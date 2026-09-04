@@ -36,7 +36,7 @@ type Minted struct {
 // The body is text whose line endings are normalised, and so is what comes
 // back. The endings the file keeps are put on when it is written.
 func Whole(
-	body string, stencils map[string]CardStencil, mint func() (domain.CardID, error),
+	body string, stencils map[string]Stencil, mint func() (domain.CardID, error),
 ) (string, []Minted, error) {
 	raw := []byte(body)
 	deck, spans := readDeck(domain.Fingerprint{}, raw)

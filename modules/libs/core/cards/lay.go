@@ -15,7 +15,7 @@ var placeholderRe = regexp.MustCompile(`\{\{([^{}]*)\}\}`)
 // A placeholder naming a field the card leaves out lays out as nothing, and
 // everything around it is what the person wrote and arrives as they wrote it. A
 // face with only one of its two sides lays out nothing at all.
-func Lay(s CardStencil, face CardFaceTemplate, card Card) (front, back string) {
+func Lay(s Stencil, face FaceTemplate, card Card) (front, back string) {
 	if face.Front == "" || face.Back == "" {
 		return "", ""
 	}

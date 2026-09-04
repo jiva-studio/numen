@@ -474,7 +474,7 @@ func TestAFaceIsWrittenWithTheSidesItHas(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.AddFace(cards.CardFaceTemplate{Name: "Half a face", Front: "Where does {{Name}} live?"}); err != nil {
+	if err := f.AddFace(cards.FaceTemplate{Name: "Half a face", Front: "Where does {{Name}} live?"}); err != nil {
 		t.Fatalf("add: %v", err)
 	}
 
@@ -627,7 +627,7 @@ func TestWholeSaysWhichCardsItMinted(t *testing.T) {
 		return out, nil
 	}
 
-	_, minted, err := cards.Whole(body, map[string]cards.CardStencil{
+	_, minted, err := cards.Whole(body, map[string]cards.Stencil{
 		"Animal": {Fields: []string{"Name"}},
 	}, mint)
 	if err != nil {

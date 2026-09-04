@@ -65,7 +65,7 @@ func (f *DeckFile) Deck(ref domain.Fingerprint) Deck {
 
 // Whole makes every card of the file whole and reports the marks it minted,
 // which is what Whole does to a body. The file keeps its own line endings.
-func (f *DeckFile) Whole(stencils map[string]CardStencil, mint func() (domain.CardID, error)) ([]Minted, error) {
+func (f *DeckFile) Whole(stencils map[string]Stencil, mint func() (domain.CardID, error)) ([]Minted, error) {
 	body, minted, err := Whole(markdown.Normalised(f.doc.Body()), stencils, mint)
 	if err != nil {
 		return nil, err
@@ -314,7 +314,7 @@ func stamped(doc *markdown.Document, identifier string) (bool, error) {
 
 // Stencil is what the file now says: the fields of the frontmatter in front of
 // the writer, and the faces of the body in front of it.
-func (f *StencilFile) Stencil(n domain.Note) CardStencil {
+func (f *StencilFile) Stencil(n domain.Note) Stencil {
 	n.Body = f.doc.Body()
 	n.Frontmatter = map[string]any{fieldsKey: declared(f.doc)}
 	return ReadStencil(n)
@@ -389,7 +389,7 @@ func declared(doc *markdown.Document) []any {
 
 // AddFace writes a face at the end of the stencil. A stencil shows a card once
 // through each face it carries, so two faces of one name are two faces.
-func (f *StencilFile) AddFace(face CardFaceTemplate) error {
+func (f *StencilFile) AddFace(face FaceTemplate) error {
 	body := []byte(f.doc.Body())
 	at := len(body)
 	return f.doc.SpliceBody(at, at, insert(body, at, laid(face)))
@@ -398,7 +398,7 @@ func (f *StencilFile) AddFace(face CardFaceTemplate) error {
 // laid is the markdown one face is written as: its heading, the lead beneath
 // it, and each side the face has under a heading of its name. A face missing a
 // side is written missing it, and it is the face that lays out nothing.
-func laid(face CardFaceTemplate) string {
+func laid(face FaceTemplate) string {
 	blocks := []string{headingLine(2, face.Name)}
 	if lead := trimBlankLines(markdown.Normalised(face.Lead)); lead != "" {
 		blocks = append(blocks, lead)

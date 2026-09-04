@@ -593,10 +593,10 @@ func values(vs []FieldValue) []format.Value {
 	return out
 }
 
-func faced(fs []Face) []format.CardFaceTemplate {
-	out := make([]format.CardFaceTemplate, 0, len(fs))
+func faced(fs []Face) []format.FaceTemplate {
+	out := make([]format.FaceTemplate, 0, len(fs))
 	for _, f := range fs {
-		out = append(out, format.CardFaceTemplate{Name: f.Name, Front: f.Front, Back: f.Back})
+		out = append(out, format.FaceTemplate{Name: f.Name, Front: f.Front, Back: f.Back})
 	}
 	return out
 }

@@ -103,7 +103,7 @@ type Cards struct {
 	// the markdown a stencil's faces are. A tool changes cards and hands them
 	// back; what the file then reads as is the format's.
 	DeckBody    func(d format.Deck) (string, error)
-	StencilBody func(preamble string, faces []format.CardFaceTemplate, tail string) (string, error)
+	StencilBody func(preamble string, faces []format.FaceTemplate, tail string) (string, error)
 }
 
 // Sources is the documents a vault holds beside its notes. Without Queries the

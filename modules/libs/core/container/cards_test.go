@@ -130,7 +130,7 @@ func TestWritingOneFaceLeavesTheRestOfTheStencilAlone(t *testing.T) {
 		"## Name it\n\nAnd this one the other way round.\n\n### Front\n\n{{Height}}\n\n### Back\n\n{{Name}}\n"
 
 	read := format.ReadStencil(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, []byte(raw)))
-	held := append([]format.CardFaceTemplate(nil), read.Faces...)
+	held := append([]format.FaceTemplate(nil), read.Faces...)
 	held[0].Back = "**{{Height}}**"
 
 	body, err := container.StencilBody(read.Preamble, held, read.Tail)
@@ -153,7 +153,7 @@ func TestWritingOneFaceLeavesTheRestOfTheStencilAlone(t *testing.T) {
 // addressed by its name here. Two faces of one name are two faces, and what
 // each holds is in the file.
 func TestAStencilKeepsEveryFaceItIsGiven(t *testing.T) {
-	body, err := container.StencilBody("", []format.CardFaceTemplate{
+	body, err := container.StencilBody("", []format.FaceTemplate{
 		{Name: "Recognise", Front: "{{Name}}", Back: "{{Height}}"},
 		{Name: "Recognise", Front: "{{Height}}", Back: "{{Name}}"},
 	}, "")

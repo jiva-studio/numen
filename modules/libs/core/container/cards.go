@@ -56,7 +56,7 @@ func (c Config) Cards(
 //
 // The faces are written into a stencil of no faces, one after another, so every
 // face a caller gave stands in the file and two of one name are two faces.
-func StencilBody(preamble string, fs []format.CardFaceTemplate, tail string) (string, error) {
+func StencilBody(preamble string, fs []format.FaceTemplate, tail string) (string, error) {
 	scratch, err := format.OpenStencil(markdown.Create("", preamble))
 	if err != nil {
 		return "", err

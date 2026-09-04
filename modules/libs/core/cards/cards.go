@@ -26,9 +26,9 @@ const (
 	FieldLevel = 3
 )
 
-// CardStencil is a note declaring what a card has and the face templates it is
+// Stencil is a note declaring what a card has and the face templates it is
 // shown through.
-type CardStencil struct {
+type Stencil struct {
 	Ref    domain.Fingerprint
 	Fields []string
 	// Preamble is every byte above the first face, down to the one its heading
@@ -36,16 +36,16 @@ type CardStencil struct {
 	// read. Both are kept as they were written and neither is any face's.
 	Preamble string
 	Tail     string
-	Faces    []CardFaceTemplate
+	Faces    []FaceTemplate
 	// Problems are what was wrong with the file and could not be repaired.
 	// They are shown to the person, and never guessed at.
 	Problems []Problem
 }
 
-// CardFaceTemplate is one way a card is shown, as its stencil declares it: what
+// FaceTemplate is one way a card is shown, as its stencil declares it: what
 // stands before the answer and what stands after it, each with `{{Field}}` where
 // a value goes. A face with only one of the two lays out nothing.
-type CardFaceTemplate struct {
+type FaceTemplate struct {
 	Name string
 	// Lead is what stands between the face's heading and its first side.
 	Lead  string
@@ -112,7 +112,7 @@ type Value struct {
 
 // First is the field a card's heading holds the value of. A stencil declaring
 // none cuts nothing, and answers with no name.
-func (s CardStencil) First() string {
+func (s Stencil) First() string {
 	if len(s.Fields) == 0 {
 		return ""
 	}
