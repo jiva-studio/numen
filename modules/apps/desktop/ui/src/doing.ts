@@ -9,9 +9,10 @@ import type { PlexRelatedSeat } from '@numen/ui'
 import type { Deed, Runnable, Shown } from './commanding'
 import type { Opened } from './putting'
 import type {
-  Answer,
+  Artifact,
   Movement,
   Outcome,
+  Reached,
   Refused,
   Removed,
   Renamed,
@@ -220,6 +221,8 @@ export interface Words {
   readonly occupied: string
   /** This build cannot do the run at all, and stops offering it. */
   readonly unrunnable: string
+  /** What an artifact of a file now stands at, in words a person reads. */
+  readonly made: Record<Artifact, Record<Reached, string>>
 }
 
 /** One command, carried out. */
@@ -247,11 +250,11 @@ const carried: Record<string, Carries> = {
   remove: (deed, on, words) => removes(deed, false, on, words),
   destroy: (deed, on, words) => removes(deed, true, on, words),
   transcribe: async (deed, on, words) =>
-    began(deed, await on.runs.transcribes(deed.file), on, words),
+    began(deed, await on.runs.makes(deed.file, 'transcript'), on, words),
   recognise: async (deed, on, words) =>
-    began(deed, await on.runs.recognises(deed.file), on, words),
+    began(deed, await on.runs.makes(deed.file, 'reading'), on, words),
   proofread: async (deed, on, words) =>
-    began(deed, await on.runs.proofreads(deed.file), on, words),
+    began(deed, await on.runs.makes(deed.file, 'corrections'), on, words),
   dropTranscript: async (deed, on, words) => {
     if (await on.runs.drops(deed.file)) return
     on.runnable.cannotRun(deed.id)
@@ -366,21 +369,25 @@ const moves = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
   if (answer.refusal) on.says(words.refused[answer.refusal], 'refusal')
 }
 
-/** The outcomes a run is under way in, which the window says as what it did. */
-const UNDER_WAY: readonly Answer[] = ['started', 'queued']
+/** What an artifact stands at while a run is under way, which is said as a report. */
+const UNDER_WAY: readonly Reached[] = ['queued', 'running']
 
 /**
- * A run asked for over a file. The application answers how it came out in one
- * sentence, which is what the person is told; a run under way shows what it is
- * doing in the work behind the window. A build that cannot do the run at all is
- * told once and offers it nowhere after that.
+ * An artifact asked for over a file. What it now stands at is one sentence,
+ * which is what the person is told; a run under way shows what it is doing in
+ * the work behind the window. A build that cannot make it at all is told once
+ * and offers it nowhere after that.
  */
 const began = (deed: Deed, outcome: Outcome, on: Doing, words: Words): void => {
   if (!outcome.able) {
     on.runnable.cannotRun(deed.id)
     return on.says(words.unrunnable, 'refusal')
   }
-  on.says(outcome.why, UNDER_WAY.includes(outcome.answer) ? 'report' : 'refusal')
+  // A file nothing here could read carries what the run said about it, and that
+  // stands after the sentence.
+  const why = words.made[outcome.of][outcome.made]
+  const said = outcome.error ? `${why} ${outcome.error}` : why
+  on.says(said, UNDER_WAY.includes(outcome.made) ? 'report' : 'refusal')
 }
 
 /** An empty folder, made under the path that was typed. */

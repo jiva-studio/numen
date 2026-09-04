@@ -35,6 +35,7 @@ const front = (over: Partial<Where> = {}): Where => ({
   title: 'Ontology',
   file: '',
   source: null,
+  made: {},
   vault: { id: 'physics', name: 'Physics' },
   ready: true,
   ...over,
@@ -575,6 +576,57 @@ describe('the runs over the file in front', () => {
     expect(drawn(asking(heard, [], {}, undefined, runs).commands.bands).file).toBeUndefined()
     expect(drawn(asking(scanned, [], {}, undefined, runs).commands.bands).file).toStrictEqual([
       'recognise',
+    ])
+  })
+
+  // A run is offered on what has been made from the file and not on its kind.
+  // The window can ask what a book carries, so a book already read is not
+  // offered to be read again.
+  it('offers a scan to be recognised only where nothing has read it', () => {
+    for (const [made, offered] of [
+      ['none', true],
+      ['stopped', true],
+      ['queued', false],
+      ['running', false],
+      ['done', false],
+      ['empty', false],
+      ['failed', false],
+    ] as const) {
+      const { commands } = asking({ ...scanned, made: { reading: made } })
+
+      expect(drawn(commands.bands).file, made).toStrictEqual(offered ? ['recognise'] : undefined)
+    }
+  })
+
+  it('offers a recording to be transcribed only where nothing has heard it', () => {
+    const { commands } = asking({ ...heard, made: { transcript: 'done' } })
+
+    expect(drawn(commands.bands).file).not.toContain('transcribe')
+  })
+
+  // There is nothing to put right until a model has heard something, and
+  // nothing to take away until it has.
+  it('offers a transcript to be put right once one stands, and not before', () => {
+    expect(drawn(asking({ ...heard, made: { transcript: 'none' } }).commands.bands).file)
+      .toStrictEqual(['transcribe'])
+    expect(drawn(asking({ ...heard, made: { transcript: 'done' } }).commands.bands).file)
+      .toStrictEqual(['proofread', 'dropTranscript'])
+    expect(
+      drawn(asking({ ...heard, made: { transcript: 'done', corrections: 'done' } }).commands.bands)
+        .file,
+    ).toStrictEqual(['dropTranscript'])
+  })
+
+  // Nothing has been asked yet, and the file is offered what its kind offers.
+  // A window that hid the runs until the answer came would flicker every one of
+  // them into place.
+  it('offers what the kind offers while nothing is known of the file', () => {
+    const { commands } = asking(heard)
+
+    expect(drawn(commands.bands).file).toStrictEqual([
+      'transcribe',
+      'proofread',
+      'dropTranscript',
     ])
   })
 

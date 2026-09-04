@@ -9,7 +9,16 @@
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteBand, PaletteItem, PaletteKeys } from '@numen/ui'
 import { asking as latest } from './asking'
-import { wentTo, type Known, type Listed, type NoteType, type Source, type Went } from './core'
+import {
+  wentTo,
+  type Carries,
+  type Known,
+  type Listed,
+  type NoteType,
+  type Reached,
+  type Source,
+  type Went,
+} from './core'
 import { keysOf } from './keying'
 import type { Named, Silences } from './finding'
 
@@ -114,6 +123,12 @@ export interface Where {
    */
   readonly file: string
   readonly source: Source | null
+  /**
+   * What that file carries, and what has become of each. A file nothing has
+   * been asked about carries nothing here, and a command over it is offered on
+   * its kind alone.
+   */
+  readonly made: Carries
   /** The other files it is over, beside the one at `path`. */
   readonly others?: readonly string[]
   /** The vault the window is showing, and nothing where it shows none. */
@@ -375,6 +390,25 @@ const onSource =
   (at: Where, runs: Runnable): boolean =>
     at.ready && at.file !== '' && at.source === source && runs.canRun(run)
 
+/**
+ * A run over the file in front that is offered on what has been made from it,
+ * and not on its kind alone: a book already read is not offered to be read.
+ *
+ * A file nothing has been asked about carries nothing, and it is offered as it
+ * would have been. The application refuses what it has already made, so the
+ * person is never left holding an item that would do nothing.
+ */
+const onEvidence =
+  (run: string, source: Source, made: (carries: Carries) => boolean) =>
+  (at: Where, runs: Runnable): boolean =>
+    onSource(run, source)(at, runs) && (isEmpty(at.made) || made(at.made))
+
+const isEmpty = (carries: Carries): boolean => Object.keys(carries).length === 0
+
+/** An artifact a run over the file would begin, rather than be refused for. */
+const owed = (made: Reached | undefined): boolean =>
+  made === undefined || made === 'none' || made === 'stopped'
+
 const always = (): boolean => true
 
 /**
@@ -428,20 +462,28 @@ export const commandsOf = (
     id: 'transcribe',
     text: words.transcribe,
     band: 'file',
-    where: onSource('transcribe', 'recording'),
+    where: onEvidence('transcribe', 'recording', (made) => owed(made.transcript)),
   },
   {
     id: 'proofread',
     text: words.proofread,
     band: 'file',
-    where: onSource('proofread', 'recording'),
+    // There is nothing to put right until a model has heard something, and
+    // nothing to put right again once it has been put right.
+    where: onEvidence(
+      'proofread',
+      'recording',
+      (made) => made.transcript === 'done' && owed(made.corrections),
+    ),
   },
   {
     id: 'dropTranscript',
     text: words.dropTranscript,
     band: 'file',
     needs: 'asking',
-    where: onSource('dropTranscript', 'recording'),
+    // Everything one run of listening left goes, so a run that stopped part way
+    // and a recording that gave no words are both taken away here.
+    where: onEvidence('dropTranscript', 'recording', (made) => made.transcript !== 'none'),
     answers: {
       keeps: words.keepsTranscript,
       kept: words.kept,
@@ -449,7 +491,12 @@ export const commandsOf = (
       then: words.dropped,
     },
   },
-  { id: 'recognise', text: words.recognise, band: 'file', where: onSource('recognise', 'book') },
+  {
+    id: 'recognise',
+    text: words.recognise,
+    band: 'file',
+    where: onEvidence('recognise', 'book', (made) => owed(made.reading)),
+  },
   {
     id: 'note',
     text: words.newNote,

@@ -140,45 +140,57 @@ export interface Task {
 }
 
 /**
- * How a run asked for over a file came out: it began now, it waits its turn
- * behind another, this file is being worked on already, it has been done, the
- * file is not of that kind, nothing has listened to it, the words are a
- * person's own, or a run got no words out of it and wrote down what it got.
- * Asking again over that last one gets the same until the record of it is taken
- * away.
+ * What a model makes from one file of the vault: the text read out of a scan,
+ * the words heard in a recording, and those words put right.
  */
-export type Answer =
-  | 'started'
-  | 'queued'
-  | 'running'
-  | 'done'
-  | 'unfit'
-  | 'unheard'
-  | 'byHand'
-  | 'answered'
+export type Artifact = 'reading' | 'transcript' | 'corrections'
 
 /**
- * What asking for a run answered: how it came out, and one sentence beside it
- * in the application's own words. A build that cannot do the run at all answers
- * nothing else, and the run is offered nowhere after that.
+ * What has become of one artifact: nothing has been made, a run over it waits
+ * its turn behind another, a run is writing it now, a run stopped part way and
+ * what it reached is on disk, the whole of it stands, a run found nothing to
+ * write down, or a run could not read the file at all.
+ *
+ * The last two are what a run answered, and asking again gets the same until
+ * the artifact is taken away.
+ */
+export type Reached =
+  | 'none'
+  | 'queued'
+  | 'running'
+  | 'stopped'
+  | 'done'
+  | 'empty'
+  | 'failed'
+
+/** What a file carries, and what has become of each. */
+export type Carries = Partial<Record<Artifact, Reached>>
+
+/**
+ * What asking for an artifact to be made answered: which artifact, what it now
+ * is, and what a run said about a file it could not read. A build that cannot
+ * make it at all answers nothing else, and the run is offered nowhere after
+ * that.
  */
 export type Outcome =
   | { readonly able: false }
   | {
       readonly able: true
-      readonly path: string
-      readonly answer: Answer
-      readonly why: string
+      readonly of: Artifact
+      readonly made: Reached
+      readonly error: string
     }
 
-/** The runs a person asks for over one file of the vault. */
+/** What a person asks be made from one file of the vault, and taken away. */
 export interface Runs {
-  /** A recording transcribed, and the words of it written down. */
-  transcribes(path: string): Promise<Outcome>
-  /** A scanned document read, and the text of it written down. */
-  recognises(path: string): Promise<Outcome>
-  /** The transcript of a recording put right by a proofreader. */
-  proofreads(path: string): Promise<Outcome>
+  /**
+   * What the file at a path carries. It is asked before anything is offered
+   * over the file, so a book that has been read is not offered to be read
+   * again.
+   */
+  carries(path: string): Promise<Carries>
+  /** One artifact asked for, and what came of asking. */
+  makes(path: string, of: Artifact): Promise<Outcome>
   /**
    * The transcript of a recording taken away, with everything cut from it, and
    * whether this build can do it at all. The recording is left saying nothing,

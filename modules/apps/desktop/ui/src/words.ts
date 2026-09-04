@@ -6,7 +6,7 @@
  * the palette, the commands, the corner, and the quit.
  */
 import { commandKeyChord, keyChord } from '@numen/ui'
-import type { Refused, VaultRefused } from './core'
+import type { Artifact, Reached, Refused, VaultRefused } from './core'
 import { WORDS as agent } from './agent/words'
 import { WORDS as cards } from './cards/words'
 import { WORDS as note } from './note/words'
@@ -27,6 +27,44 @@ export const REFUSED: Record<Refused, string> = {
   notADeck: 'that note is not a deck',
   deckTooLarge: 'that deck is longer than this reads',
   notAPreset: 'that note is not a preset',
+}
+
+/**
+ * What an artifact of a file now stands at, in the window's own voice.
+ *
+ * They answer a person who chose Recognise, Transcribe or Proofread from a
+ * menu, and they say the word that person chose. A run under way is said as a
+ * report and everything else as a refusal, so no two of them may say the same
+ * thing.
+ */
+export const MADE: Record<Artifact, Record<Reached, string>> = {
+  reading: {
+    none: 'This scan has not been recognised.',
+    queued: 'This scan is in line, behind the one being recognised now.',
+    running: 'This scan is being recognised now.',
+    stopped: 'Recognising this scan stopped part way.',
+    done: 'This scan has already been recognised.',
+    empty: 'Nothing was read in this scan.',
+    failed: 'This scan could not be opened:',
+  },
+  transcript: {
+    none: 'This recording has not been transcribed.',
+    queued: 'This recording is in line, behind the one being transcribed now.',
+    running: 'This recording is being transcribed now.',
+    stopped: 'Transcribing this recording stopped part way.',
+    done: 'This recording has already been transcribed.',
+    empty: 'No speech was heard in this recording.',
+    failed: 'This recording could not be opened:',
+  },
+  corrections: {
+    none: 'Nothing has been transcribed here, so there is nothing to proofread.',
+    queued: 'This transcript is in line, behind the one being put right now.',
+    running: 'This transcript is being put right now.',
+    stopped: 'Putting this transcript right stopped part way.',
+    done: 'This transcript has already been put right.',
+    empty: 'There were no words in this transcript to put right.',
+    failed: 'This transcript could not be put right:',
+  },
 }
 
 /** What the list of vaults refused a command, in words a person reads. */
@@ -200,6 +238,8 @@ export const WORDS = {
   occupied: 'something of that name is filed there, so the file stayed where it was',
   /** This build cannot do the run at all, and stops offering it. */
   unrunnable: 'this installation of numen cannot do that at all',
+  /** What an artifact of a file now stands at. */
+  made: MADE,
   /** What the action panel of the palette is called. */
   actions: 'Actions',
   findAction: 'Search actions',

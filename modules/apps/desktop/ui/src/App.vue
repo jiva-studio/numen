@@ -12,7 +12,7 @@ import type { Notice } from '@numen/ui'
 import '@numen/ui/styles.css'
 import './app.css'
 import { cards, core, documents, recordings, running, vaults } from './vault'
-import type { Attention, Listed } from './core'
+import type { Attention, Carries, Listed } from './core'
 import { showing } from './showing'
 import { standing } from './plex/standing'
 import { reading } from './document/reading'
@@ -218,7 +218,14 @@ const heard = recordingKind(
   (path) => transcript(recordings, path, { plays }),
   {
     runs: (id, path, called) =>
-      carries(id, { ...where(), path: '', title: called, file: path, source: 'recording' }),
+      carries(id, {
+        ...where(),
+        path: '',
+        title: called,
+        file: path,
+        source: 'recording',
+        made: makes.value.get(path) ?? {},
+      }),
     canRun: (run) => runs.canRun(run),
   },
   puts,
@@ -256,7 +263,15 @@ const files = filesKind(held.host, () => folders(core), {
   lands: (landing) => void lands(landing, places),
   runs: (id, paths, name, source) => {
     const path = paths[0] ?? ''
-    carries(id, { ...where(), path, title: name, file: path, source, others: paths.slice(1) })
+    carries(id, {
+      ...where(),
+      path,
+      title: name,
+      file: path,
+      source,
+      made: makes.value.get(path) ?? {},
+      others: paths.slice(1),
+    })
   },
   moves: (from, to) => does(deedOf('move', { ...where(), path: from }, to), doing, words),
   carries: (paths) => {
@@ -318,17 +333,47 @@ const where = (): Where => {
   const front = held.host.front()
   const tab = front?.id ?? ''
   const on = front && held.heldIn(tab)?.kind.at?.(front.held)
+  const file = on?.file ?? ''
   return {
     tab,
     kind: front?.kind ?? null,
     path: on?.path ?? '',
     title: on?.title ?? '',
-    file: on?.file ?? '',
+    file,
     source: on?.source ?? null,
+    made: (file && makes.value.get(file)) || {},
     vault: shown.value,
     ready: !failure.value && !indexing.value,
   }
 }
+
+/**
+ * What each file the window has asked about carries. A command over a file is
+ * offered on what has been made from it, so this is asked as the file comes in
+ * front and again whenever a run over it is asked for.
+ */
+const makes = ref<ReadonlyMap<string, Carries>>(new Map())
+
+/** What one file carries, asked of the application and kept. */
+const carrying = async (path: string) => {
+  if (!path) return
+  try {
+    const held = await running.carries(path)
+    makes.value = new Map(makes.value).set(path, held)
+  } catch {
+    // A file that cannot be asked about is one nothing is known of, and every
+    // command over it is offered as it was before anything could be listed.
+    makes.value = new Map(makes.value).set(path, {})
+  }
+}
+
+// The file in front decides what is offered over it, so what it carries is
+// asked for as it arrives.
+watch(
+  () => where().file,
+  (file) => void carrying(file),
+  { immediate: true },
+)
 
 /**
  * The tab the person is looking at. A question is written into an agent tab, so
@@ -497,12 +542,17 @@ const doing: Doing = {
     makesFolder: (path) => core.makeFolder(path),
   },
   runs: {
-    transcribes: (path) => running.transcribes(path),
-    recognises: (path) => running.recognises(path),
-    proofreads: (path) => running.proofreads(path),
+    carries: (path) => running.carries(path),
+    makes: async (path, of) => {
+      const outcome = await running.makes(path, of)
+      // What the file carries has moved, and what is offered over it follows.
+      void carrying(path)
+      return outcome
+    },
     drops: async (path) => {
       const able = await running.drops(path)
       if (able) heard.dropped(path)
+      void carrying(path)
       return able
     },
   },

@@ -4,8 +4,10 @@
  * Nothing here describes what an answer looks like: that is the schema, and
  * both halves are generated from it.
  */
-import { createClient } from '@connectrpc/connect'
+import { Code, createClient } from '@connectrpc/connect'
+import type { ConnectError } from '@connectrpc/connect'
 import {
+  ArtifactService,
   CardsService,
   Counting as Countings,
   Fault as Faults,
@@ -17,6 +19,7 @@ import {
   Seat as Seats,
   SettingsService,
   SourceKind,
+  State as States,
   VaultService,
   VaultsRefusal,
   VaultsService,
@@ -46,8 +49,8 @@ import type { Documents, Highlight, Sheet } from './document/reading'
 import type { Cue, Recordings } from './recording/transcript'
 import type {
   Added,
-  Answer,
   Answered,
+  Artifact as ArtifactOf,
   Cards,
   Carded,
   Core,
@@ -65,9 +68,9 @@ import type {
   NewLink,
   NoteType,
   Offer,
-  Outcome,
   Presence,
   Problem,
+  Reached,
   Refused,
   Removed,
   Renamed,
@@ -92,6 +95,9 @@ const settingsService = createClient(SettingsService, transport)
 
 /** This window itself, which is the editor and not the one cards are run in. */
 const windowService = createClient(WindowService, transport)
+
+/** What a model has made from the files of the vault. */
+const artifacts = createClient(ArtifactService, transport)
 
 /** The window every question about a window names. */
 const WINDOW = 'editor'
@@ -497,37 +503,74 @@ export const recordings: Recordings = {
 }
 
 /**
- * The runs a person asks for over one file, over the same addresses. The
- * application answers how each came out, in a word and one sentence.
+ * What a model makes from one file of the vault, asked for by name. Which model
+ * does the work follows from the file, so the window names the artifact and
+ * never the producer.
  */
 export const running: Runs = {
-  transcribes: (path) => begins(`${asset(path)}/transcribe`),
-  recognises: (path) => begins(`${asset(path)}/recognise`),
-  proofreads: (path) => begins(`${asset(path)}/proofread`),
+  carries: async (path) => {
+    const answer = await artifacts.listArtifacts({ path })
+    const held: Record<string, Reached> = {}
+    for (const one of answer.artifacts) {
+      const of = made[one.name.slice(one.name.lastIndexOf('/artifacts/') + '/artifacts/'.length)]
+      if (of) held[of] = reached(one.state)
+    }
+    return held
+  },
+  makes: async (path, of) => {
+    try {
+      const answer = await artifacts.createArtifact({ path, artifactId: ids[of] })
+      return {
+        able: true,
+        of,
+        made: reached(answer.artifact?.state),
+        error: answer.artifact?.error ?? '',
+      }
+    } catch (error) {
+      // A build that cannot make it at all says so, and it is offered nowhere
+      // from then on.
+      if (Code.Unimplemented === (error as ConnectError).code) return { able: false }
+      throw error
+    }
+  },
   drops: async (path) => {
-    const answer = await fetch(`${asset(path)}/cues`, { method: 'DELETE' })
-    if (answer.status === 501) return false
-    if (!answer.ok) throw new Error((await answer.text()).trim() || `${answer.status}`)
-    return true
+    try {
+      await artifacts.deleteArtifact({ path, artifactId: ids.transcript })
+      return true
+    } catch (error) {
+      if (Code.Unimplemented === (error as ConnectError).code) return false
+      throw error
+    }
   },
 }
 
-/**
- * A run asked for. A build that cannot do it at all says so in a status, and
- * the run is offered nowhere from then on.
- */
-const begins = async (address: string): Promise<Outcome> => {
-  const answer = await fetch(address, { method: 'POST' })
-  if (answer.status === 501) return { able: false }
-  if (!answer.ok) throw new Error((await answer.text()).trim() || `${answer.status}`)
-  const said = (await answer.json()) as { path?: string; answer?: Answer; why?: string }
-  return {
-    able: true,
-    path: said.path ?? '',
-    answer: said.answer ?? 'started',
-    why: said.why ?? '',
-  }
+/** What each artifact is asked for under, as the schema names it. */
+const ids: Record<ArtifactOf, string> = {
+  reading: 'ocr',
+  transcript: 'asr',
+  corrections: 'asr.corrected',
 }
+
+/** And back, for reading the id off the end of an artifact's name. */
+const made = Object.fromEntries(
+  Object.entries(ids).map(([of, id]) => [id, of as ArtifactOf]),
+) as Record<string, ArtifactOf>
+
+/** What has become of an artifact, in the words the window uses. */
+const become: Record<States, Reached> = {
+  [States.UNSPECIFIED]: 'none',
+  [States.NONE]: 'none',
+  [States.QUEUED]: 'queued',
+  [States.RUNNING]: 'running',
+  [States.STOPPED]: 'stopped',
+  [States.DONE]: 'done',
+  [States.EMPTY]: 'empty',
+  [States.FAILED]: 'failed',
+}
+
+/** A state this window has no word for is an artifact nothing has made. */
+const reached = (state: States | undefined): Reached =>
+  (state === undefined ? undefined : become[state]) ?? 'none'
 
 /**
  * Where a file of the vault is asked about. The path is written out whole, so a

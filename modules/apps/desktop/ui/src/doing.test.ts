@@ -9,10 +9,12 @@ import { commandsOf, deedOf, runnable, type Deed, type Where } from './commandin
 import { does, reaching, type Doing, type Store } from './doing'
 import type {
   Added,
-  Answer,
+  Artifact,
+  Carries,
   Known,
   Movement,
   Outcome,
+  Reached,
   Refused,
   Removed,
   Renamed,
@@ -28,6 +30,7 @@ const front = (over: Partial<Where> = {}): Where => ({
   title: 'Ontology',
   file: '',
   source: null,
+  made: {},
   vault: { id: 'physics', name: 'Physics' },
   ready: true,
   ...over,
@@ -51,12 +54,12 @@ const renamed = (over: Partial<Renamed> = {}): Renamed => ({
   ...over,
 })
 
-/** How a run came out, as the application answers it: a word and a sentence. */
-const outcome = (answer: Answer, why: string): Outcome => ({
+/** What an artifact now stands at, as the application answers it. */
+const outcome = (of: Artifact, made: Reached, error = ''): Outcome => ({
   able: true,
-  path: 'talks/Ants.mp3',
-  answer,
-  why,
+  of,
+  made,
+  error,
 })
 
 const removed = (over: Partial<Removed> = {}): Removed => ({
@@ -91,7 +94,9 @@ const window = (
     movement?: Movement
     /** What making a folder was refused with. */
     folderRefused?: Refused
-    /** How a run asked for over a file came out. */
+    /** What the file in front carries. */
+    carries?: Carries
+    /** How asking for an artifact of a file came out. */
     outcome?: Outcome
     /** What dropping a transcript was refused with. */
     dropRefused?: string
@@ -131,17 +136,13 @@ const window = (
       },
     },
     runs: {
-      transcribes: async (path) => {
-        done.push(`transcribes ${path}`)
-        return answers.outcome ?? outcome('started', '')
+      carries: async (path) => {
+        done.push(`carries ${path}`)
+        return answers.carries ?? {}
       },
-      recognises: async (path) => {
-        done.push(`recognises ${path}`)
-        return answers.outcome ?? outcome('started', '')
-      },
-      proofreads: async (path) => {
-        done.push(`proofreads ${path}`)
-        return answers.outcome ?? outcome('started', '')
+      makes: async (path, of) => {
+        done.push(`makes ${of} ${path}`)
+        return answers.outcome ?? outcome(of, 'running')
       },
       drops: async (path) => {
         done.push(`drops ${path}`)
@@ -360,61 +361,56 @@ describe('a note made', () => {
   })
 })
 
-/**
- * The sentences the application answers a run with, one to an outcome. They are
- * its own words, and the window shows what it is given.
- */
-const WHY: Record<Answer, string> = {
-  started: 'Transcribing this recording has begun.',
-  queued: 'This recording is in line, behind the one being transcribed now.',
-  running: 'This recording is being transcribed now.',
-  done: 'This recording has already been transcribed.',
-  unfit: 'Only a recording is transcribed, and this file is not one.',
-  unheard: 'Nothing has been transcribed here, so there is nothing to proofread.',
-  byHand: 'These words were written by hand, and a model does not correct them.',
-  answered:
-    'Nothing came of transcribing this recording: unopened: the mp3 recording: mp3: MPEG version 2.5 is not supported',
-}
+/** What the window says an artifact of a file now stands at, as a report. */
+const REPORTED: readonly Reached[] = ['queued', 'running']
 
-/** The outcomes the window says as a report, which are the runs under way. */
-const REPORTED: readonly Answer[] = ['started', 'queued']
+/** Everything an artifact can stand at, which the window has a sentence for. */
+const REACHED: readonly Reached[] = [
+  'none',
+  'queued',
+  'running',
+  'stopped',
+  'done',
+  'empty',
+  'failed',
+]
 
-/** A run asked for over the recording in front, as it came out. */
-const asked = (answer: Answer) => {
-  const one = window({ outcome: outcome(answer, WHY[answer]) })
+/** An artifact of the recording in front asked for, as it came out. */
+const asked = (made: Reached, error = '') => {
+  const one = window({ outcome: outcome('transcript', made, error) })
   return { one, deed: deedOf('transcribe', front({ file: 'talks/Ants.mp3' })) }
 }
 
-describe('a run asked for over a file', () => {
+describe('an artifact asked for over a file', () => {
   it('asks the application over that file', async () => {
-    const { one, deed } = asked('started')
+    const { one, deed } = asked('running')
 
     await carry(deed, one.on)
 
-    expect(one.done).toStrictEqual(['transcribes talks/Ants.mp3'])
+    expect(one.done).toStrictEqual(['makes transcript talks/Ants.mp3'])
   })
 
-  // Every outcome carries a sentence, so the person is told one whatever
+  // Every state carries a sentence, so the person is told one whatever
   // happened.
-  it('says how it came out, in the words the application sent', async () => {
-    for (const answer of Object.keys(WHY) as Answer[]) {
-      const { one, deed } = asked(answer)
+  it('says what it now stands at, in the window’s own words', async () => {
+    for (const made of REACHED) {
+      const { one, deed } = asked(made)
 
       await carry(deed, one.on)
 
-      expect(one.said, answer).toStrictEqual([WHY[answer]])
+      expect(one.said, made).toStrictEqual([words.made.transcript[made]])
     }
   })
 
   // Only a run under way is a report. Everything else is a refusal: the person
   // asked for work, and none is being done.
   it('says a run under way as a report and the rest as refusals', async () => {
-    for (const answer of Object.keys(WHY) as Answer[]) {
-      const { one, deed } = asked(answer)
+    for (const made of REACHED) {
+      const { one, deed } = asked(made)
 
       await carry(deed, one.on)
 
-      expect(one.tones, answer).toStrictEqual([REPORTED.includes(answer) ? 'report' : 'refusal'])
+      expect(one.tones, made).toStrictEqual([REPORTED.includes(made) ? 'report' : 'refusal'])
     }
   })
 
@@ -425,28 +421,37 @@ describe('a run asked for over a file', () => {
 
     await carry(deed, one.on)
 
-    expect(one.said).toStrictEqual([WHY.done])
+    expect(one.said).toStrictEqual([words.made.transcript.done])
   })
 
-  // A run that got no words out of the recording wrote down what it got, and
-  // asking again gets the same until that record is taken away.
-  it('says what a run answered about a recording it got no words out of', async () => {
-    const { one, deed } = asked('answered')
+  // A run that could not read the file wrote down what it got, and asking again
+  // gets the same until that record is taken away.
+  it('says what a run said about a recording it could not open', async () => {
+    const said = 'mp3: MPEG version 2.5 is not supported'
+    const { one, deed } = asked('failed', said)
 
     await carry(deed, one.on)
 
-    expect(one.done).toStrictEqual(['transcribes talks/Ants.mp3'])
-    expect(one.said).toStrictEqual([WHY.answered])
+    expect(one.done).toStrictEqual(['makes transcript talks/Ants.mp3'])
+    expect(one.said).toStrictEqual([`${words.made.transcript.failed} ${said}`])
   })
 
   it('says the same of a scan already recognised', async () => {
-    const why = 'This scan has already been recognised.'
-    const one = window({ outcome: { able: true, path: 'books/Ants.pdf', answer: 'done', why } })
+    const one = window({ outcome: outcome('reading', 'done') })
 
     await carry(deedOf('recognise', front({ file: 'books/Ants.pdf' })), one.on)
 
-    expect(one.done).toStrictEqual(['recognises books/Ants.pdf'])
-    expect(one.said).toStrictEqual([why])
+    expect(one.done).toStrictEqual(['makes reading books/Ants.pdf'])
+    expect(one.said).toStrictEqual([words.made.reading.done])
+  })
+
+  // No two of them may say the same thing: a person reads the sentence and not
+  // the word behind it.
+  it('says something of its own for every artifact and every state', () => {
+    const said = Object.values(words.made).flatMap((one) => Object.values(one))
+
+    expect(said.filter((one) => one === '')).toStrictEqual([])
+    expect(new Set(said).size).toBe(said.length)
   })
 
   it('says this build cannot do it, and offers it nowhere after that', async () => {
