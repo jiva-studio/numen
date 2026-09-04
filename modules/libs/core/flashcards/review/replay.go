@@ -45,23 +45,23 @@ func ReplayUnder(d Day, by Assignment, answers []Answer) map[CardFaceID]Schedule
 	return Give(answers).Replay(d, by)
 }
 
-// ReviewHistory is a vault's answers in the order they were given: nothing a
+// History is a vault's answers in the order they were given: nothing a
 // line takes back, one line to an identifier, earliest first.
 //
 // One request asks several things of one history — where it leaves each card,
 // what each day came to, what a preset spent. The order is worked out once and
 // handed to each of them.
-type ReviewHistory []Answer
+type History []Answer
 
 // Give puts a vault's answers in the order they were given.
-func Give(answers []Answer) ReviewHistory { return given(answers) }
+func Give(answers []Answer) History { return given(answers) }
 
 // Replay works out where this history leaves every card face, each under the
 // scheduler its own preset asks for and on the day its own preset puts it.
 //
 // The days the answers have already filled are what the next card is placed
 // against.
-func (h ReviewHistory) Replay(d Day, by Assignment) map[CardFaceID]Schedule {
+func (h History) Replay(d Day, by Assignment) map[CardFaceID]Schedule {
 	out := make(map[CardFaceID]Schedule)
 	on := Spreading(d)
 	for _, a := range h {
@@ -96,7 +96,7 @@ func Retained(by Scheduler, d Day, answers []Answer) map[string]RecallTally {
 }
 
 // Retained is the same over a history already in order.
-func (h ReviewHistory) Retained(by Scheduler, d Day) map[string]RecallTally {
+func (h History) Retained(by Scheduler, d Day) map[string]RecallTally {
 	out := make(map[string]RecallTally)
 	h.replayed(by, func(before Schedule, a Answer) {
 		if !by.Spaced(before) {
@@ -121,7 +121,7 @@ func replayed(
 	return Give(answers).replayed(by, each)
 }
 
-func (h ReviewHistory) replayed(
+func (h History) replayed(
 	by Scheduler, each func(before Schedule, a Answer),
 ) map[CardFaceID]Schedule {
 	out := make(map[CardFaceID]Schedule)
