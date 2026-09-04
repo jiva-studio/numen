@@ -92,7 +92,7 @@ func run(cfg container.Config, noAgent bool) error {
 	running := cfg.Flashcards(db.Queries(), db.Links(), vaults.level)
 	api := &flashcardsui.API{
 		Registry:  registry,
-		Owed:      running.Owed,
+		CardsDue:  running.CardsDue,
 		Session:   running.Session,
 		Schedules: running.Schedules,
 		Log:       running.Log,
