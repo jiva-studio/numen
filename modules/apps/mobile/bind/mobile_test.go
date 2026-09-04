@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -109,7 +110,32 @@ func TestStartAnswers(t *testing.T) {
 // origin it answers is the page the platform serves: a page in the person's own
 // browser asks the same address and is refused by the browser before the ask
 // leaves it.
+// page is the one origin, spelled out. Reading it from the code under test
+// would make this hold for whatever that code says — "*" included, which is the
+// answer this test exists to refuse.
+const page = "http://localhost"
+
+// The origin is settled in the platform's own configuration and named here in
+// Go, and a scheme changed in one is a page refused by the other with nothing
+// said. The two are read against each other.
+func TestThePageIsServedFromTheOriginTheCoreAnswers(t *testing.T) {
+	held, err := os.ReadFile(filepath.Join("..", "capacitor.config.ts"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	scheme, _, found := strings.Cut(page, "://")
+	if !found {
+		t.Fatalf("%q names no scheme", page)
+	}
+	if want := "androidScheme: '" + scheme + "'"; !strings.Contains(string(held), want) {
+		t.Errorf("the core answers %q and capacitor.config.ts says no %s", page, want)
+	}
+}
+
 func TestTheSocketAnswersThePagesOwnOriginAndNoOther(t *testing.T) {
+	if bind.Page != page {
+		t.Fatalf("the page is served from %q and this reads %q", bind.Page, page)
+	}
 	port, err := bind.Start(t.TempDir())
 	if err != nil {
 		t.Fatalf("starting: %v", err)
@@ -117,7 +143,7 @@ func TestTheSocketAnswersThePagesOwnOriginAndNoOther(t *testing.T) {
 	t.Cleanup(func() { _ = bind.Stop() })
 
 	url := fmt.Sprintf("http://127.0.0.1:%d/numen.v1.NoteService/CreateNote", port)
-	for _, origin := range []string{bind.Page, "https://a-page-somebody-opened.example"} {
+	for _, origin := range []string{page, "https://a-page-somebody-opened.example"} {
 		for _, method := range []string{http.MethodOptions, http.MethodPost} {
 			req, err := http.NewRequest(method, url, bytes.NewReader([]byte(`{"title":"Anemone"}`)))
 			if err != nil {
@@ -134,7 +160,7 @@ func TestTheSocketAnswersThePagesOwnOriginAndNoOther(t *testing.T) {
 				t.Fatalf("asking as %s: %v", origin, err)
 			}
 			res.Body.Close()
-			if got := res.Header.Get("Access-Control-Allow-Origin"); got != bind.Page {
+			if got := res.Header.Get("Access-Control-Allow-Origin"); got != page {
 				t.Errorf("a %s from %s is allowed %q", method, origin, got)
 			}
 		}
@@ -176,6 +202,39 @@ func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 		if res.StatusCode != http.StatusNotFound {
 			t.Errorf("%s answered %s", at, res.Status)
 		}
+	}
+}
+
+// The vault, the index built from it and the settings file all sit under the
+// directory Start is handed, so the platform's own backup is a way off the
+// phone for the file the socket above refuses to serve. It is turned off, and
+// nothing else in this repository reads the manifest.
+func TestThePlatformDoesNotCarryTheVaultOffThePhone(t *testing.T) {
+	at := filepath.Join("..", "android", "app", "src", "main")
+	manifest, err := os.ReadFile(filepath.Join(at, "AndroidManifest.xml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, said := range []string{
+		`android:allowBackup="false"`,
+		`android:dataExtractionRules="@xml/data_extraction_rules"`,
+	} {
+		if !strings.Contains(string(manifest), said) {
+			t.Errorf("the manifest does not say %s", said)
+		}
+	}
+
+	rules, err := os.ReadFile(filepath.Join(at, "res", "xml", "data_extraction_rules.xml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, said := range []string{"<cloud-backup>", "<device-transfer>"} {
+		if !strings.Contains(string(rules), said) {
+			t.Errorf("the rules name no %s", said)
+		}
+	}
+	if strings.Contains(string(rules), "<include") {
+		t.Error("the rules take something off the phone and this test does not say what")
 	}
 }
 
