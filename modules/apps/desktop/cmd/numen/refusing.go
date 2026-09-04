@@ -113,7 +113,7 @@ func stopped(cfg container.Config, why error) refusal {
 		}
 	}
 
-	var outside *settings.Outside
+	var outside *settings.OutsideBounds
 	if errors.As(why, &outside) {
 		return sized(cfg, outside)
 	}
@@ -147,7 +147,7 @@ func stopped(cfg container.Config, why error) refusal {
 
 // sized is a number a size does not take, from the file or from the command
 // line.
-func sized(cfg container.Config, outside *settings.Outside) refusal {
+func sized(cfg container.Config, outside *settings.OutsideBounds) refusal {
 	far := fmt.Sprintf("%v to %v", outside.Least, outside.Most)
 	written := fmt.Sprint(outside.Number)
 
