@@ -23,6 +23,10 @@ type Scan struct {
 	Known       port.NoteQueries
 	Maintenance port.IndexMaintenance
 
+	// Walks is the turns the vaults being walked take. A scan given none takes
+	// its turn from nobody and waits for nobody.
+	Walks *Walks
+
 	// RebuildIndex reads every file and puts it in the index again, whatever the
 	// index remembers about it.
 	//
@@ -52,16 +56,23 @@ type ScanResult struct {
 	Unreadable int // walked, still there, and the read refused
 }
 
-// walks is the vaults this process is walking, a turn each.
-var walks sync.Map
+// Walks is the vaults being walked, a turn each.
+//
+// It belongs to whatever the walks are written into: two indexes are two sets
+// of turns, and a set goes when the thing holding it goes.
+type Walks struct{ turns sync.Map }
 
-// oneWalk takes the vault's turn and answers with the release of it. Walks of
-// different vaults do not wait on each other.
-func oneWalk(ctx context.Context, vaultID domain.VaultID) (func(), error) {
+// one takes the vault's turn and answers with the release of it. Walks of
+// different vaults do not wait on each other, and neither do walks that share
+// no turns.
+func (w *Walks) one(ctx context.Context, vaultID domain.VaultID) (func(), error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	held, _ := walks.LoadOrStore(vaultID, make(chan struct{}, 1))
+	if w == nil {
+		return func() {}, nil
+	}
+	held, _ := w.turns.LoadOrStore(vaultID, make(chan struct{}, 1))
 	turn := held.(chan struct{})
 	select {
 	case turn <- struct{}{}:
@@ -77,13 +88,13 @@ func oneWalk(ctx context.Context, vaultID domain.VaultID) (func(), error) {
 // are read and parsed; the rest are not opened at all. That is what keeps a scan
 // of an unchanged vault cheap enough to run at startup.
 //
-// One walk of a vault runs at a time in this process. A walk writes in groups
-// from what it read, so its copy of a note lands last however early the note
-// was read.
+// One walk of a vault runs at a time among the scans sharing its turns. A walk
+// writes in groups from what it read, so its copy of a note lands last however
+// early the note was read.
 func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	var res ScanResult
 
-	over, err := oneWalk(ctx, v.ID)
+	over, err := u.Walks.one(ctx, v.ID)
 	if err != nil {
 		return res, err
 	}

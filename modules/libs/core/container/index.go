@@ -16,6 +16,10 @@ import (
 type Index struct {
 	db   *index.DB
 	path string
+	// walks is the turn each vault takes to be walked into this index. It is
+	// the index's because a walk is what writes into one: two indexes are
+	// walked at once, and one index is walked a vault at a time.
+	walks vault.Walks
 }
 
 // OpenIndex opens the cache. Closing it belongs to the caller, which is what
@@ -33,6 +37,9 @@ func (c Config) OpenIndex(ctx context.Context) (*Index, error) {
 }
 
 func (i *Index) Close() error { return i.db.Close() }
+
+// Walks is the turns the vaults walked into this index take.
+func (i *Index) Walks() *vault.Walks { return &i.walks }
 
 // Level brings the notes at the paths given up to date in the index. Whatever
 // writes a note calls it with the paths it touched, so what it wrote is

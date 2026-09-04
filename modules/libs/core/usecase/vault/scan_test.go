@@ -47,6 +47,7 @@ func scanner(readers port.VaultReaders, db *container.Index) usecase.Scan {
 		Notes:       db.Notes(),
 		Known:       db.Queries(),
 		Maintenance: db.Maintenance(),
+		Walks:       db.Walks(),
 	}
 }
 

@@ -46,6 +46,7 @@ func (c Config) Scan(db *Index) vault.Scan {
 		Notes:        db.NotesCutAt(c.Chunking(), c.Legibility()),
 		Known:        db.Queries(),
 		Maintenance:  db.Maintenance(),
+		Walks:        db.Walks(),
 		RebuildIndex: c.RebuildIndex,
 	}
 }
