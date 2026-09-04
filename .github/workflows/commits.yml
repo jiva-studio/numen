@@ -18,6 +18,7 @@ defaults:
 
 jobs:
   commitlint:
+    name: "Check :: Commits"
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

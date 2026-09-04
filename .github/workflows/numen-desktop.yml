@@ -124,8 +124,8 @@ jobs:
   # The two screens the desktop draws. Both are typed against the schema and
   # against the components, so a change to either fails here rather than on
   # screen.
-  windows:
-    name: "Test :: Windows"
+  screens:
+    name: "Test :: Screens"
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
