@@ -41,25 +41,61 @@ func (s Settings) say(what string, done, total int64) {
 //
 // A path in the settings is used as given. Otherwise what the machine already
 // holds is tried, and only a machine holding none fetches one.
+//
+// One caller opens the runtime and the rest wait on what it is doing, each
+// against its own context. Opening it can be a download of many minutes, and a
+// caller that gave up on its own is not held to somebody else's.
 func Open(ctx context.Context, s Settings) (*ort.Engine, string, error) {
-	held.Lock()
-	defer held.Unlock()
-	if held.engine != nil {
-		return held.engine, held.at, nil
-	}
+	for {
+		held.mu.Lock()
+		if held.engine != nil {
+			engine, at := held.engine, held.at
+			held.mu.Unlock()
+			return engine, at, nil
+		}
+		if stand := held.opening; stand != nil {
+			held.mu.Unlock()
+			select {
+			case <-stand:
+				// Whoever was opening one is done. There is an engine to hand
+				// back now, or there is the same nothing to try again.
+				continue
+			case <-ctx.Done():
+				return nil, "", ctx.Err()
+			}
+		}
+		mine := make(chan struct{})
+		held.opening = mine
+		held.mu.Unlock()
 
+		engine, at, err := open(ctx, s)
+
+		held.mu.Lock()
+		if err == nil {
+			keep(engine, at)
+		}
+		held.opening = nil
+		held.mu.Unlock()
+		close(mine)
+		return engine, at, err
+	}
+}
+
+// open finds or fetches this machine's runtime. Nothing here is held under the
+// lock: it is a download, a copy and two passes of a hash.
+func open(ctx context.Context, s Settings) (*ort.Engine, string, error) {
 	if s.Runtime != "" {
 		engine, err := ort.NewEngine(s.Runtime)
 		if err != nil {
 			return nil, "", fmt.Errorf("the onnx runtime %s: %w", s.Runtime, err)
 		}
-		return keep(engine, s.Runtime)
+		return engine, s.Runtime, nil
 	}
 
 	support()
 	engine, at, refused := load(candidates(s))
 	if engine != nil {
-		return keep(engine, at)
+		return engine, at, nil
 	}
 
 	found, err := findRelease(s)
@@ -79,18 +115,19 @@ func Open(ctx context.Context, s Settings) (*ort.Engine, string, error) {
 		return nil, "", fmt.Errorf("no onnx runtime this machine opens — name one in %s.runtime:\n  %s",
 			s.Section, strings.Join(refused, "\n  "))
 	}
-	return keep(engine, at)
+	return engine, at, nil
 }
 
 // held is the runtime this process runs, and where it came from.
 //
-// One for the life of the process. The lock is over the opening, which two
-// callers may reach at once.
+// One for the life of the process. The lock is over these fields and nothing
+// else; what one caller is doing to fill them, the rest wait on through opening.
 var held struct {
-	sync.Mutex
-	engine *ort.Engine
-	at     string
-	also   []func(at string)
+	mu      sync.Mutex
+	engine  *ort.Engine
+	at      string
+	also    []func(at string)
+	opening chan struct{}
 }
 
 // Alongside is a library that makes an engine of its own, made where this
@@ -101,8 +138,8 @@ var held struct {
 // that tensor's life, so one made on a library's first use moves what everything
 // already running was building its tensors through.
 func Alongside(also func(at string)) {
-	held.Lock()
-	defer held.Unlock()
+	held.mu.Lock()
+	defer held.mu.Unlock()
 	held.also = append(held.also, also)
 }
 
@@ -112,13 +149,12 @@ var here atomic.Bool
 
 // keep is the runtime this process has settled on, and the one moment every
 // library that makes an engine of its own makes it. The lock is the caller's.
-func keep(engine *ort.Engine, at string) (*ort.Engine, string, error) {
+func keep(engine *ort.Engine, at string) {
 	held.engine, held.at = engine, at
 	for _, also := range held.also {
 		also(at)
 	}
 	here.Store(true)
-	return engine, at, nil
 }
 
 // Here says whether this process has its runtime, or this machine holds a file

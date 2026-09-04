@@ -1,6 +1,8 @@
 package onnxruntime
 
 import (
+	"context"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -64,11 +66,53 @@ func TestTheRuntimeIsOpenedOnceForTheProcess(t *testing.T) {
 	}
 }
 
+// halfOpen leaves the runtime as it stands while one caller is fetching one:
+// nothing settled, and an opening in flight. It hands back what puts the process
+// back as it found it, runtime and all, so a test earlier in this package having
+// opened one settles nothing here.
+func halfOpen(t *testing.T) func() {
+	t.Helper()
+	held.mu.Lock()
+	engine, at := held.engine, held.at
+	stand := make(chan struct{})
+	held.engine, held.at, held.opening = nil, "", stand
+	held.mu.Unlock()
+	return func() {
+		held.mu.Lock()
+		held.engine, held.at, held.opening = engine, at, nil
+		held.mu.Unlock()
+		close(stand)
+	}
+}
+
+// A caller that gave up waiting is answered. Opening the runtime is a download
+// of minutes, and a caller left standing in a mutex would notice its own context
+// only once that download had ended for somebody else.
+func TestACallerGivesUpWhileAnotherOpensTheRuntime(t *testing.T) {
+	defer halfOpen(t)()
+
+	ctx, stop := context.WithCancel(context.Background())
+	gave := make(chan error, 1)
+	go func() {
+		_, _, err := Open(ctx, asked())
+		gave <- err
+	}()
+	stop()
+
+	select {
+	case err := <-gave:
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("a caller that gave up was told %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("a caller that gave up waited for another caller's runtime")
+	}
+}
+
 // Here is asked by the tool that starts a reading, right after it has started
 // one. It answers while that reading is opening the runtime.
 func TestHereAnswersWhileTheRuntimeIsBeingOpened(t *testing.T) {
-	held.Lock()
-	defer held.Unlock()
+	defer halfOpen(t)()
 
 	said := make(chan bool, 1)
 	go func() { said <- Here(asked()) }()
