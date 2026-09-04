@@ -97,10 +97,31 @@ const keyboard = async () => {
 
 /* -------------------------------------------------------------- commands */
 
+/** The one list of commands, from where it opens to where it closes. */
+const listing = (commanding) => {
+  const from = commanding.indexOf('export const commandsOf')
+  const to = commanding.indexOf('\n]\n', from)
+  if (from < 0 || to < 0) die('commanding.ts no longer lists its commands')
+  return commanding.slice(from, to)
+}
+
+/**
+ * Where each row of the list begins, so that what one row says is read out of
+ * the row itself and not out of a fixed number of characters after its id: a
+ * row grown longer than that number is a row that stops matching.
+ */
+const rowsOf = (listed) => {
+  const found = [...listed.matchAll(/\bid:\s*'([A-Za-z]+)'/g)]
+  return found.map((one, i) => ({
+    id: one[1],
+    said: listed.slice(one.index, found[i + 1]?.index ?? listed.length),
+  }))
+}
+
 /** Which entry of the words a command is drawn with. */
 const spoken = (commanding, command) => {
-  const row = new RegExp(`id:\\s*'${command}',[\\s\\S]{0,140}?text:\\s*words\\.([A-Za-z]+)`)
-  const found = commanding.match(row)
+  const row = rowsOf(listing(commanding)).find((one) => one.id === command)
+  const found = row?.said.match(/text:\s*words\.([A-Za-z]+)/)
   if (!found) die(`no row in commanding.ts draws the command '${command}'`)
   return found[1]
 }
@@ -112,13 +133,18 @@ const commands = async () => {
   const keying = await read(UI, 'keying.ts')
   const table = chords(keying)
 
-  const listed = commanding.slice(commanding.indexOf('export const commandsOf'))
-  const rows = [
-    ...listed.matchAll(
-      /id:\s*'([A-Za-z]+)',\s*(?:\n\s*)?text:\s*words\.([A-Za-z]+),[\s\S]{0,220}?band:\s*'(note|file|window|vault)'/g,
-    ),
-  ].map(([, id, word, band]) => ({ id, word, band }))
-  if (rows.length === 0) die('no commands are declared in commanding.ts')
+  const declared = rowsOf(listing(commanding))
+  if (declared.length === 0) die('no commands are declared in commanding.ts')
+
+  // Every command declared is a command the page carries. One the words or the
+  // bands say nothing about stops the build rather than dropping off the page.
+  const rows = declared.map(({ id, said }) => {
+    const word = said.match(/text:\s*words\.([A-Za-z]+)/)
+    const band = said.match(/band:\s*'(note|file|window|vault)'/)
+    if (!word) die(`no words draw the command '${id}'`)
+    if (!band) die(`the command '${id}' stands in no band`)
+    return { id, word: word[1], band: band[1] }
+  })
 
   const bands = [
     ['note', 'overNote'],
@@ -142,13 +168,24 @@ const commands = async () => {
 
 /* -------------------------------------------------------------- settings */
 
-/** The json-tagged fields one Go type declares, in the order it declares them. */
+/**
+ * The settings one Go type declares, in the order it declares them, and the
+ * lines of it this could make nothing of.
+ *
+ * A field named and tagged is one key. A type embedded with no name of its own
+ * is every key that type declares, written at this level, which is what the
+ * settings file holds and so what the manual has to say. A line that is
+ * neither and is still written down — one exported, tagged with something other
+ * than `-` — is handed back unread, for whoever asked to refuse it: a field
+ * shape nobody taught this to read is a setting quietly left out.
+ */
 const fieldsOf = (source, name) => {
   const at = source.search(new RegExp(`^type ${name} struct \\{$`, 'm'))
   if (at < 0) return null
   const body = source.slice(at, source.indexOf('\n}', at))
 
   const fields = []
+  const unread = []
   let doc = []
   for (const line of body.split('\n').slice(1)) {
     const comment = line.match(/^\s*\/\/ ?(.*)$/)
@@ -157,13 +194,18 @@ const fieldsOf = (source, name) => {
       continue
     }
     const field = line.match(/^\s*([A-Z][A-Za-z0-9]*)\s+([^\s]+)\s+`json:"([^",]+)([^"]*)"`/)
+    const embedded = line.match(/^\s*(\*?(?:[a-z][a-z0-9]*\.)?[A-Z][A-Za-z0-9]*)\s*$/)
     if (field) {
       const [, go, type, key] = field
       if (key !== '-') fields.push({ go, type, key, doc: doc.join(' ').trim() })
+    } else if (embedded) {
+      fields.push({ embedded: true, type: embedded[1], doc: doc.join(' ').trim() })
+    } else if (line.trim() !== '' && !/^\s*[a-z]/.test(line) && !line.includes('json:"-"')) {
+      unread.push(line.trim())
     }
     doc = []
   }
-  return fields
+  return { fields, unread }
 }
 
 /**
@@ -172,14 +214,17 @@ const fieldsOf = (source, name) => {
  * A type keeping its settings unexported writes the keys down on a mirror
  * struct beside it, so a type declaring none is read from its mirror: what a
  * person writes in the settings file is what the mirror says, whatever the
- * fields behind it come to be called. A type with neither is a section holding
- * nothing, and saying so here is what stops the manual from quietly losing a
- * page of settings that still work.
+ * fields behind it come to be called. A type with neither hands back nothing
+ * rather than an empty list, so that whoever asked says so out loud instead of
+ * quietly losing a page of settings that still work.
  */
 const structOf = (source, name) => {
-  const fields = fieldsOf(source, name)
-  if (fields === null || fields.length > 0) return fields
-  return fieldsOf(source, `${name[0].toLowerCase()}${name.slice(1)}File`) ?? fields
+  const own = fieldsOf(source, name)
+  if (own === null) return null
+  const mirror = fieldsOf(source, `${name[0].toLowerCase()}${name.slice(1)}File`)
+  const read = own.fields.length === 0 && mirror !== null ? mirror : own
+  if (read.unread.length > 0) die(`${name} declares a field this cannot read: ${read.unread[0]}`)
+  return read.fields.length > 0 ? read.fields : null
 }
 
 /** What a Go type is called where a person reads it. */
@@ -245,14 +290,15 @@ const meaning = (doc, name, keys) => {
 }
 
 /**
- * Which file declares each package's settings, so the walk crosses from one
- * to the next by itself. The whole file is walked from `settings.Config` down:
- * a section nobody listed here is still a section a key can hide in.
+ * Which file declares each package's settings, so the walk crosses from one to
+ * the next by itself. The whole file is walked from `settings.Config` down, and
+ * a package nobody listed here stops the build rather than the walk.
  */
 const FILES = {
   settings: 'adapter/settings/settings.go',
   embed: 'internal/adapter/embed/config.go',
   recognition: 'internal/adapter/recognition/config.go',
+  transcription: 'internal/adapter/transcription/config.go',
   proofreading: 'internal/adapter/proofreading/config.go',
   agent: 'adapter/agent/config.go',
 }
@@ -268,13 +314,21 @@ const named = (source) => {
   return keys
 }
 
-/** Where a field's type is declared: in this file, or in another package's. */
+/**
+ * Where a field's type is declared: in this file, or in another package's.
+ * Nothing for a type a person writes a value of rather than a section under.
+ *
+ * A package nobody listed above is where the walk would stop, and stopping
+ * there costs every key beneath it, so it stops the build instead.
+ */
 const declaredIn = (file, type) => {
   const bare = type.replace(/^\*/, '')
+  if (kindOf(bare) !== '' || !/^(?:[a-z][a-z0-9]*\.)?[A-Z][A-Za-z0-9]*$/.test(bare)) return null
   const elsewhere = bare.match(/^([a-z][a-z0-9]*)\.([A-Z][A-Za-z0-9]*)$/)
   if (!elsewhere) return { file, type: bare }
   const [, pkg, name] = elsewhere
-  return FILES[pkg] ? { file: FILES[pkg], type: name } : null
+  if (!FILES[pkg]) die(`${file} names ${bare}, and no file is listed for the package ${pkg}`)
+  return { file: FILES[pkg], type: name }
 }
 
 /** Every key under one type, its own and those of the sections inside it. */
@@ -282,16 +336,31 @@ const keysOf = async (file, type, under, depth = 0, seen = new Set()) => {
   const source = await read(GO, file)
   const keys = named(source)
   const fields = structOf(source, type)
-  if (!fields) die(`${file} declares no type ${type}`)
+  if (!fields) die(`${file} declares no settings under ${type}`)
 
   const out = []
   for (const field of fields) {
+    // An embedded type has no key of its own: its keys are written where it is
+    // embedded, at the level the settings file holds them at.
+    if (field.embedded) {
+      const at = declaredIn(file, field.type)
+      if (!at) die(`${file} embeds ${field.type} in ${type}, which is no section`)
+      const stamp = `${at.file}:${at.type}`
+      if (seen.has(stamp)) die(`${at.type} is embedded inside itself`)
+      out.push(...(await keysOf(at.file, at.type, under, depth, new Set([...seen, stamp]))))
+      continue
+    }
+
     const path = under ? `${under}.${field.key}` : field.key
     const at = declaredIn(file, field.type)
-    const inside = at && structOf(await read(GO, at.file), at.type)
     const stamp = at && `${at.file}:${at.type}`
+    let inside = null
+    if (at && !seen.has(stamp)) {
+      inside = structOf(await read(GO, at.file), at.type)
+      if (!inside) die(`${path} is a section, and ${at.file} declares no settings under ${at.type}`)
+    }
 
-    if (inside && !seen.has(stamp)) {
+    if (inside) {
       const doc = field.doc || docOf(await read(GO, at.file), at.type)
       out.push({ path, depth, group: true, meaning: meaning(doc, field.go, keys), kind: '' })
       out.push(...(await keysOf(at.file, at.type, path, depth + 1, new Set([...seen, stamp]))))
@@ -344,12 +413,12 @@ const settings = async () => {
   // A section is a heading, and its keys are written under it the way they are
   // written inside it rather than as the whole path down to them.
   for (const section of sectioned(keys)) {
+    const under = keys.filter((one) => one.path.startsWith(`${section.path}.`))
+    if (under.length === 0) die(`${section.path} is a heading with no settings under it`)
     out.push(`### \`${section.path}\``, '')
     if (section.meaning) out.push(section.meaning.replace(/^./, (c) => c.toUpperCase()), '')
     out.push('| | | |', '| --- | --- | --- |')
-    for (const key of keys.filter((one) => one.path.startsWith(`${section.path}.`))) {
-      out.push(row(key, section.path))
-    }
+    for (const key of under) out.push(row(key, section.path))
     out.push('')
   }
   return out.join('\n').trimEnd()
@@ -357,14 +426,23 @@ const settings = async () => {
 
 /* -------------------------------------------------------------- starting */
 
+/**
+ * Every flag the application is started with. What declares one is counted
+ * first and what is read out of it second, so a flag written in a form this
+ * does not read is a flag the page says nothing about, and stops the build.
+ */
 const flags = async () => {
   const main = await read(CMD, 'main.go')
+  const declared = [...main.matchAll(/\bflag\.(?:String|Bool|Float64|Int|Int64|Duration|Uint)(?:Var)?\(/g)]
   const found = [
     ...main.matchAll(
       /flag\.(?:String|Bool|Float64|Int)Var\(\s*&[^,]+,\s*"([^"]+)",\s*([^,]+),\s*(?:\n\s*)?"([^"]*)"\s*\)/g,
     ),
   ]
-  if (found.length === 0) die('no flags are declared in cmd/numen/main.go')
+  if (declared.length === 0) die('no flags are declared in cmd/numen/main.go')
+  if (found.length !== declared.length) {
+    die(`cmd/numen/main.go declares ${declared.length} flags and this reads ${found.length}`)
+  }
 
   const rows = found.map(([, name, , usage]) => {
     const said = usage.charAt(0).toUpperCase() + usage.slice(1)
@@ -401,10 +479,15 @@ const cli = async () => {
       continue
     }
     if (!holding) continue
+    // Two spaces are what holds a line apart from what it says. A line inside
+    // a block that has none is a line this cannot read, and dropping it is
+    // dropping a command off the page.
     const said = line.trim().match(/^(.*?)\s{2,}(.*)$/)
-    if (said) blocks[holding].push([said[1], said[2]])
+    if (!said) die(`cli.go says nothing about what it lists under ${holding}: ${line.trim()}`)
+    blocks[holding].push([said[1], said[2]])
   }
   if (blocks.usage.length === 0) die('cli.go lists no commands')
+  if (blocks.options.length === 0) die('cli.go lists no options')
 
   const rows = (of) => ['| | |', '| --- | --- |', ...of.map(([what, does]) => `| \`${what}\` | ${does} |`)]
 
