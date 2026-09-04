@@ -218,12 +218,12 @@ func cut(t *testing.T, tx *sql.Tx, source, vault int64) {
 		}
 		index(t, tx, small, "entropy and the observer")
 		if _, err := tx.ExecContext(ctx,
-			`INSERT OR IGNORE INTO vectors (hash, recipe, vector) VALUES (unhex((SELECT hash FROM chunks WHERE id = ?)), 'model', ?)`,
+			`INSERT OR IGNORE INTO vectors (hash, recipe, embedding) VALUES (unhex((SELECT hash FROM chunks WHERE id = ?)), 'model', ?)`,
 			small, coarse); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := tx.ExecContext(ctx,
-			`INSERT INTO chunks_vec (chunk_id, vault_id, embedding) VALUES (?, ?, vec_bit(?))`,
+			`INSERT INTO chunks_vec (chunk_id, vault_id, coarse) VALUES (?, ?, vec_bit(?))`,
 			small, vault, coarse); err != nil {
 			t.Fatal(err)
 		}

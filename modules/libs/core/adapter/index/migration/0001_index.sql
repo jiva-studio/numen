@@ -220,9 +220,9 @@ CREATE INDEX chunks_by_hash ON chunks (hash);
 -- A rowid table with the key in an index of its own: the vector is a kilobyte,
 -- and a key that carries it is a key every probe reads a kilobyte to answer.
 CREATE TABLE vectors (
-    hash   BLOB NOT NULL,
-    recipe TEXT NOT NULL,
-    vector BLOB NOT NULL
+    hash      BLOB NOT NULL,
+    recipe    TEXT NOT NULL,
+    embedding BLOB NOT NULL
 );
 
 CREATE UNIQUE INDEX vectors_by_hash ON vectors (hash, recipe);
@@ -240,9 +240,9 @@ CREATE UNIQUE INDEX vectors_by_hash ON vectors (hash, recipe);
 -- the code that deletes the chunk. The width is the model's, and a model of
 -- another width rebuilds this table from what has been made.
 CREATE VIRTUAL TABLE chunks_vec USING vec0 (
-    chunk_id  integer primary key,
-    vault_id  integer,
-    embedding bit[1024]
+    chunk_id integer primary key,
+    vault_id integer,
+    coarse   bit[1024]
 );
 
 -- The full-text index, over chunks. A lexical hit and a dense hit name the same

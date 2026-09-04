@@ -10,7 +10,7 @@
 -- A kind is a filter over what the coarse pass found, and not over what it
 -- looked at: a vault holding little of the kind asked for answers with fewer
 -- passages than were asked for.
-SELECT c.id, v.vector
+SELECT c.id, v.embedding
 FROM json_each(?1) j
 JOIN chunks c ON c.id = j.value
 JOIN sources s ON s.id = c.source_id

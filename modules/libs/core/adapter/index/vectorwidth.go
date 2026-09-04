@@ -46,9 +46,9 @@ func (db *DB) FitVectors(ctx context.Context, dims int, recipe string) error {
 	for _, statement := range []string{
 		`DROP TABLE IF EXISTS chunks_vec`,
 		fmt.Sprintf(`CREATE VIRTUAL TABLE chunks_vec USING vec0 (
-			chunk_id  integer primary key,
-			vault_id  integer,
-			embedding bit[%d]
+			chunk_id integer primary key,
+			vault_id integer,
+			coarse   bit[%d]
 		)`, dims),
 	} {
 		if _, err := tx.ExecContext(ctx, statement); err != nil {
@@ -66,9 +66,9 @@ func (db *DB) FitVectors(ctx context.Context, dims int, recipe string) error {
 // it is.
 func fillCoarse(ctx context.Context, tx *sql.Tx, dims int, recipe string) error {
 	rows, err := tx.QueryContext(ctx,
-		`SELECT c.id, c.vault_id, v.vector
+		`SELECT c.id, c.vault_id, v.embedding
 		 FROM vectors v JOIN chunks c ON unhex(c.hash) = v.hash
-		 WHERE v.recipe = ? AND length(v.vector) = ?`, recipe, dims)
+		 WHERE v.recipe = ? AND length(v.embedding) = ?`, recipe, dims)
 	if err != nil {
 		return fmt.Errorf("what the recipe has bought: %w", err)
 	}
@@ -96,7 +96,7 @@ func fillCoarse(ctx context.Context, tx *sql.Tx, dims int, recipe string) error 
 	// not distinguish that from float32.
 	for _, one := range held {
 		if _, err := tx.ExecContext(ctx,
-			`INSERT INTO chunks_vec (chunk_id, vault_id, embedding) VALUES (?, ?, vec_bit(?))`,
+			`INSERT INTO chunks_vec (chunk_id, vault_id, coarse) VALUES (?, ?, vec_bit(?))`,
 			one.chunk, one.vault, one.bits); err != nil {
 			return fmt.Errorf("fill the vector index for chunk %d: %w", one.chunk, err)
 		}

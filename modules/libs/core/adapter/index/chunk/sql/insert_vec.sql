@@ -2,5 +2,5 @@
 --
 -- `vec_bit` says the blob is one bit per dimension. Its length alone does not
 -- distinguish that from float32.
-INSERT INTO chunks_vec (chunk_id, vault_id, embedding)
+INSERT INTO chunks_vec (chunk_id, vault_id, coarse)
 SELECT id, vault_id, vec_bit(?) FROM chunks WHERE id = ?;

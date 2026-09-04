@@ -4,7 +4,7 @@
 -- with the whole table's best k.
 SELECT chunk_id, distance
 FROM chunks_vec
-WHERE embedding MATCH vec_bit(?)
+WHERE coarse MATCH vec_bit(?)
   AND vault_id = ?
   AND k = ?
 ORDER BY distance;
