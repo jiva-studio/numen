@@ -36,7 +36,7 @@ export const Working: Story = {
 
 /** Put down, with what it was about. */
 export const Done: Story = {
-  args: { tool: 'note_write', about: 'Simple pendulum' },
+  args: { tool: 'note_rewrite', about: 'Simple pendulum' },
 }
 
 /** One after another, as a thread collects them. */
@@ -48,7 +48,7 @@ export const InAThread: Story = {
         <Tool tool="note_search" about="entropy" />
         <Tool tool="note_read" about="Entropy" />
         <Tool tool="link_add" about="Entropy → Thermodynamics" />
-        <Tool tool="note_write" about="Simple pendulum" working />
+        <Tool tool="note_rewrite" about="Simple pendulum" working />
       </div>
     `,
   }),

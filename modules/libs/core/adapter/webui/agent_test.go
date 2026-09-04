@@ -124,7 +124,7 @@ func TestWhatTheClientAsksReachesTheAgent(t *testing.T) {
 func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
 	taking := &asking{took: make(chan port.Task, 1), takes: []port.Step{
 		{Kind: port.StepThinking},
-		{Kind: port.StepToolCall, Tool: "note_write", About: "notes/Fugue.md", Count: 240},
+		{Kind: port.StepToolCall, Tool: "note_rewrite", About: "notes/Fugue.md", Count: 240},
 		{Kind: port.StepAnswered},
 		{Kind: port.StepSaying, Text: "Rewritten."},
 		{Kind: port.StepStopped, Detail: "out of turns"},
@@ -139,8 +139,8 @@ func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
 		t.Errorf("the first step is %+v, want a wait beginning", steps[0])
 	}
 	doing := steps[1].GetToolCall()
-	if doing.GetTool() != "note_write" || doing.GetAbout() != "notes/Fugue.md" || doing.GetWritten() != 240 {
-		t.Errorf("the tool in hand is %+v, want note_write over notes/Fugue.md at 240", doing)
+	if doing.GetTool() != "note_rewrite" || doing.GetAbout() != "notes/Fugue.md" || doing.GetWritten() != 240 {
+		t.Errorf("the tool in hand is %+v, want note_rewrite over notes/Fugue.md at 240", doing)
 	}
 	if steps[2].GetAnswered() == nil {
 		t.Errorf("the third step is %+v, want the tool answering", steps[2])
