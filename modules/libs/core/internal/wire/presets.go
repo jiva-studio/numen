@@ -130,7 +130,7 @@ func SettingsIn(s *v1.Settings) (review.Preset, error) {
 }
 
 // CurveOf is a curve as the schema carries it.
-func CurveOf(c flashcards.Curve) *v1.Curve {
+func CurveOf(c review.Curve) *v1.Curve {
 	out := &v1.Curve{
 		Goal:      GoalOf(c.Goal),
 		Grid:      c.Grid,
@@ -162,7 +162,7 @@ func CurveOf(c flashcards.Curve) *v1.Curve {
 	return out
 }
 
-func markOf(m flashcards.Place) *v1.Mark {
+func markOf(m review.Place) *v1.Mark {
 	return &v1.Mark{At: int32(m.Index), Value: m.Value, Day: m.Day}
 }
 

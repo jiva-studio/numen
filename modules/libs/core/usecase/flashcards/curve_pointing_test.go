@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
 // sanskrit is the identifier the preset of that name carries, so that a deck
@@ -157,7 +156,7 @@ func TestACurveIsDrawnFromTheDecksPointingAtThePreset(t *testing.T) {
 						t.Fatal(err)
 					}
 
-					for _, one := range []flashcards.Curve{got, want} {
+					for _, one := range []review.Curve{got, want} {
 						if one.Decks != len(decks) || one.Cards != faces {
 							t.Errorf("the curve carries %d decks and %d card faces, and %d decks "+
 								"point at %s with %d card faces in them",
@@ -175,7 +174,7 @@ func TestACurveIsDrawnFromTheDecksPointingAtThePreset(t *testing.T) {
 }
 
 // curveOf is a curve in one line of a failure.
-func curveOf(c flashcards.Curve) string {
+func curveOf(c review.Curve) string {
 	return fmt.Sprintf("%d decks, %d card faces, %d overdue, %d unbegun\ngrid %v\nnow %+v"+
 		"\nsuggested %+v\nat %+v", c.Decks, c.Cards, c.Overdue, c.Unbegun, c.Grid,
 		c.Now, c.Suggested, c.Points)

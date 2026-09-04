@@ -1,10 +1,6 @@
-package flashcards
+package review
 
-import (
-	"testing"
-
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
-)
+import "testing"
 
 // How far a curve of minutes runs is twice the longer of what carrying the
 // whole load costs and what the preset keeps, so the day the person is on and
@@ -18,7 +14,7 @@ func TestHowFarACurveOfMinutesRuns(t *testing.T) {
 		{load: 100, keeping: 0, want: 200},
 		{load: 0, keeping: 100, want: 200},
 		{load: 30.5, keeping: 0, want: 61},
-		{load: 5000, keeping: 0, want: review.MinutesADayBounds.Most},
+		{load: 5000, keeping: 0, want: MinutesADayBounds.Most},
 	} {
 		if got := ceiling(one.load, one.keeping); got != one.want {
 			t.Errorf("a load of %v minutes under a day of %v runs to %v, want %v",

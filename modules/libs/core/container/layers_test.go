@@ -44,6 +44,11 @@ var driving = map[string]bool{
 	"adapter/webui":        true,
 }
 
+// pure are the packages holding what is true of a note or a card, and the
+// arithmetic over it. They name no port and no scenario, so nothing they answer
+// waits on a disk, a database or a clock.
+var pure = []string{"domain", "flashcards"}
+
 // The core is reached by the adapters and reaches none of them, an adapter is
 // given what it needs rather than taking another, and what is assembled is
 // assembled in one place.
@@ -123,8 +128,21 @@ func refused(from, to string) string {
 		if strings.HasPrefix(to, "adapter/") || to == "container" {
 			return "the core reaches no adapter and nothing that assembles one"
 		}
+		if holds(pure, from) && (to == "port" || strings.HasPrefix(to, "usecase/")) {
+			return "what is true of a note or a card is worked out from neither"
+		}
 	}
 	return ""
+}
+
+// holds says whether a package is one of these, or stands under one.
+func holds(these []string, pkg string) bool {
+	for _, one := range these {
+		if pkg == one || strings.HasPrefix(pkg, one+"/") {
+			return true
+		}
+	}
+	return false
 }
 
 // assembling says whether a package is one the composition root puts together:

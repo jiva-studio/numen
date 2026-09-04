@@ -3,6 +3,8 @@ package flashcards
 import (
 	"sync"
 	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
 
 // How many places of a curve run at once is what the build was told, and a
@@ -19,7 +21,7 @@ func TestHowManyPlacesRunAtOnce(t *testing.T) {
 		var mu sync.Mutex
 		running, most := 0, 0
 
-		err := (ProjectCurve{Cores: cores}).places(2*Points, func(int) error {
+		err := (ProjectCurve{Cores: cores}).places(2*review.Points, func(int) error {
 			mu.Lock()
 			running++
 			if running > most {

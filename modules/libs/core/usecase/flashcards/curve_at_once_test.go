@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
 // A curve works every place of its grid out alongside the others, and the curve
@@ -72,6 +71,6 @@ func atOnceGoals() []struct {
 
 // drawn is a whole curve written out, every scalar and every series of it, so
 // that two of them are compared by what they say and not by what they point at.
-func drawn(c flashcards.Curve) string {
+func drawn(c review.Curve) string {
 	return fmt.Sprintf("%v", c)
 }

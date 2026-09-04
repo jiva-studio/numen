@@ -96,7 +96,7 @@ func TestTheCurveOfMinutesCoversTheWholeRange(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got.Grid) != flashcards.Points || len(got.Points) != flashcards.Points {
+	if len(got.Grid) != review.Points || len(got.Points) != review.Points {
 		t.Fatalf("the curve has %d places and %d values", len(got.Grid), len(got.Points))
 	}
 	for i := 1; i < len(got.Grid); i++ {
@@ -131,10 +131,10 @@ func TestTheShortestDayThatAsksEverythingIsSuggested(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := flashcards.Nowhere
+	want := review.Nowhere
 	for i, one := range got.Points {
 		if len(one.Closed) == 0 {
-			want = flashcards.Place{Index: i, Value: got.Grid[i]}
+			want = review.Place{Index: i, Value: got.Grid[i]}
 			break
 		}
 	}
@@ -165,7 +165,7 @@ func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got.Grid) != flashcards.Points {
+	if len(got.Grid) != review.Points {
 		t.Fatalf("the curve has %d places", len(got.Grid))
 	}
 	if got.Grid[0] != review.RetentionBounds.Least ||
@@ -180,7 +180,7 @@ func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 	}
 	inRange(t, got, "now")
 
-	if got.Suggested != flashcards.Nowhere {
+	if got.Suggested != review.Nowhere {
 		t.Errorf("a target of %v is suggested, and this goal points at none",
 			got.Suggested.Value)
 	}
@@ -324,7 +324,7 @@ func TestADateIsMetAtWhateverItCosts(t *testing.T) {
 		t.Errorf("the day it aims at gets through %v of the material, and %d of it stands short",
 			stands.Share, stands.Short)
 	}
-	if got.Suggested == flashcards.Nowhere {
+	if got.Suggested == review.Nowhere {
 		t.Error("no day is suggested, and the day it aims at is through the material")
 	}
 }
@@ -343,7 +343,7 @@ func TestADayThatHasPassedHasNoCurve(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got.Grid) != 0 || got.Now != flashcards.Nowhere || got.Suggested != flashcards.Nowhere {
+	if len(got.Grid) != 0 || got.Now != review.Nowhere || got.Suggested != review.Nowhere {
 		t.Errorf("curve = %+v, want nothing", got)
 	}
 }
@@ -461,16 +461,16 @@ func TestWorkingOutACurveWritesNothingToTheVault(t *testing.T) {
 
 // inRange says the two marks fall on the curve, and that each mark named
 // stands on it at all.
-func inRange(t *testing.T, c flashcards.Curve, stands ...string) {
+func inRange(t *testing.T, c review.Curve, stands ...string) {
 	t.Helper()
-	marks := map[string]flashcards.Place{"now": c.Now, "suggested": c.Suggested}
+	marks := map[string]review.Place{"now": c.Now, "suggested": c.Suggested}
 	for _, name := range stands {
-		if marks[name] == flashcards.Nowhere {
+		if marks[name] == review.Nowhere {
 			t.Errorf("the %s mark stands nowhere on a curve of %d places", name, len(c.Grid))
 		}
 	}
 	for name, mark := range marks {
-		if mark == flashcards.Nowhere {
+		if mark == review.Nowhere {
 			continue
 		}
 		if mark.Index < 0 || mark.Index >= len(c.Grid) {
@@ -936,7 +936,7 @@ func TestTheDaySuggestedForADateGetsThroughTheMaterial(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Suggested == flashcards.Nowhere {
+	if got.Suggested == review.Nowhere {
 		t.Fatal("no day is suggested, and the range holds days the material is through by")
 	}
 	stands := got.Points[got.Suggested.Index]
@@ -995,7 +995,7 @@ func TestADateFurtherOffThanTheProjectionReachesStillDrawsARange(t *testing.T) {
 	if len(got.Grid) == 0 {
 		t.Fatal("a day twenty years off draws no range at all, as a day already past does")
 	}
-	if got.Now != flashcards.Nowhere {
+	if got.Now != review.Nowhere {
 		t.Errorf("a day twenty years off stands at %+v on a range reaching %v days",
 			got.Now, got.Grid[len(got.Grid)-1])
 	}
