@@ -106,11 +106,11 @@ func TestAnEditNamesTheArgumentsItReplacesTextWith(t *testing.T) {
 		t.Fatal(err)
 	}
 	edit := words["note_edit"]
-	if edit.Stood != "stood" || edit.Becomes != "becomes" {
-		t.Fatalf("an edit replaces %q with %q", edit.Stood, edit.Becomes)
+	if edit.Match != "match" || edit.Text != "text" {
+		t.Fatalf("an edit replaces %q with %q", edit.Match, edit.Text)
 	}
-	for _, tool := range []string{"note_write", "note_read"} {
-		if words[tool].Stood != "" || words[tool].Becomes != "" {
+	for _, tool := range []string{"note_rewrite", "note_read"} {
+		if words[tool].Match != "" || words[tool].Text != "" {
 			t.Errorf("%s claims to replace a stretch", tool)
 		}
 	}

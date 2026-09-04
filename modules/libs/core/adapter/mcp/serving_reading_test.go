@@ -27,8 +27,8 @@ func TestAPortServingTheReadingToolsOffersNoOther(t *testing.T) {
 	}
 
 	onlyOffers(t, tools.Tools, "the reading port", []string{
-		"note_search", "note_get", "note_read", "note_neighbourhood", "link_list",
-		"source_list", "source_read", "card_stencils", "card_read", "vault_get",
+		"note_search", "note_titles", "note_read", "note_neighbourhood", "link_list",
+		"source_list", "source_read", "card_stencil_list", "card_read", "vault_get",
 	})
 }
 
@@ -49,8 +49,8 @@ func TestAPortServingTheReviewingToolsOffersNoOther(t *testing.T) {
 	}
 
 	onlyOffers(t, tools.Tools, "the reviewing port", []string{
-		"note_search", "note_get", "note_read", "note_neighbourhood", "link_list",
-		"source_list", "source_read", "card_stencils", "card_read", "vault_get",
+		"note_search", "note_titles", "note_read", "note_neighbourhood", "link_list",
+		"source_list", "source_read", "card_stencil_list", "card_read", "vault_get",
 		"card_add", "card_edit", "card_remove", "card_section_add",
 	})
 }

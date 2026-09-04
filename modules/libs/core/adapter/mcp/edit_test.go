@@ -10,7 +10,7 @@ import (
 )
 
 // The stretch named is replaced and the rest of the note is the bytes it was,
-// which is the whole reason for a tool that is not `note_write`.
+// which is the whole reason for a tool that is not `note_rewrite`.
 func TestEditingANoteChangesOnlyTheStretchNamed(t *testing.T) {
 	v, core := built(t, map[string]string{
 		"Aggressor.md": "# The aggressor\n\nA hedgehog is named.\n\nAnd nothing else.\n",
@@ -20,15 +20,15 @@ func TestEditingANoteChangesOnlyTheStretchNamed(t *testing.T) {
 	answer := call[struct {
 		Path        string `json:"path"`
 		Fingerprint string `json:"fingerprint"`
-		Stood       string `json:"stood"`
-		Plainly     bool   `json:"plainly"`
+		Match       string `json:"match"`
+		Loose       bool   `json:"loose"`
 	}](t, s, "note_edit", map[string]any{
-		"path": "Aggressor.md", "stood": "A hedgehog", "becomes": "An axe",
+		"path": "Aggressor.md", "match": "A hedgehog", "text": "An axe",
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
 
-	if answer.Stood != "A hedgehog" {
-		t.Errorf("what stood there is answered as %q", answer.Stood)
+	if answer.Match != "A hedgehog" {
+		t.Errorf("what stood there is answered as %q", answer.Match)
 	}
 	if answer.Fingerprint == "" {
 		t.Error("no fingerprint came back")
@@ -51,7 +51,7 @@ func TestEditingRefusesAStretchThatStandsTwice(t *testing.T) {
 	s := connectedTo(t, core)
 
 	said := failing(t, s, "note_edit", map[string]any{
-		"path": "Aggressor.md", "stood": "foe advances", "becomes": "foe retreats",
+		"path": "Aggressor.md", "match": "foe advances", "text": "foe retreats",
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
 	if !strings.Contains(said, "2 places") {
@@ -68,7 +68,7 @@ func TestEditingSaysWhatTheNoteHoldsInstead(t *testing.T) {
 	s := connectedTo(t, core)
 
 	said := failing(t, s, "note_edit", map[string]any{
-		"path": "Aggressor.md", "stood": "the wrath of the retreating foe", "becomes": "nothing",
+		"path": "Aggressor.md", "match": "the wrath of the retreating foe", "text": "nothing",
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
 	if !strings.Contains(said, "advancing") {
@@ -85,18 +85,18 @@ func TestEditingFindsAStretchWhosePunctuationDiffers(t *testing.T) {
 	s := connectedTo(t, core)
 
 	answer := call[struct {
-		Stood   string `json:"stood"`
-		Plainly bool   `json:"plainly"`
+		Match string `json:"match"`
+		Loose bool   `json:"loose"`
 	}](t, s, "note_edit", map[string]any{
-		"path": "Aggressor.md", "stood": "сказал \"да\" - и ушёл", "becomes": "промолчал",
+		"path": "Aggressor.md", "match": "сказал \"да\" - и ушёл", "text": "промолчал",
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
 
-	if !answer.Plainly {
+	if !answer.Loose {
 		t.Error("the reading was not reported")
 	}
-	if answer.Stood != "сказал «да» — и ушёл" {
-		t.Errorf("what stood there is answered as %q", answer.Stood)
+	if answer.Match != "сказал «да» — и ушёл" {
+		t.Errorf("what stood there is answered as %q", answer.Match)
 	}
 	if body := onDisk(t, v, "Aggressor.md"); !strings.Contains(body, "Он промолчал.\n") {
 		t.Errorf("the note reads:\n%s", body)
@@ -112,7 +112,7 @@ func TestEditingWithNothingTakesTheStretchOut(t *testing.T) {
 	call[struct {
 		Path string `json:"path"`
 	}](t, s, "note_edit", map[string]any{
-		"path": "Aggressor.md", "stood": " two", "becomes": "",
+		"path": "Aggressor.md", "match": " two", "text": "",
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
 
@@ -141,7 +141,7 @@ func TestEditingTellsTheWindowWhereItIsChangingTheNote(t *testing.T) {
 	call[struct {
 		Path string `json:"path"`
 	}](t, s, "note_edit", map[string]any{
-		"path": "Aggressor.md", "stood": "A hedgehog", "becomes": "An axe",
+		"path": "Aggressor.md", "match": "A hedgehog", "text": "An axe",
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
 
@@ -171,7 +171,7 @@ func TestARefusedEditIsStillEnded(t *testing.T) {
 	})
 
 	failing(t, s, "note_edit", map[string]any{
-		"path": "Aggressor.md", "stood": "foe", "becomes": "friend",
+		"path": "Aggressor.md", "match": "foe", "text": "friend",
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
 
@@ -191,7 +191,7 @@ func TestWritingANoteWholeTellsTheWindowOnlyWhatChanged(t *testing.T) {
 
 	call[struct {
 		Path string `json:"path"`
-	}](t, s, "note_write", map[string]any{
+	}](t, s, "note_rewrite", map[string]any{
 		"path":        "Aggressor.md",
 		"body":        "# Title\n\nAn axe is named.\n\nAnd nothing else.\n",
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
@@ -220,7 +220,7 @@ func TestTheStretchIsCountedTheWayAClientCountsText(t *testing.T) {
 	call[struct {
 		Path string `json:"path"`
 	}](t, s, "note_edit", map[string]any{
-		"path": "Aggressor.md", "stood": "сказал", "becomes": "промолчал",
+		"path": "Aggressor.md", "match": "сказал", "text": "промолчал",
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
 
@@ -244,19 +244,19 @@ func TestAWriteWithNoFingerprintIsRefused(t *testing.T) {
 		tool string
 		args map[string]any
 	}{
-		{"note_write", map[string]any{"path": "Aggressor.md", "body": "An axe.\n"}},
+		{"note_rewrite", map[string]any{"path": "Aggressor.md", "body": "An axe.\n"}},
 		{"note_edit", map[string]any{
-			"path": "Aggressor.md", "stood": "A hedgehog", "becomes": "An axe",
+			"path": "Aggressor.md", "match": "A hedgehog", "text": "An axe",
 		}},
 		{"card_add", map[string]any{
 			"path": "Animals.md", "stencil": "Animal",
 			"values": []map[string]string{{"field": "Name", "text": "Vicuña"}},
 		}},
 		{"card_edit", map[string]any{
-			"path": "Animals.md", "card": llama,
+			"path": "Animals.md", "mark": llama,
 			"values": []map[string]string{{"field": "Height", "text": "about 46\""}},
 		}},
-		{"card_remove", map[string]any{"path": "Animals.md", "card": llama}},
+		{"card_remove", map[string]any{"path": "Animals.md", "mark": llama}},
 		{"card_section_add", map[string]any{"path": "Animals.md", "name": "Others"}},
 	}
 	for _, w := range writes {

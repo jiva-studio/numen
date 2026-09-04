@@ -8,13 +8,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// addVaultTools gives an agent the vault it is working: where it is, what it
-// holds under one name, and what in it could not be read. Every one of them
-// reads.
+// addVaultTools gives an agent the vault it is working: where it is, and what
+// in it could not be read. Both of them read.
 func addVaultTools(server *sdk.Server, core Core) {
 	addVaultGet(server, core)
 	addVaultProblems(server, core)
-	addVaultNamed(server, core)
 }
 
 func addVaultGet(server *sdk.Server, core Core) {
@@ -100,29 +98,6 @@ func addVaultProblems(server *sdk.Server, core Core) {
 			})
 		}
 		return nil, res, nil
-	})
-}
-
-func addVaultNamed(server *sdk.Server, core Core) {
-	sdk.AddTool(server, &sdk.Tool{
-		Name:  "vault_named",
-		Title: "Find notes by name",
-		Description: "Every note filed under one name. More than one means a link " +
-			"written by that name is ambiguous and reaches the nearest of them, which " +
-			"can change when either note is moved.",
-	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Name string `json:"name" jsonschema:"a note's filename without its extension"`
-	}) (*sdk.CallToolResult, struct {
-		Paths []string `json:"paths"`
-	}, error) {
-		type out = struct {
-			Paths []string `json:"paths"`
-		}
-		paths, err := core.Notes.Queries.Named(ctx, string(core.shown().Vault.ID), domain.LinkName(in.Name))
-		if err != nil {
-			return nil, out{}, err
-		}
-		return nil, out{Paths: paths}, nil
 	})
 }
 

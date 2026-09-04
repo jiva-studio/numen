@@ -55,13 +55,41 @@ type Passage struct {
 	Source   string `json:"source" jsonschema:"the file the text is read from, relative to the vault folder"`
 	Location string `json:"location,omitempty" jsonschema:"where this sits in the source's own numbering — a chapter, a printed page — absent when the format offered none"`
 	Text     string `json:"text" jsonschema:"the passage itself"`
-	Start    int    `json:"start" jsonschema:"where the passage begins in the source's text, in bytes; hand it to source_show to put this place in front of the person"`
+	Start    int    `json:"start" jsonschema:"where the passage begins in the source's text, in bytes; hand it to source_focus to put this place in front of the person"`
 	Length   int    `json:"length" jsonschema:"how long the passage is, in bytes"`
 }
 
 func addNoteTools(server *sdk.Server, core Core) {
 	addNoteReadingTools(server, core)
+	addNoteResolve(server, core)
 	addNoteWritingTools(server, core)
+}
+
+// addNoteResolve is the notes a link's name reaches. It is what the window a
+// person writes in asks; the surfaces that only read are served the lookups by
+// path and no more.
+func addNoteResolve(server *sdk.Server, core Core) {
+	sdk.AddTool(server, &sdk.Tool{
+		Name:  "note_resolve",
+		Title: "Find the notes a name reaches",
+		Description: "Every note filed under one name, which is what a link written by " +
+			"that name resolves to. More than one path back means the link is ambiguous " +
+			"and reaches the nearest of them, which can change when either note is " +
+			"moved. Nothing back means no note answers to the name.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Name string `json:"name" jsonschema:"a note's filename without its extension, which is what a link writes"`
+	}) (*sdk.CallToolResult, struct {
+		Paths []string `json:"paths"`
+	}, error) {
+		type out = struct {
+			Paths []string `json:"paths"`
+		}
+		paths, err := core.Notes.Queries.Named(ctx, string(core.shown().Vault.ID), domain.LinkName(in.Name))
+		if err != nil {
+			return nil, out{}, err
+		}
+		return nil, out{Paths: paths}, nil
+	})
 }
 
 func addNoteReadingTools(server *sdk.Server, core Core) {
@@ -116,11 +144,13 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
-		Name:  "note_get",
-		Title: "Look up notes",
-		Description: "Look up notes by path, without their contents. Paths that name " +
-			"nothing come back under `missing` rather than as an error: a note may have " +
-			"been removed since you last saw it.",
+		Name:  "note_titles",
+		Title: "Look up what notes are called",
+		Description: "What notes at these paths are called, and the identifier each " +
+			"carries. Nothing of their prose comes back — `note_read` gives that. Use " +
+			"this to name a note in an answer, or to see whether the vault still holds " +
+			"one. Paths that name nothing come back under `missing` rather than as an " +
+			"error: a note may have been removed since you last saw it.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Paths []string `json:"paths" jsonschema:"the paths to look up"`
 	}) (*sdk.CallToolResult, struct {
@@ -153,9 +183,10 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 		Name:  "note_read",
 		Title: "Read notes",
 		Description: "Read the prose of notes — the text below the frontmatter, which " +
-			"is exactly what `note_write` takes back. What a note is joined to is not " +
-			"in here; `link_list` answers that. The fingerprint that comes back is " +
-			"what `note_write` wants: hand it back and the write is refused if the " +
+			"is exactly what `note_rewrite` takes back. What a note is called is not in " +
+			"here; `note_titles` answers that, and for less. What a note is joined to is " +
+			"not in here either; `link_list` answers that. The fingerprint that comes back is " +
+			"what `note_rewrite` wants: hand it back and the write is refused if the " +
 			"person changed the note in the meantime. A path that could not be read " +
 			"comes back under `refused` saying why, and the rest of the batch still " +
 			"comes back.",
@@ -279,10 +310,10 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
-		Name:  "note_write",
-		Title: "Write a note",
-		Description: "Replace the prose of a note. The frontmatter is left alone — use " +
-			"the link tools to change what a note is joined to. The fingerprint from " +
+		Name:  "note_rewrite",
+		Title: "Rewrite a note",
+		Description: "Replace the whole prose of a note. The frontmatter is left alone — " +
+			"use the link tools to change what a note is joined to. The fingerprint from " +
 			"`note_read` is required, and a write lands only on the note that fingerprint " +
 			"names. This " +
 			"answers with the fingerprint it produced: pass that one to write the same " +
@@ -323,37 +354,37 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		Name:  "note_edit",
 		Title: "Edit a note",
 		Description: "Replace one stretch of a note's prose with another and leave the " +
-			"rest of it the bytes it was. `stood` is that stretch as `note_read` gave it " +
+			"rest of it the bytes it was. `match` is that stretch as `note_read` gave it " +
 			"to you, and it must stand in exactly one place: where it stands twice, take " +
 			"in enough of what surrounds one of them to tell it from the others. Quotes, " +
 			"dashes and spacing may differ from what the note has and the stretch is " +
 			"still found; the answer says so, and says what the note held. Reach for this " +
-			"before `note_write` for anything short of rewriting a note — it costs you the " +
+			"before `note_rewrite` for anything short of rewriting a note — it costs you the " +
 			"stretch instead of the whole note, and it cannot change a word you did not " +
 			"name. The fingerprint from `note_read` is required, and an edit lands only on " +
 			"the note that fingerprint names. It answers with the fingerprint it produced.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path        string `json:"path" jsonschema:"the note to edit"`
-		Stood       string `json:"stood" jsonschema:"the text to replace, as the note has it"`
-		Becomes     string `json:"becomes" jsonschema:"what to put in its place; empty takes the text out"`
+		Match       string `json:"match" jsonschema:"the text to replace, as the note has it"`
+		Text        string `json:"text" jsonschema:"what to put in its place; empty takes the text out"`
 		Fingerprint string `json:"fingerprint" jsonschema:"what note_read said the note was, which refuses an edit over somebody else's edit"`
 	}) (*sdk.CallToolResult, struct {
 		Path        string `json:"path"`
 		Fingerprint string `json:"fingerprint"`
-		Stood       string `json:"stood"`
-		Plainly     bool   `json:"plainly,omitempty"`
+		Match       string `json:"match" jsonschema:"the text that was replaced, as the note had it"`
+		Loose       bool   `json:"loose,omitempty" jsonschema:"the stretch was found only once punctuation and spacing were flattened, so what the note held is not what you asked for"`
 	}, error) {
 		type out = struct {
 			Path        string `json:"path"`
 			Fingerprint string `json:"fingerprint"`
-			Stood       string `json:"stood"`
-			Plainly     bool   `json:"plainly,omitempty"`
+			Match       string `json:"match" jsonschema:"the text that was replaced, as the note had it"`
+			Loose       bool   `json:"loose,omitempty" jsonschema:"the stretch was found only once punctuation and spacing were flattened, so what the note held is not what you asked for"`
 		}
 		seen, err := parseFingerprint(in.Fingerprint)
 		if err != nil {
 			return nil, out{}, err
 		}
-		done, err := core.Notes.Replace.Execute(ctx, core.shown().Vault, in.Path, in.Stood, in.Becomes, seen)
+		done, err := core.Notes.Replace.Execute(ctx, core.shown().Vault, in.Path, in.Match, in.Text, seen)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -362,8 +393,8 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		return nil, out{
 			Path:        in.Path,
 			Fingerprint: fingerprintOf(done.Fingerprint),
-			Stood:       done.Matched,
-			Plainly:     done.Plainly,
+			Match:       done.Matched,
+			Loose:       done.Plainly,
 		}, nil
 	})
 
@@ -478,14 +509,14 @@ func isFolder(ctx context.Context, reader port.VaultReader, path string) bool {
 	return err == nil
 }
 
-// Contents is a note as note_write takes it back: the prose, without the
+// Contents is a note as note_rewrite takes it back: the prose, without the
 // frontmatter. Handing back the whole file would invite an agent to edit what
 // it was given and write that in, putting a second frontmatter block inside the
 // body.
 type Contents struct {
 	Path        string `json:"path"`
-	Body        string `json:"body" jsonschema:"the prose below the frontmatter, which is what note_write takes"`
-	Fingerprint string `json:"fingerprint" jsonschema:"hand this to note_write to refuse a write over an edit you did not see"`
+	Body        string `json:"body" jsonschema:"the prose below the frontmatter, which is what note_rewrite takes"`
+	Fingerprint string `json:"fingerprint" jsonschema:"hand this to note_rewrite to refuse a write over an edit you did not see"`
 }
 
 // Refusal is one path that came back with no prose behind it, and what stopped

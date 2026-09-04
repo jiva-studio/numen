@@ -23,11 +23,11 @@ type Words struct {
 	Inside string
 	// Kind is what this call does to the vault.
 	Kind port.StepKind
-	// Stood and Becomes name the arguments carrying the text a call replaces
-	// and what it puts in that text's place. Both are empty for a call that
+	// Match and Text name the arguments carrying the text a call replaces and
+	// what it puts in that text's place. Both are empty for a call that
 	// replaces no stretch.
-	Stood   string
-	Becomes string
+	Match string
+	Text  string
 }
 
 // doing is what each tool this vault serves does, and the arguments a call
@@ -37,18 +37,19 @@ type Words struct {
 // takes and cannot say what taking it means.
 var doing = map[string]Words{
 	"note_search":         {Kind: port.StepSearch},
-	"note_get":            {Kind: port.StepRead},
+	"note_titles":         {Kind: port.StepRead},
 	"note_read":           {Kind: port.StepRead},
+	"note_resolve":        {Kind: port.StepRead},
 	"note_neighbourhood":  {Kind: port.StepRead},
 	"note_create":         {Kind: port.StepEdit},
-	"note_write":          {Kind: port.StepEdit},
-	"note_edit":           {Kind: port.StepEdit, Stood: "stood", Becomes: "becomes"},
+	"note_rewrite":        {Kind: port.StepEdit},
+	"note_edit":           {Kind: port.StepEdit, Match: "match", Text: "text"},
 	"note_rename":         {Kind: port.StepMove},
 	"note_move":           {Kind: port.StepMove},
 	"note_remove":         {Kind: port.StepRemove},
 	"note_focus":          {Kind: port.StepRead},
 	"file_read":           {Kind: port.StepRead},
-	"card_stencils":       {Kind: port.StepRead},
+	"card_stencil_list":   {Kind: port.StepRead},
 	"card_read":           {Kind: port.StepRead},
 	"card_add":            {Kind: port.StepEdit},
 	"card_edit":           {Kind: port.StepEdit},
@@ -58,14 +59,13 @@ var doing = map[string]Words{
 	"card_stencil_create": {Kind: port.StepEdit},
 	// A field's name stands in the stencil that declares it and in every card
 	// that stencil cuts, so renaming it is a write to as many files as hold one.
-	"card_rename_field": {Kind: port.StepMove},
+	"card_field_rename": {Kind: port.StepMove},
 	"link_add":          {Kind: port.StepEdit},
 	"link_update":       {Kind: port.StepEdit},
 	"link_remove":       {Kind: port.StepEdit},
 	"link_list":         {Kind: port.StepRead},
-	"window_tabs":       {Kind: port.StepRead},
+	"window_tab_list":   {Kind: port.StepRead},
 	"vault_get":         {Kind: port.StepRead},
-	"vault_named":       {Kind: port.StepRead},
 	"vault_problems":    {Kind: port.StepRead},
 	"vault_list":        {Kind: port.StepRead},
 	"vault_add":         {Kind: port.StepEdit},
@@ -74,7 +74,7 @@ var doing = map[string]Words{
 	"vault_open":        {Kind: port.StepRead},
 	"source_list":       {Kind: port.StepRead},
 	"source_read":       {Kind: port.StepRead},
-	"source_show":       {Kind: port.StepRead},
+	"source_focus":      {Kind: port.StepRead},
 	// Reading a document changes what the vault holds — it writes down what a
 	// model saw — so it is shown as a change and not as a look. Listening to a
 	// recording writes down what a model heard, and is shown the same way.
@@ -121,12 +121,12 @@ func vocabulary(ctx context.Context, server *sdk.Server) (map[string]Words, erro
 	for _, tool := range listed.Tools {
 		about := firstRequired(tool.InputSchema)
 		words[tool.Name] = Words{
-			Title:   titleOf(tool),
-			About:   about,
-			Inside:  firstRequiredInside(tool.InputSchema, about),
-			Kind:    doing[tool.Name].Kind,
-			Stood:   doing[tool.Name].Stood,
-			Becomes: doing[tool.Name].Becomes,
+			Title:  titleOf(tool),
+			About:  about,
+			Inside: firstRequiredInside(tool.InputSchema, about),
+			Kind:   doing[tool.Name].Kind,
+			Match:  doing[tool.Name].Match,
+			Text:   doing[tool.Name].Text,
 		}
 	}
 	return words, nil

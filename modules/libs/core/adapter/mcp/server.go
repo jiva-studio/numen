@@ -251,7 +251,7 @@ func instructions(core Core) string {
 	b.WriteString("book's sections are searched by name, and a section named what was asked ")
 	b.WriteString("for is what the search answers with.\n")
 	b.WriteString("- A search answers with several places of one book. Show every place you ")
-	b.WriteString("speak about: `source_show` takes the rest under `also`, and the person is ")
+	b.WriteString("speak about: `source_focus` takes the rest under `also`, and the person is ")
 	b.WriteString("taken to the first.\n")
 	b.WriteString("- A passage is a window cut to a size and it ends where it was cut, which ")
 	b.WriteString("is mid-sentence as often as not. Read on with `source_read` before saying ")
@@ -282,7 +282,7 @@ func opening(b *strings.Builder, core Core) {
 	b.WriteString("files, `note_read` gives you the same text.\n\n")
 
 	if core.Attending != nil {
-		b.WriteString("What the person has open is `window_tabs`: every tab of their window, ")
+		b.WriteString("What the person has open is `window_tab_list`: every tab of their window, ")
 		b.WriteString("and which of them they are looking at. Ask it before saying anything ")
 		b.WriteString("about what is in front of them, and ask again when it matters — they ")
 		b.WriteString("move between tabs while you work.\n\n")

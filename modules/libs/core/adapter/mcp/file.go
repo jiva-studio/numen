@@ -30,14 +30,14 @@ func addFileReadingTools(server *sdk.Server, core Core) {
 		Text    string `json:"text,omitempty"`
 		Start   int    `json:"start" jsonschema:"where the run begins, which is what was asked for held within the file"`
 		Length  int    `json:"length" jsonschema:"how long the run is"`
-		Whole   int    `json:"whole" jsonschema:"how long the whole file is, in bytes"`
+		Size    int    `json:"size" jsonschema:"how long the whole file is, in bytes"`
 		Refused string `json:"refused,omitempty" jsonschema:"why nothing came back, empty when the run did"`
 	}, error) {
 		type out = struct {
 			Text    string `json:"text,omitempty"`
 			Start   int    `json:"start" jsonschema:"where the run begins, which is what was asked for held within the file"`
 			Length  int    `json:"length" jsonschema:"how long the run is"`
-			Whole   int    `json:"whole" jsonschema:"how long the whole file is, in bytes"`
+			Size    int    `json:"size" jsonschema:"how long the whole file is, in bytes"`
 			Refused string `json:"refused,omitempty" jsonschema:"why nothing came back, empty when the run did"`
 		}
 		contents, err := file.Read{Readers: core.Readers}.Execute(
@@ -45,7 +45,7 @@ func addFileReadingTools(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, out{}, err
 		}
-		res := out{Start: contents.Start, Length: contents.Length, Whole: contents.Whole}
+		res := out{Start: contents.Start, Length: contents.Length, Size: contents.Whole}
 		if contents.Outcome == file.Ok {
 			res.Text = contents.Text
 			return nil, res, nil

@@ -29,7 +29,7 @@ func addWindowTools(server *sdk.Server, core Core) {
 	}
 
 	sdk.AddTool(server, &sdk.Tool{
-		Name:  "window_tabs",
+		Name:  "window_tab_list",
 		Title: "What the person has open",
 		Description: "Every tab of the person's window, and which of them they are looking " +
 			"at. Ask it before saying anything about what is open or in front of them: a " +
@@ -39,15 +39,15 @@ func addWindowTools(server *sdk.Server, core Core) {
 			"do not know is a tab of that kind and nothing more. What a recording says is " +
 			"read with source_read, as a document is.",
 	}, func(_ context.Context, _ *sdk.CallToolRequest, _ struct{}) (*sdk.CallToolResult, struct {
-		Tabs []Tab  `json:"tabs"`
-		Says string `json:"says" jsonschema:"the tab the person is looking at, in words to say back to them"`
+		Tabs    []Tab  `json:"tabs"`
+		Looking string `json:"looking" jsonschema:"the tab the person is looking at, in words to say back to them"`
 	}, error) {
 		type out = struct {
-			Tabs []Tab  `json:"tabs"`
-			Says string `json:"says" jsonschema:"the tab the person is looking at, in words to say back to them"`
+			Tabs    []Tab  `json:"tabs"`
+			Looking string `json:"looking" jsonschema:"the tab the person is looking at, in words to say back to them"`
 		}
 		open := core.Attending()
-		res := out{Tabs: make([]Tab, 0, len(open.Tabs)), Says: "the window has nothing open"}
+		res := out{Tabs: make([]Tab, 0, len(open.Tabs)), Looking: "the window has nothing open"}
 		for _, one := range open.Tabs {
 			front := one.ID != "" && one.ID == open.FrontID
 			res.Tabs = append(res.Tabs, Tab{
@@ -58,7 +58,7 @@ func addWindowTools(server *sdk.Server, core Core) {
 				Front: front,
 			})
 			if front {
-				res.Says = inFront(one)
+				res.Looking = inFront(one)
 			}
 		}
 		return nil, res, nil

@@ -132,7 +132,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	wrote := make(chan error, 1)
 	go func() {
 		res, err := session.CallTool(context.Background(), &sdk.CallToolParams{
-			Name: "note_write",
+			Name: "note_rewrite",
 			Arguments: map[string]any{
 				"path": "Note.md", "body": "# What the agent wrote\n", "fingerprint": was,
 			},

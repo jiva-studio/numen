@@ -20,9 +20,9 @@ import (
 
 // reads is every tool the reading server serves.
 var reads = []string{
-	"note_search", "note_get", "note_read", "note_neighbourhood",
+	"note_search", "note_titles", "note_read", "note_neighbourhood",
 	"link_list", "source_list", "source_read",
-	"card_stencils", "card_read", "vault_get",
+	"card_stencil_list", "card_read", "vault_get",
 }
 
 // The reading server stands on what it does not serve, so the list is exact:
@@ -61,13 +61,13 @@ func TestEveryReadingToolAnswersWithoutAWriter(t *testing.T) {
 		args any
 	}{
 		{"note_search", map[string]any{"query": "microstates"}},
-		{"note_get", map[string]any{"paths": []string{"Entropy.md"}}},
+		{"note_titles", map[string]any{"paths": []string{"Entropy.md"}}},
 		{"note_read", map[string]any{"paths": []string{"Entropy.md"}}},
 		{"note_neighbourhood", map[string]any{"path": "Entropy.md"}},
 		{"link_list", map[string]any{"path": "Entropy.md"}},
 		{"source_list", map[string]any{}},
 		{"source_read", map[string]any{"path": "Entropy.md", "start": 0, "length": 200}},
-		{"card_stencils", map[string]any{}},
+		{"card_stencil_list", map[string]any{}},
 		{"card_read", map[string]any{"path": "Kinetics.md"}},
 		{"vault_get", map[string]any{}},
 	}
@@ -121,7 +121,7 @@ type side struct {
 	session *sdk.ClientSession
 	note    string
 	deck    string
-	// called is what that note is called, which is the whole of what note_get
+	// called is what that note is called, which is the whole of what note_titles
 	// carries beside the path it was asked by.
 	called string
 	// own is a word this vault's own answers must carry, so that a tool
@@ -146,7 +146,7 @@ func (s side) answers(t *testing.T) {
 	looked := call[struct {
 		Notes   []mcp.Note `json:"notes"`
 		Missing []string   `json:"missing"`
-	}](t, s.session, "note_get", map[string]any{"paths": []string{s.note}})
+	}](t, s.session, "note_titles", map[string]any{"paths": []string{s.note}})
 	if len(looked.Notes) != 1 || looked.Notes[0].Title != s.called {
 		t.Errorf("%s does not look up its own note: %+v", s.what, looked)
 	}
@@ -178,7 +178,7 @@ func (s side) answers(t *testing.T) {
 	}
 
 	hand := dealt(t, s.session, map[string]any{"path": s.deck})
-	if hand.Held == 0 {
+	if hand.Total == 0 {
 		t.Errorf("%s reads no card out of its own deck", s.what)
 	}
 }
@@ -193,7 +193,7 @@ func (s side) holdsNothingOf(t *testing.T, other side) {
 		args any
 	}{
 		{"note_search", map[string]any{"query": other.own}},
-		{"note_get", map[string]any{"paths": []string{other.note}}},
+		{"note_titles", map[string]any{"paths": []string{other.note}}},
 		{"note_read", map[string]any{"paths": []string{other.note}}},
 		{"note_neighbourhood", map[string]any{"path": other.note}},
 		{"link_list", map[string]any{"path": other.note}},

@@ -58,12 +58,12 @@ Five families and a reader of files, served over the vault's own endpoint.
 
 | Family | What it is for |
 | --- | --- |
-| `note_*` | search the vault, look notes up, read and write their prose, edit a stretch, rename, move, remove, and put one in front of the person |
+| `note_*` | search the vault, look notes up by path and by the name a link writes, read and rewrite their prose, edit a stretch, rename, move, remove, and put one in front of the person |
 | `file_read` | read a run of any file the vault holds, by its path from the vault folder |
 | `link_*` | add, change, remove and list the links a note carries |
 | `card_*` | list the stencils a vault holds, read a deck and the cards in it, and make, change and remove one card at a time |
 | `source_*` | list the documents a vault holds, read a run of one's text, ask for a scanned one to be read, and show the person a passage |
-| `vault_*` | show the vault and what a scan could not act on, find notes by name, and list, add, rename, forget and open vaults |
+| `vault_*` | show the vault and what a scan could not act on, and list, add, rename, forget and open vaults |
 
 A call that carries names takes as many as are wanted — at most fifty for a lookup, at most ten for reading prose. A call that carries the text of a document takes one: creating a note, writing one and editing one are each a call of their own, and each is filed as it is finished.
 
@@ -75,7 +75,7 @@ A tool that writes returns only once the index is level again. An agent that cre
 
 ## The reviewer's surface
 
-The window a person runs their cards in serves a surface of its own. It reads the whole vault — `note_search`, `note_get`, `note_read`, `note_neighbourhood`, `link_list`, `source_list`, `source_read`, `card_stencils`, `card_read` and `vault_get` — and writes cards alone: `card_add`, `card_edit`, `card_remove` and `card_section_add`. Nothing else is on it. A deck and a stencil are what a vault is arranged into, and nothing there makes one; no note, link or document is written there either. The decisions behind it are [ADR-0030](adr/0030-review-is-an-application-of-its-own.md).
+The window a person runs their cards in serves a surface of its own. It reads the whole vault — `note_search`, `note_titles`, `note_read`, `note_neighbourhood`, `link_list`, `source_list`, `source_read`, `card_stencil_list`, `card_read` and `vault_get` — and writes cards alone: `card_add`, `card_edit`, `card_remove` and `card_section_add`. Nothing else is on it. A deck and a stencil are what a vault is arranged into, and nothing there makes one; no note, link or document is written there either. The decisions behind it are [ADR-0030](adr/0030-review-is-an-application-of-its-own.md).
 
 The reading half of it is a surface in its own right, with no writer on it at all.
 

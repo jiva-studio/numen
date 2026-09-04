@@ -56,8 +56,8 @@ func addViewTools(server *sdk.Server, core Core) {
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
-		Name:  "source_show",
-		Title: "Show the person a passage of a document",
+		Name:  "source_focus",
+		Title: "Put a passage in front of the person",
 		Description: "Open one of the vault's documents in front of the person at one " +
 			"passage: the page it stands on is drawn, and the words of it are lit. " +
 			"`note_search` gives the range of every passage it answers with, and this " +
@@ -75,12 +75,12 @@ func addViewTools(server *sdk.Server, core Core) {
 			Length int `json:"length"`
 		} `json:"also,omitempty" jsonschema:"the other passages of the same document to light, as a search gives them"`
 	}) (*sdk.CallToolResult, struct {
-		Shown bool   `json:"shown"`
-		Says  string `json:"says"`
+		Shown   bool   `json:"shown"`
+		Looking string `json:"looking" jsonschema:"what the person is now looking at, in words to say back to them"`
 	}, error) {
 		type out = struct {
-			Shown bool   `json:"shown"`
-			Says  string `json:"says"`
+			Shown   bool   `json:"shown"`
+			Looking string `json:"looking" jsonschema:"what the person is now looking at, in words to say back to them"`
 		}
 		if in.Path == "" {
 			return nil, out{}, errors.New("name the document to show")
@@ -109,7 +109,7 @@ func addViewTools(server *sdk.Server, core Core) {
 		if err := core.View.Focus(ctx, at); err != nil {
 			return nil, out{}, err
 		}
-		return nil, out{Shown: true, Says: showing(ref.Kind, in.Length)}, nil
+		return nil, out{Shown: true, Looking: showing(ref.Kind, in.Length)}, nil
 	})
 }
 

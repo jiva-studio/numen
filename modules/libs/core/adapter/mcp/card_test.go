@@ -57,7 +57,7 @@ type card struct {
 type cards struct {
 	Cards    []card   `json:"cards"`
 	Sections []string `json:"sections"`
-	Held     int      `json:"held"`
+	Total    int      `json:"total"`
 	Faults   []struct {
 		Card int    `json:"card"`
 		Why  string `json:"why"`
@@ -97,8 +97,8 @@ func TestADeckIsReadAsCardsAndNotAsMarkdown(t *testing.T) {
 	session, _ := connected(t, vault())
 
 	read := dealt(t, session, map[string]any{"path": "Animals.md"})
-	if read.Held != 2 {
-		t.Fatalf("the deck came back holding %d cards", read.Held)
+	if read.Total != 2 {
+		t.Fatalf("the deck came back holding %d cards", read.Total)
 	}
 	if read.Cards[0].Mark != llama || read.Cards[0].Stencil != "Animal" {
 		t.Errorf("the first card came back as %+v", read.Cards[0])
@@ -159,8 +159,8 @@ func TestADeckAnswersARunOfItsCardsAndSaysHowManyItHolds(t *testing.T) {
 	if len(read.Cards) != 1 {
 		t.Fatalf("a call asking for one card came back with %d", len(read.Cards))
 	}
-	if read.Held != 2 {
-		t.Errorf("the deck holds two cards and the answer says %d", read.Held)
+	if read.Total != 2 {
+		t.Errorf("the deck holds two cards and the answer says %d", read.Total)
 	}
 	if read.Cards[0].Mark != llama {
 		t.Errorf("the run began at %q", read.Cards[0].Mark)
@@ -183,7 +183,7 @@ func TestADeckAnswersARunOfItsCardsAndSaysHowManyItHolds(t *testing.T) {
 func TestADeckAnswersWithTheOneCardAMarkAddresses(t *testing.T) {
 	session, _ := connected(t, vault())
 
-	read := dealt(t, session, map[string]any{"path": "Animals.md", "card": alpaca})
+	read := dealt(t, session, map[string]any{"path": "Animals.md", "mark": alpaca})
 	if len(read.Cards) != 1 {
 		t.Fatalf("a call naming one card came back with %d", len(read.Cards))
 	}
@@ -193,8 +193,8 @@ func TestADeckAnswersWithTheOneCardAMarkAddresses(t *testing.T) {
 	if got := valued(read.Cards[0], "Name"); got != "Alpaca" {
 		t.Errorf("the card holds %q under Name", got)
 	}
-	if read.Held != 2 {
-		t.Errorf("the deck holds two cards and the answer says %d", read.Held)
+	if read.Total != 2 {
+		t.Errorf("the deck holds two cards and the answer says %d", read.Total)
 	}
 	if read.Fingerprint == "" {
 		t.Error("a card was read with nothing to present at the next write of its deck")
@@ -203,7 +203,7 @@ func TestADeckAnswersWithTheOneCardAMarkAddresses(t *testing.T) {
 	// A card is one card wherever it stands and however many were asked for, so
 	// what says where a run of them starts and how long it runs says nothing.
 	past := dealt(t, session, map[string]any{
-		"path": "Animals.md", "card": alpaca, "from": 5, "limit": 500,
+		"path": "Animals.md", "mark": alpaca, "from": 5, "limit": 500,
 	})
 	if len(past.Cards) != 1 || past.Cards[0].Mark != alpaca {
 		t.Errorf("a card asked for past the end of the deck came back as %+v", past.Cards)
@@ -232,7 +232,7 @@ func TestADeckAnswersWithTheFieldsItWasAskedFor(t *testing.T) {
 
 	// A card carrying none of them is a card, and comes back as one.
 	none := dealt(t, session, map[string]any{
-		"path": "Animals.md", "card": llama, "fields": []string{"Life span"},
+		"path": "Animals.md", "mark": llama, "fields": []string{"Life span"},
 	})
 	if len(none.Cards) != 1 || none.Cards[0].Mark != llama {
 		t.Fatalf("the card came back as %+v", none.Cards)
@@ -248,7 +248,7 @@ func TestReadingACardOfAMarkTheDeckHasNotGotIsRefused(t *testing.T) {
 	session, _ := connected(t, vault())
 
 	if said := failing(t, session, "card_read", map[string]any{
-		"path": "Animals.md", "card": "zzzzzzzzzz",
+		"path": "Animals.md", "mark": "zzzzzzzzzz",
 	}); !strings.Contains(said, "no card") {
 		t.Errorf("reading a card the deck has not got was answered %q", said)
 	}
@@ -278,7 +278,7 @@ func TestACardIsAddedWithTheWikilinkThatNamesItsStencil(t *testing.T) {
 		t.Errorf("the card stands under the heading %q", written)
 	}
 	read := dealt(t, session, map[string]any{"path": "Animals.md"})
-	if read.Held != 3 || read.Cards[2].Stencil != "Animal" {
+	if read.Total != 3 || read.Cards[2].Stencil != "Animal" {
 		t.Errorf("the deck now holds %+v", read.Cards)
 	}
 	if read.Cards[2].Mark == "" {
@@ -305,12 +305,12 @@ func TestACardAddedComesBackUnderTheMarkItIsAddressedBy(t *testing.T) {
 
 	// The mark reaches that card and no other.
 	call[map[string]any](t, session, "card_edit", map[string]any{
-		"path": "Animals.md", "card": made.Mark,
+		"path": "Animals.md", "mark": made.Mark,
 		"values":      []map[string]string{{"field": "Height", "text": "about 34\""}},
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	})
 	read := dealt(t, session, map[string]any{"path": "Animals.md"})
-	if read.Held != 3 || read.Cards[2].Mark != made.Mark {
+	if read.Total != 3 || read.Cards[2].Mark != made.Mark {
 		t.Fatalf("the deck holds %+v", read.Cards)
 	}
 	if valued(read.Cards[2], "Height") != "about 34\"" {
@@ -329,14 +329,14 @@ func TestACardOfAMarkTwoCardsCarryIsNotWrittenTo(t *testing.T) {
 	session, v := connected(t, map[string]string{"Animal.md": stencil, "Animals.md": copied})
 
 	if said := failing(t, session, "card_edit", map[string]any{
-		"path": "Animals.md", "card": llama,
+		"path": "Animals.md", "mark": llama,
 		"values":      []map[string]string{{"field": "Height", "text": "about 47\""}},
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	}); !strings.Contains(said, "two cards") {
 		t.Errorf("editing one of two cards of a mark was answered %q", said)
 	}
 	if said := failing(t, session, "card_remove", map[string]any{
-		"path": "Animals.md", "card": llama,
+		"path": "Animals.md", "mark": llama,
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	}); !strings.Contains(said, "two cards") {
 		t.Errorf("removing one of two cards of a mark was answered %q", said)
@@ -371,7 +371,7 @@ func TestACardIsAddedToTheSectionItWasAskedFor(t *testing.T) {
 	}
 
 	read := dealt(t, session, map[string]any{"path": "Animals.md"})
-	if read.Held != 3 || read.Cards[1].Section != 0 {
+	if read.Total != 3 || read.Cards[1].Section != 0 {
 		t.Errorf("the deck now holds %+v", read.Cards)
 	}
 	if said := failing(t, session, "card_add", map[string]any{
@@ -400,8 +400,8 @@ func TestASectionIsMadeThroughTheTools(t *testing.T) {
 	if len(read.Sections) != 2 || read.Sections[1] != "Others" {
 		t.Errorf("the deck came back with the sections %+v", read.Sections)
 	}
-	if read.Held != 2 {
-		t.Errorf("making a section moved cards: the deck holds %d", read.Held)
+	if read.Total != 2 {
+		t.Errorf("making a section moved cards: the deck holds %d", read.Total)
 	}
 }
 
@@ -411,7 +411,7 @@ func TestACardIsEditedAndTheCardsBesideItAreLeftAlone(t *testing.T) {
 	session, v := connected(t, vault())
 
 	call[map[string]any](t, session, "card_edit", map[string]any{
-		"path": "Animals.md", "card": llama,
+		"path": "Animals.md", "mark": llama,
 		"values": []map[string]string{
 			{"field": "Height", "text": "about 46\""},
 			{"field": "Life span", "text": "about 20 years"},
@@ -436,7 +436,7 @@ func TestACardIsRemovedAndNothingElseIs(t *testing.T) {
 	session, v := connected(t, vault())
 
 	call[map[string]any](t, session, "card_remove", map[string]any{
-		"path": "Animals.md", "card": llama,
+		"path": "Animals.md", "mark": llama,
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	})
 
@@ -449,7 +449,7 @@ func TestACardIsRemovedAndNothingElseIs(t *testing.T) {
 		t.Errorf("the card beside it came back as %q", written)
 	}
 	if said := failing(t, session, "card_remove", map[string]any{
-		"path": "Animals.md", "card": llama,
+		"path": "Animals.md", "mark": llama,
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	}); !strings.Contains(said, "no card") {
 		t.Errorf("removing a card twice was answered %q", said)
@@ -491,10 +491,10 @@ func TestTheStencilsOfAVaultAreListedWithWhatTheyAskFor(t *testing.T) {
 			Title  string   `json:"title"`
 			Fields []string `json:"fields"`
 		} `json:"stencils"`
-		Held int `json:"held"`
-	}](t, session, "card_stencils", map[string]any{})
+		Total int `json:"total"`
+	}](t, session, "card_stencil_list", map[string]any{})
 
-	if listed.Held != 1 || len(listed.Stencils) != 1 {
+	if listed.Total != 1 || len(listed.Stencils) != 1 {
 		t.Fatalf("the vault holds one stencil and the answer is %+v", listed)
 	}
 	if listed.Stencils[0].Path != "Animal.md" {
@@ -532,10 +532,10 @@ func TestAStencilIsMadeAsAStencilAndNotAsANote(t *testing.T) {
 	}
 
 	listed := call[struct {
-		Held int `json:"held"`
-	}](t, session, "card_stencils", map[string]any{})
-	if listed.Held != 2 {
-		t.Errorf("a stencil made through the tools is not on the list: %d", listed.Held)
+		Total int `json:"total"`
+	}](t, session, "card_stencil_list", map[string]any{})
+	if listed.Total != 2 {
+		t.Errorf("a stencil made through the tools is not on the list: %d", listed.Total)
 	}
 }
 
@@ -548,7 +548,7 @@ func TestRenamingAFieldReachesTheCardsCutByThatStencil(t *testing.T) {
 	renamed := call[struct {
 		Decks []string `json:"decks"`
 		Cards int      `json:"cards"`
-	}](t, session, "card_rename_field", map[string]any{
+	}](t, session, "card_field_rename", map[string]any{
 		"path": "Animal.md", "from": "Height", "to": "Shoulder height",
 	})
 	if renamed.Cards != 1 || len(renamed.Decks) != 1 {
@@ -595,8 +595,8 @@ func TestADeckIsMadeThroughTheTools(t *testing.T) {
 		"values":      []map[string]string{{"field": "Name", "text": "Vicuña"}},
 		"fingerprint": deckFingerprint(t, session, made.Path),
 	})
-	if read := dealt(t, session, map[string]any{"path": made.Path}); read.Held != 1 {
-		t.Errorf("the deck made through the tools holds %d cards", read.Held)
+	if read := dealt(t, session, map[string]any{"path": made.Path}); read.Total != 1 {
+		t.Errorf("the deck made through the tools holds %d cards", read.Total)
 	}
 }
 
@@ -619,7 +619,7 @@ func TestAStencilIsListedByTheNameACardsWikilinkReaches(t *testing.T) {
 			Path string `json:"path"`
 			Name string `json:"name"`
 		} `json:"stencils"`
-	}](t, session, "card_stencils", map[string]any{})
+	}](t, session, "card_stencil_list", map[string]any{})
 	if len(listed.Stencils) != 1 {
 		t.Fatalf("the vault holds one stencil and the answer is %+v", listed)
 	}
@@ -637,7 +637,7 @@ func TestAStencilIsListedByTheNameACardsWikilinkReaches(t *testing.T) {
 	// lands nowhere is cut by none.
 	renamed := call[struct {
 		Cards int `json:"cards"`
-	}](t, session, "card_rename_field", map[string]any{
+	}](t, session, "card_field_rename", map[string]any{
 		"path": "Animal.md", "from": "Height", "to": "Shoulder height",
 	})
 	if renamed.Cards != 1 {
@@ -657,7 +657,7 @@ func TestTheListOfStencilsSaysItsCeiling(t *testing.T) {
 	}
 	var said string
 	for _, tool := range listed.Tools {
-		if tool.Name != "card_stencils" {
+		if tool.Name != "card_stencil_list" {
 			continue
 		}
 		schema, err := json.Marshal(tool.InputSchema)
@@ -667,7 +667,7 @@ func TestTheListOfStencilsSaysItsCeiling(t *testing.T) {
 		said = tool.Description + string(schema)
 	}
 	if said == "" {
-		t.Fatal("card_stencils is not among the tools")
+		t.Fatal("card_stencil_list is not among the tools")
 	}
 	if strings.Contains(said, "all of them") || strings.Contains(said, "Every stencil in the vault") {
 		t.Errorf("the list answers with at most fifty and says it answers with every one:\n%s", said)
@@ -684,7 +684,7 @@ func TestEditingTheFirstFieldWritesTheHeadingAgain(t *testing.T) {
 	session, v := connected(t, vault())
 
 	call[map[string]any](t, session, "card_edit", map[string]any{
-		"path": "Animals.md", "card": llama,
+		"path": "Animals.md", "mark": llama,
 		"values":      []map[string]string{{"field": "Name", "text": "Llama (Lama glama)"}},
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
 	})
@@ -709,7 +709,7 @@ func TestRenamingTheFirstFieldReachesTheDecks(t *testing.T) {
 
 	renamed := call[struct {
 		Cards int `json:"cards"`
-	}](t, session, "card_rename_field", map[string]any{
+	}](t, session, "card_field_rename", map[string]any{
 		"path": "Animal.md", "from": "Name", "to": "Species",
 	})
 	if renamed.Cards != 1 {

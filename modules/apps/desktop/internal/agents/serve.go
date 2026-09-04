@@ -175,8 +175,8 @@ func Claude(
 			Arguments: claudecode.Arguments{
 				About:   said.About,
 				Element: said.Inside,
-				Match:   said.Stood,
-				Text:    said.Becomes,
+				Match:   said.Match,
+				Text:    said.Text,
 			},
 		}
 	}

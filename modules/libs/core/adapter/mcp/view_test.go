@@ -113,7 +113,7 @@ func TestNoWindowMeansNoTool(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, tool := range listed.Tools {
-		if tool.Name == "note_focus" || tool.Name == "source_show" {
+		if tool.Name == "note_focus" || tool.Name == "source_focus" {
 			t.Fatalf("a headless vault serves %s, which needs somebody looking", tool.Name)
 		}
 	}
@@ -131,9 +131,9 @@ func TestShowPutsAPlaceInFrontOfThePerson(t *testing.T) {
 	session, looking := watched(t, library)
 
 	out := call[struct {
-		Shown bool   `json:"shown"`
-		Says  string `json:"says"`
-	}](t, session, "source_show", map[string]any{
+		Shown   bool   `json:"shown"`
+		Looking string `json:"looking"`
+	}](t, session, "source_focus", map[string]any{
 		"path": "library/A Book.epub", "start": 1200, "length": 80,
 	})
 
@@ -150,7 +150,7 @@ func TestShowRefusesAPathTheVaultDoesNotHold(t *testing.T) {
 	session, looking := watched(t, library)
 
 	res, err := session.CallTool(t.Context(), &sdk.CallToolParams{
-		Name:      "source_show",
+		Name:      "source_focus",
 		Arguments: map[string]any{"path": "library/Nowhere.epub", "start": 0, "length": 10},
 	})
 	if err != nil {

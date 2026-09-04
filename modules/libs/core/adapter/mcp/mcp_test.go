@@ -200,7 +200,7 @@ func TestTheVaultIsLocatedInTheInstructions(t *testing.T) {
 func TestHowABookIsAskedIsInTheInstructions(t *testing.T) {
 	session, _ := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	said := session.InitializeResult().Instructions
-	for _, rule := range []string{"source_show", "source_read", "own words", "numen:"} {
+	for _, rule := range []string{"source_focus", "source_read", "own words", "numen:"} {
 		if !strings.Contains(said, rule) {
 			t.Errorf("the instructions say nothing about %q:\n%s", rule, said)
 		}
@@ -222,13 +222,13 @@ func TestHowANoteIsNamedInAnAnswerIsInTheInstructions(t *testing.T) {
 func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 	session, _ := connected(t, nil)
 	exactly(t, serves(t, session), []string{
-		"note_search", "note_get", "note_read", "note_neighbourhood",
-		"note_create", "note_write", "note_edit", "note_rename", "note_move", "note_remove",
+		"note_search", "note_titles", "note_read", "note_resolve", "note_neighbourhood",
+		"note_create", "note_rewrite", "note_edit", "note_rename", "note_move", "note_remove",
 		"file_read",
 		"link_add", "link_update", "link_remove", "link_list",
-		"card_stencils", "card_read", "card_add", "card_edit", "card_remove",
-		"card_section_add", "card_deck_create", "card_stencil_create", "card_rename_field",
-		"vault_get", "vault_problems", "vault_named",
+		"card_stencil_list", "card_read", "card_add", "card_edit", "card_remove",
+		"card_section_add", "card_deck_create", "card_stencil_create", "card_field_rename",
+		"vault_get", "vault_problems",
 		"source_list", "source_read", "source_recognise", "source_transcribe",
 	})
 }
@@ -374,7 +374,7 @@ func TestGetSeparatesWhatIsThereFromWhatIsNot(t *testing.T) {
 	got := call[struct {
 		Notes   []mcp.Note `json:"notes"`
 		Missing []string   `json:"missing"`
-	}](t, session, "note_get", map[string]any{
+	}](t, session, "note_titles", map[string]any{
 		"paths": []string{"Entropy.md", "gone.md"},
 	})
 	if len(got.Notes) != 1 || got.Notes[0].Title != "Entropy" {
@@ -397,7 +397,7 @@ func TestReadingGivesBackWhatWritingWants(t *testing.T) {
 
 	// A write answers with what the note became, so an agent writing twice has
 	// what the second write needs.
-	first := call[wrote](t, session, "note_write", map[string]any{
+	first := call[wrote](t, session, "note_rewrite", map[string]any{
 		"path": "Entropy.md", "body": "# Entropy\n\nRewritten.\n",
 		"fingerprint": read.Notes[0].Fingerprint,
 	})
@@ -405,7 +405,7 @@ func TestReadingGivesBackWhatWritingWants(t *testing.T) {
 		t.Fatalf("the write did not answer with the file it made: %+v", first)
 	}
 
-	second := call[wrote](t, session, "note_write", map[string]any{
+	second := call[wrote](t, session, "note_rewrite", map[string]any{
 		"path": "Entropy.md", "body": "# Entropy\n\nAgain.\n",
 		"fingerprint": first.Fingerprint,
 	})
@@ -422,7 +422,7 @@ func TestReadingGivesBackWhatWritingWants(t *testing.T) {
 
 	// What the read gave is two writes behind, and a write presenting it is
 	// refused.
-	if got := failing(t, session, "note_write", map[string]any{
+	if got := failing(t, session, "note_rewrite", map[string]any{
 		"path": "Entropy.md", "body": "# Entropy\n\nOnce more.\n",
 		"fingerprint": read.Notes[0].Fingerprint,
 	}); !strings.Contains(got, "changed") {
@@ -430,7 +430,7 @@ func TestReadingGivesBackWhatWritingWants(t *testing.T) {
 	}
 }
 
-// wrote is what note_write answers with.
+// wrote is what note_rewrite answers with.
 type wrote struct {
 	Path        string `json:"path"`
 	Fingerprint string `json:"fingerprint"`
@@ -567,7 +567,7 @@ func TestRemovingIsReversible(t *testing.T) {
 	back := call[struct {
 		Notes   []mcp.Note `json:"notes"`
 		Missing []string   `json:"missing"`
-	}](t, session, "note_get", map[string]any{"paths": []string{"Entropy.md"}})
+	}](t, session, "note_titles", map[string]any{"paths": []string{"Entropy.md"}})
 	if len(back.Missing) != 1 {
 		t.Errorf("a removed note is still in the index: %+v", back)
 	}
@@ -606,7 +606,7 @@ func TestAskingForTooMuchIsRefusedRatherThanTrimmed(t *testing.T) {
 	for i := range paths {
 		paths[i] = "note.md"
 	}
-	if got := failing(t, session, "note_get", map[string]any{"paths": paths}); !strings.Contains(got, "50") {
+	if got := failing(t, session, "note_titles", map[string]any{"paths": paths}); !strings.Contains(got, "50") {
 		t.Errorf("want a refusal naming the limit, got %q", got)
 	}
 }
@@ -616,7 +616,7 @@ func TestAskingForTooMuchIsRefusedRatherThanTrimmed(t *testing.T) {
 func TestAPathOutsideTheVaultIsRefused(t *testing.T) {
 	session, _ := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
-	got := failing(t, session, "note_write", map[string]any{
+	got := failing(t, session, "note_rewrite", map[string]any{
 		"path": "../../escaped.md", "body": "no\n", "fingerprint": "0-0",
 	})
 	if !strings.Contains(got, "vault") {
@@ -632,7 +632,7 @@ func TestTwoNotesOfOneNameAreReported(t *testing.T) {
 
 	named := call[struct {
 		Paths []string `json:"paths"`
-	}](t, session, "vault_named", map[string]any{"name": "Entropy"})
+	}](t, session, "note_resolve", map[string]any{"name": "Entropy"})
 	if len(named.Paths) != 2 {
 		t.Errorf("want both notes, got %v", named.Paths)
 	}
@@ -647,7 +647,7 @@ func TestANoteWhoseNameCarriesDotsIsFoundByIt(t *testing.T) {
 
 	named := call[struct {
 		Paths []string `json:"paths"`
-	}](t, session, "vault_named", map[string]any{"name": lecture})
+	}](t, session, "note_resolve", map[string]any{"name": lecture})
 	if len(named.Paths) != 1 || named.Paths[0] != "notes/"+lecture+".md" {
 		t.Errorf("got %v", named.Paths)
 	}
@@ -721,7 +721,7 @@ func TestProblemsSayWhichCheckFoundThem(t *testing.T) {
 	}
 }
 
-// What note_read gives back is what note_write takes: an agent that reads,
+// What note_read gives back is what note_rewrite takes: an agent that reads,
 // edits and writes must not end up with the frontmatter inside the prose.
 func TestReadingGivesBackOnlyTheProse(t *testing.T) {
 	session, _ := connected(t, map[string]string{
@@ -737,7 +737,7 @@ func TestReadingGivesBackOnlyTheProse(t *testing.T) {
 
 	// And a caller that hands back a whole note is told, rather than quietly
 	// given a note with two frontmatter blocks in it.
-	got := failing(t, session, "note_write", map[string]any{
+	got := failing(t, session, "note_rewrite", map[string]any{
 		"path":        "Entropy.md",
 		"body":        "---\nid: 01J8F3K2M9QRSTVWXYZ012\n---\n# Entropy\n\nMore.\n",
 		"fingerprint": fingerprint(t, session, "Entropy.md"),

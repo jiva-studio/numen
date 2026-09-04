@@ -162,7 +162,7 @@ func addVaultRename(server *sdk.Server, core Core) {
 			"filesystem gives it and nothing on disk moves. A name another vault on the " +
 			"list has is refused, so the names in `vault_list` name one vault each.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Vault string `json:"vault" jsonschema:"the vault to rename: its name, its folder, or the identity vault_list gives it"`
+		Vault string `json:"vault" jsonschema:"the vault to rename, addressed by its name, its folder, or the identity vault_list gives it"`
 		Name  string `json:"name" jsonschema:"what it is called from now on"`
 	}) (*sdk.CallToolResult, struct {
 		ID     string `json:"id"`
@@ -201,7 +201,7 @@ func addVaultForget(server *sdk.Server, core Core) {
 			"a folder: taking a person's notes off their disk is theirs to ask for, in " +
 			"front of them.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Vault string `json:"vault" jsonschema:"the vault to forget: its name, its folder, or the identity vault_list gives it"`
+		Vault string `json:"vault" jsonschema:"the vault to forget, addressed by its name, its folder, or the identity vault_list gives it"`
 	}) (*sdk.CallToolResult, struct {
 		Forgotten bool   `json:"forgotten"`
 		Folder    string `json:"folder" jsonschema:"where the folder still is; vault_add on it brings the vault back"`
