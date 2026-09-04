@@ -141,7 +141,7 @@ func (Owed) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{1}
 }
 
-type TasksRequest struct {
+type WatchTasksRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The window this is asked of. A question naming another window than the one
 	// answering it is not answered.
@@ -150,20 +150,20 @@ type TasksRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *TasksRequest) Reset() {
-	*x = TasksRequest{}
+func (x *WatchTasksRequest) Reset() {
+	*x = WatchTasksRequest{}
 	mi := &file_numen_v1_window_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *TasksRequest) String() string {
+func (x *WatchTasksRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TasksRequest) ProtoMessage() {}
+func (*WatchTasksRequest) ProtoMessage() {}
 
-func (x *TasksRequest) ProtoReflect() protoreflect.Message {
+func (x *WatchTasksRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_window_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -175,19 +175,19 @@ func (x *TasksRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TasksRequest.ProtoReflect.Descriptor instead.
-func (*TasksRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use WatchTasksRequest.ProtoReflect.Descriptor instead.
+func (*WatchTasksRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *TasksRequest) GetWindow() string {
+func (x *WatchTasksRequest) GetWindow() string {
 	if x != nil {
 		return x.Window
 	}
 	return ""
 }
 
-type TasksResponse struct {
+type WatchTasksResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Everything being done now, in the order the work began. The list arrives
 	// whole, because what is being done is a list and not a set of differences to
@@ -197,20 +197,20 @@ type TasksResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *TasksResponse) Reset() {
-	*x = TasksResponse{}
+func (x *WatchTasksResponse) Reset() {
+	*x = WatchTasksResponse{}
 	mi := &file_numen_v1_window_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *TasksResponse) String() string {
+func (x *WatchTasksResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TasksResponse) ProtoMessage() {}
+func (*WatchTasksResponse) ProtoMessage() {}
 
-func (x *TasksResponse) ProtoReflect() protoreflect.Message {
+func (x *WatchTasksResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_window_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -222,12 +222,12 @@ func (x *TasksResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TasksResponse.ProtoReflect.Descriptor instead.
-func (*TasksResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use WatchTasksResponse.ProtoReflect.Descriptor instead.
+func (*WatchTasksResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *TasksResponse) GetTasks() []*Task {
+func (x *WatchTasksResponse) GetTasks() []*Task {
 	if x != nil {
 		return x.Tasks
 	}
@@ -351,7 +351,7 @@ func (x *Task) GetCounting() Counting {
 	return Counting_COUNTING_UNSPECIFIED
 }
 
-type QuittingRequest struct {
+type WatchQuitRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The window this is asked of. A question naming another window than the one
 	// answering it is not answered.
@@ -360,20 +360,20 @@ type QuittingRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *QuittingRequest) Reset() {
-	*x = QuittingRequest{}
+func (x *WatchQuitRequest) Reset() {
+	*x = WatchQuitRequest{}
 	mi := &file_numen_v1_window_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *QuittingRequest) String() string {
+func (x *WatchQuitRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QuittingRequest) ProtoMessage() {}
+func (*WatchQuitRequest) ProtoMessage() {}
 
-func (x *QuittingRequest) ProtoReflect() protoreflect.Message {
+func (x *WatchQuitRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_window_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -385,21 +385,21 @@ func (x *QuittingRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use QuittingRequest.ProtoReflect.Descriptor instead.
-func (*QuittingRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use WatchQuitRequest.ProtoReflect.Descriptor instead.
+func (*WatchQuitRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *QuittingRequest) GetWindow() string {
+func (x *WatchQuitRequest) GetWindow() string {
 	if x != nil {
 		return x.Window
 	}
 	return ""
 }
 
-type QuittingResponse struct {
+type WatchQuitResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// What this caller answers Flushed with. The stream opens by saying it, so
+	// What this caller answers ReportFlush with. The stream opens by saying it, so
 	// a caller knows it is listening before anything is asked of it.
 	Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	// Set when the window is going and this caller's unwritten work has to land.
@@ -408,20 +408,20 @@ type QuittingResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *QuittingResponse) Reset() {
-	*x = QuittingResponse{}
+func (x *WatchQuitResponse) Reset() {
+	*x = WatchQuitResponse{}
 	mi := &file_numen_v1_window_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *QuittingResponse) String() string {
+func (x *WatchQuitResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QuittingResponse) ProtoMessage() {}
+func (*WatchQuitResponse) ProtoMessage() {}
 
-func (x *QuittingResponse) ProtoReflect() protoreflect.Message {
+func (x *WatchQuitResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_window_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -433,26 +433,26 @@ func (x *QuittingResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use QuittingResponse.ProtoReflect.Descriptor instead.
-func (*QuittingResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use WatchQuitResponse.ProtoReflect.Descriptor instead.
+func (*WatchQuitResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *QuittingResponse) GetToken() string {
+func (x *WatchQuitResponse) GetToken() string {
 	if x != nil {
 		return x.Token
 	}
 	return ""
 }
 
-func (x *QuittingResponse) GetFlush() bool {
+func (x *WatchQuitResponse) GetFlush() bool {
 	if x != nil {
 		return x.Flush
 	}
 	return false
 }
 
-type FlushedRequest struct {
+type ReportFlushRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The window this is asked of. A question naming another window than the one
 	// answering it is not answered.
@@ -466,20 +466,20 @@ type FlushedRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *FlushedRequest) Reset() {
-	*x = FlushedRequest{}
+func (x *ReportFlushRequest) Reset() {
+	*x = ReportFlushRequest{}
 	mi := &file_numen_v1_window_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *FlushedRequest) String() string {
+func (x *ReportFlushRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*FlushedRequest) ProtoMessage() {}
+func (*ReportFlushRequest) ProtoMessage() {}
 
-func (x *FlushedRequest) ProtoReflect() protoreflect.Message {
+func (x *ReportFlushRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_window_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -491,52 +491,52 @@ func (x *FlushedRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use FlushedRequest.ProtoReflect.Descriptor instead.
-func (*FlushedRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReportFlushRequest.ProtoReflect.Descriptor instead.
+func (*ReportFlushRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *FlushedRequest) GetWindow() string {
+func (x *ReportFlushRequest) GetWindow() string {
 	if x != nil {
 		return x.Window
 	}
 	return ""
 }
 
-func (x *FlushedRequest) GetToken() string {
+func (x *ReportFlushRequest) GetToken() string {
 	if x != nil {
 		return x.Token
 	}
 	return ""
 }
 
-func (x *FlushedRequest) GetOwed() Owed {
+func (x *ReportFlushRequest) GetOwed() Owed {
 	if x != nil {
 		return x.Owed
 	}
 	return Owed_OWED_UNSPECIFIED
 }
 
-type FlushedResponse struct {
+type ReportFlushResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *FlushedResponse) Reset() {
-	*x = FlushedResponse{}
+func (x *ReportFlushResponse) Reset() {
+	*x = ReportFlushResponse{}
 	mi := &file_numen_v1_window_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *FlushedResponse) String() string {
+func (x *ReportFlushResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*FlushedResponse) ProtoMessage() {}
+func (*ReportFlushResponse) ProtoMessage() {}
 
-func (x *FlushedResponse) ProtoReflect() protoreflect.Message {
+func (x *ReportFlushResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_window_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -548,12 +548,12 @@ func (x *FlushedResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use FlushedResponse.ProtoReflect.Descriptor instead.
-func (*FlushedResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReportFlushResponse.ProtoReflect.Descriptor instead.
+func (*ReportFlushResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{6}
 }
 
-type ShowingRequest struct {
+type GetShownVaultRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The window this is asked of. A question naming another window than the one
 	// answering it is not answered.
@@ -562,20 +562,20 @@ type ShowingRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ShowingRequest) Reset() {
-	*x = ShowingRequest{}
+func (x *GetShownVaultRequest) Reset() {
+	*x = GetShownVaultRequest{}
 	mi := &file_numen_v1_window_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ShowingRequest) String() string {
+func (x *GetShownVaultRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ShowingRequest) ProtoMessage() {}
+func (*GetShownVaultRequest) ProtoMessage() {}
 
-func (x *ShowingRequest) ProtoReflect() protoreflect.Message {
+func (x *GetShownVaultRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_window_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -587,19 +587,19 @@ func (x *ShowingRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ShowingRequest.ProtoReflect.Descriptor instead.
-func (*ShowingRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetShownVaultRequest.ProtoReflect.Descriptor instead.
+func (*GetShownVaultRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *ShowingRequest) GetWindow() string {
+func (x *GetShownVaultRequest) GetWindow() string {
 	if x != nil {
 		return x.Window
 	}
 	return ""
 }
 
-type ShowingResponse struct {
+type GetShownVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The identity the list of vaults holds that vault under. Empty in a window
 	// showing none, and in one that is open on the installation rather than on
@@ -609,20 +609,20 @@ type ShowingResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ShowingResponse) Reset() {
-	*x = ShowingResponse{}
+func (x *GetShownVaultResponse) Reset() {
+	*x = GetShownVaultResponse{}
 	mi := &file_numen_v1_window_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ShowingResponse) String() string {
+func (x *GetShownVaultResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ShowingResponse) ProtoMessage() {}
+func (*GetShownVaultResponse) ProtoMessage() {}
 
-func (x *ShowingResponse) ProtoReflect() protoreflect.Message {
+func (x *GetShownVaultResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_window_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -634,12 +634,12 @@ func (x *ShowingResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ShowingResponse.ProtoReflect.Descriptor instead.
-func (*ShowingResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetShownVaultResponse.ProtoReflect.Descriptor instead.
+func (*GetShownVaultResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *ShowingResponse) GetVault() string {
+func (x *GetShownVaultResponse) GetVault() string {
 	if x != nil {
 		return x.Vault
 	}
@@ -650,10 +650,10 @@ var File_numen_v1_window_proto protoreflect.FileDescriptor
 
 const file_numen_v1_window_proto_rawDesc = "" +
 	"\n" +
-	"\x15numen/v1/window.proto\x12\bnumen.v1\"&\n" +
-	"\fTasksRequest\x12\x16\n" +
-	"\x06window\x18\x01 \x01(\tR\x06window\"5\n" +
-	"\rTasksResponse\x12$\n" +
+	"\x15numen/v1/window.proto\x12\bnumen.v1\"+\n" +
+	"\x11WatchTasksRequest\x12\x16\n" +
+	"\x06window\x18\x01 \x01(\tR\x06window\":\n" +
+	"\x12WatchTasksResponse\x12$\n" +
 	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\xca\x01\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
@@ -663,20 +663,20 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x05total\x18\x05 \x01(\x03R\x05total\x12\x16\n" +
 	"\x06failed\x18\x06 \x01(\tR\x06failed\x12\x14\n" +
 	"\x05asked\x18\a \x01(\bR\x05asked\x12.\n" +
-	"\bcounting\x18\b \x01(\x0e2\x12.numen.v1.CountingR\bcounting\")\n" +
-	"\x0fQuittingRequest\x12\x16\n" +
-	"\x06window\x18\x01 \x01(\tR\x06window\">\n" +
-	"\x10QuittingResponse\x12\x14\n" +
+	"\bcounting\x18\b \x01(\x0e2\x12.numen.v1.CountingR\bcounting\"*\n" +
+	"\x10WatchQuitRequest\x12\x16\n" +
+	"\x06window\x18\x01 \x01(\tR\x06window\"?\n" +
+	"\x11WatchQuitResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x14\n" +
-	"\x05flush\x18\x02 \x01(\bR\x05flush\"b\n" +
-	"\x0eFlushedRequest\x12\x16\n" +
+	"\x05flush\x18\x02 \x01(\bR\x05flush\"f\n" +
+	"\x12ReportFlushRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\x12\x14\n" +
 	"\x05token\x18\x02 \x01(\tR\x05token\x12\"\n" +
-	"\x04owed\x18\x03 \x01(\x0e2\x0e.numen.v1.OwedR\x04owed\"\x11\n" +
-	"\x0fFlushedResponse\"(\n" +
-	"\x0eShowingRequest\x12\x16\n" +
-	"\x06window\x18\x01 \x01(\tR\x06window\"'\n" +
-	"\x0fShowingResponse\x12\x14\n" +
+	"\x04owed\x18\x03 \x01(\x0e2\x0e.numen.v1.OwedR\x04owed\"\x15\n" +
+	"\x13ReportFlushResponse\".\n" +
+	"\x14GetShownVaultRequest\x12\x16\n" +
+	"\x06window\x18\x01 \x01(\tR\x06window\"-\n" +
+	"\x15GetShownVaultResponse\x12\x14\n" +
 	"\x05vault\x18\x01 \x01(\tR\x05vault*c\n" +
 	"\bCounting\x12\x18\n" +
 	"\x14COUNTING_UNSPECIFIED\x10\x00\x12\x13\n" +
@@ -687,12 +687,13 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x10OWED_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fOWED_NOTHING\x10\x03\x12\x10\n" +
 	"\fOWED_WRITTEN\x10\x01\x12\x0f\n" +
-	"\vOWED_ASKING\x10\x022\x90\x02\n" +
-	"\rWindowService\x12:\n" +
-	"\x05Tasks\x12\x16.numen.v1.TasksRequest\x1a\x17.numen.v1.TasksResponse0\x01\x12C\n" +
-	"\bQuitting\x12\x19.numen.v1.QuittingRequest\x1a\x1a.numen.v1.QuittingResponse0\x01\x12>\n" +
-	"\aFlushed\x12\x18.numen.v1.FlushedRequest\x1a\x19.numen.v1.FlushedResponse\x12>\n" +
-	"\aShowing\x12\x18.numen.v1.ShowingRequest\x1a\x19.numen.v1.ShowingResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\vOWED_ASKING\x10\x022\xc0\x02\n" +
+	"\rWindowService\x12I\n" +
+	"\n" +
+	"WatchTasks\x12\x1b.numen.v1.WatchTasksRequest\x1a\x1c.numen.v1.WatchTasksResponse0\x01\x12F\n" +
+	"\tWatchQuit\x12\x1a.numen.v1.WatchQuitRequest\x1a\x1b.numen.v1.WatchQuitResponse0\x01\x12J\n" +
+	"\vReportFlush\x12\x1c.numen.v1.ReportFlushRequest\x1a\x1d.numen.v1.ReportFlushResponse\x12P\n" +
+	"\rGetShownVault\x12\x1e.numen.v1.GetShownVaultRequest\x1a\x1f.numen.v1.GetShownVaultResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_window_proto_rawDescOnce sync.Once
@@ -709,30 +710,30 @@ func file_numen_v1_window_proto_rawDescGZIP() []byte {
 var file_numen_v1_window_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_numen_v1_window_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_numen_v1_window_proto_goTypes = []any{
-	(Counting)(0),            // 0: numen.v1.Counting
-	(Owed)(0),                // 1: numen.v1.Owed
-	(*TasksRequest)(nil),     // 2: numen.v1.TasksRequest
-	(*TasksResponse)(nil),    // 3: numen.v1.TasksResponse
-	(*Task)(nil),             // 4: numen.v1.Task
-	(*QuittingRequest)(nil),  // 5: numen.v1.QuittingRequest
-	(*QuittingResponse)(nil), // 6: numen.v1.QuittingResponse
-	(*FlushedRequest)(nil),   // 7: numen.v1.FlushedRequest
-	(*FlushedResponse)(nil),  // 8: numen.v1.FlushedResponse
-	(*ShowingRequest)(nil),   // 9: numen.v1.ShowingRequest
-	(*ShowingResponse)(nil),  // 10: numen.v1.ShowingResponse
+	(Counting)(0),                 // 0: numen.v1.Counting
+	(Owed)(0),                     // 1: numen.v1.Owed
+	(*WatchTasksRequest)(nil),     // 2: numen.v1.WatchTasksRequest
+	(*WatchTasksResponse)(nil),    // 3: numen.v1.WatchTasksResponse
+	(*Task)(nil),                  // 4: numen.v1.Task
+	(*WatchQuitRequest)(nil),      // 5: numen.v1.WatchQuitRequest
+	(*WatchQuitResponse)(nil),     // 6: numen.v1.WatchQuitResponse
+	(*ReportFlushRequest)(nil),    // 7: numen.v1.ReportFlushRequest
+	(*ReportFlushResponse)(nil),   // 8: numen.v1.ReportFlushResponse
+	(*GetShownVaultRequest)(nil),  // 9: numen.v1.GetShownVaultRequest
+	(*GetShownVaultResponse)(nil), // 10: numen.v1.GetShownVaultResponse
 }
 var file_numen_v1_window_proto_depIdxs = []int32{
-	4,  // 0: numen.v1.TasksResponse.tasks:type_name -> numen.v1.Task
+	4,  // 0: numen.v1.WatchTasksResponse.tasks:type_name -> numen.v1.Task
 	0,  // 1: numen.v1.Task.counting:type_name -> numen.v1.Counting
-	1,  // 2: numen.v1.FlushedRequest.owed:type_name -> numen.v1.Owed
-	2,  // 3: numen.v1.WindowService.Tasks:input_type -> numen.v1.TasksRequest
-	5,  // 4: numen.v1.WindowService.Quitting:input_type -> numen.v1.QuittingRequest
-	7,  // 5: numen.v1.WindowService.Flushed:input_type -> numen.v1.FlushedRequest
-	9,  // 6: numen.v1.WindowService.Showing:input_type -> numen.v1.ShowingRequest
-	3,  // 7: numen.v1.WindowService.Tasks:output_type -> numen.v1.TasksResponse
-	6,  // 8: numen.v1.WindowService.Quitting:output_type -> numen.v1.QuittingResponse
-	8,  // 9: numen.v1.WindowService.Flushed:output_type -> numen.v1.FlushedResponse
-	10, // 10: numen.v1.WindowService.Showing:output_type -> numen.v1.ShowingResponse
+	1,  // 2: numen.v1.ReportFlushRequest.owed:type_name -> numen.v1.Owed
+	2,  // 3: numen.v1.WindowService.WatchTasks:input_type -> numen.v1.WatchTasksRequest
+	5,  // 4: numen.v1.WindowService.WatchQuit:input_type -> numen.v1.WatchQuitRequest
+	7,  // 5: numen.v1.WindowService.ReportFlush:input_type -> numen.v1.ReportFlushRequest
+	9,  // 6: numen.v1.WindowService.GetShownVault:input_type -> numen.v1.GetShownVaultRequest
+	3,  // 7: numen.v1.WindowService.WatchTasks:output_type -> numen.v1.WatchTasksResponse
+	6,  // 8: numen.v1.WindowService.WatchQuit:output_type -> numen.v1.WatchQuitResponse
+	8,  // 9: numen.v1.WindowService.ReportFlush:output_type -> numen.v1.ReportFlushResponse
+	10, // 10: numen.v1.WindowService.GetShownVault:output_type -> numen.v1.GetShownVaultResponse
 	7,  // [7:11] is the sub-list for method output_type
 	3,  // [3:7] is the sub-list for method input_type
 	3,  // [3:3] is the sub-list for extension type_name

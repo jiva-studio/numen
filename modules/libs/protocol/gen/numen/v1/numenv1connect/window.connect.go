@@ -39,20 +39,23 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// WindowServiceTasksProcedure is the fully-qualified name of the WindowService's Tasks RPC.
-	WindowServiceTasksProcedure = "/numen.v1.WindowService/Tasks"
-	// WindowServiceQuittingProcedure is the fully-qualified name of the WindowService's Quitting RPC.
-	WindowServiceQuittingProcedure = "/numen.v1.WindowService/Quitting"
-	// WindowServiceFlushedProcedure is the fully-qualified name of the WindowService's Flushed RPC.
-	WindowServiceFlushedProcedure = "/numen.v1.WindowService/Flushed"
-	// WindowServiceShowingProcedure is the fully-qualified name of the WindowService's Showing RPC.
-	WindowServiceShowingProcedure = "/numen.v1.WindowService/Showing"
+	// WindowServiceWatchTasksProcedure is the fully-qualified name of the WindowService's WatchTasks
+	// RPC.
+	WindowServiceWatchTasksProcedure = "/numen.v1.WindowService/WatchTasks"
+	// WindowServiceWatchQuitProcedure is the fully-qualified name of the WindowService's WatchQuit RPC.
+	WindowServiceWatchQuitProcedure = "/numen.v1.WindowService/WatchQuit"
+	// WindowServiceReportFlushProcedure is the fully-qualified name of the WindowService's ReportFlush
+	// RPC.
+	WindowServiceReportFlushProcedure = "/numen.v1.WindowService/ReportFlush"
+	// WindowServiceGetShownVaultProcedure is the fully-qualified name of the WindowService's
+	// GetShownVault RPC.
+	WindowServiceGetShownVaultProcedure = "/numen.v1.WindowService/GetShownVault"
 )
 
 // WindowServiceClient is a client for the numen.v1.WindowService service.
 type WindowServiceClient interface {
-	// Tasks reports everything being done behind the window, for as long as the
-	// caller listens: what it is, what it is on, and how far it has got.
+	// WatchTasks reports everything being done behind the window, for as long as
+	// the caller listens: what it is, what it is on, and how far it has got.
 	//
 	// The whole list arrives every time any of it changes, and the first arrives
 	// at once, so a window that opened while work was running is told about it.
@@ -60,19 +63,19 @@ type WindowServiceClient interface {
 	// being done is known here the moment it changes and work can begin without
 	// the window asking for it — an agent is told to read a document, and this is
 	// where the person watching sees it happen.
-	Tasks(context.Context, *connect.Request[v1.TasksRequest]) (*connect.ServerStreamForClient[v1.TasksResponse], error)
-	// Quitting says the window is going, for as long as the caller listens. A
+	WatchTasks(context.Context, *connect.Request[v1.WatchTasksRequest]) (*connect.ServerStreamForClient[v1.WatchTasksResponse], error)
+	// WatchQuit says the window is going, for as long as the caller listens. A
 	// caller holding work that is only in its own memory writes it now and
-	// answers with Flushed.
-	Quitting(context.Context, *connect.Request[v1.QuittingRequest]) (*connect.ServerStreamForClient[v1.QuittingResponse], error)
-	// Flushed says what a caller has left. Nothing left lets the window go; work
-	// a person is being asked about keeps it open. A caller that never says it is
-	// waited for and then left behind.
-	Flushed(context.Context, *connect.Request[v1.FlushedRequest]) (*connect.Response[v1.FlushedResponse], error)
-	// Showing is which vault this window has in front of the person. Two windows
-	// are open on one installation and each shows what it shows, so it is the
-	// window that is asked and not the list of vaults.
-	Showing(context.Context, *connect.Request[v1.ShowingRequest]) (*connect.Response[v1.ShowingResponse], error)
+	// answers with ReportFlush.
+	WatchQuit(context.Context, *connect.Request[v1.WatchQuitRequest]) (*connect.ServerStreamForClient[v1.WatchQuitResponse], error)
+	// ReportFlush says what a caller has left. Nothing left lets the window go;
+	// work a person is being asked about keeps it open. A caller that never says
+	// it is waited for and then left behind.
+	ReportFlush(context.Context, *connect.Request[v1.ReportFlushRequest]) (*connect.Response[v1.ReportFlushResponse], error)
+	// GetShownVault is which vault this window has in front of the person. Two
+	// windows are open on one installation and each shows what it shows, so it is
+	// the window that is asked and not the list of vaults.
+	GetShownVault(context.Context, *connect.Request[v1.GetShownVaultRequest]) (*connect.Response[v1.GetShownVaultResponse], error)
 }
 
 // NewWindowServiceClient constructs a client for the numen.v1.WindowService service. By default, it
@@ -86,28 +89,28 @@ func NewWindowServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 	baseURL = strings.TrimRight(baseURL, "/")
 	windowServiceMethods := v1.File_numen_v1_window_proto.Services().ByName("WindowService").Methods()
 	return &windowServiceClient{
-		tasks: connect.NewClient[v1.TasksRequest, v1.TasksResponse](
+		watchTasks: connect.NewClient[v1.WatchTasksRequest, v1.WatchTasksResponse](
 			httpClient,
-			baseURL+WindowServiceTasksProcedure,
-			connect.WithSchema(windowServiceMethods.ByName("Tasks")),
+			baseURL+WindowServiceWatchTasksProcedure,
+			connect.WithSchema(windowServiceMethods.ByName("WatchTasks")),
 			connect.WithClientOptions(opts...),
 		),
-		quitting: connect.NewClient[v1.QuittingRequest, v1.QuittingResponse](
+		watchQuit: connect.NewClient[v1.WatchQuitRequest, v1.WatchQuitResponse](
 			httpClient,
-			baseURL+WindowServiceQuittingProcedure,
-			connect.WithSchema(windowServiceMethods.ByName("Quitting")),
+			baseURL+WindowServiceWatchQuitProcedure,
+			connect.WithSchema(windowServiceMethods.ByName("WatchQuit")),
 			connect.WithClientOptions(opts...),
 		),
-		flushed: connect.NewClient[v1.FlushedRequest, v1.FlushedResponse](
+		reportFlush: connect.NewClient[v1.ReportFlushRequest, v1.ReportFlushResponse](
 			httpClient,
-			baseURL+WindowServiceFlushedProcedure,
-			connect.WithSchema(windowServiceMethods.ByName("Flushed")),
+			baseURL+WindowServiceReportFlushProcedure,
+			connect.WithSchema(windowServiceMethods.ByName("ReportFlush")),
 			connect.WithClientOptions(opts...),
 		),
-		showing: connect.NewClient[v1.ShowingRequest, v1.ShowingResponse](
+		getShownVault: connect.NewClient[v1.GetShownVaultRequest, v1.GetShownVaultResponse](
 			httpClient,
-			baseURL+WindowServiceShowingProcedure,
-			connect.WithSchema(windowServiceMethods.ByName("Showing")),
+			baseURL+WindowServiceGetShownVaultProcedure,
+			connect.WithSchema(windowServiceMethods.ByName("GetShownVault")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -115,36 +118,36 @@ func NewWindowServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 
 // windowServiceClient implements WindowServiceClient.
 type windowServiceClient struct {
-	tasks    *connect.Client[v1.TasksRequest, v1.TasksResponse]
-	quitting *connect.Client[v1.QuittingRequest, v1.QuittingResponse]
-	flushed  *connect.Client[v1.FlushedRequest, v1.FlushedResponse]
-	showing  *connect.Client[v1.ShowingRequest, v1.ShowingResponse]
+	watchTasks    *connect.Client[v1.WatchTasksRequest, v1.WatchTasksResponse]
+	watchQuit     *connect.Client[v1.WatchQuitRequest, v1.WatchQuitResponse]
+	reportFlush   *connect.Client[v1.ReportFlushRequest, v1.ReportFlushResponse]
+	getShownVault *connect.Client[v1.GetShownVaultRequest, v1.GetShownVaultResponse]
 }
 
-// Tasks calls numen.v1.WindowService.Tasks.
-func (c *windowServiceClient) Tasks(ctx context.Context, req *connect.Request[v1.TasksRequest]) (*connect.ServerStreamForClient[v1.TasksResponse], error) {
-	return c.tasks.CallServerStream(ctx, req)
+// WatchTasks calls numen.v1.WindowService.WatchTasks.
+func (c *windowServiceClient) WatchTasks(ctx context.Context, req *connect.Request[v1.WatchTasksRequest]) (*connect.ServerStreamForClient[v1.WatchTasksResponse], error) {
+	return c.watchTasks.CallServerStream(ctx, req)
 }
 
-// Quitting calls numen.v1.WindowService.Quitting.
-func (c *windowServiceClient) Quitting(ctx context.Context, req *connect.Request[v1.QuittingRequest]) (*connect.ServerStreamForClient[v1.QuittingResponse], error) {
-	return c.quitting.CallServerStream(ctx, req)
+// WatchQuit calls numen.v1.WindowService.WatchQuit.
+func (c *windowServiceClient) WatchQuit(ctx context.Context, req *connect.Request[v1.WatchQuitRequest]) (*connect.ServerStreamForClient[v1.WatchQuitResponse], error) {
+	return c.watchQuit.CallServerStream(ctx, req)
 }
 
-// Flushed calls numen.v1.WindowService.Flushed.
-func (c *windowServiceClient) Flushed(ctx context.Context, req *connect.Request[v1.FlushedRequest]) (*connect.Response[v1.FlushedResponse], error) {
-	return c.flushed.CallUnary(ctx, req)
+// ReportFlush calls numen.v1.WindowService.ReportFlush.
+func (c *windowServiceClient) ReportFlush(ctx context.Context, req *connect.Request[v1.ReportFlushRequest]) (*connect.Response[v1.ReportFlushResponse], error) {
+	return c.reportFlush.CallUnary(ctx, req)
 }
 
-// Showing calls numen.v1.WindowService.Showing.
-func (c *windowServiceClient) Showing(ctx context.Context, req *connect.Request[v1.ShowingRequest]) (*connect.Response[v1.ShowingResponse], error) {
-	return c.showing.CallUnary(ctx, req)
+// GetShownVault calls numen.v1.WindowService.GetShownVault.
+func (c *windowServiceClient) GetShownVault(ctx context.Context, req *connect.Request[v1.GetShownVaultRequest]) (*connect.Response[v1.GetShownVaultResponse], error) {
+	return c.getShownVault.CallUnary(ctx, req)
 }
 
 // WindowServiceHandler is an implementation of the numen.v1.WindowService service.
 type WindowServiceHandler interface {
-	// Tasks reports everything being done behind the window, for as long as the
-	// caller listens: what it is, what it is on, and how far it has got.
+	// WatchTasks reports everything being done behind the window, for as long as
+	// the caller listens: what it is, what it is on, and how far it has got.
 	//
 	// The whole list arrives every time any of it changes, and the first arrives
 	// at once, so a window that opened while work was running is told about it.
@@ -152,19 +155,19 @@ type WindowServiceHandler interface {
 	// being done is known here the moment it changes and work can begin without
 	// the window asking for it — an agent is told to read a document, and this is
 	// where the person watching sees it happen.
-	Tasks(context.Context, *connect.Request[v1.TasksRequest], *connect.ServerStream[v1.TasksResponse]) error
-	// Quitting says the window is going, for as long as the caller listens. A
+	WatchTasks(context.Context, *connect.Request[v1.WatchTasksRequest], *connect.ServerStream[v1.WatchTasksResponse]) error
+	// WatchQuit says the window is going, for as long as the caller listens. A
 	// caller holding work that is only in its own memory writes it now and
-	// answers with Flushed.
-	Quitting(context.Context, *connect.Request[v1.QuittingRequest], *connect.ServerStream[v1.QuittingResponse]) error
-	// Flushed says what a caller has left. Nothing left lets the window go; work
-	// a person is being asked about keeps it open. A caller that never says it is
-	// waited for and then left behind.
-	Flushed(context.Context, *connect.Request[v1.FlushedRequest]) (*connect.Response[v1.FlushedResponse], error)
-	// Showing is which vault this window has in front of the person. Two windows
-	// are open on one installation and each shows what it shows, so it is the
-	// window that is asked and not the list of vaults.
-	Showing(context.Context, *connect.Request[v1.ShowingRequest]) (*connect.Response[v1.ShowingResponse], error)
+	// answers with ReportFlush.
+	WatchQuit(context.Context, *connect.Request[v1.WatchQuitRequest], *connect.ServerStream[v1.WatchQuitResponse]) error
+	// ReportFlush says what a caller has left. Nothing left lets the window go;
+	// work a person is being asked about keeps it open. A caller that never says
+	// it is waited for and then left behind.
+	ReportFlush(context.Context, *connect.Request[v1.ReportFlushRequest]) (*connect.Response[v1.ReportFlushResponse], error)
+	// GetShownVault is which vault this window has in front of the person. Two
+	// windows are open on one installation and each shows what it shows, so it is
+	// the window that is asked and not the list of vaults.
+	GetShownVault(context.Context, *connect.Request[v1.GetShownVaultRequest]) (*connect.Response[v1.GetShownVaultResponse], error)
 }
 
 // NewWindowServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -174,40 +177,40 @@ type WindowServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewWindowServiceHandler(svc WindowServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	windowServiceMethods := v1.File_numen_v1_window_proto.Services().ByName("WindowService").Methods()
-	windowServiceTasksHandler := connect.NewServerStreamHandler(
-		WindowServiceTasksProcedure,
-		svc.Tasks,
-		connect.WithSchema(windowServiceMethods.ByName("Tasks")),
+	windowServiceWatchTasksHandler := connect.NewServerStreamHandler(
+		WindowServiceWatchTasksProcedure,
+		svc.WatchTasks,
+		connect.WithSchema(windowServiceMethods.ByName("WatchTasks")),
 		connect.WithHandlerOptions(opts...),
 	)
-	windowServiceQuittingHandler := connect.NewServerStreamHandler(
-		WindowServiceQuittingProcedure,
-		svc.Quitting,
-		connect.WithSchema(windowServiceMethods.ByName("Quitting")),
+	windowServiceWatchQuitHandler := connect.NewServerStreamHandler(
+		WindowServiceWatchQuitProcedure,
+		svc.WatchQuit,
+		connect.WithSchema(windowServiceMethods.ByName("WatchQuit")),
 		connect.WithHandlerOptions(opts...),
 	)
-	windowServiceFlushedHandler := connect.NewUnaryHandler(
-		WindowServiceFlushedProcedure,
-		svc.Flushed,
-		connect.WithSchema(windowServiceMethods.ByName("Flushed")),
+	windowServiceReportFlushHandler := connect.NewUnaryHandler(
+		WindowServiceReportFlushProcedure,
+		svc.ReportFlush,
+		connect.WithSchema(windowServiceMethods.ByName("ReportFlush")),
 		connect.WithHandlerOptions(opts...),
 	)
-	windowServiceShowingHandler := connect.NewUnaryHandler(
-		WindowServiceShowingProcedure,
-		svc.Showing,
-		connect.WithSchema(windowServiceMethods.ByName("Showing")),
+	windowServiceGetShownVaultHandler := connect.NewUnaryHandler(
+		WindowServiceGetShownVaultProcedure,
+		svc.GetShownVault,
+		connect.WithSchema(windowServiceMethods.ByName("GetShownVault")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/numen.v1.WindowService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case WindowServiceTasksProcedure:
-			windowServiceTasksHandler.ServeHTTP(w, r)
-		case WindowServiceQuittingProcedure:
-			windowServiceQuittingHandler.ServeHTTP(w, r)
-		case WindowServiceFlushedProcedure:
-			windowServiceFlushedHandler.ServeHTTP(w, r)
-		case WindowServiceShowingProcedure:
-			windowServiceShowingHandler.ServeHTTP(w, r)
+		case WindowServiceWatchTasksProcedure:
+			windowServiceWatchTasksHandler.ServeHTTP(w, r)
+		case WindowServiceWatchQuitProcedure:
+			windowServiceWatchQuitHandler.ServeHTTP(w, r)
+		case WindowServiceReportFlushProcedure:
+			windowServiceReportFlushHandler.ServeHTTP(w, r)
+		case WindowServiceGetShownVaultProcedure:
+			windowServiceGetShownVaultHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -217,18 +220,18 @@ func NewWindowServiceHandler(svc WindowServiceHandler, opts ...connect.HandlerOp
 // UnimplementedWindowServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedWindowServiceHandler struct{}
 
-func (UnimplementedWindowServiceHandler) Tasks(context.Context, *connect.Request[v1.TasksRequest], *connect.ServerStream[v1.TasksResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.Tasks is not implemented"))
+func (UnimplementedWindowServiceHandler) WatchTasks(context.Context, *connect.Request[v1.WatchTasksRequest], *connect.ServerStream[v1.WatchTasksResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.WatchTasks is not implemented"))
 }
 
-func (UnimplementedWindowServiceHandler) Quitting(context.Context, *connect.Request[v1.QuittingRequest], *connect.ServerStream[v1.QuittingResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.Quitting is not implemented"))
+func (UnimplementedWindowServiceHandler) WatchQuit(context.Context, *connect.Request[v1.WatchQuitRequest], *connect.ServerStream[v1.WatchQuitResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.WatchQuit is not implemented"))
 }
 
-func (UnimplementedWindowServiceHandler) Flushed(context.Context, *connect.Request[v1.FlushedRequest]) (*connect.Response[v1.FlushedResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.Flushed is not implemented"))
+func (UnimplementedWindowServiceHandler) ReportFlush(context.Context, *connect.Request[v1.ReportFlushRequest]) (*connect.Response[v1.ReportFlushResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.ReportFlush is not implemented"))
 }
 
-func (UnimplementedWindowServiceHandler) Showing(context.Context, *connect.Request[v1.ShowingRequest]) (*connect.Response[v1.ShowingResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.Showing is not implemented"))
+func (UnimplementedWindowServiceHandler) GetShownVault(context.Context, *connect.Request[v1.GetShownVaultRequest]) (*connect.Response[v1.GetShownVaultResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.GetShownVault is not implemented"))
 }

@@ -17,12 +17,12 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/window.proto.
  */
 export const file_numen_v1_window: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIh4KDFRhc2tzUmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiLgoNVGFza3NSZXNwb25zZRIdCgV0YXNrcxgBIAMoCzIOLm51bWVuLnYxLlRhc2sikgEKBFRhc2sSCgoCaWQYASABKAkSDQoFZG9pbmcYAiABKAkSDQoFYWJvdXQYAyABKAkSDAoEZG9uZRgEIAEoAxINCgV0b3RhbBgFIAEoAxIOCgZmYWlsZWQYBiABKAkSDQoFYXNrZWQYByABKAgSJAoIY291bnRpbmcYCCABKA4yEi5udW1lbi52MS5Db3VudGluZyIhCg9RdWl0dGluZ1JlcXVlc3QSDgoGd2luZG93GAEgASgJIjAKEFF1aXR0aW5nUmVzcG9uc2USDQoFdG9rZW4YASABKAkSDQoFZmx1c2gYAiABKAgiTQoORmx1c2hlZFJlcXVlc3QSDgoGd2luZG93GAEgASgJEg0KBXRva2VuGAIgASgJEhwKBG93ZWQYAyABKA4yDi5udW1lbi52MS5Pd2VkIhEKD0ZsdXNoZWRSZXNwb25zZSIgCg5TaG93aW5nUmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiIAoPU2hvd2luZ1Jlc3BvbnNlEg0KBXZhdWx0GAEgASgJKmMKCENvdW50aW5nEhgKFENPVU5USU5HX1VOU1BFQ0lGSUVEEAASEwoPQ09VTlRJTkdfVEhJTkdTEAESEgoOQ09VTlRJTkdfQllURVMQAhIUChBDT1VOVElOR19TRUNPTkRTEAMqUQoET3dlZBIUChBPV0VEX1VOU1BFQ0lGSUVEEAASEAoMT1dFRF9OT1RISU5HEAMSEAoMT1dFRF9XUklUVEVOEAESDwoLT1dFRF9BU0tJTkcQAjKQAgoNV2luZG93U2VydmljZRI6CgVUYXNrcxIWLm51bWVuLnYxLlRhc2tzUmVxdWVzdBoXLm51bWVuLnYxLlRhc2tzUmVzcG9uc2UwARJDCghRdWl0dGluZxIZLm51bWVuLnYxLlF1aXR0aW5nUmVxdWVzdBoaLm51bWVuLnYxLlF1aXR0aW5nUmVzcG9uc2UwARI+CgdGbHVzaGVkEhgubnVtZW4udjEuRmx1c2hlZFJlcXVlc3QaGS5udW1lbi52MS5GbHVzaGVkUmVzcG9uc2USPgoHU2hvd2luZxIYLm51bWVuLnYxLlNob3dpbmdSZXF1ZXN0GhkubnVtZW4udjEuU2hvd2luZ1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiMKEVdhdGNoVGFza3NSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrIpIBCgRUYXNrEgoKAmlkGAEgASgJEg0KBWRvaW5nGAIgASgJEg0KBWFib3V0GAMgASgJEgwKBGRvbmUYBCABKAMSDQoFdG90YWwYBSABKAMSDgoGZmFpbGVkGAYgASgJEg0KBWFza2VkGAcgASgIEiQKCGNvdW50aW5nGAggASgOMhIubnVtZW4udjEuQ291bnRpbmciIgoQV2F0Y2hRdWl0UmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiMQoRV2F0Y2hRdWl0UmVzcG9uc2USDQoFdG9rZW4YASABKAkSDQoFZmx1c2gYAiABKAgiUQoSUmVwb3J0Rmx1c2hSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCRINCgV0b2tlbhgCIAEoCRIcCgRvd2VkGAMgASgOMg4ubnVtZW4udjEuT3dlZCIVChNSZXBvcnRGbHVzaFJlc3BvbnNlIiYKFEdldFNob3duVmF1bHRSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSImChVHZXRTaG93blZhdWx0UmVzcG9uc2USDQoFdmF1bHQYASABKAkqYwoIQ291bnRpbmcSGAoUQ09VTlRJTkdfVU5TUEVDSUZJRUQQABITCg9DT1VOVElOR19USElOR1MQARISCg5DT1VOVElOR19CWVRFUxACEhQKEENPVU5USU5HX1NFQ09ORFMQAypRCgRPd2VkEhQKEE9XRURfVU5TUEVDSUZJRUQQABIQCgxPV0VEX05PVEhJTkcQAxIQCgxPV0VEX1dSSVRURU4QARIPCgtPV0VEX0FTS0lORxACMsACCg1XaW5kb3dTZXJ2aWNlEkkKCldhdGNoVGFza3MSGy5udW1lbi52MS5XYXRjaFRhc2tzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoVGFza3NSZXNwb25zZTABEkYKCVdhdGNoUXVpdBIaLm51bWVuLnYxLldhdGNoUXVpdFJlcXVlc3QaGy5udW1lbi52MS5XYXRjaFF1aXRSZXNwb25zZTABEkoKC1JlcG9ydEZsdXNoEhwubnVtZW4udjEuUmVwb3J0Rmx1c2hSZXF1ZXN0Gh0ubnVtZW4udjEuUmVwb3J0Rmx1c2hSZXNwb25zZRJQCg1HZXRTaG93blZhdWx0Eh4ubnVtZW4udjEuR2V0U2hvd25WYXVsdFJlcXVlc3QaHy5udW1lbi52MS5HZXRTaG93blZhdWx0UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
- * @generated from message numen.v1.TasksRequest
+ * @generated from message numen.v1.WatchTasksRequest
  */
-export type TasksRequest = Message<"numen.v1.TasksRequest"> & {
+export type WatchTasksRequest = Message<"numen.v1.WatchTasksRequest"> & {
   /**
    * The window this is asked of. A question naming another window than the one
    * answering it is not answered.
@@ -33,16 +33,16 @@ export type TasksRequest = Message<"numen.v1.TasksRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.TasksRequest.
- * Use `create(TasksRequestSchema)` to create a new message.
+ * Describes the message numen.v1.WatchTasksRequest.
+ * Use `create(WatchTasksRequestSchema)` to create a new message.
  */
-export const TasksRequestSchema: GenMessage<TasksRequest> = /*@__PURE__*/
+export const WatchTasksRequestSchema: GenMessage<WatchTasksRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_window, 0);
 
 /**
- * @generated from message numen.v1.TasksResponse
+ * @generated from message numen.v1.WatchTasksResponse
  */
-export type TasksResponse = Message<"numen.v1.TasksResponse"> & {
+export type WatchTasksResponse = Message<"numen.v1.WatchTasksResponse"> & {
   /**
    * Everything being done now, in the order the work began. The list arrives
    * whole, because what is being done is a list and not a set of differences to
@@ -54,10 +54,10 @@ export type TasksResponse = Message<"numen.v1.TasksResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.TasksResponse.
- * Use `create(TasksResponseSchema)` to create a new message.
+ * Describes the message numen.v1.WatchTasksResponse.
+ * Use `create(WatchTasksResponseSchema)` to create a new message.
  */
-export const TasksResponseSchema: GenMessage<TasksResponse> = /*@__PURE__*/
+export const WatchTasksResponseSchema: GenMessage<WatchTasksResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_window, 1);
 
 /**
@@ -137,9 +137,9 @@ export const TaskSchema: GenMessage<Task> = /*@__PURE__*/
   messageDesc(file_numen_v1_window, 2);
 
 /**
- * @generated from message numen.v1.QuittingRequest
+ * @generated from message numen.v1.WatchQuitRequest
  */
-export type QuittingRequest = Message<"numen.v1.QuittingRequest"> & {
+export type WatchQuitRequest = Message<"numen.v1.WatchQuitRequest"> & {
   /**
    * The window this is asked of. A question naming another window than the one
    * answering it is not answered.
@@ -150,18 +150,18 @@ export type QuittingRequest = Message<"numen.v1.QuittingRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.QuittingRequest.
- * Use `create(QuittingRequestSchema)` to create a new message.
+ * Describes the message numen.v1.WatchQuitRequest.
+ * Use `create(WatchQuitRequestSchema)` to create a new message.
  */
-export const QuittingRequestSchema: GenMessage<QuittingRequest> = /*@__PURE__*/
+export const WatchQuitRequestSchema: GenMessage<WatchQuitRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_window, 3);
 
 /**
- * @generated from message numen.v1.QuittingResponse
+ * @generated from message numen.v1.WatchQuitResponse
  */
-export type QuittingResponse = Message<"numen.v1.QuittingResponse"> & {
+export type WatchQuitResponse = Message<"numen.v1.WatchQuitResponse"> & {
   /**
-   * What this caller answers Flushed with. The stream opens by saying it, so
+   * What this caller answers ReportFlush with. The stream opens by saying it, so
    * a caller knows it is listening before anything is asked of it.
    *
    * @generated from field: string token = 1;
@@ -177,16 +177,16 @@ export type QuittingResponse = Message<"numen.v1.QuittingResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.QuittingResponse.
- * Use `create(QuittingResponseSchema)` to create a new message.
+ * Describes the message numen.v1.WatchQuitResponse.
+ * Use `create(WatchQuitResponseSchema)` to create a new message.
  */
-export const QuittingResponseSchema: GenMessage<QuittingResponse> = /*@__PURE__*/
+export const WatchQuitResponseSchema: GenMessage<WatchQuitResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_window, 4);
 
 /**
- * @generated from message numen.v1.FlushedRequest
+ * @generated from message numen.v1.ReportFlushRequest
  */
-export type FlushedRequest = Message<"numen.v1.FlushedRequest"> & {
+export type ReportFlushRequest = Message<"numen.v1.ReportFlushRequest"> & {
   /**
    * The window this is asked of. A question naming another window than the one
    * answering it is not answered.
@@ -212,29 +212,29 @@ export type FlushedRequest = Message<"numen.v1.FlushedRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.FlushedRequest.
- * Use `create(FlushedRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ReportFlushRequest.
+ * Use `create(ReportFlushRequestSchema)` to create a new message.
  */
-export const FlushedRequestSchema: GenMessage<FlushedRequest> = /*@__PURE__*/
+export const ReportFlushRequestSchema: GenMessage<ReportFlushRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_window, 5);
 
 /**
- * @generated from message numen.v1.FlushedResponse
+ * @generated from message numen.v1.ReportFlushResponse
  */
-export type FlushedResponse = Message<"numen.v1.FlushedResponse"> & {
+export type ReportFlushResponse = Message<"numen.v1.ReportFlushResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.FlushedResponse.
- * Use `create(FlushedResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ReportFlushResponse.
+ * Use `create(ReportFlushResponseSchema)` to create a new message.
  */
-export const FlushedResponseSchema: GenMessage<FlushedResponse> = /*@__PURE__*/
+export const ReportFlushResponseSchema: GenMessage<ReportFlushResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_window, 6);
 
 /**
- * @generated from message numen.v1.ShowingRequest
+ * @generated from message numen.v1.GetShownVaultRequest
  */
-export type ShowingRequest = Message<"numen.v1.ShowingRequest"> & {
+export type GetShownVaultRequest = Message<"numen.v1.GetShownVaultRequest"> & {
   /**
    * The window this is asked of. A question naming another window than the one
    * answering it is not answered.
@@ -245,16 +245,16 @@ export type ShowingRequest = Message<"numen.v1.ShowingRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.ShowingRequest.
- * Use `create(ShowingRequestSchema)` to create a new message.
+ * Describes the message numen.v1.GetShownVaultRequest.
+ * Use `create(GetShownVaultRequestSchema)` to create a new message.
  */
-export const ShowingRequestSchema: GenMessage<ShowingRequest> = /*@__PURE__*/
+export const GetShownVaultRequestSchema: GenMessage<GetShownVaultRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_window, 7);
 
 /**
- * @generated from message numen.v1.ShowingResponse
+ * @generated from message numen.v1.GetShownVaultResponse
  */
-export type ShowingResponse = Message<"numen.v1.ShowingResponse"> & {
+export type GetShownVaultResponse = Message<"numen.v1.GetShownVaultResponse"> & {
   /**
    * The identity the list of vaults holds that vault under. Empty in a window
    * showing none, and in one that is open on the installation rather than on
@@ -266,10 +266,10 @@ export type ShowingResponse = Message<"numen.v1.ShowingResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.ShowingResponse.
- * Use `create(ShowingResponseSchema)` to create a new message.
+ * Describes the message numen.v1.GetShownVaultResponse.
+ * Use `create(GetShownVaultResponseSchema)` to create a new message.
  */
-export const ShowingResponseSchema: GenMessage<ShowingResponse> = /*@__PURE__*/
+export const GetShownVaultResponseSchema: GenMessage<GetShownVaultResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_window, 8);
 
 /**
@@ -357,8 +357,8 @@ export const OwedSchema: GenEnum<Owed> = /*@__PURE__*/
  */
 export const WindowService: GenService<{
   /**
-   * Tasks reports everything being done behind the window, for as long as the
-   * caller listens: what it is, what it is on, and how far it has got.
+   * WatchTasks reports everything being done behind the window, for as long as
+   * the caller listens: what it is, what it is on, and how far it has got.
    *
    * The whole list arrives every time any of it changes, and the first arrives
    * at once, so a window that opened while work was running is told about it.
@@ -367,48 +367,48 @@ export const WindowService: GenService<{
    * the window asking for it — an agent is told to read a document, and this is
    * where the person watching sees it happen.
    *
-   * @generated from rpc numen.v1.WindowService.Tasks
+   * @generated from rpc numen.v1.WindowService.WatchTasks
    */
-  tasks: {
+  watchTasks: {
     methodKind: "server_streaming";
-    input: typeof TasksRequestSchema;
-    output: typeof TasksResponseSchema;
+    input: typeof WatchTasksRequestSchema;
+    output: typeof WatchTasksResponseSchema;
   },
   /**
-   * Quitting says the window is going, for as long as the caller listens. A
+   * WatchQuit says the window is going, for as long as the caller listens. A
    * caller holding work that is only in its own memory writes it now and
-   * answers with Flushed.
+   * answers with ReportFlush.
    *
-   * @generated from rpc numen.v1.WindowService.Quitting
+   * @generated from rpc numen.v1.WindowService.WatchQuit
    */
-  quitting: {
+  watchQuit: {
     methodKind: "server_streaming";
-    input: typeof QuittingRequestSchema;
-    output: typeof QuittingResponseSchema;
+    input: typeof WatchQuitRequestSchema;
+    output: typeof WatchQuitResponseSchema;
   },
   /**
-   * Flushed says what a caller has left. Nothing left lets the window go; work
-   * a person is being asked about keeps it open. A caller that never says it is
-   * waited for and then left behind.
+   * ReportFlush says what a caller has left. Nothing left lets the window go;
+   * work a person is being asked about keeps it open. A caller that never says
+   * it is waited for and then left behind.
    *
-   * @generated from rpc numen.v1.WindowService.Flushed
+   * @generated from rpc numen.v1.WindowService.ReportFlush
    */
-  flushed: {
+  reportFlush: {
     methodKind: "unary";
-    input: typeof FlushedRequestSchema;
-    output: typeof FlushedResponseSchema;
+    input: typeof ReportFlushRequestSchema;
+    output: typeof ReportFlushResponseSchema;
   },
   /**
-   * Showing is which vault this window has in front of the person. Two windows
-   * are open on one installation and each shows what it shows, so it is the
-   * window that is asked and not the list of vaults.
+   * GetShownVault is which vault this window has in front of the person. Two
+   * windows are open on one installation and each shows what it shows, so it is
+   * the window that is asked and not the list of vaults.
    *
-   * @generated from rpc numen.v1.WindowService.Showing
+   * @generated from rpc numen.v1.WindowService.GetShownVault
    */
-  showing: {
+  getShownVault: {
     methodKind: "unary";
-    input: typeof ShowingRequestSchema;
-    output: typeof ShowingResponseSchema;
+    input: typeof GetShownVaultRequestSchema;
+    output: typeof GetShownVaultResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_window, 0);

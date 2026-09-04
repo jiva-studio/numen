@@ -302,7 +302,7 @@ func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 	listening, hangUp := context.WithCancel(context.Background())
 	defer hangUp()
 
-	stream, err := f.drawn.Quitting(listening, connect.NewRequest(&v1.QuittingRequest{Window: wire.Editor}))
+	stream, err := f.drawn.WatchQuit(listening, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -333,7 +333,7 @@ func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 				t.Error(err)
 				return
 			}
-			if _, err := f.drawn.Flushed(context.Background(), connect.NewRequest(&v1.FlushedRequest{
+			if _, err := f.drawn.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
 				Window: wire.Editor,
 				Token:  stream.Msg().GetToken(),
 				Owed:   v1.Owed_OWED_WRITTEN,
@@ -381,7 +381,7 @@ func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 	listening, hangUp := context.WithCancel(context.Background())
 	defer hangUp()
 
-	stream, err := f.drawn.Quitting(listening, connect.NewRequest(&v1.QuittingRequest{Window: wire.Editor}))
+	stream, err := f.drawn.WatchQuit(listening, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -430,7 +430,7 @@ func listening(t *testing.T, f *going) *speaking {
 	t.Helper()
 
 	ctx, hangUp := context.WithCancel(context.Background())
-	stream, err := f.drawn.Quitting(ctx, connect.NewRequest(&v1.QuittingRequest{Window: wire.Editor}))
+	stream, err := f.drawn.WatchQuit(ctx, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
 	if err != nil {
 		hangUp()
 		t.Fatal(err)
@@ -469,7 +469,7 @@ func (p *speaking) answering(doing func(token string) v1.Owed) {
 
 // says is the page telling the application what it has left.
 func (p *speaking) says(token string, said v1.Owed) {
-	_, _ = p.f.drawn.Flushed(context.Background(), connect.NewRequest(&v1.FlushedRequest{
+	_, _ = p.f.drawn.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
 		Window: wire.Editor,
 		Token:  token,
 		Owed:   said,

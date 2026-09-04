@@ -13,8 +13,8 @@ option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/nume
 // WindowService answers about one window: what it has in front of the person,
 // what is being done behind it, and what a caller has left when it goes.
 service WindowService {
-  // Tasks reports everything being done behind the window, for as long as the
-  // caller listens: what it is, what it is on, and how far it has got.
+  // WatchTasks reports everything being done behind the window, for as long as
+  // the caller listens: what it is, what it is on, and how far it has got.
   //
   // The whole list arrives every time any of it changes, and the first arrives
   // at once, so a window that opened while work was running is told about it.
@@ -22,31 +22,31 @@ service WindowService {
   // being done is known here the moment it changes and work can begin without
   // the window asking for it — an agent is told to read a document, and this is
   // where the person watching sees it happen.
-  rpc Tasks(TasksRequest) returns (stream TasksResponse);
+  rpc WatchTasks(WatchTasksRequest) returns (stream WatchTasksResponse);
 
-  // Quitting says the window is going, for as long as the caller listens. A
+  // WatchQuit says the window is going, for as long as the caller listens. A
   // caller holding work that is only in its own memory writes it now and
-  // answers with Flushed.
-  rpc Quitting(QuittingRequest) returns (stream QuittingResponse);
+  // answers with ReportFlush.
+  rpc WatchQuit(WatchQuitRequest) returns (stream WatchQuitResponse);
 
-  // Flushed says what a caller has left. Nothing left lets the window go; work
-  // a person is being asked about keeps it open. A caller that never says it is
-  // waited for and then left behind.
-  rpc Flushed(FlushedRequest) returns (FlushedResponse);
+  // ReportFlush says what a caller has left. Nothing left lets the window go;
+  // work a person is being asked about keeps it open. A caller that never says
+  // it is waited for and then left behind.
+  rpc ReportFlush(ReportFlushRequest) returns (ReportFlushResponse);
 
-  // Showing is which vault this window has in front of the person. Two windows
-  // are open on one installation and each shows what it shows, so it is the
-  // window that is asked and not the list of vaults.
-  rpc Showing(ShowingRequest) returns (ShowingResponse);
+  // GetShownVault is which vault this window has in front of the person. Two
+  // windows are open on one installation and each shows what it shows, so it is
+  // the window that is asked and not the list of vaults.
+  rpc GetShownVault(GetShownVaultRequest) returns (GetShownVaultResponse);
 }
 
-message TasksRequest {
+message WatchTasksRequest {
   // The window this is asked of. A question naming another window than the one
   // answering it is not answered.
   string window = 1;
 }
 
-message TasksResponse {
+message WatchTasksResponse {
   // Everything being done now, in the order the work began. The list arrives
   // whole, because what is being done is a list and not a set of differences to
   // apply.
@@ -98,14 +98,14 @@ enum Counting {
   COUNTING_SECONDS = 3;
 }
 
-message QuittingRequest {
+message WatchQuitRequest {
   // The window this is asked of. A question naming another window than the one
   // answering it is not answered.
   string window = 1;
 }
 
-message QuittingResponse {
-  // What this caller answers Flushed with. The stream opens by saying it, so
+message WatchQuitResponse {
+  // What this caller answers ReportFlush with. The stream opens by saying it, so
   // a caller knows it is listening before anything is asked of it.
   string token = 1;
 
@@ -128,7 +128,7 @@ enum Owed {
   OWED_ASKING = 2;
 }
 
-message FlushedRequest {
+message ReportFlushRequest {
   // The window this is asked of. A question naming another window than the one
   // answering it is not answered.
   string window = 1;
@@ -141,15 +141,15 @@ message FlushedRequest {
   Owed owed = 3;
 }
 
-message FlushedResponse {}
+message ReportFlushResponse {}
 
-message ShowingRequest {
+message GetShownVaultRequest {
   // The window this is asked of. A question naming another window than the one
   // answering it is not answered.
   string window = 1;
 }
 
-message ShowingResponse {
+message GetShownVaultResponse {
   // The identity the list of vaults holds that vault under. Empty in a window
   // showing none, and in one that is open on the installation rather than on
   // any one vault.

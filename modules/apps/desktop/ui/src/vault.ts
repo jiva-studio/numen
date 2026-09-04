@@ -163,7 +163,7 @@ export const vaults: Vaults = {
   list: async () => {
     const [answer, shown] = await Promise.all([
       vaultsService.list({}),
-      windowService.showing({ window: WINDOW }),
+      windowService.getShownVault({ window: WINDOW }),
     ])
     return { vaults: answer.vaults.map(held), showing: shown.vault }
   },
@@ -287,7 +287,7 @@ export const core: Core & Asking & Commanding = {
   },
   editing: (signal) => notes.editing({}, { signal }),
   async *tasks(signal) {
-    for await (const said of windowService.tasks({ window: WINDOW }, { signal })) {
+    for await (const said of windowService.watchTasks({ window: WINDOW }, { signal })) {
       yield said.tasks.map((at) => ({
         id: at.id,
         doing: at.doing,
@@ -393,9 +393,9 @@ export const core: Core & Asking & Commanding = {
   },
   choosesReviewing: (starts) => puts([{ at: STARTS, value: starts }]),
   makeFolder: async (path) => refusalIn(await files.makeFolder({ path })),
-  quitting: (signal) => windowService.quitting({ window: WINDOW }, { signal }),
+  quitting: (signal) => windowService.watchQuit({ window: WINDOW }, { signal }),
   flushed: async (token, owed) => {
-    await windowService.flushed({ window: WINDOW, token, owed: owing[owed ?? 'nothing'] })
+    await windowService.reportFlush({ window: WINDOW, token, owed: owing[owed ?? 'nothing'] })
   },
   /** What each of the notes asked about is divided into. */
   headings: async (paths) => {

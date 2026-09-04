@@ -15,7 +15,7 @@ import (
 )
 
 // listening is the stream a window would hold, over a list a test drives.
-func listening(t *testing.T, tasks *task.Tasks) *connect.ServerStreamForClient[v1.TasksResponse] {
+func listening(t *testing.T, tasks *task.Tasks) *connect.ServerStreamForClient[v1.WatchTasksResponse] {
 	t.Helper()
 
 	route, handler := numenv1connect.NewWindowServiceHandler(&Window{Named: Editor, Tasking: tasks})
@@ -28,7 +28,7 @@ func listening(t *testing.T, tasks *task.Tasks) *connect.ServerStreamForClient[v
 	t.Cleanup(stop)
 
 	client := numenv1connect.NewWindowServiceClient(server.Client(), server.URL)
-	stream, err := client.Tasks(ctx, connect.NewRequest(&v1.TasksRequest{Window: Editor}))
+	stream, err := client.WatchTasks(ctx, connect.NewRequest(&v1.WatchTasksRequest{Window: Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func listening(t *testing.T, tasks *task.Tasks) *connect.ServerStreamForClient[v
 }
 
 // told is the list the stream says next.
-func told(t *testing.T, stream *connect.ServerStreamForClient[v1.TasksResponse]) []*v1.Task {
+func told(t *testing.T, stream *connect.ServerStreamForClient[v1.WatchTasksResponse]) []*v1.Task {
 	t.Helper()
 	if !stream.Receive() {
 		t.Fatalf("the stream ended: %v", stream.Err())
@@ -85,7 +85,7 @@ func TestAQuestionNamingAnotherWindowIsNotAnswered(t *testing.T) {
 	t.Cleanup(server.Close)
 
 	client := numenv1connect.NewWindowServiceClient(server.Client(), server.URL)
-	stream, err := client.Tasks(t.Context(), connect.NewRequest(&v1.TasksRequest{Window: Editor}))
+	stream, err := client.WatchTasks(t.Context(), connect.NewRequest(&v1.WatchTasksRequest{Window: Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func TestAQuestionNamingAnotherWindowIsNotAnswered(t *testing.T) {
 		t.Errorf("the answer was %v", stream.Err())
 	}
 
-	if _, err := client.Flushed(t.Context(), connect.NewRequest(&v1.FlushedRequest{
+	if _, err := client.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
 		Window: Editor,
 		Token:  "0",
 		Owed:   v1.Owed_OWED_WRITTEN,

@@ -98,7 +98,7 @@ func TestAFileLetGoOfOverANameAlreadyThereIsSaid(t *testing.T) {
 		t.Errorf("the note that was there is now %q", held)
 	}
 
-	answer, err := drawn.Tasks(t.Context(), connect.NewRequest(&v1.TasksRequest{Window: wire.Editor}))
+	answer, err := drawn.WatchTasks(t.Context(), connect.NewRequest(&v1.WatchTasksRequest{Window: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}

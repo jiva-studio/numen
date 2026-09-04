@@ -58,17 +58,17 @@ type Window struct {
 // stream makes one whether or not it has anything to say.
 const Again = time.Second
 
-// Tasks reports everything being done behind the window, for as long as the
-// client listens.
+// WatchTasks reports everything being done behind the window, for as long as
+// the client listens.
 //
 // The whole list goes every time any of it changes, and the first goes at once:
 // a window that opened while work was running has to be told about it, and a
 // stream that says nothing until something changes is indistinguishable from one
 // that never opened.
-func (w *Window) Tasks(
+func (w *Window) WatchTasks(
 	ctx context.Context,
-	r *connect.Request[v1.TasksRequest],
-	out *connect.ServerStream[v1.TasksResponse],
+	r *connect.Request[v1.WatchTasksRequest],
+	out *connect.ServerStream[v1.WatchTasksResponse],
 ) error {
 	if err := w.answers(r.Msg.GetWindow()); err != nil {
 		return err
@@ -77,7 +77,7 @@ func (w *Window) Tasks(
 		// A window that does nothing behind itself still answers, so that it has
 		// one thing to listen to rather than two ways of finding out whether it
 		// should.
-		return out.Send(&v1.TasksResponse{})
+		return out.Send(&v1.WatchTasksResponse{})
 	}
 
 	watching, stop := context.WithCancel(ctx)
@@ -94,25 +94,25 @@ func (w *Window) Tasks(
 			if !standing {
 				return nil
 			}
-			if err := out.Send(&v1.TasksResponse{Tasks: doing(list)}); err != nil {
+			if err := out.Send(&v1.WatchTasksResponse{Tasks: doing(list)}); err != nil {
 				return err
 			}
 			last = list
 			repeat.Reset(Again)
 
 		case <-repeat.C:
-			if err := out.Send(&v1.TasksResponse{Tasks: doing(last)}); err != nil {
+			if err := out.Send(&v1.WatchTasksResponse{Tasks: doing(last)}); err != nil {
 				return err
 			}
 		}
 	}
 }
 
-// Quitting says the window is going, for as long as the client listens.
-func (w *Window) Quitting(
+// WatchQuit says the window is going, for as long as the client listens.
+func (w *Window) WatchQuit(
 	ctx context.Context,
-	r *connect.Request[v1.QuittingRequest],
-	out *connect.ServerStream[v1.QuittingResponse],
+	r *connect.Request[v1.WatchQuitRequest],
+	out *connect.ServerStream[v1.WatchQuitResponse],
 ) error {
 	if err := w.answers(r.Msg.GetWindow()); err != nil {
 		return err
@@ -123,7 +123,7 @@ func (w *Window) Quitting(
 	// The token before anything is asked. A client that has not been given one
 	// cannot answer, and a stream that says nothing until the window goes is
 	// indistinguishable from one that never opened.
-	if err := out.Send(&v1.QuittingResponse{Token: token}); err != nil {
+	if err := out.Send(&v1.WatchQuitResponse{Token: token}); err != nil {
 		return err
 	}
 
@@ -138,41 +138,41 @@ func (w *Window) Quitting(
 			// The same token, and nothing asked of the client. A page that has
 			// gone fails the write, and this stream is what holds the window
 			// back at the quit.
-			if err := out.Send(&v1.QuittingResponse{Token: token}); err != nil {
+			if err := out.Send(&v1.WatchQuitResponse{Token: token}); err != nil {
 				return err
 			}
 		case asked, listening := <-told:
 			if !listening {
 				return nil
 			}
-			if err := out.Send(&v1.QuittingResponse{Token: asked, Flush: true}); err != nil {
+			if err := out.Send(&v1.WatchQuitResponse{Token: asked, Flush: true}); err != nil {
 				return err
 			}
 		}
 	}
 }
 
-// Flushed says what a client has left.
-func (w *Window) Flushed(
+// ReportFlush says what a client has left.
+func (w *Window) ReportFlush(
 	_ context.Context,
-	r *connect.Request[v1.FlushedRequest],
-) (*connect.Response[v1.FlushedResponse], error) {
+	r *connect.Request[v1.ReportFlushRequest],
+) (*connect.Response[v1.ReportFlushResponse], error) {
 	if err := w.answers(r.Msg.GetWindow()); err != nil {
 		return nil, err
 	}
 	w.clients.flushed(r.Msg.GetToken(), left(r.Msg.GetOwed()))
-	return connect.NewResponse(&v1.FlushedResponse{}), nil
+	return connect.NewResponse(&v1.ReportFlushResponse{}), nil
 }
 
-// Showing is the vault this window has in front of the person.
-func (w *Window) Showing(
+// GetShownVault is the vault this window has in front of the person.
+func (w *Window) GetShownVault(
 	_ context.Context,
-	r *connect.Request[v1.ShowingRequest],
-) (*connect.Response[v1.ShowingResponse], error) {
+	r *connect.Request[v1.GetShownVaultRequest],
+) (*connect.Response[v1.GetShownVaultResponse], error) {
 	if err := w.answers(r.Msg.GetWindow()); err != nil {
 		return nil, err
 	}
-	out := &v1.ShowingResponse{}
+	out := &v1.GetShownVaultResponse{}
 	if w.Vault != nil {
 		out.Vault = w.Vault()
 	}

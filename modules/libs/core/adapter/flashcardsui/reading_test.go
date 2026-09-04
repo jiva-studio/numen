@@ -99,8 +99,8 @@ func TestAWindowDoingNothingBehindItselfStillAnswers(t *testing.T) {
 	api, _ := windowed(t)
 	api.Window.Tasking = nil
 
-	stream, err := watching(t, api).Tasks(
-		t.Context(), connect.NewRequest(&v1.TasksRequest{Window: wire.Review}),
+	stream, err := watching(t, api).WatchTasks(
+		t.Context(), connect.NewRequest(&v1.WatchTasksRequest{Window: wire.Review}),
 	)
 	if err != nil {
 		t.Fatal(err)

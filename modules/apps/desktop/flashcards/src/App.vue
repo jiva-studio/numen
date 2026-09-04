@@ -319,7 +319,7 @@ onMounted(() => {
   // What is being done behind the window, which is a vault read into the index.
   // It is a stream because a reading begins without the page asking for one.
   void follows(
-    () => itself.tasks({ window: WINDOW }),
+    () => itself.watchTasks({ window: WINDOW }),
     (said) => {
       doing(
         said.tasks.map((at) => ({

@@ -187,8 +187,8 @@ func TestTheWindowSaysWhichVaultItIsShowing(t *testing.T) {
 
 	// And the question is the window's, so another window's name reaches
 	// nothing here.
-	_, err := f.drawn.Showing(t.Context(),
-		connect.NewRequest(&v1.ShowingRequest{Window: wire.Review}))
+	_, err := f.drawn.GetShownVault(t.Context(),
+		connect.NewRequest(&v1.GetShownVaultRequest{Window: wire.Review}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("err = %v, want the question about another window turned away", err)
 	}
@@ -198,8 +198,8 @@ func TestTheWindowSaysWhichVaultItIsShowing(t *testing.T) {
 func (f *showing) shows(t *testing.T, window string) string {
 	t.Helper()
 
-	out, err := f.drawn.Showing(t.Context(),
-		connect.NewRequest(&v1.ShowingRequest{Window: window}))
+	out, err := f.drawn.GetShownVault(t.Context(),
+		connect.NewRequest(&v1.GetShownVaultRequest{Window: window}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -414,11 +414,11 @@ func TestAVaultThatCannotBeShownIsRefusedAndTheWindowStays(t *testing.T) {
 
 // listens opens a stream saying the window is going, and answers with the token
 // this page will flush under.
-func (f *showing) listens(t *testing.T) (*connect.ServerStreamForClient[v1.QuittingResponse], func()) {
+func (f *showing) listens(t *testing.T) (*connect.ServerStreamForClient[v1.WatchQuitResponse], func()) {
 	t.Helper()
 
 	listening, hangUp := context.WithCancel(context.Background())
-	stream, err := f.drawn.Quitting(listening, connect.NewRequest(&v1.QuittingRequest{
+	stream, err := f.drawn.WatchQuit(listening, connect.NewRequest(&v1.WatchQuitRequest{
 		Window: wire.Editor,
 	}))
 	if err != nil {
@@ -477,7 +477,7 @@ func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 			if !stream.Msg().GetFlush() {
 				continue
 			}
-			if _, err := f.drawn.Flushed(context.Background(), connect.NewRequest(&v1.FlushedRequest{
+			if _, err := f.drawn.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
 				Window: wire.Editor,
 				Token:  stream.Msg().GetToken(),
 				Owed:   v1.Owed_OWED_ASKING,
@@ -526,7 +526,7 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 			}
 			close(told)
 			<-release
-			if _, err := f.drawn.Flushed(context.Background(), connect.NewRequest(&v1.FlushedRequest{
+			if _, err := f.drawn.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
 				Window: wire.Editor,
 				Token:  stream.Msg().GetToken(),
 				Owed:   v1.Owed_OWED_NOTHING,

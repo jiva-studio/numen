@@ -40,12 +40,12 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 		},
 		"quitting": func(ctx context.Context, http connect.HTTPClient, at string) error {
 			_, err := numenv1connect.NewWindowServiceClient(http, at).
-				Quitting(ctx, connect.NewRequest(&v1.QuittingRequest{Window: wire.Editor}))
+				WatchQuit(ctx, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
 			return err
 		},
 		"tasks": func(ctx context.Context, http connect.HTTPClient, at string) error {
 			_, err := numenv1connect.NewWindowServiceClient(http, at).
-				Tasks(ctx, connect.NewRequest(&v1.TasksRequest{Window: wire.Editor}))
+				WatchTasks(ctx, connect.NewRequest(&v1.WatchTasksRequest{Window: wire.Editor}))
 			return err
 		},
 		"ask": func(ctx context.Context, http connect.HTTPClient, at string) error {

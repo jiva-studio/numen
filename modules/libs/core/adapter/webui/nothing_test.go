@@ -141,8 +141,8 @@ func TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 		t.Errorf("the window opens on %q, and holds no vault to hold it", note.GetPath())
 	}
 
-	shown, err := f.drawn.Showing(t.Context(),
-		connect.NewRequest(&v1.ShowingRequest{Window: wire.Editor}))
+	shown, err := f.drawn.GetShownVault(t.Context(),
+		connect.NewRequest(&v1.GetShownVaultRequest{Window: wire.Editor}))
 	if err != nil {
 		t.Fatalf("the window cannot say which vault it is showing: %v", err)
 	}
@@ -186,7 +186,7 @@ func TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 		t.Fatalf("the editing stream never opened: %v", editing.Err())
 	}
 
-	tasks, err := f.drawn.Tasks(listening, connect.NewRequest(&v1.TasksRequest{Window: wire.Editor}))
+	tasks, err := f.drawn.WatchTasks(listening, connect.NewRequest(&v1.WatchTasksRequest{Window: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
