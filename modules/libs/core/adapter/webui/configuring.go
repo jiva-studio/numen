@@ -11,11 +11,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Settings is every setting of the file a person configures this installation
-// in, and the models the settings that name one can be set to.
-func (a *API) Settings(
-	_ context.Context, _ *connect.Request[v1.SettingsRequest],
-) (*connect.Response[v1.SettingsResponse], error) {
+// GetSettings is every setting of the file a person configures this
+// installation in, and the models the settings that name one can be set to.
+func (a *API) GetSettings(
+	_ context.Context, _ *connect.Request[v1.GetSettingsRequest],
+) (*connect.Response[v1.GetSettingsResponse], error) {
 	if a.Configuring.Configured == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
@@ -27,19 +27,19 @@ func (a *API) Settings(
 	if a.Configuring.Models != nil {
 		models = a.Configuring.Models()
 	}
-	return connect.NewResponse(&v1.SettingsResponse{
+	return connect.NewResponse(&v1.GetSettingsResponse{
 		Written: written,
 		Path:    path,
 		Models:  offered(models),
 	}), nil
 }
 
-// ChooseSettings writes settings into that file. A value the settings could not
+// WriteSettings writes settings into that file. A value the settings could not
 // be read out of again is the client's to correct, and the file is left as it
 // was.
-func (a *API) ChooseSettings(
-	_ context.Context, r *connect.Request[v1.ChooseSettingsRequest],
-) (*connect.Response[v1.ChooseSettingsResponse], error) {
+func (a *API) WriteSettings(
+	_ context.Context, r *connect.Request[v1.WriteSettingsRequest],
+) (*connect.Response[v1.WriteSettingsResponse], error) {
 	if a.Configuring.ChoosesSetting == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
@@ -53,13 +53,13 @@ func (a *API) ChooseSettings(
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.ChooseSettingsResponse{}), nil
+	return connect.NewResponse(&v1.WriteSettingsResponse{}), nil
 }
 
-// SettingsFile is that file as its person wrote it, byte for byte.
-func (a *API) SettingsFile(
-	_ context.Context, _ *connect.Request[v1.SettingsFileRequest],
-) (*connect.Response[v1.SettingsFileResponse], error) {
+// ReadSettingsFile is that file as its person wrote it, byte for byte.
+func (a *API) ReadSettingsFile(
+	_ context.Context, _ *connect.Request[v1.ReadSettingsFileRequest],
+) (*connect.Response[v1.ReadSettingsFileResponse], error) {
 	if a.Configuring.ConfiguredFile == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
@@ -67,7 +67,7 @@ func (a *API) SettingsFile(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.SettingsFileResponse{Written: written, Path: path}), nil
+	return connect.NewResponse(&v1.ReadSettingsFileResponse{Written: written, Path: path}), nil
 }
 
 // WriteSettingsFile replaces that file whole. A file the settings could not be

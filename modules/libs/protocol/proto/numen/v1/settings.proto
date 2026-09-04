@@ -13,17 +13,17 @@ option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/nume
 
 // SettingsService answers about that file, one setting at a time and whole.
 service SettingsService {
-  // Settings is every setting of the file, and the models the settings that
+  // GetSettings is every setting of the file, and the models the settings that
   // name one can be set to.
-  rpc Settings(SettingsRequest) returns (SettingsResponse);
+  rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
 
-  // ChooseSettings writes settings into that file. The file is patched as an
+  // WriteSettings writes settings into that file. The file is patched as an
   // object, so every key a person typed stays where it was, and a file the
   // settings could not be read out of again is not written at all.
-  rpc ChooseSettings(ChooseSettingsRequest) returns (ChooseSettingsResponse);
+  rpc WriteSettings(WriteSettingsRequest) returns (WriteSettingsResponse);
 
-  // SettingsFile is that file as its person wrote it, byte for byte.
-  rpc SettingsFile(SettingsFileRequest) returns (SettingsFileResponse);
+  // ReadSettingsFile is that file as its person wrote it, byte for byte.
+  rpc ReadSettingsFile(ReadSettingsFileRequest) returns (ReadSettingsFileResponse);
 
   // WriteSettingsFile replaces that file whole, with the bytes as they were
   // typed. A file the settings cannot be read out of is refused and the file is
@@ -33,9 +33,9 @@ service SettingsService {
   rpc WriteSettingsFile(WriteSettingsFileRequest) returns (WriteSettingsFileResponse);
 }
 
-message SettingsRequest {}
+message GetSettingsRequest {}
 
-message SettingsResponse {
+message GetSettingsResponse {
   // Every setting as it stands, as JSON: what the file says, and what an
   // installation nobody has configured does under everything it does not.
   string written = 1;
@@ -98,16 +98,16 @@ message Setting {
   string value = 2;
 }
 
-message ChooseSettingsRequest {
+message WriteSettingsRequest {
   // The settings to write. They are written together, or none of them is.
   repeated Setting settings = 1;
 }
 
-message ChooseSettingsResponse {}
+message WriteSettingsResponse {}
 
-message SettingsFileRequest {}
+message ReadSettingsFileRequest {}
 
-message SettingsFileResponse {
+message ReadSettingsFileResponse {
   // The file as its person wrote it. A file that is not there is an empty
   // object, which is what an installation nobody has configured runs on.
   string written = 1;

@@ -16,7 +16,7 @@ import (
 // them. What the file leaves out stands there at its default.
 func setting(t *testing.T, f *going, at ...string) any {
 	t.Helper()
-	said, err := f.configuring.Settings(t.Context(), connect.NewRequest(&v1.SettingsRequest{}))
+	said, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +39,7 @@ func setting(t *testing.T, f *going, at ...string) any {
 func TestTheSettingsReadOutStandOnTheDefaults(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
-	said, err := f.configuring.Settings(t.Context(), connect.NewRequest(&v1.SettingsRequest{}))
+	said, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +73,7 @@ func TestTheSettingsReadOutStandOnTheDefaults(t *testing.T) {
 func TestASettingWrittenIsAnsweredByTheNextQuestion(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
-	_, err := f.configuring.ChooseSettings(t.Context(), connect.NewRequest(&v1.ChooseSettingsRequest{
+	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
 		Settings: []*v1.Setting{
 			{At: []string{"agent", "claude", "model"}, Value: `"opus"`},
 		},
@@ -82,7 +82,7 @@ func TestASettingWrittenIsAnsweredByTheNextQuestion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	said, err := f.configuring.Settings(t.Context(), connect.NewRequest(&v1.SettingsRequest{}))
+	said, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,14 +105,14 @@ func TestAValueTheSettingsCannotHoldIsRefused(t *testing.T) {
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			f := opening(t, nil, nil, true)
-			was, err := f.configuring.Settings(t.Context(), connect.NewRequest(&v1.SettingsRequest{}))
+			was, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			_, err = f.configuring.ChooseSettings(
+			_, err = f.configuring.WriteSettings(
 				t.Context(),
-				connect.NewRequest(&v1.ChooseSettingsRequest{
+				connect.NewRequest(&v1.WriteSettingsRequest{
 					Settings: []*v1.Setting{{At: one.at, Value: one.value}},
 				}),
 			)
@@ -121,7 +121,7 @@ func TestAValueTheSettingsCannotHoldIsRefused(t *testing.T) {
 			}
 
 			// The settings still read, and read as they did.
-			now, err := f.configuring.Settings(t.Context(), connect.NewRequest(&v1.SettingsRequest{}))
+			now, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -137,7 +137,7 @@ func TestAValueTheSettingsCannotHoldIsRefused(t *testing.T) {
 func TestSettingsWrittenTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
-	_, err := f.configuring.ChooseSettings(t.Context(), connect.NewRequest(&v1.ChooseSettingsRequest{
+	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
 		Settings: []*v1.Setting{
 			{At: []string{"agent", "claude", "model"}, Value: `"opus"`},
 			{At: []string{"appearance", "text_scale"}, Value: `5`},
@@ -147,7 +147,7 @@ func TestSettingsWrittenTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T)
 		t.Fatalf("the settings were taken as %v", err)
 	}
 
-	said, err := f.configuring.Settings(t.Context(), connect.NewRequest(&v1.SettingsRequest{}))
+	said, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,7 +161,7 @@ func TestSettingsWrittenTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T)
 func TestTheSettingsFileIsReadAsItStands(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
-	said, err := f.configuring.SettingsFile(t.Context(), connect.NewRequest(&v1.SettingsFileRequest{}))
+	said, err := f.configuring.ReadSettingsFile(t.Context(), connect.NewRequest(&v1.ReadSettingsFileRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,7 +187,7 @@ func TestTheSettingsFileIsWrittenAsItWasTyped(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	said, err := f.configuring.SettingsFile(t.Context(), connect.NewRequest(&v1.SettingsFileRequest{}))
+	said, err := f.configuring.ReadSettingsFile(t.Context(), connect.NewRequest(&v1.ReadSettingsFileRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -200,7 +200,7 @@ func TestTheSettingsFileIsWrittenAsItWasTyped(t *testing.T) {
 // what a person already has in the file is worth more than the write.
 func TestAFileTheSettingsCannotBeReadOutOfIsRefused(t *testing.T) {
 	f := opening(t, nil, nil, true)
-	was, err := f.configuring.SettingsFile(t.Context(), connect.NewRequest(&v1.SettingsFileRequest{}))
+	was, err := f.configuring.ReadSettingsFile(t.Context(), connect.NewRequest(&v1.ReadSettingsFileRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -222,9 +222,9 @@ func TestAFileTheSettingsCannotBeReadOutOfIsRefused(t *testing.T) {
 				t.Fatalf("the file was taken as %v", err)
 			}
 
-			now, err := f.configuring.SettingsFile(
+			now, err := f.configuring.ReadSettingsFile(
 				t.Context(),
-				connect.NewRequest(&v1.SettingsFileRequest{}),
+				connect.NewRequest(&v1.ReadSettingsFileRequest{}),
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -263,19 +263,19 @@ func presented(written string) *string { return &written }
 // question, and the patch stands.
 func TestAFileThatMovedPastWhatTheClientReadIsAnswered(t *testing.T) {
 	f := opening(t, nil, nil, true)
-	was, err := f.configuring.SettingsFile(t.Context(), connect.NewRequest(&v1.SettingsFileRequest{}))
+	was, err := f.configuring.ReadSettingsFile(t.Context(), connect.NewRequest(&v1.ReadSettingsFileRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := f.configuring.ChooseSettings(t.Context(), connect.NewRequest(&v1.ChooseSettingsRequest{
+	if _, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
 		Settings: []*v1.Setting{
 			{At: []string{"agent", "claude", "model"}, Value: `"opus"`},
 		},
 	})); err != nil {
 		t.Fatal(err)
 	}
-	patched, err := f.configuring.SettingsFile(t.Context(), connect.NewRequest(&v1.SettingsFileRequest{}))
+	patched, err := f.configuring.ReadSettingsFile(t.Context(), connect.NewRequest(&v1.ReadSettingsFileRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -293,7 +293,7 @@ func TestAFileThatMovedPastWhatTheClientReadIsAnswered(t *testing.T) {
 		t.Error("the write landed, wanted the question put to the person")
 	}
 
-	now, err := f.configuring.SettingsFile(t.Context(), connect.NewRequest(&v1.SettingsFileRequest{}))
+	now, err := f.configuring.ReadSettingsFile(t.Context(), connect.NewRequest(&v1.ReadSettingsFileRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -305,7 +305,7 @@ func TestAFileThatMovedPastWhatTheClientReadIsAnswered(t *testing.T) {
 // A client presenting the file it read writes over it.
 func TestAFileStandingAtWhatTheClientReadIsWritten(t *testing.T) {
 	f := opening(t, nil, nil, true)
-	was, err := f.configuring.SettingsFile(t.Context(), connect.NewRequest(&v1.SettingsFileRequest{}))
+	was, err := f.configuring.ReadSettingsFile(t.Context(), connect.NewRequest(&v1.ReadSettingsFileRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -321,7 +321,7 @@ func TestAFileStandingAtWhatTheClientReadIsWritten(t *testing.T) {
 		t.Fatal("the write was answered the question, wanted it to land")
 	}
 
-	now, err := f.configuring.SettingsFile(t.Context(), connect.NewRequest(&v1.SettingsFileRequest{}))
+	now, err := f.configuring.ReadSettingsFile(t.Context(), connect.NewRequest(&v1.ReadSettingsFileRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

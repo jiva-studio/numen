@@ -47,8 +47,8 @@ func turnsHanging(t *testing.T, f *going, hangs bool, count *int) error {
 			At: []string{"appearance", "parts_under_a_node"}, Value: fmt.Sprint(*count),
 		})
 	}
-	_, err := f.configuring.ChooseSettings(t.Context(),
-		connect.NewRequest(&v1.ChooseSettingsRequest{Settings: written}))
+	_, err := f.configuring.WriteSettings(t.Context(),
+		connect.NewRequest(&v1.WriteSettingsRequest{Settings: written}))
 	return err
 }
 

@@ -133,7 +133,7 @@ const STARTS = ['review', 'day_starts']
 
 /** Every setting as it stands, with the defaults under what the file leaves out. */
 const configured = async (): Promise<unknown> =>
-  JSON.parse((await settingsService.settings({})).written)
+  JSON.parse((await settingsService.getSettings({})).written)
 
 /** How many parts a node hangs, and the default where the settings name none. */
 const partsIn = (value: unknown): number =>
@@ -147,7 +147,7 @@ const puts = async (
   written: readonly { at: readonly string[]; value: unknown }[],
 ): Promise<string | null> => {
   try {
-    await settingsService.chooseSettings({
+    await settingsService.writeSettings({
       settings: written.map((one) => ({ at: [...one.at], value: write(one.value) })),
     })
   } catch (thrown) {
@@ -356,7 +356,7 @@ export const core: Core & Asking & Commanding = {
       ...(parts === undefined ? [] : [{ at: PARTS, value: parts }]),
     ]),
   settings: async () => {
-    const answer = await settingsService.settings({})
+    const answer = await settingsService.getSettings({})
     return {
       written: answer.written,
       path: answer.path,
@@ -372,12 +372,12 @@ export const core: Core & Asking & Commanding = {
     } satisfies Configured
   },
   choosesSetting: async (written) => {
-    await settingsService.chooseSettings({
+    await settingsService.writeSettings({
       settings: written.map((one) => ({ at: [...one.at], value: one.value })),
     })
   },
   settingsFile: async () => {
-    const answer = await settingsService.settingsFile({})
+    const answer = await settingsService.readSettingsFile({})
     return { written: answer.written, path: answer.path }
   },
   writesSettingsFile: async (written, seen) => {

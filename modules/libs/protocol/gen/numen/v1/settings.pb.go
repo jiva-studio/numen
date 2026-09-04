@@ -86,26 +86,26 @@ func (Presence) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{0}
 }
 
-type SettingsRequest struct {
+type GetSettingsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SettingsRequest) Reset() {
-	*x = SettingsRequest{}
+func (x *GetSettingsRequest) Reset() {
+	*x = GetSettingsRequest{}
 	mi := &file_numen_v1_settings_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SettingsRequest) String() string {
+func (x *GetSettingsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SettingsRequest) ProtoMessage() {}
+func (*GetSettingsRequest) ProtoMessage() {}
 
-func (x *SettingsRequest) ProtoReflect() protoreflect.Message {
+func (x *GetSettingsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_settings_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -117,12 +117,12 @@ func (x *SettingsRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SettingsRequest.ProtoReflect.Descriptor instead.
-func (*SettingsRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetSettingsRequest.ProtoReflect.Descriptor instead.
+func (*GetSettingsRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{0}
 }
 
-type SettingsResponse struct {
+type GetSettingsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Every setting as it stands, as JSON: what the file says, and what an
 	// installation nobody has configured does under everything it does not.
@@ -135,20 +135,20 @@ type SettingsResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SettingsResponse) Reset() {
-	*x = SettingsResponse{}
+func (x *GetSettingsResponse) Reset() {
+	*x = GetSettingsResponse{}
 	mi := &file_numen_v1_settings_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SettingsResponse) String() string {
+func (x *GetSettingsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SettingsResponse) ProtoMessage() {}
+func (*GetSettingsResponse) ProtoMessage() {}
 
-func (x *SettingsResponse) ProtoReflect() protoreflect.Message {
+func (x *GetSettingsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_settings_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -160,26 +160,26 @@ func (x *SettingsResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SettingsResponse.ProtoReflect.Descriptor instead.
-func (*SettingsResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetSettingsResponse.ProtoReflect.Descriptor instead.
+func (*GetSettingsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *SettingsResponse) GetWritten() string {
+func (x *GetSettingsResponse) GetWritten() string {
 	if x != nil {
 		return x.Written
 	}
 	return ""
 }
 
-func (x *SettingsResponse) GetPath() string {
+func (x *GetSettingsResponse) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *SettingsResponse) GetModels() []*Model {
+func (x *GetSettingsResponse) GetModels() []*Model {
 	if x != nil {
 		return x.Models
 	}
@@ -343,7 +343,7 @@ func (x *Setting) GetValue() string {
 	return ""
 }
 
-type ChooseSettingsRequest struct {
+type WriteSettingsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The settings to write. They are written together, or none of them is.
 	Settings      []*Setting `protobuf:"bytes,1,rep,name=settings,proto3" json:"settings,omitempty"`
@@ -351,20 +351,20 @@ type ChooseSettingsRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ChooseSettingsRequest) Reset() {
-	*x = ChooseSettingsRequest{}
+func (x *WriteSettingsRequest) Reset() {
+	*x = WriteSettingsRequest{}
 	mi := &file_numen_v1_settings_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ChooseSettingsRequest) String() string {
+func (x *WriteSettingsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ChooseSettingsRequest) ProtoMessage() {}
+func (*WriteSettingsRequest) ProtoMessage() {}
 
-func (x *ChooseSettingsRequest) ProtoReflect() protoreflect.Message {
+func (x *WriteSettingsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_settings_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -376,38 +376,38 @@ func (x *ChooseSettingsRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChooseSettingsRequest.ProtoReflect.Descriptor instead.
-func (*ChooseSettingsRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use WriteSettingsRequest.ProtoReflect.Descriptor instead.
+func (*WriteSettingsRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ChooseSettingsRequest) GetSettings() []*Setting {
+func (x *WriteSettingsRequest) GetSettings() []*Setting {
 	if x != nil {
 		return x.Settings
 	}
 	return nil
 }
 
-type ChooseSettingsResponse struct {
+type WriteSettingsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ChooseSettingsResponse) Reset() {
-	*x = ChooseSettingsResponse{}
+func (x *WriteSettingsResponse) Reset() {
+	*x = WriteSettingsResponse{}
 	mi := &file_numen_v1_settings_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ChooseSettingsResponse) String() string {
+func (x *WriteSettingsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ChooseSettingsResponse) ProtoMessage() {}
+func (*WriteSettingsResponse) ProtoMessage() {}
 
-func (x *ChooseSettingsResponse) ProtoReflect() protoreflect.Message {
+func (x *WriteSettingsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_settings_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -419,31 +419,31 @@ func (x *ChooseSettingsResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChooseSettingsResponse.ProtoReflect.Descriptor instead.
-func (*ChooseSettingsResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use WriteSettingsResponse.ProtoReflect.Descriptor instead.
+func (*WriteSettingsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{5}
 }
 
-type SettingsFileRequest struct {
+type ReadSettingsFileRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SettingsFileRequest) Reset() {
-	*x = SettingsFileRequest{}
+func (x *ReadSettingsFileRequest) Reset() {
+	*x = ReadSettingsFileRequest{}
 	mi := &file_numen_v1_settings_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SettingsFileRequest) String() string {
+func (x *ReadSettingsFileRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SettingsFileRequest) ProtoMessage() {}
+func (*ReadSettingsFileRequest) ProtoMessage() {}
 
-func (x *SettingsFileRequest) ProtoReflect() protoreflect.Message {
+func (x *ReadSettingsFileRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_settings_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -455,12 +455,12 @@ func (x *SettingsFileRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SettingsFileRequest.ProtoReflect.Descriptor instead.
-func (*SettingsFileRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReadSettingsFileRequest.ProtoReflect.Descriptor instead.
+func (*ReadSettingsFileRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{6}
 }
 
-type SettingsFileResponse struct {
+type ReadSettingsFileResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The file as its person wrote it. A file that is not there is an empty
 	// object, which is what an installation nobody has configured runs on.
@@ -471,20 +471,20 @@ type SettingsFileResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SettingsFileResponse) Reset() {
-	*x = SettingsFileResponse{}
+func (x *ReadSettingsFileResponse) Reset() {
+	*x = ReadSettingsFileResponse{}
 	mi := &file_numen_v1_settings_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SettingsFileResponse) String() string {
+func (x *ReadSettingsFileResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SettingsFileResponse) ProtoMessage() {}
+func (*ReadSettingsFileResponse) ProtoMessage() {}
 
-func (x *SettingsFileResponse) ProtoReflect() protoreflect.Message {
+func (x *ReadSettingsFileResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_settings_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -496,19 +496,19 @@ func (x *SettingsFileResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SettingsFileResponse.ProtoReflect.Descriptor instead.
-func (*SettingsFileResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReadSettingsFileResponse.ProtoReflect.Descriptor instead.
+func (*ReadSettingsFileResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *SettingsFileResponse) GetWritten() string {
+func (x *ReadSettingsFileResponse) GetWritten() string {
 	if x != nil {
 		return x.Written
 	}
 	return ""
 }
 
-func (x *SettingsFileResponse) GetPath() string {
+func (x *ReadSettingsFileResponse) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
@@ -621,9 +621,9 @@ var File_numen_v1_settings_proto protoreflect.FileDescriptor
 
 const file_numen_v1_settings_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x11\n" +
-	"\x0fSettingsRequest\"i\n" +
-	"\x10SettingsResponse\x12\x18\n" +
+	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x14\n" +
+	"\x12GetSettingsRequest\"l\n" +
+	"\x13GetSettingsResponse\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12'\n" +
 	"\x06models\x18\x03 \x03(\v2\x0f.numen.v1.ModelR\x06models\"\xdc\x01\n" +
@@ -638,12 +638,12 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\bpresence\x18\a \x01(\x0e2\x12.numen.v1.PresenceR\bpresence\"/\n" +
 	"\aSetting\x12\x0e\n" +
 	"\x02at\x18\x01 \x03(\tR\x02at\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value\"F\n" +
-	"\x15ChooseSettingsRequest\x12-\n" +
-	"\bsettings\x18\x01 \x03(\v2\x11.numen.v1.SettingR\bsettings\"\x18\n" +
-	"\x16ChooseSettingsResponse\"\x15\n" +
-	"\x13SettingsFileRequest\"D\n" +
-	"\x14SettingsFileResponse\x12\x18\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\"E\n" +
+	"\x14WriteSettingsRequest\x12-\n" +
+	"\bsettings\x18\x01 \x03(\v2\x11.numen.v1.SettingR\bsettings\"\x17\n" +
+	"\x15WriteSettingsResponse\"\x19\n" +
+	"\x17ReadSettingsFileRequest\"H\n" +
+	"\x18ReadSettingsFileResponse\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\"V\n" +
 	"\x18WriteSettingsFileRequest\x12\x18\n" +
@@ -658,11 +658,11 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\x14PRESENCE_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10PRESENCE_PRESENT\x10\x01\x12\x18\n" +
 	"\x14PRESENCE_NOT_FETCHED\x10\x02\x12\x1d\n" +
-	"\x19PRESENCE_NOTHING_TO_FETCH\x10\x032\xd6\x02\n" +
-	"\x0fSettingsService\x12A\n" +
-	"\bSettings\x12\x19.numen.v1.SettingsRequest\x1a\x1a.numen.v1.SettingsResponse\x12S\n" +
-	"\x0eChooseSettings\x12\x1f.numen.v1.ChooseSettingsRequest\x1a .numen.v1.ChooseSettingsResponse\x12M\n" +
-	"\fSettingsFile\x12\x1d.numen.v1.SettingsFileRequest\x1a\x1e.numen.v1.SettingsFileResponse\x12\\\n" +
+	"\x19PRESENCE_NOTHING_TO_FETCH\x10\x032\xe8\x02\n" +
+	"\x0fSettingsService\x12J\n" +
+	"\vGetSettings\x12\x1c.numen.v1.GetSettingsRequest\x1a\x1d.numen.v1.GetSettingsResponse\x12P\n" +
+	"\rWriteSettings\x12\x1e.numen.v1.WriteSettingsRequest\x1a\x1f.numen.v1.WriteSettingsResponse\x12Y\n" +
+	"\x10ReadSettingsFile\x12!.numen.v1.ReadSettingsFileRequest\x1a\".numen.v1.ReadSettingsFileResponse\x12\\\n" +
 	"\x11WriteSettingsFile\x12\".numen.v1.WriteSettingsFileRequest\x1a#.numen.v1.WriteSettingsFileResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
@@ -681,31 +681,31 @@ var file_numen_v1_settings_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_settings_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_numen_v1_settings_proto_goTypes = []any{
 	(Presence)(0),                     // 0: numen.v1.Presence
-	(*SettingsRequest)(nil),           // 1: numen.v1.SettingsRequest
-	(*SettingsResponse)(nil),          // 2: numen.v1.SettingsResponse
+	(*GetSettingsRequest)(nil),        // 1: numen.v1.GetSettingsRequest
+	(*GetSettingsResponse)(nil),       // 2: numen.v1.GetSettingsResponse
 	(*Model)(nil),                     // 3: numen.v1.Model
 	(*Setting)(nil),                   // 4: numen.v1.Setting
-	(*ChooseSettingsRequest)(nil),     // 5: numen.v1.ChooseSettingsRequest
-	(*ChooseSettingsResponse)(nil),    // 6: numen.v1.ChooseSettingsResponse
-	(*SettingsFileRequest)(nil),       // 7: numen.v1.SettingsFileRequest
-	(*SettingsFileResponse)(nil),      // 8: numen.v1.SettingsFileResponse
+	(*WriteSettingsRequest)(nil),      // 5: numen.v1.WriteSettingsRequest
+	(*WriteSettingsResponse)(nil),     // 6: numen.v1.WriteSettingsResponse
+	(*ReadSettingsFileRequest)(nil),   // 7: numen.v1.ReadSettingsFileRequest
+	(*ReadSettingsFileResponse)(nil),  // 8: numen.v1.ReadSettingsFileResponse
 	(*WriteSettingsFileRequest)(nil),  // 9: numen.v1.WriteSettingsFileRequest
 	(*WriteSettingsFileResponse)(nil), // 10: numen.v1.WriteSettingsFileResponse
 	(Refusal)(0),                      // 11: numen.v1.Refusal
 }
 var file_numen_v1_settings_proto_depIdxs = []int32{
-	3,  // 0: numen.v1.SettingsResponse.models:type_name -> numen.v1.Model
+	3,  // 0: numen.v1.GetSettingsResponse.models:type_name -> numen.v1.Model
 	4,  // 1: numen.v1.Model.writes:type_name -> numen.v1.Setting
 	0,  // 2: numen.v1.Model.presence:type_name -> numen.v1.Presence
-	4,  // 3: numen.v1.ChooseSettingsRequest.settings:type_name -> numen.v1.Setting
+	4,  // 3: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
 	11, // 4: numen.v1.WriteSettingsFileResponse.refusal:type_name -> numen.v1.Refusal
-	1,  // 5: numen.v1.SettingsService.Settings:input_type -> numen.v1.SettingsRequest
-	5,  // 6: numen.v1.SettingsService.ChooseSettings:input_type -> numen.v1.ChooseSettingsRequest
-	7,  // 7: numen.v1.SettingsService.SettingsFile:input_type -> numen.v1.SettingsFileRequest
+	1,  // 5: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
+	5,  // 6: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
+	7,  // 7: numen.v1.SettingsService.ReadSettingsFile:input_type -> numen.v1.ReadSettingsFileRequest
 	9,  // 8: numen.v1.SettingsService.WriteSettingsFile:input_type -> numen.v1.WriteSettingsFileRequest
-	2,  // 9: numen.v1.SettingsService.Settings:output_type -> numen.v1.SettingsResponse
-	6,  // 10: numen.v1.SettingsService.ChooseSettings:output_type -> numen.v1.ChooseSettingsResponse
-	8,  // 11: numen.v1.SettingsService.SettingsFile:output_type -> numen.v1.SettingsFileResponse
+	2,  // 9: numen.v1.SettingsService.GetSettings:output_type -> numen.v1.GetSettingsResponse
+	6,  // 10: numen.v1.SettingsService.WriteSettings:output_type -> numen.v1.WriteSettingsResponse
+	8,  // 11: numen.v1.SettingsService.ReadSettingsFile:output_type -> numen.v1.ReadSettingsFileResponse
 	10, // 12: numen.v1.SettingsService.WriteSettingsFile:output_type -> numen.v1.WriteSettingsFileResponse
 	9,  // [9:13] is the sub-list for method output_type
 	5,  // [5:9] is the sub-list for method input_type

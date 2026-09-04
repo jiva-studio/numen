@@ -161,9 +161,9 @@ func TestTheSettingsFileIsNotServedToThePhone(t *testing.T) {
 	t.Cleanup(func() { _ = bind.Stop() })
 
 	for _, at := range []string{
-		"/numen.v1.SettingsService/Settings",
-		"/numen.v1.SettingsService/SettingsFile",
-		"/numen.v1.SettingsService/ChooseSettings",
+		"/numen.v1.SettingsService/GetSettings",
+		"/numen.v1.SettingsService/ReadSettingsFile",
+		"/numen.v1.SettingsService/WriteSettings",
 		"/numen.v1.SettingsService/WriteSettingsFile",
 	} {
 		url := fmt.Sprintf("http://127.0.0.1:%d%s", port, at)

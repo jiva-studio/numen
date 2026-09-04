@@ -38,15 +38,15 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// SettingsServiceSettingsProcedure is the fully-qualified name of the SettingsService's Settings
-	// RPC.
-	SettingsServiceSettingsProcedure = "/numen.v1.SettingsService/Settings"
-	// SettingsServiceChooseSettingsProcedure is the fully-qualified name of the SettingsService's
-	// ChooseSettings RPC.
-	SettingsServiceChooseSettingsProcedure = "/numen.v1.SettingsService/ChooseSettings"
-	// SettingsServiceSettingsFileProcedure is the fully-qualified name of the SettingsService's
-	// SettingsFile RPC.
-	SettingsServiceSettingsFileProcedure = "/numen.v1.SettingsService/SettingsFile"
+	// SettingsServiceGetSettingsProcedure is the fully-qualified name of the SettingsService's
+	// GetSettings RPC.
+	SettingsServiceGetSettingsProcedure = "/numen.v1.SettingsService/GetSettings"
+	// SettingsServiceWriteSettingsProcedure is the fully-qualified name of the SettingsService's
+	// WriteSettings RPC.
+	SettingsServiceWriteSettingsProcedure = "/numen.v1.SettingsService/WriteSettings"
+	// SettingsServiceReadSettingsFileProcedure is the fully-qualified name of the SettingsService's
+	// ReadSettingsFile RPC.
+	SettingsServiceReadSettingsFileProcedure = "/numen.v1.SettingsService/ReadSettingsFile"
 	// SettingsServiceWriteSettingsFileProcedure is the fully-qualified name of the SettingsService's
 	// WriteSettingsFile RPC.
 	SettingsServiceWriteSettingsFileProcedure = "/numen.v1.SettingsService/WriteSettingsFile"
@@ -54,15 +54,15 @@ const (
 
 // SettingsServiceClient is a client for the numen.v1.SettingsService service.
 type SettingsServiceClient interface {
-	// Settings is every setting of the file, and the models the settings that
+	// GetSettings is every setting of the file, and the models the settings that
 	// name one can be set to.
-	Settings(context.Context, *connect.Request[v1.SettingsRequest]) (*connect.Response[v1.SettingsResponse], error)
-	// ChooseSettings writes settings into that file. The file is patched as an
+	GetSettings(context.Context, *connect.Request[v1.GetSettingsRequest]) (*connect.Response[v1.GetSettingsResponse], error)
+	// WriteSettings writes settings into that file. The file is patched as an
 	// object, so every key a person typed stays where it was, and a file the
 	// settings could not be read out of again is not written at all.
-	ChooseSettings(context.Context, *connect.Request[v1.ChooseSettingsRequest]) (*connect.Response[v1.ChooseSettingsResponse], error)
-	// SettingsFile is that file as its person wrote it, byte for byte.
-	SettingsFile(context.Context, *connect.Request[v1.SettingsFileRequest]) (*connect.Response[v1.SettingsFileResponse], error)
+	WriteSettings(context.Context, *connect.Request[v1.WriteSettingsRequest]) (*connect.Response[v1.WriteSettingsResponse], error)
+	// ReadSettingsFile is that file as its person wrote it, byte for byte.
+	ReadSettingsFile(context.Context, *connect.Request[v1.ReadSettingsFileRequest]) (*connect.Response[v1.ReadSettingsFileResponse], error)
 	// WriteSettingsFile replaces that file whole, with the bytes as they were
 	// typed. A file the settings cannot be read out of is refused and the file is
 	// left as it was; what is said names where in the file the trouble is. A file
@@ -82,22 +82,22 @@ func NewSettingsServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 	baseURL = strings.TrimRight(baseURL, "/")
 	settingsServiceMethods := v1.File_numen_v1_settings_proto.Services().ByName("SettingsService").Methods()
 	return &settingsServiceClient{
-		settings: connect.NewClient[v1.SettingsRequest, v1.SettingsResponse](
+		getSettings: connect.NewClient[v1.GetSettingsRequest, v1.GetSettingsResponse](
 			httpClient,
-			baseURL+SettingsServiceSettingsProcedure,
-			connect.WithSchema(settingsServiceMethods.ByName("Settings")),
+			baseURL+SettingsServiceGetSettingsProcedure,
+			connect.WithSchema(settingsServiceMethods.ByName("GetSettings")),
 			connect.WithClientOptions(opts...),
 		),
-		chooseSettings: connect.NewClient[v1.ChooseSettingsRequest, v1.ChooseSettingsResponse](
+		writeSettings: connect.NewClient[v1.WriteSettingsRequest, v1.WriteSettingsResponse](
 			httpClient,
-			baseURL+SettingsServiceChooseSettingsProcedure,
-			connect.WithSchema(settingsServiceMethods.ByName("ChooseSettings")),
+			baseURL+SettingsServiceWriteSettingsProcedure,
+			connect.WithSchema(settingsServiceMethods.ByName("WriteSettings")),
 			connect.WithClientOptions(opts...),
 		),
-		settingsFile: connect.NewClient[v1.SettingsFileRequest, v1.SettingsFileResponse](
+		readSettingsFile: connect.NewClient[v1.ReadSettingsFileRequest, v1.ReadSettingsFileResponse](
 			httpClient,
-			baseURL+SettingsServiceSettingsFileProcedure,
-			connect.WithSchema(settingsServiceMethods.ByName("SettingsFile")),
+			baseURL+SettingsServiceReadSettingsFileProcedure,
+			connect.WithSchema(settingsServiceMethods.ByName("ReadSettingsFile")),
 			connect.WithClientOptions(opts...),
 		),
 		writeSettingsFile: connect.NewClient[v1.WriteSettingsFileRequest, v1.WriteSettingsFileResponse](
@@ -111,25 +111,25 @@ func NewSettingsServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 
 // settingsServiceClient implements SettingsServiceClient.
 type settingsServiceClient struct {
-	settings          *connect.Client[v1.SettingsRequest, v1.SettingsResponse]
-	chooseSettings    *connect.Client[v1.ChooseSettingsRequest, v1.ChooseSettingsResponse]
-	settingsFile      *connect.Client[v1.SettingsFileRequest, v1.SettingsFileResponse]
+	getSettings       *connect.Client[v1.GetSettingsRequest, v1.GetSettingsResponse]
+	writeSettings     *connect.Client[v1.WriteSettingsRequest, v1.WriteSettingsResponse]
+	readSettingsFile  *connect.Client[v1.ReadSettingsFileRequest, v1.ReadSettingsFileResponse]
 	writeSettingsFile *connect.Client[v1.WriteSettingsFileRequest, v1.WriteSettingsFileResponse]
 }
 
-// Settings calls numen.v1.SettingsService.Settings.
-func (c *settingsServiceClient) Settings(ctx context.Context, req *connect.Request[v1.SettingsRequest]) (*connect.Response[v1.SettingsResponse], error) {
-	return c.settings.CallUnary(ctx, req)
+// GetSettings calls numen.v1.SettingsService.GetSettings.
+func (c *settingsServiceClient) GetSettings(ctx context.Context, req *connect.Request[v1.GetSettingsRequest]) (*connect.Response[v1.GetSettingsResponse], error) {
+	return c.getSettings.CallUnary(ctx, req)
 }
 
-// ChooseSettings calls numen.v1.SettingsService.ChooseSettings.
-func (c *settingsServiceClient) ChooseSettings(ctx context.Context, req *connect.Request[v1.ChooseSettingsRequest]) (*connect.Response[v1.ChooseSettingsResponse], error) {
-	return c.chooseSettings.CallUnary(ctx, req)
+// WriteSettings calls numen.v1.SettingsService.WriteSettings.
+func (c *settingsServiceClient) WriteSettings(ctx context.Context, req *connect.Request[v1.WriteSettingsRequest]) (*connect.Response[v1.WriteSettingsResponse], error) {
+	return c.writeSettings.CallUnary(ctx, req)
 }
 
-// SettingsFile calls numen.v1.SettingsService.SettingsFile.
-func (c *settingsServiceClient) SettingsFile(ctx context.Context, req *connect.Request[v1.SettingsFileRequest]) (*connect.Response[v1.SettingsFileResponse], error) {
-	return c.settingsFile.CallUnary(ctx, req)
+// ReadSettingsFile calls numen.v1.SettingsService.ReadSettingsFile.
+func (c *settingsServiceClient) ReadSettingsFile(ctx context.Context, req *connect.Request[v1.ReadSettingsFileRequest]) (*connect.Response[v1.ReadSettingsFileResponse], error) {
+	return c.readSettingsFile.CallUnary(ctx, req)
 }
 
 // WriteSettingsFile calls numen.v1.SettingsService.WriteSettingsFile.
@@ -139,15 +139,15 @@ func (c *settingsServiceClient) WriteSettingsFile(ctx context.Context, req *conn
 
 // SettingsServiceHandler is an implementation of the numen.v1.SettingsService service.
 type SettingsServiceHandler interface {
-	// Settings is every setting of the file, and the models the settings that
+	// GetSettings is every setting of the file, and the models the settings that
 	// name one can be set to.
-	Settings(context.Context, *connect.Request[v1.SettingsRequest]) (*connect.Response[v1.SettingsResponse], error)
-	// ChooseSettings writes settings into that file. The file is patched as an
+	GetSettings(context.Context, *connect.Request[v1.GetSettingsRequest]) (*connect.Response[v1.GetSettingsResponse], error)
+	// WriteSettings writes settings into that file. The file is patched as an
 	// object, so every key a person typed stays where it was, and a file the
 	// settings could not be read out of again is not written at all.
-	ChooseSettings(context.Context, *connect.Request[v1.ChooseSettingsRequest]) (*connect.Response[v1.ChooseSettingsResponse], error)
-	// SettingsFile is that file as its person wrote it, byte for byte.
-	SettingsFile(context.Context, *connect.Request[v1.SettingsFileRequest]) (*connect.Response[v1.SettingsFileResponse], error)
+	WriteSettings(context.Context, *connect.Request[v1.WriteSettingsRequest]) (*connect.Response[v1.WriteSettingsResponse], error)
+	// ReadSettingsFile is that file as its person wrote it, byte for byte.
+	ReadSettingsFile(context.Context, *connect.Request[v1.ReadSettingsFileRequest]) (*connect.Response[v1.ReadSettingsFileResponse], error)
 	// WriteSettingsFile replaces that file whole, with the bytes as they were
 	// typed. A file the settings cannot be read out of is refused and the file is
 	// left as it was; what is said names where in the file the trouble is. A file
@@ -163,22 +163,22 @@ type SettingsServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	settingsServiceMethods := v1.File_numen_v1_settings_proto.Services().ByName("SettingsService").Methods()
-	settingsServiceSettingsHandler := connect.NewUnaryHandler(
-		SettingsServiceSettingsProcedure,
-		svc.Settings,
-		connect.WithSchema(settingsServiceMethods.ByName("Settings")),
+	settingsServiceGetSettingsHandler := connect.NewUnaryHandler(
+		SettingsServiceGetSettingsProcedure,
+		svc.GetSettings,
+		connect.WithSchema(settingsServiceMethods.ByName("GetSettings")),
 		connect.WithHandlerOptions(opts...),
 	)
-	settingsServiceChooseSettingsHandler := connect.NewUnaryHandler(
-		SettingsServiceChooseSettingsProcedure,
-		svc.ChooseSettings,
-		connect.WithSchema(settingsServiceMethods.ByName("ChooseSettings")),
+	settingsServiceWriteSettingsHandler := connect.NewUnaryHandler(
+		SettingsServiceWriteSettingsProcedure,
+		svc.WriteSettings,
+		connect.WithSchema(settingsServiceMethods.ByName("WriteSettings")),
 		connect.WithHandlerOptions(opts...),
 	)
-	settingsServiceSettingsFileHandler := connect.NewUnaryHandler(
-		SettingsServiceSettingsFileProcedure,
-		svc.SettingsFile,
-		connect.WithSchema(settingsServiceMethods.ByName("SettingsFile")),
+	settingsServiceReadSettingsFileHandler := connect.NewUnaryHandler(
+		SettingsServiceReadSettingsFileProcedure,
+		svc.ReadSettingsFile,
+		connect.WithSchema(settingsServiceMethods.ByName("ReadSettingsFile")),
 		connect.WithHandlerOptions(opts...),
 	)
 	settingsServiceWriteSettingsFileHandler := connect.NewUnaryHandler(
@@ -189,12 +189,12 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 	)
 	return "/numen.v1.SettingsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case SettingsServiceSettingsProcedure:
-			settingsServiceSettingsHandler.ServeHTTP(w, r)
-		case SettingsServiceChooseSettingsProcedure:
-			settingsServiceChooseSettingsHandler.ServeHTTP(w, r)
-		case SettingsServiceSettingsFileProcedure:
-			settingsServiceSettingsFileHandler.ServeHTTP(w, r)
+		case SettingsServiceGetSettingsProcedure:
+			settingsServiceGetSettingsHandler.ServeHTTP(w, r)
+		case SettingsServiceWriteSettingsProcedure:
+			settingsServiceWriteSettingsHandler.ServeHTTP(w, r)
+		case SettingsServiceReadSettingsFileProcedure:
+			settingsServiceReadSettingsFileHandler.ServeHTTP(w, r)
 		case SettingsServiceWriteSettingsFileProcedure:
 			settingsServiceWriteSettingsFileHandler.ServeHTTP(w, r)
 		default:
@@ -206,16 +206,16 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 // UnimplementedSettingsServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedSettingsServiceHandler struct{}
 
-func (UnimplementedSettingsServiceHandler) Settings(context.Context, *connect.Request[v1.SettingsRequest]) (*connect.Response[v1.SettingsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.Settings is not implemented"))
+func (UnimplementedSettingsServiceHandler) GetSettings(context.Context, *connect.Request[v1.GetSettingsRequest]) (*connect.Response[v1.GetSettingsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.GetSettings is not implemented"))
 }
 
-func (UnimplementedSettingsServiceHandler) ChooseSettings(context.Context, *connect.Request[v1.ChooseSettingsRequest]) (*connect.Response[v1.ChooseSettingsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.ChooseSettings is not implemented"))
+func (UnimplementedSettingsServiceHandler) WriteSettings(context.Context, *connect.Request[v1.WriteSettingsRequest]) (*connect.Response[v1.WriteSettingsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.WriteSettings is not implemented"))
 }
 
-func (UnimplementedSettingsServiceHandler) SettingsFile(context.Context, *connect.Request[v1.SettingsFileRequest]) (*connect.Response[v1.SettingsFileResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.SettingsFile is not implemented"))
+func (UnimplementedSettingsServiceHandler) ReadSettingsFile(context.Context, *connect.Request[v1.ReadSettingsFileRequest]) (*connect.Response[v1.ReadSettingsFileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.ReadSettingsFile is not implemented"))
 }
 
 func (UnimplementedSettingsServiceHandler) WriteSettingsFile(context.Context, *connect.Request[v1.WriteSettingsFileRequest]) (*connect.Response[v1.WriteSettingsFileResponse], error) {

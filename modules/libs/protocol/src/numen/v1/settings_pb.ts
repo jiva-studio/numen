@@ -18,25 +18,25 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/settings.proto.
  */
 export const file_numen_v1_settings: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiEQoPU2V0dGluZ3NSZXF1ZXN0IlIKEFNldHRpbmdzUmVzcG9uc2USDwoHd3JpdHRlbhgBIAEoCRIMCgRwYXRoGAIgASgJEh8KBm1vZGVscxgDIAMoCzIPLm51bWVuLnYxLk1vZGVsIqIBCgVNb2RlbBIQCghuYW1lZF9hdBgBIAMoCRIMCgRuYW1lGAIgASgJEg0KBXRpdGxlGAMgASgJEg0KBXNoZWxmGAQgASgJEhIKCmJ5X2RlZmF1bHQYBSABKAgSIQoGd3JpdGVzGAYgAygLMhEubnVtZW4udjEuU2V0dGluZxIkCghwcmVzZW5jZRgHIAEoDjISLm51bWVuLnYxLlByZXNlbmNlIiQKB1NldHRpbmcSCgoCYXQYASADKAkSDQoFdmFsdWUYAiABKAkiPAoVQ2hvb3NlU2V0dGluZ3NSZXF1ZXN0EiMKCHNldHRpbmdzGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyIYChZDaG9vc2VTZXR0aW5nc1Jlc3BvbnNlIhUKE1NldHRpbmdzRmlsZVJlcXVlc3QiNQoUU2V0dGluZ3NGaWxlUmVzcG9uc2USDwoHd3JpdHRlbhgBIAEoCRIMCgRwYXRoGAIgASgJIkcKGFdyaXRlU2V0dGluZ3NGaWxlUmVxdWVzdBIPCgd3cml0dGVuGAEgASgJEhEKBHNlZW4YAiABKAlIAIgBAUIHCgVfc2VlbiJfChlXcml0ZVNldHRpbmdzRmlsZVJlc3BvbnNlEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWxKBAgBEAJSB2NoYW5nZWQqcwoIUHJlc2VuY2USGAoUUFJFU0VOQ0VfVU5TUEVDSUZJRUQQABIUChBQUkVTRU5DRV9QUkVTRU5UEAESGAoUUFJFU0VOQ0VfTk9UX0ZFVENIRUQQAhIdChlQUkVTRU5DRV9OT1RISU5HX1RPX0ZFVENIEAMy1gIKD1NldHRpbmdzU2VydmljZRJBCghTZXR0aW5ncxIZLm51bWVuLnYxLlNldHRpbmdzUmVxdWVzdBoaLm51bWVuLnYxLlNldHRpbmdzUmVzcG9uc2USUwoOQ2hvb3NlU2V0dGluZ3MSHy5udW1lbi52MS5DaG9vc2VTZXR0aW5nc1JlcXVlc3QaIC5udW1lbi52MS5DaG9vc2VTZXR0aW5nc1Jlc3BvbnNlEk0KDFNldHRpbmdzRmlsZRIdLm51bWVuLnYxLlNldHRpbmdzRmlsZVJlcXVlc3QaHi5udW1lbi52MS5TZXR0aW5nc0ZpbGVSZXNwb25zZRJcChFXcml0ZVNldHRpbmdzRmlsZRIiLm51bWVuLnYxLldyaXRlU2V0dGluZ3NGaWxlUmVxdWVzdBojLm51bWVuLnYxLldyaXRlU2V0dGluZ3NGaWxlUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IlUKE0dldFNldHRpbmdzUmVzcG9uc2USDwoHd3JpdHRlbhgBIAEoCRIMCgRwYXRoGAIgASgJEh8KBm1vZGVscxgDIAMoCzIPLm51bWVuLnYxLk1vZGVsIqIBCgVNb2RlbBIQCghuYW1lZF9hdBgBIAMoCRIMCgRuYW1lGAIgASgJEg0KBXRpdGxlGAMgASgJEg0KBXNoZWxmGAQgASgJEhIKCmJ5X2RlZmF1bHQYBSABKAgSIQoGd3JpdGVzGAYgAygLMhEubnVtZW4udjEuU2V0dGluZxIkCghwcmVzZW5jZRgHIAEoDjISLm51bWVuLnYxLlByZXNlbmNlIiQKB1NldHRpbmcSCgoCYXQYASADKAkSDQoFdmFsdWUYAiABKAkiOwoUV3JpdGVTZXR0aW5nc1JlcXVlc3QSIwoIc2V0dGluZ3MYASADKAsyES5udW1lbi52MS5TZXR0aW5nIhcKFVdyaXRlU2V0dGluZ3NSZXNwb25zZSIZChdSZWFkU2V0dGluZ3NGaWxlUmVxdWVzdCI5ChhSZWFkU2V0dGluZ3NGaWxlUmVzcG9uc2USDwoHd3JpdHRlbhgBIAEoCRIMCgRwYXRoGAIgASgJIkcKGFdyaXRlU2V0dGluZ3NGaWxlUmVxdWVzdBIPCgd3cml0dGVuGAEgASgJEhEKBHNlZW4YAiABKAlIAIgBAUIHCgVfc2VlbiJfChlXcml0ZVNldHRpbmdzRmlsZVJlc3BvbnNlEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWxKBAgBEAJSB2NoYW5nZWQqcwoIUHJlc2VuY2USGAoUUFJFU0VOQ0VfVU5TUEVDSUZJRUQQABIUChBQUkVTRU5DRV9QUkVTRU5UEAESGAoUUFJFU0VOQ0VfTk9UX0ZFVENIRUQQAhIdChlQUkVTRU5DRV9OT1RISU5HX1RPX0ZFVENIEAMy6AIKD1NldHRpbmdzU2VydmljZRJKCgtHZXRTZXR0aW5ncxIcLm51bWVuLnYxLkdldFNldHRpbmdzUmVxdWVzdBodLm51bWVuLnYxLkdldFNldHRpbmdzUmVzcG9uc2USUAoNV3JpdGVTZXR0aW5ncxIeLm51bWVuLnYxLldyaXRlU2V0dGluZ3NSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1Jlc3BvbnNlElkKEFJlYWRTZXR0aW5nc0ZpbGUSIS5udW1lbi52MS5SZWFkU2V0dGluZ3NGaWxlUmVxdWVzdBoiLm51bWVuLnYxLlJlYWRTZXR0aW5nc0ZpbGVSZXNwb25zZRJcChFXcml0ZVNldHRpbmdzRmlsZRIiLm51bWVuLnYxLldyaXRlU2V0dGluZ3NGaWxlUmVxdWVzdBojLm51bWVuLnYxLldyaXRlU2V0dGluZ3NGaWxlUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
- * @generated from message numen.v1.SettingsRequest
+ * @generated from message numen.v1.GetSettingsRequest
  */
-export type SettingsRequest = Message<"numen.v1.SettingsRequest"> & {
+export type GetSettingsRequest = Message<"numen.v1.GetSettingsRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.SettingsRequest.
- * Use `create(SettingsRequestSchema)` to create a new message.
+ * Describes the message numen.v1.GetSettingsRequest.
+ * Use `create(GetSettingsRequestSchema)` to create a new message.
  */
-export const SettingsRequestSchema: GenMessage<SettingsRequest> = /*@__PURE__*/
+export const GetSettingsRequestSchema: GenMessage<GetSettingsRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_settings, 0);
 
 /**
- * @generated from message numen.v1.SettingsResponse
+ * @generated from message numen.v1.GetSettingsResponse
  */
-export type SettingsResponse = Message<"numen.v1.SettingsResponse"> & {
+export type GetSettingsResponse = Message<"numen.v1.GetSettingsResponse"> & {
   /**
    * Every setting as it stands, as JSON: what the file says, and what an
    * installation nobody has configured does under everything it does not.
@@ -61,10 +61,10 @@ export type SettingsResponse = Message<"numen.v1.SettingsResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.SettingsResponse.
- * Use `create(SettingsResponseSchema)` to create a new message.
+ * Describes the message numen.v1.GetSettingsResponse.
+ * Use `create(GetSettingsResponseSchema)` to create a new message.
  */
-export const SettingsResponseSchema: GenMessage<SettingsResponse> = /*@__PURE__*/
+export const GetSettingsResponseSchema: GenMessage<GetSettingsResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_settings, 1);
 
 /**
@@ -160,9 +160,9 @@ export const SettingSchema: GenMessage<Setting> = /*@__PURE__*/
   messageDesc(file_numen_v1_settings, 3);
 
 /**
- * @generated from message numen.v1.ChooseSettingsRequest
+ * @generated from message numen.v1.WriteSettingsRequest
  */
-export type ChooseSettingsRequest = Message<"numen.v1.ChooseSettingsRequest"> & {
+export type WriteSettingsRequest = Message<"numen.v1.WriteSettingsRequest"> & {
   /**
    * The settings to write. They are written together, or none of them is.
    *
@@ -172,42 +172,42 @@ export type ChooseSettingsRequest = Message<"numen.v1.ChooseSettingsRequest"> & 
 };
 
 /**
- * Describes the message numen.v1.ChooseSettingsRequest.
- * Use `create(ChooseSettingsRequestSchema)` to create a new message.
+ * Describes the message numen.v1.WriteSettingsRequest.
+ * Use `create(WriteSettingsRequestSchema)` to create a new message.
  */
-export const ChooseSettingsRequestSchema: GenMessage<ChooseSettingsRequest> = /*@__PURE__*/
+export const WriteSettingsRequestSchema: GenMessage<WriteSettingsRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_settings, 4);
 
 /**
- * @generated from message numen.v1.ChooseSettingsResponse
+ * @generated from message numen.v1.WriteSettingsResponse
  */
-export type ChooseSettingsResponse = Message<"numen.v1.ChooseSettingsResponse"> & {
+export type WriteSettingsResponse = Message<"numen.v1.WriteSettingsResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.ChooseSettingsResponse.
- * Use `create(ChooseSettingsResponseSchema)` to create a new message.
+ * Describes the message numen.v1.WriteSettingsResponse.
+ * Use `create(WriteSettingsResponseSchema)` to create a new message.
  */
-export const ChooseSettingsResponseSchema: GenMessage<ChooseSettingsResponse> = /*@__PURE__*/
+export const WriteSettingsResponseSchema: GenMessage<WriteSettingsResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_settings, 5);
 
 /**
- * @generated from message numen.v1.SettingsFileRequest
+ * @generated from message numen.v1.ReadSettingsFileRequest
  */
-export type SettingsFileRequest = Message<"numen.v1.SettingsFileRequest"> & {
+export type ReadSettingsFileRequest = Message<"numen.v1.ReadSettingsFileRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.SettingsFileRequest.
- * Use `create(SettingsFileRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ReadSettingsFileRequest.
+ * Use `create(ReadSettingsFileRequestSchema)` to create a new message.
  */
-export const SettingsFileRequestSchema: GenMessage<SettingsFileRequest> = /*@__PURE__*/
+export const ReadSettingsFileRequestSchema: GenMessage<ReadSettingsFileRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_settings, 6);
 
 /**
- * @generated from message numen.v1.SettingsFileResponse
+ * @generated from message numen.v1.ReadSettingsFileResponse
  */
-export type SettingsFileResponse = Message<"numen.v1.SettingsFileResponse"> & {
+export type ReadSettingsFileResponse = Message<"numen.v1.ReadSettingsFileResponse"> & {
   /**
    * The file as its person wrote it. A file that is not there is an empty
    * object, which is what an installation nobody has configured runs on.
@@ -225,10 +225,10 @@ export type SettingsFileResponse = Message<"numen.v1.SettingsFileResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.SettingsFileResponse.
- * Use `create(SettingsFileResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ReadSettingsFileResponse.
+ * Use `create(ReadSettingsFileResponseSchema)` to create a new message.
  */
-export const SettingsFileResponseSchema: GenMessage<SettingsFileResponse> = /*@__PURE__*/
+export const ReadSettingsFileResponseSchema: GenMessage<ReadSettingsFileResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_settings, 7);
 
 /**
@@ -329,37 +329,37 @@ export const PresenceSchema: GenEnum<Presence> = /*@__PURE__*/
  */
 export const SettingsService: GenService<{
   /**
-   * Settings is every setting of the file, and the models the settings that
+   * GetSettings is every setting of the file, and the models the settings that
    * name one can be set to.
    *
-   * @generated from rpc numen.v1.SettingsService.Settings
+   * @generated from rpc numen.v1.SettingsService.GetSettings
    */
-  settings: {
+  getSettings: {
     methodKind: "unary";
-    input: typeof SettingsRequestSchema;
-    output: typeof SettingsResponseSchema;
+    input: typeof GetSettingsRequestSchema;
+    output: typeof GetSettingsResponseSchema;
   },
   /**
-   * ChooseSettings writes settings into that file. The file is patched as an
+   * WriteSettings writes settings into that file. The file is patched as an
    * object, so every key a person typed stays where it was, and a file the
    * settings could not be read out of again is not written at all.
    *
-   * @generated from rpc numen.v1.SettingsService.ChooseSettings
+   * @generated from rpc numen.v1.SettingsService.WriteSettings
    */
-  chooseSettings: {
+  writeSettings: {
     methodKind: "unary";
-    input: typeof ChooseSettingsRequestSchema;
-    output: typeof ChooseSettingsResponseSchema;
+    input: typeof WriteSettingsRequestSchema;
+    output: typeof WriteSettingsResponseSchema;
   },
   /**
-   * SettingsFile is that file as its person wrote it, byte for byte.
+   * ReadSettingsFile is that file as its person wrote it, byte for byte.
    *
-   * @generated from rpc numen.v1.SettingsService.SettingsFile
+   * @generated from rpc numen.v1.SettingsService.ReadSettingsFile
    */
-  settingsFile: {
+  readSettingsFile: {
     methodKind: "unary";
-    input: typeof SettingsFileRequestSchema;
-    output: typeof SettingsFileResponseSchema;
+    input: typeof ReadSettingsFileRequestSchema;
+    output: typeof ReadSettingsFileResponseSchema;
   },
   /**
    * WriteSettingsFile replaces that file whole, with the bytes as they were
