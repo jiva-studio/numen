@@ -5,7 +5,8 @@
 #
 # The packaging workflow gathers the two binaries and the marks beside them
 # into `staged/`, already under the names they keep inside the snap, and writes
-# the version into `staged/version`.
+# the version into `staged/version`. The desktop entries beside this file are
+# the ones that go in: a snap finds an icon by the path it holds it at.
 name: numen
 base: core24
 adopt-info: numen
@@ -16,10 +17,10 @@ description: |
   graph, a typed hierarchy with several parents, spaced repetition, and a
   source layer over PDF and audio.
 
-license: LicenseRef-proprietary
+license: proprietary
 website: https://numen.md
 contact: https://forum.numen.md
-source-code: https://github.com/jiva-studio/numen
+issues: https://forum.numen.md
 
 grade: stable
 confinement: strict

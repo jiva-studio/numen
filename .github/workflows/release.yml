@@ -513,11 +513,15 @@ jobs:
           staged="$work/staged"
           mkdir -p "$staged/bin" "$work/snap"
 
+          at=modules/apps/desktop/build/linux/snap
+
           tar xzf "$RUNNER_TEMP"/built/numen_*_linux_amd64.tar.gz -C "$staged"
           mv "$staged/numen" "$staged/numen-flashcards" "$staged/bin/"
           printf '%s' "$VERSION" > "$staged/version"
 
-          cp modules/apps/desktop/build/linux/snap/snapcraft.yaml "$work/snap/"
+          cp "$at/numen.desktop" "$at/numen-flashcards.desktop" \
+            "$staged/share/applications/"
+          cp "$at/snapcraft.yaml" "$work/snap/"
           find "$staged" -type f -printf '%P\n' | sort
 
       - uses: snapcore/action-build@v1
