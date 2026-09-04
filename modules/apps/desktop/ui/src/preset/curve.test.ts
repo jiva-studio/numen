@@ -22,7 +22,7 @@ import {
   producing,
   shapeOf,
   round,
-  standing,
+  goalValue,
 } from './curve'
 
 const today = new Date('2026-08-30T00:00:00Z')
@@ -112,9 +112,9 @@ describe('the line the window draws in the answer’s place', () => {
 
 describe('where the preset itself stands', () => {
   it('is the value under the key its goal names', () => {
-    expect(standing(settings({ minutesADay: 25 }), today)).toBe(25)
-    expect(standing(settings({ goal: 'retention', retention: 0.85 }), today)).toBe(0.85)
-    expect(standing(settings({ goal: 'date', byDate: '2026-09-29' }), today)).toBe(30)
+    expect(goalValue(settings({ minutesADay: 25 }), today)).toBe(25)
+    expect(goalValue(settings({ goal: 'retention', retention: 0.85 }), today)).toBe(0.85)
+    expect(goalValue(settings({ goal: 'date', byDate: '2026-09-29' }), today)).toBe(30)
   })
 })
 

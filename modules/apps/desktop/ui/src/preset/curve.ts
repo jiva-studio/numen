@@ -269,7 +269,7 @@ export const approximate = (settings: Settings, today: Date): Curve => {
   const grid = gridFor(settings, today)
   const at = grid.map((value) => guessed(settings, value, grid))
   const days = settings.goal === 'date' ? grid.map((value) => dayAfter(today, value)) : []
-  const value = standing(settings, today)
+  const value = goalValue(settings, today)
   const place = nearest(grid, value)
   const now: Place = { at: place, value, day: days[place] ?? '' }
   return {
@@ -287,8 +287,8 @@ export const approximate = (settings: Settings, today: Date): Curve => {
   }
 }
 
-/** Where the preset itself stands, in the units of its goal's grid. */
-export const standing = (settings: Settings, today: Date): number => {
+/** The goal's own value in the preset, in the units of its grid. */
+export const goalValue = (settings: Settings, today: Date): number => {
   if (settings.goal === 'retention') return settings.retention
   if (settings.goal === 'date') return daysUntil(today, settings.byDate)
   return settings.minutesADay
@@ -353,7 +353,7 @@ export const producing = (
   today: Date,
   within: SettingsBounds,
 ): Settings => {
-  const value = curve.grid[place] ?? standing(was, today)
+  const value = curve.grid[place] ?? goalValue(was, today)
   if (curve.goal === 'retention') {
     return { ...was, retention: held(round(value, 2), within.retention) }
   }

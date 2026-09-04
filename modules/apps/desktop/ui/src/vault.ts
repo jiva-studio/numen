@@ -47,7 +47,7 @@ import type { Counting } from '@numen/ui'
 import { fingerprint, refusalIn, staleIn, stamp } from './answers'
 import { DEFAULT_PARTS } from './hanging'
 import { DEFAULT_STARTS } from './reviewing'
-import { standing as settingAt } from './settings/configuring'
+import { settingAt } from './settings/configuring'
 import { write } from './settings/json5'
 import type { Asking as Commanding } from './commanding'
 import type { Asking, Way } from './finding'
@@ -368,7 +368,7 @@ export const core: Core & Asking & Commanding = {
         shelf: one.shelf,
         byDefault: one.byDefault,
         writes: one.writes.map((write) => ({ at: write.at, value: write.value })),
-        presence: standing[one.presence],
+        presence: fetched[one.presence],
       })),
     } satisfies Configured
   },
@@ -708,7 +708,7 @@ const holding: Record<SourceKind, Source> = {
 const sourceKind = (of: SourceKind): Source => holding[of] ?? 'other'
 
 /** What a model's files are on this machine, in the words the window uses. */
-const standing: Record<Presences, Presence> = {
+const fetched: Record<Presences, Presence> = {
   [Presences.UNSPECIFIED]: 'nothing to fetch',
   [Presences.PRESENT]: 'present',
   [Presences.NOT_FETCHED]: 'not fetched',

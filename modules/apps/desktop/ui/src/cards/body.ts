@@ -647,7 +647,7 @@ export const faceWritten = (
  * attribute. A field is named by whatever a person typed, so the quote and the
  * backslash are written out.
  */
-export const standingIn = (attribute: string, value: string): string =>
+export const selectorFor = (attribute: string, value: string): string =>
   `[${attribute}="${value.replace(/[\\"]/gu, (char) => `\\${char}`)}"]`
 
 /** Where each problem is drawn. */

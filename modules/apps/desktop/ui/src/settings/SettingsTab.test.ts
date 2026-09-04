@@ -12,7 +12,7 @@ import { nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 
 import type { Model, Written } from '../core'
-import { standing as at } from './configuring'
+import { settingAt as at } from './configuring'
 import SettingsTab from './SettingsTab.vue'
 import type { Installation } from './kind'
 import { WORDS as words } from './words'

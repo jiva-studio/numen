@@ -31,12 +31,12 @@ import {
   approximate,
   dayAfter,
   daysUntil,
+  goalValue,
   held,
   isDay,
   nearest,
   producing,
   shapeOf,
-  standing,
   steers,
   type Field,
 } from './curve'
@@ -352,7 +352,7 @@ export function presetting(
   const standsAt = (curve: Curve, settings: Settings): number =>
     curve.now.at >= 0
       ? curve.now.at
-      : Math.max(nearest(curve.grid, standing(settings, today())), 0)
+      : Math.max(nearest(curve.grid, goalValue(settings, today())), 0)
 
   /** The settings as they now stand, into the file the read came out of. */
   const sends = async (one: Kept): Promise<void> => {

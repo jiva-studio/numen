@@ -33,10 +33,10 @@ import {
   sectionGone,
   sectionNamed,
   sectionsOf,
+  selectorFor,
   sheetBodyOf,
   sheetIn,
   sheetOf,
-  standingIn,
   type Deck,
   type Sheet,
 } from './body'
@@ -826,11 +826,11 @@ describe('whether two readings of a file read the same', () => {
 
 describe('where a mark is drawn', () => {
   it('is the one element carrying that value', () => {
-    expect(standingIn('data-card', 'c1')).toBe('[data-card="c1"]')
+    expect(selectorFor('data-card', 'c1')).toBe('[data-card="c1"]')
   })
 
   it('writes out a quote and a backslash, which a name may carry', () => {
-    expect(standingIn('data-field', 'a "wide" one')).toBe('[data-field="a \\"wide\\" one"]')
-    expect(standingIn('data-field', 'a\\b')).toBe('[data-field="a\\\\b"]')
+    expect(selectorFor('data-field', 'a "wide" one')).toBe('[data-field="a \\"wide\\" one"]')
+    expect(selectorFor('data-field', 'a\\b')).toBe('[data-field="a\\\\b"]')
   })
 })

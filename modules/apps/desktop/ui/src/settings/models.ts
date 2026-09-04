@@ -36,7 +36,7 @@ const addressed = (value: string): boolean => value.includes('/')
  * What a model's files are on this machine, in a word. A model reached over
  * the network is fetched from nowhere, and stands with nothing said about it.
  */
-const standing = (presence: Presence, words: Words): string => {
+const presenceIn = (presence: Presence, words: Words): string => {
   if (presence === 'present') return words.present
   return presence === 'not fetched' ? words.notFetched : ''
 }
@@ -58,7 +58,7 @@ const offered = (model: Model, words: Words): SelectChoice => {
   // A model addressed by a path, a repository or an address is named by its
   // own words and addressed under them.
   const detail = under([
-    standing(model.presence, words),
+    presenceIn(model.presence, words),
     addressed(model.name) ? model.name : '',
   ])
   return {

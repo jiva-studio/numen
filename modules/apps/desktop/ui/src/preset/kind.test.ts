@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { Stopped } from '@numen/protocol'
 
 import { presetting, type Said } from './kind'
-import { fieldsUnder, nearest, standing, steers, type Field } from './curve'
+import { fieldsUnder, goalValue, nearest, steers, type Field } from './curve'
 import {
   DEFAULTS,
   NO_BOUNDS,
@@ -702,7 +702,7 @@ describe('a setting the goal on screen does not name', () => {
 const ranging = (asked: Settings): Curve => {
   const top = 60 + asked.backlog
   const grid = Array.from({ length: 7 }, (_, at) => Math.round((top * (at + 1)) / 7))
-  const value = standing(asked, NOW)
+  const value = goalValue(asked, NOW)
   return {
     ...curve,
     goal: asked.goal,

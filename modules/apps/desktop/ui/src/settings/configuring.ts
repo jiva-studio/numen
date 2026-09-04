@@ -32,7 +32,7 @@ export interface Called {
 }
 
 /** What stands at a path through a tree of settings, and nothing where none does. */
-export const standing = (held: unknown, at: readonly string[]): unknown => {
+export const settingAt = (held: unknown, at: readonly string[]): unknown => {
   let value = held
   for (const step of at) {
     if (typeof value !== 'object' || value === null) return undefined
@@ -73,7 +73,7 @@ export function configuring(core: Called, words: Words, said: Says) {
   }
 
   /** What stands at a setting, and nothing where the file names none. */
-  const at = (setting: readonly string[]): unknown => standing(held.value, setting)
+  const at = (setting: readonly string[]): unknown => settingAt(held.value, setting)
 
   /** The models one setting can be set to, in the order they are offered. */
   const offers = (setting: readonly string[]): readonly Model[] =>

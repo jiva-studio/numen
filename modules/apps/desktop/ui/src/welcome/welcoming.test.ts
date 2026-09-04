@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { keyChord } from '@numen/ui'
 import type { Listed, Vault } from '../core'
 import { keyOf } from '../keying'
-import { COMMANDS, SETTINGS, vaultsOn, waysIn, type Standing, type Words } from './welcoming'
+import { COMMANDS, SETTINGS, vaultsOn, waysIn, type ShownVault, type Words } from './welcoming'
 import { WORDS as own } from './words'
 
 const APPLE = 'MacIntel'
@@ -32,7 +32,7 @@ const words: Words = {
 }
 
 /** A window showing a vault it has read. */
-const at = (over: Partial<Standing> = {}): Standing => ({
+const at = (over: Partial<ShownVault> = {}): ShownVault => ({
   vault: 'physics',
   ready: true,
   ...over,

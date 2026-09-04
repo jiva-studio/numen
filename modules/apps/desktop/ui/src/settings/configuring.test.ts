@@ -7,7 +7,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { Model } from '../core'
-import { configuring, standing, type Called } from './configuring'
+import { configuring, settingAt, type Called } from './configuring'
 
 const words = {
   unturned: 'That setting could not be written:',
@@ -110,15 +110,15 @@ describe('a setting written', () => {
 
 describe('what stands at a path through a tree', () => {
   it('is the value the path leads to', () => {
-    expect(standing({ a: { b: [1, 2] } }, ['a', 'b'])).toStrictEqual([1, 2])
+    expect(settingAt({ a: { b: [1, 2] } }, ['a', 'b'])).toStrictEqual([1, 2])
   })
 
   it('is the tree itself for a path of no steps', () => {
-    expect(standing({ a: 1 }, [])).toStrictEqual({ a: 1 })
+    expect(settingAt({ a: 1 }, [])).toStrictEqual({ a: 1 })
   })
 
   it('is nothing where the path runs off the tree', () => {
-    expect(standing({ a: 1 }, ['a', 'b'])).toBeUndefined()
-    expect(standing(null, ['a'])).toBeUndefined()
+    expect(settingAt({ a: 1 }, ['a', 'b'])).toBeUndefined()
+    expect(settingAt(null, ['a'])).toBeUndefined()
   })
 })

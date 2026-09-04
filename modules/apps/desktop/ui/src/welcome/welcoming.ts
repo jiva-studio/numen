@@ -10,7 +10,7 @@ import { keysOf } from '../keying'
 import { WORDS as own } from './words'
 
 /** What the welcome screen is drawn over. */
-export interface Standing {
+export interface ShownVault {
   /** The vault the window is showing, and nothing where it shows none. */
   readonly vault: string
   /** Whether that vault has been read and can be asked to do anything. */
@@ -53,7 +53,7 @@ export const SETTINGS = 'settings'
  * Every keystroke drawn here is the one the table binds, so a key a person sees
  * is a key that works.
  */
-export const waysIn = (at: Standing, words: Words, agent: string): readonly Way[] => {
+export const waysIn = (at: ShownVault, words: Words, agent: string): readonly Way[] => {
   const settings: Way = { id: SETTINGS, text: words.settings, ...keysOf(SETTINGS, agent) }
   if (at.vault === '') return [settings]
   const note: readonly Way[] = at.ready
