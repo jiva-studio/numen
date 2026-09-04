@@ -9,7 +9,6 @@ package index
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"net/url"
 	"strings"
 
@@ -59,11 +58,6 @@ var pragmas = []string{
 }
 
 func Open(ctx context.Context, path string) (*DB, error) {
-	// The name has to reach the connections this opens, so it is registered
-	// before the first of them.
-	if err := foldsNames(); err != nil {
-		return nil, fmt.Errorf("the name fold is not available to SQL: %w", err)
-	}
 	write, err := sql.Open("sqlite", writeDSN(path))
 	if err != nil {
 		return nil, err

@@ -76,7 +76,8 @@ CREATE TABLE notes (
 
     -- The name a note is found by when a link is written by name, folded: a
     -- name is one name whatever case and whatever composition it is written in,
-    -- and the comparison is plain equality on the key `numen_fold` computes.
+    -- and the comparison is plain equality on the key the scan computes with
+    -- domain.FoldName.
     basename          TEXT NOT NULL,
 
     title             TEXT NOT NULL,
