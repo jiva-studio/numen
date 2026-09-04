@@ -15,17 +15,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-// errNoPresets is what a build with no path to the presets of a vault answers.
-var errNoPresets = errors.New("this build cannot work the presets of a vault")
-
 // GetDeckPreset is the preset a deck is scheduled by. A deck naming none is
 // answered with the defaults under no path.
 func (a *API) GetDeckPreset(
 	ctx context.Context, r *connect.Request[v1.GetDeckPresetRequest],
 ) (*connect.Response[v1.GetDeckPresetResponse], error) {
-	if a.Presets == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoPresets)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
@@ -53,9 +47,6 @@ func (a *API) GetDeckPreset(
 func (a *API) ListPresets(
 	ctx context.Context, _ *connect.Request[v1.ListPresetsRequest],
 ) (*connect.Response[v1.ListPresetsResponse], error) {
-	if a.Presets == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoPresets)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
@@ -92,9 +83,6 @@ func (a *API) CreatePreset(
 func (a *API) ScheduleDeck(
 	ctx context.Context, r *connect.Request[v1.ScheduleDeckRequest],
 ) (*connect.Response[v1.ScheduleDeckResponse], error) {
-	if a.Presets == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoPresets)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
@@ -129,9 +117,6 @@ func (a *API) ScheduleDeck(
 func (a *API) ReadPreset(
 	ctx context.Context, r *connect.Request[v1.ReadPresetRequest],
 ) (*connect.Response[v1.ReadPresetResponse], error) {
-	if a.Presets == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoPresets)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
@@ -157,9 +142,6 @@ func (a *API) ReadPreset(
 func (a *API) WritePreset(
 	ctx context.Context, r *connect.Request[v1.WritePresetRequest],
 ) (*connect.Response[v1.WritePresetResponse], error) {
-	if a.Presets == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoPresets)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
@@ -203,9 +185,6 @@ func (a *API) WritePreset(
 func (a *API) ComputeCurve(
 	ctx context.Context, r *connect.Request[v1.ComputeCurveRequest],
 ) (*connect.Response[v1.ComputeCurveResponse], error) {
-	if a.Curves == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoPresets)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err

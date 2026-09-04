@@ -16,19 +16,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-// errNoCards is what a build with no path to the decks and the stencils
-// answers.
-var errNoCards = errors.New("this build cannot work the cards of a vault")
-
 // ListStencils is every stencil the vault holds, by what it is called and what
 // it asks for. A vault holding more than one answer carries is answered with as
 // many as it carries, and told how many it holds.
 func (a *API) ListStencils(
 	ctx context.Context, r *connect.Request[v1.ListStencilsRequest],
 ) (*connect.Response[v1.ListStencilsResponse], error) {
-	if a.Cards.List == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
@@ -89,9 +82,6 @@ func (a *API) CreateDeck(
 func (a *API) makes(
 	ctx context.Context, cut func(domain.Vault, cards.New) (cards.CreateNoteResult, error), title, folder string,
 ) (cards.CreateNoteResult, *v1.Refusal, error) {
-	if a.Cards.Create == nil {
-		return cards.CreateNoteResult{}, nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return cards.CreateNoteResult{}, nil, err
@@ -125,9 +115,6 @@ func (a *API) makes(
 func (a *API) RenameStencilField(
 	ctx context.Context, r *connect.Request[v1.RenameStencilFieldRequest],
 ) (*connect.Response[v1.RenameStencilFieldResponse], error) {
-	if a.Cards.RenameField == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
@@ -163,9 +150,6 @@ func (a *API) RenameStencilField(
 func (a *API) ReadStencil(
 	ctx context.Context, r *connect.Request[v1.ReadStencilRequest],
 ) (*connect.Response[v1.ReadStencilResponse], error) {
-	if a.Cards.Read == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
@@ -191,9 +175,6 @@ func (a *API) ReadStencil(
 func (a *API) ReadDeck(
 	ctx context.Context, r *connect.Request[v1.ReadDeckRequest],
 ) (*connect.Response[v1.ReadDeckResponse], error) {
-	if a.Cards.Read == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
@@ -224,9 +205,6 @@ func (a *API) ReadDeck(
 func (a *API) WriteDeck(
 	ctx context.Context, r *connect.Request[v1.WriteDeckRequest],
 ) (*connect.Response[v1.WriteDeckResponse], error) {
-	if a.Cards.Write == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
@@ -268,9 +246,6 @@ func (a *API) WriteDeck(
 func (a *API) WriteStencil(
 	ctx context.Context, r *connect.Request[v1.WriteStencilRequest],
 ) (*connect.Response[v1.WriteStencilResponse], error) {
-	if a.Cards.Write == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
