@@ -295,7 +295,7 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, fr
 // them, and they are the ones about to be filed.
 func displace(ctx context.Context, tx *sql.Tx, vault int64, from, to string) error {
 	first, past := under(to)
-	rows, err := tx.QueryContext(ctx, stmt.Get("sources_at"), vault, to, first, past)
+	rows, err := tx.QueryContext(ctx, stmt.Get("sources_under"), vault, to, first, past)
 	if err != nil {
 		return fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
 	}

@@ -80,7 +80,7 @@ func (q *Queries) Under(ctx context.Context, vaultID domain.VaultID, path string
 	}
 
 	first, past := under(path)
-	rows, err := q.db.QueryContext(ctx, stmt.Get("sources_under"), vault, path, vault, first, past)
+	rows, err := q.db.QueryContext(ctx, stmt.Get("fingerprints_under"), vault, path, vault, first, past)
 	if err != nil {
 		return nil, fmt.Errorf("what the vault holds at %s and under it: %w", path, err)
 	}
