@@ -123,7 +123,7 @@ func (u Write) stencil(
 		return domain.Fingerprint{}, note.ErrBodyRefused
 	}
 
-	e := note.NewEditing(u.Readers, u.Writers, u.Index, u.Now)
+	e := note.NewEdit(u.Readers, u.Writers, u.Index, u.Now)
 	e.Fingerprint, e.Bound = fingerprint, note.MaxBytes
 	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		doc.SetBody(body)

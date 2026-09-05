@@ -92,7 +92,7 @@ const naming = computed<NodeIdFactory>(() => props.naming ?? mint)
 const frame = useTemplateRef<HTMLElement>('frame')
 
 /** A tab under the pointer, and the pane its strip belongs to. */
-interface Carried {
+interface Drag {
   readonly tab: TabId
   readonly from: NodeId
 }
@@ -102,7 +102,7 @@ const {
   at: landing,
   point,
   lift,
-} = usePressDrag<Carried, TabLanding>({
+} = usePressDrag<Drag, TabLanding>({
   threshold: () => props.threshold,
   clock: () => props.clock,
   landingAt: (_held, at) => landingAt(at.x, at.y),
@@ -167,7 +167,7 @@ function press(tab: TabId, at: PointerEvent): void {
   lift({ tab, from }, at)
 }
 
-function land(held: Carried, at: TabLanding): void {
+function land(held: Drag, at: TabLanding): void {
   const ids = naming.value
 
   if (at.kind === 'edge') {

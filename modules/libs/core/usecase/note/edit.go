@@ -41,13 +41,13 @@ func missing(err error) error {
 	return err
 }
 
-// Editing is what every change to the contents of an existing note needs.
+// Edit is what every change to the contents of an existing note needs.
 //
 // It is one function because the shape is always the same and the rules in it
 // are easy to forget one at a time: read, refuse what cannot be read, write the
 // identifier because this is an edit, change the one thing, put it back, and
 // bring the index level.
-type Editing struct {
+type Edit struct {
 	Readers     port.VaultReaders
 	Writers     port.VaultWriters
 	Index       Levels
@@ -65,19 +65,19 @@ type Editing struct {
 	Seen *LastRead
 }
 
-// NewEditing is what a change to an existing note is made through: the vault it
+// NewEdit is what a change to an existing note is made through: the vault it
 // is read and written through, what brings it level in the index, and what time
 // it is, because an edit stamps the identifier a note arrived without. What the
 // caller believes is on disk, and how much of a file it will hold, are set
 // beside it.
-func NewEditing(
+func NewEdit(
 	readers port.VaultReaders, writers port.VaultWriters, index Levels, now port.Clock,
-) Editing {
-	return Editing{Readers: readers, Writers: writers, Index: index, Now: now}
+) Edit {
+	return Edit{Readers: readers, Writers: writers, Index: index, Now: now}
 }
 
 // Apply makes one change to the note at path and puts it back.
-func (e Editing) Apply(ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error) (domain.Fingerprint, error) {
+func (e Edit) Apply(ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error) (domain.Fingerprint, error) {
 	written, err := e.splice(ctx, v, path, change)
 	if err != nil {
 		return domain.Fingerprint{}, err
@@ -89,7 +89,7 @@ func (e Editing) Apply(ctx context.Context, v domain.Vault, path string, change 
 
 // splice is the read, the change and the write, under this vault's write lock
 // from before the read until after the file is replaced.
-func (e Editing) splice(
+func (e Edit) splice(
 	ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error,
 ) (domain.Fingerprint, error) {
 	release, err := e.Writers.Hold(ctx, v)

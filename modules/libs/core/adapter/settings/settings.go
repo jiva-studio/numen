@@ -50,8 +50,8 @@ type Config struct {
 	// Agent is which agent answers in the panel, and what it may reach.
 	Agent agent.Config `json:"agent"`
 
-	// Naming is how a note's title and the name of its file are held together.
-	Naming Naming `json:"naming"`
+	// Titles is how a note's title and the name of its file are held together.
+	Titles Titles `json:"naming"`
 
 	// Review is what a day of review is, on this person's clock. How a deck is
 	// scheduled is in the vault, in the preset it points at.
@@ -292,8 +292,8 @@ func (i Indexing) TranscribesUnder() int64 {
 	return int64(i.TranscribeUnderMB) << 20
 }
 
-// Naming is how a note's title and the name of its file are held together.
-type Naming struct {
+// Titles is how a note's title and the name of its file are held together.
+type Titles struct {
 	// SyncTitleAndFilename is whether renaming either of the two brings the
 	// other into line. A file leaving it out keeps them one name, and a file
 	// naming false is what tells them apart.
@@ -302,7 +302,7 @@ type Naming struct {
 
 // Sync is whether a note's title and its filename are kept as one name. A
 // section naming nothing keeps them one name.
-func (n Naming) Sync() bool {
+func (n Titles) Sync() bool {
 	return n.SyncTitleAndFilename == nil || *n.SyncTitleAndFilename
 }
 
@@ -356,7 +356,7 @@ func Starting(written string) (string, error) {
 }
 
 // Sync is whether a note's title and its filename are kept as one name.
-func (c Config) Sync() bool { return c.Naming.Sync() }
+func (c Config) Sync() bool { return c.Titles.Sync() }
 
 // DayStarts is how long past midnight a day of review begins.
 func (c Config) DayStarts() time.Duration {
@@ -396,7 +396,7 @@ func Defaults() Config {
 			TranscribeRecordings: on(),
 		},
 		Agent:  agent.Defaults(),
-		Naming: Naming{SyncTitleAndFilename: on()},
+		Titles: Titles{SyncTitleAndFilename: on()},
 		Review: Review{DayStarts: review.Clock(DefaultStarts())},
 	}
 }

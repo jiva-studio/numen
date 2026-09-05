@@ -213,7 +213,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	running := cfg.Flashcards(db.Queries(), db.Links(), db.Problems(), opened.level)
 	api.Presets = &running.Presets
 	api.Curves = &running.Curves
-	api.Configuring = Configuring{
+	api.Configuring = SettingsPorts{
 		Configured:     cfg.Configured(),
 		Models:         cfg.Models(),
 		ChoosesSetting: cfg.TurnsSetting(),

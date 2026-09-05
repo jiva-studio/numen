@@ -22,7 +22,7 @@ type Replace struct {
 	Index   Levels
 	// Telling is told what this change is doing while it is being made. Nothing
 	// is told where nobody is drawing the note.
-	Telling TellEditing
+	Telling ReportEdit
 	Now     port.Clock
 }
 
@@ -102,7 +102,7 @@ func (u Replace) Execute(
 	ends := func() {}
 	defer func() { ends() }()
 
-	e := Editing{
+	e := Edit{
 		Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now,
 		Fingerprint: fingerprint, Bound: MaxBytes,
 	}

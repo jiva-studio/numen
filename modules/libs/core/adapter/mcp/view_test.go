@@ -35,7 +35,7 @@ func watched(t *testing.T, notes map[string]string) (*sdk.ClientSession, *window
 	_, core := built(t, notes)
 	looking := &window{}
 	core.View = looking
-	tells := note.TellEditing(func(ctx context.Context, said domain.Edit) {
+	tells := note.ReportEdit(func(ctx context.Context, said domain.Edit) {
 		_ = looking.Editing(ctx, said)
 	})
 	core.Notes.Write.Telling = tells

@@ -58,7 +58,7 @@ type Write struct {
 	Bound int
 	// Telling is told what a write is doing while it is being made. Nothing is
 	// told where nobody is drawing the note.
-	Telling TellEditing
+	Telling ReportEdit
 }
 
 // Levels brings the named notes up to date in the index, so that what a write
@@ -96,7 +96,7 @@ func (u Write) Execute(
 		return domain.Fingerprint{}, ErrBodyRefused
 	}
 
-	e := Editing{
+	e := Edit{
 		Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now,
 		Fingerprint: fingerprint, Bound: u.bound(),
 	}
@@ -167,7 +167,7 @@ func (u Write) Save(
 	if markdown.OpensFrontmatter(body) {
 		return domain.Fingerprint{}, ErrBodyRefused
 	}
-	e := Editing{
+	e := Edit{
 		Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now,
 		Overwrite: true,
 		Seen:      seen,

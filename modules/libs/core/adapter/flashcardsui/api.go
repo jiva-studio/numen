@@ -85,7 +85,7 @@ type API struct {
 	// answer with. It is held rather than written into the question: a deck is
 	// named by whoever synced it, and a name in a question is read as
 	// instruction where a tool's answer is data.
-	showing atomic.Pointer[Showing]
+	showing atomic.Pointer[CurrentCard]
 
 	runs     sittings
 	readings readings
@@ -129,21 +129,21 @@ func (s *sittings) named(vault domain.VaultID, name string) (*flashcards.LogWrit
 	return run, nil
 }
 
-// Showing is the card in front of the person, as the last question said it. A
-// window that has asked nothing is looking at no card as far as anyone here
-// knows.
-type Showing struct {
+// CurrentCard is the card in front of the person, as the last question said
+// it. A window that has asked nothing is looking at no card as far as anyone
+// here knows.
+type CurrentCard struct {
 	Deck string
 	Card string
 	Face string
 }
 
-// Showing is that card, for whatever answers about it.
-func (a *API) Showing() Showing {
+// Current is that card, for whatever answers about it.
+func (a *API) Current() CurrentCard {
 	if on := a.showing.Load(); on != nil {
 		return *on
 	}
-	return Showing{}
+	return CurrentCard{}
 }
 
 // Answering is the agent a question about a card goes to, and nothing where

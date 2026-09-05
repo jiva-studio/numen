@@ -148,8 +148,8 @@ type API struct {
 	Files       Files
 	Vaults      Vaults
 	Cards       Cards
-	Configuring Configuring
-	Indexing    Indexing
+	Configuring SettingsPorts
+	Indexing    IndexState
 }
 
 // Notes is a vault's notes: what is asked of them, and what changes them.
@@ -215,11 +215,11 @@ type Cards struct {
 	RenameField *cards.RenameField
 }
 
-// Configuring is every setting the window reads and writes. Each is a reader
+// SettingsPorts is every setting the window reads and writes. Each is a reader
 // and the writer beside it, and they are bound by every build that serves the
 // settings: the phone serves them to a socket answering any origin at all, so
 // it mounts no service about the file the keys are written in.
-type Configuring struct {
+type SettingsPorts struct {
 	// Configured reads every setting as JSON and the file it stands in, Models
 	// the models the settings that name one can be set to, and ChoosesSetting
 	// writes settings into that file.
@@ -243,8 +243,8 @@ type Configuring struct {
 // Bounds is how far a setting holding a number goes, at each end.
 type Bounds struct{ Least, Most float64 }
 
-// Indexing is how far the vault has been read for meaning.
-type Indexing struct {
+// IndexState is how far the vault has been read for meaning.
+type IndexState struct {
 	// Progress answers how far cutting and embedding have got. Nil for a vault
 	// nothing is reading for meaning, and the window then says nothing about it.
 	Progress port.IndexProgress

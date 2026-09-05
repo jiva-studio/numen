@@ -194,7 +194,7 @@ export function resizeBranch(
   }
 }
 
-interface Landed {
+interface Landing {
   readonly root: WorkspaceNode
   readonly axis: Orientation
   readonly focus: NodeId
@@ -215,7 +215,7 @@ function beside(
   side: Side,
   axis: Orientation,
   id: NodeIdFactory,
-): Landed {
+): Landing {
   const wanted = orientationOf(side)
   const path = pathTo(root, onto)
   if (!wanted || !path) return { root, axis, focus: onto }

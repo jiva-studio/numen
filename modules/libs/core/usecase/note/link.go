@@ -209,6 +209,6 @@ func Writable(link domain.Link) error {
 	return nil
 }
 
-func (u EditLinks) editing() Editing {
-	return Editing{Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now}
+func (u EditLinks) editing() Edit {
+	return Edit{Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now}
 }

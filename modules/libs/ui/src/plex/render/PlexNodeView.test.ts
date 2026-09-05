@@ -8,7 +8,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import PlexNodeView from './PlexNodeView.vue'
-import { OPENING, type Widened } from '../dwell'
+import { OPENING, type WideBox } from '../dwell'
 import { hangParts, type PlexPart } from '../inside'
 import { stubClock } from '../../fixtures/clock'
 import type { GestureRole, PlacedNode } from '../node'
@@ -315,7 +315,7 @@ describe('a box with more of its title to show', () => {
   })
 
   const mountWide = (
-    wide: Widened | null = WIDE,
+    wide: WideBox | null = WIDE,
     over: Partial<PlacedNode> = {},
     gestureRole: GestureRole = 'open',
   ) => {
@@ -487,7 +487,7 @@ describe('the parts a node hangs', () => {
       level: 1,
     }))
 
-  const mountInside = (held: readonly PlexPart[], wide: Widened | null = null) => {
+  const mountInside = (held: readonly PlexPart[], wide: WideBox | null = null) => {
     vi.useFakeTimers()
     const world = stubClock()
     const node = mount(PlexNodeView, {

@@ -21,7 +21,7 @@ import {
 import PlexNodeHandle from './PlexNodeHandle.vue'
 import PlexNodeParts from './PlexNodeParts.vue'
 import { isMenuKey, isPress, isShowKey } from './keys'
-import { DWELL, useDwell, type Widened } from '../dwell'
+import { DWELL, useDwell, type WideBox } from '../dwell'
 import { byHandle, type ReachStrategy } from '../reaching'
 import { byDoubleClick, joined, showingOf, type PlexShowing, type ShowStrategy } from '../showing'
 import type { HungParts } from '../inside'
@@ -48,7 +48,7 @@ const props = withDefaults(
      * it has no more of its title to show. How wide the whole title runs, and
      * how much window there is to grow into, are the picture's to work out.
      */
-    wide?: Widened | null
+    wide?: WideBox | null
     /**
      * The parts it hangs under its box while the attention rests, and nothing
      * for a node with none. What they are and what choosing one does are the
@@ -268,7 +268,7 @@ const under = computed(() =>
 const open = useDwell(() => under.value, () => props.dwell, props.clock)
 
 /** The box as it is drawn: the one it was placed with, opened towards the widened one. */
-const box = computed<Widened>(() => {
+const box = computed<WideBox>(() => {
   const wide = props.wide
   if (!wide || open.value <= 0) return { width: props.node.width, offset: 0 }
   return {

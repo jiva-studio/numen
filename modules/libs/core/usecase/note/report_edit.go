@@ -8,16 +8,16 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// TellEditing is what a write says about itself while it is being made, for whoever
+// ReportEdit is what a write says about itself while it is being made, for whoever
 // is looking at the note. Nothing is said where nobody is drawing.
-type TellEditing func(ctx context.Context, said domain.Edit)
+type ReportEdit func(ctx context.Context, said domain.Edit)
 
 // begins names one change and says what it is about to do. What comes back ends
 // it, and ends it whether the change landed or was refused.
 //
 // The name is a ULID, so the change the writer is telling about is named on the
 // clock the write itself is stamped from.
-func (tell TellEditing) begins(ctx context.Context, now port.Clock, said domain.Edit) func() {
+func (tell ReportEdit) begins(ctx context.Context, now port.Clock, said domain.Edit) func() {
 	if tell == nil {
 		return func() {}
 	}

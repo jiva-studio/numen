@@ -7,14 +7,14 @@
 import { onBeforeUnmount, onMounted, ref, type Ref, type ShallowRef } from 'vue'
 import type { Room } from './strip'
 
-export interface Measured {
+export interface RoomState {
   /** The room, in CSS pixels. Nothing until something has been measured. */
   readonly room: Ref<Room>
   /** Take it again. The caller says when a reader is on screen. */
   readonly measure: () => void
 }
 
-export function useRoom(area: Readonly<ShallowRef<HTMLElement | null>>): Measured {
+export function useRoom(area: Readonly<ShallowRef<HTMLElement | null>>): RoomState {
   const room = ref<Room>({ wide: 0, high: 0 })
   let watching: ResizeObserver | undefined
 

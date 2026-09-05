@@ -153,7 +153,7 @@ func reviewing(
 		// question, so a deck named by whoever synced it is data and not
 		// instruction.
 		Reviewing: func() mcp.AskedCard {
-			on := api.Showing()
+			on := api.Current()
 			return mcp.AskedCard{Deck: on.Deck, Card: on.Card, Face: on.Face}
 		},
 

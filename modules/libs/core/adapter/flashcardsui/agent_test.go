@@ -125,7 +125,7 @@ func TestTheCardsNameIsNotInTheQuestion(t *testing.T) {
 	if strings.Contains(task.Question, planted) {
 		t.Errorf("the card's name is in the question: %q", task.Question)
 	}
-	if on := api.Showing(); on.Deck != planted || on.Card != planted || on.Face != planted {
+	if on := api.Current(); on.Deck != planted || on.Card != planted || on.Face != planted {
 		t.Errorf("the card in front of them is %+v", on)
 	}
 }

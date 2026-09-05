@@ -24,8 +24,8 @@ func TestATranscriptIsPutRightWithTheProfileNamedForSpeech(t *testing.T) {
 	cfg.SpeechProofreading = proofreading.Proofread{Profile: "speech"}
 	cfg.ScanProofreading = proofreading.Proofread{Profile: "scans", Automatically: true}
 
-	var opened AgentProofreading
-	cfg.AgentProofreader = func(said AgentProofreading) (port.Proofreader, error) {
+	var opened ProofreaderSpec
+	cfg.AgentProofreader = func(said ProofreaderSpec) (port.Proofreader, error) {
 		opened = said
 		return nil, errors.New("nothing on this machine puts a transcript right")
 	}

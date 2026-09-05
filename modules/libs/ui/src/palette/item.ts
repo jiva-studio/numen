@@ -165,7 +165,7 @@ export const PALETTE_KEYS: readonly PaletteKeys[] = [
 ]
 
 /** One action, and the key that reaches it straight from the list. */
-export interface PaletteKeyed {
+export interface PaletteShortcut {
   readonly action: PaletteAction
   readonly key: PaletteKeys | null
 }
@@ -174,7 +174,7 @@ export interface PaletteKeyed {
  * The actions of this item a key reaches, in the order they are offered. This
  * is what the foot of the palette says, and where the keys are decided.
  */
-export const keyed = (item: PaletteItem | undefined): readonly PaletteKeyed[] => {
+export const keyed = (item: PaletteItem | undefined): readonly PaletteShortcut[] => {
   const actions = item && choosable(item) ? (item.actions ?? []) : []
   return actions
     .slice(0, PALETTE_KEYS.length)

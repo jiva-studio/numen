@@ -20,7 +20,7 @@ export const DWELL = 500
 export const OPENING = 280
 
 /** A box drawn wider than it was placed. */
-export interface Widened {
+export interface WideBox {
   readonly width: number
   /** How far its middle stands from where the node is placed. */
   readonly offset: number
@@ -39,7 +39,7 @@ export function widenedFor(
   wanted: number,
   viewport: Size,
   margin: number,
-): Widened | null {
+): WideBox | null {
   const width = Math.min(wanted, viewport.width - 2 * margin)
   if (width <= node.width) return null
 

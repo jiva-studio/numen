@@ -43,7 +43,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 	}
 
 	var by NameSource
-	e := Editing{Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now}
+	e := Edit{Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now}
 	_, err = e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		if _, titled := doc.Title(); titled {
 			by = ByFrontmatter
@@ -85,7 +85,7 @@ func (u Move) Called(ctx context.Context, v domain.Vault, path string) error {
 	}
 
 	name := domain.Basename(path)
-	e := Editing{Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now}
+	e := Edit{Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now}
 	_, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		if _, titled := doc.Title(); titled {
 			return doc.SetTitle(name)

@@ -15,7 +15,7 @@ import { edgeKey } from '../edge'
 import type { PlexFrame } from '../frame'
 import { ghostNode, handleIn, type GestureRole, type PlacedNode, type Point } from '../node'
 import { seatWord, type PlexRelatedSeat } from '../seat'
-import { DWELL, type Widened } from '../dwell'
+import { DWELL, type WideBox } from '../dwell'
 import { byHandle, type ReachStrategy } from '../reaching'
 import { byDoubleClick, type PlexShowing, type ShowStrategy } from '../showing'
 import type { HungParts } from '../inside'
@@ -51,7 +51,7 @@ const props = withDefaults(
      * for a node with no more of its title to show. Text is measured where the
      * plex is drawn, so this arrives already worked out.
      */
-    widen?: ((node: PlacedNode) => Widened | null) | undefined
+    widen?: ((node: PlacedNode) => WideBox | null) | undefined
     /**
      * The parts a node hangs under its box while the attention rests on it,
      * and nothing for a node with none. Which parts a node holds is the

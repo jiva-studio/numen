@@ -78,7 +78,7 @@ func (n Notes) Following(view port.Window) Notes {
 // Only a caller that is not the person binds it. The window's own writes draw
 // nothing, because the person is looking at the text they typed.
 func (n Notes) Drawing(view port.Window) Notes {
-	tell := note.TellEditing(func(ctx context.Context, said domain.Edit) {
+	tell := note.ReportEdit(func(ctx context.Context, said domain.Edit) {
 		_ = view.Editing(ctx, said)
 	})
 	n.Write.Telling, n.Replace.Telling = tell, tell

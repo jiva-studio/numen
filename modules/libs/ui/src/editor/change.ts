@@ -82,7 +82,7 @@ const arriving = Decoration.mark({ class: 'cm-arriving' })
 const covered = Decoration.replace({})
 
 /** What is drawn for a change, and where it stands. */
-interface Marked {
+interface Mark {
   readonly change: EditorChange | null
   readonly from: number
   readonly to: number
@@ -91,7 +91,7 @@ interface Marked {
   readonly decorations: DecorationSet
 }
 
-const NOTHING: Marked = {
+const NOTHING: Mark = {
   change: null,
   from: 0,
   to: 0,
@@ -124,7 +124,7 @@ const arrived = (state: EditorState, change: EditorChange, from: number) =>
   change.text.length > 0 &&
   state.doc.sliceString(from, from + change.text.length) === change.text
 
-const start = (state: EditorState): Marked => {
+const start = (state: EditorState): Mark => {
   const change = state.facet(changing)
   if (!change) return NOTHING
 
@@ -143,7 +143,7 @@ const start = (state: EditorState): Marked => {
  * Every range maps through the document's own changes, so typing beside a
  * change moves the overlay with the text under it.
  */
-export const marked = StateField.define<Marked>({
+export const marked = StateField.define<Mark>({
   create: start,
   update: (was, transaction) => {
     if (transaction.state.facet(changing) !== transaction.startState.facet(changing))
