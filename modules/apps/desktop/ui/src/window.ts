@@ -38,7 +38,7 @@ import { does, reaching, type CommandDeps, type Store } from './doing'
 import { finding } from './finding'
 import { lands, type LandingDeps } from './landing'
 import { cutting, putting } from './putting'
-import { leaving } from './leaving'
+import { flushing } from './flushing'
 import { raising } from './raising'
 import { windowing } from './windowing'
 import { telling } from './telling'
@@ -89,7 +89,7 @@ export const useWindow = () => {
     reloads,
   })
   /** What the window answers when the application says it is going. */
-  const going = leaving(core)
+  const going = flushing(core)
   going.holds(notes.flush)
 
   raising(notes, going)

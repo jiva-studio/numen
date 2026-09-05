@@ -1,11 +1,11 @@
 /**
- * The notes whose file moved past what was read, told to the quit.
+ * The notes whose file moved past what was read, told to the flush.
  *
- * A question is raised while the tab stands overtaken and dropped when it
- * stops, so the window waits on exactly what is still to be answered.
+ * A conflict is raised while the tab stands overtaken and dropped when it
+ * stops, so the window waits on exactly what is still to be settled.
  */
 import { watch } from 'vue'
-import type { Question } from './leaving'
+import type { Conflict } from './flushing'
 import type { State } from './note/tab'
 
 /** The notes of a window, each under the identity its tab opened under. */
@@ -16,12 +16,12 @@ export interface Notes {
   take(id: string): void
 }
 
-/** What the window answers when the application says it is going. */
-export interface Quit {
-  raise(one: Question): () => void
+/** Where a conflict is raised, so the flush waits until it is settled. */
+export interface ConflictRaiser {
+  raise(one: Conflict): () => void
 }
 
-export function raising(notes: Notes, going: Quit) {
+export function raising(notes: Notes, going: ConflictRaiser) {
   const raised = new Map<string, () => void>()
 
   watch(

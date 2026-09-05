@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { raising, type Notes } from './raising'
-import type { Question } from './leaving'
+import type { Conflict } from './flushing'
 import type { State } from './note/tab'
 
 /** Notes in the states the test puts them in, each under its own identity. */
@@ -30,12 +30,12 @@ const notes = () => {
   }
 }
 
-/** A quit that keeps every question standing until it is dropped. */
+/** A quit that keeps every conflict standing until it is dropped. */
 const quit = () => {
-  const raised = new Map<string, Question>()
+  const raised = new Map<string, Conflict>()
   return {
     going: {
-      raise: (one: Question) => {
+      raise: (one: Conflict) => {
         raised.set(one.note, one)
         return () => raised.delete(one.note)
       },

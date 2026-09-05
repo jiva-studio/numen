@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { editing } from './note/editing'
-import { leaving, type LeavingDeps, type Owed, type Question } from './leaving'
+import { flushing, type Conflict, type FlushDeps, type FlushResult } from './flushing'
 import type { NoteResult, Core } from './core'
 
 /** A vault that has been read and is doing nothing. */
@@ -57,11 +57,11 @@ function stream() {
 function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) {
   const files = new Map<string, string>()
   const wrote: { path: string; body: string }[] = []
-  const answered: { token: string; owed: Owed }[] = []
+  const answered: { token: string; result: FlushResult }[] = []
   /** Writes wait here until a test lets them through. */
   let held: (() => void) | null = null
 
-  const core: Core & LeavingDeps = {
+  const core: Core & FlushDeps = {
     neighbourhood: async () => ({}) as never,
     headings: async () => new Map(),
     fileKinds: async () => new Map(),
@@ -74,8 +74,8 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
     editing: async function* () {},
     tasks: async function* () {},
     quitting,
-    flushed: async (token: string, owed: Owed = 'written') => {
-      answered.push({ token, owed })
+    flushed: async (token: string, result: FlushResult = 'written') => {
+      answered.push({ token, result })
     },
     read: async (path): Promise<NoteResult> =>
       files.has(path)
@@ -136,7 +136,7 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
 function conflicted(note: string) {
   const took: string[] = []
   let drop = () => {}
-  const question: Question = {
+  const conflict: Conflict = {
     note,
     keep: async () => {
       took.push('keep ' + note)
@@ -148,12 +148,12 @@ function conflicted(note: string) {
     },
   }
   return {
-    question,
+    conflict,
     took,
-    raise: (raising: (one: Question) => () => void) => {
-      drop = raising(question)
+    raise: (raising: (one: Conflict) => () => void) => {
+      drop = raising(conflict)
     },
-    /** The question stops standing, however that came about. */
+    /** The conflict stops standing, however that came about. */
     answered: () => drop(),
   }
 }
@@ -168,7 +168,7 @@ describe('a page asked to write what it owes', () => {
     const said = stream()
     const at = fake(said.read)
     const notes = editing(at.core)
-    const going = leaving(at.core)
+    const going = flushing(at.core)
     going.holds(notes.flush)
     void going.start()
 
@@ -183,14 +183,14 @@ describe('a page asked to write what it owes', () => {
     await settle()
 
     expect(at.wrote).toEqual([{ path: 'Note.md', body: 'what the person was in the middle of' }])
-    expect(at.answered).toEqual([{ token: '7', owed: 'written' }])
+    expect(at.answered).toEqual([{ token: '7', result: 'written' }])
   })
 
   it('does not answer while the write it owes is still in the air', async () => {
     const said = stream()
     const at = fake(said.read)
     const notes = editing(at.core)
-    const going = leaving(at.core)
+    const going = flushing(at.core)
     going.holds(notes.flush)
     void going.start()
 
@@ -208,14 +208,14 @@ describe('a page asked to write what it owes', () => {
     await settle()
 
     expect(at.wrote).toEqual([{ path: 'Note.md', body: 'held' }])
-    expect(at.answered).toEqual([{ token: '1', owed: 'written' }])
+    expect(at.answered).toEqual([{ token: '1', result: 'written' }])
   })
 
   it('says nothing until the application asks', async () => {
     const said = stream()
     const at = fake(said.read)
     const notes = editing(at.core)
-    const going = leaving(at.core)
+    const going = flushing(at.core)
     going.holds(notes.flush)
     void going.start()
 
@@ -234,22 +234,22 @@ describe('a page asked to write what it owes', () => {
   it('answers for a window with nothing open', async () => {
     const said = stream()
     const at = fake(said.read)
-    const going = leaving(at.core)
+    const going = flushing(at.core)
     going.holds(editing(at.core).flush)
     void going.start()
 
     said.say({ token: '0', flush: true })
     await settle()
 
-    expect(at.answered).toEqual([{ token: '0', owed: 'written' }])
+    expect(at.answered).toEqual([{ token: '0', result: 'written' }])
   })
 })
 
 describe('a page holding text the file changed under', () => {
-  it('says there are questions outstanding, and does not say it has written', async () => {
+  it('says there are conflicts outstanding, and does not say it has written', async () => {
     const said = stream()
     const at = fake(said.read)
-    const going = leaving(at.core)
+    const going = flushing(at.core)
     const note = conflicted('Note.md')
     note.raise(going.raise)
     void going.start()
@@ -257,15 +257,15 @@ describe('a page holding text the file changed under', () => {
     said.say({ token: '4', flush: true })
     await settle()
 
-    expect(at.answered).toEqual([{ token: '4', owed: 'asking' }])
-    expect(going.questions.value.map((one) => one.note)).toEqual(['Note.md'])
+    expect(at.answered).toEqual([{ token: '4', result: 'asking' }])
+    expect(going.conflicts.value.map((one) => one.note)).toEqual(['Note.md'])
   })
 
   it('says so before the writes it owes have landed', async () => {
     const said = stream()
     const at = fake(said.read)
     const notes = editing(at.core)
-    const going = leaving(at.core)
+    const going = flushing(at.core)
     going.holds(notes.flush)
     const note = conflicted('Held.md')
     note.raise(going.raise)
@@ -279,21 +279,21 @@ describe('a page holding text the file changed under', () => {
     said.say({ token: '5', flush: true })
     await settle()
 
-    expect(at.answered).toEqual([{ token: '5', owed: 'asking' }])
+    expect(at.answered).toEqual([{ token: '5', result: 'asking' }])
 
     at.release()
     await settle()
 
-    // The write landed and the question still stands, so nothing has changed
+    // The write landed and the conflict still stands, so nothing has changed
     // about what the page owes.
     expect(at.wrote).toEqual([{ path: 'Other.md', body: 'on its way' }])
-    expect(at.answered).toEqual([{ token: '5', owed: 'asking' }])
+    expect(at.answered).toEqual([{ token: '5', result: 'asking' }])
   })
 
-  it('says it has written once every question is answered', async () => {
+  it('says it has written once every conflict is settled', async () => {
     const said = stream()
     const at = fake(said.read)
-    const going = leaving(at.core)
+    const going = flushing(at.core)
     const first = conflicted('One.md')
     const second = conflicted('Two.md')
     first.raise(going.raise)
@@ -303,40 +303,40 @@ describe('a page holding text the file changed under', () => {
     said.say({ token: '6', flush: true })
     await settle()
 
-    expect(at.answered).toEqual([{ token: '6', owed: 'asking' }])
+    expect(at.answered).toEqual([{ token: '6', result: 'asking' }])
 
-    await going.questions.value.find((one) => one.note === 'One.md')?.keep()
+    await going.conflicts.value.find((one) => one.note === 'One.md')?.keep()
     await settle()
 
     // One of the two is answered, so the window is still owed something.
-    expect(at.answered.at(-1)).toEqual({ token: '6', owed: 'asking' })
-    expect(going.questions.value.map((one) => one.note)).toEqual(['Two.md'])
+    expect(at.answered.at(-1)).toEqual({ token: '6', result: 'asking' })
+    expect(going.conflicts.value.map((one) => one.note)).toEqual(['Two.md'])
 
-    await going.questions.value.find((one) => one.note === 'Two.md')?.take()
+    await going.conflicts.value.find((one) => one.note === 'Two.md')?.take()
     await settle()
 
-    expect(at.answered.at(-1)).toEqual({ token: '6', owed: 'written' })
-    expect(going.questions.value).toEqual([])
+    expect(at.answered.at(-1)).toEqual({ token: '6', result: 'written' })
+    expect(going.conflicts.value).toEqual([])
     expect(first.took).toEqual(['keep One.md'])
     expect(second.took).toEqual(['take Two.md'])
   })
 
-  it('leaves a question the person put off standing, and stops drawing it', async () => {
+  it('leaves a conflict the person put off standing, and stops drawing it', async () => {
     const said = stream()
     const at = fake(said.read)
-    const going = leaving(at.core, async () => {})
+    const going = flushing(at.core, async () => {})
     conflicted('Later.md').raise(going.raise)
     void going.start()
 
     said.say({ token: '8', flush: true })
     await settle()
 
-    going.questions.value[0]?.later()
+    going.conflicts.value[0]?.later()
     await settle()
 
-    expect(going.questions.value).toEqual([])
+    expect(going.conflicts.value).toEqual([])
     // Nothing was answered for it, so the window is still owed it.
-    expect(at.answered.at(-1)).toEqual({ token: '8', owed: 'asking' })
+    expect(at.answered.at(-1)).toEqual({ token: '8', result: 'asking' })
 
     // And it is still owed it the next time the window is asked for.
     said.end()
@@ -344,13 +344,13 @@ describe('a page holding text the file changed under', () => {
     said.say({ token: '9', flush: true })
     await settle()
 
-    expect(at.answered.at(-1)).toEqual({ token: '9', owed: 'asking' })
+    expect(at.answered.at(-1)).toEqual({ token: '9', result: 'asking' })
   })
 
   it('says nothing under a token the stream took with it', async () => {
     const said = stream()
     const at = fake(said.read)
-    const going = leaving(at.core, async () => {})
+    const going = flushing(at.core, async () => {})
     const note = conflicted('Note.md')
     note.raise(going.raise)
     void going.start()
@@ -358,7 +358,7 @@ describe('a page holding text the file changed under', () => {
     said.say({ token: '2', flush: true })
     await settle()
 
-    expect(at.answered).toEqual([{ token: '2', owed: 'asking' }])
+    expect(at.answered).toEqual([{ token: '2', result: 'asking' }])
 
     said.end()
     await settle()
@@ -366,25 +366,25 @@ describe('a page holding text the file changed under', () => {
     await settle()
 
     // Nothing answers to that token now, and the page has not been asked again.
-    expect(at.answered).toEqual([{ token: '2', owed: 'asking' }])
+    expect(at.answered).toEqual([{ token: '2', result: 'asking' }])
 
     said.say({ token: '3', flush: true })
     await settle()
 
-    expect(at.answered.at(-1)).toEqual({ token: '3', owed: 'written' })
+    expect(at.answered.at(-1)).toEqual({ token: '3', result: 'written' })
   })
 
   it('raises what stands again under the token it is asked under next', async () => {
     const said = stream()
     const at = fake(said.read)
-    const going = leaving(at.core, async () => {})
+    const going = flushing(at.core, async () => {})
     conflicted('Note.md').raise(going.raise)
     void going.start()
 
     said.say({ token: '9', flush: true })
     await settle()
 
-    expect(at.answered).toEqual([{ token: '9', owed: 'asking' }])
+    expect(at.answered).toEqual([{ token: '9', result: 'asking' }])
 
     // The stream drops and the page listens again under a new token.
     said.end()
@@ -392,6 +392,6 @@ describe('a page holding text the file changed under', () => {
     said.say({ token: '10', flush: true })
     await settle()
 
-    expect(at.answered.at(-1)).toEqual({ token: '10', owed: 'asking' })
+    expect(at.answered.at(-1)).toEqual({ token: '10', result: 'asking' })
   })
 })

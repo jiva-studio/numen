@@ -7,14 +7,14 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import Leaving from './Leaving.vue'
-import type { DrawnQuestion } from './leaving'
+import UnsavedChangesPrompt from './UnsavedChangesPrompt.vue'
+import type { ConflictPrompt } from './flushing'
 import { WORDS as note } from './note/words'
 
 const UNBROKEN = `${'A note whose name nobody shortened and which runs on past '.repeat(8)}.md`
 
 /** One note standing, with the three answers written down as they are given. */
-const question = (path: string): DrawnQuestion => ({
+const conflict = (path: string): ConflictPrompt => ({
   note: path,
   keep: fn(async () => {}),
   take: fn(async () => {}),
@@ -22,11 +22,11 @@ const question = (path: string): DrawnQuestion => ({
 })
 
 const meta = {
-  title: 'Window/Leaving',
-  component: Leaving,
+  title: 'Window/Unsaved Changes',
+  component: UnsavedChangesPrompt,
   parameters: { layout: 'fullscreen' },
   args: { called: (path: string) => path.split('/').pop() ?? path },
-} satisfies Meta<typeof Leaving>
+} satisfies Meta<typeof UnsavedChangesPrompt>
 
 export default meta
 type Story = StoryObj<typeof meta>
@@ -42,7 +42,7 @@ const answers = (canvas: HTMLElement) => within(canvas).getAllByRole('button')
 
 /** Two notes, each with the three ways out of it. */
 export const TwoNotes: Story = {
-  args: { questions: [question('physics/Entropy.md'), question('Heat.md')] },
+  args: { conflicts: [conflict('physics/Entropy.md'), conflict('Heat.md')] },
   play: async ({ canvasElement }) => {
     const said = notice(canvasElement)
     await expect(said).not.toBeNull()
@@ -64,9 +64,9 @@ export const TwoNotes: Story = {
 
 /** One note, answered. */
 export const AnsweredForOneNote: Story = {
-  args: { questions: [question('physics/Entropy.md'), question('Heat.md')] },
+  args: { conflicts: [conflict('physics/Entropy.md'), conflict('Heat.md')] },
   play: async ({ args, canvasElement }) => {
-    const [first, second] = args.questions
+    const [first, second] = args.conflicts
 
     // The answer given is the answer for the note it stands beside, and the
     // other note is left standing.
@@ -80,7 +80,7 @@ export const AnsweredForOneNote: Story = {
 
 /** A name far longer than the row it stands in. */
 export const AnUnbrokenName: Story = {
-  args: { questions: [question(UNBROKEN)] },
+  args: { conflicts: [conflict(UNBROKEN)] },
   play: async ({ canvasElement }) => {
     const row_ = notes(canvasElement)[0]!
     const title = within(row_).getByText(UNBROKEN.split('/').pop()!)
@@ -97,9 +97,9 @@ export const AnUnbrokenName: Story = {
   },
 }
 
-/** Nothing owed, so nothing is drawn and nothing is in the way. */
-export const NothingOwed: Story = {
-  args: { questions: [] },
+/** Nothing unwritten, so nothing is drawn and nothing is in the way. */
+export const NothingUnwritten: Story = {
+  args: { conflicts: [] },
   play: async ({ canvasElement }) => {
     await expect(notice(canvasElement)).toBeNull()
   },

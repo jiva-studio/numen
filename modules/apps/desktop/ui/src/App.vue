@@ -8,7 +8,7 @@
 import { Notices, Workspace } from '@numen/ui'
 import '@numen/ui/styles.css'
 import './app.css'
-import Leaving from './Leaving.vue'
+import UnsavedChangesPrompt from './UnsavedChangesPrompt.vue'
 import Failure from './Failure.vue'
 import Palette from './Palette.vue'
 import Welcoming from './Welcoming.vue'
@@ -81,7 +81,7 @@ const {
       @gone="tell.forget"
     />
 
-    <Leaving :questions="going.questions.value" :called="titled" />
+    <UnsavedChangesPrompt :conflicts="going.conflicts.value" :called="titled" />
 
     <Palette
       :commands="commands"

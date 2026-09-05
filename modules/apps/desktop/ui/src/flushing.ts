@@ -1,30 +1,30 @@
 /**
- * Writing out what the window still owes, when the window goes.
+ * Flushing the window's unwritten work, when the application asks to quit.
  *
  * A tab saves once the typing stops, so the last seconds of work are in a
  * buffer here and nowhere else. The application asks for them over a stream
  * this page listens on for as long as it is drawn, and waits for the answer.
  *
- * Text that cannot be written raises a question, and the window stays until
- * every question is answered.
+ * Text that cannot be written raises a conflict, and the window stays until
+ * every conflict is settled.
  */
 import { ref, type Ref } from 'vue'
 import { following } from '@numen/ui'
 
-/** What this page has left when it answers. */
-export type Owed = 'written' | 'asking'
+/** How a flush came out: everything written, or a person still being asked. */
+export type FlushResult = 'written' | 'asking'
 
-/** What the quit needs of the core. */
-export interface LeavingDeps {
+/** What the flush needs of the core. */
+export interface FlushDeps {
   quitting(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
-  flushed(token: string, owed?: Owed): Promise<unknown>
+  flushed(token: string, result?: FlushResult): Promise<unknown>
 }
 
-/** Somewhere unwritten work is held, which the quit waits for. */
-export type Owing = () => Promise<unknown>
+/** Somewhere unwritten work is held, which the flush calls and waits for. */
+export type FlushHandler = () => Promise<unknown>
 
-/** Text that could not be written, and the two ways out of it. */
-export interface Question {
+/** Text a file moved out from under, and the two ways of settling it. */
+export interface Conflict {
   /** The identity the note holding the text opened under. */
   readonly note: string
   /** Write what the person has, over what the file holds. */
@@ -33,8 +33,8 @@ export interface Question {
   readonly take: () => Promise<unknown>
 }
 
-/** A question as the window draws it. */
-export interface DrawnQuestion {
+/** A conflict as the window puts it to the person. */
+export interface ConflictPrompt {
   readonly note: string
   readonly keep: () => Promise<unknown>
   readonly take: () => Promise<unknown>
@@ -43,43 +43,43 @@ export interface DrawnQuestion {
 }
 
 /**
- * Answering the application when it asks for what the window owes.
+ * Answering the application when it asks the window to write out what it holds.
  *
  * Whatever holds unwritten work adds itself, and every one of them is written
  * before the answer goes back. A refusal is not a reason to keep the window
- * open: the person asked for it to go. A question is: the text is still here,
+ * open: the person asked for it to go. A conflict is: the text is still here,
  * and nothing but the person decides where it goes.
  */
-export function leaving(core: LeavingDeps, wait: (ms: number) => Promise<unknown> = sleep) {
-  const owing = new Set<Owing>()
+export function flushing(core: FlushDeps, wait: (ms: number) => Promise<unknown> = sleep) {
+  const handlers = new Set<FlushHandler>()
   let open = true
   const listening = new AbortController()
 
   /** The token the application is being answered under, once it has asked. */
   let under: string | null = null
   /** The last thing said under that token, which is not worth saying twice. */
-  let told: Owed | null = null
+  let told: FlushResult | null = null
   /** The writes owed at the ask, while they are still in the air. */
   let writing: Promise<unknown> | null = null
-  /** Every question a person has to answer, drawn or put off. */
-  const outstanding = new Set<Question>()
+  /** Every conflict a person has to settle, drawn or put off. */
+  const outstanding = new Set<Conflict>()
   /** The notes a person put off. They stand and are not drawn. */
   const put = new Set<string>()
-  /** The questions to draw, which is everything standing bar what was put off. */
-  const questions = ref([]) as Ref<readonly DrawnQuestion[]>
+  /** The conflicts to draw, which is everything standing bar what was put off. */
+  const conflicts = ref([]) as Ref<readonly ConflictPrompt[]>
 
-  /** Something the quit waits for, until what this answers with is called. */
-  const holds = (one: Owing) => {
-    owing.add(one)
-    return () => owing.delete(one)
+  /** Something the flush waits for, until what this answers with is called. */
+  const holds = (one: FlushHandler) => {
+    handlers.add(one)
+    return () => handlers.delete(one)
   }
 
   /**
-   * Text a person has to answer for, standing until what this answers with is
+   * Text a person has to settle, standing until what this answers with is
    * called. It is told to the application as soon as it is raised: whatever
    * holds the text is waiting on a person and finishes when they say so.
    */
-  const raise = (one: Question) => {
+  const raise = (one: Conflict) => {
     outstanding.add(one)
     void say()
     return () => {
@@ -95,10 +95,10 @@ export function leaving(core: LeavingDeps, wait: (ms: number) => Promise<unknown
     // Every asking is put to the person whole. What was put off last time is
     // drawn again, because this is a fresh reason to answer it.
     put.clear()
-    const owed = Promise.allSettled([...owing].map((one) => one()))
-    writing = owed
-    void owed.then(() => {
-      if (writing !== owed) return
+    const written = Promise.allSettled([...handlers].map((one) => one()))
+    writing = written
+    void written.then(() => {
+      if (writing !== written) return
       writing = null
       void say()
     })
@@ -113,24 +113,24 @@ export function leaving(core: LeavingDeps, wait: (ms: number) => Promise<unknown
     for (const note of [...put]) {
       if (!all.some((one) => one.note === note)) put.delete(note)
     }
-    questions.value = all.filter((one) => !put.has(one.note)).map(drawn)
+    conflicts.value = all.filter((one) => !put.has(one.note)).map(prompt)
     // A write still in the air is not something a person answers, and it is
     // not an answer either.
     if (all.length === 0 && writing !== null) return
-    const owed: Owed = all.length > 0 ? 'asking' : 'written'
-    if (owed === told) return
-    told = owed
-    await core.flushed(token, owed)
+    const result: FlushResult = all.length > 0 ? 'asking' : 'written'
+    if (result === told) return
+    told = result
+    await core.flushed(token, result)
   }
 
-  /** One question with the three ways out of it. */
-  const drawn = (one: Question): DrawnQuestion => ({
+  /** One conflict with the three ways out of it. */
+  const prompt = (one: Conflict): ConflictPrompt => ({
     note: one.note,
     keep: one.keep,
     take: one.take,
     later: () => {
       put.add(one.note)
-      questions.value = questions.value.filter((drawing) => drawing.note !== one.note)
+      conflicts.value = conflicts.value.filter((each) => each.note !== one.note)
     },
   })
 
@@ -159,7 +159,7 @@ export function leaving(core: LeavingDeps, wait: (ms: number) => Promise<unknown
   return {
     holds,
     raise,
-    questions,
+    conflicts,
     start,
     close: () => {
       open = false
