@@ -3,7 +3,7 @@
  * What one day of the grid came to. The day is handed to it, and where it
  * stands is the tooltip's business.
  *
- * `data-summary` names each part of the account: `account` is the whole of it,
+ * `data-day-summary` names each part of the account: `account` is the whole of it,
  * and `day`, `count`, `four`, `said`, `how-many` and `came` are its lines.
  */
 import { computed } from 'vue'
@@ -39,43 +39,45 @@ const came = computed(() => {
 </script>
 
 <template>
-  <div class="summary" data-summary="account">
-    <p class="summary__day" data-summary="day">{{ words.names(day.day) }}</p>
+  <div class="day-summary" data-day-summary="account">
+    <p class="day-summary__day" data-day-summary="day">{{ words.names(day.day) }}</p>
 
-    <p v-if="day.ahead" class="summary__count" data-summary="count">
+    <p v-if="day.ahead" class="day-summary__count" data-day-summary="count">
       {{ day.did > 0 ? `${day.did} ${words.toCome}` : words.nothing }}
     </p>
     <template v-else>
-      <p class="summary__count" data-summary="count">
+      <p class="day-summary__count" data-day-summary="count">
         {{ day.did > 0 ? `${day.did} ${words.answered}` : words.nothing }}
       </p>
-      <ul v-if="four.length" class="summary__four" data-summary="four">
+      <ul v-if="four.length" class="day-summary__four" data-day-summary="four">
         <li v-for="one in four" :key="one.tone" :data-tone="one.tone">
-          <span class="summary__said" data-summary="said">{{ one.says }}</span>
-          <span class="summary__how-many" data-summary="how-many">{{ one.count }}</span>
+          <span class="day-summary__said" data-day-summary="said">{{ one.says }}</span>
+          <span class="day-summary__how-many" data-day-summary="how-many">{{ one.count }}</span>
         </li>
       </ul>
-      <p v-if="came" class="summary__came" data-summary="came">{{ came }} {{ words.recalled }}</p>
+      <p v-if="came" class="day-summary__came" data-day-summary="came">
+        {{ came }} {{ words.recalled }}
+      </p>
     </template>
   </div>
 </template>
 
 <style scoped>
-.summary {
+.day-summary {
   min-inline-size: 8rem;
 }
 
-.summary__day {
+.day-summary__day {
   margin: 0;
   font-weight: 600;
 }
 
-.summary__count {
+.day-summary__count {
   margin: 0;
   color: var(--numen-hushed);
 }
 
-.summary__four {
+.day-summary__four {
   display: flex;
   margin: var(--numen-inset) 0 0;
   padding: 0;
@@ -84,26 +86,26 @@ const came = computed(() => {
   list-style: none;
 }
 
-.summary__four li {
+.day-summary__four li {
   display: flex;
   justify-content: space-between;
   gap: var(--numen-inset);
 }
 
 /* The word for each answer is drawn in what that answer means. */
-.summary__four li[data-tone='again'] .summary__said {
+.day-summary__four li[data-tone='again'] .day-summary__said {
   color: var(--numen-alarm);
 }
 
-.summary__four li[data-tone='hard'] .summary__said {
+.day-summary__four li[data-tone='hard'] .day-summary__said {
   color: var(--numen-caution-fg);
 }
 
-.summary__how-many {
+.day-summary__how-many {
   font-variant-numeric: tabular-nums;
 }
 
-.summary__came {
+.day-summary__came {
   margin: var(--numen-inset) 0 0;
   color: var(--numen-hushed);
 }

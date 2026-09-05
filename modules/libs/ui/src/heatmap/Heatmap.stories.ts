@@ -175,7 +175,7 @@ const pointsAtToday = async (canvas: HTMLElement): Promise<HTMLElement> => {
   const today = canvas.querySelector('[data-today]')
   await expect(today).not.toBeNull()
   await userEvent.hover(today as Element)
-  const said = canvas.querySelector('[data-summary="account"]')
+  const said = canvas.querySelector('[data-day-summary="account"]')
   await expect(said).not.toBeNull()
   return said as HTMLElement
 }
@@ -196,13 +196,13 @@ export const ADayReviewed: Story = {
   render: room,
   play: async ({ canvasElement }) => {
     const said = await pointsAtToday(canvasElement)
-    await expect(said.querySelector('[data-summary="day"]')?.textContent).toBe(TODAY)
-    await expect(said.querySelector('[data-summary="count"]')?.textContent?.trim()).toBe('26 answered')
+    await expect(said.querySelector('[data-day-summary="day"]')?.textContent).toBe(TODAY)
+    await expect(said.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe('26 answered')
 
-    const four = [...said.querySelectorAll('[data-summary="four"] li')].map((one) => one.textContent)
+    const four = [...said.querySelectorAll('[data-day-summary="four"] li')].map((one) => one.textContent)
     await expect(four).toEqual(['Again2', 'Hard3', 'Good18', 'Easy3'])
 
-    const came = said.querySelector('[data-summary="came"]') as HTMLElement
+    const came = said.querySelector('[data-day-summary="came"]') as HTMLElement
     await expect(came.textContent?.trim()).toBe('83% of cards you are reviewing came back')
 
     // 8rem is the least the panel is drawn at and not the most, so the panel
@@ -226,9 +226,9 @@ export const ADayOfNewCards: Story = {
   render: room,
   play: async ({ canvasElement }) => {
     const said = await pointsAtToday(canvasElement)
-    await expect(said.querySelector('[data-summary="count"]')?.textContent?.trim()).toBe('12 answered')
-    await expect(said.querySelectorAll('[data-summary="four"] li')).toHaveLength(3)
-    await expect(said.querySelector('[data-summary="came"]')).toBeNull()
+    await expect(said.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe('12 answered')
+    await expect(said.querySelectorAll('[data-day-summary="four"] li')).toHaveLength(3)
+    await expect(said.querySelector('[data-day-summary="came"]')).toBeNull()
   },
 }
 
@@ -238,9 +238,9 @@ export const ADayOfNothing: Story = {
   render: room,
   play: async ({ canvasElement }) => {
     const said = await pointsAtToday(canvasElement)
-    await expect(said.querySelector('[data-summary="count"]')?.textContent?.trim()).toBe('Nothing answered')
-    await expect(said.querySelector('[data-summary="four"]')).toBeNull()
-    await expect(said.querySelector('[data-summary="came"]')).toBeNull()
+    await expect(said.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe('Nothing answered')
+    await expect(said.querySelector('[data-day-summary="four"]')).toBeNull()
+    await expect(said.querySelector('[data-day-summary="came"]')).toBeNull()
   },
 }
 

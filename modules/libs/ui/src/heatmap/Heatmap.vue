@@ -13,7 +13,7 @@ import { computed, ref } from 'vue'
 
 import Tooltip from '../tooltip/Tooltip.vue'
 import type { Box } from '../placing/place'
-import Summary from './Summary.vue'
+import DaySummary from './DaySummary.vue'
 import { days, fits, ROWS } from './heatmap'
 import type { Day, Tally } from './heatmap'
 import { useWidth } from './width'
@@ -95,7 +95,7 @@ const reaches = (day: Day, press: MouseEvent) => {
     </svg>
 
     <Tooltip v-if="pointed" :at="pointed.at">
-      <Summary :day="pointed.day" :words="words" />
+      <DaySummary :day="pointed.day" :words="words" />
     </Tooltip>
   </div>
 </template>
