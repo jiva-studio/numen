@@ -55,7 +55,7 @@ const SHOTS = [
   { name: 'decking', story: 'desktop-window--deck' },
   { name: 'cutting', story: 'desktop-window--stencil' },
   { name: 'pacing', story: 'desktop-window--preset' },
-  { name: 'owing', story: 'flash-cards-window--owing', size: NARROW },
+  { name: 'owing', story: 'flash-cards-window--cards-due', size: NARROW },
   { name: 'reviewing', story: 'flash-cards-window--reviewing', size: NARROW },
 ]
 /** Pixels for one, so the picture holds up where it is drawn wide. */
