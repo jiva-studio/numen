@@ -1,18 +1,18 @@
 <script setup lang="ts">
 /**
- * How much is waiting, as one figure and the word for what it counts.
+ * How many cards are due, as one figure and the word for what it counts.
  *
  * A figure not worked out yet is drawn as the shape it will be, in the same
  * box, so the row it stands in does not move when it lands.
  */
 import { computed } from 'vue'
 import Skeleton from '../waiting/Skeleton.vue'
-import { OWED_WORDS, type OwedWords } from './owed'
+import { DUE_WORDS, type DueWords } from './due'
 
 const props = withDefaults(
   defineProps<{
-    /** Cards waiting today: owed, and never asked. Nothing until it is counted. */
-    waiting: number | null
+    /** Cards due today: owed, and never asked. Nothing until it is counted. */
+    due: number | null
     /**
      * The number alone. Where a list is long and the room is short, the word is
      * said once above the list and not on every row of it.
@@ -21,15 +21,15 @@ const props = withDefaults(
     /** Drawn on a ground of its own, where it stands on a filled button. */
     over?: boolean
     /** The words it is drawn with. */
-    words?: OwedWords
+    words?: DueWords
   }>(),
-  { bare: false, over: false, words: () => OWED_WORDS },
+  { bare: false, over: false, words: () => DUE_WORDS },
 )
 
 /** What it is read out as, where that is not what it draws. */
 const label = computed(() => {
-  if (props.waiting === null) return props.words.counting
-  return props.bare ? props.words.counted(props.waiting) : undefined
+  if (props.due === null) return props.words.counting
+  return props.bare ? props.words.counted(props.due) : undefined
 })
 </script>
 
@@ -37,21 +37,21 @@ const label = computed(() => {
   <!-- A generic element carries no name, so the pill takes a role and is read
        out while the figure is still coming. -->
   <span
-    class="owed"
+    class="due-count"
     role="status"
-    :class="{ 'owed--over': over }"
+    :class="{ 'due-count--over': over }"
     :aria-label="label"
   >
     <!-- Narrower than the pill's own least width, so the box is the same width
          whether the figure has landed or not. -->
-    <Skeleton v-if="waiting === null" wide="0.8rem" high="0.7em" pill />
-    <template v-else-if="bare">{{ waiting }}</template>
-    <template v-else>{{ words.counted(waiting) }}</template>
+    <Skeleton v-if="due === null" wide="0.8rem" high="0.7em" pill />
+    <template v-else-if="bare">{{ due }}</template>
+    <template v-else>{{ words.counted(due) }}</template>
   </span>
 </template>
 
 <style scoped>
-.owed {
+.due-count {
   flex: none;
   min-inline-size: 1.5rem;
   padding: 0.0625rem 0.4rem;
@@ -66,7 +66,7 @@ const label = computed(() => {
 
 /* On a filled button the ground is the button's own, lightened by the text that
    stands on it, so the pill follows whatever the button is painted. */
-.owed--over {
+.due-count--over {
   background: color-mix(in srgb, currentcolor 18%, transparent);
   color: inherit;
 }

@@ -112,7 +112,7 @@ describe('how much of a deck stands learned', () => {
 
     expect(one.findAll('.decks__learned')).toHaveLength(1)
     expect(one.find('.decks__learned').text()).toBe('')
-    expect(one.find('.decks__learned').classes()).toContain('coming')
+    expect(one.find('.decks__learned').classes()).toContain('skeleton')
   })
 
   // The rule the share is counted by is the preset's, so a deck whose preset

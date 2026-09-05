@@ -131,7 +131,7 @@ describe('a deck with nothing waiting', () => {
     const one = shown([preset({ cards: 0, answered: 6, took: 3 })], holding(20, 0, 0))
 
     expect(one.find('.decks__met').text()).toBe('Done today')
-    expect(one.findAll('.owed')).toHaveLength(1)
+    expect(one.findAll('.due-count')).toHaveLength(1)
     expect(one.find('.decks__all').text()).toContain('0')
   })
 
@@ -197,13 +197,13 @@ describe('a deck with nothing waiting', () => {
     expect(one.findAll('.decks__met')).toHaveLength(0)
     expect(one.findAll('.decks__stopped')).toHaveLength(0)
     // The pill on the button of the whole vault is the only count on the row.
-    expect(one.find('.decks__deck').findAll('.owed')).toHaveLength(0)
+    expect(one.find('.decks__deck').findAll('.due-count')).toHaveLength(0)
   })
 
   it('counts what is waiting where something is', () => {
     const one = shown([preset()], holding(20, 8, 2))
 
-    expect(one.find('.decks__deck').find('.owed').text()).toBe('10 to review')
+    expect(one.find('.decks__deck').find('.due-count').text()).toBe('10 to review')
     expect(one.findAll('.decks__met')).toHaveLength(0)
   })
 })
@@ -253,6 +253,6 @@ describe('the tile and the decks under it', () => {
       'nothing today',
       'nothing today',
     ])
-    expect(one.find('.decks__deck').find('.owed').text()).toBe('10 to review')
+    expect(one.find('.decks__deck').find('.due-count').text()).toBe('10 to review')
   })
 })

@@ -11,7 +11,7 @@
  * number will take and is not opened until it has one.
  */
 import { computed } from 'vue'
-import { Owed, Spinner, Welcome } from '@numen/ui'
+import { DueCount, Spinner, Welcome } from '@numen/ui'
 import type { VaultRow } from '@numen/ui'
 import type { VaultCardsDue } from './core'
 
@@ -65,7 +65,7 @@ const waiting = computed(
   >
     <!-- The list is where the room is shortest, so the number stands alone. -->
     <template #vault="{ vault }">
-      <Owed v-if="waiting.has(vault.id)" :waiting="waiting.get(vault.id) ?? null" bare />
+      <DueCount v-if="waiting.has(vault.id)" :due="waiting.get(vault.id) ?? null" bare />
     </template>
 
     <!-- Nothing is known about the installation yet, not even which vaults it

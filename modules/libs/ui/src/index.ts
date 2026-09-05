@@ -46,7 +46,7 @@ export { Days } from './components/ui/days'
 export { weekFrom, WEEK } from './components/ui/days'
 export type { Day, Named } from './components/ui/days'
 
-export { default as Owed } from './cards/Owed.vue'
+export { default as DueCount } from './cards/DueCount.vue'
 /** What a person did on each day, as a grid of weeks. */
 export { default as Heatmap } from './heatmap/Heatmap.vue'
 export { dayName as heatmapDayName } from './heatmap/dates'

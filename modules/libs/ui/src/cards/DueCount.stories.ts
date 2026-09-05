@@ -1,5 +1,5 @@
 /**
- * How much is waiting, as one figure in a pill. Also the test corpus: each
+ * How many cards are due, as one figure in a pill. Also the test corpus: each
  * story is run in a browser by `@storybook/addon-vitest`.
  *
  * The pill has two grounds. On its own it takes a token; on a filled button it
@@ -7,40 +7,40 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
-import Owed from './Owed.vue'
+import DueCount from './DueCount.vue'
 import { Button } from '../components/ui/button'
-import { OWED_WORDS } from './owed'
+import { DUE_WORDS } from './due'
 import { lightness } from '@/fixtures/colour'
 import { DARK, drawnDark } from '@/fixtures/theme'
 
 interface Knobs {
-  /** Cards waiting today. Nothing until it has been counted. */
-  waiting: number | null
+  /** Cards due today. Nothing until it has been counted. */
+  due: number | null
   bare: boolean
   over: boolean
 }
 
 /** The pill on the surface, and the same pill on a filled button. */
 const beside = (args: Knobs) => ({
-  components: { Owed, Button },
+  components: { DueCount, Button },
   setup: () => ({ args }),
   template: `
     <div class="numen" style="display:flex;align-items:center;gap:24px;padding:32px;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
       <span style="display:inline-flex;align-items:center;gap:8px">
         Sanskrit
-        <Owed :waiting="args.waiting" :bare="args.bare" />
+        <DueCount :due="args.due" :bare="args.bare" />
       </span>
       <Button variant="solid">
         Review
-        <Owed :waiting="args.waiting" :bare="args.bare" over />
+        <DueCount :due="args.due" :bare="args.bare" over />
       </Button>
     </div>
   `,
 })
 
 const meta: Meta<Knobs> = {
-  title: 'Flash Cards/Owed',
-  component: Owed,
+  title: 'Flash Cards/Due count',
+  component: DueCount,
   parameters: {
     layout: 'centered',
     docs: {
@@ -53,11 +53,11 @@ const meta: Meta<Knobs> = {
     },
   },
   argTypes: {
-    waiting: { control: 'number' },
+    due: { control: 'number' },
     bare: { control: 'boolean' },
     over: { control: 'boolean' },
   },
-  args: { waiting: 12, bare: false, over: false },
+  args: { due: 12, bare: false, over: false },
   render: beside,
 }
 
@@ -75,7 +75,7 @@ export const Bare: Story = {
     expect(pill?.textContent?.trim()).toBe('12')
 
     // Drawn as the figure alone, and still read out as what it counts.
-    expect(pill?.getAttribute('aria-label')).toBe(OWED_WORDS.counted(12))
+    expect(pill?.getAttribute('aria-label')).toBe(DUE_WORDS.counted(12))
   },
 }
 
@@ -84,10 +84,10 @@ export const Bare: Story = {
  * so to a reader who is listening.
  */
 export const StillCounting: Story = {
-  args: { waiting: null },
+  args: { due: null },
   play: async ({ canvasElement }) => {
     const [pill] = within(canvasElement).getAllByRole('status')
-    expect(pill?.getAttribute('aria-label')).toBe(OWED_WORDS.counting)
+    expect(pill?.getAttribute('aria-label')).toBe(DUE_WORDS.counting)
     expect(pill?.textContent?.trim()).toBe('')
   },
 }

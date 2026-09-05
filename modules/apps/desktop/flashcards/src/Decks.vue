@@ -6,7 +6,7 @@
  * top as one button. A deck below it is for the person who came for that deck.
  */
 import { computed } from 'vue'
-import { Button, KeyCap, Owed, Skeleton } from '@numen/ui'
+import { Button, DueCount, KeyCap, Skeleton } from '@numen/ui'
 import type { HeatmapTally } from '@numen/ui'
 import Progress from './Progress.vue'
 import Presets from './Presets.vue'
@@ -117,7 +117,7 @@ const share = (deck: DeckCardsDue): string => {
                met where something was answered. A deck holding no cards at all
                says neither. -->
           <span v-if="stopped(deck.deck)" class="decks__stopped">{{ stopped(deck.deck) }}</span>
-          <Owed v-else-if="deck.due + deck.new > 0" :waiting="deck.due + deck.new" />
+          <DueCount v-else-if="deck.due + deck.new > 0" :due="deck.due + deck.new" />
           <template v-else-if="deck.faces > 0">
             <span v-if="done(deck)" class="decks__met">Done today</span>
             <span v-else class="decks__stopped">{{ empty(deck) }}</span>
@@ -136,7 +136,7 @@ const share = (deck: DeckCardsDue): string => {
       <Button class="decks__all" :disabled="owed === 0" @click="$emit('start', '')">
         <KeyCap :keys="{ icons: [], letter: 'enter' }" />
         Review
-        <Owed :waiting="owed" bare over />
+        <DueCount :due="owed" bare over />
       </Button>
     </footer>
   </section>
