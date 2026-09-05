@@ -172,12 +172,15 @@ func FuzzReadConfig(f *testing.F) {
 	for _, seed := range configSeeds {
 		f.Add(seed)
 	}
+	// One folder is written over and over: a vault for each of a million inputs
+	// is a run that never gets to the end of them.
+	root := f.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, DefaultServiceDir), 0o755); err != nil {
+		f.Fatal(err)
+	}
+	at := configAt(root, DefaultServiceDir)
+
 	f.Fuzz(func(t *testing.T, raw string) {
-		root := t.TempDir()
-		if err := os.MkdirAll(filepath.Join(root, DefaultServiceDir), 0o755); err != nil {
-			t.Fatal(err)
-		}
-		at := configAt(root, DefaultServiceDir)
 		if err := os.WriteFile(at, []byte(raw), 0o644); err != nil {
 			t.Fatal(err)
 		}
