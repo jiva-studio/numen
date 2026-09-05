@@ -20,7 +20,7 @@ graph TD
     O["open the index"] --> V{"the version in the database"}
     V -->|"below this build"| M["apply each numbered file in turn"]
     V -->|"level with this build"| U["use it"]
-    V -->|"above this build"| R["refused, naming both versions"]
+    V -->|"above this build"| R["emptied, and built again from the first file"]
     M --> U
 ```
 
@@ -44,9 +44,11 @@ A migration may empty the tables it changes, saying so in its own file, and the 
 
 Beside the version the index keeps a `schema_migrations` table: a version, and the name of the numbered file that reached it. It is not itself a numbered migration — it is what says whether those ran — so the index creates it where it is missing, and a table carrying a column this build does not write is brought to the two columns this build writes.
 
-### An index at a version this build does not carry is refused
+### An index at a version this build does not carry is built again
 
-A schema written by a later build holds what this one cannot read. It is reported and left exactly as it stands, naming the version it is at and the version this build knows.
+A schema this build does not carry holds what it cannot read. The index is a cache — what it holds is a reading of the vault, and the next scan reads the vault again — so it is emptied and migrated from the first file rather than refused. Refusing it stopped the application before its window opened, on a database it is free to throw away, and told the person to find the build that wrote it, which after a collapsed sequence is older than the one refusing.
+
+The cost is a full re-scan and re-embed, which is minutes of work and not nothing. It is still the smaller cost of the two.
 
 ## Consequences
 

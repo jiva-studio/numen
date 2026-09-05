@@ -23,9 +23,11 @@ Which agent answers is a setting, and each carries a section of its own; a secti
 
 The command line, the environment and the working directory are built by this application. What is absent is absent because this decision says so.
 
-### It brings a web search and a web fetch, and no other built-in
+### It brings a web search, and no other built-in
 
-The set of built-in tools is named in full, so every other one is absent: no shell, no file reader, no file writer, no subagent. A shell and a file writer reach into the vault under a name the index does not know, and into the rest of the machine. The web tools reach neither, and looking something up is part of writing a note about it.
+The set of built-in tools is named in full, so every other one is absent: no shell, no file reader, no file writer, no subagent. A shell and a file writer reach into the vault under a name the index does not know, and into the rest of the machine. A search reaches neither, and looking something up is part of writing a note about it.
+
+A web *fetch* is absent, and the reason is not the same. A search cannot be told where to send anything: an injected note names no recipient, and what comes back is read by the model that was already reading the note. A fetch takes its address from the text, so a note somebody synced chooses where the run reaches — and the run is approved ahead of time, so nothing intervenes. That makes it a channel out of the vault rather than a way into the web, and the proofreader in the same package already runs with both refused.
 
 This vault's tools are approved ahead of the run, so nothing is asked about them while it is on.
 
