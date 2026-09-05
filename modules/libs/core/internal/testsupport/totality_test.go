@@ -25,7 +25,7 @@ var walked = map[protoreflect.FullName]string{
 	"numen.v1.Mode":          "internal/wire: round trip through ModeIn and ModeOf",
 	"numen.v1.NamedBy":       "adapter/webui: written by namedByOf",
 	"numen.v1.NoteType":      "adapter/webui: written by typeOf",
-	"numen.v1.Presence":      "adapter/webui: written by the standing table",
+	"numen.v1.Presence":      "adapter/webui: written by the presences table",
 	"numen.v1.Rating":        "adapter/flashcardsui: read by rating",
 	"numen.v1.Refusal":       "adapter/mcp: worded by said",
 	"numen.v1.Role":          "adapter/webui: read by roleOf",
