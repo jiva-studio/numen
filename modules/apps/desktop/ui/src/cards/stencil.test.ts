@@ -120,14 +120,14 @@ describe('a stencil opened', () => {
   it('draws the fields in the order a person is asked for them', async () => {
     const { tab } = await open()
 
-    expect(tab.sheet().fields).toStrictEqual(['Height', 'Life span'])
+    expect(tab.sheet.value.fields).toStrictEqual(['Height', 'Life span'])
   })
 
   it('gives every face an identity, which the file carries none of', async () => {
     const { tab } = await open()
 
-    expect(tab.sheet().faces[0]?.id).toBeTruthy()
-    expect(tab.sheet().faces[0]?.name).toBe('Recognise')
+    expect(tab.sheet.value.faces[0]?.id).toBeTruthy()
+    expect(tab.sheet.value.faces[0]?.name).toBe('Recognise')
   })
 
   it('is called what the file is called', async () => {
@@ -164,8 +164,8 @@ describe('a field renamed in a stencil', () => {
     await settles()
     await settles()
 
-    expect(tab.sheet().fields).toStrictEqual(['Shoulder', 'Life span'])
-    expect(tab.sheet().faces[0]?.back).toBe('**Height:** {{Shoulder}}')
+    expect(tab.sheet.value.fields).toStrictEqual(['Shoulder', 'Life span'])
+    expect(tab.sheet.value.faces[0]?.back).toBe('**Height:** {{Shoulder}}')
   })
 
   it('asks for nothing where the name is the one the field carries', async () => {
@@ -265,7 +265,7 @@ describe('a field carried in a stencil', () => {
 
     tab.movesField('Life span', null)
 
-    expect(tab.sheet().fields).toStrictEqual(['Height', 'Life span'])
+    expect(tab.sheet.value.fields).toStrictEqual(['Height', 'Life span'])
   })
 
   it('leaves the first field first, wherever it was let go', async () => {
@@ -273,7 +273,7 @@ describe('a field carried in a stencil', () => {
 
     tab.movesField('Height', null)
 
-    expect(tab.sheet().fields).toStrictEqual(['Height', 'Life span'])
+    expect(tab.sheet.value.fields).toStrictEqual(['Height', 'Life span'])
   })
 
   it('lands nothing above the first field', async () => {
@@ -282,7 +282,7 @@ describe('a field carried in a stencil', () => {
     tab.addsField('Weight')
     tab.movesField('Weight', 'Height')
 
-    expect(tab.sheet().fields).toStrictEqual(['Height', 'Life span', 'Weight'])
+    expect(tab.sheet.value.fields).toStrictEqual(['Height', 'Life span', 'Weight'])
   })
 })
 
@@ -313,7 +313,7 @@ describe('a stencil the vault refused', () => {
     const { tab } = await open({ refusal: 'notAStencil' })
 
     expect(tab.saying.value).toBe(words.notAStencil)
-    expect(tab.sheet().fields).toStrictEqual([])
+    expect(tab.sheet.value.fields).toStrictEqual([])
   })
 
   it('says nothing where the stencil was read', async () => {
@@ -346,8 +346,8 @@ describe('what is wrong with a stencil', () => {
       ],
     })
 
-    const face = tab.sheet().faces[0]?.id ?? ''
-    expect(tab.marks().at.get(face)).toStrictEqual(['no back'])
+    const face = tab.sheet.value.faces[0]?.id ?? ''
+    expect(tab.marks.value.at.get(face)).toStrictEqual(['no back'])
   })
 
   it('stands against the field it names where it stands against no face', async () => {
@@ -363,16 +363,16 @@ describe('what is wrong with a stencil', () => {
       ],
     })
 
-    expect(tab.marks().fields.get('Height')).toStrictEqual(['declared twice'])
-    expect(tab.marks().at.size).toBe(0)
+    expect(tab.marks.value.fields.get('Height')).toStrictEqual(['declared twice'])
+    expect(tab.marks.value.at.size).toBe(0)
   })
 
   it('is nothing at all where the vault reported none', async () => {
     const { tab } = await open()
 
-    expect(tab.marks().at.size).toBe(0)
-    expect(tab.marks().fields.size).toBe(0)
-    expect(tab.marks().whole).toStrictEqual([])
+    expect(tab.marks.value.at.size).toBe(0)
+    expect(tab.marks.value.fields.size).toBe(0)
+    expect(tab.marks.value.whole).toStrictEqual([])
   })
 })
 
@@ -389,38 +389,38 @@ describe('a stencil read again under the window', () => {
 
   it('leaves what the editor is drawing standing, where the file reads the same', async () => {
     const one = await open({ problems: [sideless] })
-    const was = { sheet: one.tab.sheet(), marks: one.tab.marks() }
+    const was = { sheet: one.tab.sheet.value, marks: one.tab.marks.value }
 
     one.stencils.changed(['Animal.md'])
     await settles()
 
     // Each of them the same thing, and not merely a thing that reads the same:
     // a field under the keyboard is redrawn by anything else.
-    expect(one.tab.sheet()).toBe(was.sheet)
-    expect(one.tab.marks()).toBe(was.marks)
+    expect(one.tab.sheet.value).toBe(was.sheet)
+    expect(one.tab.marks.value).toBe(was.marks)
   })
 
   it('leaves each mark standing on the face the editor is drawing', async () => {
     const one = await open({ problems: [sideless] })
     // The face the editor is drawing, under the identity it was drawn with.
-    const face = one.tab.sheet().faces[0]?.id ?? ''
+    const face = one.tab.sheet.value.faces[0]?.id ?? ''
 
     one.stencils.changed(['Animal.md'])
     await settles()
 
-    expect(one.tab.marks().at.get(face)).toStrictEqual(['no back'])
+    expect(one.tab.marks.value.at.get(face)).toStrictEqual(['no back'])
   })
 
   it('draws the file again where it was written from somewhere else', async () => {
     const one = await open()
-    const was = one.tab.sheet()
+    const was = one.tab.sheet.value
 
     one.holds([{ name: 'Recall', lead: '', front: '{{Height}}', back: '{{Life span}}' }])
     one.stencils.changed(['Animal.md'])
     await settles()
 
-    expect(one.tab.sheet().faces.map((face) => face.name)).toStrictEqual(['Recall'])
-    expect(one.tab.sheet()).not.toBe(was)
+    expect(one.tab.sheet.value.faces.map((face) => face.name)).toStrictEqual(['Recall'])
+    expect(one.tab.sheet.value).not.toBe(was)
   })
 })
 

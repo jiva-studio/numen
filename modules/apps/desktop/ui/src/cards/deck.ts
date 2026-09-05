@@ -92,21 +92,21 @@ export interface Held {
   /** The deck as the window draws it: the state it is in, and what it stands at. */
   readonly shown: ComputedRef<Editing>
   /** The cards, as the window holds them. */
-  deck(): Deck
+  readonly deck: ComputedRef<Deck>
   /** The same, as the grid draws them, each under the stencil that cuts it. */
-  drawn(): readonly Drawn[]
+  readonly drawn: ComputedRef<readonly Drawn[]>
   /** The sections, as the grid draws them. */
-  bands(): readonly Banded[]
+  readonly bands: ComputedRef<readonly Banded[]>
   /** The stencils a card may be cut by. */
-  stencils(): readonly Stencil[]
+  readonly stencils: ComputedRef<readonly Stencil[]>
   /** What is wrong with the file, against the card it stands on. */
-  marks(): Marks
+  readonly marks: ComputedRef<Marks>
   /** What the whole file was refused for, in words a person reads. */
   readonly saying: ComputedRef<string>
   /** The preset this deck is scheduled by. */
-  scheduled(): Scheduled
+  readonly scheduled: ComputedRef<Scheduled>
   /** The presets this deck may be put on, the defaults first. */
-  choices(): readonly Choice[]
+  readonly choices: ComputedRef<readonly Choice[]>
   /**
    * This deck put on the preset at that path, and on the defaults where the
    * path is empty. What it is owed reaches the file first.
@@ -425,14 +425,14 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
   const held = (id: string): Held => ({
     id,
     shown: computed(() => store.shown(id)),
-    deck: () => deckAt(id),
-    drawn: () => drawnAt(id),
-    bands: () => bandsAt(id),
-    stencils: () => stencils.value,
-    marks: () => marksAt(id),
+    deck: computed(() => deckAt(id)),
+    drawn: computed(() => drawnAt(id)),
+    bands: computed(() => bandsAt(id)),
+    stencils,
+    marks: computed(() => marksAt(id)),
     saying: computed(() => sayingOf(id)),
-    scheduled: () => scheduledAt(id),
-    choices: () => choices.value,
+    scheduled: computed(() => scheduledAt(id)),
+    choices,
     schedules: (preset) => void schedules(id, preset),
     adds: (stencil, values, section) =>
       turns(id, added(deckAt(id), stencil, pathOfCut(offers.value, stencil), values, section)),

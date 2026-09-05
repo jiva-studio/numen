@@ -310,18 +310,18 @@ const BANDS = [
 const DECK_HELD: DeckHeld = {
   id: 'Sanskrit/Roots.md',
   shown: computed(() => ({ path: 'Sanskrit/Roots.md', body: '', state: 'clean', refusal: null })),
-  deck: () => ({ preamble: '', cards: [], sections: [], tail: '' }),
-  drawn: () => CARDS,
-  bands: () => BANDS,
-  stencils: () => [ROOT_CUT, WORD],
-  marks: () => NO_MARKS,
+  deck: computed(() => ({ preamble: '', cards: [], sections: [], tail: '' })),
+  drawn: computed(() => CARDS),
+  bands: computed(() => BANDS),
+  stencils: computed(() => [ROOT_CUT, WORD]),
+  marks: computed(() => NO_MARKS),
   saying: computed(() => ''),
-  scheduled: () => ({ path: 'Sanskrit.md', name: 'Sanskrit', saying: '' }),
-  choices: () => [
+  scheduled: computed(() => ({ path: 'Sanskrit.md', name: 'Sanskrit', saying: '' })),
+  choices: computed(() => [
     { path: '', name: 'The defaults' },
     { path: 'Sanskrit.md', name: 'Sanskrit' },
     { path: 'Anatomy.md', name: 'Anatomy' },
-  ],
+  ]),
   schedules: () => {},
   adds: () => {},
   removes: () => {},
@@ -343,7 +343,7 @@ export const Deck: Story = {
 const STENCIL_HELD: StencilHeld = {
   id: 'Sanskrit/Word.md',
   shown: computed(() => ({ path: 'Sanskrit/Word.md', body: '', state: 'clean', refusal: null })),
-  sheet: () => ({
+  sheet: computed(() => ({
     fields: WORD.fields,
     preamble: '',
     faces: [
@@ -370,8 +370,8 @@ const STENCIL_HELD: StencilHeld = {
       },
     ],
     tail: '',
-  }),
-  marks: () => NO_MARKS,
+  })),
+  marks: computed(() => NO_MARKS),
   saying: computed(() => ''),
   addsField: () => {},
   namesField: () => {},

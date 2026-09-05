@@ -16,8 +16,8 @@ import { WORDS as words } from './words'
 
 const props = defineProps<{ held: Held }>()
 
-const sheet = computed(() => props.held.sheet())
-const marks = computed(() => props.held.marks())
+const sheet = computed(() => props.held.sheet.value)
+const marks = computed(() => props.held.marks.value)
 </script>
 
 <template>

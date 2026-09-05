@@ -17,25 +17,27 @@ import { WORDS as words } from './words'
 
 const props = defineProps<{ held: Held }>()
 
-const drawn = computed(() => props.held.drawn())
-const marks = computed(() => props.held.marks())
+const drawn = computed(() => props.held.drawn.value)
+const marks = computed(() => props.held.marks.value)
 
 /** What the grid draws against the cards it was handed. */
 const wrong = computed(() => ({ at: marks.value.at, under: marks.value.under }))
 
 /** The untyped values a card cut by that stencil is made with. */
 const empty = (stencil: string) =>
-  cardBlanks(cardFields(props.held.stencils().find((one) => one.name === stencil)?.fields ?? []))
+  cardBlanks(
+    cardFields(props.held.stencils.value.find((one) => one.name === stencil)?.fields ?? []),
+  )
 
 /** Which preset schedules this deck. */
-const scheduled = computed(() => props.held.scheduled())
+const scheduled = computed(() => props.held.scheduled.value)
 
 /**
  * The presets on offer. The defaults stand in a band of their own, so the line
  * between them and the notes says which is which.
  */
 const offered = computed(() =>
-  props.held.choices().map((one) => ({
+  props.held.choices.value.map((one) => ({
     id: one.path,
     text: one.name,
     band: one.path === '' ? 'defaults' : 'presets',
@@ -95,8 +97,8 @@ const chose = (path: string) => {
     <DeckView
       class="deck-tab__grid"
       :cards="drawn"
-      :sections="props.held.bands()"
-      :stencils="props.held.stencils()"
+      :sections="props.held.bands.value"
+      :stencils="props.held.stencils.value"
       :name="words.deck"
       :wrong="wrong"
       @add="(stencil: string, section: string | null) => props.held.adds(stencil, empty(stencil), section)"

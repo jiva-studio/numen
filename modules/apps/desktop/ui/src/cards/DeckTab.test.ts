@@ -213,9 +213,9 @@ describe('a deck drawn', () => {
     await window.findAll('[data-plus]').at(-1)!.find('button').trigger('click')
     await window.find('[data-cut="Animal"]').trigger('click')
 
-    expect(tab.deck().cards.length).toBe(3)
-    expect(tab.deck().cards.at(-1)?.stencil).toBe('Animal')
-    expect(tab.deck().cards.at(-1)?.values).toStrictEqual([
+    expect(tab.deck.value.cards.length).toBe(3)
+    expect(tab.deck.value.cards.at(-1)?.stencil).toBe('Animal')
+    expect(tab.deck.value.cards.at(-1)?.values).toStrictEqual([
       { field: 'Name', text: '' },
       { field: 'Height', text: '' },
     ])
@@ -223,7 +223,7 @@ describe('a deck drawn', () => {
 
   it('draws a heading for every section the vault read, with the cards under it', async () => {
     const { window, tab } = await drawn()
-    const roots = tab.bands()[0]?.id ?? ''
+    const roots = tab.bands.value[0]?.id ?? ''
 
     expect(window.get(`[data-band="${roots}"]`).get('input').element.value).toBe('Roots')
     expect(window.findAll(`[data-section="${roots}"]`)).toHaveLength(2)
@@ -234,21 +234,21 @@ describe('a deck drawn', () => {
 
     await window.get('[data-add-section]').trigger('click')
 
-    expect(tab.bands().map((band) => band.name)).toStrictEqual(['Roots', 'Section 1'])
+    expect(tab.bands.value.map((band) => band.name)).toStrictEqual(['Roots', 'Section 1'])
   })
 })
 
 describe('a mark on a tile', () => {
   it('is drawn inside the tile of the card it was read against', async () => {
     const { window, tab } = await drawn([stencilless])
-    const second = tab.deck().cards[1]?.id ?? ''
+    const second = tab.deck.value.cards[1]?.id ?? ''
 
     expect(tileOf(window, second).find('[data-wrong]').text()).toBe('a card under no stencil')
   })
 
   it('is drawn on no other tile', async () => {
     const { window, tab } = await drawn([stencilless])
-    const first = tab.deck().cards[0]?.id ?? ''
+    const first = tab.deck.value.cards[0]?.id ?? ''
 
     expect(tileOf(window, first).find('[data-wrong]').exists()).toBe(false)
   })
@@ -261,7 +261,7 @@ describe('a mark on a tile', () => {
 
   it('goes when the card it stood on is taken out of the deck', async () => {
     const { window, tab } = await drawn([stencilless])
-    const second = tab.deck().cards[1]?.id ?? ''
+    const second = tab.deck.value.cards[1]?.id ?? ''
 
     tab.removes(second)
     await settles()
@@ -271,8 +271,8 @@ describe('a mark on a tile', () => {
 
   it('stands with the card and not with its place, so removing another leaves it', async () => {
     const { window, tab } = await drawn([stencilless])
-    const first = tab.deck().cards[0]?.id ?? ''
-    const second = tab.deck().cards[1]?.id ?? ''
+    const first = tab.deck.value.cards[0]?.id ?? ''
+    const second = tab.deck.value.cards[1]?.id ?? ''
 
     tab.removes(first)
     await settles()
@@ -301,42 +301,42 @@ describe('what is wrong with the file itself', () => {
 describe('a gesture in the grid', () => {
   it('writes into the card the box belongs to', async () => {
     const { window, tab } = await drawn()
-    const first = tab.deck().cards[0]?.id ?? ''
+    const first = tab.deck.value.cards[0]?.id ?? ''
     const box = tileOf(window, first).find('[data-value="Name"]')
 
     await box.setValue('Vicuña')
 
-    expect(tab.deck().cards[0]?.values[0]).toStrictEqual({ field: 'Name', text: 'Vicuña' })
+    expect(tab.deck.value.cards[0]?.values[0]).toStrictEqual({ field: 'Name', text: 'Vicuña' })
   })
 
   it('leaves every other card as it was', async () => {
     const { window, tab } = await drawn()
-    const first = tab.deck().cards[0]?.id ?? ''
+    const first = tab.deck.value.cards[0]?.id ?? ''
     const box = tileOf(window, first).find('[data-value="Name"]')
 
     await box.setValue('Vicuña')
 
-    expect(tab.deck().cards[1]?.values).toStrictEqual([])
+    expect(tab.deck.value.cards[1]?.values).toStrictEqual([])
   })
 
   it('renames the section the box belongs to', async () => {
     const { window, tab } = await drawn()
-    const roots = tab.bands()[0]?.id ?? ''
+    const roots = tab.bands.value[0]?.id ?? ''
     const box = window.get(`[data-band="${roots}"]`).get('input')
 
     await box.setValue('Roots and shoots')
     await box.trigger('change')
 
-    expect(tab.bands()[0]?.name).toBe('Roots and shoots')
+    expect(tab.bands.value[0]?.name).toBe('Roots and shoots')
   })
 
   it('takes a section away, and leaves the cards that stood under it', async () => {
     const { window, tab } = await drawn()
-    const roots = tab.bands()[0]?.id ?? ''
+    const roots = tab.bands.value[0]?.id ?? ''
 
     await window.get(`[data-band="${roots}"]`).get('.remove').trigger('click')
 
-    expect(tab.bands()).toStrictEqual([])
+    expect(tab.bands.value).toStrictEqual([])
     expect(window.findAll('[data-card]')).toHaveLength(2)
   })
 })
