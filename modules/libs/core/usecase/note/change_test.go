@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -47,13 +48,13 @@ func (c changing) search() search.Search {
 }
 
 func (c changing) create() note.Create {
-	return note.NewCreate(filesystem.VaultWriters{}, c.db.Queries(), c.index)
+	return note.NewCreate(filesystem.VaultWriters{}, c.db.Queries(), c.index, time.Now)
 }
 
 func (c changing) move() note.Move {
 	return note.NewMove(
 		filesystem.VaultReaders{}, filesystem.VaultWriters{},
-		c.db.Links(), c.db.Queries(), c.db.Sources(), c.index,
+		c.db.Links(), c.db.Queries(), c.db.Sources(), c.index, time.Now,
 	)
 }
 
@@ -63,7 +64,8 @@ func (c changing) remove() note.Remove {
 }
 
 func (c changing) linking() note.EditLinks {
-	return note.NewEditLinks(filesystem.VaultReaders{}, filesystem.VaultWriters{}, c.index)
+	return note.NewEditLinks(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, c.index, time.Now)
 }
 
 func (c changing) read(t *testing.T, path string) string {
@@ -523,7 +525,8 @@ func TestRemovingALinkLeavesTheOtherNoteAlone(t *testing.T) {
 func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 	t.Parallel()
 	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	writing := note.NewWrite(filesystem.VaultReaders{}, filesystem.VaultWriters{}, c.index)
+	writing := note.NewWrite(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, c.index, time.Now)
 
 	reader, err := (filesystem.VaultReaders{}).Open(c.vault)
 	if err != nil {
@@ -554,7 +557,8 @@ func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	t.Parallel()
 	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	writing := note.NewWrite(filesystem.VaultReaders{}, filesystem.VaultWriters{}, c.index)
+	writing := note.NewWrite(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, c.index, time.Now)
 
 	reader, err := (filesystem.VaultReaders{}).Open(c.vault)
 	if err != nil {

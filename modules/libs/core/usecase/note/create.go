@@ -4,7 +4,6 @@ import (
 	"context"
 	pathpkg "path"
 	"strings"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
@@ -24,18 +23,21 @@ type Create struct {
 	// a note and searches for it in the next breath finds it.
 	Index Levels
 	// Now is when this is happening. An identifier carries it.
-	Now func() time.Time
+	Now port.Clock
 }
 
 // NewCreate is what a note is made through: the vault it is written into, what
-// is asked which names are taken, and what brings the new file level in the
-// index.
+// is asked which names are taken, what brings the new file level in the index,
+// and what time it is.
 //
-// All three are named here because a note made without any one of them is a
-// note half made — one filed under a name that reaches another note, or one
-// the vault cannot find.
-func NewCreate(writers port.VaultWriters, names port.NoteQueries, index Levels) Create {
-	return Create{Writers: writers, Names: names, Index: index}
+// All four are named here because a note made without any one of them is a
+// note half made — one filed under a name that reaches another note, one the
+// vault cannot find, or one whose identifier was minted off the machine's
+// clock rather than off the one this installation keeps.
+func NewCreate(
+	writers port.VaultWriters, names port.NoteQueries, index Levels, now port.Clock,
+) Create {
+	return Create{Writers: writers, Names: names, Index: index, Now: now}
 }
 
 // NewNote is what to make.
@@ -75,7 +77,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 		}
 	}
 
-	identifier, err := ulid.New(u.now())
+	identifier, err := ulid.New(u.Now())
 	if err != nil {
 		return CreateResult{}, err
 	}
@@ -150,13 +152,6 @@ func joined(content []byte, links []domain.Link) ([]byte, error) {
 		}
 	}
 	return doc.Bytes(), nil
-}
-
-func (u Create) now() time.Time {
-	if u.Now == nil {
-		return time.Now()
-	}
-	return u.Now()
 }
 
 func (u Create) index(ctx context.Context, v domain.Vault, paths ...string) error {

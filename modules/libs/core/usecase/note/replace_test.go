@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
@@ -13,6 +14,7 @@ import (
 func (c changing) replace() note.Replace {
 	return note.Replace{
 		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}, Index: c.index,
+		Now: time.Now,
 	}
 }
 

@@ -21,6 +21,7 @@ import (
 func (c changing) saving() note.Write {
 	return note.Write{
 		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}, Index: c.index,
+		Now: time.Now,
 	}
 }
 
@@ -305,6 +306,7 @@ func TestALinkWrittenWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		}},
 		Writers: filesystem.VaultWriters{},
 		Index:   c.index,
+		Now:     time.Now,
 	}
 
 	saveAsking := make(chan struct{})
@@ -319,6 +321,7 @@ func TestALinkWrittenWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		}},
 		Writers: watchedWriters{inner: filesystem.VaultWriters{}, hold: func() { close(saveAsking) }},
 		Index:   c.index,
+		Now:     time.Now,
 	}
 
 	added := make(chan error, 1)
@@ -396,6 +399,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		Names:   c.db.Queries(),
 		Sources: c.db.Sources(),
 		Index:   c.index,
+		Now:     time.Now,
 	}
 
 	saveAsking := make(chan struct{})
@@ -410,6 +414,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		}},
 		Writers: watchedWriters{inner: filesystem.VaultWriters{}, hold: func() { close(saveAsking) }},
 		Index:   c.index,
+		Now:     time.Now,
 	}
 
 	moved := make(chan error, 1)

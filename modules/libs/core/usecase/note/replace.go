@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -24,17 +23,21 @@ type Replace struct {
 	// Telling is told what this change is doing while it is being made. Nothing
 	// is told where nobody is drawing the note.
 	Telling TellEditing
-	Now     func() time.Time
+	Now     port.Clock
 }
 
 // NewReplace is what one stretch of a note is put right through: the vault it
-// is read and written through, and what brings it level in the index.
+// is read and written through, what brings it level in the index, and what time
+// it is.
 //
-// All three are named here for the reason NewWrite names them: a replacement
+// All four are named here for the reason NewWrite names them: a replacement
 // short of the levelling changes the file and leaves the vault unable to find
-// what it now says.
-func NewReplace(readers port.VaultReaders, writers port.VaultWriters, index Levels) Replace {
-	return Replace{Readers: readers, Writers: writers, Index: index}
+// what it now says, and one short of the clock stamps the note off the
+// machine's.
+func NewReplace(
+	readers port.VaultReaders, writers port.VaultWriters, index Levels, now port.Clock,
+) Replace {
+	return Replace{Readers: readers, Writers: writers, Index: index, Now: now}
 }
 
 // ReplaceResult is what a replacement did.
@@ -122,7 +125,7 @@ func (u Replace) Execute(
 
 		// A client counts text its own way, and a span named in bytes lands
 		// somewhere else in prose that is not ASCII.
-		ends = u.Telling.begins(ctx, domain.Edit{
+		ends = u.Telling.begins(ctx, u.Now, domain.Edit{
 			Path: path,
 			From: markdown.Counted(body, span.From),
 			To:   markdown.Counted(body, span.To),

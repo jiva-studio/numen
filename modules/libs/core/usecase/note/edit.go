@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
@@ -50,7 +49,7 @@ type Editing struct {
 	Readers     port.VaultReaders
 	Writers     port.VaultWriters
 	Index       Levels
-	Now         func() time.Time
+	Now         port.Clock
 	Fingerprint domain.Fingerprint
 	// Overwrite is a caller writing what is in front of the person: the note
 	// on disk is replaced without being held to a fingerprint, a note that is
@@ -65,11 +64,14 @@ type Editing struct {
 }
 
 // NewEditing is what a change to an existing note is made through: the vault it
-// is read and written through, and what brings it level in the index. What the
+// is read and written through, what brings it level in the index, and what time
+// it is, because an edit stamps the identifier a note arrived without. What the
 // caller believes is on disk, and how much of a file it will hold, are set
 // beside it.
-func NewEditing(readers port.VaultReaders, writers port.VaultWriters, index Levels) Editing {
-	return Editing{Readers: readers, Writers: writers, Index: index}
+func NewEditing(
+	readers port.VaultReaders, writers port.VaultWriters, index Levels, now port.Clock,
+) Editing {
+	return Editing{Readers: readers, Writers: writers, Index: index, Now: now}
 }
 
 // Apply makes one change to the note at path and puts it back.
@@ -151,11 +153,7 @@ func (e Editing) splice(
 	// A caller writing over what is there is the person editing their own note,
 	// and leaves the frontmatter as they wrote it.
 	if _, carried := doc.Identifier(); !carried && !e.Overwrite {
-		at := time.Now
-		if e.Now != nil {
-			at = e.Now
-		}
-		identifier, err := ulid.New(at())
+		identifier, err := ulid.New(e.Now())
 		if err != nil {
 			return domain.Fingerprint{}, err
 		}

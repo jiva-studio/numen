@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
@@ -53,7 +52,7 @@ type Write struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
 	Index   Levels
-	Now     func() time.Time
+	Now     port.Clock
 	// Bound is the most the file may be, measured as it goes to disk. Zero is
 	// MaxBytes. A caller whose files are read at a bound of their own sets it.
 	Bound int
@@ -67,14 +66,18 @@ type Write struct {
 type Levels func(ctx context.Context, v domain.Vault, paths []string) error
 
 // NewWrite is the writer a note somebody is saving goes to disk through: the
-// vault it is read and written through, and what brings it level in the index.
+// vault it is read and written through, what brings it level in the index, and
+// what time it is.
 //
-// All three are named here because a write without any one of them is a save
-// that half happens. A caller that forgets the levelling does not compile,
-// where a struct built field by field would save the note and quietly leave the
-// vault unable to find what it now holds.
-func NewWrite(readers port.VaultReaders, writers port.VaultWriters, index Levels) Write {
-	return Write{Readers: readers, Writers: writers, Index: index}
+// All four are named here because a write without any one of them is a save
+// that half happens. A caller that forgets the levelling or the clock does not
+// compile, where a struct built field by field would save the note and quietly
+// leave the vault unable to find what it now holds, or stamp it off the clock
+// of whichever machine happened to be running.
+func NewWrite(
+	readers port.VaultReaders, writers port.VaultWriters, index Levels, now port.Clock,
+) Write {
+	return Write{Readers: readers, Writers: writers, Index: index, Now: now}
 }
 
 // Execute puts body in the note at path.
@@ -106,7 +109,7 @@ func (u Write) Execute(
 		was := markdown.Normalised(doc.Body())
 		at, insert := markdown.Differs(was, markdown.Normalised(body))
 		if at.From != at.To || insert != "" {
-			ends = u.Telling.begins(ctx, domain.Edit{
+			ends = u.Telling.begins(ctx, u.Now, domain.Edit{
 				Path: path,
 				From: markdown.Counted(was, at.From),
 				To:   markdown.Counted(was, at.To),
@@ -165,7 +168,7 @@ func (u Write) Save(
 		return domain.Fingerprint{}, ErrBodyRefused
 	}
 	e := Editing{
-		Readers: u.Readers, Writers: u.Writers, Index: u.Index,
+		Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now,
 		Overwrite: true,
 		Seen:      seen,
 		Bound:     u.bound(),

@@ -28,6 +28,10 @@ type Move struct {
 	// at one path is at another.
 	Sources port.SourceRepository
 	Index   Levels
+	// Now is when this is happening. Bringing a note's title into line with its
+	// filename is an edit, and an edit stamps the identifier a note arrived
+	// without.
+	Now port.Clock
 	// Moving is told where the note went, so that whoever is showing it at the
 	// name it had follows it. Nothing is told where nobody is drawing.
 	Moving TellMove
@@ -39,12 +43,13 @@ type Move struct {
 
 // NewMove is what files a note somewhere else: the vault it is read and written
 // through, the links that point at it, what is asked which name reaches it,
-// where the index files it, and what brings both paths level.
+// where the index files it, what brings both paths level, and what time it is.
 //
-// All six are named here because a move short of any one of them lands the file
-// and leaves something behind it — a link repaired to a bare name that reaches
-// another note, a row still filed at the path the file left, or a vault that
-// cannot find what it now holds.
+// All seven are named here because a move short of any one of them lands the
+// file and leaves something behind it — a link repaired to a bare name that
+// reaches another note, a row still filed at the path the file left, a vault
+// that cannot find what it now holds, or a title brought into line under an
+// identifier minted off the machine's clock.
 func NewMove(
 	readers port.VaultReaders,
 	writers port.VaultWriters,
@@ -52,10 +57,11 @@ func NewMove(
 	names NameQueries,
 	sources port.SourceRepository,
 	index Levels,
+	now port.Clock,
 ) Move {
 	return Move{
 		Readers: readers, Writers: writers, Links: links,
-		Names: names, Sources: sources, Index: index,
+		Names: names, Sources: sources, Index: index, Now: now,
 	}
 }
 

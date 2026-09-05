@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
@@ -25,16 +24,20 @@ type EditLinks struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
 	Index   Levels
-	Now     func() time.Time
+	Now     port.Clock
 }
 
 // NewEditLinks is what a note's relationships are written through: the vault it
-// is read and written through, and what brings it level in the index.
+// is read and written through, what brings it level in the index, and what time
+// it is.
 //
-// All three are named here for the reason NewWrite names them: a link written
-// and not levelled is a relationship the vault cannot be asked about.
-func NewEditLinks(readers port.VaultReaders, writers port.VaultWriters, index Levels) EditLinks {
-	return EditLinks{Readers: readers, Writers: writers, Index: index}
+// All four are named here for the reason NewWrite names them: a link written
+// and not levelled is a relationship the vault cannot be asked about, and a
+// note stamped off the machine's clock is stamped where nobody said it may be.
+func NewEditLinks(
+	readers port.VaultReaders, writers port.VaultWriters, index Levels, now port.Clock,
+) EditLinks {
+	return EditLinks{Readers: readers, Writers: writers, Index: index, Now: now}
 }
 
 // Add writes relationships into a note, in one read and one write. A link to
