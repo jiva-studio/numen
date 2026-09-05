@@ -16,7 +16,7 @@ go test ./usecase/flashcards/ -run XXX -bench Vault -benchtime 5x -benchmem -tim
 go test ./usecase/flashcards/ -run XXX -bench PresetCurve -benchtime 3x -benchmem -timeout 40m
 go test ./usecase/flashcards/ -run XXX -bench CurveCards -benchtime 3x -count 2 -benchmem -timeout 180m
 go test ./adapter/flashcardsui/ -run XXX -bench FrontDoor -benchtime 5x -count 2 -timeout 40m
-go test ./adapter/filesystem/ -run XXX -bench Derived -benchmem -count 3
+go test ./internal/adapter/filesystem/ -run XXX -bench Derived -benchmem -count 3
 ```
 
 The vault is generated, not downloaded: `testsupport.GenerateVault` writes notes of varying length across fifty folders, each naming a parent and pointing at a few others, from a fixed seed.
