@@ -153,6 +153,40 @@ jobs:
           go run golang.org/x/vuln/cmd/govulncheck@latest ./...
         working-directory: modules/libs/protocol
 
+  # A numbered file a released build has run is a step somebody's index was
+  # brought through, and rewriting or deleting it moves a database this build
+  # can no longer reach. The schema goes forward by another number.
+  #
+  # Only a pull request has a base to compare against, and the base commit has
+  # to be in the clone to be read.
+  migration:
+    name: "Check :: Migrations"
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Git holds the hashes, so nothing here is written down twice: a file the
+      # base already carries answers A only if it is untouched.
+      - name: Forward only
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          # Read apart from the grep, so a diff that cannot be taken fails the
+          # step instead of passing it empty.
+          changed=$(git diff --name-status "$BASE"...HEAD -- modules/libs/core/adapter/index/migration/)
+          touched=$(printf '%s' "$changed" | grep -v '^A' || true)
+          if [ -n "$touched" ]; then
+            echo "$touched"
+            echo "::error::a migration the base already carries was changed or removed — add a new numbered file instead"
+            exit 1
+          fi
+
   go:
     name: "Test :: Go :: ${{ matrix.name }}"
     needs: [asked]
