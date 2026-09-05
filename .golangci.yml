@@ -122,7 +122,7 @@ linters:
       # a page drawn ahead under `a.behind()`, a proofreading under
       # `t.context()`. Handing it the caller's context is how a scan dies
       # because the page that asked for a count was closed.
-      - path: (^|/)(adapter/flashcardsui/reading|adapter/webui/(serve|viewer)|usecase/source/transcribing)\.go$
+      - path: (^|/)(adapter/flashcardsui/reading|adapter/webui/(serve|showing|viewer)|usecase/source/transcribing)\.go$
         linters: [contextcheck]
 
       # A close is what runs when the context is already over, so it carries one
