@@ -17,9 +17,9 @@ import {
 } from '@ionic/vue'
 import { Editor } from '@numen/ui'
 import type { ReadNoteResponse } from '@numen/protocol'
-import type { Reached } from '../core'
+import type { Core } from '../core'
 
-const props = defineProps<{ core: Reached; path: string }>()
+const props = defineProps<{ core: Core; path: string }>()
 const emit = defineEmits<{
   (event: 'close'): void
   (event: 'trouble', said: string): void

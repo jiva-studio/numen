@@ -5,7 +5,7 @@
 import { effectScope } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import { follow } from './following'
-import type { Reached } from '../core'
+import type { Core } from '../core'
 
 /** What the core was asked to follow with, and how the stream answered. */
 const core = (changes: () => AsyncGenerator<unknown>) => {
@@ -17,7 +17,7 @@ const core = (changes: () => AsyncGenerator<unknown>) => {
         return changes()
       },
     },
-  } as unknown as Reached
+  } as unknown as Core
   return { reached, asked }
 }
 

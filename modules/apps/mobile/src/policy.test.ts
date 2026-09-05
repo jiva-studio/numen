@@ -10,7 +10,7 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import NoteSheet from './note/NoteSheet.vue'
-import type { Reached } from './core'
+import type { Core } from './core'
 
 /** The origin the platform serves the page from: `androidScheme` and nothing. */
 const PAGE = 'http://localhost'
@@ -151,7 +151,7 @@ describe('a picture written into a note', () => {
           at: undefined,
         }),
       },
-    } as unknown as Reached
+    } as unknown as Core
 
     const sheet = mount(NoteSheet, { props: { core, path: 'Synced.md' }, attachTo: document.body })
     await flushPromises()

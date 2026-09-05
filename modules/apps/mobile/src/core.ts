@@ -9,14 +9,14 @@ import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
 import { NoteService, VaultService } from '@numen/protocol'
 
-interface Core {
+interface CorePlugin {
   start(): Promise<{ port: number; dir: string }>
 }
 
-const NumenCore = registerPlugin<Core>('NumenCore')
+const NumenCore = registerPlugin<CorePlugin>('NumenCore')
 
 /** Where the core is, and what it holds. */
-export interface Reached {
+export interface Core {
   port: number
   dir: string
   /** The vault itself: what it is, and what has changed in it. */
@@ -32,7 +32,7 @@ const vaultClient = (port: number) => createClient(VaultService, reaching(port))
 const noteClient = (port: number) => createClient(NoteService, reaching(port))
 
 /** Start the core and answer with clients onto the vault it opened. */
-export async function reach(): Promise<Reached> {
+export async function reach(): Promise<Core> {
   const { port, dir } = await NumenCore.start()
   return { port, dir, vault: vaultClient(port), notes: noteClient(port) }
 }

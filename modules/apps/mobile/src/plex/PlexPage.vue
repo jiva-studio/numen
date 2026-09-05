@@ -16,12 +16,12 @@ import {
   type PlexRelatedSeat,
 } from '@numen/ui'
 import NoteSheet from '../note/NoteSheet.vue'
-import { reach, type Reached } from '../core'
+import { reach, type Core } from '../core'
 import { follow } from './following'
 import { asPlex } from './picture'
 import { CREATABLE, ROLES, SEEDED } from './seats'
 
-const core = ref<Reached | null>(null)
+const core = ref<Core | null>(null)
 const picture = ref<PlexNeighbourhood | null>(null)
 const at = ref(SEEDED)
 const trouble = ref('')
