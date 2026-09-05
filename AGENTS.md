@@ -14,7 +14,7 @@ Paths below are relative to `modules/libs/core/` unless they say otherwise. The 
 4. `container` may not name the generated schema. It is the one package answering for what it names rather than for everything it is built from. → `answering`
 5. `domain`, `flashcards`, `markdown`, `internal/cardid` and `internal/ulid` import only each other. A pure package reaching a sibling of the core takes on its goroutines, its channels and its schema. → `pure` in `layers_test.go`
 6. A test of a pure package imports no adapter. → `TestNoPurePackageIsTestedThroughAnAdapter`
-7. The domain does not know what time it is: no `time.Now` or `time.Since` outside `adapter/`, `container/` and an application's `cmd/` — take a clock port. No `fmt.Print*` outside `adapter/cli/` and `cmd/`. No `panic` anywhere but a test. → `.golangci.yml`, `forbidigo` — reported today, not failed: `make lint-go` runs the core and the desktop under `--issues-exit-code=0` while the backlog is triaged
+7. The domain does not know what time it is: no `time.Now` or `time.Since` outside `adapter/`, `container/` and an application's `cmd/` — take a clock port. No `fmt.Print*` outside `adapter/cli/` and `cmd/`. No `panic` anywhere but a test. → `.golangci.yml`, `forbidigo` — `make lint-go` fails on what it finds
 8. The core writes to no stream of its own. What went wrong in work it carries on past is said through `port.Trouble`; what a call could not answer is that call's error.
 
 ## Adapters
@@ -56,7 +56,9 @@ The frontend grew a house dialect — `Plexing`, `Filing`, `Drawn`, `Asked`, `Ab
 29. **`UpperCamelCase` for types, `lowerCamelCase` for values, `CONSTANT_CASE` for global constants.** A composable is a function named `useX`. → [Google](https://google.github.io/styleguide/tsguide.html); [Vue composables](https://vuejs.org/guide/reusability/composables.html): "composable functions … camelCase names that start with `use`".
 30. **Do not rename to a synonym.** A rename earns its churn only where a stranger who has not read the body is plainly better off. Names that already read as things — `Vault`, `Entry`, `Passage`, `Transcript` — stay. → Ousterhout, *A Philosophy of Software Design* ch. 14: a name must "create an image" and be precise; a name that resists this is a sign the thing itself is unclear.
 
-Nothing refuses any of 24–30. They are read by a person and by a reviewer.
+31. **A component name is multi-word; a data type may be a single noun.** That is what keeps them apart in `modules/libs/ui/src/index.ts`, where one barrel exports both. The bare noun belongs to the type — `Stencil`, `Deck`, `Card` — and the component says what it draws or does with one: `StencilEditor`, not `StencilView`. A `View` suffix added only to dodge the barrel is the collision showing through, and rule 26 already refuses it. → [Vue style guide, essential rules](https://vuejs.org/style-guide/rules-essential.html): "User component names should always be multi-word, except for root `App` components. This prevents conflicts with existing and future HTML elements, since all HTML elements are a single word."
+
+Nothing refuses any of 24–31. They are read by a person and by a reviewer.
 
 ## The reviewer
 
