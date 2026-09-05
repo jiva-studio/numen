@@ -48,7 +48,7 @@ func (c Config) Recognising(
 	return source.NewRecognising(ctx, source.Recognitions{
 		Readers:   c.VaultReaders(),
 		Derived:   c.DerivedStores(),
-		Documents: c.Documents(),
+		Documents: c.PageRenderer(),
 		Sources:   sources,
 		Tasks:     tasks,
 		Runtime: source.RecognitionRuntime{

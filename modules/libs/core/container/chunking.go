@@ -88,14 +88,11 @@ func (c Config) Embed(db *Index, embedder port.Embedder, v domain.Vault) (source
 	if err != nil {
 		return source.Embed{}, err
 	}
-	return source.Embed{
-		Readers:   c.VaultReaders(),
-		Derived:   derived,
-		Documents: c.Documents(),
-		Chunks:    db.VectorsOwing(),
-		Vectors:   db.Vectors(),
-		Embedder:  embedder,
-	}, nil
+	embed := source.NewEmbed(c.VaultReaders(), db.VectorsOwing(), db.Vectors())
+	embed.Derived = derived
+	embed.Documents = c.TextExtractor()
+	embed.Embedder = embedder
+	return embed, nil
 }
 
 // Extract cuts a vault's sources into chunks. Every entry point takes it from
@@ -105,14 +102,11 @@ func (c Config) Extract(sources port.SourceRepository, known port.SourceQueries,
 	if err != nil {
 		return source.Extract{}, err
 	}
-	return source.Extract{
-		Readers:      c.VaultReaders(),
-		Sources:      sources,
-		Known:        known,
-		Derived:      derived,
-		Documents:    c.Documents(),
-		Sizes:        c.Chunking(),
-		Legibility:   c.Legibility(),
-		RebuildIndex: c.RebuildIndex,
-	}, nil
+	extract := source.NewExtract(c.VaultReaders(), sources, known)
+	extract.Derived = derived
+	extract.Documents = c.TextExtractor()
+	extract.Sizes = c.Chunking()
+	extract.Legibility = c.Legibility()
+	extract.RebuildIndex = c.RebuildIndex
+	return extract, nil
 }

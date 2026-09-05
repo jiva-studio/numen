@@ -140,7 +140,7 @@ func agentCore(cfg container.Config, opened *webui.Installation, root string, ou
 			Recognise:  recogniser(opened),
 			Transcribe: opened.Transcribing(),
 			Derived:    cfg.DerivedStores(),
-			Documents:  cfg.Documents(),
+			Documents:  cfg.TextExtractor(),
 		},
 
 		Cards: mcp.Cards{

@@ -142,7 +142,7 @@ func ReaderName(ref domain.Fingerprint) (string, bool) {
 // whoever synced it, and a library taking text out of it is a library being
 // fed. A panic inside one is answered here as an unreadable file, so that one
 // crafted book costs one file and not the process the window runs in.
-func Read(ctx context.Context, docs port.Documents, ref domain.Fingerprint, raw []byte) (doc *Document, err error) {
+func Read(ctx context.Context, docs port.TextExtractor, ref domain.Fingerprint, raw []byte) (doc *Document, err error) {
 	defer func() {
 		if raised := recover(); raised != nil {
 			doc, err = nil, fmt.Errorf("%w: reading %s raised %v", ErrUnreadable, ref.Path, raised)
@@ -193,7 +193,7 @@ func fromEPUB(raw []byte) (*Document, error) {
 
 // fromPages is a document whose text is laid out on printed pages, and whose
 // pages are named by where they stand.
-func fromPages(ctx context.Context, docs port.Documents, raw []byte) (*Document, error) {
+func fromPages(ctx context.Context, docs port.TextExtractor, raw []byte) (*Document, error) {
 	book, err := docs.Read(ctx, raw)
 	if err != nil {
 		if ctx.Err() != nil {

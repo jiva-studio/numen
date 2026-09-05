@@ -54,7 +54,7 @@ type RecognitionRuntime struct {
 type Recognitions struct {
 	Readers   port.VaultReaders
 	Derived   port.DerivedStores
-	Documents port.Documents
+	Documents port.PageRenderer
 	Sources   port.SourceRepository
 	Tasks     *task.Tasks
 

@@ -124,7 +124,7 @@ type Sources struct {
 	Derived port.DerivedStores
 	// Documents reads a format that needs a library, for a document standing on
 	// its own bytes.
-	Documents port.Documents
+	Documents port.TextExtractor
 }
 
 // Asked is the card in front of the person, as an agent is told about it. The

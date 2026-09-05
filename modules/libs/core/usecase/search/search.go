@@ -92,7 +92,7 @@ type Search struct {
 	readers   port.VaultReaders
 	embedder  port.Embedder
 	derived   port.DerivedStores
-	documents port.Documents
+	documents port.TextExtractor
 	floor     float64
 	trouble   func(error)
 }
@@ -109,7 +109,7 @@ type Search struct {
 //
 // `trouble` hears about a half that could not answer. Nothing is said by
 // passing nothing.
-func New(passages port.PassageQueries, readers port.VaultReaders, derived port.DerivedStores, documents port.Documents, embedder port.Embedder, floor float64, trouble func(error)) Search {
+func New(passages port.PassageQueries, readers port.VaultReaders, derived port.DerivedStores, documents port.TextExtractor, embedder port.Embedder, floor float64, trouble func(error)) Search {
 	if floor == 0 {
 		floor = DefaultFloor
 	}

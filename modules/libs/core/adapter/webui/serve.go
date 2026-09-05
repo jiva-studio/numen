@@ -116,7 +116,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	// Where a passage sits on the page is asked of whichever producer made the
 	// text it is a place in, which is what the index records.
 	highlighting := source.NewHighlight(cfg.VaultReaders(), db.SourcesKnown(), cfg.DerivedStores())
-	highlighting.Documents = cfg.Documents()
+	highlighting.Documents = cfg.TextExtractor()
 
 	api := &API{
 		Listeners: following(),
@@ -125,7 +125,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Window:    &wire.Window{Named: wire.Editor, Tasking: tasks},
 		Wrote:     func() { raise(wake.notes) },
 		Readers:   cfg.VaultReaders(),
-		Viewer:    keepingDrawings(cfg.Documents()),
+		Viewer:    keepingDrawings(cfg.PageRenderer()),
 		Highlight: &highlighting,
 		Notes: Notes{
 			Queries: db.Queries(),

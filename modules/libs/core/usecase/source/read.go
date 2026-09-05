@@ -22,7 +22,7 @@ type Read struct {
 	Derived port.DerivedStores
 	// Documents reads a format that needs a library, for a source standing on
 	// its own bytes.
-	Documents port.Documents
+	Documents port.TextExtractor
 }
 
 // ReadResult is a run of a source's text, where it begins, and how much of the

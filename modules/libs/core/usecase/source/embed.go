@@ -34,7 +34,7 @@ type Embed struct {
 	// Documents is optional. It reads a format that needs a library, for a
 	// source standing on its own bytes; without one such a chunk is left owing
 	// its vector.
-	Documents port.Documents
+	Documents port.TextExtractor
 
 	// Embedder is optional. Without one nothing is embedded and a search answers
 	// on its words alone, which is a whole search: the vector index fills in

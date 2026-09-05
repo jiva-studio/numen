@@ -31,7 +31,7 @@ type Reader struct {
 	Derived port.DerivedStore
 	// Documents reads a format that needs a library. A vault holding none is
 	// read without one.
-	Documents port.Documents
+	Documents port.TextExtractor
 }
 
 // Of is the text a source's chunks are places in.

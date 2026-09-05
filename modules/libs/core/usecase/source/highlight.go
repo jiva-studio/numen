@@ -31,7 +31,7 @@ type Highlight struct {
 	// Documents is optional. It reads a document that carries its own text
 	// layer; without one such a document is lit nowhere. A vault whose
 	// documents are all recognised needs none.
-	Documents port.Documents
+	Documents port.TextExtractor
 }
 
 // NewHighlight is what places a run of text on the pages it was read from: the

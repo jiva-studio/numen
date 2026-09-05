@@ -28,7 +28,7 @@ func boxed(page, start, length int, over highlight.Rect) highlight.Box {
 // layered reads a document with the library and answers where its words sit
 // with what the test put in.
 type layered struct {
-	port.Documents
+	port.TextExtractor
 	where func(raw []byte, pages []int) ([]highlight.Box, error)
 }
 
@@ -38,7 +38,7 @@ func (l layered) Highlights(_ context.Context, raw []byte, _ []int, pages []int)
 
 // answering is the use case with the test's own answer for where words sit.
 func answering(u Highlight, where func(raw []byte, pages []int) ([]highlight.Box, error)) Highlight {
-	u.Documents = layered{Documents: pdf.Documents{}, where: where}
+	u.Documents = layered{TextExtractor: pdf.Documents{}, where: where}
 	return u
 }
 

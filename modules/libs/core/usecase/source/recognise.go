@@ -34,7 +34,7 @@ type Recognise struct {
 	By      port.Recogniser
 
 	// Documents draws the pages a model is given.
-	Documents port.Documents
+	Documents port.PageRenderer
 
 	// Area is the store the artifact is kept in. Empty means the default.
 	Area string
@@ -64,7 +64,7 @@ func NewRecognise(
 	readers port.VaultReaders,
 	sources port.SourceRepository,
 	derived port.DerivedStores,
-	documents port.Documents,
+	documents port.PageRenderer,
 	by port.Recogniser,
 ) Recognise {
 	return Recognise{

@@ -36,7 +36,7 @@ type Extract struct {
 	Derived port.DerivedStore
 	// Documents is optional. It reads a format that needs a library; without
 	// one, a source in that format is unreadable.
-	Documents port.Documents
+	Documents port.TextExtractor
 	// Area is the producer a recognition is kept under. Empty means the default.
 	Area string
 

@@ -57,24 +57,20 @@ func recogniseCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 	// The line of pages is closed once it stops, so what follows it stands on a
 	// line of its own.
 	shown := false
-	recognise := source.Recognise{
-		Readers:   cfg.VaultReaders(),
-		Sources:   db.Sources(),
-		Derived:   cfg.DerivedStores(),
-		Documents: cfg.Documents(),
-		By:        models,
-		Cut: func(ctx context.Context, v domain.Vault, path string) error {
-			_, err := cut.One(ctx, v, path)
-			return err
-		},
-		// A terminal that prints nothing for an hour looks broken, and this
-		// takes about that. The line rewrites itself.
-		OnProgress: func(res source.RecogniseResult) {
-			if res.Pages > 0 {
-				fmt.Fprintf(out, "  page %d of %d\r", res.Read, res.Pages)
-				shown = true
-			}
-		},
+	recognise := source.NewRecognise(
+		cfg.VaultReaders(), db.Sources(), cfg.DerivedStores(), cfg.PageRenderer(), models,
+	)
+	recognise.Cut = func(ctx context.Context, v domain.Vault, path string) error {
+		_, err := cut.One(ctx, v, path)
+		return err
+	}
+	// A terminal that prints nothing for an hour looks broken, and this takes
+	// about that. The line rewrites itself.
+	recognise.OnProgress = func(res source.RecogniseResult) {
+		if res.Pages > 0 {
+			fmt.Fprintf(out, "  page %d of %d\r", res.Read, res.Pages)
+			shown = true
+		}
 	}
 	res, err := recognise.Execute(ctx, v, args[1])
 	if err != nil {

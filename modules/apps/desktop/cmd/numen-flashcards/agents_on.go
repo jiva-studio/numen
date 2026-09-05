@@ -168,7 +168,7 @@ func reviewing(
 		Sources: mcp.Sources{
 			Queries:   db.SourcesKnown(),
 			Derived:   cfg.DerivedStores(),
-			Documents: cfg.Documents(),
+			Documents: cfg.TextExtractor(),
 		},
 
 		Cards: mcp.Cards{

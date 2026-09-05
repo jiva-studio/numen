@@ -94,7 +94,7 @@ const (
 )
 
 // drawnBy holds a document open with what the application draws with.
-func drawnBy(docs port.Documents) func([]byte) (scan, error) {
+func drawnBy(docs port.PageRenderer) func([]byte) (scan, error) {
 	return func(raw []byte) (scan, error) {
 		return docs.Draw(context.Background(), raw)
 	}
@@ -103,7 +103,7 @@ func drawnBy(docs port.Documents) func([]byte) (scan, error) {
 // looking is a window with nothing open yet, and nothing kept on disk. What is
 // kept there outlives the window, so where it goes is said where the window is
 // served and not here.
-func looking(docs port.Documents) *viewer {
+func looking(docs port.PageRenderer) *viewer {
 	v := &viewer{
 		open:     drawnBy(docs),
 		patience: patience,
@@ -429,7 +429,7 @@ func refuse(w http.ResponseWriter, err error) {
 
 // keepingDrawings is a window that keeps the pages it draws where this machine
 // keeps what it can make again.
-func keepingDrawings(docs port.Documents) *viewer {
+func keepingDrawings(docs port.PageRenderer) *viewer {
 	v := looking(docs)
 	v.kept = shelved()
 	return v
