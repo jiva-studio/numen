@@ -51,12 +51,12 @@ func TestTheLockGoesToWhatWasAskedFor(t *testing.T) {
 func TestARunThatLeavesHandsTheLockOn(t *testing.T) {
 	var g lock
 
-	held, err := g.acquire(context.Background(), true, nil)
+	held, err := g.acquire(t.Context(), true, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	gone, stop := context.WithCancel(context.Background())
+	gone, stop := context.WithCancel(t.Context())
 	left := make(chan error, 1)
 	waiting := make(chan struct{})
 	go func() {
@@ -68,7 +68,7 @@ func TestARunThatLeavesHandsTheLockOn(t *testing.T) {
 	after := make(chan struct{})
 	queued := make(chan struct{})
 	go func() {
-		release, err := g.acquire(context.Background(), true, func() { close(queued) })
+		release, err := g.acquire(t.Context(), true, func() { close(queued) })
 		if err != nil {
 			return
 		}

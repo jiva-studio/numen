@@ -1,7 +1,6 @@
 package transcription
 
 import (
-	"context"
 	"os"
 	"strings"
 	"testing"
@@ -40,7 +39,7 @@ func TestDecodeSaysWhatTheJoinerNames(t *testing.T) {
 		joint: func(frame, _ []float32) ([]float32, error) {
 			return named[int(frame[0])], nil
 		},
-	}.decode(context.Background())
+	}.decode(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +65,7 @@ func TestDecodeLeavesAFrameTheJoinerCoversWithNothing(t *testing.T) {
 		joint: func([]float32, []float32) ([]float32, error) {
 			return answer(blank, blank, 0, steps), nil
 		},
-	}.decode(context.Background())
+	}.decode(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +85,7 @@ func TestDecodeRefusesAJoinerThatIsTooNarrow(t *testing.T) {
 		joint: func([]float32, []float32) ([]float32, error) {
 			return make([]float32, 16), nil
 		},
-	}.decode(context.Background())
+	}.decode(t.Context())
 	if err == nil {
 		t.Error("a joiner too narrow for the tokens was read")
 	}

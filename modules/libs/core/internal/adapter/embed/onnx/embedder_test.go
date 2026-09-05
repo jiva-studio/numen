@@ -1,7 +1,6 @@
 package onnx_test
 
 import (
-	"context"
 	"math"
 	"os"
 	"strings"
@@ -104,7 +103,7 @@ func TestTheModelEmbedsAndReportsItself(t *testing.T) {
 		"Ворота запирают каждый вечер на закате.",
 		"Sourdough needs a starter and a warm kitchen.",
 	}
-	vectors, err := e.Embed(context.Background(), texts)
+	vectors, err := e.Embed(t.Context(), texts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,13 +128,13 @@ func TestTheModelEmbedsAndReportsItself(t *testing.T) {
 
 func TestTheSameTextGivesTheSameVector(t *testing.T) {
 	e := open(t, modelDir(t))
-	first, err := e.Embed(context.Background(), []string{"udyāne pathaḥ dvāraṁ bījāni śākhāḥ jalaṁ"})
+	first, err := e.Embed(t.Context(), []string{"udyāne pathaḥ dvāraṁ bījāni śākhāḥ jalaṁ"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	// In another batch, beside a text of another length, so that the padding
 	// differs.
-	second, err := e.Embed(context.Background(), []string{
+	second, err := e.Embed(t.Context(), []string{
 		"udyāne pathaḥ dvāraṁ bījāni śākhāḥ jalaṁ",
 		"a much shorter line",
 	})
@@ -155,7 +154,7 @@ func TestALongTextIsTruncatedAndEmbedded(t *testing.T) {
 	for range 4000 {
 		long += "udyāne pathaḥ dvāraṁ bījāni śākhāḥ "
 	}
-	if _, err := e.Embed(context.Background(), []string{long}); err != nil {
+	if _, err := e.Embed(t.Context(), []string{long}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -173,11 +172,11 @@ func TestThroughput(t *testing.T) {
 		}
 	}
 	// One pass to compile the shape, which is paid once per process.
-	if _, err := e.Embed(context.Background(), texts[:1]); err != nil {
+	if _, err := e.Embed(t.Context(), texts[:1]); err != nil {
 		t.Fatal(err)
 	}
 	start := time.Now()
-	if _, err := e.Embed(context.Background(), texts); err != nil {
+	if _, err := e.Embed(t.Context(), texts); err != nil {
 		t.Fatal(err)
 	}
 	elapsed := time.Since(start)

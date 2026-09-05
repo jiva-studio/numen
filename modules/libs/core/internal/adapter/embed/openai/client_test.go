@@ -1,7 +1,6 @@
 package openai_test
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -97,7 +96,7 @@ func TestVectorsComeBackNormalisedAndInOrder(t *testing.T) {
 		}
 		answer(w, read(t, r), 4)
 	})
-	got, err := client(t, s.URL, 4).Embed(context.Background(), []string{"one", "two"})
+	got, err := client(t, s.URL, 4).Embed(t.Context(), []string{"one", "two"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +125,7 @@ func TestVectorsOutOfOrderAreRestoredByIndex(t *testing.T) {
 			{"index":1,"embedding":[0,1]},
 			{"index":0,"embedding":[1,0]}]}`)
 	})
-	got, err := client(t, s.URL, 2).Embed(context.Background(), []string{"first", "second"})
+	got, err := client(t, s.URL, 2).Embed(t.Context(), []string{"first", "second"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +149,7 @@ func TestOverloadIsWaitedOutAndRetried(t *testing.T) {
 			answer(w, read(t, r), 4)
 		}
 	})
-	if _, err := client(t, s.URL, 4).Embed(context.Background(), []string{"one"}); err != nil {
+	if _, err := client(t, s.URL, 4).Embed(t.Context(), []string{"one"}); err != nil {
 		t.Fatal(err)
 	}
 	if calls != 3 {
@@ -169,7 +168,7 @@ func TestRetryAfterIsHonoured(t *testing.T) {
 		}
 		answer(w, read(t, r), 4)
 	})
-	if _, err := client(t, s.URL, 4).Embed(context.Background(), []string{"one"}); err != nil {
+	if _, err := client(t, s.URL, 4).Embed(t.Context(), []string{"one"}); err != nil {
 		t.Fatal(err)
 	}
 	if calls != 2 {
@@ -185,7 +184,7 @@ func TestOverloadThatNeverClearsIsReported(t *testing.T) {
 	})
 	c := client(t, s.URL, 4)
 	c.Attempts = 3
-	_, err := c.Embed(context.Background(), []string{"one"})
+	_, err := c.Embed(t.Context(), []string{"one"})
 	if err == nil {
 		t.Fatal("want an error")
 	}
@@ -205,7 +204,7 @@ func TestARejectedRequestIsNotRetried(t *testing.T) {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"error":{"message":"too many tokens in the request"}}`)
 	})
-	_, err := client(t, s.URL, 4).Embed(context.Background(), []string{"one"})
+	_, err := client(t, s.URL, 4).Embed(t.Context(), []string{"one"})
 	if !errors.Is(err, openai.ErrRejected) {
 		t.Fatalf("got %v", err)
 	}
@@ -220,7 +219,7 @@ func TestAnUnauthorisedKeyIsNotRetried(t *testing.T) {
 		calls++
 		w.WriteHeader(http.StatusUnauthorized)
 	})
-	_, err := client(t, s.URL, 4).Embed(context.Background(), []string{"one"})
+	_, err := client(t, s.URL, 4).Embed(t.Context(), []string{"one"})
 	if !errors.Is(err, openai.ErrRejected) {
 		t.Fatalf("got %v", err)
 	}
@@ -233,7 +232,7 @@ func TestTheWrongWidthIsRefusedRatherThanStored(t *testing.T) {
 	s := server(t, func(w http.ResponseWriter, r *http.Request) {
 		answer(w, read(t, r), 3)
 	})
-	_, err := client(t, s.URL, 4).Embed(context.Background(), []string{"one"})
+	_, err := client(t, s.URL, 4).Embed(t.Context(), []string{"one"})
 	if err == nil || !strings.Contains(err.Error(), "3 dimensions") {
 		t.Fatalf("got %v", err)
 	}
@@ -261,7 +260,7 @@ func TestABatchIsCutByCharacters(t *testing.T) {
 	}
 	c.Delay = 0
 
-	got, err := c.Embed(context.Background(), []string{verse, verse, verse, verse, verse})
+	got, err := c.Embed(t.Context(), []string{verse, verse, verse, verse, verse})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -280,7 +279,7 @@ func TestNoTextsIsNoRequest(t *testing.T) {
 	s := server(t, func(w http.ResponseWriter, r *http.Request) {
 		t.Error("a request was sent for no texts")
 	})
-	got, err := client(t, s.URL, 4).Embed(context.Background(), nil)
+	got, err := client(t, s.URL, 4).Embed(t.Context(), nil)
 	if err != nil || got != nil {
 		t.Errorf("got %v, %v", got, err)
 	}
@@ -312,7 +311,7 @@ func TestTheKeyIsNotInAnError(t *testing.T) {
 			})
 			c := client(t, s.URL, 4)
 			c.Attempts = 1
-			_, err := c.Embed(context.Background(), []string{"one"})
+			_, err := c.Embed(t.Context(), []string{"one"})
 			if err == nil {
 				t.Fatal("the request was answered")
 			}

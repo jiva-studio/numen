@@ -244,7 +244,7 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 
 	writing := make(chan error, 1)
 	go func() {
-		_, err := f.client.WriteNote(context.Background(), connect.NewRequest(&v1.WriteNoteRequest{
+		_, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 			Path: "Note.md",
 			Body: "the last thing the person typed\n",
 		}))
@@ -262,7 +262,7 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 	shut := make(chan struct{})
 	go func() {
 		defer close(shut)
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 		defer cancel()
 		f.opened.Settle(ctx)
 		if err := f.opened.Close(); err != nil {
@@ -305,7 +305,7 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 	f := quitting(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 
-	listening, hangUp := context.WithCancel(context.Background())
+	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
 
 	stream, err := f.drawn.WatchQuit(listening, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
@@ -332,14 +332,14 @@ func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 			// What a page does: it writes what only it holds, and says so
 			// afterwards.
 			time.Sleep(200 * time.Millisecond)
-			if _, err := f.client.WriteNote(context.Background(), connect.NewRequest(&v1.WriteNoteRequest{
+			if _, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 				Path: "Note.md",
 				Body: "typed and never saved\n",
 			})); err != nil {
 				t.Error(err)
 				return
 			}
-			if _, err := f.drawn.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
+			if _, err := f.drawn.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
 				Window: wire.Editor,
 				Token:  stream.Msg().GetToken(),
 				Result: v1.FlushResult_FLUSH_RESULT_WRITTEN,
@@ -350,7 +350,7 @@ func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 		}
 	}()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
 	f.opened.Settle(ctx)
 	f.order.at("settled")
@@ -384,7 +384,7 @@ func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 	f := quitting(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	t.Cleanup(func() { f.opened.Close() })
 
-	listening, hangUp := context.WithCancel(context.Background())
+	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
 
 	stream, err := f.drawn.WatchQuit(listening, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
@@ -399,7 +399,7 @@ func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 
 	// The page is listening and will say nothing at all.
 	bound := 400 * time.Millisecond
-	ctx, cancel := context.WithTimeout(context.Background(), bound)
+	ctx, cancel := context.WithTimeout(t.Context(), bound)
 	defer cancel()
 
 	began := time.Now()
@@ -435,7 +435,7 @@ type speaking struct {
 func listening(t *testing.T, f *going) *speaking {
 	t.Helper()
 
-	ctx, hangUp := context.WithCancel(context.Background())
+	ctx, hangUp := context.WithCancel(t.Context())
 	stream, err := f.drawn.WatchQuit(ctx, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
 	if err != nil {
 		hangUp()
@@ -507,7 +507,7 @@ func TestAPageWithAQuestionStandingDoesNotLetTheWindowGo(t *testing.T) {
 	page := listening(t, f)
 	page.answering(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 
 	began := time.Now()
@@ -520,7 +520,7 @@ func TestAPageWithAQuestionStandingDoesNotLetTheWindowGo(t *testing.T) {
 
 	// The vault is as it was: the person is going back to work, and the writes
 	// they do next have to land.
-	if _, err := f.client.WriteNote(context.Background(), connect.NewRequest(&v1.WriteNoteRequest{
+	if _, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Note.md",
 		Body: "written after the question was raised\n",
 	})); err != nil {
@@ -543,7 +543,7 @@ func TestTheWindowGoesOnceTheQuestionsAreAnswered(t *testing.T) {
 	page := listening(t, f)
 	page.answering(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
 
-	asking, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	asking, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 	if f.opened.Settle(asking) {
 		t.Fatal("the vault settled with a question standing")
@@ -552,7 +552,7 @@ func TestTheWindowGoesOnceTheQuestionsAreAnswered(t *testing.T) {
 	// What the window does with a close it called off: it waits on a person,
 	// and that wait is not measured.
 	answered := make(chan bool, 1)
-	go func() { answered <- f.opened.Answered(context.Background()) }()
+	go func() { answered <- f.opened.Answered(t.Context()) }()
 
 	select {
 	case <-answered:
@@ -587,7 +587,7 @@ func TestACloseCalledOffAsksThePageAgain(t *testing.T) {
 			return v1.FlushResult_FLUSH_RESULT_ASKING
 		}
 		// What a page does once the person has said what happens to the text.
-		if _, err := f.client.WriteNote(context.Background(), connect.NewRequest(&v1.WriteNoteRequest{
+		if _, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 			Path: "Note.md",
 			Body: "typed and never saved\n",
 		})); err != nil {
@@ -596,13 +596,13 @@ func TestACloseCalledOffAsksThePageAgain(t *testing.T) {
 		return v1.FlushResult_FLUSH_RESULT_WRITTEN
 	})
 
-	first, cancelFirst := context.WithTimeout(context.Background(), 10*time.Second)
+	first, cancelFirst := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancelFirst()
 	if f.opened.Settle(first) {
 		t.Fatal("the vault settled with a question standing")
 	}
 
-	second, cancelSecond := context.WithTimeout(context.Background(), 10*time.Second)
+	second, cancelSecond := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancelSecond()
 	if !f.opened.Settle(second) {
 		t.Fatal("the second quit did not settle the vault")
@@ -630,7 +630,7 @@ func TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind(t *testi
 	page := listening(t, f)
 	page.answering(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
 
-	asking, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	asking, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 	if f.opened.Settle(asking) {
 		t.Fatal("the vault settled with a question standing")
@@ -638,7 +638,7 @@ func TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind(t *testi
 	page.went(t)
 
 	bound := 400 * time.Millisecond
-	ctx, endsAt := context.WithTimeout(context.Background(), bound)
+	ctx, endsAt := context.WithTimeout(t.Context(), bound)
 	defer endsAt()
 
 	began := time.Now()
@@ -664,7 +664,7 @@ func TestAPageThatComesBackRaisesItsQuestionAgain(t *testing.T) {
 	first := listening(t, f)
 	first.answering(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
 
-	asking, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	asking, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 	if f.opened.Settle(asking) {
 		t.Fatal("the vault settled with a question standing")
@@ -677,7 +677,7 @@ func TestAPageThatComesBackRaisesItsQuestionAgain(t *testing.T) {
 	}
 	back.answering(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
 
-	again, cancelAgain := context.WithTimeout(context.Background(), 10*time.Second)
+	again, cancelAgain := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancelAgain()
 	if f.opened.Settle(again) {
 		t.Fatal("the vault settled with the question raised again")

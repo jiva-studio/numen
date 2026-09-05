@@ -417,7 +417,7 @@ func TestAVaultThatCannotBeShownIsRefusedAndTheWindowStays(t *testing.T) {
 func (f *showing) listens(t *testing.T) (*connect.ServerStreamForClient[v1.WatchQuitResponse], func()) {
 	t.Helper()
 
-	listening, hangUp := context.WithCancel(context.Background())
+	listening, hangUp := context.WithCancel(t.Context())
 	stream, err := f.drawn.WatchQuit(listening, connect.NewRequest(&v1.WatchQuitRequest{
 		Window: wire.Editor,
 	}))
@@ -446,7 +446,7 @@ func TestAPageThatSaysNothingCostsTheSwapItsBound(t *testing.T) {
 	defer done()
 
 	swapped := make(chan error, 1)
-	go func() { swapped <- f.opened.Show(context.Background(), f.second) }()
+	go func() { swapped <- f.opened.Show(t.Context(), f.second) }()
 
 	select {
 	case err := <-swapped:
@@ -477,7 +477,7 @@ func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 			if !stream.Msg().GetFlush() {
 				continue
 			}
-			if _, err := f.drawn.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
+			if _, err := f.drawn.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
 				Window: wire.Editor,
 				Token:  stream.Msg().GetToken(),
 				Result: v1.FlushResult_FLUSH_RESULT_ASKING,
@@ -488,7 +488,7 @@ func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 		}
 	}()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 	if err := f.opened.Show(ctx, f.second); err == nil {
 		t.Fatal("a page holding work a person has to answer for did not call the swap off")
@@ -526,7 +526,7 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 			}
 			close(told)
 			<-release
-			if _, err := f.drawn.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
+			if _, err := f.drawn.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
 				Window: wire.Editor,
 				Token:  stream.Msg().GetToken(),
 				Result: v1.FlushResult_FLUSH_RESULT_NOTHING,
@@ -539,7 +539,7 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 
 	settled := make(chan bool, 1)
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		ctx, cancel := context.WithTimeout(t.Context(), 20*time.Second)
 		defer cancel()
 		settled <- f.opened.Settle(ctx)
 	}()

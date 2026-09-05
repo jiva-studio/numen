@@ -44,7 +44,7 @@ func recognising(t *testing.T, why error) *watched {
 	t.Helper()
 	tasks := task.New()
 	w := &watched{tasks: tasks, held: &blank{}}
-	w.RecognitionWorker = NewRecognitionWorker(context.Background(), Recognitions{
+	w.RecognitionWorker = NewRecognitionWorker(t.Context(), Recognitions{
 		Readers: vaultReaders,
 		Derived: derivedStores,
 		Tasks:   tasks,

@@ -441,18 +441,18 @@ func TestNeitherARenameNorARemoveIsTakenWhileTheWindowIsGoing(t *testing.T) {
 	f := quitting(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 	t.Cleanup(func() { f.opened.Close() })
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 	if !f.opened.Settle(ctx) {
 		t.Fatal("the vault did not settle with nobody holding anything")
 	}
 
-	if _, err := f.client.RenameNote(context.Background(), connect.NewRequest(&v1.RenameNoteRequest{
+	if _, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path: "Entropy.md", Title: "Thermodynamics",
 	})); connect.CodeOf(err) != connect.CodeUnavailable {
 		t.Errorf("a rename after the door was shut was answered with %v", err)
 	}
-	if _, err := f.client.RemoveFile(context.Background(), connect.NewRequest(&v1.RemoveFileRequest{
+	if _, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "Entropy.md",
 	})); connect.CodeOf(err) != connect.CodeUnavailable {
 		t.Errorf("a remove after the door was shut was answered with %v", err)

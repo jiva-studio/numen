@@ -67,11 +67,11 @@ func TestOneWalkOfAVaultRunsAtATime(t *testing.T) {
 
 	done := make(chan error, 2)
 	first, second := scanner(readers, db), scanner(readers, db)
-	go func() { _, err := first.Execute(context.Background(), v); done <- err }()
+	go func() { _, err := first.Execute(t.Context(), v); done <- err }()
 	if !held.waited() {
 		t.Fatal("the first walk never began")
 	}
-	go func() { _, err := second.Execute(context.Background(), v); done <- err }()
+	go func() { _, err := second.Execute(t.Context(), v); done <- err }()
 
 	select {
 	case <-held.began:
@@ -101,7 +101,7 @@ func TestWalksIntoTwoIndexesDoNotWaitOnEachOther(t *testing.T) {
 	done := make(chan error, 2)
 	for _, db := range []*container.Index{openIndex(t), openIndex(t)} {
 		scan := scanner(readers, db)
-		go func() { _, err := scan.Execute(context.Background(), v); done <- err }()
+		go func() { _, err := scan.Execute(t.Context(), v); done <- err }()
 	}
 	for range 2 {
 		if !held.waited() {

@@ -25,7 +25,7 @@ func TestARecordingInLineOutlivesTheContext(t *testing.T) {
 	by := &deaf{why: errors.New("not a container anything here decodes")}
 	listening, v := listens(t, by, "talks/a.mp3")
 
-	over, stop := context.WithCancel(context.Background())
+	over, stop := context.WithCancel(t.Context())
 	stop()
 
 	listening.mu.Lock()

@@ -56,7 +56,7 @@ var errHeld = errors.New("the index was not asked")
 // returns covers the rounds behind it, and a caller that asked for them goes on
 // building the window.
 func TestAQueueRunsBehindTheCallerAndIsCountedBeforeIt(t *testing.T) {
-	ctx, stop := context.WithCancel(context.Background())
+	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 
 	held, v := listens(t, &deaf{})
@@ -106,7 +106,7 @@ func TestAQueueRunsBehindTheCallerAndIsCountedBeforeIt(t *testing.T) {
 // proofreader are asked after on the same terms as the queue: behind whoever
 // asked, and counted in the call rather than in the goroutine it counts.
 func TestCollectingRunsBehindTheCallerAndIsCountedBeforeIt(t *testing.T) {
-	ctx, stop := context.WithCancel(context.Background())
+	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 
 	w := recognising(t, nil)

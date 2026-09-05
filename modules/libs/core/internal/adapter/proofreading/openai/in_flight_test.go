@@ -1,7 +1,6 @@
 package openai_test
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -63,7 +62,7 @@ func TestTheServiceIsAskedAboutAsManyBatchesAsTheProfileNames(t *testing.T) {
 			batches = append(batches, page(at, "a line"))
 		}
 
-		if _, err := asking(t, s.URL, want).Proofread(context.Background(), batches); err != nil {
+		if _, err := asking(t, s.URL, want).Proofread(t.Context(), batches); err != nil {
 			t.Fatal(err)
 		}
 		if got := most(); got != want {
@@ -80,7 +79,7 @@ func TestAProfileNamingNoNumberTakesTheDefault(t *testing.T) {
 		batches = append(batches, page(at, "a line"))
 	}
 
-	if _, err := asking(t, s.URL, 0).Proofread(context.Background(), batches); err != nil {
+	if _, err := asking(t, s.URL, 0).Proofread(t.Context(), batches); err != nil {
 		t.Fatal(err)
 	}
 	if got := most(); got != 4 {

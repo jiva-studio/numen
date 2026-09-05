@@ -69,7 +69,7 @@ func begun(t *testing.T, reading <-chan int) int {
 func TestADocumentInLineOutlivesTheContext(t *testing.T) {
 	w := recognising(t, errors.New("no models on this machine"))
 
-	over, stop := context.WithCancel(context.Background())
+	over, stop := context.WithCancel(t.Context())
 	stop()
 
 	w.mu.Lock()

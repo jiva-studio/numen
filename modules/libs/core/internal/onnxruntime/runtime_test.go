@@ -91,7 +91,7 @@ func halfOpen(t *testing.T) func() {
 func TestACallerGivesUpWhileAnotherOpensTheRuntime(t *testing.T) {
 	defer halfOpen(t)()
 
-	ctx, stop := context.WithCancel(context.Background())
+	ctx, stop := context.WithCancel(t.Context())
 	gave := make(chan error, 1)
 	go func() {
 		_, _, err := Open(ctx, asked())

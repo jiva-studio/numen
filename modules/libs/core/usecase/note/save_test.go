@@ -326,7 +326,7 @@ func TestALinkWrittenWhileASaveIsReadingSurvivesIt(t *testing.T) {
 
 	added := make(chan error, 1)
 	go func() {
-		_, err := agent.Add(context.Background(), c.vault, "Heat.md", domain.Fingerprint{}, domain.Link{
+		_, err := agent.Add(t.Context(), c.vault, "Heat.md", domain.Fingerprint{}, domain.Link{
 			Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"},
 			Role:   domain.RoleParent,
 		})
@@ -336,7 +336,7 @@ func TestALinkWrittenWhileASaveIsReadingSurvivesIt(t *testing.T) {
 
 	saved := make(chan error, 1)
 	go func() {
-		_, err := saving.Save(context.Background(), c.vault, "Heat.md", "# Heat\n\nWhat the person typed.\n", nil)
+		_, err := saving.Save(t.Context(), c.vault, "Heat.md", "# Heat\n\nWhat the person typed.\n", nil)
 		saved <- err
 	}()
 
@@ -419,7 +419,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 
 	moved := make(chan error, 1)
 	go func() {
-		_, err := moving.Execute(context.Background(), c.vault,
+		_, err := moving.Execute(t.Context(), c.vault,
 			"physics/Entropy.md", "archive/Thermodynamics.md")
 		moved <- err
 	}()
@@ -427,7 +427,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 
 	saved := make(chan error, 1)
 	go func() {
-		_, err := saving.Save(context.Background(), c.vault, "physics/Heat.md",
+		_, err := saving.Save(t.Context(), c.vault, "physics/Heat.md",
 			"# Heat\n\nWhat the person typed.\n", nil)
 		saved <- err
 	}()

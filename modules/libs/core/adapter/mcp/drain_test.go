@@ -130,7 +130,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	was := fingerprint(t, session, "Note.md")
 	wrote := make(chan error, 1)
 	go func() {
-		res, err := session.CallTool(context.Background(), &sdk.CallToolParams{
+		res, err := session.CallTool(t.Context(), &sdk.CallToolParams{
 			Name: "note_rewrite",
 			Arguments: map[string]any{
 				"path": "Note.md", "body": "# What the agent wrote\n", "fingerprint": was,
@@ -159,7 +159,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	shut := make(chan struct{})
 	go func() {
 		defer close(shut)
-		ctx, cancel := context.WithTimeout(context.Background(), drain)
+		ctx, cancel := context.WithTimeout(t.Context(), drain)
 		defer cancel()
 		endpoint.Close(ctx)
 		db.Close()

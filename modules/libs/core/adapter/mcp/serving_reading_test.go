@@ -1,7 +1,6 @@
 package mcp_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -19,7 +18,7 @@ func TestAPortServingTheReadingToolsOffersNoOther(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { endpoint.Close(context.Background()) })
+	t.Cleanup(func() { endpoint.Close(t.Context()) })
 
 	tools, err := listing(t, endpoint.URL)
 	if err != nil {
@@ -41,7 +40,7 @@ func TestAPortServingTheReviewingToolsOffersNoOther(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { endpoint.Close(context.Background()) })
+	t.Cleanup(func() { endpoint.Close(t.Context()) })
 
 	tools, err := listing(t, endpoint.URL)
 	if err != nil {

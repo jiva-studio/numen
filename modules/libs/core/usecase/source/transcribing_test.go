@@ -85,7 +85,7 @@ func listens(t *testing.T, by *deaf, recordings ...string) (*TranscriptionWorker
 			t.Fatal(err)
 		}
 	}
-	held := NewTranscriptionWorker(context.Background(), Transcriptions{
+	held := NewTranscriptionWorker(t.Context(), Transcriptions{
 		Readers: vaultReaders,
 		Derived: derivedStores,
 		Tasks:   task.New(),
