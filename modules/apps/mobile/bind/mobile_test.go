@@ -247,7 +247,7 @@ func TestTheSettingsFileIsNotServedToThePhone(t *testing.T) {
 	written := fmt.Sprintf(`{"indexing":{"proofreading":{"profiles":{
 		"openai": {"use":"service","name":"a-model","key":%q}
 	}}}}`, secret)
-	if err := os.WriteFile(filepath.Join(dir, "settings.yaml"), []byte(written), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "numen.json"), []byte(written), 0o600); err != nil {
 		t.Fatalf("writing the settings: %v", err)
 	}
 
@@ -284,7 +284,7 @@ func TestTheSettingsFileIsNotServedToThePhone(t *testing.T) {
 		}
 	}
 
-	held, err := os.ReadFile(filepath.Join(dir, "settings.yaml"))
+	held, err := os.ReadFile(filepath.Join(dir, "numen.json"))
 	if err != nil {
 		t.Fatalf("reading the settings back: %v", err)
 	}

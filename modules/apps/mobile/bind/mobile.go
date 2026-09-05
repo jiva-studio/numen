@@ -150,7 +150,6 @@ func configured(dir string, out io.Writer) container.Config {
 	return container.Config{
 		IndexPath:    filepath.Join(dir, "index.db"),
 		RegistryPath: filepath.Join(dir, "vaults.json"),
-		SettingsPath: filepath.Join(dir, "settings.yaml"),
 		ThemesPath:   filepath.Join(dir, "themes"),
 		Trouble:      func(err error) { fmt.Fprintln(out, "numen:", err) },
 	}
