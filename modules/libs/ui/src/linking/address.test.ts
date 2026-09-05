@@ -12,6 +12,13 @@ import { addressOf, pointsAtNote, stated, wikilinkAt, wikilinksIn } from './addr
  */
 import corpus from '../../../protocol/testdata/addresses.json'
 
+/**
+ * The brackets are read here and again in the core, which finds the links a
+ * note carries and the stencil a card is cut by. Both read this one corpus,
+ * and neither owns it.
+ */
+import brackets from '../../../protocol/testdata/wikilinks.json'
+
 describe('an address', () => {
   it('is read the way the schema says it is', () => {
     expect(corpus.length).toBeGreaterThan(0)
@@ -39,6 +46,16 @@ describe('what points at a note', () => {
 })
 
 describe('the wikilinks in a text', () => {
+  it('are the ones the schema says are there', () => {
+    expect(brackets.length).toBeGreaterThan(0)
+    for (const { text, found } of brackets) {
+      expect({ text, found: wikilinksIn(text).map((one) => one.address) }).toStrictEqual({
+        text,
+        found,
+      })
+    }
+  })
+
   it('are found in the order they are written', () => {
     const found = wikilinksIn('Under [[Thermodynamics]], beside [[Entropy]].')
 

@@ -1,0 +1,27 @@
+[
+  {
+    "text": "Under [[Thermodynamics]], beside [[Entropy]].",
+    "found": ["name://Thermodynamics", "name://Entropy"]
+  },
+  { "text": "No brackets here at all.", "found": [] },
+  { "text": "A single [bracket] and one [[Sundial]].", "found": ["name://Sundial"] },
+  { "text": "[Sundial](https://example.test/sundial) is the other notation.", "found": [] },
+  { "text": "[[]] and [[   ]] hold nothing.", "found": [] },
+  { "text": "[[Sundial [[Gnomon]]", "found": ["name://Gnomon"] },
+  { "text": "[[Kite]flight]] closes on the wrong bracket.", "found": [] },
+  { "text": "[[Kite]] and [[Gnomon", "found": ["name://Kite"] },
+  { "text": "[[Kite]][[Gnomon]]", "found": ["name://Kite", "name://Gnomon"] },
+  { "text": "[[Kite]] then [[Kite]] again.", "found": ["name://Kite", "name://Kite"] },
+  { "text": "[[Entropy|the other way]]", "found": ["name://Entropy"] },
+  { "text": "[[Entropy#a-heading|the other way]]", "found": ["name://Entropy"] },
+  { "text": "[[  Sundial  ]]", "found": ["name://Sundial"] },
+  { "text": "[[Lecture 3: entropy]]", "found": ["name://Lecture 3: entropy"] },
+  {
+    "text": "[[note://01HQ8WZK]] and [[asset://diagram.png]]",
+    "found": ["note://01HQ8WZK", "asset://diagram.png"]
+  },
+  {
+    "text": "[[Seminar 1.2–1.3 — Lisbon, 9 July 1973]]",
+    "found": ["name://Seminar 1.2–1.3 — Lisbon, 9 July 1973"]
+  }
+]
