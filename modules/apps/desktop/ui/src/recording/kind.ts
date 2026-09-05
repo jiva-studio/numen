@@ -15,7 +15,7 @@ import { DROP, PROOFREAD, TRANSCRIBE } from './words'
 import RecordingTab from './RecordingTab.vue'
 
 /** What a recording tab asks of the window it is drawn in. */
-export interface Transcribing {
+export interface RecordingTabDeps {
   /**
    * A command asked for over the recording the tab holds, carried out where the
    * commands are. `called` is what the tab calls the recording, which is what a
@@ -38,7 +38,7 @@ export type Held = ReturnType<typeof transcribed>
  * are. None is offered while a run is going, or where this build cannot do it
  * at all.
  */
-export function transcribed(read: Transcript, asks: Transcribing) {
+export function transcribed(read: Transcript, asks: RecordingTabDeps) {
   /** Whether this build can do a run. A window that says nothing offers every run. */
   const canRun = (run: string): boolean => asks.canRun?.(run) ?? true
 
@@ -72,7 +72,7 @@ export function transcribed(read: Transcript, asks: Transcribing) {
 export function recordingKind(
   host: Host,
   opens: (path: string) => Transcript,
-  asks: Transcribing,
+  asks: RecordingTabDeps,
   puts: Putting,
 ) {
   const kind: Kind<Held> = {

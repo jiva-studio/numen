@@ -23,7 +23,7 @@ import FilesTab from './FilesTab.vue'
 import { WORDS as words } from './words'
 
 /** Where the menu stands, and what it was asked for on. */
-export interface Asked {
+export interface MenuRequest {
   /** The row it was asked for on, and nothing where it was asked off every row. */
   readonly path: string | null
   readonly at: { x: number; y: number }
@@ -33,7 +33,7 @@ export interface Asked {
 export type Dropped = { readonly into: string } | { readonly before: string }
 
 /** What a files tab asks of the window it is drawn in. */
-export interface Filing {
+export interface FilesTabDeps {
   /** Somewhere chosen, taken. Nothing chosen takes the person nowhere. */
   lands(landing: Landing | null): void
   /**
@@ -134,7 +134,7 @@ export type Held = ReturnType<typeof filing>
  * The files tab of a window. A window shows the vault once, so a second asked
  * for is the tree already open.
  */
-export function filesKind(host: Host, makes: () => Listing, deps: Filing) {
+export function filesKind(host: Host, makes: () => Listing, deps: FilesTabDeps) {
   const kind: Kind<Held> = {
     kind: FILES,
     opens: () => {
@@ -170,9 +170,9 @@ export function filesKind(host: Host, makes: () => Listing, deps: Filing) {
   return { kind, reveals, changed }
 }
 
-export function filing(list: Listing, deps: Filing) {
+export function filing(list: Listing, deps: FilesTabDeps) {
   /** The menu on a row, for as long as it stands. */
-  const menu = ref<Asked | null>(null)
+  const menu = ref<MenuRequest | null>(null)
   /** The row whose name is in a field, and nothing while none is. */
   const renaming = ref<string | null>(null)
 
@@ -323,7 +323,7 @@ export function filing(list: Listing, deps: Filing) {
   }
 
   /** A menu asked for on a row or off every row, and one put away. */
-  const asks = (asked: Asked) => {
+  const asks = (asked: MenuRequest) => {
     menu.value = asked
   }
   const dismiss = () => {

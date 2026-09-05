@@ -13,7 +13,7 @@ import { DOCUMENT } from '../workspace'
 import DocumentTab from './DocumentTab.vue'
 
 /** What the window asks of a page once it is drawn. */
-export interface Drawn {
+export interface PageHandle {
   measure(): void
 }
 
@@ -57,10 +57,10 @@ export function documentKind(host: Host, opens: (path: string) => Held, puts: Pu
 
 export function documenting(read: Reading) {
   /** The page of this document, for as long as its tab is drawn. */
-  let page: Drawn | null = null
+  let page: PageHandle | null = null
 
   const drew = (drawn: unknown) => {
-    page = (drawn as Drawn | null) ?? null
+    page = (drawn as PageHandle | null) ?? null
   }
 
   const measure = () => page?.measure()

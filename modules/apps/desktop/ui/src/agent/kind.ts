@@ -16,7 +16,7 @@ import AgentTab from './AgentTab.vue'
 import { WORDS as words } from './words'
 
 /** What an agent tab asks of the window it is drawn in. */
-export interface Talking {
+export interface AgentTabDeps {
   /** A source opened at stretches of its own text, the first of them in front. */
   opens(path: string, ...stretches: readonly Stretch[]): void
   /** A note opened in a tab beside the pane the person is in. */
@@ -34,12 +34,12 @@ export interface Talking {
 export type Held = ReturnType<typeof talking>
 
 /** The note a talk is about, under the name the window calls it by. */
-export interface About {
+export interface NoteRef {
   readonly path: string
   readonly title: string
 }
 
-export function talking(talk: Conversation, deps: Talking) {
+export function talking(talk: Conversation, deps: AgentTabDeps) {
   /** The question being written, until it is sent. */
   const asked = ref('')
 
@@ -137,7 +137,7 @@ export function talking(talk: Conversation, deps: Talking) {
  * A talk is about no note of its own, so a command asked from one is asked over
  * the note the plex the person was last in is standing on.
  */
-export function agentKind(host: Host, opens: () => Held, about: () => About) {
+export function agentKind(host: Host, opens: () => Held, about: () => NoteRef) {
   const kind: Kind<Held> = {
     kind: AGENT,
     opens,

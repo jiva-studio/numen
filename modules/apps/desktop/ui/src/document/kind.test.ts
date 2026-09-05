@@ -5,7 +5,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { documenting, documentKind, type Drawn, type Held } from './kind'
+import { documenting, documentKind, type Held, type PageHandle } from './kind'
 import { DOCUMENT } from '../workspace'
 import type { Reading } from './reading'
 import type { Putting, Reads } from '../putting'
@@ -47,7 +47,7 @@ const kindOver = (held: Held) => documentKind(window_(held).host, () => held, pu
 
 describe('what a document tab holds', () => {
   it('measures the page again once there is a page to measure', () => {
-    const page: Drawn = { measure: vi.fn() }
+    const page: PageHandle = { measure: vi.fn() }
     const held = documenting(read('physics/Boltzmann.pdf'))
 
     // Drawn nowhere yet, and asked to measure all the same.
@@ -62,7 +62,7 @@ describe('what a document tab holds', () => {
   // A tab is drawn while it is out of sight, where there is no room to lay a
   // page out in, so what it drew is let go of when it goes.
   it('measures nothing once the page it drew is gone', () => {
-    const page: Drawn = { measure: vi.fn() }
+    const page: PageHandle = { measure: vi.fn() }
     const held = documenting(read('physics/Boltzmann.pdf'))
     held.drew(page)
     held.drew(null)
@@ -101,7 +101,7 @@ describe('a document tab', () => {
 
   it('measures the page when the tab comes on screen', () => {
     const { kind } = kindOf()
-    const page: Drawn = { measure: vi.fn() }
+    const page: PageHandle = { measure: vi.fn() }
     const held = documenting(read('physics/Boltzmann.pdf'))
     held.drew(page)
 

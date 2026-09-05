@@ -7,14 +7,14 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import ConfigurationTab from './ConfigurationTab.vue'
-import { holding, type Called } from './kind'
+import { holding, type ConfigurationTabDeps } from './kind'
 import { WORDS as words } from './words'
 
 const HELD = '{\n  "agent": { "use": "claude" }\n}\n'
 
-const drawn = async (answers: Partial<Called> = {}) => {
+const drawn = async (answers: Partial<ConfigurationTabDeps> = {}) => {
   const wrote: string[] = []
-  const core: Called = {
+  const core: ConfigurationTabDeps = {
     settingsFile: () => Promise.resolve({ written: HELD, path: '/numen.json' }),
     writesSettingsFile: (written) => {
       wrote.push(written)

@@ -12,7 +12,7 @@ import ConfigurationTab from './ConfigurationTab.vue'
 import { WORDS as words } from './words'
 
 /** What this asks of the vault. */
-export interface Called {
+export interface ConfigurationTabDeps {
   /** The settings file as its person wrote it, and where it stands. */
   settingsFile(): Promise<{ readonly written: string; readonly path: string }>
   /**
@@ -39,7 +39,7 @@ const reason = (thrown: unknown): string =>
  * last read, and a file that moved past it stands overtaken until the person
  * keeps theirs or takes the file's.
  */
-export function holding(core: Called, reads: () => void) {
+export function holding(core: ConfigurationTabDeps, reads: () => void) {
   /** The bytes the file held when it was last read. */
   const held = ref('')
   const typed = ref('')
@@ -55,7 +55,7 @@ export function holding(core: Called, reads: () => void) {
   const overtaken = ref(false)
 
   const again = async (): Promise<void> => {
-    let answer: Awaited<ReturnType<Called['settingsFile']>>
+    let answer: Awaited<ReturnType<ConfigurationTabDeps['settingsFile']>>
     try {
       answer = await core.settingsFile()
     } catch (thrown) {
@@ -76,7 +76,7 @@ export function holding(core: Called, reads: () => void) {
    */
   const writes = async (seen: string | null): Promise<void> => {
     if (!read.value) return
-    let answer: Awaited<ReturnType<Called['writesSettingsFile']>>
+    let answer: Awaited<ReturnType<ConfigurationTabDeps['writesSettingsFile']>>
     try {
       answer = await core.writesSettingsFile(typed.value, seen)
     } catch (thrown) {
@@ -133,7 +133,7 @@ const mark = (held: Held): string | undefined => {
  * The settings file's tab. There is one file, so opening it again is the tab it
  * already stands in.
  */
-export function configuring(host: Host, core: Called, reads: () => void) {
+export function configuring(host: Host, core: ConfigurationTabDeps, reads: () => void) {
   const kind: Kind<Held> = {
     kind: CONFIGURATION,
     opens: () => {

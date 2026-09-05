@@ -5,17 +5,17 @@
  * Every value here is invented.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { holding, type Called } from './kind'
+import { holding, type ConfigurationTabDeps } from './kind'
 import { WORDS as words } from './words'
 
 const HELD = '{\n  "agent": { "use": "claude" }\n}\n'
 
 /** A vault holding that file, and everything it was asked to write. */
-const vault = (answers: Partial<Called> = {}) => {
+const vault = (answers: Partial<ConfigurationTabDeps> = {}) => {
   const wrote: string[] = []
   /** What each write presented as the file it last read. */
   const presented: (string | null)[] = []
-  const core: Called = {
+  const core: ConfigurationTabDeps = {
     settingsFile: () => Promise.resolve({ written: HELD, path: '/numen.json' }),
     writesSettingsFile: (written, seen) => {
       wrote.push(written)
@@ -157,7 +157,7 @@ describe('a file that moved past what the tab read', () => {
     let stands = HELD
     const wrote: string[] = []
     const reads = vi.fn()
-    const core: Called = {
+    const core: ConfigurationTabDeps = {
       settingsFile: () => Promise.resolve({ written: stands, path: '/numen.json' }),
       writesSettingsFile: (written, seen) => {
         if (seen !== null && seen !== stands) return Promise.resolve({ changed: true })
