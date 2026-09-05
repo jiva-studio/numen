@@ -11,6 +11,6 @@
   "devDependencies": {
     "@vue/compiler-sfc": "^3.5.42",
     "dependency-cruiser": "^18.2.0",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   }
 }

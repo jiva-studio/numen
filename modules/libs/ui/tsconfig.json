@@ -7,7 +7,6 @@
     "jsx": "preserve",
     "types": ["vite/client", "node"],
 
-    "baseUrl": ".",
     "paths": { "@/*": ["./src/*"] },
 
     "strict": true,
