@@ -9,8 +9,8 @@
 import { computed, ref, shallowRef } from 'vue'
 import type { Ref } from 'vue'
 
-import { rated } from './core'
-import type { CardFace, Grade, Intervals } from './core'
+import { rated } from '../core'
+import type { CardFace, Grade, Intervals } from '../core'
 
 /** What a sitting asks of the application, and no more of it than that. */
 export interface SessionClient {

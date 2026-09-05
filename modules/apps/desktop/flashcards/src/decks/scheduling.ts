@@ -9,10 +9,10 @@ import { computed, ref, shallowRef } from 'vue'
 import { StopReason } from '@numen/protocol'
 import type { Goal as Goals, Refusal } from '@numen/protocol'
 
-import { deckName, goalOf } from './core'
-import type { DeckCardsDue, Goal } from './core'
+import { deckName, goalOf } from '../core'
+import type { DeckCardsDue, Goal } from '../core'
 import { refusalWords } from '@numen/wire'
-import type { BudgetKeys, VaultCardsDue } from './core'
+import type { BudgetKeys, VaultCardsDue } from '../core'
 
 export type { BudgetKeys }
 

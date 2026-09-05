@@ -10,10 +10,10 @@ import { Button, DueCount, KeyCap, Skeleton } from '@numen/ui'
 import type { HeatmapTally } from '@numen/ui'
 import Progress from './Progress.vue'
 import Presets from './Presets.vue'
-import { deckName } from './core'
-import { letterOf } from './keying'
+import { deckName } from '../core'
+import { letterOf } from '../keying'
 import { beginsNothing, learned, opens, spent, LEARNED, STOPPED } from './scheduling'
-import type { DeckCardsDue, VaultCardsDue } from './core'
+import type { DeckCardsDue, VaultCardsDue } from '../core'
 import type { Preset } from './scheduling'
 
 const props = defineProps<{

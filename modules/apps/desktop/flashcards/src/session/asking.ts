@@ -14,7 +14,7 @@ import { conversation } from '@numen/ui'
 import type { AgentPort, Conversation, Turn } from '@numen/ui'
 
 import { WORDS as words } from './agent/words'
-import type { CardFace } from './core'
+import type { CardFace } from '../core'
 
 /** What the panel asks of the window it is drawn in. */
 export interface AgentPanelDeps {

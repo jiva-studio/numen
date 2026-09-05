@@ -8,7 +8,7 @@ import AgentPanel from './AgentPanel.vue'
 import { asking } from './asking'
 import type { AgentPanelState } from './asking'
 import { WORDS as words } from './agent/words'
-import type { CardFace } from './core'
+import type { CardFace } from '../core'
 
 /** A card as the sitting hands one over. */
 const card: CardFace = {

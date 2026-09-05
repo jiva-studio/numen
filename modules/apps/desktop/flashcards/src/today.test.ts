@@ -9,8 +9,8 @@ import { Goal, StopReason } from '@numen/protocol'
 
 import { counting } from './counting'
 import type { CardsDueClient } from './counting'
-import { named, scheduling } from './scheduling'
-import type { PresetsClient, SettingsMessage } from './scheduling'
+import { named, scheduling } from './decks/scheduling'
+import type { PresetsClient, SettingsMessage } from './decks/scheduling'
 import type { VaultCardsDue } from './core'
 
 const dated = (day: string): SettingsMessage => ({

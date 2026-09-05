@@ -12,12 +12,12 @@
 import { Notices } from '@numen/ui'
 import '@numen/ui/styles.css'
 
-import Vaults from './Vaults.vue'
-import Decks from './Decks.vue'
-import Session from './Session.vue'
-import SessionSummary from './SessionSummary.vue'
-import AgentPanel from './AgentPanel.vue'
-import NotesPanel from './NotesPanel.vue'
+import Vaults from './vaults/Vaults.vue'
+import Decks from './decks/Decks.vue'
+import Session from './session/Session.vue'
+import SessionSummary from './session/SessionSummary.vue'
+import AgentPanel from './session/AgentPanel.vue'
+import NotesPanel from './session/NotesPanel.vue'
 import { VERSION } from './version'
 import { useWindow } from './window'
 

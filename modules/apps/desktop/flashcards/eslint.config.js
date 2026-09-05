@@ -98,7 +98,7 @@ export default tseslint.config(
       'src/**/*.test.ts',
       'src/**/*.stories.ts',
       // The port's own default, which is where the browser is allowed in.
-      'src/session.ts',
+      'src/session/session.ts',
     ],
     rules: {
       'no-restricted-globals': [

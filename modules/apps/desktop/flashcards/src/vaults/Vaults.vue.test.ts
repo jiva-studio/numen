@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { Skeleton, Spinner } from '@numen/ui'
 
 import Vaults from './Vaults.vue'
-import type { VaultCardsDue } from './core'
+import type { VaultCardsDue } from '../core'
 
 const vault = (said: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   vault: '01A',

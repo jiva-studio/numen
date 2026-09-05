@@ -6,7 +6,7 @@
  */
 import { refusalWords } from '@numen/wire'
 
-import { cards } from '../core'
+import { cards } from '../../core'
 
 /** One note the deck is joined to. */
 export interface Neighbour {

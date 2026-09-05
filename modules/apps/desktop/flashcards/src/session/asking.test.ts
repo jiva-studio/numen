@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import type { AgentPort, AgentStep } from '@numen/ui'
 
 import { asking } from './asking'
-import type { CardFace } from './core'
+import type { CardFace } from '../core'
 
 /** A card as the sitting hands one over. */
 const card = (more: Partial<CardFace> = {}): CardFace => ({

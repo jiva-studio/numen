@@ -13,7 +13,7 @@
 import { computed } from 'vue'
 import { DueCount, Spinner, WelcomePage } from '@numen/ui'
 import type { VaultRow } from '@numen/ui'
-import type { VaultCardsDue } from './core'
+import type { VaultCardsDue } from '../core'
 
 const props = defineProps<{
   vaults: readonly VaultCardsDue[]

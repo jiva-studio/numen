@@ -5,7 +5,7 @@ import { StopReason } from '@numen/protocol'
 
 import Decks from './Decks.vue'
 import Presets from './Presets.vue'
-import type { VaultCardsDue } from './core'
+import type { VaultCardsDue } from '../core'
 import type { BudgetKeys, Preset, Settings } from './scheduling'
 
 const settings = (said: Partial<Settings> = {}): Settings => ({

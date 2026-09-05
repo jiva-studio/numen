@@ -8,8 +8,8 @@ import { createClient } from '@connectrpc/connect'
 import { AgentService } from '@numen/protocol'
 import { agentPort } from '@numen/wire'
 
-import { transport } from '../transport'
-import type { CardFace } from '../core'
+import { transport } from '../../transport'
+import type { CardFace } from '../../core'
 
 const service = createClient(AgentService, transport)
 

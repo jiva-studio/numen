@@ -22,7 +22,7 @@ import type {
   Settings,
   SettingsMessage,
 } from './scheduling'
-import type { Goal, PresetCardsDue, VaultCardsDue } from './core'
+import type { Goal, PresetCardsDue, VaultCardsDue } from '../core'
 
 const settings = (said: Partial<Settings> = {}): Settings => ({
   goal: 'minutes',

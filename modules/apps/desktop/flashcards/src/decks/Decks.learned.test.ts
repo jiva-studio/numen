@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import Decks from './Decks.vue'
 import { learned } from './scheduling'
-import type { DeckCardsDue, VaultCardsDue } from './core'
+import type { DeckCardsDue, VaultCardsDue } from '../core'
 import type { BudgetKeys, Preset, Settings } from './scheduling'
 
 const settings: Settings = {

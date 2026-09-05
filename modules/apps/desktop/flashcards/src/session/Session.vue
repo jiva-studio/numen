@@ -10,9 +10,9 @@ import { Button, KeyCap, keyChord } from '@numen/ui'
 import PanelCarousel from './PanelCarousel.vue'
 import type { PanelPlace } from './PanelCarousel.vue'
 import Card from './Card.vue'
-import { ahead, called, deckName, grades } from './core'
-import { ASKS, READS } from './keying'
-import type { CardFace, Grade } from './core'
+import { ahead, called, deckName, grades } from '../core'
+import { ASKS, READS } from '../keying'
+import type { CardFace, Grade } from '../core'
 
 defineProps<{
   card: CardFace

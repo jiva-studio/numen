@@ -75,7 +75,7 @@ vi.mock('./core', async (original) => ({
 }))
 
 const { default: App } = await import('./App.vue')
-const Decks = (await import('./Decks.vue')).default
+const Decks = (await import('./decks/Decks.vue')).default
 
 /** The window drawn, with the vaults counted and on the screen. */
 const drawn = async () => {

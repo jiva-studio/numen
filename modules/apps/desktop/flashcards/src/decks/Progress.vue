@@ -8,7 +8,7 @@
 import { Heatmap, heatmapDayName } from '@numen/ui'
 import type { HeatmapTally, HeatmapWords } from '@numen/ui'
 
-import { called } from './core'
+import { called } from '../core'
 
 defineProps<{
   /** What was answered on each day, by the day it was. */

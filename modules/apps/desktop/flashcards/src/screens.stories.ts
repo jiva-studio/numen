@@ -8,9 +8,9 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import type { HeatmapTally } from '@numen/ui'
 import { h, type VNode } from 'vue'
-import Decks from './Decks.vue'
-import Session from './Session.vue'
-import type { BudgetKeys, Preset, Settings } from './scheduling'
+import Decks from './decks/Decks.vue'
+import Session from './session/Session.vue'
+import type { BudgetKeys, Preset, Settings } from './decks/scheduling'
 import type { CardFace, DeckCardsDue, VaultCardsDue } from './core'
 
 /** A day as the grid of weeks writes one. */
