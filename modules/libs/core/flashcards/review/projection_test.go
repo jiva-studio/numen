@@ -174,7 +174,7 @@ func TestADayAnswersTheCardFacesWaitingLongest(t *testing.T) {
 	day := review.Day{Starts: review.DayStarts, In: time.UTC}
 	now := time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
 	open := day.Ends(now).AddDate(0, 0, -1)
-	standing := func(name string, since, due int) (review.CardFaceID, review.Schedule) {
+	face := func(name string, since, due int) (review.CardFaceID, review.Schedule) {
 		return review.CardFaceID{Card: name, Face: "Say it"}, review.Schedule{
 			Last: open.AddDate(0, 0, -since), Due: open.AddDate(0, 0, due),
 			Reps: 3, Stability: 20, Difficulty: 5, Phase: 2,
@@ -182,11 +182,11 @@ func TestADayAnswersTheCardFacesWaitingLongest(t *testing.T) {
 	}
 	// The two waiting longest were answered most recently, so the order the day
 	// takes them in is the order of the days they came round on.
-	first, firstAt := standing("first", 10, -9)
-	second, secondAt := standing("second", 11, -8)
-	third, thirdAt := standing("third", 100, -3)
-	fourth, fourthAt := standing("fourth", 101, -2)
-	fifth, fifthAt := standing("fifth", 102, -1)
+	first, firstAt := face("first", 10, -9)
+	second, secondAt := face("second", 11, -8)
+	third, thirdAt := face("third", 100, -3)
+	fourth, fourthAt := face("fourth", 101, -2)
+	fifth, fifthAt := face("fifth", 102, -1)
 
 	run := review.Simulation{
 		By: review.NewFSRS(), Day: day, Cost: review.DefaultCost, Days: 1, Retains: []int{0},
