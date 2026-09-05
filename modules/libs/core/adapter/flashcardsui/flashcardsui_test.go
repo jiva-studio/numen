@@ -905,7 +905,7 @@ func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 	api, held := windowed(t, lived)
 	v := held[0]
 	lives(t, api, v, 14)
-	standing(api, firstMorning.AddDate(0, 0, 14))
+	setNow(api, firstMorning.AddDate(0, 0, 14))
 
 	p := asWritten(t, api, v, "Sanskrit.md")
 	p.Goal = review.GoalMinutes
@@ -946,7 +946,7 @@ func TestWhatIsOverdueStandsOverTheWholeCurve(t *testing.T) {
 	api, held := windowed(t, lived)
 	v := held[0]
 	lives(t, api, v, 14)
-	standing(api, firstMorning.AddDate(0, 0, 14))
+	setNow(api, firstMorning.AddDate(0, 0, 14))
 
 	owes := 0
 	for _, one := range owing(t, api, v).GetDecks() {
@@ -1036,7 +1036,7 @@ func TestThePresetTileAndTheSittingItOpensAreOneNumber(t *testing.T) {
 	api, held := windowed(t, spread)
 	v := held[0]
 	lives(t, api, v, 14)
-	standing(api, firstMorning.AddDate(0, 0, 14))
+	setNow(api, firstMorning.AddDate(0, 0, 14))
 
 	said := owing(t, api, v)
 	// Which decks each preset schedules, so what a sitting asks can be checked
@@ -1115,7 +1115,7 @@ func TestTheCountNeverAllocatesPastTheBudgetItSpends(t *testing.T) {
 			v := held[0]
 			lives(t, api, v, 14)
 			now := firstMorning.AddDate(0, 0, 14)
-			standing(api, now)
+			setNow(api, now)
 
 			past := 0
 			for _, said := range owing(t, api, v).GetPresets() {
@@ -1159,7 +1159,7 @@ func TestTheCurveCarriesTheBacklogDayByDay(t *testing.T) {
 	api, held := windowed(t, lived)
 	v := held[0]
 	lives(t, api, v, 14)
-	standing(api, firstMorning.AddDate(0, 0, 14))
+	setNow(api, firstMorning.AddDate(0, 0, 14))
 
 	p := asWritten(t, api, v, "Sanskrit.md")
 	p.Goal = review.GoalMinutes
@@ -1233,7 +1233,7 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 			api, held := windowed(t, lived)
 			v := held[0]
 			lives(t, api, v, 14)
-			standing(api, firstMorning.AddDate(0, 0, 14))
+			setNow(api, firstMorning.AddDate(0, 0, 14))
 
 			p := asWritten(t, api, v, "Sanskrit.md")
 			p.Goal = review.GoalRetention
@@ -1312,7 +1312,7 @@ func TestTheBacklogShareMovesTheSittingAndTheProjectionTogether(t *testing.T) {
 		api, made := windowed(t, lived)
 		v := made[0]
 		lives(t, api, v, 20)
-		standing(api, firstMorning.AddDate(0, 0, 20))
+		setNow(api, firstMorning.AddDate(0, 0, 20))
 
 		p := asWritten(t, api, v, "Sanskrit.md")
 		p.Goal, p.Backlog = review.GoalMinutes, share

@@ -81,9 +81,9 @@ var reviewDay = review.Day{Starts: 4 * time.Hour, In: time.UTC}
 // firstMorning is the instant the history begins at, well inside its review day.
 var firstMorning = time.Date(2026, 4, 6, 9, 0, 0, 0, time.UTC)
 
-// standing puts the whole window on one instant: the day the counts stand in,
+// setNow puts the whole window on one instant: the day the counts stand in,
 // the day a sitting is held to, and the day a curve is drawn for.
-func standing(api *API, now time.Time) {
+func setNow(api *API, now time.Time) {
 	at := func() time.Time { return now }
 	api.Now = at
 	api.Day = reviewDay
@@ -102,7 +102,7 @@ func lives(t *testing.T, api *API, v domain.Vault, days int) {
 	t.Helper()
 	for day := range days {
 		morning := firstMorning.AddDate(0, 0, day)
-		standing(api, morning)
+		setNow(api, morning)
 		if day%5 == 4 {
 			continue
 		}
@@ -237,7 +237,7 @@ func TestTheCurveAndTheDeckScreenOfferTheSameDay(t *testing.T) {
 			api, held := windowed(t, lived)
 			v := held[0]
 			lives(t, api, v, 14)
-			standing(api, firstMorning.AddDate(0, 0, 14))
+			setNow(api, firstMorning.AddDate(0, 0, 14))
 
 			p := asWritten(t, api, v, "Sanskrit.md")
 			p.Goal = one.goal
@@ -272,7 +272,7 @@ func TestTheCurveAndTheDeckScreenOfferTheSameDay(t *testing.T) {
 func TestTheCurveCarriesWhatThePresetSchedules(t *testing.T) {
 	api, held := windowed(t, lived)
 	v := held[0]
-	standing(api, firstMorning)
+	setNow(api, firstMorning)
 
 	drawn := pictured(t, api, v, "Sanskrit.md", asWritten(t, api, v, "Sanskrit.md"))
 	want := facesIn["decks/Verbs.md"] + facesIn["decks/Nouns.md"]
@@ -292,7 +292,7 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 	api, held := windowed(t, lived)
 	v := held[0]
 	lives(t, api, v, 14)
-	standing(api, firstMorning.AddDate(0, 0, 14))
+	setNow(api, firstMorning.AddDate(0, 0, 14))
 
 	said := owing(t, api, v)
 	if int(said.GetFaces()) != 630 {
@@ -344,7 +344,7 @@ func TestADeckSaysHowMuchOfItWasAnsweredToday(t *testing.T) {
 	lives(t, api, v, 14)
 
 	// A new day, with nothing answered in it yet.
-	standing(api, firstMorning.AddDate(0, 0, 14))
+	setNow(api, firstMorning.AddDate(0, 0, 14))
 	for _, one := range owing(t, api, v).GetDecks() {
 		if one.GetAnswered() != 0 {
 			t.Errorf("nothing was answered today and %s counts %d",
@@ -388,7 +388,7 @@ func TestADeckSaysHowMuchOfItWasAnsweredToday(t *testing.T) {
 // count.
 func TestTheFrontDoorHoldsEachVaultOnce(t *testing.T) {
 	api, held := windowed(t, lived, deck)
-	standing(api, firstMorning)
+	setNow(api, firstMorning)
 
 	rows := front(t, api).GetVaults()
 	if len(rows) != len(held) {
@@ -432,7 +432,7 @@ func TestATargetMovedIsNotAnsweredFromTheWorkingOutUnderTheOldOne(t *testing.T) 
 	api, held := windowed(t, lived)
 	v := held[0]
 	lives(t, api, v, 14)
-	standing(api, firstMorning.AddDate(0, 0, 14))
+	setNow(api, firstMorning.AddDate(0, 0, 14))
 
 	p := asWritten(t, api, v, "Grammar.md")
 	p.Retention = review.RetentionBounds.Least

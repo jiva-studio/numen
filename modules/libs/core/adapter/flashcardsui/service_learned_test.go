@@ -26,7 +26,7 @@ var learnedDecks = map[string]string{
 func TestTheCountCarriesHowMuchOfADeckStandsLearned(t *testing.T) {
 	api, held := windowed(t, learnedDecks)
 	v := held[0]
-	standing(api, firstMorning)
+	setNow(api, firstMorning)
 
 	// One card of each deck answered, so the two decks differ by their rule
 	// alone and not by what was done to them.
@@ -45,7 +45,7 @@ func TestTheCountCarriesHowMuchOfADeckStandsLearned(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	standing(api, firstMorning.Add(time.Minute))
+	setNow(api, firstMorning.Add(time.Minute))
 
 	want := map[string]int32{"decks/Near.md": 1, "decks/Far.md": 0}
 	for _, one := range owing(t, api, v).GetDecks() {
@@ -64,7 +64,7 @@ func TestTheCountCarriesHowMuchOfADeckStandsLearned(t *testing.T) {
 func TestAVaultNobodyHasAnsweredCarriesNothingLearned(t *testing.T) {
 	api, held := windowed(t, learnedDecks)
 	v := held[0]
-	standing(api, firstMorning)
+	setNow(api, firstMorning)
 
 	for _, one := range owing(t, api, v).GetDecks() {
 		if one.GetLearned() != 0 {
