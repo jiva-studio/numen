@@ -5,7 +5,9 @@ import (
 	"maps"
 	"math"
 	"slices"
+	"strings"
 	"testing"
+	"time"
 
 	"pgregory.net/rapid"
 
@@ -191,14 +193,20 @@ func loading(t *rapid.T) []deckLoad {
 // this order: the card faces the sitting takes, by name.
 //
 // The order stands for the order the vault was walked in. Each deck's own cards
-// keep the order they stand in, which is the deck's and not the walk's.
+// keep the order they stand in, which is the deck's and not the walk's. A
+// budget of no minutes is a day that does not close on them.
 func walking(load []deckLoad, order []int, keeps review.Budget) map[review.CardFaceID]bool {
+	closes := review.Closes{New: review.ClosedNew, Reviews: review.ClosedReviews}
+	if keeps.Minutes > 0 {
+		closes.Minutes = review.ClosedMinutes
+	}
 	day := &budgets{
 		under: make(map[review.CardFaceID]string),
 		left: map[string]*allowance{"Preset.md": {
 			admits: review.Allowance{
 				Keeps: keeps, New: keeps.New, Reviews: keeps.Reviews,
-				Closes:  review.Closes{New: review.ClosedNew, Reviews: review.ClosedReviews},
+				Minutes: time.Duration(keeps.Minutes * float64(time.Minute)),
+				Closes:  closes,
 				Backlog: review.AllBacklog,
 			},
 			cost:   review.DefaultCost,
@@ -242,6 +250,48 @@ func walking(load []deckLoad, order []int, keeps review.Budget) map[review.CardF
 		}
 	}
 	return out
+}
+
+// handedOver is how many cards each deck was handed of a day of this budget.
+func handedOver(load []deckLoad, keeps review.Budget) map[string]int {
+	places := make([]int, len(load))
+	for at := range places {
+		places[at] = at
+	}
+	out := make(map[string]int, len(load))
+	for face := range walking(load, places, keeps) {
+		for _, one := range load {
+			if strings.HasPrefix(face.Card, one.path+"/") {
+				out[one.path]++
+			}
+		}
+	}
+	return out
+}
+
+// A day of one minute over a deck of one unbegun card and a deck of five: a
+// card costs twenty seconds, so the shares of the minute — ten seconds and
+// fifty — buy two cards in the larger deck and none in the smaller. The twenty
+// seconds nobody could spend buy a third card in the larger deck, which is
+// where four cards are still standing, and not the one card of the deck whose
+// name sorts first.
+//
+// What no deck can use is offered round again, to the deck still holding most.
+func TestWhatNoDeckCouldUseGoesToTheDeckHoldingMost(t *testing.T) {
+	t.Parallel()
+	keeps := review.Budget{New: 6, Minutes: 1}
+	one, five := "decks/a.md", "decks/b.md"
+
+	got := handedOver([]deckLoad{{path: one, fresh: 1}, {path: five, fresh: 5}}, keeps)
+	if want := (map[string]int{five: 3}); !maps.Equal(got, want) {
+		t.Fatalf("a day of one minute handed over %v, want %v", got, want)
+	}
+	// The same two decks under each other's names hand over the same cards.
+	got = handedOver([]deckLoad{{path: five, fresh: 1}, {path: one, fresh: 5}}, keeps)
+	if want := (map[string]int{one: 3}); !maps.Equal(got, want) {
+		t.Fatalf("a day of one minute over the same decks renamed handed over "+
+			"%v, want %v", got, want)
+	}
 }
 
 // A vault hands over the same cards however its files are walked. The decks are

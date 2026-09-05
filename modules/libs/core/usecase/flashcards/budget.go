@@ -277,6 +277,30 @@ type deckShare struct {
 	debt, begun  int
 }
 
+// standing is how many of a deck's cards no share has taken, which is what the
+// deck still owes of the day.
+func (q *deckShare) standing(out taken) int {
+	held := 0
+	for _, at := range q.owed {
+		if !out.owed[at] {
+			held++
+		}
+	}
+	for _, at := range q.fresh {
+		if !out.fresh[at] {
+			held++
+		}
+	}
+	return held
+}
+
+// given is how much of the day a deck has had, in the time it took: what an
+// earlier sitting spent of today, and what the deck's own share has just spent.
+func (b *budgets) given(q *deckShare, cost review.AnswerCost) time.Duration {
+	return b.sat[q.deck].Took +
+		time.Duration(q.debt)*cost.Review + time.Duration(q.begun)*cost.New
+}
+
 // spends is what each preset's day takes of the debt before it and the material
 // it has not begun.
 //
@@ -345,7 +369,20 @@ func (b *budgets) spends(owed, fresh []CardFace) taken {
 			b.deals(&shares[i], q, owed, fresh, &out)
 		}
 		// What is left of the day after every deck has had its share goes to
-		// the decks that still hold a card, in the order they stand.
+		// the decks that still hold a card, the one holding most first: what a
+		// deck has left to answer is what it still owes of the day, and the day
+		// is handed out by what is owed. Decks holding the same number take it
+		// in the order of the time the day has given them already, least first.
+		standing := make(map[string]int, len(decks))
+		for _, q := range decks {
+			standing[q.deck] = q.standing(out)
+		}
+		slices.SortStableFunc(decks, func(x, y *deckShare) int {
+			return cmp.Or(
+				cmp.Compare(standing[y.deck], standing[x.deck]),
+				cmp.Compare(b.given(x, one.cost), b.given(y, one.cost)),
+			)
+		})
 		for _, q := range decks {
 			q.seen, q.unseen = 0, 0
 			over := *one
