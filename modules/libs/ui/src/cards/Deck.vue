@@ -8,7 +8,7 @@
  * stands for is the caller's.
  */
 import { computed, shallowRef } from 'vue'
-import Band from './Band.vue'
+import SectionHeading from './SectionHeading.vue'
 import Card from './Card.vue'
 import Icon from './Icon.vue'
 import Divider from '../divider/Divider.vue'
@@ -105,7 +105,7 @@ const after = (run: Run): Landing => endOf(run.id)
 
 const add = (stencil: Stencil, run: Run): void => {
   asking.value = null
-  emit('add', stencil.name, run.band?.id ?? null)
+  emit('add', stencil.name, run.section?.id ?? null)
 }
 
 const addSection = (): void => {
@@ -125,18 +125,18 @@ const addSection = (): void => {
       <!-- A card let go on a section's heading lands at the head of that
            section, which is the one place a section holding none takes one. -->
       <div
-        v-if="run.band"
-        class="deck__band caret-below"
-        :data-band="run.band.id"
-        :data-before="run.band.id === at || undefined"
-        @dragover.stop="over(run.band.id, $event)"
+        v-if="run.section"
+        class="deck__section-head caret-below"
+        :data-section-head="run.section.id"
+        :data-before="run.section.id === at || undefined"
+        @dragover.stop="over(run.section.id, $event)"
         @drop.stop="drop"
       >
-        <Band
-          :band="run.band"
+        <SectionHeading
+          :section="run.section"
           :words="words"
-          @rename="(name: string) => emit('rename-section', run.band?.id ?? '', name)"
-          @remove="emit('remove-section', run.band?.id ?? '')"
+          @rename="(name: string) => emit('rename-section', run.section?.id ?? '', name)"
+          @remove="emit('remove-section', run.section?.id ?? '')"
         />
       </div>
 
@@ -184,7 +184,7 @@ const addSection = (): void => {
           :aria-setsize="shown.of"
           :aria-label="words.add"
           data-plus
-          :data-plus-of="run.band?.id"
+          :data-plus-of="run.section?.id"
           :data-before="after(run) === at || undefined"
           @dragover.stop="over(after(run), $event)"
           @drop.stop="drop"
@@ -253,7 +253,7 @@ const addSection = (): void => {
 
 /* A section's heading runs the width of the grid under it, and takes the caret
    that says a card would land at its head. */
-.deck__band {
+.deck__section-head {
   position: relative;
 }
 

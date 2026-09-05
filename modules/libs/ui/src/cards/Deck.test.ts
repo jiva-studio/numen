@@ -71,7 +71,7 @@ const dragTo = async (held: Grid, id: string, onto: string | null): Promise<void
         ? held.get('[data-head]')
         : held.find(`[data-card="${onto}"]`).exists()
           ? tileFor(held, onto)
-          : held.get(`[data-band="${onto}"]`)
+          : held.get(`[data-section-head="${onto}"]`)
   await over.trigger('dragover')
   await over.trigger('drop')
 }
@@ -501,7 +501,9 @@ describe('Deck', () => {
 
     it('draws a heading per section, in the order they were handed in', () => {
       const held = mountSectioned()
-      expect(held.findAll('[data-band]').map((band) => band.attributes('data-band'))).toEqual([
+      expect(
+        held.findAll('[data-section-head]').map((head) => head.attributes('data-section-head')),
+      ).toEqual([
         'roots',
         'leaves',
       ])
@@ -509,7 +511,7 @@ describe('Deck', () => {
 
     it('draws a heading for a section holding no card', () => {
       const held = mountSectioned()
-      expect(held.get('[data-band="leaves"]').get('input').element.value).toBe('Leaves')
+      expect(held.get('[data-section-head="leaves"]').get('input').element.value).toBe('Leaves')
     })
 
     it('stands each card under the section it was handed in under', () => {
@@ -519,7 +521,7 @@ describe('Deck', () => {
     })
 
     it('draws no heading for a deck the caller handed no section', () => {
-      expect(mountDeck().findAll('[data-band]')).toHaveLength(0)
+      expect(mountDeck().findAll('[data-section-head]')).toHaveLength(0)
     })
 
     it('emits a section asked for, named by something nothing has taken', async () => {
@@ -530,7 +532,7 @@ describe('Deck', () => {
 
     it('emits a section renamed', async () => {
       const held = mountSectioned()
-      const box = held.get<HTMLInputElement>('[data-band="roots"] input')
+      const box = held.get<HTMLInputElement>('[data-section-head="roots"] input')
       box.element.value = 'Roots and shoots'
       await box.trigger('input')
       await box.trigger('change')
@@ -539,7 +541,7 @@ describe('Deck', () => {
 
     it('emits a section asked to go', async () => {
       const held = mountSectioned()
-      await held.get('[data-band="roots"] .remove-button').trigger('click')
+      await held.get('[data-section-head="roots"] .remove-button').trigger('click')
       expect(held.emitted('remove-section')).toEqual([['roots']])
     })
 

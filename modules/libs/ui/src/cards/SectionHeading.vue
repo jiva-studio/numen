@@ -13,13 +13,13 @@ import RemoveButton from './RemoveButton.vue'
 import NameBox from './NameBox.vue'
 import Divider from '../divider/Divider.vue'
 import { useNaming } from './naming'
-import { DECK_WORDS, type Band, type DeckWords } from './deck'
+import { DECK_WORDS, type DeckWords, type PlacedSection } from './deck'
 import { heading, type Refusal } from './order'
 
 const props = withDefaults(
   defineProps<{
     /** The section, and where it stands among them. */
-    band: Band
+    section: PlacedSection
     /** The words it is drawn with. */
     words?: DeckWords
   }>(),
@@ -31,24 +31,24 @@ const emit = defineEmits<{
   (event: 'remove'): void
 }>()
 
-/** What this band's objection is named by, which is this band's alone. */
+/** What this heading's objection is named by, which is this heading's alone. */
 const uid = useId()
 
 const objectsId = `${uid}-objects`
 
 /** A name typed over the one this section carries, until it is committed. */
 const naming = useNaming<Refusal>({
-  carries: () => props.band.name,
+  carries: () => props.section.name,
   taken: () => [],
   amiss: heading,
   renamed: (_over, name) => emit('rename', name),
 })
 
 /** What is in the box: the name it carries, or what is being typed over it. */
-const text = computed(() => naming.text(props.band.id))
+const text = computed(() => naming.text(props.section.id))
 
 /** Why what is in the box cannot be used, and nothing while it can. */
-const objects = computed(() => naming.objection(props.band.id))
+const objects = computed(() => naming.objection(props.section.id))
 
 /** What is said of a name that cannot be used, and nothing while it can. */
 const says = computed(() => (objects.value === null ? null : props.words.sectionObjection))
@@ -57,39 +57,45 @@ const says = computed(() => (objects.value === null ? null : props.words.section
  * What the section is announced by. A section's name is a person's own text and
  * may be nothing at all, so what it is called here is the place it stands in.
  */
-const stem = computed(() => `${props.words.sectionStem} ${props.band.at}`)
+const stem = computed(() => `${props.words.sectionStem} ${props.section.at}`)
 </script>
 
 <template>
-  <div class="band" :data-band-of="band.id">
+  <div class="section-heading" :data-heading-of="section.id">
     <Divider>
       <!-- What a person reaches for is the name and the way to be rid of it,
            and nothing of the line either side. -->
-      <span class="band__held">
-        <span class="band__name" :data-typed="text || stem">
+      <span class="section-heading__held">
+        <span class="section-heading__name" :data-typed="text || stem">
           <!-- The box is as wide as the cell behind it comes to, and the cell
                is set to the text. -->
           <NameBox
-            class="band__title min-w-0 rounded-node"
+            class="section-heading__title min-w-0 rounded-node"
             :naming="naming"
-            :over="band.id"
+            :over="section.id"
             :stem="stem"
             :described-by="says ? objectsId : null"
           />
         </span>
 
-        <span class="band__deeds">
+        <span class="section-heading__deeds">
           <RemoveButton :label="`${words.remove}: ${stem}`" @press="emit('remove')" />
         </span>
       </span>
     </Divider>
 
-    <ErrorMessage v-if="says" :id="objectsId" class="band__objects" role="alert" :said="says" />
+    <ErrorMessage
+      v-if="says"
+      :id="objectsId"
+      class="section-heading__objects"
+      role="alert"
+      :said="says"
+    />
   </div>
 </template>
 
 <style scoped>
-.band {
+.section-heading {
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
@@ -99,7 +105,7 @@ const stem = computed(() => `${props.words.sectionStem} ${props.band.at}`)
 
 /* What a person reaches for is the name and what stands at its end, and it is
    as wide as the two of them come to. */
-.band__held {
+.section-heading__held {
   display: flex;
   align-items: center;
   min-inline-size: 0;
@@ -108,22 +114,22 @@ const stem = computed(() => `${props.words.sectionStem} ${props.band.at}`)
 /* The box is as wide as what is typed in it: the same text is set behind the
    input, unseen, and the box takes the width it comes to. Past twenty
    characters' room the text scrolls inside. */
-.band__name {
+.section-heading__name {
   display: inline-grid;
   flex: 0 1 auto;
   min-inline-size: 0;
   max-inline-size: 20rem;
 }
 
-.band__name::after,
-.band__title {
+.section-heading__name::after,
+.section-heading__title {
   grid-area: 1 / 1;
   font: inherit;
   font-weight: 500;
 }
 
 /* The cell behind the box is the box's own size, so the two hold the same air. */
-.band__name::after {
+.section-heading__name::after {
   content: attr(data-typed);
   padding: var(--card-row-pad-block, 0.125rem) var(--card-row-pad-inline, 0.375rem);
   visibility: hidden;
@@ -132,14 +138,14 @@ const stem = computed(() => `${props.words.sectionStem} ${props.band.at}`)
 
 /* The name is the heading of everything below it, and stands in the middle of
    the rule it is typed on. */
-.band__title {
+.section-heading__title {
   text-align: center;
 }
 
 /* What the section is pressed to be rid of is not drawn until its name is
    reached for, by the pointer or by the keyboard. Until then it takes no room
    at all, and the line runs unbroken up to the name. */
-.band__deeds {
+.section-heading__deeds {
   display: flex;
   flex: none;
   align-items: center;
@@ -150,21 +156,21 @@ const stem = computed(() => `${props.words.sectionStem} ${props.band.at}`)
   transition: opacity var(--numen-motion-hover) var(--numen-easing);
 }
 
-.band__held:hover .band__deeds,
-.band__held:focus-within .band__deeds {
+.section-heading__held:hover .section-heading__deeds,
+.section-heading__held:focus-within .section-heading__deeds {
   inline-size: auto;
   padding-inline-start: var(--numen-inset);
   opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .band__deeds {
+  .section-heading__deeds {
     transition: none;
   }
 }
 
 /* What is wrong stands under the rule it is wrong about. */
-.band__objects {
+.section-heading__objects {
   margin: 0;
   padding-inline: 0.375rem;
   overflow-wrap: anywhere;

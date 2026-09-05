@@ -484,23 +484,23 @@ export const ADeck: Story = {
 export const InSections: Story = {
   args: { corpus: 'a deck in sections' },
   play: async ({ canvasElement }) => {
-    const bands = [...canvasElement.querySelectorAll('[data-band]')]
-    expect(bands.map((band) => band.getAttribute('data-band'))).toEqual(['roots', 'leaves'])
+    const heads = [...canvasElement.querySelectorAll('[data-section-head]')]
+    expect(heads.map((head) => head.getAttribute('data-section-head'))).toEqual(['roots', 'leaves'])
 
     // A section holding no card keeps its heading, and stands as wide as the
     // grid under it.
-    const leaves = found(canvasElement, '[data-band="leaves"]')
+    const leaves = found(canvasElement, '[data-section-head="leaves"]')
     expect(canvasElement.querySelectorAll('[data-section="leaves"]')).toHaveLength(0)
     expect(leaves.getBoundingClientRect().width).toBeGreaterThan(240)
 
     // The heading is a rule with the name typed on it, and the way to be rid of
     // it at the end.
-    expect(found(canvasElement, '[data-band="roots"] .divider')).toBeTruthy()
-    expect(found(canvasElement, '[data-band="roots"] input').getAttribute('value')).toBe('Roots')
+    expect(found(canvasElement, '[data-section-head="roots"] .divider')).toBeTruthy()
+    expect(found(canvasElement, '[data-section-head="roots"] input').getAttribute('value')).toBe('Roots')
 
     // What a person reaches for is the name and the way to be rid of it. It is
     // as wide as the two of them, and the line either side is the rule's.
-    const held = found(canvasElement, '[data-band="roots"] .band__held')
+    const held = found(canvasElement, '[data-section-head="roots"] .section-heading__held')
     expect(held.getBoundingClientRect().width).toBeLessThan(
       leaves.getBoundingClientRect().width / 3,
     )
@@ -508,12 +508,12 @@ export const InSections: Story = {
     // The bin takes no room until the name is reached for, so the line runs
     // unbroken up to it. Once it is drawn it stands inside the rule, which
     // keeps nothing that hangs past it.
-    const deeds = found(canvasElement, '[data-band="roots"] .band__deeds')
+    const deeds = found(canvasElement, '[data-section-head="roots"] .section-heading__deeds')
     expect(deeds.getBoundingClientRect().width).toBe(0)
 
-    found(canvasElement, '[data-band="roots"] input').focus()
-    const drawn = found(canvasElement, '[data-band="roots"] .remove-button').getBoundingClientRect()
-    const rule = found(canvasElement, '[data-band="roots"] .divider__held').getBoundingClientRect()
+    found(canvasElement, '[data-section-head="roots"] input').focus()
+    const drawn = found(canvasElement, '[data-section-head="roots"] .remove-button').getBoundingClientRect()
+    const rule = found(canvasElement, '[data-section-head="roots"] .divider__held').getBoundingClientRect()
     expect(deeds.getBoundingClientRect().width).toBeGreaterThan(0)
     expect(drawn.right).toBeLessThanOrEqual(Math.ceil(rule.right))
     expect(drawn.left).toBeGreaterThanOrEqual(Math.floor(rule.left))
@@ -527,14 +527,14 @@ export const InSections: Story = {
 
     // A section made at the end, under a name nothing has taken.
     await userEvent.click(found(canvasElement, '[data-add-section]'))
-    const made = [...canvasElement.querySelectorAll('[data-band]')]
+    const made = [...canvasElement.querySelectorAll('[data-section-head]')]
     expect(made).toHaveLength(3)
     expect(made[2]?.querySelector('input')?.value).toBe('Section 1')
 
     // Taking a section away takes away its heading and nothing else: its cards
     // stand under the heading above them now.
-    await userEvent.click(found(canvasElement, '[data-band="roots"] .remove-button'))
-    expect(canvasElement.querySelectorAll('[data-band="roots"]')).toHaveLength(0)
+    await userEvent.click(found(canvasElement, '[data-section-head="roots"] .remove-button'))
+    expect(canvasElement.querySelectorAll('[data-section-head="roots"]')).toHaveLength(0)
     expect(canvasElement.querySelectorAll('[data-card]')).toHaveLength(3)
     expect(
       found(canvasElement, '[data-card="z3f1m6b4dt"]').getAttribute('data-section'),

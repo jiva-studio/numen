@@ -252,7 +252,7 @@ describe('grid', () => {
   })
 
   describe('the sections of a deck', () => {
-    const BANDS: readonly DeckSection[] = [
+    const SECTIONS: readonly DeckSection[] = [
       { id: 'roots', name: 'Roots' },
       { id: 'leaves', name: 'Leaves' },
     ]
@@ -263,25 +263,25 @@ describe('grid', () => {
     ]
 
     it('stands the cards before the first section in a run under no section', () => {
-      const runs = grid(SECTIONED, BANDS, CUTS, null).runs
-      expect(runs[0]?.band).toBeNull()
+      const runs = grid(SECTIONED, SECTIONS, CUTS, null).runs
+      expect(runs[0]?.section).toBeNull()
       expect(runs[0]?.tiles.map((tile) => tile.id)).toEqual(['loose'])
     })
 
     it('stands one run under each section, in the order the sections were handed in', () => {
-      const runs = grid(SECTIONED, BANDS, CUTS, null).runs
-      expect(runs.map((run) => run.band?.name ?? null)).toEqual([null, 'Roots', 'Leaves'])
-      expect(runs.map((run) => run.band?.at ?? null)).toEqual([null, 1, 2])
+      const runs = grid(SECTIONED, SECTIONS, CUTS, null).runs
+      expect(runs.map((run) => run.section?.name ?? null)).toEqual([null, 'Roots', 'Leaves'])
+      expect(runs.map((run) => run.section?.at ?? null)).toEqual([null, 1, 2])
     })
 
     it('keeps a section no card stands under, and draws it holding none', () => {
-      const runs = grid(SECTIONED, BANDS, CUTS, null).runs
-      expect(runs[2]?.band?.id).toBe('leaves')
+      const runs = grid(SECTIONED, SECTIONS, CUTS, null).runs
+      expect(runs[2]?.section?.id).toBe('leaves')
       expect(runs[2]?.tiles).toEqual([])
     })
 
     it('says of each tile which section it stands under', () => {
-      const runs = grid(SECTIONED, BANDS, CUTS, null).runs
+      const runs = grid(SECTIONED, SECTIONS, CUTS, null).runs
       expect(runs[1]?.tiles.map((tile) => [tile.id, tile.section])).toEqual([
         ['llama', 'roots'],
         ['yak', 'roots'],
@@ -289,14 +289,14 @@ describe('grid', () => {
     })
 
     it('counts a tile’s place over the whole deck, and not over its run', () => {
-      const runs = grid(SECTIONED, BANDS, CUTS, null).runs
+      const runs = grid(SECTIONED, SECTIONS, CUTS, null).runs
       expect(runs.flatMap((run) => run.tiles).map((tile) => tile.at)).toEqual([1, 3, 4])
     })
 
     // A card is made at the end of a run, so every run cards may be put in
     // carries a plus, and each stands where it is drawn among them all.
     it('counts each plus where it stands, and every tile against them all', () => {
-      const shown = grid(SECTIONED, BANDS, CUTS, null)
+      const shown = grid(SECTIONED, SECTIONS, CUTS, null)
       expect(shown.runs.map((run) => run.plusAt)).toEqual([2, 5, 6])
       expect(shown.of).toBe(6)
       expect(shown.runs.flatMap((run) => run.tiles).map((tile) => tile.of)).toEqual([6, 6, 6])
@@ -304,13 +304,13 @@ describe('grid', () => {
 
     it('stands no plus before the first section where no card stands there', () => {
       const under = SECTIONED.filter((card) => card.section !== null)
-      expect(grid(under, BANDS, CUTS, null).runs.map((run) => run.plusAt)).toEqual([null, 3, 4])
+      expect(grid(under, SECTIONS, CUTS, null).runs.map((run) => run.plusAt)).toEqual([null, 3, 4])
     })
 
     it('stands one run, holding every card, where the deck has no section', () => {
       const runs = grid(CARDS, [], CUTS, null).runs
       expect(runs).toHaveLength(1)
-      expect(runs[0]?.band).toBeNull()
+      expect(runs[0]?.section).toBeNull()
     })
   })
 })

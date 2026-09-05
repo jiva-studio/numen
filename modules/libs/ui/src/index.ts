@@ -248,7 +248,7 @@ export { default as Card } from './cards/Card.vue'
 export { default as Face } from './cards/Face.vue'
 export { default as CardProse } from './cards/CardProse.vue'
 /** The heading one section of a deck stands under. */
-export { default as Band } from './cards/Band.vue'
+export { default as SectionHeading } from './cards/SectionHeading.vue'
 /** The strip a tile is carried by. */
 export { default as CardHeader } from './cards/CardHeader.vue'
 /** A rule with something standing on it, in its middle or at its start. */

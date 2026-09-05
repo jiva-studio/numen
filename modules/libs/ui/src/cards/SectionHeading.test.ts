@@ -4,15 +4,15 @@
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
-import Band from './Band.vue'
-import type { Band as Section } from './deck'
+import SectionHeading from './SectionHeading.vue'
+import type { PlacedSection } from './deck'
 
-const BAND: Section = { id: 'roots', name: 'Roots', at: 1 }
+const SECTION: PlacedSection = { id: 'roots', name: 'Roots', at: 1 }
 
-const mountBand = (props: Record<string, unknown> = {}) =>
-  mount(Band, { attachTo: document.body, props: { band: BAND, ...props } })
+const mountHeading = (props: Record<string, unknown> = {}) =>
+  mount(SectionHeading, { attachTo: document.body, props: { section: SECTION, ...props } })
 
-type Held = ReturnType<typeof mountBand>
+type Held = ReturnType<typeof mountHeading>
 
 const boxIn = (held: Held) => held.get<HTMLInputElement>('input')
 
@@ -27,35 +27,35 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-describe('Band', () => {
+describe('SectionHeading', () => {
   it('draws the section on a rule, which is what divides one from the next', () => {
-    const held = mountBand()
+    const held = mountHeading()
     expect(held.get('.divider').find('input').exists()).toBe(true)
   })
 
   it('stands the name the section carries in the box', () => {
-    expect(boxIn(mountBand()).element.value).toBe('Roots')
+    expect(boxIn(mountHeading()).element.value).toBe('Roots')
   })
 
   it('announces the box by the place the section stands among them', () => {
-    expect(boxIn(mountBand()).attributes('aria-label')).toBe('Section 1')
+    expect(boxIn(mountHeading()).attributes('aria-label')).toBe('Section 1')
   })
 
   it('emits the name typed over it, committed', async () => {
-    const held = mountBand()
+    const held = mountHeading()
     await type(held, 'Leaves')
     await boxIn(held).trigger('change')
     expect(held.emitted('rename')).toEqual([['Leaves']])
   })
 
   it('renames nothing while the name is only being typed', async () => {
-    const held = mountBand()
+    const held = mountHeading()
     await type(held, 'Leaves')
     expect(held.emitted('rename')).toBeUndefined()
   })
 
   it('takes a name another section carries, two sections being free to share one', async () => {
-    const held = mountBand({ band: { id: 'shoots', name: 'Shoots', at: 2 } })
+    const held = mountHeading({ section: { id: 'shoots', name: 'Shoots', at: 2 } })
     await type(held, 'Roots')
     expect(held.find('[role="alert"]').exists()).toBe(false)
     await boxIn(held).trigger('change')
@@ -63,7 +63,7 @@ describe('Band', () => {
   })
 
   it('refuses a name with nothing in it, and says why to the box', async () => {
-    const held = mountBand()
+    const held = mountHeading()
     await type(held, '   ')
 
     const said = held.get('[role="alert"]')
@@ -76,7 +76,7 @@ describe('Band', () => {
   })
 
   it('abandons what was typed on escape, and keeps the name the section carries', async () => {
-    const held = mountBand()
+    const held = mountHeading()
     await type(held, 'Leaves')
     await boxIn(held).trigger('keydown', { key: 'Escape' })
     await boxIn(held).trigger('change')
@@ -84,7 +84,7 @@ describe('Band', () => {
   })
 
   it('emits the section asked to go, named to a reader', async () => {
-    const held = mountBand()
+    const held = mountHeading()
     const away = held.get('.remove-button')
     expect(away.attributes('aria-label')).toBe('Remove: Section 1')
     await away.trigger('click')
@@ -92,7 +92,7 @@ describe('Band', () => {
   })
 
   it('names the way to be rid of it by the place it stands, a bare heading and all', () => {
-    const held = mountBand({ band: { id: 'bare', name: '', at: 2 } })
+    const held = mountHeading({ section: { id: 'bare', name: '', at: 2 } })
     expect(held.get('.remove-button').attributes('aria-label')).toBe('Remove: Section 2')
   })
 })

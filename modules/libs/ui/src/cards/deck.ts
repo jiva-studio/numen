@@ -207,8 +207,8 @@ export interface Tile {
   readonly carried: boolean
 }
 
-/** One section as the grid draws it. */
-export interface Band extends DeckSection {
+/** One section as the grid draws it: the section, and where it stands. */
+export interface PlacedSection extends DeckSection {
   /** Where it stands among the sections, counting from one. */
   readonly at: number
 }
@@ -218,7 +218,7 @@ export interface Run {
   /** Where a card let go on the run itself lands, which is at the head of it. */
   readonly id: string
   /** The section they stand under, and nothing for the cards before the first. */
-  readonly band: Band | null
+  readonly section: PlacedSection | null
   readonly tiles: readonly Tile[]
   /**
    * It draws a landing of its own. A run under a section is landed on by that
@@ -256,7 +256,7 @@ export function grid(
   stencils: readonly Stencil[],
   carried: string | null,
 ): Grid {
-  const banded = new Set(sections.map((section) => section.id))
+  const sectioned = new Set(sections.map((section) => section.id))
   const tiles = cards.map((card) => {
     const cut = stencils.find((each) => each.name === card.stencil)
     const fields = declared(cut?.fields ?? [])
@@ -284,7 +284,7 @@ export function grid(
 
     return {
       id: card.id,
-      section: card.section !== null && banded.has(card.section) ? card.section : null,
+      section: card.section !== null && sectioned.has(card.section) ? card.section : null,
       stencil: card.stencil,
       filled: counted.map((each) => ({
         ...each,
@@ -302,10 +302,10 @@ export function grid(
 
   const head = tilesUnder(null)
   const drawn = [
-    { id: HEAD, band: null, tiles: head, landing: head.length === 0 && sections.length > 0 },
+    { id: HEAD, section: null, tiles: head, landing: head.length === 0 && sections.length > 0 },
     ...sections.map((section, index) => ({
       id: section.id,
-      band: { id: section.id, name: section.name, at: index + 1 },
+      section: { id: section.id, name: section.name, at: index + 1 },
       tiles: tilesUnder(section.id),
       landing: false,
     })),
@@ -317,7 +317,7 @@ export function grid(
   let seat = 0
   const runs: readonly Run[] = drawn.map((run) => {
     const laid = run.tiles.map((tile) => ({ ...tile, at: ++seat }))
-    const plus = run.band !== null || laid.length > 0 || drawn.length === 1
+    const plus = run.section !== null || laid.length > 0 || drawn.length === 1
     return { ...run, tiles: laid, plusAt: plus ? ++seat : null }
   })
   const of = seat
