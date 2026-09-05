@@ -2,6 +2,7 @@
  * The settings tab: one to a window, holding the installation itself.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
 import { settling, type Installation } from './kind'
 import { WORDS as words } from './words'
 import { SETTINGS } from '../workspace'
@@ -21,29 +22,27 @@ const window_ = () => {
 
 const installation = (): Installation =>
   ({
-    themes: () => [],
-    applied: () => 'preset/Numen.css',
-    mode: () => 'system',
-    pinned: () => false,
-    sizes: () => ({ interfaceScale: 1, textScale: 1 }),
-    bounds: () => ({
+    themes: ref([]),
+    applied: ref('preset/Numen.css'),
+    mode: ref('system'),
+    pinned: ref(false),
+    sizes: ref({ interfaceScale: 1, textScale: 1 }),
+    bounds: ref({
       interfaceScale: { least: 0.8, most: 2 },
       textScale: { least: 0.8, most: 1.75 },
     }),
     chooses: vi.fn(),
-    syncing: () => false,
-    choosesSyncing: vi.fn(),
-    hangs: () => false,
-    parts: () => 0,
-    choosesHanging: vi.fn(),
+    syncing: ref(false),
+    hangs: ref(false),
+    parts: ref(0),
     choosesParts: vi.fn(),
-    dayStarts: () => '04:00',
-    latestDayStarts: () => '12:00',
+    dayStarts: ref('04:00'),
+    latestDayStarts: ref('12:00'),
     choosesDayStarts: vi.fn(),
     setting: () => undefined,
     models: () => [],
     writes: vi.fn(),
-    file: () => '/vaults/Physics/.numen/settings.json',
+    file: ref('/vaults/Physics/.numen/settings.json'),
     opensFile: vi.fn(),
   }) satisfies Installation
 

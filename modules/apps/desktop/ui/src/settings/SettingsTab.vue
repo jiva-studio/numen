@@ -31,7 +31,7 @@ const props = defineProps<{ held: Held }>()
 const held = computed(() => props.held.installation)
 
 /** How large the interface may be drawn, and how large the text may be set. */
-const bounds = computed(() => held.value.bounds())
+const bounds = computed(() => held.value.bounds.value)
 
 /** The three halves of a colour pair, as the switch offers them. */
 const modes = [
@@ -42,7 +42,7 @@ const modes = [
 
 /** The themes, in the two shelves they come off. */
 const themes = computed<readonly SelectChoice[]>(() =>
-  [...held.value.themes()]
+  [...held.value.themes.value]
     .sort((one, other) => Number(other.shipped) - Number(one.shipped))
     .map((one) => ({
       id: one.name,
@@ -114,7 +114,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
       <!-- Where the settings stand, and the one way to the file itself. Every
            setting with a control is turned by its control. -->
       <div class="settings__where">
-        <p class="settings__file">{{ held.file() || words.file }}</p>
+        <p class="settings__file">{{ held.file.value || words.file }}</p>
         <Button variant="outline" size="small" @click="held.opensFile()">{{ words.opens }}</Button>
       </div>
 
@@ -129,7 +129,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           <span class="settings__value">
             <Select
               id="settings-theme"
-              :model-value="held.applied()"
+              :model-value="held.applied.value"
               :choices="themes"
               :name="words.theme"
               class="settings__choice"
@@ -142,14 +142,14 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           <span class="settings__said">
             <span class="settings__name" id="settings-mode">{{ words.mode }}</span>
             <span class="settings__detail">
-              {{ held.pinned() ? words.pinned : words.modeDetail }}
+              {{ held.pinned.value ? words.pinned : words.modeDetail }}
             </span>
           </span>
           <span class="settings__value">
             <Segmented
-              :model-value="held.mode()"
+              :model-value="held.mode.value"
               :choices="modes"
-              :disabled="held.pinned()"
+              :disabled="held.pinned.value"
               :aria-labelledby="'settings-mode'"
               @update:model-value="(one: string) => held.chooses(`${MODE}:${one as Mode}`)"
             />
@@ -163,7 +163,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           </span>
           <span class="settings__value">
             <NumberField
-              :model-value="held.sizes().interfaceScale"
+              :model-value="held.sizes.value.interfaceScale"
               :min="bounds.interfaceScale.least"
               :max="bounds.interfaceScale.most"
               :step="STEP"
@@ -184,7 +184,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           </span>
           <span class="settings__value">
             <NumberField
-              :model-value="held.sizes().textScale"
+              :model-value="held.sizes.value.textScale"
               :min="bounds.textScale.least"
               :max="bounds.textScale.most"
               :step="STEP"
@@ -203,11 +203,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
             <span class="settings__detail">{{ words.hangingDetail }}</span>
           </span>
           <span class="settings__value">
-            <Switch
-              :model-value="held.hangs()"
-              :aria-labelledby="'settings-hanging'"
-              @update:model-value="(on: boolean) => held.choosesHanging(on)"
-            />
+            <Switch v-model="held.hangs.value" :aria-labelledby="'settings-hanging'" />
           </span>
         </div>
 
@@ -218,7 +214,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           </span>
           <span class="settings__value">
             <NumberField
-              :model-value="held.parts()"
+              :model-value="held.parts.value"
               :min="1"
               :max="12"
               :step="1"
@@ -241,11 +237,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
             <span class="settings__detail">{{ words.syncingDetail }}</span>
           </span>
           <span class="settings__value">
-            <Switch
-              :model-value="held.syncing()"
-              :aria-labelledby="'settings-syncing'"
-              @update:model-value="(on: boolean) => held.choosesSyncing(on)"
-            />
+            <Switch v-model="held.syncing.value" :aria-labelledby="'settings-syncing'" />
           </span>
         </div>
       </section>
@@ -261,9 +253,9 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           <span class="settings__value">
             <TimeField
               id="settings-day-starts"
-              :model-value="held.dayStarts()"
+              :model-value="held.dayStarts.value"
               :min="EARLIEST"
-              :max="held.latestDayStarts()"
+              :max="held.latestDayStarts.value"
               class="settings__number"
               @settles="(hour: string) => held.choosesDayStarts(hour)"
             />

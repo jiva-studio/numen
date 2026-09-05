@@ -101,34 +101,32 @@ type Story = StoryObj
 /* The settings. ------------------------------------------------------------ */
 
 const INSTALLATION: Installation = {
-  themes: () => [
+  themes: ref([
     { name: 'preset:numen', title: 'numen', shipped: true, pinned: false },
     { name: 'preset:dracula', title: 'dracula', shipped: true, pinned: true },
     { name: 'preset:solarized', title: 'solarized', shipped: true, pinned: false },
     { name: 'mine:sea', title: 'sea', shipped: false, pinned: false },
-  ],
-  applied: () => 'preset:numen',
-  mode: () => 'system',
-  pinned: () => false,
-  sizes: () => ({ interfaceScale: 1, textScale: 1.25 }),
-  bounds: () => ({
+  ]),
+  applied: ref('preset:numen'),
+  mode: ref('system'),
+  pinned: ref(false),
+  sizes: ref({ interfaceScale: 1, textScale: 1.25 }),
+  bounds: ref({
     interfaceScale: { least: 0.8, most: 2 },
     textScale: { least: 0.8, most: 1.75 },
   }),
   chooses: () => {},
-  syncing: () => true,
-  choosesSyncing: () => {},
-  hangs: () => true,
-  parts: () => 6,
-  choosesHanging: () => {},
+  syncing: ref(true),
+  hangs: ref(true),
+  parts: ref(6),
   choosesParts: () => {},
-  dayStarts: () => '04:00',
-  latestDayStarts: () => '12:00',
+  dayStarts: ref('04:00'),
+  latestDayStarts: ref('12:00'),
   choosesDayStarts: () => {},
   setting: () => undefined,
   models: () => [],
   writes: () => {},
-  file: () => '/numen.json',
+  file: ref('/numen.json'),
   opensFile: () => {},
 }
 

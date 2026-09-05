@@ -5,6 +5,7 @@
  * write, and this is a second way to the same values. A row here and the
  * command of the same name in the palette go through one piece of code.
  */
+import type { Ref } from 'vue'
 import type { Model, Written } from '../core'
 import type { Host, Kind } from '../windowing'
 import { SETTINGS } from '../workspace'
@@ -15,28 +16,30 @@ import { WORDS as words } from './words'
 /** What this installation is configured as, as the window already holds it. */
 export interface Installation {
   /** Every theme there is, and the one the settings name. */
-  themes(): readonly Wearable[]
-  applied(): string
-  mode(): Mode
+  readonly themes: Readonly<Ref<readonly Wearable[]>>
+  readonly applied: Readonly<Ref<string>>
+  readonly mode: Readonly<Ref<Mode>>
   /** Whether the theme worn declares light and dark itself. */
-  pinned(): boolean
-  sizes(): Sizes
-  bounds(): Ranges
+  readonly pinned: Readonly<Ref<boolean>>
+  readonly sizes: Readonly<Ref<Sizes>>
+  readonly bounds: Readonly<Ref<Ranges>>
   /**
    * A value of one of the four appearance settings chosen, by the identity the
-   * palette offers it under.
+   * palette offers it under. The theme, the half of the pair and the two sizes
+   * are each named a different way, so none of the four is written by hand.
    */
   chooses(item: string): void
-  syncing(): boolean
-  choosesSyncing(on: boolean): void
-  hangs(): boolean
-  parts(): number
-  choosesHanging(on: boolean): void
+  /** The two switches, which are read and written as the one value. */
+  readonly syncing: Ref<boolean>
+  readonly hangs: Ref<boolean>
+  /** How many parts a day is hung in. A field offers no number as well. */
+  readonly parts: Readonly<Ref<number>>
   choosesParts(count: number): void
   /** The hour a day of review begins at, written as `04:00`. */
-  dayStarts(): string
+  readonly dayStarts: Readonly<Ref<string>>
   /** The latest hour the vault takes. One past it is refused. */
-  latestDayStarts(): string
+  readonly latestDayStarts: Readonly<Ref<string>>
+  /** Written once the field settles, not on every hour typed through. */
   choosesDayStarts(hour: string): void
   /**
    * The rest of the file: what stands at a setting, the models a setting that
@@ -46,7 +49,7 @@ export interface Installation {
   models(at: readonly string[]): readonly Model[]
   writes(written: readonly Written[]): void
   /** The file the settings stand in, absolute on this machine. */
-  file(): string
+  readonly file: Readonly<Ref<string>>
   /** That file opened whole, in a tab of its own. */
   opensFile(): void
 }

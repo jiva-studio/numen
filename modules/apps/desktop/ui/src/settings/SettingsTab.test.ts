@@ -8,7 +8,7 @@
  * Every value here is invented.
  */
 import { afterEach, describe, expect, it } from 'vitest'
-import { nextTick, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 
 import type { Model, Written } from '../core'
@@ -74,35 +74,39 @@ const configured = (pinned = false, file: Record<string, unknown> = {}) => {
     setting: (path) => at(file, path),
     models: (path) => MODELS.filter((one) => one.namedAt.join('.') === path.join('.')),
     writes: (said) => void written.push(...said),
-    file: () => '/numen.json',
+    file: ref('/numen.json'),
     opensFile: () => void done.push('opens the file'),
-    themes: () => [
+    themes: ref([
       { name: 'preset:numen', title: 'numen', shipped: true, pinned: false },
       { name: 'mine:sea', title: 'sea', shipped: false, pinned: false },
-    ],
-    applied: () => 'preset:numen',
-    mode: () => 'system',
-    pinned: () => pinned,
-    sizes: () => ({ interfaceScale: 1, textScale: 1 }),
-    bounds: () => ({
+    ]),
+    applied: ref('preset:numen'),
+    mode: ref('system'),
+    pinned: ref(pinned),
+    sizes: ref({ interfaceScale: 1, textScale: 1 }),
+    bounds: ref({
       interfaceScale: { least: 0.8, most: 2 },
       textScale: { least: 0.8, most: 1.75 },
     }),
     chooses: (item) => void done.push(`chooses ${item}`),
-    syncing: () => syncing.value,
-    choosesSyncing: (on) => {
-      syncing.value = on
-      done.push(`syncing ${on}`)
-    },
-    hangs: () => hangs.value,
-    parts: () => 6,
-    choosesHanging: (on) => {
-      hangs.value = on
-      done.push(`hanging ${on}`)
-    },
+    syncing: computed({
+      get: () => syncing.value,
+      set: (on) => {
+        syncing.value = on
+        done.push(`syncing ${on}`)
+      },
+    }),
+    hangs: computed({
+      get: () => hangs.value,
+      set: (on) => {
+        hangs.value = on
+        done.push(`hanging ${on}`)
+      },
+    }),
+    parts: ref(6),
     choosesParts: (count) => void done.push(`parts ${count}`),
-    dayStarts: () => '04:00',
-    latestDayStarts: () => '12:00',
+    dayStarts: ref('04:00'),
+    latestDayStarts: ref('12:00'),
     choosesDayStarts: (hour) => void done.push(`day starts ${hour}`),
   }
   const tab = mount(SettingsTab, {
