@@ -79,6 +79,8 @@ func topdir(path string) (string, error) {
 			return at, nil
 		}
 		var up syscall.Stat_t
+		// A parent nothing here can look at is as far as this goes: what it is
+		// on cannot be compared, so the folder below it is the root.
 		if err := syscall.Lstat(parent, &up); err != nil || up.Dev != folder.Dev {
 			return at, nil
 		}

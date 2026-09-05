@@ -106,7 +106,10 @@ func bounded(held Bounds) *v1.Bounds {
 	return &v1.Bounds{Least: held.Least, Most: held.Most}
 }
 
-// ReadTheme is one theme's file, as the file stands.
+// ReadTheme is one theme's file, as the file stands. A name this build ships
+// no file for and holds none under is no theme, and is answered with no CSS:
+// the page wears what it already has, and nobody is shown a failure they did
+// not ask for.
 func (s *Service) ReadTheme(
 	_ context.Context,
 	req *connect.Request[v1.ReadThemeRequest],
