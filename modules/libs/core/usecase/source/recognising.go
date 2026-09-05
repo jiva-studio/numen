@@ -345,12 +345,12 @@ func (r *RecognitionWorker) proofread(ctx context.Context, v domain.Vault, path 
 	id := proofreadingID(path)
 	r.say(task.Task{ID: id, Doing: "Proofreading a reading", About: path})
 
-	right := NewProofread(r.with.Readers, r.with.Derived, by)
+	right := NewProofreadReading(r.with.Readers, r.with.Derived, by)
 	right.Queue = queue
 	right.Pages = said.Batch
 	right.MaxEditDistance = said.MaxEditDistance
 	right.Cut = r.Cut
-	right.OnProgress = func(res ProofreadResult) {
+	right.OnProgress = func(res ProofreadReadingResult) {
 		r.say(task.Task{
 			ID:    id,
 			Doing: "Proofreading a reading",
@@ -485,7 +485,7 @@ func (r *RecognitionWorker) collect(
 			return
 		}
 		id := proofreadingID(one.Path)
-		res, err := Proofread{
+		res, err := ProofreadReading{
 			Readers:         r.with.Readers,
 			Derived:         r.with.Derived,
 			By:              by,
@@ -493,7 +493,7 @@ func (r *RecognitionWorker) collect(
 			Pages:           said.Batch,
 			MaxEditDistance: said.MaxEditDistance,
 			Cut:             r.Cut,
-			OnProgress: func(res ProofreadResult) {
+			OnProgress: func(res ProofreadReadingResult) {
 				r.says(task.Task{
 					ID: id, Doing: "Proofreading a reading", About: one.Path,
 					Count: int64(res.Read), Total: int64(res.Pages),

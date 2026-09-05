@@ -13,10 +13,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
-// proofreadCommand puts one document's reading right with a model.
-//
-// It reaches a service, so it runs where a person configured one. An
-// installation that named none is told so and nothing is sent anywhere.
+// proofreadCommand puts one file right with a model, by what the file is: a
+// recording's transcript, or a document's reading.
 func proofreadCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli proofread <vault> <file>")
@@ -28,6 +26,20 @@ func proofreadCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 	if domain.MediaType(args[1]) != "" {
 		return putRightCommand(ctx, out, cfg, v, args[1])
 	}
+	return proofreadReadingCommand(ctx, out, cfg, v, args[1])
+}
+
+// proofreadReadingCommand puts one document's reading right with a model.
+//
+// It reaches a service, so it runs where a person configured one. An
+// installation that named none is told so and nothing is sent anywhere.
+func proofreadReadingCommand(
+	ctx context.Context,
+	out io.Writer,
+	cfg container.Config,
+	v domain.Vault,
+	path string,
+) error {
 	named := cfg.ScanProofreading.Profile
 	by, err := cfg.Proofreader(named, proofread.ScanInstruction)
 	if err != nil {
@@ -54,12 +66,12 @@ func proofreadCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 		return err
 	}
 
-	fmt.Fprintf(out, "proofreading %s with %s\n", args[1], by.Name())
+	fmt.Fprintf(out, "proofreading %s with %s\n", path, by.Name())
 	started := time.Now()
 
 	// The line of pages rewrites itself, and is closed once it stops.
 	shown := false
-	proofread := source.NewProofread(cfg.VaultReaders(), cfg.DerivedStores(), by)
+	proofread := source.NewProofreadReading(cfg.VaultReaders(), cfg.DerivedStores(), by)
 	proofread.Queue = queue
 	proofread.Pages = cfg.Proofreading.Profiles[named].BatchSize
 	proofread.MaxEditDistance = cfg.Proofreading.Distance()
@@ -67,13 +79,13 @@ func proofreadCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 		_, err := cut.One(ctx, v, path)
 		return err
 	}
-	proofread.OnProgress = func(res source.ProofreadResult) {
+	proofread.OnProgress = func(res source.ProofreadReadingResult) {
 		if res.Pages > 0 {
 			fmt.Fprintf(out, "  page %d of %d\r", res.Read, res.Pages)
 			shown = true
 		}
 	}
-	res, err := proofread.Execute(ctx, v, args[1])
+	res, err := proofread.Execute(ctx, v, path)
 	if err != nil {
 		return err
 	}

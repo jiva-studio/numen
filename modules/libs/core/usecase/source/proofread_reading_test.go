@@ -60,15 +60,15 @@ func (c *corrector) Proofread(ctx context.Context, pages []proofread.Batch) (map
 }
 
 // proofreading is a reading of the fixture, already written down, and a
-// Proofread over it.
-func proofreading(t *testing.T, says map[int]string) (Proofread, domain.Vault, *shelf, *corrector) {
+// ProofreadReading over it.
+func proofreading(t *testing.T, says map[int]string) (ProofreadReading, domain.Vault, *shelf, *corrector) {
 	t.Helper()
 	read, v, _, shelved, _ := reading(t, "the words", "outline.pdf")
 	if _, err := read.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}
 	by := &corrector{says: says}
-	return Proofread{
+	return ProofreadReading{
 		Readers: read.Readers,
 		Derived: shelved,
 		By:      by,
@@ -86,13 +86,13 @@ func corrects(at int, text string) string { return fmt.Sprintf("%d|%s", at, text
 func TestNothingIsProofreadWhereNothingWasConfiguredToProofreadWith(t *testing.T) {
 	put, v, _, by := proofreading(t, nil)
 
-	if _, err := NewProofread(put.Readers, put.Derived, nil).
+	if _, err := NewProofreadReading(put.Readers, put.Derived, nil).
 		Execute(t.Context(), v, documentPath); !errors.Is(err, errNothingProofreads) {
 		t.Fatalf("a reading was proofread with no proofreader: %v", err)
 	}
 	// The control: the same reading, through the same constructor, with a
 	// proofreader.
-	if _, err := NewProofread(put.Readers, put.Derived, by).
+	if _, err := NewProofreadReading(put.Readers, put.Derived, by).
 		Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatalf("a reading with a proofreader was refused: %v", err)
 	}
@@ -501,7 +501,7 @@ func TestAReadingAtItsLastPageReportsNoProgress(t *testing.T) {
 
 	told := 0
 	put.By = &corrector{}
-	put.OnProgress = func(ProofreadResult) { told++ }
+	put.OnProgress = func(ProofreadReadingResult) { told++ }
 	res, err := put.Execute(t.Context(), v, documentPath)
 	if err != nil {
 		t.Fatal(err)

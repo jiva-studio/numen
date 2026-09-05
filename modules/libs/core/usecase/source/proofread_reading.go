@@ -21,13 +21,13 @@ import (
 // value the settings produce and not a caller's slip.
 var errNothingProofreads = errors.New("nothing to proofread with: none is configured")
 
-// Proofread puts a reading right, where a person configured something to
-// proofread it with.
+// ProofreadReading puts a document's reading right, where a person configured
+// something to proofread it with.
 //
 // What the recogniser produced stays on disk under its own name and the
 // corrections go beside it, so a proofreading that went wrong is a file that can
 // be deleted and a person can always ask what the machine read.
-type Proofread struct {
+type ProofreadReading struct {
 	Readers port.VaultReaders
 	Derived port.DerivedStores
 	By      port.Proofreader
@@ -53,24 +53,24 @@ type Proofread struct {
 	// stand on the text as it was read until the next scan.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
 
-	OnProgress func(ProofreadResult)
+	OnProgress func(ProofreadReadingResult)
 }
 
-// NewProofread is what a reading is put right through: the vault it is read out
-// of, the store the reading and its corrections are kept in, and the
+// NewProofreadReading is what a reading is put right through: the vault it is
+// read out of, the store the reading and its corrections are kept in, and the
 // proofreader that answers about a page.
 //
 // All three are named here because a proofreading short of any one of them has
 // nothing to correct, nothing to correct it with, or nowhere to put the
 // corrections, and the pages a person paid for are asked about again.
-func NewProofread(
+func NewProofreadReading(
 	readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader,
-) Proofread {
-	return Proofread{Readers: readers, Derived: derived, By: by}
+) ProofreadReading {
+	return ProofreadReading{Readers: readers, Derived: derived, By: by}
 }
 
-// ProofreadResult reports what proofreading did.
-type ProofreadResult struct {
+// ProofreadReadingResult reports what proofreading a reading did.
+type ProofreadReadingResult struct {
 	Path    string // the document being proofread
 	Pages   int    // how many pages the reading has
 	Read    int    // how many have been asked about, this run and before it
@@ -97,8 +97,8 @@ type checkpoint struct {
 }
 
 // Execute proofreads one document's reading.
-func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (ProofreadResult, error) {
-	res := ProofreadResult{Path: path}
+func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path string) (ProofreadReadingResult, error) {
+	res := ProofreadReadingResult{Path: path}
 	if u.By == nil {
 		return res, errNothingProofreads
 	}
@@ -201,7 +201,7 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 // lines are the printed lines of a reading, by the page they were read from. A
 // reading whose text or coordinates are not there is a reading nothing can be
 // asked about.
-func (u Proofread) lines(
+func (u ProofreadReading) lines(
 	ctx context.Context,
 	store port.DerivedStore,
 	area, hash string,
@@ -229,7 +229,7 @@ func (u Proofread) lines(
 //
 // A page nothing came back about and a page whose reply the gates refused are
 // the same outcome: the page is left as it was read.
-func (u Proofread) gathered(
+func (u ProofreadReading) gathered(
 	asked []proofread.Batch,
 	replies map[int]string,
 ) (put []fixes.Line, refused int) {
@@ -256,7 +256,7 @@ func (u Proofread) gathered(
 // A count stands after the corrections it claims, so what follows the last one
 // is a batch that did not land whole. Corrections another proofreader made are
 // not this one's, and the reading is taken up from the first page.
-func (u Proofread) taken(
+func (u ProofreadReading) taken(
 	ctx context.Context,
 	store port.DerivedStore,
 	corrections, far string,
@@ -281,7 +281,7 @@ func (u Proofread) taken(
 // await collects what the proofreader has answered about, and leaves the pages
 // after it. One run collects one batch and leaves one, so a book is put right
 // over as many runs as it has batches.
-func (u Proofread) await(
+func (u ProofreadReading) await(
 	ctx context.Context,
 	v domain.Vault,
 	store port.DerivedStore,
@@ -289,8 +289,8 @@ func (u Proofread) await(
 	pages []proofread.Batch,
 	stood checkpoint,
 	corrections, far string,
-	res ProofreadResult,
-) (ProofreadResult, error) {
+	res ProofreadReadingResult,
+) (ProofreadReadingResult, error) {
 	if stood.Batch != "" {
 		replies, ready, err := u.Queue.Collect(ctx, stood.Batch)
 		if err != nil {
@@ -387,7 +387,7 @@ func opening(pages []proofread.Batch, done int) (int, bool) {
 
 // counted writes down who put this reading right and how far they got. It
 // stands last and is what makes the batch before it count.
-func (u Proofread) counted(ctx context.Context, store port.DerivedStore, far string, stood checkpoint) error {
+func (u ProofreadReading) counted(ctx context.Context, store port.DerivedStore, far string, stood checkpoint) error {
 	stood.By = u.By.Name()
 	raw, err := json.MarshalIndent(stood, "", "  ")
 	if err != nil {
@@ -397,35 +397,35 @@ func (u Proofread) counted(ctx context.Context, store port.DerivedStore, far str
 }
 
 // cut makes this source's chunks from the reading as it now stands.
-func (u Proofread) cut(ctx context.Context, v domain.Vault, path string) error {
+func (u ProofreadReading) cut(ctx context.Context, v domain.Vault, path string) error {
 	if u.Cut == nil {
 		return nil
 	}
 	return u.Cut(ctx, v, path)
 }
 
-func (u Proofread) area() string {
+func (u ProofreadReading) area() string {
 	if u.Area == "" {
 		return "ocr"
 	}
 	return u.Area
 }
 
-func (u Proofread) batch() int {
+func (u ProofreadReading) batch() int {
 	if u.Pages <= 0 {
 		return DefaultPages
 	}
 	return u.Pages
 }
 
-func (u Proofread) distance() float64 {
+func (u ProofreadReading) distance() float64 {
 	if u.MaxEditDistance <= 0 {
 		return proofread.MaxEditDistance
 	}
 	return u.MaxEditDistance
 }
 
-func (u Proofread) progress(res ProofreadResult) {
+func (u ProofreadReading) progress(res ProofreadReadingResult) {
 	if u.OnProgress != nil {
 		u.OnProgress(res)
 	}
