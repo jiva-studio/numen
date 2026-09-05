@@ -93,7 +93,7 @@ func (u Create) Preset(ctx context.Context, v domain.Vault, in New) (CreateNoteR
 
 func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, in New) (CreateNoteResult, error) {
 	title := strings.TrimSpace(in.Title)
-	name, exact, err := domain.Filed(title)
+	name, exact, err := domain.Filename(title)
 	if err != nil {
 		return CreateNoteResult{}, err
 	}

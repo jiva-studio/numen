@@ -377,7 +377,7 @@ func rename(ctx context.Context, tx *sql.Tx, vault int64, from, to string) error
 	shown := title
 	if !named {
 		shown = name
-	} else if filed, _ := domain.Filename(title); domain.FoldName(filed) != domain.FoldName(name) {
+	} else if filed, _ := domain.ReducedFilename(title); domain.FoldName(filed) != domain.FoldName(name) {
 		return nil
 	}
 	if err := exec(ctx, tx, "rename_note", domain.FoldName(name), shown, vault, from); err != nil {
