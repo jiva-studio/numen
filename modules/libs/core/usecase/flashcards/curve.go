@@ -31,22 +31,6 @@ type ProjectCurve struct {
 	Cores int
 }
 
-// NewProjectCurve is what a preset's one control is projected through: what
-// stands in the vault, where the answers have left each card face, which preset
-// each deck is scheduled by, where one day of review gives way to the next, and
-// what time it is.
-//
-// All five are named here because a curve short of any one of them is drawn
-// over the wrong cards, and the person moves the control by it.
-func NewProjectCurve(
-	faces ListCardFaces, schedules Schedules, presets Presets,
-	day review.Day, now port.Clock,
-) ProjectCurve {
-	return ProjectCurve{
-		CardFaces: faces, Schedules: schedules, Presets: presets, Day: day, Now: now,
-	}
-}
-
 // steered is what is wrong with the value the goal moves, and is nil where the
 // value stands inside its bounds. A goal of a date names a day and no number.
 func steered(p review.Preset) error {
