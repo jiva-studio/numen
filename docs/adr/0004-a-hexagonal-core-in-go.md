@@ -106,7 +106,6 @@ modules/libs/core/
     cli/                   driving: arguments in, text out
     webui/                 driving: the handler a client asks
     mcp/                   driving: tools an agent calls
-    filesystem/            driven: a vault on disk
     index/                 driven: the cache, a folder per aggregate
       <aggregate>/         repository.go, queries.go, sql/*.sql
       migration/           numbered schema changes
@@ -115,6 +114,7 @@ modules/libs/core/
     flashcardsui/          driving: the handler the review window asks
   internal/
     adapter/               driving or driven: what nothing outside composes
+      filesystem/          driven: a vault on disk
     onnxruntime/           the runtime two driven adapters run models through
     ulid/  cardid/         identifiers, and the ones a card is known by
     wire/                  what two driving adapters both put on the wire

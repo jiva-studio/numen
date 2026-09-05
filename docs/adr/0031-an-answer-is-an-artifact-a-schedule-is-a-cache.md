@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-29
-- **Applies to:** the vault format, and `modules/libs/core` — `review`, `usecase/flashcards`
+- **Applies to:** the vault format, and `modules/libs/core` — `flashcards/review`, `usecase/flashcards`
 - **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [A vault carries its identity, and application state lives with the application](0003-a-vault-carries-its-identity.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [One process, one lifetime](0020-one-process-one-lifetime.md), [The stencil, the deck and the card](0027-the-stencil-and-the-deck.md), [Review is an application of its own](0030-review-is-an-application-of-its-own.md)
 
 ## Context

@@ -46,7 +46,7 @@ The review window is open on the installation rather than on any one vault — i
 
 Each service has a file of its own, and `shared.proto` holds what three or more of them use: `Refusal`, `NoteType`, `Fingerprint` and `Stretch`. It declares no service and imports nothing, and it is the base of the import graph.
 
-**A type enters `shared.proto` only when three services already use it.** Two services holding one type is a coincidence; three is a shape. Everything else stays in the file of the service that answers with it, and the service that wants it imports that file. `Note` and `Heading` are `NoteService`'s and `SearchService` imports them; `SourceKind` and `Moved` are `FileService`'s, and `NoteService` and `SearchService` import them.
+**A type enters `shared.proto` only when three services already use it.** Two services holding one type is a coincidence; three is a shape. Everything else stays in the file of the service that answers with it, and the service that wants it imports that file. `Note` and `Heading` are `NoteService`'s and `SearchService` imports them; `SourceKind` and `MoveResult` are `FileService`'s, and `NoteService` and `SearchService` import them.
 
 Under any looser rule the shared file admits whatever might be wanted twice and fills with types nothing in particular owns, and a type that arrives there early is one every service is written around afterwards.
 

@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/libs/core` — `usecase/note`, `adapter/filesystem`
+- **Applies to:** `modules/libs/core` — `usecase/note`, `internal/adapter/filesystem`
 - **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [What the index stores](0006-what-the-index-stores.md), [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [The note file](0018-the-note-file.md), [A note is identified by a ULID in its frontmatter](0019-a-note-is-identified-by-a-ulid.md), [One process, one lifetime](0020-one-process-one-lifetime.md), [An agent reaches the vault through tools](0021-an-agent-reaches-the-vault-through-tools.md)
 
 ## Context
