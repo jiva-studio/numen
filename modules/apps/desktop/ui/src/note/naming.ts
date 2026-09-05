@@ -63,15 +63,11 @@ export function naming(vault: Called, notes: Notes) {
    * A note is asked what it is called once what was typed into it has landed,
    * and again once it settles at another file.
    */
-  watch(
-    settled,
-    (now, before) => {
-      for (const one of now) {
-        if (!before?.some((was) => was.id === one.id && was.at === one.at)) void asks(one.id)
-      }
-    },
-    { deep: true },
-  )
+  watch(settled, (now, before) => {
+    for (const one of now) {
+      if (!before?.some((was) => was.id === one.id && was.at === one.at)) void asks(one.id)
+    }
+  })
 
   /** What one note is called, and the file it stands at while nothing has named it. */
   const called = (id: string): string => titles.value.get(id) ?? notes.where(id)
