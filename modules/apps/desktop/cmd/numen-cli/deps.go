@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/cli"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // deps is what the terminal works through, built for the places one run was
@@ -49,6 +50,26 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 				notes := cfg.Notes(
 					db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), cfg.Level(db))
 				return cli.Links{Show: notes.Links, Close: db.Close}, nil
+			},
+
+			Search: func(ctx context.Context, trouble port.Trouble) (cli.Search, error) {
+				db, err := cfg.OpenIndex(ctx)
+				if err != nil {
+					return cli.Search{}, err
+				}
+				// Only the provider that embeds questions is opened. Nothing a
+				// search does fills an index.
+				asking, closeAsking, why := cfg.Asking(ctx)
+				return cli.Search{
+					Search: cfg.Searching(db, asking, trouble),
+					Words:  why,
+					Close: func() error {
+						if closeAsking != nil {
+							_ = closeAsking()
+						}
+						return db.Close()
+					},
+				}, nil
 			},
 
 			Problems: func(ctx context.Context) (cli.Problems, error) {
