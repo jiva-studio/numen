@@ -13,7 +13,7 @@ import { ref } from 'vue'
 import RecordingTab from './RecordingTab.vue'
 import { transcribed } from './kind'
 import { transcript, type Cue, type Recordings } from './transcript'
-import type { Player, CanPlayType } from './playing'
+import type { MediaTypeProbe, Player } from './playing'
 import { WORDS as words } from './words'
 
 /** Two lines, said a minute and a half apart. */
@@ -60,7 +60,7 @@ const played = (): Player => {
   }
 }
 
-const holding = (cues: readonly Cue[], plays: CanPlayType = () => true) =>
+const holding = (cues: readonly Cue[], plays: MediaTypeProbe = () => true) =>
   transcribed(transcript(talk(cues), 'talks/Ants.mp3', { through: played(), plays }), {
     runs: () => {},
   })

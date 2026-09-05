@@ -85,22 +85,22 @@ export interface Kind<TabState> {
  * A kind as the window keeps it. What its tabs hold is the kind's own affair,
  * and the window hands it back to the kind untouched.
  */
-export type Kept = Kind<unknown>
+export type AnyKind = Kind<unknown>
 
 /** What one tab is: its kind, and what that kind gave it to hold. */
-export interface Open {
-  readonly kind: Kept
+export interface WindowTab {
+  readonly kind: AnyKind
   readonly held: unknown
 }
 
 /** One tab of a kind, as that kind is given it back. */
-export interface Tabbed<TabState> {
+export interface KindTab<TabState> {
   readonly id: string
   readonly held: TabState
 }
 
 /** The tab the person is looking at, whichever kind it turns out to be. */
-export interface Fronted {
+export interface ActiveTab {
   readonly id: string
   /** The word its kind is filed under, and nothing where the window holds no such tab. */
   readonly kind: string | null
@@ -122,14 +122,14 @@ export interface Host {
    * Every tab of a kind, in the order the person was last in them. The last of
    * them is the one in front.
    */
-  each<TabState>(kind: string): readonly Tabbed<TabState>[]
+  each<TabState>(kind: string): readonly KindTab<TabState>[]
   /** The tab of a kind the person was last in, and nothing where it holds none. */
-  last<TabState>(kind: string): Tabbed<TabState> | null
+  last<TabState>(kind: string): KindTab<TabState> | null
   /**
    * The tab showing in the pane the person is in, of whatever kind. A pane
    * holding nothing answers with nothing.
    */
-  front(): Fronted | null
+  front(): ActiveTab | null
   /** What one tab of a kind holds, and nothing where the tab is another kind. */
   holds<TabState>(kind: string, id: string): TabState | null
 }
@@ -154,13 +154,13 @@ export function windowing() {
   }
 
   /** The kinds of tab this window draws, each under the word it is asked for by. */
-  const byKind = new Map<string, Kept>()
+  const byKind = new Map<string, AnyKind>()
 
   /**
    * The kinds this window draws. It is told once, before a tab of any of them
    * is opened.
    */
-  const declares = (told: readonly Kept[]) => {
+  const declares = (told: readonly AnyKind[]) => {
     for (const one of told) byKind.set(one.kind, one)
   }
 
@@ -168,7 +168,7 @@ export function windowing() {
    * Every tab the window holds, each under the identity it opened with, in the
    * order the person was last in them.
    */
-  const open = shallowRef<ReadonlyMap<string, Open>>(new Map())
+  const open = shallowRef<ReadonlyMap<string, WindowTab>>(new Map())
 
   /**
    * What each open tab watches, kept apart so that letting go of the tab lets
@@ -198,7 +198,7 @@ export function windowing() {
   )
 
   /** What one tab holds, or nothing where the window holds no such tab. */
-  const heldIn = (id: string): Open | null => open.value.get(id) ?? null
+  const heldIn = (id: string): WindowTab | null => open.value.get(id) ?? null
 
   /**
    * What one tab of a kind holds, for a caller that knows the kind and what
@@ -214,7 +214,7 @@ export function windowing() {
    * layout is focused on. A tab the window holds answers under its kind, and
    * one it does not hold answers under none.
    */
-  const front = (): Fronted | null => {
+  const front = (): ActiveTab | null => {
     const id = paneById(layout.value.root, layout.value.focus)?.active
     if (!id) return null
     const one = open.value.get(id)
@@ -222,7 +222,7 @@ export function windowing() {
   }
 
   /** Every tab of a kind, the one the person was last in last. */
-  const each = <T,>(kind: string): readonly Tabbed<T>[] =>
+  const each = <T,>(kind: string): readonly KindTab<T>[] =>
     [...open.value]
       .filter(([, one]) => one.kind.kind === kind)
       .map(([id, one]) => ({ id, held: one.held as T }))

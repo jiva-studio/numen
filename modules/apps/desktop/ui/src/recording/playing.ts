@@ -139,9 +139,6 @@ export const player: Player = audio()
 /** What is asked whether a kind of sound can be played. */
 export type MediaTypeProbe = (type: string) => boolean
 
-/** Whether this window can play a recording of a media type. */
-export type CanPlayType = (type: string) => boolean
-
 /** What the window itself says about a kind of sound. */
 const itself: MediaTypeProbe = (type) => {
   try {
@@ -157,7 +154,7 @@ const itself: MediaTypeProbe = (type) => {
  * What this window can play. The answer is the window's own, and it is asked
  * once for each kind of sound however many recordings are open.
  */
-export function playable(answers: MediaTypeProbe = itself): CanPlayType {
+export function playable(answers: MediaTypeProbe = itself): MediaTypeProbe {
   const asked = new Map<string, boolean>()
   return (type) => {
     if (!type) return false

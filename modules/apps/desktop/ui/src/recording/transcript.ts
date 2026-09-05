@@ -9,7 +9,7 @@ import { clock } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
 import { asking as latest } from '../asking'
 import { cued, same, spanning, spoken } from './cueing'
-import { playable as canPlay, player, type Player, type CanPlayType } from './playing'
+import { playable as canPlay, player, type MediaTypeProbe, type Player } from './playing'
 import { WORDS } from './words'
 
 /** One stretch of speech: what was said, and the milliseconds it spans. */
@@ -20,7 +20,7 @@ export interface Cue {
 }
 
 /** The transcript of a recording, and whether it may be written over. */
-export interface Spoken {
+export interface Transcript {
   readonly cues: readonly Cue[]
   /** False while a run writing the transcript holds it. */
   readonly editable: boolean
@@ -33,7 +33,7 @@ export interface Spoken {
  * A recording nothing has listened to reaches nowhere, and the player it is
  * loaded into is what then says how long it runs.
  */
-export interface Listened {
+export interface RecordingSummary {
   readonly length: number
   readonly heard: number
   /** Where the recording is played from, as the application answers it. */
@@ -46,9 +46,9 @@ export interface Listened {
 /** Everything a recording tab asks of the application. */
 export interface Recordings {
   /** How long the recording runs, and how much of it has been written down. */
-  listened(path: string): Promise<Listened>
+  listened(path: string): Promise<RecordingSummary>
   /** The words heard in the recording, in the order they were spoken. */
-  cues(path: string): Promise<Spoken>
+  cues(path: string): Promise<Transcript>
   /** The words as a person has edited them, kept against the recording. */
   writes(path: string, cues: readonly Cue[]): Promise<void>
   /**
@@ -69,22 +69,22 @@ const holding = (cues: readonly Cue[], ms: number): number => {
   return -1
 }
 
-export type Transcript = ReturnType<typeof transcript>
+export type TranscriptState = ReturnType<typeof transcript>
 
 /** How long the words have to have been still before they are written. */
 export const QUIET = 800
 
 /** What the window hands one recording tab, beside the application and the path. */
-export interface Playing {
+export interface TranscriptOptions {
   /** The player the sound comes out of, which every recording of a window shares. */
   through?: Player
   /** How long the typing settles for before the words are written. */
   quiet?: number
   /** Whether this window can play a kind of sound. */
-  plays?: CanPlayType
+  plays?: MediaTypeProbe
 }
 
-export function transcript(recordings: Recordings, path: string, how: Playing = {}) {
+export function transcript(recordings: Recordings, path: string, how: TranscriptOptions = {}) {
   const through = how.through ?? player
   const quiet = how.quiet ?? QUIET
   const plays = how.plays ?? canPlay()

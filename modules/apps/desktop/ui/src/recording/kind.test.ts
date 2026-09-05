@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { recordingKind, type RecordingTabState } from './kind'
-import type { Transcript } from './transcript'
+import type { TranscriptState } from './transcript'
 import { putting } from '../putting'
 import { windowing } from '../windowing'
 
@@ -20,7 +20,7 @@ const kind = (held: RecordingTabState) => {
   const window = windowing()
   return recordingKind(
     window.host,
-    () => held as unknown as Transcript,
+    () => held as unknown as TranscriptState,
     { runs: () => {} },
     putting({ fileKinds: async () => new Map() }),
   ).kind

@@ -20,7 +20,7 @@ import {
   type NoteType,
   type Seat,
 } from '../core'
-import { windowing, type Kept } from '../windowing'
+import { windowing, type AnyKind } from '../windowing'
 import { PLEX } from '../workspace'
 
 /** A moment for whatever a gesture asked the vault for to come back. */
@@ -690,7 +690,7 @@ describe('a part of a node chosen', () => {
 })
 
 /** A note beside another: where it sits, and the note it comes through. */
-type Beside = readonly [path: string, seat: Seat, through?: string]
+type NeighbourRow = readonly [path: string, seat: Seat, through?: string]
 
 /** What a note is shown by, which a move of its file leaves alone. */
 const titleOf = (path: string) => (path.split('/').pop() ?? path).replace(/\.md$/, '')
@@ -703,7 +703,7 @@ const titleOf = (path: string) => (path.split('/').pop() ?? path).replace(/\.md$
  * another editor. A move renames its files and is told to the plex as a change
  * arriving tells it.
  */
-const inVault = async (focus: string, beside: readonly Beside[] = []) => {
+const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
   let around = beside.map(([path, seat, through]) => ({ path, seat, through: through ?? '' }))
   /** An answer the vault is holding back, and what lets it go. */
   let holding: Promise<void> | null = null
@@ -775,7 +775,7 @@ const inVault = async (focus: string, beside: readonly Beside[] = []) => {
     await view.go(view.here.value)
   }
   /** The person travels to another note, which is a picture of its own. */
-  const travels = async (path: string, ...now: readonly Beside[]) => {
+  const travels = async (path: string, ...now: readonly NeighbourRow[]) => {
     around = now.map(([at, seat, through]) => ({ path: at, seat, through: through ?? '' }))
     await view.go(path)
   }
@@ -1024,7 +1024,7 @@ describe('a plex that travelled', () => {
 })
 
 /** A kind that is not a plex, for the person to be in a tab of. */
-const other: Kept = {
+const other: AnyKind = {
   kind: 'other',
   opens: () => ({}),
   called: () => 'Other',

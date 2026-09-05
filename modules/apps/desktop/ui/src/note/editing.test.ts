@@ -20,13 +20,13 @@ const idle = {
 const marked = (body: string): string => `at:${body}`
 
 /** Everything a tab asks of the core, and the rest of what a window asks. */
-type Faked = Omit<Core, 'read' | 'write'> & Notes
+type FakeCore = Omit<Core, 'read' | 'write'> & Notes
 
 /** A core that answers reads and writes from what a test puts in it. */
-function fake(over: Partial<Faked> = {}) {
+function fake(over: Partial<FakeCore> = {}) {
   const files = new Map<string, string>()
   const wrote: { path: string; body: string }[] = []
-  const core: Faked = {
+  const core: FakeCore = {
     neighbourhood: async () => ({}) as never,
     headings: async () => new Map(),
     fileKinds: async () => new Map(),
@@ -320,7 +320,7 @@ describe('a note whose file is about to be renamed or removed', () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
     // A write slower than the interval armed by the keystroke before it.
-    const slow: Faked = {
+    const slow: FakeCore = {
       ...core,
       write: async (path, body, seen) => {
         await new Promise((wake) => setTimeout(wake, 20))

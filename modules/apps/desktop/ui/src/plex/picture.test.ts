@@ -5,9 +5,9 @@ import { ticketing } from './tickets'
 
 /** A note and what sits around it: seat, label, the note it comes through, and
  *  whether the other note names the relationship too. */
-type Related = [string, Seat, string, string, boolean?]
+type NeighbourRow = [string, Seat, string, string, boolean?]
 
-const around = (focus: string, related: Related[]): Neighbourhood => ({
+const around = (focus: string, related: NeighbourRow[]): Neighbourhood => ({
   focus: { path: focus, title: focus },
   focusType: 'note',
   related: related.map(([path, seat, label, through, mutual]) => ({

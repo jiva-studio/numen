@@ -6,7 +6,7 @@
  * recording it holds moves and asks for the words again.
  */
 import { computed } from 'vue'
-import type { Transcript } from './transcript'
+import type { TranscriptState } from './transcript'
 import type { Stretch, Task } from '../core'
 import type { FileOpeners } from '../putting'
 import type { Host, Kind } from '../windowing'
@@ -38,7 +38,7 @@ export type RecordingTabState = ReturnType<typeof transcribed>
  * are. None is offered while a run is going, or where this build cannot do it
  * at all.
  */
-export function transcribed(read: Transcript, asks: RecordingTabDeps) {
+export function transcribed(read: TranscriptState, asks: RecordingTabDeps) {
   /** Whether this build can do a run. A window that says nothing offers every run. */
   const canRun = (run: string): boolean => asks.canRun?.(run) ?? true
 
@@ -71,7 +71,7 @@ export function transcribed(read: Transcript, asks: RecordingTabDeps) {
  */
 export function recordingKind(
   host: Host,
-  opens: (path: string) => Transcript,
+  opens: (path: string) => TranscriptState,
   asks: RecordingTabDeps,
   puts: FileOpeners,
 ) {

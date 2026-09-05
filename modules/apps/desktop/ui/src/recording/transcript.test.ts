@@ -7,7 +7,13 @@
  */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
-import { transcript, type Cue, type Listened, type Recordings, type Spoken } from './transcript'
+import {
+  transcript,
+  type Cue,
+  type Recordings,
+  type RecordingSummary,
+  type Transcript,
+} from './transcript'
 import { playable, type Player } from './playing'
 import { WORDS } from './words'
 
@@ -17,7 +23,7 @@ const CUES: readonly Cue[] = [
   { text: 'The third thing said.', from: 5_000, to: 9_000 },
 ]
 
-const LISTENED: Listened = {
+const SUMMARY: RecordingSummary = {
   length: 9_000,
   heard: 9_000,
   media: 'http://127.0.0.1:1/files/w/v/talk.mp3',
@@ -30,7 +36,7 @@ const LISTENED: Listened = {
  */
 function talk(
   cues: readonly Cue[] | Error = CUES,
-  said: Listened | Error = LISTENED,
+  said: RecordingSummary | Error = SUMMARY,
   at: number | null = null,
 ) {
   /** Every address asked of it, in the order they were asked. */
@@ -96,7 +102,7 @@ function played() {
 
   /** The recording plays on: the player moves of itself. */
   const moves = (ms: number) => {
-    address.value = LISTENED.media
+    address.value = SUMMARY.media
     at.value = ms
   }
 
@@ -117,7 +123,7 @@ describe('a recording opened', () => {
 
     await settled()
 
-    expect(heard.address.value).toBe(LISTENED.media)
+    expect(heard.address.value).toBe(SUMMARY.media)
   })
 
   it('asks what it is and what was heard in it, once each', async () => {
@@ -152,7 +158,7 @@ describe('a build that cannot read a transcript', () => {
     await settled()
 
     expect(heard.trouble.value).toContain('numen did not answer')
-    expect(heard.address.value).toBe(LISTENED.media)
+    expect(heard.address.value).toBe(SUMMARY.media)
   })
 })
 
@@ -253,7 +259,7 @@ describe('the one player the window has', () => {
 
     heard.play()
 
-    expect(player.address.value).toBe(LISTENED.media)
+    expect(player.address.value).toBe(SUMMARY.media)
     expect(heard.playing.value).toBe(true)
   })
 
@@ -284,7 +290,7 @@ describe('the one player the window has', () => {
 
 describe('a recording opened at a place in its words', () => {
   it('plays from the moment the first stretch was spoken at', async () => {
-    const { recordings, asked } = talk(CUES, LISTENED, 2_500)
+    const { recordings, asked } = talk(CUES, SUMMARY, 2_500)
     const { player, sought } = played()
     const heard = transcript(recordings, 'talks/Ants.mp3', { through: player })
 
@@ -296,7 +302,7 @@ describe('a recording opened at a place in its words', () => {
   })
 
   it('stands where it stands when no cue holds the stretch', async () => {
-    const { recordings } = talk(CUES, LISTENED, null)
+    const { recordings } = talk(CUES, SUMMARY, null)
     const { player, sought } = played()
     const heard = transcript(recordings, 'talks/Ants.mp3', { through: player })
 
@@ -354,12 +360,12 @@ describe('two questions about the words in flight at once', () => {
    */
   const slow = () => {
     let asks = 0
-    let letGo: (spoken: Spoken) => void = () => {}
-    const held = new Promise<Spoken>((done) => {
+    let letGo: (spoken: Transcript) => void = () => {}
+    const held = new Promise<Transcript>((done) => {
       letGo = done
     })
     const recordings: Recordings = {
-      listened: async () => (++asks > 1 ? new Promise<Listened>(() => {}) : LISTENED),
+      listened: async () => (++asks > 1 ? new Promise<RecordingSummary>(() => {}) : SUMMARY),
       cues: async () => held,
       writes: async () => {},
       plays: async () => null,
@@ -436,7 +442,7 @@ describe('a recording tab that closes', () => {
     const again = transcript(recordings, 'talks/Ants.mp3', { through: player })
     await settled()
 
-    expect(player.address.value).toBe(LISTENED.media)
+    expect(player.address.value).toBe(SUMMARY.media)
     expect(again.now.value).toBe(6_200)
   })
 })
@@ -449,7 +455,7 @@ describe('a recording tab as it opens', () => {
     const heard = transcript(recordings, 'talks/Ants.mp3', { through: player })
     await settled()
 
-    expect(player.address.value).toBe(LISTENED.media)
+    expect(player.address.value).toBe(SUMMARY.media)
     expect(player.playing.value).toBe(false)
     expect(heard.playing.value).toBe(false)
   })
@@ -477,7 +483,7 @@ describe('how long the recording runs, as the controls read it', () => {
   })
 
   it('is what the recording itself says, where nothing has listened to it', async () => {
-    const { recordings } = talk([], { ...LISTENED, length: 0, heard: 0 })
+    const { recordings } = talk([], { ...SUMMARY, length: 0, heard: 0 })
     const { player, length } = played()
     const heard = transcript(recordings, 'talks/Ants.mp3', { through: player })
     await settled()
@@ -529,12 +535,12 @@ describe('what this window can play', () => {
 describe('a transcript asked for twice at once', () => {
   it('keeps the answer to the later asking, however they arrive', async () => {
     // The earlier asking is answered with fewer words, and answered last.
-    const early: Spoken = { cues: [CUES[0]!], editable: true }
-    const answers: ((said: Spoken) => void)[] = []
+    const early: Transcript = { cues: [CUES[0]!], editable: true }
+    const answers: ((said: Transcript) => void)[] = []
 
     const recordings: Recordings = {
-      listened: async () => LISTENED,
-      cues: () => new Promise<Spoken>((done) => void answers.push(done)),
+      listened: async () => SUMMARY,
+      cues: () => new Promise<Transcript>((done) => void answers.push(done)),
       writes: async () => {},
       plays: async () => null,
     }
@@ -561,7 +567,7 @@ describe('a player that could not load the recording', () => {
     const heard = transcript(recordings, 'talks/Ants.mp3', { through: player })
     await settled()
 
-    address.value = LISTENED.media
+    address.value = SUMMARY.media
     failed.value = 'the recording could not be read from the vault'
 
     expect(heard.broken.value).toContain('read from the vault')
@@ -790,7 +796,7 @@ describe('the words as a person edits them', () => {
 describe('a transcript a run still holds', () => {
   it('is not edited', async () => {
     const recordings: Recordings = {
-      listened: async () => LISTENED,
+      listened: async () => SUMMARY,
       cues: async () => ({ cues: CUES, editable: false }),
       writes: async () => {},
       plays: async () => null,

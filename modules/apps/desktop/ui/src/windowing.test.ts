@@ -7,17 +7,17 @@
 import { describe, expect, it } from 'vitest'
 import { panesOf } from '@numen/ui'
 import type { WorkspaceLayout } from '@numen/ui'
-import { windowing, type Host, type Kept } from './windowing'
+import { windowing, type AnyKind, type Host } from './windowing'
 
 /**
  * A kind that records what it was asked to do, under the names it opened on. A
  * kind that keeps its tabs has something to finish and never lets one go.
  */
-const kind = ({ keeps = false, ...over }: Partial<Kept> & { keeps?: boolean } = {}) => {
+const kind = ({ keeps = false, ...over }: Partial<AnyKind> & { keeps?: boolean } = {}) => {
   const opened: string[] = []
   const shut: string[] = []
   const seen: string[] = []
-  const one: Kept = {
+  const one: AnyKind = {
     kind: 'thing',
     opens: (at: string) => {
       opened.push(at)
@@ -38,7 +38,7 @@ const kind = ({ keeps = false, ...over }: Partial<Kept> & { keeps?: boolean } = 
 }
 
 /** A window told what kinds it draws, each of them made with what it is given. */
-const told = (declared: readonly ((host: Host) => Kept)[]) => {
+const told = (declared: readonly ((host: Host) => AnyKind)[]) => {
   const window = windowing()
   window.declares(declared.map((one) => one(window.host)))
   return window
