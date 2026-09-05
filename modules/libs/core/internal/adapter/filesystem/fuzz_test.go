@@ -8,9 +8,10 @@ import (
 )
 
 // vault is a root the rules can be asked about: a folder of notes, the
-// application's own folder, a link that stays inside, and a link that leaves.
-// The links are what makes the question more than a question about text — a
-// path that reads as the vault's still lands wherever the filesystem takes it.
+// application's own folder, a link that stays inside, a link that leaves, and a
+// link into the application's own folder. The links are what makes the question
+// more than a question about text — a path that reads as the vault's still
+// lands wherever the filesystem takes it.
 func vault(tb testing.TB) string {
 	tb.Helper()
 	root := tb.TempDir()
@@ -32,6 +33,7 @@ func vault(tb testing.TB) string {
 		{filepath.Join(real, "notes"), filepath.Join(real, "inward")},
 		{away, filepath.Join(real, "outward")},
 		{away, filepath.Join(real, "notes", "outward")},
+		{filepath.Join(real, DefaultServiceDir), filepath.Join(real, "held")},
 	} {
 		if err := os.Symlink(link[0], link[1]); err != nil {
 			tb.Fatal(err)
@@ -56,6 +58,10 @@ func FuzzInside(f *testing.F) {
 	for _, path := range []string{
 		"inward/Entropy.md",
 		"outward/Entropy.md",
+		"held",
+		"held/ocr/abc.txt",
+		"held/../notes/Entropy.md",
+		"HELD/config.json",
 		"notes/outward/../../../etc/passwd",
 		"notes/./../.numen/ocr/a.txt",
 		".numen\\config.json",
@@ -73,8 +79,8 @@ func FuzzInside(f *testing.F) {
 			t.Fatalf("%q is both the vault's (%s) and the application's (%s)",
 				path, asVault, asOurs)
 		}
-		held(t, root, path, "within", asVault, vaultReal, vaultErr)
-		held(t, root, path, "service", asOurs, oursReal, oursErr)
+		held(t, root, path, "within", false, asVault, vaultReal, vaultErr)
+		held(t, root, path, "service", true, asOurs, oursReal, oursErr)
 
 		// A path that could not name anything inside a vault is refused before
 		// the filesystem is asked anything at all.
@@ -98,7 +104,12 @@ func FuzzInside(f *testing.F) {
 // held fails unless a rule that answered handed back a path under the root,
 // both where it lands and where it lands with every link resolved, and unless a
 // rule that refused handed back nothing at all.
-func held(t *testing.T, root, path, rule, target, real string, err error) {
+//
+// Where the path resolves to is what says which of the two rules was entitled
+// to answer. A link is a second spelling for a place, and it is the place the
+// two divide between them, so a path spelled as the vault's that lands in the
+// application's folder is the application's and within may not take it.
+func held(t *testing.T, root, path, rule string, application bool, target, real string, err error) {
 	t.Helper()
 	if err != nil {
 		if target != "" || real != "" {
@@ -110,5 +121,12 @@ func held(t *testing.T, root, path, rule, target, real string, err error) {
 		if !under(got, root) {
 			t.Fatalf("%s took %q, which %s %q, outside %q", rule, path, what, got, root)
 		}
+	}
+	if got := ours(landing(real, root), DefaultServiceDir); got != application {
+		where := "outside the application's folder"
+		if got {
+			where = "into the application's folder"
+		}
+		t.Fatalf("%s took %q, which resolves %s: %q", rule, path, where, real)
 	}
 }

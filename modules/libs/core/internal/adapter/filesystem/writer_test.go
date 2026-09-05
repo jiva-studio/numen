@@ -334,10 +334,14 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 	for _, at := range []struct {
 		name  string
 		makes string
+		// sentinel is what the refusal carries, where the refusal is the
+		// vault's answer about what it holds. A link into the application's
+		// own folder is refused before that question is reached.
+		sentinel error
 	}{
-		{"the service folder", ".numen/vault.yml"},
-		{"another tool's folder", ".obsidian/workspace.json"},
-		{"a file that is not a note", "attachments/paper.pdf"},
+		{"the service folder", ".numen/vault.yml", nil},
+		{"another tool's folder", ".obsidian/workspace.json", port.ErrNotANote},
+		{"a file that is not a note", "attachments/paper.pdf", port.ErrNotANote},
 	} {
 		t.Run(at.name, func(t *testing.T) {
 			root := t.TempDir()
@@ -357,8 +361,11 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 				t.Fatal(err)
 			}
 			_, err = w.Write(t.Context(), "Note.md", []byte("# Mine\n"), domain.Fingerprint{})
-			if !errors.Is(err, port.ErrNotANote) {
-				t.Errorf("writing through the link gave %v, want ErrNotANote", err)
+			switch {
+			case err == nil:
+				t.Errorf("writing through the link was allowed")
+			case at.sentinel != nil && !errors.Is(err, at.sentinel):
+				t.Errorf("writing through the link gave %v, want %v", err, at.sentinel)
 			}
 			raw, readErr := os.ReadFile(held)
 			if readErr != nil {
@@ -447,6 +454,58 @@ func TestAFolderMovesBesideOneWhoseNameItBegins(t *testing.T) {
 		t.Errorf("the folder did not arrive: %v", err)
 	}
 }
+
+// A link inside the vault is a second name for the folder it points at, and a
+// link pointing at the application's own folder is a second name for that. Not
+// one of the writer's doors opens through it: a sync tool or an unpacked
+// archive can leave such a link, and a note written through it would land on
+// the application's own state.
+func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
+	w, root := writing(t)
+	ctx := t.Context()
+
+	held := filepath.Join(root, filesystem.DefaultServiceDir, "ocr")
+	if err := os.MkdirAll(held, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	kept := filepath.Join(held, "abc.txt")
+	if err := os.WriteFile(kept, []byte("what was recognised\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// The link is written the way a sync tool writes one, relative to the
+	// folder it stands in.
+	if err := os.Symlink(filesystem.DefaultServiceDir, filepath.Join(root, "link")); err != nil {
+		t.Fatal(err)
+	}
+
+	refused := map[string]error{
+		"write":  errorOf(w.Write(ctx, "link/ocr/note.md", []byte("# Mine\n"), domain.Fingerprint{})),
+		"create": w.Create(ctx, "link/ocr/note.md", []byte("# Mine\n")),
+		"bring":  w.Bring(ctx, "link/ocr/brought.txt", strings.NewReader("brought\n")),
+		"folder": w.MakeFolder(ctx, "link/sneak"),
+		"remove": w.Remove(ctx, "link/ocr/abc.txt"),
+		"move":   w.Move(ctx, "link/ocr/abc.txt", "Stolen.md"),
+	}
+	for what, err := range refused {
+		if err == nil {
+			t.Errorf("%s through the link was allowed", what)
+		}
+	}
+
+	body, err := os.ReadFile(kept)
+	if err != nil {
+		t.Fatalf("the derived file did not survive: %v", err)
+	}
+	if string(body) != "what was recognised\n" {
+		t.Errorf("the derived file holds %q", body)
+	}
+	if entries, err := os.ReadDir(held); err != nil || len(entries) != 1 {
+		t.Errorf("the application's folder holds %v, %v", entries, err)
+	}
+}
+
+// errorOf is a write's error, where only that is being asked about.
+func errorOf(_ domain.Fingerprint, err error) error { return err }
 
 // A vault may be reached through a link: a home folder on another disk, a
 // synced folder, a temporary folder on a machine that keeps them elsewhere.

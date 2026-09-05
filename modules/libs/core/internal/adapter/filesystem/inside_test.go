@@ -61,6 +61,37 @@ func TestOneOfTheTwoRulesAnswers(t *testing.T) {
 	}
 }
 
+// A link is a second spelling for a place, and the rules are asked about the
+// place. One pointing at the application's folder is the application's however
+// it is spelled; one pointing at a folder of notes is still the vault's, which
+// is the arrangement a person makes on purpose and which nothing here narrows.
+func TestALinkIsJudgedByWhereItLeads(t *testing.T) {
+	root := vault(t)
+
+	tests := []struct {
+		name  string
+		path  string
+		vault bool
+		ours  bool
+	}{
+		{name: "a link to notes", path: "inward/Entropy.md", vault: true},
+		{name: "into the application's folder", path: "held/ocr/abc.txt"},
+		{name: "the link to it", path: "held"},
+		{name: "the application's folder itself", path: ".numen/ocr/abc.txt", ours: true},
+		{name: "out of the vault", path: "outward/Entropy.md"},
+	}
+	for _, c := range tests {
+		t.Run(c.name, func(t *testing.T) {
+			if _, _, err := within(root, c.path, DefaultServiceDir); (err == nil) != c.vault {
+				t.Errorf("within(%q) gave %v, want accepted=%v", c.path, err, c.vault)
+			}
+			if _, _, err := service(root, c.path, DefaultServiceDir); (err == nil) != c.ours {
+				t.Errorf("service(%q) gave %v, want accepted=%v", c.path, err, c.ours)
+			}
+		})
+	}
+}
+
 // On Windows a name kept for a device and a path relative to a drive name
 // nothing a vault holds. On the other systems they are ordinary names.
 func TestAWindowsDeviceNameIsNotAPathInTheVault(t *testing.T) {

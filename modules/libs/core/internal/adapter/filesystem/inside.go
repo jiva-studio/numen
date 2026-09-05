@@ -39,7 +39,12 @@ func followed(root, path, serviceDir string) (string, error) {
 }
 
 // within is the vault as the person's: a path that stays inside it, and that is
-// not in the folder belonging to the application.
+// not in the folder belonging to the application — neither as it is spelled nor
+// where it lands.
+//
+// A link is a second spelling for a place, so the folder is asked about both.
+// `link/ocr/abc.txt`, where `link` is a link to the service folder, reads as the
+// vault's and is the application's, and it is the second that decides.
 func within(root, path, serviceDir string) (target, real string, err error) {
 	clean, err := cleaned(path)
 	if err != nil {
@@ -48,15 +53,24 @@ func within(root, path, serviceDir string) (target, real string, err error) {
 	if ours(clean, serviceDir) {
 		return "", "", fmt.Errorf("%s belongs to the application, not to the vault", path)
 	}
-	return contained(root, clean)
+	target, real, landed, err := contained(root, clean)
+	if err != nil {
+		return "", "", err
+	}
+	if ours(landed, serviceDir) {
+		return "", "", fmt.Errorf("%s belongs to the application, not to the vault", path)
+	}
+	return target, real, nil
 }
 
-// service is the exact complement of within: a path that stays inside the
-// vault, and that is in the folder belonging to the application.
+// service is the complement of within: a path that stays inside the vault, and
+// that is in the folder belonging to the application by both of the same
+// measures.
 //
-// The two together cover the vault once and overlap nowhere, which is what lets
-// one type write a derived file where no writer of notes can reach, without
-// making any note's refusal weaker. That property is the subject of a test.
+// The two overlap nowhere, which is what lets one type write a derived file
+// where no writer of notes can reach, without making any note's refusal weaker.
+// That property is the subject of a test. A path whose spelling and whose
+// landing disagree is neither's, and both refuse it.
 func service(root, path, serviceDir string) (target, real string, err error) {
 	clean, err := cleaned(path)
 	if err != nil {
@@ -65,7 +79,14 @@ func service(root, path, serviceDir string) (target, real string, err error) {
 	if !ours(clean, serviceDir) {
 		return "", "", fmt.Errorf("%s: %w", path, ErrOutside)
 	}
-	return contained(root, clean)
+	target, real, landed, err := contained(root, clean)
+	if err != nil {
+		return "", "", err
+	}
+	if !ours(landed, serviceDir) {
+		return "", "", fmt.Errorf("%s: %w", path, ErrOutside)
+	}
+	return target, real, nil
 }
 
 // ours says whether a path is in the folder the application keeps for itself.
@@ -100,9 +121,10 @@ func cleaned(path string) (string, error) {
 }
 
 // contained is the containment rule and nothing else: where a cleaned path
-// lands on this machine, and where it lands once every link on the way to it is
-// resolved, both of them under the root or neither of them anything.
-func contained(root, clean string) (target, real string, err error) {
+// lands on this machine, where it lands once every link on the way to it is
+// resolved, and that landing named from the root, all three of them under the
+// root or none of them anything.
+func contained(root, clean string) (target, real, landed string, err error) {
 	target = filepath.Join(root, filepath.FromSlash(clean))
 
 	// A folder inside the vault may be a link to somewhere else — a synced
@@ -111,16 +133,25 @@ func contained(root, clean string) (target, real string, err error) {
 	// asked about the deepest part of the path that exists.
 	real, err = deepest(target)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	root, err = filepath.EvalSymlinks(root)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	if !under(real, root) {
-		return "", "", fmt.Errorf("%s: %w", clean, ErrOutside)
+		return "", "", "", fmt.Errorf("%s: %w", clean, ErrOutside)
 	}
-	return target, real, nil
+	return target, real, landing(real, root), nil
+}
+
+// landing is a resolved path as a name under the root, in the form the rules
+// are written against. The root itself lands nowhere and is named by nothing.
+func landing(real, root string) string {
+	if len(real) <= len(root) {
+		return ""
+	}
+	return filepath.ToSlash(real[len(root)+1:])
 }
 
 // under says whether a resolved path is a root or lies inside it.
