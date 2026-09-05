@@ -96,7 +96,7 @@ func vaultList(out io.Writer, cfg container.Config) error {
 	if err != nil {
 		return err
 	}
-	missing := vault.FolderMissing{Readers: cfg.VaultReaders()}
+	missing := vault.NewFolderMissing(cfg.VaultReaders())
 	for _, v := range known {
 		last := " "
 		if recorded && v.ID == recent.ID {
@@ -132,7 +132,7 @@ func vaultRename(ctx context.Context, out io.Writer, cfg container.Config, args 
 	}
 	defer db.Close()
 
-	renamed, err := vault.Rename{Registry: registry, Index: db.Vaults()}.Execute(ctx, v, args[1])
+	renamed, err := vault.NewRename(registry, db.Vaults()).Execute(ctx, v, args[1])
 	if err != nil {
 		return err
 	}
@@ -158,7 +158,7 @@ func vaultForget(ctx context.Context, out io.Writer, cfg container.Config, args 
 	}
 	defer db.Close()
 
-	forget := vault.Forget{Registry: registry, Index: db.Vaults()}
+	forget := vault.NewForget(registry, db.Vaults())
 	if err := forget.Execute(ctx, v); err != nil {
 		return err
 	}
@@ -198,15 +198,14 @@ func vaultErase(ctx context.Context, out io.Writer, cfg container.Config, args [
 
 	// What will be said is worked out while the folder is still there.
 	went := fmt.Sprintf("%s went to the trash this machine keeps", v.Path)
-	if (vault.FolderMissing{Readers: cfg.VaultReaders()}).Execute(v) {
+	if vault.NewFolderMissing(cfg.VaultReaders()).Execute(v) {
 		went = fmt.Sprintf("nothing was at %s", v.Path)
 	}
 
-	err = vault.Erase{
-		Identity: cfg.VaultIdentity(),
-		Trash:    erasesInto(cfg),
-		Forget:   vault.Forget{Registry: registry, Index: db.Vaults()},
-	}.Execute(ctx, v)
+	erase := vault.NewErase(
+		cfg.VaultIdentity(), erasesInto(cfg), vault.NewForget(registry, db.Vaults()),
+	)
+	err = erase.Execute(ctx, v)
 	if errors.Is(err, port.ErrNoTrash) {
 		return fmt.Errorf("%w — take it off the list with: numen-cli vault forget %s", err, v.Name)
 	}

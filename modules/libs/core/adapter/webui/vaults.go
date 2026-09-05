@@ -166,7 +166,7 @@ func (s vaultsService) found(id string) (domain.Vault, error) {
 func vaultOf(v domain.Vault, readers port.VaultReaders) *v1.Vault {
 	return &v1.Vault{
 		Name: string(v.ID), DisplayName: v.Name, Path: v.Path,
-		Missing: vaults.FolderMissing{Readers: readers}.Execute(v),
+		Missing: vaults.NewFolderMissing(readers).Execute(v),
 	}
 }
 
