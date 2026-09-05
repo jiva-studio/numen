@@ -441,6 +441,129 @@ func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
 	}
 }
 
+// numbered are the types a machine's own counter is spelled in.
+var numbered = map[string]bool{
+	"int": true, "int8": true, "int16": true, "int32": true, "int64": true,
+	"uint": true, "uint8": true, "uint16": true, "uint32": true, "uint64": true,
+	"uintptr": true, "byte": true, "rune": true,
+}
+
+// identity is an exported field naming one: the type it stands in, the field,
+// and how its own type is written.
+type identity struct{ in, field, spelled string }
+
+// identities are the exported struct fields of one file whose names end in ID.
+func identities(file *ast.File) []identity {
+	var found []identity
+	ast.Inspect(file, func(node ast.Node) bool {
+		spec, is := node.(*ast.TypeSpec)
+		if !is {
+			return true
+		}
+		held, is := spec.Type.(*ast.StructType)
+		if !is {
+			return true
+		}
+		for _, one := range held.Fields.List {
+			for _, name := range one.Names {
+				if name.IsExported() && strings.HasSuffix(name.Name, "ID") {
+					found = append(found, identity{spec.Name.Name, name.Name, spelled(one.Type)})
+				}
+			}
+		}
+		return true
+	})
+	return found
+}
+
+// spelled is a type as it is written, and empty for one this rule reads
+// nothing into.
+func spelled(at ast.Expr) string {
+	switch held := at.(type) {
+	case *ast.Ident:
+		return held.Name
+	case *ast.SelectorExpr:
+		if from, is := held.X.(*ast.Ident); is {
+			return from.Name + "." + held.Sel.Name
+		}
+	}
+	return ""
+}
+
+// An identity the core carries is a word of the core's own. A row number is the
+// store's: it says which row of which table, whatever counts rows hands it out,
+// and it can be ordered and paged when the thing it names cannot. A core
+// carrying one has taken the store's numbering into its language, and then into
+// what a scenario does — which is how a use case comes to loop on ascending
+// integer keys.
+//
+// Every identity here is its own type, and this is what keeps it so.
+func TestTheCoresIdentitiesAreItsOwn(t *testing.T) {
+	var wrong []string
+	var read int
+	for _, at := range []string{"domain", "port"} {
+		dir := filepath.Join("..", at)
+		held, err := os.ReadDir(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, one := range held {
+			if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
+				strings.HasSuffix(one.Name(), "_test.go") {
+				continue
+			}
+			file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(dir, one.Name()), nil, 0)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, found := range identities(file) {
+				read++
+				if numbered[found.spelled] {
+					wrong = append(wrong, fmt.Sprintf("%s/%s.%s is a %s",
+						at, found.in, found.field, found.spelled))
+				}
+			}
+		}
+	}
+	for _, one := range wrong {
+		t.Error(one + ": an identity the core carries is a word of its own")
+	}
+
+	// A walk that read no identity is a rule checked against nothing, and it
+	// passes.
+	if read == 0 {
+		t.Fatal("domain/ and port/ name no identity: the walk is not reading them")
+	}
+}
+
+// What the rule refuses, read against a declaration written to be refused. It
+// has to find the field and the type it is spelled in, and let through the ones
+// that are the core's own word and the ones that name no identity at all.
+func TestWhatTheIdentityRuleRefuses(t *testing.T) {
+	file, err := parser.ParseFile(token.NewFileSet(), "identity.go", `package p
+
+type Thing struct {
+	ID      VaultID
+	ChunkID int64
+	OtherID domain.ChunkID
+	Rows    int64
+	chunkID int64
+}
+`, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var refused []string
+	for _, one := range identities(file) {
+		if numbered[one.spelled] {
+			refused = append(refused, one.field)
+		}
+	}
+	if !slices.Equal(refused, []string{"ChunkID"}) {
+		t.Errorf("the rule refuses %v, want the one identity spelled as a number", refused)
+	}
+}
+
 // adapters are the names one file calls another adapter's package by, whether
 // that is the package's own name or an alias.
 func adapters(file *ast.File, own string) map[string]bool {
