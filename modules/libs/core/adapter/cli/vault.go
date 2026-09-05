@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -71,11 +70,7 @@ func vaultAdd(out io.Writer, cfg container.Config, args []string) error {
 	if err != nil {
 		return err
 	}
-	v, err := vault.Add{
-		Identity: cfg.VaultIdentity(),
-		Registry: registry,
-		Now:      time.Now,
-	}.Execute(root, *name)
+	v, err := vault.NewAdd(cfg.VaultIdentity(), registry, cfg.Clock()).Execute(root, *name)
 	if err != nil {
 		return err
 	}
