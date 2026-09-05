@@ -27,31 +27,6 @@ func transcriptionID(path string) string { return "transcription-" + path }
 // listen to. It is told how far the fetching of what it needs has got.
 type OpenTranscriber func(ctx context.Context, tell func(what string, done, total int64)) (port.Transcriber, func() error, error)
 
-// ProofreadingConfig is what a text is put right with: what answers, where
-// batches are left for it to answer about later, and how much of a text goes
-// over at a time.
-//
-// Naming no proofreader is a text used exactly as it was made.
-type ProofreadingConfig struct {
-	// Named says whether a profile is named for this kind of text. A person is
-	// offered the run where one is.
-	Named bool
-	// Automatically says whether a text is put right without anybody asking.
-	Automatically bool
-	// By opens what answers about a batch, and Queue where batches are left for
-	// it to answer about later. Each is told what it is proofreading. Both
-	// answer nothing where no profile is named, and the reason where one cannot
-	// be opened.
-	By    func(instruction string) (port.Proofreader, error)
-	Queue func(instruction string) (port.ProofreadQueue, error)
-	// Batch is how much of a text one request carries, Overlap how much of it
-	// the request before also carried, and InFlight how many stand out at once.
-	Batch, Overlap, InFlight int
-	// MaxEditDistance is how far a reply may stand from the text before it is
-	// refused as an answer about something else.
-	MaxEditDistance float64
-}
-
 // A TranscriptionRuntime is what a recording is transcribed through on this
 // machine.
 type TranscriptionRuntime struct {
