@@ -18,7 +18,8 @@ import (
 // unpack takes the library out of an archive, once, and says where it now is.
 //
 // The archive carries the sum this release publishes before anything is taken
-// out of it, and the library carries its own before it is left in the cache. A
+// out of it, and one that does not is taken away so the next run fetches it
+// again. The library carries its own before it is left in the cache, and a
 // library already there carrying another sum is written over.
 //
 // The library is looked for by name at any depth, because the folder inside the
@@ -31,6 +32,10 @@ func unpack(archive, name string, found release) (string, error) {
 		return at, nil
 	}
 	if err := verify(archive, found.sum); err != nil {
+		// The archive is in the cache, and what is in the cache is handed back
+		// without being fetched again. Left there, one bad download is every
+		// later run's answer too.
+		os.Remove(archive)
 		return "", err
 	}
 	var err error

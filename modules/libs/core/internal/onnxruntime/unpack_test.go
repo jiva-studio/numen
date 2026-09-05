@@ -110,6 +110,37 @@ func TestAnArchiveThatIsNotTheOnePublishedIsRefused(t *testing.T) {
 	}
 }
 
+// A cached archive that is not the one published is taken away, so that the
+// next run fetches it again rather than being handed the same bad file for
+// ever. What stands in for that run here is a second unpack, of the archive as
+// it is published.
+func TestACachedArchiveThatIsNotTheOnePublishedIsFetchedAgain(t *testing.T) {
+	dir := t.TempDir()
+	found := packed(t, dir)
+	broken := found
+	broken.sum = summed("another archive")
+
+	if _, err := unpack(broken.archive, "libonnxruntime.dylib", broken); err == nil {
+		t.Fatal("an archive that is not the one published was unpacked")
+	}
+	if _, err := os.Stat(found.archive); err == nil {
+		t.Fatal("the archive is still in the cache, and every later run is handed it")
+	}
+
+	found = packed(t, dir)
+	at, err := unpack(found.archive, "libonnxruntime.dylib", found)
+	if err != nil {
+		t.Fatal(err)
+	}
+	held, err := os.ReadFile(at)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(held) != "the library" {
+		t.Errorf("what came out of the archive fetched again was %q", held)
+	}
+}
+
 // An archive read to its end and holding no such library says that, and not
 // that it is broken. The two send a person to different places.
 func TestAnArchiveHoldingNoSuchLibrarySaysSo(t *testing.T) {
