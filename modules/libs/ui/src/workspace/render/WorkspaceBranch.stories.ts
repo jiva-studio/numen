@@ -8,7 +8,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { computed, provide, ref } from 'vue'
 import WorkspaceBranch from './WorkspaceBranch.vue'
-import { WORKSPACING, type Workspacing } from './context'
+import { WORKSPACE_CONTEXT, type WorkspaceContext } from './context'
 import Filling from '../fixtures/Filling.vue'
 import { split, stack } from '../fixtures/build'
 import { type Branch, type NodeId, type Tab, type TabId } from '../node'
@@ -82,8 +82,8 @@ const meta: Meta<Knobs> = {
       }
 
       provide(
-        WORKSPACING,
-        computed<Workspacing>(() => ({
+        WORKSPACE_CONTEXT,
+        computed<WorkspaceContext>(() => ({
           tabOf: (id: TabId): Tab | undefined =>
             TITLES[id] === undefined ? undefined : { id, title: TITLES[id] },
           focus: 'left',

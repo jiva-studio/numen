@@ -9,7 +9,7 @@
 import { computed, inject, onBeforeUnmount, ref, useTemplateRef, watch, type Ref } from 'vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import WorkspacePane from './WorkspacePane.vue'
-import { WORKSPACING, type Workspacing } from './context'
+import { WORKSPACE_CONTEXT, type WorkspaceContext } from './context'
 import { orientationAt, type Branch, type Orientation, type TabId } from '../node'
 import { atLeast, fit } from '../shares'
 
@@ -22,7 +22,7 @@ const props = defineProps<{
 }>()
 
 /** What every branch and pane of one workspace is told once, at the top. */
-const workspace = inject(WORKSPACING) as Ref<Workspacing>
+const workspace = inject(WORKSPACE_CONTEXT) as Ref<WorkspaceContext>
 
 const slots = defineSlots<{
   tab(props: { id: TabId }): unknown

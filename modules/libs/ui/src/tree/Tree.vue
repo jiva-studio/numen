@@ -21,12 +21,12 @@ import {
   selects,
   stepTo,
   PLAIN,
-  type Carried,
+  type DragLabel,
   type Landing,
-  type Marking,
   type Press,
-  type Pressed,
   type Row,
+  type RowMarker,
+  type RowSelection,
   type RowId,
   type ShownRow,
 } from './row'
@@ -55,7 +55,7 @@ const props = withDefaults(
      * and a row answered with nothing is left unmarked; the tree itself is
      * asked about as no row at all.
      */
-    marking?: Marking | undefined
+    marking?: RowMarker | undefined
     /** The clock. Browser by default; a test hands in its own. */
     clock?: Clock
   }>(),
@@ -156,7 +156,7 @@ const before = computed(() => (at.value && 'before' in at.value ? at.value.befor
 const lifted = computed(() => new Set(point.value ? (dragging.value?.held ?? []) : []))
 
 /** What follows the pointer, and nothing until a press has become a drag. */
-const carrying = computed<Carried | null>(() => {
+const carrying = computed<DragLabel | null>(() => {
   const held = dragging.value
   const where = point.value
   if (!held?.moved || !where) return null
@@ -194,7 +194,7 @@ const turn = (row: ShownRow): void => {
 }
 
 /** A selection a press came to, said, and the anchor put where it names. */
-const takes = (pressed: Pressed): readonly RowId[] => {
+const takes = (pressed: RowSelection): readonly RowId[] => {
   anchor.value = pressed.anchor
   if (!sameRows(pressed.rows, props.selected)) emit('select', pressed.rows)
   return pressed.rows

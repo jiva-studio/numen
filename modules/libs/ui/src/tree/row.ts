@@ -28,7 +28,7 @@ export interface Row {
  * them by. The tree writes the name and the value it is given and reads
  * neither.
  */
-export interface Marking {
+export interface RowMarker {
   readonly attribute: string
   /** What the attribute says on a row, and nothing for a row left unmarked. */
   readonly valueFor: (row: RowId | null) => string | null
@@ -96,7 +96,7 @@ export interface Press {
 export const PLAIN: Press = { joining: false, reaching: false }
 
 /** What a press comes to: the selection, and the row a reach is measured from. */
-export interface Pressed {
+export interface RowSelection {
   readonly rows: readonly RowId[]
   readonly anchor: RowId | null
 }
@@ -139,7 +139,7 @@ export function selects(
   anchor: RowId | null,
   row: RowId,
   press: Press,
-): Pressed {
+): RowSelection {
   if (press.reaching) return { rows: between(shown, anchor ?? row, row), anchor: anchor ?? row }
 
   if (press.joining) {
@@ -153,7 +153,7 @@ export function selects(
 }
 
 /** Every row that is drawn, with the anchor left where it stands. */
-export const everyRow = (shown: readonly ShownRow[], anchor: RowId | null): Pressed => ({
+export const everyRow = (shown: readonly ShownRow[], anchor: RowId | null): RowSelection => ({
   rows: shown.map((row) => row.id),
   anchor: anchor ?? shown[0]?.id ?? null,
 })
@@ -170,7 +170,7 @@ export const sameRows = (rows: readonly RowId[], others: readonly RowId[]): bool
   rows.length === others.length && rows.every((row, at) => row === others[at])
 
 /** What is drawn at the pointer while rows are carried. */
-export interface Carried {
+export interface DragLabel {
   /** The name of the one row carried, or how many there are. */
   readonly says: string
   /** Where the pointer is, which is where it is drawn. */
@@ -186,7 +186,7 @@ export function carried(
   rows: readonly RowId[],
   at: Point,
   counted: (rows: number) => string,
-): Carried | null {
+): DragLabel | null {
   const first = rows[0]
   if (first === undefined) return null
 

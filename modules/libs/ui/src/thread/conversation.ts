@@ -13,7 +13,7 @@ import { charsWord, type Turn } from './turn'
 import type { AgentPort, Place } from './agent'
 
 /** The words the panel puts up itself. */
-export interface Wording {
+export interface ConversationStrings {
   /** The line shown before the agent has reached for anything. */
   readonly thinking: string
   /** What is said when the agent could not be reached at all. */
@@ -55,7 +55,7 @@ const spoken = (tool: string) => tool.replaceAll('_', ' ')
 
 export function conversation(
   agent: AgentPort,
-  words: Wording,
+  words: ConversationStrings,
   /** What this thread of talk is called, for as long as it is open. */
   conversation: string,
   paint: Paint = onNextFrame,

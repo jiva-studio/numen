@@ -4,7 +4,7 @@
  * Nothing here is about drawing: a kind translates these into what it holds,
  * and this is what every one of them starts from.
  */
-import type { Counting } from '@numen/ui'
+import type { TallyUnit } from '@numen/ui'
 
 /** A note that is no longer where it was, and where it now is. */
 export interface Move {
@@ -132,7 +132,7 @@ export interface Task {
   readonly done: number
   readonly total: number
   /** What that count counts. */
-  readonly counting: Counting
+  readonly counting: TallyUnit
   /** Why it stopped, when it stopped badly. */
   readonly failed: string
   /** Whether a person asked for this and is waiting to be told it began. */

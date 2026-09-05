@@ -49,20 +49,15 @@ export interface MenuPlacement {
   readonly margin: number
 }
 
-/** Where the menu goes, in the coordinates the point arrived in. */
-export interface MenuPlacing {
-  readonly x: number
-  readonly y: number
-}
-
 /**
- * Where a menu of this size, asked for at this point, is drawn.
+ * Where a menu of this size, asked for at this point, is drawn, in the
+ * coordinates the point arrived in.
  *
  * The point is a span of no width, touching the menu: the menu runs on from it
  * and folds back over it at an edge. Wider than the area it is placed in, it
  * sits at the near edge and scrolls.
  */
-export const placeMenu = ({ at, size, viewport, margin }: MenuPlacement): MenuPlacing => ({
+export const placeMenu = ({ at, size, viewport, margin }: MenuPlacement): Point => ({
   x: beside({
     from: at.x,
     to: at.x,

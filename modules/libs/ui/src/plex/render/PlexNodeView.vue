@@ -22,8 +22,8 @@ import PlexNodeHandle from './PlexNodeHandle.vue'
 import PlexNodeParts from './PlexNodeParts.vue'
 import { isMenuKey, isPress, isShowKey } from './keys'
 import { DWELL, useDwell, type Widened } from '../dwell'
-import { byHandle, type Reaching } from '../reaching'
-import { byDoubleClick, joined, showingOf, type PlexShowing, type Showing } from '../showing'
+import { byHandle, type ReachStrategy } from '../reaching'
+import { byDoubleClick, joined, showingOf, type PlexShowing, type ShowStrategy } from '../showing'
 import type { HungParts } from '../inside'
 import { lerp } from '../arrange'
 import { browserClock, type Clock } from '../transition'
@@ -58,9 +58,9 @@ const props = withDefaults(
     /** How long the attention rests before it widens. Milliseconds. */
     dwell?: number
     /** How this node offers to be reached out of. The handle by default. */
-    reaching?: Reaching
+    reaching?: ReachStrategy
     /** How this node is asked for on its own. The second click by default. */
-    showing?: Showing
+    showing?: ShowStrategy
     /** The clock the opening is drawn on. Browser by default. */
     clock?: Clock
   }>(),

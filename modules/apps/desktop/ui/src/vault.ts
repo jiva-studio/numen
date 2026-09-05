@@ -43,7 +43,7 @@ import type {
   Stencil as StencilMessage,
   Vault as VaultMessage,
 } from '@numen/protocol'
-import type { Counting } from '@numen/ui'
+import type { TallyUnit } from '@numen/ui'
 import { namesOf, troubleWords } from '@numen/wire'
 import { fingerprint, refusalIn, staleIn, stamp } from './answers'
 import { DEFAULT_PARTS } from './hanging'
@@ -649,7 +649,7 @@ const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
  * What a piece of work counts, in the words the window uses. One it has no word
  * for is counted one by one.
  */
-const counted: Record<Units, Counting> = {
+const counted: Record<Units, TallyUnit> = {
   [Units.UNSPECIFIED]: 'things',
   [Units.THINGS]: 'things',
   [Units.BYTES]: 'bytes',

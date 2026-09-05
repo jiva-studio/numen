@@ -16,14 +16,14 @@ const pixelRatio = (): number =>
 /** The width a page is asked for at, staged. */
 const staged = (pixels: number): number => Math.ceil(pixels / STAGE) * STAGE
 
-export interface Asking {
+export interface PageWidthState {
   /** What the row asks for its pages at, in device pixels. */
   readonly asking: ComputedRef<number>
   /** What each page is asked for at, which follows that once it has settled. */
   readonly drawnAt: Ref<number>
 }
 
-export function useAsking(laid: () => Row, wide: (pixels: number) => void): Asking {
+export function useAsking(laid: () => Row, wide: (pixels: number) => void): PageWidthState {
   /** The widest page there is, staged, in device pixels. */
   const asking = computed(() => {
     const widest = laid().widths.reduce((most, each) => Math.max(most, each), 0)

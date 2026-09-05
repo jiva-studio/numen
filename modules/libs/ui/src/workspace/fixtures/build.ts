@@ -9,7 +9,7 @@ import {
 } from '../node'
 import { panesOf } from '../tree'
 import { even } from '../shares'
-import type { Naming } from '../edit'
+import type { NodeIdFactory } from '../edit'
 
 /** A stack of tabs. */
 export const stack = (id: NodeId, ...tabs: string[]): WorkspaceNode => pane(id, tabs)
@@ -32,7 +32,7 @@ export const workspaceOf = (
 })
 
 /** Identities that count up, so a test can name what a gesture made. */
-export function naming(prefix = 'made'): Naming {
+export function naming(prefix = 'made'): NodeIdFactory {
   let made = 0
   return () => `${prefix}-${++made}`
 }

@@ -8,7 +8,7 @@
 import { inject, onMounted, watch } from 'vue'
 import WorkspaceTab from './WorkspaceTab.vue'
 import { stepTo } from './keys'
-import { WORKSPACING } from './context'
+import { WORKSPACE_CONTEXT } from './context'
 import type { Pane, TabId } from '../node'
 
 const props = withDefaults(
@@ -20,7 +20,7 @@ const props = withDefaults(
   { focused: false },
 )
 
-const workspace = inject(WORKSPACING)
+const workspace = inject(WORKSPACE_CONTEXT)
 
 /** What a tab is called. A tab with no title is shown by its identity. */
 const titleOf = (tab: TabId): string => workspace?.value.tabOf(tab)?.title ?? tab

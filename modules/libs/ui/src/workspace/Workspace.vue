@@ -12,7 +12,7 @@ import CarriedLabel from '../press/CarriedLabel.vue'
 import { usePressDrag } from '../press/press'
 import WorkspaceBranch from './render/WorkspaceBranch.vue'
 import WorkspacePane from './render/WorkspacePane.vue'
-import { WORKSPACING, type Workspacing } from './render/context'
+import { WORKSPACE_CONTEXT, type WorkspaceContext } from './render/context'
 import {
   activateTab,
   closeTab,
@@ -21,7 +21,7 @@ import {
   focusPane,
   moveTabWithin,
   resizeBranch,
-  type Naming,
+  type NodeIdFactory,
 } from './edit'
 import { boxOf, caretAt, edgeOf, overlayFor, sideAt, slotAt, type Landing } from './drop'
 import { type NodeId, type Tab, type TabId, type Workspace } from './node'
@@ -31,7 +31,7 @@ const props = withDefaults(
   defineProps<{
     tabs: readonly Tab[]
     /** Where identities for what a gesture makes come from. */
-    naming?: Naming | undefined
+    naming?: NodeIdFactory | undefined
     /** How close to the outer edge divides the whole workspace. */
     edge?: number
     /** How far the pointer travels before a press becomes a drag. */
@@ -87,7 +87,7 @@ let made = 0
 const mint = (): NodeId =>
   typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : `node-${++made}-${Date.now()}`
 
-const naming = computed<Naming>(() => props.naming ?? mint)
+const naming = computed<NodeIdFactory>(() => props.naming ?? mint)
 
 const frame = useTemplateRef<HTMLElement>('frame')
 
@@ -144,8 +144,8 @@ function resize(branch: NodeId, sizes: readonly number[]): void {
 }
 
 provide(
-  WORKSPACING,
-  computed<Workspacing>(() => ({
+  WORKSPACE_CONTEXT,
+  computed<WorkspaceContext>(() => ({
     tabOf,
     focus: workspace.value.focus,
     minimum: props.minimum,

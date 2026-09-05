@@ -2,7 +2,7 @@
  * What a notice is, as plain values. No DOM, no clock, no measurement.
  */
 
-import { rateOf, type Counting, type Tone } from '../activity/tally'
+import { rateOf, type TallyUnit, type Tone } from '../activity/tally'
 
 export type { Tone }
 
@@ -33,7 +33,7 @@ export interface Notice {
   readonly done?: number
   readonly total?: number
   /** What that count counts. */
-  readonly counting?: Counting
+  readonly counting?: TallyUnit
   /** Whether it is running now, or is a fact that is simply so. */
   readonly working?: boolean
   /** How it reads. Plain unless said otherwise. */
@@ -61,7 +61,7 @@ export interface Task {
   readonly done?: number
   readonly total?: number
   /** What that count counts. */
-  readonly counting?: Counting
+  readonly counting?: TallyUnit
 }
 
 /**

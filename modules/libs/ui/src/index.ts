@@ -15,13 +15,7 @@ export { showingOf, SHOWINGS } from './plex/showing'
 
 export { default as Menu } from './menu/Menu.vue'
 export { banded, landsOn, placeMenu, stepTo, MENU_OPENINGS } from './menu/item'
-export type {
-  BandedItem,
-  MenuItem,
-  MenuOpening,
-  MenuPlacement,
-  MenuPlacing,
-} from './menu/item'
+export type { BandedItem, MenuItem, MenuOpening, MenuPlacement } from './menu/item'
 
 export { Button, buttonVariants } from './components/ui/button'
 export type { ButtonVariants } from './components/ui/button'
@@ -124,7 +118,7 @@ export { default as Player } from './player/Player.vue'
 export { clock } from './player/clock'
 export type { Timed, Timing } from './editor/timing'
 
-export { default as Composer } from './composer/Composer.vue'
+export { default as MessageComposer } from './composer/MessageComposer.vue'
 export { COMPOSER_STATES, composerState, keyIntent } from './composer/state'
 export type { ComposerState, KeyIntent } from './composer/state'
 
@@ -140,7 +134,7 @@ export { default as Thread } from './thread/Thread.vue'
 export { VOICES, charsWord, placeTurns } from './thread/turn'
 export type { PlacedTurn, Turn, TurnState, Voice } from './thread/turn'
 export { conversation } from './thread/conversation'
-export type { Conversation, Wording } from './thread/conversation'
+export type { Conversation, ConversationStrings } from './thread/conversation'
 export type { AgentPort, AgentStep, Place } from './thread/agent'
 
 /** A link to a note: `[[name]]` in the text, `note://<identifier>` inside it. */
@@ -173,7 +167,7 @@ export {
   sizeWord,
   tallyWord,
 } from './activity/tally'
-export type { ActivityDescriptor, ActivityState, Counting, Tally, Tone } from './activity/tally'
+export type { ActivityDescriptor, ActivityState, Tally, TallyUnit, Tone } from './activity/tally'
 
 export { default as Notices } from './notices/Notices.vue'
 export { ROOM, dwellOf, finished, folded, measured, noticed, readable, tallyOf } from './notices/notice'
@@ -194,7 +188,7 @@ export {
   openTabBeside,
   resizeBranch,
 } from './workspace/edit'
-export type { Naming, TabDrop } from './workspace/edit'
+export type { NodeIdFactory, TabDrop } from './workspace/edit'
 
 /** For arranging without drawing, or reading a gesture without this renderer. */
 export { arrangeWorkspace, DEFAULT_ARRANGE } from './workspace/arrange'
@@ -234,13 +228,13 @@ export {
   TREE_KEYS,
 } from './tree/row'
 export type {
-  Carried,
+  DragLabel,
   Landing,
-  Marking,
   Press,
-  Pressed,
   Row,
   RowId,
+  RowMarker,
+  RowSelection,
   ShownRow,
   Step,
   TreeKey,
@@ -282,10 +276,10 @@ export type { Stencil } from './cards/stencil'
 export type { Clock, PlexTransition } from './plex/transition'
 export { byHandle, byHolding } from './plex/reaching'
 export { APART, byDoubleClick, byDoubleTap, TAP } from './plex/showing'
-export type { Showing, ShowingSite } from './plex/showing'
-export type { Reaching, ReachingSite } from './plex/reaching'
+export type { ShowStrategy, ShowSite } from './plex/showing'
+export type { ReachStrategy, ReachSite } from './plex/reaching'
 export { HOLD, STRAY, useHold } from './plex/holding'
-export type { Holding } from './plex/holding'
+export type { HoldState } from './plex/holding'
 export type { HungPart, HungParts, PlexPart } from './plex/inside'
 export type {
   EdgeArrow,

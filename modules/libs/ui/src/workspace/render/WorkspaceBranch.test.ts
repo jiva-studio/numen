@@ -10,7 +10,7 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import WorkspaceBranch from './WorkspaceBranch.vue'
 import WorkspacePane from './WorkspacePane.vue'
-import { WORKSPACING, type Workspacing } from './context'
+import { WORKSPACE_CONTEXT, type WorkspaceContext } from './context'
 import { split, stack } from '../fixtures/build'
 import { type Branch, type Tab, type TabId } from '../node'
 
@@ -31,7 +31,7 @@ const mountBranch = (node: Branch, slots: Record<string, string> = {}) => {
   const resize = vi.fn<(branch: string, sizes: readonly number[]) => void>()
   const claim = vi.fn<(pane: string) => void>()
 
-  const workspacing: Workspacing = {
+  const workspacing: WorkspaceContext = {
     tabOf: (id: TabId): Tab | undefined =>
       TITLES[id] === undefined ? undefined : { id, title: TITLES[id] },
     focus: 'left',
@@ -46,7 +46,7 @@ const mountBranch = (node: Branch, slots: Record<string, string> = {}) => {
 
   const held = mount(WorkspaceBranch, {
     attachTo: document.body,
-    global: { provide: { [WORKSPACING as symbol]: computed(() => workspacing) } },
+    global: { provide: { [WORKSPACE_CONTEXT as symbol]: computed(() => workspacing) } },
     props: { node, axis: 'horizontal' as const, depth: 0 },
     slots: { tab: '<span class="held">held</span>', ...slots },
   })

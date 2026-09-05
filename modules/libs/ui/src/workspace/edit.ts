@@ -34,7 +34,7 @@ import {
 import { insert } from './shares'
 
 /** Where an identity for a pane or a branch a gesture makes comes from. */
-export type Naming = () => NodeId
+export type NodeIdFactory = () => NodeId
 
 export interface TabDrop {
   readonly tab: TabId
@@ -91,7 +91,7 @@ export function openTabBeside(
   workspace: Workspace,
   tab: TabId,
   side: Side,
-  naming: Naming,
+  naming: NodeIdFactory,
   onto: NodeId = workspace.focus,
 ): Workspace {
   const target = paneById(workspace.root, onto) ?? panesOf(workspace.root)[0]
@@ -139,7 +139,7 @@ export function moveTabWithin(workspace: Workspace, tab: TabId, slot: number): W
  *
  * A tab let go where it started, with nowhere else to go, is only shown.
  */
-export function dropTab(workspace: Workspace, drop: TabDrop, naming: Naming): Workspace {
+export function dropTab(workspace: Workspace, drop: TabDrop, naming: NodeIdFactory): Workspace {
   const target = paneById(workspace.root, drop.onto)
   const source = paneWithTab(workspace.root, drop.tab)
   if (!target || !source) return workspace
@@ -168,7 +168,7 @@ export function dropOnEdge(
   workspace: Workspace,
   tab: TabId,
   side: Side,
-  naming: Naming,
+  naming: NodeIdFactory,
 ): Workspace {
   if (!paneWithTab(workspace.root, tab) || side === 'center') return workspace
 
@@ -214,7 +214,7 @@ function beside(
   tab: TabId,
   side: Side,
   axis: Orientation,
-  id: Naming,
+  id: NodeIdFactory,
 ): Landed {
   const wanted = orientationOf(side)
   const path = pathTo(root, onto)

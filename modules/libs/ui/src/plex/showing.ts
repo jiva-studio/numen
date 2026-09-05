@@ -46,28 +46,28 @@ export const TAP = 300
 export const APART = 24
 
 /** The node a strategy is watching, in the only two terms it needs. */
-export interface ShowingSite {
+export interface ShowSite {
   /** Whether this node answers being asked for at all. */
   readonly ready: () => boolean
   /** It was asked for. The modifier says where it is to be drawn. */
   readonly show: (modified: boolean) => void
 }
 
-export interface Showing {
+export interface ShowStrategy {
   /** Whether the node answers the browser's own second click. */
   readonly doubleClick: boolean
   /** What the node listens for besides. Called once, inside the node's scope. */
-  readonly listeners: (site: ShowingSite) => Record<string, (event: PointerEvent) => void>
+  readonly listeners: (site: ShowSite) => Record<string, (event: PointerEvent) => void>
 }
 
 /** The second click, as the browser counts it. */
-export const byDoubleClick: Showing = {
+export const byDoubleClick: ShowStrategy = {
   doubleClick: true,
   listeners: () => ({}),
 }
 
 /** Two taps, counted here. Milliseconds, if the wait is to be another. */
-export const byDoubleTap = (within: number = TAP): Showing => ({
+export const byDoubleTap = (within: number = TAP): ShowStrategy => ({
   doubleClick: false,
   listeners: (site) => {
     const first = ref<{ timer: number; x: number; y: number } | null>(null)

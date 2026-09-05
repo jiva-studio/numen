@@ -19,7 +19,7 @@ interface Draft {
  * is the rule's to say: a field is written in a slot and a face in a heading,
  * and the two are not written under the same rules.
  */
-export interface Named<Why> {
+export interface NamingDeps<Why> {
   /** The name the thing being typed over carries. */
   readonly carries: (over: string) => string
   /** The names already taken, which the one being typed is measured against. */
@@ -31,7 +31,7 @@ export interface Named<Why> {
 }
 
 /** What naming answers: what a box holds, what is wrong with it, and the gestures. */
-export interface Naming<Why> {
+export interface NamingState<Why> {
   /** What is in the box: the name it carries, or what is being typed over it. */
   readonly text: (over: string) => string
   /** Why what is in the box cannot be used, and nothing while it can. */
@@ -44,7 +44,7 @@ export interface Naming<Why> {
   readonly onKey: (press: KeyboardEvent, over: string) => void
 }
 
-export function useNaming<Why>(named: Named<Why>): Naming<Why> {
+export function useNaming<Why>(named: NamingDeps<Why>): NamingState<Why> {
   /** What is being typed, over the thing it is being typed over. */
   const draft = shallowRef<Draft | null>(null)
 

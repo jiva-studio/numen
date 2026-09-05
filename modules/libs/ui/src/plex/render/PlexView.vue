@@ -16,8 +16,8 @@ import type { PlexFrame } from '../frame'
 import { ghostNode, handleIn, type GestureRole, type PlacedNode, type Point } from '../node'
 import { seatWord, type PlexRelatedSeat } from '../seat'
 import { DWELL, type Widened } from '../dwell'
-import { byHandle, type Reaching } from '../reaching'
-import { byDoubleClick, type PlexShowing, type Showing } from '../showing'
+import { byHandle, type ReachStrategy } from '../reaching'
+import { byDoubleClick, type PlexShowing, type ShowStrategy } from '../showing'
 import type { HungParts } from '../inside'
 import { browserClock, type Clock } from '../transition'
 import {
@@ -61,9 +61,9 @@ const props = withDefaults(
     /** How long the attention rests on a box before it widens. Milliseconds. */
     dwell?: number
     /** How a node offers to be reached out of. The handle by default. */
-    reaching?: Reaching
+    reaching?: ReachStrategy
     /** How a node is asked for on its own. The second click by default. */
-    showing?: Showing
+    showing?: ShowStrategy
     /** The clock a box opens on. Browser by default; a test hands in its own. */
     clock?: Clock
     /** A gesture in progress: where it started, where it is, what it means. */

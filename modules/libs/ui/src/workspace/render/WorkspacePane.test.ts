@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import { computed } from 'vue'
 import { describe, expect, it } from 'vitest'
 import WorkspacePane from './WorkspacePane.vue'
-import { WORKSPACING, type Workspacing } from './context'
+import { WORKSPACE_CONTEXT, type WorkspaceContext } from './context'
 import { pane, type Tab } from '../node'
 
 const three = () => pane('main', ['plex', 'chat', 'notes'], 'chat')
@@ -11,7 +11,7 @@ const three = () => pane('main', ['plex', 'chat', 'notes'], 'chat')
 const TITLES: Readonly<Record<string, string>> = { plex: 'Plex', chat: 'Chat', notes: 'Notes' }
 
 /** The workspace a pane stands in, as far as a pane on its own asks about it. */
-const workspacing = (marks: Readonly<Record<string, string>> = {}): Workspacing => ({
+const workspacing = (marks: Readonly<Record<string, string>> = {}): WorkspaceContext => ({
   tabOf: (id): Tab | undefined =>
     TITLES[id] === undefined
       ? undefined
@@ -30,7 +30,7 @@ const mountPane = (props: Record<string, unknown> = {}, slots: Record<string, st
   const { marks, ...rest } = props as { marks?: Readonly<Record<string, string>> }
   return mount(WorkspacePane, {
     attachTo: document.body,
-    global: { provide: { [WORKSPACING as symbol]: computed(() => workspacing(marks)) } },
+    global: { provide: { [WORKSPACE_CONTEXT as symbol]: computed(() => workspacing(marks)) } },
     props: { pane: three(), ...rest },
     slots,
   })

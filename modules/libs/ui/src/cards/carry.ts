@@ -27,7 +27,7 @@ export interface Carry<At extends Landing | undefined> {
 }
 
 /** What a carry answers: what is being carried, where it would land, and the gestures. */
-export interface Carrying<At extends Landing | undefined> {
+export interface CarryState<At extends Landing | undefined> {
   /** What is under the pointer's hand, and nothing while nothing is carried. */
   readonly carried: ShallowRef<string | null>
   /** Where letting go would put it. */
@@ -44,7 +44,7 @@ export interface Carrying<At extends Landing | undefined> {
   readonly step: (what: string, way: Way, press: KeyboardEvent) => void
 }
 
-export function useCarry<At extends Landing | undefined>(carry: Carry<At>): Carrying<At> {
+export function useCarry<At extends Landing | undefined>(carry: Carry<At>): CarryState<At> {
   const carried = shallowRef<string | null>(null)
   const at: ShallowRef<At> = shallowRef(carry.nowhere)
 

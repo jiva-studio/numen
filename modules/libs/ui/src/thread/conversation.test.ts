@@ -6,10 +6,10 @@
  * from one exchange landing in the next.
  */
 import { describe, expect, it } from 'vitest'
-import { conversation, type Wording } from './conversation'
+import { conversation, type ConversationStrings } from './conversation'
 import type { AgentPort, AgentStep, Place } from './agent'
 
-const words: Wording = {
+const words: ConversationStrings = {
   thinking: 'Thinking',
   unreachable: 'Not reached',
   nothing: 'Said nothing',

@@ -38,7 +38,7 @@ export interface Tally {
  * Bytes are read out in the sizes a person reads them in and seconds on a
  * clock. Everything else is counted one by one.
  */
-export type Counting = 'things' | 'bytes' | 'seconds'
+export type TallyUnit = 'things' | 'bytes' | 'seconds'
 
 /** What a line of activity draws. */
 export interface ActivityDescriptor {
@@ -114,7 +114,7 @@ export const sizeWord = (bytes: number): string => {
  * reach six figures on an ordinary vault. A count that overtook its total reads
  * as the total: a vault loses a book mid-scan, and the bar is already full.
  */
-export const tallyWord = (tally: Tally, counting: Counting = 'things'): string => {
+export const tallyWord = (tally: Tally, counting: TallyUnit = 'things'): string => {
   const done = Math.min(tally.done, tally.total)
   switch (counting) {
     case 'bytes':
@@ -133,7 +133,7 @@ export const tallyWord = (tally: Tally, counting: Counting = 'things'): string =
  * is nothing known, and nothing is said. Seconds move against real time, so
  * they read as a multiple of it.
  */
-export const rateWord = (perSecond: number, counting: Counting = 'things'): string => {
+export const rateWord = (perSecond: number, counting: TallyUnit = 'things'): string => {
   if (perSecond <= 0) return ''
   switch (counting) {
     case 'bytes':

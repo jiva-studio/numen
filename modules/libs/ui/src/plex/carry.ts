@@ -12,7 +12,7 @@ import type { PlexRelatedSeat } from './seat'
 
 const CAPTURE = { capture: true } as const
 
-export interface Carrying {
+export interface PlexCarryState {
   /** Where the pointer is, in the plex's own coordinates. */
   readonly at: Ref<Point | null>
   /** The seat letting go here comes to, so it can be shown before it does. */
@@ -43,7 +43,7 @@ export interface Carry {
  * window for as long as there is something to carry, and it is over the
  * instant the pointer comes up wherever that is.
  */
-export function usePlexCarry(carry: Carry): Carrying {
+export function usePlexCarry(carry: Carry): PlexCarryState {
   /** Where the pointer is, and nothing at all while nothing is being carried. */
   const at = ref<Point | null>(null)
 

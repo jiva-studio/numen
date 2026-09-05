@@ -9,7 +9,7 @@ import type { Point } from '../lib/geometry'
 import type { Clock } from '../lib/clock'
 
 /** What is being carried, and whether the pointer has gone far enough to mean it. */
-export interface Pressing<Held> {
+export interface Drag<Held> {
   readonly held: Held
   readonly moved: boolean
 }
@@ -34,16 +34,16 @@ export interface Press<Held, At> {
 }
 
 /** What a press answers: what is held, where it would land, and how to start one. */
-export interface Pressed<Held, At> {
-  readonly dragging: ShallowRef<Pressing<Held> | null>
+export interface PressDragState<Held, At> {
+  readonly dragging: ShallowRef<Drag<Held> | null>
   readonly at: ShallowRef<At | null>
   /** Where the pointer is, for as long as a drag is live. */
   readonly point: ShallowRef<Point | null>
   readonly lift: (held: Held, event: PointerEvent) => void
 }
 
-export function usePressDrag<Held, At>(press: Press<Held, At>): Pressed<Held, At> {
-  const dragging = shallowRef<Pressing<Held> | null>(null)
+export function usePressDrag<Held, At>(press: Press<Held, At>): PressDragState<Held, At> {
+  const dragging = shallowRef<Drag<Held> | null>(null)
   const at = shallowRef<At | null>(null)
   const point = shallowRef<Point | null>(null)
 
