@@ -4,18 +4,18 @@
 // tsconfig answers for what `@/` means. Every path below is relative to the
 // module being cruised.
 //
-// The direction rule is ADR-0023's — apps → libs/ui, never back and never
-// sideways — and it is not written out here as a list of module names. It does
-// not have to be: every manifest already names what its module may reach, and
-// `no-reach-past-the-manifest` makes that list binding. A window importing the
-// other window, or the components importing the schema, is an import of a
-// package that module never declared.
+// The direction rule — apps → libs/ui, never back and never sideways — is not
+// written out here as a list of module names. It does not have to be: every
+// manifest already names what its module may reach, and
+// `no-reach-past-the-manifest` makes that list binding. A window importing
+// the other window, or the components importing the schema, is an import of
+// a package that module never declared.
 
 const forbidden = [
   {
     name: 'no-reach-past-the-manifest',
     comment:
-      'A module names what it may reach in its own package.json (ADR-0023). ' +
+      'A module names what it may reach in its own package.json. ' +
       'An import of a package that is not in it resolves today only because ' +
       'somebody else installed it.',
     severity: 'error',
@@ -26,7 +26,7 @@ const forbidden = [
     name: 'no-reach-out-of-the-module',
     comment:
       'A module reaches another by its name, not by a path out of its own ' +
-      'folder. There is no module at the repository root (ADR-0004), and a ' +
+      'folder. There is no module at the repository root, and a ' +
       'relative path across two of them is one the build cannot see.',
     severity: 'error',
     from: { path: '^(src|index\\.ts)', pathNot: '\\.(test|stories)\\.ts$' },
