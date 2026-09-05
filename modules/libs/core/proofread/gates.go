@@ -126,7 +126,7 @@ func Fixed(batch Batch, reply string, maxDistance float64) (put []Line, past, ok
 // nothing right, and a line no accepted reply covers is not in the result.
 func Gathered(asked []Batch, replies map[int]string, maxDistance float64) (map[int]Line, []int) {
 	put := make(map[int]Line)
-	standing := make(map[int]int)
+	best := make(map[int]int)
 	var past []int
 	for _, batch := range asked {
 		reply, answered := replies[batch.Number]
@@ -145,11 +145,11 @@ func Gathered(asked []Batch, replies map[int]string, maxDistance float64) (map[i
 			after[line.Number] = len(batch.Lines) - 1 - i
 		}
 		for _, line := range lines {
-			if stood, seen := standing[line.Number]; seen && after[line.Number] < stood {
+			if stood, seen := best[line.Number]; seen && after[line.Number] < stood {
 				continue
 			}
 			put[line.Number] = line
-			standing[line.Number] = after[line.Number]
+			best[line.Number] = after[line.Number]
 		}
 	}
 	return put, past
