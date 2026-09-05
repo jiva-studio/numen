@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -28,7 +29,7 @@ func unlevelled(context.Context, domain.Vault, []string) error { return nil }
 func editable(t *testing.T, notes map[string]string) *API {
 	t.Helper()
 	writing := note.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, unlevelled)
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, unlevelled, time.Now)
 	api := &API{
 		Notes: Notes{
 			Read:  &note.Read{Readers: filesystem.VaultReaders{}},
@@ -181,6 +182,7 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 		}},
 		filesystem.VaultWriters{},
 		unlevelled,
+		time.Now,
 	)
 	api.Notes.Linking = &linking
 

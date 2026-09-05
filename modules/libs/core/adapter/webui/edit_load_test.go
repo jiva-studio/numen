@@ -49,7 +49,7 @@ func TestEditLoad(t *testing.T) {
 	t.Cleanup(func() { db.Close() })
 
 	writing := note.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, unlevelled)
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, unlevelled, time.Now)
 	api := &API{
 		Listeners: following(),
 		Places:    focusing(),

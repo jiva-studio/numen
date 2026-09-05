@@ -136,6 +136,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 		cfg.VaultReaders(),
 		recording{VaultWriters: cfg.VaultWriters(), order: recorded, hold: hold},
 		unlevelled,
+		time.Now,
 	)
 	opened.API.Notes.Write = &writing
 
