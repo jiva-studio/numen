@@ -255,7 +255,7 @@ func TestCutNothing(t *testing.T) {
 // is in, and never crosses one.
 func obeyed(t *testing.T, text string, parts []PartStart, sizes Sizes, out []Chunk) {
 	t.Helper()
-	s := sizes.resolve()
+	s := sizes.Resolved()
 	bounds := boundaries(text, parts)
 
 	ascending := -1

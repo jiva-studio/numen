@@ -174,6 +174,22 @@ func TestWhatHasNotChangedIsNotOpenedAgain(t *testing.T) {
 	}
 }
 
+// An overlap as wide as the size it belongs to is narrowed before anything is
+// cut, so that tiling advances. A recipe naming the number configuration asked
+// for would name bytes nobody wrote, and the source would be read again on
+// every run.
+func TestTheRecipeNamesTheSizesTheCutKeptTo(t *testing.T) {
+	asked := chunking.Sizes{Large: 100, LargeOverlap: 100, Small: 20, SmallOverlap: 20}
+	kept := asked.Resolved()
+
+	if kept.LargeOverlap != 99 || kept.SmallOverlap != 19 {
+		t.Fatalf("the cut keeps to %+v", kept)
+	}
+	if got := (Extract{Sizes: asked}).sizes(); got != kept {
+		t.Errorf("the recipe names %+v, want %+v", got, kept)
+	}
+}
+
 func TestTheRecipeFollowsTheCutSizesAndStalenessFollowsTheRecipe(t *testing.T) {
 	ctx := t.Context()
 	one := chunking.Sizes{Large: 100, LargeOverlap: 20, Small: 20, SmallOverlap: 5}
