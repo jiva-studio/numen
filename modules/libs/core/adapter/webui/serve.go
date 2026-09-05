@@ -131,8 +131,9 @@ type passes struct {
 	ended func()
 }
 
-// errGoing is a vault asked for in a window that has settled to close.
-var errGoing = errors.New("the window is closing")
+// errGoing is a vault asked for in a window that has settled to go, and which
+// shows no other vault.
+var errGoing = errors.New("this window is going")
 
 // errSettling is a vault asked for while the window is already settling what it
 // owes.

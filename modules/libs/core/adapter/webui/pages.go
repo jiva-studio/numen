@@ -21,8 +21,9 @@ var pages embed.FS
 // policy is what this window may load. A page of a document arrives as a
 // picture at a URL of its own, so nothing here draws from anywhere but itself.
 
-// errGone is a question asked of a window whose door is shut.
-var errGone = errors.New("this window is going")
+// errShut is a question asked of a window that has been shut, which answers no
+// more of them.
+var errShut = errors.New("this window is shut")
 
 // Pages is the interface itself, built by `make interface` and carried inside
 // the binary. A binary built without it says so.
@@ -107,7 +108,7 @@ func (a *API) Serving(files http.Handler, named ...string) http.Handler {
 		w.Header().Set("Content-Security-Policy", policy)
 		// A window being taken away answers nothing.
 		if a.closed() {
-			http.Error(w, errGone.Error(), http.StatusServiceUnavailable)
+			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
 		for _, one := range routes {
@@ -119,7 +120,7 @@ func (a *API) Serving(files http.Handler, named ...string) http.Handler {
 		switch {
 		case bytes && strings.HasPrefix(r.URL.EscapedPath(), assetsRoute):
 			if !a.questions.begin() {
-				http.Error(w, errGone.Error(), http.StatusServiceUnavailable)
+				http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 				return
 			}
 			defer a.questions.done()
@@ -142,7 +143,7 @@ func (a *API) counting() connect.HandlerOption {
 		func(next connect.UnaryFunc) connect.UnaryFunc {
 			return func(ctx context.Context, r connect.AnyRequest) (connect.AnyResponse, error) {
 				if !a.questions.begin() {
-					return nil, connect.NewError(connect.CodeUnavailable, errGone)
+					return nil, connect.NewError(connect.CodeUnavailable, errShut)
 				}
 				defer a.questions.done()
 				return next(ctx, r)

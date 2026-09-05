@@ -549,7 +549,7 @@ func TestAWindowThatIsGoingIsNotARefusalAboutTheVault(t *testing.T) {
 		name string
 		why  error
 	}{
-		{"the window is closing", errGoing},
+		{"the window is going", errGoing},
 		{"the window is settling", errSettling},
 	} {
 		t.Run(one.name, func(t *testing.T) {
