@@ -19,7 +19,7 @@ const props = defineProps<{ held: DeckTabState }>()
 
 // The tab's state outlives this component, so what it holds is bound once here
 // and the template unwraps it.
-const { bands, choices, drawn, marks, saying, scheduled, shown, stencils } = props.held
+const { choices, drawn, marks, saying, scheduled, sections, shown, stencils } = props.held
 
 /** What the grid draws against the cards it was handed. */
 const wrong = computed(() => ({ at: marks.value.at, under: marks.value.under }))
@@ -95,7 +95,7 @@ const chose = (path: string) => {
     <DeckView
       class="deck-tab__grid"
       :cards="drawn"
-      :sections="bands"
+      :sections="sections"
       :stencils="stencils"
       :name="words.deck"
       :wrong="wrong"
@@ -127,7 +127,7 @@ const chose = (path: string) => {
 </template>
 
 <style scoped>
-/* The grid takes what the bands above it leave, and scrolls inside itself. */
+/* The grid takes what the rows above it leave, and scrolls inside itself. */
 .deck-tab {
   display: flex;
   flex-direction: column;

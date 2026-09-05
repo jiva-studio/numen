@@ -183,7 +183,7 @@ export const sectionsOf = (deck: Deck): readonly VaultSection[] =>
   deck.sections.map(({ name, lead }) => ({ name, lead }))
 
 /** The sections as the grid draws them, each under the identity it was read at. */
-export const bandedOf = (deck: Deck): readonly DeckSection[] =>
+export const drawnSectionsOf = (deck: Deck): readonly DeckSection[] =>
   deck.sections.map(({ id, name }) => ({ id, name }))
 
 /** The faces of a stencil, in the shape the vault takes them. */

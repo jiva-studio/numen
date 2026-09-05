@@ -54,7 +54,7 @@ const marks = computed(() => props.held.marks.value)
 </template>
 
 <style scoped>
-/* The editor takes what the bands above it leave, and scrolls inside itself. */
+/* The editor takes what the rows above it leave, and scrolls inside itself. */
 .stencil-tab {
   display: flex;
   flex-direction: column;

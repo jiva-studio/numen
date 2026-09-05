@@ -223,7 +223,7 @@ describe('a deck drawn', () => {
 
   it('draws a heading for every section the vault read, with the cards under it', async () => {
     const { window, tab } = await drawn()
-    const roots = tab.bands.value[0]?.id ?? ''
+    const roots = tab.sections.value[0]?.id ?? ''
 
     expect(window.get(`[data-section-head="${roots}"]`).get('input').element.value).toBe('Roots')
     expect(window.findAll(`[data-section="${roots}"]`)).toHaveLength(2)
@@ -234,7 +234,7 @@ describe('a deck drawn', () => {
 
     await window.get('[data-add-section]').trigger('click')
 
-    expect(tab.bands.value.map((band) => band.name)).toStrictEqual(['Roots', 'Section 1'])
+    expect(tab.sections.value.map((section) => section.name)).toStrictEqual(['Roots', 'Section 1'])
   })
 })
 
@@ -321,22 +321,22 @@ describe('a gesture in the grid', () => {
 
   it('renames the section the box belongs to', async () => {
     const { window, tab } = await drawn()
-    const roots = tab.bands.value[0]?.id ?? ''
+    const roots = tab.sections.value[0]?.id ?? ''
     const box = window.get(`[data-section-head="${roots}"]`).get('input')
 
     await box.setValue('Roots and shoots')
     await box.trigger('change')
 
-    expect(tab.bands.value[0]?.name).toBe('Roots and shoots')
+    expect(tab.sections.value[0]?.name).toBe('Roots and shoots')
   })
 
   it('takes a section away, and leaves the cards that stood under it', async () => {
     const { window, tab } = await drawn()
-    const roots = tab.bands.value[0]?.id ?? ''
+    const roots = tab.sections.value[0]?.id ?? ''
 
     await window.get(`[data-section-head="${roots}"]`).get('.remove-button').trigger('click')
 
-    expect(tab.bands.value).toStrictEqual([])
+    expect(tab.sections.value).toStrictEqual([])
     expect(window.findAll('[data-card]')).toHaveLength(2)
   })
 })

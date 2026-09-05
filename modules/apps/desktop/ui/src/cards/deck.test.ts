@@ -247,8 +247,8 @@ describe('a deck opened', () => {
   it('draws the sections the vault read, each under an identity of its own', async () => {
     const { tab } = await open({ sections: [{ name: 'Roots', lead: '' }] })
 
-    expect(tab.bands.value.map((band) => band.name)).toStrictEqual(['Roots'])
-    expect(tab.bands.value[0]?.id).toBeTruthy()
+    expect(tab.sections.value.map((section) => section.name)).toStrictEqual(['Roots'])
+    expect(tab.sections.value[0]?.id).toBeTruthy()
   })
 
   it('is called what the file is called', async () => {
@@ -524,7 +524,7 @@ describe('a section of a deck the window holds', () => {
     const { decks, tab, wrote } = await open()
 
     tab.addsSection('Roots')
-    expect(tab.bands.value.map((band) => band.name)).toStrictEqual(['Roots'])
+    expect(tab.sections.value.map((section) => section.name)).toStrictEqual(['Roots'])
 
     await decks.flush()
     expect(wrote()[0]?.sections).toStrictEqual([{ name: 'Roots', lead: '' }])
@@ -533,9 +533,9 @@ describe('a section of a deck the window holds', () => {
   it('takes the name it was given', async () => {
     const { tab } = await open({ sections: [{ name: 'Roots', lead: '' }] })
 
-    tab.namesSection(tab.bands.value[0]?.id ?? '', 'Roots and shoots')
+    tab.namesSection(tab.sections.value[0]?.id ?? '', 'Roots and shoots')
 
-    expect(tab.bands.value.map((band) => band.name)).toStrictEqual(['Roots and shoots'])
+    expect(tab.sections.value.map((section) => section.name)).toStrictEqual(['Roots and shoots'])
   })
 
   it('takes away its heading and nothing else when it goes', async () => {
@@ -544,9 +544,9 @@ describe('a section of a deck the window holds', () => {
       cards: CARDS.map((card) => ({ ...card, section: 0 })),
     })
 
-    tab.removesSection(tab.bands.value[0]?.id ?? '')
+    tab.removesSection(tab.sections.value[0]?.id ?? '')
 
-    expect(tab.bands.value).toStrictEqual([])
+    expect(tab.sections.value).toStrictEqual([])
     expect(tab.deck.value.cards.map(calling)).toStrictEqual(['Llama', 'Alpaca'])
     expect(tab.drawn.value.map((card) => card.section)).toStrictEqual([null, null])
   })

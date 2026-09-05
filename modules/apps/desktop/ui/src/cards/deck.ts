@@ -19,7 +19,7 @@ import { DECK } from '../workspace'
 import DeckTab from './DeckTab.vue'
 import {
   added,
-  bandedOf,
+  drawnSectionsOf,
   bodyOf,
   cardsOf,
   carried,
@@ -96,7 +96,7 @@ export interface DeckTabState {
   /** The same, as the grid draws them, each under the stencil that cuts it. */
   readonly drawn: ComputedRef<readonly DeckCard[]>
   /** The sections, as the grid draws them. */
-  readonly bands: ComputedRef<readonly DeckSection[]>
+  readonly sections: ComputedRef<readonly DeckSection[]>
   /** The stencils a card may be cut by. */
   readonly stencils: ComputedRef<readonly Stencil[]>
   /** What is wrong with the file, against the card it stands on. */
@@ -401,7 +401,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: FileOp
       shown: computed(() => store.shown(id)),
       deck,
       drawn: computed(() => drawnOf(deck.value, offers.value)),
-      bands: computed(() => bandedOf(deck.value)),
+      sections: computed(() => drawnSectionsOf(deck.value)),
       stencils,
       marks: computed(() => marksAt(id)),
       saying: computed(() => sayingOf(id)),

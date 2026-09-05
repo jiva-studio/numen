@@ -301,7 +301,7 @@ const CARDS = [
   ]),
 ]
 
-const BANDS = [
+const SECTIONS = [
   { id: 'going', name: 'Verbs of going' },
   { id: 'knowing', name: 'Verbs of knowing' },
   { id: 'nouns', name: 'Nouns off them' },
@@ -312,7 +312,7 @@ const DECK_HELD: DeckTabState = {
   shown: computed(() => ({ path: 'Sanskrit/Roots.md', body: '', state: 'clean', refusal: null })),
   deck: computed(() => ({ preamble: '', cards: [], sections: [], tail: '' })),
   drawn: computed(() => CARDS),
-  bands: computed(() => BANDS),
+  sections: computed(() => SECTIONS),
   stencils: computed(() => [ROOT_CUT, WORD]),
   marks: computed(() => NO_MARKS),
   saying: computed(() => ''),
