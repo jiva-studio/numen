@@ -117,7 +117,7 @@ func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path stri
 
 	hash := text.Fingerprint(raw)
 	area := u.area()
-	corrections, far := text.Fixes(area, hash), text.Proofread(area, hash)
+	corrections, far := text.Corrections(area, hash), text.Proofread(area, hash)
 
 	// One run to a reading. The name is the one the corrections are kept under,
 	// and it is held for as long as the proofreading takes.

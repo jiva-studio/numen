@@ -125,7 +125,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 
 	hash := text.Fingerprint(raw)
 	area := u.area()
-	stands, far := text.Corrected(area, hash), text.Proofread(area, hash)
+	stands, far := text.Corrections(area, hash), text.Proofread(area, hash)
 
 	// One run to a recording. The name a transcription holds is the name held
 	// here, so a run listening to a recording and a run putting its transcript
@@ -296,7 +296,7 @@ func (u ProofreadTranscript) current(
 	store port.DerivedStore,
 	area, hash string,
 ) ([]byte, bool, error) {
-	raw, err := store.Read(ctx, text.Corrected(area, hash))
+	raw, err := store.Read(ctx, text.Corrections(area, hash))
 	if err == nil {
 		return raw, true, nil
 	}

@@ -161,7 +161,7 @@ func stopped(
 	for at := range through {
 		spoken[at].Text = strings.ToUpper(spoken[at].Text)
 	}
-	if err := store.Write(t.Context(), text.Corrected(text.ASR, hash), transcript.Marshal(spoken)); err != nil {
+	if err := store.Write(t.Context(), text.Corrections(text.ASR, hash), transcript.Marshal(spoken)); err != nil {
 		t.Fatal(err)
 	}
 	stood, err := json.Marshal(putting{By: by.Name(), At: spoken[through-1].To})
@@ -207,7 +207,7 @@ func TestATranscriptLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testin
 		t.Errorf("the proofreader was asked about lines %v", got)
 	}
 	want := []string{"FIRST THING", "SECOND THING", "THIRD THING"}
-	if got := written(t, store, text.Corrected(text.ASR, hash)); !slices.Equal(got, want) {
+	if got := written(t, store, text.Corrections(text.ASR, hash)); !slices.Equal(got, want) {
 		t.Errorf("the transcript says %q", got)
 	}
 	if doing, failed := shown(held, recording); doing != "" {

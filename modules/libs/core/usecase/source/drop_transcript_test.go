@@ -62,7 +62,7 @@ func TestDroppingATranscriptLeavesTheRecordingAsItWas(t *testing.T) {
 	}
 	// A person put the words right, so the file beside the artifact stands too.
 	right := transcript.Marshal([]transcript.Cue{{Text: "first thing said", From: 0, To: 800}})
-	if err := kept.Write(t.Context(), text.Corrected(text.ASR, hash), right); err != nil {
+	if err := kept.Write(t.Context(), text.Corrections(text.ASR, hash), right); err != nil {
 		t.Fatal(err)
 	}
 	if len(cutFrom(index, v, recordingPath)) == 0 {

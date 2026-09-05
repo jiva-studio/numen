@@ -38,7 +38,7 @@ func TestASentenceBrokenAcrossStretchesBecomesOneLine(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cues := cued(t, shelved, text.Corrected(text.ASR, hash))
+	cues := cued(t, shelved, text.Corrections(text.ASR, hash))
 	if len(cues) != 2 {
 		t.Fatalf("the transcript says %+v", cues)
 	}
@@ -106,7 +106,7 @@ func TestALineAlreadyPutIntoARunIsLeftInIt(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			cues := cued(t, shelved, text.Corrected(text.ASR, hash))
+			cues := cued(t, shelved, text.Corrections(text.ASR, hash))
 			if len(cues) != 3 {
 				t.Fatalf("the transcript says %+v", cues)
 			}
@@ -132,7 +132,7 @@ func TestARunOverLinesAlreadyPutTogetherIsDropped(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cues := cued(t, shelved, text.Corrected(text.ASR, hash))
+	cues := cued(t, shelved, text.Corrections(text.ASR, hash))
 	if len(cues) != 3 {
 		t.Fatalf("the transcript says %+v", cues)
 	}
@@ -176,7 +176,7 @@ func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 		t.Errorf("got %+v", res)
 	}
 
-	cues := cued(t, shelved, text.Corrected(text.ASR, hash))
+	cues := cued(t, shelved, text.Corrections(text.ASR, hash))
 	if len(cues) != 3 || cues[0].Text != putTogether {
 		t.Errorf("the transcript says %+v", cues)
 	}
@@ -226,7 +226,7 @@ func TestASentenceCrossingACutIsPutBackTogether(t *testing.T) {
 		t.Fatalf("it asked %v", by.asked)
 	}
 
-	cues := cued(t, shelved, text.Corrected(text.ASR, hash))
+	cues := cued(t, shelved, text.Corrections(text.ASR, hash))
 	if len(cues) != 6 {
 		t.Fatalf("the transcript says %+v", cues)
 	}
@@ -322,7 +322,7 @@ func TestARunStoppedInTheSeamPassTakesUpWhereItStopped(t *testing.T) {
 		t.Errorf("it asked %v, want the seam it stopped on", again.asked)
 	}
 
-	cues := cued(t, shelved, text.Corrected(text.ASR, hash))
+	cues := cued(t, shelved, text.Corrections(text.ASR, hash))
 	if len(cues) != 7 {
 		t.Fatalf("the transcript says %+v", cues)
 	}
@@ -347,7 +347,7 @@ func TestALineTheFirstPassJoinedIsNotJoinedAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cues := cued(t, shelved, text.Corrected(text.ASR, hash))
+	cues := cued(t, shelved, text.Corrections(text.ASR, hash))
 	if len(cues) != 7 {
 		t.Fatalf("the transcript says %+v", cues)
 	}

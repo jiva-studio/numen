@@ -90,7 +90,7 @@ func halted(
 	for at := range through {
 		put = append(put, fixes.Line{Number: at, Text: corrected(lines[at])})
 	}
-	if err := store.Append(t.Context(), text.Fixes("ocr", hash), fixes.Pack(put)); err != nil {
+	if err := store.Append(t.Context(), text.Corrections("ocr", hash), fixes.Pack(put)); err != nil {
 		t.Fatal(err)
 	}
 	stood, err := json.Marshal(checkpoint{By: by.Name(), Pages: through})
@@ -152,7 +152,7 @@ func TestAReadingLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testing.T
 	if got := by.lines(); !slices.Equal(got, []int{1, 2}) {
 		t.Errorf("the proofreader was asked about lines %v", got)
 	}
-	if got := corrections(t, store, text.Fixes("ocr", hash)); !slices.Equal(got, []int{0, 1, 2}) {
+	if got := corrections(t, store, text.Corrections("ocr", hash)); !slices.Equal(got, []int{0, 1, 2}) {
 		t.Errorf("the corrections stand for lines %v", got)
 	}
 	if at, held := w.said(t); held {
@@ -216,7 +216,7 @@ func TestAReadingAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
 	lines := []string{"the words one", "the words two"}
 	by := &puts{}
 	w, v, store, hash := halted(t, by, 1, lines...)
-	release, err := store.Claim(t.Context(), text.Fixes("ocr", hash))
+	release, err := store.Claim(t.Context(), text.Corrections("ocr", hash))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -127,7 +127,7 @@ func (u Highlight) read(
 	// A reading that was proofread is read with its corrections in it, so a run
 	// of its text is a run of the corrected prose and the coordinates say where
 	// those words stand.
-	corrections, err := store.Read(ctx, text.Fixes(said.Producer, said.Hash))
+	corrections, err := store.Read(ctx, text.Corrections(said.Producer, said.Hash))
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (u Highlight) layer(
 
 // every is the pages all the runs fall on, in order and each of them once. Two
 // runs on one page are one page read.
-func every(book port.Reading, runs []highlight.Stretch) []int {
+func every(book port.TextLayer, runs []highlight.Stretch) []int {
 	held := map[int]bool{}
 	var out []int
 	for _, one := range runs {
@@ -189,7 +189,7 @@ func every(book port.Reading, runs []highlight.Stretch) []int {
 // across is the pages a run of the document's text falls on. A page holds the
 // text from where it begins up to where the next page does, and the last page
 // holds the rest.
-func across(book port.Reading, start, end int) []int {
+func across(book port.TextLayer, start, end int) []int {
 	if end > len(book.Text) {
 		end = len(book.Text)
 	}

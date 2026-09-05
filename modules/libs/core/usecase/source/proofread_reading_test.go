@@ -345,7 +345,7 @@ func textNames(t *testing.T, shelved *shelf) names {
 		return names{
 			hash:     hash,
 			artifact: text.Artifact("ocr", hash),
-			fixes:    text.Fixes("ocr", hash),
+			fixes:    text.Corrections("ocr", hash),
 			far:      text.Proofread("ocr", hash),
 		}
 	}

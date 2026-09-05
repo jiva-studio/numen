@@ -88,7 +88,7 @@ func Composed(
 	raw []byte,
 ) (*Document, error) {
 	if reader == ASR {
-		put, err := beside(ctx, store, Corrected(reader, hash))
+		put, err := beside(ctx, store, Corrections(reader, hash))
 		if err != nil {
 			return nil, err
 		}
@@ -103,7 +103,7 @@ func Composed(
 	if err != nil {
 		return nil, err
 	}
-	corrections, err := beside(ctx, store, Fixes(reader, hash))
+	corrections, err := beside(ctx, store, Corrections(reader, hash))
 	if err != nil {
 		return nil, err
 	}
@@ -223,13 +223,18 @@ func Partial(from, hash string) string {
 	return from + "/" + hash + ".partial"
 }
 
-// Corrected is the name a transcript put right is kept under: the words as they
-// now stand, WebVTT under the extension that format is opened by.
+// Corrections is the name what put a producer's text right is kept under. A
+// text nothing proofread and nobody edited has no such file.
 //
-// The artifact stays what was heard, so deleting this file gives that back. A
-// transcript nothing put right has no such file.
-func Corrected(from, hash string) string {
-	return from + "/" + hash + ".corrected.vtt"
+// The artifact stays what was read or heard, so deleting this file gives that
+// back. A transcript's corrections are the words as they now stand, WebVTT
+// under the extension that format is opened by; a reading's are one record to
+// a line put right, keyed by the box the line was read from.
+func Corrections(from, hash string) string {
+	if from == ASR {
+		return from + "/" + hash + ".corrected.vtt"
+	}
+	return from + "/" + hash + ".fixes"
 }
 
 // Parts is the name the parts of a reading are kept under. A reading whose
@@ -242,12 +247,6 @@ func Parts(from, hash string) string {
 // kept because no machine here remakes them cheaply.
 func Boxes(from, hash string) string {
 	return from + "/" + hash + ".boxes"
-}
-
-// Fixes is the name a reading's corrections are kept under. A reading nothing
-// proofread has no such file.
-func Fixes(from, hash string) string {
-	return from + "/" + hash + ".fixes"
 }
 
 // Proofread is the name of what says who put a reading right and how far they
@@ -305,7 +304,7 @@ func Names(from, hash string) []string {
 		return []string{
 			Artifact(from, hash),
 			Partial(from, hash),
-			Corrected(from, hash),
+			Corrections(from, hash),
 			Proofread(from, hash),
 			Answer(from, hash),
 			Beside(from, hash),
@@ -316,7 +315,7 @@ func Names(from, hash string) []string {
 		Partial(from, hash),
 		Boxes(from, hash),
 		Parts(from, hash),
-		Fixes(from, hash),
+		Corrections(from, hash),
 		Proofread(from, hash),
 		Beside(from, hash),
 	}

@@ -89,7 +89,7 @@ func TestATranscriptIsPutRightAndEveryTimingStands(t *testing.T) {
 		t.Errorf("got %+v", res)
 	}
 
-	cues := cued(t, shelved, text.Corrected(text.ASR, hash))
+	cues := cued(t, shelved, text.Corrections(text.ASR, hash))
 	if len(cues) != len(words) {
 		t.Fatalf("the transcript says %+v", cues)
 	}
@@ -140,7 +140,7 @@ func TestAReplyThatIsNoAnswerLeavesItsLinesAsHeard(t *testing.T) {
 	if res.Refused != 1 || res.Fixed != 0 || res.Left != 2 {
 		t.Errorf("got %+v", res)
 	}
-	if _, err := shelved.Read(t.Context(), text.Corrected(text.ASR, hash)); err == nil {
+	if _, err := shelved.Read(t.Context(), text.Corrections(text.ASR, hash)); err == nil {
 		t.Error("a transcript nothing put right was written beside the artifact")
 	}
 }
@@ -179,7 +179,7 @@ func TestATranscriptIsTakenUpWhereTheRunBeforeStopped(t *testing.T) {
 		}
 	}
 
-	cues := cued(t, shelved, text.Corrected(text.ASR, hash))
+	cues := cued(t, shelved, text.Corrections(text.ASR, hash))
 	if len(cues) != 4 {
 		t.Fatalf("the transcript says %+v", cues)
 	}
@@ -197,7 +197,7 @@ func TestAResumedRunReadsNoMoreLinesThanTheTranscriptHas(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing", "forth thing"}
 	u, v, shelved, _, hash := hearing(t, nil, words...)
 	u.BatchSize, u.Overlap, u.InFlight = 2, 1, 1
-	if err := shelved.Write(t.Context(), text.Corrected(text.ASR, hash), transcript.Marshal(heard(words))); err != nil {
+	if err := shelved.Write(t.Context(), text.Corrections(text.ASR, hash), transcript.Marshal(heard(words))); err != nil {
 		t.Fatal(err)
 	}
 	stood, err := json.Marshal(putting{By: "a proofreader", At: stretch(1).To})
@@ -262,7 +262,7 @@ func TestATranscriptSomebodyElseWroteIsLeftAsTheyLeftIt(t *testing.T) {
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			u, v, shelved, by, hash := hearing(t, map[int]string{1: corrects(1, "second thing")}, words...)
-			if err := shelved.Write(t.Context(), text.Corrected(text.ASR, hash), one.said); err != nil {
+			if err := shelved.Write(t.Context(), text.Corrections(text.ASR, hash), one.said); err != nil {
 				t.Fatal(err)
 			}
 			if one.stood.By != "" {
@@ -285,7 +285,7 @@ func TestATranscriptSomebodyElseWroteIsLeftAsTheyLeftIt(t *testing.T) {
 			if len(by.asked) != 0 {
 				t.Errorf("it asked about %v", by.asked)
 			}
-			if now := string(kept(t, shelved, text.Corrected(text.ASR, hash))); now != string(one.said) {
+			if now := string(kept(t, shelved, text.Corrections(text.ASR, hash))); now != string(one.said) {
 				t.Errorf("the transcript now says %q", now)
 			}
 		})

@@ -363,7 +363,7 @@ func TestAProofreadReadingIsLitWhereItsWordsNowStand(t *testing.T) {
 	// The first line is put right and grows by three bytes, so the third line
 	// begins at 14 and runs to 19.
 	put := []fixes.Line{{Number: 0, Text: "eighteen"}}
-	if err := store.Write(t.Context(), text.Fixes("ocr", "abc123"), fixes.Pack(put)); err != nil {
+	if err := store.Write(t.Context(), text.Corrections("ocr", "abc123"), fixes.Pack(put)); err != nil {
 		t.Fatal(err)
 	}
 
