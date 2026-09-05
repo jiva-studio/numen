@@ -154,6 +154,7 @@ lint: generate-check ## the checks CI runs, less the one needing a base branch
 	cd $(DOCS) && npm run manual:check
 	cd $(DOCS) && npm run typecheck
 	cd $(LANDING) && npm run typecheck
+	cd $(LANDING) && npm run stories:check
 	cd $(DEPGRAPH) && npm run check
 	$(MAKE) graph-check
 
