@@ -30,6 +30,7 @@ The numbers run without gaps, and the whole corpus is renumbered when one closes
 - [Where a port is declared, and where an adapter stands](0035-where-a-port-is-declared-and-where-an-adapter-stands.md)
 - [A client is generated from the protocol](0005-a-client-is-generated-from-the-protocol.md)
 - [One service to a subject](0034-one-service-to-a-subject.md)
+- [Nothing is logged, and a person is told where they are](0037-nothing-is-logged.md)
 - [How this application is tested](0025-how-this-application-is-tested.md)
 
 ### The index
