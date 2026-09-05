@@ -11,7 +11,8 @@ import (
 // onDisk gives a window a folder of its own to keep its drawings in.
 func onDisk(t *testing.T, api *API) *cache {
 	t.Helper()
-	kept := &cache{dir: t.TempDir(), limit: mostKept}
+	kept := keptIn(t.TempDir())
+	t.Cleanup(kept.close)
 	api.Viewer.kept = kept
 	return kept
 }
@@ -143,6 +144,49 @@ func TestTheOldestDrawingsGoWhenTheFolderIsFull(t *testing.T) {
 	if n := drawingsIn(t, kept); n != 3 {
 		t.Errorf("the folder holds %d drawings after the sweep, want 3", n)
 	}
+}
+
+// A sweep runs behind the page whose writing triggered it. The window owns it:
+// closing ends it and waits for it, so nothing is still deleting files in a
+// folder after the process that started it has said it is done.
+func TestTheWindowWaitsForTheSweepItStarted(t *testing.T) {
+	kept := keptIn(t.TempDir())
+	page := make([]byte, 1000)
+	kept.limit = 2 * int64(len(page))
+	kept.every = int64(len(page))
+
+	for at := range 6 {
+		kept.put(drawingOf(at), page)
+	}
+	kept.close()
+
+	if total := totalOf(t, kept); total > kept.limit {
+		t.Errorf("the folder holds %d bytes after the window closed, over its bound of %d", total, kept.limit)
+	}
+}
+
+// A page kept after the window has closed starts no sweep: it would be one
+// nobody is left to wait for.
+func TestNoSweepIsStartedAfterTheWindowCloses(t *testing.T) {
+	kept := keptIn(t.TempDir())
+	page := make([]byte, 1000)
+	kept.limit = 1
+	kept.every = int64(len(page))
+
+	kept.close()
+	for at := range 4 {
+		kept.put(drawingOf(at), page)
+	}
+	kept.going.Wait()
+
+	if n := drawingsIn(t, kept); n != 4 {
+		t.Errorf("a sweep nobody was left to wait for deleted %d of 4 drawings", 4-n)
+	}
+}
+
+// drawingOf is one page of the one book these tests keep drawings of.
+func drawingOf(at int) pictureID {
+	return pictureID{document: fingerprint{path: "book.pdf", size: 1, mtime: 1}, page: at, width: 400}
 }
 
 // totalOf is what the folder's drawings come to.

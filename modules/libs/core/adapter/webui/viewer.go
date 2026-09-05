@@ -114,7 +114,12 @@ func looking(docs port.Documents) *viewer {
 	return v
 }
 
-func (v *viewer) close() { v.docs.Load().close() }
+// close is the documents the window holds open let go, and the sweep of the
+// folder they were kept in ended and waited for.
+func (v *viewer) close() {
+	v.docs.Load().close()
+	v.kept.close()
+}
 
 // empty closes the documents the window has open and drops the pages drawn from
 // them. It goes on looking, at whatever it is given next.

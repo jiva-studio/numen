@@ -25,11 +25,22 @@ import (
 type cache struct {
 	dir   string
 	limit int64
+	// every is what is written between sweeps.
+	every int64
+
+	// going is the sweep that has not ended. A sweep outlives the page whose
+	// writing started it, and the window waits here for it: it is unlink calls
+	// for the files above the bound, and a folder left half swept is one nothing
+	// is left to sweep.
+	going sync.WaitGroup
 
 	mu sync.Mutex
 	// written is what has been written since the last sweep. Counting the folder
 	// on every write is a folder read per page turned.
 	written int64
+	// shut is the window gone. A sweep started after it would be one nobody is
+	// left to wait for.
+	shut bool
 }
 
 const (
@@ -52,7 +63,29 @@ func shelved() *cache {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil
 	}
-	return &cache{dir: dir, limit: mostKept}
+	return keptIn(dir)
+}
+
+// keptIn is a cache in one folder, with nothing written to it yet and no sweep
+// running.
+func keptIn(dir string) *cache {
+	return &cache{dir: dir, limit: mostKept, every: sweptEvery}
+}
+
+// close waits for the sweep that is running, and starts no more.
+//
+// A sweep is one pass of unlink calls over the files above the bound, so what
+// it costs to wait for it is that. What it costs not to is a folder swept as
+// far as the process happened to get, with the count that would sweep it again
+// already back at nothing.
+func (s *cache) close() {
+	if s == nil {
+		return
+	}
+	s.mu.Lock()
+	s.shut = true
+	s.mu.Unlock()
+	s.going.Wait()
 }
 
 // get is a page drawn before, and nothing where it was not.
@@ -102,13 +135,19 @@ func (s *cache) put(key pictureID, body []byte) {
 
 	s.mu.Lock()
 	s.written += int64(len(body))
-	due := s.written >= sweptEvery
+	due := !s.shut && s.written >= s.every
 	if due {
 		s.written = 0
+		// Counted before the sweep is started, so a close cannot come between
+		// the two and go without waiting for it.
+		s.going.Add(1)
 	}
 	s.mu.Unlock()
 	if due {
-		go s.sweep()
+		go func() {
+			defer s.going.Done()
+			s.sweep()
+		}()
 	}
 }
 
