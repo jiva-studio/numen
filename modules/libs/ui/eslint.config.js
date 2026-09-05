@@ -50,8 +50,10 @@ export default tseslint.config(
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
       ],
 
-      // A component here is named after the one thing it draws — Card, Plex,
-      // Reader — and the module is not a page of global tag names.
+      // Button, Card and Menu are what the field calls these, and a single-file
+      // component is addressed in PascalCase, so it meets no HTML element. What
+      // a name here must not do is take a word the barrel already exports as a
+      // type: that is the collision, and no rule refuses it.
       'vue/multi-word-component-names': 'off',
 
       // The one place it fires is the regular expression that strips control

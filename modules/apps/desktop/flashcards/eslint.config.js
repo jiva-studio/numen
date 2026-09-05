@@ -54,8 +54,9 @@ export default tseslint.config(
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
       ],
 
-      // A screen here is named after the one thing it draws — Decks, Session,
-      // Reading.
+      // A screen is named after the one thing it draws, and is addressed in
+      // PascalCase, so it meets no HTML element. This window exports no barrel,
+      // so the collision the rule guards against elsewhere cannot arise here.
       'vue/multi-word-component-names': 'off',
     },
   },
