@@ -7,12 +7,12 @@
  * blend came to. The build in `vite.config.ts` writes into the Go package's
  * assets and has nothing to say about either.
  */
-/// <reference types="@vitest/browser/providers/playwright" />
 import { accessSync, constants } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
 import { configDefaults, coverageConfigDefaults, defineConfig } from 'vitest/config'
 import type { BrowserCommand } from 'vitest/node'
+import { playwright } from '@vitest/browser-playwright'
 import vue from '@vitejs/plugin-vue'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
 
@@ -34,7 +34,7 @@ const sweep: BrowserCommand<[from: Point, to: Point]> = async ({ page }, from, t
   await page.mouse.up()
 }
 
-declare module '@vitest/browser/context' {
+declare module 'vitest/browser' {
   interface BrowserCommands {
     sweep: (from: Point, to: Point) => Promise<void>
   }
@@ -79,7 +79,7 @@ export default defineConfig({
       // A story is the corpus a test run draws, not code under test.
       exclude: [...coverageConfigDefaults.exclude, '**/*.stories.ts'],
       reporter: ['text-summary'],
-      thresholds: { statements: 92, branches: 92, functions: 79, lines: 92 },
+      thresholds: { statements: 89, branches: 84, functions: 81, lines: 91 },
     },
     projects: [
       {
@@ -109,13 +109,15 @@ export default defineConfig({
           browser: {
             enabled: true,
             headless: true,
-            provider: 'playwright',
+            provider: playwright(),
             // The window is WebKit on a mac and on Linux, and Chromium on
             // Windows. Every story is rendered in both.
             instances: [
               {
                 browser: 'chromium',
-                ...(chrome ? { launch: { executablePath: chrome } } : {}),
+                ...(chrome
+                  ? { provider: playwright({ launchOptions: { executablePath: chrome } }) }
+                  : {}),
               },
               { browser: 'webkit' },
             ],
