@@ -447,7 +447,7 @@ func (a *API) GetNeighbourhood(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	// Which of three each note on the picture is, asked once for the whole of
+	// Which of four each note on the picture is, asked once for the whole of
 	// it, so a client draws a deck and a stencil as what they are.
 	paths := []string{found.Focus.Path}
 	for _, related := range found.Related {

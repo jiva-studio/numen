@@ -17,7 +17,7 @@ import (
 // passes is the half of the window that belongs to one vault: what runs behind
 // it, what a request reaches them through, and what ends them.
 //
-// It is published as one, through API.on, and every request reads it there.
+// It is published as one, through API.showing, and every request reads it there.
 type passes struct {
 	opening      *container.VaultOpener
 	recognising  *source.RecognitionWorker

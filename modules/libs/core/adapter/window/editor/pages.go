@@ -18,9 +18,6 @@ import (
 //go:embed all:pages
 var pages embed.FS
 
-// policy is what this window may load. A page of a document arrives as a
-// picture at a URL of its own, so nothing here draws from anywhere but itself.
-
 // errShut is a question asked of a window that has been shut, which answers no
 // more of them.
 var errShut = errors.New("this window is shut")
