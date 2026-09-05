@@ -90,8 +90,9 @@ func TestTimingsOtherToolsWrite(t *testing.T) {
 	}
 }
 
-// A run of the words is played from the cue it begins in.
-func TestARunIsPlayedFromItsCue(t *testing.T) {
+// A run of the words is in the cues it crosses, and in none where it is past
+// them.
+func TestARunIsInTheCuesItCrosses(t *testing.T) {
 	_, cues := transcript.Parse(transcript.Marshal([]transcript.Cue{
 		{Text: "first", From: 0, To: 1000},
 		{Text: "second", From: 1000, To: 2000},
@@ -99,15 +100,14 @@ func TestARunIsPlayedFromItsCue(t *testing.T) {
 	}))
 
 	// "second" begins after "first\n".
-	ms, ok := transcript.Plays(cues, 6, 6)
-	if !ok || ms != 1000 {
-		t.Errorf("the run plays from %d ms (found %v)", ms, ok)
+	if got := transcript.At(cues, 6, 6); len(got) != 1 || got[0].From != 1000 {
+		t.Errorf("the run is in %d cues, the first from %v", len(got), got)
 	}
 	if got := transcript.At(cues, 6, 8); len(got) != 2 {
 		t.Errorf("a run crossing into the third cue is in %d cues, want 2", len(got))
 	}
-	if _, ok := transcript.Plays(cues, 900, 5); ok {
-		t.Errorf("a run past the words was placed in the recording")
+	if got := transcript.At(cues, 900, 5); len(got) != 0 {
+		t.Errorf("a run past the words is in %d cues, want none", len(got))
 	}
 }
 

@@ -52,10 +52,10 @@ func TestBytesRoundTrip(t *testing.T) {
 			if got[0] != c.want {
 				t.Fatalf("got %d, want %d", got[0], c.want)
 			}
-			back := embedding.Floats(got)
+			back := float64(got[0]) / 127 * embedding.Int8Scale
 			want := math.Min(math.Abs(float64(c.in)), embedding.Int8Scale)
-			if diff := math.Abs(math.Abs(float64(back[0])) - want); diff > step/2 {
-				t.Errorf("read back %v from %v, off by %v", back[0], c.in, diff)
+			if diff := math.Abs(math.Abs(back) - want); diff > step/2 {
+				t.Errorf("read back %v from %v, off by %v", back, c.in, diff)
 			}
 		})
 	}

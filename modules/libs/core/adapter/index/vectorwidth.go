@@ -12,10 +12,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/embedding"
 )
 
-// coarseWidth is the width the vector index is created at, and is what an
-// installation with no model leaves it as.
-const coarseWidth = 1024
-
 // declaredWidth reads the width out of the statement the table was created by,
 // which is where a virtual table keeps its shape.
 var declaredWidth = regexp.MustCompile(`bit\[(\d+)]`)

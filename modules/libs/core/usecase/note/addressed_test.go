@@ -18,7 +18,7 @@ func (n named) Named(_ context.Context, _ domain.VaultID, name string) ([]string
 }
 
 // unreachable is a vault that cannot answer at all.
-type unreachable struct{ named }
+type unreachable struct{}
 
 func (unreachable) Named(context.Context, domain.VaultID, string) ([]string, error) {
 	return nil, errors.New("the index could not be read")

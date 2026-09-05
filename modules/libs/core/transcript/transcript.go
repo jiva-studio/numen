@@ -197,16 +197,6 @@ func At(cues []Cue, start, length int) []Cue {
 	return out
 }
 
-// Plays is the millisecond a run of the words is played from, and whether any
-// cue holds it. A run no cue holds is nowhere to play.
-func Plays(cues []Cue, start, length int) (int, bool) {
-	found := At(cues, start, length)
-	if len(found) == 0 {
-		return 0, false
-	}
-	return found[0].From, true
-}
-
 // Heard is the note a run stopped part way leaves: how many milliseconds of the
 // recording have been written down. It stands after the cues it claims, so a
 // batch that did not land whole is one no note claims.

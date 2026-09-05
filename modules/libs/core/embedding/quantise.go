@@ -56,17 +56,6 @@ func Bytes(v []float32) []int8 {
 	return out
 }
 
-// Floats reads bytes back as float32. The result differs from what was
-// quantised by up to half a step, and that difference is what the rerank
-// tolerates.
-func Floats(q []int8) []float32 {
-	out := make([]float32, len(q))
-	for i, b := range q {
-		out[i] = float32(float64(b) / 127 * Int8Scale)
-	}
-	return out
-}
-
 // Normalise scales a vector to unit length, in place, and returns it. A vector
 // of all zeros is returned unchanged: there is no direction to keep.
 func Normalise(v []float32) []float32 {
