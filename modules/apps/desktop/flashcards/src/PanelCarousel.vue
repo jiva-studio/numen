@@ -18,13 +18,13 @@ const TAKES = 600
 const SETTLES = 140
 
 /** The three the strip stops at, in the order they stand. */
-const WHERE = ['before', 'here', 'after'] as const
+const PLACES = ['before', 'here', 'after'] as const
 
 /** Which of the three is in the window. */
-export type Where = (typeof WHERE)[number]
+export type PanelPlace = (typeof PLACES)[number]
 
 /** A hand moves this as much as the owner does, so it is a model and not a prop. */
-const shown = defineModel<Where>('at', { required: true })
+const shown = defineModel<PanelPlace>('at', { required: true })
 
 const window_ = useTemplateRef<HTMLElement>('window')
 const middle = useTemplateRef<HTMLElement>('middle')
@@ -42,14 +42,14 @@ let sending = 0
 let settling = 0
 
 /** Where a move in flight is going, and nothing while none is. */
-let aim: Where | null = null
+let aim: PanelPlace | null = null
 
 /**
  * Where the strip stands when each of the three is in the window. They are read
  * off the layout rather than worked out, so the space the three stand apart by
  * is in them already.
  */
-const stops = (): Record<Where, number> => {
+const stops = (): Record<PanelPlace, number> => {
   const at = window_.value
   const card = middle.value
   if (!at || !card) return { before: 0, here: 0, after: 0 }
@@ -57,16 +57,16 @@ const stops = (): Record<Where, number> => {
 }
 
 /** Which of the three the strip is closest to standing on. */
-const nearest = (left: number): Where => {
+const nearest = (left: number): PanelPlace => {
   const all = stops()
-  let best: Where = 'before'
-  for (const where of WHERE) {
+  let best: PanelPlace = 'before'
+  for (const where of PLACES) {
     if (Math.abs(all[where] - left) < Math.abs(all[best] - left)) best = where
   }
   return best
 }
 
-const goes = (where: Where) => {
+const goes = (where: PanelPlace) => {
   window.clearTimeout(settling)
   const at = window_.value
   if (!at) return
@@ -88,7 +88,7 @@ const goes = (where: Where) => {
  * the card already in it, and a resize moves the stops under a strip that is
  * standing on one, so neither is something to be seen sliding.
  */
-const puts = (where: Where) => {
+const puts = (where: PanelPlace) => {
   const at = window_.value
   if (!at) return
   window.clearTimeout(settling)

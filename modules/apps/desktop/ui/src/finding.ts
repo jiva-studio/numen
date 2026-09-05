@@ -133,7 +133,7 @@ type Band = 'names' | 'text' | 'meaning'
  * Where one item stands in the vault, and what it can be asked. A line of -1 is
  * no line at all.
  */
-interface Stands {
+interface SearchHit {
   path: string
   title: string
   line: number
@@ -148,9 +148,9 @@ interface Stands {
 }
 
 /** One item as it is drawn, beside where it stands and what it offers. */
-interface Drawn {
+interface SearchRow {
   item: PaletteItem
-  stands: Stands
+  stands: SearchHit
 }
 
 const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
@@ -262,7 +262,7 @@ export function finding(core: FindingDeps, words: Words, how: FindingOptions = {
    *
    * The name that matched stands first, and the note it was found in under it.
    */
-  const nameItem = (one: NameMatch): Drawn =>
+  const nameItem = (one: NameMatch): SearchRow =>
     one.heading
       ? {
           item: {
@@ -308,7 +308,7 @@ export function finding(core: FindingDeps, words: Words, how: FindingOptions = {
           },
         }
 
-  const passageItem = (band: Band, one: Passage): Drawn => ({
+  const passageItem = (band: Band, one: Passage): SearchRow => ({
     item: {
       // Named by where it stands in the vault and where in that source it was
       // found: a band that lands renumbers the list, and an item renamed under
@@ -358,10 +358,10 @@ export function finding(core: FindingDeps, words: Words, how: FindingOptions = {
 
   /** What the bands hold, and where each thing in them stands in the vault. */
   const built = computed(() => {
-    const held = new Map<string, Stands>()
+    const held = new Map<string, SearchHit>()
     if (!typed.value.trim()) return { bands: [] as readonly PaletteBand[], held }
 
-    const band = (id: Band, title: string, drawn: readonly Drawn[]): PaletteBand => {
+    const band = (id: Band, title: string, drawn: readonly SearchRow[]): PaletteBand => {
       for (const one of drawn) held.set(one.item.id, one.stands)
       return {
         id,

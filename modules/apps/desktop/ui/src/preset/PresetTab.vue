@@ -92,17 +92,17 @@ const value = computed(() =>
 const reading = computed(() => words.value(curve.value.goal, value.value, day.value))
 
 /** How far a control runs, and nothing at all where nothing was said. */
-type Ends = { min: number; max: number } | Record<string, never>
+type ControlBounds = { min: number; max: number } | Record<string, never>
 
 /** One pair of ends as a control takes them, counted in the field's own units. */
-const ends = (one: Bounds | undefined, per = 1): Ends =>
+const ends = (one: Bounds | undefined, per = 1): ControlBounds =>
   one ? { min: one.least * per, max: one.most * per } : {}
 
 /**
  * How far a field goes, as the control it is drawn in takes it. A field the
  * application has said no bound for is left to the control's own ends.
  */
-const boundsOf = (field: Field): Ends => {
+const boundsOf = (field: Field): ControlBounds => {
   const within = bounds.value
   if (field === 'newADay') return ends(within.newADay)
   if (field === 'reviewsADay') return ends(within.reviewsADay)

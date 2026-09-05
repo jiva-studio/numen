@@ -64,7 +64,7 @@ interface VaultAnswer {
 const NOTHING: VaultAnswer = { problems: [], reading: null, writing: null, bound: 0 }
 
 /** The preset a deck is scheduled by, as the line at the top of it draws it. */
-export interface Scheduled {
+export interface DeckPreset {
   /** The note the preset stands in. Empty is a deck scheduled by the defaults. */
   readonly path: string
   /** What that preset is called, in the words on the line. */
@@ -77,7 +77,7 @@ export interface Scheduled {
 }
 
 /** A deck naming no preset, which is scheduled by the defaults. */
-const BY_DEFAULT: Scheduled = { path: '', name: words.defaults, saying: '' }
+const BY_DEFAULT: DeckPreset = { path: '', name: words.defaults, saying: '' }
 
 /** One preset a deck may be put on, as the line offers it. */
 export interface Choice {
@@ -104,7 +104,7 @@ export interface DeckTabState {
   /** What the whole file was refused for, in words a person reads. */
   readonly saying: ComputedRef<string>
   /** The preset this deck is scheduled by. */
-  readonly scheduled: ComputedRef<Scheduled>
+  readonly scheduled: ComputedRef<DeckPreset>
   /** The presets this deck may be put on, the defaults first. */
   readonly choices: ComputedRef<readonly Choice[]>
   /**
@@ -283,7 +283,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: FileOp
   /** Whether the last listing of the presets answered. */
   let offeredOk = true
   /** Which preset schedules each file, under the path it is filed at. */
-  const scheduling = ref(new Map<string, Scheduled>())
+  const scheduling = ref(new Map<string, DeckPreset>())
   /** What choosing a preset came to, under the tab that chose. */
   const chose = ref(new Map<string, string>())
 
@@ -305,7 +305,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: FileOp
   }
 
   /** The preset a deck names, as the line at the top of it draws it. */
-  const scheduledOf = (read: ReadResult): Scheduled => {
+  const scheduledOf = (read: ReadResult): DeckPreset => {
     if (read.preset === null) return BY_DEFAULT
     const saying = read.preset.problems[0] ?? ''
     if (read.preset.path === '') return { ...BY_DEFAULT, saying }
@@ -367,7 +367,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: FileOp
    * The preset one tab is scheduled by. What the tab was last told about a
    * choice it made stands over what the file says, until a choice lands.
    */
-  const scheduledAt = (id: string): Scheduled => {
+  const scheduledAt = (id: string): DeckPreset => {
     const held = scheduling.value.get(store.where(id)) ?? BY_DEFAULT
     const said = chose.value.get(id) ?? ''
     return said === '' ? held : { ...held, saying: said }

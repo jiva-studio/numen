@@ -4,7 +4,7 @@ import type { VueWrapper } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
 import Session from './Session.vue'
-import type { Where } from './PanelCarousel.vue'
+import type { PanelPlace } from './PanelCarousel.vue'
 import { grades } from './core'
 import type { CardFace } from './core'
 
@@ -22,7 +22,7 @@ const card: CardFace = {
 }
 
 /** The sitting on the screen, with something of its own standing in the panel. */
-const sitting = (more: { at?: Where; shown?: boolean } = {}) =>
+const sitting = (more: { at?: PanelPlace; shown?: boolean } = {}) =>
   mount(Session, {
     props: {
       card,

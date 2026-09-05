@@ -4,14 +4,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
 import PanelCarousel from './PanelCarousel.vue'
-import type { Where } from './PanelCarousel.vue'
+import type { PanelPlace } from './PanelCarousel.vue'
 
 /**
  * The three on the screen. jsdom lays nothing out, so the strip is given the
  * widths it would have had: a panel either side of a card the width of the
  * window, with a space between each pair.
  */
-const strip = (at: Where = 'here') => {
+const strip = (at: PanelPlace = 'here') => {
   const one = mount(PanelCarousel, {
     // The window is listening and answers by setting the prop, so what is in the
     // window stays the window's answer. A strip nobody listens to keeps its own.

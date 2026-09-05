@@ -17,7 +17,7 @@ export interface NamingDeps {
 }
 
 /** One settled note: the identity it opened under, and the file it settled at. */
-interface Settled {
+interface SettledNote {
   readonly id: string
   readonly at: string
 }
@@ -53,7 +53,7 @@ export function naming(vault: NamingDeps, notes: Notes) {
   }
 
   /** Every note that has settled, each with the file it settled at. */
-  const settled = (): readonly Settled[] =>
+  const settled = (): readonly SettledNote[] =>
     notes
       .all()
       .filter((id) => notes.shown(id).state === 'clean')

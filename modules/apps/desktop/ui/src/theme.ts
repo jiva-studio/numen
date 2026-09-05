@@ -17,7 +17,7 @@ const theme = createClient(ThemeService, transport)
 export type Mode = 'system' | 'light' | 'dark'
 
 /** One theme as the list refers to it. */
-export interface Wearable {
+export interface Theme {
   /** The shelf and the filename, which is how the theme is asked for again. */
   readonly name: string
   /** What the file is called, without the shelf. */
@@ -51,7 +51,7 @@ export type Ranges = Scales<Bounds>
 
 /** Every theme there is, and what the settings say the window wears. */
 export interface Catalogue {
-  readonly themes: readonly Wearable[]
+  readonly themes: readonly Theme[]
   readonly applied: string
   readonly mode: Mode
   readonly sizes: Sizes

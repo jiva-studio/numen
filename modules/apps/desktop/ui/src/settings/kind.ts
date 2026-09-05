@@ -9,14 +9,14 @@ import type { Ref } from 'vue'
 import type { Model, SettingEdit } from '../core'
 import type { Host, Kind } from '../windowing'
 import { SETTINGS } from '../workspace'
-import type { Mode, Ranges, Sizes, Wearable } from '../theme'
+import type { Mode, Ranges, Sizes, Theme } from '../theme'
 import SettingsTab from './SettingsTab.vue'
 import { WORDS as words } from './words'
 
 /** What this installation is configured as, as the window already holds it. */
 export interface Installation {
   /** Every theme there is, and the one the settings name. */
-  readonly themes: Readonly<Ref<readonly Wearable[]>>
+  readonly themes: Readonly<Ref<readonly Theme[]>>
   readonly applied: Readonly<Ref<string>>
   readonly mode: Readonly<Ref<Mode>>
   /** Whether the theme worn declares light and dark itself. */

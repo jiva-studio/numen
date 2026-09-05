@@ -8,7 +8,7 @@
 import { Button, KeyCap, keyChord } from '@numen/ui'
 
 import PanelCarousel from './PanelCarousel.vue'
-import type { Where } from './PanelCarousel.vue'
+import type { PanelPlace } from './PanelCarousel.vue'
 import Card from './Card.vue'
 import { ahead, called, deckName, grades } from './core'
 import { ASKS, READS } from './keying'
@@ -25,7 +25,7 @@ defineProps<{
 }>()
 
 /** Which of the card and the panels either side of it is in the window. */
-const at = defineModel<Where>('at', { required: true })
+const at = defineModel<PanelPlace>('at', { required: true })
 
 /** The panels are held with the overlay key, drawn as this machine's own. */
 const chord = (letter: string) => keyChord(letter, navigator.userAgent)

@@ -53,10 +53,10 @@ const isLoad = (value: SettingValue): value is Load =>
   typeof value === 'object' && Object.values(value).every((share) => typeof share === 'number')
 
 /** The settings as a tab holds them while a person is moving them. */
-type Holding = { -readonly [field in keyof Settings]: Settings[field] }
+type MutableSettings = { -readonly [field in keyof Settings]: Settings[field] }
 
 /** One setting left where it stands, rather than taken from the read. */
-const kept = <F extends keyof Settings>(out: Holding, was: Settings, field: F): void => {
+const kept = <F extends keyof Settings>(out: MutableSettings, was: Settings, field: F): void => {
   out[field] = was[field]
 }
 
@@ -66,7 +66,7 @@ const kept = <F extends keyof Settings>(out: Holding, was: Settings, field: F): 
  */
 const taking = (read: Settings, was: Settings, theirs: ReadonlySet<keyof Settings>): Settings => {
   if (theirs.size === 0) return read
-  const out: Holding = { ...read }
+  const out: MutableSettings = { ...read }
   for (const field of theirs) kept(out, was, field)
   return out
 }
@@ -140,7 +140,7 @@ export function presetting(
   const bounds = shallowRef<SettingsBounds>(NO_BOUNDS)
 
   /** Everything one open preset stands at. */
-  interface Kept {
+  interface OpenPreset {
     readonly path: Ref<string>
     readonly settings: Ref<Settings>
     readonly curve: Ref<Curve>
@@ -181,9 +181,9 @@ export function presetting(
     readonly answers: Map<string, Curve>
   }
 
-  const open = new Map<string, Kept>()
+  const open = new Map<string, OpenPreset>()
 
-  const keeps = (path: string): Kept => ({
+  const keeps = (path: string): OpenPreset => ({
     path: ref(path),
     settings: shallowRef<Settings>(DEFAULTS),
     curve: shallowRef<Curve>(approximate(DEFAULTS, today())),
@@ -214,7 +214,7 @@ export function presetting(
     refusal === null ? '' : words.refused(refusal)
 
   /** The settings of one preset, read again from the file. */
-  const reads = async (one: Kept): Promise<void> => {
+  const reads = async (one: OpenPreset): Promise<void> => {
     let answer
     try {
       answer = await core.read(one.path.value)
@@ -257,7 +257,7 @@ export function presetting(
    * a grid the old place means nothing on, and the knob goes back to where the
    * preset stands.
    */
-  const curves = async (one: Kept): Promise<void> => {
+  const curves = async (one: OpenPreset): Promise<void> => {
     // A curve already answered stands at once, and a control dragged over a
     // range it has been over reads it without asking again.
     const shape = shapeOf(one.settings.value)
@@ -287,7 +287,7 @@ export function presetting(
   }
 
   /** One curve, asked for and landed. */
-  const drawing = async (one: Kept): Promise<void> => {
+  const drawing = async (one: OpenPreset): Promise<void> => {
     const mine = one.asks.ask()
     const shape = shapeOf(one.settings.value)
     one.shape = shape
@@ -332,7 +332,7 @@ export function presetting(
    * A curve landed and drawn. The figures it counts the material at are kept
    * beside it, so what no setting moves stands on while the next curve is out.
    */
-  const lands = (one: Kept, curve: Curve): void => {
+  const lands = (one: OpenPreset, curve: Curve): void => {
     one.curve.value = curve
     one.material.value = {
       decks: curve.decks,
@@ -355,7 +355,7 @@ export function presetting(
       : Math.max(nearest(curve.grid, goalValue(settings, today())), 0)
 
   /** The settings as they now stand, into the file the read came out of. */
-  const sends = async (one: Kept): Promise<void> => {
+  const sends = async (one: OpenPreset): Promise<void> => {
     said('')
     let answer
     try {
@@ -387,7 +387,7 @@ export function presetting(
    * file it produced. A file that moved under the window is answered by the
    * person, so nothing is sent on top of that notice.
    */
-  const writes = (one: Kept): Promise<void> => {
+  const writes = (one: OpenPreset): Promise<void> => {
     if (one.writing) {
       one.wanted = true
       return one.flight ?? Promise.resolve()
@@ -399,7 +399,7 @@ export function presetting(
   }
 
   /** One write, and the write asked for while it was out, as one answer. */
-  const sending = async (one: Kept): Promise<void> => {
+  const sending = async (one: OpenPreset): Promise<void> => {
     await sends(one)
     one.writing = false
     const again = one.wanted && !one.changed.value
@@ -412,7 +412,7 @@ export function presetting(
   }
 
   /** Everything the tab owes the file, written and landed. */
-  const owed = async (one: Kept): Promise<void> => {
+  const owed = async (one: OpenPreset): Promise<void> => {
     if (one.theirs.size > 0 && !one.changed.value) await writes(one)
     else if (one.flight) await one.flight
   }
@@ -427,7 +427,7 @@ export function presetting(
    * whose settings the file would not take is held once and says why; asked a
    * second time it goes, since the person has been told.
    */
-  const shut = async (one: Kept): Promise<boolean> => {
+  const shut = async (one: OpenPreset): Promise<boolean> => {
     await owed(one)
     if (one.theirs.size === 0 && !one.changed.value) return true
     if (one.told) return true
@@ -436,7 +436,7 @@ export function presetting(
   }
 
   /** The settings the place the knob stands at produces, which is its own value. */
-  const turns = (one: Kept, place: number): void => {
+  const turns = (one: OpenPreset, place: number): void => {
     const was = one.settings.value
     one.settings.value = producing(was, place, one.curve.value, today(), bounds.value)
     one.place.value = place
@@ -482,14 +482,14 @@ export function presetting(
    * One field put where a person typed it, and marked theirs. A value the
    * field cannot hold moves nothing and claims nothing.
    */
-  const moved = (one: Kept, field: Field, value: SettingValue): void => {
+  const moved = (one: OpenPreset, field: Field, value: SettingValue): void => {
     const was = one.settings.value
     one.settings.value = typed(was, field, value)
     if (one.settings.value !== was) one.theirs.add(field)
   }
 
   /** Where a value typed into the field the goal steers falls on the grid. */
-  const falling = (one: Kept, value: SettingValue): number => {
+  const falling = (one: OpenPreset, value: SettingValue): number => {
     if (typeof value === 'number') return nearest(one.curve.value.grid, value)
     if (typeof value === 'string' && isDay(value)) {
       return nearest(one.curve.value.grid, daysUntil(today(), value))
@@ -504,7 +504,7 @@ export function presetting(
       : { ...settings, goal }
 
   /** What one open preset holds, in the vocabulary its tab is drawn from. */
-  const holding = (one: Kept, id: string): PresetTabState => {
+  const holding = (one: OpenPreset, id: string): PresetTabState => {
     return {
       id,
       settings: one.settings,

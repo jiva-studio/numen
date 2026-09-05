@@ -15,7 +15,7 @@ import { asking } from './asking'
 import type { StepBand, StepRow } from './commanding'
 import { following } from '@numen/ui'
 import type { Voice } from './telling'
-import type { Bounds, Catalogue, Mode, Ranges, Scales, Sizes, Themes, Wearable } from './theme'
+import type { Bounds, Catalogue, Mode, Ranges, Scales, Sizes, Theme, Themes } from './theme'
 
 /** Everything the appearance says in the window's voice. */
 export interface Words {
@@ -53,11 +53,11 @@ export const TEXT_SCALE = 'textScale'
 export const DRESSING: readonly string[] = [APPEARANCE, MODE, INTERFACE_SCALE, TEXT_SCALE]
 
 /** Which of the two sizes a row is one of. */
-type Which = typeof INTERFACE_SCALE | typeof TEXT_SCALE
+type ScaleKind = typeof INTERFACE_SCALE | typeof TEXT_SCALE
 
 /** One size, and which of the two it is. */
-interface Sized {
-  readonly which: Which
+interface ScaleChoice {
+  readonly which: ScaleKind
   readonly size: number
 }
 
@@ -107,10 +107,10 @@ const modeOf = (item: string): Mode | null =>
  * A theme is named by its shelf, and there are two shelves, so no theme is
  * ever named this.
  */
-const sizing = (which: Which, size: number): string => `${which}:${size}`
+const sizing = (which: ScaleKind, size: number): string => `${which}:${size}`
 
 /** The size a row names, and nothing for a row naming anything else. */
-const sizeOf = (item: string): Sized | null => {
+const sizeOf = (item: string): ScaleChoice | null => {
   const [which, said] = item.split(':')
   if (which !== INTERFACE_SCALE && which !== TEXT_SCALE) return null
   const size = Number(said)
@@ -118,7 +118,7 @@ const sizeOf = (item: string): Sized | null => {
 }
 
 /** The elements the page carries: the mode's, the theme's, and the sizes'. */
-interface Dressed {
+interface StyleElements {
   readonly mode: HTMLStyleElement
   readonly theme: HTMLStyleElement
   /** Nothing for a page served at no size of its own, until one is written. */
@@ -142,7 +142,7 @@ const marked = (sheet: Document, is: string): HTMLStyleElement | null =>
  * The elements the head ends with. A page served by something that dresses it
  * in nothing is given a mode's and a theme's of its own, in that order.
  */
-const dressing = (sheet: Document): Dressed => {
+const dressing = (sheet: Document): StyleElements => {
   const mode = marked(sheet, IS_MODE) ?? sheet.head.appendChild(styling(IS_MODE, sheet))
   const theme = marked(sheet, IS_THEME) ?? after(mode, IS_THEME, sheet)
   return { mode, theme, sizes: marked(sheet, IS_SIZES) ?? undefined }
@@ -214,10 +214,10 @@ const once = (rows: readonly StepRow[]): readonly StepRow[] => {
 const NOWHERE: Bounds = { least: 0, most: 0 }
 
 /** What is said of one of the two sizes. */
-const its = <T,>(both: Scales<T>, which: Which): T => both[which]
+const its = <T,>(both: Scales<T>, which: ScaleKind): T => both[which]
 
 /** The pair with what is said of one of the two put in its place. */
-const onto = <T,>(both: Scales<T>, which: Which, one: T): Scales<T> => ({ ...both, [which]: one })
+const onto = <T,>(both: Scales<T>, which: ScaleKind, one: T): Scales<T> => ({ ...both, [which]: one })
 
 export function wearing(
   core: Themes,
@@ -233,7 +233,7 @@ export function wearing(
   let written = ''
 
   /** Every theme there is, and the theme and the mode the settings name. */
-  const list = shallowRef<readonly Wearable[]>([])
+  const list = shallowRef<readonly Theme[]>([])
   const applied = ref('')
   const mode = ref<Mode>('system')
 
@@ -262,7 +262,7 @@ export function wearing(
    * The size the keyboard has stood on long enough for the window to be drawn
    * at it, and nothing while it stands anywhere else.
    */
-  const holding = ref<Sized | null>(null)
+  const holding = ref<ScaleChoice | null>(null)
   let holds: ReturnType<typeof setTimeout> | undefined
 
   /** Whether a row names a theme, which the rows of the other lists do not. */
@@ -401,7 +401,7 @@ export function wearing(
    */
   const shelf = (shipping: boolean): readonly StepRow[] => {
     const off = list.value.filter((one) => one.shipped === shipping)
-    const named = (one: Wearable): StepRow => ({
+    const named = (one: Theme): StepRow => ({
       id: one.name,
       title: one.title,
       ...(one.name === applied.value ? { detail: words.current, inForce: true } : {}),
@@ -463,7 +463,7 @@ export function wearing(
    * where a person is standing before they walk.
    */
   const sizes = (command: string, typed = ''): readonly StepBand[] => {
-    const which: Which = command === TEXT_SCALE ? TEXT_SCALE : INTERFACE_SCALE
+    const which: ScaleKind = command === TEXT_SCALE ? TEXT_SCALE : INTERFACE_SCALE
     const range = its(bounds.value, which)
     const now = its(settings.value, which)
     const said = typedSize(typed)
@@ -526,7 +526,7 @@ export function wearing(
    * waiting for, and it is written into the settings beside the theme. A number
    * the settings refuse is said, and the window goes back to the size they hold.
    */
-  const picks = async (chosen: Sized) => {
+  const picks = async (chosen: ScaleChoice) => {
     if (!reaches(its(bounds.value, chosen.which), chosen.size)) return
     const was = settings.value
     said('')

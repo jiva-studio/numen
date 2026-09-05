@@ -238,7 +238,7 @@ export const daysUntil = (today: Date, day: string): number => {
 }
 
 /** Why a preset's goal has nothing to work on, and empty where it has. */
-export type Idle = 'unpointed' | 'noCards' | 'beginsNothing' | ''
+export type IdleReason = 'unpointed' | 'noCards' | 'beginsNothing' | ''
 
 /**
  * Whether the goal has nothing to work on, and why. The counts the curve
@@ -249,7 +249,7 @@ export type Idle = 'unpointed' | 'noCards' | 'beginsNothing' | ''
  * card face here is one nobody has begun, and no place of the range begins one.
  * It is a fact about the material, and not a reason the preset is stopped.
  */
-export const idle = (curve: Curve): Idle => {
+export const idle = (curve: Curve): IdleReason => {
   if (!curve.honest) return ''
   if (curve.decks === 0) return 'unpointed'
   if (curve.cards === 0) return 'noCards'

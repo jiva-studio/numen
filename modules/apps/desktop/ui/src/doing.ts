@@ -310,7 +310,7 @@ const atItsFile = (deed: Deed, on: CommandDeps): Deed =>
   deed.note ? { ...deed, path: on.notes.where(deed.note) } : deed
 
 /** A tab asked to settle: which one it was, and whether it is still waiting. */
-interface Settled {
+interface SettleResult {
   readonly held: string | null
   readonly waiting: boolean
 }
@@ -319,7 +319,7 @@ interface Settled {
  * The tab holding a note, once nothing of the note is on its way to its file.
  * A tab waiting on the person to answer for it settles nothing and says so.
  */
-const settles = async (path: string, on: CommandDeps): Promise<Settled> => {
+const settles = async (path: string, on: CommandDeps): Promise<SettleResult> => {
   const held = on.notes.holding(path)
   if (held === null) return { held, waiting: false }
   if (on.notes.asking(held)) return { held, waiting: true }

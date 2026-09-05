@@ -32,7 +32,7 @@ export interface HoldLimits {
 export const holding: HoldLimits = { settle: 900, bound: 4000, abandoned: 15000 }
 
 /** What should be done: the interval for one note, armed again over the last. */
-export interface Arm {
+export interface TimerRequest {
   readonly path: string
   readonly after: number
 }
@@ -43,7 +43,7 @@ export function drawing(limits: HoldLimits = holding) {
   const ending = new Set<string>()
 
   /** A change was reported. */
-  const told = (said: NoteEdit): Arm | null => {
+  const told = (said: NoteEdit): TimerRequest | null => {
     if (!said.done) {
       changes.set(said.path, {
         id: said.change,
@@ -64,7 +64,7 @@ export function drawing(limits: HoldLimits = holding) {
   }
 
   /** The note changed under whatever is drawn over it. */
-  const arrived = (path: string): Arm | null => {
+  const arrived = (path: string): TimerRequest | null => {
     if (!ending.has(path)) return null
     return { path, after: limits.settle }
   }

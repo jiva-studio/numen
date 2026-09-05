@@ -6,7 +6,7 @@
  */
 import { ref } from 'vue'
 import type { NoteEdit } from '../core'
-import { drawing, holding, type Arm, type Change, type HoldLimits } from './drawing'
+import { drawing, holding, type Change, type HoldLimits, type TimerRequest } from './drawing'
 
 export function drawn(limits: HoldLimits = holding) {
   const decided = drawing(limits)
@@ -16,14 +16,14 @@ export function drawn(limits: HoldLimits = holding) {
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
 
 
-  const carry = (path: string, arm: Arm | null): void => {
+  const carry = (path: string, arm: TimerRequest | null): void => {
     const change = decided.shown(path)
     if (change) changes.value.set(path, change)
     else changes.value.delete(path)
     if (arm) hold(arm)
   }
 
-  function hold(arm: Arm): void {
+  function hold(arm: TimerRequest): void {
     clearTimeout(timers.get(arm.path))
     timers.set(
       arm.path,

@@ -28,9 +28,9 @@ import type {
 } from '../core'
 
 /** An identity something is drawn under, which no file carries. */
-export type Mint = () => string
+export type IdMaker = () => string
 
-const minting: Mint = () => crypto.randomUUID()
+const minting: IdMaker = () => crypto.randomUUID()
 
 /**
  * One card as the window holds it: what the file says, under the identity it is
@@ -89,7 +89,7 @@ export const NO_SHEET: Sheet = { fields: [], preamble: '', faces: [], tail: '' }
  * A card standing under a section this reading does not hold stands before the
  * first section, where it is drawn and where the next write puts it.
  */
-export const deckOf = (read: VaultDeck, mint: Mint = minting): Deck => {
+export const deckOf = (read: VaultDeck, mint: IdMaker = minting): Deck => {
   const held = new Map<string, number>()
   for (const card of read.cards) held.set(card.mark, (held.get(card.mark) ?? 0) + 1)
   const sections = read.sections.map((section) => ({ ...section, id: mint() }))
@@ -106,7 +106,7 @@ export const deckOf = (read: VaultDeck, mint: Mint = minting): Deck => {
 }
 
 /** A stencil as the vault read it, each face under an identity this window mints. */
-export const sheetOf = (read: VaultStencil, mint: Mint = minting): Sheet => ({
+export const sheetOf = (read: VaultStencil, mint: IdMaker = minting): Sheet => ({
   fields: read.fields,
   preamble: read.preamble,
   faces: read.faces.map((face) => ({ id: mint(), ...face })),
@@ -397,7 +397,7 @@ export const added = (
   stencilAt: string,
   values: readonly Value[],
   section: string | null = null,
-  mint: Mint = minting,
+  mint: IdMaker = minting,
 ): Deck => {
   // A card is filed where its section stands, so it goes after every card of
   // that section and of the ones before it.
@@ -500,7 +500,7 @@ export const carried = (deck: Deck, id: string, at: CardLanding): Deck => {
 }
 
 /** A section made at the end of the deck, holding no card. */
-export const sectionAdded = (deck: Deck, name: string, mint: Mint = minting): Deck => ({
+export const sectionAdded = (deck: Deck, name: string, mint: IdMaker = minting): Deck => ({
   ...deck,
   sections: [...deck.sections, { id: mint(), name, lead: '' }],
 })
@@ -614,7 +614,7 @@ export const faceCarried = (sheet: Sheet, id: string, at: CardLanding): Sheet =>
 }
 
 /** A face added at the end, with both its halves empty. */
-export const faceAdded = (sheet: Sheet, name: string, mint: Mint = minting): Sheet => ({
+export const faceAdded = (sheet: Sheet, name: string, mint: IdMaker = minting): Sheet => ({
   ...sheet,
   faces: [...sheet.faces, { id: mint(), name, lead: '', front: '', back: '' }],
 })

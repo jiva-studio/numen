@@ -10,7 +10,7 @@ import { computed, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 import { following, opensVault } from '@numen/ui'
 
 import type NotesPanel from './NotesPanel.vue'
-import type { Where } from './PanelCarousel.vue'
+import type { PanelPlace } from './PanelCarousel.vue'
 import { WINDOW, cards, deckName, itself } from './core'
 import { counting } from './counting'
 import { asks, picks, swallows } from './keying'
@@ -50,7 +50,7 @@ export const useWindow = () => {
   const showing = ref<'reading' | 'here' | 'asking'>('here')
 
   /** The same thing in the words the strip stands the three in. */
-  const at = computed<Where>(() =>
+  const at = computed<PanelPlace>(() =>
     showing.value === 'reading' ? 'before' : showing.value === 'asking' ? 'after' : 'here',
   )
 
@@ -58,7 +58,7 @@ export const useWindow = () => {
    * The strip taken somewhere by a hand. A panel reached this way is opened, not
    * merely shown: what is in it is fetched and started when it is asked for.
    */
-  const moved = (where: Where) => {
+  const moved = (where: PanelPlace) => {
     if (where === 'before') void read.opens()
     else if (where === 'after') panel.opens()
     else showing.value = 'here'
