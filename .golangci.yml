@@ -1,0 +1,86 @@
+# What the Go modules are checked for, beyond gofmt and go vet.
+#
+# Two kinds of rule live here. Most are the ordinary ones nobody argues with —
+# an error dropped, a body left open, a context that did not survive the call.
+# forbidigo is the other kind: it is ADR-0004 written so a machine refuses it.
+# The domain does not know what time it is, the core does not panic, and
+# nothing here writes to a stream of its own.
+#
+# Run from a module's own directory; every path below is relative to that.
+
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - nilerr
+    - forbidigo
+    - bodyclose
+    - sqlclosecheck
+    - rowserrcheck
+    - contextcheck
+    - noctx
+    - exhaustive
+
+  settings:
+    errcheck:
+      # A type assertion that fails is a panic, and the core does not panic.
+      check-type-assertions: true
+      # Rolling back a transaction that already committed is how the pattern is
+      # written; the error it returns says only that.
+      exclude-functions:
+        - (*database/sql.Tx).Rollback
+
+    exhaustive:
+      # A switch that names a default has answered for the cases it did not
+      # write down.
+      default-signifies-exhaustive: true
+      # The rule is for enums this repository owns and the ones the schema
+      # generates. A borrowed set of a few hundred HTML element names is not an
+      # enum anybody switches over whole.
+      ignore-enum-types: ^(golang\.org/x/net/html/atom\.Atom|gopkg\.in/yaml\.v3\.Kind|time\.Weekday)$
+
+    forbidigo:
+      # Match against the resolved type, so a local named `time` or a variable
+      # named `panic` is not mistaken for the thing being forbidden.
+      analyze-types: true
+      forbid:
+        - pattern: ^time\.Now$
+          pkg: ^time$
+          msg: the domain does not know what time it is — take a clock port (ADR-0004)
+        - pattern: ^time\.Since$
+          pkg: ^time$
+          msg: the domain does not know what time it is — take a clock port (ADR-0004)
+        - pattern: ^panic$
+          msg: what a call could not answer is that call's error (ADR-0004)
+        - pattern: ^fmt\.Print.*$
+          pkg: ^fmt$
+          msg: the core writes to no stream of its own — say it through port.Trouble (ADR-0004)
+
+  exclusions:
+    generated: lax
+    # golangci-lint's own list for the calls whose error says nothing anybody
+    # can act on — a Close on the way out, a Flush, a print to a stream. What
+    # matters about a body or a row left open is bodyclose and sqlclosecheck's
+    # to say, and they are on.
+    presets:
+      - std-error-handling
+    rules:
+      # A test builds the world it needs, names its own clock, and fails by
+      # panicking as readily as by returning.
+      - path: _test\.go
+        linters: [forbidigo, errcheck, noctx, contextcheck]
+
+      # Knowledge of the technology is confined to the adapters and to the
+      # composition root, and an entry point is an adapter (ADR-0004). These
+      # are the places allowed to know what time it is.
+      - path: (^|/)(adapter|container|cmd)/
+        text: does not know what time it is
+        linters: [forbidigo]
+
+      # The command line is a driving adapter whose output is text, and a
+      # process that cannot start says so before there is anywhere to say it.
+      - path: (^|/)(adapter/cli|cmd)/
+        text: writes to no stream of its own
+        linters: [forbidigo]

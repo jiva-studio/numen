@@ -17,6 +17,7 @@ PROTOCOL := modules/libs/protocol
 # What has to be on PATH, and who needs it:
 #
 #   go, node, npm                everything
+#   golangci-lint                the Go checks past go vet
 #   pkg-config, gtk4,            the window, which links against the system's
 #   webkitgtk-6.0                own browser through cgo
 #   buf, protoc-gen-go,          the schema, and only for somebody changing it:
@@ -137,6 +138,7 @@ lint: generate-check ## the checks CI runs, less the one needing a base branch
 	cd $(DESKTOP) && go vet ./...
 	cd $(MOBILE) && $(call gofmt-check,./bind)
 	cd $(MOBILE) && go vet ./...
+	$(MAKE) lint-go
 	cd $(PROTOCOL) && buf lint
 	cd $(UI) && npm run typecheck
 	cd $(WIRE) && npm run typecheck
@@ -146,3 +148,15 @@ lint: generate-check ## the checks CI runs, less the one needing a base branch
 	cd $(DOCS) && npm run manual:check
 	cd $(DOCS) && npm run typecheck
 	cd $(LANDING) && npm run typecheck
+
+# What .golangci.yml asks for. The phone binds the core and is left out of it.
+#
+# The core and the window say what they found and do not fail on it: the check
+# arrived after the code did, and the backlog it names is triaged one finding
+# at a time rather than swept. Take the flag off when that list is empty — a
+# check nobody can go red on is a check nobody reads.
+.PHONY: lint-go
+lint-go: ## what golangci-lint finds; a report on the two modules with a backlog
+	cd $(CORE) && golangci-lint run --issues-exit-code=0 ./...
+	cd $(DESKTOP) && golangci-lint run --issues-exit-code=0 ./...
+	cd $(PROTOCOL) && golangci-lint run ./...
