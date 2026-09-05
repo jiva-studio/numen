@@ -168,5 +168,3 @@ export const neighbourhoods = {
   awkwardLabels,
   labelledRows,
 } as const
-
-export type FixtureName = keyof typeof neighbourhoods
