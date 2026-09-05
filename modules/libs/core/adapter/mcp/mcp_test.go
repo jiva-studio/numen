@@ -102,7 +102,7 @@ func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 			StencilBody: container.StencilBody,
 		},
 
-		Showing: mcp.One(v, v.Path), Readers: readers,
+		Showing: mcp.ShowingOne(v, v.Path), Readers: readers,
 		Notes: mcp.Notes{
 			Queries:       queries,
 			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),

@@ -29,7 +29,7 @@ func installed(t *testing.T) container.Config {
 // vault is a Core answering about one vault and holding nothing.
 func vault(t *testing.T) mcp.Core {
 	t.Helper()
-	return mcp.Core{Showing: mcp.One(domain.Vault{ID: "one", Name: "one"}, t.TempDir())}
+	return mcp.Core{Showing: mcp.ShowingOne(domain.Vault{ID: "one", Name: "one"}, t.TempDir())}
 }
 
 // authority is the host and port an endpoint is reached at.

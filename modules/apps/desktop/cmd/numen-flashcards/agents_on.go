@@ -147,7 +147,7 @@ func reviewing(
 	out io.Writer,
 ) mcp.Core {
 	return mcp.Core{
-		Showing: mcp.One(v, root),
+		Showing: mcp.ShowingOne(v, root),
 		Readers: cfg.VaultReaders(),
 		// Which card the person is on is a tool's answer and never part of the
 		// question, so a deck named by whoever synced it is data and not

@@ -119,7 +119,7 @@ func agentCore(cfg container.Config, opened *webui.Installation, root string, ou
 	cutting := opened.Cards()
 
 	return mcp.Core{
-		Showing:   mcp.One(opened.Showing(), root),
+		Showing:   mcp.ShowingOne(opened.Showing(), root),
 		Readers:   cfg.VaultReaders(),
 		View:      opened.API.Viewing(),
 		Attending: opened.API.Attended,

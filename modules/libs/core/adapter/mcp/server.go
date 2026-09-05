@@ -153,8 +153,8 @@ func (c Core) shown() ShownVault {
 	return c.Showing()
 }
 
-// One is a Core working one vault for as long as it is served.
-func One(v domain.Vault, root string) func() ShownVault {
+// ShowingOne answers with the same vault for as long as the server is served.
+func ShowingOne(v domain.Vault, root string) func() ShownVault {
 	return func() ShownVault { return ShownVault{Vault: v, Root: root} }
 }
 
