@@ -441,10 +441,12 @@ func At(path string) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	if err := object(raw); err != nil {
+	if err := json.Unmarshal(raw, &cfg); err != nil {
 		return Config{}, err
 	}
-	if err := json.Unmarshal(raw, &cfg); err != nil {
+	// The reading above takes a bare null and leaves the defaults standing, so
+	// the bytes are asked again whether they are one object.
+	if err := object(raw); err != nil {
 		return Config{}, err
 	}
 	// A file naming no version, and one naming a number that is no version at
