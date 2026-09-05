@@ -11,7 +11,7 @@ import type { Goal as Goals, Refusal } from '@numen/protocol'
 
 import { deckName, goalOf } from './core'
 import type { DeckCardsDue, Goal } from './core'
-import { said } from './reading/core'
+import { refusalWords } from '@numen/wire'
 import type { BudgetKeys, VaultCardsDue } from './core'
 
 export type { BudgetKeys }
@@ -193,7 +193,7 @@ const scheduled = async (
     const answer = await presets.getVaultDeckPreset({ vault, deck })
     const settings = answer.preset?.settings
     if (!answer.preset || !settings) {
-      return { deck, held: null, refused: said(answer.refusal) || UNREAD }
+      return { deck, held: null, refused: refusalWords(answer.refusal) || UNREAD }
     }
     return {
       deck,

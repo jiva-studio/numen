@@ -7,6 +7,7 @@
  * leaves out.
  */
 import { ref, shallowRef } from 'vue'
+import { troubleWords } from '@numen/wire'
 import type { Model, Written } from '../core'
 import type { Voice } from '../telling'
 import { write } from './json5'
@@ -91,8 +92,7 @@ export function configuring(core: ConfiguringDeps, words: Words, said: Voice) {
     try {
       await core.choosesSetting(written)
     } catch (thrown) {
-      const failed = thrown instanceof Error ? thrown.message : `${thrown}`
-      said(`${words.unturned} ${failed}`, 'refusal')
+      said(`${words.unturned} ${troubleWords(thrown)}`, 'refusal')
     }
     await start()
   }

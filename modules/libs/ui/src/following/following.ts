@@ -10,6 +10,17 @@
 /** How long the window waits before it takes a stream up again, in milliseconds. */
 export const AGAIN = 1000
 
+/**
+ * What a stream that ended in a fault is said as.
+ *
+ * The fault itself is a transport's, and nothing a person can act on: what they
+ * can act on is that the window is behind the vault and is working its way
+ * back. Every stream ends the same way and is taken up again the same way, so
+ * there is one thing to say and this library can say it without knowing what
+ * was being followed.
+ */
+export const LOST = 'lost touch with numen — the window keeps trying'
+
 /** What following a stream reads of the window it is following for. */
 export interface FollowingDeps {
   /** Whether the window is still open. Nothing is followed once it is not. */
@@ -41,9 +52,9 @@ export function following(deps: FollowingDeps) {
           if (!deps.open()) return
           await each(said)
         }
-      } catch (error) {
+      } catch {
         if (!deps.open()) return
-        deps.lost(String(error))
+        deps.lost(LOST)
       }
       deps.reset?.()
       await deps.wait(again)

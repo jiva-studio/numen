@@ -6,6 +6,7 @@
  * list. Nothing here draws anything.
  */
 import type { PlexRelatedSeat } from '@numen/ui'
+import { troubleWords } from '@numen/wire'
 import type { Deed, Runnable, VaultRef } from './commanding'
 import type { Opened } from './putting'
 import type {
@@ -297,7 +298,7 @@ export async function does(deed: Deed | null, on: CommandDeps, words: Words): Pr
   try {
     await carry(atItsFile(deed, on), on, words)
   } catch (error) {
-    on.says(String(error), 'refusal')
+    on.says(troubleWords(error), 'refusal')
   }
 }
 
@@ -373,7 +374,7 @@ const moves = async (deed: Deed, on: CommandDeps, words: Words): Promise<void> =
 const UNDER_WAY: readonly Reached[] = ['queued', 'running']
 
 /**
- * An artifact asked for over a file. What it now stands at is one sentence,
+ * An artifact asked for over a file. What it now stands at is one troubleWords,
  * which is what the person is told; a run under way shows what it is doing in
  * the work behind the window. A build that cannot make it at all is told once
  * and offers it nowhere after that.
@@ -384,7 +385,7 @@ const began = (deed: Deed, outcome: Outcome, on: CommandDeps, words: Words): voi
     return on.says(words.unrunnable, 'refusal')
   }
   // A file nothing here could read carries what the run said about it, and that
-  // stands after the sentence.
+  // stands after the troubleWords.
   const why = words.made[outcome.of][outcome.made]
   const said = outcome.error ? `${why} ${outcome.error}` : why
   on.says(said, UNDER_WAY.includes(outcome.made) ? 'report' : 'refusal')

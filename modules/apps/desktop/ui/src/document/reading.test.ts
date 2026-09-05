@@ -220,7 +220,8 @@ describe('a document opened at a place in its text', () => {
 
     await read.reach({ start: 40_512, length: 31 })
 
-    expect(read.trouble.value).toContain('the layer is being written')
+    expect(read.trouble.value).toContain('numen did not answer')
+    expect(read.trouble.value).not.toContain('the layer is being written')
     expect(read.picture.value).toBe('Book.pdf 0 800')
   })
 })
@@ -248,7 +249,8 @@ describe('a document that will not open', () => {
     read.widen(800)
     await read.go(1)
 
-    expect(read.trouble.value).toContain('no such document')
+    expect(read.trouble.value).toContain('numen did not answer')
+    expect(read.trouble.value).not.toContain('no such document')
     expect(read.pages.value).toBe(0)
     expect(read.picture.value).toBe('')
   })

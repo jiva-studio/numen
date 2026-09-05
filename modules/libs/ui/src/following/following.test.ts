@@ -5,7 +5,7 @@
  * shows what the vault held a moment ago, with no error and no way back.
  */
 import { describe, expect, it } from 'vitest'
-import { following, AGAIN } from './following'
+import { following, AGAIN, LOST } from './following'
 
 /** A window that is open for as many streams as the test allows it. */
 const window = (streams = 3) => {
@@ -60,7 +60,7 @@ describe('a stream that fails', () => {
       () => {},
     )
 
-    expect(one.lost[0]).toContain('connection lost')
+    expect(one.lost[0]).toBe(LOST)
   })
 
   it('says nothing about it once it has it back', async () => {
@@ -86,7 +86,7 @@ describe('a stream that fails', () => {
     })
 
     expect(answered).toBeGreaterThanOrEqual(2)
-    expect(one.lost[0]).toContain('the answer went wrong')
+    expect(one.lost[0]).toBe(LOST)
   })
 })
 

@@ -6,6 +6,7 @@
 import type { Stretch } from '../core'
 import { computed, ref } from 'vue'
 import { clock } from '@numen/ui'
+import { troubleWords } from '@numen/wire'
 import { asking as latest } from '../asking'
 import { cued, same, spanning, spoken } from './cueing'
 import { playable as canPlay, player, type Player, type CanPlayType } from './playing'
@@ -204,7 +205,7 @@ export function transcript(recordings: Recordings, path: string, how: Playing = 
       trouble.value = ''
     } catch (error) {
       if (!mine.lands()) return
-      trouble.value = String(error)
+      trouble.value = troubleWords(error)
     }
   }
 
@@ -279,7 +280,7 @@ export function transcript(recordings: Recordings, path: string, how: Playing = 
     } catch (error) {
       if (!open) return
       owed = true
-      trouble.value = String(error)
+      trouble.value = troubleWords(error)
     } finally {
       writing = false
       // Typing that landed while the write was in the air is still owed.
@@ -326,7 +327,7 @@ export function transcript(recordings: Recordings, path: string, how: Playing = 
       go(ms)
     } catch (error) {
       if (!open) return
-      trouble.value = String(error)
+      trouble.value = troubleWords(error)
     }
   }
 

@@ -8,6 +8,7 @@
 import { ref } from 'vue'
 import type { Core, Move, Said, Stretch, Task } from './core'
 import { following } from '@numen/ui'
+import { troubleWords } from '@numen/wire'
 
 /**
  * The vault as the whole window reads it, and what it says when the vault
@@ -246,7 +247,7 @@ export function showing(core: Core, how: Showing = {}) {
         await wait(100)
       }
     } catch (error) {
-      failure.value = String(error)
+      failure.value = troubleWords(error)
       indexing.value = false
     }
   }

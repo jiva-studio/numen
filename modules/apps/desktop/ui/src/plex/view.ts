@@ -5,6 +5,7 @@
  * for the whole window, and `showing.ts` tells every plex when to ask again.
  */
 import { ref } from 'vue'
+import { troubleWords } from '@numen/wire'
 import { asking } from '../asking'
 import { movedTo, type Neighbourhood, type Move } from '../core'
 import { alike } from './picture'
@@ -50,7 +51,7 @@ export function view(core: Neighbours) {
       if (!alike(neighbourhood.value, answer)) neighbourhood.value = answer
     } catch (error) {
       if (!mine.current) return
-      trouble.value = String(error)
+      trouble.value = troubleWords(error)
     }
   }
 

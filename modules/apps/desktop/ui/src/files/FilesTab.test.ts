@@ -304,7 +304,7 @@ describe('a folder that could not be read', () => {
     const window = mount(FilesTab, { props: { held: tab } })
     await settles()
 
-    expect(window.find('.caution').text()).toContain('the vault is not there')
+    expect(window.find('.caution').text()).toContain('numen did not answer')
   })
 
   it('is said nowhere while the vault answers', async () => {

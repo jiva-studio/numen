@@ -112,7 +112,8 @@ describe('making a note in a seat of another', () => {
     const making = creating(core, says)
 
     expect(await making.make('Ontology.md', 'child')).toBeNull()
-    expect(last()).toContain('out of reach')
+    expect(last()).toContain('numen did not answer')
+    expect(last()).not.toContain('out of reach')
   })
 })
 

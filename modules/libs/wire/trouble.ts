@@ -7,15 +7,23 @@
  * whoever is looking at the screen. What is said here is what happened and,
  * where there is one, what they can do about it.
  *
- * The two are shaped for the two places they are drawn. A fault stands alone in
- * a block of its own, so it is sentences; a refusal is set inline beside the
- * thing refused, so it is the clause the rest of that line reads on.
+ * What a call carried back is repeated on four codes and on no other. Those
+ * four the application only ever raises with a sentence it wrote — *this
+ * recording is being listened to*, *no agent is set up for this vault* — and
+ * the sentence says what no code could. Every other code wraps whatever error
+ * came back, and *sql: no rows in result set* is not something to put in front
+ * of anybody.
+ *
+ * Both are clauses rather than sentences, because both are read after
+ * something that says which thing went wrong — `That setting could not be
+ * written:`, a note's title, the row a refusal is set beside. A window that
+ * wants a sentence of one makes it one.
  */
 import { Code, ConnectError } from '@connectrpc/connect'
 import { Refusal } from '@numen/protocol'
 
 /** What is said when nothing more precise can honestly be said. */
-const UNEXPECTED = 'Something inside numen went wrong.'
+const UNEXPECTED = 'something inside numen went wrong'
 
 /**
  * What a call that could not be answered says.
@@ -33,38 +41,57 @@ const UNEXPECTED = 'Something inside numen went wrong.'
 const TROUBLE: Record<Code, string> = {
   [Code.Canceled]: '',
   [Code.Unknown]:
-    'Nothing was done: numen did not answer. It may have stopped, and the window keeps trying.',
-  [Code.InvalidArgument]: 'Nothing was done: numen could not make sense of what was asked.',
-  [Code.DeadlineExceeded]: 'Nothing was done: numen took too long to answer. Try again.',
-  [Code.NotFound]: 'What was asked for is not there.',
+    'numen did not answer, so nothing was done — it may have stopped, and the window keeps trying',
+  [Code.InvalidArgument]: 'numen could not make sense of what was asked, so nothing was done',
+  [Code.DeadlineExceeded]: 'numen took too long to answer, so nothing was done',
+  [Code.NotFound]: 'what was asked for is not there',
   [Code.AlreadyExists]: UNEXPECTED,
   [Code.PermissionDenied]: UNEXPECTED,
   [Code.ResourceExhausted]: UNEXPECTED,
-  [Code.FailedPrecondition]:
-    'Nothing was done: numen cannot do that as things stand. There may be no vault open, or nothing set to do it with.',
+  [Code.FailedPrecondition]: 'numen cannot do that as things now stand',
   [Code.Aborted]: UNEXPECTED,
   [Code.OutOfRange]: UNEXPECTED,
-  [Code.Unimplemented]: 'This installation of numen cannot do that.',
+  [Code.Unimplemented]: 'this installation of numen cannot do that',
   [Code.Internal]: UNEXPECTED,
-  [Code.Unavailable]: 'Nothing was done: numen is not answering just now. Try again in a moment.',
+  [Code.Unavailable]: 'numen is not answering just now — try again in a moment',
   [Code.DataLoss]: UNEXPECTED,
   [Code.Unauthenticated]: UNEXPECTED,
 }
+
+/**
+ * The codes the application raises only with a sentence of its own.
+ *
+ * Everything under them is hand-written and reads as a clause: a vault that is
+ * closing, a recording a run is holding, a setting that does not read as JSON
+ * and the byte it stops at. Not found is out, because half of what it carries
+ * is `fs.ErrNotExist` with a path and a stat call in front of it.
+ */
+const CARRIES = new Set<Code>([
+  Code.InvalidArgument,
+  Code.FailedPrecondition,
+  Code.Unavailable,
+  Code.Unimplemented,
+])
 
 /**
  * What a caught fault says to the person who was waiting for the answer.
  *
  * Anything at all can be thrown, so anything at all is taken. What the window
  * threw at itself is not the person's to read either, and lands on the same
- * sentence as an unexpected code.
+ * words as a code nothing here produces.
  */
-export const sentence = (thrown: unknown): string => TROUBLE[ConnectError.from(thrown).code]
+export const troubleWords = (thrown: unknown): string => {
+  const fault = ConnectError.from(thrown)
+  const carried = CARRIES.has(fault.code) ? fault.rawMessage.trim() : ''
+  return carried || TROUBLE[fault.code]
+}
 
 /**
- * What each refusal the schema carries says, as the clause it is read in.
+ * What each refusal the schema carries says.
  *
- * Keyed by the schema itself, so a refusal added to it has no words until
- * someone writes them and does not compile until someone does.
+ * Keyed by the schema itself, so a refusal added to the protocol has no words
+ * until someone writes them, and nothing that reads this compiles until
+ * someone does.
  */
 const REFUSED: Record<Refusal, string> = {
   [Refusal.UNSPECIFIED]: 'that note could not be read, and numen did not say why',
@@ -84,5 +111,5 @@ const REFUSED: Record<Refusal, string> = {
 }
 
 /** What one refusal says, and nothing where the answer was not refused. */
-export const refused = (refusal: Refusal | undefined): string =>
+export const refusalWords = (refusal: Refusal | undefined): string =>
   refusal === undefined ? '' : REFUSED[refusal]

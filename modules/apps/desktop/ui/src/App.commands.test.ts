@@ -772,13 +772,13 @@ describe('a deck or a stencil the file tree asked the vault for', () => {
   it('says why no deck was made, where the vault could not be reached', async () => {
     const window = await asksFor(false)
 
-    expect(cards(window).join(' ')).toContain('could not be reached')
+    expect(cards(window).join(' ')).toContain('numen did not answer')
   })
 
   it('says why no stencil was made, the same way', async () => {
     const window = await asksFor(true)
 
-    expect(cards(window).join(' ')).toContain('could not be reached')
+    expect(cards(window).join(' ')).toContain('numen did not answer')
   })
 })
 

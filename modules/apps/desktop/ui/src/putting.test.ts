@@ -320,6 +320,7 @@ describe('a deck, a stencil or a preset made', () => {
     const made = cutting(cuts(null, true), putting(unreachable), CUTTING, told.says)
 
     expect(await made.cuts('zoology', 'Animals')).toBe('')
-    expect(told.said).toStrictEqual(['Error: the vault is not there'])
+    expect(told.said.join(' ')).not.toContain('the vault is not there')
+    expect(told.said.join(' ')).toContain('numen did not answer')
   })
 })

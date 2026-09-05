@@ -76,7 +76,7 @@ describe('an hour chosen', () => {
     )
   })
 
-  it('says what was thrown where the hour is refused as no hour at all', async () => {
+  it('says what a person can read where the vault threw instead of answering', async () => {
     const said = vi.fn()
     const hours = reviewing(
       {
@@ -91,7 +91,7 @@ describe('an hour chosen', () => {
 
     expect(hours.starts.value).toBe(DEFAULT_STARTS)
     expect(said).toHaveBeenLastCalledWith(
-      'That setting could not be written: not an hour of the day',
+      'That setting could not be written: numen did not answer, so nothing was done — it may have stopped, and the window keeps trying',
       'refusal',
     )
   })

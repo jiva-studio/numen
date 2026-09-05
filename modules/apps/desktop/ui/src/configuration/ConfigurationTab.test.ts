@@ -5,6 +5,7 @@
  * is kept, so there is no bar above it saying either.
  */
 import { describe, expect, it } from 'vitest'
+import { Code, ConnectError } from '@connectrpc/connect'
 import { mount } from '@vue/test-utils'
 import ConfigurationTab from './ConfigurationTab.vue'
 import { holding, type ConfigurationTabDeps } from './kind'
@@ -58,7 +59,9 @@ describe('the file drawn', () => {
   it('says what is wrong where the settings could not be read out of it', async () => {
     const { tab, held } = await drawn({
       writesSettingsFile: () =>
-        Promise.reject(new Error('not a setting: it does not read as JSON, at byte 12')),
+        Promise.reject(
+          new ConnectError('not a setting: it does not read as JSON, at byte 12', Code.InvalidArgument),
+        ),
     })
     held.types('{ "agent": ')
     await held.keeps()

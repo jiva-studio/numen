@@ -6,6 +6,7 @@
  * player. A kind of tab hands over the way it opens a file and keeps none.
  */
 import type { PlexShowing } from '@numen/ui'
+import { troubleWords } from '@numen/wire'
 import type { FileKind, Made, NoteType, RefusalReason, Stretch } from './core'
 import type { Voice } from './telling'
 
@@ -173,7 +174,7 @@ export function cutting(vault: CutWriter, puts: Putting, words: CuttingWords, sa
       }
       return answer.path
     } catch (error) {
-      said(String(error), 'refusal')
+      said(troubleWords(error), 'refusal')
       return ''
     }
   }

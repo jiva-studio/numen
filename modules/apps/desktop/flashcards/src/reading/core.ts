@@ -4,11 +4,9 @@
  * Nothing here draws. What arrives is turned into the plain values the panel
  * carries, so what the schema calls things stops at this file.
  */
-import { Refusal } from '@numen/protocol'
+import { refusalWords } from '@numen/wire'
 
 import { cards } from '../core'
-import { REFUSED } from './words'
-import type { Refused } from './words'
 
 /** One note the deck is joined to. */
 export interface Neighbour {
@@ -47,30 +45,8 @@ export const around = async (vault: string, deck: string): Promise<DeckNeighbour
       label: one.label,
       points: one.points,
       ambiguous: one.ambiguous,
-      refusal: said(one.refusal),
+      refusal: refusalWords(one.refusal),
     })),
     unread: answer.unread,
   }
-}
-
-/** Why a note has no text, in words a person reads, and nothing where it has. */
-export const said = (refusal: Refusal | undefined): string =>
-  refusal === undefined ? '' : REFUSED[refused[refusal]]
-
-/** What the schema calls each refusal this panel can be given. */
-const refused: Record<Refusal, Refused> = {
-  [Refusal.UNSPECIFIED]: 'unreadable',
-  [Refusal.MISSING]: 'missing',
-  [Refusal.NOT_A_NOTE]: 'notANote',
-  [Refusal.NOT_TEXT]: 'notText',
-  [Refusal.TOO_LARGE]: 'tooLarge',
-  [Refusal.BODY_REFUSED]: 'unreadable',
-  [Refusal.UNREADABLE]: 'unreadable',
-  [Refusal.OCCUPIED]: 'unreadable',
-  [Refusal.UNNAMEABLE]: 'unreadable',
-  [Refusal.NOT_A_STENCIL]: 'notANote',
-  [Refusal.NOT_A_DECK]: 'notANote',
-  [Refusal.NOT_A_PRESET]: 'notAPreset',
-  [Refusal.DECK_TOO_LARGE]: 'tooLarge',
-  [Refusal.STALE]: 'unreadable',
 }

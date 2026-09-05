@@ -5,6 +5,7 @@
  * Every value here is invented.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { Code, ConnectError } from '@connectrpc/connect'
 import { holding, type ConfigurationTabDeps } from './kind'
 import { WORDS as words } from './words'
 
@@ -50,7 +51,9 @@ describe('the file as it stands', () => {
     })
     await held.again()
 
-    expect(held.saying()).toBe(`${words.unread} the folder is not there`)
+    expect(held.saying()).toBe(
+      `${words.unread} numen did not answer, so nothing was done — it may have stopped, and the window keeps trying`,
+    )
     expect(held.read()).toBe(false)
   })
 })
@@ -111,7 +114,9 @@ describe('a file the settings cannot be read out of', () => {
   const refusing = () =>
     vault({
       writesSettingsFile: () =>
-        Promise.reject(new Error('not a setting: it does not read as JSON, at byte 12')),
+        Promise.reject(
+          new ConnectError('not a setting: it does not read as JSON, at byte 12', Code.InvalidArgument),
+        ),
     })
 
   it('is refused, with what is wrong said', async () => {

@@ -8,6 +8,7 @@
  * the watcher, and appears at the next of those.
  */
 import { computed, ref, shallowRef } from 'vue'
+import { troubleWords } from '@numen/wire'
 import { movedTo, type Entry, type Move } from '../core'
 
 /** Everything a files tab asks of the application. */
@@ -107,7 +108,7 @@ export function listing(core: Folders) {
       trouble.value = ''
     } catch (error) {
       if (!alive) return
-      trouble.value = String(error)
+      trouble.value = troubleWords(error)
     }
   }
 

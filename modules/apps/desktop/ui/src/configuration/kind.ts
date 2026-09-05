@@ -6,6 +6,7 @@
  * wrong with it, and the file is left as it was.
  */
 import { computed, ref } from 'vue'
+import { troubleWords } from '@numen/wire'
 import type { Host, Kind } from '../windowing'
 import { CONFIGURATION } from '../workspace'
 import ConfigurationTab from './ConfigurationTab.vue'
@@ -28,10 +29,6 @@ export interface ConfigurationTabDeps {
 
 /** What one tab of the settings file holds. */
 export type ConfigurationTabState = ReturnType<typeof holding>
-
-/** What is wrong, as a person reads it. */
-const reason = (thrown: unknown): string =>
-  thrown instanceof Error ? thrown.message : `${thrown}`
 
 /**
  * The file as it stands, what is typed over it, and what is wrong with what was
@@ -59,7 +56,7 @@ export function holding(core: ConfigurationTabDeps, reads: () => void) {
     try {
       answer = await core.settingsFile()
     } catch (thrown) {
-      wrong.value = `${words.unread} ${reason(thrown)}`
+      wrong.value = `${words.unread} ${troubleWords(thrown)}`
       return
     }
     held.value = answer.written
@@ -80,7 +77,7 @@ export function holding(core: ConfigurationTabDeps, reads: () => void) {
     try {
       answer = await core.writesSettingsFile(typed.value, seen)
     } catch (thrown) {
-      wrong.value = `${words.unwritten} ${reason(thrown)}`
+      wrong.value = `${words.unwritten} ${troubleWords(thrown)}`
       return
     }
     // Nothing was written, and the tab stands overtaken until the person says

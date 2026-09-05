@@ -102,7 +102,7 @@ describe('a setting written', () => {
     const { kept, said } = holding('{}', 'the file could not be written')
     await kept.puts(['agent', 'use'], 'claude')
     expect(said).toHaveBeenLastCalledWith(
-      'That setting could not be written: the file could not be written',
+      'That setting could not be written: numen did not answer, so nothing was done — it may have stopped, and the window keeps trying',
       'refusal',
     )
   })

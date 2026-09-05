@@ -146,7 +146,7 @@ describe('the stream of changes', () => {
     await window.follow()
 
     expect(streams).toBeGreaterThanOrEqual(2)
-    expect(window.lost.value).toContain('connection lost')
+    expect(window.lost.value).toContain('lost touch with numen')
   })
 
   it('says what changed, and waits for whatever is drawn from it', async () => {

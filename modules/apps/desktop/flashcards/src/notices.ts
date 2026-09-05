@@ -6,10 +6,10 @@
  * with it.
  */
 import { computed, ref } from 'vue'
-import { ConnectError } from '@connectrpc/connect'
 
 import { noticed } from '@numen/ui'
 import type { Notice, Task, Tone } from '@numen/ui'
+import { troubleWords } from '@numen/wire'
 
 export function raising() {
   /** What the window is doing behind itself, which stands above what it said. */
@@ -40,8 +40,14 @@ export function raising() {
     ]
   }
 
-  /** Trouble, in the person's own words: what the application said, as a sentence. */
-  const failed = (why: unknown) => says(sentence(ConnectError.from(why).rawMessage), 'alarm')
+  /**
+   * Trouble, in the person's own words. A call the window itself stopped has
+   * nothing to say, and nothing is raised for it.
+   */
+  const failed = (why: unknown) => {
+    const said = sentence(troubleWords(why))
+    if (said) says(said, 'alarm')
+  }
 
   /**
    * What is being done behind the window, as cards to draw. The whole list

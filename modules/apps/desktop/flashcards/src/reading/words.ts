@@ -12,15 +12,3 @@ export const WORDS = {
   /** How many at the end came named and not read. */
   named: (many: number) => `${many} more are joined to this deck and are not read here`,
 }
-
-/** Why a note has no text here, in words a person reads. */
-export const REFUSED = {
-  missing: 'that note is not in the vault',
-  notANote: 'that file is not a note',
-  notAPreset: 'that note is not a preset',
-  notText: 'that file is not text',
-  tooLarge: 'that note is longer than this reads',
-  unreadable: 'the frontmatter of that note cannot be read',
-} as const
-
-export type Refused = keyof typeof REFUSED

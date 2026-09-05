@@ -8,6 +8,7 @@
  */
 import type { Stretch } from '../core'
 import { computed, ref } from 'vue'
+import { troubleWords } from '@numen/wire'
 
 /** Where something sits on a page, in fractions of it. */
 export interface Rect {
@@ -138,7 +139,7 @@ export function reading(documents: Documents, path: string) {
       seen.value = said.at
     } catch (error) {
       if (!open) return
-      trouble.value = String(error)
+      trouble.value = troubleWords(error)
     }
   })()
 
@@ -186,7 +187,7 @@ export function reading(documents: Documents, path: string) {
       await highlight(where)
     } catch (error) {
       if (!open) return
-      trouble.value = String(error)
+      trouble.value = troubleWords(error)
     }
   }
 

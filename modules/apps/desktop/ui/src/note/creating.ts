@@ -6,6 +6,7 @@
  * decided here: the plex reports the shape of a gesture and nothing else.
  */
 import type { PlexRelatedSeat } from '@numen/ui'
+import { troubleWords } from '@numen/wire'
 import type { Core, NewLink, RefusalReason, Role } from '../core'
 import type { Voice } from '../telling'
 import { REFUSED } from '../words'
@@ -86,7 +87,7 @@ export function creating(core: Core, said: Voice) {
       if (made.refusal !== null) return made.refusal
       return { path: made.path, title }
     } catch (error) {
-      said(String(error), 'refusal')
+      said(troubleWords(error), 'refusal')
       return null
     }
   }
@@ -156,7 +157,7 @@ export function creating(core: Core, said: Voice) {
       said('')
       return true
     } catch (error) {
-      said(String(error), 'refusal')
+      said(troubleWords(error), 'refusal')
       return false
     }
   }

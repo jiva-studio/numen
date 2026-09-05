@@ -6,6 +6,7 @@
  * installation is doing and choosing another hour writes it.
  */
 import { ref } from 'vue'
+import { troubleWords } from '@numen/wire'
 import type { Reviewing } from './core'
 import type { Voice } from './telling'
 
@@ -62,7 +63,7 @@ export function reviewing(core: ReviewingDeps, words: Words, said: Voice) {
     try {
       failed = await core.choosesReviewing(hour)
     } catch (thrown) {
-      failed = thrown instanceof Error ? thrown.message : `${thrown}`
+      failed = troubleWords(thrown)
     }
     if (!failed) return
     said(`${words.unturned} ${failed}`, 'refusal')

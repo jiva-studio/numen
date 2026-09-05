@@ -5,6 +5,7 @@
  * or removed, and that what a remove leaves behind is put to the person.
  */
 import { describe, expect, it } from 'vitest'
+import { Code, ConnectError } from '@connectrpc/connect'
 import { commandsOf, deedOf, runnable, type Deed, type CommandTarget } from './commanding'
 import { does, reaching, type CommandDeps, type Store } from './doing'
 import type {
@@ -146,7 +147,8 @@ const window = (
       },
       drops: async (path) => {
         done.push(`drops ${path}`)
-        if (answers.dropRefused) throw new Error(answers.dropRefused)
+        if (answers.dropRefused)
+          throw new ConnectError(answers.dropRefused, Code.FailedPrecondition)
         return answers.undroppable !== true
       },
     },
@@ -485,7 +487,7 @@ describe('the transcript of a recording dropped', () => {
 
     await carry(deedOf('dropTranscript', front({ file: 'talks/Ants.mp3' })), one.on)
 
-    expect(one.said).toStrictEqual([`Error: ${why}`])
+    expect(one.said).toStrictEqual([why])
     expect(one.tones).toStrictEqual(['refusal'])
   })
 
@@ -1060,7 +1062,9 @@ describe('nothing to carry out', () => {
 
     await does(deedOf('remove', front()), broken, words)
 
-    expect(one.said).toStrictEqual(['Error: gone'])
+    expect(one.said).toStrictEqual([
+      'numen did not answer, so nothing was done — it may have stopped, and the window keeps trying',
+    ])
   })
 })
 
