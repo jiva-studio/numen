@@ -1,10 +1,50 @@
 package format_test
 
 import (
+	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 )
+
+// A face travels on the wire as it was written, so the window fills one too —
+// to show a preview of the card the person is writing the face for. Both read
+// this one corpus, and neither owns it.
+const corpus = "../../../protocol/testdata/faces.json"
+
+type laying struct {
+	Face   string   `json:"face"`
+	Fields []string `json:"fields"`
+	Laid   string   `json:"laid"`
+}
+
+func TestAFaceIsFilledTheWayTheSchemaSaysItIs(t *testing.T) {
+	raw, err := os.ReadFile(corpus)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cases []laying
+	if err := json.Unmarshal(raw, &cases); err != nil {
+		t.Fatal(err)
+	}
+	if len(cases) == 0 {
+		t.Fatal("the corpus is empty")
+	}
+
+	for _, one := range cases {
+		card := format.Card{Heading: "Llama"}
+		for _, field := range one.Fields {
+			card.Values = append(card.Values, format.Value{Field: field, Text: "<" + field + ">"})
+		}
+
+		face := format.FaceTemplate{Front: one.Face, Back: one.Face}
+		front, back := format.Lay(declaring(one.Fields...), face, card)
+		if front != one.Laid || back != one.Laid {
+			t.Errorf("%q laid out as %q and %q, want %q", one.Face, front, back, one.Laid)
+		}
+	}
+}
 
 // declaring is a stencil of nothing but its fields, which is what laying a face
 // out needs of one.

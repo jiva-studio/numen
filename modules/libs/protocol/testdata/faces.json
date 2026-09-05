@@ -1,0 +1,16 @@
+[
+  {
+    "face": "**{{Name}}** is {{Height}}.",
+    "fields": ["Name", "Height"],
+    "laid": "**<Name>** is <Height>."
+  },
+  { "face": "![[llama.jpg]]", "fields": ["Name"], "laid": "![[llama.jpg]]" },
+  { "face": "{{Name}}{{Height}}", "fields": ["Name", "Height"], "laid": "<Name><Height>" },
+  { "face": "`{{Name}}`", "fields": ["Name"], "laid": "`<Name>`" },
+  { "face": "{{{Name}}}", "fields": ["Name"], "laid": "{<Name>}" },
+  { "face": "{{Name}", "fields": ["Name"], "laid": "{{Name}" },
+  { "face": "{{Weight}}", "fields": ["Name"], "laid": "" },
+  { "face": "[{{}}]", "fields": ["Name"], "laid": "[]" },
+  { "face": "[{{ Name }}]", "fields": ["Name"], "laid": "[]" },
+  { "face": "[{{Name\nHeight}}]", "fields": ["Name", "Height"], "laid": "[]" }
+]

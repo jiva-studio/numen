@@ -14,10 +14,27 @@ import {
   strayIn,
 } from './fill'
 
+/**
+ * A face travels on the wire as it was written, so the core fills one too — to
+ * lay out the card a person is shown. Both read this one corpus, and neither
+ * owns it.
+ */
+import corpus from '../../../protocol/testdata/faces.json'
+
 const VALUES = [
   { field: 'Height', text: 'about 45"' },
   { field: 'Life span', text: 'about 20 years' },
 ]
+
+describe('the braces a face is written with', () => {
+  it('are read the way the schema says they are', () => {
+    expect(corpus.length).toBeGreaterThan(0)
+    for (const { face, fields, laid } of corpus) {
+      const values = fields.map((field) => ({ field, text: `<${field}>` }))
+      expect({ face, laid: fill(face, values) }).toStrictEqual({ face, laid })
+    }
+  })
+})
 
 describe('slotsIn', () => {
   it('finds every slot where it stands', () => {
