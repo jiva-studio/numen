@@ -483,7 +483,7 @@ describe('what a goal of a date draws', () => {
 
   /** How many days the band is drawn over, which is how many places it has. */
   const days = (tab: ReturnType<typeof mount>) =>
-    (tab.get('[data-band="line"]').attributes('d') ?? '').split(/[ML]/).length - 1
+    (tab.get('[data-backlog="line"]').attributes('d') ?? '').split(/[ML]/).length - 1
 
   it('stops the band at the day the place stands for', async () => {
     const { tab } = dated()
@@ -500,9 +500,9 @@ describe('what a goal of a date draws', () => {
     const { tab } = dated()
     const control = tab.get('[data-control="picture"][role="slider"]')
     await control.trigger('keydown', { key: 'End' })
-    const tallest = heights(tab.get('[data-band="line"]').attributes('d') ?? '')
+    const tallest = heights(tab.get('[data-backlog="line"]').attributes('d') ?? '')
     await control.trigger('keydown', { key: 'Home' })
-    const shortest = heights(tab.get('[data-band="line"]').attributes('d') ?? '')
+    const shortest = heights(tab.get('[data-backlog="line"]').attributes('d') ?? '')
 
     // The first days are the same days, and they are drawn at the same height.
     expect(shortest.slice(0, 3)).toStrictEqual(tallest.slice(0, 3))
@@ -523,15 +523,15 @@ describe('the band of what stands overdue', () => {
 
   it('is a plot of its own under the picture, drawn over the days ahead', () => {
     const { tab } = climbing()
-    expect(tab.findAll('[data-band="line"]')).toHaveLength(1)
-    expect(tab.get('[data-band="line"]').attributes('d')?.startsWith('M')).toBe(true)
+    expect(tab.findAll('[data-backlog="line"]')).toHaveLength(1)
+    expect(tab.get('[data-backlog="line"]').attributes('d')?.startsWith('M')).toBe(true)
   })
 
   // A day too short to carry what falls due adds to the pile, and the climb is
   // what the picture is for. The band is scaled to this one place's own run.
   it('draws a backlog that climbs as climbing, and not flat', () => {
     const heights = (d: string) => d.split(/[ML]/).slice(1).map((one) => Number(one.split(' ')[1]))
-    const drawnAt = heights(climbing().tab.get('[data-band="line"]').attributes('d') ?? '')
+    const drawnAt = heights(climbing().tab.get('[data-backlog="line"]').attributes('d') ?? '')
     expect(drawnAt[0]).toBeGreaterThan(drawnAt[5] ?? 0)
     expect(drawnAt[2]).toBeLessThan(drawnAt[1] ?? 0)
     expect(new Set(drawnAt).size).toBeGreaterThan(4)
@@ -570,13 +570,13 @@ describe('the band of what stands overdue', () => {
   it('is read and not dragged, so the one control stays the one control', () => {
     const { tab } = climbing()
     expect(tab.findAll('[data-control="picture"][role="slider"]')).toHaveLength(1)
-    expect(tab.findAll('[data-control="picture"], [data-band="picture"]')).toHaveLength(2)
+    expect(tab.findAll('[data-control="picture"], [data-backlog="picture"]')).toHaveLength(2)
   })
 
   // The page keeps its height whether or not there is a backlog to draw.
   it('keeps its room where the place the knob stands carries no backlog', () => {
     const { tab } = drawn()
-    expect(tab.findAll('[data-band="line"]')).toHaveLength(0)
+    expect(tab.findAll('[data-backlog="line"]')).toHaveLength(0)
     expect(tab.findAll('[data-control="room"]')).toHaveLength(2)
     expect(tab.findAll('[data-control="name"][data-axis="y"]').map((one) => one.text())).toContain(words.backlogY)
   })
@@ -601,10 +601,10 @@ describe('the band of what stands overdue', () => {
         .slice(1)
         .map((one) => Number(one.split(' ')[1]))
     const flat = heights(
-      climbing([0, 0, 0, 0, 0, 0]).tab.get('[data-band="line"]').attributes('d') ?? '',
+      climbing([0, 0, 0, 0, 0, 0]).tab.get('[data-backlog="line"]').attributes('d') ?? '',
     )
     const floor = heights(
-      climbing([12, 8, 4, 0, 0, 0]).tab.get('[data-band="line"]').attributes('d') ?? '',
+      climbing([12, 8, 4, 0, 0, 0]).tab.get('[data-backlog="line"]').attributes('d') ?? '',
     )
     // Every place of the empty run stands where the run that clears comes to
     // rest, which is the foot the axis is drawn along.
@@ -631,7 +631,7 @@ describe('the band of what stands overdue', () => {
         point({ backlog: [8, 4, 0] }),
       ],
     })
-    const line = () => tab.get('[data-band="line"]').attributes('d')
+    const line = () => tab.get('[data-backlog="line"]').attributes('d')
     const was = line()
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'End' })
     expect(line()).not.toBe(was)
@@ -737,7 +737,7 @@ describe('what the control stands at', () => {
     const { tab } = drawn({ honest: false })
     expect(tab.findAll('[data-control="waiting"]')).toHaveLength(1)
     expect(tab.text()).toContain(words.waiting)
-    expect(tab.findAll('[data-control="picture"], [data-band="picture"]')).toHaveLength(0)
+    expect(tab.findAll('[data-control="picture"], [data-backlog="picture"]')).toHaveLength(0)
     expect(tab.findAll('[data-control="picture"][role="slider"]')).toHaveLength(0)
     expect(tab.findAll('[data-control="number"]')).toHaveLength(0)
     expect(tab.get('[data-control="ends"]').text()).toBe('')

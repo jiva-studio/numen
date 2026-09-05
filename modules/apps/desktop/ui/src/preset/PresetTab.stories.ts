@@ -342,8 +342,8 @@ export const TheBandKeepsItsRoom: Story = {
 
     // One tab has a backlog drawn in the band and the other has none, which is
     // what makes the two rooms worth comparing.
-    expect(answered!.querySelectorAll('[data-band="picture"]')).toHaveLength(1)
-    expect(waiting!.querySelectorAll('[data-band="picture"]')).toHaveLength(0)
+    expect(answered!.querySelectorAll('[data-backlog="picture"]')).toHaveLength(1)
+    expect(waiting!.querySelectorAll('[data-backlog="picture"]')).toHaveLength(0)
 
     // The room is the same either way, and in the band's own proportion.
     const drawn = bandRoom(answered!)

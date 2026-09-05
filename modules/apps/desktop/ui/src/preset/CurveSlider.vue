@@ -20,7 +20,7 @@ import { computed, shallowRef, watch, useTemplateRef } from 'vue'
 import { Spinner } from '@numen/ui'
 import type { Curve, Material } from './core'
 import { clearing } from './curve'
-import BacklogBand from './BacklogBand.vue'
+import BacklogPlot from './BacklogPlot.vue'
 import {
   BANDS,
   bandOf,
@@ -434,7 +434,7 @@ const released = (event: KeyboardEvent) => {
         </p>
       </div>
 
-      <BacklogBand :curve="props.curve" :place="props.place" :honest="honest" />
+      <BacklogPlot :curve="props.curve" :place="props.place" :honest="honest" />
     </div>
 
     <!-- When the material is learned at the place the knob stands, read off
