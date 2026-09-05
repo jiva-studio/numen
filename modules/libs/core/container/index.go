@@ -49,6 +49,7 @@ func (i *Index) Walks() *vault.Walks { return &i.walks }
 func (c Config) Level(db *Index) note.Levels {
 	refresh := vault.NewRefresh(
 		c.VaultReaders(),
+		db.Vaults(),
 		db.NotesCutAt(c.Chunking(), c.Legibility()),
 		db.SourcesKnown(),
 		db.Sources(),

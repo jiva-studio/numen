@@ -308,6 +308,7 @@ func (o *Installation) Refresh() vaults.Refresh {
 	}
 	return vaults.NewRefresh(
 		o.cfg.VaultReaders(),
+		o.Index.Vaults(),
 		o.Index.NotesCutAt(o.cfg.Chunking(), o.cfg.Legibility()),
 		o.Index.SourcesKnown(),
 		o.Index.Sources(),

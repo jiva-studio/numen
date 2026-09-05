@@ -73,7 +73,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	var once sync.Once
 	// release lets the held write through, from now on.
 	release := func() { once.Do(func() { close(until) }) }
-	refresh := vaults.NewRefresh(readers, db.Notes(), db.SourcesKnown(), db.Sources())
+	refresh := vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources())
 	// The index hook is where a write reaches the database. Held open, it is a
 	// write that has not finished at the moment the application is asked to go.
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {

@@ -41,7 +41,7 @@ func fileable(t *testing.T, notes map[string]string) filing {
 		t.Fatal(err)
 	}
 	readers := &countingReaders{VaultReaders: filesystem.VaultReaders{}}
-	refresh := vaults.Refresh{Readers: readers, Notes: db.Notes()}
+	refresh := vaults.Refresh{Readers: readers, Vaults: db.Vaults(), Notes: db.Notes()}
 	return filing{
 		db:      db,
 		vault:   v,

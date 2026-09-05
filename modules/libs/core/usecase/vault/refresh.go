@@ -21,7 +21,9 @@ import (
 // source. A path that is not a note is said back and left alone.
 type Refresh struct {
 	Readers port.VaultReaders
-	Notes   port.NoteRepository
+	// Vaults is where the vault gets the row every note of it points at.
+	Vaults port.VaultRepository
+	Notes  port.NoteRepository
 	// Known says which kind of source the index holds at a path, and Sources
 	// takes those rows out.
 	Known   port.SourceQueries
@@ -29,19 +31,21 @@ type Refresh struct {
 }
 
 // NewRefresh is how the index is brought level with a handful of files: the
-// vault they are read out of, where a note is filed, and the two the rows of a
-// book and a recording are swept through.
+// vault they are read out of, the row it is filed under, where a note is filed,
+// and the two the rows of a book and a recording are swept through.
 //
-// All four are named here because a refresh short of the last two takes the
+// All five are named here because a refresh short of the last two takes the
 // note away and leaves the book and the recording at a path the vault no longer
-// holds, until something asks for a whole scan.
+// holds, until something asks for a whole scan — and one short of the vault
+// writes nothing at all until a walk has been past.
 func NewRefresh(
 	readers port.VaultReaders,
+	vaults port.VaultRepository,
 	notes port.NoteRepository,
 	known port.SourceQueries,
 	sources port.SourceRepository,
 ) Refresh {
-	return Refresh{Readers: readers, Notes: notes, Known: known, Sources: sources}
+	return Refresh{Readers: readers, Vaults: vaults, Notes: notes, Known: known, Sources: sources}
 }
 
 // RefreshResult is what happened, in the terms a caller acts on: the notes that
@@ -72,6 +76,12 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return res, err
+	}
+	// A note is filed under the vault's row, and a vault nothing has walked yet
+	// has none: a note written into a vault the moment it opens is levelled
+	// here or nowhere.
+	if err := u.Vaults.Register(ctx, v.ID); err != nil {
+		return res, fmt.Errorf("register vault: %w", err)
 	}
 
 	// The same bounds a scan writes in. One event can name a whole folder — a

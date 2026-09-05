@@ -31,7 +31,7 @@ func changeable(t *testing.T, notes map[string]string) changing {
 	t.Helper()
 	db, v := indexed(t, notes)
 	refresh := vaults.NewRefresh(
-		filesystem.VaultReaders{}, db.Notes(), db.SourcesKnown(), db.Sources())
+		filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources())
 	return changing{
 		db:    db,
 		vault: v,
