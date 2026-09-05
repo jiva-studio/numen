@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { paneById, panesOf } from '@numen/ui'
-import { plexKind, plexing, type Held, type Making, type Plexing } from './kind'
+import { plexKind, plexing, type Held, type PlexEditor, type PlexTabDeps } from './kind'
 import { ITEMS, NEW_NOTE } from './menu'
 import { view as viewing, type View } from './view'
 import { WORDS as words } from './words'
@@ -75,7 +75,7 @@ const making = (takes = true) => {
   const joined: [string, string, string][] = []
   /** The notes this vault will write no link to, which a test names. */
   const refuses = new Set<string>()
-  const makes: Making = {
+  const makes: PlexEditor = {
     make: async (from, seat) => {
       made.push([from, seat])
       return takes ? { path: 'Made.md', title: 'Made' } : null
@@ -110,7 +110,7 @@ const tab = (at: string, related: readonly string[] = [], takes = true, types: T
   const hangs = ref(true)
   /** Every question the vault was asked about what the notes hold. */
   const insides: (readonly string[])[] = []
-  const deps: Plexing = {
+  const deps: PlexTabDeps = {
     makes: vault.makes,
     ready: ref(true),
     hangs,
@@ -263,7 +263,7 @@ describe('the menu on a node', () => {
  * them is a plex to offer a note over.
  */
 describe('a plex drawing nothing', () => {
-  const plex = (over: Partial<Plexing>) => {
+  const plex = (over: Partial<PlexTabDeps>) => {
     const view = {
       neighbourhood: ref(null),
       here: ref(''),

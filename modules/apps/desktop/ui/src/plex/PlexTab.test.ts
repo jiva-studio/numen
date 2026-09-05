@@ -9,7 +9,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import PlexTab from './PlexTab.vue'
-import type { Asked, Held } from './kind'
+import type { MenuRequest, Held } from './kind'
 import { WORDS as words } from './words'
 import type { NoteType } from '../core'
 import { iconFor } from '../icons'
@@ -96,12 +96,12 @@ describe('the box a node is drawn in', () => {
 describe('a menu asked for over a tab drawing no picture', () => {
   /** A tab of a vault holding no note, with what it was asked written down. */
   const empty = () => {
-    const asked: Asked[] = []
+    const asked: MenuRequest[] = []
     const tab = {
       ...held(),
       picture: ref(null),
       empty: ref(true),
-      asks: (one: Asked) => void asked.push(one),
+      asks: (one: MenuRequest) => void asked.push(one),
     } as unknown as Held
     return { tab, asked }
   }
@@ -132,8 +132,8 @@ describe('a menu asked for over a tab drawing no picture', () => {
 
   it('leaves a tab drawing a picture to answer for itself', async () => {
     drawing(13)
-    const asked: Asked[] = []
-    const tab = { ...held(), asks: (one: Asked) => void asked.push(one) } as Held
+    const asked: MenuRequest[] = []
+    const tab = { ...held(), asks: (one: MenuRequest) => void asked.push(one) } as Held
     const view = mount(PlexTab, { props: { held: tab } })
 
     await view.get('.plex').trigger('contextmenu', { clientX: 12, clientY: 34 })

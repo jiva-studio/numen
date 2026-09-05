@@ -25,7 +25,7 @@ import PlexTab from './PlexTab.vue'
 import { WORDS as words } from './words'
 
 /** Where the menu stands, and the node it was asked for on. */
-export interface Asked {
+export interface MenuRequest {
   /** The node it was asked for on, and nothing where it was asked off every node. */
   readonly node: string | null
   readonly at: { x: number; y: number }
@@ -33,14 +33,14 @@ export interface Asked {
 }
 
 /** Making a note from the picture, and joining two that are already on it. */
-export interface Making {
+export interface PlexEditor {
   make(from: string, seat: PlexRelatedSeat): Promise<unknown>
   join(from: string, to: string, seat: PlexRelatedSeat): Promise<boolean>
 }
 
 /** What a plex tab asks of the vault and of the window it is drawn in. */
-export interface Plexing {
-  readonly makes: Making
+export interface PlexTabDeps {
+  readonly makes: PlexEditor
   /** Whether the window has anything true to draw at all. */
   readonly ready: Readonly<Ref<boolean>>
   /**
@@ -98,7 +98,7 @@ export type Held = ReturnType<typeof plexing>
  * the window is put in front of, and the one a plex opened after it stands
  * beside.
  */
-export function plexKind(host: Host, makes: () => View, deps: Plexing) {
+export function plexKind(host: Host, makes: () => View, deps: PlexTabDeps) {
   /** Every plex the window holds, and the one the person was last in. */
   const all = () => host.each<Held>(PLEX)
   const front = (): Held | null => host.last<Held>(PLEX)?.held ?? null
@@ -187,7 +187,7 @@ export function plexKind(host: Host, makes: () => View, deps: Plexing) {
   return { kind, looking, names, travel, leaves, again }
 }
 
-export function plexing(view: View, deps: Plexing) {
+export function plexing(view: View, deps: PlexTabDeps) {
   /** What this plex calls each note it draws. */
   const tickets = ticketing()
 
@@ -221,7 +221,7 @@ export function plexing(view: View, deps: Plexing) {
   })
 
   /** The menu on a node, for as long as it stands. */
-  const menu = ref<Asked | null>(null)
+  const menu = ref<MenuRequest | null>(null)
 
   /** What each note this plex draws is divided into, by the path it stands at. */
   const parts = shallowRef<ReadonlyMap<string, readonly PlexPart[]>>(new Map())
@@ -367,7 +367,7 @@ export function plexing(view: View, deps: Plexing) {
   }
 
   /** A menu asked for on a node or off every node, and one put away. */
-  const asks = (asked: Asked) => {
+  const asks = (asked: MenuRequest) => {
     menu.value = asked
   }
   const dismiss = () => {
