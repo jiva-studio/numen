@@ -149,7 +149,7 @@ func load(tb testing.TB, cards, days, perDay int) loaded {
 			Day: today, Now: time.Now,
 		},
 		sat: flashcards.Session{
-			Marking: s.marking, CardFaces: s.standings, Schedules: schedules,
+			Marks: s.marking, CardFaces: s.standings, Schedules: schedules,
 			Presets: s.presets, Day: today, Now: time.Now,
 		},
 		review: flashcards.CountReviews{

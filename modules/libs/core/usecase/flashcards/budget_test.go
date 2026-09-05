@@ -59,7 +59,7 @@ func deckNaming(at []string, cards int, from int) string {
 func (s vaulted) sittingAt(t *testing.T, day review.Day, now time.Time) flashcards.SessionResult {
 	t.Helper()
 	sat, err := flashcards.Session{
-		Marking: s.marking, CardFaces: s.standings, Schedules: s.kept,
+		Marks: s.marking, CardFaces: s.standings, Schedules: s.kept,
 		Presets: s.presets, Day: day, Now: func() time.Time { return now },
 	}.Execute(t.Context(), s.vault, flashcards.Scope{})
 	if err != nil {

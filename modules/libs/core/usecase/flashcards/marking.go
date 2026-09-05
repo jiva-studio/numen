@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-// Marking gives a mark to every card of a vault that carries none.
+// MarkCards gives a mark to every card of a vault that carries none.
 //
 // A card typed by hand carries no mark until the application writes its file,
 // and a card with no mark has nothing an answer can be recorded against. A deck
@@ -20,7 +20,7 @@ import (
 // This is the one thing flashcards writes into a vault, and it is done when a
 // person sits down to that vault — not to every vault the installation holds,
 // and not for the counting of what is owed.
-type Marking struct {
+type MarkCards struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
 	Notes   port.NoteQueries
@@ -32,7 +32,7 @@ type Marking struct {
 	Now port.Clock
 }
 
-// NewMarking is what a vault's cards are given marks through: the vault the
+// NewMarkCards is what a vault's cards are given marks through: the vault the
 // decks are read out of and written back to, what says which of its notes are
 // decks, where the wikilink a card names its stencil by lands, what brings a
 // written deck level in the index, and what time it is.
@@ -40,22 +40,22 @@ type Marking struct {
 // All six are named here because a marking short of any one of them leaves a
 // card with no mark, which is a card the sitting after it cannot ask, or a mark
 // minted off the machine's clock rather than this installation's.
-func NewMarking(
+func NewMarkCards(
 	readers port.VaultReaders,
 	writers port.VaultWriters,
 	notes port.NoteQueries,
 	links port.LinkQueries,
 	index func(ctx context.Context, v domain.Vault, paths []string) error,
 	now port.Clock,
-) Marking {
-	return Marking{
+) MarkCards {
+	return MarkCards{
 		Readers: readers, Writers: writers, Notes: notes, Links: links,
 		Index: index, Now: now,
 	}
 }
 
-// MarkingResult is what the marking came to: the decks it could not write.
-type MarkingResult struct {
+// MarkCardsResult is what the marking came to: the decks it could not write.
+type MarkCardsResult struct {
 	// Unwritten are the paths of the decks holding a card with no mark that
 	// could not be given one. Their cards are left out of this sitting.
 	Unwritten []string
@@ -67,17 +67,17 @@ type MarkingResult struct {
 // editor may be saving it, and the vault's write lock lives in one process. Its
 // cards are left out of this sitting and marked at the next, and it is named in
 // what comes back so that a person is told which deck that was.
-func (u Marking) Execute(ctx context.Context, v domain.Vault) (MarkingResult, error) {
+func (u MarkCards) Execute(ctx context.Context, v domain.Vault) (MarkCardsResult, error) {
 	paths, err := u.Notes.OfType(ctx, v.ID, domain.TypeDeck)
 	if err != nil {
-		return MarkingResult{}, err
+		return MarkCardsResult{}, err
 	}
 
 	read := cards.Read{Readers: u.Readers, Links: u.Links}
 	write := cards.Write{
 		Readers: u.Readers, Writers: u.Writers, Links: u.Links, Index: u.Index, Now: u.Now,
 	}
-	var out MarkingResult
+	var out MarkCardsResult
 	for _, path := range paths {
 		deck, err := read.Deck(ctx, v, path)
 		if err != nil || deck.Outcome != note.Ok || !unmarked(deck.Body) {

@@ -42,7 +42,7 @@ type vaulted struct {
 	vault     domain.Vault
 	standings flashcards.ListCardFaces
 	presets   flashcards.Presets
-	marking   flashcards.Marking
+	marking   flashcards.MarkCards
 	kept      flashcards.Schedules
 	counted   flashcards.CountReviews
 	logs      filesystem.DerivedStores
@@ -92,7 +92,7 @@ func opened(t testing.TB, notes map[string]string) vaulted {
 		vault:     v,
 		standings: standings,
 		presets:   presets,
-		marking: flashcards.NewMarking(
+		marking: flashcards.NewMarkCards(
 			filesystem.VaultReaders{}, filesystem.VaultWriters{},
 			db.NoteQueries(), db.NoteQueries(), scanned, time.Now),
 		kept:    schedules,

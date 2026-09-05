@@ -75,10 +75,10 @@ type SessionResult struct {
 // Each deck is held to the budget its preset keeps today, and what was already
 // answered today is off that budget.
 type Session struct {
-	// Marking gives a mark to the cards of this vault that carry none, so that
+	// Marks gives a mark to the cards of this vault that carry none, so that
 	// what is asked can be answered. It is the one write flashcards makes, and it
 	// is made when a person sits down to a vault.
-	Marking   Marking
+	Marks     MarkCards
 	CardFaces ListCardFaces
 	Schedules Schedules
 	// Presets says which preset each deck is scheduled by. A build holding no
@@ -97,11 +97,11 @@ type Session struct {
 // wrong cards, or asks past the budget the person set for the day, and the
 // answers it takes are written down all the same.
 func NewSession(
-	marking Marking, faces ListCardFaces, schedules Schedules, presets Presets,
+	marks MarkCards, faces ListCardFaces, schedules Schedules, presets Presets,
 	day review.Day, now port.Clock,
 ) Session {
 	return Session{
-		Marking: marking, CardFaces: faces, Schedules: schedules, Presets: presets,
+		Marks: marks, CardFaces: faces, Schedules: schedules, Presets: presets,
 		Day: day, Now: now,
 	}
 }
@@ -117,7 +117,7 @@ func (u Session) Execute(
 	if over.Named && over.Deck != "" {
 		return SessionResult{}, ErrBothNamed
 	}
-	marked, err := u.Marking.Execute(ctx, v)
+	marked, err := u.Marks.Execute(ctx, v)
 	if err != nil {
 		return SessionResult{}, err
 	}

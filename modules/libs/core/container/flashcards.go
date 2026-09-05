@@ -20,7 +20,7 @@ import (
 // owes, what to ask next, and what an answer is written to.
 type Flashcards struct {
 	CardFaces flashcards.ListCardFaces
-	Marking   flashcards.Marking
+	Marks     flashcards.MarkCards
 	Schedules flashcards.Schedules
 	CardsDue  flashcards.CountCardsDue
 	Session   flashcards.Session
@@ -110,7 +110,7 @@ func (c Config) Flashcards(
 	}
 
 	faces := flashcards.ListCardFaces{Readers: c.VaultReaders(), Notes: notes, Links: links}
-	marking := flashcards.Marking{
+	marking := flashcards.MarkCards{
 		Readers: c.VaultReaders(), Writers: c.VaultWriters(),
 		Notes: notes, Links: links, Index: index, Now: now,
 	}
@@ -140,13 +140,13 @@ func (c Config) Flashcards(
 
 	return Flashcards{
 		CardFaces: faces,
-		Marking:   marking,
+		Marks:     marking,
 		Schedules: schedules,
 		CardsDue: flashcards.CountCardsDue{
 			CardFaces: faces, Schedules: schedules, Presets: presets, Day: day, Now: now,
 		},
 		Session: flashcards.Session{
-			Marking: marking, CardFaces: faces, Schedules: schedules,
+			Marks: marking, CardFaces: faces, Schedules: schedules,
 			Presets: presets, Day: day, Now: now,
 		},
 		Log: flashcards.Log{Stores: logs},

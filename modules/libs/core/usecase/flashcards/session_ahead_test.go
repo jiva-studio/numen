@@ -38,7 +38,7 @@ func TestTheWindowsUnderTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 	}
 
 	sitting := flashcards.Session{
-		Marking: s.marking, CardFaces: s.standings, Schedules: s.kept,
+		Marks: s.marking, CardFaces: s.standings, Schedules: s.kept,
 		Presets: s.presets, Day: today, Now: func() time.Time { return at },
 	}
 	held, err := sitting.Execute(t.Context(), s.vault, flashcards.Scope{})
