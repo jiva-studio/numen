@@ -218,7 +218,10 @@ func TestEveryVerdictCrossesAsItself(t *testing.T) {
 		}
 	}
 
-	if got := StopReasonOf(review.StopReason("sideways")); got != v1.StopReason_STOP_REASON_NOTHING {
+	// A verdict nobody has taught this table is not "the preset schedules". A
+	// preset stopped for a reason the schema has no word for would be drawn as
+	// one handing out a day of review.
+	if got := StopReasonOf(review.StopReason("sideways")); got != v1.StopReason_STOP_REASON_UNSPECIFIED {
 		t.Errorf("a verdict the schema does not name crosses as %v", got)
 	}
 }
