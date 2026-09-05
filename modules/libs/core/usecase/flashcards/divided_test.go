@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"maps"
 	"math"
+	"slices"
 	"testing"
 
 	"pgregory.net/rapid"
@@ -99,8 +100,8 @@ func TestAShareIsTheProportionOfTheDayItsDeckOwes(t *testing.T) {
 // A deck owing more of the day never takes less of it than a deck owing less,
 // and decks owing the same take what is left over in the order they are given.
 //
-// A deck owing nine times another's takes nine times the share, and decks
-// standing equal take the remainder in the order their paths stand.
+// A deck owing nine times another's takes nine times the share, and where the
+// fractions stand equal the deck owing more takes the remainder.
 func TestADeckOwingMoreNeverTakesLess(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -117,6 +118,52 @@ func TestADeckOwingMoreNeverTakesLess(t *testing.T) {
 			}
 		}
 	})
+}
+
+// The decks take the same shares between them whatever order they are given in.
+// A share is worked out from what its deck owes and from nothing else, so
+// renaming a deck's file moves no card from one deck to another.
+//
+// The shares are proportional to what the decks owe, and where the fractions
+// stand equal the deck owing more takes the remainder.
+func TestTheOrderDecksAreGivenInDoesNotChangeTheShares(t *testing.T) {
+	t.Parallel()
+	rapid.Check(t, func(t *rapid.T) {
+		budget, owes := owing(t)
+		places := make([]int, len(owes))
+		for at := range places {
+			places[at] = at
+		}
+		otherwise := make([]float64, len(owes))
+		for at, one := range rapid.Permutation(places).Draw(t, "order") {
+			otherwise[at] = owes[one]
+		}
+
+		was, now := divided(budget, owes), divided(budget, otherwise)
+		slices.Sort(was)
+		slices.Sort(now)
+		if !slices.Equal(was, now) {
+			t.Fatalf("a budget of %v over %v was handed out as %v, and as %v "+
+				"with the decks given in another order", budget, owes, was, now)
+		}
+	})
+}
+
+// Decks owing quite different amounts stand at the same fraction: half a day
+// leaves a deck owing an odd number half a card over, whatever that number is,
+// so a deck owing one and a deck owing seven are level. The two cards over go to
+// the two decks owing most of those standing level, and not to the decks owing
+// one card each.
+//
+// Where the fractions stand equal the deck owing more takes the remainder.
+func TestDecksLevelOnTheFractionAreSplitByWhatTheyOwe(t *testing.T) {
+	t.Parallel()
+	owes := []float64{0, 1, 1, 7, 239, 400}
+	want := []float64{0, 0, 0, 4, 120, 200}
+	if got := divided(324, owes); !slices.Equal(got, want) {
+		t.Fatalf("half a day over %v was handed out as %v, want %v",
+			owes, got, want)
+	}
 }
 
 // deckLoad is one deck of a preset and what it holds: cards that are owed, and

@@ -1,9 +1,9 @@
-# ADR-0034: A preset is a note, and one arithmetic schedules it
+# A preset is a note, and one arithmetic schedules it
 
 - **Status:** Accepted
 - **Date:** 2026-08-30
 - **Applies to:** the vault format — every application that reads or writes one
-- **Related:** ADR-0017, ADR-0018, ADR-0027, ADR-0031
+- **Related:** [The application writes to the vault](0017-the-application-writes-to-the-vault.md), [The note file](0018-the-note-file.md), [The stencil, the deck and the card](0027-the-stencil-and-the-deck.md), [An answer is an artifact, a schedule is a cache](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)
 
 ## Context
 
@@ -58,7 +58,7 @@ A preset's budget is spent on the cards of the decks pointing at it, and a sitti
 
 **Inside one preset, one budget closes the day**, and the preset's `goal` names which. A day is one day whatever presets fall on it, so how loaded each day is, is one table.
 
-**A preset's day is divided over the decks it schedules, once, before any of it is spent.** A sitting over one deck is that deck's slice of the one division, and the deck's row on the front door is the same slice: they are one number because they are one arithmetic. The shares are proportional to what each deck owes, what the proportions leave over goes by the largest fraction, and decks standing equal take it in the order their paths stand, so a vault divides the same day however its files are walked. What no deck can use is offered round again.
+**A preset's day is divided over the decks it schedules, once, before any of it is spent.** A sitting over one deck is that deck's slice of the one division, and the deck's row on the front door is the same slice: they are one number because they are one arithmetic. The shares are proportional to what each deck owes, what the proportions leave over goes by the largest fraction, and where the fractions stand equal the deck owing more takes it, so a vault divides the same day however its files are named or walked. Decks owing the same are alike in everything the division knows of them, and take what is left over in the order their paths stand. What no deck can use is offered round again.
 
 ### One function places a card's day, and everything that asks goes through it
 

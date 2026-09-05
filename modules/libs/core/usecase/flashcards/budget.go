@@ -391,8 +391,11 @@ func (b *budgets) divides(one *allowance, decks []*deckShare) []allowance {
 //
 // A deck owing nine times another's takes nine times the share, a deck owing
 // nothing takes nothing, and no deck takes more than it owes. What the
-// proportions leave over goes by the largest fraction, and decks standing equal
-// take it in the order they are given.
+// proportions leave over goes by the largest fraction, and where the fractions
+// stand equal the deck owing more takes it: the card moves the smaller deck
+// further off its proportion than the larger. Decks owing the same are alike in
+// everything the division knows of them, and take it in the order they are
+// given.
 func divided(budget float64, owes []float64) []float64 {
 	out := make([]float64, len(owes))
 	var total float64
@@ -417,7 +420,10 @@ func divided(budget float64, owes []float64) []float64 {
 		over[at] = at
 	}
 	slices.SortStableFunc(over, func(a, b int) int {
-		return cmp.Compare(parts[b], parts[a])
+		return cmp.Or(
+			cmp.Compare(parts[b], parts[a]),
+			cmp.Compare(owes[b], owes[a]),
+		)
 	})
 	for _, at := range over[:min(len(over), int(left))] {
 		out[at]++
