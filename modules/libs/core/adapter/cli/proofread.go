@@ -59,24 +59,21 @@ func proofreadCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 
 	// The line of pages rewrites itself, and is closed once it stops.
 	shown := false
-	res, err := source.Proofread{
-		Readers:         cfg.VaultReaders(),
-		Derived:         cfg.DerivedStores(),
-		By:              by,
-		Queue:           queue,
-		Pages:           cfg.Proofreading.Profiles[named].BatchSize,
-		MaxEditDistance: cfg.Proofreading.Distance(),
-		Cut: func(ctx context.Context, v domain.Vault, path string) error {
-			_, err := cut.One(ctx, v, path)
-			return err
-		},
-		OnProgress: func(res source.ProofreadResult) {
-			if res.Pages > 0 {
-				fmt.Fprintf(out, "  page %d of %d\r", res.Read, res.Pages)
-				shown = true
-			}
-		},
-	}.Execute(ctx, v, args[1])
+	proofread := source.NewProofread(cfg.VaultReaders(), cfg.DerivedStores(), by)
+	proofread.Queue = queue
+	proofread.Pages = cfg.Proofreading.Profiles[named].BatchSize
+	proofread.MaxEditDistance = cfg.Proofreading.Distance()
+	proofread.Cut = func(ctx context.Context, v domain.Vault, path string) error {
+		_, err := cut.One(ctx, v, path)
+		return err
+	}
+	proofread.OnProgress = func(res source.ProofreadResult) {
+		if res.Pages > 0 {
+			fmt.Fprintf(out, "  page %d of %d\r", res.Read, res.Pages)
+			shown = true
+		}
+	}
+	res, err := proofread.Execute(ctx, v, args[1])
 	if err != nil {
 		return err
 	}

@@ -52,24 +52,21 @@ func putRightCommand(
 	// The line of lines rewrites itself, and is closed once it stops.
 	shown := false
 	profile := cfg.Proofreading.Profiles[named]
-	res, err := source.PutRight{
-		Readers:   cfg.VaultReaders(),
-		Derived:   cfg.DerivedStores(),
-		By:        by,
-		BatchSize: profile.BatchSize,
-		Overlap:   profile.Overlap,
-		InFlight:  profile.InFlight,
-		Cut: func(ctx context.Context, v domain.Vault, path string) error {
-			_, err := cut.One(ctx, v, path)
-			return err
-		},
-		OnProgress: func(res source.PutRightResult) {
-			if res.Lines > 0 {
-				fmt.Fprintf(out, "  line %d of %d\r", res.Read, res.Lines)
-				shown = true
-			}
-		},
-	}.Execute(ctx, v, path)
+	putRight := source.NewPutRight(cfg.VaultReaders(), cfg.DerivedStores(), by)
+	putRight.BatchSize = profile.BatchSize
+	putRight.Overlap = profile.Overlap
+	putRight.InFlight = profile.InFlight
+	putRight.Cut = func(ctx context.Context, v domain.Vault, path string) error {
+		_, err := cut.One(ctx, v, path)
+		return err
+	}
+	putRight.OnProgress = func(res source.PutRightResult) {
+		if res.Lines > 0 {
+			fmt.Fprintf(out, "  line %d of %d\r", res.Read, res.Lines)
+			shown = true
+		}
+	}
+	res, err := putRight.Execute(ctx, v, path)
 	if err != nil {
 		return err
 	}

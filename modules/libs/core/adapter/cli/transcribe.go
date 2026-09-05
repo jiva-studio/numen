@@ -69,25 +69,22 @@ func transcribeCommand(ctx context.Context, out io.Writer, cfg container.Config,
 	// The line of minutes is closed once it stops, so what follows it stands on
 	// a line of its own.
 	shown := false
-	transcribe := source.Transcribe{
-		Readers: cfg.VaultReaders(),
-		Sources: db.Sources(),
-		Derived: cfg.DerivedStores(),
-		By:      models,
-		Again:   again,
-		Cut: func(ctx context.Context, v domain.Vault, path string) error {
-			_, err := cut.One(ctx, v, path)
-			return err
-		},
-		// A terminal that prints nothing for an hour looks broken, and this
-		// takes about that. The line rewrites itself.
-		OnProgress: func(res source.TranscribeResult) {
-			if res.Length > 0 {
-				fmt.Fprintf(out, "  %s of %s\r",
-					transcript.Stamp(res.Heard), transcript.Stamp(res.Length))
-				shown = true
-			}
-		},
+	transcribe := source.NewTranscribe(
+		cfg.VaultReaders(), db.Sources(), cfg.DerivedStores(), models,
+	)
+	transcribe.Again = again
+	transcribe.Cut = func(ctx context.Context, v domain.Vault, path string) error {
+		_, err := cut.One(ctx, v, path)
+		return err
+	}
+	// A terminal that prints nothing for an hour looks broken, and this takes
+	// about that. The line rewrites itself.
+	transcribe.OnProgress = func(res source.TranscribeResult) {
+		if res.Length > 0 {
+			fmt.Fprintf(out, "  %s of %s\r",
+				transcript.Stamp(res.Heard), transcript.Stamp(res.Length))
+			shown = true
+		}
 	}
 	res, err := transcribe.Execute(ctx, v, args[1])
 	if err != nil {
