@@ -13,7 +13,7 @@ import { ref } from 'vue'
 import RecordingTab from './RecordingTab.vue'
 import { transcribed } from './kind'
 import { transcript, type Cue, type Recordings } from './transcript'
-import type { MediaTypeProbe, Player } from './playing'
+import type { MediaTypeProbe, Player } from './player'
 import { WORDS as words } from './words'
 
 /** Two lines, said a minute and a half apart. */

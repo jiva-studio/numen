@@ -14,7 +14,7 @@ import {
   type RecordingSummary,
   type Transcript,
 } from './transcript'
-import { playable, type Player } from './playing'
+import { playable, type Player } from './player'
 import { WORDS } from './words'
 
 const CUES: readonly Cue[] = [

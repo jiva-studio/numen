@@ -15,7 +15,7 @@ import { runSupport } from '../command/commanding'
 import RecordingTab from './RecordingTab.vue'
 import { transcribed } from './kind'
 import { transcript, type Cue, type Recordings } from './transcript'
-import type { MediaTypeProbe, Player } from './playing'
+import type { MediaTypeProbe, Player } from './player'
 import { WORDS } from './words'
 
 const CUES: readonly Cue[] = [

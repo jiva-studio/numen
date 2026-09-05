@@ -9,7 +9,7 @@
 import { computed, ref, shallowRef, type ComputedRef } from 'vue'
 import type { DeckCard, DeckSection, PlexShowing, Stencil } from '@numen/ui'
 import type { Cards, Move, Problem, RefusalReason, StencilSummary } from '../core'
-import type { Store } from '../command/doing'
+import type { Store } from '../command/handlers'
 import type { PresetChoice, Presets, ReadResult } from '../preset/core'
 import { editing, type OpenNote } from '../note/editing'
 import { markOf } from '../note/tab'

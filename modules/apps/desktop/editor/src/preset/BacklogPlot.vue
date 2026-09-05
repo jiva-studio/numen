@@ -21,7 +21,7 @@ import {
   runAt,
   WIDE,
   type Extent,
-} from './drawing'
+} from './plot'
 import type { Curve } from './core'
 import { WORDS as words } from './words'
 import './curve-slider.css'

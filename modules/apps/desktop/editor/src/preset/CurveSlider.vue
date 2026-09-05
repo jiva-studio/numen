@@ -43,7 +43,7 @@ import {
   yOfGridline,
   type Extent,
   type Mark,
-} from './drawing'
+} from './plot'
 import { WORDS as words } from './words'
 import './curve-slider.css'
 

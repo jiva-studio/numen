@@ -8,8 +8,8 @@ import { computed, ref, shallowRef } from 'vue'
 import { clock } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
 import { asking as latest } from '../asking'
-import { cued, same, spanning, spoken } from './cueing'
-import { playable as canPlay, player, type MediaTypeProbe, type Player } from './playing'
+import { cued, same, spanning, spoken } from './cues'
+import { playable as canPlay, player, type MediaTypeProbe, type Player } from './player'
 import { WORDS } from './words'
 
 /** One stretch of speech: what was said, and the milliseconds it spans. */

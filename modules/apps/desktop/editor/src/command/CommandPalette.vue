@@ -16,7 +16,7 @@ import {
   type Commands,
   type CommandTarget,
 } from './commanding'
-import { does, type CommandDeps } from './doing'
+import { does, type CommandDeps } from './handlers'
 import type { SearchState } from './finding'
 import { iconFor, iconOfNote, iconOfSource } from '../icons'
 import { chorded } from './keying'

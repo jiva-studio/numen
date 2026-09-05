@@ -41,7 +41,7 @@ import {
   type Box,
   type Mark,
   type Spot,
-} from './drawing'
+} from './plot'
 
 const point = (over: Partial<Point> = {}): Point => ({
   reviews: 0,

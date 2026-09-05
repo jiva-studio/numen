@@ -21,7 +21,7 @@ import {
   type Settings,
   type SettingsBounds,
 } from './core'
-import { BACKLOG_HIGH, HIGH, WIDE } from './drawing'
+import { BACKLOG_HIGH, HIGH, WIDE } from './plot'
 import type { PresetTabState } from './kind'
 import { WORDS as words } from './words'
 

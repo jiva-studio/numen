@@ -11,7 +11,7 @@ import { PRESET } from './tabs/workspace'
 import { commandsOf } from './command/commanding'
 import { itemsFor } from './files/menu'
 import { ITEMS, NONE } from './plex/menu'
-import { waysIn } from './welcome/welcoming'
+import { waysIn } from './welcome/screen'
 import { WORDS as words } from './words'
 import type { NoteType, Source } from './core'
 

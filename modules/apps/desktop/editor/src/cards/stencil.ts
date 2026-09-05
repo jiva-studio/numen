@@ -8,7 +8,7 @@
 import { computed, type ComputedRef } from 'vue'
 import type { Half, PlexShowing } from '@numen/ui'
 import type { Cards, Move, Problem, RefusalReason } from '../core'
-import type { Store } from '../command/doing'
+import type { Store } from '../command/handlers'
 import { editing, type OpenNote } from '../note/editing'
 import { markOf } from '../note/tab'
 import type { Voice } from '../notices/telling'

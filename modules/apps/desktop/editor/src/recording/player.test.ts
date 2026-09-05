@@ -5,7 +5,7 @@
  * what it does is asked of it here through a stand-in element.
  */
 import { describe, expect, it } from 'vitest'
-import { audio, type AudioFactory } from './playing'
+import { audio, type AudioFactory } from './player'
 import { WORDS } from './words'
 
 const TALK = 'http://127.0.0.1:1/files/w/v/talk.mp3'

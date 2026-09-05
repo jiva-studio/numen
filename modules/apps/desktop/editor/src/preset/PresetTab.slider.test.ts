@@ -10,7 +10,7 @@ import { mount } from '@vue/test-utils'
 import PresetTab from './PresetTab.vue'
 import { NOWHERE, type Curve, type Point } from './core'
 import { clearing } from './curve'
-import { FOOT } from './drawing'
+import { FOOT } from './plot'
 import { drawn, heights, point, tabAt } from '../testing/preset'
 import { WORDS as words } from './words'
 
