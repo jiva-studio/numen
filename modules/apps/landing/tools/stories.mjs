@@ -15,7 +15,7 @@ import { SHOTS } from './shots.mjs'
 /** Everywhere a story is written, which is the same list Storybook is given. */
 const ROOTS = [
   new URL('../../../libs/ui/src/', import.meta.url),
-  new URL('../../desktop/ui/src/', import.meta.url),
+  new URL('../../desktop/editor/src/', import.meta.url),
   new URL('../../desktop/flashcards/src/', import.meta.url),
 ]
 

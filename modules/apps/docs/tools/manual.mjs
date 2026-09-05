@@ -12,7 +12,7 @@
  */
 import { readFile, writeFile } from 'node:fs/promises'
 
-const UI = new URL('../../desktop/ui/src/', import.meta.url)
+const UI = new URL('../../desktop/editor/src/', import.meta.url)
 const GO = new URL('../../../libs/core/', import.meta.url)
 const CMD = new URL('../../desktop/cmd/numen/', import.meta.url)
 const PAGES = new URL('../src/content/docs/', import.meta.url)
@@ -141,12 +141,12 @@ const said = async (whole, name, seen = new Set()) => {
 }
 
 const keyboard = async () => {
-  const keying = await read(UI, 'keying.ts')
+  const keying = await read(UI, 'command/keying.ts')
   const words = await read(UI, 'words.ts')
 
   // The two the window keeps for itself are not in that table: they put the
   // palette up, and the palette answers them.
-  const palette = await read(UI, 'Palette.vue')
+  const palette = await read(UI, 'command/CommandPalette.vue')
   for (const letter of ['k', 'p']) {
     if (!palette.includes(`key === '${letter}'`)) {
       die(`the palette no longer answers '${letter}' itself`)
@@ -158,7 +158,7 @@ const keyboard = async () => {
     `| ${chordOf({ letter: 'p' })} | Commands |`,
   ]
   for (const chord of chords(keying)) {
-    rows.push(`| ${chordOf(chord)} | ${await said(words, spoken(await read(UI, 'commanding.ts'), chord.command))} |`)
+    rows.push(`| ${chordOf(chord)} | ${await said(words, spoken(await read(UI, 'command/commanding.ts'), chord.command))} |`)
   }
   return ['| | |', '| --- | --- |', ...rows].join('\n')
 }
@@ -198,9 +198,9 @@ const spoken = (commanding, command) => {
 
 /** Every command the palette offers, in the order it draws them. */
 const commands = async () => {
-  const commanding = await read(UI, 'commanding.ts')
+  const commanding = await read(UI, 'command/commanding.ts')
   const words = await read(UI, 'words.ts')
-  const keying = await read(UI, 'keying.ts')
+  const keying = await read(UI, 'command/keying.ts')
   const table = chords(keying)
 
   const declared = rowsOf(listing(commanding))
@@ -575,7 +575,7 @@ const cli = async () => {
 /** Everywhere a story is written, which is the same list Storybook is given. */
 const ROOTS = [
   new URL('../../../libs/ui/src/', import.meta.url),
-  new URL('../../desktop/ui/src/', import.meta.url),
+  new URL('../../desktop/editor/src/', import.meta.url),
   new URL('../../desktop/flashcards/src/', import.meta.url),
 ]
 

@@ -13,8 +13,8 @@ export const root = resolve(here, '../../..')
 export const modules = [
   { name: '@numen/ui', at: 'modules/libs/ui/src' },
   { name: '@numen/wire', at: 'modules/libs/wire' },
-  { name: '@numen/desktop-ui', at: 'modules/apps/desktop/ui/src' },
-  { name: '@numen/flashcards-ui', at: 'modules/apps/desktop/flashcards/src' },
+  { name: '@numen/editor', at: 'modules/apps/desktop/editor/src' },
+  { name: '@numen/flashcards', at: 'modules/apps/desktop/flashcards/src' },
   { name: '@numen/mobile', at: 'modules/apps/mobile/src' },
 ]
 

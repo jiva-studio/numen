@@ -21,9 +21,9 @@ Paths below are relative to `modules/libs/core/` unless they say otherwise. The 
 
 9. An adapter takes no other adapter. Its own subpackages are itself; `internal/adapter/x` is not `adapter/x`. → `refused` / `sibling`
 10. An adapter never names `container`. It is given what it needs. → `refused`
-11. Only a driving adapter imports `usecase/**`. The driving adapters are `adapter/cli`, `adapter/flashcardsui`, `adapter/mcp`, `adapter/webui`, `internal/adapter/theme`. → `driving` in `layers_test.go`
+11. Only a driving adapter imports `usecase/**`. The driving adapters are `adapter/cli`, `adapter/mcp`, `adapter/window/editor`, `adapter/window/flashcards`, `internal/adapter/theme`. → `driving` in `layers_test.go`
 12. An adapter importing the generated schema is a driving adapter and is listed as one. Direction is read off the messages an adapter handles, never off the folder it sits in: `internal/` says only that nothing outside composes it. → `TestEveryAdapterServingTheSchemaIsDriving`
-13. `adapter/` holds exactly `agent, cli, flashcardsui, index, mcp, settings, webui`. `internal/adapter/` holds exactly `appstate, embed, filesystem, pdf, proofreading, recognition, theme, transcription, trash`. A new adapter is a line added to the list, which is what makes it a decision. → `TestTheCoresPublicAdaptersAreTheseAndNoOthers`, `TestTheCoresHeldAdaptersAreTheseAndNoOthers`
+13. `adapter/` holds exactly `agent, cli, index, mcp, settings, window/editor, window/flashcards`. `adapter/window/` groups adapters and is not one. `internal/adapter/` holds exactly `appstate, embed, filesystem, pdf, proofreading, recognition, theme, transcription, trash`. A new adapter is a line added to the list, which is what makes it a decision. → `TestTheCoresPublicAdaptersAreTheseAndNoOthers`, `TestTheCoresHeldAdaptersAreTheseAndNoOthers`
 14. An existing edge that breaks a rule above is an entry in `owed`, and that list only shrinks. Add an entry; never widen a rule.
 
 ## Ports
@@ -41,7 +41,7 @@ Paths below are relative to `modules/libs/core/` unless they say otherwise. The 
 
 ## The interface library
 
-22. Nothing in `modules/libs/ui` imports `@numen/protocol`, `@numen/desktop-ui` or `modules/apps/**` — not in a component, not in a story, not in a fixture. The dependency runs `modules/apps/*` → `modules/libs/ui`, never back and never sideways. → the package names fail to resolve because `modules/libs/ui/package.json` declares neither; a relative path into `apps/` would typecheck, and nothing refuses it
+22. Nothing in `modules/libs/ui` imports `@numen/protocol`, `@numen/editor` or `modules/apps/**` — not in a component, not in a story, not in a fixture. The dependency runs `modules/apps/*` → `modules/libs/ui`, never back and never sideways. → the package names fail to resolve because `modules/libs/ui/package.json` declares neither; a relative path into `apps/` would typecheck, and nothing refuses it
 23. A component's pure core takes the clock, the animation frame and the viewport as parameters. `Date.now`, `new Date()`, `Math.random`, `requestAnimationFrame`, `matchMedia` and `getBoundingClientRect` belong in `lib/clock.ts` and in `.vue` views, not in a pure `.ts`. → nothing refuses this today
 
 ## Names in TypeScript
@@ -70,7 +70,7 @@ Nothing refuses any of 24–31. They are read by a person and by a reviewer.
 
 ## Names on files
 
-32. **A file named by a gerund or a participle says that word in its own code.** A file answers with a declaration of its own — a type, a function, a constant, a package; a test answers with any name its code calls, being named after what it tests. Neither answers with a comment or a string. `owing_test.go` held the counting of a vault's cards due and said "owing" nowhere in itself, and no guard could see it, because every one of them read declarations and none read the name of the file it stood in. There is no dictionary and nothing is exempt: a verb form the code does not use is a word standing on nothing, and the file takes the name of what it declares. → `every Go file named by a verb form says that word in its own code`, in `modules/tools/lint/filenames.test.mjs`
+32. **A file named by a gerund or a participle says that word in its own code.** A file answers with a declaration of its own — a type, a function, a constant, a package; a test answers with any name its code calls, being named after what it tests; a single-file component answers with its own file name, which is what every template addresses it by. None of them answers with a comment or a string. `owing_test.go` held the counting of a vault's cards due and said "owing" nowhere in itself, and no guard could see it, because every one of them read declarations and none read the name of the file it stood in. There is no dictionary and nothing is exempt: a verb form the code does not use is a word standing on nothing, and the file takes the name of what it declares. → `every file named by a verb form says that word in its own code`, in `modules/tools/lint/filenames.test.mjs`, over the Go of the modules and the `.ts` and `.vue` of the interface modules
 
 ## The reviewer
 

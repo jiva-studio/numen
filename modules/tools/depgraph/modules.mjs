@@ -21,13 +21,13 @@ export const modules = [
     says: "What a window's ports are answered with.",
   },
   {
-    name: '@numen/desktop-ui',
-    at: 'modules/apps/desktop/ui',
+    name: '@numen/editor',
+    at: 'modules/apps/desktop/editor',
     sources: ['src'],
-    says: 'The desktop window: reaches the components, the wire and the schema.',
+    says: 'The notes window: reaches the components, the wire and the schema.',
   },
   {
-    name: '@numen/flashcards-ui',
+    name: '@numen/flashcards',
     at: 'modules/apps/desktop/flashcards',
     sources: ['src'],
     says: 'The review window: the same three, and never the other window.',

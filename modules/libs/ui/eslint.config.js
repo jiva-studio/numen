@@ -98,7 +98,7 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ['@numen/protocol', '@numen/protocol/*', '@numen/desktop-ui', '@numen/wire'],
+              group: ['@numen/protocol', '@numen/protocol/*', '@numen/editor', '@numen/wire'],
               message:
                 'a component knows nothing about the domain or the wire — take props in a drawing vocabulary and emit opaque identifiers',
             },

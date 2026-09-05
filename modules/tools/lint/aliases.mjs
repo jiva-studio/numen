@@ -14,7 +14,7 @@
  */
 
 /** The packages whose names we choose. */
-const OURS = ['@numen/ui', '@numen/wire', '@numen/desktop-ui', '@numen/flashcards-ui']
+const OURS = ['@numen/ui', '@numen/wire', '@numen/editor', '@numen/flashcards']
 
 /**
  * owed are the borders this installation still renames across, and the list

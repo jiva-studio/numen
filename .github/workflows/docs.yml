@@ -5,9 +5,10 @@ on:
     paths:
       - "modules/apps/docs/**"
       # What the manual writes itself from.
-      - "modules/apps/desktop/ui/src/keying.ts"
-      - "modules/apps/desktop/ui/src/words.ts"
-      - "modules/apps/desktop/ui/src/commanding.ts"
+      - "modules/apps/desktop/editor/src/command/keying.ts"
+      - "modules/apps/desktop/editor/src/words.ts"
+      - "modules/apps/desktop/editor/src/command/commanding.ts"
+      - "modules/apps/desktop/editor/src/command/CommandPalette.vue"
       - "modules/apps/desktop/cmd/numen/main.go"
       - "modules/libs/core/adapter/cli/cli.go"
       - "modules/libs/core/adapter/settings/settings.go"
@@ -22,9 +23,10 @@ on:
     paths:
       - "modules/apps/docs/**"
       # What the manual writes itself from.
-      - "modules/apps/desktop/ui/src/keying.ts"
-      - "modules/apps/desktop/ui/src/words.ts"
-      - "modules/apps/desktop/ui/src/commanding.ts"
+      - "modules/apps/desktop/editor/src/command/keying.ts"
+      - "modules/apps/desktop/editor/src/words.ts"
+      - "modules/apps/desktop/editor/src/command/commanding.ts"
+      - "modules/apps/desktop/editor/src/command/CommandPalette.vue"
       - "modules/apps/desktop/cmd/numen/main.go"
       - "modules/libs/core/adapter/cli/cli.go"
       - "modules/libs/core/adapter/settings/settings.go"

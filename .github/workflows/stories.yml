@@ -13,7 +13,7 @@ on:
   pull_request:
     paths:
       - "modules/libs/ui/src/**"
-      - "modules/apps/desktop/ui/src/**"
+      - "modules/apps/desktop/editor/src/**"
       - "modules/apps/desktop/flashcards/src/**"
       - "modules/apps/docs/tools/**"
       - "modules/apps/landing/tools/**"
@@ -25,7 +25,7 @@ on:
     branches: [main]
     paths:
       - "modules/libs/ui/src/**"
-      - "modules/apps/desktop/ui/src/**"
+      - "modules/apps/desktop/editor/src/**"
       - "modules/apps/desktop/flashcards/src/**"
       - "modules/apps/docs/tools/**"
       - "modules/apps/landing/tools/**"

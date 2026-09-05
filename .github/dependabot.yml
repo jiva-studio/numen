@@ -38,7 +38,7 @@ updates:
       - /modules/libs/ui
       - /modules/libs/wire
       - /modules/libs/protocol
-      - /modules/apps/desktop/ui
+      - /modules/apps/desktop/editor
       - /modules/apps/desktop/flashcards
       - /modules/apps/mobile
     schedule:

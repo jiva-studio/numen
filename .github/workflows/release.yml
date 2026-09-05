@@ -202,7 +202,7 @@ jobs:
           cache-dependency-path: |
             modules/libs/protocol/package-lock.json
             modules/libs/ui/package-lock.json
-            modules/apps/desktop/ui/package-lock.json
+            modules/apps/desktop/editor/package-lock.json
             modules/apps/desktop/flashcards/package-lock.json
             modules/apps/landing/package-lock.json
 
@@ -601,7 +601,7 @@ jobs:
           cache-dependency-path: |
             modules/libs/protocol/package-lock.json
             modules/libs/ui/package-lock.json
-            modules/apps/desktop/ui/package-lock.json
+            modules/apps/desktop/editor/package-lock.json
             modules/apps/desktop/flashcards/package-lock.json
             modules/apps/landing/package-lock.json
 
@@ -724,7 +724,7 @@ jobs:
           cache-dependency-path: |
             modules/libs/protocol/package-lock.json
             modules/libs/ui/package-lock.json
-            modules/apps/desktop/ui/package-lock.json
+            modules/apps/desktop/editor/package-lock.json
             modules/apps/desktop/flashcards/package-lock.json
             modules/apps/landing/package-lock.json
 

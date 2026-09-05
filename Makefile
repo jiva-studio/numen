@@ -43,7 +43,7 @@ install: ## fetch every module's dependencies
 	cd $(PROTOCOL) && $(INSTALL) --omit=dev
 	cd $(UI) && $(INSTALL)
 	cd $(WIRE) && $(INSTALL)
-	cd $(DESKTOP)/ui && $(INSTALL)
+	cd $(DESKTOP)/editor && $(INSTALL)
 	cd $(DESKTOP)/flashcards && $(INSTALL)
 	cd $(MOBILE) && $(INSTALL)
 	cd $(DOCS) && $(INSTALL)
@@ -67,7 +67,7 @@ build: interface ## build everything
 .PHONY: interface
 interface: ## build each window's page into the binary's assets
 	cd $(UI) && npm run build
-	cd $(DESKTOP)/ui && npm run build
+	cd $(DESKTOP)/editor && npm run build
 	cd $(DESKTOP)/flashcards && npm run build
 
 # On macOS the window is built into a bundle, ad-hoc signed. A bare executable
@@ -121,7 +121,7 @@ test: ## run every test
 	cd $(UI) && npm test
 	cd $(UI) && npm run build
 	cd $(WIRE) && npm test
-	cd $(DESKTOP)/ui && npm test
+	cd $(DESKTOP)/editor && npm test
 	cd $(DESKTOP)/flashcards && npm test
 	cd $(MOBILE) && npm test
 
@@ -148,8 +148,8 @@ lint: generate-check ## the checks CI runs, less the one needing a base branch
 	cd $(UI) && npm run lint
 	cd $(UI) && npm run typecheck
 	cd $(WIRE) && npm run typecheck
-	cd $(DESKTOP)/ui && npm run lint
-	cd $(DESKTOP)/ui && npm run typecheck
+	cd $(DESKTOP)/editor && npm run lint
+	cd $(DESKTOP)/editor && npm run typecheck
 	cd $(DESKTOP)/flashcards && npm run lint
 	cd $(DESKTOP)/flashcards && npm run typecheck
 	cd $(MOBILE) && npm run typecheck

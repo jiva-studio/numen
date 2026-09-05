@@ -167,7 +167,7 @@ jobs:
             modules/libs/protocol/package-lock.json
             modules/libs/ui/package-lock.json
             modules/libs/wire/package-lock.json
-            modules/apps/desktop/ui/package-lock.json
+            modules/apps/desktop/editor/package-lock.json
             modules/apps/desktop/flashcards/package-lock.json
 
       # A window reaches the components through their build, and the wire
@@ -178,7 +178,7 @@ jobs:
           npm ci --prefix modules/libs/protocol
           npm ci --prefix modules/libs/ui
           npm ci --prefix modules/libs/wire
-          npm ci --prefix modules/apps/desktop/ui
+          npm ci --prefix modules/apps/desktop/editor
           npm ci --prefix modules/apps/desktop/flashcards
 
       # The engines are a download of their own and answer to the version in
@@ -210,19 +210,19 @@ jobs:
 
       - name: Lint
         run: |
-          npm run lint --prefix modules/apps/desktop/ui
+          npm run lint --prefix modules/apps/desktop/editor
           npm run lint --prefix modules/apps/desktop/flashcards
 
       - name: Typecheck
         run: |
           npm run typecheck --prefix modules/libs/wire
-          npm run typecheck --prefix modules/apps/desktop/ui
+          npm run typecheck --prefix modules/apps/desktop/editor
           npm run typecheck --prefix modules/apps/desktop/flashcards
 
       - name: Test
         run: |
           npm test --prefix modules/libs/wire
-          npm run test:unit --prefix modules/apps/desktop/ui -- --coverage
-          npm run test:stories --prefix modules/apps/desktop/ui
+          npm run test:unit --prefix modules/apps/desktop/editor -- --coverage
+          npm run test:stories --prefix modules/apps/desktop/editor
           npm run test:unit --prefix modules/apps/desktop/flashcards -- --coverage
           npm run test:stories --prefix modules/apps/desktop/flashcards
