@@ -48,7 +48,7 @@ export interface NoteBaseline {
 }
 
 /** The write on its way to the file. */
-export interface Flight {
+export interface PendingWrite {
   readonly body: string
 }
 
@@ -65,7 +65,7 @@ export interface Tab {
   readonly at: FilePath | null
   /** The body on screen. */
   readonly shown: string
-  readonly flight: Flight | null
+  readonly flight: PendingWrite | null
   /** Whether the flight has to be followed by a write. */
   readonly owed: boolean
   /**

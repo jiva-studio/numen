@@ -10,14 +10,14 @@
 export const SCHEME = 'numen:'
 
 /** Somewhere in the vault: a file, and the stretch of its text meant. */
-export interface Spot {
+export interface LinkTarget {
   readonly path: string
   readonly start: number
   readonly length: number
 }
 
 /** One place, as a link. */
-export const linkOf = (spot: Spot): string =>
+export const linkOf = (spot: LinkTarget): string =>
   `${SCHEME}${encodeURIComponent(spot.path)}?start=${spot.start}&length=${spot.length}`
 
 /**
@@ -26,7 +26,7 @@ export const linkOf = (spot: Spot): string =>
  * A link of ours with no stretch in it is a link to a file and not to a place
  * inside it, which nothing here opens.
  */
-export const spotOf = (href: string): Spot | null => {
+export const spotOf = (href: string): LinkTarget | null => {
   if (!href.startsWith(SCHEME)) return null
   const rest = href.slice(SCHEME.length)
   const [written, query = ''] = rest.split('?', 2)
@@ -55,8 +55,8 @@ export const spotOf = (href: string): Spot | null => {
  * of them once. It is read off the marks and not off the screen, so an answer
  * still arriving names what it has named so far.
  */
-export const spotsIn = (text: string): readonly Spot[] => {
-  const found: Spot[] = []
+export const spotsIn = (text: string): readonly LinkTarget[] => {
+  const found: LinkTarget[] = []
   for (const [, href] of text.matchAll(/]\(\s*(numen:[^\s)]+)\s*\)/g)) {
     const spot = spotOf(href ?? '')
     if (!spot) continue
@@ -67,5 +67,5 @@ export const spotsIn = (text: string): readonly Spot[] => {
 }
 
 /** Whether two places are the same stretch of the same file. */
-export const same = (one: Spot, other: Spot): boolean =>
+export const same = (one: LinkTarget, other: LinkTarget): boolean =>
   one.path === other.path && one.start === other.start && one.length === other.length

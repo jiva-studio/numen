@@ -7,7 +7,14 @@
  * band that failed must not take the other two down with it.
  */
 import { describe, expect, it } from 'vitest'
-import { finding, type FindingDeps, type Way, type NameMatch, type Passage, type Words } from './finding'
+import {
+  finding,
+  type FindingDeps,
+  type NameMatch,
+  type Passage,
+  type SearchMode,
+  type Words,
+} from './finding'
 import { later, type Deferred } from './testing/later'
 
 const WORDS: Words = {
@@ -27,7 +34,7 @@ const WORDS: Words = {
 /** A vault that answers when the test says so, and remembers what it was asked. */
 function asking() {
   const names: Deferred<readonly NameMatch[]>[] = []
-  const searched: { way: Way; answer: Deferred<readonly Passage[]> }[] = []
+  const searched: { way: SearchMode; answer: Deferred<readonly Passage[]> }[] = []
   const queries: string[] = []
 
   const core: FindingDeps = {
@@ -45,7 +52,7 @@ function asking() {
     },
   }
 
-  const way = (which: Way) => searched.find((one) => one.way === which)?.answer
+  const way = (which: SearchMode) => searched.find((one) => one.way === which)?.answer
   return { core, names, searched, queries, way }
 }
 

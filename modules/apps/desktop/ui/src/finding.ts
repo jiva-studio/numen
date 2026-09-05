@@ -63,14 +63,14 @@ export interface Passage {
  * How a search over the text is asked. Each way is an order of its own, and
  * `fused` is every way in one ranking.
  */
-export type Way = 'fused' | 'words' | 'meaning' | 'names'
+export type SearchMode = 'fused' | 'words' | 'meaning' | 'names'
 
 /** The two questions the palette asks of the vault. */
 export interface FindingDeps {
   /** The names in the vault that match: a note’s own title, and its headings. */
   names(query: string, limit: number): Promise<readonly NameMatch[]>
   /** The text the vault holds that answers, asked one way. */
-  search(query: string, way: Way, limit: number): Promise<readonly Passage[]>
+  search(query: string, way: SearchMode, limit: number): Promise<readonly Passage[]>
 }
 
 /** What a band of a palette says when it holds nothing. */

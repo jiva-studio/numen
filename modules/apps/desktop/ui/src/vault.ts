@@ -52,7 +52,7 @@ import { DEFAULT_STARTS } from './reviewing'
 import { settingAt } from './settings/configuring'
 import { write } from './settings/json5'
 import type { CommandingDeps } from './commanding'
-import type { FindingDeps, Way } from './finding'
+import type { FindingDeps, SearchMode } from './finding'
 import type { Documents, Page } from './document/reading'
 import type { Cue, Recordings } from './recording/transcript'
 import type {
@@ -675,7 +675,7 @@ const writes: Record<NamedBy, boolean> = {
  * How a search is asked, in the words the window uses. Keyed by the schema, so
  * a way added to it has to be given a word here before this compiles.
  */
-const asked: Record<Ways, Way | null> = {
+const asked: Record<Ways, SearchMode | null> = {
   [Ways.UNSPECIFIED]: null,
   [Ways.EVERY]: 'fused',
   [Ways.WORDS]: 'words',
@@ -684,7 +684,7 @@ const asked: Record<Ways, Way | null> = {
 }
 
 /** How a search is asked, as the schema names it. */
-const ways = namesOf<Way, Ways>(asked)
+const ways = namesOf<SearchMode, Ways>(asked)
 
 /** A run of text, kept as the plain pair the window carries it as. */
 const run = (span: { from: number; to: number }) => ({ from: span.from, to: span.to })
