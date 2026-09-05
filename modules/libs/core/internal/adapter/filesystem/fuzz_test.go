@@ -1,10 +1,14 @@
 package filesystem
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
 )
 
 // vault is a root the rules can be asked about: a folder of notes, the
@@ -129,4 +133,76 @@ func held(t *testing.T, root, path, rule string, application bool, target, real 
 		}
 		t.Fatalf("%s took %q, which resolves %s: %q", rule, path, where, real)
 	}
+}
+
+// configSeeds are the shapes a vault's configuration arrives in: what
+// Initialize writes, one that names what to leave alone, one a sync truncated
+// mid-write, an identifier with a character the alphabet has not got, one a
+// letter short, a name written twice, an object holding nothing, a bare null,
+// the file as something other than an object, and bytes that are no
+// configuration at all.
+var configSeeds = []string{
+	"{\n  \"v\": 1,\n  \"id\": \"01JQ8ZP4T7MXVN2K5H9RBCDEFG\"\n}\n",
+	"{\"v\":1,\"id\":\"01JQ8ZP4T7MXVN2K5H9RBCDEFG\",\"ignore\":[\"attachments/\",\"*.tmp\"]}",
+	"{\"v\":1,\"id\":\"01JQ8ZP4T7MXV",
+	"{\"v\":1,\"id\":\"01JQ8ZP4T7MXVN2K5H9RBCDEFU\"}",
+	"{\"v\":1,\"id\":\"01JQ8ZP4T7MXVN2K5H9RBCDEF\"}",
+	"{\"v\":1,\"id\":\"01JQ8ZP4T7MXVN2K5H9RBCDEFG\",\"id\":\"01JQ8ZP4T7MXVN2K5H9RBCDEFH\"}",
+	"{}",
+	"null",
+	"[1, 2, 3]",
+	"\xef\xbb\xbf{\"v\":1,\"id\":\"01JQ8ZP4T7MXVN2K5H9RBCDEFG\"}",
+	"\x00\xff\xfe",
+	"",
+}
+
+// A folder carries an identity or it does not, and ReadConfig says which. An
+// identity it hands back is one that could have been made here, because every
+// row of the index points at it and a row pointing at nothing belongs to no
+// vault.
+//
+// Bytes nobody can read out are refused as unreadable and not as a folder that
+// was never added, and Initialize leaves them exactly where they are: a vault
+// whose file a sync truncated does not get a second identity, which would part
+// it from everything already indexed under the first.
+//
+// The file is in a folder a person keeps in their own sync, so the bytes are a
+// stranger's.
+func FuzzReadConfig(f *testing.F) {
+	for _, seed := range configSeeds {
+		f.Add(seed)
+	}
+	f.Fuzz(func(t *testing.T, raw string) {
+		root := t.TempDir()
+		if err := os.MkdirAll(filepath.Join(root, DefaultServiceDir), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		at := configAt(root, DefaultServiceDir)
+		if err := os.WriteFile(at, []byte(raw), 0o644); err != nil {
+			t.Fatal(err)
+		}
+
+		held, err := ReadConfig(root, DefaultServiceDir)
+		if err == nil && !ulid.Valid(held.ID) {
+			t.Fatalf("a vault was read as carrying %q, which no vault carries", held.ID)
+		}
+		if errors.Is(err, ErrNotAVault) {
+			t.Fatalf("%q stands in the folder and it was read as never having been added", raw)
+		}
+
+		made, adding := Initialize(root, DefaultServiceDir, time.Unix(1, 0))
+		switch {
+		case err == nil && (adding != nil || made.ID != held.ID):
+			t.Fatalf("a vault carrying %q was added again as %q, %v", held.ID, made.ID, adding)
+		case err != nil && adding == nil:
+			t.Fatalf("%q could not be read (%v) and the folder was added all the same", raw, err)
+		}
+		after, readErr := os.ReadFile(at)
+		if readErr != nil {
+			t.Fatal(readErr)
+		}
+		if string(after) != raw {
+			t.Fatalf("%q stood in the folder and %q stands there now", raw, after)
+		}
+	})
 }
