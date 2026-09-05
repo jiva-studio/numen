@@ -16,29 +16,23 @@
  * `data-axis`, the reading at the knob carries `data-at-knob`, and a tail
  * turned under carries `data-under`.
  */
-import { computed, shallowRef, watch, useTemplateRef, type CSSProperties } from 'vue'
-import { Waiting } from '@numen/ui'
+import { computed, shallowRef, watch, useTemplateRef } from 'vue'
+import { Spinner } from '@numen/ui'
 import type { Curve, Material } from './core'
 import { clearing } from './curve'
 import BacklogBand from './BacklogBand.vue'
 import {
-  against,
-  againstBox,
-  apart,
   BANDS,
   bandOf,
-  clearAt,
-  LABEL,
   FOOT,
+  heightsOf,
   HIGH,
+  labelsOf,
   LEFT,
   lineOf,
-  naming,
-  namingBox,
-  PERCH_GAP,
-  PERCH_HIGH,
-  PERCH_WIDE,
+  perchOf,
   placeUnder,
+  readingAt,
   RIGHT,
   runAt,
   shortOf,
@@ -48,8 +42,7 @@ import {
   WIDE,
   yOfBand,
   type Band,
-  type Box,
-  type Spot,
+  type Mark,
 } from './drawing'
 import { WORDS as words } from './words'
 import './control.css'
@@ -128,7 +121,7 @@ const honest = computed(() => props.curve.honest)
  */
 const marks = computed(() => {
   if (!honest.value) return []
-  const out: { key: string; spot: Spot; text: string }[] = []
+  const out: Mark[] = []
   if (knob.value) out.push({ key: 'knob', spot: knob.value, text: '' })
   if (suggested.value) {
     out.push({ key: 'suggested', spot: suggested.value, text: words.markName(props.curve.goal) })
@@ -136,13 +129,7 @@ const marks = computed(() => {
   return out
 })
 
-/**
- * What this place of the curve buys, said in a bubble over the knob that moves
- * with it. It sits above the knob, and below it where above would take it off
- * the top, so it never covers the curve the knob is riding. The tail is
- * anchored on the knob itself and turns over with the bubble, so what the
- * numbers belong to is never in doubt.
- */
+/** What this place of the curve buys, said in a bubble over the knob. */
 const perched = computed(() => {
   const spot = knob.value
   const point = props.curve.at[props.place]
@@ -157,86 +144,25 @@ const perched = computed(() => {
     short: point.short,
     cards: props.curve.cards,
   })
-  const under = spot.y - PERCH_GAP - PERCH_HIGH < TOP
-  const half = PERCH_WIDE / 2
-  const back = spot.x < LEFT + half ? 0 : spot.x > RIGHT - half ? PERCH_WIDE : half
-  const edge = under ? spot.y + PERCH_GAP : spot.y - PERCH_GAP
-  return {
-    lines,
-    under,
-    box: {
-      x: spot.x - back,
-      y: under ? edge : edge - PERCH_HIGH,
-      wide: PERCH_WIDE,
-      high: PERCH_HIGH,
-    },
-    at: {
-      insetInlineStart: `${(spot.x / WIDE) * 100}%`,
-      insetBlockStart: `${(edge / HIGH) * 100}%`,
-      translate: `${(-back / PERCH_WIDE) * 100}% ${under ? '0' : '-100%'}`,
-    },
-    tail: {
-      insetInlineStart: `${(spot.x / WIDE) * 100}%`,
-      insetBlockStart: `${(edge / HIGH) * 100}%`,
-    },
-  }
+  return { lines, ...perchOf(spot) }
 })
 
-/**
- * The names that fit. They are taken in the order the marks stand in, and one
- * that would touch the readout over the knob, or a name already placed, is
- * left off.
- */
-const named = computed(() => {
-  const placed: Box[] = perched.value ? [perched.value.box] : []
-  const out: { key: string; text: string; at: CSSProperties; box: Box }[] = []
-  for (const mark of marks.value) {
-    if (!mark.text) continue
-    const box = namingBox(mark.spot)
-    if (!placed.every((one) => apart(box, one))) continue
-    placed.push(box)
-    out.push({ key: mark.key, text: mark.text, at: naming(mark.spot), box })
-  }
-  return out
-})
+/** The names of the marks that fit around the bubble and around each other. */
+const named = computed(() => labelsOf(marks.value, perched.value?.box ?? null))
 
-/**
- * What the height of the picture comes to, against the lines it is read off. A
- * band of no width is one number and is said once, on the foot, where a curve
- * that never moves is drawn. A number the line, a mark or the readout over the
- * knob stands on is dropped: the axis gives way, and the drawing keeps what it
- * has to say.
- */
-const heights = computed(() => {
-  const { least, most } = band.value
-  const said = (value: number) => words.heightAt(props.curve.goal, value)
-  const marked = marks.value.map((one) => one.spot)
-  const over = perched.value?.box
-  const fits = (y: number, lift: string, value: number) => {
-    const box = againstBox(y, lift)
-    if (!clearAt(y, spots.value, marked)) return []
-    if (over && !apart(box, over)) return []
-    return [{ at: against(y, lift), box, text: said(value) }]
-  }
-  // A band of no width has one number and nothing else to read, and it is set
-  // over the line it names. That line is the foot, which is where a run with no
-  // height is drawn.
-  if (most === least) {
-    return [{ at: against(FOOT, '0'), box: againstBox(FOOT, '0'), text: said(most) }]
-  }
-  return [...fits(TOP, '-100%', most), ...fits(FOOT, '0', least)]
-})
+/** The numbers read off the picture's edges, against the band it is scaled to. */
+const heights = computed(() =>
+  heightsOf(
+    band.value,
+    spots.value,
+    marks.value.map((one) => one.spot),
+    perched.value?.box ?? null,
+    (value) => words.heightAt(props.curve.goal, value),
+  ),
+)
 
-/**
- * Where the knob's own value is set. It rides a line of its own under the
- * picture, so it never prints over a number read off the picture's edges.
- */
-const reading = computed(() => {
-  const spot = knob.value
-  if (!spot) return {}
-  const back = spot.x < LEFT + LABEL ? '0' : spot.x > RIGHT - LABEL ? '-100%' : '-50%'
-  return { insetInlineStart: `${(spot.x / WIDE) * 100}%`, translate: `${back} 0` }
-})
+/** Where the knob's own value is set, on a line of its own under the picture. */
+const reading = computed(() => readingAt(knob.value))
 
 /** The value at the knob, and at either end of the range, in the goal's units. */
 const atKnob = computed(() => words.widthAt(props.curve.goal, held.value))
@@ -356,7 +282,7 @@ const released = (event: KeyboardEvent) => {
               data-control="waiting"
               role="status"
             >
-              <Waiting class="control__ring" />
+              <Spinner class="control__ring" />
               <span>{{ words.waiting }}</span>
             </div>
 

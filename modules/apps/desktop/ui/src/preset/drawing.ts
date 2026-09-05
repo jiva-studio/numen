@@ -250,6 +250,125 @@ export const againstBox = (y: number, lift: string): Box => ({
   high: AXIS_HIGH,
 })
 
+/** The bubble over the knob: the side it hangs on, the room it takes, and where. */
+export interface Perch {
+  readonly under: boolean
+  readonly box: Box
+  readonly at: CSSProperties
+  readonly tail: CSSProperties
+}
+
+/**
+ * Where the bubble over the knob is set. It sits above the knob, and below it
+ * where above would take it off the top, so it never covers the curve the knob
+ * is riding. The tail is anchored on the knob itself and turns over with the
+ * bubble, so what the numbers belong to is never in doubt.
+ */
+export const perchOf = (spot: Spot): Perch => {
+  const under = spot.y - PERCH_GAP - PERCH_HIGH < TOP
+  const half = PERCH_WIDE / 2
+  const back = spot.x < LEFT + half ? 0 : spot.x > RIGHT - half ? PERCH_WIDE : half
+  const edge = under ? spot.y + PERCH_GAP : spot.y - PERCH_GAP
+  return {
+    under,
+    box: {
+      x: spot.x - back,
+      y: under ? edge : edge - PERCH_HIGH,
+      wide: PERCH_WIDE,
+      high: PERCH_HIGH,
+    },
+    at: {
+      insetInlineStart: `${(spot.x / WIDE) * 100}%`,
+      insetBlockStart: `${(edge / HIGH) * 100}%`,
+      translate: `${(-back / PERCH_WIDE) * 100}% ${under ? '0' : '-100%'}`,
+    },
+    tail: {
+      insetInlineStart: `${(spot.x / WIDE) * 100}%`,
+      insetBlockStart: `${(edge / HIGH) * 100}%`,
+    },
+  }
+}
+
+/** A mark the picture carries, and the name it wants over it where it wants one. */
+export interface Mark {
+  readonly key: string
+  readonly spot: Spot
+  readonly text: string
+}
+
+/** A name that fit: where it is set, and the room it took. */
+export interface Label {
+  readonly key: string
+  readonly text: string
+  readonly at: CSSProperties
+  readonly box: Box
+}
+
+/**
+ * The names that fit. They are taken in the order the marks stand in, and one
+ * that would touch the readout over the knob, or a name already placed, is
+ * left off.
+ */
+export const labelsOf = (marks: readonly Mark[], over: Box | null): readonly Label[] => {
+  const placed: Box[] = over ? [over] : []
+  const out: Label[] = []
+  for (const mark of marks) {
+    if (!mark.text) continue
+    const box = namingBox(mark.spot)
+    if (!placed.every((one) => apart(box, one))) continue
+    placed.push(box)
+    out.push({ key: mark.key, text: mark.text, at: naming(mark.spot), box })
+  }
+  return out
+}
+
+/** A number read off an edge of the picture: where it is set, and what it says. */
+export interface Height {
+  readonly at: CSSProperties
+  readonly box: Box
+  readonly text: string
+}
+
+/**
+ * What the height of the picture comes to, against the lines it is read off. A
+ * band of no width is one number and is said once, on the foot, where a curve
+ * that never moves is drawn. A number the line, a mark or the readout over the
+ * knob stands on is dropped: the axis gives way, and the drawing keeps what it
+ * has to say.
+ */
+export const heightsOf = (
+  band: Band,
+  spots: readonly Spot[],
+  marks: readonly Spot[],
+  over: Box | null,
+  said: (value: number) => string,
+): readonly Height[] => {
+  const { least, most } = band
+  const fits = (y: number, lift: string, value: number): readonly Height[] => {
+    const box = againstBox(y, lift)
+    if (!clearAt(y, spots, marks)) return []
+    if (over && !apart(box, over)) return []
+    return [{ at: against(y, lift), box, text: said(value) }]
+  }
+  // A band of no width has one number and nothing else to read, and it is set
+  // over the line it names. That line is the foot, which is where a run with no
+  // height is drawn.
+  if (most === least) {
+    return [{ at: against(FOOT, '0'), box: againstBox(FOOT, '0'), text: said(most) }]
+  }
+  return [...fits(TOP, '-100%', most), ...fits(FOOT, '0', least)]
+}
+
+/**
+ * Where the knob's own value is set. It rides a line of its own under the
+ * picture, so it never prints over a number read off the picture's edges.
+ */
+export const readingAt = (spot: Spot | null): CSSProperties => {
+  if (!spot) return {}
+  const back = spot.x < LEFT + LABEL ? '0' : spot.x > RIGHT - LABEL ? '-100%' : '-50%'
+  return { insetInlineStart: `${(spot.x / WIDE) * 100}%`, translate: `${back} 0` }
+}
+
 /** Where a keystroke takes the knob, and nothing for a keystroke of somebody else's. */
 export const walked = (key: string, place: number, places: number): number | null => {
   const last = places - 1

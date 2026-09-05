@@ -15,14 +15,21 @@ import {
   BAND,
   bandOf,
   FOOT,
+  heightsOf,
   HIGH,
   LABEL,
+  labelsOf,
   LEFT,
   LIFT,
   lineOf,
   naming,
   namingBox,
+  perchOf,
+  PERCH_GAP,
+  PERCH_HIGH,
+  PERCH_WIDE,
   placeUnder,
+  readingAt,
   RIGHT,
   shortOf,
   spotsOf,
@@ -31,6 +38,9 @@ import {
   WIDE,
   xOf,
   yOfBand,
+  type Box,
+  type Mark,
+  type Spot,
 } from './drawing'
 
 const point = (over: Partial<Point> = {}): Point => ({
@@ -266,5 +276,191 @@ describe('where a keystroke takes the knob', () => {
   it('is nothing for a keystroke of somebody else’s', () => {
     expect(walked('a', 2, 5)).toBeNull()
     expect(walked('Enter', 2, 5)).toBeNull()
+  })
+})
+
+const mark = (key: string, x: number, y: number, text = key): Mark => ({
+  key,
+  spot: { x, y },
+  text,
+})
+
+/** A room somewhere in the picture, to stand a word against. */
+const box = (x: number, y: number, wide: number, high: number): Box => ({ x, y, wide, high })
+
+/** Whether a room is wholly inside the picture, which is what the viewBox holds. */
+const inside = (one: Box): boolean =>
+  one.x >= 0 && one.y >= 0 && one.x + one.wide <= WIDE && one.y + one.high <= HIGH
+
+describe('the bubble over the knob', () => {
+  it('hangs above the knob, clear of it by the gap', () => {
+    const perch = perchOf({ x: WIDE / 2, y: 120 })
+
+    expect(perch.under).toBe(false)
+    expect(perch.box).toStrictEqual(
+      box(WIDE / 2 - PERCH_WIDE / 2, 120 - PERCH_GAP - PERCH_HIGH, PERCH_WIDE, PERCH_HIGH),
+    )
+  })
+
+  // Above would take it off the top, so it turns over and hangs under instead.
+  it('turns under the knob where above would take it off the top', () => {
+    const perch = perchOf({ x: WIDE / 2, y: TOP })
+
+    expect(perch.under).toBe(true)
+    expect(perch.box.y).toBe(TOP + PERCH_GAP)
+    expect(perch.at.translate).toBe('-50% 0')
+  })
+
+  it('turns over at the exact height it no longer fits above', () => {
+    expect(perchOf({ x: WIDE / 2, y: TOP + PERCH_GAP + PERCH_HIGH }).under).toBe(false)
+    expect(perchOf({ x: WIDE / 2, y: TOP + PERCH_GAP + PERCH_HIGH - 1 }).under).toBe(true)
+  })
+
+  it.each([
+    { where: 'the left edge', spot: { x: LEFT, y: 120 }, back: '0%' },
+    { where: 'the middle', spot: { x: WIDE / 2, y: 120 }, back: '-50%' },
+    { where: 'the right edge', spot: { x: RIGHT, y: 120 }, back: '-100%' },
+  ])('is pulled back inside the picture at $where', ({ spot, back }) => {
+    const perch = perchOf(spot)
+
+    expect(perch.at.translate).toBe(`${back} -100%`)
+    expect(inside(perch.box)).toBe(true)
+  })
+
+  it('anchors its tail on the knob, wherever the bubble was pulled to', () => {
+    const perch = perchOf({ x: LEFT, y: 120 })
+
+    expect(perch.tail.insetInlineStart).toBe(perch.at.insetInlineStart)
+    expect(perch.tail.insetBlockStart).toBe(perch.at.insetBlockStart)
+  })
+})
+
+describe('the names of the marks that fit', () => {
+  it('says nothing where there are no marks', () => {
+    expect(labelsOf([], null)).toStrictEqual([])
+  })
+
+  it('sets the one name a single mark carries', () => {
+    expect(labelsOf([mark('suggested', WIDE / 2, 100)], null)).toStrictEqual([
+      {
+        key: 'suggested',
+        text: 'suggested',
+        at: naming({ x: WIDE / 2, y: 100 }),
+        box: namingBox({ x: WIDE / 2, y: 100 }),
+      },
+    ])
+  })
+
+  it('leaves off a mark carrying no name at all', () => {
+    expect(labelsOf([mark('knob', WIDE / 2, 100, '')], null)).toStrictEqual([])
+  })
+
+  // A name that will not fit is dropped, not moved: nothing here pushes two
+  // names apart, so the second of a touching pair is simply not drawn.
+  it.each([
+    { gap: LABEL * 2 - 1, kept: ['first'] },
+    { gap: LABEL * 2, kept: ['first', 'second'] },
+    { gap: LABEL * 2 + 1, kept: ['first', 'second'] },
+  ])('keeps $kept.length of two names $gap apart at the same height', ({ gap, kept }) => {
+    const names = labelsOf([mark('first', 200, 100), mark('second', 200 + gap, 100)], null)
+
+    expect(names.map((one) => one.key)).toStrictEqual(kept)
+  })
+
+  it('keeps two names at the same place where their heights stand clear', () => {
+    const names = labelsOf([mark('first', 200, 60), mark('second', 200, 60 + LIFT + AXIS_HIGH)], null)
+
+    expect(names.map((one) => one.key)).toStrictEqual(['first', 'second'])
+  })
+
+  it('leaves off a name the bubble over the knob stands on', () => {
+    const over = perchOf({ x: 280, y: TOP }).box
+
+    expect(labelsOf([mark('suggested', 280, 100)], over)).toStrictEqual([])
+    expect(labelsOf([mark('suggested', 280, 100)], null)).toHaveLength(1)
+  })
+
+  it.each([
+    { where: 'the left edge', spot: { x: LEFT, y: 100 } },
+    { where: 'the right edge', spot: { x: RIGHT, y: 100 } },
+    { where: 'the top', spot: { x: WIDE / 2, y: TOP } },
+    { where: 'the foot', spot: { x: WIDE / 2, y: FOOT } },
+  ])('keeps the room a name takes at $where inside the picture', ({ spot }) => {
+    const names = labelsOf([mark('suggested', spot.x, spot.y)], null)
+
+    expect(names).toHaveLength(1)
+    expect(inside(names[0]!.box)).toBe(true)
+  })
+})
+
+/** A number said as itself, so a test reads the height and not the wording. */
+const said = (value: number): string => String(value)
+
+/** A curve drawn well clear of the left edge, where no number is read. */
+const clear: readonly Spot[] = [
+  { x: 300, y: TOP },
+  { x: RIGHT, y: FOOT },
+]
+
+describe('the numbers read off the picture’s edges', () => {
+  it('is the most over the top and the least on the foot', () => {
+    const numbers = heightsOf({ least: 0, most: 10 }, clear, [], null, said)
+
+    expect(numbers.map((one) => one.text)).toStrictEqual(['10', '0'])
+    expect(numbers.map((one) => one.box)).toStrictEqual([
+      againstBox(TOP, '-100%'),
+      againstBox(FOOT, '0'),
+    ])
+  })
+
+  // A band of no width has one number and nothing else to read.
+  it('is one number on the foot for a band of no width', () => {
+    const numbers = heightsOf({ least: 4, most: 4 }, clear, [], null, said)
+
+    expect(numbers).toStrictEqual([
+      { at: against(FOOT, '0'), box: againstBox(FOOT, '0'), text: '4' },
+    ])
+  })
+
+  it('drops the number the curve itself stands on', () => {
+    const numbers = heightsOf({ least: 0, most: 10 }, [{ x: LEFT, y: FOOT }], [], null, said)
+
+    expect(numbers.map((one) => one.text)).toStrictEqual(['10'])
+  })
+
+  it('drops the number a mark stands on', () => {
+    const numbers = heightsOf({ least: 0, most: 10 }, clear, [{ x: LEFT, y: TOP }], null, said)
+
+    expect(numbers.map((one) => one.text)).toStrictEqual(['0'])
+  })
+
+  it('drops the number the bubble over the knob stands on', () => {
+    const over = box(LEFT, 0, PERCH_WIDE, PERCH_HIGH)
+    const numbers = heightsOf({ least: 0, most: 10 }, clear, [], over, said)
+
+    expect(numbers.map((one) => one.text)).toStrictEqual(['0'])
+  })
+
+  it('keeps every number it draws inside the picture', () => {
+    const numbers = heightsOf({ least: 0, most: 10 }, clear, [], null, said)
+
+    expect(numbers.every((one) => inside(one.box))).toBe(true)
+  })
+})
+
+describe('where the knob’s own value is set', () => {
+  it('is nowhere at all while the knob stands nowhere', () => {
+    expect(readingAt(null)).toStrictEqual({})
+  })
+
+  it.each([
+    { where: 'the left edge', x: LEFT, back: '0' },
+    { where: 'the middle', x: WIDE / 2, back: '-50%' },
+    { where: 'the right edge', x: RIGHT, back: '-100%' },
+  ])('is pulled back inside the picture at $where', ({ x, back }) => {
+    const at = readingAt({ x, y: 100 })
+
+    expect(at.insetInlineStart).toBe(`${(x / WIDE) * 100}%`)
+    expect(at.translate).toBe(`${back} 0`)
   })
 })
