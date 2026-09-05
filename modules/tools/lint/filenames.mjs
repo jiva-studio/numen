@@ -12,14 +12,21 @@
  * named after what it tests and declares little of its own. Neither answers
  * with a comment or a string: a word only a comment says is a word the code
  * does not use.
+ *
+ * A single-file component declares itself by its file name, which is the name
+ * every template addresses it by, so `RecordingTab.vue` says "recording" by
+ * standing there. Where Go has a package clause a module of TypeScript has its
+ * path, so the name a test imports its neighbour by counts among the names
+ * that neighbour hands it.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
-import { basename, dirname, join, relative } from 'node:path'
-import { root } from './source.mjs'
+import { basename, dirname, extname, join, relative } from 'node:path'
+import { blocks, root, sources } from './source.mjs'
 
 /**
  * Where each module's Go stands. The list is the modules', and a module left
- * off is a rule that stops at its border.
+ * off is a rule that stops at its border. The interface modules are
+ * `source.mjs`'s, for the same reason.
  */
 export const modules = [
   { name: 'core', at: 'modules/libs/core' },
@@ -86,12 +93,17 @@ function nounStem(word) {
 export const carries = (said, declared) =>
   said === declared || verbStem(said) === nounStem(declared)
 
+/** What a test is called after what it tests, in each language. */
+const BESIDE = { '.go': ['_test'], '.ts': ['.test', '.stories'], '.vue': [] }
+
 /** The stem of a file name, and whether the file is a test. */
 export function stemOf(path) {
-  const stem = basename(path, '.go')
-  return stem.endsWith('_test')
-    ? { stem: stem.slice(0, -5), test: true }
-    : { stem, test: false }
+  const kind = extname(path)
+  const whole = basename(path, kind)
+  for (const end of BESIDE[kind] ?? []) {
+    if (whole.endsWith(end)) return { stem: whole.slice(0, -end.length), test: true }
+  }
+  return { stem: whole, test: false }
 }
 
 const TOP =
@@ -106,13 +118,25 @@ const IN_GROUP = /^\t([A-Za-z_]\w*)/gm
  * a margin is all this has to read. It sees no name declared inside a function
  * body, and none a comment says.
  */
-export function declares(source) {
+export function goDeclares(source) {
   const found = []
   for (const one of source.matchAll(TOP)) found.push(one[1] ?? one[2] ?? one[3] ?? one[4])
   for (const block of source.matchAll(GROUPED)) {
     for (const one of block[1].matchAll(IN_GROUP)) found.push(one[1])
   }
   return found
+}
+
+const EXPORTED =
+  /^(?:export\s+)?(?:default\s+)?(?:declare\s+)?(?:abstract\s+)?(?:async\s+)?(?:function\*?|class|const|let|var|type|interface|enum)\s+([A-Za-z_$][\w$]*)/gm
+
+/**
+ * Every name one module of TypeScript declares. The margin is what this reads
+ * too: a name bound inside a function is that function's own, and a name
+ * brought in by an import is another module's.
+ */
+export function tsDeclares(source) {
+  return [...source.matchAll(EXPORTED)].map((one) => one[1])
 }
 
 /** Every name a file's code says, with what a comment and a string say cut out. */
@@ -122,7 +146,17 @@ export function calls(source) {
     .replace(/\/\/[^\n]*/g, ' ')
     .replace(/`[^`]*`/g, ' ')
     .replace(/"(?:\\.|[^"\\])*"/g, ' ')
-  return [...code.matchAll(/[A-Za-z_]\w*/g)].map((one) => one[0])
+    .replace(/'(?:\\.|[^'\\])*'/g, ' ')
+  return [...code.matchAll(/[A-Za-z_$][\w$]*/g)].map((one) => one[0])
+}
+
+/** The names one file declares, in whatever it is written in. */
+export function holds({ at, text }) {
+  if (at.endsWith('.go')) return goDeclares(text)
+  if (at.endsWith('.vue')) {
+    return [stemOf(at).stem, ...blocks(text, 'script').flatMap(tsDeclares)]
+  }
+  return tsDeclares(text)
 }
 
 /**
@@ -137,24 +171,34 @@ export function refused(stem, names) {
   return verbs.filter((verb) => ![...said].some((one) => carries(verb, one)))
 }
 
+/** Every file the rule reads: the Go of the modules, and the interfaces'. */
+export const allSources = () => [...goSources(), ...sources(['.ts', '.vue'])]
+
 /**
- * Every Go file against the words of its name that nothing in it answers for.
+ * What the file a test stands beside tells it. In Go that is the package
+ * clause and the declarations; in TypeScript a module has no clause and is
+ * imported by its path, so the path is a name of its own.
+ */
+const told = (one) => (one.at.endsWith('.go') ? holds(one) : [one.stem, ...holds(one)])
+
+/**
+ * Every file against the words of its name that nothing in it answers for.
  *
  * A test is read with the file it stands beside as well as itself:
- * `editing_bench_test.go` is named after `edit.go`, so a test's stem begins
- * with the stem of what it tests.
+ * `editing_bench_test.go` is named after `edit.go` and `App.opening.test.ts`
+ * after `App.vue`, so a test's stem begins with the stem of what it tests.
  */
 export function named() {
-  const sources = goSources()
-  const beside = sources
+  const found = allSources()
+  const beside = found
     .filter(({ at }) => !stemOf(at).test)
-    .map(({ at, text }) => ({ in: dirname(at), stem: stemOf(at).stem, text }))
-  return sources.map(({ at, text }) => {
+    .map(({ at, text }) => ({ at, in: dirname(at), stem: stemOf(at).stem, text }))
+  return found.map(({ at, text }) => {
     const { stem, test } = stemOf(at)
-    if (!test) return { at, wrong: refused(stem, declares(text)) }
+    if (!test) return { at, wrong: refused(stem, holds({ at, text })) }
     const said = calls(text)
     for (const one of beside) {
-      if (one.in === dirname(at) && stem.startsWith(one.stem)) said.push(...declares(one.text))
+      if (one.in === dirname(at) && stem.startsWith(one.stem)) said.push(...told(one))
     }
     return { at, wrong: refused(stem, said) }
   })
