@@ -8,7 +8,7 @@
  * field's row.
  */
 import { computed, useId } from 'vue'
-import Amiss from './Amiss.vue'
+import ErrorMessage from './ErrorMessage.vue'
 import Icon from './Icon.vue'
 import NameBox from './NameBox.vue'
 import Rule from '../rule/Rule.vue'
@@ -168,7 +168,7 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
           </Button>
         </Slab>
 
-        <Amiss
+        <ErrorMessage
           v-if="says(row.field)"
           :id="objectsId(row.field)"
           class="stencil__objects"
@@ -176,7 +176,7 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
           :said="says(row.field) ?? ''"
         />
 
-        <Amiss
+        <ErrorMessage
           v-if="wrongWith(row.field).length"
           class="stencil__objects"
           data-wrong

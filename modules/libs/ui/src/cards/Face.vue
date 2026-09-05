@@ -8,7 +8,7 @@
  * in. What the face stands for is the caller's, and so is what is wrong with it.
  */
 import { computed, nextTick, shallowRef, useId, type ComponentPublicInstance } from 'vue'
-import Amiss from './Amiss.vue'
+import ErrorMessage from './ErrorMessage.vue'
 import Bar from './Bar.vue'
 import Remove from './Remove.vue'
 import AutosizeTextarea from './AutosizeTextarea.vue'
@@ -162,9 +162,15 @@ const put = async (field: string): Promise<void> => {
         <!-- What is wrong with the face stands at the end of the strip, over
              the window under it. -->
         <div v-if="says || wrong.length" class="face__amiss">
-          <Amiss v-if="says" :id="objectsId" class="face__objects" role="alert" :said="says" />
+          <ErrorMessage
+            v-if="says"
+            :id="objectsId"
+            class="face__objects"
+            role="alert"
+            :said="says"
+          />
 
-          <Amiss
+          <ErrorMessage
             v-if="wrong.length"
             class="face__objects"
             data-wrong
@@ -222,7 +228,7 @@ const put = async (field: string): Promise<void> => {
         <!-- What is wrong with the half stands in the foot of the part, over
              what is written there. -->
         <div v-if="pane.stray.length" class="face__amiss">
-          <Amiss class="face__objects" role="alert" :said="words.stray(pane.stray)" />
+          <ErrorMessage class="face__objects" role="alert" :said="words.stray(pane.stray)" />
         </div>
       </div>
     </div>

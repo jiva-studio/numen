@@ -8,7 +8,7 @@
  * is refused.
  */
 import { computed, useId } from 'vue'
-import Amiss from './Amiss.vue'
+import ErrorMessage from './ErrorMessage.vue'
 import Remove from './Remove.vue'
 import NameBox from './NameBox.vue'
 import Rule from '../rule/Rule.vue'
@@ -84,7 +84,7 @@ const stem = computed(() => `${props.words.sectionStem} ${props.band.at}`)
       </span>
     </Rule>
 
-    <Amiss v-if="says" :id="objectsId" class="band__objects" role="alert" :said="says" />
+    <ErrorMessage v-if="says" :id="objectsId" class="band__objects" role="alert" :said="says" />
   </div>
 </template>
 

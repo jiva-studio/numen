@@ -15,9 +15,9 @@ defineProps<{
 </script>
 
 <template>
-  <p v-if="typeof said === 'string'" class="amiss text-small text-alarm">{{ said }}</p>
+  <p v-if="typeof said === 'string'" class="error-message text-small text-alarm">{{ said }}</p>
 
-  <ul v-else class="amiss text-small text-alarm" :aria-label="label">
+  <ul v-else class="error-message text-small text-alarm" :aria-label="label">
     <li v-for="(text, at) in said" :key="at">{{ text }}</li>
   </ul>
 </template>
@@ -26,7 +26,7 @@ defineProps<{
 /* A line or two saying what is wrong, and never a list to read: no bullet, and
    no room kept for one, so it stands over the edge the host draws it on. It
    takes the whole row under whatever it is wrong about. */
-.amiss {
+.error-message {
   flex-basis: 100%;
   margin: 0;
   padding-inline-start: 0;

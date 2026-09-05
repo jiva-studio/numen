@@ -8,7 +8,7 @@
  * what is wrong with one value is said under that value.
  */
 import { computed, useId } from 'vue'
-import Amiss from './Amiss.vue'
+import ErrorMessage from './ErrorMessage.vue'
 import Bar from './Bar.vue'
 import Remove from './Remove.vue'
 import AutosizeTextarea from './AutosizeTextarea.vue'
@@ -99,14 +99,14 @@ const wrongIn = (value: Stood): readonly string[] =>
 
     <div class="card__body flex flex-col">
       <!-- A card is waiting for a stencil only where it names one. -->
-      <Amiss
+      <ErrorMessage
         v-if="!tile.known && tile.stencil !== null"
         class="card__objects"
         role="alert"
         :said="words.unknown(tile.stencil)"
       />
 
-      <Amiss
+      <ErrorMessage
         v-if="wrong.length"
         class="card__objects"
         data-wrong
@@ -144,7 +144,7 @@ const wrongIn = (value: Stood): readonly string[] =>
           :data-wrote="value.field"
         >{{ value.text }}</p>
 
-        <Amiss
+        <ErrorMessage
           v-if="wrongIn(value).length"
           class="card__objects"
           :data-wrong-value="value.field"
