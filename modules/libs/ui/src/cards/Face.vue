@@ -10,7 +10,7 @@
 import { computed, nextTick, shallowRef, useId, type ComponentPublicInstance } from 'vue'
 import ErrorMessage from './ErrorMessage.vue'
 import Bar from './Bar.vue'
-import Remove from './Remove.vue'
+import RemoveButton from './RemoveButton.vue'
 import AutosizeTextarea from './AutosizeTextarea.vue'
 import CardProse from './CardProse.vue'
 import NameBox from './NameBox.vue'
@@ -181,7 +181,7 @@ const put = async (field: string): Promise<void> => {
       </div>
 
       <template #deeds>
-        <Remove :label="`${words.remove}: ${face.name}`" @press="emit('remove')" />
+        <RemoveButton :label="`${words.remove}: ${face.name}`" @press="emit('remove')" />
       </template>
     </Bar>
 

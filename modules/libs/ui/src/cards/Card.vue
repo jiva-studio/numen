@@ -10,7 +10,7 @@
 import { computed, useId } from 'vue'
 import ErrorMessage from './ErrorMessage.vue'
 import Bar from './Bar.vue'
-import Remove from './Remove.vue'
+import RemoveButton from './RemoveButton.vue'
 import AutosizeTextarea from './AutosizeTextarea.vue'
 import Divider from '../divider/Divider.vue'
 import { DECK_WORDS, sealed, type CardWords, type Stood, type Tile } from './deck'
@@ -93,7 +93,7 @@ const wrongIn = (value: Stood): readonly string[] =>
       </p>
 
       <template #deeds>
-        <Remove :label="`${words.remove}: ${called}`" @press="emit('remove')" />
+        <RemoveButton :label="`${words.remove}: ${called}`" @press="emit('remove')" />
       </template>
     </Bar>
 

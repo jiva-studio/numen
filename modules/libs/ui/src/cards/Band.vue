@@ -9,7 +9,7 @@
  */
 import { computed, useId } from 'vue'
 import ErrorMessage from './ErrorMessage.vue'
-import Remove from './Remove.vue'
+import RemoveButton from './RemoveButton.vue'
 import NameBox from './NameBox.vue'
 import Divider from '../divider/Divider.vue'
 import { useNaming } from './naming'
@@ -79,7 +79,7 @@ const stem = computed(() => `${props.words.sectionStem} ${props.band.at}`)
         </span>
 
         <span class="band__deeds">
-          <Remove :label="`${words.remove}: ${stem}`" @press="emit('remove')" />
+          <RemoveButton :label="`${words.remove}: ${stem}`" @press="emit('remove')" />
         </span>
       </span>
     </Divider>

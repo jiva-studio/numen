@@ -19,7 +19,7 @@ const emit = defineEmits<{ (event: 'press'): void }>()
 <template>
   <button
     type="button"
-    class="remove"
+    class="remove-button"
     draggable="false"
     :aria-label="label"
     :title="label"
@@ -30,7 +30,7 @@ const emit = defineEmits<{ (event: 'press'): void }>()
 </template>
 
 <style scoped>
-.remove {
+.remove-button {
   display: grid;
   place-items: center;
   inline-size: 1.5rem;
@@ -42,18 +42,18 @@ const emit = defineEmits<{ (event: 'press'): void }>()
   transition: color var(--numen-motion-hover) var(--numen-easing);
 }
 
-.remove:hover,
-.remove:focus-visible {
+.remove-button:hover,
+.remove-button:focus-visible {
   color: var(--numen-ink);
 }
 
-.remove:focus-visible {
+.remove-button:focus-visible {
   outline: var(--numen-ring-width) solid var(--numen-ring);
   outline-offset: 1px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .remove {
+  .remove-button {
     transition: none;
   }
 }
