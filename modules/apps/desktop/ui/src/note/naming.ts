@@ -48,6 +48,8 @@ export function naming(vault: NamingDeps, notes: Notes) {
       const said = (await vault.neighbourhood(notes.where(id))).focus?.title
       if (said) calls(id, said)
     } catch {
+      // The tab keeps the name it had, and the next thing that moves the note
+      // asks again.
       return
     }
   }

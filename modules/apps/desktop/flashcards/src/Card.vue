@@ -39,6 +39,8 @@ const plain = (named: string) => {
   try {
     return decodeURIComponent(named)
   } catch {
+    // Nothing is wrong with the card; only with an escape in it, and the
+    // characters as written are the closest thing to what was meant.
     return named
   }
 }

@@ -289,6 +289,8 @@ export function editing(core: Notes, how: EditingOptions = {}) {
     try {
       answered = await core.write(path, body, seen)
     } catch {
+      // The core did not answer. The tab stands refused, in the words a
+      // vault that could not be reached is refused in.
       turn(id, { kind: 'written', answer: { kind: 'refused', refusal: 'unreachable' } })
       return
     }

@@ -207,6 +207,8 @@ const scheduled = async (
       refused: '',
     }
   } catch {
+    // A preset that could not be asked for is refused in the same words as one
+    // whose settings would not read, and the refusal is what is drawn.
     return { deck, held: null, refused: UNREAD }
   }
 }
