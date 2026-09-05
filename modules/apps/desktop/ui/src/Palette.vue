@@ -16,21 +16,21 @@ import {
   type Commands,
   type Where,
 } from './commanding'
-import { does, type Doing } from './doing'
+import { does, type CommandDeps } from './doing'
 import type { Searching } from './finding'
 import { iconFor, iconOfNote, iconOfSource } from './icons'
 import { chorded } from './keying'
-import { lands, type Places } from './landing'
+import { lands, type LandingDeps } from './landing'
 import { WORDS as words } from './words'
 
 const props = defineProps<{
   commands: Commands
   search: Searching
-  doing: Doing
+  doing: CommandDeps
   /** What the commands are over, as the window stands now. */
   where: () => Where
   /** Where the window is taken by what the search turns up. */
-  places: Places
+  places: LandingDeps
 }>()
 
 /** What the palette draws: the commands while they are open, the search under. */

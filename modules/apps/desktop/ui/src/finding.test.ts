@@ -7,7 +7,7 @@
  * band that failed must not take the other two down with it.
  */
 import { describe, expect, it } from 'vitest'
-import { finding, type Asking, type Way, type Named, type Passage, type Words } from './finding'
+import { finding, type FindingDeps, type Way, type Named, type Passage, type Words } from './finding'
 import { later, type Later } from './testing/later'
 
 const WORDS: Words = {
@@ -30,7 +30,7 @@ function asking() {
   const searched: { way: Way; answer: Later<readonly Passage[]> }[] = []
   const queries: string[] = []
 
-  const core: Asking = {
+  const core: FindingDeps = {
     names: (query) => {
       queries.push(query)
       const one = later<readonly Named[]>()

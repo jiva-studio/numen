@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { editing } from './note/editing'
-import { leaving, type Going, type Owed, type Question } from './leaving'
+import { leaving, type LeavingDeps, type Owed, type Question } from './leaving'
 import type { Answered, Core } from './core'
 
 /** A vault that has been read and is doing nothing. */
@@ -61,7 +61,7 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
   /** Writes wait here until a test lets them through. */
   let held: (() => void) | null = null
 
-  const core: Core & Going = {
+  const core: Core & LeavingDeps = {
     neighbourhood: async () => ({}) as never,
     headings: async () => new Map(),
     fileKinds: async () => new Map(),

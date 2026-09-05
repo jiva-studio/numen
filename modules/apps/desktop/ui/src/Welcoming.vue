@@ -12,7 +12,7 @@ import { opensVault, Welcome } from '@numen/ui'
 import type { Tab } from '@numen/ui'
 import { deedOf, type Commands, type Shown, type Where } from './commanding'
 import type { Listed } from './core'
-import { does, type Doing } from './doing'
+import { does, type CommandDeps } from './doing'
 import type { Searching } from './finding'
 import { iconFor } from './icons'
 import { keysOf } from './keying'
@@ -27,7 +27,7 @@ const props = defineProps<{
   tabs: readonly Tab[]
   commands: Commands
   search: Searching
-  doing: Doing
+  doing: CommandDeps
   where: () => Where
   /** A command asked for, which is what every way in but the commands comes to. */
   carries: (id: string, at: Where) => void

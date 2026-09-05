@@ -8,7 +8,7 @@ import { ref } from 'vue'
 import { documenting, documentKind, type DocumentTabState, type PageHandle } from './kind'
 import { DOCUMENT } from '../workspace'
 import type { Reading } from './reading'
-import type { Putting, Reads } from '../putting'
+import type { Putting, SourceReader } from '../putting'
 import type { Stretch } from '../core'
 import type { Host } from '../windowing'
 
@@ -30,8 +30,8 @@ const window_ = (held: DocumentTabState | null = null) => {
 
 /** What puts documents in front, keeping the reader it is handed. */
 const putting = () => {
-  let reader: Reads | null = null
-  const puts = { reads: (opens: Reads) => void (reader = opens) } as unknown as Putting
+  let reader: SourceReader | null = null
+  const puts = { reads: (opens: SourceReader) => void (reader = opens) } as unknown as Putting
   return { puts, opens: () => reader }
 }
 

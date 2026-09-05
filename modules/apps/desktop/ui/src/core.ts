@@ -164,7 +164,7 @@ export type Reached =
   | 'failed'
 
 /** What a file carries, and what has become of each. */
-export type Carries = Partial<Record<Artifact, Reached>>
+export type ArtifactStates = Partial<Record<Artifact, Reached>>
 
 /**
  * What asking for an artifact to be made answered: which artifact, what it now
@@ -182,13 +182,13 @@ export type Outcome =
     }
 
 /** What a person asks be made from one file of the vault, and taken away. */
-export interface Runs {
+export interface ArtifactRunner {
   /**
    * What the file at a path carries. It is asked before anything is offered
    * over the file, so a book that has been read is not offered to be read
    * again.
    */
-  carries(path: string): Promise<Carries>
+  carries(path: string): Promise<ArtifactStates>
   /** One artifact asked for, and what came of asking. */
   makes(path: string, of: Artifact): Promise<Outcome>
   /**

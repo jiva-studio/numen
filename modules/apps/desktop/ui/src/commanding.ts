@@ -11,7 +11,7 @@ import type { PaletteBand, PaletteItem, PaletteKeys } from '@numen/ui'
 import { asking as latest } from './asking'
 import {
   movedTo,
-  type Carries,
+  type ArtifactStates,
   type Listed,
   type Move,
   type NoteType,
@@ -20,10 +20,10 @@ import {
   type Vault,
 } from './core'
 import { keysOf } from './keying'
-import type { Named, Silences } from './finding'
+import type { EmptyWords, Named } from './finding'
 
 /** What the commands ask of the application before anything is chosen. */
-export interface Asking {
+export interface CommandingDeps {
   /** The names in the vault that match. */
   names(query: string, limit: number): Promise<readonly Named[]>
   /** Every vault the installation holds, and which of them this window shows. */
@@ -128,7 +128,7 @@ export interface Where {
    * been asked about carries nothing here, and a command over it is offered on
    * its kind alone.
    */
-  readonly made: Carries
+  readonly made: ArtifactStates
   /** The other files it is over, beside the one at `path`. */
   readonly others?: readonly string[]
   /** The vault the window is showing, and nothing where it shows none. */
@@ -208,7 +208,7 @@ export interface Deed {
 }
 
 /** Everything the commands say in the window's voice. */
-export interface Words extends Silences {
+export interface Words extends EmptyWords {
   /** The commands, each in the words it is offered by. */
   readonly read: string
   readonly beside: string
@@ -399,11 +399,11 @@ const onSource =
  * person is never left holding an item that would do nothing.
  */
 const onEvidence =
-  (run: string, source: Source, made: (carries: Carries) => boolean) =>
+  (run: string, source: Source, made: (carries: ArtifactStates) => boolean) =>
   (at: Where, runs: Runnable): boolean =>
     onSource(run, source)(at, runs) && (isEmpty(at.made) || made(at.made))
 
-const isEmpty = (carries: Carries): boolean => Object.keys(carries).length === 0
+const isEmpty = (carries: ArtifactStates): boolean => Object.keys(carries).length === 0
 
 /** An artifact a run over the file would begin, rather than be refused for. */
 const owed = (made: Reached | undefined): boolean =>
@@ -695,7 +695,7 @@ interface Asked {
 const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
 
 export function commanding(
-  core: Asking,
+  core: CommandingDeps,
   words: Words,
   at: () => Where,
   knows: Knows,

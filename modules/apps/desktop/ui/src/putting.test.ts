@@ -7,14 +7,14 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { FileKind, Refused } from './core'
-import { cutting, putting, type Asking, type Cuts } from './putting'
+import { cutting, putting, type CutWriter, type PuttingDeps } from './putting'
 import { voice } from './testing/voice'
 import { REFUSED } from './words'
 
 /** A vault that answers what it was told, and counts the questions. */
 const vault = (stands: Record<string, FileKind> = {}) => {
   const asked: (readonly string[])[] = []
-  const core: Asking = {
+  const core: PuttingDeps = {
     fileKinds: async (paths) => {
       asked.push(paths)
       const found = new Map<string, FileKind>()
@@ -37,7 +37,7 @@ const TALK: FileKind = { kind: 'recording', type: 'note' }
 const OTHER: FileKind = { kind: 'other', type: 'note' }
 
 /** A vault that cannot answer at all. */
-const unreachable: Asking = {
+const unreachable: PuttingDeps = {
   fileKinds: async () => {
     throw new Error('the vault is not there')
   },
@@ -239,7 +239,7 @@ describe('a file just made here', () => {
 })
 
 /** The vault answering what it was told, and writing down what it was asked to make. */
-const cuts = (refusal: Refused | null = null, throws = false): Cuts & { asked: string[] } => {
+const cuts = (refusal: Refused | null = null, throws = false): CutWriter & { asked: string[] } => {
   const asked: string[] = []
   const answer = async (path: string) => {
     if (throws) throw new Error('the vault is not there')

@@ -15,7 +15,7 @@ import { following } from '@numen/ui'
 export type Owed = 'written' | 'asking'
 
 /** What the quit needs of the core. */
-export interface Going {
+export interface LeavingDeps {
   quitting(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
   flushed(token: string, owed?: Owed): Promise<unknown>
 }
@@ -50,7 +50,7 @@ export interface DrawnQuestion {
  * open: the person asked for it to go. A question is: the text is still here,
  * and nothing but the person decides where it goes.
  */
-export function leaving(core: Going, wait: (ms: number) => Promise<unknown> = sleep) {
+export function leaving(core: LeavingDeps, wait: (ms: number) => Promise<unknown> = sleep) {
   const owing = new Set<Owing>()
   let open = true
   const listening = new AbortController()

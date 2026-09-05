@@ -12,7 +12,7 @@ import type { Notice } from '@numen/ui'
 import '@numen/ui/styles.css'
 import './app.css'
 import { cards, core, documents, recordings, running, vaults } from './vault'
-import type { Attention, Carries, Listed } from './core'
+import type { Attention, ArtifactStates, Listed } from './core'
 import { showing } from './showing'
 import { view } from './plex/view'
 import { reading } from './document/reading'
@@ -37,9 +37,9 @@ import { APPEARANCE, DRESSING, INTERFACE_SCALE, MODE, TEXT_SCALE, wearing } from
 import { reviewing } from './reviewing'
 import { OFF, ON, SYNCING, syncing } from './syncing'
 import { HANGING, PARTS, hanging } from './hanging'
-import { does, reaching, type Doing, type Store } from './doing'
+import { does, reaching, type CommandDeps, type Store } from './doing'
 import { finding } from './finding'
-import { lands, type Places } from './landing'
+import { lands, type LandingDeps } from './landing'
 import { cutting, putting } from './putting'
 import { leaving } from './leaving'
 import { raising } from './raising'
@@ -236,7 +236,7 @@ const heard = recordingKind(
 watch(tasks, () => heard.ticked(tasks.value))
 
 /** Where the window is taken when something is chosen, wherever it was chosen. */
-const places: Places = {
+const places: LandingDeps = {
   travel: (path) => plexes.travel(path),
   opensAt: (path, run) => puts.opensAt(path, [run]),
   opens: (path, title, line) => void puts.opens(path, title, 'here', line),
@@ -352,7 +352,7 @@ const where = (): Where => {
  * offered on what has been made from it, so this is asked as the file comes in
  * front and again whenever a run over it is asked for.
  */
-const makes = shallowRef<ReadonlyMap<string, Carries>>(new Map())
+const makes = shallowRef<ReadonlyMap<string, ArtifactStates>>(new Map())
 
 /** What one file carries, asked of the application and kept. */
 const carrying = async (path: string) => {
@@ -538,7 +538,7 @@ const opensPreset = async (path: string): Promise<void> => {
 const commands = commanding(core, words, where, knows, kept, runs)
 
 /** What the window offers a command being carried out, one port to a job. */
-const doing: Doing = {
+const doing: CommandDeps = {
   files: {
     makes: (title, from, seat) => making.calls(title, from, seat),
     renames: (path, title) => core.rename(path, title),

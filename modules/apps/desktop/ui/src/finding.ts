@@ -66,7 +66,7 @@ export interface Passage {
 export type Way = 'fused' | 'words' | 'meaning' | 'names'
 
 /** The two questions the palette asks of the vault. */
-export interface Asking {
+export interface FindingDeps {
   /** The names in the vault that match: a note’s own title, and its headings. */
   names(query: string, limit: number): Promise<readonly Named[]>
   /** The text the vault holds that answers, asked one way. */
@@ -74,7 +74,7 @@ export interface Asking {
 }
 
 /** What a band of a palette says when it holds nothing. */
-export interface Silences {
+export interface EmptyWords {
   /** What a band says when it came back with nothing. */
   readonly noneFound: string
   /** What a band says when the vault could not answer at all. */
@@ -82,7 +82,7 @@ export interface Silences {
 }
 
 /** Everything the palette says in the window's voice. */
-export interface Words extends Silences {
+export interface Words extends EmptyWords {
   names: string
   text: string
   meaning: string
@@ -162,7 +162,7 @@ export interface Finding {
   reading?(): Meaning
 }
 
-export function finding(core: Asking, words: Words, how: Finding = {}) {
+export function finding(core: FindingDeps, words: Words, how: Finding = {}) {
   const wait = how.wait ?? sleep
   const reading = how.reading
   /** Whether the palette is drawn at all. */

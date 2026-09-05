@@ -19,7 +19,7 @@ export type Opened = NoteType | 'preset'
  * A file put in front of the person in one editor. A line is somewhere inside
  * the file, and what standing there comes to is the editor's own.
  */
-export type Opens = (
+export type FileOpener = (
   path: string,
   title: string,
   showing: PlexShowing,
@@ -31,38 +31,38 @@ export type Opens = (
  * stretches are of the source's own text, and the person is taken to the first
  * of them.
  */
-export type Reads = (path: string, stretches: readonly Stretch[]) => void
+export type SourceReader = (path: string, stretches: readonly Stretch[]) => void
 
 /** What the window asks the vault about the file it is opening. */
-export interface Asking {
+export interface PuttingDeps {
   fileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>>
 }
 
 /** What a file the vault could not be asked about at all is opened as. */
 const ORDINARY: FileKind = { kind: 'note', type: 'note' }
 
-export function putting(vault: Asking) {
+export function putting(vault: PuttingDeps) {
   /** The editor each kind of note opens in, as its kind handed it over. */
-  const editors = new Map<Opened, Opens>()
+  const editors = new Map<Opened, FileOpener>()
 
   /**
    * The reader a document opens in and the player a recording is heard in, each
    * under the kind the vault answers a path with.
    */
-  const sources = new Map<FileKind['kind'], Reads>()
+  const sources = new Map<FileKind['kind'], SourceReader>()
 
   /** A kind of tab hands over the way it puts a file in front of the person. */
-  const holds = (type: Opened, opens: Opens) => {
+  const holds = (type: Opened, opens: FileOpener) => {
     editors.set(type, opens)
   }
 
   /** The kind of tab that reads documents hands its own over. */
-  const reads = (opens: Reads) => {
+  const reads = (opens: SourceReader) => {
     sources.set('book', opens)
   }
 
   /** The kind of tab that plays recordings hands its own over. */
-  const hears = (opens: Reads) => {
+  const hears = (opens: SourceReader) => {
     sources.set('recording', opens)
   }
 
@@ -132,7 +132,7 @@ export type Putting = ReturnType<typeof putting>
 export type Cut = 'deck' | 'stencil' | 'preset'
 
 /** What the window asks the vault to make from nothing. */
-export interface Cuts {
+export interface CutWriter {
   /** A deck of no cards, filed in that folder under a name made from the title. */
   makeDeck(title: string, folder: string): Promise<Made>
   /**
@@ -145,7 +145,7 @@ export interface Cuts {
 }
 
 /** Everything making one of the three says in the window's voice. */
-export interface Cutting {
+export interface CuttingWords {
   /** What the vault refused, in words a person reads. */
   readonly refused: Record<Refused, string>
   /** What the one field a stencil is made carrying is called. */
@@ -158,7 +158,7 @@ export interface Cutting {
  * answers nothing at all is said here, because the roads that ask for one carry
  * no word of their own.
  */
-export function cutting(vault: Cuts, puts: Putting, words: Cutting, said: Says) {
+export function cutting(vault: CutWriter, puts: Putting, words: CuttingWords, said: Says) {
   const makes = async (what: Cut, folder: string, name: string): Promise<string> => {
     try {
       const answer =

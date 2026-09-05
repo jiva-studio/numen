@@ -9,7 +9,7 @@
 import type { Landing } from './finding'
 
 /** What the window offers whatever was chosen. */
-export interface Places {
+export interface LandingDeps {
   /** A note put in front of the person, in the plex they are looking at. */
   travel(path: string): Promise<void>
   /**
@@ -25,7 +25,7 @@ export interface Places {
 }
 
 /** Somewhere chosen, taken. Nothing chosen takes the person nowhere. */
-export async function lands(landing: Landing | null, places: Places): Promise<void> {
+export async function lands(landing: Landing | null, places: LandingDeps): Promise<void> {
   if (!landing) return
   if (landing.at === 'plex') return void places.travel(landing.path)
   if (landing.at === 'document') {

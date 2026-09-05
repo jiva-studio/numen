@@ -16,7 +16,7 @@ import type {
   Refused,
   Removed,
   Renamed,
-  Runs,
+  ArtifactRunner,
   VaultRefused,
   Vaults,
 } from './core'
@@ -99,7 +99,7 @@ export const reaching = (
 }
 
 /** The vault as a command changes what it holds. */
-export interface Filing {
+export interface VaultWriter {
   /** A note made under the name it is given, in a seat of another one. */
   makes(title: string, from: string, seat: PlexRelatedSeat | null): Promise<Made | null>
   /** A note given a different name, and its file renamed with it where the two are one name. */
@@ -116,7 +116,7 @@ export interface Filing {
 }
 
 /** The files a command makes from nothing, each put in front of the person. */
-export interface Cutting {
+export interface CutMaker {
   /**
    * A deck made in a folder under the name it is given. The path it landed at,
    * and nothing where none was made.
@@ -129,7 +129,7 @@ export interface Cutting {
 }
 
 /** The vaults this installation holds, as a command changes which one shows. */
-export interface Vaulting extends Vaults {
+export interface VaultSwitcher extends Vaults {
   /** The vault the window is showing, under the name it has now. */
   calls(vault: Shown): void
   /**
@@ -140,7 +140,7 @@ export interface Vaulting extends Vaults {
 }
 
 /** Where a command takes the window. */
-export interface Going {
+export interface WindowNavigator {
   /** The files of the vault put in front of the person, opened down to a path. */
   reveals(path: string): void
   /** A note put in front of the person, in the plex they are looking at. */
@@ -165,7 +165,7 @@ export interface Going {
 }
 
 /** The settings a command writes, each under the identity the window gives it. */
-export interface Setting {
+export interface SettingsWriter {
   /**
    * The window drawn another way: a theme worn from now on, which half of a
    * colour pair the tokens are read as, or how large one of the two kinds of
@@ -181,13 +181,13 @@ export interface Setting {
 }
 
 /** What the window offers a command being carried out, one port to a job. */
-export interface Doing {
-  readonly files: Filing
-  readonly runs: Runs
-  readonly cards: Cutting
-  readonly vaults: Vaulting
-  readonly goes: Going
-  readonly settings: Setting
+export interface CommandDeps {
+  readonly files: VaultWriter
+  readonly runs: ArtifactRunner
+  readonly cards: CutMaker
+  readonly vaults: VaultSwitcher
+  readonly goes: WindowNavigator
+  readonly settings: SettingsWriter
   /** The open files a command reaches, whichever store holds each. */
   readonly notes: Notes
   /** The runs this window has been told this build cannot do. */
@@ -226,10 +226,10 @@ export interface Words {
 }
 
 /** One command, carried out. */
-type Carries = (deed: Deed, on: Doing, words: Words) => Promise<void> | void
+type CommandHandler =(deed: Deed, on: CommandDeps, words: Words) => Promise<void> | void
 
 /** What each command comes to. A command with no entry here does nothing. */
-const carried: Record<string, Carries> = {
+const carried: Record<string, CommandHandler> = {
   read: (deed, on) => on.notes.opens(deed.path, deed.title, 'here'),
   beside: (deed, on) => on.notes.opens(deed.path, deed.title, 'beside'),
   travel: (deed, on) => on.goes.travel(deed.path),
@@ -289,7 +289,7 @@ const carried: Record<string, Carries> = {
 }
 
 /** A command carried out. Nothing chosen does nothing at all. */
-export async function does(deed: Deed | null, on: Doing, words: Words): Promise<void> {
+export async function does(deed: Deed | null, on: CommandDeps, words: Words): Promise<void> {
   if (!deed) return
   const carry = carried[deed.id]
   if (!carry) return
@@ -305,7 +305,7 @@ export async function does(deed: Deed | null, on: Doing, words: Words): Promise<
  * The deed at the file its note stands at now. One over a note no tab of the
  * window holds is at the name it was made over.
  */
-const atItsFile = (deed: Deed, on: Doing): Deed =>
+const atItsFile = (deed: Deed, on: CommandDeps): Deed =>
   deed.note ? { ...deed, path: on.notes.where(deed.note) } : deed
 
 /** A tab asked to settle: which one it was, and whether it is still waiting. */
@@ -318,7 +318,7 @@ interface Settled {
  * The tab holding a note, once nothing of the note is on its way to its file.
  * A tab waiting on the person to answer for it settles nothing and says so.
  */
-const settles = async (path: string, on: Doing): Promise<Settled> => {
+const settles = async (path: string, on: CommandDeps): Promise<Settled> => {
   const held = on.notes.holding(path)
   if (held === null) return { held, waiting: false }
   if (on.notes.asking(held)) return { held, waiting: true }
@@ -333,7 +333,7 @@ const settles = async (path: string, on: Doing): Promise<Settled> => {
 const makes = async (
   deed: Deed,
   seat: PlexRelatedSeat | null,
-  on: Doing,
+  on: CommandDeps,
   words: Words,
 ): Promise<void> => {
   if (!deed.name) return
@@ -347,7 +347,7 @@ const makes = async (
  * A note given a different name, and its file renamed with it where the two are
  * one name. Prose on disk that nobody here has seen leaves the note as it is.
  */
-const renames = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
+const renames = async (deed: Deed, on: CommandDeps, words: Words): Promise<void> => {
   if (!deed.name || deed.name === deed.title) return
   const tab = await settles(deed.path, on)
   if (tab.waiting) return on.says(words.unanswered, 'caution')
@@ -360,7 +360,7 @@ const renames = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
  * A file or a folder filed somewhere else, carrying the name the path ends in.
  * A destination that is taken leaves it where it was.
  */
-const moves = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
+const moves = async (deed: Deed, on: CommandDeps, words: Words): Promise<void> => {
   if (!deed.name || deed.name === deed.path) return
   const tab = await settles(deed.path, on)
   if (tab.waiting) return on.says(words.unanswered, 'caution')
@@ -378,7 +378,7 @@ const UNDER_WAY: readonly Reached[] = ['queued', 'running']
  * the work behind the window. A build that cannot make it at all is told once
  * and offers it nowhere after that.
  */
-const began = (deed: Deed, outcome: Outcome, on: Doing, words: Words): void => {
+const began = (deed: Deed, outcome: Outcome, on: CommandDeps, words: Words): void => {
   if (!outcome.able) {
     on.runnable.cannotRun(deed.id)
     return on.says(words.unrunnable, 'refusal')
@@ -391,7 +391,7 @@ const began = (deed: Deed, outcome: Outcome, on: Doing, words: Words): void => {
 }
 
 /** An empty folder, made under the path that was typed. */
-const makesFolder = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
+const makesFolder = async (deed: Deed, on: CommandDeps, words: Words): Promise<void> => {
   if (!deed.name) return
   const refusal = await on.files.makesFolder(deed.name)
   if (refusal === 'occupied') return on.says(words.occupied, 'refusal')
@@ -410,7 +410,7 @@ const over = (deed: Deed): readonly string[] => [deed.path, ...deed.others]
  * vault refuses leaves the rest to go, and what was refused is what the person
  * is told.
  */
-const removes = async (deed: Deed, destroy: boolean, on: Doing, words: Words): Promise<void> => {
+const removes = async (deed: Deed, destroy: boolean, on: CommandDeps, words: Words): Promise<void> => {
   const dangling: string[] = []
   const refused: string[] = []
   let waiting = false
@@ -441,7 +441,7 @@ const removes = async (deed: Deed, destroy: boolean, on: Doing, words: Words): P
  * Another vault under this window. What the page holds belongs to the vault
  * that has gone, so the page is drawn again on the one that arrived.
  */
-const shows = async (id: string, on: Doing, words: Words): Promise<void> => {
+const shows = async (id: string, on: CommandDeps, words: Words): Promise<void> => {
   if (!id) return
   const refusal = await on.vaults.open(id)
   if (refusal) return on.says(words.unvaulted[refusal], 'refusal')
@@ -452,7 +452,7 @@ const shows = async (id: string, on: Doing, words: Words): Promise<void> => {
  * A folder chosen on this machine, added as a vault and opened. A person who
  * chose no folder has asked for nothing.
  */
-const adds = async (on: Doing, words: Words): Promise<void> => {
+const adds = async (on: CommandDeps, words: Words): Promise<void> => {
   const path = await on.vaults.choose(words.folder)
   if (!path) return
   const answer = await on.vaults.add(path, '')
@@ -462,7 +462,7 @@ const adds = async (on: Doing, words: Words): Promise<void> => {
 }
 
 /** A vault called something else. Its folder keeps the name it has on disk. */
-const calls = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
+const calls = async (deed: Deed, on: CommandDeps, words: Words): Promise<void> => {
   if (!deed.name || deed.name === deed.vault.name) return
   const answer = await on.vaults.rename(deed.vault.id, deed.name)
   if (answer.refusal) return on.says(words.unvaulted[answer.refusal], 'refusal')
@@ -473,14 +473,14 @@ const calls = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
  * A vault taken off the list. Erasing it puts the folder in the trash this
  * machine keeps; forgetting it leaves the folder where it is.
  */
-const forgets = async (deed: Deed, erase: boolean, on: Doing, words: Words): Promise<void> => {
+const forgets = async (deed: Deed, erase: boolean, on: CommandDeps, words: Words): Promise<void> => {
   const id = deed.vault.id
   const refusal = await on.vaults.remove(id, erase)
   if (refusal) on.says(words.unvaulted[refusal], 'refusal')
 }
 
 /** A note travelled to, and a vault with none to travel to said. */
-const travels = async (path: string, on: Doing, words: Words): Promise<void> => {
+const travels = async (path: string, on: CommandDeps, words: Words): Promise<void> => {
   if (!path) return on.says(words.nowhere, 'caution')
   await on.goes.travel(path)
 }

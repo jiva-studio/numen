@@ -49,8 +49,8 @@ import { DEFAULT_PARTS } from './hanging'
 import { DEFAULT_STARTS } from './reviewing'
 import { settingAt } from './settings/configuring'
 import { write } from './settings/json5'
-import type { Asking as Commanding } from './commanding'
-import type { Asking, Way } from './finding'
+import type { CommandingDeps } from './commanding'
+import type { FindingDeps, Way } from './finding'
 import type { Documents, Page } from './document/reading'
 import type { Cue, Recordings } from './recording/transcript'
 import type {
@@ -79,7 +79,7 @@ import type {
   Removed,
   Renamed,
   Role,
-  Runs,
+  ArtifactRunner,
   Seat,
   Source,
   Stencilled,
@@ -182,7 +182,7 @@ export const vaults: Vaults = {
 export const cards: Cards = {
   stencils: async (limit) => {
     const answer = await cardsService.listStencils({ limit: limit ?? 0 })
-    return { stencils: answer.stencils.map(offered), held: answer.held }
+    return { stencils: answer.stencils.map(offered), held: answer.total }
   },
   makeDeck: async (title, folder) => {
     const answer = await cardsService.createDeck({ title, folder })
@@ -267,7 +267,7 @@ export const cards: Cards = {
 }
 
 /** The same questions, in the shape the window asks them. */
-export const core: Core & Asking & Commanding = {
+export const core: Core & FindingDeps & CommandingDeps = {
   vaults: () => vaults.list(),
   neighbourhood: async (path) => around(await notes.getNeighbourhood({ path })),
   opening: async () => (await notes.getOpeningNote({})).note ?? null,
@@ -539,7 +539,7 @@ const spoken = (one: CueMessage): Cue => ({ text: one.text, from: one.from, to: 
  * does the work follows from the file, so the window names the artifact and
  * never the producer.
  */
-export const running: Runs = {
+export const running: ArtifactRunner = {
   carries: async (path) => {
     const answer = await artifacts.listArtifacts({ path })
     const held: Record<string, Reached> = {}

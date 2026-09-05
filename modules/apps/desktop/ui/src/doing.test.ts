@@ -6,11 +6,11 @@
  */
 import { describe, expect, it } from 'vitest'
 import { commandsOf, deedOf, runnable, type Deed, type Where } from './commanding'
-import { does, reaching, type Doing, type Store } from './doing'
+import { does, reaching, type CommandDeps, type Store } from './doing'
 import type {
   Added,
   Artifact,
-  Carries,
+  ArtifactStates,
   Movement,
   Outcome,
   Reached,
@@ -95,7 +95,7 @@ const window = (
     /** What making a folder was refused with. */
     folderRefused?: Refused
     /** What the file in front carries. */
-    carries?: Carries
+    carries?: ArtifactStates
     /** How asking for an artifact of a file came out. */
     outcome?: Outcome
     /** What dropping a transcript was refused with. */
@@ -112,7 +112,7 @@ const window = (
   const refusal = answers.turnedDown ?? null
   /** The runs this one window has been told this build cannot do. */
   const runs = runnable()
-  const on: Doing = {
+  const on: CommandDeps = {
     files: {
       makes: async (title, from, seat) => {
         done.push(`makes ${title} ${from || '—'} ${seat ?? '—'}`)
@@ -228,7 +228,7 @@ const window = (
 }
 
 /** One command carried out over the note in front. */
-const carry = async (deed: Deed, on: Doing) => does(deed, on, words)
+const carry = async (deed: Deed, on: CommandDeps) => does(deed, on, words)
 
 describe('every command that is offered', () => {
   it('is carried out by something', async () => {
@@ -634,7 +634,7 @@ describe('a note removed', () => {
 
   it('leaves the plexes alone where the vault opens with no note at all', async () => {
     const one = window()
-    const nowhere: Doing = { ...one.on, goes: { ...one.on.goes, opening: () => '' } }
+    const nowhere: CommandDeps = { ...one.on, goes: { ...one.on.goes, opening: () => '' } }
 
     await carry(deedOf('remove', front()), nowhere)
 
@@ -711,7 +711,7 @@ describe('several files removed at once', () => {
 
   it('takes the rest out where the vault refuses one, and says what it refused', async () => {
     const one = window()
-    const picky: Doing = {
+    const picky: CommandDeps = {
       ...one.on,
       files: {
         ...one.on.files,
@@ -884,7 +884,7 @@ describe('a command over the vault', () => {
 
   it('says a vault that opens with no note at all', async () => {
     const one = window()
-    const empty: Doing = { ...one.on, goes: { ...one.on.goes, opening: () => '' } }
+    const empty: CommandDeps = { ...one.on, goes: { ...one.on.goes, opening: () => '' } }
 
     await does(deedOf('first', front()), empty, words)
 
@@ -1053,7 +1053,7 @@ describe('nothing to carry out', () => {
 
   it('says what the vault could not be asked, and asks no further', async () => {
     const one = window()
-    const broken: Doing = {
+    const broken: CommandDeps = {
       ...one.on,
       files: { ...one.on.files, removes: async () => Promise.reject(new Error('gone')) },
     }
