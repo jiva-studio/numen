@@ -119,11 +119,13 @@ func TestTheLayersAreWhatTheyAre(t *testing.T) {
 func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
 	var wrong []string
 	var read int
+	reached := map[string]bool{}
 	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, "_test.go") {
 			return err
 		}
-		if !holds(pure, within("..", path)) {
+		pkg := within("..", path)
+		if !holds(pure, pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
@@ -131,6 +133,11 @@ func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
 			return err
 		}
 		read++
+		for _, one := range pure {
+			if pkg == one || strings.HasPrefix(pkg, one+"/") {
+				reached[one] = true
+			}
+		}
 		for _, one := range file.Imports {
 			to, err := strconv.Unquote(one.Path.Value)
 			if err != nil || !strings.HasPrefix(to, module) {
@@ -151,9 +158,16 @@ func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
 	}
 
 	// A walk that read no test of a pure package is a rule checked against
-	// nothing, and it passes.
+	// nothing, and it passes. A count cannot say which of them it read, and
+	// four of the five would clear any floor the fifth is left out of, so each
+	// is named: a package that moved is a package this rule stopped at.
 	if read < 20 {
 		t.Fatalf("%d tests of the pure packages read: the walk is not reading them", read)
+	}
+	for _, one := range pure {
+		if !reached[one] {
+			t.Errorf("%s has no test the walk read: the rule stops at that package", one)
+		}
 	}
 }
 
@@ -172,11 +186,13 @@ func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
 func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 	var wrong []string
 	var read int
+	reached := map[string]bool{}
 	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
 		}
-		if strings.HasSuffix(path, "_test.go") || !adapting(within("..", path)) {
+		pkg := within("..", path)
+		if strings.HasSuffix(path, "_test.go") || !adapting(pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -184,6 +200,7 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 			return err
 		}
 		read++
+		reached[family(pkg)] = true
 		for _, one := range claimed(file) {
 			wrong = append(wrong, path+" names port."+one)
 		}
@@ -197,9 +214,21 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 	}
 
 	// A walk that read no file of an adapter is a rule checked against nothing,
-	// and it passes.
+	// and it passes. A count says how much and never what, and the adapters the
+	// compiler holds are half of them: every adapter there is is named, so one
+	// the filter stopped recognising says so instead of thinning the count.
 	if read < 50 {
 		t.Fatalf("%d files of the adapters read: the walk is not reading them", read)
+	}
+	for _, one := range public {
+		if !reached["adapter/"+one] {
+			t.Errorf("no file of adapter/%s was read: the rule stops at that adapter", one)
+		}
+	}
+	for _, one := range held {
+		if !reached["internal/adapter/"+one] {
+			t.Errorf("no file of internal/adapter/%s was read: the rule stops at that adapter", one)
+		}
 	}
 }
 
@@ -1069,6 +1098,7 @@ var layers = map[string]bool{
 // The tests are read too: most of a package's call sites are in them.
 func TestNoPackageIsImportedUnderItsLayer(t *testing.T) {
 	var wrong []string
+	var read, aliased int
 	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
@@ -1077,8 +1107,13 @@ func TestNoPackageIsImportedUnderItsLayer(t *testing.T) {
 		if err != nil {
 			return err
 		}
+		read++
 		for _, one := range file.Imports {
-			if one.Name == nil || !layers[one.Name.Name] {
+			if one.Name == nil {
+				continue
+			}
+			aliased++
+			if !layers[one.Name.Name] {
 				continue
 			}
 			held, err := strconv.Unquote(one.Path.Value)
@@ -1094,6 +1129,43 @@ func TestNoPackageIsImportedUnderItsLayer(t *testing.T) {
 	}
 	for _, one := range wrong {
 		t.Error(one)
+	}
+
+	// A walk that read no file, or one that met no alias, is a rule checked
+	// against nothing, and it passes: this rule has only aliases to read.
+	if read < 100 {
+		t.Fatalf("%d files of the core read: the walk is not reading it", read)
+	}
+	if aliased < 10 {
+		t.Fatalf("%d imports carry a name of their own: the walk is reading no alias", aliased)
+	}
+}
+
+// What the rule refuses, read against imports written to be refused. The name
+// of a layer says only which folder the package sits in; any other word is the
+// caller saying what the package is, which is the whole point of writing one.
+func TestWhatTheLayerAliasRuleRefuses(t *testing.T) {
+	file, err := parser.ParseFile(token.NewFileSet(), "alias.go", `package p
+
+import (
+	usecase "`+module+`usecase/note"
+	adapter "`+module+`adapter/index"
+	vaults "`+module+`usecase/vault"
+	"`+module+`domain"
+	pathpkg "path"
+)
+`, parser.ImportsOnly)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var refused []string
+	for _, one := range file.Imports {
+		if one.Name != nil && layers[one.Name.Name] {
+			refused = append(refused, one.Name.Name)
+		}
+	}
+	if want := []string{"usecase", "adapter"}; !slices.Equal(refused, want) {
+		t.Errorf("the rule refuses %v, want %v", refused, want)
 	}
 }
 
