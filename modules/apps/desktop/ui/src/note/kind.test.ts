@@ -11,7 +11,7 @@ import { nextTick, ref } from 'vue'
 import type { PlexShowing } from '@numen/ui'
 import { noting, type NoteTabDeps, type NoteTabState } from './kind'
 import { putting } from '../putting'
-import type { Drawn } from './entering'
+import type { EditorHandle } from './entering'
 import type { drawn } from './drawn'
 import type { editing } from './editing'
 import type { State } from './tab'
@@ -98,7 +98,7 @@ const drawings = () => {
 /** An editor that says whether it took what it was handed. */
 const editor = (takes = true) => {
   const focused: number[] = []
-  const drawn: Drawn = {
+  const drawn: EditorHandle = {
     focus: () => {
       focused.push(-1)
       return takes

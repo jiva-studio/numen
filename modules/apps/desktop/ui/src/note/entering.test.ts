@@ -6,13 +6,13 @@
  */
 import { describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
-import { entering, ITSELF, type Drawn } from './entering'
+import { entering, ITSELF, type EditorHandle } from './entering'
 
 /** An editor that says whether it took what it was handed. */
 const editor = (takes = true) => {
   const focused: number[] = []
   const measured: number[] = []
-  const drawn: Drawn = {
+  const drawn: EditorHandle = {
     focus: () => {
       focused.push(ITSELF)
       return takes

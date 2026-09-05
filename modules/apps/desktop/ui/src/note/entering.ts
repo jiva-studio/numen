@@ -9,7 +9,7 @@
 import { nextTick } from 'vue'
 
 /** What the editor of a note answers once it is drawn. */
-export interface Drawn {
+export interface EditorHandle {
   focus(): boolean
   measure(): void
   reveal(line: number): boolean
@@ -30,7 +30,7 @@ export function entering() {
   const owed = new Map<string, number>()
 
   /** The editor of each open note, for as long as its tab is drawn. */
-  const editors = new Map<string, Drawn>()
+  const editors = new Map<string, EditorHandle>()
 
   const enters = (id: string) => {
     const line = owed.get(id)
@@ -58,7 +58,7 @@ export function entering() {
       editors.delete(id)
       return
     }
-    editors.set(id, editor as Drawn)
+    editors.set(id, editor as EditorHandle)
     void nextTick(() => enters(id))
   }
 
