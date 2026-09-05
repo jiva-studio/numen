@@ -442,7 +442,16 @@ afterEach(() => {
 async function drawn() {
   const window = mount(App, {
     global: {
-      stubs: { Plex: true, Editor: editor, Agent: true, Reader: reader, Palette: true, Tree: true },
+      // A stub is named by the binding the component is drawn through, and the
+      // window's own palette draws the library's under `PaletteView`.
+      stubs: {
+        Plex: true,
+        Editor: editor,
+        Agent: true,
+        Reader: reader,
+        PaletteView: true,
+        Tree: true,
+      },
     },
   })
   windows.push(window)

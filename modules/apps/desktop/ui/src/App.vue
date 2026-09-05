@@ -46,7 +46,7 @@ import { raising } from './raising'
 import { windowing } from './windowing'
 import Leaving from './Leaving.vue'
 import Failure from './Failure.vue'
-import Field from './Field.vue'
+import Palette from './Palette.vue'
 import Welcoming from './Welcoming.vue'
 import { telling } from './telling'
 import { agentKind, talking } from './agent/kind'
@@ -703,7 +703,7 @@ onUnmounted(() => {
 
     <Leaving :questions="going.questions.value" :called="titled" />
 
-    <Field
+    <Palette
       :commands="commands"
       :search="palette"
       :doing="doing"
