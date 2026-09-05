@@ -26,7 +26,7 @@ func wrote(t *testing.T, body string) container.Config {
 // palette is answered by the next rename and not by the next launch.
 func TestTheSettingIsReadAsEachRenameIsMade(t *testing.T) {
 	cfg := wrote(t, `{"naming":{"sync_title_and_filename":true}}`)
-	asking := cfg.Syncing()
+	asking := cfg.SyncSetting()
 	if !asking.Kept() {
 		t.Fatal("a title and a filename are told apart")
 	}
@@ -50,7 +50,7 @@ func TestWhatIsReadWhereTheFileSaysNothing(t *testing.T) {
 		"a file that does not parse": `{"naming":`,
 	} {
 		t.Run(name, func(t *testing.T) {
-			if !wrote(t, body).Syncing().Kept() {
+			if !wrote(t, body).SyncSetting().Kept() {
 				t.Error("a title and a filename are told apart")
 			}
 		})

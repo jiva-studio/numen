@@ -72,13 +72,13 @@ func (e MissingStretch) Error() string {
 		e.Instead, e.Matched+"…")
 }
 
-// Twice is a stretch standing in more than one place, which is a stretch that
-// does not say which of them was meant.
-type Twice struct {
+// AmbiguousStretch is a stretch standing in more than one place, which is a
+// stretch that does not say which of them was meant.
+type AmbiguousStretch struct {
 	Places int
 }
 
-func (e Twice) Error() string {
+func (e AmbiguousStretch) Error() string {
 	return fmt.Sprintf("this stretch stands in %d places; take in enough of what is around "+
 		"one of them to tell it from the others", e.Places)
 }
@@ -113,7 +113,7 @@ func (u Replace) Execute(
 		switch {
 		case len(where) == 1:
 		case len(where) > 1:
-			return Twice{Places: len(where)}
+			return AmbiguousStretch{Places: len(where)}
 		case becomes != "" && strings.Contains(body, becomes):
 			return ErrAlreadyWritten
 		default:

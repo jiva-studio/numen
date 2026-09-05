@@ -34,7 +34,8 @@ func (a *API) RenameNote(
 	if renamed.Moved != nil {
 		out.Moved = movedOf(*renamed.Moved)
 	}
-	if err != nil {
+	out.Unlevelled = a.unlevelled(err)
+	if err != nil && !out.GetUnlevelled() {
 		reason, refused := wire.RefusalBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
@@ -59,7 +60,8 @@ func (a *API) RemoveFile(
 	defer a.Writing.done()
 
 	removed, err := a.removal(ctx, showing, r.Msg.GetPath(), r.Msg.GetDestroy())
-	if err != nil {
+	behind := a.unlevelled(err)
+	if err != nil && !behind {
 		reason, refused := wire.RefusalBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
@@ -70,8 +72,9 @@ func (a *API) RemoveFile(
 	// went is said here, so the tree drops the row whatever stood on it.
 	a.Listeners.tell(change{paths: []string{removed.Path}})
 	return connect.NewResponse(&v1.RemoveFileResponse{
-		Trashed:  removed.Trashed,
-		Dangling: removed.Dangling,
+		Trashed:    removed.Trashed,
+		Dangling:   removed.Dangling,
+		Unlevelled: behind,
 	}), nil
 }
 
@@ -89,7 +92,7 @@ func (a *API) removal(
 }
 
 // namedByOf is which of the two a rename wrote, as the schema carries it.
-func namedByOf(by note.NamedBy) v1.NamedBy {
+func namedByOf(by note.NameSource) v1.NamedBy {
 	switch by {
 	case note.ByFrontmatter:
 		return v1.NamedBy_NAMED_BY_FRONTMATTER

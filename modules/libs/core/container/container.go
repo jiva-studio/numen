@@ -143,10 +143,10 @@ func (c Config) Indexing(said settings.Indexing) Config {
 	return c
 }
 
-// Syncing reads, as each rename is made, whether a note's title and its
+// SyncSetting reads, as each rename is made, whether a note's title and its
 // filename are kept as one name. A file that cannot be read keeps them one
 // name, which is what an installation nobody has configured does.
-func (c Config) Syncing() note.Syncing {
+func (c Config) SyncSetting() note.SyncSetting {
 	return func() note.SyncTitleAndFilename {
 		path, err := c.settingsFile()
 		if err != nil {

@@ -43,7 +43,7 @@ func (c Config) Notes(
 	// One note.Move settles every note that travelled, whether a rename sent it
 	// or a move did.
 	moving := note.NewMove(readers, writers, links, queries, sources, index, now)
-	moving.Sync = c.Syncing()
+	moving.Sync = c.SyncSetting()
 
 	return Notes{
 		Read:    note.Read{Readers: readers},

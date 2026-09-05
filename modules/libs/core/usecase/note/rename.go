@@ -27,7 +27,7 @@ func NewRename(moving Move) Rename { return Rename{Move: moving} }
 type RenameResult struct {
 	Path  string // where the note is filed now
 	Title string
-	By    NamedBy
+	By    NameSource
 	Moved *MoveResult // nil when the file is not at a different path
 }
 
@@ -42,7 +42,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 		return RenameResult{}, err
 	}
 
-	var by NamedBy
+	var by NameSource
 	e := Editing{Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now}
 	_, err = e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		if _, titled := doc.Title(); titled {

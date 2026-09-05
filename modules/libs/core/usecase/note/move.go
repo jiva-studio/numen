@@ -38,7 +38,7 @@ type Move struct {
 	// Sync is asked, as each rename is made, whether a note's title and its
 	// filename are kept as one name. Nothing asked keeps the two one name,
 	// which is what an installation nobody has configured does.
-	Sync Syncing
+	Sync SyncSetting
 }
 
 // NewMove is what files a note somewhere else: the vault it is read and written
@@ -253,7 +253,7 @@ func (u Move) repair(ctx context.Context, v domain.Vault, in string, address dom
 }
 
 func (u Move) index(ctx context.Context, v domain.Vault, paths ...string) error {
-	return u.Index(ctx, v, paths)
+	return Levelled(u.Index(ctx, v, paths), paths...)
 }
 
 // Into is where a note lands when it is filed under a folder, keeping its name.

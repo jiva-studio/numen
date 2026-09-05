@@ -48,7 +48,7 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 		raw   string
 		title string
 		path  string
-		by    note.NamedBy
+		by    note.NameSource
 		holds []string
 		lacks []string
 	}{
@@ -527,7 +527,7 @@ func TestRenamingLeavesTheFileWhereItIsWhereTheTwoAreToldApart(t *testing.T) {
 	for name, c := range map[string]struct {
 		raw   string
 		title string
-		by    note.NamedBy
+		by    note.NameSource
 		holds string
 	}{
 		"a title in the frontmatter": {

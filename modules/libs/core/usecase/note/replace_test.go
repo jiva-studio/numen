@@ -86,12 +86,12 @@ func TestAStretchStandingTwiceIsRefused(t *testing.T) {
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"foe advances", "foe retreats", domain.Fingerprint{})
-	var twice note.Twice
-	if !errors.As(err, &twice) {
-		t.Fatalf("want Twice, got %v", err)
+	var ambiguous note.AmbiguousStretch
+	if !errors.As(err, &ambiguous) {
+		t.Fatalf("want AmbiguousStretch, got %v", err)
 	}
-	if twice.Places != 2 {
-		t.Errorf("counted %d places", twice.Places)
+	if ambiguous.Places != 2 {
+		t.Errorf("counted %d places", ambiguous.Places)
 	}
 	if body := c.read(t, "Aggressor.md"); body != was {
 		t.Errorf("the refused replacement landed anyway:\n%s", body)

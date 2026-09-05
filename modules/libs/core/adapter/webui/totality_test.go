@@ -75,7 +75,7 @@ func TestEverySourceKindIsWrittenFromOne(t *testing.T) {
 }
 
 func TestEveryNamingIsWrittenFromOne(t *testing.T) {
-	testsupport.Produced(t, map[v1.NamedBy]note.NamedBy{
+	testsupport.Produced(t, map[v1.NamedBy]note.NameSource{
 		v1.NamedBy_NAMED_BY_FRONTMATTER: note.ByFrontmatter,
 		v1.NamedBy_NAMED_BY_FILENAME:    note.ByFilename,
 	}, namedByOf)
