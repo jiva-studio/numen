@@ -32,6 +32,10 @@ test('no component styles a class no template of its can set', () => {
     read.some((at) => at.endsWith('welcome/WelcomePage.vue')),
     'the walk did not read WelcomePage.vue, which is the component this rule exists for',
   )
+  assert.ok(
+    read.some((at) => at.endsWith('apps/mobile/src/plex/PlexPage.vue')),
+    "the walk did not read the phone's PlexPage.vue, so the rule stops at the mobile border",
+  )
 })
 
 /**

@@ -24,8 +24,13 @@ test('no type of the interface modules is named by a gerund or a participle', ()
   assert.deepEqual(wrong, [])
 
   // A walk that read no declaration is a rule checked against nothing, and it
-  // passes.
+  // passes. A count alone cannot say which modules it read, so the furthest of
+  // them is named: the phone is where a rule stops at a border first.
   assert.ok(found.length > 400, `${found.length} types read: the walk is not reading the modules`)
+  assert.ok(
+    found.some(({ at }) => at.endsWith('apps/mobile/src/core.ts')),
+    "the walk did not read the phone's core.ts, so the rule stops at the mobile border",
+  )
 })
 
 /**

@@ -15,6 +15,7 @@ export const modules = [
   { name: '@numen/wire', at: 'modules/libs/wire' },
   { name: '@numen/desktop-ui', at: 'modules/apps/desktop/ui/src' },
   { name: '@numen/flashcards-ui', at: 'modules/apps/desktop/flashcards/src' },
+  { name: '@numen/mobile', at: 'modules/apps/mobile/src' },
 ]
 
 /** What is nobody's writing: a dependency, a build, a generated schema. */

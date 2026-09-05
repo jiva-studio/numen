@@ -11,9 +11,9 @@ import { sources } from './source.mjs'
  */
 test('no name is renamed on its way across our own border', () => {
   const wrong = []
-  let read = 0
+  const read = []
   for (const { at, text } of sources(['.ts', '.vue'])) {
-    read += 1
+    read.push(at)
     for (const one of renames(text)) {
       const said = `${at}: ${one}`
       if (!owed.includes(said)) wrong.push(said)
@@ -22,8 +22,16 @@ test('no name is renamed on its way across our own border', () => {
   assert.deepEqual(wrong, [])
 
   // A walk that read no file of the modules is a rule checked against nothing,
-  // and it passes.
-  assert.ok(read > 300, `${read} files of the interface modules read: the walk is not reading them`)
+  // and it passes. A count alone cannot say which modules it read, so the
+  // furthest of them is named: the phone takes from the library too.
+  assert.ok(
+    read.length > 300,
+    `${read.length} files of the interface modules read: the walk is not reading them`,
+  )
+  assert.ok(
+    read.some((at) => at.endsWith('apps/mobile/src/plex/picture.ts')),
+    "the walk did not read the phone's picture.ts, so the rule stops at the mobile border",
+  )
 
   // An entry naming a border nothing renames across any more is a rule kept
   // alive by a line nobody reads. The list only shrinks.
