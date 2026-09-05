@@ -6,7 +6,7 @@
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import Segmented from './Segmented.vue'
+import SegmentedControl from './SegmentedControl.vue'
 
 const CHOICES = [
   { id: 'small', text: 'Small' },
@@ -14,18 +14,18 @@ const CHOICES = [
   { id: 'large', text: 'Large' },
 ]
 
-type SegmentedProps = InstanceType<typeof Segmented>['$props']
+type SegmentedControlProps = InstanceType<typeof SegmentedControl>['$props']
 
-const mountSegmented = (props: Partial<SegmentedProps> = {}) =>
-  mount(Segmented, { props: { choices: CHOICES, modelValue: 'small', ...props } })
+const mountSegmentedControl = (props: Partial<SegmentedControlProps> = {}) =>
+  mount(SegmentedControl, { props: { choices: CHOICES, modelValue: 'small', ...props } })
 
 /** Every choice the control has handed on, in the order it handed them on. */
-const handed = (control: ReturnType<typeof mountSegmented>): readonly unknown[] =>
+const handed = (control: ReturnType<typeof mountSegmentedControl>): readonly unknown[] =>
   (control.emitted('update:modelValue') ?? []).map((said) => (said as unknown[])[0])
 
 describe('what a screen reader is told', () => {
   it('is a set of choices, one of them in force', () => {
-    const control = mountSegmented()
+    const control = mountSegmentedControl()
     expect(control.get('[role="radiogroup"]')).toBeTruthy()
 
     const segments = control.findAll('[role="radio"]')
@@ -38,7 +38,7 @@ describe('what a screen reader is told', () => {
   })
 
   it('draws what each choice says, in the order they were offered', () => {
-    const control = mountSegmented()
+    const control = mountSegmentedControl()
     expect(control.findAll('[role="radio"]').map((one) => one.text())).toEqual([
       'Small',
       'Medium',
@@ -49,13 +49,13 @@ describe('what a screen reader is told', () => {
 
 describe('choosing', () => {
   it('hands back the identifier it was given', async () => {
-    const control = mountSegmented()
+    const control = mountSegmentedControl()
     await control.findAll('[role="radio"]')[1]?.trigger('click')
     expect(handed(control)).toEqual(['medium'])
   })
 
   it('leaves the segment in force in force', async () => {
-    const control = mountSegmented()
+    const control = mountSegmentedControl()
     await control.findAll('[role="radio"]')[0]?.trigger('click')
 
     expect(handed(control).at(-1) ?? 'small').toBe('small')
@@ -63,7 +63,7 @@ describe('choosing', () => {
   })
 
   it('goes to the ends on Home and End', async () => {
-    const control = mountSegmented({ modelValue: 'medium' })
+    const control = mountSegmentedControl({ modelValue: 'medium' })
     const segments = control.findAll('[role="radio"]')
 
     await segments[1]?.trigger('keydown', { key: 'End' })
@@ -74,13 +74,13 @@ describe('choosing', () => {
   })
 
   it('is left where it is on Home and End while nobody may turn it', async () => {
-    const control = mountSegmented({ modelValue: 'medium', disabled: true })
+    const control = mountSegmentedControl({ modelValue: 'medium', disabled: true })
     await control.findAll('[role="radio"]')[1]?.trigger('keydown', { key: 'End' })
     expect(handed(control)).toEqual([])
   })
 
   it('hands nothing on while nobody may turn it', async () => {
-    const control = mountSegmented({ disabled: true })
+    const control = mountSegmentedControl({ disabled: true })
     await control.findAll('[role="radio"]')[1]?.trigger('click')
     expect(handed(control)).toEqual([])
   })
@@ -89,7 +89,7 @@ describe('choosing', () => {
 // One press is one turn. The row already walks to its ends on these keys, and
 // a choice made twice is written twice by whoever is listening.
 it('hands a choice on once for one press of Home or End', async () => {
-  const control = mountSegmented({ modelValue: 'medium' })
+  const control = mountSegmentedControl({ modelValue: 'medium' })
   const segments = control.findAll('[role="radio"]')
 
   await segments[1]?.trigger('keydown', { key: 'End' })

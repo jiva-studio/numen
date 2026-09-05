@@ -1,4 +1,4 @@
-export { default as Segmented } from './Segmented.vue'
+export { default as SegmentedControl } from './SegmentedControl.vue'
 
 /** One of the choices a segmented control offers. */
 export interface SegmentedChoice {

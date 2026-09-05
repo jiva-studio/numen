@@ -8,7 +8,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { computed, ref } from 'vue'
-import Segmented from './Segmented.vue'
+import SegmentedControl from './SegmentedControl.vue'
 import { lightness } from '@/fixtures/colour'
 import { DARK, drawnDark } from '@/fixtures/theme'
 
@@ -25,7 +25,7 @@ interface Knobs {
 
 const meta: Meta<Knobs> = {
   title: 'Controls/Segmented control',
-  component: Segmented,
+  component: SegmentedControl,
   parameters: { layout: 'centered' },
   argTypes: {
     words: { control: 'text' },
@@ -40,7 +40,7 @@ const meta: Meta<Knobs> = {
     width: 'auto',
   },
   render: (args) => ({
-    components: { Segmented },
+    components: { SegmentedControl },
     setup: () => {
       const choices = computed(() =>
         args.words
@@ -56,7 +56,7 @@ const meta: Meta<Knobs> = {
     },
     template: `
       <div :style="{ padding: '2rem', inlineSize: args.width }">
-        <Segmented
+        <SegmentedControl
           v-model="chosen"
           aria-label="How large it is drawn"
           :choices="choices"

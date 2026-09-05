@@ -8,7 +8,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import { NumberField } from './number-field'
-import { Segmented } from './segmented'
+import { SegmentedControl } from './segmented'
 import { Select } from './select'
 import { TimeField } from './time-field'
 
@@ -34,7 +34,7 @@ describe('the height a row shares', () => {
   })
 
   it('is what a row of segments stands at', () => {
-    expect(mount(Segmented, { props: { choices: CHOICES } }).classes()).toContain(ROW)
+    expect(mount(SegmentedControl, { props: { choices: CHOICES } }).classes()).toContain(ROW)
   })
 })
 

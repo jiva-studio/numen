@@ -7,7 +7,7 @@
  * says nothing about where that is.
  */
 import { computed, useTemplateRef, ref, watch } from 'vue'
-import Controls from './Controls.vue'
+import ReaderToolbar from './ReaderToolbar.vue'
 import Sheet from './Sheet.vue'
 import { useAsking } from './asking'
 import { useRoom } from './room'
@@ -178,7 +178,7 @@ defineExpose({
       </p>
     </div>
 
-    <Controls
+    <ReaderToolbar
       v-if="pages > 0"
       v-model:zoom="zoom"
       :pages="pages"

@@ -34,7 +34,7 @@ export { TimeField, onTheClock } from './components/ui/time-field'
 export { Slider } from './components/ui/slider'
 
 /** Two to four choices side by side, one of them chosen. */
-export { Segmented } from './components/ui/segmented'
+export { SegmentedControl } from './components/ui/segmented'
 export type { SegmentedChoice } from './components/ui/segmented'
 
 /** One choice out of a list, taken from a menu the machine draws. */
@@ -126,7 +126,7 @@ export type { ComposerState, KeyIntent } from './composer/state'
 export { following } from './following/following'
 export type { FollowingDeps } from './following/following'
 
-export { default as Dots } from './dots/Dots.vue'
+export { default as TypingIndicator } from './dots/TypingIndicator.vue'
 export { default as Spinner } from './waiting/Spinner.vue'
 export { default as Skeleton } from './waiting/Skeleton.vue'
 

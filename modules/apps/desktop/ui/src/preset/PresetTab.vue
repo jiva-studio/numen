@@ -9,7 +9,7 @@
  * `detail`, `day`, `choice` and `percent`.
  */
 import { computed } from 'vue'
-import { NumberField, Segmented, Select, Slider, Switch, WeekdayChips, WEEK } from '@numen/ui'
+import { NumberField, SegmentedControl, Select, Slider, Switch, WeekdayChips, WEEK } from '@numen/ui'
 import type { Day } from '@numen/ui'
 import CurveSlider from './CurveSlider.vue'
 import type { PresetTabState, SettingValue } from './kind'
@@ -181,7 +181,7 @@ const stopped = computed(() => words.stopped(stoppedAt.value))
         <section class="preset__goal" :aria-label="words.goal">
           <p class="preset__label" data-preset="label">{{ words.goal }}</p>
 
-          <Segmented
+          <SegmentedControl
             :model-value="settings.goal"
             :choices="goals"
             @update:model-value="(one: string) => props.held.chooses(one as Goal)"
@@ -235,7 +235,7 @@ const stopped = computed(() => words.stopped(stoppedAt.value))
                 data-preset="choice"
                 @update:model-value="ruled"
               />
-              <Segmented
+              <SegmentedControl
                 v-else-if="field === 'counts'"
                 :model-value="settings.counts"
                 :choices="counts"

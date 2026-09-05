@@ -7,11 +7,11 @@
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import Controls from './Controls.vue'
+import ReaderToolbar from './ReaderToolbar.vue'
 
 /** The controls over a document of that many pages, open at the first. */
 const drawn = (pages = 200, at = 0) =>
-  mount(Controls, { props: { pages, at, 'onUpdate:at': (page: number) => void page } })
+  mount(ReaderToolbar, { props: { pages, at, 'onUpdate:at': (page: number) => void page } })
 
 describe('the page asked for', () => {
   it('is the page typed, counted from one', async () => {

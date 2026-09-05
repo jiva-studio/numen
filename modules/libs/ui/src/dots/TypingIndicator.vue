@@ -6,13 +6,13 @@ const DOTS = 3
 </script>
 
 <template>
-  <span class="dots numen">
-    <span v-for="dot in DOTS" :key="dot" class="dots__dot" />
+  <span class="typing numen">
+    <span v-for="dot in DOTS" :key="dot" class="typing__dot" />
   </span>
 </template>
 
 <style scoped>
-.dots {
+.typing {
   /* How large a dot is drawn, and how far it rises. */
   --size: 0.25rem;
   --rise: 0.1875rem;
@@ -27,24 +27,24 @@ const DOTS = 3
 
 /* The colour is whatever they stand on, so the same dots read on a plain
    surface and inside a filled button. */
-.dots__dot {
+.typing__dot {
   inline-size: var(--size);
   block-size: var(--size);
   border-radius: var(--numen-radius-pill);
   background: currentColor;
   opacity: 0.45;
-  animation: dots-rise var(--cycle) ease-in-out infinite;
+  animation: typing-rise var(--cycle) ease-in-out infinite;
 }
 
-.dots__dot:nth-child(2) {
+.typing__dot:nth-child(2) {
   animation-delay: calc(var(--cycle) / 3);
 }
 
-.dots__dot:nth-child(3) {
+.typing__dot:nth-child(3) {
   animation-delay: calc(var(--cycle) / 3 * 2);
 }
 
-@keyframes dots-rise {
+@keyframes typing-rise {
   0%,
   60%,
   100% {

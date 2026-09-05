@@ -8,7 +8,7 @@
  * where they stand.
  */
 import { computed } from 'vue'
-import { Button, NumberField, Segmented, Select, Switch, TimeField } from '@numen/ui'
+import { Button, NumberField, SegmentedControl, Select, Switch, TimeField } from '@numen/ui'
 import type { SelectChoice } from '@numen/ui'
 import SettingRow from './SettingRow.vue'
 import type { SettingsTabState } from './kind'
@@ -144,7 +144,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           :name="words.mode"
           :detail="held.pinned.value ? words.pinned : words.modeDetail"
         >
-          <Segmented
+          <SegmentedControl
             :model-value="held.mode.value"
             :choices="modes"
             :disabled="held.pinned.value"

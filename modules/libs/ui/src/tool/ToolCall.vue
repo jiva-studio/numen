@@ -4,7 +4,7 @@
  *
  * A line about work: quieter than what is said, and marked.
  */
-import Dots from '../dots/Dots.vue'
+import TypingIndicator from '../dots/TypingIndicator.vue'
 
 withDefaults(
   defineProps<{
@@ -31,7 +31,7 @@ withDefaults(
     <span v-if="about" class="min-w-0 flex-1 truncate opacity-70">{{ about }}</span>
     <span v-else class="flex-1" />
     <span v-if="aside" class="flex-none tabular-nums opacity-70">{{ aside }}</span>
-    <Dots v-if="working" />
+    <TypingIndicator v-if="working" />
   </p>
 </template>
 
