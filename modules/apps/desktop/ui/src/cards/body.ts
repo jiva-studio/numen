@@ -12,7 +12,7 @@ import {
   ordered,
   reordered,
   type DeckSection,
-  type CardLanding,
+  type InsertionPoint,
   type Stencil,
   type DeckCard,
 } from '@numen/ui'
@@ -443,7 +443,7 @@ export const removed = (deck: Deck, id: string): Deck => ({
  * under no section, one let go past the last card under a heading stands under
  * that heading, and one let go at the end stands under the last section.
  */
-export const carried = (deck: Deck, id: string, at: CardLanding): Deck => {
+export const carried = (deck: Deck, id: string, at: InsertionPoint): Deck => {
   const held = deck.cards.find((card) => card.id === id)
   if (!held) return deck
   const left = deck.cards.filter((card) => card.id !== id)
@@ -593,7 +593,7 @@ export const fieldGone = (sheet: Sheet, field: string): Sheet => ({
  * A field let go somewhere in the order. The first field names every card the
  * stencil cuts, so it stays first and nothing lands above it.
  */
-export const fieldCarried = (sheet: Sheet, field: string, at: CardLanding): Sheet => ({
+export const fieldCarried = (sheet: Sheet, field: string, at: InsertionPoint): Sheet => ({
   ...sheet,
   fields: reordered(sheet.fields, field, at),
 })
@@ -603,7 +603,7 @@ export const fieldCarried = (sheet: Sheet, field: string, at: CardLanding): Shee
  * order of the faces is the order a card's repetitions are taken from it, and
  * nothing among them is fixed.
  */
-export const faceCarried = (sheet: Sheet, id: string, at: CardLanding): Sheet => {
+export const faceCarried = (sheet: Sheet, id: string, at: InsertionPoint): Sheet => {
   const order = ordered(
     sheet.faces.map((face) => face.id),
     id,

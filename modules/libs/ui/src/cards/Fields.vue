@@ -22,7 +22,7 @@ import {
   objection,
   wayOf,
   type Problems,
-  type Landing,
+  type InsertionPoint,
   type Objection,
 } from './order'
 import { fieldRows, STENCIL_WORDS, type StencilWords } from './stencil'
@@ -44,7 +44,7 @@ const emit = defineEmits<{
   (event: 'rename', field: string, name: string): void
   (event: 'remove', field: string): void
   /** A field let go somewhere in the order: before another, or at the end. */
-  (event: 'move', field: string, at: Landing): void
+  (event: 'move', field: string, at: InsertionPoint): void
 }>()
 
 /** What these objections are named by, which is this list's alone. */
@@ -72,7 +72,7 @@ const objects = (field: string): Objection | null => naming.objection(field)
  * a field, at the end, or nowhere. The first field names every card, so nothing
  * lands above it and it goes nowhere itself.
  */
-const { carried, at, lift, over, release, drop, step } = useCarry<Landing | undefined>({
+const { carried, at, lift, over, release, drop, step } = useCarry<InsertionPoint | undefined>({
   order: () => props.fields,
   nowhere: undefined,
   lands: (held, lands) => landing(props.fields, held, lands),

@@ -5,7 +5,7 @@
  * clock.
  */
 
-import { declared, type Problems, type Landing } from './order'
+import { declared, type Problems, type InsertionPoint } from './order'
 import type { Stencil } from './stencil'
 
 /** One named slot and what stands in it. */
@@ -29,10 +29,10 @@ const END = 'the end of '
  * under that heading, and under the heading itself. The run before the first
  * section is named by the head of the deck.
  */
-export const endOf = (run: string): Landing => `${END}${run}`
+export const endOf = (run: string): InsertionPoint => `${END}${run}`
 
 /** Which run's end a landing is, and nothing for a landing that is not one. */
-export const ended = (at: Landing): string | null =>
+export const ended = (at: InsertionPoint): string | null =>
   typeof at === 'string' && at.startsWith(END) ? at.slice(END.length) : null
 
 /** One card as the deck draws it. */
@@ -333,7 +333,7 @@ export function grid(
  * stands moves nothing: the head of the deck is where the first card standing
  * under no section already is, and the end of a run is where its last card is.
  */
-export const lands = (runs: readonly Run[], carried: string, at: Landing): boolean => {
+export const lands = (runs: readonly Run[], carried: string, at: InsertionPoint): boolean => {
   if (at === carried) return false
   if (at === HEAD) return runs[0]?.tiles[0]?.id !== carried
 

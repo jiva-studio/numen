@@ -28,7 +28,7 @@ import {
   type Run,
   type Wrong,
 } from './deck'
-import { numbered, type Landing } from './order'
+import { numbered, type InsertionPoint } from './order'
 import type { Stencil } from './stencil'
 
 /** A card nothing is wrong with any value of. */
@@ -65,7 +65,7 @@ const emit = defineEmits<{
    * the head of the deck, at the head of the section of that identity, past
    * the last card standing under a heading, or at the end.
    */
-  (event: 'move', card: string, at: Landing): void
+  (event: 'move', card: string, at: InsertionPoint): void
   /**
    * One value of one card as it now reads. A card writing a field twice is
    * writing two values, of which `nth` says which was typed in.
@@ -91,17 +91,17 @@ const asking = shallowRef<string | null>(null)
  * The head of the deck stands first in the order, so the card at the top of the
  * first section is carried out of it by the keyboard as it is by the pointer.
  */
-const { carried, at, lift, over, release, drop, step } = useCarry<Landing | undefined>({
+const { carried, at, lift, over, release, drop, step } = useCarry<InsertionPoint | undefined>({
   order: () => [HEAD, ...props.cards.map((card) => card.id)],
   nowhere: undefined,
-  lands: (held: string, at: Landing): boolean => lands(shown.value.runs, held, at),
+  lands: (held: string, at: InsertionPoint): boolean => lands(shown.value.runs, held, at),
   moves: (held, at) => emit('move', held, at),
 })
 
 const shown = computed(() => grid(props.cards, props.sections, props.stencils, carried.value))
 
 /** Where the plus of a run stands in the order: past everything under it. */
-const after = (run: Run): Landing => endOf(run.id)
+const after = (run: Run): InsertionPoint => endOf(run.id)
 
 const add = (stencil: Stencil, run: Run): void => {
   asking.value = null

@@ -6,28 +6,29 @@
  * what a landing comes to are the caller's, and each is stated once.
  */
 import { shallowRef, type ShallowRef } from 'vue'
-import { stepped, type Landing, type Way } from './order'
+import { stepped, type InsertionPoint, type Way } from './order'
 
 /**
  * What following a carry takes: the order it runs along, and the rules.
  *
  * `At` is where letting go may put the thing carried. Where a place in the
- * order takes nothing — a row that is pinned — it is `Landing | undefined`, and
- * `nowhere` is the landing that stands for that.
+ * order takes nothing — a row that is pinned — it is
+ * `InsertionPoint | undefined`, and `nowhere` is the landing that stands for
+ * that.
  */
-export interface Carry<At extends Landing | undefined> {
+export interface Carry<At extends InsertionPoint | undefined> {
   /** The order, as the thing carried is stepped along it. */
   readonly order: () => readonly string[]
   /** Where a landing stands while the pointer is over nothing that takes one. */
   readonly nowhere: At
   /** Whether letting the thing carried go there moves it. */
-  readonly lands: (carried: string, at: Landing) => boolean
+  readonly lands: (carried: string, at: InsertionPoint) => boolean
   /** What a landing that is allowed comes to. */
-  readonly moves: (carried: string, at: Landing) => void
+  readonly moves: (carried: string, at: InsertionPoint) => void
 }
 
 /** What a carry answers: what is being carried, where it would land, and the gestures. */
-export interface CarryState<At extends Landing | undefined> {
+export interface CarryState<At extends InsertionPoint | undefined> {
   /** What is under the pointer's hand, and nothing while nothing is carried. */
   readonly carried: ShallowRef<string | null>
   /** Where letting go would put it. */
@@ -44,7 +45,7 @@ export interface CarryState<At extends Landing | undefined> {
   readonly step: (what: string, way: Way, press: KeyboardEvent) => void
 }
 
-export function useCarry<At extends Landing | undefined>(carry: Carry<At>): CarryState<At> {
+export function useCarry<At extends InsertionPoint | undefined>(carry: Carry<At>): CarryState<At> {
   const carried = shallowRef<string | null>(null)
   const at: ShallowRef<At> = shallowRef(carry.nowhere)
 

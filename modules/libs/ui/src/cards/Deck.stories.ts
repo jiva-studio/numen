@@ -9,7 +9,7 @@ import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Deck from './Deck.vue'
 import { blanks, HEAD, type DeckSection, type DeckCard, type Wrong } from './deck'
-import { declared, type Landing } from './order'
+import { declared, type InsertionPoint } from './order'
 import type { Stencil } from './stencil'
 
 interface Corpus {
@@ -352,7 +352,7 @@ const meta: Meta<Knobs> = {
         onRemove: (id: string) => {
           cards.value = cards.value.filter((card) => card.id !== id)
         },
-        onMove: (id: string, at: Landing) => {
+        onMove: (id: string, at: InsertionPoint) => {
           cards.value = moved(cards.value, sections.value, id, at)
         },
         onWrite: (id: string, field: string, nth: number, text: string) => {
@@ -417,7 +417,7 @@ const moved = (
   cards: readonly DeckCard[],
   sections: readonly DeckSection[],
   id: string,
-  at: Landing,
+  at: InsertionPoint,
 ): readonly DeckCard[] => {
   const held = cards.find((card) => card.id === id)
   if (!held) return cards

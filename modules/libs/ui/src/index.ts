@@ -263,7 +263,7 @@ export { safe, scheme } from './cards/safe'
 export { drawn } from './cards/render'
 /** For putting a card or a field where a person let it go, without drawing it. */
 export { ordered, reordered } from './cards/order'
-export type { Half, Landing as CardLanding } from './cards/order'
+export type { Half, InsertionPoint } from './cards/order'
 /**
  * Where a card let go at the head of a deck lands, before its first section,
  * and where one let go past the last card standing under a heading lands.

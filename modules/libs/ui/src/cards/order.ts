@@ -5,7 +5,7 @@
  */
 
 /** Where a carried entry lands: before the entry named, or at the end. */
-export type Landing = string | null
+export type InsertionPoint = string | null
 
 /**
  * The order a carried entry lands in. The entry is taken out first, so landing
@@ -15,7 +15,7 @@ export type Landing = string | null
 export function ordered(
   names: readonly string[],
   carried: string,
-  at: Landing,
+  at: InsertionPoint,
 ): readonly string[] {
   if (!names.includes(carried)) return names
 
@@ -35,7 +35,7 @@ export function ordered(
 export function landing(
   fields: readonly string[],
   carried: string,
-  at: Landing,
+  at: InsertionPoint,
 ): boolean {
   const first = fields[0]
   if (first === undefined) return false
@@ -59,7 +59,7 @@ export function stepped(
   names: readonly string[],
   carried: string,
   way: Way,
-): Landing | undefined {
+): InsertionPoint | undefined {
   const at = names.indexOf(carried)
   if (at === -1) return undefined
   if (way === 'up') return at === 0 ? undefined : (names[at - 1] ?? undefined)
@@ -71,7 +71,7 @@ export function stepped(
 export const reordered = (
   fields: readonly string[],
   carried: string,
-  at: Landing,
+  at: InsertionPoint,
 ): readonly string[] => (landing(fields, carried, at) ? ordered(fields, carried, at) : fields)
 
 /** Why a name cannot be used, and nothing where it can. */

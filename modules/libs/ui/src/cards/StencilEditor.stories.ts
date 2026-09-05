@@ -8,7 +8,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Stencil from './StencilEditor.vue'
-import { ordered, reordered, type Half, type Landing } from './order'
+import { ordered, reordered, type Half, type InsertionPoint } from './order'
 import type { StencilFace } from './stencil'
 import { renamedIn } from './fill'
 
@@ -174,7 +174,7 @@ const meta: Meta<Knobs> = {
         onRemoveField: (field: string) => {
           fields.value = fields.value.filter((each) => each !== field)
         },
-        onMoveField: (field: string, at: Landing) => {
+        onMoveField: (field: string, at: InsertionPoint) => {
           fields.value = reordered(fields.value, field, at)
         },
         onAddFace: (name: string) => {
@@ -187,7 +187,7 @@ const meta: Meta<Knobs> = {
           faces.value = faces.value.filter((face) => face.id !== id)
         },
         /* Nothing among the faces is fixed, so any of them lands anywhere. */
-        onMoveFace: (id: string, at: Landing) => {
+        onMoveFace: (id: string, at: InsertionPoint) => {
           const order = ordered(faces.value.map((face) => face.id), id, at)
           faces.value = order.flatMap((each) => faces.value.filter((face) => face.id === each))
         },

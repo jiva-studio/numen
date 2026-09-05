@@ -9,7 +9,7 @@
  */
 import { computed, ref } from 'vue'
 import { cardBlanks, cardFields, Deck as DeckView, Menu } from '@numen/ui'
-import type { CardLanding, Point } from '@numen/ui'
+import type { InsertionPoint, Point } from '@numen/ui'
 import { ChevronDown } from '@lucide/vue'
 import FileConflictPrompt from '../FileConflictPrompt.vue'
 import type { DeckTabState } from './deck'
@@ -101,7 +101,7 @@ const chose = (path: string) => {
       :wrong="wrong"
       @add="(stencil: string, section: string | null) => props.held.adds(stencil, empty(stencil), section)"
       @remove="(id: string) => props.held.removes(id)"
-      @move="(id: string, at: CardLanding) => props.held.moves(id, at)"
+      @move="(id: string, at: InsertionPoint) => props.held.moves(id, at)"
       @write="
         (id: string, field: string, nth: number, text: string) =>
           props.held.writes(id, field, nth, text)

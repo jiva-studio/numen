@@ -14,7 +14,7 @@ import Icon from './Icon.vue'
 import Divider from '../divider/Divider.vue'
 import { useCarry } from './carry'
 import { Button } from '../components/ui/button'
-import { declared, numbered, type Half, type Landing } from './order'
+import { declared, numbered, type Half, type InsertionPoint } from './order'
 import {
   drawnFaces,
   NOTHING_AMISS,
@@ -55,7 +55,7 @@ const emit = defineEmits<{
   (event: 'rename-field', field: string, name: string): void
   (event: 'remove-field', field: string): void
   /** A field let go somewhere in the order: before another, or at the end. */
-  (event: 'move-field', field: string, at: Landing): void
+  (event: 'move-field', field: string, at: InsertionPoint): void
   (event: 'add-face', name: string): void
   (event: 'rename-face', id: string, name: string): void
   (event: 'remove-face', id: string): void
@@ -64,7 +64,7 @@ const emit = defineEmits<{
    * order of the faces is the order a card's repetitions are taken from it, so
    * nothing among them is fixed.
    */
-  (event: 'move-face', id: string, at: Landing): void
+  (event: 'move-face', id: string, at: InsertionPoint): void
   /** One half of one face, as it now reads. */
   (event: 'write', id: string, half: Half, text: string): void
 }>()
@@ -85,7 +85,7 @@ const {
   release: releaseFace,
   drop: dropFace,
   step: stepFace,
-} = useCarry<Landing>({
+} = useCarry<InsertionPoint>({
   order: () => props.faces.map((each) => each.id),
   nowhere: null,
   lands: (held, lands) => lands !== held,
@@ -119,7 +119,7 @@ const addFace = (): void => {
       @add="(name: string) => emit('add-field', name)"
       @rename="(field: string, name: string) => emit('rename-field', field, name)"
       @remove="(field: string) => emit('remove-field', field)"
-      @move="(field: string, at: Landing) => emit('move-field', field, at)"
+      @move="(field: string, at: InsertionPoint) => emit('move-field', field, at)"
     />
 
     <section

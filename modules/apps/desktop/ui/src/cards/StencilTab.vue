@@ -9,7 +9,7 @@
  */
 import { computed } from 'vue'
 import { StencilEditor } from '@numen/ui'
-import type { CardLanding, Half } from '@numen/ui'
+import type { InsertionPoint, Half } from '@numen/ui'
 import FileConflictPrompt from '../FileConflictPrompt.vue'
 import type { StencilTabState } from './stencil'
 import { WORDS as words } from './words'
@@ -43,11 +43,11 @@ const marks = computed(() => props.held.marks.value)
       @add-field="(name: string) => props.held.addsField(name)"
       @rename-field="(field: string, name: string) => props.held.namesField(field, name)"
       @remove-field="(field: string) => props.held.removesField(field)"
-      @move-field="(field: string, at: CardLanding) => props.held.movesField(field, at)"
+      @move-field="(field: string, at: InsertionPoint) => props.held.movesField(field, at)"
       @add-face="(name: string) => props.held.addsFace(name)"
       @rename-face="(id: string, name: string) => props.held.namesFace(id, name)"
       @remove-face="(id: string) => props.held.removesFace(id)"
-      @move-face="(id: string, at: CardLanding) => props.held.movesFace(id, at)"
+      @move-face="(id: string, at: InsertionPoint) => props.held.movesFace(id, at)"
       @write="(id: string, half: Half, text: string) => props.held.writes(id, half, text)"
     />
   </div>
