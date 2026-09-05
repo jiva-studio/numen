@@ -40,6 +40,16 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 					},
 				}, nil
 			},
+
+			Links: func(ctx context.Context) (cli.Links, error) {
+				db, err := cfg.OpenIndex(ctx)
+				if err != nil {
+					return cli.Links{}, err
+				}
+				notes := cfg.Notes(
+					db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), cfg.Level(db))
+				return cli.Links{Show: notes.Links, Close: db.Close}, nil
+			},
 		}
 	}
 }

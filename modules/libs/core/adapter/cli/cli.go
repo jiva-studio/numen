@@ -95,7 +95,7 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	case "search":
 		return searchCommand(ctx, out, errOut, cfg, deps, rest[1:])
 	case "links":
-		return linksCommand(ctx, out, cfg, deps, rest[1:])
+		return linksCommand(ctx, out, deps, rest[1:])
 	case "problems":
 		return problemsCommand(ctx, out, cfg, deps, rest[1:])
 	case "help", "-h", "--help":

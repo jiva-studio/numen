@@ -6,12 +6,10 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-func linksCommand(ctx context.Context, out io.Writer, cfg container.Config, deps Deps, args []string) error {
+func linksCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli links <vault> <note>")
 	}
@@ -19,13 +17,13 @@ func linksCommand(ctx context.Context, out io.Writer, cfg container.Config, deps
 	if err != nil {
 		return err
 	}
-	db, err := cfg.OpenIndex(ctx)
+	open, err := deps.Links(ctx)
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer closing(open.Close)
 
-	links, err := note.NewShowLinks(db.Links()).Execute(ctx, v, args[1])
+	links, err := open.Show.Execute(ctx, v, args[1])
 	if err != nil {
 		return err
 	}

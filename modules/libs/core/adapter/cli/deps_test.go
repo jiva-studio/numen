@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // deps is what the commands of one session run through. The test assembles it
@@ -31,6 +32,14 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 					return cli.VaultRows{Vaults: db.Vaults(), Close: db.Close}, nil
 				},
 			}, nil
+		},
+
+		Links: func(ctx context.Context) (cli.Links, error) {
+			db, err := index.Open(ctx, where.Index)
+			if err != nil {
+				return cli.Links{}, err
+			}
+			return cli.Links{Show: note.NewShowLinks(db.NoteQueries()), Close: db.Close}, nil
 		},
 	}
 }
