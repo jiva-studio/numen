@@ -10,7 +10,7 @@ import (
 // put it.
 const (
 	EvenFrom = 2.5
-	EvenTo   = Ahead
+	EvenTo   = 90
 )
 
 // DueByDay is how loaded each day of review is: how many card faces fall on

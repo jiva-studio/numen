@@ -87,9 +87,8 @@ type Spent struct {
 // Sat is what the day named came to under each preset, by the path the card
 // faces are grouped under.
 //
-// A card face nothing groups is left out, and so is an answer taken back. One
-// answer counts LongestAnswer at most: a card left on the screen while a person
-// answered the door stands there for an hour, and the hour is not review.
+// A card face nothing groups is left out, and so is an answer taken back. Each
+// answer counts for what Answer.Counted makes of it.
 //
 // Counts says how each preset counts, by the same path, and a path it does not
 // name counts in cards: a card face counts once for the day however many times
@@ -132,7 +131,7 @@ func (h History) Sat(
 				one.Reviews++
 			}
 		}
-		if took := min(a.Took, LongestAnswer); took > 0 {
+		if took := a.Counted(); took > 0 {
 			one.Took += took
 		}
 		out[path] = one

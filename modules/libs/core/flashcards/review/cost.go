@@ -10,6 +10,10 @@ import (
 // not review.
 const LongestAnswer = time.Minute
 
+// Counted is how long this answer counts for, wherever one is counted: what it
+// carries, held to LongestAnswer.
+func (a Answer) Counted() time.Duration { return min(a.Took, LongestAnswer) }
+
 // ShortestAnswer is the shortest a kind of answer is costed at. A card graded
 // before it could be read is a key hit and not review.
 const ShortestAnswer = time.Second
@@ -39,7 +43,7 @@ var DefaultCost = AnswerCost{New: 20 * time.Second, Review: 8 * time.Second}
 func Costed(by Scheduler, answers []Answer) AnswerCost {
 	var took answerTimes
 	replayed(by, answers, func(before Schedule, a Answer) {
-		took.holds(by.Spaced(before), a.Took)
+		took.holds(by.Spaced(before), a.Counted())
 	})
 	return took.cost()
 }
@@ -63,7 +67,7 @@ func CostedUnder(by Scheduler, answers []Answer, under map[CardFaceID]string) ma
 			one = &answerTimes{}
 			held[path] = one
 		}
-		one.holds(by.Spaced(before), a.Took)
+		one.holds(by.Spaced(before), a.Counted())
 	})
 
 	out := make(map[string]AnswerCost, len(held))
@@ -76,10 +80,9 @@ func CostedUnder(by Scheduler, answers []Answer, under map[CardFaceID]string) ma
 // answerTimes is how long the answers of each kind took, one entry an answer.
 type answerTimes struct{ begun, spaced []time.Duration }
 
-// holds counts one answer, capped at LongestAnswer. An answer carrying no time
-// at all says nothing about how long its kind takes.
+// holds counts one answer. An answer carrying no time at all says nothing about
+// how long its kind takes.
 func (t *answerTimes) holds(spaced bool, took time.Duration) {
-	took = min(took, LongestAnswer)
 	if took <= 0 {
 		return
 	}
