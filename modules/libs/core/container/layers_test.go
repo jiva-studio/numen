@@ -767,6 +767,137 @@ func TestWhatThePortRuleRefuses(t *testing.T) {
 	}
 }
 
+// A port is asked for as a whole, and a method of it is one thing the core can
+// ask. A method nothing calls is a question never put: the adapters go on
+// answering it, and the day it is wrong nothing says so.
+//
+// The tests are not read here, and that asymmetry is the rule. A port a test
+// alone asks for is still a conversation, so the two rules above read them. A
+// method a test alone calls is the opposite: the only caller is the thing that
+// was written to check the answer, so the method exists to be tested and
+// nothing else is asking.
+func TestEveryPortMethodIsCalledSomewhereElse(t *testing.T) {
+	uncalled, err := uncalledOutside("..", filepath.Join("..", "port"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range uncalled {
+		t.Errorf("%s is declared and nothing outside a test calls it", one)
+	}
+}
+
+// Read against port/ as the whole tree, nothing outside it calls anything, and
+// the rule has to come back with every method the folder declares.
+func TestWhatThePortMethodRuleRefuses(t *testing.T) {
+	at := filepath.Join("..", "port")
+	uncalled, err := uncalledOutside(at, at)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range []string{"NoteQueries.Names", "Transcriber.Transcription"} {
+		if !slices.Contains(uncalled, one) {
+			t.Errorf("nothing outside calls %s and the rule does not refuse it", one)
+		}
+	}
+}
+
+// uncalledOutside are the methods port/'s interfaces declare that no file of
+// the tree outside it, and outside a test, names as a selector.
+//
+// A selector is what a call site of a method looks like whatever holds the
+// value, so the match is on the name alone: an interface the core reaches
+// through a variable never says port.X at the call site.
+func uncalledOutside(root, dir string) ([]string, error) {
+	declared, err := methodsIn(dir)
+	if err != nil {
+		return nil, err
+	}
+	if len(declared) < 50 {
+		return nil, fmt.Errorf("%s declares %d port methods: the walk is not reading it", dir, len(declared))
+	}
+
+	called := map[string]bool{}
+	err = filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
+			return err
+		}
+		if strings.HasSuffix(path, "_test.go") || filepath.Dir(path) == filepath.Clean(dir) {
+			return nil
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+		if err != nil {
+			return err
+		}
+		ast.Inspect(file, func(node ast.Node) bool {
+			if at, is := node.(*ast.SelectorExpr); is {
+				called[at.Sel.Name] = true
+			}
+			return true
+		})
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var uncalled []string
+	for one, method := range declared {
+		if !called[method] {
+			uncalled = append(uncalled, one)
+		}
+	}
+	slices.Sort(uncalled)
+	return uncalled, nil
+}
+
+// methodsIn are the methods the exported interfaces of a folder declare, each
+// keyed as Interface.Method and giving the method's own name. An embedded
+// interface is the other one's declaration and is read there.
+func methodsIn(dir string) (map[string]string, error) {
+	held, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	declared := map[string]string{}
+	for _, one := range held {
+		if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
+			strings.HasSuffix(one.Name(), "_test.go") {
+			continue
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(dir, one.Name()), nil, 0)
+		if err != nil {
+			return nil, err
+		}
+		for _, decl := range file.Decls {
+			at, is := decl.(*ast.GenDecl)
+			if !is || at.Tok != token.TYPE {
+				continue
+			}
+			for _, spec := range at.Specs {
+				named, is := spec.(*ast.TypeSpec)
+				if !is || !named.Name.IsExported() {
+					continue
+				}
+				shape, is := named.Type.(*ast.InterfaceType)
+				if !is {
+					continue
+				}
+				for _, method := range shape.Methods.List {
+					if _, is := method.Type.(*ast.FuncType); !is {
+						continue
+					}
+					for _, at := range method.Names {
+						if at.IsExported() {
+							declared[named.Name.Name+"."+at.Name] = at.Name
+						}
+					}
+				}
+			}
+		}
+	}
+	return declared, nil
+}
+
 // unnamedOutside are the exported types port/ declares that no file of the tree
 // outside it names as port.X. onlyPorts reads the interfaces alone.
 //
