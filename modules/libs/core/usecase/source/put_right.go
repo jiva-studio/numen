@@ -126,7 +126,7 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 	}
 	defer release()
 
-	whole, beside, err := u.standing(ctx, store, area, hash)
+	whole, beside, err := u.current(ctx, store, area, hash)
 	if err != nil {
 		return res, err
 	}
@@ -274,10 +274,10 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 	return res, nil
 }
 
-// standing is the transcript as it now stands, and whether it is the file that
+// current is the transcript as it now stands, and whether it is the file that
 // stands beside the artifact. A recording nothing has listened to is nothing to
 // put right.
-func (u PutRight) standing(
+func (u PutRight) current(
 	ctx context.Context,
 	store port.DerivedStore,
 	area, hash string,
