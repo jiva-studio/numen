@@ -96,7 +96,7 @@ A placeholder naming a field the stencil does not declare is a problem against t
 
 Everything around a placeholder is HTML and is drawn as the markup it is.
 
-`{{` is not escaped. Wherever the two characters stand in a face, what runs to the next `}}` is read as a placeholder, and a face that wants those characters as text has no way to write them. This is a known limit of the format.
+`{{` is not escaped, and a code span is no exemption: wherever the two characters stand in a face with no brace between them and the next `}}`, what runs between the pairs is read as a placeholder. A face wanting those characters as text has only the accident that a brace in the middle spoils the match. This is a known limit of the format.
 
 ## The deck
 
@@ -257,7 +257,7 @@ A deck's tab reads which preset schedules it, and offers the defaults and every 
 | --- | --- |
 | `goal` | which value the one control steers: `minutes_a_day`, `retention` or `by_date`. The value stands under the key it names. |
 | `by_date` | the day the material is to be learned by, written `2026-09-30`. What learned means is this preset's own `learned` rule, asked of every card on that day. |
-| `minutes_a_day` | how long a day of review runs, spent against the time each answer took. Zero keeps no budget in time. |
+| `minutes_a_day` | how long a day of review runs, spent against the time each answer took. Zero under this goal is a pause. Under the other two goals the value is not read at all. |
 | `new_a_day` | how many unseen cards a day holds. 10. |
 | `reviews_a_day` | how many returning cards a day holds. 200. |
 | `retention` | the share of cards recalled when they come round again. 0.90, and it goes from 0.70 to 0.99. |
@@ -310,7 +310,7 @@ A problem is something that could not be acted on and was not guessed at, filed 
 
 | Problem | Against | What it is |
 | --- | --- | --- |
-| a `type` outside the list | the note | `type` is not `note`, `deck` or `stencil`. The note is read as an ordinary note. |
+| a `type` outside the list | the note | `type` is not `note`, `deck`, `stencil` or `preset`. The note is read as an ordinary note. |
 | two fields of one name | the stencil | `fields` declares a name twice. The first stands. |
 | a stencil declaring no field | the stencil | `fields` is absent or empty, so a card cut by it has nothing to be filled with. |
 | a face missing a side | the stencil | no `### Front` or no `### Back` under a second-level heading. The face lays out nothing. |
