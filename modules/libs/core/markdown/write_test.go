@@ -259,8 +259,8 @@ func TestAnEntryCarryingSomebodyElsesKeyIsRefused(t *testing.T) {
 		domain.Address{Scheme: domain.SchemeName, Value: "Entropy"},
 		domain.Link{Role: domain.RoleChild},
 	)
-	if !errors.Is(err, ErrNotOurs) {
-		t.Fatalf("want ErrNotOurs, got %v", err)
+	if !errors.Is(err, ErrNotOwned) {
+		t.Fatalf("want ErrNotOwned, got %v", err)
 	}
 	if !strings.Contains(string(d.Bytes()), "mine: keep me") {
 		t.Error("the refused change was made anyway")
@@ -283,8 +283,8 @@ func TestARefusedUpdateWritesNoEntryAtAll(t *testing.T) {
 		domain.Address{Scheme: domain.SchemeName, Value: "Entropy"},
 		domain.Link{Role: domain.RoleChild},
 	)
-	if !errors.Is(err, ErrNotOurs) {
-		t.Fatalf("want ErrNotOurs, got %v", err)
+	if !errors.Is(err, ErrNotOwned) {
+		t.Fatalf("want ErrNotOwned, got %v", err)
 	}
 	if changed != 0 {
 		t.Errorf("changed = %d", changed)
@@ -905,8 +905,8 @@ func TestAnEntryOfTheTypeCarryingSomebodyElsesKeyIsRefused(t *testing.T) {
 	}
 	err = d.SetLinkOfType(
 		"preset", domain.Address{Scheme: domain.SchemeName, Value: "Slow going"}, domain.RoleRef)
-	if !errors.Is(err, ErrNotOurs) {
-		t.Fatalf("want ErrNotOurs, got %v", err)
+	if !errors.Is(err, ErrNotOwned) {
+		t.Fatalf("want ErrNotOwned, got %v", err)
 	}
 	if got := string(d.Bytes()); got != raw {
 		t.Errorf("the refused change was made anyway\n%s", got)

@@ -10,10 +10,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// ErrNotOurs is what changing an entry says when the entry carries something
+// ErrNotOwned is what changing an entry says when the entry carries something
 // the application does not own. A collision is the person's win: the link is
 // named in the error and left as they wrote it.
-var ErrNotOurs = fmt.Errorf("this link carries something the application does not own")
+var ErrNotOwned = fmt.Errorf("this link carries something the application does not own")
 
 // owned is every key an entry of the `links:` block may carry. Anything else
 // in there is the person's, and the entry it sits in is left alone.
@@ -195,7 +195,7 @@ func (d *Document) SetLinkOfType(kind string, to domain.Address, role domain.Lin
 			continue
 		}
 		if !e.ours {
-			return fmt.Errorf("%w: %s", ErrNotOurs, e.link.Target)
+			return fmt.Errorf("%w: %s", ErrNotOwned, e.link.Target)
 		}
 		carrying = append(carrying, i)
 	}
@@ -256,7 +256,7 @@ func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error
 			continue
 		}
 		if !e.ours {
-			return 0, fmt.Errorf("%w: %s", ErrNotOurs, e.link.Target)
+			return 0, fmt.Errorf("%w: %s", ErrNotOwned, e.link.Target)
 		}
 		// What was not sent is kept, and every field here behaves the same way.
 		next := e.link
