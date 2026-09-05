@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import Decks from './Decks.vue'
 import { learned } from './scheduling'
-import type { DeckOwing, Owing } from './core'
+import type { DeckCardsDue, VaultCardsDue } from './core'
 import type { Closes, Preset, Settings } from './scheduling'
 
 const settings: Settings = {
@@ -40,7 +40,7 @@ const preset = (said: Partial<Preset> = {}): Preset => ({
   ...said,
 })
 
-const deck = (said: Partial<DeckOwing> = {}): DeckOwing => ({
+const deck = (said: Partial<DeckCardsDue> = {}): DeckCardsDue => ({
   deck: 'decks/Words.md',
   faces: 20,
   due: 8,
@@ -50,7 +50,7 @@ const deck = (said: Partial<DeckOwing> = {}): DeckOwing => ({
   ...said,
 })
 
-const vault = (said: Partial<Owing> = {}): Owing => ({
+const vault = (said: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   vault: '01A',
   name: 'Studies',
   path: '/vaults/01A',
@@ -66,7 +66,7 @@ const vault = (said: Partial<Owing> = {}): Owing => ({
 })
 
 /** The screen over a vault, and over the presets its decks were read to hold. */
-const shown = (over: Owing, presets: readonly Preset[], scheduled = true) =>
+const shown = (over: VaultCardsDue, presets: readonly Preset[], scheduled = true) =>
   mount(Decks, {
     props: {
       vault: over,

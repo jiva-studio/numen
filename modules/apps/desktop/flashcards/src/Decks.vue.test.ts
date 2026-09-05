@@ -5,7 +5,7 @@ import { StopReason } from '@numen/protocol'
 
 import Decks from './Decks.vue'
 import Presets from './Presets.vue'
-import type { Owing } from './core'
+import type { VaultCardsDue } from './core'
 import type { Closes, Preset, Settings } from './scheduling'
 
 const settings = (said: Partial<Settings> = {}): Settings => ({
@@ -42,7 +42,7 @@ const preset = (said: Partial<Preset> = {}): Preset => ({
   ...said,
 })
 
-const vault: Owing = {
+const vault: VaultCardsDue = {
   vault: '01A',
   name: 'Studies',
   path: '/vaults/01A',
@@ -76,7 +76,7 @@ const vault: Owing = {
   reading: false,
 }
 
-const shown = (presets: readonly Preset[], over: Owing = vault) =>
+const shown = (presets: readonly Preset[], over: VaultCardsDue = vault) =>
   mount(Decks, {
     props: {
       vault: over,
@@ -118,7 +118,7 @@ describe('the decks of a vault', () => {
 
 describe('a deck with nothing waiting', () => {
   /** A vault whose one deck holds these cards and owes this much of them. */
-  const holding = (faces: number, due: number, fresh: number, unbegun = 0): Owing => ({
+  const holding = (faces: number, due: number, fresh: number, unbegun = 0): VaultCardsDue => ({
     ...vault,
     due,
     new: fresh,
@@ -224,7 +224,7 @@ describe('a preset pressed', () => {
 // of the day, so they cannot say different things about it.
 describe('the tile and the decks under it', () => {
   it('agree: at nothing done, no deck of that preset claims to be done', () => {
-    const over: Owing = {
+    const over: VaultCardsDue = {
       ...vault,
       due: 10,
       new: 0,

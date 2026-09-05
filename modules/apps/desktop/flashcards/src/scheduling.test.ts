@@ -15,7 +15,7 @@ import {
   through,
 } from './scheduling'
 import type { Asks, Budget, Closes, Preset, Settings, SettingsMessage } from './scheduling'
-import type { Goal, Owing, PresetOwing } from './core'
+import type { Goal, PresetCardsDue, VaultCardsDue } from './core'
 
 const settings = (said: Partial<Settings> = {}): Settings => ({
   goal: 'minutes',
@@ -72,7 +72,7 @@ const preset = (said: Partial<Preset> = {}): Preset => ({
 })
 
 /** One preset of a vault as the count hands it over. */
-const owing = (said: Partial<PresetOwing> = {}): PresetOwing => ({
+const presetDue = (said: Partial<PresetCardsDue> = {}): PresetCardsDue => ({
   preset: 'Sanskrit.md',
   title: 'Sanskrit',
   decks: 1,
@@ -92,8 +92,8 @@ const owing = (said: Partial<PresetOwing> = {}): PresetOwing => ({
 
 const vault = (
   decks: readonly { deck: string; due: number; new: number }[],
-  presets: readonly PresetOwing[] = [],
-): Owing => ({
+  presets: readonly PresetCardsDue[] = [],
+): VaultCardsDue => ({
   vault: '01A',
   name: 'Vault',
   path: '/vaults/01A',
@@ -388,7 +388,7 @@ describe('which preset schedules each deck', () => {
       vault(
         [{ deck: 'decks/Words.md', due: 40, new: 9 }],
         [
-          owing({
+          presetDue({
             cards: 49,
             owed: 49,
             answered: 6,
@@ -495,8 +495,8 @@ describe('which preset schedules each deck', () => {
       vault(
         [{ deck: 'decks/Words.md', due: 3, new: 1 }],
         [
-          owing({ cards: 4, owed: 4 }),
-          owing({
+          presetDue({ cards: 4, owed: 4 }),
+          presetDue({
             preset: 'Empty.md',
             title: 'Empty',
             decks: 0,
@@ -535,8 +535,8 @@ describe('which preset schedules each deck', () => {
       vault(
         [],
         [
-          owing({ preset: 'Empty.md', title: 'Empty', decks: 0, cards: 0 }),
-          owing({
+          presetDue({ preset: 'Empty.md', title: 'Empty', decks: 0, cards: 0 }),
+          presetDue({
             preset: 'Quiet.md',
             title: 'Quiet',
             decks: 0,
@@ -564,7 +564,7 @@ describe('which preset schedules each deck', () => {
       vault(
         [],
         [
-          owing({
+          presetDue({
             preset: 'Empty.md',
             title: 'Empty',
             cards: 0,
@@ -589,7 +589,7 @@ describe('which preset schedules each deck', () => {
       vault(
         [],
         [
-          owing({
+          presetDue({
             preset: 'goals/Empty.md',
             title: '',
             decks: 0,
@@ -617,7 +617,7 @@ describe('which preset schedules each deck', () => {
     await one.read(
       vault(
         [{ deck: 'decks/Words.md', due: 20, new: 2 }],
-        [owing({ cards: 40, owed: 22, answered: 6, took: 12, new: 0, reviews: 0, minutes: 20 })],
+        [presetDue({ cards: 40, owed: 22, answered: 6, took: 12, new: 0, reviews: 0, minutes: 20 })],
       ),
       '2026-09-05',
     )
@@ -636,7 +636,7 @@ describe('which preset schedules each deck', () => {
       presets: { getVaultDeckPreset: async () => ({ refusal: Refusal.MISSING }) },
     })
 
-    await one.read(vault([{ deck: 'decks/Words.md', due: 20, new: 2 }], [owing()]), '2026-09-05')
+    await one.read(vault([{ deck: 'decks/Words.md', due: 20, new: 2 }], [presetDue()]), '2026-09-05')
 
     expect(one.presets.value[0]?.wrong).toBe('that note is not in the vault')
   })
@@ -644,7 +644,7 @@ describe('which preset schedules each deck', () => {
   it('says nothing is wrong with a preset no deck of this vault answered for', async () => {
     const one = scheduling({ presets: answering({}) })
 
-    await one.read(vault([], [owing()]), '2026-09-05')
+    await one.read(vault([], [presetDue()]), '2026-09-05')
 
     expect(one.presets.value[0]?.wrong).toBe('')
   })

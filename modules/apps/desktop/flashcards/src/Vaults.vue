@@ -13,10 +13,10 @@
 import { computed } from 'vue'
 import { Owed, Waiting, Welcome } from '@numen/ui'
 import type { Held } from '@numen/ui'
-import type { Owing } from './core'
+import type { VaultCardsDue } from './core'
 
 const props = defineProps<{
-  vaults: readonly Owing[]
+  vaults: readonly VaultCardsDue[]
   counting: boolean
   version: string
 }>()

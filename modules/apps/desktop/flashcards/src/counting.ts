@@ -12,7 +12,7 @@
 import { ref } from 'vue'
 import type { StopReason } from '@numen/protocol'
 
-import type { Owing } from './core'
+import type { VaultCardsDue } from './core'
 
 /** What the front door of the application answers. */
 export interface Counts {
@@ -77,7 +77,7 @@ export interface Counting {
 }
 
 export function counting(deps: Counting) {
-  const vaults = ref<readonly Owing[]>([])
+  const vaults = ref<readonly VaultCardsDue[]>([])
   const counting = ref(true)
 
   /**
@@ -134,7 +134,7 @@ export function counting(deps: Counting) {
   }
 
   /** A vault on the list before its count has arrived. */
-  const listed = (one: Vaulted): Owing => ({
+  const listed = (one: Vaulted): VaultCardsDue => ({
     vault: one.name,
     name: one.displayName,
     path: one.path,
@@ -149,7 +149,7 @@ export function counting(deps: Counting) {
   })
 
   /** A vault as its own count leaves it. */
-  const owed = (one: Vaulted): Owing => ({
+  const counted = (one: Vaulted): VaultCardsDue => ({
     vault: one.name,
     name: one.displayName,
     path: one.path,
@@ -207,7 +207,7 @@ export function counting(deps: Counting) {
    * index has no count yet, and its row goes on waiting for one.
    */
   const fills = (one: Vaulted) => {
-    const now = one.reading ? listed(one) : owed(one)
+    const now = one.reading ? listed(one) : counted(one)
     vaults.value = vaults.value.map((row) => (row.vault === one.name ? now : row))
   }
 

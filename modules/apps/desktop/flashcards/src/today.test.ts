@@ -11,7 +11,7 @@ import { counting } from './counting'
 import type { Counts } from './counting'
 import { named, scheduling } from './scheduling'
 import type { Asks, SettingsMessage } from './scheduling'
-import type { Owing } from './core'
+import type { VaultCardsDue } from './core'
 
 const dated = (day: string): SettingsMessage => ({
   goal: Goal.BY_DATE,
@@ -24,7 +24,7 @@ const dated = (day: string): SettingsMessage => ({
   evenLoad: true,
 })
 
-const vault: Owing = {
+const vault: VaultCardsDue = {
   vault: '01A',
   name: 'Vault',
   path: '/vaults/01A',

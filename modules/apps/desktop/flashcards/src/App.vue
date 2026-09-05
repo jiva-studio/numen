@@ -33,7 +33,7 @@ import { asking } from './asking'
 import { reading } from './reading'
 import { around } from './reading/core'
 import { core as agent } from './agent/core'
-import type { Owing, Said } from './core'
+import type { Said, VaultCardsDue } from './core'
 import type { Report } from './session'
 
 /** Which of the three screens the window is on. */
@@ -258,7 +258,7 @@ const picking = (press: KeyboardEvent) => {
 }
 
 /** The keys a person picks what to sit down to with. */
-const choosing = (press: KeyboardEvent, vault: Owing) => {
+const choosing = (press: KeyboardEvent, vault: VaultCardsDue) => {
   const asked = picks(press, vault.decks.length)
   if (!asked) return
   press.preventDefault()

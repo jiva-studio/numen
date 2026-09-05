@@ -7,9 +7,9 @@ import { describe, expect, it } from 'vitest'
 import { Coming, Waiting } from '@numen/ui'
 
 import Vaults from './Vaults.vue'
-import type { Owing } from './core'
+import type { VaultCardsDue } from './core'
 
-const vault = (said: Partial<Owing> = {}): Owing => ({
+const vault = (said: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   vault: '01A',
   name: 'Studies',
   path: '/vaults/01A',
@@ -25,10 +25,10 @@ const vault = (said: Partial<Owing> = {}): Owing => ({
 })
 
 /** A vault on the list whose count has not arrived. */
-const uncounted = (said: Partial<Owing> = {}): Owing =>
+const uncounted = (said: Partial<VaultCardsDue> = {}): VaultCardsDue =>
   vault({ counted: false, faces: 0, due: 0, new: 0, ...said })
 
-const shown = (counting: boolean, vaults: readonly Owing[] = []) =>
+const shown = (counting: boolean, vaults: readonly VaultCardsDue[] = []) =>
   mount(Vaults, { props: { vaults, counting, version: '0.1.0' } })
 
 describe('the front door before it knows which vaults there are', () => {

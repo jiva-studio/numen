@@ -12,7 +12,7 @@ import { h, type VNode } from 'vue'
 import Decks from './Decks.vue'
 import Session from './Session.vue'
 import type { Closes, Preset, Settings } from './scheduling'
-import type { Asked, DeckOwing, Owing as Vault } from './core'
+import type { Asked, DeckCardsDue, VaultCardsDue } from './core'
 
 /** A day as the grid of weeks writes one. */
 const dayOf = (at: Date): string =>
@@ -157,7 +157,7 @@ const ANATOMY = preset({
 
 const PRESETS: readonly Preset[] = [SANSKRIT, ANATOMY]
 
-const deck = (path: string, over: Partial<DeckOwing> = {}): DeckOwing => ({
+const deck = (path: string, over: Partial<DeckCardsDue> = {}): DeckCardsDue => ({
   deck: path,
   faces: 400,
   due: 0,
@@ -167,7 +167,7 @@ const deck = (path: string, over: Partial<DeckOwing> = {}): DeckOwing => ({
   ...over,
 })
 
-const DECKS: readonly DeckOwing[] = [
+const DECKS: readonly DeckCardsDue[] = [
   deck('Sanskrit/Roots.md', { faces: 520, due: 34, new: 6, learned: 361 }),
   deck('Sanskrit/Declensions.md', { faces: 448, due: 21, new: 0, learned: 302 }),
   deck('Sanskrit/Sandhi.md', { faces: 272, due: 0, new: 0, learned: 249 }),
@@ -183,7 +183,7 @@ const DECKS: readonly DeckOwing[] = [
   deck('Anatomy/Organs.md', { faces: 196, due: 0, new: 5, learned: 88 }),
 ]
 
-const VAULT: Vault = {
+const VAULT: VaultCardsDue = {
   vault: 'v1',
   name: 'Studies',
   path: '/home/you/Studies',
@@ -252,7 +252,7 @@ export default meta
 type Story = StoryObj
 
 /** What the vault owes today: the goals, the days answered on, and the decks. */
-export const Owing: Story = {
+export const CardsDue: Story = {
   render: () =>
     frame(
       h(Decks, {

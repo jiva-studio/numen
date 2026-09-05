@@ -10,9 +10,9 @@ import { StopReason } from '@numen/protocol'
 import type { Goal as Goals, Refusal } from '@numen/protocol'
 
 import { deckName, goalOf } from './core'
-import type { DeckOwing, Goal } from './core'
+import type { DeckCardsDue, Goal } from './core'
 import { said } from './reading/core'
-import type { Closes, Owing } from './core'
+import type { Closes, VaultCardsDue } from './core'
 
 export type { Closes }
 
@@ -143,22 +143,22 @@ export function scheduling(deps: Scheduling) {
 
   // Today is the review day, which the application measures and this window is
   // told: it begins at the hour the settings name.
-  const read = async (owing: Owing | null, today: string) => {
-    if (!owing) {
+  const read = async (due: VaultCardsDue | null, today: string) => {
+    if (!due) {
       forget()
       return
     }
     // A vault read again keeps what is known of it while the reading runs, so
     // the screen it is read behind does not empty and fill.
-    if (of.value !== owing.vault) known.value = false
-    of.value = owing.vault
+    if (of.value !== due.vault) known.value = false
+    of.value = due.vault
 
     const held = await Promise.all(
-      owing.decks.map((deck) => scheduled(deps.presets, owing.vault, deck.deck)),
+      due.decks.map((deck) => scheduled(deps.presets, due.vault, deck.deck)),
     )
-    if (of.value !== owing.vault) return
+    if (of.value !== due.vault) return
 
-    presets.value = gather(owing, held, today)
+    presets.value = gather(due, held, today)
     known.value = true
   }
 
@@ -233,7 +233,7 @@ const budgetOf = (settings: Settings): Budget => ({
  * Every preset the vault holds gets a row. The ones whose decks hold cards are
  * gathered from what each deck answered, and the rest stand on the count alone.
  */
-const gather = (vault: Owing, answered: readonly Answered[], today: string): Preset[] => {
+const gather = (vault: VaultCardsDue, answered: readonly Answered[], today: string): Preset[] => {
   const owed = new Map(vault.decks.map((one) => [one.deck, one]))
   const came = new Map(vault.presets.map((one) => [one.preset, one]))
   const at = new Map<string, Gathering>()
@@ -330,7 +330,7 @@ const refusedFor = (answered: readonly Answered[]): string => {
  * Whether sitting down to one deck is offered: it owes something today, and the
  * preset scheduling it schedules something.
  */
-export const opens = (deck: DeckOwing, by: ReadonlyMap<string, Preset>): boolean =>
+export const opens = (deck: DeckCardsDue, by: ReadonlyMap<string, Preset>): boolean =>
   deck.due + deck.new > 0 && !by.get(deck.deck)?.paused
 
 /**
@@ -340,7 +340,7 @@ export const opens = (deck: DeckOwing, by: ReadonlyMap<string, Preset>): boolean
  * It is a fact about the material, and not a reason the preset is stopped. The
  * preset schedules; there is nothing here for it to schedule.
  */
-export const beginsNothing = (deck: DeckOwing, by: Preset | undefined): boolean =>
+export const beginsNothing = (deck: DeckCardsDue, by: Preset | undefined): boolean =>
   deck.faces > 0 && deck.unbegun === deck.faces && by?.budget.new === 0
 
 /** How many cards the day holds at most. */
@@ -410,7 +410,7 @@ export const LEARNED = {
  * How much of a deck stands learned, as a share of its card faces, and null for
  * a deck holding none: a share of nothing is no share.
  */
-export const learned = (deck: DeckOwing): number | null =>
+export const learned = (deck: DeckCardsDue): number | null =>
   deck.faces > 0 ? deck.learned / deck.faces : null
 
 /**

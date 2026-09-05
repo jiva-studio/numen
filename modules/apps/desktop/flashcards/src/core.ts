@@ -54,7 +54,7 @@ export const goalOf: Readonly<Record<Goals, Goal>> = {
 }
 
 /** One deck's share of what a vault owes. */
-export interface DeckOwing {
+export interface DeckCardsDue {
   readonly deck: string
   readonly faces: number
   readonly due: number
@@ -73,7 +73,7 @@ export interface DeckOwing {
 }
 
 /** One preset of a vault, and what the day comes to under it. */
-export interface PresetOwing {
+export interface PresetCardsDue {
   /** The note it stands in, and empty for the decks naming no preset. */
   readonly preset: string
   /** What it is called, and empty where nothing names the note. */
@@ -124,7 +124,7 @@ export interface Closes {
 }
 
 /** One vault, and what its cards come to today. */
-export interface Owing {
+export interface VaultCardsDue {
   readonly vault: string
   readonly name: string
   readonly path: string
@@ -136,8 +136,8 @@ export interface Owing {
   readonly faces: number
   readonly due: number
   readonly new: number
-  readonly decks: readonly DeckOwing[]
-  readonly presets: readonly PresetOwing[]
+  readonly decks: readonly DeckCardsDue[]
+  readonly presets: readonly PresetCardsDue[]
   /** Why nothing was counted, where nothing was. */
   readonly unread: string
   /**

@@ -13,11 +13,11 @@ import Presets from './Presets.vue'
 import { deckName } from './core'
 import { letterOf } from './keying'
 import { beginsNothing, learned, opens, spent, LEARNED, STOPPED } from './scheduling'
-import type { DeckOwing, Owing } from './core'
+import type { DeckCardsDue, VaultCardsDue } from './core'
 import type { Preset } from './scheduling'
 
 const props = defineProps<{
-  vault: Owing
+  vault: VaultCardsDue
   /** How many cards were answered on each day, by the day it was. */
   days: ReadonlyMap<string, HeatmapTally>
   /** How many cards fall on each day still to come, by the day they fall on. */
@@ -50,7 +50,7 @@ const stopped = (deck: string): string => props.byDeck.get(deck)?.paused ?? ''
  * nothing standing: something was answered under its preset today, and its
  * preset still had room for more.
  */
-const done = (deck: DeckOwing): boolean => {
+const done = (deck: DeckCardsDue): boolean => {
   const one = props.byDeck.get(deck.deck)
   return !!one && !spent(one) && one.answered > 0
 }
@@ -60,7 +60,7 @@ const done = (deck: DeckOwing): boolean => {
  * it: the preset's day is spent, nothing here can be begun at all, or the day
  * held nothing of this deck.
  */
-const empty = (deck: DeckOwing): string => {
+const empty = (deck: DeckCardsDue): string => {
   const one = props.byDeck.get(deck.deck)
   if (one && spent(one)) return STOPPED.full
   return beginsNothing(deck, one) ? STOPPED.beginsNothing : STOPPED.nothing
@@ -71,7 +71,7 @@ const empty = (deck: DeckOwing): string => {
  * a deck holding no card face is a share of nothing, and a deck whose preset
  * was not read has no rule to be counted by.
  */
-const share = (deck: DeckOwing): string => {
+const share = (deck: DeckCardsDue): string => {
   if (props.scheduled && !props.byDeck.has(deck.deck)) return LEARNED.unruled
   const of = learned(deck)
   return of === null ? '' : LEARNED.share(of)
