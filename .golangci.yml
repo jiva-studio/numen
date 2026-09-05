@@ -27,6 +27,7 @@ linters:
     - contextcheck
     - noctx
     - exhaustive
+    - usetesting
 
   settings:
     errcheck:
@@ -69,6 +70,12 @@ linters:
         - pattern: ^fmt\.Print.*$
           pkg: ^fmt$
           msg: the core writes to no stream of its own — say it through port.Trouble
+
+    usetesting:
+      # A test never touches the machine it runs on: it takes its context and
+      # its directory from testing. Both checks are off until they are named.
+      context-background: true
+      os-temp-dir: true
 
   exclusions:
     generated: lax
