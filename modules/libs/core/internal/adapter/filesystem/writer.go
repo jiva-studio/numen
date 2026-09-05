@@ -255,7 +255,7 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 		return err
 	}
 
-	switch standing, err := root.Lstat(arrives); {
+	switch there, err := root.Lstat(arrives); {
 	case err == nil:
 		// A file already at the name is the name being taken, unless it is this
 		// file: a filesystem that tells neither capitalisation nor the spelling
@@ -264,7 +264,7 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 		if err != nil {
 			return err
 		}
-		if !os.SameFile(here, standing) {
+		if !os.SameFile(here, there) {
 			return fmt.Errorf("move %s to %s: %w", from, to, port.ErrOccupied)
 		}
 	case !errors.Is(err, fs.ErrNotExist):
