@@ -7,14 +7,15 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/numen-ui.umd.cjs",
-  "module": "./dist/numen-ui.js",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/numen-ui.js",
-      "require": "./dist/numen-ui.umd.cjs"
+      "import": "./dist/index.js"
     },
     "./styles.css": "./dist/numen-ui.css"
   },
