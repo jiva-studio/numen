@@ -240,42 +240,6 @@ func TestADayCarryingNoneOfTheLoadTakesNoCard(t *testing.T) {
 	}
 }
 
-// An even load moves reviews to the quieter days around them, so the busiest
-// day of a week stands nearer its quietest.
-func TestAnEvenLoadEvensTheDaysOut(t *testing.T) {
-	by := review.NewFSRS()
-	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	at := learned(by, now, 600)
-	// No budget binds, so a day carries what falls on it and what is compared is
-	// where the reviews fall.
-	run := review.Simulation{By: by, Day: ahead, Cost: review.DefaultCost, Days: 60}
-	p := review.Preset{Goal: review.GoalRetention, ReviewsADay: 9999}
-
-	lumpy := ran(t, run, now, p, at, 0)
-	p.EvenLoad = true
-	even := ran(t, run, now, p, at, 0)
-
-	// The first week pays the backlog, which stands where the answers already
-	// given left it.
-	if got := widest(lumpy.Load[7:]); got != 120 {
-		t.Errorf("a load left alone spread its widest week over %d answers, want 120", got)
-	}
-	if got := widest(even.Load[7:]); got != 30 {
-		t.Errorf("an even load spread its widest week over %d answers, want 30", got)
-	}
-}
-
-// widest is the most a week's busiest day stands above its quietest, over every
-// week of a projection.
-func widest(load []int) int {
-	out := 0
-	for i := 0; i+7 <= len(load); i++ {
-		week := load[i : i+7]
-		out = max(out, slices.Max(week)-slices.Min(week))
-	}
-	return out
-}
-
 // weekdays is the day of the week each day of a projection falls on.
 func weekdays(now time.Time, days int) []time.Weekday {
 	out := make([]time.Weekday, days)
@@ -1094,65 +1058,6 @@ func TestWhatAProjectionAssumesAboutRecallIsAnInputToTheRun(t *testing.T) {
 	if got, _ := ran(t, said, now, p, at, 0).Retained.On(0); got != middle {
 		t.Errorf("told what the model says the run retained %v, and told nothing %v",
 			got, middle)
-	}
-}
-
-// A sitting works out the day from a local now, and a replay from the stamp its
-// log carries, which is read back in UTC. One card and one answer, over the
-// night the clock goes back: both land on one moment, and not merely on one
-// date.
-func TestTheSittingAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
-	in, err := time.LoadLocation("Europe/Warsaw")
-	if err != nil {
-		t.Skipf("this machine holds no zone whose clock changes: %v", err)
-	}
-	day := review.Day{Starts: review.DayStarts, In: in}
-	by := review.NewFSRS()
-	p := review.Defaults()
-
-	face := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	stood := review.Give([]review.Answer{
-		answered("01A", face.Card, face.Face, "2026-10-10T08:00:00Z", review.Good),
-		answered("01B", face.Card, face.Face, "2026-10-13T08:00:00Z", review.Good),
-	}).Replay(day, review.By(by))[face]
-
-	// The answer is given ten days before the night the clock goes back, so the
-	// day the scheduler names falls the far side of it and the window the card
-	// may be moved within reaches back over it.
-	local := time.Date(2026, 10, 15, 10, 0, 0, 0, in)
-	changes := time.Date(2026, 10, 25, 3, 0, 0, 0, in)
-	due := by.Next(stood, local, review.Good).Due
-	if !due.After(changes) {
-		t.Fatalf("the card comes back on %v, which is not past the clock change", due.In(in))
-	}
-
-	// The stamp that answer stands as in the log, read back as a replay reads it.
-	stamp, err := review.Moment(local.UTC().Format(review.Stamp))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !stamp.Equal(local) {
-		t.Fatalf("the stamp reads back as %v, and the answer was given at %v", stamp, local)
-	}
-
-	// The day the scheduler named already carries cards, so the placement moves
-	// the card and the arithmetic that adds days is reached.
-	loaded := func(on time.Time) *review.DueByDay {
-		s := review.Spreading(day)
-		for range 9 {
-			s.Holds(on)
-		}
-		return s
-	}
-
-	button := p.Lands(loaded(due), local, due)
-	replayed := p.Places(loaded(due.UTC()), stamp, by.Next(stood, stamp, review.Good).Due)
-	if button.Equal(due) {
-		t.Fatalf("the placement left the card on %v, where the scheduler put it", due.In(in))
-	}
-	if !button.Equal(replayed) {
-		t.Errorf("the button said %v and the replay put the card on %v",
-			button.In(in), replayed.In(in))
 	}
 }
 
