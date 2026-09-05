@@ -39,6 +39,16 @@ func NewFSRS() FSRS {
 	return FSRS{p: p, name: FSRSName + "." + weighed(p)}
 }
 
+// NewFSRSAt is the scheduler asking for this share of the cards to come back
+// when they come round. A share outside what a preset may hold is brought to
+// the nearest end of it.
+func NewFSRSAt(retention float64) FSRS {
+	p := fsrs.DefaultParam()
+	p.EnableFuzz = false
+	p.RequestRetention = math.Min(math.Max(retention, RetentionBounds.Least), RetentionBounds.Most)
+	return FSRS{p: p, name: FSRSName + "." + weighed(p)}
+}
+
 func (f FSRS) Name() string { return f.name }
 
 // weighed is the parameters as a short name. Everything the scheduler was built

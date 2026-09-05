@@ -184,16 +184,6 @@ func AsModelled(c Schedule, at time.Time) float64 {
 // NothingForgotten is a run in which every card face asked comes back.
 func NothingForgotten(Schedule, time.Time) float64 { return 1 }
 
-// NewFSRSAt is the scheduler asking for this share of the cards to come back
-// when they come round. A share outside what a preset may hold is brought to
-// the nearest end of it.
-func NewFSRSAt(retention float64) FSRS {
-	p := fsrs.DefaultParam()
-	p.EnableFuzz = false
-	p.RequestRetention = math.Min(math.Max(retention, RetentionBounds.Least), RetentionBounds.Most)
-	return FSRS{p: p, name: FSRSName + "." + weighed(p)}
-}
-
 // Projection is what a preset comes to over the days ahead.
 //
 // Everything in it is a number a caller shows. It is worked out from the
