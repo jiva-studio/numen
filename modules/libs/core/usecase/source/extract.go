@@ -13,10 +13,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
-// extractor names the reader that takes text out of a book. It is part of the
-// recipe, and it changes when the text or the offsets the reader produces do.
-const extractor = "epub-1"
-
 // sourcesPerQuery bounds one answer about what owes its text, so that a library
 // of any size is worked through in pieces.
 const sourcesPerQuery = 100

@@ -676,13 +676,6 @@ func TestCoordinatesThatDidNotLandWholeAreNotReadAsRecords(t *testing.T) {
 	reads(t, prose, boxes, says)
 }
 
-// says is the prose the artifact holds.
-func says(t *testing.T, v domain.Vault, index *store, written *shelf) string {
-	t.Helper()
-	prose, _ := ocr.Read(artifact(t, v, index, written))
-	return prose
-}
-
 // artifact is what recognition wrote for the document under test.
 func artifact(t *testing.T, v domain.Vault, index *store, written *shelf) []byte {
 	t.Helper()
