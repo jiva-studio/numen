@@ -12,17 +12,26 @@ import { unreachable } from './styles.mjs'
  */
 test('no component styles a class no template of its can set', () => {
   const wrong = []
-  let read = 0
+  const read = []
   for (const { at, text } of sources(['.vue'])) {
     if (!text.includes('<style')) continue
-    read += 1
+    read.push(at)
     for (const one of unreachable(text)) wrong.push(`${at} styles .${one}, which nothing sets`)
   }
   assert.deepEqual(wrong, [])
 
   // A walk that read no style block is a rule checked against nothing, and it
-  // passes. The count is a floor well under what the three modules hold.
-  assert.ok(read > 60, `${read} components with a style block read: the walk is not reading them`)
+  // passes. The count is a floor well under what the modules hold, and the file
+  // the rule was written for is named: a walk that reads eighty others and not
+  // that one is reading the wrong tree.
+  assert.ok(
+    read.length > 60,
+    `${read.length} components with a style block read: the walk is not reading them`,
+  )
+  assert.ok(
+    read.some((at) => at.endsWith('welcome/WelcomePage.vue')),
+    'the walk did not read WelcomePage.vue, which is the component this rule exists for',
+  )
 })
 
 /**
