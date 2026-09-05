@@ -85,7 +85,7 @@ describe('Band', () => {
 
   it('emits the section asked to go, named to a reader', async () => {
     const held = mountBand()
-    const away = held.get('.deed')
+    const away = held.get('.remove')
     expect(away.attributes('aria-label')).toBe('Remove: Section 1')
     await away.trigger('click')
     expect(held.emitted('remove')).toEqual([[]])
@@ -93,6 +93,6 @@ describe('Band', () => {
 
   it('names the way to be rid of it by the place it stands, a bare heading and all', () => {
     const held = mountBand({ band: { id: 'bare', name: '', at: 2 } })
-    expect(held.get('.deed').attributes('aria-label')).toBe('Remove: Section 2')
+    expect(held.get('.remove').attributes('aria-label')).toBe('Remove: Section 2')
   })
 })

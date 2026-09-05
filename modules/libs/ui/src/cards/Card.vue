@@ -10,7 +10,7 @@
 import { computed, useId } from 'vue'
 import Amiss from './Amiss.vue'
 import Bar from './Bar.vue'
-import Deed from './Deed.vue'
+import Remove from './Remove.vue'
 import Grown from './Grown.vue'
 import Rule from '../rule/Rule.vue'
 import { DECK_WORDS, sealed, type CardWords, type Stood, type Tile } from './deck'
@@ -93,7 +93,7 @@ const wrongIn = (value: Stood): readonly string[] =>
       </p>
 
       <template #deeds>
-        <Deed :label="`${words.remove}: ${called}`" @press="emit('remove')" />
+        <Remove :label="`${words.remove}: ${called}`" @press="emit('remove')" />
       </template>
     </Bar>
 
@@ -192,7 +192,7 @@ const wrongIn = (value: Stood): readonly string[] =>
 }
 
 /* What cut the card stands in the middle of the strip itself, and keeps clear
-   of the deed at its end. */
+   of the button at its end. */
 .card__cut {
   position: absolute;
   inset-inline: 2rem;

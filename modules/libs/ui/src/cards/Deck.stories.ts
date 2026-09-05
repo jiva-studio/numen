@@ -512,7 +512,7 @@ export const InSections: Story = {
     expect(deeds.getBoundingClientRect().width).toBe(0)
 
     found(canvasElement, '[data-band="roots"] input').focus()
-    const drawn = found(canvasElement, '[data-band="roots"] .deed').getBoundingClientRect()
+    const drawn = found(canvasElement, '[data-band="roots"] .remove').getBoundingClientRect()
     const rule = found(canvasElement, '[data-band="roots"] .rule__held').getBoundingClientRect()
     expect(deeds.getBoundingClientRect().width).toBeGreaterThan(0)
     expect(drawn.right).toBeLessThanOrEqual(Math.ceil(rule.right))
@@ -533,7 +533,7 @@ export const InSections: Story = {
 
     // Taking a section away takes away its heading and nothing else: its cards
     // stand under the heading above them now.
-    await userEvent.click(found(canvasElement, '[data-band="roots"] .deed'))
+    await userEvent.click(found(canvasElement, '[data-band="roots"] .remove'))
     expect(canvasElement.querySelectorAll('[data-band="roots"]')).toHaveLength(0)
     expect(canvasElement.querySelectorAll('[data-card]')).toHaveLength(3)
     expect(

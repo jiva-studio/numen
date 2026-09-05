@@ -10,7 +10,7 @@
 import { computed, nextTick, shallowRef, useId, type ComponentPublicInstance } from 'vue'
 import Amiss from './Amiss.vue'
 import Bar from './Bar.vue'
-import Deed from './Deed.vue'
+import Remove from './Remove.vue'
 import Grown from './Grown.vue'
 import CardProse from './CardProse.vue'
 import NameBox from './NameBox.vue'
@@ -175,7 +175,7 @@ const put = async (field: string): Promise<void> => {
       </div>
 
       <template #deeds>
-        <Deed :label="`${words.remove}: ${block.name}`" @press="emit('remove')" />
+        <Remove :label="`${words.remove}: ${block.name}`" @press="emit('remove')" />
       </template>
     </Bar>
 

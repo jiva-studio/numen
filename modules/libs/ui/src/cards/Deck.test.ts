@@ -540,7 +540,7 @@ describe('Deck', () => {
 
     it('emits a section asked to go', async () => {
       const held = mountSectioned()
-      await held.get('[data-band="roots"] .deed').trigger('click')
+      await held.get('[data-band="roots"] .remove').trigger('click')
       expect(held.emitted('remove-section')).toEqual([['roots']])
     })
 

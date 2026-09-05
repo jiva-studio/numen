@@ -9,7 +9,7 @@
  */
 import { computed, useId } from 'vue'
 import Amiss from './Amiss.vue'
-import Deed from './Deed.vue'
+import Remove from './Remove.vue'
 import NameBox from './NameBox.vue'
 import Rule from '../rule/Rule.vue'
 import { useNaming } from './naming'
@@ -79,7 +79,7 @@ const stem = computed(() => `${props.words.sectionStem} ${props.band.at}`)
         </span>
 
         <span class="band__deeds">
-          <Deed :label="`${words.remove}: ${stem}`" @press="emit('remove')" />
+          <Remove :label="`${words.remove}: ${stem}`" @press="emit('remove')" />
         </span>
       </span>
     </Rule>
