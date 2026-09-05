@@ -5,10 +5,9 @@
  * reading in their own language reads their own dates.
  */
 
+import { dayOf } from '../calendar/day'
+
 const full = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' })
 
 /** A day as a person reads one. */
-export const dayName = (day: string): string => {
-  const [year, month, at] = day.split('-').map(Number)
-  return full.format(new Date(year ?? 2000, (month ?? 1) - 1, at ?? 1))
-}
+export const dayName = (day: string): string => full.format(dayOf(day))

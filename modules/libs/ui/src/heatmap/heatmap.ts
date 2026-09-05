@@ -5,7 +5,7 @@
  * how dark it is drawn are arithmetic, and arithmetic inside a component is
  * arithmetic nobody can check without a screen.
  */
-import { dayNamed } from '../calendar/day'
+import { dayNamed, dayOf } from '../calendar/day'
 
 /** How many days stand in one column. A column is a week. */
 export const ROWS = 7
@@ -160,10 +160,7 @@ function began(
     if (first === '' || day < first) first = day
   }
   if (first === '') return now
-  const [year, month, day] = first.split('-').map(Number)
-  const at = new Date(now)
-  at.setFullYear(year ?? now.getFullYear(), (month ?? 1) - 1, day ?? 1)
-  at.setHours(12, 0, 0, 0)
+  const at = dayOf(first)
   return at > now ? now : at
 }
 
