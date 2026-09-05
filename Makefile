@@ -10,6 +10,7 @@ MOBILE   := modules/apps/mobile
 DOCS     := modules/apps/docs
 LANDING  := modules/apps/landing
 ICON     := modules/tools/icon
+DEPGRAPH := modules/tools/depgraph
 UI       := modules/libs/ui
 WIRE     := modules/libs/wire
 PROTOCOL := modules/libs/protocol
@@ -46,6 +47,7 @@ install: ## fetch every module's dependencies
 	cd $(MOBILE) && $(INSTALL)
 	cd $(DOCS) && $(INSTALL)
 	cd $(LANDING) && $(INSTALL)
+	cd $(DEPGRAPH) && $(INSTALL)
 
 .PHONY: generate
 generate: ## compile the schema into Go and TypeScript
@@ -150,6 +152,18 @@ lint: generate-check ## the checks CI runs, less the one needing a base branch
 	cd $(DOCS) && npm run manual:check
 	cd $(DOCS) && npm run typecheck
 	cd $(LANDING) && npm run typecheck
+	cd $(DEPGRAPH) && npm run check
+	$(MAKE) graph-check
+
+# The drawing, taken from the code rather than from memory. A map made this way
+# is the cheapest instrument there is against not knowing what depends on what.
+.PHONY: graph
+graph: ## draw what the interface modules depend on, into docs/dependencies.md
+	cd $(DEPGRAPH) && npm run graph
+
+.PHONY: graph-check
+graph-check: graph ## fail if the drawing that is committed is out of date
+	git diff --exit-code -- docs/dependencies.md
 
 # What .golangci.yml asks for. The phone binds the core and is left out of it.
 #
