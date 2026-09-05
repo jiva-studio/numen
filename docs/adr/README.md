@@ -61,6 +61,7 @@ The numbers are identity, not order. This list is the order. A gap in the number
 ### The vault, written
 
 - [The application writes to the vault](0017-the-application-writes-to-the-vault.md)
+- [A path is judged by where it lands](0048-a-path-is-judged-by-where-it-lands.md)
 - [The note file](0018-the-note-file.md)
 - [A note is identified by a ULID in its frontmatter](0019-a-note-is-identified-by-a-ulid.md)
 - [One process, one lifetime](0020-one-process-one-lifetime.md)
