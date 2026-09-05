@@ -45,7 +45,8 @@ linters:
 
     exhaustive:
       # A switch that names a default has answered for the cases it did not
-      # write down.
+      # write down, and the default is written inside the switch: a statement
+      # standing after it answers nothing this can see.
       default-signifies-exhaustive: true
       # The rule is for enums this repository owns and the ones the schema
       # generates. A borrowed set of a few hundred HTML element names is not an

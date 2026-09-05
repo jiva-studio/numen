@@ -307,8 +307,9 @@ func left(said v1.FlushResult) owed {
 		return wrote
 	case v1.FlushResult_FLUSH_RESULT_ASKING:
 		return asks
+	default:
+		return silent
 	}
-	return silent
 }
 
 // leaving is everyone drawing this window, for the moment it goes.

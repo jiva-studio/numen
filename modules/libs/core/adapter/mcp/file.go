@@ -68,6 +68,7 @@ func unread(outcome file.ReadOutcome) string {
 		return "this path holds a folder"
 	case file.NotText:
 		return "this run of the file is not text: some of it is not valid UTF-8"
+	default:
+		return string(outcome)
 	}
-	return string(outcome)
 }

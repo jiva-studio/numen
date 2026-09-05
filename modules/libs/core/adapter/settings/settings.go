@@ -128,8 +128,9 @@ func Word(mode appearance.ColorScheme) string {
 		return ModeLight
 	case appearance.Dark:
 		return ModeDark
+	default:
+		return ModeSystem
 	}
-	return ModeSystem
 }
 
 // AsDesigned is the multiplier that draws everything the size it was drawn at.

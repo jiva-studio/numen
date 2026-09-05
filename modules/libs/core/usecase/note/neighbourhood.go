@@ -139,10 +139,11 @@ func seatFor(role domain.LinkRole) (domain.Relation, bool) {
 		return domain.SeatChild, true
 	case domain.RoleJump:
 		return domain.SeatJump, true
+	default:
+		// A wikilink in prose and an attachment are links, and neither is a
+		// place in the hierarchy.
+		return "", false
 	}
-	// A wikilink in prose and an attachment are links, and neither is a place
-	// in the hierarchy.
-	return "", false
 }
 
 func mirror(role domain.LinkRole) domain.LinkRole {
@@ -151,8 +152,9 @@ func mirror(role domain.LinkRole) domain.LinkRole {
 		return domain.RoleChild
 	case domain.RoleChild:
 		return domain.RoleParent
+	default:
+		return role
 	}
-	return role
 }
 
 // seats collects notes in the order they were found: the links this note

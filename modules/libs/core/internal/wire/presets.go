@@ -65,8 +65,9 @@ func StopReasonOf(s review.StopReason) v1.StopReason {
 		return v1.StopReason_STOP_REASON_NO_LOAD
 	case review.StoppedNoWeek:
 		return v1.StopReason_STOP_REASON_NO_WEEK
+	default:
+		return v1.StopReason_STOP_REASON_NOTHING
 	}
-	return v1.StopReason_STOP_REASON_NOTHING
 }
 
 // SettingsOf is how a preset schedules, as the schema carries it.

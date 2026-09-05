@@ -107,8 +107,9 @@ func scheme(mode ColorScheme) string {
 		return "light"
 	case Dark:
 		return "dark"
+	default:
+		return "light dark"
 	}
-	return "light dark"
 }
 
 // styled is one stylesheet as the page carries it, marked as the one of the

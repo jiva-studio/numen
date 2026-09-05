@@ -277,8 +277,9 @@ func rating(r v1.Rating) review.Rating {
 		return review.Good
 	case v1.Rating_RATING_EASY:
 		return review.Easy
+	default:
+		return 0
 	}
-	return 0
 }
 
 // TakeBackAnswer writes down that an answer was taken back.

@@ -179,8 +179,9 @@ func wayOf(way v1.Way) (search.SearchWay, bool) {
 		return search.ByName, true
 	case v1.Way_WAY_EVERY:
 		return search.EveryWay, true
+	default:
+		return search.EveryWay, false
 	}
-	return search.EveryWay, false
 }
 
 // atMost is how many answers to give, from what the client asked for.

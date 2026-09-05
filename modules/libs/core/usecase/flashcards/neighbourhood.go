@@ -136,6 +136,9 @@ func (u ShowNeighbourhood) Execute(
 				// held a note there: it is written while this reads it.
 				continue
 			}
+			// An ordinary note is what the cards were written from, and is
+			// taken below rather than passed over here.
+			//exhaustive:ignore
 			switch kinds[one.Path] {
 			case domain.TypeStencil:
 				// Every card names the stencil it is cut by, so a deck points at

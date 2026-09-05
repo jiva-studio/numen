@@ -17,8 +17,9 @@ func ModeOf(mode appearance.ColorScheme) v1.Mode {
 		return v1.Mode_MODE_LIGHT
 	case appearance.Dark:
 		return v1.Mode_MODE_DARK
+	default:
+		return v1.Mode_MODE_SYSTEM
 	}
-	return v1.Mode_MODE_SYSTEM
 }
 
 func ModeIn(mode v1.Mode) appearance.ColorScheme {
@@ -27,6 +28,7 @@ func ModeIn(mode v1.Mode) appearance.ColorScheme {
 		return appearance.Light
 	case v1.Mode_MODE_DARK:
 		return appearance.Dark
+	default:
+		return appearance.System
 	}
-	return appearance.System
 }

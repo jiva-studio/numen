@@ -87,6 +87,9 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 		return DeckContents{}, err
 	}
 	out.Fingerprint, out.Outcome, out.Type = ref, outcome, n.Type
+	// A file that will not read is carried out in the outcome above, and adds
+	// nothing to a body nobody read.
+	//exhaustive:ignore
 	switch outcome {
 	case note.Ok:
 		out.Body, out.Raw = format.ReadDeck(n), n.Body
