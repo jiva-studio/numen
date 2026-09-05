@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-09-04
-- **Applies to:** `modules/libs/protocol`; `modules/libs/core` — `adapter/webui`, `adapter/flashcardsui`
+- **Applies to:** `modules/libs/protocol`; `modules/libs/core` — `adapter/window/editor`, `adapter/window/flashcards`
 - **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [A client is generated from the protocol](0005-a-client-is-generated-from-the-protocol.md), [Review is an application of its own](0027-review-is-an-application-of-its-own.md), [Both windows open a vault through one path](0033-both-windows-open-a-vault-through-one-path.md)
 
 ## Context

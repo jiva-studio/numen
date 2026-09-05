@@ -11,8 +11,8 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/flashcardsui"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
+	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
@@ -70,7 +70,7 @@ func serveAgents(
 	db *container.Index,
 	notes container.Notes,
 	cutting container.Cards,
-	api *flashcardsui.API,
+	api *window.API,
 	off bool,
 	out io.Writer,
 ) func() error {
@@ -141,7 +141,7 @@ func reviewing(
 	db *container.Index,
 	notes container.Notes,
 	cutting container.Cards,
-	api *flashcardsui.API,
+	api *window.API,
 	v domain.Vault,
 	root string,
 	out io.Writer,

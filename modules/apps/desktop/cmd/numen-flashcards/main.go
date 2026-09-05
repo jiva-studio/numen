@@ -23,7 +23,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/flashcardsui"
+	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
@@ -104,7 +104,7 @@ func run(cfg container.Config, noAgent bool) error {
 	notes, cutting := composed(cfg, db, vaults)
 
 	running := cfg.Flashcards(db.Queries(), db.Links(), db.Problems(), vaults.level)
-	api := &flashcardsui.API{
+	api := &window.API{
 		Registry:      registry,
 		CardsDue:      running.CardsDue,
 		Session:       running.Session,
@@ -114,7 +114,7 @@ func run(cfg container.Config, noAgent bool) error {
 		Neighbourhood: flashcards.NewShowNeighbourhood(notes.Links, db.Queries(), notes.Read),
 		Presets:       running.Presets,
 		Notes:         db.Queries(),
-		Window:        flashcardsui.Watching(task.New()),
+		Window:        window.Watching(task.New()),
 		Day:           running.Day,
 		Now:           time.Now,
 	}
@@ -175,7 +175,7 @@ func run(cfg container.Config, noAgent bool) error {
 	}
 	api.Themes = themes
 
-	pages, err := flashcardsui.Pages()
+	pages, err := window.Pages()
 	if err != nil {
 		return err
 	}

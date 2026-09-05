@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-29
-- **Applies to:** `modules/apps/desktop` — the binaries; `modules/libs/core` — `usecase/flashcards`, `adapter/mcp`, `adapter/flashcardsui`, `internal/wire`
+- **Applies to:** `modules/apps/desktop` — the binaries; `modules/libs/core` — `usecase/flashcards`, `adapter/mcp`, `adapter/window/flashcards`, `internal/wire`
 - **Related:** [One database for all vaults, outside them](0002-one-database-for-all-vaults.md), [A vault carries its identity, and application state lives with the application](0003-a-vault-carries-its-identity.md), [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [One process, one lifetime](0020-one-process-one-lifetime.md), [An agent reaches the vault through tools](0021-an-agent-reaches-the-vault-through-tools.md), [The agent this application starts is a port](0022-the-agent-this-application-starts-is-a-port.md), [How this application is tested](0025-how-this-application-is-tested.md), [The stencil, the deck and the card](0026-the-stencil-and-the-deck.md), [An answer is an artifact, a schedule is a cache](0028-an-answer-is-an-artifact-a-schedule-is-a-cache.md), [Both windows open a vault through one path](0033-both-windows-open-a-vault-through-one-path.md)
 
 ## Context

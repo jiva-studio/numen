@@ -13,7 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/flashcardsui"
+	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
@@ -31,7 +31,7 @@ var deck = map[string]string{
 // index it may write, and two vaults to sit down to.
 func built(
 	t *testing.T,
-) (container.Config, *container.Index, *openVaults, *flashcardsui.API, []domain.Vault) {
+) (container.Config, *container.Index, *openVaults, *window.API, []domain.Vault) {
 	t.Helper()
 
 	state := t.TempDir()
@@ -51,7 +51,7 @@ func built(
 	}
 	vaults := &openVaults{cfg: cfg, db: db, ctx: t.Context(), record: func(domain.Vault) {}, out: io.Discard}
 	t.Cleanup(vaults.wait)
-	return cfg, db, vaults, &flashcardsui.API{}, held
+	return cfg, db, vaults, &window.API{}, held
 }
 
 // vaultOf is a folder holding one stencil and one deck, as a vault.

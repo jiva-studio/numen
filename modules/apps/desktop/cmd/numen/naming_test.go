@@ -11,14 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // indexed waits until the vault holds the note at this path, which is what says
 // the walk that reads a file it has just been given is over.
-func indexed(t *testing.T, opened *webui.Installation, v domain.Vault, path string) {
+func indexed(t *testing.T, opened *editor.Installation, v domain.Vault, path string) {
 	t.Helper()
 	for range 200 {
 		shown, err := opened.Index.Queries().Notes(t.Context(), v.ID, []string{path})

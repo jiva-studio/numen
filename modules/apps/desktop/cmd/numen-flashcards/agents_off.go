@@ -6,7 +6,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/flashcardsui"
+	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
@@ -22,7 +22,7 @@ func serveAgents(
 	_ *container.Index,
 	_ container.Notes,
 	_ container.Cards,
-	api *flashcardsui.API,
+	api *window.API,
 	_ bool,
 	_ io.Writer,
 ) func() error {

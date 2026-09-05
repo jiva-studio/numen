@@ -22,13 +22,13 @@ const module = "github.com/jiva-studio/numen/modules/libs/core/"
 //
 // A package is named by the path it sits at. An adapter the compiler holds sits
 // under internal/, and a name here is not a name there: what is owed to
-// adapter/webui is not owed to internal/adapter/webui, which is not the same
-// package and would not be the same window.
+// adapter/window/editor is not owed to internal/adapter/window/editor, which is
+// not the same package and would not be the same window.
 var owed = map[string][]string{
 	// The terminal assembles what it serves.
 	"adapter/cli": {"container"},
 	// The window assembles what it serves.
-	"adapter/webui": {"container"},
+	"adapter/window/editor": {"container"},
 	// One settings file is the union of every adapter's section.
 	"adapter/settings": {
 		"adapter/agent", "internal/adapter/embed", "internal/adapter/proofreading",
@@ -47,11 +47,11 @@ var owed = map[string][]string{
 // says nothing outside composes this, and a driving adapter mounted by another
 // adapter rather than by an application is composed by nothing outside.
 var driving = map[string]bool{
-	"adapter/cli":            true,
-	"adapter/flashcardsui":   true,
-	"adapter/mcp":            true,
-	"adapter/webui":          true,
-	"internal/adapter/theme": true,
+	"adapter/cli":               true,
+	"adapter/mcp":               true,
+	"adapter/window/editor":     true,
+	"adapter/window/flashcards": true,
+	"internal/adapter/theme":    true,
 }
 
 // pure are the packages holding what is true of a note or a card, and the
@@ -1172,42 +1172,75 @@ func assembling(to string) bool {
 // package under it, which share the settings section they are built from.
 func sibling(from, to string) bool { return family(from) == family(to) }
 
-// family is the adapter a package belongs to: the folder holding it, and where
-// the compiler holds that folder, the folder under internal/adapter.
+// grouping are the folders that hold adapters rather than being one: adapter/
+// itself, the folder the compiler holds them in, and the folder holding one
+// adapter to a window. What stands directly under any of them is an adapter.
+var grouping = []string{"adapter", "internal/adapter", "adapter/window"}
+
+// family is the adapter a package belongs to: what stands directly under the
+// grouping folder it is in, and every package beneath that.
 func family(pkg string) string {
-	held := strings.Split(pkg, "/")
 	depth := 2
-	if strings.HasPrefix(pkg, "internal/adapter/") {
-		depth = 3
+	for _, one := range grouping {
+		if strings.HasPrefix(pkg, one+"/") {
+			depth = max(depth, strings.Count(one, "/")+2)
+		}
 	}
+	held := strings.Split(pkg, "/")
 	if len(held) < depth {
 		return pkg
 	}
 	return strings.Join(held[:depth], "/")
 }
 
+// standing are the adapters in one folder, named under it. A folder that groups
+// adapters is not an adapter, so what stands under it is read in its place.
+func standing(dir, at string) ([]string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	var found []string
+	for _, one := range entries {
+		if !one.IsDir() {
+			continue
+		}
+		below := at + "/" + one.Name()
+		if !slices.Contains(grouping, below) {
+			found = append(found, one.Name())
+			continue
+		}
+		deeper, err := standing(filepath.Join(dir, one.Name()), below)
+		if err != nil {
+			return nil, err
+		}
+		for _, name := range deeper {
+			found = append(found, one.Name()+"/"+name)
+		}
+	}
+	return found, nil
+}
+
 // public are the adapters an application names for itself: the four it serves
 // something through, and the three it composes or configures.
 var public = []string{
-	"agent", "cli", "flashcardsui", "index", "mcp", "settings", "webui",
+	"agent", "cli", "index", "mcp", "settings",
+	"window/editor", "window/flashcards",
 }
 
 // The core's surface is these adapters and no others. A driven adapter nothing
 // outside composes sits under internal/adapter, where the compiler holds it, so
 // binding it to a port stays this package's work.
 func TestTheCoresPublicAdaptersAreTheseAndNoOthers(t *testing.T) {
-	held, err := os.ReadDir(filepath.Join("..", "adapter"))
+	found, err := standing(filepath.Join("..", "adapter"), "adapter")
 	if err != nil {
 		t.Fatal(err)
 	}
-	there := make(map[string]bool, len(held))
-	for _, one := range held {
-		if !one.IsDir() {
-			continue
-		}
-		there[one.Name()] = true
-		if !holds(public, one.Name()) {
-			t.Errorf("adapter/%s is public and nothing outside composes it", one.Name())
+	there := make(map[string]bool, len(found))
+	for _, one := range found {
+		there[one] = true
+		if !holds(public, one) {
+			t.Errorf("adapter/%s is public and nothing outside composes it", one)
 		}
 	}
 	for _, one := range public {
@@ -1227,18 +1260,15 @@ var held = []string{
 
 // The adapters under internal/ are these and no others.
 func TestTheCoresHeldAdaptersAreTheseAndNoOthers(t *testing.T) {
-	found, err := os.ReadDir(filepath.Join("..", "internal", "adapter"))
+	found, err := standing(filepath.Join("..", "internal", "adapter"), "internal/adapter")
 	if err != nil {
 		t.Fatal(err)
 	}
 	there := make(map[string]bool, len(found))
 	for _, one := range found {
-		if !one.IsDir() {
-			continue
-		}
-		there[one.Name()] = true
-		if !holds(held, one.Name()) {
-			t.Errorf("internal/adapter/%s stands here and is named nowhere", one.Name())
+		there[one] = true
+		if !holds(held, one) {
+			t.Errorf("internal/adapter/%s stands here and is named nowhere", one)
 		}
 	}
 	for _, one := range held {
@@ -1258,12 +1288,18 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		refuses  bool
 	}{
 		// An adapter under internal/ is not the adapter it is named after.
-		{"internal/adapter/webui", "container", true},
+		{"internal/adapter/window/editor", "container", true},
 		{"internal/adapter/settings", "internal/adapter/embed", true},
 		{"internal/adapter/mcp", "usecase/note", true},
-		{"adapter/webui", "container", false},
+		{"adapter/window/editor", "container", false},
 		{"adapter/settings", "internal/adapter/embed", false},
 		{"adapter/mcp", "usecase/note", false},
+
+		// The folder holding one adapter to a window is not an adapter, so the
+		// two windows are two adapters and neither is given the other.
+		{"adapter/window/editor", "adapter/window/flashcards", true},
+		{"adapter/window/flashcards", "adapter/window/editor", true},
+		{"adapter/window/editor/pages", "adapter/window/editor", false},
 
 		// A driven adapter runs no scenario, and takes no other adapter. Which
 		// of the two an adapter is has nothing to do with the folder it sits
@@ -1279,7 +1315,7 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"usecase/note", "internal/adapter/trash", true},
 		{"usecase/note", "container", true},
 		{"usecase/note", "port", false},
-		{"internal/wire", "adapter/webui", true},
+		{"internal/wire", "adapter/window/editor", true},
 
 		// What is true of a note is worked out from what is true of a note.
 		{"domain", "task", true},

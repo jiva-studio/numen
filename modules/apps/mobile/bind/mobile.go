@@ -19,7 +19,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -34,7 +34,7 @@ var (
 type held struct {
 	port   int
 	stop   context.CancelFunc
-	opened *webui.Installation
+	opened *editor.Installation
 	server *http.Server
 }
 
@@ -76,7 +76,7 @@ func Start(dir string) (int, error) {
 	}
 
 	ctx, stop := context.WithCancel(context.Background())
-	opened, err := webui.Open(ctx, cfg, filed, io.Discard)
+	opened, err := editor.Open(ctx, cfg, filed, io.Discard)
 	if err != nil {
 		stop()
 		return 0, err

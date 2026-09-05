@@ -6,14 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // windowOn is a window open on a vault of this test's own.
-func windowOn(t *testing.T) (*webui.Installation, container.Config) {
+func windowOn(t *testing.T) (*editor.Installation, container.Config) {
 	t.Helper()
 
 	cfg := container.Config{
@@ -30,7 +30,7 @@ func windowOn(t *testing.T) (*webui.Installation, container.Config) {
 		t.Fatal(err)
 	}
 
-	opened, err := webui.Open(t.Context(), cfg, "one", io.Discard)
+	opened, err := editor.Open(t.Context(), cfg, "one", io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -27,7 +27,7 @@ graph TD
     subgraph core["modules/libs/core"]
         direction TB
         subgraph driving["driving adapters"]
-            W["webui<br/>serves a client"]
+            W["window/editor<br/>serves a client"]
             C["cli"]
             M["mcp<br/>agent tools"]
         end
@@ -104,14 +104,15 @@ modules/libs/core/
 
   adapter/
     cli/                   driving: arguments in, text out
-    webui/                 driving: the handler a client asks
     mcp/                   driving: tools an agent calls
     index/                 driven: the cache, a folder per aggregate
       <aggregate>/         repository.go, queries.go, sql/*.sql
       migration/           numbered schema changes
     settings/              driven: what a person configured
     agent/                 driven: which agent answers
-    flashcardsui/          driving: the handler the review window asks
+    window/                one adapter to a window
+      editor/              driving: the handler the notes window asks
+      flashcards/          driving: the handler the review window asks
   internal/
     adapter/               driving or driven: what nothing outside composes
       filesystem/          driven: a vault on disk

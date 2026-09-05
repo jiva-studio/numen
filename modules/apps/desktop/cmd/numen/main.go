@@ -26,7 +26,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
@@ -118,12 +118,12 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	if err := cfg.PrepareRecogniser(ctx); err != nil {
 		fmt.Fprintln(os.Stderr, "numen: nothing to read a scan with:", err)
 	}
-	pages, err := webui.Pages()
+	pages, err := editor.Pages()
 	if err != nil {
 		return err
 	}
 
-	opened, err := webui.Open(ctx, cfg, vault, os.Stdout)
+	opened, err := editor.Open(ctx, cfg, vault, os.Stdout)
 	if err != nil {
 		return err
 	}
@@ -337,7 +337,7 @@ func asked(g *going, s visibility, quit func()) bool {
 
 // quitBound is how long the window waits for a page that says nothing to write
 // what only it holds. A vault being changed waits under the same bound.
-const quitBound = webui.HandedOverIn
+const quitBound = editor.HandedOverIn
 
 // going is the vault settling, whichever way the window is asked to go.
 //

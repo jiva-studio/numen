@@ -101,7 +101,7 @@ linters:
       # A page held in the window's cache is drawn by this file and read by it,
       # and `container/list` carries it as `any` because the standard library
       # has no list of one type. The assertion is over what this file put there.
-      - path: (^|/)adapter/webui/pictures\.go$
+      - path: (^|/)adapter/window/editor/pictures\.go$
         text: Error return value is not checked
         linters: [errcheck]
 
@@ -129,7 +129,7 @@ linters:
       # a page drawn ahead under `a.behind()`, a proofreading under
       # `t.context()`. Handing it the caller's context is how a scan dies
       # because the page that asked for a count was closed.
-      - path: (^|/)(adapter/flashcardsui/reading|adapter/webui/(serve|showing|viewer)|usecase/source/transcribing)\.go$
+      - path: (^|/)(adapter/window/(flashcards/reading|editor/(serve|showing|viewer))|usecase/source/transcribing)\.go$
         linters: [contextcheck]
 
       # A close is what runs when the context is already over, so it carries one

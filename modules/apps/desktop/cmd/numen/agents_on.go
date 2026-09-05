@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/check"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -29,7 +29,7 @@ const defaultAgentAddr = mcp.DefaultAddr
 // unnamed is what the panel is told where the settings name no agent.
 const unnamed = "no agent is named in the settings"
 
-func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Installation, opts agentOptions, out io.Writer) (func() error, error) {
+func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Installation, opts agentOptions, out io.Writer) (func() error, error) {
 	if opts.off {
 		return func() error { return nil }, nil
 	}
@@ -84,7 +84,7 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Instal
 
 // drafting is how a change the agent is making reaches the window before it
 // lands. Where a stretch stands is the vault's to say.
-func drafting(opened *webui.Installation) claudecode.Drafting {
+func drafting(opened *editor.Installation) claudecode.Drafting {
 	reading := opened.Notes().Read
 	return claudecode.Drafting{
 		Report: func(ctx context.Context, said domain.Edit) {
@@ -114,7 +114,7 @@ func drafting(opened *webui.Installation) claudecode.Drafting {
 // The one difference is Drawing, and it is why: a note a tool writes is drawn
 // as the stretch that changed, and a note the person writes is not, because
 // they are looking at the text they typed.
-func agentCore(cfg container.Config, opened *webui.Installation, root string, out io.Writer) mcp.Core {
+func agentCore(cfg container.Config, opened *editor.Installation, root string, out io.Writer) mcp.Core {
 	notes := opened.Notes().Drawing(opened.API.Viewing())
 	cutting := opened.Cards()
 
@@ -178,7 +178,7 @@ func agentCore(cfg container.Config, opened *webui.Installation, root string, ou
 // The session that asked is served for the vault that is going and ends with
 // it, so what went wrong is said here. A window that cannot be moved serves no
 // tool that would move it.
-func opening(opened *webui.Installation, out io.Writer) func(context.Context, domain.Vault) error {
+func opening(opened *editor.Installation, out io.Writer) func(context.Context, domain.Vault) error {
 	if opened.API.Opens == nil {
 		return nil
 	}
@@ -196,6 +196,6 @@ func opening(opened *webui.Installation, out io.Writer) func(context.Context, do
 // It is always served, even on a machine holding none of the models: what is
 // missing is fetched behind whoever asked, and the tool says so. A tool that is
 // not served at all leaves an agent saying the vault cannot do a thing it can.
-func recogniser(opened *webui.Installation) mcp.Recogniser {
+func recogniser(opened *editor.Installation) mcp.Recogniser {
 	return opened.Recognising()
 }

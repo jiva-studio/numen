@@ -83,7 +83,7 @@ func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 		refuses  bool
 	}{
 		// The core is compiled from none of the three, at any remove.
-		{"usecase/note", module + "adapter/webui", true},
+		{"usecase/note", module + "adapter/window/editor", true},
 		{"usecase/note", module + "internal/adapter/theme", true},
 		{"usecase/note", module + "container", true},
 		{"usecase/note", wire + "/gen/numen/v1", true},
@@ -100,10 +100,10 @@ func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 		// What two adapters both put on the schema is built in one place, and
 		// the edge that admits it admits nothing else.
 		{"internal/wire", wire + "/gen/numen/v1", false},
-		{"internal/wire", module + "adapter/webui", true},
+		{"internal/wire", module + "adapter/window/editor", true},
 
 		// An adapter, and what only a test builds, answer for nothing.
-		{"adapter/webui", wire + "/gen/numen/v1", false},
+		{"adapter/window/editor", wire + "/gen/numen/v1", false},
 		{"internal/adapter/theme", wire + "/gen/numen/v1", false},
 		{"internal/testsupport", module + "adapter/index", false},
 	} {
