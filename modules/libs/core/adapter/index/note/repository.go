@@ -106,7 +106,7 @@ func saveNote(
 	var row int64
 	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
 		vault, n.Fingerprint.Path, kind, n.Fingerprint.Size, n.Fingerprint.ModTime).Scan(&row); err != nil {
-		return fmt.Errorf("save_source: %w", err)
+		return fmt.Errorf("record the source this note is: %w", err)
 	}
 	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.Fingerprint.Path)),
 		n.Title, string(noteType(n)), nullable(n.ID), frontmatter, nullable(problem)); err != nil {
@@ -149,7 +149,7 @@ func saveNote(
 	if len(n.Links) > 0 {
 		insert, err := tx.PrepareContext(ctx, stmt.Get("insert_link"))
 		if err != nil {
-			return fmt.Errorf("insert_link: %w", err)
+			return fmt.Errorf("store what this note points at: %w", err)
 		}
 		defer insert.Close()
 		for i, l := range n.Links {
@@ -157,7 +157,7 @@ func saveNote(
 				l.Target.Scheme, l.Target.Value, domain.FoldName(domain.LinkName(l.Target.Value)),
 				string(l.Role), nullable(l.Type), nullable(l.Why), nullable(l.Label),
 			); err != nil {
-				return fmt.Errorf("insert_link: %w", err)
+				return fmt.Errorf("store what this note points at: %w", err)
 			}
 		}
 	}

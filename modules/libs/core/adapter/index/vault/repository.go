@@ -55,7 +55,7 @@ func (r *Repository) Forget(ctx context.Context, vaultID domain.VaultID) error {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("vault_row: %w", err)
+		return fmt.Errorf("which row this vault is filed under: %w", err)
 	}
 	for _, name := range forgetting {
 		if _, err := tx.ExecContext(ctx, stmt.Get(name), row); err != nil {

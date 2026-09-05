@@ -105,7 +105,7 @@ func (r *Repository) SaveSource(ctx context.Context, vaultID domain.VaultID, s S
 	var row int64
 	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
 		vault, s.Path, s.Kind, s.Size, s.MTime, nullable(s.Hash), nullable(s.Recipe), nullable(s.TextFrom)).Scan(&row); err != nil {
-		return fmt.Errorf("save_source %s: %w", s.Path, err)
+		return fmt.Errorf("record the source %s: %w", s.Path, err)
 	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("commit: %w", err)
@@ -132,7 +132,7 @@ func (r *Repository) SaveExtraction(ctx context.Context, vaultID domain.VaultID,
 	var source int64
 	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
 		vault, s.Path, s.Kind, s.Size, s.MTime, nullable(s.Hash), nullable(s.Recipe), nullable(s.TextFrom)).Scan(&source); err != nil {
-		return fmt.Errorf("save_source %s: %w", s.Path, err)
+		return fmt.Errorf("record the source %s: %w", s.Path, err)
 	}
 	if err := Replace(ctx, tx, source, vault, chunks); err != nil {
 		return err
@@ -297,7 +297,7 @@ func displace(ctx context.Context, tx *sql.Tx, vault int64, from, to string) err
 	first, past := under(to)
 	rows, err := tx.QueryContext(ctx, stmt.Get("sources_at"), vault, to, first, past)
 	if err != nil {
-		return fmt.Errorf("sources_at: %w", err)
+		return fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
 	}
 	defer rows.Close()
 
@@ -307,7 +307,7 @@ func displace(ctx context.Context, tx *sql.Tx, vault int64, from, to string) err
 		var source int64
 		var path string
 		if err := rows.Scan(&source, &path); err != nil {
-			return fmt.Errorf("sources_at: %w", err)
+			return fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
 		}
 		if path == from || (path >= movingFirst && path < movingPast) {
 			continue
@@ -315,7 +315,7 @@ func displace(ctx context.Context, tx *sql.Tx, vault int64, from, to string) err
 		standing = append(standing, source)
 	}
 	if err := rows.Err(); err != nil {
-		return fmt.Errorf("sources_at: %w", err)
+		return fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
 	}
 	rows.Close()
 
@@ -352,7 +352,7 @@ func rename(ctx context.Context, tx *sql.Tx, vault int64, from, to string) error
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("note_naming %s: %w", from, err)
+		return fmt.Errorf("what the note %s is called: %w", from, err)
 	}
 	shown := title
 	if !named {
@@ -410,7 +410,7 @@ func Replace(ctx context.Context, tx *sql.Tx, source, vault int64, chunks []Chun
 	// A chunk that says the same thing keeps its row through a cut, so the
 	// names of the parts are dropped by the source and not with the chunks.
 	if _, err := tx.ExecContext(ctx, stmt.Get("clear_parts"), source); err != nil {
-		return fmt.Errorf("clear_parts: %w", err)
+		return fmt.Errorf("take the names of this source's parts out of the index: %w", err)
 	}
 
 	w, err := prepare(ctx, tx)
@@ -477,7 +477,7 @@ func (w statements) put(ctx context.Context, held *rows, source, vault int64, c 
 	key := textID{hash: hashOf(c.Text), small: parent != nil}
 	if row, kept := held.claim(key); kept {
 		if _, err := w.move.ExecContext(ctx, c.Start, c.Length, parent, nullable(c.Location), row); err != nil {
-			return 0, fmt.Errorf("move_chunk: %w", err)
+			return 0, fmt.Errorf("move a chunk to where its text now is: %w", err)
 		}
 		if err := w.opens(ctx, row, c); err != nil {
 			return 0, err
@@ -489,10 +489,10 @@ func (w statements) put(ctx context.Context, held *rows, source, vault int64, c 
 	err := w.insert.QueryRowContext(ctx,
 		source, vault, c.Start, c.Length, parent, nullable(c.Location), key.hash).Scan(&row)
 	if err != nil {
-		return 0, fmt.Errorf("insert_chunk: %w", err)
+		return 0, fmt.Errorf("store a chunk of this source: %w", err)
 	}
 	if _, err := w.index.ExecContext(ctx, row, c.Text); err != nil {
-		return 0, fmt.Errorf("insert_fts: %w", err)
+		return 0, fmt.Errorf("index a chunk for the words in it: %w", err)
 	}
 	if err := w.opens(ctx, row, c); err != nil {
 		return 0, err
@@ -507,7 +507,7 @@ func (w statements) opens(ctx context.Context, row int64, c Chunk) error {
 		return nil
 	}
 	if _, err := w.names.ExecContext(ctx, row, strings.Join(c.Opens, "\n")); err != nil {
-		return fmt.Errorf("insert_part: %w", err)
+		return fmt.Errorf("index the names of the parts a chunk opens: %w", err)
 	}
 	return nil
 }
@@ -532,7 +532,7 @@ type rows struct {
 func chunksOf(ctx context.Context, tx *sql.Tx, source int64) (*rows, error) {
 	cursor, err := tx.QueryContext(ctx, stmt.Get("chunks_of"), source)
 	if err != nil {
-		return nil, fmt.Errorf("chunks_of: %w", err)
+		return nil, fmt.Errorf("the chunks this source is already cut into: %w", err)
 	}
 	defer cursor.Close()
 
@@ -541,7 +541,7 @@ func chunksOf(ctx context.Context, tx *sql.Tx, source int64) (*rows, error) {
 		var row int64
 		var key textID
 		if err := cursor.Scan(&row, &key.hash, &key.small); err != nil {
-			return nil, fmt.Errorf("chunks_of: %w", err)
+			return nil, fmt.Errorf("the chunks this source is already cut into: %w", err)
 		}
 		h.candidates[key] = append(h.candidates[key], row)
 		h.left[row] = true
