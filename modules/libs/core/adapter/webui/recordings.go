@@ -25,7 +25,8 @@ import (
 // not one.
 var errNotARecording = errors.New("not a recording this vault holds")
 
-// errNotHeard is what an edit to a recording nothing has listened to gets.
+// errNotHeard is a recording nothing has listened to, which holds no words to
+// edit, to take away or to put right.
 var errNotHeard = errors.New("nothing has listened to this recording")
 
 // errBeingHeard is what an edit to a recording a run holds gets. A run appends

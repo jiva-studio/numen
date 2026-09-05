@@ -40,10 +40,6 @@ var (
 	errNotCarried = errors.New("this file carries no artifact of that name")
 )
 
-// errNothingHeard is corrections asked for over a recording nothing has
-// listened to, which holds no words to put right.
-var errNothingHeard = errors.New("nothing has listened to this recording")
-
 // errNotDroppable is an artifact taken away that is not taken away here.
 var errNotDroppable = errors.New("only what a recording was heard as is taken away")
 
@@ -238,7 +234,7 @@ func (a *API) putRight(
 	// nothing listened to has nothing to put right. A client that listed what
 	// the recording carries never asks.
 	if !listened {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errNothingHeard)
+		return nil, connect.NewError(connect.CodeFailedPrecondition, errNotHeard)
 	}
 
 	res, err := puts.Proofread(ctx, v, ref.Path)
