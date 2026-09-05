@@ -19,8 +19,8 @@ import (
 
 // settled is how long the vault has to have been still before the notes written
 // into it are embedded. It is longer than the bound in the editor window's
-// note/tab.ts, which
-// writes an unfinished edit every five seconds while a person goes on typing.
+// note/tab.ts, which writes an unfinished edit every five seconds while a
+// person goes on typing.
 const settled = 8 * time.Second
 
 // nudges are the two ways work reaches the reading behind the window once the

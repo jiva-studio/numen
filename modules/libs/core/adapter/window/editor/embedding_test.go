@@ -205,7 +205,7 @@ func TestANoteSavedGetsItsVectorsBack(t *testing.T) {
 	}
 }
 
-// TestTheCooldownDoesNotFirePerSave. The bound in ui/src/tab.ts writes an
+// TestTheCooldownDoesNotFirePerSave. The bound in note/tab.ts writes an
 // unfinished edit while the person is still typing, so saves arrive one inside
 // the next and one pass answers them all.
 func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
