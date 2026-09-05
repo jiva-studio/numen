@@ -1,12 +1,14 @@
 package container
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -526,20 +528,68 @@ func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
 //
 // The tests are read: a port a test alone still asks for is asked for.
 func TestEveryPortIsAskedForSomewhereElse(t *testing.T) {
-	declared, err := interfaces(filepath.Join("..", "port"))
+	unasked, err := unnamedOutside("..", filepath.Join("..", "port"), true)
 	if err != nil {
 		t.Fatal(err)
 	}
+	for _, one := range unasked {
+		t.Errorf("port.%s is declared and nothing asks for it", one)
+	}
+}
+
+// A port is named in the words of what it is about, and those words are
+// declared beside it: the identity of a model, a page of audio, a row of the
+// settings file. A word nothing outside port/ says is a word of no
+// conversation, and it stays behind when the conversation it belonged to goes.
+//
+// This does not say which words belong here. Whether a type is the domain's or
+// the boundary's is read, not parsed: what the index holds is the domain's, and
+// what an adapter is configured with is the boundary's.
+func TestEveryTypePortDeclaresIsNamedSomewhereElse(t *testing.T) {
+	unnamed, err := unnamedOutside("..", filepath.Join("..", "port"), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range unnamed {
+		t.Errorf("port.%s is declared and nothing outside port/ names it", one)
+	}
+}
+
+// Read against port/ as the whole tree, nothing outside it names anything, and
+// the rule has to come back with everything the folder declares. It is what
+// says the passes above are passing on the naming and not on an empty walk.
+func TestWhatThePortRuleRefuses(t *testing.T) {
+	at := filepath.Join("..", "port")
+	unnamed, err := unnamedOutside(at, at, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range []string{"TextExtractor", "PageRenderer", "Vector", "Trouble"} {
+		if !slices.Contains(unnamed, one) {
+			t.Errorf("nothing outside names port.%s and the rule does not refuse it", one)
+		}
+	}
+}
+
+// unnamedOutside are the exported types port/ declares that no file of the tree
+// outside it names as port.X. onlyPorts reads the interfaces alone.
+//
+// The tests are read: a type a test alone still names is named.
+func unnamedOutside(root, dir string, onlyPorts bool) ([]string, error) {
+	declared, err := declaredIn(dir)
+	if err != nil {
+		return nil, err
+	}
 	if len(declared) == 0 {
-		t.Fatal("port/ declares no interface: the walk is not reading it")
+		return nil, fmt.Errorf("%s declares no type: the walk is not reading it", dir)
 	}
 
-	asked := map[string]bool{}
-	err = filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
+	named := map[string]bool{}
+	err = filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
 		}
-		if within("..", path) == "port" {
+		if within(root, path) == "port" {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -552,30 +602,37 @@ func TestEveryPortIsAskedForSomewhereElse(t *testing.T) {
 				return true
 			}
 			if from, is := at.X.(*ast.Ident); is && from.Name == "port" {
-				asked[at.Sel.Name] = true
+				named[at.Sel.Name] = true
 			}
 			return true
 		})
 		return nil
 	})
 	if err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
 
-	for _, one := range declared {
-		if !asked[one] {
-			t.Errorf("port.%s is declared and nothing asks for it", one)
+	var unnamed []string
+	for one, isPort := range declared {
+		if onlyPorts && !isPort {
+			continue
+		}
+		if !named[one] {
+			unnamed = append(unnamed, one)
 		}
 	}
+	slices.Sort(unnamed)
+	return unnamed, nil
 }
 
-// interfaces are the exported interfaces a folder's own files declare.
-func interfaces(dir string) ([]string, error) {
+// declaredIn are the exported types a folder's own files declare, each said to
+// be an interface or not.
+func declaredIn(dir string) (map[string]bool, error) {
 	held, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
-	var declared []string
+	declared := map[string]bool{}
 	for _, one := range held {
 		if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
 			strings.HasSuffix(one.Name(), "_test.go") {
@@ -595,9 +652,8 @@ func interfaces(dir string) ([]string, error) {
 				if !is || !named.Name.IsExported() {
 					continue
 				}
-				if _, is := named.Type.(*ast.InterfaceType); is {
-					declared = append(declared, named.Name.Name)
-				}
+				_, isPort := named.Type.(*ast.InterfaceType)
+				declared[named.Name.Name] = isPort
 			}
 		}
 	}
