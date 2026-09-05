@@ -22,9 +22,10 @@ defineProps<{
   left: number
   /** Whether there is an answer to take back. */
   takenBack: boolean
-  /** Which of the card and the panels either side of it is in the window. */
-  at: Where
 }>()
+
+/** Which of the card and the panels either side of it is in the window. */
+const at = defineModel<Where>('at', { required: true })
 
 /** The panels are held with the overlay key, drawn as this machine's own. */
 const chord = (letter: string) => keyChord(letter, navigator.userAgent)
@@ -36,7 +37,6 @@ defineEmits<{
   (event: 'leave'): void
   (event: 'ask'): void
   (event: 'read', named: string): void
-  (event: 'update:at', at: Where): void
 }>()
 </script>
 
@@ -74,7 +74,7 @@ defineEmits<{
 
     <!-- The card is what changes under a person as they work, so a reader that
          is not looking at the screen is told when the answer appears. -->
-    <PanelCarousel :at="at" @update:at="(where: Where) => $emit('update:at', where)">
+    <PanelCarousel v-model:at="at">
       <template #before><slot name="reading" /></template>
       <div class="session__card" aria-live="polite">
         <Card

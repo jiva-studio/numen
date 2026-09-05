@@ -23,9 +23,8 @@ const WHERE = ['before', 'here', 'after'] as const
 /** Which of the three is in the window. */
 export type Where = (typeof WHERE)[number]
 
-const props = defineProps<{ at: Where }>()
-
-const emit = defineEmits<{ (event: 'update:at', at: Where): void }>()
+/** A hand moves this as much as the owner does, so it is a model and not a prop. */
+const shown = defineModel<Where>('at', { required: true })
 
 const window_ = useTemplateRef<HTMLElement>('window')
 const middle = useTemplateRef<HTMLElement>('middle')
@@ -101,10 +100,10 @@ const puts = (where: Where) => {
   at.style.scrollBehavior = ''
 }
 
-const resized = () => puts(props.at)
+const resized = () => puts(shown.value)
 
 watch(
-  () => props.at,
+  () => shown.value,
   (where) => {
     if (!taking.value) goes(where)
   },
@@ -124,7 +123,7 @@ const scrolled = () => {
     sending = 0
   }
   const where = nearest(at.scrollLeft)
-  if (!aim && where !== props.at) emit('update:at', where)
+  if (!aim && where !== shown.value) shown.value = where
 
   // A wheel or a trackpad leaves the strip wherever it ran out, and it is taken
   // the rest of the way once it has stopped. A hand still on it is not done.
@@ -138,7 +137,7 @@ const scrolled = () => {
   if (taking.value) return
   window.clearTimeout(settling)
   const going = aim
-  settling = window.setTimeout(() => goes(going ?? props.at), SETTLES)
+  settling = window.setTimeout(() => goes(going ?? shown.value), SETTLES)
 }
 
 /** Where the hand went down, and where the strip was under it. */
@@ -163,20 +162,20 @@ const takes = (press: PointerEvent) => {
 const letGo = async () => {
   if (!taking.value) return
   const at = window_.value
-  const where = at ? nearest(at.scrollLeft) : props.at
+  const where = at ? nearest(at.scrollLeft) : shown.value
   taking.value = false
   // A hand moves the strip with the smoothing off, and it is taken the rest of
   // the way with it on, so the letting go is waited for.
   await nextTick()
-  if (where !== props.at) emit('update:at', where)
+  if (where !== shown.value) shown.value = where
   // Where the hand asked for and where the window went are two things: a panel
   // the window refused to open is one the strip goes back off.
   await nextTick()
-  goes(props.at)
+  goes(shown.value)
 }
 
 onMounted(() => {
-  puts(props.at)
+  puts(shown.value)
   window.addEventListener('resize', resized)
 })
 
@@ -198,13 +197,13 @@ onBeforeUnmount(() => {
     @pointerup="letGo"
     @pointercancel="letGo"
   >
-    <div class="carousel__before" :inert="at !== 'before' || undefined">
+    <div class="carousel__before" :inert="shown !== 'before' || undefined">
       <slot name="before" />
     </div>
-    <div ref="middle" class="carousel__here" :inert="at !== 'here' || undefined">
+    <div ref="middle" class="carousel__here" :inert="shown !== 'here' || undefined">
       <slot />
     </div>
-    <div class="carousel__after" :inert="at !== 'after' || undefined">
+    <div class="carousel__after" :inert="shown !== 'after' || undefined">
       <slot name="after" />
     </div>
   </div>

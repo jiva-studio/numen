@@ -13,7 +13,9 @@ import type { Where } from './PanelCarousel.vue'
  */
 const strip = (at: Where = 'here') => {
   const one = mount(PanelCarousel, {
-    props: { at },
+    // The window is listening and answers by setting the prop, so what is in the
+    // window stays the window's answer. A strip nobody listens to keeps its own.
+    props: { at, 'onUpdate:at': () => {} },
     slots: {
       before: '<p>the reading</p>',
       default: '<p>the card</p>',
