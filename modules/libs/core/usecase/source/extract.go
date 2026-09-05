@@ -496,7 +496,7 @@ func recipe(reader string, s chunking.Sizes) string {
 // recipes are what every reader would produce at these sizes. A source carrying
 // none of them owes its text: its own reader has changed, or the sizes have.
 func recipes(s chunking.Sizes) []string {
-	named := []string{text.ReaderEPUB, text.ReaderPDF, text.ReaderRecording}
+	named := text.Readers()
 	out := make([]string, 0, len(named))
 	for _, reader := range named {
 		out = append(out, recipe(reader, s))

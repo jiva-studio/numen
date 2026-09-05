@@ -100,14 +100,21 @@ func preceding(namedPlaces []namedPlace, offset int) int {
 	return sort.Search(len(namedPlaces), func(i int) bool { return namedPlaces[i].Offset > offset }) - 1
 }
 
-// Readers are the names of what takes text out of a file. A name is part of a
-// source's recipe and changes when the text or the offsets it produces do.
+// The names of what takes text out of a file. A name is part of a source's
+// recipe and changes when the text or the offsets it produces do.
 const (
 	ReaderNote      = "note-1"
 	ReaderEPUB      = "epub-1"
 	ReaderPDF       = "pdf-1"
 	ReaderRecording = "recording-1"
 )
+
+// Readers is every one of them. Whoever lists the recipes in use reads this
+// rather than naming the readers again: a reader left out of that list is a
+// reader whose sources owe their text on every run, for ever.
+func Readers() []string {
+	return []string{ReaderNote, ReaderEPUB, ReaderPDF, ReaderRecording}
+}
 
 // ReaderName names what would read this file. A file nothing reads has no name,
 // and nothing asks for its text.
