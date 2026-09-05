@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import KeyCap from '../palette/KeyCap.vue'
 import WelcomePage from './WelcomePage.vue'
-import { VAULT_LETTERS } from './picking'
+import { VAULT_LETTERS } from './letters'
 import type { Offer, VaultRow, WelcomeAction } from './welcome'
 
 const vault = (id: string): VaultRow => ({ id, name: id, path: `/vaults/${id}` })

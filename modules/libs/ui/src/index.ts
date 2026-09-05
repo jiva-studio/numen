@@ -60,7 +60,7 @@ export { days as heatmapDays, fits as heatmapFits, weighs as heatmapWeighs } fro
 export type { Day as HeatmapDay, Room as HeatmapRoom, Tally as HeatmapTally } from './heatmap/heatmap'
 export { default as WelcomePage } from './welcome/WelcomePage.vue'
 /** The letter a vault on that screen is opened by, and what a keystroke opens. */
-export { opensVault, typing, vaultLetter, VAULT_LETTERS } from './welcome/picking'
+export { opensVault, typing, vaultLetter, VAULT_LETTERS } from './welcome/letters'
 export type { Offer, VaultRow, WelcomeAction } from './welcome/welcome'
 
 export { default as Palette } from './palette/Palette.vue'

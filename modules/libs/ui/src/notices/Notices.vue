@@ -12,7 +12,7 @@ import { computed, nextTick, ref, shallowRef, useTemplateRef, watch, watchEffect
 import Activity from '../activity/Activity.vue'
 import LiveRegions from './LiveRegions.vue'
 import { remainingWord } from '../activity/tally'
-import { useAnnouncer } from './announcing'
+import { useAnnouncer } from './announcer'
 import { useHeld } from './held'
 import {
   arrivals,

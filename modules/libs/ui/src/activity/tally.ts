@@ -7,7 +7,7 @@
  * what the words are, so nothing here knows what is being counted.
  */
 
-import { grouped } from '../counting'
+import { grouped } from '../digits'
 import { clock } from '../player/clock'
 
 /**

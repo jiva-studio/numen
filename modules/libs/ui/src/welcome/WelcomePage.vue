@@ -10,7 +10,7 @@
 import { FolderRoot } from '@lucide/vue'
 import KeyCap from '../palette/KeyCap.vue'
 import Glyph from './Glyph.vue'
-import { vaultLetter } from './picking'
+import { vaultLetter } from './letters'
 import type { Offer, VaultRow, WelcomeAction } from './welcome'
 
 withDefaults(

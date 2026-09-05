@@ -5,7 +5,7 @@
  * nothing, and a letter typed into a field is text.
  */
 import { describe, expect, it } from 'vitest'
-import { opensVault, vaultLetter, VAULT_LETTERS } from './picking'
+import { opensVault, vaultLetter, VAULT_LETTERS } from './letters'
 
 /** pressed is one keystroke, as the window meets it. */
 const pressed = (key: string, more: Partial<KeyboardEvent> = {}) =>

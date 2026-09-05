@@ -11,7 +11,7 @@ import ReaderToolbar from './ReaderToolbar.vue'
 import Sheet from './Sheet.vue'
 import { useAsking } from './asking'
 import { useRoom } from './room'
-import { useHandScroll } from './scrolling'
+import { useHandScroll } from './scroll'
 import {
   GAP,
   READER_WORDS,
