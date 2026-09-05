@@ -191,16 +191,10 @@ func vaultErase(ctx context.Context, out io.Writer, cfg container.Config, args [
 	}
 	defer db.Close()
 
-	// What will be said is worked out while the folder is still there.
-	went := fmt.Sprintf("%s went to the trash this machine keeps", v.Path)
-	if vault.NewFolderCheck(cfg.VaultReaders()).Execute(v) {
-		went = fmt.Sprintf("nothing was at %s", v.Path)
-	}
-
 	erase := vault.NewErase(
 		cfg.VaultIdentity(), erasesInto(cfg), vault.NewForget(registry, db.Vaults()),
 	)
-	err = erase.Execute(ctx, v)
+	res, err := erase.Execute(ctx, v)
 	if errors.Is(err, port.ErrNoTrash) {
 		return fmt.Errorf("%w — take it off the list with: numen-cli vault forget %s", err, v.Name)
 	}
@@ -208,6 +202,10 @@ func vaultErase(ctx context.Context, out io.Writer, cfg container.Config, args [
 		return err
 	}
 
+	went := fmt.Sprintf("nothing was at %s", v.Path)
+	if res.Trashed {
+		went = fmt.Sprintf("%s went to the trash this machine keeps", v.Path)
+	}
 	fmt.Fprintf(out, "erased %s\n  %s\n", v.Name, went)
 	return nil
 }

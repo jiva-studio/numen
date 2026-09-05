@@ -46,8 +46,12 @@ func TestEraseTrashesTheFolderBeforeForgettingIt(t *testing.T) {
 	_, gone, registry := twoVaults(t)
 	erase, trash, index, steps := erasing(registry)
 
-	if err := erase.Execute(t.Context(), gone); err != nil {
+	res, err := erase.Execute(t.Context(), gone)
+	if err != nil {
 		t.Fatal(err)
+	}
+	if !res.Trashed {
+		t.Error("the folder went to the trash and the erasure says it did not")
 	}
 
 	if !slices.Equal(*steps, []string{"trash", "forget"}) {
@@ -74,7 +78,7 @@ func TestEraseRefusesAFolderThatNoLongerCarriesTheIdentity(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := erase.Execute(t.Context(), gone); !errors.Is(err, vaults.ErrUnreadable) {
+	if _, err := erase.Execute(t.Context(), gone); !errors.Is(err, vaults.ErrUnreadable) {
 		t.Fatalf("a folder that is not the vault was answered %v", err)
 	}
 	if len(trash.moved) != 0 {
@@ -97,8 +101,12 @@ func TestAFolderThatIsGoneIsForgottenAndNothingIsTrashed(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := erase.Execute(t.Context(), gone); err != nil {
+	res, err := erase.Execute(t.Context(), gone)
+	if err != nil {
 		t.Fatal(err)
+	}
+	if res.Trashed {
+		t.Error("nothing was there to trash and the erasure says the folder went")
 	}
 	if len(trash.moved) != 0 {
 		t.Errorf("trashed %v, and there was nothing there", trash.moved)
@@ -120,7 +128,7 @@ func TestEraseRefusesTheOnlyVaultBeforeTouchingItsFolder(t *testing.T) {
 	}
 	erase, trash, _, _ := erasing(registry)
 
-	if err := erase.Execute(t.Context(), only); !errors.Is(err, vaults.ErrLastVault) {
+	if _, err := erase.Execute(t.Context(), only); !errors.Is(err, vaults.ErrLastVault) {
 		t.Fatalf("the last vault was answered %v", err)
 	}
 	if len(trash.moved) != 0 {

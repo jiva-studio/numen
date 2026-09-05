@@ -110,7 +110,8 @@ func (s vaultsService) RemoveVault(
 // removal is the two ways a vault leaves the list.
 func (s vaultsService) removal(ctx context.Context, v domain.Vault, trash bool) error {
 	if trash {
-		return s.api.Vaults.Erase.Execute(ctx, v)
+		_, err := s.api.Vaults.Erase.Execute(ctx, v)
+		return err
 	}
 	return s.api.Vaults.Forget.Execute(ctx, v)
 }
