@@ -3,7 +3,7 @@
  * A branch holds branches, so there is no depth to thread anything through.
  */
 import type { InjectionKey, Ref } from 'vue'
-import type { NodeId, Tab, TabId } from '../model'
+import type { NodeId, Tab, TabId } from '../node'
 
 export interface Workspacing {
   /** The tab an identity stands for, and nothing for one the workspace has lost. */

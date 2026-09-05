@@ -1,5 +1,4 @@
-import type { PlexRelatedSeat } from '../model'
-import { SEATS } from '../model'
+import { SEATS, type PlexRelatedSeat } from '../seat'
 import type { Size } from '../../lib/geometry'
 
 export type Direction = 'up' | 'down' | 'left' | 'right'

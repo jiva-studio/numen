@@ -1,5 +1,5 @@
 /** An edge with what the drawing asks of it, worked out once for both layers. */
-import type { PlacedEdge } from '../model'
+import type { PlacedEdge } from '../edge'
 
 export interface EdgeLine {
   readonly edge: PlacedEdge

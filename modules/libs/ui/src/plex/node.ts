@@ -1,5 +1,5 @@
 import type { PlexSeat } from './seat'
-import type { Point, Size } from '../../lib/geometry'
+import type { Point, Size } from '../lib/geometry'
 
 export type { Point }
 

@@ -9,7 +9,9 @@ import './window.css'
 
 export { default as Plex } from './plex/Plex.vue'
 export { browserClock } from './plex/transition'
-export { countOf, isStop, seatWord, showingOf, SEATS, SHOWINGS } from './plex/model'
+export { isStop } from './plex/node'
+export { countOf, seatWord, SEATS } from './plex/seat'
+export { showingOf, SHOWINGS } from './plex/showing'
 
 export { default as Menu } from './menu/Menu.vue'
 export { banded, landsOn, placeMenu, stepTo, MENU_OPENINGS } from './menu/item'
@@ -197,30 +199,21 @@ export type { Naming, TabDrop } from './workspace/edit'
 /** For arranging without drawing, or reading a gesture without this renderer. */
 export { arrangeWorkspace, DEFAULT_ARRANGE } from './workspace/arrange'
 export { DEFAULT_DROP, overlayFor, sideAt, slotAt } from './workspace/drop'
-export {
-  branch,
-  isBranch,
-  isPane,
-  normalize,
-  orientationAt,
-  orientationOf,
-  pane,
-  paneById,
-  panesOf,
-  paneWithTab,
-} from './workspace/model'
+export { branch, orientationAt, orientationOf, pane } from './workspace/node'
+export { isBranch, isPane, paneById, panesOf, paneWithTab } from './workspace/tree'
+export { normalize } from './workspace/normalize'
 export type {
   Branch as WorkspaceBranchNode,
   NodeId,
   Orientation,
   Pane as WorkspacePaneNode,
-  Rect,
   Side,
   Tab,
   TabId,
   Workspace as WorkspaceLayout,
   WorkspaceNode,
-} from './workspace/model'
+} from './workspace/node'
+export type { Rect } from './workspace/rect'
 
 export { default as Tree } from './tree/Tree.vue'
 
@@ -258,7 +251,7 @@ export { default as Deck } from './cards/Deck.vue'
 /** One card of a deck, which is what the deck lays out. */
 export { default as Card } from './cards/Card.vue'
 /** One face of a stencil, which is what the stencil lays out. */
-export { default as Block } from './cards/Block.vue'
+export { default as Face } from './cards/Face.vue'
 export { default as CardProse } from './cards/CardProse.vue'
 /** The heading one section of a deck stands under. */
 export { default as Band } from './cards/Band.vue'
@@ -298,17 +291,12 @@ export type {
   EdgeArrow,
   EdgeCurve,
   EdgeHeading,
-  Extent,
   PlacedArrow,
   PlacedEdge,
-  PlacedNode,
   PlexEdge,
-  PlexFrame,
-  PlexNeighbourhood,
-  PlexNode,
-  PlexRelatedSeat,
-  PlexSeat,
-  PlexShowing,
-  Point,
-  ShowingDescriptor,
-} from './plex/model'
+} from './plex/edge'
+export type { Extent, PlexFrame } from './plex/frame'
+export type { PlexNeighbourhood } from './plex/neighbourhood'
+export type { PlacedNode, PlexNode, Point } from './plex/node'
+export type { PlexRelatedSeat, PlexSeat } from './plex/seat'
+export type { PlexShowing, ShowingDescriptor } from './plex/showing'

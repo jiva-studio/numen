@@ -14,7 +14,7 @@ import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import type { EdgeLine } from './lines'
 import { arrowTransformOf, pathOf, readingPathOf } from '../arrange'
-import type { PlacedEdge } from '../model'
+import type { PlacedEdge } from '../edge'
 import { lightness } from '@/fixtures/colour'
 import { DARK, drawnDark } from '@/fixtures/theme'
 

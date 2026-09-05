@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent } from 'storybook/test'
 import { computed } from 'vue'
 import PlexNodeHandle from './PlexNodeHandle.vue'
-import { RELATED_SEATS, type PlexSeat } from '../model'
+import { RELATED_SEATS, type PlexSeat } from '../seat'
 
 interface Knobs {
   /** Where it sits, in the coordinates of whatever draws it. */

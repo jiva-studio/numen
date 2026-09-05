@@ -7,14 +7,8 @@
  * place while it is not, cut to the longest clear stretch where the whole of the
  * words stand nowhere, and dropped where that stretch holds less than half.
  */
-import {
-  headingOf,
-  lengthOf,
-  rulerOf,
-  type PlacedEdge,
-  type PlacedNode,
-  type Point,
-} from '../model'
+import { headingOf, lengthOf, rulerOf, type PlacedEdge } from '../edge'
+import type { PlacedNode, Point } from '../node'
 import { cutToFit, MIDDLE, type Routing } from './routing'
 
 /** An upright box in the plex's own coordinates. */

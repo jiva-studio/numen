@@ -11,21 +11,13 @@ import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import PlexNodeView from './PlexNodeView.vue'
 import type { EdgeLine } from './lines'
-import {
-  edgeKey,
-  ghostNode,
-  handleIn,
-  seatWord,
-  type GestureRole,
-  type PlacedNode,
-  type PlexFrame,
-  type PlexRelatedSeat,
-  type PlexShowing,
-  type Point,
-} from '../model'
+import { edgeKey } from '../edge'
+import type { PlexFrame } from '../frame'
+import { ghostNode, handleIn, type GestureRole, type PlacedNode, type Point } from '../node'
+import { seatWord, type PlexRelatedSeat } from '../seat'
 import { DWELL, type Widened } from '../dwell'
 import { byHandle, type Reaching } from '../reaching'
-import { byDoubleClick, type Showing } from '../showing'
+import { byDoubleClick, type PlexShowing, type Showing } from '../showing'
 import type { HungParts } from '../inside'
 import { browserClock, type Clock } from '../transition'
 import {

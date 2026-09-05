@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { usePlexTransition } from './transition'
 import { neighbourhoods } from './fixtures/neighbourhoods'
 import { stubClock } from '../fixtures/clock'
-import type { PlacedNode, PlexNeighbourhood } from './model'
+import type { PlexNeighbourhood } from './neighbourhood'
+import type { PlacedNode } from './node'
 
 /** Run a composable inside a scope, as a component would. */
 function inScope<T>(build: () => T): T {

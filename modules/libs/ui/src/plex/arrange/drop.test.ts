@@ -4,7 +4,8 @@ import { arrangePlex } from './arrange'
 import { nodeAt, resolveDrop, seatCarried, seatTowards } from './drop'
 import { DEFAULT_OPTIONS, resolveOptions } from './options'
 import { build } from '../fixtures/build'
-import type { PlexFrame, PlexRelatedSeat } from '../model'
+import type { PlexFrame } from '../frame'
+import type { PlexRelatedSeat } from '../seat'
 
 const ALLOWED: readonly PlexRelatedSeat[] = ['parent', 'child', 'jump']
 

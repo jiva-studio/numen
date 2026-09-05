@@ -7,7 +7,7 @@
 import { onScopeDispose, ref, watch, type Ref } from 'vue'
 import { easeOut, lerp, type Size } from './arrange'
 import { browserClock, type Clock } from './transition'
-import type { PlacedNode } from './model'
+import type { PlacedNode } from './node'
 
 /** How long a hand stays on a box before it opens, in milliseconds. */
 export const DWELL = 500

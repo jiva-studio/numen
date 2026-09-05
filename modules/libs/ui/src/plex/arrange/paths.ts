@@ -4,7 +4,7 @@
  * Where a line runs is settled in `routing.ts`; this is only how that is
  * written down.
  */
-import { ARROW_LENGTH, type EdgeCurve, type PlacedArrow, type PlacedEdge } from '../model'
+import { ARROW_LENGTH, type EdgeCurve, type PlacedArrow, type PlacedEdge } from '../edge'
 import type { Point } from '../../lib/geometry'
 
 /** The curve, from where it leaves to where it arrives. */

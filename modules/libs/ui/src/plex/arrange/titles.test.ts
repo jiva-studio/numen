@@ -6,14 +6,9 @@ import { MIDDLE, routeEdges, routingFor } from './routing'
 import { settleTitles } from './titles'
 import { build } from '../fixtures/build'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
-import {
-  headingOf,
-  lengthOf,
-  rulerOf,
-  type PlacedEdge,
-  type PlacedNode,
-  type PlexNeighbourhood,
-} from '../model'
+import { headingOf, lengthOf, rulerOf, type PlacedEdge } from '../edge'
+import type { PlexNeighbourhood } from '../neighbourhood'
+import type { PlacedNode } from '../node'
 
 /** A letter of a fixed width, so what a title needs is a matter of counting. */
 const perLetter = (width: number) => (label: string) => width * [...label].length

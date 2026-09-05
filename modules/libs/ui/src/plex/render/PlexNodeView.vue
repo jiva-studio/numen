@@ -23,7 +23,7 @@ import PlexNodeParts from './PlexNodeParts.vue'
 import { isMenuKey, isPress, isShowKey } from './keys'
 import { DWELL, useDwell, type Widened } from '../dwell'
 import { byHandle, type Reaching } from '../reaching'
-import { byDoubleClick, joined, type Showing } from '../showing'
+import { byDoubleClick, joined, showingOf, type PlexShowing, type Showing } from '../showing'
 import type { HungParts } from '../inside'
 import { lerp } from '../arrange'
 import { browserClock, type Clock } from '../transition'
@@ -33,12 +33,10 @@ import {
   isReachable,
   isStop,
   nameOf,
-  showingOf,
   type GestureRole,
   type PlacedNode,
-  type PlexShowing,
   type Point,
-} from '../model'
+} from '../node'
 
 const props = withDefaults(
   defineProps<{

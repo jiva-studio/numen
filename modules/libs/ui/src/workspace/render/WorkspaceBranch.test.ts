@@ -2,7 +2,7 @@
  * The splitter that composes panes, and what a handle reports back.
  *
  * The shares a handle settles on are what the workspace is told; the
- * arithmetic on them is `model/shares.test.ts`.
+ * arithmetic on them is `shares.test.ts`.
  */
 import { mount } from '@vue/test-utils'
 import { computed } from 'vue'
@@ -12,7 +12,7 @@ import WorkspaceBranch from './WorkspaceBranch.vue'
 import WorkspacePane from './WorkspacePane.vue'
 import { WORKSPACING, type Workspacing } from './context'
 import { split, stack } from '../fixtures/build'
-import { type Branch, type Tab, type TabId } from '../model'
+import { type Branch, type Tab, type TabId } from '../node'
 
 const TITLES: Readonly<Record<string, string>> = { one: 'One', two: 'Two', three: 'Three' }
 

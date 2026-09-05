@@ -11,8 +11,8 @@ import WorkspaceBranch from './WorkspaceBranch.vue'
 import { WORKSPACING, type Workspacing } from './context'
 import Filling from '../fixtures/Filling.vue'
 import { split, stack } from '../fixtures/build'
-import { type Branch, type NodeId, type Tab, type TabId } from '../model'
-import { fit } from '../model/shares'
+import { type Branch, type NodeId, type Tab, type TabId } from '../node'
+import { fit } from '../shares'
 
 const TITLES: Readonly<Record<string, string>> = {
   one: 'One',

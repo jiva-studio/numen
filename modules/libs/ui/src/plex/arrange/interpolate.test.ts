@@ -4,14 +4,9 @@ import { arrangePlex } from './arrange'
 import { interpolatePlex } from './interpolate'
 import { easeOut } from './math'
 import { MIDDLE } from './routing'
-import {
-  ARROW_LENGTH,
-  headingOf,
-  lengthOf,
-  rulerOf,
-  type PlexFrame,
-  type PlexNeighbourhood,
-} from '../model'
+import { ARROW_LENGTH, headingOf, lengthOf, rulerOf } from '../edge'
+import type { PlexFrame } from '../frame'
+import type { PlexNeighbourhood } from '../neighbourhood'
 
 /** Focus on `focus`, with two children and one parent. */
 const before: PlexNeighbourhood = {

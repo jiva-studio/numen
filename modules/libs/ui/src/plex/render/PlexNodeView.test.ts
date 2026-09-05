@@ -11,7 +11,8 @@ import PlexNodeView from './PlexNodeView.vue'
 import { OPENING, type Widened } from '../dwell'
 import { hangParts, type PlexPart } from '../inside'
 import { stubClock } from '../../fixtures/clock'
-import type { GestureRole, PlacedNode, PlexSeat } from '../model'
+import type { GestureRole, PlacedNode } from '../node'
+import type { PlexSeat } from '../seat'
 
 const nodeAt = (over: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',

@@ -5,8 +5,8 @@
  * the side then does to the tree are settled elsewhere; `boxOf` is the one
  * thing here that measures anything.
  */
-import type { NodeId, Point, Rect, Side } from './model'
-import { within } from './model'
+import type { NodeId, Side } from './node'
+import { within, type Point, type Rect } from './rect'
 
 /**
  * Where a tab would go if it were let go now, and the part of the screen that

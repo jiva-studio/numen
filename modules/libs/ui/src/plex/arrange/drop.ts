@@ -1,5 +1,6 @@
-import type { PlacedNode, PlexFrame, PlexRelatedSeat, Point } from '../model'
-import { RELATED_SEATS } from '../model'
+import type { PlexFrame } from '../frame'
+import type { PlacedNode, Point } from '../node'
+import { RELATED_SEATS, type PlexRelatedSeat } from '../seat'
 import type { Direction, PlexOptions, Size } from './options'
 
 /**

@@ -8,7 +8,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import Workspace from './Workspace.vue'
 import WorkspacePane from './render/WorkspacePane.vue'
-import { type Tab, type Workspace as State } from './model'
+import { type Tab, type Workspace as State } from './node'
 import { oneStack, sideBySide, stack, workspaceOf } from './fixtures/build'
 
 const TABS: readonly Tab[] = [

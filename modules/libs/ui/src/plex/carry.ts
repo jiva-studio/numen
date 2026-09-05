@@ -6,7 +6,9 @@
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
 import { seatCarried, type PlexOptions, type Size } from './arrange'
 import { pointIn } from './gesture'
-import type { PlexFrame, PlexRelatedSeat, Point } from './model'
+import type { PlexFrame } from './frame'
+import type { Point } from './node'
+import type { PlexRelatedSeat } from './seat'
 
 const CAPTURE = { capture: true } as const
 

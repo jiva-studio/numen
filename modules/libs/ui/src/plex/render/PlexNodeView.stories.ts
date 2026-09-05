@@ -13,13 +13,9 @@ import PlexNodeView from './PlexNodeView.vue'
 import { awkwardLabels } from '../fixtures/neighbourhoods'
 import { hovered, lightness } from '@/fixtures/colour'
 import { DARK, drawnDark } from '@/fixtures/theme'
-import {
-  RELATED_SEATS,
-  type GestureRole,
-  type PlacedNode,
-  type PlexSeat,
-  type PlexShowing,
-} from '../model'
+import type { GestureRole, PlacedNode } from '../node'
+import { RELATED_SEATS, type PlexSeat } from '../seat'
+import type { PlexShowing } from '../showing'
 
 interface Knobs {
   title: string

@@ -1,5 +1,5 @@
 /** Boxes and points, in whatever coordinates the caller measures in. */
-import type { Point } from '../../lib/geometry'
+import type { Point } from '../lib/geometry'
 
 export type { Point }
 

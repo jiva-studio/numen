@@ -8,7 +8,7 @@
  * workspace watches.
  */
 import { useTemplateRef } from 'vue'
-import type { TabId } from '../model'
+import type { TabId } from '../node'
 withDefaults(
   defineProps<{
     /** Its identity, carried on the element for a drag to find it by. */

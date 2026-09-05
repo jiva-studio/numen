@@ -4,11 +4,10 @@ import {
   lengthOf,
   type EdgeCurve,
   type PlacedEdge,
-  type PlacedNode,
   type PlexEdge,
-  type PlexSeat,
-  type Point,
-} from '../model'
+} from '../edge'
+import type { PlacedNode, Point } from '../node'
+import type { PlexSeat } from '../seat'
 import { isVertical, type PlexOptions, type RoutingOptions } from './options'
 
 /** `auto` means take the axis from the geometry. */

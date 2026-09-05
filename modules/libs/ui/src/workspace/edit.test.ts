@@ -11,7 +11,8 @@ import {
   resizeBranch,
 } from './edit'
 import { arrangeWorkspace } from './arrange'
-import { isBranch, isPane, paneWithTab, panesOf, type Side, type Workspace } from './model'
+import type { Side, Workspace } from './node'
+import { isBranch, isPane, paneWithTab, panesOf } from './tree'
 import {
   deep,
   empty,

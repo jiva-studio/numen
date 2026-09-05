@@ -12,7 +12,7 @@ import {
   type PlexPart,
   type Room,
 } from './inside'
-import type { PlacedNode } from './model'
+import type { PlacedNode } from './node'
 
 const NODE: PlacedNode = {
   id: 'a',

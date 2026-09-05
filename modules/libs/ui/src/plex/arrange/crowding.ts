@@ -1,5 +1,4 @@
-import type { PlexRelatedSeat } from '../model'
-import { RELATED_SEATS } from '../model'
+import { RELATED_SEATS, type PlexRelatedSeat } from '../seat'
 import { limitsFor } from './limits'
 import { lerp } from './math'
 import type { PlexOptions } from './options'

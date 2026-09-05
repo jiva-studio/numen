@@ -4,16 +4,10 @@ import { arrangePlex } from './arrange'
 import { DEFAULT_OPTIONS } from './options'
 import { routeEdges, routingFor } from './routing'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
-import {
-  ARROW_LENGTH,
-  arrowOf,
-  lengthOf,
-  rulerOf,
-  type EdgeArrow,
-  type PlacedNode,
-  type PlexNeighbourhood,
-  type PlexSeat,
-} from '../model'
+import { ARROW_LENGTH, arrowOf, lengthOf, rulerOf, type EdgeArrow } from '../edge'
+import type { PlexNeighbourhood } from '../neighbourhood'
+import type { PlacedNode } from '../node'
+import type { PlexSeat } from '../seat'
 
 const withSeat = (frame: { nodes: readonly PlacedNode[] }, seat: PlexSeat) =>
   frame.nodes.filter((node) => node.seat === seat)

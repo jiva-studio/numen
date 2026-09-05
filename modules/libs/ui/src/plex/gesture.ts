@@ -5,7 +5,9 @@
 import { computed, onScopeDispose, ref, type Ref } from 'vue'
 import { resolveDrop, seatWithoutDirection, type Drop } from './arrange'
 import type { PlexOptions } from './arrange'
-import type { PlexFrame, PlexRelatedSeat, Point } from './model'
+import type { PlexFrame } from './frame'
+import type { Point } from './node'
+import type { PlexRelatedSeat } from './seat'
 
 export interface Gesture {
   /** The node it started from, while one is under way. */

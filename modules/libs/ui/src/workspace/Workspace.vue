@@ -24,7 +24,8 @@ import {
   type Naming,
 } from './edit'
 import { boxOf, caretAt, edgeOf, overlayFor, sideAt, slotAt, type Landing } from './drop'
-import { type NodeId, type Rect, type Tab, type TabId, type Workspace } from './model'
+import { type NodeId, type Tab, type TabId, type Workspace } from './node'
+import type { Rect } from './rect'
 
 const props = withDefaults(
   defineProps<{

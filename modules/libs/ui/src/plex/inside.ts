@@ -7,7 +7,7 @@
  */
 import { clamp01, easeOut, lerp } from './arrange'
 import type { PlexOptions, Size } from './arrange'
-import type { PlacedNode, Point } from './model'
+import type { PlacedNode, Point } from './node'
 
 /**
  * How far behind the one above it each part sets off, as a fraction of the

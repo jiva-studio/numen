@@ -7,20 +7,10 @@
  */
 import {
   branch,
-  isBranch,
-  isPane,
   leads,
-  nodeAt,
-  normalize,
   orientationAt,
   orientationOf,
   pane,
-  paneById,
-  paneWithTab,
-  panesOf,
-  pathTo,
-  replaceAt,
-  withChildren,
   type NodeId,
   type Orientation,
   type Pane,
@@ -28,8 +18,20 @@ import {
   type TabId,
   type Workspace,
   type WorkspaceNode,
-} from './model'
-import { insert } from './model/shares'
+} from './node'
+import { normalize } from './normalize'
+import {
+  isBranch,
+  isPane,
+  nodeAt,
+  paneById,
+  paneWithTab,
+  panesOf,
+  pathTo,
+  replaceAt,
+  withChildren,
+} from './tree'
+import { insert } from './shares'
 
 /** Where an identity for a pane or a branch a gesture makes comes from. */
 export type Naming = () => NodeId

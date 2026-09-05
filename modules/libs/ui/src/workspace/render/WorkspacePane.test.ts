@@ -4,7 +4,7 @@ import { computed } from 'vue'
 import { describe, expect, it } from 'vitest'
 import WorkspacePane from './WorkspacePane.vue'
 import { WORKSPACING, type Workspacing } from './context'
-import { pane, type Tab } from '../model'
+import { pane, type Tab } from '../node'
 
 const three = () => pane('main', ['plex', 'chat', 'notes'], 'chat')
 

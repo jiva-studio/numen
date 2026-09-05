@@ -1,4 +1,5 @@
-import type { PlacedNode, PlexNode, PlexRelatedSeat } from '../model'
+import type { PlacedNode, PlexNode } from '../node'
+import type { PlexRelatedSeat } from '../seat'
 import type { Limits, RoleLimits } from './limits'
 import { isVertical, type Direction, type PlexOptions } from './options'
 

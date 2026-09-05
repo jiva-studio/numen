@@ -2,13 +2,13 @@
 import {
   branch,
   pane,
-  panesOf,
   type NodeId,
   type Orientation,
   type Workspace,
   type WorkspaceNode,
-} from '../model'
-import { even } from '../model/shares'
+} from '../node'
+import { panesOf } from '../tree'
+import { even } from '../shares'
 import type { Naming } from '../edit'
 
 /** A stack of tabs. */

@@ -25,15 +25,10 @@ import { byDoubleClick, type Showing } from './showing'
 import { hangParts, type PlexPart } from './inside'
 import { usePlexTransition, browserClock, type Clock } from './transition'
 import type { Placement, PlexOptionsInput } from './arrange'
-import {
-  countOf,
-  seatWord,
-  type PlacedNode,
-  type PlexNeighbourhood,
-  type PlexRelatedSeat,
-  type PlexShowing,
-  type Point,
-} from './model'
+import type { PlexNeighbourhood } from './neighbourhood'
+import type { PlacedNode, Point } from './node'
+import { countOf, seatWord, type PlexRelatedSeat } from './seat'
+import type { PlexShowing } from './showing'
 import { resolveOptions } from './arrange'
 import { usePlexCarry } from './carry'
 import { usePlexGesture } from './gesture'

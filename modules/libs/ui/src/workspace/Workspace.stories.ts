@@ -10,7 +10,8 @@ import { expect, userEvent, within } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Workspace from './Workspace.vue'
 import Filling from './fixtures/Filling.vue'
-import { panesOf, type Tab, type Workspace as State } from './model'
+import type { Tab, Workspace as State } from './node'
+import { panesOf } from './tree'
 import { crowded, deep, empty, oneStack, sideBySide, stack, workspaceOf } from './fixtures/build'
 
 const TITLES: Readonly<Record<string, string>> = {

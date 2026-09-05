@@ -19,14 +19,11 @@ import { neighbourhoodOf, walkStart } from './fixtures/walk'
 import { around, build, type Named } from './fixtures/build'
 import { nameNow } from './fixtures/names'
 import { ring } from './fixtures/ring'
-import type {
-  PlexEdge,
-  PlexNeighbourhood,
-  PlexNode,
-  PlexRelatedSeat,
-  PlexShowing,
-  Point,
-} from './model'
+import type { PlexEdge } from './edge'
+import type { PlexNeighbourhood } from './neighbourhood'
+import type { PlexNode, Point } from './node'
+import type { PlexRelatedSeat } from './seat'
+import type { PlexShowing } from './showing'
 import type { Clock } from './transition'
 import type { MenuOpening } from '../menu/item'
 

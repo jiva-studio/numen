@@ -5,16 +5,10 @@
  * reads the clock, measures text or touches the DOM: how wide a title is
  * arrives as a number, from whoever is drawing it.
  */
-import {
-  assertNeighbourhood,
-  extentOf,
-  RELATED_SEATS,
-  type PlacedNode,
-  type PlexFrame,
-  type PlexNeighbourhood,
-  type PlexNode,
-  type PlexRelatedSeat,
-} from '../model'
+import { extentOf, type PlexFrame } from '../frame'
+import { assertNeighbourhood, type PlexNeighbourhood } from '../neighbourhood'
+import type { PlacedNode, PlexNode } from '../node'
+import { RELATED_SEATS, type PlexRelatedSeat } from '../seat'
 import { crowdingFor } from './crowding'
 import { limitsFor, type Limits } from './limits'
 import { resolveOptions, type PlexOptions, type PlexOptionsInput } from './options'

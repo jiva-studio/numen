@@ -9,7 +9,7 @@ import { inject, onMounted, watch } from 'vue'
 import WorkspaceTab from './WorkspaceTab.vue'
 import { stepTo } from './keys'
 import { WORKSPACING } from './context'
-import type { Pane, TabId } from '../model'
+import type { Pane, TabId } from '../node'
 
 const props = withDefaults(
   defineProps<{
