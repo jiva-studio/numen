@@ -5,7 +5,7 @@ import type { AskAgentResponse } from '@numen/protocol'
 import type { AgentStep } from '@numen/ui'
 
 import { agentPort } from './agent'
-import type { Asking } from './agent'
+import type { AgentClient } from './agent'
 
 /** A tool call as the service sends one, working on a place or on none. */
 const call = (place?: { path: string; start: number; length: number }): AskAgentResponse =>
@@ -25,7 +25,7 @@ const call = (place?: { path: string; start: number; length: number }): AskAgent
 const service = (says: AskAgentResponse[]) => {
   const asked: { request: unknown; signal: AbortSignal }[] = []
   const over: string[] = []
-  const agent: Asking = {
+  const agent: AgentClient = {
     async *askAgent(request, options) {
       asked.push({ request, signal: options.signal })
       for (const step of says) yield step

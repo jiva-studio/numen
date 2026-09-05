@@ -9,7 +9,7 @@ import type { AskAgentResponse } from '@numen/protocol'
 import type { AgentPort } from '@numen/ui'
 
 /** As much of the agent service as the port asks of it. */
-export interface Asking {
+export interface AgentClient {
   askAgent(
     request: { asked: string; focus: string; conversation: string },
     options: { signal: AbortSignal },
@@ -18,7 +18,7 @@ export interface Asking {
 }
 
 /** The agent port, over the client the window talks on. */
-export const agentPort = (agent: Asking): AgentPort => ({
+export const agentPort = (agent: AgentClient): AgentPort => ({
   async *ask(asked, focus, conversation, signal) {
     for await (const step of agent.askAgent({ asked, focus, conversation }, { signal })) {
       switch (step.step.case) {

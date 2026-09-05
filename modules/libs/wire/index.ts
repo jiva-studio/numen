@@ -5,6 +5,6 @@
  * never translates. What turns one into the other stands here, once.
  */
 export { agentPort } from './agent'
-export type { Asking } from './agent'
+export type { AgentClient } from './agent'
 export { namesOf } from './naming'
 export { refusalWords, troubleWords } from './trouble'
