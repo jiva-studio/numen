@@ -446,8 +446,13 @@ export const WatchCardsDueRequestSchema: GenMessage<WatchCardsDueRequest> = /*@_
 export type WatchCardsDueResponse = Message<"numen.v1.WatchCardsDueResponse"> & {
   /**
    * Vaults is every vault the installation holds, by name and by where it is,
-   * with nothing counted. It stands in the first message and in no other, and
-   * it is what the list is drawn from.
+   * with nothing counted. It is what the list is drawn from.
+   *
+   * It stands in the first message, and again wherever counting one vault takes
+   * long enough that the stream would otherwise say nothing: a client is told
+   * what it already knows, and a page that has gone is found by the write that
+   * fails. So the list is laid over what a client already shows, and a vault it
+   * has a count for keeps it.
    *
    * @generated from field: repeated numen.v1.VaultCardsDue vaults = 1;
    */
@@ -456,17 +461,15 @@ export type WatchCardsDueResponse = Message<"numen.v1.WatchCardsDueResponse"> & 
   /**
    * Day is the review day these counts stand in, written as the year, the month
    * and the day. A day of review begins at the hour the settings name, so an
-   * hour past midnight is still the day before. It stands in the first message
-   * beside the vaults.
+   * hour past midnight is still the day before. It stands beside the vaults.
    *
    * @generated from field: string day = 2;
    */
   day: string;
 
   /**
-   * Counted is one vault worked out, and stands in every message after the
-   * first. Until one arrives for a vault, nothing is known about what that
-   * vault owes.
+   * Counted is one vault worked out. Until one arrives for a vault, nothing is
+   * known about what that vault owes.
    *
    * @generated from field: numen.v1.VaultCardsDue counted = 3;
    */

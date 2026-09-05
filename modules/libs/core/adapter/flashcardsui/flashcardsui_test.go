@@ -195,6 +195,11 @@ func asked(t *testing.T, client numenv1connect.FlashcardsServiceClient) *v1.Watc
 			continue
 		}
 		one := said.GetCounted()
+		if one == nil {
+			// The list again, which the stream says while a count is still
+			// running so that a page which has gone is found.
+			continue
+		}
 		where, listed := at[one.GetName()]
 		if !listed {
 			t.Fatalf("a count arrived for %s, which the front door did not list", one.GetName())

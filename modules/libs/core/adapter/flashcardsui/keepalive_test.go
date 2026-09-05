@@ -2,6 +2,7 @@ package flashcardsui
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,6 +10,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
@@ -85,6 +87,58 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 		})
 	}
 }
+
+// TestTheCountsSayAgainWhileAVaultIsBeingCounted. Counting reads whole vaults,
+// four of them at once, and the request context belongs to the process. A
+// stream saying nothing until a count lands leaves those counters reading for a
+// window that has gone, and reloading the page stacks another four on them.
+func TestTheCountsSayAgainWhileAVaultIsBeingCounted(t *testing.T) {
+	api, _ := windowed(t, deck)
+	// The vault is read when the window opens it, and what a count that will not
+	// come back does to the stream is what is under test here.
+	front(t, api)
+
+	held := make(chan struct{})
+	defer close(held)
+	api.CardsDue.CardFaces.Readers = waiting{until: held}
+
+	stream, err := serving(t, api).WatchCardsDue(t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer stream.Close()
+
+	if !stream.Receive() {
+		t.Fatalf("the front door never opened: %v", stream.Err())
+	}
+	if len(stream.Msg().GetVaults()) != 1 {
+		t.Fatalf("the front door opened on %+v", stream.Msg().GetVaults())
+	}
+
+	// Nothing has been counted and nothing will be, so what arrives next is the
+	// stream reaching for its client.
+	if !stream.Receive() {
+		t.Fatalf("the stream said nothing while the count ran: %v", stream.Err())
+	}
+	said := stream.Msg()
+	if said.GetCounted() != nil {
+		t.Fatalf("a count arrived for a vault nothing could read: %+v", said.GetCounted())
+	}
+	if len(said.GetVaults()) != 1 {
+		t.Errorf("the stream said again and listed %+v", said.GetVaults())
+	}
+}
+
+// waiting is a vault whose card faces never come back, which is what counting a
+// vault of many thousands looks like from the stream's side.
+type waiting struct{ until <-chan struct{} }
+
+func (w waiting) Open(domain.Vault) (port.VaultReader, error) {
+	<-w.until
+	return nil, errNothingRead
+}
+
+var errNothingRead = errors.New("the count was let go")
 
 // rooted serves the handler the way the window does: the request context is the
 // process's own, and ends when the application ends and at no other moment.

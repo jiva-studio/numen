@@ -43,7 +43,10 @@ func (a *API) WatchCardsDue(
 		listed = append(listed, &v1.VaultCardsDue{Name: string(v.ID), DisplayName: v.Name, Path: v.Path})
 	}
 	// The day these counts stand in, which is the day a goal is weighed against.
-	if err := out.Send(&v1.WatchCardsDueResponse{Day: a.Day.Names(a.now()), Vaults: listed}); err != nil {
+	standing := func() *v1.WatchCardsDueResponse {
+		return &v1.WatchCardsDueResponse{Day: a.Day.Names(a.now()), Vaults: listed}
+	}
+	if err := out.Send(standing()); err != nil {
 		return err
 	}
 
@@ -52,9 +55,31 @@ func (a *API) WatchCardsDue(
 	ctx, stop := context.WithCancel(ctx)
 	defer stop()
 
-	for one := range a.counting(ctx, a.wanted(all)) {
-		if err := out.Send(&v1.WatchCardsDueResponse{Counted: one}); err != nil {
-			return err
+	// Counting four vaults reads four vaults, and nothing else tells this
+	// handler its client has gone: the request context belongs to the process
+	// and is not cancelled when a page is reloaded away from under the stream.
+	// A write that fails is the one report there is, so the list goes again
+	// while nothing has been counted, and a person reloading twice does not
+	// leave two sets of counters reading the vault.
+	repeat := time.NewTicker(wire.Again)
+	defer repeat.Stop()
+
+	counted := a.counting(ctx, a.wanted(all))
+	for counted != nil {
+		select {
+		case one, open := <-counted:
+			if !open {
+				counted = nil
+				continue
+			}
+			if err := out.Send(&v1.WatchCardsDueResponse{Counted: one}); err != nil {
+				return err
+			}
+			repeat.Reset(wire.Again)
+		case <-repeat.C:
+			if err := out.Send(standing()); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
