@@ -5,7 +5,6 @@
  * Nothing here waits on a vault. It is the screen a picture of the window is
  * taken from, so every piece is drawn in the state it settles in.
  */
-import './zzprobe'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import type { HeatmapTally } from '@numen/ui'
 import { h, type VNode } from 'vue'

@@ -18,7 +18,9 @@ const preview: Preview = {
     (story, context) => {
       const theme = context.globals['theme'] === 'dark' ? 'dark' : 'light'
       document.documentElement.style.colorScheme = theme
-      return { components: { story }, template: '<story />' }
+      // The story whole. The theme is set on the document, so there is nothing
+      // to wrap it in, and nothing to hand the compiler at run time.
+      return story()
     },
   ],
   globalTypes: {
