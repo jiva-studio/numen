@@ -11,11 +11,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-func problemsCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
+func problemsCommand(ctx context.Context, out io.Writer, cfg container.Config, deps Deps, args []string) error {
 	if len(args) < 1 {
 		return errors.New("usage: numen-cli problems <vault> [<check>...]")
 	}
-	v, err := findVault(cfg, args[0])
+	v, err := findVault(deps, args[0])
 	if err != nil {
 		return err
 	}

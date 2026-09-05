@@ -22,6 +22,6 @@ func main() {
 		fmt.Fprintln(os.Stderr, "numen-cli:", err)
 		os.Exit(1)
 	}
-	os.Exit(cli.Main(context.Background(), os.Stdout, os.Stderr, os.Args[1:],
-		platform.Config().Indexing(chosen.Indexing)))
+	cfg := platform.Config().Indexing(chosen.Indexing)
+	os.Exit(cli.Main(context.Background(), os.Stdout, os.Stderr, os.Args[1:], cfg, deps(cfg)))
 }

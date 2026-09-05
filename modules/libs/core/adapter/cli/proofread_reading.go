@@ -14,11 +14,11 @@ import (
 
 // proofreadCommand puts one file right with a model, by what the file is: a
 // recording's transcript, or a document's reading.
-func proofreadCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
+func proofreadCommand(ctx context.Context, out io.Writer, cfg container.Config, deps Deps, args []string) error {
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli proofread <vault> <file>")
 	}
-	v, err := findVault(cfg, args[0])
+	v, err := findVault(deps, args[0])
 	if err != nil {
 		return err
 	}

@@ -15,12 +15,12 @@ import (
 const excerptRunes = 160
 
 func searchCommand(
-	ctx context.Context, out, errOut io.Writer, cfg container.Config, args []string,
+	ctx context.Context, out, errOut io.Writer, cfg container.Config, deps Deps, args []string,
 ) error {
 	if len(args) < 2 {
 		return errors.New("usage: numen-cli search <vault> <query>")
 	}
-	v, err := findVault(cfg, args[0])
+	v, err := findVault(deps, args[0])
 	if err != nil {
 		return err
 	}

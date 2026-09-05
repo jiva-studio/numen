@@ -8,12 +8,11 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
+func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, deps Deps, args []string) error {
 	// `--rebuild-index` reads every file, whatever the index remembers.
 	rest := make([]string, 0, len(args))
 	for _, arg := range args {
@@ -26,7 +25,7 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 	if len(rest) != 1 {
 		return errors.New("usage: numen-cli scan <vault> [--rebuild-index]")
 	}
-	v, err := findVault(cfg, rest[0])
+	v, err := findVault(deps, rest[0])
 	if err != nil {
 		return err
 	}
@@ -84,20 +83,6 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 	}
 	fmt.Fprintf(out, "index now holds %d notes and %d headings\n", summary.Notes, summary.Headings)
 	return nil
-}
-
-// findVault resolves what the person typed and, when it resolves to nothing,
-// says what to do about it. Talking to a person belongs here.
-func findVault(cfg container.Config, nameOrPath string) (domain.Vault, error) {
-	registry, err := cfg.Registry()
-	if err != nil {
-		return domain.Vault{}, err
-	}
-	v, err := vaults.NewFind(registry).Execute(nameOrPath)
-	if err != nil {
-		return domain.Vault{}, fmt.Errorf("%w — add it with: numen-cli vault add %s", err, nameOrPath)
-	}
-	return v, nil
 }
 
 // describeSources puts the reading of what nobody typed here into words: the

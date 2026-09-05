@@ -26,6 +26,9 @@ type session struct {
 	t     *testing.T
 	vault string
 	base  []string
+	// bin is where an erased folder goes. A test sends nothing to the trash of
+	// the machine it runs on.
+	bin *bin
 	// said is what the commands run here wrote beside their answers.
 	said bytes.Buffer
 }
@@ -36,6 +39,7 @@ func newSession(t *testing.T) *session {
 	return &session{
 		t:     t,
 		vault: testsupport.CopyVault(t),
+		bin:   &bin{into: t.TempDir()},
 		base: []string{
 			"--registry", filepath.Join(dir, "vaults.json"),
 			"--index", filepath.Join(dir, "index.db"),
@@ -49,7 +53,7 @@ func (s *session) run(args ...string) (string, error) {
 	// No embedder and nothing this machine supplies: a test must not reach a
 	// model, a service, an account or a process.
 	err := cli.Run(context.Background(), &out, &s.said, append(s.base, args...),
-		container.Config{}.Indexing(settings.Indexing{}))
+		container.Config{}.Indexing(settings.Indexing{}), s.deps)
 	return out.String(), err
 }
 
@@ -103,12 +107,12 @@ func (b *bin) Trash(path string) error {
 	return os.Rename(path, filepath.Join(b.into, filepath.Base(path)))
 }
 
-// trash puts a bin where an erased folder goes, for as long as the test runs.
+// trash is the bin an erased folder goes to, answering refuse where one is
+// given.
 func (s *session) trash(refuse error) *bin {
 	s.t.Helper()
-	b := &bin{into: s.t.TempDir(), refuse: refuse}
-	s.t.Cleanup(cli.ErasesInto(b))
-	return b
+	s.bin.refuse = refuse
+	return s.bin
 }
 
 // marks is the two characters vault list puts before a vault's name.

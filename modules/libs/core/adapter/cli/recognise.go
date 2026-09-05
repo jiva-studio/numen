@@ -17,11 +17,11 @@ import (
 // Nothing starts this on its own. Whether a document's own text layer is any
 // good cannot be told from the text, so the layer is used until a person says
 // otherwise, and this is how they say it.
-func recogniseCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
+func recogniseCommand(ctx context.Context, out io.Writer, cfg container.Config, deps Deps, args []string) error {
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli recognise <vault> <file>")
 	}
-	v, err := findVault(cfg, args[0])
+	v, err := findVault(deps, args[0])
 	if err != nil {
 		return err
 	}

@@ -38,13 +38,14 @@ options:
   --service-dir <name>  the folder a vault keeps its identity in (default: .numen)
 `
 
-// Main runs the command line and returns a process exit code. The
-// configuration carries what this machine supplies and what the settings file
-// says, put together before this is called.
+// Main runs the command line and returns a process exit code. open is asked
+// for what this run works through, once the places a person pointed it at have
+// been read off the arguments: an installation is assembled by the application,
+// and this is where one is asked for.
 func Main(ctx context.Context, out, errOut io.Writer, args []string,
-	cfg container.Config,
+	cfg container.Config, open func(Locations) Deps,
 ) int {
-	if err := Run(ctx, out, errOut, args, cfg); err != nil {
+	if err := Run(ctx, out, errOut, args, cfg, open); err != nil {
 		fmt.Fprintln(errOut, "numen-cli:", err)
 		return 1
 	}
@@ -54,15 +55,16 @@ func Main(ctx context.Context, out, errOut io.Writer, args []string,
 // Run is Main with its output injected and errors returned, so what the person
 // sees is testable. errOut carries what a command says beside its answer.
 func Run(ctx context.Context, out, errOut io.Writer, args []string,
-	cfg container.Config,
+	cfg container.Config, open func(Locations) Deps,
 ) error {
+	var where Locations
 	fs := flag.NewFlagSet("numen-cli", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
-	fs.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
-	fs.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
+	fs.StringVar(&where.Index, "index", "", "path to the index database")
+	fs.StringVar(&where.Registry, "registry", "", "path to the vault list")
 	// Empty is the folder this installation writes into a vault by default,
 	// which is the answer for every other location here too.
-	fs.StringVar(&cfg.ServiceDir, "service-dir", "", "vault service folder")
+	fs.StringVar(&where.ServiceDir, "service-dir", "", "vault service folder")
 
 	// A plain parse: it stops at the first argument that is not a flag, which
 	// is the command. Anything after that belongs to the command and is parsed
@@ -70,6 +72,8 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+	cfg.IndexPath, cfg.RegistryPath, cfg.ServiceDir = where.Index, where.Registry, where.ServiceDir
+	deps := open(where)
 
 	rest := fs.Args()
 	if len(rest) == 0 {
@@ -79,21 +83,21 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 
 	switch rest[0] {
 	case "vault":
-		return vaultCommand(ctx, out, cfg, rest[1:])
+		return vaultCommand(ctx, out, deps, rest[1:])
 	case "scan":
-		return scanCommand(ctx, out, cfg, rest[1:])
+		return scanCommand(ctx, out, cfg, deps, rest[1:])
 	case "recognise":
-		return recogniseCommand(ctx, out, cfg, rest[1:])
+		return recogniseCommand(ctx, out, cfg, deps, rest[1:])
 	case "proofread":
-		return proofreadCommand(ctx, out, cfg, rest[1:])
+		return proofreadCommand(ctx, out, cfg, deps, rest[1:])
 	case "transcribe":
-		return transcribeCommand(ctx, out, cfg, rest[1:])
+		return transcribeCommand(ctx, out, cfg, deps, rest[1:])
 	case "search":
-		return searchCommand(ctx, out, errOut, cfg, rest[1:])
+		return searchCommand(ctx, out, errOut, cfg, deps, rest[1:])
 	case "links":
-		return linksCommand(ctx, out, cfg, rest[1:])
+		return linksCommand(ctx, out, cfg, deps, rest[1:])
 	case "problems":
-		return problemsCommand(ctx, out, cfg, rest[1:])
+		return problemsCommand(ctx, out, cfg, deps, rest[1:])
 	case "help", "-h", "--help":
 		fmt.Fprint(out, usage)
 		return nil

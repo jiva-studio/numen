@@ -11,11 +11,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-func linksCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
+func linksCommand(ctx context.Context, out io.Writer, cfg container.Config, deps Deps, args []string) error {
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli links <vault> <note>")
 	}
-	v, err := findVault(cfg, args[0])
+	v, err := findVault(deps, args[0])
 	if err != nil {
 		return err
 	}

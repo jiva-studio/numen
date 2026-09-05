@@ -19,7 +19,7 @@ import (
 // A recording carries no text of its own, so what the model heard is the only
 // text there is. The window listens to a vault's recordings on its own; this is
 // the hand asking for one.
-func transcribeCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
+func transcribeCommand(ctx context.Context, out io.Writer, cfg container.Config, deps Deps, args []string) error {
 	again := false
 	rest := make([]string, 0, len(args))
 	for _, one := range args {
@@ -33,7 +33,7 @@ func transcribeCommand(ctx context.Context, out io.Writer, cfg container.Config,
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli transcribe <vault> <file> [--again]")
 	}
-	v, err := findVault(cfg, args[0])
+	v, err := findVault(deps, args[0])
 	if err != nil {
 		return err
 	}
