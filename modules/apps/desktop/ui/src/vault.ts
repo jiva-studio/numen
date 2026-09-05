@@ -44,7 +44,7 @@ import type {
   Vault as VaultMessage,
 } from '@numen/protocol'
 import type { Counting } from '@numen/ui'
-import { fingerprint, refusalIn, staleIn, stamp } from './answers'
+import { fingerprint, namesOf, refusalIn, staleIn, stamp } from './answers'
 import { DEFAULT_PARTS } from './hanging'
 import { DEFAULT_STARTS } from './reviewing'
 import { settingAt } from './settings/configuring'
@@ -655,8 +655,12 @@ const counted: Record<Units, Counting> = {
   [Units.SECONDS]: 'seconds',
 }
 
-/** How a search is asked, in the words the window uses. */
-const asked: Partial<Record<Ways, Way>> = {
+/**
+ * How a search is asked, in the words the window uses. Keyed by the schema, so
+ * a way added to it has to be given a word here before this compiles.
+ */
+const asked: Record<Ways, Way | null> = {
+  [Ways.UNSPECIFIED]: null,
   [Ways.EVERY]: 'fused',
   [Ways.WORDS]: 'words',
   [Ways.MEANING]: 'meaning',
@@ -664,9 +668,7 @@ const asked: Partial<Record<Ways, Way>> = {
 }
 
 /** How a search is asked, as the schema names it. */
-const ways = Object.fromEntries(
-  Object.entries(asked).map(([said, way]) => [way, Number(said)]),
-) as Record<Way, Ways>
+const ways = namesOf<Way, Ways>(asked)
 
 /** A run of text, kept as the plain pair the window carries it as. */
 const run = (span: { from: number; to: number }) => ({ from: span.from, to: span.to })
@@ -686,9 +688,7 @@ const called: Record<Roles, Role | null> = {
 }
 
 /** What kind of relationship a link is, as the schema names it. */
-const roles = Object.fromEntries(
-  Object.entries(called).flatMap(([role, word]) => (word ? [[word, Number(role)]] : [])),
-) as Record<Role, Roles>
+const roles = namesOf<Role, Roles>(called)
 
 /** A link in the shape the schema carries it. */
 const written = (link: NewLink) => ({
@@ -914,9 +914,16 @@ const filed = (moved: MoveResultMessage): MoveResult => ({
   repaired: moved.repaired,
 })
 
-/** What a client has left, as the schema names it. */
-const owing: Record<'nothing' | 'written' | 'asking', FlushResult> = {
-  nothing: FlushResult.NOTHING,
-  written: FlushResult.WRITTEN,
-  asking: FlushResult.ASKING,
+/**
+ * What a client has left, in the words the window uses. Keyed by the schema,
+ * so a result added to it has to be given a word here before this compiles.
+ */
+const left: Record<FlushResult, 'nothing' | 'written' | 'asking' | null> = {
+  [FlushResult.UNSPECIFIED]: null,
+  [FlushResult.NOTHING]: 'nothing',
+  [FlushResult.WRITTEN]: 'written',
+  [FlushResult.ASKING]: 'asking',
 }
+
+/** And back, which is the one direction this ever travels in. */
+const owing = namesOf<NonNullable<(typeof left)[FlushResult]>, FlushResult>(left)
