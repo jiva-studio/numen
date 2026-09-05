@@ -8,7 +8,6 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
@@ -262,7 +261,7 @@ func (a *API) WriteStencil(
 	if err != nil {
 		return nil, err
 	}
-	body, err := container.StencilBody(
+	body, err := format.StencilBody(
 		r.Msg.GetPreamble(), facesOf(r.Msg.GetFaces()), r.Msg.GetTail())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)

@@ -99,7 +99,7 @@ func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 			Create:      cutting.Create,
 			RenameField: cutting.Rename,
 			DeckEdit:    format.OpenDeckBody,
-			StencilBody: container.StencilBody,
+			StencilBody: format.StencilBody,
 		},
 
 		Showing: mcp.ShowingOne(v, v.Path), Readers: readers,

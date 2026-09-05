@@ -1,10 +1,6 @@
 package container
 
 import (
-	"strings"
-
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
-	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -42,38 +38,4 @@ func (c Config) Cards(
 		Create: cards.NewCreate(writers, index, now),
 		Rename: cards.NewRenameField(readers, writers, notes, links, index, now),
 	}
-}
-
-// StencilBody is the markdown these faces are written as, in the order they are
-// to stand in the note: the preamble as it arrived, each face laid down by the
-// format itself, and the tail verbatim below the last side.
-//
-// The faces are written into a stencil of no faces, one after another, so every
-// face a caller gave stands in the file and two of one name are two faces.
-func StencilBody(preamble string, fs []format.FaceTemplate, tail string) (string, error) {
-	scratch, err := format.OpenStencil(markdown.Create("", preamble))
-	if err != nil {
-		return "", err
-	}
-	for _, face := range fs {
-		if err := scratch.AddFace(face); err != nil {
-			return "", err
-		}
-	}
-	body, err := below(scratch.Bytes())
-	if err != nil || len(fs) == 0 {
-		return body, err
-	}
-	// The tail opens with the break that ends the last side, so the break the
-	// last face was written with goes.
-	return strings.TrimRight(body, "\n") + tail, nil
-}
-
-// below is what stands under the frontmatter of a file just written.
-func below(raw []byte) (string, error) {
-	doc, err := markdown.Open(raw)
-	if err != nil {
-		return "", err
-	}
-	return doc.Body(), nil
 }

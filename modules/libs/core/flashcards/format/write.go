@@ -363,6 +363,32 @@ func DeckBody(d Deck) (string, error) {
 	return strings.TrimRight(body, "\n") + d.Tail, nil
 }
 
+// StencilBody is the markdown these faces are written as, in the order they are
+// to stand in the note: the preamble as it arrived, each face laid down by the
+// format itself, and the tail verbatim below the last side.
+//
+// The faces are written into a stencil of no faces, one after another, so every
+// face a caller gave stands in the file and two of one name are two faces.
+func StencilBody(preamble string, faces []FaceTemplate, tail string) (string, error) {
+	scratch, err := OpenStencil(markdown.Create("", preamble))
+	if err != nil {
+		return "", err
+	}
+	for _, face := range faces {
+		if err := scratch.AddFace(face); err != nil {
+			return "", err
+		}
+	}
+
+	body := scratch.doc.Body()
+	if len(faces) == 0 {
+		return body, nil
+	}
+	// The tail opens with the break that ends the last side, so the break the
+	// last face was written with goes.
+	return strings.TrimRight(body, "\n") + tail, nil
+}
+
 // RenameField rewrites one field's heading in every card cut by the stencil
 // filed at stencil, and reports how many it rewrote. The value under each
 // heading is left as it was.

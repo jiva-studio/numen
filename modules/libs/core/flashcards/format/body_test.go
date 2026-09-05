@@ -1,4 +1,4 @@
-package container_test
+package format_test
 
 import (
 	"os"
@@ -6,15 +6,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 )
 
-// stencil is the awkward one the round trip is tested against: a key nobody
-// owns, prose above the first face and prose under a face's heading.
-const stencil = "---\n" +
+// proseStencil is the awkward one the round trip is tested against: a key
+// nobody owns, prose above the first face and prose under a face's heading.
+const proseStencil = "---\n" +
 	"id: 01J8F3K2M9QRSTVWXYZ012\n" +
 	"type: stencil\n" +
 	"mine: keep me verbatim\n" +
@@ -41,8 +40,8 @@ const stencil = "---\n" +
 // forever.
 func TestReadingAStencilAndWritingItBackChangesNothing(t *testing.T) {
 	for name, raw := range map[string]string{
-		"the stencil": stencil,
-		"crlf":        strings.ReplaceAll(stencil, "\n", "\r\n"),
+		"the stencil": proseStencil,
+		"crlf":        strings.ReplaceAll(proseStencil, "\n", "\r\n"),
 		"no frontmatter": "Above them all.\n\n## Recognise\n\nThe one to start with.\n\n" +
 			"### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
 		"no trailing break": "---\ntype: stencil\n---\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}",
@@ -64,7 +63,7 @@ func TestReadingAStencilAndWritingItBackChangesNothing(t *testing.T) {
 				t.Fatalf("open: %v", err)
 			}
 			read := format.ReadStencil(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, []byte(raw)))
-			body, err := container.StencilBody(read.Preamble, read.Faces, read.Tail)
+			body, err := format.StencilBody(read.Preamble, read.Faces, read.Tail)
 			if err != nil {
 				t.Fatalf("stencil body: %v", err)
 			}
@@ -76,7 +75,7 @@ func TestReadingAStencilAndWritingItBackChangesNothing(t *testing.T) {
 }
 
 // vault is where the fixtures a person can open in the application stand.
-const vault = "../../../../tests/vault/cards"
+const vault = "../../../../../tests/vault/cards"
 
 // Every deck and stencil of the fixture vault, read and written straight back,
 // comes out as the body it went in as. These are the files a person is shown,
@@ -106,7 +105,7 @@ func TestReadingTheFixtureVaultAndWritingItBackChangesNothing(t *testing.T) {
 				body, err = format.DeckBody(format.ReadDeck(n))
 			case domain.TypeStencil:
 				read := format.ReadStencil(n)
-				body, err = container.StencilBody(read.Preamble, read.Faces, read.Tail)
+				body, err = format.StencilBody(read.Preamble, read.Faces, read.Tail)
 			default:
 				t.Fatalf("type = %q, want a deck or a stencil", n.Type)
 			}
@@ -133,7 +132,7 @@ func TestWritingOneFaceLeavesTheRestOfTheStencilAlone(t *testing.T) {
 	held := append([]format.FaceTemplate(nil), read.Faces...)
 	held[0].Back = "**{{Height}}**"
 
-	body, err := container.StencilBody(read.Preamble, held, read.Tail)
+	body, err := format.StencilBody(read.Preamble, held, read.Tail)
 	if err != nil {
 		t.Fatalf("stencil body: %v", err)
 	}
@@ -153,7 +152,7 @@ func TestWritingOneFaceLeavesTheRestOfTheStencilAlone(t *testing.T) {
 // addressed by its name here. Two faces of one name are two faces, and what
 // each holds is in the file.
 func TestAStencilKeepsEveryFaceItIsGiven(t *testing.T) {
-	body, err := container.StencilBody("", []format.FaceTemplate{
+	body, err := format.StencilBody("", []format.FaceTemplate{
 		{Name: "Recognise", Front: "{{Name}}", Back: "{{Height}}"},
 		{Name: "Recognise", Front: "{{Height}}", Back: "{{Name}}"},
 	}, "")
