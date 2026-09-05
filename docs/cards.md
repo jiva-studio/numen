@@ -37,9 +37,9 @@ fields:
 
 ### Back
 
-**Height:** {{Height}}
-**Weight:** {{Weight}}
-**Life span:** {{Life span}}
+<b>Height:</b> {{Height}}
+<b>Weight:</b> {{Weight}}
+<b>Life span:</b> {{Life span}}
 
 ## Name it
 
