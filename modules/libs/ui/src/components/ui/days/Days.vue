@@ -10,7 +10,7 @@ import { computed, ref, type HTMLAttributes } from 'vue'
 import { RovingFocusGroup, RovingFocusItem } from 'reka-ui'
 import { cn } from '@/classes'
 import Menu from '@/menu/Menu.vue'
-import type { Point } from '@/plex/node'
+import type { Point } from '@/lib/geometry'
 import { filled, offering, percent, type Day } from './week'
 
 // The row and the levels it offers are two things drawn, so what a caller
