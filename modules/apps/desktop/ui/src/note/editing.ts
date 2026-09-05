@@ -71,11 +71,14 @@ export interface Keeping {
   limits?: typeof waiting
   /** What hears that a note on screen was replaced by what its file holds. */
   replaced?(path: string): void
+  /** When it is now. A step of the undo is stamped with it. */
+  now?(): number
 }
 
 export function editing(core: Notes, how: Keeping = {}) {
   const limits = how.limits ?? waiting
   const replaced = how.replaced ?? (() => {})
+  const now = how.now ?? (() => Date.now())
   /** Every open note, under an identity its caller mints and this never reads into. */
   const tabs = ref(new Map<string, Tab>())
   /** The interval each tab is waiting on, so arming again replaces it. */
@@ -145,7 +148,7 @@ export function editing(core: Notes, how: Keeping = {}) {
   /** The person typed. */
   const typed = (id: string, body: string): void => {
     bodies.value.set(id, body)
-    turn(id, { kind: 'typed', body, at: Date.now() })
+    turn(id, { kind: 'typed', body, at: now() })
   }
 
   /** The vault changed. Every open note hears it and decides for itself. */

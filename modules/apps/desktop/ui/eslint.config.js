@@ -96,10 +96,8 @@ export default tseslint.config(
       'src/**/*.test.ts',
       'src/**/*.stories.ts',
       'src/testing/**',
-      // The port's own default, which is where the browser is allowed in.
+      // The ports' own defaults, which is where the browser is allowed in.
       'src/preset/kind.ts',
-      // A backlog, not a licence: what an undo step is stamped with should come
-      // from a clock the tab is given. This line goes when it does.
       'src/note/editing.ts',
     ],
     rules: {
