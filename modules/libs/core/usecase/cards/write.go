@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
@@ -29,20 +28,24 @@ type Write struct {
 	Links port.LinkQueries
 	Index note.Levels
 	// Now is when this is happening. An identifier written here carries it.
-	Now func() time.Time
+	Now port.Clock
 }
 
 // NewWrite is what a deck or a stencil goes back through: the vault it is read
 // and written through, where the wikilink each card names its stencil by lands,
-// and what brings the file level in the index.
+// what brings the file level in the index, and what time it is.
 //
-// All four are named here because a write short of any one of them puts the
+// All five are named here because a write short of any one of them puts the
 // file back and leaves something behind it — a card cut by the wrong stencil,
-// or a deck the vault cannot find.
+// a deck the vault cannot find, or a mark minted off the machine's clock.
 func NewWrite(
-	readers port.VaultReaders, writers port.VaultWriters, links port.LinkQueries, index note.Levels,
+	readers port.VaultReaders,
+	writers port.VaultWriters,
+	links port.LinkQueries,
+	index note.Levels,
+	now port.Clock,
 ) Write {
-	return Write{Readers: readers, Writers: writers, Links: links, Index: index}
+	return Write{Readers: readers, Writers: writers, Links: links, Index: index, Now: now}
 }
 
 // WriteResult is what a write of a deck left behind: what the file now stands at,
@@ -120,8 +123,8 @@ func (u Write) stencil(
 		return domain.Fingerprint{}, note.ErrBodyRefused
 	}
 
-	e := note.NewEditing(u.Readers, u.Writers, u.Index)
-	e.Now, e.Fingerprint, e.Bound = u.Now, fingerprint, note.MaxBytes
+	e := note.NewEditing(u.Readers, u.Writers, u.Index, u.Now)
+	e.Fingerprint, e.Bound = fingerprint, note.MaxBytes
 	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		doc.SetBody(body)
 		// A stencil already declaring these, in this order, keeps the bytes the
@@ -136,7 +139,7 @@ func (u Write) stencil(
 // note is the writer a deck goes to disk through, held to the size a deck is
 // read at.
 func (u Write) note() note.Write {
-	writing := note.NewWrite(u.Readers, u.Writers, u.Index)
-	writing.Now, writing.Bound = u.Now, MaxBytes
+	writing := note.NewWrite(u.Readers, u.Writers, u.Index, u.Now)
+	writing.Bound = MaxBytes
 	return writing
 }

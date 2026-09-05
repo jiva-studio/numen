@@ -6,7 +6,6 @@ import (
 	"fmt"
 	pathpkg "path"
 	"strings"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
@@ -33,16 +32,18 @@ type Create struct {
 	// and lists the vault's decks in the next breath finds it.
 	Index note.Levels
 	// Now is when this is happening. An identifier carries it.
-	Now func() time.Time
+	Now port.Clock
 }
 
 // NewCreate is what a deck, a stencil or a preset is made through: the vault it
-// is written into, and what brings the new file level in the index.
+// is written into, what brings the new file level in the index, and what time
+// it is.
 //
-// Both are named here because a file made and not levelled is one the vault
-// cannot be asked for in the next breath, which is what making it was for.
-func NewCreate(writers port.VaultWriters, index note.Levels) Create {
-	return Create{Writers: writers, Index: index}
+// All three are named here because a file made and not levelled is one the
+// vault cannot be asked for in the next breath, which is what making it was
+// for, and one made without a clock carries an identifier off the machine's.
+func NewCreate(writers port.VaultWriters, index note.Levels, now port.Clock) Create {
+	return Create{Writers: writers, Index: index, Now: now}
 }
 
 // New is what to make.
@@ -98,7 +99,7 @@ func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, 
 	}
 	path := pathpkg.Join(in.Folder, name+domain.NoteExtension)
 
-	identifier, err := ulid.New(u.now())
+	identifier, err := ulid.New(u.Now())
 	if err != nil {
 		return CreateNoteResult{}, err
 	}
@@ -136,11 +137,4 @@ func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, 
 	// whether or not the index caught up.
 	made := CreateNoteResult{Path: path, ID: identifier, Title: title}
 	return made, u.Index(ctx, v, []string{path})
-}
-
-func (u Create) now() time.Time {
-	if u.Now == nil {
-		return time.Now()
-	}
-	return u.Now()
 }

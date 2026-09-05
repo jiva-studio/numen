@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
@@ -48,7 +49,7 @@ func TestAStencilsFacesAndItsFieldsAreOneWrite(t *testing.T) {
 	vs := indexed(t)
 	writers := &counted{VaultWriters: filesystem.VaultWriters{}}
 	u := cards.NewWrite(
-		filesystem.VaultReaders{}, writers, vs.db.NoteQueries(), unlevelled)
+		filesystem.VaultReaders{}, writers, vs.db.NoteQueries(), unlevelled, time.Now)
 
 	body := "\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Wingspan}}\n"
 	at, err := u.Stencil(
@@ -87,7 +88,8 @@ func TestAStencilAlreadyDeclaringTheseFieldsKeepsWhatStandsAroundThem(t *testing
 		"\n## Recognise\n\n### Front\n\n{{Name}}\n")
 
 	u := cards.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), unlevelled)
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), unlevelled,
+		time.Now)
 	if _, err := u.Stencil(
 		t.Context(), vs.first, "Kept.md",
 		"\n## Recognise\n\n### Front\n\n{{Height}}\n",
@@ -114,7 +116,8 @@ func laid(t *testing.T, vs vaulted, path, body string) cards.Write {
 		t.Fatal(err)
 	}
 	return cards.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), unlevelled)
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), unlevelled,
+		time.Now)
 }
 
 // held is the deck as the vault now holds it.
@@ -196,7 +199,8 @@ func TestAMarkIsWrittenInTheFilesOwnLineEnding(t *testing.T) {
 	}
 
 	w := cards.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), unlevelled)
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), unlevelled,
+		time.Now)
 	if _, err := w.Deck(t.Context(), vs.first, "decks/Crlf.md", body, domain.Fingerprint{}); err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -317,7 +321,7 @@ func TestWritingADeckNobodyTouchedChangesNothing(t *testing.T) {
 
 			w := cards.NewWrite(
 				filesystem.VaultReaders{}, filesystem.VaultWriters{},
-				vs.db.NoteQueries(), unlevelled)
+				vs.db.NoteQueries(), unlevelled, time.Now)
 			if _, err := w.Deck(
 				t.Context(), vs.first, "decks/Whole.md", body, domain.Fingerprint{},
 			); err != nil {

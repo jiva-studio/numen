@@ -3,7 +3,6 @@ package cards
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
@@ -62,37 +61,34 @@ type RenameField struct {
 	Links port.LinkQueries
 	Index note.Levels
 	// Now is when this is happening. An identifier written here carries it.
-	Now func() time.Time
+	Now port.Clock
 }
 
 // NewRenameField is what a stencil's field is renamed through: the vault the
 // stencil and every deck are read and written through, what says which notes
-// are decks, where each card's wikilink lands, and what brings every file the
-// rename touched level in the index.
+// are decks, where each card's wikilink lands, what brings every file the
+// rename touched level in the index, and what time it is.
 //
-// All five are named here because a rename short of any one of them leaves the
-// name written in one place and not another.
+// All six are named here because a rename short of any one of them leaves the
+// name written in one place and not another, or an identifier minted off the
+// machine's clock.
 func NewRenameField(
 	readers port.VaultReaders,
 	writers port.VaultWriters,
 	notes port.NoteQueries,
 	links port.LinkQueries,
 	index note.Levels,
+	now port.Clock,
 ) RenameField {
 	return RenameField{
-		Readers: readers, Writers: writers, Notes: notes, Links: links, Index: index,
+		Readers: readers, Writers: writers, Notes: notes, Links: links,
+		Index: index, Now: now,
 	}
 }
 
 // stamp is the identifier a file this rename writes is to carry where it
 // carries none.
-func (u RenameField) stamp() (string, error) {
-	at := time.Now
-	if u.Now != nil {
-		at = u.Now
-	}
-	return ulid.New(at())
-}
+func (u RenameField) stamp() (string, error) { return ulid.New(u.Now()) }
 
 // Execute renames the field, in the stencil first and then in the vault.
 //

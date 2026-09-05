@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -155,7 +156,8 @@ func TestADeckReadAndWrittenBackIsTheFileItWas(t *testing.T) {
 	}
 
 	w := cards.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), unlevelled)
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), unlevelled,
+		time.Now)
 	if _, err := w.Deck(t.Context(), vs.first, "decks/Mammals.md", prose(t, before), got.Fingerprint); err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -315,7 +317,8 @@ func TestAStencilIsBoundedAsANote(t *testing.T) {
 func TestADeckThatChangedSinceItWasReadIsNotWrittenOver(t *testing.T) {
 	vs := indexed(t)
 	w := cards.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), unlevelled)
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), unlevelled,
+		time.Now)
 
 	first, err := cards.Read{Readers: filesystem.VaultReaders{}}.Deck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {
@@ -343,7 +346,7 @@ func TestADeckThatChangedSinceItWasReadIsNotWrittenOver(t *testing.T) {
 // it.
 func TestWhatIsMadeSaysWhatItIs(t *testing.T) {
 	vs := indexed(t)
-	u := cards.Create{Writers: filesystem.VaultWriters{}, Index: vs.index(t)}
+	u := cards.NewCreate(filesystem.VaultWriters{}, vs.index(t), time.Now)
 
 	deck, err := u.Deck(t.Context(), vs.first, cards.New{Title: "Birds of prey", Folder: "decks"})
 	if err != nil {
@@ -380,7 +383,7 @@ func TestWhatIsMadeSaysWhatItIs(t *testing.T) {
 // settings, and every key it does not carry stands at the default.
 func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
 	vs := indexed(t)
-	u := cards.Create{Writers: filesystem.VaultWriters{}, Index: vs.index(t)}
+	u := cards.NewCreate(filesystem.VaultWriters{}, vs.index(t), time.Now)
 
 	made, err := u.Preset(t.Context(), vs.first, cards.New{Title: "Prosody", Folder: "presets"})
 	if err != nil {
@@ -412,7 +415,7 @@ func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
 // with one and nothing is written where there is none.
 func TestAStencilIsMadeWithAFirstField(t *testing.T) {
 	vs := indexed(t)
-	u := cards.Create{Writers: filesystem.VaultWriters{}, Index: vs.index(t)}
+	u := cards.NewCreate(filesystem.VaultWriters{}, vs.index(t), time.Now)
 
 	if _, err := u.Stencil(t.Context(), vs.first, cards.New{Title: "Bird"}); !errors.Is(
 		err, cards.ErrNoFields,

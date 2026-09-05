@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
@@ -19,13 +20,10 @@ import (
 
 func renaming(t *testing.T, vs vaulted) cards.RenameField {
 	t.Helper()
-	return cards.RenameField{
-		Readers: filesystem.VaultReaders{},
-		Writers: filesystem.VaultWriters{},
-		Notes:   vs.db.NoteQueries(),
-		Links:   vs.db.NoteQueries(),
-		Index:   vs.index(t),
-	}
+	return cards.NewRenameField(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{},
+		vs.db.NoteQueries(), vs.db.NoteQueries(), vs.index(t), time.Now,
+	)
 }
 
 // A field renamed in a stencil is renamed in every card that stencil cuts, and
