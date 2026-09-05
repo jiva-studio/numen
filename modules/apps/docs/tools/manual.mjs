@@ -33,16 +33,82 @@ const die = (message) => {
 
 const read = (base, path) => readFile(new URL(path, base), 'utf8')
 
+/* ----------------------------------------------------------------- lists */
+
+/**
+ * The array literal one declaration holds, and how many entries stand in it.
+ *
+ * The entries are counted by walking the brackets, which is a reading that
+ * knows nothing of what an entry says. What a regex then reads out of the same
+ * text is held against this count, so a list read in part — the shape of one
+ * entry changed, the rest still matching — stops the build instead of writing
+ * a shorter page.
+ */
+const listed = (source, from) => {
+  const opens = source.slice(from).match(/=>?\s*\[/)
+  if (!opens) return null
+  const at = from + opens.index + opens[0].length - 1
+
+  let depth = 0
+  let entries = 0
+  let quote = null
+  for (let i = at; i < source.length; i += 1) {
+    const c = source[i]
+    if (quote) {
+      if (c === '\\') i += 1
+      else if (c === quote) quote = null
+      continue
+    }
+    // A bracket written in prose is not a bracket, and an apostrophe in prose
+    // is not a quote: a comment is stepped over whole.
+    if (c === '/' && source[i + 1] === '/') {
+      i = source.indexOf('\n', i)
+      if (i < 0) return null
+      continue
+    }
+    if (c === '/' && source[i + 1] === '*') {
+      i = source.indexOf('*/', i)
+      if (i < 0) return null
+      i += 1
+      continue
+    }
+    if (c === "'" || c === '"' || c === '`') {
+      quote = c
+    } else if ('[{('.includes(c)) {
+      depth += 1
+      // A brace opening directly inside the array is one entry of it. Anything
+      // deeper belongs to an entry already counted.
+      if (c === '{' && depth === 2) entries += 1
+    } else if (']})'.includes(c)) {
+      depth -= 1
+      if (depth === 0) return { text: source.slice(at, i + 1), entries }
+    }
+  }
+  return null
+}
+
+/** The list one exported name is declared as. */
+const declaring = (source, name, what) => {
+  const at = source.indexOf(`export const ${name}`)
+  const found = at < 0 ? null : listed(source, at)
+  if (!found) die(what)
+  return found
+}
+
 /* ------------------------------------------------------------------ keys */
 
 /** Every chord the window carries out a command for, in the order it declares them. */
 const chords = (keying) => {
+  const table = declaring(keying, 'CHORDS', 'keying.ts no longer lists its chords')
   const found = [
-    ...keying.matchAll(
-      /\{\s*command:\s*'([a-z]+)',\s*letter:\s*'([a-z])',\s*shift:\s*(true|false)\s*\}/g,
+    ...table.text.matchAll(
+      /\{\s*command:\s*'([A-Za-z]+)',\s*letter:\s*'([a-z])',\s*shift:\s*(true|false)\s*\}/g,
     ),
   ].map(([, command, letter, shift]) => ({ command, letter, shift: shift === 'true' }))
   if (found.length === 0) die('no chords are declared in keying.ts')
+  if (found.length !== table.entries) {
+    die(`keying.ts lists ${table.entries} chords and this reads ${found.length}`)
+  }
   return found
 }
 
@@ -100,23 +166,25 @@ const keyboard = async () => {
 /* -------------------------------------------------------------- commands */
 
 /** The one list of commands, from where it opens to where it closes. */
-const listing = (commanding) => {
-  const from = commanding.indexOf('export const commandsOf')
-  const to = commanding.indexOf('\n]\n', from)
-  if (from < 0 || to < 0) die('commanding.ts no longer lists its commands')
-  return commanding.slice(from, to)
-}
+const listing = (commanding) =>
+  declaring(commanding, 'commandsOf', 'commanding.ts no longer lists its commands')
 
 /**
  * Where each row of the list begins, so that what one row says is read out of
  * the row itself and not out of a fixed number of characters after its id: a
  * row grown longer than that number is a row that stops matching.
+ *
+ * Every command the list holds is a command read here. One written in a shape
+ * this cannot find an id in stops the build rather than dropping off the page.
  */
-const rowsOf = (listed) => {
-  const found = [...listed.matchAll(/\bid:\s*'([A-Za-z]+)'/g)]
+const rowsOf = ({ text, entries }) => {
+  const found = [...text.matchAll(/\bid:\s*'([A-Za-z]+)'/g)]
+  if (found.length !== entries) {
+    die(`commanding.ts lists ${entries} commands and this reads ${found.length}`)
+  }
   return found.map((one, i) => ({
     id: one[1],
-    said: listed.slice(one.index, found[i + 1]?.index ?? listed.length),
+    said: text.slice(one.index, found[i + 1]?.index ?? text.length),
   }))
 }
 
@@ -139,16 +207,16 @@ const commands = async () => {
   if (declared.length === 0) die('no commands are declared in commanding.ts')
 
   // Every command declared is a command the page carries. One the words or the
-  // bands say nothing about stops the build rather than dropping off the page.
+  // groups say nothing about stops the build rather than dropping off the page.
   const rows = declared.map(({ id, said }) => {
     const word = said.match(/text:\s*words\.([A-Za-z]+)/)
-    const band = said.match(/band:\s*'(note|file|window|vault)'/)
+    const group = said.match(/group:\s*'(note|file|window|vault)'/)
     if (!word) die(`no words draw the command '${id}'`)
-    if (!band) die(`the command '${id}' stands in no band`)
-    return { id, word: word[1], band: band[1] }
+    if (!group) die(`the command '${id}' stands in no group`)
+    return { id, word: word[1], group: group[1] }
   })
 
-  const bands = [
+  const groups = [
     ['note', 'overNote'],
     ['file', 'overFile'],
     ['window', 'overWindow'],
@@ -156,9 +224,9 @@ const commands = async () => {
   ]
 
   const out = []
-  for (const [band, heading] of bands) {
+  for (const [group, heading] of groups) {
     out.push(`### ${await said(words, heading)}`, '', '| | |', '| --- | --- |')
-    for (const row of rows.filter((one) => one.band === band)) {
+    for (const row of rows.filter((one) => one.group === group)) {
       const chord = table.find((one) => one.command === row.id)
       const key = chord ? chordOf(chord) : row.id === 'find' ? chordOf({ letter: 'k' }) : ''
       out.push(`| ${await said(words, row.word)} | ${key} |`)
@@ -504,25 +572,19 @@ const cli = async () => {
 
 /* --------------------------------------------------------------- pictures */
 
-/**
- * Every picture in the manual is a story, and a story renamed is a picture
- * that cannot be taken again. The names are held against the stories here, so
- * the renaming is caught where it happens rather than the next time somebody
- * runs the camera.
- */
-const pictured = async () => {
-  const { SHOTS } = await import('./shoot.mjs')
+/** Everywhere a story is written, which is the same list Storybook is given. */
+const ROOTS = [
+  new URL('../../../libs/ui/src/', import.meta.url),
+  new URL('../../desktop/ui/src/', import.meta.url),
+  new URL('../../desktop/flashcards/src/', import.meta.url),
+]
+
+/** Every story id the tree declares, under the same name Storybook gives it. */
+const stories = async () => {
   const { readdir } = await import('node:fs/promises')
 
-  /** Everywhere a story is written, which is the same list Storybook is given. */
-  const roots = [
-    new URL('../../../libs/ui/src/', import.meta.url),
-    new URL('../../desktop/ui/src/', import.meta.url),
-    new URL('../../desktop/flashcards/src/', import.meta.url),
-  ]
-
   const told = new Set()
-  for (const root of roots) {
+  for (const root of ROOTS) {
     const files = (await readdir(root, { recursive: true })).filter((name) =>
       name.endsWith('.stories.ts'),
     )
@@ -536,10 +598,89 @@ const pictured = async () => {
       }
     }
   }
+  return told
+}
+
+/**
+ * Every picture in the manual is a story drawn in a palette, and a story or a
+ * palette renamed is a picture that cannot be taken again. Both are held
+ * against the tree here, so the renaming is caught where it happens rather
+ * than the next time somebody runs the camera.
+ */
+const pictured = async () => {
+  const { SHOTS } = await import('./shots.mjs')
+  const { access } = await import('node:fs/promises')
+
+  const told = await stories()
+  // Nothing to hold the names against is nothing checked.
+  if (told.size === 0) die('no stories are written anywhere the camera is pointed')
+  if (SHOTS.length === 0) die('shoot.mjs asks for no pictures')
 
   const gone = SHOTS.filter((shot) => !told.has(shot.story))
   if (gone.length > 0) {
     die(`no story called ${gone.map((shot) => shot.story).join(', ')} — the pictures cannot be taken again`)
+  }
+
+  const presets = new URL('../../../libs/core/internal/adapter/theme/presets/', import.meta.url)
+  for (const shot of SHOTS) {
+    if (!shot.preset) continue
+    try {
+      await access(new URL(`${shot.preset}.css`, presets))
+    } catch {
+      die(`no palette called ${shot.preset} — the picture of it cannot be taken again`)
+    }
+  }
+}
+
+/* ------------------------------------------------- what the rules refuse */
+
+/**
+ * The rule every list above is held to, put through sources made up here.
+ *
+ * A check nobody has seen fail is an assumption, and this one's whole worth is
+ * the failure path, so the path is walked on every run before a page is.
+ */
+const REFUSES = [
+  {
+    what: 'a list every entry of which the pattern reads',
+    source: "export const CHORDS: readonly Chord[] = [\n  { command: 'note', letter: 'n', shift: false },\n]\n",
+    pattern: /\{\s*command:\s*'([A-Za-z]+)',\s*letter:\s*'([a-z])',\s*shift:\s*(true|false)\s*\}/g,
+    refused: false,
+  },
+  {
+    what: 'a chord spelled in a way the pattern does not match',
+    source: "export const CHORDS: readonly Chord[] = [\n  { command: 'note', letter: 'n', shift: false },\n  { command: 'newVault', letter: 'n', shift: true },\n]\n",
+    pattern: /\{\s*command:\s*'([a-z]+)',\s*letter:\s*'([a-z])',\s*shift:\s*(true|false)\s*\}/g,
+    refused: true,
+  },
+  {
+    what: 'a row of the commands carrying no id',
+    source: "export const commandsOf = (): readonly Command[] => [\n  { id: 'read', group: 'note' },\n  { name: 'beside', group: 'note' },\n]\n",
+    pattern: /\bid:\s*'([A-Za-z]+)'/g,
+    refused: true,
+  },
+  {
+    what: 'an apostrophe in a comment, which is prose and no quote',
+    source: "export const commandsOf = (): readonly Command[] => [\n  // The vault's own folder.\n  { id: 'read', group: 'note' },\n]\n",
+    pattern: /\bid:\s*'([A-Za-z]+)'/g,
+    refused: false,
+  },
+  {
+    what: 'a list that never closes',
+    source: "export const CHORDS: readonly Chord[] = [\n  { command: 'note', letter: 'n', shift: false },\n",
+    pattern: /\bcommand:/g,
+    refused: true,
+  },
+]
+
+const refuses = () => {
+  if (REFUSES.length === 0) die('the rules are put through nothing')
+  for (const one of REFUSES) {
+    const found = listed(one.source, 0)
+    const refused = !found || [...found.text.matchAll(one.pattern)].length !== found.entries
+    if (refused !== one.refused) {
+      die(`the rule ${one.refused ? 'lets through' : 'refuses'} ${one.what}`)
+    }
   }
 }
 
@@ -556,6 +697,7 @@ const WRITES = [
 const checking = process.argv.includes('--check')
 let drifted = false
 
+refuses()
 await pictured()
 
 for (const [name, write] of WRITES) {

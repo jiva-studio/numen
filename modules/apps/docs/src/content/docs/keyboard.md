@@ -20,6 +20,7 @@ undo. Nothing that removes a note, a vault or a file is ever one keystroke away.
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>K</kbd> | Search the vault |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>P</kbd> | Commands |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>N</kbd> | New note |
+| <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>N</kbd> | New vault |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>G</kbd> | Go to a note |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>P</kbd> | Show in plex |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>X</kbd> | New plex |

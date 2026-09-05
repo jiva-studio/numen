@@ -14,6 +14,8 @@ import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
 import sharp from 'sharp'
 
+import { SHOTS } from './shots.mjs'
+
 const HERE = dirname(fileURLToPath(import.meta.url))
 const UI = join(HERE, '..', '..', '..', 'libs', 'ui')
 const INTO = join(HERE, '..', 'src', 'assets')
@@ -56,47 +58,6 @@ const same = async (at, taken) => {
   }
 }
 
-/**
- * What is taken, and from which story.
- *
- * A window is drawn narrower than the column it lands in, so the application's
- * own text is larger on the page than it is on screen and can be read at a
- * glance. What stands alone is drawn at about the size it stands at.
- *
- * `over` names what the pointer is left on: the picture is taken once whatever
- * a hand resting there brings out is all the way out.
- */
-export const SHOTS = [
-  { name: 'window', story: 'application-window--map', width: 1180, height: 740 },
-  { name: 'theme-dracula', story: 'application-window--map', width: 1180, height: 740, preset: 'dracula' },
-  { name: 'theme-solarized', story: 'application-window--map', width: 1180, height: 740, preset: 'solarized' },
-  { name: 'searching', story: 'application-window--searching', width: 1180, height: 740 },
-  { name: 'asking', story: 'application-window--asking', width: 1180, height: 740 },
-  { name: 'plex', story: 'application-window--mapping', width: 1180, height: 740 },
-  {
-    name: 'parts',
-    story: 'application-window--hanging',
-    width: 1180,
-    height: 740,
-    over: '.plex__node--focus',
-  },
-  { name: 'commands', story: 'application-window--commanding', width: 1180, height: 740 },
-  { name: 'writing', story: 'application-window--writing', width: 1180, height: 740 },
-  { name: 'table', story: 'application-window--tabling', width: 1180, height: 740 },
-  { name: 'reader', story: 'application-window--reading', width: 1180, height: 740 },
-  { name: 'files', story: 'application-window--filing', width: 1180, height: 740 },
-  { name: 'settings', story: 'desktop-window--settings', width: 1180, height: 740 },
-  { name: 'recording', story: 'desktop-window--recording', width: 1180, height: 740 },
-  { name: 'transcribe', story: 'desktop-window--transcribed', width: 1180, height: 740 },
-  { name: 'recognise', story: 'desktop-window--recognised', width: 1180, height: 740 },
-  { name: 'deck', story: 'desktop-window--deck', width: 1180, height: 740 },
-  { name: 'stencil', story: 'desktop-window--stencil', width: 1180, height: 740 },
-  { name: 'preset', story: 'desktop-window--preset', width: 1180, height: 740 },
-  // The window a person runs their cards in, which is not a wide window.
-  { name: 'decks', story: 'flash-cards-window--cards-due', width: 760, height: 540 },
-  { name: 'sitting', story: 'flash-cards-window--reviewing', width: 760, height: 540 },
-]
-
 const CANDIDATES = ['google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser']
 
 /** A browser already on the machine; undefined uses Playwright's own. */
@@ -133,77 +94,71 @@ const answering = async (url) => {
   throw new Error(`Storybook did not answer at ${url}`)
 }
 
-// Imported by the check that the stories are still there, which asks for the
-// list and nothing else.
-if (process.argv[1] !== fileURLToPath(import.meta.url)) {
-  // Nothing to do: the list above is the export.
-} else {
-  const storybook = GIVEN
-    ? { pid: 0 }
-    : spawn('npx', ['storybook', 'dev', '-p', String(PORT), '--no-open', '--quiet'], {
-        cwd: UI,
-        detached: true,
-        stdio: 'ignore',
+const storybook = GIVEN
+  ? { pid: 0 }
+  : spawn('npx', ['storybook', 'dev', '-p', String(PORT), '--no-open', '--quiet'], {
+      cwd: UI,
+      detached: true,
+      stdio: 'ignore',
+    })
+
+try {
+  const base = `http://localhost:${PORT}`
+  await answering(`${base}/iframe.html`)
+
+  const chrome = systemChrome()
+  const browser = await chromium.launch(chrome ? { executablePath: chrome } : {})
+  for (const theme of ['light', 'dark']) {
+    for (const shot of SHOTS) {
+      const page = await browser.newPage({
+        viewport: { width: shot.width, height: shot.height },
+        deviceScaleFactor: SCALE,
+        colorScheme: theme,
       })
-
-  try {
-    const base = `http://localhost:${PORT}`
-    await answering(`${base}/iframe.html`)
-
-    const chrome = systemChrome()
-    const browser = await chromium.launch(chrome ? { executablePath: chrome } : {})
-    for (const theme of ['light', 'dark']) {
-      for (const shot of SHOTS) {
-        const page = await browser.newPage({
-          viewport: { width: shot.width, height: shot.height },
-          deviceScaleFactor: SCALE,
-          colorScheme: theme,
-        })
-        await page.goto(
-          `${base}/iframe.html?id=${shot.story}&viewMode=story&globals=theme:${theme}`,
-          { waitUntil: 'networkidle' },
+      await page.goto(
+        `${base}/iframe.html?id=${shot.story}&viewMode=story&globals=theme:${theme}`,
+        { waitUntil: 'networkidle' },
+      )
+      // The screen is waited for, not timed: a story reached through a module
+      // graph the server has not built yet takes longer than any pause, and a
+      // story that will not load draws Storybook's error page instead.
+      try {
+        await page.waitForFunction(
+          () =>
+            !document.body.classList.contains('sb-show-errordisplay') &&
+            (document.querySelector('#storybook-root')?.children.length ?? 0) > 0,
+          { timeout: PATIENCE },
         )
-        // The screen is waited for, not timed: a story reached through a module
-        // graph the server has not built yet takes longer than any pause, and a
-        // story that will not load draws Storybook's error page instead.
-        try {
-          await page.waitForFunction(
-            () =>
-              !document.body.classList.contains('sb-show-errordisplay') &&
-              (document.querySelector('#storybook-root')?.children.length ?? 0) > 0,
-            { timeout: PATIENCE },
-          )
-        } catch {
-          throw new Error(`${shot.story} drew nothing this build could photograph`)
-        }
-        // A picture of a theme is the window wearing that theme: the palette
-        // that ships with the application, spliced in as the window splices it.
-        if (shot.preset) {
-          await page.addStyleTag({ content: readFileSync(join(PRESETS, `${shot.preset}.css`), 'utf8') })
-          await page.waitForTimeout(200)
-        }
-
-        if (shot.over) await page.hover(shot.over)
-
-        await page.waitForTimeout(SETTLING)
-
-        // WebP, because these are checked in: the same picture is a third of
-        // the bytes, and what the build would convert it to anyway.
-        const name = `${shot.name}-${theme}.webp`
-        const taken = await sharp(await page.screenshot()).webp({ quality: QUALITY }).toBuffer()
-        if (taken.length < DRAWN) throw new Error(`${name} is ${taken.length} bytes: the story had not drawn`)
-        const at = join(INTO, name)
-        if (await same(at, taken)) {
-          console.log(`${name} — the same picture`)
-        } else {
-          await writeFile(at, taken)
-          console.log(name)
-        }
-        await page.close()
+      } catch {
+        throw new Error(`${shot.story} drew nothing this build could photograph`)
       }
+      // A picture of a theme is the window wearing that theme: the palette
+      // that ships with the application, spliced in as the window splices it.
+      if (shot.preset) {
+        await page.addStyleTag({ content: readFileSync(join(PRESETS, `${shot.preset}.css`), 'utf8') })
+        await page.waitForTimeout(200)
+      }
+
+      if (shot.over) await page.hover(shot.over)
+
+      await page.waitForTimeout(SETTLING)
+
+      // WebP, because these are checked in: the same picture is a third of
+      // the bytes, and what the build would convert it to anyway.
+      const name = `${shot.name}-${theme}.webp`
+      const taken = await sharp(await page.screenshot()).webp({ quality: QUALITY }).toBuffer()
+      if (taken.length < DRAWN) throw new Error(`${name} is ${taken.length} bytes: the story had not drawn`)
+      const at = join(INTO, name)
+      if (await same(at, taken)) {
+        console.log(`${name} — the same picture`)
+      } else {
+        await writeFile(at, taken)
+        console.log(name)
+      }
+      await page.close()
     }
-    await browser.close()
-  } finally {
-    if (storybook.pid) process.kill(-storybook.pid, 'SIGTERM')
   }
+  await browser.close()
+} finally {
+  if (storybook.pid) process.kill(-storybook.pid, 'SIGTERM')
 }
