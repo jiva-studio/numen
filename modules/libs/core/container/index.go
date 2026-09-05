@@ -66,7 +66,7 @@ func (c Config) Moves(ctx context.Context) (<-chan struct{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return filesystem.Watcher{Options: c.VaultOptions()}.File(ctx, path)
+	return filesystem.Watcher{Options: c.vaultOptions()}.File(ctx, path)
 }
 
 // FitVectors makes the vector index hold vectors of the width given, filled

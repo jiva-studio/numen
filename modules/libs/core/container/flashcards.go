@@ -41,7 +41,7 @@ type Flashcards struct {
 // the application keeps everything else of its own in, under an area of its
 // own.
 func (c Config) Answers() port.DerivedStores {
-	return filesystem.DerivedStores{Options: c.VaultOptions(), Area: filesystem.FlashcardsDir}
+	return filesystem.DerivedStores{Options: c.vaultOptions(), Area: filesystem.FlashcardsDir}
 }
 
 // DayStarts is how long past midnight a day of review begins, as the settings

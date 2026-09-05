@@ -308,13 +308,13 @@ func (c Config) Registry() (port.VaultRegistry, error) {
 
 // VaultReaders opens vaults for reading.
 func (c Config) VaultReaders() port.VaultReaders {
-	return filesystem.VaultReaders{Options: c.VaultOptions()}
+	return filesystem.VaultReaders{Options: c.vaultOptions()}
 }
 
 // VaultWriters opens vaults for changing. It is a separate opener from the
 // readers because reading and writing a person's notes are different rights.
 func (c Config) VaultWriters() port.VaultWriters {
-	return filesystem.VaultWriters{Options: c.VaultOptions()}
+	return filesystem.VaultWriters{Options: c.vaultOptions()}
 }
 
 // ImportedFiles reads what a person handed this application from outside every
@@ -326,20 +326,23 @@ func (c Config) ImportedFiles() port.ImportedFiles {
 
 // VaultWatcher follows vaults for changes the application did not make.
 func (c Config) VaultWatcher() port.VaultWatcher {
-	return filesystem.Watcher{Options: c.VaultOptions()}
+	return filesystem.Watcher{Options: c.vaultOptions()}
 }
 
 // VaultIdentity gives folders their identity.
 func (c Config) VaultIdentity() port.VaultIdentity {
-	return filesystem.VaultIdentity{Options: c.VaultOptions()}
+	return filesystem.VaultIdentity{Options: c.vaultOptions()}
 }
 
 // Trash is the place this machine keeps what a person deleted.
 func (c Config) Trash() port.Trash { return trash.New() }
 
-// VaultOptions is how a vault on disk is read: which folder is ours, and which
+// vaultOptions is how a vault on disk is read: which folder is ours, and which
 // files count as books. The same answer for whatever looks at it.
-func (c Config) VaultOptions() filesystem.Options {
+//
+// It is not exported: an application is handed a port, and `filesystem.Options`
+// is the adapter's own type.
+func (c Config) vaultOptions() filesystem.Options {
 	return filesystem.Options{
 		ServiceDir:     c.ServiceDir,
 		BookExtensions: c.BookExtensions,
@@ -355,7 +358,7 @@ func (c Config) VaultOptions() filesystem.Options {
 // a use case that places a passage reads both.
 func (c Config) DerivedStores() port.DerivedStores {
 	return filesystem.DerivedStores{
-		Options: c.VaultOptions(),
+		Options: c.vaultOptions(),
 		Area:    filesystem.OCRDir,
 		Areas:   []string{filesystem.SpeechDir},
 	}
