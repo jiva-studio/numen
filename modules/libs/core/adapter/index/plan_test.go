@@ -32,7 +32,6 @@ var expectedPlans = []struct {
 	{note.Statements(), "identify", []any{1, "p"}, []string{"(vault_id=? AND path=?)"}},
 	{note.Statements(), "addressing", []any{1, "p"}, []string{"(vault_id=? AND path=?)"}},
 	{note.Statements(), "fingerprints", []any{1, "note"}, []string{"sources_by_fingerprint"}},
-	{note.Statements(), "search", []any{`"entropy"`, 1, 20}, []string{"chunks_fts"}},
 	{note.Statements(), "stencils", []any{1, "stencil"}, []string{"notes_by_type"}},
 	{note.Statements(), "notes_of_type", []any{1, "deck"}, []string{"notes_by_type"}},
 	{note.Statements(), "types_at", []any{1, `["p"]`}, []string{"(vault_id=? AND path=?)"}},

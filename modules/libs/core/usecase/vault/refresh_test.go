@@ -50,13 +50,14 @@ func passages(t *testing.T, db *container.Index, v domain.Vault, query string) [
 
 func titles(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
 	t.Helper()
-	matches, err := db.NoteIndex().Search(t.Context(), v.ID, query, 10)
+	paths := searched(t, db, v, query)
+	named, err := db.Queries().Notes(t.Context(), v.ID, paths)
 	if err != nil {
 		t.Fatal(err)
 	}
-	out := make([]string, 0, len(matches))
-	for _, m := range matches {
-		out = append(out, m.Title)
+	out := make([]string, 0, len(paths))
+	for _, path := range paths {
+		out = append(out, named[path].Title)
 	}
 	slices.Sort(out)
 	return out

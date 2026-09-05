@@ -41,6 +41,27 @@ func openIndex(t *testing.T) *container.Index {
 	return db
 }
 
+// notesOnly keeps a search to what the vault holds as notes.
+var notesOnly = []domain.SourceKind{domain.KindNote}
+
+// searched is the notes of a vault whose text matches the words typed, by path.
+// The words are indexed over chunks, so a note matching in more than one of its
+// own is named once.
+func searched(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
+	t.Helper()
+	found, err := db.Passages().Lexical(t.Context(), v.ID, query, notesOnly, 20, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := make([]string, 0, len(found))
+	for _, p := range found {
+		if !slices.Contains(out, p.Source) {
+			out = append(out, p.Source)
+		}
+	}
+	return out
+}
+
 func scanner(readers port.VaultReaders, db *container.Index) vaults.Scan {
 	return vaults.Scan{
 		Readers:     readers,
@@ -198,13 +219,9 @@ func TestScanSkipsWhatIsNotVaultContent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	matches, err := db.NoteIndex().Search(ctx, v.ID, "hidden", 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, m := range matches {
-		if m.Path == ".obsidian/note-in-a-hidden-folder.md" {
-			t.Errorf("indexed a file from a hidden folder: %+v", m)
+	for _, path := range searched(t, db, v, "hidden") {
+		if path == ".obsidian/note-in-a-hidden-folder.md" {
+			t.Errorf("indexed a file from a hidden folder: %s", path)
 		}
 	}
 }
@@ -273,21 +290,12 @@ func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
 		t.Errorf("removed %d notes, want 1", res.Removed)
 	}
 
-	queries := db.NoteIndex()
-	matches, err := queries.Search(ctx, v.ID, "crystallography", 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(matches) != 1 {
-		t.Errorf("new text not searchable: %+v", matches)
+	if matches := searched(t, db, v, "crystallography"); len(matches) != 1 {
+		t.Errorf("new text not searchable: %v", matches)
 	}
 	// The vault is authoritative: what is not on disk is not in the index.
-	stale, err := queries.Search(ctx, v.ID, "windows", 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(stale) != 0 {
-		t.Errorf("deleted note still searchable: %+v", stale)
+	if stale := searched(t, db, v, "windows"); len(stale) != 0 {
+		t.Errorf("deleted note still searchable: %v", stale)
 	}
 }
 
@@ -361,34 +369,21 @@ func TestSearchNeverCrossesVaults(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	queries := db.NoteIndex()
-
 	// The two vaults hold disjoint words, so a query that forgets its vault
 	// shows up as a match that cannot belong to the vault being searched. One
 	// database for every vault makes that failure invisible by construction,
 	// and a test that shares content between the vaults cannot see it either.
-	leaked, err := queries.Search(ctx, first.ID, "quasar", 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(leaked) != 0 {
-		t.Errorf("searching the first vault returned the second vault's notes: %+v", leaked)
+	if leaked := searched(t, db, first, "quasar"); len(leaked) != 0 {
+		t.Errorf("searching the first vault returned the second vault's notes: %v", leaked)
 	}
 
-	other, err := queries.Search(ctx, second.ID, "entropy", 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(other) != 0 {
-		t.Errorf("searching the second vault returned the first vault's notes: %+v", other)
+	if other := searched(t, db, second, "entropy"); len(other) != 0 {
+		t.Errorf("searching the second vault returned the first vault's notes: %v", other)
 	}
 
-	own, err := queries.Search(ctx, second.ID, "quasar", 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(own) != 1 || own[0].Path != "quasar.md" {
-		t.Errorf("the second vault cannot find its own note: %+v", own)
+	own := searched(t, db, second, "quasar")
+	if len(own) != 1 || own[0] != "quasar.md" {
+		t.Errorf("the second vault cannot find its own note: %v", own)
 	}
 }
 
@@ -572,12 +567,8 @@ func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
 	if _, kept := known[gone]; !kept {
 		t.Error("a note that was briefly absent was dropped from the index")
 	}
-	matches, err := db.NoteIndex().Search(ctx, v.ID, "uncertainty", 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(matches) != 1 {
-		t.Errorf("the note is no longer searchable: %+v", matches)
+	if matches := searched(t, db, v, "uncertainty"); len(matches) != 1 {
+		t.Errorf("the note is no longer searchable: %v", matches)
 	}
 }
 
@@ -594,12 +585,8 @@ func TestFrontmatterThatCannotBeStoredDoesNotFailTheScan(t *testing.T) {
 	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(ctx, v); err != nil {
 		t.Fatalf("a note with unstorable frontmatter ended the scan: %v", err)
 	}
-	matches, err := db.NoteIndex().Search(ctx, v.ID, "searchable", 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(matches) != 1 {
-		t.Errorf("the note was not indexed: %+v", matches)
+	if matches := searched(t, db, v, "searchable"); len(matches) != 1 {
+		t.Errorf("the note was not indexed: %v", matches)
 	}
 }
 

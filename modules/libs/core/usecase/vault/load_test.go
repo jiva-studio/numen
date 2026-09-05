@@ -131,11 +131,11 @@ func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan va
 		reading.Add(1)
 		go func() {
 			defer reading.Done()
-			queries := db.NoteIndex()
+			queries := db.Passages()
 			deadline := time.Now().Add(duration)
 			for time.Now().Before(deadline) && ctx.Err() == nil {
 				started := time.Now()
-				if _, err := queries.Search(ctx, v.ID, query, 20); err != nil {
+				if _, err := queries.Lexical(ctx, v.ID, query, notesOnly, 20, false); err != nil {
 					return
 				}
 				latencies[i] = append(latencies[i], time.Since(started))

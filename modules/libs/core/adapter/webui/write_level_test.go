@@ -11,6 +11,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -67,11 +68,21 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 		t.Fatalf("the save was refused: %v", refused)
 	}
 
-	found, err := opened.Index.NoteIndex().Search(t.Context(), opened.Showing().ID, "tetragrammaton", 10)
+	found, err := opened.Index.Passages().Lexical(
+		t.Context(), opened.Showing().ID, "tetragrammaton",
+		[]domain.SourceKind{domain.KindNote}, 10, false,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) != 1 || found[0].Path != "Kept.md" {
-		t.Errorf("the note saved through the window is found as %+v", found)
+	// The word is indexed over chunks, so the one note answers from each of its
+	// own that holds it.
+	if len(found) == 0 {
+		t.Error("the note saved through the window is not found")
+	}
+	for _, p := range found {
+		if p.Source != "Kept.md" {
+			t.Errorf("the search answered with %s, and only Kept.md holds the word", p.Source)
+		}
 	}
 }

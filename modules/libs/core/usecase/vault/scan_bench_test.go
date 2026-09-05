@@ -138,11 +138,13 @@ func BenchmarkSearch(b *testing.B) {
 			if _, err := scanFor(db).Execute(b.Context(), v); err != nil {
 				b.Fatal(err)
 			}
-			queries := db.NoteIndex()
+			queries := db.Passages()
 
 			b.ResetTimer()
 			for range b.N {
-				if _, err := queries.Search(b.Context(), v.ID, "entropy observer", 20); err != nil {
+				if _, err := queries.Lexical(
+					b.Context(), v.ID, "entropy observer", notesOnly, 20, false,
+				); err != nil {
 					b.Fatal(err)
 				}
 			}
@@ -203,10 +205,10 @@ func BenchmarkSearchDuringScan(b *testing.B) {
 		}
 	}()
 
-	queries := db.NoteIndex()
+	queries := db.Passages()
 	b.ResetTimer()
 	for range b.N {
-		if _, err := queries.Search(ctx, v.ID, "entropy observer", 20); err != nil {
+		if _, err := queries.Lexical(ctx, v.ID, "entropy observer", notesOnly, 20, false); err != nil {
 			b.Fatal(err)
 		}
 	}

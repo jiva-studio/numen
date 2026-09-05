@@ -42,46 +42,6 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID domain.VaultID) (map
 	return out, rows.Err()
 }
 
-// Search is the notes whose text matches the words typed, each ranked by its
-// best chunk. A search over everything the vault holds answers with passages;
-// this answers with notes.
-func (q *Queries) Search(ctx context.Context, vaultID domain.VaultID, query string, limit int) ([]domain.NoteMatch, error) {
-	if limit <= 0 {
-		// How many results a person wants is not something a database adapter
-		// knows. The caller decides, and arriving here without one is a
-		// mistake in the caller.
-		return nil, fmt.Errorf("search limit must be positive, got %d", limit)
-	}
-	expression := chunk.Expression(query, false)
-	if expression == "" {
-		return nil, nil
-	}
-	vault, err := vaultRow(ctx, q.db, vaultID)
-	if errors.Is(err, errNoVault) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := q.db.QueryContext(ctx, stmt.Get("search"), expression, vault, limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var out []domain.NoteMatch
-	for rows.Next() {
-		var m domain.NoteMatch
-		var score float64
-		if err := rows.Scan(&m.Path, &m.Title, &score); err != nil {
-			return nil, err
-		}
-		out = append(out, m)
-	}
-	return out, rows.Err()
-}
-
 // Holds reports whether the index carries this vault at all.
 func (q *Queries) Holds(ctx context.Context, vaultID domain.VaultID) (bool, error) {
 	_, err := vaultRow(ctx, q.db, vaultID)
