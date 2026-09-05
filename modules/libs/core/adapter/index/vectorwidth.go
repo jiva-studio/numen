@@ -70,7 +70,7 @@ func fillCoarse(ctx context.Context, tx *sql.Tx, dims int, recipe string) error 
 		 FROM vectors v JOIN chunks c ON unhex(c.hash) = v.hash
 		 WHERE v.recipe = ? AND length(v.embedding) = ?`, recipe, dims)
 	if err != nil {
-		return fmt.Errorf("what the recipe has bought: %w", err)
+		return fmt.Errorf("the vectors the recipe holds: %w", err)
 	}
 	defer rows.Close()
 
@@ -83,13 +83,13 @@ func fillCoarse(ctx context.Context, tx *sql.Tx, dims int, recipe string) error 
 		var one coarse
 		var value []byte
 		if err := rows.Scan(&one.chunk, &one.vault, &value); err != nil {
-			return fmt.Errorf("what the recipe has bought: %w", err)
+			return fmt.Errorf("the vectors the recipe holds: %w", err)
 		}
 		one.bits = embedding.Coarse(quantised(value))
 		held = append(held, one)
 	}
 	if err := rows.Err(); err != nil {
-		return fmt.Errorf("what the recipe has bought: %w", err)
+		return fmt.Errorf("the vectors the recipe holds: %w", err)
 	}
 
 	// `vec_bit` says the blob is one bit per dimension. Its length alone does
