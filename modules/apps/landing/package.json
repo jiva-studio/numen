@@ -9,6 +9,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "typecheck": "astro check",
+    "stories:check": "node tools/stories.mjs",
     "shoot": "node tools/shoot.mjs"
   },
   "dependencies": {
