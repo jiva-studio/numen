@@ -49,7 +49,7 @@ import { presets } from './preset/core'
 import { presetting } from './preset/kind'
 import { configuring } from './settings/configuring'
 import { settling } from './settings/kind'
-import { configuring as holdingFile } from './configuration/kind'
+import { editingSettingsFile } from './settingsfile/kind'
 import { documentKind, documenting } from './document/kind'
 import { recordingKind } from './recording/kind'
 import { transcript } from './recording/transcript'
@@ -457,7 +457,7 @@ export const useWindow = () => {
   const rest = configuring(core, words, tell.under('configured'))
 
   /** The settings file itself, opened whole in a tab of its own. */
-  const file = holdingFile(held.host, core, () => void rest.start())
+  const file = editingSettingsFile(held.host, core, () => void rest.start())
 
   /**
    * Everything this installation is configured as, in a tab of its own. It holds

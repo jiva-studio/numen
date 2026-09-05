@@ -51,7 +51,6 @@ import {
 import type { NoteType, Source } from './core'
 import {
   AGENT,
-  CONFIGURATION,
   DECK,
   DOCUMENT,
   FILES,
@@ -60,6 +59,7 @@ import {
   PRESET,
   RECORDING,
   SETTINGS,
+  SETTINGS_FILE,
   STENCIL,
 } from './workspace'
 
@@ -135,7 +135,7 @@ const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
   [STENCIL, LayoutTemplate],
   [PRESET, Gauge],
   [SETTINGS, SlidersHorizontal],
-  [CONFIGURATION, Braces],
+  [SETTINGS_FILE, Braces],
 ])
 
 /** The icon for a kind of tab, and nothing for a kind that has none. */

@@ -24,8 +24,8 @@ export const STENCIL = 'stencil'
 export const PRESET = 'preset'
 /** What this installation is configured as, one tab of it to a window. */
 export const SETTINGS = 'settings'
-/** The settings file itself, opened whole, one tab of it to a window. */
-export const CONFIGURATION = 'configuration'
+/** The settings file itself, opened whole as text, one tab of it to a window. */
+export const SETTINGS_FILE = 'settings-file'
 
 /** One thread of talk, under the name the agent hears it by. */
 export const CONVERSATION = 'conversation'
