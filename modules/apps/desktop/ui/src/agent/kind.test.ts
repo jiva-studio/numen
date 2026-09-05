@@ -1,8 +1,8 @@
 /**
  * What pressing something in an agent tab comes to, asked without a screen.
  *
- * A question carries nothing about what is open, and a place named in an answer
- * opens the source it is in.
+ * A question carries nothing about what is open, and a passage named in an
+ * answer opens the source it is in.
  */
 import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
@@ -12,8 +12,10 @@ import type { Stretch } from '../core'
 import { windowing } from '../windowing'
 import { AGENT } from '../workspace'
 
-/** A talk that records what it was asked, and the places its lines name. */
-const talked = (places: Record<string, { path: string; start: number; length: number }> = {}) => {
+/** A talk that records what it was asked, and the passages its lines name. */
+const talked = (
+  passages: Record<string, { path: string; start: number; length: number }> = {},
+) => {
   const asked: [string, string][] = []
   const stopped: string[] = []
   const said = ref<Turn[]>([])
@@ -23,7 +25,7 @@ const talked = (places: Record<string, { path: string; start: number; length: nu
     ask: async (text, focus) => {
       asked.push([text, focus])
     },
-    place: (turn) => places[turn] ?? null,
+    passage: (turn) => passages[turn] ?? null,
     stop: () => stopped.push('stop'),
     finish: () => stopped.push('finish'),
   }
@@ -35,10 +37,10 @@ const talked = (places: Record<string, { path: string; start: number; length: nu
  * with the notes it was handed, and reaches nothing for every other address.
  */
 const tab = (
-  places: Record<string, { path: string; start: number; length: number }> = {},
+  passages: Record<string, { path: string; start: number; length: number }> = {},
   notes: Record<string, string> = {},
 ) => {
-  const talk = talked(places)
+  const talk = talked(passages)
   const opened: [string, readonly Stretch[]][] = []
   const beside: string[] = []
   const held = talking(talk.talk, {

@@ -53,10 +53,10 @@ export function talking(talk: Conversation, deps: AgentTabDeps) {
     void talk.ask(text, '')
   }
 
-  /** A line about work pressed: the place that call was on is put in front. */
+  /** A line about work pressed: the passage that call was on is put in front. */
   const opensTurn = (turn: Turn) => {
-    const place = talk.place(turn.id)
-    if (place) deps.opens(place.path, { start: place.start, length: place.length })
+    const passage = talk.passage(turn.id)
+    if (passage) deps.opens(passage.path, { start: passage.start, length: passage.length })
   }
 
   /**
