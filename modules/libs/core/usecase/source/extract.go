@@ -29,7 +29,7 @@ const sourcesPerQuery = 100
 type Extract struct {
 	Readers port.VaultReaders
 	Sources port.SourceRepository
-	Owing   port.SourceQueries
+	Known   port.SourceQueries
 
 	// Derived holds what a recogniser wrote. Without one, a source is read from
 	// its own bytes and a recognition is not looked for.
@@ -119,7 +119,7 @@ func (u Extract) discover(
 ) error {
 	known := make(map[domain.SourceKind]map[string]domain.Fingerprint, len(u.kinds()))
 	for _, kind := range u.kinds() {
-		held, err := u.Owing.Fingerprints(ctx, v.ID, kind)
+		held, err := u.Known.Fingerprints(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
@@ -189,7 +189,7 @@ func (u Extract) standing(
 	if u.Derived == nil {
 		return nil, nil
 	}
-	held, err := u.Owing.Recognised(ctx, v.ID, kind)
+	held, err := u.Known.Recognised(ctx, v.ID, kind)
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
@@ -221,7 +221,7 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceTe
 	}
 	stood := make(map[port.SourceText]bool)
 	for _, kind := range u.kinds() {
-		held, err := u.Owing.Recognised(ctx, v.ID, kind)
+		held, err := u.Known.Recognised(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
@@ -254,7 +254,7 @@ func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.Vaul
 		return nil
 	}
 	for _, kind := range u.kinds() {
-		standing, err := u.Owing.Recognised(ctx, v.ID, kind)
+		standing, err := u.Known.Recognised(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
@@ -308,10 +308,10 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 	for _, kind := range u.kinds() {
 		questions = append(questions,
 			func(ctx context.Context) ([]string, error) {
-				return u.Owing.Unchunked(ctx, v.ID, kind, sourcesPerQuery)
+				return u.Known.Unchunked(ctx, v.ID, kind, sourcesPerQuery)
 			},
 			func(ctx context.Context) ([]string, error) {
-				return u.Owing.ByOtherRecipe(ctx, v.ID, kind, known, sourcesPerQuery)
+				return u.Known.ByOtherRecipe(ctx, v.ID, kind, known, sourcesPerQuery)
 			},
 		)
 	}
