@@ -200,7 +200,7 @@ func TestASaveFollowsASaveWithNoReadBetween(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if at == (domain.Fingerprint{}) {
+	if at.IsZero() {
 		t.Fatal("the save answered with no fingerprint")
 	}
 

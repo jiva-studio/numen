@@ -77,9 +77,11 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID domain.VaultID, kind
 	out := map[string]domain.Fingerprint{}
 	for rows.Next() {
 		var ref domain.Fingerprint
-		if err := rows.Scan(&ref.Path, &ref.Size, &ref.ModTime); err != nil {
+		var mtime int64
+		if err := rows.Scan(&ref.Path, &ref.Size, &mtime); err != nil {
 			return nil, err
 		}
+		ref.ModTime = Instant(mtime)
 		out[ref.Path] = ref
 	}
 	return out, rows.Err()
@@ -106,9 +108,11 @@ func (q *Queries) Under(ctx context.Context, vaultID domain.VaultID, path string
 	var out []domain.Fingerprint
 	for rows.Next() {
 		var ref domain.Fingerprint
-		if err := rows.Scan(&ref.Path, &ref.Kind, &ref.Size, &ref.ModTime); err != nil {
+		var mtime int64
+		if err := rows.Scan(&ref.Path, &ref.Kind, &ref.Size, &mtime); err != nil {
 			return nil, err
 		}
+		ref.ModTime = Instant(mtime)
 		out = append(out, ref)
 	}
 	return out, rows.Err()
@@ -483,7 +487,7 @@ type SourceText struct {
 	Producer string
 	Hash     string
 	Size     int64
-	MTime    domain.ModTime
+	MTime    int64
 }
 
 // Reading is what one source's text came from, and false where the index holds

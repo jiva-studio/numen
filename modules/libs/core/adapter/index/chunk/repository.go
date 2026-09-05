@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlfile"
@@ -42,13 +43,31 @@ type Source struct {
 	Path   string
 	Kind   string
 	Size   int64
-	MTime  domain.ModTime
+	MTime  int64
 	Hash   string
 	Recipe string
 
 	// TextFrom names the producer of the text this source's chunks are places
 	// in. Empty where the source's own bytes are the text.
 	TextFrom string
+}
+
+// Instant and Stamp are the source row's modification time either way round.
+// The column is an INTEGER of nanoseconds since the epoch, and zero is a row
+// that names no time rather than the epoch itself.
+
+func Instant(nanos int64) time.Time {
+	if nanos == 0 {
+		return time.Time{}
+	}
+	return time.Unix(0, nanos)
+}
+
+func Stamp(t time.Time) int64 {
+	if t.IsZero() {
+		return 0
+	}
+	return t.UnixNano()
 }
 
 // Chunk is one cut of a source's text. `Location` is where it sits in the terms

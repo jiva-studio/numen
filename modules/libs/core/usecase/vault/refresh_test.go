@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -175,7 +176,7 @@ func TestABookThatWentLeavesTheIndex(t *testing.T) {
 	testsupport.WriteBook(t, v.Path, book)
 	if err := db.Sources().SaveExtraction(t.Context(), v.ID, domain.SourceChunks{
 		Source: domain.Source{
-			Fingerprint: domain.Fingerprint{Path: book, Kind: domain.KindBook, Size: 1, ModTime: 1},
+			Fingerprint: domain.Fingerprint{Path: book, Kind: domain.KindBook, Size: 1, ModTime: time.Unix(0, 1)},
 			Hash:        "a-hash",
 			Recipe:      "epub",
 		},

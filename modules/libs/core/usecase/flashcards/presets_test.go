@@ -164,7 +164,7 @@ func TestAPresetWrittenWithNoLevellingHandsBackItsFingerprint(t *testing.T) {
 	if !errors.Is(err, note.ErrUnlevelled) {
 		t.Fatalf("a levelling that failed came back as %v", err)
 	}
-	if at == (domain.Fingerprint{}) {
+	if at.IsZero() {
 		t.Fatal("the write handed back no fingerprint")
 	}
 

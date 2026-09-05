@@ -26,7 +26,7 @@ func laid(
 		body += headings[i].Text + "\n"
 	}
 	n := domain.Note{
-		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: int64(len(body)), ModTime: 1},
+		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: int64(len(body)), ModTime: walked},
 		Title:       path,
 		Type:        kind,
 		Body:        body,
@@ -272,7 +272,7 @@ func TestAnOrdinaryNoteKeepsEveryHeadingItHas(t *testing.T) {
 func TestADeckIsANoteInEveryOtherWay(t *testing.T) {
 	db := opened(t)
 	n := domain.Note{
-		Fingerprint: domain.Fingerprint{Path: "decks/mammals.md", Kind: domain.KindNote, Size: 100, ModTime: 1},
+		Fingerprint: domain.Fingerprint{Path: "decks/mammals.md", Kind: domain.KindNote, Size: 100, ModTime: walked},
 		Title:       "Mammals",
 		Type:        domain.TypeDeck,
 		ID:          "01HQXMAMMALS",

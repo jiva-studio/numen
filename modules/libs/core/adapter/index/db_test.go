@@ -7,10 +7,14 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
+
+// walked is when a walk said every file these tests put in last changed.
+var walked = time.Unix(0, 1)
 
 func TestEveryConnectionGetsThePragmas(t *testing.T) {
 	// The bug this guards against is invisible to an ordinary test: executing

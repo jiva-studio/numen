@@ -178,7 +178,7 @@ func (u RenameField) stencil(
 	ctx context.Context, reader port.VaultReader, writer port.VaultWriter, in Rename,
 ) (domain.Fingerprint, error) {
 	against := in.Fingerprint
-	if against == (domain.Fingerprint{}) {
+	if against.IsZero() {
 		on, err := reader.Stat(ctx, in.Stencil)
 		if err != nil {
 			return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", in.Stencil, err)

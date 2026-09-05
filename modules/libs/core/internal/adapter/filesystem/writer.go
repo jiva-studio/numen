@@ -81,14 +81,14 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 			return domain.Fingerprint{}, fmt.Errorf("write %s: it is a directory", path)
 		}
 		mode = info.Mode().Perm()
-		if fingerprint != (domain.Fingerprint{}) &&
-			(info.Size() != fingerprint.Size || domain.ModTimeOf(info.ModTime()) != fingerprint.ModTime) {
+		if !fingerprint.IsZero() &&
+			(info.Size() != fingerprint.Size || !info.ModTime().Equal(fingerprint.ModTime)) {
 			return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, port.ErrChanged)
 		}
 	case errors.Is(err, fs.ErrNotExist):
 		// A note that is not there yet cannot have changed, and a caller that
 		// believed it was there is told so.
-		if fingerprint != (domain.Fingerprint{}) {
+		if !fingerprint.IsZero() {
 			return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, port.ErrChanged)
 		}
 	default:
@@ -198,7 +198,7 @@ func replace(root *os.Root, target string, content []byte, mode fs.FileMode) (do
 	if err := rename(root, at, target); err != nil {
 		return domain.Fingerprint{}, err
 	}
-	written := domain.Fingerprint{Size: info.Size(), ModTime: domain.ModTimeOf(info.ModTime())}
+	written := domain.Fingerprint{Size: info.Size(), ModTime: info.ModTime()}
 	return written, settle(root, dir)
 }
 

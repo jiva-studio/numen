@@ -7,8 +7,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"time"
 )
 
 // A page of a document the vault holds is bytes, and bytes are what this route
@@ -109,5 +108,23 @@ func printed(query url.Values) (fingerprint, error) {
 	if err != nil {
 		return fingerprint{}, fmt.Errorf("mtime: %q is not a time", query.Get("mtime"))
 	}
-	return fingerprint{size: size, mtime: domain.ModTime(mtime)}, nil
+	return fingerprint{size: size, mtime: mtime}, nil
+}
+
+// stamp and instant are a modification time as this adapter carries it — an
+// address and the schema both say nanoseconds since the epoch — and as the core
+// holds one. Zero is a file nothing was said about, not the epoch.
+
+func stamp(t time.Time) int64 {
+	if t.IsZero() {
+		return 0
+	}
+	return t.UnixNano()
+}
+
+func instant(nanos int64) time.Time {
+	if nanos == 0 {
+		return time.Time{}
+	}
+	return time.Unix(0, nanos)
 }

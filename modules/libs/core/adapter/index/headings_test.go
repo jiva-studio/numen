@@ -16,7 +16,7 @@ func divided(t *testing.T, db *DB, vault domain.Vault, path string, headings ...
 		text = append(text, h.Text)
 	}
 	n := domain.Note{
-		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: 100, ModTime: 1},
+		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: 100, ModTime: walked},
 		Title:       path,
 		Body:        strings.Join(text, "\n"),
 		Headings:    headings,

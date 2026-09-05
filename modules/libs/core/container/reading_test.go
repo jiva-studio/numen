@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -36,7 +37,7 @@ func scanned(t *testing.T) (container.Config, domain.Vault) {
 	}
 	err = db.Sources().SaveExtraction(t.Context(), vault.ID, domain.SourceChunks{
 		Source: domain.Source{
-			Fingerprint: domain.Fingerprint{Path: "Entropy.md", Kind: domain.KindNote, Size: int64(len(entropy)), ModTime: 1},
+			Fingerprint: domain.Fingerprint{Path: "Entropy.md", Kind: domain.KindNote, Size: int64(len(entropy)), ModTime: time.Unix(0, 1)},
 			Hash:        "hash-entropy",
 			Recipe:      "markdown",
 		},

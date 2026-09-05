@@ -1,7 +1,6 @@
 package vault
 
 import (
-	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -174,7 +173,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	}); err != nil {
 		return res, err
 	}
-	slices.SortFunc(found, func(a, b domain.Fingerprint) int { return cmp.Compare(b.ModTime, a.ModTime) })
+	slices.SortFunc(found, func(a, b domain.Fingerprint) int { return b.ModTime.Compare(a.ModTime) })
 
 	group := grouping{write: func(ctx context.Context, notes []domain.Note) error {
 		if err := u.Notes.Save(ctx, v.ID, notes); err != nil {

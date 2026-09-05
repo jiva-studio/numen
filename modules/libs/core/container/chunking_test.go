@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
@@ -74,7 +75,7 @@ func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
 
 	body := strings.TrimSpace(strings.Repeat("chunks carry vectors ", 100))
 	n := domain.Note{
-		Fingerprint: domain.Fingerprint{Path: "notes/cut.md", Size: int64(len(body)), ModTime: 1},
+		Fingerprint: domain.Fingerprint{Path: "notes/cut.md", Size: int64(len(body)), ModTime: time.Unix(0, 1)},
 		Title:       "Cut",
 		Body:        body,
 	}

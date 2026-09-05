@@ -131,7 +131,7 @@ func stored(s domain.Source) chunk.Source {
 		Path:     s.Fingerprint.Path,
 		Kind:     string(s.Fingerprint.Kind),
 		Size:     s.Fingerprint.Size,
-		MTime:    s.Fingerprint.ModTime,
+		MTime:    chunk.Stamp(s.Fingerprint.ModTime),
 		Hash:     s.Hash,
 		Recipe:   s.Recipe,
 		TextFrom: s.TextFrom,
@@ -166,7 +166,7 @@ func (s queries) Reading(ctx context.Context, vaultID domain.VaultID, path strin
 		return port.SourceText{}, false, err
 	}
 	return port.SourceText{
-		Fingerprint: domain.Fingerprint{Path: found.Path, Size: found.Size, ModTime: found.MTime},
+		Fingerprint: domain.Fingerprint{Path: found.Path, Size: found.Size, ModTime: chunk.Instant(found.MTime)},
 		Producer:    found.Producer,
 		Hash:        found.Hash,
 	}, true, nil

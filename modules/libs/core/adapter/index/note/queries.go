@@ -34,9 +34,11 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID domain.VaultID) (map
 	out := map[string]domain.Fingerprint{}
 	for rows.Next() {
 		var ref domain.Fingerprint
-		if err := rows.Scan(&ref.Path, &ref.Size, &ref.ModTime); err != nil {
+		var mtime int64
+		if err := rows.Scan(&ref.Path, &ref.Size, &mtime); err != nil {
 			return nil, err
 		}
+		ref.ModTime = chunk.Instant(mtime)
 		out[ref.Path] = ref
 	}
 	return out, rows.Err()

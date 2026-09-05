@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -53,7 +54,8 @@ func TestABookIsCutIntoChunksRecordedWithTheRecipeThatCutThem(t *testing.T) {
 			if source.Hash == "" {
 				t.Error("nothing addresses the content the chunks were cut from")
 			}
-			if source.Fingerprint.Size != int64(len(raw)) || source.Fingerprint.ModTime != 1 {
+			if source.Fingerprint.Size != int64(len(raw)) ||
+				!source.Fingerprint.ModTime.Equal(time.Unix(0, 1)) {
 				t.Errorf("the source was recorded as %+v, want the file as it is", source.Fingerprint)
 			}
 

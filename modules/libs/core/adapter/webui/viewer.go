@@ -158,7 +158,7 @@ func (a *API) GetDocument(
 
 	out := &v1.GetDocumentResponse{
 		Pages:       int32(doc.scan.Pages()),
-		Fingerprint: &v1.Fingerprint{Path: print.path, Size: print.size, Mtime: int64(print.mtime)},
+		Fingerprint: &v1.Fingerprint{Path: print.path, Size: print.size, Mtime: print.mtime},
 	}
 	out.Sheets = make([]*v1.Sheet, out.Pages)
 	for i := range out.Sheets {
@@ -234,7 +234,7 @@ func (a *API) stat(ctx context.Context, path string) (port.VaultReader, fingerpr
 	if err != nil {
 		return nil, fingerprint{}, err
 	}
-	return reader, fingerprint{path: ref.Path, size: ref.Size, mtime: ref.ModTime}, nil
+	return reader, fingerprint{path: ref.Path, size: ref.Size, mtime: stamp(ref.ModTime)}, nil
 }
 
 // opening hands over the document at a fingerprint, held open.

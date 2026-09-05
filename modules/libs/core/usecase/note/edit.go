@@ -107,7 +107,7 @@ func (e Edit) splice(
 	// read hands its fingerprint over in.
 	var on domain.Fingerprint
 	var looked error
-	if e.Seen != nil || (e.Fingerprint == (domain.Fingerprint{}) && !e.Overwrite) {
+	if e.Seen != nil || (e.Fingerprint.IsZero() && !e.Overwrite) {
 		on, looked = reader.Stat(ctx, path)
 	}
 
@@ -128,7 +128,7 @@ func (e Edit) splice(
 	// the note was is held to that; one that said nothing is held to what was
 	// read just now. A caller writing over what is there is held to neither.
 	against := e.Fingerprint
-	if against == (domain.Fingerprint{}) && !e.Overwrite {
+	if against.IsZero() && !e.Overwrite {
 		if looked != nil {
 			return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", path, missing(looked))
 		}

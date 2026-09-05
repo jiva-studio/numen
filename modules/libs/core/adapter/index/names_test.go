@@ -12,7 +12,7 @@ func noted(t *testing.T, db *DB, vault domain.Vault, path, title string, heading
 	t.Helper()
 
 	n := domain.Note{
-		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: 100, ModTime: 1},
+		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: 100, ModTime: walked},
 		Title:       title,
 		Body:        strings.Join(headings, "\n"),
 	}

@@ -132,7 +132,7 @@ func (l *Loopback) Address(vault domain.Vault, ref domain.Fingerprint) string {
 	}
 	return l.address + "/" + l.token + "/" + url.PathEscape(string(vault.ID)) +
 		"/" + url.PathEscape(ref.Path) +
-		"?" + printing(fingerprint{size: ref.Size, mtime: ref.ModTime})
+		"?" + printing(fingerprint{size: ref.Size, mtime: stamp(ref.ModTime)})
 }
 
 // Close stops answering.
@@ -178,7 +178,7 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 		refuse(w, err)
 		return
 	}
-	if named.size != ref.Size || named.mtime != ref.ModTime {
+	if named.size != ref.Size || named.mtime != stamp(ref.ModTime) {
 		refuse(w, errChanged)
 		return
 	}
@@ -193,7 +193,7 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 	if named := domain.MediaType(ref.Path); named != "" {
 		w.Header().Set("Content-Type", named)
 	}
-	http.ServeContent(w, r, ref.Path, ref.ModTime.Time(), file)
+	http.ServeContent(w, r, ref.Path, ref.ModTime, file)
 }
 
 // vaultOf is the vault an address names. The one the window shows is answered

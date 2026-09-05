@@ -2,20 +2,6 @@ package domain
 
 import "time"
 
-// ModTime is when a file last changed, in nanoseconds since the Unix epoch. It
-// is a stamp to compare and to order by, not an instant the domain reasons
-// about: seconds put here match nothing a walk took, so every file reads as
-// changed on every scan.
-type ModTime int64
-
-// ModTimeOf is the stamp for an instant, which is how an adapter holding a
-// file's modification time makes one.
-func ModTimeOf(t time.Time) ModTime { return ModTime(t.UnixNano()) }
-
-// Time is the instant the stamp names, for a caller that has to say it in a
-// protocol of its own.
-func (m ModTime) Time() time.Time { return time.Unix(0, int64(m)) }
-
 // SourceKind says what sort of source a file is. It is the word the index files
 // the row under, and it is decided from the file's name alone.
 type SourceKind string
@@ -39,14 +25,26 @@ type Fingerprint struct {
 	Path string
 	// Kind is what the file is. A walk and a stat both say it; a fingerprint the
 	// index hands back leaves it empty, because the kind is what was asked for.
-	Kind    SourceKind
-	Size    int64
-	ModTime ModTime
+	Kind SourceKind
+	Size int64
+	// ModTime is when the file last changed. Each adapter converts at its own
+	// edge: the index and the wire carry nanoseconds since the epoch, and a
+	// stamp in seconds put here matches nothing a walk took.
+	ModTime time.Time
 }
 
 // Unchanged reports whether the file can be skipped. Size and modification time
 // are the invalidation key; content is not hashed during a walk, because that
 // would mean reading every file to discover that nothing changed.
+//
+// The time is compared with Equal, because a time.Time also carries a zone and
+// a monotonic reading, and neither of those says which instant it is.
 func (f Fingerprint) Unchanged(other Fingerprint) bool {
-	return f.Size == other.Size && f.ModTime == other.ModTime
+	return f.Size == other.Size && f.ModTime.Equal(other.ModTime)
+}
+
+// IsZero reports whether this is no fingerprint at all, which is what a caller
+// presents when it says nothing about the file it expected to write over.
+func (f Fingerprint) IsZero() bool {
+	return f.Path == "" && f.Kind == "" && f.Size == 0 && f.ModTime.IsZero()
 }

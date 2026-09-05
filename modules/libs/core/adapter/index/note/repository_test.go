@@ -3,6 +3,7 @@ package note
 import (
 	"strings"
 	"testing"
+	"time"
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/modules/libs/core/chunking"
@@ -15,7 +16,7 @@ import (
 func TestASmallChunkIsCutUnderTheLimitGiven(t *testing.T) {
 	body := strings.TrimSpace(strings.Repeat("chunks carry vectors ", 200))
 	n := domain.Note{
-		Fingerprint: domain.Fingerprint{Path: "notes/cut.md", Size: int64(len(body)), ModTime: 1},
+		Fingerprint: domain.Fingerprint{Path: "notes/cut.md", Size: int64(len(body)), ModTime: time.Unix(0, 1)},
 		Title:       "Cut",
 		Body:        body,
 	}

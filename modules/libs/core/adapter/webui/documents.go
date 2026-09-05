@@ -6,8 +6,6 @@ import (
 	"image"
 	"sync"
 	"time"
-
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // scan is a document held open for its pages to be drawn. It is pdf.Scan in
@@ -21,11 +19,13 @@ type scan interface {
 
 // fingerprint is which bytes a document is: where it sits in the vault, and
 // what the vault says about the file there. Both caches key on it, so a
-// document rewritten under the same name is drawn again.
+// document rewritten under the same name is drawn again. The stamp is
+// nanoseconds since the epoch: this is a cache key, and a time.Time compares by
+// zone and monotonic reading as well as by instant.
 type fingerprint struct {
 	path  string
 	size  int64
-	mtime domain.ModTime
+	mtime int64
 }
 
 // errBusy is a document that could not be reached inside the bound: a worker of

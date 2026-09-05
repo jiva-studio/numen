@@ -106,7 +106,7 @@ func saveNote(
 
 	var row int64
 	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
-		vault, n.Fingerprint.Path, kind, n.Fingerprint.Size, n.Fingerprint.ModTime).Scan(&row); err != nil {
+		vault, n.Fingerprint.Path, kind, n.Fingerprint.Size, chunk.Stamp(n.Fingerprint.ModTime)).Scan(&row); err != nil {
 		return fmt.Errorf("record the source this note is: %w", err)
 	}
 	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.Fingerprint.Path)),

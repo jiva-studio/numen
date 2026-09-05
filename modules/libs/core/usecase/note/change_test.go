@@ -464,7 +464,7 @@ func TestPointingANoteAtAPlaceUnderATypeReplacesTheEntryItHad(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if at == (domain.Fingerprint{}) {
+	if at.IsZero() {
 		t.Error("the write says nothing about the file it made")
 	}
 
@@ -573,7 +573,7 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if at == (domain.Fingerprint{}) {
+	if at.IsZero() {
 		t.Fatal("the write answered with no fingerprint")
 	}
 

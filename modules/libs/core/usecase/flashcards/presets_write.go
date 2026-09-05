@@ -135,7 +135,7 @@ func (u Presets) save(
 	// A caller that said what it believed the note was is held to that; one that
 	// said nothing is held to what stands there now.
 	against := fingerprint
-	if against == (domain.Fingerprint{}) {
+	if against.IsZero() {
 		against = on
 	}
 	raw, err := reader.Read(ctx, path)

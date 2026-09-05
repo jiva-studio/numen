@@ -145,7 +145,7 @@ func TestStatDoesNotSayABookIsGone(t *testing.T) {
 	if ref.Kind != domain.KindBook {
 		t.Errorf("stat says the book is %q", ref.Kind)
 	}
-	if ref.Size <= 0 || ref.ModTime == 0 {
+	if ref.Size <= 0 || ref.ModTime.IsZero() {
 		t.Errorf("stat gave %+v", ref)
 	}
 	if _, err := src.Read(t.Context(), "library/A Book.epub"); err != nil {
@@ -205,7 +205,7 @@ func TestWalkReportsSizeAndTime(t *testing.T) {
 		if r.Size <= 0 {
 			t.Errorf("%s has size %d", r.Path, r.Size)
 		}
-		if r.ModTime == 0 {
+		if r.ModTime.IsZero() {
 			t.Errorf("%s has no modification time", r.Path)
 		}
 		return nil

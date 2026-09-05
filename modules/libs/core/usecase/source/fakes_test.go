@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -355,9 +356,11 @@ type library struct {
 }
 
 type shelved struct {
-	kind  domain.SourceKind
-	raw   []byte
-	mtime domain.ModTime
+	kind domain.SourceKind
+	raw  []byte
+	// mtime is nanoseconds since the epoch, which is what a test writing one
+	// out by hand can compare against.
+	mtime int64
 }
 
 func newLibrary() *library {
@@ -365,7 +368,7 @@ func newLibrary() *library {
 }
 
 // hold puts one file in the vault, at the modification time given.
-func (l *library) hold(path string, kind domain.SourceKind, raw []byte, mtime domain.ModTime) {
+func (l *library) hold(path string, kind domain.SourceKind, raw []byte, mtime int64) {
 	l.files[path] = &shelved{kind: kind, raw: raw, mtime: mtime}
 }
 
@@ -396,7 +399,9 @@ func (l *library) Stat(_ context.Context, path string) (domain.Fingerprint, erro
 
 func (l *library) ref(path string) domain.Fingerprint {
 	held := l.files[path]
-	return domain.Fingerprint{Path: path, Kind: held.kind, Size: int64(len(held.raw)), ModTime: held.mtime}
+	return domain.Fingerprint{
+		Path: path, Kind: held.kind, Size: int64(len(held.raw)), ModTime: time.Unix(0, held.mtime),
+	}
 }
 
 // vaults opens the reader of each vault a test set up.
