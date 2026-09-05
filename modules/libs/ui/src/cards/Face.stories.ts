@@ -39,7 +39,7 @@ const CORPORA = {
       id: 'recognise',
       name: 'Recognise',
       front: '{{Name}}',
-      back: '**Height:** {{Height}}\n\n**Weight:** {{Weight}}\n\n**Life span:** {{Life span}}',
+      back: '<b>Height:</b> {{Height}}\n<b>Weight:</b> {{Weight}}\n<b>Life span:</b> {{Life span}}',
     },
     sample: [
       { field: 'Name', text: 'Llama' },
@@ -56,7 +56,7 @@ const CORPORA = {
       id: 'stray',
       name: 'Stray',
       front: '{{Name}} the {{Colour}} one',
-      back: '**Height:** {{Height}}\n\n**Weight:** {{Weight}}',
+      back: '<b>Height:</b> {{Height}}\n<b>Weight:</b> {{Weight}}',
     },
   },
   /* A face with nothing in either half, and no name either. */
@@ -64,14 +64,14 @@ const CORPORA = {
     fields: ANIMAL,
     face: { id: 'blank', name: '', front: '', back: '' },
   },
-  /* Marks a person wrote, which stand as text and are never drawn as marks. */
+  /* Marks a person wrote, which stand as text, and tags, which are drawn. */
   'marks a person wrote': {
     fields: ['Name', 'Height'],
     face: {
       id: 'tagged',
       name: 'Tagged',
-      front: '<b>{{Name}}</b>',
-      back: '<span style="color: teal">{{Height}}</span>\n\n<script>window.stolen = 1</script>',
+      front: '**{{Name}}** and <b>{{Name}}</b>',
+      back: '<span style="color: teal">{{Height}}</span>\n<script>window.stolen = 1</script>',
     },
   },
   /* Forty fields to write in, far more than the strip has room for. */
@@ -82,8 +82,8 @@ const CORPORA = {
       name: 'Crowded',
       front: '{{Field 1}}',
       back: many(40)
-        .map((field) => `**${field}:** {{${field}}}`)
-        .join('\n\n'),
+        .map((field) => `<b>${field}:</b> {{${field}}}`)
+        .join('\n'),
     },
   },
   /* What the vault found wrong with the face, and a name another face has. */
@@ -255,7 +255,14 @@ export const AFace: Story = {
     const preview = found(canvasElement, '[data-preview="back"]')
     expect(preview.textContent).toContain('about 45" at the shoulder')
     expect(preview.textContent).not.toContain('{{')
-    expect(preview.querySelector('strong')?.textContent).toBe('Height:')
+    expect(preview.querySelector('b')?.textContent).toBe('Height:')
+
+    // A face is HTML, so each of its three bare lines reads as a line of its
+    // own: three lines of type, and not one line running into the next.
+    const answer = found(canvasElement, '[data-preview="back"] .prose')
+    const tall = Number.parseFloat(getComputedStyle(answer).lineHeight)
+    expect(tall).toBeGreaterThan(0)
+    expect(answer.getBoundingClientRect().height).toBeCloseTo(tall * 3, 0)
 
     // A field to write into a half is a small quiet chip with a ground of its
     // own at rest, markedly smaller than the heading whose strip it stands in.
@@ -386,12 +393,21 @@ export const NothingInIt: Story = {
   },
 }
 
-/** Marks a person wrote, which stand as text and are never drawn as marks. */
+/**
+ * A card is HTML: a tag a person wrote is drawn, and the marks of another
+ * format stand as the characters they are.
+ */
 export const MarksAPersonWrote: Story = {
   args: { corpus: 'marks a person wrote' },
   play: async ({ canvasElement }) => {
     expect(canvasElement.querySelector('script')).toBeNull()
     expect((window as unknown as Record<string, unknown>)['stolen']).toBeUndefined()
+
+    // The tag is drawn; the asterisks around the same value are four characters
+    // of the answer, and nothing about them is bold.
+    const front = found(canvasElement, '[data-preview="front"]')
+    expect(front.textContent).toBe('**Name** and Name')
+    expect(front.querySelectorAll('b, strong')).toHaveLength(1)
 
     // What the person wrote is theirs to read and change, standing as the text
     // of a box.

@@ -111,14 +111,14 @@ describe('fill', () => {
   })
 
   it('keeps the markup around the slots', () => {
-    expect(fill('- {{Height}}\n- {{Life span}}\n', VALUES)).toBe(
-      '- about 45"\n- about 20 years\n',
+    expect(fill('<li>{{Height}}</li>\n<li>{{Life span}}</li>\n', VALUES)).toBe(
+      '<li>about 45"</li>\n<li>about 20 years</li>\n',
     )
   })
 
-  it('stands a value that is itself markdown', () => {
-    const values = [{ field: 'Picture', text: '![[llama.jpg]]' }]
-    expect(fill('{{Picture}}', values)).toBe('![[llama.jpg]]')
+  it('stands a value that is itself markup', () => {
+    const values = [{ field: 'Picture', text: '<img src="llama.jpg" alt="a llama">' }]
+    expect(fill('{{Picture}}', values)).toBe('<img src="llama.jpg" alt="a llama">')
   })
 
   it('does not read the braces a value stands in the text', () => {

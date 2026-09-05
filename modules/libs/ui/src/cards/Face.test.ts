@@ -20,7 +20,7 @@ const FACE: StencilFace = {
   id: 'recognise',
   name: 'Recognise',
   front: '{{Name}}',
-  back: '**Height:** {{Height}}',
+  back: '<b>Height:</b> {{Height}}',
 }
 
 /** One face, laid out against the fields a stencil declares. */
@@ -123,13 +123,24 @@ describe('Face, the window', () => {
     expect(boxIn(mountFace(), 'back').element.value).toContain('{{Height}}')
   })
 
-  it('draws no braces in the preview, and no markup either', () => {
+  it('draws no braces in the preview, and the tags around them as tags', () => {
     const held = mountFace(faceOf(FACE, FIELDS, [{ field: 'Height', text: 'about 45"' }]))
     const preview = held.get('[data-preview="back"]')
     expect(preview.text()).toContain('about 45"')
     expect(preview.text()).not.toContain('{{')
-    expect(preview.text()).not.toContain('**')
-    expect(preview.get('strong').text()).toBe('Height:')
+    expect(preview.text()).not.toContain('<b>')
+    expect(preview.get('b').text()).toBe('Height:')
+  })
+
+  /* A face is HTML, so the marks of another format are characters a person
+     typed and are drawn as themselves. */
+  it('draws the marks a face carries as the text they are', () => {
+    const held = mountFace(
+      faceOf({ id: 'one', name: 'One', front: '**Name**: {{Name}}', back: '' }),
+    )
+    const preview = held.get('[data-preview="front"]')
+    expect(preview.text()).toBe('**Name**: Name')
+    expect(preview.find('strong').exists()).toBe(false)
   })
 
   it('emits a half as it now reads when it is typed into', async () => {
@@ -140,7 +151,7 @@ describe('Face, the window', () => {
 
   it('follows no link a preview draws: the window stays where it is', () => {
     const held = mountFace(
-      faceOf({ id: 'one', name: 'One', front: '[there](https://example.org)', back: '' }),
+      faceOf({ id: 'one', name: 'One', front: '<a href="https://example.org">there</a>', back: '' }),
     )
     const press = new MouseEvent('click', { bubbles: true, cancelable: true })
     held.get('[data-preview="front"] a').element.dispatchEvent(press)
@@ -228,7 +239,7 @@ describe('Face, the fields it is written with', () => {
 
     await held.get('[data-insert="Weight"]').trigger('click')
 
-    expect(held.emitted('write')).toEqual([['back', '{{Weight}}**Height:** {{Height}}']])
+    expect(held.emitted('write')).toEqual([['back', '{{Weight}}<b>Height:</b> {{Height}}']])
   })
 })
 

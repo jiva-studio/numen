@@ -257,7 +257,7 @@ export { default as Divider } from './divider/Divider.vue'
  * come from another person, so anything drawing one goes through this.
  */
 export { safe, scheme } from './cards/safe'
-/** What a card is written with, drawn: markdown, with the tags among the marks. */
+/** What a card is written with, drawn: the HTML a person wrote, measured. */
 export { rendered } from './cards/render'
 /** For putting a card or a field where a person let it go, without drawing it. */
 export { ordered, reordered } from './cards/order'

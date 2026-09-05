@@ -2,15 +2,14 @@
 /**
  * What a card is written with, read as it is meant to be read.
  *
- * Marks and tags both come out as elements, and what a card may not be drawn
- * with is gone before this is handed anything. Typesetting is the typography
- * plugin's.
+ * A face is HTML and is drawn as the markup it is, measured first against what
+ * a card may be drawn with. Typesetting is the typography plugin's.
  */
 import { computed } from 'vue'
 import { rendered } from './render'
 
 const props = defineProps<{
-  /** Markdown, with tags among the marks. */
+  /** HTML, as a person wrote it. */
   text: string
 }>()
 
@@ -45,6 +44,17 @@ const pressed = (press: MouseEvent) => {
   font-size: var(--numen-prose-size);
   user-select: text;
   -webkit-user-select: text;
+
+  /* Nothing wraps a line a person wrote with no tag around it, so the breaks
+     between such lines are kept and each reads as the line it is. */
+  white-space: pre-wrap;
+}
+
+/* Inside a tag a person wrote, the whitespace is the markup's: a list is not
+   indented by the spaces the file was laid out with. Preformatted text keeps
+   its own. */
+.prose :deep(*:not(pre, pre *)) {
+  white-space: normal;
 }
 
 /* A table wider than the measure scrolls inside itself, carrying its own

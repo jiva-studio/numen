@@ -31,7 +31,7 @@ const CORPORA = {
         id: 'recognise',
         name: 'Recognise',
         front: '{{Name}}',
-        back: '**Height:** {{Height}}\n\n**Weight:** {{Weight}}\n\n**Life span:** {{Life span}}',
+        back: '<b>Height:</b> {{Height}}\n<b>Weight:</b> {{Weight}}\n<b>Life span:</b> {{Life span}}',
       },
       {
         id: 'name-it',
@@ -48,7 +48,7 @@ const CORPORA = {
       name: `Face ${at + 1}`,
       front: '{{Field 1}}',
       back: many(40)
-        .map((field) => `**${field}:** {{${field}}}`)
+        .map((field) => `<b>${field}:</b> {{${field}}}`)
         .join('\n\n'),
     })),
   },
@@ -68,7 +68,7 @@ const CORPORA = {
         id: 'слово',
         name: 'Слово',
         front: '{{Слово}}',
-        back: '**Перевод:** {{Перевод}}\n\n**Пример:** {{Пример}}\n\n{{देवनागरी}}',
+        back: '<b>Перевод:</b> {{Перевод}}\n<b>Пример:</b> {{Пример}}\n{{देवनागरी}}',
       },
       {
         id: 'run-on',
@@ -90,7 +90,7 @@ const CORPORA = {
         id: 'stray',
         name: 'Stray',
         front: '{{Name}} the {{Colour}} one',
-        back: '**Height:** {{Height}}\n\n**Weight:** {{Weight}}',
+        back: '<b>Height:</b> {{Height}}\n<b>Weight:</b> {{Weight}}',
       },
       {
         id: 'tagged',
