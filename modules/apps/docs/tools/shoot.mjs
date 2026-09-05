@@ -93,7 +93,7 @@ export const SHOTS = [
   { name: 'stencil', story: 'desktop-window--stencil', width: 1180, height: 740 },
   { name: 'preset', story: 'desktop-window--preset', width: 1180, height: 740 },
   // The window a person runs their cards in, which is not a wide window.
-  { name: 'decks', story: 'flash-cards-window--owing', width: 760, height: 540 },
+  { name: 'decks', story: 'flash-cards-window--cards-due', width: 760, height: 540 },
   { name: 'sitting', story: 'flash-cards-window--reviewing', width: 760, height: 540 },
 ]
 

@@ -79,10 +79,12 @@ const keyboard = async () => {
   const words = await read(UI, 'words.ts')
 
   // The two the window keeps for itself are not in that table: they put the
-  // field up, and the field answers them.
-  const field = await read(UI, 'Field.vue')
+  // palette up, and the palette answers them.
+  const palette = await read(UI, 'Palette.vue')
   for (const letter of ['k', 'p']) {
-    if (!field.includes(`key === '${letter}'`)) die(`the field no longer answers '${letter}' itself`)
+    if (!palette.includes(`key === '${letter}'`)) {
+      die(`the palette no longer answers '${letter}' itself`)
+    }
   }
 
   const rows = [
