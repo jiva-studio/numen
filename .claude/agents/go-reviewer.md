@@ -34,9 +34,11 @@ contradicts ADR-NNNN, and the ADR looks outdated" — not silence.
 
 ### Architecture
 
-The layout for this repository is in ADR-0014; read it rather than assuming a
-shape. What follows is how to judge whether the code honours it — the same
-principles would apply if the layout changed.
+The layout for this repository is in ADR-0004, and where a port is declared and
+where an adapter stands is ADR-0047; read them rather than assuming a shape. The
+constraint list in `AGENTS.md` is the same rules in short form, each naming the
+test that refuses it. What follows is how to judge whether the code honours
+them — the same principles would apply if the layout changed.
 
 **Dependencies point inward, and the compiler proves it.** `core/` — entities,
 ports, use cases — imports nothing from `adapter/` and nothing that is a driver,
@@ -57,6 +59,13 @@ interface, the implementation never names it, and the fit is checked
 structurally. An interface declared next to its single implementation, or an
 adapter that imports the port package to announce it satisfies it, is
 ceremony — flag it.
+
+**A port is not judged by its number of callers.** ADR-0047 settles it: a port
+is a purposeful conversation, and one caller is a fact about this application
+rather than about the conversation. "Only one caller" is not a finding against
+an interface in `port/`. What the rule above still catches is an interface
+declared beside the thing that implements it, and an adapter naming the port it
+satisfies.
 
 **A use case is one business scenario, named as one.** `AddVault`, `ScanVault`,
 `SearchNotes`. It orchestrates ports and entities and owns the boundary of one
@@ -84,7 +93,8 @@ wrote down, or under two names in two packages, is a finding — it is the point
 at which a codebase and its documentation start describing different systems.
 
 **Do not abstract before there is a second case.** Go rewards deleting an
-interface that has one implementation and no test double. Structure introduced
+interface that has one implementation and no test double — outside `port/`,
+where the paragraph above applies. Structure introduced
 "for when we need it" is a cost paid now against a benefit nobody has ordered;
 say so when you see it, and say so equally when a genuinely needed seam is
 missing.
