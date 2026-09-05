@@ -27,6 +27,7 @@ The numbers are identity, not order. This list is the order. A gap in the number
 ### The shape of the code
 
 - [ADR-0004 — A hexagonal core in Go](0004-a-hexagonal-core-in-go.md)
+- [ADR-0047 — Where a port is declared, and where an adapter stands](0047-where-a-port-is-declared-and-where-an-adapter-stands.md)
 - [ADR-0005 — A client is generated from the protocol](0005-a-client-is-generated-from-the-protocol.md)
 - [ADR-0046 — One service to a subject](0046-one-service-to-a-subject.md)
 - [ADR-0025 — How this application is tested](0025-how-this-application-is-tested.md)
