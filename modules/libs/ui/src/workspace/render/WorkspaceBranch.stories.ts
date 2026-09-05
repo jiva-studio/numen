@@ -9,7 +9,7 @@ import { expect, userEvent, waitFor } from 'storybook/test'
 import { computed, provide, ref } from 'vue'
 import WorkspaceBranch from './WorkspaceBranch.vue'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from './context'
-import Filling from '../fixtures/Filling.vue'
+import TabStub from '../fixtures/TabStub.vue'
 import { split, stack } from '../fixtures/build'
 import { type Branch, type NodeId, type Tab, type TabId } from '../node'
 import { fit } from '../shares'
@@ -72,7 +72,7 @@ const meta: Meta<Knobs> = {
   },
   args: { arrangement: 'two panes', minimum: 220, room: '100%' },
   render: (args) => ({
-    components: { WorkspaceBranch, Filling },
+    components: { WorkspaceBranch, TabStub },
     setup() {
       const held = ref<Branch>(ARRANGEMENTS[args.arrangement]())
 
@@ -102,7 +102,7 @@ const meta: Meta<Knobs> = {
     template: `
       <div :style="{ height: '100vh', inlineSize: args.room, padding: 0 }">
         <WorkspaceBranch :node="held" axis="horizontal" :depth="0">
-          <template #tab="{ id }"><Filling :name="id" /></template>
+          <template #tab="{ id }"><TabStub :name="id" /></template>
         </WorkspaceBranch>
       </div>
     `,

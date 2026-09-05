@@ -9,7 +9,9 @@ defineProps<{ name: string }>()
 </script>
 
 <template>
-  <div class="filling numen grid h-full place-items-center bg-surface font-sans text-base text-hushed">
+  <div
+    class="tab-stub numen grid h-full place-items-center bg-surface font-sans text-base text-hushed"
+  >
     {{ name }}
   </div>
 </template>

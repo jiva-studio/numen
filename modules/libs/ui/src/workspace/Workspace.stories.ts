@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Workspace from './Workspace.vue'
-import Filling from './fixtures/Filling.vue'
+import TabStub from './fixtures/TabStub.vue'
 import type { Tab, Workspace as State } from './node'
 import { panesOf } from './tree'
 import { crowded, deep, empty, oneStack, sideBySide, stack, workspaceOf } from './fixtures/build'
@@ -76,7 +76,7 @@ const meta: Meta<Knobs> = {
   },
   args: { arrangement: 'side by side', edge: 22, threshold: 4, marks: {} },
   render: (args) => ({
-    components: { Workspace, Filling },
+    components: { Workspace, TabStub },
     setup() {
       const held = ref<State>(ARRANGEMENTS[args.arrangement]())
       watch(
@@ -98,7 +98,7 @@ const meta: Meta<Knobs> = {
           :threshold="args.threshold"
           :naming="() => 'made-' + Math.random().toString(36).slice(2, 8)"
         >
-          <template #tab="{ id }"><Filling :name="id" /></template>
+          <template #tab="{ id }"><TabStub :name="id" /></template>
         </Workspace>
       </div>
     `,
