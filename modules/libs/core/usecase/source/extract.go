@@ -165,7 +165,7 @@ func (u Extract) discover(
 		// What those paths stood on, before the rows saying so are taken out.
 		// Which of those readings nothing stands on any more is a question for
 		// once every source has been cut.
-		went, err := u.standing(ctx, v, kind, gone)
+		went, err := u.recognised(ctx, v, kind, gone)
 		if err != nil {
 			return err
 		}
@@ -178,9 +178,9 @@ func (u Extract) discover(
 	return nil
 }
 
-// standing is the reading each of these paths stood on, for the ones that stood
-// on any.
-func (u Extract) standing(
+// recognised is the reading each of these paths stood on, for the ones that
+// stood on any.
+func (u Extract) recognised(
 	ctx context.Context,
 	v domain.Vault,
 	kind domain.SourceKind,
@@ -254,11 +254,11 @@ func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.Vaul
 		return nil
 	}
 	for _, kind := range u.kinds() {
-		standing, err := u.Known.Recognised(ctx, v.ID, kind)
+		recognised, err := u.Known.Recognised(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
-		for _, r := range standing {
+		for _, r := range recognised {
 			if err := ctx.Err(); err != nil {
 				return err
 			}
