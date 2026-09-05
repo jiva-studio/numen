@@ -164,7 +164,7 @@ func (s *cache) sweep() {
 	type page struct {
 		name  string
 		size  int64
-		mtime int64
+		mtime time.Time
 	}
 	pages := make([]page, 0, len(held))
 	var total int64
@@ -173,13 +173,13 @@ func (s *cache) sweep() {
 		if err != nil {
 			continue
 		}
-		pages = append(pages, page{name: one.Name(), size: info.Size(), mtime: info.ModTime().UnixNano()})
+		pages = append(pages, page{name: one.Name(), size: info.Size(), mtime: info.ModTime()})
 		total += info.Size()
 	}
 	if total <= s.limit {
 		return
 	}
-	sort.Slice(pages, func(a, b int) bool { return pages[a].mtime < pages[b].mtime })
+	sort.Slice(pages, func(a, b int) bool { return pages[a].mtime.Before(pages[b].mtime) })
 	for _, one := range pages {
 		if total <= s.limit {
 			return
