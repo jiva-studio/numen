@@ -45,8 +45,11 @@ func (s CardFace) Lay() (front, back string) { return format.Lay(s.stencil, s.fa
 // before they are asked anything.
 type ListCardFaces struct {
 	Readers port.VaultReaders
-	Notes   port.NoteQueries
-	Links   port.LinkQueries
+	// Notes says which notes of the vault are decks. A build holding none
+	// answers ErrNotCarried for every vault, the same as an index that has not
+	// read this one yet.
+	Notes port.NoteQueries
+	Links port.LinkQueries
 }
 
 // ErrNotCarried is what a vault the index does not carry gets. It is the signal
