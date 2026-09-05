@@ -28,7 +28,7 @@ const packages = () => {
  * added to the repository and left off the list is a border the rules stop at
  * without anybody being told. The list was two lists once, a module apart.
  */
-test('every package of the repository is read or is written off by name', () => {
+test('every library and every application is read or is written off by name', () => {
   const named = new Set([...modules.map((one) => one.at), ...Object.keys(elsewhere)])
   assert.deepEqual(
     packages().filter((at) => !named.has(at)),
