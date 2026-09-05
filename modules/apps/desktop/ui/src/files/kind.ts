@@ -60,7 +60,7 @@ export interface FilesTabDeps {
    * A deck made in a folder, under the name it is given. The path it landed at,
    * and nothing where none was made.
    */
-  cuts(folder: string, name: string): Promise<string>
+  decks(folder: string, name: string): Promise<string>
   /** A stencil made the same way. */
   stencils(folder: string, name: string): Promise<string>
   /** A preset made the same way, naming none of its settings. */
@@ -309,7 +309,7 @@ export function filing(list: FileTree, deps: FilesTabDeps) {
    * answers where it stands, so a name already taken there comes back as a
    * refusal.
    */
-  const cuts = async (path: string | null, makes: FileMaker, name: string) => {
+  const makesOne = async (path: string | null, makes: FileMaker, name: string) => {
     const into = folderFor(path)
     const made = await makes(into, name)
     if (!made) return
@@ -336,9 +336,9 @@ export function filing(list: FileTree, deps: FilesTabDeps) {
     menu.value = null
     if (!asking || !OFFERED.has(id)) return
     if (id === NEW_NOTE) return void writes(asking.path)
-    if (id === NEW_DECK) return void cuts(asking.path, deps.cuts, words.newDeck)
-    if (id === NEW_STENCIL) return void cuts(asking.path, deps.stencils, words.newStencil)
-    if (id === NEW_PRESET) return void cuts(asking.path, deps.presets, words.newPreset)
+    if (id === NEW_DECK) return void makesOne(asking.path, deps.decks, words.newDeck)
+    if (id === NEW_STENCIL) return void makesOne(asking.path, deps.stencils, words.newStencil)
+    if (id === NEW_PRESET) return void makesOne(asking.path, deps.presets, words.newPreset)
     if (id === NEW_FOLDER) return void makes(asking.path)
 
     const path = asking.path
@@ -378,7 +378,7 @@ export function filing(list: FileTree, deps: FilesTabDeps) {
     remove,
     makes,
     writes,
-    cuts,
+    makesOne,
     asks,
     dismiss,
     chose,

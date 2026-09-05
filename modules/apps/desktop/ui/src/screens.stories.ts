@@ -589,7 +589,7 @@ const files = (open: readonly string[]) => {
     carries: () => {},
     makes: async () => {},
     writes: async () => '',
-    cuts: async () => '',
+    decks: async () => '',
     stencils: async () => '',
     presets: async () => '',
     says: () => {},

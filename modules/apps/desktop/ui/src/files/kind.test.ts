@@ -67,8 +67,8 @@ const tab = (refuses = false) => {
     },
     // The vault takes a folder and a name and answers where it filed the file.
     // The ending is its own, and it is not markdown here.
-    cuts: async (folder, name) => {
-      done.push(`cuts ${folder === ROOT ? '/' : folder} ${name}`)
+    decks: async (folder, name) => {
+      done.push(`decks ${folder === ROOT ? '/' : folder} ${name}`)
       if (refuses) return ''
       const made = folder === ROOT ? `${name}.note` : `${folder}/${name}.note`
       vault[folder] = [...(vault[folder] ?? []), file(made, { type: 'deck' })]
@@ -381,7 +381,7 @@ describe('rows let go of', () => {
       carries: () => {},
       makes: async () => {},
       writes: async () => '',
-      cuts: async () => '',
+      decks: async () => '',
       stencils: async () => '',
       presets: async () => '',
       says: () => {},
@@ -553,7 +553,7 @@ describe('an item chosen in the menu on a row', () => {
     one.chose(NEW_DECK)
     await settles()
 
-    expect(done).toStrictEqual([`cuts / ${words.newDeck}`])
+    expect(done).toStrictEqual([`decks / ${words.newDeck}`])
     // The name put in the field is where the vault filed it, ending and all.
     expect(one.renaming.value).toBe(`${words.newDeck}.note`)
   })
@@ -619,7 +619,7 @@ describe('an item chosen in the menu on a row', () => {
     one.chose(NEW_DECK)
     await settles()
 
-    expect(done).toStrictEqual([`cuts physics ${words.newDeck}`])
+    expect(done).toStrictEqual([`decks physics ${words.newDeck}`])
   })
 
   it('names nothing where the vault made no deck', async () => {

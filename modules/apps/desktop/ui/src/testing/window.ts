@@ -13,7 +13,7 @@ import type { Tab } from '../core'
 import PlexTab from '../plex/PlexTab.vue'
 
 
-const { said, held, asked, listed, folders, cuts, stands, outside } = vi.hoisted(() => ({
+const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoisted(() => ({
   /**
    * What the vault holds at a path. A book and a note are told apart by the
    * name the file carries, the way the vault itself tells them apart, and which
@@ -54,7 +54,7 @@ const { said, held, asked, listed, folders, cuts, stands, outside } = vi.hoisted
    * title, and the extension is the vault's own and no caller's. It is not
    * markdown here, so a window building the path for itself reaches nothing.
    */
-  cuts: (() => {
+  maker: (() => {
     const filed = new Set<string>()
     /** Whether the vault answers what it is asked at all. */
     let reached = true
@@ -159,7 +159,7 @@ const { said, held, asked, listed, folders, cuts, stands, outside } = vi.hoisted
     moved: [] as string[],
     folders: [] as string[],
     /** The decks and the stencils the window asked for, in the order it asked. */
-    cut: [] as string[],
+    cards: [] as string[],
     /** Each field rename the window asked the vault for. */
     renamedField: [] as string[],
     /** The cards each of those deck writes carried, by name. */
@@ -230,12 +230,12 @@ vi.mock('../vault', () => ({
       held: 1,
     }),
     makeDeck: async (title: string, folder: string) => {
-      asked.cut.push(`deck ${folder || '/'} ${title}`)
-      return cuts.makes(title, folder)
+      asked.cards.push(`deck ${folder || '/'} ${title}`)
+      return maker.makes(title, folder)
     },
     makeStencil: async (title: string, folder: string, fields: readonly string[]) => {
-      asked.cut.push(`stencil ${folder || '/'} ${title} [${fields.join(', ')}]`)
-      return cuts.makes(title, folder)
+      asked.cards.push(`stencil ${folder || '/'} ${title} [${fields.join(', ')}]`)
+      return maker.makes(title, folder)
     },
     renameField: async (path: string, from: string, to: string) => {
       asked.renamedField.push(`${path} ${from} ${to}`)
@@ -259,7 +259,7 @@ vi.mock('../vault', () => ({
       path: string,
       deck: { cards: readonly { values: readonly { text: string }[] }[] },
     ) => {
-      asked.cut.push(`deck ${path}`)
+      asked.cards.push(`deck ${path}`)
       asked.wrote.push(deck.cards.map((card) => card.values[0]?.text ?? '').join(', '))
       return { refusal: null, changed: false, at: 'a2', bound: 0 }
     },
@@ -269,7 +269,7 @@ vi.mock('../vault', () => ({
       at: 'a1',
     }),
     writeStencil: async (path: string) => {
-      asked.cut.push(`stencil ${path}`)
+      asked.cards.push(`stencil ${path}`)
       return { refusal: null, changed: false, at: 'a2' }
     },
   },
@@ -484,10 +484,10 @@ afterEach(() => {
     changed: false,
     at: 'a2',
   }
-  cuts.forget()
+  maker.forget()
   outside.forget()
   asked.made = []
-  asked.cut = []
+  asked.cards = []
   asked.renamedField = []
   asked.wrote = []
   asked.renamed = []
@@ -579,7 +579,7 @@ const tabsOf = (window: VueWrapper): readonly { id: string; title: string }[] =>
 export {
   asked,
   cards,
-  cuts,
+  maker,
   drawn,
   drawnWithPalette,
   editor,

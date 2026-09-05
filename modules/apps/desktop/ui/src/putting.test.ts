@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { FileKind, RefusalReason } from './core'
-import { cutting, putting, type CutWriter, type FileOpenerDeps } from './putting'
+import { fileMakers, putting, type VaultMaker, type FileOpenerDeps } from './putting'
 import { voice } from './testing/voice'
 import { REFUSED } from './words'
 
@@ -239,7 +239,10 @@ describe('a file just made here', () => {
 })
 
 /** The vault answering what it was told, and writing down what it was asked to make. */
-const cuts = (refusal: RefusalReason | null = null, throws = false): CutWriter & { asked: string[] } => {
+const maker = (
+  refusal: RefusalReason | null = null,
+  throws = false,
+): VaultMaker & { asked: string[] } => {
   const asked: string[] = []
   const answer = async (path: string) => {
     if (throws) throw new Error('the vault is not there')
@@ -263,12 +266,12 @@ const cuts = (refusal: RefusalReason | null = null, throws = false): CutWriter &
 }
 
 /** Everything making one of the three says, and the field a stencil carries. */
-const CUTTING = { refused: REFUSED, field: 'Front' }
+const MAKING = { refused: REFUSED, field: 'Front' }
 
 describe('a deck, a stencil or a preset made', () => {
   it('is asked of the vault under the name and the folder it was given', async () => {
-    const vault = cuts()
-    const made = cutting(vault, putting(unreachable), CUTTING, () => {})
+    const vault = maker()
+    const made = fileMakers(vault, putting(unreachable), MAKING, () => {})
 
     await made.makes('deck', 'zoology', 'Animals')
     await made.makes('stencil', 'zoology', 'Words')
@@ -282,7 +285,7 @@ describe('a deck, a stencil or a preset made', () => {
   })
 
   it('answers where the vault filed it', async () => {
-    const made = cutting(cuts(), putting(unreachable), CUTTING, () => {})
+    const made = fileMakers(maker(), putting(unreachable), MAKING, () => {})
 
     expect(await made.makes('deck', 'zoology', 'Animals')).toBe('zoology/Animals.md')
   })
@@ -291,9 +294,9 @@ describe('a deck, a stencil or a preset made', () => {
     const puts = putting(unreachable)
     const opened = editors(puts)
     puts.holds('preset', (path) => opened.push(`preset ${path}`))
-    const made = cutting(cuts(), puts, CUTTING, () => {})
+    const made = fileMakers(maker(), puts, MAKING, () => {})
 
-    await made.cuts('zoology', 'Animals')
+    await made.decks('zoology', 'Animals')
     await made.stencils('zoology', 'Words')
     await made.presets('', 'Slow')
 
@@ -308,18 +311,18 @@ describe('a deck, a stencil or a preset made', () => {
     const puts = putting(unreachable)
     const opened = editors(puts)
     const told = voice()
-    const made = cutting(cuts('occupied'), puts, CUTTING, told.says)
+    const made = fileMakers(maker('occupied'), puts, MAKING, told.says)
 
-    expect(await made.cuts('zoology', 'Animals')).toBe('')
+    expect(await made.decks('zoology', 'Animals')).toBe('')
     expect(told.said).toStrictEqual([REFUSED.occupied])
     expect(opened).toStrictEqual([])
   })
 
   it('says a vault that could not be asked at all', async () => {
     const told = voice()
-    const made = cutting(cuts(null, true), putting(unreachable), CUTTING, told.says)
+    const made = fileMakers(maker(null, true), putting(unreachable), MAKING, told.says)
 
-    expect(await made.cuts('zoology', 'Animals')).toBe('')
+    expect(await made.decks('zoology', 'Animals')).toBe('')
     expect(told.said.join(' ')).not.toContain('the vault is not there')
     expect(told.said.join(' ')).toContain('numen did not answer')
   })

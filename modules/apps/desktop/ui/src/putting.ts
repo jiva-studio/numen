@@ -133,7 +133,7 @@ export type FileOpeners = ReturnType<typeof putting>
 export type MakeKind = 'deck' | 'stencil' | 'preset'
 
 /** What the window asks the vault to make from nothing. */
-export interface CutWriter {
+export interface VaultMaker {
   /** A deck of no cards, filed in that folder under a name made from the title. */
   makeDeck(title: string, folder: string): Promise<MakeResult>
   /**
@@ -146,7 +146,7 @@ export interface CutWriter {
 }
 
 /** Everything making one of the three says in the window's voice. */
-export interface CuttingWords {
+export interface MakeWords {
   /** What the vault refused, in words a person reads. */
   readonly refused: Record<RefusalReason, string>
   /** What the one field a stencil is made carrying is called. */
@@ -159,7 +159,7 @@ export interface CuttingWords {
  * answers nothing at all is said here, because the roads that ask for one carry
  * no word of their own.
  */
-export function cutting(vault: CutWriter, puts: FileOpeners, words: CuttingWords, said: Voice) {
+export function fileMakers(vault: VaultMaker, puts: FileOpeners, words: MakeWords, said: Voice) {
   const makes = async (what: MakeKind, folder: string, name: string): Promise<string> => {
     try {
       const answer =
@@ -189,7 +189,7 @@ export function cutting(vault: CutWriter, puts: FileOpeners, words: CuttingWords
 
   return {
     makes,
-    cuts: (folder: string, name: string) => opens('deck', folder, name),
+    decks: (folder: string, name: string) => opens('deck', folder, name),
     stencils: (folder: string, name: string) => opens('stencil', folder, name),
     presets: (folder: string, name: string) => opens('preset', folder, name),
   }

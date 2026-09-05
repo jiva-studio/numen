@@ -26,7 +26,7 @@ import { WORDS as plexWords } from './plex/words'
 import {
   asked,
   cards,
-  cuts,
+  maker,
   drawn,
   drawnWithPalette,
   HELD,
@@ -335,7 +335,7 @@ describe('a command reached by its own keystroke', () => {
     await press('Enter')
     await settles()
 
-    expect(asked.cut).toStrictEqual(['deck / Animals'])
+    expect(asked.cards).toStrictEqual(['deck / Animals'])
     expect(paneKinds(window).flat()).toContain('deck')
   })
 
@@ -387,7 +387,7 @@ describe('a command reached by its own keystroke', () => {
     await press('Enter')
     await settles()
 
-    expect(asked.cut).toStrictEqual(['stencil / Animal [Field 1]'])
+    expect(asked.cards).toStrictEqual(['stencil / Animal [Field 1]'])
     expect(paneKinds(window).flat()).not.toContain('deck')
   })
 
@@ -402,7 +402,7 @@ describe('a command reached by its own keystroke', () => {
     await press('Enter')
     await settles()
 
-    expect(asked.cut).not.toStrictEqual(['stencil / Animal []'])
+    expect(asked.cards).not.toStrictEqual(['stencil / Animal []'])
   })
 
   it('opens the step that picks a note, on the keystroke going to one draws', async () => {
@@ -762,7 +762,7 @@ describe('a deck or a stencil the file tree asked the vault for', () => {
       asks(asked: { path: string | null; at: { x: number; y: number } }): void
       chose(id: string): void
     }
-    cuts.breaks()
+    maker.breaks()
     tree.asks({ path: null, at: { x: 0, y: 0 } })
     tree.chose(stencil ? NEW_STENCIL : NEW_DECK)
     await settles()

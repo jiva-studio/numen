@@ -44,7 +44,7 @@ const opened = (open: readonly string[]): FilesTabState => {
     carries: () => {},
     makes: async () => {},
     writes: async (at) => `${at}Untitled note.md`,
-    cuts: async (at, name) => `${at}${name}`,
+    decks: async (at, name) => `${at}${name}`,
     stencils: async (at, name) => `${at}${name}`,
     presets: async (at, name) => `${at}${name}`,
     says: () => {},

@@ -37,7 +37,7 @@ import { HANGING, PARTS, hanging } from './hanging'
 import { does, reaching, type CommandDeps, type Store } from './doing'
 import { finding } from './finding'
 import { lands, type DestinationDeps } from './destination'
-import { cutting, putting } from './putting'
+import { fileMakers, putting } from './putting'
 import { flushing } from './flushing'
 import { raising } from './raising'
 import { windowing } from './windowing'
@@ -60,7 +60,7 @@ import { noting } from './note/kind'
 import { plexKind } from './plex/kind'
 import { core as agent } from './agent/core'
 import { WORDS as talk } from './agent/words'
-import { WORDS as cut } from './cards/words'
+import { WORDS as cardWords } from './cards/words'
 import { WORDS as words } from './words'
 import { AGENT, CONVERSATION, FILES, PLEX, named, opening } from './workspace'
 
@@ -242,14 +242,14 @@ export const useWindow = () => {
    * none of its settings, so the decks pointed at it are scheduled by the
    * defaults until the person moves one.
    */
-  const made = cutting(
+  const made = fileMakers(
     {
       makeDeck: (title, folder) => cards.makeDeck(title, folder),
       makeStencil: (title, folder, fields) => cards.makeStencil(title, folder, fields),
       makesPreset: (title, folder) => presets.makes(title, folder),
     },
     puts,
-    { refused: words.refused, field: cut.newField },
+    { refused: words.refused, field: cardWords.newField },
     told,
   )
 
@@ -274,7 +274,7 @@ export const useWindow = () => {
     },
     makes: (path) => does(deedOf('makeFolder', where(), path), doing, words),
     writes: async (folder) => (await making.named(folder, []))?.path ?? '',
-    cuts: (folder, name) => made.makes('deck', folder, name),
+    decks: (folder, name) => made.makes('deck', folder, name),
     stencils: (folder, name) => made.makes('stencil', folder, name),
     presets: (folder, name) => made.makes('preset', folder, name),
     says: (text) => told(text, 'refusal'),

@@ -117,12 +117,12 @@ export interface VaultWriter {
 }
 
 /** The files a command makes from nothing, each put in front of the person. */
-export interface CutMaker {
+export interface FileMakers {
   /**
    * A deck made in a folder under the name it is given. The path it landed at,
    * and nothing where none was made.
    */
-  cuts(folder: string, name: string): Promise<string>
+  decks(folder: string, name: string): Promise<string>
   /** A stencil made the same way. */
   stencils(folder: string, name: string): Promise<string>
   /** A preset made the same way, naming none of its settings. */
@@ -185,7 +185,7 @@ export interface SettingsWriter {
 export interface CommandDeps {
   readonly files: VaultWriter
   readonly runs: ArtifactRunner
-  readonly cards: CutMaker
+  readonly cards: FileMakers
   readonly vaults: VaultSwitcher
   readonly goes: WindowNavigator
   readonly settings: SettingsWriter
@@ -239,7 +239,7 @@ const carried: Record<string, CommandHandler> = {
   jump: (deed, on, words) => makes(deed, 'jump', on, words),
   note: (deed, on, words) => makes(deed, null, on, words),
   deck: async (deed, on) => {
-    if (deed.name) await on.cards.cuts('', deed.name)
+    if (deed.name) await on.cards.decks('', deed.name)
   },
   stencil: async (deed, on) => {
     if (deed.name) await on.cards.stencils('', deed.name)

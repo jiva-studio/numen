@@ -153,8 +153,8 @@ const window = (
       },
     },
     cards: {
-      cuts: async (folder, name) => {
-        done.push(`cuts ${folder || '—'} ${name}`)
+      decks: async (folder, name) => {
+        done.push(`decks ${folder || '—'} ${name}`)
         return folder ? `${folder}/${name}` : name
       },
       stencils: async (folder, name) => {
@@ -272,7 +272,7 @@ describe('a deck, a stencil or a preset made', () => {
     await carry(deedOf('deck', front(), 'Animals'), one.on)
 
     // The vault names the file, so nothing here puts an ending on the name.
-    expect(one.done).toStrictEqual(['cuts — Animals'])
+    expect(one.done).toStrictEqual(['decks — Animals'])
   })
 
   it('hands a name that carries an ending over unchanged', async () => {
@@ -280,7 +280,7 @@ describe('a deck, a stencil or a preset made', () => {
 
     await carry(deedOf('deck', front(), 'Animals.md'), one.on)
 
-    expect(one.done).toStrictEqual(['cuts — Animals.md'])
+    expect(one.done).toStrictEqual(['decks — Animals.md'])
   })
 
   it('is a stencil where that is what was asked for', async () => {
