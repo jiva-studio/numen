@@ -395,10 +395,10 @@ func Clear(ctx context.Context, tx *sql.Tx, source int64) error {
 // a new chunk, and a row whose hash is in no chunk is a chunk that is gone.
 //
 // A large chunk covers the whole of a note, so its hash moves whenever the note
-// is edited at all, and `chunks.parent … ON DELETE CASCADE` takes every chunk
-// inside a large one with it. The new rows go in first, the chunks that were
-// kept are then pointed at the large chunk they now sit in, and the rows that
-// are gone come out last.
+// is edited at all, and `chunks.parent_id … ON DELETE CASCADE` takes every
+// chunk inside a large one with it. The new rows go in first, the chunks that
+// were kept are then pointed at the large chunk they now sit in, and the rows
+// that are gone come out last.
 //
 // Every chunk written is indexed for the words it holds, large and small alike,
 // so that a search asked by words and one asked by meaning name one kind of row.
@@ -472,7 +472,7 @@ func (w statements) close() {
 // put is the row one chunk is held on, and moves or writes it.
 //
 // A chunk inside another arrives with the row enclosing it, and a large chunk
-// with nothing, which is also what the row's `parent` becomes.
+// with nothing, which is also what the row's `parent_id` becomes.
 func (w statements) put(ctx context.Context, held *rows, source, vault int64, c Chunk, parent any) (int64, error) {
 	key := textID{hash: hashOf(c.Text), small: parent != nil}
 	if row, kept := held.claim(key); kept {

@@ -109,7 +109,7 @@ func smallChunks(t *testing.T, db *DB, vault domain.Vault, path string) []int64 
 	return rowsOf(t, db, `SELECT c.id FROM chunks c
 	                      JOIN sources s ON s.id = c.source_id
 	                      JOIN vaults v ON v.id = c.vault_id
-	                      WHERE v.identifier = ? AND s.path = ? AND c.parent IS NOT NULL
+	                      WHERE v.identifier = ? AND s.path = ? AND c.parent_id IS NOT NULL
 	                      ORDER BY c.start, c.length`, vault.ID, path)
 }
 
@@ -119,7 +119,7 @@ func largeChunk(t *testing.T, db *DB, vault domain.Vault, path string) int64 {
 	rows := rowsOf(t, db, `SELECT c.id FROM chunks c
 	                       JOIN sources s ON s.id = c.source_id
 	                       JOIN vaults v ON v.id = c.vault_id
-	                       WHERE v.identifier = ? AND s.path = ? AND c.parent IS NULL`, vault.ID, path)
+	                       WHERE v.identifier = ? AND s.path = ? AND c.parent_id IS NULL`, vault.ID, path)
 	if len(rows) != 1 {
 		t.Fatalf("%d large chunks for %s", len(rows), path)
 	}
@@ -435,8 +435,8 @@ func TestEditingTheStartOfANoteRecutsAllOfIt(t *testing.T) {
 
 func TestARecutKeepsAChunkInsideALargeOneThatChanged(t *testing.T) {
 	// The large chunk covers the whole note, so its text moves on every edit and
-	// it is a new row every time. `chunks.parent … ON DELETE CASCADE` takes every
-	// chunk inside a large one with it, so the chunks that were kept are
+	// it is a new row every time. `chunks.parent_id … ON DELETE CASCADE` takes
+	// every chunk inside a large one with it, so the chunks that were kept are
 	// pointed at the new large chunk before the old one comes out.
 	db := opened(t)
 	model := embedder{seed: 0x22}
@@ -464,7 +464,7 @@ func TestARecutKeepsAChunkInsideALargeOneThatChanged(t *testing.T) {
 	if !vectored(t, db, kept) {
 		t.Error("the chunk whose text did not change lost its vector")
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE id = ? AND parent = ?`, kept, now); got != 1 {
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE id = ? AND parent_id = ?`, kept, now); got != 1 {
 		t.Error("the chunk that was kept does not sit inside the large chunk that is there now")
 	}
 }
@@ -584,7 +584,7 @@ func locationsOf(t *testing.T, db *DB, vault domain.Vault, path string) []string
 	rows, err := db.read.QueryContext(t.Context(), `SELECT COALESCE(c.location, '') FROM chunks c
 	                                                JOIN sources s ON s.id = c.source_id
 	                                                JOIN vaults v ON v.id = c.vault_id
-	                                                WHERE v.identifier = ? AND s.path = ? AND c.parent IS NOT NULL
+	                                                WHERE v.identifier = ? AND s.path = ? AND c.parent_id IS NOT NULL
 	                                                ORDER BY c.start, c.length`, vault.ID, path)
 	if err != nil {
 		t.Fatal(err)

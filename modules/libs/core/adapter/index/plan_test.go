@@ -204,7 +204,7 @@ func cut(t *testing.T, tx *sql.Tx, source, vault int64) {
 
 	var large int64
 	if err := tx.QueryRowContext(ctx,
-		`INSERT INTO chunks (source_id, vault_id, start, length, parent, location, hash)
+		`INSERT INTO chunks (source_id, vault_id, start, length, parent_id, location, hash)
 		 VALUES (?, ?, 0, 100, NULL, 'chapter 1', hex(randomblob(32))) RETURNING id`, source, vault).Scan(&large); err != nil {
 		t.Fatal(err)
 	}
@@ -212,7 +212,7 @@ func cut(t *testing.T, tx *sql.Tx, source, vault int64) {
 	for j := range 2 {
 		var small int64
 		if err := tx.QueryRowContext(ctx,
-			`INSERT INTO chunks (source_id, vault_id, start, length, parent, location, hash)
+			`INSERT INTO chunks (source_id, vault_id, start, length, parent_id, location, hash)
 			 VALUES (?, ?, ?, 50, ?, NULL, hex(randomblob(32))) RETURNING id`, source, vault, j*50, large).Scan(&small); err != nil {
 			t.Fatal(err)
 		}

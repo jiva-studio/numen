@@ -10,4 +10,4 @@
 SELECT count(*), count(v.hash)
   FROM chunks c
   LEFT JOIN vectors v ON v.hash = unhex(c.hash) AND v.recipe = ?
- WHERE c.vault_id = ? AND c.parent IS NOT NULL;
+ WHERE c.vault_id = ? AND c.parent_id IS NOT NULL;

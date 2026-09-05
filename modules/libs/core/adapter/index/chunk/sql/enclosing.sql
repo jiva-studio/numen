@@ -8,5 +8,5 @@ SELECT s.path, s.kind, COALESCE(s.producer, ''), COALESCE(s.hash, ''),
        c.start - COALESCE(p.start, c.start)
 FROM chunks c
 JOIN sources s ON s.id = c.source_id
-LEFT JOIN chunks p ON p.id = c.parent
+LEFT JOIN chunks p ON p.id = c.parent_id
 WHERE c.id = ? AND c.vault_id = ?;

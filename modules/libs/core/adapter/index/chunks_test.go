@@ -399,10 +399,10 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 
 	// A note is cut the way a book is: one large chunk over the whole of it, and
 	// the small chunks inside it that carry the vectors.
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent IS NULL`); got != 1 {
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent_id IS NULL`); got != 1 {
 		t.Errorf("%d large chunks for one note", got)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent IS NOT NULL`); got == 0 {
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent_id IS NOT NULL`); got == 0 {
 		t.Fatal("a note has no small chunks, so nothing about it can be embedded")
 	}
 	vectorise(t, db, first, 0x00)
@@ -418,12 +418,12 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 	}
 
 	// What is left is the note as it stands now, cut once.
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent IS NULL`); got != 1 {
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent_id IS NULL`); got != 1 {
 		t.Errorf("%d large chunks after a note was rewritten", got)
 	}
 	if got := counted(t, db,
-		`SELECT COUNT(*) FROM chunks c WHERE c.parent IS NOT NULL
-		   AND c.parent NOT IN (SELECT id FROM chunks WHERE parent IS NULL)`); got != 0 {
+		`SELECT COUNT(*) FROM chunks c WHERE c.parent_id IS NOT NULL
+		   AND c.parent_id NOT IN (SELECT id FROM chunks WHERE parent_id IS NULL)`); got != 0 {
 		t.Errorf("%d small chunks sit inside a large one that is gone", got)
 	}
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
@@ -622,7 +622,7 @@ func TestAChunkCannotClaimAnotherVault(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err := db.write.ExecContext(ctx,
-		`INSERT INTO chunks (source_id, vault_id, start, length, parent, location)
+		`INSERT INTO chunks (source_id, vault_id, start, length, parent_id, location)
 		 VALUES (?, ?, 0, 10, NULL, NULL)`, source, theirs)
 	if err == nil {
 		t.Error("a chunk was written into a vault its source does not belong to")
@@ -730,7 +730,7 @@ func TestTheChildKeyOfAChunkIsIndexed(t *testing.T) {
 	ctx := t.Context()
 	db := opened(t)
 
-	for column, want := range map[string]string{"parent": "chunks_by_parent", "source_id": "chunks_by_source"} {
+	for column, want := range map[string]string{"parent_id": "chunks_by_parent", "source_id": "chunks_by_source"} {
 		if !leads(ctx, t, db, "chunks", column) {
 			t.Errorf("no index of chunks leads with %s, so %s is missing", column, want)
 		}

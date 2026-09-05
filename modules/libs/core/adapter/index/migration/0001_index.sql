@@ -176,7 +176,7 @@ CREATE TABLE chunks (
     vault_id  INTEGER NOT NULL,
     start     INTEGER NOT NULL,
     length    INTEGER NOT NULL,
-    parent    INTEGER REFERENCES chunks(id) ON DELETE CASCADE,
+    parent_id INTEGER REFERENCES chunks(id) ON DELETE CASCADE,
     location  TEXT,
     hash      TEXT NOT NULL,
 
@@ -189,7 +189,7 @@ CREATE INDEX chunks_by_source ON chunks (source_id, vault_id);
 
 -- A cascade finds the chunks inside a large one by this key, and reads the
 -- whole table without it.
-CREATE INDEX chunks_by_parent ON chunks (parent);
+CREATE INDEX chunks_by_parent ON chunks (parent_id);
 
 -- Which chunks of a vault still owe work, asked from an id onwards so that the
 -- answer resumes.
@@ -197,7 +197,7 @@ CREATE INDEX chunks_by_vault ON chunks (vault_id, id);
 
 -- How far embedding has got is asked of the chunks that carry vectors. A chunk
 -- that encloses others carries none, so the total counts only the ones that do.
-CREATE INDEX chunks_by_vault_parent ON chunks (vault_id, parent, id);
+CREATE INDEX chunks_by_vault_parent ON chunks (vault_id, parent_id, id);
 
 -- Finding a chunk by the text it holds, which is how a vector is claimed and
 -- how a vector nothing holds any more is recognised.
