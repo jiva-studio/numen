@@ -3,7 +3,6 @@ package webui
 import (
 	"context"
 	"errors"
-	"os"
 
 	"connectrpc.com/connect"
 
@@ -30,7 +29,7 @@ func (s vaultsService) ListVaults(
 	}
 	out := &v1.ListVaultsResponse{Vaults: make([]*v1.Vault, 0, len(held))}
 	for _, v := range held {
-		out.Vaults = append(out.Vaults, vaultOf(v))
+		out.Vaults = append(out.Vaults, vaultOf(v, s.api.Readers))
 	}
 	return connect.NewResponse(out), nil
 }
@@ -65,7 +64,7 @@ func (s vaultsService) AddVault(
 		}
 		return connect.NewResponse(&v1.AddVaultResponse{Refusal: &refusal}), nil
 	}
-	return connect.NewResponse(&v1.AddVaultResponse{Vault: vaultOf(added)}), nil
+	return connect.NewResponse(&v1.AddVaultResponse{Vault: vaultOf(added, s.api.Readers)}), nil
 }
 
 // RenameVault is what a person calls a vault. The folder keeps the name the
@@ -85,7 +84,7 @@ func (s vaultsService) RenameVault(
 		}
 		return connect.NewResponse(&v1.RenameVaultResponse{Refusal: &refusal}), nil
 	}
-	return connect.NewResponse(&v1.RenameVaultResponse{Vault: vaultOf(v)}), nil
+	return connect.NewResponse(&v1.RenameVaultResponse{Vault: vaultOf(v, s.api.Readers)}), nil
 }
 
 // RemoveVault takes a vault off the list and out of the index, and its folder
@@ -164,10 +163,10 @@ func (s vaultsService) found(id string) (domain.Vault, error) {
 
 // vaultOf is one vault as the schema carries it. A folder that is not there to
 // be found is marked, and the vault stays on the list.
-func vaultOf(v domain.Vault) *v1.Vault {
-	_, err := os.Stat(v.Path)
+func vaultOf(v domain.Vault, readers port.VaultReaders) *v1.Vault {
 	return &v1.Vault{
-		Name: string(v.ID), DisplayName: v.Name, Path: v.Path, Missing: err != nil,
+		Name: string(v.ID), DisplayName: v.Name, Path: v.Path,
+		Missing: vaults.FolderMissing{Readers: readers}.Execute(v),
 	}
 }
 

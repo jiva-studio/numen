@@ -143,6 +143,7 @@ func onAList(t *testing.T) *onTheList {
 		second:   added(t, adding, "two"),
 	}
 	f.api = &API{
+		Readers: filesystem.VaultReaders{},
 		Vaults: Vaults{
 			Registry:     registry,
 			FolderDialog: f.dialog,

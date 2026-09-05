@@ -106,6 +106,7 @@ func onTheList(t *testing.T) *installation {
 	}
 	f.core = mcp.Core{
 		Showing: mcp.One(f.first, f.first.Path),
+		Readers: filesystem.VaultReaders{},
 		Vaults: mcp.Vaults{
 			Registry:     registry,
 			FolderDialog: f.dialog,

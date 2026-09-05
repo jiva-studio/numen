@@ -96,6 +96,7 @@ func vaultList(out io.Writer, cfg container.Config) error {
 	if err != nil {
 		return err
 	}
+	missing := vault.FolderMissing{Readers: cfg.VaultReaders()}
 	for _, v := range known {
 		last := " "
 		if recorded && v.ID == recent.ID {
@@ -103,7 +104,7 @@ func vaultList(out io.Writer, cfg container.Config) error {
 			last = "*"
 		}
 		there := " "
-		if _, err := os.Stat(v.Path); err != nil {
+		if missing.Execute(v) {
 			// The registry remembers where a vault was last seen; the vault
 			// carries the identity. A folder that is not there is marked here.
 			there = "?"
@@ -197,7 +198,7 @@ func vaultErase(ctx context.Context, out io.Writer, cfg container.Config, args [
 
 	// What will be said is worked out while the folder is still there.
 	went := fmt.Sprintf("%s went to the trash this machine keeps", v.Path)
-	if _, err := os.Stat(v.Path); err != nil {
+	if (vault.FolderMissing{Readers: cfg.VaultReaders()}).Execute(v) {
 		went = fmt.Sprintf("nothing was at %s", v.Path)
 	}
 
