@@ -203,7 +203,9 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
 .stencil__fields {
   display: flex;
   flex-direction: column;
-  gap: var(--row-gap);
+  /* The room between rows is the editor's, and this is what it comes to
+     where the rows stand anywhere else. */
+  gap: var(--row-gap, 0.5rem);
   inline-size: 100%;
   margin: 0;
   padding: 0;
