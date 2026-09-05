@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-08-29
 - **Applies to:** the vault format, and `modules/libs/core` — `flashcards/review`, `usecase/flashcards`
-- **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [A vault carries its identity, and application state lives with the application](0003-a-vault-carries-its-identity.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [One process, one lifetime](0020-one-process-one-lifetime.md), [The stencil, the deck and the card](0027-the-stencil-and-the-deck.md), [Review is an application of its own](0030-review-is-an-application-of-its-own.md)
+- **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [A vault carries its identity, and application state lives with the application](0003-a-vault-carries-its-identity.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [One process, one lifetime](0020-one-process-one-lifetime.md), [The stencil, the deck and the card](0026-the-stencil-and-the-deck.md), [Review is an application of its own](0027-review-is-an-application-of-its-own.md)
 
 ## Context
 
@@ -89,7 +89,7 @@ A mark in the log that no deck holds is not an error and is never removed. The c
 
 ## Consequences
 
-- **A vault carries its own history.** Copied to another machine, its cards are the cards a person has been answering, at the interval they had reached. This is what [The stencil, the deck and the card](0027-the-stencil-and-the-deck.md) recorded as the cost of keeping the schedule outside the vault, and it is the cost this decision takes back — the deck file still holds no schedule and is still not rewritten when a card is answered.
+- **A vault carries its own history.** Copied to another machine, its cards are the cards a person has been answering, at the interval they had reached. This is what [The stencil, the deck and the card](0026-the-stencil-and-the-deck.md) recorded as the cost of keeping the schedule outside the vault, and it is the cost this decision takes back — the deck file still holds no schedule and is still not rewritten when a card is answered.
 - **The order of the history is the order of the clocks that wrote it.** Two machines whose clocks disagree interleave their answers wrongly, and nothing here can tell.
 - **The mark the schedule cache is filed under carries the placement.** A preset's shares, whether its load is evened, the goal that decides whether it is evened at all, and the hour a day begins at all decide which day a card lands on, so all of them stand in the mark.
 - **The log grows, one small file to a run.** Daily review is on the order of a few hundred files a year, each a few kilobytes. Folding old ones together is a rewrite, and a rewrite is the thing that makes merging hard, so it is only ever done to months nothing writes to any more.

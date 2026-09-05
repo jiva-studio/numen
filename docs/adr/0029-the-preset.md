@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-08-30
 - **Applies to:** the vault format — every application that reads or writes one
-- **Related:** [The application writes to the vault](0017-the-application-writes-to-the-vault.md), [The note file](0018-the-note-file.md), [The stencil, the deck and the card](0027-the-stencil-and-the-deck.md), [An answer is an artifact, a schedule is a cache](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)
+- **Related:** [The application writes to the vault](0017-the-application-writes-to-the-vault.md), [The note file](0018-the-note-file.md), [The stencil, the deck and the card](0026-the-stencil-and-the-deck.md), [An answer is an artifact, a schedule is a cache](0028-an-answer-is-an-artifact-a-schedule-is-a-cache.md)
 
 ## Context
 

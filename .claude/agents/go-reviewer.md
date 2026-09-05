@@ -36,7 +36,7 @@ contradicts ADR-NNNN, and the ADR looks outdated" — not silence.
 
 The layout for this repository is in [A hexagonal core in Go](../../docs/adr/0004-a-hexagonal-core-in-go.md),
 and where a port is declared and where an adapter stands is
-[Where a port is declared, and where an adapter stands](../../docs/adr/0047-where-a-port-is-declared-and-where-an-adapter-stands.md);
+[Where a port is declared, and where an adapter stands](../../docs/adr/0035-where-a-port-is-declared-and-where-an-adapter-stands.md);
 read them rather than assuming a shape. The
 constraint list in `AGENTS.md` is the same rules in short form, each naming the
 test that refuses it. What follows is how to judge whether the code honours

@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-09-01
 - **Applies to:** `modules/libs/core`, `modules/apps/desktop`
-- **Related:** [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [A passage is a range of bytes](0016-a-passage-is-a-range-of-bytes.md), [A recording is a source of its own](0042-a-recording-is-a-source-of-its-own.md), [A recording is transcribed without being asked](0044-a-recording-is-transcribed-without-being-asked.md)
+- **Related:** [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [A passage is a range of bytes](0016-a-passage-is-a-range-of-bytes.md), [A recording is a source of its own](0030-a-recording-is-a-source-of-its-own.md), [A recording is transcribed without being asked](0032-a-recording-is-transcribed-without-being-asked.md)
 
 ## Context
 

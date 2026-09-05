@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-09-01
 - **Applies to:** `modules/libs/core`, `modules/apps/desktop`
-- **Related:** [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [A recording is a source of its own](0042-a-recording-is-a-source-of-its-own.md), [A transcript is WebVTT](0043-a-transcript-is-webvtt.md)
+- **Related:** [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [A recording is a source of its own](0030-a-recording-is-a-source-of-its-own.md), [A transcript is WebVTT](0031-a-transcript-is-webvtt.md)
 
 ## Context
 

@@ -2,11 +2,11 @@
 
 Running the cards a vault holds. This is a specification, not a decision record: every rule here traces to an accepted ADR.
 
-Flashcards is an application of its own, beside the editor and over the same core ([Review is an application of its own](adr/0030-review-is-an-application-of-its-own.md)). Writing cards is occasional and running them is daily, so the daily one is not reached through the other.
+Flashcards is an application of its own, beside the editor and over the same core ([Review is an application of its own](adr/0027-review-is-an-application-of-its-own.md)). Writing cards is occasional and running them is daily, so the daily one is not reached through the other.
 
 ## The front door
 
-The window opens on the vaults this installation holds and what is due in each ([Review is an application of its own](adr/0030-review-is-an-application-of-its-own.md)). The list is names and where the vaults are, which the registry answers before any vault is opened, so the whole of it is on screen at once.
+The window opens on the vaults this installation holds and what is due in each ([Review is an application of its own](adr/0027-review-is-an-application-of-its-own.md)). The list is names and where the vaults are, which the registry answers before any vault is opened, so the whole of it is on screen at once.
 
 Each vault's count arrives on its own and fills in the row it belongs to. A vault whose count has not landed shows the shape the number will take, and is not opened until it has one, by hand or by its letter. A vault counted a moment ago keeps that count while the next count runs, so a list already drawn is never emptied to be filled again. A vault that could not be read says why, in the place its number would stand.
 
@@ -53,7 +53,7 @@ A card is answered by how well it came back, not by whether it did:
 | **Good** | it came back |
 | **Easy** | it came back with none |
 
-The better it came back, the longer it is left. What that comes to is FSRS's ([An answer is an artifact, a schedule is a cache](adr/0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)), and nothing about the intervals is written into a vault: they are worked out from the answers whenever they are wanted.
+The better it came back, the longer it is left. What that comes to is FSRS's ([An answer is an artifact, a schedule is a cache](adr/0028-an-answer-is-an-artifact-a-schedule-is-a-cache.md)), and nothing about the intervals is written into a vault: they are worked out from the answers whenever they are wanted.
 
 ### Taking one back
 

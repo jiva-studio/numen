@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-09-01
 - **Applies to:** `modules/libs/core`, `modules/apps/desktop`
-- **Related:** [A source is text in one table](0010-a-source-is-text-in-one-table.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [A transcript is WebVTT](0043-a-transcript-is-webvtt.md), [A recording is transcribed without being asked](0044-a-recording-is-transcribed-without-being-asked.md)
+- **Related:** [A source is text in one table](0010-a-source-is-text-in-one-table.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [A transcript is WebVTT](0031-a-transcript-is-webvtt.md), [A recording is transcribed without being asked](0032-a-recording-is-transcribed-without-being-asked.md)
 
 ## Context
 

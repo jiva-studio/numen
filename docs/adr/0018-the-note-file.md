@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** the vault format — every application that reads or writes one
-- **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [The application writes to the vault](0017-the-application-writes-to-the-vault.md), [A note is identified by a ULID in its frontmatter](0019-a-note-is-identified-by-a-ulid.md), [The stencil, the deck and the card](0027-the-stencil-and-the-deck.md)
+- **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [The application writes to the vault](0017-the-application-writes-to-the-vault.md), [A note is identified by a ULID in its frontmatter](0019-a-note-is-identified-by-a-ulid.md), [The stencil, the deck and the card](0026-the-stencil-and-the-deck.md)
 
 ## Context
 

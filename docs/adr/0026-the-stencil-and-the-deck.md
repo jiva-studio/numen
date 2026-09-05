@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-08-27
 - **Applies to:** the vault format — every application that reads or writes one
-- **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [The application writes to the vault](0017-the-application-writes-to-the-vault.md), [The note file](0018-the-note-file.md), [An answer is an artifact, a schedule is a cache](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md), [A preset is a note, and one arithmetic schedules it](0034-the-preset.md)
+- **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [The application writes to the vault](0017-the-application-writes-to-the-vault.md), [The note file](0018-the-note-file.md), [An answer is an artifact, a schedule is a cache](0028-an-answer-is-an-artifact-a-schedule-is-a-cache.md), [A preset is a note, and one arithmetic schedules it](0029-the-preset.md)
 
 ## Context
 
@@ -15,7 +15,7 @@ Every plain-text system that has tried this has had to choose where the shape is
 
 ### One key says what a note is
 
-The frontmatter key `type` says which of four a note is: `note`, `deck`, `stencil` or `preset`. The list is closed, and a note carrying no `type` is a `note`, which is nearly every note in a vault. What a preset is, is [A preset is a note, and one arithmetic schedules it](0034-the-preset.md).
+The frontmatter key `type` says which of four a note is: `note`, `deck`, `stencil` or `preset`. The list is closed, and a note carrying no `type` is a `note`, which is nearly every note in a vault. What a preset is, is [A preset is a note, and one arithmetic schedules it](0029-the-preset.md).
 
 One key rather than one per kind is what makes the four exclusive: a file is one of them by the shape of the record, and no rule is needed to say it cannot be two. A value outside the list is a problem against the note, and the note is read as an ordinary note.
 
@@ -155,7 +155,7 @@ A card takes ordinary links, in the frontmatter of no file — the wikilink unde
 
 When a card is next due, how far apart its intervals have grown, and how it has been answered are not written into the deck.
 
-A schedule is computed from the history of answers, deterministically and for free. That makes it a cache, and it is kept with the application. The answers themselves are the vault's, in its service folder ([An answer is an artifact, a schedule is a cache](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)). The deck holds what a person wrote and nothing a machine worked out.
+A schedule is computed from the history of answers, deterministically and for free. That makes it a cache, and it is kept with the application. The answers themselves are the vault's, in its service folder ([An answer is an artifact, a schedule is a cache](0028-an-answer-is-an-artifact-a-schedule-is-a-cache.md)). The deck holds what a person wrote and nothing a machine worked out.
 
 ### A field renamed in a stencil is renamed in every card it cuts
 
@@ -185,7 +185,7 @@ A deck over its bound is refused, and the refusal says which file and what the b
 - **A first field of many lines makes a short heading.** What an outline shows is its first line, which is what an outline is for.
 - **`[[Deck#^k7m2xq9fzp]]` reaches the deck**, as every fragment does today. Reaching the card itself is work for whoever wants it.
 - Two files must agree for a card to be drawn, and a deck whose stencil was deleted holds cards that cannot be laid out. The values are still there and still readable.
-- A deck copied to another machine arrives with the answers given to its cards, because those are kept beside it in the vault's service folder. What the machine works out from them it works out again ([An answer is an artifact, a schedule is a cache](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)).
+- A deck copied to another machine arrives with the answers given to its cards, because those are kept beside it in the vault's service folder. What the machine works out from them it works out again ([An answer is an artifact, a schedule is a cache](0028-an-answer-is-an-artifact-a-schedule-is-a-cache.md)).
 
 ## Alternatives considered
 

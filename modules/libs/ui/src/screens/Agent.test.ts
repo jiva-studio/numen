@@ -14,7 +14,7 @@ const SCREEN = 100
  * lays nothing out. One turn is one screenful.
  */
 const talking = (turns: readonly Turn[]) => {
-  const wrapper = mount(Agent, { props: { turns } })
+  const wrapper = mount(Agent, { props: { turns, modelValue: '' } })
   const thread = wrapper.find('.agent__thread').element as HTMLElement
   let top = 0
   Object.defineProperty(thread, 'clientHeight', { get: () => SCREEN })
@@ -35,10 +35,17 @@ const talking = (turns: readonly Turn[]) => {
       top = from
       await wrapper.find('.agent__thread').trigger('scroll')
     },
-    /** Written in the field and sent. */
+    /** Every text the field has handed on, in the order it handed them on. */
+    handed: (): readonly unknown[] =>
+      (wrapper.emitted('update:modelValue') ?? []).map((said) => (said as unknown[])[0]),
+    /**
+     * Written in the field and sent, the caller putting back what it is handed
+     * before the key is pressed, which is what holding the field is.
+     */
     sends: async (text: string) => {
       const field = wrapper.find('textarea')
       await field.setValue(text)
+      await wrapper.setProps({ modelValue: text })
       await field.trigger('keydown', { key: 'Enter' })
     },
   }
@@ -50,6 +57,7 @@ describe('a question sent', () => {
 
     await one.sends('what is a seat')
 
+    expect(one.handed()).toEqual(['what is a seat'])
     expect(one.wrapper.emitted('submit')).toEqual([['what is a seat']])
   })
 

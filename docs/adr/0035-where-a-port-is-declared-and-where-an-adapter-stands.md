@@ -4,7 +4,7 @@
 - **Date:** 2026-09-05
 - **Applies to:** `modules/libs/core` — `port`, `adapter`, `internal/adapter`, `container`
 - **Amends:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md)
-- **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [An agent reaches the vault through tools](0021-an-agent-reaches-the-vault-through-tools.md), [The agent this application starts is a port](0022-the-agent-this-application-starts-is-a-port.md), [One service to a subject](0046-one-service-to-a-subject.md)
+- **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [An agent reaches the vault through tools](0021-an-agent-reaches-the-vault-through-tools.md), [The agent this application starts is a port](0022-the-agent-this-application-starts-is-a-port.md), [One service to a subject](0034-one-service-to-a-subject.md)
 
 ## Context
 

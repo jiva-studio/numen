@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-09-02
 - **Applies to:** the two desktop applications and the index they share
-- **Related:** [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [The vault is watched](0009-the-vault-is-watched.md), [One process, one lifetime](0020-one-process-one-lifetime.md), [Review is an application of its own](0030-review-is-an-application-of-its-own.md), [A preset is a note, and one arithmetic schedules it](0034-the-preset.md)
+- **Related:** [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [The vault is watched](0009-the-vault-is-watched.md), [One process, one lifetime](0020-one-process-one-lifetime.md), [Review is an application of its own](0027-review-is-an-application-of-its-own.md), [A preset is a note, and one arithmetic schedules it](0029-the-preset.md)
 
 ## Context
 

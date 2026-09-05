@@ -16,7 +16,7 @@ A file here records **one decision**: something that could have been settled ano
 
 ## Reading order
 
-The numbers are identity, not order. This list is the order. A gap in the numbers is a record merged into another; git holds it.
+The numbers run without gaps, and the whole corpus is renumbered when one closes: a number is a position in the sequence, not an identity, and it changes. A record is named by its title. This list is the reading order, which is not the numbering.
 
 ### What is kept, and where
 
@@ -27,9 +27,9 @@ The numbers are identity, not order. This list is the order. A gap in the number
 ### The shape of the code
 
 - [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md)
-- [Where a port is declared, and where an adapter stands](0047-where-a-port-is-declared-and-where-an-adapter-stands.md)
+- [Where a port is declared, and where an adapter stands](0035-where-a-port-is-declared-and-where-an-adapter-stands.md)
 - [A client is generated from the protocol](0005-a-client-is-generated-from-the-protocol.md)
-- [One service to a subject](0046-one-service-to-a-subject.md)
+- [One service to a subject](0034-one-service-to-a-subject.md)
 - [How this application is tested](0025-how-this-application-is-tested.md)
 
 ### The index
@@ -54,25 +54,25 @@ The numbers are identity, not order. This list is the order. A gap in the number
 
 ### Recordings
 
-- [A recording is a source of its own](0042-a-recording-is-a-source-of-its-own.md)
-- [A transcript is WebVTT](0043-a-transcript-is-webvtt.md)
-- [A recording is transcribed without being asked](0044-a-recording-is-transcribed-without-being-asked.md)
+- [A recording is a source of its own](0030-a-recording-is-a-source-of-its-own.md)
+- [A transcript is WebVTT](0031-a-transcript-is-webvtt.md)
+- [A recording is transcribed without being asked](0032-a-recording-is-transcribed-without-being-asked.md)
 
 ### The vault, written
 
 - [The application writes to the vault](0017-the-application-writes-to-the-vault.md)
-- [A path is judged by where it lands](0048-a-path-is-judged-by-where-it-lands.md)
+- [A path is judged by where it lands](0036-a-path-is-judged-by-where-it-lands.md)
 - [The note file](0018-the-note-file.md)
 - [A note is identified by a ULID in its frontmatter](0019-a-note-is-identified-by-a-ulid.md)
 - [One process, one lifetime](0020-one-process-one-lifetime.md)
 
 ### Cards
 
-- [The stencil, the deck and the card](0027-the-stencil-and-the-deck.md)
-- [An answer is an artifact, a schedule is a cache](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)
-- [A preset is a note, and one arithmetic schedules it](0034-the-preset.md)
-- [Review is an application of its own](0030-review-is-an-application-of-its-own.md)
-- [Both windows open a vault through one path](0045-both-windows-open-a-vault-through-one-path.md)
+- [The stencil, the deck and the card](0026-the-stencil-and-the-deck.md)
+- [An answer is an artifact, a schedule is a cache](0028-an-answer-is-an-artifact-a-schedule-is-a-cache.md)
+- [A preset is a note, and one arithmetic schedules it](0029-the-preset.md)
+- [Review is an application of its own](0027-review-is-an-application-of-its-own.md)
+- [Both windows open a vault through one path](0033-both-windows-open-a-vault-through-one-path.md)
 
 ### Agents
 

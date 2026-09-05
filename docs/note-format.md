@@ -41,13 +41,13 @@ The frontmatter is shared, not owned:
 | `title` | The name a note is shown by. Written when a note that already has a non-empty one is renamed, and when a title no filename can carry whole is given to one that has none. | [A vault is scanned in the background](adr/0008-a-vault-is-scanned-in-the-background.md) |
 | `id` | The identity of the note, a ULID. Written when the application creates a note or changes what is in it, never backfilled and never written by a person typing in it. A note that was moved carries the identifier it carried before. | [A vault is scanned in the background](adr/0008-a-vault-is-scanned-in-the-background.md), [A schema change is a numbered migration](adr/0007-a-schema-change-is-a-numbered-migration.md) |
 | `links` | Links that carry a role, and optionally a type, a label and a note. | [Links](links.md) |
-| `type` | Which of four this note is: `note`, `deck`, `stencil` or `preset`. A note carrying none is a `note`. | [The stencil, the deck and the card](adr/0027-the-stencil-and-the-deck.md), [A preset is a note, and one arithmetic schedules it](adr/0034-the-preset.md) |
-| `fields` | The fields a card cut by this stencil has, in the order they are asked for. Read on a stencil and nowhere else. | [The stencil, the deck and the card](adr/0027-the-stencil-and-the-deck.md) |
-| `goal`, `by_date`, `minutes_a_day`, `new_a_day`, `reviews_a_day`, `retention` | What a day of the decks pointing at this preset holds, and which of those closes it. Read on a preset and nowhere else. | [A preset is a note, and one arithmetic schedules it](adr/0034-the-preset.md) |
-| `learned`, `interval` | What this preset counts as a card learned, and what a day named under `by_date` is tested by. Read on a preset and nowhere else. | [A preset is a note, and one arithmetic schedules it](adr/0034-the-preset.md) |
-| `counts`, `backlog` | What a day's budget is spent on, and in what order. Read on a preset and nowhere else. | [A preset is a note, and one arithmetic schedules it](adr/0034-the-preset.md) |
-| `load` | The share of a day's load each day of the week carries. Read on a preset and nowhere else. | [A preset is a note, and one arithmetic schedules it](adr/0034-the-preset.md) |
-| `even_load` | Whether a card is moved off the day it fell on. Read on a preset and nowhere else. | [A preset is a note, and one arithmetic schedules it](adr/0034-the-preset.md) |
+| `type` | Which of four this note is: `note`, `deck`, `stencil` or `preset`. A note carrying none is a `note`. | [The stencil, the deck and the card](adr/0026-the-stencil-and-the-deck.md), [A preset is a note, and one arithmetic schedules it](adr/0029-the-preset.md) |
+| `fields` | The fields a card cut by this stencil has, in the order they are asked for. Read on a stencil and nowhere else. | [The stencil, the deck and the card](adr/0026-the-stencil-and-the-deck.md) |
+| `goal`, `by_date`, `minutes_a_day`, `new_a_day`, `reviews_a_day`, `retention` | What a day of the decks pointing at this preset holds, and which of those closes it. Read on a preset and nowhere else. | [A preset is a note, and one arithmetic schedules it](adr/0029-the-preset.md) |
+| `learned`, `interval` | What this preset counts as a card learned, and what a day named under `by_date` is tested by. Read on a preset and nowhere else. | [A preset is a note, and one arithmetic schedules it](adr/0029-the-preset.md) |
+| `counts`, `backlog` | What a day's budget is spent on, and in what order. Read on a preset and nowhere else. | [A preset is a note, and one arithmetic schedules it](adr/0029-the-preset.md) |
+| `load` | The share of a day's load each day of the week carries. Read on a preset and nowhere else. | [A preset is a note, and one arithmetic schedules it](adr/0029-the-preset.md) |
+| `even_load` | Whether a card is moved off the day it fell on. Read on a preset and nowhere else. | [A preset is a note, and one arithmetic schedules it](adr/0029-the-preset.md) |
 
 A note with no `title` is named by its filename. A heading in the prose names nothing: what a person writes in the body is the body, and typing one does not rename the note.
 

@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/core`
-- **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [One database for all vaults, outside them](0002-one-database-for-all-vaults.md), [A schema change is a numbered migration](0007-a-schema-change-is-a-numbered-migration.md), [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [Text is cut twice](0011-text-is-cut-twice.md), [A chunk is identified by its text](0012-a-chunk-is-identified-by-its-text.md), [One search, three rankings, merged by rank](0014-one-search-three-rankings.md), [The application writes to the vault](0017-the-application-writes-to-the-vault.md), [The stencil, the deck and the card](0027-the-stencil-and-the-deck.md)
+- **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [One database for all vaults, outside them](0002-one-database-for-all-vaults.md), [A schema change is a numbered migration](0007-a-schema-change-is-a-numbered-migration.md), [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [Text is cut twice](0011-text-is-cut-twice.md), [A chunk is identified by its text](0012-a-chunk-is-identified-by-its-text.md), [One search, three rankings, merged by rank](0014-one-search-three-rankings.md), [The application writes to the vault](0017-the-application-writes-to-the-vault.md), [The stencil, the deck and the card](0026-the-stencil-and-the-deck.md)
 
 ## Context
 

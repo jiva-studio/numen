@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/protocol`, `modules/apps/desktop`, `modules/libs/ui`
-- **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [The vault is watched](0009-the-vault-is-watched.md), [How an interface component is built](0023-how-an-interface-component-is-built.md), [One service to a subject](0046-one-service-to-a-subject.md)
+- **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [The vault is watched](0009-the-vault-is-watched.md), [How an interface component is built](0023-how-an-interface-component-is-built.md), [One service to a subject](0034-one-service-to-a-subject.md)
 
 ## Context
 
