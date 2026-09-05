@@ -79,6 +79,25 @@ func proofreading(t *testing.T, says map[int]string) (Proofread, domain.Vault, *
 // corrects is a reply putting one line right.
 func corrects(at int, text string) string { return fmt.Sprintf("%d|%s", at, text) }
 
+// TestNothingIsProofreadWhereNothingWasConfiguredToProofreadWith. An
+// installation that named no profile has no proofreader, so nil is what the
+// settings hand over and the constructor takes it without a word. A caller that
+// forgot to refuse it first is answered, not brought down mid-reading.
+func TestNothingIsProofreadWhereNothingWasConfiguredToProofreadWith(t *testing.T) {
+	put, v, _, by := proofreading(t, nil)
+
+	if _, err := NewProofread(put.Readers, put.Derived, nil).
+		Execute(t.Context(), v, documentPath); !errors.Is(err, errNothingProofreads) {
+		t.Fatalf("a reading was proofread with no proofreader: %v", err)
+	}
+	// The control: the same reading, through the same constructor, with a
+	// proofreader.
+	if _, err := NewProofread(put.Readers, put.Derived, by).
+		Execute(t.Context(), v, documentPath); err != nil {
+		t.Fatalf("a reading with a proofreader was refused: %v", err)
+	}
+}
+
 func TestTheCorrectionsGoBesideTheReadingAndTheReadingIsNotTouched(t *testing.T) {
 	put, v, shelved, _ := proofreading(t, map[int]string{
 		0: corrects(0, "the WORDS 1"),

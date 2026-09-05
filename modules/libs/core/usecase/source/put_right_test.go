@@ -55,6 +55,25 @@ func cued(t *testing.T, shelved *shelf, name string) []transcript.Cue {
 	return cues
 }
 
+// TestNothingIsPutRightWhereNothingWasConfiguredToProofreadWith. An
+// installation that named no profile has no proofreader, so nil is what the
+// settings hand over and the constructor takes it without a word. A caller that
+// forgot to refuse it first is answered, not brought down mid-transcript.
+func TestNothingIsPutRightWhereNothingWasConfiguredToProofreadWith(t *testing.T) {
+	u, v, _, by, _ := hearing(t, nil, "first thing", "secnd thing")
+
+	if _, err := NewPutRight(u.Readers, u.Derived, nil).
+		Execute(t.Context(), v, recordingPath); !errors.Is(err, errNothingProofreads) {
+		t.Fatalf("a transcript was put right with no proofreader: %v", err)
+	}
+	// The control: the same transcript, through the same constructor, with a
+	// proofreader.
+	if _, err := NewPutRight(u.Readers, u.Derived, by).
+		Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatalf("a transcript with a proofreader was refused: %v", err)
+	}
+}
+
 func TestATranscriptIsPutRightAndEveryTimingStands(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing"}
 	u, v, shelved, _, hash := hearing(t, map[int]string{1: corrects(1, "second thing")}, words...)

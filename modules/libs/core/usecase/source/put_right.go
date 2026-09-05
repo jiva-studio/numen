@@ -106,6 +106,9 @@ type putting struct {
 // Execute puts one recording's transcript right.
 func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (PutRightResult, error) {
 	res := PutRightResult{Path: path}
+	if u.By == nil {
+		return res, errNothingProofreads
+	}
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return res, err

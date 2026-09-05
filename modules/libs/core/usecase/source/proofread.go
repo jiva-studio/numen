@@ -16,6 +16,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
+// errNothingProofreads is a proofreading with nothing to proofread with. An
+// installation that named no profile has no proofreader at all, so nil is a
+// value the settings produce and not a caller's slip.
+var errNothingProofreads = errors.New("nothing to proofread with: none is configured")
+
 // Proofread puts a reading right, where a person configured something to
 // proofread it with.
 //
@@ -94,6 +99,9 @@ type checkpoint struct {
 // Execute proofreads one document's reading.
 func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (ProofreadResult, error) {
 	res := ProofreadResult{Path: path}
+	if u.By == nil {
+		return res, errNothingProofreads
+	}
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return res, err
