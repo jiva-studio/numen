@@ -9,6 +9,22 @@
 import { Refusal } from '@numen/protocol'
 import type { RefusalReason } from './core'
 
+/**
+ * What each word the window uses is, as the schema names it: a table of the
+ * words read backwards.
+ *
+ * A table of words is keyed by the schema, so the compiler asks for a word the
+ * moment the schema carries a value more. Reading it backwards is how the
+ * sending side follows from the same list rather than from a second one, which
+ * the compiler cannot hold to it.
+ */
+export const namesOf = <W extends string, E extends number>(
+  worded: Readonly<Record<E, W | null>>,
+): Record<W, E> =>
+  Object.fromEntries(
+    Object.entries(worded).flatMap(([value, word]) => (word ? [[word, Number(value)]] : [])),
+  ) as Record<W, E>
+
 /** The file an answer came out of, as the one string the window carries. */
 export const stamp = (at?: { path: string; size: bigint; mtime: bigint }): string | undefined =>
   at && `${at.size} ${at.mtime} ${at.path}`
@@ -22,11 +38,12 @@ export const fingerprint = (at: string) => {
 /**
  * What each refusal the schema carries is called in the window's own words.
  *
- * A file that moved past what the caller read is not among them: that one is a
+ * A file that moved past what the caller read has no word: that one is a
  * question for the person and not a message, and the window carries it as
- * `changed`.
+ * `changed`. Keyed by the schema, so a refusal added to it has to be given a
+ * word or that same silence here before this compiles.
  */
-export const REFUSAL: Partial<Record<Refusal, RefusalReason>> = {
+export const REFUSAL: Record<Refusal, RefusalReason | null> = {
   [Refusal.UNSPECIFIED]: 'unreadable',
   [Refusal.MISSING]: 'missing',
   [Refusal.NOT_A_NOTE]: 'notANote',
@@ -40,6 +57,7 @@ export const REFUSAL: Partial<Record<Refusal, RefusalReason>> = {
   [Refusal.NOT_A_DECK]: 'notADeck',
   [Refusal.DECK_TOO_LARGE]: 'deckTooLarge',
   [Refusal.NOT_A_PRESET]: 'notAPreset',
+  [Refusal.STALE]: null,
 }
 
 /** What one answer was refused for, and nothing where it was not refused. */

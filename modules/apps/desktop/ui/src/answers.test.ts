@@ -32,14 +32,11 @@ describe('the file an answer came out of', () => {
 })
 
 describe('what a refusal is called', () => {
-  // A file that moved past what the caller read is the one refusal with no
-  // word: the window puts that question to the person and shows no message.
-  it('has a word for every refusal the schema carries but the stale one', () => {
-    for (const refusal of Object.values(Refusal)) {
-      if (typeof refusal !== 'number' || refusal === Refusal.STALE) continue
-      expect(REFUSAL[refusal as Refusal], String(refusal)).toBeDefined()
-    }
-    expect(REFUSAL[Refusal.STALE]).toBeUndefined()
+  // The table is keyed by the schema, so the compiler asks for every refusal.
+  // What it cannot ask is which of them the silence belongs to.
+  it('leaves a file that moved past the caller the one refusal with no word', () => {
+    expect(REFUSAL[Refusal.STALE]).toBeNull()
+    expect(Object.values(REFUSAL).filter((word) => word === null)).toHaveLength(1)
   })
 
   it('reads a file that moved past the caller off the answer that says so', () => {
