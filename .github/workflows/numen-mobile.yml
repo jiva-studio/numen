@@ -7,6 +7,7 @@ on:
       - "modules/libs/core/**"
       - "modules/libs/ui/**"
       - "modules/libs/protocol/**"
+      - "modules/tools/lint/**"
       - ".github/workflows/numen-mobile.yml"
   push:
     branches: [main]
@@ -15,6 +16,7 @@ on:
       - "modules/libs/core/**"
       - "modules/libs/ui/**"
       - "modules/libs/protocol/**"
+      - "modules/tools/lint/**"
       - ".github/workflows/numen-mobile.yml"
 
 # One run at a time per branch, and on a pull request the newest is the one that
@@ -111,6 +113,12 @@ jobs:
 
       - name: Build the components
         run: npm run build --prefix modules/libs/ui
+
+      # The house rules read the phone's source too, so they run where a change
+      # to the phone alone reaches them. It depends on nothing, so there is
+      # nothing to install.
+      - name: House rules
+        run: npm run check --prefix modules/tools/lint
 
       - name: Typecheck
         run: npm run typecheck --prefix modules/apps/mobile
