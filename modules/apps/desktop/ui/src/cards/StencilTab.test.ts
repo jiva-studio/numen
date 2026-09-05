@@ -92,11 +92,11 @@ const twice: Problem = {
 }
 
 describe('a stencil drawn', () => {
-  it('draws a row for every field and a block for every face', async () => {
+  it('draws a row for every field and one for every face', async () => {
     const { window } = await drawn()
 
     expect(window.findAll('[data-field]')).toHaveLength(2)
-    expect(window.findAll('[data-face-block]')).toHaveLength(2)
+    expect(window.findAll('[data-face]')).toHaveLength(2)
   })
 })
 
@@ -105,7 +105,7 @@ describe('a mark on a face', () => {
     const { window, tab } = await drawn([missing])
     const second = tab.sheet().faces[1]?.id ?? ''
 
-    expect(window.find(`[data-face-block="${second}"]`).find('[data-wrong]').text()).toBe(
+    expect(window.find(`[data-face="${second}"]`).find('[data-wrong]').text()).toBe(
       'this face has no back',
     )
   })
@@ -114,7 +114,7 @@ describe('a mark on a face', () => {
     const { window, tab } = await drawn([missing])
     const second = tab.sheet().faces[1]?.id ?? ''
 
-    expect(window.find(`[data-face-block="${second}"] header [data-wrong]`).text()).toBe(
+    expect(window.find(`[data-face="${second}"] header [data-wrong]`).text()).toBe(
       'this face has no back',
     )
   })
@@ -123,7 +123,7 @@ describe('a mark on a face', () => {
     const { window, tab } = await drawn([missing])
     const first = tab.sheet().faces[0]?.id ?? ''
 
-    expect(window.find(`[data-face-block="${first}"]`).find('[data-wrong]').exists()).toBe(false)
+    expect(window.find(`[data-face="${first}"]`).find('[data-wrong]').exists()).toBe(false)
   })
 
   it('follows the face when another is taken out beside it', async () => {
@@ -134,7 +134,7 @@ describe('a mark on a face', () => {
     tab.removesFace(first)
     await settles()
 
-    expect(window.find(`[data-face-block="${second}"]`).find('[data-wrong]').text()).toBe(
+    expect(window.find(`[data-face="${second}"]`).find('[data-wrong]').text()).toBe(
       'this face has no back',
     )
   })

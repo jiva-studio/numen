@@ -20,7 +20,7 @@ import { heading, type Half, type Refusal, type Way } from './order'
 import {
   panes,
   STENCIL_WORDS,
-  type FaceBlock,
+  type Face,
   type Pane,
   type StencilWords,
 } from './stencil'
@@ -29,7 +29,7 @@ import { insert } from './fill'
 const props = withDefaults(
   defineProps<{
     /** The face, laid out against the fields the stencil declares. */
-    block: FaceBlock
+    face: Face
     /** What the caller found wrong with this face, said beside its name. */
     wrong?: readonly string[]
     /** The words it is drawn with. */
@@ -50,21 +50,21 @@ const emit = defineEmits<{
   (event: 'write', half: Half, text: string): void
 }>()
 
-/** What this block's objection is named by, which is this block's alone. */
+/** What this face's objection is named by, which is this face's alone. */
 const uid = useId()
 
 const objectsId = `${uid}-objects`
 
 /** A name typed over the one this face carries, until it is committed. */
 const naming = useNaming<Refusal>({
-  carries: () => props.block.name,
-  taken: () => props.block.taken,
+  carries: () => props.face.name,
+  taken: () => props.face.taken,
   amiss: heading,
   renamed: (_over, name) => emit('rename', name),
 })
 
 /** Why what is in the name box cannot be used, and nothing while it can. */
-const objects = computed(() => naming.objection(props.block.id))
+const objects = computed(() => naming.objection(props.face.id))
 
 /** What is said of a name that cannot be used, and nothing while it can. */
 const says = computed(() => {
@@ -97,7 +97,7 @@ const holds = (half: Half, drawn: Element | ComponentPublicInstance | null): voi
 }
 
 /** The four parts this face's window is divided into. */
-const divided = computed<readonly Pane[]>(() => panes(props.block, props.words))
+const divided = computed<readonly Pane[]>(() => panes(props.face, props.words))
 
 /** The part a field would be written into. */
 const aiming = (pane: Pane): boolean => pane.shows === 'written' && aimed.value === pane.half
@@ -123,33 +123,33 @@ const put = async (field: string): Promise<void> => {
 </script>
 
 <template>
-  <article class="block flex flex-col rounded-node bg-raised" :data-face-block="block.id">
+  <article class="face flex flex-col rounded-node bg-raised" :data-face="face.id">
     <Bar
-      :carry="`${words.carry}: ${block.name}`"
+      :carry="`${words.carry}: ${face.name}`"
       @dragstart="emit('lift', $event)"
       @dragend="emit('release')"
       @step="(way, press) => emit('step', way, press)"
     >
-      <div class="block__said">
-        <div class="block__head flex items-center">
+      <div class="face__said">
+        <div class="face__head flex items-center">
           <NameBox
-            class="block__title rounded-node"
+            class="face__title rounded-node"
             :naming="naming"
-            :over="block.id"
-            :stem="`${words.faceStem} ${block.at}`"
+            :over="face.id"
+            :stem="`${words.faceStem} ${face.at}`"
             :described-by="says ? objectsId : null"
           />
 
           <!-- The fields are small quiet chips, as small quiet actions are
                drawn everywhere else here. What they are for is said to a
                reader by the group, and to everyone else by their look. -->
-          <div class="block__slots flex" role="group" :aria-label="`${words.insert}: ${block.name}`">
+          <div class="face__slots flex" role="group" :aria-label="`${words.insert}: ${face.name}`">
             <Button
-              v-for="field in block.fields"
+              v-for="field in face.fields"
               :key="field"
               variant="ghost"
               size="small"
-              class="block__slot h-5 rounded-pill bg-bubble px-2 text-small"
+              class="face__slot h-5 rounded-pill bg-bubble px-2 text-small"
               draggable="false"
               :data-insert="field"
               :aria-label="`${words.insert}: ${field}`"
@@ -161,12 +161,12 @@ const put = async (field: string): Promise<void> => {
 
         <!-- What is wrong with the face stands at the end of the strip, over
              the window under it. -->
-        <div v-if="says || wrong.length" class="block__amiss">
-          <Amiss v-if="says" :id="objectsId" class="block__objects" role="alert" :said="says" />
+        <div v-if="says || wrong.length" class="face__amiss">
+          <Amiss v-if="says" :id="objectsId" class="face__objects" role="alert" :said="says" />
 
           <Amiss
             v-if="wrong.length"
-            class="block__objects"
+            class="face__objects"
             data-wrong
             :said="wrong"
             :label="words.wrong"
@@ -175,17 +175,17 @@ const put = async (field: string): Promise<void> => {
       </div>
 
       <template #deeds>
-        <Remove :label="`${words.remove}: ${block.name}`" @press="emit('remove')" />
+        <Remove :label="`${words.remove}: ${face.name}`" @press="emit('remove')" />
       </template>
     </Bar>
 
     <!-- One window divided into four: the parts share the lines between them,
-         and the frame around them is the block's own. -->
-    <div class="block__body">
+         and the frame around them is the face's own. -->
+    <div class="face__body">
       <div
         v-for="pane in divided"
         :key="`${pane.half}-${pane.shows}`"
-        class="block__pane"
+        class="face__pane"
         :data-pane="`${pane.half}-${pane.shows}`"
         :data-shows="pane.shows"
         :data-blank="pane.blank || undefined"
@@ -194,7 +194,7 @@ const put = async (field: string): Promise<void> => {
         <Grown
           v-if="pane.shows === 'written'"
           :ref="(held) => holds(pane.half, held)"
-          class="block__grown"
+          class="face__grown"
           :text="pane.text"
           :data-half="pane.half"
           :aria-label="pane.named"
@@ -204,7 +204,7 @@ const put = async (field: string): Promise<void> => {
 
         <div
           v-else
-          class="block__preview"
+          class="face__preview"
           :data-preview="pane.half"
           :aria-label="pane.named"
           role="group"
@@ -215,14 +215,14 @@ const put = async (field: string): Promise<void> => {
         </div>
 
         <!-- An empty part says what it is for, in the middle of itself. -->
-        <p v-if="pane.blank" class="block__ghost caps-numen text-small text-hushed" aria-hidden="true">
+        <p v-if="pane.blank" class="face__ghost caps-numen text-small text-hushed" aria-hidden="true">
           {{ pane.said }}
         </p>
 
         <!-- What is wrong with the half stands in the foot of the part, over
              what is written there. -->
-        <div v-if="pane.stray.length" class="block__amiss">
-          <Amiss class="block__objects" role="alert" :said="words.stray(pane.stray)" />
+        <div v-if="pane.stray.length" class="face__amiss">
+          <Amiss class="face__objects" role="alert" :said="words.stray(pane.stray)" />
         </div>
       </div>
     </div>
@@ -230,8 +230,8 @@ const put = async (field: string): Promise<void> => {
 </template>
 
 <style scoped>
-/* The width of the block is what the window inside it is divided by. */
-.block {
+/* The width of the face is what the window inside it is divided by. */
+.face {
   /* The air a box keeps inside a part of the window, which is what a box put
      there inherits. */
   --box-air: 0.5rem;
@@ -249,8 +249,8 @@ const put = async (field: string): Promise<void> => {
 }
 
 /* The body is one window: the parts are divided by the lines they share, and
-   the frame around them is the block's own. */
-.block__body {
+   the frame around them is the face's own. */
+.face__body {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--numen-stroke);
@@ -260,25 +260,25 @@ const put = async (field: string): Promise<void> => {
 /* Two parts to a row from the width at which a part still holds a line of a
    face: the writing beside its preview, the front above the back. */
 @container (min-width: 36rem) {
-  .block__body {
+  .face__body {
     grid-template-columns: 1fr 1fr;
   }
 }
 
 /* The strip is the face's own, so its name leads it and the fields follow. */
-.block__said {
+.face__said {
   position: relative;
   inline-size: 100%;
 }
 
-.block__head {
+.face__head {
   inline-size: 100%;
   gap: var(--numen-inset);
 }
 
-/* The name is the heading of the block: the largest thing in the strip, and
+/* The name is the heading of the face: the largest thing in the strip, and
    never squeezed by however many fields stand beside it. */
-.block__title {
+.face__title {
   flex: 0 1 12rem;
   min-inline-size: 5rem;
   font-weight: 500;
@@ -286,7 +286,7 @@ const put = async (field: string): Promise<void> => {
 
 /* The fields are a group under the heading, not its equal. A long row scrolls
    inside the strip. */
-.block__slots {
+.face__slots {
   flex: 1 1 auto;
   min-inline-size: 0;
   gap: 0.25rem;
@@ -294,16 +294,16 @@ const put = async (field: string): Promise<void> => {
   scrollbar-width: none;
 }
 
-.block__slots::-webkit-scrollbar {
+.face__slots::-webkit-scrollbar {
   display: none;
 }
 
-.block__slot:hover {
+.face__slot:hover {
   background: color-mix(in oklab, var(--numen-bubble-bg), var(--numen-ink) 10%);
 }
 
 /* The ring is drawn inside the chip, so the row it scrolls in cannot clip it. */
-.block__slot:focus-visible {
+.face__slot:focus-visible {
   box-shadow: none;
   outline: var(--numen-ring-width) solid var(--numen-ring);
   outline-offset: calc(-1 * var(--numen-ring-width));
@@ -311,7 +311,7 @@ const put = async (field: string): Promise<void> => {
 
 /* A part is a pane of the window: it carries a ground and no line of its own.
    What it holds and what it says while it holds nothing share its one cell. */
-.block__pane {
+.face__pane {
   position: relative;
   display: grid;
   grid-template-columns: 1fr;
@@ -322,20 +322,20 @@ const put = async (field: string): Promise<void> => {
 }
 
 /* What is written stands on the ground a box stands on; what it comes to
-   stands on the ground the block is read on. */
-.block__pane[data-shows='preview'] {
+   stands on the ground the face is read on. */
+.face__pane[data-shows='preview'] {
   background: var(--numen-raised);
 }
 
-.block__grown,
-.block__preview,
-.block__ghost {
+.face__grown,
+.face__preview,
+.face__ghost {
   grid-area: 1 / 1;
 }
 
 /* What is wrong stands at the end of what it is wrong about and over it, taking
    no room from it. A press meant for what is underneath reaches it. */
-.block__amiss {
+.face__amiss {
   position: absolute;
   z-index: 1;
   inset-inline-end: var(--box-pad-inline);
@@ -348,16 +348,16 @@ const put = async (field: string): Promise<void> => {
 }
 
 /* The strip's stands under it, and a part's inside its foot. */
-.block__said > .block__amiss {
+.face__said > .face__amiss {
   inset-block-start: 100%;
 }
 
-.block__pane > .block__amiss {
+.face__pane > .face__amiss {
   inset-block-end: var(--box-air);
 }
 
 /* What is wrong is read over whatever it covers, so it carries a ground. */
-.block__amiss > .block__objects {
+.face__amiss > .face__objects {
   padding: 0.125rem 0.375rem;
   border-radius: var(--numen-radius);
   background: var(--numen-alarm-bg);
@@ -365,13 +365,13 @@ const put = async (field: string): Promise<void> => {
 
 /* A face's box stands open at a few lines and grows with what is written in
    it, as every other box does. */
-.block__grown {
+.face__grown {
   --grown-lines: var(--pane-lines);
 }
 
 /* What an empty part is called stands in the middle of it, and is passed
    through to whatever is underneath. */
-.block__ghost {
+.face__ghost {
   place-self: center;
   margin: 0;
   padding-inline: var(--box-pad-inline);
@@ -379,7 +379,7 @@ const put = async (field: string): Promise<void> => {
   pointer-events: none;
 }
 
-.block__preview {
+.face__preview {
   min-inline-size: 0;
   padding: var(--box-air) var(--box-pad-inline);
   overflow-wrap: anywhere;

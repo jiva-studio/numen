@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { Filled } from './deck'
-import { faceBlocks, fieldRows, panes, STENCIL_WORDS, type Shown } from './stencil'
+import { drawnFaces, fieldRows, panes, STENCIL_WORDS, type Shown } from './stencil'
 
 describe('fieldRows', () => {
   const FIELDS = ['Height', 'Weight']
@@ -43,7 +43,7 @@ describe('fieldRows', () => {
   })
 })
 
-describe('faceBlocks', () => {
+describe('drawnFaces', () => {
   const FIELDS = ['Name', 'Height']
   const FACES: readonly Shown[] = [
     { id: 'recognise', name: 'Recognise', front: '{{Name}}', back: '{{Height}}' },
@@ -54,55 +54,55 @@ describe('faceBlocks', () => {
     { field: 'Height', text: 'about 45"' },
   ]
 
-  it('numbers the blocks from one, each knowing how many stand with it', () => {
-    expect(faceBlocks(FACES, FIELDS, SAMPLE).map((each) => [each.at, each.of])).toEqual([
+  it('numbers the faces from one, each knowing how many stand with it', () => {
+    expect(drawnFaces(FACES, FIELDS, SAMPLE).map((each) => [each.at, each.of])).toEqual([
       [1, 2],
       [2, 2],
     ])
   })
 
   it('shows each half with the sample values standing in it', () => {
-    const block = faceBlocks(FACES, FIELDS, SAMPLE)[0]
-    expect(block?.frontShown).toBe('Llama')
-    expect(block?.backShown).toBe('about 45"')
+    const face = drawnFaces(FACES, FIELDS, SAMPLE)[0]
+    expect(face?.frontShown).toBe('Llama')
+    expect(face?.backShown).toBe('about 45"')
   })
 
   it('keeps the markup a half was written with beside what it shows', () => {
-    expect(faceBlocks(FACES, FIELDS, SAMPLE)[0]?.front).toBe('{{Name}}')
+    expect(drawnFaces(FACES, FIELDS, SAMPLE)[0]?.front).toBe('{{Name}}')
   })
 
   it('says the slots each half names that the fields do not, each once', () => {
     const faces: readonly Shown[] = [
       { id: 'one', name: 'One', front: '{{Colour}}', back: '{{Weight}} {{Weight}}' },
     ]
-    const block = faceBlocks(faces, FIELDS, SAMPLE)[0]
-    expect(block?.frontStray).toEqual(['Colour'])
-    expect(block?.backStray).toEqual(['Weight'])
+    const face = drawnFaces(faces, FIELDS, SAMPLE)[0]
+    expect(face?.frontStray).toEqual(['Colour'])
+    expect(face?.backStray).toEqual(['Weight'])
   })
 
   it('marks a stray slot in the preview where it stands, and fills the rest', () => {
     const faces: readonly Shown[] = [
       { id: 'one', name: 'One', front: '{{Name}} {{Colour}}', back: '' },
     ]
-    expect(faceBlocks(faces, FIELDS, SAMPLE)[0]?.frontShown).toBe(
+    expect(drawnFaces(faces, FIELDS, SAMPLE)[0]?.frontShown).toBe(
       'Llama <mark>{{Colour}}</mark>',
     )
   })
 
   it('says nothing stray of a face naming only declared fields', () => {
-    const block = faceBlocks(FACES, FIELDS, SAMPLE)[0]
-    expect(block?.frontStray).toEqual([])
-    expect(block?.backStray).toEqual([])
+    const face = drawnFaces(FACES, FIELDS, SAMPLE)[0]
+    expect(face?.frontStray).toEqual([])
+    expect(face?.backStray).toEqual([])
   })
 
-  it('draws no blocks for a stencil with no faces', () => {
-    expect(faceBlocks([], FIELDS, SAMPLE)).toEqual([])
+  it('draws nothing for a stencil with no faces', () => {
+    expect(drawnFaces([], FIELDS, SAMPLE)).toEqual([])
   })
 
   it('carries the identity and the name each face was handed in under', () => {
-    const blocks = faceBlocks(FACES, FIELDS, SAMPLE)
-    expect(blocks.map((each) => each.id)).toEqual(['recognise', 'name-it'])
-    expect(blocks.map((each) => each.name)).toEqual(['Recognise', 'Name it'])
+    const drawn = drawnFaces(FACES, FIELDS, SAMPLE)
+    expect(drawn.map((each) => each.id)).toEqual(['recognise', 'name-it'])
+    expect(drawn.map((each) => each.name)).toEqual(['Recognise', 'Name it'])
   })
 })
 
@@ -113,13 +113,13 @@ describe('panes', () => {
     { field: 'Height', text: 'about 45"' },
   ]
 
-  const blockOf = (face: Shown, fields: readonly string[], sample: readonly Filled[]) => {
-    const block = faceBlocks([face], fields, sample)[0]
-    if (!block) throw new Error('no block')
-    return block
+  const faceOf = (face: Shown, fields: readonly string[], sample: readonly Filled[]) => {
+    const drawn = drawnFaces([face], fields, sample)[0]
+    if (!drawn) throw new Error('no face')
+    return drawn
   }
 
-  const divided = (face: Shown) => panes(blockOf(face, FIELDS, SAMPLE))
+  const divided = (face: Shown) => panes(faceOf(face, FIELDS, SAMPLE))
 
   const FULL: Shown = {
     id: 'recognise',
@@ -166,7 +166,7 @@ describe('panes', () => {
 
   it('calls a part blank where what is written fills out to nothing', () => {
     const face: Shown = { id: 'one', name: 'One', front: '{{Blank}}', back: '' }
-    const drawn = panes(blockOf(face, ['Blank'], [{ field: 'Blank', text: '' }]))
+    const drawn = panes(faceOf(face, ['Blank'], [{ field: 'Blank', text: '' }]))
     expect(drawn[0]?.blank).toBe(false)
     expect(drawn[1]?.blank).toBe(true)
   })
@@ -177,7 +177,7 @@ describe('panes', () => {
   })
 
   it('draws every part with the words it was handed', () => {
-    const drawn = panes(blockOf(FULL, FIELDS, SAMPLE), {
+    const drawn = panes(faceOf(FULL, FIELDS, SAMPLE), {
       ...STENCIL_WORDS,
       front: 'Recto',
       back: 'Verso',

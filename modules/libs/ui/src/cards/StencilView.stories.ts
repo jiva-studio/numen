@@ -222,7 +222,7 @@ type Story = StoryObj<Knobs>
 
 const boxFor = (canvas: HTMLElement, id: string, half: Half) => {
   const box = canvas.querySelector<HTMLTextAreaElement>(
-    `[data-face-block="${id}"] [data-half="${half}"]`,
+    `[data-face="${id}"] [data-half="${half}"]`,
   )
   if (!box) throw new Error(`no ${half} of ${id}`)
   return box
@@ -331,7 +331,7 @@ export const WhatAPersonDoesToIt: Story = {
     front.setSelectionRange(front.value.length, front.value.length)
 
     await userEvent.click(
-      found(canvasElement, '[data-face-block="recognise"] [data-insert="Weight"]'),
+      found(canvasElement, '[data-face="recognise"] [data-insert="Weight"]'),
     )
     expect(boxFor(canvasElement, 'recognise', 'front').value).toBe('{{Name}}{{Weight}}')
     expect(boxFor(canvasElement, 'name-it', 'back').value).toBe('{{Name}}')
@@ -348,19 +348,19 @@ export const WhatAPersonDoesToIt: Story = {
 
     // The last face is let go over the first, and takes its place.
     const drawn = (): readonly (string | null)[] =>
-      [...canvasElement.querySelectorAll('[data-face-block]')].map((each) =>
-        each.getAttribute('data-face-block'),
+      [...canvasElement.querySelectorAll('[data-face]')].map((each) =>
+        each.getAttribute('data-face'),
       )
     expect(drawn()).toEqual(['recognise', 'name-it'])
 
-    const bar = found(canvasElement, '[data-face-block="name-it"] .bar')
+    const bar = found(canvasElement, '[data-face="name-it"] .bar')
     expect(bar.getAttribute('draggable')).toBe('true')
     bar.dispatchEvent(new DragEvent('dragstart', { bubbles: true }))
-    const onto = found(canvasElement, '[data-face-block="recognise"]')
+    const onto = found(canvasElement, '[data-face="recognise"]')
     onto.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true }))
 
     // The one on its way is quiet, and the line it would land on is drawn.
-    const carried = found(canvasElement, '[data-face-block="name-it"]')
+    const carried = found(canvasElement, '[data-face="name-it"]')
     await waitFor(() => {
       expect(Number.parseFloat(getComputedStyle(carried).opacity)).toBeLessThan(1)
       expect(Number.parseFloat(getComputedStyle(onto, '::before').blockSize)).toBeGreaterThan(0)
@@ -374,13 +374,13 @@ export const WhatAPersonDoesToIt: Story = {
 
 /**
  * Forty fields and twelve faces, far more than the window has room for. Every
- * row and every block is drawn, and none of it is drawn sideways.
+ * row and every face is drawn, and none of it is drawn sideways.
  */
 export const FarTooMany: Story = {
   args: { corpus: 'far too many' },
   play: async ({ canvasElement }) => {
     expect(drawnFields(canvasElement)).toHaveLength(40)
-    expect(canvasElement.querySelectorAll('[data-face-block]')).toHaveLength(12)
+    expect(canvasElement.querySelectorAll('[data-face]')).toHaveLength(12)
 
     const editor = found(canvasElement, '.stencil')
     expect(editor.scrollWidth).toBeLessThanOrEqual(editor.clientWidth + 1)
@@ -405,17 +405,17 @@ export const WhatIsWrong: Story = {
     // and no second chip going nowhere.
     expect(drawnFields(canvasElement)).toEqual(['Name', 'Height'])
     expect(canvasElement.querySelectorAll('.stencil__field input')).toHaveLength(2)
-    const chips = [...canvasElement.querySelectorAll('[data-face-block="stray"] [data-insert]')]
+    const chips = [...canvasElement.querySelectorAll('[data-face="stray"] [data-insert]')]
     expect(chips.map((chip) => chip.getAttribute('data-insert'))).toEqual(['Name', 'Height'])
 
     // What the caller found wrong with one face stands under that face's name,
     // and under no other's.
     expect(
-      found(canvasElement, '[data-face-block="stray"] [data-pane="front-written"]')
+      found(canvasElement, '[data-face="stray"] [data-pane="front-written"]')
         .textContent?.trim(),
     ).toContain('Not a field: Colour')
     expect(
-      canvasElement.querySelector('[data-face-block="tagged"] [data-pane] [role="alert"]'),
+      canvasElement.querySelector('[data-face="tagged"] [data-pane] [role="alert"]'),
     ).toBeNull()
   },
 }

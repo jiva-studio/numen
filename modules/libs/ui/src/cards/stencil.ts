@@ -123,8 +123,8 @@ export function fieldRows(
   }))
 }
 
-/** One face of a stencil, as its block is drawn. */
-export interface FaceBlock {
+/** One face of a stencil, as it is drawn. */
+export interface Face {
   readonly id: string
   readonly name: string
   /** Where it stands, counting from one, which is what it is announced as. */
@@ -147,21 +147,21 @@ export interface FaceBlock {
 }
 
 /**
- * The blocks a stencil's faces are drawn as, each carrying what its preview
- * shows and what is wrong in each half of it.
+ * A stencil's faces as they are drawn, each carrying what its preview shows and
+ * what is wrong in each half of it.
  */
-export function faceBlocks(
-  faces: readonly Shown[],
+export function drawnFaces(
+  shown: readonly Shown[],
   fields: readonly string[],
   sample: readonly Filled[],
-): readonly FaceBlock[] {
-  const names = faces.map((each) => each.name)
-  return faces.map((face, index) => {
+): readonly Face[] {
+  const names = shown.map((each) => each.name)
+  return shown.map((face, index) => {
     return {
       id: face.id,
       name: face.name,
       at: index + 1,
-      of: faces.length,
+      of: shown.length,
       fields,
       taken: names.filter((_, at) => at !== index),
       front: face.front,
@@ -198,11 +198,11 @@ export interface Pane {
  * and then what that markup comes to. Two parts to a row stand the front above
  * the back; one to a row stands each preview under the half it is of.
  */
-export function panes(block: FaceBlock, words: StencilWords = STENCIL_WORDS): readonly Pane[] {
+export function panes(face: Face, words: StencilWords = STENCIL_WORDS): readonly Pane[] {
   return HALVES.flatMap((half): readonly Pane[] => {
     const said = half === 'front' ? words.front : words.back
-    const written = half === 'front' ? block.front : block.back
-    const shown = half === 'front' ? block.frontShown : block.backShown
+    const written = half === 'front' ? face.front : face.back
+    const shown = half === 'front' ? face.frontShown : face.backShown
     return [
       {
         half,
@@ -211,13 +211,13 @@ export function panes(block: FaceBlock, words: StencilWords = STENCIL_WORDS): re
         named: said,
         text: written,
         blank: written.trim() === '',
-        stray: half === 'front' ? block.frontStray : block.backStray,
+        stray: half === 'front' ? face.frontStray : face.backStray,
       },
       {
         half,
         shows: 'preview',
         said: words.preview,
-        named: `${words.preview}: ${block.name} ${said}`,
+        named: `${words.preview}: ${face.name} ${said}`,
         text: shown,
         blank: shown.trim() === '',
         stray: [],

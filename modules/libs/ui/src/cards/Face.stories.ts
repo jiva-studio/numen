@@ -7,10 +7,10 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { computed, ref, watch } from 'vue'
-import Block from './Block.vue'
+import FaceView from './Face.vue'
 import type { Filled } from './deck'
 import { declared, type Half } from './order'
-import { faceBlocks, type FaceBlock, type Shown } from './stencil'
+import { drawnFaces, type Face, type Shown } from './stencil'
 import { sampled } from './fill'
 import { hovered, lightness } from '@/fixtures/colour'
 import { DARK, drawnDark } from '@/fixtures/theme'
@@ -102,7 +102,7 @@ interface Knobs {
   /** How wide the window drawing the face is. */
   width: string
   /** Given by the story, and nothing a reader turns. */
-  block?: never
+  face?: never
   fields?: never
   taken?: never
   wrong?: never
@@ -110,8 +110,8 @@ interface Knobs {
 }
 
 const meta: Meta<Knobs> = {
-  title: 'Flash Cards/Block',
-  component: Block,
+  title: 'Flash Cards/Face',
+  component: FaceView,
   parameters: { layout: 'padded' },
   argTypes: {
     corpus: {
@@ -120,7 +120,7 @@ const meta: Meta<Knobs> = {
       description: 'What the face starts as. Changing it starts afresh.',
     },
     width: { control: 'text' },
-    block: { table: { disable: true } },
+    face: { table: { disable: true } },
     fields: { table: { disable: true } },
     taken: { table: { disable: true } },
     wrong: { table: { disable: true } },
@@ -128,42 +128,42 @@ const meta: Meta<Knobs> = {
   },
   args: { corpus: 'a face', width: '64rem' },
   render: (args) => ({
-    components: { Block },
+    components: { FaceView },
     setup() {
       const held = ref<Corpus>(CORPORA[args.corpus])
-      const face = ref<Shown>(CORPORA[args.corpus].face)
+      const written = ref<Shown>(CORPORA[args.corpus].face)
 
       watch(
         () => args.corpus,
         (next) => {
           held.value = CORPORA[next]
-          face.value = CORPORA[next].face
+          written.value = CORPORA[next].face
         },
       )
 
-      const block = computed<FaceBlock>(() => {
+      const drawn = computed<Face>(() => {
         const fields = declared(held.value.fields)
-        const laid = faceBlocks([face.value], fields, held.value.sample ?? sampled(fields))[0]
+        const laid = drawnFaces([written.value], fields, held.value.sample ?? sampled(fields))[0]
         if (!laid) throw new Error('a corpus holding no face')
         return { ...laid, taken: held.value.taken ?? [] }
       })
 
       return {
         args,
-        block,
+        drawn,
         wrong: () => held.value.wrong ?? [],
         onRename: (name: string) => {
-          face.value = { ...face.value, name }
+          written.value = { ...written.value, name }
         },
         onWrite: (half: Half, text: string) => {
-          face.value = { ...face.value, [half]: text }
+          written.value = { ...written.value, [half]: text }
         },
       }
     },
     template: `
       <div :style="{ width: args.width }">
-        <Block
-          :block="block"
+        <FaceView
+          :face="drawn"
           :wrong="wrong()"
           @rename="onRename"
           @write="onWrite"
@@ -201,12 +201,12 @@ const PANES = ['front-written', 'front-preview', 'back-written', 'back-preview']
  *
  * The window is one window: two parts to a row, the writing beside its preview
  * and the front above the back, divided by the lines they share. The frame
- * around all four is the block's, the parts carry none of their own, and the
+ * around all four is the face's, the parts carry none of their own, and the
  * keyboard landing in one changes nothing that is drawn.
  */
 export const AFace: Story = {
   play: async ({ canvasElement }) => {
-    const body = found(canvasElement, '.block__body')
+    const body = found(canvasElement, '.face__body')
     expect(getComputedStyle(body).gridTemplateColumns.split(' ')).toHaveLength(2)
 
     const at = (pane: string): DOMRect => paneOf(canvasElement, pane).getBoundingClientRect()
@@ -233,9 +233,9 @@ export const AFace: Story = {
     expect(box.getBoundingClientRect().height).toBeGreaterThan(deep * 4)
     expect(box.getBoundingClientRect().height).toBeCloseTo(part.getBoundingClientRect().height, 0)
 
-    // The block is framed and the parts inside it are not.
-    const block = found(canvasElement, '[data-face-block]')
-    expect(Number.parseFloat(getComputedStyle(block).borderTopWidth)).toBeGreaterThan(0)
+    // The face is framed and the parts inside it are not.
+    const face = found(canvasElement, '[data-face]')
+    expect(Number.parseFloat(getComputedStyle(face).borderTopWidth)).toBeGreaterThan(0)
     for (const pane of PANES) {
       const drawn = getComputedStyle(paneOf(canvasElement, pane))
       for (const side of [
@@ -260,7 +260,7 @@ export const AFace: Story = {
     // A field to write into a half is a small quiet chip with a ground of its
     // own at rest, markedly smaller than the heading whose strip it stands in.
     const chip = found(canvasElement, '[data-insert="Height"]')
-    const title = found(canvasElement, '.block__title')
+    const title = found(canvasElement, '.face__title')
     expect(getComputedStyle(chip).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
     expect(Number.parseFloat(getComputedStyle(chip).fontSize)).toBeLessThan(
       Number.parseFloat(getComputedStyle(title).fontSize),
@@ -273,10 +273,10 @@ export const AFace: Story = {
     await userEvent.click(chip)
     await waitFor(() => expect(boxFor(canvasElement, 'back').value.startsWith('{{Height}}')).toBe(true))
 
-    // The keyboard landing in a box changes the block, the strip and the parts
+    // The keyboard landing in a box changes the face, the strip and the parts
     // in nothing.
     const watched = [
-      block,
+      face,
       found(canvasElement, '.bar'),
       ...PANES.map((pane) => paneOf(canvasElement, pane)),
     ]
@@ -305,7 +305,7 @@ export const AFace: Story = {
 export const Narrow: Story = {
   args: { width: '22rem' },
   play: async ({ canvasElement }) => {
-    const body = found(canvasElement, '.block__body')
+    const body = found(canvasElement, '.face__body')
     expect(getComputedStyle(body).gridTemplateColumns.split(' ')).toHaveLength(1)
 
     const tops = PANES.map((pane) =>
@@ -325,12 +325,12 @@ export const AStraySlot: Story = {
     expect(found(canvasElement, '[data-preview="front"] mark').textContent).toBe('{{Colour}}')
     expect(found(canvasElement, '[data-preview="back"] mark').textContent).toBe('{{Weight}}')
     expect(
-      found(canvasElement, '[data-pane="front-written"] .block__objects').textContent?.trim(),
+      found(canvasElement, '[data-pane="front-written"] .face__objects').textContent?.trim(),
     ).toBe('Not a field: Colour')
     expect(
-      found(canvasElement, '[data-pane="back-written"] .block__objects').textContent?.trim(),
+      found(canvasElement, '[data-pane="back-written"] .face__objects').textContent?.trim(),
     ).toBe('Not a field: Weight')
-    expect(canvasElement.querySelector('header .block__objects')).toBeNull()
+    expect(canvasElement.querySelector('header .face__objects')).toBeNull()
 
     // It stands in the foot of the part, over what is written there: the box
     // still fills the part, and a press meant for the box reaches it.
@@ -338,10 +338,10 @@ export const AStraySlot: Story = {
     const box = boxFor(canvasElement, 'front').getBoundingClientRect()
     expect(box.height).toBeCloseTo(pane.height, 0)
 
-    const layer = found(canvasElement, '[data-pane="front-written"] .block__amiss')
+    const layer = found(canvasElement, '[data-pane="front-written"] .face__amiss')
     expect(getComputedStyle(layer).pointerEvents).toBe('none')
 
-    const said = found(canvasElement, '[data-pane="front-written"] .block__objects')
+    const said = found(canvasElement, '[data-pane="front-written"] .face__objects')
     const over = said.getBoundingClientRect()
     expect(over.bottom).toBeLessThanOrEqual(pane.bottom + 1)
     expect(over.right).toBeLessThanOrEqual(pane.right + 1)
@@ -357,7 +357,7 @@ export const NothingInIt: Story = {
     const said: string[] = []
     for (const pane of PANES) {
       const held = paneOf(canvasElement, pane)
-      const ghost = held.querySelector<HTMLElement>('.block__ghost')
+      const ghost = held.querySelector<HTMLElement>('.face__ghost')
       if (!ghost) throw new Error(`nothing said in ${pane}`)
       said.push(ghost.textContent?.trim() ?? '')
 
@@ -373,15 +373,15 @@ export const NothingInIt: Story = {
     const written = boxFor(canvasElement, 'front')
     await userEvent.type(written, 'a word')
     await waitFor(() => {
-      expect(paneOf(canvasElement, 'front-written').querySelector('.block__ghost')).toBeNull()
-      expect(paneOf(canvasElement, 'front-preview').querySelector('.block__ghost')).toBeNull()
+      expect(paneOf(canvasElement, 'front-written').querySelector('.face__ghost')).toBeNull()
+      expect(paneOf(canvasElement, 'front-preview').querySelector('.face__ghost')).toBeNull()
     })
     const pane = paneOf(canvasElement, 'front-written')
     expect(written.getBoundingClientRect().top).toBeCloseTo(pane.getBoundingClientRect().top, 0)
 
     // The half nothing was written in still says what it is for.
     expect(
-      paneOf(canvasElement, 'back-written').querySelector('.block__ghost')?.textContent,
+      paneOf(canvasElement, 'back-written').querySelector('.face__ghost')?.textContent,
     ).toBe('Back')
   },
 }
@@ -407,8 +407,8 @@ export const FarTooManyFields: Story = {
   args: { corpus: 'far too many fields' },
   play: async ({ canvasElement }) => {
     const bar = found(canvasElement, '.bar')
-    const title = found(canvasElement, '.block__title')
-    const slots = found(canvasElement, '.block__slots')
+    const title = found(canvasElement, '.face__title')
+    const slots = found(canvasElement, '.face__slots')
 
     // Forty fields do not push the heading out of its own strip.
     expect(title.getBoundingClientRect().width).toBeGreaterThan(60)
@@ -439,24 +439,24 @@ export const WhatIsWrongWithIt: Story = {
     // where the strip ends: what is wrong hangs over the window and takes no
     // room from it.
     const bar = found(canvasElement, '.bar').getBoundingClientRect()
-    const head = found(canvasElement, '.block__head').getBoundingClientRect()
-    const body = found(canvasElement, '.block__body').getBoundingClientRect()
+    const head = found(canvasElement, '.face__head').getBoundingClientRect()
+    const body = found(canvasElement, '.face__body').getBoundingClientRect()
     const over = said.getBoundingClientRect()
     expect(bar.height).toBeLessThan(40)
     expect(body.top).toBeCloseTo(bar.bottom, 0)
     expect(over.top).toBeGreaterThanOrEqual(head.bottom - 1)
     expect(over.bottom).toBeGreaterThan(body.top)
 
-    // It stays inside the block, and a press meant for the window reaches it.
-    const block = found(canvasElement, '[data-face-block]').getBoundingClientRect()
-    expect(over.right).toBeLessThanOrEqual(block.right + 1)
-    expect(getComputedStyle(found(canvasElement, 'header .block__amiss')).pointerEvents).toBe(
+    // It stays inside the face, and a press meant for the window reaches it.
+    const face = found(canvasElement, '[data-face]').getBoundingClientRect()
+    expect(over.right).toBeLessThanOrEqual(face.right + 1)
+    expect(getComputedStyle(found(canvasElement, 'header .face__amiss')).pointerEvents).toBe(
       'none',
     )
     expect(getComputedStyle(said).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
 
     // A name another face carries cannot be used, and the box says so.
-    const name = found(canvasElement, '.block__title') as HTMLInputElement
+    const name = found(canvasElement, '.face__title') as HTMLInputElement
     await userEvent.clear(name)
     await userEvent.type(name, 'Recognise')
     await waitFor(() => {
@@ -469,7 +469,7 @@ export const WhatIsWrongWithIt: Story = {
 
 /**
  * On the dark set of tokens, where a field's chip takes its hover from the
- * block's own ink mixed into the chip's ground.
+ * face's own ink mixed into the chip's ground.
  *
  * The mix is one expression for both sets, so on the dark set it has to move
  * the chip towards the ink, which is lighter there than the ground under it.

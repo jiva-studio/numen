@@ -2,7 +2,7 @@
  * What the stencil editor draws from the fields and faces it was handed, and
  * what it emits.
  *
- * What one face draws is that face's own, and is in `Block.test.ts`. Here are
+ * What one face draws is that face's own, and is in `Face.test.ts`. Here are
  * the two orders, the two carries, and what each face is handed.
  *
  * The negatives are here: the first field has no handle and no way to go, a
@@ -362,7 +362,7 @@ describe('Stencil, what the caller found wrong', () => {
 
   it('says what is wrong with a face under that face’s name', () => {
     const held = mountStencil({ wrong: WRONG })
-    const said = held.get('[data-face-block="recognise"] header [data-wrong]')
+    const said = held.get('[data-face="recognise"] header [data-wrong]')
     expect(said.text()).toBe('this face has no back')
   })
 
@@ -386,13 +386,13 @@ describe('Stencil, the faces', () => {
     { id: 'two', name: 'Two', front: '', back: '' },
   ]
 
-  it('draws a block per face', () => {
-    expect(mountStencil().findAll('[data-face-block]')).toHaveLength(1)
+  it('draws one of them per face', () => {
+    expect(mountStencil().findAll('[data-face]')).toHaveLength(1)
   })
 
-  it('draws the silence, and no blocks, for a stencil showing nothing', () => {
+  it('draws the silence, and no faces, for a stencil showing nothing', () => {
     const held = mountStencil({ faces: [] })
-    expect(held.findAll('[data-face-block]')).toHaveLength(0)
+    expect(held.findAll('[data-face]')).toHaveLength(0)
     expect(held.text()).toContain('No faces yet')
   })
 
@@ -400,7 +400,7 @@ describe('Stencil, the faces', () => {
     const held = mountStencil({ faces: TWO })
     for (const id of ['one', 'two']) {
       const said = held
-        .findAll(`[data-face-block="${id}"] [data-insert]`)
+        .findAll(`[data-face="${id}"] [data-insert]`)
         .map((each) => each.attributes('data-insert'))
       expect(said).toEqual(FIELDS)
     }
@@ -408,17 +408,17 @@ describe('Stencil, the faces', () => {
 
   it('hands a face the names the other faces carry', async () => {
     const held = mountStencil({ faces: TWO })
-    const box = held.get<HTMLInputElement>('[data-face-block="one"] header input')
+    const box = held.get<HTMLInputElement>('[data-face="one"] header input')
     box.element.value = 'Two'
     await box.trigger('input')
-    expect(held.get('[data-face-block="one"] header [role="alert"]').text()).toBe(
+    expect(held.get('[data-face="one"] header [role="alert"]').text()).toBe(
       'That name is taken',
     )
   })
 
   it('emits the face and the half a box was typed into', async () => {
     const held = mountStencil()
-    await held.get('[data-face-block="recognise"] [data-half="back"]').setValue('nothing but words')
+    await held.get('[data-face="recognise"] [data-half="back"]').setValue('nothing but words')
     expect(held.emitted('write')).toEqual([['recognise', 'back', 'nothing but words']])
   })
 
@@ -440,13 +440,13 @@ describe('Stencil, the faces', () => {
 
   it('emits the face asked to go', async () => {
     const held = mountStencil()
-    await held.get('[data-face-block="recognise"] .bar__deeds button').trigger('click')
+    await held.get('[data-face="recognise"] .bar__deeds button').trigger('click')
     expect(held.emitted('remove-face')).toEqual([['recognise']])
   })
 
   it('emits a face renamed', async () => {
     const held = mountStencil()
-    const box = held.get<HTMLInputElement>('[data-face-block="recognise"] header input')
+    const box = held.get<HTMLInputElement>('[data-face="recognise"] header input')
     box.element.value = 'Name it'
     await box.trigger('input')
     await box.trigger('change')
@@ -460,7 +460,7 @@ describe('Stencil, the faces', () => {
       { id: 'three', name: 'Three', front: '', back: '' },
     ]
 
-    const stripOf = (held: Editor, id: string) => held.get(`[data-face-block="${id}"] .bar`)
+    const stripOf = (held: Editor, id: string) => held.get(`[data-face="${id}"] .bar`)
 
     it('names the strip a face is carried by, and gives it a place in the order', () => {
       const strip = stripOf(mountStencil({ faces: THREE }), 'two')
@@ -496,12 +496,12 @@ describe('Stencil, the faces', () => {
       { id: 'three', name: 'Three', front: '', back: '' },
     ]
 
-    const blockFor = (editor: Editor, id: string) => editor.get(`[data-face-block="${id}"]`)
+    const faceFor = (editor: Editor, id: string) => editor.get(`[data-face="${id}"]`)
 
     /** A face picked up by its strip and let go over another, or over the tail. */
     const carry = async (editor: Editor, id: string, onto: string | null): Promise<void> => {
-      await blockFor(editor, id).get('.bar').trigger('dragstart')
-      const over = onto === null ? editor.findAll('section')[1] : blockFor(editor, onto)
+      await faceFor(editor, id).get('.bar').trigger('dragstart')
+      const over = onto === null ? editor.findAll('section')[1] : faceFor(editor, onto)
       await over?.trigger('dragover')
       await over?.trigger('drop')
     }
@@ -538,9 +538,9 @@ describe('Stencil, the faces', () => {
 
     /** A face picked up and the carry ended without it being let go anywhere. */
     const carryOff = async (editor: Editor, id: string, onto: string | null): Promise<void> => {
-      const bar = blockFor(editor, id).get('.bar')
+      const bar = faceFor(editor, id).get('.bar')
       await bar.trigger('dragstart')
-      if (onto !== null) await blockFor(editor, onto).trigger('dragover')
+      if (onto !== null) await faceFor(editor, onto).trigger('dragover')
       await bar.trigger('dragend')
     }
 
@@ -548,7 +548,7 @@ describe('Stencil, the faces', () => {
       const editor = mountStencil({ faces: THREE })
       await carryOff(editor, 'two', null)
       expect(editor.emitted('move-face')).toBeUndefined()
-      expect(blockFor(editor, 'two').attributes('data-carried')).toBeUndefined()
+      expect(faceFor(editor, 'two').attributes('data-carried')).toBeUndefined()
     })
 
     it('moves nothing where a carry over another face ends with it let go nowhere', async () => {
@@ -559,9 +559,9 @@ describe('Stencil, the faces', () => {
 
     it('marks the face on its way, and no other', async () => {
       const editor = mountStencil({ faces: THREE })
-      await blockFor(editor, 'two').get('.bar').trigger('dragstart')
-      expect(blockFor(editor, 'two').attributes('data-carried')).toBe('true')
-      expect(blockFor(editor, 'one').attributes('data-carried')).toBeUndefined()
+      await faceFor(editor, 'two').get('.bar').trigger('dragstart')
+      expect(faceFor(editor, 'two').attributes('data-carried')).toBe('true')
+      expect(faceFor(editor, 'one').attributes('data-carried')).toBeUndefined()
     })
 
     it('moves no field when a face is carried', async () => {

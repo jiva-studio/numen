@@ -8,7 +8,7 @@
  * row.
  */
 import { computed } from 'vue'
-import Block from './Block.vue'
+import Face from './Face.vue'
 import Fields from './Fields.vue'
 import Icon from './Icon.vue'
 import Rule from '../rule/Rule.vue'
@@ -16,7 +16,7 @@ import { useCarry } from './carry'
 import { Button } from '../components/ui/button'
 import { declared, numbered, type Half, type Landing } from './order'
 import {
-  faceBlocks,
+  drawnFaces,
   NOTHING_AMISS,
   STENCIL_WORDS,
   type Shown,
@@ -96,7 +96,7 @@ const {
 const sample = computed(() => sampled(asked.value))
 
 /** The faces as they are drawn. */
-const blocks = computed(() => faceBlocks(props.faces, asked.value, sample.value))
+const drawn = computed(() => drawnFaces(props.faces, asked.value, sample.value))
 
 /** What is wrong with one face, and nothing where nothing is. */
 const wrongWithFace = (id: string): readonly string[] => props.wrong.at.get(id) ?? []
@@ -130,27 +130,27 @@ const addFace = (): void => {
     >
       <h2 class="stencil__heading caps-numen m-0 text-small text-hushed">{{ words.faces }}</h2>
 
-      <p v-if="!blocks.length" class="stencil__silence caps-numen m-0 text-small text-hushed">
+      <p v-if="!drawn.length" class="stencil__silence caps-numen m-0 text-small text-hushed">
         {{ words.noFaces }}
       </p>
 
-      <Block
-        v-for="block in blocks"
-        :key="block.id"
+      <Face
+        v-for="one in drawn"
+        :key="one.id"
         class="stencil__face caret-above"
-        :block="block"
-        :wrong="wrongWithFace(block.id)"
+        :face="one"
+        :wrong="wrongWithFace(one.id)"
         :words="words"
-        :data-carried="block.id === face || undefined"
-        :data-before="block.id === faceAt || undefined"
-        @dragover.stop="overFace(block.id, $event)"
+        :data-carried="one.id === face || undefined"
+        :data-before="one.id === faceAt || undefined"
+        @dragover.stop="overFace(one.id, $event)"
         @drop.stop="dropFace"
-        @rename="(name: string) => emit('rename-face', block.id, name)"
-        @remove="emit('remove-face', block.id)"
-        @lift="liftFace(block.id, $event)"
+        @rename="(name: string) => emit('rename-face', one.id, name)"
+        @remove="emit('remove-face', one.id)"
+        @lift="liftFace(one.id, $event)"
         @release="releaseFace"
-        @step="(way, press) => stepFace(block.id, way, press)"
-        @write="(half, text) => emit('write', block.id, half, text)"
+        @step="(way, press) => stepFace(one.id, way, press)"
+        @write="(half, text) => emit('write', one.id, half, text)"
       />
 
       <Rule>
@@ -167,7 +167,7 @@ const addFace = (): void => {
 @import './carrying.css';
 
 .stencil {
-  /* The room between one block and the next, and between the rows of a block. */
+  /* The room between one part and the next, and between the rows of a part. */
   --part-gap: 1.5rem;
   --row-gap: 0.5rem;
   /* The caret stands in the middle of the room between two rows. */
