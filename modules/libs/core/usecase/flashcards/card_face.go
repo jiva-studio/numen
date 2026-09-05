@@ -97,14 +97,14 @@ func (u ListCardFaces) Of(ctx context.Context, v domain.Vault, paths []string) [
 		if err != nil || deck.Outcome != note.Ok {
 			continue
 		}
-		out = append(out, u.standing(ctx, v, read, deck, stencils)...)
+		out = append(out, u.facesOf(ctx, v, read, deck, stencils)...)
 	}
 	return out
 }
 
-// standing is the card faces one deck holds: every card of a mark, through every
+// facesOf is the card faces one deck holds: every card of a mark, through every
 // face of the stencil it names that lays anything out.
-func (u ListCardFaces) standing(
+func (u ListCardFaces) facesOf(
 	ctx context.Context, v domain.Vault, read cards.Read,
 	deck cards.DeckContents, stencils map[string]format.Stencil,
 ) []CardFace {

@@ -100,7 +100,7 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, over Scope) (Sitti
 	if err != nil {
 		return Sitting{}, err
 	}
-	standing, err := u.CardFaces.Execute(ctx, v)
+	faces, err := u.CardFaces.Execute(ctx, v)
 	if err != nil {
 		return Sitting{}, err
 	}
@@ -115,7 +115,7 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, over Scope) (Sitti
 	// One reading of this vault's presets answers both the schedulers the cards
 	// are worked out by and the budgets they are held to.
 	reading := u.Presets.Reading()
-	asks, err := u.Schedules.under(ctx, v, reading, standing)
+	asks, err := u.Schedules.under(ctx, v, reading, faces)
 	if err != nil {
 		return Sitting{}, err
 	}
@@ -123,13 +123,13 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, over Scope) (Sitti
 
 	now := u.Now()
 	day, err := budgeted(
-		ctx, v, reading, u.Day, standing, schedules, held,
+		ctx, v, reading, u.Day, faces, schedules, held,
 		u.Schedules.By, u.Schedules.at, now,
 	)
 	if err != nil {
 		return Sitting{}, err
 	}
-	holds := day.asks(standing, schedules, u.Day, now, over)
+	holds := day.asks(faces, schedules, u.Day, now, over)
 	if over.Named && len(holds.seen)+len(holds.fresh) == 0 {
 		return Sitting{}, day.refuses(over.Preset)
 	}

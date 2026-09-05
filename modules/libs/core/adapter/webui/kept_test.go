@@ -211,7 +211,7 @@ func totalOf(t *testing.T, kept *cache) int64 {
 // from.
 func print(t *testing.T, api *API) fingerprint {
 	t.Helper()
-	_, said, err := api.standing(t.Context(), book)
+	_, said, err := api.stat(t.Context(), book)
 	if err != nil {
 		t.Fatal(err)
 	}

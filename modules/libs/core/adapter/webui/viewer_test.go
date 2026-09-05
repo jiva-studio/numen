@@ -155,7 +155,7 @@ func ask(handler http.Handler, url string) *httptest.ResponseRecorder {
 // printOf is which bytes the file at a path is, as an address names them.
 func printOf(t *testing.T, api *API, path string) fingerprint {
 	t.Helper()
-	_, print, err := api.standing(t.Context(), path)
+	_, print, err := api.stat(t.Context(), path)
 	if err != nil {
 		t.Fatal(err)
 	}

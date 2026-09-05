@@ -116,20 +116,20 @@ func (u Schedules) asking(ctx context.Context, v domain.Vault) (assignment, erro
 	if u.Presets.Links == nil || u.CardFaces.Notes == nil {
 		return u.plain(), nil
 	}
-	standing, err := u.CardFaces.Execute(ctx, v)
+	faces, err := u.CardFaces.Execute(ctx, v)
 	if errors.Is(err, ErrNotCarried) {
 		return u.plain(), nil
 	}
 	if err != nil {
 		return assignment{}, err
 	}
-	return u.under(ctx, v, u.Presets.Reading(), standing)
+	return u.under(ctx, v, u.Presets.Reading(), faces)
 }
 
 // under is the same, from the cards and the reading of the presets a caller
 // already holds.
 func (u Schedules) under(
-	ctx context.Context, v domain.Vault, reading *PresetReads, standing []CardFace,
+	ctx context.Context, v domain.Vault, reading *PresetReads, faces []CardFace,
 ) (assignment, error) {
 	out := u.plain()
 	if reading == nil || reading.Links == nil {
@@ -137,9 +137,9 @@ func (u Schedules) under(
 	}
 
 	by := make(map[string]review.Scheduling)
-	under := make(map[review.CardFaceID]review.Scheduling, len(standing))
-	asked := make(map[string]string, len(standing))
-	for _, one := range standing {
+	under := make(map[review.CardFaceID]review.Scheduling, len(faces))
+	asked := make(map[string]string, len(faces))
+	for _, one := range faces {
 		path, known := asked[one.Deck]
 		if !known {
 			p, err := reading.Of(ctx, v, one.Deck)

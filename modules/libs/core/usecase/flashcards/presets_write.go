@@ -232,7 +232,7 @@ func shares(entries []string, load, read map[time.Weekday]int) []markdown.Entry 
 		weekday, isDay := review.Weekday(name)
 		_, could := read[weekday]
 		if !isDay || !could {
-			out = append(out, markdown.Entry{Key: name, Standing: true})
+			out = append(out, markdown.Entry{Key: name, Verbatim: true})
 			continue
 		}
 		share, named := load[weekday]
@@ -260,7 +260,7 @@ func reading(entries []string, read map[time.Weekday]int) map[time.Weekday]strin
 		if _, could := read[weekday]; !isDay || !could {
 			continue
 		}
-		if standing, held := out[weekday]; !held || name > standing {
+		if was, ok := out[weekday]; !ok || name > was {
 			out[weekday] = name
 		}
 	}

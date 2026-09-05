@@ -46,26 +46,26 @@ type allowance struct {
 // takes up where the first left off.
 func budgeted(
 	ctx context.Context, v domain.Vault, reading *PresetReads, day review.Day,
-	standing []CardFace, schedules map[review.CardFaceID]review.Schedule,
+	faces []CardFace, schedules map[review.CardFaceID]review.Schedule,
 	log ReviewLog, by review.Scheduler, at func(retention float64) review.Scheduler,
 	now time.Time,
 ) (*budgets, error) {
 	out := &budgets{
-		under: make(map[review.CardFaceID]string, len(standing)),
+		under: make(map[review.CardFaceID]string, len(faces)),
 		left:  make(map[string]*allowance),
 		cards: make(map[string]int),
 	}
 
 	// A deck is asked once which preset schedules it, however many card faces it
 	// holds, and a preset note is opened once however many decks name it.
-	asked := make(map[string]string, len(standing))
+	asked := make(map[string]string, len(faces))
 	// The deck each card face stands in, which is how the day's answers are
 	// grouped, and the settings each preset was read with.
-	in := make(map[review.CardFaceID]string, len(standing))
+	in := make(map[review.CardFaceID]string, len(faces))
 	settings := make(map[string]review.Preset)
 	// The material each preset has still to begin.
 	unseen := make(map[string]int)
-	for _, one := range standing {
+	for _, one := range faces {
 		path, known := asked[one.Deck]
 		if !known {
 			p, err := reading.Of(ctx, v, one.Deck)
@@ -231,11 +231,11 @@ func (b *budgets) refuses(preset string) error {
 // what it was opened over. A deck's row on the front door and what pressing
 // that deck hands over are the one division.
 func (b *budgets) asks(
-	standing []CardFace, schedules map[review.CardFaceID]review.Schedule,
+	faces []CardFace, schedules map[review.CardFaceID]review.Schedule,
 	day review.Day, now time.Time, over Scope,
 ) asking {
 	var owed, fresh []CardFace
-	for _, one := range standing {
+	for _, one := range faces {
 		s, answered := schedules[one.ID]
 		switch {
 		case !answered:
@@ -277,9 +277,9 @@ type deckShare struct {
 	debt, begun  int
 }
 
-// standing is how many of a deck's cards no share has taken, which is what the
+// remaining is how many of a deck's cards no share has taken, which is what the
 // deck still owes of the day.
-func (q *deckShare) standing(out taken) int {
+func (q *deckShare) remaining(out taken) int {
 	held := 0
 	for _, at := range q.owed {
 		if !out.owed[at] {
@@ -373,13 +373,13 @@ func (b *budgets) spends(owed, fresh []CardFace) taken {
 		// deck has left to answer is what it still owes of the day, and the day
 		// is handed out by what is owed. Decks holding the same number take it
 		// in the order of the time the day has given them already, least first.
-		standing := make(map[string]int, len(decks))
+		remaining := make(map[string]int, len(decks))
 		for _, q := range decks {
-			standing[q.deck] = q.standing(out)
+			remaining[q.deck] = q.remaining(out)
 		}
 		slices.SortStableFunc(decks, func(x, y *deckShare) int {
 			return cmp.Or(
-				cmp.Compare(standing[y.deck], standing[x.deck]),
+				cmp.Compare(remaining[y.deck], remaining[x.deck]),
 				cmp.Compare(b.given(x, one.cost), b.given(y, one.cost)),
 			)
 		})

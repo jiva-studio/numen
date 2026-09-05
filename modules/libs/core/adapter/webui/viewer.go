@@ -141,7 +141,7 @@ func (a *API) GetDocument(
 	ctx, cancel := context.WithTimeout(ctx, a.Viewer.patience)
 	defer cancel()
 
-	reader, print, err := a.standing(ctx, r.Msg.GetPath())
+	reader, print, err := a.stat(ctx, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(refusedDrawing(err), err)
 	}
@@ -189,7 +189,7 @@ func (a *API) Page(w http.ResponseWriter, r *http.Request, path, page string) {
 	ctx, cancel := context.WithTimeout(r.Context(), a.Viewer.patience)
 	defer cancel()
 
-	reader, print, err := a.standing(ctx, path)
+	reader, print, err := a.stat(ctx, path)
 	if err != nil {
 		refuse(w, err)
 		return
@@ -215,13 +215,13 @@ func (a *API) Page(w http.ResponseWriter, r *http.Request, path, page string) {
 	_, _ = w.Write(body)
 }
 
-// standing is what the vault says about the file at a path: which bytes they
-// are, for the caches to key on.
+// stat is what the vault says about the file at a path: which bytes they are,
+// for the caches to key on.
 //
 // The path goes through the vault's readers the way everything from outside
 // does, so a path leaving the vault is refused there. A window standing on
 // nothing holds no file to say anything about.
-func (a *API) standing(ctx context.Context, path string) (port.VaultReader, fingerprint, error) {
+func (a *API) stat(ctx context.Context, path string) (port.VaultReader, fingerprint, error) {
 	showing := a.Showing()
 	if showing.ID == "" {
 		return nil, fingerprint{}, errNoVault

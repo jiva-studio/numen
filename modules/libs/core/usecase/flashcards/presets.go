@@ -154,7 +154,7 @@ func (u Presets) Reading() *PresetReads {
 
 // Of is the preset the deck at path is scheduled by.
 func (r *PresetReads) Of(ctx context.Context, v domain.Vault, deck string) (PresetContents, error) {
-	if held, standing := r.scheduling[deck]; standing {
+	if held, ok := r.scheduling[deck]; ok {
 		return held, nil
 	}
 	out, err := r.scheduled(ctx, v, deck)
@@ -245,7 +245,7 @@ func (r *PresetReads) roleless(ctx context.Context, v domain.Vault, deck string)
 
 // read is the preset at path, opened once however many decks name it.
 func (r *PresetReads) read(ctx context.Context, v domain.Vault, path string) (PresetContents, error) {
-	if held, standing := r.held[path]; standing {
+	if held, ok := r.held[path]; ok {
 		return held, nil
 	}
 	out, err := r.Presets.Read(ctx, v, path)

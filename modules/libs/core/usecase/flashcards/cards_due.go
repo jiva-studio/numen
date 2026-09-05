@@ -107,7 +107,7 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	if err := ctx.Err(); err != nil {
 		return CardsDue{}, err
 	}
-	standing, err := u.CardFaces.Execute(ctx, v)
+	faces, err := u.CardFaces.Execute(ctx, v)
 	if err != nil {
 		return CardsDue{}, err
 	}
@@ -121,7 +121,7 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	// One reading of this vault's presets answers the schedulers, the budgets
 	// and how many decks name each preset.
 	reading := u.Presets.Reading()
-	asks, err := u.Schedules.under(ctx, v, reading, standing)
+	asks, err := u.Schedules.under(ctx, v, reading, faces)
 	if err != nil {
 		return CardsDue{}, err
 	}
@@ -132,15 +132,15 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 
 	now := u.Now()
 	day, err := budgeted(
-		ctx, v, reading, u.Day, standing, schedules, log,
+		ctx, v, reading, u.Day, faces, schedules, log,
 		u.Schedules.By, u.Schedules.at, now,
 	)
 	if err != nil {
 		return CardsDue{}, err
 	}
-	holds := day.asks(standing, schedules, u.Day, now, Scope{})
+	holds := day.asks(faces, schedules, u.Day, now, Scope{})
 
-	out := CardsDue{Faces: len(standing)}
+	out := CardsDue{Faces: len(faces)}
 	decks := make(map[string]*DeckCardsDue)
 	at := func(deck string) *DeckCardsDue {
 		one, held := decks[deck]
@@ -152,7 +152,7 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	}
 	// The schedules and the presets are both in hand, so what stands learned is
 	// counted off the reading that is already here.
-	for _, one := range standing {
+	for _, one := range faces {
 		row := at(one.Deck)
 		row.Faces++
 		if !schedules[one.ID].Seen() {

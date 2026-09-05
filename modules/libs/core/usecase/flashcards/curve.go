@@ -70,7 +70,7 @@ func (u ProjectCurve) Execute(
 	if err != nil {
 		return review.Curve{}, err
 	}
-	standing := u.CardFaces.Of(ctx, v, scheduled)
+	faces := u.CardFaces.Of(ctx, v, scheduled)
 	held, err := Log{Stores: u.Schedules.Logs}.Read(ctx, v)
 	if err != nil {
 		return review.Curve{}, err
@@ -78,7 +78,7 @@ func (u ProjectCurve) Execute(
 	// A deck is asked once which preset schedules it, however many card faces
 	// it holds, and a preset note is opened once however many decks name it.
 	reading := u.Presets.Reading()
-	asks, err := u.Schedules.under(ctx, v, reading, standing)
+	asks, err := u.Schedules.under(ctx, v, reading, faces)
 	if err != nil {
 		return review.Curve{}, err
 	}
@@ -89,7 +89,7 @@ func (u ProjectCurve) Execute(
 	// The card faces this preset schedules, which is what it is costed from.
 	under := make(map[review.CardFaceID]string)
 	unseen := 0
-	for _, one := range standing {
+	for _, one := range faces {
 		mine, asked := decks[one.Deck]
 		if !asked {
 			held, err := reading.Of(ctx, v, one.Deck)
