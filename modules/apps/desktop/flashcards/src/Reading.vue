@@ -5,7 +5,7 @@
  * They are read one under another rather than picked from a list: a person who
  * came here to read is reading, and a list would make them choose first.
  */
-import { nextTick, ref, useTemplateRef, watch } from 'vue'
+import { nextTick, useTemplateRef, watch } from 'vue'
 import { Prose } from '@numen/ui'
 
 import { WORDS as words } from './reading/words'
@@ -16,8 +16,19 @@ const props = defineProps<{ held: Read }>()
 
 const column = useTemplateRef<HTMLElement>('column')
 
-/** Where each note was drawn, so the one a link named can be scrolled to. */
-const drawn = ref<HTMLElement[]>([])
+/** A note is keyed by what its article is keyed by. */
+const keyOf = (one: Neighbour) => one.path || one.written
+
+/**
+ * Where each note was drawn, so the one a link named can be scrolled to. Read
+ * only when a link is followed, so it is held outside the reactive graph.
+ */
+const drawn = new Map<string, HTMLElement>()
+
+const holdNote = (one: Neighbour, element: unknown): void => {
+  if (element) drawn.set(keyOf(one), element as HTMLElement)
+  else drawn.delete(keyOf(one))
+}
 
 /** How much of the panel one press of space moves it. */
 const STEP = 0.85
@@ -43,8 +54,8 @@ watch(
   ([open, at, notes]) => {
     if (!open || !at || !notes.length) return
     void nextTick(() => {
-      const i = notes.findIndex((one) => one.written === at || one.path === at)
-      drawn.value[i]?.scrollIntoView({ block: 'start', behavior: 'auto' })
+      const found = notes.find((one) => one.written === at || one.path === at)
+      if (found) drawn.get(keyOf(found))?.scrollIntoView({ block: 'start', behavior: 'auto' })
       props.held.read()
     })
   },
@@ -60,9 +71,9 @@ watch(
       </p>
 
       <article
-        v-for="(one, i) in props.held.notes.value"
-        :key="one.path || one.written"
-        :ref="(el) => (drawn[i] = el as HTMLElement)"
+        v-for="one in props.held.notes.value"
+        :key="keyOf(one)"
+        :ref="(element) => holdNote(one, element)"
         class="reading__note"
       >
         <header class="reading__head">
