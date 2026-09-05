@@ -6,12 +6,12 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
-import { naming, type Called } from './naming'
+import { naming, type NamingDeps } from './naming'
 import type { editing } from './editing'
 import type { State } from './tab'
 
 /** A vault that answers with the heading written into each note. */
-const vault = (titles: Record<string, string> = {}): Called => ({
+const vault = (titles: Record<string, string> = {}): NamingDeps => ({
   neighbourhood: async (path) => {
     if (titles[path] === undefined) throw new Error('not reached')
     return { focus: { title: titles[path] } }

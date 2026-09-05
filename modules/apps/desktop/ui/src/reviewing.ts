@@ -19,14 +19,14 @@ export interface Words {
 }
 
 /** What this asks of the vault. */
-export interface Called {
+export interface ReviewingDeps {
   /** The hour as the settings file holds it, and the latest the vault takes. */
   reviewing(): Promise<Reviewing>
   /** The hour written. What could not be written, and nothing where it was. */
   choosesReviewing(starts: string): Promise<string | null>
 }
 
-export function reviewing(core: Called, words: Words, said: Says) {
+export function reviewing(core: ReviewingDeps, words: Words, said: Says) {
   /** The hour in force. It opens where an installation nobody has configured begins. */
   const starts = ref(DEFAULT_STARTS)
 

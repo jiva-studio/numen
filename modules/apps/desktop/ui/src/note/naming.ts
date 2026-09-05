@@ -12,7 +12,7 @@ import type { editing } from './editing'
 type Notes = ReturnType<typeof editing>
 
 /** What a note is asked to be called, as the vault last said it. */
-export interface Called {
+export interface NamingDeps {
   neighbourhood(path: string): Promise<{ focus?: { title?: string } | undefined }>
 }
 
@@ -22,7 +22,7 @@ interface Settled {
   readonly at: string
 }
 
-export function naming(vault: Called, notes: Notes) {
+export function naming(vault: NamingDeps, notes: Notes) {
   /**
    * What each note is called, as the vault last said it, under the identity its
    * tab opened under. A note keeps what it is called wherever its file goes.

@@ -20,7 +20,7 @@ export interface Words {
 }
 
 /** What this asks of the vault. */
-export interface Called {
+export interface ConfiguringDeps {
   /** Every setting as it stands, and the models the settings offer. */
   settings(): Promise<{
     readonly written: string
@@ -41,7 +41,7 @@ export const settingAt = (held: unknown, at: readonly string[]): unknown => {
   return value
 }
 
-export function configuring(core: Called, words: Words, said: Says) {
+export function configuring(core: ConfiguringDeps, words: Words, said: Says) {
   /** Every setting as it stands. It holds nothing until the vault has answered. */
   const held = shallowRef<unknown>({})
 
@@ -51,7 +51,7 @@ export function configuring(core: Called, words: Words, said: Says) {
 
   /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {
-    let answer: Awaited<ReturnType<Called['settings']>>
+    let answer: Awaited<ReturnType<ConfiguringDeps['settings']>>
     try {
       answer = await core.settings()
     } catch {

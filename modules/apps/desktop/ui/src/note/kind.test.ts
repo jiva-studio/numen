@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { nextTick, ref } from 'vue'
 import type { PlexShowing } from '@numen/ui'
-import { noting, type Asked, type NoteTabState } from './kind'
+import { noting, type NoteTabDeps, type NoteTabState } from './kind'
 import { putting } from '../putting'
 import type { Drawn } from './entering'
 import type { drawn } from './drawn'
@@ -22,7 +22,7 @@ import { NOTE } from '../workspace'
 const vault = (
   titles: Record<string, string> = {},
   notes: Record<string, string> = {},
-): Asked => ({
+): NoteTabDeps => ({
   neighbourhood: async (path) => {
     if (titles[path] === undefined) throw new Error('not reached')
     return { focus: { title: titles[path] } }

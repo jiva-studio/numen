@@ -44,7 +44,7 @@ export interface Hanging {
 }
 
 /** What this asks of the vault. */
-export interface Called {
+export interface HangingDeps {
   /** The two settings, as the settings file holds them. */
   hanging(): Promise<Hanging>
   /**
@@ -58,7 +58,7 @@ export interface Called {
 const ladder = (least: number, most: number): readonly number[] =>
   Array.from({ length: Math.max(0, most - least + 1) }, (_, at) => least + at)
 
-export function hanging(core: Called, words: Words, said: Says) {
+export function hanging(core: HangingDeps, words: Words, said: Says) {
   /**
    * The two settings. They open on what an installation nobody has configured
    * does, and are asked of the vault as the window opens.

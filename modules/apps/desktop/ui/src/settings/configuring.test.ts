@@ -7,7 +7,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { Model } from '../core'
-import { configuring, settingAt, type Called } from './configuring'
+import { configuring, settingAt, type ConfiguringDeps } from './configuring'
 
 const words = {
   unturned: 'That setting could not be written:',
@@ -29,7 +29,7 @@ const MODELS: readonly Model[] = [
 /** A vault holding those settings, and refusing what it is told to refuse. */
 const holding = (written: string, refuses: string | null = null) => {
   const asked: unknown[] = []
-  const core: Called = {
+  const core: ConfiguringDeps = {
     settings: () => Promise.resolve({ written, path: '/numen.json', models: MODELS }),
     choosesSetting: (said) => {
       asked.push(said)

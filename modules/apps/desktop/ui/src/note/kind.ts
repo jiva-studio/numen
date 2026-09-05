@@ -15,7 +15,7 @@ import type { Change } from './drawing'
 import type { drawn } from './drawn'
 import type { Editing, editing } from './editing'
 import { entering, ITSELF } from './entering'
-import { naming, type Called } from './naming'
+import { naming, type NamingDeps } from './naming'
 import NoteTab from './NoteTab.vue'
 import { markOf } from './tab'
 import type { Putting } from '../putting'
@@ -25,10 +25,10 @@ type Notes = ReturnType<typeof editing>
 /** What is being typed into each note now, as the editor draws it. */
 type Drawings = ReturnType<typeof drawn>
 
-export type { Called }
+export type { NamingDeps }
 
 /** What the notes of a window ask of the vault, beside what names them. */
-export interface Asked extends Called {
+export interface NoteTabDeps extends NamingDeps {
   /**
    * Where each of those addresses lands, by the address it was asked about.
    * They are written in the note at `from`, and one that reaches nothing is
@@ -66,7 +66,7 @@ export interface NoteTabState {
 }
 
 export function noting(
-  vault: Asked,
+  vault: NoteTabDeps,
   notes: Notes,
   drawings: Drawings,
   host: Host,

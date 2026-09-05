@@ -6,14 +6,14 @@
  * asked leaves it standing at the hour an installation begins at.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { reviewing, DEFAULT_STARTS, type Called } from './reviewing'
+import { reviewing, DEFAULT_STARTS, type ReviewingDeps } from './reviewing'
 
 const words = { unturned: 'That setting could not be written:' }
 
 /** A vault holding that hour, and refusing what it is told to refuse. */
 const vault = (held: string, refuses: string | null = null, latest = '12:00') => {
   const written: string[] = []
-  const core: Called = {
+  const core: ReviewingDeps = {
     reviewing: () => Promise.resolve({ starts: held, latest }),
     choosesReviewing: (starts) => {
       written.push(starts)
