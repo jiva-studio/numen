@@ -121,11 +121,22 @@ test: ## run every test
 	cd $(DESKTOP)/flashcards && npm test
 	cd $(MOBILE) && npm test
 
+# gofmt -l names the files it would change and exits 0 all the same, so the
+# list it prints is turned into a failure here. The CI workflows do the same
+# thing in their own words.
+define gofmt-check
+	unformatted=$$(gofmt -l $(1)); \
+	if [ -n "$$unformatted" ]; then echo "not gofmt-ed:"; echo "$$unformatted"; exit 1; fi
+endef
+
 .PHONY: lint
 lint: generate-check ## the checks CI runs, less the one needing a base branch
-	cd $(CORE) && gofmt -l . && go vet ./...
-	cd $(DESKTOP) && gofmt -l ./cmd ./internal && go vet ./...
-	cd $(MOBILE) && gofmt -l ./bind && go vet ./...
+	cd $(CORE) && $(call gofmt-check,.)
+	cd $(CORE) && go vet ./...
+	cd $(DESKTOP) && $(call gofmt-check,./cmd ./internal)
+	cd $(DESKTOP) && go vet ./...
+	cd $(MOBILE) && $(call gofmt-check,./bind)
+	cd $(MOBILE) && go vet ./...
 	cd $(PROTOCOL) && buf lint
 	cd $(UI) && npm run typecheck
 	cd $(WIRE) && npm run typecheck
