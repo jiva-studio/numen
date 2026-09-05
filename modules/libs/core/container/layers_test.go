@@ -745,18 +745,18 @@ func TestTheCoresPublicAdaptersAreTheseAndNoOthers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	standing := make(map[string]bool, len(held))
+	there := make(map[string]bool, len(held))
 	for _, one := range held {
 		if !one.IsDir() {
 			continue
 		}
-		standing[one.Name()] = true
+		there[one.Name()] = true
 		if !holds(public, one.Name()) {
 			t.Errorf("adapter/%s is public and nothing outside composes it", one.Name())
 		}
 	}
 	for _, one := range public {
-		if !standing[one] {
+		if !there[one] {
 			t.Errorf("adapter/%s is named here and is not there", one)
 		}
 	}
@@ -776,18 +776,18 @@ func TestTheCoresHeldAdaptersAreTheseAndNoOthers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	standing := make(map[string]bool, len(found))
+	there := make(map[string]bool, len(found))
 	for _, one := range found {
 		if !one.IsDir() {
 			continue
 		}
-		standing[one.Name()] = true
+		there[one.Name()] = true
 		if !holds(held, one.Name()) {
 			t.Errorf("internal/adapter/%s stands here and is named nowhere", one.Name())
 		}
 	}
 	for _, one := range held {
-		if !standing[one] {
+		if !there[one] {
 			t.Errorf("internal/adapter/%s is named here and is not there", one)
 		}
 	}
