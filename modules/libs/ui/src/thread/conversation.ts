@@ -10,7 +10,7 @@
 import { ref, type Ref } from 'vue'
 import { onNextFrame } from '../lib/clock'
 import { charsWord, type Turn } from './turn'
-import type { AgentPort, Place } from './agent'
+import type { AgentPort, Passage } from './agent'
 
 /** The words the panel puts up itself. */
 export interface ConversationStrings {
@@ -28,7 +28,7 @@ export interface Conversation {
   readonly working: Ref<boolean>
   readonly ask: (asked: string, focus: string) => Promise<void>
   /** The stretch of a source one line names, for a line that says it opens one. */
-  readonly place: (turn: string) => Place | null
+  readonly passage: (turn: string) => Passage | null
   /** The answer on its way is let go of, and the conversation keeps what arrived. */
   readonly stop: () => void
   /**
@@ -64,7 +64,7 @@ export function conversation(
   const working = ref(false)
 
   /** The stretch of a source each line about work names, under the line's name. */
-  const places = new Map<string, Place>()
+  const passages = new Map<string, Passage>()
 
   let next = 0
   let inFlight: AbortController | null = null
@@ -115,7 +115,7 @@ export function conversation(
 
     const takeDown = () => {
       drop(doing)
-      places.delete(doing)
+      passages.delete(doing)
       up = false
     }
 
@@ -127,7 +127,7 @@ export function conversation(
         about,
         aside: charsWord(written),
         state,
-        ...(places.has(doing) ? { opens: true } : {}),
+        ...(passages.has(doing) ? { opens: true } : {}),
       })
       up = true
     }
@@ -206,8 +206,8 @@ export function conversation(
             about = step.about
             // A call naming a stretch of a source's text names somewhere the
             // line can be pressed to open.
-            if (step.place?.length) places.set(doing, step.place)
-            else places.delete(doing)
+            if (step.passage?.length) passages.set(doing, step.passage)
+            else passages.delete(doing)
             nowDoing('arriving', step.written)
             break
 
@@ -286,5 +286,12 @@ export function conversation(
     }
   }
 
-  return { turns, working, ask, place: (turn: string) => places.get(turn) ?? null, stop, finish }
+  return {
+    turns,
+    working,
+    ask,
+    passage: (turn: string) => passages.get(turn) ?? null,
+    stop,
+    finish,
+  }
 }

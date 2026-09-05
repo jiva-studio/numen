@@ -10,7 +10,7 @@
  * named, counted in bytes. A length of zero names the source and no place
  * inside it.
  */
-export interface Place {
+export interface Passage {
   readonly path: string
   readonly start: number
   readonly length: number
@@ -26,7 +26,7 @@ export type AgentStep =
       /** How much of the call has been written. It arrives more than once. */
       readonly written: number
       /** Where it was working, for a call working on a source. */
-      readonly place?: Place
+      readonly passage?: Passage
     }
   /** The tool answered. Nothing of the application's is running from here. */
   | { readonly kind: 'answered' }
