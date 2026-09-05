@@ -27,6 +27,13 @@ func (c Config) Transcriber(ctx context.Context) (transcriber port.Transcriber, 
 	return models, models.Close, nil
 }
 
+// Transcribe is one recording listened to with the transcriber given, for a
+// caller that asked for that recording and waits for it. Transcribing is the
+// queue that listens to what nobody asked about.
+func (c Config) Transcribe(sources port.SourceRepository, by port.Transcriber) source.Transcribe {
+	return source.NewTranscribe(c.VaultReaders(), sources, c.DerivedStores(), by)
+}
+
 // Transcribing is the queue that listens to this installation's recordings,
 // built against the adapters it was configured with and reporting itself into
 // the list of what is being done.

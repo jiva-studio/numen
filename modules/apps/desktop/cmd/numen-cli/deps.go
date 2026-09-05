@@ -117,6 +117,37 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 				}, nil
 			},
 
+			Transcribe: func(
+				ctx context.Context, v domain.Vault, fetching func(),
+			) (cli.Transcribe, error) {
+				if !cfg.TranscriberReady() {
+					fetching()
+				}
+				models, closeModels, why := cfg.Transcriber(ctx)
+				if why != nil {
+					return cli.Transcribe{}, why
+				}
+				db, err := cfg.OpenIndex(ctx)
+				if err != nil {
+					_ = closeModels()
+					return cli.Transcribe{}, err
+				}
+				cut, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
+				if err != nil {
+					_ = closeModels()
+					_ = db.Close()
+					return cli.Transcribe{}, err
+				}
+				return cli.Transcribe{
+					Transcribe: cfg.Transcribe(db.Sources(), models),
+					Cut:        cut,
+					Close: func() error {
+						_ = closeModels()
+						return db.Close()
+					},
+				}, nil
+			},
+
 			Search: func(ctx context.Context, trouble port.Trouble) (cli.Search, error) {
 				db, err := cfg.OpenIndex(ctx)
 				if err != nil {

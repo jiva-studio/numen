@@ -91,7 +91,7 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	case "proofread":
 		return proofreadCommand(ctx, out, cfg, deps, rest[1:])
 	case "transcribe":
-		return transcribeCommand(ctx, out, cfg, deps, rest[1:])
+		return transcribeCommand(ctx, out, deps, rest[1:])
 	case "search":
 		return searchCommand(ctx, out, errOut, deps, rest[1:])
 	case "links":
