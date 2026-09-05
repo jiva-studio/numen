@@ -183,7 +183,7 @@ func TestARunTheContextKilledEndsWithIt(t *testing.T) {
 	}
 	by := &Proofreader{Command: []string{script}, Instruction: proofread.ScanInstruction}
 
-	ctx, stop := context.WithCancel(context.Background())
+	ctx, stop := context.WithCancel(t.Context())
 	go func() {
 		time.Sleep(150 * time.Millisecond)
 		stop()

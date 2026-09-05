@@ -1,7 +1,6 @@
 package claudecode_test
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"io/fs"
@@ -745,7 +744,7 @@ sleep 120
 	asked := map[string]string{"one": "left", "two": "right"}
 	works := map[string]port.Run{}
 	for conversation, question := range asked {
-		work, err := claude.Take(context.Background(),
+		work, err := claude.Take(t.Context(),
 			port.Task{Question: question, Conversation: conversation})
 		if err != nil {
 			t.Fatal(err)
@@ -805,7 +804,7 @@ sleep 120
 	}
 
 	// A window that has closed does not start another.
-	if _, err := claude.Take(context.Background(), port.Task{Question: "again"}); err == nil {
+	if _, err := claude.Take(t.Context(), port.Task{Question: "again"}); err == nil {
 		t.Error("an agent was started after the window closed")
 	}
 }
@@ -979,7 +978,7 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 	}
 	takes := func(asked, conversation string) port.Run {
 		t.Helper()
-		work, err := claude.Take(context.Background(), port.Task{Question: asked, Conversation: conversation})
+		work, err := claude.Take(t.Context(), port.Task{Question: asked, Conversation: conversation})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1109,7 +1108,7 @@ sleep 120
 	}
 	takes := func(asked, conversation string) port.Run {
 		t.Helper()
-		work, err := claude.Take(context.Background(), port.Task{Question: asked, Conversation: conversation})
+		work, err := claude.Take(t.Context(), port.Task{Question: asked, Conversation: conversation})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1128,7 +1127,7 @@ sleep 120
 	}
 	closing, answering := pidOf(t, dir, "left"), pidOf(t, dir, "right")
 
-	if err := claude.Finish(context.Background(), "one"); err != nil {
+	if err := claude.Finish(t.Context(), "one"); err != nil {
 		t.Fatal(err)
 	}
 
