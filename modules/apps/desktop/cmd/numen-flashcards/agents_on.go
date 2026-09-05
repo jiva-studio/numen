@@ -51,7 +51,7 @@ func (r *reaching) Sat(_ context.Context, v domain.Vault) {
 	_ = r.swapping.Around(func() error { return nil })
 }
 
-func (r *reaching) standing() domain.Vault {
+func (r *reaching) showing() domain.Vault {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return r.vault
@@ -94,7 +94,7 @@ func serveAgents(
 	held := &reaching{}
 	held.swapping = &agents.Endpoint{
 		Serve: func() (func() error, error) {
-			v := held.standing()
+			v := held.showing()
 			root, err := filepath.Abs(v.Path)
 			if err != nil {
 				return nil, err
@@ -113,7 +113,7 @@ func serveAgents(
 			api.Answers(served.Agent)
 			return served.Close, nil
 		},
-		Showing:     held.standing,
+		Showing:     held.showing,
 		Handler:     api.Answers,
 		Unreachable: func(why string) { api.Unreachable.Store(why) },
 		Trouble:     func(err error) { fmt.Fprintln(out, "numen-flashcards: agents:", err) },
