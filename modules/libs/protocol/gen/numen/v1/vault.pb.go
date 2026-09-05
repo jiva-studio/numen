@@ -788,14 +788,14 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x14WriteOpenTabsRequest\x12!\n" +
 	"\x04tabs\x18\x01 \x03(\v2\r.numen.v1.TabR\x04tabs\x12\x14\n" +
 	"\x05front\x18\x02 \x01(\tR\x05front\"\x17\n" +
-	"\x15WriteOpenTabsResponse\"\xca\x01\n" +
+	"\x15WriteOpenTabsResponse\"\xd2\x01\n" +
 	"\x03Tab\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x04 \x01(\tR\x05title\x122\n" +
 	"\bdocument\x18\a \x01(\v2\x16.numen.v1.OpenDocumentR\bdocument\x125\n" +
-	"\trecording\x18\b \x01(\v2\x17.numen.v1.OpenRecordingR\trecordingJ\x04\b\x05\x10\x06J\x04\b\x06\x10\a\"8\n" +
+	"\trecording\x18\b \x01(\v2\x17.numen.v1.OpenRecordingR\trecordingJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\x02atR\x02of\"8\n" +
 	"\fOpenDocument\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x14\n" +
 	"\x05pages\x18\x02 \x01(\x05R\x05pages\"=\n" +

@@ -147,6 +147,7 @@ message Tab {
   string title = 4;
 
   reserved 5, 6;
+  reserved "at", "of";
 
   // Where the person stands in what the tab holds. A tab holding a document
   // sets document, a tab holding a recording sets recording, and a tab of any
