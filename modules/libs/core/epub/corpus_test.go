@@ -14,7 +14,7 @@ import (
 // the test stands aside when it is not there.
 const corpusEnv = "NUMEN_EPUB_CORPUS"
 
-const relativeCorpus = "../../../../../../../../resources/mahabharata"
+const relativeCorpus = "../../../../../../resources/mahabharata"
 
 // What the corpus holds, measured. These numbers are the test: a change that
 // moves a book from one tier to another has changed what a reader is shown, and
