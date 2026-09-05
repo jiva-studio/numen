@@ -89,7 +89,7 @@ const {
       @read="reads"
     >
       <template #reading>
-        <NotesPanel ref="page" :held="read" />
+        <NotesPanel :held="read" />
       </template>
       <template #panel>
         <AgentPanel :held="panel" />
