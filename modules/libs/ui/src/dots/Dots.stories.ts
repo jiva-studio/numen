@@ -6,7 +6,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import Dots from './Dots.vue'
 
 const meta = {
-  title: 'Generic/Dots',
+  title: 'Agent/Dots',
   component: Dots,
   parameters: {
     layout: 'centered',

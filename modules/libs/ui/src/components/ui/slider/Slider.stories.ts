@@ -24,7 +24,7 @@ interface Knobs {
 }
 
 const meta: Meta<Knobs> = {
-  title: 'Generic/Slider',
+  title: 'Controls/Slider',
   component: Slider,
   parameters: { layout: 'centered' },
   argTypes: {

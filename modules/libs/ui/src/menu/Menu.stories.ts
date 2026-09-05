@@ -99,7 +99,7 @@ const asked = (args: Knobs) => ({
 })
 
 const meta = {
-  title: 'Generic/Menu',
+  title: 'Controls/Menu',
   component: Menu,
   parameters: {
     layout: 'fullscreen',

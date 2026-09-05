@@ -32,7 +32,7 @@ const choiceOf = (line: string, at: number) => {
 }
 
 const meta: Meta<Knobs> = {
-  title: 'Generic/Select',
+  title: 'Controls/Select',
   component: Select,
   parameters: { layout: 'centered' },
   argTypes: {

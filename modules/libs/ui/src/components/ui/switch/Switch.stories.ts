@@ -23,7 +23,7 @@ interface Knobs {
 }
 
 const meta: Meta<Knobs> = {
-  title: 'Generic/Switch',
+  title: 'Controls/Switch',
   component: Switch,
   parameters: { layout: 'centered' },
   argTypes: {

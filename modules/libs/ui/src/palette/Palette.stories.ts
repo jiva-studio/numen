@@ -175,7 +175,7 @@ const over = (args: Knobs) => ({
 })
 
 const meta = {
-  title: 'Generic/Palette',
+  title: 'Application/Palette',
   component: Palette,
   parameters: {
     layout: 'fullscreen',

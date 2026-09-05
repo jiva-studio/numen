@@ -20,7 +20,7 @@ interface Knobs {
 }
 
 const meta: Meta<Knobs> = {
-  title: 'Generic/Number field',
+  title: 'Controls/Number field',
   component: NumberField,
   parameters: { layout: 'centered' },
   argTypes: {

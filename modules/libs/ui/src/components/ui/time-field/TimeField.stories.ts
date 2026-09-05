@@ -20,7 +20,7 @@ interface Knobs {
 }
 
 const meta: Meta<Knobs> = {
-  title: 'Generic/Time field',
+  title: 'Controls/Time field',
   component: TimeField,
   parameters: { layout: 'centered' },
   argTypes: {

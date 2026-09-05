@@ -101,7 +101,7 @@ const over = (args: Knobs) => ({
 })
 
 const meta = {
-  title: 'Generic/Notices',
+  title: 'Application/Notices',
   component: Notices,
   parameters: {
     layout: 'fullscreen',

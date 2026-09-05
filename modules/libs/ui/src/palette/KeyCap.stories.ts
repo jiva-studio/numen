@@ -20,7 +20,7 @@ import { drawingInk } from '@/fixtures/ink'
 import { DARK, drawnDark } from '@/fixtures/theme'
 
 const meta = {
-  title: 'Generic/KeyCap',
+  title: 'Application/KeyCap',
   component: KeyCap,
   parameters: { layout: 'centered' },
 } satisfies Meta<typeof KeyCap>

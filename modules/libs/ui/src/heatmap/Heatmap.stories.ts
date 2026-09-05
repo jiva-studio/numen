@@ -16,7 +16,7 @@ import { lightness } from '@/fixtures/colour'
 import { DARK, drawnDark } from '@/fixtures/theme'
 
 const meta = {
-  title: 'Generic/Heatmap',
+  title: 'Flash Cards/Heatmap',
   component: Heatmap,
 } satisfies Meta<typeof Heatmap>
 

@@ -24,7 +24,7 @@ interface Knobs {
 }
 
 const meta: Meta<Knobs> = {
-  title: 'Generic/Segmented control',
+  title: 'Controls/Segmented control',
   component: Segmented,
   parameters: { layout: 'centered' },
   argTypes: {

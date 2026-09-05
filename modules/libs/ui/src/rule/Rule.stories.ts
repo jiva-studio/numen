@@ -25,7 +25,7 @@ interface Knobs {
 }
 
 const meta: Meta<Knobs> = {
-  title: 'Generic/Rule',
+  title: 'Rule',
   component: Rule,
   parameters: { layout: 'fullscreen' },
   argTypes: {

@@ -11,7 +11,7 @@ import { lightness } from '@/fixtures/colour'
 import { DARK, drawnDark } from '@/fixtures/theme'
 
 const meta = {
-  title: 'Generic/Coming',
+  title: 'Flash Cards/Coming',
   component: Coming,
   parameters: {
     layout: 'centered',

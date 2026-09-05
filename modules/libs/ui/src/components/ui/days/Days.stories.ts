@@ -43,7 +43,7 @@ interface Knobs {
 }
 
 const meta: Meta<Knobs> = {
-  title: 'Generic/Days',
+  title: 'Controls/Days',
   component: Days,
   parameters: { layout: 'centered' },
   argTypes: {

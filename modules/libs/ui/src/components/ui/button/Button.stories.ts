@@ -41,7 +41,7 @@ const row = (args: Knobs) => ({
 })
 
 const meta: Meta<Knobs> = {
-  title: 'Generic/Button',
+  title: 'Controls/Button',
   component: Button,
   parameters: {
     layout: 'centered',

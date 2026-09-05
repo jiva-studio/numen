@@ -6,7 +6,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import Waiting from './Waiting.vue'
 
 const meta = {
-  title: 'Generic/Waiting',
+  title: 'Waiting',
   component: Waiting,
   parameters: {
     layout: 'centered',
