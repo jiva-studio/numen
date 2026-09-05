@@ -70,7 +70,7 @@ body:
     id: related
     attributes:
       label: Related ADRs
-      placeholder: "ADR-0003, ADR-0009"
+      placeholder: "the records this one builds on or touches"
 
   - type: dropdown
     id: kind

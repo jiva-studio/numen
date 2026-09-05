@@ -1,7 +1,7 @@
 version: 2
 
 # Every module the product ships, and the two that gate it. Each manifest is
-# its own project — there is no module at the repository root (ADR-0004) — so
+# its own project — there is no module at the repository root — so
 # the list has to be written out; nothing here discovers a directory it was not
 # told about.
 #

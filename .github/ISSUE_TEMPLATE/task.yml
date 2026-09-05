@@ -19,7 +19,7 @@ body:
         Which accepted decision this implements. Leave empty only if the task
         genuinely follows from no ADR — that is usually a sign the decision has
         not been made yet.
-      placeholder: "ADR-0009"
+      placeholder: "the accepted record this task implements"
 
   - type: dropdown
     id: priority
