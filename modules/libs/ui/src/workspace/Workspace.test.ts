@@ -87,9 +87,16 @@ describe('the last tab in the workspace', () => {
     expect(held.findComponent(WorkspacePane).exists()).toBe(true)
   })
 
+  // The silence stands on the arrangement the caller wrote back, not on
+  // anything the workspace kept to itself: a caller holding the tab open sees
+  // none of this.
   it('leaves the silence in its place', async () => {
     const held = mountWorkspace(alone(), {}, { silence: '<p class="quiet">Nothing here</p>' })
     await closeOf(held, 'plex').trigger('click')
+
+    const after = held.emitted('update:modelValue')?.[0]?.[0] as State
+    expect(after.root.kind === 'pane' && after.root.tabs).toStrictEqual([])
+    await held.setProps({ modelValue: after })
 
     expect(held.find('.quiet').exists()).toBe(true)
     expect(held.find('[data-workspace-strip]').exists()).toBe(false)
