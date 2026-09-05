@@ -1,0 +1,24 @@
+[
+  { "written": "Thermodynamics", "scheme": "name", "value": "Thermodynamics" },
+  { "written": "[[Thermodynamics]]", "scheme": "name", "value": "Thermodynamics" },
+  { "written": "Lecture 3: entropy", "scheme": "name", "value": "Lecture 3: entropy" },
+  { "written": "[[Lecture 3: entropy]]", "scheme": "name", "value": "Lecture 3: entropy" },
+  { "written": "note:not-a-scheme", "scheme": "name", "value": "note:not-a-scheme" },
+  { "written": "http:/one-slash", "scheme": "name", "value": "http:/one-slash" },
+  { "written": "://nothing-before-it", "scheme": "name", "value": "://nothing-before-it" },
+  { "written": "note://01ABC", "scheme": "note", "value": "01ABC" },
+  { "written": "[[note://01ABC]]", "scheme": "note", "value": "01ABC" },
+  { "written": "asset://picture.png", "scheme": "asset", "value": "picture.png" },
+  { "written": "name://Entropy", "scheme": "name", "value": "Entropy" },
+  { "written": "one://two://three", "scheme": "one", "value": "two://three" },
+  { "written": "[[Entropy|what disorder means]]", "scheme": "name", "value": "Entropy" },
+  { "written": "[[Entropy#a-heading]]", "scheme": "name", "value": "Entropy" },
+  { "written": "[[Entropy#a-heading|what disorder means]]", "scheme": "name", "value": "Entropy" },
+  { "written": "  [[ Entropy ]]  ", "scheme": "name", "value": "Entropy" },
+  { "written": "notes/Entropy#Later|the other way", "scheme": "name", "value": "notes/Entropy" },
+  {
+    "written": "Seminar 1.2–1.3 — Lisbon, 9 July 1973",
+    "scheme": "name",
+    "value": "Seminar 1.2–1.3 — Lisbon, 9 July 1973"
+  }
+]

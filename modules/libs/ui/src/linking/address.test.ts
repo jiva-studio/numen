@@ -6,34 +6,18 @@
 import { describe, expect, it } from 'vitest'
 import { addressOf, pointsAtNote, stated, wikilinkAt, wikilinksIn } from './address'
 
+/**
+ * The addresses in a note travel on the wire as they were written, so the core
+ * reads them too. Both read this one corpus, and neither owns it.
+ */
+import corpus from '../../../protocol/testdata/addresses.json'
+
 describe('an address', () => {
-  it('is the name itself where no scheme is written', () => {
-    expect(addressOf('Thermodynamics')).toStrictEqual({ scheme: 'name', value: 'Thermodynamics' })
-  })
-
-  it('is read out of the brackets it stands in', () => {
-    expect(addressOf('[[Thermodynamics]]')).toStrictEqual({
-      scheme: 'name',
-      value: 'Thermodynamics',
-    })
-  })
-
-  it('carries the scheme that was written', () => {
-    expect(addressOf('note://01J8')).toStrictEqual({ scheme: 'note', value: '01J8' })
-  })
-
-  it('drops the alias and the fragment, which are not part of it', () => {
-    expect(addressOf('notes/Entropy#Later|the other way')).toStrictEqual({
-      scheme: 'name',
-      value: 'notes/Entropy',
-    })
-  })
-
-  it('reads a colon in a title as a colon', () => {
-    expect(addressOf('Lecture 3: entropy')).toStrictEqual({
-      scheme: 'name',
-      value: 'Lecture 3: entropy',
-    })
+  it('is read the way the schema says it is', () => {
+    expect(corpus.length).toBeGreaterThan(0)
+    for (const { written, scheme, value } of corpus) {
+      expect({ written, ...addressOf(written) }).toStrictEqual({ written, scheme, value })
+    }
   })
 
   it('is one string, which is how it is handed on and read back', () => {
