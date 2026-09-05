@@ -276,7 +276,7 @@ func TestWhatCountsAsLearnedIsReadFromTheFile(t *testing.T) {
 // other, and the rule the preset does not name takes no part.
 func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
 	now := time.Date(2026, 3, 2, 9, 41, 0, 0, time.UTC)
-	standing := func(since, away int, stability float64) review.Schedule {
+	schedule := func(since, away int, stability float64) review.Schedule {
 		last := now.AddDate(0, 0, -since)
 		return review.Schedule{
 			Due: last.AddDate(0, 0, away), Last: last, Reps: 3, Stability: stability,
@@ -292,11 +292,11 @@ func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
 	for _, days := range []int{7, 21, 60} {
 		one := p
 		one.Interval = days
-		if !one.Learned(standing(200, days, 10), now) {
+		if !one.Learned(schedule(200, days, 10), now) {
 			t.Errorf("a card sent away for %d days is not learned at an interval of %d",
 				days, days)
 		}
-		if one.Learned(standing(0, days-1, 90), now) {
+		if one.Learned(schedule(0, days-1, 90), now) {
 			t.Errorf("a card sent away for %d days is learned at an interval of %d",
 				days-1, days)
 		}
@@ -310,10 +310,10 @@ func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
 
 	// The same two card faces, under the other rule: what is asked now is the
 	// chance of recalling them today, and the intervals take no part.
-	if p.Learned(standing(200, 21, 10), now) {
+	if p.Learned(schedule(200, 21, 10), now) {
 		t.Error("a card 200 days past an answer at a stability of 10 is recalled nine times in ten")
 	}
-	if !p.Learned(standing(0, 20, 90), now) {
+	if !p.Learned(schedule(0, 20, 90), now) {
 		t.Error("a card answered today is not recalled nine times in ten")
 	}
 	if p.Learned(review.Schedule{}, now) {
