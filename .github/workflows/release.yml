@@ -230,7 +230,10 @@ jobs:
           # Both binaries say what they are out of the one package the linker
           # writes the numbers into.
           into=github.com/jiva-studio/numen/modules/apps/desktop/internal/version
-          stamp="-X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
+          # -s -w drop the debugging tables, which are a quarter of the binary
+          # and reach nobody: a panic is symbolised from the pcln table, which
+          # neither flag touches.
+          stamp="-s -w -X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
 
           CGO_ENABLED=1 go build -trimpath -ldflags "$stamp" \
             -o "$RUNNER_TEMP/numen" ./cmd/numen
@@ -622,7 +625,10 @@ jobs:
           go install github.com/akavel/rsrc@v0.10.2
 
           into=github.com/jiva-studio/numen/modules/apps/desktop/internal/version
-          stamp="-X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
+          # -s -w drop the debugging tables, which are a quarter of the binary
+          # and reach nobody: a panic is symbolised from the pcln table, which
+          # neither flag touches.
+          stamp="-s -w -X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
 
           # The two windows are always the same build: they ship together, one
           # version, one installer. A resource is linked into the command it is
@@ -741,7 +747,10 @@ jobs:
           COMMIT: ${{ needs.naming.outputs.commit }}
         run: |
           into=github.com/jiva-studio/numen/modules/apps/desktop/internal/version
-          stamp="-X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
+          # -s -w drop the debugging tables, which are a quarter of the binary
+          # and reach nobody: a panic is symbolised from the pcln table, which
+          # neither flag touches.
+          stamp="-s -w -X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
           # The two windows are always the same build: they ship together, one
           # version, one image.
           for window in numen numen-flashcards; do
