@@ -192,7 +192,7 @@ func (d drawing) minutes(ctx context.Context) (Curve, error) {
 		out.Grid = append(out.Grid, math.Round(top*float64(i+1)/Points))
 	}
 	// The day the preset keeps is a place of the grid.
-	standing(out.Grid, float64(p.MinutesADay), 0, len(out.Grid)-1)
+	snap(out.Grid, float64(p.MinutesADay), 0, len(out.Grid)-1)
 	// A place is read on the last day of its run, and that is the day the run
 	// works the returning share out on.
 	run.Retains = []int{run.Covers() - 1}
@@ -247,7 +247,7 @@ func (d drawing) retention(ctx context.Context) (Curve, error) {
 	}
 	// The target the preset asks for is a place of the grid. The two ends are
 	// what memory allows, and no setting displaces them.
-	standing(out.Grid, p.Retention, 1, len(out.Grid)-2)
+	snap(out.Grid, p.Retention, 1, len(out.Grid)-2)
 
 	// A place is read on the last day of its run, and that is the day the run
 	// works the returning share out on.
@@ -522,13 +522,13 @@ func naming(steps []int, at int) []int {
 	return steps
 }
 
-// standing puts the value the preset holds on the grid, in place of the place
-// of it nearest that value, so what is drawn under the place is drawn for the
+// snap puts the value the preset holds on the grid, in place of the place of
+// it nearest that value, so what is drawn under the place is drawn for the
 // setting the person is standing at.
 //
 // First and last are the places a value may take: a range whose ends say what
 // the setting may be at all keeps them.
-func standing(grid []float64, value float64, first, last int) {
+func snap(grid []float64, value float64, first, last int) {
 	if first < 0 || last >= len(grid) || first > last {
 		return
 	}
