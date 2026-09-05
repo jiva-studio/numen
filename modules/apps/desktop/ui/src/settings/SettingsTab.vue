@@ -10,6 +10,7 @@
 import { computed } from 'vue'
 import { Button, NumberField, Segmented, Select, Switch, TimeField } from '@numen/ui'
 import type { SelectChoice } from '@numen/ui'
+import SettingRow from './SettingRow.vue'
 import type { SettingsTabState } from './kind'
 /**
  * The settings read out of the file whole, each as a path through it. A reading
@@ -121,379 +122,346 @@ const profiles = computed<readonly SelectChoice[]>(() => {
       <section class="settings__group" :aria-label="words.window">
         <h2 class="settings__heading">{{ words.window }}</h2>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <label class="settings__name" for="settings-theme">{{ words.theme }}</label>
-            <span class="settings__detail">{{ words.themeDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <Select
-              id="settings-theme"
-              :model-value="held.applied.value"
-              :choices="themes"
-              :name="words.theme"
-              class="settings__choice"
-              @update:model-value="(name: string) => held.chooses(name)"
-            />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="theme"
+          :name="words.theme"
+          :detail="words.themeDetail"
+        >
+          <Select
+            :model-value="held.applied.value"
+            :choices="themes"
+            :name="words.theme"
+            :aria-labelledby="labelledBy"
+            class="settings__choice"
+            @update:model-value="(name: string) => held.chooses(name)"
+          />
+        </SettingRow>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <span class="settings__name" id="settings-mode">{{ words.mode }}</span>
-            <span class="settings__detail">
-              {{ held.pinned.value ? words.pinned : words.modeDetail }}
-            </span>
-          </span>
-          <span class="settings__value">
-            <Segmented
-              :model-value="held.mode.value"
-              :choices="modes"
-              :disabled="held.pinned.value"
-              :aria-labelledby="'settings-mode'"
-              @update:model-value="(one: string) => held.chooses(`${MODE}:${one as Mode}`)"
-            />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="mode"
+          :name="words.mode"
+          :detail="held.pinned.value ? words.pinned : words.modeDetail"
+        >
+          <Segmented
+            :model-value="held.mode.value"
+            :choices="modes"
+            :disabled="held.pinned.value"
+            :aria-labelledby="labelledBy"
+            @update:model-value="(one: string) => held.chooses(`${MODE}:${one as Mode}`)"
+          />
+        </SettingRow>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <span class="settings__name" id="settings-interface">{{ words.interfaceScale }}</span>
-            <span class="settings__detail">{{ words.interfaceScaleDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <NumberField
-              :model-value="held.sizes.value.interfaceScale"
-              :min="bounds.interfaceScale.least"
-              :max="bounds.interfaceScale.most"
-              :step="STEP"
-              class="settings__number"
-              :aria-labelledby="'settings-interface'"
-              @update:model-value="
-                (size: number | null) =>
-                  size !== null && held.chooses(`${INTERFACE_SCALE}:${size}`)
-              "
-            />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="interface"
+          :name="words.interfaceScale"
+          :detail="words.interfaceScaleDetail"
+        >
+          <NumberField
+            :model-value="held.sizes.value.interfaceScale"
+            :min="bounds.interfaceScale.least"
+            :max="bounds.interfaceScale.most"
+            :step="STEP"
+            :aria-labelledby="labelledBy"
+            class="settings__number"
+            @update:model-value="
+              (size: number | null) => size !== null && held.chooses(`${INTERFACE_SCALE}:${size}`)
+            "
+          />
+        </SettingRow>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <span class="settings__name" id="settings-text">{{ words.textScale }}</span>
-            <span class="settings__detail">{{ words.textScaleDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <NumberField
-              :model-value="held.sizes.value.textScale"
-              :min="bounds.textScale.least"
-              :max="bounds.textScale.most"
-              :step="STEP"
-              class="settings__number"
-              :aria-labelledby="'settings-text'"
-              @update:model-value="
-                (size: number | null) => size !== null && held.chooses(`${TEXT_SCALE}:${size}`)
-              "
-            />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="text"
+          :name="words.textScale"
+          :detail="words.textScaleDetail"
+        >
+          <NumberField
+            :model-value="held.sizes.value.textScale"
+            :min="bounds.textScale.least"
+            :max="bounds.textScale.most"
+            :step="STEP"
+            :aria-labelledby="labelledBy"
+            class="settings__number"
+            @update:model-value="
+              (size: number | null) => size !== null && held.chooses(`${TEXT_SCALE}:${size}`)
+            "
+          />
+        </SettingRow>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <span class="settings__name" id="settings-hanging">{{ words.hanging }}</span>
-            <span class="settings__detail">{{ words.hangingDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <Switch v-model="held.hangs.value" :aria-labelledby="'settings-hanging'" />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="hanging"
+          :name="words.hanging"
+          :detail="words.hangingDetail"
+        >
+          <Switch v-model="held.hangs.value" :aria-labelledby="labelledBy" />
+        </SettingRow>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <span class="settings__name" id="settings-parts">{{ words.parts }}</span>
-            <span class="settings__detail">{{ words.partsDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <NumberField
-              :model-value="held.parts.value"
-              :min="1"
-              :max="12"
-              :step="1"
-              class="settings__number"
-              :aria-labelledby="'settings-parts'"
-              @update:model-value="
-                (count: number | null) => count !== null && held.choosesParts(count)
-              "
-            />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="parts"
+          :name="words.parts"
+          :detail="words.partsDetail"
+        >
+          <NumberField
+            :model-value="held.parts.value"
+            :min="1"
+            :max="12"
+            :step="1"
+            :aria-labelledby="labelledBy"
+            class="settings__number"
+            @update:model-value="
+              (count: number | null) => count !== null && held.choosesParts(count)
+            "
+          />
+        </SettingRow>
       </section>
 
       <section class="settings__group" :aria-label="words.naming">
         <h2 class="settings__heading">{{ words.naming }}</h2>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <span class="settings__name" id="settings-syncing">{{ words.syncing }}</span>
-            <span class="settings__detail">{{ words.syncingDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <Switch v-model="held.syncing.value" :aria-labelledby="'settings-syncing'" />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="syncing"
+          :name="words.syncing"
+          :detail="words.syncingDetail"
+        >
+          <Switch v-model="held.syncing.value" :aria-labelledby="labelledBy" />
+        </SettingRow>
       </section>
 
       <section class="settings__group" :aria-label="words.review">
         <h2 class="settings__heading">{{ words.review }}</h2>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <label class="settings__name" for="settings-day-starts">{{ words.dayStarts }}</label>
-            <span class="settings__detail">{{ words.dayStartsDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <TimeField
-              id="settings-day-starts"
-              :model-value="held.dayStarts.value"
-              :min="EARLIEST"
-              :max="held.latestDayStarts.value"
-              class="settings__number"
-              @settles="(hour: string) => held.choosesDayStarts(hour)"
-            />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="day-starts"
+          :name="words.dayStarts"
+          :detail="words.dayStartsDetail"
+        >
+          <TimeField
+            :model-value="held.dayStarts.value"
+            :min="EARLIEST"
+            :max="held.latestDayStarts.value"
+            :aria-labelledby="labelledBy"
+            class="settings__number"
+            @settles="(hour: string) => held.choosesDayStarts(hour)"
+          />
+        </SettingRow>
       </section>
 
       <section class="settings__group" :aria-label="words.transcription">
         <h2 class="settings__heading">{{ words.transcription }}</h2>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <span class="settings__name" id="settings-transcribing">{{ words.transcribing }}</span>
-            <span class="settings__detail">{{ words.transcribingDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <Switch
-              :model-value="on(AT.transcribing)"
-              :aria-labelledby="'settings-transcribing'"
-              @update:model-value="(kept: boolean) => puts(AT.transcribing, kept)"
-            />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="transcribing"
+          :name="words.transcribing"
+          :detail="words.transcribingDetail"
+        >
+          <Switch
+            :model-value="on(AT.transcribing)"
+            :aria-labelledby="labelledBy"
+            @update:model-value="(kept: boolean) => puts(AT.transcribing, kept)"
+          />
+        </SettingRow>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <span class="settings__name" id="settings-under">{{ words.transcribeUnder }}</span>
-            <span class="settings__detail">{{ words.transcribeUnderDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <NumberField
-              :model-value="counted(AT.transcribeUnder)"
-              :min="UNDER.least"
-              :max="UNDER.most"
-              :step="1"
-              class="settings__number"
-              :aria-labelledby="'settings-under'"
-              @settles="(size: number | null) => size !== null && puts(AT.transcribeUnder, size)"
-            />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="under"
+          :name="words.transcribeUnder"
+          :detail="words.transcribeUnderDetail"
+        >
+          <NumberField
+            :model-value="counted(AT.transcribeUnder)"
+            :min="UNDER.least"
+            :max="UNDER.most"
+            :step="1"
+            :aria-labelledby="labelledBy"
+            class="settings__number"
+            @settles="(size: number | null) => size !== null && puts(AT.transcribeUnder, size)"
+          />
+        </SettingRow>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <label class="settings__name" for="settings-transcript-proofread">
-              {{ words.transcriptProofread }}
-            </label>
-            <span class="settings__detail">{{ words.transcriptProofreadDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <Select
-              id="settings-transcript-proofread"
-              :model-value="said(AT.transcriptProofread)"
-              :choices="profiles"
-              :name="words.transcriptProofread"
-              class="settings__choice"
-              @update:model-value="(name: string) => puts(AT.transcriptProofread, name)"
-            />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="transcript-proofread"
+          :name="words.transcriptProofread"
+          :detail="words.transcriptProofreadDetail"
+        >
+          <Select
+            :model-value="said(AT.transcriptProofread)"
+            :choices="profiles"
+            :name="words.transcriptProofread"
+            :aria-labelledby="labelledBy"
+            class="settings__choice"
+            @update:model-value="(name: string) => puts(AT.transcriptProofread, name)"
+          />
+        </SettingRow>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <span class="settings__name" id="settings-transcript-always">
-              {{ words.transcriptProofreadAlways }}
-            </span>
-            <span class="settings__detail">{{ words.transcriptProofreadAlwaysDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <Switch
-              :model-value="on(AT.transcriptProofreadAlways)"
-              :aria-labelledby="'settings-transcript-always'"
-              @update:model-value="(kept: boolean) => puts(AT.transcriptProofreadAlways, kept)"
-            />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="transcript-always"
+          :name="words.transcriptProofreadAlways"
+          :detail="words.transcriptProofreadAlwaysDetail"
+        >
+          <Switch
+            :model-value="on(AT.transcriptProofreadAlways)"
+            :aria-labelledby="labelledBy"
+            @update:model-value="(kept: boolean) => puts(AT.transcriptProofreadAlways, kept)"
+          />
+        </SettingRow>
       </section>
 
       <section class="settings__group" :aria-label="words.ocr">
         <h2 class="settings__heading">{{ words.ocr }}</h2>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <label class="settings__name" for="settings-ocr">{{ words.ocrModel }}</label>
-            <span class="settings__detail">{{ words.ocrModelDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <Select
-              id="settings-ocr"
-              :model-value="said(AT.ocrModel)"
-              :choices="models(AT.ocrModel)"
-              :name="words.ocrModel"
-              class="settings__choice"
-              @update:model-value="(name: string) => picks(AT.ocrModel, name)"
-            />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="ocr"
+          :name="words.ocrModel"
+          :detail="words.ocrModelDetail"
+        >
+          <Select
+            :model-value="said(AT.ocrModel)"
+            :choices="models(AT.ocrModel)"
+            :name="words.ocrModel"
+            :aria-labelledby="labelledBy"
+            class="settings__choice"
+            @update:model-value="(name: string) => picks(AT.ocrModel, name)"
+          />
+        </SettingRow>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <label class="settings__name" for="settings-ocr-proofread">
-              {{ words.ocrProofread }}
-            </label>
-            <span class="settings__detail">{{ words.ocrProofreadDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <Select
-              id="settings-ocr-proofread"
-              :model-value="said(AT.ocrProofread)"
-              :choices="profiles"
-              :name="words.ocrProofread"
-              class="settings__choice"
-              @update:model-value="(name: string) => puts(AT.ocrProofread, name)"
-            />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="ocr-proofread"
+          :name="words.ocrProofread"
+          :detail="words.ocrProofreadDetail"
+        >
+          <Select
+            :model-value="said(AT.ocrProofread)"
+            :choices="profiles"
+            :name="words.ocrProofread"
+            :aria-labelledby="labelledBy"
+            class="settings__choice"
+            @update:model-value="(name: string) => puts(AT.ocrProofread, name)"
+          />
+        </SettingRow>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <span class="settings__name" id="settings-ocr-always">
-              {{ words.ocrProofreadAlways }}
-            </span>
-            <span class="settings__detail">{{ words.ocrProofreadAlwaysDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <Switch
-              :model-value="on(AT.ocrProofreadAlways)"
-              :aria-labelledby="'settings-ocr-always'"
-              @update:model-value="(kept: boolean) => puts(AT.ocrProofreadAlways, kept)"
-            />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="ocr-always"
+          :name="words.ocrProofreadAlways"
+          :detail="words.ocrProofreadAlwaysDetail"
+        >
+          <Switch
+            :model-value="on(AT.ocrProofreadAlways)"
+            :aria-labelledby="labelledBy"
+            @update:model-value="(kept: boolean) => puts(AT.ocrProofreadAlways, kept)"
+          />
+        </SettingRow>
       </section>
 
       <section class="settings__group" :aria-label="words.indexing">
         <h2 class="settings__heading">{{ words.indexing }}</h2>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <label class="settings__name" for="settings-indexing">{{ words.indexingModel }}</label>
-            <span class="settings__detail">{{ words.indexingModelDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <Select
-              id="settings-indexing"
-              :model-value="said(AT.indexingModel)"
-              :choices="models(AT.indexingModel)"
-              :name="words.indexingModel"
-              class="settings__choice"
-              @update:model-value="(name: string) => picks(AT.indexingModel, name)"
-            />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="indexing"
+          :name="words.indexingModel"
+          :detail="words.indexingModelDetail"
+        >
+          <Select
+            :model-value="said(AT.indexingModel)"
+            :choices="models(AT.indexingModel)"
+            :name="words.indexingModel"
+            :aria-labelledby="labelledBy"
+            class="settings__choice"
+            @update:model-value="(name: string) => picks(AT.indexingModel, name)"
+          />
+        </SettingRow>
       </section>
 
       <section class="settings__group" :aria-label="words.agent">
         <h2 class="settings__heading">{{ words.agent }}</h2>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <label class="settings__name" for="settings-agent">{{ words.agentUse }}</label>
-            <span class="settings__detail">{{ words.agentUseDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <Select
-              id="settings-agent"
-              :model-value="said(AT.agent)"
-              :choices="models(AT.agent)"
-              :name="words.agentUse"
-              class="settings__choice"
-              @update:model-value="(name: string) => picks(AT.agent, name)"
-            />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="agent"
+          :name="words.agentUse"
+          :detail="words.agentUseDetail"
+        >
+          <Select
+            :model-value="said(AT.agent)"
+            :choices="models(AT.agent)"
+            :name="words.agentUse"
+            :aria-labelledby="labelledBy"
+            class="settings__choice"
+            @update:model-value="(name: string) => picks(AT.agent, name)"
+          />
+        </SettingRow>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <label class="settings__name" for="settings-agent-model">{{ words.agentModel }}</label>
-            <span class="settings__detail">{{ words.agentModelDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <Select
-              id="settings-agent-model"
-              :model-value="said(AT.agentModel)"
-              :choices="models(AT.agentModel)"
-              :name="words.agentModel"
-              class="settings__choice"
-              @update:model-value="(name: string) => picks(AT.agentModel, name)"
-            />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="agent-model"
+          :name="words.agentModel"
+          :detail="words.agentModelDetail"
+        >
+          <Select
+            :model-value="said(AT.agentModel)"
+            :choices="models(AT.agentModel)"
+            :name="words.agentModel"
+            :aria-labelledby="labelledBy"
+            class="settings__choice"
+            @update:model-value="(name: string) => picks(AT.agentModel, name)"
+          />
+        </SettingRow>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <span class="settings__name" id="settings-agent-steps">{{ words.agentSteps }}</span>
-            <span class="settings__detail">{{ words.agentStepsDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <NumberField
-              :model-value="counted(AT.agentSteps)"
-              :min="STEPS.least"
-              :max="STEPS.most"
-              :step="1"
-              class="settings__number"
-              :aria-labelledby="'settings-agent-steps'"
-              @settles="(count: number | null) => count !== null && puts(AT.agentSteps, count)"
-            />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="agent-steps"
+          :name="words.agentSteps"
+          :detail="words.agentStepsDetail"
+        >
+          <NumberField
+            :model-value="counted(AT.agentSteps)"
+            :min="STEPS.least"
+            :max="STEPS.most"
+            :step="1"
+            :aria-labelledby="labelledBy"
+            class="settings__number"
+            @settles="(count: number | null) => count !== null && puts(AT.agentSteps, count)"
+          />
+        </SettingRow>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <span class="settings__name" id="settings-agent-tools">{{ words.agentTools }}</span>
-            <span class="settings__detail">{{ words.agentToolsDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <Switch
-              :model-value="on(AT.agentTools)"
-              :aria-labelledby="'settings-agent-tools'"
-              @update:model-value="(kept: boolean) => puts(AT.agentTools, kept)"
-            />
-          </span>
-        </div>
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="agent-tools"
+          :name="words.agentTools"
+          :detail="words.agentToolsDetail"
+        >
+          <Switch
+            :model-value="on(AT.agentTools)"
+            :aria-labelledby="labelledBy"
+            @update:model-value="(kept: boolean) => puts(AT.agentTools, kept)"
+          />
+        </SettingRow>
 
-        <div class="settings__row">
-          <span class="settings__said">
-            <span class="settings__name" id="settings-agent-hooks">{{ words.agentHooks }}</span>
-            <span class="settings__detail">{{ words.agentHooksDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <Switch
-              :model-value="on(AT.agentHooks)"
-              :aria-labelledby="'settings-agent-hooks'"
-              @update:model-value="(kept: boolean) => puts(AT.agentHooks, kept)"
-            />
-          </span>
-        </div>
-
+        <SettingRow
+          v-slot="{ labelledBy }"
+          at="agent-hooks"
+          :name="words.agentHooks"
+          :detail="words.agentHooksDetail"
+        >
+          <Switch
+            :model-value="on(AT.agentHooks)"
+            :aria-labelledby="labelledBy"
+            @update:model-value="(kept: boolean) => puts(AT.agentHooks, kept)"
+          />
+        </SettingRow>
       </section>
     </div>
   </div>
@@ -507,13 +475,10 @@ const profiles = computed<readonly SelectChoice[]>(() => {
   /* Between one group and the next, and between a heading and its rows. */
   --settings-apart: 1.75rem;
   --settings-near: 0.375rem;
-  /* One row: the box a number is typed into, the box a choice is taken from,
-     the air around the row, and the space between what it is called and what
-     it means. */
+  /* On a row: the box a number is typed into, and the box a choice is taken
+     from. */
   --settings-value: 6rem;
   --settings-choice: 18rem;
-  --settings-row-air: 0.5rem;
-  --settings-said-gap: 0.125rem;
   display: flex;
   flex-direction: column;
   block-size: 100%;
@@ -565,41 +530,11 @@ const profiles = computed<readonly SelectChoice[]>(() => {
   text-transform: uppercase;
 }
 
-/* The name and what it means on the left, the control at the end of the row. */
-.settings__row {
-  display: grid;
-  grid-template-columns: 1fr max-content;
-  align-items: center;
-  gap: 0 var(--numen-panel-gap);
-  padding-block: var(--settings-row-air);
-  border-block-end: var(--numen-stroke) solid var(--numen-rule);
-}
-
-/* What the row is called, and under it what it means. */
-.settings__said {
-  display: flex;
-  flex-direction: column;
-  gap: var(--settings-said-gap);
-  min-inline-size: 0;
-}
-
-/* Controls of every width end at the one edge. */
-.settings__value {
-  display: flex;
-  align-items: center;
-  justify-content: end;
-}
-
 .settings__number {
   inline-size: var(--settings-value);
 }
 
 .settings__choice {
   inline-size: var(--settings-choice);
-}
-
-.settings__detail {
-  color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
 }
 </style>

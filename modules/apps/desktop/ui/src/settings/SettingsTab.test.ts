@@ -126,9 +126,12 @@ afterEach(() => {
 
 type Tab = ReturnType<typeof configured>['tab']
 
+/** The control on a row, which the name of that row announces. */
+const control = (id: string) => `[aria-labelledby="${id}"]`
+
 /** The choices one line offers, opened. They are drawn at the end of the document. */
 const opens = async (tab: Tab, id: string) => {
-  await tab.get(`#${id}`).trigger('click')
+  await tab.get(control(id)).trigger('click')
   await nextTick()
   await nextTick()
 }
@@ -167,7 +170,7 @@ describe('the settings tab', () => {
 
   it('opens on the theme the settings name, off both shelves', async () => {
     const { tab } = configured()
-    expect(tab.get('#settings-theme').text()).toContain('numen')
+    expect(tab.get(control('settings-theme')).text()).toContain('numen')
 
     await opens(tab, 'settings-theme')
     expect(shelved()).toStrictEqual([words.shipped, words.owned])
@@ -187,8 +190,8 @@ describe('the settings tab', () => {
 
   it('turns the two switches the window keeps', async () => {
     const { tab, done } = configured()
-    await tab.get('[aria-labelledby="settings-hanging"]').trigger('click')
-    await tab.get('[aria-labelledby="settings-syncing"]').trigger('click')
+    await tab.get(control('settings-hanging')).trigger('click')
+    await tab.get(control('settings-syncing')).trigger('click')
     expect(done).toStrictEqual(['hanging false', 'syncing false'])
   })
 
@@ -220,9 +223,9 @@ describe('the settings tab', () => {
     const heard = tab.get('section[aria-label="' + words.transcription + '"]')
 
     expect(ocr.text()).toContain(words.ocrProofread)
-    expect(ocr.find('#settings-ocr-proofread').exists()).toBe(true)
+    expect(ocr.find(control('settings-ocr-proofread')).exists()).toBe(true)
     expect(heard.text()).toContain(words.transcriptProofread)
-    expect(heard.find('#settings-transcript-proofread').exists()).toBe(true)
+    expect(heard.find(control('settings-transcript-proofread')).exists()).toBe(true)
   })
 
   it('reads each of the two proofreadings out of its own path', () => {
@@ -232,8 +235,8 @@ describe('the settings tab', () => {
         transcription: { proofread: { with: 'quick' } },
       },
     })
-    expect(tab.get('#settings-ocr-proofread').text()).toContain('careful')
-    expect(tab.get('#settings-transcript-proofread').text()).toContain('quick')
+    expect(tab.get(control('settings-ocr-proofread')).text()).toContain('careful')
+    expect(tab.get(control('settings-transcript-proofread')).text()).toContain('quick')
   })
 
   it('writes each of the two proofreadings into its own path', async () => {
@@ -249,8 +252,8 @@ describe('the settings tab', () => {
 
   it('turns whether each of the two is put right unasked', async () => {
     const { tab, written } = configured()
-    await tab.get('[aria-labelledby="settings-ocr-always"]').trigger('click')
-    await tab.get('[aria-labelledby="settings-transcript-always"]').trigger('click')
+    await tab.get(control('settings-ocr-always')).trigger('click')
+    await tab.get(control('settings-transcript-always')).trigger('click')
     expect(written).toStrictEqual([
       { at: ['indexing', 'recognition', 'proofread', 'automatically'], value: 'true' },
       { at: ['indexing', 'transcription', 'proofread', 'automatically'], value: 'true' },
@@ -259,7 +262,7 @@ describe('the settings tab', () => {
 
   it('opens a model on what the file names, and says which one is the default', async () => {
     const { tab } = configured(false, { agent: { claude: { model: 'opus' } } })
-    expect(tab.get('#settings-agent-model').text()).toContain('opus')
+    expect(tab.get(control('settings-agent-model')).text()).toContain('opus')
 
     await opens(tab, 'settings-agent-model')
     expect(offered()).toContain(`Whatever this machine answers with — ${words.byDefault}`)
@@ -281,7 +284,7 @@ describe('the settings tab', () => {
     const { tab } = configured(false, {
       indexing: { recognition: { recognise: { name: OWN } } },
     })
-    const line = tab.get('#settings-ocr')
+    const line = tab.get(control('settings-ocr'))
 
     expect(line.text()).toContain('eslav_rec_mobile.onnx')
     expect(line.text()).not.toContain('https://')
@@ -292,7 +295,7 @@ describe('the settings tab', () => {
     const { tab } = configured(false, {
       indexing: { recognition: { recognise: { name: own } } },
     })
-    expect(tab.get('#settings-ocr').text()).toContain('Other_rec.onnx')
+    expect(tab.get(control('settings-ocr')).text()).toContain('Other_rec.onnx')
     expect(tab.text()).not.toMatch(/not found/i)
 
     await opens(tab, 'settings-ocr')
@@ -310,7 +313,7 @@ describe('the settings tab', () => {
     await nextTick()
 
     expect(written).toStrictEqual([])
-    expect(tab.get('#settings-ocr').text()).toContain('Other_rec.onnx')
+    expect(tab.get(control('settings-ocr')).text()).toContain('Other_rec.onnx')
   })
 
   it('writes everything a model decides, not its name alone', async () => {
@@ -322,7 +325,7 @@ describe('the settings tab', () => {
 
   it('writes a setting it read out of the file back where it stands', async () => {
     const { tab, written } = configured(false, { agent: { serve_tools: false } })
-    await tab.get('[aria-labelledby="settings-agent-tools"]').trigger('click')
+    await tab.get(control('settings-agent-tools')).trigger('click')
     expect(written).toStrictEqual([{ at: ['agent', 'serve_tools'], value: 'true' }])
   })
 
