@@ -28,7 +28,7 @@ Paths below are relative to `modules/libs/core/` unless they say otherwise. The 
 
 ## Ports
 
-15. An interface the composition root binds an adapter to is declared in `port/`. An interface a single use case needs and nothing binds is declared beside that use case. What has to see it decides where it goes. → ADR-0047
+15. An interface the composition root binds an adapter to is declared in `port/`. An interface a single use case needs and nothing binds is declared beside that use case. What has to see it decides where it goes. → [Where a port is declared, and where an adapter stands](docs/adr/0047-where-a-port-is-declared-and-where-an-adapter-stands.md)
 16. **The number of callers decides nothing.** A one-caller port is a port. `VaultWatcher`, `IndexMaintenance` and `VectorQueries` are settled cases; do not reopen them.
 17. Every interface in `port/` is named as `port.X` somewhere outside `port/`. A port whose last caller went is deleted, not kept. → `TestEveryPortIsAskedForSomewhereElse`
 18. No adapter writes `var _ port.X = …`. The binding is the composition root's, and naming it in the adapter puts it in two places. → `TestNoAdapterNamesThePortItSatisfies`, and `TestNoApplicationNamesThePortItSatisfies` in `modules/apps/desktop/internal/layers/`
@@ -62,4 +62,4 @@ Nothing refuses any of 24–31. They are read by a person and by a reviewer.
 
 ## The reviewer
 
-`.claude/agents/go-reviewer.md` reviews Go changes against the same records, afterwards. The one place the two could have disagreed is the number of a port's callers: the reviewer's rule against abstracting before a second case predates ADR-0047, and both files now draw the line the same way. It holds for an ordinary Go interface; inside `port/` it does not, and "only one caller" is not a finding there.
+`.claude/agents/go-reviewer.md` reviews Go changes against the same records, afterwards. The one place the two could have disagreed is the number of a port's callers: the reviewer's rule against abstracting before a second case predates the rule above, and both files now draw the line the same way. It holds for an ordinary Go interface; inside `port/` it does not, and "only one caller" is not a finding there.

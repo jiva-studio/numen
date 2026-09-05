@@ -34,8 +34,10 @@ contradicts ADR-NNNN, and the ADR looks outdated" — not silence.
 
 ### Architecture
 
-The layout for this repository is in ADR-0004, and where a port is declared and
-where an adapter stands is ADR-0047; read them rather than assuming a shape. The
+The layout for this repository is in [A hexagonal core in Go](../../docs/adr/0004-a-hexagonal-core-in-go.md),
+and where a port is declared and where an adapter stands is
+[Where a port is declared, and where an adapter stands](../../docs/adr/0047-where-a-port-is-declared-and-where-an-adapter-stands.md);
+read them rather than assuming a shape. The
 constraint list in `AGENTS.md` is the same rules in short form, each naming the
 test that refuses it. What follows is how to judge whether the code honours
 them — the same principles would apply if the layout changed.
@@ -60,7 +62,7 @@ structurally. An interface declared next to its single implementation, or an
 adapter that imports the port package to announce it satisfies it, is
 ceremony — flag it.
 
-**A port is not judged by its number of callers.** ADR-0047 settles it: a port
+**A port is not judged by its number of callers.** A port
 is a purposeful conversation, and one caller is a fact about this application
 rather than about the conversation. "Only one caller" is not a finding against
 an interface in `port/`. What the rule above still catches is an interface
