@@ -299,11 +299,15 @@ func TestATestOfTheCoreBuildingAnAdapterStandsOutsideIt(t *testing.T) {
 	}
 }
 
-// machinery are the packages that reach the machine because reaching it is
-// what they are: the composition root that builds the adapters, the runtime two
-// adapters load their models through, and the fixtures only a test is compiled
-// from. The adapters themselves are left out by adapting.
-var machinery = []string{"container", "internal/onnxruntime", "internal/testsupport"}
+// machinery are the packages held to none of the abstinences below, because
+// reaching outward is what they are: the composition root that builds the
+// adapters, the fixtures only a test is compiled from, and the infrastructure
+// the adapters share — the runtime two of them load their models through, and
+// the package two windows both answer a request for a page out of. The
+// adapters themselves are left out by adapting.
+var machinery = []string{
+	"container", "internal/onnxruntime", "internal/testsupport", "internal/wire",
+}
 
 // looking are the functions of path/filepath that are not path arithmetic.
 // Each one asks the machine what is there, and Abs answers against the folder
