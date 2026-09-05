@@ -205,7 +205,7 @@ jobs:
           npm run graph --prefix modules/tools/depgraph
           git diff --exit-code -- docs/dependencies.md
 
-      - name: "Lint :: numen"
+      - name: "Lint :: Numen"
         run: npm run check --prefix modules/tools/lint
 
       - name: Lint
