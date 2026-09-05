@@ -24,9 +24,9 @@ export const ROOT = ''
  * One line of the tree: what it stands for, and the lines drawn under it. A
  * folder that is closed holds none until it opens.
  */
-export interface Row {
+export interface ListingRow {
   readonly entry: Entry
-  readonly rows: readonly Row[]
+  readonly rows: readonly ListingRow[]
 }
 
 /** The folder a path sits in, and the root for a path at the top of the vault. */
@@ -83,14 +83,14 @@ export function listing(core: Folders) {
   const opened = (folder: string): boolean => open.value.has(folder)
 
   /** One folder as lines, with every folder open under it drawn inside it. */
-  const rowsIn = (folder: string): readonly Row[] =>
+  const rowsIn = (folder: string): readonly ListingRow[] =>
     entriesIn(folder).map((entry) => ({
       entry,
       rows: entry.folder && opened(entry.path) ? rowsIn(entry.path) : [],
     }))
 
   /** The tree, in the order the vault gave each folder. */
-  const rows = computed<readonly Row[]>(() => rowsIn(ROOT))
+  const rows = computed<readonly ListingRow[]>(() => rowsIn(ROOT))
 
   /** The folders drawn open, as the list the tree is handed. */
   const openRows = computed<readonly string[]>(() => [...open.value])

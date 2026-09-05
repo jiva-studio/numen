@@ -9,12 +9,12 @@
  */
 import { computed, onMounted, onUnmounted } from 'vue'
 import { Menu, Tree } from '@numen/ui'
-import type { Point, Row as TreeRow, RowMarker } from '@numen/ui'
+import type { Point, Row, RowMarker } from '@numen/ui'
 import { Book, File, Folder, FolderOpen, type LucideIcon } from '@lucide/vue'
 import type { NoteType, Source } from '../core'
 import { iconFor, iconOfNote } from '../icons'
 import type { DropPosition, FilesTabState } from './kind'
-import type { Row } from './listing'
+import type { ListingRow } from './listing'
 import { itemsFor } from './menu'
 import { WORDS as words } from './words'
 
@@ -31,7 +31,7 @@ const dropTarget = computed<RowMarker>(() => ({
 }))
 
 /** The tree as the component takes it, a path standing for each row. */
-const drawn = (rows: readonly Row[]): TreeRow[] =>
+const drawn = (rows: readonly ListingRow[]): Row[] =>
   rows.map((one) => ({
     id: one.entry.path,
     name: one.entry.name,

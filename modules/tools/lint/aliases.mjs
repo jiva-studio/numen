@@ -21,10 +21,7 @@ const OURS = ['@numen/ui', '@numen/wire', '@numen/desktop-ui', '@numen/flashcard
  * only shrinks. Each is a name the window and the library both want; the fix
  * is a rename in one of them, not an entry here.
  */
-export const owed = [
-  // The window's files tab has a row of its own.
-  'modules/apps/desktop/ui/src/files/FilesTab.vue: Row as TreeRow',
-]
+export const owed = []
 
 /** The `{ … }` clause of every import and export naming a package. */
 const CLAUSES = /(?:^|[\n;])\s*(?:import|export)\s+(?:type\s+)?\{([^}]*)\}\s*from\s*['"]([^'"]+)['"]/g

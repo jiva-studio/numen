@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { Entry } from '../core'
-import { above, folderOf, freeName, landedIn, listing, ROOT, type Row } from './listing'
+import { above, folderOf, freeName, landedIn, listing, ROOT, type ListingRow } from './listing'
 
 /** One row of a listing, under the folder it sits in. */
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
@@ -51,7 +51,7 @@ const vault = (
 }
 
 /** The paths of the rows drawn, in the order they are drawn, one line each. */
-const paths = (rows: readonly Row[]): readonly string[] =>
+const paths = (rows: readonly ListingRow[]): readonly string[] =>
   rows.flatMap((one) => [one.entry.path, ...paths(one.rows)])
 
 describe('the folder a path sits in', () => {
