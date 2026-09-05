@@ -180,6 +180,6 @@ export const STAGE = 128
 export const SETTLED = 150
 
 /** How close a page is drawn, never past either end. */
-export function drawn(zoom: number): number {
+export function clamped(zoom: number): number {
   return Math.min(Math.max(zoom, FURTHEST), CLOSEST)
 }

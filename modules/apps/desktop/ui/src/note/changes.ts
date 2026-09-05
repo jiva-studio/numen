@@ -8,7 +8,8 @@ import { ref } from 'vue'
 import type { NoteEdit } from '../core'
 import { drawing, holding, type Change, type HoldLimits, type TimerRequest } from './drawing'
 
-export function drawn(limits: HoldLimits = holding) {
+/** Every change in flight, filed by the note it stands on. */
+export function noteChanges(limits: HoldLimits = holding) {
   const decided = drawing(limits)
   /** What each note is drawn with, which Vue reads to draw it. */
   const changes = ref(new Map<string, Change>())

@@ -7,7 +7,7 @@
  */
 import { computed, ref } from 'vue'
 import { Button } from '@/components/ui/button'
-import { CLOSEST, drawn, FURTHEST, NEARER, READER_WORDS, type ReaderWords } from './strip'
+import { clamped, CLOSEST, FURTHEST, NEARER, READER_WORDS, type ReaderWords } from './strip'
 
 withDefaults(
   defineProps<{
@@ -26,7 +26,7 @@ withDefaults(
 const at = defineModel<number>('at', { default: 0 })
 
 /** How close the page is drawn, which is never past either end. */
-const zoom = defineModel<number>('zoom', { default: 1, set: drawn })
+const zoom = defineModel<number>('zoom', { default: 1, set: clamped })
 
 /**
  * What is being typed over the page in front, and nothing while nothing is. A

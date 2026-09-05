@@ -7,7 +7,7 @@
  * plugin's.
  */
 import { computed } from 'vue'
-import { drawn } from './render'
+import { rendered } from './render'
 
 const props = defineProps<{
   /** Markdown, with tags among the marks. */
@@ -22,7 +22,7 @@ const emit = defineEmits<{
   (event: 'follow', href: string, press: MouseEvent): void
 }>()
 
-const html = computed(() => drawn(props.text))
+const html = computed(() => rendered(props.text))
 
 const pressed = (press: MouseEvent) => {
   const link = (press.target as HTMLElement | null)?.closest?.('a')

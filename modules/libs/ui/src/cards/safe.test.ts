@@ -7,7 +7,7 @@
 import MarkdownIt from 'markdown-it'
 import { describe, expect, it } from 'vitest'
 import { safe } from './safe'
-import { drawn } from './render'
+import { rendered } from './render'
 
 /** The marks alone, told to read tags as tags and told nothing else. */
 const unmeasured = new MarkdownIt({ html: true, linkify: true })
@@ -172,29 +172,29 @@ describe('safe, the styles a card may carry', () => {
   })
 })
 
-describe('drawn', () => {
+describe('rendered', () => {
   it('reads the marks as marks', () => {
-    expect(drawn('**bold**')).toBe('<p><strong>bold</strong></p>\n')
+    expect(rendered('**bold**')).toBe('<p><strong>bold</strong></p>\n')
   })
 
   it('reads the tags among the marks as tags', () => {
-    expect(drawn('a <u>marked</u> word')).toBe('<p>a <u>marked</u> word</p>\n')
+    expect(rendered('a <u>marked</u> word')).toBe('<p>a <u>marked</u> word</p>\n')
   })
 
   it('draws no script a person wrote among the marks', () => {
-    expect(drawn('before\n\n<script>alert(1)</script>\n\nafter')).not.toContain('alert')
+    expect(rendered('before\n\n<script>alert(1)</script>\n\nafter')).not.toContain('alert')
   })
 
   it('draws no handler a person wrote among the marks', () => {
-    expect(drawn('<img src="x" onerror="alert(1)">')).not.toContain('onerror')
+    expect(rendered('<img src="x" onerror="alert(1)">')).not.toContain('onerror')
   })
 
   it('draws text that is not Latin as it was written', () => {
-    expect(drawn('बगीचे की खाद और हरी खाद')).toContain('बगीचे की खाद और हरी खाद')
+    expect(rendered('बगीचे की खाद और हरी खाद')).toContain('बगीचे की खाद और हरी खाद')
   })
 
   it('draws nothing for text with nothing in it', () => {
-    expect(drawn('')).toBe('')
+    expect(rendered('')).toBe('')
   })
 
   /* The marks alone would draw each of these, so what takes them out is the
@@ -205,6 +205,6 @@ describe('drawn', () => {
     '<iframe src="https://example.org"></iframe>',
   ])('is what takes %s out, which the marks alone would draw', (said) => {
     expect(unmeasured.render(said)).toContain(said)
-    expect(drawn(said)).not.toContain(said)
+    expect(rendered(said)).not.toContain(said)
   })
 })

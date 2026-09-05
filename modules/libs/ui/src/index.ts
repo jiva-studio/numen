@@ -260,7 +260,7 @@ export { default as Divider } from './divider/Divider.vue'
  */
 export { safe, scheme } from './cards/safe'
 /** What a card is written with, drawn: markdown, with the tags among the marks. */
-export { drawn } from './cards/render'
+export { rendered } from './cards/render'
 /** For putting a card or a field where a person let it go, without drawing it. */
 export { ordered, reordered } from './cards/order'
 export type { Half, InsertionPoint } from './cards/order'

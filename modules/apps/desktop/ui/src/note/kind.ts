@@ -12,7 +12,7 @@ import type { Store } from '../doing'
 import type { Host, Kind } from '../windowing'
 import { NOTE } from '../workspace'
 import type { Change } from './drawing'
-import type { drawn } from './drawn'
+import type { noteChanges } from './changes'
 import type { OpenNote, editing } from './editing'
 import { entering, ITSELF } from './entering'
 import { naming, type NamingDeps } from './naming'
@@ -23,7 +23,7 @@ import type { FileOpeners } from '../putting'
 /** The notes of the whole window, read and written by one store. */
 type Notes = ReturnType<typeof editing>
 /** What is being typed into each note now, as the editor draws it. */
-type Drawings = ReturnType<typeof drawn>
+type NoteChanges = ReturnType<typeof noteChanges>
 
 export type { NamingDeps }
 
@@ -68,7 +68,7 @@ export interface NoteTabState {
 export function noting(
   vault: NoteTabDeps,
   notes: Notes,
-  drawings: Drawings,
+  changes: NoteChanges,
   host: Host,
   puts: FileOpeners,
 ) {
@@ -153,7 +153,7 @@ export function noting(
     id,
     shown: computed(() => notes.shown(id)),
     saying: computed(() => notes.saying(id)),
-    change: computed(() => drawings.shown(notes.where(id))),
+    change: computed(() => changes.shown(notes.where(id))),
     typed: (body: string) => notes.typed(id, body),
     save: () => notes.save(id),
     keep: () => notes.keep(id),
@@ -171,7 +171,7 @@ export function noting(
     /** The tab stands until the note says the write is done, and goes then. */
     shuts: (tab: string) => {
       keyboard.drops(id)
-      drawings.shut(notes.where(id))
+      changes.shut(notes.where(id))
       void notes.shut(id).then((gone) => {
         if (!gone) return
         names.forgets(id)

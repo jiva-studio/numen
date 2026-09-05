@@ -12,7 +12,7 @@ import type { PlexShowing } from '@numen/ui'
 import { noting, type NoteTabDeps, type NoteTabState } from './kind'
 import { putting } from '../putting'
 import type { EditorHandle } from './entering'
-import type { drawn } from './drawn'
+import type { noteChanges } from './changes'
 import type { editing } from './editing'
 import type { State } from './tab'
 import { windowing } from '../windowing'
@@ -92,7 +92,7 @@ const notes = (states: Record<string, State> = {}) => {
 const drawings = () => {
   const shut: string[] = []
   const store = { shown: () => 0, shut: (path: string) => shut.push(path) }
-  return { store: store as unknown as ReturnType<typeof drawn>, shut }
+  return { store: store as unknown as ReturnType<typeof noteChanges>, shut }
 }
 
 /** An editor that says whether it took what it was handed. */

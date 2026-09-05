@@ -16,7 +16,7 @@ import { reading } from './document/reading'
 import { cornerOf } from './corner'
 import type { Meaning } from './meaning'
 import { editing } from './note/editing'
-import { drawn } from './note/drawn'
+import { noteChanges } from './note/changes'
 import { CREATABLE, creating } from './note/creating'
 import {
   commanding,
@@ -66,8 +66,8 @@ import { AGENT, CONVERSATION, FILES, PLEX, named, opening } from './workspace'
 
 /** Everything the window is made of, made once and handed to what draws it. */
 export const useWindow = () => {
-  const drawings = drawn()
-  const notes = editing(core, { replaced: drawings.arrived })
+  const changes = noteChanges()
+  const notes = editing(core, { replaced: changes.arrived })
   /** Everything the window has said, each part of it under a name of its own. */
   const tell = telling()
   const making = creating(core, tell.under('made'))
@@ -83,7 +83,7 @@ export const useWindow = () => {
       await files.changed(paths, renamed)
       await plexes.again(renamed)
     },
-    drawing: drawings.told,
+    drawing: changes.told,
     wanted: (path) => plexes.travel(path),
     reads: (path, runs) => void puts.opensAt(path, runs),
     reloads,
@@ -142,7 +142,7 @@ export const useWindow = () => {
   const runs = runSupport()
 
   /** The notes the window has open: what each is called, and what each tab of one holds. */
-  const noted = noting(core, notes, drawings, held.host, puts)
+  const noted = noting(core, notes, changes, held.host, puts)
 
   /** The decks and the stencils the window has open, each saved the way a note is. */
   const decks = decking(cards, presets, held.host, puts)
@@ -648,7 +648,7 @@ export const useWindow = () => {
   onUnmounted(() => {
     globalThis.removeEventListener('keydown', asked)
     window.close()
-    drawings.close()
+    changes.close()
     going.close()
     held.close()
     dressed.close()

@@ -11,4 +11,4 @@ import { safe } from './safe'
 const marks = new MarkdownIt({ html: true, linkify: true })
 
 /** Text as the HTML a card draws, with nothing in it that a card may not. */
-export const drawn = (text: string): string => safe(marks.render(text))
+export const rendered = (text: string): string => safe(marks.render(text))
