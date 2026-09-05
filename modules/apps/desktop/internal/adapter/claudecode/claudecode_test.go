@@ -20,7 +20,7 @@ import (
 // started is an agent whose command line is a script printing what it was told
 // to print. What is tested is the reading and the stopping: the tools are the
 // server's business and the answering is the model's.
-func started(t *testing.T, prints string) port.Work {
+func started(t *testing.T, prints string) port.Run {
 	t.Helper()
 
 	dir := t.TempDir()
@@ -59,7 +59,7 @@ func started(t *testing.T, prints string) port.Work {
 }
 
 // heard is every step of a piece of work, in order.
-func heard(t *testing.T, work port.Work) []port.Step {
+func heard(t *testing.T, work port.Run) []port.Step {
 	t.Helper()
 
 	var steps []port.Step
@@ -743,7 +743,7 @@ sleep 120
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
 	}
 	asked := map[string]string{"one": "left", "two": "right"}
-	works := map[string]port.Work{}
+	works := map[string]port.Run{}
 	for conversation, question := range asked {
 		work, err := claude.Take(context.Background(),
 			port.Task{Question: question, Conversation: conversation})
@@ -891,7 +891,7 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 		Root:    dir,
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
 	}
-	takes := func(asked, conversation string) port.Work {
+	takes := func(asked, conversation string) port.Run {
 		t.Helper()
 		work, err := claude.Take(t.Context(), port.Task{Question: asked, Conversation: conversation})
 		if err != nil {
@@ -977,7 +977,7 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 		Root:    dir,
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
 	}
-	takes := func(asked, conversation string) port.Work {
+	takes := func(asked, conversation string) port.Run {
 		t.Helper()
 		work, err := claude.Take(context.Background(), port.Task{Question: asked, Conversation: conversation})
 		if err != nil {
@@ -1107,7 +1107,7 @@ sleep 120
 		Root:    dir,
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
 	}
-	takes := func(asked, conversation string) port.Work {
+	takes := func(asked, conversation string) port.Run {
 		t.Helper()
 		work, err := claude.Take(context.Background(), port.Task{Question: asked, Conversation: conversation})
 		if err != nil {

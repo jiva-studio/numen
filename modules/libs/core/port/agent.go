@@ -12,8 +12,8 @@ import (
 // What answers is a program of somebody else's making, reached over a protocol
 // of its own. Everything above this interface sees one agent and never which.
 type Agent interface {
-	// Take gives the agent a task and hands back the work it has begun.
-	Take(ctx context.Context, task Task) (Work, error)
+	// Take gives the agent a task and hands back the run it has begun.
+	Take(ctx context.Context, task Task) (Run, error)
 	// Finish says a conversation is over. What the agent kept of it is let go
 	// of, and whatever is still being worked in it is stopped and waited for.
 	// Empty is no conversation, and there is nothing to finish.
@@ -35,12 +35,12 @@ type Task struct {
 	Conversation string
 }
 
-// Work is one task being worked.
-type Work interface {
+// Run is one task being worked. Task is the request; this is its execution.
+type Run interface {
 	// Steps arrive in the order the agent takes them, and the channel closes
 	// when there are no more.
 	Steps() <-chan Step
-	// Stop ends the work and returns once nothing of it is still running.
+	// Stop ends the run and returns once nothing of it is still running.
 	Stop() error
 }
 

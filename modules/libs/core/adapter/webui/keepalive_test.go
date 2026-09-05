@@ -110,7 +110,7 @@ func rooted(handler http.Handler, entered, returned chan<- struct{}) http.Handle
 // waiting on a model looks like.
 type silentAgent struct{}
 
-func (silentAgent) Take(context.Context, port.Task) (port.Work, error) {
+func (silentAgent) Take(context.Context, port.Task) (port.Run, error) {
 	return silentWork{steps: make(chan port.Step)}, nil
 }
 

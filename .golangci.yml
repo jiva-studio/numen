@@ -37,11 +37,11 @@ linters:
       #
       # The other two are the same act as a deferred Close, which the preset
       # below drops: a temporary file taken away after the rename carried its
-      # content off the name, and an agent's work ended on the way out.
+      # content off the name, and an agent's run ended on the way out.
       exclude-functions:
         - (*database/sql.Tx).Rollback
         - (*os.Root).Remove
-        - (github.com/jiva-studio/numen/modules/libs/core/port.Work).Stop
+        - (github.com/jiva-studio/numen/modules/libs/core/port.Run).Stop
 
     exhaustive:
       # A switch that names a default has answered for the cases it did not

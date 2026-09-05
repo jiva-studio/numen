@@ -29,7 +29,7 @@ type asking struct {
 	refuses error
 }
 
-func (a *asking) Take(_ context.Context, task port.Task) (port.Work, error) {
+func (a *asking) Take(_ context.Context, task port.Task) (port.Run, error) {
 	a.took <- task
 	steps := make(chan port.Step, len(a.takes))
 	for _, step := range a.takes {

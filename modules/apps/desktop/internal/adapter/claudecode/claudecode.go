@@ -189,7 +189,7 @@ const Name = "numen"
 const DefaultTurns = 30
 
 // Take starts the agent on a task.
-func (a *Agent) Take(ctx context.Context, task port.Task) (port.Work, error) {
+func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
 	if a.Tools.URL == "" || a.Tools.Token == "" {
 		return nil, errors.New("no tools to give an agent")
 	}

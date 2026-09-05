@@ -24,9 +24,9 @@ var errNothingTranscribes = errors.New("nothing to transcribe with")
 // written down.
 func transcriptionID(path string) string { return "transcription-" + path }
 
-// Transcribes is what transcribes a recording, opened when there is one to
-// transcribe. It is told how far the fetching of what it needs has got.
-type Transcribes func(ctx context.Context, tell func(what string, done, total int64)) (port.Transcriber, func() error, error)
+// OpenTranscriber opens what listens to a recording, when there is one to
+// listen to. It is told how far the fetching of what it needs has got.
+type OpenTranscriber func(ctx context.Context, tell func(what string, done, total int64)) (port.Transcriber, func() error, error)
 
 // Proofreading is what a text is put right with: what answers, where batches
 // are left for it to answer about later, and how much of a text goes over at a
@@ -57,7 +57,7 @@ type Proofreading struct {
 // machine.
 type TranscriptionRuntime struct {
 	// Open transcribes a recording.
-	Open Transcribes
+	Open OpenTranscriber
 	// Ready says whether opening it would wait for anything to arrive.
 	Ready func() bool
 }

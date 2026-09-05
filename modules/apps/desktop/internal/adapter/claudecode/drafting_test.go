@@ -34,7 +34,7 @@ func (d *drawn) drafting() claudecode.Drafting {
 }
 
 // drafting is the agent with a window behind it, fed a canned stream.
-func drafting(t *testing.T, window *drawn, prints string) port.Work {
+func drafting(t *testing.T, window *drawn, prints string) port.Run {
 	t.Helper()
 
 	dir := t.TempDir()

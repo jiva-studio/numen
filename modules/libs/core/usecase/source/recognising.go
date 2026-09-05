@@ -31,14 +31,14 @@ func recognitionID(nth uint64) string { return fmt.Sprintf("recognition-%d", nth
 // shown. One file is one line, and it replaces itself as the text is put right.
 func proofreadingID(path string) string { return "proofreading-" + path }
 
-// Recognises is what recognises a scanned page, opened when there is one to
-// recognise. It is told how far the fetching of what it needs has got.
-type Recognises func(ctx context.Context, tell func(what string, done, total int64)) (port.Recogniser, func() error, error)
+// OpenRecogniser opens what reads a scanned page, when there is one to read.
+// It is told how far the fetching of what it needs has got.
+type OpenRecogniser func(ctx context.Context, tell func(what string, done, total int64)) (port.Recogniser, func() error, error)
 
 // A RecognitionRuntime is what a page is recognised through on this machine.
 type RecognitionRuntime struct {
 	// Open recognises a page.
-	Open Recognises
+	Open OpenRecogniser
 	// Ready says whether opening it would wait for anything to arrive.
 	Ready func() bool
 	// Prepared says whether the runtime was made before the window. One made
