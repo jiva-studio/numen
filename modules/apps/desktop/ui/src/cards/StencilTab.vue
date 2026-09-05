@@ -8,7 +8,7 @@
  * row. What stands against neither is said above the editor.
  */
 import { computed } from 'vue'
-import { StencilView } from '@numen/ui'
+import { StencilEditor } from '@numen/ui'
 import type { CardLanding, Half } from '@numen/ui'
 import Answering from '../Answering.vue'
 import type { StencilTabState } from './stencil'
@@ -34,7 +34,7 @@ const marks = computed(() => props.held.marks.value)
       <li v-for="(text, at) in marks.whole" :key="at">{{ text }}</li>
     </ul>
 
-    <StencilView
+    <StencilEditor
       class="stencil-tab__sheet"
       :fields="sheet.fields"
       :faces="sheet.faces"
