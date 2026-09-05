@@ -47,8 +47,8 @@ const forbidden = [
       'A ring holding an import of a type alone is not one: nothing is ' +
       'loaded to satisfy it and the build erases the edge.',
     severity: 'error',
-    from: { pathNot: '\\.vue$' },
-    to: { circular: true, viaOnly: { dependencyTypesNot: ['type-only'], pathNot: '\\.vue$' } },
+    from: {},
+    to: { circular: true, viaOnly: { dependencyTypesNot: ['type-only'] } },
   },
   {
     name: 'no-screen-at-the-root',
@@ -71,8 +71,20 @@ module.exports = {
     // window's use of the components reads as one edge to a package and stops
     // there. What is drawn is the shape of the source, not of an install.
     preserveSymlinks: true,
+    // Which imports a type alone is read off the compiler rather than off the
+    // text, so `import type` is one edge everywhere. Without this a `.vue` is
+    // not put through TypeScript at all and every type it names reads as a
+    // value, which is the difference between judging a component's ring and
+    // leaving components out of the rule.
+    tsPreCompilationDeps: true,
+    // A package is one node and is not walked into, and it is still a node: an
+    // import of something the manifest never named is an edge, and a graph with
+    // no packages in it has no such edge to refuse.
     doNotFollow: { path: 'node_modules' },
-    exclude: { path: 'node_modules|/dist/|/storybook-static/|/coverage/' },
+    // The module's own build output and its coverage, anchored at its root. A
+    // pattern loose enough to say `/dist/` takes every package whose entry
+    // stands in one with it.
+    exclude: { path: '^(dist|storybook-static|coverage)/' },
     tsConfig: { fileName: 'tsconfig.json' },
     enhancedResolveOptions: {
       extensions: ['.ts', '.tsx', '.vue', '.js', '.mjs', '.json'],
@@ -80,9 +92,11 @@ module.exports = {
       conditionNames: ['import', 'require', 'node', 'default'],
     },
     reporterOptions: {
-      // One box per folder, which is the level a component lives at.
-      archi: { collapsePattern: '^(src/[^/]+|node_modules/(@[^/]+/)?[^/]+)' },
-      dot: { collapsePattern: '^(src/[^/]+|node_modules/(@[^/]+/)?[^/]+)' },
+      // One box per folder of ours and one per package, which is the level a
+      // drawing reads at. A scope is tried before the bare folder so that
+      // `@numen/ui` is a box and `@numen` is not.
+      archi: { collapsePattern: '^(node_modules/@[a-z0-9-]+|node_modules|src)/[^/]+' },
+      dot: { collapsePattern: '^(node_modules/@[a-z0-9-]+|node_modules|src)/[^/]+' },
     },
   },
 }
