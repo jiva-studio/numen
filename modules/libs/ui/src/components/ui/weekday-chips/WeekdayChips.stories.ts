@@ -9,7 +9,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { computed, ref } from 'vue'
-import Days from './Days.vue'
+import WeekdayChips from './WeekdayChips.vue'
 import { weekFrom, WEEK, type Named } from './week'
 import { lightness } from '@/fixtures/colour'
 import { DARK, drawnDark } from '@/fixtures/theme'
@@ -43,8 +43,8 @@ interface Knobs {
 }
 
 const meta: Meta<Knobs> = {
-  title: 'Controls/Days',
-  component: Days,
+  title: 'Controls/Weekday chips',
+  component: WeekdayChips,
   parameters: { layout: 'centered' },
   argTypes: {
     levelOf: { control: 'object' },
@@ -62,7 +62,7 @@ const meta: Meta<Knobs> = {
     disabled: false,
   },
   render: (args) => ({
-    components: { Days },
+    components: { WeekdayChips },
     setup: () => {
       const levelOf = ref<Record<string, number>>({ ...args.levelOf })
       const days = computed(() => {
@@ -77,7 +77,7 @@ const meta: Meta<Knobs> = {
     },
     template: `
       <div style="padding: 2rem">
-        <Days
+        <WeekdayChips
           aria-label="The level each day stands at"
           :days="days"
           :levels="args.levels"
@@ -93,7 +93,7 @@ export default meta
 type Story = StoryObj<Knobs>
 
 const chips = (canvas: HTMLElement): readonly HTMLElement[] =>
-  Array.from(canvas.querySelectorAll<HTMLElement>('[data-slot="days"] button'))
+  Array.from(canvas.querySelectorAll<HTMLElement>('[data-slot="weekday-chips"] button'))
 
 const said = (canvas: HTMLElement): readonly string[] =>
   chips(canvas).map((chip) => chip.getAttribute('aria-label') ?? '')
@@ -149,7 +149,7 @@ export const OtherScripts: Story = {
 export const NoDaysAtAll: Story = {
   args: { named: [] },
   play: async ({ canvasElement }) => {
-    const row = canvasElement.querySelector<HTMLElement>('[data-slot="days"]')
+    const row = canvasElement.querySelector<HTMLElement>('[data-slot="weekday-chips"]')
     expect(row).not.toBeNull()
     expect(chips(canvasElement)).toHaveLength(0)
     expect(row?.tabIndex).toBe(-1)
@@ -283,7 +283,7 @@ export const PressingADayOffersTheLevels: Story = {
  */
 export const OneStopForTheWholeRow: Story = {
   play: async ({ canvasElement }) => {
-    const row = canvasElement.querySelector<HTMLElement>('[data-slot="days"]')
+    const row = canvasElement.querySelector<HTMLElement>('[data-slot="weekday-chips"]')
     expect(row?.tabIndex).toBe(0)
     expect(chips(canvasElement).map((chip) => chip.tabIndex)).toEqual([-1, -1, -1, -1, -1, -1, -1])
 

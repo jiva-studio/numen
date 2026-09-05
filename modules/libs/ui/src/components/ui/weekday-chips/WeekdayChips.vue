@@ -82,7 +82,7 @@ const filling = (level: number) => {
 
 <template>
   <RovingFocusGroup
-    data-slot="days"
+    data-slot="weekday-chips"
     role="toolbar"
     orientation="horizontal"
     v-bind="$attrs"

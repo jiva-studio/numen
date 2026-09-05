@@ -9,7 +9,7 @@
  * `detail`, `day`, `choice` and `percent`.
  */
 import { computed } from 'vue'
-import { Days, NumberField, Segmented, Select, Slider, Switch, WEEK } from '@numen/ui'
+import { NumberField, Segmented, Select, Slider, Switch, WeekdayChips, WEEK } from '@numen/ui'
 import type { Day } from '@numen/ui'
 import CurveSlider from './CurveSlider.vue'
 import type { PresetTabState, SettingValue } from './kind'
@@ -258,7 +258,7 @@ const stopped = computed(() => words.stopped(stoppedAt.value))
                   words.percent(settings.backlog)
                 }}</span>
               </template>
-              <Days
+              <WeekdayChips
                 v-else-if="field === 'load'"
                 :days="week"
                 :levels="levels"

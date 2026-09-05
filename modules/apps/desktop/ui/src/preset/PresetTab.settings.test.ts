@@ -205,7 +205,7 @@ describe('the load of the week', () => {
   }
 
   /** The chips of the row that draws the week. */
-  const chips = (tab: ReturnType<typeof mount>) => tab.findAll('[data-slot="days"] button')
+  const chips = (tab: ReturnType<typeof mount>) => tab.findAll('[data-slot="weekday-chips"] button')
 
   const offered = (): readonly HTMLElement[] => [
     ...document.body.querySelectorAll<HTMLElement>('[role="menuitemradio"]'),
