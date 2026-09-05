@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -63,7 +64,7 @@ func (f filing) apart() vaults.Move { return f.moving(false) }
 func (f filing) moving(kept note.SyncTitleAndFilename) vaults.Move {
 	notes := note.NewMove(
 		f.readers, filesystem.VaultWriters{},
-		f.db.Links(), f.db.Queries(), f.db.Sources(), f.index,
+		f.db.Links(), f.db.Queries(), f.db.Sources(), f.index, time.Now,
 	)
 	notes.Sync = func() note.SyncTitleAndFilename { return kept }
 	notes.Moving = func(_ context.Context, went domain.Move) {

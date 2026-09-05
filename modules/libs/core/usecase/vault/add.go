@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -29,13 +28,13 @@ var ErrCopy = errors.New("one vault cannot be in two places")
 type Add struct {
 	Identity port.VaultIdentity
 	Registry port.VaultRegistry
-	Now      func() time.Time
+	Now      port.Clock
 }
 
 // NewAdd is what turns a folder into a vault: what writes and reads the
 // identity the folder carries, the list this installation keeps, and when this
 // is happening, which the identity carries.
-func NewAdd(identity port.VaultIdentity, registry port.VaultRegistry, now func() time.Time) Add {
+func NewAdd(identity port.VaultIdentity, registry port.VaultRegistry, now port.Clock) Add {
 	return Add{Identity: identity, Registry: registry, Now: now}
 }
 

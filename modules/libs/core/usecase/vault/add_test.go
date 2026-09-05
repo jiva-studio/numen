@@ -20,11 +20,7 @@ import (
 func adding(t *testing.T) (vaults.Add, *appstate.VaultRegistry) {
 	t.Helper()
 	registry := registryAt(t)
-	return vaults.Add{
-		Identity: filesystem.VaultIdentity{},
-		Registry: registry,
-		Now:      time.Now,
-	}, registry
+	return vaults.NewAdd(filesystem.VaultIdentity{}, registry, time.Now), registry
 }
 
 func registryAt(t *testing.T) *appstate.VaultRegistry {
