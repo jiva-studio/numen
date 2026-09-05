@@ -7,8 +7,6 @@ import (
 	"math"
 	"slices"
 	"time"
-
-	fsrs "github.com/open-spaced-repetition/go-fsrs/v3"
 )
 
 // Ahead is how many days a projection runs when it is not told.
@@ -149,40 +147,6 @@ func middling(took []time.Duration) (time.Duration, bool) {
 	}
 	return max(out, ShortestAnswer), true
 }
-
-// The forgetting curve a projection reads a stability by.
-var (
-	recallFactor = fsrs.DefaultParam().Factor
-	recallDecay  = fsrs.DefaultParam().Decay
-)
-
-// Recall is the share of cards standing at this stability that come back after
-// this long away. A card nothing is known about comes back to nobody.
-func Recall(away time.Duration, stability float64) float64 {
-	if stability <= 0 {
-		return 0
-	}
-	days := math.Max(away.Hours()/24, 0)
-	return math.Pow(1+recallFactor*days/stability, recallDecay)
-}
-
-// RecallChance is what a projection assumes about coming back: how likely a
-// card face standing here is to be recalled when it is asked at this instant.
-//
-// A projection follows one card down the middle of what it may do, weighing the
-// ending where it came back against the ending where it did not, and this is
-// the weight. Every figure a run draws is drawn under the assumption it was
-// given, so a caller naming one says which.
-type RecallChance func(Schedule, time.Time) float64
-
-// AsModelled is the chance the scheduler's own forgetting curve gives a card
-// face, and is what a run not told otherwise reads.
-func AsModelled(c Schedule, at time.Time) float64 {
-	return Recall(at.Sub(c.Last), c.Stability)
-}
-
-// NothingForgotten is a run in which every card face asked comes back.
-func NothingForgotten(Schedule, time.Time) float64 { return 1 }
 
 // Projection is what a preset comes to over the days ahead.
 //
@@ -335,75 +299,6 @@ func Overdue(d Day, at map[CardFaceID]Schedule, now time.Time) int {
 		}
 	}
 	return out
-}
-
-// BudgetName is one budget a day of review may be stopped by, in the words the
-// preset writes the key in. A budget the goal does not name is never one of
-// them, and a day that asked for everything there was is closed by nothing:
-// the material ran out.
-type BudgetName string
-
-const (
-	ClosedNothing BudgetName = ""
-	ClosedMinutes BudgetName = "minutes_a_day"
-	ClosedNew     BudgetName = "new_a_day"
-	ClosedReviews BudgetName = "reviews_a_day"
-	// ClosedDate is a day paced by the day the preset aims at.
-	ClosedDate BudgetName = "by_date"
-	// ClosedBacklog is the share of a day that goes to the debt. It closes
-	// nothing, and stands in this vocabulary because it is a key of a preset
-	// that a goal either reads or leaves idle.
-	ClosedBacklog BudgetName = "backlog"
-	// ClosedPaused is a preset scheduling nothing at all.
-	ClosedPaused BudgetName = "paused"
-)
-
-// BudgetNames is every budget that closed one day of review.
-//
-// A goal of retention holds a day to both card counts, and a day that ran out
-// of new cards and of reviews names both: a person raising one of them and
-// finding nothing changed is reading a day the other closed too.
-type BudgetNames []BudgetName
-
-// closers is every budget a day may be closed by, in the order a closing names
-// them.
-var closers = []BudgetName{ClosedPaused, ClosedMinutes, ClosedNew, ClosedReviews, ClosedDate}
-
-// Holds reports whether this budget is one of those that closed the day.
-func (c BudgetNames) Holds(one BudgetName) bool { return slices.Contains(c, one) }
-
-// with is this closing and one budget more, named once and in the order closers
-// stands in.
-func (c BudgetNames) with(one BudgetName) BudgetNames {
-	if !slices.Contains(closers, one) || c.Holds(one) {
-		return c
-	}
-	out := make(BudgetNames, 0, len(c)+1)
-	for _, each := range closers {
-		if each == one || c.Holds(each) {
-			out = append(out, each)
-		}
-	}
-	return out
-}
-
-// Names is every budget that closed the day, each in the words the preset
-// writes the key in.
-func (c BudgetNames) Names() []string {
-	out := make([]string, 0, len(c))
-	for _, one := range c {
-		out = append(out, string(one))
-	}
-	return out
-}
-
-// Name is the key one budget is written under, and empty where the day was
-// closed by none or by more than one.
-func (c BudgetNames) Name() string {
-	if len(c) != 1 {
-		return ""
-	}
-	return string(c[0])
 }
 
 // Simulation projects a preset forward over the days ahead: its card faces
@@ -1000,27 +895,6 @@ func (s Simulation) recalls(c Schedule, at time.Time) float64 {
 		return AsModelled(c, at)
 	}
 	return s.Recalls(c, at)
-}
-
-// Budget is what one day of a preset holds: how many cards of each kind, and
-// how long the day runs.
-type Budget struct {
-	New     int
-	Reviews int
-	Minutes float64
-}
-
-// on is the budget a preset keeps on this day of the week: its share of the
-// load, whether or not the days are evened out.
-//
-// What a day of it admits is Admits, which is the one place a limit is read.
-func (p Preset) on(day time.Weekday) Budget {
-	share := p.Share(day)
-	return Budget{
-		New:     int(math.Round(share * float64(p.NewADay))),
-		Reviews: int(math.Round(share * float64(p.ReviewsADay))),
-		Minutes: share * float64(p.MinutesADay),
-	}
 }
 
 // DueByDay is how loaded each day of review is: how many card faces fall on

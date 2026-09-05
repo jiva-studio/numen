@@ -240,56 +240,6 @@ func TestADayCarryingNoneOfTheLoadTakesNoCard(t *testing.T) {
 	}
 }
 
-// keeps is what a preset keeps for a day of the week, read off the day that
-// admits it.
-func keeps(p review.Preset, day time.Weekday) review.Budget {
-	at := time.Date(2026, 3, 1, 9, 0, 0, 0, time.Local)
-	for at.Weekday() != day {
-		at = at.AddDate(0, 0, 1)
-	}
-	return p.Admits(review.Day{Starts: review.DayStarts}, at, review.Spent{}, 0, 0).Keeps
-}
-
-// The budget a preset keeps on one day is that day of the week's share of it,
-// whether or not the days are evened out. A day the preset does not name keeps
-// the whole of it, and a day at nothing keeps none.
-func TestTheBudgetOfOneDayIsItsShareOfTheLoad(t *testing.T) {
-	p := review.Preset{
-		MinutesADay: 20, NewADay: 10, ReviewsADay: 40,
-		Load: map[time.Weekday]int{time.Wednesday: 50, time.Sunday: 0},
-	}
-
-	half := keeps(p, time.Wednesday)
-	if want := (review.Budget{New: 5, Reviews: 20, Minutes: 10}); half != want {
-		t.Errorf("a day at half the load holds %+v, want %+v", half, want)
-	}
-	whole := keeps(p, time.Tuesday)
-	if want := (review.Budget{New: 10, Reviews: 40, Minutes: 20}); whole != want {
-		t.Errorf("a day the preset does not name holds %+v, want %+v", whole, want)
-	}
-	if none := keeps(p, time.Sunday); none != (review.Budget{}) {
-		t.Errorf("a day at none of the load holds %+v", none)
-	}
-}
-
-// A day at none of the load schedules nothing, as a budget of zero does.
-func TestADayAtNoneOfTheLoadIsAPause(t *testing.T) {
-	p := review.Preset{
-		Goal: review.GoalRetention, NewADay: 10, ReviewsADay: 40,
-		Load: map[time.Weekday]int{time.Sunday: 0},
-	}
-	at := time.Date(2026, 3, 1, 9, 0, 0, 0, time.Local)
-	if at.Weekday() != time.Sunday {
-		t.Fatalf("%v is a %v", at, at.Weekday())
-	}
-	if !p.Admits(ahead, at, review.Spent{}, 0, 0).Paused() {
-		t.Error("a day at none of the load is not a pause")
-	}
-	if p.Admits(ahead, at.AddDate(0, 0, 1), review.Spent{}, 0, 0).Paused() {
-		t.Error("the day after it is a pause")
-	}
-}
-
 // An even load moves reviews to the quieter days around them, so the busiest
 // day of a week stands nearer its quietest.
 func TestAnEvenLoadEvensTheDaysOut(t *testing.T) {
