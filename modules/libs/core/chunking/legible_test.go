@@ -16,11 +16,11 @@ func TestANegativeThresholdAsksForNone(t *testing.T) {
 	}
 
 	// The thresholds as they stand still refuse what they were written for.
-	standing := Legibility{}.resolve()
-	if legible(rubbish, standing) {
+	defaults := Legibility{}.resolve()
+	if legible(rubbish, defaults) {
 		t.Errorf("%q passed the thresholds", rubbish)
 	}
-	if !legible(plain, standing) {
+	if !legible(plain, defaults) {
 		t.Errorf("%q was refused by the thresholds", plain)
 	}
 }

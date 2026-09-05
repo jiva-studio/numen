@@ -158,16 +158,16 @@ func (p Preset) Learned(s Schedule, at time.Time) bool {
 // cannot hold stands at the default. A preset that says nothing holds its cards
 // to the threshold in Defaults.
 func (p Preset) counting() (LearnedRule, int, float64) {
-	standing := Defaults()
+	defaults := Defaults()
 	rule, interval, retention := p.Rule, p.Interval, p.Retention
 	if !KnownRule(rule) {
-		rule = standing.Rule
+		rule = defaults.Rule
 	}
 	if !IntervalBounds.Holds(float64(interval)) {
-		interval = standing.Interval
+		interval = defaults.Interval
 	}
 	if !RetentionBounds.Holds(retention) {
-		retention = standing.Retention
+		retention = defaults.Retention
 	}
 	return rule, interval, retention
 }
@@ -776,11 +776,11 @@ func DayName(day time.Weekday) string {
 // counted is one setting written in whole numbers, and what the note said
 // about it.
 func counted(
-	front map[string]any, key string, bounds Bounds, standing int, problems *[]string,
+	front map[string]any, key string, bounds Bounds, fallback int, problems *[]string,
 ) int {
 	raw, present := front[key]
 	if !present || raw == nil {
-		return standing
+		return fallback
 	}
 	value, ok := number(raw)
 	switch {
@@ -794,7 +794,7 @@ func counted(
 	default:
 		return int(value)
 	}
-	return standing
+	return fallback
 }
 
 // number is what YAML hands over for a number, whichever of the two it chose.
