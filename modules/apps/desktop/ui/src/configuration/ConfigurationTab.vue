@@ -8,7 +8,6 @@
  * moved past what was read puts the person the two answers a note puts.
  */
 import { Editor } from '@numen/ui'
-import Caution from '../Caution.vue'
 import type { ConfigurationTabState } from './kind'
 import { WORDS as words } from './words'
 
@@ -21,11 +20,11 @@ const props = defineProps<{ held: ConfigurationTabState }>()
       {{ props.held.saying() }}
     </p>
 
-    <Caution v-if="props.held.overtaken()" role="status" answering>
+    <p v-if="props.held.overtaken()" class="caution caution--answering" role="status">
       {{ words.overtaken }}
       <button type="button" class="answer" @click="props.held.keep()">{{ words.keep }}</button>
       <button type="button" class="answer" @click="props.held.take()">{{ words.take }}</button>
-    </Caution>
+    </p>
 
     <Editor
       v-if="props.held.read()"

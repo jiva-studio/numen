@@ -12,7 +12,6 @@ import { Menu, optionsForType, Plex, useTypeSize } from '@numen/ui'
 import type { MenuOpening, PlexRelatedSeat, PlexShowing } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 import { ITEMS, NONE } from './menu'
-import Caution from '../Caution.vue'
 import { iconFor, iconOfNote } from '../icons'
 import type { PlexTabState } from './kind'
 import { WORDS as words } from './words'
@@ -70,9 +69,9 @@ const closed = (chose?: string) => {
 
 <template>
   <div class="plex" @contextmenu="asks">
-    <Caution v-if="props.held.view.trouble.value">
+    <p v-if="props.held.view.trouble.value" class="caution">
       {{ props.held.view.trouble.value }}
-    </Caution>
+    </p>
 
     <Plex
       v-if="props.held.picture.value"

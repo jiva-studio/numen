@@ -6,7 +6,6 @@
  * two is theirs. A file that is gone keeps what is on screen and offers to make
  * it again. What either is said in is the tab's own.
  */
-import Caution from './Caution.vue'
 import type { State } from './note/tab'
 
 /** The words the two questions are put in. */
@@ -35,16 +34,16 @@ defineEmits<{
 </script>
 
 <template>
-  <Caution v-if="saying" role="alert">{{ saying }}</Caution>
+  <p v-if="saying" class="caution" role="alert">{{ saying }}</p>
 
-  <Caution v-if="state === 'gone'" role="status" answering>
+  <p v-if="state === 'gone'" class="caution caution--answering" role="status">
     {{ words.gone }}
     <button type="button" class="answer" @click="$emit('keep')">{{ words.makeAgain }}</button>
-  </Caution>
+  </p>
 
-  <Caution v-if="state === 'overtaken'" role="status" answering>
+  <p v-if="state === 'overtaken'" class="caution caution--answering" role="status">
     {{ words.overtaken }}
     <button type="button" class="answer" @click="$emit('keep')">{{ words.keep }}</button>
     <button type="button" class="answer" @click="$emit('take')">{{ words.take }}</button>
-  </Caution>
+  </p>
 </template>

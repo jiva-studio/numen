@@ -9,9 +9,8 @@
  */
 import { computed, onMounted, onUnmounted } from 'vue'
 import { Menu, Tree } from '@numen/ui'
-import type { Marking, Point, Row as TreeRow } from '@numen/ui'
+import type { Point, Row as TreeRow, RowMarker } from '@numen/ui'
 import { Book, File, Folder, FolderOpen, type LucideIcon } from '@lucide/vue'
-import Caution from '../Caution.vue'
 import type { NoteType, Source } from '../core'
 import { iconFor, iconOfNote } from '../icons'
 import type { Dropped, FilesTabState } from './kind'
@@ -26,7 +25,7 @@ const props = defineProps<{ held: FilesTabState }>()
  * up by, carrying the folder a file let go there is filed in. The window puts
  * `file-drop-target-active` on whichever it is over.
  */
-const dropTarget = computed<Marking>(() => ({
+const dropTarget = computed<RowMarker>(() => ({
   attribute: 'data-file-drop-target',
   valueFor: (row: string | null) => props.held.folderFor(row),
 }))
@@ -91,9 +90,9 @@ onUnmounted(() => globalThis.removeEventListener('focus', again))
 
 <template>
   <div class="files">
-    <Caution v-if="props.held.list.trouble.value">
+    <p v-if="props.held.list.trouble.value" class="caution">
       {{ props.held.list.trouble.value }}
-    </Caution>
+    </p>
 
     <Tree
       v-model:renaming="renaming"
