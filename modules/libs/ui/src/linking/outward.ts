@@ -35,6 +35,8 @@ export const holdsTheWindow = (opens: Opens, root: Document = document): (() => 
     try {
       at = new URL(href, here)
     } catch {
+      // An href that is no address points nowhere outward, so the press is the
+      // page's own and is left to it.
       return
     }
     if (!pointsOutward(at, here)) return

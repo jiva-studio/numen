@@ -266,6 +266,9 @@ export function plexing(view: View, deps: PlexTabDeps) {
       if (!mine.current) return
       parts.value = new Map([...found].map(([path, held]) => [path, asParts(held)]))
     } catch {
+      // What hangs under a node is the picture saying more about notes already
+      // drawn. A vault that cannot answer leaves them hanging nothing, and the
+      // next picture asks again.
       if (mine.current) parts.value = new Map()
     }
   }

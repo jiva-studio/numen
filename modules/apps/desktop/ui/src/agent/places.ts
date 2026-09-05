@@ -36,6 +36,8 @@ export const spotOf = (href: string): Spot | null => {
   try {
     path = decodeURIComponent(written)
   } catch {
+    // An escape a model wrote wrongly names no file, and a link to no file
+    // opens nothing.
     return null
   }
   if (path === '') return null

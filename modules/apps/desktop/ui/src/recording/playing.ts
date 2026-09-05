@@ -147,6 +147,8 @@ const itself: MediaTypeProbe = (type) => {
   try {
     return document.createElement('audio').canPlayType(type) !== ''
   } catch {
+    // A window that cannot be asked has not said yes, and what is offered is
+    // what the window says it can play.
     return false
   }
 }
