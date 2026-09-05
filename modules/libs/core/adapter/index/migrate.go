@@ -10,6 +10,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/writing"
 )
 
 // SQL lives in .sql files: it is a language of its own, and anything that
@@ -155,7 +157,7 @@ func discard(ctx context.Context, db *sql.DB) error {
 // A table carrying a column this build does not write is brought to the shape
 // this build writes, which is the one thing the bookkeeping owes itself.
 func remember(ctx context.Context, db *sql.DB) error {
-	if _, err := db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (
+	if _, err := writing.Exec(ctx, db, `CREATE TABLE IF NOT EXISTS schema_migrations (
 		version INTEGER PRIMARY KEY,
 		name    TEXT NOT NULL
 	)`); err != nil {
@@ -177,7 +179,7 @@ func remember(ctx context.Context, db *sql.DB) error {
 		`DROP TABLE schema_migrations`,
 		`ALTER TABLE schema_migrations_next RENAME TO schema_migrations`,
 	} {
-		if _, err := db.ExecContext(ctx, statement); err != nil {
+		if _, err := writing.Exec(ctx, db, statement); err != nil {
 			return fmt.Errorf("what this index was migrated by: %w", err)
 		}
 	}
@@ -188,7 +190,7 @@ func apply(ctx context.Context, db *sql.DB, m migration) error {
 	if err := remember(ctx, db); err != nil {
 		return err
 	}
-	tx, err := db.BeginTx(ctx, nil)
+	tx, err := writing.Begin(ctx, db)
 	if err != nil {
 		return err
 	}

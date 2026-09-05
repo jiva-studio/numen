@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlfile"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/writing"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
@@ -26,7 +27,7 @@ func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 // Register gives the vault a row for other rows to point at. A vault the index
 // already knows keeps the row it has.
 func (r *Repository) Register(ctx context.Context, vaultID domain.VaultID) error {
-	_, err := r.db.ExecContext(ctx, stmt.Get("register"), string(vaultID))
+	_, err := writing.Exec(ctx, r.db, stmt.Get("register"), string(vaultID))
 	return err
 }
 
@@ -43,7 +44,7 @@ var forgetting = []string{
 // The vectors stay. One is addressed by the text it was made from, so chunks of
 // several vaults hold the same vector.
 func (r *Repository) Forget(ctx context.Context, vaultID domain.VaultID) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := writing.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}

@@ -14,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlfile"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/writing"
 	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
@@ -68,7 +69,7 @@ func (r *Repository) Save(ctx context.Context, vaultID domain.VaultID, notes []d
 	if len(notes) == 0 {
 		return nil
 	}
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := writing.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
@@ -287,7 +288,7 @@ func (r *Repository) Remove(ctx context.Context, vaultID domain.VaultID, paths [
 	if len(paths) == 0 {
 		return nil
 	}
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := writing.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}

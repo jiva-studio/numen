@@ -18,6 +18,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlfile"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/writing"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
@@ -92,7 +93,7 @@ func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
 // SaveSource records one file of one kind and what reading it produced.
 func (r *Repository) SaveSource(ctx context.Context, vaultID domain.VaultID, s Source) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := writing.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
@@ -119,7 +120,7 @@ func (r *Repository) SaveSource(ctx context.Context, vaultID domain.VaultID, s S
 // One write, because a recipe names the sizes a source's chunks were cut into:
 // the recipe and the chunks it describes are recorded together.
 func (r *Repository) SaveExtraction(ctx context.Context, vaultID domain.VaultID, s Source, chunks []Chunk) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := writing.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
@@ -145,7 +146,7 @@ func (r *Repository) SaveExtraction(ctx context.Context, vaultID domain.VaultID,
 
 // SaveChunks makes the chunks of one source the ones given.
 func (r *Repository) SaveChunks(ctx context.Context, vaultID domain.VaultID, kind, path string, chunks []Chunk) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := writing.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
@@ -183,7 +184,7 @@ func (r *Repository) SaveVectors(ctx context.Context, vectors []Vector) error {
 	if len(vectors) == 0 {
 		return nil
 	}
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := writing.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
@@ -214,7 +215,7 @@ func (r *Repository) RemoveSources(ctx context.Context, vaultID domain.VaultID, 
 	if len(paths) == 0 {
 		return nil
 	}
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := writing.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
@@ -252,7 +253,7 @@ func (r *Repository) RemoveSources(ctx context.Context, vaultID domain.VaultID, 
 // Only the file at the path itself can be called something else afterwards;
 // everything under a folder keeps the name it has.
 func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, from, to string) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := writing.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}

@@ -31,7 +31,8 @@ import (
 // while a scan is still running.
 //
 // Several processes open the one file. Their writers queue in SQLite, under the
-// busy timeout, and a writer still waiting when it runs out says so.
+// busy timeout, and a writer still waiting when it runs out asks again — see
+// the writing package, which every write on this pool goes through.
 type DB struct {
 	write *sql.DB
 	read  *sql.DB
@@ -51,7 +52,8 @@ var pragmas = []string{
 	// Foreign keys so removing a vault cannot leave rows pointing at nothing.
 	"foreign_keys(1)",
 	// Wait for a writer, up to five seconds, before SQLITE_BUSY. The writer
-	// waited for may be in another process.
+	// waited for may be in another process, and a write that waited it out asks
+	// again rather than failing.
 	"busy_timeout(5000)",
 	"cache_size(-65536)",
 }

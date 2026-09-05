@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/writing"
 	"github.com/jiva-studio/numen/modules/libs/core/embedding"
 )
 
@@ -37,7 +38,7 @@ func (db *DB) FitVectors(ctx context.Context, dims int, recipe string) error {
 		return nil
 	}
 
-	tx, err := db.write.BeginTx(ctx, nil)
+	tx, err := writing.Begin(ctx, db.write)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}

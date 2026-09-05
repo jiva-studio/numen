@@ -3,6 +3,8 @@ package index
 import (
 	"context"
 	"database/sql"
+
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/writing"
 )
 
 // DatabaseMaintenance keeps the database's picture of its own contents current,
@@ -24,6 +26,6 @@ const measure = "PRAGMA optimize = 0x10012"
 
 // Changed says what the database knows about itself is out of date.
 func (m DatabaseMaintenance) Changed(ctx context.Context) error {
-	_, err := m.db.ExecContext(ctx, measure)
+	_, err := writing.Exec(ctx, m.db, measure)
 	return err
 }
