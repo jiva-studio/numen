@@ -61,7 +61,7 @@ const stem = computed(() => `${props.words.sectionStem} ${props.section.at}`)
 </script>
 
 <template>
-  <div class="section-heading" :data-heading-of="section.id">
+  <div class="section-heading">
     <Divider>
       <!-- What a person reaches for is the name and the way to be rid of it,
            and nothing of the line either side. -->
