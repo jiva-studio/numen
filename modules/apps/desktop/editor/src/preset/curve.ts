@@ -7,6 +7,7 @@
  * is arithmetic over the settings alone, and is shown as an approximation.
  */
 import { BudgetName } from '@numen/protocol'
+import { dayAfter, dayNamed, daysBetween } from '@numen/ui'
 import { DEFAULTS, NOWHERE } from './core'
 import type { Bounds, Curve, Goal, Place, Point, Rule, Settings, SettingsBounds } from './core'
 
@@ -234,23 +235,6 @@ export const placeAt = (grid: readonly number[], share: number): number => {
   return Math.min(Math.max(Math.round(share * last), 0), last)
 }
 
-/** The day a number of days from another, written as the year, month and day. */
-export const dayAfter = (from: Date, days: number): string => {
-  const day = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate()))
-  day.setUTCDate(day.getUTCDate() + days)
-  return day.toISOString().slice(0, 10)
-}
-
-/** Whether a value is a day at all, which an empty field is not. */
-export const isDay = (day: string): boolean => !Number.isNaN(Date.parse(`${day}T00:00:00Z`))
-
-/** How many days stand between today and a day, and zero for a day that is not one. */
-export const daysUntil = (today: Date, day: string): number => {
-  const named = Date.parse(`${day}T00:00:00Z`)
-  if (Number.isNaN(named)) return 0
-  const from = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
-  return Math.round((named - from) / 86400000)
-}
 
 /** Why a preset's goal has nothing to work on, and empty where it has. */
 export type IdleReason = 'unpointed' | 'noCards' | 'beginsNothing' | ''
@@ -283,7 +267,8 @@ const asksNothing = (curve: Curve): boolean =>
 export const approximate = (settings: Settings, today: Date): Curve => {
   const grid = gridFor(settings, today)
   const at = grid.map((value) => guessed(settings, value, grid))
-  const days = settings.goal === 'date' ? grid.map((value) => dayAfter(today, value)) : []
+  const days =
+    settings.goal === 'date' ? grid.map((value) => dayAfter(dayNamed(today), value)) : []
   const value = goalValue(settings, today)
   const place = nearest(grid, value)
   const now: Place = { at: place, value, day: days[place] ?? '' }
@@ -305,7 +290,7 @@ export const approximate = (settings: Settings, today: Date): Curve => {
 /** The goal's own value in the preset, in the units of its grid. */
 export const goalValue = (settings: Settings, today: Date): number => {
   if (settings.goal === 'retention') return settings.retention
-  if (settings.goal === 'date') return daysUntil(today, settings.byDate)
+  if (settings.goal === 'date') return daysBetween(dayNamed(today), settings.byDate)
   return settings.minutesADay
 }
 
@@ -315,7 +300,7 @@ const gridFor = (settings: Settings, today: Date): readonly number[] => {
     return ladder(RETENTION.least, RETENTION.most, (one) => Math.round(one * 1000) / 1000)
   }
   if (settings.goal === 'date') {
-    const most = Math.max(daysUntil(today, settings.byDate), 30)
+    const most = Math.max(daysBetween(dayNamed(today), settings.byDate), 30)
     return ladder(1, most, Math.round)
   }
   return ladder(0, Math.max(settings.minutesADay, LEAST_CEILING), Math.round)
@@ -373,7 +358,7 @@ export const producing = (
     return { ...was, retention: held(round(value, 2), within.retention) }
   }
   if (curve.goal === 'date') {
-    return { ...was, byDate: curve.days[place] ?? dayAfter(today, value) }
+    return { ...was, byDate: curve.days[place] ?? dayAfter(dayNamed(today), value) }
   }
   return { ...was, minutesADay: held(Math.round(value), within.minutesADay) }
 }

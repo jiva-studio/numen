@@ -27,13 +27,11 @@ import {
   type Settings,
   type SettingsBounds,
 } from './core'
+import { dayAfter, dayNamed, daysBetween, isDay } from '@numen/ui'
 import {
   approximate,
-  dayAfter,
-  daysUntil,
   goalValue,
   held,
-  isDay,
   nearest,
   producing,
   shapeOf,
@@ -492,7 +490,7 @@ export function presetting(
   const falling = (one: OpenPreset, value: SettingValue): number => {
     if (typeof value === 'number') return nearest(one.curve.value.grid, value)
     if (typeof value === 'string' && isDay(value)) {
-      return nearest(one.curve.value.grid, daysUntil(today(), value))
+      return nearest(one.curve.value.grid, daysBetween(dayNamed(today()), value))
     }
     return -1
   }
@@ -500,7 +498,7 @@ export function presetting(
   /** A goal of a date opens on a day, so one is named where the file names none. */
   const aiming = (settings: Settings, goal: Goal): Settings =>
     goal === 'date' && settings.byDate === ''
-      ? { ...settings, goal, byDate: dayAfter(today(), AHEAD) }
+      ? { ...settings, goal, byDate: dayAfter(dayNamed(today()), AHEAD) }
       : { ...settings, goal }
 
   /** What one open preset holds, in the vocabulary its tab is drawn from. */

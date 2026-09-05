@@ -11,8 +11,6 @@ import { BOUNDS } from '../testing/preset'
 import {
   approximate,
   costOf,
-  dayAfter,
-  daysUntil,
   FIELDS,
   held,
   limiting,
@@ -33,7 +31,9 @@ import {
  */
 import corpus from '../../../../../libs/protocol/testdata/presets.json'
 
-const today = new Date('2026-08-30T00:00:00Z')
+// The instant is read on the calendar the machine stands in, so the day is
+// written out here rather than fixed at Greenwich.
+const today = new Date(2026, 7, 30, 12)
 
 const settings = (over: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...over })
 
@@ -68,19 +68,6 @@ describe('where a value stands on a grid', () => {
     expect(placeAt([0, 1, 2, 3, 4], 0.5)).toBe(2)
     expect(placeAt([0, 1, 2, 3, 4], -1)).toBe(0)
     expect(placeAt([0, 1, 2, 3, 4], 2)).toBe(4)
-  })
-})
-
-describe('the days a goal of a date counts', () => {
-  it('counts forward from today and back again', () => {
-    expect(dayAfter(today, 30)).toBe('2026-09-29')
-    expect(daysUntil(today, '2026-09-29')).toBe(30)
-    expect(daysUntil(today, '2026-08-01')).toBe(-29)
-  })
-
-  it('counts nothing for a day that is not one', () => {
-    expect(daysUntil(today, '')).toBe(0)
-    expect(daysUntil(today, 'the day after tomorrow')).toBe(0)
   })
 })
 
