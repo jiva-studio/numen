@@ -100,7 +100,7 @@ func (c Config) Embed(db *Index, embedder port.Embedder, v domain.Vault) (source
 
 // Extract cuts a vault's sources into chunks. Every entry point takes it from
 // here, so what a chunk is kept under is one answer.
-func (c Config) Extract(sources port.SourceRepository, owing port.SourceQueries, v domain.Vault) (source.Extract, error) {
+func (c Config) Extract(sources port.SourceRepository, known port.SourceQueries, v domain.Vault) (source.Extract, error) {
 	derived, err := c.DerivedStores().Open(v)
 	if err != nil {
 		return source.Extract{}, err
@@ -108,7 +108,7 @@ func (c Config) Extract(sources port.SourceRepository, owing port.SourceQueries,
 	return source.Extract{
 		Readers:      c.VaultReaders(),
 		Sources:      sources,
-		Owing:        owing,
+		Known:        known,
 		Derived:      derived,
 		Documents:    c.Documents(),
 		Sizes:        c.Chunking(),

@@ -249,7 +249,7 @@ func searchable(readers port.VaultReaders, db *container.Index) vaults.ReadWhole
 		Books: source.Extract{
 			Readers: readers,
 			Sources: db.Sources(),
-			Owing:   db.SourcesKnown(),
+			Known:   db.SourcesKnown(),
 		},
 		Vectors: source.Embed{
 			Readers: readers,
