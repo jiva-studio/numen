@@ -1828,14 +1828,14 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x05focus\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x05focus\x12-\n" +
 	"\arelated\x18\x02 \x03(\v2\x13.numen.v1.NeighbourR\arelated\x121\n" +
 	"\n" +
-	"focus_type\x18\x03 \x01(\x0e2\x12.numen.v1.NoteTypeR\tfocusType\"\xc3\x01\n" +
+	"focus_type\x18\x03 \x01(\x0e2\x12.numen.v1.NoteTypeR\tfocusType\"\xd4\x01\n" +
 	"\tNeighbour\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x12\"\n" +
 	"\x04seat\x18\x02 \x01(\x0e2\x0e.numen.v1.SeatR\x04seat\x12\x14\n" +
 	"\x05label\x18\x03 \x01(\tR\x05label\x12\x18\n" +
 	"\athrough\x18\x04 \x01(\tR\athrough\x12\x16\n" +
 	"\x06mutual\x18\x05 \x01(\bR\x06mutual\x12&\n" +
-	"\x04type\x18\x06 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\"G\n" +
+	"\x04type\x18\x06 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04typeJ\x04\b\a\x10\bR\tambiguous\"G\n" +
 	"\x17ResolveAddressesRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x18\n" +
 	"\awritten\x18\x02 \x03(\tR\awritten\"Q\n" +
