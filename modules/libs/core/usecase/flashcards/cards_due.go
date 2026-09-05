@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // CardsDue is what one vault's cards come to today: what it holds, what is owed,
@@ -89,7 +90,7 @@ type CountCardsDue struct {
 	// links schedules every deck by the defaults.
 	Presets Presets
 	Day     review.Day
-	Now     func() time.Time
+	Now     port.Clock
 }
 
 // Execute counts one vault.
@@ -129,7 +130,7 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 		return CardsDue{}, err
 	}
 
-	now := u.now()
+	now := u.Now()
 	day, err := budgeted(
 		ctx, v, reading, u.Day, standing, schedules, log,
 		u.Schedules.By, u.Schedules.at, now,
@@ -267,11 +268,4 @@ func (b *budgets) owing(due, fresh map[string]int) []PresetCardsDue {
 		})
 	}
 	return out
-}
-
-func (u CountCardsDue) now() time.Time {
-	if u.Now == nil {
-		return time.Now()
-	}
-	return u.Now()
 }

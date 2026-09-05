@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // ProjectCurve is the simulator behind the one control of a preset.
@@ -21,7 +21,7 @@ type ProjectCurve struct {
 	// links projects every deck of the vault.
 	Presets Presets
 	Day     review.Day
-	Now     func() time.Time
+	Now     port.Clock
 	// By is the scheduler asking for a share of the cards to come back. A build
 	// holding none reads FSRS.
 	By func(retention float64) review.Scheduler
@@ -122,7 +122,7 @@ func (u ProjectCurve) Execute(
 	if !costed {
 		cost = review.DefaultCost
 	}
-	now := u.now()
+	now := u.Now()
 	// The projection is run by the scheduler this preset asks for, which is the
 	// one its cards are scheduled by, and it opens on the day a person is
 	// already partway through.
@@ -241,11 +241,4 @@ func (u ProjectCurve) at(retention float64) review.Scheduler {
 		return u.By(retention)
 	}
 	return review.NewFSRSAt(retention)
-}
-
-func (u ProjectCurve) now() time.Time {
-	if u.Now == nil {
-		return time.Now()
-	}
-	return u.Now()
 }

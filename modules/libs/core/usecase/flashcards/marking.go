@@ -3,7 +3,6 @@ package flashcards
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
@@ -29,7 +28,8 @@ type Marking struct {
 	// Index brings what a write touched up to date. A build holding none leaves
 	// the index to the next scan.
 	Index func(ctx context.Context, v domain.Vault, paths []string) error
-	Now   func() time.Time
+	// Now is when this is happening. A mark written here carries it.
+	Now port.Clock
 }
 
 // MarkingResult is what the marking came to: the decks it could not write.

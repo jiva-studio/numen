@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // ErrBothNamed is a sitting named a deck and a preset at once. Which cards were
@@ -83,7 +84,7 @@ type Session struct {
 	// links schedules every deck by the defaults.
 	Presets Presets
 	Day     review.Day
-	Now     func() time.Time
+	Now     port.Clock
 }
 
 // Execute is what to ask, in order.
@@ -120,7 +121,7 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, over Scope) (Sitti
 	}
 	schedules := u.Schedules.replayed(ctx, v, held, asks)
 
-	now := u.now()
+	now := u.Now()
 	day, err := budgeted(
 		ctx, v, reading, u.Day, standing, schedules, held,
 		u.Schedules.By, u.Schedules.at, now,
@@ -181,11 +182,4 @@ func ahead(
 		out[r] = one.Preset.Lands(on, now, due).Sub(now)
 	}
 	return out
-}
-
-func (u Session) now() time.Time {
-	if u.Now == nil {
-		return time.Now()
-	}
-	return u.Now()
 }

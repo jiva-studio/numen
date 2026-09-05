@@ -3,7 +3,6 @@ package flashcards
 import (
 	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
@@ -70,7 +69,7 @@ type CountReviews struct {
 	// says how much falls on each day still to come.
 	Schedules Schedules
 	Day       review.Day
-	Now       func() time.Time
+	Now       port.Clock
 }
 
 // Execute counts one vault.
@@ -145,7 +144,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 
 	held.order = ordered(held.Answers)
 	u.remember(ctx, v, now)
-	out.Streak = review.Streak(u.Day, out.Days, u.now())
+	out.Streak = review.Streak(u.Day, out.Days, u.Now())
 
 	// What is still to come, and how much came back, are both worked out from
 	// the answers in the order they were given, so they are asked for together.
@@ -224,7 +223,7 @@ func (u CountReviews) ahead(
 		return nil, nil, err
 	}
 
-	now := u.now()
+	now := u.Now()
 	ends := u.Day.Ends(now)
 	for _, s := range schedules {
 		if !s.Seen() || s.Due.Before(ends) {
@@ -267,11 +266,4 @@ func (u CountReviews) remember(ctx context.Context, v domain.Vault, now countCac
 		return
 	}
 	_ = u.Cache.Write(ctx, v.ID, raw)
-}
-
-func (u CountReviews) now() time.Time {
-	if u.Now == nil {
-		return time.Now()
-	}
-	return u.Now()
 }

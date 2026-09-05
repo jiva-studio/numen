@@ -80,7 +80,7 @@ func opened(t testing.TB, notes map[string]string) vaulted {
 	presets := flashcards.Presets{
 		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{},
 		Links: db.NoteQueries(), Notes: db.NoteQueries(),
-		Problems: db.NoteQueries(), Index: scanned,
+		Problems: db.NoteQueries(), Index: scanned, Now: time.Now,
 	}
 	// Each card is worked out at the share of the cards its own preset asks
 	// for, which is how the application builds this.
@@ -183,7 +183,8 @@ func (s vaulted) owedAt(day review.Day, now func() time.Time) flashcards.CountCa
 
 func (s vaulted) session(day review.Day) flashcards.Session {
 	return flashcards.Session{
-		Marking: s.marking, CardFaces: s.standings, Schedules: s.kept, Day: day, Now: time.Now,
+		Marking: s.marking, CardFaces: s.standings, Schedules: s.kept,
+		Presets: flashcards.Presets{Now: time.Now}, Day: day, Now: time.Now,
 	}
 }
 

@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"slices"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -66,19 +65,14 @@ type Presets struct {
 	// the index to the next scan.
 	Index func(ctx context.Context, v domain.Vault, paths []string) error
 	// Day is where one day of review gives way to the next, and Now what time
-	// it is. They answer whether a preset schedules anything today. A build
-	// holding no clock reads the machine's.
+	// it is. They answer whether a preset schedules anything today.
 	Day review.Day
-	Now func() time.Time
+	Now port.Clock
 }
 
 // stops is why a preset schedules nothing, and why it schedules nothing today.
 func (u Presets) stops(p review.Preset) (review.StopReason, review.StopReason) {
-	now := time.Now
-	if u.Now != nil {
-		now = u.Now
-	}
-	at := now()
+	at := u.Now()
 	return p.Stops(u.Day, at), p.StopsOn(u.Day, at)
 }
 

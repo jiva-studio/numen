@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // ErrNoRating is what an answer outside the four gets. Nothing here guesses
@@ -21,7 +22,7 @@ var ErrNoRating = errors.New("not one of the four ratings")
 // line of its own naming the one it takes back.
 type Record struct {
 	Run *LogWriter
-	Now func() time.Time
+	Now port.Clock
 }
 
 // Answer writes down one card answered once, and hands back the line as it was
@@ -36,7 +37,7 @@ func (u Record) Answer(
 		return review.Answer{}, errors.New("an answer says which card, and through which face")
 	}
 
-	at := u.now()
+	at := u.Now()
 	id, err := ulid.New(at)
 	if err != nil {
 		return review.Answer{}, err
@@ -54,7 +55,7 @@ func (u Record) TakeBack(ctx context.Context, id string) (review.Answer, error) 
 	if id == "" {
 		return review.Answer{}, errors.New("an answer taken back names the one it takes back")
 	}
-	at := u.now()
+	at := u.Now()
 	own, err := ulid.New(at)
 	if err != nil {
 		return review.Answer{}, err
@@ -64,11 +65,4 @@ func (u Record) TakeBack(ctx context.Context, id string) (review.Answer, error) 
 		return review.Answer{}, err
 	}
 	return a, nil
-}
-
-func (u Record) now() time.Time {
-	if u.Now == nil {
-		return time.Now()
-	}
-	return u.Now()
 }
