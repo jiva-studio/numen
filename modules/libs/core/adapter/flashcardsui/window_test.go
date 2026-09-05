@@ -123,7 +123,7 @@ func lives(t *testing.T, api *API, v domain.Vault, days int) {
 			}
 			_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 				Vault: string(v.ID), Run: sitting.GetRun(),
-				Card: one.GetCard(), Face: one.GetFace(),
+				Mark: one.GetMark(), Face: one.GetFace(),
 				Rating: rating, TookMs: took.Milliseconds(),
 			}))
 			if err != nil {
@@ -365,7 +365,7 @@ func TestADeckSaysHowMuchOfItWasAnsweredToday(t *testing.T) {
 	for _, card := range sat.Msg.GetAsked()[:3] {
 		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 			Vault: string(v.ID), Run: sat.Msg.GetRun(),
-			Card: card.GetCard(), Face: card.GetFace(),
+			Mark: card.GetMark(), Face: card.GetFace(),
 			Rating: v1.Rating_RATING_GOOD, TookMs: 6000,
 		})); err != nil {
 			t.Fatal(err)

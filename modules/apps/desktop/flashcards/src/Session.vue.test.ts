@@ -12,7 +12,7 @@ import type { CardFace } from './core'
 const card: CardFace = {
   deck: 'decks/Words.md',
   section: '',
-  card: '3f4g5h6j7k',
+  mark: '3f4g5h6j7k',
   face: 'Say it',
   heading: 'Leaf mould',
   front: '<p>Leaf mould</p>',

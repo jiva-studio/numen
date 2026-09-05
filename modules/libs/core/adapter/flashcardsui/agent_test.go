@@ -108,7 +108,7 @@ func TestTheCardsNameIsNotInTheQuestion(t *testing.T) {
 	stream, err := panelled(t, api).AskAgent(t.Context(), connect.NewRequest(&v1.AskAgentRequest{
 		Asked: "why is it called that",
 		Focus: planted,
-		Card:  planted,
+		Mark:  planted,
 		Face:  planted,
 	}))
 	if err != nil {

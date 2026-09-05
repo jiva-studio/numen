@@ -43,7 +43,7 @@ type AskAgentRequest struct {
 	// The card in focus, for a window that asks about one: the mark its deck
 	// writes it under, and the face it is being shown through. The deck is the
 	// note in focus. Both empty in a window that asks about notes.
-	Card          string `protobuf:"bytes,4,opt,name=card,proto3" json:"card,omitempty"`
+	Mark          string `protobuf:"bytes,4,opt,name=mark,proto3" json:"mark,omitempty"`
 	Face          string `protobuf:"bytes,5,opt,name=face,proto3" json:"face,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -100,9 +100,9 @@ func (x *AskAgentRequest) GetConversation() string {
 	return ""
 }
 
-func (x *AskAgentRequest) GetCard() string {
+func (x *AskAgentRequest) GetMark() string {
 	if x != nil {
-		return x.Card
+		return x.Mark
 	}
 	return ""
 }
@@ -517,7 +517,7 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\x05asked\x18\x01 \x01(\tR\x05asked\x12\x14\n" +
 	"\x05focus\x18\x02 \x01(\tR\x05focus\x12\"\n" +
 	"\fconversation\x18\x03 \x01(\tR\fconversation\x12\x12\n" +
-	"\x04card\x18\x04 \x01(\tR\x04card\x12\x12\n" +
+	"\x04mark\x18\x04 \x01(\tR\x04mark\x12\x12\n" +
 	"\x04face\x18\x05 \x01(\tR\x04face\"?\n" +
 	"\x19FinishConversationRequest\x12\"\n" +
 	"\fconversation\x18\x01 \x01(\tR\fconversation\"\x1c\n" +

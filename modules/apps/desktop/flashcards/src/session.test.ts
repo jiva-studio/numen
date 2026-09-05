@@ -4,13 +4,13 @@ import { session } from './session'
 import type { SessionClient, SessionStart } from './session'
 
 /** One card as the application hands it over. */
-const asked = (card: string) => ({
+const asked = (mark: string) => ({
   deck: 'decks/Words.md',
   section: '',
-  card,
+  mark,
   face: 'Say it',
-  heading: card,
-  front: `<p>${card}</p>`,
+  heading: mark,
+  front: `<p>${mark}</p>`,
   back: '<p>and back</p>',
   seen: false,
   ahead: undefined,
@@ -110,7 +110,7 @@ describe('a sitting', () => {
 
     expect(report).toEqual({ unwritten: [], skipped: 0 })
     expect(one.asked.value).toHaveLength(3)
-    expect(one.card.value?.card).toBe('one')
+    expect(one.card.value?.mark).toBe('one')
     expect(one.shown.value).toBe(false)
     expect(one.left.value).toBe(3)
     expect(one.over.value).toBe(false)
@@ -157,7 +157,7 @@ describe('a sitting', () => {
 
     expect(trouble).toHaveLength(1)
     expect(one.at.value).toBe(0)
-    expect(one.card.value?.card).toBe('one')
+    expect(one.card.value?.mark).toBe('one')
     expect(one.shown.value).toBe(true)
     expect(one.answers.value).toEqual([])
     expect(asks.filter((ask) => ask.what === 'answer')).toHaveLength(1)
@@ -177,11 +177,11 @@ describe('a sitting', () => {
     await one.start('01VAULT', '')
     one.show()
     await one.answer('good')
-    expect(one.card.value?.card).toBe('two')
+    expect(one.card.value?.mark).toBe('two')
 
     await one.takeBack()
 
-    expect(one.card.value?.card).toBe('one')
+    expect(one.card.value?.mark).toBe('one')
     expect(one.shown.value).toBe(true)
     expect(one.answers.value).toEqual([])
     expect(one.done.value).toBe(0)

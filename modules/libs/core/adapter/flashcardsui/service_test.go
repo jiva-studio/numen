@@ -21,7 +21,7 @@ func answered(t *testing.T, api *API, vault string, sitting *v1.StartSessionResp
 	card := sitting.GetAsked()[0]
 	out, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault: vault, Run: sitting.GetRun(),
-		Card: card.GetCard(), Face: card.GetFace(),
+		Mark: card.GetMark(), Face: card.GetFace(),
 		Rating: v1.Rating_RATING_GOOD,
 	}))
 	if err != nil {
@@ -129,7 +129,7 @@ func TestAnsweringAVaultNobodyHoldsIsRefused(t *testing.T) {
 
 	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault: "nothing", Run: "nothing",
-		Card: "k7m2xq9fzp", Face: "Recognise", Rating: v1.Rating_RATING_GOOD,
+		Mark: "k7m2xq9fzp", Face: "Recognise", Rating: v1.Rating_RATING_GOOD,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("refused with %v", connect.CodeOf(err))

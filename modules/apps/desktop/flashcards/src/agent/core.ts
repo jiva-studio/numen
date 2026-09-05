@@ -24,6 +24,6 @@ const service = createClient(AgentService, transport)
 export const core = (card: CardFace) =>
   agentPort({
     askAgent: (request, options) =>
-      service.askAgent({ ...request, card: card.card, face: card.face }, options),
+      service.askAgent({ ...request, mark: card.mark, face: card.face }, options),
     finishConversation: (request) => service.finishConversation(request),
   })

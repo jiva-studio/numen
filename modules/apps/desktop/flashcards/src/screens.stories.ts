@@ -205,7 +205,7 @@ const BY_DECK = new Map<string, Preset>(
 const CARD: CardFace = {
   deck: 'Sanskrit/Roots.md',
   section: 'Verbs of going',
-  card: 'k7m2xq9fzp',
+  mark: 'k7m2xq9fzp',
   face: 'Recognise',
   heading: 'gam',
   front: '<p><strong>gam</strong> — गम्</p>\n<p>Which class does it take, and what is its present stem?</p>',

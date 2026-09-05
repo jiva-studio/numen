@@ -50,7 +50,7 @@ func (a *API) AskAgent(
 	// into the question is read as instruction where a tool's answer is data.
 	a.showing.Store(&Showing{
 		Deck: r.Msg.GetFocus(),
-		Card: r.Msg.GetCard(),
+		Card: r.Msg.GetMark(),
 		Face: r.Msg.GetFace(),
 	})
 

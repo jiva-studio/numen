@@ -23,7 +23,7 @@ func TestWhatAVaultWasAnsweredOnComesBackInOrder(t *testing.T) {
 	for _, card := range sitting.GetAsked() {
 		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 			Vault: string(v.ID), Run: sitting.GetRun(),
-			Card: card.GetCard(), Face: card.GetFace(),
+			Mark: card.GetMark(), Face: card.GetFace(),
 			Rating: v1.Rating_RATING_GOOD,
 		})); err != nil {
 			t.Fatal(err)
@@ -79,7 +79,7 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 	card := sitting.GetAsked()[0]
 	if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault: string(v.ID), Run: sitting.GetRun(),
-		Card: card.GetCard(), Face: card.GetFace(),
+		Mark: card.GetMark(), Face: card.GetFace(),
 		Rating: v1.Rating_RATING_EASY,
 	})); err != nil {
 		t.Fatal(err)

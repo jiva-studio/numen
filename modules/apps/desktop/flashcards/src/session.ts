@@ -22,7 +22,7 @@ export interface SessionClient {
   answerCard(said: {
     vault: string
     run: string
-    card: string
+    mark: string
     face: string
     rating: number
     tookMs: bigint
@@ -36,7 +36,7 @@ export interface SessionStart {
   asked: readonly {
     deck: string
     section: string
-    card: string
+    mark: string
     face: string
     heading: string
     front: string
@@ -156,7 +156,7 @@ export function session(deps: SessionDeps) {
       const given = await deps.cards.answerCard({
         vault: vault.value,
         run: run.value,
-        card: one.card,
+        mark: one.mark,
         face: one.face,
         rating: rated[how],
         tookMs: BigInt(took),
@@ -219,7 +219,7 @@ export function session(deps: SessionDeps) {
 const asking = (one: SessionStart['asked'][number]): CardFace => ({
   deck: one.deck,
   section: one.section,
-  card: one.card,
+  mark: one.mark,
   face: one.face,
   heading: one.heading,
   front: one.front,

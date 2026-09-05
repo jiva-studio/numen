@@ -239,7 +239,7 @@ func askedOf(one flashcards.QueuedCardFace) *v1.Asked {
 	return &v1.Asked{
 		Deck:    one.Deck,
 		Section: one.Section,
-		Card:    one.ID.Card,
+		Mark:    one.ID.Card,
 		Face:    one.ID.Face,
 		Heading: one.Heading,
 		Front:   front,
@@ -276,7 +276,7 @@ func (a *API) AnswerCard(
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 
-	on := review.CardFaceID{Card: r.Msg.GetCard(), Face: r.Msg.GetFace()}
+	on := review.CardFaceID{Card: r.Msg.GetMark(), Face: r.Msg.GetFace()}
 	record := flashcards.Record{Run: run, Now: a.now}
 	given, err := record.Answer(ctx, on, rating(r.Msg.GetRating()),
 		time.Duration(r.Msg.GetTookMs())*time.Millisecond)

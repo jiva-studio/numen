@@ -222,9 +222,9 @@ message Asked {
   string deck = 1;
   string section = 2;
 
-  // Card is the mark the card is known by, and face the name of the face it is
+  // Mark is what the card is known by, and face the name of the face it is
   // shown through. The two together are what an answer is recorded against.
-  string card = 3;
+  string mark = 3;
   string face = 4;
 
   // Heading is what the card's heading shows, which is the first line of its
@@ -298,7 +298,9 @@ message StartSessionResponse {
 message AnswerCardRequest {
   string vault = 1;
   string run = 2;
-  string card = 3;
+  // The mark the card is known by, and the name of the face it was shown
+  // through.
+  string mark = 3;
   string face = 4;
   Rating rating = 5;
   // Took is how long the card stood on the screen, in milliseconds. It is the

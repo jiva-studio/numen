@@ -61,7 +61,7 @@ export function asking(deps: AgentPanelDeps) {
 
   /** The talk about one card, made once and let go of with the card. */
   const talking = (card: CardFace) => {
-    if (talk.value && about.value?.card === card.card && about.value?.face === card.face) return
+    if (talk.value && about.value?.mark === card.mark && about.value?.face === card.face) return
     ends()
     about.value = card
     talk.value = conversation(deps.agent(card), words, `card-${opened++}`, deps.paint)

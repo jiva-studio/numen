@@ -611,9 +611,9 @@ type Asked struct {
 	// carries none.
 	Deck    string `protobuf:"bytes,1,opt,name=deck,proto3" json:"deck,omitempty"`
 	Section string `protobuf:"bytes,2,opt,name=section,proto3" json:"section,omitempty"`
-	// Card is the mark the card is known by, and face the name of the face it is
+	// Mark is what the card is known by, and face the name of the face it is
 	// shown through. The two together are what an answer is recorded against.
-	Card string `protobuf:"bytes,3,opt,name=card,proto3" json:"card,omitempty"`
+	Mark string `protobuf:"bytes,3,opt,name=mark,proto3" json:"mark,omitempty"`
 	Face string `protobuf:"bytes,4,opt,name=face,proto3" json:"face,omitempty"`
 	// Heading is what the card's heading shows, which is the first line of its
 	// first field.
@@ -676,9 +676,9 @@ func (x *Asked) GetSection() string {
 	return ""
 }
 
-func (x *Asked) GetCard() string {
+func (x *Asked) GetMark() string {
 	if x != nil {
-		return x.Card
+		return x.Mark
 	}
 	return ""
 }
@@ -981,12 +981,14 @@ func (x *StartSessionResponse) GetSkipped() int32 {
 }
 
 type AnswerCardRequest struct {
-	state  protoimpl.MessageState `protogen:"open.v1"`
-	Vault  string                 `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
-	Run    string                 `protobuf:"bytes,2,opt,name=run,proto3" json:"run,omitempty"`
-	Card   string                 `protobuf:"bytes,3,opt,name=card,proto3" json:"card,omitempty"`
-	Face   string                 `protobuf:"bytes,4,opt,name=face,proto3" json:"face,omitempty"`
-	Rating Rating                 `protobuf:"varint,5,opt,name=rating,proto3,enum=numen.v1.Rating" json:"rating,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Vault string                 `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
+	Run   string                 `protobuf:"bytes,2,opt,name=run,proto3" json:"run,omitempty"`
+	// The mark the card is known by, and the name of the face it was shown
+	// through.
+	Mark   string `protobuf:"bytes,3,opt,name=mark,proto3" json:"mark,omitempty"`
+	Face   string `protobuf:"bytes,4,opt,name=face,proto3" json:"face,omitempty"`
+	Rating Rating `protobuf:"varint,5,opt,name=rating,proto3,enum=numen.v1.Rating" json:"rating,omitempty"`
 	// Took is how long the card stood on the screen, in milliseconds. It is the
 	// one thing about an answer that cannot be measured later.
 	TookMs        int64 `protobuf:"varint,6,opt,name=took_ms,json=tookMs,proto3" json:"took_ms,omitempty"`
@@ -1038,9 +1040,9 @@ func (x *AnswerCardRequest) GetRun() string {
 	return ""
 }
 
-func (x *AnswerCardRequest) GetCard() string {
+func (x *AnswerCardRequest) GetMark() string {
 	if x != nil {
-		return x.Card
+		return x.Mark
 	}
 	return ""
 }
@@ -1990,7 +1992,7 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x05Asked\x12\x12\n" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x18\n" +
 	"\asection\x18\x02 \x01(\tR\asection\x12\x12\n" +
-	"\x04card\x18\x03 \x01(\tR\x04card\x12\x12\n" +
+	"\x04mark\x18\x03 \x01(\tR\x04mark\x12\x12\n" +
 	"\x04face\x18\x04 \x01(\tR\x04face\x12\x18\n" +
 	"\aheading\x18\x05 \x01(\tR\aheading\x12\x14\n" +
 	"\x05front\x18\x06 \x01(\tR\x05front\x12\x12\n" +
@@ -2017,7 +2019,7 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x11AnswerCardRequest\x12\x14\n" +
 	"\x05vault\x18\x01 \x01(\tR\x05vault\x12\x10\n" +
 	"\x03run\x18\x02 \x01(\tR\x03run\x12\x12\n" +
-	"\x04card\x18\x03 \x01(\tR\x04card\x12\x12\n" +
+	"\x04mark\x18\x03 \x01(\tR\x04mark\x12\x12\n" +
 	"\x04face\x18\x04 \x01(\tR\x04face\x12(\n" +
 	"\x06rating\x18\x05 \x01(\x0e2\x10.numen.v1.RatingR\x06rating\x12\x17\n" +
 	"\atook_ms\x18\x06 \x01(\x03R\x06tookMs\",\n" +

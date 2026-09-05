@@ -159,7 +159,8 @@ export interface VaultCardsDue {
 export interface CardFace {
   readonly deck: string
   readonly section: string
-  readonly card: string
+  /** What the card is known by. */
+  readonly mark: string
   readonly face: string
   /** What the card's heading shows, which is the first line of its first field. */
   readonly heading: string

@@ -35,7 +35,7 @@ message AskAgentRequest {
   // The card in focus, for a window that asks about one: the mark its deck
   // writes it under, and the face it is being shown through. The deck is the
   // note in focus. Both empty in a window that asks about notes.
-  string card = 4;
+  string mark = 4;
   string face = 5;
 }
 

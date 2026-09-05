@@ -238,7 +238,7 @@ func TestARunIsAnsweredOnlyOnTheVaultItWasOpenedOn(t *testing.T) {
 	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault:  string(two.ID),
 		Run:    sitting.GetRun(),
-		Card:   card.GetCard(),
+		Mark:   card.GetMark(),
 		Face:   card.GetFace(),
 		Rating: v1.Rating_RATING_GOOD,
 	}))
@@ -288,7 +288,7 @@ func TestARunIsClosedByTheNextSittingOnItsVault(t *testing.T) {
 	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault:  string(v.ID),
 		Run:    was.GetRun(),
-		Card:   card.GetCard(),
+		Mark:   card.GetMark(),
 		Face:   card.GetFace(),
 		Rating: v1.Rating_RATING_GOOD,
 	}))
@@ -313,7 +313,7 @@ func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
 	for _, card := range sitting.GetAsked() {
 		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 			Vault: string(one.ID), Run: sitting.GetRun(),
-			Card: card.GetCard(), Face: card.GetFace(),
+			Mark: card.GetMark(), Face: card.GetFace(),
 			Rating: v1.Rating_RATING_EASY,
 		})); err != nil {
 			t.Fatal(err)
@@ -358,7 +358,7 @@ func TestAnAnswerIsWrittenAndCanBeTakenBack(t *testing.T) {
 	given, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault:  string(v.ID),
 		Run:    sitting.GetRun(),
-		Card:   card.GetCard(),
+		Mark:   card.GetMark(),
 		Face:   card.GetFace(),
 		Rating: v1.Rating_RATING_GOOD,
 		TookMs: 1200,
@@ -392,7 +392,7 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 
 	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault: string(v.ID), Run: sitting.GetRun(),
-		Card: card.GetCard(), Face: card.GetFace(),
+		Mark: card.GetMark(), Face: card.GetFace(),
 		Rating: v1.Rating_RATING_UNSPECIFIED,
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
@@ -675,7 +675,7 @@ func TestTheFrontDoorSaysWhatTodayCameToUnderEachPreset(t *testing.T) {
 	card := sitting.GetAsked()[0]
 	if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault: string(v.ID), Run: sitting.GetRun(),
-		Card: card.GetCard(), Face: card.GetFace(),
+		Mark: card.GetMark(), Face: card.GetFace(),
 		Rating: v1.Rating_RATING_GOOD, TookMs: 6000,
 	})); err != nil {
 		t.Fatal(err)
