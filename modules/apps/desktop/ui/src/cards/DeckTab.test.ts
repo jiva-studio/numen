@@ -8,7 +8,7 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
-import type { Cards, Carded, Problem, Refused } from '../core'
+import type { Cards, Carded, Problem, RefusalReason } from '../core'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type Listed, type Presets } from '../preset/core'
 import { putting } from '../putting'
 import { windowing } from '../windowing'
@@ -74,7 +74,7 @@ const drawn = async (
     /** What is said against what the deck names. */
     saying?: string
     /** What putting the deck on a preset is refused for. */
-    notScheduled?: Refused
+    notScheduled?: RefusalReason
   } = {},
 ) => {
   const core: Cards = {

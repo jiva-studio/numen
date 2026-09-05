@@ -13,11 +13,11 @@ import type {
   Movement,
   Outcome,
   Reached,
-  Refused,
+  RefusalReason,
   Removed,
   Renamed,
   ArtifactRunner,
-  VaultRefused,
+  VaultRefusalReason,
   Vaults,
 } from './core'
 import type { Made } from './note/creating'
@@ -112,7 +112,7 @@ export interface VaultWriter {
    */
   moves(from: string, to: string): Promise<Movement>
   /** An empty folder. The folders above it are made with it. */
-  makesFolder(path: string): Promise<Refused | null>
+  makesFolder(path: string): Promise<RefusalReason | null>
 }
 
 /** The files a command makes from nothing, each put in front of the person. */
@@ -204,9 +204,9 @@ export interface CommandDeps {
 /** Everything carrying a command out says in the window's voice. */
 export interface Words {
   /** What the vault refused, in words a person reads. */
-  readonly refused: Record<Refused, string>
+  readonly refused: Record<RefusalReason, string>
   /** What the list of vaults refused, in words a person reads. */
-  readonly unvaulted: Record<VaultRefused, string>
+  readonly unvaulted: Record<VaultRefusalReason, string>
   /** What the machine's own folder picker is titled. */
   readonly folder: string
   /** The links that reach nothing now, which nothing repairs. */

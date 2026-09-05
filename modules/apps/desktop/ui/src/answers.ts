@@ -7,7 +7,7 @@
  * the parts stay here and the string goes everywhere else.
  */
 import { Refusal } from '@numen/protocol'
-import type { Refused } from './core'
+import type { RefusalReason } from './core'
 
 /** The file an answer came out of, as the one string the window carries. */
 export const stamp = (at?: { path: string; size: bigint; mtime: bigint }): string | undefined =>
@@ -26,7 +26,7 @@ export const fingerprint = (at: string) => {
  * question for the person and not a message, and the window carries it as
  * `changed`.
  */
-export const REFUSAL: Partial<Record<Refusal, Refused>> = {
+export const REFUSAL: Partial<Record<Refusal, RefusalReason>> = {
   [Refusal.UNSPECIFIED]: 'unreadable',
   [Refusal.MISSING]: 'missing',
   [Refusal.NOT_A_NOTE]: 'notANote',
@@ -43,7 +43,7 @@ export const REFUSAL: Partial<Record<Refusal, Refused>> = {
 }
 
 /** What one answer was refused for, and nothing where it was not refused. */
-export const refusalIn = (from: { refusal?: Refusal | undefined }): Refused | null =>
+export const refusalIn = (from: { refusal?: Refusal | undefined }): RefusalReason | null =>
   from.refusal === undefined ? null : (REFUSAL[from.refusal] ?? null)
 
 /** Whether the file an answer is about had moved past what the caller read. */

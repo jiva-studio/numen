@@ -85,7 +85,7 @@ import type {
   Stencilled,
   StencilSummary,
   Vault,
-  VaultRefused,
+  VaultRefusalReason,
   Vaults,
 } from './core'
 import { transport } from './transport'
@@ -891,10 +891,10 @@ const added = (from: {
   refusal: turnedDown(from),
 })
 
-const turnedDown = (from: { refusal?: VaultsRefusal | undefined }): VaultRefused | null =>
+const turnedDown = (from: { refusal?: VaultsRefusal | undefined }): VaultRefusalReason | null =>
   from.refusal === undefined ? null : unvaulted[from.refusal]
 
-const unvaulted: Record<VaultsRefusal, VaultRefused> = {
+const unvaulted: Record<VaultsRefusal, VaultRefusalReason> = {
   [VaultsRefusal.UNSPECIFIED]: 'unreadable',
   [VaultsRefusal.UNREADABLE]: 'unreadable',
   [VaultsRefusal.COPY]: 'copy',

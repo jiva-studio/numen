@@ -6,7 +6,7 @@
  * decided here: the plex reports the shape of a gesture and nothing else.
  */
 import type { PlexRelatedSeat } from '@numen/ui'
-import type { Core, NewLink, Refused, Role } from '../core'
+import type { Core, NewLink, RefusalReason, Role } from '../core'
 import type { Voice } from '../telling'
 import { REFUSED } from '../words'
 
@@ -57,7 +57,7 @@ const names = 100
  * What a person is told when a note could not be made or joined. A name that
  * is taken is a name to choose again, and nothing has been renamed.
  */
-const words: Record<Refused, string> = {
+const words: Record<RefusalReason, string> = {
   ...REFUSED,
   occupied: 'a note of that name is filed there already',
 }
@@ -80,7 +80,7 @@ export function creating(core: Core, said: Voice) {
     title: string,
     folder: string,
     links: readonly NewLink[],
-  ): Promise<Made | Refused | null> {
+  ): Promise<Made | RefusalReason | null> {
     try {
       const made = await core.create({ title, folder, links })
       if (made.refusal !== null) return made.refusal
@@ -130,7 +130,7 @@ export function creating(core: Core, said: Voice) {
   }
 
   /** What a note that was asked for came to, said to the person where it failed. */
-  const answered = (made: Made | Refused | null): Made | null => {
+  const answered = (made: Made | RefusalReason | null): Made | null => {
     if (made === null) return null
     if (typeof made === 'string') {
       said(words[made], 'refusal')

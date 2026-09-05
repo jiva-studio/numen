@@ -14,11 +14,11 @@ import type {
   Movement,
   Outcome,
   Reached,
-  Refused,
+  RefusalReason,
   Removed,
   Renamed,
   Vault,
-  VaultRefused,
+  VaultRefusalReason,
 } from './core'
 import { WORDS as words } from './words'
 
@@ -89,11 +89,11 @@ const window = (
     /** What the list of vaults answered adding or renaming one. */
     added?: Added
     /** What the list of vaults refused forgetting, erasing or opening one. */
-    turnedDown?: VaultRefused
+    turnedDown?: VaultRefusalReason
     /** What moving a file came back with. */
     movement?: Movement
     /** What making a folder was refused with. */
-    folderRefused?: Refused
+    folderRefused?: RefusalReason
     /** What the file in front carries. */
     carries?: ArtifactStates
     /** How asking for an artifact of a file came out. */
@@ -1029,7 +1029,7 @@ describe('a vault taken off the list', () => {
 
 describe('what the list of vaults refused', () => {
   it('reaches the person in the window’s own words, whichever it was', async () => {
-    for (const refusal of Object.keys(words.unvaulted) as VaultRefused[]) {
+    for (const refusal of Object.keys(words.unvaulted) as VaultRefusalReason[]) {
       const one = window({ turnedDown: refusal })
 
       await carry(deedOf('openVault', front()), one.on)

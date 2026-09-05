@@ -10,7 +10,7 @@ import { ref, shallowRef, type Ref } from 'vue'
 import { StopReason } from '@numen/protocol'
 import { asking, type Asking } from '../asking'
 import type { PlexShowing } from '@numen/ui'
-import type { Move, Refused } from '../core'
+import type { Move, RefusalReason } from '../core'
 import type { Voice } from '../telling'
 import type { Host, Kind } from '../windowing'
 import type { Putting } from '../putting'
@@ -210,7 +210,7 @@ export function presetting(
   })
 
   /** What a read was refused for, in words a person reads. */
-  const whyOf = (refusal: Refused | null): string =>
+  const whyOf = (refusal: RefusalReason | null): string =>
     refusal === null ? '' : words.refused(refusal)
 
   /** The settings of one preset, read again from the file. */

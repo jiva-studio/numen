@@ -22,7 +22,7 @@ import {
   type Written,
 } from './core'
 import { BOUNDS } from '../testing/preset'
-import type { Refused } from '../core'
+import type { RefusalReason } from '../core'
 import type { Host } from '../windowing'
 import type { Putting } from '../putting'
 import { WORDS as words } from './words'
@@ -431,7 +431,7 @@ describe('a preset no tab has open', () => {
 // A person who is told what happened can do something about it. One sentence
 // over every refusal names none of them.
 describe('what the tab says it was refused for', () => {
-  const refusals: readonly Refused[] = ['missing', 'tooLarge', 'notANote', 'unreadable']
+  const refusals: readonly RefusalReason[] = ['missing', 'tooLarge', 'notANote', 'unreadable']
 
   it('is a sentence of its own for each refusal a read answers', async () => {
     const said: string[] = []

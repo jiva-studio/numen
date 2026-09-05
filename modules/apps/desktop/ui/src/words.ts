@@ -6,7 +6,7 @@
  * the palette, the commands, the corner, and the quit.
  */
 import { commandKeyChord, keyChord } from '@numen/ui'
-import type { Artifact, Reached, Refused, VaultRefused } from './core'
+import type { Artifact, Reached, RefusalReason, VaultRefusalReason } from './core'
 import { WORDS as agent } from './agent/words'
 import { WORDS as cards } from './cards/words'
 import { WORDS as note } from './note/words'
@@ -14,7 +14,7 @@ import { WORDS as plex } from './plex/words'
 import { WORDS as preset } from './preset/words'
 
 /** What the vault refused a command, in words a person reads. */
-export const REFUSED: Record<Refused, string> = {
+export const REFUSED: Record<RefusalReason, string> = {
   missing: 'that note is not in the vault',
   notANote: 'that file is not a note',
   notText: 'that file is not text',
@@ -68,7 +68,7 @@ export const MADE: Record<Artifact, Record<Reached, string>> = {
 }
 
 /** What the list of vaults refused a command, in words a person reads. */
-export const UNVAULTED: Record<VaultRefused, string> = {
+export const UNVAULTED: Record<VaultRefusalReason, string> = {
   unreadable: 'that folder is not there, or cannot be read',
   copy: 'that folder is a copy of a vault this installation already holds',
   overlaps: 'that folder is inside a vault already added, or holds one',

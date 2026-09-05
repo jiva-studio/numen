@@ -7,7 +7,7 @@
  */
 import { computed, type ComputedRef } from 'vue'
 import type { Half, PlexShowing } from '@numen/ui'
-import type { Cards, Move, Problem, Refused } from '../core'
+import type { Cards, Move, Problem, RefusalReason } from '../core'
 import type { Store } from '../doing'
 import { editing, type Editing } from '../note/editing'
 import { markOf } from '../note/tab'
@@ -47,9 +47,9 @@ interface Told {
    */
   readonly problems: readonly Problem[]
   /** What the last read of the file was refused for. */
-  readonly reading: Refused | null
+  readonly reading: RefusalReason | null
   /** What the last write of it was refused for. */
-  readonly writing: Refused | null
+  readonly writing: RefusalReason | null
   /** The file the stencil last came out of, for a rename to present. */
   readonly at: string
 }

@@ -1,6 +1,6 @@
 /** What a preset tab says: the one control, the settings under it, and what went wrong. */
 import { StopReason } from '@numen/protocol'
-import type { Refused } from '../core'
+import type { RefusalReason } from '../core'
 import type { Counts, Goal, Rule } from './core'
 import type { Field } from './curve'
 
@@ -67,7 +67,7 @@ const FIELDS: Record<Field, readonly [string, string]> = {
  * What a read of the preset was refused for. A refusal a read of a note does
  * not answer is said in the one sentence under it.
  */
-const READING: Partial<Record<Refused, string>> = {
+const READING: Partial<Record<RefusalReason, string>> = {
   missing: 'This preset is no longer in the vault, so what stands here is what was last read.',
   notANote: 'What stands at this path is not a note, so there are no settings in it to read.',
   notText: 'This file is not text, so there are no settings in it to read.',
@@ -83,7 +83,7 @@ const UNREAD = 'This preset could not be read, and the vault named no reason.'
  * What a write of the settings was refused for. Each says where the settings
  * stand, which is in the tab: a refused write leaves the file as it was.
  */
-const WRITING: Partial<Record<Refused, string>> = {
+const WRITING: Partial<Record<RefusalReason, string>> = {
   missing:
     'This preset is no longer in the vault, so nothing was written. ' +
     'These settings are still here.',
@@ -296,9 +296,9 @@ export const WORDS = {
   changed: 'This file changed on disk, so nothing was written.',
   reads: 'Read it again',
   /** What a read was refused for. */
-  refused: (refusal: Refused) => READING[refusal] ?? UNREAD,
+  refused: (refusal: RefusalReason) => READING[refusal] ?? UNREAD,
   /** What a write was refused for, and where the settings stand after it. */
-  notSaved: (refusal: Refused) => WRITING[refusal] ?? UNWRITTEN,
+  notSaved: (refusal: RefusalReason) => WRITING[refusal] ?? UNWRITTEN,
   /** The vault answered a read with neither settings nor a reason. */
   unreachable: 'The vault would not answer for this preset, and did not say why.',
   /** The vault answered a write with neither a file nor a reason. */

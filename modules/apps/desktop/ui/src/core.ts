@@ -113,7 +113,7 @@ export interface Entry {
 export interface Movement {
   /** What the file did. Null when it stayed where it was. */
   moved: MoveResult | null
-  refusal: Refused | null
+  refusal: RefusalReason | null
 }
 
 /**
@@ -381,7 +381,7 @@ export interface Core {
    * A relationship written into one note. The note at the other end is left
    * alone: a link is one end's account of a relationship.
    */
-  join(path: string, link: NewLink): Promise<Refused | null>
+  join(path: string, link: NewLink): Promise<RefusalReason | null>
   /**
    * A note given a different name. Whichever of the title and the filename
    * names it is brought into line, and the file follows where a title and a
@@ -460,7 +460,7 @@ export interface Core {
     seen: string | null,
   ): Promise<{ readonly changed: boolean }>
   /** An empty folder. The folders above it are made with it. */
-  makeFolder(path: string): Promise<Refused | null>
+  makeFolder(path: string): Promise<RefusalReason | null>
   /**
    * The window going, for as long as the client listens. The stream opens with
    * the token this client answers under.
@@ -476,10 +476,10 @@ export interface Core {
  */
 export interface Answered {
   body: string
-  refusal: Refused | null
+  refusal: RefusalReason | null
 }
 
-export type Refused =
+export type RefusalReason =
   | 'missing'
   | 'notANote'
   | 'notText'
@@ -523,7 +523,7 @@ export interface NewLink {
 export interface Made {
   /** Where the file is filed. Empty when nothing was made. */
   path: string
-  refusal: Refused | null
+  refusal: RefusalReason | null
 }
 
 /** What renaming a note came back with. */
@@ -538,7 +538,7 @@ export interface Renamed {
   frontmatter: boolean
   /** What the file did. Null when it stayed where it was. */
   moved: MoveResult | null
-  refusal: Refused | null
+  refusal: RefusalReason | null
   /** The note holds prose nobody here has seen, and nothing was written. */
   changed: boolean
 }
@@ -560,7 +560,7 @@ export interface Removed {
   trashed: string
   /** The notes whose links pointed at it and now reach nothing. */
   dangling: readonly string[]
-  refusal: Refused | null
+  refusal: RefusalReason | null
 }
 
 /** One stencil as the list of them names it. */
@@ -691,7 +691,7 @@ export interface Stencilled {
 export interface DeckRead {
   /** Null when the deck was refused. */
   readonly deck: Decked | null
-  readonly refusal: Refused | null
+  readonly refusal: RefusalReason | null
   /** The file it came out of, to present at the next write. */
   readonly at: string
   /** The size a deck is read up to, in bytes. */
@@ -700,7 +700,7 @@ export interface DeckRead {
 
 /** What writing a deck came back with. */
 export interface DeckWritten {
-  readonly refusal: Refused | null
+  readonly refusal: RefusalReason | null
   /** The file is no longer the one this caller read, and nothing was written. */
   readonly changed: boolean
   readonly at: string
@@ -711,13 +711,13 @@ export interface DeckWritten {
 export interface StencilRead {
   /** Null when the stencil was refused. */
   readonly stencil: Stencilled | null
-  readonly refusal: Refused | null
+  readonly refusal: RefusalReason | null
   readonly at: string
 }
 
 /** What writing a stencil came back with. */
 export interface StencilWritten {
-  readonly refusal: Refused | null
+  readonly refusal: RefusalReason | null
   readonly changed: boolean
   readonly at: string
 }
@@ -737,7 +737,7 @@ export interface Renaming {
   readonly cards: number
   readonly notWritten: readonly UnwrittenDeck[]
   /** Set where nothing was renamed at all. */
-  readonly refusal: Refused | null
+  readonly refusal: RefusalReason | null
   /** The stencil is no longer the one this caller read, and nothing was renamed. */
   readonly changed: boolean
   readonly at: string
@@ -820,11 +820,11 @@ export interface Listed {
 export interface Added {
   /** The vault as the list has it now. Null where the list is as it was. */
   vault: Vault | null
-  refusal: VaultRefused | null
+  refusal: VaultRefusalReason | null
 }
 
 /** Why the list is as it was, or why the window is showing what it was showing. */
-export type VaultRefused =
+export type VaultRefusalReason =
   | 'unreadable'
   | 'copy'
   | 'overlaps'
@@ -855,7 +855,7 @@ export interface Vaults {
    * A vault taken off the list. The folder stays where it is, and goes to the
    * trash this machine keeps when the call asks for it.
    */
-  remove(id: string, trash: boolean): Promise<VaultRefused | null>
+  remove(id: string, trash: boolean): Promise<VaultRefusalReason | null>
   /** Another vault shown in this window, in place of the one it was showing. */
-  open(id: string): Promise<VaultRefused | null>
+  open(id: string): Promise<VaultRefusalReason | null>
 }

@@ -6,7 +6,7 @@
  * it answers picks the tab the file opens in.
  */
 import { describe, expect, it } from 'vitest'
-import type { FileKind, Refused } from './core'
+import type { FileKind, RefusalReason } from './core'
 import { cutting, putting, type CutWriter, type PuttingDeps } from './putting'
 import { voice } from './testing/voice'
 import { REFUSED } from './words'
@@ -239,7 +239,7 @@ describe('a file just made here', () => {
 })
 
 /** The vault answering what it was told, and writing down what it was asked to make. */
-const cuts = (refusal: Refused | null = null, throws = false): CutWriter & { asked: string[] } => {
+const cuts = (refusal: RefusalReason | null = null, throws = false): CutWriter & { asked: string[] } => {
   const asked: string[] = []
   const answer = async (path: string) => {
     if (throws) throw new Error('the vault is not there')

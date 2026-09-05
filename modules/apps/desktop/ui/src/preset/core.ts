@@ -17,7 +17,7 @@ import type {
   SettingsBounds as SettingsBoundsMessage,
 } from '@numen/protocol'
 import { fingerprint, refusalIn, staleIn, stamp } from '../answers'
-import type { Refused } from '../core'
+import type { RefusalReason } from '../core'
 import { transport } from '../transport'
 
 /** Which value the one control steers. */
@@ -168,7 +168,7 @@ export interface Preset {
 export interface Read {
   /** Null when the preset was refused. */
   readonly preset: Preset | null
-  readonly refusal: Refused | null
+  readonly refusal: RefusalReason | null
   /** The file it came out of, to present at the next write. */
   readonly at: string
   /** How far each setting goes, which a refused read answers as well. */
@@ -177,7 +177,7 @@ export interface Read {
 
 /** What writing a preset came back with. */
 export interface Written {
-  readonly refusal: Refused | null
+  readonly refusal: RefusalReason | null
   /** The file is no longer the one this caller read, and nothing was written. */
   readonly changed: boolean
   readonly at: string
@@ -187,7 +187,7 @@ export interface Written {
 export interface Made {
   /** Where it is filed. Empty when nothing was made. */
   readonly path: string
-  readonly refusal: Refused | null
+  readonly refusal: RefusalReason | null
 }
 
 /** What a preset comes to at one place of the grid. */

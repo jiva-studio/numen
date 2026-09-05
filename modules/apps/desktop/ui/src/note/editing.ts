@@ -18,7 +18,7 @@ import {
   type State,
   type Tab,
 } from './tab'
-import type { Answered, Refused } from '../core'
+import type { Answered, RefusalReason } from '../core'
 
 /** One open note as the window draws it. */
 export interface Editing {
@@ -347,7 +347,7 @@ export function editing(core: Notes, how: Keeping = {}) {
  * A deck is refused by what it is and by the size it is read up to, and the tab
  * that holds one says which in its own words.
  */
-const refusalOf = (from: Refused): Refusal => {
+const refusalOf = (from: RefusalReason): Refusal => {
   if (from === 'deckTooLarge') return 'tooLarge'
   if (from === 'notAStencil' || from === 'notADeck' || from === 'notAPreset') return 'notANote'
   return from === 'missing' || from === 'occupied' || from === 'unnameable' ? 'unreadable' : from

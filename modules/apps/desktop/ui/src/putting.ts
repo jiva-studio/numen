@@ -6,7 +6,7 @@
  * player. A kind of tab hands over the way it opens a file and keeps none.
  */
 import type { PlexShowing } from '@numen/ui'
-import type { FileKind, Made, NoteType, Refused, Stretch } from './core'
+import type { FileKind, Made, NoteType, RefusalReason, Stretch } from './core'
 import type { Voice } from './telling'
 
 /**
@@ -147,7 +147,7 @@ export interface CutWriter {
 /** Everything making one of the three says in the window's voice. */
 export interface CuttingWords {
   /** What the vault refused, in words a person reads. */
-  readonly refused: Record<Refused, string>
+  readonly refused: Record<RefusalReason, string>
   /** What the one field a stencil is made carrying is called. */
   readonly field: string
 }

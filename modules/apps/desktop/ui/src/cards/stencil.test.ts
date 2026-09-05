@@ -3,7 +3,7 @@
  * writes back, and where what is wrong with it stands.
  */
 import { describe, expect, it } from 'vitest'
-import type { Cards, Faced, Problem, Refused, Renaming } from '../core'
+import type { Cards, Faced, Problem, RefusalReason, Renaming } from '../core'
 import { putting } from '../putting'
 import { windowing } from '../windowing'
 import { STENCIL } from '../workspace'
@@ -24,7 +24,7 @@ const FACES: readonly Faced[] = [
 /** A vault holding one stencil, writing down every write it was asked for. */
 const vault = (
   answers: {
-    refusal?: Refused
+    refusal?: RefusalReason
     problems?: readonly Problem[]
     changed?: boolean
     /** What renaming a field comes back with, where a test wants another answer. */
@@ -32,7 +32,7 @@ const vault = (
     /** The vault is out of reach, and a read of the stencil reaches nothing. */
     unreachable?: boolean
     /** What a write of the stencil is refused for. */
-    wrote?: Refused
+    wrote?: RefusalReason
   } = {},
 ) => {
   const written: string[] = []

@@ -8,7 +8,7 @@
  */
 import { computed, ref, shallowRef, type ComputedRef } from 'vue'
 import type { Banded, Drawn, PlexShowing, Stencil } from '@numen/ui'
-import type { Cards, Move, Problem, Refused, StencilSummary } from '../core'
+import type { Cards, Move, Problem, RefusalReason, StencilSummary } from '../core'
 import type { Store } from '../doing'
 import type { Listed, Presets, Read } from '../preset/core'
 import { editing, type Editing } from '../note/editing'
@@ -54,9 +54,9 @@ interface Told {
    */
   readonly problems: readonly Problem[]
   /** What the last read of the file was refused for. */
-  readonly reading: Refused | null
+  readonly reading: RefusalReason | null
   /** What the last write of it was refused for. */
-  readonly writing: Refused | null
+  readonly writing: RefusalReason | null
   /** The size a deck is read up to, where that is what refused it. */
   readonly bound: number
 }
@@ -374,7 +374,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
   }
 
   /** The words one refusal is put in, and nothing for one this file has none for. */
-  const whyOf = (refusal: Refused | null, bound: number): string | null => {
+  const whyOf = (refusal: RefusalReason | null, bound: number): string | null => {
     if (refusal === 'deckTooLarge') return words.tooLarge(bound)
     if (refusal === 'notADeck') return words.notADeck
     return null

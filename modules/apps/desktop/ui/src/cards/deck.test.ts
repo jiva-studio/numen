@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
-import type { Cards, Carded, Problem, Refused } from '../core'
+import type { Cards, Carded, Problem, RefusalReason } from '../core'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type Listed, type Presets } from '../preset/core'
 import { putting } from '../putting'
 import { windowing } from '../windowing'
@@ -54,7 +54,7 @@ const calling = (card: { values: readonly { field: string; text: string }[] }): 
 /** A vault holding one deck, writing down every write it was asked for. */
 const vault = (
   answers: {
-    refusal?: Refused
+    refusal?: RefusalReason
     problems?: readonly Problem[]
     bound?: number
     /** The write answers that the file moved past what the tab read. */
@@ -66,7 +66,7 @@ const vault = (
     /** The vault is out of reach, and a read of the deck reaches nothing. */
     unreachable?: boolean
     /** What a write of the deck is refused for. */
-    wrote?: Refused
+    wrote?: RefusalReason
     /** How many listings of the stencils go unanswered before one answers. */
     unlisted?: number
     /** The presets the vault holds, where a test wants other ones. */
@@ -76,7 +76,7 @@ const vault = (
     /** What is said against what the deck names. */
     saying?: string
     /** What putting the deck on a preset is refused for. */
-    notScheduled?: Refused
+    notScheduled?: RefusalReason
     /** Putting the deck on a preset answers that the file moved past it. */
     schedulingChanged?: boolean
   } = {},
