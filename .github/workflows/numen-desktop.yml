@@ -205,9 +205,7 @@ jobs:
           npm run graph --prefix modules/tools/depgraph
           git diff --exit-code -- docs/dependencies.md
 
-      # The house rules a person kept catching by reading. It depends on
-      # nothing, so there is nothing to install.
-      - name: House rules
+      - name: The code says what it is
         run: npm run check --prefix modules/tools/lint
 
       - name: Lint

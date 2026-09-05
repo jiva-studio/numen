@@ -114,10 +114,7 @@ jobs:
       - name: Build the components
         run: npm run build --prefix modules/libs/ui
 
-      # The house rules read the phone's source too, so they run where a change
-      # to the phone alone reaches them. It depends on nothing, so there is
-      # nothing to install.
-      - name: House rules
+      - name: The code says what it is
         run: npm run check --prefix modules/tools/lint
 
       - name: Typecheck
