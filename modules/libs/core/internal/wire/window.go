@@ -107,8 +107,8 @@ func (w *Window) WatchTasks(
 	var last []task.Task
 	for {
 		select {
-		case list, standing := <-watch:
-			if !standing {
+		case list, ok := <-watch:
+			if !ok {
 				return nil
 			}
 			if err := out.Send(&v1.WatchTasksResponse{Tasks: doing(list)}); err != nil {
