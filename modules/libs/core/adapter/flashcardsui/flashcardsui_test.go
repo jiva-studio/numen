@@ -1182,15 +1182,15 @@ func TestTheCurveCarriesTheBacklogDayByDay(t *testing.T) {
 		}
 		// A day too short to carry what falls due adds to the pile, so the
 		// band rises as well as falls, and never below nothing.
-		for day, standing := range band {
-			if standing < 0 {
-				t.Errorf("%v stands %d behind on day %d", drawn.GetGrid()[i], standing, day)
+		for day, backlog := range band {
+			if backlog < 0 {
+				t.Errorf("%v stands %d behind on day %d", drawn.GetGrid()[i], backlog, day)
 			}
 		}
 		// The day named as the clearing is the day the band reaches nothing.
 		first := int32(-1)
-		for day, standing := range band {
-			if standing == 0 {
+		for day, backlog := range band {
+			if backlog == 0 {
 				first = int32(day) + 1
 				break
 			}

@@ -464,9 +464,9 @@ func (s Simulation) Run(
 
 		// What the day left standing is what fell due in it and was not reached,
 		// and the day the backlog is gone is the first day none is.
-		standing := len(due) - take + len(again) - next
-		out.Backlog = append(out.Backlog, standing)
-		if out.Clears == NeverClears && standing == 0 {
+		backlog := len(due) - take + len(again) - next
+		out.Backlog = append(out.Backlog, backlog)
+		if out.Clears == NeverClears && backlog == 0 {
 			out.Clears = len(out.Load)
 		}
 		if answers[today] {

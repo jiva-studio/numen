@@ -640,15 +640,15 @@ func TestTheBacklogDayByDayAgreesWithTheDayItClears(t *testing.T) {
 			t.Errorf("%s projected %d days and left a backlog of %d",
 				one.what, got.Days, len(got.Backlog))
 		}
-		for day, standing := range got.Backlog {
-			if standing < 0 {
-				t.Errorf("%s stands %d behind on day %d", one.what, standing, day)
+		for day, backlog := range got.Backlog {
+			if backlog < 0 {
+				t.Errorf("%s stands %d behind on day %d", one.what, backlog, day)
 			}
 		}
 
 		first := review.NeverClears
-		for day, standing := range got.Backlog {
-			if standing == 0 {
+		for day, backlog := range got.Backlog {
+			if backlog == 0 {
 				first = day + 1
 				break
 			}
