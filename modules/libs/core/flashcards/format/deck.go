@@ -2,7 +2,6 @@ package format
 
 import (
 	"bytes"
-	"regexp"
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -18,10 +17,6 @@ func ReadDeck(n domain.Note) Deck {
 	deck, _ := readDeck(n.Fingerprint, []byte(n.Body))
 	return deck
 }
-
-// loneLinkRe is a paragraph that is one wikilink and nothing else. Under a
-// card's heading that names the stencil the card is cut by.
-var loneLinkRe = regexp.MustCompile(`^\[\[([^\]\[]+)\]\]$`)
 
 // headSpan is where one heading line stands: the byte it begins at, and the
 // byte after it.
@@ -208,8 +203,11 @@ func stencil(body []byte, from, to int) (target string, leadFrom int) {
 			at = next
 			continue
 		}
-		if m := loneLinkRe.FindStringSubmatch(line); m != nil && paragraphEnds(body, next, to) {
-			return m[1], next
+		// A paragraph that is one wikilink and nothing else names the stencil.
+		found := markdown.WikilinksIn(line)
+		if len(found) == 1 && found[0].At == 0 && found[0].To == len(line) &&
+			paragraphEnds(body, next, to) {
+			return found[0].Inside, next
 		}
 		return "", from
 	}

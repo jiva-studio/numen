@@ -3,15 +3,10 @@ package markdown
 import (
 	"bufio"
 	"bytes"
-	"regexp"
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
-
-// A wikilink is the ordinary link people write. Anything inside the brackets is
-// the target, an alias, or a fragment; the address parser sorts that out.
-var wikilinkRe = regexp.MustCompile(`\[\[([^\]\[]+)\]\]`)
 
 // bodyLinks finds the links written in prose. They carry no role of their own,
 // so they are references — the plain "see also" of a vault.
@@ -28,13 +23,12 @@ func bodyLinks(body []byte) []domain.Link {
 			// A link inside a code fence is an example of a link, not one.
 			continue
 		}
-		for _, m := range wikilinkRe.FindAllStringSubmatch(line, -1) {
-			target := domain.ParseAddress(m[1])
-			if target.Value == "" || seen[target.String()] {
+		for _, found := range WikilinksIn(line) {
+			if seen[found.Target.String()] {
 				continue
 			}
-			seen[target.String()] = true
-			out = append(out, domain.Link{Target: target, Role: domain.RoleRef})
+			seen[found.Target.String()] = true
+			out = append(out, domain.Link{Target: found.Target, Role: domain.RoleRef})
 		}
 	}
 	return out
