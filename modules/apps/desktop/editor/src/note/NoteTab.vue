@@ -8,7 +8,7 @@
  */
 import { watch } from 'vue'
 import { Editor } from '@numen/ui'
-import FileConflictPrompt from '../FileConflictPrompt.vue'
+import FileConflictPrompt from '../saving/FileConflictPrompt.vue'
 import { WORDS as words } from './words'
 import type { NoteTabState } from './kind'
 

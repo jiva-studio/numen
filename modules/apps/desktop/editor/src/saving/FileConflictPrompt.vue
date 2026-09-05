@@ -6,7 +6,7 @@
  * two is theirs. A file that is gone keeps what is on screen and offers to make
  * it again. What either is said in is the tab's own.
  */
-import type { State } from './note/tab'
+import type { State } from '../note/tab'
 
 /** The words the two conflicts are put in. */
 export interface FileConflictWords {

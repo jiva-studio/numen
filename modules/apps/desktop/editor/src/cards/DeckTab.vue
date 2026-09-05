@@ -11,7 +11,7 @@ import { computed, ref } from 'vue'
 import { cardBlanks, cardFields, DeckEditor, Menu } from '@numen/ui'
 import type { InsertionPoint, Point } from '@numen/ui'
 import { ChevronDown } from '@lucide/vue'
-import FileConflictPrompt from '../FileConflictPrompt.vue'
+import FileConflictPrompt from '../saving/FileConflictPrompt.vue'
 import type { DeckTabState } from './deck'
 import { WORDS as words } from './words'
 

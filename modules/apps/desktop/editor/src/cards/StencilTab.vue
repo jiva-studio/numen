@@ -10,7 +10,7 @@
 import { computed } from 'vue'
 import { StencilEditor } from '@numen/ui'
 import type { InsertionPoint, Half } from '@numen/ui'
-import FileConflictPrompt from '../FileConflictPrompt.vue'
+import FileConflictPrompt from '../saving/FileConflictPrompt.vue'
 import type { StencilTabState } from './stencil'
 import { WORDS as words } from './words'
 

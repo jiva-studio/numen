@@ -39,6 +39,29 @@ const forbidden = [
     from: {},
     to: { couldNotResolve: true },
   },
+  {
+    name: 'no-going-round',
+    comment:
+      'Two files that each reach the other have no order between them, so ' +
+      'neither can be read first and neither can be taken out on its own. ' +
+      'A ring holding an import of a type alone is not one: nothing is ' +
+      'loaded to satisfy it and the build erases the edge.',
+    severity: 'error',
+    from: { pathNot: '\\.vue$' },
+    to: { circular: true, viaOnly: { dependencyTypesNot: ['type-only'], pathNot: '\\.vue$' } },
+  },
+  {
+    name: 'no-screen-at-the-root',
+    comment:
+      'What stands at the root of a module is what every folder under it ' +
+      'shares. A component is not that: it belongs with the folder that draws ' +
+      'it, and one standing at the root is reached from folders that have ' +
+      'nothing else to do with each other. The window a module opens on is ' +
+      'the exception, being the root itself.',
+    severity: 'error',
+    from: {},
+    to: { path: '^src/(?!App\\.vue$)[^/]+\\.vue$' },
+  },
 ]
 
 module.exports = {
