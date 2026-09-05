@@ -15,7 +15,7 @@ import (
 // not about the row.
 func TestAFolderThatHasGoneIsMissing(t *testing.T) {
 	t.Parallel()
-	asking := vaults.NewFolderMissing(filesystem.VaultReaders{})
+	asking := vaults.NewFolderCheck(filesystem.VaultReaders{})
 
 	at := filepath.Join(t.TempDir(), "one")
 	if err := os.Mkdir(at, 0o700); err != nil {
@@ -42,7 +42,7 @@ func TestAPathHoldingAFileIsMissingToo(t *testing.T) {
 	if err := os.WriteFile(at, []byte("not a vault"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	asking := vaults.NewFolderMissing(filesystem.VaultReaders{})
+	asking := vaults.NewFolderCheck(filesystem.VaultReaders{})
 	if !asking.Execute(domain.Vault{ID: "one", Name: "one", Path: at}) {
 		t.Error("a file where a vault's folder was is not missing")
 	}

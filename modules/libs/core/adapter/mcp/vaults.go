@@ -291,7 +291,7 @@ func knownOf(v domain.Vault, showing domain.VaultID, readers port.VaultReaders) 
 		ID:      string(v.ID),
 		Name:    v.Name,
 		Folder:  v.Path,
-		Missing: vaults.NewFolderMissing(readers).Execute(v),
+		Missing: vaults.NewFolderCheck(readers).Execute(v),
 		Showing: v.ID != "" && v.ID == showing,
 	}
 }

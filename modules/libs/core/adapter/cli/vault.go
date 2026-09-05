@@ -96,7 +96,7 @@ func vaultList(out io.Writer, cfg container.Config) error {
 	if err != nil {
 		return err
 	}
-	missing := vault.NewFolderMissing(cfg.VaultReaders())
+	missing := vault.NewFolderCheck(cfg.VaultReaders())
 	for _, v := range known {
 		last := " "
 		if recorded && v.ID == recent.ID {
@@ -198,7 +198,7 @@ func vaultErase(ctx context.Context, out io.Writer, cfg container.Config, args [
 
 	// What will be said is worked out while the folder is still there.
 	went := fmt.Sprintf("%s went to the trash this machine keeps", v.Path)
-	if vault.NewFolderMissing(cfg.VaultReaders()).Execute(v) {
+	if vault.NewFolderCheck(cfg.VaultReaders()).Execute(v) {
 		went = fmt.Sprintf("nothing was at %s", v.Path)
 	}
 
