@@ -38,7 +38,7 @@ func TestAListenerIsPassedOverRatherThanWaitedFor(t *testing.T) {
 func TestAListenerThatStoppedIsNotSpokenTo(t *testing.T) {
 	var f following
 	going, still := f.listen()
-	standing, done := f.listen()
+	stays, done := f.listen()
 	t.Cleanup(done)
 
 	still()
@@ -47,7 +47,7 @@ func TestAListenerThatStoppedIsNotSpokenTo(t *testing.T) {
 	}
 
 	f.say()
-	if _, is := <-standing; !is {
+	if _, is := <-stays; !is {
 		t.Error("the listener that stayed was told nothing")
 	}
 }
