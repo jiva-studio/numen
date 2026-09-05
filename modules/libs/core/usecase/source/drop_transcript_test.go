@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
@@ -188,7 +187,7 @@ type watching struct {
 	saw func()
 }
 
-func (w watching) SaveExtraction(ctx context.Context, vaultID domain.VaultID, e port.SourceChunks) error {
+func (w watching) SaveExtraction(ctx context.Context, vaultID domain.VaultID, e domain.SourceChunks) error {
 	w.saw()
 	return w.store.SaveExtraction(ctx, vaultID, e)
 }

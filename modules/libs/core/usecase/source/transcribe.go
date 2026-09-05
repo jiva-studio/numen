@@ -276,7 +276,7 @@ func (u Transcribe) stand(ctx context.Context, v domain.Vault, ref domain.Finger
 	if u.Cut != nil {
 		return u.Cut(ctx, v, ref.Path)
 	}
-	return u.Sources.SaveSource(ctx, v.ID, port.Source{Fingerprint: ref, Hash: hash, TextFrom: from})
+	return u.Sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref, Hash: hash, TextFrom: from})
 }
 
 // cut makes this source's chunks from what has been heard so far.

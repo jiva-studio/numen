@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
 
@@ -1427,19 +1426,19 @@ func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
 	ctx := t.Context()
 	db := opened(t)
 
-	if err := db.Sources().SaveExtraction(ctx, first.ID, port.SourceChunks{
-		Source: port.Source{
+	if err := db.Sources().SaveExtraction(ctx, first.ID, domain.SourceChunks{
+		Source: domain.Source{
 			Fingerprint: domain.Fingerprint{
 				Path: "library/chaitanya.pdf", Kind: domain.KindBook, Size: 1000, ModTime: 1,
 			},
 			Hash:   "hash",
 			Recipe: "pdf",
 		},
-		Chunks: []port.Chunk{{
+		Chunks: []domain.Chunk{{
 			Start: 0, Length: 60, Location: "Madhavendra Puri",
 			Opens: []string{"Madhavendra Puri"},
 			Text:  "Madhavendra Puri appeared in the fourteenth century.",
-			Small: []port.Chunk{{Start: 0, Length: 60, Text: "Madhavendra Puri appeared."}},
+			Small: []domain.Chunk{{Start: 0, Length: 60, Text: "Madhavendra Puri appeared."}},
 		}},
 	}); err != nil {
 		t.Fatal(err)

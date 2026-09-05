@@ -20,10 +20,10 @@ import (
 // noting is an index that holds on to what a drop wrote to it.
 type noting struct {
 	unrecorded
-	written []port.SourceChunks
+	written []domain.SourceChunks
 }
 
-func (n *noting) SaveExtraction(_ context.Context, _ domain.VaultID, e port.SourceChunks) error {
+func (n *noting) SaveExtraction(_ context.Context, _ domain.VaultID, e domain.SourceChunks) error {
 	n.written = append(n.written, e)
 	return nil
 }

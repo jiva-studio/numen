@@ -337,7 +337,7 @@ func shortened(ctx context.Context, store port.DerivedStore, name string, prose 
 // No recipe is written, so the source owes its text: what cuts it into chunks
 // is extraction, which knows the sizes and is the one place that does.
 func (u Recognise) claim(ctx context.Context, v domain.Vault, ref domain.Fingerprint, hash, from string) error {
-	return u.Sources.SaveSource(ctx, v.ID, port.Source{Fingerprint: ref, Hash: hash, TextFrom: from})
+	return u.Sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref, Hash: hash, TextFrom: from})
 }
 
 // record keeps what read the document beside what it read. Nothing on any path

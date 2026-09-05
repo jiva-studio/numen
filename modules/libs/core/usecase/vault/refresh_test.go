@@ -28,6 +28,7 @@ func refreshing(t *testing.T, notes map[string]string) (vaults.Refresh, *contain
 	}
 	return vaults.Refresh{
 		Readers: filesystem.VaultReaders{},
+		Vaults:  db.Vaults(),
 		Notes:   db.Notes(),
 		Known:   db.SourcesKnown(),
 		Sources: db.Sources(),
@@ -59,6 +60,27 @@ func titles(t *testing.T, db *container.Index, v domain.Vault, query string) []s
 	}
 	slices.Sort(out)
 	return out
+}
+
+// TestANoteIsLevelledInAVaultNothingHasWalked. A note is filed under the
+// vault's row in the index, and a vault nothing has walked has none. A person
+// who writes in the moment a vault opens is racing the first walk, and their
+// note is findable either way.
+func TestANoteIsLevelledInAVaultNothingHasWalked(t *testing.T) {
+	t.Parallel()
+	v := testsupport.NewVault(t, map[string]string{
+		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
+	})
+	db := openIndex(t)
+	refresh := vaults.NewRefresh(
+		filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources())
+
+	if _, err := refresh.Execute(t.Context(), v, []string{"Note.md"}); err != nil {
+		t.Fatal(err)
+	}
+	if found := titles(t, db, v, "entropy"); !slices.Equal(found, []string{"Note"}) {
+		t.Errorf("the note is found as %v", found)
+	}
 }
 
 // TestARefreshedNoteIsWhatIsOnDisk.
@@ -150,13 +172,13 @@ func TestABookThatWentLeavesTheIndex(t *testing.T) {
 	})
 	const book = "library/A Book.epub"
 	testsupport.WriteBook(t, v.Path, book)
-	if err := db.Sources().SaveExtraction(t.Context(), v.ID, port.SourceChunks{
-		Source: port.Source{
+	if err := db.Sources().SaveExtraction(t.Context(), v.ID, domain.SourceChunks{
+		Source: domain.Source{
 			Fingerprint: domain.Fingerprint{Path: book, Kind: domain.KindBook, Size: 1, ModTime: 1},
 			Hash:        "a-hash",
 			Recipe:      "epub",
 		},
-		Chunks: []port.Chunk{{Start: 0, Length: 19, Text: "a reversible engine"}},
+		Chunks: []domain.Chunk{{Start: 0, Length: 19, Text: "a reversible engine"}},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -277,7 +299,9 @@ func TestARefreshWritesInGroups(t *testing.T) {
 
 	v := testsupport.NewVault(t, notes)
 	written := &countingNotes{}
-	refresh := vaults.Refresh{Readers: filesystem.VaultReaders{}, Notes: written}
+	refresh := vaults.Refresh{
+		Readers: filesystem.VaultReaders{}, Vaults: &indexRows{}, Notes: written,
+	}
 
 	if _, err := refresh.Execute(t.Context(), v, paths); err != nil {
 		t.Fatal(err)

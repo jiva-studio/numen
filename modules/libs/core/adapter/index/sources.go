@@ -29,13 +29,13 @@ type queries struct {
 
 // SaveSource records what a file is now, with no recipe: a source saved this way
 // owes its text.
-func (s sources) SaveSource(ctx context.Context, vaultID domain.VaultID, src port.Source) error {
+func (s sources) SaveSource(ctx context.Context, vaultID domain.VaultID, src domain.Source) error {
 	return s.write.SaveSource(ctx, vaultID, stored(src))
 }
 
 // SaveExtraction records the source and replaces its chunks in one write, so a
 // recipe is never recorded for chunks that are not there.
-func (s sources) SaveExtraction(ctx context.Context, vaultID domain.VaultID, e port.SourceChunks) error {
+func (s sources) SaveExtraction(ctx context.Context, vaultID domain.VaultID, e domain.SourceChunks) error {
 	return s.write.SaveExtraction(ctx, vaultID, stored(e.Source), chunks(e.Chunks))
 }
 
@@ -105,7 +105,7 @@ func (s queries) Unembedded(ctx context.Context, vaultID domain.VaultID, model p
 	return out, nil
 }
 
-func stored(s port.Source) chunk.Source {
+func stored(s domain.Source) chunk.Source {
 	return chunk.Source{
 		Path:     s.Fingerprint.Path,
 		Kind:     string(s.Fingerprint.Kind),
@@ -117,7 +117,7 @@ func stored(s port.Source) chunk.Source {
 	}
 }
 
-func chunks(in []port.Chunk) []chunk.Chunk {
+func chunks(in []domain.Chunk) []chunk.Chunk {
 	out := make([]chunk.Chunk, 0, len(in))
 	for _, c := range in {
 		out = append(out, chunk.Chunk{

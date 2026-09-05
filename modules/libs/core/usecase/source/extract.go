@@ -151,7 +151,7 @@ func (u Extract) discover(
 			res.Unchanged++
 			return nil
 		}
-		if err := u.Sources.SaveSource(ctx, v.ID, port.Source{Fingerprint: ref}); err != nil {
+		if err := u.Sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref}); err != nil {
 			return fmt.Errorf("record %s: %w", ref.Path, err)
 		}
 		res.Recorded++
@@ -285,7 +285,7 @@ func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.Vaul
 			if err != nil {
 				return fmt.Errorf("stat %s: %w", r.Path, err)
 			}
-			if err := u.Sources.SaveSource(ctx, v.ID, port.Source{Fingerprint: ref}); err != nil {
+			if err := u.Sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref}); err != nil {
 				return fmt.Errorf("record %s: %w", r.Path, err)
 			}
 			res.Forgotten++
@@ -433,8 +433,8 @@ func (u Extract) source(
 	}
 
 	chunks := chunksOf(doc, sizes, u.Legibility)
-	extraction := port.SourceChunks{
-		Source: port.Source{
+	extraction := domain.SourceChunks{
+		Source: domain.Source{
 			Fingerprint: ref,
 			Hash:        hash,
 			Recipe:      recipe(name, sizes),
@@ -453,8 +453,8 @@ func (u Extract) source(
 
 // chunksOf cuts one source's text: the large chunks a result shows, each
 // holding the small chunks that carry a vector.
-func chunksOf(doc *text.Document, sizes chunking.Sizes, reads chunking.Legibility) []port.Chunk {
-	var out []port.Chunk
+func chunksOf(doc *text.Document, sizes chunking.Sizes, reads chunking.Legibility) []domain.Chunk {
+	var out []domain.Chunk
 	for _, large := range chunking.Cut(doc.Text, doc.Parts, sizes, reads) {
 		c := chunkAt(doc, large)
 		// The name of a section is kept on the chunk that begins it, and on that
@@ -471,8 +471,8 @@ func chunksOf(doc *text.Document, sizes chunking.Sizes, reads chunking.Legibilit
 
 // chunkAt is one chunk with what it holds and where the source says it is. The
 // text goes with it to be indexed for its words and is not kept.
-func chunkAt(doc *text.Document, c chunking.Chunk) port.Chunk {
-	return port.Chunk{
+func chunkAt(doc *text.Document, c chunking.Chunk) domain.Chunk {
+	return domain.Chunk{
 		Start:    c.Start,
 		Length:   c.Length,
 		Location: doc.Locate(c.Start),
@@ -481,7 +481,7 @@ func chunkAt(doc *text.Document, c chunking.Chunk) port.Chunk {
 }
 
 // counted is how many chunks of both sizes a cut produced.
-func counted(chunks []port.Chunk) int {
+func counted(chunks []domain.Chunk) int {
 	n := len(chunks)
 	for _, c := range chunks {
 		n += len(c.Small)

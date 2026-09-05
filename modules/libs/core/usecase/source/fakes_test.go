@@ -36,7 +36,7 @@ var (
 // store is the index, in memory, answering every question the way the index
 // answers it. What the two passes do next is read from those answers.
 type store struct {
-	sources map[domain.VaultID]map[string]port.Source // vault, then path
+	sources map[domain.VaultID]map[string]domain.Source // vault, then path
 	chunks  []storedChunk
 	vectors map[int64][]port.Vector // by chunk, appended, so a second write shows
 	groups  [][]port.Vector         // every write of vectors, in order
@@ -61,18 +61,18 @@ type storedChunk struct {
 
 func newStore() *store {
 	return &store{
-		sources: map[domain.VaultID]map[string]port.Source{},
+		sources: map[domain.VaultID]map[string]domain.Source{},
 		vectors: map[int64][]port.Vector{},
 		written: map[string]int{},
 	}
 }
 
-func (s *store) SaveSource(_ context.Context, vaultID domain.VaultID, src port.Source) error {
+func (s *store) SaveSource(_ context.Context, vaultID domain.VaultID, src domain.Source) error {
 	s.put(vaultID, src)
 	return nil
 }
 
-func (s *store) SaveExtraction(_ context.Context, vaultID domain.VaultID, e port.SourceChunks) error {
+func (s *store) SaveExtraction(_ context.Context, vaultID domain.VaultID, e domain.SourceChunks) error {
 	s.written[e.Source.Fingerprint.Path]++
 	s.put(vaultID, e.Source)
 	s.clear(vaultID, e.Source.Fingerprint.Path)
@@ -125,13 +125,13 @@ func (s *store) Fingerprints(_ context.Context, vaultID domain.VaultID, kind dom
 }
 
 func (s *store) Unchunked(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind, limit int) ([]string, error) {
-	return s.paths(vaultID, kind, limit, func(src port.Source) bool {
+	return s.paths(vaultID, kind, limit, func(src domain.Source) bool {
 		return !s.cut(vaultID, src.Fingerprint.Path)
 	})
 }
 
 func (s *store) ByOtherRecipe(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind, recipes []string, limit int) ([]string, error) {
-	return s.paths(vaultID, kind, limit, func(src port.Source) bool {
+	return s.paths(vaultID, kind, limit, func(src domain.Source) bool {
 		return !slices.Contains(recipes, src.Recipe)
 	})
 }
@@ -169,9 +169,9 @@ func hashOf(text string) string {
 
 // put records a source as it arrived, the recipe included: a source recorded
 // without one owes its text.
-func (s *store) put(vaultID domain.VaultID, src port.Source) {
+func (s *store) put(vaultID domain.VaultID, src domain.Source) {
 	if s.sources[vaultID] == nil {
-		s.sources[vaultID] = map[string]port.Source{}
+		s.sources[vaultID] = map[string]domain.Source{}
 	}
 	s.sources[vaultID][src.Fingerprint.Path] = src
 }
@@ -235,7 +235,7 @@ func (s *store) clear(vaultID domain.VaultID, path string) {
 	s.chunks = kept
 }
 
-func (s *store) insert(vaultID domain.VaultID, ref domain.Fingerprint, c port.Chunk, parent int64) int64 {
+func (s *store) insert(vaultID domain.VaultID, ref domain.Fingerprint, c domain.Chunk, parent int64) int64 {
 	s.next++
 	s.chunks = append(s.chunks, storedChunk{
 		id: s.next, vault: vaultID, path: ref.Path, kind: ref.Kind,
@@ -246,7 +246,7 @@ func (s *store) insert(vaultID domain.VaultID, ref domain.Fingerprint, c port.Ch
 
 // paths answers a question about sources as the paths that satisfy it, ordered
 // and bounded the way the index orders and bounds them.
-func (s *store) paths(vaultID domain.VaultID, kind domain.SourceKind, limit int, owing func(port.Source) bool) ([]string, error) {
+func (s *store) paths(vaultID domain.VaultID, kind domain.SourceKind, limit int, owing func(domain.Source) bool) ([]string, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a question about sources needs a positive limit, got %d", limit)
 	}
