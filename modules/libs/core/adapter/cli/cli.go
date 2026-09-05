@@ -9,8 +9,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-
-	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
 const usage = `numen-cli — notes with typed links and spaced repetition
@@ -43,9 +41,9 @@ options:
 // been read off the arguments: an installation is assembled by the application,
 // and this is where one is asked for.
 func Main(ctx context.Context, out, errOut io.Writer, args []string,
-	cfg container.Config, open func(Locations) Deps,
+	open func(Locations) Deps,
 ) int {
-	if err := Run(ctx, out, errOut, args, cfg, open); err != nil {
+	if err := Run(ctx, out, errOut, args, open); err != nil {
 		fmt.Fprintln(errOut, "numen-cli:", err)
 		return 1
 	}
@@ -55,7 +53,7 @@ func Main(ctx context.Context, out, errOut io.Writer, args []string,
 // Run is Main with its output injected and errors returned, so what the person
 // sees is testable. errOut carries what a command says beside its answer.
 func Run(ctx context.Context, out, errOut io.Writer, args []string,
-	cfg container.Config, open func(Locations) Deps,
+	open func(Locations) Deps,
 ) error {
 	var where Locations
 	fs := flag.NewFlagSet("numen-cli", flag.ContinueOnError)
@@ -72,7 +70,6 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	cfg.IndexPath, cfg.RegistryPath, cfg.ServiceDir = where.Index, where.Registry, where.ServiceDir
 	deps := open(where)
 
 	rest := fs.Args()
@@ -89,7 +86,7 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	case "recognise":
 		return recogniseCommand(ctx, out, deps, rest[1:])
 	case "proofread":
-		return proofreadCommand(ctx, out, cfg, deps, rest[1:])
+		return proofreadCommand(ctx, out, deps, rest[1:])
 	case "transcribe":
 		return transcribeCommand(ctx, out, deps, rest[1:])
 	case "search":

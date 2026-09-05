@@ -148,6 +148,50 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 				}, nil
 			},
 
+			ProofreadReading: func(
+				ctx context.Context, v domain.Vault,
+			) (cli.ProofreadReading, error) {
+				proofread, held, err := cfg.ProofreadingScans().
+					Reading(cfg.VaultReaders(), cfg.DerivedStores())
+				if err != nil || !held {
+					return cli.ProofreadReading{}, err
+				}
+				db, err := cfg.OpenIndex(ctx)
+				if err != nil {
+					return cli.ProofreadReading{}, err
+				}
+				cut, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
+				if err != nil {
+					_ = db.Close()
+					return cli.ProofreadReading{}, err
+				}
+				return cli.ProofreadReading{
+					Proofread: proofread, Cut: cut, Held: true, Close: db.Close,
+				}, nil
+			},
+
+			ProofreadTranscript: func(
+				ctx context.Context, v domain.Vault,
+			) (cli.ProofreadTranscript, error) {
+				proofread, held, err := cfg.ProofreadingSpeech().
+					Transcript(cfg.VaultReaders(), cfg.DerivedStores())
+				if err != nil || !held {
+					return cli.ProofreadTranscript{}, err
+				}
+				db, err := cfg.OpenIndex(ctx)
+				if err != nil {
+					return cli.ProofreadTranscript{}, err
+				}
+				cut, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
+				if err != nil {
+					_ = db.Close()
+					return cli.ProofreadTranscript{}, err
+				}
+				return cli.ProofreadTranscript{
+					Proofread: proofread, Cut: cut, Held: true, Close: db.Close,
+				}, nil
+			},
+
 			Search: func(ctx context.Context, trouble port.Trouble) (cli.Search, error) {
 				db, err := cfg.OpenIndex(ctx)
 				if err != nil {

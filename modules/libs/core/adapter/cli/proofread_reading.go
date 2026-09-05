@@ -7,14 +7,13 @@ import (
 	"io"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 // proofreadCommand puts one file right with a model, by what the file is: a
 // recording's transcript, or a document's reading.
-func proofreadCommand(ctx context.Context, out io.Writer, cfg container.Config, deps Deps, args []string) error {
+func proofreadCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli proofread <vault> <file>")
 	}
@@ -23,9 +22,9 @@ func proofreadCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 		return err
 	}
 	if domain.MediaType(args[1]) != "" {
-		return proofreadTranscriptCommand(ctx, out, cfg, v, args[1])
+		return proofreadTranscriptCommand(ctx, out, deps, v, args[1])
 	}
-	return proofreadReadingCommand(ctx, out, cfg, v, args[1])
+	return proofreadReadingCommand(ctx, out, deps, v, args[1])
 }
 
 // proofreadReadingCommand puts one document's reading right with a model.
@@ -35,31 +34,20 @@ func proofreadCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 func proofreadReadingCommand(
 	ctx context.Context,
 	out io.Writer,
-	cfg container.Config,
+	deps Deps,
 	v domain.Vault,
 	path string,
 ) error {
-	proofread, held, err := cfg.ProofreadingScans().Reading(cfg.VaultReaders(), cfg.DerivedStores())
+	open, err := deps.ProofreadReading(ctx, v)
 	if err != nil {
 		return err
 	}
-	if !held {
+	defer closing(open.Close)
+	if !open.Held {
 		return errors.New("nothing to proofread with: none is configured")
 	}
-	db, err := cfg.OpenIndex(ctx)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
 
-	// What a batch of pages puts right is cut before the next batch is asked
-	// about, so a book answers about the pages already corrected while the rest
-	// is still being asked about.
-	cut, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
-	if err != nil {
-		return err
-	}
-
+	proofread, cut := open.Proofread, open.Cut
 	fmt.Fprintf(out, "proofreading %s with %s\n", path, proofread.By.Name())
 	started := time.Now()
 

@@ -91,7 +91,7 @@ func TestWhatTheOwedShrinkRuleRefuses(t *testing.T) {
 		from, to string
 		admits   bool
 	}{
-		{"adapter/cli", "container", true},
+		{"adapter/window/editor", "container", true},
 		{"container", "task", true},
 		{"adapter/cli", "internal/adapter/trash", false},
 		{"adapter/settings", "port", false},

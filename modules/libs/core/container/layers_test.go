@@ -25,8 +25,6 @@ const module = "github.com/jiva-studio/numen/modules/libs/core/"
 // adapter/window/editor is not owed to internal/adapter/window/editor, which is
 // not the same package and would not be the same window.
 var owed = map[string][]string{
-	// The terminal assembles what it serves.
-	"adapter/cli": {"container"},
 	// The window assembles what it serves.
 	"adapter/window/editor": {"container"},
 	// One settings file is the union of every adapter's section.

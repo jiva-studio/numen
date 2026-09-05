@@ -7,7 +7,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
@@ -19,32 +18,20 @@ import (
 func proofreadTranscriptCommand(
 	ctx context.Context,
 	out io.Writer,
-	cfg container.Config,
+	deps Deps,
 	v domain.Vault,
 	path string,
 ) error {
-	proofread, held, err := cfg.ProofreadingSpeech().
-		Transcript(cfg.VaultReaders(), cfg.DerivedStores())
+	open, err := deps.ProofreadTranscript(ctx, v)
 	if err != nil {
 		return err
 	}
-	if !held {
+	defer closing(open.Close)
+	if !open.Held {
 		return errors.New("nothing to proofread with: none is configured")
 	}
-	db, err := cfg.OpenIndex(ctx)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
 
-	// What a batch puts right is cut before the next is asked about, so a
-	// recording answers about the speech already corrected while the rest is
-	// still being asked about.
-	cut, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
-	if err != nil {
-		return err
-	}
-
+	proofread, cut := open.Proofread, open.Cut
 	fmt.Fprintf(out, "proofreading %s with %s\n", path, proofread.By.Name())
 	started := time.Now()
 

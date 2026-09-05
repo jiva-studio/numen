@@ -23,5 +23,5 @@ func main() {
 		os.Exit(1)
 	}
 	cfg := platform.Config().Indexing(chosen.Indexing)
-	os.Exit(cli.Main(context.Background(), os.Stdout, os.Stderr, os.Args[1:], cfg, deps(cfg)))
+	os.Exit(cli.Main(context.Background(), os.Stdout, os.Stderr, os.Args[1:], deps(cfg)))
 }

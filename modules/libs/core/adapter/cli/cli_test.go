@@ -13,8 +13,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/cli"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -52,8 +50,7 @@ func (s *session) run(args ...string) (string, error) {
 	var out bytes.Buffer
 	// No embedder and nothing this machine supplies: a test must not reach a
 	// model, a service, an account or a process.
-	err := cli.Run(context.Background(), &out, &s.said, append(s.base, args...),
-		container.Config{}.Indexing(settings.Indexing{}), s.deps)
+	err := cli.Run(context.Background(), &out, &s.said, append(s.base, args...), s.deps)
 	return out.String(), err
 }
 
