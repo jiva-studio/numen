@@ -1,5 +1,9 @@
 package domain
 
+// ChunkID names one chunk of one source. The index hands it out and answers for
+// it; nothing here reads anything into how it is spelled.
+type ChunkID string
+
 // Passage is what a search returns: the text around a hit, and where it came
 // from. It is a read model — a chunk is not reconstructed from it.
 //
@@ -7,8 +11,8 @@ package domain
 // of the file `Source` names, and `Text` is what stands there once the file has
 // been read.
 type Passage struct {
-	// ChunkID is the row a ranking named. Two rankings are merged on it.
-	ChunkID int64
+	// ChunkID is the chunk a ranking named. Two rankings are merged on it.
+	ChunkID ChunkID
 
 	// Source is the path of the file the text is read from, relative to the
 	// vault folder.

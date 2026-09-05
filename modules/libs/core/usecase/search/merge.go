@@ -24,8 +24,8 @@ const rankConstant = 60
 // Equal scores are ordered by source and then by chunk, so one index gives one
 // answer.
 func merge(rankings ...[]domain.Passage) []domain.Passage {
-	score := map[int64]float64{}
-	seen := map[int64]domain.Passage{}
+	score := map[domain.ChunkID]float64{}
+	seen := map[domain.ChunkID]domain.Passage{}
 	for _, ranking := range rankings {
 		for i, p := range ranking {
 			score[p.ChunkID] += 1 / float64(rankConstant+i+1)

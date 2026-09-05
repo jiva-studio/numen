@@ -73,8 +73,12 @@ func (s queries) ByOtherRecipe(ctx context.Context, vaultID domain.VaultID, kind
 func (s sources) SaveVectors(ctx context.Context, vectors []port.Vector) error {
 	out := make([]chunk.Vector, 0, len(vectors))
 	for _, v := range vectors {
+		row, err := chunk.Row(v.ChunkID)
+		if err != nil {
+			return err
+		}
 		out = append(out, chunk.Vector{
-			Chunk:  v.ChunkID,
+			Chunk:  row,
 			Hash:   v.Hash,
 			Recipe: v.Model.Recipe(),
 			Value:  v.Value,
@@ -84,15 +88,19 @@ func (s sources) SaveVectors(ctx context.Context, vectors []port.Vector) error {
 	return s.write.SaveVectors(ctx, out)
 }
 
-func (s queries) Unembedded(ctx context.Context, vaultID domain.VaultID, model port.EmbeddingModel, after int64, limit int) ([]domain.Passage, error) {
-	found, err := s.read.Unembedded(ctx, vaultID, model.Recipe(), after, limit)
+func (s queries) Unembedded(ctx context.Context, vaultID domain.VaultID, model port.EmbeddingModel, after port.ChunkCursor, limit int) ([]domain.Passage, port.ChunkCursor, error) {
+	from, err := resuming(after)
 	if err != nil {
-		return nil, err
+		return nil, "", err
+	}
+	found, err := s.read.Unembedded(ctx, vaultID, model.Recipe(), from, limit)
+	if err != nil {
+		return nil, "", err
 	}
 	out := make([]domain.Passage, 0, len(found))
 	for _, p := range found {
 		out = append(out, domain.Passage{
-			ChunkID:    p.Chunk,
+			ChunkID:    chunk.ID(p.Chunk),
 			Source:     p.Path,
 			TextFrom:   p.TextFrom,
 			SourceHash: p.Hash,
@@ -102,7 +110,20 @@ func (s queries) Unembedded(ctx context.Context, vaultID domain.VaultID, model p
 			ChunkHash:  p.ChunkHash,
 		})
 	}
-	return out, nil
+	next := after
+	if len(found) > 0 {
+		next = port.ChunkCursor(chunk.ID(found[len(found)-1].Chunk))
+	}
+	return out, next, nil
+}
+
+// resuming is the chunk a walk carries on after. A cursor is a chunk's own
+// address, so it is read the same way, and the empty one is the beginning.
+func resuming(after port.ChunkCursor) (int64, error) {
+	if after == "" {
+		return 0, nil
+	}
+	return chunk.Row(domain.ChunkID(after))
 }
 
 func stored(s domain.Source) chunk.Source {

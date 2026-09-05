@@ -91,20 +91,24 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 	}
 	source := extracted{of: text.Reader{Vault: reader, Derived: store, Documents: u.Documents}}
 
-	after := int64(0)
+	var after port.ChunkCursor
 	for {
 		if err := ctx.Err(); err != nil {
 			return res, err
 		}
-		owing, err := u.Chunks.Unembedded(ctx, v.ID, model, after, chunksPerQuery)
+		owing, next, err := u.Chunks.Unembedded(ctx, v.ID, model, after, chunksPerQuery)
 		if err != nil {
 			return res, fmt.Errorf("what owes a vector from %s: %w", model, err)
 		}
 		if len(owing) == 0 {
 			return res, nil
 		}
+		// A group answered without moving on would be answered again forever.
+		if next == after {
+			return res, fmt.Errorf("what owes a vector from %s does not carry on past %d chunks", model, len(owing))
+		}
 		res.Owing += len(owing)
-		after = owing[len(owing)-1].ChunkID
+		after = next
 
 		chunks, texts, err := u.read(ctx, &source, owing, &res)
 		if err != nil {

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -38,6 +39,22 @@ type Passage struct {
 	Hash string
 	// ChunkHash addresses the text this chunk held when the index cut it.
 	ChunkHash string
+}
+
+// ID is how the core addresses the chunk on a row. This is the one place a
+// chunk's identity is spelled, and the core carries it back untouched.
+func ID(row int64) domain.ChunkID {
+	return domain.ChunkID(strconv.FormatInt(row, 10))
+}
+
+// Row is the chunk an identifier names, and an error where it names none this
+// index handed out.
+func Row(id domain.ChunkID) (int64, error) {
+	row, err := strconv.ParseInt(string(id), 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("%q is no chunk of this index", id)
+	}
+	return row, nil
 }
 
 // Fingerprints is what the index believes about each file of one kind, keyed by
@@ -147,9 +164,11 @@ func (q *Queries) Lexical(ctx context.Context, vaultID domain.VaultID, query str
 	var out []domain.Passage
 	for rows.Next() {
 		var p domain.Passage
-		if err := rows.Scan(&p.ChunkID, &p.Source, &p.Kind, &p.TextFrom, &p.SourceHash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
+		var row int64
+		if err := rows.Scan(&row, &p.Source, &p.Kind, &p.TextFrom, &p.SourceHash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
 			return nil, err
 		}
+		p.ChunkID = ID(row)
 		out = append(out, p)
 	}
 	return out, rows.Err()
@@ -191,9 +210,11 @@ func (q *Queries) Named(ctx context.Context, vaultID domain.VaultID, query strin
 	var out []domain.Passage
 	for rows.Next() {
 		var p domain.Passage
-		if err := rows.Scan(&p.ChunkID, &p.Source, &p.Kind, &p.TextFrom, &p.SourceHash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
+		var row int64
+		if err := rows.Scan(&row, &p.Source, &p.Kind, &p.TextFrom, &p.SourceHash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
 			return nil, err
 		}
+		p.ChunkID = ID(row)
 		out = append(out, p)
 	}
 	return out, rows.Err()
@@ -273,7 +294,7 @@ func (q *Queries) enclosing(ctx context.Context, vault int64, chunks []int64) ([
 
 	out := make([]domain.Passage, 0, len(chunks))
 	for _, chunk := range chunks {
-		p := domain.Passage{ChunkID: chunk}
+		p := domain.Passage{ChunkID: ID(chunk)}
 		err := enclosing.QueryRowContext(ctx, chunk, vault).
 			Scan(&p.Source, &p.Kind, &p.TextFrom, &p.SourceHash, &p.Start, &p.Length, &p.Location, &p.HitAt)
 		if errors.Is(err, sql.ErrNoRows) {

@@ -13,6 +13,7 @@ import (
 	"maps"
 	"math/rand/v2"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -38,9 +39,9 @@ var (
 type store struct {
 	sources map[domain.VaultID]map[string]domain.Source // vault, then path
 	chunks  []storedChunk
-	vectors map[int64][]port.Vector // by chunk, appended, so a second write shows
-	groups  [][]port.Vector         // every write of vectors, in order
-	written map[string]int          // extractions per path
+	vectors map[domain.ChunkID][]port.Vector // by chunk, appended, so a second write shows
+	groups  [][]port.Vector                  // every write of vectors, in order
+	written map[string]int                   // extractions per path
 	next    int64
 	// kept is what the index already holds, by recipe and hash.
 	kept map[string][]byte
@@ -62,7 +63,7 @@ type storedChunk struct {
 func newStore() *store {
 	return &store{
 		sources: map[domain.VaultID]map[string]domain.Source{},
-		vectors: map[int64][]port.Vector{},
+		vectors: map[domain.ChunkID][]port.Vector{},
 		written: map[string]int{},
 	}
 }
@@ -136,13 +137,18 @@ func (s *store) ByOtherRecipe(_ context.Context, vaultID domain.VaultID, kind do
 	})
 }
 
-func (s *store) Unembedded(_ context.Context, vaultID domain.VaultID, model port.EmbeddingModel, after int64, limit int) ([]domain.Passage, error) {
+func (s *store) Unembedded(_ context.Context, vaultID domain.VaultID, model port.EmbeddingModel, after port.ChunkCursor, limit int) ([]domain.Passage, port.ChunkCursor, error) {
 	if limit <= 0 {
-		return nil, fmt.Errorf("a batch needs a positive limit, got %d", limit)
+		return nil, "", fmt.Errorf("a batch needs a positive limit, got %d", limit)
+	}
+	from, err := resuming(after)
+	if err != nil {
+		return nil, "", err
 	}
 	var out []domain.Passage
+	var last int64
 	for _, c := range s.ordered() {
-		if c.vault != vaultID || c.parent == 0 || c.id <= after || s.embedded(c.id, model) {
+		if c.vault != vaultID || c.parent == 0 || c.id <= from || s.embedded(c.id, model) {
 			continue
 		}
 		// The source says which text its chunks are places in, as the query
@@ -150,14 +156,36 @@ func (s *store) Unembedded(_ context.Context, vaultID domain.VaultID, model port
 		// reading and not from the file.
 		src := s.sources[c.vault][c.path]
 		out = append(out, domain.Passage{
-			ChunkID: c.id, Source: c.path, Start: c.start, Length: c.length, Location: c.location,
+			ChunkID: chunkID(c.id), Source: c.path, Start: c.start, Length: c.length, Location: c.location,
 			TextFrom: src.TextFrom, SourceHash: src.Hash, ChunkHash: hashOf(c.text),
 		})
+		last = c.id
 		if len(out) == limit {
 			break
 		}
 	}
-	return out, nil
+	next := after
+	if len(out) > 0 {
+		next = port.ChunkCursor(chunkID(last))
+	}
+	return out, next, nil
+}
+
+// chunkID is how this store spells the row a chunk sits on, as an index does.
+func chunkID(row int64) domain.ChunkID {
+	return domain.ChunkID(strconv.FormatInt(row, 10))
+}
+
+// resuming is the chunk a walk carries on after, and zero for the beginning.
+func resuming(after port.ChunkCursor) (int64, error) {
+	if after == "" {
+		return 0, nil
+	}
+	row, err := strconv.ParseInt(string(after), 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("%q is no chunk of this store", after)
+	}
+	return row, nil
 }
 
 // hashOf is the address an index gives a chunk's text, and what a vector
@@ -227,7 +255,7 @@ func (s *store) clear(vaultID domain.VaultID, path string) {
 	kept := s.chunks[:0]
 	for _, c := range s.chunks {
 		if c.vault == vaultID && c.path == path {
-			delete(s.vectors, c.id)
+			delete(s.vectors, chunkID(c.id))
 			continue
 		}
 		kept = append(kept, c)
@@ -274,18 +302,21 @@ func (s *store) cut(vaultID domain.VaultID, path string) bool {
 	return false
 }
 
-// holds says whether the index holds a chunk of that number.
-func (s *store) holds(chunk int64) bool {
+// holds says whether the index holds the chunk named.
+func (s *store) holds(chunk domain.ChunkID) bool {
 	for _, c := range s.chunks {
-		if c.id == chunk {
+		if chunkID(c.id) == chunk {
 			return true
 		}
 	}
 	return false
 }
 
+// made is the vectors this store holds for one chunk.
+func (s *store) made(c storedChunk) []port.Vector { return s.vectors[chunkID(c.id)] }
+
 func (s *store) embedded(chunk int64, model port.EmbeddingModel) bool {
-	for _, v := range s.vectors[chunk] {
+	for _, v := range s.vectors[chunkID(chunk)] {
 		if v.Model == model {
 			return true
 		}

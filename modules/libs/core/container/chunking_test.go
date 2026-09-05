@@ -82,7 +82,7 @@ func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	owing, err := db.VectorsOwing().Unembedded(t.Context(), v.ID, wide{384}.Model(), 0, 1000)
+	owing, _, err := db.VectorsOwing().Unembedded(t.Context(), v.ID, wide{384}.Model(), "", 1000)
 	if err != nil {
 		t.Fatal(err)
 	}

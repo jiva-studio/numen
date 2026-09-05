@@ -1,6 +1,10 @@
 package port
 
-import "context"
+import (
+	"context"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+)
 
 // QuantisedInt8 names the quantisation of a stored vector's bytes: one signed
 // byte per dimension, at the scale the model is written down with. It is
@@ -14,7 +18,7 @@ const QuantisedInt8 = "int8"
 // the text the model read, which is what the vector is kept under once the
 // chunk that pointed at it is gone.
 type Vector struct {
-	ChunkID int64
+	ChunkID domain.ChunkID
 	Hash    []byte
 	Model   EmbeddingModel
 	Kind    string
