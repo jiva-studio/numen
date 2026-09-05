@@ -6,7 +6,7 @@
 
 import { sealed, type Filled } from './deck'
 import { previewed, strayIn } from './fill'
-import { declared, HALVES, type Against, type Half, type Objection, type Refusal } from './order'
+import { declared, HALVES, type Problems, type Half, type Objection, type Refusal } from './order'
 
 /** One way a stencil shows a card. */
 export interface Shown {
@@ -84,9 +84,9 @@ export const STENCIL_WORDS: StencilWords = {
  */
 export interface StencilWrong {
   /** What is wrong with each face, under the identity it was drawn by. */
-  readonly at: Against
+  readonly at: Problems
   /** What is wrong with each field, under the name it is declared by. */
-  readonly fields: Against
+  readonly fields: Problems
 }
 
 /** Nothing wrong with any face and nothing wrong with any field. */
@@ -175,12 +175,12 @@ export function drawnFaces(
 }
 
 /** What one part of the window a face is edited in holds. */
-export type Shows = 'written' | 'preview'
+export type PaneMode = 'written' | 'preview'
 
 /** One part of the window a face is edited in. */
 export interface Pane {
   readonly half: Half
-  readonly shows: Shows
+  readonly shows: PaneMode
   /** What the part is called while nothing stands in it. */
   readonly said: string
   /** What the part is announced as. */

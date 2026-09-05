@@ -11,7 +11,7 @@
 export const AGAIN = 1000
 
 /** What following a stream reads of the window it is following for. */
-export interface Follows {
+export interface FollowingDeps {
   /** Whether the window is still open. Nothing is followed once it is not. */
   open(): boolean
   /** What the window lost touch with, said until it has it back. */
@@ -24,7 +24,7 @@ export interface Follows {
   reset?(): void
 }
 
-export function following(deps: Follows) {
+export function following(deps: FollowingDeps) {
   /**
    * One stream, read for as long as the window is open. What arrives is
    * answered before the next of it is read, and what the answer throws ends

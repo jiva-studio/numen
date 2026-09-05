@@ -21,7 +21,7 @@ import {
   numbered,
   objection,
   wayOf,
-  type Against,
+  type Problems,
   type Landing,
   type Objection,
 } from './order'
@@ -32,7 +32,7 @@ const props = withDefaults(
     /** The fields a card is asked for, each named once, in the order they stand. */
     fields: readonly string[]
     /** What the caller found wrong with each field, under the name it is declared by. */
-    wrong?: Against | null
+    wrong?: Problems | null
     /** The words they are drawn with. */
     words?: StencilWords
   }>(),

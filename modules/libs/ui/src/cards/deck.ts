@@ -5,7 +5,7 @@
  * clock.
  */
 
-import { declared, type Against, type Landing } from './order'
+import { declared, type Problems, type Landing } from './order'
 import type { Stencil } from './stencil'
 
 /** One named slot and what stands in it. */
@@ -115,12 +115,12 @@ export const DECK_WORDS: DeckWords = {
  */
 export interface Wrong {
   /** What is wrong with each card, under the identity it was drawn by. */
-  readonly at: Against
+  readonly at: Problems
   /**
    * What is wrong with one value of a card, under that card's identity and then
    * the field the value stands in.
    */
-  readonly under: ReadonlyMap<string, Against>
+  readonly under: ReadonlyMap<string, Problems>
 }
 
 /**
@@ -138,7 +138,7 @@ export function sealed<K, V>(): ReadonlyMap<K, V> {
 /** Nothing wrong with anything. */
 export const NOTHING_WRONG: Wrong = Object.freeze({
   at: sealed<string, readonly string[]>(),
-  under: sealed<string, Against>(),
+  under: sealed<string, Problems>(),
 })
 
 /** One value of a card, laid out under the stencil that cuts it. */

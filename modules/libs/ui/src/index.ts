@@ -61,7 +61,7 @@ export type { Words as HeatmapWords } from './heatmap/words'
 export { default as Tooltip } from './tooltip/Tooltip.vue'
 /** Where a thing standing over the page goes, which the menu and tooltip share. */
 export { beside } from './placing/place'
-export type { Beside, Box } from './placing/place'
+export type { AxisPlacement, Box } from './placing/place'
 export { days as heatmapDays, fits as heatmapFits, weighs as heatmapWeighs } from './heatmap/heatmap'
 export type { Day as HeatmapDay, Room as HeatmapRoom, Tally as HeatmapTally } from './heatmap/heatmap'
 export { default as Welcome } from './welcome/Welcome.vue'
@@ -100,7 +100,7 @@ export { optionsForType, scaleOptions, useTypeSize, DESIGNED_TYPE } from './plex
 
 /** How wide a title needs its box, measured against the type the page is set in. */
 export { titleWidths, useTitleWidths } from './plex/measure'
-export type { Measure, Measures } from './plex/measure'
+export type { Measure, PlexMetrics } from './plex/measure'
 
 export type {
   ArrangeInput,
@@ -130,7 +130,7 @@ export type { ComposerState, KeyIntent } from './composer/state'
 
 /** A stream taken up again for as long as a window is open. */
 export { following } from './following/following'
-export type { Follows } from './following/following'
+export type { FollowingDeps } from './following/following'
 
 export { default as Dots } from './dots/Dots.vue'
 export { default as Waiting } from './waiting/Waiting.vue'

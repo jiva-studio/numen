@@ -12,7 +12,7 @@ import type { PlexNode } from './node'
 export type Measure = (node: PlexNode) => number
 
 /** What a plex measures its own text with. */
-export interface Measures {
+export interface PlexMetrics {
   readonly node: Measure
   /** The words of a label, which stand on a line and carry no padding. */
   readonly label: (label: string) => number
@@ -80,7 +80,7 @@ const pixelsOf = (value: string): number => {
  * Nothing where there is no canvas to measure against — jsdom, or a page
  * rendered on a server — and the arrangement then draws every box at its widest.
  */
-export function titleWidths(icon = 0): Measures | undefined {
+export function titleWidths(icon = 0): PlexMetrics | undefined {
   const probe = openProbe()
   if (!probe) return undefined
 
@@ -98,9 +98,9 @@ export function titleWidths(icon = 0): Measures | undefined {
  * says what the last one said changes nothing: a box moves when the type moves
  * and at no other time.
  */
-export function useTitleWidths(icon: () => number): Ref<Measures | undefined> {
+export function useTitleWidths(icon: () => number): Ref<PlexMetrics | undefined> {
   const probe = openProbe()
-  if (!probe) return shallowRef<Measures | undefined>(undefined)
+  if (!probe) return shallowRef<PlexMetrics | undefined>(undefined)
 
   const type = shallowRef(typeOf(probe))
 
@@ -165,7 +165,7 @@ const sameType = (one: PlexType, other: PlexType): boolean =>
   one.padding === other.padding &&
   one.gap === other.gap
 
-function measuresFor(type: PlexType, icon: number): Measures | undefined {
+function measuresFor(type: PlexType, icon: number): PlexMetrics | undefined {
   const context = measuringContext()
   if (!context) return undefined
 

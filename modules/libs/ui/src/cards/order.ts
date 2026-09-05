@@ -126,4 +126,4 @@ export type Half = 'front' | 'back'
 export const HALVES: readonly Half[] = ['front', 'back']
 
 /** What is wrong with each of a number of things, under what each is known by. */
-export type Against = ReadonlyMap<string, readonly string[]>
+export type Problems = ReadonlyMap<string, readonly string[]>

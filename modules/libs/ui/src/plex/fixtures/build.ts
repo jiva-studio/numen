@@ -4,7 +4,7 @@ import type { PlexNode } from '../node'
 import { RELATED_SEATS, type PlexRelatedSeat } from '../seat'
 import { nameFor } from './names'
 
-export type Counts = Readonly<Partial<Record<PlexRelatedSeat, number>>>
+export type SeatCounts = Readonly<Partial<Record<PlexRelatedSeat, number>>>
 
 export interface Named {
   readonly id: string
@@ -20,7 +20,7 @@ const RELATION: Record<PlexRelatedSeat, string> = {
 }
 
 /** A neighbourhood of the requested size, for turning knobs against. */
-export function build(title: string, counts: Counts): PlexNeighbourhood {
+export function build(title: string, counts: SeatCounts): PlexNeighbourhood {
   return around({ id: 'focus', title }, null, counts)
 }
 
@@ -35,7 +35,7 @@ export function build(title: string, counts: Counts): PlexNeighbourhood {
 export function around(
   focus: Named,
   from: Named | null,
-  counts: Counts,
+  counts: SeatCounts,
 ): PlexNeighbourhood {
   let taken = 0
   const invented: PlexNode[] = RELATED_SEATS.flatMap((seat) =>
