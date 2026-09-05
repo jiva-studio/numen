@@ -97,14 +97,15 @@ func offered(held []port.Model) []*v1.Model {
 			Shelf:     one.Shelf,
 			ByDefault: one.Default,
 			Writes:    writes(one.Writes),
-			Presence:  standing[one.Presence],
+			Presence:  presences[one.Presence],
 		})
 	}
 	return models
 }
 
-// standing is what a model's files are on this machine, as the wire carries it.
-var standing = map[port.Presence]v1.Presence{
+// presences is what a model's files are on this machine, as the wire carries
+// it.
+var presences = map[port.Presence]v1.Presence{
 	port.NothingToFetch: v1.Presence_PRESENCE_NOTHING_TO_FETCH,
 	port.Present:        v1.Presence_PRESENCE_PRESENT,
 	port.NotFetched:     v1.Presence_PRESENCE_NOT_FETCHED,
