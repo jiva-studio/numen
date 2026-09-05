@@ -65,8 +65,10 @@ type API struct {
 	// Day is where one day of review gives way to the next. A build holding none
 	// counts the day from midnight.
 	Day review.Day
-	// Now is when this is happening.
-	Now func() time.Time
+	// Now is when this is happening, and what every scenario this window runs
+	// is handed. A window that names none reads this machine's clock, which an
+	// adapter is allowed to and a scenario is not.
+	Now port.Clock
 
 	// Opened is called with the vault a sitting has just opened on. What answers
 	// about a card works one vault, and it is told which when the sitting is.
