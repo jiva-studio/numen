@@ -27,7 +27,14 @@ func NewFolderCheck(readers port.VaultReaders) FolderCheck {
 
 // Execute reports whether the folder is gone. A path holding something that is
 // not a folder is gone as well: it is not a vault to be read either way.
+//
+// A build with nothing to open a vault through says no folder is gone. It knows
+// nothing about the disk, and answering that every vault has vanished is a
+// person told their notes are gone by a build that never looked.
 func (u FolderCheck) Execute(v domain.Vault) bool {
+	if u.Readers == nil {
+		return false
+	}
 	_, err := u.Readers.Open(v)
 	return err != nil
 }

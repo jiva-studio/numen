@@ -10,7 +10,6 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -65,14 +64,14 @@ func addVaultList(server *sdk.Server, core Core) {
 		type out = struct {
 			Vaults []Vault `json:"vaults"`
 		}
-		held, err := vaults.NewList(core.Vaults.Registry).Execute()
+		held, err := vaults.NewKnownVaults(core.Vaults.Registry, core.Readers).
+			Execute(core.shown().Vault.ID)
 		if err != nil {
 			return nil, out{}, err
 		}
-		showing := core.shown().Vault.ID
 		list := make([]Vault, 0, len(held))
-		for _, v := range held {
-			list = append(list, knownOf(v, showing, core.Readers))
+		for _, one := range held {
+			list = append(list, knownOf(one))
 		}
 		return nil, out{Vaults: list}, nil
 	})
@@ -284,15 +283,14 @@ func (v Vaults) found(nameOrPath string) (domain.Vault, error) {
 	return vaults.NewFind(v.Registry).Execute(nameOrPath)
 }
 
-// knownOf is one vault as an agent is told about it. A folder that is not there
-// to be found is marked, and the vault stays on the list.
-func knownOf(v domain.Vault, showing domain.VaultID, readers port.VaultReaders) Vault {
+// knownOf is one vault as an agent is told about it.
+func knownOf(one vaults.KnownVault) Vault {
 	return Vault{
-		ID:      string(v.ID),
-		Name:    v.Name,
-		Folder:  v.Path,
-		Missing: vaults.NewFolderCheck(readers).Execute(v),
-		Showing: v.ID != "" && v.ID == showing,
+		ID:      string(one.Vault.ID),
+		Name:    one.Vault.Name,
+		Folder:  one.Vault.Path,
+		Missing: one.Missing,
+		Showing: one.Current,
 	}
 }
 

@@ -84,7 +84,9 @@ func vaultList(out io.Writer, cfg container.Config) error {
 	if err != nil {
 		return err
 	}
-	known, err := vault.NewList(registry).Execute()
+	// Nobody is sitting in front of a vault here, so the current one is the
+	// vault the next window opens.
+	known, err := vault.NewKnownVaults(registry, cfg.VaultReaders()).Execute("")
 	if err != nil {
 		return err
 	}
@@ -92,24 +94,17 @@ func vaultList(out io.Writer, cfg container.Config) error {
 		fmt.Fprintln(out, "no vaults yet — add one with: numen-cli vault add <path>")
 		return nil
 	}
-	recent, recorded, err := registry.Last()
-	if err != nil {
-		return err
-	}
-	missing := vault.NewFolderCheck(cfg.VaultReaders())
-	for _, v := range known {
+	for _, one := range known {
 		last := " "
-		if recorded && v.ID == recent.ID {
-			// The vault the next window opens.
+		if one.Current {
 			last = "*"
 		}
 		there := " "
-		if missing.Execute(v) {
-			// The registry remembers where a vault was last seen; the vault
-			// carries the identity. A folder that is not there is marked here.
+		if one.Missing {
 			there = "?"
 		}
-		fmt.Fprintf(out, "%s%s %-20s %s\n  %s\n", last, there, v.Name, v.ID, v.Path)
+		fmt.Fprintf(out, "%s%s %-20s %s\n  %s\n",
+			last, there, one.Vault.Name, one.Vault.ID, one.Vault.Path)
 	}
 	return nil
 }
