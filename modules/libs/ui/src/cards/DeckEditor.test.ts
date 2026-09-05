@@ -9,7 +9,7 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
-import Deck from './Deck.vue'
+import DeckEditor from './DeckEditor.vue'
 import { endOf, HEAD, type DeckSection, type DeckCard } from './deck'
 import type { Stencil } from './stencil'
 
@@ -34,7 +34,7 @@ const CARDS: readonly DeckCard[] = [
 ]
 
 const mountDeck = (props: Record<string, unknown> = {}) =>
-  mount(Deck, { attachTo: document.body, props: { cards: CARDS, stencils: CUTS, ...props } })
+  mount(DeckEditor, { attachTo: document.body, props: { cards: CARDS, stencils: CUTS, ...props } })
 
 type Grid = ReturnType<typeof mountDeck>
 
@@ -102,7 +102,7 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-describe('Deck', () => {
+describe('DeckEditor', () => {
   it('draws a tile per card, in the order they were handed in', () => {
     expect(drawnCards(mountDeck())).toEqual(['llama', 'yak'])
   })

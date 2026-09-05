@@ -8,7 +8,7 @@
  * two cards of one mark are each marked where they were read from.
  */
 import { computed, ref } from 'vue'
-import { cardBlanks, cardFields, Deck as DeckView, Menu } from '@numen/ui'
+import { cardBlanks, cardFields, DeckEditor, Menu } from '@numen/ui'
 import type { InsertionPoint, Point } from '@numen/ui'
 import { ChevronDown } from '@lucide/vue'
 import FileConflictPrompt from '../FileConflictPrompt.vue'
@@ -92,7 +92,7 @@ const chose = (path: string) => {
       </span>
     </p>
 
-    <DeckView
+    <DeckEditor
       class="deck-tab__grid"
       :cards="drawn"
       :sections="sections"

@@ -7,7 +7,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
-import Deck from './Deck.vue'
+import DeckEditor from './DeckEditor.vue'
 import { blanks, HEAD, type DeckSection, type DeckCard, type Wrong } from './deck'
 import { declared, type InsertionPoint } from './order'
 import type { Stencil } from './stencil'
@@ -296,7 +296,7 @@ interface Knobs {
 
 const meta: Meta<Knobs> = {
   title: 'Flash Cards/Deck',
-  component: Deck,
+  component: DeckEditor,
   parameters: { layout: 'fullscreen' },
   argTypes: {
     corpus: {
@@ -313,7 +313,7 @@ const meta: Meta<Knobs> = {
   },
   args: { corpus: 'a deck', name: 'Deck', width: '100%' },
   render: (args) => ({
-    components: { Deck },
+    components: { DeckEditor },
     setup() {
       const cards = ref<readonly DeckCard[]>(CORPORA[args.corpus].cards)
       const cuts = ref<readonly Stencil[]>(CORPORA[args.corpus].cuts)
@@ -387,7 +387,7 @@ const meta: Meta<Knobs> = {
     },
     template: `
       <div :style="{ height: '100vh', width: args.width }">
-        <Deck
+        <DeckEditor
           :cards="cards"
           :stencils="cuts"
           :sections="sections"

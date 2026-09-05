@@ -239,7 +239,7 @@ export type {
 } from './tree/row'
 
 export { default as StencilEditor } from './cards/StencilEditor.vue'
-export { default as Deck } from './cards/Deck.vue'
+export { default as DeckEditor } from './cards/DeckEditor.vue'
 /** One card of a deck, which is what the deck lays out. */
 export { default as Card } from './cards/Card.vue'
 /** One face of a stencil, which is what the stencil lays out. */
