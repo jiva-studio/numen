@@ -37,10 +37,14 @@ func (a *API) RenameNote(
 	out.Unlevelled = a.unlevelled(err)
 	if err != nil && !out.GetUnlevelled() {
 		reason, refused := wire.RefusalBy(err)
-		if !refused {
+		switch {
+		case refused:
+			out.Refusal = &reason
+		case out.GetPath() == "":
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		out.Refusal = &reason
+		// The note was opened and its name was written, so what stands is the
+		// answer. A rename that came apart afterwards is a rename that happened.
 	}
 	return connect.NewResponse(out), nil
 }

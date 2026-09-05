@@ -148,10 +148,14 @@ func (a *API) MoveFile(
 	out.Unlevelled = a.unlevelled(err)
 	if err != nil && !out.GetUnlevelled() {
 		reason, refused := wire.RefusalBy(err)
-		if !refused {
+		switch {
+		case refused:
+			out.Refusal = &reason
+		case !moved.Landed:
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		out.Refusal = &reason
+		// The file is where it was sent, so where it went and which links were
+		// repaired is the answer, whatever came apart after it landed.
 	}
 	return connect.NewResponse(out), nil
 }
