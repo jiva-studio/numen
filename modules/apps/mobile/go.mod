@@ -1,6 +1,6 @@
 module github.com/jiva-studio/numen/modules/apps/mobile
 
-go 1.26.5
+go 1.26.8
 
 require (
 	github.com/jiva-studio/numen/modules/libs/core v0.0.0

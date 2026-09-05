@@ -1,6 +1,6 @@
 module github.com/jiva-studio/numen/modules/libs/core
 
-go 1.26.5
+go 1.26.8
 
 require (
 	connectrpc.com/connect v1.20.0

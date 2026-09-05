@@ -1,6 +1,6 @@
 module github.com/jiva-studio/numen/modules/libs/protocol
 
-go 1.26
+go 1.26.8
 
 require (
 	connectrpc.com/connect v1.20.0
