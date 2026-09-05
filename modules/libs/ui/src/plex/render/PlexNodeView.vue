@@ -213,6 +213,8 @@ const keyboardOn = (element: Element) => {
   try {
     return element.matches(':focus-visible')
   } catch {
+    // A browser that does not know the selector cannot say the keyboard is on
+    // it, and no is the answer that draws nothing extra.
     return false
   }
 }

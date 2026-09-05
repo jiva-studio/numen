@@ -249,6 +249,9 @@ export function conversation(
         else if (!said) put({ id: `${next++}`, voice: 'answered', text: words.nothing })
       }
     } catch {
+      // The turn ends however it went wrong, and the person is told it could
+      // not be reached. That is what all but one of these are; the exception is
+      // a fault in the reading above, and this cannot tell the two apart.
       takeDown()
       waiting(false)
       settleAnswer()

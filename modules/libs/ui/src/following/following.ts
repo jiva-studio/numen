@@ -53,6 +53,9 @@ export function following(deps: FollowingDeps) {
           await each(said)
         }
       } catch {
+        // Anything the reading throws ends this one and is said as losing
+        // touch, which is what all but one of them are. The exception is a
+        // fault in `each`, and this cannot tell the two apart.
         if (!deps.open()) return
         deps.lost(LOST)
       }

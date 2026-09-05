@@ -222,6 +222,8 @@ function measuringContext(): CanvasRenderingContext2D | null {
   try {
     return document.createElement('canvas').getContext('2d')
   } catch {
+    // A window that will not make one has none, which is what the check above
+    // already answers for; measuring is not offered either way.
     return null
   }
 }
