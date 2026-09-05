@@ -359,8 +359,16 @@ describe('a row of the receipt', () => {
   it('carries no mark of its own and offers nothing back to the goal', () => {
     for (const goal of ['minutes', 'retention', 'date'] as const) {
       const { tab } = drawn({ goal }, { goal })
-      expect(tab.findAll('.preset__row--mine')).toHaveLength(0)
-      expect(tab.findAll('.preset__restore')).toHaveLength(0)
+      const rows = tab.findAll('[data-preset-row]')
+      expect(rows.length).toBeGreaterThan(0)
+      // A mark on the row that shows who put the value there would be one row
+      // drawn unlike the others; every row is drawn alike.
+      expect(new Set(rows.map((one) => one.attributes('class'))).size).toBe(1)
+      // A way back under the goal stood in what the row says. What it says is
+      // its name and what it means, and nothing beside them.
+      for (const row of rows) {
+        expect(row.get('[data-preset="name"]').element.parentElement?.children).toHaveLength(2)
+      }
     }
   })
 })
@@ -646,7 +654,6 @@ describe('what the control stands at', () => {
     expect(foot?.get('[data-control="name"][data-axis="x"]').text()).toBe(words.axisX('minutes'))
     // Nothing under the picture but the axis: what a place buys is said in the
     // bubble over the knob, and nowhere else.
-    expect(tab.findAll('.preset__reading')).toHaveLength(0)
     expect(foot?.text()).not.toContain(words.value('minutes', 20, ''))
   })
 

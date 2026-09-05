@@ -58,9 +58,11 @@ describe('what the goals come to today', () => {
   it('says how far through the day it is in words alone, and draws nothing', () => {
     const one = shown([preset()])
 
-    expect(one.findAll('.presets__track')).toHaveLength(0)
-    expect(one.findAll('.presets__through')).toHaveLength(0)
-    expect(one.find('.presets__preset').text()).toBe('Sanskrit20 minutes a day20%22 cards')
+    // A meter says nothing: it is drawn to be looked at. Everything the tile
+    // draws carries words, so there is none.
+    const tile = one.get('.presets__preset')
+    expect(tile.findAll('*').filter((each) => each.text() === '')).toStrictEqual([])
+    expect(tile.text()).toBe('Sanskrit20 minutes a day20%22 cards')
   })
 
   // The tile reads across: the name with the goal under it, and what the day
@@ -273,7 +275,9 @@ describe('what the goals come to today', () => {
 
     expect(one.text()).toContain('The defaults')
     expect(one.findAll('.presets__done')).toHaveLength(1)
-    expect(one.findAll('.presets__settle')).toHaveLength(0)
+    // Sitting down to it is the whole tile, the way it is for a preset that
+    // names itself: the tile carries no act of its own beside that.
+    expect(one.get('.presets__preset').findAll('button, a, [role="button"]')).toHaveLength(0)
   })
 
   it('stands aside where the vault has no preset to show', () => {

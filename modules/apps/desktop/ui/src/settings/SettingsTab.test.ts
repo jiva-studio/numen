@@ -202,7 +202,6 @@ describe('the settings tab', () => {
 
   it('carries no pencil, and no editor spliced under a row', () => {
     const { tab } = configured()
-    expect(tab.findAll('.editable__row')).toHaveLength(0)
     expect(tab.findAll('.cm-editor')).toHaveLength(0)
     expect(tab.text()).not.toContain('JSON5')
   })

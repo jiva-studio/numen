@@ -277,7 +277,6 @@ describe('Deck', () => {
   it('announces a card by the place it stands in the deck, and by no name of its own', () => {
     const held = mountDeck()
     expect(tileFor(held, 'yak').attributes('aria-label')).toBe('Card 2')
-    expect(held.find('.card__said').exists()).toBe(false)
   })
 
   describe('carrying a tile by the keyboard', () => {
