@@ -41,5 +41,13 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			}
 			return cli.Links{Show: note.NewShowLinks(db.NoteQueries()), Close: db.Close}, nil
 		},
+
+		Problems: func(ctx context.Context) (cli.Problems, error) {
+			db, err := index.Open(ctx, where.Index)
+			if err != nil {
+				return cli.Problems{}, err
+			}
+			return cli.Problems{Problems: db.NoteQueries(), Close: db.Close}, nil
+		},
 	}
 }

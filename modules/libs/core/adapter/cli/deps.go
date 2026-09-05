@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/check"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -114,10 +113,14 @@ type Links struct {
 	Close func() error
 }
 
-// Problems is what a vault holds that a scan could not act on.
+// Problems is what a scan could not act on, as the index answers about it.
+//
+// The checks themselves are not opened here. Which questions are asked of a
+// vault is the core's own vocabulary and no part of an installation, so the
+// terminal takes the standard set and this opens what answers them.
 type Problems struct {
-	Checks check.Checks
-	Close  func() error
+	Problems port.ProblemQueries
+	Close    func() error
 }
 
 // Recognise is one scanned document read with a model.

@@ -97,7 +97,7 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	case "links":
 		return linksCommand(ctx, out, deps, rest[1:])
 	case "problems":
-		return problemsCommand(ctx, out, cfg, deps, rest[1:])
+		return problemsCommand(ctx, out, deps, rest[1:])
 	case "help", "-h", "--help":
 		fmt.Fprint(out, usage)
 		return nil

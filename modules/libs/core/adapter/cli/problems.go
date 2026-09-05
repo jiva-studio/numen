@@ -7,11 +7,10 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/modules/libs/core/check"
-	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-func problemsCommand(ctx context.Context, out io.Writer, cfg container.Config, deps Deps, args []string) error {
+func problemsCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	if len(args) < 1 {
 		return errors.New("usage: numen-cli problems <vault> [<check>...]")
 	}
@@ -19,18 +18,18 @@ func problemsCommand(ctx context.Context, out io.Writer, cfg container.Config, d
 	if err != nil {
 		return err
 	}
-	db, err := cfg.OpenIndex(ctx)
+	open, err := deps.Problems(ctx)
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer closing(open.Close)
 
 	var named []domain.Check
 	for _, name := range args[1:] {
 		named = append(named, domain.Check(name))
 	}
 
-	found, err := check.Standard(db.Problems()).Run(ctx, v, named...)
+	found, err := check.Standard(open.Problems).Run(ctx, v, named...)
 	if err != nil {
 		return err
 	}
