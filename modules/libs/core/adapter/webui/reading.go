@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
-	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // settled is how long the vault has to have been still before the notes written
@@ -118,7 +117,7 @@ func begin(
 		api.Failed.Store(err.Error())
 	}
 	opening.Trouble = trouble
-	opening.Told = func(m vaults.VaultChanges) {
+	opening.Told = func(m container.VaultChanges) {
 		// A client draws every file the vault holds, so an asset is named to it
 		// the way a note is.
 		api.Listeners.tell(change{paths: slices.Concat(m.Paths, m.Assets), reload: m.Reload})
@@ -163,8 +162,8 @@ func begin(
 
 		// The walk a person watches is this one. A later one is the index being
 		// brought level with a vault that moved under it.
-		result, err := open.Read(ctx, func(res vaults.ScanResult) {
-			api.say(task.Task{ID: walkingNotes, Doing: "Reading the vault", Count: int64(res.Indexed)})
+		notes, err := open.Read(ctx, func(indexed int) {
+			api.say(task.Task{ID: walkingNotes, Doing: "Reading the vault", Count: int64(indexed)})
 		})
 
 		switch {
@@ -178,7 +177,7 @@ func begin(
 			return false
 		}
 
-		fmt.Fprintf(out, "%s: %d notes\n", v.Name, result.Notes)
+		fmt.Fprintf(out, "%s: %d notes\n", v.Name, notes)
 		api.Ready.Store(true)
 		return true
 	}

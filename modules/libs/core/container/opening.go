@@ -17,7 +17,7 @@ import (
 // opened in the other. What each says about it while it runs is its own.
 type VaultOpener struct {
 	// Told, if set, is called each time the index and the vault are level again.
-	Told func(vault.VaultChanges)
+	Told func(VaultChanges)
 	// Trouble, if set, is called with what went wrong, and with nil when a later
 	// attempt succeeds.
 	Trouble port.Trouble
@@ -29,6 +29,23 @@ type VaultOpener struct {
 	held    *holding
 	refresh vault.Refresh
 }
+
+// VaultChanges is what an opener tells its callers: the notes that are
+// different now, the files that changed and are not notes, or that the whole
+// vault has to be looked at again.
+//
+// It is the opener's own word and not the walk's. What opens a vault here is
+// the whole of what a caller is given, and a caller that had to name the
+// scenario behind it to read one of these would be assembling the core itself.
+type VaultChanges struct {
+	Paths  []string
+	Assets []string
+	Reload bool
+}
+
+// Reading says whether an asset owes a read: one changed, or the whole vault is
+// being looked at again and every asset with it.
+func (m VaultChanges) Reading() bool { return m.Reload || len(m.Assets) > 0 }
 
 // VaultOpener is how this installation opens a vault, the way the settings say
 // one is read and watched.
@@ -80,7 +97,11 @@ func (o *VaultOpener) Level(ctx context.Context, v domain.Vault, paths []string)
 func (o *VaultOpener) Begin(ctx context.Context, v domain.Vault) *OpenVault {
 	scan := o.Scanning()
 	follow := vault.NewFollow(o.watcher, o.refresh, scan)
-	follow.Changed = o.Told
+	if told := o.Told; told != nil {
+		follow.Changed = func(m vault.VaultChanges) {
+			told(VaultChanges{Paths: m.Paths, Assets: m.Assets, Reload: m.Reload})
+		}
+	}
 	follow.Trouble = o.Trouble
 	watching, err := follow.Begin(ctx, v)
 	return &OpenVault{
@@ -107,29 +128,31 @@ type OpenVault struct {
 // vault nobody is following looks exactly like a vault nothing happens to.
 func (o *OpenVault) Unwatched() error { return o.unwatched }
 
-// Read walks the vault into the index, handing back how far it has got as it
-// goes.
+// Read walks the vault into the index and answers how many notes it holds. got,
+// if set, is called as the walk goes with the number of notes written so far.
 //
 // The walk writes in groups from what it read, so its copy of a note lands last
 // however early the note was read. Every note brought up to date underneath it
 // is read once more, and the newest copy of each lands last.
-func (o *OpenVault) Read(ctx context.Context, got func(vault.ScanResult)) (vault.ScanResult, error) {
+func (o *OpenVault) Read(ctx context.Context, got func(indexed int)) (notes int, err error) {
 	o.opening.held.begin()
 
 	walk := o.scan
-	walk.OnProgress = got
+	if got != nil {
+		walk.OnProgress = func(res vault.ScanResult) { got(res.Indexed) }
+	}
 	res, err := walk.Execute(ctx, o.vault)
 
 	under := o.opening.held.taken()
 	if err != nil {
-		return res, err
+		return res.Notes, err
 	}
 	if len(under) > 0 {
 		if _, err := o.opening.refresh.Execute(ctx, o.vault, under); err != nil {
 			o.trouble(err)
 		}
 	}
-	return res, nil
+	return res.Notes, nil
 }
 
 // Run acts on everything the watch collects, and goes on until ctx is done or

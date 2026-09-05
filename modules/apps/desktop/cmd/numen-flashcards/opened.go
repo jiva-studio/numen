@@ -9,7 +9,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // errGoing is work asked for once the window has begun closing.
@@ -89,7 +88,7 @@ func (o *openVaults) of(v domain.Vault) *vaultOpening {
 // opens starts one vault's watch and leaves it running.
 func (o *openVaults) opens(v domain.Vault, one *vaultOpening) {
 	opening := o.cfg.VaultOpener(o.db)
-	opening.Told = func(vault.VaultChanges) { o.record(v) }
+	opening.Told = func(container.VaultChanges) { o.record(v) }
 	opening.Trouble = func(err error) {
 		if err != nil {
 			fmt.Fprintf(o.out, "numen-flashcards: %s: %v\n", v.Name, err)
@@ -118,7 +117,7 @@ func (o *openVaults) reads(ctx context.Context, v domain.Vault, progress func(in
 	}
 	defer o.running.Done()
 
-	_, err := o.of(v).open.Read(ctx, func(res vault.ScanResult) { progress(int64(res.Indexed)) })
+	_, err := o.of(v).open.Read(ctx, func(indexed int) { progress(int64(indexed)) })
 	return err
 }
 

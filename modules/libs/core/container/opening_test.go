@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // note is one vault of one note.
@@ -31,7 +30,7 @@ func TestANoteWrittenUnderTheWalkIsReadAgain(t *testing.T) {
 
 	// Written through the levelling while the walk is running, which is what the
 	// window does when a person saves.
-	if _, err := open.Read(t.Context(), func(vaults.ScanResult) {
+	if _, err := open.Read(t.Context(), func(int) {
 		write(t, v, "Leaf.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
 		if err := opening.Level(t.Context(), v, []string{"Leaf.md"}); err != nil {
 			t.Error(err)
@@ -58,7 +57,7 @@ func TestASecondWalkHoldsWhatIsWrittenUnderIt(t *testing.T) {
 	// The first walk goes through, and the second is held with the note's old
 	// bytes in the walk's hand.
 	held.release()
-	if _, err := open.Read(t.Context(), func(vaults.ScanResult) {}); err != nil {
+	if _, err := open.Read(t.Context(), func(int) {}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -69,7 +68,7 @@ func TestASecondWalkHoldsWhatIsWrittenUnderIt(t *testing.T) {
 
 	walked := make(chan error, 1)
 	go func() {
-		_, err := open.Read(t.Context(), func(vaults.ScanResult) {})
+		_, err := open.Read(t.Context(), func(int) {})
 		walked <- err
 	}()
 
@@ -99,7 +98,7 @@ func TestAVaultThatCannotBeWatchedIsOpenedAndSaysSo(t *testing.T) {
 		t.Fatal("a vault nobody can follow says nothing about it")
 	}
 	// And it still reads: what cannot be followed can still be walked.
-	if _, err := open.Read(t.Context(), func(vaults.ScanResult) {}); err != nil {
+	if _, err := open.Read(t.Context(), func(int) {}); err != nil {
 		t.Fatal(err)
 	}
 	if got := titleOf(t, db, v, "Leaf.md"); got != "Leaf" {
@@ -117,15 +116,15 @@ func TestARescanDoesNotRunBesideTheFirstWalk(t *testing.T) {
 	readers := staging()
 	opening := cfg.VaultOpenerWith(db, readers, watcher)
 
-	told := make(chan vaults.VaultChanges, 8)
-	opening.Told = func(m vaults.VaultChanges) { told <- m }
+	told := make(chan container.VaultChanges, 8)
+	opening.Told = func(m container.VaultChanges) { told <- m }
 
 	open := opening.Begin(t.Context(), v)
 	go open.Run(t.Context())
 
 	walked := make(chan error, 1)
 	go func() {
-		_, err := open.Read(t.Context(), func(vaults.ScanResult) {})
+		_, err := open.Read(t.Context(), func(int) {})
 		walked <- err
 	}()
 

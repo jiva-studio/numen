@@ -40,10 +40,9 @@ var owed = map[string][]string{
 	"desktop/cmd/numen": {
 		"check", "flashcards/format", "markdown", "usecase/note",
 	},
-	// The review window builds its own surface, its own queue and its own
-	// vault opening.
+	// The review window builds its own surface and its own queue.
 	"desktop/cmd/numen-flashcards": {
-		"flashcards/format", "task", "usecase/flashcards", "usecase/vault",
+		"flashcards/format", "task", "usecase/flashcards",
 	},
 	// The proofreading adapter speaks the port's own language.
 	"desktop/internal/adapter/claudecode": {"proofread"},
