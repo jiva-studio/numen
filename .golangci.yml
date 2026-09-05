@@ -146,9 +146,22 @@ linters:
 
       # Knowledge of the technology is confined to the adapters and to the
       # composition root, and an entry point is an adapter (ADR-0004). These
-      # are the places allowed to know what time it is.
-      - path: (^|/)(adapter|container|cmd)/
+      # are the places allowed to know what time it is. `internal/onnxruntime`
+      # fetches and unpacks a runtime over the network: a driven adapter that
+      # does not stand under `adapter/`.
+      - path: (^|/)(adapter|container|cmd|internal/onnxruntime)/
         text: does not know what time it is
+        linters: [forbidigo]
+
+      # Three panics over what the build already decided. The SQL is embedded
+      # in the binary, so a file that will not read and a statement named that
+      # is not there are both a build that should not have been produced, and
+      # failing loudly on the first call is what keeps a statement renamed in
+      # one place from going quietly wrong in the other. Every value the
+      # settings file offers is written a few lines above the marshalling of
+      # it. None of the three can be reached by anything a person does.
+      - path: (^|/)(adapter/index/sqlfile/sqlfile|adapter/settings/models)\.go$
+        text: that call's error
         linters: [forbidigo]
 
       # The command line is a driving adapter whose output is text, and a
