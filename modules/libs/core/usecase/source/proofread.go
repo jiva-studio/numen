@@ -42,12 +42,26 @@ type Proofread struct {
 	// and still be a correction. Zero takes what was measured.
 	MaxEditDistance float64
 
-	// Cut makes a source's chunks. It is called as corrections are written
-	// down, so a book answers about the pages already put right while the rest
-	// is still being asked about.
+	// Cut is optional. It makes a source's chunks, and is called as corrections
+	// are written down, so a book answers about the pages already put right
+	// while the rest is still being asked about. Where nothing cuts, the chunks
+	// stand on the text as it was read until the next scan.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
 
 	OnProgress func(ProofreadResult)
+}
+
+// NewProofread is what a reading is put right through: the vault it is read out
+// of, the store the reading and its corrections are kept in, and the
+// proofreader that answers about a page.
+//
+// All three are named here because a proofreading short of any one of them has
+// nothing to correct, nothing to correct it with, or nowhere to put the
+// corrections, and the pages a person paid for are asked about again.
+func NewProofread(
+	readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader,
+) Proofread {
+	return Proofread{Readers: readers, Derived: derived, By: by}
 }
 
 // ProofreadResult reports what proofreading did.
@@ -80,10 +94,6 @@ type checkpoint struct {
 // Execute proofreads one document's reading.
 func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (ProofreadResult, error) {
 	res := ProofreadResult{Path: path}
-	if u.By == nil {
-		return res, errors.New("no proofreader: none is configured")
-	}
-
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return res, err

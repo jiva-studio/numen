@@ -290,23 +290,18 @@ func (r *Recognising) recognise(ctx context.Context, v domain.Vault, id, path st
 	}
 
 	r.say(task.Task{ID: id, Doing: "Reading a scan", About: path})
-	res, err := Recognise{
-		Readers:   r.with.Readers,
-		Sources:   r.with.Sources,
-		Derived:   r.with.Derived,
-		Documents: r.with.Documents,
-		By:        by,
-		Cut:       r.Cut,
-		OnProgress: func(res RecogniseResult) {
-			r.say(task.Task{
-				ID:    id,
-				Doing: "Reading a scan",
-				About: path,
-				Count: int64(res.Read),
-				Total: int64(res.Pages),
-			})
-		},
-	}.Execute(ctx, v, path)
+	read := NewRecognise(r.with.Readers, r.with.Sources, r.with.Derived, r.with.Documents, by)
+	read.Cut = r.Cut
+	read.OnProgress = func(res RecogniseResult) {
+		r.say(task.Task{
+			ID:    id,
+			Doing: "Reading a scan",
+			About: path,
+			Count: int64(res.Read),
+			Total: int64(res.Pages),
+		})
+	}
+	res, err := read.Execute(ctx, v, path)
 	if err != nil {
 		return err
 	}
@@ -350,24 +345,21 @@ func (r *Recognising) proofread(ctx context.Context, v domain.Vault, path string
 	id := proofreadingID(path)
 	r.say(task.Task{ID: id, Doing: "Proofreading a reading", About: path})
 
-	_, err = Proofread{
-		Readers:         r.with.Readers,
-		Derived:         r.with.Derived,
-		By:              by,
-		Queue:           queue,
-		Pages:           said.Batch,
-		MaxEditDistance: said.MaxEditDistance,
-		Cut:             r.Cut,
-		OnProgress: func(res ProofreadResult) {
-			r.say(task.Task{
-				ID:    id,
-				Doing: "Proofreading a reading",
-				About: path,
-				Count: int64(res.Read),
-				Total: int64(res.Pages),
-			})
-		},
-	}.Execute(ctx, v, path)
+	right := NewProofread(r.with.Readers, r.with.Derived, by)
+	right.Queue = queue
+	right.Pages = said.Batch
+	right.MaxEditDistance = said.MaxEditDistance
+	right.Cut = r.Cut
+	right.OnProgress = func(res ProofreadResult) {
+		r.say(task.Task{
+			ID:    id,
+			Doing: "Proofreading a reading",
+			About: path,
+			Count: int64(res.Read),
+			Total: int64(res.Pages),
+		})
+	}
+	_, err = right.Execute(ctx, v, path)
 
 	switch {
 	case err == nil, errors.Is(err, context.Canceled):

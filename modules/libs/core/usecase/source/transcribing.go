@@ -472,31 +472,28 @@ func (t *Transcribing) putRight(
 	}
 
 	var once sync.Once
-	res, err := PutRight{
-		Readers:   t.with.Readers,
-		Derived:   t.with.Derived,
-		By:        by,
-		BatchSize: said.Batch,
-		Overlap:   said.Overlap,
-		InFlight:  said.InFlight,
-		Cut:       t.Cut,
-		OnProgress: func(res PutRightResult) {
-			// Progress is reported once there is a question to put, so the first
-			// of it is this run beginning.
-			once.Do(func() {
-				if began != nil {
-					began(res)
-				}
-			})
-			t.say(task.Task{
-				ID:    id,
-				Doing: "Proofreading a transcript",
-				About: path,
-				Count: int64(res.Read),
-				Total: int64(res.Lines),
-			}, asked)
-		},
-	}.Execute(ctx, v, path)
+	right := NewPutRight(t.with.Readers, t.with.Derived, by)
+	right.BatchSize = said.Batch
+	right.Overlap = said.Overlap
+	right.InFlight = said.InFlight
+	right.Cut = t.Cut
+	right.OnProgress = func(res PutRightResult) {
+		// Progress is reported once there is a question to put, so the first of
+		// it is this run beginning.
+		once.Do(func() {
+			if began != nil {
+				began(res)
+			}
+		})
+		t.say(task.Task{
+			ID:    id,
+			Doing: "Proofreading a transcript",
+			About: path,
+			Count: int64(res.Read),
+			Total: int64(res.Lines),
+		}, asked)
+	}
+	res, err := right.Execute(ctx, v, path)
 
 	switch {
 	case err != nil && !errors.Is(err, context.Canceled):
@@ -584,23 +581,19 @@ func (t *Transcribing) transcribe(
 	}()
 
 	t.say(task.Task{ID: id, Doing: "Transcribing a recording", About: path}, asked)
-	return Transcribe{
-		Readers: t.with.Readers,
-		Sources: t.with.Sources,
-		Derived: t.with.Derived,
-		By:      by,
-		Cut:     t.Cut,
-		OnProgress: func(res TranscribeResult) {
-			t.say(task.Task{
-				ID:    id,
-				Doing: "Transcribing a recording",
-				About: path,
-				Count: int64(res.Heard / 1000),
-				Total: int64(res.Length / 1000),
-				Unit:  task.Seconds,
-			}, asked)
-		},
-	}.Execute(ctx, v, path)
+	listen := NewTranscribe(t.with.Readers, t.with.Sources, t.with.Derived, by)
+	listen.Cut = t.Cut
+	listen.OnProgress = func(res TranscribeResult) {
+		t.say(task.Task{
+			ID:    id,
+			Doing: "Transcribing a recording",
+			About: path,
+			Count: int64(res.Heard / 1000),
+			Total: int64(res.Length / 1000),
+			Unit:  task.Seconds,
+		}, asked)
+	}
+	return listen.Execute(ctx, v, path)
 }
 
 // recordAnswer puts a recording out of the queue's reach for the life of this

@@ -55,13 +55,6 @@ func cued(t *testing.T, shelved *shelf, name string) []transcript.Cue {
 	return cues
 }
 
-func TestNothingIsPutRightWhereNothingWasConfiguredToProofreadWith(t *testing.T) {
-	_, err := PutRight{}.Execute(t.Context(), first, recordingPath)
-	if err == nil {
-		t.Fatal("a transcript was put right with no proofreader")
-	}
-}
-
 func TestATranscriptIsPutRightAndEveryTimingStands(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing"}
 	u, v, shelved, _, hash := hearing(t, map[int]string{1: corrects(1, "second thing")}, words...)

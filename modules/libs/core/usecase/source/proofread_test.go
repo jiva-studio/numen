@@ -79,13 +79,6 @@ func proofreading(t *testing.T, says map[int]string) (Proofread, domain.Vault, *
 // corrects is a reply putting one line right.
 func corrects(at int, text string) string { return fmt.Sprintf("%d|%s", at, text) }
 
-func TestNothingIsProofreadWhereNothingWasConfiguredToProofreadWith(t *testing.T) {
-	_, err := Proofread{}.Execute(t.Context(), first, documentPath)
-	if err == nil {
-		t.Fatal("a reading was proofread with no proofreader")
-	}
-}
-
 func TestTheCorrectionsGoBesideTheReadingAndTheReadingIsNotTouched(t *testing.T) {
 	put, v, shelved, _ := proofreading(t, map[int]string{
 		0: corrects(0, "the WORDS 1"),

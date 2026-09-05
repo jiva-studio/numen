@@ -27,11 +27,13 @@ type Embed struct {
 	Chunks  port.VectorQueries
 	Vectors port.VectorRepository
 
-	// Derived holds what a recogniser wrote. A chunk of a recognised document
-	// is re-sliced out of that and not out of the document.
+	// Derived is optional. It holds what a recogniser wrote, and a chunk of a
+	// recognised document is re-sliced out of that and not out of the document;
+	// without one such a chunk is left owing its vector.
 	Derived port.DerivedStore
-	// Documents reads a format that needs a library, for a source standing on
-	// its own bytes.
+	// Documents is optional. It reads a format that needs a library, for a
+	// source standing on its own bytes; without one such a chunk is left owing
+	// its vector.
 	Documents port.Documents
 
 	// Embedder is optional. Without one nothing is embedded and a search answers
@@ -44,6 +46,19 @@ type Embed struct {
 
 	// OnProgress, if set, is called each time a group of vectors is written.
 	OnProgress func(EmbedResult)
+}
+
+// NewEmbed is what a vault's chunks are given vectors through: the vault the
+// text is read out of, what says which chunks owe a vector from the model in
+// use, and where the vectors are written.
+//
+// All three are named here because embedding short of any one of them cannot
+// tell what it has already done, and a run that cannot tell that does the whole
+// vault again or none of it.
+func NewEmbed(
+	readers port.VaultReaders, chunks port.VectorQueries, vectors port.VectorRepository,
+) Embed {
+	return Embed{Readers: readers, Chunks: chunks, Vectors: vectors}
 }
 
 // EmbedResult reports what embedding did.

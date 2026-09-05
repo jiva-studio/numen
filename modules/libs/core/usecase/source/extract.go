@@ -31,11 +31,11 @@ type Extract struct {
 	Sources port.SourceRepository
 	Known   port.SourceQueries
 
-	// Derived holds what a recogniser wrote. Without one, a source is read from
-	// its own bytes and a recognition is not looked for.
+	// Derived is optional. It holds what a recogniser wrote; without one, a
+	// source is read from its own bytes and a recognition is not looked for.
 	Derived port.DerivedStore
-	// Documents reads a format that needs a library. Without one, a source in
-	// that format is unreadable.
+	// Documents is optional. It reads a format that needs a library; without
+	// one, a source in that format is unreadable.
 	Documents port.Documents
 	// Area is the producer a recognition is kept under. Empty means the default.
 	Area string
@@ -65,6 +65,19 @@ type Extract struct {
 	// written. A library takes minutes, and something has to be able to say how
 	// far it has got.
 	OnProgress func(ExtractResult)
+}
+
+// NewExtract is what a vault's sources are cut into chunks through: the vault
+// they are read out of, where a source and its chunks are written, and what
+// says which sources the index already holds.
+//
+// All three are named here because extraction short of any one of them cuts a
+// library and writes it nowhere, or reads every file afresh each time because
+// nothing says what was seen before.
+func NewExtract(
+	readers port.VaultReaders, sources port.SourceRepository, known port.SourceQueries,
+) Extract {
+	return Extract{Readers: readers, Sources: sources, Known: known}
 }
 
 // ExtractResult reports what extraction did.

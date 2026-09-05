@@ -46,12 +46,26 @@ type PutRight struct {
 	// takes the default.
 	InFlight int
 
-	// Cut makes a source's chunks. It is called as the words are written down,
-	// so a recording answers about the speech already put right while the rest
-	// is still being asked about.
+	// Cut is optional. It makes a source's chunks, and is called as the words
+	// are written down, so a recording answers about the speech already put
+	// right while the rest is still being asked about. Where nothing cuts, the
+	// chunks stand on the words as heard until the next scan.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
 
 	OnProgress func(PutRightResult)
+}
+
+// NewPutRight is what a transcript is put right through: the vault the
+// recording is read out of, the store the transcript and the words as they now
+// stand are kept in, and the proofreader that answers about a batch of lines.
+//
+// All three are named here because a proofreading short of any one of them has
+// nothing to correct, nothing to correct it with, or nowhere to put the words
+// it settled on, and the lines a person paid for are asked about again.
+func NewPutRight(
+	readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader,
+) PutRight {
+	return PutRight{Readers: readers, Derived: derived, By: by}
 }
 
 // PutRightResult reports what putting a transcript right did.
@@ -92,10 +106,6 @@ type putting struct {
 // Execute puts one recording's transcript right.
 func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (PutRightResult, error) {
 	res := PutRightResult{Path: path}
-	if u.By == nil {
-		return res, errors.New("no proofreader: none is configured")
-	}
-
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return res, err

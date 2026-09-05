@@ -198,6 +198,11 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 
 	wake := waking(settled)
 
+	// Where a passage sits on the page is asked of whichever producer made the
+	// text it is a place in, which is what the index records.
+	highlighting := source.NewHighlight(cfg.VaultReaders(), db.SourcesKnown(), cfg.DerivedStores())
+	highlighting.Documents = cfg.Documents()
+
 	api := &API{
 		Listeners: following(),
 		Places:    focusing(),
@@ -206,14 +211,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Wrote:     func() { raise(wake.notes) },
 		Readers:   cfg.VaultReaders(),
 		Viewer:    keepingDrawings(cfg.Documents()),
-		// Where a passage sits on the page is asked of whichever producer made
-		// the text it is a place in, which is what the index records.
-		Highlight: &source.Highlight{
-			Readers:   cfg.VaultReaders(),
-			Sources:   db.SourcesKnown(),
-			Derived:   cfg.DerivedStores(),
-			Documents: cfg.Documents(),
-		},
+		Highlight: &highlighting,
 		Notes: Notes{
 			Queries: db.Queries(),
 			Links:   db.Links(),

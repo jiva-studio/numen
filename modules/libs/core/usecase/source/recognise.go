@@ -44,11 +44,32 @@ type Recognise struct {
 	// it had. Zero takes the default.
 	Batch int
 
-	// Cut makes a source's chunks. It is called as pages are written down, so
-	// what has been read is searchable before the rest of it is.
+	// Cut is optional. It makes a source's chunks, and is called as pages are
+	// written down, so what has been read is searchable before the rest of it
+	// is. Where nothing cuts, the source is recorded as owing its text and the
+	// next scan cuts it.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
 
 	OnProgress func(RecogniseResult)
+}
+
+// NewRecognise is what a scan is read through: the vault it is read out of,
+// where what the vault holds is recorded, the store the reading is written
+// into, what draws a page for the model, and the model itself.
+//
+// All five are named here because a recognition short of any one of them is a
+// document a person asked to have read and did not get back — nothing to draw
+// the pages, nothing to read them, or nowhere to keep what was read.
+func NewRecognise(
+	readers port.VaultReaders,
+	sources port.SourceRepository,
+	derived port.DerivedStores,
+	documents port.Documents,
+	by port.Recogniser,
+) Recognise {
+	return Recognise{
+		Readers: readers, Sources: sources, Derived: derived, Documents: documents, By: by,
+	}
 }
 
 // RecogniseResult reports what recognition did.
@@ -67,10 +88,6 @@ const DefaultBatch = 16
 // Execute reads one document.
 func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (RecogniseResult, error) {
 	res := RecogniseResult{Path: path}
-	if u.By == nil {
-		return res, errors.New("no recogniser: none is configured")
-	}
-
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return res, err
@@ -112,9 +129,6 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		return res, u.stand(ctx, v, ref, hash, area)
 	}
 
-	if u.Documents == nil {
-		return res, fmt.Errorf("%s: nothing to draw a page with", path)
-	}
 	scan, err := u.Documents.Draw(ctx, raw)
 	if err != nil {
 		return res, fmt.Errorf("%s: %w", path, err)

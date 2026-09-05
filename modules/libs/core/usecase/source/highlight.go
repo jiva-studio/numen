@@ -28,9 +28,23 @@ type Highlight struct {
 	Sources port.SourceQueries
 	Derived port.DerivedStores
 
-	// Documents reads a document that carries its own text layer. A vault whose
+	// Documents is optional. It reads a document that carries its own text
+	// layer; without one such a document is lit nowhere. A vault whose
 	// documents are all recognised needs none.
 	Documents port.Documents
+}
+
+// NewHighlight is what places a run of text on the pages it was read from: the
+// vault the document is read out of, what says which producer made the text the
+// runs are places in, and the store that producer's coordinates are kept in.
+//
+// All three are named here because a highlighter short of any one of them
+// answers that the words are nowhere, which is the same answer it gives for a
+// document that truly carries no coordinates.
+func NewHighlight(
+	readers port.VaultReaders, sources port.SourceQueries, derived port.DerivedStores,
+) Highlight {
+	return Highlight{Readers: readers, Sources: sources, Derived: derived}
 }
 
 // Execute is where the runs of one source's text sit: for each of them, the
@@ -96,9 +110,6 @@ func (u Highlight) read(
 	v domain.Vault,
 	said port.SourceText,
 ) ([]highlight.Box, error) {
-	if u.Derived == nil {
-		return nil, nil
-	}
 	store, err := u.Derived.Open(v)
 	if err != nil {
 		return nil, err

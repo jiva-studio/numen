@@ -44,11 +44,29 @@ type Transcribe struct {
 	// model is configured now, and nothing sets it on its own.
 	Again bool
 
-	// Cut makes a source's chunks. It is called as speech is written down, so
-	// what has been heard is searchable before the rest of it is.
+	// Cut is optional. It makes a source's chunks, and is called as speech is
+	// written down, so what has been heard is searchable before the rest of it
+	// is. Where nothing cuts, the source is recorded as owing its text and the
+	// next scan cuts it.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
 
 	OnProgress func(TranscribeResult)
+}
+
+// NewTranscribe is what a recording is listened to through: the vault it is
+// read out of, where what the vault holds is recorded, the store the transcript
+// is written into, and the model that hears it.
+//
+// All four are named here because a transcription short of any one of them is a
+// recording heard and lost — nothing to hear it with, nowhere to put the words,
+// or a vault that goes on believing the recording owes its text.
+func NewTranscribe(
+	readers port.VaultReaders,
+	sources port.SourceRepository,
+	derived port.DerivedStores,
+	by port.Transcriber,
+) Transcribe {
+	return Transcribe{Readers: readers, Sources: sources, Derived: derived, By: by}
 }
 
 // TranscribeResult reports what transcribing did.
@@ -69,10 +87,6 @@ const DefaultHeard = 16
 // Execute listens to one recording.
 func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (TranscribeResult, error) {
 	res := TranscribeResult{Path: path}
-	if u.By == nil {
-		return res, errors.New("no transcriber: none is configured")
-	}
-
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return res, err
