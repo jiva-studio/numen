@@ -16,8 +16,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
-// PutRight puts a transcript right, where a person configured something to
-// proofread it with.
+// ProofreadTranscript puts a recording's transcript right, where a person
+// configured something to proofread it with.
 //
 // What the model heard stays on disk under its own name and the words as they
 // now stand go beside it, so a proofreading that went wrong is a file that can
@@ -25,7 +25,7 @@ import (
 //
 // A correction changes words. The proofreader is given line numbers and text,
 // and every cue keeps the moments it was spoken between.
-type PutRight struct {
+type ProofreadTranscript struct {
 	Readers port.VaultReaders
 	Derived port.DerivedStores
 	By      port.Proofreader
@@ -52,24 +52,25 @@ type PutRight struct {
 	// chunks stand on the words as heard until the next scan.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
 
-	OnProgress func(PutRightResult)
+	OnProgress func(ProofreadTranscriptResult)
 }
 
-// NewPutRight is what a transcript is put right through: the vault the
-// recording is read out of, the store the transcript and the words as they now
-// stand are kept in, and the proofreader that answers about a batch of lines.
+// NewProofreadTranscript is what a transcript is put right through: the vault
+// the recording is read out of, the store the transcript and the words as they
+// now stand are kept in, and the proofreader that answers about a batch of
+// lines.
 //
 // All three are named here because a proofreading short of any one of them has
 // nothing to correct, nothing to correct it with, or nowhere to put the words
 // it settled on, and the lines a person paid for are asked about again.
-func NewPutRight(
+func NewProofreadTranscript(
 	readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader,
-) PutRight {
-	return PutRight{Readers: readers, Derived: derived, By: by}
+) ProofreadTranscript {
+	return ProofreadTranscript{Readers: readers, Derived: derived, By: by}
 }
 
-// PutRightResult reports what putting a transcript right did.
-type PutRightResult struct {
+// ProofreadTranscriptResult reports what proofreading a transcript did.
+type ProofreadTranscriptResult struct {
 	Path    string // the recording whose transcript is being put right
 	Lines   int    // how many lines the transcript has
 	Read    int    // how many have been asked about, this run and before it
@@ -104,8 +105,8 @@ type putting struct {
 }
 
 // Execute puts one recording's transcript right.
-func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (PutRightResult, error) {
-	res := PutRightResult{Path: path}
+func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path string) (ProofreadTranscriptResult, error) {
+	res := ProofreadTranscriptResult{Path: path}
 	if u.By == nil {
 		return res, errNothingProofreads
 	}
@@ -290,7 +291,7 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 // current is the transcript as it now stands, and whether it is the file that
 // stands beside the artifact. A recording nothing has listened to is nothing to
 // put right.
-func (u PutRight) current(
+func (u ProofreadTranscript) current(
 	ctx context.Context,
 	store port.DerivedStore,
 	area, hash string,
@@ -314,7 +315,7 @@ func (u PutRight) current(
 
 // taken is who put this transcript right and how far they got. A record nothing
 // here can read names nobody.
-func (u PutRight) taken(ctx context.Context, store port.DerivedStore, far string) (putting, error) {
+func (u ProofreadTranscript) taken(ctx context.Context, store port.DerivedStore, far string) (putting, error) {
 	raw, err := store.Read(ctx, far)
 	if errors.Is(err, fs.ErrNotExist) {
 		return putting{}, nil
@@ -331,7 +332,7 @@ func (u PutRight) taken(ctx context.Context, store port.DerivedStore, far string
 
 // counted writes down who is putting this transcript right and how far they
 // have got.
-func (u PutRight) counted(ctx context.Context, store port.DerivedStore, far string, stood putting) error {
+func (u ProofreadTranscript) counted(ctx context.Context, store port.DerivedStore, far string, stood putting) error {
 	stood.By = u.By.Name()
 	raw, err := json.MarshalIndent(stood, "", "  ")
 	if err != nil {
@@ -411,7 +412,7 @@ func reached(batches []proofread.Batch, spoken, end int, cues []transcript.Cue) 
 }
 
 // seams is a batch for each of the cuts, carrying what the recording holds.
-func (u PutRight) seams(cues []transcript.Cue, cuts []int, about string) []proofread.Batch {
+func (u ProofreadTranscript) seams(cues []transcript.Cue, cuts []int, about string) []proofread.Batch {
 	return told(proofread.Seams(cues, u.batchSize(), u.overlap(), cuts), about)
 }
 
@@ -461,35 +462,35 @@ func linesBefore(cues []transcript.Cue, at int) int {
 }
 
 // cut makes this source's chunks from the transcript as it now stands.
-func (u PutRight) cut(ctx context.Context, v domain.Vault, path string) error {
+func (u ProofreadTranscript) cut(ctx context.Context, v domain.Vault, path string) error {
 	if u.Cut == nil {
 		return nil
 	}
 	return u.Cut(ctx, v, path)
 }
 
-func (u PutRight) area() string {
+func (u ProofreadTranscript) area() string {
 	if u.Area == "" {
 		return text.ASR
 	}
 	return u.Area
 }
 
-func (u PutRight) batchSize() int {
+func (u ProofreadTranscript) batchSize() int {
 	if u.BatchSize <= 0 {
 		return DefaultBatchSize
 	}
 	return u.BatchSize
 }
 
-func (u PutRight) overlap() int {
+func (u ProofreadTranscript) overlap() int {
 	if u.Overlap <= 0 {
 		return DefaultOverlap
 	}
 	return u.Overlap
 }
 
-func (u PutRight) inFlight() int {
+func (u ProofreadTranscript) inFlight() int {
 	if u.InFlight <= 0 {
 		return DefaultInFlight
 	}
@@ -499,7 +500,7 @@ func (u PutRight) inFlight() int {
 // unbounded holds a correction to speech to no distance from what was heard.
 const unbounded = 0.0
 
-func (u PutRight) progress(res PutRightResult) {
+func (u ProofreadTranscript) progress(res ProofreadTranscriptResult) {
 	if u.OnProgress != nil {
 		u.OnProgress(res)
 	}

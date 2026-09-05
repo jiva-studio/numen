@@ -24,7 +24,7 @@ func proofreadCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 		return err
 	}
 	if domain.MediaType(args[1]) != "" {
-		return putRightCommand(ctx, out, cfg, v, args[1])
+		return proofreadTranscriptCommand(ctx, out, cfg, v, args[1])
 	}
 	return proofreadReadingCommand(ctx, out, cfg, v, args[1])
 }

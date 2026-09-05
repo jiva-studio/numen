@@ -399,7 +399,7 @@ func (t *TranscriptionWorker) Proofread(
 	ctx context.Context,
 	v domain.Vault,
 	path string,
-) (PutRightResult, error) {
+) (ProofreadTranscriptResult, error) {
 	// A run says two things at most: that it began, and how it ended. The room
 	// for both is here, so a run whose caller has gone says them and ends.
 	said := make(chan outcome, 2)
@@ -407,7 +407,7 @@ func (t *TranscriptionWorker) Proofread(
 	t.going.Add(1)
 	go func() {
 		defer t.going.Done()
-		res, err := t.putRight(t.context(), v, path, true, func(began PutRightResult) {
+		res, err := t.proofreadTranscript(t.context(), v, path, true, func(began ProofreadTranscriptResult) {
 			said <- outcome{res: began}
 		})
 		said <- outcome{res: res, err: err}
@@ -417,14 +417,14 @@ func (t *TranscriptionWorker) Proofread(
 	case one := <-said:
 		return one.res, one.err
 	case <-ctx.Done():
-		return PutRightResult{Path: path}, ctx.Err()
+		return ProofreadTranscriptResult{Path: path}, ctx.Err()
 	}
 }
 
 // outcome is what a run putting a transcript right says about itself: what it
 // found, and what stopped it.
 type outcome struct {
-	res PutRightResult
+	res ProofreadTranscriptResult
 	err error
 }
 
@@ -434,22 +434,23 @@ func (t *TranscriptionWorker) proofread(ctx context.Context, v domain.Vault, pat
 	if !t.with.Proofreading.Automatically {
 		return
 	}
-	_, _ = t.putRight(ctx, v, path, asked, nil)
+	_, _ = t.proofreadTranscript(ctx, v, path, asked, nil)
 }
 
-// putRight puts one transcript right with the profile named for speech.
+// proofreadTranscript puts one transcript right with the profile named for
+// speech.
 //
 // A transcript whose proofreading failed is the transcript as it was
 // transcribed, and the failure stands in the list of what is being done until
 // somebody reads it. Work a person asked for is in that list from the moment
 // they asked.
-func (t *TranscriptionWorker) putRight(
+func (t *TranscriptionWorker) proofreadTranscript(
 	ctx context.Context,
 	v domain.Vault,
 	path string,
 	asked bool,
-	began func(PutRightResult),
-) (PutRightResult, error) {
+	began func(ProofreadTranscriptResult),
+) (ProofreadTranscriptResult, error) {
 	said := t.with.Proofreading
 
 	id := proofreadingID(path)
@@ -465,20 +466,20 @@ func (t *TranscriptionWorker) putRight(
 	by, err := said.By(proofread.SpeechInstruction)
 	if err != nil {
 		fail(err)
-		return PutRightResult{Path: path}, err
+		return ProofreadTranscriptResult{Path: path}, err
 	}
 	if by == nil {
 		t.done(id)
-		return PutRightResult{Path: path}, nil
+		return ProofreadTranscriptResult{Path: path}, nil
 	}
 
 	var once sync.Once
-	right := NewPutRight(t.with.Readers, t.with.Derived, by)
+	right := NewProofreadTranscript(t.with.Readers, t.with.Derived, by)
 	right.BatchSize = said.Batch
 	right.Overlap = said.Overlap
 	right.InFlight = said.InFlight
 	right.Cut = t.Cut
-	right.OnProgress = func(res PutRightResult) {
+	right.OnProgress = func(res ProofreadTranscriptResult) {
 		// Progress is reported once there is a question to put, so the first of
 		// it is this run beginning.
 		once.Do(func() {

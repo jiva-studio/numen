@@ -13,11 +13,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
-// putRightCommand puts one recording's transcript right with a model.
+// proofreadTranscriptCommand puts one recording's transcript right with a model.
 //
 // The words are corrected and the moments they were spoken at are left where
 // they are. A transcript a person edited is theirs, and is left as they left it.
-func putRightCommand(
+func proofreadTranscriptCommand(
 	ctx context.Context,
 	out io.Writer,
 	cfg container.Config,
@@ -52,21 +52,21 @@ func putRightCommand(
 	// The line of lines rewrites itself, and is closed once it stops.
 	shown := false
 	profile := cfg.Proofreading.Profiles[named]
-	putRight := source.NewPutRight(cfg.VaultReaders(), cfg.DerivedStores(), by)
-	putRight.BatchSize = profile.BatchSize
-	putRight.Overlap = profile.Overlap
-	putRight.InFlight = profile.InFlight
-	putRight.Cut = func(ctx context.Context, v domain.Vault, path string) error {
+	proofread := source.NewProofreadTranscript(cfg.VaultReaders(), cfg.DerivedStores(), by)
+	proofread.BatchSize = profile.BatchSize
+	proofread.Overlap = profile.Overlap
+	proofread.InFlight = profile.InFlight
+	proofread.Cut = func(ctx context.Context, v domain.Vault, path string) error {
 		_, err := cut.One(ctx, v, path)
 		return err
 	}
-	putRight.OnProgress = func(res source.PutRightResult) {
+	proofread.OnProgress = func(res source.ProofreadTranscriptResult) {
 		if res.Lines > 0 {
 			fmt.Fprintf(out, "  line %d of %d\r", res.Read, res.Lines)
 			shown = true
 		}
 	}
-	res, err := putRight.Execute(ctx, v, path)
+	res, err := proofread.Execute(ctx, v, path)
 	if err != nil {
 		return err
 	}

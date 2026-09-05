@@ -123,7 +123,7 @@ func (a *API) CreateArtifact(
 
 	var made *v1.Artifact
 	if of == v1.ArtifactKind_ARTIFACT_KIND_CORRECTED {
-		made, err = a.putRight(ctx, showing, ref)
+		made, err = a.proofreadTranscript(ctx, showing, ref)
 	} else {
 		made, err = a.run(ctx, showing, ref, of)
 	}
@@ -228,9 +228,9 @@ func (a *API) runner(of v1.ArtifactKind) Runner {
 // asks again.
 var errComingUp = errors.New("the vault is still coming up")
 
-// putRight begins putting the transcript of a recording right, and answers with
-// what the corrections now are.
-func (a *API) putRight(
+// proofreadTranscript begins putting the transcript of a recording right, and
+// answers with what the corrections now are.
+func (a *API) proofreadTranscript(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
@@ -270,7 +270,7 @@ func (a *API) putRight(
 // them: nothing runs over them either way. One run to a recording, by the name
 // it writes under: a run listening to this recording holds that name, and so
 // does a proofreading of it.
-func came(res source.PutRightResult) v1.State {
+func came(res source.ProofreadTranscriptResult) v1.State {
 	switch {
 	case res.Busy:
 		return v1.State_STATE_RUNNING

@@ -20,7 +20,7 @@ type Proofreader interface {
 	ProofreaderReady() bool
 	// Proofread puts one transcript right and says what came of asking. It
 	// answers before the work is over.
-	Proofread(ctx context.Context, v domain.Vault, path string) (source.PutRightResult, error)
+	Proofread(ctx context.Context, v domain.Vault, path string) (source.ProofreadTranscriptResult, error)
 }
 
 // errNoProofreading is an installation the settings name nothing to put a

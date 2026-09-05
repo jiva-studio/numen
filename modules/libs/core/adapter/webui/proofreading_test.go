@@ -20,7 +20,7 @@ import (
 // to put right, and what it says came of the ask.
 type proofreads struct {
 	ready bool
-	came  source.PutRightResult
+	came  source.ProofreadTranscriptResult
 	why   error
 
 	vault string
@@ -34,7 +34,7 @@ func (p *proofreads) Proofread(
 	_ context.Context,
 	v domain.Vault,
 	path string,
-) (source.PutRightResult, error) {
+) (source.ProofreadTranscriptResult, error) {
 	p.times++
 	p.vault, p.path = string(v.ID), path
 	return p.came, p.why
@@ -77,13 +77,13 @@ func TestATranscriptIsProofreadWhenTheWindowAsksForIt(t *testing.T) {
 func TestWhatAProofreadingCameToIsSaid(t *testing.T) {
 	for _, one := range []struct {
 		name  string
-		came  source.PutRightResult
+		came  source.ProofreadTranscriptResult
 		state v1.State
 	}{
-		{"a recording another run holds", source.PutRightResult{Busy: true}, v1.State_STATE_RUNNING},
-		{"a transcript already put right", source.PutRightResult{Already: true}, v1.State_STATE_DONE},
-		{"words a person wrote themselves", source.PutRightResult{Edited: true}, v1.State_STATE_DONE},
-		{"a transcript holding no words", source.PutRightResult{None: true}, v1.State_STATE_NONE},
+		{"a recording another run holds", source.ProofreadTranscriptResult{Busy: true}, v1.State_STATE_RUNNING},
+		{"a transcript already put right", source.ProofreadTranscriptResult{Already: true}, v1.State_STATE_DONE},
+		{"words a person wrote themselves", source.ProofreadTranscriptResult{Edited: true}, v1.State_STATE_DONE},
+		{"a transcript holding no words", source.ProofreadTranscriptResult{None: true}, v1.State_STATE_NONE},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			api, _, by := proofreading(t, onTheShelf(), heardBy())

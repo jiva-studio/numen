@@ -115,7 +115,7 @@ linters:
       # error: Missing, NotANote, NotText, Unreadable, a theme with no file, a
       # record naming nobody, or one more on a batch's Unreadable count. The
       # caller is told what happened and goes on to the next file.
-      - path: (^|/)(usecase/(cards/read|note/read|flashcards/presets|source/extract|source/put_right)|internal/adapter/theme/service)\.go$
+      - path: (^|/)(usecase/(cards/read|note/read|flashcards/presets|source/extract|source/proofread_transcript)|internal/adapter/theme/service)\.go$
         linters: [nilerr]
 
       # A comparison nobody got an answer out of, and a folder whose parent

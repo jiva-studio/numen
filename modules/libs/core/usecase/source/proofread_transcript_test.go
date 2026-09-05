@@ -13,12 +13,15 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
-// hearing is a PutRight over one vault holding one recording whose transcript
-// is written down already, and the hash that transcript is kept under.
+// hearing is a ProofreadTranscript over one vault holding one recording whose
+// transcript is written down already, and the hash that transcript is kept
+// under.
 //
 // One line to a batch and one batch to a request, so the number a reply is
 // about is the number of the line it puts right.
-func hearing(t *testing.T, says map[int]string, words ...string) (PutRight, domain.Vault, *shelf, *corrector, string) {
+func hearing(
+	t *testing.T, says map[int]string, words ...string,
+) (ProofreadTranscript, domain.Vault, *shelf, *corrector, string) {
 	t.Helper()
 	raw := recorded(words)
 	shelved := newLibrary()
@@ -30,7 +33,7 @@ func hearing(t *testing.T, says map[int]string, words ...string) (PutRight, doma
 		t.Fatal(err)
 	}
 	by := &corrector{says: says}
-	return PutRight{
+	return ProofreadTranscript{
 		Readers:   vaults{first.ID: shelved},
 		Derived:   kept,
 		By:        by,
@@ -62,13 +65,13 @@ func cued(t *testing.T, shelved *shelf, name string) []transcript.Cue {
 func TestNothingIsPutRightWhereNothingWasConfiguredToProofreadWith(t *testing.T) {
 	u, v, _, by, _ := hearing(t, nil, "first thing", "secnd thing")
 
-	if _, err := NewPutRight(u.Readers, u.Derived, nil).
+	if _, err := NewProofreadTranscript(u.Readers, u.Derived, nil).
 		Execute(t.Context(), v, recordingPath); !errors.Is(err, errNothingProofreads) {
 		t.Fatalf("a transcript was put right with no proofreader: %v", err)
 	}
 	// The control: the same transcript, through the same constructor, with a
 	// proofreader.
-	if _, err := NewPutRight(u.Readers, u.Derived, by).
+	if _, err := NewProofreadTranscript(u.Readers, u.Derived, by).
 		Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatalf("a transcript with a proofreader was refused: %v", err)
 	}
@@ -206,7 +209,7 @@ func TestAResumedRunReadsNoMoreLinesThanTheTranscriptHas(t *testing.T) {
 	}
 
 	furthest := 0
-	u.OnProgress = func(res PutRightResult) {
+	u.OnProgress = func(res ProofreadTranscriptResult) {
 		if res.Read > res.Lines {
 			t.Errorf("read %d lines of %d", res.Read, res.Lines)
 		}
@@ -357,7 +360,7 @@ func TestATranscriptAtItsLastLineReportsNoProgress(t *testing.T) {
 
 	told := 0
 	u.By = &corrector{}
-	u.OnProgress = func(PutRightResult) { told++ }
+	u.OnProgress = func(ProofreadTranscriptResult) { told++ }
 	res, err := u.Execute(t.Context(), v, recordingPath)
 	if err != nil {
 		t.Fatal(err)
@@ -391,7 +394,7 @@ func TestARunTakingUpAmongTheSeamsIsToldAbout(t *testing.T) {
 	}
 
 	told := 0
-	u.OnProgress = func(PutRightResult) { told++ }
+	u.OnProgress = func(ProofreadTranscriptResult) { told++ }
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
 	}
