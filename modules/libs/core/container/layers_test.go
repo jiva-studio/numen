@@ -183,6 +183,82 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 	}
 }
 
+// The settings file is the union of every adapter's section, which is what the
+// edges out of adapter/settings are owed for. A section is another adapter's
+// shape and the defaults it starts at, and never its work: an adapter that
+// stats a folder on another's behalf is doing the work that other one is bound
+// for, in a package the composition root binds nothing of.
+func TestTheSettingsAdapterRunsNoOtherAdaptersWork(t *testing.T) {
+	at := filepath.Join("..", "adapter", "settings")
+	held, err := os.ReadDir(at)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var wrong []string
+	var read int
+	for _, one := range held {
+		if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
+			strings.HasSuffix(one.Name(), "_test.go") {
+			continue
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(at, one.Name()), nil, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		named := adapters(file, "adapter/settings")
+		ast.Inspect(file, func(node ast.Node) bool {
+			call, is := node.(*ast.CallExpr)
+			if !is {
+				return true
+			}
+			ran, is := call.Fun.(*ast.SelectorExpr)
+			if !is {
+				return true
+			}
+			from, is := ran.X.(*ast.Ident)
+			if !is || !named[from.Name] {
+				return true
+			}
+			read++
+			if !strings.HasSuffix(ran.Sel.Name, "Defaults") {
+				wrong = append(wrong, one.Name()+" runs "+from.Name+"."+ran.Sel.Name)
+			}
+			return true
+		})
+	}
+	for _, one := range wrong {
+		t.Error(one + ": a settings section is another adapter's shape and its defaults")
+	}
+
+	// A walk that read no call into another adapter is a rule checked against
+	// nothing, and it passes.
+	if read == 0 {
+		t.Fatal("adapter/settings names no other adapter: the walk is not reading it")
+	}
+}
+
+// adapters are the names one file calls another adapter's package by, whether
+// that is the package's own name or an alias.
+func adapters(file *ast.File, own string) map[string]bool {
+	named := map[string]bool{}
+	for _, one := range file.Imports {
+		to, err := strconv.Unquote(one.Path.Value)
+		if err != nil || !strings.HasPrefix(to, module) {
+			continue
+		}
+		held := strings.TrimPrefix(to, module)
+		if !adapting(held) || family(held) == own {
+			continue
+		}
+		name := held[strings.LastIndex(held, "/")+1:]
+		if one.Name != nil {
+			name = one.Name.Name
+		}
+		named[name] = true
+	}
+	return named
+}
+
 // claimed are the ports a file declares itself to answer, by the blank name.
 func claimed(file *ast.File) []string {
 	var held []string

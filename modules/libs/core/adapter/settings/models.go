@@ -26,6 +26,16 @@ var (
 	AgentAt            = []string{"agent", "use"}
 )
 
+// Fetches say whether a model's files are on this machine. Finding them is the
+// work of the adapter that would fetch them, so each is handed in from where
+// the adapters are assembled, and both are required.
+type Fetches struct {
+	// Embedding is the model the vault is indexed by, run here.
+	Embedding func(embed.LocalModel) bool
+	// Recognising is the model a scanned page is read by.
+	Recognising func(recognition.Config, recognition.RecogniserModel) bool
+}
+
 // Models are the models each setting that names one can be set to. Every
 // adapter behind them hands the name it is given to a service or to a command
 // line, and these are the models this application is built around.
@@ -33,10 +43,10 @@ var (
 // They are read against the settings in force, so each row says what its files
 // are on this machine, and a model the settings name that is none of them
 // stands as a row of its own.
-func Models(held Config) []port.Model {
+func Models(held Config, fetched Fetches) []port.Model {
 	models := make([]port.Model, 0, 12)
-	models = append(models, embedding(held)...)
-	models = append(models, recognising(held)...)
+	models = append(models, embedding(held, fetched)...)
+	models = append(models, recognising(held, fetched)...)
 	models = append(models, answering(held)...)
 	return models
 }
@@ -44,7 +54,7 @@ func Models(held Config) []port.Model {
 // embedding is the model the vault is indexed by. The name is what a vector is
 // kept under, and the width, the window and the pooling belong with it, so
 // choosing one writes the model and the provider that runs it together.
-func embedding(held Config) []port.Model {
+func embedding(held Config, fetched Fetches) []port.Model {
 	offered := embed.Defaults()
 	provider := held.Indexing.Embedding.Indexing
 	offeredLocal, _ := offered.Indexing.Local()
@@ -54,7 +64,7 @@ func embedding(held Config) []port.Model {
 		Title:    offered.Model.Name,
 		Shelf:    shelfMachine,
 		Default:  true,
-		Presence: embedded(provider, offered.Model.Name),
+		Presence: embedded(provider, offered.Model.Name, fetched),
 		Writes: []port.Setting{
 			setting([]string{"indexing", "embedding", "model"}, offered.Model),
 			setting([]string{"indexing", "embedding", "indexing", "use"}, embed.UseLocal),
@@ -84,7 +94,7 @@ func embedding(held Config) []port.Model {
 		Name:     name,
 		Title:    name,
 		Shelf:    shelfConfigured,
-		Presence: embedded(provider, name),
+		Presence: embedded(provider, name, fetched),
 		Writes:   writes,
 	})
 }
@@ -92,18 +102,18 @@ func embedding(held Config) []port.Model {
 // embedded is what the model named is on this machine, at the provider the
 // settings run it at. A provider reaching a service fetches nothing whatever
 // the model is called.
-func embedded(provider embed.Provider, name string) port.Presence {
+func embedded(provider embed.Provider, name string, fetched Fetches) port.Presence {
 	local, here := provider.Local()
 	if !here {
 		return port.NothingToFetch
 	}
 	local.Name = name
-	return fetching(embed.Fetched(local))
+	return fetching(fetched.Embedding(local))
 }
 
 // recognising is the model a scanned page is read by. It is named by where it
 // is fetched from, so the row says what it is and the setting holds the address.
-func recognising(held Config) []port.Model {
+func recognising(held Config, fetched Fetches) []port.Model {
 	offered := recognition.Defaults()
 	cfg := held.Indexing.Recognition.Config
 	models := []port.Model{{
@@ -112,7 +122,7 @@ func recognising(held Config) []port.Model {
 		Title:    "PP-OCRv6, small",
 		Shelf:    shelfMachine,
 		Default:  true,
-		Presence: fetching(recognition.Fetched(cfg, offered.Recognise)),
+		Presence: fetching(fetched.Recognising(cfg, offered.Recognise)),
 		Writes:   []port.Setting{setting(RecognitionModelAt, offered.Recognise.Name)},
 	}}
 	name := cfg.Recognise.Name
@@ -124,7 +134,7 @@ func recognising(held Config) []port.Model {
 		Name:     name,
 		Title:    name,
 		Shelf:    shelfConfigured,
-		Presence: fetching(recognition.Fetched(cfg, cfg.Recognise)),
+		Presence: fetching(fetched.Recognising(cfg, cfg.Recognise)),
 		Writes:   []port.Setting{setting(RecognitionModelAt, name)},
 	})
 }

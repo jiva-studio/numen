@@ -10,13 +10,18 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
+
+// fetches are the adapters that would fetch a model, as the composition root
+// hands them in: a row says what is on this machine because they looked.
+var fetches = Fetches{Embedding: embed.Fetched, Recognising: recognition.Fetched}
 
 // A model is nothing to the window unless it says where it is read from and
 // what choosing it writes.
 func TestEveryModelSaysWhereItIsReadAndWhatItWrites(t *testing.T) {
-	for _, one := range append(Models(Defaults()), Agents()...) {
+	for _, one := range append(Models(Defaults(), fetches), Agents()...) {
 		if len(one.Path) == 0 {
 			t.Errorf("%q is read from nowhere", one.Title)
 		}
@@ -32,7 +37,7 @@ func TestEveryModelSaysWhereItIsReadAndWhatItWrites(t *testing.T) {
 // One setting, one model an installation nobody has configured runs on.
 func TestOneModelToASettingIsTheDefault(t *testing.T) {
 	byDefault := map[string]int{}
-	for _, one := range append(Models(Defaults()), Agents()...) {
+	for _, one := range append(Models(Defaults(), fetches), Agents()...) {
 		if one.Default {
 			byDefault[at(one.Path)]++
 		}
@@ -225,7 +230,7 @@ func written(t *testing.T, at string) {
 func models(t *testing.T, held Config, setting []string) []port.Model {
 	t.Helper()
 	found := []port.Model{}
-	for _, one := range append(Models(held), Agents()...) {
+	for _, one := range append(Models(held, fetches), Agents()...) {
 		if at(one.Path) == at(setting) {
 			found = append(found, one)
 		}

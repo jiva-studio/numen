@@ -199,6 +199,9 @@ func (c Config) WritesConfiguredFile() func(written string, seen *string) error 
 // be set to, and the programs the agent setting can name. The settings are read
 // with them, so every row is answered against what is in force; a file that
 // cannot be read is answered against the defaults.
+//
+// Whether a model's files are on this machine is looked for by the adapter that
+// would fetch them, bound here as every other adapter is.
 func (c Config) Models() func() []port.Model {
 	return func() []port.Model {
 		held := settings.Defaults()
@@ -207,7 +210,11 @@ func (c Config) Models() func() []port.Model {
 				held = read
 			}
 		}
-		return append(settings.Models(held), settings.Agents()...)
+		fetched := settings.Fetches{
+			Embedding:   embed.Fetched,
+			Recognising: recognition.Fetched,
+		}
+		return append(settings.Models(held, fetched), settings.Agents()...)
 	}
 }
 
