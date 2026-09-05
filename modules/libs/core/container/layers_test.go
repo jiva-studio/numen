@@ -237,6 +237,66 @@ func TestTheSettingsAdapterRunsNoOtherAdaptersWork(t *testing.T) {
 	}
 }
 
+// owedInside are the packages of the core whose own tests build an adapter
+// from inside the package they exercise, and the list only shrinks.
+//
+// usecase/source is one because its twenty test files share one set of fakes
+// and two of them exercise a type the package does not export, so the three
+// that build an adapter — internal/adapter/pdf in highlight_test.go and
+// recognise_test.go, internal/adapter/filesystem in transcribing_test.go — do
+// not stand outside on their own.
+var owedInside = []string{"usecase/source"}
+
+// A test that builds an adapter stands outside the package it exercises. That
+// is what the rules above are left out of a test file for: an adapter built
+// from within is in the package's own compilation unit when the tests build,
+// and every other scenario in the core is tested from a package_test.
+//
+// An adapter's own test is not this. It builds the thing it is about, and so
+// does the composition root's.
+func TestATestOfTheCoreBuildingAnAdapterStandsOutsideIt(t *testing.T) {
+	var wrong []string
+	var read int
+	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || !strings.HasSuffix(path, "_test.go") {
+			return err
+		}
+		pkg := within("..", path)
+		if adapting(pkg) || pkg == "container" {
+			return nil
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
+		if err != nil {
+			return err
+		}
+		read++
+		if strings.HasSuffix(file.Name.Name, "_test") || holds(owedInside, pkg) {
+			return nil
+		}
+		for _, one := range file.Imports {
+			to, err := strconv.Unquote(one.Path.Value)
+			if err != nil || !strings.HasPrefix(to, module) {
+				continue
+			}
+			if held := strings.TrimPrefix(to, module); adapting(held) {
+				wrong = append(wrong, path+" builds "+held+" from inside "+pkg)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range wrong {
+		t.Error(one + ": a test that builds an adapter stands outside the package")
+	}
+
+	// A walk that read no test of the core is a rule checked against nothing.
+	if read < 100 {
+		t.Fatalf("%d tests of the core read: the walk is not reading them", read)
+	}
+}
+
 // machinery are the packages that reach the machine because reaching it is
 // what they are: the composition root that builds the adapters, the runtime two
 // adapters load their models through, and the fixtures only a test is compiled
