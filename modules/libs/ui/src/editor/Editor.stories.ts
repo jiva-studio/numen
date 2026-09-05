@@ -287,7 +287,7 @@ export const TableTypedInto: Story = {
 
     // What is typed is written back over that cell alone. The browser does the
     // typing: the cell takes plain text, and only a real keystroke reaches it.
-    const context = await import('@vitest/browser/context')
+    const context = await import('vitest/browser')
     await context.userEvent.fill(cells(canvasElement)[3] as HTMLElement, 'Enthalpy')
 
     await waitFor(() => expect(source(canvasElement)).toContain('| Enthalpy | parent | 1865 |'))

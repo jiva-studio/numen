@@ -30,6 +30,6 @@ export function lightness(colour: string, ground = '#000'): number {
  * The events a test library synthesises leave it alone.
  */
 export async function hovered(element: Element): Promise<void> {
-  const context = await import('@vitest/browser/context')
+  const context = await import('vitest/browser')
   await context.userEvent.hover(element)
 }

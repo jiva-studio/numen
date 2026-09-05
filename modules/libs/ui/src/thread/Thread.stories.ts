@@ -175,7 +175,7 @@ const framedIn = (point: Point): Point => {
  * the pointer is driven.
  */
 const dragged = async (from: Point, to: Point): Promise<string | null> => {
-  const context = await import('@vitest/browser/context').catch(() => null)
+  const context = await import('vitest/browser').catch(() => null)
   if (!context) return null
 
   window.getSelection()?.removeAllRanges()

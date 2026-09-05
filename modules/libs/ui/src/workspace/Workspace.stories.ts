@@ -180,7 +180,7 @@ const framedIn = (point: Point): { window: Point; story: Point } => {
  * catches the pointer by where it is, which is something only a browser says.
  */
 const swept = async (from: Point, to: Point): Promise<void> => {
-  const context = await import('@vitest/browser/context')
+  const context = await import('vitest/browser')
   await context.commands.sweep(framedIn(from).window, framedIn(to).window)
   await new Promise((done) => setTimeout(done, 16))
 }
