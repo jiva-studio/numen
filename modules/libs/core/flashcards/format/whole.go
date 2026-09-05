@@ -7,10 +7,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// Minted is a mark given to a card that carried none, and where that card
+// MintedMark is a mark given to a card that carried none, and where that card
 // stands in the deck, counted from its first card. A caller that has just
 // written a card learns from this what to address it by.
-type Minted struct {
+type MintedMark struct {
 	Card int
 	Mark domain.CardID
 }
@@ -37,11 +37,11 @@ type Minted struct {
 // back. The endings the file keeps are put on when it is written.
 func Whole(
 	body string, stencils map[string]Stencil, mint func() (domain.CardID, error),
-) (string, []Minted, error) {
+) (string, []MintedMark, error) {
 	raw := []byte(body)
 	deck, spans := readDeck(domain.Fingerprint{}, raw)
 
-	var minted []Minted
+	var minted []MintedMark
 	// Backwards, because a splice moves every byte after it.
 	for i := len(spans) - 1; i >= 0; i-- {
 		card, span := deck.Cards[i], spans[i]
@@ -53,7 +53,7 @@ func Whole(
 				return "", nil, fmt.Errorf("mint a mark for the card standing at %d: %w", i, err)
 			}
 			carried = given
-			minted = append(minted, Minted{Card: i, Mark: carried})
+			minted = append(minted, MintedMark{Card: i, Mark: carried})
 		}
 		text := card.Heading
 		if first := stencils[card.Stencil].First(); first != "" {

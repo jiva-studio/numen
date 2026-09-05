@@ -53,7 +53,7 @@ func NewWrite(
 // that carried none was given.
 type WriteResult struct {
 	Fingerprint domain.Fingerprint
-	Minted      []format.Minted
+	Minted      []format.MintedMark
 }
 
 // Deck puts body in the deck at path.
@@ -85,7 +85,7 @@ func (u Write) Deck(
 // wikilink the caller has just changed is cut by the stencil it now names.
 func (u Write) whole(
 	ctx context.Context, v domain.Vault, path, body string,
-) (string, []format.Minted, error) {
+) (string, []format.MintedMark, error) {
 	read := Read{Readers: u.Readers, Links: u.Links}
 	by, err := read.Cutting(ctx, v, path, format.ReadDeck(domain.Note{Body: body}))
 	if err != nil {

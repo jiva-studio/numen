@@ -88,7 +88,9 @@ func addCardShowing(server *sdk.Server, core Core) {
 			"card and moves to the next while you work — and read the card itself with " +
 			"`card_read`. Nothing is in front of them between cards, and the deck comes " +
 			"back empty.",
-	}, func(_ context.Context, _ *sdk.CallToolRequest, _ struct{}) (*sdk.CallToolResult, Asked, error) {
+	}, func(
+		_ context.Context, _ *sdk.CallToolRequest, _ struct{},
+	) (*sdk.CallToolResult, AskedCard, error) {
 		return nil, core.Reviewing(), nil
 	})
 }
@@ -558,7 +560,7 @@ type WriteOutcome struct {
 func changing(
 	ctx context.Context, core Core, path, fingerprint string,
 	change func(read cards.DeckContents, file *format.DeckFile) error,
-) (WriteOutcome, []format.Minted, error) {
+) (WriteOutcome, []format.MintedMark, error) {
 	seen, err := parseFingerprint(fingerprint)
 	if err != nil {
 		return WriteOutcome{}, nil, err
@@ -616,7 +618,7 @@ func index(held []format.Card, carried string) (int, error) {
 
 // markOf is the mark the card standing at one place was given, and nothing
 // where it carried one already.
-func markOf(minted []format.Minted, at int) string {
+func markOf(minted []format.MintedMark, at int) string {
 	for _, one := range minted {
 		if one.Card == at {
 			return string(one.Mark)

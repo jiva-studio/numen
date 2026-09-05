@@ -14,7 +14,7 @@ import (
 // this deck or this preset.
 func (s vaulted) over(
 	t *testing.T, day review.Day, now time.Time, at flashcards.Scope,
-) (flashcards.Sitting, error) {
+) (flashcards.SessionResult, error) {
 	t.Helper()
 	return flashcards.Session{
 		Marking: s.marking, CardFaces: s.standings, Schedules: s.kept,
@@ -25,7 +25,7 @@ func (s vaulted) over(
 // under is the sitting over one preset, and a fatal error where it was refused.
 func (s vaulted) under(
 	t *testing.T, day review.Day, now time.Time, preset string,
-) flashcards.Sitting {
+) flashcards.SessionResult {
 	t.Helper()
 	sat, err := s.over(t, day, now, flashcards.ByPreset(preset))
 	if err != nil {

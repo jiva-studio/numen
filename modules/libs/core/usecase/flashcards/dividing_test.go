@@ -50,7 +50,7 @@ func (s vaulted) presses(t *testing.T, now time.Time, deck string) int {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return len(sat.Asked)
+	return len(sat.Queue)
 }
 
 // sits answers everything one deck hands over, sitting again until it hands
@@ -64,11 +64,11 @@ func (s vaulted) sits(t *testing.T, now time.Time, deck string) int {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(sat.Asked) == 0 {
+		if len(sat.Queue) == 0 {
 			return len(faces)
 		}
 		record := s.run(t, now)
-		for _, one := range sat.Asked {
+		for _, one := range sat.Queue {
 			took := review.DefaultCost.Review
 			if !one.Schedule.Seen() {
 				took = review.DefaultCost.New

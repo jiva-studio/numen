@@ -160,14 +160,14 @@ func (b *budgets) takes(share *allowance, face review.CardFaceID, fresh bool) bo
 // room reports whether this day has a place left for a card face of this kind
 // at this cost.
 func (a *allowance) room(fresh, counted bool, cost time.Duration) bool {
-	left, closes := a.admits.Reviews, a.admits.Closes.Reviews
+	left, closes := a.admits.Reviews, a.admits.Limits.Reviews
 	if fresh {
-		left, closes = a.admits.New, a.admits.Closes.New
+		left, closes = a.admits.New, a.admits.Limits.New
 	}
 	if counted && closes != review.ClosedNothing && left <= 0 {
 		return false
 	}
-	return a.admits.Closes.Minutes == review.ClosedNothing || a.admits.Minutes >= cost
+	return a.admits.Limits.Minutes == review.ClosedNothing || a.admits.Minutes >= cost
 }
 
 // spends takes a card face of this kind out of this day.

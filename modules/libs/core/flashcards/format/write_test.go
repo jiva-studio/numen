@@ -686,7 +686,7 @@ func TestWholeSaysWhichCardsItMinted(t *testing.T) {
 	if err != nil {
 		t.Fatalf("whole: %v", err)
 	}
-	want := []format.Minted{{Card: 0, Mark: "m9n8b7v6c5"}, {Card: 2, Mark: "zpqrstvwxy"}}
+	want := []format.MintedMark{{Card: 0, Mark: "m9n8b7v6c5"}, {Card: 2, Mark: "zpqrstvwxy"}}
 	if !slices.Equal(minted, want) {
 		t.Errorf("minted = %+v, want %+v", minted, want)
 	}

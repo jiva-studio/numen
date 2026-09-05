@@ -413,11 +413,11 @@ func TestACardFallingOnADayAtNoneOfTheLoadStandsOver(t *testing.T) {
 	}
 
 	opens := today.Ends(fell).AddDate(0, 0, -1)
-	if asked := s.sittingAt(t, today, opens.Add(6*time.Hour)).Asked; len(asked) != 0 {
+	if asked := s.sittingAt(t, today, opens.Add(6*time.Hour)).Queue; len(asked) != 0 {
 		t.Errorf("a %v carrying none of the load asked %d cards", fell.Weekday(), len(asked))
 	}
 	after := today.Ends(fell).Add(6 * time.Hour)
-	if asked := s.sittingAt(t, today, after).Asked; len(asked) != 1 {
+	if asked := s.sittingAt(t, today, after).Queue; len(asked) != 1 {
 		t.Errorf("the day after asked %d cards, want the one standing over", len(asked))
 	}
 }

@@ -494,7 +494,7 @@ func TestACardPutDaysAwayIsNotOwedToday(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range sitting.Asked {
+	for _, one := range sitting.Queue {
 		if one.ID == on {
 			t.Error("the card is days away and was asked today")
 		}
@@ -631,7 +631,7 @@ func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	asked := sitting.Asked
+	asked := sitting.Queue
 	if len(asked) < 2 {
 		t.Fatalf("asked %d", len(asked))
 	}
@@ -661,7 +661,7 @@ func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	asked := sitting.Asked
+	asked := sitting.Queue
 	if len(asked) != 1 || asked[0].Deck != "decks/Words.md" {
 		t.Errorf("asked %+v, want the one card of that deck", asked)
 	}

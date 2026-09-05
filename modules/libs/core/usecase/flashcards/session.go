@@ -40,9 +40,9 @@ func OverDeck(path string) Scope { return Scope{Deck: path} }
 // held to that preset's budget.
 func ByPreset(preset string) Scope { return Scope{Preset: preset, Named: true} }
 
-// Asked is one card face as it is put to a person: where it stands, how it is laid
-// out, and where the answers so far have left it.
-type Asked struct {
+// QueuedCardFace is one card face as the sitting queues it: where it stands,
+// how it is laid out, and where the answers so far have left it.
+type QueuedCardFace struct {
 	CardFace
 	Schedule review.Schedule
 	// Ahead is how long each of the four answers would leave this card, from
@@ -51,12 +51,13 @@ type Asked struct {
 	Ahead map[review.Rating]time.Duration
 }
 
-// Sitting is what a person sits down to: the cards to ask, and what could not
-// be acted on in getting them.
-type Sitting struct {
-	Asked []Asked
+// SessionResult is what a person sits down to: the cards to ask, and what could
+// not be acted on in getting them.
+type SessionResult struct {
+	// Queue is what to ask, in the order to ask it.
+	Queue []QueuedCardFace
 	// Unwritten are the decks holding a card with no mark that could not be
-	// given one. Their cards are not in Asked and are asked for at the next
+	// given one. Their cards are not in the queue and are asked for at the next
 	// sitting.
 	Unwritten []string
 	// Skipped is how many lines of the vault's answers could not be read: a run
@@ -110,17 +111,19 @@ func NewSession(
 // Scope is the deck or the preset the sitting is opened over. Naming both is
 // ErrBothNamed, and a preset with nothing to ask today is ErrSchedulesNothing
 // with the reason.
-func (u Session) Execute(ctx context.Context, v domain.Vault, over Scope) (Sitting, error) {
+func (u Session) Execute(
+	ctx context.Context, v domain.Vault, over Scope,
+) (SessionResult, error) {
 	if over.Named && over.Deck != "" {
-		return Sitting{}, ErrBothNamed
+		return SessionResult{}, ErrBothNamed
 	}
 	marked, err := u.Marking.Execute(ctx, v)
 	if err != nil {
-		return Sitting{}, err
+		return SessionResult{}, err
 	}
 	faces, err := u.CardFaces.Execute(ctx, v)
 	if err != nil {
-		return Sitting{}, err
+		return SessionResult{}, err
 	}
 
 	// The log is read once here and the schedules worked out from it, so that
@@ -128,14 +131,14 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, over Scope) (Sitti
 	// their own cards were laid out from.
 	held, err := Log{Stores: u.Schedules.Logs}.Read(ctx, v)
 	if err != nil {
-		return Sitting{}, err
+		return SessionResult{}, err
 	}
 	// One reading of this vault's presets answers both the schedulers the cards
 	// are worked out by and the budgets they are held to.
 	reading := u.Presets.Reading()
 	asks, err := u.Schedules.under(ctx, v, reading, faces)
 	if err != nil {
-		return Sitting{}, err
+		return SessionResult{}, err
 	}
 	schedules := u.Schedules.replayed(ctx, v, held, asks)
 
@@ -145,11 +148,11 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, over Scope) (Sitti
 		u.Schedules.By, u.Schedules.at, now,
 	)
 	if err != nil {
-		return Sitting{}, err
+		return SessionResult{}, err
 	}
 	holds := day.asks(faces, schedules, u.Day, now, over)
 	if over.Named && len(holds.seen)+len(holds.fresh) == 0 {
-		return Sitting{}, day.refuses(over.Preset)
+		return SessionResult{}, day.refuses(over.Preset)
 	}
 
 	// How loaded each day of review already is, which is what a card put on one
@@ -159,16 +162,16 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, over Scope) (Sitti
 		on.Holds(s.Due)
 	}
 
-	out := Sitting{Unwritten: marked.Unwritten, Skipped: held.Skipped}
-	out.Asked = make([]Asked, 0, len(holds.seen)+len(holds.fresh))
+	out := SessionResult{Unwritten: marked.Unwritten, Skipped: held.Skipped}
+	out.Queue = make([]QueuedCardFace, 0, len(holds.seen)+len(holds.fresh))
 	for _, one := range holds.seen {
 		s := schedules[one.ID]
-		out.Asked = append(out.Asked, Asked{
+		out.Queue = append(out.Queue, QueuedCardFace{
 			CardFace: one, Schedule: s, Ahead: ahead(asks.under, on, one.ID, s, now),
 		})
 	}
 	for _, one := range holds.fresh {
-		out.Asked = append(out.Asked, Asked{
+		out.Queue = append(out.Queue, QueuedCardFace{
 			CardFace: one,
 			Ahead:    ahead(asks.under, on, one.ID, review.Schedule{}, now),
 		})

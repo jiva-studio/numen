@@ -32,7 +32,7 @@ const Version = "0.1.0"
 type Core struct {
 	// Showing is the vault the tools work, asked at every call so that they
 	// follow the window.
-	Showing func() Shown
+	Showing func() ShownVault
 
 	// Readers is the vault's files, which the notes, the documents and the
 	// window are all read out of.
@@ -50,7 +50,7 @@ type Core struct {
 	// Reviewing is the card the person is looking at, asked at every call for
 	// the same reason. Without it an agent is told nothing of what card anybody
 	// is on.
-	Reviewing func() Asked
+	Reviewing func() AskedCard
 
 	Notes   Notes
 	Vaults  Vaults
@@ -127,35 +127,35 @@ type Sources struct {
 	Documents port.TextExtractor
 }
 
-// Asked is the card in front of the person, as an agent is told about it. The
-// deck is the file it stands in and the mark is what every card tool addresses
-// it by.
-type Asked struct {
+// AskedCard is the card in front of the person, as an agent is told about it.
+// The deck is the file it stands in and the mark is what every card tool
+// addresses it by.
+type AskedCard struct {
 	Deck string `json:"deck" jsonschema:"the deck the card stands in, by the path the vault files it under; empty when no card is in front of them"`
 	Card string `json:"card,omitempty" jsonschema:"the card's mark, as card_read gives it"`
 	Face string `json:"face,omitempty" jsonschema:"the face it is being shown through, spelled as the stencil writes it"`
 }
 
-// Shown is the vault a call is answered about: the vault itself, and where it
-// sits on this machine. An agent that can open files joins the folder to a
+// ShownVault is the vault a call is answered about: the vault itself, and where
+// it sits on this machine. An agent that can open files joins the folder to a
 // path itself; one that cannot reads through a tool.
-type Shown struct {
+type ShownVault struct {
 	Vault domain.Vault
 	Root  string
 }
 
 // shown is the vault this call is about. A build that named none answers about
 // no vault at all.
-func (c Core) shown() Shown {
+func (c Core) shown() ShownVault {
 	if c.Showing == nil {
-		return Shown{}
+		return ShownVault{}
 	}
 	return c.Showing()
 }
 
 // One is a Core working one vault for as long as it is served.
-func One(v domain.Vault, root string) func() Shown {
-	return func() Shown { return Shown{Vault: v, Root: root} }
+func One(v domain.Vault, root string) func() ShownVault {
+	return func() ShownVault { return ShownVault{Vault: v, Root: root} }
 }
 
 // New builds the server an agent connects to.

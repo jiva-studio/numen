@@ -72,11 +72,11 @@ type PresetCardsDue struct {
 	Took            time.Duration
 	// Budget is what the preset keeps for this day of the week. A budget its
 	// goal does not name stands here as the person left it and closes nothing,
-	// so Due and New are held to Closes and not to all three of these.
+	// so Due and New are held to Limits and not to all three of these.
 	Budget review.Budget
-	// Closes is which of the three closes the day, and what each is called when
+	// Limits is which of the three closes the day, and what each is called when
 	// it does.
-	Closes review.Closes
+	Limits review.Limits
 	// Stops is why the preset schedules nothing on this day, and empty where it
 	// schedules something.
 	Stops review.StopReason
@@ -279,7 +279,7 @@ func (b *budgets) owing(due, fresh map[string]int) []PresetCardsDue {
 			AnsweredNew:     one.spent.New,
 			AnsweredReviews: one.spent.Reviews,
 			Took:            one.spent.Took,
-			Budget:          one.admits.Keeps, Closes: one.admits.Closes,
+			Budget:          one.admits.Keeps, Limits: one.admits.Limits,
 			Stops: one.admits.Stops,
 		})
 	}

@@ -45,12 +45,12 @@ func TestTheWindowsUnderTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(held.Asked) != 2 {
-		t.Fatalf("%d cards were asked", len(held.Asked))
+	if len(held.Queue) != 2 {
+		t.Fatalf("%d cards were asked", len(held.Queue))
 	}
 
 	seen := map[float64]time.Duration{}
-	for _, one := range held.Asked {
+	for _, one := range held.Queue {
 		share, named := shares[one.Deck]
 		if !named {
 			t.Fatalf("a card of %s was asked", one.Deck)
@@ -102,10 +102,10 @@ func TestTheWindowsUnderTheFourNameTheDayTheCardComesBackOn(t *testing.T) {
 		for step := range 60 {
 			at := saturday.Add(time.Duration(step) * time.Second)
 			sat := s.sittingAt(t, today, at)
-			if len(sat.Asked) == 0 {
+			if len(sat.Queue) == 0 {
 				break
 			}
-			card := sat.Asked[0]
+			card := sat.Queue[0]
 			said, named := card.Ahead[review.Good]
 			if !named {
 				t.Fatalf("under %s a card was asked with no window under its buttons", one.what)

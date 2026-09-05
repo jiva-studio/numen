@@ -232,7 +232,7 @@ func TestWhichSettingsAGoalReads(t *testing.T) {
 		p.Goal, p.By, p.Backlog = one.goal, time.Now().AddDate(0, 0, 30), 40
 		admits := p.Admits(day, time.Now(), review.Spent{}, 0, 0)
 
-		if got := admits.Closes.Backlog != ""; got != one.reads {
+		if got := admits.Limits.Backlog != ""; got != one.reads {
 			t.Errorf("under %s the share is read %v, want %v", one.goal, got, one.reads)
 		}
 		want := 40

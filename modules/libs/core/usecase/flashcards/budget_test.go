@@ -56,7 +56,7 @@ func deckNaming(at []string, cards int, from int) string {
 }
 
 // sittingAt is what the vault asks at this instant, held to the day's budgets.
-func (s vaulted) sittingAt(t *testing.T, day review.Day, now time.Time) flashcards.Sitting {
+func (s vaulted) sittingAt(t *testing.T, day review.Day, now time.Time) flashcards.SessionResult {
 	t.Helper()
 	sat, err := flashcards.Session{
 		Marking: s.marking, CardFaces: s.standings, Schedules: s.kept,
@@ -69,18 +69,18 @@ func (s vaulted) sittingAt(t *testing.T, day review.Day, now time.Time) flashcar
 }
 
 // byDeck is how many card faces of each deck a sitting holds.
-func byDeck(sat flashcards.Sitting) map[string]int {
+func byDeck(sat flashcards.SessionResult) map[string]int {
 	out := make(map[string]int)
-	for _, one := range sat.Asked {
+	for _, one := range sat.Queue {
 		out[one.Deck]++
 	}
 	return out
 }
 
 // unseen is how many of a sitting's cards nobody has answered yet.
-func unseen(sat flashcards.Sitting) int {
+func unseen(sat flashcards.SessionResult) int {
 	out := 0
-	for _, one := range sat.Asked {
+	for _, one := range sat.Queue {
 		if !one.Schedule.Seen() {
 			out++
 		}
@@ -508,7 +508,7 @@ func TestWhatIsOwedIsWhatTheSittingAsks(t *testing.T) {
 }
 
 // asked is how many card faces a sitting holds, over every deck.
-func asked(sat flashcards.Sitting) int { return len(sat.Asked) }
+func asked(sat flashcards.SessionResult) int { return len(sat.Queue) }
 
 // The decks naming no preset are one scope, so a second deck of them is a
 // second deck of the same day and not a second day's work.
@@ -1283,11 +1283,11 @@ func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
 		asked := 0
 		for range 4 {
 			sat := s.sittingAt(t, today, saturday.Add(spent))
-			if len(sat.Asked) == 0 {
+			if len(sat.Queue) == 0 {
 				break
 			}
 			given := s.run(t, saturday.Add(spent))
-			for _, one := range sat.Asked {
+			for _, one := range sat.Queue {
 				again(t, given, one.ID.Card, 6*time.Second)
 				spent += 6 * time.Second
 				asked++
@@ -1312,11 +1312,11 @@ func (s vaulted) through(t *testing.T, day review.Day, now time.Time) int {
 	faces := make(map[review.CardFaceID]bool)
 	for range 100 {
 		sat := s.sittingAt(t, day, now)
-		if len(sat.Asked) == 0 {
+		if len(sat.Queue) == 0 {
 			return len(faces)
 		}
 		record := s.run(t, now)
-		for _, one := range sat.Asked {
+		for _, one := range sat.Queue {
 			took := review.DefaultCost.Review
 			if !one.Schedule.Seen() {
 				took = review.DefaultCost.New

@@ -330,12 +330,12 @@ func (c BudgetNames) Name() string {
 	return string(c[0])
 }
 
-// Closes is what each of a preset's settings governs under the goal in force,
-// each written as the preset writes the key, and empty where it takes no part.
+// Limits is which key caps each budget under the goal in force, each written as
+// the preset writes the key, and empty where it takes no part.
 //
 // A setting taking no part stands in the file where the person left it and is
 // in force again the moment its goal is chosen.
-type Closes struct {
+type Limits struct {
 	// New, Reviews and Minutes are the budgets. The goal names the one that
 	// closes the day, and the others take no part.
 	New     BudgetName
@@ -362,8 +362,8 @@ type Allowance struct {
 	New     int
 	Reviews int
 	Minutes time.Duration
-	// Closes is which of the three closes the day.
-	Closes Closes
+	// Limits is which of the three closes the day.
+	Limits Limits
 	// Backlog is how much of the day goes to the debt before anything unbegun
 	// is offered, as a share in hundredths. A goal whose day is not one pot
 	// spent between the two stands at the whole of it, and the debt is paid
@@ -389,7 +389,7 @@ func (p Preset) Admits(
 	opened := d.Opened(now)
 	out := Allowance{
 		Keeps:  p.on(opened.Weekday()),
-		Closes: p.closing(),
+		Limits: p.limits(),
 		Stops:  p.StopsOn(d, now),
 	}
 	if p.Goal == GoalDate {
@@ -401,7 +401,7 @@ func (p Preset) Admits(
 	// A split that takes no part leaves the day spending on the debt first,
 	// which is what a preset naming no share does.
 	out.Backlog = AllBacklog
-	if out.Closes.Backlog != ClosedNothing {
+	if out.Limits.Backlog != ClosedNothing {
 		out.Backlog = p.Backlog
 	}
 	out.New = out.Keeps.New - spent.New
@@ -438,14 +438,14 @@ func (a Allowance) Paying(debt, begun int, owed, fresh bool) bool {
 // The share of the day that goes to the debt is read where one pot is spent
 // between the two. A goal of retention keeps a count for each side, so each is
 // held to its own and the share decides nothing.
-func (p Preset) closing() Closes {
+func (p Preset) limits() Limits {
 	switch p.Goal {
 	case GoalRetention:
-		return Closes{New: ClosedNew, Reviews: ClosedReviews}
+		return Limits{New: ClosedNew, Reviews: ClosedReviews}
 	case GoalDate:
-		return Closes{New: ClosedDate}
+		return Limits{New: ClosedDate}
 	default:
-		return Closes{Minutes: ClosedMinutes, Backlog: ClosedBacklog}
+		return Limits{Minutes: ClosedMinutes, Backlog: ClosedBacklog}
 	}
 }
 

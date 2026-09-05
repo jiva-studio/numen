@@ -40,9 +40,9 @@ func loading(t *rapid.T) []deckLoad {
 // keep the order they stand in, which is the deck's and not the walk's. A
 // budget of no minutes is a day that does not close on them.
 func walking(load []deckLoad, order []int, keeps review.Budget) map[review.CardFaceID]bool {
-	closes := review.Closes{New: review.ClosedNew, Reviews: review.ClosedReviews}
+	limits := review.Limits{New: review.ClosedNew, Reviews: review.ClosedReviews}
 	if keeps.Minutes > 0 {
-		closes.Minutes = review.ClosedMinutes
+		limits.Minutes = review.ClosedMinutes
 	}
 	day := &budgets{
 		under: make(map[review.CardFaceID]string),
@@ -50,7 +50,7 @@ func walking(load []deckLoad, order []int, keeps review.Budget) map[review.CardF
 			admits: review.Allowance{
 				Keeps: keeps, New: keeps.New, Reviews: keeps.Reviews,
 				Minutes: time.Duration(keeps.Minutes * float64(time.Minute)),
-				Closes:  closes,
+				Limits:  limits,
 				Backlog: review.AllBacklog,
 			},
 			cost:   review.DefaultCost,

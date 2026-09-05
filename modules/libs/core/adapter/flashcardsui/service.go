@@ -154,10 +154,10 @@ func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultCardsDue {
 			New:             int32(preset.Budget.New),
 			Reviews:         int32(preset.Budget.Reviews),
 			Minutes:         preset.Budget.Minutes,
-			ClosesNew:       string(preset.Closes.New),
-			ClosesReviews:   string(preset.Closes.Reviews),
-			ClosesMinutes:   string(preset.Closes.Minutes),
-			ClosesBacklog:   string(preset.Closes.Backlog),
+			ClosesNew:       string(preset.Limits.New),
+			ClosesReviews:   string(preset.Limits.Reviews),
+			ClosesMinutes:   string(preset.Limits.Minutes),
+			ClosesBacklog:   string(preset.Limits.Backlog),
 			StopsOn:         wire.StopReasonOf(preset.Stops),
 		})
 	}
@@ -199,17 +199,17 @@ func (a *API) StartSession(
 
 	out := &v1.StartSessionResponse{
 		Run:       run.Name(),
-		Asked:     make([]*v1.Asked, 0, len(sitting.Asked)),
+		Asked:     make([]*v1.Asked, 0, len(sitting.Queue)),
 		Unwritten: sitting.Unwritten,
 		Skipped:   int32(sitting.Skipped),
 	}
-	for _, one := range sitting.Asked {
+	for _, one := range sitting.Queue {
 		out.Asked = append(out.Asked, askedOf(one))
 	}
 	return connect.NewResponse(out), nil
 }
 
-func askedOf(one flashcards.Asked) *v1.Asked {
+func askedOf(one flashcards.QueuedCardFace) *v1.Asked {
 	front, back := one.Lay()
 	return &v1.Asked{
 		Deck:    one.Deck,

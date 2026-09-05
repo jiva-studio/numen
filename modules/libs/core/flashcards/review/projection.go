@@ -366,8 +366,8 @@ func (s Simulation) Run(
 					at = due[take]
 				}
 				counted := p.Counts.Charges(shown[at] > 0)
-				if counted && admits.Closes.Reviews != ClosedNothing && charged >= admits.Reviews {
-					closed = closed.with(admits.Closes.Reviews)
+				if counted && admits.Limits.Reviews != ClosedNothing && charged >= admits.Reviews {
+					closed = closed.with(admits.Limits.Reviews)
 					if repeat {
 						settled = true
 					} else {
@@ -375,8 +375,8 @@ func (s Simulation) Run(
 					}
 					continue
 				}
-				if admits.Closes.Minutes != ClosedNothing && used+s.Cost.Review > admits.Minutes {
-					closed = closed.with(admits.Closes.Minutes)
+				if admits.Limits.Minutes != ClosedNothing && used+s.Cost.Review > admits.Minutes {
+					closed = closed.with(admits.Limits.Minutes)
 					if repeat {
 						settled = true
 					} else {
@@ -411,12 +411,12 @@ func (s Simulation) Run(
 				continue
 			}
 
-			if admits.Closes.New != ClosedNothing && begun >= admits.New {
-				closed, all = closed.with(admits.Closes.New), true
+			if admits.Limits.New != ClosedNothing && begun >= admits.New {
+				closed, all = closed.with(admits.Limits.New), true
 				continue
 			}
-			if admits.Closes.Minutes != ClosedNothing && used+s.Cost.New > admits.Minutes {
-				closed, all = closed.with(admits.Closes.Minutes), true
+			if admits.Limits.Minutes != ClosedNothing && used+s.Cost.New > admits.Minutes {
+				closed, all = closed.with(admits.Limits.Minutes), true
 				continue
 			}
 			used += s.Cost.New
