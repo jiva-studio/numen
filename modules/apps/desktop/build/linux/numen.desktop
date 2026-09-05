@@ -2,7 +2,7 @@
 Type=Application
 Name=Numen
 Comment=Notes, a hierarchy with several parents, and the sources under them
-Exec=numen %F
+Exec=numen
 Icon=numen
 Terminal=false
 Categories=Office;Utility;
