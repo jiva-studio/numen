@@ -56,7 +56,9 @@ async function made(from: string, seat: PlexRelatedSeat) {
 
 async function joined(from: string, to: string, seat: PlexRelatedSeat) {
   if (!core.value) return
-  const said = await core.value.notes.writeLink({ path: from, link: { to, role: ROLES[seat] } })
+  const role = ROLES[seat]
+  if (role === undefined) return
+  const said = await core.value.notes.writeLink({ path: from, link: { to, role } })
   if (said.refusal) {
     trouble.value = `nothing was written: ${JSON.stringify(said.refusal)}`
     return
