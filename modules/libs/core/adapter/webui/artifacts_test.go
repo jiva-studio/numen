@@ -24,8 +24,8 @@ func TestABookNothingHasReadCarriesAReadingThatIsNothing(t *testing.T) {
 	if len(held) != 1 {
 		t.Fatalf("a book carries %v", held)
 	}
-	if held[readingID] != v1.State_STATE_NONE {
-		t.Errorf("the reading of a book nothing read is %s", held[readingID])
+	if held[readingOf] != v1.State_STATE_NONE {
+		t.Errorf("the reading of a book nothing read is %s", held[readingOf])
 	}
 }
 

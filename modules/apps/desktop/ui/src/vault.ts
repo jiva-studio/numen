@@ -7,6 +7,7 @@
 import { Code, createClient } from '@connectrpc/connect'
 import type { ConnectError } from '@connectrpc/connect'
 import {
+  ArtifactKind as Kinds,
   ArtifactService,
   AssetService,
   CardsService,
@@ -545,14 +546,14 @@ export const running: ArtifactRunner = {
     const answer = await artifacts.listArtifacts({ path })
     const held: Record<string, ArtifactState> = {}
     for (const one of answer.artifacts) {
-      const of = made[one.name.slice(one.name.lastIndexOf('/artifacts/') + '/artifacts/'.length)]
+      const of = drawn[one.kind]
       if (of) held[of] = reached(one.state)
     }
     return held
   },
   makes: async (path, of) => {
     try {
-      const answer = await artifacts.createArtifact({ path, artifactId: ids[of] })
+      const answer = await artifacts.createArtifact({ path, kind: asking[of] })
       return {
         able: true,
         of,
@@ -568,7 +569,7 @@ export const running: ArtifactRunner = {
   },
   drops: async (path) => {
     try {
-      await artifacts.deleteArtifact({ path, artifactId: ids.transcript })
+      await artifacts.deleteArtifact({ path })
       return true
     } catch (error) {
       if (Code.Unimplemented === (error as ConnectError).code) return false
@@ -577,17 +578,20 @@ export const running: ArtifactRunner = {
   },
 }
 
-/** What each artifact is asked for under, as the schema names it. */
-const ids: Record<ArtifactOf, string> = {
-  reading: 'ocr',
-  transcript: 'asr',
-  corrections: 'asr.corrected',
+/**
+ * What each artifact the schema names is called in the window. Keyed by the
+ * schema, so an artifact added to it has to be given a word here before this
+ * compiles.
+ */
+const drawn: Readonly<Record<Kinds, ArtifactOf | null>> = {
+  [Kinds.UNSPECIFIED]: null,
+  [Kinds.READING]: 'reading',
+  [Kinds.HEARD]: 'transcript',
+  [Kinds.CORRECTED]: 'corrections',
 }
 
-/** And back, for reading the id off the end of an artifact's name. */
-const made = Object.fromEntries(
-  Object.entries(ids).map(([of, id]) => [id, of as ArtifactOf]),
-) as Record<string, ArtifactOf>
+/** And back, for asking for one. */
+const asking = namesOf<ArtifactOf, Kinds>(drawn)
 
 /** What has become of an artifact, in the words the window uses. */
 const become: Record<States, ArtifactState> = {

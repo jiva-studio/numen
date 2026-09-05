@@ -57,7 +57,7 @@ func heardBy() indexed {
 // dropping asks for what a recording was heard as to be taken away.
 func dropping(api *API) (*v1.Artifact, error) {
 	out, err := api.DeleteArtifact(context.Background(), connect.NewRequest(&v1.DeleteArtifactRequest{
-		Path: talk, ArtifactId: heardID,
+		Path: talk,
 	}))
 	if err != nil {
 		return nil, err
@@ -125,22 +125,6 @@ func TestARecordingNobodyHasListenedToHasNoTranscriptToDrop(t *testing.T) {
 
 	if _, err := dropping(api); connect.CodeOf(err) != connect.CodeNotFound {
 		t.Fatalf("dropped the transcript of a recording nothing heard and was refused %v", err)
-	}
-	if len(index.written) != 0 {
-		t.Error("the index was written for a drop that did nothing")
-	}
-}
-
-// What a recording was heard as is the only artifact taken away here: the words
-// a person put right go with it, and are not taken away on their own.
-func TestOnlyWhatARecordingWasHeardAsIsTakenAway(t *testing.T) {
-	api, index, _ := dropper(t, whole(spoke()), heardBy())
-
-	_, err := api.DeleteArtifact(t.Context(), connect.NewRequest(&v1.DeleteArtifactRequest{
-		Path: talk, ArtifactId: correctedID,
-	}))
-	if connect.CodeOf(err) != connect.CodeInvalidArgument {
-		t.Fatalf("took the corrections away on their own and was refused %v", err)
 	}
 	if len(index.written) != 0 {
 		t.Error("the index was written for a drop that did nothing")

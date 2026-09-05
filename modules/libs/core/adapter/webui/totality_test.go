@@ -1,6 +1,7 @@
 package webui
 
 import (
+	"slices"
 	"testing"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
@@ -121,7 +122,25 @@ func TestEveryArtifactStateIsWrittenFromOne(t *testing.T) {
 	}, func(writes func() v1.State) v1.State { return writes() })
 }
 
+// Every artifact the schema names stands under a name in the store, and is
+// carried by a file of some kind.
+//
+// The two lists used to be a comment: a fourth artifact compiled on both sides,
+// passed every check, and reached the person as a button that was never drawn.
+func TestEveryArtifactTheSchemaNamesStandsSomewhere(t *testing.T) {
+	testsupport.Handled(t, func(of v1.ArtifactKind) bool {
+		id, named := standing(of)
+		return named && id != ""
+	})
+	testsupport.Handled(t, func(of v1.ArtifactKind) bool {
+		return slices.Contains(carried(domain.KindBook), of) ||
+			slices.Contains(carried(domain.KindRecording), of)
+	})
+}
+
 // standingAt is what an artifact over a source standing here is answered with.
 func standingAt(got reached) func() v1.State {
-	return func() v1.State { return stood(domain.Vault{}, "Heard.md", heardID, got).GetState() }
+	return func() v1.State {
+		return stood(domain.Vault{}, "Heard.md", v1.ArtifactKind_ARTIFACT_KIND_HEARD, got).GetState()
+	}
 }

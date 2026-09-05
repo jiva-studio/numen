@@ -582,13 +582,17 @@ func TestARunReachesTheVaultTheWindowIsShowing(t *testing.T) {
 
 	asking, stop := context.WithCancel(t.Context())
 	var asked sync.WaitGroup
-	for _, id := range []string{"asr.corrected", "ocr", "asr"} {
+	for _, of := range []v1.ArtifactKind{
+		v1.ArtifactKind_ARTIFACT_KIND_CORRECTED,
+		v1.ArtifactKind_ARTIFACT_KIND_READING,
+		v1.ArtifactKind_ARTIFACT_KIND_HEARD,
+	} {
 		asked.Add(1)
 		go func() {
 			defer asked.Done()
 			for asking.Err() == nil {
 				f.opened.API.CreateArtifact(asking, connect.NewRequest(&v1.CreateArtifactRequest{
-					Path: entropy, ArtifactId: id,
+					Path: entropy, Kind: of,
 				}))
 			}
 		}()

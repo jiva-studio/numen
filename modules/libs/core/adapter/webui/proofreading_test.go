@@ -60,7 +60,7 @@ func onTheShelf() stored {
 func TestATranscriptIsProofreadWhenTheWindowAsksForIt(t *testing.T) {
 	api, _, by := proofreading(t, onTheShelf(), heardBy())
 
-	made := making(t, api, talk, correctedID)
+	made := making(t, api, talk, correctedOf)
 	if made.GetState() != v1.State_STATE_RUNNING {
 		t.Fatalf("the transcript was answered %s", made.GetState())
 	}
@@ -89,7 +89,7 @@ func TestWhatAProofreadingCameToIsSaid(t *testing.T) {
 			api, _, by := proofreading(t, onTheShelf(), heardBy())
 			by.came = one.came
 
-			if made := making(t, api, talk, correctedID); made.GetState() != one.state {
+			if made := making(t, api, talk, correctedOf); made.GetState() != one.state {
 				t.Fatalf("it was answered %s", made.GetState())
 			}
 		})
@@ -101,7 +101,7 @@ func TestWhatAProofreadingCameToIsSaid(t *testing.T) {
 func TestARecordingNothingHasListenedToHasNothingToProofread(t *testing.T) {
 	api, _, by := proofreading(t, stored{}, nothingRead())
 
-	if code := refusedMaking(t, api, talk, correctedID); code != connect.CodeFailedPrecondition {
+	if code := refusedMaking(t, api, talk, correctedOf); code != connect.CodeFailedPrecondition {
 		t.Fatalf("a recording nothing has heard was refused %s", code)
 	}
 	if by.times != 0 {
@@ -109,7 +109,7 @@ func TestARecordingNothingHasListenedToHasNothingToProofread(t *testing.T) {
 	}
 	// Nothing stands, and the window that asked what the recording carries is
 	// told so rather than offering the run at all.
-	if state := carrying(t, api, talk)[correctedID]; state != v1.State_STATE_NONE {
+	if state := carrying(t, api, talk)[correctedOf]; state != v1.State_STATE_NONE {
 		t.Errorf("the corrections of a recording nothing heard are %s", state)
 	}
 }
@@ -121,7 +121,7 @@ func TestOnlyARecordingsTranscriptIsProofread(t *testing.T) {
 		t.Run(path, func(t *testing.T) {
 			api, _, by := proofreading(t, onTheShelf(), heardBy())
 
-			if code := refusedMaking(t, api, path, correctedID); code != connect.CodeInvalidArgument {
+			if code := refusedMaking(t, api, path, correctedOf); code != connect.CodeInvalidArgument {
 				t.Fatalf("a file of the wrong kind was refused %s", code)
 			}
 			if by.times != 0 {
@@ -139,7 +139,7 @@ func TestAnInstallationNamingNoProofreaderSaysSo(t *testing.T) {
 	api, _, _ := proofreading(t, onTheShelf(), heardBy())
 	runningBehind(api, func(on *passes) { on.proofreads = &proofreads{} })
 
-	if code := refusedMaking(t, api, talk, correctedID); code != connect.CodeFailedPrecondition {
+	if code := refusedMaking(t, api, talk, correctedOf); code != connect.CodeFailedPrecondition {
 		t.Fatalf("it was refused %s", code)
 	}
 }
@@ -150,7 +150,7 @@ func TestAProofreadingAskedForBeforeThePassesAreUpIsAskedAgain(t *testing.T) {
 	api, _, _ := proofreading(t, onTheShelf(), heardBy())
 	runningBehind(api, func(on *passes) { on.proofreads = nil })
 
-	if code := refusedMaking(t, api, talk, correctedID); code != connect.CodeUnavailable {
+	if code := refusedMaking(t, api, talk, correctedOf); code != connect.CodeUnavailable {
 		t.Fatalf("it was refused %s", code)
 	}
 }

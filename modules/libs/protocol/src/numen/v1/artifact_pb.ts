@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/artifact.proto.
  */
 export const file_numen_v1_artifact: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9hcnRpZmFjdC5wcm90bxIIbnVtZW4udjEiVQoIQXJ0aWZhY3QSDAoEbmFtZRgBIAEoCRIeCgVzdGF0ZRgCIAEoDjIPLm51bWVuLnYxLlN0YXRlEg0KBWVycm9yGAMgASgJEgwKBHNpemUYBCABKAMiJAoUTGlzdEFydGlmYWN0c1JlcXVlc3QSDAoEcGF0aBgBIAEoCSI+ChVMaXN0QXJ0aWZhY3RzUmVzcG9uc2USJQoJYXJ0aWZhY3RzGAEgAygLMhIubnVtZW4udjEuQXJ0aWZhY3QiOgoVQ3JlYXRlQXJ0aWZhY3RSZXF1ZXN0EgwKBHBhdGgYASABKAkSEwoLYXJ0aWZhY3RfaWQYAiABKAkiPgoWQ3JlYXRlQXJ0aWZhY3RSZXNwb25zZRIkCghhcnRpZmFjdBgBIAEoCzISLm51bWVuLnYxLkFydGlmYWN0IjoKFURlbGV0ZUFydGlmYWN0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhMKC2FydGlmYWN0X2lkGAIgASgJIj4KFkRlbGV0ZUFydGlmYWN0UmVzcG9uc2USJAoIYXJ0aWZhY3QYASABKAsyEi5udW1lbi52MS5BcnRpZmFjdCItCgNDdWUSDAoEdGV4dBgBIAEoCRIMCgRmcm9tGAIgASgFEgoKAnRvGAMgASgFIkQKFVJlYWRUcmFuc2NyaXB0UmVxdWVzdBIMCgRwYXRoGAEgASgJEh0KAmF0GAIgASgLMhEubnVtZW4udjEuU3RyZXRjaCJHChZSZWFkVHJhbnNjcmlwdFJlc3BvbnNlEhsKBGN1ZXMYASADKAsyDS5udW1lbi52MS5DdWUSEAoIZWRpdGFibGUYAiABKAgiQwoWV3JpdGVUcmFuc2NyaXB0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhsKBGN1ZXMYAiADKAsyDS5udW1lbi52MS5DdWUiSAoXV3JpdGVUcmFuc2NyaXB0UmVzcG9uc2USGwoEY3VlcxgBIAMoCzINLm51bWVuLnYxLkN1ZRIQCghlZGl0YWJsZRgCIAEoCCqZAQoFU3RhdGUSFQoRU1RBVEVfVU5TUEVDSUZJRUQQABIOCgpTVEFURV9OT05FEAESEAoMU1RBVEVfUVVFVUVEEAISEQoNU1RBVEVfUlVOTklORxADEhEKDVNUQVRFX1NUT1BQRUQQBBIOCgpTVEFURV9ET05FEAUSDwoLU1RBVEVfRU1QVFkQBhIQCgxTVEFURV9GQUlMRUQQBzK6AwoPQXJ0aWZhY3RTZXJ2aWNlElAKDUxpc3RBcnRpZmFjdHMSHi5udW1lbi52MS5MaXN0QXJ0aWZhY3RzUmVxdWVzdBofLm51bWVuLnYxLkxpc3RBcnRpZmFjdHNSZXNwb25zZRJTCg5DcmVhdGVBcnRpZmFjdBIfLm51bWVuLnYxLkNyZWF0ZUFydGlmYWN0UmVxdWVzdBogLm51bWVuLnYxLkNyZWF0ZUFydGlmYWN0UmVzcG9uc2USUwoORGVsZXRlQXJ0aWZhY3QSHy5udW1lbi52MS5EZWxldGVBcnRpZmFjdFJlcXVlc3QaIC5udW1lbi52MS5EZWxldGVBcnRpZmFjdFJlc3BvbnNlElMKDlJlYWRUcmFuc2NyaXB0Eh8ubnVtZW4udjEuUmVhZFRyYW5zY3JpcHRSZXF1ZXN0GiAubnVtZW4udjEuUmVhZFRyYW5zY3JpcHRSZXNwb25zZRJWCg9Xcml0ZVRyYW5zY3JpcHQSIC5udW1lbi52MS5Xcml0ZVRyYW5zY3JpcHRSZXF1ZXN0GiEubnVtZW4udjEuV3JpdGVUcmFuc2NyaXB0UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9hcnRpZmFjdC5wcm90bxIIbnVtZW4udjEiewoIQXJ0aWZhY3QSDAoEbmFtZRgBIAEoCRIeCgVzdGF0ZRgCIAEoDjIPLm51bWVuLnYxLlN0YXRlEg0KBWVycm9yGAMgASgJEgwKBHNpemUYBCABKAMSJAoEa2luZBgFIAEoDjIWLm51bWVuLnYxLkFydGlmYWN0S2luZCIkChRMaXN0QXJ0aWZhY3RzUmVxdWVzdBIMCgRwYXRoGAEgASgJIj4KFUxpc3RBcnRpZmFjdHNSZXNwb25zZRIlCglhcnRpZmFjdHMYASADKAsyEi5udW1lbi52MS5BcnRpZmFjdCJeChVDcmVhdGVBcnRpZmFjdFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIkCgRraW5kGAMgASgOMhYubnVtZW4udjEuQXJ0aWZhY3RLaW5kSgQIAhADUgthcnRpZmFjdF9pZCI+ChZDcmVhdGVBcnRpZmFjdFJlc3BvbnNlEiQKCGFydGlmYWN0GAEgASgLMhIubnVtZW4udjEuQXJ0aWZhY3QiOAoVRGVsZXRlQXJ0aWZhY3RSZXF1ZXN0EgwKBHBhdGgYASABKAlKBAgCEANSC2FydGlmYWN0X2lkIj4KFkRlbGV0ZUFydGlmYWN0UmVzcG9uc2USJAoIYXJ0aWZhY3QYASABKAsyEi5udW1lbi52MS5BcnRpZmFjdCItCgNDdWUSDAoEdGV4dBgBIAEoCRIMCgRmcm9tGAIgASgFEgoKAnRvGAMgASgFIkQKFVJlYWRUcmFuc2NyaXB0UmVxdWVzdBIMCgRwYXRoGAEgASgJEh0KAmF0GAIgASgLMhEubnVtZW4udjEuU3RyZXRjaCJHChZSZWFkVHJhbnNjcmlwdFJlc3BvbnNlEhsKBGN1ZXMYASADKAsyDS5udW1lbi52MS5DdWUSEAoIZWRpdGFibGUYAiABKAgiQwoWV3JpdGVUcmFuc2NyaXB0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhsKBGN1ZXMYAiADKAsyDS5udW1lbi52MS5DdWUiSAoXV3JpdGVUcmFuc2NyaXB0UmVzcG9uc2USGwoEY3VlcxgBIAMoCzINLm51bWVuLnYxLkN1ZRIQCghlZGl0YWJsZRgCIAEoCCp+CgxBcnRpZmFjdEtpbmQSHQoZQVJUSUZBQ1RfS0lORF9VTlNQRUNJRklFRBAAEhkKFUFSVElGQUNUX0tJTkRfUkVBRElORxABEhcKE0FSVElGQUNUX0tJTkRfSEVBUkQQAhIbChdBUlRJRkFDVF9LSU5EX0NPUlJFQ1RFRBADKpkBCgVTdGF0ZRIVChFTVEFURV9VTlNQRUNJRklFRBAAEg4KClNUQVRFX05PTkUQARIQCgxTVEFURV9RVUVVRUQQAhIRCg1TVEFURV9SVU5OSU5HEAMSEQoNU1RBVEVfU1RPUFBFRBAEEg4KClNUQVRFX0RPTkUQBRIPCgtTVEFURV9FTVBUWRAGEhAKDFNUQVRFX0ZBSUxFRBAHMroDCg9BcnRpZmFjdFNlcnZpY2USUAoNTGlzdEFydGlmYWN0cxIeLm51bWVuLnYxLkxpc3RBcnRpZmFjdHNSZXF1ZXN0Gh8ubnVtZW4udjEuTGlzdEFydGlmYWN0c1Jlc3BvbnNlElMKDkNyZWF0ZUFydGlmYWN0Eh8ubnVtZW4udjEuQ3JlYXRlQXJ0aWZhY3RSZXF1ZXN0GiAubnVtZW4udjEuQ3JlYXRlQXJ0aWZhY3RSZXNwb25zZRJTCg5EZWxldGVBcnRpZmFjdBIfLm51bWVuLnYxLkRlbGV0ZUFydGlmYWN0UmVxdWVzdBogLm51bWVuLnYxLkRlbGV0ZUFydGlmYWN0UmVzcG9uc2USUwoOUmVhZFRyYW5zY3JpcHQSHy5udW1lbi52MS5SZWFkVHJhbnNjcmlwdFJlcXVlc3QaIC5udW1lbi52MS5SZWFkVHJhbnNjcmlwdFJlc3BvbnNlElYKD1dyaXRlVHJhbnNjcmlwdBIgLm51bWVuLnYxLldyaXRlVHJhbnNjcmlwdFJlcXVlc3QaIS5udW1lbi52MS5Xcml0ZVRyYW5zY3JpcHRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * An Artifact is one thing a model wrote about one file of the vault.
@@ -62,6 +62,15 @@ export type Artifact = Message<"numen.v1.Artifact"> & {
    * @generated from field: int64 size = 4;
    */
   size: bigint;
+
+  /**
+   * Which of them this is. A client draws a row per kind and reads this rather
+   * than the last part of `name`: a name is where the artifact stands, and
+   * taking a client's meaning out of it makes every reader parse it.
+   *
+   * @generated from field: numen.v1.ArtifactKind kind = 5;
+   */
+  kind: ArtifactKind;
 };
 
 /**
@@ -123,18 +132,12 @@ export type CreateArtifactRequest = Message<"numen.v1.CreateArtifactRequest"> & 
   path: string;
 
   /**
-   * Which artifact of it to make. It is the last part of the artifact's name:
+   * Which artifact of it to make. Which model does the work follows from the
+   * file, and is not asked for here.
    *
-   *   ocr             the text read out of a scan
-   *   asr             the words heard in a recording
-   *   asr.corrected   those words put right
-   *
-   * Which model does the work follows from the file, and is not asked for
-   * here.
-   *
-   * @generated from field: string artifact_id = 2;
+   * @generated from field: numen.v1.ArtifactKind kind = 3;
    */
-  artifactId: string;
+  kind: ArtifactKind;
 };
 
 /**
@@ -166,20 +169,15 @@ export const CreateArtifactResponseSchema: GenMessage<CreateArtifactResponse> = 
  */
 export type DeleteArtifactRequest = Message<"numen.v1.DeleteArtifactRequest"> & {
   /**
-   * The file of the vault, as the vault holds it.
+   * The file of the vault, as the vault holds it. What is taken away is
+   * everything listening to a recording produced — the words a model heard and
+   * the words a person put right — so there is nothing to name: a field that
+   * takes one value of three and refuses the other two at run time is a rule
+   * the schema cannot state and a client cannot read.
    *
    * @generated from field: string path = 1;
    */
   path: string;
-
-  /**
-   * Which artifact of it to take away. Only `asr` is taken away here: it is
-   * everything listening to a recording produced, and the words put right go
-   * with it.
-   *
-   * @generated from field: string artifact_id = 2;
-   */
-  artifactId: string;
 };
 
 /**
@@ -356,6 +354,46 @@ export const WriteTranscriptResponseSchema: GenMessage<WriteTranscriptResponse> 
   messageDesc(file_numen_v1_artifact, 11);
 
 /**
+ * ArtifactKind is which thing made from a file is meant. The list is closed: a
+ * client draws one row per kind, and a kind nobody decided on has no row.
+ *
+ * @generated from enum numen.v1.ArtifactKind
+ */
+export enum ArtifactKind {
+  /**
+   * @generated from enum value: ARTIFACT_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * The text read out of a scan. It stands under the name `ocr`.
+   *
+   * @generated from enum value: ARTIFACT_KIND_READING = 1;
+   */
+  READING = 1,
+
+  /**
+   * The words heard in a recording, under `asr`.
+   *
+   * @generated from enum value: ARTIFACT_KIND_HEARD = 2;
+   */
+  HEARD = 2,
+
+  /**
+   * Those words put right, under `asr.corrected`.
+   *
+   * @generated from enum value: ARTIFACT_KIND_CORRECTED = 3;
+   */
+  CORRECTED = 3,
+}
+
+/**
+ * Describes the enum numen.v1.ArtifactKind.
+ */
+export const ArtifactKindSchema: GenEnum<ArtifactKind> = /*@__PURE__*/
+  enumDesc(file_numen_v1_artifact, 0);
+
+/**
  * State is what has become of one artifact.
  *
  * @generated from enum numen.v1.State
@@ -426,7 +464,7 @@ export enum State {
  * Describes the enum numen.v1.State.
  */
 export const StateSchema: GenEnum<State> = /*@__PURE__*/
-  enumDesc(file_numen_v1_artifact, 0);
+  enumDesc(file_numen_v1_artifact, 1);
 
 /**
  * ArtifactService answers what has been made from a file of the vault, makes

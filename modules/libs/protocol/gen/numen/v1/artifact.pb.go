@@ -28,6 +28,63 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// ArtifactKind is which thing made from a file is meant. The list is closed: a
+// client draws one row per kind, and a kind nobody decided on has no row.
+type ArtifactKind int32
+
+const (
+	ArtifactKind_ARTIFACT_KIND_UNSPECIFIED ArtifactKind = 0
+	// The text read out of a scan. It stands under the name `ocr`.
+	ArtifactKind_ARTIFACT_KIND_READING ArtifactKind = 1
+	// The words heard in a recording, under `asr`.
+	ArtifactKind_ARTIFACT_KIND_HEARD ArtifactKind = 2
+	// Those words put right, under `asr.corrected`.
+	ArtifactKind_ARTIFACT_KIND_CORRECTED ArtifactKind = 3
+)
+
+// Enum value maps for ArtifactKind.
+var (
+	ArtifactKind_name = map[int32]string{
+		0: "ARTIFACT_KIND_UNSPECIFIED",
+		1: "ARTIFACT_KIND_READING",
+		2: "ARTIFACT_KIND_HEARD",
+		3: "ARTIFACT_KIND_CORRECTED",
+	}
+	ArtifactKind_value = map[string]int32{
+		"ARTIFACT_KIND_UNSPECIFIED": 0,
+		"ARTIFACT_KIND_READING":     1,
+		"ARTIFACT_KIND_HEARD":       2,
+		"ARTIFACT_KIND_CORRECTED":   3,
+	}
+)
+
+func (x ArtifactKind) Enum() *ArtifactKind {
+	p := new(ArtifactKind)
+	*p = x
+	return p
+}
+
+func (x ArtifactKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ArtifactKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_artifact_proto_enumTypes[0].Descriptor()
+}
+
+func (ArtifactKind) Type() protoreflect.EnumType {
+	return &file_numen_v1_artifact_proto_enumTypes[0]
+}
+
+func (x ArtifactKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ArtifactKind.Descriptor instead.
+func (ArtifactKind) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_artifact_proto_rawDescGZIP(), []int{0}
+}
+
 // State is what has become of one artifact.
 type State int32
 
@@ -90,11 +147,11 @@ func (x State) String() string {
 }
 
 func (State) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_artifact_proto_enumTypes[0].Descriptor()
+	return file_numen_v1_artifact_proto_enumTypes[1].Descriptor()
 }
 
 func (State) Type() protoreflect.EnumType {
-	return &file_numen_v1_artifact_proto_enumTypes[0]
+	return &file_numen_v1_artifact_proto_enumTypes[1]
 }
 
 func (x State) Number() protoreflect.EnumNumber {
@@ -103,7 +160,7 @@ func (x State) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use State.Descriptor instead.
 func (State) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_artifact_proto_rawDescGZIP(), []int{0}
+	return file_numen_v1_artifact_proto_rawDescGZIP(), []int{1}
 }
 
 // An Artifact is one thing a model wrote about one file of the vault.
@@ -124,7 +181,11 @@ type Artifact struct {
 	// Size is how many bytes stand under that name. A file being written is
 	// appended to as the work goes, so it keeps its name and grows: how long it
 	// now is is what tells a caller that what it already read has moved on.
-	Size          int64 `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
+	Size int64 `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
+	// Which of them this is. A client draws a row per kind and reads this rather
+	// than the last part of `name`: a name is where the artifact stands, and
+	// taking a client's meaning out of it makes every reader parse it.
+	Kind          ArtifactKind `protobuf:"varint,5,opt,name=kind,proto3,enum=numen.v1.ArtifactKind" json:"kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -185,6 +246,13 @@ func (x *Artifact) GetSize() int64 {
 		return x.Size
 	}
 	return 0
+}
+
+func (x *Artifact) GetKind() ArtifactKind {
+	if x != nil {
+		return x.Kind
+	}
+	return ArtifactKind_ARTIFACT_KIND_UNSPECIFIED
 }
 
 type ListArtifactsRequest struct {
@@ -283,15 +351,9 @@ type CreateArtifactRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The file of the vault, as the vault holds it.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// Which artifact of it to make. It is the last part of the artifact's name:
-	//
-	//	ocr             the text read out of a scan
-	//	asr             the words heard in a recording
-	//	asr.corrected   those words put right
-	//
-	// Which model does the work follows from the file, and is not asked for
-	// here.
-	ArtifactId    string `protobuf:"bytes,2,opt,name=artifact_id,json=artifactId,proto3" json:"artifact_id,omitempty"`
+	// Which artifact of it to make. Which model does the work follows from the
+	// file, and is not asked for here.
+	Kind          ArtifactKind `protobuf:"varint,3,opt,name=kind,proto3,enum=numen.v1.ArtifactKind" json:"kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -333,11 +395,11 @@ func (x *CreateArtifactRequest) GetPath() string {
 	return ""
 }
 
-func (x *CreateArtifactRequest) GetArtifactId() string {
+func (x *CreateArtifactRequest) GetKind() ArtifactKind {
 	if x != nil {
-		return x.ArtifactId
+		return x.Kind
 	}
-	return ""
+	return ArtifactKind_ARTIFACT_KIND_UNSPECIFIED
 }
 
 type CreateArtifactResponse struct {
@@ -386,12 +448,12 @@ func (x *CreateArtifactResponse) GetArtifact() *Artifact {
 
 type DeleteArtifactRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The file of the vault, as the vault holds it.
-	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// Which artifact of it to take away. Only `asr` is taken away here: it is
-	// everything listening to a recording produced, and the words put right go
-	// with it.
-	ArtifactId    string `protobuf:"bytes,2,opt,name=artifact_id,json=artifactId,proto3" json:"artifact_id,omitempty"`
+	// The file of the vault, as the vault holds it. What is taken away is
+	// everything listening to a recording produced — the words a model heard and
+	// the words a person put right — so there is nothing to name: a field that
+	// takes one value of three and refuses the other two at run time is a rule
+	// the schema cannot state and a client cannot read.
+	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -429,13 +491,6 @@ func (*DeleteArtifactRequest) Descriptor() ([]byte, []int) {
 func (x *DeleteArtifactRequest) GetPath() string {
 	if x != nil {
 		return x.Path
-	}
-	return ""
-}
-
-func (x *DeleteArtifactRequest) GetArtifactId() string {
-	if x != nil {
-		return x.ArtifactId
 	}
 	return ""
 }
@@ -781,26 +836,24 @@ var File_numen_v1_artifact_proto protoreflect.FileDescriptor
 
 const file_numen_v1_artifact_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/artifact.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"o\n" +
+	"\x17numen/v1/artifact.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x9b\x01\n" +
 	"\bArtifact\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12%\n" +
 	"\x05state\x18\x02 \x01(\x0e2\x0f.numen.v1.StateR\x05state\x12\x14\n" +
 	"\x05error\x18\x03 \x01(\tR\x05error\x12\x12\n" +
-	"\x04size\x18\x04 \x01(\x03R\x04size\"*\n" +
+	"\x04size\x18\x04 \x01(\x03R\x04size\x12*\n" +
+	"\x04kind\x18\x05 \x01(\x0e2\x16.numen.v1.ArtifactKindR\x04kind\"*\n" +
 	"\x14ListArtifactsRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"I\n" +
 	"\x15ListArtifactsResponse\x120\n" +
-	"\tartifacts\x18\x01 \x03(\v2\x12.numen.v1.ArtifactR\tartifacts\"L\n" +
+	"\tartifacts\x18\x01 \x03(\v2\x12.numen.v1.ArtifactR\tartifacts\"j\n" +
 	"\x15CreateArtifactRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1f\n" +
-	"\vartifact_id\x18\x02 \x01(\tR\n" +
-	"artifactId\"H\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12*\n" +
+	"\x04kind\x18\x03 \x01(\x0e2\x16.numen.v1.ArtifactKindR\x04kindJ\x04\b\x02\x10\x03R\vartifact_id\"H\n" +
 	"\x16CreateArtifactResponse\x12.\n" +
-	"\bartifact\x18\x01 \x01(\v2\x12.numen.v1.ArtifactR\bartifact\"L\n" +
+	"\bartifact\x18\x01 \x01(\v2\x12.numen.v1.ArtifactR\bartifact\">\n" +
 	"\x15DeleteArtifactRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1f\n" +
-	"\vartifact_id\x18\x02 \x01(\tR\n" +
-	"artifactId\"H\n" +
+	"\x04path\x18\x01 \x01(\tR\x04pathJ\x04\b\x02\x10\x03R\vartifact_id\"H\n" +
 	"\x16DeleteArtifactResponse\x12.\n" +
 	"\bartifact\x18\x01 \x01(\v2\x12.numen.v1.ArtifactR\bartifact\"=\n" +
 	"\x03Cue\x12\x12\n" +
@@ -818,7 +871,12 @@ const file_numen_v1_artifact_proto_rawDesc = "" +
 	"\x04cues\x18\x02 \x03(\v2\r.numen.v1.CueR\x04cues\"X\n" +
 	"\x17WriteTranscriptResponse\x12!\n" +
 	"\x04cues\x18\x01 \x03(\v2\r.numen.v1.CueR\x04cues\x12\x1a\n" +
-	"\beditable\x18\x02 \x01(\bR\beditable*\x99\x01\n" +
+	"\beditable\x18\x02 \x01(\bR\beditable*~\n" +
+	"\fArtifactKind\x12\x1d\n" +
+	"\x19ARTIFACT_KIND_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15ARTIFACT_KIND_READING\x10\x01\x12\x17\n" +
+	"\x13ARTIFACT_KIND_HEARD\x10\x02\x12\x1b\n" +
+	"\x17ARTIFACT_KIND_CORRECTED\x10\x03*\x99\x01\n" +
 	"\x05State\x12\x15\n" +
 	"\x11STATE_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -849,48 +907,51 @@ func file_numen_v1_artifact_proto_rawDescGZIP() []byte {
 	return file_numen_v1_artifact_proto_rawDescData
 }
 
-var file_numen_v1_artifact_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_numen_v1_artifact_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_numen_v1_artifact_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_numen_v1_artifact_proto_goTypes = []any{
-	(State)(0),                      // 0: numen.v1.State
-	(*Artifact)(nil),                // 1: numen.v1.Artifact
-	(*ListArtifactsRequest)(nil),    // 2: numen.v1.ListArtifactsRequest
-	(*ListArtifactsResponse)(nil),   // 3: numen.v1.ListArtifactsResponse
-	(*CreateArtifactRequest)(nil),   // 4: numen.v1.CreateArtifactRequest
-	(*CreateArtifactResponse)(nil),  // 5: numen.v1.CreateArtifactResponse
-	(*DeleteArtifactRequest)(nil),   // 6: numen.v1.DeleteArtifactRequest
-	(*DeleteArtifactResponse)(nil),  // 7: numen.v1.DeleteArtifactResponse
-	(*Cue)(nil),                     // 8: numen.v1.Cue
-	(*ReadTranscriptRequest)(nil),   // 9: numen.v1.ReadTranscriptRequest
-	(*ReadTranscriptResponse)(nil),  // 10: numen.v1.ReadTranscriptResponse
-	(*WriteTranscriptRequest)(nil),  // 11: numen.v1.WriteTranscriptRequest
-	(*WriteTranscriptResponse)(nil), // 12: numen.v1.WriteTranscriptResponse
-	(*Stretch)(nil),                 // 13: numen.v1.Stretch
+	(ArtifactKind)(0),               // 0: numen.v1.ArtifactKind
+	(State)(0),                      // 1: numen.v1.State
+	(*Artifact)(nil),                // 2: numen.v1.Artifact
+	(*ListArtifactsRequest)(nil),    // 3: numen.v1.ListArtifactsRequest
+	(*ListArtifactsResponse)(nil),   // 4: numen.v1.ListArtifactsResponse
+	(*CreateArtifactRequest)(nil),   // 5: numen.v1.CreateArtifactRequest
+	(*CreateArtifactResponse)(nil),  // 6: numen.v1.CreateArtifactResponse
+	(*DeleteArtifactRequest)(nil),   // 7: numen.v1.DeleteArtifactRequest
+	(*DeleteArtifactResponse)(nil),  // 8: numen.v1.DeleteArtifactResponse
+	(*Cue)(nil),                     // 9: numen.v1.Cue
+	(*ReadTranscriptRequest)(nil),   // 10: numen.v1.ReadTranscriptRequest
+	(*ReadTranscriptResponse)(nil),  // 11: numen.v1.ReadTranscriptResponse
+	(*WriteTranscriptRequest)(nil),  // 12: numen.v1.WriteTranscriptRequest
+	(*WriteTranscriptResponse)(nil), // 13: numen.v1.WriteTranscriptResponse
+	(*Stretch)(nil),                 // 14: numen.v1.Stretch
 }
 var file_numen_v1_artifact_proto_depIdxs = []int32{
-	0,  // 0: numen.v1.Artifact.state:type_name -> numen.v1.State
-	1,  // 1: numen.v1.ListArtifactsResponse.artifacts:type_name -> numen.v1.Artifact
-	1,  // 2: numen.v1.CreateArtifactResponse.artifact:type_name -> numen.v1.Artifact
-	1,  // 3: numen.v1.DeleteArtifactResponse.artifact:type_name -> numen.v1.Artifact
-	13, // 4: numen.v1.ReadTranscriptRequest.at:type_name -> numen.v1.Stretch
-	8,  // 5: numen.v1.ReadTranscriptResponse.cues:type_name -> numen.v1.Cue
-	8,  // 6: numen.v1.WriteTranscriptRequest.cues:type_name -> numen.v1.Cue
-	8,  // 7: numen.v1.WriteTranscriptResponse.cues:type_name -> numen.v1.Cue
-	2,  // 8: numen.v1.ArtifactService.ListArtifacts:input_type -> numen.v1.ListArtifactsRequest
-	4,  // 9: numen.v1.ArtifactService.CreateArtifact:input_type -> numen.v1.CreateArtifactRequest
-	6,  // 10: numen.v1.ArtifactService.DeleteArtifact:input_type -> numen.v1.DeleteArtifactRequest
-	9,  // 11: numen.v1.ArtifactService.ReadTranscript:input_type -> numen.v1.ReadTranscriptRequest
-	11, // 12: numen.v1.ArtifactService.WriteTranscript:input_type -> numen.v1.WriteTranscriptRequest
-	3,  // 13: numen.v1.ArtifactService.ListArtifacts:output_type -> numen.v1.ListArtifactsResponse
-	5,  // 14: numen.v1.ArtifactService.CreateArtifact:output_type -> numen.v1.CreateArtifactResponse
-	7,  // 15: numen.v1.ArtifactService.DeleteArtifact:output_type -> numen.v1.DeleteArtifactResponse
-	10, // 16: numen.v1.ArtifactService.ReadTranscript:output_type -> numen.v1.ReadTranscriptResponse
-	12, // 17: numen.v1.ArtifactService.WriteTranscript:output_type -> numen.v1.WriteTranscriptResponse
-	13, // [13:18] is the sub-list for method output_type
-	8,  // [8:13] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	1,  // 0: numen.v1.Artifact.state:type_name -> numen.v1.State
+	0,  // 1: numen.v1.Artifact.kind:type_name -> numen.v1.ArtifactKind
+	2,  // 2: numen.v1.ListArtifactsResponse.artifacts:type_name -> numen.v1.Artifact
+	0,  // 3: numen.v1.CreateArtifactRequest.kind:type_name -> numen.v1.ArtifactKind
+	2,  // 4: numen.v1.CreateArtifactResponse.artifact:type_name -> numen.v1.Artifact
+	2,  // 5: numen.v1.DeleteArtifactResponse.artifact:type_name -> numen.v1.Artifact
+	14, // 6: numen.v1.ReadTranscriptRequest.at:type_name -> numen.v1.Stretch
+	9,  // 7: numen.v1.ReadTranscriptResponse.cues:type_name -> numen.v1.Cue
+	9,  // 8: numen.v1.WriteTranscriptRequest.cues:type_name -> numen.v1.Cue
+	9,  // 9: numen.v1.WriteTranscriptResponse.cues:type_name -> numen.v1.Cue
+	3,  // 10: numen.v1.ArtifactService.ListArtifacts:input_type -> numen.v1.ListArtifactsRequest
+	5,  // 11: numen.v1.ArtifactService.CreateArtifact:input_type -> numen.v1.CreateArtifactRequest
+	7,  // 12: numen.v1.ArtifactService.DeleteArtifact:input_type -> numen.v1.DeleteArtifactRequest
+	10, // 13: numen.v1.ArtifactService.ReadTranscript:input_type -> numen.v1.ReadTranscriptRequest
+	12, // 14: numen.v1.ArtifactService.WriteTranscript:input_type -> numen.v1.WriteTranscriptRequest
+	4,  // 15: numen.v1.ArtifactService.ListArtifacts:output_type -> numen.v1.ListArtifactsResponse
+	6,  // 16: numen.v1.ArtifactService.CreateArtifact:output_type -> numen.v1.CreateArtifactResponse
+	8,  // 17: numen.v1.ArtifactService.DeleteArtifact:output_type -> numen.v1.DeleteArtifactResponse
+	11, // 18: numen.v1.ArtifactService.ReadTranscript:output_type -> numen.v1.ReadTranscriptResponse
+	13, // 19: numen.v1.ArtifactService.WriteTranscript:output_type -> numen.v1.WriteTranscriptResponse
+	15, // [15:20] is the sub-list for method output_type
+	10, // [10:15] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_artifact_proto_init() }
@@ -904,7 +965,7 @@ func file_numen_v1_artifact_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_artifact_proto_rawDesc), len(file_numen_v1_artifact_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,

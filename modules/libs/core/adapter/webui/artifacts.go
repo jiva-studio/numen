@@ -22,8 +22,8 @@ import (
 // Which model does the work follows from the file. A scan is read and a
 // recording is heard, so the caller names the artifact and never the producer.
 
-// The artifacts a file of the vault can carry, by the id each is asked for
-// under. An id is the last part of an artifact's name.
+// The artifacts a file of the vault can carry, by the name each stands under.
+// A name is the last part of an artifact's resource name.
 const (
 	// readingID is the text a model read out of a scan.
 	readingID = "ocr"
@@ -33,26 +33,41 @@ const (
 	correctedID = derived.ASR + ".corrected"
 )
 
-// errNoArtifact is an id no file of the vault carries, and errNotCarried one
+// errNoArtifact is a kind no file of the vault carries, and errNotCarried one
 // this file's kind does not carry.
 var (
 	errNoArtifact = errors.New("nothing of that name is made from a file")
 	errNotCarried = errors.New("this file carries no artifact of that name")
 )
 
-// errNotDroppable is an artifact taken away that is not taken away here.
-var errNotDroppable = errors.New("only what a recording was heard as is taken away")
-
 // carried is every artifact a file of this kind can carry, in the order they
 // are made. A kind carrying none is a file nothing is made from.
-func carried(kind domain.SourceKind) []string {
+func carried(kind domain.SourceKind) []v1.ArtifactKind {
 	switch kind {
 	case domain.KindBook:
-		return []string{readingID}
+		return []v1.ArtifactKind{v1.ArtifactKind_ARTIFACT_KIND_READING}
 	case domain.KindRecording:
-		return []string{heardID, correctedID}
+		return []v1.ArtifactKind{
+			v1.ArtifactKind_ARTIFACT_KIND_HEARD,
+			v1.ArtifactKind_ARTIFACT_KIND_CORRECTED,
+		}
 	default:
 		return nil
+	}
+}
+
+// standing is the name one artifact stands under in the store, and whether the
+// schema names that artifact at all.
+func standing(of v1.ArtifactKind) (string, bool) {
+	switch of {
+	case v1.ArtifactKind_ARTIFACT_KIND_READING:
+		return readingID, true
+	case v1.ArtifactKind_ARTIFACT_KIND_HEARD:
+		return heardID, true
+	case v1.ArtifactKind_ARTIFACT_KIND_CORRECTED:
+		return correctedID, true
+	default:
+		return "", false
 	}
 }
 
@@ -72,8 +87,8 @@ func (a *API) ListArtifacts(
 		return nil, connect.NewError(reaching(err), err)
 	}
 	out := &v1.ListArtifactsResponse{}
-	for _, id := range carried(ref.Kind) {
-		one, err := a.artifact(ctx, showing, ref, id)
+	for _, of := range carried(ref.Kind) {
+		one, err := a.artifact(ctx, showing, ref, of)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -92,25 +107,25 @@ func (a *API) CreateArtifact(
 	ctx context.Context,
 	r *connect.Request[v1.CreateArtifactRequest],
 ) (*connect.Response[v1.CreateArtifactResponse], error) {
-	id := r.Msg.GetArtifactId()
-	if !known(id) {
+	of := r.Msg.GetKind()
+	if _, named := standing(of); !named {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoArtifact)
 	}
 	showing, ref, err := a.held(ctx, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(reaching(err), err)
 	}
-	// The kind decides what is made from a file, so an id the file does not
-	// carry is a client asking for a run over the wrong thing.
-	if !slices.Contains(carried(ref.Kind), id) {
+	// The kind of the file decides what is made from it, so an artifact the file
+	// does not carry is a client asking for a run over the wrong thing.
+	if !slices.Contains(carried(ref.Kind), of) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNotCarried)
 	}
 
 	var made *v1.Artifact
-	if id == correctedID {
+	if of == v1.ArtifactKind_ARTIFACT_KIND_CORRECTED {
 		made, err = a.putRight(ctx, showing, ref)
 	} else {
-		made, err = a.run(ctx, showing, ref, id)
+		made, err = a.run(ctx, showing, ref, of)
 	}
 	if err != nil {
 		return nil, err
@@ -125,12 +140,6 @@ func (a *API) DeleteArtifact(
 	ctx context.Context,
 	r *connect.Request[v1.DeleteArtifactRequest],
 ) (*connect.Response[v1.DeleteArtifactResponse], error) {
-	if !known(r.Msg.GetArtifactId()) {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errNoArtifact)
-	}
-	if r.Msg.GetArtifactId() != heardID {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errNotDroppable)
-	}
 	showing, ref, err := a.held(ctx, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(reaching(err), err)
@@ -156,6 +165,7 @@ func (a *API) DeleteArtifact(
 	return connect.NewResponse(&v1.DeleteArtifactResponse{
 		Artifact: &v1.Artifact{
 			Name:  named(showing, ref.Path, heardID),
+			Kind:  v1.ArtifactKind_ARTIFACT_KIND_HEARD,
 			State: v1.State_STATE_NONE,
 		},
 	}), nil
@@ -167,9 +177,9 @@ func (a *API) run(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
-	id string,
+	of v1.ArtifactKind,
 ) (*v1.Artifact, error) {
-	by := a.runner(id)
+	by := a.runner(of)
 	if by == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
@@ -180,7 +190,7 @@ func (a *API) run(
 	// What stands is what the ask comes to. A source a run already answered
 	// about is answered the same until that record is taken away.
 	if got.stands == done || got.stands == under || got.stands == silent || got.stands == unopened {
-		return stood(v, ref.Path, id, got), nil
+		return stood(v, ref.Path, of, got), nil
 	}
 
 	// What this machine has fetched is not asked about. A run comes up in its
@@ -188,8 +198,10 @@ func (a *API) run(
 	//
 	// The list of what is being done draws the run from the moment it begins,
 	// under the work and the file it is over.
+	id, _ := standing(of)
 	return &v1.Artifact{
 		Name:  named(v, ref.Path, id),
+		Kind:  of,
 		State: beginning(by.Start(v, ref.Path)),
 	}, nil
 }
@@ -204,8 +216,8 @@ func beginning(started port.StartOutcome) v1.State {
 
 // runner is what reads a scan or hears a recording. Nothing while the passes
 // behind the vault the window is showing are still coming up.
-func (a *API) runner(id string) Runner {
-	if id == readingID {
+func (a *API) runner(of v1.ArtifactKind) Runner {
+	if of == v1.ArtifactKind_ARTIFACT_KIND_READING {
 		return a.recognises()
 	}
 	return a.transcribes()
@@ -275,16 +287,16 @@ func (a *API) artifact(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
-	id string,
+	of v1.ArtifactKind,
 ) (*v1.Artifact, error) {
-	if id == correctedID {
+	if of == v1.ArtifactKind_ARTIFACT_KIND_CORRECTED {
 		return a.corrections(ctx, v, ref)
 	}
 	got, err := a.far(ctx, v, ref.Path, ref.Kind)
 	if err != nil {
 		return nil, err
 	}
-	return stood(v, ref.Path, id, got), nil
+	return stood(v, ref.Path, of, got), nil
 }
 
 // corrections is what putting a recording's transcript right has come to.
@@ -297,7 +309,11 @@ func (a *API) corrections(
 	v domain.Vault,
 	ref domain.Fingerprint,
 ) (*v1.Artifact, error) {
-	out := &v1.Artifact{Name: named(v, ref.Path, correctedID), State: v1.State_STATE_NONE}
+	out := &v1.Artifact{
+		Name:  named(v, ref.Path, correctedID),
+		Kind:  v1.ArtifactKind_ARTIFACT_KIND_CORRECTED,
+		State: v1.State_STATE_NONE,
+	}
 	said, store, listened, err := a.heard(ctx, v, ref.Path)
 	if err != nil || !listened {
 		return out, err
@@ -316,8 +332,9 @@ func (a *API) corrections(
 }
 
 // stood is how far a run got, as the artifact a client reads.
-func stood(v domain.Vault, path, id string, got reached) *v1.Artifact {
-	out := &v1.Artifact{Name: named(v, path, id), Size: int64(got.size)}
+func stood(v domain.Vault, path string, of v1.ArtifactKind, got reached) *v1.Artifact {
+	id, _ := standing(of)
+	out := &v1.Artifact{Name: named(v, path, id), Kind: of, Size: int64(got.size)}
 	switch got.stands {
 	case done:
 		out.State = v1.State_STATE_DONE
@@ -339,12 +356,6 @@ func stood(v domain.Vault, path, id string, got reached) *v1.Artifact {
 // the name the store keeps it under.
 func named(v domain.Vault, path, id string) string {
 	return "vaults/" + string(v.ID) + "/files/" + path + "/artifacts/" + id
-}
-
-// known says whether an id names an artifact at all, whatever file it is asked
-// of.
-func known(id string) bool {
-	return id == readingID || id == heardID || id == correctedID
 }
 
 // reaching is the code a file that could not be reached is answered with.

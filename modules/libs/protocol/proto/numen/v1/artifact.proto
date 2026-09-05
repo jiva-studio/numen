@@ -73,6 +73,26 @@ message Artifact {
   // appended to as the work goes, so it keeps its name and grows: how long it
   // now is is what tells a caller that what it already read has moved on.
   int64 size = 4;
+
+  // Which of them this is. A client draws a row per kind and reads this rather
+  // than the last part of `name`: a name is where the artifact stands, and
+  // taking a client's meaning out of it makes every reader parse it.
+  ArtifactKind kind = 5;
+}
+
+// ArtifactKind is which thing made from a file is meant. The list is closed: a
+// client draws one row per kind, and a kind nobody decided on has no row.
+enum ArtifactKind {
+  ARTIFACT_KIND_UNSPECIFIED = 0;
+
+  // The text read out of a scan. It stands under the name `ocr`.
+  ARTIFACT_KIND_READING = 1;
+
+  // The words heard in a recording, under `asr`.
+  ARTIFACT_KIND_HEARD = 2;
+
+  // Those words put right, under `asr.corrected`.
+  ARTIFACT_KIND_CORRECTED = 3;
 }
 
 // State is what has become of one artifact.
@@ -120,18 +140,15 @@ message ListArtifactsResponse {
 }
 
 message CreateArtifactRequest {
+  reserved 2;
+  reserved "artifact_id";
+
   // The file of the vault, as the vault holds it.
   string path = 1;
 
-  // Which artifact of it to make. It is the last part of the artifact's name:
-  //
-  //   ocr             the text read out of a scan
-  //   asr             the words heard in a recording
-  //   asr.corrected   those words put right
-  //
-  // Which model does the work follows from the file, and is not asked for
-  // here.
-  string artifact_id = 2;
+  // Which artifact of it to make. Which model does the work follows from the
+  // file, and is not asked for here.
+  ArtifactKind kind = 3;
 }
 
 message CreateArtifactResponse {
@@ -139,13 +156,15 @@ message CreateArtifactResponse {
 }
 
 message DeleteArtifactRequest {
-  // The file of the vault, as the vault holds it.
-  string path = 1;
+  reserved 2;
+  reserved "artifact_id";
 
-  // Which artifact of it to take away. Only `asr` is taken away here: it is
-  // everything listening to a recording produced, and the words put right go
-  // with it.
-  string artifact_id = 2;
+  // The file of the vault, as the vault holds it. What is taken away is
+  // everything listening to a recording produced — the words a model heard and
+  // the words a person put right — so there is nothing to name: a field that
+  // takes one value of three and refuses the other two at run time is a rule
+  // the schema cannot state and a client cannot read.
+  string path = 1;
 }
 
 message DeleteArtifactResponse {
