@@ -13,12 +13,12 @@ import { rated } from './core'
 import type { CardFace, Grade, Intervals } from './core'
 
 /** What a sitting asks of the application, and no more of it than that. */
-export interface Asking {
+export interface SessionClient {
   /**
    * Deck is one deck, or empty for every deck the vault holds. Preset holds it
    * to the decks one preset schedules, and to the budget that preset keeps.
    */
-  startSession(said: { vault: string; deck: string; preset?: string }): Promise<Opened>
+  startSession(said: { vault: string; deck: string; preset?: string }): Promise<SessionStart>
   answerCard(said: {
     vault: string
     run: string
@@ -31,7 +31,7 @@ export interface Asking {
 }
 
 /** What opening a sitting comes back with. */
-export interface Opened {
+export interface SessionStart {
   run: string
   asked: readonly {
     deck: string
@@ -58,7 +58,7 @@ export interface Report {
 
 /** What a sitting is built over: the application, and what it says went wrong. */
 export interface SessionDeps {
-  cards: Asking
+  cards: SessionClient
   failed(why: unknown): void
   /** When it is, in milliseconds. How long a card stood there is measured with it. */
   now?(): number
@@ -216,7 +216,7 @@ export function session(deps: SessionDeps) {
 }
 
 /** One card as the window holds it: the seconds come across as numbers. */
-const asking = (one: Opened['asked'][number]): CardFace => ({
+const asking = (one: SessionStart['asked'][number]): CardFace => ({
   deck: one.deck,
   section: one.section,
   card: one.card,

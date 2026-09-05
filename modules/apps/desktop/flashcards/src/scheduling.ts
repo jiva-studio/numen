@@ -166,7 +166,7 @@ export function scheduling(deps: SchedulingDeps) {
 }
 
 /** What was answered about one deck's preset. */
-interface Answered {
+interface DeckPresetResult {
   readonly deck: string
   /** The preset, and null where it was not read. */
   readonly held: {
@@ -188,7 +188,7 @@ const scheduled = async (
   presets: PresetsClient,
   vault: string,
   deck: string,
-): Promise<Answered> => {
+): Promise<DeckPresetResult> => {
   try {
     const answer = await presets.getVaultDeckPreset({ vault, deck })
     const settings = answer.preset?.settings
@@ -212,7 +212,7 @@ const scheduled = async (
 }
 
 /** One preset while its decks are still being counted into it. */
-interface Gathering {
+interface PresetTally {
   path: string
   name: string
   settings: Settings
@@ -237,10 +237,10 @@ const budgetOf = (settings: Settings): Budget => ({
  * Every preset the vault holds gets a row. The ones whose decks hold cards are
  * gathered from what each deck answered, and the rest stand on the count alone.
  */
-const gather = (vault: VaultCardsDue, answered: readonly Answered[], today: string): Preset[] => {
+const gather = (vault: VaultCardsDue, answered: readonly DeckPresetResult[], today: string): Preset[] => {
   const owed = new Map(vault.decks.map((one) => [one.deck, one]))
   const came = new Map(vault.presets.map((one) => [one.preset, one]))
-  const at = new Map<string, Gathering>()
+  const at = new Map<string, PresetTally>()
 
   for (const one of answered) {
     if (!one.held) continue
@@ -324,7 +324,7 @@ const gather = (vault: VaultCardsDue, answered: readonly Answered[], today: stri
  * preset is refused for the same reason, so a reason every refused deck gave is
  * the reason of each preset none of them could read.
  */
-const refusedFor = (answered: readonly Answered[]): string => {
+const refusedFor = (answered: readonly DeckPresetResult[]): string => {
   const why = new Set(answered.filter((one) => one.refused).map((one) => one.refused))
   if (why.size === 0) return ''
   return why.size === 1 ? ([...why][0] ?? '') : UNREAD

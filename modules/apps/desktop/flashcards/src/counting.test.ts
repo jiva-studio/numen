@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
 
 import { counting } from './counting'
-import type { CardsDueClient, Counted, Vaulted } from './counting'
+import type { CardsDueClient, DueCounts, VaultCounts } from './counting'
 
-const vault = (id: string, said: Partial<Vaulted> = {}): Vaulted => ({
+const vault = (id: string, said: Partial<VaultCounts> = {}): VaultCounts => ({
   name: id,
   displayName: id,
   path: `/vaults/${id}`,
@@ -39,27 +39,27 @@ const vault = (id: string, said: Partial<Vaulted> = {}): Vaulted => ({
 })
 
 /** The vaults as they stand before any of them is counted. */
-const listing = (...all: readonly Vaulted[]): Counted => ({
+const listing = (...all: readonly VaultCounts[]): DueCounts => ({
   day: '2026-09-05',
   vaults: all.map((one) => ({ ...vault(one.name), ...one, faces: 0, due: 0, new: 0, decks: [] })),
 })
 
 /** One vault's count, as it arrives on its own. */
-const count = (one: Vaulted): Counted => ({ day: '', vaults: [], counted: one })
+const count = (one: VaultCounts): DueCounts => ({ day: '', vaults: [], counted: one })
 
 /** A count a test feeds by hand, message by message. */
 const feeding = () => {
-  const held: Counted[] = []
+  const held: DueCounts[] = []
   let wake: (() => void) | null = null
   let over = false
 
   const watchCardsDue = async function* (
     _said: Record<string, never>,
     how?: { signal?: AbortSignal },
-  ): AsyncGenerator<Counted> {
+  ): AsyncGenerator<DueCounts> {
     over = false
     for (;;) {
-      while (held.length) yield held.shift() as Counted
+      while (held.length) yield held.shift() as DueCounts
       if (over) return
       await new Promise<void>((then, stopped) => {
         wake = () => {
@@ -75,7 +75,7 @@ const feeding = () => {
 
   return {
     cards: { watchCardsDue } satisfies CardsDueClient,
-    says(one: Counted) {
+    says(one: DueCounts) {
       held.push(one)
       wake?.()
     },
@@ -269,7 +269,7 @@ describe('counting what every vault owes', () => {
   it('says what went wrong and stops counting', async () => {
     const trouble: unknown[] = []
     const cards: CardsDueClient = {
-      watchCardsDue: async function* (): AsyncGenerator<Counted> {
+      watchCardsDue: async function* (): AsyncGenerator<DueCounts> {
         throw new Error('no registry')
       },
     }

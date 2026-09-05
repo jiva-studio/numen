@@ -16,11 +16,11 @@ import type { VaultCardsDue } from './core'
 
 /** What the front door of the application answers. */
 export interface CardsDueClient {
-  watchCardsDue(said: Record<string, never>, how?: { signal?: AbortSignal }): AsyncIterable<Counted>
+  watchCardsDue(said: Record<string, never>, how?: { signal?: AbortSignal }): AsyncIterable<DueCounts>
 }
 
 /** One vault, as the count answers about it. */
-export interface Vaulted {
+export interface VaultCounts {
   name: string
   displayName: string
   path: string
@@ -59,13 +59,13 @@ export interface Vaulted {
 }
 
 /** One message of the count. */
-export interface Counted {
+export interface DueCounts {
   /** The review day these counts stand in, which begins at the hour the settings name. */
   day: string
   /** Every vault the installation holds, in the first message and in no other. */
-  vaults: readonly Vaulted[]
+  vaults: readonly VaultCounts[]
   /** One vault worked out, in every message after the first. */
-  counted?: Vaulted | undefined
+  counted?: VaultCounts | undefined
 }
 
 /** A length of time as the application holds one, which is in minutes. */
@@ -134,7 +134,7 @@ export function counting(deps: CountingDeps) {
   }
 
   /** A vault on the list before its count has arrived. */
-  const listed = (one: Vaulted): VaultCardsDue => ({
+  const listed = (one: VaultCounts): VaultCardsDue => ({
     vault: one.name,
     name: one.displayName,
     path: one.path,
@@ -149,7 +149,7 @@ export function counting(deps: CountingDeps) {
   })
 
   /** A vault as its own count leaves it. */
-  const counted = (one: Vaulted): VaultCardsDue => ({
+  const counted = (one: VaultCounts): VaultCardsDue => ({
     vault: one.name,
     name: one.displayName,
     path: one.path,
@@ -194,7 +194,7 @@ export function counting(deps: CountingDeps) {
    * ago keeps that count until its new one lands, so a list already drawn is
    * never emptied to be filled again.
    */
-  const stands = (all: readonly Vaulted[]) => {
+  const stands = (all: readonly VaultCounts[]) => {
     const held = new Map(vaults.value.map((one) => [one.vault, one]))
     vaults.value = all.map((one) => {
       const was = held.get(one.name)
@@ -206,7 +206,7 @@ export function counting(deps: CountingDeps) {
    * One vault's count, into the row it belongs to. A vault being read into the
    * index has no count yet, and its row goes on waiting for one.
    */
-  const fills = (one: Vaulted) => {
+  const fills = (one: VaultCounts) => {
     const now = one.reading ? listed(one) : counted(one)
     vaults.value = vaults.value.map((row) => (row.vault === one.name ? now : row))
   }

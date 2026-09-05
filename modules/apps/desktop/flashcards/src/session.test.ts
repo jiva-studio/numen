@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { session } from './session'
-import type { Asking, Opened } from './session'
+import type { SessionClient, SessionStart } from './session'
 
 /** One card as the application hands it over. */
 const asked = (card: string) => ({
@@ -17,7 +17,7 @@ const asked = (card: string) => ({
 })
 
 /** opening is what starting a sitting comes back with. */
-const opening = (...cards: string[]): Opened => ({
+const opening = (...cards: string[]): SessionStart => ({
   run: 'flashcards/01A.jsonl',
   asked: cards.map(asked),
   unwritten: [],
@@ -32,7 +32,7 @@ const opening = (...cards: string[]): Opened => ({
 function held(said?: { answering?: Promise<{ answer: string }>; refuses?: unknown }) {
   const asks: { what: string; said: unknown }[] = []
   let written = 0
-  const cards: Asking = {
+  const cards: SessionClient = {
     async startSession(one) {
       asks.push({ what: 'start', said: one })
       return opening('one', 'two', 'three')
@@ -87,7 +87,7 @@ describe('what a sitting is opened over', () => {
   // pressed. A count read a moment ago can still be overtaken, and what comes
   // back is said and nothing is opened.
   it('opens nothing where the preset is refused, and says why', async () => {
-    const cards: Asking = {
+    const cards: SessionClient = {
       startSession: () =>
         Promise.reject(new Error('this preset schedules nothing today: it is paused')),
       answerCard: () => Promise.reject(new Error('no')),
@@ -226,7 +226,7 @@ describe('a sitting', () => {
   })
 
   it('says nothing was opened when the vault could not be sat down to', async () => {
-    const cards: Asking = {
+    const cards: SessionClient = {
       startSession: () => Promise.reject(new Error('this folder cannot be read as a vault')),
       answerCard: () => Promise.reject(new Error('no')),
       takeBackAnswer: () => Promise.reject(new Error('no')),
@@ -242,7 +242,7 @@ describe('a sitting', () => {
   it('measures how long the card stood in front of the person', async () => {
     let clock = 1000
     const asks: { said: unknown }[] = []
-    const cards: Asking = {
+    const cards: SessionClient = {
       async startSession() {
         return opening('one')
       },
