@@ -16,8 +16,8 @@ func (s *Endpoint) serving() bool {
 	return s.close != nil
 }
 
-// standing is a window on a vault, serving tools that do nothing.
-func standing() *Endpoint {
+// newEndpoint is a window on a vault, serving tools that do nothing.
+func newEndpoint() *Endpoint {
 	return &Endpoint{
 		Serve:       func() (func() error, error) { return func() error { return nil }, nil },
 		Showing:     func() domain.Vault { return domain.Vault{ID: "one"} },
@@ -31,7 +31,7 @@ func standing() *Endpoint {
 // the window, so a second swap arriving while one runs does not put them back
 // in front of the agents on the vault that is going.
 func TestOneSwapHoldsTheAgentsUntilItIsOver(t *testing.T) {
-	s := standing()
+	s := newEndpoint()
 	s.On()
 	if !s.serving() {
 		t.Fatal("the tools were never served")
