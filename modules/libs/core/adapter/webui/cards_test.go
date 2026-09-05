@@ -382,8 +382,8 @@ func TestAListOfStencilsCutShortSaysHowManyTheVaultHolds(t *testing.T) {
 	if held := answer.Msg.GetStencils(); len(held) != 2 {
 		t.Fatalf("a list asked for two came back with %d", len(held))
 	}
-	if held := answer.Msg.GetHeld(); held != 3 {
-		t.Errorf("the vault holds three stencils and the answer says %d", held)
+	if total := answer.Msg.GetTotal(); total != 3 {
+		t.Errorf("the vault holds three stencils and the answer says %d", total)
 	}
 	if fields := answer.Msg.GetStencils()[0].GetFields(); len(fields) != 2 || fields[0] != "Name" {
 		t.Errorf("the first stencil asks for %v", fields)

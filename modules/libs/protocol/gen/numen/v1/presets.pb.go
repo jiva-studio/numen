@@ -540,8 +540,8 @@ type Curve struct {
 	// What the preset comes to at each place of the grid, one for one with it.
 	At []*Point `protobuf:"bytes,4,rep,name=at,proto3" json:"at,omitempty"`
 	// Where the preset stands, and what is suggested.
-	Now       *Mark `protobuf:"bytes,5,opt,name=now,proto3" json:"now,omitempty"`
-	Suggested *Mark `protobuf:"bytes,6,opt,name=suggested,proto3" json:"suggested,omitempty"`
+	Now       *Place `protobuf:"bytes,5,opt,name=now,proto3" json:"now,omitempty"`
+	Suggested *Place `protobuf:"bytes,6,opt,name=suggested,proto3" json:"suggested,omitempty"`
 	// How many decks are scheduled by this preset. Zero is a preset no deck
 	// points at, and every place of the curve stands at zero with it.
 	Decks int32 `protobuf:"varint,7,opt,name=decks,proto3" json:"decks,omitempty"`
@@ -619,14 +619,14 @@ func (x *Curve) GetAt() []*Point {
 	return nil
 }
 
-func (x *Curve) GetNow() *Mark {
+func (x *Curve) GetNow() *Place {
 	if x != nil {
 		return x.Now
 	}
 	return nil
 }
 
-func (x *Curve) GetSuggested() *Mark {
+func (x *Curve) GetSuggested() *Place {
 	if x != nil {
 		return x.Suggested
 	}
@@ -842,34 +842,34 @@ func (x *Point) GetShort() int32 {
 	return 0
 }
 
-// Mark is one place on the curve worth pointing at.
-type Mark struct {
+// Place is one place on the curve worth pointing at.
+type Place struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Where on the grid it stands, and -1 for a value that falls outside it.
 	At int32 `protobuf:"varint,1,opt,name=at,proto3" json:"at,omitempty"`
-	// The goal's value at the mark, in the units of the grid. What the preset
+	// The goal's value at the place, in the units of the grid. What the preset
 	// stands at need not sit on the grid.
 	Value float64 `protobuf:"fixed64,2,opt,name=value,proto3" json:"value,omitempty"`
-	// The day at the mark, filled for a goal of a date.
+	// The day at the place, filled for a goal of a date.
 	Day           string `protobuf:"bytes,3,opt,name=day,proto3" json:"day,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Mark) Reset() {
-	*x = Mark{}
+func (x *Place) Reset() {
+	*x = Place{}
 	mi := &file_numen_v1_presets_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Mark) String() string {
+func (x *Place) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Mark) ProtoMessage() {}
+func (*Place) ProtoMessage() {}
 
-func (x *Mark) ProtoReflect() protoreflect.Message {
+func (x *Place) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_presets_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -881,26 +881,26 @@ func (x *Mark) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Mark.ProtoReflect.Descriptor instead.
-func (*Mark) Descriptor() ([]byte, []int) {
+// Deprecated: Use Place.ProtoReflect.Descriptor instead.
+func (*Place) Descriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *Mark) GetAt() int32 {
+func (x *Place) GetAt() int32 {
 	if x != nil {
 		return x.At
 	}
 	return 0
 }
 
-func (x *Mark) GetValue() float64 {
+func (x *Place) GetValue() float64 {
 	if x != nil {
 		return x.Value
 	}
 	return 0
 }
 
-func (x *Mark) GetDay() string {
+func (x *Place) GetDay() string {
 	if x != nil {
 		return x.Day
 	}
@@ -1858,14 +1858,14 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\bsettings\x18\x03 \x01(\v2\x12.numen.v1.SettingsR\bsettings\x12\x1a\n" +
 	"\bproblems\x18\x04 \x03(\tR\bproblems\x12*\n" +
 	"\x05stops\x18\x05 \x01(\x0e2\x14.numen.v1.StopReasonR\x05stops\x12/\n" +
-	"\bstops_on\x18\x06 \x01(\x0e2\x14.numen.v1.StopReasonR\astopsOn\"\xa4\x02\n" +
+	"\bstops_on\x18\x06 \x01(\x0e2\x14.numen.v1.StopReasonR\astopsOn\"\xa6\x02\n" +
 	"\x05Curve\x12\"\n" +
 	"\x04goal\x18\x01 \x01(\x0e2\x0e.numen.v1.GoalR\x04goal\x12\x12\n" +
 	"\x04grid\x18\x02 \x03(\x01R\x04grid\x12\x12\n" +
 	"\x04days\x18\x03 \x03(\tR\x04days\x12\x1f\n" +
-	"\x02at\x18\x04 \x03(\v2\x0f.numen.v1.PointR\x02at\x12 \n" +
-	"\x03now\x18\x05 \x01(\v2\x0e.numen.v1.MarkR\x03now\x12,\n" +
-	"\tsuggested\x18\x06 \x01(\v2\x0e.numen.v1.MarkR\tsuggested\x12\x14\n" +
+	"\x02at\x18\x04 \x03(\v2\x0f.numen.v1.PointR\x02at\x12!\n" +
+	"\x03now\x18\x05 \x01(\v2\x0f.numen.v1.PlaceR\x03now\x12-\n" +
+	"\tsuggested\x18\x06 \x01(\v2\x0f.numen.v1.PlaceR\tsuggested\x12\x14\n" +
 	"\x05decks\x18\a \x01(\x05R\x05decks\x12\x14\n" +
 	"\x05cards\x18\b \x01(\x05R\x05cards\x12\x18\n" +
 	"\aoverdue\x18\t \x01(\x05R\aoverdue\x12\x18\n" +
@@ -1885,8 +1885,8 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\alearned\x18\v \x01(\x05R\alearned\x12\x1b\n" +
 	"\x06learns\x18\f \x01(\x05H\x00R\x06learns\x88\x01\x01\x12\x14\n" +
 	"\x05short\x18\r \x01(\x05R\x05shortB\t\n" +
-	"\a_learnsJ\x04\b\a\x10\bR\x03met\">\n" +
-	"\x04Mark\x12\x0e\n" +
+	"\a_learnsJ\x04\b\a\x10\bR\x03met\"?\n" +
+	"\x05Place\x12\x0e\n" +
 	"\x02at\x18\x01 \x01(\x05R\x02at\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x01R\x05value\x12\x10\n" +
 	"\x03day\x18\x03 \x01(\tR\x03day\"*\n" +
@@ -2017,7 +2017,7 @@ var file_numen_v1_presets_proto_goTypes = []any{
 	(*Preset)(nil),                // 5: numen.v1.Preset
 	(*Curve)(nil),                 // 6: numen.v1.Curve
 	(*Point)(nil),                 // 7: numen.v1.Point
-	(*Mark)(nil),                  // 8: numen.v1.Mark
+	(*Place)(nil),                 // 8: numen.v1.Place
 	(*GetDeckPresetRequest)(nil),  // 9: numen.v1.GetDeckPresetRequest
 	(*GetDeckPresetResponse)(nil), // 10: numen.v1.GetDeckPresetResponse
 	(*ListPresetsRequest)(nil),    // 11: numen.v1.ListPresetsRequest
@@ -2049,8 +2049,8 @@ var file_numen_v1_presets_proto_depIdxs = []int32{
 	3,  // 6: numen.v1.Preset.stops_on:type_name -> numen.v1.StopReason
 	0,  // 7: numen.v1.Curve.goal:type_name -> numen.v1.Goal
 	7,  // 8: numen.v1.Curve.at:type_name -> numen.v1.Point
-	8,  // 9: numen.v1.Curve.now:type_name -> numen.v1.Mark
-	8,  // 10: numen.v1.Curve.suggested:type_name -> numen.v1.Mark
+	8,  // 9: numen.v1.Curve.now:type_name -> numen.v1.Place
+	8,  // 10: numen.v1.Curve.suggested:type_name -> numen.v1.Place
 	5,  // 11: numen.v1.GetDeckPresetResponse.preset:type_name -> numen.v1.Preset
 	26, // 12: numen.v1.GetDeckPresetResponse.refusal:type_name -> numen.v1.Refusal
 	27, // 13: numen.v1.GetDeckPresetResponse.at:type_name -> numen.v1.Fingerprint

@@ -305,7 +305,7 @@ message ListStencilsResponse {
 
   // How many stencils the vault holds. It stands above the length of the list
   // when the ceiling was reached, and the interface says so.
-  int32 held = 2;
+  int32 total = 2;
 }
 
 message CreateStencilRequest {

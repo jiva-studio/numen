@@ -235,8 +235,8 @@ message Curve {
   repeated Point at = 4;
 
   // Where the preset stands, and what is suggested.
-  Mark now = 5;
-  Mark suggested = 6;
+  Place now = 5;
+  Place suggested = 6;
 
   // How many decks are scheduled by this preset. Zero is a preset no deck
   // points at, and every place of the curve stands at zero with it.
@@ -334,16 +334,16 @@ message Point {
   int32 short = 13;
 }
 
-// Mark is one place on the curve worth pointing at.
-message Mark {
+// Place is one place on the curve worth pointing at.
+message Place {
   // Where on the grid it stands, and -1 for a value that falls outside it.
   int32 at = 1;
 
-  // The goal's value at the mark, in the units of the grid. What the preset
+  // The goal's value at the place, in the units of the grid. What the preset
   // stands at need not sit on the grid.
   double value = 2;
 
-  // The day at the mark, filled for a goal of a date.
+  // The day at the place, filled for a goal of a date.
   string day = 3;
 }
 

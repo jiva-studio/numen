@@ -272,10 +272,10 @@ func TestAClientNamingNoCountsIsRefused(t *testing.T) {
 	}
 }
 
-// TestACurveComesBackWithItsTwoMarks. The control is drawn from where the
+// TestACurveComesBackWithItsTwoPlaces. The control is drawn from where the
 // preset stands to what is suggested, so a curve that came back without both
-// marks is a control with nothing to point at.
-func TestACurveComesBackWithItsTwoMarks(t *testing.T) {
+// places is a control with nothing to point at.
+func TestACurveComesBackWithItsTwoPlaces(t *testing.T) {
 	f := steering(t, pointed)
 
 	answer, err := f.client.ComputeCurve(t.Context(), connect.NewRequest(&v1.ComputeCurveRequest{
@@ -293,15 +293,15 @@ func TestACurveComesBackWithItsTwoMarks(t *testing.T) {
 		t.Fatalf("the curve has %d places on its grid and %d points",
 			len(grid), len(curve.GetAt()))
 	}
-	for _, mark := range []struct {
+	for _, place := range []struct {
 		what string
-		at   *v1.Mark
+		at   *v1.Place
 	}{
 		{"where the preset stands", curve.GetNow()},
 		{"what is suggested", curve.GetSuggested()},
 	} {
-		if mark.at.GetAt() < 0 || int(mark.at.GetAt()) >= len(grid) {
-			t.Errorf("%s is at place %d of %d", mark.what, mark.at.GetAt(), len(grid))
+		if place.at.GetAt() < 0 || int(place.at.GetAt()) >= len(grid) {
+			t.Errorf("%s is at place %d of %d", place.what, place.at.GetAt(), len(grid))
 		}
 	}
 	if value := curve.GetNow().GetValue(); value != 20 {

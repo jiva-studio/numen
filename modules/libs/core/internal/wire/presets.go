@@ -137,8 +137,8 @@ func CurveOf(c review.Curve) *v1.Curve {
 		Grid:      c.Grid,
 		Days:      c.Days,
 		At:        make([]*v1.Point, 0, len(c.Points)),
-		Now:       markOf(c.Now),
-		Suggested: markOf(c.Suggested),
+		Now:       placeOf(c.Now),
+		Suggested: placeOf(c.Suggested),
 		Decks:     int32(c.Decks),
 		Cards:     int32(c.Cards),
 		Overdue:   int32(c.Overdue),
@@ -163,8 +163,8 @@ func CurveOf(c review.Curve) *v1.Curve {
 	return out
 }
 
-func markOf(m review.Place) *v1.Mark {
-	return &v1.Mark{At: int32(m.Index), Value: m.Value, Day: m.Day}
+func placeOf(p review.Place) *v1.Place {
+	return &v1.Place{At: int32(p.Index), Value: p.Value, Day: p.Day}
 }
 
 // GoalOf is which value the control steers, as the schema names it.

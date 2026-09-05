@@ -836,7 +836,7 @@ type ListStencilsResponse struct {
 	Stencils []*StencilSummary `protobuf:"bytes,1,rep,name=stencils,proto3" json:"stencils,omitempty"`
 	// How many stencils the vault holds. It stands above the length of the list
 	// when the ceiling was reached, and the interface says so.
-	Held          int32 `protobuf:"varint,2,opt,name=held,proto3" json:"held,omitempty"`
+	Total         int32 `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -878,9 +878,9 @@ func (x *ListStencilsResponse) GetStencils() []*StencilSummary {
 	return nil
 }
 
-func (x *ListStencilsResponse) GetHeld() int32 {
+func (x *ListStencilsResponse) GetTotal() int32 {
 	if x != nil {
-		return x.Held
+		return x.Total
 	}
 	return 0
 }
@@ -1915,10 +1915,10 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x05field\x18\x01 \x01(\tR\x05field\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\"+\n" +
 	"\x13ListStencilsRequest\x12\x14\n" +
-	"\x05limit\x18\x01 \x01(\x05R\x05limit\"`\n" +
+	"\x05limit\x18\x01 \x01(\x05R\x05limit\"b\n" +
 	"\x14ListStencilsResponse\x124\n" +
-	"\bstencils\x18\x01 \x03(\v2\x18.numen.v1.StencilSummaryR\bstencils\x12\x12\n" +
-	"\x04held\x18\x02 \x01(\x05R\x04held\"\\\n" +
+	"\bstencils\x18\x01 \x03(\v2\x18.numen.v1.StencilSummaryR\bstencils\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"\\\n" +
 	"\x14CreateStencilRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x16\n" +
 	"\x06folder\x18\x02 \x01(\tR\x06folder\x12\x16\n" +

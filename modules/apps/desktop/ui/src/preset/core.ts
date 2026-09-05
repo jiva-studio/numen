@@ -11,7 +11,7 @@ import type {
   StopReason,
   Bounds as BoundsMessage,
   Curve as CurveMessage,
-  Mark as PlaceMessage,
+  Place as PlaceMessage,
   Preset as PresetMessage,
   Settings as SettingsMessage,
   SettingsBounds as SettingsBoundsMessage,
