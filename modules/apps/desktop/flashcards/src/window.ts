@@ -4,7 +4,8 @@
  *
  * The rules are beside it: what a sitting is, what a keystroke asks for, what
  * the vaults come to, and what the window has to say. Everything here is made
- * once, as the window opens.
+ * once, as the window opens, and what comes out stands under the screen it
+ * belongs to.
  */
 import { computed, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 import { following, opensVault } from '@numen/ui'
@@ -59,12 +60,12 @@ export const useWindow = () => {
    * merely shown: what is in it is fetched and started when it is asked for.
    */
   const moved = (where: PanelPlace) => {
-    if (where === 'before') void read.opens()
-    else if (where === 'after') panel.opens()
+    if (where === 'before') void notesPanel.opens()
+    else if (where === 'after') agentPanel.opens()
     else showing.value = 'here'
   }
 
-  const panel = asking({
+  const agentPanel = asking({
     agent,
     card: () => sat.card.value,
     unreachable: () => unreachable.value,
@@ -79,7 +80,7 @@ export const useWindow = () => {
     says: (said) => says(said, 'caution'),
   })
 
-  const read = reading({
+  const notesPanel = reading({
     open: () => showing.value === 'reading',
     shows: (open) => {
       if (open) showing.value = 'reading'
@@ -99,13 +100,13 @@ export const useWindow = () => {
    * reading rather than toggling it: the press was about that note.
    */
   const reads = (named = '') => {
-    if (named === '' && showing.value === 'reading') read.shuts()
-    else void read.opens(named)
+    if (named === '' && showing.value === 'reading') notesPanel.shuts()
+    else void notesPanel.opens(named)
   }
 
   const talks = () => {
-    if (showing.value === 'asking') panel.shuts()
-    else panel.opens()
+    if (showing.value === 'asking') agentPanel.shuts()
+    else agentPanel.opens()
   }
 
   /** What is read, so the keys can scroll it: the caret is nowhere in it. */
@@ -163,8 +164,8 @@ export const useWindow = () => {
    * the days too: what a person just answered is part of what they have done.
    */
   const leave = async () => {
-    panel.ends()
-    read.ends()
+    agentPanel.ends()
+    notesPanel.ends()
     sat.forget()
     on.value = 'decks'
     void done.read(vault.value)
@@ -174,8 +175,8 @@ export const useWindow = () => {
 
   /** Back to the vaults, which is where a person picks another collection. */
   const vaultsAgain = async () => {
-    panel.ends()
-    read.ends()
+    agentPanel.ends()
+    notesPanel.ends()
     sat.forget()
     done.forget()
     schedules.forget()
@@ -189,7 +190,7 @@ export const useWindow = () => {
    * card it was about.
    */
   const answered = async (how: Grade) => {
-    panel.ends()
+    agentPanel.ends()
     await sat.answer(how)
   }
 
@@ -229,8 +230,8 @@ export const useWindow = () => {
         page.value?.scrolls(asked.back)
         break
       case 'shut':
-        if (showing.value === 'asking') panel.shuts()
-        else read.shuts()
+        if (showing.value === 'asking') agentPanel.shuts()
+        else notesPanel.shuts()
         break
     }
   }
@@ -331,27 +332,18 @@ export const useWindow = () => {
   })
 
   return {
-    answered,
-    at,
-    busy,
-    choose,
-    chosen,
-    done,
-    leave,
-    moved,
-    notices,
+    /** The window's own: which screen is on, and what it has to say. */
     on,
-    panel,
+    notices,
     putAway,
-    read,
-    reads,
-    sat,
-    schedules,
-    start,
-    startPreset,
-    talks,
-    today,
-    vaults,
-    vaultsAgain,
+
+    /** The list of vaults, and the way into one. */
+    vaults: { list: vaults, counting: busy, choose },
+
+    /** One vault's decks and presets, and the ways to sit down to them. */
+    decks: { chosen, today, done, schedules, start, startPreset, vaultsAgain },
+
+    /** The sitting, and the two panels standing beside the card. */
+    session: { sat, at, moved, answered, talks, reads, leave, agentPanel, notesPanel },
   }
 }

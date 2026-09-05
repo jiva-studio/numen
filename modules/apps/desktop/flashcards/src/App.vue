@@ -21,78 +21,59 @@ import NotesPanel from './NotesPanel.vue'
 import { VERSION } from './version'
 import { useWindow } from './window'
 
-const {
-  answered,
-  at,
-  busy,
-  choose,
-  chosen,
-  done,
-  leave,
-  moved,
-  notices,
-  on,
-  panel,
-  putAway,
-  read,
-  reads,
-  sat,
-  schedules,
-  start,
-  startPreset,
-  talks,
-  today,
-  vaults,
-  vaultsAgain,
-} = useWindow()
+const { on, notices, putAway, vaults, decks, session } = useWindow()
 </script>
 
 <template>
   <main class="flashcards">
     <Vaults
       v-if="on === 'vaults'"
-      :vaults="vaults"
-      :counting="busy"
+      :vaults="vaults.list.value"
+      :counting="vaults.counting.value"
       :version="VERSION"
-      @choose="choose"
+      @choose="vaults.choose"
     />
 
     <Decks
-      v-else-if="on === 'decks' && chosen"
-      :vault="chosen"
-      :days="done.days.value"
-      :due="done.due.value"
-      :presets="schedules.presets.value"
-      :by-deck="schedules.byDeck.value"
-      :scheduled="schedules.known.value"
-      :today="today"
-      @start="start"
-      @start-preset="startPreset"
-      @back="vaultsAgain"
+      v-else-if="on === 'decks' && decks.chosen.value"
+      :vault="decks.chosen.value"
+      :days="decks.done.days.value"
+      :due="decks.done.due.value"
+      :presets="decks.schedules.presets.value"
+      :by-deck="decks.schedules.byDeck.value"
+      :scheduled="decks.schedules.known.value"
+      :today="decks.today.value"
+      @start="decks.start"
+      @start-preset="decks.startPreset"
+      @back="decks.vaultsAgain"
     />
 
-    <SessionSummary v-else-if="sat.over.value" :done="sat.done.value" @leave="leave" />
+    <SessionSummary
+      v-else-if="session.sat.over.value"
+      :done="session.sat.done.value"
+      @leave="session.leave"
+    />
 
     <Session
-      v-else-if="sat.card.value"
-      :card="sat.card.value"
-      :shown="sat.shown.value"
-      :left="sat.left.value"
-      :taken-back="sat.answers.value.length > 0"
-      :at="at"
-      @update:at="moved"
-      @show="sat.show"
-      @answer="answered"
-      @take-back="sat.takeBack"
-      @leave="leave"
-      @ask="talks"
-      @read="reads"
+      v-else-if="session.sat.card.value"
+      :card="session.sat.card.value"
+      :shown="session.sat.shown.value"
+      :left="session.sat.left.value"
+      :taken-back="session.sat.answers.value.length > 0"
+      :at="session.at.value"
+      @update:at="session.moved"
+      @show="session.sat.show"
+      @answer="session.answered"
+      @take-back="session.sat.takeBack"
+      @leave="session.leave"
+      @ask="session.talks"
+      @read="session.reads"
     >
       <template #reading>
-        <NotesPanel :held="read" />
+        <NotesPanel :held="session.notesPanel" />
       </template>
       <template #panel>
-        <AgentPanel :held="panel" />
+        <AgentPanel :held="session.agentPanel" />
       </template>
     </Session>
   </main>
