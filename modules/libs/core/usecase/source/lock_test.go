@@ -18,7 +18,7 @@ func TestTheLockGoesToWhatWasAskedFor(t *testing.T) {
 
 	// Both wait for the lock, the unasked one first.
 	took := make(chan bool, 2)
-	standing := func(asked bool) {
+	queue := func(asked bool) {
 		waiting := make(chan struct{})
 		go func() {
 			release, err := g.acquire(t.Context(), asked, func() { close(waiting) })
@@ -30,8 +30,8 @@ func TestTheLockGoesToWhatWasAskedFor(t *testing.T) {
 		}()
 		<-waiting
 	}
-	standing(false)
-	standing(true)
+	queue(false)
+	queue(true)
 
 	held()
 	for want := range []bool{true, false} {
@@ -66,16 +66,16 @@ func TestARunThatLeavesHandsTheLockOn(t *testing.T) {
 	<-waiting
 
 	after := make(chan struct{})
-	standing := make(chan struct{})
+	queued := make(chan struct{})
 	go func() {
-		release, err := g.acquire(context.Background(), true, func() { close(standing) })
+		release, err := g.acquire(context.Background(), true, func() { close(queued) })
 		if err != nil {
 			return
 		}
 		close(after)
 		release()
 	}()
-	<-standing
+	<-queued
 
 	stop()
 	if err := <-left; err == nil {
