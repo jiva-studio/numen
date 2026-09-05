@@ -87,7 +87,7 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	case "scan":
 		return scanCommand(ctx, out, deps, rest[1:])
 	case "recognise":
-		return recogniseCommand(ctx, out, cfg, deps, rest[1:])
+		return recogniseCommand(ctx, out, deps, rest[1:])
 	case "proofread":
 		return proofreadCommand(ctx, out, cfg, deps, rest[1:])
 	case "transcribe":

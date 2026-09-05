@@ -7,7 +7,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
@@ -17,7 +16,7 @@ import (
 // Nothing starts this on its own. Whether a document's own text layer is any
 // good cannot be told from the text, so the layer is used until a person says
 // otherwise, and this is how they say it.
-func recogniseCommand(ctx context.Context, out io.Writer, cfg container.Config, deps Deps, args []string) error {
+func recogniseCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli recognise <vault> <file>")
 	}
@@ -25,41 +24,27 @@ func recogniseCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 	if err != nil {
 		return err
 	}
-	db, err := cfg.OpenIndex(ctx)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
 
-	// A terminal is where waiting is what a person came for, so this fetches
-	// what is missing and waits for it. It is said out loud first: a hundred and
-	// sixty megabytes is minutes, and a program that prints nothing for minutes
-	// looks broken.
-	if !cfg.RecogniserReady() {
+	// A terminal is where waiting is what a person came for, so the opener
+	// fetches what is missing and waits for it. It is said out loud first: a
+	// hundred and sixty megabytes is minutes, and a program that prints nothing
+	// for minutes looks broken.
+	fetching := func() {
 		fmt.Fprintln(out, "fetching what is needed to read scans, about 160 MB")
 	}
-	models, closeModels, why := cfg.Recogniser(ctx)
-	if why != nil {
-		return fmt.Errorf("nothing to read with: %w", why)
-	}
-	defer closeModels()
-
-	fmt.Fprintf(out, "reading %s with %s\n", args[1], models.Recognition())
-	started := time.Now()
-
-	// What a batch of pages writes down is cut before the next batch is read, so
-	// a document stopped part way through is searchable to the page it reached.
-	cut, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
+	open, err := deps.Recognise(ctx, v, fetching)
 	if err != nil {
-		return err
+		return fmt.Errorf("nothing to read with: %w", err)
 	}
+	defer closing(open.Close)
+
+	recognise, cut := open.Recognise, open.Cut
+	fmt.Fprintf(out, "reading %s with %s\n", args[1], recognise.By.Recognition())
+	started := time.Now()
 
 	// The line of pages is closed once it stops, so what follows it stands on a
 	// line of its own.
 	shown := false
-	recognise := source.NewRecognise(
-		cfg.VaultReaders(), db.Sources(), cfg.DerivedStores(), cfg.PageRenderer(), models,
-	)
 	recognise.Cut = func(ctx context.Context, v domain.Vault, path string) error {
 		_, err := cut.One(ctx, v, path)
 		return err

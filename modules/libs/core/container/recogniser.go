@@ -37,6 +37,13 @@ func (c Config) Recogniser(ctx context.Context) (recogniser port.Recogniser, clo
 	return models, models.Close, nil
 }
 
+// Recognise is one document read with the recogniser given, for a caller that
+// asked for that document and waits for it. Recognising is the queue that reads
+// what nobody asked about.
+func (c Config) Recognise(sources port.SourceRepository, by port.Recogniser) source.Recognise {
+	return source.NewRecognise(c.VaultReaders(), sources, c.DerivedStores(), c.PageRenderer(), by)
+}
+
 // Recognising is the queue that reads this installation's scanned documents,
 // built against the adapters it was configured with and reporting itself into
 // the list of what is being done.

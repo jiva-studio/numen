@@ -86,6 +86,37 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 				}, nil
 			},
 
+			Recognise: func(
+				ctx context.Context, v domain.Vault, fetching func(),
+			) (cli.Recognise, error) {
+				if !cfg.RecogniserReady() {
+					fetching()
+				}
+				models, closeModels, why := cfg.Recogniser(ctx)
+				if why != nil {
+					return cli.Recognise{}, why
+				}
+				db, err := cfg.OpenIndex(ctx)
+				if err != nil {
+					_ = closeModels()
+					return cli.Recognise{}, err
+				}
+				cut, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
+				if err != nil {
+					_ = closeModels()
+					_ = db.Close()
+					return cli.Recognise{}, err
+				}
+				return cli.Recognise{
+					Recognise: cfg.Recognise(db.Sources(), models),
+					Cut:       cut,
+					Close: func() error {
+						_ = closeModels()
+						return db.Close()
+					},
+				}, nil
+			},
+
 			Search: func(ctx context.Context, trouble port.Trouble) (cli.Search, error) {
 				db, err := cfg.OpenIndex(ctx)
 				if err != nil {
