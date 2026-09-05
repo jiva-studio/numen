@@ -56,6 +56,16 @@ func Bytes(v []float32) []int8 {
 	return out
 }
 
+// Dimensions reads a stored vector back as the dimensions it holds, one per
+// byte. It is what Bytes wrote, arriving from storage as unsigned.
+func Dimensions(stored []byte) []int8 {
+	out := make([]int8, len(stored))
+	for i, b := range stored {
+		out[i] = int8(b)
+	}
+	return out
+}
+
 // Normalise scales a vector to unit length, in place, and returns it. A vector
 // of all zeros is returned unchanged: there is no direction to keep.
 func Normalise(v []float32) []float32 {

@@ -61,6 +61,21 @@ func TestBytesRoundTrip(t *testing.T) {
 	}
 }
 
+func TestDimensionsReadEveryStoredByteBack(t *testing.T) {
+	stored := make([]byte, 256)
+	want := make([]int8, 256)
+	for i := range stored {
+		stored[i] = byte(i)
+		want[i] = int8(i)
+	}
+	if got := embedding.Dimensions(stored); !slices.Equal(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+	if got := embedding.Dimensions(nil); len(got) != 0 {
+		t.Errorf("got %v for no vector", got)
+	}
+}
+
 // The same vector quantises to the same bytes in a run over any other data.
 // This is the property that keeps a vector stored today comparable with one
 // stored after a book in another language is added.

@@ -56,7 +56,7 @@ func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, ca
 			return nil, fmt.Errorf("chunk %d holds %d dimensions where the query has %d",
 				chunk, len(stored), len(query))
 		}
-		similarity[chunk] = embedding.Similarity(query, signed(stored))
+		similarity[chunk] = embedding.Similarity(query, embedding.Dimensions(stored))
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -76,13 +76,4 @@ func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, ca
 		out = append(out, k.chunk)
 	}
 	return out, nil
-}
-
-// signed reads a stored vector as the dimensions it holds, one per byte.
-func signed(stored []byte) []int8 {
-	out := make([]int8, len(stored))
-	for i, b := range stored {
-		out[i] = int8(b)
-	}
-	return out
 }

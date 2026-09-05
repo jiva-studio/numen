@@ -82,7 +82,7 @@ func fillCoarse(ctx context.Context, tx *sql.Tx, dims int, recipe string) error 
 		if err := rows.Scan(&one.chunk, &one.vault, &value); err != nil {
 			return fmt.Errorf("the vectors the recipe holds: %w", err)
 		}
-		one.bits = embedding.Coarse(quantised(value))
+		one.bits = embedding.Coarse(embedding.Dimensions(value))
 		held = append(held, one)
 	}
 	if err := rows.Err(); err != nil {
@@ -99,15 +99,6 @@ func fillCoarse(ctx context.Context, tx *sql.Tx, dims int, recipe string) error 
 		}
 	}
 	return nil
-}
-
-// quantised reads a stored vector as the signed bytes it was written from.
-func quantised(stored []byte) []int8 {
-	out := make([]int8, len(stored))
-	for i, b := range stored {
-		out[i] = int8(b)
-	}
-	return out
 }
 
 // vectorWidth is the width the vector index holds, or nothing when it holds no

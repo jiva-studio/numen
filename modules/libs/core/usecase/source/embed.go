@@ -203,7 +203,7 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 			Model:   model,
 			Kind:    port.QuantisedInt8,
 			Value:   value,
-			Coarse:  embedding.Coarse(unsigned(value)),
+			Coarse:  embedding.Coarse(embedding.Dimensions(value)),
 		})
 		res.Reused++
 	}
@@ -242,15 +242,6 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 	res.Embedded += len(out)
 	u.progress(*res)
 	return nil
-}
-
-// unsigned is a stored vector as the dimensions it holds, one per byte.
-func unsigned(stored []byte) []int8 {
-	out := make([]int8, len(stored))
-	for i, b := range stored {
-		out[i] = int8(b)
-	}
-	return out
 }
 
 func (u Embed) progress(res EmbedResult) {
