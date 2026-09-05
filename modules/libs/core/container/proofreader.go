@@ -18,10 +18,13 @@ type ProofreaderSpec struct {
 	InFlight    int
 }
 
-// Profile is the place a reading is put right at, by the name a consumer
+// profile is the place a reading is put right at, by the name a consumer
 // names it under. A name no profile carries is an error: a person who named one
 // is owed the news that it is not there.
-func (c Config) Profile(name string) (proofreading.Profile, error) {
+//
+// It is not exported: `proofreading.Profile` is the adapter's own type, and
+// what an application is handed is the proofreader itself.
+func (c Config) profile(name string) (proofreading.Profile, error) {
 	profile, held := c.Proofreading.Profiles[name]
 	if !held {
 		return proofreading.Profile{}, fmt.Errorf("no proofreading profile named %q", name)
@@ -50,7 +53,7 @@ func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) 
 	if name == "" {
 		return nil, nil
 	}
-	profile, err := c.Profile(name)
+	profile, err := c.profile(name)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +99,7 @@ func (c Config) ProofreadQueue(name, instruction string) (port.ProofreadQueue, e
 	if name == "" {
 		return nil, nil
 	}
-	profile, err := c.Profile(name)
+	profile, err := c.profile(name)
 	if err != nil {
 		return nil, err
 	}
