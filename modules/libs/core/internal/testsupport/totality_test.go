@@ -18,6 +18,7 @@ import (
 // below, and a value added to an enum already here fails in the test named
 // beside it.
 var walked = map[protoreflect.FullName]string{
+	"numen.v1.ArtifactKind":  "adapter/webui: named by standing",
 	"numen.v1.Counts":        "internal/wire: round trip through CountsIn and CountsOf",
 	"numen.v1.Fault":         "adapter/webui: written by faultOf",
 	"numen.v1.FlushResult":   "internal/wire: read by left",
