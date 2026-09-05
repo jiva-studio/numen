@@ -6,7 +6,6 @@ import {
   goalWords,
   holds,
   leftWords,
-  named,
   opens,
   scheduling,
   spent,
@@ -744,10 +743,6 @@ describe('which preset schedules each deck', () => {
 
     expect(one.presets.value).toHaveLength(0)
     expect(one.of.value).toBe('')
-  })
-
-  it('shows a day as the application writes one', () => {
-    expect(named(new Date(2026, 8, 5))).toBe('2026-09-05')
   })
 })
 

@@ -9,7 +9,8 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import Heatmap from './Heatmap.vue'
-import { names, ROWS } from './heatmap'
+import { ROWS } from './heatmap'
+import { dayNamed } from '../calendar/day'
 import type { Tally } from './heatmap'
 import type { Words } from './words'
 import { lightness } from '@/fixtures/colour'
@@ -49,7 +50,7 @@ function worked(): Map<string, Tally> {
     if (on.getDay() === 0) continue
     const answered = ((back * 7) % 60) + 1
     const again = back % 5 === 0 ? 2 : 0
-    out.set(names(on), {
+    out.set(dayNamed(on), {
       answered,
       again,
       hard: 1,
@@ -159,7 +160,7 @@ export const Nothing: Story = {
 }
 
 /** The day the accounts below are pointed at, which is the one holding now. */
-const TODAY = names(now)
+const TODAY = dayNamed(now)
 
 /** A day drawn on its own, so the cell pointed at is the one holding now. */
 const alone = (tally: Tally): Map<string, Tally> => new Map([[TODAY, tally]])

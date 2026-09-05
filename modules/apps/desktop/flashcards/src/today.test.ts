@@ -9,7 +9,8 @@ import { Goal, StopReason } from '@numen/protocol'
 
 import { counting } from './counting'
 import type { CardsDueClient } from './counting'
-import { named, scheduling } from './decks/scheduling'
+import { dayNamed } from '@numen/ui'
+import { scheduling } from './decks/scheduling'
 import type { PresetsClient, SettingsMessage } from './decks/scheduling'
 import type { VaultCardsDue } from './core'
 
@@ -75,7 +76,7 @@ describe('the day a goal is weighed against', () => {
     // began at four on the fourth is still running.
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 8, 5, 1, 0, 0))
-    expect(named(new Date())).toBe('2026-09-05')
+    expect(dayNamed(new Date())).toBe('2026-09-05')
 
     const cards: CardsDueClient = {
       async *watchCardsDue() {

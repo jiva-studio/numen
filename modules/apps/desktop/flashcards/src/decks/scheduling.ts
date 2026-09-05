@@ -12,6 +12,7 @@ import type { Goal as Goals, Refusal } from '@numen/protocol'
 import { deckName, goalOf } from '../core'
 import type { DeckCardsDue, Goal } from '../core'
 import { refusalWords } from '@numen/wire'
+import { dayOf, daysBetween } from '@numen/ui'
 import type { BudgetKeys, VaultCardsDue } from '../core'
 
 export type { BudgetKeys }
@@ -481,27 +482,12 @@ export const goalWords = (settings: Settings, today: string): string => {
 const many = (value: number, one: string): string =>
   `${value} ${value === 1 ? one : `${one}s`}`
 
-/** A day as the application writes one: the year, the month and the day. */
-export const named = (at: Date): string => {
-  const pad = (value: number) => String(value).padStart(2, '0')
-  return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`
-}
-
 /** A day as a person reads one, without the year they are already in. */
 const short = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'long' })
 
-const dayWords = (day: string): string => short.format(dated(day))
+const dayWords = (day: string): string => short.format(dayOf(day))
 
 /** The day of the week a day falls on, by its name. */
 const weekday = new Intl.DateTimeFormat(undefined, { weekday: 'long' })
 
-const weekdayWords = (day: string): string => weekday.format(dated(day))
-
-/** How many days lie between two days. */
-const daysBetween = (from: string, to: string): number =>
-  Math.round((dated(to).getTime() - dated(from).getTime()) / 86400000)
-
-const dated = (day: string): Date => {
-  const [year, month, at] = day.split('-').map(Number)
-  return new Date(year ?? 2000, (month ?? 1) - 1, at ?? 1)
-}
+const weekdayWords = (day: string): string => weekday.format(dayOf(day))

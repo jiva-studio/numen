@@ -5,6 +5,7 @@
  * how dark it is drawn are arithmetic, and arithmetic inside a component is
  * arithmetic nobody can check without a screen.
  */
+import { dayNamed } from '../calendar/day'
 
 /** How many days stand in one column. A column is a week. */
 export const ROWS = 7
@@ -102,7 +103,7 @@ export function days(
   now: Date,
   did: ReadonlyMap<string, Tally>,
   due: ReadonlyMap<string, number> = new Map(),
-  named: (at: Date) => string = names,
+  named: (at: Date) => string = dayNamed,
 ): Day[] {
   const out: Day[] = []
   if (columns < 1) return out
@@ -193,9 +194,3 @@ export function weighs(did: number): Day['weight'] {
   return 4
 }
 
-/** A day as it is written down: the year, the month and the day. */
-export function names(at: Date): string {
-  const month = String(at.getMonth() + 1).padStart(2, '0')
-  const day = String(at.getDate()).padStart(2, '0')
-  return `${at.getFullYear()}-${month}-${day}`
-}

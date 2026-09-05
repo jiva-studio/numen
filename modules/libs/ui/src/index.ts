@@ -56,6 +56,8 @@ export { default as Tooltip } from './tooltip/Tooltip.vue'
 /** Where a thing standing over the page goes, which the menu and tooltip share. */
 export { beside } from './placing/place'
 export type { AxisPlacement, Box } from './placing/place'
+/** A day of the calendar, written down, read back and counted against another. */
+export { dayAfter, dayNamed, dayOf, daysBetween, isDay } from './calendar/day'
 export { days as heatmapDays, fits as heatmapFits, weighs as heatmapWeighs } from './heatmap/heatmap'
 export type { Day as HeatmapDay, Room as HeatmapRoom, Tally as HeatmapTally } from './heatmap/heatmap'
 export { default as WelcomePage } from './welcome/WelcomePage.vue'
