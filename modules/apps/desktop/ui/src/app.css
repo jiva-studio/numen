@@ -19,7 +19,7 @@
 }
 
 /* The answers ride on the line the sentence is on, so the band stands one line high. */
-.caution--answering {
+.caution--conflict {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;

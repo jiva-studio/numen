@@ -9,9 +9,9 @@ import { Notices, Workspace } from '@numen/ui'
 import '@numen/ui/styles.css'
 import './app.css'
 import UnsavedChangesPrompt from './UnsavedChangesPrompt.vue'
-import Failure from './Failure.vue'
+import CoreFailureNotice from './CoreFailureNotice.vue'
 import Palette from './Palette.vue'
-import Welcoming from './Welcoming.vue'
+import WelcomeScreen from './WelcomeScreen.vue'
 import { useWindow } from './window'
 import { WORDS as words } from './words'
 
@@ -37,7 +37,7 @@ const {
 
 <template>
   <main>
-    <Failure :failure="failure" />
+    <CoreFailureNotice :failure="failure" />
 
     <Workspace
       v-model="layout"
@@ -61,7 +61,7 @@ const {
       </template>
 
       <template #silence>
-        <Welcoming
+        <WelcomeScreen
           :listed="listed"
           :tabs="held.tabs.value"
           :commands="commands"

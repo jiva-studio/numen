@@ -10,7 +10,7 @@
 import { computed } from 'vue'
 import { StencilEditor } from '@numen/ui'
 import type { CardLanding, Half } from '@numen/ui'
-import Answering from '../Answering.vue'
+import FileConflictPrompt from '../FileConflictPrompt.vue'
 import type { StencilTabState } from './stencil'
 import { WORDS as words } from './words'
 
@@ -22,7 +22,7 @@ const marks = computed(() => props.held.marks.value)
 
 <template>
   <div class="stencil-tab">
-    <Answering
+    <FileConflictPrompt
       :saying="props.held.saying.value"
       :state="props.held.shown.value.state"
       :words="words"

@@ -20,7 +20,7 @@ const props = defineProps<{ held: ConfigurationTabState }>()
       {{ props.held.saying() }}
     </p>
 
-    <p v-if="props.held.overtaken()" class="caution caution--answering" role="status">
+    <p v-if="props.held.overtaken()" class="caution caution--conflict" role="status">
       {{ words.overtaken }}
       <button type="button" class="answer" @click="props.held.keep()">{{ words.keep }}</button>
       <button type="button" class="answer" @click="props.held.take()">{{ words.take }}</button>

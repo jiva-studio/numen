@@ -8,7 +8,7 @@
  */
 import { watch } from 'vue'
 import { Editor } from '@numen/ui'
-import Answering from '../Answering.vue'
+import FileConflictPrompt from '../FileConflictPrompt.vue'
 import { WORDS as words } from './words'
 import type { NoteTabState } from './kind'
 
@@ -26,7 +26,7 @@ watch(
 
 <template>
   <div class="note">
-    <Answering
+    <FileConflictPrompt
       :saying="props.held.saying.value"
       :state="props.held.shown.value.state"
       :words="words"

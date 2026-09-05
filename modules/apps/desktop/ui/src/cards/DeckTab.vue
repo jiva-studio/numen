@@ -11,7 +11,7 @@ import { computed, ref } from 'vue'
 import { cardBlanks, cardFields, Deck as DeckView, Menu } from '@numen/ui'
 import type { CardLanding, Point } from '@numen/ui'
 import { ChevronDown } from '@lucide/vue'
-import Answering from '../Answering.vue'
+import FileConflictPrompt from '../FileConflictPrompt.vue'
 import type { DeckTabState } from './deck'
 import { WORDS as words } from './words'
 
@@ -63,7 +63,7 @@ const chose = (path: string) => {
 
 <template>
   <div class="deck-tab">
-    <Answering
+    <FileConflictPrompt
       :saying="props.held.saying.value"
       :state="props.held.shown.value.state"
       :words="words"
