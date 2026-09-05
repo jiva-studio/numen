@@ -12,6 +12,7 @@
     "typecheck": "vue-tsc --build --force",
     "test": "vitest run"
   },
+  "//": "vue-router is named in no source file here and is required all the same: @ionic/vue imports routeLocationKey, useRoute and matchedRouteKey from it at the top of its entry, and declares no peer dependency on it.",
   "dependencies": {
     "@bufbuild/protobuf": "^2.14.0",
     "@capacitor/android": "^7.0.0",
@@ -19,7 +20,6 @@
     "@connectrpc/connect": "^2.1.2",
     "@connectrpc/connect-web": "^2.1.2",
     "@ionic/vue": "^8.5.0",
-    "@ionic/vue-router": "^8.5.0",
     "@numen/protocol": "file:../../libs/protocol",
     "@numen/ui": "file:../../libs/ui",
     "vue": "^3.5.0",
