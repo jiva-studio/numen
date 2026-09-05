@@ -55,7 +55,7 @@ The cost is a full re-scan and re-embed, which is minutes of work and not nothin
 - Migrations are forward-only and accumulate, and each is code that runs on somebody's machine years later.
 - A migrated database and a fresh one can differ, and nothing compares them.
 - A half-applied change does not exist; a failure leaves the last whole version.
-- An index a later build wrote stops this build, and the remedy is that build.
+- An index a later build wrote costs a person the scan and the embedding again, and stops nothing.
 - A migration that empties a table costs the person the next scan over it.
 
 ## Alternatives considered
