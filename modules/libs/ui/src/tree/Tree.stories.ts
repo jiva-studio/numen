@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Tree from './Tree.vue'
-import type { Landing, Row, RowId } from './row'
+import type { RowLanding, Row, RowId } from './row'
 
 /** A row taken out of wherever it stands. */
 const without = (rows: readonly Row[], id: RowId): readonly Row[] =>
@@ -27,7 +27,7 @@ const found = (rows: readonly Row[], id: RowId): Row | null => {
 }
 
 /** Rows put where a landing says, in the order they were carried. */
-const put = (rows: readonly Row[], at: Landing, held: readonly Row[]): readonly Row[] =>
+const put = (rows: readonly Row[], at: RowLanding, held: readonly Row[]): readonly Row[] =>
   rows.flatMap((row) => {
     const below = row.rows ? { ...row, rows: put(row.rows, at, held) } : row
     if ('before' in at && row.id === at.before) return [...held, below]
@@ -38,7 +38,7 @@ const put = (rows: readonly Row[], at: Landing, held: readonly Row[]): readonly 
   })
 
 /** The application's part: what a move comes to, in the rows it holds. */
-const moved = (rows: readonly Row[], carried: readonly RowId[], at: Landing): readonly Row[] => {
+const moved = (rows: readonly Row[], carried: readonly RowId[], at: RowLanding): readonly Row[] => {
   const held = carried.map((row) => found(rows, row)).filter((row): row is Row => row !== null)
   const left = carried.reduce((rest, row) => without(rest, row), rows)
   return held.length ? put(left, at, held) : rows
@@ -214,7 +214,7 @@ const meta: Meta<Knobs> = {
         onSelect: (picked: readonly RowId[]) => {
           selected.value = picked
         },
-        onMove: (carried: readonly RowId[], at: Landing) => {
+        onMove: (carried: readonly RowId[], at: RowLanding) => {
           rows.value = moved(rows.value, carried, at)
         },
         onRemove: (carried: readonly RowId[]) => {

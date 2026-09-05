@@ -23,7 +23,7 @@ import {
   resizeBranch,
   type NodeIdFactory,
 } from './edit'
-import { boxOf, caretAt, edgeOf, overlayFor, sideAt, slotAt, type Landing } from './drop'
+import { boxOf, caretAt, edgeOf, overlayFor, sideAt, slotAt, type TabLanding } from './drop'
 import { type NodeId, type Tab, type TabId, type Workspace } from './node'
 import type { Rect } from './rect'
 
@@ -102,7 +102,7 @@ const {
   at: landing,
   point,
   lift,
-} = usePressDrag<Carried, Landing>({
+} = usePressDrag<Carried, TabLanding>({
   threshold: () => props.threshold,
   clock: () => props.clock,
   landingAt: (_held, at) => landingAt(at.x, at.y),
@@ -167,7 +167,7 @@ function press(tab: TabId, at: PointerEvent): void {
   lift({ tab, from }, at)
 }
 
-function land(held: Carried, at: Landing): void {
+function land(held: Carried, at: TabLanding): void {
   const ids = naming.value
 
   if (at.kind === 'edge') {
@@ -194,7 +194,7 @@ function land(held: Carried, at: Landing): void {
  * neighbours; then the outer edge, which divides the whole workspace; then the
  * pane, which divides itself.
  */
-function landingAt(x: number, y: number): Landing | null {
+function landingAt(x: number, y: number): TabLanding | null {
   const held = frame.value
   if (!held) return null
 

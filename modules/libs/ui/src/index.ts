@@ -229,10 +229,10 @@ export {
 } from './tree/row'
 export type {
   DragLabel,
-  Landing,
   Press,
   Row,
   RowId,
+  RowLanding,
   RowMarker,
   RowSelection,
   ShownRow,

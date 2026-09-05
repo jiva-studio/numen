@@ -246,15 +246,14 @@ export function stepTo(shown: readonly ShownRow[], from: RowId | null, key: Tree
   }
 }
 
-/** Where a drag would put what is held. */
 /**
- * Where what is held would land: inside a row, or above one. Into no row at
- * all is the top level.
+ * Where held rows would land: inside a row, or above one. Into no row at all
+ * is the top level.
  */
-export type Landing = { readonly into: RowId | null } | { readonly before: RowId }
+export type RowLanding = { readonly into: RowId | null } | { readonly before: RowId }
 
 /** The row a landing names, and nothing for the top level. */
-const named = (at: Landing): RowId | null => ('into' in at ? at.into : at.before)
+const named = (at: RowLanding): RowId | null => ('into' in at ? at.into : at.before)
 
 /**
  * What letting go at a height comes to.
@@ -270,7 +269,7 @@ export function landing(
   dragging: readonly RowId[],
   y: number,
   height: number,
-): Landing | null {
+): RowLanding | null {
   const found = bandAt(shown, y, height)
   if (!found) return null
 
@@ -279,7 +278,7 @@ export function landing(
 }
 
 /** The band a height falls in, as a landing. */
-function bandAt(shown: readonly ShownRow[], y: number, height: number): Landing | null {
+function bandAt(shown: readonly ShownRow[], y: number, height: number): RowLanding | null {
   if (height <= 0 || y < 0) return null
 
   const at = Math.floor(y / height)
@@ -297,7 +296,7 @@ function bandAt(shown: readonly ShownRow[], y: number, height: number): Landing 
 }
 
 /** The row a landing puts what is held inside. Null at the top level. */
-export const holderOf = (shown: readonly ShownRow[], at: Landing): RowId | null =>
+export const holderOf = (shown: readonly ShownRow[], at: RowLanding): RowId | null =>
   'into' in at ? at.into : (shown.find((row) => row.id === at.before)?.parent ?? null)
 
 /**

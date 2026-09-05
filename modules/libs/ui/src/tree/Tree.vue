@@ -22,7 +22,7 @@ import {
   stepTo,
   PLAIN,
   type DragLabel,
-  type Landing,
+  type RowLanding,
   type Press,
   type Row,
   type RowMarker,
@@ -83,7 +83,7 @@ const emit = defineEmits<{
   /** A name typed and committed. */
   (event: 'rename', row: RowId, name: string): void
   /** The rows let go somewhere, all of them landing in the one place. */
-  (event: 'move', rows: readonly RowId[], at: Landing): void
+  (event: 'move', rows: readonly RowId[], at: RowLanding): void
   /**
    * The rows lifted clear of the tree, on their way across whatever is drawn
    * beside it. Where they end up there is not the tree's to say.
@@ -136,7 +136,7 @@ const tabbed = computed<RowId | null>(() => {
 /** Whether the press being made has said what the selection is already. */
 const said = shallowRef(false)
 
-const { dragging, at, point, lift } = usePressDrag<readonly RowId[], Landing>({
+const { dragging, at, point, lift } = usePressDrag<readonly RowId[], RowLanding>({
   threshold: () => props.threshold,
   clock: () => props.clock,
   landingAt,
@@ -299,7 +299,7 @@ function press(row: RowId, event: PointerEvent): void {
  * Where the pointer is, asked of the drawing: the rows are one height each,
  * and the height is whatever they are drawn at.
  */
-function landingAt(rows: readonly RowId[], at: Point): Landing | null {
+function landingAt(rows: readonly RowId[], at: Point): RowLanding | null {
   const drawn = list.value
   const over = box.value?.getBoundingClientRect()
   if (!drawn || !over) return null
