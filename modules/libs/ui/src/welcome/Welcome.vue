@@ -40,6 +40,13 @@ defineEmits<{
   /** The row below the list pressed. */
   (event: 'offers'): void
 }>()
+
+defineSlots<{
+  /** What stands where the list would be while there is no list yet. */
+  waiting?(): unknown
+  /** How a vault on the list is drawn. */
+  vault?(props: { vault: VaultRow }): unknown
+}>()
 </script>
 
 <template>

@@ -18,6 +18,11 @@ const props = defineProps<{
   detail: string
 }>()
 
+defineSlots<{
+  /** The control at the end of the line, told what announces it. */
+  default(props: { labelledBy: string }): unknown
+}>()
+
 const labelling = computed(() => `settings-${props.at}`)
 </script>
 

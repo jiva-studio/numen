@@ -137,6 +137,13 @@ const emit = defineEmits<{
   (event: 'enter', id: string, part: string): void
 }>()
 
+defineSlots<{
+  /** What is drawn beside a node's title. A node with none is drawn narrower. */
+  icon?(props: { node: PlacedNode }): unknown
+  /** What is said about the neighbours that did not fit, in the caller's words. */
+  overflow?(props: { overflow: readonly [PlexRelatedSeat, number][] }): unknown
+}>()
+
 /** What the window is taken to be until it has been measured. */
 const FALLBACK = { width: 1200, height: 800 }
 

@@ -115,6 +115,11 @@ const emit = defineEmits<{
   (event: 'enter', id: string, part: string): void
 }>()
 
+defineSlots<{
+  /** What is drawn beside a node's title. */
+  icon?(props: { node: PlacedNode }): unknown
+}>()
+
 const svg = useTemplateRef<SVGSVGElement>('svg')
 
 /** The boxes as they are drawn, so the keyboard can be put back on one. */

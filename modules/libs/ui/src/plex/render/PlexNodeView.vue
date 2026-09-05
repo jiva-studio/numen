@@ -102,6 +102,11 @@ const emit = defineEmits<{
   (event: 'enter', part: string): void
 }>()
 
+defineSlots<{
+  /** What is drawn beside this node's title. */
+  icon?(props: { node: PlacedNode }): unknown
+}>()
+
 const group = useTemplateRef<SVGGElement>('group')
 
 /** The keyboard put back on this node by whoever took it away. */

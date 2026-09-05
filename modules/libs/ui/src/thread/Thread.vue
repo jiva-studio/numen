@@ -24,6 +24,15 @@ const emit = defineEmits<{
   (event: 'follow', turn: Turn, href: string, press: MouseEvent): void
 }>()
 
+defineSlots<{
+  /** What is said when nothing has been said yet. */
+  silence?(): unknown
+  /** How a turn is drawn, where the caller draws it itself. */
+  turn?(props: { turn: Turn; state: PlacedTurn['state'] }): unknown
+  /** What is said about a turn that never sent. */
+  failure?(props: { turn: Turn }): unknown
+}>()
+
 const placed = computed(() => placeTurns(props.turns))
 
 /** What the line about a tool in hand is drawn from. */
