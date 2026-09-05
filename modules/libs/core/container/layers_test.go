@@ -237,6 +237,78 @@ func TestTheSettingsAdapterRunsNoOtherAdaptersWork(t *testing.T) {
 	}
 }
 
+// machinery are the packages that reach the machine because reaching it is
+// what they are: the composition root that builds the adapters, the runtime two
+// adapters load their models through, and the fixtures only a test is compiled
+// from. The adapters themselves are left out by adapting.
+var machinery = []string{"container", "internal/onnxruntime", "internal/testsupport"}
+
+// looking are the functions of path/filepath that are not path arithmetic.
+// Each one asks the machine what is there, and Abs answers against the folder
+// the process was started in, which a scenario is not written against.
+var looking = map[string]bool{
+	"EvalSymlinks": true, "Glob": true, "Walk": true, "WalkDir": true, "Abs": true,
+}
+
+// A scenario asks a port what is on the machine, and never the machine. What a
+// path is once every link on the way to it is resolved is one such question,
+// and a folder handed in as a content URI has no answer for it: the disk this
+// would read is not the one the file is on.
+//
+// A path taken apart and put together again is arithmetic over a string and
+// stays here. What separates the two is whether the answer is on the disk.
+func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
+	var wrong []string
+	var read int
+	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
+			return err
+		}
+		pkg := within("..", path)
+		if strings.HasSuffix(path, "_test.go") || adapting(pkg) || holds(machinery, pkg) {
+			return nil
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+		if err != nil {
+			return err
+		}
+		read++
+		for _, one := range file.Imports {
+			to, err := strconv.Unquote(one.Path.Value)
+			if err != nil {
+				return err
+			}
+			if to == "os" || to == "os/exec" {
+				wrong = append(wrong, path+" is compiled from "+to)
+			}
+		}
+		ast.Inspect(file, func(node ast.Node) bool {
+			at, is := node.(*ast.SelectorExpr)
+			if !is {
+				return true
+			}
+			from, is := at.X.(*ast.Ident)
+			if is && from.Name == "filepath" && looking[at.Sel.Name] {
+				wrong = append(wrong, path+" runs filepath."+at.Sel.Name)
+			}
+			return true
+		})
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range wrong {
+		t.Error(one + ": the core asks a port what is on the machine")
+	}
+
+	// A walk that read no file of the core is a rule checked against nothing,
+	// and it passes.
+	if read < 100 {
+		t.Fatalf("%d files of the core read: the walk is not reading it", read)
+	}
+}
+
 // adapters are the names one file calls another adapter's package by, whether
 // that is the package's own name or an alias.
 func adapters(file *ast.File, own string) map[string]bool {

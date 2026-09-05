@@ -46,10 +46,9 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 	if !filepath.IsAbs(root) {
 		return domain.Vault{}, fmt.Errorf("vault path must be absolute, got %q", root)
 	}
-	// One folder has one name here, whichever route reached it.
-	if resolved, err := filepath.EvalSymlinks(root); err == nil {
-		root = resolved
-	}
+	// One folder has one name here, whichever route reached it, and which
+	// routes lead to it is the machine's to say.
+	root = u.Identity.Named(root)
 	if err := u.Identity.Readable(root); err != nil {
 		return domain.Vault{}, fmt.Errorf("%w: %w", ErrUnreadable, err)
 	}

@@ -3,6 +3,7 @@ package filesystem
 import (
 	"errors"
 	"io/fs"
+	"path/filepath"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -11,6 +12,18 @@ import (
 // VaultIdentity gives folders the identity that makes them vaults, and answers
 // whether a folder can be read as one at all.
 type VaultIdentity struct{ Options Options }
+
+// Named is the folder with every link on the way to it resolved, which is what
+// this machine calls it however it was reached. A path that resolves to nothing
+// — there is no such folder, or a link along it is broken — is named as it was
+// given, and what is wrong with it is said by whoever opens it.
+func (i VaultIdentity) Named(root string) string {
+	real, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		return root
+	}
+	return real
+}
 
 func (i VaultIdentity) Readable(root string) error {
 	_, err := Open(root, i.Options)
