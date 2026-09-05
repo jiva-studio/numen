@@ -87,7 +87,7 @@ const boxOf = (one: Rect) => ({
       @error="tries += 1"
       @load="arrived = true"
     />
-    <div v-if="!arrived" class="reader__waiting absolute inset-0 grid place-items-center">
+    <div v-if="!arrived" class="reader__spinner absolute inset-0 grid place-items-center">
       <span v-if="givenUp" class="px-inset text-center text-small text-hushed">
         {{ undrawn }}
       </span>
@@ -126,8 +126,8 @@ const boxOf = (one: Rect) => ({
 
 /* The ring stands in the middle of a page's worth of nothing, so it is drawn at
    the size of something being waited for and not of a word. */
-.reader__waiting {
-  --waiting-size: 1.4rem;
-  --waiting-thickness: 2px;
+.reader__spinner {
+  --spinner-size: 1.4rem;
+  --spinner-thickness: 2px;
 }
 </style>

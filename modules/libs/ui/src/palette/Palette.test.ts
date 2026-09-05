@@ -440,7 +440,7 @@ describe('what a band says about itself', () => {
     })
     await settle()
 
-    expect(document.body.querySelector('.waiting')).not.toBeNull()
+    expect(document.body.querySelector('.spinner')).not.toBeNull()
     expect(bands()[0]?.getAttribute('aria-busy')).toBe('true')
   })
 
@@ -448,7 +448,7 @@ describe('what a band says about itself', () => {
     mountPalette()
     await settle()
 
-    expect(document.body.querySelector('.waiting')).toBeNull()
+    expect(document.body.querySelector('.spinner')).toBeNull()
     expect(bands().some((band) => band.hasAttribute('aria-busy'))).toBe(false)
   })
 
@@ -458,7 +458,7 @@ describe('what a band says about itself', () => {
     })
     await settle()
 
-    expect(document.body.querySelector('.waiting')?.getAttribute('aria-hidden')).toBe(
+    expect(document.body.querySelector('.spinner')?.getAttribute('aria-hidden')).toBe(
       'true',
     )
   })

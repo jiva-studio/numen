@@ -23,8 +23,8 @@ describe('a page still coming', () => {
   it('turns a ring where the picture will be', () => {
     const page = sheet()
 
-    expect(page.find('.reader__waiting').exists()).toBe(true)
-    expect(page.find('.waiting').exists()).toBe(true)
+    expect(page.find('.reader__spinner').exists()).toBe(true)
+    expect(page.find('.spinner').exists()).toBe(true)
   })
 
   it('lights nothing', () => {
@@ -46,7 +46,7 @@ describe('a page that has come', () => {
   })
 
   it('takes the ring away', async () => {
-    expect((await arrived()).find('.reader__waiting').exists()).toBe(false)
+    expect((await arrived()).find('.reader__spinner').exists()).toBe(false)
   })
 
   it('lights what was found on it', async () => {
@@ -82,7 +82,7 @@ describe('a page that will not come', () => {
     const page = await givenUp()
 
     expect(page.text()).toContain('This page would not come.')
-    expect(page.find('.waiting').exists()).toBe(false)
+    expect(page.find('.spinner').exists()).toBe(false)
   })
 
   it('asks again at an address the last ask did not use', async () => {

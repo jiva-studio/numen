@@ -131,7 +131,7 @@ export const Dark: Story = {
     const grounds = canvasElement.querySelectorAll<HTMLElement>('[data-ground]')
     await expect(grounds).toHaveLength(2)
     for (const ground of grounds) {
-      const shape = ground.querySelector<HTMLElement>('.coming')!
+      const shape = ground.querySelector<HTMLElement>('.skeleton')!
       const fill = getComputedStyle(shape).backgroundColor
       // Something is there, and it is not the colour of what it stands on.
       await expect(fill).not.toBe('rgba(0, 0, 0, 0)')
@@ -142,7 +142,7 @@ export const Dark: Story = {
     // that is a light shape on the surface and a dark one on the accent.
     const laidOn = (ground: HTMLElement) => {
       const behind = getComputedStyle(ground).backgroundColor
-      const shape = ground.querySelector<HTMLElement>('.coming')!
+      const shape = ground.querySelector<HTMLElement>('.skeleton')!
       return lightness(getComputedStyle(shape).backgroundColor, behind) - lightness(behind)
     }
     await expect(laidOn(grounds[0]!)).toBeGreaterThan(2)
