@@ -11,7 +11,7 @@ import { computed, nextTick, shallowRef, useId, type ComponentPublicInstance } f
 import Amiss from './Amiss.vue'
 import Bar from './Bar.vue'
 import Remove from './Remove.vue'
-import Grown from './Grown.vue'
+import AutosizeTextarea from './AutosizeTextarea.vue'
 import CardProse from './CardProse.vue'
 import NameBox from './NameBox.vue'
 import { useNaming } from './naming'
@@ -83,17 +83,17 @@ const aim = shallowRef<Half | null>(null)
 const aimed = computed<Half>(() => aim.value ?? 'front')
 
 /** The two boxes this face is written in, each held by the part drawing it. */
-const front = shallowRef<InstanceType<typeof Grown> | null>(null)
-const back = shallowRef<InstanceType<typeof Grown> | null>(null)
+const front = shallowRef<InstanceType<typeof AutosizeTextarea> | null>(null)
+const back = shallowRef<InstanceType<typeof AutosizeTextarea> | null>(null)
 
 const boxOf = (half: Half): HTMLTextAreaElement | null =>
   (half === 'front' ? front.value : back.value)?.box ?? null
 
 /** A part was drawn, or taken away, with the box its half is written in. */
 const holds = (half: Half, drawn: Element | ComponentPublicInstance | null): void => {
-  const grown = drawn as InstanceType<typeof Grown> | null
-  if (half === 'front') front.value = grown
-  else back.value = grown
+  const box = drawn as InstanceType<typeof AutosizeTextarea> | null
+  if (half === 'front') front.value = box
+  else back.value = box
 }
 
 /** The four parts this face's window is divided into. */
@@ -191,10 +191,10 @@ const put = async (field: string): Promise<void> => {
         :data-blank="pane.blank || undefined"
         :data-aimed="aiming(pane) || undefined"
       >
-        <Grown
+        <AutosizeTextarea
           v-if="pane.shows === 'written'"
           :ref="(held) => holds(pane.half, held)"
-          class="face__grown"
+          class="face__box"
           :text="pane.text"
           :data-half="pane.half"
           :aria-label="pane.named"
@@ -327,7 +327,7 @@ const put = async (field: string): Promise<void> => {
   background: var(--numen-raised);
 }
 
-.face__grown,
+.face__box,
 .face__preview,
 .face__ghost {
   grid-area: 1 / 1;
@@ -365,8 +365,8 @@ const put = async (field: string): Promise<void> => {
 
 /* A face's box stands open at a few lines and grows with what is written in
    it, as every other box does. */
-.face__grown {
-  --grown-lines: var(--pane-lines);
+.face__box {
+  --autosize-lines: var(--pane-lines);
 }
 
 /* What an empty part is called stands in the middle of it, and is passed

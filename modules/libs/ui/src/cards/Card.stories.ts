@@ -292,10 +292,10 @@ export const ACard: Story = {
     expect(new Set(heights).size).toBe(1)
 
     // The card keeps the ground both the rules and the boxes stand on.
-    const grown = found(canvasElement, '.grown')
-    const ground = getComputedStyle(grown).backgroundColor
+    const cell = found(canvasElement, '.autosize')
+    const ground = getComputedStyle(cell).backgroundColor
     expect(ground === 'rgba(0, 0, 0, 0)' || ground === 'transparent').toBe(true)
-    expect(getComputedStyle(grown).borderTopWidth).toBe('0px')
+    expect(getComputedStyle(cell).borderTopWidth).toBe('0px')
     expect(getComputedStyle(tile).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
 
     // The strip says what cut the card, and holds the one way to remove it.

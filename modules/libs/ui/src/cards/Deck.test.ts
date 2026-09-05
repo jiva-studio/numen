@@ -183,8 +183,8 @@ describe('Deck', () => {
       },
     ]
     const held = mountDeck({ cards })
-    const grown = tileFor(held, 'x').findAll('[data-grown]')
-    expect(grown.map((each) => each.attributes('data-grown'))).toEqual(['', 'a\nb\nc', ''])
+    const boxes = tileFor(held, 'x').findAll('[data-autosize]')
+    expect(boxes.map((each) => each.attributes('data-autosize'))).toEqual(['', 'a\nb\nc', ''])
   })
 
   it('says on each tile what cut the card it draws', () => {

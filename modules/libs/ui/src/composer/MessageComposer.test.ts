@@ -1,9 +1,9 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import Composer from './Composer.vue'
+import MessageComposer from './MessageComposer.vue'
 
 const composer = (props: Record<string, unknown> = {}) =>
-  mount(Composer, { props: { modelValue: '', ...props } })
+  mount(MessageComposer, { props: { modelValue: '', ...props } })
 
 const enter = { key: 'Enter' }
 

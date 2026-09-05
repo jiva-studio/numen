@@ -1,17 +1,18 @@
 /**
- * What the composer looks like. What it does is asserted in `Composer.test.ts`.
+ * What the composer looks like. What it does is asserted in
+ * `MessageComposer.test.ts`.
  *
  * `working` and `disabled` are controls, not stories.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn } from 'storybook/test'
 import { ref } from 'vue'
-import Composer from './Composer.vue'
+import MessageComposer from './MessageComposer.vue'
 import { ARABIC, DEVANAGARI, LINK, LONG, MULTILINE } from '@/fixtures/prose'
 
 const meta = {
-  title: 'Chat/Composer',
-  component: Composer,
+  title: 'Chat/MessageComposer',
+  component: MessageComposer,
   parameters: {
     layout: 'centered',
     docs: {
@@ -38,7 +39,7 @@ const meta = {
     onSubmit: fn(),
     onStop: fn(),
   },
-} satisfies Meta<typeof Composer>
+} satisfies Meta<typeof MessageComposer>
 
 export default meta
 type Story = StoryObj<typeof meta>
@@ -49,11 +50,16 @@ type Render = NonNullable<Story['render']>
  * what was written and leaves clearing it to whoever answers.
  */
 const holding = (...starts: string[]): Render => (args) => ({
-  components: { Composer },
+  components: { MessageComposer },
   setup: () => ({ args, texts: starts.map((start) => ref(start)) }),
   template: `
     <div class="numen flex w-[420px] max-w-[calc(100vw-2rem)] flex-col gap-4">
-      <Composer v-for="(text, index) in texts" :key="index" v-bind="args" v-model="text.value" />
+      <MessageComposer
+        v-for="(text, index) in texts"
+        :key="index"
+        v-bind="args"
+        v-model="text.value"
+      />
     </div>
   `,
 })
@@ -99,12 +105,12 @@ export const AwkwardText: Story = { render: holding(LINK, DEVANAGARI, ARABIC) }
 export const Narrow: Story = {
   args: { placeholder: 'Ask about the vault, or about anything else' },
   render: (args) => ({
-    components: { Composer },
+    components: { MessageComposer },
     setup: () => ({ args, empty: ref(''), typed: ref('x') }),
     template: `
       <div class="numen flex w-[180px] flex-col gap-4">
-        <Composer v-bind="args" v-model="empty" />
-        <Composer v-bind="args" v-model="typed" />
+        <MessageComposer v-bind="args" v-model="empty" />
+        <MessageComposer v-bind="args" v-model="typed" />
       </div>
     `,
   }),

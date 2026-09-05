@@ -40,10 +40,10 @@ defineExpose({
 </script>
 
 <template>
-  <div class="grown" :class="attrs.class" :style="attrs.style" :data-grown="text">
+  <div class="autosize" :class="attrs.class" :style="attrs.style" :data-autosize="text">
     <textarea
       ref="box"
-      class="grown__box"
+      class="autosize__box"
       rows="1"
       :value="text"
       v-bind="handed"
@@ -54,26 +54,26 @@ defineExpose({
 
 <style scoped>
 /* A box holding nothing stands as tall as a box holding one line. */
-.grown {
+.autosize {
   display: grid;
   min-block-size: calc(
-    var(--grown-lines, 1) * var(--numen-line-height) * 1em + 2 * var(--box-air, 0.5rem)
+    var(--autosize-lines, 1) * var(--numen-line-height) * 1em + 2 * var(--box-air, 0.5rem)
   );
 }
 
 /* The space at the end keeps a line for text ending in a newline, and for no
    text at all. */
-.grown::after {
-  content: attr(data-grown) ' ';
+.autosize::after {
+  content: attr(data-autosize) ' ';
   visibility: hidden;
 }
 
-.grown__box {
+.autosize__box {
   min-inline-size: 0;
 }
 
-.grown__box,
-.grown::after {
+.autosize__box,
+.autosize::after {
   grid-area: 1 / 1;
   padding: var(--box-air, 0.5rem) var(--box-pad-inline, var(--numen-box-air));
   border: none;
@@ -86,7 +86,7 @@ defineExpose({
   resize: none;
 }
 
-.grown__box:focus-visible {
+.autosize__box:focus-visible {
   outline: none;
 }
 </style>

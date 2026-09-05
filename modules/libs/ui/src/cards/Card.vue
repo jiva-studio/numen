@@ -11,7 +11,7 @@ import { computed, useId } from 'vue'
 import Amiss from './Amiss.vue'
 import Bar from './Bar.vue'
 import Remove from './Remove.vue'
-import Grown from './Grown.vue'
+import AutosizeTextarea from './AutosizeTextarea.vue'
 import Rule from '../rule/Rule.vue'
 import { DECK_WORDS, sealed, type CardWords, type Stood, type Tile } from './deck'
 import type { Way } from './order'
@@ -126,7 +126,7 @@ const wrongIn = (value: Stood): readonly string[] =>
           <span v-else class="card__field text-small text-hushed">{{ value.field }}</span>
         </Rule>
 
-        <Grown
+        <AutosizeTextarea
           v-if="value.declared"
           :id="boxId(value)"
           :text="value.text"

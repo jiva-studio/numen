@@ -8,7 +8,7 @@
  */
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import Thread from '../thread/Thread.vue'
-import Composer from '../composer/Composer.vue'
+import MessageComposer from '../composer/MessageComposer.vue'
 import type { Turn } from '../thread/turn'
 
 withDefaults(
@@ -44,7 +44,7 @@ const emit = defineEmits<{
 
 const text = defineModel<string>({ default: '' })
 
-const composer = useTemplateRef<InstanceType<typeof Composer>>('composer')
+const composer = useTemplateRef<InstanceType<typeof MessageComposer>>('composer')
 const thread = useTemplateRef<InstanceType<typeof Thread>>('thread')
 
 defineExpose({ focus: (how?: FocusOptions) => composer.value?.focus(how) })
@@ -94,7 +94,7 @@ onBeforeUnmount(() => watching?.disconnect())
       <template #failure="bound"><slot name="failure" v-bind="bound">Did not send</slot></template>
     </Thread>
 
-    <Composer
+    <MessageComposer
       ref="composer"
       v-model="text"
       class="agent__composer"
