@@ -9,7 +9,7 @@ import { StateEffect, StateField, type Extension } from '@codemirror/state'
 import { Decoration, EditorView, GutterMarker, ViewPlugin, gutter } from '@codemirror/view'
 
 /** What the editor shows against its lines. */
-export interface Timed {
+export interface TimingState {
   /** What stands in the gutter, one for each line from the first. */
   readonly times: readonly string[]
   /** The line being said, counted from zero. None is -1. */
@@ -18,11 +18,11 @@ export interface Timed {
   readonly following: boolean
 }
 
-const NOTHING: Timed = { times: [], current: -1, following: false }
+const NOTHING: TimingState = { times: [], current: -1, following: false }
 
-const told = StateEffect.define<Timed>()
+const told = StateEffect.define<TimingState>()
 
-const held = StateField.define<Timed>({
+const held = StateField.define<TimingState>({
   create: () => NOTHING,
   update: (was, transaction) => {
     for (const effect of transaction.effects) if (effect.is(told)) return effect.value
@@ -122,11 +122,11 @@ export interface Timing {
   /** The extension, put in the editor these are shown in. */
   readonly extension: Extension
   /** What the editor shows now. */
-  show(timed: Timed): void
+  show(timed: TimingState): void
 }
 
 /** Whether two of these say the same thing. */
-const same = (one: Timed, two: Timed): boolean =>
+const same = (one: TimingState, two: TimingState): boolean =>
   one.current === two.current &&
   one.following === two.following &&
   (one.times === two.times ||
@@ -138,7 +138,7 @@ export function timing(goes: (line: number) => void): Timing {
 
   // What was last shown. An editor drawn again — a tab moved, a pane split —
   // is a new editor holding none of it, and is given it as it attaches.
-  let last: Timed | null = null
+  let last: TimingState | null = null
 
   const holding = ViewPlugin.define((got) => {
     view = got
@@ -160,7 +160,7 @@ export function timing(goes: (line: number) => void): Timing {
   // put shows what is given. It moves the view only where it may: the line to
   // keep in sight has to be one the document has, following has to be on, and
   // one of the two has to have changed.
-  const put = (timed: Timed, may: boolean) => {
+  const put = (timed: TimingState, may: boolean) => {
     last = timed
     if (!view) return
     const was = view.state.field(held)
@@ -174,7 +174,7 @@ export function timing(goes: (line: number) => void): Timing {
     view.dispatch({ effects })
   }
 
-  const show = (timed: Timed) => put(timed, true)
+  const show = (timed: TimingState) => put(timed, true)
 
   return { extension: [held, marked, times(goes), painted, holding], show }
 }

@@ -79,16 +79,16 @@ const measuring = (): ((length: number) => void) => {
   }
 }
 
-type Mounted = ReturnType<typeof mountBranch>
+type BranchFixture = ReturnType<typeof mountBranch>
 
-const panes = ({ held }: Mounted) => held.findAllComponents(WorkspacePane)
+const panes = ({ held }: BranchFixture) => held.findAllComponents(WorkspacePane)
 
-const groups = ({ held }: Mounted) => held.findAllComponents(SplitterGroup)
+const groups = ({ held }: BranchFixture) => held.findAllComponents(SplitterGroup)
 
-const handles = ({ held }: Mounted) => held.findAllComponents(SplitterResizeHandle)
+const handles = ({ held }: BranchFixture) => held.findAllComponents(SplitterResizeHandle)
 
 /** The splitter reporting the shares it has settled on, in percent. */
-const layout = (one: Mounted, at: number, sizes: number[]) =>
+const layout = (one: BranchFixture, at: number, sizes: number[]) =>
   groups(one)[at]!.vm.$emit('layout', sizes)
 
 describe('what a branch draws', () => {
@@ -169,7 +169,7 @@ describe('what a branch draws', () => {
 })
 
 describe('a handle taken up and put down', () => {
-  const grab = (one: Mounted, now: boolean) => handles(one)[0]!.vm.$emit('dragging', now)
+  const grab = (one: BranchFixture, now: boolean) => handles(one)[0]!.vm.$emit('dragging', now)
 
   it('says nothing while it is still held', async () => {
     const one = mountBranch(twoPanes())

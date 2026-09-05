@@ -15,7 +15,7 @@ import { marked, type EditorChange } from './change'
 import { opening, resolving } from './outside'
 
 type Props = InstanceType<typeof Editor>['$props']
-type Exposed = { focus: () => void; measure: () => void; reveal: (line: number) => boolean }
+type EditorHandle = { focus: () => void; measure: () => void; reveal: (line: number) => boolean }
 
 // Nothing here has a size, and the editor measures anyway.
 Range.prototype.getClientRects = () =>
@@ -29,7 +29,7 @@ const editor = (props: Partial<Props> = {}) => {
   drawn.push(wrapper)
   const view = EditorView.findFromDOM(wrapper.element as HTMLElement)
   if (!view) throw new Error('the editor drew no view')
-  return { wrapper, view, exposed: wrapper.vm as unknown as Exposed }
+  return { wrapper, view, exposed: wrapper.vm as unknown as EditorHandle }
 }
 
 /** Where the caret is, as a person would say it. */

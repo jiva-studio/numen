@@ -7,13 +7,13 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { timing, type Timed } from './timing'
+import { timing, type TimingState } from './timing'
 
 const drawn: EditorView[] = []
 
 const TEXT = 'A bell over the door.\nRain on the awning.\nSomeone counting change.'
 
-const TIMED: Timed = { times: ['0:01', '0:03', '0:06'], current: -1, following: false }
+const TIMED: TimingState = { times: ['0:01', '0:03', '0:06'], current: -1, following: false }
 
 const editor = (goes: (line: number) => void = () => {}) => {
   const times = timing(goes)

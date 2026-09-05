@@ -3,7 +3,7 @@
  * A walk through it has to keep producing neighbourhoods a plex will accept.
  */
 import { describe, expect, it } from 'vitest'
-import { around, build, type Named } from './build'
+import { around, build, type TitledNode } from './build'
 import { arrangePlex } from '../arrange'
 
 const COUNTS = { parent: 3, child: 6, jump: 3, sibling: 3 }
@@ -12,7 +12,7 @@ const COUNTS = { parent: 3, child: 6, jump: 3, sibling: 3 }
 function step(current: ReturnType<typeof build>, id: string) {
   const chosen = current.nodes.find((node) => node.id === id)!
   const was = current.nodes.find((node) => node.seat === 'focus')!
-  const from: Named = { id: was.id, title: was.title }
+  const from: TitledNode = { id: was.id, title: was.title }
   return around({ id: chosen.id, title: chosen.title }, from, COUNTS)
 }
 

@@ -44,7 +44,7 @@ export type { SelectChoice } from './components/ui/select'
 /** The days of the week, each drawn at the level it stands at. */
 export { WeekdayChips } from './components/ui/weekday-chips'
 export { weekFrom, WEEK } from './components/ui/weekday-chips'
-export type { Day, Named } from './components/ui/weekday-chips'
+export type { Day, DayName } from './components/ui/weekday-chips'
 
 export { default as DueCount } from './cards/DueCount.vue'
 /** What a person did on each day, as a grid of weeks. */
@@ -115,7 +115,7 @@ export { timing } from './editor/timing'
 /** The controls a recording is played by. What plays is somewhere else. */
 export { default as Player } from './player/Player.vue'
 export { clock } from './player/clock'
-export type { Timed, Timing } from './editor/timing'
+export type { Timing, TimingState } from './editor/timing'
 
 export { default as MessageComposer } from './composer/MessageComposer.vue'
 export { COMPOSER_STATES, composerState, keyIntent } from './composer/state'

@@ -6,7 +6,7 @@
  */
 
 /** What a day is called. */
-export interface Named {
+export interface DayName {
   /** The caller's own identifier, handed back as given. */
   readonly id: string
   /** What is drawn on the chip: a letter or two. */
@@ -16,13 +16,13 @@ export interface Named {
 }
 
 /** One day as the row draws it: what it is called, and how full it stands. */
-export interface Day extends Named {
+export interface Day extends DayName {
   /** How full the chip is drawn, from nothing to the whole of it. */
   readonly level: number
 }
 
 /** The week as English names it, starting on Monday. */
-export const WEEK: readonly Named[] = [
+export const WEEK: readonly DayName[] = [
   { id: 'mon', short: 'M', long: 'Monday' },
   { id: 'tue', short: 'T', long: 'Tuesday' },
   { id: 'wed', short: 'W', long: 'Wednesday' },
@@ -33,7 +33,7 @@ export const WEEK: readonly Named[] = [
 ]
 
 /** The week turned to start on a day; a day it does not hold leaves it as it is. */
-export const weekFrom = <One extends Named>(id: string, week: readonly One[]): readonly One[] => {
+export const weekFrom = <One extends DayName>(id: string, week: readonly One[]): readonly One[] => {
   const at = week.findIndex((day) => day.id === id)
   if (at <= 0) return week
   return [...week.slice(at), ...week.slice(0, at)]

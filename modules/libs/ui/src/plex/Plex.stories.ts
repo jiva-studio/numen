@@ -16,7 +16,7 @@ import { DWELL } from './dwell'
 import { type PlexPart } from './inside'
 import { neighbourhoods } from './fixtures/neighbourhoods'
 import { neighbourhoodOf, walkStart } from './fixtures/walk'
-import { around, build, type Named } from './fixtures/build'
+import { around, build, type TitledNode } from './fixtures/build'
 import { nameNow } from './fixtures/names'
 import { ring } from './fixtures/ring'
 import type { PlexEdge } from './edge'
@@ -147,8 +147,8 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
   components: { Plex },
   setup() {
     const type = useTypeSize()
-    const focus = ref<Named | null>(null)
-    const cameFrom = ref<Named | null>(null)
+    const focus = ref<TitledNode | null>(null)
+    const cameFrom = ref<TitledNode | null>(null)
 
     /** What the application would keep: what has been made, and what is new. */
     const made = ref<PlexNode[]>([])

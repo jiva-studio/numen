@@ -10,12 +10,12 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { computed, ref } from 'vue'
 import WeekdayChips from './WeekdayChips.vue'
-import { weekFrom, WEEK, type Named } from './week'
+import { weekFrom, WEEK, type DayName } from './week'
 import { lightness } from '@/fixtures/colour'
 import { DARK, drawnDark } from '@/fixtures/theme'
 
 /** The week as Russian names it, for the names that are not Latin. */
-const RUSSIAN: readonly Named[] = [
+const RUSSIAN: readonly DayName[] = [
   { id: 'mon', short: 'Пн', long: 'Понедельник' },
   { id: 'tue', short: 'Вт', long: 'Вторник' },
   { id: 'wed', short: 'Ср', long: 'Среда' },
@@ -39,7 +39,7 @@ interface Knobs {
   levels: readonly number[]
   disabled: boolean
   /** The names themselves, where a story draws something other than a week. */
-  named?: readonly Named[]
+  named?: readonly DayName[]
 }
 
 const meta: Meta<Knobs> = {

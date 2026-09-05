@@ -6,7 +6,7 @@ import { nameFor } from './names'
 
 export type SeatCounts = Readonly<Partial<Record<PlexRelatedSeat, number>>>
 
-export interface Named {
+export interface TitledNode {
   readonly id: string
   readonly title: string
 }
@@ -33,8 +33,8 @@ export function build(title: string, counts: SeatCounts): PlexNeighbourhood {
  * "Child 1, Child 2" says nothing about whether real titles wrap or collide.
  */
 export function around(
-  focus: Named,
-  from: Named | null,
+  focus: TitledNode,
+  from: TitledNode | null,
   counts: SeatCounts,
 ): PlexNeighbourhood {
   let taken = 0

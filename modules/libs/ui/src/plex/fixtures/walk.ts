@@ -10,14 +10,14 @@ import type { PlexEdge } from '../edge'
 import type { PlexNeighbourhood } from '../neighbourhood'
 import type { PlexNode } from '../node'
 
-interface Named {
+interface GraphNode {
   readonly title: string
   readonly parents?: readonly string[]
   /** Untyped by seat: an association, not a place in the hierarchy. */
   readonly jumps?: readonly string[]
 }
 
-const GRAPH: Record<string, Named> = {
+const GRAPH: Record<string, GraphNode> = {
   architecture: { title: 'Architecture' },
   storage: { title: 'Storage', parents: ['architecture'] },
   interface: { title: 'Interface', parents: ['architecture'] },
