@@ -237,7 +237,9 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 func TestAVaultThatCannotBeWatchedSaysSo(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Note.md": "# Note\n"})
-	_, err := vaults.Follow{Watcher: refuses{}}.Begin(t.Context(), v)
+	// Nothing to refresh with and nothing to walk with: a watch that never
+	// starts reaches neither.
+	_, err := vaults.NewFollow(refuses{}, vaults.Refresh{}, vaults.Scan{}).Begin(t.Context(), v)
 	if err == nil {
 		t.Fatal("a watcher that could not start was taken for one that did")
 	}

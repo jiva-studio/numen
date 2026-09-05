@@ -441,7 +441,7 @@ func (a *API) GetNeighbourhood(
 	if err != nil {
 		return nil, err
 	}
-	found, err := note.ShowNeighbourhood{Links: a.Notes.Links, Notes: a.Notes.Queries}.
+	found, err := note.NewShowNeighbourhood(a.Notes.Links, a.Notes.Queries).
 		Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)

@@ -23,7 +23,7 @@ func (s vaultsService) ListVaults(
 	_ context.Context,
 	_ *connect.Request[v1.ListVaultsRequest],
 ) (*connect.Response[v1.ListVaultsResponse], error) {
-	held, err := vaults.List{Registry: s.api.Vaults.Registry}.Execute()
+	held, err := vaults.NewList(s.api.Vaults.Registry).Execute()
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -158,7 +158,7 @@ var errShowing = errors.New("this vault is the one the window is showing")
 
 // found is the vault an identity names.
 func (s vaultsService) found(id string) (domain.Vault, error) {
-	return vaults.Find{Registry: s.api.Vaults.Registry}.Execute(id)
+	return vaults.NewFind(s.api.Vaults.Registry).Execute(id)
 }
 
 // vaultOf is one vault as the schema carries it. A folder that is not there to

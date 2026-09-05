@@ -40,15 +40,16 @@ func (i *Index) NotesCutAt(sizes chunking.Sizes, reads chunking.Legibility) port
 // Scan is the walk that reads a vault's notes into the index, cut at this
 // installation's sizes. Every application that reads a vault takes it from here.
 func (c Config) Scan(db *Index) vault.Scan {
-	return vault.Scan{
-		Readers:      c.VaultReaders(),
-		Vaults:       db.Vaults(),
-		Notes:        db.NotesCutAt(c.Chunking(), c.Legibility()),
-		Known:        db.Queries(),
-		Maintenance:  db.Maintenance(),
-		Walks:        db.Walks(),
-		RebuildIndex: c.RebuildIndex,
-	}
+	scan := vault.NewScan(
+		c.VaultReaders(),
+		db.Vaults(),
+		db.NotesCutAt(c.Chunking(), c.Legibility()),
+		db.Queries(),
+		db.Maintenance(),
+	)
+	scan.Walks = db.Walks()
+	scan.RebuildIndex = c.RebuildIndex
+	return scan
 }
 
 // ReadWholeVault is what makes a vault answer, put together the one way: the
@@ -75,11 +76,7 @@ func (c Config) ReadWholeVault(
 	if err != nil {
 		return vault.ReadWholeVault{}, err
 	}
-	return vault.ReadWholeVault{
-		Notes:   c.Scan(db),
-		Books:   books,
-		Vectors: vectors,
-	}, nil
+	return vault.NewReadWholeVault(c.Scan(db), books, vectors), nil
 }
 
 // Embed gives a vault's chunks the vectors they owe.

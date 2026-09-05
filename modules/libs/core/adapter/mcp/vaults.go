@@ -65,7 +65,7 @@ func addVaultList(server *sdk.Server, core Core) {
 		type out = struct {
 			Vaults []Vault `json:"vaults"`
 		}
-		held, err := vaults.List{Registry: core.Vaults.Registry}.Execute()
+		held, err := vaults.NewList(core.Vaults.Registry).Execute()
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -281,7 +281,7 @@ func (v Vaults) found(nameOrPath string) (domain.Vault, error) {
 	if nameOrPath == "" {
 		return domain.Vault{}, errors.New("name the vault, as vault_list gives it")
 	}
-	return vaults.Find{Registry: v.Registry}.Execute(nameOrPath)
+	return vaults.NewFind(v.Registry).Execute(nameOrPath)
 }
 
 // knownOf is one vault as an agent is told about it. A folder that is not there
@@ -291,7 +291,7 @@ func knownOf(v domain.Vault, showing domain.VaultID, readers port.VaultReaders) 
 		ID:      string(v.ID),
 		Name:    v.Name,
 		Folder:  v.Path,
-		Missing: vaults.FolderMissing{Readers: readers}.Execute(v),
+		Missing: vaults.NewFolderMissing(readers).Execute(v),
 		Showing: v.ID != "" && v.ID == showing,
 	}
 }

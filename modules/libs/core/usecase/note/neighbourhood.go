@@ -26,6 +26,16 @@ type RefQueries interface {
 	Notes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error)
 }
 
+// NewShowNeighbourhood is what a picture of one note is drawn from: where its
+// links land, and what is needed to show each note they reach.
+//
+// Both are named here because the second is asked once, after every link has
+// been followed: a build short of it walks the whole graph and then has nothing
+// to draw of it.
+func NewShowNeighbourhood(links port.LinkQueries, notes RefQueries) ShowNeighbourhood {
+	return ShowNeighbourhood{Links: links, Notes: notes}
+}
+
 func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path string) (domain.Neighbourhood, error) {
 	var out domain.Neighbourhood
 

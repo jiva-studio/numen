@@ -46,7 +46,7 @@ func (c Config) Notes(
 	moving.Sync = c.SyncSetting()
 
 	return Notes{
-		Read:    note.Read{Readers: readers},
+		Read:    note.NewRead(readers),
 		Write:   note.NewWrite(readers, writers, index, now),
 		Create:  note.NewCreate(writers, queries, index, now),
 		Replace: note.NewReplace(readers, writers, index, now),
@@ -55,8 +55,8 @@ func (c Config) Notes(
 		Rename:  note.NewRename(moving),
 		Remove:  note.NewRemove(writers, links, known, index),
 
-		Links:         note.ShowLinks{Links: links},
-		Neighbourhood: note.ShowNeighbourhood{Links: links, Notes: queries},
+		Links:         note.NewShowLinks(links),
+		Neighbourhood: note.NewShowNeighbourhood(links, queries),
 	}
 }
 

@@ -10,6 +10,14 @@ type List struct {
 	Registry port.VaultRegistry
 }
 
+// NewList is what the vaults are read out of: the list this installation keeps.
+//
+// It is named here because every screen that shows the vaults builds this where
+// it stands, and the list is the whole of the answer.
+func NewList(registry port.VaultRegistry) List {
+	return List{Registry: registry}
+}
+
 func (u List) Execute() ([]domain.Vault, error) {
 	return u.Registry.All()
 }

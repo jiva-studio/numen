@@ -79,13 +79,9 @@ func (o *VaultOpener) Level(ctx context.Context, v domain.Vault, paths []string)
 // A vault that cannot be watched is opened all the same, and Unwatched says why.
 func (o *VaultOpener) Begin(ctx context.Context, v domain.Vault) *OpenVault {
 	scan := o.Scanning()
-	follow := vault.Follow{
-		Watcher: o.watcher,
-		Refresh: o.refresh,
-		Scan:    scan,
-		Changed: o.Told,
-		Trouble: o.Trouble,
-	}
+	follow := vault.NewFollow(o.watcher, o.refresh, scan)
+	follow.Changed = o.Told
+	follow.Trouble = o.Trouble
 	watching, err := follow.Begin(ctx, v)
 	return &OpenVault{
 		opening:   o,

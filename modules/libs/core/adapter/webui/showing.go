@@ -131,7 +131,7 @@ func (o *Installation) arrive(v domain.Vault, rebuild bool) error {
 // the watch behind it, the reading of the documents it holds, and the batches
 // left with a proofreader.
 func (o *Installation) begins(v domain.Vault, rebuild bool) (*passes, error) {
-	known, err := vaults.List{Registry: o.registry}.Execute()
+	known, err := vaults.NewList(o.registry).Execute()
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +255,7 @@ func (o *Installation) forget() {
 // A vault named and not on the list is refused, and the window does not open.
 func chosen(registry port.VaultRegistry, asked string) (domain.Vault, error) {
 	if asked != "" {
-		return vaults.Find{Registry: registry}.Execute(asked)
+		return vaults.NewFind(registry).Execute(asked)
 	}
 	last, found, err := registry.Last()
 	if err != nil {
@@ -264,7 +264,7 @@ func chosen(registry port.VaultRegistry, asked string) (domain.Vault, error) {
 	if found {
 		return last, nil
 	}
-	held, err := vaults.List{Registry: registry}.Execute()
+	held, err := vaults.NewList(registry).Execute()
 	if err != nil {
 		return domain.Vault{}, err
 	}

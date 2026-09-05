@@ -93,7 +93,7 @@ func findVault(cfg container.Config, nameOrPath string) (domain.Vault, error) {
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	v, err := vaults.Find{Registry: registry}.Execute(nameOrPath)
+	v, err := vaults.NewFind(registry).Execute(nameOrPath)
 	if err != nil {
 		return domain.Vault{}, fmt.Errorf("%w — add it with: numen-cli vault add %s", err, nameOrPath)
 	}

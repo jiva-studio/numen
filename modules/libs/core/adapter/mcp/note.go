@@ -205,7 +205,7 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 		if len(in.Paths) > maxBodies {
 			return nil, out{}, fmt.Errorf("read at most %d notes at a time", maxBodies)
 		}
-		read := note.Read{Readers: core.Readers}
+		read := note.NewRead(core.Readers)
 		res := out{Notes: make([]Contents, 0, len(in.Paths))}
 		for _, path := range in.Paths {
 			if err := ctx.Err(); err != nil {

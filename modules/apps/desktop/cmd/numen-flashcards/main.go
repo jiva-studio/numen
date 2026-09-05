@@ -105,22 +105,18 @@ func run(cfg container.Config, noAgent bool) error {
 
 	running := cfg.Flashcards(db.Queries(), db.Links(), vaults.level)
 	api := &flashcardsui.API{
-		Registry:  registry,
-		CardsDue:  running.CardsDue,
-		Session:   running.Session,
-		Schedules: running.Schedules,
-		Log:       running.Log,
-		Counted:   running.Counted,
-		Neighbourhood: flashcards.ShowNeighbourhood{
-			Linked: notes.Links,
-			Notes:  db.Queries(),
-			Reads:  notes.Read,
-		},
-		Presets: running.Presets,
-		Notes:   db.Queries(),
-		Window:  flashcardsui.Watching(task.New()),
-		Day:     running.Day,
-		Now:     time.Now,
+		Registry:      registry,
+		CardsDue:      running.CardsDue,
+		Session:       running.Session,
+		Schedules:     running.Schedules,
+		Log:           running.Log,
+		Counted:       running.Counted,
+		Neighbourhood: flashcards.NewShowNeighbourhood(notes.Links, db.Queries(), notes.Read),
+		Presets:       running.Presets,
+		Notes:         db.Queries(),
+		Window:        flashcardsui.Watching(task.New()),
+		Day:           running.Day,
+		Now:           time.Now,
 	}
 
 	// A vault is walked into the index before it is counted. The walk outlives

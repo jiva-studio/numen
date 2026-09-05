@@ -25,7 +25,7 @@ func linksCommand(ctx context.Context, out io.Writer, cfg container.Config, args
 	}
 	defer db.Close()
 
-	links, err := note.ShowLinks{Links: db.Links()}.Execute(ctx, v, args[1])
+	links, err := note.NewShowLinks(db.Links()).Execute(ctx, v, args[1])
 	if err != nil {
 		return err
 	}

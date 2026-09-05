@@ -22,6 +22,16 @@ type ReadWholeVault struct {
 	Vectors source.Embed
 }
 
+// NewReadWholeVault is the three passes, in the order they stand in: the notes
+// walked, the books read, and the vectors made.
+//
+// All three are named here because a vault read short of one of them answers,
+// and answers by less than it holds — a search that misses a book, or misses
+// every word a person did not type themselves.
+func NewReadWholeVault(notes Scan, books source.Extract, vectors source.Embed) ReadWholeVault {
+	return ReadWholeVault{Notes: notes, Books: books, Vectors: vectors}
+}
+
 // ReadWholeVaultResult is what each pass did. A pass that did not run is a zero
 // value, and Read says which of them were reached.
 type ReadWholeVaultResult struct {

@@ -42,6 +42,28 @@ type Scan struct {
 	OnProgress func(ScanResult)
 }
 
+// NewScan is what a walk of a vault reads and writes through: the vault it is
+// read out of, the row every note of it points at, where a note is filed, what
+// the index already believes about each file, and the upkeep a changed index
+// owes.
+//
+// All five are named here because each is reached in the ordinary course of a
+// walk — the upkeep only where the walk found something, so a build short of it
+// scans an untouched vault for as long as nobody edits a note, and goes down on
+// the first one that is.
+func NewScan(
+	readers port.VaultReaders,
+	vaults port.VaultRepository,
+	notes port.NoteRepository,
+	known FingerprintQueries,
+	maintenance port.IndexMaintenance,
+) Scan {
+	return Scan{
+		Readers: readers, Vaults: vaults, Notes: notes,
+		Known: known, Maintenance: maintenance,
+	}
+}
+
 // ScanResult reports what a scan did, in the terms the user cares about.
 //
 // `Seen` counts notes and nothing else, and every other number here is about

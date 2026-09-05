@@ -84,7 +84,7 @@ func vaultList(out io.Writer, cfg container.Config) error {
 	if err != nil {
 		return err
 	}
-	known, err := vault.List{Registry: registry}.Execute()
+	known, err := vault.NewList(registry).Execute()
 	if err != nil {
 		return err
 	}

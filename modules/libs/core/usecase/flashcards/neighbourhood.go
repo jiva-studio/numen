@@ -57,6 +57,19 @@ type ShowNeighbourhood struct {
 	Reads  note.Read
 }
 
+// NewShowNeighbourhood is what the reading beside a review is made of: what the
+// deck is joined to, what says which of those notes are decks and stencils of
+// its own, and what the prose of each is read out of.
+//
+// All three are named here because the last is reached only once a deck names
+// something: a build short of it opens every deck that points nowhere and goes
+// down on the first one a person wrote a link into.
+func NewShowNeighbourhood(
+	linked note.ShowLinks, notes port.NoteQueries, reads note.Read,
+) ShowNeighbourhood {
+	return ShowNeighbourhood{Linked: linked, Notes: notes, Reads: reads}
+}
+
 // Execute gathers what the deck is joined to: what it points at first, then
 // what points at it.
 //
