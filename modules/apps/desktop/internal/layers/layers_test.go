@@ -10,6 +10,7 @@ import (
 	"go/token"
 	"io/fs"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -111,6 +112,84 @@ func TestNoApplicationDoesTheCoresWork(t *testing.T) {
 	// passes. The floor is well under what the applications hold.
 	if read < 50 {
 		t.Fatalf("%d edges read: the walk is not reading the applications", read)
+	}
+}
+
+// logging are the words a package that keeps a record is named by, read off the
+// last element of an import path. The standard library holds two of them, and
+// the rest are the libraries reached for when one of those will not do.
+var logging = map[string]bool{
+	"log": true, "slog": true, "logrus": true, "zap": true,
+	"zerolog": true, "logr": true, "glog": true, "klog": true,
+}
+
+// logs answers whether an import is a logger.
+func logs(to string) bool { return logging[to[strings.LastIndex(to, "/")+1:]] }
+
+// Nothing here logs. An entry point is where the process's own streams are
+// named, and the one line it writes to standard error is for a terminal
+// somebody is standing at; everything a person has to act on is said in the
+// window they are looking at. A logger would write to neither.
+func TestNoApplicationLogs(t *testing.T) {
+	var wrong []string
+	var read int
+	root := filepath.Join("..", "..", "..")
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() {
+			if entry != nil && entry.IsDir() && entry.Name() == "node_modules" {
+				return filepath.SkipDir
+			}
+			return err
+		}
+		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+			return nil
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
+		if err != nil {
+			return err
+		}
+		read++
+		for _, one := range file.Imports {
+			to, err := strconv.Unquote(one.Path.Value)
+			if err != nil {
+				return err
+			}
+			if logs(to) {
+				wrong = append(wrong, within(root, path)+" imports "+to)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range wrong {
+		t.Error(one + ": nothing here logs — a person is told where they are")
+	}
+
+	// A walk that read no file is a rule checked against nothing, and it
+	// passes. The floor is well under what the applications hold.
+	if read < 20 {
+		t.Fatalf("%d files read: the walk is not reading the applications", read)
+	}
+}
+
+// What the rule refuses, read against imports written to be refused. It has to
+// find both of the standard library's and a third party's, and let through the
+// packages whose names only begin the same way.
+func TestWhatTheLoggingRuleRefuses(t *testing.T) {
+	var refused []string
+	for _, to := range []string{
+		"log", "log/slog", "go.uber.org/zap", "github.com/rs/zerolog",
+		"logic", "text/template", core + "domain",
+	} {
+		if logs(to) {
+			refused = append(refused, to)
+		}
+	}
+	want := []string{"log", "log/slog", "go.uber.org/zap", "github.com/rs/zerolog"}
+	if !slices.Equal(refused, want) {
+		t.Errorf("the rule refuses %v, want %v", refused, want)
 	}
 }
 

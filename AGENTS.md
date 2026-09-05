@@ -15,7 +15,7 @@ Paths below are relative to `modules/libs/core/` unless they say otherwise. The 
 5. `domain`, `flashcards`, `markdown`, `internal/cardid` and `internal/ulid` import only each other. A pure package reaching a sibling of the core takes on its goroutines, its channels and its schema. → `pure` in `layers_test.go`
 6. A test of a pure package imports no adapter. → `TestNoPurePackageIsTestedThroughAnAdapter`
 7. The domain does not know what time it is: no `time.Now` or `time.Since` outside `adapter/`, `container/` and an application's `cmd/` — take a clock port. No `fmt.Print*` outside `adapter/cli/` and `cmd/`. No `panic` anywhere but a test. → `.golangci.yml`, `forbidigo` — `make lint-go` fails on what it finds
-8. The core writes to no stream of its own. What went wrong in work it carries on past is said through `port.Trouble`; what a call could not answer is that call's error.
+8. The core writes to no stream of its own. What went wrong in work it carries on past is said through `port.Trouble`; what a call could not answer is that call's error. **Nothing in any module here imports a logging package** — there is no log, and a person is told in the window they are looking at. → `TestNothingOfTheCoreLogs`, and `TestNoApplicationLogs` in `modules/apps/desktop/internal/layers/`
 
 ## Adapters
 

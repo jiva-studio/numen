@@ -34,12 +34,9 @@ var owed = map[string][]string{
 		"adapter/agent", "internal/adapter/embed", "internal/adapter/proofreading",
 		"internal/adapter/recognition", "internal/adapter/transcription",
 	},
-	// The two source queues and the deck writer stand here, so the words for a
-	// piece of work, a card, a schedule, a cut and a vector are read in place.
-	"container": {
-		"chunking", "embedding", "flashcards/format", "flashcards/review",
-		"markdown", "proofread", "task",
-	},
+	// The two source queues stand here, so the words for a piece of work, a
+	// schedule, a cut and a vector are read in place.
+	"container": {"chunking", "embedding", "flashcards/review", "task"},
 }
 
 // driving are the adapters something outside comes in through. They call the
@@ -406,6 +403,81 @@ func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
 	// and it passes.
 	if read < 100 {
 		t.Fatalf("%d files of the core read: the walk is not reading it", read)
+	}
+}
+
+// logging are the words a package that keeps a record is named by, read off the
+// last element of an import path. The standard library holds two of them, and
+// the rest are the libraries reached for when one of those will not do.
+var logging = map[string]bool{
+	"log": true, "slog": true, "logrus": true, "zap": true,
+	"zerolog": true, "logr": true, "glog": true, "klog": true,
+}
+
+// logs answers whether an import is a logger.
+func logs(to string) bool { return logging[to[strings.LastIndex(to, "/")+1:]] }
+
+// Nothing here logs. A log is a record kept for somebody who was not there, and
+// the person this application is for is in front of the window: what has to be
+// said is said there, or on the stream whoever started the process is reading.
+// A logger bound anywhere would write to neither.
+//
+// The rule is the whole core's and not a layer's, so the adapters and the
+// composition root are read too.
+func TestNothingOfTheCoreLogs(t *testing.T) {
+	var wrong []string
+	var read int
+	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") ||
+			strings.HasSuffix(path, "_test.go") {
+			return err
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
+		if err != nil {
+			return err
+		}
+		read++
+		for _, one := range file.Imports {
+			to, err := strconv.Unquote(one.Path.Value)
+			if err != nil {
+				return err
+			}
+			if logs(to) {
+				wrong = append(wrong, path+" imports "+to)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range wrong {
+		t.Error(one + ": nothing here logs — a person is told where they are")
+	}
+
+	// A walk that read no file of the core is a rule checked against nothing,
+	// and it passes.
+	if read < 100 {
+		t.Fatalf("%d files of the core read: the walk is not reading it", read)
+	}
+}
+
+// What the rule refuses, read against imports written to be refused. It has to
+// find both of the standard library's and a third party's, and let through the
+// packages whose names only begin the same way.
+func TestWhatTheLoggingRuleRefuses(t *testing.T) {
+	var refused []string
+	for _, to := range []string{
+		"log", "log/slog", "go.uber.org/zap", "github.com/rs/zerolog",
+		"logic", "text/template", module + "domain",
+	} {
+		if logs(to) {
+			refused = append(refused, to)
+		}
+	}
+	want := []string{"log", "log/slog", "go.uber.org/zap", "github.com/rs/zerolog"}
+	if !slices.Equal(refused, want) {
+		t.Errorf("the rule refuses %v, want %v", refused, want)
 	}
 }
 
