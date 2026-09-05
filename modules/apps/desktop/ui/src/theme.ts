@@ -83,7 +83,7 @@ export const themes: Themes = {
       themes: answer.themes.map((one) => ({
         name: one.name,
         title: one.title,
-        shipped: one.shelf === Shelf.PRESET,
+        shipped: ships[one.shelf],
         pinned: one.pinned,
       })),
       applied: answer.applied,
@@ -115,6 +115,16 @@ const ranged = (said: { least: number; most: number } | undefined): Bounds => ({
   least: said?.least ?? 0,
   most: said?.most ?? 0,
 })
+
+/**
+ * Whether a theme ships inside the application. Keyed by the schema, so a shelf
+ * added to it has to be answered here before this compiles.
+ */
+const ships: Record<Shelf, boolean> = {
+  [Shelf.UNSPECIFIED]: false,
+  [Shelf.PRESET]: true,
+  [Shelf.MINE]: false,
+}
 
 /**
  * The mode in the window's own words. A mode it has no word for is the

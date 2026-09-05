@@ -318,7 +318,7 @@ export const core: Core & FindingDeps & CommandingDeps = {
     return {
       path: answer.path,
       title: answer.title,
-      frontmatter: answer.by === NamedBy.FRONTMATTER,
+      frontmatter: writes[answer.by],
       moved: answer.moved ? filed(answer.moved) : null,
       refusal: refusalIn(answer),
       changed: staleIn(answer),
@@ -654,6 +654,17 @@ const counted: Record<Units, Counting> = {
   [Units.THINGS]: 'things',
   [Units.BYTES]: 'bytes',
   [Units.SECONDS]: 'seconds',
+}
+
+/**
+ * Whether a rename wrote the title into the note rather than moving its file.
+ * Keyed by the schema, so a namer added to it has to be answered here before
+ * this compiles.
+ */
+const writes: Record<NamedBy, boolean> = {
+  [NamedBy.UNSPECIFIED]: false,
+  [NamedBy.FRONTMATTER]: true,
+  [NamedBy.FILENAME]: false,
 }
 
 /**
