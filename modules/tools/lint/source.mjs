@@ -1,22 +1,11 @@
 /** The interface modules' own source, and the walk that reads it. */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
-import { dirname, extname, join, relative, resolve } from 'node:path'
+import { dirname, extname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { modules, root } from '../modules.mjs'
 
 export const here = dirname(fileURLToPath(import.meta.url))
-export const root = resolve(here, '../../..')
-
-/**
- * Where each module's hand-written source stands. The list is depgraph's, and
- * for the same reason: a module left off is a rule that stops at its border.
- */
-export const modules = [
-  { name: '@numen/ui', at: 'modules/libs/ui/src' },
-  { name: '@numen/wire', at: 'modules/libs/wire' },
-  { name: '@numen/editor', at: 'modules/apps/desktop/editor/src' },
-  { name: '@numen/flashcards', at: 'modules/apps/desktop/flashcards/src' },
-  { name: '@numen/mobile', at: 'modules/apps/mobile/src' },
-]
+export { modules, root }
 
 /** What is nobody's writing: a dependency, a build, a generated schema. */
 const skipped = new Set(['node_modules', 'dist', 'gen', 'storybook-static', '.storybook'])
@@ -38,7 +27,7 @@ function walk(at, found) {
 export function sources(kinds) {
   const found = []
   for (const one of modules) {
-    for (const path of walk(join(root, one.at), [])) {
+    for (const path of walk(join(root, one.written), [])) {
       if (!kinds.includes(extname(path)) || path.endsWith('.d.ts')) continue
       found.push({ at: relative(root, path), text: readFileSync(path, 'utf8') })
     }
