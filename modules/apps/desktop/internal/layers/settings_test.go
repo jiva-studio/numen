@@ -1,17 +1,34 @@
-package settings_test
+package layers
 
 import (
 	"encoding/json"
-	"strings"
+	"os"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 )
 
+// paths is the table the settings page draws its rows from, which it holds in a
+// file of its own so that this can be read against the same table the window
+// reads.
+const paths = "../../ui/src/settings/paths.json"
+
 // Every path the settings page reads is a path through the file this build
 // writes. A row reading a key nothing writes draws nothing, whatever the file
-// holds.
+// holds, and writing that row puts a key in the file that nothing acts on.
 func TestEveryPathThePageReadsStandsInTheFile(t *testing.T) {
+	raw, err := os.ReadFile(paths)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var drawn map[string][]string
+	if err := json.Unmarshal(raw, &drawn); err != nil {
+		t.Fatal(err)
+	}
+	if len(drawn) == 0 {
+		t.Fatal("the page draws no rows")
+	}
+
 	written, err := settings.Written(settings.Defaults())
 	if err != nil {
 		t.Fatal(err)
@@ -21,25 +38,10 @@ func TestEveryPathThePageReadsStandsInTheFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, at := range []string{
-		"indexing.embedding.model.name",
-		"indexing.recognition.recognise.name",
-		"indexing.recognition.proofread.with",
-		"indexing.recognition.proofread.automatically",
-		"indexing.transcribe_recordings",
-		"indexing.transcribe_under_mb",
-		"indexing.transcription.proofread.with",
-		"indexing.transcription.proofread.automatically",
-		"indexing.proofreading.profiles",
-		"agent.use",
-		"agent.claude.model",
-		"agent.claude.max_steps",
-		"agent.serve_tools",
-		"agent.claude.reads_hooks_and_skills",
-	} {
+	for row, at := range drawn {
 		value := held
 		ok := true
-		for _, step := range strings.Split(at, ".") {
+		for _, step := range at {
 			object, is := value.(map[string]any)
 			if !is {
 				ok = false
@@ -51,7 +53,7 @@ func TestEveryPathThePageReadsStandsInTheFile(t *testing.T) {
 			}
 		}
 		if !ok {
-			t.Errorf("%s is no path through the file", at)
+			t.Errorf("%s reads %v, which is no path through the file", row, at)
 		}
 	}
 }

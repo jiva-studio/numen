@@ -11,8 +11,16 @@ import { computed } from 'vue'
 import { Button, NumberField, Segmented, Select, Switch, TimeField } from '@numen/ui'
 import type { SelectChoice } from '@numen/ui'
 import type { Held } from './kind'
+/**
+ * The settings read out of the file whole, each as a path through it. A reading
+ * off a scanned page and a transcript of a recording are put right at a profile
+ * each, and each stands beside the thing it puts right.
+ *
+ * It stands in a file of its own because the core is held to it: a row reading
+ * a key the settings file has no place for draws nothing, whatever is written.
+ */
+import AT from './paths.json'
 import type { Mode } from '../theme'
-import { LATEST_STARTS as LATEST } from '../reviewing'
 import { INTERFACE_SCALE, MODE, TEXT_SCALE } from '../wearing'
 import { choicesFor } from './models'
 import { write } from './json5'
@@ -49,27 +57,6 @@ const STEP = 0.1
 /** How early in the day a day of review may be asked to begin. */
 const EARLIEST = '00:00'
 
-/**
- * The settings read out of the file whole, each as a path through it. A reading
- * off a scanned page and a transcript of a recording are put right at a profile
- * each, and each stands beside the thing it puts right.
- */
-const AT = {
-  indexingModel: ['indexing', 'embedding', 'model', 'name'],
-  ocrModel: ['indexing', 'recognition', 'recognise', 'name'],
-  ocrProofread: ['indexing', 'recognition', 'proofread', 'with'],
-  ocrProofreadAlways: ['indexing', 'recognition', 'proofread', 'automatically'],
-  transcribing: ['indexing', 'transcribe_recordings'],
-  transcribeUnder: ['indexing', 'transcribe_under_mb'],
-  transcriptProofread: ['indexing', 'transcription', 'proofread', 'with'],
-  transcriptProofreadAlways: ['indexing', 'transcription', 'proofread', 'automatically'],
-  profiles: ['indexing', 'proofreading', 'profiles'],
-  agent: ['agent', 'use'],
-  agentModel: ['agent', 'claude', 'model'],
-  agentSteps: ['agent', 'claude', 'max_steps'],
-  agentTools: ['agent', 'serve_tools'],
-  agentHooks: ['agent', 'claude', 'reads_hooks_and_skills'],
-} as const
 
 /**
  * The ends the two fields type between. A field settles on the number inside
@@ -276,7 +263,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
               id="settings-day-starts"
               :model-value="held.dayStarts()"
               :min="EARLIEST"
-              :max="LATEST"
+              :max="held.latestDayStarts()"
               class="settings__number"
               @settles="(hour: string) => held.choosesDayStarts(hour)"
             />
