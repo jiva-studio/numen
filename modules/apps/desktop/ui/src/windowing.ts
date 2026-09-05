@@ -6,7 +6,15 @@
  * all of them: a kind is added by declaring one, and the window is not told
  * about it twice.
  */
-import { computed, ref, shallowRef, type Component, type Ref } from 'vue'
+import {
+  computed,
+  effectScope,
+  ref,
+  shallowRef,
+  type Component,
+  type EffectScope,
+  type Ref,
+} from 'vue'
 import { closeTab, openTab, openTabBeside, pane, paneById } from '@numen/ui'
 import type { Tab, WorkspaceLayout } from '@numen/ui'
 import type { OpenDocument, OpenRecording, Source } from './core'
@@ -37,8 +45,12 @@ export interface Attends {
 export interface Kind<Held> {
   /** The word the identities of its tabs are filed under. */
   readonly kind: string
-  /** What one of its tabs holds, made as the tab opens on what it was given. */
-  opens(at: string): Held | Promise<Held>
+  /**
+   * What one of its tabs holds, made as the tab opens on what it was given.
+   * It is made at once, so whatever it watches is caught by the tab's scope
+   * and let go of with the tab.
+   */
+  opens(at: string): Held
   /** What the tab is called, as what it holds now stands. */
   called(held: Held): string
   /** The one word the tab carries beside its title, or nothing. */
@@ -157,6 +169,20 @@ export function windowing() {
    * order the person was last in them.
    */
   const open = shallowRef<ReadonlyMap<string, Open>>(new Map())
+
+  /**
+   * What each open tab watches, kept apart so that letting go of the tab lets
+   * go of it. A kind makes what its tab holds outside any component, so nothing
+   * else would ever stop what it started.
+   */
+  const scopes = new Map<string, EffectScope>()
+
+  /** A tab is gone, and nothing it started keeps answering. */
+  const drop = (id: string) => {
+    scopes.get(id)?.stop()
+    scopes.delete(id)
+  }
+
   const layout: Ref<WorkspaceLayout> = ref({
     root: pane('main', []),
     axis: 'horizontal',
@@ -213,7 +239,9 @@ export function windowing() {
     if (!one) return ''
     const id = one.identity ? `${kind}:${one.identity(at)}` : named(kind)
     if (open.value.has(id)) return id
-    const held = await one.opens(at)
+    const scope = effectScope(true)
+    const held = scope.run(() => one.opens(at))
+    scopes.set(id, scope)
     open.value = new Map(open.value).set(id, { kind: one, held })
     return id
   }
@@ -240,6 +268,7 @@ export function windowing() {
   /** A tab that took its own close, going now. */
   const closes = (id: string) => {
     open.value = without(open.value, id)
+    drop(id)
     layout.value = closeTab(layout.value, id)
   }
 
@@ -263,6 +292,7 @@ export function windowing() {
     if (!one) return true
     if (one.kind.shuts && !one.kind.shuts(one.held, id)) return false
     open.value = without(open.value, id)
+    drop(id)
     return true
   }
 
@@ -279,6 +309,7 @@ export function windowing() {
     for (const [id, one] of open.value) {
       if (one.kind.gone) one.kind.gone(one.held, id)
       else one.kind.shuts?.(one.held, id)
+      drop(id)
     }
   }
 

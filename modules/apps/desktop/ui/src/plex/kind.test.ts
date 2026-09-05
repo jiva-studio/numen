@@ -1041,6 +1041,10 @@ const window = (opening = 'Opening.md') => {
   const views: ReturnType<typeof viewOn>[] = []
   /** Every time the vault was asked where it opens, and what it answered then. */
   const asked: string[] = []
+  /** Whether a node hangs the parts of its note, which a test turns. */
+  const hangs = ref(true)
+  /** Every question the vault was asked about what the notes hold. */
+  const insides: (readonly string[])[] = []
   let first = opening
 
   const makes = () => {
@@ -1052,10 +1056,13 @@ const window = (opening = 'Opening.md') => {
   const plexes = plexKind(held.host, makes, {
     makes: making().makes,
     ready: () => true,
-    hangs: () => true,
+    hangs: () => hangs.value,
     parts: () => 6,
     opens: () => {},
-    inside: async () => new Map(),
+    inside: async (paths) => {
+      insides.push(paths)
+      return new Map()
+    },
     asks: () => {},
     runs: () => {},
     opening: () => first,
@@ -1089,7 +1096,20 @@ const window = (opening = 'Opening.md') => {
     paneById(held.layout.value.root, held.layout.value.focus)?.active ?? ''
   /** A tab holding no plex, opened in front of the person. */
   const elsewhere = () => held.opens(other.kind)
-  return { ...plexes, holds, enters, shuts, gains, onScreen, active, elsewhere, views, asked }
+  return {
+    ...plexes,
+    holds,
+    enters,
+    shuts,
+    gains,
+    onScreen,
+    active,
+    elsewhere,
+    views,
+    asked,
+    hangs,
+    insides,
+  }
 }
 
 describe('a plex tab as it opens', () => {
@@ -1311,6 +1331,22 @@ describe('every plex asked for its picture again', () => {
     expect(one.views[0]?.went).toContain('One.md')
     expect(one.views[1]?.went.filter((where) => where === 'Two.md')).toHaveLength(1)
     expect(first.held.view.here.value).toBe('One.md')
+  })
+})
+
+describe('a plex tab the person has closed', () => {
+  it('asks the vault nothing when a setting it once answered turns', async () => {
+    const one = window()
+    const plex = await one.holds('One.md')
+    one.hangs.value = false
+    await settles()
+
+    one.shuts(plex.id)
+    one.insides.length = 0
+    one.hangs.value = true
+    await settles()
+
+    expect(one.insides).toStrictEqual([])
   })
 })
 
