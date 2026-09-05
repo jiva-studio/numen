@@ -66,8 +66,8 @@ type ProofreadResult struct {
 // DefaultPages is how many pages one request carries.
 const DefaultPages = 40
 
-// standing is what says who put a reading right and how far they got.
-type standing struct {
+// checkpoint is what says who put a reading right and how far they got.
+type checkpoint struct {
 	By    string `json:"by"`
 	Pages int    `json:"pages"`
 	// Batch is the name what was left for the proofreader is collected under,
@@ -172,7 +172,7 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 		if err := u.cut(ctx, v, path); err != nil {
 			return res, err
 		}
-		if err := u.counted(ctx, store, far, standing{Pages: end}); err != nil {
+		if err := u.counted(ctx, store, far, checkpoint{Pages: end}); err != nil {
 			return res, err
 		}
 		u.progress(res)
@@ -242,20 +242,20 @@ func (u Proofread) taken(
 	ctx context.Context,
 	store port.DerivedStore,
 	corrections, far string,
-) (standing, error) {
+) (checkpoint, error) {
 	raw, err := store.Read(ctx, far)
 	if errors.Is(err, fs.ErrNotExist) {
-		return standing{}, nil
+		return checkpoint{}, nil
 	}
 	if err != nil {
-		return standing{}, err
+		return checkpoint{}, err
 	}
-	var stood standing
+	var stood checkpoint
 	if err := json.Unmarshal(raw, &stood); err != nil || stood.By != u.By.Name() {
 		if err := store.Remove(ctx, corrections); err != nil {
-			return standing{}, err
+			return checkpoint{}, err
 		}
-		return standing{}, store.Remove(ctx, far)
+		return checkpoint{}, store.Remove(ctx, far)
 	}
 	return stood, nil
 }
@@ -269,7 +269,7 @@ func (u Proofread) await(
 	store port.DerivedStore,
 	path string,
 	pages []proofread.Batch,
-	stood standing,
+	stood checkpoint,
 	corrections, far string,
 	res ProofreadResult,
 ) (ProofreadResult, error) {
@@ -297,7 +297,7 @@ func (u Proofread) await(
 			}
 			res.Fixed += len(put)
 		}
-		stood = standing{Pages: end}
+		stood = checkpoint{Pages: end}
 		res.Read = end
 		if err := u.cut(ctx, v, path); err != nil {
 			return res, err
@@ -317,7 +317,7 @@ func (u Proofread) await(
 		return res, fmt.Errorf("leave the pages of %s: %w", path, err)
 	}
 	res.Waiting = true
-	return res, u.counted(ctx, store, far, standing{Pages: stood.Pages, Batch: name, Left: end - stood.Pages})
+	return res, u.counted(ctx, store, far, checkpoint{Pages: stood.Pages, Batch: name, Left: end - stood.Pages})
 }
 
 // cropped drops the corrections of pages no count claims. A line is numbered by
@@ -369,7 +369,7 @@ func opening(pages []proofread.Batch, done int) (int, bool) {
 
 // counted writes down who put this reading right and how far they got. It
 // stands last and is what makes the batch before it count.
-func (u Proofread) counted(ctx context.Context, store port.DerivedStore, far string, stood standing) error {
+func (u Proofread) counted(ctx context.Context, store port.DerivedStore, far string, stood checkpoint) error {
 	stood.By = u.By.Name()
 	raw, err := json.MarshalIndent(stood, "", "  ")
 	if err != nil {

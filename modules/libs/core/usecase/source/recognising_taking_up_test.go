@@ -93,7 +93,7 @@ func halted(
 	if err := store.Append(t.Context(), text.Fixes("ocr", hash), fixes.Pack(put)); err != nil {
 		t.Fatal(err)
 	}
-	stood, err := json.Marshal(standing{By: by.Name(), Pages: through})
+	stood, err := json.Marshal(checkpoint{By: by.Name(), Pages: through})
 	if err != nil {
 		t.Fatal(err)
 	}

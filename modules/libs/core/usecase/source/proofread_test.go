@@ -108,7 +108,7 @@ func TestTheCorrectionsGoBesideTheReadingAndTheReadingIsNotTouched(t *testing.T)
 	if put := fixes.Unpack(kept(t, shelved, names.fixes)); len(put) != 2 {
 		t.Errorf("what is kept beside the reading is %+v", put)
 	}
-	var stood standing
+	var stood checkpoint
 	if err := json.Unmarshal(kept(t, shelved, names.far), &stood); err != nil {
 		t.Fatal(err)
 	}
@@ -206,7 +206,7 @@ func TestARunStoppedPartWayIsTakenUpAtThePageItStoppedOn(t *testing.T) {
 func TestCorrectionsAnotherProofreaderMadeAreNotTakenUp(t *testing.T) {
 	put, v, shelved, _ := proofreading(t, map[int]string{0: corrects(0, "the WORDS 1")})
 	names := textNames(t, shelved)
-	stood, err := json.Marshal(standing{By: "somebody else", Pages: 3})
+	stood, err := json.Marshal(checkpoint{By: "somebody else", Pages: 3})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -395,9 +395,9 @@ func (q *proofreadQueue) Collect(_ context.Context, name string) (map[int]string
 }
 
 // stands is what the reading says about who put it right and how far they got.
-func stands(t *testing.T, shelved *shelf) standing {
+func stands(t *testing.T, shelved *shelf) checkpoint {
 	t.Helper()
-	var stood standing
+	var stood checkpoint
 	if err := json.Unmarshal(kept(t, shelved, textNames(t, shelved).far), &stood); err != nil {
 		t.Fatal(err)
 	}
