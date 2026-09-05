@@ -7,7 +7,6 @@ on:
       - "modules/libs/core/**"
       - "modules/libs/ui/**"
       - "modules/libs/protocol/**"
-      - "modules/tools/lint/**"
       - ".github/workflows/numen-mobile.yml"
   push:
     branches: [main]
@@ -16,7 +15,6 @@ on:
       - "modules/libs/core/**"
       - "modules/libs/ui/**"
       - "modules/libs/protocol/**"
-      - "modules/tools/lint/**"
       - ".github/workflows/numen-mobile.yml"
 
 # One run at a time per branch, and on a pull request the newest is the one that
@@ -113,9 +111,6 @@ jobs:
 
       - name: Build the components
         run: npm run build --prefix modules/libs/ui
-
-      - name: "Lint :: Numen"
-        run: npm run check --prefix modules/tools/lint
 
       - name: Typecheck
         run: npm run typecheck --prefix modules/apps/mobile

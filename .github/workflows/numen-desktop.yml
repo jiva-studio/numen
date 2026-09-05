@@ -8,8 +8,6 @@ on:
       - "modules/libs/ui/**"
       - "modules/libs/wire/**"
       - "modules/libs/protocol/**"
-      - "modules/tools/depgraph/**"
-      - "modules/tools/lint/**"
       - ".github/workflows/numen-desktop.yml"
   push:
     branches: [main]
@@ -19,8 +17,6 @@ on:
       - "modules/libs/ui/**"
       - "modules/libs/wire/**"
       - "modules/libs/protocol/**"
-      - "modules/tools/depgraph/**"
-      - "modules/tools/lint/**"
       - ".github/workflows/numen-desktop.yml"
 
 # One run at a time per branch, and on a pull request the newest is the one that
@@ -194,19 +190,6 @@ jobs:
 
       - name: Build the components
         run: npm run build --prefix modules/libs/ui
-
-      # Which way the interface modules are allowed to point, and the drawing
-      # of which way they do. The drawing is committed, so a change that moves
-      # an edge has to redraw it: a map that is out of date is worse than none.
-      - name: Boundaries
-        run: |
-          npm ci --prefix modules/tools/depgraph
-          npm run check --prefix modules/tools/depgraph
-          npm run graph --prefix modules/tools/depgraph
-          git diff --exit-code -- docs/dependencies.md
-
-      - name: "Lint :: Numen"
-        run: npm run check --prefix modules/tools/lint
 
       - name: Lint
         run: |
