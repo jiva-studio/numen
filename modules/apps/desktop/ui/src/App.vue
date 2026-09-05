@@ -10,7 +10,7 @@ import '@numen/ui/styles.css'
 import './app.css'
 import UnsavedChangesPrompt from './UnsavedChangesPrompt.vue'
 import CoreFailureNotice from './CoreFailureNotice.vue'
-import Palette from './Palette.vue'
+import CommandPalette from './CommandPalette.vue'
 import WelcomeScreen from './WelcomeScreen.vue'
 import { useWindow } from './window'
 import { WORDS as words } from './words'
@@ -83,7 +83,7 @@ const {
 
     <UnsavedChangesPrompt :conflicts="going.conflicts.value" :called="titled" />
 
-    <Palette
+    <CommandPalette
       :commands="commands"
       :search="palette"
       :doing="doing"

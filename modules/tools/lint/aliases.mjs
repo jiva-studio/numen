@@ -22,8 +22,6 @@ const OURS = ['@numen/ui', '@numen/wire', '@numen/desktop-ui', '@numen/flashcard
  * is a rename in one of them, not an entry here.
  */
 export const owed = [
-  // The window's own palette screen wraps the library's palette.
-  'modules/apps/desktop/ui/src/Palette.vue: Palette as PaletteView',
   // The window's deck tab wraps the library's deck.
   'modules/apps/desktop/ui/src/cards/DeckTab.vue: Deck as DeckView',
   // The window's files tab has a row of its own.

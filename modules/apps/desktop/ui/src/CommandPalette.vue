@@ -7,7 +7,7 @@
  * and what a keystroke in it means. Two chords put each up and take it down.
  */
 import { computed, onMounted, onUnmounted } from 'vue'
-import { Palette as PaletteView, type ActionWords } from '@numen/ui'
+import { Palette, type ActionWords } from '@numen/ui'
 import {
   asksCommands,
   creates,
@@ -147,7 +147,7 @@ onUnmounted(() => globalThis.removeEventListener('keydown', asked))
 </script>
 
 <template>
-  <PaletteView
+  <Palette
     :model-value="field.typed"
     :groups="field.groups"
     :open="field.open"
@@ -166,7 +166,7 @@ onUnmounted(() => globalThis.removeEventListener('keydown', asked))
     <template #icon="{ id }">
       <component :is="rowIcon(id)" v-if="rowIcon(id)" class="command-icon" />
     </template>
-  </PaletteView>
+  </Palette>
 </template>
 
 <style scoped>

@@ -515,13 +515,13 @@ async function drawn() {
   const window = mount(App, {
     global: {
       // A stub is named by the binding the component is drawn through, and the
-      // window's own palette draws the library's under `PaletteView`.
+      // window's command palette draws the library's under `Palette`.
       stubs: {
         Plex: true,
         Editor: editor,
         Agent: true,
         Reader: reader,
-        PaletteView: true,
+        Palette: true,
         Tree: true,
       },
     },
