@@ -54,9 +54,7 @@ const rows = computed(() => drawn(props.held.list.rows.value))
 /** The row whose name is in a field, which the tree opens and closes itself. */
 const renaming = computed({
   get: () => props.held.renaming.value,
-  set: (row: string | null) => {
-    props.held.renaming.value = row
-  },
+  set: (row: string | null) => props.held.renames(row),
 })
 
 /** What the vault holds at a row: a folder, a note of one of three kinds, or a file. */

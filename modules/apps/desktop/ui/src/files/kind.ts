@@ -317,6 +317,11 @@ export function filing(list: Listing, deps: Filing) {
     renaming.value = made
   }
 
+  /** The row whose name the person is typing over, and none once they are done. */
+  const renames = (path: string | null) => {
+    renaming.value = path
+  }
+
   /** A menu asked for on a row or off every row, and one put away. */
   const asks = (asked: Asked) => {
     menu.value = asked
@@ -359,6 +364,7 @@ export function filing(list: Listing, deps: Filing) {
     list,
     menu,
     renaming,
+    renames,
     over,
     folderFor,
     activate,
