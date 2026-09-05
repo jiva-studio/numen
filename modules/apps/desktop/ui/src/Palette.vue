@@ -17,7 +17,7 @@ import {
   type CommandTarget,
 } from './commanding'
 import { does, type CommandDeps } from './doing'
-import type { Searching } from './finding'
+import type { SearchState } from './finding'
 import { iconFor, iconOfNote, iconOfSource } from './icons'
 import { chorded } from './keying'
 import { lands, type LandingDeps } from './landing'
@@ -25,7 +25,7 @@ import { WORDS as words } from './words'
 
 const props = defineProps<{
   commands: Commands
-  search: Searching
+  search: SearchState
   doing: CommandDeps
   /** What the commands are over, as the window stands now. */
   where: () => CommandTarget

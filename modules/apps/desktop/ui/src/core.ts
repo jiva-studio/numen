@@ -204,7 +204,7 @@ export interface ArtifactRunner {
 }
 
 /** Whether a node hangs the parts of its note, and how many stand at once. */
-export interface Hanging {
+export interface HangingSettings {
   readonly hangs: boolean
   readonly parts: number
   /** How many the vault takes, at each end. A count outside them is refused. */
@@ -213,7 +213,7 @@ export interface Hanging {
 }
 
 /** The hour a day of review begins at, and how late in the day one may. */
-export interface Reviewing {
+export interface ReviewSettings {
   readonly starts: string
   /** The latest hour the vault takes. One past it is refused. */
   readonly latest: string
@@ -423,7 +423,7 @@ export interface Core {
    * Whether a node in the plex hangs the parts of its note under the box, and
    * how many of them stand there at once, as the settings hold them.
    */
-  hanging(): Promise<Hanging>
+  hanging(): Promise<HangingSettings>
   /**
    * Those settings written into the settings file. What could not be written,
    * and nothing where it was. A count left out stands as it is.
@@ -434,7 +434,7 @@ export interface Core {
    * `04:00`, and how late in the day the vault takes one. An hour past that is
    * refused.
    */
-  reviewing(): Promise<Reviewing>
+  reviewing(): Promise<ReviewSettings>
   /**
    * That hour written into the settings file. What could not be written, and
    * nothing where it was.

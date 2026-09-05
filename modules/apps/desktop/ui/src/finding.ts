@@ -22,7 +22,7 @@ export interface Span {
  * One name that matched: a note, and the heading inside it when a heading is
  * what matched rather than the note's own title.
  */
-export interface Named {
+export interface NameMatch {
   path: string
   title: string
   heading: string
@@ -68,7 +68,7 @@ export type Way = 'fused' | 'words' | 'meaning' | 'names'
 /** The two questions the palette asks of the vault. */
 export interface FindingDeps {
   /** The names in the vault that match: a note’s own title, and its headings. */
-  names(query: string, limit: number): Promise<readonly Named[]>
+  names(query: string, limit: number): Promise<readonly NameMatch[]>
   /** The text the vault holds that answers, asked one way. */
   search(query: string, way: Way, limit: number): Promise<readonly Passage[]>
 }
@@ -156,20 +156,20 @@ interface Drawn {
 const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
 
 /** What the window hands the palette, beside the vault and its own words. */
-export interface Finding {
+export interface FindingOptions {
   wait?(ms: number): Promise<unknown>
   /** How far the vault has been read for meaning, where the window knows. */
   reading?(): Meaning
 }
 
-export function finding(core: FindingDeps, words: Words, how: Finding = {}) {
+export function finding(core: FindingDeps, words: Words, how: FindingOptions = {}) {
   const wait = how.wait ?? sleep
   const reading = how.reading
   /** Whether the palette is drawn at all. */
   const open = ref(false)
   const typed = ref('')
 
-  const names = shallowRef<readonly Named[]>([])
+  const names = shallowRef<readonly NameMatch[]>([])
   const texts = shallowRef<readonly Passage[]>([])
   const meanings = shallowRef<readonly Passage[]>([])
 
@@ -262,7 +262,7 @@ export function finding(core: FindingDeps, words: Words, how: Finding = {}) {
    *
    * The name that matched stands first, and the note it was found in under it.
    */
-  const nameItem = (one: Named): Drawn =>
+  const nameItem = (one: NameMatch): Drawn =>
     one.heading
       ? {
           item: {
@@ -424,4 +424,4 @@ export function finding(core: FindingDeps, words: Words, how: Finding = {}) {
 }
 
 /** The search of one window: what the words typed turn up, and where each goes. */
-export type Searching = ReturnType<typeof finding>
+export type SearchState = ReturnType<typeof finding>

@@ -7,7 +7,7 @@
  */
 import { ref } from 'vue'
 import { troubleWords } from '@numen/wire'
-import type { Reviewing } from './core'
+import type { ReviewSettings } from './core'
 import type { Voice } from './telling'
 
 /** The hour an installation nobody has configured begins the day at. */
@@ -22,7 +22,7 @@ export interface Words {
 /** What this asks of the vault. */
 export interface ReviewingDeps {
   /** The hour as the settings file holds it, and the latest the vault takes. */
-  reviewing(): Promise<Reviewing>
+  reviewing(): Promise<ReviewSettings>
   /** The hour written. What could not be written, and nothing where it was. */
   choosesReviewing(starts: string): Promise<string | null>
 }

@@ -35,7 +35,7 @@ export interface Words {
 }
 
 /** Whether a node hangs the parts of its note, and how many stand at once. */
-export interface Hanging {
+export interface HangingSettings {
   readonly hangs: boolean
   readonly parts: number
   /** How many the vault takes, at each end. A count outside them is refused. */
@@ -46,7 +46,7 @@ export interface Hanging {
 /** What this asks of the vault. */
 export interface HangingDeps {
   /** The two settings, as the settings file holds them. */
-  hanging(): Promise<Hanging>
+  hanging(): Promise<HangingSettings>
   /**
    * The settings written. What could not be written, and nothing where it was.
    * A count left out stands as it is.
@@ -74,7 +74,7 @@ export function hanging(core: HangingDeps, words: Words, said: Voice) {
 
   /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {
-    let held: Hanging
+    let held: HangingSettings
     try {
       held = await core.hanging()
     } catch {

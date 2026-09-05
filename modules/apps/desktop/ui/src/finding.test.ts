@@ -7,7 +7,7 @@
  * band that failed must not take the other two down with it.
  */
 import { describe, expect, it } from 'vitest'
-import { finding, type FindingDeps, type Way, type Named, type Passage, type Words } from './finding'
+import { finding, type FindingDeps, type Way, type NameMatch, type Passage, type Words } from './finding'
 import { later, type Deferred } from './testing/later'
 
 const WORDS: Words = {
@@ -26,14 +26,14 @@ const WORDS: Words = {
 
 /** A vault that answers when the test says so, and remembers what it was asked. */
 function asking() {
-  const names: Deferred<readonly Named[]>[] = []
+  const names: Deferred<readonly NameMatch[]>[] = []
   const searched: { way: Way; answer: Deferred<readonly Passage[]> }[] = []
   const queries: string[] = []
 
   const core: FindingDeps = {
     names: (query) => {
       queries.push(query)
-      const one = later<readonly Named[]>()
+      const one = later<readonly NameMatch[]>()
       names.push(one)
       return one.promise
     },
@@ -57,7 +57,7 @@ const settled = async () => {
   for (let turn = 0; turn < 6; turn += 1) await Promise.resolve()
 }
 
-const named = (over: Partial<Named> = {}): Named => ({
+const named = (over: Partial<NameMatch> = {}): NameMatch => ({
   path: 'notes/entropy.md',
   title: 'Entropy',
   heading: '',

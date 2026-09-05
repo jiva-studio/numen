@@ -20,12 +20,12 @@ import {
   type VaultList,
 } from './core'
 import { keysOf } from './keying'
-import type { EmptyWords, Named } from './finding'
+import type { EmptyWords, NameMatch } from './finding'
 
 /** What the commands ask of the application before anything is chosen. */
 export interface CommandingDeps {
   /** The names in the vault that match. */
-  names(query: string, limit: number): Promise<readonly Named[]>
+  names(query: string, limit: number): Promise<readonly NameMatch[]>
   /** Every vault the installation holds, and which of them this window shows. */
   vaults(): Promise<VaultList>
 }
@@ -718,7 +718,7 @@ export function commanding(
   const steps = shallowRef<readonly PendingStep[]>([])
 
   /** The names the vault answered the step that picks a note with. */
-  const found = shallowRef<readonly Named[]>([])
+  const found = shallowRef<readonly NameMatch[]>([])
   /** The vaults the installation answered the step that lists them with. */
   const known = shallowRef<readonly Vault[]>([])
   /** Which of them that answer said this window is showing. */

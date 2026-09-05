@@ -24,7 +24,7 @@ import {
   type CommandTarget,
 } from './commanding'
 import type { VaultList, Vault } from './core'
-import type { Named } from './finding'
+import type { NameMatch } from './finding'
 import { WORDS as words } from './words'
 
 /** What is in front, which a test moves under the commands. */
@@ -42,7 +42,7 @@ const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
 })
 
 /** One name as the vault answers one. */
-const name = (path: string, title: string, heading = ''): Named => ({
+const name = (path: string, title: string, heading = ''): NameMatch => ({
   path,
   title,
   heading,
@@ -106,7 +106,7 @@ const holding = (offers: Record<string, readonly Offering[]>) => {
 /** The commands over what a test says is in front, asked without a hold. */
 const asking = (
   over: Partial<CommandTarget> = {},
-  found: readonly Named[] = [],
+  found: readonly NameMatch[] = [],
   offers: Record<string, readonly Offering[]> = {},
   listed: VaultList = installation(vault('physics', 'Physics')),
   runs: Runnable = runnable(),

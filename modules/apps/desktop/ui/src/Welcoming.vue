@@ -13,7 +13,7 @@ import type { Tab } from '@numen/ui'
 import { deedOf, type CommandTarget, type Commands, type VaultRef } from './commanding'
 import type { VaultList } from './core'
 import { does, type CommandDeps } from './doing'
-import type { Searching } from './finding'
+import type { SearchState } from './finding'
 import { iconFor } from './icons'
 import { keysOf } from './keying'
 import { VERSION } from './version'
@@ -26,7 +26,7 @@ const props = defineProps<{
   /** Every tab the window holds, which is none while this screen is what shows. */
   tabs: readonly Tab[]
   commands: Commands
-  search: Searching
+  search: SearchState
   doing: CommandDeps
   where: () => CommandTarget
   /** A command asked for, which is what every way in but the commands comes to. */

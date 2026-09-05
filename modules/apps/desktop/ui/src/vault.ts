@@ -64,8 +64,8 @@ import type {
   Faced,
   Fault,
   Configured,
-  Hanging,
-  Reviewing,
+  HangingSettings,
+  ReviewSettings,
   MakeResult,
   MoveResult,
   Movement,
@@ -351,7 +351,7 @@ export const core: Core & FindingDeps & CommandingDeps = {
       parts: partsIn(settingAt(written, PARTS)),
       least: held?.least ?? DEFAULT_PARTS,
       most: held?.most ?? DEFAULT_PARTS,
-    } satisfies Hanging
+    } satisfies HangingSettings
   },
   // The switch is always sent, and the count only where it is the count being
   // turned.
@@ -398,7 +398,7 @@ export const core: Core & FindingDeps & CommandingDeps = {
     return {
       starts: typeof hour === 'string' ? hour : DEFAULT_STARTS,
       latest: answer.latestDayStarts,
-    } satisfies Reviewing
+    } satisfies ReviewSettings
   },
   choosesReviewing: (starts) => puts([{ at: STARTS, value: starts }]),
   makeFolder: async (path) => refusalIn(await files.createFolder({ path })),
