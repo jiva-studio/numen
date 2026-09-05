@@ -12,7 +12,7 @@ import Amiss from './Amiss.vue'
 import Bar from './Bar.vue'
 import Deed from './Deed.vue'
 import Grown from './Grown.vue'
-import Prose from './Prose.vue'
+import CardProse from './CardProse.vue'
 import NameBox from './NameBox.vue'
 import { useNaming } from './naming'
 import { Button } from '../components/ui/button'
@@ -211,7 +211,7 @@ const put = async (field: string): Promise<void> => {
         >
           <!-- A preview is a face read, not a face followed: a link in it stays
                where it is pressed. -->
-          <Prose :text="pane.text" @follow="(_href, press) => press.preventDefault()" />
+          <CardProse :text="pane.text" @follow="(_href, press) => press.preventDefault()" />
         </div>
 
         <!-- An empty part says what it is for, in the middle of itself. -->
@@ -244,7 +244,7 @@ const put = async (field: string): Promise<void> => {
   position: relative;
   container-type: inline-size;
   inline-size: 100%;
-  border: var(--numen-stroke) solid var(--numen-node-border);
+  border: var(--numen-stroke) solid var(--numen-rule);
   overflow: hidden;
 }
 
@@ -254,7 +254,7 @@ const put = async (field: string): Promise<void> => {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--numen-stroke);
-  background: var(--numen-node-border);
+  background: var(--numen-rule);
 }
 
 /* Two parts to a row from the width at which a part still holds a line of a
@@ -299,7 +299,7 @@ const put = async (field: string): Promise<void> => {
 }
 
 .block__slot:hover {
-  background: color-mix(in oklab, var(--numen-bubble-bg), var(--numen-node-fg) 10%);
+  background: color-mix(in oklab, var(--numen-bubble-bg), var(--numen-ink) 10%);
 }
 
 /* The ring is drawn inside the chip, so the row it scrolls in cannot clip it. */
@@ -324,7 +324,7 @@ const put = async (field: string): Promise<void> => {
 /* What is written stands on the ground a box stands on; what it comes to
    stands on the ground the block is read on. */
 .block__pane[data-shows='preview'] {
-  background: var(--numen-node-bg);
+  background: var(--numen-raised);
 }
 
 .block__grown,

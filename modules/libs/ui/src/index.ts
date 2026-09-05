@@ -259,7 +259,7 @@ export { default as Deck } from './cards/Deck.vue'
 export { default as Card } from './cards/Card.vue'
 /** One face of a stencil, which is what the stencil lays out. */
 export { default as Block } from './cards/Block.vue'
-export { default as CardProse } from './cards/Prose.vue'
+export { default as CardProse } from './cards/CardProse.vue'
 /** The heading one section of a deck stands under. */
 export { default as Band } from './cards/Band.vue'
 /** The strip a tile is carried by. */
