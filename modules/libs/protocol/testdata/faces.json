@@ -1,16 +1,359 @@
-[
-  {
-    "face": "**{{Name}}** is {{Height}}.",
-    "fields": ["Name", "Height"],
-    "laid": "**<Name>** is <Height>."
-  },
-  { "face": "![[llama.jpg]]", "fields": ["Name"], "laid": "![[llama.jpg]]" },
-  { "face": "{{Name}}{{Height}}", "fields": ["Name", "Height"], "laid": "<Name><Height>" },
-  { "face": "`{{Name}}`", "fields": ["Name"], "laid": "`<Name>`" },
-  { "face": "{{{Name}}}", "fields": ["Name"], "laid": "{<Name>}" },
-  { "face": "{{Name}", "fields": ["Name"], "laid": "{{Name}" },
-  { "face": "{{Weight}}", "fields": ["Name"], "laid": "" },
-  { "face": "[{{}}]", "fields": ["Name"], "laid": "[]" },
-  { "face": "[{{ Name }}]", "fields": ["Name"], "laid": "[]" },
-  { "face": "[{{Name\nHeight}}]", "fields": ["Name", "Height"], "laid": "[]" }
-]
+{
+  "invariant": "a card face means the same thing on every surface it is shown on",
+  "count": 41,
+  "changed": 35,
+  "faces": [
+    {
+      "name": "prose with no slot",
+      "construct": "a face naming no field",
+      "face": "A llama is a camelid.",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "A llama is a camelid."
+    },
+    {
+      "name": "a face of nothing",
+      "construct": "an empty face",
+      "face": "",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": ""
+    },
+    {
+      "name": "a face of nothing but space",
+      "construct": "space and tabs alone, kept as they were written",
+      "face": "   \n\t ",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "   \n\t "
+    },
+    {
+      "name": "a slot standing alone",
+      "construct": "a face that is one placeholder",
+      "face": "{{Name}}",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "Llama"
+    },
+    {
+      "name": "a slot in prose",
+      "construct": "a placeholder with words on both sides of it",
+      "face": "The {{Name}} is a camelid.",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "The Llama is a camelid."
+    },
+    {
+      "name": "one field placed twice",
+      "construct": "a face naming one field in two slots",
+      "face": "{{Name}} and {{Name}}",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "Llama and Llama"
+    },
+    {
+      "name": "two slots with nothing between them",
+      "construct": "placeholders that touch",
+      "face": "{{Name}}{{Height}}",
+      "fields": ["Name", "Height"],
+      "values": [
+        { "field": "Name", "text": "Llama" },
+        { "field": "Height", "text": "about 45\"" }
+      ],
+      "laid": "Llamaabout 45\""
+    },
+    {
+      "name": "a field the card leaves out",
+      "construct": "a declared field the card holds nothing under",
+      "face": "[{{Weight}}]",
+      "fields": ["Name", "Weight"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "[]"
+    },
+    {
+      "name": "a field written empty",
+      "construct": "a heading with nothing under it",
+      "face": "[{{Name}}]",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "" }],
+      "laid": "[]"
+    },
+    {
+      "name": "a field name with a space in it",
+      "construct": "a field named in two words",
+      "face": "{{Life span}}",
+      "fields": ["Life span"],
+      "values": [{ "field": "Life span", "text": "about 20 years" }],
+      "laid": "about 20 years"
+    },
+    {
+      "name": "a slot name with space around it",
+      "construct": "the name between the braces is a field's name written exactly, so this one is not Name",
+      "face": "[{{ Name }}]",
+      "fields": ["Name", " Name "],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "[]"
+    },
+    {
+      "name": "a slot with no name",
+      "construct": "empty braces, which are a slot naming a field of no name",
+      "face": "[{{}}]",
+      "fields": ["Name", ""],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "[]"
+    },
+    {
+      "name": "a slot name across two lines",
+      "construct": "a line break inside the braces, which is part of the name",
+      "face": "[{{Name\nHeight}}]",
+      "fields": ["Name", "Height", "Name\nHeight"],
+      "values": [
+        { "field": "Name", "text": "Llama" },
+        { "field": "Height", "text": "about 45\"" }
+      ],
+      "laid": "[]"
+    },
+    {
+      "name": "braces that are not doubled",
+      "construct": "single braces, which open no slot",
+      "face": "{ {Name} } is one brace",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "{ {Name} } is one brace"
+    },
+    {
+      "name": "braces that never close",
+      "construct": "an opening pair with no closing pair after it",
+      "face": "{{Name}",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "{{Name}"
+    },
+    {
+      "name": "braces three deep",
+      "construct": "a slot inside a brace, where the outermost brace is text",
+      "face": "{{{Name}}}",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "{Llama}"
+    },
+    {
+      "name": "a card writing one field twice",
+      "construct": "two headings of one name in a card, where the first stands",
+      "face": "{{Name}}",
+      "fields": ["Name"],
+      "values": [
+        { "field": "Name", "text": "the first" },
+        { "field": "Name", "text": "the second" }
+      ],
+      "laid": "the first"
+    },
+    {
+      "name": "emphasis around a slot",
+      "construct": "a placeholder inside strong emphasis",
+      "face": "**{{Name}}**",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "**Llama**"
+    },
+    {
+      "name": "emphasis inside emphasis",
+      "construct": "nested emphasis, written both ways",
+      "face": "***{{Name}}*** and *__{{Name}}__*",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "***Llama*** and *__Llama__*"
+    },
+    {
+      "name": "a value that is itself emphasis",
+      "construct": "marks written in the card rather than in the face",
+      "face": "{{Note}}",
+      "fields": ["Note"],
+      "values": [{ "field": "Note", "text": "**bold** and *thin*" }],
+      "laid": "**bold** and *thin*"
+    },
+    {
+      "name": "a slot in a code span",
+      "construct": "the braces are read inside code too, because the format escapes nothing",
+      "face": "`{{Name}}`",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "`Llama`"
+    },
+    {
+      "name": "a slot in a fence",
+      "construct": "a fenced block, whose braces are read like any others",
+      "face": "```\n{{Name}}\n```",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "```\nLlama\n```"
+    },
+    {
+      "name": "a slot in a link",
+      "construct": "a placeholder standing as the text of a link",
+      "face": "[{{Name}}](https://example.invalid/llama)",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "[Llama](https://example.invalid/llama)"
+    },
+    {
+      "name": "a slot in a wikilink",
+      "construct": "a placeholder standing as the target of a wikilink",
+      "face": "[[{{Name}}]]",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "[[Llama]]"
+    },
+    {
+      "name": "an embed and no slot",
+      "construct": "an embed, whose brackets are no braces",
+      "face": "![[llama.jpg]]",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "![[llama.jpg]]"
+    },
+    {
+      "name": "a picture laid out from two fields",
+      "construct": "placeholders in both halves of an image",
+      "face": "![{{Name}}]({{Picture}})",
+      "fields": ["Name", "Picture"],
+      "values": [
+        { "field": "Name", "text": "Llama" },
+        { "field": "Picture", "text": "llama.png" }
+      ],
+      "laid": "![Llama](llama.png)"
+    },
+    {
+      "name": "a slot inside a tag",
+      "construct": "HTML, which a face holds as readily as marks",
+      "face": "<u>{{Name}}</u>",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "<u>Llama</u>"
+    },
+    {
+      "name": "a slot inside an attribute",
+      "construct": "a placeholder standing in an attribute's value",
+      "face": "<span title=\"{{Name}}\">a camelid</span>",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "<span title=\"Llama\">a camelid</span>"
+    },
+    {
+      "name": "a slot in a table cell",
+      "construct": "a table, whose pipes and rules are text around the slot",
+      "face": "| Field | Value |\n| --- | --- |\n| Height | {{Height}} |\n",
+      "fields": ["Height"],
+      "values": [{ "field": "Height", "text": "about 45\"" }],
+      "laid": "| Field | Value |\n| --- | --- |\n| Height | about 45\" |\n"
+    },
+    {
+      "name": "a slot on each line of a list",
+      "construct": "a list, whose bullets are text around the slots",
+      "face": "- {{Name}}\n- {{Height}}\n",
+      "fields": ["Name", "Height"],
+      "values": [
+        { "field": "Name", "text": "Llama" },
+        { "field": "Height", "text": "about 45\"" }
+      ],
+      "laid": "- Llama\n- about 45\"\n"
+    },
+    {
+      "name": "a slot in a quotation",
+      "construct": "a blockquote",
+      "face": "> {{Name}}\n",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "> Llama\n"
+    },
+    {
+      "name": "a slot under a fourth-level heading",
+      "construct": "the deepest heading a card may write, the three above it being spent",
+      "face": "#### {{Name}}",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "Llama" }],
+      "laid": "#### Llama"
+    },
+    {
+      "name": "a value carrying braces of its own",
+      "construct": "what a value stands in the text is not read again",
+      "face": "{{One}}",
+      "fields": ["One", "Two"],
+      "values": [
+        { "field": "One", "text": "{{Two}}" },
+        { "field": "Two", "text": "caught" }
+      ],
+      "laid": "{{Two}}"
+    },
+    {
+      "name": "a value carrying the marks a replacement is written with",
+      "construct": "dollars in a value, which are text and not a pattern",
+      "face": "[{{Note}}]",
+      "fields": ["Note"],
+      "values": [{ "field": "Note", "text": "$& $1 $$ $`" }],
+      "laid": "[$& $1 $$ $`]"
+    },
+    {
+      "name": "a value carrying backslashes",
+      "construct": "an escape in a value, which is the two characters and no escape",
+      "face": "[{{Note}}]",
+      "fields": ["Note"],
+      "values": [{ "field": "Note", "text": "a\\b and \\n" }],
+      "laid": "[a\\b and \\n]"
+    },
+    {
+      "name": "a value over several lines",
+      "construct": "a paragraph written into a slot that stands on one line",
+      "face": "{{Note}}",
+      "fields": ["Note"],
+      "values": [{ "field": "Note", "text": "one\ntwo\n\nthree" }],
+      "laid": "one\ntwo\n\nthree"
+    },
+    {
+      "name": "a value of nothing but space",
+      "construct": "space written under a heading, which is neither empty nor a word",
+      "face": "[{{Note}}]",
+      "fields": ["Note"],
+      "values": [{ "field": "Note", "text": "   " }],
+      "laid": "[   ]"
+    },
+    {
+      "name": "a face whose lines end the Windows way",
+      "construct": "carriage returns, which are the file's own and are carried through",
+      "face": "{{Name}}\r\n{{Height}}\r\n",
+      "fields": ["Name", "Height"],
+      "values": [
+        { "field": "Name", "text": "Llama" },
+        { "field": "Height", "text": "about 45\"" }
+      ],
+      "laid": "Llama\r\nabout 45\"\r\n"
+    },
+    {
+      "name": "a face that is not Latin",
+      "construct": "field names and values in another script",
+      "face": "{{Перевод}} — {{Слово}}",
+      "fields": ["Перевод", "Слово"],
+      "values": [
+        { "field": "Перевод", "text": "compost" },
+        { "field": "Слово", "text": "Компост" }
+      ],
+      "laid": "compost — Компост"
+    },
+    {
+      "name": "a value beyond the basic plane",
+      "construct": "characters that are one code point and two UTF-16 units",
+      "face": "{{Name}} 🌱",
+      "fields": ["Name"],
+      "values": [{ "field": "Name", "text": "विद्या 🐫" }],
+      "laid": "विद्या 🐫 🌱"
+    },
+    {
+      "name": "a field named beyond the basic plane",
+      "construct": "a slot whose name is one code point counted in bytes on one side and in UTF-16 units on the other",
+      "face": "[{{🐫}}]",
+      "fields": ["🐫"],
+      "values": [{ "field": "🐫", "text": "Llama" }],
+      "laid": "[Llama]"
+    }
+  ]
+}

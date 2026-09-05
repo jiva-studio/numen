@@ -15,9 +15,10 @@ import {
 } from './fill'
 
 /**
- * A face travels on the wire as it was written, so the core fills one too — to
- * lay out the card a person is shown. Both read this one corpus, and neither
- * owns it.
+ * A card face is shown on two surfaces and each lays it out for itself: this
+ * library for the preview beside the stencil being written, and the core's
+ * flashcards/format for the window a card is reviewed in. The table both are
+ * held to is one file, and neither owns it.
  */
 import corpus from '../../../protocol/testdata/faces.json'
 
@@ -26,13 +27,48 @@ const VALUES = [
   { field: 'Life span', text: 'about 20 years' },
 ]
 
-describe('the braces a face is written with', () => {
-  it('are read the way the schema says they are', () => {
-    expect(corpus.length).toBeGreaterThan(0)
-    for (const { face, fields, laid } of corpus) {
-      const values = fields.map((field) => ({ field, text: `<${field}>` }))
-      expect({ face, laid: fill(face, values) }).toStrictEqual({ face, laid })
+/**
+ * A card face means the same thing on every surface it is shown on.
+ *
+ * Laying a face out is the step each surface takes for itself; drawing what
+ * comes out is one implementation both of them reach, so what is compared is
+ * the text the slots have been filled in, and text that agrees is drawn alike.
+ *
+ * Every slot of the table names a field the stencil declares. A slot naming
+ * none is where the two surfaces part on purpose — the review window lays it
+ * out as nothing and the preview marks it where it stands, because the stencil
+ * is what the preview is there to settle — and it is held to below instead.
+ */
+describe('a card face', () => {
+  it('means the same on every surface it is shown on', () => {
+    if (corpus.invariant === '') throw new Error('the table names no invariant')
+    if (corpus.faces.length === 0 || corpus.count === 0 || corpus.changed === 0) {
+      throw new Error(
+        `the table holds ${corpus.faces.length} faces and declares ${corpus.count}, ` +
+          `${corpus.changed} of which the slots change`,
+      )
     }
+
+    const named = new Set<string>()
+    let laid = 0
+    let changed = 0
+    for (const { name, construct, face, fields, values, laid: want } of corpus.faces) {
+      if (name === '' || construct === '') {
+        throw new Error(`a face of the table is called "${name}" and pins "${construct}"`)
+      }
+      if (named.has(name)) throw new Error(`two faces of the table are called "${name}"`)
+      named.add(name)
+
+      laid += 1
+      if (want !== face) changed += 1
+
+      const said = { name, construct, laid: want }
+      expect({ name, construct, laid: fill(face, values) }).toStrictEqual(said)
+      expect({ name, construct, laid: previewed(face, values, fields) }).toStrictEqual(said)
+    }
+
+    expect(laid).toBe(corpus.count)
+    expect(changed).toBe(corpus.changed)
   })
 })
 

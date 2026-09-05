@@ -8,42 +8,109 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 )
 
-// A face travels on the wire as it was written, so the window fills one too —
-// to show a preview of the card the person is writing the face for. Both read
-// this one corpus, and neither owns it.
+// A card face is shown on two surfaces and each lays it out for itself: this
+// package for the window a card is reviewed in, and modules/libs/ui for the
+// preview beside the stencil being written. The table both are held to is one
+// file, and neither owns it.
 const corpus = "../../../protocol/testdata/faces.json"
 
-type laying struct {
-	Face   string   `json:"face"`
-	Fields []string `json:"fields"`
-	Laid   string   `json:"laid"`
+// table is the corpus as it is written down: what it says of itself, and the
+// faces.
+type table struct {
+	Invariant string   `json:"invariant"`
+	Count     int      `json:"count"`
+	Changed   int      `json:"changed"`
+	Faces     []laying `json:"faces"`
 }
 
-func TestAFaceIsFilledTheWayTheSchemaSaysItIs(t *testing.T) {
+// laying is one face of the table: what it is called, the construct it pins,
+// and what a surface must lay it out as.
+type laying struct {
+	Name      string   `json:"name"`
+	Construct string   `json:"construct"`
+	Face      string   `json:"face"`
+	Fields    []string `json:"fields"`
+	Values    []filled `json:"values"`
+	Laid      string   `json:"laid"`
+}
+
+type filled struct {
+	Field string `json:"field"`
+	Text  string `json:"text"`
+}
+
+// A card face means the same thing on every surface it is shown on. Laying it
+// out is the step each surface takes for itself; drawing what comes out is one
+// implementation both of them reach, so what is compared here is the text the
+// slots have been filled in, and text that agrees is drawn alike.
+func TestACardFaceMeansTheSameOnEverySurfaceItIsShownOn(t *testing.T) {
+	read := corpusOf(t)
+
+	laid, changed := 0, 0
+	for _, one := range read.Faces {
+		card := format.Card{Heading: "Llama"}
+		for _, value := range one.Values {
+			card.Values = append(card.Values, format.Value{Field: value.Field, Text: value.Text})
+		}
+
+		face := format.FaceTemplate{Name: one.Name, Front: one.Face, Back: one.Face}
+		front, back := format.Lay(declaring(one.Fields...), face, card)
+		laid++
+		if one.Laid != one.Face {
+			changed++
+		}
+
+		if front != one.Laid {
+			t.Errorf("%s — %s\nthe face  %q\nlays out  %q\nthe table %q",
+				one.Name, one.Construct, one.Face, front, one.Laid)
+		}
+		if back != front {
+			t.Errorf("%s — %s: the two sides of one face lay out as %q and %q",
+				one.Name, one.Construct, front, back)
+		}
+	}
+
+	if laid != read.Count {
+		t.Fatalf("the table declares %d faces and %d were laid out", read.Count, laid)
+	}
+	if changed != read.Changed {
+		t.Fatalf("the table declares %d faces the slots change and %d of them differ from the face",
+			read.Changed, changed)
+	}
+}
+
+// corpusOf reads the table and refuses one that would pass without asking
+// anything: a file that is empty, that declares no faces, that says nothing of
+// what it is for, or that names one face twice.
+func corpusOf(t *testing.T) table {
+	t.Helper()
+
 	raw, err := os.ReadFile(corpus)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var cases []laying
-	if err := json.Unmarshal(raw, &cases); err != nil {
+	var read table
+	if err := json.Unmarshal(raw, &read); err != nil {
 		t.Fatal(err)
 	}
-	if len(cases) == 0 {
-		t.Fatal("the corpus is empty")
+	if read.Invariant == "" {
+		t.Fatal("the table names no invariant")
 	}
-
-	for _, one := range cases {
-		card := format.Card{Heading: "Llama"}
-		for _, field := range one.Fields {
-			card.Values = append(card.Values, format.Value{Field: field, Text: "<" + field + ">"})
-		}
-
-		face := format.FaceTemplate{Front: one.Face, Back: one.Face}
-		front, back := format.Lay(declaring(one.Fields...), face, card)
-		if front != one.Laid || back != one.Laid {
-			t.Errorf("%q laid out as %q and %q, want %q", one.Face, front, back, one.Laid)
-		}
+	if len(read.Faces) == 0 || read.Count == 0 || read.Changed == 0 {
+		t.Fatalf("the table holds %d faces and declares %d, %d of which the slots change",
+			len(read.Faces), read.Count, read.Changed)
 	}
+	seen := map[string]bool{}
+	for _, one := range read.Faces {
+		if one.Name == "" || one.Construct == "" {
+			t.Fatalf("a face of the table is called %q and pins %q", one.Name, one.Construct)
+		}
+		if seen[one.Name] {
+			t.Fatalf("two faces of the table are called %q", one.Name)
+		}
+		seen[one.Name] = true
+	}
+	return read
 }
 
 // declaring is a stencil of nothing but its fields, which is what laying a face
