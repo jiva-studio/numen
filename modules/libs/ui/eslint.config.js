@@ -13,8 +13,8 @@ import tseslint from 'typescript-eslint'
 
 /** The globals a pure core is not allowed to reach for, and the port for each. */
 const lifetimes = [
-  { name: 'requestAnimationFrame', port: 'the schedule an Environment carries' },
-  { name: 'cancelAnimationFrame', port: 'the cancel an Environment carries' },
+  { name: 'requestAnimationFrame', port: 'the schedule a Clock carries' },
+  { name: 'cancelAnimationFrame', port: 'the cancel a Clock carries' },
   { name: 'matchMedia', port: 'a prop, or CSS where the browser already knows' },
 ]
 
@@ -126,7 +126,7 @@ export default tseslint.config(
       'src/**/fixtures/**',
       // The port itself, and the one function that turns an element into the
       // rectangle the pure core reasons about.
-      'src/lib/environment.ts',
+      'src/lib/clock.ts',
       'src/workspace/drop.ts',
     ],
     rules: {
@@ -141,11 +141,11 @@ export default tseslint.config(
         'error',
         {
           selector: 'MemberExpression[object.name="Date"][property.name="now"]',
-          message: 'the clock is a port — take the now an Environment carries (ADR-0023)',
+          message: 'the clock is a port — take the now a Clock carries (ADR-0023)',
         },
         {
           selector: 'NewExpression[callee.name="Date"][arguments.length=0]',
-          message: 'the clock is a port — take the now an Environment carries (ADR-0023)',
+          message: 'the clock is a port — take the now a Clock carries (ADR-0023)',
         },
         {
           selector: 'MemberExpression[object.name="Math"][property.name="random"]',
