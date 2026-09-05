@@ -78,7 +78,7 @@ A field renamed in a stencil is renamed in every card that stencil cuts. Each de
 
 A deck that cannot be written — a deck whose frontmatter does not parse, a file the filesystem refuses — keeps the old heading, and that is a problem against the deck.
 
-A rename is the application changing what is in a file, so a deck it reaches carries an `id` afterwards if it carried none ([ADR-0019](adr/0019-a-note-is-identified-by-a-ulid.md)). One rename can therefore write an identifier into a deck a person wrote by hand and never opened here.
+A rename is the application changing what is in a file, so a deck it reaches carries an `id` afterwards if it carried none ([A note is identified by a ULID in its frontmatter](adr/0019-a-note-is-identified-by-a-ulid.md)). One rename can therefore write an identifier into a deck a person wrote by hand and never opened here.
 
 ### Faces
 
@@ -272,7 +272,7 @@ Several decks pointing at one preset is what sharing it looks like, and scheduli
 
 Each preset's budget is spent on the cards of the decks pointing at it, and a sitting over the whole vault is the union of them. Inside one preset, the budget its `goal` names is what closes the day: the minutes under `minutes_a_day`, the two card counts under `retention`, and under `by_date` what has to be got through to have the material learned by that day. A setting the goal does not name keeps its value and takes no part until its own goal is chosen again.
 
-**A preset's day is divided over the decks pointing at it**, and pressing one deck hands over that deck's share of it — the same count the deck stands at on the front door. The shares go by what each deck owes: three decks owing the same take a third each, and a deck owing nine times another's takes nine times the share. A share too small to buy a card, or larger than the deck has cards to spend it on, goes to the decks that can use it, so the day spends what it holds. What a deck was already sat through today comes off that deck's own share, so sitting one deck does not take from another and the decks may be sat in any order. Adding a deck adds nothing to the day's work; it spreads the same work over more decks, and raising the work is raising the budget ([ADR-0034](adr/0034-the-preset.md)).
+**A preset's day is divided over the decks pointing at it**, and pressing one deck hands over that deck's share of it — the same count the deck stands at on the front door. The shares go by what each deck owes: three decks owing the same take a third each, and a deck owing nine times another's takes nine times the share. A share too small to buy a card, or larger than the deck has cards to spend it on, goes to the decks that can use it, so the day spends what it holds. What a deck was already sat through today comes off that deck's own share, so sitting one deck does not take from another and the decks may be sat in any order. Adding a deck adds nothing to the day's work; it spreads the same work over more decks, and raising the work is raising the budget ([A preset is a note, and one arithmetic schedules it](adr/0034-the-preset.md)).
 
 **A day asks a card as often as it falls due in it.** An answer a card did not come back on sends it away for minutes, so it lands back inside the day it was asked in and that day asks it again. Under `counts: cards` a card face spends a slot the first time the day asks it and comes round again in it for nothing; under `counts: shows` every showing spends one. The minutes go on every showing either way, and the count a person reads beside the control is in cards: a card the day comes back to is the one card, and the showings it takes are what the clock runs out on.
 
@@ -328,7 +328,7 @@ A card carrying a field its stencil does not declare is not a problem. Neither i
 
 ## What is not in these files
 
-**No schedule.** When a card is due, how long its intervals have grown and how it has been answered are computed from the history of answers, so they are a cache and live in the index ([ADR-0015](adr/0015-a-books-text-is-a-cache-or-an-artifact.md)). A deck is not rewritten because a card was reviewed.
+**No schedule.** When a card is due, how long its intervals have grown and how it has been answered are computed from the history of answers, so they are a cache and live in the index ([A book's text is a cache or an artifact](adr/0015-a-books-text-is-a-cache-or-an-artifact.md)). A deck is not rewritten because a card was reviewed.
 
 ## What is searched
 

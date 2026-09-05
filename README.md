@@ -50,7 +50,7 @@ a shell. What it does arrives in the window the way any other edit does.
 
 ## Architecture
 
-A **hexagonal core in Go** ([ADR-0004](docs/adr/0004-a-hexagonal-core-in-go.md)),
+A [**hexagonal core in Go**](docs/adr/0004-a-hexagonal-core-in-go.md),
 compiled into whatever runs it. There is no daemon.
 
 ```
@@ -62,7 +62,7 @@ container/  the composition root, where an adapter meets a port
 ```
 
 Clients are **generated from one `.proto`**
-([ADR-0005](docs/adr/0005-a-client-is-generated-from-the-protocol.md)): Go
+([A client is generated from the protocol](docs/adr/0005-a-client-is-generated-from-the-protocol.md)): Go
 handlers and a TypeScript client both come out of the schema, so a renamed field
 fails a build rather than a request.
 
@@ -76,9 +76,9 @@ nothing about vaults. Local models run in-process: ONNX Runtime for speech and
 OCR, and pdfium under WebAssembly for pages.
 
 Two ideas hold the rest together. **Files on disk are the truth** and the index
-is a cache ([ADR-0001](docs/adr/0001-files-are-the-source-of-truth.md)); and
+is a cache ([Files on disk are the source of truth](docs/adr/0001-files-are-the-source-of-truth.md)); and
 what a model made and cannot cheaply remake is an **artifact**, kept in the
-vault's own folder ([ADR-0015](docs/adr/0015-a-books-text-is-a-cache-or-an-artifact.md)).
+vault's own folder ([A book's text is a cache or an artifact](docs/adr/0015-a-books-text-is-a-cache-or-an-artifact.md)).
 
 ## Layout
 

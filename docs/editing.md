@@ -66,9 +66,9 @@ A keystroke is worth trying again after three of them — `tooLarge`, `bodyRefus
 
 ## What a save writes
 
-The buffer holds the body. The save reads the file under the vault's write lock, takes the frontmatter as it then stands, puts the body on it, and replaces the file. The read and the rename are one act against every other write that reads a note and puts it back — see [ADR-0020](adr/0020-one-process-one-lifetime.md).
+The buffer holds the body. The save reads the file under the vault's write lock, takes the frontmatter as it then stands, puts the body on it, and replaces the file. The read and the rename are one act against every other write that reads a note and puts it back — see [One process, one lifetime](adr/0020-one-process-one-lifetime.md).
 
-**A save writes no identifier.** What it puts in the note is the person's. A note the save makes — a name with no file behind it, kept — is made with no frontmatter at all. An identifier arrives from the operations that change what is in a note: a create, a link, a rename that writes the `title` key. See [ADR-0019](adr/0019-a-note-is-identified-by-a-ulid.md).
+**A save writes no identifier.** What it puts in the note is the person's. A note the save makes — a name with no file behind it, kept — is made with no frontmatter at all. An identifier arrives from the operations that change what is in a note: a create, a link, a rename that writes the `title` key. See [A note is identified by a ULID in its frontmatter](adr/0019-a-note-is-identified-by-a-ulid.md).
 
 **A note this application moves is followed.** The move knows both names, so the tab takes the one the note now has and goes on reading and writing it there. It is the move that says so, and this holds for every caller of one.
 
@@ -172,7 +172,7 @@ The window is asked for everything it still holds, and it answers once every tab
 
 A page that goes with a question standing is still owed. Its work is held by a window this process cannot reach into, and a page that comes back takes it over and raises the question again.
 
-The window then settles in one order — the page, the agents, the scan and the follower, the database. A page has three seconds to hand over what it holds; the agents' transport has two seconds to be cut off; the writes already taken are waited for with no bound, the door having been shut first. A quit that does not arrive through the window happens once, the same way. See [ADR-0020](adr/0020-one-process-one-lifetime.md).
+The window then settles in one order — the page, the agents, the scan and the follower, the database. A page has three seconds to hand over what it holds; the agents' transport has two seconds to be cut off; the writes already taken are waited for with no bound, the door having been shut first. A quit that does not arrive through the window happens once, the same way. See [One process, one lifetime](adr/0020-one-process-one-lifetime.md).
 
 ## The states, drawn
 

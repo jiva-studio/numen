@@ -75,7 +75,7 @@ header the hook measures is what that comes to.
 - **breaking change** — `!` after the scope, or a `BREAKING CHANGE:` footer.
 
 ```
-docs(adr): add ADR-0009 on two levels of addressing
+docs(adr): add a record on two levels of addressing
 feat(domain): resolve wikilinks by name with priority rules
 fix(protocol): keep note:// links untouched on rename
 feat(domain)!: drop path-based note identity

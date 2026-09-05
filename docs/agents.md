@@ -1,6 +1,6 @@
 # What the panel's agent can reach
 
-A person types a question into the panel beside their notes, and the application starts an agent to answer it. It chooses the program, the model, the tools, the working directory and the environment. This page is what that agent is given and what it is refused; the decisions behind it are [ADR-0021](adr/0021-an-agent-reaches-the-vault-through-tools.md).
+A person types a question into the panel beside their notes, and the application starts an agent to answer it. It chooses the program, the model, the tools, the working directory and the environment. This page is what that agent is given and what it is refused; the decisions behind it are [An agent reaches the vault through tools](adr/0021-an-agent-reaches-the-vault-through-tools.md).
 
 ## What the agent is given
 
@@ -75,7 +75,7 @@ A tool that writes returns only once the index is level again. An agent that cre
 
 ## The reviewer's surface
 
-The window a person runs their cards in serves a surface of its own. It reads the whole vault — `note_search`, `note_titles`, `note_read`, `note_neighbourhood`, `link_list`, `source_list`, `source_read`, `card_stencil_list`, `card_read` and `vault_get` — and writes cards alone: `card_add`, `card_edit`, `card_value_remove`, `card_remove`, `card_section_add`, `card_section_rename` and `card_section_remove`. Nothing else is on it. A deck and a stencil are what a vault is arranged into, and nothing there makes one; no note, link or document is written there either. The decisions behind it are [ADR-0030](adr/0030-review-is-an-application-of-its-own.md).
+The window a person runs their cards in serves a surface of its own. It reads the whole vault — `note_search`, `note_titles`, `note_read`, `note_neighbourhood`, `link_list`, `source_list`, `source_read`, `card_stencil_list`, `card_read` and `vault_get` — and writes cards alone: `card_add`, `card_edit`, `card_value_remove`, `card_remove`, `card_section_add`, `card_section_rename` and `card_section_remove`. Nothing else is on it. A deck and a stencil are what a vault is arranged into, and nothing there makes one; no note, link or document is written there either. The decisions behind it are [Review is an application of its own](adr/0030-review-is-an-application-of-its-own.md).
 
 The reading half of it is a surface in its own right, with no writer on it at all.
 

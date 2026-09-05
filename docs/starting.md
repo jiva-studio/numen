@@ -21,7 +21,7 @@ The heading names what could not be opened: the index, or the person's own setti
 
 Five states are drawn, each in the application's own words and each carrying a remedy:
 
-- **an index a later build wrote** — the schema the index holds beside the schema this build knows, and update numen to the version that wrote it. See [ADR-0007](adr/0007-a-schema-change-is-a-numbered-migration.md) for what a build does about a schema it cannot account for;
+- **an index a later build wrote** — the schema the index holds beside the schema this build knows, and update numen to the version that wrote it. See [A schema change is a numbered migration](adr/0007-a-schema-change-is-a-numbered-migration.md) for what a build does about a schema it cannot account for;
 - **an index that is not a database** — move the file aside, and numen makes a new one and fills it from the vaults;
 - **an index path that is a folder** — point `-index` at a file, or move the folder out of the way;
 - **an index folder nobody may write in** — the folder, and permission to write in it or a path somewhere the person can write;

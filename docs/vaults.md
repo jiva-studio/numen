@@ -8,11 +8,11 @@ The process holds two halves, and they have different lifetimes.
 
 **The installation is made once**: the index, the embedder, the list of what is being done, and everyone listening to it. **One vault is made and unmade**: the scan, the watch, the reading of documents, the documents held open, and what each of those has in flight.
 
-Opening another vault unmakes the second half and makes it again. One database holds every vault and the embedder is the installation's, so neither is touched. See [ADR-0004](adr/0004-a-hexagonal-core-in-go.md).
+Opening another vault unmakes the second half and makes it again. One database holds every vault and the embedder is the installation's, so neither is touched. See [A hexagonal core in Go](adr/0004-a-hexagonal-core-in-go.md).
 
 ## A swap settles first
 
-Every page writes what only it holds before anything is taken away. This is the settling a window closing does, asked for a second reason — see [ADR-0020](adr/0020-one-process-one-lifetime.md).
+Every page writes what only it holds before anything is taken away. This is the settling a window closing does, asked for a second reason — see [One process, one lifetime](adr/0020-one-process-one-lifetime.md).
 
 **A page holding text a person has to answer for calls the swap off.** The window stays on the vault it had, and the question stands. A page that says nothing has three seconds to hand over what it holds.
 
@@ -62,7 +62,7 @@ sequenceDiagram
 
 ## The registry is the list
 
-Which vaults exist, where they are and which was opened last is JSON, written by the application, kept where the application keeps its own files and beside `numen.json` — see [Settings](settings.md). It is not derivable from anything and it is not a cache. It is read before the database opens, and most of all when the database will not open. See [ADR-0002](adr/0002-one-database-for-all-vaults.md).
+Which vaults exist, where they are and which was opened last is JSON, written by the application, kept where the application keeps its own files and beside `numen.json` — see [Settings](settings.md). It is not derivable from anything and it is not a cache. It is read before the database opens, and most of all when the database will not open. See [One database for all vaults, outside them](adr/0002-one-database-for-all-vaults.md).
 
 The `vaults` table in the index is what every other row's foreign key points at. It is a copy of the list, which a scan writes again.
 
@@ -99,7 +99,7 @@ The index file does not shrink. The space is reused and the file is the size it 
 
 ## What an agent may do
 
-Five tools, from [ADR-0021](adr/0021-an-agent-reaches-the-vault-through-tools.md):
+Five tools, from [An agent reaches the vault through tools](adr/0021-an-agent-reaches-the-vault-through-tools.md):
 
 | Tool | What it does |
 | --- | --- |

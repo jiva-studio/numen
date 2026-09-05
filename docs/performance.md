@@ -57,7 +57,7 @@ Recorded 2026-08-15 on an AMD Ryzen 7 6800U, `modernc.org/sqlite`, WAL with `syn
 
 Neither link figure grows with the vault: the two columns are ten times apart in size and within a fraction of a millisecond of each other.
 
-A search costs more while a scan is continuously rewriting the index. That is the number ADR-0004 exists to keep honest: WAL lets a reader answer without waiting for the writer, and the write pool is capped at one connection, so writers queue in Go.
+A search costs more while a scan is continuously rewriting the index. WAL lets a reader answer without waiting for the writer, and the write pool is capped at one connection, so writers queue in Go.
 
 **How much more is unsettled.** The two rows above are 20 ms quiet against 60 ms under a scan — the same query, the same ten thousand notes, three times as long. `BenchmarkSearchDuringScan` was reported on the same date as **64 ms against 48 ms** on a quiet database, which is a third more. The loaded figures are close and the quiet ones are not, and nothing establishes which quiet run the table holds. Both are 2026-08-15.
 
@@ -121,7 +121,7 @@ The first two are what a search returns for "slow SQLite inserts".
 
 ## The source layer: finding a passage
 
-The numbers above are the note index. These are the source layer: text cut into chunks, embedded, and searched. The decisions they were taken for are in [ADR-0010](adr/0010-a-source-is-text-in-one-table.md) and the four decisions after it.
+The numbers above are the note index. These are the source layer: text cut into chunks, embedded, and searched. The decisions they were taken for are in [A source is text in one table](adr/0010-a-source-is-text-in-one-table.md) and the four decisions after it.
 
 Recorded 2026-08-17 on the same AMD Ryzen 7 6800U, `modernc.org/sqlite` v1.56 with the bundled `sqlite-vec` v0.1.9, WAL with `synchronous = NORMAL`.
 
@@ -158,7 +158,7 @@ One passage, one query, four chunks cut around the same sentence. The score is a
 
 The best score anything in the corpus reaches for that query is 0.639. At 25 words the passage would lead by a wide margin; at 200 it ranks **401st of 36 560**, which is not a result anybody sees.
 
-This is the measurement ADR-0005 exists for. Nothing about the index changed between those rows.
+This is the measurement the chunk sizes are chosen against. Nothing about the index changed between those rows.
 
 The chunk also has to fit the model. Cut on the sections a translation already carries, in words:
 
@@ -288,7 +288,7 @@ One question was answered by seven chunks of a single note taking the top seven 
 
 **Agreement is with the model, not with a reader.** The full-precision ranking is the reference, so a representation scoring 0.975 reproduces what this model believes — including where it is wrong.
 
-**The sizes are one corpus.** Chunk sizes tuned here are not guaranteed elsewhere, which is why ADR-0005 makes the acceptance set the check rather than the sizes.
+**The sizes are one corpus.** Chunk sizes tuned here are not guaranteed elsewhere, which is why the acceptance set is the check rather than the sizes.
 
 **Sanskrit is indexed and does not surface.** No question in the set returned a passage from the critical edition, in any configuration tried. Whether that is the model, the transliteration or the way verse is cut is not established.
 
@@ -350,7 +350,7 @@ The corpus is not in git. The test that measures it skips when the directory is 
 | Per book | 59 ms |
 | Slowest book | 0.26 s |
 
-Reading a passage back, which is what a result costs when the extracted text is not stored ([ADR-0015](adr/0015-a-books-text-is-a-cache-or-an-artifact.md)):
+Reading a passage back, which is what a result costs when the extracted text is not stored ([A book's text is a cache or an artifact](adr/0015-a-books-text-is-a-cache-or-an-artifact.md)):
 
 | | |
 | --- | --- |
@@ -369,7 +369,7 @@ What structure the forty carry, **measured with the Go extractor**:
 | Heading tags | 4 |
 | Nothing at all | 20 |
 
-Half the corpus offers nothing to cut on, which is what ADR-0006 requires extraction to survive.
+Half the corpus offers nothing to cut on, which is what extraction has to survive.
 
 A tier answers only when it names at least two parts. One named part is a cover or a book's own title, and it carries no cut a caller does not already have, because the offset of every spine document is reported separately. Four books turn on that rule: they carry a single heading each, one of them across 853 spine documents. Counting a lone heading as structure puts those four in the heading tier and reads 16 / 8 / 16.
 
@@ -392,7 +392,7 @@ Window size moves it as much as the flag does: the same model answers 6.0/s at 1
 
 For comparison, a hosted service embedded 145 800 chunks of the source corpus in **10 minutes** for about ten cents.
 
-What that means for the default: a personal vault of a few thousand notes is ten to twenty thousand chunks, which finishes locally in one to two hours. A hundred thousand notes is four hundred thousand chunks, and local is then a day and a half of background work. ADR-0001 already says the vector index fills in behind the lexical one and may never finish, so neither figure blocks anything — but only the service answers a corpus of that size in a sitting.
+What that means for the default: a personal vault of a few thousand notes is ten to twenty thousand chunks, which finishes locally in one to two hours. A hundred thousand notes is four hundred thousand chunks, and local is then a day and a half of background work. The vector index fills in behind the lexical one and may never finish, so neither figure blocks anything — but only the service answers a corpus of that size in a sitting.
 
 The default model is a 470 MB fp32 ONNX file, fetched on first use. An int8 export was not tried.
 
@@ -431,7 +431,7 @@ The weights are 641 MB, fetched when the first recording is heard.
 
 ### Why the markup is not parsed as XML
 
-Four books hold documents that `encoding/xml` refuses — 125 documents in all, failing with `element <p> closed by </html>`. `golang.org/x/net/html` reads every one of them. That is the whole case for the dependency: a strict parser drops a tenth of this corpus, and ADR-0006 does not allow extraction to refuse.
+Four books hold documents that `encoding/xml` refuses — 125 documents in all, failing with `element <p> closed by </html>`. `golang.org/x/net/html` reads every one of them. That is the whole case for the dependency: a strict parser drops a tenth of this corpus, and extraction is not allowed to refuse.
 
 Two more shapes in the same corpus would have cost whole books. Three books declare their spine documents as `media-type="text/html"`, so filtering the spine by media type loses them entirely. Five carry no `dc:title` at all, so an empty title is a correct answer rather than a parse failure.
 
