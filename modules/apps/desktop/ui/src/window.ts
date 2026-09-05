@@ -13,8 +13,8 @@ import type { Attention, ArtifactStates, VaultList } from './core'
 import { showing } from './showing'
 import { view } from './plex/view'
 import { reading } from './document/reading'
-import { cornerOf } from './corner'
-import type { Meaning } from './meaning'
+import { cornerOf } from './notices/corner'
+import type { Meaning } from './notices/meaning'
 import { editing } from './note/editing'
 import { noteChanges } from './note/changes'
 import { CREATABLE, creating } from './note/creating'
@@ -26,30 +26,37 @@ import {
   type NoteLookup,
   type VaultRef,
   type CommandTarget,
-} from './commanding'
-import { chorded, commandFor } from './keying'
+} from './command/commanding'
+import { chorded, commandFor } from './command/keying'
 import { iconOfKind } from './icons'
-import { themes } from './theme'
-import { APPEARANCE, DRESSING, INTERFACE_SCALE, MODE, TEXT_SCALE, wearing } from './wearing'
-import { reviewing } from './reviewing'
-import { OFF, ON, SYNCING, syncing } from './syncing'
-import { HANGING, PARTS, hanging } from './hanging'
-import { does, reaching, type CommandDeps, type Store } from './doing'
-import { finding } from './finding'
-import { lands, type DestinationDeps } from './destination'
-import { fileMakers, putting } from './putting'
-import { flushing } from './flushing'
-import { raising } from './raising'
-import { windowing } from './windowing'
-import { telling } from './telling'
+import { themes } from './settings/theme'
+import {
+  APPEARANCE,
+  DRESSING,
+  INTERFACE_SCALE,
+  MODE,
+  TEXT_SCALE,
+  wearing,
+} from './settings/wearing'
+import { reviewing } from './settings/reviewing'
+import { OFF, ON, SYNCING, syncing } from './settings/syncing'
+import { HANGING, PARTS, hanging } from './settings/hanging'
+import { does, reaching, type CommandDeps, type Store } from './command/doing'
+import { finding } from './command/finding'
+import { lands, type DestinationDeps } from './command/destination'
+import { fileMakers, putting } from './tabs/putting'
+import { flushing } from './saving/flushing'
+import { raising } from './saving/raising'
+import { windowing } from './tabs/windowing'
+import { telling } from './notices/telling'
 import { agentKind, talking } from './agent/kind'
 import { decking } from './cards/deck'
 import { stencilling } from './cards/stencil'
 import { presets } from './preset/core'
 import { presetting } from './preset/kind'
-import { configuring } from './settings/configuring'
-import { settling } from './settings/kind'
-import { editingSettingsFile } from './settingsfile/kind'
+import { settingsStore } from './settings/store'
+import { settling } from './settings/controls/kind'
+import { editingSettingsFile } from './settings/file/kind'
 import { documentKind, documenting } from './document/kind'
 import { recordingKind } from './recording/kind'
 import { transcript } from './recording/transcript'
@@ -62,7 +69,7 @@ import { core as agent } from './agent/core'
 import { WORDS as talk } from './agent/words'
 import { WORDS as cardWords } from './cards/words'
 import { WORDS as words } from './words'
-import { AGENT, CONVERSATION, FILES, PLEX, named, opening } from './workspace'
+import { AGENT, CONVERSATION, FILES, PLEX, named, opening } from './tabs/workspace'
 
 /** Everything the window is made of, made once and handed to what draws it. */
 export const useWindow = () => {
@@ -454,7 +461,7 @@ export const useWindow = () => {
   const dayBegins = reviewing(core, words, tell.under('reviewed'))
 
   /** The rest of the settings file, which no command of the window turns. */
-  const rest = configuring(core, words, tell.under('configured'))
+  const rest = settingsStore(core, words, tell.under('configured'))
 
   /** The settings file itself, opened whole in a tab of its own. */
   const file = editingSettingsFile(held.host, core, () => void rest.start())

@@ -39,7 +39,7 @@ import {
   sourceSaid,
 } from './testing/window'
 import { REFUSED, WORDS } from './words'
-import { plexCalled } from './workspace'
+import { plexCalled } from './tabs/workspace'
 
 describe('the palette', () => {
   /** A keystroke taken on the window, and whether the window took it. */

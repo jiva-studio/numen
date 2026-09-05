@@ -8,7 +8,7 @@
 import type { PlexRelatedSeat } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
 import type { Core, NewLink, RefusalReason, Role } from '../core'
-import type { Voice } from '../telling'
+import type { Voice } from '../notices/telling'
 import { REFUSED } from '../words'
 
 /**

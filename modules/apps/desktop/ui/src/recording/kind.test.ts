@@ -8,8 +8,8 @@ import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { recordingKind, type RecordingTabState } from './kind'
 import type { TranscriptState } from './transcript'
-import { putting } from '../putting'
-import { windowing } from '../windowing'
+import { putting } from '../tabs/putting'
+import { windowing } from '../tabs/windowing'
 
 /** A recording open in a tab, as far as the window reads one. */
 const recording = (path: string, heard: number, length: number) =>

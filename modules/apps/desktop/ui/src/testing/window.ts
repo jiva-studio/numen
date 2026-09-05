@@ -366,7 +366,7 @@ vi.mock('../vault', () => ({
 
 vi.mock('../agent/core', () => ({ core: { ask: held, finish: async () => {} } }))
 
-vi.mock('../theme', () => ({
+vi.mock('../settings/theme', () => ({
   themes: {
     catalogue: async () => ({
       themes: [

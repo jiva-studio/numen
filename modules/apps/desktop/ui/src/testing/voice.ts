@@ -4,7 +4,7 @@
  * Everything in the window that says something takes a `Voice`, so a test that
  * wants to read what was said hands one of these over.
  */
-import type { MessageKind, Voice } from '../telling'
+import type { MessageKind, Voice } from '../notices/telling'
 
 export function voice() {
   const told: { text: string; kind: MessageKind }[] = []

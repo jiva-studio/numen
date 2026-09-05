@@ -8,9 +8,9 @@
  */
 import { computed, type ComputedRef } from 'vue'
 import { pointsAtNote, type PlexShowing } from '@numen/ui'
-import type { Store } from '../doing'
-import type { Host, Kind } from '../windowing'
-import { NOTE } from '../workspace'
+import type { Store } from '../command/doing'
+import type { Host, Kind } from '../tabs/windowing'
+import { NOTE } from '../tabs/workspace'
 import type { Change } from './drawing'
 import type { noteChanges } from './changes'
 import type { OpenNote, editing } from './editing'
@@ -18,7 +18,7 @@ import { entering, ITSELF } from './entering'
 import { naming, type NamingDeps } from './naming'
 import NoteTab from './NoteTab.vue'
 import { markOf } from './tab'
-import type { FileOpeners } from '../putting'
+import type { FileOpeners } from '../tabs/putting'
 
 /** The notes of the whole window, read and written by one store. */
 type Notes = ReturnType<typeof editing>

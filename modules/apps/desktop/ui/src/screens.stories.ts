@@ -13,8 +13,8 @@ import { Workspace, branch, pane } from '@numen/ui'
 import type { Tab, WorkspaceLayout } from '@numen/ui'
 import { computed, nextTick, onMounted, ref, shallowRef, type Component } from 'vue'
 
-import SettingsTab from './settings/SettingsTab.vue'
-import type { Installation } from './settings/kind'
+import SettingsTab from './settings/controls/SettingsTab.vue'
+import type { Installation } from './settings/controls/kind'
 import PresetTab from './preset/PresetTab.vue'
 import {
   DEFAULTS,
@@ -42,7 +42,7 @@ import { filing } from './files/kind'
 import { listing, ROOT } from './files/listing'
 import type { Entry } from './core'
 import { iconOfKind } from './icons'
-import { DECK, DOCUMENT, FILES, PRESET, RECORDING, SETTINGS, STENCIL } from './workspace'
+import { DECK, DOCUMENT, FILES, PRESET, RECORDING, SETTINGS, STENCIL } from './tabs/workspace'
 
 /** Every tab this file draws, under the identity the window opens it at. */
 const TABS: readonly Tab[] = [

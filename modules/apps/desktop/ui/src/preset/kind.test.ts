@@ -23,8 +23,8 @@ import {
 } from './core'
 import { BOUNDS } from '../testing/preset'
 import type { RefusalReason } from '../core'
-import type { Host } from '../windowing'
-import type { FileOpeners } from '../putting'
+import type { Host } from '../tabs/windowing'
+import type { FileOpeners } from '../tabs/putting'
 import { WORDS as words } from './words'
 
 const point = (over: Partial<Point> = {}): Point => ({

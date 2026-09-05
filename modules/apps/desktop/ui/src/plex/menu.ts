@@ -10,7 +10,7 @@
  * note.
  */
 import type { MenuItem } from '@numen/ui'
-import { commandsOf, overNote } from '../commanding'
+import { commandsOf, overNote } from '../command/commanding'
 import { WORDS as words } from '../words'
 import { WORDS as own } from './words'
 

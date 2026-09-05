@@ -61,7 +61,7 @@ import {
   SETTINGS,
   SETTINGS_FILE,
   STENCIL,
-} from './workspace'
+} from './tabs/workspace'
 
 /** What each command is drawn as. A map, so an identity answers for itself. */
 const ICONS: ReadonlyMap<string, LucideIcon> = new Map([

@@ -9,13 +9,13 @@
 import { computed, ref, shallowRef, type ComputedRef } from 'vue'
 import type { DeckCard, DeckSection, PlexShowing, Stencil } from '@numen/ui'
 import type { Cards, Move, Problem, RefusalReason, StencilSummary } from '../core'
-import type { Store } from '../doing'
+import type { Store } from '../command/doing'
 import type { PresetChoice, Presets, ReadResult } from '../preset/core'
 import { editing, type OpenNote } from '../note/editing'
 import { markOf } from '../note/tab'
-import type { Host, Kind } from '../windowing'
-import type { FileOpeners } from '../putting'
-import { DECK } from '../workspace'
+import type { Host, Kind } from '../tabs/windowing'
+import type { FileOpeners } from '../tabs/putting'
+import { DECK } from '../tabs/workspace'
 import DeckTab from './DeckTab.vue'
 import {
   added,
@@ -347,6 +347,8 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: FileOp
       else if (answer.refusal !== null) says(id, words.notScheduled)
       else says(id, '')
     } catch {
+      // The vault did not answer, and the deck is on the preset it was on. The
+      // tab says so where it says what choosing came to.
       says(id, words.unreachable)
       return
     }

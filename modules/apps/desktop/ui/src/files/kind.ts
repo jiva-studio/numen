@@ -5,7 +5,7 @@
  */
 import { ref } from 'vue'
 import type { Entry, Move, Source } from '../core'
-import type { SearchDestination } from '../finding'
+import type { SearchDestination } from '../command/finding'
 import { folderOf, landedIn, type FileTree, ROOT } from './listing'
 import {
   NEW_DECK,
@@ -17,8 +17,8 @@ import {
   RENAME,
   type RunGuard,
 } from './menu'
-import type { Host, Kind } from '../windowing'
-import { FILES } from '../workspace'
+import type { Host, Kind } from '../tabs/windowing'
+import { FILES } from '../tabs/workspace'
 import FilesTab from './FilesTab.vue'
 import { WORDS as words } from './words'
 

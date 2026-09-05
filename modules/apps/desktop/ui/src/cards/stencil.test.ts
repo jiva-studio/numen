@@ -4,9 +4,9 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { Cards, VaultFace, Problem, RefusalReason, FieldRenameResult } from '../core'
-import { putting } from '../putting'
-import { windowing } from '../windowing'
-import { STENCIL } from '../workspace'
+import { putting } from '../tabs/putting'
+import { windowing } from '../tabs/windowing'
+import { STENCIL } from '../tabs/workspace'
 import { REFUSED } from '../words'
 import { stencilling, type StencilTabState } from './stencil'
 import { WORDS as words } from './words'

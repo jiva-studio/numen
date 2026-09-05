@@ -7,9 +7,9 @@
  */
 import type { OpenDocumentState } from './reading'
 import type { Stretch } from '../core'
-import type { FileOpeners } from '../putting'
-import type { Host, Kind } from '../windowing'
-import { DOCUMENT } from '../workspace'
+import type { FileOpeners } from '../tabs/putting'
+import type { Host, Kind } from '../tabs/windowing'
+import { DOCUMENT } from '../tabs/workspace'
 import DocumentTab from './DocumentTab.vue'
 
 /** What the window asks of a page once it is drawn. */

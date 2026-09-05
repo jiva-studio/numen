@@ -6,11 +6,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { documenting, documentKind, type DocumentTabState, type PageHandle } from './kind'
-import { DOCUMENT } from '../workspace'
+import { DOCUMENT } from '../tabs/workspace'
 import type { OpenDocumentState } from './reading'
-import type { FileOpeners, SourceReader } from '../putting'
+import type { FileOpeners, SourceReader } from '../tabs/putting'
 import type { Stretch } from '../core'
-import type { Host } from '../windowing'
+import type { Host } from '../tabs/windowing'
 
 /** A document being read, with only the parts a tab of it reaches for. */
 const read = (path: string, close = vi.fn()) => ({ path, close }) as unknown as OpenDocumentState
