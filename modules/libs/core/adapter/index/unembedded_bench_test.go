@@ -60,7 +60,7 @@ func owing(b *testing.B, sources, per int) *DB {
 				Text:   fmt.Sprintf("passage %d of book %d, some words to index", i, s),
 			})
 		}
-		if err := chunks.SaveChunks(ctx, benchVault.ID, "book", path, []chunk.Chunk{{
+		if err := chunks.ReplaceChunks(ctx, benchVault.ID, "book", path, []chunk.Chunk{{
 			Start: 0, Length: per * 50, Location: "chapter 1",
 			Text:  fmt.Sprintf("book %d whole", s),
 			Small: small,

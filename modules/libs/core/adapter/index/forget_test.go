@@ -45,7 +45,7 @@ func filled(t *testing.T, db *DB, vault domain.Vault, stem string, seed byte) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().SaveChunks(ctx, vault.ID, "book", path, []chunk.Chunk{
+	if err := db.Chunks().ReplaceChunks(ctx, vault.ID, "book", path, []chunk.Chunk{
 		{
 			Start: 0, Length: 100, Location: stem + " section",
 			Opens: []string{stem + " section"},

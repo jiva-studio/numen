@@ -110,7 +110,7 @@ func book(t *testing.T, db *DB, vault domain.Vault, path string, seed byte) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := chunks.SaveChunks(ctx, vault.ID, "book", path, []chunk.Chunk{{
+	if err := chunks.ReplaceChunks(ctx, vault.ID, "book", path, []chunk.Chunk{{
 		Start: 0, Length: 100, Location: "chapter 1",
 		Text: stem + " opening " + stem + " middle",
 		Small: []chunk.Chunk{
@@ -340,7 +340,7 @@ func source(t *testing.T, db *DB, vault domain.Vault, path string, kind domain.S
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := chunks.SaveChunks(ctx, vault.ID, string(kind), path, []chunk.Chunk{{
+	if err := chunks.ReplaceChunks(ctx, vault.ID, string(kind), path, []chunk.Chunk{{
 		Start: 0, Length: 100, Location: "opening", Opens: []string{"opening"}, Text: text,
 		Small: []chunk.Chunk{{Start: 0, Length: 50, Text: text}},
 	}}); err != nil {
@@ -531,7 +531,7 @@ func TestRemovingANoteTakesItsIndexedRows(t *testing.T) {
 	if err := db.Notes().Save(ctx, first.ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().SaveChunks(ctx, first.ID, "note", note.Fingerprint.Path, []chunk.Chunk{{
+	if err := db.Chunks().ReplaceChunks(ctx, first.ID, "note", note.Fingerprint.Path, []chunk.Chunk{{
 		Start: 0, Length: 6, Text: note.Body,
 		Small: []chunk.Chunk{{Start: 0, Length: 6, Text: note.Body}},
 	}}); err != nil {
@@ -781,7 +781,7 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 			},
 		})
 	}
-	if err := db.Chunks().SaveChunks(ctx, vault.ID, "book", "library/one.epub", large); err != nil {
+	if err := db.Chunks().ReplaceChunks(ctx, vault.ID, "book", "library/one.epub", large); err != nil {
 		t.Fatal(err)
 	}
 
@@ -843,7 +843,7 @@ func cutInto(t *testing.T, db *DB, vault domain.Vault, path string, texts ...str
 			Small: []chunk.Chunk{{Start: i * 100, Length: 50, Text: text}},
 		})
 	}
-	if err := db.Chunks().SaveChunks(ctx, vault.ID, "book", path, cut); err != nil {
+	if err := db.Chunks().ReplaceChunks(ctx, vault.ID, "book", path, cut); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -1269,7 +1269,7 @@ func sectioned(t *testing.T, db *DB, vault domain.Vault, path string) {
 			Small: []chunk.Chunk{{Start: 200, Length: 100, Text: "Alice Fenn met him."}},
 		},
 	}
-	if err := chunks.SaveChunks(ctx, vault.ID, "book", path, cut); err != nil {
+	if err := chunks.ReplaceChunks(ctx, vault.ID, "book", path, cut); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -1356,7 +1356,7 @@ func TestASectionNameLeavesWithTheSourceItCameFrom(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := chunks.SaveChunks(ctx, first.ID, "book", "library/gone.pdf", []chunk.Chunk{{
+	if err := chunks.ReplaceChunks(ctx, first.ID, "book", "library/gone.pdf", []chunk.Chunk{{
 		Start: 0, Length: 100, Location: "Thermodynamics",
 		Opens: []string{"Thermodynamics"},
 		Text:  "Heat moves one way.",
@@ -1375,7 +1375,7 @@ func TestASectionNameLeavesWithTheSourceItCameFrom(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := chunks.SaveChunks(ctx, first.ID, "book", "library/next.pdf", []chunk.Chunk{{
+	if err := chunks.ReplaceChunks(ctx, first.ID, "book", "library/next.pdf", []chunk.Chunk{{
 		Start: 0, Length: 100, Location: "Whales",
 		Text:  "A whale breathes air.",
 		Small: []chunk.Chunk{{Start: 0, Length: 100, Text: "A whale breathes air."}},
@@ -1401,7 +1401,7 @@ func TestASectionCutAwayIsNotFoundByItsName(t *testing.T) {
 	sectioned(t, db, first, "library/chaitanya.pdf")
 
 	// Cut again, and this time nothing opens a section.
-	if err := db.Chunks().SaveChunks(ctx, first.ID, "book", "library/chaitanya.pdf",
+	if err := db.Chunks().ReplaceChunks(ctx, first.ID, "book", "library/chaitanya.pdf",
 		[]chunk.Chunk{{
 			Start: 0, Length: 100, Location: "Madhavendra Puri",
 			Text:  "Madhavendra Puri appeared in the fourteenth century.",

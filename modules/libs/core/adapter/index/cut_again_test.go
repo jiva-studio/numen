@@ -114,7 +114,7 @@ func cutSource(t *testing.T, db *DB, path string, chunks []chunk.Chunk) int64 {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().SaveChunks(t.Context(), first.ID, "book", path, chunks); err != nil {
+	if err := db.Chunks().ReplaceChunks(t.Context(), first.ID, "book", path, chunks); err != nil {
 		t.Fatal(err)
 	}
 	var source int64
@@ -149,7 +149,7 @@ func TestCuttingASourceAgainKeepsTheRowsOfTheTextItStillHolds(t *testing.T) {
 		source := cutSource(outer, db, "library/a.epub", was)
 		before := standing(outer, db, source)
 
-		if err := db.Chunks().SaveChunks(outer.Context(), first.ID, "book", "library/a.epub", now); err != nil {
+		if err := db.Chunks().ReplaceChunks(outer.Context(), first.ID, "book", "library/a.epub", now); err != nil {
 			t.Fatal(err)
 		}
 		after := standing(outer, db, source)

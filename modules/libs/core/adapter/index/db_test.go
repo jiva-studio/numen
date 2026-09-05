@@ -184,7 +184,7 @@ func narrow(t *testing.T, db *DB, vault domain.Vault, dims int) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().SaveChunks(ctx, vault.ID, "book", path, []chunk.Chunk{{
+	if err := db.Chunks().ReplaceChunks(ctx, vault.ID, "book", path, []chunk.Chunk{{
 		Start: 0, Length: 50, Text: "whole",
 		Small: []chunk.Chunk{{Start: 0, Length: 50, Text: "a chunk of text"}},
 	}}); err != nil {

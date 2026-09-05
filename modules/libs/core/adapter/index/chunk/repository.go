@@ -163,8 +163,10 @@ func (r *Repository) SaveExtraction(ctx context.Context, vaultID domain.VaultID,
 	return nil
 }
 
-// SaveChunks makes the chunks of one source the ones given.
-func (r *Repository) SaveChunks(ctx context.Context, vaultID domain.VaultID, kind, path string, chunks []Chunk) error {
+// ReplaceChunks looks up the source this vault holds at a path and replaces
+// its chunks, in a transaction of its own. The source is already recorded or
+// there is nothing to replace the chunks of.
+func (r *Repository) ReplaceChunks(ctx context.Context, vaultID domain.VaultID, kind, path string, chunks []Chunk) error {
 	tx, err := writing.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)

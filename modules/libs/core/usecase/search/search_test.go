@@ -94,7 +94,7 @@ func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) 
 	for _, text := range small {
 		chunks.Small = append(chunks.Small, chunk.Chunk{Start: 0, Length: len(raw), Text: text})
 	}
-	if err := c.db.Chunks().SaveChunks(t.Context(), v.ID, "note", path, []chunk.Chunk{chunks}); err != nil {
+	if err := c.db.Chunks().ReplaceChunks(t.Context(), v.ID, "note", path, []chunk.Chunk{chunks}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -392,7 +392,7 @@ func (c corpus) sectioned(t *testing.T, v domain.Vault, path string) {
 				"Madhavendra Puri is said. Madhavendra Puri again.",
 		},
 	}
-	if err := c.db.Chunks().SaveChunks(t.Context(), v.ID, "note", path, chunks); err != nil {
+	if err := c.db.Chunks().ReplaceChunks(t.Context(), v.ID, "note", path, chunks); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -450,7 +450,7 @@ func TestAPassageCarriesTheLineItStandsOnInTheProse(t *testing.T) {
 		Start: 0, Length: len(isotherm), Text: isotherm,
 		Small: []chunk.Chunk{{Start: at, Length: len(held), Text: held}},
 	}
-	if err := c.db.Chunks().SaveChunks(ctx, v.ID, "note", path, []chunk.Chunk{whole}); err != nil {
+	if err := c.db.Chunks().ReplaceChunks(ctx, v.ID, "note", path, []chunk.Chunk{whole}); err != nil {
 		t.Fatal(err)
 	}
 
