@@ -65,8 +65,12 @@ func (*GetVaultStateRequest) Descriptor() ([]byte, []int) {
 
 type GetVaultStateResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Path  string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	// Name is the identity the folder carries, and how this vault is asked for
+	// again. DisplayName is what the person calls it, which is what a window
+	// titles itself with. The list says both of a vault the same way.
+	Name        string `protobuf:"bytes,18,opt,name=name,proto3" json:"name,omitempty"`
+	DisplayName string `protobuf:"bytes,1,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	Path        string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// Ready is set when the scan has finished.
 	Ready bool `protobuf:"varint,4,opt,name=ready,proto3" json:"ready,omitempty"`
 	// Why the scan stopped, when it stopped for a reason. A vault that could
@@ -125,6 +129,13 @@ func (*GetVaultStateResponse) Descriptor() ([]byte, []int) {
 func (x *GetVaultStateResponse) GetName() string {
 	if x != nil {
 		return x.Name
+	}
+	return ""
+}
+
+func (x *GetVaultStateResponse) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
 	}
 	return ""
 }
@@ -757,9 +768,10 @@ var File_numen_v1_vault_proto protoreflect.FileDescriptor
 const file_numen_v1_vault_proto_rawDesc = "" +
 	"\n" +
 	"\x14numen/v1/vault.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x16\n" +
-	"\x14GetVaultStateRequest\"\xd3\x02\n" +
+	"\x14GetVaultStateRequest\"\xf6\x02\n" +
 	"\x15GetVaultStateResponse\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
+	"\x04name\x18\x12 \x01(\tR\x04name\x12!\n" +
+	"\fdisplay_name\x18\x01 \x01(\tR\vdisplayName\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
 	"\x05ready\x18\x04 \x01(\bR\x05ready\x12\x16\n" +
 	"\x06failed\x18\x05 \x01(\tR\x06failed\x12\x1c\n" +

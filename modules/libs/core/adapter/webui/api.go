@@ -394,7 +394,8 @@ func (a *API) GetVaultState(
 ) (*connect.Response[v1.GetVaultStateResponse], error) {
 	showing := a.Showing()
 	out := &v1.GetVaultStateResponse{
-		Name:        showing.Name,
+		Name:        string(showing.ID),
+		DisplayName: showing.Name,
 		Path:        showing.Path,
 		Ready:       a.Ready.Load(),
 		Failed:      a.Failed.Why(),

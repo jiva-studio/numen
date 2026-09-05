@@ -239,7 +239,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 	}
 	f.read(t)
 
-	if name := f.state(t).GetName(); name != "two" {
+	if name := f.state(t).GetDisplayName(); name != "two" {
 		t.Errorf("the window says it is showing %q", name)
 	}
 	if got := f.named(t, "Enthalpy"); len(got) == 0 {
@@ -402,7 +402,7 @@ func TestAVaultThatCannotBeShownIsRefusedAndTheWindowStays(t *testing.T) {
 				t.Fatal("the window opened a vault it cannot read")
 			}
 			state := f.state(t)
-			if state.GetName() != "one" || !state.GetReady() {
+			if state.GetDisplayName() != "one" || !state.GetReady() {
 				t.Errorf("the window is on %+v", state)
 			}
 			if got := f.named(t, "Entropy"); len(got) == 0 {
@@ -499,7 +499,7 @@ func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the page was never asked for what it holds")
 	}
-	if name := f.state(t).GetName(); name != "one" {
+	if name := f.state(t).GetDisplayName(); name != "one" {
 		t.Errorf("the window is showing %q", name)
 	}
 	if got := f.named(t, "Entropy"); len(got) == 0 {

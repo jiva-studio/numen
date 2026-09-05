@@ -19,7 +19,8 @@ const answer = (path: string): Neighbourhood => ({
 const held = () => new Promise<never>(() => {})
 
 const settled = {
-  name: 'Vault',
+  name: '01JQVAULTPHYSICS0000000000',
+  displayName: 'Vault',
   path: '/vaults/Physics',
   ready: true,
   failed: '',

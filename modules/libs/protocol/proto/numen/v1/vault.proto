@@ -42,7 +42,12 @@ message GetVaultStateResponse {
   reserved 3, 9, 11 to 16;
   reserved "books", "books_read", "busy", "indexed", "learning", "made", "owing", "reading";
 
-  string name = 1;
+  // Name is the identity the folder carries, and how this vault is asked for
+  // again. DisplayName is what the person calls it, which is what a window
+  // titles itself with. The list says both of a vault the same way.
+  string name = 18;
+  string display_name = 1;
+
   string path = 2;
   // Ready is set when the scan has finished.
   bool ready = 4;

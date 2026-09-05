@@ -318,7 +318,10 @@ export interface Core {
   resolve(from: string, written: readonly string[]): Promise<ReadonlyMap<string, string>>
   opening(): Promise<{ path: string } | null>
   state(): Promise<{
+    /** The identity the folder carries, which is how the vault is asked for again. */
     name: string
+    /** What the person calls the vault. */
+    displayName: string
     /** The folder the vault sits in, absolute on this machine. */
     path: string
     ready: boolean

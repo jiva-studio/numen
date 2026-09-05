@@ -107,7 +107,7 @@ export function showing(core: Core, how: ShowingOptions = {}) {
   /** What the vault says about itself, which is not only its name. */
   async function ask() {
     const state = await core.state()
-    name.value = state.name
+    name.value = state.displayName
     // Read once: this is the folder the page was drawn on.
     if (at.value === '') at.value = state.path
     trouble.value = state.failed
