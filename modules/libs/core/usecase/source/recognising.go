@@ -17,10 +17,15 @@ import (
 // it was fetched after the window was made.
 var errLateRuntime = errors.New("what reads a scan arrived just now; open numen again to read it")
 
-// recognitionID is what one recognition is called, wherever it is shown. It
-// stands for the whole of that recognition, so what it reports again replaces
-// itself, and one recognition dismissed is one recognition dismissed.
-func recognitionID() string { return fmt.Sprintf("recognition-%d", time.Now().UnixNano()) }
+// recognitionID is what the nth recognition of this launch is called, wherever
+// it is shown. It stands for the whole of that recognition, so what it reports
+// again replaces itself, and one recognition dismissed is one recognition
+// dismissed.
+//
+// The list it names into lives as long as the process, so counting is the whole
+// of what makes one name distinct. Two recognitions can begin inside one tick
+// of a clock and share the name it would give them.
+func recognitionID(nth uint64) string { return fmt.Sprintf("recognition-%d", nth) }
 
 // proofreadingID is what putting one file's text right is called, wherever it is
 // shown. One file is one line, and it replaces itself as the text is put right.
@@ -97,6 +102,9 @@ type Recognising struct {
 	// that failed is left in the list under that name, and the next recognition
 	// takes it out.
 	last string
+	// named counts the recognitions that have been named, which is what one of
+	// them is called by.
+	named uint64
 }
 
 // NewRecognising is the recogniser an installation offers, reporting itself into
@@ -195,7 +203,8 @@ func (r *Recognising) drain(ctx context.Context) {
 func (r *Recognising) one(ctx context.Context, v domain.Vault, path string) {
 	r.mu.Lock()
 	before := r.last
-	id := recognitionID()
+	r.named++
+	id := recognitionID(r.named)
 	r.last = id
 	r.mu.Unlock()
 
