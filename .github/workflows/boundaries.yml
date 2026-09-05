@@ -76,3 +76,21 @@ jobs:
       # every module, Go included. It installs nothing.
       - name: The house rules
         run: npm run check --prefix modules/tools/lint
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: modules/apps/desktop/go.mod
+          cache-dependency-path: |
+            modules/apps/desktop/go.sum
+            modules/libs/core/go.sum
+
+      # The rule the applications are read against walks every one of them, the
+      # phone included, and it stands in the desktop module. Run here it answers
+      # for a change to any application; run only from the desktop's own
+      # workflow it answered for a change to the desktop.
+      #
+      # The package imports nothing of the window, so this machine needs none of
+      # the webview's headers.
+      - name: Which way the applications point
+        run: go test ./internal/layers/...
+        working-directory: modules/apps/desktop
