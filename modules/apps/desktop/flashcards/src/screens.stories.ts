@@ -5,6 +5,7 @@
  * Nothing here waits on a vault. It is the screen a picture of the window is
  * taken from, so every piece is drawn in the state it settles in.
  */
+import './zzprobe'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import type { HeatmapTally } from '@numen/ui'
 import { h, type VNode } from 'vue'
@@ -76,8 +77,8 @@ const DUE = new Map<string, number>(
 )
 
 /** The budget that closes a day, in the words a preset writes the key in. */
-const BY_MINUTES: BudgetKeys ={ new: '', reviews: '', minutes: 'minutes_a_day' }
-const BY_CARDS: BudgetKeys ={ new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' }
+const BY_MINUTES: BudgetKeys = { new: '', reviews: '', minutes: 'minutes_a_day' }
+const BY_CARDS: BudgetKeys = { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' }
 
 const settings = (over: Partial<Settings> = {}): Settings => ({
   goal: 'minutes',

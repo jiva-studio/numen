@@ -19,7 +19,7 @@ const settings: Settings = {
 }
 
 /** What closes the day of the fixture, which is steered by its minutes. */
-const closes: BudgetKeys ={ new: '', reviews: '', minutes: 'minutes_a_day' }
+const closes: BudgetKeys = { new: '', reviews: '', minutes: 'minutes_a_day' }
 
 const preset = (said: Partial<Preset> = {}): Preset => ({
   path: 'Sanskrit.md',

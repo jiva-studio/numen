@@ -54,10 +54,10 @@ const budget = (said: Partial<Budget> = {}): Budget => ({
 })
 
 /** A preset steered by how long its day runs, which is the ordinary one. */
-const byMinutes: BudgetKeys ={ new: '', reviews: '', minutes: 'minutes_a_day' }
+const byMinutes: BudgetKeys = { new: '', reviews: '', minutes: 'minutes_a_day' }
 
 /** One steered by what it asks of memory, where the counts are what close it. */
-const byCounts: BudgetKeys ={ new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' }
+const byCounts: BudgetKeys = { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' }
 
 const preset = (said: Partial<Preset> = {}): Preset => ({
   path: 'Sanskrit.md',

@@ -21,7 +21,7 @@ const said = (days: [string, number][], streak = 0, due: [string, number][] = []
 
 describe('what a vault was answered on', () => {
   it('is held by the day it was answered on', async () => {
-    const cards: ReviewDaysClient ={
+    const cards: ReviewDaysClient = {
       async listReviewDays() {
         return said(
           [
@@ -46,7 +46,7 @@ describe('what a vault was answered on', () => {
   // vault, and these days are not its days.
   it('is dropped when the person has moved to another vault', async () => {
     let settle = (_: ReviewDays) => {}
-    const cards: ReviewDaysClient ={
+    const cards: ReviewDaysClient = {
       listReviewDays({ vault }) {
         if (vault === '01SLOW') {
           return new Promise<ReviewDays>((then) => {
@@ -69,7 +69,7 @@ describe('what a vault was answered on', () => {
   })
 
   it('holds what is still to come apart from what was done', async () => {
-    const cards: ReviewDaysClient ={
+    const cards: ReviewDaysClient = {
       async listReviewDays() {
         return said([['2026-08-29', 3]], 1, [
           ['2026-08-31', 12],
@@ -87,7 +87,7 @@ describe('what a vault was answered on', () => {
   })
 
   it('is nothing for no vault at all', async () => {
-    const cards: ReviewDaysClient ={ listReviewDays: () => Promise.reject(new Error('never asked')) }
+    const cards: ReviewDaysClient = { listReviewDays: () => Promise.reject(new Error('never asked')) }
     const one = reviewed({ cards, failed: () => {} })
 
     await one.read('')
@@ -98,7 +98,7 @@ describe('what a vault was answered on', () => {
 
   it('says what went wrong and holds nothing', async () => {
     const trouble: unknown[] = []
-    const cards: ReviewDaysClient ={ listReviewDays: () => Promise.reject(new Error('no such vault')) }
+    const cards: ReviewDaysClient = { listReviewDays: () => Promise.reject(new Error('no such vault')) }
     const one = reviewed({ cards, failed: (why) => trouble.push(why) })
 
     await one.read('01VAULT')
