@@ -2,7 +2,7 @@
 #
 # Two kinds of rule live here. Most are the ordinary ones nobody argues with —
 # an error dropped, a body left open, a context that did not survive the call.
-# forbidigo is the other kind: it is ADR-0004 written so a machine refuses it.
+# forbidigo is the other kind: an architecture rule written so a machine refuses it.
 # The domain does not know what time it is, the core does not panic, and
 # nothing here writes to a stream of its own.
 #
@@ -59,15 +59,15 @@ linters:
       forbid:
         - pattern: ^time\.Now$
           pkg: ^time$
-          msg: the domain does not know what time it is — take a clock port (ADR-0004)
+          msg: the domain does not know what time it is — take a clock port
         - pattern: ^time\.Since$
           pkg: ^time$
-          msg: the domain does not know what time it is — take a clock port (ADR-0004)
+          msg: the domain does not know what time it is — take a clock port
         - pattern: ^panic$
-          msg: what a call could not answer is that call's error (ADR-0004)
+          msg: what a call could not answer is that call's error
         - pattern: ^fmt\.Print.*$
           pkg: ^fmt$
-          msg: the core writes to no stream of its own — say it through port.Trouble (ADR-0004)
+          msg: the core writes to no stream of its own — say it through port.Trouble
 
   exclusions:
     generated: lax
@@ -145,7 +145,7 @@ linters:
         linters: [noctx]
 
       # Knowledge of the technology is confined to the adapters and to the
-      # composition root, and an entry point is an adapter (ADR-0004). These
+      # composition root, and an entry point is an adapter. These
       # are the places allowed to know what time it is. `internal/onnxruntime`
       # fetches and unpacks a runtime over the network: a driven adapter that
       # does not stand under `adapter/`.

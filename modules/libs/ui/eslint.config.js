@@ -2,9 +2,9 @@
 // formatting is done by hand and a rule with an opinion about it would start
 // rewriting files nobody asked it to.
 //
-// Three of the four groups below are ADR-0023 made executable. A component
-// knows nothing about the domain, anything with a lifetime is a port, and a
-// component finding its own children takes a template ref.
+// Three of the four groups below are the module's boundary made executable. A
+// component knows nothing about the domain, anything with a lifetime is a port,
+// and a component finding its own children takes a template ref.
 
 import js from '@eslint/js'
 import globals from 'globals'
@@ -74,7 +74,7 @@ export default tseslint.config(
     },
   },
 
-  // ADR-0023: a component's props are a contract with another module.
+  // A component's props are a contract with another module.
   {
     files: ['**/*.vue'],
     rules: {
@@ -84,7 +84,7 @@ export default tseslint.config(
     },
   },
 
-  // ADR-0023: nothing in this module imports anything that knows what a vault
+  // Nothing in this module imports anything that knows what a vault
   // is — not in the components, not in the stories, not in the fixtures. A
   // fixture taken from the domain is how the dependency comes back in through
   // the door marked "tests", so the rule covers every file the module holds.
@@ -98,12 +98,11 @@ export default tseslint.config(
             {
               group: ['@numen/protocol', '@numen/protocol/*', '@numen/desktop-ui', '@numen/wire'],
               message:
-                'a component knows nothing about the domain or the wire (ADR-0023) — take props in a drawing vocabulary and emit opaque identifiers',
+                'a component knows nothing about the domain or the wire — take props in a drawing vocabulary and emit opaque identifiers',
             },
             {
               group: ['**/apps/**'],
-              message:
-                'the dependency runs apps → libs/ui, never back (ADR-0023)',
+              message: 'the dependency runs apps → libs/ui, never back',
             },
           ],
         },
@@ -111,7 +110,7 @@ export default tseslint.config(
     },
   },
 
-  // ADR-0023: anything with a lifetime a test must hold still is a port. The
+  // Anything with a lifetime a test must hold still is a port. The
   // pure core computes what is drawn from its props alone, so it may not ask
   // the machine what time it is, what the window measures, or what comes next.
   //
@@ -134,36 +133,36 @@ export default tseslint.config(
         'error',
         ...lifetimes.map(({ name, port }) => ({
           name,
-          message: `${name} has a lifetime a test must hold still — take ${port} (ADR-0023)`,
+          message: `${name} has a lifetime a test must hold still — take ${port}`,
         })),
       ],
       'no-restricted-syntax': [
         'error',
         {
           selector: 'MemberExpression[object.name="Date"][property.name="now"]',
-          message: 'the clock is a port — take the now a Clock carries (ADR-0023)',
+          message: 'the clock is a port — take the now a Clock carries',
         },
         {
           selector: 'NewExpression[callee.name="Date"][arguments.length=0]',
-          message: 'the clock is a port — take the now a Clock carries (ADR-0023)',
+          message: 'the clock is a port — take the now a Clock carries',
         },
         {
           selector: 'MemberExpression[object.name="Math"][property.name="random"]',
-          message: 'the same input gives the same numbers on any machine on any day (ADR-0023)',
+          message: 'the same input gives the same numbers on any machine on any day',
         },
         {
           selector: 'MemberExpression[property.name="getBoundingClientRect"]',
-          message: 'what the window measures is a port — take it as a value (ADR-0023)',
+          message: 'what the window measures is a port — take it as a value',
         },
         {
           selector: 'MemberExpression[property.name="matchMedia"]',
-          message: 'a reader who asks for less motion is answered in CSS (ADR-0023)',
+          message: 'a reader who asks for less motion is answered in CSS',
         },
       ],
     },
   },
 
-  // ADR-0023: a component finding its own children takes a template ref. A
+  // A component finding its own children takes a template ref. A
   // story stands outside the component and is allowed to reach in.
   {
     files: ['**/*.vue'],
@@ -173,17 +172,17 @@ export default tseslint.config(
         {
           object: 'document',
           property: 'querySelector',
-          message: 'a component finding its own children takes a template ref (ADR-0023)',
+          message: 'a component finding its own children takes a template ref',
         },
         {
           object: 'document',
           property: 'querySelectorAll',
-          message: 'a component finding its own children takes a template ref (ADR-0023)',
+          message: 'a component finding its own children takes a template ref',
         },
         {
           object: 'document',
           property: 'getElementById',
-          message: 'a component finding its own children takes a template ref (ADR-0023)',
+          message: 'a component finding its own children takes a template ref',
         },
       ],
     },
