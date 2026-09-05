@@ -663,14 +663,24 @@ const ways = Object.fromEntries(
 /** A run of text, kept as the plain pair the window carries it as. */
 const run = (span: { from: number; to: number }) => ({ from: span.from, to: span.to })
 
-/** What kind of relationship a link is, as the schema names it. */
-const roles: Record<Role, Roles> = {
-  parent: Roles.PARENT,
-  child: Roles.CHILD,
-  jump: Roles.JUMP,
-  ref: Roles.REF,
-  attachment: Roles.ATTACHMENT,
+/**
+ * What kind of relationship a link is, in the words the window uses. Keyed by
+ * the schema, so a role added to it has to be given a word here before this
+ * compiles, and the window cannot quietly go on knowing four of five.
+ */
+const called: Record<Roles, Role | null> = {
+  [Roles.UNSPECIFIED]: null,
+  [Roles.PARENT]: 'parent',
+  [Roles.CHILD]: 'child',
+  [Roles.JUMP]: 'jump',
+  [Roles.REF]: 'ref',
+  [Roles.ATTACHMENT]: 'attachment',
 }
+
+/** What kind of relationship a link is, as the schema names it. */
+const roles = Object.fromEntries(
+  Object.entries(called).flatMap(([role, word]) => (word ? [[word, Number(role)]] : [])),
+) as Record<Role, Roles>
 
 /** A link in the shape the schema carries it. */
 const written = (link: NewLink) => ({

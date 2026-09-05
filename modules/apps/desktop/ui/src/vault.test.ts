@@ -7,6 +7,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { Role } from '@numen/protocol'
+import type { Role as WindowRole } from './core'
 
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
@@ -62,21 +63,25 @@ describe('the role a link carries', () => {
     ])
   })
 
-  it('is every role the vault acts on, on a link written into a note that is there', async () => {
-    for (const [role, named] of [
-      ['parent', Role.PARENT],
-      ['child', Role.CHILD],
-      ['jump', Role.JUMP],
-      ['ref', Role.REF],
-      ['attachment', Role.ATTACHMENT],
-    ] as const) {
+  // Taken from the schema rather than typed out, so a role added there is one
+  // this asks for, and the window is caught having no word for it.
+  it('is every role the schema names, on a link written into a note that is there', async () => {
+    const carried = Object.keys(Role).filter(
+      (name) => Number.isNaN(Number(name)) && name !== 'UNSPECIFIED',
+    )
+    expect(carried).toContain('ATTACHMENT')
+
+    for (const name of carried) {
       asked.writeLink.mockResolvedValue({})
 
-      await core.join('Ontology.md', { to: 'Entropy.md', role })
+      await core.join('Ontology.md', {
+        to: 'Entropy.md',
+        role: name.toLowerCase() as WindowRole,
+      })
 
       expect(asked.writeLink.mock.calls.at(-1)?.[0].link).toEqual({
         to: 'Entropy.md',
-        role: named,
+        role: Role[name as keyof typeof Role],
         label: '',
       })
     }
