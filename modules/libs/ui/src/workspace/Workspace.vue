@@ -8,7 +8,7 @@
  */
 import { computed, provide, useTemplateRef } from 'vue'
 import { browserClock, type Clock } from '../lib/clock'
-import CarriedLabel from '../press/CarriedLabel.vue'
+import DragPreview from '../press/DragPreview.vue'
 import { usePressDrag } from '../press/press'
 import WorkspaceBranch from './render/WorkspaceBranch.vue'
 import WorkspacePane from './render/WorkspacePane.vue'
@@ -267,7 +267,7 @@ function landingAt(x: number, y: number): Landing | null {
       }"
     />
 
-    <CarriedLabel
+    <DragPreview
       v-if="carried && point"
       class="workspace__carried"
       :at="point"

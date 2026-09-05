@@ -10,7 +10,7 @@
  */
 import { computed, nextTick, ref, shallowRef, useTemplateRef, watch, watchEffect } from 'vue'
 import Activity from '../activity/Activity.vue'
-import Announce from './Announce.vue'
+import LiveRegions from './LiveRegions.vue'
 import { remainingWord } from '../activity/tally'
 import { useAnnouncer } from './announcing'
 import { useHeld } from './held'
@@ -178,7 +178,7 @@ const { told, cried } = useAnnouncer(() => drawn.value)
 
 <template>
   <div class="notices numen font-sans text-small">
-    <Announce :told="told" :cried="cried" />
+    <LiveRegions :told="told" :cried="cried" />
 
     <aside
       v-if="folds.shown.length || folds.over"

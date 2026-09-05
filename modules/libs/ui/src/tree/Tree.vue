@@ -32,7 +32,7 @@ import {
 } from './row'
 import type { Point } from '../lib/geometry'
 import { browserClock, type Clock } from '../lib/clock'
-import CarriedLabel from '../press/CarriedLabel.vue'
+import DragPreview from '../press/DragPreview.vue'
 import { usePressDrag } from '../press/press'
 
 const props = withDefaults(
@@ -416,7 +416,7 @@ function onFieldKey(event: KeyboardEvent): void {
       <slot name="silence">Nothing here</slot>
     </p>
 
-    <CarriedLabel
+    <DragPreview
       v-if="carrying"
       class="tree__carried"
       :at="carrying.at"
