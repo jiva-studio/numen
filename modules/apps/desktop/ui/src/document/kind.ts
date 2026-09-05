@@ -5,7 +5,7 @@
  * out of sight, where there is none. What is drawn says so when it appears, and
  * measures again then.
  */
-import type { Reading } from './reading'
+import type { OpenDocumentState } from './reading'
 import type { Stretch } from '../core'
 import type { FileOpeners } from '../putting'
 import type { Host, Kind } from '../windowing'
@@ -55,7 +55,7 @@ export function documentKind(host: Host, opens: (path: string) => DocumentTabSta
   return { kind }
 }
 
-export function documenting(read: Reading) {
+export function documenting(read: OpenDocumentState) {
   /** The page of this document, for as long as its tab is drawn. */
   let page: PageHandle | null = null
 

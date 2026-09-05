@@ -7,13 +7,13 @@ import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { documenting, documentKind, type DocumentTabState, type PageHandle } from './kind'
 import { DOCUMENT } from '../workspace'
-import type { Reading } from './reading'
+import type { OpenDocumentState } from './reading'
 import type { FileOpeners, SourceReader } from '../putting'
 import type { Stretch } from '../core'
 import type { Host } from '../windowing'
 
 /** A document being read, with only the parts a tab of it reaches for. */
-const read = (path: string, close = vi.fn()) => ({ path, close }) as unknown as Reading
+const read = (path: string, close = vi.fn()) => ({ path, close }) as unknown as OpenDocumentState
 
 /** A window, writing down what it was asked to open and holding what it made. */
 const window_ = (held: DocumentTabState | null = null) => {

@@ -74,7 +74,8 @@ export interface Documents {
 /** The widest a page is drawn, in device pixels, which is as wide as one is drawn. */
 const WIDEST = 4096
 
-export type Reading = ReturnType<typeof reading>
+/** What one open document holds: its pages, and what is lit in them. */
+export type OpenDocumentState = ReturnType<typeof reading>
 
 export function reading(documents: Documents, path: string) {
   const pages = ref(0)
