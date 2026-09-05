@@ -306,6 +306,11 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		ChoosesSetting: cfg.TurnsSetting(),
 		ConfiguredFile: cfg.ConfiguredFile(),
 		WritesFile:     cfg.WritesConfiguredFile(),
+		PartsUnderANode: Bounds{
+			Least: cfg.PartsUnderANodeBounds().Least,
+			Most:  cfg.PartsUnderANodeBounds().Most,
+		},
+		LatestDayStarts: cfg.LatestDayStarts(),
 	}
 
 	held := &opened.vaults

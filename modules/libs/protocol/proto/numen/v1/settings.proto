@@ -8,6 +8,7 @@ syntax = "proto3";
 package numen.v1;
 
 import "numen/v1/shared.proto";
+import "numen/v1/theme.proto";
 
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
 
@@ -45,6 +46,15 @@ message GetSettingsResponse {
 
   // The models the settings that name one can be set to.
   repeated Model models = 3;
+
+  // How many parts a node may be asked to hang, at each end. A number outside
+  // it is refused. A client asking a person for one says these.
+  Bounds parts_under_a_node_bounds = 4;
+
+  // How late in the day a day of review may be made to begin, on the clock on
+  // the wall as `HH:MM`. An hour past it is refused. A client asking a person
+  // for one says this.
+  string latest_day_starts = 5;
 }
 
 // Model is one model a setting that names a model can be set to.

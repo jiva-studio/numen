@@ -123,6 +123,7 @@ const INSTALLATION: Installation = {
   choosesHanging: () => {},
   choosesParts: () => {},
   dayStarts: () => '04:00',
+  latestDayStarts: () => '12:00',
   choosesDayStarts: () => {},
   setting: () => undefined,
   models: () => [],

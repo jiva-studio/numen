@@ -6,13 +6,11 @@
  * installation is doing and choosing another hour writes it.
  */
 import { ref } from 'vue'
+import type { Reviewing } from './core'
 import type { Says } from './telling'
 
 /** The hour an installation nobody has configured begins the day at. */
 export const DEFAULT_STARTS = '04:00'
-
-/** How late in the day the setting takes an hour, which is noon. */
-export const LATEST_STARTS = '12:00'
 
 /** Everything this says in the window's voice. */
 export interface Words {
@@ -22,8 +20,8 @@ export interface Words {
 
 /** What this asks of the vault. */
 export interface Called {
-  /** The hour, as the settings file holds it. */
-  reviewing(): Promise<string>
+  /** The hour as the settings file holds it, and the latest the vault takes. */
+  reviewing(): Promise<Reviewing>
   /** The hour written. What could not be written, and nothing where it was. */
   choosesReviewing(starts: string): Promise<string | null>
 }
@@ -32,10 +30,19 @@ export function reviewing(core: Called, words: Words, said: Says) {
   /** The hour in force. It opens where an installation nobody has configured begins. */
   const starts = ref(DEFAULT_STARTS)
 
+  /**
+   * How late in the day the vault takes an hour, which it says when it is asked
+   * what it holds. Until it has, an hour is asked for no later than the one in
+   * force, so none is offered that is refused.
+   */
+  const latest = ref(DEFAULT_STARTS)
+
   /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {
     try {
-      starts.value = await core.reviewing()
+      const held = await core.reviewing()
+      starts.value = held.starts
+      latest.value = held.latest
     } catch {
       // A vault that cannot be asked leaves the hour where it stands.
     }
@@ -62,5 +69,5 @@ export function reviewing(core: Called, words: Words, said: Says) {
     starts.value = was
   }
 
-  return { starts, start, chooses }
+  return { starts, latest, start, chooses }
 }

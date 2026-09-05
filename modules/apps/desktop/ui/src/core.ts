@@ -203,6 +203,16 @@ export interface Runs {
 export interface Hanging {
   readonly hangs: boolean
   readonly parts: number
+  /** How many the vault takes, at each end. A count outside them is refused. */
+  readonly least: number
+  readonly most: number
+}
+
+/** The hour a day of review begins at, and how late in the day one may. */
+export interface Reviewing {
+  readonly starts: string
+  /** The latest hour the vault takes. One past it is refused. */
+  readonly latest: string
 }
 
 /** One setting of the file, and what to put there. */
@@ -417,9 +427,10 @@ export interface Core {
   choosesHanging(hangs: boolean, parts?: number): Promise<string | null>
   /**
    * The hour a day of review begins at, on the clock on the wall, written as
-   * `04:00`.
+   * `04:00`, and how late in the day the vault takes one. An hour past that is
+   * refused.
    */
-  reviewing(): Promise<string>
+  reviewing(): Promise<Reviewing>
   /**
    * That hour written into the settings file. What could not be written, and
    * nothing where it was.

@@ -102,6 +102,7 @@ const configured = (pinned = false, file: Record<string, unknown> = {}) => {
     },
     choosesParts: (count) => void done.push(`parts ${count}`),
     dayStarts: () => '04:00',
+    latestDayStarts: () => '12:00',
     choosesDayStarts: (hour) => void done.push(`day starts ${hour}`),
   }
   const tab = mount(SettingsTab, {

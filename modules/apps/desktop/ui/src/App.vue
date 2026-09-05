@@ -483,6 +483,7 @@ const configured = settling(held.host, {
   choosesHanging: (on) => void hungParts.chooses(on ? ON : OFF),
   choosesParts: (count) => void hungParts.choosesCount(`${count}`),
   dayStarts: () => dayBegins.starts.value,
+  latestDayStarts: () => dayBegins.latest.value,
   choosesDayStarts: (hour) => void dayBegins.chooses(hour),
   setting: (at) => rest.at(at),
   models: (at) => rest.offers(at),

@@ -35,6 +35,8 @@ export interface Installation {
   choosesParts(count: number): void
   /** The hour a day of review begins at, written as `04:00`. */
   dayStarts(): string
+  /** The latest hour the vault takes. One past it is refused. */
+  latestDayStarts(): string
   choosesDayStarts(hour: string): void
   /**
    * The rest of the file: what stands at a setting, the models a setting that

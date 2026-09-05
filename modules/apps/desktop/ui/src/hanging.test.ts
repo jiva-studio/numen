@@ -5,13 +5,13 @@ import { voice } from './testing/voice'
 import { WORDS as words } from './words'
 
 /** The vault, answering what the settings hold and keeping what was written. */
-const vault = (held: boolean, parts = 6, refuses: string | null = null) => {
+const vault = (held: boolean, parts = 6, refuses: string | null = null, most = 12) => {
   const wrote: boolean[] = []
   const counted: (number | undefined)[] = []
   return {
     wrote,
     counted,
-    hanging: async () => ({ hangs: held, parts }),
+    hanging: async () => ({ hangs: held, parts, least: 1, most }),
     choosesHanging: async (hangs: boolean, count?: number) => {
       wrote.push(hangs)
       counted.push(count)

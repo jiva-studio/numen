@@ -11,10 +11,10 @@ import { reviewing, DEFAULT_STARTS, type Called } from './reviewing'
 const words = { unturned: 'That setting could not be written:' }
 
 /** A vault holding that hour, and refusing what it is told to refuse. */
-const vault = (held: string, refuses: string | null = null) => {
+const vault = (held: string, refuses: string | null = null, latest = '12:00') => {
   const written: string[] = []
   const core: Called = {
-    reviewing: () => Promise.resolve(held),
+    reviewing: () => Promise.resolve({ starts: held, latest }),
     choosesReviewing: (starts) => {
       written.push(starts)
       return Promise.resolve(refuses)
@@ -80,7 +80,7 @@ describe('an hour chosen', () => {
     const said = vi.fn()
     const hours = reviewing(
       {
-        reviewing: () => Promise.resolve('04:00'),
+        reviewing: () => Promise.resolve({ starts: '04:00', latest: '12:00' }),
         choosesReviewing: () => Promise.reject(new Error('not an hour of the day')),
       },
       words,

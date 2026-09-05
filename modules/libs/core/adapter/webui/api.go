@@ -230,7 +230,17 @@ type Configuring struct {
 	// replaces it whole, presenting the file the caller last read.
 	ConfiguredFile func() (string, string, error)
 	WritesFile     func(written string, seen *string) error
+
+	// PartsUnderANode is how many parts a node may be asked to hang, at each
+	// end, and LatestDayStarts how late in the day a day of review may be made
+	// to begin, on the clock as `HH:MM`. Each is refused outside, so the window
+	// is told them rather than holding a second copy.
+	PartsUnderANode Bounds
+	LatestDayStarts string
 }
+
+// Bounds is how far a setting holding a number goes, at each end.
+type Bounds struct{ Least, Most float64 }
 
 // Indexing is how far the vault has been read for meaning.
 type Indexing struct {

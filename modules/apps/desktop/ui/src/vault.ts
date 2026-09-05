@@ -66,6 +66,7 @@ import type {
   Fault,
   Configured,
   Hanging,
+  Reviewing,
   Made,
   MoveResult,
   Movement,
@@ -342,10 +343,14 @@ export const core: Core & Asking & Commanding = {
   syncing: async () => settingAt(await configured(), SYNCS) !== false,
   choosesSyncing: (kept) => puts([{ at: SYNCS, value: kept }]),
   hanging: async () => {
-    const written = await configured()
+    const answer = await settingsService.getSettings({})
+    const written = JSON.parse(answer.written)
+    const held = answer.partsUnderANodeBounds
     return {
       hangs: settingAt(written, HANGS) !== false,
       parts: partsIn(settingAt(written, PARTS)),
+      least: held?.least ?? DEFAULT_PARTS,
+      most: held?.most ?? DEFAULT_PARTS,
     } satisfies Hanging
   },
   // The switch is always sent, and the count only where it is the count being
@@ -388,8 +393,12 @@ export const core: Core & Asking & Commanding = {
     return { changed: staleIn(answer) }
   },
   reviewing: async () => {
-    const hour = settingAt(await configured(), STARTS)
-    return typeof hour === 'string' ? hour : DEFAULT_STARTS
+    const answer = await settingsService.getSettings({})
+    const hour = settingAt(JSON.parse(answer.written), STARTS)
+    return {
+      starts: typeof hour === 'string' ? hour : DEFAULT_STARTS,
+      latest: answer.latestDayStarts,
+    } satisfies Reviewing
   },
   choosesReviewing: (starts) => puts([{ at: STARTS, value: starts }]),
   makeFolder: async (path) => refusalIn(await files.createFolder({ path })),

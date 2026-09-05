@@ -24,10 +24,13 @@ func (a *API) GetSettings(
 	if a.Configuring.Models != nil {
 		models = a.Configuring.Models()
 	}
+	held := a.Configuring.PartsUnderANode
 	return connect.NewResponse(&v1.GetSettingsResponse{
-		Written: written,
-		Path:    path,
-		Models:  offered(models),
+		Written:               written,
+		Path:                  path,
+		Models:                offered(models),
+		PartsUnderANodeBounds: &v1.Bounds{Least: held.Least, Most: held.Most},
+		LatestDayStarts:       a.Configuring.LatestDayStarts,
 	}), nil
 }
 

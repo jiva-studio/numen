@@ -14,6 +14,7 @@ import (
 
 	adapteragent "github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
@@ -208,6 +209,19 @@ func (c Config) Models() func() []port.Model {
 		}
 		return append(settings.Models(held), settings.Agents()...)
 	}
+}
+
+// PartsUnderANodeBounds is how many parts a node may be asked to hang, at each
+// end. A number outside it is refused, so a client asking a person for one is
+// told them rather than holding a second copy.
+func (Config) PartsUnderANodeBounds() settings.Bounds {
+	return settings.PartsUnderANodeBounds
+}
+
+// LatestDayStarts is how late in the day a day of review may be made to begin,
+// on the clock on the wall. An hour past it is refused.
+func (Config) LatestDayStarts() string {
+	return review.Clock(settings.LatestDayStarts)
 }
 
 // TurnsSetting writes settings into the file. The file is patched as an object,

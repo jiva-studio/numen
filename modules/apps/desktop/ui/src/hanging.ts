@@ -17,13 +17,6 @@ export const PARTS = 'parts'
 export const ON = 'on'
 export const OFF = 'off'
 
-/**
- * How many parts a node may be asked to hang, at each end. A node hangs at
- * least one, and twelve of them reach the foot of a window the plex is drawn in.
- */
-const LEAST = 1
-const MOST = 12
-
 /** How many a node hangs where the settings name no number. */
 export const DEFAULT_PARTS = 6
 
@@ -45,6 +38,9 @@ export interface Words {
 export interface Hanging {
   readonly hangs: boolean
   readonly parts: number
+  /** How many the vault takes, at each end. A count outside them is refused. */
+  readonly least: number
+  readonly most: number
 }
 
 /** What this asks of the vault. */
@@ -59,8 +55,8 @@ export interface Called {
 }
 
 /** The counts offered, from one end of what the setting takes to the other. */
-const ladder = (): readonly number[] =>
-  Array.from({ length: MOST - LEAST + 1 }, (_, at) => LEAST + at)
+const ladder = (least: number, most: number): readonly number[] =>
+  Array.from({ length: Math.max(0, most - least + 1) }, (_, at) => least + at)
 
 export function hanging(core: Called, words: Words, said: Says) {
   /**
@@ -69,6 +65,12 @@ export function hanging(core: Called, words: Words, said: Says) {
    */
   const hangs = ref(true)
   const parts = ref(DEFAULT_PARTS)
+
+  /**
+   * How many the vault takes, which it says when it is asked what it holds.
+   * Nothing is offered until it has, so no count is offered that is refused.
+   */
+  const ends = ref({ least: DEFAULT_PARTS, most: DEFAULT_PARTS })
 
   /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {
@@ -81,6 +83,7 @@ export function hanging(core: Called, words: Words, said: Says) {
     }
     hangs.value = held.hangs
     parts.value = held.parts
+    ends.value = { least: held.least, most: held.most }
   }
 
   /** One row of a list, saying whether it is the value in force. */
@@ -104,7 +107,9 @@ export function hanging(core: Called, words: Words, said: Says) {
     {
       id: PARTS,
       title: words.partsBand,
-      items: ladder().map((count) => row(`${count}`, `${count}`, count === parts.value)),
+      items: ladder(ends.value.least, ends.value.most).map((count) =>
+        row(`${count}`, `${count}`, count === parts.value),
+      ),
     },
   ]
 
@@ -134,7 +139,8 @@ export function hanging(core: Called, words: Words, said: Says) {
   const choosesCount = async (item: string): Promise<void> => {
     const now = Number(item)
     const was = parts.value
-    if (!Number.isInteger(now) || now < LEAST || now > MOST || now === was) return
+    const { least, most } = ends.value
+    if (!Number.isInteger(now) || now < least || now > most || now === was) return
     said('')
     parts.value = now
 

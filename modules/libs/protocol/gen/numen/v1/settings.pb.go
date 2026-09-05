@@ -130,9 +130,16 @@ type GetSettingsResponse struct {
 	// The file itself, absolute on this machine.
 	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// The models the settings that name one can be set to.
-	Models        []*Model `protobuf:"bytes,3,rep,name=models,proto3" json:"models,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Models []*Model `protobuf:"bytes,3,rep,name=models,proto3" json:"models,omitempty"`
+	// How many parts a node may be asked to hang, at each end. A number outside
+	// it is refused. A client asking a person for one says these.
+	PartsUnderANodeBounds *Bounds `protobuf:"bytes,4,opt,name=parts_under_a_node_bounds,json=partsUnderANodeBounds,proto3" json:"parts_under_a_node_bounds,omitempty"`
+	// How late in the day a day of review may be made to begin, on the clock on
+	// the wall as `HH:MM`. An hour past it is refused. A client asking a person
+	// for one says this.
+	LatestDayStarts string `protobuf:"bytes,5,opt,name=latest_day_starts,json=latestDayStarts,proto3" json:"latest_day_starts,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GetSettingsResponse) Reset() {
@@ -184,6 +191,20 @@ func (x *GetSettingsResponse) GetModels() []*Model {
 		return x.Models
 	}
 	return nil
+}
+
+func (x *GetSettingsResponse) GetPartsUnderANodeBounds() *Bounds {
+	if x != nil {
+		return x.PartsUnderANodeBounds
+	}
+	return nil
+}
+
+func (x *GetSettingsResponse) GetLatestDayStarts() string {
+	if x != nil {
+		return x.LatestDayStarts
+	}
+	return ""
 }
 
 // Model is one model a setting that names a model can be set to.
@@ -621,12 +642,14 @@ var File_numen_v1_settings_proto protoreflect.FileDescriptor
 
 const file_numen_v1_settings_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x14\n" +
-	"\x12GetSettingsRequest\"l\n" +
+	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\x1a\x14numen/v1/theme.proto\"\x14\n" +
+	"\x12GetSettingsRequest\"\xe4\x01\n" +
 	"\x13GetSettingsResponse\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12'\n" +
-	"\x06models\x18\x03 \x03(\v2\x0f.numen.v1.ModelR\x06models\"\xdc\x01\n" +
+	"\x06models\x18\x03 \x03(\v2\x0f.numen.v1.ModelR\x06models\x12J\n" +
+	"\x19parts_under_a_node_bounds\x18\x04 \x01(\v2\x10.numen.v1.BoundsR\x15partsUnderANodeBounds\x12*\n" +
+	"\x11latest_day_starts\x18\x05 \x01(\tR\x0flatestDayStarts\"\xdc\x01\n" +
 	"\x05Model\x12\x19\n" +
 	"\bnamed_at\x18\x01 \x03(\tR\anamedAt\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -691,27 +714,29 @@ var file_numen_v1_settings_proto_goTypes = []any{
 	(*ReadSettingsFileResponse)(nil),  // 8: numen.v1.ReadSettingsFileResponse
 	(*WriteSettingsFileRequest)(nil),  // 9: numen.v1.WriteSettingsFileRequest
 	(*WriteSettingsFileResponse)(nil), // 10: numen.v1.WriteSettingsFileResponse
-	(Refusal)(0),                      // 11: numen.v1.Refusal
+	(*Bounds)(nil),                    // 11: numen.v1.Bounds
+	(Refusal)(0),                      // 12: numen.v1.Refusal
 }
 var file_numen_v1_settings_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.GetSettingsResponse.models:type_name -> numen.v1.Model
-	4,  // 1: numen.v1.Model.writes:type_name -> numen.v1.Setting
-	0,  // 2: numen.v1.Model.presence:type_name -> numen.v1.Presence
-	4,  // 3: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
-	11, // 4: numen.v1.WriteSettingsFileResponse.refusal:type_name -> numen.v1.Refusal
-	1,  // 5: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
-	5,  // 6: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
-	7,  // 7: numen.v1.SettingsService.ReadSettingsFile:input_type -> numen.v1.ReadSettingsFileRequest
-	9,  // 8: numen.v1.SettingsService.WriteSettingsFile:input_type -> numen.v1.WriteSettingsFileRequest
-	2,  // 9: numen.v1.SettingsService.GetSettings:output_type -> numen.v1.GetSettingsResponse
-	6,  // 10: numen.v1.SettingsService.WriteSettings:output_type -> numen.v1.WriteSettingsResponse
-	8,  // 11: numen.v1.SettingsService.ReadSettingsFile:output_type -> numen.v1.ReadSettingsFileResponse
-	10, // 12: numen.v1.SettingsService.WriteSettingsFile:output_type -> numen.v1.WriteSettingsFileResponse
-	9,  // [9:13] is the sub-list for method output_type
-	5,  // [5:9] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	11, // 1: numen.v1.GetSettingsResponse.parts_under_a_node_bounds:type_name -> numen.v1.Bounds
+	4,  // 2: numen.v1.Model.writes:type_name -> numen.v1.Setting
+	0,  // 3: numen.v1.Model.presence:type_name -> numen.v1.Presence
+	4,  // 4: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
+	12, // 5: numen.v1.WriteSettingsFileResponse.refusal:type_name -> numen.v1.Refusal
+	1,  // 6: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
+	5,  // 7: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
+	7,  // 8: numen.v1.SettingsService.ReadSettingsFile:input_type -> numen.v1.ReadSettingsFileRequest
+	9,  // 9: numen.v1.SettingsService.WriteSettingsFile:input_type -> numen.v1.WriteSettingsFileRequest
+	2,  // 10: numen.v1.SettingsService.GetSettings:output_type -> numen.v1.GetSettingsResponse
+	6,  // 11: numen.v1.SettingsService.WriteSettings:output_type -> numen.v1.WriteSettingsResponse
+	8,  // 12: numen.v1.SettingsService.ReadSettingsFile:output_type -> numen.v1.ReadSettingsFileResponse
+	10, // 13: numen.v1.SettingsService.WriteSettingsFile:output_type -> numen.v1.WriteSettingsFileResponse
+	10, // [10:14] is the sub-list for method output_type
+	6,  // [6:10] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_settings_proto_init() }
@@ -720,6 +745,7 @@ func file_numen_v1_settings_proto_init() {
 		return
 	}
 	file_numen_v1_shared_proto_init()
+	file_numen_v1_theme_proto_init()
 	file_numen_v1_settings_proto_msgTypes[8].OneofWrappers = []any{}
 	file_numen_v1_settings_proto_msgTypes[9].OneofWrappers = []any{}
 	type x struct{}

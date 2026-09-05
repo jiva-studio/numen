@@ -38,6 +38,7 @@ const installation = (): Installation =>
     choosesHanging: vi.fn(),
     choosesParts: vi.fn(),
     dayStarts: () => '04:00',
+    latestDayStarts: () => '12:00',
     choosesDayStarts: vi.fn(),
     setting: () => undefined,
     models: () => [],
