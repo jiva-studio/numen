@@ -69,7 +69,7 @@ export function listing(core: Folders) {
   /** The folders drawn open. The root is one of them for as long as the tab is. */
   const open = shallowRef<ReadonlySet<string>>(new Set([ROOT]))
   /** The rows the person is standing on, by the paths they stand for. */
-  const chosen = ref<readonly string[]>([])
+  const chosen = shallowRef<readonly string[]>([])
   /** What the folders could not be read as, in words the window puts up for it. */
   const trouble = ref('')
 

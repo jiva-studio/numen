@@ -4,7 +4,7 @@
  * them.
  */
 import type { Stretch } from '../core'
-import { computed, ref } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 import { clock } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
 import { asking as latest } from '../asking'
@@ -91,7 +91,7 @@ export function transcript(recordings: Recordings, path: string, how: Playing = 
   /** Where the recording's own bytes are played from, once it is asked. */
   const address = ref('')
   /** The words heard in the recording, in the order they were spoken. */
-  const cues = ref<readonly Cue[]>([])
+  const cues = shallowRef<readonly Cue[]>([])
   /** The words as the editor shows them, one cue to a line. */
   const prose = ref('')
   /** Whether the transcript may be written over now. */

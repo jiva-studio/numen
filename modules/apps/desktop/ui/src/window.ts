@@ -162,7 +162,7 @@ export const useWindow = () => {
    * says what it has lifted, and a plex draws a line to them. Neither knows the
    * other is there.
    */
-  const carried = ref<readonly string[]>([])
+  const carried = shallowRef<readonly string[]>([])
 
   /** Whether a node hangs the parts of its note under the box, and how many. */
   const hungParts = hanging(core, words, tell.under('hanging'))

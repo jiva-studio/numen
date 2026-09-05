@@ -5,7 +5,7 @@
  * its own, and the corner draws what stands. Nothing here knows how any of it
  * is drawn.
  */
-import { ref, type Ref } from 'vue'
+import { shallowRef, type Ref } from 'vue'
 
 /**
  * What kind of thing the window said.
@@ -46,7 +46,7 @@ export interface MessageLog {
  * one.
  */
 export function telling(): MessageLog {
-  const said = ref<readonly WindowMessage[]>([])
+  const said = shallowRef<readonly WindowMessage[]>([])
   let minted = 0
 
   const under =

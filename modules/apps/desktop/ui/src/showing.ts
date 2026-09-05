@@ -5,7 +5,7 @@
  * window keeps up with the vault, and a rule inside a component is a rule that
  * is only exercised by looking at the screen.
  */
-import { ref } from 'vue'
+import { ref, shallowRef } from 'vue'
 import type { Core, Move, NoteEdit, Stretch, Task } from './core'
 import { following } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
@@ -82,7 +82,7 @@ export function showing(core: Core, how: ShowingOptions = {}) {
    * Everything the application is doing behind the window. It arrives whole
    * and is shown whole, and a new kind of work is an entry here.
    */
-  const tasks = ref<readonly Task[]>([])
+  const tasks = shallowRef<readonly Task[]>([])
 
   let open = true
   /** Let go of every stream the window is listening to. */

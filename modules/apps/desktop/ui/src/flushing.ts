@@ -8,7 +8,7 @@
  * Text that cannot be written raises a conflict, and the window stays until
  * every conflict is settled.
  */
-import { ref, type Ref } from 'vue'
+import { shallowRef, type Ref } from 'vue'
 import { following } from '@numen/ui'
 
 /** How a flush came out: everything written, or a person still being asked. */
@@ -66,7 +66,7 @@ export function flushing(core: FlushDeps, wait: (ms: number) => Promise<unknown>
   /** The notes a person put off. They stand and are not drawn. */
   const put = new Set<string>()
   /** The conflicts to draw, which is everything standing bar what was put off. */
-  const conflicts = ref([]) as Ref<readonly ConflictPrompt[]>
+  const conflicts = shallowRef([]) as Ref<readonly ConflictPrompt[]>
 
   /** Something the flush waits for, until what this answers with is called. */
   const holds = (one: FlushHandler) => {

@@ -5,7 +5,7 @@
  * It is asked for when a vault is opened and again whenever that vault moves,
  * and the decks of one preset are counted together however many there are.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 import { StopReason } from '@numen/protocol'
 import type { Goal as Goals, Refusal } from '@numen/protocol'
 
@@ -114,7 +114,7 @@ export interface SchedulingDeps {
 }
 
 export function scheduling(deps: SchedulingDeps) {
-  const presets = ref<readonly Preset[]>([])
+  const presets = shallowRef<readonly Preset[]>([])
 
   /** Which vault the presets on hand belong to. */
   const of = ref('')

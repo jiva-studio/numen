@@ -5,7 +5,7 @@
  * stands are rules, and a name that repeats is a notice that puts another away
  * with it.
  */
-import { computed, ref } from 'vue'
+import { computed, shallowRef } from 'vue'
 
 import { noticed } from '@numen/ui'
 import type { Notice, Task, Tone } from '@numen/ui'
@@ -13,10 +13,10 @@ import { troubleWords } from '@numen/wire'
 
 export function raising() {
   /** What the window is doing behind itself, which stands above what it said. */
-  const tasks = ref<readonly Notice[]>([])
+  const tasks = shallowRef<readonly Notice[]>([])
 
   /** What it has told the person, newest last. */
-  const told = ref<readonly Notice[]>([])
+  const told = shallowRef<readonly Notice[]>([])
 
   const notices = computed<readonly Notice[]>(() => [...tasks.value, ...told.value])
 

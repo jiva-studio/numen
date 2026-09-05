@@ -6,7 +6,7 @@
  * is asked and what their vault is told, and a rule inside a component is a rule
  * only exercised by looking at the screen.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 import type { Ref } from 'vue'
 
 import { rated } from './core'
@@ -69,7 +69,7 @@ export function session(deps: SessionDeps) {
 
   const vault = ref('')
   const run = ref('')
-  const asked = ref<readonly CardFace[]>([])
+  const asked = shallowRef<readonly CardFace[]>([])
   const at = ref(0)
   const shown = ref(false)
   const answers = ref<string[]>([])

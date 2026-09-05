@@ -9,7 +9,7 @@
  * follows on its own. A vault whose count has not arrived stands on the list
  * with nothing said about what it holds.
  */
-import { ref } from 'vue'
+import { ref, shallowRef } from 'vue'
 import type { StopReason } from '@numen/protocol'
 
 import type { VaultCardsDue } from './core'
@@ -77,7 +77,7 @@ export interface CountingDeps {
 }
 
 export function counting(deps: CountingDeps) {
-  const vaults = ref<readonly VaultCardsDue[]>([])
+  const vaults = shallowRef<readonly VaultCardsDue[]>([])
   const counting = ref(true)
 
   /**

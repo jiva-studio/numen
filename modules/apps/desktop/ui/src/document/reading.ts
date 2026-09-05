@@ -7,7 +7,7 @@
  * asks them without a browser.
  */
 import type { Stretch } from '../core'
-import { computed, ref } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 import { troubleWords } from '@numen/wire'
 
 /** Where something sits on a page, in fractions of it. */
@@ -79,7 +79,7 @@ export type Reading = ReturnType<typeof reading>
 export function reading(documents: Documents, path: string) {
   const pages = ref(0)
   /** How big each page is, in its own units. */
-  const sheets = ref<readonly Sheet[]>([])
+  const sheets = shallowRef<readonly Sheet[]>([])
   /** Which page is in front, counted from the first. */
   const at = ref(0)
   /** How wide the page is drawn, in device pixels. */
@@ -87,12 +87,12 @@ export function reading(documents: Documents, path: string) {
   /** The file the pages were read from, which the addresses they are drawn at name. */
   const seen = ref('')
   /** What is highlighted, page by page: the place the tab turned to. */
-  const highlights = ref<readonly Page[]>([])
+  const highlights = shallowRef<readonly Page[]>([])
   /**
    * The other places asked for, page by page. They are somewhere else to look
    * and not where the person was taken.
    */
-  const others = ref<readonly (readonly Page[])[]>([])
+  const others = shallowRef<readonly (readonly Page[])[]>([])
   /** What this document could not do, in words the window puts up for it. */
   const trouble = ref('')
 
