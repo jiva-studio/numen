@@ -61,9 +61,9 @@ type Presets struct {
 	// Problems is what parsing each file of the vault turned up. A build holding
 	// none says nothing against a deck whose link the parser could not read.
 	Problems port.ProblemQueries
-	// Index brings what a write touched up to date. A build holding none leaves
-	// the index to the next scan.
-	Index func(ctx context.Context, v domain.Vault, paths []string) error
+	// Index brings what a write touched up to date. Every write here calls it,
+	// and a preset short of it cannot point a deck at anything.
+	Index note.Levels
 	// Day is where one day of review gives way to the next, and Now what time
 	// it is. They answer whether a preset schedules anything today.
 	Day review.Day
@@ -72,22 +72,25 @@ type Presets struct {
 
 // NewPresets is what a vault's presets are read and written through: the vault
 // their notes are read out of and written back to, where a deck's link to its
-// preset lands, what says which notes are presets and what each is called,
-// where one day of review gives way to the next, and what time it is.
+// preset lands, what says which notes are presets and what each is called, what
+// brings a write level in the index, where one day of review gives way to the
+// next, and what time it is.
 //
-// All six are named here because a preset short of any one of them schedules a
-// deck by something other than the note a person pointed it at, and says
+// All seven are named here because a preset short of any one of them schedules
+// a deck by something other than the note a person pointed it at, and says
 // nothing about having done so.
 func NewPresets(
 	readers port.VaultReaders,
 	writers port.VaultWriters,
 	links port.LinkQueries,
 	notes port.NoteQueries,
+	index note.Levels,
 	day review.Day,
 	now port.Clock,
 ) Presets {
 	return Presets{
-		Readers: readers, Writers: writers, Links: links, Notes: notes, Day: day, Now: now,
+		Readers: readers, Writers: writers, Links: links, Notes: notes,
+		Index: index, Day: day, Now: now,
 	}
 }
 

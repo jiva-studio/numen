@@ -121,9 +121,8 @@ func (c Config) Flashcards(
 	}
 
 	presets := flashcards.NewPresets(
-		c.VaultReaders(), c.VaultWriters(), links, notes, day, now,
+		c.VaultReaders(), c.VaultWriters(), links, notes, index, day, now,
 	)
-	presets.Index = index
 	// A link the index does not carry is accounted for in what parsing turned
 	// up, which is the same reader answering both.
 	if said, holds := notes.(port.ProblemQueries); holds {

@@ -101,7 +101,7 @@ func (u Presets) Save(
 		return domain.Fingerprint{}, err
 	}
 	at, err := u.save(ctx, v, path, settings, fingerprint)
-	if err != nil || u.Index == nil {
+	if err != nil {
 		return at, err
 	}
 	return at, note.Levelled(u.Index(ctx, v, []string{path}), path)

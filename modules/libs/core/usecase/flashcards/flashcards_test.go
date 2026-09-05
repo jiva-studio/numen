@@ -78,8 +78,8 @@ func opened(t testing.TB, notes map[string]string) vaulted {
 		filesystem.VaultReaders{}, db.NoteQueries(), db.NoteQueries())
 	presets := flashcards.NewPresets(
 		filesystem.VaultReaders{}, filesystem.VaultWriters{},
-		db.NoteQueries(), db.NoteQueries(), review.Day{}, time.Now)
-	presets.Problems, presets.Index = db.NoteQueries(), scanned
+		db.NoteQueries(), db.NoteQueries(), scanned, review.Day{}, time.Now)
+	presets.Problems = db.NoteQueries()
 	// Each card is worked out at the share of the cards its own preset asks
 	// for, which is how the application builds this.
 	schedules := flashcards.NewSchedules(logs, review.NewFSRS(), today, standings, presets)
@@ -173,7 +173,7 @@ func (s vaulted) owedAt(day review.Day, now func() time.Time) flashcards.CountCa
 func (s vaulted) session(day review.Day) flashcards.Session {
 	return flashcards.NewSession(
 		s.marking, s.standings, s.kept,
-		flashcards.NewPresets(nil, nil, nil, nil, day, time.Now), day, time.Now,
+		flashcards.NewPresets(nil, nil, nil, nil, nil, day, time.Now), day, time.Now,
 	)
 }
 
