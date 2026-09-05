@@ -164,6 +164,27 @@ describe('what the tab says went wrong', () => {
   })
 })
 
+// A file someone else wrote while the tab stood open is not a failure, so it
+// is said as a status and not as an alert. The way out is the same one: read
+// the file again.
+describe('a file that changed under the tab', () => {
+  it('says so, and offers reading the file again', async () => {
+    const one = tabAt()
+    const held: Held = { ...one.held, changed: () => true }
+    const tab = mount(PresetTab, { props: { held } })
+    const said = tab.get('[role="status"].preset__answering')
+    expect(said.text()).toContain(words.changed)
+    await said.get('button').trigger('click')
+    expect(one.done).toStrictEqual(['again'])
+  })
+
+  it('says nothing where the file is the one the tab read', () => {
+    const { tab } = drawn()
+    expect(tab.findAll('[role="status"].preset__answering')).toHaveLength(0)
+    expect(tab.text()).not.toContain(words.changed)
+  })
+})
+
 // The row of days draws a level and hands back a day and a level. That the
 // whole of a day is a hundred, and that a day back at it stops being named,
 // are the file's own way of writing the week and belong to this tab.
