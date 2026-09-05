@@ -167,16 +167,16 @@ graph-check: graph ## fail if the drawing that is committed is out of date
 
 # What .golangci.yml asks for. The phone binds the core and is left out of it.
 #
-# The window and the protocol fail on what they find. The core still reports:
-# what is left there is thirteen switches whose default stands after them, and
-# twelve use cases that read the machine's clock where the composition root
-# left their Now unset. Neither is a line to fix — the first is a style the
-# whole repository is written in, the second is a port that is missing. Take
-# the flag off when they are answered: a check nobody can go red on is a check
-# nobody reads.
+# The window and the protocol fail on what they find, and so does the one rule
+# the core is clear of: nothing outside the adapters and the composition root
+# reads the machine's clock. What is left reporting is fourteen switches whose
+# default stands after them, which is a style the whole repository is written
+# in. Take that flag off when they are answered too: a check nobody can go red
+# on is a check nobody reads.
 .PHONY: lint-go
 lint-go: ## what golangci-lint finds; a report on the core, a refusal elsewhere
 	cd $(CORE) && golangci-lint run --issues-exit-code=0 ./...
+	cd $(CORE) && golangci-lint run --enable-only=forbidigo ./...
 	cd $(DESKTOP) && golangci-lint run ./...
 	cd $(PROTOCOL) && golangci-lint run ./...
 

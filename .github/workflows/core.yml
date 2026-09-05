@@ -112,6 +112,10 @@ jobs:
   # The core reports and does not fail. The check arrived after the code did,
   # and the backlog it names is triaged one finding at a time. The flag comes
   # off when that list is empty; `make lint-go` carries the same one.
+  #
+  # A rule the core is clear of is asked again on its own, without the flag, so
+  # that it cannot come back: nothing outside the adapters and the composition
+  # root reads the machine's clock.
   lint:
     name: "Lint :: Go"
     runs-on: ubuntu-latest
@@ -131,6 +135,12 @@ jobs:
           version: v2.12.2
           working-directory: modules/libs/core
           args: --timeout 15m --issues-exit-code=0
+
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.12.2
+          working-directory: modules/libs/core
+          args: --timeout 15m --enable-only=forbidigo
 
       # The schema's Go is generated and holds the set clean, so here the
       # linter is allowed to say no.
