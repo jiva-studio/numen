@@ -1,0 +1,221 @@
+package embedders
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/jiva-studio/numen/modules/libs/core/embedding"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/task"
+)
+
+// OpenModel is a model on this machine becoming answerable. It is told how far
+// fetching and compiling it has got, counted in the bytes of it that are here.
+type OpenModel func(ctx context.Context, tell func(done, total int64)) (port.Embedder, error)
+
+// Provider is one place vectors are made: the identity what it answers is kept
+// under, the name to call it by while it arrives, and the one way it is opened.
+//
+// The zero Provider is an installation that names no provider for this half.
+type Provider struct {
+	model port.EmbeddingModel
+	name  string
+
+	// One of the two, for a provider that is named at all. A service answers
+	// the moment there is something to ask; a model on this machine answers
+	// once it is here.
+	held  port.Embedder
+	fetch OpenModel
+}
+
+// Reached is a provider that answers at once.
+func Reached(model port.EmbeddingModel, name string, held port.Embedder) Provider {
+	return Provider{model: model, name: name, held: held}
+}
+
+// Fetched is a model on this machine, opened behind whoever asked.
+func Fetched(model port.EmbeddingModel, name string, open OpenModel) Provider {
+	return Provider{model: model, name: name, fetch: open}
+}
+
+// named says whether this half was placed anywhere.
+func (p Provider) named() bool { return p.held != nil || p.fetch != nil }
+
+// Which half of the work a provider is for. An arrival is called by its role
+// and its name, and two providers naming one repository are two lines.
+const (
+	forIndexing = "indexing"
+	forQuery    = "query"
+)
+
+// Open is what fills a vault's index and what a question is asked with, from the
+// two providers an installation was given, and what lets go of them.
+//
+// They are one model where only the first is named. Where both are, the second
+// is held to the first by being asked one text once both are here, and a second
+// answering it differently is let go of: a question embedded in another space
+// finds nothing the first indexed.
+//
+// Naming no provider for the index is embedding with nothing, and there is
+// nothing to close.
+func Open(
+	ctx context.Context, tasks *task.Tasks, indexing, query Provider,
+) (filling, asking port.Embedder, close func() error) {
+	if !indexing.named() {
+		return nil, nil, nil
+	}
+	first := open(ctx, tasks, indexing, indexing.arriving(forIndexing))
+	if !query.named() {
+		return first.Filling(), first.Asking(), first.Close
+	}
+
+	at := query.arriving(forQuery)
+	second := open(ctx, tasks, query, at)
+	go func() {
+		if err := agreeing(ctx, first, second); err != nil {
+			_ = second.Disown(err)
+			failed(tasks, at, err)
+		}
+	}()
+	return first.Filling(), second.Asking(), both(first.Close, second.Close)
+}
+
+// One is a single provider opened for a run with nowhere to show that a model
+// is arriving, which waits for it instead. It answers under the identity the
+// index is filled with, whichever half of the work it was named for.
+func One(ctx context.Context, from Provider) (port.Embedder, func() error) {
+	if !from.named() {
+		return nil, nil
+	}
+	held := open(ctx, nil, from, line{})
+	return held.Filling(), held.Close
+}
+
+// open is one provider held under the identity its vectors are kept under. What
+// it is is known before it is here, so the index is fitted and a vector claimed
+// under the right recipe while the weights are still coming down.
+func open(ctx context.Context, tasks *task.Tasks, from Provider, at line) *embedding.Embedder {
+	held := embedding.Arriving(from.model)
+	if from.fetch == nil {
+		held.Landed(from.held, nil)
+		return held
+	}
+
+	tell := preparing(tasks, at)
+	tell(0, 0)
+	go func() {
+		model, err := from.fetch(ctx, tell)
+		if err != nil {
+			held.Landed(nil, err)
+			failed(tasks, at, err)
+			return
+		}
+		held.Landed(model, nil)
+		ready(tasks, at)
+	}()
+	return held
+}
+
+// agreeing is the two providers answering one text alike, once both are here.
+//
+// A comparison that did not happen is not agreement, and only a context that
+// ended excuses one.
+func agreeing(ctx context.Context, first, second *embedding.Embedder) error {
+	// unchecked is a comparison nobody got an answer out of. A run somebody
+	// stopped is owed no answer.
+	unchecked := func(why error) error {
+		if ctx.Err() != nil {
+			return nil
+		}
+		return fmt.Errorf("%s and %s were not compared as one model: %w",
+			first.Model(), second.Model(), why)
+	}
+
+	if err := first.Wait(ctx); err != nil {
+		return unchecked(err)
+	}
+	if err := second.Wait(ctx); err != nil {
+		return unchecked(err)
+	}
+
+	said, err := first.Filling().Embed(ctx, []string{embedding.Asked})
+	if err != nil {
+		return unchecked(err)
+	}
+	back, err := second.Filling().Embed(ctx, []string{embedding.Asked})
+	if err != nil {
+		return unchecked(err)
+	}
+	if len(said) != 1 || len(back) != 1 || !embedding.Agreed(said[0], back[0]) {
+		return fmt.Errorf("%s and %s are not one model, and a question embedded by the second finds nothing the first indexed",
+			first.Model(), second.Model())
+	}
+	return nil
+}
+
+// line is one provider's arrival in the list of what is being done: what that
+// line is called, and the name to show on it.
+type line struct {
+	id, name string
+}
+
+// arriving is how one provider appears while it is on its way, under the name it
+// is reached by and the half of the work it was named for.
+func (p Provider) arriving(role string) line {
+	return line{id: "getting ready: " + role + ": " + p.name, name: p.name}
+}
+
+// preparing tells the list how far the model has got, counted in the bytes of
+// it that are here. Fetching it and compiling it are one wait.
+//
+// The count is bytes and says so, and the sizes a person reads them in are the
+// window's to write. A share is drawn once some of the model is here: none of
+// it counted is nothing known about how long the rest will take.
+//
+// A run with no list to tell is told nothing and still asks: what says how far
+// the work has got is called wherever the work is, and a run in a terminal
+// takes the same road as a window.
+func preparing(tasks *task.Tasks, at line) func(done, total int64) {
+	if tasks == nil {
+		return func(int64, int64) {}
+	}
+	return func(done, total int64) {
+		held := task.Task{ID: at.id, Doing: "Preparing the model", About: at.name}
+		if done > 0 {
+			held.Count, held.Total, held.Unit = done, total, task.Bytes
+		}
+		tasks.Set(held)
+	}
+}
+
+func ready(tasks *task.Tasks, at line) {
+	if tasks != nil {
+		tasks.Done(at.id)
+	}
+}
+
+// failed leaves the model in the list under what stopped it.
+func failed(tasks *task.Tasks, at line, why error) {
+	if tasks != nil {
+		tasks.Set(task.Task{
+			ID: at.id, Doing: "Preparing the model", About: at.name,
+			Failed: why.Error(),
+		})
+	}
+}
+
+// both is one closer for two, letting go of the second whatever the first says.
+func both(first, second func() error) func() error {
+	return func() error {
+		var why error
+		if second != nil {
+			why = second()
+		}
+		if first != nil {
+			if err := first(); why == nil {
+				why = err
+			}
+		}
+		return why
+	}
+}

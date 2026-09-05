@@ -35,8 +35,8 @@ var owed = map[string][]string{
 		"internal/adapter/recognition", "internal/adapter/transcription",
 	},
 	// The two source queues stand here, so the words for a piece of work, a
-	// schedule, a cut and a vector are read in place.
-	"container": {"chunking", "embedding", "flashcards/review", "task"},
+	// schedule and a cut are read in place.
+	"container": {"chunking", "flashcards/review", "task"},
 }
 
 // driving are the adapters something outside comes in through. They call the

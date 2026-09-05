@@ -121,7 +121,7 @@ linters:
       # A comparison nobody got an answer out of, and a folder whose parent
       # nothing may look at. Only a context that ended excuses the first, and
       # the second is the top of the volume by definition.
-      - path: (^|/)(container/embedder|internal/adapter/trash/trash_linux)\.go$
+      - path: (^|/)(usecase/embedders/open|internal/adapter/trash/trash_linux)\.go$
         linters: [nilerr]
 
       # Work nobody is waiting for runs under a life of its own, not under the

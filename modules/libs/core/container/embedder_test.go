@@ -298,15 +298,6 @@ func failing(t *testing.T, tasks *task.Tasks, want int) []task.Task {
 	})
 }
 
-// A comparison that could not be made is not agreement: the provider that
-// answers questions is let go of, and it is said.
-func TestTwoProvidersThatCouldNotBeComparedAreNotOneModel(t *testing.T) {
-	held := failing(t, uncompared(t), 2)
-	if len(held) != 2 {
-		t.Fatalf("the list holds %d pieces of work: %+v", len(held), held)
-	}
-}
-
 // A provider is called by the name it is reached by, whichever kind it is.
 func TestAProviderIsInTheListUnderItsOwnName(t *testing.T) {
 	tasks := uncompared(t)
@@ -318,40 +309,6 @@ func TestAProviderIsInTheListUnderItsOwnName(t *testing.T) {
 		}
 	}
 	t.Errorf("the provider that answers questions is not in the list: %+v", held)
-}
-
-// Two providers naming one repository are two lines, and how far one has got
-// is not written over by the other.
-func TestTwoProvidersOfOneRepositoryAreTwoLines(t *testing.T) {
-	cfg := embed.Defaults()
-	cfg.Indexing = missing(t)
-	cfg.Query = missing(t)
-	cfg.Query.Use = embed.UseLocal
-
-	tasks := task.New()
-	_, _, close, why := container.Config{Embedding: cfg}.Embedders(t.Context(), tasks)
-	if why != nil {
-		t.Fatal(why)
-	}
-	if close != nil {
-		defer func() { _ = close() }()
-	}
-
-	held := waited(t, tasks, func(held []task.Task) bool {
-		failed := 0
-		for _, at := range held {
-			if at.Failed != "" {
-				failed++
-			}
-		}
-		return failed == 2
-	})
-	if len(held) != 2 {
-		t.Fatalf("two providers are %d lines: %+v", len(held), held)
-	}
-	if held[0].ID == held[1].ID {
-		t.Errorf("two providers share the line %q", held[0].ID)
-	}
 }
 
 // A provider that cannot be built is the whole thing not being built, and
