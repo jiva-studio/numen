@@ -10,6 +10,11 @@
 
 version: "2"
 
+# A report that stops at three of a kind is a report that hides the fourth.
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
 linters:
   default: none
   enable:
@@ -29,8 +34,14 @@ linters:
       check-type-assertions: true
       # Rolling back a transaction that already committed is how the pattern is
       # written; the error it returns says only that.
+      #
+      # The other two are the same act as a deferred Close, which the preset
+      # below drops: a temporary file taken away after the rename carried its
+      # content off the name, and an agent's work ended on the way out.
       exclude-functions:
         - (*database/sql.Tx).Rollback
+        - (*os.Root).Remove
+        - (github.com/jiva-studio/numen/modules/libs/core/port.Work).Stop
 
     exhaustive:
       # A switch that names a default has answered for the cases it did not
@@ -68,9 +79,23 @@ linters:
       - std-error-handling
     rules:
       # A test builds the world it needs, names its own clock, and fails by
-      # panicking as readily as by returning.
-      - path: _test\.go
-        linters: [forbidigo, errcheck, noctx, contextcheck]
+      # panicking as readily as by returning. What it opens is closed when the
+      # process it opened for ends.
+      - path: (_test\.go|(^|/)internal/testsupport/)
+        linters: [forbidigo, errcheck, noctx, contextcheck, bodyclose]
+
+      # What was taken is let go, and the kernel drops a lock and a model's
+      # memory however the process ends. What letting go could not do is nobody's
+      # to act on, the same as the deferred Close the preset above drops.
+      - source: ^\s*(defer )?(release|closeModels)\(\)$
+        linters: [errcheck]
+
+      # A page held in the window's cache is drawn by this file and read by it,
+      # and `container/list` carries it as `any` because the standard library
+      # has no list of one type. The assertion is over what this file put there.
+      - path: (^|/)adapter/webui/pictures\.go$
+        text: Error return value is not checked
+        linters: [errcheck]
 
       # Knowledge of the technology is confined to the adapters and to the
       # composition root, and an entry point is an adapter (ADR-0004). These

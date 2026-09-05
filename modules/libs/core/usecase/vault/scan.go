@@ -60,7 +60,25 @@ type ScanResult struct {
 //
 // It belongs to whatever the walks are written into: two indexes are two sets
 // of turns, and a set goes when the thing holding it goes.
-type Walks struct{ turns sync.Map }
+type Walks struct {
+	mu    sync.Mutex
+	turns map[domain.VaultID]chan struct{}
+}
+
+// turn is this vault's turn, made where the set does not hold one yet.
+func (w *Walks) turn(vaultID domain.VaultID) chan struct{} {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if w.turns == nil {
+		w.turns = map[domain.VaultID]chan struct{}{}
+	}
+	held, found := w.turns[vaultID]
+	if !found {
+		held = make(chan struct{}, 1)
+		w.turns[vaultID] = held
+	}
+	return held
+}
 
 // one takes the vault's turn and answers with the release of it. Walks of
 // different vaults do not wait on each other, and neither do walks that share
@@ -72,8 +90,7 @@ func (w *Walks) one(ctx context.Context, vaultID domain.VaultID) (func(), error)
 	if w == nil {
 		return func() {}, nil
 	}
-	held, _ := w.turns.LoadOrStore(vaultID, make(chan struct{}, 1))
-	turn := held.(chan struct{})
+	turn := w.turn(vaultID)
 	select {
 	case turn <- struct{}{}:
 		return func() { <-turn }, nil

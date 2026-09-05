@@ -192,7 +192,9 @@ func (t *Transcribing) drain(ctx context.Context) {
 		if !waiting {
 			return
 		}
-		t.one(ctx, one.vault, one.path, true)
+		// Every recording a person named is worked, and one that ends in
+		// nothing has already said so under its own line.
+		_ = t.one(ctx, one.vault, one.path, true)
 	}
 }
 

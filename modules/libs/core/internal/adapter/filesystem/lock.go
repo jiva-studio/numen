@@ -10,7 +10,10 @@ import (
 
 // locks is one lock per vault root, keyed by the folder on disk. Every writer
 // opened on a folder takes the same lock.
-var locks sync.Map
+var locks = struct {
+	sync.Mutex
+	held map[string]chan struct{}
+}{held: map[string]chan struct{}{}}
 
 // Hold takes this vault's write lock, waiting for whoever holds it.
 //
@@ -31,11 +34,14 @@ func (w VaultWriters) Hold(ctx context.Context, v domain.Vault) (func(), error) 
 
 func lockFor(root string) chan struct{} {
 	key := canonical(root)
-	if lock, found := locks.Load(key); found {
-		return lock.(chan struct{})
+	locks.Lock()
+	defer locks.Unlock()
+	lock, found := locks.held[key]
+	if !found {
+		lock = make(chan struct{}, 1)
+		locks.held[key] = lock
 	}
-	lock, _ := locks.LoadOrStore(key, make(chan struct{}, 1))
-	return lock.(chan struct{})
+	return lock
 }
 
 // canonical is the one name a folder is locked under. A path that cannot be

@@ -205,7 +205,9 @@ func (a *API) Page(w http.ResponseWriter, r *http.Request, path, page string) {
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Header().Set("Content-Length", strconv.Itoa(len(body)))
 	w.Header().Set("Cache-Control", immutable)
-	w.Write(body)
+	// The header is written; a body the client is no longer there to read is
+	// nothing this can say anything more about.
+	_, _ = w.Write(body)
 }
 
 // standing is what the vault says about the file at a path: which bytes they
@@ -305,7 +307,9 @@ func (a *API) readAhead(reader port.VaultReader, key pictureID) {
 		defer a.Viewer.ahead.done()
 		ctx, cancel := context.WithTimeout(a.behind(), a.Viewer.ahead.within)
 		defer cancel()
-		a.picture(ctx, reader, next)
+		// Nobody asked for this page. One that would not draw is drawn again
+		// when somebody turns to it, and says so then.
+		_, _ = a.picture(ctx, reader, next)
 	}()
 }
 
