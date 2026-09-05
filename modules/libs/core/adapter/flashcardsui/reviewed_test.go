@@ -146,7 +146,7 @@ func TestTheDaysComeBackOldestFirst(t *testing.T) {
 }
 
 // A question about a vault the installation does not hold is refused.
-func TestReviewedIsRefusedForAVaultNobodyHolds(t *testing.T) {
+func TestAVaultNobodyHoldsIsRefused(t *testing.T) {
 	api, _ := windowed(t)
 
 	_, err := api.ListReviewDays(t.Context(),

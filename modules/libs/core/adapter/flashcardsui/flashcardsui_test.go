@@ -796,7 +796,7 @@ var backlogged = map[string]string{
 
 // The deck screen and the preset tab are one arithmetic, under every goal.
 //
-// The window asks Owing for what its decks offer today and Curve for the
+// The window asks CardsDue for what its decks offer today and Curve for the
 // picture over a preset's range, and both are asked here as the window asks
 // them: the settings the curve is drawn for are the ones the vault holds. Where
 // the preset stands on that picture is the day the deck screen offers wherever
