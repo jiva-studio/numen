@@ -2,7 +2,7 @@
  * The chrome a plot of the one slider is drawn in: the name up its side, the
  * room the picture takes, and the numbers read off its edges.
  *
- * The curve and the band under it are two pictures, and this is what they draw
+ * The curve and the backlog under it are two pictures, and this is what they draw
  * alike. The lengths come off `.curve-slider`, which both stand inside.
  */
 
@@ -86,7 +86,7 @@
 }
 
 /*
- * A number read off the picture: the ends of the band against the lines they
+ * A number read off the picture: the ends of the extent against the lines they
  * are the height of, and the value the knob stands at under it. The halo keeps
  * it legible where the line runs behind it.
  */

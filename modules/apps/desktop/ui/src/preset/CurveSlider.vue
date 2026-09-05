@@ -11,7 +11,7 @@
  *
  * `data-control` names each part: `material`, `learned`, `tile`, `figure`,
  * `word`, `over`, `room`, `waiting`, `picture`, `rule`, `line`, `drop`,
- * `suggested`, `knob`, `label`, `number`, `perch`, `bought`, `tail`, `foot`,
+ * `suggested`, `knob`, `label`, `number`, `callout`, `bought`, `tail`, `foot`,
  * `under`, `ends` and `name`. The picture is the slider; a name carries
  * `data-axis`, the reading at the knob carries `data-at-knob`, and a tail
  * turned under carries `data-under`.
@@ -22,15 +22,15 @@ import type { Curve, Material } from './core'
 import { clearing } from './curve'
 import BacklogPlot from './BacklogPlot.vue'
 import {
-  BANDS,
-  bandOf,
+  calloutOf,
+  extentOf,
   FOOT,
+  GRIDLINES,
   heightsOf,
   HIGH,
   labelsOf,
   LEFT,
   lineOf,
-  perchOf,
   placeUnder,
   readingAt,
   RIGHT,
@@ -40,8 +40,8 @@ import {
   TOP,
   walked,
   WIDE,
-  yOfBand,
-  type Band,
+  yOfGridline,
+  type Extent,
   type Mark,
 } from './drawing'
 import { WORDS as words } from './words'
@@ -75,20 +75,20 @@ const picture = useTemplateRef<SVGSVGElement>('picture')
  * the first answer this goal gave and kept while that goal is on screen. A
  * later answer is drawn against it, so the line moves and the axis does not.
  */
-const scale = shallowRef<{ goal: string; band: Band } | null>(null)
+const scale = shallowRef<{ goal: string; extent: Extent } | null>(null)
 
 watch(
   () => props.curve,
   (curve) => {
     if (scale.value?.goal === curve.goal) return
-    scale.value = curve.honest ? { goal: curve.goal, band: bandOf(curve) } : null
+    scale.value = curve.honest ? { goal: curve.goal, extent: extentOf(curve) } : null
   },
   { immediate: true },
 )
 
-const band = computed<Band>(() => scale.value?.band ?? bandOf(props.curve))
+const extent = computed<Extent>(() => scale.value?.extent ?? extentOf(props.curve))
 
-const spots = computed(() => spotsOf(props.curve, band.value))
+const spots = computed(() => spotsOf(props.curve, extent.value))
 const line = computed(() => lineOf(spots.value))
 /** The stretch the budget does not get through, which is drawn quieter. */
 const short = computed(() => shortOf(props.curve, spots.value))
@@ -112,7 +112,7 @@ const held = computed(() =>
 /** A goal of a date stands the mark of the day it names full height, and dashed. */
 const dated = computed(() => props.curve.goal === 'date')
 
-/** Whether this is the application's answer. The bands and the marks stand over that alone. */
+/** Whether this is the application's answer. The gridlines and the marks stand over that alone. */
 const honest = computed(() => props.curve.honest)
 
 /**
@@ -130,7 +130,7 @@ const marks = computed(() => {
 })
 
 /** What this place of the curve buys, said in a bubble over the knob. */
-const perched = computed(() => {
+const callout = computed(() => {
   const spot = knob.value
   const point = props.curve.at[props.place]
   if (!honest.value || !spot || !point) return null
@@ -144,19 +144,19 @@ const perched = computed(() => {
     short: point.short,
     cards: props.curve.cards,
   })
-  return { lines, ...perchOf(spot) }
+  return { lines, ...calloutOf(spot) }
 })
 
 /** The names of the marks that fit around the bubble and around each other. */
-const named = computed(() => labelsOf(marks.value, perched.value?.box ?? null))
+const named = computed(() => labelsOf(marks.value, callout.value?.box ?? null))
 
-/** The numbers read off the picture's edges, against the band it is scaled to. */
+/** The numbers read off the picture's edges, against the extent it is scaled to. */
 const heights = computed(() =>
   heightsOf(
-    band.value,
+    extent.value,
     spots.value,
     marks.value.map((one) => one.spot),
-    perched.value?.box ?? null,
+    callout.value?.box ?? null,
     (value) => words.heightAt(props.curve.goal, value),
   ),
 )
@@ -254,7 +254,7 @@ const released = (event: KeyboardEvent) => {
       </span>
     </div>
 
-    <!-- The whole chart as one block on the page: the plot, the band under it,
+    <!-- The whole chart as one block on the page: the plot, the backlog under it,
          and every name and number read off either. -->
     <div class="curve-slider__island">
       <div class="curve-slider__frame">
@@ -307,13 +307,13 @@ const released = (event: KeyboardEvent) => {
               @keyup="released"
             >
               <line
-                v-for="share in BANDS"
+                v-for="share in GRIDLINES"
                 :key="share"
-                class="curve-slider__band"
+                class="curve-slider__gridline"
                 :x1="LEFT"
                 :x2="RIGHT"
-                :y1="yOfBand(share)"
-                :y2="yOfBand(share)"
+                :y1="yOfGridline(share)"
+                :y2="yOfGridline(share)"
               />
 
               <!-- The two axes the figures are read against. -->
@@ -388,10 +388,10 @@ const released = (event: KeyboardEvent) => {
 
           <!-- What this place buys, in a bubble over the knob, with its tail
                on the knob it belongs to. -->
-          <template v-if="perched">
-            <span class="curve-slider__perch" data-control="perch" :style="perched.at">
+          <template v-if="callout">
+            <span class="curve-slider__callout" data-control="callout" :style="callout.at">
               <span
-                v-for="one in perched.lines"
+                v-for="one in callout.lines"
                 :key="one"
                 class="curve-slider__bought"
                 data-control="bought"
@@ -401,9 +401,9 @@ const released = (event: KeyboardEvent) => {
             <span
               class="curve-slider__tail"
               data-control="tail"
-              :data-under="perched.under || undefined"
-              :class="{ 'curve-slider__tail--under': perched.under }"
-              :style="perched.tail"
+              :data-under="callout.under || undefined"
+              :class="{ 'curve-slider__tail--under': callout.under }"
+              :style="callout.tail"
             />
           </template>
         </div>
@@ -521,7 +521,7 @@ const released = (event: KeyboardEvent) => {
 }
 
 /*
- * The block the whole chart sits on: the plot, the band under it, and every
+ * The block the whole chart sits on: the plot, the backlog under it, and every
  * name and number read off either. The surface stands around the plots and
  * adds nothing to the room inside them.
  */
@@ -570,7 +570,7 @@ const released = (event: KeyboardEvent) => {
   stroke-width: 3;
 }
 
-.curve-slider__band {
+.curve-slider__gridline {
   stroke: var(--numen-rule);
   stroke-width: 1;
   stroke-dasharray: 2 5;
@@ -618,7 +618,7 @@ const released = (event: KeyboardEvent) => {
  * ground of its own so the line behind it never reads through, and holds one
  * short line to a row.
  */
-.curve-slider__perch {
+.curve-slider__callout {
   position: absolute;
   display: flex;
   flex-direction: column;

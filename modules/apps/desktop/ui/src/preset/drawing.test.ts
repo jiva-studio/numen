@@ -12,8 +12,8 @@ import {
   againstBox,
   AXIS_HIGH,
   AXIS_WIDE,
-  BAND,
-  bandOf,
+  BACKLOG_PLOT,
+  extentOf,
   FOOT,
   heightsOf,
   HIGH,
@@ -24,10 +24,10 @@ import {
   lineOf,
   naming,
   namingBox,
-  perchOf,
-  PERCH_GAP,
-  PERCH_HIGH,
-  PERCH_WIDE,
+  calloutOf,
+  CALLOUT_GAP,
+  CALLOUT_HIGH,
+  CALLOUT_WIDE,
   placeUnder,
   readingAt,
   RIGHT,
@@ -37,7 +37,7 @@ import {
   walked,
   WIDE,
   xOf,
-  yOfBand,
+  yOfGridline,
   type Box,
   type Mark,
   type Spot,
@@ -84,28 +84,28 @@ describe('where a place of the grid stands across the picture', () => {
   })
 
   it('draws its faint lines between the foot and the top', () => {
-    expect(yOfBand(0)).toBe(FOOT)
-    expect(yOfBand(1)).toBe(TOP)
+    expect(yOfGridline(0)).toBe(FOOT)
+    expect(yOfGridline(1)).toBe(TOP)
   })
 })
 
 describe('the curve as it is drawn', () => {
-  it('is scaled to the band it is given, between the foot and the top', () => {
+  it('is scaled to the extent it is given, between the foot and the top', () => {
     const one = curve([0, 0.5, 1])
-    expect(bandOf(one)).toStrictEqual({ least: 0, most: 1 })
-    const spots = spotsOf(one, bandOf(one))
+    expect(extentOf(one)).toStrictEqual({ least: 0, most: 1 })
+    const spots = spotsOf(one, extentOf(one))
     expect(spots[0]?.y).toBe(FOOT)
     expect(spots[2]?.y).toBe(TOP)
   })
 
-  // The band is the goal's and not this answer's, so an answer that moves
+  // The extent is the goal's and not this answer's, so an answer that moves
   // little inside it is drawn as the little it moves.
-  it('draws a curve that is flat within its band flat', () => {
+  it('draws a curve that is flat within its extent flat', () => {
     const spots = spotsOf(curve([0.9, 0.9, 0.9]), { least: 0, most: 1 })
     expect(spots.every((spot) => spot.y === spots[0]?.y)).toBe(true)
   })
 
-  it('keeps a curve past either end of its band inside the picture', () => {
+  it('keeps a curve past either end of its extent inside the picture', () => {
     const spots = spotsOf(curve([-1, 0.5, 2]), { least: 0, most: 1 })
     expect(spots[0]?.y).toBe(FOOT)
     expect(spots[2]?.y).toBe(TOP)
@@ -113,23 +113,23 @@ describe('the curve as it is drawn', () => {
 
   // A count does not go below nothing, so nothing is the foot of the picture
   // and a run of it lies along that foot.
-  it('lies along the floor where the band has no width', () => {
+  it('lies along the floor where the extent has no width', () => {
     const spots = spotsOf(curve([0, 0, 0]), { least: 0, most: 0 })
     expect(spots.every((one) => one.y === FOOT)).toBe(true)
   })
 
-  it('stands a band on nothing, whatever the run it holds comes to', () => {
-    expect(bandOf(curve([0, 0, 0]))).toStrictEqual({ least: 0, most: 0 })
-    expect(bandOf(curve([40, 45, 41]))).toStrictEqual({ least: 0, most: 45 })
-    expect(bandOf(curve([0, 20, 5]))).toStrictEqual({ least: 0, most: 20 })
-    expect(bandOf(curve([]))).toStrictEqual({ least: 0, most: 0 })
+  it('stands a extent on nothing, whatever the run it holds comes to', () => {
+    expect(extentOf(curve([0, 0, 0]))).toStrictEqual({ least: 0, most: 0 })
+    expect(extentOf(curve([40, 45, 41]))).toStrictEqual({ least: 0, most: 45 })
+    expect(extentOf(curve([0, 20, 5]))).toStrictEqual({ least: 0, most: 20 })
+    expect(extentOf(curve([]))).toStrictEqual({ least: 0, most: 0 })
   })
 
   // Whatever the run holds, the height read as nothing is the foot line.
   it('draws nothing on the foot under every run', () => {
     for (const run of [[0, 0, 0], [0, 20, 5], [40, 45, 41]]) {
       const one = curve(run)
-      const spots = spotsOf(one, bandOf(one))
+      const spots = spotsOf(one, extentOf(one))
       for (const [at, value] of run.entries()) {
         if (value === 0) expect(spots[at]?.y).toBe(FOOT)
         expect(spots[at]?.y).toBeLessThanOrEqual(FOOT)
@@ -151,17 +151,17 @@ describe('the curve as it is drawn', () => {
 describe('the stretch a budget does not get through', () => {
   it('is a line of its own over the places the budget falls short at', () => {
     const one = curve([0, 0.4, 0.7, 1], [true, false, false, true])
-    expect(shortOf(one, spotsOf(one, bandOf(one))).startsWith('M')).toBe(true)
+    expect(shortOf(one, spotsOf(one, extentOf(one))).startsWith('M')).toBe(true)
   })
 
   it('is nothing where the budget gets through all of it', () => {
     const one = curve([0, 0.4, 1])
-    expect(shortOf(one, spotsOf(one, bandOf(one)))).toBe('')
+    expect(shortOf(one, spotsOf(one, extentOf(one)))).toBe('')
   })
 
   it('is nothing where it falls short at one place alone, which draws no line', () => {
     const one = curve([0, 0.4, 1], [true, false, true])
-    expect(shortOf(one, spotsOf(one, bandOf(one)))).toBe('')
+    expect(shortOf(one, spotsOf(one, extentOf(one)))).toBe('')
   })
 })
 
@@ -178,7 +178,7 @@ describe('the place a pointer stands over', () => {
 
   it('reads back the place a spot was drawn at', () => {
     const one = curve([0, 0.25, 0.5, 0.75, 1])
-    const spots = spotsOf(one, bandOf(one))
+    const spots = spotsOf(one, extentOf(one))
     spots.forEach((spot, at) => expect(placeUnder(spot.x, spots.length)).toBe(at))
   })
 
@@ -233,9 +233,9 @@ describe('where a number against a line is set', () => {
     expect(at.translate).toBe('0 0')
   })
 
-  it('is read against the room it is given, which the band under the picture has its own of', () => {
-    expect(against(BAND.foot, '0', BAND.high).insetBlockStart).toBe(
-      `${(BAND.foot / BAND.high) * 100}%`,
+  it('is read against the room it is given, which the extent under the picture has its own of', () => {
+    expect(against(BACKLOG_PLOT.foot, '0', BACKLOG_PLOT.high).insetBlockStart).toBe(
+      `${(BACKLOG_PLOT.foot / BACKLOG_PLOT.high) * 100}%`,
     )
   })
 })
@@ -294,26 +294,26 @@ const inside = (one: Box): boolean =>
 
 describe('the bubble over the knob', () => {
   it('hangs above the knob, clear of it by the gap', () => {
-    const perch = perchOf({ x: WIDE / 2, y: 120 })
+    const callout = calloutOf({ x: WIDE / 2, y: 120 })
 
-    expect(perch.under).toBe(false)
-    expect(perch.box).toStrictEqual(
-      box(WIDE / 2 - PERCH_WIDE / 2, 120 - PERCH_GAP - PERCH_HIGH, PERCH_WIDE, PERCH_HIGH),
+    expect(callout.under).toBe(false)
+    expect(callout.box).toStrictEqual(
+      box(WIDE / 2 - CALLOUT_WIDE / 2, 120 - CALLOUT_GAP - CALLOUT_HIGH, CALLOUT_WIDE, CALLOUT_HIGH),
     )
   })
 
   // Above would take it off the top, so it turns over and hangs under instead.
   it('turns under the knob where above would take it off the top', () => {
-    const perch = perchOf({ x: WIDE / 2, y: TOP })
+    const callout = calloutOf({ x: WIDE / 2, y: TOP })
 
-    expect(perch.under).toBe(true)
-    expect(perch.box.y).toBe(TOP + PERCH_GAP)
-    expect(perch.at.translate).toBe('-50% 0')
+    expect(callout.under).toBe(true)
+    expect(callout.box.y).toBe(TOP + CALLOUT_GAP)
+    expect(callout.at.translate).toBe('-50% 0')
   })
 
   it('turns over at the exact height it no longer fits above', () => {
-    expect(perchOf({ x: WIDE / 2, y: TOP + PERCH_GAP + PERCH_HIGH }).under).toBe(false)
-    expect(perchOf({ x: WIDE / 2, y: TOP + PERCH_GAP + PERCH_HIGH - 1 }).under).toBe(true)
+    expect(calloutOf({ x: WIDE / 2, y: TOP + CALLOUT_GAP + CALLOUT_HIGH }).under).toBe(false)
+    expect(calloutOf({ x: WIDE / 2, y: TOP + CALLOUT_GAP + CALLOUT_HIGH - 1 }).under).toBe(true)
   })
 
   it.each([
@@ -321,17 +321,17 @@ describe('the bubble over the knob', () => {
     { where: 'the middle', spot: { x: WIDE / 2, y: 120 }, back: '-50%' },
     { where: 'the right edge', spot: { x: RIGHT, y: 120 }, back: '-100%' },
   ])('is pulled back inside the picture at $where', ({ spot, back }) => {
-    const perch = perchOf(spot)
+    const callout = calloutOf(spot)
 
-    expect(perch.at.translate).toBe(`${back} -100%`)
-    expect(inside(perch.box)).toBe(true)
+    expect(callout.at.translate).toBe(`${back} -100%`)
+    expect(inside(callout.box)).toBe(true)
   })
 
   it('anchors its tail on the knob, wherever the bubble was pulled to', () => {
-    const perch = perchOf({ x: LEFT, y: 120 })
+    const callout = calloutOf({ x: LEFT, y: 120 })
 
-    expect(perch.tail.insetInlineStart).toBe(perch.at.insetInlineStart)
-    expect(perch.tail.insetBlockStart).toBe(perch.at.insetBlockStart)
+    expect(callout.tail.insetInlineStart).toBe(callout.at.insetInlineStart)
+    expect(callout.tail.insetBlockStart).toBe(callout.at.insetBlockStart)
   })
 })
 
@@ -374,7 +374,7 @@ describe('the names of the marks that fit', () => {
   })
 
   it('leaves off a name the bubble over the knob stands on', () => {
-    const over = perchOf({ x: 280, y: TOP }).box
+    const over = calloutOf({ x: 280, y: TOP }).box
 
     expect(labelsOf([mark('suggested', 280, 100)], over)).toStrictEqual([])
     expect(labelsOf([mark('suggested', 280, 100)], null)).toHaveLength(1)
@@ -413,8 +413,8 @@ describe('the numbers read off the picture’s edges', () => {
     ])
   })
 
-  // A band of no width has one number and nothing else to read.
-  it('is one number on the foot for a band of no width', () => {
+  // A extent of no width has one number and nothing else to read.
+  it('is one number on the foot for a extent of no width', () => {
     const numbers = heightsOf({ least: 4, most: 4 }, clear, [], null, said)
 
     expect(numbers).toStrictEqual([
@@ -435,7 +435,7 @@ describe('the numbers read off the picture’s edges', () => {
   })
 
   it('drops the number the bubble over the knob stands on', () => {
-    const over = box(LEFT, 0, PERCH_WIDE, PERCH_HIGH)
+    const over = box(LEFT, 0, CALLOUT_WIDE, CALLOUT_HIGH)
     const numbers = heightsOf({ least: 0, most: 10 }, clear, [], over, said)
 
     expect(numbers.map((one) => one.text)).toStrictEqual(['0'])

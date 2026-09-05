@@ -185,7 +185,7 @@ export const limiting = (curve: Curve, point: Point | null): readonly string[] =
 }
 
 /**
- * The day the overdue pile is gone, read off the very projection the band is
+ * The day the overdue pile is gone, read off the very projection the backlog is
  * drawn from. Null is a place with nothing overdue to be gone at all, and -1
  * is a pile still standing on the last day projected.
  */

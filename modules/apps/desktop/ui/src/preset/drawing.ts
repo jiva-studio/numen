@@ -20,21 +20,21 @@ export const TOP = 16
 export const FOOT = HIGH - 16
 
 /** The height a plot's line is drawn between, and the picture it stands in. */
-export interface Room {
+export interface Plot {
   readonly high: number
   readonly top: number
   readonly foot: number
 }
 
-/** The curve's own room, which is the picture. */
-export const PLOT: Room = { high: HIGH, top: TOP, foot: FOOT }
+/** The curve's own plot, which is the picture. */
+export const CURVE_PLOT: Plot = { high: HIGH, top: TOP, foot: FOOT }
 
-/** The band's room under it, which is short and shares the picture's width. */
-export const BAND_HIGH = 76
-export const BAND: Room = { high: BAND_HIGH, top: 12, foot: BAND_HIGH - 12 }
+/** The backlog's plot under it, which is short and shares the picture's width. */
+export const BACKLOG_HIGH = 76
+export const BACKLOG_PLOT: Plot = { high: BACKLOG_HIGH, top: 12, foot: BACKLOG_HIGH - 12 }
 
-/** The faint lines the picture is banded by, as shares of the room's height. */
-export const BANDS: readonly number[] = [0.25, 0.5, 0.75]
+/** The faint lines drawn across the picture, as shares of the plot's height. */
+export const GRIDLINES: readonly number[] = [0.25, 0.5, 0.75]
 
 /** How far the name of a mark stands above it, and how wide it is set. */
 export const LIFT = 9
@@ -51,31 +51,31 @@ export const xOf = (place: number, places: number): number =>
   places <= 1 ? LEFT : LEFT + ((RIGHT - LEFT) * place) / (places - 1)
 
 /** The height of one of the faint lines. */
-export const yOfBand = (share: number): number => FOOT - (FOOT - TOP) * share
+export const yOfGridline = (share: number): number => FOOT - (FOOT - TOP) * share
 
 /** The stretch of cost the picture is scaled to. */
-export interface Band {
+export interface Extent {
   readonly least: number
   readonly most: number
 }
 
 /**
- * The band a curve is drawn against: nothing at the foot, and the most it ever
- * costs over the top. A count does not go below nothing, so the foot of the
- * picture is nothing under every run and a height is read against it.
+ * The extent a curve is drawn against: nothing at the foot, and the most it
+ * ever costs over the top. A count does not go below nothing, so the foot of
+ * the picture is nothing under every run and a height is read against it.
  */
-export const bandOf = (curve: Curve): Band => {
+export const extentOf = (curve: Curve): Extent => {
   const costs = curve.at.map((point) => costOf(curve.goal, point))
   return { least: 0, most: costs.length === 0 ? 0 : Math.max(0, ...costs) }
 }
 
 /**
- * The band a backlog is drawn against: nothing overdue at the foot, and the
+ * The extent a backlog is drawn against: nothing overdue at the foot, and the
  * most this pace ever stands at over the top. It is scaled to the one place
  * the knob stands at, so a day too short to carry what falls due is drawn
  * climbing over the height it has.
  */
-export const bandOfBacklog = (backlog: readonly number[]): Band => ({
+export const extentOfBacklog = (backlog: readonly number[]): Extent => ({
   least: 0,
   most: backlog.length === 0 ? 0 : Math.max(...backlog),
 })
@@ -85,45 +85,45 @@ export const bandOfBacklog = (backlog: readonly number[]): Band => ({
  * run holding nothing at all lies along the floor and a run holding anything
  * is measured up from it.
  */
-export const backlogSpotsOf = (values: readonly number[], band: Band): readonly Spot[] =>
-  seriesOf(values, band, BAND)
+export const backlogSpotsOf = (values: readonly number[], extent: Extent): readonly Spot[] =>
+  seriesOf(values, extent, BACKLOG_PLOT)
 
 /**
- * Where every place of the curve is drawn, in the band the picture is scaled
- * to. The band is the goal's and not this answer's, so a curve that is flat
- * within it is drawn flat, and a band of no width lies along the foot.
+ * Where every place of the curve is drawn, in the extent the picture is scaled
+ * to. The extent is the goal's and not this answer's, so a curve that is flat
+ * within it is drawn flat, and an extent of no width lies along the foot.
  */
-export const spotsOf = (curve: Curve, band: Band): readonly Spot[] =>
+export const spotsOf = (curve: Curve, extent: Extent): readonly Spot[] =>
   seriesOf(
     curve.at.map((point) => costOf(curve.goal, point)),
-    band,
+    extent,
   )
 
 /**
  * Where any reading of the curve is drawn: one figure a place, over the same
- * width and against the band it is scaled to. The line is one such reading and
- * a second series — a backlog under it, say — is another, so a picture that
+ * width and against the extent it is scaled to. The line is one such reading
+ * and a second series — a backlog under it, say — is another, so a picture that
  * carries two carries them by the same arithmetic.
  */
 export const seriesOf = (
   values: readonly number[],
-  band: Band,
-  room: Room = PLOT,
+  extent: Extent,
+  plot: Plot = CURVE_PLOT,
 ): readonly Spot[] => {
-  const span = band.most - band.least
-  // A band of no width has no height to read: every value in it is the foot of
-  // the band, and the foot is where it is drawn.
+  const span = extent.most - extent.least
+  // An extent of no width has no height to read: every value in it is the foot
+  // of the plot, and the foot is where it is drawn.
   return values.map((value, place) => ({
     x: xOf(place, values.length),
     y:
       span > 0
-        ? held(room.foot - (room.foot - room.top) * ((value - band.least) / span), room)
-        : room.foot,
+        ? held(plot.foot - (plot.foot - plot.top) * ((value - extent.least) / span), plot)
+        : plot.foot,
   }))
 }
 
-/** A height inside the room the line is drawn in. */
-const held = (y: number, room: Room): number => Math.min(Math.max(y, room.top), room.foot)
+/** A height inside the plot the line is drawn in. */
+const held = (y: number, plot: Plot): number => Math.min(Math.max(y, plot.top), plot.foot)
 
 /** The line through those places. */
 export const lineOf = (spots: readonly Spot[]): string =>
@@ -140,9 +140,9 @@ export const AXIS_HIGH = 15
  * far enough that the curve on either side of the knob is read through it, and
  * is the same gap on whichever side the bubble hangs.
  */
-export const PERCH_WIDE = 104
-export const PERCH_HIGH = 48
-export const PERCH_GAP = 24
+export const CALLOUT_WIDE = 104
+export const CALLOUT_HIGH = 48
+export const CALLOUT_GAP = 24
 
 /** The room one word takes on the picture, in the picture's own units. */
 export interface Box {
@@ -251,7 +251,7 @@ export const againstBox = (y: number, lift: string): Box => ({
 })
 
 /** The bubble over the knob: the side it hangs on, the room it takes, and where. */
-export interface Perch {
+export interface Callout {
   readonly under: boolean
   readonly box: Box
   readonly at: CSSProperties
@@ -264,23 +264,23 @@ export interface Perch {
  * is riding. The tail is anchored on the knob itself and turns over with the
  * bubble, so what the numbers belong to is never in doubt.
  */
-export const perchOf = (spot: Spot): Perch => {
-  const under = spot.y - PERCH_GAP - PERCH_HIGH < TOP
-  const half = PERCH_WIDE / 2
-  const back = spot.x < LEFT + half ? 0 : spot.x > RIGHT - half ? PERCH_WIDE : half
-  const edge = under ? spot.y + PERCH_GAP : spot.y - PERCH_GAP
+export const calloutOf = (spot: Spot): Callout => {
+  const under = spot.y - CALLOUT_GAP - CALLOUT_HIGH < TOP
+  const half = CALLOUT_WIDE / 2
+  const back = spot.x < LEFT + half ? 0 : spot.x > RIGHT - half ? CALLOUT_WIDE : half
+  const edge = under ? spot.y + CALLOUT_GAP : spot.y - CALLOUT_GAP
   return {
     under,
     box: {
       x: spot.x - back,
-      y: under ? edge : edge - PERCH_HIGH,
-      wide: PERCH_WIDE,
-      high: PERCH_HIGH,
+      y: under ? edge : edge - CALLOUT_HIGH,
+      wide: CALLOUT_WIDE,
+      high: CALLOUT_HIGH,
     },
     at: {
       insetInlineStart: `${(spot.x / WIDE) * 100}%`,
       insetBlockStart: `${(edge / HIGH) * 100}%`,
-      translate: `${(-back / PERCH_WIDE) * 100}% ${under ? '0' : '-100%'}`,
+      translate: `${(-back / CALLOUT_WIDE) * 100}% ${under ? '0' : '-100%'}`,
     },
     tail: {
       insetInlineStart: `${(spot.x / WIDE) * 100}%`,
@@ -331,26 +331,26 @@ export interface Height {
 
 /**
  * What the height of the picture comes to, against the lines it is read off. A
- * band of no width is one number and is said once, on the foot, where a curve
+ * extent of no width is one number and is said once, on the foot, where a curve
  * that never moves is drawn. A number the line, a mark or the readout over the
  * knob stands on is dropped: the axis gives way, and the drawing keeps what it
  * has to say.
  */
 export const heightsOf = (
-  band: Band,
+  extent: Extent,
   spots: readonly Spot[],
   marks: readonly Spot[],
   over: Box | null,
   said: (value: number) => string,
 ): readonly Height[] => {
-  const { least, most } = band
+  const { least, most } = extent
   const fits = (y: number, lift: string, value: number): readonly Height[] => {
     const box = againstBox(y, lift)
     if (!clearAt(y, spots, marks)) return []
     if (over && !apart(box, over)) return []
     return [{ at: against(y, lift), box, text: said(value) }]
   }
-  // A band of no width has one number and nothing else to read, and it is set
+  // An extent of no width has one number and nothing else to read, and it is set
   // over the line it names. That line is the foot, which is where a run with no
   // height is drawn.
   if (most === least) {

@@ -133,7 +133,7 @@ describe('the one slider', () => {
       at: [point(), point(), point({ reviews: 80, backlog: [9, 4, 0, 0] }), point()],
     })
     const said = tab
-      .get('[data-control="perch"]')
+      .get('[data-control="callout"]')
       .findAll('[data-control="bought"]')
       .map((one) => one.text())
     expect(said).toStrictEqual([
@@ -215,9 +215,9 @@ describe('the one slider', () => {
     expect(tab.get('[data-control="number"][data-at-knob]').text()).toBe(words.widthAt('minutes', 30))
   })
 
-  // The figure is read off the very run the band is drawn from, so the picture
+  // The figure is read off the very run the backlog is drawn from, so the picture
   // and the words can never disagree.
-  it('takes the day it goes off the projection the band is drawn from', () => {
+  it('takes the day it goes off the projection the backlog is drawn from', () => {
     expect(clearing([9, 4, 0, 0])).toBe(3)
     expect(clearing([9, 21, 40])).toBe(-1)
     expect(clearing([0, 0, 0])).toBe(null)
@@ -231,7 +231,7 @@ describe('the one slider', () => {
     // tail sits on.
     const lift = () =>
       /translate:[^;]*\s([^\s;]+);?/.exec(
-        tab.get('[data-control="perch"]').attributes('style') ?? '',
+        tab.get('[data-control="callout"]').attributes('style') ?? '',
       )?.[1]
     const turned = () => tab.get('[data-control="tail"]').attributes('data-under')
     const slider = tab.get('[data-control="picture"][role="slider"]')
@@ -481,11 +481,11 @@ describe('what a goal of a date draws', () => {
       { goal: 'date', byDate: '2026-09-04' },
     )
 
-  /** How many days the band is drawn over, which is how many places it has. */
+  /** How many days the backlog is drawn over, which is how many places it has. */
   const days = (tab: ReturnType<typeof mount>) =>
     (tab.get('[data-backlog="line"]').attributes('d') ?? '').split(/[ML]/).length - 1
 
-  it('stops the band at the day the place stands for', async () => {
+  it('stops the backlog at the day the place stands for', async () => {
     const { tab } = dated()
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'Home' })
     expect(days(tab)).toBe(4)
@@ -495,8 +495,8 @@ describe('what a goal of a date draws', () => {
   })
 
   // A shorter run must not make the picture jump, so every place is drawn
-  // against the one band: the most any of them ever stands at.
-  it('keeps one height for the band, whatever place the knob stands on', async () => {
+  // against the one extent: the most any of them ever stands at.
+  it('keeps one height for the backlog, whatever place the knob stands on', async () => {
     const { tab } = dated()
     const control = tab.get('[data-control="picture"][role="slider"]')
     await control.trigger('keydown', { key: 'End' })
@@ -514,7 +514,7 @@ describe('what a goal of a date draws', () => {
   })
 })
 
-describe('the band of what stands overdue', () => {
+describe('the plot of what stands overdue', () => {
   /** A curve whose place the knob stands at carries a backlog that climbs. */
   const climbing = (backlog: readonly number[] = [16, 21, 55, 66, 65, 78]) =>
     drawn({
@@ -528,7 +528,7 @@ describe('the band of what stands overdue', () => {
   })
 
   // A day too short to carry what falls due adds to the pile, and the climb is
-  // what the picture is for. The band is scaled to this one place's own run.
+  // what the picture is for. The extent is scaled to this one place's own run.
   it('draws a backlog that climbs as climbing, and not flat', () => {
     const heights = (d: string) => d.split(/[ML]/).slice(1).map((one) => Number(one.split(' ')[1]))
     const drawnAt = heights(climbing().tab.get('[data-backlog="line"]').attributes('d') ?? '')
@@ -545,7 +545,7 @@ describe('the band of what stands overdue', () => {
       .map((one) => one.text())
     expect(said).toContain(words.backlogHeightAt(78))
     // A number the line stands on gives way to it, so the foot is read off a
-    // run that leaves the left edge of the band clear.
+    // run that leaves the left edge of the backlog clear.
     const falling = climbing([78, 60, 40, 20, 5, 0])
       .tab.findAll('[data-control="number"]')
       .map((one) => one.text())
@@ -565,7 +565,7 @@ describe('the band of what stands overdue', () => {
     expect(ends[1]).toContain(words.backlogWidthAt(6))
   })
 
-  // The band is read and never dragged, so it is no stop on the way round the
+  // The backlog is read and never dragged, so it is no stop on the way round the
   // screen and offers nothing to the keyboard.
   it('is read and not dragged, so the one control stays the one control', () => {
     const { tab } = climbing()
@@ -592,7 +592,7 @@ describe('the band of what stands overdue', () => {
     expect(room({ at: [point(), point(), point(), point()] })).toStrictEqual(room())
   })
 
-  // Nothing overdue is the floor the band is read up from, and a run holding
+  // Nothing overdue is the floor the backlog is read up from, and a run holding
   // nothing at all lies along it.
   it('lays a run of nothing overdue along the floor, not through the middle', () => {
     const heights = (d: string) =>
@@ -621,7 +621,7 @@ describe('the band of what stands overdue', () => {
   })
 
   // The backlog is read off the place the knob stands at, so walking the grid
-  // walks the band with it.
+  // walks the backlog with it.
   it('follows the knob, since each place of the grid keeps its own', async () => {
     const { tab } = drawn({
       at: [
@@ -764,7 +764,7 @@ describe('what the control stands at', () => {
   it('keeps the rows under the picture whether or not the answer has landed', () => {
     for (const one of [drawn({ honest: false }), drawn()]) {
       expect(one.tab.findAll('[data-control="under"]')).toHaveLength(1)
-      // The picture's own row of ends, and the band's under it.
+      // The picture's own row of ends, and the backlog's under it.
       expect(one.tab.findAll('[data-control="ends"]')).toHaveLength(2)
     }
   })
@@ -798,9 +798,9 @@ describe('what the control stands at', () => {
 
   // The words say which way is better and the numbers say how much, so a
   // height can be read off the picture and a place along it can be told.
-  it('carries the ends of the band, against the lines they are the height of', () => {
+  it('carries the ends of the backlog, against the lines they are the height of', () => {
     const numbers = drawn().tab.findAll('[data-control="number"]').map((one) => one.text())
-    // The band of the fixture runs from no cards a day to a hundred and twenty.
+    // The extent of the fixture runs from no cards a day to a hundred and twenty.
     expect(numbers).toContain(words.heightAt('minutes', 120))
   })
 
@@ -813,8 +813,8 @@ describe('what the control stands at', () => {
     expect(numbers).not.toContain(words.heightAt('minutes', 0))
   })
 
-  // Two ends of a band of no width are one number, and one number said twice
-  // says nothing. A run of nothing is that band, and its one number stands on
+  // Two ends of an extent of no width are one number, and one number said twice
+  // says nothing. A run of nothing is that extent, and its one number stands on
   // the foot the run lies along.
   it('says the one value once where the curve never moves', () => {
     const flat = drawn({ at: [point(), point(), point()] })

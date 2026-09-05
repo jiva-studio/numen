@@ -10,17 +10,17 @@
 import { computed } from 'vue'
 import {
   against,
-  BAND,
-  BAND_HIGH,
+  BACKLOG_HIGH,
+  BACKLOG_PLOT,
   backlogSpotsOf,
-  bandOfBacklog,
   clearAt,
+  extentOfBacklog,
   LEFT,
   lineOf,
   RIGHT,
   runAt,
   WIDE,
-  type Band,
+  type Extent,
 } from './drawing'
 import type { Curve } from './core'
 import { WORDS as words } from './words'
@@ -38,36 +38,43 @@ const props = defineProps<{
 const backlog = computed<readonly number[]>(() => runAt(props.curve, props.place))
 
 /**
- * The band it is drawn against, which is the most any place of the curve ever
- * stands at. One band for every place keeps the picture still while the knob
+ * The extent it is drawn against, which is the most any place of the curve ever
+ * stands at. One extent for every place keeps the picture still while the knob
  * moves, and a place whose run is cut shorter than another's is drawn against
  * the same height as the rest.
  */
-const band = computed<Band>(() =>
-  bandOfBacklog(props.curve.at.flatMap((_, place) => [...runAt(props.curve, place)])),
+const extent = computed<Extent>(() =>
+  extentOfBacklog(props.curve.at.flatMap((_, place) => [...runAt(props.curve, place)])),
 )
 
-const spots = computed(() => backlogSpotsOf(backlog.value, band.value))
+const spots = computed(() => backlogSpotsOf(backlog.value, extent.value))
 const line = computed(() => lineOf(spots.value))
 
 /** Whether there is a backlog to draw at all. */
-const banded = computed(() => props.honest && backlog.value.length > 1)
+const drawn = computed(() => props.honest && backlog.value.length > 1)
 
 /**
- * The ends of the band, against the lines they are the height of. Nothing
+ * The ends of the extent, against the lines they are the height of. Nothing
  * overdue is the foot, so a run holding nothing at all is that one number on
  * the floor it lies along.
  */
 const heights = computed(() => {
-  const { least, most } = band.value
+  const { least, most } = extent.value
   const said = (value: number) => words.backlogHeightAt(value)
   const fits = (y: number, lift: string, value: number) =>
-    clearAt(y, spots.value, []) ? [{ at: against(y, lift, BAND.high), text: said(value) }] : []
-  if (most === least) return [{ at: against(BAND.foot, '0', BAND.high), text: said(least) }]
-  return [...fits(BAND.top, '-100%', most), ...fits(BAND.foot, '0', least)]
+    clearAt(y, spots.value, [])
+      ? [{ at: against(y, lift, BACKLOG_PLOT.high), text: said(value) }]
+      : []
+  if (most === least) {
+    return [{ at: against(BACKLOG_PLOT.foot, '0', BACKLOG_PLOT.high), text: said(least) }]
+  }
+  return [
+    ...fits(BACKLOG_PLOT.top, '-100%', most),
+    ...fits(BACKLOG_PLOT.foot, '0', least),
+  ]
 })
 
-/** The days at either end of the band, which the grid says nothing about. */
+/** The days at either end of the extent, which the grid says nothing about. */
 const ends = computed(() => [words.backlogWidthAt(1), words.backlogWidthAt(backlog.value.length)])
 </script>
 
@@ -83,31 +90,31 @@ const ends = computed(() => [words.backlogWidthAt(1), words.backlogWidthAt(backl
       <div
         class="curve-slider__room"
         data-control="room"
-        :style="{ aspectRatio: `${WIDE} / ${BAND_HIGH}` }"
+        :style="{ aspectRatio: `${WIDE} / ${BACKLOG_HIGH}` }"
       >
         <svg
-          v-if="banded"
+          v-if="drawn"
           class="curve-slider__picture backlog__picture"
           data-backlog="picture"
           aria-hidden="true"
-          :viewBox="`0 0 ${WIDE} ${BAND_HIGH}`"
+          :viewBox="`0 0 ${WIDE} ${BACKLOG_HIGH}`"
         >
-          <!-- The foot is nothing overdue, which is what the band is read up from. -->
+          <!-- The foot is nothing overdue, which is what the extent is read up from. -->
           <line
             class="curve-slider__rule"
             data-control="rule"
             :x1="LEFT"
             :x2="LEFT"
-            :y1="BAND.top"
-            :y2="BAND.foot"
+            :y1="BACKLOG_PLOT.top"
+            :y2="BACKLOG_PLOT.foot"
           />
           <line
             class="curve-slider__rule"
             data-control="rule"
             :x1="LEFT"
             :x2="RIGHT"
-            :y1="BAND.foot"
-            :y2="BAND.foot"
+            :y1="BACKLOG_PLOT.foot"
+            :y2="BACKLOG_PLOT.foot"
           />
 
           <path class="backlog__line" data-backlog="line" :d="line" />
@@ -115,7 +122,7 @@ const ends = computed(() => [words.backlogWidthAt(1), words.backlogWidthAt(backl
       </div>
 
       <span
-        v-for="(one, at) in banded ? heights : []"
+        v-for="(one, at) in drawn ? heights : []"
         :key="at"
         class="curve-slider__number"
         data-control="number"
@@ -127,8 +134,8 @@ const ends = computed(() => [words.backlogWidthAt(1), words.backlogWidthAt(backl
 
   <div class="curve-slider__foot" data-control="foot">
     <p class="curve-slider__ends" data-control="ends">
-      <span>{{ banded ? ends[0] : '' }}</span>
-      <span>{{ banded ? ends[1] : '' }}</span>
+      <span>{{ drawn ? ends[0] : '' }}</span>
+      <span>{{ drawn ? ends[1] : '' }}</span>
     </p>
 
     <p class="curve-slider__name curve-slider__name--x" data-control="name" data-axis="x">

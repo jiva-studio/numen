@@ -1,5 +1,5 @@
 /**
- * The preset tab: the goal, the picture of it, the band under that, and the
+ * The preset tab: the goal, the picture of it, the backlog under that, and the
  * rows of settings the answer produced.
  *
  * What is asked here is what only a browser can answer. The rows are laid out
@@ -21,7 +21,7 @@ import {
   type Settings,
   type SettingsBounds,
 } from './core'
-import { BAND_HIGH, HIGH, WIDE } from './drawing'
+import { BACKLOG_HIGH, HIGH, WIDE } from './drawing'
 import type { PresetTabState } from './kind'
 import { WORDS as words } from './words'
 
@@ -42,7 +42,7 @@ const point = (over: Partial<Point> = {}): Point => ({
 
 /**
  * A curve of four places, the backlog running down over a fortnight. The grid
- * is what the knob walks, and the run under each place is what the band draws.
+ * is what the knob walks, and the run under each place is what the backlog draws.
  */
 const curve = (over: Partial<Curve> = {}): Curve => ({
   goal: 'minutes',
@@ -136,7 +136,7 @@ const bothWays = (args: Knobs) => ({
 const tabsIn = (canvas: HTMLElement): readonly HTMLElement[] =>
   Array.from(canvas.querySelectorAll<HTMLElement>('[data-tab]'))
 
-/** The rooms a tab holds its two plots in: the picture's, then the band's. */
+/** The rooms a tab holds its two plots in: the picture's, then the backlog's. */
 const roomsIn = (tab: HTMLElement): readonly HTMLElement[] =>
   Array.from(tab.querySelectorAll<HTMLElement>('[data-control="room"]'))
 
@@ -311,28 +311,28 @@ export const TheBubbleStandsOverTheKnob: Story = {
 }
 
 /**
- * The band of what stands overdue, under the picture, drawn both ways: the tab
+ * The plot of what stands overdue, under the picture, drawn both ways: the tab
  * with an answer on it above, and the same tab still waiting for one below.
  *
- * The band keeps its room whether or not there is a backlog to draw, so nothing
+ * The plot keeps its room whether or not there is a backlog to draw, so nothing
  * below it moves when the answer lands. Only a browser can say that: the room is
  * held by an aspect ratio, which is a number until something lays it out.
  */
-export const TheBandKeepsItsRoom: Story = {
+export const TheBacklogKeepsItsRoom: Story = {
   render: bothWays,
   play: async ({ canvasElement }) => {
     const [answered, waiting] = tabsIn(canvasElement)
-    const bandRoom = (tab: HTMLElement): DOMRect =>
+    const backlogRoom = (tab: HTMLElement): DOMRect =>
       roomsIn(tab)[1]!.getBoundingClientRect()
 
-    // The band's own two axes are named, and it is drawn under the picture it
+    // The backlog's own two axes are named, and it is drawn under the picture it
     // belongs to rather than beside it.
     const canvas = within(answered!)
-    const band = canvas.getByText(words.backlogY)
+    const backlog = canvas.getByText(words.backlogY)
     const along = canvas.getByText(words.backlogX)
     const picture = pictureIn(answered!).getBoundingClientRect()
-    expect(band.getBoundingClientRect().top).toBeGreaterThan(picture.top)
-    expect(along.getBoundingClientRect().top).toBeGreaterThan(band.getBoundingClientRect().top)
+    expect(backlog.getBoundingClientRect().top).toBeGreaterThan(picture.top)
+    expect(along.getBoundingClientRect().top).toBeGreaterThan(backlog.getBoundingClientRect().top)
 
     // It runs from the first day to the last of the run at this place, and the
     // two ends stand at the two ends of it.
@@ -340,18 +340,18 @@ export const TheBandKeepsItsRoom: Story = {
     const last = canvas.getByText(words.backlogWidthAt(7))
     expect(first.getBoundingClientRect().left).toBeLessThan(last.getBoundingClientRect().left)
 
-    // One tab has a backlog drawn in the band and the other has none, which is
+    // One tab has a backlog drawn in the backlog and the other has none, which is
     // what makes the two rooms worth comparing.
     expect(answered!.querySelectorAll('[data-backlog="picture"]')).toHaveLength(1)
     expect(waiting!.querySelectorAll('[data-backlog="picture"]')).toHaveLength(0)
 
-    // The room is the same either way, and in the band's own proportion.
-    const drawn = bandRoom(answered!)
-    const empty = bandRoom(waiting!)
+    // The room is the same either way, and in the backlog's own proportion.
+    const drawn = backlogRoom(answered!)
+    const empty = backlogRoom(waiting!)
     expect(drawn.width).toBeGreaterThan(0)
     expect(empty.width).toBeCloseTo(drawn.width, 0)
     expect(empty.height).toBeCloseTo(drawn.height, 0)
-    expect(drawn.width / drawn.height).toBeCloseTo(WIDE / BAND_HIGH, 1)
+    expect(drawn.width / drawn.height).toBeCloseTo(WIDE / BACKLOG_HIGH, 1)
   },
 }
 

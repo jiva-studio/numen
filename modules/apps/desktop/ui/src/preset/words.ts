@@ -175,10 +175,10 @@ export const WORDS = {
     if (goal === 'retention') return 'Retention'
     return goal === 'date' ? 'Days from today' : 'Minutes a day'
   },
-  /** What the band under the picture measures, said along the axis it names. */
+  /** What the backlog under the picture measures, said along the axis it names. */
   backlogY: 'Cards overdue',
   backlogX: 'Days from today',
-  /** One height of the band, and one day along it. */
+  /** One height of the backlog, and one day along it. */
   backlogHeightAt: (value: number) => many(value, 'card'),
   backlogWidthAt: (days: number) => `${count(days)} d`,
   /**
