@@ -130,6 +130,20 @@ linters:
       - path: (^|/)(adapter/cli/(recognise|transcribe)|cmd/numen/main|internal/agents/serve)\.go$
         linters: [contextcheck]
 
+      # The four statements a cut prepares are closed by the `defer w.close()`
+      # of whoever prepared them and on the way out of preparing them, through
+      # a `**sql.Stmt` sqlclosecheck cannot follow. The rows a wipe reads are
+      # closed on every path out of its loop, and deferring them would hold
+      # every pass's rows open until the last pass was done.
+      - path: (^|/)adapter/index/(chunk/repository|migrate)\.go$
+        linters: [sqlclosecheck]
+
+      # Binding a listening socket does not block, so there is nothing for a
+      # context to cancel. How long a socket answers for is said where the
+      # server it belongs to is stopped.
+      - source: ^\s*\w+, err := net\.Listen\(
+        linters: [noctx]
+
       # Knowledge of the technology is confined to the adapters and to the
       # composition root, and an entry point is an adapter (ADR-0004). These
       # are the places allowed to know what time it is.
