@@ -187,7 +187,7 @@ export function listing(core: Folders) {
    */
   const freeIn = (folder: string, word: string): string =>
     freeName(
-      entriesIn(folder).map((one) => one.displayName),
+      entriesIn(folder).map((one) => one.name),
       word,
     )
 

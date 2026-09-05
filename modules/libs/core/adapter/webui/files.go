@@ -42,11 +42,11 @@ func (a *API) ListFiles(
 	out := &v1.ListFilesResponse{Entries: make([]*v1.Entry, 0, len(held))}
 	for _, entry := range held {
 		out.Entries = append(out.Entries, &v1.Entry{
-			Path:        entry.Path,
-			DisplayName: entry.Name,
-			Folder:      entry.IsFolder,
-			Kind:        kindOf(entry.Kind),
-			Type:        typeOf(types[entry.Path]),
+			Path:   entry.Path,
+			Name:   entry.Name,
+			Folder: entry.IsFolder,
+			Kind:   kindOf(entry.Kind),
+			Type:   typeOf(types[entry.Path]),
 		})
 	}
 	return connect.NewResponse(out), nil

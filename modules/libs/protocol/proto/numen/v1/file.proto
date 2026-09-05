@@ -58,7 +58,7 @@ message Entry {
   string path = 1;
 
   // The last segment of the path, which is what the row shows.
-  string display_name = 2;
+  string name = 2;
 
   bool folder = 3;
 

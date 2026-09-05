@@ -34,7 +34,7 @@ const dropTarget = computed<RowMarker>(() => ({
 const drawn = (rows: readonly Row[]): TreeRow[] =>
   rows.map((one) => ({
     id: one.entry.path,
-    name: one.entry.displayName,
+    name: one.entry.name,
     holds: one.entry.folder,
     rows: drawn(one.rows),
   }))

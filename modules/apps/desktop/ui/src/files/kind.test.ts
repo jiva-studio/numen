@@ -15,7 +15,7 @@ import { WORDS as words } from './words'
 
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   path,
-  displayName: path.split('/').pop() ?? path,
+  name: path.split('/').pop() ?? path,
   folder: false,
   kind: 'note',
   type: 'note',

@@ -33,7 +33,7 @@ func drawn(t *testing.T, f *going, at string) []*v1.Entry {
 func named(entries []*v1.Entry) []string {
 	out := make([]string, 0, len(entries))
 	for _, entry := range entries {
-		out = append(out, entry.GetDisplayName())
+		out = append(out, entry.GetName())
 	}
 	return out
 }
@@ -64,7 +64,7 @@ func TestListingAFolderAnswersInTheOrderToDrawItIn(t *testing.T) {
 	}
 	held := map[string]*v1.Entry{}
 	for _, entry := range root {
-		held[entry.GetDisplayName()] = entry
+		held[entry.GetName()] = entry
 	}
 	if entry := held["physics"]; !entry.GetFolder() || entry.GetPath() != "physics" {
 		t.Errorf("the folder came back as %+v", entry)
@@ -365,7 +365,7 @@ func TestAListingSaysWhichOfFourEachNoteIs(t *testing.T) {
 
 	held := map[string]*v1.Entry{}
 	for _, entry := range drawn(t, f, "") {
-		held[entry.GetDisplayName()] = entry
+		held[entry.GetName()] = entry
 	}
 
 	want := map[string]v1.NoteType{

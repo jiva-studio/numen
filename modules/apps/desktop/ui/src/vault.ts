@@ -735,7 +735,7 @@ const answered = (from: {
 /** One row of a listing, kept as the plain value the window carries it as. */
 const listed = (one: EntryMessage): Entry => ({
   path: one.path,
-  displayName: one.displayName,
+  name: one.name,
   folder: one.folder,
   kind: sourceKind(one.kind),
   type: noteType(one.type),
