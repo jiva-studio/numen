@@ -9,7 +9,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
@@ -24,12 +23,12 @@ func proofreadTranscriptCommand(
 	v domain.Vault,
 	path string,
 ) error {
-	named := cfg.SpeechProofreading.Profile
-	by, err := cfg.Proofreader(named, proofread.SpeechInstruction)
+	proofread, held, err := cfg.ProofreadingSpeech().
+		Transcript(cfg.VaultReaders(), cfg.DerivedStores())
 	if err != nil {
-		return fmt.Errorf("nothing to proofread with: %w", err)
+		return err
 	}
-	if by == nil {
+	if !held {
 		return errors.New("nothing to proofread with: none is configured")
 	}
 	db, err := cfg.OpenIndex(ctx)
@@ -46,16 +45,11 @@ func proofreadTranscriptCommand(
 		return err
 	}
 
-	fmt.Fprintf(out, "proofreading %s with %s\n", path, by.Name())
+	fmt.Fprintf(out, "proofreading %s with %s\n", path, proofread.By.Name())
 	started := time.Now()
 
 	// The line of lines rewrites itself, and is closed once it stops.
 	shown := false
-	profile := cfg.Proofreading.Profiles[named]
-	proofread := source.NewProofreadTranscript(cfg.VaultReaders(), cfg.DerivedStores(), by)
-	proofread.BatchSize = profile.BatchSize
-	proofread.Overlap = profile.Overlap
-	proofread.InFlight = profile.InFlight
 	proofread.Cut = func(ctx context.Context, v domain.Vault, path string) error {
 		_, err := cut.One(ctx, v, path)
 		return err

@@ -10,7 +10,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 )
 
@@ -463,21 +462,17 @@ func (t *TranscriptionWorker) proofreadTranscript(
 		t.say(task.Task{ID: id, Doing: "Proofreading a transcript", About: path}, asked)
 	}
 
-	by, err := said.By(proofread.SpeechInstruction)
+	right, held, err := said.Transcript(t.with.Readers, t.with.Derived)
 	if err != nil {
 		fail(err)
 		return ProofreadTranscriptResult{Path: path}, err
 	}
-	if by == nil {
+	if !held {
 		t.done(id)
 		return ProofreadTranscriptResult{Path: path}, nil
 	}
 
 	var once sync.Once
-	right := NewProofreadTranscript(t.with.Readers, t.with.Derived, by)
-	right.BatchSize = said.Batch
-	right.Overlap = said.Overlap
-	right.InFlight = said.InFlight
 	right.Cut = t.Cut
 	right.OnProgress = func(res ProofreadTranscriptResult) {
 		// Progress is reported once there is a question to put, so the first of

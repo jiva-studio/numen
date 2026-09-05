@@ -9,7 +9,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
@@ -40,17 +39,12 @@ func proofreadReadingCommand(
 	v domain.Vault,
 	path string,
 ) error {
-	named := cfg.ScanProofreading.Profile
-	by, err := cfg.Proofreader(named, proofread.ScanInstruction)
+	proofread, held, err := cfg.ProofreadingScans().Reading(cfg.VaultReaders(), cfg.DerivedStores())
 	if err != nil {
-		return fmt.Errorf("nothing to proofread with: %w", err)
+		return err
 	}
-	if by == nil {
+	if !held {
 		return errors.New("nothing to proofread with: none is configured")
-	}
-	queue, err := cfg.ProofreadQueue(named, proofread.ScanInstruction)
-	if err != nil {
-		return fmt.Errorf("nothing to leave the pages with: %w", err)
 	}
 	db, err := cfg.OpenIndex(ctx)
 	if err != nil {
@@ -66,15 +60,11 @@ func proofreadReadingCommand(
 		return err
 	}
 
-	fmt.Fprintf(out, "proofreading %s with %s\n", path, by.Name())
+	fmt.Fprintf(out, "proofreading %s with %s\n", path, proofread.By.Name())
 	started := time.Now()
 
 	// The line of pages rewrites itself, and is closed once it stops.
 	shown := false
-	proofread := source.NewProofreadReading(cfg.VaultReaders(), cfg.DerivedStores(), by)
-	proofread.Queue = queue
-	proofread.Pages = cfg.Proofreading.Profiles[named].BatchSize
-	proofread.MaxEditDistance = cfg.Proofreading.Distance()
 	proofread.Cut = func(ctx context.Context, v domain.Vault, path string) error {
 		_, err := cut.One(ctx, v, path)
 		return err

@@ -77,6 +77,17 @@ func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) 
 	})
 }
 
+// ProofreadingScans is what a document's reading is put right with: the profile
+// the settings name for a scan, and the sizes a reading is asked about at.
+func (c Config) ProofreadingScans() source.ProofreadingConfig {
+	return c.proofreadingFor(c.ScanProofreading)
+}
+
+// ProofreadingSpeech is the same for what a model heard.
+func (c Config) ProofreadingSpeech() source.ProofreadingConfig {
+	return c.proofreadingFor(c.SpeechProofreading)
+}
+
 // proofreadingFor is what a reading of one kind is put right with: the profile
 // the settings name for it, opened when there is something to put right.
 func (c Config) proofreadingFor(said proofreading.Proofread) source.ProofreadingConfig {
