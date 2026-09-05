@@ -101,7 +101,7 @@ const pointsPerInch = 72
 
 // The ways a file can fail to be a document.
 var (
-	ErrNotPDF    = errors.New("pdf: not a PDF file")
+	ErrNotPDF    = errors.New("these bytes do not open as a PDF")
 	ErrEncrypted = errors.New("pdf: the file is encrypted")
 )
 
