@@ -43,7 +43,7 @@ A vault the index does not carry has nothing to draw until the walk is done and 
 
 ### A vault is unread only while nothing has read it
 
-`ErrUnread` is the index's answer that it does not carry a vault. It reaches a person only where nothing reads one: a build that names no walk, and a sitting opened on a vault whose walk has not finished.
+`ErrNotCarried` is the index's answer that it does not carry a vault. It reaches a person only where nothing reads one: a build that names no walk, and a sitting opened on a vault whose walk has not finished.
 
 ## Consequences
 

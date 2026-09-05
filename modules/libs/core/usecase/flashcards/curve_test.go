@@ -1186,7 +1186,7 @@ func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
 	}
 }
 
-// A build carrying no index reaches no deck, and answers ErrUnread.
+// A build carrying no index reaches no deck, and answers ErrNotCarried.
 func TestABuildWithNoIndexDrawsNoCurve(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 4)
@@ -1196,7 +1196,7 @@ func TestABuildWithNoIndexDrawsNoCurve(t *testing.T) {
 	p := review.Preset{
 		Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 	}
-	if _, err := u.Execute(t.Context(), s.vault, "Sanskrit.md", p); !errors.Is(err, flashcards.ErrUnread) {
+	if _, err := u.Execute(t.Context(), s.vault, "Sanskrit.md", p); !errors.Is(err, flashcards.ErrNotCarried) {
 		t.Errorf("a build with no index answered %v", err)
 	}
 }

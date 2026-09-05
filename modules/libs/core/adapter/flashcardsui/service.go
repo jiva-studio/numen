@@ -186,7 +186,7 @@ func (a *API) StartSession(
 		switch {
 		case errors.Is(err, flashcards.ErrBothNamed):
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
-		case errors.Is(err, flashcards.ErrUnread),
+		case errors.Is(err, flashcards.ErrNotCarried),
 			errors.Is(err, flashcards.ErrSchedulesNothing):
 			return nil, connect.NewError(connect.CodeFailedPrecondition, err)
 		}

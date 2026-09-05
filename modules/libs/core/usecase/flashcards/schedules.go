@@ -117,7 +117,7 @@ func (u Schedules) asking(ctx context.Context, v domain.Vault) (assignment, erro
 		return u.plain(), nil
 	}
 	standing, err := u.CardFaces.Execute(ctx, v)
-	if errors.Is(err, ErrUnread) {
+	if errors.Is(err, ErrNotCarried) {
 		return u.plain(), nil
 	}
 	if err != nil {

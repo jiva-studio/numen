@@ -19,7 +19,7 @@ func TestAVaultTheIndexHasNotReadIsNotAVaultOfNoCards(t *testing.T) {
 	unread := domain.Vault{ID: "nobody-scanned-this", Name: "Unread", Path: s.vault.Path}
 
 	_, err := s.standings.Execute(t.Context(), unread)
-	if !errors.Is(err, flashcards.ErrUnread) {
+	if !errors.Is(err, flashcards.ErrNotCarried) {
 		t.Errorf("a vault the index has not read came back with %v", err)
 	}
 }

@@ -475,7 +475,7 @@ func TestSittingDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("refused with %v: %v", connect.CodeOf(err), err)
 	}
-	if !errors.Is(err, flashcards.ErrUnread) {
+	if !errors.Is(err, flashcards.ErrNotCarried) {
 		t.Errorf("says %q, and not that the index does not carry the vault", err)
 	}
 }
