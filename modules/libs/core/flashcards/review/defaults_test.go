@@ -31,9 +31,17 @@ type defaultPreset struct {
 	Interval    int            `json:"interval"`
 }
 
+// presetBounds is how far one setting goes, at each end.
+type presetBounds struct {
+	Least float64 `json:"least"`
+	Most  float64 `json:"most"`
+}
+
 // presetCorpusFile is what the corpus holds.
 type presetCorpusFile struct {
-	Defaults defaultPreset `json:"defaults"`
+	Defaults        defaultPreset `json:"defaults"`
+	FullLoad        int           `json:"fullLoad"`
+	RetentionBounds presetBounds  `json:"retentionBounds"`
 }
 
 func readPresetCorpus(t *testing.T) presetCorpusFile {

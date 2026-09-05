@@ -13,5 +13,7 @@
     "evenLoad": true,
     "learned": "interval",
     "interval": 21
-  }
+  },
+  "fullLoad": 100,
+  "retentionBounds": { "least": 0.7, "most": 0.99 }
 }

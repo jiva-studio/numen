@@ -66,6 +66,12 @@ describe('a day put at a share', () => {
   })
 })
 
+describe('the whole of a day’s load', () => {
+  it('is what the corpus says it is', () => {
+    expect(WHOLE_LOAD).toBe(corpus.fullLoad)
+  })
+})
+
 describe('the shares a day is offered', () => {
   it('run from nothing to the whole of a day, in order', () => {
     expect(LOADS[0]).toBe(0)

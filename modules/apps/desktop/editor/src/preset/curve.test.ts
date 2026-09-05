@@ -23,7 +23,14 @@ import {
   shapeOf,
   round,
   goalValue,
+  RETENTION,
 } from './curve'
+
+/**
+ * The sketch is drawn across the span the core holds a target to, before any
+ * answer from it has landed. Both read this one corpus, and neither owns it.
+ */
+import corpus from '../../../../../libs/protocol/testdata/presets.json'
 
 const today = new Date('2026-08-30T00:00:00Z')
 
@@ -107,6 +114,12 @@ describe('the line the window draws in the answer’s place', () => {
     const guess = approximate(settings({ goal: 'date', byDate: '2026-09-29' }), today)
     expect(guess.days).toHaveLength(guess.grid.length)
     expect(guess.days[guess.now.at]).toBe('2026-09-29')
+  })
+})
+
+describe('the span the sketch of a target is drawn across', () => {
+  it('is how far the application holds a target, as the corpus says', () => {
+    expect(RETENTION).toStrictEqual(corpus.retentionBounds)
   })
 })
 

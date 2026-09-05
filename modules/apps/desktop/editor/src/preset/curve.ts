@@ -16,7 +16,7 @@ const PLACES = 25
 const LEAST_CEILING = 60
 
 /** The span of retention the sketch is drawn across, as the two ends of it. */
-const RETENTION = { least: 0.7, most: 0.99 }
+export const RETENTION: Bounds = { least: 0.7, most: 0.99 }
 
 /** How long one answer takes where nothing has been answered yet, in seconds. */
 const ANSWER = 8
