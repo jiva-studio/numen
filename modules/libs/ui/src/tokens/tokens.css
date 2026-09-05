@@ -185,7 +185,7 @@
   --numen-lift-palette: 70;
   /* Said beside the pointer, so it stands over whatever the pointer is over. */
   --numen-lift-tooltip: 75;
-  --numen-lift-going: 80;
+  --numen-lift-leaving: 80;
 
   /* Wider than any box it rounds. */
   --numen-radius-pill: 999px;

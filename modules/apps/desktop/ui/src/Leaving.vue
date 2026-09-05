@@ -42,7 +42,7 @@ const props = defineProps<{
   position: fixed;
   inset-block-end: 1rem;
   inset-inline: 1rem;
-  z-index: var(--numen-lift-going);
+  z-index: var(--numen-lift-leaving);
   padding: 0.8rem 1rem;
   border-radius: var(--numen-radius);
   background: var(--numen-caution-bg);
