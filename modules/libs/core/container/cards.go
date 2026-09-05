@@ -2,7 +2,6 @@ package container
 
 import (
 	"strings"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
@@ -34,18 +33,14 @@ func (c Config) Cards(
 ) Cards {
 	readers := c.VaultReaders()
 	writers := c.VaultWriters()
-
-	writing := cards.NewWrite(readers, writers, links, index)
-	writing.Now = time.Now
-	making := cards.NewCreate(writers, index)
-	making.Now = time.Now
+	now := c.Clock()
 
 	return Cards{
 		Read:   cards.NewRead(readers, links),
 		List:   cards.NewList(readers, notes),
-		Write:  writing,
-		Create: making,
-		Rename: cards.NewRenameField(readers, writers, notes, links, index),
+		Write:  cards.NewWrite(readers, writers, links, index, now),
+		Create: cards.NewCreate(writers, index, now),
+		Rename: cards.NewRenameField(readers, writers, notes, links, index, now),
 	}
 }
 

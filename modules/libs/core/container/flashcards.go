@@ -90,6 +90,7 @@ func (c Config) Flashcards(
 	index func(ctx context.Context, v domain.Vault, paths []string) error,
 ) Flashcards {
 	logs := c.Answers()
+	now := c.Clock()
 	kept, err := c.Schedules()
 	if err != nil {
 		// A machine that cannot say where its caches go works the schedules out
@@ -100,7 +101,7 @@ func (c Config) Flashcards(
 	standing := flashcards.ListCardFaces{Readers: c.VaultReaders(), Notes: notes, Links: links}
 	marking := flashcards.Marking{
 		Readers: c.VaultReaders(), Writers: c.VaultWriters(),
-		Notes: notes, Links: links, Index: index, Now: time.Now,
+		Notes: notes, Links: links, Index: index, Now: now,
 	}
 	day := review.Day{Starts: c.DayStarts()}
 
@@ -111,7 +112,7 @@ func (c Config) Flashcards(
 
 	presets := flashcards.Presets{
 		Readers: c.VaultReaders(), Writers: c.VaultWriters(),
-		Links: links, Notes: notes, Index: index, Day: day, Now: time.Now,
+		Links: links, Notes: notes, Index: index, Day: day, Now: now,
 	}
 	// A link the index does not carry is accounted for in what parsing turned
 	// up, which is the same reader answering both.
@@ -131,21 +132,21 @@ func (c Config) Flashcards(
 		Marking:   marking,
 		Schedules: schedules,
 		CardsDue: flashcards.CountCardsDue{
-			CardFaces: standing, Schedules: schedules, Presets: presets, Day: day, Now: time.Now,
+			CardFaces: standing, Schedules: schedules, Presets: presets, Day: day, Now: now,
 		},
 		Session: flashcards.Session{
 			Marking: marking, CardFaces: standing, Schedules: schedules,
-			Presets: presets, Day: day, Now: time.Now,
+			Presets: presets, Day: day, Now: now,
 		},
 		Log: flashcards.Log{Stores: logs},
 		Counted: flashcards.CountReviews{
-			Logs: logs, Cache: counting, Schedules: schedules, Day: day, Now: time.Now,
+			Logs: logs, Cache: counting, Schedules: schedules, Day: day, Now: now,
 		},
 		Presets: presets,
 		// How many places of a curve run at once is what this machine can run
 		// at once, which is a fact only here is allowed to read.
 		Curves: flashcards.ProjectCurve{
-			CardFaces: standing, Schedules: schedules, Presets: presets, Day: day, Now: time.Now,
+			CardFaces: standing, Schedules: schedules, Presets: presets, Day: day, Now: now,
 			Cores: runtime.GOMAXPROCS(0),
 		},
 		Day: day,

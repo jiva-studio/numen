@@ -369,6 +369,61 @@ func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
 	}
 }
 
+// telling are the functions of time that answer from the machine's clock. The
+// rest of the package is arithmetic over an instant somebody was given.
+var telling = map[string]bool{"Now": true, "Since": true}
+
+// The domain does not know what time it is. A clock is a port, so a scenario
+// that stamps a note or asks what is due today is handed one, and the
+// composition root is where it is bound to this machine's.
+//
+// A scenario reading the clock itself cannot be exercised at a chosen instant,
+// and scheduling here is entirely about when: the day a card comes back on, the
+// budget the day is answered under, and the identifier a note is stamped with
+// all turn on it.
+func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
+	var wrong []string
+	var read int
+	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
+			return err
+		}
+		pkg := within("..", path)
+		if strings.HasSuffix(path, "_test.go") || adapting(pkg) || holds(machinery, pkg) {
+			return nil
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+		if err != nil {
+			return err
+		}
+		read++
+		ast.Inspect(file, func(node ast.Node) bool {
+			at, is := node.(*ast.SelectorExpr)
+			if !is {
+				return true
+			}
+			from, is := at.X.(*ast.Ident)
+			if is && from.Name == "time" && telling[at.Sel.Name] {
+				wrong = append(wrong, path+" runs time."+at.Sel.Name)
+			}
+			return true
+		})
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range wrong {
+		t.Error(one + ": a scenario is handed a clock and reads no other")
+	}
+
+	// A walk that read no file of the core is a rule checked against nothing,
+	// and it passes.
+	if read < 100 {
+		t.Fatalf("%d files of the core read: the walk is not reading it", read)
+	}
+}
+
 // adapters are the names one file calls another adapter's package by, whether
 // that is the package's own name or an alias.
 func adapters(file *ast.File, own string) map[string]bool {

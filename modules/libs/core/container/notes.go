@@ -38,18 +38,19 @@ func (c Config) Notes(
 ) Notes {
 	readers := c.VaultReaders()
 	writers := c.VaultWriters()
+	now := c.Clock()
 
 	// One note.Move settles every note that travelled, whether a rename sent it
 	// or a move did.
-	moving := note.NewMove(readers, writers, links, queries, sources, index)
+	moving := note.NewMove(readers, writers, links, queries, sources, index, now)
 	moving.Sync = c.Syncing()
 
 	return Notes{
 		Read:    note.Read{Readers: readers},
-		Write:   note.NewWrite(readers, writers, index),
-		Create:  note.NewCreate(writers, queries, index),
-		Replace: note.NewReplace(readers, writers, index),
-		Linking: note.NewEditLinks(readers, writers, index),
+		Write:   note.NewWrite(readers, writers, index, now),
+		Create:  note.NewCreate(writers, queries, index, now),
+		Replace: note.NewReplace(readers, writers, index, now),
+		Linking: note.NewEditLinks(readers, writers, index, now),
 		Move:    moving,
 		Rename:  note.NewRename(moving),
 		Remove:  note.NewRemove(writers, links, known, index),

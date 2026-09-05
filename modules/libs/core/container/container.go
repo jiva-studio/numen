@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	adapteragent "github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
@@ -101,6 +102,19 @@ type Config struct {
 	// Trouble is where what is assembled here says what went wrong in work it
 	// carries on past. An installation that sets none is told nothing.
 	Trouble port.Trouble
+
+	// Now is what time it is, for every scenario that stamps a note or asks
+	// what is due today. An installation that names none reads this machine's
+	// clock, and this is the one place in the core allowed to.
+	Now port.Clock
+}
+
+// Clock is the clock every scenario assembled here is handed.
+func (c Config) Clock() port.Clock {
+	if c.Now != nil {
+		return c.Now
+	}
+	return time.Now
 }
 
 // trouble says what went wrong to whoever asked to be told.
