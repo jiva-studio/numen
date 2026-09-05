@@ -64,16 +64,23 @@ const FIELDS: Record<Field, readonly [string, string]> = {
 }
 
 /**
- * What a read of the preset was refused for. A refusal a read of a note does
- * not answer is said in the one sentence under it.
+ * What a read of the preset was refused for. A refusal only a write answers
+ * with, and one only a deck or a stencil is refused with, has no sentence here
+ * and is said in the one line under it.
  */
-const READING: Partial<Record<RefusalReason, string>> = {
+const READING: Record<RefusalReason, string | null> = {
   missing: 'This preset is no longer in the vault, so what stands here is what was last read.',
   notANote: 'What stands at this path is not a note, so there are no settings in it to read.',
   notText: 'This file is not text, so there are no settings in it to read.',
   tooLarge: 'This note is longer than the window reads, so none of its settings were read.',
   unreadable: 'The frontmatter of this note cannot be read, so none of its settings were read.',
   notAPreset: 'That note is not a preset, and the defaults stand.',
+  bodyRefused: null,
+  occupied: null,
+  unnameable: null,
+  notAStencil: null,
+  notADeck: null,
+  deckTooLarge: null,
 }
 
 /** The read was refused and the vault named no reason the window knows. */
@@ -81,9 +88,10 @@ const UNREAD = 'This preset could not be read, and the vault named no reason.'
 
 /**
  * What a write of the settings was refused for. Each says where the settings
- * stand, which is in the tab: a refused write leaves the file as it was.
+ * stand, which is in the tab: a refused write leaves the file as it was. A
+ * refusal only a deck or a stencil is written with has no sentence here.
  */
-const WRITING: Partial<Record<RefusalReason, string>> = {
+const WRITING: Record<RefusalReason, string | null> = {
   missing:
     'This preset is no longer in the vault, so nothing was written. ' +
     'These settings are still here.',
@@ -105,6 +113,10 @@ const WRITING: Partial<Record<RefusalReason, string>> = {
     'These settings are still here.',
   notAPreset:
     'That note is not a preset, so nothing was written. These settings are still here.',
+  unnameable: null,
+  notAStencil: null,
+  notADeck: null,
+  deckTooLarge: null,
 }
 
 /** The write was refused and the vault named no reason the window knows. */
