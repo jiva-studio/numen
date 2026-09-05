@@ -18,12 +18,8 @@ export function drawn(limits: Holding = holding) {
 
   const carry = (path: string, arm: Arm | null): void => {
     const change = decided.shown(path)
-    if (change !== changes.value.get(path)) {
-      const next = new Map(changes.value)
-      if (change) next.set(path, change)
-      else next.delete(path)
-      changes.value = next
-    }
+    if (change) changes.value.set(path, change)
+    else changes.value.delete(path)
     if (arm) hold(arm)
   }
 

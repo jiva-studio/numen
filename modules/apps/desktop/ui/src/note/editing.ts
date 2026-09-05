@@ -194,7 +194,6 @@ export function editing(core: Notes, how: Keeping = {}) {
 
   function carry(id: string, next: ReturnType<typeof tabAfter>): void {
     tabs.value.set(id, next.tab)
-    tabs.value = new Map(tabs.value)
     for (const effect of next.effects) act(id, effect)
 
     // Held with nothing on its way to the file: the tab stays, and whoever
@@ -229,7 +228,6 @@ export function editing(core: Notes, how: Keeping = {}) {
         return
       case 'replace':
         bodies.value.set(id, effect.body)
-        bodies.value = new Map(bodies.value)
         replaced(where(id))
         return
       case 'hold':
@@ -304,9 +302,7 @@ export function editing(core: Notes, how: Keeping = {}) {
     clearTimeout(timers.get(id))
     timers.delete(id)
     tabs.value.delete(id)
-    tabs.value = new Map(tabs.value)
     bodies.value.delete(id)
-    bodies.value = new Map(bodies.value)
     closing.get(id)?.(true)
     closing.delete(id)
     settled(id)

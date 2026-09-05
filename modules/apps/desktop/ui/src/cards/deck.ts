@@ -356,13 +356,11 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
       return
     }
     scheduling.value.set(path, scheduledOf(read))
-    scheduling.value = new Map(scheduling.value)
   }
 
   /** What one tab was told about the preset it last chose. */
   const says = (id: string, text: string): void => {
     chose.value.set(id, text)
-    chose.value = new Map(chose.value)
   }
 
   /**
