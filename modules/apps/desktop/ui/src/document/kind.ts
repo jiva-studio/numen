@@ -6,6 +6,7 @@
  * measures again then.
  */
 import type { Reading } from './reading'
+import type { Stretch } from '../core'
 import type { Putting } from '../putting'
 import type { Host, Kind } from '../windowing'
 import { DOCUMENT } from '../workspace'
@@ -45,10 +46,11 @@ export function documentKind(host: Host, opens: (path: string) => Held, puts: Pu
   // The reader of documents. What stands at the stretches asked for is
   // highlighted, and the tab turns to the first page of them; the rest are
   // highlighted where they fall, each of them somewhere else to look.
-  puts.reads(async (path, stretches) => {
+  const reads = async (path: string, stretches: readonly Stretch[]) => {
     const id = await host.opens(DOCUMENT, path)
     void host.holds<Held>(DOCUMENT, id)?.reach(...stretches)
-  })
+  }
+  puts.reads((path, stretches) => void reads(path, stretches))
 
   return { kind }
 }

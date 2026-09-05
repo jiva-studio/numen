@@ -146,7 +146,9 @@ lint: generate-check ## the checks CI runs, less the one needing a base branch
 	cd $(UI) && npm run lint
 	cd $(UI) && npm run typecheck
 	cd $(WIRE) && npm run typecheck
+	cd $(DESKTOP)/ui && npm run lint
 	cd $(DESKTOP)/ui && npm run typecheck
+	cd $(DESKTOP)/flashcards && npm run lint
 	cd $(DESKTOP)/flashcards && npm run typecheck
 	cd $(MOBILE) && npm run typecheck
 	cd $(DOCS) && npm run manual:check

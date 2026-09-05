@@ -10,16 +10,7 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { Menu, Tree } from '@numen/ui'
 import type { Marking, Point, Row as TreeRow } from '@numen/ui'
-import {
-  Book,
-  File,
-  FileText,
-  Folder,
-  FolderOpen,
-  Layers,
-  LayoutTemplate,
-  type LucideIcon,
-} from '@lucide/vue'
+import { Book, File, Folder, FolderOpen, type LucideIcon } from '@lucide/vue'
 import Caution from '../Caution.vue'
 import type { NoteType, Source } from '../core'
 import { iconFor, iconOfNote } from '../icons'
@@ -93,8 +84,9 @@ const items = computed(() => {
  * A file the vault holds no source for is not reported by the watcher, so the
  * tree is read again whenever the window comes back to the front.
  */
-onMounted(() => globalThis.addEventListener('focus', props.held.list.again))
-onUnmounted(() => globalThis.removeEventListener('focus', props.held.list.again))
+const again = () => void props.held.list.again()
+onMounted(() => globalThis.addEventListener('focus', again))
+onUnmounted(() => globalThis.removeEventListener('focus', again))
 </script>
 
 <template>

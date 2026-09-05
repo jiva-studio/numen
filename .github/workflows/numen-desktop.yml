@@ -203,6 +203,11 @@ jobs:
           npm run graph --prefix modules/tools/depgraph
           git diff --exit-code -- docs/dependencies.md
 
+      - name: Lint
+        run: |
+          npm run lint --prefix modules/apps/desktop/ui
+          npm run lint --prefix modules/apps/desktop/flashcards
+
       - name: Typecheck
         run: |
           npm run typecheck --prefix modules/libs/wire

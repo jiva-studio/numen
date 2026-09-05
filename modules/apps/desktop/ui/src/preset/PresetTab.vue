@@ -14,7 +14,7 @@ import type { Day } from '@numen/ui'
 import Control from './Control.vue'
 import type { Held, Said } from './kind'
 import { COUNTS, GOALS, LOADS, RULES, WHOLE_LOAD, loadOn, loaded } from './core'
-import type { Bounds, Counts, Goal, Rule } from './core'
+import type { Bounds, Counts, Goal } from './core'
 import { fieldsUnder, idle, round, type Field } from './curve'
 import { WORDS as words } from './words'
 

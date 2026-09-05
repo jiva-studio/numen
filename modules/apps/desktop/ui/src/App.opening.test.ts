@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
-import { branch, Plex, Tree, Welcome } from '@numen/ui'
+import { Plex, Tree, Welcome } from '@numen/ui'
 import AgentTab from './agent/AgentTab.vue'
 import DocumentTab from './document/DocumentTab.vue'
 import FilesTab from './files/FilesTab.vue'

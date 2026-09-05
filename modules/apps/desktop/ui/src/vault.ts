@@ -51,7 +51,7 @@ import { settingAt } from './settings/configuring'
 import { write } from './settings/json5'
 import type { Asking as Commanding } from './commanding'
 import type { Asking, Way } from './finding'
-import type { Documents, Page, Sheet } from './document/reading'
+import type { Documents, Page } from './document/reading'
 import type { Cue, Recordings } from './recording/transcript'
 import type {
   Added,
@@ -76,7 +76,6 @@ import type {
   Presence,
   Problem,
   Reached,
-  Refused,
   Removed,
   Renamed,
   Role,

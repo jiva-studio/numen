@@ -33,15 +33,11 @@ function fake(over: Partial<Faked> = {}) {
     resolve: async () => new Map(),
     opening: async () => null,
     state: async () => idle,
-    // eslint-disable-next-line require-yield
     changes: async function* () {},
-    // eslint-disable-next-line require-yield
     focus: async function* () {},
     attending: async () => {},
-    // eslint-disable-next-line require-yield
     editing: async function* () {},
     tasks: async function* () {},
-    // eslint-disable-next-line require-yield
     quitting: async function* () {},
     flushed: async () => {},
     read: async (path) =>

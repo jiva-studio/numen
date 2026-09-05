@@ -11,11 +11,8 @@ import { Plex } from '@numen/ui'
 import {
   asked,
   cards,
-  drawn,
   drawnWithPalette,
-  editor,
   nodeInPlex,
-  outside,
   said,
   settles,
 } from './testing/window'

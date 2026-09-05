@@ -29,7 +29,6 @@ import {
   cuts,
   drawn,
   drawnWithPalette,
-  editor,
   HELD,
   nameSaid,
   nodeInPlex,

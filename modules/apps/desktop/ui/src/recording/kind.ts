@@ -7,7 +7,7 @@
  */
 import { computed } from 'vue'
 import type { Transcript } from './transcript'
-import type { Task } from '../core'
+import type { Stretch, Task } from '../core'
 import type { Putting } from '../putting'
 import type { Host, Kind } from '../windowing'
 import { RECORDING } from '../workspace'
@@ -94,10 +94,11 @@ export function recordingKind(
 
   // The player of recordings. The person is taken to the moment the first of
   // the stretches asked for was spoken at.
-  puts.hears(async (path, stretches) => {
+  const hears = async (path: string, stretches: readonly Stretch[]) => {
     const id = await host.opens(RECORDING, path)
     void host.holds<Held>(RECORDING, id)?.reach(...stretches)
-  })
+  }
+  puts.hears((path, stretches) => void hears(path, stretches))
 
   /**
    * What the application is doing, as it last said. A tab whose recording is

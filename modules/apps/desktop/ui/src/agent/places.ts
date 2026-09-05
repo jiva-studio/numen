@@ -32,7 +32,7 @@ export const spotOf = (href: string): Spot | null => {
   const [written, query = ''] = rest.split('?', 2)
   if (!written) return null
 
-  let path = ''
+  let path: string
   try {
     path = decodeURIComponent(written)
   } catch {

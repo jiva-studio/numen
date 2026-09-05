@@ -25,7 +25,6 @@ import {
   against,
   againstBox,
   apart,
-  AXIS_HIGH,
   BANDS,
   bandOf,
   clearAt,

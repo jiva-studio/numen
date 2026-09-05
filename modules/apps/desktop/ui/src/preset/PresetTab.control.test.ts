@@ -11,7 +11,7 @@ import PresetTab from './PresetTab.vue'
 import { NOWHERE, type Curve, type Point } from './core'
 import { clearing } from './curve'
 import { FOOT } from './drawing'
-import { curve, drawn, heights, point, rows, tabAt } from '../testing/preset'
+import { drawn, heights, point, tabAt } from '../testing/preset'
 import { WORDS as words } from './words'
 
 describe('the one control', () => {

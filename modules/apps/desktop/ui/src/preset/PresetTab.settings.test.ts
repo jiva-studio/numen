@@ -14,7 +14,7 @@ import controlSource from './Control.vue?raw'
 import { NO_BOUNDS } from './core'
 import type { Field } from './curve'
 import type { Held, Said } from './kind'
-import { BOUNDS, curve, drawn, rows, tabAt } from '../testing/preset'
+import { BOUNDS, drawn, rows, tabAt } from '../testing/preset'
 import { WORDS as words } from './words'
 
 describe('the settings under the control', () => {

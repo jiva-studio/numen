@@ -15,13 +15,6 @@ const answer = (path: string): Neighbourhood => ({
   related: [],
 })
 
-/** A neighbourhood of a note the index does not hold: a focus with no path. */
-const nothing = (): Neighbourhood => ({
-  focus: { path: '', title: '' },
-  focusType: 'note',
-  related: [],
-})
-
 /** A stream that stays open, so a loop waiting on it is not the one under test. */
 const held = () => new Promise<never>(() => {})
 
@@ -51,12 +44,9 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     resolve: async () => new Map(),
     opening: async () => ({ path: 'Opening.md' }),
     state: async () => settled,
-    // eslint-disable-next-line require-yield
     changes: async function* () {},
-    // eslint-disable-next-line require-yield
     focus: async function* () {},
     attending: async () => {},
-    // eslint-disable-next-line require-yield
     editing: async function* () {},
     tasks: async function* () {
       await held()
@@ -87,7 +77,6 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     choosesSetting: async () => {},
     settingsFile: async () => ({ written: '{}', path: '/numen.json' }),
     writesSettingsFile: async () => ({ changed: false }),
-    // eslint-disable-next-line require-yield
     quitting: async function* () {},
     flushed: async () => {},
     ...over,
