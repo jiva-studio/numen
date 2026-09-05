@@ -540,7 +540,7 @@ type Neighbour struct {
 // fingerprintOf is what a note was when it was read, in a form an agent hands
 // back without having to understand it.
 func fingerprintOf(ref domain.Fingerprint) string {
-	return strconv.FormatInt(ref.Size, 10) + "-" + strconv.FormatInt(ref.ModTime, 10)
+	return strconv.FormatInt(ref.Size, 10) + "-" + strconv.FormatInt(int64(ref.ModTime), 10)
 }
 
 // parseFingerprint is the fingerprint a caller presents. Every tool that writes
@@ -559,9 +559,11 @@ func parseFingerprint(s string) (domain.Fingerprint, error) {
 	if ref.Size, err = strconv.ParseInt(size, 10, 64); err != nil {
 		return domain.Fingerprint{}, fmt.Errorf("%q is not a fingerprint note_read gave out", s)
 	}
-	if ref.ModTime, err = strconv.ParseInt(mtime, 10, 64); err != nil {
+	stamp, err := strconv.ParseInt(mtime, 10, 64)
+	if err != nil {
 		return domain.Fingerprint{}, fmt.Errorf("%q is not a fingerprint note_read gave out", s)
 	}
+	ref.ModTime = domain.ModTime(stamp)
 	return ref, nil
 }
 

@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	derived "github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
@@ -34,7 +35,7 @@ func TestABookAModelHasReadCarriesTheReading(t *testing.T) {
 	const wrote = "what the model read off the pages"
 	api, _ := running(t,
 		stored{derived.Artifact(reader, scanned): []byte(wrote)},
-		indexed{book: {Path: book, Producer: reader, Hash: scanned}},
+		indexed{book: {Fingerprint: domain.Fingerprint{Path: book}, Producer: reader, Hash: scanned}},
 		willRun(), willRun(),
 	)
 
@@ -123,7 +124,7 @@ func TestWhatARunAnsweredIsWhatARecordingCarries(t *testing.T) {
 		t.Run(one.name, func(t *testing.T) {
 			api, _ := running(t,
 				stored{derived.Answer(asr, hashed): []byte(one.gave)},
-				indexed{talk: {Path: talk, Producer: asr, Hash: hashed}},
+				indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}},
 				willRun(), willRun(),
 			)
 

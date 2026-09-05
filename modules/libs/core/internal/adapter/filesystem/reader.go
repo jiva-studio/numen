@@ -110,7 +110,7 @@ func (s *VaultReader) Walk(ctx context.Context, fn func(domain.Fingerprint) erro
 			Path:    rel,
 			Kind:    kind,
 			Size:    found.Size(),
-			ModTime: found.ModTime().UnixNano(),
+			ModTime: domain.ModTimeOf(found.ModTime()),
 		})
 	})
 }
@@ -289,7 +289,7 @@ func (s *VaultReader) Stat(ctx context.Context, path string) (domain.Fingerprint
 		Path:    path,
 		Kind:    kind,
 		Size:    info.Size(),
-		ModTime: info.ModTime().UnixNano(),
+		ModTime: domain.ModTimeOf(info.ModTime()),
 	}, nil
 }
 

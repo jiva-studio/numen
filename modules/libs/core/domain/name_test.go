@@ -1,7 +1,9 @@
 package domain_test
 
 import (
+	"reflect"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
@@ -116,5 +118,33 @@ func TestAFileIsSkippedOnItsSizeAndItsTime(t *testing.T) {
 	// neither path nor kind.
 	if !was.Unchanged(domain.Fingerprint{Path: "elsewhere.md", Size: 10, ModTime: 100}) {
 		t.Error("the path decided whether the file was read")
+	}
+}
+
+// The stamp is nanoseconds since the epoch. An adapter filling it with seconds
+// leaves every file looking changed on every scan, and the number alone says
+// nothing about which of the two it holds.
+func TestAStampInSecondsIsNotTheSameFileAsOneInNanoseconds(t *testing.T) {
+	at := time.Date(2026, 9, 3, 11, 4, 5, 123456789, time.UTC)
+	was := domain.Fingerprint{Size: 10, ModTime: domain.ModTimeOf(at)}
+	if was.Unchanged(domain.Fingerprint{Size: 10, ModTime: domain.ModTime(at.Unix())}) {
+		t.Error("a stamp in seconds passed for the file a stamp in nanoseconds describes")
+	}
+	// Equal and not ==, because the instant a stamp names carries neither the
+	// zone nor the monotonic reading the one it was made from may have.
+	if named := was.ModTime.Time(); !named.Equal(at) {
+		t.Errorf("the stamp names %v, and it was made from %v", named, at)
+	}
+}
+
+// The stamp has a type of its own, so an integer of unstated unit cannot be put
+// here without a conversion that says what it is being taken for.
+func TestTheStampIsNotABareInteger(t *testing.T) {
+	held, found := reflect.TypeOf(domain.Fingerprint{}).FieldByName("ModTime")
+	if !found {
+		t.Fatal("a fingerprint carries no modification time")
+	}
+	if held.Type != reflect.TypeOf(domain.ModTime(0)) {
+		t.Errorf("the stamp is %v, which anything counting anything assigns to", held.Type)
 	}
 }

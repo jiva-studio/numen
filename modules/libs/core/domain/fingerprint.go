@@ -1,5 +1,21 @@
 package domain
 
+import "time"
+
+// ModTime is when a file last changed, in nanoseconds since the Unix epoch. It
+// is a stamp to compare and to order by, not an instant the domain reasons
+// about: seconds put here match nothing a walk took, so every file reads as
+// changed on every scan.
+type ModTime int64
+
+// ModTimeOf is the stamp for an instant, which is how an adapter holding a
+// file's modification time makes one.
+func ModTimeOf(t time.Time) ModTime { return ModTime(t.UnixNano()) }
+
+// Time is the instant the stamp names, for a caller that has to say it in a
+// protocol of its own.
+func (m ModTime) Time() time.Time { return time.Unix(0, int64(m)) }
+
 // SourceKind says what sort of source a file is. It is the word the index files
 // the row under, and it is decided from the file's name alone.
 type SourceKind string
@@ -25,7 +41,7 @@ type Fingerprint struct {
 	// index hands back leaves it empty, because the kind is what was asked for.
 	Kind    SourceKind
 	Size    int64
-	ModTime int64
+	ModTime ModTime
 }
 
 // Unchanged reports whether the file can be skipped. Size and modification time

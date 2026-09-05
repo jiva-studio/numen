@@ -158,7 +158,7 @@ func (a *API) GetDocument(
 
 	out := &v1.GetDocumentResponse{
 		Pages:       int32(doc.scan.Pages()),
-		Fingerprint: &v1.Fingerprint{Path: print.path, Size: print.size, Mtime: print.mtime},
+		Fingerprint: &v1.Fingerprint{Path: print.path, Size: print.size, Mtime: int64(print.mtime)},
 	}
 	out.Sheets = make([]*v1.Sheet, out.Pages)
 	for i := range out.Sheets {

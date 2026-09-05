@@ -109,7 +109,9 @@ type books struct{ port.SourceQueries }
 func (books) Recognised(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) ([]port.SourceText, error) {
-	return []port.SourceText{{Path: scan, Producer: "ocr", Hash: "x"}}, nil
+	return []port.SourceText{{
+		Fingerprint: domain.Fingerprint{Path: scan}, Producer: "ocr", Hash: "x",
+	}}, nil
 }
 
 // corrected is a line as a proofreader puts it right.

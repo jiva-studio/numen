@@ -69,7 +69,7 @@ func placing(t *testing.T) (*API, http.Handler, *pdf.Book) {
 		Readers: filesystem.VaultReaders{},
 		Highlight: &source.Highlight{
 			Readers:   filesystem.VaultReaders{},
-			Sources:   indexed{book: {Path: book}},
+			Sources:   indexed{book: {Fingerprint: domain.Fingerprint{Path: book}}},
 			Documents: pdf.Documents{},
 		},
 	}

@@ -357,7 +357,7 @@ type library struct {
 type shelved struct {
 	kind  domain.SourceKind
 	raw   []byte
-	mtime int64
+	mtime domain.ModTime
 }
 
 func newLibrary() *library {
@@ -365,7 +365,7 @@ func newLibrary() *library {
 }
 
 // hold puts one file in the vault, at the modification time given.
-func (l *library) hold(path string, kind domain.SourceKind, raw []byte, mtime int64) {
+func (l *library) hold(path string, kind domain.SourceKind, raw []byte, mtime domain.ModTime) {
 	l.files[path] = &shelved{kind: kind, raw: raw, mtime: mtime}
 }
 
@@ -522,8 +522,11 @@ func (s *store) Reading(_ context.Context, vaultID domain.VaultID, path string) 
 	}
 	// The row says what the file was when it was read, as the query does.
 	return port.SourceText{
-		Path: path, Producer: src.TextFrom, Hash: src.Hash,
-		Size: src.Fingerprint.Size, ModTime: src.Fingerprint.ModTime,
+		Fingerprint: domain.Fingerprint{
+			Path: path, Size: src.Fingerprint.Size, ModTime: src.Fingerprint.ModTime,
+		},
+		Producer: src.TextFrom,
+		Hash:     src.Hash,
 	}, true, nil
 }
 
@@ -531,7 +534,11 @@ func (s *store) Recognised(_ context.Context, vaultID domain.VaultID, kind domai
 	var out []port.SourceText
 	for path, src := range s.sources[vaultID] {
 		if src.Fingerprint.Kind == kind && src.TextFrom != "" {
-			out = append(out, port.SourceText{Path: path, Producer: src.TextFrom, Hash: src.Hash})
+			out = append(out, port.SourceText{
+				Fingerprint: domain.Fingerprint{Path: path},
+				Producer:    src.TextFrom,
+				Hash:        src.Hash,
+			})
 		}
 	}
 	slices.SortFunc(out, func(a, b port.SourceText) int { return cmp.Compare(a.Path, b.Path) })

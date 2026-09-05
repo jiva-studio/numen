@@ -207,7 +207,9 @@ func (h recognised) Fingerprints(
 func (h recognised) Recognised(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) ([]port.SourceText, error) {
-	return []port.SourceText{{Path: h.path, Producer: "asr", Hash: "x"}}, nil
+	return []port.SourceText{{
+		Fingerprint: domain.Fingerprint{Path: h.path}, Producer: "asr", Hash: "x",
+	}}, nil
 }
 
 func (h recognised) Under(context.Context, domain.VaultID, string) ([]domain.Fingerprint, error) {

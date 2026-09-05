@@ -83,7 +83,7 @@ func windowOn(t *testing.T, held port.DerivedStores) (*API, http.Handler) {
 	api := &API{
 		Readers: filesystem.VaultReaders{},
 		Highlight: &source.Highlight{
-			Sources: indexed{talk: {Path: talk, Producer: asr, Hash: hashed}},
+			Sources: indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}},
 			Derived: held,
 		},
 	}

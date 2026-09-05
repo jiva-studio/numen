@@ -6,6 +6,8 @@ import (
 	"image"
 	"sync"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // scan is a document held open for its pages to be drawn. It is pdf.Scan in
@@ -23,7 +25,7 @@ type scan interface {
 type fingerprint struct {
 	path  string
 	size  int64
-	mtime int64
+	mtime domain.ModTime
 }
 
 // errBusy is a document that could not be reached inside the bound: a worker of

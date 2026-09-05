@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // A page of a document the vault holds is bytes, and bytes are what this route
@@ -107,5 +109,5 @@ func printed(query url.Values) (fingerprint, error) {
 	if err != nil {
 		return fingerprint{}, fmt.Errorf("mtime: %q is not a time", query.Get("mtime"))
 	}
-	return fingerprint{size: size, mtime: mtime}, nil
+	return fingerprint{size: size, mtime: domain.ModTime(mtime)}, nil
 }

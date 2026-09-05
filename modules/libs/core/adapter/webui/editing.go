@@ -225,7 +225,7 @@ func fingerprintOf(ref domain.Fingerprint) *v1.Fingerprint {
 	if ref == (domain.Fingerprint{}) {
 		return nil
 	}
-	return &v1.Fingerprint{Path: ref.Path, Size: ref.Size, Mtime: ref.ModTime}
+	return &v1.Fingerprint{Path: ref.Path, Size: ref.Size, Mtime: int64(ref.ModTime)}
 }
 
 // seenOf is what a client says it last saw of a note. Nothing said is nothing
@@ -243,5 +243,5 @@ func refOf(at *v1.Fingerprint) domain.Fingerprint {
 	if at == nil {
 		return domain.Fingerprint{}
 	}
-	return domain.Fingerprint{Path: at.GetPath(), Size: at.GetSize(), ModTime: at.GetMtime()}
+	return domain.Fingerprint{Path: at.GetPath(), Size: at.GetSize(), ModTime: domain.ModTime(at.GetMtime())}
 }

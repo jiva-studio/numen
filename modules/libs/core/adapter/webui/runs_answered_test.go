@@ -26,7 +26,7 @@ func TestASourceAlreadyAnsweredSaysWhatCameOfIt(t *testing.T) {
 	talks := willRun()
 	api, _ := running(t,
 		stored{derived.Answer(asr, hashed): []byte(derived.Unopened + ": " + said + "\n")},
-		indexed{talk: {Path: talk, Producer: asr, Hash: hashed}},
+		indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}},
 		willRun(), talks,
 	)
 
@@ -59,7 +59,7 @@ func TestARecordingAnsweredIsFoundWhereTheIndexNamesNoProducer(t *testing.T) {
 			talks := willRun()
 			api, _ := running(t,
 				stored{derived.Answer(derived.ASR, sounded()): []byte(one.gave)},
-				indexed{talk: {Path: talk, Hash: sounded()}},
+				indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Hash: sounded()}},
 				willRun(), talks,
 			)
 
@@ -103,7 +103,7 @@ func TestASourceDoneIsDoneEvenWhereAnAnswerStands(t *testing.T) {
 			derived.Artifact(asr, hashed): []byte("what the model heard"),
 			derived.Answer(asr, hashed):   []byte(derived.Silent + "\n"),
 		},
-		indexed{talk: {Path: talk, Producer: asr, Hash: hashed}},
+		indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}},
 		willRun(), talks,
 	)
 
@@ -122,7 +122,7 @@ func TestARecordingDoneIsDoneWhereTheIndexNamesNoProducer(t *testing.T) {
 			derived.Artifact(derived.ASR, sounded()): []byte(heard),
 			derived.Answer(derived.ASR, sounded()):   []byte(derived.Silent + "\n"),
 		},
-		indexed{talk: {Path: talk, Hash: sounded()}},
+		indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Hash: sounded()}},
 		willRun(), talks,
 	)
 

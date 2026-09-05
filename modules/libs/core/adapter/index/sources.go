@@ -166,8 +166,9 @@ func (s queries) Reading(ctx context.Context, vaultID domain.VaultID, path strin
 		return port.SourceText{}, false, err
 	}
 	return port.SourceText{
-		Path: found.Path, Producer: found.Producer, Hash: found.Hash,
-		Size: found.Size, ModTime: found.MTime,
+		Fingerprint: domain.Fingerprint{Path: found.Path, Size: found.Size, ModTime: found.MTime},
+		Producer:    found.Producer,
+		Hash:        found.Hash,
 	}, true, nil
 }
 
@@ -179,7 +180,11 @@ func (s queries) Recognised(ctx context.Context, vaultID domain.VaultID, kind do
 	}
 	out := make([]port.SourceText, 0, len(found))
 	for _, r := range found {
-		out = append(out, port.SourceText{Path: r.Path, Producer: r.Producer, Hash: r.Hash})
+		out = append(out, port.SourceText{
+			Fingerprint: domain.Fingerprint{Path: r.Path},
+			Producer:    r.Producer,
+			Hash:        r.Hash,
+		})
 	}
 	return out, nil
 }

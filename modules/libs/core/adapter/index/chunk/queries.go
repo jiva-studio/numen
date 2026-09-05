@@ -483,7 +483,7 @@ type SourceText struct {
 	Producer string
 	Hash     string
 	Size     int64
-	MTime    int64
+	MTime    domain.ModTime
 }
 
 // Reading is what one source's text came from, and false where the index holds

@@ -560,7 +560,7 @@ func TestANoteWithALongNameIsSaved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	held := domain.Fingerprint{Size: info.Size(), ModTime: info.ModTime().UnixNano()}
+	held := domain.Fingerprint{Size: info.Size(), ModTime: domain.ModTimeOf(info.ModTime())}
 	if _, err := w.Write(ctx, name, []byte("# Note\n\nedited\n"), held); err != nil {
 		t.Fatalf("the note could not be saved: %v", err)
 	}

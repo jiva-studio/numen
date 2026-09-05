@@ -262,7 +262,7 @@ func TestASourceAlreadyDoneIsNotRunAgain(t *testing.T) {
 			scans, hears := willRun(), willRun()
 			api, _ := running(t,
 				stored{derived.Artifact(one.from, one.hash): []byte(wrote)},
-				indexed{one.path: {Path: one.path, Producer: one.from, Hash: one.hash}},
+				indexed{one.path: {Fingerprint: domain.Fingerprint{Path: one.path}, Producer: one.from, Hash: one.hash}},
 				scans, hears,
 			)
 
@@ -302,7 +302,7 @@ func TestASourceARunHoldsIsSaidToBeUnderWay(t *testing.T) {
 					stored: stored{derived.Partial(one.from, one.hash): []byte(far)},
 					name:   derived.Partial(one.from, one.hash),
 				},
-				indexed{one.path: {Path: one.path, Producer: one.from, Hash: one.hash}},
+				indexed{one.path: {Fingerprint: domain.Fingerprint{Path: one.path}, Producer: one.from, Hash: one.hash}},
 				scans, hears,
 			)
 
@@ -336,7 +336,7 @@ func TestASourceNothingHoldsIsNotUnderWay(t *testing.T) {
 		t.Run(one.name, func(t *testing.T) {
 			api, _ := running(t,
 				stored{derived.Partial(one.from, one.hash): []byte("as far as it got")},
-				indexed{one.path: {Path: one.path, Producer: one.from, Hash: one.hash}},
+				indexed{one.path: {Fingerprint: domain.Fingerprint{Path: one.path}, Producer: one.from, Hash: one.hash}},
 				willQueue(), willQueue(),
 			)
 
@@ -362,7 +362,7 @@ func TestASourceDoneIsDoneEvenWhereAPartialStands(t *testing.T) {
 			derived.Artifact(reader, scanned): []byte("what the model wrote"),
 			derived.Partial(reader, scanned):  []byte("what it wrote on the way"),
 		},
-		indexed{book: {Path: book, Producer: reader, Hash: scanned}},
+		indexed{book: {Fingerprint: domain.Fingerprint{Path: book}, Producer: reader, Hash: scanned}},
 		scans, willRun(),
 	)
 
@@ -379,7 +379,7 @@ func TestASourceDoneIsDoneEvenWhereAPartialStands(t *testing.T) {
 func TestASourceCarryingItsOwnTextHasNotBeenRun(t *testing.T) {
 	scans := willRun()
 	api, _ := running(t, stored{},
-		indexed{book: {Path: book, Hash: scanned}},
+		indexed{book: {Fingerprint: domain.Fingerprint{Path: book}, Hash: scanned}},
 		scans, willRun(),
 	)
 

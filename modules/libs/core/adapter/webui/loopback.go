@@ -193,7 +193,7 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 	if named := domain.MediaType(ref.Path); named != "" {
 		w.Header().Set("Content-Type", named)
 	}
-	http.ServeContent(w, r, ref.Path, time.Unix(0, ref.ModTime), file)
+	http.ServeContent(w, r, ref.Path, ref.ModTime.Time(), file)
 }
 
 // vaultOf is the vault an address names. The one the window shows is answered

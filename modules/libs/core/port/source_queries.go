@@ -53,13 +53,11 @@ type SourceQueries interface {
 // SourceText is one source whose text a producer made: where the file is, what
 // made the text, and the hash the files of that reading are kept under.
 type SourceText struct {
-	Path     string
+	// The fingerprint is the file as the index last saw it. A reading is of the
+	// bytes that were there then, and a file rewritten since is one those
+	// coordinates no longer describe. It is embedded so that the file's
+	// coordinates are declared once, in the domain, and carry their units here.
+	domain.Fingerprint
 	Producer string
 	Hash     string
-
-	// Size and ModTime are the file as the index last saw it. A reading is of
-	// the bytes that were there then, and a file rewritten since is one those
-	// coordinates no longer describe.
-	Size    int64
-	ModTime int64
 }

@@ -42,7 +42,7 @@ type Source struct {
 	Path   string
 	Kind   string
 	Size   int64
-	MTime  int64
+	MTime  domain.ModTime
 	Hash   string
 	Recipe string
 

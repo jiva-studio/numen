@@ -51,7 +51,7 @@ func dropper(t *testing.T, held port.DerivedStores, known indexed) (*API, *notin
 
 // heardBy is what the index says a recording a model listened to stands on.
 func heardBy() indexed {
-	return indexed{talk: {Path: talk, Producer: asr, Hash: hashed}}
+	return indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}}
 }
 
 // dropping asks for what a recording was heard as to be taken away.
