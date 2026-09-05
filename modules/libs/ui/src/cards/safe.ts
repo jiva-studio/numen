@@ -27,8 +27,16 @@ const STRUCK = new Set([
   'applet', 'canvas', 'audio', 'video', 'source', 'track', 'portal',
 ])
 
-/** The attributes any tag may carry. */
-const ANY = new Set(['class', 'dir', 'lang', 'title'])
+/**
+ * The attributes any tag may carry.
+ *
+ * A class is not among them. The window's own stylesheet is in the page a card
+ * is drawn on, so a class names rules a deck's author never wrote and cannot
+ * see: one from somebody else could stand a card over the window it is being
+ * read in. How a card looks is the window's, and what a deck carries is what a
+ * card says.
+ */
+const ANY = new Set(['dir', 'lang', 'title'])
 
 /** What each tag may carry beyond those. */
 const OWN: Readonly<Record<string, readonly string[]>> = {
