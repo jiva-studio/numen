@@ -589,7 +589,7 @@ func (s stating) Stat(ctx context.Context, path string) (domain.Fingerprint, err
 func TestATranscriptIsCutAgainInTheVaultItBelongsTo(t *testing.T) {
 	held := whole(spoke())
 	api, _ := listeningTo(t, held)
-	standing := api.Showing()
+	showing := api.Showing()
 	elsewhere := testsupport.NewVault(t, map[string]string{talk: sound})
 
 	api.Readers = swapping{VaultReaders: filesystem.VaultReaders{}, then: func() { api.show(elsewhere) }}
@@ -608,8 +608,8 @@ func TestATranscriptIsCutAgainInTheVaultItBelongsTo(t *testing.T) {
 	if len(cutIn) != 1 {
 		t.Fatalf("the recording was cut again in %v", cutIn)
 	}
-	if cutIn[0].ID != standing.ID {
-		t.Errorf("the recording was cut again in %q, and it belongs to %q", cutIn[0].ID, standing.ID)
+	if cutIn[0].ID != showing.ID {
+		t.Errorf("the recording was cut again in %q, and it belongs to %q", cutIn[0].ID, showing.ID)
 	}
 }
 
