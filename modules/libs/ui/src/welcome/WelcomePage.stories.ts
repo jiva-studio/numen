@@ -8,6 +8,7 @@
  * what the claim is about.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect } from 'storybook/test'
 import { Bot, FolderPlus, Settings, SquarePen, Waypoints } from '@lucide/vue'
 import WelcomePage from './WelcomePage.vue'
 import type { Offer, VaultRow, WelcomeAction } from './welcome'
@@ -102,8 +103,28 @@ const meta: Meta<Knobs> = {
 export default meta
 type Story = StoryObj<Knobs>
 
+/** The element the selector names, or the story fails saying which is missing. */
+function found(canvas: HTMLElement, selector: string): HTMLElement {
+  const el = canvas.querySelector<HTMLElement>(selector)
+  expect(el, `nothing here is ${selector}`).not.toBeNull()
+  return el as HTMLElement
+}
+
 /** A window with the height for all of it: one column in the middle. */
-export const Opening: Story = {}
+export const Opening: Story = {
+  play: async ({ canvasElement }) => {
+    const page = found(canvasElement, '.welcome-page')
+    const mark = found(canvasElement, '.welcome-page__glyph')
+
+    // The mark carries no size of its own: it stands at the length the page
+    // declares. A page that stops declaring one draws the whole file, which is
+    // taller than the window it stands in.
+    expect(getComputedStyle(page).getPropertyValue('--glyph').trim()).not.toBe('')
+    expect(mark.getBoundingClientRect().height).toBeLessThan(
+      page.getBoundingClientRect().height / 2,
+    )
+  },
+}
 
 /** Wide and not tall: the ways in on the left, the vaults on the right. */
 export const ShortAndWide: Story = {

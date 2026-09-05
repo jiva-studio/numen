@@ -125,7 +125,7 @@ defineSlots<{
 /* One column in the middle of the window, held to the width of a short line so
    the rows read as a list and not as a page. Short of the height that column
    needs, it stands as two. */
-.welcome {
+.welcome-page {
   /* How tall the glyph stands over the name. */
   --glyph: 5.4rem;
 
