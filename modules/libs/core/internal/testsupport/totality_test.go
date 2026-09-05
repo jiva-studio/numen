@@ -19,6 +19,7 @@ import (
 // beside it.
 var walked = map[protoreflect.FullName]string{
 	"numen.v1.ArtifactKind":  "adapter/window/editor: named by standing",
+	"numen.v1.BudgetName":    "internal/wire: answered one by one against BudgetOf",
 	"numen.v1.Counts":        "internal/wire: round trip through CountsIn and CountsOf",
 	"numen.v1.Fault":         "adapter/window/editor: written by faultOf",
 	"numen.v1.FlushResult":   "internal/wire: read by left",
