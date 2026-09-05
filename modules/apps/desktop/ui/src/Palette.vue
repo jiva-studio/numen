@@ -20,7 +20,7 @@ import { does, type CommandDeps } from './doing'
 import type { SearchState } from './finding'
 import { iconFor, iconOfNote, iconOfSource } from './icons'
 import { chorded } from './keying'
-import { lands, type LandingDeps } from './landing'
+import { lands, type DestinationDeps } from './destination'
 import { WORDS as words } from './words'
 
 const props = defineProps<{
@@ -30,7 +30,7 @@ const props = defineProps<{
   /** What the commands are over, as the window stands now. */
   where: () => CommandTarget
   /** Where the window is taken by what the search turns up. */
-  places: LandingDeps
+  places: DestinationDeps
 }>()
 
 /** What the palette draws: the commands while they are open, the search under. */

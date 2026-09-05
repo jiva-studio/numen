@@ -6,15 +6,15 @@
  * who asked for a passage and was given the top of a note.
  */
 import { describe, expect, it } from 'vitest'
-import { lands, type LandingDeps } from './landing'
-import type { Landing } from './finding'
+import { lands, type DestinationDeps } from './destination'
+import type { SearchDestination } from './finding'
 
 /** A window that writes down where it was taken. */
 const window = () => {
   const travelled: string[] = []
   const opened: string[] = []
   const shown: string[] = []
-  const places: LandingDeps = {
+  const places: DestinationDeps = {
     travel: async (path) => void travelled.push(path),
     opensAt: async (path, run) => void opened.push(`${path} ${run.start} ${run.length}`),
     opens: (path, title, line) =>
@@ -23,7 +23,7 @@ const window = () => {
   return { places, travelled, opened, shown }
 }
 
-const landing = (over: Partial<Landing>): Landing => ({
+const landing = (over: Partial<SearchDestination>): SearchDestination => ({
   at: 'file',
   path: 'Note.md',
   title: 'A note',

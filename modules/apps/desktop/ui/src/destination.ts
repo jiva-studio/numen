@@ -3,13 +3,13 @@
  *
  * A name is a thing and travels in the plex the person is looking at; a
  * heading and a passage are places in a source, and open it where they stand.
- * Which editor the source opens in is not decided here: a landing names the
+ * Which editor the source opens in is not decided here: a destination names the
  * file and the place in it, and `putting.ts` opens it.
  */
-import type { Landing } from './finding'
+import type { SearchDestination } from './finding'
 
 /** What the window offers whatever was chosen. */
-export interface LandingDeps {
+export interface DestinationDeps {
   /** A note put in front of the person, in the plex they are looking at. */
   travel(path: string): Promise<void>
   /**
@@ -25,15 +25,18 @@ export interface LandingDeps {
 }
 
 /** Somewhere chosen, taken. Nothing chosen takes the person nowhere. */
-export async function lands(landing: Landing | null, places: LandingDeps): Promise<void> {
-  if (!landing) return
-  if (landing.at === 'plex') return void places.travel(landing.path)
-  if (landing.at === 'document') {
-    await places.opensAt(landing.path, {
-      start: landing.start ?? 0,
-      length: landing.length ?? 0,
+export async function lands(
+  going: SearchDestination | null,
+  places: DestinationDeps,
+): Promise<void> {
+  if (!going) return
+  if (going.at === 'plex') return void places.travel(going.path)
+  if (going.at === 'document') {
+    await places.opensAt(going.path, {
+      start: going.start ?? 0,
+      length: going.length ?? 0,
     })
     return
   }
-  places.opens(landing.path, landing.title || landing.path, landing.line)
+  places.opens(going.path, going.title || going.path, going.line)
 }

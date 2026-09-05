@@ -36,7 +36,7 @@ import { OFF, ON, SYNCING, syncing } from './syncing'
 import { HANGING, PARTS, hanging } from './hanging'
 import { does, reaching, type CommandDeps, type Store } from './doing'
 import { finding } from './finding'
-import { lands, type LandingDeps } from './landing'
+import { lands, type DestinationDeps } from './destination'
 import { cutting, putting } from './putting'
 import { flushing } from './flushing'
 import { raising } from './raising'
@@ -231,7 +231,7 @@ export const useWindow = () => {
   watch(tasks, () => heard.ticked(tasks.value))
 
   /** Where the window is taken when something is chosen, wherever it was chosen. */
-  const places: LandingDeps = {
+  const places: DestinationDeps = {
     travel: (path) => plexes.travel(path),
     opensAt: (path, run) => puts.opensAt(path, [run]),
     opens: (path, title, line) => void puts.opens(path, title, 'here', line),

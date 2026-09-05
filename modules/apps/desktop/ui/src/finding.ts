@@ -103,7 +103,7 @@ export interface Words extends EmptyWords {
  * inside it, and nothing about which editor it opens in: a landing at a file
  * carries a line, one at a document a stretch of the source's own text.
  */
-export interface Landing {
+export interface SearchDestination {
   at: 'plex' | 'file' | 'document'
   path: string
   /** What the note is called, for a tab that has not been opened before. */
@@ -405,7 +405,7 @@ export function finding(core: FindingDeps, words: Words, how: FindingOptions = {
   const kindOf = (item: string): Source | null => built.value.held.get(item)?.kind ?? null
 
   /** Where one item, asked one thing, takes the person. */
-  const chose = (item: string, action: string): Landing | null => {
+  const chose = (item: string, action: string): SearchDestination | null => {
     const stands = built.value.held.get(item)
     // An item is answered for by what it offers, and an item offering nothing
     // is an answer and no more.

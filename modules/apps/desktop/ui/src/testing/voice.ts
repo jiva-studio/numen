@@ -4,10 +4,10 @@
  * Everything in the window that says something takes a `Voice`, so a test that
  * wants to read what was said hands one of these over.
  */
-import type { Kind, Voice } from '../telling'
+import type { MessageKind, Voice } from '../telling'
 
 export function voice() {
-  const told: { text: string; kind: Kind }[] = []
+  const told: { text: string; kind: MessageKind }[] = []
   const says: Voice = (text, kind = 'report') => void told.push({ text, kind })
   return {
     says,

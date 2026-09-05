@@ -5,7 +5,7 @@
  */
 import { ref } from 'vue'
 import type { Entry, Move, Source } from '../core'
-import type { Landing } from '../finding'
+import type { SearchDestination } from '../finding'
 import { folderOf, landedIn, type Listing, ROOT } from './listing'
 import {
   NEW_DECK,
@@ -35,7 +35,7 @@ export type Dropped = { readonly into: string } | { readonly before: string }
 /** What a files tab asks of the window it is drawn in. */
 export interface FilesTabDeps {
   /** Somewhere chosen, taken. Nothing chosen takes the person nowhere. */
-  lands(landing: Landing | null): void
+  lands(going: SearchDestination | null): void
   /**
    * A command asked for on the files the rows stand for, under what the vault
    * holds at the first of them. One that needs something asks for it in the
@@ -82,7 +82,7 @@ type Cut = (folder: string, name: string) => Promise<string>
  * the name it is filed as. A folder is somewhere to go nowhere, and what the
  * file opens in is not decided here.
  */
-export const landingOf = (entry: Entry): Landing | null =>
+export const landingOf = (entry: Entry): SearchDestination | null =>
   entry.folder ? null : { at: 'file', path: entry.path, title: entry.displayName }
 
 /** What a file is filed as, which is the last segment of the path. */

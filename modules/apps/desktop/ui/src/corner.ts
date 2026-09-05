@@ -9,7 +9,7 @@ import { noticed } from '@numen/ui'
 import type { Notice, Stay, Tone } from '@numen/ui'
 import type { Task } from './core'
 import { wordsOnly, type Meaning } from './meaning'
-import type { Kind, Told } from './telling'
+import type { MessageKind, WindowMessage } from './telling'
 
 /** The sentences the corner draws that are the window's own. */
 export interface Words {
@@ -40,7 +40,7 @@ export interface State {
 }
 
 /** How each kind of word is drawn, and how long it stands. */
-const manner: Record<Kind, { tone: Tone; stay: Stay }> = {
+const manner: Record<MessageKind, { tone: Tone; stay: Stay }> = {
   refusal: { tone: 'alarm', stay: 'kept' },
   caution: { tone: 'caution', stay: 'kept' },
   report: { tone: 'plain', stay: 'read' },
@@ -103,7 +103,7 @@ const alone = (tasks: readonly Task[]): readonly Task[] =>
  */
 export const cornerOf = (
   tasks: readonly Task[],
-  told: readonly Told[],
+  told: readonly WindowMessage[],
   state: State,
   vault: Meaning,
   words: Words,

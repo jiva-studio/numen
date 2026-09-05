@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { cornerOf, type State, type Words } from './corner'
 import type { Task } from './core'
 import type { Meaning } from './meaning'
-import type { Told } from './telling'
+import type { WindowMessage } from './telling'
 
 const words: Words = {
   unwatched: 'not following the vault',
@@ -47,7 +47,7 @@ const reading = (over: Partial<Task> = {}): Task => ({
   ...over,
 })
 
-const told = (over: Partial<Told> = {}): Told => ({
+const told = (over: Partial<WindowMessage> = {}): WindowMessage => ({
   id: 'command#1',
   name: 'command',
   kind: 'report',
@@ -57,7 +57,7 @@ const told = (over: Partial<Told> = {}): Told => ({
 
 const corner = (
   tasks: readonly Task[] = [],
-  said: readonly Told[] = [],
+  said: readonly WindowMessage[] = [],
   state: State = well(),
   meaning: Meaning = vault(),
 ) => cornerOf(tasks, said, state, meaning, words)

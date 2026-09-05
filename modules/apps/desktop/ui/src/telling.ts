@@ -14,24 +14,24 @@ import { ref, type Ref } from 'vue'
  * nothing done at once. A report is what a command did. A state is so until
  * something else makes it not so.
  */
-export type Kind = 'refusal' | 'caution' | 'report' | 'state'
+export type MessageKind = 'refusal' | 'caution' | 'report' | 'state'
 
 /** One thing the window has said. */
-export interface Told {
+export interface WindowMessage {
   /** What this utterance is addressed by, which no two of them share. */
   readonly id: string
   /** Who said it. A second word under one name replaces the first. */
   readonly name: string
-  readonly kind: Kind
+  readonly kind: MessageKind
   readonly says: string
 }
 
 /** One part of the window speaking. Nothing said clears what it last said. */
-export type Voice = (text: string, kind?: Kind) => void
+export type Voice = (text: string, kind?: MessageKind) => void
 
 /** What the window has said, and what changes it. */
-export interface Telling {
-  readonly said: Ref<readonly Told[]>
+export interface MessageLog {
+  readonly said: Ref<readonly WindowMessage[]>
   /** A voice under a name of its own. */
   under(name: string): Voice
   /** A word the person is finished with, by the identity it was given. */
@@ -45,8 +45,8 @@ export interface Telling {
  * put away, so a second word under one name is a second word and is read as
  * one.
  */
-export function telling(): Telling {
-  const said = ref<readonly Told[]>([])
+export function telling(): MessageLog {
+  const said = ref<readonly WindowMessage[]>([])
   let minted = 0
 
   const under =
