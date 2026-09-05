@@ -88,3 +88,15 @@ export const EveryControlAtTheOneEdge: Story = {
     await expect(Math.round(last.right)).toBe(Math.round(narrow.right))
   },
 }
+
+/** What a row is called, and under it what it means, read as two things. */
+export const TheNameStandsOutFromWhatItMeans: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const name = canvas.getByText('Hang the parts of a note')
+    const detail = canvas.getByText('The headings of a note, under the box that draws it')
+
+    await expect(getComputedStyle(name).fontWeight).toBe('500')
+    await expect(getComputedStyle(name).color).not.toBe(getComputedStyle(detail).color)
+  },
+}

@@ -56,6 +56,13 @@ const labelling = computed(() => `settings-${props.at}`)
   min-inline-size: 0;
 }
 
+/* The name of a row and what it means are one size, and the name carries the
+   weight and the colour that tell them apart. */
+.settings__name {
+  color: var(--numen-ink);
+  font-weight: 500;
+}
+
 /* Controls of every width end at the one edge. */
 .settings__value {
   display: flex;
