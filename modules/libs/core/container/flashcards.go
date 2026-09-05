@@ -98,7 +98,7 @@ func (c Config) Flashcards(
 		c.trouble(fmt.Errorf("the schedules are worked out at every launch: %w", err))
 	}
 
-	standing := flashcards.ListCardFaces{Readers: c.VaultReaders(), Notes: notes, Links: links}
+	faces := flashcards.ListCardFaces{Readers: c.VaultReaders(), Notes: notes, Links: links}
 	marking := flashcards.Marking{
 		Readers: c.VaultReaders(), Writers: c.VaultWriters(),
 		Notes: notes, Links: links, Index: index, Now: now,
@@ -124,18 +124,18 @@ func (c Config) Flashcards(
 	// for, which is what says which preset a card face stands under.
 	schedules := flashcards.Schedules{
 		Logs: logs, Cache: kept, By: review.NewFSRS(), Day: day,
-		CardFaces: standing, Presets: presets,
+		CardFaces: faces, Presets: presets,
 	}
 
 	return Flashcards{
-		CardFaces: standing,
+		CardFaces: faces,
 		Marking:   marking,
 		Schedules: schedules,
 		CardsDue: flashcards.CountCardsDue{
-			CardFaces: standing, Schedules: schedules, Presets: presets, Day: day, Now: now,
+			CardFaces: faces, Schedules: schedules, Presets: presets, Day: day, Now: now,
 		},
 		Session: flashcards.Session{
-			Marking: marking, CardFaces: standing, Schedules: schedules,
+			Marking: marking, CardFaces: faces, Schedules: schedules,
 			Presets: presets, Day: day, Now: now,
 		},
 		Log: flashcards.Log{Stores: logs},
@@ -146,7 +146,7 @@ func (c Config) Flashcards(
 		// How many places of a curve run at once is what this machine can run
 		// at once, which is a fact only here is allowed to read.
 		Curves: flashcards.ProjectCurve{
-			CardFaces: standing, Schedules: schedules, Presets: presets, Day: day, Now: now,
+			CardFaces: faces, Schedules: schedules, Presets: presets, Day: day, Now: now,
 			Cores: runtime.GOMAXPROCS(0),
 		},
 		Day: day,
