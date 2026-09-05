@@ -138,7 +138,7 @@ func BenchmarkSearch(b *testing.B) {
 			if _, err := scanFor(db).Execute(b.Context(), v); err != nil {
 				b.Fatal(err)
 			}
-			queries := db.Queries()
+			queries := db.NoteIndex()
 
 			b.ResetTimer()
 			for range b.N {
@@ -203,7 +203,7 @@ func BenchmarkSearchDuringScan(b *testing.B) {
 		}
 	}()
 
-	queries := db.Queries()
+	queries := db.NoteIndex()
 	b.ResetTimer()
 	for range b.N {
 		if _, err := queries.Search(ctx, v.ID, "entropy observer", 20); err != nil {

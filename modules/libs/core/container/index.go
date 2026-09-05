@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
+	noteindex "github.com/jiva-studio/numen/modules/libs/core/adapter/index/note"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -77,6 +78,11 @@ func (i *Index) FitVectors(ctx context.Context, dims int, recipe string) error {
 func (i *Index) Vaults() port.VaultRepository { return i.db.Vaults() }
 func (i *Index) Notes() port.NoteRepository   { return i.db.Notes() }
 func (i *Index) Queries() port.NoteQueries    { return i.db.NoteQueries() }
+
+// NoteIndex is the note index itself. Nothing in the core searches it — what a
+// person searches is every passage a vault holds — and a test that has scanned
+// a vault reads it to see the notes were indexed.
+func (i *Index) NoteIndex() *noteindex.Queries { return i.db.NoteQueries() }
 
 // Passages is the two indexes a search runs over. They read, so a search answers
 // while a scan is still writing.

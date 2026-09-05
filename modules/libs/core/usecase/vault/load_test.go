@@ -131,7 +131,7 @@ func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan va
 		reading.Add(1)
 		go func() {
 			defer reading.Done()
-			queries := db.Queries()
+			queries := db.NoteIndex()
 			deadline := time.Now().Add(duration)
 			for time.Now().Before(deadline) && ctx.Err() == nil {
 				started := time.Now()

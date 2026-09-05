@@ -198,7 +198,7 @@ func TestScanSkipsWhatIsNotVaultContent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	matches, err := db.Queries().Search(ctx, v.ID, "hidden", 10)
+	matches, err := db.NoteIndex().Search(ctx, v.ID, "hidden", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -273,7 +273,7 @@ func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
 		t.Errorf("removed %d notes, want 1", res.Removed)
 	}
 
-	queries := db.Queries()
+	queries := db.NoteIndex()
 	matches, err := queries.Search(ctx, v.ID, "crystallography", 10)
 	if err != nil {
 		t.Fatal(err)
@@ -361,7 +361,7 @@ func TestSearchNeverCrossesVaults(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	queries := db.Queries()
+	queries := db.NoteIndex()
 
 	// The two vaults hold disjoint words, so a query that forgets its vault
 	// shows up as a match that cannot belong to the vault being searched. One
@@ -572,7 +572,7 @@ func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
 	if _, kept := known[gone]; !kept {
 		t.Error("a note that was briefly absent was dropped from the index")
 	}
-	matches, err := db.Queries().Search(ctx, v.ID, "uncertainty", 10)
+	matches, err := db.NoteIndex().Search(ctx, v.ID, "uncertainty", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -594,7 +594,7 @@ func TestFrontmatterThatCannotBeStoredDoesNotFailTheScan(t *testing.T) {
 	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(ctx, v); err != nil {
 		t.Fatalf("a note with unstorable frontmatter ended the scan: %v", err)
 	}
-	matches, err := db.Queries().Search(ctx, v.ID, "searchable", 10)
+	matches, err := db.NoteIndex().Search(ctx, v.ID, "searchable", 10)
 	if err != nil {
 		t.Fatal(err)
 	}

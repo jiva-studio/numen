@@ -12,10 +12,6 @@ type NoteQueries interface {
 	// a scan can decide what to reparse without reading anything.
 	Fingerprints(ctx context.Context, vaultID domain.VaultID) (map[string]domain.Fingerprint, error)
 
-	// Search is the notes whose text matches the words typed. A search over
-	// everything the vault holds is PassageQueries and the use case above it.
-	Search(ctx context.Context, vaultID domain.VaultID, query string, limit int) ([]domain.NoteMatch, error)
-
 	// Names is the names in a vault that match the words typed: a note's own
 	// title, and the headings inside notes. Searching the text a vault holds is
 	// PassageQueries and the use case above it.
