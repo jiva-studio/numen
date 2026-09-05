@@ -21,9 +21,9 @@ func Replay(d Day, by Scheduler, answers []Answer) map[CardFaceID]Schedule {
 	return Give(answers).Replay(d, By(by))
 }
 
-// Scheduling is how one card face is worked out: the scheduler that spaces it,
-// and the preset that says which day it lands on.
-type Scheduling struct {
+// SchedulingPolicy is what one card face is worked out under: the scheduler
+// that spaces it, and the preset that says which day it lands on.
+type SchedulingPolicy struct {
 	By     Scheduler
 	Preset Preset
 }
@@ -31,12 +31,12 @@ type Scheduling struct {
 // Assignment is how one card face is scheduled. A card face is scheduled by the
 // preset its deck points at, and two presets asking for different shares of the
 // cards send the same card away for different lengths of time.
-type Assignment func(CardFaceID) Scheduling
+type Assignment func(CardFaceID) SchedulingPolicy
 
 // By is one scheduler for every card face, on the preset a deck naming none is
 // scheduled by.
 func By(s Scheduler) Assignment {
-	return func(CardFaceID) Scheduling { return Scheduling{By: s, Preset: Defaults()} }
+	return func(CardFaceID) SchedulingPolicy { return SchedulingPolicy{By: s, Preset: Defaults()} }
 }
 
 // History is a vault's answers in the order they were given: nothing a

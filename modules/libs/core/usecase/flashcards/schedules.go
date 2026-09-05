@@ -154,8 +154,8 @@ func (u Schedules) under(
 		return out, nil
 	}
 
-	by := make(map[string]review.Scheduling)
-	under := make(map[review.CardFaceID]review.Scheduling, len(faces))
+	by := make(map[string]review.SchedulingPolicy)
+	under := make(map[review.CardFaceID]review.SchedulingPolicy, len(faces))
 	asked := make(map[string]string, len(faces))
 	for _, one := range faces {
 		path, known := asked[one.Deck]
@@ -167,7 +167,7 @@ func (u Schedules) under(
 			path = p.Path
 			asked[one.Deck] = path
 			if _, held := by[path]; !held {
-				by[path] = review.Scheduling{By: u.at(p.Settings.Retention), Preset: p.Settings}
+				by[path] = review.SchedulingPolicy{By: u.at(p.Settings.Retention), Preset: p.Settings}
 			}
 		}
 		under[one.ID] = by[path]
@@ -179,11 +179,11 @@ func (u Schedules) under(
 		marks = append(marks, face.Card+"\t"+face.Face+"\t"+one.By.Name()+"\t"+one.Preset.Placing())
 	}
 	out.mark = marked(marks)
-	out.under = func(face review.CardFaceID) review.Scheduling {
+	out.under = func(face review.CardFaceID) review.SchedulingPolicy {
 		if one, held := under[face]; held {
 			return one
 		}
-		return review.Scheduling{By: u.By, Preset: review.Defaults()}
+		return review.SchedulingPolicy{By: u.By, Preset: review.Defaults()}
 	}
 	return out, nil
 }
