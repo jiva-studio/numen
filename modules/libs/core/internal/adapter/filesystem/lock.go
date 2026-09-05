@@ -10,6 +10,12 @@ import (
 
 // locks is one lock per vault root, keyed by the folder on disk. Every writer
 // opened on a folder takes the same lock.
+//
+// Nothing is ever taken out of it. It holds one channel per vault root this
+// process has written to, and the key is the folder as the filesystem resolves
+// it, so no spelling of a root can add a second entry: a person's vault list is
+// the bound. Taking one out would mean counting who is waiting on it, to buy
+// back a handful of channels.
 var locks = struct {
 	sync.Mutex
 	held map[string]chan struct{}
