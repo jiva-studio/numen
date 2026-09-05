@@ -6,3 +6,4 @@
  */
 export { agentPort } from './agent'
 export type { Asking } from './agent'
+export { refused, sentence } from './trouble'

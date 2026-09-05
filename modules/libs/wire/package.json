@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@connectrpc/connect": "^2.1.2",
     "@numen/protocol": "file:../protocol",
     "@numen/ui": "file:../ui"
   },
