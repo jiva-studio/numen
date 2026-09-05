@@ -21,6 +21,7 @@ const { said, held, asked, listed, folders, cuts, stands, outside } = vi.hoisted
    */
   stands: (path: string) => {
     if (/\.(epub|pdf)$/u.test(path)) return { kind: 'book' as const, type: 'note' as const }
+    if (/\.(mp3|m4a|wav)$/u.test(path)) return { kind: 'recording' as const, type: 'note' as const }
     if (!/\.(md|note)$/u.test(path)) return { kind: 'other' as const, type: 'note' as const }
     return { kind: 'note' as const, type: said.types[path] ?? ('note' as const) }
   },
@@ -116,6 +117,26 @@ const { said, held, asked, listed, folders, cuts, stands, outside } = vi.hoisted
     applied: 'preset:numen',
     mode: 'system' as 'system' | 'light' | 'dark',
     sizes: { interfaceScale: 1, textScale: 1 },
+    /** The recording the vault answers with, and the words written down in it. */
+    heard: {
+      length: 60_000,
+      media: 'numen://recording/heard',
+      type: 'audio/mpeg',
+      cues: [{ text: 'the first thing said', from: 0, to: 4000 }] as {
+        text: string
+        from: number
+        to: number
+      }[],
+      /** False while a run writing the transcript holds it. */
+      editable: true,
+    },
+    /**
+     * What the file at each path carries, as the application answers it. A path
+     * it says nothing about carries nothing.
+     */
+    carries: {} as Record<string, Record<string, string>>,
+    /** Whether the application answers what a file carries at all. */
+    carrying: true,
     /** What renaming a field of a stencil comes back with. */
     renaming: {
       decks: [] as string[],
@@ -148,6 +169,14 @@ const { said, held, asked, listed, folders, cuts, stands, outside } = vi.hoisted
     measured: 0,
     /** The vaults the window asked to be shown, in the order it asked. */
     opened: [] as string[],
+    /** The recordings the window listened to, in the order it asked. */
+    listened: [] as string[],
+    /** The transcripts the window wrote, as the words each carried. */
+    transcribed: [] as string[],
+    /** Every file the window asked what it carries, in the order it asked. */
+    carried: [] as string[],
+    /** Each run the window asked for, and each transcript it dropped. */
+    ran: [] as string[],
     /** How often a folder was asked for, which is a vault being added. */
     chose: 0,
     /** What the window said the person has open, the last of it last. */
@@ -242,6 +271,36 @@ vi.mock('../vault', () => ({
     writeStencil: async (path: string) => {
       asked.cut.push(`stencil ${path}`)
       return { refusal: null, changed: false, at: 'a2' }
+    },
+  },
+  recordings: {
+    listened: async (path: string) => {
+      asked.listened.push(path)
+      const { length, media, type } = said.heard
+      // How far the words reach is the last thing written down, which is what
+      // the application counts it as.
+      return { length, media, type, heard: said.heard.cues.at(-1)?.to ?? 0 }
+    },
+    cues: async () => ({ cues: said.heard.cues, editable: said.heard.editable }),
+    writes: async (path: string, cues: readonly { text: string }[]) => {
+      asked.transcribed.push(`${path} ${cues.map((one) => one.text).join(' / ')}`)
+    },
+    plays: async (path: string, stretch: { start: number }) =>
+      said.heard.cues.find((one) => one.from >= stretch.start)?.from ?? null,
+  },
+  running: {
+    carries: async (path: string) => {
+      asked.carried.push(path)
+      if (!said.carrying) throw new Error('what the file carries cannot be asked')
+      return said.carries[path] ?? {}
+    },
+    makes: async (path: string, of: string) => {
+      asked.ran.push(`${of} ${path}`)
+      return { able: true, of, made: 'queued', error: '' }
+    },
+    drops: async (path: string) => {
+      asked.ran.push(`drop ${path}`)
+      return true
     },
   },
   core: {
@@ -408,6 +467,15 @@ afterEach(() => {
   said.applied = 'preset:numen'
   said.mode = 'system'
   said.sizes = { interfaceScale: 1, textScale: 1 }
+  said.heard = {
+    length: 60_000,
+    media: 'numen://recording/heard',
+    type: 'audio/mpeg',
+    cues: [{ text: 'the first thing said', from: 0, to: 4000 }],
+    editable: true,
+  }
+  said.carries = {}
+  said.carrying = true
   said.renaming = {
     decks: [],
     cards: 0,
@@ -429,6 +497,10 @@ afterEach(() => {
   asked.worn = []
   asked.measured = 0
   asked.opened = []
+  asked.listened = []
+  asked.transcribed = []
+  asked.carried = []
+  asked.ran = []
   asked.chose = 0
   asked.attending = []
   listed.vaults = [{ name: 'physics', displayName: 'Physics', path: '/vaults/Physics', missing: false }]

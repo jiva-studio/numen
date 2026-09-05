@@ -12,6 +12,7 @@ import { Agent, Editor, Palette, Plex, Reader, Tree, Workspace, type WorkspaceLa
 import { linkOf } from './agent/places'
 import DocumentTab from './document/DocumentTab.vue'
 import NoteTab from './note/NoteTab.vue'
+import RecordingTab from './recording/RecordingTab.vue'
 import {
   asked,
   cards,
@@ -257,4 +258,72 @@ describe('a place an answer names', () => {
     expect(window.findComponent(DocumentTab).findComponent(Reader).exists()).toBe(true)
   })
 })
+
+// A recording is the one file the window reaches two ports for: the player is
+// loaded from one, and what the file carries is asked of the other. Neither is
+// reached by any other kind of tab.
+describe('a recording put in front', () => {
+  const HEARD = '730709BG.LON.mp3'
+
+  /** The window with that recording open, asked for from outside it. */
+  const playing = async () => {
+    const window = await drawn()
+    outside.asks({ path: HEARD, start: 0, length: 4 })
+    await settles()
+    await settles()
+    return window
+  }
+
+  it('is played from where the application answers, on the words written down', async () => {
+    const window = await playing()
+
+    const held = window.findComponent(RecordingTab).props('held') as {
+      address: { value: string }
+      prose: { value: string }
+      editable: { value: boolean }
+    }
+    expect(asked.listened).toStrictEqual([HEARD])
+    expect(held.address.value).toBe(said.heard.media)
+    expect(held.prose.value).toBe(said.heard.cues[0]?.text)
+    expect(held.editable.value).toBe(true)
+    // How long it runs and how far the words reach are the application's
+    // answer, and what the window says the person has open carries them.
+    expect(asked.attending.at(-1)?.tabs.at(-1)).toMatchObject({
+      path: HEARD,
+      recording: { heard: said.heard.cues[0]?.to, length: said.heard.length },
+    })
+  })
+
+  // What is offered over a recording follows what has been made from it, and
+  // not its kind alone: one already written down is not offered to be written
+  // down again.
+  it('is offered being written down while it carries no transcript', async () => {
+    said.carries = { [HEARD]: { transcript: 'none' } }
+
+    const window = await playing()
+
+    expect(asked.carried).toStrictEqual([HEARD])
+    expect(await runsOffered(window)).toStrictEqual(['transcribe'])
+  })
+
+  it('is offered putting the words right once a run has written them', async () => {
+    said.carries = { [HEARD]: { transcript: 'done' } }
+
+    const window = await playing()
+
+    expect(asked.carried).toStrictEqual([HEARD])
+    expect(await runsOffered(window)).toStrictEqual(['proofread', 'dropTranscript'])
+  })
+})
+
+/** The runs the palette offers over the file in front, in the order it draws them. */
+const runsOffered = async (window: VueWrapper): Promise<readonly string[]> => {
+  globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, cancelable: true }))
+  await settles()
+  const bands = window.findComponent(Palette).props('bands') as readonly {
+    id: string
+    items: readonly { id: string }[]
+  }[]
+  return bands.find((one) => one.id === 'file')?.items.map((one) => one.id) ?? []
+}
 
