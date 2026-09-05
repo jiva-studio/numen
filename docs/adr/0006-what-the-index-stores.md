@@ -69,7 +69,7 @@ erDiagram
         INTEGER note_id PK "and FK to notes"
         INTEGER position PK
         TEXT scheme
-        TEXT value "as written"
+        TEXT target "as written"
         TEXT folded_name "folded, the last segment of the address"
         TEXT role
         TEXT type

@@ -13,7 +13,7 @@
 -- dangling: it names one note in the world, and the vault holding it may simply
 -- not be open on this machine. Reporting it would tell somebody to mend a link
 -- that is fine everywhere they use it.
-SELECT s.path, l.scheme, l.value, l.role,
+SELECT s.path, l.scheme, l.target, l.role,
        COALESCE(l.type, ''), COALESCE(l.why, ''), COALESCE(l.label, '')
 FROM links l
 JOIN sources s ON s.id = l.note_id
@@ -22,7 +22,7 @@ WHERE s.vault_id = ?
   AND NOT EXISTS (
     SELECT 1 FROM sources t
     JOIN notes tn ON tn.source_id = t.id
-    WHERE t.vault_id = s.vault_id AND t.path = l.value
+    WHERE t.vault_id = s.vault_id AND t.path = l.target
   )
   AND NOT EXISTS (
     SELECT 1 FROM notes tn

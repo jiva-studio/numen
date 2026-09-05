@@ -173,7 +173,7 @@ func populated(t *testing.T) *DB {
 				source, vault, name, name, held, fmt.Sprintf("01M%d%022d", vault, i))
 			for j := range 3 {
 				target := fmt.Sprintf("%s-%05d", prefix, (i+j+1)%notes)
-				exec(`INSERT INTO links (note_id, position, scheme, value, folded_name, role)
+				exec(`INSERT INTO links (note_id, position, scheme, target, folded_name, role)
 				      VALUES (?, ?, 'name', ?, ?, 'ref')`, source, j, target, target)
 			}
 			// Every second note is cut, so that a question about what is not cut

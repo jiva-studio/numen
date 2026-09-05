@@ -4,7 +4,7 @@
 -- it was written — an exact path or a note in the same folder settles it — and
 -- that is decided by the same resolution every other link goes through, not
 -- here.
-SELECT s.path, l.scheme, l.value, l.role,
+SELECT s.path, l.scheme, l.target, l.role,
        COALESCE(l.type, ''), COALESCE(l.why, ''), COALESCE(l.label, '')
 FROM links l
 JOIN sources s ON s.id = l.note_id

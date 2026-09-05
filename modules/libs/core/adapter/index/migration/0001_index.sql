@@ -118,7 +118,7 @@ CREATE TABLE links (
     note_id     INTEGER NOT NULL REFERENCES notes(source_id) ON DELETE CASCADE,
     position    INTEGER NOT NULL,
     scheme      TEXT NOT NULL,
-    value       TEXT NOT NULL,
+    target      TEXT NOT NULL,
 
     -- The last segment of the address under the same fold a note's name is
     -- held to, which is what the two are compared on: what [[notes/Entropy]],
@@ -135,7 +135,7 @@ CREATE TABLE links (
 
 -- A name and an identifier each find few links, which are then narrowed to a
 -- vault by the notes they belong to.
-CREATE INDEX links_by_target ON links (scheme, value);
+CREATE INDEX links_by_target ON links (scheme, target);
 CREATE INDEX links_by_name ON links (folded_name);
 
 -- What could not be acted on and is worth showing: a link with no role, a
