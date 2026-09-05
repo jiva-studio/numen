@@ -20,9 +20,20 @@ import { WORDS as words } from './words'
 
 const props = defineProps<{ held: PresetTabState }>()
 
-const settings = computed(() => props.held.settings.value)
-const curve = computed(() => props.held.curve.value)
-const place = computed(() => props.held.place.value)
+// The tab's state outlives this component, so what it holds is bound once here
+// and the template unwraps it.
+const {
+  bounds,
+  changed,
+  curve,
+  material,
+  place,
+  problems,
+  saying,
+  settings,
+  stopped: stoppedAt,
+  waiting,
+} = props.held
 
 /** Why the goal has nothing to work on, and empty where it has. */
 const nothing = computed(() => idle(curve.value))
@@ -80,9 +91,6 @@ const value = computed(() =>
 /** The value the control stands at, in the units of its goal. */
 const reading = computed(() => words.value(curve.value.goal, value.value, day.value))
 
-/** How far each setting goes, as the last read answered it. */
-const bounds = computed(() => props.held.bounds.value)
-
 /** How far a control runs, and nothing at all where nothing was said. */
 type Ends = { min: number; max: number } | Record<string, never>
 
@@ -139,21 +147,21 @@ const dated = (said: Event) => {
 }
 
 /** Why the preset schedules nothing, and empty while it schedules something. */
-const stopped = computed(() => words.stopped(props.held.stopped.value))
+const stopped = computed(() => words.stopped(stoppedAt.value))
 </script>
 
 <template>
   <div class="preset">
     <!-- Reading the file again is the way out of anything the tab has to say,
          and it waits on nothing in the vault. -->
-    <p v-if="props.held.saying.value" role="alert" class="preset__warning preset__answering">
-      {{ props.held.saying.value }}
+    <p v-if="saying" role="alert" class="preset__warning preset__answering">
+      {{ saying }}
       <button type="button" class="answer" @click="props.held.again()">
         {{ words.reads }}
       </button>
     </p>
 
-    <p v-if="props.held.changed.value" role="status" class="preset__warning preset__answering">
+    <p v-if="changed" role="status" class="preset__warning preset__answering">
       {{ words.changed }}
       <button type="button" class="answer" @click="props.held.again()">
         {{ words.reads }}
@@ -161,11 +169,11 @@ const stopped = computed(() => words.stopped(props.held.stopped.value))
     </p>
 
     <ul
-      v-if="props.held.problems.value.length"
+      v-if="problems.length"
       class="preset__warning preset__problems"
       :aria-label="words.problems"
     >
-      <li v-for="(text, at) in props.held.problems.value" :key="at">{{ text }}</li>
+      <li v-for="(text, at) in problems" :key="at">{{ text }}</li>
     </ul>
 
     <div class="preset__page">
@@ -184,10 +192,10 @@ const stopped = computed(() => words.stopped(props.held.stopped.value))
           <template v-else>
             <CurveSlider
               :curve="curve"
-              :material="props.held.material.value"
+              :material="material"
               :place="place"
               :value-text="reading"
-              :waiting="props.held.waiting.value"
+              :waiting="waiting"
               @moves="(at: number) => props.held.moves(at)"
               @settles="props.held.settles()"
             />

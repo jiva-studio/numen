@@ -18,6 +18,10 @@ import { WORDS as words } from './words'
 
 const props = defineProps<{ held: PlexTabState }>()
 
+// The tab's state outlives this component, so what it holds is bound once here
+// and the template unwraps it.
+const { carried, empty, menu, mostParts, picture: neighbourhood } = props.held
+
 /**
  * How large the picture is drawn, and how many parts a node hangs at once. A
  * node's label is set in the window's type, so the boxes and the clearances
@@ -26,7 +30,7 @@ const props = defineProps<{ held: PlexTabState }>()
 const type = useTypeSize()
 const options = computed(() => ({
   ...optionsForType(type.value),
-  maxParts: props.held.mostParts.value,
+  maxParts: mostParts.value,
 }))
 
 /**
@@ -39,7 +43,7 @@ const nodeIcon = (node: string): LucideIcon | null => {
 }
 
 /** What the menu offers: on a node, or off every node. */
-const items = computed(() => (props.held.menu.value?.node === null ? NONE : ITEMS))
+const items = computed(() => (menu.value?.node === null ? NONE : ITEMS))
 
 /**
  * A menu asked for over a tab drawing no picture, which is a vault holding no
@@ -47,7 +51,7 @@ const items = computed(() => (props.held.menu.value?.node === null ? NONE : ITEM
  * so does a vault that has notes and has not been read yet.
  */
 const asks = (event: MouseEvent) => {
-  if (!props.held.empty.value) return
+  if (!empty.value) return
   event.preventDefault()
   props.held.asks({
     node: null,
@@ -60,7 +64,7 @@ const picture = useTemplateRef<{ focusNode: (id: string) => void }>('picture')
 
 /** A menu put away, and the keyboard back on the node it was asked from. */
 const closed = (chose?: string) => {
-  const node = props.held.menu.value?.node ?? null
+  const node = menu.value?.node ?? null
   if (chose === undefined) props.held.dismiss()
   else props.held.chose(chose)
   if (node !== null) picture.value?.focusNode(node)
@@ -74,13 +78,13 @@ const closed = (chose?: string) => {
     </p>
 
     <Plex
-      v-if="props.held.picture.value"
+      v-if="neighbourhood"
       ref="picture"
       class="plex__picture"
-      :neighbourhood="props.held.picture.value!"
+      :neighbourhood="neighbourhood!"
       :options="options"
       :creatable="props.held.creatable"
-      :carried="props.held.carried.value"
+      :carried="carried"
       :carried-name="words.carried"
       :parts="props.held.partsOf"
       @activate="(node: string) => props.held.activate(node)"
@@ -113,10 +117,10 @@ const closed = (chose?: string) => {
     </Plex>
 
     <Menu
-      v-if="props.held.menu.value"
+      v-if="menu"
       :items="items"
-      :at="props.held.menu.value!.at"
-      :opening="props.held.menu.value!.opening"
+      :at="menu!.at"
+      :opening="menu!.opening"
       open
       @choose="(id: string) => closed(id)"
       @dismiss="closed()"

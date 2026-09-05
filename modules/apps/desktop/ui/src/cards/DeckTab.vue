@@ -17,8 +17,9 @@ import { WORDS as words } from './words'
 
 const props = defineProps<{ held: DeckTabState }>()
 
-const drawn = computed(() => props.held.drawn.value)
-const marks = computed(() => props.held.marks.value)
+// The tab's state outlives this component, so what it holds is bound once here
+// and the template unwraps it.
+const { bands, choices, drawn, marks, saying, scheduled, shown, stencils } = props.held
 
 /** What the grid draws against the cards it was handed. */
 const wrong = computed(() => ({ at: marks.value.at, under: marks.value.under }))
@@ -26,18 +27,15 @@ const wrong = computed(() => ({ at: marks.value.at, under: marks.value.under }))
 /** The untyped values a card cut by that stencil is made with. */
 const empty = (stencil: string) =>
   cardBlanks(
-    cardFields(props.held.stencils.value.find((one) => one.name === stencil)?.fields ?? []),
+    cardFields(stencils.value.find((one) => one.name === stencil)?.fields ?? []),
   )
-
-/** Which preset schedules this deck. */
-const scheduled = computed(() => props.held.scheduled.value)
 
 /**
  * The presets on offer. The defaults stand in a band of their own, so the line
  * between them and the notes says which is which.
  */
 const offered = computed(() =>
-  props.held.choices.value.map((one) => ({
+  choices.value.map((one) => ({
     id: one.path,
     text: one.name,
     band: one.path === '' ? 'defaults' : 'presets',
@@ -64,8 +62,8 @@ const chose = (path: string) => {
 <template>
   <div class="deck-tab">
     <FileConflictPrompt
-      :saying="props.held.saying.value"
-      :state="props.held.shown.value.state"
+      :saying="saying"
+      :state="shown.state"
       :words="words"
       @keep="props.held.keep()"
       @take="props.held.take()"
@@ -97,8 +95,8 @@ const chose = (path: string) => {
     <DeckView
       class="deck-tab__grid"
       :cards="drawn"
-      :sections="props.held.bands.value"
-      :stencils="props.held.stencils.value"
+      :sections="bands"
+      :stencils="stencils"
       :name="words.deck"
       :wrong="wrong"
       @add="(stencil: string, section: string | null) => props.held.adds(stencil, empty(stencil), section)"

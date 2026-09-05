@@ -17,6 +17,27 @@ import type { RecordingTabState } from './kind'
 
 const props = defineProps<{ held: RecordingTabState }>()
 
+// The tab's state outlives this component, so what it holds is bound once here
+// and the template unwraps it.
+const {
+  broken,
+  current,
+  droppable,
+  editable,
+  following,
+  note,
+  now,
+  playable,
+  playing,
+  proofreadable,
+  prose,
+  runs,
+  times: cues,
+  transcribable,
+  trouble,
+  typing,
+} = props.held
+
 /** The times in the editor's gutter, and the line being said. */
 const times = timing((line) => props.held.goes(line))
 
@@ -24,25 +45,25 @@ const times = timing((line) => props.held.goes(line))
 // in the accent, and following is what brings it back into view.
 watchPostEffect(() =>
   times.show({
-    times: props.held.times.value,
-    current: props.held.current.value,
-    following: props.held.following.value && !props.held.typing.value,
+    times: cues.value,
+    current: current.value,
+    following: following.value && !typing.value,
   }),
 )
 
 /** Whether the view keeps the line being said in sight. */
-const follows = computed(() => props.held.following.value)
+const follows = computed(() => following.value)
 
 /** Whether this recording has no transcript, which decides what stands below the player. */
-const empty = computed(() => props.held.times.value.length === 0)
+const empty = computed(() => cues.value.length === 0)
 
 /**
  * What the menu offers over this recording: each item only where it applies,
  * and the one that takes the words away last.
  */
 const offered = computed(() => [
-  ...(props.held.proofreadable.value ? [{ id: PROOFREAD, text: words.proofread }] : []),
-  ...(props.held.droppable.value ? [{ id: DROP, text: words.drop }] : []),
+  ...(proofreadable.value ? [{ id: PROOFREAD, text: words.proofread }] : []),
+  ...(droppable.value ? [{ id: DROP, text: words.drop }] : []),
 ])
 
 /** Where the menu was asked for, and nothing while it is not open. */
@@ -66,11 +87,11 @@ const chose = (id: string) => {
   <div class="recording">
     <div class="recording__head">
       <Player
-        v-if="props.held.playable.value"
+        v-if="playable"
         class="recording__player"
-        :at="props.held.now.value"
-        :length="props.held.runs.value"
-        :playing="props.held.playing.value"
+        :at="now"
+        :length="runs"
+        :playing="playing"
         :label="words.player"
         @play="props.held.play()"
         @pause="props.held.pause()"
@@ -108,18 +129,18 @@ const chose = (id: string) => {
     <div class="recording__below">
       <!-- What went wrong stands above the words, where it is read whether or
            not there are any. -->
-      <p v-if="props.held.broken.value" class="recording__note">
-        {{ props.held.broken.value }}
+      <p v-if="broken" class="recording__note">
+        {{ broken }}
       </p>
-      <p v-if="props.held.trouble.value" role="alert" class="recording__note">
-        {{ props.held.trouble.value }}
+      <p v-if="trouble" role="alert" class="recording__note">
+        {{ trouble }}
       </p>
 
       <!-- The button says there is no transcript, so the note says it only
            where there is no button. -->
       <div v-if="empty" class="recording__silence">
-        <p v-if="!props.held.transcribable.value" class="recording__note">
-          {{ props.held.note.value }}
+        <p v-if="!transcribable" class="recording__note">
+          {{ note }}
         </p>
         <button
           v-else
@@ -134,8 +155,8 @@ const chose = (id: string) => {
       <Editor
         v-else
         class="recording__transcript"
-        :model-value="props.held.prose.value"
-        :readonly="!props.held.editable.value"
+        :model-value="prose"
+        :readonly="!editable"
         :live="false"
         :extensions="times.extension"
         :aria-label="words.transcript"
