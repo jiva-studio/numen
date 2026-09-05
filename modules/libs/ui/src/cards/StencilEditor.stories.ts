@@ -353,9 +353,9 @@ export const WhatAPersonDoesToIt: Story = {
       )
     expect(drawn()).toEqual(['recognise', 'name-it'])
 
-    const bar = found(canvasElement, '[data-face="name-it"] .bar')
-    expect(bar.getAttribute('draggable')).toBe('true')
-    bar.dispatchEvent(new DragEvent('dragstart', { bubbles: true }))
+    const header = found(canvasElement, '[data-face="name-it"] .card-header')
+    expect(header.getAttribute('draggable')).toBe('true')
+    header.dispatchEvent(new DragEvent('dragstart', { bubbles: true }))
     const onto = found(canvasElement, '[data-face="recognise"]')
     onto.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true }))
 

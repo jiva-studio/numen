@@ -9,7 +9,7 @@
  */
 import { computed, nextTick, shallowRef, useId, type ComponentPublicInstance } from 'vue'
 import ErrorMessage from './ErrorMessage.vue'
-import Bar from './Bar.vue'
+import CardHeader from './CardHeader.vue'
 import RemoveButton from './RemoveButton.vue'
 import AutosizeTextarea from './AutosizeTextarea.vue'
 import CardProse from './CardProse.vue'
@@ -124,7 +124,7 @@ const put = async (field: string): Promise<void> => {
 
 <template>
   <article class="face flex flex-col rounded-node bg-raised" :data-face="face.id">
-    <Bar
+    <CardHeader
       :carry="`${words.carry}: ${face.name}`"
       @dragstart="emit('lift', $event)"
       @dragend="emit('release')"
@@ -183,7 +183,7 @@ const put = async (field: string): Promise<void> => {
       <template #deeds>
         <RemoveButton :label="`${words.remove}: ${face.name}`" @press="emit('remove')" />
       </template>
-    </Bar>
+    </CardHeader>
 
     <!-- One window divided into four: the parts share the lines between them,
          and the frame around them is the face's own. -->

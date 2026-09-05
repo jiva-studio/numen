@@ -9,7 +9,7 @@
  */
 import { computed, useId } from 'vue'
 import ErrorMessage from './ErrorMessage.vue'
-import Bar from './Bar.vue'
+import CardHeader from './CardHeader.vue'
 import RemoveButton from './RemoveButton.vue'
 import AutosizeTextarea from './AutosizeTextarea.vue'
 import Divider from '../divider/Divider.vue'
@@ -73,7 +73,7 @@ const wrongIn = (value: Stood): readonly string[] =>
     :data-section="tile.section ?? undefined"
     :data-carried="tile.carried || undefined"
   >
-    <Bar
+    <CardHeader
       :carry="`${words.carry}: ${called}`"
       @dragstart="emit('lift', $event)"
       @dragend="emit('release')"
@@ -95,7 +95,7 @@ const wrongIn = (value: Stood): readonly string[] =>
       <template #deeds>
         <RemoveButton :label="`${words.remove}: ${called}`" @press="emit('remove')" />
       </template>
-    </Bar>
+    </CardHeader>
 
     <div class="card__body flex flex-col">
       <!-- A card is waiting for a stencil only where it names one. -->

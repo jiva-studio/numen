@@ -299,10 +299,10 @@ export const ACard: Story = {
     expect(getComputedStyle(tile).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
 
     // The strip says what cut the card, and holds the one way to remove it.
-    const bar = found(canvasElement, '.bar')
+    const header = found(canvasElement, '.card-header')
     expect(found(canvasElement, '[data-cut-of]').textContent?.trim()).toBe('Animal')
     expect(tile.querySelector('[aria-expanded]')).toBeNull()
-    expect(bar.querySelectorAll('button')).toHaveLength(1)
+    expect(header.querySelectorAll('button')).toHaveLength(1)
 
     // It stands in the middle of the strip, and is said more quietly than what
     // the card holds.
@@ -311,7 +311,7 @@ export const ACard: Story = {
       const box = each.getBoundingClientRect()
       return Math.round(box.left + box.width / 2)
     }
-    expect(middle(cut)).toBe(middle(bar))
+    expect(middle(cut)).toBe(middle(header))
 
     const said = Number.parseFloat(getComputedStyle(cut).fontSize)
     const written = Number.parseFloat(

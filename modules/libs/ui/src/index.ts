@@ -250,7 +250,7 @@ export { default as CardProse } from './cards/CardProse.vue'
 /** The heading one section of a deck stands under. */
 export { default as Band } from './cards/Band.vue'
 /** The strip a tile is carried by. */
-export { default as Bar } from './cards/Bar.vue'
+export { default as CardHeader } from './cards/CardHeader.vue'
 /** A rule with something standing on it, in its middle or at its start. */
 export { default as Divider } from './divider/Divider.vue'
 

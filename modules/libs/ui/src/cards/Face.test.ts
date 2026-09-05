@@ -172,11 +172,11 @@ describe('Face, the fields it is written with', () => {
 
   it('stands the name and the fields on one strip, and no row of their own', () => {
     const held = mountFace()
-    const bar = held.get('.bar')
-    expect(bar.attributes('data-grip')).toBeDefined()
-    expect(bar.attributes('draggable')).toBe('true')
-    expect(bar.find('input').exists()).toBe(true)
-    expect(bar.findAll('[data-insert]')).toHaveLength(FIELDS.length)
+    const header = held.get('.card-header')
+    expect(header.attributes('data-grip')).toBeDefined()
+    expect(header.attributes('draggable')).toBe('true')
+    expect(header.find('input').exists()).toBe(true)
+    expect(header.findAll('[data-insert]')).toHaveLength(FIELDS.length)
     expect(held.findAll('.face__slots')).toHaveLength(1)
   })
 
@@ -367,21 +367,21 @@ describe('Face, its name', () => {
 describe('Face, what it is asked', () => {
   it('emits when it is asked to go', async () => {
     const held = mountFace()
-    await held.get('.bar__deeds button').trigger('click')
+    await held.get('.card-header__deeds button').trigger('click')
     expect(held.emitted('remove')).toEqual([[]])
   })
 
   it('emits the carry its strip is taken up by, and the carry let go', async () => {
     const held = mountFace()
-    await held.get('.bar').trigger('dragstart')
+    await held.get('.card-header').trigger('dragstart')
     expect(held.emitted('lift')).toHaveLength(1)
-    await held.get('.bar').trigger('dragend')
+    await held.get('.card-header').trigger('dragend')
     expect(held.emitted('release')).toEqual([[]])
   })
 
   it('emits the way it is asked to go along the order', async () => {
     const held = mountFace()
-    await held.get('.bar').trigger('keydown', { key: 'ArrowDown' })
+    await held.get('.card-header').trigger('keydown', { key: 'ArrowDown' })
     expect(held.emitted('step')?.[0]?.[0]).toBe('down')
   })
 })

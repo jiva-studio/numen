@@ -11,7 +11,7 @@ withDefaults(
     /** What the row is drawn as. */
     as?: 'div' | 'header'
     /** A row standing in a list, or the strip at the head of a block. */
-    tone?: 'field' | 'bar'
+    tone?: 'field' | 'header'
   }>(),
   { as: 'div', tone: 'field' },
 )
@@ -42,7 +42,7 @@ withDefaults(
 }
 
 /* A strip at the head of a block is ruled off from what it heads. */
-.card-row[data-tone='bar'] {
+.card-row[data-tone='header'] {
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
   background: var(--numen-code-bg);
 }

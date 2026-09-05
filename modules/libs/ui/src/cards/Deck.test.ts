@@ -206,7 +206,7 @@ describe('Deck', () => {
   })
 
   it('holds nothing in a tile’s head but what cut it, the grip and the way to remove it', () => {
-    const head = tileFor(mountDeck(), 'llama').get('.bar')
+    const head = tileFor(mountDeck(), 'llama').get('.card-header')
     expect(head.findAll('button')).toHaveLength(1)
     expect(head.attributes('data-grip')).toBeDefined()
     expect(head.attributes('draggable')).toBe('true')
@@ -220,7 +220,7 @@ describe('Deck', () => {
   })
 
   it('leaves the way to remove a card out of what carries it', () => {
-    const away = tileFor(mountDeck(), 'llama').get('.bar button')
+    const away = tileFor(mountDeck(), 'llama').get('.card-header button')
     expect(away.attributes('draggable')).toBe('false')
   })
 
@@ -318,7 +318,7 @@ describe('Deck', () => {
 
   it('emits the card asked to go', async () => {
     const held = mountDeck()
-    await tileFor(held, 'yak').get('.bar button').trigger('click')
+    await tileFor(held, 'yak').get('.card-header button').trigger('click')
     expect(held.emitted('remove')).toEqual([['yak']])
   })
 

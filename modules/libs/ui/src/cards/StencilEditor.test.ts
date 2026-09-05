@@ -440,7 +440,7 @@ describe('Stencil, the faces', () => {
 
   it('emits the face asked to go', async () => {
     const held = mountStencil()
-    await held.get('[data-face="recognise"] .bar__deeds button').trigger('click')
+    await held.get('[data-face="recognise"] .card-header__deeds button').trigger('click')
     expect(held.emitted('remove-face')).toEqual([['recognise']])
   })
 
@@ -460,7 +460,7 @@ describe('Stencil, the faces', () => {
       { id: 'three', name: 'Three', front: '', back: '' },
     ]
 
-    const stripOf = (held: Editor, id: string) => held.get(`[data-face="${id}"] .bar`)
+    const stripOf = (held: Editor, id: string) => held.get(`[data-face="${id}"] .card-header`)
 
     it('names the strip a face is carried by, and gives it a place in the order', () => {
       const strip = stripOf(mountStencil({ faces: THREE }), 'two')
@@ -500,7 +500,7 @@ describe('Stencil, the faces', () => {
 
     /** A face picked up by its strip and let go over another, or over the tail. */
     const carry = async (editor: Editor, id: string, onto: string | null): Promise<void> => {
-      await faceFor(editor, id).get('.bar').trigger('dragstart')
+      await faceFor(editor, id).get('.card-header').trigger('dragstart')
       const over = onto === null ? editor.findAll('section')[1] : faceFor(editor, onto)
       await over?.trigger('dragover')
       await over?.trigger('drop')
@@ -538,10 +538,10 @@ describe('Stencil, the faces', () => {
 
     /** A face picked up and the carry ended without it being let go anywhere. */
     const carryOff = async (editor: Editor, id: string, onto: string | null): Promise<void> => {
-      const bar = faceFor(editor, id).get('.bar')
-      await bar.trigger('dragstart')
+      const header = faceFor(editor, id).get('.card-header')
+      await header.trigger('dragstart')
       if (onto !== null) await faceFor(editor, onto).trigger('dragover')
-      await bar.trigger('dragend')
+      await header.trigger('dragend')
     }
 
     it('moves nothing where a carry ends with the face let go nowhere', async () => {
@@ -559,7 +559,7 @@ describe('Stencil, the faces', () => {
 
     it('marks the face on its way, and no other', async () => {
       const editor = mountStencil({ faces: THREE })
-      await faceFor(editor, 'two').get('.bar').trigger('dragstart')
+      await faceFor(editor, 'two').get('.card-header').trigger('dragstart')
       expect(faceFor(editor, 'two').attributes('data-carried')).toBe('true')
       expect(faceFor(editor, 'one').attributes('data-carried')).toBeUndefined()
     })

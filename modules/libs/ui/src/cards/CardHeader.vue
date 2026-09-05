@@ -67,8 +67,8 @@ const carried = (event: KeyboardEvent): void => {
 <template>
   <CardRow
     as="header"
-    tone="bar"
-    class="bar"
+    tone="header"
+    class="card-header"
     data-grip
     role="group"
     tabindex="0"
@@ -80,41 +80,41 @@ const carried = (event: KeyboardEvent): void => {
     @pointerdown="press"
     @keydown="carried"
   >
-    <span class="bar__held min-w-0 flex-1"><slot /></span>
-    <span class="bar__deeds flex shrink-0 items-center"><slot name="deeds" /></span>
+    <span class="card-header__held min-w-0 flex-1"><slot /></span>
+    <span class="card-header__deeds flex shrink-0 items-center"><slot name="deeds" /></span>
   </CardRow>
 </template>
 
 <style scoped>
 /* The strip is a row like any other, and reads as something to take hold of.
    What it holds may stand against the strip's own width. */
-.bar {
+.card-header {
   position: relative;
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
 }
 
-.bar:active {
+.card-header:active {
   cursor: grabbing;
 }
 
 /* What the strip is pressed for is not drawn until the strip is reached for,
    by the pointer or by the keyboard. It is drawn on a plane of its own, kept
    for as long as the card stands. */
-.bar__deeds {
+.card-header__deeds {
   opacity: 0;
   will-change: opacity;
   transition: opacity var(--numen-motion-hover) var(--numen-easing);
 }
 
-.bar:hover .bar__deeds,
-.bar:focus-within .bar__deeds {
+.card-header:hover .card-header__deeds,
+.card-header:focus-within .card-header__deeds {
   opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bar__deeds {
+  .card-header__deeds {
     transition: none;
   }
 }

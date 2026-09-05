@@ -277,7 +277,7 @@ export const AFace: Story = {
     // in nothing.
     const watched = [
       face,
-      found(canvasElement, '.bar'),
+      found(canvasElement, '.card-header'),
       ...PANES.map((pane) => paneOf(canvasElement, pane)),
     ]
     const look = (): readonly string[] =>
@@ -406,7 +406,7 @@ export const MarksAPersonWrote: Story = {
 export const FarTooManyFields: Story = {
   args: { corpus: 'far too many fields' },
   play: async ({ canvasElement }) => {
-    const bar = found(canvasElement, '.bar')
+    const header = found(canvasElement, '.card-header')
     const title = found(canvasElement, '.face__title')
     const slots = found(canvasElement, '.face__slots')
 
@@ -414,9 +414,9 @@ export const FarTooManyFields: Story = {
     expect(title.getBoundingClientRect().width).toBeGreaterThan(60)
 
     expect(slots.scrollWidth).toBeGreaterThan(slots.clientWidth)
-    expect(bar.getBoundingClientRect().height).toBeLessThan(40)
+    expect(header.getBoundingClientRect().height).toBeLessThan(40)
     expect(slots.getBoundingClientRect().right).toBeLessThanOrEqual(
-      bar.getBoundingClientRect().right + 1,
+      header.getBoundingClientRect().right + 1,
     )
   },
 }
@@ -438,12 +438,12 @@ export const WhatIsWrongWithIt: Story = {
     // The strip stands one row deep with all of it said, and the window begins
     // where the strip ends: what is wrong hangs over the window and takes no
     // room from it.
-    const bar = found(canvasElement, '.bar').getBoundingClientRect()
+    const header = found(canvasElement, '.card-header').getBoundingClientRect()
     const head = found(canvasElement, '.face__head').getBoundingClientRect()
     const body = found(canvasElement, '.face__body').getBoundingClientRect()
     const over = said.getBoundingClientRect()
-    expect(bar.height).toBeLessThan(40)
-    expect(body.top).toBeCloseTo(bar.bottom, 0)
+    expect(header.height).toBeLessThan(40)
+    expect(body.top).toBeCloseTo(header.bottom, 0)
     expect(over.top).toBeGreaterThanOrEqual(head.bottom - 1)
     expect(over.bottom).toBeGreaterThan(body.top)
 
