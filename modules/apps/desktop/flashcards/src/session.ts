@@ -103,6 +103,7 @@ export function session(deps: SessionDeps) {
     shown.value = false
     answers.value = []
     run.value = ''
+    vault.value = ''
   }
 
   /**

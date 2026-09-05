@@ -21,6 +21,7 @@ import { opens, scheduling } from './scheduling'
 import { session } from './session'
 import { asking } from './asking'
 import { reading } from './reading'
+import { screens } from './screens'
 import { around } from './reading/core'
 import { core as agent } from './agent/core'
 import type { Grade, VaultCardsDue } from './core'
@@ -28,9 +29,6 @@ import type { Report } from './session'
 
 /** Everything the window is made of, made once and handed to what draws it. */
 export const useWindow = () => {
-  /** Which of the three screens the window is on. */
-  const on = ref<'vaults' | 'decks' | 'session'>('vaults')
-
   /** The vault whose decks are open, and whose cards are being asked. */
   const vault = ref('')
 
@@ -109,6 +107,21 @@ export const useWindow = () => {
     else agentPanel.opens()
   }
 
+  /**
+   * The three screens, and what each of them holds. Everything a screen took up
+   * stands here beside it, which is the whole of what going back lets go of.
+   */
+  const { on, goes } = screens(['vaults', 'decks', 'session'] as const, {
+    decks: [
+      done.forget,
+      schedules.forget,
+      () => {
+        vault.value = ''
+      },
+    ],
+    session: [sat.forget, agentPanel.ends, notesPanel.ends],
+  })
+
   /** What is read, so the keys can scroll it: the caret is nowhere in it. */
   const page = useTemplateRef<InstanceType<typeof NotesPanel>>('page')
 
@@ -121,7 +134,7 @@ export const useWindow = () => {
   const choose = (id: string) => {
     stop()
     vault.value = id
-    on.value = 'decks'
+    goes('decks')
     void done.read(id)
     void schedules.read(chosen.value, today.value)
   }
@@ -147,7 +160,7 @@ export const useWindow = () => {
   const start = async (deck: string) => {
     const said = await sat.start(vault.value, deck)
     if (!said) return
-    on.value = 'session'
+    goes('session')
     reported(said)
   }
 
@@ -155,7 +168,7 @@ export const useWindow = () => {
   const startPreset = async (preset: string) => {
     const said = await sat.start(vault.value, '', preset)
     if (!said) return
-    on.value = 'session'
+    goes('session')
     reported(said)
   }
 
@@ -164,10 +177,7 @@ export const useWindow = () => {
    * the days too: what a person just answered is part of what they have done.
    */
   const leave = async () => {
-    agentPanel.ends()
-    notesPanel.ends()
-    sat.forget()
-    on.value = 'decks'
+    goes('decks')
     void done.read(vault.value)
     await count()
     void schedules.read(chosen.value, today.value)
@@ -175,13 +185,7 @@ export const useWindow = () => {
 
   /** Back to the vaults, which is where a person picks another collection. */
   const vaultsAgain = async () => {
-    agentPanel.ends()
-    notesPanel.ends()
-    sat.forget()
-    done.forget()
-    schedules.forget()
-    on.value = 'vaults'
-    vault.value = ''
+    goes('vaults')
     await count()
   }
 
