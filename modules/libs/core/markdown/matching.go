@@ -30,7 +30,7 @@ func Where(text, wanted string) (at []Span, plainly bool) {
 	if wanted == "" {
 		return nil, false
 	}
-	if found := standing(text, wanted); len(found) > 0 {
+	if found := occurrences(text, wanted); len(found) > 0 {
 		return found, false
 	}
 	for _, read := range []func(string) reading{plain, loose} {
@@ -38,7 +38,7 @@ func Where(text, wanted string) (at []Span, plainly bool) {
 		if sought.text == "" {
 			continue
 		}
-		found := standing(held.text, sought.text)
+		found := occurrences(held.text, sought.text)
 		if len(found) == 0 {
 			continue
 		}
@@ -51,9 +51,9 @@ func Where(text, wanted string) (at []Span, plainly bool) {
 	return nil, false
 }
 
-// standing is every place `wanted` stands in `text`. A place found is stepped
-// over, so two reported spans never overlap.
-func standing(text, wanted string) []Span {
+// occurrences is every place `wanted` stands in `text`. A place found is
+// stepped over, so two reported spans never overlap.
+func occurrences(text, wanted string) []Span {
 	var at []Span
 	for from := 0; from <= len(text); {
 		next := strings.Index(text[from:], wanted)
