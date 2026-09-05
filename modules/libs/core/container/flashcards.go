@@ -65,7 +65,14 @@ func (c Config) Schedules() (port.ScheduleStore, error) {
 	if c.SchedulesPath != "" {
 		return appstate.SchedulesAt(c.SchedulesPath), nil
 	}
-	return appstate.OpenSchedules()
+	// A returned *Schedules is nil where there is no cache folder, and a nil
+	// pointer in an interface is not a nil interface: the caller's check for one
+	// would pass and the first call on it would panic.
+	kept, err := appstate.OpenSchedules()
+	if err != nil {
+		return nil, err
+	}
+	return kept, nil
 }
 
 // Counting is where what each day came to is remembered. It stands beside the
@@ -76,7 +83,11 @@ func (c Config) Counting() (port.ScheduleStore, error) {
 	if c.SchedulesPath != "" {
 		return appstate.SchedulesAt(filepath.Join(c.SchedulesPath, "days")), nil
 	}
-	return appstate.OpenCounting()
+	counting, err := appstate.OpenCounting()
+	if err != nil {
+		return nil, err
+	}
+	return counting, nil
 }
 
 // Flashcards builds the scenarios against this installation.
