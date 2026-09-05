@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { FieldValue } from './deck'
-import { drawnFaces, fieldRows, panes, STENCIL_WORDS, type StencilFace } from './stencil'
+import { faceRows, fieldRows, panes, STENCIL_WORDS, type StencilFace } from './stencil'
 
 describe('fieldRows', () => {
   const FIELDS = ['Height', 'Weight']
@@ -43,7 +43,7 @@ describe('fieldRows', () => {
   })
 })
 
-describe('drawnFaces', () => {
+describe('faceRows', () => {
   const FIELDS = ['Name', 'Height']
   const FACES: readonly StencilFace[] = [
     { id: 'recognise', name: 'Recognise', front: '{{Name}}', back: '{{Height}}' },
@@ -55,27 +55,27 @@ describe('drawnFaces', () => {
   ]
 
   it('numbers the faces from one, each knowing how many stand with it', () => {
-    expect(drawnFaces(FACES, FIELDS, SAMPLE).map((each) => [each.at, each.of])).toEqual([
+    expect(faceRows(FACES, FIELDS, SAMPLE).map((each) => [each.at, each.of])).toEqual([
       [1, 2],
       [2, 2],
     ])
   })
 
   it('shows each half with the sample values standing in it', () => {
-    const face = drawnFaces(FACES, FIELDS, SAMPLE)[0]
-    expect(face?.frontStencilFace).toBe('Llama')
-    expect(face?.backStencilFace).toBe('about 45"')
+    const face = faceRows(FACES, FIELDS, SAMPLE)[0]
+    expect(face?.frontPreview).toBe('Llama')
+    expect(face?.backPreview).toBe('about 45"')
   })
 
   it('keeps the markup a half was written with beside what it shows', () => {
-    expect(drawnFaces(FACES, FIELDS, SAMPLE)[0]?.front).toBe('{{Name}}')
+    expect(faceRows(FACES, FIELDS, SAMPLE)[0]?.front).toBe('{{Name}}')
   })
 
   it('says the slots each half names that the fields do not, each once', () => {
     const faces: readonly StencilFace[] = [
       { id: 'one', name: 'One', front: '{{Colour}}', back: '{{Weight}} {{Weight}}' },
     ]
-    const face = drawnFaces(faces, FIELDS, SAMPLE)[0]
+    const face = faceRows(faces, FIELDS, SAMPLE)[0]
     expect(face?.frontStray).toEqual(['Colour'])
     expect(face?.backStray).toEqual(['Weight'])
   })
@@ -84,23 +84,23 @@ describe('drawnFaces', () => {
     const faces: readonly StencilFace[] = [
       { id: 'one', name: 'One', front: '{{Name}} {{Colour}}', back: '' },
     ]
-    expect(drawnFaces(faces, FIELDS, SAMPLE)[0]?.frontStencilFace).toBe(
+    expect(faceRows(faces, FIELDS, SAMPLE)[0]?.frontPreview).toBe(
       'Llama <mark>{{Colour}}</mark>',
     )
   })
 
   it('says nothing stray of a face naming only declared fields', () => {
-    const face = drawnFaces(FACES, FIELDS, SAMPLE)[0]
+    const face = faceRows(FACES, FIELDS, SAMPLE)[0]
     expect(face?.frontStray).toEqual([])
     expect(face?.backStray).toEqual([])
   })
 
   it('draws nothing for a stencil with no faces', () => {
-    expect(drawnFaces([], FIELDS, SAMPLE)).toEqual([])
+    expect(faceRows([], FIELDS, SAMPLE)).toEqual([])
   })
 
   it('carries the identity and the name each face was handed in under', () => {
-    const drawn = drawnFaces(FACES, FIELDS, SAMPLE)
+    const drawn = faceRows(FACES, FIELDS, SAMPLE)
     expect(drawn.map((each) => each.id)).toEqual(['recognise', 'name-it'])
     expect(drawn.map((each) => each.name)).toEqual(['Recognise', 'Name it'])
   })
@@ -114,7 +114,7 @@ describe('panes', () => {
   ]
 
   const faceOf = (face: StencilFace, fields: readonly string[], sample: readonly FieldValue[]) => {
-    const drawn = drawnFaces([face], fields, sample)[0]
+    const drawn = faceRows([face], fields, sample)[0]
     if (!drawn) throw new Error('no face')
     return drawn
   }

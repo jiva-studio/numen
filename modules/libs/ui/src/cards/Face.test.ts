@@ -8,10 +8,10 @@
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
-import FaceView from './Face.vue'
+import Face from './Face.vue'
 import type { FieldValue } from './deck'
 import { declared } from './order'
-import { drawnFaces, type Face, type StencilFace } from './stencil'
+import { faceRows, type FaceRow, type StencilFace } from './stencil'
 import { sampled } from './fill'
 
 const FIELDS = ['Name', 'Height', 'Weight']
@@ -28,14 +28,14 @@ const faceOf = (
   face: StencilFace,
   fields: readonly string[] = FIELDS,
   sample?: readonly FieldValue[],
-): Face => {
-  const laid = drawnFaces([face], fields, sample ?? sampled(declared(fields)))[0]
+): FaceRow => {
+  const laid = faceRows([face], fields, sample ?? sampled(declared(fields)))[0]
   if (!laid) throw new Error('a corpus holding no face')
   return laid
 }
 
-const mountFace = (face: Face = faceOf(FACE), props: Record<string, unknown> = {}) =>
-  mount(FaceView, {
+const mountFace = (face: FaceRow = faceOf(FACE), props: Record<string, unknown> = {}) =>
+  mount(Face, {
     attachTo: document.body,
     props: { face, ...props },
   })

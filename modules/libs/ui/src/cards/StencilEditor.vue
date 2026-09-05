@@ -16,7 +16,7 @@ import { useCarry } from './carry'
 import { Button } from '../components/ui/button'
 import { declared, numbered, type Half, type InsertionPoint } from './order'
 import {
-  drawnFaces,
+  faceRows,
   NOTHING_AMISS,
   STENCIL_WORDS,
   type StencilFace,
@@ -96,7 +96,7 @@ const {
 const sample = computed(() => sampled(asked.value))
 
 /** The faces as they are drawn. */
-const drawn = computed(() => drawnFaces(props.faces, asked.value, sample.value))
+const drawn = computed(() => faceRows(props.faces, asked.value, sample.value))
 
 /** What is wrong with one face, and nothing where nothing is. */
 const wrongWithFace = (id: string): readonly string[] => props.wrong.at.get(id) ?? []

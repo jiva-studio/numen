@@ -7,10 +7,10 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { computed, ref, watch } from 'vue'
-import FaceView from './Face.vue'
+import Face from './Face.vue'
 import type { FieldValue } from './deck'
 import { declared, type Half } from './order'
-import { drawnFaces, type Face, type StencilFace } from './stencil'
+import { faceRows, type FaceRow, type StencilFace } from './stencil'
 import { sampled } from './fill'
 import { hovered, lightness } from '@/fixtures/colour'
 import { DARK, drawnDark } from '@/fixtures/theme'
@@ -111,7 +111,7 @@ interface Knobs {
 
 const meta: Meta<Knobs> = {
   title: 'Flash Cards/Face',
-  component: FaceView,
+  component: Face,
   parameters: { layout: 'padded' },
   argTypes: {
     corpus: {
@@ -128,7 +128,7 @@ const meta: Meta<Knobs> = {
   },
   args: { corpus: 'a face', width: '64rem' },
   render: (args) => ({
-    components: { FaceView },
+    components: { Face },
     setup() {
       const held = ref<Corpus>(CORPORA[args.corpus])
       const written = ref<StencilFace>(CORPORA[args.corpus].face)
@@ -141,9 +141,9 @@ const meta: Meta<Knobs> = {
         },
       )
 
-      const drawn = computed<Face>(() => {
+      const drawn = computed<FaceRow>(() => {
         const fields = declared(held.value.fields)
-        const laid = drawnFaces([written.value], fields, held.value.sample ?? sampled(fields))[0]
+        const laid = faceRows([written.value], fields, held.value.sample ?? sampled(fields))[0]
         if (!laid) throw new Error('a corpus holding no face')
         return { ...laid, taken: held.value.taken ?? [] }
       })
@@ -162,7 +162,7 @@ const meta: Meta<Knobs> = {
     },
     template: `
       <div :style="{ width: args.width }">
-        <FaceView
+        <Face
           :face="drawn"
           :wrong="wrong()"
           @rename="onRename"

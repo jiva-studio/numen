@@ -123,8 +123,8 @@ export function fieldRows(
   }))
 }
 
-/** One face of a stencil, as it is drawn. */
-export interface Face {
+/** One face of a stencil, as its row is drawn. */
+export interface FaceRow {
   readonly id: string
   readonly name: string
   /** Where it stands, counting from one, which is what it is announced as. */
@@ -139,8 +139,8 @@ export interface Face {
   readonly front: string
   readonly back: string
   /** The same two, with the sample values standing in the braces. */
-  readonly frontStencilFace: string
-  readonly backStencilFace: string
+  readonly frontPreview: string
+  readonly backPreview: string
   /** The slots each half names that the fields do not, each said once. */
   readonly frontStray: readonly string[]
   readonly backStray: readonly string[]
@@ -150,11 +150,11 @@ export interface Face {
  * A stencil's faces as they are drawn, each carrying what its preview shows and
  * what is wrong in each half of it.
  */
-export function drawnFaces(
+export function faceRows(
   shown: readonly StencilFace[],
   fields: readonly string[],
   sample: readonly FieldValue[],
-): readonly Face[] {
+): readonly FaceRow[] {
   const names = shown.map((each) => each.name)
   return shown.map((face, index) => {
     return {
@@ -166,8 +166,8 @@ export function drawnFaces(
       taken: names.filter((_, at) => at !== index),
       front: face.front,
       back: face.back,
-      frontStencilFace: previewed(face.front, sample, fields),
-      backStencilFace: previewed(face.back, sample, fields),
+      frontPreview: previewed(face.front, sample, fields),
+      backPreview: previewed(face.back, sample, fields),
       frontStray: strayIn(face.front, fields),
       backStray: strayIn(face.back, fields),
     }
@@ -198,11 +198,11 @@ export interface Pane {
  * and then what that markup comes to. Two parts to a row stand the front above
  * the back; one to a row stands each preview under the half it is of.
  */
-export function panes(face: Face, words: StencilWords = STENCIL_WORDS): readonly Pane[] {
+export function panes(face: FaceRow, words: StencilWords = STENCIL_WORDS): readonly Pane[] {
   return HALVES.flatMap((half): readonly Pane[] => {
     const said = half === 'front' ? words.front : words.back
     const written = half === 'front' ? face.front : face.back
-    const shown = half === 'front' ? face.frontStencilFace : face.backStencilFace
+    const shown = half === 'front' ? face.frontPreview : face.backPreview
     return [
       {
         half,

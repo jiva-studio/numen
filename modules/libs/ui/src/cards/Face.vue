@@ -20,7 +20,7 @@ import { heading, type Half, type Refusal, type StepDirection } from './order'
 import {
   panes,
   STENCIL_WORDS,
-  type Face,
+  type FaceRow,
   type Pane,
   type StencilWords,
 } from './stencil'
@@ -29,7 +29,7 @@ import { insert } from './fill'
 const props = withDefaults(
   defineProps<{
     /** The face, laid out against the fields the stencil declares. */
-    face: Face
+    face: FaceRow
     /** What the caller found wrong with this face, said beside its name. */
     wrong?: readonly string[]
     /** The words it is drawn with. */
