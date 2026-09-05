@@ -532,6 +532,34 @@ func TestTheConfiguredServiceFolderIsSkippedEvenWithoutALeadingDot(t *testing.T)
 	}
 }
 
+// Containment reads the service folder's name without regard to case, because
+// that is how macOS and Windows open it. A walk reads it the same way, so a
+// file the walk reports is a file the vault will hand over.
+func TestTheServiceFolderIsSkippedInWhateverCaseItIsSpelled(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, "_NUMEN"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "_NUMEN", "notes.md"), []byte("# ours\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "real.md"), []byte("# theirs\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	opts := filesystem.Options{ServiceDir: "_numen"}
+	if got := walked(t, dir, opts); !slices.Equal(got, []string{"real.md"}) {
+		t.Errorf("walk found %v, want [real.md]", got)
+	}
+	src, err := filesystem.Open(dir, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := src.Read(t.Context(), "_NUMEN/notes.md"); err == nil {
+		t.Error("the application's folder was read as the vault's")
+	}
+}
+
 func walked(t *testing.T, root string, opts filesystem.Options) []string {
 	t.Helper()
 	src, err := filesystem.Open(root, opts)

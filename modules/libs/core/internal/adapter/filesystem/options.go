@@ -107,6 +107,13 @@ func (o Options) serviceDir() string {
 	return o.ServiceDir
 }
 
+// isService says whether one component of a path is the folder the application
+// keeps for itself. The name is compared without regard to case, which is how
+// macOS and Windows open it, and which is how containment reads it.
+func (o Options) isService(name string) bool {
+	return strings.EqualFold(name, o.serviceDir())
+}
+
 func (o Options) bookExtensions() []string {
 	if len(o.BookExtensions) == 0 {
 		return DefaultBookExtensions

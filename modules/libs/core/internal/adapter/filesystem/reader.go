@@ -152,7 +152,7 @@ func (s *VaultReader) List(ctx context.Context, folder string) ([]domain.Entry, 
 		rel := pathpkg.Join(folder, d.Name())
 		var kind domain.SourceKind
 		if d.IsDir() {
-			if d.Name() == s.opts.serviceDir() || s.ignored.MatchesPath(rel+"/") {
+			if s.opts.isService(d.Name()) || s.ignored.MatchesPath(rel+"/") {
 				continue
 			}
 		} else {
@@ -313,7 +313,7 @@ func (s *VaultReader) leftAlone(path string) error {
 // and the watcher both ask it, so neither of them looks where the other does
 // not.
 func (s *VaultReader) skipped(path, name string) bool {
-	return name == s.opts.serviceDir() || s.ignored.MatchesPath(path+"/")
+	return s.opts.isService(name) || s.ignored.MatchesPath(path+"/")
 }
 
 // holds reports which kind of source a path inside this vault is, and whether a
@@ -331,7 +331,7 @@ func (s *VaultReader) holds(path string) (domain.SourceKind, bool) {
 		return "", false
 	}
 	for dir := pathpkg.Dir(path); dir != "." && dir != "/"; dir = pathpkg.Dir(dir) {
-		if pathpkg.Base(dir) == s.opts.serviceDir() || s.ignored.MatchesPath(dir+"/") {
+		if s.opts.isService(pathpkg.Base(dir)) || s.ignored.MatchesPath(dir+"/") {
 			return "", false
 		}
 	}

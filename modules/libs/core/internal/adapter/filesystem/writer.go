@@ -416,8 +416,7 @@ const TrashDir = ".trash"
 func (w *VaultWriter) ours(path string) bool {
 	clean := pathpkg.Clean(filepath.ToSlash(path))
 	for dir := pathpkg.Dir(clean); dir != "." && dir != "/"; dir = pathpkg.Dir(dir) {
-		switch pathpkg.Base(dir) {
-		case w.opts.serviceDir(), TrashDir:
+		if name := pathpkg.Base(dir); w.opts.isService(name) || strings.EqualFold(name, TrashDir) {
 			return true
 		}
 	}
@@ -437,7 +436,7 @@ func (w *VaultWriter) reachable(path string) bool {
 		return false
 	}
 	for dir := pathpkg.Dir(clean); dir != "." && dir != "/"; dir = pathpkg.Dir(dir) {
-		if pathpkg.Base(dir) == w.opts.serviceDir() {
+		if w.opts.isService(pathpkg.Base(dir)) {
 			return false
 		}
 	}
@@ -455,7 +454,7 @@ func (w *VaultWriter) holds(path string) bool {
 		return false
 	}
 	for dir := pathpkg.Dir(clean); dir != "." && dir != "/"; dir = pathpkg.Dir(dir) {
-		if pathpkg.Base(dir) == w.opts.serviceDir() {
+		if w.opts.isService(pathpkg.Base(dir)) {
 			return false
 		}
 	}
