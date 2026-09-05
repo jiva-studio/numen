@@ -341,11 +341,11 @@ func TestAFileIsFollowedThroughBeingReplaced(t *testing.T) {
 	// A file of another name in the same folder is not this file. What the
 	// replacing left waiting is taken first: one message stands for whatever
 	// happened before it was read.
-	for standing := true; standing; {
+	for draining := true; draining; {
 		select {
 		case <-moved:
 		case <-time.After(200 * time.Millisecond):
-			standing = false
+			draining = false
 		}
 	}
 	if err := os.WriteFile(filepath.Join(dir, "other"), []byte("no"), 0o644); err != nil {
