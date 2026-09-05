@@ -327,8 +327,8 @@ func TestAFileRewrittenSinceItWasReadIsLitFromItself(t *testing.T) {
 	}
 	start, length := run(t, book, "Afterword")
 
-	standing := litOn(t, u, documentPath, start, length)
-	if len(standing) == 0 {
+	lit := litOn(t, u, documentPath, start, length)
+	if len(lit) == 0 {
 		t.Fatal("the reading lit nothing, so rewriting the file proves nothing")
 	}
 
