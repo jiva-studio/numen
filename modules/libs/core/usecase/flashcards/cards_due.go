@@ -93,6 +93,22 @@ type CountCardsDue struct {
 	Now     port.Clock
 }
 
+// NewCountCardsDue is what a vault's front door is counted through: what stands
+// in the vault, where the answers have left each card face, which preset each
+// deck is scheduled by, where one day of review gives way to the next, and what
+// time it is.
+//
+// All five are named here because a count short of any one of them is a number
+// on a person's front door that no sitting behind it agrees with.
+func NewCountCardsDue(
+	faces ListCardFaces, schedules Schedules, presets Presets,
+	day review.Day, now port.Clock,
+) CountCardsDue {
+	return CountCardsDue{
+		CardFaces: faces, Schedules: schedules, Presets: presets, Day: day, Now: now,
+	}
+}
+
 // Execute counts one vault.
 //
 // The log is read once here and the schedules worked out from it, so the count

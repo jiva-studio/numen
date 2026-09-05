@@ -105,7 +105,7 @@ func (u ListCardFaces) Decks(ctx context.Context, v domain.Vault) ([]string, err
 // was wrong with it is the deck's own problem, and the editor is where it is
 // settled.
 func (u ListCardFaces) Of(ctx context.Context, v domain.Vault, paths []string) []CardFace {
-	read := cards.Read{Readers: u.Readers, Links: u.Links}
+	read := cards.NewRead(u.Readers, u.Links)
 	stencils := make(map[string]format.Stencil)
 	var out []CardFace
 	for _, path := range paths {

@@ -277,7 +277,7 @@ func (a *API) AnswerCard(
 	}
 
 	on := review.CardFaceID{Card: r.Msg.GetMark(), Face: r.Msg.GetFace()}
-	record := flashcards.Record{Run: run, Now: a.now}
+	record := flashcards.NewRecord(run, a.now)
 	given, err := record.Answer(ctx, on, rating(r.Msg.GetRating()),
 		time.Duration(r.Msg.GetTookMs())*time.Millisecond)
 	if err != nil {
@@ -319,7 +319,7 @@ func (a *API) TakeBackAnswer(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-	record := flashcards.Record{Run: run, Now: a.now}
+	record := flashcards.NewRecord(run, a.now)
 	if _, err := record.TakeBack(ctx, r.Msg.GetAnswer()); err != nil {
 		// An answer with no identifier is the caller's mistake; a line that
 		// could not be written is not.

@@ -73,10 +73,8 @@ func (u MarkCards) Execute(ctx context.Context, v domain.Vault) (MarkCardsResult
 		return MarkCardsResult{}, err
 	}
 
-	read := cards.Read{Readers: u.Readers, Links: u.Links}
-	write := cards.Write{
-		Readers: u.Readers, Writers: u.Writers, Links: u.Links, Index: u.Index, Now: u.Now,
-	}
+	read := cards.NewRead(u.Readers, u.Links)
+	write := cards.NewWrite(u.Readers, u.Writers, u.Links, u.Index, u.Now)
 	var out MarkCardsResult
 	for _, path := range paths {
 		deck, err := read.Deck(ctx, v, path)
