@@ -34,7 +34,9 @@ export default tseslint.config(
       globals: globals.browser,
       parserOptions: {
         // The files the build's tsconfig does not name.
-        projectService: { allowDefaultProject: ['eslint.config.js'] },
+        projectService: {
+          allowDefaultProject: ['eslint.config.js', 'vitest.config.ts', '.storybook/*.ts'],
+        },
         tsconfigRootDir: import.meta.dirname,
         extraFileExtensions: ['.vue'],
       },
@@ -160,7 +162,7 @@ export default tseslint.config(
   // A test and a story are code that ships to nobody, and both reach for the
   // browser on purpose.
   {
-    files: ['**/*.test.ts', '**/*.stories.ts'],
+    files: ['**/*.test.ts', '**/*.stories.ts', '.storybook/**'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',

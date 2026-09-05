@@ -219,4 +219,5 @@ jobs:
           npm test --prefix modules/libs/wire
           npm run test:unit --prefix modules/apps/desktop/ui -- --coverage
           npm run test:stories --prefix modules/apps/desktop/ui
-          npm test --prefix modules/apps/desktop/flashcards
+          npm run test:unit --prefix modules/apps/desktop/flashcards -- --coverage
+          npm run test:stories --prefix modules/apps/desktop/flashcards
