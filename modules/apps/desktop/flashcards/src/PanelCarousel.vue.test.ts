@@ -3,8 +3,8 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
-import Beside from './Beside.vue'
-import type { Where } from './Beside.vue'
+import PanelCarousel from './PanelCarousel.vue'
+import type { Where } from './PanelCarousel.vue'
 
 /**
  * The three on the screen. jsdom lays nothing out, so the strip is given the
@@ -12,18 +12,18 @@ import type { Where } from './Beside.vue'
  * window, with a space between each pair.
  */
 const strip = (at: Where = 'here') => {
-  const one = mount(Beside, {
+  const one = mount(PanelCarousel, {
     props: { at },
     slots: {
       before: '<p>the reading</p>',
       default: '<p>the card</p>',
-      other: '<p>the chat</p>',
+      after: '<p>the chat</p>',
     },
   })
-  const window_ = one.find('.beside').element as HTMLElement
+  const window_ = one.find('.carousel').element as HTMLElement
   Object.defineProperty(window_, 'scrollWidth', { value: 1040, configurable: true })
   Object.defineProperty(window_, 'clientWidth', { value: 600, configurable: true })
-  Object.defineProperty(one.find('.beside__one').element, 'offsetLeft', {
+  Object.defineProperty(one.find('.carousel__here').element, 'offsetLeft', {
     value: 220,
     configurable: true,
   })
@@ -65,19 +65,19 @@ describe('a card with a panel on either side of it', () => {
   // not what reads the screen aloud.
   it('puts whichever is out of the window beyond reach', () => {
     const reading = strip('before').one
-    expect(reading.find('.beside__before').attributes('inert')).toBeUndefined()
-    expect(reading.find('.beside__one').attributes('inert')).toBeDefined()
-    expect(reading.find('.beside__other').attributes('inert')).toBeDefined()
+    expect(reading.find('.carousel__before').attributes('inert')).toBeUndefined()
+    expect(reading.find('.carousel__here').attributes('inert')).toBeDefined()
+    expect(reading.find('.carousel__after').attributes('inert')).toBeDefined()
 
     const card = strip('here').one
-    expect(card.find('.beside__before').attributes('inert')).toBeDefined()
-    expect(card.find('.beside__one').attributes('inert')).toBeUndefined()
-    expect(card.find('.beside__other').attributes('inert')).toBeDefined()
+    expect(card.find('.carousel__before').attributes('inert')).toBeDefined()
+    expect(card.find('.carousel__here').attributes('inert')).toBeUndefined()
+    expect(card.find('.carousel__after').attributes('inert')).toBeDefined()
 
     const chat = strip('after').one
-    expect(chat.find('.beside__before').attributes('inert')).toBeDefined()
-    expect(chat.find('.beside__one').attributes('inert')).toBeDefined()
-    expect(chat.find('.beside__other').attributes('inert')).toBeUndefined()
+    expect(chat.find('.carousel__before').attributes('inert')).toBeDefined()
+    expect(chat.find('.carousel__here').attributes('inert')).toBeDefined()
+    expect(chat.find('.carousel__after').attributes('inert')).toBeUndefined()
   })
 
   // Asked for by a key rather than a hand, the strip is taken there rather than
@@ -99,7 +99,7 @@ describe('a card with a panel on either side of it', () => {
   // strip goes. The space the three stand apart by is in them already.
   it('stops where the card stands and not at a width worked out', async () => {
     const { one, window_ } = strip('before')
-    Object.defineProperty(one.find('.beside__one').element, 'offsetLeft', {
+    Object.defineProperty(one.find('.carousel__here').element, 'offsetLeft', {
       value: 300,
       configurable: true,
     })

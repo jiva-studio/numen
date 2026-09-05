@@ -7,8 +7,8 @@
  */
 import { Button, KeyCap, keyChord } from '@numen/ui'
 
-import Beside from './Beside.vue'
-import type { Where } from './Beside.vue'
+import PanelCarousel from './PanelCarousel.vue'
+import type { Where } from './PanelCarousel.vue'
 import Card from './Card.vue'
 import { ahead, called, deckName, grades } from './core'
 import { ASKS, READS } from './keying'
@@ -74,7 +74,7 @@ defineEmits<{
 
     <!-- The card is what changes under a person as they work, so a reader that
          is not looking at the screen is told when the answer appears. -->
-    <Beside :at="at" @update:at="(where: Where) => $emit('update:at', where)">
+    <PanelCarousel :at="at" @update:at="(where: Where) => $emit('update:at', where)">
       <template #before><slot name="reading" /></template>
       <div class="session__card" aria-live="polite">
         <Card
@@ -85,8 +85,8 @@ defineEmits<{
           @read="(named: string) => $emit('read', named)"
         />
       </div>
-      <template #other><slot name="panel" /></template>
-    </Beside>
+      <template #after><slot name="panel" /></template>
+    </PanelCarousel>
 
     <footer class="session__answers">
       <!-- The key first and the word after it: a person answering with the

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * One thing, and a second and a third beside it that are scrolled to.
+ * Three panels in a row, one of them in the window at a time.
  *
  * The three are a strip the width of all of them, and which of them is in the
  * window is where that strip is scrolled to. A hand takes it there and lets go
@@ -190,22 +190,22 @@ onBeforeUnmount(() => {
 <template>
   <div
     ref="window"
-    class="beside"
-    :class="{ 'beside--taking': taking }"
+    class="carousel"
+    :class="{ 'carousel--taking': taking }"
     @scroll="scrolled"
     @pointerdown="took"
     @pointermove="takes"
     @pointerup="letGo"
     @pointercancel="letGo"
   >
-    <div class="beside__before" :inert="at !== 'before' || undefined">
+    <div class="carousel__before" :inert="at !== 'before' || undefined">
       <slot name="before" />
     </div>
-    <div ref="middle" class="beside__one" :inert="at !== 'here' || undefined">
+    <div ref="middle" class="carousel__here" :inert="at !== 'here' || undefined">
       <slot />
     </div>
-    <div class="beside__other" :inert="at !== 'after' || undefined">
-      <slot name="other" />
+    <div class="carousel__after" :inert="at !== 'after' || undefined">
+      <slot name="after" />
     </div>
   </div>
 </template>
@@ -216,8 +216,8 @@ onBeforeUnmount(() => {
 
    Positioned, so that where the middle stands is measured from the strip and
    the stops are the layout's own answer. */
-.beside {
-  --beside-other: min(28rem, 100%);
+.carousel {
+  --carousel-side: min(28rem, 100%);
 
   position: relative;
   display: flex;
@@ -242,39 +242,39 @@ onBeforeUnmount(() => {
   touch-action: pan-y;
 }
 
-.beside::-webkit-scrollbar {
+.carousel::-webkit-scrollbar {
   display: none;
 }
 
 /* A hand on the strip is where the strip is, and nothing pulls it to a stop of
    its own while that hand is down. */
-.beside--taking {
+.carousel--taking {
   scroll-behavior: auto;
   cursor: grabbing;
   user-select: none;
 }
 
-.beside__before,
-.beside__one,
-.beside__other {
+.carousel__before,
+.carousel__here,
+.carousel__after {
   display: flex;
   min-inline-size: 0;
 }
 
-.beside__one {
+.carousel__here {
   flex: 0 0 100%;
 }
 
-.beside__before,
-.beside__other {
-  flex: 0 0 var(--beside-other);
+.carousel__before,
+.carousel__after {
+  flex: 0 0 var(--carousel-side);
 }
 
 /* Too narrow for two of them at once: either side takes the window, and the
    middle is scrolled out of it rather than squeezed into what is left. */
 @media (max-width: 68rem) {
-  .beside {
-    --beside-other: 100%;
+  .carousel {
+    --carousel-side: 100%;
   }
 }
 </style>

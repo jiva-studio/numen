@@ -4,7 +4,7 @@ import type { VueWrapper } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
 import Session from './Session.vue'
-import type { Where } from './Beside.vue'
+import type { Where } from './PanelCarousel.vue'
 import { grades } from './core'
 import type { CardFace } from './core'
 
@@ -60,8 +60,8 @@ describe('the way into the panel', () => {
   // and the strip is scrolled from one to the next in that order.
   it('stands the reading before the card and the conversation after it', () => {
     const one = sitting()
-    expect(one.find('.beside__before').text()).toContain('the reading')
-    expect(one.find('.beside__other').text()).toContain('the panel')
+    expect(one.find('.carousel__before').text()).toContain('the reading')
+    expect(one.find('.carousel__after').text()).toContain('the panel')
   })
 
   // A link inside a card is the other way in, and what it names goes with it.
@@ -105,11 +105,11 @@ describe('a sitting with the panel up', () => {
   // which it wants.
   it('tells what stands the two beside each other which of them is wanted', () => {
     const up = sitting({ at: 'after' })
-    expect(up.find('.beside__other').attributes('inert')).toBeUndefined()
-    expect(up.find('.beside__one').attributes('inert')).toBeDefined()
+    expect(up.find('.carousel__after').attributes('inert')).toBeUndefined()
+    expect(up.find('.carousel__here').attributes('inert')).toBeDefined()
 
     const down = sitting({ at: 'here' })
-    expect(down.find('.beside__other').attributes('inert')).toBeDefined()
-    expect(down.find('.beside__one').attributes('inert')).toBeUndefined()
+    expect(down.find('.carousel__after').attributes('inert')).toBeDefined()
+    expect(down.find('.carousel__here').attributes('inert')).toBeUndefined()
   })
 })
