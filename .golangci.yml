@@ -80,9 +80,9 @@ linters:
     rules:
       # A test builds the world it needs, names its own clock, and fails by
       # panicking as readily as by returning. What it opens is closed when the
-      # process it opened for ends.
+      # process it opened for ends, and it switches over the cases it is about.
       - path: (_test\.go|(^|/)internal/testsupport/)
-        linters: [forbidigo, errcheck, noctx, contextcheck, bodyclose]
+        linters: [forbidigo, errcheck, noctx, contextcheck, bodyclose, exhaustive]
 
       # What was taken is let go, and the kernel drops a lock and a model's
       # memory however the process ends. What letting go could not do is nobody's

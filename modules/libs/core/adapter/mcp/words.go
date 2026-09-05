@@ -65,6 +65,8 @@ func said(reason v1.Refusal) string {
 		return "this deck is larger than a deck is read at"
 	case v1.Refusal_REFUSAL_NOT_A_PRESET:
 		return "this note is not a preset"
+	case v1.Refusal_REFUSAL_STALE:
+		return "this file is no longer the one that was read, and nothing was written: read it again and write from what is there now"
 	}
 	return reason.String()
 }

@@ -627,7 +627,7 @@ func TestALinkWrittenOverAnEditNobodySawIsRefused(t *testing.T) {
 	out := added(t, session, map[string]any{
 		"from": "Heat.md", "to": "Work", "role": "jump", "fingerprint": stale,
 	})
-	if len(out) != 1 || !strings.Contains(out[0].Refused, "STALE") {
+	if len(out) != 1 || !strings.Contains(out[0].Refused, "no longer the one that was read") {
 		t.Errorf("link_add over an edit nobody saw: %+v", out)
 	}
 
