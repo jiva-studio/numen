@@ -113,6 +113,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 		}
 		settled, err := u.Notes.Settle(ctx, v, source.Path, relocated(from, to, source.Path), pointing[source.Path])
 		res.Repaired = append(res.Repaired, settled.Repaired...)
+		res.Dangling = append(res.Dangling, settled.Dangling...)
 		if err != nil {
 			return res, err
 		}

@@ -539,7 +539,12 @@ type MoveResult struct {
 	// Where it is now.
 	To string `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
 	// The notes whose link stopped resolving and was written again, by name.
-	Repaired      []string `protobuf:"bytes,3,rep,name=repaired,proto3" json:"repaired,omitempty"`
+	Repaired []string `protobuf:"bytes,3,rep,name=repaired,proto3" json:"repaired,omitempty"`
+	// The notes whose link stopped resolving and could not be written again, by
+	// name. Each of them still points at the name the file left, and nothing
+	// comes back to it: a move that reports only what it repaired reports a
+	// vault it did not leave behind.
+	Dangling      []string `protobuf:"bytes,5,rep,name=dangling,proto3" json:"dangling,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -591,6 +596,13 @@ func (x *MoveResult) GetTo() string {
 func (x *MoveResult) GetRepaired() []string {
 	if x != nil {
 		return x.Repaired
+	}
+	return nil
+}
+
+func (x *MoveResult) GetDangling() []string {
+	if x != nil {
+		return x.Dangling
 	}
 	return nil
 }
@@ -849,12 +861,13 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"unlevelledB\b\n" +
 	"\x06_movedB\n" +
 	"\n" +
-	"\b_refusal\"^\n" +
+	"\b_refusal\"z\n" +
 	"\n" +
 	"MoveResult\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\x12\x1a\n" +
-	"\brepaired\x18\x03 \x03(\tR\brepairedJ\x04\b\x04\x10\x05R\n" +
+	"\brepaired\x18\x03 \x03(\tR\brepaired\x12\x1a\n" +
+	"\bdangling\x18\x05 \x03(\tR\bdanglingJ\x04\b\x04\x10\x05R\n" +
 	"retargeted\"A\n" +
 	"\x11RemoveFileRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
