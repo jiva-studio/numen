@@ -29,7 +29,7 @@ const held = () =>
     empty: ref(false),
     menu: ref(null),
     creatable: ['child'],
-    mostParts: () => 6,
+    mostParts: ref(6),
     typeOf: () => 'note',
     activate: () => {},
     made: async () => {},

@@ -5,7 +5,7 @@
  * A gesture names a node by its ticket. This is the edge where a ticket becomes
  * the path the vault is asked about, and past it every note is a path.
  */
-import { computed, ref, shallowRef, watch } from 'vue'
+import { computed, ref, shallowRef, watch, type Ref } from 'vue'
 import type {
   MenuOpening,
   PlexNeighbourhood,
@@ -42,15 +42,15 @@ export interface Making {
 export interface Plexing {
   readonly makes: Making
   /** Whether the window has anything true to draw at all. */
-  ready(): boolean
+  readonly ready: Readonly<Ref<boolean>>
   /**
-   * Whether a node hangs the parts of its note under the box. While it answers
+   * Whether a node hangs the parts of its note under the box. While it stands
    * false the vault is asked nothing about what a note is divided into, and
    * every node hangs nothing.
    */
-  hangs(): boolean
+  readonly hangs: Readonly<Ref<boolean>>
   /** How many of those parts stand under a node at once. The rest are wound to. */
-  parts(): number
+  readonly parts: Readonly<Ref<number>>
   /**
    * A note opened in a tab of its own, under the name the picture gives it, in
    * the editor made for what it is. A line is a place inside it.
@@ -69,12 +69,12 @@ export interface Plexing {
    */
   runs(id: string, path: string, title: string): void
   /** The note the vault opens with, as it was last answered. */
-  opening(): string
+  readonly opening: Readonly<Ref<string>>
   /**
    * The notes the window is carrying over the picture, and none while it
    * carries nothing.
    */
-  carried(): readonly string[]
+  readonly carried: Readonly<Ref<readonly string[]>>
   /** What could not be done, in words a person reads. */
   says(text: string): void
   /**
@@ -107,7 +107,7 @@ export function plexKind(host: Host, makes: () => View, deps: Plexing) {
     kind: PLEX,
     opens: (at) => {
       const held = plexing(makes(), deps)
-      const from = at || looking() || deps.opening()
+      const from = at || looking() || deps.opening.value
       if (from) void held.view.go(from)
       return held
     },
@@ -177,7 +177,7 @@ export function plexKind(host: Host, makes: () => View, deps: Plexing) {
     // it was already drawn in, and nothing else would ask.
     await Promise.all(
       all().map(async ({ held }) => {
-        const path = held.view.here.value || deps.opening()
+        const path = held.view.here.value || deps.opening.value
         if (path) await held.view.go(path)
         await held.reads()
       }),
@@ -197,7 +197,7 @@ export function plexing(view: View, deps: Plexing) {
    */
   const picture = computed<PlexNeighbourhood | null>(() => {
     const around = view.neighbourhood.value
-    if (!deps.ready() || !around) return null
+    if (!deps.ready.value || !around) return null
     const drawn = asPlex(around, tickets.of)
     tickets.keeps(drawn.nodes.map((node) => node.id))
     return drawn
@@ -205,7 +205,7 @@ export function plexing(view: View, deps: Plexing) {
 
   /** Whether the vault has been read and holds no note for this plex to draw. */
   const empty = computed(
-    () => deps.ready() && !view.here.value && !deps.opening() && !view.neighbourhood.value,
+    () => deps.ready.value && !view.here.value && !deps.opening.value && !view.neighbourhood.value,
   )
 
   /**
@@ -216,8 +216,8 @@ export function plexing(view: View, deps: Plexing) {
    */
   const carried = computed<readonly string[]>(() => {
     const here = view.here.value
-    if (!deps.ready() || !view.neighbourhood.value || !here) return []
-    return deps.carried().filter((path) => path !== here)
+    if (!deps.ready.value || !view.neighbourhood.value || !here) return []
+    return deps.carried.value.filter((path) => path !== here)
   })
 
   /** The menu on a node, for as long as it stands. */
@@ -257,7 +257,7 @@ export function plexing(view: View, deps: Plexing) {
     // is a part of prose. Only an ordinary note is asked about.
     const paths = drawn.value.filter((path) => (types.value.get(path) ?? 'note') === 'note')
     const mine = reading.ask()
-    if (!deps.hangs() || paths.length === 0) {
+    if (!deps.hangs.value || paths.length === 0) {
       parts.value = new Map()
       return
     }
@@ -276,11 +276,11 @@ export function plexing(view: View, deps: Plexing) {
 
   // The setting turned: what each node hangs is asked for again, so a picture
   // already drawn hangs what the setting now says.
-  watch(() => deps.hangs(), () => void reads())
+  watch(deps.hangs, () => void reads())
 
   /** The parts of the note a ticket names, and none while the setting is off. */
   const partsOf = (node: string): readonly PlexPart[] =>
-    deps.hangs() ? (parts.value.get(tickets.note(node) ?? '') ?? []) : []
+    deps.hangs.value ? (parts.value.get(tickets.note(node) ?? '') ?? []) : []
 
   /** A node chosen: the plex travels there, and the picture is asked for again. */
   const activate = (node: string) => {
@@ -417,7 +417,7 @@ export function plexing(view: View, deps: Plexing) {
     creatable: deps.creatable,
     typeOf,
     partsOf,
-    mostParts: () => deps.parts(),
+    mostParts: deps.parts,
     reads,
     entered,
     activate,

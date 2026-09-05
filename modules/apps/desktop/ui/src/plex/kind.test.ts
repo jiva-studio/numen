@@ -112,9 +112,9 @@ const tab = (at: string, related: readonly string[] = [], takes = true, types: T
   const insides: (readonly string[])[] = []
   const deps: Plexing = {
     makes: vault.makes,
-    ready: () => true,
-    hangs: () => hangs.value,
-    parts: () => 6,
+    ready: ref(true),
+    hangs,
+    parts: ref(6),
     opens: (path, title, showing, line) => {
       opened.push([path, title, showing])
       if (line !== undefined) entered.push([path, line])
@@ -126,9 +126,9 @@ const tab = (at: string, related: readonly string[] = [], takes = true, types: T
     },
     asks: (text) => asked.push(text),
     runs: (id, path, title) => ran.push([id, path, title]),
-    opening: () => 'Opening.md',
+    opening: ref('Opening.md'),
     first: async () => 'Opening.md',
-    carried: () => carrying.value,
+    carried: carrying,
     says: (text) => said.push(text),
     writes: async () => {
       wrote.push(writes.value)
@@ -274,16 +274,16 @@ describe('a plex drawing nothing', () => {
     }
     return plexing(view as unknown as View, {
       makes: making().makes,
-      ready: () => true,
-      hangs: () => true,
-      parts: () => 6,
+      ready: ref(true),
+      hangs: ref(true),
+      parts: ref(6),
       opens: () => {},
       inside: async () => new Map(),
       asks: () => {},
       runs: () => {},
-      opening: () => '',
+      opening: ref(''),
       first: async () => '',
-      carried: () => [],
+      carried: ref([]),
       says: () => {},
       writes: async () => '',
       creatable: ['parent', 'child', 'jump'],
@@ -296,11 +296,11 @@ describe('a plex drawing nothing', () => {
   })
 
   it('is not an empty vault while the vault is still being read', () => {
-    expect(plex({ ready: () => false }).empty.value).toBe(false)
+    expect(plex({ ready: ref(false) }).empty.value).toBe(false)
   })
 
   it('is not an empty vault while the first answer is on its way', () => {
-    expect(plex({ opening: () => 'Opening.md' }).empty.value).toBe(false)
+    expect(plex({ opening: ref('Opening.md') }).empty.value).toBe(false)
   })
 
   it('is not an empty vault once the plex stands on a note', () => {
@@ -365,16 +365,16 @@ describe('the picture', () => {
     const plex = viewOn('Root.md')
     const held = plexing(plex.view, {
       makes: making().makes,
-      ready: () => false,
-      hangs: () => true,
-      parts: () => 6,
+      ready: ref(false),
+      hangs: ref(true),
+      parts: ref(6),
       opens: () => {},
       inside: async () => new Map(),
       asks: () => {},
       runs: () => {},
-      opening: () => '',
+      opening: ref(''),
       first: async () => '',
-      carried: () => ['Entropy.md'],
+      carried: ref(['Entropy.md']),
       says: () => {},
       writes: async () => '',
       creatable: ['parent', 'child', 'jump'],
@@ -540,16 +540,16 @@ describe('the parts a node hangs', () => {
     const one = tab('Root.md')
     const plex = plexing(one.held.view, {
       makes: making().makes,
-      ready: () => true,
-      hangs: () => true,
-      parts: () => 6,
+      ready: ref(true),
+      hangs: ref(true),
+      parts: ref(6),
       opens: () => {},
       inside: () => new Promise((done) => answers.push(done)),
       asks: () => {},
       runs: () => {},
-      opening: () => 'Root.md',
+      opening: ref('Root.md'),
       first: async () => 'Root.md',
-      carried: () => [],
+      carried: ref([]),
       says: () => {},
       writes: async () => '',
       creatable: ['parent', 'child', 'jump'],
@@ -735,16 +735,16 @@ const inVault = async (focus: string, beside: readonly Beside[] = []) => {
   })
   const held = plexing(view, {
     makes: vault.makes,
-    ready: () => true,
-    hangs: () => true,
-    parts: () => 6,
+    ready: ref(true),
+    hangs: ref(true),
+    parts: ref(6),
     opens: (path, title, showing) => opened.push([path, title, showing]),
     inside: async () => new Map(),
     asks: () => {},
     runs: (id, path, title) => ran.push([id, path, title]),
-    opening: () => '',
+    opening: ref(''),
     first: async () => '',
-    carried: () => [],
+    carried: ref([]),
     says: () => {},
     writes: async () => '',
     creatable: ['parent', 'child', 'jump'],
@@ -1045,7 +1045,7 @@ const window = (opening = 'Opening.md') => {
   const hangs = ref(true)
   /** Every question the vault was asked about what the notes hold. */
   const insides: (readonly string[])[] = []
-  let first = opening
+  const first = ref(opening)
 
   const makes = () => {
     const view = viewOn('')
@@ -1055,9 +1055,9 @@ const window = (opening = 'Opening.md') => {
   const held = windowing()
   const plexes = plexKind(held.host, makes, {
     makes: making().makes,
-    ready: () => true,
-    hangs: () => hangs.value,
-    parts: () => 6,
+    ready: ref(true),
+    hangs,
+    parts: ref(6),
     opens: () => {},
     inside: async (paths) => {
       insides.push(paths)
@@ -1065,12 +1065,12 @@ const window = (opening = 'Opening.md') => {
     },
     asks: () => {},
     runs: () => {},
-    opening: () => first,
+    opening: first,
     first: async () => {
-      asked.push(first)
-      return first
+      asked.push(first.value)
+      return first.value
     },
-    carried: () => [],
+    carried: ref([]),
     says: () => {},
     writes: async () => '',
     creatable: ['parent', 'child', 'jump'],
@@ -1088,7 +1088,7 @@ const window = (opening = 'Opening.md') => {
   const shuts = (id: string) => held.shut(id)
   /** The vault gained a note, which is what it opens with from now on. */
   const gains = (path: string) => {
-    first = path
+    first.value = path
   }
   const onScreen = () => panesOf(held.layout.value.root).flatMap((pane) => pane.tabs)
   /** The tab the person is in, which is the active tab of the pane they are in. */

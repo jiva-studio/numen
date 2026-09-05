@@ -27,7 +27,7 @@ const props = defineProps<{ held: Held }>()
 const type = useTypeSize()
 const options = computed(() => ({
   ...optionsForType(type.value),
-  maxParts: props.held.mostParts(),
+  maxParts: props.held.mostParts.value,
 }))
 
 /**
