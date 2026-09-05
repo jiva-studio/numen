@@ -6,7 +6,7 @@
  * few things one kind asks of another. What a tab of a kind holds is that
  * kind's own.
  */
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { conversation, Notices, Workspace } from '@numen/ui'
 import type { Notice } from '@numen/ui'
 import '@numen/ui/styles.css'
@@ -352,7 +352,7 @@ const where = (): Where => {
  * offered on what has been made from it, so this is asked as the file comes in
  * front and again whenever a run over it is asked for.
  */
-const makes = ref<ReadonlyMap<string, Carries>>(new Map())
+const makes = shallowRef<ReadonlyMap<string, Carries>>(new Map())
 
 /** What one file carries, asked of the application and kept. */
 const carrying = async (path: string) => {

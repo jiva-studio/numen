@@ -5,7 +5,7 @@
  * A gesture names a node by its ticket. This is the edge where a ticket becomes
  * the path the vault is asked about, and past it every note is a path.
  */
-import { computed, ref, watch } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 import type {
   MenuOpening,
   PlexNeighbourhood,
@@ -224,7 +224,7 @@ export function plexing(view: View, deps: Plexing) {
   const menu = ref<Asked | null>(null)
 
   /** What each note this plex draws is divided into, by the path it stands at. */
-  const parts = ref<ReadonlyMap<string, readonly PlexPart[]>>(new Map())
+  const parts = shallowRef<ReadonlyMap<string, readonly PlexPart[]>>(new Map())
 
   /** Which of three each note on the picture is, by the path it stands at. */
   const types = computed<ReadonlyMap<string, NoteType>>(() => {

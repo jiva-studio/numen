@@ -5,7 +5,7 @@
  * is that note's title. So a note is asked what it is called again once what
  * was typed into it has landed.
  */
-import { ref, watch } from 'vue'
+import { shallowRef, watch } from 'vue'
 import type { editing } from './editing'
 
 /** The notes of the whole window, as far as this reads them. */
@@ -27,7 +27,7 @@ export function naming(vault: Called, notes: Notes) {
    * What each note is called, as the vault last said it, under the identity its
    * tab opened under. A note keeps what it is called wherever its file goes.
    */
-  const titles = ref<ReadonlyMap<string, string>>(new Map())
+  const titles = shallowRef<ReadonlyMap<string, string>>(new Map())
 
   const calls = (id: string, name: string): void => {
     titles.value = new Map(titles.value).set(id, name)

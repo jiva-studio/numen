@@ -6,7 +6,7 @@
  * from the window entirely, is not time spent reading it. What that comes to is
  * kept here; nothing here draws anything.
  */
-import { computed, ref, type ComputedRef, type Ref, type ShallowRef } from 'vue'
+import { computed, ref, shallowRef, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 
 /** What the corner keeps of a person's attention. */
 export interface Held {
@@ -33,8 +33,8 @@ export function useHeld(
   clock: () => number,
   hidden: () => boolean,
 ): Held {
-  const away = ref<ReadonlySet<string>>(new Set())
-  const arrived = ref<ReadonlyMap<string, number>>(new Map())
+  const away = shallowRef<ReadonlySet<string>>(new Set())
+  const arrived = shallowRef<ReadonlyMap<string, number>>(new Map())
   const now = ref(clock())
 
   /** Whether a pointer is on the stack, and whether the keyboard is in it. */

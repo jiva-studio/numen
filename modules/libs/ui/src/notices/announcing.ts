@@ -5,7 +5,7 @@
  * Both regions are emptied and filled again a tick later. Two changes can land
  * inside one tick, and the second reads out everything neither has read yet.
  */
-import { nextTick, onMounted, ref, watch, type Ref } from 'vue'
+import { nextTick, onMounted, ref, shallowRef, watch, type Ref } from 'vue'
 import type { Notice } from './notice'
 
 /** What each card reads out as. */
@@ -27,7 +27,7 @@ export function useAnnouncer(drawn: () => readonly Notice[]): Announcer {
   const cried = ref('')
 
   /** The words each card was last read out by. */
-  const announced = ref<ReadonlyMap<string, string>>(new Map())
+  const announced = shallowRef<ReadonlyMap<string, string>>(new Map())
   /** Whether both regions have stood empty, which is what makes them read. */
   let listening = false
   /** Which reading is the one in hand, and what is waiting to be read out. */

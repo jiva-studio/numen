@@ -8,7 +8,7 @@
  *
  * It takes no room from what it covers, and what each card says is the caller's.
  */
-import { computed, nextTick, ref, useTemplateRef, watch, watchEffect } from 'vue'
+import { computed, nextTick, ref, shallowRef, useTemplateRef, watch, watchEffect } from 'vue'
 import Activity from '../activity/Activity.vue'
 import Announce from './Announce.vue'
 import { remainingWord } from '../activity/tally'
@@ -67,7 +67,7 @@ const emit = defineEmits<{
 }>()
 
 /** How fast each count is moving. This is the clock the rate is read against. */
-const moving = ref<ReadonlyMap<string, Movement>>(new Map())
+const moving = shallowRef<ReadonlyMap<string, Movement>>(new Map())
 
 const stack = useTemplateRef<HTMLElement>('stack')
 

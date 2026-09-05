@@ -6,7 +6,7 @@
  * changes. A line about work names a place in a source and opens it; a link
  * inside an answer names a place in a source or a note, and opens either.
  */
-import { computed, ref, watch } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 import { pointsAtNote, wikilinksIn, type Conversation, type Turn } from '@numen/ui'
 import { same, spotOf, spotsIn } from './places'
 import type { Stretch } from '../core'
@@ -64,7 +64,7 @@ export function talking(talk: Conversation, deps: Talking) {
    * nothing is held as the empty path, which is what draws the link as not
    * resolving.
    */
-  const landed = ref<ReadonlyMap<string, string>>(new Map())
+  const landed = shallowRef<ReadonlyMap<string, string>>(new Map())
   const asking = new Set<string>()
 
   /** Every address an answer points at, asked once each as they arrive. */
