@@ -24,6 +24,7 @@ import { reading } from './session/reading'
 import { screens } from './screens'
 import { around } from './session/reading/core'
 import { core as agent } from './session/agent/core'
+import { WORDS } from './session/agent/words'
 import type { Grade, VaultCardsDue } from './core'
 import type { Report } from './session/session'
 
@@ -294,7 +295,7 @@ export const useWindow = () => {
         unreachable.value = said.unreachable
       })
       .catch(() => {
-        unreachable.value = 'The agent could not be reached.'
+        unreachable.value = WORDS.unreachable
       })
     // A deck written or a card changed underneath the window is counted again
     // without a person asking. A sitting is left alone: its cards were laid out
