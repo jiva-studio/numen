@@ -50,14 +50,31 @@ var owed = map[string][]string{
 	"mobile/bind": {"usecase/vault"},
 }
 
-// An application is served by the core and does none of its work, and no
-// application reaches another: what two of them share is a library.
+// standing is a file of the applications, under the package it belongs to.
+type standing struct {
+	at   string
+	in   string
+	file *ast.File
+}
+
+// named are files every walk below has to have reached, one from each
+// application. A count says how much was read and never what: the phone is a
+// module of its own, and a walk that stopped at the desktop's border would
+// clear any floor the desktop's own files fill.
+var named = []string{
+	"desktop/cmd/numen/main.go",
+	"desktop/internal/adapter/claudecode/claudecode.go",
+	"mobile/bind/mobile.go",
+}
+
+// walked is every hand-written Go file of the applications, parsed.
 //
 // A test file is left out: a test stands outside the package it exercises and
 // builds what stands in for the real thing.
-func TestNoApplicationDoesTheCoresWork(t *testing.T) {
-	var wrong []string
-	var read int
+func walked(t *testing.T) []standing {
+	t.Helper()
+
+	var found []standing
 	root := filepath.Join("..", "..", "..")
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() {
@@ -69,39 +86,66 @@ func TestNoApplicationDoesTheCoresWork(t *testing.T) {
 		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
 			return nil
 		}
-		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
 		if err != nil {
 			return err
 		}
-		from := within(root, path)
-		for _, one := range file.Imports {
-			to, err := strconv.Unquote(one.Path.Value)
-			if err != nil {
-				return err
-			}
-			switch {
-			case strings.HasPrefix(to, core):
-				read++
-				held := strings.TrimPrefix(to, core)
-				if assembled(held) || allowed(from, held) {
-					continue
-				}
-				wrong = append(wrong, from+" reaches "+held+
-					": an application is served by the core and does none of its work")
-			case strings.HasPrefix(to, apps):
-				read++
-				held := strings.TrimPrefix(to, apps)
-				if application(held) == application(from) {
-					continue
-				}
-				wrong = append(wrong, from+" reaches "+held+
-					": what two applications share is a library")
-			}
-		}
+		found = append(found, standing{
+			at:   filepath.ToSlash(strings.TrimPrefix(path, root+string(filepath.Separator))),
+			in:   within(root, path),
+			file: file,
+		})
 		return nil
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	// A walk that read nothing is a rule checked against nothing, and it
+	// passes. The floor is well under what the applications hold, and each
+	// application names a file besides.
+	if len(found) < 20 {
+		t.Fatalf("%d files read: the walk is not reading the applications", len(found))
+	}
+	for _, one := range named {
+		if !slices.ContainsFunc(found, func(held standing) bool { return held.at == one }) {
+			t.Fatalf("the walk did not read %s, so the rule stops before it", one)
+		}
+	}
+	return found
+}
+
+// An application is served by the core and does none of its work, and no
+// application reaches another: what two of them share is a library.
+func TestNoApplicationDoesTheCoresWork(t *testing.T) {
+	var wrong []string
+	var read int
+	for _, held := range walked(t) {
+		from := held.in
+		for _, one := range held.file.Imports {
+			to, err := strconv.Unquote(one.Path.Value)
+			if err != nil {
+				t.Fatal(err)
+			}
+			switch {
+			case strings.HasPrefix(to, core):
+				read++
+				reaches := strings.TrimPrefix(to, core)
+				if assembled(reaches) || allowed(from, reaches) {
+					continue
+				}
+				wrong = append(wrong, from+" reaches "+reaches+
+					": an application is served by the core and does none of its work")
+			case strings.HasPrefix(to, apps):
+				read++
+				reaches := strings.TrimPrefix(to, apps)
+				if application(reaches) == application(from) {
+					continue
+				}
+				wrong = append(wrong, from+" reaches "+reaches+
+					": what two applications share is a library")
+			}
+		}
 	}
 	for _, one := range wrong {
 		t.Error(one)
@@ -131,45 +175,19 @@ func logs(to string) bool { return logging[to[strings.LastIndex(to, "/")+1:]] }
 // window they are looking at. A logger would write to neither.
 func TestNoApplicationLogs(t *testing.T) {
 	var wrong []string
-	var read int
-	root := filepath.Join("..", "..", "..")
-	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
-		if err != nil || entry.IsDir() {
-			if entry != nil && entry.IsDir() && entry.Name() == "node_modules" {
-				return filepath.SkipDir
-			}
-			return err
-		}
-		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
-			return nil
-		}
-		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
-		if err != nil {
-			return err
-		}
-		read++
-		for _, one := range file.Imports {
+	for _, held := range walked(t) {
+		for _, one := range held.file.Imports {
 			to, err := strconv.Unquote(one.Path.Value)
 			if err != nil {
-				return err
+				t.Fatal(err)
 			}
 			if logs(to) {
-				wrong = append(wrong, within(root, path)+" imports "+to)
+				wrong = append(wrong, held.at+" imports "+to)
 			}
 		}
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
 	}
 	for _, one := range wrong {
 		t.Error(one + ": nothing here logs — a person is told where they are")
-	}
-
-	// A walk that read no file is a rule checked against nothing, and it
-	// passes. The floor is well under what the applications hold.
-	if read < 20 {
-		t.Fatalf("%d files read: the walk is not reading the applications", read)
 	}
 }
 
@@ -199,27 +217,10 @@ func TestWhatTheLoggingRuleRefuses(t *testing.T) {
 // nothing yet asks it for that method.
 func TestNoApplicationNamesThePortItSatisfies(t *testing.T) {
 	var wrong []string
-	err := filepath.WalkDir(filepath.Join("..", "..", ".."), func(path string, entry fs.DirEntry, err error) error {
-		if err != nil || entry.IsDir() {
-			if entry != nil && entry.IsDir() && entry.Name() == "node_modules" {
-				return filepath.SkipDir
-			}
-			return err
+	for _, held := range walked(t) {
+		for _, one := range claimed(held.file) {
+			wrong = append(wrong, held.at+" names port."+one)
 		}
-		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
-			return nil
-		}
-		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
-		if err != nil {
-			return err
-		}
-		for _, one := range claimed(file) {
-			wrong = append(wrong, path+" names port."+one)
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
 	}
 	for _, one := range wrong {
 		t.Error(one)
@@ -227,16 +228,23 @@ func TestNoApplicationNamesThePortItSatisfies(t *testing.T) {
 }
 
 // claimed are the ports a file declares itself to answer, by the blank name.
+//
+// A blank standing among other names is the same claim as one standing alone,
+// and a declaration inside a function is the same claim as one beside the
+// package's own. A variable that holds a port is not one: it is given what
+// answers the port, and names what it was given.
 func claimed(file *ast.File) []string {
 	var held []string
-	for _, one := range file.Decls {
-		decl, is := one.(*ast.GenDecl)
+	ast.Inspect(file, func(node ast.Node) bool {
+		decl, is := node.(*ast.GenDecl)
 		if !is || decl.Tok != token.VAR {
-			continue
+			return true
 		}
 		for _, spec := range decl.Specs {
 			named, is := spec.(*ast.ValueSpec)
-			if !is || len(named.Names) != 1 || named.Names[0].Name != "_" {
+			if !is || !slices.ContainsFunc(named.Names, func(at *ast.Ident) bool {
+				return at.Name == "_"
+			}) {
 				continue
 			}
 			if at, is := named.Type.(*ast.SelectorExpr); is {
@@ -245,8 +253,36 @@ func claimed(file *ast.File) []string {
 				}
 			}
 		}
-	}
+		return true
+	})
 	return held
+}
+
+// What the rule refuses, read against a file written to be refused. The three
+// shapes of the claim are one claim, and the walk has to reach the one written
+// inside a function; a variable holding a port is left alone.
+func TestWhatThePortClaimRefuses(t *testing.T) {
+	file, err := parser.ParseFile(token.NewFileSet(), "claim.go", `package p
+
+var _ port.Agent = (*Agent)(nil)
+
+var _, _ port.Trash = (*Bin)(nil), (*Bin)(nil)
+
+var held port.Clock
+
+func mount() {
+	var _ port.Recording = (*sound)(nil)
+	var kept port.Agent
+	_, _ = held, kept
+}
+`, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"Agent", "Trash", "Recording"}
+	if got := claimed(file); !slices.Equal(got, want) {
+		t.Errorf("the rule refuses %v, want %v", got, want)
+	}
 }
 
 // within is the package a file belongs to, as the rules name it.
