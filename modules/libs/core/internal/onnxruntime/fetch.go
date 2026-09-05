@@ -66,6 +66,19 @@ func CacheDir(s Settings) (string, error) {
 }
 
 // Fetched is the file one address names, downloaded if it is not already here.
+//
+// Nothing checked here. The runtime's caller checks what it fetched against the
+// sums this build carries, because the runtime's address is this build's: one
+// release a platform, published once and never republished, so a sum is what
+// this build says about a file it chose.
+//
+// A model's address is the person's. `indexing.recognition` and
+// `indexing.transcription` name it and may be pointed anywhere, and a sum
+// beside a name they chose is a number only they could supply and have nowhere
+// to get. Most of the defaults name a branch rather than a revision, and a
+// branch is written over, so a sum on those would refuse the model the day its
+// publisher republished it. A model a person names is a model a person trusts,
+// and it is fetched as named.
 func Fetched(ctx context.Context, s Settings, address string) (string, error) {
 	dir, err := CacheDir(s)
 	if err != nil {

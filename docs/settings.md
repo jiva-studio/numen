@@ -350,7 +350,7 @@ The boundary the detector answers with is the text's own outline drawn inside th
 | `transcribe_under_mb` | how large a recording may be and still be listened to unasked, in megabytes. 300, which is a talk of a few hours. A larger one waits to be asked for by name, because a folder of albums is days of a machine. A negative number is no limit. |
 | `runtime` | the ONNX Runtime shared library. Empty takes the one beside the application, then the one the platform holds, and then the published one, fetched and checked against the sum this build carries. One process opens one, and both a recognition and a transcription run their models through it. |
 | `dir` | a folder holding the models. Empty takes the folder beside the application, and then the download cache. |
-| `download` | whether what is not on this machine may be fetched. |
+| `download` | whether what is not on this machine may be fetched. A model is fetched from the address named here and checked against no sum: the runtime's address is this build's and carries one, and a model's is the person's own setting, which nobody but them could publish a sum for. A model named here is a model trusted. |
 | `threads` | how many threads one model may use. 4. |
 | `model.name` | what the transducer is called in the record kept beside a transcript. |
 | `model.from` | the folder its four files are fetched from. The encoder, the decoder, the joiner and the tokens are one model: three graphs from two exports write nothing anybody can read. |
