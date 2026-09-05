@@ -46,10 +46,10 @@ import { WORDS as words } from './words'
 const AHEAD = 30
 
 /** What a person can put into one row of the receipt. */
-export type Said = number | string | boolean | Load
+export type SettingValue = number | string | boolean | Load
 
 /** Whether what was said is a share for each day of the week that carries one. */
-const isLoad = (value: Said): value is Load =>
+const isLoad = (value: SettingValue): value is Load =>
   typeof value === 'object' && Object.values(value).every((share) => typeof share === 'number')
 
 /** The settings as a tab holds them while a person is moving them. */
@@ -118,7 +118,7 @@ export interface PresetTabState {
    * written, as under the knob. The field the goal steers is the knob, and
    * typing into it moves the knob.
    */
-  types(field: Field, value: Said): void
+  types(field: Field, value: SettingValue): void
   /** The tab is closing. */
   shuts(id: string): void
 }
@@ -448,7 +448,7 @@ export function presetting(
   const typed = (
     settings: Settings,
     field: Field,
-    value: Said,
+    value: SettingValue,
   ): Settings => {
     if (field === 'byDate' && typeof value === 'string') return { ...settings, byDate: value }
     if (field === 'counts' && (value === 'cards' || value === 'shows')) {
@@ -482,14 +482,14 @@ export function presetting(
    * One field put where a person typed it, and marked theirs. A value the
    * field cannot hold moves nothing and claims nothing.
    */
-  const moved = (one: Kept, field: Field, value: Said): void => {
+  const moved = (one: Kept, field: Field, value: SettingValue): void => {
     const was = one.settings.value
     one.settings.value = typed(was, field, value)
     if (one.settings.value !== was) one.theirs.add(field)
   }
 
   /** Where a value typed into the field the goal steers falls on the grid. */
-  const falling = (one: Kept, value: Said): number => {
+  const falling = (one: Kept, value: SettingValue): number => {
     if (typeof value === 'number') return nearest(one.curve.value.grid, value)
     if (typeof value === 'string' && isDay(value)) {
       return nearest(one.curve.value.grid, daysUntil(today(), value))

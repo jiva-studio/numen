@@ -5,7 +5,7 @@
  * holding the answers where the template can draw them.
  */
 import { ref } from 'vue'
-import type { Said } from '../core'
+import type { NoteEdit } from '../core'
 import { drawing, holding, type Arm, type Change, type HoldLimits } from './drawing'
 
 export function drawn(limits: HoldLimits = holding) {
@@ -36,7 +36,7 @@ export function drawn(limits: HoldLimits = holding) {
   }
 
   /** A change was reported. */
-  const told = (said: Said): void => carry(said.path, decided.told(said))
+  const told = (said: NoteEdit): void => carry(said.path, decided.told(said))
 
   /** The note changed under whatever is drawn over it. */
   const arrived = (path: string): void => carry(path, decided.arrived(path))

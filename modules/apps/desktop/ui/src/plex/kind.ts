@@ -18,7 +18,7 @@ import { NEW_NOTE, OFFERED } from './menu'
 import { asParts, asPlex, typesIn } from './picture'
 import type { View } from './view'
 import { ticketing } from './tickets'
-import type { Heading, Move, NoteType } from '../core'
+import type { Move, NoteHeading, NoteType } from '../core'
 import type { Host, Kind } from '../windowing'
 import { PLEX, plexCalled } from '../workspace'
 import PlexTab from './PlexTab.vue'
@@ -60,7 +60,7 @@ export interface PlexTabDeps {
    * What each of the notes asked about is divided into, by the path it was
    * asked about. A note with nothing inside it is absent.
    */
-  inside(paths: readonly string[]): Promise<ReadonlyMap<string, readonly Heading[]>>
+  inside(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
   /** Something to ask, put in the agent the person was last in. */
   asks(text: string): void
   /**

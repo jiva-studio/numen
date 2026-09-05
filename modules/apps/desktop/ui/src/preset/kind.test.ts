@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
 
-import { presetting, type Said } from './kind'
+import { presetting, type SettingValue } from './kind'
 import { fieldsUnder, goalValue, nearest, steers, type Field } from './curve'
 import {
   DEFAULTS,
@@ -735,7 +735,7 @@ describe('a field the goal does not steer, typed', () => {
     expect(written.at(-1)?.minutesADay).toBe(23)
   })
 
-  const SAID: Partial<Record<Field, Said>> = {
+  const SAID: Partial<Record<Field, SettingValue>> = {
     newADay: 4,
     reviewsADay: 33,
     counts: 'shows',

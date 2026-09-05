@@ -14,7 +14,7 @@ import {
   type Event,
   type Move,
   type Refusal,
-  type Seen,
+  type NoteBaseline,
   type State,
   type Tab,
 } from './tab'
@@ -38,7 +38,7 @@ export interface Notes {
   write(
     path: string,
     body: string,
-    seen: Seen | null,
+    seen: NoteBaseline | null,
   ): Promise<NoteResult & { at?: string; changed?: boolean }>
 }
 
@@ -279,7 +279,12 @@ export function editing(core: Notes, how: EditingOptions = {}) {
     })
   }
 
-  async function write(id: string, path: string, body: string, seen: Seen | null): Promise<void> {
+  async function write(
+    id: string,
+    path: string,
+    body: string,
+    seen: NoteBaseline | null,
+  ): Promise<void> {
     let answered: NoteResult & { at?: string; changed?: boolean }
     try {
       answered = await core.write(path, body, seen)

@@ -6,7 +6,7 @@
  * held until the note changes under it and dropped a moment later; one whose
  * text never arrives is dropped on the longer bound.
  */
-import type { Said } from '../core'
+import type { NoteEdit } from '../core'
 
 /** What is being drawn over one note. */
 export interface Change {
@@ -43,7 +43,7 @@ export function drawing(limits: HoldLimits = holding) {
   const ending = new Set<string>()
 
   /** A change was reported. */
-  const told = (said: Said): Arm | null => {
+  const told = (said: NoteEdit): Arm | null => {
     if (!said.done) {
       changes.set(said.path, {
         id: said.change,

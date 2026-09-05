@@ -5,7 +5,7 @@
  * seat and edges between them; it is not told what a note is, and the schema
  * says nothing about drawing.
  */
-import type { Heading, Neighbourhood, NoteType, Seat } from '../core'
+import type { Neighbourhood, NoteHeading, NoteType, Seat } from '../core'
 import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexPart } from '@numen/ui'
 
 /**
@@ -92,7 +92,7 @@ export function asPlex(
  * A part is named by the line it stands on: that is what taking someone to it
  * needs, and it tells two headings of one wording apart.
  */
-export function asParts(headings: readonly Heading[]): PlexPart[] {
+export function asParts(headings: readonly NoteHeading[]): PlexPart[] {
   return headings.map((heading) => ({
     id: `${heading.line}`,
     text: heading.text,

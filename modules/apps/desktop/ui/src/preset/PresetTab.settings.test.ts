@@ -13,7 +13,7 @@ import tabSource from './PresetTab.vue?raw'
 import sliderSource from './CurveSlider.vue?raw'
 import { NO_BOUNDS } from './core'
 import type { Field } from './curve'
-import type { PresetTabState, Said } from './kind'
+import type { PresetTabState, SettingValue } from './kind'
 import { BOUNDS, drawn, rows, tabAt } from '../testing/preset'
 import { WORDS as words } from './words'
 
@@ -193,7 +193,7 @@ describe('the load of the week', () => {
   /** A tab whose row of days is watched for what it puts into the settings. */
   const watching = (load: Record<string, number>) => {
     const one = tabAt({}, { load })
-    const put: [Field, Said][] = []
+    const put: [Field, SettingValue][] = []
     const held: PresetTabState = {
       ...one.held,
       types: (field, value) => {

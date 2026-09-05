@@ -42,7 +42,7 @@ export type FilePath = string
  * read came out of. A write presents it, and the note still holding either is
  * the note this tab read.
  */
-export interface Seen {
+export interface NoteBaseline {
   readonly prose: string
   readonly at: FilePath
 }
@@ -172,7 +172,7 @@ export type Effect =
       readonly kind: 'write'
       readonly path: string
       readonly body: string
-      readonly seen: Seen | null
+      readonly seen: NoteBaseline | null
     }
   /** Arm the interval to fire after this many milliseconds. */
   | { readonly kind: 'arm'; readonly after: number }
@@ -257,11 +257,11 @@ const shows = (tab: Tab, body: string, at: FilePath | null): Transition => ({
 })
 
 /** What the tab last saw, for a write to present. */
-const seenOf = (tab: Tab): Seen | null =>
+const seenOf = (tab: Tab): NoteBaseline | null =>
   tab.written === null || tab.at === null ? null : { prose: tab.written, at: tab.at }
 
 /** A write of what is on screen now, presenting what it is given. */
-const begins = (tab: Tab, seen: Seen | null): Transition => ({
+const begins = (tab: Tab, seen: NoteBaseline | null): Transition => ({
   tab: { ...tab, flight: { body: tab.shown }, owed: false, overtaken: false },
   effects: [{ kind: 'write', path: tab.path, body: tab.shown, seen }],
 })

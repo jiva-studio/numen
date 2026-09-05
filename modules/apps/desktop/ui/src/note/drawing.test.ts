@@ -5,10 +5,10 @@
  * get rid of, and one dropped too early is a change that happens invisibly.
  */
 import { describe, expect, it } from 'vitest'
-import type { Said } from '../core'
+import type { NoteEdit } from '../core'
 import { drawing, holding } from './drawing'
 
-const said = (over: Partial<Said> = {}): Said => ({
+const said = (over: Partial<NoteEdit> = {}): NoteEdit => ({
   change: 'one',
   path: 'Note.md',
   from: 2,

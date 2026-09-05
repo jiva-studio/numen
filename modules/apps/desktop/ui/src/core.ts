@@ -26,7 +26,7 @@ export interface Stretch {
  * One report of a change being made to the prose of a note, while it is being
  * made: which change it belongs to, where it lands, and what goes in.
  */
-export interface Said {
+export interface NoteEdit {
   readonly change: string
   readonly path: string
   readonly from: number
@@ -72,7 +72,7 @@ export interface Neighbourhood {
 }
 
 /** One heading inside a note, which is one of the parts the note divides into. */
-export interface Heading {
+export interface NoteHeading {
   readonly text: string
   /** How deep it sits, from one for the shallowest a note can carry. */
   readonly level: number
@@ -303,7 +303,7 @@ export interface Core {
    * What each of the notes asked about is divided into, by the path it was
    * asked about. A note with no headings in it is absent.
    */
-  headings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly Heading[]>>
+  headings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
   /**
    * What stands at each of those paths, by the path it was asked about. The
    * kind comes off the vault itself, so a path nothing has scanned is answered
@@ -337,7 +337,7 @@ export interface Core {
     renamed: readonly Move[]
   }>
   /** A change being made to a note's prose, reported while it is being made. */
-  editing(signal: AbortSignal): AsyncIterable<Said>
+  editing(signal: AbortSignal): AsyncIterable<NoteEdit>
   /**
    * Everything the application is doing behind the window, for as long as the
    * window listens.

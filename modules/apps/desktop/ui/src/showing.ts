@@ -6,7 +6,7 @@
  * is only exercised by looking at the screen.
  */
 import { ref } from 'vue'
-import type { Core, Move, Said, Stretch, Task } from './core'
+import type { Core, Move, NoteEdit, Stretch, Task } from './core'
 import { following } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
 
@@ -28,7 +28,7 @@ export interface ShowingOptions {
    */
   told?(paths: readonly string[], renamed?: readonly Move[]): void | Promise<void>
   /** What hears about a change to a note while it is being made. */
-  drawing?(said: Said): void
+  drawing?(said: NoteEdit): void
   /** What puts a note in front of the person, asked for from outside the window. */
   wanted?(path: string): void | Promise<void>
   /**

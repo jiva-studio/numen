@@ -14,8 +14,8 @@ import { view as viewing, type View } from './view'
 import { WORDS as words } from './words'
 import {
   movedTo,
-  type Heading,
   type Move,
+  type NoteHeading,
   type Neighbourhood,
   type NoteType,
   type Seat,
@@ -105,7 +105,7 @@ const tab = (at: string, related: readonly string[] = [], takes = true, types: T
   /** Every note put in front of the person on a line of its own prose. */
   const entered: [string, number][] = []
   /** What the vault says each note is divided into, which a test sets. */
-  const divides = ref<ReadonlyMap<string, readonly Heading[]>>(new Map())
+  const divides = ref<ReadonlyMap<string, readonly NoteHeading[]>>(new Map())
   /** Whether a node hangs the parts of its note, which a test turns. */
   const hangs = ref(true)
   /** Every question the vault was asked about what the notes hold. */
@@ -489,7 +489,7 @@ describe('what the picture draws a line to', () => {
 
 describe('the parts a node hangs', () => {
   /** One heading of a note, as the vault answers one. */
-  const heading = (text: string, line: number, level = 1): Heading => ({ text, level, line })
+  const heading = (text: string, line: number, level = 1): NoteHeading => ({ text, level, line })
 
   it('are what the vault said that note is divided into', async () => {
     const one = tab('Root.md', ['Child.md'])
@@ -536,7 +536,7 @@ describe('the parts a node hangs', () => {
   it('are what the question asked last came back with, whatever order they land in', async () => {
     // The first answer is held up until the second has settled, which is a
     // change followed while a travel is still out.
-    const answers: ((held: ReadonlyMap<string, readonly Heading[]>) => void)[] = []
+    const answers: ((held: ReadonlyMap<string, readonly NoteHeading[]>) => void)[] = []
     const one = tab('Root.md')
     const plex = plexing(one.held.view, {
       makes: making().makes,

@@ -12,7 +12,7 @@ import { computed } from 'vue'
 import { Days, NumberField, Segmented, Select, Slider, Switch, WEEK } from '@numen/ui'
 import type { Day } from '@numen/ui'
 import CurveSlider from './CurveSlider.vue'
-import type { PresetTabState, Said } from './kind'
+import type { PresetTabState, SettingValue } from './kind'
 import { COUNTS, GOALS, LOADS, RULES, WHOLE_LOAD, loadOn, loaded } from './core'
 import type { Bounds, Counts, Goal } from './core'
 import { fieldsUnder, idle, round, type Field } from './curve'
@@ -128,7 +128,7 @@ const typed = (field: Field, said: number | null) => {
  * a step at a time says so when it is let go of; one that turns in a single
  * gesture is done the moment it turns.
  */
-const chose = (field: Field, value: Said) => {
+const chose = (field: Field, value: SettingValue) => {
   props.held.types(field, value)
   props.held.settles()
 }
