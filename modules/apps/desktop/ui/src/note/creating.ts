@@ -11,10 +11,19 @@ import type { Says } from '../telling'
 import { REFUSED } from '../words'
 
 /**
- * Seats a person may make a note in. A sibling is another child of a shared
- * parent, so no link writes one.
+ * The role a link carries to seat a note where the gesture put it. A seat and
+ * the role that seats a note in it are one relationship named twice, so they
+ * carry the same word; a seat there is no role of that name for is written
+ * nowhere, and a sibling is one.
  */
-export const CREATABLE = ['parent', 'child', 'jump'] as const
+const carries: Partial<Record<PlexRelatedSeat, Role>> = {
+  parent: 'parent',
+  child: 'child',
+  jump: 'jump',
+}
+
+/** Seats a person may make a note in: exactly those a link can write. */
+export const CREATABLE = Object.keys(carries) as readonly PlexRelatedSeat[]
 
 /**
  * What a new note writes about the note it was made from. The new one takes the
@@ -24,16 +33,6 @@ export const CREATABLE = ['parent', 'child', 'jump'] as const
 const facing: Partial<Record<PlexRelatedSeat, PlexRelatedSeat>> = {
   parent: 'child',
   child: 'parent',
-  jump: 'jump',
-}
-
-/**
- * The role a link carries to seat a note where the gesture put it. A sibling is
- * another child of a shared parent, so no link writes one.
- */
-const carries: Partial<Record<PlexRelatedSeat, Role>> = {
-  parent: 'parent',
-  child: 'child',
   jump: 'jump',
 }
 
