@@ -345,12 +345,12 @@ func TestANeighbourhoodSaysWhichOfThreeEachNoteIs(t *testing.T) {
 	}
 
 	// And the note in focus is said the same way, a plex standing on a deck.
-	standing, err := client.GetNeighbourhood(t.Context(),
+	near, err := client.GetNeighbourhood(t.Context(),
 		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "Animals.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if is := standing.Msg.GetFocusType(); is != v1.NoteType_NOTE_TYPE_DECK {
+	if is := near.Msg.GetFocusType(); is != v1.NoteType_NOTE_TYPE_DECK {
 		t.Errorf("the deck in focus is drawn as %v", is)
 	}
 }
