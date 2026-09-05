@@ -6,6 +6,7 @@
 import { createClient } from '@connectrpc/connect'
 import { Goal as Goals, Rating, FlashcardsService, WindowService } from '@numen/protocol'
 import type { StopReason } from '@numen/protocol'
+import { namesOf } from '@numen/wire'
 import { transport } from './transport'
 
 /**
@@ -34,13 +35,20 @@ export const called: Readonly<Record<Grade, string>> = {
   easy: 'Easy',
 }
 
-/** What the schema calls each of them. */
-export const rated: Readonly<Record<Grade, Rating>> = {
-  again: Rating.AGAIN,
-  hard: Rating.HARD,
-  good: Rating.GOOD,
-  easy: Rating.EASY,
+/**
+ * What each of them is called in this window's own words. Keyed by the schema,
+ * so a rating added to it has to be given a word here before this compiles.
+ */
+const graded: Readonly<Record<Rating, Grade | null>> = {
+  [Rating.UNSPECIFIED]: null,
+  [Rating.AGAIN]: 'again',
+  [Rating.HARD]: 'hard',
+  [Rating.GOOD]: 'good',
+  [Rating.EASY]: 'easy',
 }
+
+/** What the schema calls each of them, read off the words above. */
+export const rated: Readonly<Record<Grade, Rating>> = namesOf<Grade, Rating>(graded)
 
 /** Which value the one control of a preset steers. */
 export type Goal = 'minutes' | 'retention' | 'date'

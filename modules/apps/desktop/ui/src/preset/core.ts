@@ -16,7 +16,8 @@ import type {
   Settings as SettingsMessage,
   SettingsBounds as SettingsBoundsMessage,
 } from '@numen/protocol'
-import { fingerprint, namesOf, refusalIn, staleIn, stamp } from '../answers'
+import { namesOf } from '@numen/wire'
+import { fingerprint, refusalIn, staleIn, stamp } from '../answers'
 import type { RefusalReason } from '../core'
 import { transport } from '../transport'
 

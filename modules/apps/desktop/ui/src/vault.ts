@@ -44,7 +44,8 @@ import type {
   Vault as VaultMessage,
 } from '@numen/protocol'
 import type { Counting } from '@numen/ui'
-import { fingerprint, namesOf, refusalIn, staleIn, stamp } from './answers'
+import { namesOf, troubleWords } from '@numen/wire'
+import { fingerprint, refusalIn, staleIn, stamp } from './answers'
 import { DEFAULT_PARTS } from './hanging'
 import { DEFAULT_STARTS } from './reviewing'
 import { settingAt } from './settings/configuring'
@@ -151,7 +152,7 @@ const puts = async (
       settings: written.map((one) => ({ at: [...one.at], value: write(one.value) })),
     })
   } catch (thrown) {
-    return thrown instanceof Error ? thrown.message : `${thrown}`
+    return troubleWords(thrown)
   }
   return null
 }

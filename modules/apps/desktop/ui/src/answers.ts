@@ -9,22 +9,6 @@
 import { Refusal } from '@numen/protocol'
 import type { RefusalReason } from './core'
 
-/**
- * What each word the window uses is, as the schema names it: a table of the
- * words read backwards.
- *
- * A table of words is keyed by the schema, so the compiler asks for a word the
- * moment the schema carries a value more. Reading it backwards is how the
- * sending side follows from the same list rather than from a second one, which
- * the compiler cannot hold to it.
- */
-export const namesOf = <W extends string, E extends number>(
-  worded: Readonly<Record<E, W | null>>,
-): Record<W, E> =>
-  Object.fromEntries(
-    Object.entries(worded).flatMap(([value, word]) => (word ? [[word, Number(value)]] : [])),
-  ) as Record<W, E>
-
 /** The file an answer came out of, as the one string the window carries. */
 export const stamp = (at?: { path: string; size: bigint; mtime: bigint }): string | undefined =>
   at && `${at.size} ${at.mtime} ${at.path}`
