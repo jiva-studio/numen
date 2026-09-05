@@ -16,7 +16,7 @@ import type {
   Settings as SettingsMessage,
   SettingsBounds as SettingsBoundsMessage,
 } from '@numen/protocol'
-import { fingerprint, refusalIn, staleIn, stamp } from '../answers'
+import { fingerprint, namesOf, refusalIn, staleIn, stamp } from '../answers'
 import type { RefusalReason } from '../core'
 import { transport } from '../transport'
 
@@ -472,43 +472,43 @@ const curved = (said: CurveMessage | undefined): Curve => ({
 const placed = (said: PlaceMessage | undefined): Place =>
   said === undefined ? NOWHERE : { at: said.at, value: said.value, day: said.day }
 
-/** The goal as the schema names it. */
-const ASKED: Record<Goal, Goals> = {
-  minutes: Goals.MINUTES_A_DAY,
-  retention: Goals.RETENTION,
-  date: Goals.BY_DATE,
-}
-
-/** The goal in the window's own words. A preset naming none takes the default. */
-const WORDED: Record<Goals, Goal> = {
-  [Goals.UNSPECIFIED]: DEFAULTS.goal,
+/**
+ * The goal in the window's own words. A preset naming none takes the default.
+ * Keyed by the schema, so a goal added to it has to be given a word here before
+ * this compiles.
+ */
+const WORDED: Record<Goals, Goal | null> = {
+  [Goals.UNSPECIFIED]: null,
   [Goals.MINUTES_A_DAY]: 'minutes',
   [Goals.RETENTION]: 'retention',
   [Goals.BY_DATE]: 'date',
 }
 
-/** What counts as learned, as the schema names it. */
-const RULING: Record<Rule, Rules> = {
-  interval: Rules.INTERVAL,
-  retention: Rules.RETENTION,
-}
+/** The goal as the schema names it, read off the words above. */
+const ASKED = namesOf<Goal, Goals>(WORDED)
 
-/** What counts as learned, in the window's own words. A preset naming none takes the default. */
-const LEARNED: Record<Rules, Rule> = {
-  [Rules.UNSPECIFIED]: DEFAULTS.learned,
+/**
+ * What counts as learned, in the window's own words. A preset naming none takes
+ * the default. Keyed by the schema, the same way.
+ */
+const LEARNED: Record<Rules, Rule | null> = {
+  [Rules.UNSPECIFIED]: null,
   [Rules.INTERVAL]: 'interval',
   [Rules.RETENTION]: 'retention',
 }
 
-/** What a budget counts, as the schema names it. */
-const COUNTING: Record<Counts, Countings> = {
-  cards: Countings.CARDS,
-  shows: Countings.SHOWS,
-}
+/** What counts as learned, as the schema names it. */
+const RULING = namesOf<Rule, Rules>(LEARNED)
 
-/** What a budget counts, in the window's own words. A preset naming nothing takes the default. */
-const COUNTED: Record<Countings, Counts> = {
-  [Countings.UNSPECIFIED]: DEFAULTS.counts,
+/**
+ * What a budget counts, in the window's own words. A preset naming nothing
+ * takes the default. Keyed by the schema, the same way.
+ */
+const COUNTED: Record<Countings, Counts | null> = {
+  [Countings.UNSPECIFIED]: null,
   [Countings.CARDS]: 'cards',
   [Countings.SHOWS]: 'shows',
 }
+
+/** What a budget counts, as the schema names it. */
+const COUNTING = namesOf<Counts, Countings>(COUNTED)

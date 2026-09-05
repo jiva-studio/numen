@@ -8,6 +8,7 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { Mode as Modes, Shelf, ThemeService } from '@numen/protocol'
+import { namesOf } from './answers'
 import { transport } from './transport'
 
 const theme = createClient(ThemeService, transport)
@@ -115,17 +116,17 @@ const ranged = (said: { least: number; most: number } | undefined): Bounds => ({
   most: said?.most ?? 0,
 })
 
-/** The mode as the schema carries it. */
-const ASKED: Record<Mode, Modes> = {
-  system: Modes.SYSTEM,
-  light: Modes.LIGHT,
-  dark: Modes.DARK,
-}
-
-/** The mode in the window's own words. A mode it has no word for is the system's. */
-const WORDED: Record<Modes, Mode> = {
-  [Modes.UNSPECIFIED]: 'system',
+/**
+ * The mode in the window's own words. A mode it has no word for is the
+ * system's. Keyed by the schema, so a mode added to it has to be given a word
+ * here before this compiles.
+ */
+const WORDED: Record<Modes, Mode | null> = {
+  [Modes.UNSPECIFIED]: null,
   [Modes.SYSTEM]: 'system',
   [Modes.LIGHT]: 'light',
   [Modes.DARK]: 'dark',
 }
+
+/** The mode as the schema carries it, read off the words above. */
+const ASKED = namesOf<Mode, Modes>(WORDED)
