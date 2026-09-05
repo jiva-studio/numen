@@ -6,7 +6,7 @@
  * top as one button. A deck below it is for the person who came for that deck.
  */
 import { computed } from 'vue'
-import { Button, Coming, KeyCap, Owed } from '@numen/ui'
+import { Button, KeyCap, Owed, Skeleton } from '@numen/ui'
 import type { HeatmapTally } from '@numen/ui'
 import Progress from './Progress.vue'
 import Presets from './Presets.vue'
@@ -109,7 +109,7 @@ const share = (deck: DeckCardsDue): string => {
           <!-- How much of the deck stands learned, under the rule its own
                preset counts by. The word is said with the figure: a bare share
                on this screen is how far through its day a preset stands. -->
-          <Coming v-if="!vault.counted" class="decks__learned" wide="3.5rem" high="0.7em" />
+          <Skeleton v-if="!vault.counted" class="decks__learned" wide="3.5rem" high="0.7em" />
           <span v-else-if="share(deck)" class="decks__learned">{{ share(deck) }}</span>
 
           <!-- What is left of this deck today, or why nothing is. Having

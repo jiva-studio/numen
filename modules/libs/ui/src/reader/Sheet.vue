@@ -8,7 +8,7 @@
  * asked for again a few times, each ask carrying a number the last one did not.
  */
 import { computed, ref, watch } from 'vue'
-import Waiting from '@/waiting/Waiting.vue'
+import Spinner from '@/waiting/Spinner.vue'
 import type { Rect } from './strip'
 
 const props = withDefaults(
@@ -91,7 +91,7 @@ const boxOf = (one: Rect) => ({
       <span v-if="givenUp" class="px-inset text-center text-small text-hushed">
         {{ undrawn }}
       </span>
-      <Waiting v-else class="text-hushed" />
+      <Spinner v-else class="text-hushed" />
     </div>
     <template v-if="arrived">
       <div

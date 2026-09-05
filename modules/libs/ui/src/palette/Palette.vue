@@ -20,7 +20,7 @@ import {
   useTemplateRef,
   watch,
 } from 'vue'
-import Waiting from '../waiting/Waiting.vue'
+import Spinner from '../waiting/Spinner.vue'
 import KeyCap from './KeyCap.vue'
 import PaletteActions from './PaletteActions.vue'
 import {
@@ -406,7 +406,7 @@ onBeforeUnmount(() => {
             >
               <span>{{ one.band.title }}</span>
               <!-- More of this band is on its way. -->
-              <Waiting v-if="one.band.working" />
+              <Spinner v-if="one.band.working" />
             </p>
             <div
               v-for="row in one.items"

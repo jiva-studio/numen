@@ -8,7 +8,7 @@
  * It is a line, and whoever draws it announces it.
  */
 import { computed } from 'vue'
-import Waiting from '../waiting/Waiting.vue'
+import Spinner from '../waiting/Spinner.vue'
 import { activity, percentWord, type Tally, type Tone } from './tally'
 
 const props = withDefaults(
@@ -93,9 +93,9 @@ const strength = computed(() => (props.tone === 'plain' ? 'text-hushed' : ''))
       <span v-if="percent" class="activity__percent">{{ percent }}</span>
       <span v-if="left" class="activity__left">{{ left }}</span>
     </span>
-    <Waiting
+    <Spinner
       v-if="shown.share === undefined && shown.state === 'working'"
-      class="activity__waiting"
+      class="activity__spinner"
     />
   </p>
 </template>

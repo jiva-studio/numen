@@ -4,7 +4,7 @@
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import { Coming, Waiting } from '@numen/ui'
+import { Skeleton, Spinner } from '@numen/ui'
 
 import Vaults from './Vaults.vue'
 import type { VaultCardsDue } from './core'
@@ -36,7 +36,7 @@ describe('the front door before it knows which vaults there are', () => {
     const one = shown(true)
 
     expect(one.find('.vaults__counting').text()).toBe('Reading the vaults')
-    expect(one.findComponent(Waiting).exists()).toBe(true)
+    expect(one.findComponent(Spinner).exists()).toBe(true)
   })
 
   // A person is told what is happening, and the turning mark is for the eye.
@@ -69,7 +69,7 @@ describe('the front door while the vaults are being counted', () => {
   it('holds the room the number will take, and prints no number', () => {
     const one = shown(true, [uncounted()])
 
-    expect(one.findComponent(Coming).exists()).toBe(true)
+    expect(one.findComponent(Skeleton).exists()).toBe(true)
     expect(one.find('.welcome__row--vault').text()).toBe('Studies/vaults/01A')
   })
 
@@ -78,7 +78,7 @@ describe('the front door while the vaults are being counted', () => {
   it('is not the same as a vault counted at nothing', () => {
     const counted = shown(false, [vault({ due: 0, new: 0 })])
 
-    expect(counted.findComponent(Coming).exists()).toBe(false)
+    expect(counted.findComponent(Skeleton).exists()).toBe(false)
     expect(counted.find('.welcome__row--vault').text()).toContain('0')
   })
 
@@ -112,7 +112,7 @@ describe('the front door once the counts are in', () => {
     const one = shown(false, [vault()])
 
     expect(one.find('.vaults__counting').exists()).toBe(false)
-    expect(one.findComponent(Waiting).exists()).toBe(false)
+    expect(one.findComponent(Spinner).exists()).toBe(false)
     expect(one.findAll('.welcome__row--vault')).toHaveLength(1)
   })
 
@@ -128,7 +128,7 @@ describe('the front door once the counts are in', () => {
     const one = shown(false, [vault({ unread: 'this folder cannot be read as a vault' })])
 
     expect(one.find('.welcome__row--vault').text()).toContain('cannot be read')
-    expect(one.findComponent(Coming).exists()).toBe(false)
+    expect(one.findComponent(Skeleton).exists()).toBe(false)
   })
 
   // A vault the index does not carry is being read into it, which is what its
@@ -137,6 +137,6 @@ describe('the front door once the counts are in', () => {
     const one = shown(false, [vault({ counted: false, reading: true })])
 
     expect(one.find('.welcome__row--vault').text()).toContain('Reading the vault')
-    expect(one.findComponent(Coming).exists()).toBe(false)
+    expect(one.findComponent(Skeleton).exists()).toBe(false)
   })
 })

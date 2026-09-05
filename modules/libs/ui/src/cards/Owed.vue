@@ -6,7 +6,7 @@
  * box, so the row it stands in does not move when it lands.
  */
 import { computed } from 'vue'
-import Coming from '../waiting/Coming.vue'
+import Skeleton from '../waiting/Skeleton.vue'
 import { OWED_WORDS, type OwedWords } from './owed'
 
 const props = withDefaults(
@@ -44,7 +44,7 @@ const label = computed(() => {
   >
     <!-- Narrower than the pill's own least width, so the box is the same width
          whether the figure has landed or not. -->
-    <Coming v-if="waiting === null" wide="0.8rem" high="0.7em" pill />
+    <Skeleton v-if="waiting === null" wide="0.8rem" high="0.7em" pill />
     <template v-else-if="bare">{{ waiting }}</template>
     <template v-else>{{ words.counted(waiting) }}</template>
   </span>

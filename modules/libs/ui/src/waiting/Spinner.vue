@@ -8,29 +8,29 @@
 </script>
 
 <template>
-  <span class="waiting numen" aria-hidden="true" />
+  <span class="spinner numen" aria-hidden="true" />
 </template>
 
 <style scoped>
 /* As tall as one line of the text it stands beside, so it sits on that line's
-   own middle. The colour is whatever it stands on, and `--waiting-size` and
-   `--waiting-thickness` are whatever holds it. */
-.waiting {
+   own middle. The colour is whatever it stands on, and `--spinner-size` and
+   `--spinner-thickness` are whatever holds it. */
+.spinner {
   --cycle: 800ms;
 
   display: inline-block;
   flex: none;
-  inline-size: var(--waiting-size, 0.9em);
-  block-size: var(--waiting-size, 0.9em);
-  border: var(--waiting-thickness, 1.5px) solid currentColor;
+  inline-size: var(--spinner-size, 0.9em);
+  block-size: var(--spinner-size, 0.9em);
+  border: var(--spinner-thickness, 1.5px) solid currentColor;
   /* One arc left open is what makes the turning visible on a ring. */
   border-block-start-color: transparent;
   border-radius: 50%;
   opacity: 0.55;
-  animation: waiting-turn var(--cycle) linear infinite;
+  animation: spinner-turn var(--cycle) linear infinite;
 }
 
-@keyframes waiting-turn {
+@keyframes spinner-turn {
   to {
     transform: rotate(1turn);
   }
@@ -39,7 +39,7 @@
 /* Still, it is a mark that is simply there beside the name: the band is
    filling, and nothing moves to say so. */
 @media (prefers-reduced-motion: reduce) {
-  .waiting {
+  .spinner {
     opacity: 0.4;
     animation: none;
   }

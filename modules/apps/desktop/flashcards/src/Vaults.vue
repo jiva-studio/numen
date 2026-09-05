@@ -11,7 +11,7 @@
  * number will take and is not opened until it has one.
  */
 import { computed } from 'vue'
-import { Owed, Waiting, Welcome } from '@numen/ui'
+import { Owed, Spinner, Welcome } from '@numen/ui'
 import type { VaultRow } from '@numen/ui'
 import type { VaultCardsDue } from './core'
 
@@ -72,7 +72,7 @@ const waiting = computed(
          holds, which is the one thing the screen has to say until it is. -->
     <template v-if="counting" #waiting>
       <p class="vaults__counting" role="status">
-        <Waiting />
+        <Spinner />
         Reading the vaults
       </p>
     </template>

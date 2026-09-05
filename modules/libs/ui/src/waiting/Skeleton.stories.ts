@@ -6,13 +6,13 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
-import Coming from './Coming.vue'
+import Skeleton from './Skeleton.vue'
 import { lightness } from '@/fixtures/colour'
 import { DARK, drawnDark } from '@/fixtures/theme'
 
 const meta = {
-  title: 'Flash Cards/Coming',
-  component: Coming,
+  title: 'Flash Cards/Skeleton',
+  component: Skeleton,
   parameters: {
     layout: 'centered',
     docs: {
@@ -31,7 +31,7 @@ const meta = {
     pill: { control: 'boolean' },
   },
   args: { wide: '1.5rem', high: '0.75em', pill: true },
-} satisfies Meta<typeof Coming>
+} satisfies Meta<typeof Skeleton>
 
 export default meta
 type Story = StoryObj<typeof meta>
@@ -45,7 +45,7 @@ export const Playground: Story = {}
  */
 export const ARowThatDoesNotMove: Story = {
   render: (args) => ({
-    components: { Coming },
+    components: { Skeleton },
     setup: () => ({ args, rows: ['Studies', 'Sanskrit', 'Птицы', 'ᬩᬮᬶ'] }),
     template: `
       <div class="numen" style="display:flex;gap:32px;padding:24px;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
@@ -53,7 +53,7 @@ export const ARowThatDoesNotMove: Story = {
           <li v-for="(name, row) in rows" :key="name" style="display:flex;align-items:center;gap:12px;padding:0.3rem 0.6rem">
             <span style="flex:1">{{ name }}</span>
             <span v-if="counted" style="flex:none;min-inline-size:1.5rem;padding:0.0625rem 0.4rem;text-align:center;border-radius:var(--numen-radius-pill);background:var(--numen-highlight);color:var(--numen-caution-fg);font-size:var(--numen-edge-label-size);font-variant-numeric:tabular-nums">{{ [7, 128, 0, 42][row] }}</span>
-            <span v-else style="flex:none;min-inline-size:1.5rem;padding:0.0625rem 0.4rem;text-align:center;border-radius:var(--numen-radius-pill);background:var(--numen-highlight);color:var(--numen-caution-fg);font-size:var(--numen-edge-label-size)"><Coming v-bind="args" /></span>
+            <span v-else style="flex:none;min-inline-size:1.5rem;padding:0.0625rem 0.4rem;text-align:center;border-radius:var(--numen-radius-pill);background:var(--numen-highlight);color:var(--numen-caution-fg);font-size:var(--numen-edge-label-size)"><Skeleton v-bind="args" /></span>
           </li>
         </ul>
       </div>
@@ -65,12 +65,12 @@ export const ARowThatDoesNotMove: Story = {
 export const InPlaceOfWords: Story = {
   args: { wide: '9rem', high: '1em', pill: false },
   render: (args) => ({
-    components: { Coming },
+    components: { Skeleton },
     setup: () => ({ args }),
     template: `
       <div class="numen" style="inline-size:280px;padding:24px;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
         <p style="margin:0 0 6px;color:var(--numen-edge-label);font-size:var(--numen-edge-label-size)">Preset</p>
-        <Coming v-bind="args" />
+        <Skeleton v-bind="args" />
       </div>
     `,
   }),
@@ -80,11 +80,11 @@ export const InPlaceOfWords: Story = {
 export const AsWideAsWhatHoldsIt: Story = {
   args: { wide: '100%', high: '3rem', pill: false },
   render: (args) => ({
-    components: { Coming },
+    components: { Skeleton },
     setup: () => ({ args }),
     template: `
       <div class="numen" style="inline-size:320px;padding:24px;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans)">
-        <Coming v-bind="args" />
+        <Skeleton v-bind="args" />
       </div>
     `,
   }),
@@ -94,13 +94,13 @@ export const AsWideAsWhatHoldsIt: Story = {
 export const OnAFilledGround: Story = {
   args: { wide: '4rem', high: '1em', pill: true },
   render: (args) => ({
-    components: { Coming },
+    components: { Skeleton },
     setup: () => ({ args }),
     template: `
       <div class="numen" style="padding:24px;background:var(--numen-accent);color:var(--numen-accent-ink);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
         <span style="display:inline-flex;align-items:center;gap:8px">
           <span>Counting</span>
-          <Coming v-bind="args" />
+          <Skeleton v-bind="args" />
         </span>
       </div>
     `,
@@ -116,12 +116,12 @@ export const Dark: Story = {
   globals: DARK,
   args: { wide: '4rem', high: '1em', pill: true },
   render: (args) => ({
-    components: { Coming },
+    components: { Skeleton },
     setup: () => ({ args }),
     template: `
       <div class="numen" style="display:flex;flex-direction:column;gap:16px;padding:24px;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
-        <span data-ground style="padding:8px;background:var(--numen-surface)"><Coming v-bind="args" /></span>
-        <span data-ground style="padding:8px;background:var(--numen-accent);color:var(--numen-accent-ink)"><Coming v-bind="args" /></span>
+        <span data-ground style="padding:8px;background:var(--numen-surface)"><Skeleton v-bind="args" /></span>
+        <span data-ground style="padding:8px;background:var(--numen-accent);color:var(--numen-accent-ink)"><Skeleton v-bind="args" /></span>
       </div>
     `,
   }),
@@ -154,11 +154,11 @@ export const Dark: Story = {
 export const FarTooMany: Story = {
   args: { wide: '100%', high: '0.9rem', pill: false },
   render: (args) => ({
-    components: { Coming },
+    components: { Skeleton },
     setup: () => ({ args, rows: Array.from({ length: 40 }, (_, at) => at) }),
     template: `
       <div class="numen" style="display:flex;flex-direction:column;gap:6px;inline-size:320px;padding:24px;background:var(--numen-surface);color:var(--numen-ink)">
-        <Coming v-for="row in rows" :key="row" v-bind="args" />
+        <Skeleton v-for="row in rows" :key="row" v-bind="args" />
       </div>
     `,
   }),
