@@ -161,6 +161,7 @@ func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
 // where nothing yet asks it for that method.
 func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 	var wrong []string
+	var read int
 	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
@@ -172,6 +173,7 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 		if err != nil {
 			return err
 		}
+		read++
 		for _, one := range claimed(file) {
 			wrong = append(wrong, path+" names port."+one)
 		}
@@ -182,6 +184,12 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 	}
 	for _, one := range wrong {
 		t.Error(one)
+	}
+
+	// A walk that read no file of an adapter is a rule checked against nothing,
+	// and it passes.
+	if read < 50 {
+		t.Fatalf("%d files of the adapters read: the walk is not reading them", read)
 	}
 }
 
@@ -587,16 +595,23 @@ func adapters(file *ast.File, own string) map[string]bool {
 }
 
 // claimed are the ports a file declares itself to answer, by the blank name.
+//
+// A blank standing among other names is the same claim as one standing alone,
+// and a declaration inside a function is the same claim as one beside the
+// package's own. A variable that holds a port is not one: it is given the
+// adapter, and names what it was given.
 func claimed(file *ast.File) []string {
 	var held []string
-	for _, one := range file.Decls {
-		decl, is := one.(*ast.GenDecl)
+	ast.Inspect(file, func(node ast.Node) bool {
+		decl, is := node.(*ast.GenDecl)
 		if !is || decl.Tok != token.VAR {
-			continue
+			return true
 		}
 		for _, spec := range decl.Specs {
 			named, is := spec.(*ast.ValueSpec)
-			if !is || len(named.Names) != 1 || named.Names[0].Name != "_" {
+			if !is || !slices.ContainsFunc(named.Names, func(at *ast.Ident) bool {
+				return at.Name == "_"
+			}) {
 				continue
 			}
 			if at, is := named.Type.(*ast.SelectorExpr); is {
@@ -605,8 +620,36 @@ func claimed(file *ast.File) []string {
 				}
 			}
 		}
-	}
+		return true
+	})
 	return held
+}
+
+// What the rule refuses, read against a file written to be refused. The three
+// shapes of the claim are one claim, and the walk has to reach the one written
+// inside a function; a variable holding a port is left alone.
+func TestWhatThePortClaimRefuses(t *testing.T) {
+	file, err := parser.ParseFile(token.NewFileSet(), "claim.go", `package p
+
+var _ port.VaultReader = (*Reader)(nil)
+
+var _, _ port.VaultWriter = (*Writer)(nil), (*Writer)(nil)
+
+var held port.DerivedStore
+
+func mount() {
+	var _ port.Recording = (*sound)(nil)
+	var kept port.Agent
+	_, _ = held, kept
+}
+`, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"VaultReader", "VaultWriter", "Recording"}
+	if got := claimed(file); !slices.Equal(got, want) {
+		t.Errorf("the rule refuses %v, want %v", got, want)
+	}
 }
 
 // schema is the generated messages. An adapter that takes one and answers with
