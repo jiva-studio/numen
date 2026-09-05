@@ -46,19 +46,19 @@ const DefaultHold = 50 * time.Millisecond
 // written and never widens it, so a negation it writes reaches only what the
 // same vault asked to leave out.
 type ignoring struct {
-	standing *ignore.GitIgnore
+	defaults *ignore.GitIgnore
 	vaults   *ignore.GitIgnore
 }
 
 // MatchesPath is asked for files and folders alike, against the path from the
 // vault root, which is what the patterns are written in terms of.
 func (i *ignoring) MatchesPath(path string) bool {
-	return i.standing.MatchesPath(path) || i.vaults.MatchesPath(path)
+	return i.defaults.MatchesPath(path) || i.vaults.MatchesPath(path)
 }
 
 func (o Options) ignored() *ignoring {
 	return &ignoring{
-		standing: ignore.CompileIgnoreLines(DefaultIgnore...),
+		defaults: ignore.CompileIgnoreLines(DefaultIgnore...),
 		vaults:   ignore.CompileIgnoreLines(o.Ignore...),
 	}
 }
