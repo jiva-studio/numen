@@ -54,6 +54,11 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Instal
 		addr = mcp.DefaultAddr
 	}
 
+	// The whole surface, and this is the one endpoint an agent a person runs
+	// themselves reaches too, announced with the token it presents. Serving a
+	// narrow one here would take the vault's writers off that agent, which is
+	// not what a person configured it for. What the panel's own child may call
+	// is that child's allowance and is narrowed there.
 	served, err := agents.Serve(ctx, agents.Options{
 		Config:     cfg,
 		Core:       agentCore(cfg, opened, root, out),
