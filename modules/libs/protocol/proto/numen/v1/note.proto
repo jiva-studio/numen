@@ -244,6 +244,11 @@ message WriteNoteResponse {
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
   optional Fingerprint at = 3;
+
+  // Set when the prose is on disk and the index would not come level with it.
+  // The write happened and `at` stands; search answers about this note as it
+  // read it last, until a walk goes past.
+  bool unlevelled = 4;
 }
 
 // Role is what kind of relationship a link is. The list is closed: navigation

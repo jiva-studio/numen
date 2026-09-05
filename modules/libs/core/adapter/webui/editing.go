@@ -55,14 +55,19 @@ func (a *API) WriteNote(
 	defer a.Writing.done()
 	at, err := a.Notes.Write.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), seenOf(r.Msg.GetSeen()))
 	// A write that reached the vault is a write that happened, so the client is
-	// handed the fingerprint it presents at its next save.
-	if err == nil || errors.Is(err, note.ErrUnlevelled) {
+	// handed the fingerprint it presents at its next save. It is told in the
+	// same breath where the index did not follow, because the prose is on disk
+	// and search does not hold it.
+	behind := a.unlevelled(err)
+	if err == nil || behind {
 		// What the person typed owes its vectors. Which chunks owe them is not
 		// carried: the debt is in the index, so several saves are one pass.
 		if a.Wrote != nil {
 			a.Wrote()
 		}
-		return connect.NewResponse(&v1.WriteNoteResponse{At: fingerprintOf(at)}), nil
+		return connect.NewResponse(&v1.WriteNoteResponse{
+			At: fingerprintOf(at), Unlevelled: behind,
+		}), nil
 	}
 	reason, refused := wire.RefusalBy(err)
 	if !refused {

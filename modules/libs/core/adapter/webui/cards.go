@@ -220,12 +220,16 @@ func (a *API) WriteDeck(
 
 	wrote, err := a.Cards.Write.Deck(ctx, showing, r.Msg.GetPath(), body, refOf(r.Msg.GetSeen()))
 	// A write that reached the vault is a write that happened, so the client is
-	// handed the fingerprint it presents at its next save.
-	if err == nil || errors.Is(err, note.ErrUnlevelled) {
+	// handed the fingerprint it presents at its next save, and told where the
+	// index did not follow.
+	behind := a.unlevelled(err)
+	if err == nil || behind {
 		if a.Wrote != nil {
 			a.Wrote()
 		}
-		return connect.NewResponse(&v1.WriteDeckResponse{At: fingerprintOf(wrote.Fingerprint)}), nil
+		return connect.NewResponse(&v1.WriteDeckResponse{
+			At: fingerprintOf(wrote.Fingerprint), Unlevelled: behind,
+		}), nil
 	}
 	if errors.Is(err, note.ErrTooLarge) {
 		refusal := v1.Refusal_REFUSAL_DECK_TOO_LARGE
@@ -263,12 +267,16 @@ func (a *API) WriteStencil(
 	at, err := a.Cards.Write.Stencil(
 		ctx, showing, r.Msg.GetPath(), body, r.Msg.GetFields(), refOf(r.Msg.GetSeen()))
 	// A write that reached the vault is a write that happened, so the client is
-	// handed the fingerprint it presents at its next save.
-	if err == nil || errors.Is(err, note.ErrUnlevelled) {
+	// handed the fingerprint it presents at its next save, and told where the
+	// index did not follow.
+	behind := a.unlevelled(err)
+	if err == nil || behind {
 		if a.Wrote != nil {
 			a.Wrote()
 		}
-		return connect.NewResponse(&v1.WriteStencilResponse{At: fingerprintOf(at)}), nil
+		return connect.NewResponse(&v1.WriteStencilResponse{
+			At: fingerprintOf(at), Unlevelled: behind,
+		}), nil
 	}
 	reason, refused := wire.RefusalBy(err)
 	if !refused {

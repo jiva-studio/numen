@@ -1176,7 +1176,11 @@ type WriteNoteResponse struct {
 	Refusal *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
-	At            *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	// Set when the prose is on disk and the index would not come level with it.
+	// The write happened and `at` stands; search answers about this note as it
+	// read it last, until a walk goes past.
+	Unlevelled    bool `protobuf:"varint,4,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1223,6 +1227,13 @@ func (x *WriteNoteResponse) GetAt() *Fingerprint {
 		return x.At
 	}
 	return nil
+}
+
+func (x *WriteNoteResponse) GetUnlevelled() bool {
+	if x != nil {
+		return x.Unlevelled
+	}
+	return false
 }
 
 // NewLink is one relationship as the note it is written in declares it: the
@@ -1841,10 +1852,13 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04body\x18\x02 \x01(\tR\x04body\x12+\n" +
 	"\x04seen\x18\x03 \x01(\v2\x12.numen.v1.LastReadH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\x93\x01\n" +
+	"\x05_seen\"\xb3\x01\n" +
 	"\x11WriteNoteResponse\x120\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01B\n" +
+	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
+	"\n" +
+	"unlevelled\x18\x04 \x01(\bR\n" +
+	"unlevelledB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
 	"\x03_atJ\x04\b\x02\x10\x03R\achanged\"S\n" +

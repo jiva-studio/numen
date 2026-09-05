@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // GetDeckPreset is the preset a deck is scheduled by. A deck naming none is
@@ -95,12 +94,16 @@ func (a *API) ScheduleDeck(
 	at, err := a.Presets.Point(
 		ctx, showing, r.Msg.GetDeck(), r.Msg.GetPreset(), refOf(r.Msg.GetSeen()))
 	// A write that reached the vault is a write that happened, so the client is
-	// handed the fingerprint it presents at its next save.
-	if err == nil || errors.Is(err, note.ErrUnlevelled) {
+	// handed the fingerprint it presents at its next save, and told where the
+	// index did not follow.
+	behind := a.unlevelled(err)
+	if err == nil || behind {
 		if a.Wrote != nil {
 			a.Wrote()
 		}
-		return connect.NewResponse(&v1.ScheduleDeckResponse{At: fingerprintOf(at)}), nil
+		return connect.NewResponse(&v1.ScheduleDeckResponse{
+			At: fingerprintOf(at), Unlevelled: behind,
+		}), nil
 	}
 	if errors.Is(err, flashcards.ErrNotAPreset) {
 		reason := v1.Refusal_REFUSAL_NOT_A_PRESET
@@ -157,12 +160,16 @@ func (a *API) WritePreset(
 
 	at, err := a.Presets.Save(ctx, showing, r.Msg.GetPath(), settings, refOf(r.Msg.GetSeen()))
 	// A write that reached the vault is a write that happened, so the client is
-	// handed the fingerprint it presents at its next save.
-	if err == nil || errors.Is(err, note.ErrUnlevelled) {
+	// handed the fingerprint it presents at its next save, and told where the
+	// index did not follow.
+	behind := a.unlevelled(err)
+	if err == nil || behind {
 		if a.Wrote != nil {
 			a.Wrote()
 		}
-		return connect.NewResponse(&v1.WritePresetResponse{At: fingerprintOf(at)}), nil
+		return connect.NewResponse(&v1.WritePresetResponse{
+			At: fingerprintOf(at), Unlevelled: behind,
+		}), nil
 	}
 	// A value outside what a preset may hold is the client's to correct.
 	if errors.Is(err, flashcards.ErrOutOfBounds) {

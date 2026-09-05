@@ -378,6 +378,11 @@ message WriteStencilResponse {
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
   optional Fingerprint at = 3;
+
+  // Set when the stencil is on disk and the index would not come level with it.
+  // The write happened and `at` stands; search answers about this file as it
+  // read it last, until a walk goes past.
+  bool unlevelled = 4;
 }
 
 message RenameStencilFieldRequest {
@@ -502,4 +507,9 @@ message WriteDeckResponse {
   // REFUSAL_DECK_TOO_LARGE, so the interface names the bound without holding a
   // number of its own.
   int64 bound = 4;
+
+  // Set when the deck is on disk and the index would not come level with it.
+  // The write happened and `at` stands; search answers about this file as it
+  // read it last, until a walk goes past.
+  bool unlevelled = 5;
 }

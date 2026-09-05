@@ -357,6 +357,9 @@ const (
 	// readingTheSettings is a name the settings file holds that this build
 	// reads under another one. Each sentence stands under this and its place.
 	readingTheSettings = "reading the settings"
+	// levellingTheIndex is a file that reached the vault and an index that did
+	// not follow it.
+	levellingTheIndex = "levelling the index"
 )
 
 // Says puts what reading the settings had to tell a person in the list of what

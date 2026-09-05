@@ -1211,7 +1211,11 @@ type WriteStencilResponse struct {
 	Refusal *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
-	At            *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	// Set when the stencil is on disk and the index would not come level with it.
+	// The write happened and `at` stands; search answers about this file as it
+	// read it last, until a walk goes past.
+	Unlevelled    bool `protobuf:"varint,4,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1258,6 +1262,13 @@ func (x *WriteStencilResponse) GetAt() *Fingerprint {
 		return x.At
 	}
 	return nil
+}
+
+func (x *WriteStencilResponse) GetUnlevelled() bool {
+	if x != nil {
+		return x.Unlevelled
+	}
+	return false
 }
 
 type RenameStencilFieldRequest struct {
@@ -1803,7 +1814,11 @@ type WriteDeckResponse struct {
 	// The size a deck is written up to, in bytes. Set with
 	// REFUSAL_DECK_TOO_LARGE, so the interface names the bound without holding a
 	// number of its own.
-	Bound         int64 `protobuf:"varint,4,opt,name=bound,proto3" json:"bound,omitempty"`
+	Bound int64 `protobuf:"varint,4,opt,name=bound,proto3" json:"bound,omitempty"`
+	// Set when the deck is on disk and the index would not come level with it.
+	// The write happened and `at` stands; search answers about this file as it
+	// read it last, until a walk goes past.
+	Unlevelled    bool `protobuf:"varint,5,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1857,6 +1872,13 @@ func (x *WriteDeckResponse) GetBound() int64 {
 		return x.Bound
 	}
 	return 0
+}
+
+func (x *WriteDeckResponse) GetUnlevelled() bool {
+	if x != nil {
+		return x.Unlevelled
+	}
+	return false
 }
 
 var File_numen_v1_cards_proto protoreflect.FileDescriptor
@@ -1946,10 +1968,13 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x04seen\x18\x04 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01\x12\x1a\n" +
 	"\bpreamble\x18\x05 \x01(\tR\bpreamble\x12\x12\n" +
 	"\x04tail\x18\x06 \x01(\tR\x04tailB\a\n" +
-	"\x05_seen\"\x96\x01\n" +
+	"\x05_seen\"\xb6\x01\n" +
 	"\x14WriteStencilResponse\x120\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01B\n" +
+	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
+	"\n" +
+	"unlevelled\x18\x04 \x01(\bR\n" +
+	"unlevelledB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
 	"\x03_atJ\x04\b\x02\x10\x03R\achanged\"\x8c\x01\n" +
@@ -1998,11 +2023,14 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\bsections\x18\x06 \x03(\v2\x11.numen.v1.SectionR\bsections\x12.\n" +
 	"\x04seen\x18\x04 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01\x12\x12\n" +
 	"\x04tail\x18\x05 \x01(\tR\x04tailB\a\n" +
-	"\x05_seen\"\xa9\x01\n" +
+	"\x05_seen\"\xc9\x01\n" +
 	"\x11WriteDeckResponse\x120\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x14\n" +
-	"\x05bound\x18\x04 \x01(\x03R\x05boundB\n" +
+	"\x05bound\x18\x04 \x01(\x03R\x05bound\x12\x1e\n" +
+	"\n" +
+	"unlevelled\x18\x05 \x01(\bR\n" +
+	"unlevelledB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
 	"\x03_atJ\x04\b\x02\x10\x03R\achanged*\xbb\x02\n" +

@@ -8,6 +8,7 @@ package webui
 
 import (
 	"context"
+	"errors"
 	"sync/atomic"
 	"time"
 
@@ -325,6 +326,24 @@ func (a *API) say(at task.Task) { a.Window.Say(at) }
 
 // finished takes one piece of work out of that list.
 func (a *API) finished(id string) { a.Window.Finished(id) }
+
+// unlevelled says whether a write reached the vault and the index did not
+// follow.
+// The answer goes on the wire, so the client that saved knows search has not
+// caught up with what it saved, and it stands in the list of what is being done
+// until a write levels the index again, so a person who is not looking at that
+// note is told too.
+func (a *API) unlevelled(err error) bool {
+	if err == nil {
+		a.finished(levellingTheIndex)
+		return false
+	}
+	if !errors.Is(err, note.ErrUnlevelled) {
+		return false
+	}
+	a.say(task.Task{ID: levellingTheIndex, Doing: "Bringing the index level", Failed: err.Error()})
+	return true
+}
 
 // Shut refuses every question from now on, and there is no opening it again. It
 // answers once the questions already taken have been answered, so everything an
