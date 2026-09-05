@@ -17,6 +17,9 @@ on:
       - "modules/apps/desktop/flashcards/src/**"
       - "modules/apps/docs/tools/**"
       - "modules/apps/landing/tools/**"
+      # A picture of a palette is taken in one of these, and the manual's
+      # check holds the names against the folder.
+      - "modules/libs/core/internal/adapter/theme/presets/**"
       - ".github/workflows/stories.yml"
   push:
     branches: [main]
@@ -26,6 +29,9 @@ on:
       - "modules/apps/desktop/flashcards/src/**"
       - "modules/apps/docs/tools/**"
       - "modules/apps/landing/tools/**"
+      # A picture of a palette is taken in one of these, and the manual's
+      # check holds the names against the folder.
+      - "modules/libs/core/internal/adapter/theme/presets/**"
       - ".github/workflows/stories.yml"
 
 concurrency:
