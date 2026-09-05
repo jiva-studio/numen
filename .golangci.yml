@@ -135,7 +135,7 @@ linters:
       # A close is what runs when the context is already over, so it carries one
       # of its own with a bound. A readiness a person is shown in a terminal is
       # a question about this machine, and asks nothing that can be waited for.
-      - path: (^|/)(adapter/cli/(recognise|transcribe)|cmd/numen/main|internal/agents/serve)\.go$
+      - path: (^|/)(cmd/(numen/main|numen-cli/deps)|internal/agents/serve)\.go$
         linters: [contextcheck]
 
       # The four statements a cut prepares are closed by the `defer w.close()`
