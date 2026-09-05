@@ -303,7 +303,7 @@ func displace(ctx context.Context, tx *sql.Tx, vault int64, from, to string) err
 	defer rows.Close()
 
 	movingFirst, movingPast := under(from)
-	var standing []int64
+	var displaced []int64
 	for rows.Next() {
 		var source int64
 		var path string
@@ -313,14 +313,14 @@ func displace(ctx context.Context, tx *sql.Tx, vault int64, from, to string) err
 		if path == from || (path >= movingFirst && path < movingPast) {
 			continue
 		}
-		standing = append(standing, source)
+		displaced = append(displaced, source)
 	}
 	if err := rows.Err(); err != nil {
 		return fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
 	}
 	rows.Close()
 
-	for _, source := range standing {
+	for _, source := range displaced {
 		if err := Clear(ctx, tx, source); err != nil {
 			return err
 		}
