@@ -135,6 +135,7 @@ endef
 
 .PHONY: lint
 lint: generate-check ## the checks CI runs, less the one needing a base branch
+	$(CORE)/adapter/index/migration-forward-only.sh --self-test
 	cd $(CORE) && $(call gofmt-check,.)
 	cd $(CORE) && go vet ./...
 	cd $(DESKTOP) && $(call gofmt-check,./cmd ./internal)

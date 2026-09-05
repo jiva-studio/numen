@@ -161,7 +161,6 @@ jobs:
   # to be in the clone to be read.
   migration:
     name: "Check :: Migrations"
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -170,22 +169,19 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # A rule nothing has been seen to refuse is an assumption, so the rule is
+      # put through a repository built to be refused before it is trusted with
+      # this one. It needs no base and runs on every event.
+      - name: What the rule refuses
+        run: modules/libs/core/adapter/index/migration-forward-only.sh --self-test
+
       # Git holds the hashes, so nothing here is written down twice: a file the
-      # base already carries answers A only if it is untouched.
+      # base already carries has to still be what it was there.
       - name: Forward only
+        if: github.event_name == 'pull_request'
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
-        run: |
-          set -euo pipefail
-          # Read apart from the grep, so a diff that cannot be taken fails the
-          # step instead of passing it empty.
-          changed=$(git diff --name-status "$BASE"...HEAD -- modules/libs/core/adapter/index/migration/)
-          touched=$(printf '%s' "$changed" | grep -v '^A' || true)
-          if [ -n "$touched" ]; then
-            echo "$touched"
-            echo "::error::a migration the base already carries was changed or removed — add a new numbered file instead"
-            exit 1
-          fi
+        run: modules/libs/core/adapter/index/migration-forward-only.sh "$BASE"
 
   go:
     name: "Test :: Go :: ${{ matrix.name }}"
