@@ -142,7 +142,7 @@ export const NOTHING_WRONG: Wrong = Object.freeze({
 })
 
 /** One value of a card, laid out under the stencil that cuts it. */
-export interface Laid extends FieldValue {
+export interface CardFieldValue extends FieldValue {
   /** The stencil names this slot. */
   readonly declared: boolean
 }
@@ -154,7 +154,10 @@ export interface Laid extends FieldValue {
  * names nothing for come after the rest, marked as named by nothing, and what
  * is drawn of them is the caller's.
  */
-export function laid(filled: readonly FieldValue[], fields: readonly string[]): readonly Laid[] {
+export function laid(
+  filled: readonly FieldValue[],
+  fields: readonly string[],
+): readonly CardFieldValue[] {
   const stood = declared(fields).flatMap((field) => {
     const written = filled.filter((each) => each.field === field)
     if (!written.length) return [{ field, text: '', declared: true }]
@@ -171,7 +174,7 @@ export const blanks = (fields: readonly string[]): readonly FieldValue[] =>
   fields.map((field) => ({ field, text: '' }))
 
 /** One value of a card as its tile draws it. */
-export interface Stood extends Laid {
+export interface PlacedFieldValue extends CardFieldValue {
   /** Where it stands among the values, counting from one. */
   readonly at: number
   /**
@@ -196,7 +199,7 @@ export interface Tile {
   readonly section: string | null
   readonly stencil: string | null
   /** Its values, in the order its stencil asks for them. */
-  readonly filled: readonly Stood[]
+  readonly filled: readonly PlacedFieldValue[]
   /** Where it stands among the tiles, counting from one, which is what it is announced as. */
   readonly at: number
   /** How many stand in the grid with it, the plus among them. */

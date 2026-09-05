@@ -13,7 +13,7 @@ import CardHeader from './CardHeader.vue'
 import RemoveButton from './RemoveButton.vue'
 import AutosizeTextarea from './AutosizeTextarea.vue'
 import Divider from '../divider/Divider.vue'
-import { DECK_WORDS, sealed, type CardWords, type Stood, type Tile } from './deck'
+import { DECK_WORDS, sealed, type CardWords, type PlacedFieldValue, type Tile } from './deck'
 import type { Way } from './order'
 
 const props = withDefaults(
@@ -56,10 +56,10 @@ const called = computed(() => `${props.words.cardStem} ${props.tile.at}`)
 /** What the strip says cut the card, and where nothing cut it, that nothing did. */
 const cut = computed(() => props.tile.stencil ?? props.words.unknown(null))
 
-const boxId = (value: Stood): string => `${uid}-${encodeURIComponent(value.key)}`
+const boxId = (value: PlacedFieldValue): string => `${uid}-${encodeURIComponent(value.key)}`
 
 /** What is wrong with one value, said once, under the last box standing for its field. */
-const wrongIn = (value: Stood): readonly string[] =>
+const wrongIn = (value: PlacedFieldValue): readonly string[] =>
   value.last ? (props.wrongUnder.get(value.field) ?? []) : []
 </script>
 
