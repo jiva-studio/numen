@@ -163,7 +163,11 @@ export type Reached =
   | 'empty'
   | 'failed'
 
-/** What a file carries, and what has become of each. */
+/**
+ * What a file carries, and what has become of each. Partial because which
+ * artifacts a file carries follows from the file: a scan carries no words
+ * heard, and a recording carries no text read.
+ */
 export type ArtifactStates = Partial<Record<Artifact, Reached>>
 
 /**
