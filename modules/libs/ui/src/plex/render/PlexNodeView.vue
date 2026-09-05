@@ -381,11 +381,11 @@ const hue = computed(() => ({
    darkens a light node and lightens a dark one. The outline is left to the
    seat's hue, and the focused node is painted from the pair it wears. */
 .plex__node:hover .plex__box {
-  fill: color-mix(in oklab, var(--numen-node-bg), var(--numen-node-fg) 8%);
+  fill: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 8%);
 }
 
 .plex__node--focus:hover .plex__box {
-  fill: color-mix(in oklab, var(--numen-focus-bg), var(--numen-focus-fg) 8%);
+  fill: color-mix(in oklab, var(--numen-accent), var(--numen-accent-ink) 8%);
 }
 
 .plex__node--focus {
@@ -397,8 +397,8 @@ const hue = computed(() => ({
    the seat; the fill answers the pointer at the speed a pointer is answered. */
 .plex__box {
   rx: var(--radius);
-  fill: var(--numen-node-bg);
-  stroke: var(--numen-seat-hue, var(--numen-node-border));
+  fill: var(--numen-raised);
+  stroke: var(--numen-seat-hue, var(--numen-rule));
   stroke-width: var(--numen-stroke);
   transition:
     fill var(--numen-motion-hover) var(--numen-easing),
@@ -423,7 +423,7 @@ const hue = computed(() => ({
   gap: var(--numen-node-gap);
   padding-inline: var(--numen-node-padding);
   box-sizing: border-box;
-  color: var(--numen-node-fg);
+  color: var(--numen-ink);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-font-size);
   line-height: var(--numen-line-height);
@@ -437,7 +437,7 @@ const hue = computed(() => ({
   flex: none;
   display: flex;
   align-items: center;
-  color: var(--numen-seat-hue, var(--numen-node-fg));
+  color: var(--numen-seat-hue, var(--numen-ink));
 }
 
 /* One line, then an ellipsis. A box stands at the height the arrangement gave
@@ -486,12 +486,12 @@ const hue = computed(() => ({
 
 .plex__node--focus .plex__box {
   rx: var(--radius-focus);
-  fill: var(--numen-focus-bg);
-  stroke: var(--numen-focus-border);
+  fill: var(--numen-accent);
+  stroke: var(--numen-accent);
 }
 
 .plex__node--focus .plex__title {
-  color: var(--numen-focus-fg);
+  color: var(--numen-accent-ink);
 }
 
 /* The focused node is painted from its own pair, and its seat's hue is the

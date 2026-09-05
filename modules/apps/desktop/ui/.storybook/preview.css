@@ -10,7 +10,7 @@ body,
    for. */
 html {
   background: var(--numen-surface);
-  color: var(--numen-node-fg);
+  color: var(--numen-ink);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-font-size);
 }

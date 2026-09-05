@@ -128,7 +128,7 @@ defineEmits<{
   overflow: auto;
   container-type: size;
   padding: var(--numen-gutter);
-  color: var(--numen-node-fg);
+  color: var(--numen-ink);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-font-size);
 }

@@ -74,8 +74,8 @@ const chose = (said: string) => {
 const filling = (level: number) => {
   const weight = filled(level) * 100
   return {
-    background: `color-mix(in oklab, var(--numen-node-bg), var(--numen-focus-bg) ${weight}%)`,
-    color: weight > 50 ? 'var(--numen-focus-fg)' : 'var(--numen-node-fg)',
+    background: `color-mix(in oklab, var(--numen-raised), var(--numen-accent) ${weight}%)`,
+    color: weight > 50 ? 'var(--numen-accent-ink)' : 'var(--numen-ink)',
   }
 }
 </script>

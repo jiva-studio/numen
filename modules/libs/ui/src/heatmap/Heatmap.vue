@@ -115,28 +115,28 @@ const reaches = (day: Day, press: MouseEvent) => {
 /* A day nobody answered on is the ground the grid is drawn on, and a day
    answered on is the accent, at the weight of what was done. */
 .heatmap__day {
-  fill: var(--numen-node-bg);
-  stroke: var(--numen-node-border);
+  fill: var(--numen-raised);
+  stroke: var(--numen-rule);
   stroke-width: 1;
 }
 
 .heatmap__day[data-weight='1'] {
-  fill: color-mix(in oklab, var(--numen-focus-bg) 25%, var(--numen-node-bg));
+  fill: color-mix(in oklab, var(--numen-accent) 25%, var(--numen-raised));
   stroke: none;
 }
 
 .heatmap__day[data-weight='2'] {
-  fill: color-mix(in oklab, var(--numen-focus-bg) 45%, var(--numen-node-bg));
+  fill: color-mix(in oklab, var(--numen-accent) 45%, var(--numen-raised));
   stroke: none;
 }
 
 .heatmap__day[data-weight='3'] {
-  fill: color-mix(in oklab, var(--numen-focus-bg) 70%, var(--numen-node-bg));
+  fill: color-mix(in oklab, var(--numen-accent) 70%, var(--numen-raised));
   stroke: none;
 }
 
 .heatmap__day[data-weight='4'] {
-  fill: var(--numen-focus-bg);
+  fill: var(--numen-accent);
   stroke: none;
 }
 
@@ -144,28 +144,28 @@ const reaches = (day: Day, press: MouseEvent) => {
    and what is coming is the same weight drawn dim. It carries its weight, so a
    heavy week ahead reads as a heavy week. */
 .heatmap__day[data-ahead][data-weight='1'] {
-  fill: color-mix(in oklab, var(--numen-focus-bg) 8%, var(--numen-node-bg));
+  fill: color-mix(in oklab, var(--numen-accent) 8%, var(--numen-raised));
   stroke: none;
 }
 
 .heatmap__day[data-ahead][data-weight='2'] {
-  fill: color-mix(in oklab, var(--numen-focus-bg) 15%, var(--numen-node-bg));
+  fill: color-mix(in oklab, var(--numen-accent) 15%, var(--numen-raised));
   stroke: none;
 }
 
 .heatmap__day[data-ahead][data-weight='3'] {
-  fill: color-mix(in oklab, var(--numen-focus-bg) 23%, var(--numen-node-bg));
+  fill: color-mix(in oklab, var(--numen-accent) 23%, var(--numen-raised));
   stroke: none;
 }
 
 .heatmap__day[data-ahead][data-weight='4'] {
-  fill: color-mix(in oklab, var(--numen-focus-bg) 32%, var(--numen-node-bg));
+  fill: color-mix(in oklab, var(--numen-accent) 32%, var(--numen-raised));
   stroke: none;
 }
 
 /* Today is where a person's eye goes first, so it is ringed whatever it holds. */
 .heatmap__day[data-today] {
-  stroke: var(--numen-node-fg);
+  stroke: var(--numen-ink);
   stroke-width: 1.5;
 }
 </style>

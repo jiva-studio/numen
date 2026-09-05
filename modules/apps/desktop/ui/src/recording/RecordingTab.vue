@@ -180,7 +180,7 @@ const chose = (id: string) => {
   min-block-size: 0;
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-2);
-  color: var(--numen-node-fg);
+  color: var(--numen-ink);
 }
 
 /* The player heads the pane at its full width, on the rule that separates it
@@ -194,7 +194,7 @@ const chose = (id: string) => {
   inline-size: 100%;
   min-block-size: var(--numen-action-size);
   padding-inline: var(--numen-gutter);
-  border-block-end: var(--numen-stroke) solid var(--numen-node-border);
+  border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }
 
 /* Everything but the player: the words, or what is said where there are none. */
@@ -229,7 +229,7 @@ const chose = (id: string) => {
 }
 
 .recording__ask:hover {
-  border-color: var(--numen-focus-border);
+  border-color: var(--numen-accent);
 }
 
 .recording__player {
@@ -267,7 +267,7 @@ const chose = (id: string) => {
 }
 
 .recording__follow[aria-pressed='true'] {
-  color: var(--numen-focus-border);
+  color: var(--numen-accent);
 }
 
 .recording__icon {

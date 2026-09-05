@@ -28,7 +28,7 @@ const row = (args: Knobs) => ({
   components: { Button },
   setup: () => ({ args, variants: VARIANTS }),
   template: `
-    <div class="numen" style="display:flex;align-items:center;gap:16px;padding:32px;background:var(--numen-surface);color:var(--numen-node-fg);font-family:var(--numen-font-sans)">
+    <div class="numen" style="display:flex;align-items:center;gap:16px;padding:32px;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans)">
       <Button
         v-for="variant in variants"
         :key="variant"

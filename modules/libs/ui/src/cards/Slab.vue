@@ -43,7 +43,7 @@ withDefaults(
 
 /* A strip at the head of a block is ruled off from what it heads. */
 .slab[data-tone='bar'] {
-  border-block-end: var(--numen-stroke) solid var(--numen-node-border);
+  border-block-end: var(--numen-stroke) solid var(--numen-rule);
   background: var(--numen-code-bg);
 }
 </style>

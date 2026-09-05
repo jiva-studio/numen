@@ -81,7 +81,7 @@
 }
 
 .control__rule {
-  stroke: var(--numen-node-border);
+  stroke: var(--numen-rule);
   stroke-width: 1;
 }
 
@@ -100,8 +100,8 @@
   line-height: 1.2;
   white-space: nowrap;
   text-shadow:
-    0 0 var(--numen-edge-label-halo) var(--numen-node-bg),
-    0 0 var(--numen-edge-label-halo) var(--numen-node-bg);
+    0 0 var(--numen-edge-label-halo) var(--numen-raised),
+    0 0 var(--numen-edge-label-halo) var(--numen-raised);
   pointer-events: none;
 }
 

@@ -60,10 +60,10 @@ const spoken = computed(() =>
   min-inline-size: 1.6em;
   padding-inline: 0.45em;
   border: var(--numen-stroke) solid
-    color-mix(in oklab, var(--numen-node-bg), var(--numen-node-fg) 25%);
+    color-mix(in oklab, var(--numen-raised), var(--numen-ink) 25%);
   border-radius: var(--cap-radius);
-  background: var(--numen-node-bg);
-  color: var(--numen-node-fg);
+  background: var(--numen-raised);
+  color: var(--numen-ink);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-1);
   line-height: 1;

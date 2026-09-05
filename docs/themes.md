@@ -9,8 +9,8 @@ Every token a theme leaves out keeps the value `tokens.css` holds. A file naming
 ```css
 :root {
   --numen-surface: #101014;
-  --numen-node-bg: #17171d;
-  --numen-node-fg: #e6e6ea;
+  --numen-raised: #17171d;
+  --numen-ink: #e6e6ea;
 }
 ```
 
@@ -72,19 +72,18 @@ A name matching nothing wears `preset:numen`, and the name that was not found is
 
 ## The tokens a theme sets
 
-Forty-two, each a colour except where it says otherwise.
+Forty-one, each a colour except where it says otherwise.
 
 ### The window and what stands on it
 
 | | |
 | --- | --- |
 | `--numen-surface` | the ground the window is drawn on. |
-| `--numen-node-bg` | what a node, a card and a pane are filled with. |
-| `--numen-node-fg` | text on that fill, and the caret in it. |
-| `--numen-node-border` | the line around it. |
-| `--numen-focus-bg` | the accent: the node the keyboard is on, and what a button is filled with. |
-| `--numen-focus-fg` | text on the accent. |
-| `--numen-focus-border` | the line around it. |
+| `--numen-raised` | what a node, a card and a pane are filled with. |
+| `--numen-ink` | text on that fill, and the caret in it. |
+| `--numen-rule` | the line around it. |
+| `--numen-accent` | the node the keyboard is on, what a button is filled with, and every line and mark drawn in the accent. |
+| `--numen-accent-ink` | text on the accent. |
 | `--numen-ring` | the outline around what is focused, and a link in marked-up text. |
 | `--numen-alarm` | what is wrong: a refusal, and what the parser could not read. |
 

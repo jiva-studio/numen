@@ -23,11 +23,11 @@ export const buttonVariants = cva(
       variant: {
         solid: [
           'bg-accent text-accent-ink',
-          'hover:bg-[color-mix(in_oklab,var(--numen-focus-bg),var(--numen-focus-fg)_8%)]',
+          'hover:bg-[color-mix(in_oklab,var(--numen-accent),var(--numen-accent-ink)_8%)]',
         ],
         outline: [
           'border border-rule bg-raised text-ink',
-          'hover:bg-[color-mix(in_oklab,var(--numen-node-bg),var(--numen-node-fg)_8%)]',
+          'hover:bg-[color-mix(in_oklab,var(--numen-raised),var(--numen-ink)_8%)]',
         ],
         ghost: 'text-ink hover:bg-raised',
       },

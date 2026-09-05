@@ -262,10 +262,10 @@ const { told, cried } = useAnnouncer(() => drawn.value)
   max-inline-size: calc(100vw - 2 * var(--numen-inset-wide));
   padding-block: 0.5rem;
   padding-inline: 0.75rem 0.5rem;
-  border: var(--numen-stroke) solid var(--numen-node-border);
+  border: var(--numen-stroke) solid var(--numen-rule);
   border-radius: var(--numen-radius-panel);
-  background: var(--numen-node-bg);
-  color: var(--numen-node-fg);
+  background: var(--numen-raised);
+  color: var(--numen-ink);
   box-shadow: var(--numen-shadow-card);
   text-align: start;
 }

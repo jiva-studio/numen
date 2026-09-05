@@ -114,8 +114,8 @@ const boxOf = (one: Rect) => ({
 /* The page stands on the surface, and its own edge is what tells it from it.
    The edge is the page's, so a highlight is placed inside it. */
 .reader__page {
-  border: var(--numen-stroke) solid var(--numen-node-border);
-  background: var(--numen-node-bg);
+  border: var(--numen-stroke) solid var(--numen-rule);
+  background: var(--numen-raised);
 }
 
 /* A place the person was not sent to is drawn faintly: it says there is

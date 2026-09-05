@@ -78,7 +78,7 @@ defineExpose({
   padding: var(--box-air, 0.5rem) var(--box-pad-inline, var(--numen-box-air));
   border: none;
   background: none;
-  color: var(--numen-node-fg);
+  color: var(--numen-ink);
   font: inherit;
   white-space: pre-wrap;
   overflow-wrap: anywhere;

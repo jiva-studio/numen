@@ -304,7 +304,7 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
   min-block-size: 0;
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-2);
-  color: var(--numen-node-fg);
+  color: var(--numen-ink);
 }
 
 .preset__page {
@@ -379,7 +379,7 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
   align-items: center;
   gap: 0 var(--numen-panel-gap);
   padding-block: var(--preset-row-air);
-  border-block-end: var(--numen-stroke) solid var(--numen-node-border);
+  border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }
 
 /* What the row is called, and under it what it means. */
@@ -393,7 +393,7 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
 /* The name of a row and what it means are one size, and the name carries the
    weight and the colour that tell them apart. */
 .preset__name {
-  color: var(--numen-node-fg);
+  color: var(--numen-ink);
   font-weight: 500;
 }
 

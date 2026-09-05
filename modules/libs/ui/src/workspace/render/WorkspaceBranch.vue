@@ -214,7 +214,7 @@ function handling(now: boolean): void {
   position: relative;
   z-index: 1;
   flex: none;
-  background: var(--numen-node-border);
+  background: var(--numen-rule);
 }
 
 /* The splitter draws the pointer as a double arrow everywhere its reach is

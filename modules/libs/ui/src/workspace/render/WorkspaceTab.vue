@@ -110,8 +110,8 @@ const onPointerDown = (event: PointerEvent) => {
 
 /* The one showing is raised, as a node in focus is. */
 .tab[data-showing] {
-  background: var(--numen-node-bg);
-  color: var(--numen-node-fg);
+  background: var(--numen-raised);
+  color: var(--numen-ink);
 }
 
 /* What kind of tab this is, drawn before its name. The row's own gap is the

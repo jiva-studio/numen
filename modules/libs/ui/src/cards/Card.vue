@@ -168,7 +168,7 @@ const wrongIn = (value: Stood): readonly string[] =>
 
   position: relative;
   min-inline-size: 0;
-  border: var(--numen-stroke) solid var(--numen-node-border);
+  border: var(--numen-stroke) solid var(--numen-rule);
   overflow: hidden;
   overflow-wrap: anywhere;
 }

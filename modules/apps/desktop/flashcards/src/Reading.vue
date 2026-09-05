@@ -100,10 +100,10 @@ watch(
   min-inline-size: 0;
   min-block-size: 0;
   padding: var(--numen-inset-wide);
-  border: 1px solid var(--numen-node-border);
+  border: 1px solid var(--numen-rule);
   border-radius: var(--numen-radius);
   overflow: hidden;
-  background: var(--numen-node-bg);
+  background: var(--numen-raised);
 }
 
 /* Read down, while the strip it stands in is taken across. */
@@ -129,7 +129,7 @@ watch(
 .reading__head {
   margin-block-end: var(--numen-inset);
   padding-block-end: var(--numen-inset);
-  border-block-end: 1px solid var(--numen-node-border);
+  border-block-end: 1px solid var(--numen-rule);
 }
 
 .reading__name {

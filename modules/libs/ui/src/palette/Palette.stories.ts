@@ -147,11 +147,11 @@ const over = (args: Knobs) => ({
     return { args, open, typed }
   },
   template: `
-    <div class="numen" style="height:100vh;padding:24px;background:var(--numen-surface);color:var(--numen-node-fg);font-family:var(--numen-font-sans)">
+    <div class="numen" style="height:100vh;padding:24px;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans)">
       <p style="margin:0 0 12px">The window, with the palette standing over it.</p>
       <button
         type="button"
-        style="padding:8px 14px;border-radius:6px;border:1px solid var(--numen-node-border);background:var(--numen-node-bg);color:inherit;font:inherit"
+        style="padding:8px 14px;border-radius:6px;border:1px solid var(--numen-rule);background:var(--numen-raised);color:inherit;font:inherit"
         @click="open = true"
       >Open the palette</button>
       <Palette

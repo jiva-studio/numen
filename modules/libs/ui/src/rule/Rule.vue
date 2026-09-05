@@ -33,7 +33,7 @@ withDefaults(defineProps<{ at?: 'middle' | 'start' }>(), { at: 'middle' })
   flex: 1 1 0;
   min-inline-size: 0;
   block-size: 0;
-  border-block-start: var(--numen-stroke) dashed var(--numen-node-border);
+  border-block-start: var(--numen-stroke) dashed var(--numen-rule);
 }
 
 /* A rule that leads with what it holds keeps only a stub of line before it. */

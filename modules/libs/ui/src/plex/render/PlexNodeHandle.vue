@@ -68,8 +68,8 @@ const onKey = (event: KeyboardEvent) => {
 /* The hue is the one thing it inherits: it belongs to whatever it hangs off. */
 .plex__handle {
   r: var(--radius);
-  fill: var(--numen-node-bg);
-  stroke: var(--numen-seat-hue, var(--numen-node-border));
+  fill: var(--numen-raised);
+  stroke: var(--numen-seat-hue, var(--numen-rule));
   stroke-width: var(--numen-stroke);
   cursor: crosshair;
 }
@@ -82,7 +82,7 @@ const onKey = (event: KeyboardEvent) => {
 
 /* The cross, as two bars, each drawn about the origin the group is placed at. */
 .plex__handle-mark {
-  fill: var(--numen-node-fg);
+  fill: var(--numen-ink);
   rx: calc(var(--bar) / 2);
   pointer-events: none;
 }

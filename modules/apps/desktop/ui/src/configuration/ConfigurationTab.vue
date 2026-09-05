@@ -51,7 +51,7 @@ const props = defineProps<{ held: Held }>()
   min-block-size: 0;
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-2);
-  color: var(--numen-node-fg);
+  color: var(--numen-ink);
 }
 
 /* What is wrong with what was typed, which is the one thing to catch the eye. */

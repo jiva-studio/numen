@@ -70,7 +70,7 @@ const asked = (args: Knobs) => ({
       <button
         ref="node"
         type="button"
-        style="padding:10px 18px;border-radius:6px;border:1px solid var(--numen-node-border);background:var(--numen-node-bg);color:var(--numen-node-fg);font-family:var(--numen-font-sans)"
+        style="padding:10px 18px;border-radius:6px;border:1px solid var(--numen-rule);background:var(--numen-raised);color:var(--numen-ink);font-family:var(--numen-font-sans)"
         @contextmenu="ask"
       >A node</button>
       <Menu
@@ -237,11 +237,11 @@ export const NotClipped: Story = {
       <div class="numen" style="height:100vh;display:grid;place-items:center;background:var(--numen-surface)">
         <div
           data-clipping
-          style="width:200px;height:110px;overflow:hidden;position:relative;outline:1px solid var(--numen-node-border)"
+          style="width:200px;height:110px;overflow:hidden;position:relative;outline:1px solid var(--numen-rule)"
         >
           <button
             type="button"
-            style="position:absolute;inset-block-end:6px;inset-inline-end:6px;padding:8px 14px;border-radius:6px;border:1px solid var(--numen-node-border);background:var(--numen-node-bg);color:var(--numen-node-fg);font-family:var(--numen-font-sans)"
+            style="position:absolute;inset-block-end:6px;inset-inline-end:6px;padding:8px 14px;border-radius:6px;border:1px solid var(--numen-rule);background:var(--numen-raised);color:var(--numen-ink);font-family:var(--numen-font-sans)"
             @contextmenu="ask"
           >A node at the corner</button>
 

@@ -20,7 +20,7 @@ body,
 
 body {
   background: var(--numen-surface);
-  color: var(--numen-node-fg);
+  color: var(--numen-ink);
   user-select: none;
   -webkit-user-select: none;
 }

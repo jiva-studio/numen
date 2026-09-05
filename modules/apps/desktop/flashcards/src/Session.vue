@@ -148,7 +148,7 @@ defineEmits<{
 }
 
 .session__deck {
-  color: var(--numen-node-fg);
+  color: var(--numen-ink);
   font-weight: 600;
 }
 

@@ -298,7 +298,7 @@ const addSection = (): void => {
   place-items: center;
   min-block-size: 12rem;
   padding: var(--numen-box-air);
-  border: var(--numen-stroke) dashed var(--numen-node-border);
+  border: var(--numen-stroke) dashed var(--numen-rule);
 }
 
 /* A mark is drawn at the height of the text around it, so the plus is as large

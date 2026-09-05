@@ -116,6 +116,6 @@ const sought = (event: Event) => emit('seek', Number((event.target as HTMLInputE
 .player__bar {
   flex: 1;
   min-inline-size: 0;
-  accent-color: var(--numen-focus-border);
+  accent-color: var(--numen-accent);
 }
 </style>

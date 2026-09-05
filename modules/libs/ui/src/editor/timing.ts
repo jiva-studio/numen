@@ -113,7 +113,7 @@ const painted = EditorView.theme({
   },
   '.cm-time:focus-visible': { outline: 'none' },
   '.cm-current, .cm-current .cm-time': {
-    color: 'var(--numen-focus-border)',
+    color: 'var(--numen-accent)',
   },
 })
 

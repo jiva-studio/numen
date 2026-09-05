@@ -17,15 +17,14 @@
   color-scheme: dark;
 
   --numen-surface: #1e1f1c;
-  --numen-node-bg: #272822;
-  --numen-node-fg: #f8f8f2;
-  --numen-node-border: #34352f;
+  --numen-raised: #272822;
+  --numen-ink: #f8f8f2;
+  --numen-rule: #34352f;
 
   /* The accent is the tone the palette fills a button and a selected row with,
      with its focus line around what the keyboard is on. */
-  --numen-focus-bg: #75715e;
-  --numen-focus-fg: #f8f8f2;
-  --numen-focus-border: #75715e;
+  --numen-accent: #75715e;
+  --numen-accent-ink: #f8f8f2;
 
   --numen-seat-parent: #66d9ef;
   --numen-seat-child: #a6e22e;

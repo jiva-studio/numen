@@ -460,8 +460,8 @@ function onFieldKey(event: KeyboardEvent): void {
 }
 
 .tree__row[data-selected] {
-  background: var(--numen-focus-bg);
-  color: var(--numen-focus-fg);
+  background: var(--numen-accent);
+  color: var(--numen-accent-ink);
 }
 
 /* A row on its way somewhere, drawn plainly where it stands. */
@@ -504,7 +504,7 @@ function onFieldKey(event: KeyboardEvent): void {
 .tree__field {
   border: var(--numen-stroke) solid var(--numen-field-border);
   background: var(--numen-field-bg);
-  color: var(--numen-node-fg);
+  color: var(--numen-ink);
   font: inherit;
 }
 

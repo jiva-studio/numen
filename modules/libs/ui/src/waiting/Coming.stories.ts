@@ -48,7 +48,7 @@ export const ARowThatDoesNotMove: Story = {
     components: { Coming },
     setup: () => ({ args, rows: ['Studies', 'Sanskrit', 'Птицы', 'ᬩᬮᬶ'] }),
     template: `
-      <div class="numen" style="display:flex;gap:32px;padding:24px;background:var(--numen-surface);color:var(--numen-node-fg);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
+      <div class="numen" style="display:flex;gap:32px;padding:24px;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
         <ul v-for="(counted, at) in [true, false]" :key="at" style="margin:0;padding:0;list-style:none;inline-size:11rem">
           <li v-for="(name, row) in rows" :key="name" style="display:flex;align-items:center;gap:12px;padding:0.3rem 0.6rem">
             <span style="flex:1">{{ name }}</span>
@@ -68,7 +68,7 @@ export const InPlaceOfWords: Story = {
     components: { Coming },
     setup: () => ({ args }),
     template: `
-      <div class="numen" style="inline-size:280px;padding:24px;background:var(--numen-surface);color:var(--numen-node-fg);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
+      <div class="numen" style="inline-size:280px;padding:24px;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
         <p style="margin:0 0 6px;color:var(--numen-edge-label);font-size:var(--numen-edge-label-size)">Preset</p>
         <Coming v-bind="args" />
       </div>
@@ -83,7 +83,7 @@ export const AsWideAsWhatHoldsIt: Story = {
     components: { Coming },
     setup: () => ({ args }),
     template: `
-      <div class="numen" style="inline-size:320px;padding:24px;background:var(--numen-surface);color:var(--numen-node-fg);font-family:var(--numen-font-sans)">
+      <div class="numen" style="inline-size:320px;padding:24px;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans)">
         <Coming v-bind="args" />
       </div>
     `,
@@ -97,7 +97,7 @@ export const OnAFilledGround: Story = {
     components: { Coming },
     setup: () => ({ args }),
     template: `
-      <div class="numen" style="padding:24px;background:var(--numen-focus-bg);color:var(--numen-focus-fg);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
+      <div class="numen" style="padding:24px;background:var(--numen-accent);color:var(--numen-accent-ink);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
         <span style="display:inline-flex;align-items:center;gap:8px">
           <span>Counting</span>
           <Coming v-bind="args" />
@@ -119,9 +119,9 @@ export const Dark: Story = {
     components: { Coming },
     setup: () => ({ args }),
     template: `
-      <div class="numen" style="display:flex;flex-direction:column;gap:16px;padding:24px;background:var(--numen-surface);color:var(--numen-node-fg);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
+      <div class="numen" style="display:flex;flex-direction:column;gap:16px;padding:24px;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
         <span data-ground style="padding:8px;background:var(--numen-surface)"><Coming v-bind="args" /></span>
-        <span data-ground style="padding:8px;background:var(--numen-focus-bg);color:var(--numen-focus-fg)"><Coming v-bind="args" /></span>
+        <span data-ground style="padding:8px;background:var(--numen-accent);color:var(--numen-accent-ink)"><Coming v-bind="args" /></span>
       </div>
     `,
   }),
@@ -157,7 +157,7 @@ export const FarTooMany: Story = {
     components: { Coming },
     setup: () => ({ args, rows: Array.from({ length: 40 }, (_, at) => at) }),
     template: `
-      <div class="numen" style="display:flex;flex-direction:column;gap:6px;inline-size:320px;padding:24px;background:var(--numen-surface);color:var(--numen-node-fg)">
+      <div class="numen" style="display:flex;flex-direction:column;gap:6px;inline-size:320px;padding:24px;background:var(--numen-surface);color:var(--numen-ink)">
         <Coming v-for="row in rows" :key="row" v-bind="args" />
       </div>
     `,

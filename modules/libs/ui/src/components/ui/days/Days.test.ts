@@ -66,9 +66,9 @@ describe('what is drawn', () => {
   it('fills a day in step with the level it stands at', () => {
     const chips = mountDays({ days: week({ sat: 0, sun: 0.75 }) }).findAll('button')
     const filling = (at: number) => chips[at]?.attributes('style') ?? ''
-    expect(filling(0)).toContain('var(--numen-focus-bg) 100%')
-    expect(filling(5)).toContain('var(--numen-focus-bg) 0%')
-    expect(filling(6)).toContain('var(--numen-focus-bg) 75%')
+    expect(filling(0)).toContain('var(--numen-accent) 100%')
+    expect(filling(5)).toContain('var(--numen-accent) 0%')
+    expect(filling(6)).toContain('var(--numen-accent) 75%')
   })
 
   it('says a day offers the levels rather than turning on the spot', () => {
@@ -105,9 +105,9 @@ describe('a day standing at a level the offer does not name', () => {
     const row = mountDays({ days: week({ sat: 0.37, sun: 4 }) })
     const chips = row.findAll('button')
     expect(chips[5]?.attributes('aria-label')).toBe('Saturday, 37%')
-    expect(chips[5]?.attributes('style')).toContain('var(--numen-focus-bg) 37%')
+    expect(chips[5]?.attributes('style')).toContain('var(--numen-accent) 37%')
     expect(chips[6]?.attributes('aria-label')).toBe('Sunday, 100%')
-    expect(chips[6]?.attributes('style')).toContain('var(--numen-focus-bg) 100%')
+    expect(chips[6]?.attributes('style')).toContain('var(--numen-accent) 100%')
   })
 
   it('offers that level too, in its place among them and as the one in force', async () => {

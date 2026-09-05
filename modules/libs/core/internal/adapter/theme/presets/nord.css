@@ -17,13 +17,12 @@
   color-scheme: dark;
 
   --numen-surface: #2e3440;
-  --numen-node-bg: #3b4252;
-  --numen-node-fg: #eceff4;
-  --numen-node-border: #434c5e;
+  --numen-raised: #3b4252;
+  --numen-ink: #eceff4;
+  --numen-rule: #434c5e;
 
-  --numen-focus-bg: #88c0d0;
-  --numen-focus-fg: #2e3440;
-  --numen-focus-border: #88c0d0;
+  --numen-accent: #88c0d0;
+  --numen-accent-ink: #2e3440;
 
   --numen-seat-parent: #81a1c1;
   --numen-seat-child: #a3be8c;

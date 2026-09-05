@@ -1380,7 +1380,7 @@ export const SmallWindow: Story = {
     },
     template: `
       <div style="height:100vh;display:grid;place-items:center;background:#8883">
-        <div style="width:420px;height:320px;outline:1px solid var(--numen-node-border)">
+        <div style="width:420px;height:320px;outline:1px solid var(--numen-rule)">
           <Plex
             :neighbourhood="args.neighbourhood"
             :placement="args.placement"

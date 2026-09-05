@@ -23,15 +23,14 @@
  */
 :where(:root) {
   --numen-surface: light-dark(#faf4e8, #1e1916);
-  --numen-node-bg: light-dark(#fffbf2, #27221d);
-  --numen-node-fg: light-dark(#3a322a, #ece0cd);
-  --numen-node-border: light-dark(#e0d6c4, #373029);
+  --numen-raised: light-dark(#fffbf2, #27221d);
+  --numen-ink: light-dark(#3a322a, #ece0cd);
+  --numen-rule: light-dark(#e0d6c4, #373029);
 
-  /* The node in focus is filled with the accent, which is what the ring and
+  /* The accent: what the node in focus is filled with, and what the ring and
      the selection are drawn in as well. */
-  --numen-focus-bg: light-dark(#b45f16, #e9a23b);
-  --numen-focus-fg: light-dark(#faf4e8, #2a1d0c);
-  --numen-focus-border: light-dark(#b45f16, #e9a23b);
+  --numen-accent: light-dark(#b45f16, #e9a23b);
+  --numen-accent-ink: light-dark(#faf4e8, #2a1d0c);
 
   /* One hue per seat, carrying the meaning the position already carries: the
      arrangement is what a reader learns, the colour is what they use first. */
@@ -95,9 +94,9 @@
   --numen-scrim: light-dark(#00000014, #0000005c);
 
   --numen-field-bg: light-dark(#fffbf2, #221d19);
-  /* A field is ruled in the line a node's box is ruled in. A theme wanting the
-     two apart names this one as well. */
-  --numen-field-border: var(--numen-node-border);
+  /* A field is ruled in the line every other box is ruled in. A theme wanting
+     the two apart names this one as well. */
+  --numen-field-border: var(--numen-rule);
 
   /* What was said is a bubble; what came back is text on the surface. */
   --numen-bubble-bg: light-dark(#f0e6d4, #2e2822);

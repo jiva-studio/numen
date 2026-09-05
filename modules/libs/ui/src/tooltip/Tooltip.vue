@@ -98,10 +98,10 @@ watch(() => props.at, measure, { flush: 'post' })
   /* As wide as what it says, whatever room is left beside where it stands. */
   inline-size: max-content;
   padding: var(--numen-inset);
-  border: 1px solid var(--numen-node-border);
+  border: 1px solid var(--numen-rule);
   border-radius: var(--numen-radius);
-  background: var(--numen-node-bg);
-  color: var(--numen-node-fg);
+  background: var(--numen-raised);
+  color: var(--numen-ink);
   box-shadow: var(--numen-shadow-card);
   font-size: var(--numen-text-1);
   pointer-events: none;

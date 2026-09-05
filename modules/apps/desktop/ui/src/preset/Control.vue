@@ -574,13 +574,13 @@ const released = (event: KeyboardEvent) => {
      letters, so the block clearance is trimmed by that difference and the four
      gaps read alike. */
   padding: calc(var(--numen-inset) - var(--control-lead)) var(--numen-box-air);
-  border: var(--numen-stroke) solid var(--numen-node-border);
+  border: var(--numen-stroke) solid var(--numen-rule);
   border-radius: var(--numen-radius-tight);
-  background: var(--numen-node-bg);
+  background: var(--numen-raised);
 }
 
 .control__figure {
-  color: var(--numen-node-fg);
+  color: var(--numen-ink);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-2);
   font-variant-numeric: tabular-nums;
@@ -605,9 +605,9 @@ const released = (event: KeyboardEvent) => {
   flex-direction: column;
   gap: var(--numen-dot-gap);
   padding: var(--numen-box-air);
-  border: var(--numen-stroke) solid var(--numen-node-border);
+  border: var(--numen-stroke) solid var(--numen-rule);
   border-radius: var(--numen-radius-tight);
-  background: var(--numen-node-bg);
+  background: var(--numen-raised);
 }
 
 
@@ -646,7 +646,7 @@ const released = (event: KeyboardEvent) => {
 }
 
 .control__band {
-  stroke: var(--numen-node-border);
+  stroke: var(--numen-rule);
   stroke-width: 1;
   stroke-dasharray: 2 5;
 }
@@ -657,7 +657,7 @@ const released = (event: KeyboardEvent) => {
  */
 .control__line {
   fill: none;
-  stroke: var(--numen-focus-bg);
+  stroke: var(--numen-accent);
   stroke-width: 2.25;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -673,19 +673,19 @@ const released = (event: KeyboardEvent) => {
 
 /* The line dropping from the knob, drawn one way under every goal. */
 .control__drop {
-  stroke: var(--numen-focus-bg);
+  stroke: var(--numen-accent);
   stroke-width: 1;
   stroke-dasharray: var(--numen-thread-dash);
 }
 
 /* What is suggested: the accent again, filled and lighter. */
 .control__suggested {
-  fill: var(--numen-focus-bg);
+  fill: var(--numen-accent);
 }
 
 /* The knob's own value, which reads out where the knob is dragged to. */
 .control__number--knob {
-  color: var(--numen-focus-bg);
+  color: var(--numen-accent);
 }
 
 /*
@@ -699,9 +699,9 @@ const released = (event: KeyboardEvent) => {
   flex-direction: column;
   gap: var(--numen-dot-gap);
   padding: var(--numen-inset);
-  border: var(--numen-stroke) solid var(--numen-node-border);
+  border: var(--numen-stroke) solid var(--numen-rule);
   border-radius: var(--numen-radius-tight);
-  background: var(--numen-node-bg);
+  background: var(--numen-raised);
   box-shadow: var(--numen-shadow-card);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-1);
@@ -719,10 +719,10 @@ const released = (event: KeyboardEvent) => {
   position: absolute;
   inline-size: var(--control-tail);
   block-size: var(--control-tail);
-  border: var(--numen-stroke) solid var(--numen-node-border);
+  border: var(--numen-stroke) solid var(--numen-rule);
   border-block-start: 0;
   border-inline-start: 0;
-  background: var(--numen-node-bg);
+  background: var(--numen-raised);
   rotate: 45deg;
   translate: -50% -50%;
   pointer-events: none;
@@ -730,39 +730,39 @@ const released = (event: KeyboardEvent) => {
 
 /* Under the knob the bubble hangs below it, so the tail points up instead. */
 .control__tail--under {
-  border-block-start: var(--numen-stroke) solid var(--numen-node-border);
-  border-inline-start: var(--numen-stroke) solid var(--numen-node-border);
+  border-block-start: var(--numen-stroke) solid var(--numen-rule);
+  border-inline-start: var(--numen-stroke) solid var(--numen-rule);
   border-block-end: 0;
   border-inline-end: 0;
 }
 
 .control__bought {
-  color: var(--numen-node-fg);
+  color: var(--numen-ink);
   font-variant-numeric: tabular-nums;
 }
 
 /* The value being held is the knob's own, and is said in the knob's colour. */
 .control__bought:first-child {
-  color: var(--numen-focus-bg);
+  color: var(--numen-accent);
 }
 
 /* The name of a mark, set over the picture in the colour of the mark it names. */
 .control__label {
   position: absolute;
-  color: var(--numen-focus-bg);
+  color: var(--numen-accent);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-1);
   line-height: 1;
   white-space: nowrap;
   text-shadow:
-    0 0 var(--numen-edge-label-halo) var(--numen-node-bg),
-    0 0 var(--numen-edge-label-halo) var(--numen-node-bg);
+    0 0 var(--numen-edge-label-halo) var(--numen-raised),
+    0 0 var(--numen-edge-label-halo) var(--numen-raised);
   pointer-events: none;
 }
 
 .control__knob {
-  fill: var(--numen-focus-bg);
-  stroke: var(--numen-node-bg);
+  fill: var(--numen-accent);
+  stroke: var(--numen-raised);
   stroke-width: 2;
 }
 </style>

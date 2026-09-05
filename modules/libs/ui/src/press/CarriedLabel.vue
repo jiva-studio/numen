@@ -37,8 +37,8 @@ defineProps<{
   pointer-events: none;
   overflow: hidden;
   border-radius: var(--numen-radius);
-  background: var(--numen-focus-bg);
-  color: var(--numen-focus-fg);
+  background: var(--numen-accent);
+  color: var(--numen-accent-ink);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

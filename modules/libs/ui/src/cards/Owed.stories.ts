@@ -25,7 +25,7 @@ const beside = (args: Knobs) => ({
   components: { Owed, Button },
   setup: () => ({ args }),
   template: `
-    <div class="numen" style="display:flex;align-items:center;gap:24px;padding:32px;background:var(--numen-surface);color:var(--numen-node-fg);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
+    <div class="numen" style="display:flex;align-items:center;gap:24px;padding:32px;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
       <span style="display:inline-flex;align-items:center;gap:8px">
         Sanskrit
         <Owed :waiting="args.waiting" :bare="args.bare" />

@@ -84,7 +84,7 @@ const over = (args: Knobs) => ({
   components: { Notices },
   setup: () => ({ args }),
   template: `
-    <div class="numen" style="height:100vh;background:var(--numen-surface);color:var(--numen-node-fg);font-family:var(--numen-font-sans);padding:24px">
+    <div class="numen" style="height:100vh;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans);padding:24px">
       The window, with what it has to say in the corner.
       <Notices
         :notices="args.notices"

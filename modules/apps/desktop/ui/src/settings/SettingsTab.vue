@@ -528,7 +528,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
   min-block-size: 0;
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-2);
-  color: var(--numen-node-fg);
+  color: var(--numen-ink);
 }
 
 .settings__page {
@@ -580,7 +580,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
   align-items: center;
   gap: 0 var(--numen-panel-gap);
   padding-block: var(--settings-row-air);
-  border-block-end: var(--numen-stroke) solid var(--numen-node-border);
+  border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }
 
 /* What the row is called, and under it what it means. */

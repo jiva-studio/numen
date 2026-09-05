@@ -127,8 +127,8 @@ const arrowLine = (arrow: Arrow) =>
    enough to read the picture through. */
 .plex__ground {
   rx: 0.25rem;
-  fill: color-mix(in oklab, var(--numen-node-bg), transparent 25%);
-  stroke: color-mix(in oklab, var(--numen-node-border), transparent 55%);
+  fill: color-mix(in oklab, var(--numen-raised), transparent 25%);
+  stroke: color-mix(in oklab, var(--numen-rule), transparent 55%);
   stroke-width: var(--numen-stroke);
 }
 
@@ -141,7 +141,7 @@ const arrowLine = (arrow: Arrow) =>
   block-size: 100%;
   font-family: var(--numen-font-sans);
   font-size: var(--numen-edge-label-size);
-  color: var(--numen-node-fg);
+  color: var(--numen-ink);
   user-select: none;
   -webkit-user-select: none;
   display: flex;
@@ -155,7 +155,7 @@ const arrowLine = (arrow: Arrow) =>
 
 /* A ground under the one the hand is on, which is what says it can be pressed. */
 .plex__part:hover {
-  background: color-mix(in oklab, var(--numen-node-bg), var(--numen-node-fg) 12%);
+  background: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 12%);
 }
 
 /* One line, then an ellipsis, as a title is. */

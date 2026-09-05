@@ -44,7 +44,7 @@ const emit = defineEmits<{ (event: 'press'): void }>()
 
 .deed:hover,
 .deed:focus-visible {
-  color: var(--numen-node-fg);
+  color: var(--numen-ink);
 }
 
 .deed:focus-visible {

@@ -90,9 +90,9 @@ const pressed = (press: MouseEvent) => {
   min-block-size: 0;
   padding: var(--numen-inset-wide);
   overflow-y: auto;
-  border: 1px solid var(--numen-node-border);
+  border: 1px solid var(--numen-rule);
   border-radius: var(--numen-radius);
-  background: var(--numen-node-bg);
+  background: var(--numen-raised);
   /* A card is read, not scanned, so it is set at the size reading is set at. */
   font-size: var(--numen-reading-size);
   gap: var(--numen-inset-wide);
