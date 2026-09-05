@@ -94,12 +94,12 @@ func libraryAgrees(
 	for _, r := range libraryRatings {
 		want := asSchedule(engine.Next(asCard(stood), libraryNow, r).Card)
 		got := by.Next(s, libraryNow, review.Rating(r))
-		sameSchedule(t, fmt.Sprintf("at %.2f, %s of %s", retention, r, standing(s)), got, want)
+		sameSchedule(t, fmt.Sprintf("at %.2f, %s of %s", retention, r, describe(s)), got, want)
 	}
 	good, again := by.Endings(s, libraryNow)
-	sameSchedule(t, fmt.Sprintf("at %.2f, the ending it came back on of %s", retention, standing(s)),
+	sameSchedule(t, fmt.Sprintf("at %.2f, the ending it came back on of %s", retention, describe(s)),
 		good, asSchedule(engine.Next(asCard(stood), libraryNow, fsrs.Good).Card))
-	sameSchedule(t, fmt.Sprintf("at %.2f, the ending it did not of %s", retention, standing(s)),
+	sameSchedule(t, fmt.Sprintf("at %.2f, the ending it did not of %s", retention, describe(s)),
 		again, asSchedule(engine.Next(asCard(stood), libraryNow, fsrs.Again).Card))
 }
 
@@ -283,8 +283,8 @@ func asSchedule(c fsrs.Card) review.Schedule {
 	}
 }
 
-// standing is one card face, as much of it as names which card face it was.
-func standing(s review.Schedule) string {
+// describe is one card face, as much of it as names which card face it was.
+func describe(s review.Schedule) string {
 	return fmt.Sprintf("a card face in phase %d at stability %v difficulty %v answered %v",
 		s.Phase, s.Stability, s.Difficulty, s.Last)
 }
