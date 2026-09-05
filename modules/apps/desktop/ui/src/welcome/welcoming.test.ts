@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { keyChord } from '@numen/ui'
-import type { Listed, Vault } from '../core'
+import type { VaultList, Vault } from '../core'
 import { keyOf } from '../keying'
 import { COMMANDS, SETTINGS, vaultsOn, waysIn, type ShownVault, type Words } from './welcoming'
 import { WORDS as own } from './words'
@@ -45,7 +45,7 @@ const vault = (id: string, name: string, missing = false): Vault => ({
   missing,
 })
 
-const listed = (vaults: readonly Vault[], showing: string): Listed => ({ vaults, showing })
+const listed = (vaults: readonly Vault[], showing: string): VaultList => ({ vaults, showing })
 
 /** Two vaults, the first of them the one the window is showing. */
 const two = listed([vault('a', 'Physics'), vault('b', 'Heat')], 'a')

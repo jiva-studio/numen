@@ -6,7 +6,7 @@
  * command of the same name in the palette go through one piece of code.
  */
 import type { Ref } from 'vue'
-import type { Model, Written } from '../core'
+import type { Model, SettingEdit } from '../core'
 import type { Host, Kind } from '../windowing'
 import { SETTINGS } from '../workspace'
 import type { Mode, Ranges, Sizes, Wearable } from '../theme'
@@ -47,7 +47,7 @@ export interface Installation {
    */
   setting(at: readonly string[]): unknown
   models(at: readonly string[]): readonly Model[]
-  writes(written: readonly Written[]): void
+  writes(written: readonly SettingEdit[]): void
   /** The file the settings stand in, absolute on this machine. */
   readonly file: Readonly<Ref<string>>
   /** That file opened whole, in a tab of its own. */

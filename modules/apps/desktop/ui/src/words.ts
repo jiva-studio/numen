@@ -6,7 +6,7 @@
  * the palette, the commands, the corner, and the quit.
  */
 import { commandKeyChord, keyChord } from '@numen/ui'
-import type { Artifact, Reached, RefusalReason, VaultRefusalReason } from './core'
+import type { Artifact, ArtifactState, RefusalReason, VaultRefusalReason } from './core'
 import { WORDS as agent } from './agent/words'
 import { WORDS as cards } from './cards/words'
 import { WORDS as note } from './note/words'
@@ -37,7 +37,7 @@ export const REFUSED: Record<RefusalReason, string> = {
  * report and everything else as a refusal, so no two of them may say the same
  * thing.
  */
-export const MADE: Record<Artifact, Record<Reached, string>> = {
+export const MADE: Record<Artifact, Record<ArtifactState, string>> = {
   reading: {
     none: 'This scan has not been recognised.',
     queued: 'This scan is in line, behind the one being recognised now.',

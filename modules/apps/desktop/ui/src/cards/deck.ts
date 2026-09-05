@@ -10,7 +10,7 @@ import { computed, ref, shallowRef, type ComputedRef } from 'vue'
 import type { Banded, Drawn, PlexShowing, Stencil } from '@numen/ui'
 import type { Cards, Move, Problem, RefusalReason, StencilSummary } from '../core'
 import type { Store } from '../doing'
-import type { Listed, Presets, ReadResult } from '../preset/core'
+import type { PresetChoice, Presets, ReadResult } from '../preset/core'
 import { editing, type OpenNote } from '../note/editing'
 import { markOf } from '../note/tab'
 import type { Host, Kind } from '../windowing'
@@ -279,7 +279,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
   }
 
   /** The presets of the vault, as they were last listed. */
-  const offered = shallowRef<readonly Listed[]>([])
+  const offered = shallowRef<readonly PresetChoice[]>([])
   /** Whether the last listing of the presets answered. */
   let offeredOk = true
   /** Which preset schedules each file, under the path it is filed at. */

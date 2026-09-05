@@ -13,7 +13,7 @@ import type {
   Artifact,
   Movement,
   Outcome,
-  Reached,
+  ArtifactState,
   RefusalReason,
   RemoveResult,
   RenameResult,
@@ -223,7 +223,7 @@ export interface Words {
   /** This build cannot do the run at all, and stops offering it. */
   readonly unrunnable: string
   /** What an artifact of a file now stands at, in words a person reads. */
-  readonly made: Record<Artifact, Record<Reached, string>>
+  readonly made: Record<Artifact, Record<ArtifactState, string>>
 }
 
 /** One command, carried out. */
@@ -371,7 +371,7 @@ const moves = async (deed: Deed, on: CommandDeps, words: Words): Promise<void> =
 }
 
 /** What an artifact stands at while a run is under way, which is said as a report. */
-const UNDER_WAY: readonly Reached[] = ['queued', 'running']
+const UNDER_WAY: readonly ArtifactState[] = ['queued', 'running']
 
 /**
  * An artifact asked for over a file. What it now stands at is one troubleWords,

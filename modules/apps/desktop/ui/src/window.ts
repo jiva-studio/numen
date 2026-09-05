@@ -9,7 +9,7 @@ import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { conversation } from '@numen/ui'
 import type { Notice } from '@numen/ui'
 import { cards, core, documents, recordings, running, vaults } from './vault'
-import type { Attention, ArtifactStates, Listed } from './core'
+import type { Attention, ArtifactStates, VaultList } from './core'
 import { showing } from './showing'
 import { view } from './plex/view'
 import { reading } from './document/reading'
@@ -301,7 +301,7 @@ export const useWindow = () => {
   const shown = ref<VaultRef>({ id: '', name: '' })
 
   /** Every vault the installation holds, as the list last answered. */
-  const listed = ref<Listed>({ vaults: [], showing: '' })
+  const listed = ref<VaultList>({ vaults: [], showing: '' })
 
   /** What asking for the list of vaults leaves the person to be told. */
   const unlisted = tell.under('listed')

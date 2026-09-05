@@ -5,7 +5,7 @@
  * window standing on a vault, or on none, puts in front of the person.
  */
 import type { PaletteKeys, VaultRow, Way } from '@numen/ui'
-import type { Listed } from '../core'
+import type { VaultList } from '../core'
 import { keysOf } from '../keying'
 import { WORDS as own } from './words'
 
@@ -73,7 +73,7 @@ export const waysIn = (at: ShownVault, words: Words, agent: string): readonly Wa
  * The vaults the installation holds. The one in front of the person says so,
  * and so does one whose folder is not there; the rest carry nothing.
  */
-export const vaultsOn = (listed: Listed, words: Words): readonly VaultRow[] =>
+export const vaultsOn = (listed: VaultList, words: Words): readonly VaultRow[] =>
   listed.vaults.map((one) => {
     const aside = one.missing ? words.gone : one.name === listed.showing ? words.current : ''
     return {

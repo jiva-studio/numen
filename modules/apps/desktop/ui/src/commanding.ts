@@ -11,13 +11,13 @@ import type { PaletteBand, PaletteItem, PaletteKeys } from '@numen/ui'
 import { asking as latest } from './asking'
 import {
   movedTo,
+  type ArtifactState,
   type ArtifactStates,
-  type Listed,
   type Move,
   type NoteType,
-  type Reached,
   type Source,
   type Vault,
+  type VaultList,
 } from './core'
 import { keysOf } from './keying'
 import type { EmptyWords, Named } from './finding'
@@ -27,7 +27,7 @@ export interface CommandingDeps {
   /** The names in the vault that match. */
   names(query: string, limit: number): Promise<readonly Named[]>
   /** Every vault the installation holds, and which of them this window shows. */
-  vaults(): Promise<Listed>
+  vaults(): Promise<VaultList>
 }
 
 /** One of a list the window itself holds, as the step that offers it draws it. */
@@ -406,7 +406,7 @@ const onEvidence =
 const isEmpty = (carries: ArtifactStates): boolean => Object.keys(carries).length === 0
 
 /** An artifact a run over the file would begin, rather than be refused for. */
-const owed = (made: Reached | undefined): boolean =>
+const owed = (made: ArtifactState | undefined): boolean =>
   made === undefined || made === 'none' || made === 'stopped'
 
 const always = (): boolean => true

@@ -154,7 +154,7 @@ export type Artifact = 'reading' | 'transcript' | 'corrections'
  * The last two are what a run answered, and asking again gets the same until
  * the artifact is taken away.
  */
-export type Reached =
+export type ArtifactState =
   | 'none'
   | 'queued'
   | 'running'
@@ -168,7 +168,7 @@ export type Reached =
  * artifacts a file carries follows from the file: a scan carries no words
  * heard, and a recording carries no text read.
  */
-export type ArtifactStates = Partial<Record<Artifact, Reached>>
+export type ArtifactStates = Partial<Record<Artifact, ArtifactState>>
 
 /**
  * What asking for an artifact to be made answered: which artifact, what it now
@@ -181,7 +181,7 @@ export type Outcome =
   | {
       readonly able: true
       readonly of: Artifact
-      readonly made: Reached
+      readonly made: ArtifactState
       readonly error: string
     }
 
@@ -220,7 +220,7 @@ export interface Reviewing {
 }
 
 /** One setting of the file, and what to put there. */
-export interface Written {
+export interface SettingEdit {
   /** The setting, as a path through the file. */
   readonly at: readonly string[]
   /** What stands there, as JSON. */
@@ -244,7 +244,7 @@ export interface Model {
   /** Set on the model an installation nobody has configured runs on. */
   readonly byDefault: boolean
   /** What choosing it writes. */
-  readonly writes: readonly Written[]
+  readonly writes: readonly SettingEdit[]
   /** What this model's files are on this machine. */
   readonly presence: Presence
 }
@@ -447,7 +447,7 @@ export interface Core {
    * the settings could not be read out of again is refused, and what the file
    * holds is unchanged.
    */
-  choosesSetting(written: readonly Written[]): Promise<void>
+  choosesSetting(written: readonly SettingEdit[]): Promise<void>
   /** The settings file as its person wrote it, and where it stands. */
   settingsFile(): Promise<{ readonly written: string; readonly path: string }>
   /**
@@ -814,7 +814,7 @@ export interface Vault {
 }
 
 /** Every vault the installation holds, and the one this window is showing. */
-export interface Listed {
+export interface VaultList {
   readonly vaults: readonly Vault[]
   /** The identity of the vault in front of the person. */
   readonly showing: string
@@ -842,7 +842,7 @@ export type VaultRefusalReason =
 /** The vaults an installation holds, and what changes them. */
 export interface Vaults {
   /** Every vault on the list, and which of them this window is showing. */
-  list(): Promise<Listed>
+  list(): Promise<VaultList>
   /**
    * This machine's own folder picker, put in front of the person. It answers
    * with the folder they chose, and with nothing where they closed it.

@@ -9,7 +9,7 @@ import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
 import type { Cards, Carded, Problem, RefusalReason } from '../core'
-import { DEFAULTS, NOWHERE, NO_BOUNDS, type Listed, type Presets } from '../preset/core'
+import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '../preset/core'
 import { putting } from '../putting'
 import { windowing } from '../windowing'
 import { DECK } from '../workspace'
@@ -68,7 +68,7 @@ const drawn = async (
   problems: readonly Problem[] = [],
   scheduling: {
     /** The presets the vault holds. */
-    presets?: readonly Listed[]
+    presets?: readonly PresetChoice[]
     /** The preset the deck names, and nothing for a deck naming none. */
     by?: string
     /** What is said against what the deck names. */

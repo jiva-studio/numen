@@ -11,7 +11,7 @@ import { computed, onMounted, onUnmounted } from 'vue'
 import { opensVault, Welcome } from '@numen/ui'
 import type { Tab } from '@numen/ui'
 import { deedOf, type CommandTarget, type Commands, type VaultRef } from './commanding'
-import type { Listed } from './core'
+import type { VaultList } from './core'
 import { does, type CommandDeps } from './doing'
 import type { Searching } from './finding'
 import { iconFor } from './icons'
@@ -22,7 +22,7 @@ import { WORDS as words } from './words'
 
 const props = defineProps<{
   /** Every vault the installation holds, as the list last answered. */
-  listed: Listed
+  listed: VaultList
   /** Every tab the window holds, which is none while this screen is what shows. */
   tabs: readonly Tab[]
   commands: Commands

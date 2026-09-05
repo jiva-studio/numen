@@ -75,7 +75,7 @@ import type {
   NoteType,
   Presence,
   Problem,
-  Reached,
+  ArtifactState,
   RemoveResult,
   RenameResult,
   Role,
@@ -543,7 +543,7 @@ const spoken = (one: CueMessage): Cue => ({ text: one.text, from: one.from, to: 
 export const running: ArtifactRunner = {
   carries: async (path) => {
     const answer = await artifacts.listArtifacts({ path })
-    const held: Record<string, Reached> = {}
+    const held: Record<string, ArtifactState> = {}
     for (const one of answer.artifacts) {
       const of = made[one.name.slice(one.name.lastIndexOf('/artifacts/') + '/artifacts/'.length)]
       if (of) held[of] = reached(one.state)
@@ -590,7 +590,7 @@ const made = Object.fromEntries(
 ) as Record<string, ArtifactOf>
 
 /** What has become of an artifact, in the words the window uses. */
-const become: Record<States, Reached> = {
+const become: Record<States, ArtifactState> = {
   [States.UNSPECIFIED]: 'none',
   [States.NONE]: 'none',
   [States.QUEUED]: 'queued',
@@ -602,7 +602,7 @@ const become: Record<States, Reached> = {
 }
 
 /** A state this window has no word for is an artifact nothing has made. */
-const reached = (state: States | undefined): Reached =>
+const reached = (state: States | undefined): ArtifactState =>
   (state === undefined ? undefined : become[state]) ?? 'none'
 
 /**

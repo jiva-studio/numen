@@ -23,7 +23,7 @@ import {
   type Runnable,
   type CommandTarget,
 } from './commanding'
-import type { Listed, Vault } from './core'
+import type { VaultList, Vault } from './core'
 import type { Named } from './finding'
 import { WORDS as words } from './words'
 
@@ -60,7 +60,7 @@ const vault = (id: string, name: string, missing = false): Vault => ({
 })
 
 /** The vaults the installation holds, with the one in front named. */
-const installation = (...vaults: readonly Vault[]): Listed => ({
+const installation = (...vaults: readonly Vault[]): VaultList => ({
   vaults,
   showing: 'physics',
 })
@@ -108,7 +108,7 @@ const asking = (
   over: Partial<CommandTarget> = {},
   found: readonly Named[] = [],
   offers: Record<string, readonly Offering[]> = {},
-  listed: Listed = installation(vault('physics', 'Physics')),
+  listed: VaultList = installation(vault('physics', 'Physics')),
   runs: Runnable = runnable(),
 ) => {
   const at = ref(front(over))

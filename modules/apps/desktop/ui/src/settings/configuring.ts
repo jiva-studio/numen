@@ -8,7 +8,7 @@
  */
 import { ref, shallowRef } from 'vue'
 import { troubleWords } from '@numen/wire'
-import type { Model, Written } from '../core'
+import type { Model, SettingEdit } from '../core'
 import type { Voice } from '../telling'
 import { write } from './json5'
 
@@ -29,7 +29,7 @@ export interface ConfiguringDeps {
     readonly models: readonly Model[]
   }>
   /** Settings written. A value the settings cannot hold is refused. */
-  choosesSetting(written: readonly Written[]): Promise<void>
+  choosesSetting(written: readonly SettingEdit[]): Promise<void>
 }
 
 /** What stands at a path through a tree of settings, and nothing where none does. */
@@ -85,7 +85,7 @@ export function configuring(core: ConfiguringDeps, words: Words, said: Voice) {
    * refused is said, and the window reads the file again either way, so what is
    * drawn is what the settings hold.
    */
-  const chooses = async (written: readonly Written[]): Promise<void> => {
+  const chooses = async (written: readonly SettingEdit[]): Promise<void> => {
     if (written.length === 0) return
     said('')
 

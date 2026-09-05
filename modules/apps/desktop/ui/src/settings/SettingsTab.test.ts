@@ -11,7 +11,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { computed, nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 
-import type { Model, Written } from '../core'
+import type { Model, SettingEdit } from '../core'
 import { settingAt as at } from './configuring'
 import SettingsTab from './SettingsTab.vue'
 import type { Installation } from './kind'
@@ -67,7 +67,7 @@ const MODELS: readonly Model[] = [
 /** An installation configured that way, and everything it was asked to change. */
 const configured = (pinned = false, file: Record<string, unknown> = {}) => {
   const done: string[] = []
-  const written: Written[] = []
+  const written: SettingEdit[] = []
   const syncing = ref(true)
   const hangs = ref(true)
   const installation: Installation = {

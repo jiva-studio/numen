@@ -292,7 +292,7 @@ export interface Curve extends Material {
 }
 
 /** One preset as a person choosing between them sees it. */
-export interface Listed {
+export interface PresetChoice {
   readonly path: string
   /** What it is called. Empty where nothing names the note. */
   readonly title: string
@@ -306,7 +306,7 @@ export interface Presets {
    * Every preset the vault holds. The defaults are no note and are not among
    * them: they are what schedules a deck naming no preset.
    */
-  list(): Promise<readonly Listed[]>
+  list(): Promise<readonly PresetChoice[]>
   /**
    * A preset made in a folder under the name it is given, naming none of its
    * settings. Every key it does not carry stands at the default.

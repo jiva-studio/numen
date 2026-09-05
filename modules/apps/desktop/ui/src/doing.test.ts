@@ -13,7 +13,7 @@ import type {
   ArtifactStates,
   Movement,
   Outcome,
-  Reached,
+  ArtifactState,
   RefusalReason,
   RemoveResult,
   RenameResult,
@@ -56,7 +56,7 @@ const renamed = (over: Partial<RenameResult> = {}): RenameResult => ({
 })
 
 /** What an artifact now stands at, as the application answers it. */
-const outcome = (of: Artifact, made: Reached, error = ''): Outcome => ({
+const outcome = (of: Artifact, made: ArtifactState, error = ''): Outcome => ({
   able: true,
   of,
   made,
@@ -360,10 +360,10 @@ describe('a note made', () => {
 })
 
 /** What the window says an artifact of a file now stands at, as a report. */
-const REPORTED: readonly Reached[] = ['queued', 'running']
+const REPORTED: readonly ArtifactState[] = ['queued', 'running']
 
 /** Everything an artifact can stand at, which the window has a sentence for. */
-const REACHED: readonly Reached[] = [
+const REACHED: readonly ArtifactState[] = [
   'none',
   'queued',
   'running',
@@ -374,7 +374,7 @@ const REACHED: readonly Reached[] = [
 ]
 
 /** An artifact of the recording in front asked for, as it came out. */
-const asked = (made: Reached, error = '') => {
+const asked = (made: ArtifactState, error = '') => {
   const one = window({ outcome: outcome('transcript', made, error) })
   return { one, deed: deedOf('transcribe', front({ file: 'talks/Ants.mp3' })) }
 }
