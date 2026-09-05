@@ -11,7 +11,7 @@ import type { Ref } from 'vue'
  * The width of what the ref holds, measured when it is drawn and again whenever
  * it changes. A machine with no way to watch for that measures once.
  */
-export function useWidth(held: Ref<HTMLElement | null>): Ref<number> {
+export function useWidth(held: Readonly<Ref<HTMLElement | null>>): Ref<number> {
   const room = ref(0)
   let watching: ResizeObserver | null = null
 

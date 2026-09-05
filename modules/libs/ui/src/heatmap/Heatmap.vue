@@ -9,7 +9,7 @@
  *
  * Each cell carries `data-heatmap-day`, the day it stands for.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 
 import Tooltip from '../tooltip/Tooltip.vue'
 import type { Box } from '../placing/place'
@@ -37,8 +37,8 @@ const props = withDefaults(
   { due: () => new Map(), now: () => new Date(), cell: 11, gap: 3 },
 )
 
-const held = ref<HTMLElement | null>(null)
-const room = useWidth(held)
+const root = useTemplateRef<HTMLElement>('root')
+const room = useWidth(root)
 
 const laid = computed(() =>
   fits({ width: room.value, cell: props.cell, gap: props.gap }),
@@ -65,7 +65,7 @@ const reaches = (day: Day, press: MouseEvent) => {
 </script>
 
 <template>
-  <div ref="held" class="heatmap">
+  <div ref="root" class="heatmap">
     <svg
       v-if="room > 0"
       class="heatmap__grid"

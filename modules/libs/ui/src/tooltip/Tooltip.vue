@@ -6,7 +6,7 @@
  * It stands on the far side of the thing it is about, takes the near side where
  * the far one has no room, and is brought inside the edge where neither has.
  */
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 
 import { beside, type Box } from '../placing/place'
 import type { Size } from '../lib/geometry'
@@ -25,7 +25,7 @@ const props = withDefaults(
   { viewport: null, margin: 8, gap: 8 },
 )
 
-const held = ref<HTMLElement | null>(null)
+const root = useTemplateRef<HTMLElement>('root')
 
 /** Its own size, which only the drawing knows. Placement is worked out from it. */
 const size = ref<Size>({ width: 0, height: 0 })
@@ -60,7 +60,7 @@ const placed = computed(() => ({
 }))
 
 const measure = () => {
-  const box = held.value?.getBoundingClientRect()
+  const box = root.value?.getBoundingClientRect()
   if (box) size.value = { width: box.width, height: box.height }
 }
 
@@ -82,7 +82,7 @@ watch(() => props.at, measure, { flush: 'post' })
 
 <template>
   <aside
-    ref="held"
+    ref="root"
     class="tooltip"
     role="tooltip"
     :style="{ insetInlineStart: `${placed.x}px`, insetBlockStart: `${placed.y}px` }"
