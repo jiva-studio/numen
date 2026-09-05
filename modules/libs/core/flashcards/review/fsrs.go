@@ -4,7 +4,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"hash"
 	"math"
+	"strconv"
 	"time"
 
 	fsrs "github.com/open-spaced-repetition/go-fsrs/v3"
@@ -51,12 +53,35 @@ func NewFSRSAt(retention float64) FSRS {
 
 func (f FSRS) Name() string { return f.name }
 
-// weighed is the parameters as a short name. Everything the scheduler was built
-// with goes into it, so parameters that change at all — a weight, a retention, a
-// field the library adds — are another name and another cache.
+// weighed is the parameters as a short name. Every number the arithmetic above
+// reads goes into it under a name of its own, so a weight or a retention that
+// changes is another name and another cache, and a field the library adds,
+// renames or reorders is not.
+//
+// The numbers go in as hexadecimal floats, which are exact and are written the
+// same way at every release.
 func weighed(p fsrs.Parameters) string {
-	sum := sha256.Sum256([]byte(fmt.Sprintf("%+v", p)))
-	return hex.EncodeToString(sum[:4])
+	sum := sha256.New()
+	for _, one := range []struct {
+		name  string
+		value float64
+	}{
+		{"retention", p.RequestRetention},
+		{"interval", p.MaximumInterval},
+		{"decay", p.Decay},
+		{"factor", p.Factor},
+	} {
+		named(sum, one.name, one.value)
+	}
+	for i, w := range p.W {
+		named(sum, "w"+strconv.Itoa(i), w)
+	}
+	return hex.EncodeToString(sum.Sum(nil)[:4])
+}
+
+// named writes one number of the parameters into the name being worked out.
+func named(sum hash.Hash, name string, value float64) {
+	fmt.Fprintf(sum, "%s=%s\n", name, strconv.FormatFloat(value, 'x', -1, 64))
 }
 
 // Spaced reports whether this scheduler has put a card face into review: it has
