@@ -706,7 +706,7 @@ A held arrow key crosses a row of the size list every 40 ms, and a size is worn 
 
 ## What a name of the derived store costs
 
-Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkDerived` in `adapter/filesystem`. Every name the store takes is answered where the vault still is, and the check that it is asks the folder what identity it carries.
+Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkDerived` in `internal/adapter/filesystem`. Every name the store takes is answered where the vault still is, and the check that it is asks the folder what identity it carries.
 
 | | Before | After |
 | --- | --- | --- |
@@ -755,7 +755,7 @@ A sitting and the history screen each worked the whole log out again and wrote w
 
 **Nothing is shared between two requests.** Opening the window and then one preset tab walks the whole vault twice and reads the whole log twice: what a vault holds is read from its deck and stencil files at every request, and so are its answers. That is most of what the table above measures and none of what it changed.
 
-By profile, over the front door on this vault: **57 % of the request is `Standings.Execute`** — every deck read and parsed, most of it in the markdown parser — and 7 % is reading the log. Working out the day's budgets is 8 %, of which the cost of an answer is 4 %. What a memo for the life of a window would take off a second request is those first two.
+By profile, over the front door on this vault: **57 % of the request is `ListCardFaces.Execute`** — every deck read and parsed, most of it in the markdown parser — and 7 % is reading the log. Working out the day's budgets is 8 %, of which the cost of an answer is 4 %. What a memo for the life of a window would take off a second request is those first two.
 
 ## The curve of one preset
 

@@ -57,7 +57,8 @@ compiled into whatever runs it. There is no daemon.
 domain/     notes, vaults, links, cards — no clock, no disk, no database
 port/       the interfaces the core needs, named after the need
 usecase/    one file per scenario
-adapter/    driving: cli, webui, mcp · driven: filesystem, index, settings
+adapter/    driving: cli, webui, mcp · driven: index, settings
+internal/   what nothing outside composes: filesystem, appstate, and the rest
 container/  the composition root, where an adapter meets a port
 ```
 
