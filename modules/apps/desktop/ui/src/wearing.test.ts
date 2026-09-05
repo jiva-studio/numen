@@ -7,7 +7,7 @@
  * drawn only once the keyboard has stood on its row.
  */
 import { describe, expect, it, vi } from 'vitest'
-import type { Offering } from './commanding'
+import type { StepBand } from './commanding'
 import type { Catalogue, Themes } from './theme'
 import {
   INTERFACE_SCALE,
@@ -314,7 +314,7 @@ describe('which half of a pair the tokens are read as', () => {
 
 describe('the themes the step offers', () => {
   /** Every band, by its identity, and the rows standing in each. */
-  const listed = (rows: readonly Offering[]) =>
+  const listed = (rows: readonly StepBand[]) =>
     Object.fromEntries(rows.map((band) => [band.id, band.items.map((row) => row.id)]))
 
   it('draws the themes in the two bands they come off, and nothing else', async () => {

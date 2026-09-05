@@ -250,7 +250,7 @@ export interface Model {
 }
 
 /** Every setting as it stands, where they stand, and the models offered. */
-export interface Configured {
+export interface Configuration {
   /** Every setting as JSON, the defaults under everything the file leaves out. */
   readonly written: string
   /** The file itself, absolute on this machine. */
@@ -441,7 +441,7 @@ export interface Core {
    */
   choosesReviewing(starts: string): Promise<string | null>
   /** Every setting as it stands, and the models the settings offer. */
-  settings(): Promise<Configured>
+  settings(): Promise<Configuration>
   /**
    * Settings written into the settings file, together or not at all. A value
    * the settings could not be read out of again is refused, and what the file

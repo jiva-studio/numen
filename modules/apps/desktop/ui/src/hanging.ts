@@ -6,7 +6,7 @@
  * holds, choosing another writes it, and the plex reads both as it draws.
  */
 import { ref } from 'vue'
-import type { Offered, Offering } from './commanding'
+import type { StepBand, StepRow } from './commanding'
 import type { Voice } from './telling'
 
 /** The command whose step offers the two, and the one that offers the counts. */
@@ -87,14 +87,14 @@ export function hanging(core: HangingDeps, words: Words, said: Voice) {
   }
 
   /** One row of a list, saying whether it is the value in force. */
-  const row = (id: string, title: string, inForce: boolean): Offered => ({
+  const row = (id: string, title: string, inForce: boolean): StepRow => ({
     id,
     title,
     ...(inForce ? { detail: words.current, inForce: true } : {}),
   })
 
   /** The two, in one band named for the setting they are of. */
-  const offers = (): readonly Offering[] => [
+  const offers = (): readonly StepBand[] => [
     {
       id: HANGING,
       title: words.hangingBand,
@@ -103,7 +103,7 @@ export function hanging(core: HangingDeps, words: Words, said: Voice) {
   ]
 
   /** The counts, in one band of their own. */
-  const counts = (): readonly Offering[] => [
+  const counts = (): readonly StepBand[] => [
     {
       id: PARTS,
       title: words.partsBand,

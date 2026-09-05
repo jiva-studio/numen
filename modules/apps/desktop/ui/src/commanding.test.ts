@@ -13,14 +13,14 @@ import {
   commanding,
   commandsOf,
   creates,
-  runnable,
+  runSupport,
   MAKING,
   offering,
   overNote,
   type PaletteLists,
   type NoteLookup,
-  type Offering,
-  type Runnable,
+  type RunSupport,
+  type StepBand,
   type CommandTarget,
 } from './commanding'
 import type { VaultList, Vault } from './core'
@@ -93,7 +93,7 @@ const held = () => {
 }
 
 /** The lists the window holds, and every row a step said it was standing on. */
-const holding = (offers: Record<string, readonly Offering[]>) => {
+const holding = (offers: Record<string, readonly StepBand[]>) => {
   const lists = ref(offers)
   const shown: string[] = []
   const holds: PaletteLists = {
@@ -107,9 +107,9 @@ const holding = (offers: Record<string, readonly Offering[]>) => {
 const asking = (
   over: Partial<CommandTarget> = {},
   found: readonly NameMatch[] = [],
-  offers: Record<string, readonly Offering[]> = {},
+  offers: Record<string, readonly StepBand[]> = {},
   listed: VaultList = installation(vault('physics', 'Physics')),
-  runs: Runnable = runnable(),
+  runs: RunSupport = runSupport(),
 ) => {
   const at = ref(front(over))
   const asked: string[] = []
@@ -568,7 +568,7 @@ describe('the runs over the file in front', () => {
   })
 
   it('is offered nowhere once this build has said it cannot do it at all', () => {
-    const runs = runnable()
+    const runs = runSupport()
     runs.cannotRun('transcribe')
     runs.cannotRun('proofread')
     runs.cannotRun('dropTranscript')
@@ -631,7 +631,7 @@ describe('the runs over the file in front', () => {
   })
 
   it('is still offered in a window that has not been told it', () => {
-    const runs = runnable()
+    const runs = runSupport()
     runs.cannotRun('transcribe')
     runs.cannotRun('proofread')
     runs.cannotRun('dropTranscript')
@@ -752,7 +752,7 @@ describe('a command that asks for a note', () => {
       () => at.value,
       { called: () => '', holding: () => null },
       { offers: () => [], shows: () => {} },
-      runnable(),
+      runSupport(),
       async () => {},
     )
     commands.shows(true)
@@ -766,7 +766,7 @@ describe('a command that asks for a note', () => {
 
 describe('a command that offers a list the window holds', () => {
   /** The themes, in the two bands they come off, and one band holding none. */
-  const THEMES: readonly Offering[] = [
+  const THEMES: readonly StepBand[] = [
     {
       id: 'shipping',
       title: 'Ships with numen',
@@ -779,7 +779,7 @@ describe('a command that offers a list the window holds', () => {
   ]
 
   /** The three halves, drawn and not to be chosen, as a pinned theme leaves them. */
-  const HALVES: readonly Offering[] = [
+  const HALVES: readonly StepBand[] = [
     {
       id: 'half',
       title: 'Light and dark',
@@ -1162,7 +1162,7 @@ describe('a command that asks for a vault', () => {
       () => at.value,
       { called: () => '', holding: () => null },
       { offers: () => [], shows: () => {} },
-      runnable(),
+      runSupport(),
       async () => {},
     )
     commands.shows(true)

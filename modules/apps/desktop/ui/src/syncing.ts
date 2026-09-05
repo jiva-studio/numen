@@ -7,7 +7,7 @@
  * rename after the choice is the first one it answers.
  */
 import { ref } from 'vue'
-import type { Offering } from './commanding'
+import type { StepBand } from './commanding'
 import type { Voice } from './telling'
 
 /** The command whose step offers the two. */
@@ -54,7 +54,7 @@ export function syncing(core: SyncingDeps, words: Words, said: Voice) {
   }
 
   /** The two, in one band named for the setting they are of. */
-  const offers = (): readonly Offering[] => {
+  const offers = (): readonly StepBand[] => {
     const row = (id: string, title: string, inForce: boolean) => ({
       id,
       title,

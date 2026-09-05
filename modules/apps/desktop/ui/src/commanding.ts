@@ -31,7 +31,7 @@ export interface CommandingDeps {
 }
 
 /** One of a list the window itself holds, as the step that offers it draws it. */
-export interface Offered {
+export interface StepRow {
   readonly id: string
   readonly title: string
   /** A second line: what is true of this row and not of the ones beside it. */
@@ -43,10 +43,10 @@ export interface Offered {
 }
 
 /** One band of such a list, named by whatever holds it. */
-export interface Offering {
+export interface StepBand {
   readonly id: string
   readonly title: string
-  readonly items: readonly Offered[]
+  readonly items: readonly StepRow[]
   /** What is said in its place where it holds nothing. */
   readonly silence?: string
 }
@@ -61,7 +61,7 @@ export interface PaletteLists {
    * What this command offers now, in the bands it is drawn in. The words typed
    * come too: a list may hold a row made out of them.
    */
-  offers(command: string, typed: string): readonly Offering[]
+  offers(command: string, typed: string): readonly StepBand[]
   /** The one the keyboard is standing on, and nothing where it stands on none. */
   shows(command: string, item: string): void
 }
@@ -169,7 +169,7 @@ export interface Command {
   /** The band it is offered in. */
   readonly band: Band
   /** Whether it is offered at all over what is in front, in this window. */
-  where(at: CommandTarget, runs: Runnable): boolean
+  where(at: CommandTarget, runs: RunSupport): boolean
   /** What stands in the field when its step opens, for the person to replace. */
   filled?(at: CommandTarget): string
   /** What its step says, where that step confirms or asks for the name back. */
@@ -365,7 +365,7 @@ const onVault = (at: CommandTarget): boolean => at.vault.id !== ''
  * application says so the first time one is asked for, and that window offers
  * it nowhere after that.
  */
-export interface Runnable {
+export interface RunSupport {
   /** Whether this build can do a run at all. A view drawing it follows the answer. */
   canRun(run: string): boolean
   /** A run the application answered it cannot do at all. */
@@ -373,7 +373,7 @@ export interface Runnable {
 }
 
 /** The runs one window holds, which is every one of them until it is told otherwise. */
-export const runnable = (): Runnable => {
+export const runSupport = (): RunSupport => {
   const beyond = shallowRef<ReadonlySet<string>>(new Set())
   return {
     canRun: (run) => !beyond.value.has(run),
@@ -387,7 +387,7 @@ export const runnable = (): Runnable => {
  */
 const onSource =
   (run: string, source: Source) =>
-  (at: CommandTarget, runs: Runnable): boolean =>
+  (at: CommandTarget, runs: RunSupport): boolean =>
     at.ready && at.file !== '' && at.source === source && runs.canRun(run)
 
 /**
@@ -400,7 +400,7 @@ const onSource =
  */
 const onEvidence =
   (run: string, source: Source, made: (carries: ArtifactStates) => boolean) =>
-  (at: CommandTarget, runs: Runnable): boolean =>
+  (at: CommandTarget, runs: RunSupport): boolean =>
     onSource(run, source)(at, runs) && (isEmpty(at.made) || made(at.made))
 
 const isEmpty = (carries: ArtifactStates): boolean => Object.keys(carries).length === 0
@@ -700,7 +700,7 @@ export function commanding(
   at: () => CommandTarget,
   knows: NoteLookup,
   holds: PaletteLists,
-  runs: Runnable,
+  runs: RunSupport,
   wait: (ms: number) => Promise<unknown> = sleep,
 ) {
   /** Whether the commands are drawn at all. */
@@ -976,7 +976,7 @@ export function commanding(
   }
 
   /** One such row, and nothing where the words typed leave it out. */
-  const offered = (one: Offered, word: string): PaletteItem | null => {
+  const offered = (one: StepRow, word: string): PaletteItem | null => {
     const found = word === '' ? -1 : one.title.toLowerCase().indexOf(word)
     if (word !== '' && found < 0) return null
     return {

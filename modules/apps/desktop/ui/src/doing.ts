@@ -7,7 +7,7 @@
  */
 import type { PlexRelatedSeat } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
-import type { Deed, Runnable, VaultRef } from './commanding'
+import type { Deed, RunSupport, VaultRef } from './commanding'
 import type { Opened } from './putting'
 import type {
   Artifact,
@@ -192,7 +192,7 @@ export interface CommandDeps {
   /** The open files a command reaches, whichever store holds each. */
   readonly notes: Notes
   /** The runs this window has been told this build cannot do. */
-  readonly runnable: Runnable
+  readonly runSupport: RunSupport
   /** A path put on the clipboard. */
   copies(path: string): void
   /**
@@ -258,7 +258,7 @@ const carried: Record<string, CommandHandler> = {
     began(deed, await on.runs.makes(deed.file, 'corrections'), on, words),
   dropTranscript: async (deed, on, words) => {
     if (await on.runs.drops(deed.file)) return
-    on.runnable.cannotRun(deed.id)
+    on.runSupport.cannotRun(deed.id)
     on.says(words.unrunnable, 'refusal')
   },
   ask: (deed, on) => on.goes.asks(`${deed.path} — `),
@@ -381,7 +381,7 @@ const UNDER_WAY: readonly ArtifactState[] = ['queued', 'running']
  */
 const began = (deed: Deed, outcome: Outcome, on: CommandDeps, words: Words): void => {
   if (!outcome.able) {
-    on.runnable.cannotRun(deed.id)
+    on.runSupport.cannotRun(deed.id)
     return on.says(words.unrunnable, 'refusal')
   }
   // A file nothing here could read carries what the run said about it, and that

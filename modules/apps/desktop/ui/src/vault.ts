@@ -64,7 +64,7 @@ import type {
   Entry,
   VaultFace,
   Fault,
-  Configured,
+  Configuration,
   HangingSettings,
   ReviewSettings,
   MakeResult,
@@ -375,7 +375,7 @@ export const core: Core & FindingDeps & CommandingDeps = {
         writes: one.writes.map((write) => ({ at: write.at, value: write.value })),
         presence: fetched[one.presence],
       })),
-    } satisfies Configured
+    } satisfies Configuration
   },
   choosesSetting: async (written) => {
     await settingsService.writeSettings({

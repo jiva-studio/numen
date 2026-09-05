@@ -11,7 +11,7 @@ import '../testing/no-layout'
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { ref } from 'vue'
-import { runnable } from '../commanding'
+import { runSupport } from '../commanding'
 import RecordingTab from './RecordingTab.vue'
 import { transcribed } from './kind'
 import { transcript, type Cue, type Recordings } from './transcript'
@@ -334,7 +334,7 @@ describe('the menu at the end of the player strip', () => {
   // Each item stands only where this build can do the run behind it, and the
   // menu itself only where an item stands.
   it('drops an item this build cannot do at all, and goes where none is left', async () => {
-    const runs = runnable()
+    const runs = runSupport()
     runs.cannotRun('dropTranscript')
     const { held } = tab(CUES, undefined, (run) => runs.canRun(run))
     const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })

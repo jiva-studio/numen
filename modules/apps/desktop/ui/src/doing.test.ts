@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import { commandsOf, deedOf, runnable, type Deed, type CommandTarget } from './commanding'
+import { commandsOf, deedOf, runSupport, type Deed, type CommandTarget } from './commanding'
 import { does, reaching, type CommandDeps, type Store } from './doing'
 import type {
   Artifact,
@@ -112,7 +112,7 @@ const window = (
   const at = answers.at ?? 'physics/Ontology.md'
   const refusal = answers.turnedDown ?? null
   /** The runs this one window has been told this build cannot do. */
-  const runs = runnable()
+  const runs = runSupport()
   const on: CommandDeps = {
     files: {
       makes: async (title, from, seat) => {
@@ -218,7 +218,7 @@ const window = (
       hanging: async (chosen) => void done.push(`hanging ${chosen}`),
       parts: async (chosen) => void done.push(`parts ${chosen}`),
     },
-    runnable: runs,
+    runSupport: runs,
     copies: (path) => void done.push(`copies ${path}`),
     says: (text, kind) => {
       if (!text) return

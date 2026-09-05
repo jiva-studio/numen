@@ -21,7 +21,7 @@ import { CREATABLE, creating } from './note/creating'
 import {
   commanding,
   deedOf,
-  runnable,
+  runSupport,
   type PaletteLists,
   type NoteLookup,
   type VaultRef,
@@ -139,7 +139,7 @@ export const useWindow = () => {
    * application answers a run it cannot do once, and this window stops offering
    * it wherever it is offered.
    */
-  const runs = runnable()
+  const runs = runSupport()
 
   /** The notes the window has open: what each is called, and what each tab of one holds. */
   const noted = noting(core, notes, drawings, held.host, puts)
@@ -584,7 +584,7 @@ export const useWindow = () => {
       parts: (chosen) => hungParts.choosesCount(chosen),
     },
     notes: reached,
-    runnable: runs,
+    runSupport: runs,
     copies: (path) => void navigator.clipboard?.writeText(path),
     says: told,
   }

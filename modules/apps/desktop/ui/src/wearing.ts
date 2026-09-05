@@ -12,7 +12,7 @@
  */
 import { computed, ref, shallowRef, watch } from 'vue'
 import { asking } from './asking'
-import type { Offered, Offering } from './commanding'
+import type { StepBand, StepRow } from './commanding'
 import { following } from '@numen/ui'
 import type { Voice } from './telling'
 import type { Bounds, Catalogue, Mode, Ranges, Scales, Sizes, Themes, Wearable } from './theme'
@@ -199,9 +199,9 @@ const percent = (size: number): string => `${Math.round(size * 100)}%`
  * The rows one to a title. A size the list already holds is not held twice, and
  * the first of a pair is the one that stands.
  */
-const once = (rows: readonly Offered[]): readonly Offered[] => {
+const once = (rows: readonly StepRow[]): readonly StepRow[] => {
   const seen = new Set<string>()
-  const only: Offered[] = []
+  const only: StepRow[] = []
   for (const one of rows) {
     if (seen.has(one.title)) continue
     seen.add(one.title)
@@ -399,9 +399,9 @@ export function wearing(
    * came off is said by the band it stands in, so a row says only what is
    * true of it alone.
    */
-  const shelf = (shipping: boolean): readonly Offered[] => {
+  const shelf = (shipping: boolean): readonly StepRow[] => {
     const off = list.value.filter((one) => one.shipped === shipping)
-    const named = (one: Wearable): Offered => ({
+    const named = (one: Wearable): StepRow => ({
       id: one.name,
       title: one.title,
       ...(one.name === applied.value ? { detail: words.current, inForce: true } : {}),
@@ -416,7 +416,7 @@ export function wearing(
    * The themes, in the two bands they come off. The band the theme worn came
    * off stands first, so opening the list stands on what the window wears.
    */
-  const offers = (): readonly Offering[] => {
+  const offers = (): readonly StepBand[] => {
     const shipping = { id: 'shipping', title: words.shipping, items: shelf(true) }
     const own = {
       id: 'owned',
@@ -439,8 +439,8 @@ export function wearing(
    * pins light and dark: it is there, it says why, and the keyboard passes
    * over it.
    */
-  const modes = (): readonly Offering[] => {
-    const row = (one: Mode): Offered => {
+  const modes = (): readonly StepBand[] => {
+    const row = (one: Mode): StepRow => {
       const detail = beside(one)
       return {
         id: named(one),
@@ -462,12 +462,12 @@ export function wearing(
    * The one row that says anything is the size the window is drawn at, which is
    * where a person is standing before they walk.
    */
-  const sizes = (command: string, typed = ''): readonly Offering[] => {
+  const sizes = (command: string, typed = ''): readonly StepBand[] => {
     const which: Which = command === TEXT_SCALE ? TEXT_SCALE : INTERFACE_SCALE
     const range = its(bounds.value, which)
     const now = its(settings.value, which)
     const said = typedSize(typed)
-    const row = (size: number): Offered => ({
+    const row = (size: number): StepRow => ({
       id: sizing(which, size),
       title: percent(size),
       ...(size === now ? { detail: words.current, inForce: true } : {}),
