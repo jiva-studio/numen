@@ -24,11 +24,11 @@ import {
   type Settings as Scheduling,
   type SettingsBounds,
 } from './preset/core'
-import type { Held as PresetHeld } from './preset/kind'
+import type { PresetTabState } from './preset/kind'
 import DeckTab from './cards/DeckTab.vue'
-import type { Held as DeckHeld } from './cards/deck'
+import type { DeckTabState } from './cards/deck'
 import StencilTab from './cards/StencilTab.vue'
-import type { Held as StencilHeld } from './cards/stencil'
+import type { StencilTabState } from './cards/stencil'
 import type { Marks } from './cards/body'
 import RecordingTab from './recording/RecordingTab.vue'
 import { transcript, type Cue, type Recordings } from './recording/transcript'
@@ -206,7 +206,7 @@ const BOUNDS: SettingsBounds = {
   interval: { least: 1, most: 365 },
 }
 
-const PRESET_HELD: PresetHeld = {
+const PRESET_HELD: PresetTabState = {
   id: 'Sanskrit.md',
   settings: shallowRef(SETTINGS_OF_PRESET),
   curve: shallowRef(CURVE),
@@ -307,7 +307,7 @@ const BANDS = [
   { id: 'nouns', name: 'Nouns off them' },
 ]
 
-const DECK_HELD: DeckHeld = {
+const DECK_HELD: DeckTabState = {
   id: 'Sanskrit/Roots.md',
   shown: computed(() => ({ path: 'Sanskrit/Roots.md', body: '', state: 'clean', refusal: null })),
   deck: computed(() => ({ preamble: '', cards: [], sections: [], tail: '' })),
@@ -340,7 +340,7 @@ export const Deck: Story = {
   render: () => window(`${DECK}:roots`, DeckTab, DECK_HELD),
 }
 
-const STENCIL_HELD: StencilHeld = {
+const STENCIL_HELD: StencilTabState = {
   id: 'Sanskrit/Word.md',
   shown: computed(() => ({ path: 'Sanskrit/Word.md', body: '', state: 'clean', refusal: null })),
   sheet: computed(() => ({

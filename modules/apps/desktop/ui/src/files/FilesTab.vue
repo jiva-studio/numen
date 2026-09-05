@@ -14,12 +14,12 @@ import { Book, File, Folder, FolderOpen, type LucideIcon } from '@lucide/vue'
 import Caution from '../Caution.vue'
 import type { NoteType, Source } from '../core'
 import { iconFor, iconOfNote } from '../icons'
-import type { Dropped, Held } from './kind'
+import type { Dropped, FilesTabState } from './kind'
 import type { Row } from './listing'
 import { itemsFor } from './menu'
 import { WORDS as words } from './words'
 
-const props = defineProps<{ held: Held }>()
+const props = defineProps<{ held: FilesTabState }>()
 
 /**
  * The mark the window's drag and drop reads: the attribute it looks a target

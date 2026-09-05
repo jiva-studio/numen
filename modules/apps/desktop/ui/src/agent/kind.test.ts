@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import type { Conversation, Turn } from '@numen/ui'
-import { agentKind, talking, type Held } from './kind'
+import { agentKind, talking, type AgentTabState } from './kind'
 import type { Stretch } from '../core'
 import { windowing } from '../windowing'
 import { AGENT } from '../workspace'
@@ -69,7 +69,7 @@ const tabs = (about = { path: '', title: '' }) => {
   /** An agent tab of this window, and what it holds. */
   const holds = async () => {
     const id = await held.opens(AGENT)
-    return { id, held: held.holdsIn<Held>(id, AGENT)! }
+    return { id, held: held.holdsIn<AgentTabState>(id, AGENT)! }
   }
   /** The person is in this tab now. */
   const enters = (id: string) => held.shown(id)

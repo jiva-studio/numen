@@ -11,7 +11,7 @@ import { mount } from '@vue/test-utils'
 import { Menu, Tree } from '@numen/ui'
 import type { Entry } from '../core'
 import FilesTab from './FilesTab.vue'
-import { filing, type Held } from './kind'
+import { filing, type FilesTabState } from './kind'
 import { listing, ROOT } from './listing'
 
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
@@ -37,7 +37,7 @@ const settles = () => new Promise((done) => setTimeout(done, 0))
 const drawn = async (open: readonly string[] = []) => {
   const done: string[] = []
   const list = listing({ list: async (at: string) => held[at] ?? [] })
-  const tab: Held = filing(list, {
+  const tab: FilesTabState = filing(list, {
     lands: (landing) => void done.push(`lands ${landing ? `${landing.at} ${landing.path}` : '—'}`),
     runs: (id, paths, name) => void done.push(`runs ${id} ${paths.join(' ')} ${name}`),
     moves: async (from, to) => void done.push(`moves ${from} ${to}`),
@@ -287,7 +287,7 @@ describe('a folder that could not be read', () => {
         throw new Error('the vault is not there')
       },
     })
-    const tab: Held = filing(list, {
+    const tab: FilesTabState = filing(list, {
       lands: () => {},
       runs: () => {},
       moves: async () => {},

@@ -18,7 +18,7 @@ import {
   type Settings,
   type SettingsBounds,
 } from '../preset/core'
-import type { Held } from '../preset/kind'
+import type { PresetTabState } from '../preset/kind'
 
 /**
  * How far each setting goes, as the application answers a read. A test says
@@ -112,7 +112,7 @@ const tabAt = (
 ) => {
   const done: string[] = []
   const place = ref(2)
-  const held: Held = {
+  const held: PresetTabState = {
     id: 'Sanskrit.md',
     settings: shallowRef({ ...DEFAULTS, ...settings }),
     curve: shallowRef(curve(over)),

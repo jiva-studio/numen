@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { paneById, panesOf } from '@numen/ui'
-import { plexKind, plexing, type Held, type PlexEditor, type PlexTabDeps } from './kind'
+import { plexKind, plexing, type PlexTabState, type PlexEditor, type PlexTabDeps } from './kind'
 import { ITEMS, NEW_NOTE } from './menu'
 import { view as viewing, type View } from './view'
 import { WORDS as words } from './words'
@@ -159,7 +159,7 @@ const tab = (at: string, related: readonly string[] = [], takes = true, types: T
 }
 
 /** The node of the picture drawn for the note of this title, if it draws one. */
-const nodeFor = (held: Held, title: string): string =>
+const nodeFor = (held: PlexTabState, title: string): string =>
   held.picture.value?.nodes.find((node) => node.title === title)?.id ?? ''
 
 describe('a note made from a node', () => {
@@ -1080,7 +1080,7 @@ const window = (opening = 'Opening.md') => {
   /** A plex tab of this window, opened on what it was given. */
   const holds = async (at = '') => {
     const id = await held.opens(PLEX, at)
-    return { id, held: held.holdsIn<Held>(id, PLEX)! }
+    return { id, held: held.holdsIn<PlexTabState>(id, PLEX)! }
   }
   /** The person is in this tab now. */
   const enters = (id: string) => held.shown(id)

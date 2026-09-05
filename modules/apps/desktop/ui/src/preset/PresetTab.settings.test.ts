@@ -13,7 +13,7 @@ import tabSource from './PresetTab.vue?raw'
 import controlSource from './Control.vue?raw'
 import { NO_BOUNDS } from './core'
 import type { Field } from './curve'
-import type { Held, Said } from './kind'
+import type { PresetTabState, Said } from './kind'
 import { BOUNDS, drawn, rows, tabAt } from '../testing/preset'
 import { WORDS as words } from './words'
 
@@ -128,7 +128,7 @@ describe('the settings under the control', () => {
   // itself with, rather than at ends the window made up.
   it('leaves a field the application has said nothing about at its own ends', () => {
     const one = tabAt({}, { learned: 'interval', interval: 21 })
-    const held: Held = { ...one.held, bounds: shallowRef(NO_BOUNDS) }
+    const held: PresetTabState = { ...one.held, bounds: shallowRef(NO_BOUNDS) }
     const tab = mount(PresetTab, { props: { held } })
     const field = tab.get('[data-preset-row="interval"]').get<HTMLInputElement>('input')
     expect(field.element.value).toBe('21')
@@ -141,7 +141,7 @@ describe('the settings under the control', () => {
 describe('what the tab says went wrong', () => {
   const saying = (words: string) => {
     const one = tabAt()
-    const held: Held = { ...one.held, saying: ref(words) }
+    const held: PresetTabState = { ...one.held, saying: ref(words) }
     return { tab: mount(PresetTab, { props: { held } }), done: one.done }
   }
 
@@ -171,7 +171,7 @@ describe('what the tab says went wrong', () => {
 describe('a file that changed under the tab', () => {
   it('says so, and offers reading the file again', async () => {
     const one = tabAt()
-    const held: Held = { ...one.held, changed: ref(true) }
+    const held: PresetTabState = { ...one.held, changed: ref(true) }
     const tab = mount(PresetTab, { props: { held } })
     const said = tab.get('[role="status"].preset__answering')
     expect(said.text()).toContain(words.changed)
@@ -194,7 +194,7 @@ describe('the load of the week', () => {
   const watching = (load: Record<string, number>) => {
     const one = tabAt({}, { load })
     const put: [Field, Said][] = []
-    const held: Held = {
+    const held: PresetTabState = {
       ...one.held,
       types: (field, value) => {
         put.push([field, value])

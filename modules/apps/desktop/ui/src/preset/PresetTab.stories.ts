@@ -22,7 +22,7 @@ import {
   type SettingsBounds,
 } from './core'
 import { BAND_HIGH, HIGH, WIDE } from './drawing'
-import type { Held } from './kind'
+import type { PresetTabState } from './kind'
 import { WORDS as words } from './words'
 
 const point = (over: Partial<Point> = {}): Point => ({
@@ -88,7 +88,7 @@ const BOUNDS: SettingsBounds = {
 }
 
 /** A tab standing at those settings, holding the place the knob was moved to. */
-const holding = (args: Knobs): Held => {
+const holding = (args: Knobs): PresetTabState => {
   const place = ref(args.place)
   const drawn = curve({ goal: args.goal, honest: args.honest })
   return {

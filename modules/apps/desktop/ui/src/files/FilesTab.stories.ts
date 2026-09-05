@@ -8,7 +8,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 import FilesTab from './FilesTab.vue'
-import { filing, type Held } from './kind'
+import { filing, type FilesTabState } from './kind'
 import { listing, ROOT } from './listing'
 import type { Entry } from '../core'
 
@@ -35,9 +35,9 @@ const VAULT: Record<string, readonly Entry[]> = {
 }
 
 /** A tab of that vault, reading the folders named as it is drawn. */
-const opened = (open: readonly string[]): Held => {
+const opened = (open: readonly string[]): FilesTabState => {
   const list = listing({ list: async (at: string) => VAULT[at] ?? [] })
-  const held: Held = filing(list, {
+  const held: FilesTabState = filing(list, {
     lands: () => {},
     runs: () => {},
     moves: async () => {},

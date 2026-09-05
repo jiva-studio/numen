@@ -9,7 +9,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import PlexTab from './PlexTab.vue'
-import type { MenuRequest, Held } from './kind'
+import type { MenuRequest, PlexTabState } from './kind'
 import { WORDS as words } from './words'
 import type { NoteType } from '../core'
 import { iconFor } from '../icons'
@@ -40,7 +40,7 @@ const held = () =>
     dismiss: () => {},
     chose: () => {},
     nameOf: () => '',
-  }) as unknown as Held
+  }) as unknown as PlexTabState
 
 /** The probe the size is measured off is a box one em on a side. */
 const isProbe = (target: Element) => (target as HTMLElement).style.inlineSize === '1em'
@@ -102,7 +102,7 @@ describe('a menu asked for over a tab drawing no picture', () => {
       picture: ref(null),
       empty: ref(true),
       asks: (one: MenuRequest) => void asked.push(one),
-    } as unknown as Held
+    } as unknown as PlexTabState
     return { tab, asked }
   }
 
@@ -133,7 +133,7 @@ describe('a menu asked for over a tab drawing no picture', () => {
   it('leaves a tab drawing a picture to answer for itself', async () => {
     drawing(13)
     const asked: MenuRequest[] = []
-    const tab = { ...held(), asks: (one: MenuRequest) => void asked.push(one) } as Held
+    const tab = { ...held(), asks: (one: MenuRequest) => void asked.push(one) } as PlexTabState
     const view = mount(PlexTab, { props: { held: tab } })
 
     await view.get('.plex').trigger('contextmenu', { clientX: 12, clientY: 34 })
@@ -145,7 +145,7 @@ describe('a menu asked for over a tab drawing no picture', () => {
 describe('what a node is drawn before its title', () => {
   /** A tab whose nodes are of the kinds a test names. */
   const typed = (types: Record<string, NoteType>) =>
-    ({ ...held(), typeOf: (node: string) => types[node] ?? 'note' }) as unknown as Held
+    ({ ...held(), typeOf: (node: string) => types[node] ?? 'note' }) as unknown as PlexTabState
 
   it('is the icon the tree draws a deck under', () => {
     drawing(13)

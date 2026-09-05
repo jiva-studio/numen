@@ -42,7 +42,7 @@ export interface Attends {
 }
 
 /** A kind of tab: what it holds, what it is called, and what it lets go of. */
-export interface Kind<Held> {
+export interface Kind<TabState> {
   /** The word the identities of its tabs are filed under. */
   readonly kind: string
   /**
@@ -50,11 +50,11 @@ export interface Kind<Held> {
    * It is made at once, so whatever it watches is caught by the tab's scope
    * and let go of with the tab.
    */
-  opens(at: string): Held
+  opens(at: string): TabState
   /** What the tab is called, as what it holds now stands. */
-  called(held: Held): string
+  called(held: TabState): string
   /** The one word the tab carries beside its title, or nothing. */
-  marked?(held: Held): string | undefined
+  marked?(held: TabState): string | undefined
   /** What is drawn in the pane, given what the tab holds. */
   readonly draws: Component
   /**
@@ -64,21 +64,21 @@ export interface Kind<Held> {
    */
   identity?(at: string): string
   /** The tab came on screen, where what it holds has room to measure. */
-  shown?(held: Held, id: string): void
+  shown?(held: TabState, id: string): void
   /** What a command asked over one of its tabs is over. */
-  at?(held: Held): At
+  at?(held: TabState): At
   /** What one of its tabs holds, as whoever answers for the person is told it. */
-  attends?(held: Held): Attends
+  attends?(held: TabState): Attends
   /**
    * The tab lets go of what it held. False keeps it on screen: what it holds
    * has something to finish, and closes the tab itself once it has.
    */
-  shuts?(held: Held, id: string): boolean
+  shuts?(held: TabState, id: string): boolean
   /**
    * The window is going, and nothing this tab holds outlives it. A kind that
    * says nothing here lets go the way a tab of it closes.
    */
-  gone?(held: Held, id: string): void
+  gone?(held: TabState, id: string): void
 }
 
 /**
@@ -94,9 +94,9 @@ export interface Open {
 }
 
 /** One tab of a kind, as that kind is given it back. */
-export interface Tabbed<Held> {
+export interface Tabbed<TabState> {
   readonly id: string
-  readonly held: Held
+  readonly held: TabState
 }
 
 /** The tab the person is looking at, whichever kind it turns out to be. */
@@ -122,16 +122,16 @@ export interface Host {
    * Every tab of a kind, in the order the person was last in them. The last of
    * them is the one in front.
    */
-  each<Held>(kind: string): readonly Tabbed<Held>[]
+  each<TabState>(kind: string): readonly Tabbed<TabState>[]
   /** The tab of a kind the person was last in, and nothing where it holds none. */
-  last<Held>(kind: string): Tabbed<Held> | null
+  last<TabState>(kind: string): Tabbed<TabState> | null
   /**
    * The tab showing in the pane the person is in, of whatever kind. A pane
    * holding nothing answers with nothing.
    */
   front(): Fronted | null
   /** What one tab of a kind holds, and nothing where the tab is another kind. */
-  holds<Held>(kind: string, id: string): Held | null
+  holds<TabState>(kind: string, id: string): TabState | null
 }
 
 /** The identity a pane made by a split is filed under. */
@@ -147,10 +147,10 @@ export function windowing() {
     beside: (kind, at) => beside(kind, at),
     shows: (id) => shows(id),
     closes: (id) => closes(id),
-    each: <Held,>(kind: string) => each<Held>(kind),
-    last: <Held,>(kind: string) => each<Held>(kind).at(-1) ?? null,
+    each: <TabState,>(kind: string) => each<TabState>(kind),
+    last: <TabState,>(kind: string) => each<TabState>(kind).at(-1) ?? null,
     front: () => front(),
-    holds: <Held,>(kind: string, id: string) => holdsIn<Held>(id, kind),
+    holds: <TabState,>(kind: string, id: string) => holdsIn<TabState>(id, kind),
   }
 
   /** The kinds of tab this window draws, each under the word it is asked for by. */

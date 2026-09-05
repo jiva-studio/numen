@@ -14,10 +14,10 @@ import type { LucideIcon } from '@lucide/vue'
 import { ITEMS, NONE } from './menu'
 import Caution from '../Caution.vue'
 import { iconFor, iconOfNote } from '../icons'
-import type { Held } from './kind'
+import type { PlexTabState } from './kind'
 import { WORDS as words } from './words'
 
-const props = defineProps<{ held: Held }>()
+const props = defineProps<{ held: PlexTabState }>()
 
 /**
  * How large the picture is drawn, and how many parts a node hangs at once. A

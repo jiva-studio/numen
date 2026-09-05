@@ -13,7 +13,7 @@ import { putting } from '../putting'
 import { windowing } from '../windowing'
 import { STENCIL } from '../workspace'
 import StencilTab from './StencilTab.vue'
-import { stencilling, type Held } from './stencil'
+import { stencilling, type StencilTabState } from './stencil'
 import { WORDS as words } from './words'
 
 /** The one place a file is opened from. Nothing here opens one. */
@@ -67,7 +67,7 @@ const drawn = async (problems: readonly Problem[] = []) => {
   held.declares([stencils.kind])
   const id = await held.opens(STENCIL, 'Animal.md')
   await settles()
-  const tab = held.host.holds<Held>(STENCIL, id) as Held
+  const tab = held.host.holds<StencilTabState>(STENCIL, id) as StencilTabState
   // A mark is teleported into the face or the row it is about, so the editor
   // has to stand in the document for those to be found.
   const window = mount(StencilTab, { props: { held: tab }, attachTo: document.body })

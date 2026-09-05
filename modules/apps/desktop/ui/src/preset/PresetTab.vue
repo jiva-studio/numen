@@ -12,13 +12,13 @@ import { computed } from 'vue'
 import { Days, NumberField, Segmented, Select, Slider, Switch, WEEK } from '@numen/ui'
 import type { Day } from '@numen/ui'
 import Control from './Control.vue'
-import type { Held, Said } from './kind'
+import type { PresetTabState, Said } from './kind'
 import { COUNTS, GOALS, LOADS, RULES, WHOLE_LOAD, loadOn, loaded } from './core'
 import type { Bounds, Counts, Goal } from './core'
 import { fieldsUnder, idle, round, type Field } from './curve'
 import { WORDS as words } from './words'
 
-const props = defineProps<{ held: Held }>()
+const props = defineProps<{ held: PresetTabState }>()
 
 const settings = computed(() => props.held.settings.value)
 const curve = computed(() => props.held.curve.value)

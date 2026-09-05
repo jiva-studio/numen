@@ -12,10 +12,10 @@ import { cardBlanks, cardFields, Deck as DeckView, Menu } from '@numen/ui'
 import type { CardLanding, Point } from '@numen/ui'
 import { ChevronDown } from '@lucide/vue'
 import Answering from '../Answering.vue'
-import type { Held } from './deck'
+import type { DeckTabState } from './deck'
 import { WORDS as words } from './words'
 
-const props = defineProps<{ held: Held }>()
+const props = defineProps<{ held: DeckTabState }>()
 
 const drawn = computed(() => props.held.drawn.value)
 const marks = computed(() => props.held.marks.value)

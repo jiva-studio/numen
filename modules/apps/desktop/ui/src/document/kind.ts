@@ -18,14 +18,14 @@ export interface PageHandle {
 }
 
 /** What one document tab holds. */
-export type Held = ReturnType<typeof documenting>
+export type DocumentTabState = ReturnType<typeof documenting>
 
 /**
  * The document tabs of a window. A document is its own tab, so the same one
  * opened again is the tab it is already read in.
  */
-export function documentKind(host: Host, opens: (path: string) => Held, puts: Putting) {
-  const kind: Kind<Held> = {
+export function documentKind(host: Host, opens: (path: string) => DocumentTabState, puts: Putting) {
+  const kind: Kind<DocumentTabState> = {
     kind: DOCUMENT,
     opens,
     called: (held) => held.path.split('/').pop() ?? held.path,
@@ -48,7 +48,7 @@ export function documentKind(host: Host, opens: (path: string) => Held, puts: Pu
   // highlighted where they fall, each of them somewhere else to look.
   const reads = async (path: string, stretches: readonly Stretch[]) => {
     const id = await host.opens(DOCUMENT, path)
-    void host.holds<Held>(DOCUMENT, id)?.reach(...stretches)
+    void host.holds<DocumentTabState>(DOCUMENT, id)?.reach(...stretches)
   }
   puts.reads((path, stretches) => void reads(path, stretches))
 

@@ -8,7 +8,7 @@ import { putting } from '../putting'
 import { windowing } from '../windowing'
 import { STENCIL } from '../workspace'
 import { REFUSED } from '../words'
-import { stencilling, type Held } from './stencil'
+import { stencilling, type StencilTabState } from './stencil'
 import { WORDS as words } from './words'
 
 /** The one place a file is opened from. Nothing here opens one. */
@@ -112,7 +112,7 @@ const open = async (answers: Parameters<typeof vault>[0] = {}, path = 'Animal.md
   held.declares([stencils.kind])
   const id = await held.opens(STENCIL, path)
   await settles()
-  const tab = held.host.holds<Held>(STENCIL, id) as Held
+  const tab = held.host.holds<StencilTabState>(STENCIL, id) as StencilTabState
   return { ...one, held, road, stencils, id, tab, said }
 }
 

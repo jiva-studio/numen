@@ -68,7 +68,7 @@ export { default as Welcome } from './welcome/Welcome.vue'
 export { default as Glyph } from './welcome/Glyph.vue'
 /** The letter a vault on that screen is opened by, and what a keystroke opens. */
 export { opensVault, typing, vaultLetter, VAULT_LETTERS } from './welcome/picking'
-export type { Held, Offer, Way } from './welcome/welcome'
+export type { Offer, VaultRow, Way } from './welcome/welcome'
 
 export { default as Palette } from './palette/Palette.vue'
 export { default as KeyCap } from './palette/KeyCap.vue'

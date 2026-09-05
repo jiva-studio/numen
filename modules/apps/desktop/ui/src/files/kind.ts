@@ -128,14 +128,14 @@ export const renamedTo = (path: string, name: string, folder = false): string =>
 }
 
 /** What one files tab holds. */
-export type Held = ReturnType<typeof filing>
+export type FilesTabState = ReturnType<typeof filing>
 
 /**
  * The files tab of a window. A window shows the vault once, so a second asked
  * for is the tree already open.
  */
 export function filesKind(host: Host, makes: () => Listing, deps: FilesTabDeps) {
-  const kind: Kind<Held> = {
+  const kind: Kind<FilesTabState> = {
     kind: FILES,
     opens: () => {
       const held = filing(makes(), deps)
@@ -152,7 +152,7 @@ export function filesKind(host: Host, makes: () => Listing, deps: FilesTabDeps) 
   }
 
   /** The tree of this window, and nothing while it holds none. */
-  const front = (): Held | null => host.last<Held>(FILES)?.held ?? null
+  const front = (): FilesTabState | null => host.last<FilesTabState>(FILES)?.held ?? null
 
   /**
    * The tree put in front of the person, walked down to a path. The window that
@@ -160,7 +160,7 @@ export function filesKind(host: Host, makes: () => Listing, deps: FilesTabDeps) 
    */
   const reveals = async (path: string) => {
     const id = await host.opens(FILES)
-    await host.holds<Held>(FILES, id)?.list.reveals(path)
+    await host.holds<FilesTabState>(FILES, id)?.list.reveals(path)
   }
 
   /** The vault changed, and every open folder a named path sits in is read again. */

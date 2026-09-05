@@ -57,7 +57,7 @@ interface Told {
 const NOTHING: Told = { problems: [], reading: null, writing: null, at: '' }
 
 /** What one stencil tab holds. */
-export interface Held {
+export interface StencilTabState {
   /** The identity this stencil opened under, which its tab keeps wherever it goes. */
   readonly id: string
   /** The stencil as the window draws it: the state it is in, and what it stands at. */
@@ -222,7 +222,7 @@ export function stencilling(
     return words.unreachable
   }
 
-  const held = (id: string): Held => ({
+  const held = (id: string): StencilTabState => ({
     id,
     shown: computed(() => store.shown(id)),
     sheet: computed(() => sheetAt(id)),
@@ -266,7 +266,7 @@ export function stencilling(
 
   /** The tab holding a stencil lets go of it, wherever the window draws it. */
   const shuts = (id: string): void => {
-    const tab = host.each<Held>(STENCIL).find((one) => one.held.id === id)
+    const tab = host.each<StencilTabState>(STENCIL).find((one) => one.held.id === id)
     tab?.held.shuts(tab.id)
   }
 
@@ -313,7 +313,7 @@ export function stencilling(
    * under, so the same file asked for twice is the tab it has wherever the file
    * has been renamed to since.
    */
-  const kind: Kind<Held> = {
+  const kind: Kind<StencilTabState> = {
     kind: STENCIL,
     opens: (id) => {
       const path = minted.get(id) ?? id

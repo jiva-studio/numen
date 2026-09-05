@@ -14,7 +14,7 @@ import { putting } from '../putting'
 import { windowing } from '../windowing'
 import { DECK } from '../workspace'
 import DeckTab from './DeckTab.vue'
-import { decking, type Held } from './deck'
+import { decking, type DeckTabState } from './deck'
 import { WORDS as words } from './words'
 
 /** A preset that schedules, which is what every preset here is. */
@@ -170,7 +170,7 @@ const drawn = async (
   held.declares([decks.kind])
   const id = await held.opens(DECK, 'Animals.md')
   await settles()
-  const tab = held.host.holds<Held>(DECK, id) as Held
+  const tab = held.host.holds<DeckTabState>(DECK, id) as DeckTabState
   // A mark is teleported into the tile it is about, so the grid has to stand in
   // the document for the tile to be found.
   const window = mount(DeckTab, { props: { held: tab }, attachTo: document.body })

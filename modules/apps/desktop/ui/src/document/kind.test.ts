@@ -5,7 +5,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { documenting, documentKind, type Held, type PageHandle } from './kind'
+import { documenting, documentKind, type DocumentTabState, type PageHandle } from './kind'
 import { DOCUMENT } from '../workspace'
 import type { Reading } from './reading'
 import type { Putting, Reads } from '../putting'
@@ -16,7 +16,7 @@ import type { Host } from '../windowing'
 const read = (path: string, close = vi.fn()) => ({ path, close }) as unknown as Reading
 
 /** A window, writing down what it was asked to open and holding what it made. */
-const window_ = (held: Held | null = null) => {
+const window_ = (held: DocumentTabState | null = null) => {
   const opened: string[] = []
   const host = {
     opens: async (kind: string, at?: string) => {
@@ -40,10 +40,10 @@ const settles = () => new Promise((done) => setTimeout(done, 0))
 
 /** A document open at a page of a file, as far as the window reads one. */
 const openedAt = (path: string, page: number, pages: number) =>
-  ({ path, at: ref(page), pages: ref(pages) }) as unknown as Held
+  ({ path, at: ref(page), pages: ref(pages) }) as unknown as DocumentTabState
 
 /** The kind, over a window holding the document it is handed. */
-const kindOver = (held: Held) => documentKind(window_(held).host, () => held, putting().puts).kind
+const kindOver = (held: DocumentTabState) => documentKind(window_(held).host, () => held, putting().puts).kind
 
 describe('what a document tab holds', () => {
   it('measures the page again once there is a page to measure', () => {
@@ -122,7 +122,7 @@ describe('a document tab', () => {
 describe('a search that landed in a document', () => {
   it('opens the document and turns it to what was found', async () => {
     const reached = vi.fn()
-    const held = { reach: reached } as unknown as Held
+    const held = { reach: reached } as unknown as DocumentTabState
     const { host, opened } = window_(held)
     const { puts, opens } = putting()
     documentKind(host, (path) => documenting(read(path)), puts)

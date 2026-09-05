@@ -11,10 +11,10 @@ import { computed } from 'vue'
 import { StencilView } from '@numen/ui'
 import type { CardLanding, Half } from '@numen/ui'
 import Answering from '../Answering.vue'
-import type { Held } from './stencil'
+import type { StencilTabState } from './stencil'
 import { WORDS as words } from './words'
 
-const props = defineProps<{ held: Held }>()
+const props = defineProps<{ held: StencilTabState }>()
 
 const sheet = computed(() => props.held.sheet.value)
 const marks = computed(() => props.held.marks.value)

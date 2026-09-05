@@ -38,7 +38,7 @@ export interface Asked extends Called {
 }
 
 /** What one note tab holds: its text, and the answers a person gives it. */
-export interface Held {
+export interface NoteTabState {
   /** The identity this note opened under, which its tab keeps wherever it goes. */
   readonly id: string
   /** The note as the window draws it: the body, and the state it is in. */
@@ -141,7 +141,7 @@ export function noting(
 
   /** The tab holding a note lets go of it, wherever the window draws it. */
   const shuts = (id: string) => {
-    const tab = host.each<Held>(NOTE).find((one) => one.held.id === id)
+    const tab = host.each<NoteTabState>(NOTE).find((one) => one.held.id === id)
     tab?.held.shuts(tab.id)
   }
 
@@ -149,7 +149,7 @@ export function noting(
    * What one tab of a note holds. What is being drawn over a note is filed by
    * the file it is being drawn on, which is where the note stands now.
    */
-  const held = (id: string): Held => ({
+  const held = (id: string): NoteTabState => ({
     id,
     shown: computed(() => notes.shown(id)),
     saying: computed(() => notes.saying(id)),
@@ -185,9 +185,9 @@ export function noting(
    * identity it opened under.
    */
   /** The file this note stands at now, and nothing while the store has let it go. */
-  const standsAt = (held: Held): string => (notes.has(held.id) ? notes.where(held.id) : '')
+  const standsAt = (held: NoteTabState): string => (notes.has(held.id) ? notes.where(held.id) : '')
 
-  const kind: Kind<Held> = {
+  const kind: Kind<NoteTabState> = {
     kind: NOTE,
     opens: (id) => opens(id),
     called: (held) => names.called(held.id),

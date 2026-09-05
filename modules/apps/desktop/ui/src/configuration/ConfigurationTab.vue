@@ -9,10 +9,10 @@
  */
 import { Editor } from '@numen/ui'
 import Caution from '../Caution.vue'
-import type { Held } from './kind'
+import type { ConfigurationTabState } from './kind'
 import { WORDS as words } from './words'
 
-const props = defineProps<{ held: Held }>()
+const props = defineProps<{ held: ConfigurationTabState }>()
 </script>
 
 <template>

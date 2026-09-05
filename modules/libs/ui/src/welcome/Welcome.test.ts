@@ -10,9 +10,9 @@ import { mount } from '@vue/test-utils'
 import KeyCap from '../palette/KeyCap.vue'
 import Welcome from './Welcome.vue'
 import { VAULT_LETTERS } from './picking'
-import type { Held, Offer, Way } from './welcome'
+import type { Offer, VaultRow, Way } from './welcome'
 
-const vault = (id: string): Held => ({ id, name: id, path: `/vaults/${id}` })
+const vault = (id: string): VaultRow => ({ id, name: id, path: `/vaults/${id}` })
 
 /** What a window offers below the list, with the keystroke that reaches it. */
 const offer: Offer = {
@@ -21,7 +21,7 @@ const offer: Offer = {
   keys: { icons: ['control', 'shift'], letter: 'N' },
 }
 
-const draw = (vaults: readonly Held[]) => mount(Welcome, { props: { vaults, heading: 'Vaults' } })
+const draw = (vaults: readonly VaultRow[]) => mount(Welcome, { props: { vaults, heading: 'Vaults' } })
 
 /** The letters drawn on the list, in the order the rows stand. */
 const caps = (screen: ReturnType<typeof draw>): readonly string[] =>
@@ -61,7 +61,7 @@ describe('a vault on the list', () => {
 })
 
 describe('a vault the window has not answered for yet', () => {
-  const working = (id: string): Held => ({ ...vault(id), working: true })
+  const working = (id: string): VaultRow => ({ ...vault(id), working: true })
 
   it('stands on the list under its own name', () => {
     const screen = draw([working('physics')])
@@ -93,7 +93,7 @@ describe('a vault the window has not answered for yet', () => {
 })
 
 describe('the room the list will fill', () => {
-  const drawEmpty = (vaults: readonly Held[]) =>
+  const drawEmpty = (vaults: readonly VaultRow[]) =>
     mount(Welcome, {
       props: { vaults, heading: 'Vaults' },
       slots: { waiting: '<p class="counting">Counting</p>' },

@@ -30,7 +30,7 @@ export interface RecordingTabDeps {
 }
 
 /** What one recording tab holds. */
-export type Held = ReturnType<typeof transcribed>
+export type RecordingTabState = ReturnType<typeof transcribed>
 
 /**
  * One recording, with what can be asked about its words: writing them down
@@ -75,7 +75,7 @@ export function recordingKind(
   asks: RecordingTabDeps,
   puts: Putting,
 ) {
-  const kind: Kind<Held> = {
+  const kind: Kind<RecordingTabState> = {
     kind: RECORDING,
     opens: (path) => transcribed(opens(path), asks),
     called: (held) => held.called,
@@ -96,7 +96,7 @@ export function recordingKind(
   // the stretches asked for was spoken at.
   const hears = async (path: string, stretches: readonly Stretch[]) => {
     const id = await host.opens(RECORDING, path)
-    void host.holds<Held>(RECORDING, id)?.reach(...stretches)
+    void host.holds<RecordingTabState>(RECORDING, id)?.reach(...stretches)
   }
   puts.hears((path, stretches) => void hears(path, stretches))
 
@@ -105,7 +105,7 @@ export function recordingKind(
    * named there is being transcribed, and asks for the words again.
    */
   const ticked = (tasks: readonly Task[]) => {
-    for (const one of host.each<Held>(RECORDING)) {
+    for (const one of host.each<RecordingTabState>(RECORDING)) {
       one.held.ticks(tasks.some((task) => task.about === one.held.path))
     }
   }
@@ -115,7 +115,7 @@ export function recordingKind(
    * words again, and finds there are none.
    */
   const dropped = (path: string) => {
-    for (const one of host.each<Held>(RECORDING)) {
+    for (const one of host.each<RecordingTabState>(RECORDING)) {
       if (one.held.path === path) one.held.again()
     }
   }

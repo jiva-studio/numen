@@ -6,9 +6,9 @@
  */
 import { Reader } from '@numen/ui'
 import { WORDS as words } from './words'
-import type { Held } from './kind'
+import type { DocumentTabState } from './kind'
 
-const props = defineProps<{ held: Held }>()
+const props = defineProps<{ held: DocumentTabState }>()
 </script>
 
 <template>

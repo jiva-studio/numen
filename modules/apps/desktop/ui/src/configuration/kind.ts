@@ -27,7 +27,7 @@ export interface ConfigurationTabDeps {
 }
 
 /** What one tab of the settings file holds. */
-export type Held = ReturnType<typeof holding>
+export type ConfigurationTabState = ReturnType<typeof holding>
 
 /** What is wrong, as a person reads it. */
 const reason = (thrown: unknown): string =>
@@ -124,7 +124,7 @@ export function holding(core: ConfigurationTabDeps, reads: () => void) {
 }
 
 /** What the tab carries beside its name, and nothing where there is nothing to say. */
-const mark = (held: Held): string | undefined => {
+const mark = (held: ConfigurationTabState): string | undefined => {
   if (held.overtaken()) return 'overtaken'
   return held.changed() ? '•' : undefined
 }
@@ -134,7 +134,7 @@ const mark = (held: Held): string | undefined => {
  * already stands in.
  */
 export function configuring(host: Host, core: ConfigurationTabDeps, reads: () => void) {
-  const kind: Kind<Held> = {
+  const kind: Kind<ConfigurationTabState> = {
     kind: CONFIGURATION,
     opens: () => {
       const held = holding(core, reads)

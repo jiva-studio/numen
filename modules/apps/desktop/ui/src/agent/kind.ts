@@ -31,7 +31,7 @@ export interface AgentTabDeps {
 }
 
 /** What one agent tab holds. */
-export type Held = ReturnType<typeof talking>
+export type AgentTabState = ReturnType<typeof talking>
 
 /** The note a talk is about, under the name the window calls it by. */
 export interface NoteRef {
@@ -137,8 +137,8 @@ export function talking(talk: Conversation, deps: AgentTabDeps) {
  * A talk is about no note of its own, so a command asked from one is asked over
  * the note the plex the person was last in is standing on.
  */
-export function agentKind(host: Host, opens: () => Held, about: () => NoteRef) {
-  const kind: Kind<Held> = {
+export function agentKind(host: Host, opens: () => AgentTabState, about: () => NoteRef) {
+  const kind: Kind<AgentTabState> = {
     kind: AGENT,
     opens,
     called: (held) =>
@@ -153,8 +153,8 @@ export function agentKind(host: Host, opens: () => Held, about: () => NoteRef) {
 
   /** Something to ask, put in the agent the person was last in and put in front. */
   const asks = async (text: string) => {
-    const id = host.last<Held>(AGENT)?.id ?? (await host.opens(AGENT))
-    host.holds<Held>(AGENT, id)?.writing(text)
+    const id = host.last<AgentTabState>(AGENT)?.id ?? (await host.opens(AGENT))
+    host.holds<AgentTabState>(AGENT, id)?.writing(text)
     host.shows(id)
   }
 

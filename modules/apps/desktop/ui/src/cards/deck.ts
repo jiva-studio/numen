@@ -86,7 +86,7 @@ export interface Choice {
 }
 
 /** What one deck tab holds. */
-export interface Held {
+export interface DeckTabState {
   /** The identity this deck opened under, which its tab keeps wherever it goes. */
   readonly id: string
   /** The deck as the window draws it: the state it is in, and what it stands at. */
@@ -392,7 +392,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
     return words.unreachable
   }
 
-  const held = (id: string): Held => {
+  const held = (id: string): DeckTabState => {
     /** The deck this tab is showing, which everything drawn of it follows. */
     const deck = computed(() => deckAt(id))
 
@@ -449,7 +449,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
 
   /** The tab holding a deck lets go of it, wherever the window draws it. */
   const shuts = (id: string): void => {
-    const tab = host.each<Held>(DECK).find((one) => one.held.id === id)
+    const tab = host.each<DeckTabState>(DECK).find((one) => one.held.id === id)
     tab?.held.shuts(tab.id)
   }
 
@@ -495,7 +495,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
    * identity it opened under, so the same file asked for twice is the tab it
    * has wherever the file has been renamed to since.
    */
-  const kind: Kind<Held> = {
+  const kind: Kind<DeckTabState> = {
     kind: DECK,
     opens: (id) => {
       const path = minted.get(id) ?? id

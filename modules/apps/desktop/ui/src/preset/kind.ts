@@ -72,7 +72,7 @@ const taking = (read: Settings, was: Settings, theirs: ReadonlySet<keyof Setting
 }
 
 /** What one preset tab holds. */
-export interface Held {
+export interface PresetTabState {
   /** The identity this preset opened under, which its tab keeps wherever it goes. */
   readonly id: string
   /** The settings as they now stand, whether or not they have been written. */
@@ -504,7 +504,7 @@ export function presetting(
       : { ...settings, goal }
 
   /** What one open preset holds, in the vocabulary its tab is drawn from. */
-  const holding = (one: Kept, id: string): Held => {
+  const holding = (one: Kept, id: string): PresetTabState => {
     return {
       id,
       settings: one.settings,
@@ -564,7 +564,7 @@ export function presetting(
   }
 
   /** What a preset tab holds, and nothing for a preset no tab has open. */
-  const holds = (id: string): Held | undefined => {
+  const holds = (id: string): PresetTabState | undefined => {
     const one = open.get(id)
     return one && holding(one, id)
   }
@@ -577,7 +577,7 @@ export function presetting(
    * A preset tab as the window keeps it. A preset is its own tab, under the
    * file it stands at, so the same preset asked for twice is the tab it has.
    */
-  const kind: Kind<Held> = {
+  const kind: Kind<PresetTabState> = {
     kind: PRESET,
     opens: (path) => {
       const one = keeps(path)

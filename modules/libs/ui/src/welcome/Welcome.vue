@@ -11,7 +11,7 @@ import { FolderRoot } from '@lucide/vue'
 import KeyCap from '../palette/KeyCap.vue'
 import Glyph from './Glyph.vue'
 import { vaultLetter } from './picking'
-import type { Held, Offer, Way } from './welcome'
+import type { Offer, VaultRow, Way } from './welcome'
 
 withDefaults(
   defineProps<{
@@ -22,7 +22,7 @@ withDefaults(
     name?: string
     /** The ways in, above the list. A window offering none draws none. */
     ways?: readonly Way[]
-    vaults: readonly Held[]
+    vaults: readonly VaultRow[]
     /** What the list is called. */
     heading: string
     /** The row below the list, where a window offers one. */

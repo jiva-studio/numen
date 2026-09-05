@@ -18,7 +18,7 @@ export interface Way {
 }
 
 /** One vault of the list, as the screen draws it. */
-export interface Held {
+export interface VaultRow {
   readonly id: string
   readonly name: string
   /** The folder it stands for, absolute on this machine. */

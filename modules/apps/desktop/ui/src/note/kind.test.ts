@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { nextTick, ref } from 'vue'
 import type { PlexShowing } from '@numen/ui'
-import { noting, type Asked, type Held } from './kind'
+import { noting, type Asked, type NoteTabState } from './kind'
 import { putting } from '../putting'
 import type { Drawn } from './entering'
 import type { drawn } from './drawn'
@@ -494,8 +494,8 @@ describe('what a note is called under the identity it opened under', () => {
 })
 
 /** What the one note tab of a window holds. */
-const holds = (one: ReturnType<typeof window>): Held =>
-  one.held.holdsIn<Held>(one.held.tabs.value[0]?.id ?? '', NOTE)!
+const holds = (one: ReturnType<typeof window>): NoteTabState =>
+  one.held.holdsIn<NoteTabState>(one.held.tabs.value[0]?.id ?? '', NOTE)!
 
 describe('what a command asked over a note tab is over', () => {
   it('is the note it holds, at the file it stands at and under the name it carries', async () => {

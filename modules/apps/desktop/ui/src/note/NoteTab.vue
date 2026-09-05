@@ -10,9 +10,9 @@ import { watch } from 'vue'
 import { Editor } from '@numen/ui'
 import Answering from '../Answering.vue'
 import { WORDS as words } from './words'
-import type { Held } from './kind'
+import type { NoteTabState } from './kind'
 
-const props = defineProps<{ held: Held }>()
+const props = defineProps<{ held: NoteTabState }>()
 
 // The prose of a note arrives after the tab it is drawn in. The editor takes
 // the keyboard it is owed once there are lines for a caret to stand on.

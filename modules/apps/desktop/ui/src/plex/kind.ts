@@ -89,7 +89,7 @@ export interface PlexTabDeps {
 }
 
 /** What one plex tab holds. */
-export type Held = ReturnType<typeof plexing>
+export type PlexTabState = ReturnType<typeof plexing>
 
 /**
  * The plex tabs of a window, in the order the person was last in them.
@@ -100,10 +100,10 @@ export type Held = ReturnType<typeof plexing>
  */
 export function plexKind(host: Host, makes: () => View, deps: PlexTabDeps) {
   /** Every plex the window holds, and the one the person was last in. */
-  const all = () => host.each<Held>(PLEX)
-  const front = (): Held | null => host.last<Held>(PLEX)?.held ?? null
+  const all = () => host.each<PlexTabState>(PLEX)
+  const front = (): PlexTabState | null => host.last<PlexTabState>(PLEX)?.held ?? null
 
-  const kind: Kind<Held> = {
+  const kind: Kind<PlexTabState> = {
     kind: PLEX,
     opens: (at) => {
       const held = plexing(makes(), deps)
@@ -136,7 +136,7 @@ export function plexKind(host: Host, makes: () => View, deps: PlexTabDeps) {
    * on it.
    */
   const travel = async (path: string) => {
-    const one = host.last<Held>(PLEX)
+    const one = host.last<PlexTabState>(PLEX)
     if (!one) {
       await host.opens(PLEX, path)
       return

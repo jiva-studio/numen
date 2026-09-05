@@ -10,7 +10,7 @@
 import { computed } from 'vue'
 import { Button, NumberField, Segmented, Select, Switch, TimeField } from '@numen/ui'
 import type { SelectChoice } from '@numen/ui'
-import type { Held } from './kind'
+import type { SettingsTabState } from './kind'
 /**
  * The settings read out of the file whole, each as a path through it. A reading
  * off a scanned page and a transcript of a recording are put right at a profile
@@ -26,7 +26,7 @@ import { choicesFor } from './models'
 import { write } from './json5'
 import { WORDS as words } from './words'
 
-const props = defineProps<{ held: Held }>()
+const props = defineProps<{ held: SettingsTabState }>()
 
 const held = computed(() => props.held.installation)
 

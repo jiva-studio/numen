@@ -9,7 +9,7 @@ import { DEFAULTS, NOWHERE, NO_BOUNDS, type Listed, type Presets } from '../pres
 import { putting } from '../putting'
 import { windowing } from '../windowing'
 import { DECK } from '../workspace'
-import { decking, type Held } from './deck'
+import { decking, type DeckTabState } from './deck'
 import { WORDS as words } from './words'
 
 /** A preset that schedules, which is what every preset here is. */
@@ -226,7 +226,7 @@ const open = async (
   held.declares([decks.kind])
   const id = await held.opens(DECK, path)
   await settles()
-  const tab = held.host.holds<Held>(DECK, id) as Held
+  const tab = held.host.holds<DeckTabState>(DECK, id) as DeckTabState
   return { ...one, held, road, decks, id, tab }
 }
 
@@ -254,7 +254,7 @@ describe('a deck opened', () => {
   it('is called what the file is called', async () => {
     const { decks, id, held } = await open()
 
-    expect(decks.kind.called(held.host.holds<Held>(DECK, id) as Held)).toBe('Animals')
+    expect(decks.kind.called(held.host.holds<DeckTabState>(DECK, id) as DeckTabState)).toBe('Animals')
   })
 
   it('offers every stencil the vault holds as a cut', async () => {
@@ -577,7 +577,7 @@ describe('the vault changing under the window', () => {
 
 describe('a deck read again under the window', () => {
   /** Everything the tab hands the grid to draw. */
-  const drawing = (tab: Held) => ({
+  const drawing = (tab: DeckTabState) => ({
     deck: tab.deck.value,
     drawn: tab.drawn.value,
     stencils: tab.stencils.value,

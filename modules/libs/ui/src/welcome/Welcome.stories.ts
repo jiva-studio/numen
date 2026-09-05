@@ -10,7 +10,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { Bot, FolderPlus, Settings, SquarePen, Waypoints } from '@lucide/vue'
 import Welcome from './Welcome.vue'
-import type { Held, Offer, Way } from './welcome'
+import type { Offer, VaultRow, Way } from './welcome'
 
 /** The ways in the editor's window offers, in the order it offers them. */
 const WAYS: readonly Way[] = [
@@ -29,21 +29,21 @@ const OFFER: Offer = {
   keys: { icons: ['control', 'shift'], letter: 'N' },
 }
 
-const held = (name: string, path: string, detail?: string): Held => ({
+const held = (name: string, path: string, detail?: string): VaultRow => ({
   id: name.toLowerCase(),
   name,
   path,
   ...(detail ? { detail } : {}),
 })
 
-const VAULTS: readonly Held[] = [
+const VAULTS: readonly VaultRow[] = [
   held('Studies', '/home/rowan/vaults/studies', 'Open'),
   held('Sanskrit', '/home/rowan/vaults/sanskrit'),
   held('Fieldwork', '/home/rowan/Documents/fieldwork'),
 ]
 
 /** More vaults than a short window has room for, which is where the list scrolls. */
-const MANY: readonly Held[] = [
+const MANY: readonly VaultRow[] = [
   ...VAULTS,
   held('Птицы', '/home/rowan/vaults/birds'),
   held('Boltzmann', '/home/rowan/vaults/boltzmann'),
@@ -62,7 +62,7 @@ interface Knobs {
   /** How tall the window is, in pixels. */
   high: number
   ways: readonly Way[]
-  vaults: readonly Held[]
+  vaults: readonly VaultRow[]
 }
 
 const meta: Meta<Knobs> = {

@@ -12,7 +12,7 @@
  */
 import { computed } from 'vue'
 import { Owed, Waiting, Welcome } from '@numen/ui'
-import type { Held } from '@numen/ui'
+import type { VaultRow } from '@numen/ui'
 import type { VaultCardsDue } from './core'
 
 const props = defineProps<{
@@ -27,7 +27,7 @@ defineEmits<{ (event: 'choose', vault: string): void }>()
  * A vault as a row of the list. One being read into the index says so, and one
  * that could not be counted says why.
  */
-const listed = computed<readonly Held[]>(() =>
+const listed = computed<readonly VaultRow[]>(() =>
   props.vaults.map((one) => {
     const said = one.reading ? 'Reading the vault' : one.unread
     return {

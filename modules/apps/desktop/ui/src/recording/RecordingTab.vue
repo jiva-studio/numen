@@ -13,9 +13,9 @@ import { Editor, Menu, Player, timing } from '@numen/ui'
 import type { Point } from '@numen/ui'
 import { iconFor } from '../icons'
 import { DROP, PROOFREAD, WORDS as words } from './words'
-import type { Held } from './kind'
+import type { RecordingTabState } from './kind'
 
-const props = defineProps<{ held: Held }>()
+const props = defineProps<{ held: RecordingTabState }>()
 
 /** The times in the editor's gutter, and the line being said. */
 const times = timing((line) => props.held.goes(line))

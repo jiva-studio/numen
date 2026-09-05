@@ -8,9 +8,9 @@
 import { Agent } from '@numen/ui'
 import type { Turn } from '@numen/ui'
 import { WORDS as words } from './words'
-import type { Held } from './kind'
+import type { AgentTabState } from './kind'
 
-const props = defineProps<{ held: Held }>()
+const props = defineProps<{ held: AgentTabState }>()
 </script>
 
 <template>

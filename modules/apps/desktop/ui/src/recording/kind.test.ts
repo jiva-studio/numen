@@ -6,17 +6,17 @@
  */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
-import { recordingKind, type Held } from './kind'
+import { recordingKind, type RecordingTabState } from './kind'
 import type { Transcript } from './transcript'
 import { putting } from '../putting'
 import { windowing } from '../windowing'
 
 /** A recording open in a tab, as far as the window reads one. */
 const recording = (path: string, heard: number, length: number) =>
-  ({ path, heard: ref(heard), length: ref(length) }) as unknown as Held
+  ({ path, heard: ref(heard), length: ref(length) }) as unknown as RecordingTabState
 
 /** The kind, made with a window that opens recordings this test hands it. */
-const kind = (held: Held) => {
+const kind = (held: RecordingTabState) => {
   const window = windowing()
   return recordingKind(
     window.host,

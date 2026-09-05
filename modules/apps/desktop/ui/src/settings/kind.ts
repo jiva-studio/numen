@@ -55,15 +55,15 @@ export interface Installation {
 }
 
 /** What the settings tab holds. */
-export interface Held {
+export interface SettingsTabState {
   readonly installation: Installation
 }
 
 export function settling(host: Host, installation: Installation) {
-  const held: Held = { installation }
+  const held: SettingsTabState = { installation }
 
   /** One settings tab to a window: the settings are the installation's, not a file's. */
-  const kind: Kind<Held> = {
+  const kind: Kind<SettingsTabState> = {
     kind: SETTINGS,
     opens: () => held,
     called: () => words.settings,
