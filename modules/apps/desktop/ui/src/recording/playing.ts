@@ -117,8 +117,13 @@ export function audio(makes: AudioFactory = made): Player {
 
     play: (wanted) => {
       if (!load(wanted)) return
-      void element?.play().catch(() => {
+      void element?.play().catch((why: unknown) => {
         playing.value = false
+        // A play the window itself cut short is not a failure. Anything else is
+        // a press that did nothing, and no `error` event fires on it, so this
+        // is the only place it can be said.
+        if ((why as { name?: string } | null)?.name === 'AbortError') return
+        if (failed.value === '') failed.value = WORDS.unreadable
       })
     },
 

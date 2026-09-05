@@ -30,8 +30,9 @@ function stands() {
     /** How many times it was asked to play, and to stop. */
     started: 0,
     stopped: 0,
-    /** What a call to play answers with. */
+    /** What a call to play answers with, and what it refuses with. */
     refuses: false,
+    refusal: new Error('the window would not') as Error,
 
     addEventListener(name: string, run: () => void) {
       const held = listeners.get(name) ?? []
@@ -41,7 +42,7 @@ function stands() {
 
     play() {
       element.started++
-      if (element.refuses) return Promise.reject(new Error('the window would not'))
+      if (element.refuses) return Promise.reject(element.refusal)
       element.paused = false
       fires('play')
       return Promise.resolve()
@@ -190,7 +191,7 @@ describe('a recording played', () => {
     expect(plays.playing.value).toBe(true)
   })
 
-  it('is not playing where the window refused it', async () => {
+  it('is not playing where the window refused it, and says so', async () => {
     const { plays, element } = player()
     element.refuses = true
 
@@ -199,6 +200,21 @@ describe('a recording played', () => {
     await Promise.resolve()
 
     expect(plays.playing.value).toBe(false)
+    expect(plays.failed.value).toBe(WORDS.unreadable)
+  })
+
+  it('says nothing of a play the window itself cut short', async () => {
+    const { plays, element } = player()
+    element.refuses = true
+    element.refusal = Object.assign(new Error('another recording took it'), {
+      name: 'AbortError',
+    })
+
+    plays.play(TALK)
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(plays.failed.value).toBe('')
   })
 
   it('stops where the person stops it, and stands where it stopped', () => {
