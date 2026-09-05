@@ -341,10 +341,10 @@ func TestNoDocumentIsDrawnForAWindowStandingOnNothing(t *testing.T) {
 
 	// A file of the folder this process is standing in, which is what a path
 	// with no vault under it reaches.
-	const standing = "serve.go"
+	const file = "serve.go"
 
 	answer, err := f.server.Client().Get(
-		f.server.URL + "/assets/" + standing + "/pages/0?wide=800&size=1&mtime=1")
+		f.server.URL + "/assets/" + file + "/pages/0?wide=800&size=1&mtime=1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -357,19 +357,19 @@ func TestNoDocumentIsDrawnForAWindowStandingOnNothing(t *testing.T) {
 	asked := map[string]func() error{
 		"what a document is": func() error {
 			_, err := files.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{
-				Path: standing,
+				Path: file,
 			}))
 			return err
 		},
 		"what a recording is": func() error {
 			_, err := files.GetRecording(t.Context(), connect.NewRequest(&v1.GetRecordingRequest{
-				Path: standing,
+				Path: file,
 			}))
 			return err
 		},
 		"where a run of the text sits": func() error {
 			_, err := files.ListHighlights(t.Context(), connect.NewRequest(&v1.ListHighlightsRequest{
-				Path: standing,
+				Path: file,
 				At:   []*v1.Stretch{{Start: 0, Length: 1}},
 			}))
 			return err
