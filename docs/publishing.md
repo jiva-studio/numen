@@ -125,9 +125,9 @@ this build did not write, purges the edge, and then fetches the page over the
 public address to prove a stranger can read it.
 
 **The manual.** `docs.yml` does the same for `modules/apps/docs`, and checks
-one thing more before it builds: that the keyboard page still says what the
-window does. It runs on a pull request touching the manual and on the three
-files the keyboard page is written from.
+one thing more before it builds: that the five pages that write themselves
+still say what the application does. It runs on a pull request touching the
+manual and on the twelve files those pages are written from.
 
 **The builds.** `release.yml` is asked for by hand and answers for one channel. A stable release is named for the month it is made in and for how many stable releases that month already holds — `2026.9.0`, then `2026.9.1` — and goes into `latest/` and `releases/`, which is where the page looks. A beta is named for the stable release it precedes and for the number of commits behind it — `2026.9.1-beta.884` — and goes into `beta/` and `builds/`, where nothing points at it. Either way it renames what each platform produced to the names above, writes `latest.json`, uploads, purges, and fetches every file back over the public address, checking that what comes down is the file that went up.
 

@@ -43,8 +43,8 @@ The predicates are read in order, so a tab is in exactly one state. The mark is 
 
 | State | What it means | Mark |
 | --- | --- | --- |
-| `loading` | the first read has not answered; there is no document to type into | — |
 | `stuck` | reading or writing this note is impossible, and the tab says why | `stuck` |
+| `loading` | the first read has not answered; there is no document to type into | — |
 | `gone` | the name the tab stands at has no file behind it | `gone` |
 | `overtaken` | the file moved past the prose this tab read, and the save stopped | `overtaken` |
 | `saving` | a write is in the air | `unsaved` |
@@ -94,9 +94,9 @@ A link in the prose is followed with the platform's modifier held down. `[[Entro
 
 ## Creating a note
 
-`note_create` is given a title. The file is named after it, and that is the whole mechanism: a note is shown by its `title`, else by its filename. The note is filed under the first extension the vault holds as notes, `.md` by default.
+`note_create` is given a title. The file is named after it, and that is the whole mechanism: a note is shown by its `title`, else by its filename. The note is filed under `.md`, which is the one extension a vault holds notes under.
 
-The reduction from a title to a filename drops control characters, writes `-` for each of `/ \ : * ? " < > | #`, collapses a doubled `[` or `]` to one, cuts the name to 120 bytes without splitting a character in half, and trims a dot or a space off either end.
+The reduction from a title to a filename drops control characters, writes `-` for each of `/ \ : * ? " < > | #`, collapses a doubled `[` or `]` to one, cuts the name to 120 bytes without splitting a character in half, and trims a dot or a space off either end. A name Windows keeps for a device takes a `-` after it, and a title reduced that way did not survive whole.
 
 Where a title survives that whole, the filename says it and nothing is written into the frontmatter. Where it does not, the name is what survived and the frontmatter carries the exact title under `title`.
 
@@ -124,7 +124,7 @@ Creating a note and renaming one are the same convention read in two directions:
 
 **A note whose frontmatter cannot be read is not renamed.** The order above cannot be walked without reading the frontmatter, and a block that does not parse is one the application refuses to read past. It cannot be known whether the note carries a `title`, so it cannot be known what renaming the note means. The application says so and changes nothing.
 
-**The file keeps the extension it had.** What a vault files new notes under is a setting about creating one.
+**The file keeps the extension it had.** A note is created under `.md`, and a rename never touches what a note already carries.
 
 **A heading in the prose names nothing.** What a person types into the body is the body: writing `# Something` at the top of a note does not rename it, and neither does changing one. The name is the `title` key, else the filename.
 

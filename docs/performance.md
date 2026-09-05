@@ -15,7 +15,7 @@ NUMEN_LOAD=1 go test ./usecase/vault/ -run TestLoad -v -timeout 40m
 go test ./usecase/flashcards/ -run XXX -bench Vault -benchtime 5x -benchmem -timeout 40m
 go test ./usecase/flashcards/ -run XXX -bench PresetCurve -benchtime 3x -benchmem -timeout 40m
 go test ./usecase/flashcards/ -run XXX -bench CurveCards -benchtime 3x -count 2 -benchmem -timeout 180m
-go test ./adapter/flashcardsui/ -run XXX -bench FrontDoor -benchtime 5x -count 2 -timeout 40m
+go test ./adapter/window/flashcards/ -run XXX -bench FrontDoor -benchtime 5x -count 2 -timeout 40m
 go test ./internal/adapter/filesystem/ -run XXX -bench Derived -benchmem -count 3
 go test ./adapter/index/ -run XXX -bench Unembedded -benchmem -count 10 -benchtime 300x
 go test ./adapter/index/ -run XXX -bench SaveVectors -benchmem -count 10 -benchtime 50x
@@ -331,7 +331,7 @@ An index that has to be held in memory to be searched is out whatever its speed.
 
 **`INSERT OR REPLACE` is not honoured by `vec0`.** It raises `UNIQUE constraint failed`, so a vector that is being replaced is deleted first.
 
-**Re-saving a row does not cascade anything.** `save.sql` conflicts on `(vault_id, path)` and updates, so the row number never changes and nothing hangs off a deleted parent. Every derived table is therefore cleared by hand — headings, links, problems, and now chunks. A test saves the same note twice and asserts the counts did not double, because nothing else would notice.
+**Re-saving a row does not cascade anything.** `save_source.sql` conflicts on `(vault_id, path)` and updates, so the row number never changes and nothing hangs off a deleted parent. Every derived table is therefore cleared by hand — headings, links, problems, and now chunks. A test saves the same note twice and asserts the counts did not double, because nothing else would notice.
 
 **A query plan names the alias, not the table.** A check that forbade `SCAN <table>` passed on `SCAN c`, so reading every chunk went unnoticed. The check now forbids every `SCAN` step except a virtual table and `vaults`.
 
@@ -478,7 +478,7 @@ Taken 2026-08-17, AMD Ryzen 7 6800U, NVMe, `-benchtime 50x`.
 ### A save, and how long until the window knows
 
 ```
-NUMEN_LOAD=1 go test ./adapter/webui/ -run TestEditLoad -v -timeout 30m
+NUMEN_LOAD=1 go test ./adapter/window/editor/ -run TestEditLoad -v -timeout 30m
 ```
 
 Taken 2026-08-17, same machine. This is the path the application owns: the write, the watcher noticing it, the refresh, and the change reaching a client.
@@ -695,7 +695,7 @@ Recorded 2026-08-21 over the same 546-page scan, through a hosted model.
 
 The cheap model reports lines it did not change, which is where its output goes. A chain running it first pays $0.14 for a reply it throws away and $0.29 for the good model after it. The good model alone is $0.29, about 1 165 000 tokens in and 194 000 out. A refused page asked again answers the same.
 
-**Where the letters-apart threshold comes from.** Over 931 corrections the distribution has a hole in it: 36 stand further apart than 0.50, 47 than 0.30, 49 than 0.20, 70 than 0.10. Above 0.30 every correction read was damage — text dragged in from the next line, or one corrected word in place of a whole line — and below it every one was a correction. The threshold is the hole and not a round number, and it is in the settings file because it was measured on one book.
+**Where `max_edit_distance` comes from.** Over 931 corrections the distribution has a hole in it: 36 stand further apart than 0.50, 47 than 0.30, 49 than 0.20, 70 than 0.10. Above 0.30 every correction read was damage — text dragged in from the next line, or one corrected word in place of a whole line — and below it every one was a correction. The threshold is the hole and not a round number, and it is in the settings file because it was measured on one book.
 
 **A reply row is written two ways.** Over one batch of 40 pages the model answered 15 pages with `2544|the line` and 25 with `2544 the line`, each page in one style throughout.
 
@@ -901,7 +901,7 @@ Both columns are the median of two runs of three on an idle machine. **The clock
 
 ## What a window asks of every vault
 
-Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkFrontDoor` in `adapter/flashcardsui`. The installation is generated: four vaults, each of five thousand card faces over twenty decks, answered a hundred times a day for sixty days — 6 000 answers in 60 run files a vault. The schedule caches are filled before the clock starts, which is a person's second opening of a day.
+Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkFrontDoor` in `adapter/window/flashcards`. The installation is generated: four vaults, each of five thousand card faces over twenty decks, answered a hundred times a day for sixty days — 6 000 answers in 60 run files a vault. The schedule caches are filled before the clock starts, which is a person's second opening of a day.
 
 | | Measured |
 | --- | --- |

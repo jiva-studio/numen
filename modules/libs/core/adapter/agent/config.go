@@ -39,7 +39,8 @@ type Claude struct {
 	// carrying several.
 	Command []string `json:"command"`
 
-	// Model is which of its models answers — `opus`, `sonnet`, or a full name.
+	// Model is which of its models answers — `opus`, `sonnet`, `haiku`, or a
+	// full name.
 	// Empty takes whatever that installation answers with.
 	//
 	// Worth naming: a panel is read while somebody waits.

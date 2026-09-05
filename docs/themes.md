@@ -72,7 +72,7 @@ A name matching nothing wears `preset:numen`, and the name that was not found is
 
 ## The tokens a theme sets
 
-Forty-one, each a colour except where it says otherwise.
+Forty-three, each a colour except where it says otherwise.
 
 ### The window and what stands on it
 
@@ -86,6 +86,8 @@ Forty-one, each a colour except where it says otherwise.
 | `--numen-accent-ink` | text on the accent. |
 | `--numen-ring` | the outline around what is focused, and a link in marked-up text. |
 | `--numen-alarm` | what is wrong: a refusal, and what the parser could not read. |
+| `--numen-alarm-bg` | the ground a card carrying an alarm stands on. |
+| `--numen-hushed` | text said quietly beside what it is about: a caption, a count, a month over a grid. |
 
 ### The plex
 
@@ -96,7 +98,7 @@ Forty-one, each a colour except where it says otherwise.
 | `--numen-seat-jump` | the hue of a jump's seat. |
 | `--numen-seat-sibling` | the hue of a sibling's seat. |
 | `--numen-edge` | the line drawn between two nodes. |
-| `--numen-edge-label` | the words on that line, and small print wherever it stands. |
+| `--numen-edge-label` | the words on that line, which are said in the hushed voice unless a theme sets them apart. |
 
 ### Text being read, and text about to change
 

@@ -472,7 +472,7 @@ The key is in the environment, under the name `key_env` gives. Nothing in this f
 }
 ```
 
-A scan goes forty printed lines to a request, on a queue at half the price that survives a restart. A page ends where a page ends, so nothing carries over and `overlap` is 0. Speech goes twenty cues to a request, answered by a subscription already paid for, one batch at a time and no key at all; a sentence runs across the cue a batch ends on, so two cues are shared with the batch on either side.
+A scan goes forty printed lines to a request, on a queue at half the price that survives a restart. A page ends where a page ends, so nothing carries over and `overlap` is 0. Speech goes sixty cues to a request, answered by a subscription already paid for, three batches at a time and no key at all; a sentence runs across the cue a batch ends on, so two cues are shared with the batch on either side.
 
 A `with` naming a profile `profiles` does not carry is an error at startup. An installation that meant to proofread and misspelled the name is told so, and does not run quietly proofreading nothing.
 
@@ -500,7 +500,7 @@ A `with` naming a profile `profiles` does not carry is an error at startup. An i
 | `use` | which agent answers. `claude` is Claude Code, reached by starting it and reading what it prints. Empty answers with none, and the panel says so. |
 | `serve_tools` | whether the tools go on a port, which is how an agent a person runs themselves reaches this vault. Off. The agent `use` names is served either way, so an installation naming one has the port open for it. |
 | `claude.command` | what starts it: the command line's path, and anything it is started through. Empty asks the path, then the folders its installers write to. Worth naming for an installation those folders do not cover, and for one machine carrying several. |
-| `claude.model` | which of its models answers — `opus`, `sonnet`, or a full name. Empty takes whatever that installation answers with. Worth naming because a panel is read while somebody waits. |
+| `claude.model` | which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. Empty takes whatever that installation answers with. Worth naming because a panel is read while somebody waits. |
 | `claude.max_steps` | how many times it may go to the model before it is stopped. 30. |
 | `claude.reads_hooks_and_skills` | whether it reads what this machine holds configured for it: hooks, skills, standing instructions in `CLAUDE.md`, plugins. Off. A hook is a shell command Claude Code runs itself, and a question typed into a panel is not asking for one. On, what is configured for this person is read; what a vault carries is refused either way, since a vault arrives from elsewhere. |
 

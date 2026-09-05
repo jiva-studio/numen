@@ -148,7 +148,7 @@ Which agent answers in the panel, and what it may reach.
 | `serve_tools` | yes or no | puts the tools on a port, which is how an agent a person runs themselves reaches this vault. |
 | `claude` |  | code, reached by starting it and reading what it prints. |
 | `claude.command` | a list of words | starts it: the command line's path, and anything it is started through. |
-| `claude.model` | text | which of its models answers — `opus`, `sonnet`, or a full name. |
+| `claude.model` | text | which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. |
 | `claude.max_steps` | a number | how many times it may go to the model before it is stopped. |
 | `claude.reads_hooks_and_skills` | yes or no | lets it read what is configured for it on this machine: hooks, skills, standing instructions in CLAUDE. |
 

@@ -18,7 +18,7 @@ A word means one thing inside its context, and the same word in two contexts is 
 | asset | A file in a vault that is not a note. It is also the scheme a link to one is written under, and the word the window addresses one by over HTTP. | |
 | entry | One file or folder, as a listing of a folder reports it. | |
 | title | The name a note is shown by, and one of the keys the application owns — [Note format](note-format.md). A title names a note; a label names a relationship. | label |
-| naming | Which of the two carries a note's name: `frontmatter` or `filename`. It is what a rename brings into line, and it is not the setting that says how far a rename reaches. | |
+| naming | Which of the two carries a note's name: `frontmatter` or `filename`. It is what a rename brings into line, and it is not the setting that says how far a rename reaches. On the wire it is `NamedBy` and the field is `by`; the word `naming` on its own is the settings section `sync_title_and_filename` stands in. | |
 | sync_title_and_filename | Whether renaming either a note's title or the name of its file brings the other into line — [Settings](settings.md). On. | |
 | link | One relationship, as written in a file — [Links](links.md). A link is what a person wrote; an edge is what the picture draws. | edge |
 | role | What kind of relationship a link is, from a closed list of five: `parent`, `child`, `jump`, `ref`, `attachment` — [Links](links.md). A role is written in a note; a seat is worked out from where a node stands. | seat |
@@ -59,7 +59,7 @@ A word means one thing inside its context, and the same word in two contexts is 
 | location | Where a chunk sits, in the terms its own format uses. Nullable, and never a key. | |
 | hash | Over a source's bytes, which source it is; over a cut's text, which chunk it is. Two columns, and nothing joins one to the other. A passage carries both, named `SourceHash` and `ChunkHash`. | |
 | fingerprint | Path, size and modification time — what says a note need not be read again. The vectors are keyed by a column of the same name holding a chunk hash, which is the one place the word is spent twice inside this context. | |
-| stretch | A run of a source's text by where it stands: `Start` and `Length`, in bytes over the text the source is read as. A client counts the same run as a span. | |
+| stretch | A run of a source's text by where it stands: `Start` and `Length`, in bytes over the text the source is read as. It rides on the wire under its own name; a client counting a note's own text counts a span instead. | |
 | passage | What a search returns: the text around a hit, and where it came from. A read model — a chunk is not rebuilt from one. | |
 | highlight | Where a stretch of a document's text falls on the pages it was read from: the pages, and the rectangles covering it on each, in fractions of the page so a page drawn at any size lines up. A model reading a scan and a document's own text layer both produce them, and nothing above asks which. | |
 | scan | One walk of a whole vault. The word is spent twice inside this context: a scan is also a document that is a photograph of paper, which is what a recognition reads and what a reading comes out of. | |
@@ -125,7 +125,7 @@ A word means one thing inside its context, and the same word in two contexts is 
 | call | What an agent named one use of a tool, so every step reporting it is known to be one. | |
 | kind | What a call does to the vault: `read`, `edit`, `remove`, `move`, `search`. A call that says no more than that it is one is a *tool call*. A note is created and a link is added; both are removed. | deleted |
 | place | Where a call is working: a source, by the path the vault files it under, and the stretch of that source's text the call names. A length of zero names the source and nothing inside it. | part |
-| stood | A run named by the text standing in it, quoted. What an agent names a stretch by when it has read prose and not measured it, and the name of the field a note edit carries the old text in. | |
+| stood | A run named by the text standing in it, quoted. What an agent names a stretch by when it has read prose and not measured it. The field a note edit carries that text in is `match`, which is what the tool calls the text as the note has it. | |
 
 ## The installation
 
@@ -152,7 +152,7 @@ A word means one thing inside its context, and the same word in two contexts is 
 | hang_parts_under_a_node | Whether a node hangs the parts of the note it stands for under its box — [Settings](settings.md). On. | |
 | parts_under_a_node | How many of those parts stand under a node at once, the rest being wound to — [Settings](settings.md). 6. | |
 | viewport | The area the plex is drawn into. | window |
-| span | A run of text as a client counts it: `from` and `to`, in UTF-16 code units. The one form a run takes on the wire; in the core the same run is a stretch. | |
+| span | A run of text as a client counts it: `from` and `to`, in UTF-16 code units. It is how a note's own text is addressed on the wire; a run of a source's text rides there as a `Stretch`, in bytes, and in the core every run is a stretch. | |
 | standing on nothing | A window showing no vault: an installation that holds none, or one whose vault was taken down and nothing came up in its place. Every question that would reach into a vault is refused there, and the welcome screen offers the list and the way to add one. | |
 | panel | The column beside the plex where a person asks an agent something. | |
 | turn | One thing shown in the panel's conversation: what was asked, what was answered, what is being done. | |

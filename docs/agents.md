@@ -4,7 +4,7 @@ A person types a question into the panel beside their notes, and the application
 
 ## What the agent is given
 
-Two built-in tools: a web search and a web fetch. The set is named in full on the command line, so every other built-in is absent — no shell, no file reader, no file writer, no subagent.
+One built-in tool: a web search. The set is named in full on the command line, so every other built-in is absent — no shell, no file reader, no file writer, no subagent, and no web fetch. A fetch goes to an address the text names, and a note may have been written by anybody, so the address would be the vault's to choose.
 
 One tools server: this vault's, at the address the application is already serving on, presented with the bearer token. No other server's configuration is read.
 
@@ -75,7 +75,7 @@ A tool that writes returns only once the index is level again. An agent that cre
 
 ## The reviewer's surface
 
-The window a person runs their cards in serves a surface of its own. It reads the whole vault — `note_search`, `note_titles`, `note_read`, `note_neighbourhood`, `link_list`, `source_list`, `source_read`, `card_stencil_list`, `card_read` and `vault_get` — and writes cards alone: `card_add`, `card_edit`, `card_value_remove`, `card_remove`, `card_section_add`, `card_section_rename` and `card_section_remove`. Nothing else is on it. A deck and a stencil are what a vault is arranged into, and nothing there makes one; no note, link or document is written there either. The decisions behind it are [Review is an application of its own](adr/0027-review-is-an-application-of-its-own.md).
+The window a person runs their cards in serves a surface of its own. It reads the whole vault — `note_search`, `note_titles`, `note_read`, `note_neighbourhood`, `link_list`, `source_list`, `source_read`, `card_stencil_list`, `card_read` and `vault_get` — and writes cards alone: `card_add`, `card_edit`, `card_value_remove`, `card_remove`, `card_section_add`, `card_section_rename` and `card_section_remove`. It also serves `card_showing`, which answers with the card in front of the person and is on no other surface. Nothing else is on it. A deck and a stencil are what a vault is arranged into, and nothing there makes one; no note, link or document is written there either. The decisions behind it are [Review is an application of its own](adr/0027-review-is-an-application-of-its-own.md).
 
 The reading half of it is a surface in its own right, with no writer on it at all.
 
@@ -105,4 +105,4 @@ Where `command` is empty, the path is asked first, then the folders the command 
 
 **A file the agent leaves in the vault is read by the person's own terminal.** The panel's agent reads the vault's instructions in neither mode. A note it writes stays in the folder, though, and the person's own agent, started in that folder, reads what is there. Where a note may be written is bounded to places a note may live and this application's own folders, so another tool's dot-folder is refused; the vault's root is not, and a file named for what another tool reads can land in it.
 
-**Two hand-maintained lists track somebody else's program.** The nine refused variables and the two named built-in tools are both lists, and the program they filter changes without asking. Each release is a thing to check, and nothing checks it automatically.
+**Two hand-maintained lists track somebody else's program.** The nine refused variables and the named built-in tools are both lists, and the program they filter changes without asking. Each release is a thing to check, and nothing checks it automatically.
