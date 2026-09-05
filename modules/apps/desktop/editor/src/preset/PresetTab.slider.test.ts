@@ -7,6 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { BudgetName } from '@numen/protocol'
 import PresetTab from './PresetTab.vue'
 import { NOWHERE, type Curve, type Point } from './core'
 import { clearing } from './curve'
@@ -772,10 +773,10 @@ describe('what the control stands at', () => {
   it('says nothing of what closes the day where the goal on screen closes it', () => {
     const { tab } = drawn({
       at: [
-        point({ closed: ['minutes_a_day'] }),
-        point({ closed: ['minutes_a_day'] }),
-        point({ reviews: 80, closed: ['minutes_a_day'] }),
-        point({ closed: ['minutes_a_day'] }),
+        point({ closed: [BudgetName.MINUTES_A_DAY] }),
+        point({ closed: [BudgetName.MINUTES_A_DAY] }),
+        point({ reviews: 80, closed: [BudgetName.MINUTES_A_DAY] }),
+        point({ closed: [BudgetName.MINUTES_A_DAY] }),
       ],
     })
     expect(tab.text()).not.toContain('is not what limits this preset')

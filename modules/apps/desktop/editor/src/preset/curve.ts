@@ -6,6 +6,7 @@
  * the control computes nothing. The line drawn while that answer is on its way
  * is arithmetic over the settings alone, and is shown as an approximation.
  */
+import { BudgetName } from '@numen/protocol'
 import { DEFAULTS, NOWHERE } from './core'
 import type { Bounds, Curve, Goal, Place, Point, Rule, Settings, SettingsBounds } from './core'
 
@@ -161,27 +162,41 @@ export const costOf = (goal: Goal, point: Point): number =>
   goal === 'minutes' ? point.reviews : point.minutes
 
 /**
- * The budget each goal's own value closes a day by, as the preset writes the
- * key. A target closes no day of its own: what closes a day worked to one is
- * always a count.
+ * The budget each goal's own value closes a day by. A target closes no day of
+ * its own: what closes a day worked to one is always a count.
  */
-const CLOSES: Record<Goal, readonly string[]> = {
-  minutes: ['minutes_a_day'],
+const CLOSES: Record<Goal, readonly BudgetName[]> = {
+  minutes: [BudgetName.MINUTES_A_DAY],
   retention: [],
-  date: ['by_date'],
+  date: [BudgetName.BY_DATE],
 }
 
-/** Every budget a preset closes a day by, which is the whole of what may be said. */
-const CLOSERS: readonly string[] = ['minutes_a_day', 'new_a_day', 'reviews_a_day']
+/**
+ * Whether a budget is one a person is told about when it closed a day. Keyed by
+ * the schema, so a budget added to it has to be answered for here before this
+ * compiles.
+ *
+ * A day named by the debt or by a pause is not a day a budget cut short, and a
+ * date is the goal itself wherever it stands.
+ */
+const TOLD: Record<BudgetName, boolean> = {
+  [BudgetName.UNSPECIFIED]: false,
+  [BudgetName.MINUTES_A_DAY]: true,
+  [BudgetName.NEW_A_DAY]: true,
+  [BudgetName.REVIEWS_A_DAY]: true,
+  [BudgetName.BY_DATE]: false,
+  [BudgetName.BACKLOG]: false,
+  [BudgetName.PAUSED]: false,
+}
 
 /**
  * What closes the day here besides the goal on screen, and nothing where the
  * goal is the whole of it. A day nothing closed asked for every card there was,
  * and a day two budgets closed names both.
  */
-export const limiting = (curve: Curve, point: Point | null): readonly string[] => {
+export const limiting = (curve: Curve, point: Point | null): readonly BudgetName[] => {
   if (!curve.honest || !point) return []
-  return point.closed.filter((one) => CLOSERS.includes(one) && !CLOSES[curve.goal].includes(one))
+  return point.closed.filter((one) => TOLD[one] && !CLOSES[curve.goal].includes(one))
 }
 
 /**

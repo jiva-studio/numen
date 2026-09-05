@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -872,12 +873,12 @@ func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
 			if got := int(drawn.GetAt()[at].GetReviews()); one.sameDay && got != offers {
 				t.Errorf("the deck screen offers %d cards and the tab draws %d", offers, got)
 			}
-			if got := drawn.GetAt()[at].GetClosed(); !slices.Contains(got, string(one.closed)) {
-				t.Errorf("the day closed on %q, want %q among them", got, one.closed)
+			if got := drawn.GetAt()[at].GetClosed(); !slices.Contains(got, wire.BudgetOf(one.closed)) {
+				t.Errorf("the day closed on %v, want %q among them", got, one.closed)
 			}
 			for i, point := range drawn.GetAt() {
 				for _, never := range one.never {
-					if slices.Contains(point.GetClosed(), string(never)) {
+					if slices.Contains(point.GetClosed(), wire.BudgetOf(never)) {
 						t.Errorf("at %v the day closed on %q, which its goal does not name",
 							drawn.GetGrid()[i], never)
 					}
@@ -930,12 +931,13 @@ func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 		t.Errorf("the suggested day asks %v cards, and a day of any length asks %v", got, whole)
 	}
 	if got := drawn.GetAt()[at].GetClosed(); len(got) != 0 {
-		t.Errorf("the suggested day closed on %q, and a day that asks everything closes on nothing",
+		t.Errorf("the suggested day closed on %v, and a day that asks everything closes on nothing",
 			got)
 	}
 	for i := range at {
-		if got := drawn.GetAt()[i].GetClosed(); !slices.Contains(got, string(review.ClosedMinutes)) {
-			t.Errorf("%v minutes a day closed on %q, and %v is suggested",
+		got := drawn.GetAt()[i].GetClosed()
+		if !slices.Contains(got, wire.BudgetOf(review.ClosedMinutes)) {
+			t.Errorf("%v minutes a day closed on %v, and %v is suggested",
 				drawn.GetGrid()[i], got, drawn.GetGrid()[at])
 		}
 	}

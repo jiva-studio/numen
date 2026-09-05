@@ -148,7 +148,7 @@ func TestTheShortestDayThatAsksEverythingIsSuggested(t *testing.T) {
 	}
 	// And the place before it is one the minutes closed.
 	if before := got.Points[want.Index-1]; !before.Closed.Holds(review.ClosedMinutes) {
-		t.Errorf("the place under the one suggested was closed by %v", before.Closed.Names())
+		t.Errorf("the place under the one suggested was closed by %v", before.Closed)
 	}
 }
 

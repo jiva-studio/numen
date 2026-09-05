@@ -274,6 +274,81 @@ func (StopReason) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{3}
 }
 
+// BudgetName is one budget of a preset, named after the key the preset writes
+// it under. The list is closed, and a client maps a value to a word.
+//
+// A day of review is closed by the budgets it ran out of. Two of these close no
+// day and stand here because a goal either reads them or leaves them idle.
+type BudgetName int32
+
+const (
+	// The day was closed by no budget at all: it asked for every card there was,
+	// and the material ran out.
+	BudgetName_BUDGET_NAME_UNSPECIFIED BudgetName = 0
+	// How long the day runs, under `minutes_a_day`.
+	BudgetName_BUDGET_NAME_MINUTES_A_DAY BudgetName = 1
+	// How many cards of each kind the day holds, under `new_a_day` and
+	// `reviews_a_day`.
+	BudgetName_BUDGET_NAME_NEW_A_DAY     BudgetName = 2
+	BudgetName_BUDGET_NAME_REVIEWS_A_DAY BudgetName = 3
+	// A day paced by the day the preset aims at, under `by_date`.
+	BudgetName_BUDGET_NAME_BY_DATE BudgetName = 4
+	// The share of the day that goes to the debt, under `backlog`. It closes
+	// nothing and says what the day is spent on.
+	BudgetName_BUDGET_NAME_BACKLOG BudgetName = 5
+	// A preset scheduling nothing at all.
+	BudgetName_BUDGET_NAME_PAUSED BudgetName = 6
+)
+
+// Enum value maps for BudgetName.
+var (
+	BudgetName_name = map[int32]string{
+		0: "BUDGET_NAME_UNSPECIFIED",
+		1: "BUDGET_NAME_MINUTES_A_DAY",
+		2: "BUDGET_NAME_NEW_A_DAY",
+		3: "BUDGET_NAME_REVIEWS_A_DAY",
+		4: "BUDGET_NAME_BY_DATE",
+		5: "BUDGET_NAME_BACKLOG",
+		6: "BUDGET_NAME_PAUSED",
+	}
+	BudgetName_value = map[string]int32{
+		"BUDGET_NAME_UNSPECIFIED":   0,
+		"BUDGET_NAME_MINUTES_A_DAY": 1,
+		"BUDGET_NAME_NEW_A_DAY":     2,
+		"BUDGET_NAME_REVIEWS_A_DAY": 3,
+		"BUDGET_NAME_BY_DATE":       4,
+		"BUDGET_NAME_BACKLOG":       5,
+		"BUDGET_NAME_PAUSED":        6,
+	}
+)
+
+func (x BudgetName) Enum() *BudgetName {
+	p := new(BudgetName)
+	*p = x
+	return p
+}
+
+func (x BudgetName) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (BudgetName) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_presets_proto_enumTypes[4].Descriptor()
+}
+
+func (BudgetName) Type() protoreflect.EnumType {
+	return &file_numen_v1_presets_proto_enumTypes[4]
+}
+
+func (x BudgetName) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use BudgetName.Descriptor instead.
+func (BudgetName) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_presets_proto_rawDescGZIP(), []int{4}
+}
+
 // Settings are how the decks pointing at one preset are scheduled. A preset
 // carrying none of these keys is the defaults, and no cards a day is a pause.
 type Settings struct {
@@ -687,15 +762,14 @@ type Point struct {
 	// be learned by it.
 	Through float64 `protobuf:"fixed64,5,opt,name=through,proto3" json:"through,omitempty"`
 	Enough  bool    `protobuf:"varint,6,opt,name=enough,proto3" json:"enough,omitempty"`
-	// Every budget that closed the day here, each written as the preset writes
-	// the key: minutes_a_day, new_a_day, reviews_a_day, by_date, or paused. None
-	// is a day that asked for every card there was, so the material itself ran
-	// out. A budget the goal does not name is never here.
+	// Every budget that closed the day here. An empty list is a day that asked
+	// for every card there was, so the material itself ran out, and a budget the
+	// goal does not name is never here.
 	//
 	// A goal of retention holds a day to both card counts, and a day that ran out
 	// of new cards and of reviews names both: a person raising one of them and
 	// finding nothing changed is reading a day the other closed too.
-	Closed []string `protobuf:"bytes,8,rep,name=closed,proto3" json:"closed,omitempty"`
+	Closed []BudgetName `protobuf:"varint,8,rep,packed,name=closed,proto3,enum=numen.v1.BudgetName" json:"closed,omitempty"`
 	// How many days of review at this place it takes before nothing is overdue.
 	// Zero is a curve standing over nothing overdue, and -1 is a pace that never
 	// gets there, which a person reads as not at this one.
@@ -800,7 +874,7 @@ func (x *Point) GetEnough() bool {
 	return false
 }
 
-func (x *Point) GetClosed() []string {
+func (x *Point) GetClosed() []BudgetName {
 	if x != nil {
 		return x.Closed
 	}
@@ -1903,15 +1977,15 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x05cards\x18\b \x01(\x05R\x05cards\x12\x18\n" +
 	"\aoverdue\x18\t \x01(\x05R\aoverdue\x12\x18\n" +
 	"\aunbegun\x18\n" +
-	" \x01(\x05R\aunbegun\"\xca\x02\n" +
+	" \x01(\x05R\aunbegun\"\xe0\x02\n" +
 	"\x05Point\x12\x18\n" +
 	"\areviews\x18\x01 \x01(\x01R\areviews\x12\x18\n" +
 	"\aminutes\x18\x02 \x01(\x01R\aminutes\x12\x1a\n" +
 	"\bretained\x18\x03 \x01(\x01R\bretained\x12\x12\n" +
 	"\x04owed\x18\x04 \x01(\x05R\x04owed\x12\x18\n" +
 	"\athrough\x18\x05 \x01(\x01R\athrough\x12\x16\n" +
-	"\x06enough\x18\x06 \x01(\bR\x06enough\x12\x16\n" +
-	"\x06closed\x18\b \x03(\tR\x06closed\x12\x16\n" +
+	"\x06enough\x18\x06 \x01(\bR\x06enough\x12,\n" +
+	"\x06closed\x18\b \x03(\x0e2\x14.numen.v1.BudgetNameR\x06closed\x12\x16\n" +
 	"\x06clears\x18\t \x01(\x05R\x06clears\x12\x18\n" +
 	"\abacklog\x18\n" +
 	" \x03(\x05R\abacklog\x12\x18\n" +
@@ -2025,7 +2099,16 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x12STOP_REASON_NO_DAY\x10\x04\x12\x18\n" +
 	"\x14STOP_REASON_PAST_DAY\x10\x05\x12\x17\n" +
 	"\x13STOP_REASON_NO_LOAD\x10\x06\x12\x17\n" +
-	"\x13STOP_REASON_NO_WEEK\x10\a2\xb0\x04\n" +
+	"\x13STOP_REASON_NO_WEEK\x10\a*\xcc\x01\n" +
+	"\n" +
+	"BudgetName\x12\x1b\n" +
+	"\x17BUDGET_NAME_UNSPECIFIED\x10\x00\x12\x1d\n" +
+	"\x19BUDGET_NAME_MINUTES_A_DAY\x10\x01\x12\x19\n" +
+	"\x15BUDGET_NAME_NEW_A_DAY\x10\x02\x12\x1d\n" +
+	"\x19BUDGET_NAME_REVIEWS_A_DAY\x10\x03\x12\x17\n" +
+	"\x13BUDGET_NAME_BY_DATE\x10\x04\x12\x17\n" +
+	"\x13BUDGET_NAME_BACKLOG\x10\x05\x12\x16\n" +
+	"\x12BUDGET_NAME_PAUSED\x10\x062\xb0\x04\n" +
 	"\x0ePresetsService\x12P\n" +
 	"\rGetDeckPreset\x12\x1e.numen.v1.GetDeckPresetRequest\x1a\x1f.numen.v1.GetDeckPresetResponse\x12J\n" +
 	"\vListPresets\x12\x1c.numen.v1.ListPresetsRequest\x1a\x1d.numen.v1.ListPresetsResponse\x12M\n" +
@@ -2048,96 +2131,98 @@ func file_numen_v1_presets_proto_rawDescGZIP() []byte {
 	return file_numen_v1_presets_proto_rawDescData
 }
 
-var file_numen_v1_presets_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_numen_v1_presets_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_numen_v1_presets_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_numen_v1_presets_proto_goTypes = []any{
 	(Goal)(0),                     // 0: numen.v1.Goal
 	(Rule)(0),                     // 1: numen.v1.Rule
 	(Counts)(0),                   // 2: numen.v1.Counts
 	(StopReason)(0),               // 3: numen.v1.StopReason
-	(*Settings)(nil),              // 4: numen.v1.Settings
-	(*Preset)(nil),                // 5: numen.v1.Preset
-	(*Curve)(nil),                 // 6: numen.v1.Curve
-	(*Point)(nil),                 // 7: numen.v1.Point
-	(*Place)(nil),                 // 8: numen.v1.Place
-	(*GetDeckPresetRequest)(nil),  // 9: numen.v1.GetDeckPresetRequest
-	(*GetDeckPresetResponse)(nil), // 10: numen.v1.GetDeckPresetResponse
-	(*ListPresetsRequest)(nil),    // 11: numen.v1.ListPresetsRequest
-	(*ListPresetsResponse)(nil),   // 12: numen.v1.ListPresetsResponse
-	(*PresetSummary)(nil),         // 13: numen.v1.PresetSummary
-	(*CreatePresetRequest)(nil),   // 14: numen.v1.CreatePresetRequest
-	(*CreatePresetResponse)(nil),  // 15: numen.v1.CreatePresetResponse
-	(*ScheduleDeckRequest)(nil),   // 16: numen.v1.ScheduleDeckRequest
-	(*ScheduleDeckResponse)(nil),  // 17: numen.v1.ScheduleDeckResponse
-	(*ReadPresetRequest)(nil),     // 18: numen.v1.ReadPresetRequest
-	(*ReadPresetResponse)(nil),    // 19: numen.v1.ReadPresetResponse
-	(*SettingsBounds)(nil),        // 20: numen.v1.SettingsBounds
-	(*WritePresetRequest)(nil),    // 21: numen.v1.WritePresetRequest
-	(*WritePresetResponse)(nil),   // 22: numen.v1.WritePresetResponse
-	(*ComputeCurveRequest)(nil),   // 23: numen.v1.ComputeCurveRequest
-	(*ComputeCurveResponse)(nil),  // 24: numen.v1.ComputeCurveResponse
-	nil,                           // 25: numen.v1.Settings.LoadEntry
-	(Refusal)(0),                  // 26: numen.v1.Refusal
-	(*Fingerprint)(nil),           // 27: numen.v1.Fingerprint
-	(*Bounds)(nil),                // 28: numen.v1.Bounds
+	(BudgetName)(0),               // 4: numen.v1.BudgetName
+	(*Settings)(nil),              // 5: numen.v1.Settings
+	(*Preset)(nil),                // 6: numen.v1.Preset
+	(*Curve)(nil),                 // 7: numen.v1.Curve
+	(*Point)(nil),                 // 8: numen.v1.Point
+	(*Place)(nil),                 // 9: numen.v1.Place
+	(*GetDeckPresetRequest)(nil),  // 10: numen.v1.GetDeckPresetRequest
+	(*GetDeckPresetResponse)(nil), // 11: numen.v1.GetDeckPresetResponse
+	(*ListPresetsRequest)(nil),    // 12: numen.v1.ListPresetsRequest
+	(*ListPresetsResponse)(nil),   // 13: numen.v1.ListPresetsResponse
+	(*PresetSummary)(nil),         // 14: numen.v1.PresetSummary
+	(*CreatePresetRequest)(nil),   // 15: numen.v1.CreatePresetRequest
+	(*CreatePresetResponse)(nil),  // 16: numen.v1.CreatePresetResponse
+	(*ScheduleDeckRequest)(nil),   // 17: numen.v1.ScheduleDeckRequest
+	(*ScheduleDeckResponse)(nil),  // 18: numen.v1.ScheduleDeckResponse
+	(*ReadPresetRequest)(nil),     // 19: numen.v1.ReadPresetRequest
+	(*ReadPresetResponse)(nil),    // 20: numen.v1.ReadPresetResponse
+	(*SettingsBounds)(nil),        // 21: numen.v1.SettingsBounds
+	(*WritePresetRequest)(nil),    // 22: numen.v1.WritePresetRequest
+	(*WritePresetResponse)(nil),   // 23: numen.v1.WritePresetResponse
+	(*ComputeCurveRequest)(nil),   // 24: numen.v1.ComputeCurveRequest
+	(*ComputeCurveResponse)(nil),  // 25: numen.v1.ComputeCurveResponse
+	nil,                           // 26: numen.v1.Settings.LoadEntry
+	(Refusal)(0),                  // 27: numen.v1.Refusal
+	(*Fingerprint)(nil),           // 28: numen.v1.Fingerprint
+	(*Bounds)(nil),                // 29: numen.v1.Bounds
 }
 var file_numen_v1_presets_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.Settings.goal:type_name -> numen.v1.Goal
 	2,  // 1: numen.v1.Settings.counts:type_name -> numen.v1.Counts
-	25, // 2: numen.v1.Settings.load:type_name -> numen.v1.Settings.LoadEntry
+	26, // 2: numen.v1.Settings.load:type_name -> numen.v1.Settings.LoadEntry
 	1,  // 3: numen.v1.Settings.learned:type_name -> numen.v1.Rule
-	4,  // 4: numen.v1.Preset.settings:type_name -> numen.v1.Settings
+	5,  // 4: numen.v1.Preset.settings:type_name -> numen.v1.Settings
 	3,  // 5: numen.v1.Preset.stops:type_name -> numen.v1.StopReason
 	3,  // 6: numen.v1.Preset.stops_on:type_name -> numen.v1.StopReason
 	0,  // 7: numen.v1.Curve.goal:type_name -> numen.v1.Goal
-	7,  // 8: numen.v1.Curve.at:type_name -> numen.v1.Point
-	8,  // 9: numen.v1.Curve.now:type_name -> numen.v1.Place
-	8,  // 10: numen.v1.Curve.suggested:type_name -> numen.v1.Place
-	5,  // 11: numen.v1.GetDeckPresetResponse.preset:type_name -> numen.v1.Preset
-	26, // 12: numen.v1.GetDeckPresetResponse.refusal:type_name -> numen.v1.Refusal
-	27, // 13: numen.v1.GetDeckPresetResponse.at:type_name -> numen.v1.Fingerprint
-	20, // 14: numen.v1.GetDeckPresetResponse.bounds:type_name -> numen.v1.SettingsBounds
-	13, // 15: numen.v1.ListPresetsResponse.presets:type_name -> numen.v1.PresetSummary
-	26, // 16: numen.v1.CreatePresetResponse.refusal:type_name -> numen.v1.Refusal
-	27, // 17: numen.v1.ScheduleDeckRequest.seen:type_name -> numen.v1.Fingerprint
-	26, // 18: numen.v1.ScheduleDeckResponse.refusal:type_name -> numen.v1.Refusal
-	27, // 19: numen.v1.ScheduleDeckResponse.at:type_name -> numen.v1.Fingerprint
-	5,  // 20: numen.v1.ReadPresetResponse.preset:type_name -> numen.v1.Preset
-	26, // 21: numen.v1.ReadPresetResponse.refusal:type_name -> numen.v1.Refusal
-	27, // 22: numen.v1.ReadPresetResponse.at:type_name -> numen.v1.Fingerprint
-	20, // 23: numen.v1.ReadPresetResponse.bounds:type_name -> numen.v1.SettingsBounds
-	28, // 24: numen.v1.SettingsBounds.minutes_a_day:type_name -> numen.v1.Bounds
-	28, // 25: numen.v1.SettingsBounds.new_a_day:type_name -> numen.v1.Bounds
-	28, // 26: numen.v1.SettingsBounds.reviews_a_day:type_name -> numen.v1.Bounds
-	28, // 27: numen.v1.SettingsBounds.retention:type_name -> numen.v1.Bounds
-	28, // 28: numen.v1.SettingsBounds.backlog:type_name -> numen.v1.Bounds
-	28, // 29: numen.v1.SettingsBounds.interval:type_name -> numen.v1.Bounds
-	28, // 30: numen.v1.SettingsBounds.load:type_name -> numen.v1.Bounds
-	4,  // 31: numen.v1.WritePresetRequest.settings:type_name -> numen.v1.Settings
-	27, // 32: numen.v1.WritePresetRequest.seen:type_name -> numen.v1.Fingerprint
-	26, // 33: numen.v1.WritePresetResponse.refusal:type_name -> numen.v1.Refusal
-	27, // 34: numen.v1.WritePresetResponse.at:type_name -> numen.v1.Fingerprint
-	4,  // 35: numen.v1.ComputeCurveRequest.settings:type_name -> numen.v1.Settings
-	6,  // 36: numen.v1.ComputeCurveResponse.curve:type_name -> numen.v1.Curve
-	9,  // 37: numen.v1.PresetsService.GetDeckPreset:input_type -> numen.v1.GetDeckPresetRequest
-	11, // 38: numen.v1.PresetsService.ListPresets:input_type -> numen.v1.ListPresetsRequest
-	14, // 39: numen.v1.PresetsService.CreatePreset:input_type -> numen.v1.CreatePresetRequest
-	16, // 40: numen.v1.PresetsService.ScheduleDeck:input_type -> numen.v1.ScheduleDeckRequest
-	18, // 41: numen.v1.PresetsService.ReadPreset:input_type -> numen.v1.ReadPresetRequest
-	21, // 42: numen.v1.PresetsService.WritePreset:input_type -> numen.v1.WritePresetRequest
-	23, // 43: numen.v1.PresetsService.ComputeCurve:input_type -> numen.v1.ComputeCurveRequest
-	10, // 44: numen.v1.PresetsService.GetDeckPreset:output_type -> numen.v1.GetDeckPresetResponse
-	12, // 45: numen.v1.PresetsService.ListPresets:output_type -> numen.v1.ListPresetsResponse
-	15, // 46: numen.v1.PresetsService.CreatePreset:output_type -> numen.v1.CreatePresetResponse
-	17, // 47: numen.v1.PresetsService.ScheduleDeck:output_type -> numen.v1.ScheduleDeckResponse
-	19, // 48: numen.v1.PresetsService.ReadPreset:output_type -> numen.v1.ReadPresetResponse
-	22, // 49: numen.v1.PresetsService.WritePreset:output_type -> numen.v1.WritePresetResponse
-	24, // 50: numen.v1.PresetsService.ComputeCurve:output_type -> numen.v1.ComputeCurveResponse
-	44, // [44:51] is the sub-list for method output_type
-	37, // [37:44] is the sub-list for method input_type
-	37, // [37:37] is the sub-list for extension type_name
-	37, // [37:37] is the sub-list for extension extendee
-	0,  // [0:37] is the sub-list for field type_name
+	8,  // 8: numen.v1.Curve.at:type_name -> numen.v1.Point
+	9,  // 9: numen.v1.Curve.now:type_name -> numen.v1.Place
+	9,  // 10: numen.v1.Curve.suggested:type_name -> numen.v1.Place
+	4,  // 11: numen.v1.Point.closed:type_name -> numen.v1.BudgetName
+	6,  // 12: numen.v1.GetDeckPresetResponse.preset:type_name -> numen.v1.Preset
+	27, // 13: numen.v1.GetDeckPresetResponse.refusal:type_name -> numen.v1.Refusal
+	28, // 14: numen.v1.GetDeckPresetResponse.at:type_name -> numen.v1.Fingerprint
+	21, // 15: numen.v1.GetDeckPresetResponse.bounds:type_name -> numen.v1.SettingsBounds
+	14, // 16: numen.v1.ListPresetsResponse.presets:type_name -> numen.v1.PresetSummary
+	27, // 17: numen.v1.CreatePresetResponse.refusal:type_name -> numen.v1.Refusal
+	28, // 18: numen.v1.ScheduleDeckRequest.seen:type_name -> numen.v1.Fingerprint
+	27, // 19: numen.v1.ScheduleDeckResponse.refusal:type_name -> numen.v1.Refusal
+	28, // 20: numen.v1.ScheduleDeckResponse.at:type_name -> numen.v1.Fingerprint
+	6,  // 21: numen.v1.ReadPresetResponse.preset:type_name -> numen.v1.Preset
+	27, // 22: numen.v1.ReadPresetResponse.refusal:type_name -> numen.v1.Refusal
+	28, // 23: numen.v1.ReadPresetResponse.at:type_name -> numen.v1.Fingerprint
+	21, // 24: numen.v1.ReadPresetResponse.bounds:type_name -> numen.v1.SettingsBounds
+	29, // 25: numen.v1.SettingsBounds.minutes_a_day:type_name -> numen.v1.Bounds
+	29, // 26: numen.v1.SettingsBounds.new_a_day:type_name -> numen.v1.Bounds
+	29, // 27: numen.v1.SettingsBounds.reviews_a_day:type_name -> numen.v1.Bounds
+	29, // 28: numen.v1.SettingsBounds.retention:type_name -> numen.v1.Bounds
+	29, // 29: numen.v1.SettingsBounds.backlog:type_name -> numen.v1.Bounds
+	29, // 30: numen.v1.SettingsBounds.interval:type_name -> numen.v1.Bounds
+	29, // 31: numen.v1.SettingsBounds.load:type_name -> numen.v1.Bounds
+	5,  // 32: numen.v1.WritePresetRequest.settings:type_name -> numen.v1.Settings
+	28, // 33: numen.v1.WritePresetRequest.seen:type_name -> numen.v1.Fingerprint
+	27, // 34: numen.v1.WritePresetResponse.refusal:type_name -> numen.v1.Refusal
+	28, // 35: numen.v1.WritePresetResponse.at:type_name -> numen.v1.Fingerprint
+	5,  // 36: numen.v1.ComputeCurveRequest.settings:type_name -> numen.v1.Settings
+	7,  // 37: numen.v1.ComputeCurveResponse.curve:type_name -> numen.v1.Curve
+	10, // 38: numen.v1.PresetsService.GetDeckPreset:input_type -> numen.v1.GetDeckPresetRequest
+	12, // 39: numen.v1.PresetsService.ListPresets:input_type -> numen.v1.ListPresetsRequest
+	15, // 40: numen.v1.PresetsService.CreatePreset:input_type -> numen.v1.CreatePresetRequest
+	17, // 41: numen.v1.PresetsService.ScheduleDeck:input_type -> numen.v1.ScheduleDeckRequest
+	19, // 42: numen.v1.PresetsService.ReadPreset:input_type -> numen.v1.ReadPresetRequest
+	22, // 43: numen.v1.PresetsService.WritePreset:input_type -> numen.v1.WritePresetRequest
+	24, // 44: numen.v1.PresetsService.ComputeCurve:input_type -> numen.v1.ComputeCurveRequest
+	11, // 45: numen.v1.PresetsService.GetDeckPreset:output_type -> numen.v1.GetDeckPresetResponse
+	13, // 46: numen.v1.PresetsService.ListPresets:output_type -> numen.v1.ListPresetsResponse
+	16, // 47: numen.v1.PresetsService.CreatePreset:output_type -> numen.v1.CreatePresetResponse
+	18, // 48: numen.v1.PresetsService.ScheduleDeck:output_type -> numen.v1.ScheduleDeckResponse
+	20, // 49: numen.v1.PresetsService.ReadPreset:output_type -> numen.v1.ReadPresetResponse
+	23, // 50: numen.v1.PresetsService.WritePreset:output_type -> numen.v1.WritePresetResponse
+	25, // 51: numen.v1.PresetsService.ComputeCurve:output_type -> numen.v1.ComputeCurveResponse
+	45, // [45:52] is the sub-list for method output_type
+	38, // [38:45] is the sub-list for method input_type
+	38, // [38:38] is the sub-list for extension type_name
+	38, // [38:38] is the sub-list for extension extendee
+	0,  // [0:38] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_presets_proto_init() }
@@ -2160,7 +2245,7 @@ func file_numen_v1_presets_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_presets_proto_rawDesc), len(file_numen_v1_presets_proto_rawDesc)),
-			NumEnums:      4,
+			NumEnums:      5,
 			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,

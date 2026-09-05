@@ -311,16 +311,6 @@ func (c BudgetNames) with(one BudgetName) BudgetNames {
 	return out
 }
 
-// Names is every budget that closed the day, each in the words the preset
-// writes the key in.
-func (c BudgetNames) Names() []string {
-	out := make([]string, 0, len(c))
-	for _, one := range c {
-		out = append(out, string(one))
-	}
-	return out
-}
-
 // Name is the key one budget is written under, and empty where the day was
 // closed by none or by more than one.
 func (c BudgetNames) Name() string {

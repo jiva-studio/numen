@@ -84,7 +84,7 @@ func TestAProjectionAnswersNothingUnderAPresetThatSchedulesNothing(t *testing.T)
 			t.Errorf("day %d was admitted", day)
 		}
 		if !got.Closed[day].Holds(review.ClosedPaused) {
-			t.Errorf("day %d was closed by %v, want the pause", day, got.Closed[day].Names())
+			t.Errorf("day %d was closed by %v, want the pause", day, got.Closed[day])
 		}
 	}
 	if got.Admits() != 0 {

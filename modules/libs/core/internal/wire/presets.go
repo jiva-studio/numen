@@ -154,7 +154,7 @@ func CurveOf(c review.Curve) *v1.Curve {
 			Owed:     int32(one.Owed),
 			Through:  one.Share,
 			Enough:   one.Enough,
-			Closed:   one.Closed.Names(),
+			Closed:   BudgetsOf(one.Closed),
 			Short:    int32(one.Short),
 			Clears:   int32(one.Clears),
 			Learned:  int32(one.Learned),
@@ -163,6 +163,35 @@ func CurveOf(c review.Curve) *v1.Curve {
 		})
 	}
 	return out
+}
+
+// BudgetsOf are the budgets that closed a day, as the schema names them.
+func BudgetsOf(names review.BudgetNames) []v1.BudgetName {
+	out := make([]v1.BudgetName, 0, len(names))
+	for _, one := range names {
+		out = append(out, BudgetOf(one))
+	}
+	return out
+}
+
+// BudgetOf is one budget, as the schema names it.
+func BudgetOf(name review.BudgetName) v1.BudgetName {
+	switch name {
+	case review.ClosedMinutes:
+		return v1.BudgetName_BUDGET_NAME_MINUTES_A_DAY
+	case review.ClosedNew:
+		return v1.BudgetName_BUDGET_NAME_NEW_A_DAY
+	case review.ClosedReviews:
+		return v1.BudgetName_BUDGET_NAME_REVIEWS_A_DAY
+	case review.ClosedDate:
+		return v1.BudgetName_BUDGET_NAME_BY_DATE
+	case review.ClosedBacklog:
+		return v1.BudgetName_BUDGET_NAME_BACKLOG
+	case review.ClosedPaused:
+		return v1.BudgetName_BUDGET_NAME_PAUSED
+	default:
+		return v1.BudgetName_BUDGET_NAME_UNSPECIFIED
+	}
 }
 
 func placeOf(p review.Place) *v1.Place {

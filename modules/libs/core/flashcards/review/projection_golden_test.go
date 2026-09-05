@@ -171,7 +171,11 @@ func admitted(one []bool) string {
 func closed(one []review.BudgetNames) string {
 	out := make([]string, len(one))
 	for i, each := range one {
-		out[i] = strings.Join(each.Names(), "+")
+		named := make([]string, len(each))
+		for j, name := range each {
+			named[j] = string(name)
+		}
+		out[i] = strings.Join(named, "+")
 		if out[i] == "" {
 			out[i] = "-"
 		}

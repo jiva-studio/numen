@@ -195,6 +195,35 @@ enum StopReason {
   STOP_REASON_NO_WEEK = 7;
 }
 
+// BudgetName is one budget of a preset, named after the key the preset writes
+// it under. The list is closed, and a client maps a value to a word.
+//
+// A day of review is closed by the budgets it ran out of. Two of these close no
+// day and stand here because a goal either reads them or leaves them idle.
+enum BudgetName {
+  // The day was closed by no budget at all: it asked for every card there was,
+  // and the material ran out.
+  BUDGET_NAME_UNSPECIFIED = 0;
+
+  // How long the day runs, under `minutes_a_day`.
+  BUDGET_NAME_MINUTES_A_DAY = 1;
+
+  // How many cards of each kind the day holds, under `new_a_day` and
+  // `reviews_a_day`.
+  BUDGET_NAME_NEW_A_DAY = 2;
+  BUDGET_NAME_REVIEWS_A_DAY = 3;
+
+  // A day paced by the day the preset aims at, under `by_date`.
+  BUDGET_NAME_BY_DATE = 4;
+
+  // The share of the day that goes to the debt, under `backlog`. It closes
+  // nothing and says what the day is spent on.
+  BUDGET_NAME_BACKLOG = 5;
+
+  // A preset scheduling nothing at all.
+  BUDGET_NAME_PAUSED = 6;
+}
+
 // Preset is one preset as a read hands it over.
 message Preset {
   // Path is the note the settings were read from, and is empty for a deck
@@ -290,15 +319,14 @@ message Point {
   double through = 5;
   bool enough = 6;
 
-  // Every budget that closed the day here, each written as the preset writes
-  // the key: minutes_a_day, new_a_day, reviews_a_day, by_date, or paused. None
-  // is a day that asked for every card there was, so the material itself ran
-  // out. A budget the goal does not name is never here.
+  // Every budget that closed the day here. An empty list is a day that asked
+  // for every card there was, so the material itself ran out, and a budget the
+  // goal does not name is never here.
   //
   // A goal of retention holds a day to both card counts, and a day that ran out
   // of new cards and of reviews names both: a person raising one of them and
   // finding nothing changed is reading a day the other closed too.
-  repeated string closed = 8;
+  repeated BudgetName closed = 8;
 
   // How many days of review at this place it takes before nothing is overdue.
   // Zero is a curve standing over nothing overdue, and -1 is a pace that never

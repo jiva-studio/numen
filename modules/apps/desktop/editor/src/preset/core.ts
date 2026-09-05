@@ -6,7 +6,13 @@
  * what the whole range of the goal comes to.
  */
 import { createClient } from '@connectrpc/connect'
-import { Counts as Countings, Goal as Goals, Rule as Rules, PresetsService } from '@numen/protocol'
+import {
+  BudgetName,
+  Counts as Countings,
+  Goal as Goals,
+  Rule as Rules,
+  PresetsService,
+} from '@numen/protocol'
 import type {
   StopReason,
   Bounds as BoundsMessage,
@@ -203,12 +209,11 @@ export interface Point {
   readonly through: number
   readonly enough: boolean
   /**
-   * Every budget that closed the day here, each written as the preset writes
-   * the key: `minutes_a_day`, `new_a_day`, `reviews_a_day`, `by_date`, or
-   * `paused`. None is a day that asked for every card there was, and a day
-   * held to two counts names both.
+   * Every budget that closed the day here, as the schema names them. None is a
+   * day that asked for every card there was, and a day held to two counts names
+   * both.
    */
-  readonly closed: readonly string[]
+  readonly closed: readonly BudgetName[]
   /**
    * How many days of review at this place before nothing is overdue. Zero is a
    * preset standing over nothing overdue, and -1 is a pace that never gets
