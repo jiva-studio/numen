@@ -148,11 +148,11 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	// The themes are the installation's, and a folder that could not be made
 	// leaves the ones this binary ships. A theme the settings name that the
 	// catalogue has not is said where the person is.
-	themes, why := cfg.Themes(func(said string) {
+	themes, wrong := cfg.Themes(func(said string) {
 		api.say(task.Task{ID: wearingATheme, Doing: "Wearing a theme", Failed: said})
 	})
-	if why != nil {
-		fmt.Fprintf(out, "themes: %v\n", why)
+	if wrong != nil {
+		fmt.Fprintf(out, "themes: %v\n", wrong)
 	}
 	api.Themes = themes
 
