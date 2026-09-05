@@ -1,9 +1,9 @@
-# ADR-0031: An answer is an artifact, a schedule is a cache
+# An answer is an artifact, a schedule is a cache
 
 - **Status:** Accepted
 - **Date:** 2026-08-29
 - **Applies to:** the vault format, and `modules/libs/core` — `review`, `usecase/flashcards`
-- **Related:** ADR-0001, ADR-0003, ADR-0015, ADR-0020, ADR-0027, ADR-0030
+- **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [A vault carries its identity, and application state lives with the application](0003-a-vault-carries-its-identity.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [One process, one lifetime](0020-one-process-one-lifetime.md), [The stencil, the deck and the card](0027-the-stencil-and-the-deck.md), [Review is an application of its own](0030-review-is-an-application-of-its-own.md)
 
 ## Context
 
@@ -11,7 +11,7 @@ A person writes their own notes. They do not write their answers: a year of them
 
 Anki keeps the state — due, ease, interval — and changes it on every answer. Two things follow. Changing the algorithm means converting state that has no honest conversion, because SM-2's ease is not FSRS's difficulty and pretending otherwise quietly spoils everybody's schedule. And carrying a vault between two machines means merging state that both of them changed.
 
-ADR-0015 already separates the two kinds of thing: what a machine can work out again is a cache, and what it cannot is an artifact that lives in the vault.
+The two kinds of thing are already separate: what a machine can work out again is a cache, and what it cannot is an artifact that lives in the vault.
 
 ## Decision
 
@@ -51,9 +51,9 @@ A line that does not parse is skipped and counted, and so is a line whose `v` is
 
 ### A schedule belongs to a card and one of its faces
 
-**A card face is what carries a schedule**: one card, and one face of the stencil that cuts it. A card is shown once through each face its stencil declares (ADR-0027), and each face asks a different thing of the person, so each face has a path of its own.
+**A card face is what carries a schedule**: one card, and one face of the stencil that cuts it. A card is shown once through each face its stencil declares, and each face asks a different thing of the person, so each face has a path of its own.
 
-The card half is the mark it is known by (ADR-0027), which travels with it: a card moved to another deck or another vault keeps its schedule and its history, and nothing is recomputed.
+The card half is the mark it is known by, which travels with it: a card moved to another deck or another vault keeps its schedule and its history, and nothing is recomputed.
 
 The face half is the face's name, which is its heading in the stencil, and a face carries no mark. **Renaming a face starts its schedule again.** That is the cost of this decision, and it is paid where it falls: a stencil is written once and used a thousand times, and a face is renamed about as often as it is written.
 
@@ -63,7 +63,7 @@ The face half is the face's name, which is its heading in the stencil, and a fac
 <cache dir>/numen/flashcards/<vault id>.json
 ```
 
-The service folder inside a vault holds what the application made and cannot make again (ADR-0003). A schedule is made again by definition — that is what makes the answers an artifact and the schedule not one. It is also the one file here that is rewritten whole, and a file rewritten whole inside a synchronised folder is a file that conflicts.
+The service folder inside a vault holds what the application made and cannot make again. A schedule is made again by definition — that is what makes the answers an artifact and the schedule not one. It is also the one file here that is rewritten whole, and a file rewritten whole inside a synchronised folder is a file that conflicts.
 
 So it lives where the installation's own state lives, keyed by the vault's identity, and it is deleted at any time at no cost but a replay.
 
@@ -89,7 +89,7 @@ A mark in the log that no deck holds is not an error and is never removed. The c
 
 ## Consequences
 
-- **A vault carries its own history.** Copied to another machine, its cards are the cards a person has been answering, at the interval they had reached. This is what [ADR-0027](0027-the-stencil-and-the-deck.md) recorded as the cost of keeping the schedule outside the vault, and it is the cost this decision takes back — the deck file still holds no schedule and is still not rewritten when a card is answered.
+- **A vault carries its own history.** Copied to another machine, its cards are the cards a person has been answering, at the interval they had reached. This is what [The stencil, the deck and the card](0027-the-stencil-and-the-deck.md) recorded as the cost of keeping the schedule outside the vault, and it is the cost this decision takes back — the deck file still holds no schedule and is still not rewritten when a card is answered.
 - **The order of the history is the order of the clocks that wrote it.** Two machines whose clocks disagree interleave their answers wrongly, and nothing here can tell.
 - **The mark the schedule cache is filed under carries the placement.** A preset's shares, whether its load is evened, the goal that decides whether it is evened at all, and the hour a day begins at all decide which day a card lands on, so all of them stand in the mark.
 - **The log grows, one small file to a run.** Daily review is on the order of a few hundred files a year, each a few kilobytes. Folding old ones together is a rewrite, and a rewrite is the thing that makes merging hard, so it is only ever done to months nothing writes to any more.
@@ -113,4 +113,4 @@ A mark in the log that no deck holds is not an error and is never removed. The c
 
 **A schedule for the card rather than for each of its faces.** Rejected: the faces exist because they ask different things, and one schedule over all of them either shows a person what they know or hides what they do not.
 
-**Giving each face a mark of its own**, so a rename costs nothing. Rejected for now: it writes a machine's token into the stencil beside every face, which is the shape ADR-0027 turned down for cards until there was a reason. A rename costing a schedule is the reason, when it turns out to be one.
+**Giving each face a mark of its own**, so a rename costs nothing. Rejected for now: it writes a machine's token into the stencil beside every face, which is the shape turned down for cards until there was a reason. A rename costing a schedule is the reason, when it turns out to be one.

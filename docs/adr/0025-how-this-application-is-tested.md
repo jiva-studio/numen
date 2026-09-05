@@ -1,9 +1,9 @@
-# ADR-0025: How this application is tested
+# How this application is tested
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/core`, `modules/apps/desktop`, `modules/libs/ui`
-- **Related:** ADR-0004, ADR-0006, ADR-0023
+- **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [What the index stores](0006-what-the-index-stores.md), [How an interface component is built](0023-how-an-interface-component-is-built.md)
 
 ## Context
 
@@ -51,7 +51,7 @@ Any test about scoping populates two vaults whose notes share no words, and asse
 
 ### The interface has three levels
 
-1. **The pure core, as plain functions.** No DOM. This is where the assertions that matter live, because this is where the decisions are (ADR-0023).
+1. **The pure core, as plain functions.** No DOM. This is where the assertions that matter live, because this is where the decisions are.
 2. **The component in jsdom.** What is emitted, and what is drawn from the props it was handed. **The negatives belong here** — what the component does *not* emit, what is *not* drawn — because those fail silently and look right in every screenshot.
 3. **The stories, run as tests.** Each story is rendered in a browser, so a story that stops rendering is a failing test, and one fixture serves both the gallery and the suite.
 

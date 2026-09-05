@@ -1,9 +1,9 @@
-# ADR-0020: One process, one lifetime
+# One process, one lifetime
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/apps/desktop`
-- **Related:** ADR-0004, ADR-0008, ADR-0017, ADR-0021, ADR-0022
+- **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [The application writes to the vault](0017-the-application-writes-to-the-vault.md), [An agent reaches the vault through tools](0021-an-agent-reaches-the-vault-through-tools.md), [The agent this application starts is a port](0022-the-agent-this-application-starts-is-a-port.md)
 
 ## Context
 
@@ -19,7 +19,7 @@ What a person is asked when the window goes — a tab whose save stopped, callin
 
 A vault has one write lock, kept per vault root and keyed by the folder resolved through its symlinks, so every writer and every reader opened on one folder takes the same lock. A path that cannot be resolved is its own key: what is asked for is what is locked.
 
-The index's single write connection (ADR-0008) is a different lock over a different thing. This one is the vault's.
+The index's single write connection is a different lock over a different thing. This one is the vault's.
 
 ### It is taken before the read and held past the rename
 

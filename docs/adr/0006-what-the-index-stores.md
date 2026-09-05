@@ -1,13 +1,13 @@
-# ADR-0006: What the index stores
+# What the index stores
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/core`
-- **Related:** ADR-0001, ADR-0002, ADR-0007, ADR-0008, ADR-0011, ADR-0012, ADR-0014, ADR-0017, ADR-0027
+- **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [One database for all vaults, outside them](0002-one-database-for-all-vaults.md), [A schema change is a numbered migration](0007-a-schema-change-is-a-numbered-migration.md), [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [Text is cut twice](0011-text-is-cut-twice.md), [A chunk is identified by its text](0012-a-chunk-is-identified-by-its-text.md), [One search, three rankings, merged by rank](0014-one-search-three-rankings.md), [The application writes to the vault](0017-the-application-writes-to-the-vault.md), [The stencil, the deck and the card](0027-the-stencil-and-the-deck.md)
 
 ## Context
 
-The vaults are the truth and the index is what makes them answerable. It holds one schema for every vault, and what may be put in it is what every later question is asked of. How that schema moves from one shape to the next is ADR-0007.
+The vaults are the truth and the index is what makes them answerable. It holds one schema for every vault, and what may be put in it is what every later question is asked of. How that schema moves from one shape to the next is [A schema change is a numbered migration](0007-a-schema-change-is-a-numbered-migration.md).
 
 ## Decision
 
@@ -124,13 +124,13 @@ erDiagram
 
 **A problem is what could not be acted on and is worth showing**: a link with no role, a target nothing understands. Frontmatter that would not parse stays on the note it broke. Both are read together, so a vault's problems are a query.
 
-**The body is indexed over chunks.** `chunks_fts` keeps no copy of what it indexed: a chunk says where in a file its text is, and showing a passage reads the file. A lexical hit and a dense hit name the same row, so both are placed in one list and read back the same way. What a chunk is, is ADR-0012, and how a source is cut is ADR-0011; how the two passes are combined is ADR-0014.
+**The body is indexed over chunks.** `chunks_fts` keeps no copy of what it indexed: a chunk says where in a file its text is, and showing a passage reads the file. A lexical hit and a dense hit name the same row, so both are placed in one list and read back the same way. A chunk is identified by its text, a source is cut twice, and the two passes are merged by rank.
 
 **`titles_fts` and `headings_fts` each keep a copy of the text they indexed.** What an answer draws is the name with the run that matched marked inside it, and an index can only say where it matched over text it holds. They are two tables because a title and a heading are each ranked against their own population.
 
 **`sections_fts` is the names of the sections a source divides into**, keyed by the chunk each section opens, so a hit on a section's name is a passage standing at the start of that section.
 
-**A vector is addressed by the text and the recipe**, never by a chunk's row number, and it is kept where a renumbering of chunks cannot reach it (ADR-0012).
+**A vector is addressed by the text and the recipe**, never by a chunk's row number, and it is kept where a renumbering of chunks cannot reach it.
 
 ### A deck and a stencil are not searched by their text
 
@@ -138,7 +138,7 @@ A note of `type: deck` or `type: stencil` contributes no chunk, and therefore no
 
 A deck keeps its sections and its cards as headings — the first and second levels, and nothing below them. Its third level is the stencil's field names written out under every card, and deeper than that is a heading standing inside a value. A stencil keeps no heading at all. Every other note is unchanged.
 
-A card's heading reaches the index without the mark it carries (ADR-0027): the mark is written for the file, not for a person reading a list.
+A card's heading reaches the index without the mark it carries: the mark is written for the file, not for a person reading a list.
 
 A deck and a stencil are still notes in every other way: a row of their own, a title, a type, an identifier, their links resolved and their backlinks answered, a node in the plex with their headings hanging under it.
 
@@ -152,7 +152,7 @@ Headings, links, problems, chunks and full-text rows are all filed under that nu
 
 ### Parsed frontmatter is a projection
 
-JSON has no key order, no duplicate keys and no YAML timestamps, so what the index holds is what could be represented. It is enough to query and not enough to write back: the file is the only verbatim copy, and anything editing frontmatter reads the file (ADR-0017, [the note format](../note-format.md)).
+JSON has no key order, no duplicate keys and no YAML timestamps, so what the index holds is what could be represented. It is enough to query and not enough to write back: the file is the only verbatim copy, and anything editing frontmatter reads the file ([the note format](../note-format.md)).
 
 ### The index knows its own shape, and a plan is asserted by its index
 

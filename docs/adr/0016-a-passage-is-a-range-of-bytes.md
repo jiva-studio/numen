@@ -1,9 +1,9 @@
-# ADR-0016: A passage is a range of bytes
+# A passage is a range of bytes
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/core`, `modules/apps/desktop` — the asset routes
-- **Related:** ADR-0004, ADR-0005, ADR-0011, ADR-0014, ADR-0015, ADR-0046
+- **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [A client is generated from the protocol](0005-a-client-is-generated-from-the-protocol.md), [Text is cut twice](0011-text-is-cut-twice.md), [One search, three rankings, merged by rank](0014-one-search-three-rankings.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [One service to a subject](0046-one-service-to-a-subject.md)
 
 ## Context
 
@@ -15,7 +15,7 @@ What travels from the core to the window is settled once, because every producer
 
 ### A passage travels as a range of bytes
 
-What goes from a search, or from an agent, to the thing that shows a passage is `{path, start, length}` — a run of the text the source's chunks are places in. **Nothing above the viewer holds a rectangle.** Each format turns that range into its own address, so a third format is one new viewer and no change above it. The schema that carries it to the window is ADR-0005's.
+What goes from a search, or from an agent, to the thing that shows a passage is `{path, start, length}` — a run of the text the source's chunks are places in. **Nothing above the viewer holds a rectangle.** Each format turns that range into its own address, so a third format is one new viewer and no change above it. The schema that carries it to the window is the protocol's.
 
 ### One shape says where a run of text sits, and it has two producers
 
@@ -37,13 +37,13 @@ The window is sent a picture of a page. A scan is hundreds of megabytes, PDF is 
 GET /assets/<id>/pages/<n>?wide=W   one page drawn, where the asset has any
 ```
 
-**Nothing else of a file is addressed here.** What a document is, how long a recording runs, and where a run of a source's text sits are `AssetService`; a reading, a transcript and a transcript put right are `ArtifactService`, where one is listed, asked for, read, written and taken away. Only bytes stay on these routes, because only bytes are what a browser's own elements speak (ADR-0005).
+**Nothing else of a file is addressed here.** What a document is, how long a recording runs, and where a run of a source's text sits are `AssetService`; a reading, a transcript and a transcript put right are `ArtifactService`, where one is listed, asked for, read, written and taken away. Only bytes stay on these routes, because only bytes are what a browser's own elements speak.
 
-`AssetService` is a service of its own for the reason a service is carved at all (ADR-0046): the phone serves the vault's notes to a network and must not serve what is in its files, and a service is the unit of what a binary answers.
+`AssetService` is a service of its own for the reason a service is carved at all: the phone serves the vault's notes to a network and must not serve what is in its files, and a service is the unit of what a binary answers.
 
 A recording's bytes are not here either. They are served ranged, from a loopback port, at an address `AssetService.Recording` carries: a media element speaks the protocols of the world and not the scheme one application serves its window under.
 
-`<id>` is the vault path, percent-encoded, because a file has no other name the window holds. **The handler routes on the escaped path**: Go decodes before a handler sees it, and a decoded separator runs the member and what hangs off it together. This route is served by the same adapter that serves the generated handler (ADR-0005).
+`<id>` is the vault path, percent-encoded, because a file has no other name the window holds. **The handler routes on the escaped path**: Go decodes before a handler sees it, and a decoded separator runs the member and what hangs off it together. This route is served by the same adapter that serves the generated handler.
 
 ### Two bounds on what is held
 

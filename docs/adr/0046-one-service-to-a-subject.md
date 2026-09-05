@@ -1,13 +1,13 @@
-# ADR-0046: One service to a subject
+# One service to a subject
 
 - **Status:** Accepted
 - **Date:** 2026-09-04
 - **Applies to:** `modules/libs/protocol`; `modules/libs/core` — `adapter/webui`, `adapter/flashcardsui`
-- **Related:** ADR-0004, ADR-0005, ADR-0030, ADR-0045
+- **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [A client is generated from the protocol](0005-a-client-is-generated-from-the-protocol.md), [Review is an application of its own](0030-review-is-an-application-of-its-own.md), [Both windows open a vault through one path](0045-both-windows-open-a-vault-through-one-path.md)
 
 ## Context
 
-A window asks about the vault it shows, the vaults the installation holds, the cards in one, the file a person configures the installation in, the window itself, and what a model has made from a file. Those are different subjects, and two windows run over the one schema (ADR-0030). A binary that mounts a service has to answer the whole of it, so what is on a service decides what a binary must be able to do.
+A window asks about the vault it shows, the vaults the installation holds, the cards in one, the file a person configures the installation in, the window itself, and what a model has made from a file. Those are different subjects, and two windows run over the one schema. A binary that mounts a service has to answer the whole of it, so what is on a service decides what a binary must be able to do.
 
 ## Decision
 

@@ -1,9 +1,9 @@
-# ADR-0008: A vault is scanned in the background
+# A vault is scanned in the background
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/core`
-- **Related:** ADR-0004, ADR-0006, ADR-0009, ADR-0020
+- **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [What the index stores](0006-what-the-index-stores.md), [The vault is watched](0009-the-vault-is-watched.md), [One process, one lifetime](0020-one-process-one-lifetime.md)
 
 ## Context
 
@@ -29,15 +29,15 @@ A note and the fingerprint that dates it — its size and its modification time 
 
 Progress is reported per group. A caller that needs to know about one note asks the index a question.
 
-The same grouping serves a watcher's refresh (ADR-0009). One event can name a whole folder — a checkout, a restore, a sync client unpacking an archive — so a refresh is handed as many paths as a walk is.
+The same grouping serves a watcher's refresh. One event can name a whole folder — a checkout, a restore, a sync client unpacking an archive — so a refresh is handed as many paths as a walk is.
 
 ### The index's write connection
 
 The write pool is capped at one connection and writes queue in Go. The read pool is unrestricted: under write-ahead logging a reader never waits, which is what lets a search answer while a scan is still running. Every connection opens with those pragmas in its connection string, foreign keys included.
 
-**A write transaction takes its lock at BEGIN.** Two processes hold a writer each (ADR-0030), and a transaction that reads before it writes is a snapshot upgraded under lock, which SQLite refuses with `SQLITE_BUSY` without calling the busy handler. So the write pool begins every transaction immediately: a writer whose turn has not come waits out the busy timeout and then fails, and a write is never lost quietly.
+**A write transaction takes its lock at BEGIN.** Two processes hold a writer each, and a transaction that reads before it writes is a snapshot upgraded under lock, which SQLite refuses with `SQLITE_BUSY` without calling the busy handler. So the write pool begins every transaction immediately: a writer whose turn has not come waits out the busy timeout and then fails, and a write is never lost quietly.
 
-The per-vault file lock that guards a read-change-write of a note is a different lock, and it is ADR-0020's.
+The per-vault file lock that guards a read-change-write of a note is a different lock, over the vault's files rather than over the index.
 
 ## Consequences
 

@@ -1,9 +1,9 @@
-# ADR-0014: One search, three rankings, merged by rank
+# One search, three rankings, merged by rank
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/core`
-- **Related:** ADR-0006, ADR-0010, ADR-0011, ADR-0012, ADR-0013, ADR-0016, ADR-0021, ADR-0025
+- **Related:** [What the index stores](0006-what-the-index-stores.md), [A source is text in one table](0010-a-source-is-text-in-one-table.md), [Text is cut twice](0011-text-is-cut-twice.md), [A chunk is identified by its text](0012-a-chunk-is-identified-by-its-text.md), [The vector index stays inside SQLite](0013-the-vector-index-stays-inside-sqlite.md), [A passage is a range of bytes](0016-a-passage-is-a-range-of-bytes.md), [An agent reaches the vault through tools](0021-an-agent-reaches-the-vault-through-tools.md), [How this application is tested](0025-how-this-application-is-tested.md)
 
 ## Context
 

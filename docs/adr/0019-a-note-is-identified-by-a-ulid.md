@@ -1,9 +1,9 @@
-# ADR-0019: A note is identified by a ULID in its frontmatter
+# A note is identified by a ULID in its frontmatter
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** the vault format — every application that reads or writes one
-- **Related:** ADR-0001, ADR-0006, ADR-0008, ADR-0017, ADR-0018
+- **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [What the index stores](0006-what-the-index-stores.md), [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [The application writes to the vault](0017-the-application-writes-to-the-vault.md), [The note file](0018-the-note-file.md)
 
 ## Context
 

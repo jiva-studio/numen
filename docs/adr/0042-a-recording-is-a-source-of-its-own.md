@@ -1,9 +1,9 @@
-# ADR-0042: A recording is a source of its own
+# A recording is a source of its own
 
 - **Status:** Accepted
 - **Date:** 2026-09-01
 - **Applies to:** `modules/libs/core`, `modules/apps/desktop`
-- **Related:** ADR-0010, ADR-0015, ADR-0043, ADR-0044
+- **Related:** [A source is text in one table](0010-a-source-is-text-in-one-table.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [A transcript is WebVTT](0043-a-transcript-is-webvtt.md), [A recording is transcribed without being asked](0044-a-recording-is-transcribed-without-being-asked.md)
 
 ## Context
 
@@ -40,4 +40,4 @@ know it treats the source as unspecified.
 
 **A recording is a `book`.** Rejected: the interface would derive "this is a recording" from the file's extension, which is a decision the core has already made and already sends; and a question could not be about recordings at all.
 
-**A recording is a note whose body is its transcript.** Rejected: the recording is the source, and the words are what a model made of it. A note is what a person typed, and ADR-0001 rests on that difference.
+**A recording is a note whose body is its transcript.** Rejected: the recording is the source, and the words are what a model made of it. A note is what a person typed, and files being the source of truth rests on that difference.

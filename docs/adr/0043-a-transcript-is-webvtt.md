@@ -1,13 +1,13 @@
-# ADR-0043: A transcript is WebVTT
+# A transcript is WebVTT
 
 - **Status:** Accepted
 - **Date:** 2026-09-01
 - **Applies to:** `modules/libs/core`, `modules/apps/desktop`
-- **Related:** ADR-0015, ADR-0016, ADR-0042, ADR-0044
+- **Related:** [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [A passage is a range of bytes](0016-a-passage-is-a-range-of-bytes.md), [A recording is a source of its own](0042-a-recording-is-a-source-of-its-own.md), [A recording is transcribed without being asked](0044-a-recording-is-transcribed-without-being-asked.md)
 
 ## Context
 
-What a model heard in a recording is an artifact: no machine here makes it again, so it is written into the service folder and the source is cut from it afterwards (ADR-0015).
+What a model heard in a recording is an artifact: no machine here makes it again, so it is written into the service folder and the source is cut from it afterwards.
 
 It is words with times attached. A chunk is a range of bytes in the words, and a search hit has to be played from the moment those words were said.
 

@@ -1,9 +1,9 @@
-# ADR-0017: The application writes to the vault
+# The application writes to the vault
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/core` — `usecase/note`, `adapter/filesystem`
-- **Related:** ADR-0001, ADR-0006, ADR-0008, ADR-0018, ADR-0019, ADR-0020, ADR-0021
+- **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [What the index stores](0006-what-the-index-stores.md), [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [The note file](0018-the-note-file.md), [A note is identified by a ULID in its frontmatter](0019-a-note-is-identified-by-a-ulid.md), [One process, one lifetime](0020-one-process-one-lifetime.md), [An agent reaches the vault through tools](0021-an-agent-reaches-the-vault-through-tools.md)
 
 ## Context
 
@@ -49,7 +49,7 @@ sequenceDiagram
     end
 ```
 
-The lock is ADR-0020's, taken before the stat and held past the rename.
+The lock is the vault's one write lock, taken before the stat and held past the rename.
 
 ### A write lands whole or not at all
 

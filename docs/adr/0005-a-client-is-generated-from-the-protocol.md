@@ -1,9 +1,9 @@
-# ADR-0005: A client is generated from the protocol
+# A client is generated from the protocol
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/protocol`, `modules/apps/desktop`, `modules/libs/ui`
-- **Related:** ADR-0004, ADR-0009, ADR-0023, ADR-0046
+- **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [The vault is watched](0009-the-vault-is-watched.md), [How an interface component is built](0023-how-an-interface-component-is-built.md), [One service to a subject](0046-one-service-to-a-subject.md)
 
 ## Context
 
@@ -13,7 +13,7 @@ The window is a webview, so a client is written in another language from the cor
 
 ### The contract belongs to the core
 
-The protocol under `modules/libs/protocol` describes what can be asked and what comes back. Every client is generated from it and the core answers it. A client consumes the contract and never authors one. Which service a question is asked of is ADR-0046.
+The protocol under `modules/libs/protocol` describes what can be asked and what comes back. Every client is generated from it and the core answers it. A client consumes the contract and never authors one. Which service a question is asked of follows from its subject: one service to a subject.
 
 ```mermaid
 graph LR

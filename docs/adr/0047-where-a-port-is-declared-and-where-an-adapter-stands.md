@@ -1,10 +1,10 @@
-# ADR-0047: Where a port is declared, and where an adapter stands
+# Where a port is declared, and where an adapter stands
 
 - **Status:** Accepted
 - **Date:** 2026-09-05
 - **Applies to:** `modules/libs/core` — `port`, `adapter`, `internal/adapter`, `container`
-- **Amends:** ADR-0004
-- **Related:** ADR-0004, ADR-0021, ADR-0022, ADR-0046
+- **Amends:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md)
+- **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [An agent reaches the vault through tools](0021-an-agent-reaches-the-vault-through-tools.md), [The agent this application starts is a port](0022-the-agent-this-application-starts-is-a-port.md), [One service to a subject](0046-one-service-to-a-subject.md)
 
 ## Context
 
@@ -26,9 +26,9 @@ A port is a purposeful conversation between the core and something outside it. `
 
 An interface is declared where everything that uses values of it can see it, and no wider.
 
-The composition root uses values of every port it binds: it builds the adapter and hands it over. It is therefore a consumer of all of them, and the folder holding what that one consumer must see is `port`. This is the whole of the rule, and it is the rule ADR-0004 already states — a port an adapter is bound to in `container` is declared in `port`, and a one-method interface a single use case needs, that nothing binds, is declared beside that use case.
+The composition root uses values of every port it binds: it builds the adapter and hands it over. It is therefore a consumer of all of them, and the folder holding what that one consumer must see is `port`. This is the whole of the rule, and it is the rule [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md) already states — a port an adapter is bound to in `container` is declared in `port`, and a one-method interface a single use case needs, that nothing binds, is declared beside that use case.
 
-The four whose only callers are adapters are decided by the same sentence. `Window` and `FolderDialog` are asked for by the window's adapter and the tool endpoint's; `Agent` by the window's and the review window's (ADR-0022); `IndexProgress` by the window's and the composition root. Two adapters must see one interface, and an adapter takes no other adapter, so the only place both can see it is the core. They are ports because more than one adapter has to see them, not because of which side of the hexagon they sit on.
+The four whose only callers are adapters are decided by the same sentence. `Window` and `FolderDialog` are asked for by the window's adapter and the tool endpoint's; `Agent` by the window's and the review window's; `IndexProgress` by the window's and the composition root. Two adapters must see one interface, and an adapter takes no other adapter, so the only place both can see it is the core. They are ports because more than one adapter has to see them, not because of which side of the hexagon they sit on.
 
 ### A port is named in the core's own language, whatever that costs the caller
 
@@ -71,7 +71,7 @@ Direction is read off what an adapter does. An adapter that takes the generated 
 
 **A port for each caller, or a folder of ports for each aggregate.** Rejected: it is the extreme Cockburn names, the interfaces are the same interfaces, and the composition root then looks in a place per aggregate for what it binds in one.
 
-**Deciding by the layer of the caller: an interface only an adapter asks for is not a port.** Rejected: two adapters would then share it by one naming the other, which is the thing the layer rule exists to refuse, and `port.Agent` is a port by ADR-0022.
+**Deciding by the layer of the caller: an interface only an adapter asks for is not a port.** Rejected: two adapters would then share it by one naming the other, which is the thing the layer rule exists to refuse, and `port.Agent` is a port because the agent this application starts is one.
 
 **Declaring the words a port is named in at the boundary, so `port` is built from nothing.** Rejected: a highlight's box and a block of a page are the domain's, and a second set of them is two vocabularies to keep in step for a shorter import list.
 

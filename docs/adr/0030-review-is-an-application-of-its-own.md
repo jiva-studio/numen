@@ -1,9 +1,9 @@
-# ADR-0030: Review is an application of its own
+# Review is an application of its own
 
 - **Status:** Accepted
 - **Date:** 2026-08-29
 - **Applies to:** `modules/apps/desktop` — the binaries; `modules/libs/core` — `usecase/flashcards`, `adapter/mcp`, `adapter/flashcardsui`, `refusal`
-- **Related:** ADR-0002, ADR-0003, ADR-0004, ADR-0008, ADR-0020, ADR-0021, ADR-0022, ADR-0025, ADR-0027, ADR-0031, ADR-0045
+- **Related:** [One database for all vaults, outside them](0002-one-database-for-all-vaults.md), [A vault carries its identity, and application state lives with the application](0003-a-vault-carries-its-identity.md), [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [One process, one lifetime](0020-one-process-one-lifetime.md), [An agent reaches the vault through tools](0021-an-agent-reaches-the-vault-through-tools.md), [The agent this application starts is a port](0022-the-agent-this-application-starts-is-a-port.md), [How this application is tested](0025-how-this-application-is-tested.md), [The stencil, the deck and the card](0027-the-stencil-and-the-deck.md), [An answer is an artifact, a schedule is a cache](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md), [Both windows open a vault through one path](0045-both-windows-open-a-vault-through-one-path.md)
 
 ## Context
 
@@ -17,35 +17,35 @@ Where that second activity lives decides what a person has to start in order to 
 
 It is called **Flashcards**. That is the thing a person has and wants to run; review is what is done to it, and every application reviews something.
 
-`numen-flashcards` stands beside `numen` and `numen-cli`, over the one core. The three ship together, one version, one installer: flashcards with no editor has nothing to run, so there is no sense in shipping them apart, and ADR-0007's refusal of an index at a version a build does not carry costs nothing between binaries that are always the same build.
+`numen-flashcards` stands beside `numen` and `numen-cli`, over the one core. The three ship together, one version, one installer: flashcards with no editor has nothing to run, so there is no sense in shipping them apart, and the refusal of an index at a version a build does not carry costs nothing between binaries that are always the same build.
 
 It opens on **the vaults and what is due in each**. That is the whole of its front door: what a person owes today, and the place to come back to between decks.
 
 ### It reads the registry and never writes it
 
-Which vaults exist, where they are and which was opened last is what the registry answers, and it answers before any database is opened (ADR-0003).
+Which vaults exist, where they are and which was opened last is what the registry answers, and it answers before any database is opened.
 
 Every write to it rewrites it whole and nothing locks it between processes, so flashcards recording that it had been started could erase what the editor had just written. It is read here and never written.
 
 ### It opens the index for writing
 
-Both pools, the schema put in place, and the same connection settings the editor opens with. The window mints marks, its agent writes cards, and cards are edited during a sitting; every one of those writes would otherwise leave the index behind, and the window would draw from an index it could not bring up to date. Which preset schedules a deck is among what the index answers (ADR-0034), so the staleness would reach how a day is planned and not only what a heading says.
+Both pools, the schema put in place, and the same connection settings the editor opens with. The window mints marks, its agent writes cards, and cards are edited during a sitting; every one of those writes would otherwise leave the index behind, and the window would draw from an index it could not bring up to date. Which preset schedules a deck is among what the index answers, so the staleness would reach how a day is planned and not only what a heading says.
 
-Every write brings the paths it touched up to date before it returns, through the same refresh the editor uses and over the same cutting sizes, so neither application re-cuts what the other wrote. How a vault is opened and walked is ADR-0045's, and both windows go through it.
+Every write brings the paths it touched up to date before it returns, through the same refresh the editor uses and over the same cutting sizes, so neither application re-cuts what the other wrote. A vault is opened and walked through one path, and both windows go through it.
 
-Two processes now hold a writer each, and what that costs the write pool is ADR-0008's.
+Two processes now hold a writer each, which is why the write pool begins every transaction immediately, under lock.
 
-A card's heading reaches the index without the mark the card is known by (ADR-0006), so the cards themselves are read from the deck files, whatever else is open.
+A card's heading reaches the index without the mark the card is known by, so the cards themselves are read from the deck files, whatever else is open.
 
 ### It writes marks into decks, and works from what it reads back
 
-A card typed by hand carries no mark until the application next writes its file (ADR-0027). A person who opens only this application never writes that file in the editor, so their deck would hold cards nothing can be recorded against.
+A card typed by hand carries no mark until the application next writes its file. A person who opens only this application never writes that file in the editor, so their deck would hold cards nothing can be recorded against.
 
 A deck holding a card with no mark is therefore written once, which mints a mark for every card in it, and **the deck is read again afterwards and the session works from that read**.
 
 **It is done when a person sits down to a vault, and never for the counting.** The front door counts every vault the installation holds, and a count that wrote would write into all of them at every launch — including the ones nobody opened. A card with no mark is counted as nothing until the vault it is in is sat down to.
 
-The vault's write lock lives in the process (ADR-0020), and two processes on one vault hold a lock each. A mark minted here while the editor is saving the same deck is a write one of the two loses, and the editor's own save mints marks of its own for whatever is missing them. Reading the deck back is what makes that harmless: a card is reviewed under the mark the file holds, so a stamp that did not land is a card left out of this session and stamped again at the next, and no answer is ever recorded against a mark that is not in the file.
+The vault's write lock lives in the process, and two processes on one vault hold a lock each. A mark minted here while the editor is saving the same deck is a write one of the two loses, and the editor's own save mints marks of its own for whatever is missing them. Reading the deck back is what makes that harmless: a card is reviewed under the mark the file holds, so a stamp that did not land is a card left out of this session and stamped again at the next, and no answer is ever recorded against a mark that is not in the file.
 
 ### It reviews, and it corrects the card in front of the person
 
@@ -55,11 +55,11 @@ A person who finds mid-sitting that a card is wrong is holding the one piece of 
 
 Every tool family registers its reading half and its writing half separately, and a surface is a set of those halves: a reading surface with no writer on it at all, and the reviewing surface, which is that one and the four card writers. So a tool gains a behaviour once and every surface has it.
 
-**A surface is a claim about what is absent**, and a test that lists what is present passes with anything extra on it. Every surface is asserted as an exact set (ADR-0025). Which tools stand on each is [`../agents.md`](../agents.md).
+**A surface is a claim about what is absent**, and a test that lists what is present passes with anything extra on it. Every surface is asserted as an exact set. Which tools stand on each is [`../agents.md`](../agents.md).
 
 ### The tools it serves announce no port
 
-The address and token an agent a person configured reads name one vault and one window (ADR-0021). Two windows writing that file would point that agent at whichever started last, so this window listens on an ephemeral loopback port with a token that lives in memory, writes neither file, and takes no address from the command line.
+The address and token an agent a person configured reads name one vault and one window. Two windows writing that file would point that agent at whichever started last, so this window listens on an ephemeral loopback port with a token that lives in memory, writes neither file, and takes no address from the command line.
 
 ### The agent follows the vault the person sat down to
 

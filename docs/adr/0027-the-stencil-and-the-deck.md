@@ -1,21 +1,21 @@
-# ADR-0027: The stencil, the deck and the card
+# The stencil, the deck and the card
 
 - **Status:** Accepted
 - **Date:** 2026-08-27
 - **Applies to:** the vault format — every application that reads or writes one
-- **Related:** ADR-0001, ADR-0015, ADR-0017, ADR-0018, ADR-0031, ADR-0034
+- **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [The application writes to the vault](0017-the-application-writes-to-the-vault.md), [The note file](0018-the-note-file.md), [An answer is an artifact, a schedule is a cache](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md), [A preset is a note, and one arithmetic schedules it](0034-the-preset.md)
 
 ## Context
 
 A flashcard is two things that change at different rates. The shape — which fields it has, and how they are laid out on the side a person is shown — is settled once and used a thousand times. The filling is what a person typed, and there is a great deal of it.
 
-Every plain-text system that has tried this has had to choose where the shape is written and how one card is told from the next in a file. The vault format allows the application two additions to a markdown file and no more: frontmatter, and `[[wikilink]]` (ADR-0018). Whatever a card is, it is made of what markdown already renders.
+Every plain-text system that has tried this has had to choose where the shape is written and how one card is told from the next in a file. The vault format allows the application two additions to a markdown file and no more: frontmatter, and `[[wikilink]]`. Whatever a card is, it is made of what markdown already renders.
 
 ## Decision
 
 ### One key says what a note is
 
-The frontmatter key `type` says which of four a note is: `note`, `deck`, `stencil` or `preset`. The list is closed, and a note carrying no `type` is a `note`, which is nearly every note in a vault. What a preset is, is ADR-0034.
+The frontmatter key `type` says which of four a note is: `note`, `deck`, `stencil` or `preset`. The list is closed, and a note carrying no `type` is a `note`, which is nearly every note in a vault. What a preset is, is [A preset is a note, and one arithmetic schedules it](0034-the-preset.md).
 
 One key rather than one per kind is what makes the four exclusive: a file is one of them by the shape of the record, and no rule is needed to say it cannot be two. A value outside the list is a problem against the note, and the note is read as an ordinary note.
 
@@ -155,7 +155,7 @@ A card takes ordinary links, in the frontmatter of no file — the wikilink unde
 
 When a card is next due, how far apart its intervals have grown, and how it has been answered are not written into the deck.
 
-A schedule is computed from the history of answers, deterministically and for free. That makes it a cache (ADR-0015), and it is kept with the application. The answers themselves are the vault's, in its service folder ([ADR-0031](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)). The deck holds what a person wrote and nothing a machine worked out.
+A schedule is computed from the history of answers, deterministically and for free. That makes it a cache, and it is kept with the application. The answers themselves are the vault's, in its service folder ([An answer is an artifact, a schedule is a cache](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)). The deck holds what a person wrote and nothing a machine worked out.
 
 ### A field renamed in a stencil is renamed in every card it cuts
 
@@ -185,7 +185,7 @@ A deck over its bound is refused, and the refusal says which file and what the b
 - **A first field of many lines makes a short heading.** What an outline shows is its first line, which is what an outline is for.
 - **`[[Deck#^k7m2xq9fzp]]` reaches the deck**, as every fragment does today. Reaching the card itself is work for whoever wants it.
 - Two files must agree for a card to be drawn, and a deck whose stencil was deleted holds cards that cannot be laid out. The values are still there and still readable.
-- A deck copied to another machine arrives with the answers given to its cards, because those are kept beside it in the vault's service folder. What the machine works out from them it works out again ([ADR-0031](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)).
+- A deck copied to another machine arrives with the answers given to its cards, because those are kept beside it in the vault's service folder. What the machine works out from them it works out again ([An answer is an artifact, a schedule is a cache](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)).
 
 ## Alternatives considered
 
@@ -217,7 +217,7 @@ A deck over its bound is refused, and the refusal says which file and what the b
 
 **A mark written at first review**, so a deck nobody has begun to learn holds nothing machine-written. Rejected: the editor writes the deck in the first place, so there is no untouched file to keep clean, and a card with no mark would need a second way to be addressed and a rule for when each applies.
 
-**A ULID**, as a note carries (ADR-0019). Rejected: twenty-six characters at the end of every heading, to buy uniqueness across every vault that will ever exist, where the question is whether two cards in one vault collide. Creation order goes with it, and nothing here asks for creation order.
+**A ULID**, as a note carries. Rejected: twenty-six characters at the end of every heading, to buy uniqueness across every vault that will ever exist, where the question is whether two cards in one vault collide. Creation order goes with it, and nothing here asks for creation order.
 
 **A namespace on the mark, `^card/…`.** Rejected: it was needed where a card was a line in an ordinary note among a person's own anchors. It buys nothing where a card is a heading in a deck.
 

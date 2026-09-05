@@ -20,68 +20,68 @@ The numbers are identity, not order. This list is the order. A gap in the number
 
 ### What is kept, and where
 
-- [ADR-0001 — Files on disk are the source of truth](0001-files-are-the-source-of-truth.md)
-- [ADR-0002 — One database for all vaults, outside them](0002-one-database-for-all-vaults.md)
-- [ADR-0003 — A vault carries its identity, and application state lives with the application](0003-a-vault-carries-its-identity.md)
+- [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md)
+- [One database for all vaults, outside them](0002-one-database-for-all-vaults.md)
+- [A vault carries its identity, and application state lives with the application](0003-a-vault-carries-its-identity.md)
 
 ### The shape of the code
 
-- [ADR-0004 — A hexagonal core in Go](0004-a-hexagonal-core-in-go.md)
-- [ADR-0047 — Where a port is declared, and where an adapter stands](0047-where-a-port-is-declared-and-where-an-adapter-stands.md)
-- [ADR-0005 — A client is generated from the protocol](0005-a-client-is-generated-from-the-protocol.md)
-- [ADR-0046 — One service to a subject](0046-one-service-to-a-subject.md)
-- [ADR-0025 — How this application is tested](0025-how-this-application-is-tested.md)
+- [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md)
+- [Where a port is declared, and where an adapter stands](0047-where-a-port-is-declared-and-where-an-adapter-stands.md)
+- [A client is generated from the protocol](0005-a-client-is-generated-from-the-protocol.md)
+- [One service to a subject](0046-one-service-to-a-subject.md)
+- [How this application is tested](0025-how-this-application-is-tested.md)
 
 ### The index
 
-- [ADR-0006 — What the index stores](0006-what-the-index-stores.md)
-- [ADR-0007 — A schema change is a numbered migration](0007-a-schema-change-is-a-numbered-migration.md)
-- [ADR-0008 — A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md)
-- [ADR-0009 — The vault is watched](0009-the-vault-is-watched.md)
+- [What the index stores](0006-what-the-index-stores.md)
+- [A schema change is a numbered migration](0007-a-schema-change-is-a-numbered-migration.md)
+- [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md)
+- [The vault is watched](0009-the-vault-is-watched.md)
 
 ### Search
 
-- [ADR-0010 — A source is text in one table](0010-a-source-is-text-in-one-table.md)
-- [ADR-0011 — Text is cut twice](0011-text-is-cut-twice.md)
-- [ADR-0012 — A chunk is identified by its text](0012-a-chunk-is-identified-by-its-text.md)
-- [ADR-0013 — The vector index stays inside SQLite](0013-the-vector-index-stays-inside-sqlite.md)
-- [ADR-0014 — One search, three rankings, merged by rank](0014-one-search-three-rankings.md)
+- [A source is text in one table](0010-a-source-is-text-in-one-table.md)
+- [Text is cut twice](0011-text-is-cut-twice.md)
+- [A chunk is identified by its text](0012-a-chunk-is-identified-by-its-text.md)
+- [The vector index stays inside SQLite](0013-the-vector-index-stays-inside-sqlite.md)
+- [One search, three rankings, merged by rank](0014-one-search-three-rankings.md)
 
 ### Books and passages
 
-- [ADR-0015 — A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md)
-- [ADR-0016 — A passage is a range of bytes](0016-a-passage-is-a-range-of-bytes.md)
+- [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md)
+- [A passage is a range of bytes](0016-a-passage-is-a-range-of-bytes.md)
 
 ### Recordings
 
-- [ADR-0042 — A recording is a source of its own](0042-a-recording-is-a-source-of-its-own.md)
-- [ADR-0043 — A transcript is WebVTT](0043-a-transcript-is-webvtt.md)
-- [ADR-0044 — A recording is transcribed without being asked](0044-a-recording-is-transcribed-without-being-asked.md)
+- [A recording is a source of its own](0042-a-recording-is-a-source-of-its-own.md)
+- [A transcript is WebVTT](0043-a-transcript-is-webvtt.md)
+- [A recording is transcribed without being asked](0044-a-recording-is-transcribed-without-being-asked.md)
 
 ### The vault, written
 
-- [ADR-0017 — The application writes to the vault](0017-the-application-writes-to-the-vault.md)
-- [ADR-0018 — The note file](0018-the-note-file.md)
-- [ADR-0019 — A note is identified by a ULID in its frontmatter](0019-a-note-is-identified-by-a-ulid.md)
-- [ADR-0020 — One process, one lifetime](0020-one-process-one-lifetime.md)
+- [The application writes to the vault](0017-the-application-writes-to-the-vault.md)
+- [The note file](0018-the-note-file.md)
+- [A note is identified by a ULID in its frontmatter](0019-a-note-is-identified-by-a-ulid.md)
+- [One process, one lifetime](0020-one-process-one-lifetime.md)
 
 ### Cards
 
-- [ADR-0027 — The stencil, the deck and the card](0027-the-stencil-and-the-deck.md)
-- [ADR-0031 — An answer is an artifact, a schedule is a cache](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)
-- [ADR-0034 — A preset is a note, and one arithmetic schedules it](0034-the-preset.md)
-- [ADR-0030 — Review is an application of its own](0030-review-is-an-application-of-its-own.md)
-- [ADR-0045 — Both windows open a vault through one path](0045-both-windows-open-a-vault-through-one-path.md)
+- [The stencil, the deck and the card](0027-the-stencil-and-the-deck.md)
+- [An answer is an artifact, a schedule is a cache](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)
+- [A preset is a note, and one arithmetic schedules it](0034-the-preset.md)
+- [Review is an application of its own](0030-review-is-an-application-of-its-own.md)
+- [Both windows open a vault through one path](0045-both-windows-open-a-vault-through-one-path.md)
 
 ### Agents
 
-- [ADR-0021 — An agent reaches the vault through tools](0021-an-agent-reaches-the-vault-through-tools.md)
-- [ADR-0022 — The agent this application starts is a port](0022-the-agent-this-application-starts-is-a-port.md)
+- [An agent reaches the vault through tools](0021-an-agent-reaches-the-vault-through-tools.md)
+- [The agent this application starts is a port](0022-the-agent-this-application-starts-is-a-port.md)
 
 ### The interface
 
-- [ADR-0023 — How an interface component is built](0023-how-an-interface-component-is-built.md)
-- [ADR-0024 — The component library is shadcn-vue on Tailwind](0024-the-component-library-is-shadcn-vue.md)
+- [How an interface component is built](0023-how-an-interface-component-is-built.md)
+- [The component library is shadcn-vue on Tailwind](0024-the-component-library-is-shadcn-vue.md)
 
 ## The specifications
 

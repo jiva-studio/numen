@@ -1,13 +1,13 @@
-# ADR-0044: A recording is transcribed without being asked
+# A recording is transcribed without being asked
 
 - **Status:** Accepted
 - **Date:** 2026-09-01
 - **Applies to:** `modules/libs/core`, `modules/apps/desktop`
-- **Related:** ADR-0008, ADR-0015, ADR-0042, ADR-0043
+- **Related:** [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [A recording is a source of its own](0042-a-recording-is-a-source-of-its-own.md), [A transcript is WebVTT](0043-a-transcript-is-webvtt.md)
 
 ## Context
 
-ADR-0015 settles that nothing chooses automatically between a document's own text layer and a model's reading of it: there is no reliable test of a text layer, so the layer is used and recognition is something a person asks for.
+Nothing chooses automatically between a document's own text layer and a model's reading of it: there is no reliable test of a text layer, so the layer is used and recognition is something a person asks for.
 
 A recording has no layer to choose against. It says nothing until a model has listened, and no question about the file can change that.
 

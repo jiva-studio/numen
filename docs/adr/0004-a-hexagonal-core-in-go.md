@@ -1,9 +1,9 @@
-# ADR-0004: A hexagonal core in Go
+# A hexagonal core in Go
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/core`, `modules/apps/desktop`, `modules/apps/mobile`
-- **Related:** ADR-0001, ADR-0002, ADR-0005, ADR-0006, ADR-0020, ADR-0021, ADR-0023, ADR-0025
+- **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [One database for all vaults, outside them](0002-one-database-for-all-vaults.md), [A client is generated from the protocol](0005-a-client-is-generated-from-the-protocol.md), [What the index stores](0006-what-the-index-stores.md), [One process, one lifetime](0020-one-process-one-lifetime.md), [An agent reaches the vault through tools](0021-an-agent-reaches-the-vault-through-tools.md), [How an interface component is built](0023-how-an-interface-component-is-built.md), [How this application is tested](0025-how-this-application-is-tested.md)
 
 ## Context
 
@@ -15,7 +15,7 @@ The core decides what is true about a vault. A window, a phone, a command line a
 
 The application is **hexagonal architecture**: the domain declares ports, and adapters implement them. It follows the dependency rule of **clean architecture**: imports point inward only, and nothing under the core's own packages imports an adapter. It is organised by the tactical patterns of **domain-driven design**: aggregates, repositories, queries, and use cases named after the scenario, in the ubiquitous language the [glossary](../glossary.md) holds.
 
-What a client says to the core is ADR-0005.
+What a client says to the core is the protocol, and every client is generated from it.
 
 ```mermaid
 graph TD

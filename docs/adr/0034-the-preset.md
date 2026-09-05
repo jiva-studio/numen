@@ -15,7 +15,7 @@ How much is studied in a day, how long a day runs, how much is asked of memory: 
 
 ### A preset is a note
 
-A preset is a note of `type: preset`, which is the fourth of the closed list ADR-0027 keeps.
+A preset is a note of `type: preset`, which is the fourth of the closed list of note types.
 
 Its settings are frontmatter keys. The body is the person's: what the preset is for, written for themselves.
 
@@ -38,7 +38,7 @@ even_load: true
 Grammar and vocabulary. Three decks point here.
 ```
 
-Keys are the application's, in the spelling `numen.json` already uses. A key the application does not own is left where it stands, as every other note's frontmatter is (ADR-0018).
+Keys are the application's, in the spelling `numen.json` already uses. A key the application does not own is left where it stands, as every other note's frontmatter is.
 
 ### A deck points at a preset
 
@@ -73,7 +73,7 @@ It is pressure and not a promise. No day is forbidden to carry more than its sha
 - **A preset travels with the vault.** It is text the person wrote, in their history, syncing with everything else.
 - **There is no vault-wide scheduling scope.** The scopes are the installation, a preset, and the deck that points at one.
 - **A number is enforced where it was typed.** Decks are files and nothing contains anything, so no limit is displaced onto a parent.
-- **The application writes to a note it did not create.** Settings written into the vault are ADR-0017's write path, and a preset is the first note the application edits key by key rather than whole.
+- **The application writes to a note it did not create.** Settings written into the vault go down the application's one write path, and a preset is the first note the application edits key by key rather than whole.
 - **A card is scheduled at its own preset's target.** The answers are replayed under the scheduler of the preset the card's deck points at, and the schedule cache carries a mark of which cards stood under which target. A mark that does not match is a cache thrown away whole.
 - **The settings a person can change stand in two files.** `numen.json` is the installation's and is written down in [Settings](../settings.md); a preset is the vault's and is written down in [Cards](../cards.md), beside the deck it schedules.
 - **A curve a person reads is a promise the sitting keeps.** Both are the same arithmetic over the same day.

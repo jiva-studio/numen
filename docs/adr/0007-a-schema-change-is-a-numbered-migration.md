@@ -1,13 +1,13 @@
-# ADR-0007: A schema change is a numbered migration
+# A schema change is a numbered migration
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/core`
-- **Related:** ADR-0002, ADR-0004, ADR-0006, ADR-0008
+- **Related:** [One database for all vaults, outside them](0002-one-database-for-all-vaults.md), [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [What the index stores](0006-what-the-index-stores.md), [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md)
 
 ## Context
 
-One database holds every vault, its schema grows with the application, and it sits on somebody's machine while it grows. What the index may hold is ADR-0006. How it moves from one shape to the next is settled here, because every later change to the schema is written inside the answer.
+One database holds every vault, its schema grows with the application, and it sits on somebody's machine while it grows. What the index may hold is [What the index stores](0006-what-the-index-stores.md). How it moves from one shape to the next is settled here, because every later change to the schema is written inside the answer.
 
 ## Decision
 

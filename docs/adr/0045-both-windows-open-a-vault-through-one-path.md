@@ -1,13 +1,13 @@
-# ADR-0045: Both windows open a vault through one path
+# Both windows open a vault through one path
 
 - **Status:** Accepted
 - **Date:** 2026-09-02
 - **Applies to:** the two desktop applications and the index they share
-- **Related:** ADR-0008, ADR-0009, ADR-0020, ADR-0030, ADR-0034
+- **Related:** [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [The vault is watched](0009-the-vault-is-watched.md), [One process, one lifetime](0020-one-process-one-lifetime.md), [Review is an application of its own](0030-review-is-an-application-of-its-own.md), [A preset is a note, and one arithmetic schedules it](0034-the-preset.md)
 
 ## Context
 
-The index is level with a vault only for as long as nothing has been edited (ADR-0008), and the watcher covers a window's own life (ADR-0009). A vault edited on another machine arrives by sync while nothing here is running, and everything that arrived went past the watch: new decks are missing, removed cards are still asked, and an edited card is asked in its old words. Review is the daily act and the editor the occasional one (ADR-0030), so this is the ordinary case and not the corner.
+The index is level with a vault only for as long as nothing has been edited, and the watcher covers a window's own life. A vault edited on another machine arrives by sync while nothing here is running, and everything that arrived went past the watch: new decks are missing, removed cards are still asked, and an edited card is asked in its old words. Review is the daily act and the editor the occasional one, so this is the ordinary case and not the corner.
 
 Both applications hold a vault open and both write the index, so how a vault is opened is settled once for both.
 

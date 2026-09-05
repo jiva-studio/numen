@@ -1,9 +1,9 @@
-# ADR-0015: A book's text is a cache or an artifact
+# A book's text is a cache or an artifact
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/core`
-- **Related:** ADR-0001, ADR-0003, ADR-0004, ADR-0010, ADR-0011, ADR-0016, ADR-0017
+- **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [A vault carries its identity, and application state lives with the application](0003-a-vault-carries-its-identity.md), [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [A source is text in one table](0010-a-source-is-text-in-one-table.md), [Text is cut twice](0011-text-is-cut-twice.md), [A passage is a range of bytes](0016-a-passage-is-a-range-of-bytes.md), [The application writes to the vault](0017-the-application-writes-to-the-vault.md)
 
 ## Context
 
