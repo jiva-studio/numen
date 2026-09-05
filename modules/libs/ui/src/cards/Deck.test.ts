@@ -150,7 +150,7 @@ describe('Deck', () => {
     // One name, and it stands on the rule. Nothing is drawn around the box
     // under it.
     expect(value?.findAll('label')).toHaveLength(1)
-    expect(value?.get('.rule').get('label').text()).toBe('Name')
+    expect(value?.get('.divider').get('label').text()).toBe('Name')
     expect(value?.find('fieldset').exists()).toBe(false)
   })
 

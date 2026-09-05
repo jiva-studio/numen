@@ -11,7 +11,7 @@ import { computed, useId } from 'vue'
 import ErrorMessage from './ErrorMessage.vue'
 import Remove from './Remove.vue'
 import NameBox from './NameBox.vue'
-import Rule from '../rule/Rule.vue'
+import Divider from '../divider/Divider.vue'
 import { useNaming } from './naming'
 import { DECK_WORDS, type Band, type DeckWords } from './deck'
 import { heading, type Refusal } from './order'
@@ -62,7 +62,7 @@ const stem = computed(() => `${props.words.sectionStem} ${props.band.at}`)
 
 <template>
   <div class="band" :data-band-of="band.id">
-    <Rule>
+    <Divider>
       <!-- What a person reaches for is the name and the way to be rid of it,
            and nothing of the line either side. -->
       <span class="band__held">
@@ -82,7 +82,7 @@ const stem = computed(() => `${props.words.sectionStem} ${props.band.at}`)
           <Remove :label="`${words.remove}: ${stem}`" @press="emit('remove')" />
         </span>
       </span>
-    </Rule>
+    </Divider>
 
     <ErrorMessage v-if="says" :id="objectsId" class="band__objects" role="alert" :said="says" />
   </div>

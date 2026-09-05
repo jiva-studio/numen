@@ -8,7 +8,7 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
-import Rule from './Rule.vue'
+import Divider from './Divider.vue'
 import Icon from '../cards/Icon.vue'
 import { Button } from '../components/ui/button'
 
@@ -25,8 +25,8 @@ interface Knobs {
 }
 
 const meta: Meta<Knobs> = {
-  title: 'Rule',
-  component: Rule,
+  title: 'Divider',
+  component: Divider,
   parameters: { layout: 'fullscreen' },
   argTypes: {
     said: { control: 'text' },
@@ -35,16 +35,16 @@ const meta: Meta<Knobs> = {
   },
   args: { said: 'Add a field', at: 'middle', width: '100%' },
   render: (args) => ({
-    components: { Rule, Button, Icon },
+    components: { Divider, Button, Icon },
     setup: () => ({ args }),
     template: `
       <div :style="{ padding: '2rem', width: args.width }">
-        <Rule :at="args.at">
+        <Divider :at="args.at">
           <Button variant="outline" size="small">
             <Icon shows="plus" />
             {{ args.said }}
           </Button>
-        </Rule>
+        </Divider>
       </div>
     `,
   }),
@@ -59,14 +59,14 @@ const found = (canvas: HTMLElement, selector: string): HTMLElement => {
   return held
 }
 
-/** How wide each side of the line is drawn, which is the rule's own decoration. */
-const sides = (rule: HTMLElement): readonly number[] =>
+/** How wide each side of the line is drawn, which is the divider's own decoration. */
+const sides = (divider: HTMLElement): readonly number[] =>
   ['::before', '::after'].map((side) =>
-    Number.parseFloat(getComputedStyle(rule, side).width),
+    Number.parseFloat(getComputedStyle(divider, side).width),
   )
 
-/** An action standing in the middle of a rule. */
-export const ARule: Story = {}
+/** An action standing in the middle of a divider. */
+export const ADivider: Story = {}
 
 /** The shortest thing anything is added by. */
 export const One: Story = { args: { said: 'Add' } }
@@ -92,10 +92,10 @@ export const Narrow: Story = { args: { width: '10rem' } }
 export const TheLineGivesWayToWhatItHolds: Story = {
   args: { width: '40rem' },
   play: async ({ canvasElement }) => {
-    const rule = found(canvasElement, '.rule')
+    const divider = found(canvasElement, '.divider')
     const button = found(canvasElement, 'button')
 
-    const [before, after] = sides(rule)
+    const [before, after] = sides(divider)
     expect(before).toBeGreaterThan(0)
     expect(after).toBeGreaterThan(0)
 
@@ -103,12 +103,12 @@ export const TheLineGivesWayToWhatItHolds: Story = {
     expect(before).toBeCloseTo(after ?? 0, 0)
 
     const at = button.getBoundingClientRect()
-    const box = rule.getBoundingClientRect()
+    const box = divider.getBoundingClientRect()
     expect(at.left + at.width / 2).toBeCloseTo(box.left + box.width / 2, 0)
 
     // The line and the word are laid side by side, so neither runs over the
     // other: the two sides and what they hold take the whole width between them.
-    const gap = Number.parseFloat(getComputedStyle(rule).columnGap)
+    const gap = Number.parseFloat(getComputedStyle(divider).columnGap)
     expect((before ?? 0) + (after ?? 0) + at.width + 2 * gap).toBeCloseTo(box.width, 0)
   },
 }
@@ -120,49 +120,49 @@ export const TheLineGivesWayToWhatItHolds: Story = {
 export const LeadingWithWhatItHolds: Story = {
   args: { at: 'start', width: '40rem' },
   play: async ({ canvasElement }) => {
-    const rule = found(canvasElement, '.rule')
+    const divider = found(canvasElement, '.divider')
     const button = found(canvasElement, 'button')
-    expect(rule.getAttribute('data-at')).toBe('start')
+    expect(divider.getAttribute('data-at')).toBe('start')
 
-    const [before, after] = sides(rule)
-    const gap = Number.parseFloat(getComputedStyle(rule).columnGap)
+    const [before, after] = sides(divider)
+    const gap = Number.parseFloat(getComputedStyle(divider).columnGap)
     expect(before).toBeCloseTo(gap, 0)
     expect(after).toBeGreaterThan(before ?? 0)
 
     // What it holds stands at the start, and the two sides and it take the
     // whole width between them.
     const at = button.getBoundingClientRect()
-    const box = rule.getBoundingClientRect()
+    const box = divider.getBoundingClientRect()
     expect(at.left - box.left).toBeLessThan(box.width / 4)
     expect((before ?? 0) + (after ?? 0) + at.width + 2 * gap).toBeCloseTo(box.width, 0)
   },
 }
 
-/** However narrow it is drawn, a rule is one line and the word stays whole. */
+/** However narrow it is drawn, a divider is one line and the word stays whole. */
 export const StaysOneLine: Story = {
   args: { width: '9rem' },
   play: async ({ canvasElement }) => {
-    const rule = found(canvasElement, '.rule')
+    const divider = found(canvasElement, '.divider')
     const button = found(canvasElement, 'button')
 
-    expect(rule.getBoundingClientRect().height).toBeCloseTo(
+    expect(divider.getBoundingClientRect().height).toBeCloseTo(
       button.getBoundingClientRect().height,
       0,
     )
-    expect(rule.scrollWidth).toBeLessThanOrEqual(rule.clientWidth + 1)
+    expect(divider.scrollWidth).toBeLessThanOrEqual(divider.clientWidth + 1)
 
     // What is left of the width goes to the word, and the line gives it up.
-    for (const side of sides(rule)) expect(side).toBeLessThan(2)
+    for (const side of sides(divider)) expect(side).toBeLessThan(2)
   },
 }
 
-/** The rule is decoration: it is announced as nothing at all. */
+/** The divider is decoration: it is announced as nothing at all. */
 export const AnnouncedAsNothing: Story = {
   play: async ({ canvasElement }) => {
-    const rule = found(canvasElement, '.rule')
-    expect(rule.getAttribute('role')).toBe('presentation')
-    expect(rule.querySelector('hr')).toBeNull()
-    expect(rule.querySelector('[role="separator"]')).toBeNull()
+    const divider = found(canvasElement, '.divider')
+    expect(divider.getAttribute('role')).toBe('presentation')
+    expect(divider.querySelector('hr')).toBeNull()
+    expect(divider.querySelector('[role="separator"]')).toBeNull()
 
     // What it holds is a button, under its own name.
     const button = found(canvasElement, 'button')

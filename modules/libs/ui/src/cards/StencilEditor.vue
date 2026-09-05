@@ -11,7 +11,7 @@ import { computed } from 'vue'
 import Face from './Face.vue'
 import Fields from './Fields.vue'
 import Icon from './Icon.vue'
-import Rule from '../rule/Rule.vue'
+import Divider from '../divider/Divider.vue'
 import { useCarry } from './carry'
 import { Button } from '../components/ui/button'
 import { declared, numbered, type Half, type Landing } from './order'
@@ -153,12 +153,12 @@ const addFace = (): void => {
         @write="(half, text) => emit('write', one.id, half, text)"
       />
 
-      <Rule>
+      <Divider>
         <Button variant="ghost" size="small" @click="addFace">
           <Icon shows="plus" />
           {{ words.addFace }}
         </Button>
-      </Rule>
+      </Divider>
     </section>
   </div>
 </template>

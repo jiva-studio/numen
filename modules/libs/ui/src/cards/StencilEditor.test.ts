@@ -135,11 +135,11 @@ describe('Stencil, the fields', () => {
     expect(held.emitted('rename-field')).toEqual([['Name', 'Question']])
   })
 
-  it('stands the way to add a field on a rule that is announced as nothing', () => {
+  it('stands the way to add a field on a divider that is announced as nothing', () => {
     const held = mountStencil()
-    const rule = held.get('.stencil__part .rule')
-    expect(rule.attributes('role')).toBe('presentation')
-    expect(rule.get('button').text()).toBe('Add a field')
+    const divider = held.get('.stencil__part .divider')
+    expect(divider.attributes('role')).toBe('presentation')
+    expect(divider.get('button').text()).toBe('Add a field')
     expect(held.findAll('hr')).toHaveLength(0)
   })
 
@@ -236,7 +236,7 @@ describe('Stencil, the fields', () => {
   it('emits a field let go on the rule the list is added by', async () => {
     const held = mountStencil()
     await rowFor(held, 'Height').get('[data-grip]').trigger('dragstart')
-    const rule = held.findAll('section')[0]?.get('.rule')
+    const rule = held.findAll('section')[0]?.get('.divider')
     await rule?.trigger('dragover')
     await rule?.trigger('drop')
     expect(held.emitted('move-field')).toEqual([['Height', null]])
@@ -424,7 +424,7 @@ describe('Stencil, the faces', () => {
 
   it('stands the way to add a face on a rule of the same make', () => {
     const held = mountStencil()
-    const rules = held.findAll('.rule')
+    const rules = held.findAll('.divider')
     expect(rules.map((rule) => rule.get('button').text())).toEqual([
       'Add a field',
       'Add a face',

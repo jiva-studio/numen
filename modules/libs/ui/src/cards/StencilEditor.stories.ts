@@ -301,19 +301,19 @@ export const AStencil: Story = {
     })
     expect(drawnFields(canvasElement)).toEqual(['Name', 'Height', 'Weight', 'Life span'])
 
-    // What the list is added to by stands in the middle of a rule as wide as
+    // What the list is added to by stands in the middle of a divider as wide as
     // the list, and the line gives way to it either side.
-    const rule = found(canvasElement, '.stencil__part .rule')
+    const divider = found(canvasElement, '.stencil__part .divider')
     const list = found(canvasElement, '.stencil__fields')
-    const adding = found(canvasElement, '.stencil__part .rule button')
-    const along = rule.getBoundingClientRect()
+    const adding = found(canvasElement, '.stencil__part .divider button')
+    const along = divider.getBoundingClientRect()
     expect(Math.round(along.width)).toBe(Math.round(list.getBoundingClientRect().width))
     const at = adding.getBoundingClientRect()
     expect(at.left + at.width / 2).toBeCloseTo(along.left + along.width / 2, 0)
     for (const side of ['::before', '::after']) {
-      expect(Number.parseFloat(getComputedStyle(rule, side).width)).toBeGreaterThan(0)
+      expect(Number.parseFloat(getComputedStyle(divider, side).width)).toBeGreaterThan(0)
     }
-    expect(canvasElement.querySelectorAll('.rule')).toHaveLength(2)
+    expect(canvasElement.querySelectorAll('.divider')).toHaveLength(2)
   },
 }
 

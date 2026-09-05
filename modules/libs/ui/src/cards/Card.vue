@@ -12,7 +12,7 @@ import ErrorMessage from './ErrorMessage.vue'
 import Bar from './Bar.vue'
 import Remove from './Remove.vue'
 import AutosizeTextarea from './AutosizeTextarea.vue'
-import Rule from '../rule/Rule.vue'
+import Divider from '../divider/Divider.vue'
 import { DECK_WORDS, sealed, type CardWords, type Stood, type Tile } from './deck'
 import type { Way } from './order'
 
@@ -115,7 +115,7 @@ const wrongIn = (value: Stood): readonly string[] =>
       />
 
       <div v-for="value in tile.filled" :key="value.key" class="card__value">
-        <Rule at="start">
+        <Divider at="start">
           <label
             v-if="value.declared"
             class="card__field text-small text-hushed"
@@ -124,7 +124,7 @@ const wrongIn = (value: Stood): readonly string[] =>
             {{ value.field }}
           </label>
           <span v-else class="card__field text-small text-hushed">{{ value.field }}</span>
-        </Rule>
+        </Divider>
 
         <AutosizeTextarea
           v-if="value.declared"
@@ -181,8 +181,8 @@ const wrongIn = (value: Stood): readonly string[] =>
   padding: var(--numen-box-air);
 }
 
-/* A rule divides the whole tile, so it runs to both edges of it. */
-.card__value > .rule {
+/* A divider divides the whole tile, so it runs to both edges of it. */
+.card__value > .divider {
   inline-size: auto;
   margin-inline: calc(-1 * var(--numen-box-air));
 }

@@ -11,7 +11,7 @@ import { computed, useId } from 'vue'
 import ErrorMessage from './ErrorMessage.vue'
 import Icon from './Icon.vue'
 import NameBox from './NameBox.vue'
-import Rule from '../rule/Rule.vue'
+import Divider from '../divider/Divider.vue'
 import Slab from './Slab.vue'
 import { useCarry } from './carry'
 import { useNaming } from './naming'
@@ -188,12 +188,12 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
 
     <p v-else class="stencil__silence caps-numen m-0 text-small text-hushed">{{ words.noFields }}</p>
 
-    <Rule>
+    <Divider>
       <Button variant="ghost" size="small" @click="add">
         <Icon shows="plus" />
         {{ words.addField }}
       </Button>
-    </Rule>
+    </Divider>
   </section>
 </template>
 

@@ -262,13 +262,13 @@ export const ACard: Story = {
   play: async ({ canvasElement }) => {
     const tile = found(canvasElement, '[data-card="k7m2xq9fzp"]')
     const value = found(canvasElement, '.card__value')
-    const rule = value.querySelector('.rule')
+    const rule = value.querySelector('.divider')
     const label = value.querySelector('label')
     if (!rule || !label) throw new Error('no rule and no name on it')
 
     // One name, and it stands on the rule, so the two share a middle.
     expect(value.querySelectorAll('label')).toHaveLength(1)
-    expect(label.closest('.rule')).toBe(rule)
+    expect(label.closest('.divider')).toBe(rule)
     const line = rule.getBoundingClientRect()
     const name = label.getBoundingClientRect()
     expect(Math.abs((name.top + name.bottom) / 2 - (line.top + line.bottom) / 2)).toBeLessThan(2)
@@ -281,7 +281,7 @@ export const ACard: Story = {
     const boxes = [...tile.querySelectorAll<HTMLTextAreaElement>('textarea')]
     expect(boxes).toHaveLength(4)
     for (const box of boxes) {
-      const under = box.closest('.card__value')?.querySelector('.rule')
+      const under = box.closest('.card__value')?.querySelector('.divider')
       if (!under) throw new Error('a box under no rule')
       expect(box.getBoundingClientRect().top).toBeCloseTo(under.getBoundingClientRect().bottom, 0)
       expect(box.closest('.card__value')?.querySelector('fieldset')).toBeNull()

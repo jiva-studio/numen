@@ -252,7 +252,7 @@ export { default as Band } from './cards/Band.vue'
 /** The strip a tile is carried by. */
 export { default as Bar } from './cards/Bar.vue'
 /** A rule with something standing on it, in its middle or at its start. */
-export { default as Rule } from './rule/Rule.vue'
+export { default as Divider } from './divider/Divider.vue'
 
 /**
  * A card's HTML, measured against what a card may be drawn with. A deck may

@@ -11,7 +11,7 @@ import { computed, shallowRef } from 'vue'
 import Band from './Band.vue'
 import Card from './Card.vue'
 import Icon from './Icon.vue'
-import Rule from '../rule/Rule.vue'
+import Divider from '../divider/Divider.vue'
 import { useCarry } from './carry'
 import { Button } from '../components/ui/button'
 import {
@@ -221,12 +221,12 @@ const addSection = (): void => {
       </div>
     </template>
 
-    <Rule>
+    <Divider>
       <Button variant="ghost" size="small" data-add-section @click="addSection">
         <Icon shows="plus" />
         {{ words.addSection }}
       </Button>
-    </Rule>
+    </Divider>
   </div>
 </template>
 

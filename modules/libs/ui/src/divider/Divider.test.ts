@@ -1,5 +1,5 @@
 /**
- * What a rule draws around what stands in its middle.
+ * What a divider draws around what stands in its middle.
  *
  * The negatives are here: it is announced as nothing, it draws no line of its
  * own as an element, and it takes no name away from what it holds.
@@ -7,30 +7,30 @@
 import { mount } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
 import { describe, expect, it } from 'vitest'
-import Rule from './Rule.vue'
+import Divider from './Divider.vue'
 
 const held = (inside: string) =>
-  mount(Rule, {
+  mount(Divider, {
     slots: { default: h('button', { type: 'button' }, inside) },
   })
 
-describe('Rule', () => {
+describe('Divider', () => {
   it('stands what it holds in its middle, and nothing else', () => {
-    const rule = held('Add a field')
-    expect(rule.element.children).toHaveLength(1)
-    expect(rule.get('button').text()).toBe('Add a field')
+    const divider = held('Add a field')
+    expect(divider.element.children).toHaveLength(1)
+    expect(divider.get('button').text()).toBe('Add a field')
   })
 
   it('is announced as nothing, so nothing is said around what it holds', () => {
-    const rule = held('Add a field')
-    expect(rule.attributes('role')).toBe('presentation')
-    expect(rule.attributes('aria-orientation')).toBeUndefined()
+    const divider = held('Add a field')
+    expect(divider.attributes('role')).toBe('presentation')
+    expect(divider.attributes('aria-orientation')).toBeUndefined()
   })
 
   it('draws its line as decoration, and never as an element', () => {
-    const rule = held('Add a field')
-    expect(rule.element.tagName).toBe('DIV')
-    expect(rule.findAll('hr')).toHaveLength(0)
+    const divider = held('Add a field')
+    expect(divider.element.tagName).toBe('DIV')
+    expect(divider.findAll('hr')).toHaveLength(0)
   })
 
   it('stands what it holds in its middle where it is asked for nothing else', () => {
@@ -38,17 +38,17 @@ describe('Rule', () => {
   })
 
   it('leads with what it holds where it is asked to', () => {
-    const rule = mount(Rule, {
+    const divider = mount(Divider, {
       props: { at: 'start' },
       slots: { default: h('button', { type: 'button' }, 'Turn') },
     })
-    expect(rule.attributes('data-at')).toBe('start')
-    expect(rule.get('button').text()).toBe('Turn')
+    expect(divider.attributes('data-at')).toBe('start')
+    expect(divider.get('button').text()).toBe('Turn')
   })
 
   it('leaves what it holds a button of its own, under its own name', () => {
-    const rule = held('Add a face')
-    const button = rule.get('button')
+    const divider = held('Add a face')
+    const button = divider.get('button')
     expect(button.attributes('role')).toBeUndefined()
     expect(button.attributes('aria-hidden')).toBeUndefined()
     expect(button.element.tagName).toBe('BUTTON')
@@ -56,7 +56,7 @@ describe('Rule', () => {
 
   it('holds whatever it is handed', () => {
     const other = defineComponent({ setup: () => () => h('span', 'said') })
-    const rule = mount(Rule, { slots: { default: h(other) } })
-    expect(rule.get('span').text()).toBe('said')
+    const divider = mount(Divider, { slots: { default: h(other) } })
+    expect(divider.get('span').text()).toBe('said')
   })
 })

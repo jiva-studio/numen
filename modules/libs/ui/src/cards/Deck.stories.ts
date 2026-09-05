@@ -495,7 +495,7 @@ export const InSections: Story = {
 
     // The heading is a rule with the name typed on it, and the way to be rid of
     // it at the end.
-    expect(found(canvasElement, '[data-band="roots"] .rule')).toBeTruthy()
+    expect(found(canvasElement, '[data-band="roots"] .divider')).toBeTruthy()
     expect(found(canvasElement, '[data-band="roots"] input').getAttribute('value')).toBe('Roots')
 
     // What a person reaches for is the name and the way to be rid of it. It is
@@ -513,7 +513,7 @@ export const InSections: Story = {
 
     found(canvasElement, '[data-band="roots"] input').focus()
     const drawn = found(canvasElement, '[data-band="roots"] .remove').getBoundingClientRect()
-    const rule = found(canvasElement, '[data-band="roots"] .rule__held').getBoundingClientRect()
+    const rule = found(canvasElement, '[data-band="roots"] .divider__held').getBoundingClientRect()
     expect(deeds.getBoundingClientRect().width).toBeGreaterThan(0)
     expect(drawn.right).toBeLessThanOrEqual(Math.ceil(rule.right))
     expect(drawn.left).toBeGreaterThanOrEqual(Math.floor(rule.left))

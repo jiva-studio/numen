@@ -30,7 +30,7 @@ afterEach(() => {
 describe('Band', () => {
   it('draws the section on a rule, which is what divides one from the next', () => {
     const held = mountBand()
-    expect(held.get('.rule').find('input').exists()).toBe(true)
+    expect(held.get('.divider').find('input').exists()).toBe(true)
   })
 
   it('stands the name the section carries in the box', () => {
