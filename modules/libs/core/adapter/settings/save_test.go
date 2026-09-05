@@ -368,7 +368,7 @@ func TestTheSettingsAreLeftReadableByThePersonAlone(t *testing.T) {
 // an ordinary arrangement. The link is where the settings are reached, and the
 // file it leads to is where they are written.
 func TestASaveLandsOnTheFileALinkLeadsTo(t *testing.T) {
-	for what, standing := range map[string]bool{
+	for what, exists := range map[string]bool{
 		"a link to a file that is there":   true,
 		"a link to a file that is not yet": false,
 	} {
@@ -377,7 +377,7 @@ func TestASaveLandsOnTheFileALinkLeadsTo(t *testing.T) {
 		if err := os.MkdirAll(filepath.Dir(kept), 0o755); err != nil {
 			t.Fatal(err)
 		}
-		if standing {
+		if exists {
 			held := []byte(`{"appearance":{"theme":"preset:numen"}}`)
 			if err := os.WriteFile(kept, held, 0o600); err != nil {
 				t.Fatal(err)
