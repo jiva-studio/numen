@@ -11,7 +11,7 @@ import type { Cards, Move, Problem, Refused } from '../core'
 import type { Store } from '../doing'
 import { editing, type Editing } from '../note/editing'
 import { markOf } from '../note/tab'
-import type { Says } from '../telling'
+import type { Voice } from '../telling'
 import type { Host, Kind } from '../windowing'
 import { REFUSED } from '../words'
 import type { Putting } from '../putting'
@@ -89,7 +89,7 @@ export function stencilling(
   cards: Cards,
   host: Host,
   puts: Putting,
-  says: Says = () => {},
+  says: Voice = () => {},
 ) {
   /** What the vault last said about each file, under the path it is filed at. */
   const told = new Map<string, Told>()

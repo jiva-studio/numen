@@ -17,18 +17,18 @@ import {
   MAKING,
   offering,
   overNote,
-  type Holds,
-  type Knows,
+  type PaletteLists,
+  type NoteLookup,
   type Offering,
   type Runnable,
-  type Where,
+  type CommandTarget,
 } from './commanding'
 import type { Listed, Vault } from './core'
 import type { Named } from './finding'
 import { WORDS as words } from './words'
 
 /** What is in front, which a test moves under the commands. */
-const front = (over: Partial<Where> = {}): Where => ({
+const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: 'tab',
   kind: 'note',
   path: 'physics/Ontology.md',
@@ -72,7 +72,7 @@ const installation = (...vaults: readonly Vault[]): Listed => ({
 const held = () => {
   const titles = ref<Record<string, string>>({ 'physics/Ontology.md': 'Ontology' })
   const tabs = ref<Record<string, string>>({})
-  const knows: Knows = {
+  const knows: NoteLookup = {
     called: (path) => titles.value[path] ?? '',
     holding: (path) => tabs.value[path] ?? null,
   }
@@ -96,7 +96,7 @@ const held = () => {
 const holding = (offers: Record<string, readonly Offering[]>) => {
   const lists = ref(offers)
   const shown: string[] = []
-  const holds: Holds = {
+  const holds: PaletteLists = {
     offers: (command) => lists.value[command] ?? [],
     shows: (command, item) => void shown.push(`${command} ${item}`),
   }
@@ -105,7 +105,7 @@ const holding = (offers: Record<string, readonly Offering[]>) => {
 
 /** The commands over what a test says is in front, asked without a hold. */
 const asking = (
-  over: Partial<Where> = {},
+  over: Partial<CommandTarget> = {},
   found: readonly Named[] = [],
   offers: Record<string, readonly Offering[]> = {},
   listed: Listed = installation(vault('physics', 'Physics')),
@@ -513,7 +513,7 @@ describe('a note that moves under an open step', () => {
 })
 
 /** A recording in front of the window, and a scanned document. */
-const heard: Partial<Where> = {
+const heard: Partial<CommandTarget> = {
   kind: 'recording',
   path: '',
   // A recording tab is filed at no note, and what it is called is the name of
@@ -522,7 +522,7 @@ const heard: Partial<Where> = {
   file: 'talks/Ants.mp3',
   source: 'recording',
 }
-const scanned: Partial<Where> = {
+const scanned: Partial<CommandTarget> = {
   kind: 'document',
   path: '',
   title: '',

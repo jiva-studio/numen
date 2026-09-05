@@ -7,7 +7,7 @@
  */
 import type { PlexRelatedSeat } from '@numen/ui'
 import type { Core, NewLink, Refused, Role } from '../core'
-import type { Says } from '../telling'
+import type { Voice } from '../telling'
 import { REFUSED } from '../words'
 
 /**
@@ -71,7 +71,7 @@ export interface Made {
   readonly title: string
 }
 
-export function creating(core: Core, said: Says) {
+export function creating(core: Core, said: Voice) {
   /**
    * One note asked for. A name the vault has already filed is handed back as
    * `occupied` for the caller to answer for.

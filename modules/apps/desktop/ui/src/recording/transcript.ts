@@ -8,7 +8,7 @@ import { computed, ref } from 'vue'
 import { clock } from '@numen/ui'
 import { asking as latest } from '../asking'
 import { cued, same, spanning, spoken } from './cueing'
-import { playable as canPlay, player, type Player, type Plays } from './playing'
+import { playable as canPlay, player, type Player, type CanPlayType } from './playing'
 import { WORDS } from './words'
 
 /** One stretch of speech: what was said, and the milliseconds it spans. */
@@ -80,7 +80,7 @@ export interface Playing {
   /** How long the typing settles for before the words are written. */
   quiet?: number
   /** Whether this window can play a kind of sound. */
-  plays?: Plays
+  plays?: CanPlayType
 }
 
 export function transcript(recordings: Recordings, path: string, how: Playing = {}) {

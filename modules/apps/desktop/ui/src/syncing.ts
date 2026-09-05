@@ -8,7 +8,7 @@
  */
 import { ref } from 'vue'
 import type { Offering } from './commanding'
-import type { Says } from './telling'
+import type { Voice } from './telling'
 
 /** The command whose step offers the two. */
 export const SYNCING = 'syncing'
@@ -37,7 +37,7 @@ export interface SyncingDeps {
   choosesSyncing(kept: boolean): Promise<string | null>
 }
 
-export function syncing(core: SyncingDeps, words: Words, said: Says) {
+export function syncing(core: SyncingDeps, words: Words, said: Voice) {
   /**
    * Whether the two are one name. It opens on what an installation nobody has
    * configured does, and is asked of the vault as the window opens.

@@ -24,7 +24,7 @@ import { named } from './workspace'
  * What a command asked over one tab is over: the note the tab means, and the
  * file a run is asked over. A kind that means neither answers with neither.
  */
-export interface At {
+export interface TabTarget {
   readonly path?: string
   readonly title?: string
   readonly file?: string
@@ -35,7 +35,7 @@ export interface At {
  * What one tab holds, as whoever answers on the person's behalf is told it: the
  * file it stands at, and the document or the recording it stands in.
  */
-export interface Attends {
+export interface OpenTab {
   readonly path: string
   readonly document?: OpenDocument
   readonly recording?: OpenRecording
@@ -66,9 +66,9 @@ export interface Kind<TabState> {
   /** The tab came on screen, where what it holds has room to measure. */
   shown?(held: TabState, id: string): void
   /** What a command asked over one of its tabs is over. */
-  at?(held: TabState): At
+  at?(held: TabState): TabTarget
   /** What one of its tabs holds, as whoever answers for the person is told it. */
-  attends?(held: TabState): Attends
+  attends?(held: TabState): OpenTab
   /**
    * The tab lets go of what it held. False keeps it on screen: what it holds
    * has something to finish, and closes the tab itself once it has.

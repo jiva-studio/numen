@@ -5,7 +5,7 @@
  * what it does is asked of it here through a stand-in element.
  */
 import { describe, expect, it } from 'vitest'
-import { audio, type Makes } from './playing'
+import { audio, type AudioFactory } from './playing'
 import { WORDS } from './words'
 
 const TALK = 'http://127.0.0.1:1/files/w/v/talk.mp3'
@@ -97,7 +97,7 @@ function stands() {
 /** A player standing on one element, and the element it stands on. */
 const player = () => {
   const stood = stands()
-  const makes: Makes = () => stood.element as unknown as HTMLAudioElement
+  const makes: AudioFactory = () => stood.element as unknown as HTMLAudioElement
   return { plays: audio(makes), ...stood }
 }
 

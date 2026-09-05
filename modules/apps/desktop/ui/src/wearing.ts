@@ -14,8 +14,8 @@ import { computed, ref, shallowRef, watch } from 'vue'
 import { asking } from './asking'
 import type { Offered, Offering } from './commanding'
 import { following } from '@numen/ui'
-import type { Says } from './telling'
-import type { Both, Bounds, Catalogue, Mode, Ranges, Sizes, Themes, Wearable } from './theme'
+import type { Voice } from './telling'
+import type { Bounds, Catalogue, Mode, Ranges, Scales, Sizes, Themes, Wearable } from './theme'
 
 /** Everything the appearance says in the window's voice. */
 export interface Words {
@@ -214,15 +214,15 @@ const once = (rows: readonly Offered[]): readonly Offered[] => {
 const NOWHERE: Bounds = { least: 0, most: 0 }
 
 /** What is said of one of the two sizes. */
-const its = <T,>(both: Both<T>, which: Which): T => both[which]
+const its = <T,>(both: Scales<T>, which: Which): T => both[which]
 
 /** The pair with what is said of one of the two put in its place. */
-const onto = <T,>(both: Both<T>, which: Which, one: T): Both<T> => ({ ...both, [which]: one })
+const onto = <T,>(both: Scales<T>, which: Which, one: T): Scales<T> => ({ ...both, [which]: one })
 
 export function wearing(
   core: Themes,
   words: Words,
-  said: Says,
+  said: Voice,
   sheet: Document = document,
   wait: (ms: number) => Promise<unknown> = sleep,
 ) {

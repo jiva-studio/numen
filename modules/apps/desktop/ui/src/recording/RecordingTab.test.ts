@@ -15,7 +15,7 @@ import { runnable } from '../commanding'
 import RecordingTab from './RecordingTab.vue'
 import { transcribed } from './kind'
 import { transcript, type Cue, type Recordings } from './transcript'
-import type { Player, Plays } from './playing'
+import type { Player, CanPlayType } from './playing'
 import { WORDS } from './words'
 
 const CUES: readonly Cue[] = [
@@ -61,7 +61,7 @@ function played(): Player {
  */
 function tab(
   cues: readonly Cue[] = CUES,
-  plays: Plays = () => true,
+  plays: CanPlayType = () => true,
   canRun: (run: string) => boolean = () => true,
 ) {
   const asked: string[] = []

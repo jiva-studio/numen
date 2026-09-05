@@ -8,7 +8,7 @@
  */
 import { ref, shallowRef } from 'vue'
 import type { Model, Written } from '../core'
-import type { Says } from '../telling'
+import type { Voice } from '../telling'
 import { write } from './json5'
 
 /** Everything this says in the window's voice. */
@@ -41,7 +41,7 @@ export const settingAt = (held: unknown, at: readonly string[]): unknown => {
   return value
 }
 
-export function configuring(core: ConfiguringDeps, words: Words, said: Says) {
+export function configuring(core: ConfiguringDeps, words: Words, said: Voice) {
   /** Every setting as it stands. It holds nothing until the vault has answered. */
   const held = shallowRef<unknown>({})
 

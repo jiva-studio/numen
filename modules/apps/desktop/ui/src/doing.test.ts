@@ -5,7 +5,7 @@
  * or removed, and that what a remove leaves behind is put to the person.
  */
 import { describe, expect, it } from 'vitest'
-import { commandsOf, deedOf, runnable, type Deed, type Where } from './commanding'
+import { commandsOf, deedOf, runnable, type Deed, type CommandTarget } from './commanding'
 import { does, reaching, type CommandDeps, type Store } from './doing'
 import type {
   Added,
@@ -23,7 +23,7 @@ import type {
 import { WORDS as words } from './words'
 
 /** What is in front, which every deed is carried out over. */
-const front = (over: Partial<Where> = {}): Where => ({
+const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: 'tab',
   kind: 'plex',
   path: 'physics/Ontology.md',

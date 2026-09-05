@@ -25,10 +25,10 @@ import {
   commanding,
   deedOf,
   runnable,
-  type Holds,
-  type Knows,
-  type Shown,
-  type Where,
+  type PaletteLists,
+  type NoteLookup,
+  type VaultRef,
+  type CommandTarget,
 } from './commanding'
 import { chorded, commandFor } from './keying'
 import { iconOfKind } from './icons'
@@ -303,7 +303,7 @@ held.declares([
 const palette = finding(core, words, { reading: meaning })
 
 /** The vault this window is showing, as the list of vaults has it. */
-const shown = ref<Shown>({ id: '', name: '' })
+const shown = ref<VaultRef>({ id: '', name: '' })
 
 /** Every vault the installation holds, as the list last answered. */
 const listed = ref<Listed>({ vaults: [], showing: '' })
@@ -329,7 +329,7 @@ const listing = async () => {
  * run is over. Each kind says that of one of its own tabs, and a kind that says
  * nothing is over neither.
  */
-const where = (): Where => {
+const where = (): CommandTarget => {
   const front = held.host.front()
   const tab = front?.id ?? ''
   const on = front && held.heldIn(tab)?.kind.at?.(front.held)
@@ -441,7 +441,7 @@ const reached = reaching(stores, puts)
 const titled = (id: string): string => stores.find((one) => one.has(id))?.called(id) ?? ''
 
 /** What the window knows about a note by the name it is filed under. */
-const knows: Knows = {
+const knows: NoteLookup = {
   called: (path) => {
     const held = reached.holding(path)
     return held === null ? plexes.names(path) : titled(held)
@@ -504,7 +504,7 @@ held.declares([configured.kind, file.kind])
 watch(dressed.sized, () => noted.measures())
 
 /** The lists the window itself holds, which a step of a command offers. */
-const kept: Holds = {
+const kept: PaletteLists = {
   offers: (command, typed) => {
     if (command === APPEARANCE) return dressed.offers()
     if (command === MODE) return dressed.modes()
@@ -598,7 +598,7 @@ const doing: CommandDeps = {
  * needs something asks for it, and the palette stands where it asks. One that
  * is not offered over what it was asked over says why.
  */
-const carries = (id: string, at: Where) => {
+const carries = (id: string, at: CommandTarget) => {
   const deed = commands.asks(id, at)
   if (deed) return void does(deed, doing, words)
   if (commands.open.value) return palette.shows(false)

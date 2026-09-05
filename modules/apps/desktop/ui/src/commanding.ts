@@ -56,7 +56,7 @@ export interface Offering {
  * standing on. A list is read again every time the step is drawn, so what the
  * window holds may change while the step stands open.
  */
-export interface Holds {
+export interface PaletteLists {
   /**
    * What this command offers now, in the bands it is drawn in. The words typed
    * come too: a list may hold a row made out of them.
@@ -71,7 +71,7 @@ export interface Holds {
  * stands open while the vault moves under it, and this is read again each time
  * the step is drawn and once more as the deed is made.
  */
-export interface Knows {
+export interface NoteLookup {
   /** What it is called now, and nothing where the window names it nothing. */
   called(path: string): string
   /** The identity of the tab holding it, and nothing where none holds it. */
@@ -96,10 +96,10 @@ export type Step =
   | 'exactly'
 
 /** What a command wants before it can happen, which is the step that asks. */
-export type Needed = Exclude<Step, 'commands'>
+export type AskingStep = Exclude<Step, 'commands'>
 
 /** The vault a command is over: the identity the list gives it, and its name. */
-export interface Shown {
+export interface VaultRef {
   readonly id: string
   readonly name: string
 }
@@ -108,7 +108,7 @@ export interface Shown {
  * What is in front of the person, and the note it means. An agent tab means
  * the note the plex is standing on.
  */
-export interface Where {
+export interface CommandTarget {
   /** The tab in front, for a command about the tab itself. */
   readonly tab: string
   /** The word its kind is filed under, and nothing for a tab holding nothing. */
@@ -132,13 +132,13 @@ export interface Where {
   /** The other files it is over, beside the one at `path`. */
   readonly others?: readonly string[]
   /** The vault the window is showing, and nothing where it shows none. */
-  readonly vault: Shown
+  readonly vault: VaultRef
   /** Whether the vault has been read and can be asked to do anything. */
   readonly ready: boolean
 }
 
 /** The words the step that asks for the name typed back is drawn in. */
-export interface Warns {
+export interface RetypeWords {
   /** What it does, and what it leaves behind. */
   readonly does: string
   readonly then: string
@@ -147,7 +147,7 @@ export interface Warns {
 }
 
 /** The words the step that confirms is drawn in. */
-export interface Answers {
+export interface ConfirmWords {
   /** The answer that changes nothing, and what it leaves. */
   readonly keeps: string
   readonly kept: string
@@ -163,18 +163,18 @@ export interface Command {
   /** The keystroke that reaches it away from the palette. */
   readonly keys?: PaletteKeys
   /** What it asks for before it happens. */
-  readonly needs?: Needed
+  readonly needs?: AskingStep
   /** The step it asks for once the first one is answered. */
-  readonly next?: Needed
+  readonly next?: AskingStep
   /** The band it is offered in. */
   readonly band: Band
   /** Whether it is offered at all over what is in front, in this window. */
-  where(at: Where, runs: Runnable): boolean
+  where(at: CommandTarget, runs: Runnable): boolean
   /** What stands in the field when its step opens, for the person to replace. */
-  filled?(at: Where): string
+  filled?(at: CommandTarget): string
   /** What its step says, where that step confirms or asks for the name back. */
-  readonly answers?: Answers
-  readonly warns?: Warns
+  readonly answers?: ConfirmWords
+  readonly warns?: RetypeWords
   /** The command Shift and Enter reach on the same row. */
   readonly also?: string
 }
@@ -185,14 +185,14 @@ export interface Deed {
   /** The note it is over. Empty for a command over the window or the vault. */
   readonly path: string
   /** The vault it is over, which is the one the window shows until a step picks another. */
-  readonly vault: Shown
+  readonly vault: VaultRef
   /**
    * The identity of the tab holding that note, and nothing where none holds it.
    * A note that moves is at another name by the time the deed is carried out.
    */
   readonly note: string | null
   readonly title: string
-  /** The file a run is over, which is the one `Where` named. */
+  /** The file a run is over, which is the one `CommandTarget` named. */
   readonly file: string
   /** The other files it is over, beside the one at `path`. */
   readonly others: readonly string[]
@@ -355,10 +355,10 @@ const EACH = 8
 const HOLD = 120
 
 /** A command over the note in front, which there has to be one of. */
-const onNote = (at: Where): boolean => at.ready && at.path !== ''
+const onNote = (at: CommandTarget): boolean => at.ready && at.path !== ''
 
 /** A command over the vault in front, which there has to be one of. */
-const onVault = (at: Where): boolean => at.vault.id !== ''
+const onVault = (at: CommandTarget): boolean => at.vault.id !== ''
 
 /**
  * The runs this build cannot do at all, as one window has been told them. The
@@ -387,7 +387,7 @@ export const runnable = (): Runnable => {
  */
 const onSource =
   (run: string, source: Source) =>
-  (at: Where, runs: Runnable): boolean =>
+  (at: CommandTarget, runs: Runnable): boolean =>
     at.ready && at.file !== '' && at.source === source && runs.canRun(run)
 
 /**
@@ -400,7 +400,7 @@ const onSource =
  */
 const onEvidence =
   (run: string, source: Source, made: (carries: ArtifactStates) => boolean) =>
-  (at: Where, runs: Runnable): boolean =>
+  (at: CommandTarget, runs: Runnable): boolean =>
     onSource(run, source)(at, runs) && (isEmpty(at.made) || made(at.made))
 
 const isEmpty = (carries: ArtifactStates): boolean => Object.keys(carries).length === 0
@@ -621,7 +621,7 @@ export const overNote = (commands: readonly Command[]): readonly Command[] => {
 export const asksCommands = (was: string, now: string): boolean => was === '' && now === '>'
 
 /** One command as it is carried out, over what it was asked over. */
-export const deedOf = (id: string, at: Where, name = '', note: string | null = null): Deed => ({
+export const deedOf = (id: string, at: CommandTarget, name = '', note: string | null = null): Deed => ({
   id,
   path: at.path,
   vault: at.vault,
@@ -638,7 +638,7 @@ export const deedOf = (id: string, at: Where, name = '', note: string | null = n
  * The note a search did not find, made under the words that were looked for.
  * A seat hangs it off the note in front; anything else stands it on its own.
  */
-export const creates = (seat: string, name: string, at: Where): Deed =>
+export const creates = (seat: string, name: string, at: CommandTarget): Deed =>
   SEATED.includes(seat) && at.path
     ? deedOf(seat, at, name)
     : deedOf('note', { ...at, path: '', title: '' }, name)
@@ -654,7 +654,7 @@ export const offering = (
   bands: readonly PaletteBand[],
   typed: string,
   words: Words,
-  at: Where,
+  at: CommandTarget,
 ): readonly PaletteBand[] => {
   const name = typed.trim()
   const empty = bands.length > 0 && bands.every((one) => one.items.length === 0 && !one.working)
@@ -686,10 +686,10 @@ export const offering = (
 }
 
 /** One step of a command: what it asks for, and what it is over. */
-interface Asked {
-  readonly step: Needed
+interface PendingStep {
+  readonly step: AskingStep
   readonly command: Command
-  readonly on: Where
+  readonly on: CommandTarget
 }
 
 const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
@@ -697,9 +697,9 @@ const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
 export function commanding(
   core: CommandingDeps,
   words: Words,
-  at: () => Where,
-  knows: Knows,
-  holds: Holds,
+  at: () => CommandTarget,
+  knows: NoteLookup,
+  holds: PaletteLists,
   runs: Runnable,
   wait: (ms: number) => Promise<unknown> = sleep,
 ) {
@@ -715,7 +715,7 @@ export function commanding(
    * The steps a command asked for, the last of them the one being asked now.
    * None of them is the list of commands itself.
    */
-  const steps = shallowRef<readonly Asked[]>([])
+  const steps = shallowRef<readonly PendingStep[]>([])
 
   /** The names the vault answered the step that picks a note with. */
   const found = shallowRef<readonly Named[]>([])
@@ -731,10 +731,10 @@ export function commanding(
   const asked = latest()
 
   /** What the commands are over, as the window stands now. */
-  const on = computed<Where>(() => at())
+  const on = computed<CommandTarget>(() => at())
 
   /** One command as it is carried out, over the note the window holds it by. */
-  const deed = (id: string, over: Where, name = ''): Deed =>
+  const deed = (id: string, over: CommandTarget, name = ''): Deed =>
     deedOf(id, over, name, over.path ? knows.holding(over.path) : null)
 
   /**
@@ -742,7 +742,7 @@ export function commanding(
    * over the one the window shows; one over a note is over the note at the name
    * it is filed under now.
    */
-  const calling = (step: Asked): string =>
+  const calling = (step: PendingStep): string =>
     step.command.band === 'vault'
       ? step.on.vault.name
       : knows.called(step.on.path) || step.on.title
@@ -751,13 +751,13 @@ export function commanding(
    * What a step is over, as its answer names it: the one thing by the name it
    * carries, or how many things there are.
    */
-  const named = (step: Asked): string => {
+  const named = (step: PendingStep): string => {
     const others = step.on.others?.length ?? 0
     return others > 0 ? words.several(others + 1) : `“${calling(step)}”`
   }
 
   /** The step being asked, and nothing at the list of commands. */
-  const here = computed<Asked | null>(() => steps.value.at(-1) ?? null)
+  const here = computed<PendingStep | null>(() => steps.value.at(-1) ?? null)
 
   /** Which step this is, in a few words, drawn beside the field. */
   const crumb = computed(() => here.value?.command.text ?? words.command)
@@ -870,7 +870,7 @@ export function commanding(
   }
 
   /** One command as it is drawn, and nothing where the words typed leave it out. */
-  const drawn = (one: Command, over: Where, word: string): PaletteItem | null => {
+  const drawn = (one: Command, over: CommandTarget, word: string): PaletteItem | null => {
     const found = word === '' ? -1 : one.text.toLowerCase().indexOf(word)
     if (word !== '' && found < 0) return null
     const also = one.also ? byId.get(one.also) : undefined
@@ -887,11 +887,11 @@ export function commanding(
   }
 
   /** Why nothing over the note in front is offered. */
-  const why = (over: Where): string =>
+  const why = (over: CommandTarget): string =>
     !over.ready ? words.indexing : over.path ? words.noneFound : words.noNote
 
   /** Every command offered over what is in front, in the bands it holds. */
-  const listed = (over: Where, text: string): readonly PaletteBand[] => {
+  const listed = (over: CommandTarget, text: string): readonly PaletteBand[] => {
     const word = text.trim().toLowerCase()
     const items = (band: Band): readonly PaletteItem[] =>
       commands
@@ -965,7 +965,7 @@ export function commanding(
    * They are read again on every keystroke, and a row drawn as not to be chosen
    * is not chosen.
    */
-  const choosing = (step: Asked, text: string): readonly PaletteBand[] => {
+  const choosing = (step: PendingStep, text: string): readonly PaletteBand[] => {
     const word = text.trim().toLowerCase()
     return holds.offers(step.command.id, text).map((band) => ({
       id: band.id,
@@ -1002,7 +1002,7 @@ export function commanding(
    * ahead of their folder, and cannot be chosen. The folder is what tells one
    * vault from another, so it keeps the room.
    */
-  const listing = (text: string, step: Asked): PaletteBand => {
+  const listing = (text: string, step: PendingStep): PaletteBand => {
     const word = text.trim().toLowerCase()
     const items: PaletteItem[] = known.value
       .filter((one) => word === '' || one.displayName.toLowerCase().includes(word))
@@ -1030,9 +1030,9 @@ export function commanding(
    * nothing is drawn first, and it is the one the keyboard opens on. Each is
    * reached by the name it is offered under, as an item of any other step is.
    */
-  const asking = (step: Asked, text: string): PaletteBand => {
+  const asking = (step: PendingStep, text: string): PaletteBand => {
     const word = text.trim().toLowerCase()
-    const { keeps = '', kept = '', does = '', then = '' }: Partial<Answers> =
+    const { keeps = '', kept = '', does = '', then = '' }: Partial<ConfirmWords> =
       step.command.answers ?? {}
     const items: PaletteItem[] = [
       {
@@ -1059,9 +1059,9 @@ export function commanding(
   }
 
   /** The name typed back, which is the one thing that reaches destroying. */
-  const exactly = (step: Asked, text: string): PaletteBand => {
+  const exactly = (step: PendingStep, text: string): PaletteBand => {
     const title = calling(step)
-    const { does = '', then = '' }: Partial<Warns> = step.command.warns ?? {}
+    const { does = '', then = '' }: Partial<RetypeWords> = step.command.warns ?? {}
     return {
       id: 'exactly',
       title: words.exactly,
@@ -1089,12 +1089,12 @@ export function commanding(
   })
 
   /** What a step asks of the application as it is put in front of the person. */
-  const begins = (step: Asked | null) => {
+  const begins = (step: PendingStep | null) => {
     if (step?.step === 'vaults') void lists()
   }
 
   /** A step opened, with whatever it wants the person to replace standing in it. */
-  const puts = (step: Asked) => {
+  const puts = (step: PendingStep) => {
     drop()
     typed.value = step.command.filled?.(step.on) ?? ''
     steps.value = [...steps.value, step]
@@ -1124,7 +1124,7 @@ export function commanding(
    * something opens the step that asks for it; one that needs nothing is handed
    * straight back to be carried out.
    */
-  const asks = (id: string, over: Where): Deed | null => {
+  const asks = (id: string, over: CommandTarget): Deed | null => {
     const command = byId.get(id)
     if (!command || !command.where(over, runs)) return null
     if (!command.needs) return deed(command.id, over)
@@ -1140,7 +1140,7 @@ export function commanding(
    * Why a command asked for did nothing: the vault is unread, or what it was
    * asked over is not a note. One that was taken up says nothing.
    */
-  const refused = (id: string, over: Where): string => {
+  const refused = (id: string, over: CommandTarget): string => {
     const command = byId.get(id)
     if (!command || command.where(over, runs)) return ''
     return over.ready ? words.noNote : words.indexing

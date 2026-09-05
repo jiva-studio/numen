@@ -1,14 +1,14 @@
 /**
  * A voice a test speaks through, which keeps what it was told.
  *
- * Everything in the window that says something takes a `Says`, so a test that
+ * Everything in the window that says something takes a `Voice`, so a test that
  * wants to read what was said hands one of these over.
  */
-import type { Kind, Says } from '../telling'
+import type { Kind, Voice } from '../telling'
 
 export function voice() {
   const told: { text: string; kind: Kind }[] = []
-  const says: Says = (text, kind = 'report') => void told.push({ text, kind })
+  const says: Voice = (text, kind = 'report') => void told.push({ text, kind })
   return {
     says,
     /** Everything it was told, each with the voice it was said in. */

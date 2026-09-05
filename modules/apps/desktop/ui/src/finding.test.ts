@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { finding, type FindingDeps, type Way, type Named, type Passage, type Words } from './finding'
-import { later, type Later } from './testing/later'
+import { later, type Deferred } from './testing/later'
 
 const WORDS: Words = {
   names: 'Names',
@@ -26,8 +26,8 @@ const WORDS: Words = {
 
 /** A vault that answers when the test says so, and remembers what it was asked. */
 function asking() {
-  const names: Later<readonly Named[]>[] = []
-  const searched: { way: Way; answer: Later<readonly Passage[]> }[] = []
+  const names: Deferred<readonly Named[]>[] = []
+  const searched: { way: Way; answer: Deferred<readonly Passage[]> }[] = []
   const queries: string[] = []
 
   const core: FindingDeps = {

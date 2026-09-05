@@ -14,7 +14,7 @@ import {
   MAKING,
   offering,
   type Commands,
-  type Where,
+  type CommandTarget,
 } from './commanding'
 import { does, type CommandDeps } from './doing'
 import type { Searching } from './finding'
@@ -28,7 +28,7 @@ const props = defineProps<{
   search: Searching
   doing: CommandDeps
   /** What the commands are over, as the window stands now. */
-  where: () => Where
+  where: () => CommandTarget
   /** Where the window is taken by what the search turns up. */
   places: LandingDeps
 }>()

@@ -27,13 +27,13 @@ export interface Told {
 }
 
 /** One part of the window speaking. Nothing said clears what it last said. */
-export type Says = (text: string, kind?: Kind) => void
+export type Voice = (text: string, kind?: Kind) => void
 
 /** What the window has said, and what changes it. */
 export interface Telling {
   readonly said: Ref<readonly Told[]>
   /** A voice under a name of its own. */
-  under(name: string): Says
+  under(name: string): Voice
   /** A word the person is finished with, by the identity it was given. */
   forget(id: string): void
 }
@@ -50,7 +50,7 @@ export function telling(): Telling {
   let minted = 0
 
   const under =
-    (name: string): Says =>
+    (name: string): Voice =>
     (text, kind = 'report') => {
       // A voice saying again what it is already saying has said nothing new,
       // and what stands keeps its identity and its place.

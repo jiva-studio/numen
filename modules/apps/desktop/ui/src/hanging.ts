@@ -7,7 +7,7 @@
  */
 import { ref } from 'vue'
 import type { Offered, Offering } from './commanding'
-import type { Says } from './telling'
+import type { Voice } from './telling'
 
 /** The command whose step offers the two, and the one that offers the counts. */
 export const HANGING = 'hanging'
@@ -58,7 +58,7 @@ export interface HangingDeps {
 const ladder = (least: number, most: number): readonly number[] =>
   Array.from({ length: Math.max(0, most - least + 1) }, (_, at) => least + at)
 
-export function hanging(core: HangingDeps, words: Words, said: Says) {
+export function hanging(core: HangingDeps, words: Words, said: Voice) {
   /**
    * The two settings. They open on what an installation nobody has configured
    * does, and are asked of the vault as the window opens.

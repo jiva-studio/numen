@@ -6,7 +6,7 @@
  * list. Nothing here draws anything.
  */
 import type { PlexRelatedSeat } from '@numen/ui'
-import type { Deed, Runnable, Shown } from './commanding'
+import type { Deed, Runnable, VaultRef } from './commanding'
 import type { Opened } from './putting'
 import type {
   Artifact,
@@ -21,7 +21,7 @@ import type {
   Vaults,
 } from './core'
 import type { Made } from './note/creating'
-import type { Says } from './telling'
+import type { Voice } from './telling'
 import { AGENT, FILES, NOTE, PLEX, SETTINGS } from './workspace'
 
 /**
@@ -131,7 +131,7 @@ export interface CutMaker {
 /** The vaults this installation holds, as a command changes which one shows. */
 export interface VaultSwitcher extends Vaults {
   /** The vault the window is showing, under the name it has now. */
-  calls(vault: Shown): void
+  calls(vault: VaultRef): void
   /**
    * The page drawn again, on the vault the window shows now. Every tab and
    * every plex belonged to the vault that has gone.
@@ -198,7 +198,7 @@ export interface CommandDeps {
    * What was done, or could not be, in words a person reads. One command's
    * word replaces the last, and nothing said clears it.
    */
-  readonly says: Says
+  readonly says: Voice
 }
 
 /** Everything carrying a command out says in the window's voice. */

@@ -45,15 +45,15 @@ export interface Player {
 }
 
 /** What makes the element a sound is played through. A test says otherwise. */
-export type Makes = () => HTMLAudioElement
+export type AudioFactory = () => HTMLAudioElement
 
-const made: Makes = () => new Audio()
+const made: AudioFactory = () => new Audio()
 
 /**
  * One sound, played through one element made when it is first wanted. The
  * element is never put in the page, so nothing that is drawn can take it away.
  */
-export function audio(makes: Makes = made): Player {
+export function audio(makes: AudioFactory = made): Player {
   const address = ref('')
   const at = ref(0)
   const length = ref(0)
@@ -136,14 +136,14 @@ export function audio(makes: Makes = made): Player {
 /** The one player this window has. Every recording is played through it. */
 export const player: Player = audio()
 
-/** Answers is what says whether a kind of sound can be played. */
-export type Answers = (type: string) => boolean
+/** What is asked whether a kind of sound can be played. */
+export type MediaTypeProbe = (type: string) => boolean
 
-/** Plays is whether this window can play a recording of a media type. */
-export type Plays = (type: string) => boolean
+/** Whether this window can play a recording of a media type. */
+export type CanPlayType = (type: string) => boolean
 
 /** What the window itself says about a kind of sound. */
-const itself: Answers = (type) => {
+const itself: MediaTypeProbe = (type) => {
   try {
     return document.createElement('audio').canPlayType(type) !== ''
   } catch {
@@ -155,7 +155,7 @@ const itself: Answers = (type) => {
  * What this window can play. The answer is the window's own, and it is asked
  * once for each kind of sound however many recordings are open.
  */
-export function playable(answers: Answers = itself): Plays {
+export function playable(answers: MediaTypeProbe = itself): CanPlayType {
   const asked = new Map<string, boolean>()
   return (type) => {
     if (!type) return false

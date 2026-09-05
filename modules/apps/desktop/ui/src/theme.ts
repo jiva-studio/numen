@@ -31,7 +31,7 @@ export interface Wearable {
  * One thing said of each of the two sizes: how large the interface is drawn,
  * and how large the text a person reads is set.
  */
-export interface Both<T> {
+export interface Scales<T> {
   readonly interfaceScale: T
   readonly textScale: T
 }
@@ -43,10 +43,10 @@ export interface Bounds {
 }
 
 /** The two multipliers the window is drawn at. One is as designed. */
-export type Sizes = Both<number>
+export type Sizes = Scales<number>
 
 /** How far each of the two goes. */
-export type Ranges = Both<Bounds>
+export type Ranges = Scales<Bounds>
 
 /** Every theme there is, and what the settings say the window wears. */
 export interface Catalogue {

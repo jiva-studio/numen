@@ -10,7 +10,7 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { opensVault, Welcome } from '@numen/ui'
 import type { Tab } from '@numen/ui'
-import { deedOf, type Commands, type Shown, type Where } from './commanding'
+import { deedOf, type CommandTarget, type Commands, type VaultRef } from './commanding'
 import type { Listed } from './core'
 import { does, type CommandDeps } from './doing'
 import type { Searching } from './finding'
@@ -28,9 +28,9 @@ const props = defineProps<{
   commands: Commands
   search: Searching
   doing: CommandDeps
-  where: () => Where
+  where: () => CommandTarget
   /** A command asked for, which is what every way in but the commands comes to. */
-  carries: (id: string, at: Where) => void
+  carries: (id: string, at: CommandTarget) => void
 }>()
 
 /** What the welcome screen offers below the list of vaults. */
@@ -73,7 +73,7 @@ const welcoming = computed(
 const opens = (id: string) => {
   const one = props.listed.vaults.find((vault) => vault.name === id)
   if (!one) return
-  const vault: Shown = { id: one.name, name: one.displayName }
+  const vault: VaultRef = { id: one.name, name: one.displayName }
   void does(deedOf('openVault', { ...props.where(), vault }), props.doing, words)
 }
 

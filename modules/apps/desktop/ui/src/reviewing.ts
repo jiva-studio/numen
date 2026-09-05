@@ -7,7 +7,7 @@
  */
 import { ref } from 'vue'
 import type { Reviewing } from './core'
-import type { Says } from './telling'
+import type { Voice } from './telling'
 
 /** The hour an installation nobody has configured begins the day at. */
 export const DEFAULT_STARTS = '04:00'
@@ -26,7 +26,7 @@ export interface ReviewingDeps {
   choosesReviewing(starts: string): Promise<string | null>
 }
 
-export function reviewing(core: ReviewingDeps, words: Words, said: Says) {
+export function reviewing(core: ReviewingDeps, words: Words, said: Voice) {
   /** The hour in force. It opens where an installation nobody has configured begins. */
   const starts = ref(DEFAULT_STARTS)
 

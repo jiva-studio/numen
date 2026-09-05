@@ -92,7 +92,7 @@ const runnable = (run: MenuItem, canRun: CanRun): readonly MenuItem[] =>
 const SEVERAL: readonly MenuItem[] = [{ id: 'remove', text: own.remove, band: BAND.remove }]
 
 /** The row a menu was asked for on: what the vault holds there. */
-export interface On {
+export interface MenuRow {
   readonly source: Source
   readonly folder: boolean
 }
@@ -106,7 +106,7 @@ export type CanRun = (run: string) => boolean
  * that can be done to the one row it was asked for on.
  */
 export const itemsFor = (
-  on: On | null,
+  on: MenuRow | null,
   several: boolean,
   canRun: CanRun,
 ): readonly MenuItem[] => {

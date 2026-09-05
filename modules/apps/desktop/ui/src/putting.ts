@@ -7,7 +7,7 @@
  */
 import type { PlexShowing } from '@numen/ui'
 import type { FileKind, Made, NoteType, Refused, Stretch } from './core'
-import type { Says } from './telling'
+import type { Voice } from './telling'
 
 /**
  * What a file the window opens is opened as: which of three a note is, or the
@@ -158,7 +158,7 @@ export interface CuttingWords {
  * answers nothing at all is said here, because the roads that ask for one carry
  * no word of their own.
  */
-export function cutting(vault: CutWriter, puts: Putting, words: CuttingWords, said: Says) {
+export function cutting(vault: CutWriter, puts: Putting, words: CuttingWords, said: Voice) {
   const makes = async (what: Cut, folder: string, name: string): Promise<string> => {
     try {
       const answer =
