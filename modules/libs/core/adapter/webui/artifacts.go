@@ -185,13 +185,21 @@ func (a *API) run(
 
 	// What this machine has fetched is not asked about. A run comes up in its
 	// turn and fetches what it needs then.
-	state := v1.State_STATE_RUNNING
-	if by.Start(v, ref.Path) == port.Queued {
-		state = v1.State_STATE_QUEUED
-	}
+	//
 	// The list of what is being done draws the run from the moment it begins,
 	// under the work and the file it is over.
-	return &v1.Artifact{Name: named(v, ref.Path, id), State: state}, nil
+	return &v1.Artifact{
+		Name:  named(v, ref.Path, id),
+		State: beginning(by.Start(v, ref.Path)),
+	}, nil
+}
+
+// beginning is what a run just set going is, as the schema carries it.
+func beginning(started port.StartOutcome) v1.State {
+	if started == port.Queued {
+		return v1.State_STATE_QUEUED
+	}
+	return v1.State_STATE_RUNNING
 }
 
 // runner is what reads a scan or hears a recording. Nothing while the passes

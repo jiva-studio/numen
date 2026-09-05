@@ -146,7 +146,7 @@ func (Role) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{1}
 }
 
-// NamedBy is which of the three a note is shown by, and so which one a rename
+// NamedBy is which of the two a note is shown by, and so which one a rename
 // brings into line.
 type NamedBy int32
 
@@ -155,10 +155,8 @@ const (
 	NamedBy_NAMED_BY_UNSPECIFIED NamedBy = 0
 	// The `title` key of the frontmatter.
 	NamedBy_NAMED_BY_FRONTMATTER NamedBy = 1
-	// The first level-one heading of the prose.
-	NamedBy_NAMED_BY_HEADING NamedBy = 2
 	// The filename, which a rename moves and does not write.
-	NamedBy_NAMED_BY_FILENAME NamedBy = 3
+	NamedBy_NAMED_BY_FILENAME NamedBy = 2
 )
 
 // Enum value maps for NamedBy.
@@ -166,14 +164,12 @@ var (
 	NamedBy_name = map[int32]string{
 		0: "NAMED_BY_UNSPECIFIED",
 		1: "NAMED_BY_FRONTMATTER",
-		2: "NAMED_BY_HEADING",
-		3: "NAMED_BY_FILENAME",
+		2: "NAMED_BY_FILENAME",
 	}
 	NamedBy_value = map[string]int32{
 		"NAMED_BY_UNSPECIFIED": 0,
 		"NAMED_BY_FRONTMATTER": 1,
-		"NAMED_BY_HEADING":     2,
-		"NAMED_BY_FILENAME":    3,
+		"NAMED_BY_FILENAME":    2,
 	}
 )
 
@@ -1906,12 +1902,11 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"ROLE_CHILD\x10\x02\x12\r\n" +
 	"\tROLE_JUMP\x10\x03\x12\f\n" +
 	"\bROLE_REF\x10\x04\x12\x13\n" +
-	"\x0fROLE_ATTACHMENT\x10\x05*j\n" +
+	"\x0fROLE_ATTACHMENT\x10\x05*T\n" +
 	"\aNamedBy\x12\x18\n" +
 	"\x14NAMED_BY_UNSPECIFIED\x10\x00\x12\x18\n" +
-	"\x14NAMED_BY_FRONTMATTER\x10\x01\x12\x14\n" +
-	"\x10NAMED_BY_HEADING\x10\x02\x12\x15\n" +
-	"\x11NAMED_BY_FILENAME\x10\x032\x93\x06\n" +
+	"\x14NAMED_BY_FRONTMATTER\x10\x01\x12\x15\n" +
+	"\x11NAMED_BY_FILENAME\x10\x022\x93\x06\n" +
 	"\vNoteService\x12S\n" +
 	"\x0eGetOpeningNote\x12\x1f.numen.v1.GetOpeningNoteRequest\x1a .numen.v1.GetOpeningNoteResponse\x12Y\n" +
 	"\x10GetNeighbourhood\x12!.numen.v1.GetNeighbourhoodRequest\x1a\".numen.v1.GetNeighbourhoodResponse\x12Y\n" +

@@ -303,7 +303,7 @@ message WriteLinkResponse {
   optional Refusal refusal = 1;
 }
 
-// NamedBy is which of the three a note is shown by, and so which one a rename
+// NamedBy is which of the two a note is shown by, and so which one a rename
 // brings into line.
 enum NamedBy {
   // Nothing named the note.
@@ -312,11 +312,8 @@ enum NamedBy {
   // The `title` key of the frontmatter.
   NAMED_BY_FRONTMATTER = 1;
 
-  // The first level-one heading of the prose.
-  NAMED_BY_HEADING = 2;
-
   // The filename, which a rename moves and does not write.
-  NAMED_BY_FILENAME = 3;
+  NAMED_BY_FILENAME = 2;
 }
 
 message RenameNoteRequest {

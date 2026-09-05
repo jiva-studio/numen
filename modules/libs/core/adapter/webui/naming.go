@@ -88,7 +88,7 @@ func (a *API) removal(
 	return a.Notes.Remove.Execute(ctx, v, path)
 }
 
-// namedByOf is which of the three a rename wrote, as the schema carries it.
+// namedByOf is which of the two a rename wrote, as the schema carries it.
 func namedByOf(by note.NamedBy) v1.NamedBy {
 	switch by {
 	case note.ByFrontmatter:
