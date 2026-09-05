@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
@@ -22,12 +23,13 @@ var ErrNoNote = errors.New("the vault holds no note at this path")
 var ErrUnlevelled = errors.New("the vault was written and the index was not brought level with it")
 
 // Levelled is what bringing the index up to date came to, said so that a caller
-// can tell it from a write that never landed.
-func Levelled(path string, err error) error {
+// can tell it from a write that never landed. The paths are the ones the index
+// was asked about.
+func Levelled(err error, paths ...string) error {
 	if err == nil {
 		return nil
 	}
-	return fmt.Errorf("%w: %s: %w", ErrUnlevelled, path, err)
+	return fmt.Errorf("%w: %s: %w", ErrUnlevelled, strings.Join(paths, ", "), err)
 }
 
 // missing is ErrNoNote where the vault holds no note at the path, and the error
@@ -82,7 +84,7 @@ func (e Editing) Apply(ctx context.Context, v domain.Vault, path string, change 
 	}
 	// The file is on disk, so the fingerprint stands beside whatever the
 	// levelling came to and a caller can tell the two apart.
-	return written, Levelled(path, e.Index(ctx, v, []string{path}))
+	return written, Levelled(e.Index(ctx, v, []string{path}), path)
 }
 
 // splice is the read, the change and the write, under this vault's write lock

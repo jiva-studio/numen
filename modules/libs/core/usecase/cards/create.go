@@ -136,5 +136,5 @@ func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, 
 	// The file is on disk from here on, so what comes back says where it is
 	// whether or not the index caught up.
 	made := CreateNoteResult{Path: path, ID: identifier, Title: title}
-	return made, u.Index(ctx, v, []string{path})
+	return made, note.Levelled(u.Index(ctx, v, []string{path}), path)
 }

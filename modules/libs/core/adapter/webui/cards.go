@@ -92,10 +92,12 @@ func (a *API) makes(
 	defer a.Writing.done()
 
 	made, err := cut(showing, cards.New{Title: title, Folder: folder})
-	if err == nil {
+	if err == nil || errors.Is(err, note.ErrUnlevelled) {
 		if a.Wrote != nil {
 			a.Wrote()
 		}
+		// The file is on disk under that name and nothing renumbers a second
+		// attempt, so the path is the only way back to it.
 		return made, nil, nil
 	}
 	if errors.Is(err, cards.ErrNoFields) {
