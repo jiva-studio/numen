@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import PlexNodeView from './PlexNodeView.vue'
 import { OPENING, type Widened } from '../dwell'
 import { hangParts, type PlexPart } from '../inside'
-import { stubEnvironment } from '../../fixtures/clock'
+import { stubClock } from '../../fixtures/clock'
 import type { GestureRole, PlacedNode, PlexSeat } from '../model'
 
 const nodeAt = (over: Partial<PlacedNode> = {}): PlacedNode => ({
@@ -319,14 +319,14 @@ describe('a box with more of its title to show', () => {
     gestureRole: GestureRole = 'open',
   ) => {
     vi.useFakeTimers()
-    const world = stubEnvironment()
+    const world = stubClock()
     const node = mount(PlexNodeView, {
       props: {
         node: nodeAt(over),
         wide,
         dwell: WAIT,
         gestureRole,
-        environment: world.environment,
+        clock: world.clock,
       },
     })
     return { node, world }
@@ -437,9 +437,9 @@ describe('a box with nothing more to show', () => {
 
   const rest = async (props: Record<string, unknown>) => {
     vi.useFakeTimers()
-    const world = stubEnvironment()
+    const world = stubClock()
     const node = mount(PlexNodeView, {
-      props: { node: nodeAt(), dwell: WAIT, environment: world.environment, ...props },
+      props: { node: nodeAt(), dwell: WAIT, clock: world.clock, ...props },
     })
     await node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT)
@@ -488,7 +488,7 @@ describe('the parts a node hangs', () => {
 
   const mountInside = (held: readonly PlexPart[], wide: Widened | null = null) => {
     vi.useFakeTimers()
-    const world = stubEnvironment()
+    const world = stubClock()
     const node = mount(PlexNodeView, {
       props: {
         node: nodeAt(),
@@ -498,7 +498,7 @@ describe('the parts a node hangs', () => {
           margin: 20,
         }),
         dwell: WAIT,
-        environment: world.environment,
+        clock: world.clock,
       },
     })
     return { node, world }

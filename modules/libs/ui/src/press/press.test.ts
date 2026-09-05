@@ -6,7 +6,7 @@ import { effectScope } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import { usePressDrag } from './press'
 import type { Point } from '../lib/geometry'
-import type { Environment } from '../lib/environment'
+import type { Clock } from '../lib/clock'
 
 const pointer = (type: string, x: number, y: number) =>
   new PointerEvent(type, { clientX: x, clientY: y, bubbles: true })
@@ -18,7 +18,7 @@ function following(threshold = 4) {
   let next: ((now: number) => void) | null = null
 
   /** A clock whose next frame comes when the test says so. */
-  const environment: Environment = {
+  const clock: Clock = {
     now: () => 0,
     schedule: (run) => {
       next = run
@@ -33,7 +33,7 @@ function following(threshold = 4) {
   const press = scope.run(() =>
     usePressDrag<string, Point>({
       threshold: () => threshold,
-      environment: () => environment,
+      clock: () => clock,
       landingAt: (_held, at) => (at.x < 500 ? at : null),
       settle,
       began,

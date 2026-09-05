@@ -8,7 +8,7 @@ import './tokens/theme.css'
 import './window.css'
 
 export { default as Plex } from './plex/Plex.vue'
-export { browserEnvironment } from './plex/transition'
+export { browserClock } from './plex/transition'
 export { countOf, isStop, seatWord, showingOf, SEATS, SHOWINGS } from './plex/model'
 
 export { default as Menu } from './menu/Menu.vue'
@@ -286,7 +286,7 @@ export { declared as cardFields } from './cards/order'
 export type { Banded, Drawn, Filled } from './cards/deck'
 export type { Stencil } from './cards/stencil'
 
-export type { Environment, PlexTransition } from './plex/transition'
+export type { Clock, PlexTransition } from './plex/transition'
 export { byHandle, byHolding } from './plex/reaching'
 export { APART, byDoubleClick, byDoubleTap, TAP } from './plex/showing'
 export type { Showing, ShowingSite } from './plex/showing'

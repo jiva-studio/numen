@@ -6,7 +6,7 @@
  */
 import { onScopeDispose, shallowRef, type ShallowRef } from 'vue'
 import type { Point } from '../lib/geometry'
-import type { Environment } from '../lib/environment'
+import type { Clock } from '../lib/clock'
 
 /** What is being carried, and whether the pointer has gone far enough to mean it. */
 export interface Pressing<Held> {
@@ -24,7 +24,7 @@ export interface Press<Held, At> {
   /** How far the pointer travels before a press becomes a drag. */
   readonly threshold: () => number
   /** The clock the release is held against. */
-  readonly environment: () => Environment
+  readonly clock: () => Clock
   /** Where letting go at this point would put what is held. */
   readonly landingAt: (held: Held, at: Point) => At | null
   /** What letting go after a drag comes to. The landing is nothing off any target. */
@@ -82,7 +82,7 @@ export function usePressDrag<Held, At>(press: Press<Held, At>): Pressed<Held, At
     if (held?.moved) press.settle(held.held, found)
     // Held one frame longer: the click that follows the release reads it and
     // stands down.
-    press.environment().schedule(() => {
+    press.clock().schedule(() => {
       dragging.value = null
     })
   }

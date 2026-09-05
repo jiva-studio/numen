@@ -2,7 +2,7 @@
 import { effectScope, nextTick, ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { OPENING, useDwell, widenedFor } from './dwell'
-import { stubEnvironment } from '../fixtures/clock'
+import { stubClock } from '../fixtures/clock'
 import type { PlacedNode } from './model'
 
 const WINDOW = { width: 1200, height: 800 }
@@ -78,9 +78,9 @@ describe('a box opening under the attention', () => {
   /** The wait, run in a scope of its own, as a component gives it. */
   const waiting = (on: () => string | null, delay: () => number = () => WAIT) => {
     vi.useFakeTimers()
-    const world = stubEnvironment()
+    const world = stubClock()
     const scope = effectScope()
-    const open = scope.run(() => useDwell(on, delay, world.environment))!
+    const open = scope.run(() => useDwell(on, delay, world.clock))!
     return { open, world, stop: () => scope.stop() }
   }
 

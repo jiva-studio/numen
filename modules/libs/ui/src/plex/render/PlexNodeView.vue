@@ -26,7 +26,7 @@ import { byHandle, type Reaching } from '../reaching'
 import { byDoubleClick, joined, type Showing } from '../showing'
 import type { HungParts } from '../inside'
 import { lerp } from '../arrange'
-import { browserEnvironment, type Environment } from '../transition'
+import { browserClock, type Clock } from '../transition'
 import type { MenuOpening } from '../../menu/item'
 import {
   handleIn,
@@ -64,7 +64,7 @@ const props = withDefaults(
     /** How this node is asked for on its own. The second click by default. */
     showing?: Showing
     /** The clock the opening is drawn on. Browser by default. */
-    environment?: Environment
+    clock?: Clock
   }>(),
   {
     gestureRole: 'open',
@@ -73,7 +73,7 @@ const props = withDefaults(
     dwell: DWELL,
     reaching: () => byHandle,
     showing: () => byDoubleClick,
-    environment: () => browserEnvironment,
+    clock: () => browserClock,
   },
 )
 
@@ -262,7 +262,7 @@ const under = computed(() =>
     : null,
 )
 
-const open = useDwell(() => under.value, () => props.dwell, props.environment)
+const open = useDwell(() => under.value, () => props.dwell, props.clock)
 
 /** The box as it is drawn: the one it was placed with, opened towards the widened one. */
 const box = computed<Widened>(() => {

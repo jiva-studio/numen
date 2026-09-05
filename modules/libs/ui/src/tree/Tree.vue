@@ -31,7 +31,7 @@ import {
   type ShownRow,
 } from './row'
 import type { Point } from '../lib/geometry'
-import { browserEnvironment, type Environment } from '../lib/environment'
+import { browserClock, type Clock } from '../lib/clock'
 import CarriedLabel from '../press/CarriedLabel.vue'
 import { usePressDrag } from '../press/press'
 
@@ -57,7 +57,7 @@ const props = withDefaults(
      */
     marking?: Marking | undefined
     /** The clock. Browser by default; a test hands in its own. */
-    environment?: Environment
+    clock?: Clock
   }>(),
   {
     open: () => [],
@@ -66,7 +66,7 @@ const props = withDefaults(
     name: 'Tree',
     counted: (rows: number) => `${rows} rows`,
     marking: undefined,
-    environment: () => browserEnvironment,
+    clock: () => browserClock,
   },
 )
 
@@ -138,7 +138,7 @@ const said = shallowRef(false)
 
 const { dragging, at, point, lift } = usePressDrag<readonly RowId[], Landing>({
   threshold: () => props.threshold,
-  environment: () => props.environment,
+  clock: () => props.clock,
   landingAt,
   settle: (rows, found) => {
     if (found) emit('move', rows, found)

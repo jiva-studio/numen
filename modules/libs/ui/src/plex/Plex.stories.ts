@@ -27,7 +27,7 @@ import type {
   PlexShowing,
   Point,
 } from './model'
-import type { Environment } from './transition'
+import type { Clock } from './transition'
 import type { MenuOpening } from '../menu/item'
 
 interface Knobs {
@@ -94,7 +94,7 @@ interface Knobs {
 
   /** Component props the panel has no business showing. */
   options?: PlexOptionsInput
-  environment?: Environment
+  clock?: Clock
 }
 
 const knobbed = (a: Knobs): PlexOptionsInput => ({
@@ -362,7 +362,7 @@ const meta = {
     // it names the nodes it makes, and what the component reports back.
     neighbourhood: { table: { disable: true } },
     options: { table: { disable: true } },
-    environment: { table: { disable: true } },
+    clock: { table: { disable: true } },
     naming: { table: { disable: true } },
     carried: { table: { disable: true } },
     carriedName: { table: { disable: true } },

@@ -106,7 +106,7 @@ through a move" a value with a test rather than a screenshot to be caught.
 
 **Two seams are meant to be used.** `Placement` decides coordinates and nothing
 else — a radial mind map is another implementation, not a branch inside this
-one. `Environment` is the clock, so a movement is stepped by hand in a test and
+one. `Clock` is the clock, so a movement is stepped by hand in a test and
 by the browser everywhere else.
 
 ## Styling

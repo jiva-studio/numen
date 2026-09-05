@@ -8,7 +8,7 @@
  * them all as one.
  */
 import { ref, type Ref } from 'vue'
-import { onNextFrame } from '../lib/environment'
+import { onNextFrame } from '../lib/clock'
 import { charsWord, type Turn } from './turn'
 import type { AgentPort, Place } from './agent'
 

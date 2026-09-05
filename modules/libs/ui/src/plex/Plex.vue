@@ -23,7 +23,7 @@ import { DWELL, widenedFor } from './dwell'
 import { byHandle, type Reaching } from './reaching'
 import { byDoubleClick, type Showing } from './showing'
 import { hangParts, type PlexPart } from './inside'
-import { usePlexTransition, browserEnvironment, type Environment } from './transition'
+import { usePlexTransition, browserClock, type Clock } from './transition'
 import type { Placement, PlexOptionsInput } from './arrange'
 import {
   countOf,
@@ -49,7 +49,7 @@ const props = withDefaults(
     /** Milliseconds. Zero arrives instantly. */
     duration?: number
     /** The clock. Browser by default; a test hands in its own. */
-    environment?: Environment
+    clock?: Clock
     /**
      * Seats a gesture may produce. A sibling is another of the parent's
      * children, so it is left out; which relationships exist is the caller's
@@ -93,7 +93,7 @@ const props = withDefaults(
   {
     showEdgeLabels: true,
     duration: 420,
-    environment: () => browserEnvironment,
+    clock: () => browserClock,
     creatable: () => ['parent', 'child', 'jump'],
     dragThreshold: 8,
     dwell: DWELL,
@@ -222,7 +222,7 @@ const { frame, moving } = usePlexTransition(
     labelDepth: measures.value?.labelDepth,
   }),
   () => props.duration,
-  props.environment,
+  props.clock,
 )
 
 /**
@@ -315,7 +315,7 @@ defineExpose({
       :dwell="dwell"
       :reaching="reaching"
       :showing="showing"
-      :environment="environment"
+      :clock="clock"
       :gesture-from="gesture.from.value"
       :gesture-at="gesture.at.value"
       :gesture-outcome="gesture.outcome.value"

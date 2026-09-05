@@ -7,7 +7,7 @@
  * hands identities back.
  */
 import { computed, provide, useTemplateRef } from 'vue'
-import { browserEnvironment, type Environment } from '../lib/environment'
+import { browserClock, type Clock } from '../lib/clock'
 import CarriedLabel from '../press/CarriedLabel.vue'
 import { usePressDrag } from '../press/press'
 import WorkspaceBranch from './render/WorkspaceBranch.vue'
@@ -38,9 +38,9 @@ const props = withDefaults(
     /** The least room a pane is worth drawing in. */
     minimum?: number
     /** The clock. Browser by default; a test hands in its own. */
-    environment?: Environment
+    clock?: Clock
   }>(),
-  { edge: 22, threshold: 4, minimum: 220, environment: () => browserEnvironment },
+  { edge: 22, threshold: 4, minimum: 220, clock: () => browserClock },
 )
 
 const slots = defineSlots<{
@@ -103,7 +103,7 @@ const {
   lift,
 } = usePressDrag<Carried, Landing>({
   threshold: () => props.threshold,
-  environment: () => props.environment,
+  clock: () => props.clock,
   landingAt: (_held, at) => landingAt(at.x, at.y),
   settle: (held, at) => {
     if (at) land(held, at)

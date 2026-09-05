@@ -27,7 +27,7 @@ import { DWELL, type Widened } from '../dwell'
 import { byHandle, type Reaching } from '../reaching'
 import { byDoubleClick, type Showing } from '../showing'
 import type { HungParts } from '../inside'
-import { browserEnvironment, type Environment } from '../transition'
+import { browserClock, type Clock } from '../transition'
 import {
   arrowTransformOf,
   pathOf,
@@ -73,7 +73,7 @@ const props = withDefaults(
     /** How a node is asked for on its own. The second click by default. */
     showing?: Showing
     /** The clock a box opens on. Browser by default; a test hands in its own. */
-    environment?: Environment
+    clock?: Clock
     /** A gesture in progress: where it started, where it is, what it means. */
     gestureFrom?: string | null
     gestureAt?: Point | null
@@ -98,7 +98,7 @@ const props = withDefaults(
     dwell: DWELL,
     reaching: () => byHandle,
     showing: () => byDoubleClick,
-    environment: () => browserEnvironment,
+    clock: () => browserClock,
     gestureFrom: null,
     gestureAt: null,
     gestureOutcome: null,
@@ -303,7 +303,7 @@ const ghost = computed<PlacedNode | null>(() => {
       :dwell="dwell"
       :reaching="reaching"
       :showing="showing"
-      :environment="environment"
+      :clock="clock"
       @activate="emit('activate', node.id)"
       @show="emit('show', node.id, $event)"
       @reach="emit('reach', node.id, $event)"

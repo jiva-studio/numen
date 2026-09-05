@@ -9,8 +9,8 @@ import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Tree from './Tree.vue'
 import type { Row } from './row'
-import { stubEnvironment } from '../fixtures/clock'
-import type { Environment } from '../lib/environment'
+import { stubClock } from '../fixtures/clock'
+import type { Clock } from '../lib/clock'
 
 const ROWS: readonly Row[] = [
   {
@@ -35,7 +35,7 @@ const ROWS: readonly Row[] = [
 const HEIGHT = 24
 
 /** A clock whose next frame is now. */
-const atOnce: Environment = {
+const atOnce: Clock = {
   now: () => 0,
   schedule: (run) => {
     run(0)
@@ -47,7 +47,7 @@ const atOnce: Environment = {
 const mountTree = (props: Record<string, unknown> = {}, slots: Record<string, string> = {}) =>
   mount(Tree, {
     attachTo: document.body,
-    props: { rows: ROWS, open: ['work'], environment: atOnce, ...props },
+    props: { rows: ROWS, open: ['work'], clock: atOnce, ...props },
     slots,
   })
 
@@ -460,15 +460,15 @@ describe('a drag', () => {
   })
 
   it('leaves the press that follows it standing down', async () => {
-    const clock = stubEnvironment()
-    const held = mountTree({ selected: ['loose'], environment: clock.environment })
+    const world = stubClock()
+    const held = mountTree({ selected: ['loose'], clock: world.clock })
 
     await dragTo(held, 'loose', 12)
     await rowIn(held, 'notes').trigger('click')
 
     expect(held.emitted('select')).toBeUndefined()
 
-    clock.run()
+    world.run()
     await rowIn(held, 'notes').trigger('click')
     expect(held.emitted('select')).toStrictEqual([[['notes']]])
   })

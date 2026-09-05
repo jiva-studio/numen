@@ -6,7 +6,7 @@
  */
 import { onScopeDispose, ref, watch, type Ref } from 'vue'
 import { easeOut, lerp, type Size } from './arrange'
-import { browserEnvironment, type Environment } from './transition'
+import { browserClock, type Clock } from './transition'
 import type { PlacedNode } from './model'
 
 /** How long a hand stays on a box before it opens, in milliseconds. */
@@ -60,7 +60,7 @@ export function widenedFor(
 export function useDwell(
   on: () => string | null,
   delay: () => number,
-  environment: Environment = browserEnvironment,
+  clock: Clock = browserClock,
 ): Ref<number> {
   const open = ref(0)
   let waiting: ReturnType<typeof setTimeout> | undefined
@@ -72,7 +72,7 @@ export function useDwell(
   }
 
   const stopMoving = () => {
-    if (frame !== null) environment.cancel(frame)
+    if (frame !== null) clock.cancel(frame)
     frame = null
   }
 
@@ -91,10 +91,10 @@ export function useDwell(
       started ??= now
       const t = span <= 0 ? 1 : Math.min(1, (now - started) / span)
       open.value = lerp(from, to, easeOut(t))
-      frame = t < 1 ? environment.schedule(step) : null
+      frame = t < 1 ? clock.schedule(step) : null
     }
 
-    frame = environment.schedule(step)
+    frame = clock.schedule(step)
   }
 
   watch(

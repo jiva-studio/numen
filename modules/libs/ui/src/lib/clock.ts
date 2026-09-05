@@ -1,13 +1,13 @@
 /** The clock, and the only thing in the library that knows what time it is. */
 
-export interface Environment {
+export interface Clock {
   /** Milliseconds, monotonic. Only differences are used. */
   readonly now: () => number
   readonly schedule: (run: (now: number) => void) => number
   readonly cancel: (handle: number) => void
 }
 
-export const browserEnvironment: Environment = {
+export const browserClock: Clock = {
   now: () => performance.now(),
   schedule: (run) => requestAnimationFrame(run),
   cancel: (handle) => cancelAnimationFrame(handle),
@@ -19,6 +19,6 @@ export const browserEnvironment: Environment = {
  * hands in its own.
  */
 export const onNextFrame = (run: () => void): void => {
-  if (typeof requestAnimationFrame === 'function') browserEnvironment.schedule(run)
+  if (typeof requestAnimationFrame === 'function') browserClock.schedule(run)
   else run()
 }

@@ -14,7 +14,7 @@ import {
   ViewPlugin,
   type ViewUpdate,
 } from '@codemirror/view'
-import { browserEnvironment, type Environment } from '../plex/transition'
+import { browserClock, type Clock } from '../plex/transition'
 
 /** A change being made to this text by something other than the reader. */
 export interface EditorChange {
@@ -176,7 +176,7 @@ class Pace {
 
   constructor(
     private readonly view: EditorView,
-    private readonly environment: Environment,
+    private readonly clock: Clock,
   ) {
     this.take()
   }
@@ -195,11 +195,11 @@ class Pace {
     this.stop()
     const at = this.view.state.field(marked)
     if (!at.change || !at.reveal) return
-    this.handle = this.environment.schedule(this.step)
+    this.handle = this.clock.schedule(this.step)
   }
 
   private stop() {
-    if (this.handle !== null) this.environment.cancel(this.handle)
+    if (this.handle !== null) this.clock.cancel(this.handle)
     this.handle = null
     this.started = null
   }
@@ -216,9 +216,9 @@ class Pace {
     const reveal = revealOf(at.change.text, part)
     if (reveal.shown !== at.reveal.shown || reveal.fading !== at.reveal.fading)
       this.view.dispatch({ effects: stepped.of(reveal) })
-    if (part < 1) this.handle = this.environment.schedule(this.step)
+    if (part < 1) this.handle = this.clock.schedule(this.step)
   }
 }
 
-export const pacing = (environment: Environment = browserEnvironment) =>
-  ViewPlugin.define((view) => new Pace(view, environment))
+export const pacing = (clock: Clock = browserClock) =>
+  ViewPlugin.define((view) => new Pace(view, clock))

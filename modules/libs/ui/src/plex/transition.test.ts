@@ -3,7 +3,7 @@ import { effectScope, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { usePlexTransition } from './transition'
 import { neighbourhoods } from './fixtures/neighbourhoods'
-import { stubEnvironment } from '../fixtures/clock'
+import { stubClock } from '../fixtures/clock'
 import type { PlacedNode, PlexNeighbourhood } from './model'
 
 /** Run a composable inside a scope, as a component would. */
@@ -19,11 +19,11 @@ const at = (nodes: readonly PlacedNode[], id: string) =>
 
 describe('a movement stepped by hand', () => {
   it('starts where it was and arrives where it was sent', async () => {
-    const world = stubEnvironment()
+    const world = stubClock()
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
 
     const { frame, moving } = inScope(() =>
-      usePlexTransition(() => current.value, () => undefined, () => 400, world.environment),
+      usePlexTransition(() => current.value, () => undefined, () => 400, world.clock),
     )
 
     expect(moving.value).toBe(false)
@@ -48,10 +48,10 @@ describe('a movement stepped by hand', () => {
 
   it('measures from the first frame, not from when it was asked', async () => {
     // A backgrounded tab hands the first callback a stale timestamp.
-    const world = stubEnvironment()
+    const world = stubClock()
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
     const { moving } = inScope(() =>
-      usePlexTransition(() => current.value, () => undefined, () => 400, world.environment),
+      usePlexTransition(() => current.value, () => undefined, () => 400, world.clock),
     )
 
     current.value = neighbourhoods.leaf
@@ -66,10 +66,10 @@ describe('a movement stepped by hand', () => {
   })
 
   it('re-aims mid-movement instead of queueing', async () => {
-    const world = stubEnvironment()
+    const world = stubClock()
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
     const { frame } = inScope(() =>
-      usePlexTransition(() => current.value, () => undefined, () => 400, world.environment),
+      usePlexTransition(() => current.value, () => undefined, () => 400, world.clock),
     )
 
     current.value = neighbourhoods.leaf
@@ -89,10 +89,10 @@ describe('a movement stepped by hand', () => {
 
 describe('when nothing should move', () => {
   it('arrives at once when it is given no time to move in', async () => {
-    const world = stubEnvironment()
+    const world = stubClock()
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
     const { frame, moving } = inScope(() =>
-      usePlexTransition(() => current.value, () => undefined, () => 0, world.environment),
+      usePlexTransition(() => current.value, () => undefined, () => 0, world.clock),
     )
 
     current.value = neighbourhoods.leaf
@@ -104,10 +104,10 @@ describe('when nothing should move', () => {
   })
 
   it('arrives at once when given no time', async () => {
-    const world = stubEnvironment()
+    const world = stubClock()
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
     const { frame } = inScope(() =>
-      usePlexTransition(() => current.value, () => undefined, () => 0, world.environment),
+      usePlexTransition(() => current.value, () => undefined, () => 0, world.clock),
     )
 
     current.value = neighbourhoods.leaf
@@ -120,14 +120,14 @@ describe('when nothing should move', () => {
 
 describe('a change to the arrangement is a movement too', () => {
   it('travels to a new density rather than jumping to it', async () => {
-    const world = stubEnvironment()
+    const world = stubClock()
     const input = ref({ options: { maxPerLine: 5 } })
     const { moving } = inScope(() =>
       usePlexTransition(
         () => neighbourhoods.crowded,
         () => input.value,
         () => 400,
-        world.environment,
+        world.clock,
       ),
     )
 
@@ -140,11 +140,11 @@ describe('a change to the arrangement is a movement too', () => {
 
 describe('when the component goes away', () => {
   it('stops asking to be called back', async () => {
-    const world = stubEnvironment()
+    const world = stubClock()
     const current = ref<PlexNeighbourhood>(neighbourhoods.typical)
     const scope = effectScope()
     scope.run(() =>
-      usePlexTransition(() => current.value, () => undefined, () => 400, world.environment),
+      usePlexTransition(() => current.value, () => undefined, () => 400, world.clock),
     )
 
     current.value = neighbourhoods.leaf

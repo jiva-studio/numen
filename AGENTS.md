@@ -42,7 +42,7 @@ Paths below are relative to `modules/libs/core/` unless they say otherwise. The 
 ## The interface library
 
 22. Nothing in `modules/libs/ui` imports `@numen/protocol`, `@numen/desktop-ui` or `modules/apps/**` — not in a component, not in a story, not in a fixture. The dependency runs `modules/apps/*` → `modules/libs/ui`, never back and never sideways. → the package names fail to resolve because `modules/libs/ui/package.json` declares neither; a relative path into `apps/` would typecheck, and nothing refuses it
-23. A component's pure core takes the clock, the animation frame and the viewport as parameters. `Date.now`, `new Date()`, `Math.random`, `requestAnimationFrame`, `matchMedia` and `getBoundingClientRect` belong in `lib/environment.ts` and in `.vue` views, not in a pure `.ts`. → nothing refuses this today
+23. A component's pure core takes the clock, the animation frame and the viewport as parameters. `Date.now`, `new Date()`, `Math.random`, `requestAnimationFrame`, `matchMedia` and `getBoundingClientRect` belong in `lib/clock.ts` and in `.vue` views, not in a pure `.ts`. → nothing refuses this today
 
 ## The reviewer
 
