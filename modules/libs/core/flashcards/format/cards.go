@@ -2,9 +2,9 @@
 // the fields a card has and the faces it is shown by; a deck holds the cards.
 // It is pure: no filesystem, no clock, no database.
 //
-// A card is markdown and nothing else. The heading carries the structure, so a
-// value holds whatever markdown holds short of a heading of the three levels
-// the format spends.
+// A card is HTML. The file it is written in is cut at three heading levels, so
+// a value holds whatever HTML holds short of a heading of those three; one
+// wanting a heading writes it as <h4> or below.
 package format
 
 import (

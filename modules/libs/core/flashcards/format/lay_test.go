@@ -122,8 +122,8 @@ func declaring(fields ...string) format.Stencil {
 func TestLayFillsAFaceWithACard(t *testing.T) {
 	face := format.FaceTemplate{
 		Name:  "Recognise",
-		Front: "![[llama.jpg]]",
-		Back:  "**{{Name}}** is {{Height}} and lives {{Life span}}.",
+		Front: `<img src="llama.jpg" alt="a llama">`,
+		Back:  "<b>{{Name}}</b> is {{Height}} and lives {{Life span}}.",
 	}
 	card := format.Card{
 		Heading: "Llama",
@@ -135,10 +135,10 @@ func TestLayFillsAFaceWithACard(t *testing.T) {
 	}
 
 	front, back := format.Lay(declaring("Name", "Height", "Life span"), face, card)
-	if front != "![[llama.jpg]]" {
-		t.Errorf("front = %q, want the markdown around a placeholder untouched", front)
+	if front != `<img src="llama.jpg" alt="a llama">` {
+		t.Errorf("front = %q, want the markup around a placeholder untouched", front)
 	}
-	if want := `**Llama** is about 45" and lives about 20 years.`; back != want {
+	if want := `<b>Llama</b> is about 45" and lives about 20 years.`; back != want {
 		t.Errorf("back = %q, want %q", back, want)
 	}
 }
@@ -227,15 +227,15 @@ func TestBracesAreNotEscaped(t *testing.T) {
 	}
 }
 
-// A value is markdown, and it lays out as the person wrote it.
+// A value is HTML, and it lays out as the person wrote it.
 func TestAValueOfSeveralLinesLaysOutWhole(t *testing.T) {
 	card := format.Card{Heading: "Llama", Values: []format.Value{
-		{Field: "Height", Text: "#### At the shoulder\n\nabout 45\""},
+		{Field: "Height", Text: "<h4>At the shoulder</h4>\n\nabout 45\""},
 	}}
 
 	_, back := format.Lay(declaring("Name", "Height"),
-		format.FaceTemplate{Front: "{{Name}}", Back: "> {{Height}}"}, card)
-	if want := "> #### At the shoulder\n\nabout 45\""; back != want {
+		format.FaceTemplate{Front: "{{Name}}", Back: "<blockquote>{{Height}}</blockquote>"}, card)
+	if want := "<blockquote><h4>At the shoulder</h4>\n\nabout 45\"</blockquote>"; back != want {
 		t.Errorf("back = %q, want %q", back, want)
 	}
 }

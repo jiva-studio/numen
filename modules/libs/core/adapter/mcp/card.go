@@ -56,7 +56,7 @@ type Card struct {
 // FieldValue is what somebody wrote under one of a card's fields.
 type FieldValue struct {
 	Field string `json:"field" jsonschema:"the field's name, spelled as the stencil declares it"`
-	Text  string `json:"text" jsonschema:"the markdown under that heading"`
+	Text  string `json:"text" jsonschema:"the HTML under that heading"`
 }
 
 // Fault is one thing wrong with a deck, on the card it is against.
@@ -224,7 +224,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Description: "Write one card at the end of a deck, or at the end of one of its " +
 			"sections. Name the stencil it is cut by, as `card_stencil_list` gives that " +
 			"name under `name`, and give a value for every field that stencil declares, " +
-			"the first included. Do not write the markdown of a card yourself: a card " +
+			"the first included. Do not write a card into the deck yourself: a card " +
 			"written by hand without the wikilink under its heading is a card with no " +
 			"stencil, and nothing says so until somebody opens the deck. The card's " +
 			"heading is written from its first field, and the mark it is addressed by " +
@@ -453,7 +453,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 		Name:  "card_stencil_create",
 		Title: "Create a stencil",
 		Description: "Make a stencil: the fields a card is asked for, in the order to ask " +
-			"for them, and the faces one is shown through. A face is markdown with " +
+			"for them, and the faces one is shown through. A face is HTML with " +
 			"`{{Field}}` standing where a value goes, and every name in braces must be " +
 			"one of the fields. A card's heading is read from the first field, so there " +
 			"is at least one; it holds as many lines as a person writes, and the " +
@@ -536,7 +536,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 // Face is one way a stencil shows a card.
 type Face struct {
 	Name  string `json:"name" jsonschema:"what the face is called"`
-	Front string `json:"front" jsonschema:"what is shown before the answer, as markdown with {{Field}} where a value goes"`
+	Front string `json:"front" jsonschema:"what is shown before the answer, as HTML with {{Field}} where a value goes"`
 	Back  string `json:"back" jsonschema:"what is shown after it"`
 }
 
