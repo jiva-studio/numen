@@ -3,7 +3,7 @@
  * screen, and where each problem the vault reports is drawn.
  */
 import { describe, expect, it } from 'vitest'
-import { CARD_HEAD, cardEndOf as endOfCards } from '@numen/ui'
+import { CARD_HEAD, cardEndOf } from '@numen/ui'
 import type { VaultDeck, Problem, VaultStencil } from '../core'
 import {
   added,
@@ -443,7 +443,7 @@ describe('a card carried among the sections', () => {
   it('stands last under the section it was let go past the end of', () => {
     const held = sectioned()
     const roots = held.sections[0]?.id ?? ''
-    const moved = carried(held, LLAMA, endOfCards(roots))
+    const moved = carried(held, LLAMA, cardEndOf(roots))
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
       [ALPACA, roots],
       [LLAMA, roots],
@@ -452,7 +452,7 @@ describe('a card carried among the sections', () => {
 
   it('stands last under no section where it was let go past those before the first', () => {
     const held = sectioned()
-    const moved = carried(held, ALPACA, endOfCards(CARD_HEAD))
+    const moved = carried(held, ALPACA, cardEndOf(CARD_HEAD))
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
       [LLAMA, null],
       [ALPACA, null],
@@ -469,7 +469,7 @@ describe('a card carried among the sections', () => {
     }
     const deckLost = { ...held, cards: [lost, held.cards[1]!] }
 
-    const moved = carried(deckLost, ALPACA, endOfCards(CARD_HEAD))
+    const moved = carried(deckLost, ALPACA, cardEndOf(CARD_HEAD))
 
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
       [LLAMA, 'gone'],
@@ -479,7 +479,7 @@ describe('a card carried among the sections', () => {
 
   it('leaves the deck as it was where the card already stands last under that heading', () => {
     const held = sectioned()
-    expect(carried(held, ALPACA, endOfCards(held.sections[0]?.id ?? ''))).toStrictEqual(held)
+    expect(carried(held, ALPACA, cardEndOf(held.sections[0]?.id ?? ''))).toStrictEqual(held)
   })
 
   it('stands first and under no section where it was let go at the head of the deck', () => {
