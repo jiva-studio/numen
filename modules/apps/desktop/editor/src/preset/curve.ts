@@ -6,7 +6,6 @@
  * the control computes nothing. The line drawn while that answer is on its way
  * is arithmetic over the settings alone, and is shown as an approximation.
  */
-import { BudgetName } from '@numen/protocol'
 import { dayAfter, dayNamed, daysBetween } from '@numen/ui'
 import { DEFAULTS, NOWHERE } from './core'
 import type { Bounds, Curve, Goal, Place, Point, Rule, Settings, SettingsBounds } from './core'
@@ -163,44 +162,6 @@ export const costOf = (goal: Goal, point: Point): number =>
   goal === 'minutes' ? point.reviews : point.minutes
 
 /**
- * The budget each goal's own value closes a day by. A target closes no day of
- * its own: what closes a day worked to one is always a count.
- */
-const CLOSES: Record<Goal, readonly BudgetName[]> = {
-  minutes: [BudgetName.MINUTES_A_DAY],
-  retention: [],
-  date: [BudgetName.BY_DATE],
-}
-
-/**
- * Whether a budget is one a person is told about when it closed a day. Keyed by
- * the schema, so a budget added to it has to be answered for here before this
- * compiles.
- *
- * A day named by the debt or by a pause is not a day a budget cut short, and a
- * date is the goal itself wherever it stands.
- */
-const TOLD: Record<BudgetName, boolean> = {
-  [BudgetName.UNSPECIFIED]: false,
-  [BudgetName.MINUTES_A_DAY]: true,
-  [BudgetName.NEW_A_DAY]: true,
-  [BudgetName.REVIEWS_A_DAY]: true,
-  [BudgetName.BY_DATE]: false,
-  [BudgetName.BACKLOG]: false,
-  [BudgetName.PAUSED]: false,
-}
-
-/**
- * What closes the day here besides the goal on screen, and nothing where the
- * goal is the whole of it. A day nothing closed asked for every card there was,
- * and a day two budgets closed names both.
- */
-export const limiting = (curve: Curve, point: Point | null): readonly BudgetName[] => {
-  if (!curve.honest || !point) return []
-  return point.closed.filter((one) => TOLD[one] && !CLOSES[curve.goal].includes(one))
-}
-
-/**
  * The day the overdue pile is gone, read off the very projection the backlog is
  * drawn from. Null is a place with nothing overdue to be gone at all, and -1
  * is a pile still standing on the last day projected.
@@ -234,7 +195,6 @@ export const placeAt = (grid: readonly number[], share: number): number => {
   const last = grid.length - 1
   return Math.min(Math.max(Math.round(share * last), 0), last)
 }
-
 
 /** Why a preset's goal has nothing to work on, and empty where it has. */
 export type IdleReason = 'unpointed' | 'noCards' | 'beginsNothing' | ''

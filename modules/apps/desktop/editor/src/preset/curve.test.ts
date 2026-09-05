@@ -4,16 +4,14 @@
  * the curve produces.
  */
 import { describe, expect, it } from 'vitest'
-import { BudgetName } from '@numen/protocol'
 
-import { DEFAULTS, NOWHERE, type Curve, type Goal, type Point, type Settings } from './core'
+import { DEFAULTS, NOWHERE, type Curve, type Point, type Settings } from './core'
 import { BOUNDS } from '../testing/preset'
 import {
   approximate,
   costOf,
   FIELDS,
   held,
-  limiting,
   nearest,
   placeAt,
   fieldsUnder,
@@ -197,77 +195,6 @@ describe('what one place of the curve produces', () => {
   it('leaves the knob, the field and what is written at one value', () => {
     const made = producing(settings(), 2, curve, today, BOUNDS)
     expect(made.minutesADay).toBe(curve.grid[2])
-  })
-})
-
-describe('what closes the day where the goal on screen does not', () => {
-  const over = (goal: Goal): Curve => ({
-    goal,
-    grid: [0, 10, 20],
-    days: [],
-    at: [point(), point(), point()],
-    now: NOWHERE,
-    suggested: NOWHERE,
-    decks: 1,
-    cards: 400,
-    overdue: 0,
-    unbegun: 0,
-    honest: true,
-  })
-
-  // A target closes no day of its own, so a count closing one is always
-  // something other than the goal on screen.
-  it('is the count that closed a day worked to a target', () => {
-    expect(
-      limiting(over('retention'), point({ closed: [BudgetName.REVIEWS_A_DAY] })),
-    ).toStrictEqual([BudgetName.REVIEWS_A_DAY])
-    expect(limiting(over('retention'), point({ closed: [BudgetName.NEW_A_DAY] }))).toStrictEqual([
-      BudgetName.NEW_A_DAY,
-    ])
-  })
-
-  // A person raising one of two counts and finding nothing changed is reading a
-  // day the other closed too, so both are named.
-  it('is both counts where both closed the day', () => {
-    const both = point({ closed: [BudgetName.NEW_A_DAY, BudgetName.REVIEWS_A_DAY] })
-    expect(limiting(over('retention'), both)).toStrictEqual([
-      BudgetName.NEW_A_DAY,
-      BudgetName.REVIEWS_A_DAY,
-    ])
-  })
-
-  it('is the count that closed a day of minutes before the clock did', () => {
-    expect(limiting(over('minutes'), point({ closed: [BudgetName.NEW_A_DAY] }))).toStrictEqual([
-      BudgetName.NEW_A_DAY,
-    ])
-  })
-
-  it('is nothing where the goal on screen is what closed the day', () => {
-    expect(limiting(over('minutes'), point({ closed: [BudgetName.MINUTES_A_DAY] }))).toStrictEqual(
-      [],
-    )
-    expect(limiting(over('date'), point({ closed: [BudgetName.BY_DATE] }))).toStrictEqual([])
-  })
-
-  // The goal on screen is left out of a day it closed alongside another budget,
-  // and the other is named.
-  it('is what closed the day besides the goal on screen', () => {
-    const both = point({ closed: [BudgetName.MINUTES_A_DAY, BudgetName.NEW_A_DAY] })
-    expect(limiting(over('minutes'), both)).toStrictEqual([BudgetName.NEW_A_DAY])
-  })
-
-  // A day that asked for every card there was closed on nothing, and a pause
-  // is said elsewhere.
-  it('is nothing for a day no budget closed, nor for a preset paused', () => {
-    expect(limiting(over('minutes'), point({ closed: [] }))).toStrictEqual([])
-    expect(limiting(over('minutes'), point({ closed: [BudgetName.PAUSED] }))).toStrictEqual([])
-  })
-
-  it('is nothing of a line the window guessed, nor where there is no place', () => {
-    expect(
-      limiting({ ...over('retention'), honest: false }, point({ closed: [BudgetName.NEW_A_DAY] })),
-    ).toStrictEqual([])
-    expect(limiting(over('retention'), null)).toStrictEqual([])
   })
 })
 
