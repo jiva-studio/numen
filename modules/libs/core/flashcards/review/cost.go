@@ -40,6 +40,10 @@ var DefaultCost = AnswerCost{New: 20 * time.Second, Review: 8 * time.Second}
 // Costed is how long an answer takes in this history, from the times the
 // answers themselves carry. A kind of answer the history holds too few of
 // stands at the default.
+//
+// Production costs a preset at a time, through CostedUnder. This is the same
+// arithmetic over the whole history, which the tests of what a cost is need in
+// order to state a property of the cost without a grouping in front of it.
 func Costed(by Scheduler, answers []Answer) AnswerCost {
 	var took answerTimes
 	replayed(by, answers, func(before Schedule, a Answer) {
