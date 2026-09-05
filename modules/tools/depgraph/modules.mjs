@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 export const here = dirname(fileURLToPath(import.meta.url))
 export const root = resolve(here, '../../..')
-export const config = join(here, '.dependency-cruiser.cjs')
+export const config = join(here, 'rules.cjs')
 export const depcruise = join(here, 'node_modules/.bin/depcruise')
 
 export const modules = [
