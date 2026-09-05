@@ -59,7 +59,6 @@ export type { AxisPlacement, Box } from './placing/place'
 export { days as heatmapDays, fits as heatmapFits, weighs as heatmapWeighs } from './heatmap/heatmap'
 export type { Day as HeatmapDay, Room as HeatmapRoom, Tally as HeatmapTally } from './heatmap/heatmap'
 export { default as WelcomePage } from './welcome/WelcomePage.vue'
-export { default as Glyph } from './welcome/Glyph.vue'
 /** The letter a vault on that screen is opened by, and what a keystroke opens. */
 export { opensVault, typing, vaultLetter, VAULT_LETTERS } from './welcome/picking'
 export type { Offer, VaultRow, WelcomeAction } from './welcome/welcome'
@@ -224,7 +223,6 @@ export {
   refuses,
   sameRows,
   selects,
-  stepTo as stepToRow,
   TREE_KEYS,
 } from './tree/row'
 export type {
