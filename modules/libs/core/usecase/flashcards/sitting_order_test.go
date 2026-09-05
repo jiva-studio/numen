@@ -10,9 +10,9 @@ import (
 )
 
 // faces is the card faces a sitting asks, in the order it asks them.
-func faces(sat flashcards.Sitting) []review.CardFaceID {
-	out := make([]review.CardFaceID, 0, len(sat.Asked))
-	for _, one := range sat.Asked {
+func faces(sat flashcards.SessionResult) []review.CardFaceID {
+	out := make([]review.CardFaceID, 0, len(sat.Queue))
+	for _, one := range sat.Queue {
 		out = append(out, one.ID)
 	}
 	return out
