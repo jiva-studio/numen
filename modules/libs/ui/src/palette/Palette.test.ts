@@ -226,7 +226,7 @@ describe('walking the list', () => {
     expect(options()[2]?.textContent).toContain('Not this one')
 
     for (const _ of options()) await press('ArrowDown')
-    expect(document.body.querySelector('[data-off][data-here]')).toBeNull()
+    expect(document.body.querySelector('[data-disabled][data-here]')).toBeNull()
   })
 })
 

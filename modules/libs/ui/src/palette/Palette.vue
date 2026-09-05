@@ -418,7 +418,7 @@ onBeforeUnmount(() => {
               :aria-selected="row.at === here"
               :aria-disabled="row.item.disabled || undefined"
               :data-here="row.at === here || undefined"
-              :data-off="row.item.disabled || undefined"
+              :data-disabled="row.item.disabled || undefined"
               @pointermove="over(row.at, $event)"
               @pointerdown.prevent
               @click="choose(row.at, $event.shiftKey)"
@@ -617,7 +617,7 @@ onBeforeUnmount(() => {
   background: var(--numen-bubble-bg);
 }
 
-.palette__item[data-off] {
+.palette__item[data-disabled] {
   color: var(--numen-edge-label);
 }
 
