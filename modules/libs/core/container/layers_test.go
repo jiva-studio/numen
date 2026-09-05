@@ -309,6 +309,16 @@ var machinery = []string{
 	"container", "internal/onnxruntime", "internal/testsupport", "internal/wire",
 }
 
+// theMachine are the packages that are the machine and the world beyond it: the
+// process's files and its children, a socket, and the kernel itself. Each one
+// is an answer a scenario asks a port for.
+//
+// net/url is not here. An address taken apart and put together again is
+// arithmetic over a string, and nothing is dialled to do it.
+var theMachine = map[string]bool{
+	"os": true, "os/exec": true, "net": true, "net/http": true, "syscall": true,
+}
+
 // looking are the functions of path/filepath that are not path arithmetic.
 // Each one asks the machine what is there, and Abs answers against the folder
 // the process was started in, which a scenario is not written against.
@@ -319,7 +329,8 @@ var looking = map[string]bool{
 // A scenario asks a port what is on the machine, and never the machine. What a
 // path is once every link on the way to it is resolved is one such question,
 // and a folder handed in as a content URI has no answer for it: the disk this
-// would read is not the one the file is on.
+// would read is not the one the file is on. A file, a socket and a system call
+// are the same question asked further down.
 //
 // A path taken apart and put together again is arithmetic over a string and
 // stays here. What separates the two is whether the answer is on the disk.
@@ -344,7 +355,7 @@ func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
 			if err != nil {
 				return err
 			}
-			if to == "os" || to == "os/exec" {
+			if theMachine[to] {
 				wrong = append(wrong, path+" is compiled from "+to)
 			}
 		}
