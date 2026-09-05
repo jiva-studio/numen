@@ -19,8 +19,8 @@ func TestPreparingMakesTheRuntimeWithoutAModel(t *testing.T) {
 	if _, _, err := onnxruntime.Open(t.Context(), cfg.settings()); err != nil {
 		t.Skipf("no onnx runtime on this machine: %v", err)
 	}
-	standing.Store(false)
-	t.Cleanup(func() { standing.Store(false) })
+	prepared.Store(false)
+	t.Cleanup(func() { prepared.Store(false) })
 
 	if err := Prepare(t.Context(), cfg); err != nil {
 		t.Fatal(err)

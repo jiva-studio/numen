@@ -20,12 +20,12 @@ func init() {
 	})
 }
 
-// standing says whether the runtime a page is read through was made.
-var standing atomic.Bool
+// prepared says whether the runtime a page is read through was made.
+var prepared atomic.Bool
 
 // Prepared says whether this process made the runtime before it made anything
 // else.
-func Prepared() bool { return standing.Load() }
+func Prepared() bool { return prepared.Load() }
 
 // Prepare makes the runtime a page is read through, and is called before a
 // window is. Every page this process reads is read through it, and one made
@@ -38,6 +38,6 @@ func Prepare(ctx context.Context, cfg Config) error {
 	if _, _, err := onnxruntime.Open(ctx, cfg.settings()); err != nil {
 		return err
 	}
-	standing.Store(true)
+	prepared.Store(true)
 	return nil
 }
