@@ -25,8 +25,8 @@ withDefaults(
 </script>
 
 <template>
-  <p class="tool numen flex items-baseline gap-2 font-sans text-base text-hushed">
-    <span class="tool__mark" :data-working="working || undefined" />
+  <p class="tool-call numen flex items-baseline gap-2 font-sans text-base text-hushed">
+    <span class="tool-call__mark" :data-working="working || undefined" />
     <span class="min-w-0 truncate">{{ tool }}</span>
     <span v-if="about" class="min-w-0 flex-1 truncate opacity-70">{{ about }}</span>
     <span v-else class="flex-1" />
@@ -36,7 +36,7 @@ withDefaults(
 </template>
 
 <style scoped>
-.tool__mark {
+.tool-call__mark {
   flex: none;
   inline-size: 0.4em;
   block-size: 0.4em;
@@ -45,7 +45,7 @@ withDefaults(
   opacity: 0.5;
 }
 
-.tool__mark[data-working] {
+.tool-call__mark[data-working] {
   opacity: 1;
 }
 </style>

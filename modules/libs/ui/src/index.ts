@@ -154,7 +154,7 @@ export { holdsTheWindow, pointsOutward } from './linking/outward'
 export type { Opens } from './linking/outward'
 
 export { default as Prose } from './prose/Prose.vue'
-export { default as Tool } from './tool/Tool.vue'
+export { default as ToolCall } from './tool/ToolCall.vue'
 
 export { default as Activity } from './activity/Activity.vue'
 export {

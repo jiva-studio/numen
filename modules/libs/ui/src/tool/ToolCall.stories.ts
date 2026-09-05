@@ -4,11 +4,11 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
-import Tool from './Tool.vue'
+import ToolCall from './ToolCall.vue'
 
 const meta = {
-  title: 'Agent/Tool',
-  component: Tool,
+  title: 'Agent/Tool call',
+  component: ToolCall,
   parameters: {
     layout: 'centered',
     docs: {
@@ -22,7 +22,7 @@ const meta = {
     },
   },
   args: { tool: 'note_search', about: '', working: false },
-} satisfies Meta<typeof Tool>
+} satisfies Meta<typeof ToolCall>
 
 export default meta
 type Story = StoryObj<typeof meta>
@@ -42,13 +42,13 @@ export const Done: Story = {
 /** One after another, as a thread collects them. */
 export const InAThread: Story = {
   render: () => ({
-    components: { Tool },
+    components: { ToolCall },
     template: `
       <div class="numen flex w-[320px] flex-col gap-1 text-ink">
-        <Tool tool="note_search" about="entropy" />
-        <Tool tool="note_read" about="Entropy" />
-        <Tool tool="link_add" about="Entropy → Thermodynamics" />
-        <Tool tool="note_rewrite" about="Simple pendulum" working />
+        <ToolCall tool="note_search" about="entropy" />
+        <ToolCall tool="note_read" about="Entropy" />
+        <ToolCall tool="link_add" about="Entropy → Thermodynamics" />
+        <ToolCall tool="note_rewrite" about="Simple pendulum" working />
       </div>
     `,
   }),
@@ -74,7 +74,7 @@ export const BeingWritten: Story = {
     working: true,
   },
   play: async ({ canvasElement }) => {
-    const line = canvasElement.querySelector('.tool')
+    const line = canvasElement.querySelector('.tool-call')
     await expect(line).toHaveTextContent("Bram Doyle's warning")
     await expect(line).toHaveTextContent('12 015 characters')
   },

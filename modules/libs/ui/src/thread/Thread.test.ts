@@ -199,7 +199,7 @@ describe('the step each part is set at', () => {
   })
 
   it('sets a line about work at that step as well', () => {
-    expect(thread([doing('1')]).find('.tool').classes()).toContain('text-base')
+    expect(thread([doing('1')]).find('.tool-call').classes()).toContain('text-base')
   })
 
   it('says a turn did not send in the quiet step', () => {

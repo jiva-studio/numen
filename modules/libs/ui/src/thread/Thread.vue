@@ -9,7 +9,7 @@
  */
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 import Prose from '../prose/Prose.vue'
-import Tool from '../tool/Tool.vue'
+import ToolCall from '../tool/ToolCall.vue'
 import { atFoot, footOf } from './foot'
 import { placeTurns, type PlacedTurn, type Turn } from './turn'
 
@@ -100,9 +100,9 @@ defineExpose({ toFoot })
               class="thread__opens block w-full cursor-pointer rounded-node text-start outline-none ring-numen"
               @click="emit('open', entry.turn)"
             >
-              <Tool v-bind="toolOf(entry)" />
+              <ToolCall v-bind="toolOf(entry)" />
             </button>
-            <Tool v-else v-bind="toolOf(entry)" />
+            <ToolCall v-else v-bind="toolOf(entry)" />
           </template>
           <span v-else-if="entry.voice.bubble" class="thread__text">{{ entry.turn.text }}</span>
           <Prose
