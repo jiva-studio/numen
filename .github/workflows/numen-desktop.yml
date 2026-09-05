@@ -9,6 +9,7 @@ on:
       - "modules/libs/wire/**"
       - "modules/libs/protocol/**"
       - "modules/tools/depgraph/**"
+      - "modules/tools/lint/**"
       - ".github/workflows/numen-desktop.yml"
   push:
     branches: [main]
@@ -19,6 +20,7 @@ on:
       - "modules/libs/wire/**"
       - "modules/libs/protocol/**"
       - "modules/tools/depgraph/**"
+      - "modules/tools/lint/**"
       - ".github/workflows/numen-desktop.yml"
 
 # One run at a time per branch, and on a pull request the newest is the one that
@@ -202,6 +204,11 @@ jobs:
           npm run check --prefix modules/tools/depgraph
           npm run graph --prefix modules/tools/depgraph
           git diff --exit-code -- docs/dependencies.md
+
+      # The house rules a person kept catching by reading. It depends on
+      # nothing, so there is nothing to install.
+      - name: House rules
+        run: npm run check --prefix modules/tools/lint
 
       - name: Lint
         run: |
