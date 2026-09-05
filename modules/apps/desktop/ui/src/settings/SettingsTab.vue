@@ -72,12 +72,17 @@ const AT = {
 } as const
 
 /**
- * The ends the two fields type between. The settings take any whole number, and
- * these are as far as a hand is asked to turn one. Below nothing megabytes are
- * no limit at all, which is what the setting reads a negative number as.
+ * The ends the two fields type between. A field settles on the number inside
+ * its ends, so an end the settings do not hold is a number of the person's cut
+ * down behind them: the floors are the core's own, and above them the settings
+ * take any whole number there is.
+ *
+ * Below nothing megabytes is no limit at all, and no steps at all is the
+ * default number of them, which is what each setting reads its floor as.
  */
-const UNDER = { least: -1, most: 100000 }
-const STEPS = { least: 1, most: 200 }
+const WHOLE = Number.MAX_SAFE_INTEGER
+const UNDER = { least: -1, most: WHOLE }
+const STEPS = { least: 1, most: WHOLE }
 
 /** What stands at a setting, read as the kind the row draws it as. */
 const said = (at: readonly string[]): string => {
