@@ -238,7 +238,7 @@ func (q *Queries) Nearest(ctx context.Context, vaultID domain.VaultID, recipe st
 // coarse is the pass over the bit vectors: the chunks of one vault whose signs
 // stand nearest the query's, by Hamming distance, k of them.
 func (q *Queries) coarse(ctx context.Context, vault int64, query []float32, k int) ([]int64, error) {
-	rows, err := q.db.QueryContext(ctx, stmt.Get("search"), embedding.Bits(query), vault, k)
+	rows, err := q.db.QueryContext(ctx, stmt.Get("coarse"), embedding.Bits(query), vault, k)
 	if err != nil {
 		return nil, err
 	}

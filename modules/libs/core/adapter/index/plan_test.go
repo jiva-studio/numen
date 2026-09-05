@@ -68,7 +68,7 @@ var expectedPlans = []struct {
 	// The coarse pass reads the vector index. That it stays inside one vault is
 	// asserted in TestTheCoarsePassIsConstrainedInsideTheQuery and
 	// TestTheCoarsePassStaysInsideItsVault.
-	{chunk.Statements(), "search", []any{coarse, 1, 10}, []string{"chunks_vec"}},
+	{chunk.Statements(), "coarse", []any{coarse, 1, 10}, []string{"chunks_vec"}},
 }
 
 // growing is the tables that grow with the vault. A question answered by

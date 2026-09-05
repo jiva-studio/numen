@@ -45,7 +45,7 @@ func TestTheCoarsePassIsConstrainedInsideTheQuery(t *testing.T) {
 	// filter applied to the answer instead returns fewer than k passages, or
 	// none, and a query plan shows neither case: it says only that the virtual
 	// table was read.
-	statement := withoutComments(stmt.Get("search"))
+	statement := withoutComments(stmt.Get("coarse"))
 	for _, want := range []string{"MATCH", "vault_id = ?", "k = ?", "ORDER BY distance"} {
 		if !strings.Contains(statement, want) {
 			t.Errorf("the coarse pass does not constrain %q: %s", want, statement)
@@ -56,7 +56,7 @@ func TestTheCoarsePassIsConstrainedInsideTheQuery(t *testing.T) {
 func TestABitVectorSaysThatItIsOne(t *testing.T) {
 	// The 128 bytes of a 1024-bit vector are also 32 float32 dimensions, and the
 	// extension reads them as the latter unless the type is named.
-	for _, name := range []string{"insert_vec", "search"} {
+	for _, name := range []string{"insert_vec", "coarse"} {
 		if !strings.Contains(withoutComments(stmt.Get(name)), "vec_bit(?)") {
 			t.Errorf("%s does not say the blob is one bit per dimension", name)
 		}
