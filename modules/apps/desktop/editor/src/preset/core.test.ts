@@ -6,7 +6,40 @@
  * it, and nothing that draws a week knows of it.
  */
 import { describe, expect, it } from 'vitest'
-import { loadOn, loaded, LOADS, WHOLE_LOAD } from './core'
+import { DEFAULTS, loadOn, loaded, LOADS, WHOLE_LOAD } from './core'
+import type { Counts, Goal, Rule } from './core'
+
+/**
+ * The defaults are read here and again in the core, which schedules a deck
+ * naming no preset by them. Both read this one corpus, and neither owns it.
+ */
+import corpus from '../../../../../libs/protocol/testdata/presets.json'
+
+/**
+ * The key a preset file writes each word under, which is the words the corpus
+ * is written in. Every word the window has stands here, so one added to it has
+ * to be given its key before this compiles.
+ */
+const GOAL_KEYS: Record<Goal, string> = {
+  minutes: 'minutes_a_day',
+  retention: 'retention',
+  date: 'by_date',
+}
+
+const COUNTS_KEYS: Record<Counts, string> = { cards: 'cards', shows: 'shows' }
+
+const RULE_KEYS: Record<Rule, string> = { interval: 'interval', retention: 'retention' }
+
+describe('a preset naming nothing', () => {
+  it('is scheduled by what the corpus says', () => {
+    expect({
+      ...DEFAULTS,
+      goal: GOAL_KEYS[DEFAULTS.goal],
+      counts: COUNTS_KEYS[DEFAULTS.counts],
+      learned: RULE_KEYS[DEFAULTS.learned],
+    }).toStrictEqual(corpus.defaults)
+  })
+})
 
 describe('what one day carries', () => {
   it('is the whole of a day for a day nothing was said about', () => {
