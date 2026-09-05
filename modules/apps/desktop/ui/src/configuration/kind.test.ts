@@ -34,15 +34,15 @@ describe('the file as it stands', () => {
     const { held } = vault()
     await held.again()
 
-    expect(held.text()).toBe(HELD)
-    expect(held.read()).toBe(true)
-    expect(held.changed()).toBe(false)
+    expect(held.text.value).toBe(HELD)
+    expect(held.read.value).toBe(true)
+    expect(held.changed.value).toBe(false)
   })
 
   it('is nothing until it has been read', () => {
     const { held } = vault()
-    expect(held.read()).toBe(false)
-    expect(held.text()).toBe('')
+    expect(held.read.value).toBe(false)
+    expect(held.text.value).toBe('')
   })
 
   it('says so where it could not be read', async () => {
@@ -51,10 +51,10 @@ describe('the file as it stands', () => {
     })
     await held.again()
 
-    expect(held.saying()).toBe(
+    expect(held.saying.value).toBe(
       `${words.unread} numen did not answer, so nothing was done — it may have stopped, and the window keeps trying`,
     )
-    expect(held.read()).toBe(false)
+    expect(held.read.value).toBe(false)
   })
 })
 
@@ -64,10 +64,10 @@ describe('what is typed over it', () => {
     await held.again()
 
     held.types('{}\n')
-    expect(held.changed()).toBe(true)
+    expect(held.changed.value).toBe(true)
 
     held.types(HELD)
-    expect(held.changed()).toBe(false)
+    expect(held.changed.value).toBe(false)
   })
 
   it('is written as it was typed', async () => {
@@ -78,8 +78,8 @@ describe('what is typed over it', () => {
     await held.keeps()
 
     expect(wrote).toStrictEqual(['{\n  "agent": { "use": "" }\n}\n'])
-    expect(held.changed()).toBe(false)
-    expect(held.saying()).toBe('')
+    expect(held.changed.value).toBe(false)
+    expect(held.saying.value).toBe('')
   })
 
   it('presents the file the tab last read', async () => {
@@ -125,8 +125,8 @@ describe('a file the settings cannot be read out of', () => {
     held.types('{ "agent": ')
     await held.keeps()
 
-    expect(held.saying()).toContain(words.unwritten)
-    expect(held.saying()).toContain('at byte 12')
+    expect(held.saying.value).toContain(words.unwritten)
+    expect(held.saying.value).toContain('at byte 12')
   })
 
   it('is left in the editor, as it was typed', async () => {
@@ -135,8 +135,8 @@ describe('a file the settings cannot be read out of', () => {
     held.types('{ "agent": ')
     await held.keeps()
 
-    expect(held.text()).toBe('{ "agent": ')
-    expect(held.changed()).toBe(true)
+    expect(held.text.value).toBe('{ "agent": ')
+    expect(held.changed.value).toBe(true)
   })
 
   it('has nothing read again', async () => {
@@ -182,7 +182,7 @@ describe('a file that moved past what the tab read', () => {
   it('stops keeping, with nothing written', async () => {
     const { held, wrote, reads } = await overtaken()
 
-    expect(held.overtaken()).toBe(true)
+    expect(held.overtaken.value).toBe(true)
     expect(wrote).toStrictEqual([])
     expect(reads).not.toHaveBeenCalled()
   })
@@ -192,8 +192,8 @@ describe('a file that moved past what the tab read', () => {
     await held.keep()
 
     expect(wrote).toStrictEqual([TYPED])
-    expect(held.overtaken()).toBe(false)
-    expect(held.changed()).toBe(false)
+    expect(held.overtaken.value).toBe(false)
+    expect(held.changed.value).toBe(false)
     expect(reads).toHaveBeenCalledTimes(1)
   })
 
@@ -201,9 +201,9 @@ describe('a file that moved past what the tab read', () => {
     const { held, wrote } = await overtaken()
     await held.take()
 
-    expect(held.text()).toBe(MOVED)
-    expect(held.overtaken()).toBe(false)
-    expect(held.changed()).toBe(false)
+    expect(held.text.value).toBe(MOVED)
+    expect(held.overtaken.value).toBe(false)
+    expect(held.changed.value).toBe(false)
     expect(wrote).toStrictEqual([])
   })
 
@@ -211,7 +211,7 @@ describe('a file that moved past what the tab read', () => {
     const { held, wrote } = await overtaken()
     await held.keeps()
 
-    expect(held.overtaken()).toBe(true)
+    expect(held.overtaken.value).toBe(true)
     expect(wrote).toStrictEqual([])
   })
 })

@@ -5,7 +5,7 @@
  * typed. A file the settings cannot be read out of is refused with what is
  * wrong with it, and the file is left as it was.
  */
-import { computed, ref } from 'vue'
+import { computed, readonly, ref } from 'vue'
 import { troubleWords } from '@numen/wire'
 import type { Host, Kind } from '../windowing'
 import { CONFIGURATION } from '../workspace'
@@ -102,16 +102,16 @@ export function holding(core: ConfigurationTabDeps, reads: () => void) {
   }
 
   return {
-    /** What stands in the editor, and what is typed into it. */
-    text: () => typed.value,
+    /** What stands in the editor. It is moved by `types` and nothing else. */
+    text: readonly(typed),
     types: (said: string) => void (typed.value = said),
     /** What is wrong, and empty where nothing is. */
-    saying: () => wrong.value,
-    changed: () => changed.value,
+    saying: readonly(wrong),
+    changed,
     /** Whether the file has been read at all. */
-    read: () => read.value,
+    read: readonly(read),
     /** Whether the file moved past what was read. */
-    overtaken: () => overtaken.value,
+    overtaken: readonly(overtaken),
     again,
     keeps,
     keep,
@@ -122,8 +122,8 @@ export function holding(core: ConfigurationTabDeps, reads: () => void) {
 
 /** What the tab carries beside its name, and nothing where there is nothing to say. */
 const mark = (held: ConfigurationTabState): string | undefined => {
-  if (held.overtaken()) return 'overtaken'
-  return held.changed() ? '•' : undefined
+  if (held.overtaken.value) return 'overtaken'
+  return held.changed.value ? '•' : undefined
 }
 
 /**

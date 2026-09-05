@@ -12,23 +12,27 @@ import type { ConfigurationTabState } from './kind'
 import { WORDS as words } from './words'
 
 const props = defineProps<{ held: ConfigurationTabState }>()
+
+// The tab's state outlives this component, so what it holds is bound once here
+// and the template unwraps it.
+const { saying, overtaken, read, text } = props.held
 </script>
 
 <template>
   <div class="configuration">
-    <p v-if="props.held.saying()" role="alert" class="configuration__wrong">
-      {{ props.held.saying() }}
+    <p v-if="saying" role="alert" class="configuration__wrong">
+      {{ saying }}
     </p>
 
-    <p v-if="props.held.overtaken()" class="caution caution--conflict" role="status">
+    <p v-if="overtaken" class="caution caution--conflict" role="status">
       {{ words.overtaken }}
       <button type="button" class="answer" @click="props.held.keep()">{{ words.keep }}</button>
       <button type="button" class="answer" @click="props.held.take()">{{ words.take }}</button>
     </p>
 
     <Editor
-      v-if="props.held.read()"
-      :model-value="props.held.text()"
+      v-if="read"
+      :model-value="text"
       :live="false"
       language="json"
       class="configuration__editor"
