@@ -353,6 +353,46 @@ func TestTheAgentBringsOnlyTheToolsItIsNamed(t *testing.T) {
 	}
 }
 
+// The run asks nobody, so a tool outside the allowance is refused rather than
+// put to a person. Offering the search on --tools is not allowing it: left out
+// of the allowance it is refused like anything else, and the panel loses the
+// one thing the agent was given to look something up with.
+func TestTheAllowanceNamesTheSearchAndThisVaultsTools(t *testing.T) {
+	argv := recordedWith(t, func(a *claudecode.Agent) {
+		a.Allowed = []string{claudecode.Tool("note_read"), claudecode.Tool("note_edit")}
+	})
+
+	if mode := after(t, argv, "--permission-mode"); mode != "dontAsk" {
+		t.Fatalf("the run asks in %q, and the allowance is not the whole boundary", mode)
+	}
+	allowed := strings.Split(after(t, argv, "--allowedTools"), ",")
+	if !slices.Equal(allowed, []string{"WebSearch", "mcp__numen__note_read", "mcp__numen__note_edit"}) {
+		t.Errorf("the allowance is %q", allowed)
+	}
+}
+
+// An agent allowed none of this vault's tools is still allowed the search: the
+// flag stands whether the allowance names a vault tool or not.
+func TestTheSearchIsAllowedWithoutAnyVaultTool(t *testing.T) {
+	argv := recordedWith(t, func(a *claudecode.Agent) { a.Allowed = nil })
+
+	if allowed := after(t, argv, "--allowedTools"); allowed != "WebSearch" {
+		t.Errorf("the allowance is %q", allowed)
+	}
+}
+
+// after is what one flag on the command line was given, the last time it stands.
+func after(t *testing.T, argv []string, flag string) string {
+	t.Helper()
+	for i := len(argv) - 2; i >= 0; i-- {
+		if argv[i] == flag {
+			return argv[i+1]
+		}
+	}
+	t.Fatalf("nothing names %s: %q", flag, argv)
+	return ""
+}
+
 // One server, named in full, and no chance of another being read from the
 // machine's own configuration.
 func TestTheAgentReachesThisVaultAndNothingElse(t *testing.T) {

@@ -38,9 +38,10 @@ type Agent struct {
 	Root string
 	// Tools is where it reaches this vault.
 	Tools Endpoint
-	// Allowed are the tools it may use without being asked. It names this
-	// vault's tools; the two the agent brings — searching the web and fetching
-	// a page — are named where they are brought.
+	// Allowed are the tools it may use without being asked, and the only ones
+	// it may use at all: the mode this runs in asks nobody, so a tool absent
+	// from the allowance is refused. It names this vault's tools; the search
+	// the agent brings is allowed wherever the arguments are written.
 	Allowed []string
 	// Words are how the tools this vault serves are spoken about, by the name
 	// the agent calls them. A tool that is not here is named as it named
@@ -423,9 +424,10 @@ func (a *Agent) arguments(task port.Task, configuration string) []string {
 	if a.Model != "" {
 		args = append(args, "--model", a.Model)
 	}
-	if len(a.Allowed) > 0 {
-		args = append(args, "--allowedTools", strings.Join(a.Allowed, ","))
-	}
+	// The search is allowed alongside this vault's tools. Naming a tool on
+	// --tools offers it; the allowance is what lets it be called, and nothing
+	// outside the allowance is called at all under this mode.
+	args = append(args, "--allowedTools", strings.Join(append([]string{brought}, a.Allowed...), ","))
 	if session := a.Carrying(task.Conversation); session != "" {
 		args = append(args, "--resume", session)
 	}
