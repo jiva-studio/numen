@@ -135,7 +135,7 @@ export { VOICES, charsWord, placeTurns } from './thread/turn'
 export type { PlacedTurn, Turn, TurnState, Voice } from './thread/turn'
 export { conversation } from './thread/conversation'
 export type { Conversation, ConversationStrings } from './thread/conversation'
-export type { AgentPort, AgentStep, Place } from './thread/agent'
+export type { AgentPort, AgentStep, Passage } from './thread/agent'
 
 /** A link to a note: `[[name]]` in the text, `note://<identifier>` inside it. */
 export {
@@ -151,7 +151,7 @@ export type { Address, Wikilink } from './linking/address'
 
 /** A link that leads out of the application, and the window held against it. */
 export { holdsTheWindow, pointsOutward } from './linking/outward'
-export type { Opens } from './linking/outward'
+export type { LinkOpener } from './linking/outward'
 
 export { default as Prose } from './prose/Prose.vue'
 export { default as ToolCall } from './tool/ToolCall.vue'

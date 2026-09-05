@@ -9,8 +9,8 @@
 /** The schemes a browser is handed. Anything else is nobody's to open. */
 const HANDED = new Set(['http:', 'https:', 'mailto:', 'tel:'])
 
-/** Opens an address where the person's own browser opens it. */
-export type Opens = (href: string) => void
+/** Hands an address to wherever the person's own browser opens it. */
+export type LinkOpener = (href: string) => void
 
 /** Whether an address names somewhere this page is not served from. */
 export const pointsOutward = (at: URL, here: URL): boolean =>
@@ -24,7 +24,7 @@ export const pointsOutward = (at: URL, here: URL): boolean =>
  * can carry the window off. What a link inside the application means is still
  * the application's, and is left alone.
  */
-export const holdsTheWindow = (opens: Opens, root: Document = document): (() => void) => {
+export const holdsTheWindow = (opens: LinkOpener, root: Document = document): (() => void) => {
   const pressed = (press: MouseEvent) => {
     const link = (press.target as Element | null)?.closest?.('a[href]')
     const href = link?.getAttribute('href')
