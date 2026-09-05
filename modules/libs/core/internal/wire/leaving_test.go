@@ -25,7 +25,7 @@ func TestAVaultNothingIsDrawnFromOwesNothing(t *testing.T) {
 	if !closed(round.written) {
 		t.Error("a vault with no page open was owed something")
 	}
-	if round.standing() {
+	if round.pending() {
 		t.Error("a vault with no page open raised a question")
 	}
 }
@@ -60,7 +60,7 @@ func TestAPageSaysNothingUntilItIsAsked(t *testing.T) {
 	if !closed(round.written) {
 		t.Error("a page that wrote what it owed is still owed")
 	}
-	if round.standing() {
+	if round.pending() {
 		t.Error("a page that wrote what it owed raised a question")
 	}
 }
@@ -78,7 +78,7 @@ func TestAQuestionEndsTheRoundAndNotTheWait(t *testing.T) {
 	<-told
 	pages.flushed(token, asks)
 
-	if !round.standing() {
+	if !round.pending() {
 		t.Error("a question was raised and the round does not say so")
 	}
 	if closed(round.written) {
@@ -106,7 +106,7 @@ func TestOneQuestionAmongManyPagesKeepsTheWindow(t *testing.T) {
 	pages.flushed(first, wrote)
 	pages.flushed(second, asks)
 
-	if !round.standing() {
+	if !round.pending() {
 		t.Error("a question was raised and the round does not say so")
 	}
 	if closed(round.written) {
@@ -232,7 +232,7 @@ func TestAPageThatGoesWithAQuestionStandingIsStillOwed(t *testing.T) {
 	}
 
 	pages.flushed(again, asks)
-	if !second.standing() {
+	if !second.pending() {
 		t.Error("the page raised its question again and the round does not say so")
 	}
 	pages.flushed(again, wrote)
@@ -257,7 +257,7 @@ func TestAPageThatGoesWithAQuestionStandingAndDoesNotComeBackIsSilence(t *testin
 	if closed(round.written) {
 		t.Error("a round took a page that went with a question standing as written")
 	}
-	if round.standing() {
+	if round.pending() {
 		t.Error("a page that is no longer there was counted as raising a question")
 	}
 

@@ -229,7 +229,7 @@ func (w *Window) Settling(ctx context.Context) bool {
 	case <-round.over:
 	case <-ctx.Done():
 	}
-	return !round.standing() && w.clients.current() == round
+	return !round.pending() && w.clients.current() == round
 }
 
 // Answered waits for the round in progress to end with every page having
@@ -350,8 +350,8 @@ type round struct {
 	past    bool
 }
 
-// standing reports whether a question a person has to answer is outstanding.
-func (r *round) standing() bool {
+// pending reports whether a question a person has to answer is outstanding.
+func (r *round) pending() bool {
 	select {
 	case <-r.questions:
 		return true
