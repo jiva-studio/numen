@@ -352,7 +352,7 @@ func TestAReadingDeletedByHandIsNoticed(t *testing.T) {
 	}
 
 	// Cut it once, so it is a source that owes nothing.
-	extract := Extract{Readers: u.Readers, Sources: index, Owing: index, Derived: shelf}
+	extract := Extract{Readers: u.Readers, Sources: index, Known: index, Derived: shelf}
 	if _, err := extract.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}

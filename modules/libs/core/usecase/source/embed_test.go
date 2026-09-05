@@ -17,7 +17,7 @@ const dimensions = 32
 // cutBooks extracts one vault's books and answers with the chunks that owe a vector.
 func cutBooks(t *testing.T, index *store, shelf *library, v domain.Vault) []storedChunk {
 	t.Helper()
-	if _, err := (Extract{Readers: vaults{v.ID: shelf}, Sources: index, Owing: index}).Execute(t.Context(), v); err != nil {
+	if _, err := (Extract{Readers: vaults{v.ID: shelf}, Sources: index, Known: index}).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 	small := index.small(v.ID)
@@ -246,7 +246,7 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 	shelves[second.ID].hold("library/latin.epub", domain.KindBook,
 		bookOf(t, "Latin", words(latin, 400)), 1)
 
-	extract := Extract{Readers: shelves, Sources: index, Owing: index}
+	extract := Extract{Readers: shelves, Sources: index, Known: index}
 	for _, v := range []domain.Vault{first, second} {
 		if _, err := extract.Execute(ctx, v); err != nil {
 			t.Fatal(err)
@@ -297,7 +297,7 @@ func TestASourceStandingOnAReadingIsEmbeddedFromIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	extract := Extract{Readers: vaults{first.ID: shelf}, Sources: index, Owing: index, Derived: made}
+	extract := Extract{Readers: vaults{first.ID: shelf}, Sources: index, Known: index, Derived: made}
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	}

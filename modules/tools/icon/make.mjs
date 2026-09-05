@@ -97,7 +97,7 @@ const ico = (images) => {
   const directory = Buffer.alloc(images.length * 16)
   let at = 6 + directory.length
 
-  images.forEach(({ size, data }, index) => {
+  images.forEach(({ size, png }, index) => {
     const entry = index * 16
     directory.writeUInt8(size >= 256 ? 0 : size, entry)
     directory.writeUInt8(size >= 256 ? 0 : size, entry + 1)
@@ -105,21 +105,21 @@ const ico = (images) => {
     directory.writeUInt8(0, entry + 3)
     directory.writeUInt16LE(1, entry + 4)
     directory.writeUInt16LE(32, entry + 6)
-    directory.writeUInt32LE(data.length, entry + 8)
+    directory.writeUInt32LE(png.length, entry + 8)
     directory.writeUInt32LE(at, entry + 12)
-    at += data.length
+    at += png.length
   })
 
-  return Buffer.concat([header, directory, ...images.map((image) => image.data)])
+  return Buffer.concat([header, directory, ...images.map((image) => image.png)])
 }
 
 /** A mac icon: a header, then one typed block per size. */
 const icns = (blocks) => {
-  const body = blocks.map(({ type, data }) => {
+  const body = blocks.map(({ type, png }) => {
     const head = Buffer.alloc(8)
     head.write(type, 0, 4, 'ascii')
-    head.writeUInt32BE(data.length + 8, 4)
-    return Buffer.concat([head, data])
+    head.writeUInt32BE(png.length + 8, 4)
+    return Buffer.concat([head, png])
   })
 
   const length = body.reduce((sum, block) => sum + block.length, 8)
@@ -152,9 +152,9 @@ const LINUX = [16, 24, 32, 48, 64, 128, 256, 512]
 /** The sides a Windows icon holds. */
 const WINDOWS = [16, 24, 32, 48, 64, 128, 256]
 
-const write = (path, data) => {
+const write = (path, bytes) => {
   mkdirSync(dirname(path), { recursive: true })
-  writeFileSync(path, data)
+  writeFileSync(path, bytes)
   console.log(path.replace(`${ROOT}/`, ''))
 }
 
@@ -171,7 +171,7 @@ const cut = async (art, name, rasters) => {
     join(BUILD, 'windows', `${name}.ico`),
     ico(
       await Promise.all(
-        WINDOWS.map(async (size) => ({ size, data: await flat(art, size) })),
+        WINDOWS.map(async (size) => ({ size, png: await flat(art, size) })),
       ),
     ),
   )
@@ -181,7 +181,7 @@ const cut = async (art, name, rasters) => {
     join(BUILD, 'darwin', `${name}.icns`),
     icns(
       await Promise.all(
-        MAC_BLOCKS.map(async ([type, size]) => ({ type, data: await macos(art, size) })),
+        MAC_BLOCKS.map(async ([type, size]) => ({ type, png: await macos(art, size) })),
       ),
     ),
   )
