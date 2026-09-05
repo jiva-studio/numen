@@ -18,7 +18,7 @@ import {
   type State,
   type Tab,
 } from './tab'
-import type { Answered, RefusalReason } from '../core'
+import type { NoteResult, RefusalReason } from '../core'
 
 /** One open note as the window draws it. */
 export interface OpenNote {
@@ -34,12 +34,12 @@ export interface OpenNote {
  * answers whether the file carries another.
  */
 export interface Notes {
-  read(path: string): Promise<Answered & { at?: string }>
+  read(path: string): Promise<NoteResult & { at?: string }>
   write(
     path: string,
     body: string,
     seen: Seen | null,
-  ): Promise<Answered & { at?: string; changed?: boolean }>
+  ): Promise<NoteResult & { at?: string; changed?: boolean }>
 }
 
 /** What a person is shown for each refusal. */
@@ -258,7 +258,7 @@ export function editing(core: Notes, how: EditingOptions = {}) {
   }
 
   async function read(id: string, path: string, generation: number): Promise<void> {
-    let answered: Answered & { at?: string }
+    let answered: NoteResult & { at?: string }
     try {
       answered = await core.read(path)
     } catch {
@@ -280,7 +280,7 @@ export function editing(core: Notes, how: EditingOptions = {}) {
   }
 
   async function write(id: string, path: string, body: string, seen: Seen | null): Promise<void> {
-    let answered: Answered & { at?: string; changed?: boolean }
+    let answered: NoteResult & { at?: string; changed?: boolean }
     try {
       answered = await core.write(path, body, seen)
     } catch {

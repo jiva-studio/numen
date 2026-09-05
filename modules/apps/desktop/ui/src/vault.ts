@@ -55,8 +55,6 @@ import type { FindingDeps, Way } from './finding'
 import type { Documents, Page } from './document/reading'
 import type { Cue, Recordings } from './recording/transcript'
 import type {
-  Added,
-  Answered,
   Artifact as ArtifactOf,
   Cards,
   Carded,
@@ -68,17 +66,18 @@ import type {
   Configured,
   Hanging,
   Reviewing,
-  Made,
+  MakeResult,
   MoveResult,
   Movement,
   Neighbourhood,
   NewLink,
+  NoteResult,
   NoteType,
   Presence,
   Problem,
   Reached,
-  Removed,
-  Renamed,
+  RemoveResult,
+  RenameResult,
   Role,
   ArtifactRunner,
   Seat,
@@ -87,6 +86,7 @@ import type {
   StencilSummary,
   Vault,
   VaultRefusalReason,
+  VaultResult,
   Vaults,
 } from './core'
 import { transport } from './transport'
@@ -310,7 +310,7 @@ export const core: Core & FindingDeps & CommandingDeps = {
       folder: note.folder,
       links: note.links.map(written),
     })
-    return { path: answer.path, refusal: refusalIn(answer) } satisfies Made
+    return { path: answer.path, refusal: refusalIn(answer) } satisfies MakeResult
   },
   join: async (path, link) => refusalIn(await notes.writeLink({ path, link: written(link) })),
   rename: async (path, title) => {
@@ -322,7 +322,7 @@ export const core: Core & FindingDeps & CommandingDeps = {
       moved: answer.moved ? filed(answer.moved) : null,
       refusal: refusalIn(answer),
       changed: staleIn(answer),
-    } satisfies Renamed
+    } satisfies RenameResult
   },
   remove: async (path, destroy) => {
     const answer = await files.removeFile({ path, destroy: destroy ?? false })
@@ -330,7 +330,7 @@ export const core: Core & FindingDeps & CommandingDeps = {
       trashed: answer.trashed,
       dangling: answer.dangling,
       refusal: refusalIn(answer),
-    } satisfies Removed
+    } satisfies RemoveResult
   },
   list: async (folder) => (await files.listFiles({ folder })).entries.map(listed),
   move: async (from, to) => {
@@ -718,7 +718,7 @@ const answered = (from: {
   body?: string | undefined
   refusal?: Refusal | undefined
   at?: { path: string; size: bigint; mtime: bigint } | undefined
-}): Answered & { at?: string; changed: boolean } => {
+}): NoteResult & { at?: string; changed: boolean } => {
   const at = stamp(from.at)
   return {
     body: from.body ?? '',
@@ -898,7 +898,7 @@ const held = (one: VaultMessage): Vault => ({
 const added = (from: {
   vault?: VaultMessage | undefined
   refusal?: VaultsRefusal | undefined
-}): Added => ({
+}): VaultResult => ({
   vault: from.vault ? held(from.vault) : null,
   refusal: turnedDown(from),
 })

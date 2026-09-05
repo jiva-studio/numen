@@ -366,7 +366,7 @@ export interface Core {
    */
   attending(open: Attention): Promise<void>
   /** The prose of a note, below its frontmatter, and the file it came out of. */
-  read(path: string): Promise<Answered & { at?: string }>
+  read(path: string): Promise<NoteResult & { at?: string }>
   /**
    * Prose into a note, keeping the frontmatter the file has when it lands.
    *
@@ -378,9 +378,9 @@ export interface Core {
     path: string,
     body: string,
     seen: { prose: string; at: string } | null,
-  ): Promise<Answered & { at?: string; changed?: boolean }>
+  ): Promise<NoteResult & { at?: string; changed?: boolean }>
   /** A note made, named after the title it is given and joined as it is written. */
-  create(note: NewNote): Promise<Made>
+  create(note: NewNote): Promise<MakeResult>
   /**
    * A relationship written into one note. The note at the other end is left
    * alone: a link is one end's account of a relationship.
@@ -391,13 +391,13 @@ export interface Core {
    * names it is brought into line, and the file follows where a title and a
    * filename are kept as one name.
    */
-  rename(path: string, title: string): Promise<Renamed>
+  rename(path: string, title: string): Promise<RenameResult>
   /**
    * A file or a folder taken out of the vault, into the trash it can be brought
    * back from. Destroying takes the file off the disk and brings nothing back,
    * and is asked of a note only.
    */
-  remove(path: string, destroy?: boolean): Promise<Removed>
+  remove(path: string, destroy?: boolean): Promise<RemoveResult>
   /**
    * What one folder of the vault holds, in the order to draw it: folders first
    * and then files, each group by name with case ignored. The root is the empty
@@ -478,7 +478,7 @@ export interface Core {
  * What a read or a write came back with. A refusal carries no body, and the
  * words for one belong to whatever shows it.
  */
-export interface Answered {
+export interface NoteResult {
   body: string
   refusal: RefusalReason | null
 }
@@ -524,14 +524,14 @@ export interface NewLink {
 }
 
 /** What making a note, a deck or a stencil came back with. */
-export interface Made {
+export interface MakeResult {
   /** Where the file is filed. Empty when nothing was made. */
   path: string
   refusal: RefusalReason | null
 }
 
 /** What renaming a note came back with. */
-export interface Renamed {
+export interface RenameResult {
   /**
    * Where the note is filed. The note is brought into line before the file is,
    * so a refused move comes back with the path the note still has.
@@ -559,7 +559,7 @@ export interface MoveResult {
 }
 
 /** What removing a note came back with. */
-export interface Removed {
+export interface RemoveResult {
   /** Where the note sits in the trash. Empty when it was destroyed. */
   trashed: string
   /** The notes whose links pointed at it and now reach nothing. */
@@ -692,7 +692,7 @@ export interface Stencilled {
 }
 
 /** What reading a deck came back with. */
-export interface DeckRead {
+export interface DeckReadResult {
   /** Null when the deck was refused. */
   readonly deck: Decked | null
   readonly refusal: RefusalReason | null
@@ -703,7 +703,7 @@ export interface DeckRead {
 }
 
 /** What writing a deck came back with. */
-export interface DeckWritten {
+export interface DeckWriteResult {
   readonly refusal: RefusalReason | null
   /** The file is no longer the one this caller read, and nothing was written. */
   readonly changed: boolean
@@ -712,7 +712,7 @@ export interface DeckWritten {
 }
 
 /** What reading a stencil came back with. */
-export interface StencilRead {
+export interface StencilReadResult {
   /** Null when the stencil was refused. */
   readonly stencil: Stencilled | null
   readonly refusal: RefusalReason | null
@@ -720,7 +720,7 @@ export interface StencilRead {
 }
 
 /** What writing a stencil came back with. */
-export interface StencilWritten {
+export interface StencilWriteResult {
   readonly refusal: RefusalReason | null
   readonly changed: boolean
   readonly at: string
@@ -734,7 +734,7 @@ export interface UnwrittenDeck {
 }
 
 /** What renaming a field came back with. */
-export interface Renaming {
+export interface FieldRenameResult {
   /** The decks a heading was rewritten in, by path. */
   readonly decks: readonly string[]
   /** How many headings were rewritten, over all those decks. */
@@ -757,12 +757,12 @@ export interface Cards {
   /** Every stencil in the vault, by what it is called and what it asks for. */
   stencils(limit?: number): Promise<{ stencils: readonly StencilSummary[]; held: number }>
   /** A deck of no cards, filed in that folder under a name made from the title. */
-  makeDeck(title: string, folder: string): Promise<Made>
+  makeDeck(title: string, folder: string): Promise<MakeResult>
   /**
    * A stencil declaring those fields and showing no face, the same way. The
    * first field names the cards it cuts, so a stencil is made carrying one.
    */
-  makeStencil(title: string, folder: string, fields: readonly string[]): Promise<Made>
+  makeStencil(title: string, folder: string, fields: readonly string[]): Promise<MakeResult>
   /**
    * A field of a stencil under another name, wherever that name is written: in
    * the stencil's fields, in the placeholders of its faces, and as a heading in
@@ -774,8 +774,8 @@ export interface Cards {
     from: string,
     to: string,
     seen: string | null,
-  ): Promise<Renaming>
-  readDeck(path: string): Promise<DeckRead>
+  ): Promise<FieldRenameResult>
+  readDeck(path: string): Promise<DeckReadResult>
   /**
    * Sections and cards into a deck, in the order they are given, making the
    * file where there is none. Seen is what a read gave this caller, and a file
@@ -790,15 +790,15 @@ export interface Cards {
       tail: string
     },
     seen: string | null,
-  ): Promise<DeckWritten>
-  readStencil(path: string): Promise<StencilRead>
+  ): Promise<DeckWriteResult>
+  readStencil(path: string): Promise<StencilReadResult>
   /** Fields and faces into a stencil, making the file where there is none. */
   writeStencil(
     path: string,
     fields: readonly string[],
     stencil: { preamble: string; faces: readonly Faced[]; tail: string },
     seen: string | null,
-  ): Promise<StencilWritten>
+  ): Promise<StencilWriteResult>
 }
 
 /** One vault the installation holds, as the list has it. */
@@ -821,7 +821,7 @@ export interface Listed {
 }
 
 /** What adding a vault came back with, and what renaming one comes back with. */
-export interface Added {
+export interface VaultResult {
   /** The vault as the list has it now. Null where the list is as it was. */
   vault: Vault | null
   refusal: VaultRefusalReason | null
@@ -852,9 +852,9 @@ export interface Vaults {
    * A folder turned into a vault and put on the list. The folder is given an
    * identity that stays with it wherever it moves to.
    */
-  add(path: string, name: string): Promise<Added>
+  add(path: string, name: string): Promise<VaultResult>
   /** What a person calls a vault. The folder keeps the name the filesystem gives it. */
-  rename(id: string, name: string): Promise<Added>
+  rename(id: string, name: string): Promise<VaultResult>
   /**
    * A vault taken off the list. The folder stays where it is, and goes to the
    * trash this machine keeps when the call asks for it.

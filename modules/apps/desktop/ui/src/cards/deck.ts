@@ -10,7 +10,7 @@ import { computed, ref, shallowRef, type ComputedRef } from 'vue'
 import type { Banded, Drawn, PlexShowing, Stencil } from '@numen/ui'
 import type { Cards, Move, Problem, RefusalReason, StencilSummary } from '../core'
 import type { Store } from '../doing'
-import type { Listed, Presets, Read } from '../preset/core'
+import type { Listed, Presets, ReadResult } from '../preset/core'
 import { editing, type OpenNote } from '../note/editing'
 import { markOf } from '../note/tab'
 import type { Host, Kind } from '../windowing'
@@ -305,7 +305,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
   }
 
   /** The preset a deck names, as the line at the top of it draws it. */
-  const scheduledOf = (read: Read): Scheduled => {
+  const scheduledOf = (read: ReadResult): Scheduled => {
     if (read.preset === null) return BY_DEFAULT
     const saying = read.preset.problems[0] ?? ''
     if (read.preset.path === '') return { ...BY_DEFAULT, saying }
@@ -318,7 +318,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
 
   /** Which preset schedules the deck at a path, asked of the vault. */
   const asks = async (path: string): Promise<void> => {
-    let read: Read
+    let read: ReadResult
     try {
       read = await presets.scheduling(path)
     } catch {

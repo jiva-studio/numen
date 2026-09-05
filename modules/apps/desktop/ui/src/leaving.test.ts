@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 
 import { editing } from './note/editing'
 import { leaving, type LeavingDeps, type Owed, type Question } from './leaving'
-import type { Answered, Core } from './core'
+import type { NoteResult, Core } from './core'
 
 /** A vault that has been read and is doing nothing. */
 const idle = {
@@ -77,11 +77,11 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
     flushed: async (token: string, owed: Owed = 'written') => {
       answered.push({ token, owed })
     },
-    read: async (path): Promise<Answered> =>
+    read: async (path): Promise<NoteResult> =>
       files.has(path)
         ? { body: files.get(path) ?? '', refusal: null }
         : { body: '', refusal: 'missing' },
-    write: async (path, body): Promise<Answered> => {
+    write: async (path, body): Promise<NoteResult> => {
       if (held) await new Promise<void>((through) => (held = through))
       wrote.push({ path, body })
       files.set(path, body)

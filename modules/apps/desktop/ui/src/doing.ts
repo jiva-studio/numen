@@ -15,13 +15,13 @@ import type {
   Outcome,
   Reached,
   RefusalReason,
-  Removed,
-  Renamed,
+  RemoveResult,
+  RenameResult,
   ArtifactRunner,
   VaultRefusalReason,
   Vaults,
 } from './core'
-import type { Made } from './note/creating'
+import type { NoteRef } from './note/creating'
 import type { Voice } from './telling'
 import { AGENT, FILES, NOTE, PLEX, SETTINGS } from './workspace'
 
@@ -102,11 +102,11 @@ export const reaching = (
 /** The vault as a command changes what it holds. */
 export interface VaultWriter {
   /** A note made under the name it is given, in a seat of another one. */
-  makes(title: string, from: string, seat: PlexRelatedSeat | null): Promise<Made | null>
+  makes(title: string, from: string, seat: PlexRelatedSeat | null): Promise<NoteRef | null>
   /** A note given a different name, and its file renamed with it where the two are one name. */
-  renames(path: string, title: string): Promise<Renamed>
+  renames(path: string, title: string): Promise<RenameResult>
   /** A note taken out of the vault, into the trash or off the disk. */
-  removes(path: string, destroy: boolean): Promise<Removed>
+  removes(path: string, destroy: boolean): Promise<RemoveResult>
   /**
    * A file or a folder filed somewhere else. The last segment of `to` is what
    * it is called from now on.

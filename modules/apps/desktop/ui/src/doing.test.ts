@@ -9,17 +9,17 @@ import { Code, ConnectError } from '@connectrpc/connect'
 import { commandsOf, deedOf, runnable, type Deed, type CommandTarget } from './commanding'
 import { does, reaching, type CommandDeps, type Store } from './doing'
 import type {
-  Added,
   Artifact,
   ArtifactStates,
   Movement,
   Outcome,
   Reached,
   RefusalReason,
-  Removed,
-  Renamed,
+  RemoveResult,
+  RenameResult,
   Vault,
   VaultRefusalReason,
+  VaultResult,
 } from './core'
 import { WORDS as words } from './words'
 
@@ -45,7 +45,7 @@ const known = (id: string, name: string): Vault => ({
   missing: false,
 })
 
-const renamed = (over: Partial<Renamed> = {}): Renamed => ({
+const renamed = (over: Partial<RenameResult> = {}): RenameResult => ({
   path: 'physics/Entropy.md',
   title: 'Entropy',
   frontmatter: false,
@@ -63,7 +63,7 @@ const outcome = (of: Artifact, made: Reached, error = ''): Outcome => ({
   error,
 })
 
-const removed = (over: Partial<Removed> = {}): Removed => ({
+const removed = (over: Partial<RemoveResult> = {}): RemoveResult => ({
   trashed: '.trash/Ontology.md',
   dangling: [],
   refusal: null,
@@ -78,8 +78,8 @@ const removed = (over: Partial<Removed> = {}): Removed => ({
  */
 const window = (
   answers: {
-    renamed?: Renamed
-    removed?: Removed
+    renamed?: RenameResult
+    removed?: RemoveResult
     made?: boolean
     /** Where the tab holding the note stands now. */
     at?: string
@@ -88,7 +88,7 @@ const window = (
     /** The folder the person chose in the machine's own picker. */
     chose?: string
     /** What the list of vaults answered adding or renaming one. */
-    added?: Added
+    added?: VaultResult
     /** What the list of vaults refused forgetting, erasing or opening one. */
     turnedDown?: VaultRefusalReason
     /** What moving a file came back with. */

@@ -67,7 +67,7 @@ const words: Record<RefusalReason, string> = {
 const exhausted = `every name from ${UNTITLED} onwards is taken`
 
 /** A note that now exists: where it is filed, and what it is called. */
-export interface Made {
+export interface NoteRef {
   readonly path: string
   readonly title: string
 }
@@ -81,7 +81,7 @@ export function creating(core: Core, said: Voice) {
     title: string,
     folder: string,
     links: readonly NewLink[],
-  ): Promise<Made | RefusalReason | null> {
+  ): Promise<NoteRef | RefusalReason | null> {
     try {
       const made = await core.create({ title, folder, links })
       if (made.refusal !== null) return made.refusal
@@ -99,7 +99,7 @@ export function creating(core: Core, said: Voice) {
    * taken: whether a name is free is the filesystem's to answer at the moment
    * the file is made, so it is asked one name at a time.
    */
-  async function named(folder: string, links: readonly NewLink[]): Promise<Made | null> {
+  async function named(folder: string, links: readonly NewLink[]): Promise<NoteRef | null> {
     for (let taken = 1; taken <= names; taken++) {
       const made = await creates(nameAt(taken), folder, links)
       if (made === 'occupied') continue
@@ -117,21 +117,21 @@ export function creating(core: Core, said: Voice) {
     title: string,
     from: string,
     seat: PlexRelatedSeat | null,
-  ): Promise<Made | null> {
+  ): Promise<NoteRef | null> {
     const links = seatedOn(from, seat)
     if (!links) return null
     return answered(await creates(title, from ? folderOf(from) : '', links))
   }
 
   /** Make a note in a seat of another one, filed in the folder that one is in. */
-  async function make(from: string, seat: PlexRelatedSeat): Promise<Made | null> {
+  async function make(from: string, seat: PlexRelatedSeat): Promise<NoteRef | null> {
     const links = seatedOn(from, seat)
     if (!links) return null
     return named(folderOf(from), links)
   }
 
   /** What a note that was asked for came to, said to the person where it failed. */
-  const answered = (made: Made | RefusalReason | null): Made | null => {
+  const answered = (made: NoteRef | RefusalReason | null): NoteRef | null => {
     if (made === null) return null
     if (typeof made === 'string') {
       said(words[made], 'refusal')

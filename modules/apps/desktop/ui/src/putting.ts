@@ -7,7 +7,7 @@
  */
 import type { PlexShowing } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
-import type { FileKind, Made, NoteType, RefusalReason, Stretch } from './core'
+import type { FileKind, MakeResult, NoteType, RefusalReason, Stretch } from './core'
 import type { Voice } from './telling'
 
 /**
@@ -135,14 +135,14 @@ export type Cut = 'deck' | 'stencil' | 'preset'
 /** What the window asks the vault to make from nothing. */
 export interface CutWriter {
   /** A deck of no cards, filed in that folder under a name made from the title. */
-  makeDeck(title: string, folder: string): Promise<Made>
+  makeDeck(title: string, folder: string): Promise<MakeResult>
   /**
    * A stencil declaring those fields and showing no face, the same way. The
    * first field names the cards it cuts.
    */
-  makeStencil(title: string, folder: string, fields: readonly string[]): Promise<Made>
+  makeStencil(title: string, folder: string, fields: readonly string[]): Promise<MakeResult>
   /** A preset naming none of its settings, the same way. */
-  makesPreset(title: string, folder: string): Promise<Made>
+  makesPreset(title: string, folder: string): Promise<MakeResult>
 }
 
 /** Everything making one of the three says in the window's voice. */

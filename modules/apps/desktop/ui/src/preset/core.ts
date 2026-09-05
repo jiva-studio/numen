@@ -166,7 +166,7 @@ export interface Preset {
 }
 
 /** What reading a preset came back with. */
-export interface Read {
+export interface ReadResult {
   /** Null when the preset was refused. */
   readonly preset: Preset | null
   readonly refusal: RefusalReason | null
@@ -177,7 +177,7 @@ export interface Read {
 }
 
 /** What writing a preset came back with. */
-export interface Written {
+export interface WriteResult {
   readonly refusal: RefusalReason | null
   /** The file is no longer the one this caller read, and nothing was written. */
   readonly changed: boolean
@@ -185,7 +185,7 @@ export interface Written {
 }
 
 /** What making a preset came back with. */
-export interface Made {
+export interface MakeResult {
   /** Where it is filed. Empty when nothing was made. */
   readonly path: string
   readonly refusal: RefusalReason | null
@@ -301,7 +301,7 @@ export interface Listed {
 /** What the window asks about the presets of a vault. */
 export interface Presets {
   /** The settings of one preset, and the file they came out of. */
-  read(path: string): Promise<Read>
+  read(path: string): Promise<ReadResult>
   /**
    * Every preset the vault holds. The defaults are no note and are not among
    * them: they are what schedules a deck naming no preset.
@@ -311,20 +311,20 @@ export interface Presets {
    * A preset made in a folder under the name it is given, naming none of its
    * settings. Every key it does not carry stands at the default.
    */
-  makes(title: string, folder: string): Promise<Made>
+  makes(title: string, folder: string): Promise<MakeResult>
   /**
    * A deck put on a preset, and on the defaults where the path is empty. Seen
    * is what a read of the deck gave this caller, and a deck that moved past it
    * comes back changed with nothing written.
    */
-  schedules(deck: string, preset: string, seen: string): Promise<Written>
+  schedules(deck: string, preset: string, seen: string): Promise<WriteResult>
   /** The preset a deck is scheduled by. A deck naming none answers under no path. */
-  scheduling(deck: string): Promise<Read>
+  scheduling(deck: string): Promise<ReadResult>
   /**
    * Settings into a preset. Seen is what a read gave this caller, and a file
    * that moved past it comes back changed with nothing written.
    */
-  write(path: string, settings: Settings, seen: string): Promise<Written>
+  write(path: string, settings: Settings, seen: string): Promise<WriteResult>
   /**
    * What those settings come to over the whole range of the goal they name.
    * Nothing is written: a curve is asked for what a person is still moving.
@@ -373,7 +373,7 @@ const took = (answer: {
   refusal?: number | undefined
   at?: { path: string; size: bigint; mtime: bigint } | undefined
   bounds?: SettingsBoundsMessage | undefined
-}): Read => ({
+}): ReadResult => ({
   preset: answer.preset ? held(answer.preset) : null,
   refusal: refusalIn(answer),
   at: stamp(answer.at) ?? '',

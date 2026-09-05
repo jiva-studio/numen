@@ -17,9 +17,9 @@ import {
   type Goal,
   type Point,
   type Presets,
-  type Read,
+  type ReadResult,
   type Settings,
-  type Written,
+  type WriteResult,
 } from './core'
 import { BOUNDS } from '../testing/preset'
 import type { RefusalReason } from '../core'
@@ -80,8 +80,8 @@ const STEADY: Settings = { ...DEFAULTS, minutesADay: 20, reviewsADay: 80, retent
 const opened = async (
   settings: Partial<Settings> = {},
   answers: Curve | ((asked: Settings) => Curve | Promise<Curve>) = curve,
-  reading: (time: number) => Partial<Read> = () => ({}),
-  writing: (time: number) => Partial<Written> | Promise<Partial<Written>> = () => ({}),
+  reading: (time: number) => Partial<ReadResult> = () => ({}),
+  writing: (time: number) => Partial<WriteResult> | Promise<Partial<WriteResult>> = () => ({}),
 ) => {
   const written: Settings[] = []
   const asked: Goal[] = []
@@ -546,7 +546,7 @@ describe('what a tab still owes the file', () => {
     let lands = () => {}
     const { held, flush } = await opened({}, curve, () => ({}), (time) =>
       time === 0
-        ? new Promise<Partial<Written>>((done) => {
+        ? new Promise<Partial<WriteResult>>((done) => {
             lands = () => done({})
           })
         : {},

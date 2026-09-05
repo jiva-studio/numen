@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { CREATABLE, UNTITLED, creating } from './creating'
-import type { Core, Made, NewLink, NewNote } from '../core'
+import type { Core, MakeResult, NewLink, NewNote } from '../core'
 import { voice } from '../testing/voice'
 
 const pathOf = (note: NewNote): string =>
@@ -18,15 +18,15 @@ const pathOf = (note: NewNote): string =>
  * A core that keeps what it was asked to write and answers what a test told it
  * to, falling back on making the note.
  */
-function fake(answers: Made[] = [], refusals: Made['refusal'][] = []) {
+function fake(answers: MakeResult[] = [], refusals: MakeResult['refusal'][] = []) {
   const asked: NewNote[] = []
   const joined: { path: string; link: NewLink }[] = []
   const core = {
-    create: async (note: NewNote): Promise<Made> => {
+    create: async (note: NewNote): Promise<MakeResult> => {
       asked.push(note)
       return answers.shift() ?? { path: pathOf(note), refusal: null }
     },
-    join: async (path: string, link: NewLink): Promise<Made['refusal']> => {
+    join: async (path: string, link: NewLink): Promise<MakeResult['refusal']> => {
       joined.push({ path, link })
       return refusals.shift() ?? null
     },
