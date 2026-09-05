@@ -8,7 +8,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // Queries answers questions about notes in shapes that are not notes: what the
@@ -144,7 +143,7 @@ func (q *Queries) Named(ctx context.Context, vaultID domain.VaultID, name string
 }
 
 // Stencils is every stencil one vault holds, by path.
-func (q *Queries) Stencils(ctx context.Context, vaultID domain.VaultID) ([]port.Stencil, error) {
+func (q *Queries) Stencils(ctx context.Context, vaultID domain.VaultID) ([]domain.Stencil, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -159,9 +158,9 @@ func (q *Queries) Stencils(ctx context.Context, vaultID domain.VaultID) ([]port.
 	}
 	defer rows.Close()
 
-	var out []port.Stencil
+	var out []domain.Stencil
 	for rows.Next() {
-		var s port.Stencil
+		var s domain.Stencil
 		if err := rows.Scan(&s.Path, &s.Title); err != nil {
 			return nil, err
 		}

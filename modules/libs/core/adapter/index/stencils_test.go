@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // typed puts one note in, of the kind its file says it is.
@@ -23,7 +22,7 @@ func typed(t *testing.T, db *DB, vault domain.Vault, path, title string, kind do
 }
 
 // stencils is the stencils one vault answers with.
-func stencils(t *testing.T, db *DB, vault domain.Vault) []port.Stencil {
+func stencils(t *testing.T, db *DB, vault domain.Vault) []domain.Stencil {
 	t.Helper()
 
 	found, err := db.NoteQueries().Stencils(t.Context(), vault.ID)

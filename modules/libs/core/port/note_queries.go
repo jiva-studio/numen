@@ -46,7 +46,7 @@ type NoteQueries interface {
 
 	// Stencils is every stencil one vault holds, by path. A card names the
 	// stencil it is cut by, and this is the list those names are picked from.
-	Stencils(ctx context.Context, vaultID domain.VaultID) ([]Stencil, error)
+	Stencils(ctx context.Context, vaultID domain.VaultID) ([]domain.Stencil, error)
 
 	// Types is what each of the notes asked about is, keyed by path. A path
 	// naming a file the index holds no note at is absent from the answer, and a
@@ -63,13 +63,6 @@ type NoteQueries interface {
 	// reads the index tells a person so rather than showing them a vault that
 	// looks empty.
 	Holds(ctx context.Context, vaultID domain.VaultID) (bool, error)
-}
-
-// Stencil is one stencil as a caller choosing between them sees it: where the
-// file is, and what it is called.
-type Stencil struct {
-	Path  string
-	Title string
 }
 
 // LinkQueries answers what points where. It is separate from NoteQueries
