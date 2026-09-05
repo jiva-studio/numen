@@ -145,7 +145,8 @@ func (a *API) MoveFile(
 	if moved.Landed {
 		out.Moved = movedOf(moved)
 	}
-	if err != nil {
+	out.Unlevelled = a.unlevelled(err)
+	if err != nil && !out.GetUnlevelled() {
 		reason, refused := wire.RefusalBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)

@@ -327,6 +327,11 @@ message CreateStencilResponse {
 
   // Set when nothing was made, and why.
   optional Refusal refusal = 2;
+
+  // Set when the stencil is on disk and the index would not come level with it.
+  // The stencil was made and `path` stands; search does not answer about it
+  // until a walk goes past.
+  bool unlevelled = 3;
 }
 
 message ReadStencilRequest {
@@ -420,6 +425,11 @@ message RenameStencilFieldResponse {
   // The stencil the rename produced, for the caller to present at its next
   // write. Absent when nothing was renamed.
   optional Fingerprint at = 6;
+
+  // Set when the rename reached the vault and the index would not come level
+  // with it. Search answers about these files as it read them last, until a
+  // walk goes past.
+  bool unlevelled = 7;
 }
 
 // UnwrittenDeck is one deck a rename did not reach.
@@ -445,6 +455,11 @@ message CreateDeckResponse {
 
   // Set when nothing was made, and why.
   optional Refusal refusal = 2;
+
+  // Set when the deck is on disk and the index would not come level with it.
+  // The deck was made and `path` stands; search does not answer about it until
+  // a walk goes past.
+  bool unlevelled = 3;
 }
 
 message ReadDeckRequest {

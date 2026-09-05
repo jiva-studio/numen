@@ -67,13 +67,15 @@ func (a *API) ListPresets(
 func (a *API) CreatePreset(
 	ctx context.Context, r *connect.Request[v1.CreatePresetRequest],
 ) (*connect.Response[v1.CreatePresetResponse], error) {
-	made, refused, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
+	made, refused, unlevelled, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		return a.Cards.Create.Preset(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetFolder())
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&v1.CreatePresetResponse{Path: made.Path, Refusal: refused}), nil
+	return connect.NewResponse(&v1.CreatePresetResponse{
+		Path: made.Path, Refusal: refused, Unlevelled: unlevelled,
+	}), nil
 }
 
 // ScheduleDeck puts a deck on a preset. A deck still holding what the client

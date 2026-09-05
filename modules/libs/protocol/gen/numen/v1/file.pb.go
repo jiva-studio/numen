@@ -470,7 +470,11 @@ type MoveFileResponse struct {
 	// What the file did. Absent when nothing was moved.
 	Moved *MoveResult `protobuf:"bytes,1,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
 	// Set when nothing was moved, and why.
-	Refusal       *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Refusal *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	// Set when the move reached the vault and the index would not come level with
+	// it. Search answers about these files as it read them last, until a walk
+	// goes past.
+	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -517,6 +521,13 @@ func (x *MoveFileResponse) GetRefusal() Refusal {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
+}
+
+func (x *MoveFileResponse) GetUnlevelled() bool {
+	if x != nil {
+		return x.Unlevelled
+	}
+	return false
 }
 
 // MoveResult is a file under a different name, and what that did to the links
@@ -647,7 +658,10 @@ type RemoveFileResponse struct {
 	// The notes whose links pointed at what was removed and now reach nothing.
 	Dangling []string `protobuf:"bytes,2,rep,name=dangling,proto3" json:"dangling,omitempty"`
 	// Set when nothing was removed, and why.
-	Refusal       *Refusal `protobuf:"varint,3,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Refusal *Refusal `protobuf:"varint,3,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	// Set when the file has gone and the index would not come level with it.
+	// Search answers about it as it read it last, until a walk goes past.
+	Unlevelled    bool `protobuf:"varint,4,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -701,6 +715,13 @@ func (x *RemoveFileResponse) GetRefusal() Refusal {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
+}
+
+func (x *RemoveFileResponse) GetUnlevelled() bool {
+	if x != nil {
+		return x.Unlevelled
+	}
+	return false
 }
 
 type CreateFolderRequest struct {
@@ -819,10 +840,13 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\x04type\x18\x03 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\"5\n" +
 	"\x0fMoveFileRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\tR\x02to\"\x8b\x01\n" +
+	"\x02to\x18\x02 \x01(\tR\x02to\"\xab\x01\n" +
 	"\x10MoveFileResponse\x12/\n" +
 	"\x05moved\x18\x01 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x120\n" +
-	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01B\b\n" +
+	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01\x12\x1e\n" +
+	"\n" +
+	"unlevelled\x18\x03 \x01(\bR\n" +
+	"unlevelledB\b\n" +
 	"\x06_movedB\n" +
 	"\n" +
 	"\b_refusal\"^\n" +
@@ -834,11 +858,14 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"retargeted\"A\n" +
 	"\x11RemoveFileRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
-	"\adestroy\x18\x02 \x01(\bR\adestroy\"\x88\x01\n" +
+	"\adestroy\x18\x02 \x01(\bR\adestroy\"\xa8\x01\n" +
 	"\x12RemoveFileResponse\x12\x18\n" +
 	"\atrashed\x18\x01 \x01(\tR\atrashed\x12\x1a\n" +
 	"\bdangling\x18\x02 \x03(\tR\bdangling\x120\n" +
-	"\arefusal\x18\x03 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
+	"\arefusal\x18\x03 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x1e\n" +
+	"\n" +
+	"unlevelled\x18\x04 \x01(\bR\n" +
+	"unlevelledB\n" +
 	"\n" +
 	"\b_refusal\")\n" +
 	"\x13CreateFolderRequest\x12\x12\n" +

@@ -1221,7 +1221,11 @@ type CreatePresetResponse struct {
 	// Where the preset is filed. Empty when nothing was made.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Set when nothing was made, and why.
-	Refusal       *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Refusal *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	// Set when the preset is on disk and the index would not come level with it.
+	// The preset was made and `path` stands; search does not answer about it
+	// until a walk goes past.
+	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1268,6 +1272,13 @@ func (x *CreatePresetResponse) GetRefusal() Refusal {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
+}
+
+func (x *CreatePresetResponse) GetUnlevelled() bool {
+	if x != nil {
+		return x.Unlevelled
+	}
+	return false
 }
 
 type ScheduleDeckRequest struct {
@@ -1931,10 +1942,13 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x05title\x18\x02 \x01(\tR\x05title\"C\n" +
 	"\x13CreatePresetRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x16\n" +
-	"\x06folder\x18\x02 \x01(\tR\x06folder\"h\n" +
+	"\x06folder\x18\x02 \x01(\tR\x06folder\"\x88\x01\n" +
 	"\x14CreatePresetResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x120\n" +
-	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
+	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x1e\n" +
+	"\n" +
+	"unlevelled\x18\x03 \x01(\bR\n" +
+	"unlevelledB\n" +
 	"\n" +
 	"\b_refusal\"z\n" +
 	"\x13ScheduleDeckRequest\x12\x12\n" +

@@ -155,7 +155,7 @@ func joined(content []byte, links []domain.Link) ([]byte, error) {
 }
 
 func (u Create) index(ctx context.Context, v domain.Vault, paths ...string) error {
-	return u.Index(ctx, v, paths)
+	return Levelled(u.Index(ctx, v, paths), paths...)
 }
 
 func without(paths []string, path string) []string {

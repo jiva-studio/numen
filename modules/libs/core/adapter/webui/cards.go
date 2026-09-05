@@ -53,27 +53,31 @@ func offering(limit int32) int {
 func (a *API) CreateStencil(
 	ctx context.Context, r *connect.Request[v1.CreateStencilRequest],
 ) (*connect.Response[v1.CreateStencilResponse], error) {
-	made, refusal, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
+	made, refusal, unlevelled, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		in.Fields = r.Msg.GetFields()
 		return a.Cards.Create.Stencil(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetFolder())
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&v1.CreateStencilResponse{Path: made.Path, Refusal: refusal}), nil
+	return connect.NewResponse(&v1.CreateStencilResponse{
+		Path: made.Path, Refusal: refusal, Unlevelled: unlevelled,
+	}), nil
 }
 
 // CreateDeck puts a deck of no cards in the vault.
 func (a *API) CreateDeck(
 	ctx context.Context, r *connect.Request[v1.CreateDeckRequest],
 ) (*connect.Response[v1.CreateDeckResponse], error) {
-	made, refusal, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
+	made, refusal, unlevelled, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		return a.Cards.Create.Deck(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetFolder())
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&v1.CreateDeckResponse{Path: made.Path, Refusal: refusal}), nil
+	return connect.NewResponse(&v1.CreateDeckResponse{
+		Path: made.Path, Refusal: refusal, Unlevelled: unlevelled,
+	}), nil
 }
 
 // makes is what making a deck and making a stencil have in common: the vault
@@ -81,13 +85,13 @@ func (a *API) CreateDeck(
 // not be made comes back as.
 func (a *API) makes(
 	ctx context.Context, cut func(domain.Vault, cards.New) (cards.CreateNoteResult, error), title, folder string,
-) (cards.CreateNoteResult, *v1.Refusal, error) {
+) (cards.CreateNoteResult, *v1.Refusal, bool, error) {
 	showing, err := a.shown()
 	if err != nil {
-		return cards.CreateNoteResult{}, nil, err
+		return cards.CreateNoteResult{}, nil, false, err
 	}
 	if !a.Writing.begin() {
-		return cards.CreateNoteResult{}, nil, connect.NewError(connect.CodeUnavailable, errClosing)
+		return cards.CreateNoteResult{}, nil, false, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
 	defer a.Writing.done()
 
@@ -98,16 +102,16 @@ func (a *API) makes(
 		}
 		// The file is on disk under that name and nothing renumbers a second
 		// attempt, so the path is the only way back to it.
-		return made, nil, nil
+		return made, nil, a.unlevelled(err), nil
 	}
 	if errors.Is(err, cards.ErrNoFields) {
-		return cards.CreateNoteResult{}, nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return cards.CreateNoteResult{}, nil, false, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	reason, refused := wire.RefusalBy(err)
 	if !refused {
-		return cards.CreateNoteResult{}, nil, connect.NewError(wire.Coded(err), err)
+		return cards.CreateNoteResult{}, nil, false, connect.NewError(wire.Coded(err), err)
 	}
-	return cards.CreateNoteResult{}, &reason, nil
+	return cards.CreateNoteResult{}, &reason, false, nil
 }
 
 // RenameStencilField gives one of a stencil's fields a different name, in the
@@ -130,11 +134,13 @@ func (a *API) RenameStencilField(
 		Stencil: r.Msg.GetPath(), From: r.Msg.GetFrom(), To: r.Msg.GetTo(),
 		Fingerprint: refOf(r.Msg.GetSeen()),
 	})
-	if err == nil {
+	if err == nil || errors.Is(err, note.ErrUnlevelled) {
 		if a.Wrote != nil {
 			a.Wrote()
 		}
-		return connect.NewResponse(renamedOf(renamed)), nil
+		out := renamedOf(renamed)
+		out.Unlevelled = a.unlevelled(err)
+		return connect.NewResponse(out), nil
 	}
 	// The name a rename is given is the client's: one the stencil does not
 	// declare, and one it already declares, are both a name to correct.

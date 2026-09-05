@@ -1368,7 +1368,11 @@ type CreateNoteResponse struct {
 	// Where the note is filed. Empty when nothing was made.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Set when nothing was made, and why.
-	Refusal       *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Refusal *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	// Set when the note is on disk and the index would not come level with it.
+	// The note was made and `path` stands; search does not answer about it until
+	// a walk goes past.
+	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1415,6 +1419,13 @@ func (x *CreateNoteResponse) GetRefusal() Refusal {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
+}
+
+func (x *CreateNoteResponse) GetUnlevelled() bool {
+	if x != nil {
+		return x.Unlevelled
+	}
+	return false
 }
 
 type WriteLinkRequest struct {
@@ -1587,7 +1598,11 @@ type RenameNoteResponse struct {
 	// Set when the rename did not finish, and why. The note may already have been
 	// written: `path`, `title` and `by` say what stands. A note holding prose the
 	// caller never saw is REFUSAL_STALE, and nothing was written at all.
-	Refusal       *Refusal `protobuf:"varint,5,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Refusal *Refusal `protobuf:"varint,5,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	// Set when the rename reached the vault and the index would not come level
+	// with it. Search answers about these files as it read them last, until a
+	// walk goes past.
+	Unlevelled    bool `protobuf:"varint,7,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1655,6 +1670,13 @@ func (x *RenameNoteResponse) GetRefusal() Refusal {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
+}
+
+func (x *RenameNoteResponse) GetUnlevelled() bool {
+	if x != nil {
+		return x.Unlevelled
+	}
+	return false
 }
 
 type WatchEditsRequest struct {
@@ -1869,10 +1891,13 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x11CreateNoteRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x16\n" +
 	"\x06folder\x18\x02 \x01(\tR\x06folder\x12'\n" +
-	"\x05links\x18\x03 \x03(\v2\x11.numen.v1.NewLinkR\x05links\"f\n" +
+	"\x05links\x18\x03 \x03(\v2\x11.numen.v1.NewLinkR\x05links\"\x86\x01\n" +
 	"\x12CreateNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x120\n" +
-	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
+	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x1e\n" +
+	"\n" +
+	"unlevelled\x18\x03 \x01(\bR\n" +
+	"unlevelledB\n" +
 	"\n" +
 	"\b_refusal\"M\n" +
 	"\x10WriteLinkRequest\x12\x12\n" +
@@ -1884,13 +1909,16 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\b_refusalJ\x04\b\x02\x10\x03R\achanged\"=\n" +
 	"\x11RenameNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"\xe9\x01\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"\x89\x02\n" +
 	"\x12RenameNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12!\n" +
 	"\x02by\x18\x03 \x01(\x0e2\x11.numen.v1.NamedByR\x02by\x12/\n" +
 	"\x05moved\x18\x04 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x120\n" +
-	"\arefusal\x18\x05 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01B\b\n" +
+	"\arefusal\x18\x05 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01\x12\x1e\n" +
+	"\n" +
+	"unlevelled\x18\a \x01(\bR\n" +
+	"unlevelledB\b\n" +
 	"\x06_movedB\n" +
 	"\n" +
 	"\b_refusalJ\x04\b\x06\x10\aR\achanged\"\x13\n" +

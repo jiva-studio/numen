@@ -102,11 +102,14 @@ func (a *API) CreateNote(
 		Folder: r.Msg.GetFolder(),
 		Links:  links,
 	})
+	behind := a.unlevelled(err)
 	if made.Path != "" {
 		// The note is on disk under that name, so that is the answer. What comes
 		// after the write is the index catching up, and the watcher does it
 		// again.
-		return connect.NewResponse(&v1.CreateNoteResponse{Path: made.Path}), nil
+		return connect.NewResponse(&v1.CreateNoteResponse{
+			Path: made.Path, Unlevelled: behind,
+		}), nil
 	}
 	if err == nil {
 		return connect.NewResponse(&v1.CreateNoteResponse{}), nil

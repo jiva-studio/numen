@@ -955,7 +955,11 @@ type CreateStencilResponse struct {
 	// Where the stencil is filed. Empty when nothing was made.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Set when nothing was made, and why.
-	Refusal       *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Refusal *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	// Set when the stencil is on disk and the index would not come level with it.
+	// The stencil was made and `path` stands; search does not answer about it
+	// until a walk goes past.
+	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1002,6 +1006,13 @@ func (x *CreateStencilResponse) GetRefusal() Refusal {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
+}
+
+func (x *CreateStencilResponse) GetUnlevelled() bool {
+	if x != nil {
+		return x.Unlevelled
+	}
+	return false
 }
 
 type ReadStencilRequest struct {
@@ -1358,7 +1369,11 @@ type RenameStencilFieldResponse struct {
 	Refusal *Refusal `protobuf:"varint,4,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
 	// The stencil the rename produced, for the caller to present at its next
 	// write. Absent when nothing was renamed.
-	At            *Fingerprint `protobuf:"bytes,6,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *Fingerprint `protobuf:"bytes,6,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	// Set when the rename reached the vault and the index would not come level
+	// with it. Search answers about these files as it read them last, until a
+	// walk goes past.
+	Unlevelled    bool `protobuf:"varint,7,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1426,6 +1441,13 @@ func (x *RenameStencilFieldResponse) GetAt() *Fingerprint {
 		return x.At
 	}
 	return nil
+}
+
+func (x *RenameStencilFieldResponse) GetUnlevelled() bool {
+	if x != nil {
+		return x.Unlevelled
+	}
+	return false
 }
 
 // UnwrittenDeck is one deck a rename did not reach.
@@ -1542,7 +1564,11 @@ type CreateDeckResponse struct {
 	// Where the deck is filed. Empty when nothing was made.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Set when nothing was made, and why.
-	Refusal       *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Refusal *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	// Set when the deck is on disk and the index would not come level with it.
+	// The deck was made and `path` stands; search does not answer about it until
+	// a walk goes past.
+	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1589,6 +1615,13 @@ func (x *CreateDeckResponse) GetRefusal() Refusal {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
+}
+
+func (x *CreateDeckResponse) GetUnlevelled() bool {
+	if x != nil {
+		return x.Unlevelled
+	}
+	return false
 }
 
 type ReadDeckRequest struct {
@@ -1944,10 +1977,13 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x14CreateStencilRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x16\n" +
 	"\x06folder\x18\x02 \x01(\tR\x06folder\x12\x16\n" +
-	"\x06fields\x18\x03 \x03(\tR\x06fields\"i\n" +
+	"\x06fields\x18\x03 \x03(\tR\x06fields\"\x89\x01\n" +
 	"\x15CreateStencilResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x120\n" +
-	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
+	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x1e\n" +
+	"\n" +
+	"unlevelled\x18\x03 \x01(\bR\n" +
+	"unlevelledB\n" +
 	"\n" +
 	"\b_refusal\"(\n" +
 	"\x12ReadStencilRequest\x12\x12\n" +
@@ -1983,14 +2019,17 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x04from\x18\x02 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x03 \x01(\tR\x02to\x12.\n" +
 	"\x04seen\x18\x04 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\x82\x02\n" +
+	"\x05_seen\"\xa2\x02\n" +
 	"\x1aRenameStencilFieldResponse\x12\x14\n" +
 	"\x05decks\x18\x01 \x03(\tR\x05decks\x12\x14\n" +
 	"\x05cards\x18\x02 \x01(\x05R\x05cards\x128\n" +
 	"\vnot_written\x18\x03 \x03(\v2\x17.numen.v1.UnwrittenDeckR\n" +
 	"notWritten\x120\n" +
 	"\arefusal\x18\x04 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x06 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01B\n" +
+	"\x02at\x18\x06 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
+	"\n" +
+	"unlevelled\x18\a \x01(\bR\n" +
+	"unlevelledB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
 	"\x03_atJ\x04\b\x05\x10\x06R\achanged\"P\n" +
@@ -1999,10 +2038,13 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\aproblem\x18\x02 \x01(\v2\x11.numen.v1.ProblemR\aproblem\"A\n" +
 	"\x11CreateDeckRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x16\n" +
-	"\x06folder\x18\x02 \x01(\tR\x06folder\"f\n" +
+	"\x06folder\x18\x02 \x01(\tR\x06folder\"\x86\x01\n" +
 	"\x12CreateDeckResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x120\n" +
-	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
+	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x1e\n" +
+	"\n" +
+	"unlevelled\x18\x03 \x01(\bR\n" +
+	"unlevelledB\n" +
 	"\n" +
 	"\b_refusal\"%\n" +
 	"\x0fReadDeckRequest\x12\x12\n" +
