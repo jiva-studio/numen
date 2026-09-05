@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Shared interface components. Knows nothing about notes, vaults or links.",
+  "description": "Shared interface components, and the link grammar a note is written in. Knows nothing about vaults or how one is asked.",
   "files": [
     "dist"
   ],
