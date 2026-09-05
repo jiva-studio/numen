@@ -43,11 +43,16 @@ var owed = map[string][]string{
 // driving are the adapters something outside comes in through. They call the
 // scenarios; a driven adapter stands behind a port and calls none, so what a
 // scenario is written over is a port and never an adapter's own answer.
+//
+// Which way an adapter faces has nothing to do with where it stands. internal/
+// says nothing outside composes this, and a driving adapter mounted by another
+// adapter rather than by an application is composed by nothing outside.
 var driving = map[string]bool{
-	"adapter/cli":          true,
-	"adapter/flashcardsui": true,
-	"adapter/mcp":          true,
-	"adapter/webui":        true,
+	"adapter/cli":            true,
+	"adapter/flashcardsui":   true,
+	"adapter/mcp":            true,
+	"adapter/webui":          true,
+	"internal/adapter/theme": true,
 }
 
 // pure are the packages holding what is true of a note or a card, and the
@@ -199,6 +204,141 @@ func claimed(file *ast.File) []string {
 		}
 	}
 	return held
+}
+
+// schema is the generated messages. An adapter that takes one and answers with
+// one is answering something outside, whether it is served over the wire or
+// called by another adapter, and that is what makes it a driving adapter.
+//
+// The handler it satisfies is not what says so: an adapter never names the
+// interface it answers to, so nothing but the messages is left to read.
+const schema = wire + "/gen/numen/v1"
+
+// Which way an adapter faces is read off what it does, and not off the folder
+// it sits in. An adapter that serves or mounts the generated handler is a
+// driving adapter wherever it stands, and the list above says so, so the day
+// one of them needs a scenario it is allowed one.
+func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
+	var wrong []string
+	var found int
+	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
+			return err
+		}
+		pkg := within("..", path)
+		if strings.HasSuffix(path, "_test.go") || !adapting(pkg) {
+			return nil
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
+		if err != nil {
+			return err
+		}
+		for _, one := range file.Imports {
+			to, err := strconv.Unquote(one.Path.Value)
+			if err != nil || to != schema {
+				continue
+			}
+			found++
+			if !driving[family(pkg)] {
+				wrong = append(wrong, family(pkg)+" serves the schema and is named driven")
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range wrong {
+		t.Error(one)
+	}
+	if found == 0 {
+		t.Fatal("no adapter names the schema: the walk is not reading the adapters")
+	}
+}
+
+// A port is a conversation the core holds with something outside it, and a
+// conversation nothing asks for is not one. An interface left in port/ after
+// the last caller went is indirection standing on its own, and the composition
+// root goes on binding an adapter to it.
+//
+// The tests are read: a port a test alone still asks for is asked for.
+func TestEveryPortIsAskedForSomewhereElse(t *testing.T) {
+	declared, err := interfaces(filepath.Join("..", "port"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(declared) == 0 {
+		t.Fatal("port/ declares no interface: the walk is not reading it")
+	}
+
+	asked := map[string]bool{}
+	err = filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
+			return err
+		}
+		if within("..", path) == "port" {
+			return nil
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+		if err != nil {
+			return err
+		}
+		ast.Inspect(file, func(node ast.Node) bool {
+			at, is := node.(*ast.SelectorExpr)
+			if !is {
+				return true
+			}
+			if from, is := at.X.(*ast.Ident); is && from.Name == "port" {
+				asked[at.Sel.Name] = true
+			}
+			return true
+		})
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, one := range declared {
+		if !asked[one] {
+			t.Errorf("port.%s is declared and nothing asks for it", one)
+		}
+	}
+}
+
+// interfaces are the exported interfaces a folder's own files declare.
+func interfaces(dir string) ([]string, error) {
+	held, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	var declared []string
+	for _, one := range held {
+		if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
+			strings.HasSuffix(one.Name(), "_test.go") {
+			continue
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(dir, one.Name()), nil, 0)
+		if err != nil {
+			return nil, err
+		}
+		for _, decl := range file.Decls {
+			at, is := decl.(*ast.GenDecl)
+			if !is || at.Tok != token.TYPE {
+				continue
+			}
+			for _, spec := range at.Specs {
+				named, is := spec.(*ast.TypeSpec)
+				if !is || !named.Name.IsExported() {
+					continue
+				}
+				if _, is := named.Type.(*ast.InterfaceType); is {
+					declared = append(declared, named.Name.Name)
+				}
+			}
+		}
+	}
+	return declared, nil
 }
 
 // layers are the folders the tree is laid out in.
@@ -407,8 +547,12 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"adapter/cli", "internal/adapter/filesystem", false},
 		{"adapter/mcp", "usecase/note", false},
 
-		// A driven adapter runs no scenario, and takes no other adapter.
+		// A driven adapter runs no scenario, and takes no other adapter. Which
+		// of the two an adapter is has nothing to do with the folder it sits
+		// in: the one the compiler holds here serves the schema.
 		{"adapter/index", "usecase/note", true},
+		{"internal/adapter/filesystem", "usecase/note", true},
+		{"internal/adapter/theme", "usecase/note", false},
 		{"internal/adapter/theme", "internal/adapter/filesystem", true},
 		{"internal/adapter/theme/presets", "internal/adapter/theme", false},
 		{"adapter/index/chunk", "adapter/index", false},

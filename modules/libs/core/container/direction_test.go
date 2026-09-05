@@ -58,6 +58,75 @@ func answering(path string) (refuses []string, named bool) {
 	return outward, false
 }
 
+// reaching says whether a package would be failed for the edge it has, which is
+// what inward does with what answering and owing say.
+func reaching(pkg, dep string) bool {
+	refuses, _ := answering(module + pkg)
+	if owing(pkg, dep) {
+		return false
+	}
+	for _, refused := range refuses {
+		if strings.HasPrefix(dep, refused) {
+			return true
+		}
+	}
+	return false
+}
+
+// What answering and owing say between them is the whole of the rule, so they
+// are asked directly. A walk that reads the tree and refuses nothing passes,
+// and an entry admitting one edge that quietly admitted every edge would pass
+// with it: these are the edges that have to come back refused.
+func TestWhatTheDirectionRulesRefuse(t *testing.T) {
+	for _, one := range []struct {
+		pkg, dep string
+		refuses  bool
+	}{
+		// The core is compiled from none of the three, at any remove.
+		{"usecase/note", module + "adapter/webui", true},
+		{"usecase/note", module + "internal/adapter/theme", true},
+		{"usecase/note", module + "container", true},
+		{"usecase/note", wire + "/gen/numen/v1", true},
+		{"usecase/note", module + "domain", false},
+		{"domain", module + "adapter/index", true},
+		{"text", module + "internal/adapter/pdf", true},
+
+		// The composition root is built from the adapters and answers for what
+		// it names. The schema is the one thing it may not name.
+		{"container", wire + "/gen/numen/v1", true},
+		{"container", module + "adapter/index", false},
+		{"container", module + "internal/adapter/theme", false},
+
+		// What two adapters both put on the schema is built in one place, and
+		// the edge that admits it admits nothing else.
+		{"internal/wire", wire + "/gen/numen/v1", false},
+		{"internal/wire", module + "adapter/webui", true},
+
+		// An adapter, and what only a test builds, answer for nothing.
+		{"adapter/webui", wire + "/gen/numen/v1", false},
+		{"internal/adapter/theme", wire + "/gen/numen/v1", false},
+		{"internal/testsupport", module + "adapter/index", false},
+	} {
+		if got := reaching(one.pkg, one.dep); got != one.refuses {
+			if one.refuses {
+				t.Errorf("%s reaches %s and is not refused", one.pkg, one.dep)
+			} else {
+				t.Errorf("%s reaches %s and is refused", one.pkg, one.dep)
+			}
+		}
+	}
+
+	// The composition root is the one package answering for what it names
+	// rather than for everything it is built from, and everything else is held
+	// to the whole of what it is compiled from.
+	if _, named := answering(module + "container"); !named {
+		t.Error("the composition root answers for everything it is built from")
+	}
+	if _, named := answering(module + "usecase/note"); named {
+		t.Error("a scenario answers only for what it names")
+	}
+}
+
 // shipped are the platforms this product is built for. A file kept for one of
 // them is compiled nowhere else, so a listing read on the machine the test runs
 // on is a rule checked against one platform's files. Every platform is read.
