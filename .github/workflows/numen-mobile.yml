@@ -114,7 +114,7 @@ jobs:
       - name: Build the components
         run: npm run build --prefix modules/libs/ui
 
-      - name: The code says what it is
+      - name: "Lint :: numen"
         run: npm run check --prefix modules/tools/lint
 
       - name: Typecheck
