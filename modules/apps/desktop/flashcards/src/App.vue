@@ -15,9 +15,9 @@ import '@numen/ui/styles.css'
 import Vaults from './Vaults.vue'
 import Decks from './Decks.vue'
 import Session from './Session.vue'
-import Finished from './Finished.vue'
-import Asking from './Asking.vue'
-import Reading from './Reading.vue'
+import SessionSummary from './SessionSummary.vue'
+import AgentPanel from './AgentPanel.vue'
+import NotesPanel from './NotesPanel.vue'
 import { VERSION } from './version'
 import { useWindow } from './window'
 
@@ -71,7 +71,7 @@ const {
       @back="vaultsAgain"
     />
 
-    <Finished v-else-if="sat.over.value" :done="sat.done.value" @leave="leave" />
+    <SessionSummary v-else-if="sat.over.value" :done="sat.done.value" @leave="leave" />
 
     <Session
       v-else-if="sat.card.value"
@@ -89,10 +89,10 @@ const {
       @read="reads"
     >
       <template #reading>
-        <Reading ref="page" :held="read" />
+        <NotesPanel ref="page" :held="read" />
       </template>
       <template #panel>
-        <Asking :held="panel" />
+        <AgentPanel :held="panel" />
       </template>
     </Session>
   </main>

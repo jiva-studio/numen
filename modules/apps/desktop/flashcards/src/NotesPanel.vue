@@ -10,9 +10,9 @@ import { Prose } from '@numen/ui'
 
 import { WORDS as words } from './reading/words'
 import type { Neighbour } from './reading/core'
-import type { Read } from './reading'
+import type { NotesPanelState } from './reading'
 
-const props = defineProps<{ held: Read }>()
+const props = defineProps<{ held: NotesPanelState }>()
 
 const column = useTemplateRef<HTMLElement>('column')
 

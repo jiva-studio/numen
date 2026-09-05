@@ -9,7 +9,7 @@
 import { computed, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 import { following, opensVault } from '@numen/ui'
 
-import type Reading from './Reading.vue'
+import type NotesPanel from './NotesPanel.vue'
 import type { Where } from './PanelCarousel.vue'
 import { WINDOW, cards, deckName, itself } from './core'
 import { counting } from './counting'
@@ -109,7 +109,7 @@ export const useWindow = () => {
   }
 
   /** What is read, so the keys can scroll it: the caret is nowhere in it. */
-  const page = useTemplateRef<InstanceType<typeof Reading>>('page')
+  const page = useTemplateRef<InstanceType<typeof NotesPanel>>('page')
 
   const chosen = computed(() => vaults.value.find((one) => one.vault === vault.value) ?? null)
 

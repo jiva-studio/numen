@@ -135,4 +135,4 @@ export function asking(deps: AgentPanelDeps) {
 }
 
 /** What one panel holds. */
-export type Held = ReturnType<typeof asking>
+export type AgentPanelState = ReturnType<typeof asking>

@@ -10,9 +10,9 @@ import { nextTick, useTemplateRef, watch } from 'vue'
 import { Agent } from '@numen/ui'
 
 import { WORDS as words } from './agent/words'
-import type { Held } from './asking'
+import type { AgentPanelState } from './asking'
 
-const props = defineProps<{ held: Held }>()
+const props = defineProps<{ held: AgentPanelState }>()
 
 const talk = useTemplateRef<InstanceType<typeof Agent>>('talk')
 

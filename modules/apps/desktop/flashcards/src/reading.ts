@@ -16,7 +16,7 @@ import { WORDS as words } from './reading/words'
 import type { DeckNeighbourhood, Neighbour } from './reading/core'
 
 /** What the panel asks of the window it is drawn in. */
-export interface ReadingPanelDeps {
+export interface NotesPanelDeps {
   /** Whether the panel is what the window is showing. */
   readonly open: () => boolean
   /**
@@ -34,7 +34,7 @@ export interface ReadingPanelDeps {
   readonly says: (said: string) => void
 }
 
-export function reading(deps: ReadingPanelDeps) {
+export function reading(deps: NotesPanelDeps) {
   const notes = shallowRef<readonly Neighbour[]>([])
 
   /** How many at the end came named and not read. */
@@ -128,4 +128,4 @@ export function reading(deps: ReadingPanelDeps) {
 }
 
 /** What one panel holds. */
-export type Read = ReturnType<typeof reading>
+export type NotesPanelState = ReturnType<typeof reading>

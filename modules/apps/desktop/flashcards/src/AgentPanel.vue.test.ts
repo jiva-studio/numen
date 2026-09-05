@@ -4,9 +4,9 @@ import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import type { AgentPort } from '@numen/ui'
 
-import Asking from './Asking.vue'
+import AgentPanel from './AgentPanel.vue'
 import { asking } from './asking'
-import type { Held } from './asking'
+import type { AgentPanelState } from './asking'
 import { WORDS as words } from './agent/words'
 import type { CardFace } from './core'
 
@@ -32,7 +32,7 @@ const agent: AgentPort = {
 }
 
 /** The panel over one card, with the sitting around it standing in for it. */
-const holding = (unreachable = ''): Held => {
+const holding = (unreachable = ''): AgentPanelState => {
   // What the window is showing is the window's, and the test holds it for it.
   const open = ref(false)
   return asking({
@@ -51,13 +51,13 @@ const holding = (unreachable = ''): Held => {
 }
 
 /** A panel holding the card, with a reason nothing can be asked where there is one. */
-const held = (unreachable = ''): Held => {
+const held = (unreachable = ''): AgentPanelState => {
   const panel = holding(unreachable)
   panel.opens()
   return panel
 }
 
-const shown = (panel: Held) => mount(Asking, { props: { held: panel } })
+const shown = (panel: AgentPanelState) => mount(AgentPanel, { props: { held: panel } })
 
 describe('the panel a card is asked about in', () => {
   // The card it is about is the card the sitting is on, and the sitting says
@@ -77,7 +77,7 @@ describe('the panel a card is asked about in', () => {
   // A panel opened is a panel opened to write in.
   it('takes the keyboard into the field when it comes up', async () => {
     const panel = holding()
-    const one = mount(Asking, { props: { held: panel }, attachTo: document.body })
+    const one = mount(AgentPanel, { props: { held: panel }, attachTo: document.body })
 
     panel.opens()
     await nextTick()

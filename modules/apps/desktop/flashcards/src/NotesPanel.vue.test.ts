@@ -3,11 +3,11 @@ import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 
-import Reading from './Reading.vue'
+import NotesPanel from './NotesPanel.vue'
 import { reading } from './reading'
 import { WORDS as words } from './reading/words'
 import type { DeckNeighbourhood, Neighbour } from './reading/core'
-import type { Read } from './reading'
+import type { NotesPanelState } from './reading'
 
 /** One note as the window hands it over. */
 const joined = (more: Partial<Neighbour> = {}): Neighbour => ({
@@ -23,7 +23,7 @@ const joined = (more: Partial<Neighbour> = {}): Neighbour => ({
 })
 
 /** The panel over one deck, with the sitting around it standing in for it. */
-const held = (around: DeckNeighbourhood): Read => {
+const held = (around: DeckNeighbourhood): NotesPanelState => {
   const open = ref(false)
   return reading({
     open: () => open.value,
@@ -41,7 +41,7 @@ const held = (around: DeckNeighbourhood): Read => {
 const shown = async (around: DeckNeighbourhood) => {
   const panel = held(around)
   await panel.opens()
-  return mount(Reading, { props: { held: panel } })
+  return mount(NotesPanel, { props: { held: panel } })
 }
 
 describe('the panel the deck is read in', () => {
@@ -117,7 +117,7 @@ describe('a reading opened on one note', () => {
       notes: [joined(), joined({ title: 'Humus', path: 'notes/Humus.md' })],
       unread: 0,
     })
-    const one = mount(Reading, { props: { held: panel } })
+    const one = mount(NotesPanel, { props: { held: panel } })
 
     await panel.opens('notes/Humus.md')
     await nextTick()
