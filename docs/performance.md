@@ -17,6 +17,9 @@ go test ./usecase/flashcards/ -run XXX -bench PresetCurve -benchtime 3x -benchme
 go test ./usecase/flashcards/ -run XXX -bench CurveCards -benchtime 3x -count 2 -benchmem -timeout 180m
 go test ./adapter/flashcardsui/ -run XXX -bench FrontDoor -benchtime 5x -count 2 -timeout 40m
 go test ./internal/adapter/filesystem/ -run XXX -bench Derived -benchmem -count 3
+go test ./adapter/index/ -run XXX -bench Unembedded -benchmem -count 10 -benchtime 300x
+go test ./adapter/index/ -run XXX -bench SaveVectors -benchmem -count 10 -benchtime 50x
+go test ./adapter/index/ -run XXX -bench ChunkIdentity -benchmem -count 10
 ```
 
 The vault is generated, not downloaded: `testsupport.GenerateVault` writes notes of varying length across fifty folders, each naming a parent and pointing at a few others, from a fixed seed.
@@ -395,6 +398,24 @@ For comparison, a hosted service embedded 145 800 chunks of the source corpus in
 What that means for the default: a personal vault of a few thousand notes is ten to twenty thousand chunks, which finishes locally in one to two hours. A hundred thousand notes is four hundred thousand chunks, and local is then a day and a half of background work. The vector index fills in behind the lexical one and may never finish, so neither figure blocks anything — but only the service answers a corpus of that size in a sitting.
 
 The default model is a 470 MB fp32 ONNX file, fetched on first use. An int8 export was not tried.
+
+### What naming a chunk costs the walk
+
+The core addresses a chunk by an opaque `domain.ChunkID` and resumes the walk on an opaque `port.ChunkCursor`, and the index spells both out of the row number it keeps. That is one `FormatInt` per row read and one `ParseInt` per vector written, over every chunk of a vault. What it comes to was assumed and is now measured.
+
+Recorded 2026-09-05 on the same AMD Ryzen 7 6800U, from `BenchmarkUnembedded`, `BenchmarkSaveVectors` and `BenchmarkChunkIdentity` in `adapter/index`. Ten runs of each; the two conversions vary by under 10 % across them, and the pages by two- to fivefold, which is the shape of the answer.
+
+| | Measured |
+| --- | --- |
+| A row spelled as a `domain.ChunkID` | 25 ns |
+| A `port.ChunkCursor` read back as a row | 23 ns |
+| One chunk read out of the index, in a page of 200 | 3.9 µs |
+| A row turned into a `domain.Passage`, the whole of it | 0.67 µs |
+| One vector written, in a page of 200 | 200 µs |
+
+**It is lost in the noise, and the numbers say so plainly.** Over 400 000 chunks — the vault a hundred thousand notes cut into — both conversions together come to **19 ms**. Reading those rows out of SQLite is 1.6 s, writing their vectors is 80 s, and the embedding itself is 27 minutes through a service or 36 hours on this laptop's CPU. The conversion is a thousandth of the cheapest thing it sits beside, and the row a walk resumes from is spelled once per page of 200 rather than once per row.
+
+The two pages are measured at a fixed number of iterations because a laptop with other work on it moves them by fivefold between runs, and a conversion two orders of magnitude smaller than the page cannot be read out of a difference of pages. It is measured on its own instead, and the row it is measured on is nine digits — longer than anything a vault of this size hands out.
 
 ### Hearing a recording
 
