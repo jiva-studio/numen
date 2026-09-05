@@ -7,7 +7,7 @@
  * and the strip itself is what a gesture takes hold of.
  */
 import { onScopeDispose, shallowRef } from 'vue'
-import Slab from './Slab.vue'
+import CardRow from './CardRow.vue'
 import { wayOf, type Way } from './order'
 
 defineProps<{
@@ -65,7 +65,7 @@ const carried = (event: KeyboardEvent): void => {
 </script>
 
 <template>
-  <Slab
+  <CardRow
     as="header"
     tone="bar"
     class="bar"
@@ -82,7 +82,7 @@ const carried = (event: KeyboardEvent): void => {
   >
     <span class="bar__held min-w-0 flex-1"><slot /></span>
     <span class="bar__deeds flex shrink-0 items-center"><slot name="deeds" /></span>
-  </Slab>
+  </CardRow>
 </template>
 
 <style scoped>

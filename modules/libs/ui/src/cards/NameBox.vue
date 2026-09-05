@@ -43,7 +43,7 @@ const objects = (): boolean => props.naming.objection(props.over) !== null
 <style scoped>
 /* The air a row keeps at its ends, where the box stands in one. */
 .name-box {
-  padding: var(--slab-pad-block, 0.125rem) var(--slab-pad-inline, 0.375rem);
+  padding: var(--card-row-pad-block, 0.125rem) var(--card-row-pad-inline, 0.375rem);
   border: none;
   background: none;
   color: inherit;

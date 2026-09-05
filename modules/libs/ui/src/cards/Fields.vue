@@ -12,7 +12,7 @@ import ErrorMessage from './ErrorMessage.vue'
 import Icon from './Icon.vue'
 import NameBox from './NameBox.vue'
 import Divider from '../divider/Divider.vue'
-import Slab from './Slab.vue'
+import CardRow from './CardRow.vue'
 import { useCarry } from './carry'
 import { useNaming } from './naming'
 import { Button } from '../components/ui/button'
@@ -125,7 +125,7 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
         @dragover.stop="over(row.names ? undefined : row.field, $event)"
         @drop.stop="drop"
       >
-        <Slab class="stencil__row" :data-objects="objects(row.field) ?? undefined">
+        <CardRow class="stencil__row" :data-objects="objects(row.field) ?? undefined">
           <!-- The first field names every card, so its handle is there and
                turned off, and the row keeps the shape every other row has. The
                handle is what a row is carried by, by the pointer and by the
@@ -166,7 +166,7 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
           >
             <Icon shows="cross" />
           </Button>
-        </Slab>
+        </CardRow>
 
         <ErrorMessage
           v-if="says(row.field)"

@@ -125,7 +125,7 @@ const stem = computed(() => `${props.words.sectionStem} ${props.band.at}`)
 /* The cell behind the box is the box's own size, so the two hold the same air. */
 .band__name::after {
   content: attr(data-typed);
-  padding: var(--slab-pad-block, 0.125rem) var(--slab-pad-inline, 0.375rem);
+  padding: var(--card-row-pad-block, 0.125rem) var(--card-row-pad-inline, 0.375rem);
   visibility: hidden;
   white-space: pre;
 }
