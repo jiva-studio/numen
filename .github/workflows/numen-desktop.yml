@@ -89,14 +89,14 @@ jobs:
       # this job because the window's packages only compile on a machine that
       # already has the webview's headers, and this is the machine that does.
       #
-      # It reports and does not fail: the check arrived after the code did, and
-      # the backlog it names is triaged one finding at a time. The flag comes
-      # off when that list is empty; `make lint-go` carries the same one.
+      # It fails on what it finds, as the core and the protocol do: the backlog
+      # it arrived to a list of is empty, and a check that cannot go red is a
+      # check nobody reads.
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: v2.12.2
           working-directory: modules/apps/desktop
-          args: --timeout 15m --issues-exit-code=0
+          args: --timeout 15m
 
       # The vulnerability list is kept elsewhere and read at the time of the
       # run, so this step can find something on a branch that changed nothing.
