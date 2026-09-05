@@ -6,7 +6,7 @@
  * here is the same text on any machine on any day.
  */
 
-import type { Filled } from './deck'
+import type { FieldValue } from './deck'
 
 /** The braces, and what a person may write between them. */
 const SLOT = /\{\{([^{}]*)\}\}/g
@@ -41,7 +41,7 @@ export const braced = (field: string): string => `{{${field}}}`
  * is a field's name written exactly, so a slot nothing was handed for — a name
  * with space around it among them — stands empty.
  */
-export function fill(template: string, values: readonly Filled[]): string {
+export function fill(template: string, values: readonly FieldValue[]): string {
   return template.replace(SLOT, (_, inside: string) =>
     values.find((each) => each.field === inside)?.text ?? '',
   )
@@ -57,7 +57,7 @@ const escaped = (text: string): string =>
  */
 export function previewed(
   template: string,
-  values: readonly Filled[],
+  values: readonly FieldValue[],
   fields: readonly string[],
 ): string {
   return template.replace(SLOT, (whole: string, inside: string) => {
@@ -83,7 +83,7 @@ export function strayIn(
 }
 
 /** A field put into a face: the text it comes to, and where the caret lands. */
-export interface Inserted {
+export interface InsertResult {
   readonly text: string
   readonly caret: number
 }
@@ -92,7 +92,7 @@ export interface Inserted {
  * A field written into a face at the caret, the caret landing past the closing
  * brace. A caret outside the text is taken to the end nearest it.
  */
-export function insert(template: string, at: number, field: string): Inserted {
+export function insert(template: string, at: number, field: string): InsertResult {
   const where = Math.max(0, Math.min(at, template.length))
   const written = braced(field)
   return {
@@ -109,5 +109,5 @@ export function renamedIn(template: string, from: string, to: string): string {
 }
 
 /** What a preview stands in the slots: each field under its own name. */
-export const sampled = (fields: readonly string[]): readonly Filled[] =>
+export const sampled = (fields: readonly string[]): readonly FieldValue[] =>
   fields.map((field) => ({ field, text: field }))

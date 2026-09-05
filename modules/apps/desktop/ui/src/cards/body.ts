@@ -11,10 +11,10 @@ import {
   cardEnded,
   ordered,
   reordered,
-  type Banded,
+  type DeckSection,
   type CardLanding,
   type Stencil,
-  type Drawn,
+  type DeckCard,
 } from '@numen/ui'
 import type {
   VaultCard,
@@ -183,7 +183,7 @@ export const sectionsOf = (deck: Deck): readonly VaultSection[] =>
   deck.sections.map(({ name, lead }) => ({ name, lead }))
 
 /** The sections as the grid draws them, each under the identity it was read at. */
-export const bandedOf = (deck: Deck): readonly Banded[] =>
+export const bandedOf = (deck: Deck): readonly DeckSection[] =>
   deck.sections.map(({ id, name }) => ({ id, name }))
 
 /** The faces of a stencil, in the shape the vault takes them. */
@@ -196,7 +196,7 @@ export const facesOf = (sheet: Sheet): readonly VaultFace[] =>
  * file wrote in the brackets, and a card that wrote nothing there is cut by
  * nothing.
  */
-export const drawnOf = (deck: Deck, offers: readonly StencilSummary[]): readonly Drawn[] => {
+export const drawnOf = (deck: Deck, offers: readonly StencilSummary[]): readonly DeckCard[] => {
   const titles = new Map(offers.map((offer) => [offer.path, offer.title]))
   return deck.cards.map((card) => ({
     id: card.id,

@@ -22,9 +22,9 @@ import {
   lands,
   NOTHING_WRONG,
   sealed,
-  type Banded,
+  type DeckSection,
   type DeckWords,
-  type Drawn,
+  type DeckCard,
   type Run,
   type Wrong,
 } from './deck'
@@ -37,11 +37,11 @@ const NO_FIELDS: ReadonlyMap<string, readonly string[]> = sealed()
 const props = withDefaults(
   defineProps<{
     /** The cards, in the order they are drawn. */
-    cards: readonly Drawn[]
+    cards: readonly DeckCard[]
     /** The stencils a card may be cut by. */
     stencils: readonly Stencil[]
     /** The sections, in the order they stand in the deck. */
-    sections?: readonly Banded[]
+    sections?: readonly DeckSection[]
     /** What the grid is announced as. */
     name?: string
     /** What the caller found wrong with the cards it handed in. */

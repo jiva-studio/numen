@@ -8,11 +8,11 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Card from './Card.vue'
-import { grid, type Drawn, type Tile } from './deck'
+import { grid, type DeckCard, type Tile } from './deck'
 import type { Stencil } from './stencil'
 
 interface Corpus {
-  readonly card: Drawn
+  readonly card: DeckCard
   readonly cut: Stencil | null
   /** What the vault reading the file found wrong with this card. */
   readonly wrong?: readonly string[]

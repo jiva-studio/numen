@@ -19,7 +19,7 @@ import {
   drawnFaces,
   NOTHING_AMISS,
   STENCIL_WORDS,
-  type Shown,
+  type StencilFace,
   type StencilWords,
   type StencilWrong,
 } from './stencil'
@@ -35,7 +35,7 @@ const props = withDefaults(
     /** The fields, in the order a person is asked for them. The first names the card. */
     fields: readonly string[]
     /** The faces, in the order they are drawn. */
-    faces: readonly Shown[]
+    faces: readonly StencilFace[]
     /** What the editor is announced as. */
     name?: string
     /** What the caller found wrong with the fields and the faces it handed in. */

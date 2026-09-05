@@ -8,15 +8,15 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Deck from './Deck.vue'
-import { blanks, HEAD, type Banded, type Drawn, type Wrong } from './deck'
+import { blanks, HEAD, type DeckSection, type DeckCard, type Wrong } from './deck'
 import { declared, type Landing } from './order'
 import type { Stencil } from './stencil'
 
 interface Corpus {
-  readonly cards: readonly Drawn[]
+  readonly cards: readonly DeckCard[]
   readonly cuts: readonly Stencil[]
   /** The sections the cards stand under, in the order they stand in the deck. */
-  readonly sections?: readonly Banded[]
+  readonly sections?: readonly DeckSection[]
   /** What the vault reading this file found wrong with it, by card and field. */
   readonly wrong?: {
     readonly at?: Readonly<Record<string, readonly string[]>>
@@ -47,7 +47,7 @@ const UNBROKEN =
  * most: one stencil holds four fields and one holds two, and cards leave fields
  * out.
  */
-const many = (count: number): readonly Drawn[] =>
+const many = (count: number): readonly DeckCard[] =>
   Array.from({ length: count }, (_, at) =>
     at % 2 === 0
       ? {
@@ -315,9 +315,9 @@ const meta: Meta<Knobs> = {
   render: (args) => ({
     components: { Deck },
     setup() {
-      const cards = ref<readonly Drawn[]>(CORPORA[args.corpus].cards)
+      const cards = ref<readonly DeckCard[]>(CORPORA[args.corpus].cards)
       const cuts = ref<readonly Stencil[]>(CORPORA[args.corpus].cuts)
-      const sections = ref<readonly Banded[]>(sectionsOf(CORPORA[args.corpus]))
+      const sections = ref<readonly DeckSection[]>(sectionsOf(CORPORA[args.corpus]))
       const wrong = ref<Wrong>(wrongOf(CORPORA[args.corpus]))
 
       watch(
@@ -331,7 +331,7 @@ const meta: Meta<Knobs> = {
       )
 
       /** The cards, with one of them changed. */
-      const changed = (id: string, into: (card: Drawn) => Drawn): readonly Drawn[] =>
+      const changed = (id: string, into: (card: DeckCard) => DeckCard): readonly DeckCard[] =>
         cards.value.map((card) => (card.id === id ? into(card) : card))
 
       /** The section the last of them is, which is where a new card is made. */
@@ -406,7 +406,7 @@ const meta: Meta<Knobs> = {
   }),
 }
 
-const sectionsOf = (corpus: Corpus): readonly Banded[] => corpus.sections ?? []
+const sectionsOf = (corpus: Corpus): readonly DeckSection[] => corpus.sections ?? []
 
 /**
  * A card let go before another, at the head of the deck, at the head of a
@@ -414,11 +414,11 @@ const sectionsOf = (corpus: Corpus): readonly Banded[] => corpus.sections ?? []
  * in front of.
  */
 const moved = (
-  cards: readonly Drawn[],
-  sections: readonly Banded[],
+  cards: readonly DeckCard[],
+  sections: readonly DeckSection[],
   id: string,
   at: Landing,
-): readonly Drawn[] => {
+): readonly DeckCard[] => {
   const held = cards.find((card) => card.id === id)
   if (!held) return cards
   const left = cards.filter((card) => card.id !== id)

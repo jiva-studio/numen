@@ -8,19 +8,19 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { computed, ref, watch } from 'vue'
 import FaceView from './Face.vue'
-import type { Filled } from './deck'
+import type { FieldValue } from './deck'
 import { declared, type Half } from './order'
-import { drawnFaces, type Face, type Shown } from './stencil'
+import { drawnFaces, type Face, type StencilFace } from './stencil'
 import { sampled } from './fill'
 import { hovered, lightness } from '@/fixtures/colour'
 import { DARK, drawnDark } from '@/fixtures/theme'
 
 interface Corpus {
-  readonly face: Shown
+  readonly face: StencilFace
   /** The fields the stencil declares, which are what may be written into a half. */
   readonly fields: readonly string[]
   /** What the preview stands in the slots. Each field under its own name by default. */
-  readonly sample?: readonly Filled[]
+  readonly sample?: readonly FieldValue[]
   /** The names the other faces carry. */
   readonly taken?: readonly string[]
   /** What the vault reading the file found wrong with this face. */
@@ -131,7 +131,7 @@ const meta: Meta<Knobs> = {
     components: { FaceView },
     setup() {
       const held = ref<Corpus>(CORPORA[args.corpus])
-      const written = ref<Shown>(CORPORA[args.corpus].face)
+      const written = ref<StencilFace>(CORPORA[args.corpus].face)
 
       watch(
         () => args.corpus,

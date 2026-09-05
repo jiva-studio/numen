@@ -9,7 +9,7 @@ import { declared, type Problems, type Landing } from './order'
 import type { Stencil } from './stencil'
 
 /** One named slot and what stands in it. */
-export interface Filled {
+export interface FieldValue {
   readonly field: string
   readonly text: string
 }
@@ -36,7 +36,7 @@ export const ended = (at: Landing): string | null =>
   typeof at === 'string' && at.startsWith(END) ? at.slice(END.length) : null
 
 /** One card as the deck draws it. */
-export interface Drawn {
+export interface DeckCard {
   /**
    * What tells this card from every other of the deck, for as long as it is
    * drawn. It is the caller's own word for the card and travels back in every
@@ -47,7 +47,7 @@ export interface Drawn {
   readonly section: string | null
   /** What the card is cut by, as a word to show, and nothing where nothing cuts it. */
   readonly stencil: string | null
-  readonly filled: readonly Filled[]
+  readonly filled: readonly FieldValue[]
 }
 
 /**
@@ -55,7 +55,7 @@ export interface Drawn {
  * section carries no mark and its name need not be unique, so nothing the file
  * holds tells one from another.
  */
-export interface Banded {
+export interface DeckSection {
   readonly id: string
   readonly name: string
 }
@@ -142,7 +142,7 @@ export const NOTHING_WRONG: Wrong = Object.freeze({
 })
 
 /** One value of a card, laid out under the stencil that cuts it. */
-export interface Laid extends Filled {
+export interface Laid extends FieldValue {
   /** The stencil names this slot. */
   readonly declared: boolean
 }
@@ -154,7 +154,7 @@ export interface Laid extends Filled {
  * names nothing for come after the rest, marked as named by nothing, and what
  * is drawn of them is the caller's.
  */
-export function laid(filled: readonly Filled[], fields: readonly string[]): readonly Laid[] {
+export function laid(filled: readonly FieldValue[], fields: readonly string[]): readonly Laid[] {
   const stood = declared(fields).flatMap((field) => {
     const written = filled.filter((each) => each.field === field)
     if (!written.length) return [{ field, text: '', declared: true }]
@@ -167,7 +167,7 @@ export function laid(filled: readonly Filled[], fields: readonly string[]): read
 }
 
 /** The empty values a stencil's slots make, for a card nobody has typed into. */
-export const blanks = (fields: readonly string[]): readonly Filled[] =>
+export const blanks = (fields: readonly string[]): readonly FieldValue[] =>
   fields.map((field) => ({ field, text: '' }))
 
 /** One value of a card as its tile draws it. */
@@ -208,7 +208,7 @@ export interface Tile {
 }
 
 /** One section as the grid draws it. */
-export interface Band extends Banded {
+export interface Band extends DeckSection {
   /** Where it stands among the sections, counting from one. */
   readonly at: number
 }
@@ -251,8 +251,8 @@ export interface Grid {
  * first section, where every card handed in is drawn and counted.
  */
 export function grid(
-  cards: readonly Drawn[],
-  sections: readonly Banded[],
+  cards: readonly DeckCard[],
+  sections: readonly DeckSection[],
   stencils: readonly Stencil[],
   carried: string | null,
 ): Grid {

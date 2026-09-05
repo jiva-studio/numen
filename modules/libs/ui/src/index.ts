@@ -270,7 +270,7 @@ export type { Half, Landing as CardLanding } from './cards/order'
  */
 export { blanks as cardBlanks, ended as cardEnded, endOf as cardEndOf, HEAD as CARD_HEAD } from './cards/deck'
 export { declared as cardFields } from './cards/order'
-export type { Banded, Drawn, Filled } from './cards/deck'
+export type { DeckCard, DeckSection, FieldValue } from './cards/deck'
 export type { Stencil } from './cards/stencil'
 
 export type { Clock, PlexTransition } from './plex/transition'

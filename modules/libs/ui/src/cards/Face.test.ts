@@ -9,14 +9,14 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import FaceView from './Face.vue'
-import type { Filled } from './deck'
+import type { FieldValue } from './deck'
 import { declared } from './order'
-import { drawnFaces, type Face, type Shown } from './stencil'
+import { drawnFaces, type Face, type StencilFace } from './stencil'
 import { sampled } from './fill'
 
 const FIELDS = ['Name', 'Height', 'Weight']
 
-const FACE: Shown = {
+const FACE: StencilFace = {
   id: 'recognise',
   name: 'Recognise',
   front: '{{Name}}',
@@ -25,9 +25,9 @@ const FACE: Shown = {
 
 /** One face, laid out against the fields a stencil declares. */
 const faceOf = (
-  face: Shown,
+  face: StencilFace,
   fields: readonly string[] = FIELDS,
-  sample?: readonly Filled[],
+  sample?: readonly FieldValue[],
 ): Face => {
   const laid = drawnFaces([face], fields, sample ?? sampled(declared(fields)))[0]
   if (!laid) throw new Error('a corpus holding no face')

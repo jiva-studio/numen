@@ -9,8 +9,8 @@ import {
   grid,
   laid,
   NOTHING_WRONG,
-  type Banded,
-  type Drawn,
+  type DeckSection,
+  type DeckCard,
 } from './deck'
 import type { Stencil } from './stencil'
 
@@ -82,7 +82,7 @@ describe('grid', () => {
     { name: 'Animal', fields: ['Name', 'Height', 'Weight'] },
     { name: 'Word', fields: ['Word', 'Meaning'] },
   ]
-  const CARDS: readonly Drawn[] = [
+  const CARDS: readonly DeckCard[] = [
     {
       id: 'llama',
       section: null,
@@ -136,7 +136,7 @@ describe('grid', () => {
   })
 
   it('counts the values under a field from one, the first field among them', () => {
-    const said: readonly Drawn[] = [
+    const said: readonly DeckCard[] = [
       {
         id: 'x',
         section: null,
@@ -152,7 +152,7 @@ describe('grid', () => {
   })
 
   it('marks the last box standing for each field, which is where a mark is said', () => {
-    const said: readonly Drawn[] = [
+    const said: readonly DeckCard[] = [
       {
         id: 'x',
         section: null,
@@ -178,14 +178,14 @@ describe('grid', () => {
   })
 
   it('draws a card cut by nothing as cut by nothing', () => {
-    const bare: readonly Drawn[] = [{ id: 'x', section: null, stencil: null, filled: [] }]
+    const bare: readonly DeckCard[] = [{ id: 'x', section: null, stencil: null, filled: [] }]
     const tile = tilesOf(grid(bare, [], CUTS, null))[0]
     expect(tile?.stencil).toBeNull()
     expect(tile?.known).toBe(false)
   })
 
   it('stands every value of a card cut by nothing, marked as named by nothing', () => {
-    const bare: readonly Drawn[] = [
+    const bare: readonly DeckCard[] = [
       {
         id: 'x',
         section: null,
@@ -207,7 +207,7 @@ describe('grid', () => {
   })
 
   it('numbers the values from one, so two of a name are still two values', () => {
-    const said: readonly Drawn[] = [
+    const said: readonly DeckCard[] = [
       {
         id: 'x',
         section: null,
@@ -223,7 +223,7 @@ describe('grid', () => {
   })
 
   it('draws no value where the card’s stencil was not handed in', () => {
-    const orphan: readonly Drawn[] = [
+    const orphan: readonly DeckCard[] = [
       { id: 'x', section: null, stencil: 'Gone', filled: [{ field: 'A', text: 'a' }] },
     ]
     const tile = tilesOf(grid(orphan, [], CUTS, null))[0]
@@ -235,7 +235,7 @@ describe('grid', () => {
   })
 
   it('says nothing of what a card is cut by: the fields tell the stencils apart', () => {
-    const mixed: readonly Drawn[] = [
+    const mixed: readonly DeckCard[] = [
       ...CARDS,
       { id: 'llano', section: null, stencil: 'Word', filled: [] },
     ]
@@ -252,11 +252,11 @@ describe('grid', () => {
   })
 
   describe('the sections of a deck', () => {
-    const BANDS: readonly Banded[] = [
+    const BANDS: readonly DeckSection[] = [
       { id: 'roots', name: 'Roots' },
       { id: 'leaves', name: 'Leaves' },
     ]
-    const SECTIONED: readonly Drawn[] = [
+    const SECTIONED: readonly DeckCard[] = [
       { id: 'loose', section: null, stencil: 'Animal', filled: [] },
       { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
       { id: 'yak', section: 'roots', stencil: 'Animal', filled: [] },

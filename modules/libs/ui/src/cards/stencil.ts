@@ -4,12 +4,12 @@
  * means is the caller's. No DOM, no measurement, no clock.
  */
 
-import { sealed, type Filled } from './deck'
+import { sealed, type FieldValue } from './deck'
 import { previewed, strayIn } from './fill'
 import { declared, HALVES, type Problems, type Half, type Objection, type Refusal } from './order'
 
 /** One way a stencil shows a card. */
-export interface Shown {
+export interface StencilFace {
   readonly id: string
   readonly name: string
   readonly front: string
@@ -139,8 +139,8 @@ export interface Face {
   readonly front: string
   readonly back: string
   /** The same two, with the sample values standing in the braces. */
-  readonly frontShown: string
-  readonly backShown: string
+  readonly frontStencilFace: string
+  readonly backStencilFace: string
   /** The slots each half names that the fields do not, each said once. */
   readonly frontStray: readonly string[]
   readonly backStray: readonly string[]
@@ -151,9 +151,9 @@ export interface Face {
  * what is wrong in each half of it.
  */
 export function drawnFaces(
-  shown: readonly Shown[],
+  shown: readonly StencilFace[],
   fields: readonly string[],
-  sample: readonly Filled[],
+  sample: readonly FieldValue[],
 ): readonly Face[] {
   const names = shown.map((each) => each.name)
   return shown.map((face, index) => {
@@ -166,8 +166,8 @@ export function drawnFaces(
       taken: names.filter((_, at) => at !== index),
       front: face.front,
       back: face.back,
-      frontShown: previewed(face.front, sample, fields),
-      backShown: previewed(face.back, sample, fields),
+      frontStencilFace: previewed(face.front, sample, fields),
+      backStencilFace: previewed(face.back, sample, fields),
       frontStray: strayIn(face.front, fields),
       backStray: strayIn(face.back, fields),
     }
@@ -202,7 +202,7 @@ export function panes(face: Face, words: StencilWords = STENCIL_WORDS): readonly
   return HALVES.flatMap((half): readonly Pane[] => {
     const said = half === 'front' ? words.front : words.back
     const written = half === 'front' ? face.front : face.back
-    const shown = half === 'front' ? face.frontShown : face.backShown
+    const shown = half === 'front' ? face.frontStencilFace : face.backStencilFace
     return [
       {
         half,

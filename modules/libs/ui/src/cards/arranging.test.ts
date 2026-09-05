@@ -3,8 +3,8 @@
  * number and every flag a stencil draws is worked out here.
  */
 import { describe, expect, it } from 'vitest'
-import type { Filled } from './deck'
-import { drawnFaces, fieldRows, panes, STENCIL_WORDS, type Shown } from './stencil'
+import type { FieldValue } from './deck'
+import { drawnFaces, fieldRows, panes, STENCIL_WORDS, type StencilFace } from './stencil'
 
 describe('fieldRows', () => {
   const FIELDS = ['Height', 'Weight']
@@ -45,7 +45,7 @@ describe('fieldRows', () => {
 
 describe('drawnFaces', () => {
   const FIELDS = ['Name', 'Height']
-  const FACES: readonly Shown[] = [
+  const FACES: readonly StencilFace[] = [
     { id: 'recognise', name: 'Recognise', front: '{{Name}}', back: '{{Height}}' },
     { id: 'name-it', name: 'Name it', front: '{{Height}}', back: '{{Name}}' },
   ]
@@ -63,8 +63,8 @@ describe('drawnFaces', () => {
 
   it('shows each half with the sample values standing in it', () => {
     const face = drawnFaces(FACES, FIELDS, SAMPLE)[0]
-    expect(face?.frontShown).toBe('Llama')
-    expect(face?.backShown).toBe('about 45"')
+    expect(face?.frontStencilFace).toBe('Llama')
+    expect(face?.backStencilFace).toBe('about 45"')
   })
 
   it('keeps the markup a half was written with beside what it shows', () => {
@@ -72,7 +72,7 @@ describe('drawnFaces', () => {
   })
 
   it('says the slots each half names that the fields do not, each once', () => {
-    const faces: readonly Shown[] = [
+    const faces: readonly StencilFace[] = [
       { id: 'one', name: 'One', front: '{{Colour}}', back: '{{Weight}} {{Weight}}' },
     ]
     const face = drawnFaces(faces, FIELDS, SAMPLE)[0]
@@ -81,10 +81,10 @@ describe('drawnFaces', () => {
   })
 
   it('marks a stray slot in the preview where it stands, and fills the rest', () => {
-    const faces: readonly Shown[] = [
+    const faces: readonly StencilFace[] = [
       { id: 'one', name: 'One', front: '{{Name}} {{Colour}}', back: '' },
     ]
-    expect(drawnFaces(faces, FIELDS, SAMPLE)[0]?.frontShown).toBe(
+    expect(drawnFaces(faces, FIELDS, SAMPLE)[0]?.frontStencilFace).toBe(
       'Llama <mark>{{Colour}}</mark>',
     )
   })
@@ -113,15 +113,15 @@ describe('panes', () => {
     { field: 'Height', text: 'about 45"' },
   ]
 
-  const faceOf = (face: Shown, fields: readonly string[], sample: readonly Filled[]) => {
+  const faceOf = (face: StencilFace, fields: readonly string[], sample: readonly FieldValue[]) => {
     const drawn = drawnFaces([face], fields, sample)[0]
     if (!drawn) throw new Error('no face')
     return drawn
   }
 
-  const divided = (face: Shown) => panes(faceOf(face, FIELDS, SAMPLE))
+  const divided = (face: StencilFace) => panes(faceOf(face, FIELDS, SAMPLE))
 
-  const FULL: Shown = {
+  const FULL: StencilFace = {
     id: 'recognise',
     name: 'Recognise',
     front: '{{Name}}',
@@ -160,19 +160,19 @@ describe('panes', () => {
   })
 
   it('calls a part blank while nothing but space stands in it', () => {
-    const face: Shown = { id: 'one', name: 'One', front: ' \n ', back: '{{Height}}' }
+    const face: StencilFace = { id: 'one', name: 'One', front: ' \n ', back: '{{Height}}' }
     expect(divided(face).map((pane) => pane.blank)).toEqual([true, true, false, false])
   })
 
   it('calls a part blank where what is written fills out to nothing', () => {
-    const face: Shown = { id: 'one', name: 'One', front: '{{Blank}}', back: '' }
+    const face: StencilFace = { id: 'one', name: 'One', front: '{{Blank}}', back: '' }
     const drawn = panes(faceOf(face, ['Blank'], [{ field: 'Blank', text: '' }]))
     expect(drawn[0]?.blank).toBe(false)
     expect(drawn[1]?.blank).toBe(true)
   })
 
   it('says a stray slot under the markup naming it, and not under the preview', () => {
-    const face: Shown = { id: 'one', name: 'One', front: '{{Colour}}', back: '' }
+    const face: StencilFace = { id: 'one', name: 'One', front: '{{Colour}}', back: '' }
     expect(divided(face).map((pane) => pane.stray)).toEqual([['Colour'], [], [], []])
   })
 

@@ -10,7 +10,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import Deck from './Deck.vue'
-import { endOf, HEAD, type Banded, type Drawn } from './deck'
+import { endOf, HEAD, type DeckSection, type DeckCard } from './deck'
 import type { Stencil } from './stencil'
 
 const CUTS: readonly Stencil[] = [
@@ -20,7 +20,7 @@ const CUTS: readonly Stencil[] = [
 
 /* Every field a stencil declares stands under its own heading, the first
    included, and a card is addressed by the identity the caller drew it under. */
-const CARDS: readonly Drawn[] = [
+const CARDS: readonly DeckCard[] = [
   {
     id: 'llama',
     section: null,
@@ -174,7 +174,7 @@ describe('Deck', () => {
   })
 
   it('sets the ground behind each box to the box’s own text, which is what sizes it', () => {
-    const cards: readonly Drawn[] = [
+    const cards: readonly DeckCard[] = [
       {
         id: 'x',
         section: null,
@@ -194,7 +194,7 @@ describe('Deck', () => {
       { name: 'Beast', fields: ['Name', 'Height'] },
       { name: 'Vocabulary', fields: ['Word', 'Meaning'] },
     ]
-    const mixed: readonly Drawn[] = [
+    const mixed: readonly DeckCard[] = [
       { id: 'llama', section: null, stencil: 'Beast', filled: [] },
       { id: 'llano', section: null, stencil: 'Vocabulary', filled: [] },
     ]
@@ -412,7 +412,7 @@ describe('Deck', () => {
   })
 
   it('draws no value of a card whose stencil was not handed in, and says which it wants', () => {
-    const orphan: readonly Drawn[] = [
+    const orphan: readonly DeckCard[] = [
       { id: 'gone', section: null, stencil: 'Missing', filled: [{ field: 'A', text: 'kept' }] },
     ]
     const held = mountDeck({ cards: orphan })
@@ -430,7 +430,7 @@ describe('Deck', () => {
   })
 
   it('draws every value a card writes under one field, and hides none of them', () => {
-    const twice: readonly Drawn[] = [
+    const twice: readonly DeckCard[] = [
       {
         id: 'llama',
         section: null,
@@ -449,7 +449,7 @@ describe('Deck', () => {
   })
 
   it('tells the two boxes of a field written twice apart in what each emits', async () => {
-    const twice: readonly Drawn[] = [
+    const twice: readonly DeckCard[] = [
       {
         id: 'twice',
         section: null,
@@ -487,11 +487,11 @@ describe('Deck', () => {
   })
 
   describe('the sections of a deck', () => {
-    const SECTIONS: readonly Banded[] = [
+    const SECTIONS: readonly DeckSection[] = [
       { id: 'roots', name: 'Roots' },
       { id: 'leaves', name: 'Leaves' },
     ]
-    const UNDER: readonly Drawn[] = [
+    const UNDER: readonly DeckCard[] = [
       { id: 'loose', section: null, stencil: 'Animal', filled: [] },
       { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
     ]
@@ -617,7 +617,7 @@ describe('Deck', () => {
     describe('the cards before the first section', () => {
       /* A deck whose every card stands in a section, so the place before the
          first of them holds none. */
-      const INSIDE: readonly Drawn[] = [
+      const INSIDE: readonly DeckCard[] = [
         { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
         { id: 'yak', section: 'leaves', stencil: 'Animal', filled: [] },
       ]
@@ -655,7 +655,7 @@ describe('Deck', () => {
       })
 
       it('hold a card standing under a section the deck was not handed', () => {
-        const lost: readonly Drawn[] = [
+        const lost: readonly DeckCard[] = [
           { id: 'lost', section: 'gone', stencil: 'Animal', filled: [] },
           { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
         ]

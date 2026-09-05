@@ -7,7 +7,7 @@
  * the string the store is dirty against is those cards written out.
  */
 import { computed, ref, shallowRef, type ComputedRef } from 'vue'
-import type { Banded, Drawn, PlexShowing, Stencil } from '@numen/ui'
+import type { DeckCard, DeckSection, PlexShowing, Stencil } from '@numen/ui'
 import type { Cards, Move, Problem, RefusalReason, StencilSummary } from '../core'
 import type { Store } from '../doing'
 import type { PresetChoice, Presets, ReadResult } from '../preset/core'
@@ -94,9 +94,9 @@ export interface DeckTabState {
   /** The cards, as the window holds them. */
   readonly deck: ComputedRef<Deck>
   /** The same, as the grid draws them, each under the stencil that cuts it. */
-  readonly drawn: ComputedRef<readonly Drawn[]>
+  readonly drawn: ComputedRef<readonly DeckCard[]>
   /** The sections, as the grid draws them. */
-  readonly bands: ComputedRef<readonly Banded[]>
+  readonly bands: ComputedRef<readonly DeckSection[]>
   /** The stencils a card may be cut by. */
   readonly stencils: ComputedRef<readonly Stencil[]>
   /** What is wrong with the file, against the card it stands on. */

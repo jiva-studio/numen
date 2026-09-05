@@ -12,11 +12,11 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import Stencil from './StencilEditor.vue'
-import type { Shown } from './stencil'
+import type { StencilFace } from './stencil'
 
 const FIELDS = ['Name', 'Height', 'Weight']
 
-const FACES: readonly Shown[] = [
+const FACES: readonly StencilFace[] = [
   {
     id: 'recognise',
     name: 'Recognise',
@@ -381,7 +381,7 @@ describe('Stencil, what the caller found wrong', () => {
 })
 
 describe('Stencil, the faces', () => {
-  const TWO: readonly Shown[] = [
+  const TWO: readonly StencilFace[] = [
     { id: 'one', name: 'One', front: '', back: '' },
     { id: 'two', name: 'Two', front: '', back: '' },
   ]
@@ -454,7 +454,7 @@ describe('Stencil, the faces', () => {
   })
 
   describe('carrying a face by the keyboard', () => {
-    const THREE: readonly Shown[] = [
+    const THREE: readonly StencilFace[] = [
       { id: 'one', name: 'One', front: '', back: '' },
       { id: 'two', name: 'Two', front: '', back: '' },
       { id: 'three', name: 'Three', front: '', back: '' },
@@ -490,7 +490,7 @@ describe('Stencil, the faces', () => {
   })
 
   describe('reordering the faces', () => {
-    const THREE: readonly Shown[] = [
+    const THREE: readonly StencilFace[] = [
       { id: 'one', name: 'One', front: '', back: '' },
       { id: 'two', name: 'Two', front: '', back: '' },
       { id: 'three', name: 'Three', front: '', back: '' },

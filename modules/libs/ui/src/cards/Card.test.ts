@@ -5,12 +5,12 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import Card from './Card.vue'
-import { grid, type Banded, type CardWords, type Drawn, type Tile } from './deck'
+import { grid, type DeckSection, type CardWords, type DeckCard, type Tile } from './deck'
 import type { Stencil } from './stencil'
 
 const CUTS: readonly Stencil[] = [{ name: 'Animal', fields: ['Name', 'Height'] }]
 
-const CARDS: readonly Drawn[] = [
+const CARDS: readonly DeckCard[] = [
   { id: 'llama', section: null, stencil: 'Animal', filled: [] },
   { id: 'yak', section: null, stencil: 'Animal', filled: [] },
 ]
@@ -28,8 +28,8 @@ const WORDS: CardWords = {
 
 const tileOf = (
   id: string,
-  cards: readonly Drawn[] = CARDS,
-  sections: readonly Banded[] = [],
+  cards: readonly DeckCard[] = CARDS,
+  sections: readonly DeckSection[] = [],
 ): Tile => {
   const laid = grid(cards, sections, CUTS, null)
     .runs.flatMap((run) => run.tiles)
@@ -64,7 +64,7 @@ describe('Card', () => {
   })
 
   it('says which section it stands under, and nothing where it stands under none', () => {
-    const under: readonly Drawn[] = [
+    const under: readonly DeckCard[] = [
       { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
     ]
     const tile = tileOf('llama', under, [{ id: 'roots', name: 'Roots' }])
@@ -84,7 +84,7 @@ describe('Card', () => {
   })
 
   it('says on the strip which stencil cut the card, and where none did, that none did', () => {
-    const bare: readonly Drawn[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
+    const bare: readonly DeckCard[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
     expect(mountCard(tileOf('llama')).get('[data-cut-of]').text()).toBe('Animal')
     expect(mountCard(tileOf('bare', bare), { words: WORDS }).get('[data-cut-of]').text()).toBe(
       'Cut by no stencil',
@@ -92,19 +92,19 @@ describe('Card', () => {
   })
 
   it('holds nothing against a card that names no stencil, having said so on its strip', () => {
-    const bare: readonly Drawn[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
+    const bare: readonly DeckCard[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
     const held = mountCard(tileOf('bare', bare), { words: WORDS })
     expect(held.findAll('.card__objects')).toHaveLength(0)
   })
 
   it('says which stencil a card naming one is waiting for', () => {
-    const gone: readonly Drawn[] = [{ id: 'gone', section: null, stencil: 'Gone', filled: [] }]
+    const gone: readonly DeckCard[] = [{ id: 'gone', section: null, stencil: 'Gone', filled: [] }]
     const held = mountCard(tileOf('gone', gone), { words: WORDS })
     expect(held.get('.card__objects').text()).toContain('No stencil called Gone')
   })
 
   it('reads a value of a card no stencil cuts, and types into none of them', () => {
-    const bare: readonly Drawn[] = [
+    const bare: readonly DeckCard[] = [
       {
         id: 'bare',
         section: null,
@@ -121,7 +121,7 @@ describe('Card', () => {
   })
 
   it('says what is wrong with a value once, under the last box standing for it', () => {
-    const twice: readonly Drawn[] = [
+    const twice: readonly DeckCard[] = [
       {
         id: 'twice',
         section: null,

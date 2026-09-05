@@ -9,12 +9,12 @@ import { expect, userEvent, waitFor } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Stencil from './StencilEditor.vue'
 import { ordered, reordered, type Half, type Landing } from './order'
-import type { Shown } from './stencil'
+import type { StencilFace } from './stencil'
 import { renamedIn } from './fill'
 
 interface Corpus {
   readonly fields: readonly string[]
-  readonly faces: readonly Shown[]
+  readonly faces: readonly StencilFace[]
 }
 
 const UNBROKEN =
@@ -141,7 +141,7 @@ const meta: Meta<Knobs> = {
     setup() {
       const held = corpusOf(args.corpus)
       const fields = ref<readonly string[]>(held.fields)
-      const faces = ref<readonly Shown[]>(held.faces)
+      const faces = ref<readonly StencilFace[]>(held.faces)
 
       watch(
         () => args.corpus,
@@ -153,7 +153,7 @@ const meta: Meta<Knobs> = {
       )
 
       /** Every face, with one half of one of them rewritten. */
-      const written = (id: string, half: Half, text: string): readonly Shown[] =>
+      const written = (id: string, half: Half, text: string): readonly StencilFace[] =>
         faces.value.map((face) => (face.id === id ? { ...face, [half]: text } : face))
 
       return {
