@@ -259,17 +259,17 @@ CREATE VIRTUAL TABLE chunks_fts USING fts5 (
     contentless_delete=1
 );
 
--- The names of the parts a source divides into: a section is something a person
--- finds, and not only a label an answer carries.
+-- The names of the sections a source divides into: a section is something a
+-- person finds, and not only a label an answer carries.
 --
--- The rowid is the chunk the part opens, so a hit on a name is a passage
+-- The rowid is the chunk the section opens, so a hit on a name is a passage
 -- standing at the start of the section, read back the way every passage is. A
--- chunk that opens a part and a subsection under it carries both names, which is
--- one row holding two lines.
+-- chunk that opens a section and a subsection under it carries both names, which
+-- is one row holding two lines.
 --
 -- `content=''` keeps no copy: nothing reads a name back. What an answer shows is
 -- the chunk's own location.
-CREATE VIRTUAL TABLE parts_fts USING fts5 (
+CREATE VIRTUAL TABLE sections_fts USING fts5 (
     text,
     content='',
     contentless_delete=1

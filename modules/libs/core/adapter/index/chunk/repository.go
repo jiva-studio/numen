@@ -378,7 +378,7 @@ func under(folder string) (first, past string) {
 // Nothing cascades into a virtual table, and a chunk's number is handed to the
 // next chunk that wants one, so a row left behind answers for that one.
 func Clear(ctx context.Context, tx *sql.Tx, source int64) error {
-	for _, name := range []string{"clear_fts", "clear_vec", "clear_parts"} {
+	for _, name := range []string{"clear_fts", "clear_vec", "clear_sections"} {
 		if err := exec(ctx, tx, name, source); err != nil {
 			return err
 		}
@@ -408,9 +408,9 @@ func Replace(ctx context.Context, tx *sql.Tx, source, vault int64, chunks []Chun
 		return err
 	}
 	// A chunk that says the same thing keeps its row through a cut, so the
-	// names of the parts are dropped by the source and not with the chunks.
-	if _, err := tx.ExecContext(ctx, stmt.Get("clear_parts"), source); err != nil {
-		return fmt.Errorf("take the names of this source's parts out of the index: %w", err)
+	// names of the sections are dropped by the source and not with the chunks.
+	if _, err := tx.ExecContext(ctx, stmt.Get("clear_sections"), source); err != nil {
+		return fmt.Errorf("take the names of this source's sections out of the index: %w", err)
 	}
 
 	w, err := prepare(ctx, tx)
@@ -448,7 +448,7 @@ func prepare(ctx context.Context, tx *sql.Tx) (statements, error) {
 	}{
 		{"insert_chunk", &w.insert},
 		{"insert_fts", &w.index},
-		{"insert_part", &w.names},
+		{"insert_section", &w.names},
 		{"move_chunk", &w.move},
 	} {
 		prepared, err := tx.PrepareContext(ctx, stmt.Get(s.name))
@@ -500,14 +500,14 @@ func (w statements) put(ctx context.Context, held *rows, source, vault int64, c 
 	return row, nil
 }
 
-// opens keeps the names of the parts one chunk begins, so a section can be
+// opens keeps the names of the sections one chunk begins, so a section can be
 // found by its name and answer with the chunk it opens.
 func (w statements) opens(ctx context.Context, row int64, c Chunk) error {
 	if len(c.Opens) == 0 {
 		return nil
 	}
 	if _, err := w.names.ExecContext(ctx, row, strings.Join(c.Opens, "\n")); err != nil {
-		return fmt.Errorf("index the names of the parts a chunk opens: %w", err)
+		return fmt.Errorf("index the names of the sections a chunk opens: %w", err)
 	}
 	return nil
 }

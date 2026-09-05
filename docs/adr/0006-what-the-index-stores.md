@@ -28,7 +28,7 @@ erDiagram
     chunks ||--o{ chunks : "encloses"
     chunks ||--o| chunks_vec : "rowid"
     chunks ||--o| chunks_fts : "rowid"
-    chunks ||--o| parts_fts : "rowid"
+    chunks ||--o| sections_fts : "rowid"
     notes ||--o| titles_fts : "rowid"
     headings ||--o| headings_fts : "rowid"
     chunks }o--o| vectors : "hash, under a recipe"
@@ -103,8 +103,8 @@ erDiagram
     chunks_fts {
         TEXT text "fts5, contentless"
     }
-    parts_fts {
-        TEXT text "fts5, contentless, the chunk a part opens"
+    sections_fts {
+        TEXT text "fts5, contentless, the chunk a section opens"
     }
     titles_fts {
         TEXT text "fts5"
@@ -128,7 +128,7 @@ erDiagram
 
 **`titles_fts` and `headings_fts` each keep a copy of the text they indexed.** What an answer draws is the name with the run that matched marked inside it, and an index can only say where it matched over text it holds. They are two tables because a title and a heading are each ranked against their own population.
 
-**`parts_fts` is the names of the parts a source divides into**, keyed by the chunk each part opens, so a hit on a section's name is a passage standing at the start of that section.
+**`sections_fts` is the names of the sections a source divides into**, keyed by the chunk each section opens, so a hit on a section's name is a passage standing at the start of that section.
 
 **A vector is addressed by the text and the recipe**, never by a chunk's row number, and it is kept where a renumbering of chunks cannot reach it (ADR-0012).
 
@@ -167,7 +167,7 @@ Tests that check query plans name the index each question has to be answered thr
 - A feature wanting something the schema does not hold costs a migration and, where it cannot be derived, a rescan.
 - Resolution being a query puts the backlink question's plan on the critical path, and that plan is asserted by name.
 - Frontmatter is queryable from the index and writable only through the file.
-- Nothing cascades into a virtual table, so a chunk's rows in `chunks_vec`, `chunks_fts` and `parts_fts` are deleted by the code that deletes the chunk.
+- Nothing cascades into a virtual table, so a chunk's rows in `chunks_vec`, `chunks_fts` and `sections_fts` are deleted by the code that deletes the chunk.
 - A scan that stored nothing leaves the plans standing on the last measurement.
 - **The words inside a card are not findable.** A person looking for a card looks for its question. This is the one thing given up, and it is given up knowingly.
 - **The name search is not crowded by one deck.** A stencil's four field names would otherwise stand in it once per card.

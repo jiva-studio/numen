@@ -57,8 +57,8 @@ var expectedPlans = []struct {
 	// names. A virtual table reports itself as a scan and has no named index.
 	{chunk.Statements(), "lexical", []any{`"entropy"`, 1, `[]`, 20}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
 	// A search by name reads its own full-text index the same way.
-	{chunk.Statements(), "sections", []any{`"entropy"`, 1, `[]`, 20}, []string{"parts_fts", "INTEGER PRIMARY KEY"}},
-	{chunk.Statements(), "clear_parts", []any{1}, []string{"chunks_by_source"}},
+	{chunk.Statements(), "sections", []any{`"entropy"`, 1, `[]`, 20}, []string{"sections_fts", "INTEGER PRIMARY KEY"}},
+	{chunk.Statements(), "clear_sections", []any{1}, []string{"chunks_by_source"}},
 	{chunk.Statements(), "clear_fts", []any{1}, []string{"chunks_by_source"}},
 	// Cutting a source again reads what it holds now, and then moves, writes or
 	// takes out one row at a time.

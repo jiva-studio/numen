@@ -34,7 +34,7 @@ func (r *Repository) Register(ctx context.Context, vaultID domain.VaultID) error
 // first: nothing cascades into one, and the numbers four of them are addressed
 // by are read from the tables the last statement takes away.
 var forgetting = []string{
-	"clear_vec", "clear_fts", "clear_parts", "clear_title_names", "clear_heading_names", "delete",
+	"clear_vec", "clear_fts", "clear_sections", "clear_title_names", "clear_heading_names", "delete",
 }
 
 // Forget takes everything the index holds for one vault, and the vault's own

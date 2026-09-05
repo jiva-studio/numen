@@ -102,7 +102,7 @@ func virtual(t *testing.T, db *DB, c contents) map[string]int {
 	return map[string]int{
 		"chunks_vec":   counted(t, db, `SELECT COUNT(*) FROM chunks_vec WHERE chunk_id IN `+list(c.chunks)),
 		"chunks_fts":   counted(t, db, `SELECT COUNT(*) FROM chunks_fts WHERE rowid IN `+list(c.chunks)),
-		"parts_fts":    counted(t, db, `SELECT COUNT(*) FROM parts_fts WHERE rowid IN `+list(c.chunks)),
+		"sections_fts": counted(t, db, `SELECT COUNT(*) FROM sections_fts WHERE rowid IN `+list(c.chunks)),
 		"titles_fts":   counted(t, db, `SELECT COUNT(*) FROM titles_fts WHERE rowid IN `+list(c.notes)),
 		"headings_fts": counted(t, db, `SELECT COUNT(*) FROM headings_fts WHERE rowid IN `+list(c.headings)),
 	}

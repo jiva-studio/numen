@@ -20,7 +20,7 @@ graph TD
     Q["a question"]
     RW["ranked by words<br/>chunks_fts"]
     RM["ranked by meaning<br/>the coarse pass, then the rerank"]
-    RN["ranked by name<br/>parts_fts"]
+    RN["ranked by name<br/>sections_fts"]
     RRF["merged by rank"]
     CO["collapsed to the large chunk,<br/>keeping the best score"]
     P["passages, each a start and a length"]
