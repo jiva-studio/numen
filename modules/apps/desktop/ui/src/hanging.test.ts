@@ -26,9 +26,9 @@ describe('whether a node hangs the parts of its note', () => {
     const held = hanging(core, words, voice().says)
     await held.start()
 
-    const bands = held.offers()
-    expect(bands.map((band) => band.id)).toStrictEqual([HANGING])
-    const items = bands.flatMap((band) => band.items)
+    const groups = held.offers()
+    expect(groups.map((group) => group.id)).toStrictEqual([HANGING])
+    const items = groups.flatMap((group) => group.items)
     expect(items.map((one) => one.id)).toStrictEqual([ON, OFF])
     expect(items.find((one) => one.inForce)?.id).toBe(OFF)
   })
@@ -49,7 +49,7 @@ describe('whether a node hangs the parts of its note', () => {
     const held = hanging(vault(true), words, voice().says)
     await held.start()
 
-    const items = held.offers().flatMap((band) => band.items)
+    const items = held.offers().flatMap((group) => group.items)
     expect(items.find((row) => row.id === ON)?.detail).toBe(words.current)
     expect(items.find((row) => row.id === OFF)?.detail).toBeUndefined()
   })
@@ -104,9 +104,9 @@ describe('how many parts stand under a node', () => {
     const held = hanging(vault(true, 4), words, voice().says)
     await held.start()
 
-    const bands = held.counts()
-    expect(bands.map((band) => band.id)).toStrictEqual([PARTS])
-    const items = bands.flatMap((band) => band.items)
+    const groups = held.counts()
+    expect(groups.map((group) => group.id)).toStrictEqual([PARTS])
+    const items = groups.flatMap((group) => group.items)
     expect(items.map((one) => one.id)).toStrictEqual(
       Array.from({ length: 12 }, (_, at) => `${at + 1}`),
     )
@@ -116,7 +116,7 @@ describe('how many parts stand under a node', () => {
     const held = hanging(vault(true, 4), words, voice().says)
     await held.start()
 
-    const items = held.counts().flatMap((band) => band.items)
+    const items = held.counts().flatMap((group) => group.items)
     expect(items.filter((one) => one.inForce).map((one) => one.id)).toStrictEqual(['4'])
     expect(items.find((one) => one.id === '4')?.detail).toBe(words.current)
     expect(items.find((one) => one.id === '5')?.detail).toBeUndefined()

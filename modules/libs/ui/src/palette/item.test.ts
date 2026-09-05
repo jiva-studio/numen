@@ -2,8 +2,8 @@
  * The decisions a palette makes, as plain values.
  *
  * Two of them are the reason this file exists. Where the keyboard lands is
- * counted over a list that is drawn in bands, so a number has to mean the same
- * thing to the arrow keys and to the drawing. And a band arrives while a person
+ * counted over a list that is drawn in groups, so a number has to mean the same
+ * thing to the arrow keys and to the drawing. And a group arrives while a person
  * is reading, so what the keyboard is on has to survive the list changing under
  * it.
  */
@@ -26,7 +26,7 @@ import {
   stepIn,
   stepTo,
   type PaletteItem,
-  type PaletteBand,
+  type PaletteGroup,
 } from './item'
 import { MANY } from './fixtures/actions'
 
@@ -43,21 +43,21 @@ const item = (id: string, more: Partial<PaletteItem> = {}): PaletteItem => ({
   ...more,
 })
 
-const band = (id: string, items: PaletteItem[], more: Partial<PaletteBand> = {}): PaletteBand => ({
+const group = (id: string, items: PaletteItem[], more: Partial<PaletteGroup> = {}): PaletteGroup => ({
   id,
   title: id,
   items,
   ...more,
 })
 
-/** Two bands, four items, and one of them not to be landed on. */
-const SECTIONS: PaletteBand[] = [
-  band('names', [item('one'), item('two')]),
-  band('text', [item('three', { disabled: true }), item('four')]),
+/** Two groups, four items, and one of them not to be landed on. */
+const SECTIONS: PaletteGroup[] = [
+  group('names', [item('one'), item('two')]),
+  group('text', [item('three', { disabled: true }), item('four')]),
 ]
 
-describe('one list drawn in bands', () => {
-  it('numbers the items across the bands in the order they are drawn', () => {
+describe('one list drawn in groups', () => {
+  it('numbers the items across the groups in the order they are drawn', () => {
     expect(flatten(SECTIONS).map((place) => place.item.id)).toEqual([
       'one',
       'two',
@@ -76,7 +76,7 @@ describe('one list drawn in bands', () => {
 
   it('splits every line it draws, so the view works nothing out', () => {
     const placed = placePalette([
-      band('names', [
+      group('names', [
         item('one', { title: 'Entropy', at: [{ from: 0, to: 3 }], detail: 'in: Ent' }),
       ]),
     ])
@@ -89,7 +89,7 @@ describe('one list drawn in bands', () => {
   })
 
   it('draws no second line for an item that has none', () => {
-    expect(placePalette([band('names', [item('one')])])[0]?.items[0]?.detail).toEqual([])
+    expect(placePalette([group('names', [item('one')])])[0]?.items[0]?.detail).toEqual([])
   })
 })
 
@@ -111,7 +111,7 @@ describe('what may be landed on', () => {
 describe('walking the list', () => {
   const places = flatten(SECTIONS)
 
-  it('crosses a band without stopping between them', () => {
+  it('crosses a group without stopping between them', () => {
     expect(stepTo(places, 1, 1)).toBe(3)
   })
 
@@ -133,7 +133,7 @@ describe('walking the list', () => {
   })
 
   it('lands nowhere when nothing in the list can be chosen', () => {
-    const off = flatten([band('names', [item('one', { disabled: true })])])
+    const off = flatten([group('names', [item('one', { disabled: true })])])
     expect(stepTo(off, -1, 1)).toBe(-1)
   })
 
@@ -142,12 +142,12 @@ describe('walking the list', () => {
   })
 })
 
-describe('a band arriving under the keyboard', () => {
+describe('a group arriving under the keyboard', () => {
   it('keeps the item it was on, wherever the arriving answers put it', () => {
-    const before = flatten([band('names', [item('one')])])
+    const before = flatten([group('names', [item('one')])])
     const after = flatten([
-      band('names', [item('nought'), item('one')]),
-      band('text', [item('two')]),
+      group('names', [item('nought'), item('one')]),
+      group('text', [item('two')]),
     ])
 
     expect(keptAt(before, 'one')).toBe(0)
@@ -462,22 +462,22 @@ describe('marking why an item is here', () => {
   })
 })
 
-describe('which band stands where', () => {
-  const holding = band('names', [item('one')])
-  const empty = band('text', [], { silence: 'nothing to search with' })
-  const alsoEmpty = band('meaning', [], { working: true })
+describe('which group stands where', () => {
+  const holding = group('names', [item('one')])
+  const empty = group('text', [], { silence: 'nothing to search with' })
+  const alsoEmpty = group('meaning', [], { working: true })
 
-  it('keeps the bands holding something in the order they were offered', () => {
-    const also = band('text', [item('two')])
+  it('keeps the groups holding something in the order they were offered', () => {
+    const also = group('text', [item('two')])
     expect(ordered([holding, also]).map((one) => one.id)).toEqual(['names', 'text'])
     expect(ordered([also, holding]).map((one) => one.id)).toEqual(['text', 'names'])
   })
 
-  it('sends a band holding nothing to the foot', () => {
+  it('sends a group holding nothing to the foot', () => {
     expect(ordered([empty, holding]).map((one) => one.id)).toEqual(['names', 'text'])
   })
 
-  it('keeps the bands holding nothing in the order they were offered', () => {
+  it('keeps the groups holding nothing in the order they were offered', () => {
     expect(ordered([empty, holding, alsoEmpty]).map((one) => one.id)).toEqual([
       'names',
       'text',
@@ -485,27 +485,27 @@ describe('which band stands where', () => {
     ])
   })
 
-  it('draws a band that answered with nothing nowhere', () => {
-    const answered = band('text', [])
+  it('draws a group that answered with nothing nowhere', () => {
+    const answered = group('text', [])
     expect(ordered([holding, answered]).map((one) => one.id)).toEqual(['names'])
     expect(ordered([answered]).map((one) => one.id)).toEqual([])
   })
 
-  it('draws a band holding nothing while it is still working', () => {
-    expect(ordered([band('meaning', [], { working: true })]).map((one) => one.id)).toEqual([
+  it('draws a group holding nothing while it is still working', () => {
+    expect(ordered([group('meaning', [], { working: true })]).map((one) => one.id)).toEqual([
       'meaning',
     ])
   })
 
-  it('draws a band that could not be asked, with what it has to say', () => {
-    const notAsked = band('meaning', [], { silence: 'the vault could not answer' })
+  it('draws a group that could not be asked, with what it has to say', () => {
+    const notAsked = group('meaning', [], { silence: 'the vault could not answer' })
     expect(ordered([notAsked]).map((one) => one.id)).toEqual(['meaning'])
   })
 
   it('leaves what the keyboard counts exactly where it was', () => {
-    const bands = [empty, holding, alsoEmpty, band('more', [item('two'), item('three')])]
-    expect(flatten(ordered(bands)).map((place) => place.item.id)).toEqual(
-      flatten(bands).map((place) => place.item.id),
+    const groups = [empty, holding, alsoEmpty, group('more', [item('two'), item('three')])]
+    expect(flatten(ordered(groups)).map((place) => place.item.id)).toEqual(
+      flatten(groups).map((place) => place.item.id),
     )
   })
 })

@@ -1,14 +1,14 @@
 <script setup lang="ts">
 /**
- * The palette: a field, and everything the words in it turned up, in bands.
+ * The palette: a field, and everything the words in it turned up, in groups.
  *
- * It takes bands of items and says which item was chosen and what was asked of
+ * It takes groups of items and says which item was chosen and what was asked of
  * it. The keyboard stays in the field the whole time, and what is lit is named
  * to a screen reader rather than focused.
  *
  * `data-palette` names each part: `ground`, `panel`, `crumb`, `field`, `list`,
  * `title`, `icon`, `name`, `detail`, `hint`, `silence`, `nothing`, `key` and
- * `more`. A band is a group and an item is an option.
+ * `more`. A group is drawn as a group and an item as an option.
  */
 import {
   computed,
@@ -36,7 +36,7 @@ import {
   stepTo,
   ACTION_WORDS,
   type ActionWords,
-  type PaletteBand,
+  type PaletteGroup,
   type PaletteKeys,
   type PaletteLit,
 } from './item'
@@ -44,11 +44,11 @@ import {
 const props = withDefaults(
   defineProps<{
     /**
-     * The bands, in the order they are offered. A band holding nothing is
+     * The groups, in the order they are offered. A group holding nothing is
      * drawn at the foot, whatever order it was offered in, and only while it
      * is working or has something to say in place of items.
      */
-    bands?: readonly PaletteBand[]
+    groups?: readonly PaletteGroup[]
     /** Whether it is drawn at all. */
     open?: boolean
     /** The words standing in for what has not been typed. */
@@ -81,7 +81,7 @@ const props = withDefaults(
     actionKey?: PaletteKeys
   }>(),
   {
-    bands: () => [],
+    groups: () => [],
     open: false,
     placeholder: 'Search',
     crumb: '',
@@ -122,7 +122,7 @@ defineSlots<{
    * each of them draws anything.
    */
   icon(props: { id: string }): unknown
-  /** What is said while there is no band to draw. */
+  /** What is said while there is no group to draw. */
   silence(): unknown
 }>()
 
@@ -141,8 +141,8 @@ const holdItem = (item: string, row: unknown): void => {
   else drawn.delete(item)
 }
 
-/** What is drawn, and in what order: a band holding nothing stands at the foot. */
-const shown = computed(() => ordered(props.bands))
+/** What is drawn, and in what order: a group holding nothing stands at the foot. */
+const shown = computed(() => ordered(props.groups))
 
 const places = computed(() => flatten(shown.value))
 const placed = computed(() => placePalette(shown.value))
@@ -393,20 +393,20 @@ onBeforeUnmount(() => {
         >
           <section
             v-for="one in placed"
-            :key="one.band.id"
-            class="palette__band"
+            :key="one.group.id"
+            class="palette__group"
             role="group"
-            :aria-labelledby="`${uid}-band-${one.band.id}`"
-            :aria-busy="one.band.working || undefined"
+            :aria-labelledby="`${uid}-group-${one.group.id}`"
+            :aria-busy="one.group.working || undefined"
           >
             <p
-              :id="`${uid}-band-${one.band.id}`"
+              :id="`${uid}-group-${one.group.id}`"
               class="palette__title caps-numen flex items-center gap-1.5 text-small text-hushed"
               data-palette="title"
             >
-              <span>{{ one.band.title }}</span>
-              <!-- More of this band is on its way. -->
-              <Spinner v-if="one.band.working" />
+              <span>{{ one.group.title }}</span>
+              <!-- More of this group is on its way. -->
+              <Spinner v-if="one.group.working" />
             </p>
             <div
               v-for="row in one.items"
@@ -465,11 +465,11 @@ onBeforeUnmount(() => {
             </div>
 
             <p
-              v-if="!one.items.length && one.band.silence"
+              v-if="!one.items.length && one.group.silence"
               class="palette__silence px-2 py-1.5 text-hushed"
               data-palette="silence"
             >
-              {{ one.band.silence }}
+              {{ one.group.silence }}
             </p>
           </section>
         </div>
@@ -581,11 +581,11 @@ onBeforeUnmount(() => {
   overscroll-behavior: contain;
 }
 
-.palette__band + .palette__band {
+.palette__group + .palette__group {
   margin-block-start: var(--numen-panel-gap);
 }
 
-/* The band's name is small print over what it names. */
+/* The group's name is small print over what it names. */
 .palette__title {
   margin: 0;
   padding: 0.15rem 0.5rem;

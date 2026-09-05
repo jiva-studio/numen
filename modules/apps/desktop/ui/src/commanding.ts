@@ -7,7 +7,7 @@
  * own, and the step it is on is what the field means.
  */
 import { computed, ref, shallowRef } from 'vue'
-import type { PaletteBand, PaletteItem, PaletteKeys } from '@numen/ui'
+import type { PaletteGroup, PaletteItem, PaletteKeys } from '@numen/ui'
 import { asking as latest } from './asking'
 import {
   movedTo,
@@ -42,8 +42,8 @@ export interface StepRow {
   readonly inForce?: boolean
 }
 
-/** One band of such a list, named by whatever holds it. */
-export interface StepBand {
+/** One group of such a list, named by whatever holds it. */
+export interface StepGroup {
   readonly id: string
   readonly title: string
   readonly items: readonly StepRow[]
@@ -58,10 +58,10 @@ export interface StepBand {
  */
 export interface PaletteLists {
   /**
-   * What this command offers now, in the bands it is drawn in. The words typed
+   * What this command offers now, in the groups it is drawn in. The words typed
    * come too: a list may hold a row made out of them.
    */
-  offers(command: string, typed: string): readonly StepBand[]
+  offers(command: string, typed: string): readonly StepGroup[]
   /** The one the keyboard is standing on, and nothing where it stands on none. */
   shows(command: string, item: string): void
 }
@@ -78,8 +78,8 @@ export interface NoteLookup {
   holding(path: string): string | null
 }
 
-/** Which band a command is offered in. */
-export type Band = 'note' | 'file' | 'window' | 'vault'
+/** Which group a command is offered in. */
+export type CommandGroup = 'note' | 'file' | 'window' | 'vault'
 
 /**
  * Which step the palette is on: one being asked for, or the list of commands.
@@ -166,8 +166,8 @@ export interface Command {
   readonly needs?: PromptStep
   /** The step it asks for once the first one is answered. */
   readonly next?: PromptStep
-  /** The band it is offered in. */
-  readonly band: Band
+  /** The group it is offered in. */
+  readonly group: CommandGroup
   /** Whether it is offered at all over what is in front, in this window. */
   where(at: CommandTarget, runs: RunSupport): boolean
   /** What stands in the field when its step opens, for the person to replace. */
@@ -273,7 +273,7 @@ export interface Words extends EmptyWords {
   readonly renameVault: string
   readonly forgetVault: string
   readonly eraseVault: string
-  /** The bands the commands are drawn in. */
+  /** The groups the commands are drawn in. */
   readonly overNote: string
   readonly overFile: string
   readonly overWindow: string
@@ -292,7 +292,7 @@ export interface Words extends EmptyWords {
   readonly names: string
   readonly typeNote: string
   /**
-   * One of a list the window holds: the field, and what Enter does. The bands
+   * One of a list the window holds: the field, and what Enter does. The groups
    * such a list is drawn in are named by whatever holds it.
    */
   readonly typeChoice: string
@@ -345,7 +345,7 @@ const CHOSEN = 'chosen'
 const NO = 'no'
 const YES = 'yes'
 
-/** The band and the item that offer to make the note a search did not find. */
+/** The group and the item that offer to make the note a search did not find. */
 export const MAKING = 'creating'
 
 /** How many notes the step that picks one asks for. */
@@ -422,52 +422,52 @@ export const commandsOf = (
   words: Words,
   agent: string = navigator.userAgent,
 ): readonly Command[] => [
-  { id: 'read', text: words.read, band: 'note', where: onNote, also: 'beside' },
-  { id: 'beside', text: words.beside, band: 'note', where: onNote },
-  { id: 'travel', text: words.travel, ...keysOf('travel', agent), band: 'note', where: onNote },
+  { id: 'read', text: words.read, group: 'note', where: onNote, also: 'beside' },
+  { id: 'beside', text: words.beside, group: 'note', where: onNote },
+  { id: 'travel', text: words.travel, ...keysOf('travel', agent), group: 'note', where: onNote },
   {
     id: 'child',
     text: words.child,
     ...keysOf('child', agent),
-    band: 'note',
+    group: 'note',
     needs: 'naming',
     where: onNote,
   },
-  { id: 'parent', text: words.parent, band: 'note', needs: 'naming', where: onNote },
-  { id: 'jump', text: words.jump, band: 'note', needs: 'naming', where: onNote },
+  { id: 'parent', text: words.parent, group: 'note', needs: 'naming', where: onNote },
+  { id: 'jump', text: words.jump, group: 'note', needs: 'naming', where: onNote },
   {
     id: 'title',
     text: words.title,
-    band: 'note',
+    group: 'note',
     needs: 'naming',
     where: onNote,
     filled: (at) => at.title,
   },
   // The note goes to the vault's .trash folder, and putting it back is a move.
   // Destroy is the one that asks.
-  { id: 'remove', text: words.remove, band: 'note', where: onNote, also: 'destroy' },
+  { id: 'remove', text: words.remove, group: 'note', where: onNote, also: 'destroy' },
   {
     id: 'destroy',
     text: words.destroy,
-    band: 'note',
+    group: 'note',
     needs: 'exactly',
     where: onNote,
     warns: { does: words.destroys, then: words.forever, back: words.typeBack },
   },
-  { id: 'ask', text: words.ask, band: 'note', where: onNote },
-  { id: 'copy', text: words.copy, band: 'note', where: onNote },
-  { id: 'reveal', text: words.reveal, band: 'note', where: onNote },
-  { id: 'preset', text: words.preset, band: 'note', where: onNote },
+  { id: 'ask', text: words.ask, group: 'note', where: onNote },
+  { id: 'copy', text: words.copy, group: 'note', where: onNote },
+  { id: 'reveal', text: words.reveal, group: 'note', where: onNote },
+  { id: 'preset', text: words.preset, group: 'note', where: onNote },
   {
     id: 'transcribe',
     text: words.transcribe,
-    band: 'file',
+    group: 'file',
     where: onEvidence('transcribe', 'recording', (made) => owed(made.transcript)),
   },
   {
     id: 'proofread',
     text: words.proofread,
-    band: 'file',
+    group: 'file',
     // There is nothing to put right until a model has heard something, and
     // nothing to put right again once it has been put right.
     where: onEvidence(
@@ -479,7 +479,7 @@ export const commandsOf = (
   {
     id: 'dropTranscript',
     text: words.dropTranscript,
-    band: 'file',
+    group: 'file',
     needs: 'asking',
     // Everything one run of listening left goes, so a run that stopped part way
     // and a recording that gave no words are both taken away here.
@@ -494,84 +494,84 @@ export const commandsOf = (
   {
     id: 'recognise',
     text: words.recognise,
-    band: 'file',
+    group: 'file',
     where: onEvidence('recognise', 'book', (made) => owed(made.reading)),
   },
   {
     id: 'note',
     text: words.newNote,
     ...keysOf('note', agent),
-    band: 'window',
+    group: 'window',
     needs: 'naming',
     where: (at) => at.ready,
   },
   {
     id: 'deck',
     text: words.newDeck,
-    band: 'window',
+    group: 'window',
     needs: 'naming',
     where: (at) => at.ready,
   },
   {
     id: 'stencil',
     text: words.newStencil,
-    band: 'window',
+    group: 'window',
     needs: 'naming',
     where: (at) => at.ready,
   },
   {
     id: 'newPreset',
     text: words.newPreset,
-    band: 'window',
+    group: 'window',
     needs: 'naming',
     where: (at) => at.ready,
   },
-  { id: 'plex', text: words.newPlex, ...keysOf('plex', agent), band: 'window', where: always },
-  { id: 'files', text: words.files, band: 'window', where: always },
-  { id: 'agent', text: words.newAgent, ...keysOf('agent', agent), band: 'window', where: always },
+  { id: 'plex', text: words.newPlex, ...keysOf('plex', agent), group: 'window', where: always },
+  { id: 'files', text: words.files, group: 'window', where: always },
+  { id: 'agent', text: words.newAgent, ...keysOf('agent', agent), group: 'window', where: always },
   {
     id: 'close',
     text: words.close,
     ...keysOf('close', agent),
-    band: 'window',
+    group: 'window',
     where: (at) => at.tab !== '',
   },
-  { id: 'find', text: words.find, keys: words.findKeys, band: 'window', where: always },
-  { id: 'appearance', text: words.appearance, band: 'window', needs: 'choosing', where: always },
-  { id: 'mode', text: words.mode, band: 'window', needs: 'choosing', where: always },
+  { id: 'find', text: words.find, keys: words.findKeys, group: 'window', where: always },
+  { id: 'appearance', text: words.appearance, group: 'window', needs: 'choosing', where: always },
+  { id: 'mode', text: words.mode, group: 'window', needs: 'choosing', where: always },
   {
     id: 'interfaceScale',
     text: words.interfaceScale,
-    band: 'window',
+    group: 'window',
     needs: 'choosing',
     where: always,
   },
-  { id: 'textScale', text: words.textScale, band: 'window', needs: 'choosing', where: always },
-  { id: 'syncing', text: words.syncing, band: 'window', needs: 'choosing', where: always },
-  { id: 'hanging', text: words.hanging, band: 'window', needs: 'choosing', where: always },
-  { id: 'parts', text: words.parts, band: 'window', needs: 'choosing', where: always },
-  { id: 'settings', text: words.settings, band: 'window', where: always },
-  { id: 'first', text: words.first, band: 'vault', where: (at) => at.ready },
+  { id: 'textScale', text: words.textScale, group: 'window', needs: 'choosing', where: always },
+  { id: 'syncing', text: words.syncing, group: 'window', needs: 'choosing', where: always },
+  { id: 'hanging', text: words.hanging, group: 'window', needs: 'choosing', where: always },
+  { id: 'parts', text: words.parts, group: 'window', needs: 'choosing', where: always },
+  { id: 'settings', text: words.settings, group: 'window', where: always },
+  { id: 'first', text: words.first, group: 'vault', where: (at) => at.ready },
   {
     id: 'goto',
     text: words.goto,
     ...keysOf('goto', agent),
-    band: 'vault',
+    group: 'vault',
     needs: 'picking',
     where: (at) => at.ready,
   },
-  { id: 'openVault', text: words.openVault, band: 'vault', needs: 'vaults', where: always },
+  { id: 'openVault', text: words.openVault, group: 'vault', needs: 'vaults', where: always },
   {
     id: 'newVault',
     text: words.newVault,
     ...keysOf('newVault', agent),
-    band: 'vault',
+    group: 'vault',
     where: always,
   },
   {
     id: 'renameVault',
     text: words.renameVault,
-    band: 'vault',
+    group: 'vault',
     needs: 'naming',
     where: onVault,
     filled: (at) => at.vault.name,
@@ -579,7 +579,7 @@ export const commandsOf = (
   {
     id: 'forgetVault',
     text: words.forgetVault,
-    band: 'vault',
+    group: 'vault',
     needs: 'vaults',
     next: 'asking',
     where: always,
@@ -593,7 +593,7 @@ export const commandsOf = (
   {
     id: 'eraseVault',
     text: words.eraseVault,
-    band: 'vault',
+    group: 'vault',
     needs: 'vaults',
     next: 'exactly',
     where: always,
@@ -611,7 +611,7 @@ const secondary = (commands: readonly Command[]): ReadonlySet<string> =>
 /** The commands over the note in front, in the order they are drawn. */
 export const overNote = (commands: readonly Command[]): readonly Command[] => {
   const second = secondary(commands)
-  return commands.filter((one) => one.band === 'note' && !second.has(one.id))
+  return commands.filter((one) => one.group === 'note' && !second.has(one.id))
 }
 
 /**
@@ -647,18 +647,18 @@ export const creates = (seat: string, name: string, at: CommandTarget): Deed =>
 const SEATED: readonly string[] = ['child', 'parent', 'jump']
 
 /**
- * The bands of a search, and the offer to make a note where every one of them
- * answered with nothing. A band still waiting has not answered.
+ * The groups of a search, and the offer to make a note where every one of them
+ * answered with nothing. A group still waiting has not answered.
  */
 export const offering = (
-  bands: readonly PaletteBand[],
+  groups: readonly PaletteGroup[],
   typed: string,
   words: Words,
   at: CommandTarget,
-): readonly PaletteBand[] => {
+): readonly PaletteGroup[] => {
   const name = typed.trim()
-  const empty = bands.length > 0 && bands.every((one) => one.items.length === 0 && !one.working)
-  if (!name || !empty) return bands
+  const empty = groups.length > 0 && groups.every((one) => one.items.length === 0 && !one.working)
+  if (!name || !empty) return groups
   // A note made from a search stands on its own, and the note in front is what
   // it can be joined to as it is made.
   const seats = at.path
@@ -669,7 +669,7 @@ export const offering = (
       ]
     : []
   return [
-    ...bands,
+    ...groups,
     {
       id: MAKING,
       title: words.creating,
@@ -743,7 +743,7 @@ export function commanding(
    * it is filed under now.
    */
   const calling = (step: PendingStep): string =>
-    step.command.band === 'vault'
+    step.command.group === 'vault'
       ? step.on.vault.name
       : knows.called(step.on.path) || step.on.title
 
@@ -795,7 +795,7 @@ export function commanding(
   const opensOn = computed(() => {
     const step = here.value
     if (step?.step !== 'choosing') return ''
-    const rows = holds.offers(step.command.id, typed.value).flatMap((band) => band.items)
+    const rows = holds.offers(step.command.id, typed.value).flatMap((group) => group.items)
     return rows.find((one) => one.inForce)?.id ?? ''
   })
 
@@ -890,16 +890,16 @@ export function commanding(
   const why = (over: CommandTarget): string =>
     !over.ready ? words.indexing : over.path ? words.noneFound : words.noNote
 
-  /** Every command offered over what is in front, in the bands it holds. */
-  const listed = (over: CommandTarget, text: string): readonly PaletteBand[] => {
+  /** Every command offered over what is in front, in the groups it holds. */
+  const listed = (over: CommandTarget, text: string): readonly PaletteGroup[] => {
     const word = text.trim().toLowerCase()
-    const items = (band: Band): readonly PaletteItem[] =>
+    const items = (group: CommandGroup): readonly PaletteItem[] =>
       commands
-        .filter((one) => one.band === band && !second.has(one.id) && one.where(over, runs))
+        .filter((one) => one.group === group && !second.has(one.id) && one.where(over, runs))
         .map((one) => drawn(one, over, word))
         .filter((item) => item !== null)
 
-    // The runs are offered over a book and over a recording, and their band
+    // The runs are offered over a book and over a recording, and their group
     // stands where one of them is in front.
     const overFile = items('file')
 
@@ -912,7 +912,7 @@ export function commanding(
   }
 
   /** A name to give, as the one thing the words typed can be. */
-  const naming = (text: string): PaletteBand => {
+  const naming = (text: string): PaletteGroup => {
     const name = text.trim()
     return {
       id: 'naming',
@@ -938,7 +938,7 @@ export function commanding(
   const typeOf = (id: string): NoteType | null =>
     found.value.find((one) => one.path === id)?.type ?? null
 
-  const picking = (text: string): PaletteBand => {
+  const picking = (text: string): PaletteGroup => {
     const seen = new Set<string>()
     const items: PaletteItem[] = []
     for (const one of found.value) {
@@ -961,17 +961,17 @@ export function commanding(
   }
 
   /**
-   * The bands a list the window holds is drawn in, narrowed by the words typed.
+   * The groups a list the window holds is drawn in, narrowed by the words typed.
    * They are read again on every keystroke, and a row drawn as not to be chosen
    * is not chosen.
    */
-  const choosing = (step: PendingStep, text: string): readonly PaletteBand[] => {
+  const choosing = (step: PendingStep, text: string): readonly PaletteGroup[] => {
     const word = text.trim().toLowerCase()
-    return holds.offers(step.command.id, text).map((band) => ({
-      id: band.id,
-      title: band.title,
-      items: band.items.map((one) => offered(one, word)).filter((item) => item !== null),
-      silence: band.silence ?? words.noneFound,
+    return holds.offers(step.command.id, text).map((group) => ({
+      id: group.id,
+      title: group.title,
+      items: group.items.map((one) => offered(one, word)).filter((item) => item !== null),
+      silence: group.silence ?? words.noneFound,
     }))
   }
 
@@ -1002,7 +1002,7 @@ export function commanding(
    * ahead of their folder, and cannot be chosen. The folder is what tells one
    * vault from another, so it keeps the room.
    */
-  const listing = (text: string, step: PendingStep): PaletteBand => {
+  const listing = (text: string, step: PendingStep): PaletteGroup => {
     const word = text.trim().toLowerCase()
     const items: PaletteItem[] = known.value
       .filter((one) => word === '' || one.displayName.toLowerCase().includes(word))
@@ -1030,7 +1030,7 @@ export function commanding(
    * nothing is drawn first, and it is the one the keyboard opens on. Each is
    * reached by the name it is offered under, as an item of any other step is.
    */
-  const asking = (step: PendingStep, text: string): PaletteBand => {
+  const asking = (step: PendingStep, text: string): PaletteGroup => {
     const word = text.trim().toLowerCase()
     const { keeps = '', kept = '', does = '', then = '' }: Partial<ConfirmWords> =
       step.command.answers ?? {}
@@ -1059,7 +1059,7 @@ export function commanding(
   }
 
   /** The name typed back, which is the one thing that reaches destroying. */
-  const exactly = (step: PendingStep, text: string): PaletteBand => {
+  const exactly = (step: PendingStep, text: string): PaletteGroup => {
     const title = calling(step)
     const { does = '', then = '' }: Partial<RetypeWords> = step.command.warns ?? {}
     return {
@@ -1077,7 +1077,7 @@ export function commanding(
     }
   }
 
-  const bands = computed<readonly PaletteBand[]>(() => {
+  const groups = computed<readonly PaletteGroup[]>(() => {
     const step = here.value
     if (!step) return listed(on.value, typed.value)
     if (step.step === 'naming') return [naming(typed.value)]
@@ -1180,7 +1180,7 @@ export function commanding(
       return deed(step.command.id, step.on, name)
     }
     if (step.step === 'choosing') {
-      const rows = holds.offers(step.command.id, typed.value).flatMap((band) => band.items)
+      const rows = holds.offers(step.command.id, typed.value).flatMap((group) => group.items)
       const one = rows.find((row) => row.id === item)
       if (!one || one.disabled) return null
       return deed(step.command.id, step.on, one.id)
@@ -1232,7 +1232,7 @@ export function commanding(
   return {
     open,
     typed,
-    bands,
+    groups,
     crumb,
     step,
     opensOn,

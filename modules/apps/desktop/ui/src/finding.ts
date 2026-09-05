@@ -1,13 +1,13 @@
 /**
  * What the words typed turn up, and the rules for asking: a question about a
- * vault turned into the palette's bands, and an item chosen back into a place
+ * vault turned into the palette's groups, and an item chosen back into a place
  * in the window.
  *
  * Three questions go out on every keystroke and come back in whatever order
- * they take, each filling its own band as it lands.
+ * they take, each filling its own group as it lands.
  */
 import { computed, ref, shallowRef } from 'vue'
-import type { PaletteItem, PaletteBand } from '@numen/ui'
+import type { PaletteItem, PaletteGroup } from '@numen/ui'
 import { asking, type Question } from './asking'
 import type { NoteType, Source } from './core'
 import { wordsOnly, type Meaning } from './meaning'
@@ -73,11 +73,11 @@ export interface FindingDeps {
   search(query: string, way: SearchMode, limit: number): Promise<readonly Passage[]>
 }
 
-/** What a band of a palette says when it holds nothing. */
+/** What a group of a palette says when it holds nothing. */
 export interface EmptyWords {
-  /** What a band says when it came back with nothing. */
+  /** What a group says when it came back with nothing. */
   readonly noneFound: string
-  /** What a band says when the vault could not answer at all. */
+  /** What a group says when the vault could not answer at all. */
   readonly notAsked: string
 }
 
@@ -120,14 +120,14 @@ const PLEX = 'plex'
 const NOTE = 'note'
 const DOCUMENT = 'document'
 
-/** How many answers each band holds. */
+/** How many answers each group holds. */
 const EACH = 8
 
 /** How long a keystroke waits before anything is asked. */
 const HOLD = 120
 
-/** Which band is which, and nothing else is one. */
-type Band = 'names' | 'text' | 'meaning'
+/** Which group is which, and nothing else is one. */
+type SearchGroup = 'names' | 'text' | 'meaning'
 
 /**
  * Where one item stands in the vault, and what it can be asked. A line of -1 is
@@ -173,10 +173,10 @@ export function finding(core: FindingDeps, words: Words, how: FindingOptions = {
   const texts = shallowRef<readonly Passage[]>([])
   const meanings = shallowRef<readonly Passage[]>([])
 
-  /** Which bands are still working on an answer. */
-  const working = ref<Record<Band, boolean>>({ names: false, text: false, meaning: false })
-  /** What a band could not be filled with, in words a person reads. */
-  const said = ref<Record<Band, string>>({ names: '', text: '', meaning: '' })
+  /** Which groups are still working on an answer. */
+  const working = ref<Record<SearchGroup, boolean>>({ names: false, text: false, meaning: false })
+  /** What a group could not be filled with, in words a person reads. */
+  const said = ref<Record<SearchGroup, string>>({ names: '', text: '', meaning: '' })
 
   /** Three questions are in the air at once, and only the newest is drawn. */
   const asks = asking()
@@ -190,10 +190,10 @@ export function finding(core: FindingDeps, words: Words, how: FindingOptions = {
     said.value = { names: '', text: '', meaning: '' }
   }
 
-  /** One band's question, filled in when it lands and only while it is wanted. */
+  /** One group's question, filled in when it lands and only while it is wanted. */
   const fill = async <T>(
     mine: Question,
-    band: Band,
+    group: SearchGroup,
     question: () => Promise<readonly T[]>,
     into: (found: readonly T[]) => void,
   ) => {
@@ -207,9 +207,9 @@ export function finding(core: FindingDeps, words: Words, how: FindingOptions = {
       // What went wrong is said in the window's own voice. The reason belongs
       // where a person reading it can do something about it.
       console.error(error)
-      said.value = { ...said.value, [band]: words.notAsked }
+      said.value = { ...said.value, [group]: words.notAsked }
     } finally {
-      if (mine.current) working.value = { ...working.value, [band]: false }
+      if (mine.current) working.value = { ...working.value, [group]: false }
     }
   }
 
@@ -308,13 +308,13 @@ export function finding(core: FindingDeps, words: Words, how: FindingOptions = {
           },
         }
 
-  const passageItem = (band: Band, one: Passage): SearchRow => ({
+  const passageItem = (group: SearchGroup, one: Passage): SearchRow => ({
     item: {
       // Named by where it stands in the vault and where in that source it was
-      // found: a band that lands renumbers the list, and an item renamed under
+      // found: a group that lands renumbers the list, and an item renamed under
       // the keyboard takes it somewhere else. One source answering twice is two
       // passages, and a name that left the place out kept only the last of them.
-      id: `${band}:${one.path}:${one.start}`,
+      id: `${group}:${one.path}:${one.start}`,
       title: one.title || one.path,
       detail: one.text,
       detailAt: one.at,
@@ -344,11 +344,11 @@ export function finding(core: FindingDeps, words: Words, how: FindingOptions = {
   })
 
   /**
-   * Why a band holds nothing, and nothing where it was asked and answered with
+   * Why a group holds nothing, and nothing where it was asked and answered with
    * nothing. A search by meaning is asked of the vectors, so a vault that has
    * none says so.
    */
-  const silenceOf = (id: Band): string => {
+  const silenceOf = (id: SearchGroup): string => {
     if (said.value[id]) return said.value[id]
     const read = id === 'meaning' ? reading?.() : undefined
     if (!read) return ''
@@ -356,12 +356,12 @@ export function finding(core: FindingDeps, words: Words, how: FindingOptions = {
     return read.embedded === 0 ? words.notEmbedded : ''
   }
 
-  /** What the bands hold, and where each thing in them stands in the vault. */
+  /** What the groups hold, and where each thing in them stands in the vault. */
   const built = computed(() => {
     const held = new Map<string, SearchHit>()
-    if (!typed.value.trim()) return { bands: [] as readonly PaletteBand[], held }
+    if (!typed.value.trim()) return { groups: [] as readonly PaletteGroup[], held }
 
-    const band = (id: Band, title: string, drawn: readonly SearchRow[]): PaletteBand => {
+    const group = (id: SearchGroup, title: string, drawn: readonly SearchRow[]): PaletteGroup => {
       for (const one of drawn) held.set(one.item.id, one.stands)
       return {
         id,
@@ -373,24 +373,24 @@ export function finding(core: FindingDeps, words: Words, how: FindingOptions = {
     }
 
     return {
-      bands: [
-        band('names', words.names, names.value.map(nameItem)),
-        band(
+      groups: [
+        group('names', words.names, names.value.map(nameItem)),
+        group(
           'text',
           words.text,
           texts.value.map((one) => passageItem('text', one)),
         ),
-        band(
+        group(
           'meaning',
           words.meaning,
           meanings.value.map((one) => passageItem('meaning', one)),
         ),
-      ] as readonly PaletteBand[],
+      ] as readonly PaletteGroup[],
       held,
     }
   })
 
-  const bands = computed(() => built.value.bands)
+  const groups = computed(() => built.value.groups)
 
   /**
    * Which of four the note an item stands in is, and nothing where it stands in
@@ -420,7 +420,7 @@ export function finding(core: FindingDeps, words: Words, how: FindingOptions = {
       : { at: 'file', ...named }
   }
 
-  return { open, typed, bands, typing, shows, chose, typeOf, kindOf }
+  return { open, typed, groups, typing, shows, chose, typeOf, kindOf }
 }
 
 /** The search of one window: what the words typed turn up, and where each goes. */

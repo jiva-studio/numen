@@ -17,16 +17,16 @@ export interface MenuItem {
   /** Drawn and announced, and not choosable. */
   readonly disabled?: boolean
   /**
-   * The band it belongs to. Items of one band stand together, and a rule is
-   * drawn where one band gives way to the next. A menu whose items name no
-   * band is one band and carries no rules.
+   * The group it belongs to. Items of one group stand together, and a rule is
+   * drawn where one group gives way to the next. A menu whose items name no
+   * group is one group and carries no rules.
    */
-  readonly band?: string
+  readonly group?: string
 }
 
 /** One item as it is drawn: what it says, and the rule standing above it. */
-export interface BandedItem extends MenuItem {
-  /** It begins a band, and a rule stands between it and what is above. */
+export interface GroupedItem extends MenuItem {
+  /** It begins a group, and a rule stands between it and what is above. */
   readonly rule: boolean
 }
 
@@ -34,8 +34,8 @@ export interface BandedItem extends MenuItem {
  * The items in the order they were given, each saying whether a rule stands
  * above it. The first item begins the menu, and nothing is drawn above it.
  */
-export const banded = (items: readonly MenuItem[]): readonly BandedItem[] =>
-  items.map((item, at) => ({ ...item, rule: at > 0 && item.band !== items[at - 1]?.band }))
+export const grouped = (items: readonly MenuItem[]): readonly GroupedItem[] =>
+  items.map((item, at) => ({ ...item, rule: at > 0 && item.group !== items[at - 1]?.group }))
 
 /** What placing a menu needs to know. */
 export interface MenuPlacement {

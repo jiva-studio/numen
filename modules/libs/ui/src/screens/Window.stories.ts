@@ -37,7 +37,7 @@ import { branch, pane, type Tab, type Workspace as State } from '@/workspace/nod
 import { keyChord } from '@/palette/item'
 import type {
   PaletteAction,
-  PaletteBand,
+  PaletteGroup,
   PaletteItem,
   PaletteKeys,
   PaletteSpan,
@@ -427,10 +427,10 @@ const passage = (
 })
 
 /**
- * What one search turns up, in the three bands the window draws: the names it
+ * What one search turns up, in the three groups the window draws: the names it
  * matched, the text it was found in, and what means the same without saying it.
  */
-const BANDS: readonly PaletteBand[] = [
+const GROUPS: readonly PaletteGroup[] = [
   {
     id: 'names',
     title: 'Names',
@@ -483,21 +483,21 @@ const BANDS: readonly PaletteBand[] = [
 ]
 
 /**
- * What the menu on a node offers, in the bands the window draws it in: what
+ * What the menu on a node offers, in the groups the window draws it in: what
  * opens the note, what is done to its file, what is made off it in the plex,
  * what is asked of the agent, and what takes it out of the vault.
  */
 const MENU: readonly MenuItem[] = [
-  { id: 'read', text: 'Open the note', band: 'open' },
-  { id: 'travel', text: 'Show in plex', band: 'open' },
-  { id: 'copy', text: 'Copy path', band: 'file' },
-  { id: 'reveal', text: 'Show this note in the files', band: 'file' },
-  { id: 'child', text: 'New child note', band: 'plex' },
-  { id: 'parent', text: 'New parent note', band: 'plex' },
-  { id: 'jump', text: 'New jump note', band: 'plex' },
-  { id: 'title', text: 'Change title', band: 'plex' },
-  { id: 'ask', text: 'Ask the agent about this note', band: 'agent' },
-  { id: 'remove', text: 'Remove note', band: 'remove' },
+  { id: 'read', text: 'Open the note', group: 'open' },
+  { id: 'travel', text: 'Show in plex', group: 'open' },
+  { id: 'copy', text: 'Copy path', group: 'file' },
+  { id: 'reveal', text: 'Show this note in the files', group: 'file' },
+  { id: 'child', text: 'New child note', group: 'plex' },
+  { id: 'parent', text: 'New parent note', group: 'plex' },
+  { id: 'jump', text: 'New jump note', group: 'plex' },
+  { id: 'title', text: 'Change title', group: 'plex' },
+  { id: 'ask', text: 'Ask the agent about this note', group: 'agent' },
+  { id: 'remove', text: 'Remove note', group: 'remove' },
 ]
 
 const MENU_ICONS: Readonly<Record<string, typeof Waypoints>> = {
@@ -527,8 +527,8 @@ const command = (id: string, title: string, keys?: PaletteKeys): PaletteItem => 
   ...(keys ? { keys } : {}),
 })
 
-/** What the commands offer, in the three bands the window draws them in. */
-const COMMANDS: readonly PaletteBand[] = [
+/** What the commands offer, in the three groups the window draws them in. */
+const COMMANDS: readonly PaletteGroup[] = [
   {
     id: 'note',
     title: 'This note',
@@ -632,7 +632,7 @@ const screen = ({
       selected,
       MENU,
       menuIcon,
-      bands: panel === 'commands' ? COMMANDS : BANDS,
+      groups: panel === 'commands' ? COMMANDS : GROUPS,
       placeholder: panel === 'commands' ? 'Type a command' : 'Search',
       pages: BOOK_LEAVES,
       sheets: Array.from({ length: BOOK_LEAVES }, () => PAPER),
@@ -709,7 +709,7 @@ const screen = ({
       <Palette
         v-if="panel"
         v-model="typed"
-        :bands="bands"
+        :groups="groups"
         open
         :placeholder="placeholder"
       />
@@ -917,7 +917,7 @@ export const Searching: Story = {
   },
 }
 
-/** The commands, in the three bands they are drawn in. */
+/** The commands, in the three groups they are drawn in. */
 export const Commanding: Story = {
   render: () =>
     screen({
@@ -933,11 +933,11 @@ export const Commanding: Story = {
       panel: 'commands',
     }),
   play: async () => {
-    // Commanding means the commands are there to be run, in the three bands
+    // Commanding means the commands are there to be run, in the three groups
     // the window sorts them into.
     await waitFor(() => {
-      const bands = [...document.body.querySelectorAll('[data-palette="title"]')]
-      expect(bands.map((band) => band.textContent?.trim())).toEqual([
+      const groups = [...document.body.querySelectorAll('[data-palette="title"]')]
+      expect(groups.map((group) => group.textContent?.trim())).toEqual([
         'This note',
         'This window',
         'This vault',

@@ -39,7 +39,7 @@ const field = computed(() =>
     ? {
         open: true,
         typed: props.commands.typed.value,
-        bands: props.commands.bands.value,
+        groups: props.commands.groups.value,
         crumb: props.commands.crumb.value,
         step: props.commands.step.value,
         opensOn: props.commands.opensOn.value,
@@ -48,7 +48,7 @@ const field = computed(() =>
     : {
         open: props.search.open.value,
         typed: props.search.typed.value,
-        bands: offering(props.search.bands.value, props.search.typed.value, words, props.where()),
+        groups: offering(props.search.groups.value, props.search.typed.value, words, props.where()),
         crumb: '',
         step: '',
         opensOn: '',
@@ -149,7 +149,7 @@ onUnmounted(() => globalThis.removeEventListener('keydown', asked))
 <template>
   <PaletteView
     :model-value="field.typed"
-    :bands="field.bands"
+    :groups="field.groups"
     :open="field.open"
     :placeholder="field.placeholder"
     :crumb="field.crumb"

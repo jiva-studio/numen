@@ -65,16 +65,16 @@ export interface PaletteItem {
   readonly disabled?: boolean
 }
 
-/** One band of the list. What the bands are is the caller's. */
-export interface PaletteBand {
+/** One group of the list. What the groups are is the caller's. */
+export interface PaletteGroup {
   readonly id: string
-  /** What the band is called. */
+  /** What the group is called. */
   readonly title: string
   readonly items: readonly PaletteItem[]
   /** More is on its way, so what stands here is not all of it. */
   readonly working?: boolean
   /**
-   * What is said in place of items when the band holds none. A band with
+   * What is said in place of items when the group holds none. A group with
    * nothing to say here and nothing on its way is drawn nowhere.
    */
   readonly silence?: string
@@ -86,32 +86,32 @@ export interface PaletteBand {
  */
 export type PaletteLit = string
 
-/** One item, and the band it was drawn in. */
+/** One item, and the group it was drawn in. */
 export interface PalettePlace {
-  readonly band: PaletteBand
+  readonly group: PaletteGroup
   readonly item: PaletteItem
 }
 
 
 /**
- * The bands in the order they are drawn: as they were offered, and the ones
+ * The groups in the order they are drawn: as they were offered, and the ones
  * holding nothing after the ones holding something.
  *
- * A band holding nothing is drawn while it is still working, and where it has
+ * A group holding nothing is drawn while it is still working, and where it has
  * something to say in place of items. One that is neither is worth no heading
- * of its own and is drawn nowhere. Such a band holds no item either way, so
+ * of its own and is drawn nowhere. Such a group holds no item either way, so
  * what the keyboard counts is untouched.
  */
-export const ordered = (bands: readonly PaletteBand[]): readonly PaletteBand[] => [
-  ...bands.filter((one) => one.items.length > 0),
-  ...bands.filter((one) => one.items.length === 0 && (one.working || Boolean(one.silence))),
+export const ordered = (groups: readonly PaletteGroup[]): readonly PaletteGroup[] => [
+  ...groups.filter((one) => one.items.length > 0),
+  ...groups.filter((one) => one.items.length === 0 && (one.working || Boolean(one.silence))),
 ]
 
 /**
  * Every item in the order it is drawn, so that one number says which item.
  */
-export const flatten = (bands: readonly PaletteBand[]): readonly PalettePlace[] =>
-  bands.flatMap((band) => band.items.map((item) => ({ band, item })))
+export const flatten = (groups: readonly PaletteGroup[]): readonly PalettePlace[] =>
+  groups.flatMap((group) => group.items.map((item) => ({ group, item })))
 
 /** Whether the keyboard may land here. An item with nothing to do is passed over. */
 export const choosable = (item: PaletteItem): boolean =>
@@ -292,24 +292,24 @@ export interface PlacedItem {
   readonly detail: readonly PalettePart[]
 }
 
-/** One band as it is drawn. */
-export interface PlacedBand {
-  readonly band: PaletteBand
+/** One group as it is drawn. */
+export interface PlacedGroup {
+  readonly group: PaletteGroup
   readonly items: readonly PlacedItem[]
 }
 
 /**
- * Every band, with its items numbered as they stand in the whole list and each
+ * Every group, with its items numbered as they stand in the whole list and each
  * of their lines already split into runs.
  *
- * The bands are walked in the order they were given, which is the order the
+ * The groups are walked in the order they were given, which is the order the
  * keyboard counts in, so a number here is a number into `flatten`.
  */
-export const placePalette = (bands: readonly PaletteBand[]): readonly PlacedBand[] => {
+export const placePalette = (groups: readonly PaletteGroup[]): readonly PlacedGroup[] => {
   let at = 0
-  return bands.map((band) => ({
-    band,
-    items: band.items.map((item) => ({
+  return groups.map((group) => ({
+    group,
+    items: group.items.map((item) => ({
       item,
       at: at++,
       name: partsOf(item.title, item.at),

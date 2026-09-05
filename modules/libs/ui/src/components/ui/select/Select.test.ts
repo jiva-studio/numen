@@ -44,7 +44,7 @@ const line = (control: ReturnType<typeof mountSelect>) => control.get('button[da
 const rows = () => Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
 const words = () => rows().map((one) => one.querySelector('.menu__text')?.textContent?.trim())
 const shelves = () =>
-  Array.from(document.body.querySelectorAll<HTMLElement>('.menu__band')).map((one) =>
+  Array.from(document.body.querySelectorAll<HTMLElement>('.menu__group-name')).map((one) =>
     one.textContent?.trim(),
   )
 

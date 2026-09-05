@@ -99,8 +99,8 @@ describe('the four commands over how the window is drawn', () => {
       one.querySelector('[data-palette="name"]')?.textContent?.trim(),
     )
 
-  /** The bands standing, by the name each carries. */
-  const bands = () =>
+  /** The groups standing, by the name each carries. */
+  const groups = () =>
     [...document.body.querySelectorAll('[data-palette="title"]')].map((one) => one.textContent?.trim())
 
   /** The second line of every row drawn, and nothing for a row carrying none. */
@@ -152,10 +152,10 @@ describe('the four commands over how the window is drawn', () => {
   })
 
   describe('the step that offers the themes', () => {
-    it('draws the shelves as bands, and opens on the theme the window wears', async () => {
+    it('draws the shelves as groups, and opens on the theme the window wears', async () => {
       await over('theme')
 
-      expect(bands()).toStrictEqual(['Ships with numen', 'Your own themes'])
+      expect(groups()).toStrictEqual(['Ships with numen', 'Your own themes'])
       expect(document.body.querySelector('[data-here]')?.textContent).toContain('numen')
       expect(dressed()).toStrictEqual([PAIR, SERVED, SIZED])
     })
@@ -191,10 +191,10 @@ describe('the four commands over how the window is drawn', () => {
   })
 
   describe('the step that offers light and dark', () => {
-    it('opens on the half the tokens are read as, in a band of its own', async () => {
+    it('opens on the half the tokens are read as, in a group of its own', async () => {
       await over('light')
 
-      expect(bands()).toStrictEqual(['Light and dark'])
+      expect(groups()).toStrictEqual(['Light and dark'])
       expect(left()).toStrictEqual(['Follow the system', 'Light', 'Dark'])
       expect(dressed()).toStrictEqual([PAIR, SERVED, SIZED])
     })
@@ -303,10 +303,10 @@ describe('the four commands over how the window is drawn', () => {
   })
 
   describe('the step that offers how large the interface is drawn', () => {
-    it('opens on the size the window is drawn at, in a band of its own', async () => {
+    it('opens on the size the window is drawn at, in a group of its own', async () => {
       await over('interface')
 
-      expect(bands()).toStrictEqual(['How large the interface is drawn'])
+      expect(groups()).toStrictEqual(['How large the interface is drawn'])
       expect(left()).toStrictEqual(TENTHS)
       expect(dressed()).toStrictEqual([PAIR, SERVED, SIZED])
     })
@@ -451,7 +451,7 @@ describe('the four commands over how the window is drawn', () => {
     it('opens on the sizes the reading text goes between', async () => {
       await over('reading')
 
-      expect(bands()).toStrictEqual(['How large the text is set'])
+      expect(groups()).toStrictEqual(['How large the text is set'])
       // The far end of this one falls between two steps, and is offered there.
       expect(left()).toStrictEqual([...TENTHS.slice(0, 10), '175%'])
     })

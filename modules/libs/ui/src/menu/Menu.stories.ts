@@ -20,8 +20,8 @@ interface Knobs {
   opening: MenuOpening
   /** Which item is the one in force, if the menu names one. */
   current: string | null
-  /** Whether the name of a band is drawn over it. */
-  bands: boolean
+  /** Whether the name of a group is drawn over it. */
+  groups: boolean
   margin: number
   name: string
   onChoose: (id: string) => void
@@ -80,7 +80,7 @@ const asked = (args: Knobs) => ({
         :from="from"
         :opening="args.opening"
         :current="args.current"
-        :bands="args.bands"
+        :groups="args.groups"
         :margin="args.margin"
         :name="args.name"
         @choose="args.onChoose"
@@ -130,7 +130,7 @@ const meta = {
     at: { x: 480, y: 300 },
     opening: 'pointer',
     current: null,
-    bands: false,
+    groups: false,
     margin: 8,
     name: 'Menu',
     onChoose: fn(),
@@ -430,26 +430,26 @@ export const NotChoosable: Story = {
 }
 
 /**
- * Bands, ruled where one gives way to the next. What the bands mean is the
+ * Groups, ruled where one gives way to the next. What the groups mean is the
  * caller's; the menu draws a line where the word changes and nothing else.
  */
-export const Banded: Story = {
+export const Grouped: Story = {
   args: {
     items: [
-      { id: 'open', text: 'Open the note', band: 'open' },
-      { id: 'travel', text: 'Show in plex', band: 'open' },
-      { id: 'note', text: 'New note', band: 'file' },
-      { id: 'folder', text: 'New folder', band: 'file' },
-      { id: 'rename', text: 'Rename', band: 'file' },
-      { id: 'child', text: 'New child note', band: 'plex' },
-      { id: 'title', text: 'Change title', band: 'plex' },
-      { id: 'remove', text: 'Remove note', band: 'gone' },
+      { id: 'open', text: 'Open the note', group: 'open' },
+      { id: 'travel', text: 'Show in plex', group: 'open' },
+      { id: 'note', text: 'New note', group: 'file' },
+      { id: 'folder', text: 'New folder', group: 'file' },
+      { id: 'rename', text: 'Rename', group: 'file' },
+      { id: 'child', text: 'New child note', group: 'plex' },
+      { id: 'title', text: 'Change title', group: 'plex' },
+      { id: 'remove', text: 'Remove note', group: 'gone' },
     ],
   },
   play: async () => {
     const menu = within(menuElement()!)
     // A rule stands at each of the three joins, and above none of the items
-    // that carry on a band.
+    // that carry on a group.
     await expect(menu.getAllByRole('separator')).toHaveLength(3)
     // The keyboard passes over the rules: they are drawn, not chosen.
     await userEvent.keyboard('{ArrowDown}')
@@ -459,20 +459,20 @@ export const Banded: Story = {
   },
 }
 
-/** Bands named over the run they open, which is what a list of choices does. */
-export const BandsNamed: Story = {
+/** Groups named over the run they open, which is what a list of choices does. */
+export const GroupsNamed: Story = {
   args: {
     items: [
-      { id: 'numen', text: 'numen', band: 'Ships with numen' },
-      { id: 'paper', text: 'paper', band: 'Ships with numen' },
-      { id: 'sea', text: 'sea', band: 'Yours' },
+      { id: 'numen', text: 'numen', group: 'Ships with numen' },
+      { id: 'paper', text: 'paper', group: 'Ships with numen' },
+      { id: 'sea', text: 'sea', group: 'Yours' },
     ],
     current: 'paper',
-    bands: true,
+    groups: true,
   },
   play: async () => {
     const menu = menuElement()!
-    const named = Array.from(menu.querySelectorAll('.menu__band')).map((one) =>
+    const named = Array.from(menu.querySelectorAll('.menu__group-name')).map((one) =>
       one.textContent?.trim(),
     )
     await expect(named).toEqual(['Ships with numen', 'Yours'])

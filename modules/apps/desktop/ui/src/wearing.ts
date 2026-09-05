@@ -12,7 +12,7 @@
  */
 import { computed, ref, shallowRef, watch } from 'vue'
 import { asking } from './asking'
-import type { StepBand, StepRow } from './commanding'
+import type { StepGroup, StepRow } from './commanding'
 import { following } from '@numen/ui'
 import type { Voice } from './telling'
 import type { Bounds, Catalogue, Mode, Ranges, Scales, Sizes, Theme, Themes } from './theme'
@@ -23,7 +23,7 @@ export interface Words {
   readonly shipping: string
   readonly owned: string
   readonly noneOwned: string
-  /** The band the three modes are drawn in. */
+  /** The group the three modes are drawn in. */
   readonly half: string
   /** The row a list of values opens on, which is the value in force. */
   readonly current: string
@@ -33,7 +33,7 @@ export interface Words {
   readonly dark: string
   /** Why a mode cannot be chosen: the theme worn declares light and dark itself. */
   readonly pinned: string
-  /** The band each of the two sizes is drawn in. */
+  /** The group each of the two sizes is drawn in. */
   readonly drawing: string
   readonly setting: string
   /** The themes could not be listed, and one theme's file could not be read. */
@@ -396,7 +396,7 @@ export function wearing(
 
   /**
    * The themes off one shelf, the one the settings name first. Where a theme
-   * came off is said by the band it stands in, so a row says only what is
+   * came off is said by the group it stands in, so a row says only what is
    * true of it alone.
    */
   const shelf = (shipping: boolean): readonly StepRow[] => {
@@ -413,10 +413,10 @@ export function wearing(
   }
 
   /**
-   * The themes, in the two bands they come off. The band the theme worn came
+   * The themes, in the two groups they come off. The group the theme worn came
    * off stands first, so opening the list stands on what the window wears.
    */
-  const offers = (): readonly StepBand[] => {
+  const offers = (): readonly StepGroup[] => {
     const shipping = { id: 'shipping', title: words.shipping, items: shelf(true) }
     const own = {
       id: 'owned',
@@ -439,7 +439,7 @@ export function wearing(
    * pins light and dark: it is there, it says why, and the keyboard passes
    * over it.
    */
-  const modes = (): readonly StepBand[] => {
+  const modes = (): readonly StepGroup[] => {
     const row = (one: Mode): StepRow => {
       const detail = beside(one)
       return {
@@ -454,7 +454,7 @@ export function wearing(
   }
 
   /**
-   * The sizes one of the two commands offers, in one band of its own: every
+   * The sizes one of the two commands offers, in one group of its own: every
    * step the range reaches, the size the window is drawn at, and the number a
    * person typed. Each stands once, in order, and the range is what a size has
    * to be inside to stand at all.
@@ -462,7 +462,7 @@ export function wearing(
    * The one row that says anything is the size the window is drawn at, which is
    * where a person is standing before they walk.
    */
-  const sizes = (command: string, typed = ''): readonly StepBand[] => {
+  const sizes = (command: string, typed = ''): readonly StepGroup[] => {
     const which: ScaleKind = command === TEXT_SCALE ? TEXT_SCALE : INTERFACE_SCALE
     const range = its(bounds.value, which)
     const now = its(settings.value, which)

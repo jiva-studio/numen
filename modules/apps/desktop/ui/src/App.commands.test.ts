@@ -14,7 +14,7 @@ import {
   Palette,
   Tree,
   Workspace,
-  type PaletteBand,
+  type PaletteGroup,
 } from '@numen/ui'
 import AgentTab from './agent/AgentTab.vue'
 import DeckTab from './cards/DeckTab.vue'
@@ -49,8 +49,8 @@ describe('the palette', () => {
     return event
   }
 
-  const bandsOf = (window: Awaited<ReturnType<typeof drawn>>) =>
-    (window.findComponent(Palette).props('bands') as readonly { id: string }[]).map((one) => one.id)
+  const groupsOf = (window: Awaited<ReturnType<typeof drawn>>) =>
+    (window.findComponent(Palette).props('groups') as readonly { id: string }[]).map((one) => one.id)
 
   it('opens on the commands for what is in front, and prints nothing', async () => {
     const window = await drawn()
@@ -60,7 +60,7 @@ describe('the palette', () => {
 
     expect(event.defaultPrevented).toBe(true)
     expect(window.findComponent(Palette).props('open')).toBe(true)
-    expect(bandsOf(window)).toStrictEqual(['note', 'window', 'vault'])
+    expect(groupsOf(window)).toStrictEqual(['note', 'window', 'vault'])
   })
 
   it('opens on the search under its own keystroke', async () => {
@@ -70,7 +70,7 @@ describe('the palette', () => {
     await settles()
 
     expect(window.findComponent(Palette).props('open')).toBe(true)
-    expect(bandsOf(window)).toStrictEqual([])
+    expect(groupsOf(window)).toStrictEqual([])
   })
 
   /** A name the search turned up, chosen to be read. */
@@ -137,27 +137,27 @@ describe('the palette', () => {
     expect(marks().every(Boolean)).toBe(true)
   })
 
-  /** The bands standing, by the name each carries. */
-  const bandTitles = () =>
+  /** The groups standing, by the name each carries. */
+  const groupTitles = () =>
     [...document.body.querySelectorAll('[data-palette="title"]')].map((one) => one.textContent?.trim())
 
-  it('draws no band for a search that answered with nothing, and says so once', async () => {
+  it('draws no group for a search that answered with nothing, and says so once', async () => {
     said.embedded = 4
     const window = await drawnWithPalette()
 
     await searched(window)
 
-    expect(bandTitles()).toStrictEqual([WORDS.creating])
+    expect(groupTitles()).toStrictEqual([WORDS.creating])
     expect(document.body.querySelector('[data-palette="silence"]')).toBeNull()
   })
 
-  it('keeps the band that could not be asked, with what it has to say', async () => {
+  it('keeps the group that could not be asked, with what it has to say', async () => {
     said.embedded = 0
     const window = await drawnWithPalette()
 
     await searched(window)
 
-    expect(bandTitles()).toStrictEqual([WORDS.creating, WORDS.meaning])
+    expect(groupTitles()).toStrictEqual([WORDS.creating, WORDS.meaning])
     expect(document.body.querySelector('[data-palette="silence"]')?.textContent?.trim()).toBe(
       WORDS.notEmbedded,
     )
@@ -203,7 +203,7 @@ describe('the palette', () => {
     window.findComponent(Palette).vm.$emit('update:modelValue', '>')
     await settles()
 
-    expect(bandsOf(window)).toStrictEqual(['note', 'window', 'vault'])
+    expect(groupsOf(window)).toStrictEqual(['note', 'window', 'vault'])
   })
 
   /** The note the commands are over, which the step that renames one opens on. */
@@ -287,8 +287,8 @@ describe('a command reached by its own keystroke', () => {
 
   /** The row of a command in the list of commands, by the identity it is drawn under. */
   const rowOf = (window: Awaited<ReturnType<typeof drawn>>, id: string) => {
-    const bands = window.findComponent(Palette).props('bands') as readonly PaletteBand[]
-    return bands.flatMap((band) => band.items).find((one) => one.id === id)
+    const groups = window.findComponent(Palette).props('groups') as readonly PaletteGroup[]
+    return groups.flatMap((group) => group.items).find((one) => one.id === id)
   }
 
   it('draws the keystroke on its row, written for the keyboard in hand', async () => {
@@ -489,7 +489,7 @@ describe('a command reached by a keystroke holding Shift', () => {
 
     // The plex the window opened with is the one it is standing on, which is
     // what showing the note in the plex leaves in front.
-    expect(window.findComponent(Palette).props('bands')).toStrictEqual([])
+    expect(window.findComponent(Palette).props('groups')).toStrictEqual([])
   })
 
   it('opens an agent in a tab of its own', async () => {
@@ -553,9 +553,9 @@ describe('a command reached by a keystroke holding Shift', () => {
     pressed('p')
     await settles()
 
-    const bands = window.findComponent(Palette).props('bands') as readonly PaletteBand[]
+    const groups = window.findComponent(Palette).props('groups') as readonly PaletteGroup[]
     const drawnKeys = Object.fromEntries(
-      bands.flatMap((band) => band.items).map((one) => [one.id, one.keys]),
+      groups.flatMap((group) => group.items).map((one) => [one.id, one.keys]),
     )
     expect(drawnKeys['travel']).toEqual({ icons: ['control', 'shift'], letter: 'P' })
     expect(drawnKeys['child']).toEqual({ icons: ['control', 'shift'], letter: 'C' })

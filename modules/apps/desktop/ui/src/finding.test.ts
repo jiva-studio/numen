@@ -4,7 +4,7 @@
  * Three questions are in the air at once and come back in whatever order they
  * take, so the ones that matter here are the negatives: an answer to a question
  * nobody is asking any more must not fill a list a person is reading, and a
- * band that failed must not take the other two down with it.
+ * group that failed must not take the other two down with it.
  */
 import { describe, expect, it } from 'vitest'
 import {
@@ -88,18 +88,18 @@ const passage = (over: Partial<Passage> = {}): Passage => ({
   ...over,
 })
 
-/** The band under one identity, from what the palette is drawing now. */
-const bandOf = (bands: readonly { id: string }[], id: string) =>
-  bands.find((one) => one.id === id) as
+/** The group under one identity, from what the palette is drawing now. */
+const groupOf = (groups: readonly { id: string }[], id: string) =>
+  groups.find((one) => one.id === id) as
     | { id: string; items: readonly { id: string; title: string }[]; working?: boolean; silence?: string }
     | undefined
 
 describe('asking', () => {
-  it('draws no band at all until something is typed', async () => {
+  it('draws no group at all until something is typed', async () => {
     const vault = asking()
     const palette = finding(vault.core, WORDS, { wait: now })
 
-    expect(palette.bands.value).toHaveLength(0)
+    expect(palette.groups.value).toHaveLength(0)
     expect(vault.queries).toHaveLength(0)
   })
 
@@ -135,12 +135,12 @@ describe('asking', () => {
     await settled()
 
     expect(vault.names).toHaveLength(1)
-    expect(palette.bands.value).toHaveLength(0)
+    expect(palette.groups.value).toHaveLength(0)
   })
 })
 
 describe('answers arriving', () => {
-  it('fills each band on its own, while the others are still out', async () => {
+  it('fills each group on its own, while the others are still out', async () => {
     const vault = asking()
     const palette = finding(vault.core, WORDS, { wait: now })
 
@@ -150,10 +150,10 @@ describe('answers arriving', () => {
     vault.names[0]?.answers([named()])
     await settled()
 
-    expect(bandOf(palette.bands.value, 'names')?.items).toHaveLength(1)
-    expect(bandOf(palette.bands.value, 'names')?.working).toBe(false)
-    expect(bandOf(palette.bands.value, 'text')?.working).toBe(true)
-    expect(bandOf(palette.bands.value, 'meaning')?.working).toBe(true)
+    expect(groupOf(palette.groups.value, 'names')?.items).toHaveLength(1)
+    expect(groupOf(palette.groups.value, 'names')?.working).toBe(false)
+    expect(groupOf(palette.groups.value, 'text')?.working).toBe(true)
+    expect(groupOf(palette.groups.value, 'meaning')?.working).toBe(true)
   })
 
   it('drops an answer to a question nobody is asking any more', async () => {
@@ -168,14 +168,14 @@ describe('answers arriving', () => {
     // The first question answers late, and with something else entirely.
     vault.names[0]?.answers([named({ path: 'notes/stale.md', title: 'Stale' })])
     await settled()
-    expect(bandOf(palette.bands.value, 'names')?.items).toHaveLength(0)
+    expect(groupOf(palette.groups.value, 'names')?.items).toHaveLength(0)
 
     vault.names[1]?.answers([named()])
     await settled()
-    expect(bandOf(palette.bands.value, 'names')?.items?.[0]?.title).toBe('Entropy')
+    expect(groupOf(palette.groups.value, 'names')?.items?.[0]?.title).toBe('Entropy')
   })
 
-  it('says a band could not be asked in the window’s own words, and fills the others', async () => {
+  it('says a group could not be asked in the window’s own words, and fills the others', async () => {
     const vault = asking()
     const palette = finding(vault.core, WORDS, { wait: now })
 
@@ -186,12 +186,12 @@ describe('answers arriving', () => {
     vault.names[0]?.answers([named()])
     await settled()
 
-    expect(bandOf(palette.bands.value, 'meaning')?.silence).toBe(WORDS.notAsked)
-    expect(bandOf(palette.bands.value, 'meaning')?.working).toBe(false)
-    expect(bandOf(palette.bands.value, 'names')?.items).toHaveLength(1)
+    expect(groupOf(palette.groups.value, 'meaning')?.silence).toBe(WORDS.notAsked)
+    expect(groupOf(palette.groups.value, 'meaning')?.working).toBe(false)
+    expect(groupOf(palette.groups.value, 'names')?.items).toHaveLength(1)
   })
 
-  it('says nothing of a band that was asked and came back with nothing', async () => {
+  it('says nothing of a group that was asked and came back with nothing', async () => {
     const vault = asking()
     const palette = finding(vault.core, WORDS, { wait: now })
 
@@ -200,9 +200,9 @@ describe('answers arriving', () => {
     vault.names[0]?.answers([])
     await settled()
 
-    const band = bandOf(palette.bands.value, 'names')
-    expect(band?.silence).toBe('')
-    expect(band?.working).toBe(false)
+    const group = groupOf(palette.groups.value, 'names')
+    expect(group?.silence).toBe('')
+    expect(group?.working).toBe(false)
   })
 
   it('says the vault holds no vectors, where meaning came back with nothing', async () => {
@@ -216,10 +216,10 @@ describe('answers arriving', () => {
     vault.names[0]?.answers([])
     await settled()
 
-    expect(bandOf(palette.bands.value, 'meaning')?.silence).toBe(WORDS.notEmbedded)
-    // The other bands are asked of the words, which a vault holding no vector
+    expect(groupOf(palette.groups.value, 'meaning')?.silence).toBe(WORDS.notEmbedded)
+    // The other groups are asked of the words, which a vault holding no vector
     // still answers, and one of those that came back with nothing says nothing.
-    expect(bandOf(palette.bands.value, 'names')?.silence).toBe('')
+    expect(groupOf(palette.groups.value, 'names')?.silence).toBe('')
   })
 
   it('says nothing reads the vault for meaning, where nothing is set to', async () => {
@@ -232,7 +232,7 @@ describe('answers arriving', () => {
     vault.way('meaning')?.answers([])
     await settled()
 
-    expect(bandOf(palette.bands.value, 'meaning')?.silence).toBe(WORDS.wordsOnly)
+    expect(groupOf(palette.groups.value, 'meaning')?.silence).toBe(WORDS.wordsOnly)
   })
 
   it('lets go of everything when the palette is put away', async () => {
@@ -249,7 +249,7 @@ describe('answers arriving', () => {
 
     expect(palette.open.value).toBe(false)
     expect(palette.typed.value).toBe('')
-    expect(palette.bands.value).toHaveLength(0)
+    expect(palette.groups.value).toHaveLength(0)
   })
 })
 
@@ -271,7 +271,7 @@ describe('where a thing found takes the person', () => {
 
   it('opens a note found by its own name in the plex, and its text on the other key', async () => {
     const palette = await filled()
-    const item = bandOf(palette.bands.value, 'names')!.items[0]!
+    const item = groupOf(palette.groups.value, 'names')!.items[0]!
 
     expect(palette.chose(item.id, 'plex')).toEqual({
       at: 'plex',
@@ -287,7 +287,7 @@ describe('where a thing found takes the person', () => {
 
   it('opens a note found by a heading inside it on the line that heading stands on', async () => {
     const palette = await filled()
-    const item = bandOf(palette.bands.value, 'names')!.items[1]!
+    const item = groupOf(palette.groups.value, 'names')!.items[1]!
 
     expect(palette.chose(item.id, 'note')).toEqual({
       at: 'file',
@@ -312,7 +312,7 @@ describe('where a thing found takes the person', () => {
     vault.names[0]?.answers([named()])
     vault.way('words')?.answers([passage({ line: 12 })])
     await settled()
-    const item = bandOf(palette.bands.value, 'text')!.items[0]!
+    const item = groupOf(palette.groups.value, 'text')!.items[0]!
 
     expect(palette.chose(item.id, 'note')).toEqual({
       at: 'file',
@@ -339,9 +339,9 @@ describe('what a key reaches, per kind of thing found', () => {
     vault.way('words')?.answers([passage()])
     await settled()
 
-    const acts = (band: string, at: number) =>
+    const acts = (group: string, at: number) =>
       (
-        palette.bands.value.find((one) => one.id === band)?.items[at]?.actions ?? []
+        palette.groups.value.find((one) => one.id === group)?.items[at]?.actions ?? []
       ).map((one) => one.id)
 
     expect(acts('names', 0)).toEqual(['plex', 'note'])
@@ -368,7 +368,7 @@ describe('a passage from something that is not a note', () => {
     ])
     await settled()
 
-    const item = bandOf(palette.bands.value, 'text')!.items[0]! as {
+    const item = groupOf(palette.groups.value, 'text')!.items[0]! as {
       id: string
       title: string
       actions?: readonly { id: string; text: string }[]
@@ -406,7 +406,7 @@ describe('what a row is drawn as', () => {
     ])
     await settled()
 
-    const items = bandOf(palette.bands.value, 'names')!.items
+    const items = groupOf(palette.groups.value, 'names')!.items
     expect(items.map((one) => palette.typeOf(one.id))).toEqual([
       'note',
       'deck',
@@ -426,7 +426,7 @@ describe('what a row is drawn as', () => {
     ])
     await settled()
 
-    const item = bandOf(palette.bands.value, 'names')!.items[0]!
+    const item = groupOf(palette.groups.value, 'names')!.items[0]!
     expect(palette.typeOf(item.id)).toBe('deck')
   })
 
@@ -448,7 +448,7 @@ describe('what a row is drawn as', () => {
     ])
     await settled()
 
-    const items = bandOf(palette.bands.value, 'text')!.items
+    const items = groupOf(palette.groups.value, 'text')!.items
     expect(items.map((one) => palette.typeOf(one.id))).toEqual(['preset', null])
   })
 
@@ -465,7 +465,7 @@ describe('what a row is drawn as', () => {
     ])
     await settled()
 
-    const items = bandOf(palette.bands.value, 'text')!.items
+    const items = groupOf(palette.groups.value, 'text')!.items
     expect(items.map((one) => palette.kindOf(one.id))).toEqual(['note', 'book', 'recording'])
   })
 
@@ -478,7 +478,7 @@ describe('what a row is drawn as', () => {
     vault.names[0]?.answers([named(), named({ path: 'decks/words.md', type: 'deck' })])
     await settled()
 
-    const items = bandOf(palette.bands.value, 'names')!.items
+    const items = groupOf(palette.groups.value, 'names')!.items
     expect(items.map((one) => palette.kindOf(one.id))).toEqual(['note', 'note'])
   })
 
@@ -490,7 +490,7 @@ describe('what a row is drawn as', () => {
   })
 })
 
-describe('a band landing under the keyboard', () => {
+describe('a group landing under the keyboard', () => {
   it('names a passage by where it stands in the vault, not by where it stands in the list', async () => {
     const vault = asking()
     const palette = finding(vault.core, WORDS, { wait: now })
@@ -499,9 +499,9 @@ describe('a band landing under the keyboard', () => {
 
     vault.way('words')?.answers([passage({ path: 'notes/heat.md' })])
     await settled()
-    const before = bandOf(palette.bands.value, 'text')!.items[0]!.id
+    const before = groupOf(palette.groups.value, 'text')!.items[0]!.id
 
-    // The same passage, now second in its band because a better one arrived.
+    // The same passage, now second in its group because a better one arrived.
     void palette.typing('war ')
     await settled()
     vault.searched
@@ -513,7 +513,7 @@ describe('a band landing under the keyboard', () => {
       ])
     await settled()
 
-    const after = bandOf(palette.bands.value, 'text')!.items[1]!.id
+    const after = groupOf(palette.groups.value, 'text')!.items[1]!.id
     expect(after).toBe(before)
   })
 })

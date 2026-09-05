@@ -5,7 +5,7 @@
  * others, so the negatives are the ones worth having.
  */
 import { describe, expect, it } from 'vitest'
-import { banded } from '@numen/ui'
+import { grouped } from '@numen/ui'
 import type { Source } from '../core'
 import {
   itemsFor,
@@ -27,7 +27,7 @@ const on = (source: Source, folder = false, canRun: RunGuard = anything): readon
 
 /** The same, as it is drawn: each item, and the rule standing above it. */
 const drawn = (source: Source): readonly string[] =>
-  banded(itemsFor({ source, folder: false }, false, anything)).map(
+  grouped(itemsFor({ source, folder: false }, false, anything)).map(
     (one) => `${one.rule ? '— ' : ''}${one.id}`,
   )
 
@@ -131,7 +131,7 @@ describe('the four files the menu makes', () => {
     }
   })
 
-  it('offers a preset in the band the files stand in', () => {
+  it('offers a preset in the group the files stand in', () => {
     expect(drawn('note')).toContain(NEW_PRESET)
   })
 })

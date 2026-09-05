@@ -7,7 +7,7 @@
  * rename after the choice is the first one it answers.
  */
 import { ref } from 'vue'
-import type { StepBand } from './commanding'
+import type { StepGroup } from './commanding'
 import type { Voice } from './telling'
 
 /** The command whose step offers the two. */
@@ -19,8 +19,8 @@ export const OFF = 'off'
 
 /** Everything this says in the window's voice. */
 export interface Words {
-  /** The band the setting is drawn in, and the two it is. */
-  readonly syncingBand: string
+  /** The group the setting is drawn in, and the two it is. */
+  readonly syncingGroup: string
   readonly on: string
   readonly off: string
   /** The row a list of values opens on, which is the value in force. */
@@ -53,8 +53,8 @@ export function syncing(core: SyncingDeps, words: Words, said: Voice) {
     }
   }
 
-  /** The two, in one band named for the setting they are of. */
-  const offers = (): readonly StepBand[] => {
+  /** The two, in one group named for the setting they are of. */
+  const offers = (): readonly StepGroup[] => {
     const row = (id: string, title: string, inForce: boolean) => ({
       id,
       title,
@@ -63,7 +63,7 @@ export function syncing(core: SyncingDeps, words: Words, said: Voice) {
     return [
       {
         id: SYNCING,
-        title: words.syncingBand,
+        title: words.syncingGroup,
         items: [row(ON, words.on, kept.value), row(OFF, words.off, !kept.value)],
       },
     ]

@@ -10,7 +10,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { onMounted, onUnmounted, ref, type Component } from 'vue'
 import { AudioLines, BookOpen, FileText, Gauge, Layers, LayoutTemplate } from '@lucide/vue'
 import Palette from './Palette.vue'
-import { keyChord, type PaletteBand, type PaletteSpan } from './item'
+import { keyChord, type PaletteGroup, type PaletteSpan } from './item'
 import {
   ARABIC,
   DEVANAGARI,
@@ -22,7 +22,7 @@ import {
 } from '@/fixtures/prose'
 
 interface Knobs {
-  bands: readonly PaletteBand[]
+  groups: readonly PaletteGroup[]
   placeholder: string
   crumb: string
   step: string
@@ -95,7 +95,7 @@ const passage = (id: string, title: string, text: string, word: string) => ({
 })
 
 /** A vault with something in it, answering the word "ent". */
-const NAMES: PaletteBand = {
+const NAMES: PaletteGroup = {
   id: 'names',
   title: 'Names',
   items: [
@@ -106,7 +106,7 @@ const NAMES: PaletteBand = {
   ],
 }
 
-const TEXT: PaletteBand = {
+const TEXT: PaletteGroup = {
   id: 'text',
   title: 'Text',
   items: [
@@ -120,7 +120,7 @@ const TEXT: PaletteBand = {
   ],
 }
 
-const MEANING: PaletteBand = {
+const MEANING: PaletteGroup = {
   id: 'meaning',
   title: 'Meaning',
   items: [
@@ -130,10 +130,10 @@ const MEANING: PaletteBand = {
   ],
 }
 
-const ALL: PaletteBand[] = [NAMES, TEXT, { ...MEANING, working: true }]
+const ALL: PaletteGroup[] = [NAMES, TEXT, { ...MEANING, working: true }]
 
 /** The same names, each offering more than two keys can reach. */
-const NAMED: PaletteBand = {
+const NAMED: PaletteGroup = {
   ...NAMES,
   items: NAMES.items.map((one) => ({ ...one, actions: EVERYTHING.slice(0, 5) })),
 }
@@ -156,7 +156,7 @@ const over = (args: Knobs) => ({
       >Open the palette</button>
       <Palette
         v-model="typed"
-        :bands="args.bands"
+        :groups="args.groups"
         :open="open"
         :placeholder="args.placeholder"
         :crumb="args.crumb"
@@ -182,9 +182,9 @@ const meta = {
     docs: {
       description: {
         component:
-          'A field, and everything the words in it turned up, in bands. It ' +
-          'stands over the whole window and takes bands of items, and says ' +
-          'which item was chosen and what was asked of it. What the bands ' +
+          'A field, and everything the words in it turned up, in groups. It ' +
+          'stands over the whole window and takes groups of items, and says ' +
+          'which item was chosen and what was asked of it. What the groups ' +
           'are, what an item addresses and what choosing one does are the ' +
           'caller’s. The keyboard stays in the field the whole time, because ' +
           'a person is still typing.',
@@ -196,7 +196,7 @@ const meta = {
     crumb: { control: 'text' },
     name: { control: 'text' },
     opensOn: { control: 'text' },
-    bands: { table: { disable: true } },
+    groups: { table: { disable: true } },
     step: { table: { disable: true } },
     onChoose: { table: { disable: true } },
     onLit: { table: { disable: true } },
@@ -204,7 +204,7 @@ const meta = {
     onBack: { table: { disable: true } },
   },
   args: {
-    bands: ALL,
+    groups: ALL,
     placeholder: 'Search',
     crumb: '',
     step: '',
@@ -242,7 +242,7 @@ const spoken = (cap: Element | null | undefined): string => said(cap?.querySelec
 const APPLE = 'MacIntel'
 const OTHER = 'Linux x86_64'
 
-/** Every setting, live: three bands, one of them still on its way. */
+/** Every setting, live: three groups, one of them still on its way. */
 export const Playground: Story = {}
 
 /**
@@ -312,7 +312,7 @@ export const OpensOnNothingThere: Story = {
  */
 export const LitAlone: Story = {
   args: {
-    bands: [{ id: 'names', title: 'Names', items: [named('entropy', 'Entropy', 'ent')] }],
+    groups: [{ id: 'names', title: 'Names', items: [named('entropy', 'Entropy', 'ent')] }],
   },
   play: async ({ args }) => {
     await waitFor(() => expect(args.onLit).toHaveBeenCalledWith('entropy'))
@@ -323,10 +323,10 @@ export const LitAlone: Story = {
   },
 }
 
-/** Every band came back with nothing, so there is nowhere to stand. */
+/** Every group came back with nothing, so there is nowhere to stand. */
 export const LitNothing: Story = {
   args: {
-    bands: [{ id: 'names', title: 'Names', items: [], silence: 'The vault could not answer' }],
+    groups: [{ id: 'names', title: 'Names', items: [], silence: 'The vault could not answer' }],
   },
   play: async ({ args }) => {
     await waitFor(() => expect(palette()).not.toBeNull())
@@ -339,7 +339,7 @@ export const LitNothing: Story = {
 /** Far too many, walked to the end: every row it crosses is said, in order. */
 export const LitFarDown: Story = {
   args: {
-    bands: [
+    groups: [
       {
         id: 'names',
         title: 'Names',
@@ -366,7 +366,7 @@ export const LitFarDown: Story = {
  */
 export const NotLit: Story = {
   args: {
-    bands: [
+    groups: [
       {
         id: 'names',
         title: 'Names',
@@ -399,9 +399,9 @@ export const NotLit: Story = {
 }
 
 /**
- * A band arriving while it is being read.
+ * A group arriving while it is being read.
  *
- * The band on its way lands above the one the keyboard is in, so every number
+ * The group on its way lands above the one the keyboard is in, so every number
  * in the list moves. What is lit is the item, not the number, and it stays put.
  */
 export const Filling: Story = {
@@ -410,24 +410,24 @@ export const Filling: Story = {
     setup() {
       const open = ref(true)
       const typed = ref('ent')
-      const bands = ref<PaletteBand[]>([
+      const groups = ref<PaletteGroup[]>([
         { ...NAMES, items: [], working: true },
         TEXT,
       ])
 
       let waiting: ReturnType<typeof setTimeout> | undefined
       onMounted(() => {
-        waiting = setTimeout(() => (bands.value = [NAMES, TEXT]), 700)
+        waiting = setTimeout(() => (groups.value = [NAMES, TEXT]), 700)
       })
       onUnmounted(() => clearTimeout(waiting))
 
-      return { args, open, typed, bands }
+      return { args, open, typed, groups }
     },
     template: `
       <div class="numen" style="height:100vh;background:var(--numen-surface)">
         <Palette
           v-model="typed"
-          :bands="bands"
+          :groups="groups"
           :open="open"
           @choose="args.onChoose"
           @dismiss="args.onDismiss"
@@ -436,7 +436,7 @@ export const Filling: Story = {
     `,
   }),
   play: async () => {
-    // The only item there is to begin with is in the second band.
+    // The only item there is to begin with is in the second group.
     await waitFor(() => expect(lit()?.textContent).toContain('Heat engines'))
     await waitFor(() => expect(options().length).toBe(6), { timeout: 3000 })
     await expect(lit()?.textContent).toContain('Heat engines')
@@ -444,13 +444,13 @@ export const Filling: Story = {
 }
 
 /**
- * Every band was asked and answered with nothing. A band that has answered and
+ * Every group was asked and answered with nothing. A group that has answered and
  * has nothing to say is worth no heading of its own, so none of them is drawn
  * and what stands there is what the caller says in place of a list.
  */
 export const Nothing: Story = {
   args: {
-    bands: [
+    groups: [
       { id: 'names', title: 'Names', items: [] },
       { id: 'text', title: 'Text', items: [] },
       { id: 'meaning', title: 'Meaning', items: [] },
@@ -467,13 +467,13 @@ export const Nothing: Story = {
 }
 
 /**
- * One band answered with nothing and another could not be asked at all. The
+ * One group answered with nothing and another could not be asked at all. The
  * first is drawn nowhere; the second says why in its own words, which is
  * something a person needs to be told.
  */
 export const CouldNotBeAsked: Story = {
   args: {
-    bands: [
+    groups: [
       { id: 'names', title: 'Names', items: [] },
       { id: 'text', title: 'Text', items: [] },
       { id: 'meaning', title: 'Meaning', items: [], silence: 'No model is set' },
@@ -481,23 +481,23 @@ export const CouldNotBeAsked: Story = {
   },
   play: async () => {
     const drawn = () =>
-      Array.from(document.body.querySelectorAll('[data-palette="title"]')).map((band) =>
-        band.textContent?.trim(),
+      Array.from(document.body.querySelectorAll('[data-palette="title"]')).map((group) =>
+        group.textContent?.trim(),
       )
     await waitFor(() => expect(drawn()).toEqual(['Meaning']))
     await expect(said(document.body.querySelector('[data-palette="silence"]'))).toBe('No model is set')
   },
 }
 
-/** Nothing has been typed yet, so there is no band to draw at all. */
+/** Nothing has been typed yet, so there is no group to draw at all. */
 export const Unasked: Story = {
-  args: { bands: [] },
+  args: { groups: [] },
 }
 
-/** One band, one item, one thing to do with it. */
+/** One group, one item, one thing to do with it. */
 export const Alone: Story = {
   args: {
-    bands: [{ id: 'names', title: 'Names', items: [named('entropy', 'Entropy', 'ent')] }],
+    groups: [{ id: 'names', title: 'Names', items: [named('entropy', 'Entropy', 'ent')] }],
   },
 }
 
@@ -523,7 +523,7 @@ const marked = (args: Knobs) => ({
     <div class="numen" style="height:100vh;background:var(--numen-surface)">
       <Palette
         v-model="typed"
-        :bands="args.bands"
+        :groups="args.groups"
         :open="open"
         @choose="args.onChoose"
         @dismiss="args.onDismiss"
@@ -548,7 +548,7 @@ const iconOf = (row: Element | null | undefined): string =>
  */
 export const Icons: Story = {
   args: {
-    bands: [
+    groups: [
       {
         id: 'names',
         title: 'Names',
@@ -594,7 +594,7 @@ export const Icons: Story = {
  */
 export const IconsOnTheName: Story = {
   args: {
-    bands: [
+    groups: [
       {
         id: 'names',
         title: 'Names',
@@ -632,7 +632,7 @@ export const IconsOnTheName: Story = {
  */
 export const FarTooMany: Story = {
   args: {
-    bands: [
+    groups: [
       {
         id: 'names',
         title: 'Names',
@@ -663,7 +663,7 @@ export const FarTooMany: Story = {
 /** Scripts that are not Latin, one of which runs the other way. */
 export const NotLatin: Story = {
   args: {
-    bands: [
+    groups: [
       {
         id: 'names',
         title: 'Названия',
@@ -687,7 +687,7 @@ export const NotLatin: Story = {
  */
 export const TooLong: Story = {
   args: {
-    bands: [
+    groups: [
       {
         id: 'names',
         title: 'Names',
@@ -722,7 +722,7 @@ export const TooLong: Story = {
 /** Characters that are several code units each, with a run landing inside one. */
 export const Graphemes: Story = {
   args: {
-    bands: [
+    groups: [
       {
         id: 'names',
         title: 'Names',
@@ -738,7 +738,7 @@ export const Graphemes: Story = {
 /** An item that is drawn and cannot be chosen, beside ones that can. */
 export const NotToBeChosen: Story = {
   args: {
-    bands: [
+    groups: [
       {
         id: 'names',
         title: 'Names',
@@ -762,14 +762,14 @@ export const NotToBeChosen: Story = {
 }
 
 /**
- * One band answered, another is still filling, and a third could not be asked.
+ * One group answered, another is still filling, and a third could not be asked.
  *
  * The one with something to say is still drawn, and it stands at the foot, out
  * of the way of what a person is actually reading.
  */
 export const SomeCameBackEmpty: Story = {
   args: {
-    bands: [
+    groups: [
       { id: 'names', title: 'Names', items: [], silence: 'The vault could not answer' },
       TEXT,
       { ...MEANING, working: true },
@@ -778,8 +778,8 @@ export const SomeCameBackEmpty: Story = {
   play: async () => {
     await waitFor(() => expect(lit()).not.toBeNull())
 
-    const drawn = Array.from(document.body.querySelectorAll('[data-palette="title"]')).map((band) =>
-      band.textContent?.trim(),
+    const drawn = Array.from(document.body.querySelectorAll('[data-palette="title"]')).map((group) =>
+      group.textContent?.trim(),
     )
     await expect(drawn).toEqual(['Text', 'Meaning', 'Names'])
     await expect(lit()?.textContent).toContain('Heat engines')
@@ -789,7 +789,7 @@ export const SomeCameBackEmpty: Story = {
 /** One item offering five things, where two of them have a key. */
 export const FiveActions: Story = {
   args: {
-    bands: [
+    groups: [
       {
         id: 'names',
         title: 'Names',
@@ -821,7 +821,7 @@ export const FiveActions: Story = {
  */
 export const ActionPanel: Story = {
   args: {
-    bands: [
+    groups: [
       {
         id: 'names',
         title: 'Names',
@@ -863,7 +863,7 @@ export const ActionPanel: Story = {
 
 /**
  * Two steps: pick a thing, then name it. The palette draws one step at a time;
- * the caller keeps the stack and swaps the bands, the words in the field and
+ * the caller keeps the stack and swaps the groups, the words in the field and
  * the chip that says which step this is.
  *
  * On the second step the current name stands in the field and is selected, so
@@ -902,7 +902,7 @@ export const Steps: Story = {
       <div class="numen" style="height:100vh;background:var(--numen-surface)">
         <Palette
           v-model="typed"
-          :bands="step === 'find' ? [NAMED] : []"
+          :groups="step === 'find' ? [NAMED] : []"
           :open="open"
           :step="step"
           :crumb="crumb"
@@ -949,7 +949,7 @@ export const Steps: Story = {
  */
 export const KeyHints: Story = {
   args: {
-    bands: [
+    groups: [
       {
         id: 'commands',
         title: 'Commands',

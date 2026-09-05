@@ -23,9 +23,9 @@ describe('whether a title and a filename are one name', () => {
     const held = syncing(core, words, voice().says)
     await held.start()
 
-    const bands = held.offers()
-    expect(bands.map((band) => band.id)).toStrictEqual([SYNCING])
-    const items = bands.flatMap((band) => band.items)
+    const groups = held.offers()
+    expect(groups.map((group) => group.id)).toStrictEqual([SYNCING])
+    const items = groups.flatMap((group) => group.items)
     expect(items.map((one) => one.id)).toStrictEqual([ON, OFF])
     expect(items.find((one) => one.inForce)?.id).toBe(OFF)
   })
@@ -45,7 +45,7 @@ describe('whether a title and a filename are one name', () => {
     const held = syncing(vault(true), words, voice().says)
     await held.start()
 
-    const items = held.offers().flatMap((band) => band.items)
+    const items = held.offers().flatMap((group) => group.items)
     expect(items.find((row) => row.id === ON)?.detail).toBe(words.current)
     expect(items.find((row) => row.id === OFF)?.detail).toBeUndefined()
   })

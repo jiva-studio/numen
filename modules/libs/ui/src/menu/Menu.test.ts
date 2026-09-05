@@ -311,20 +311,20 @@ describe('when there is nothing to choose', () => {
   })
 })
 
-describe('the bands the items stand in', () => {
+describe('the groups the items stand in', () => {
   const SHELVED: MenuItem[] = [
-    { id: 'numen', text: 'Numen', band: 'Ships with numen' },
-    { id: 'sea', text: 'Sea', band: 'Yours' },
-    { id: 'sand', text: 'Sand', band: 'Yours' },
+    { id: 'numen', text: 'Numen', group: 'Ships with numen' },
+    { id: 'sea', text: 'Sea', group: 'Yours' },
+    { id: 'sand', text: 'Sand', group: 'Yours' },
   ]
 
   const shelves = () =>
-    Array.from(document.body.querySelectorAll<HTMLElement>('.menu__band')).map((one) =>
+    Array.from(document.body.querySelectorAll<HTMLElement>('.menu__group-name')).map((one) =>
       one.textContent?.trim(),
     )
 
   it('are named where the menu is told to name them', async () => {
-    mountMenu({ items: SHELVED, bands: true })
+    mountMenu({ items: SHELVED, groups: true })
     await settle()
     expect(shelves()).toStrictEqual(['Ships with numen', 'Yours'])
     expect(document.body.querySelectorAll('.menu__rule')).toHaveLength(0)

@@ -317,10 +317,10 @@ describe('a recording put in front', () => {
 const runsOffered = async (window: VueWrapper): Promise<readonly string[]> => {
   globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, cancelable: true }))
   await settles()
-  const bands = window.findComponent(Palette).props('bands') as readonly {
+  const groups = window.findComponent(Palette).props('groups') as readonly {
     id: string
     items: readonly { id: string }[]
   }[]
-  return bands.find((one) => one.id === 'file')?.items.map((one) => one.id) ?? []
+  return groups.find((one) => one.id === 'file')?.items.map((one) => one.id) ?? []
 }
 

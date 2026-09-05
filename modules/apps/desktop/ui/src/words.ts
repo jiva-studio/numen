@@ -88,7 +88,7 @@ export const WORDS = {
   nothingRead: 'nothing was read',
   going: 'These notes stopped saving because their files changed. The window waits.',
   later: 'Not yet',
-  /** The palette, and the three bands it draws. */
+  /** The palette, and the three groups it draws. */
   find: 'Search the vault',
   names: 'Names',
   text: 'Text',
@@ -100,7 +100,7 @@ export const WORDS = {
   noneFound: 'Nothing',
   notAsked: 'The vault could not answer',
   notEmbedded: 'This vault has not been read for meaning yet',
-  /** The commands, and the bands they are drawn in. */
+  /** The commands, and the groups they are drawn in. */
   overNote: 'This note',
   overFile: 'This file',
   overWindow: 'This window',
@@ -184,27 +184,27 @@ export const WORDS = {
   shipping: 'Ships with numen',
   owned: 'Your own themes',
   noneOwned: 'A .css file in numen/themes/, beside numen.json, is one of these',
-  /** The band the three halves are drawn in. */
+  /** The group the three halves are drawn in. */
   half: 'Light and dark',
   /** The three halves, and why the theme worn leaves nothing to choose. */
   system: 'Follow the system',
   light: 'Light',
   dark: 'Dark',
   pinned: 'Set by the theme',
-  /** The band each of the two sizes is drawn in. */
+  /** The group each of the two sizes is drawn in. */
   drawing: 'How large the interface is drawn',
   setting: 'How large the text is set',
   /** The themes could not be listed, and a theme's file could not be read. */
   unlisted: 'The themes could not be listed',
   unworn: 'That theme could not be read, so it is not worn',
-  /** The band the setting is drawn in, and the two it is. */
-  syncingBand: 'Sync title and filename',
-  /** The band the setting is drawn in, and the two it is. */
-  hangingBand: 'Hang the parts of a note under its node',
+  /** The group the setting is drawn in, and the two it is. */
+  syncingGroup: 'Sync title and filename',
+  /** The group the setting is drawn in, and the two it is. */
+  hangingGroup: 'Hang the parts of a note under its node',
   on: 'On',
   off: 'Off',
-  /** The band the counts are drawn in. */
-  partsBand: 'How many parts stand under a node at once',
+  /** The group the counts are drawn in. */
+  partsGroup: 'How many parts stand under a node at once',
   unturned: 'That setting could not be written:',
   /** The settings the vault answered with could not be read. */
   unreadSettings: 'The settings could not be read, so what is drawn is what they last held.',

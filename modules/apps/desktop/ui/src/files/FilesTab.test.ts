@@ -202,7 +202,7 @@ describe('the menu on a row', () => {
     if (chosen.length) list.chooses(chosen)
     window.findComponent(Tree).vm.$emit('menu', path, { x: 4, y: 8 })
     await settles()
-    return window.findComponent(Menu).props('items') as readonly { id: string; band?: string }[]
+    return window.findComponent(Menu).props('items') as readonly { id: string; group?: string }[]
   }
 
   const itemsOn = async (path: string | null, chosen: readonly string[] = []) =>
@@ -228,8 +228,8 @@ describe('the menu on a row', () => {
     ])
   })
 
-  it('stands the items of a note in the bands they belong to', async () => {
-    expect((await menuOn('Entropy.md')).map((one) => one.band)).toStrictEqual([
+  it('stands the items of a note in the groups they belong to', async () => {
+    expect((await menuOn('Entropy.md')).map((one) => one.group)).toStrictEqual([
       'open',
       'open',
       'file',

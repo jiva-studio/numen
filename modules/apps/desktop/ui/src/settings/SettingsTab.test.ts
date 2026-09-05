@@ -142,7 +142,7 @@ const offered = (): readonly string[] =>
   )
 
 const shelved = (): readonly string[] =>
-  Array.from(document.body.querySelectorAll('.menu__band')).map(
+  Array.from(document.body.querySelectorAll('.menu__group-name')).map(
     (one) => one.textContent?.trim() ?? '',
   )
 

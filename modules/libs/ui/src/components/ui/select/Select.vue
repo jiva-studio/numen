@@ -38,7 +38,7 @@ const items = computed<readonly MenuItem[]>(() =>
     id: one.id,
     text: one.text,
     ...(one.detail ? { detail: one.detail } : {}),
-    ...(one.group ? { band: one.group } : {}),
+    ...(one.group ? { group: one.group } : {}),
   })),
 )
 
@@ -123,7 +123,7 @@ defineExpose({
     :from="element"
     :current="model"
     :name="name"
-    bands
+    groups
     open
     opening="keyboard"
     @choose="chose"

@@ -4,7 +4,7 @@
  * area it has to fit in.
  */
 import { describe, expect, it } from 'vitest'
-import { banded, landsOn, placeMenu, stepTo, type MenuItem } from './item'
+import { grouped, landsOn, placeMenu, stepTo, type MenuItem } from './item'
 
 const VIEWPORT = { width: 1000, height: 800 }
 const SIZE = { width: 200, height: 300 }
@@ -127,21 +127,21 @@ describe('where the keyboard lands as a menu opens', () => {
   })
 })
 
-describe('the rules a menu draws between its bands', () => {
-  const ruled = (items: readonly MenuItem[]) => banded(items).map((one) => one.rule)
+describe('the rules a menu draws between its groups', () => {
+  const ruled = (items: readonly MenuItem[]) => grouped(items).map((one) => one.rule)
 
-  it('stands where one band gives way to the next', () => {
+  it('stands where one group gives way to the next', () => {
     expect(
       ruled([
-        { id: 'open', text: 'Open', band: 'open' },
-        { id: 'note', text: 'New note', band: 'file' },
-        { id: 'folder', text: 'New folder', band: 'file' },
-        { id: 'remove', text: 'Remove', band: 'gone' },
+        { id: 'open', text: 'Open', group: 'open' },
+        { id: 'note', text: 'New note', group: 'file' },
+        { id: 'folder', text: 'New folder', group: 'file' },
+        { id: 'remove', text: 'Remove', group: 'gone' },
       ]),
     ).toStrictEqual([false, true, false, true])
   })
 
-  it('stands nowhere in a menu whose items name no band', () => {
+  it('stands nowhere in a menu whose items name no group', () => {
     expect(
       ruled([
         { id: 'open', text: 'Open' },
@@ -150,30 +150,30 @@ describe('the rules a menu draws between its bands', () => {
     ).toStrictEqual([false, false])
   })
 
-  it('never stands above the first item, whatever band it names', () => {
-    expect(ruled([{ id: 'remove', text: 'Remove', band: 'gone' }])).toStrictEqual([false])
+  it('never stands above the first item, whatever group it names', () => {
+    expect(ruled([{ id: 'remove', text: 'Remove', group: 'gone' }])).toStrictEqual([false])
   })
 
-  it('stands again where a band comes back after another', () => {
+  it('stands again where a group comes back after another', () => {
     expect(
       ruled([
-        { id: 'one', text: 'One', band: 'file' },
-        { id: 'two', text: 'Two', band: 'plex' },
-        { id: 'three', text: 'Three', band: 'file' },
+        { id: 'one', text: 'One', group: 'file' },
+        { id: 'two', text: 'Two', group: 'plex' },
+        { id: 'three', text: 'Three', group: 'file' },
       ]),
     ).toStrictEqual([false, true, true])
   })
 
   it('carries every item through, in the order it was given', () => {
     const items: MenuItem[] = [
-      { id: 'one', text: 'One', band: 'file', disabled: true },
-      { id: 'two', text: 'Two', band: 'plex' },
+      { id: 'one', text: 'One', group: 'file', disabled: true },
+      { id: 'two', text: 'Two', group: 'plex' },
     ]
-    expect(banded(items).map((one) => one.id)).toStrictEqual(['one', 'two'])
-    expect(banded(items)[0]?.disabled).toBe(true)
+    expect(grouped(items).map((one) => one.id)).toStrictEqual(['one', 'two'])
+    expect(grouped(items)[0]?.disabled).toBe(true)
   })
 
   it('has nothing to draw for a menu holding nothing', () => {
-    expect(banded([])).toStrictEqual([])
+    expect(grouped([])).toStrictEqual([])
   })
 })

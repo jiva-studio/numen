@@ -8,7 +8,7 @@
  * one does are the caller's.
  */
 import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
-import { banded, landsOn, placeMenu, stepTo, type MenuItem, type MenuOpening } from './item'
+import { grouped, landsOn, placeMenu, stepTo, type MenuItem, type MenuOpening } from './item'
 import type { Point, Size } from '../lib/geometry'
 
 const props = withDefaults(
@@ -32,10 +32,10 @@ const props = withDefaults(
     /** The area it is placed in. The browser's own by default. */
     viewport?: Size | null
     /**
-     * Whether the name of a band is drawn over it. A menu whose bands are
+     * Whether the name of a group is drawn over it. A menu whose groups are
      * named by identifiers draws none.
      */
-    bands?: boolean
+    groups?: boolean
     /**
      * How wide what asked for it is. The menu is never narrower than that, and
      * grows past it for what it holds.
@@ -54,7 +54,7 @@ const props = withDefaults(
     current: null,
     from: null,
     viewport: null,
-    bands: false,
+    groups: false,
     asking: 0,
     margin: 8,
     to: 'body',
@@ -88,8 +88,8 @@ const size = ref<Size>({ width: 0, height: 0 })
 /** Which item the keyboard is on, or -1 when it is on none. */
 const here = ref(-1)
 
-/** The items with the rules that stand between their bands. */
-const rows = computed(() => banded(props.items))
+/** The items with the rules that stand between their groups. */
+const rows = computed(() => grouped(props.items))
 
 /** The area to stay inside. The browser's, unless a caller measures its own. */
 const room = computed<Size>(
@@ -280,11 +280,11 @@ onBeforeUnmount(leave)
     >
       <template v-for="(item, index) in rows" :key="item.id">
         <p
-          v-if="bands && item.band && (item.rule || index === 0)"
-          class="menu__band px-2 py-1 text-hushed"
+          v-if="groups && item.group && (item.rule || index === 0)"
+          class="menu__group-name px-2 py-1 text-hushed"
           aria-hidden="true"
         >
-          {{ item.band }}
+          {{ item.group }}
         </p>
         <hr v-else-if="item.rule" class="menu__rule" role="separator" />
 
@@ -399,8 +399,8 @@ onBeforeUnmount(leave)
   font-size: var(--numen-text-1);
 }
 
-/* The name of a band, set as this product sets a label over what it names. */
-.menu__band {
+/* The name of a group, set as this product sets a label over what it names. */
+.menu__group-name {
   margin: 0;
   font-size: var(--numen-text-1);
   font-weight: 600;

@@ -14,8 +14,8 @@ export { countOf, seatWord, SEATS } from './plex/seat'
 export { showingOf, SHOWINGS } from './plex/showing'
 
 export { default as Menu } from './menu/Menu.vue'
-export { banded, landsOn, placeMenu, stepTo, MENU_OPENINGS } from './menu/item'
-export type { BandedItem, MenuItem, MenuOpening, MenuPlacement } from './menu/item'
+export { grouped, landsOn, placeMenu, stepTo, MENU_OPENINGS } from './menu/item'
+export type { GroupedItem, MenuItem, MenuOpening, MenuPlacement } from './menu/item'
 
 export { Button, buttonVariants } from './components/ui/button'
 export type { ButtonVariants } from './components/ui/button'
@@ -75,7 +75,7 @@ export type {
   PaletteLit,
   PaletteIcon,
   PalettePart,
-  PaletteBand,
+  PaletteGroup,
   PaletteSpan,
 } from './palette/item'
 

@@ -31,14 +31,14 @@ const empty = (stencil: string) =>
   )
 
 /**
- * The presets on offer. The defaults stand in a band of their own, so the line
+ * The presets on offer. The defaults stand in a group of their own, so the line
  * between them and the notes says which is which.
  */
 const offered = computed(() =>
   choices.value.map((one) => ({
     id: one.path,
     text: one.name,
-    band: one.path === '' ? 'defaults' : 'presets',
+    group: one.path === '' ? 'defaults' : 'presets',
   })),
 )
 

@@ -6,7 +6,7 @@
  * holds, choosing another writes it, and the plex reads both as it draws.
  */
 import { ref } from 'vue'
-import type { StepBand, StepRow } from './commanding'
+import type { StepGroup, StepRow } from './commanding'
 import type { Voice } from './telling'
 
 /** The command whose step offers the two, and the one that offers the counts. */
@@ -22,12 +22,12 @@ export const DEFAULT_PARTS = 6
 
 /** Everything this says in the window's voice. */
 export interface Words {
-  /** The band the setting is drawn in, and the two it is. */
-  readonly hangingBand: string
+  /** The group the setting is drawn in, and the two it is. */
+  readonly hangingGroup: string
   readonly on: string
   readonly off: string
-  /** The band the counts are drawn in. */
-  readonly partsBand: string
+  /** The group the counts are drawn in. */
+  readonly partsGroup: string
   /** The row a list of values opens on, which is the value in force. */
   readonly current: string
   /** The setting could not be written. */
@@ -93,20 +93,20 @@ export function hanging(core: HangingDeps, words: Words, said: Voice) {
     ...(inForce ? { detail: words.current, inForce: true } : {}),
   })
 
-  /** The two, in one band named for the setting they are of. */
-  const offers = (): readonly StepBand[] => [
+  /** The two, in one group named for the setting they are of. */
+  const offers = (): readonly StepGroup[] => [
     {
       id: HANGING,
-      title: words.hangingBand,
+      title: words.hangingGroup,
       items: [row(ON, words.on, hangs.value), row(OFF, words.off, !hangs.value)],
     },
   ]
 
-  /** The counts, in one band of their own. */
-  const counts = (): readonly StepBand[] => [
+  /** The counts, in one group of their own. */
+  const counts = (): readonly StepGroup[] => [
     {
       id: PARTS,
-      title: words.partsBand,
+      title: words.partsGroup,
       items: ladder(ends.value.least, ends.value.most).map((count) =>
         row(`${count}`, `${count}`, count === parts.value),
       ),

@@ -2,7 +2,7 @@
  * The menu on a node, and what it offers.
  *
  * What it offers is every command over a note that has a row of its own, which
- * is the same list the palette draws over one, standing in bands.
+ * is the same list the palette draws over one, standing in groups.
  */
 import { describe, expect, it } from 'vitest'
 
@@ -24,13 +24,13 @@ describe('what the menu offers', () => {
     }
   })
 
-  it('stands the items in bands, each band whole and unbroken', () => {
-    const bands = ITEMS.map((item) => item.band)
-    for (const item of ITEMS) expect(item.band).not.toBeUndefined()
-    expect([...new Set(bands)]).toStrictEqual(['open', 'file', 'plex', 'agent', 'remove'])
-    // A band standing in two places would draw a rule through the middle of it.
-    expect(bands.filter((band, at) => band !== bands[at - 1])).toStrictEqual([
-      ...new Set(bands),
+  it('stands the items in groups, each group whole and unbroken', () => {
+    const groups = ITEMS.map((item) => item.group)
+    for (const item of ITEMS) expect(item.group).not.toBeUndefined()
+    expect([...new Set(groups)]).toStrictEqual(['open', 'file', 'plex', 'agent', 'remove'])
+    // A group standing in two places would draw a rule through the middle of it.
+    expect(groups.filter((group, at) => group !== groups[at - 1])).toStrictEqual([
+      ...new Set(groups),
     ])
   })
 

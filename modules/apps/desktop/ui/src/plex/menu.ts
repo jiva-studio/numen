@@ -2,7 +2,7 @@
  * The menu on a node, and the menu off every node: what each offers, and what
  * choosing an item comes to.
  *
- * A node offers every command over a note that has a row of its own, in bands:
+ * A node offers every command over a note that has a row of its own, in groups:
  * what opens the note, what is done to its file, what is made off it in the
  * plex, what is asked of the agent, and what takes it out of the vault.
  *
@@ -17,7 +17,7 @@ import { WORDS as own } from './words'
 /** The one the tab does itself: a note made where the picture stands on none. */
 export const NEW_NOTE = 'newNote'
 
-/** The bands the items stand in, in the order they are drawn. */
+/** The groups the items stand in, in the order they are drawn. */
 const BAND = {
   open: 'open',
   file: 'file',
@@ -31,10 +31,10 @@ const NOTED: ReadonlyMap<string, string> = new Map(
   overNote(commandsOf(words)).map((one) => [one.id, one.text]),
 )
 
-/** One command over a note, in the band it stands in. */
-const noted = (id: string, band: string): readonly MenuItem[] => {
+/** One command over a note, in the group it stands in. */
+const noted = (id: string, group: string): readonly MenuItem[] => {
   const text = NOTED.get(id)
-  return text === undefined ? [] : [{ id, text, band }]
+  return text === undefined ? [] : [{ id, text, group }]
 }
 
 /** What is offered on a node, in the order it is drawn. */

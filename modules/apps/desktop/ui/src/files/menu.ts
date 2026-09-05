@@ -20,8 +20,8 @@ export const NEW_PRESET = 'newPreset'
 export const NEW_FOLDER = 'newFolder'
 export const RENAME = 'rename'
 
-/** The bands the items stand in, in the order they are drawn. */
-const BAND = {
+/** The groups the items stand in, in the order they are drawn. */
+const GROUP = {
   open: 'open',
   file: 'file',
   run: 'run',
@@ -35,36 +35,36 @@ const NOTED: ReadonlyMap<string, string> = new Map(
   overNote(commandsOf(words)).map((one) => [one.id, one.text]),
 )
 
-/** One command over a note, in the band it stands in. */
-const noted = (id: string, band: string): readonly MenuItem[] => {
+/** One command over a note, in the group it stands in. */
+const noted = (id: string, group: string): readonly MenuItem[] => {
   const text = NOTED.get(id)
-  return text === undefined ? [] : [{ id, text, band }]
+  return text === undefined ? [] : [{ id, text, group }]
 }
 
 /** What the tab makes, offered wherever the menu was asked for. */
 const MADE: readonly MenuItem[] = [
-  { id: NEW_NOTE, text: own.newNote, band: BAND.file },
-  { id: NEW_DECK, text: own.newDeck, band: BAND.file },
-  { id: NEW_STENCIL, text: own.newStencil, band: BAND.file },
-  { id: NEW_PRESET, text: own.newPreset, band: BAND.file },
-  { id: NEW_FOLDER, text: own.newFolder, band: BAND.file },
+  { id: NEW_NOTE, text: own.newNote, group: GROUP.file },
+  { id: NEW_DECK, text: own.newDeck, group: GROUP.file },
+  { id: NEW_STENCIL, text: own.newStencil, group: GROUP.file },
+  { id: NEW_PRESET, text: own.newPreset, group: GROUP.file },
+  { id: NEW_FOLDER, text: own.newFolder, group: GROUP.file },
 ]
 
 /** What the tab does itself, offered on every row. */
-const OWN: readonly MenuItem[] = [...MADE, { id: RENAME, text: own.rename, band: BAND.file }]
+const OWN: readonly MenuItem[] = [...MADE, { id: RENAME, text: own.rename, group: GROUP.file }]
 
 /** What a row standing for a note offers. */
 const NOTE: readonly MenuItem[] = [
-  ...noted('read', BAND.open),
-  ...noted('travel', BAND.open),
+  ...noted('read', GROUP.open),
+  ...noted('travel', GROUP.open),
   ...OWN,
-  ...noted('copy', BAND.file),
-  ...noted('child', BAND.plex),
-  ...noted('parent', BAND.plex),
-  ...noted('jump', BAND.plex),
-  ...noted('title', BAND.plex),
-  ...noted('ask', BAND.agent),
-  ...noted('remove', BAND.remove),
+  ...noted('copy', GROUP.file),
+  ...noted('child', GROUP.plex),
+  ...noted('parent', GROUP.plex),
+  ...noted('jump', GROUP.plex),
+  ...noted('title', GROUP.plex),
+  ...noted('ask', GROUP.agent),
+  ...noted('remove', GROUP.remove),
 ]
 
 /**
@@ -73,23 +73,23 @@ const NOTE: readonly MenuItem[] = [
  */
 const filed = (...runs: readonly MenuItem[]): readonly MenuItem[] => [
   ...OWN,
-  ...noted('copy', BAND.file),
+  ...noted('copy', GROUP.file),
   ...runs,
-  { id: 'remove', text: own.remove, band: BAND.remove },
+  { id: 'remove', text: own.remove, group: GROUP.remove },
 ]
 
 const FILED = filed()
 
 /** The run a recording can be put through, and the one a scan can. */
-const TRANSCRIBE: MenuItem = { id: 'transcribe', text: own.transcribe, band: BAND.run }
-const RECOGNISE: MenuItem = { id: 'recognise', text: own.recognise, band: BAND.run }
+const TRANSCRIBE: MenuItem = { id: 'transcribe', text: own.transcribe, group: GROUP.run }
+const RECOGNISE: MenuItem = { id: 'recognise', text: own.recognise, group: GROUP.run }
 
 /** The run offered where this build can do it, and the file's own items alone where it cannot. */
 const runnable = (run: MenuItem, canRun: RunGuard): readonly MenuItem[] =>
   canRun(run.id) ? filed(run) : FILED
 
 /** What a selection of several offers, which is what means something for all of them. */
-const SEVERAL: readonly MenuItem[] = [{ id: 'remove', text: own.remove, band: BAND.remove }]
+const SEVERAL: readonly MenuItem[] = [{ id: 'remove', text: own.remove, group: GROUP.remove }]
 
 /** The row a menu was asked for on: what the vault holds there. */
 export interface MenuRow {

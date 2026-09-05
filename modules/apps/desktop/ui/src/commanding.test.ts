@@ -20,7 +20,7 @@ import {
   type PaletteLists,
   type NoteLookup,
   type RunSupport,
-  type StepBand,
+  type StepGroup,
   type CommandTarget,
 } from './commanding'
 import type { VaultList, Vault } from './core'
@@ -93,7 +93,7 @@ const held = () => {
 }
 
 /** The lists the window holds, and every row a step said it was standing on. */
-const holding = (offers: Record<string, readonly StepBand[]>) => {
+const holding = (offers: Record<string, readonly StepGroup[]>) => {
   const lists = ref(offers)
   const shown: string[] = []
   const holds: PaletteLists = {
@@ -107,7 +107,7 @@ const holding = (offers: Record<string, readonly StepBand[]>) => {
 const asking = (
   over: Partial<CommandTarget> = {},
   found: readonly NameMatch[] = [],
-  offers: Record<string, readonly StepBand[]> = {},
+  offers: Record<string, readonly StepGroup[]> = {},
   listed: VaultList = installation(vault('physics', 'Physics')),
   runs: RunSupport = runSupport(),
 ) => {
@@ -138,19 +138,19 @@ const asking = (
 /** A moment for the list of vaults to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))
 
-/** Every item drawn, band by band, under the band it stands in. */
-const drawn = (bands: ReturnType<typeof asking>['commands']['bands']) =>
-  Object.fromEntries(bands.value.map((band) => [band.id, band.items.map((item) => item.id)]))
+/** Every item drawn, group by group, under the group it stands in. */
+const drawn = (groups: ReturnType<typeof asking>['commands']['groups']) =>
+  Object.fromEntries(groups.value.map((group) => [group.id, group.items.map((item) => item.id)]))
 
-/** What one band says while it holds nothing. */
-const silence = (bands: ReturnType<typeof asking>['commands']['bands'], id: string) =>
-  bands.value.find((band) => band.id === id)?.silence
+/** What one group says while it holds nothing. */
+const silence = (groups: ReturnType<typeof asking>['commands']['groups'], id: string) =>
+  groups.value.find((group) => group.id === id)?.silence
 
 describe('the commands as they open', () => {
   it('offers everything that can be done to what is in front, with nothing typed', () => {
     const { commands } = asking()
 
-    expect(drawn(commands.bands)).toStrictEqual({
+    expect(drawn(commands.groups)).toStrictEqual({
       note: [
         'read',
         'travel',
@@ -197,7 +197,7 @@ describe('the commands as they open', () => {
 
   it('draws the command reached by Shift and Enter on the row that names it', () => {
     const { commands } = asking()
-    const items = commands.bands.value[0]?.items ?? []
+    const items = commands.groups.value[0]?.items ?? []
 
     expect(items.find((item) => item.id === 'read')?.actions?.map((one) => one.id)).toStrictEqual([
       'read',
@@ -210,15 +210,15 @@ describe('the commands as they open', () => {
 
   it('says which key reaches a command away from the palette', () => {
     const { commands } = asking()
-    const window = commands.bands.value[1]?.items ?? []
+    const window = commands.groups.value[1]?.items ?? []
 
     expect(window.find((item) => item.id === 'find')?.keys).toBe(words.findKeys)
   })
 
-  it('writes nothing under a command that its whole band is over', () => {
+  it('writes nothing under a command that its whole group is over', () => {
     const { commands } = asking()
 
-    for (const item of commands.bands.value[0]?.items ?? []) expect(item.detail).toBeUndefined()
+    for (const item of commands.groups.value[0]?.items ?? []) expect(item.detail).toBeUndefined()
   })
 
   it('keeps the commands the words typed leave, and lights where they stand', () => {
@@ -226,8 +226,8 @@ describe('the commands as they open', () => {
 
     void commands.typing('child')
 
-    expect(drawn(commands.bands)).toStrictEqual({ note: ['child'], window: [], vault: [] })
-    expect(commands.bands.value[0]?.items[0]?.at).toStrictEqual([{ from: 4, to: 9 }])
+    expect(drawn(commands.groups)).toStrictEqual({ note: ['child'], window: [], vault: [] })
+    expect(commands.groups.value[0]?.items[0]?.at).toStrictEqual([{ from: 4, to: 9 }])
   })
 })
 
@@ -235,27 +235,27 @@ describe('what is in front', () => {
   it('offers nothing over a note when a document is in front', () => {
     const { commands } = asking({ kind: 'document', path: '', title: '' })
 
-    expect(drawn(commands.bands).note).toStrictEqual([])
-    expect(silence(commands.bands, 'note')).toBe(words.noNote)
+    expect(drawn(commands.groups).note).toStrictEqual([])
+    expect(silence(commands.groups, 'note')).toBe(words.noNote)
   })
 
   it('offers nothing over a note when the tab in front is of no kind', () => {
     const { commands } = asking({ kind: null, path: '', title: '' })
 
-    expect(drawn(commands.bands).note).toStrictEqual([])
+    expect(drawn(commands.groups).note).toStrictEqual([])
   })
 
   it('offers nothing over a note when the plex is standing nowhere', () => {
     const { commands } = asking({ kind: 'plex', path: '', title: '' })
 
-    expect(drawn(commands.bands).note).toStrictEqual([])
+    expect(drawn(commands.groups).note).toStrictEqual([])
   })
 
   /** A vault that will not read is the one a person most needs to leave. */
   it('says the vault is still being read, and offers nothing over the note', () => {
     const { commands } = asking({ ready: false })
 
-    expect(drawn(commands.bands)).toStrictEqual({
+    expect(drawn(commands.groups)).toStrictEqual({
       note: [],
       window: [
         'plex',
@@ -274,13 +274,13 @@ describe('what is in front', () => {
       ],
       vault: ['openVault', 'newVault', 'renameVault', 'forgetVault', 'eraseVault'],
     })
-    expect(silence(commands.bands, 'note')).toBe(words.indexing)
+    expect(silence(commands.groups, 'note')).toBe(words.indexing)
   })
 
   it('offers no close where the window holds no tab at all', () => {
     const { commands } = asking({ tab: '' })
 
-    expect(drawn(commands.bands).window).not.toContain('close')
+    expect(drawn(commands.groups).window).not.toContain('close')
   })
 
   it('follows what the person is looking at while it is open', () => {
@@ -288,7 +288,7 @@ describe('what is in front', () => {
 
     at.value = front({ kind: 'document', path: '', title: '' })
 
-    expect(drawn(commands.bands).note).toStrictEqual([])
+    expect(drawn(commands.groups).note).toStrictEqual([])
   })
 })
 
@@ -336,14 +336,14 @@ describe('a command that asks for a name', () => {
 
     expect(commands.asks('child', front())).toBeNull()
     expect(commands.crumb.value).toBe(words.child)
-    expect(commands.bands.value.map((band) => band.id)).toStrictEqual(['naming'])
+    expect(commands.groups.value.map((group) => group.id)).toStrictEqual(['naming'])
   })
 
   it('asks for one before a preset is made, as it does before a deck', () => {
     const { commands } = asking()
 
     expect(commands.asks('newPreset', front())).toBeNull()
-    expect(commands.bands.value.map((band) => band.id)).toStrictEqual(['naming'])
+    expect(commands.groups.value.map((group) => group.id)).toStrictEqual(['naming'])
   })
 
   it('carries the name a preset was asked for under', () => {
@@ -358,11 +358,11 @@ describe('a command that asks for a name', () => {
     const { commands } = asking()
     commands.asks('child', front())
 
-    expect(commands.bands.value[0]?.items).toStrictEqual([])
+    expect(commands.groups.value[0]?.items).toStrictEqual([])
 
     void commands.typing('  Entropy  ')
 
-    expect(commands.bands.value[0]?.items[0]?.title).toBe('Call it “Entropy”')
+    expect(commands.groups.value[0]?.items[0]?.title).toBe('Call it “Entropy”')
   })
 
   it('carries the name to the note it was asked over', () => {
@@ -430,7 +430,7 @@ describe('removing a note', () => {
 
     commands.asks('remove', front())
 
-    expect(commands.bands.value.map((band) => band.id)).toStrictEqual(['note', 'window', 'vault'])
+    expect(commands.groups.value.map((group) => group.id)).toStrictEqual(['note', 'window', 'vault'])
   })
 })
 
@@ -439,7 +439,7 @@ describe('destroying a note', () => {
     const { commands } = asking()
     commands.asks('destroy', front())
 
-    expect(commands.bands.value[0]?.items[0]?.disabled).toBe(true)
+    expect(commands.groups.value[0]?.items[0]?.disabled).toBe(true)
     expect(commands.chose('exactly', 'exactly')).toBeNull()
 
     void commands.typing('Ontolog')
@@ -452,7 +452,7 @@ describe('destroying a note', () => {
     commands.asks('destroy', front())
     void commands.typing('Ontology')
 
-    expect(commands.bands.value[0]?.items[0]?.disabled).toBe(false)
+    expect(commands.groups.value[0]?.items[0]?.disabled).toBe(false)
     expect(commands.chose('exactly', 'exactly')?.id).toBe('destroy')
   })
 })
@@ -481,12 +481,12 @@ describe('a note that moves under an open step', () => {
 
     void commands.typing('Ontology')
 
-    expect(commands.bands.value[0]?.items[0]?.disabled).toBe(true)
+    expect(commands.groups.value[0]?.items[0]?.disabled).toBe(true)
     expect(commands.chose('exactly', 'exactly')).toBeNull()
 
     void commands.typing('Being')
 
-    expect(commands.bands.value[0]?.items[0]?.title).toBe('Destroy “Being”')
+    expect(commands.groups.value[0]?.items[0]?.title).toBe('Destroy “Being”')
     expect(commands.chose('exactly', 'exactly')?.path).toBe('physics/Being.md')
   })
 
@@ -534,7 +534,7 @@ describe('the runs over the file in front', () => {
   it('offers a recording to be transcribed, put right and dropped, and nothing to recognise', () => {
     const { commands } = asking(heard)
 
-    expect(drawn(commands.bands).file).toStrictEqual([
+    expect(drawn(commands.groups).file).toStrictEqual([
       'transcribe',
       'proofread',
       'dropTranscript',
@@ -544,21 +544,21 @@ describe('the runs over the file in front', () => {
   it('offers a scan to be recognised, and nothing to transcribe', () => {
     const { commands } = asking(scanned)
 
-    expect(drawn(commands.bands).file).toStrictEqual(['recognise'])
+    expect(drawn(commands.groups).file).toStrictEqual(['recognise'])
   })
 
-  // The band stands where there is something in it, so a note is offered no
+  // The group stands where there is something in it, so a note is offered no
   // empty shelf of runs.
-  it('offers neither over a note, and draws no band for them', () => {
+  it('offers neither over a note, and draws no group for them', () => {
     const { commands } = asking()
 
-    expect(drawn(commands.bands).file).toBeUndefined()
+    expect(drawn(commands.groups).file).toBeUndefined()
   })
 
   it('offers neither while the vault is still being read', () => {
     const { commands } = asking({ ...heard, ready: false })
 
-    expect(drawn(commands.bands).file).toBeUndefined()
+    expect(drawn(commands.groups).file).toBeUndefined()
   })
 
   it('carries the file the tab in front holds', () => {
@@ -573,8 +573,8 @@ describe('the runs over the file in front', () => {
     runs.cannotRun('proofread')
     runs.cannotRun('dropTranscript')
 
-    expect(drawn(asking(heard, [], {}, undefined, runs).commands.bands).file).toBeUndefined()
-    expect(drawn(asking(scanned, [], {}, undefined, runs).commands.bands).file).toStrictEqual([
+    expect(drawn(asking(heard, [], {}, undefined, runs).commands.groups).file).toBeUndefined()
+    expect(drawn(asking(scanned, [], {}, undefined, runs).commands.groups).file).toStrictEqual([
       'recognise',
     ])
   })
@@ -594,25 +594,25 @@ describe('the runs over the file in front', () => {
     ] as const) {
       const { commands } = asking({ ...scanned, made: { reading: made } })
 
-      expect(drawn(commands.bands).file, made).toStrictEqual(offered ? ['recognise'] : undefined)
+      expect(drawn(commands.groups).file, made).toStrictEqual(offered ? ['recognise'] : undefined)
     }
   })
 
   it('offers a recording to be transcribed only where nothing has heard it', () => {
     const { commands } = asking({ ...heard, made: { transcript: 'done' } })
 
-    expect(drawn(commands.bands).file).not.toContain('transcribe')
+    expect(drawn(commands.groups).file).not.toContain('transcribe')
   })
 
   // There is nothing to put right until a model has heard something, and
   // nothing to take away until it has.
   it('offers a transcript to be put right once one stands, and not before', () => {
-    expect(drawn(asking({ ...heard, made: { transcript: 'none' } }).commands.bands).file)
+    expect(drawn(asking({ ...heard, made: { transcript: 'none' } }).commands.groups).file)
       .toStrictEqual(['transcribe'])
-    expect(drawn(asking({ ...heard, made: { transcript: 'done' } }).commands.bands).file)
+    expect(drawn(asking({ ...heard, made: { transcript: 'done' } }).commands.groups).file)
       .toStrictEqual(['proofread', 'dropTranscript'])
     expect(
-      drawn(asking({ ...heard, made: { transcript: 'done', corrections: 'done' } }).commands.bands)
+      drawn(asking({ ...heard, made: { transcript: 'done', corrections: 'done' } }).commands.groups)
         .file,
     ).toStrictEqual(['dropTranscript'])
   })
@@ -623,7 +623,7 @@ describe('the runs over the file in front', () => {
   it('offers what the kind offers while nothing is known of the file', () => {
     const { commands } = asking(heard)
 
-    expect(drawn(commands.bands).file).toStrictEqual([
+    expect(drawn(commands.groups).file).toStrictEqual([
       'transcribe',
       'proofread',
       'dropTranscript',
@@ -636,8 +636,8 @@ describe('the runs over the file in front', () => {
     runs.cannotRun('proofread')
     runs.cannotRun('dropTranscript')
 
-    expect(drawn(asking(heard, [], {}, undefined, runs).commands.bands).file).toBeUndefined()
-    expect(drawn(asking(heard).commands.bands).file).toStrictEqual([
+    expect(drawn(asking(heard, [], {}, undefined, runs).commands.groups).file).toBeUndefined()
+    expect(drawn(asking(heard).commands.groups).file).toStrictEqual([
       'transcribe',
       'proofread',
       'dropTranscript',
@@ -650,8 +650,8 @@ describe('dropping the transcript of a recording', () => {
     const { commands } = asking(heard)
 
     expect(commands.asks('dropTranscript', front(heard))).toBeNull()
-    expect(commands.bands.value[0]?.id).toBe('asking')
-    expect(commands.bands.value[0]?.items.map((one) => one.id)).toStrictEqual(['no', 'yes'])
+    expect(commands.groups.value[0]?.id).toBe('asking')
+    expect(commands.groups.value[0]?.items.map((one) => one.id)).toStrictEqual(['no', 'yes'])
   })
 
   // The answer that changes nothing is the one the keyboard opens on.
@@ -659,9 +659,9 @@ describe('dropping the transcript of a recording', () => {
     const { commands } = asking(heard)
     commands.asks('dropTranscript', front(heard))
 
-    expect(commands.bands.value[0]?.items[0]?.title).toBe(words.keepsTranscript)
-    expect(commands.bands.value[0]?.items[1]?.title).toBe(`${words.drops} “${heard.title}”`)
-    expect(commands.bands.value[0]?.items[1]?.detail).toBe(words.dropped)
+    expect(commands.groups.value[0]?.items[0]?.title).toBe(words.keepsTranscript)
+    expect(commands.groups.value[0]?.items[1]?.title).toBe(`${words.drops} “${heard.title}”`)
+    expect(commands.groups.value[0]?.items[1]?.detail).toBe(words.dropped)
   })
 
   it('carries the recording the tab in front holds once the answer is given', () => {
@@ -676,7 +676,7 @@ describe('dropping the transcript of a recording', () => {
     commands.asks('dropTranscript', front(heard))
 
     expect(commands.chose('no', 'no')).toBeNull()
-    expect(commands.bands.value[0]?.id).not.toBe('asking')
+    expect(commands.groups.value[0]?.id).not.toBe('asking')
   })
 })
 
@@ -715,7 +715,7 @@ describe('a command that asks for a note', () => {
     await commands.typing('en')
 
     expect(asked).toStrictEqual(['en'])
-    expect(commands.bands.value[0]?.items.map((item) => item.id)).toStrictEqual([
+    expect(commands.groups.value[0]?.items.map((item) => item.id)).toStrictEqual([
       'physics/Entropy.md',
       'Order.md',
     ])
@@ -760,13 +760,13 @@ describe('a command that asks for a note', () => {
 
     await commands.typing('en')
 
-    expect(commands.bands.value[0]?.silence).toBe(words.notAsked)
+    expect(commands.groups.value[0]?.silence).toBe(words.notAsked)
   })
 })
 
 describe('a command that offers a list the window holds', () => {
-  /** The themes, in the two bands they come off, and one band holding none. */
-  const THEMES: readonly StepBand[] = [
+  /** The themes, in the two groups they come off, and one group holding none. */
+  const THEMES: readonly StepGroup[] = [
     {
       id: 'shipping',
       title: 'Ships with numen',
@@ -779,7 +779,7 @@ describe('a command that offers a list the window holds', () => {
   ]
 
   /** The three halves, drawn and not to be chosen, as a pinned theme leaves them. */
-  const HALVES: readonly StepBand[] = [
+  const HALVES: readonly StepGroup[] = [
     {
       id: 'half',
       title: 'Light and dark',
@@ -792,21 +792,21 @@ describe('a command that offers a list the window holds', () => {
 
   const held = { appearance: THEMES, mode: HALVES }
 
-  it('offers the bands the window holds, each under its own name', () => {
+  it('offers the groups the window holds, each under its own name', () => {
     const { commands } = asking({}, [], held)
     commands.asks('appearance', front())
 
     expect(commands.crumb.value).toBe(words.appearance)
     expect(commands.placeholder.value).toBe(words.typeChoice)
-    expect(commands.bands.value.map((band) => band.title)).toStrictEqual([
+    expect(commands.groups.value.map((group) => group.title)).toStrictEqual([
       'Ships with numen',
       'Your own themes',
     ])
-    expect(drawn(commands.bands)).toStrictEqual({
+    expect(drawn(commands.groups)).toStrictEqual({
       shipping: ['preset:numen', 'preset:dracula'],
       owned: [],
     })
-    expect(silence(commands.bands, 'owned')).toBe('A .css file there is one')
+    expect(silence(commands.groups, 'owned')).toBe('A .css file there is one')
   })
 
   it('offers each command the list it holds for that command', () => {
@@ -814,7 +814,7 @@ describe('a command that offers a list the window holds', () => {
     commands.asks('mode', front())
 
     expect(commands.crumb.value).toBe(words.mode)
-    expect(drawn(commands.bands)).toStrictEqual({
+    expect(drawn(commands.groups)).toStrictEqual({
       half: ['mode:system', 'mode:light'],
     })
   })
@@ -825,20 +825,20 @@ describe('a command that offers a list the window holds', () => {
 
     await commands.typing('rac')
 
-    expect(drawn(commands.bands)).toStrictEqual({ shipping: ['preset:dracula'], owned: [] })
-    expect(commands.bands.value[0]?.items[0]?.at).toStrictEqual([{ from: 1, to: 4 }])
+    expect(drawn(commands.groups)).toStrictEqual({ shipping: ['preset:dracula'], owned: [] })
+    expect(commands.groups.value[0]?.items[0]?.at).toStrictEqual([{ from: 1, to: 4 }])
   })
 
   it('draws a row the window says cannot be chosen, and chooses nothing by it', () => {
     const { commands } = asking({}, [], held)
     commands.asks('mode', front())
 
-    expect(commands.bands.value[0]?.items[0]?.disabled).toBe(true)
+    expect(commands.groups.value[0]?.items[0]?.disabled).toBe(true)
     expect(commands.chose('mode:system', 'chosen')).toBeNull()
     expect(commands.chose('mode:none', 'chosen')).toBeNull()
   })
 
-  it('hands back the row that was chosen, from whichever band it stood in', () => {
+  it('hands back the row that was chosen, from whichever group it stood in', () => {
     const { commands } = asking({}, [], held)
     commands.asks('appearance', front())
 
@@ -893,7 +893,7 @@ describe('leaving a step', () => {
     commands.leaves()
 
     expect(commands.open.value).toBe(true)
-    expect(commands.bands.value.map((band) => band.id)).toStrictEqual(['note', 'window', 'vault'])
+    expect(commands.groups.value.map((group) => group.id)).toStrictEqual(['note', 'window', 'vault'])
   })
 
   it('puts the commands away from the commands themselves', () => {
@@ -966,27 +966,27 @@ describe('the character that means the commands', () => {
 })
 
 describe('a search that turned up nothing', () => {
-  const bands = (items: number, working = false) => [
+  const groups = (items: number, working = false) => [
     { id: 'names', title: 'Names', items: Array.from({ length: items }, (_, at) => ({ id: `${at}`, title: 'One' })), working },
   ]
 
   it('offers to make the note that was looked for', () => {
-    const offered = offering(bands(0), 'Entropy', words, front())
+    const offered = offering(groups(0), 'Entropy', words, front())
 
     expect(offered.at(-1)?.id).toBe(MAKING)
     expect(offered.at(-1)?.items[0]?.title).toBe('Create a note called “Entropy”')
   })
 
-  it('offers nothing while a band is still waiting on the vault', () => {
-    expect(offering(bands(0, true), 'Entropy', words, front())).toHaveLength(1)
+  it('offers nothing while a group is still waiting on the vault', () => {
+    expect(offering(groups(0, true), 'Entropy', words, front())).toHaveLength(1)
   })
 
-  it('offers nothing where a band turned something up', () => {
-    expect(offering(bands(1), 'Entropy', words, front())).toHaveLength(1)
+  it('offers nothing where a group turned something up', () => {
+    expect(offering(groups(1), 'Entropy', words, front())).toHaveLength(1)
   })
 
   it('offers nothing where nothing was looked for', () => {
-    expect(offering(bands(0), '   ', words, front())).toHaveLength(1)
+    expect(offering(groups(0), '   ', words, front())).toHaveLength(1)
   })
 
   it('makes the note where the person is standing, under the words looked for', () => {
@@ -1005,7 +1005,7 @@ describe('a search that turned up nothing', () => {
   })
 
   it('offers the seats of the note in front, and says which note that is', () => {
-    const item = offering(bands(0), 'Entropy', words, front()).at(-1)?.items[0]
+    const item = offering(groups(0), 'Entropy', words, front()).at(-1)?.items[0]
 
     expect(item?.actions?.map((one) => one.id)).toStrictEqual([
       MAKING,
@@ -1017,7 +1017,7 @@ describe('a search that turned up nothing', () => {
   })
 
   it('offers no seat where nothing in front is a note', () => {
-    const item = offering(bands(0), 'Entropy', words, front({ path: '', title: '' })).at(-1)
+    const item = offering(groups(0), 'Entropy', words, front({ path: '', title: '' })).at(-1)
       ?.items[0]
 
     expect(item?.actions?.map((one) => one.id)).toStrictEqual([MAKING])
@@ -1051,9 +1051,9 @@ describe('the commands over a note', () => {
 })
 
 describe('the commands over the vaults an installation holds', () => {
-  it('are offered in the band of the vault in front', () => {
+  it('are offered in the group of the vault in front', () => {
     const over = commandsOf(words)
-      .filter((one) => one.band === 'vault')
+      .filter((one) => one.group === 'vault')
       .map((one) => one.id)
 
     expect(over).toStrictEqual([
@@ -1071,7 +1071,7 @@ describe('the commands over the vaults an installation holds', () => {
   it('leave out the rename where the window is showing no vault', () => {
     const { commands } = asking({ vault: { id: '', name: '' } })
 
-    expect(drawn(commands.bands).vault).toStrictEqual([
+    expect(drawn(commands.groups).vault).toStrictEqual([
       'first',
       'goto',
       'openVault',
@@ -1091,8 +1091,8 @@ describe('a command that asks for a vault', () => {
 
     await settles()
 
-    expect(commands.bands.value[0]?.items.map((item) => item.id)).toStrictEqual(['physics', 'heat'])
-    expect(commands.bands.value[0]?.items[1]?.detail).toBe('/vaults/Heat')
+    expect(commands.groups.value[0]?.items.map((item) => item.id)).toStrictEqual(['physics', 'heat'])
+    expect(commands.groups.value[0]?.items[1]?.detail).toBe('/vaults/Heat')
   })
 
   /** The folder may be on a volume nobody has mounted, and the vault stays. */
@@ -1101,8 +1101,8 @@ describe('a command that asks for a vault', () => {
     commands.asks('openVault', front())
     await settles()
 
-    expect(commands.bands.value[0]?.items[0]?.disabled).toBe(true)
-    expect(commands.bands.value[0]?.items[0]?.detail).toBe(`${words.gone} · /vaults/Gone`)
+    expect(commands.groups.value[0]?.items[0]?.disabled).toBe(true)
+    expect(commands.groups.value[0]?.items[0]?.detail).toBe(`${words.gone} · /vaults/Gone`)
     expect(commands.chose('gone', 'open')).toBeNull()
   })
 
@@ -1116,8 +1116,8 @@ describe('a command that asks for a vault', () => {
     commands.asks('openVault', front())
     await settles()
 
-    expect(commands.bands.value[0]?.items[0]?.disabled).toBe(true)
-    expect(commands.bands.value[0]?.items[0]?.detail).toBe(`${words.current} · /vaults/Physics`)
+    expect(commands.groups.value[0]?.items[0]?.disabled).toBe(true)
+    expect(commands.groups.value[0]?.items[0]?.detail).toBe(`${words.current} · /vaults/Physics`)
     expect(commands.chose('physics', 'open')).toBeNull()
   })
 
@@ -1126,7 +1126,7 @@ describe('a command that asks for a vault', () => {
     commands.asks('forgetVault', front())
     await settles()
 
-    expect(commands.bands.value[0]?.items[1]?.actions?.[0]?.text).toBe(words.forgetVault)
+    expect(commands.groups.value[0]?.items[1]?.actions?.[0]?.text).toBe(words.forgetVault)
   })
 
   it('carries the vault that was picked, not the one the window is showing', async () => {
@@ -1147,7 +1147,7 @@ describe('a command that asks for a vault', () => {
 
     await commands.typing('hea')
 
-    expect(commands.bands.value[0]?.items.map((item) => item.id)).toStrictEqual(['heat'])
+    expect(commands.groups.value[0]?.items.map((item) => item.id)).toStrictEqual(['heat'])
   })
 
   it('says the list could not be asked, in the window’s own words', async () => {
@@ -1170,7 +1170,7 @@ describe('a command that asks for a vault', () => {
     commands.asks('openVault', front())
     await settles()
 
-    expect(commands.bands.value[0]?.silence).toBe(words.notAsked)
+    expect(commands.groups.value[0]?.silence).toBe(words.notAsked)
   })
 })
 
@@ -1220,10 +1220,10 @@ describe('a vault taken off the list', () => {
   it('is confirmed over the vault that was chosen, saying the folder stays', async () => {
     const commands = await chose('forgetVault')
 
-    expect(commands.bands.value[0]?.items.map((item) => item.id)).toStrictEqual(['no', 'yes'])
-    expect(commands.bands.value[0]?.items[0]?.title).toBe(words.keepsVault)
-    expect(commands.bands.value[0]?.items[1]?.title).toBe('Forget “Heat”')
-    expect(commands.bands.value[0]?.items[1]?.detail).toBe(words.stays)
+    expect(commands.groups.value[0]?.items.map((item) => item.id)).toStrictEqual(['no', 'yes'])
+    expect(commands.groups.value[0]?.items[0]?.title).toBe(words.keepsVault)
+    expect(commands.groups.value[0]?.items[1]?.title).toBe('Forget “Heat”')
+    expect(commands.groups.value[0]?.items[1]?.detail).toBe(words.stays)
   })
 
   it('is a deed over that vault once the question is answered', async () => {
@@ -1241,8 +1241,8 @@ describe('a vault taken off the list', () => {
     commands.leaves()
     await settles()
 
-    expect(commands.bands.value[0]?.id).toBe('vaults')
-    expect(commands.bands.value[0]?.items.map((item) => item.id)).toStrictEqual([
+    expect(commands.groups.value[0]?.id).toBe('vaults')
+    expect(commands.groups.value[0]?.items.map((item) => item.id)).toStrictEqual([
       'physics',
       'heat',
     ])
@@ -1251,9 +1251,9 @@ describe('a vault taken off the list', () => {
   it('waits for the name of the vault chosen, and says where its folder goes', async () => {
     const commands = await chose('eraseVault')
 
-    expect(commands.bands.value[0]?.items[0]?.title).toBe('Erase “Heat”')
-    expect(commands.bands.value[0]?.items[0]?.detail).toBe(words.binned)
-    expect(commands.bands.value[0]?.items[0]?.disabled).toBe(true)
+    expect(commands.groups.value[0]?.items[0]?.title).toBe('Erase “Heat”')
+    expect(commands.groups.value[0]?.items[0]?.detail).toBe(words.binned)
+    expect(commands.groups.value[0]?.items[0]?.disabled).toBe(true)
     expect(commands.placeholder.value).toBe(words.typeVaultBack)
     expect(commands.chose('exactly', 'exactly')).toBeNull()
   })
@@ -1263,7 +1263,7 @@ describe('a vault taken off the list', () => {
 
     void commands.typing('Heat')
 
-    expect(commands.bands.value[0]?.items[0]?.disabled).toBe(false)
+    expect(commands.groups.value[0]?.items[0]?.disabled).toBe(false)
     expect(commands.chose('exactly', 'exactly')).toMatchObject({
       id: 'eraseVault',
       vault: { id: 'heat', name: 'Heat' },
