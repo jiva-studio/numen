@@ -49,7 +49,7 @@ func (s *session) run(args ...string) (string, error) {
 	// No embedder and nothing this machine supplies: a test must not reach a
 	// model, a service, an account or a process.
 	err := cli.Run(context.Background(), &out, &s.said, append(s.base, args...),
-		settings.Indexing{}, container.Config{})
+		container.Config{}.Indexing(settings.Indexing{}))
 	return out.String(), err
 }
 

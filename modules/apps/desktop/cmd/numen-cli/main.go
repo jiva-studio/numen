@@ -23,5 +23,5 @@ func main() {
 		os.Exit(1)
 	}
 	os.Exit(cli.Main(context.Background(), os.Stdout, os.Stderr, os.Args[1:],
-		chosen.Indexing, platform.Config()))
+		platform.Config().Indexing(chosen.Indexing)))
 }

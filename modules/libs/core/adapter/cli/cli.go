@@ -10,9 +10,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 )
 
 const usage = `numen-cli — notes with typed links and spaced repetition
@@ -40,13 +38,13 @@ options:
   --service-dir <name>  the folder a vault keeps its identity in (default: .numen)
 `
 
-// Main runs the command line and returns a process exit code. Platform carries
-// what this machine supplies rather than the settings file, and the settings
-// are read over it.
+// Main runs the command line and returns a process exit code. The
+// configuration carries what this machine supplies and what the settings file
+// says, put together before this is called.
 func Main(ctx context.Context, out, errOut io.Writer, args []string,
-	indexing settings.Indexing, platform container.Config,
+	cfg container.Config,
 ) int {
-	if err := Run(ctx, out, errOut, args, indexing, platform); err != nil {
+	if err := Run(ctx, out, errOut, args, cfg); err != nil {
 		fmt.Fprintln(errOut, "numen-cli:", err)
 		return 1
 	}
@@ -56,14 +54,15 @@ func Main(ctx context.Context, out, errOut io.Writer, args []string,
 // Run is Main with its output injected and errors returned, so what the person
 // sees is testable. errOut carries what a command says beside its answer.
 func Run(ctx context.Context, out, errOut io.Writer, args []string,
-	indexing settings.Indexing, platform container.Config,
+	cfg container.Config,
 ) error {
-	cfg := platform.Indexing(indexing)
 	fs := flag.NewFlagSet("numen-cli", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	fs.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
 	fs.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
-	fs.StringVar(&cfg.ServiceDir, "service-dir", filesystem.DefaultServiceDir, "vault service folder")
+	// Empty is the folder this installation writes into a vault by default,
+	// which is the answer for every other location here too.
+	fs.StringVar(&cfg.ServiceDir, "service-dir", "", "vault service folder")
 
 	// A plain parse: it stops at the first argument that is not a flag, which
 	// is the command. Anything after that belongs to the command and is parsed

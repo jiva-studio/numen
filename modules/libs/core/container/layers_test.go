@@ -25,8 +25,8 @@ const module = "github.com/jiva-studio/numen/modules/libs/core/"
 // adapter/webui is not owed to internal/adapter/webui, which is not the same
 // package and would not be the same window.
 var owed = map[string][]string{
-	// The terminal opens a vault and reads the settings file itself.
-	"adapter/cli": {"internal/adapter/filesystem", "adapter/settings", "container"},
+	// The terminal assembles what it serves.
+	"adapter/cli": {"container"},
 	// The window assembles what it serves.
 	"adapter/webui": {"container"},
 	// One settings file is the union of every adapter's section.
@@ -1259,10 +1259,10 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 	}{
 		// An adapter under internal/ is not the adapter it is named after.
 		{"internal/adapter/webui", "container", true},
-		{"internal/adapter/cli", "internal/adapter/filesystem", true},
+		{"internal/adapter/settings", "internal/adapter/embed", true},
 		{"internal/adapter/mcp", "usecase/note", true},
 		{"adapter/webui", "container", false},
-		{"adapter/cli", "internal/adapter/filesystem", false},
+		{"adapter/settings", "internal/adapter/embed", false},
 		{"adapter/mcp", "usecase/note", false},
 
 		// A driven adapter runs no scenario, and takes no other adapter. Which
