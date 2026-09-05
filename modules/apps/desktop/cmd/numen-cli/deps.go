@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/cli"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -50,6 +51,39 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 				notes := cfg.Notes(
 					db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), cfg.Level(db))
 				return cli.Links{Show: notes.Links, Close: db.Close}, nil
+			},
+
+			Scan: func(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
+				reading := cfg
+				reading.RebuildIndex = rebuild
+				db, err := reading.OpenIndex(ctx)
+				if err != nil {
+					return cli.Scan{}, err
+				}
+				// A terminal waits for the model rather than making the vectors
+				// later, and a vault is read whether or not one arrives.
+				embedder, closeEmbedder, why := reading.Embedder(ctx)
+				read, err := reading.ReadWholeVault(ctx, db, embedder, v)
+				if err != nil {
+					if closeEmbedder != nil {
+						_ = closeEmbedder()
+					}
+					_ = db.Close()
+					return cli.Scan{}, err
+				}
+				return cli.Scan{
+					Read: read,
+					Summary: func(ctx context.Context) (domain.VaultSummary, error) {
+						return db.Queries().Summary(ctx, v.ID)
+					},
+					Unembedded: why,
+					Close: func() error {
+						if closeEmbedder != nil {
+							_ = closeEmbedder()
+						}
+						return db.Close()
+					},
+				}, nil
 			},
 
 			Search: func(ctx context.Context, trouble port.Trouble) (cli.Search, error) {

@@ -7,17 +7,17 @@ import (
 	"io"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, deps Deps, args []string) error {
+func scanCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	// `--rebuild-index` reads every file, whatever the index remembers.
+	rebuild := false
 	rest := make([]string, 0, len(args))
 	for _, arg := range args {
 		if arg == "--rebuild-index" {
-			cfg.RebuildIndex = true
+			rebuild = true
 			continue
 		}
 		rest = append(rest, arg)
@@ -29,26 +29,19 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, deps 
 	if err != nil {
 		return err
 	}
-	db, err := cfg.OpenIndex(ctx)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
 
 	// The vectors are made here too. The window does all three in the
 	// background; here they are waited for, which is this adapter's property
 	// and not the use case's.
-	embedder, closeEmbedder, why := cfg.Embedder(ctx)
-	if why != nil {
-		fmt.Fprintf(out, "not embedding %s: %v\n", v.Name, why)
-	}
-	if closeEmbedder != nil {
-		defer func() { _ = closeEmbedder() }()
-	}
-	making, err := cfg.ReadWholeVault(ctx, db, embedder, v)
+	open, err := deps.Scan(ctx, v, rebuild)
 	if err != nil {
 		return err
 	}
+	defer closing(open.Close)
+	if open.Unembedded != nil {
+		fmt.Fprintf(out, "not embedding %s: %v\n", v.Name, open.Unembedded)
+	}
+	making := open.Read
 
 	// A terminal that prints nothing for a minute looks broken. One group is
 	// about half a second, and the line rewrites itself.
@@ -70,7 +63,7 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, deps 
 		return err
 	}
 
-	summary, err := db.Queries().Summary(ctx, v.ID)
+	summary, err := open.Summary(ctx)
 	if err != nil {
 		return err
 	}

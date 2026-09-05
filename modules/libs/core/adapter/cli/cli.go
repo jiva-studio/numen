@@ -85,7 +85,7 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	case "vault":
 		return vaultCommand(ctx, out, deps, rest[1:])
 	case "scan":
-		return scanCommand(ctx, out, cfg, deps, rest[1:])
+		return scanCommand(ctx, out, deps, rest[1:])
 	case "recognise":
 		return recogniseCommand(ctx, out, cfg, deps, rest[1:])
 	case "proofread":

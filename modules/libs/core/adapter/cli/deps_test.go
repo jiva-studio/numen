@@ -6,12 +6,16 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/cli"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
+	"github.com/jiva-studio/numen/modules/libs/core/chunking"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // derived is the shelf this installation keeps its own files on inside a vault:
@@ -53,6 +57,40 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 				return cli.Links{}, err
 			}
 			return cli.Links{Show: note.NewShowLinks(db.NoteQueries()), Close: db.Close}, nil
+		},
+
+		Scan: func(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
+			db, err := index.Open(ctx, where.Index)
+			if err != nil {
+				return cli.Scan{}, err
+			}
+			readers := filesystem.VaultReaders{Options: options}
+			store, err := derived(options).Open(v)
+			if err != nil {
+				_ = db.Close()
+				return cli.Scan{}, err
+			}
+
+			notes := vaults.NewScan(readers, db.Vaults(),
+				db.Notes().Cut(chunking.Sizes{}, chunking.Legibility{}),
+				db.NoteQueries(), db.Maintenance())
+			notes.RebuildIndex = rebuild
+
+			books := source.NewExtract(readers, db.Sources(), db.Sources())
+			books.Derived, books.Documents, books.RebuildIndex = store, pdf.Documents{}, rebuild
+
+			// No vectors: a test reaches no model, and a vault answers by its
+			// words alone.
+			vectors := source.NewEmbed(readers, db.Sources(), db.Sources())
+			vectors.Derived, vectors.Documents = store, pdf.Documents{}
+
+			return cli.Scan{
+				Read: vaults.NewReadWholeVault(notes, books, vectors),
+				Summary: func(ctx context.Context) (domain.VaultSummary, error) {
+					return db.NoteQueries().Summary(ctx, v.ID)
+				},
+				Close: db.Close,
+			}, nil
 		},
 
 		// No embedder: a test reaches no model, so a question is answered by its
