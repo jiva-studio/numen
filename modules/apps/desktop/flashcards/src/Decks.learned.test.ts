@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import Decks from './Decks.vue'
 import { learned } from './scheduling'
 import type { DeckCardsDue, VaultCardsDue } from './core'
-import type { Closes, Preset, Settings } from './scheduling'
+import type { BudgetKeys, Preset, Settings } from './scheduling'
 
 const settings: Settings = {
   goal: 'minutes',
@@ -19,7 +19,7 @@ const settings: Settings = {
 }
 
 /** What closes the day of the fixture, which is steered by its minutes. */
-const closes: Closes = { new: '', reviews: '', minutes: 'minutes_a_day' }
+const closes: BudgetKeys ={ new: '', reviews: '', minutes: 'minutes_a_day' }
 
 const preset = (said: Partial<Preset> = {}): Preset => ({
   path: 'Sanskrit.md',

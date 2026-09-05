@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 
 import { reading } from './reading'
-import type { Around, Neighbour } from './reading/core'
+import type { DeckNeighbourhood, Neighbour } from './reading/core'
 
 /** One note as the window hands it over. */
 const joined = (more: Partial<Neighbour> = {}): Neighbour => ({
@@ -33,7 +33,7 @@ const panel = (more: { deck?: string; refuses?: boolean } = {}) => {
     around: async (vault, of) => {
       asked.push({ vault, deck: of })
       if (more.refuses) throw new Error('out of reach')
-      return { notes: [joined({ written: of })], unread: 2 } satisfies Around
+      return { notes: [joined({ written: of })], unread: 2 } satisfies DeckNeighbourhood
     },
     says: (one) => said.push(one),
   })

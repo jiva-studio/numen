@@ -8,11 +8,11 @@ import { ref } from 'vue'
 import type { HeatmapTally } from '@numen/ui'
 
 /** What the application answers about a vault's days. */
-export interface Asks {
-  listReviewDays(said: { vault: string }): Promise<Said>
+export interface ReviewDaysClient {
+  listReviewDays(said: { vault: string }): Promise<ReviewDays>
 }
 
-export interface Said {
+export interface ReviewDays {
   days: readonly Day[]
   due: readonly { day: string; answered: number }[]
   streak: number
@@ -32,12 +32,12 @@ export interface Day {
   recalled: number
 }
 
-export interface Reviewing {
-  cards: Asks
+export interface ReviewDaysDeps {
+  cards: ReviewDaysClient
   failed(why: unknown): void
 }
 
-export function reviewed(deps: Reviewing) {
+export function reviewed(deps: ReviewDaysDeps) {
   /** How much was answered on each day, by the day it was answered on. */
   const days = ref<ReadonlyMap<string, HeatmapTally>>(new Map())
   /** How much falls on each day still to come, by the day it falls on. */

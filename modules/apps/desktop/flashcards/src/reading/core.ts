@@ -29,14 +29,14 @@ export interface Neighbour {
 }
 
 /** What one deck stands among. */
-export interface Around {
+export interface DeckNeighbourhood {
   readonly notes: readonly Neighbour[]
   /** How many at the end came named and not read. */
   readonly unread: number
 }
 
 /** The notes one deck is joined to, in the order they are read. */
-export const around = async (vault: string, deck: string): Promise<Around> => {
+export const around = async (vault: string, deck: string): Promise<DeckNeighbourhood> => {
   const answer = await cards.getDeckNeighbourhood({ vault, deck })
   return {
     notes: answer.notes.map((one) => ({

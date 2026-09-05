@@ -33,7 +33,7 @@ import { asking } from './asking'
 import { reading } from './reading'
 import { around } from './reading/core'
 import { core as agent } from './agent/core'
-import type { Said, VaultCardsDue } from './core'
+import type { Grade, VaultCardsDue } from './core'
 import type { Report } from './session'
 
 /** Which of the three screens the window is on. */
@@ -197,7 +197,7 @@ const vaultsAgain = async () => {
  * The card answered. The conversation the panel was holding is over with the
  * card it was about.
  */
-const answered = async (how: Said) => {
+const answered = async (how: Grade) => {
   panel.ends()
   await sat.answer(how)
 }

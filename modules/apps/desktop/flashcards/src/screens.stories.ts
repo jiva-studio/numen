@@ -10,8 +10,8 @@ import type { HeatmapTally } from '@numen/ui'
 import { h, type VNode } from 'vue'
 import Decks from './Decks.vue'
 import Session from './Session.vue'
-import type { Closes, Preset, Settings } from './scheduling'
-import type { Asked, DeckCardsDue, VaultCardsDue } from './core'
+import type { BudgetKeys, Preset, Settings } from './scheduling'
+import type { CardFace, DeckCardsDue, VaultCardsDue } from './core'
 
 /** A day as the grid of weeks writes one. */
 const dayOf = (at: Date): string =>
@@ -76,8 +76,8 @@ const DUE = new Map<string, number>(
 )
 
 /** The budget that closes a day, in the words a preset writes the key in. */
-const BY_MINUTES: Closes = { new: '', reviews: '', minutes: 'minutes_a_day' }
-const BY_CARDS: Closes = { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' }
+const BY_MINUTES: BudgetKeys ={ new: '', reviews: '', minutes: 'minutes_a_day' }
+const BY_CARDS: BudgetKeys ={ new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' }
 
 const settings = (over: Partial<Settings> = {}): Settings => ({
   goal: 'minutes',
@@ -202,7 +202,7 @@ const BY_DECK = new Map<string, Preset>(
 )
 
 /** One card face, as the sitting puts it. */
-const CARD: Asked = {
+const CARD: CardFace = {
   deck: 'Sanskrit/Roots.md',
   section: 'Verbs of going',
   card: 'k7m2xq9fzp',

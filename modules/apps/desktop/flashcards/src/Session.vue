@@ -10,12 +10,12 @@ import { Button, KeyCap, keyChord } from '@numen/ui'
 import Beside from './Beside.vue'
 import type { Where } from './Beside.vue'
 import Card from './Card.vue'
-import { ahead, called, deckName, said } from './core'
+import { ahead, called, deckName, grades } from './core'
 import { ASKS, READS } from './keying'
-import type { Asked, Said } from './core'
+import type { CardFace, Grade } from './core'
 
 defineProps<{
-  card: Asked
+  card: CardFace
   /** Whether the answer is showing. */
   shown: boolean
   /** How many cards are left to ask, this one among them. */
@@ -31,7 +31,7 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
 
 defineEmits<{
   (event: 'show'): void
-  (event: 'answer', how: Said): void
+  (event: 'answer', how: Grade): void
   (event: 'takeBack'): void
   (event: 'leave'): void
   (event: 'ask'): void
@@ -94,7 +94,7 @@ defineEmits<{
            reads the words either way. -->
       <template v-if="shown">
         <Button
-          v-for="(how, i) in said"
+          v-for="(how, i) in grades"
           :key="how"
           variant="outline"
           class="session__answer"

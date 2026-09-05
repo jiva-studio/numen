@@ -8,10 +8,10 @@ import Asking from './Asking.vue'
 import { asking } from './asking'
 import type { Held } from './asking'
 import { WORDS as words } from './agent/words'
-import type { Asked } from './core'
+import type { CardFace } from './core'
 
 /** A card as the sitting hands one over. */
-const card: Asked = {
+const card: CardFace = {
   deck: 'decks/Words.md',
   section: '',
   card: '3f4g5h6j7k',

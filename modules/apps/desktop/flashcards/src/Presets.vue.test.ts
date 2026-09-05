@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
 import Presets from './Presets.vue'
-import type { Closes, Preset, Settings } from './scheduling'
+import type { BudgetKeys, Preset, Settings } from './scheduling'
 
 const settings = (said: Partial<Settings> = {}): Settings => ({
   goal: 'minutes',
@@ -18,7 +18,7 @@ const settings = (said: Partial<Settings> = {}): Settings => ({
 })
 
 /** What closes the day of the fixture, which is steered by its minutes. */
-const closes: Closes = { new: '', reviews: '', minutes: 'minutes_a_day' }
+const closes: BudgetKeys ={ new: '', reviews: '', minutes: 'minutes_a_day' }
 
 const preset = (said: Partial<Preset> = {}): Preset => ({
   path: 'Sanskrit.md',

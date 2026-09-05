@@ -10,7 +10,7 @@ import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
 
 import { rated } from './core'
-import type { Ahead, Asked, Said } from './core'
+import type { CardFace, Grade, Intervals } from './core'
 
 /** What a sitting asks of the application, and no more of it than that. */
 export interface Asking {
@@ -57,19 +57,19 @@ export interface Report {
 }
 
 /** What a sitting is built over: the application, and what it says went wrong. */
-export interface Sits {
+export interface SessionDeps {
   cards: Asking
   failed(why: unknown): void
   /** When it is, in milliseconds. How long a card stood there is measured with it. */
   now?(): number
 }
 
-export function session(deps: Sits) {
+export function session(deps: SessionDeps) {
   const now = deps.now ?? (() => Date.now())
 
   const vault = ref('')
   const run = ref('')
-  const asked = ref<readonly Asked[]>([])
+  const asked = ref<readonly CardFace[]>([])
   const at = ref(0)
   const shown = ref(false)
   const answers = ref<string[]>([])
@@ -85,7 +85,7 @@ export function session(deps: Sits) {
   /** When the card now in front of the person was put there. */
   let put = now()
 
-  const card = computed<Asked | null>(() => asked.value[at.value] ?? null)
+  const card = computed<CardFace | null>(() => asked.value[at.value] ?? null)
   const left = computed(() => asked.value.length - at.value)
   const over = computed(() => card.value === null)
 
@@ -147,7 +147,7 @@ export function session(deps: Sits) {
    * leaves the card where it was: what a person said is theirs, and a card
    * moved past with nothing recorded is an answer lost.
    */
-  const answer = async (how: Said) => {
+  const answer = async (how: Grade) => {
     const one = card.value
     if (!one || !shown.value || writing.value) return
     const took = now() - put
@@ -216,7 +216,7 @@ export function session(deps: Sits) {
 }
 
 /** One card as the window holds it: the seconds come across as numbers. */
-const asking = (one: Opened['asked'][number]): Asked => ({
+const asking = (one: Opened['asked'][number]): CardFace => ({
   deck: one.deck,
   section: one.section,
   card: one.card,
@@ -231,6 +231,6 @@ const asking = (one: Opened['asked'][number]): Asked => ({
         hard: Number(one.ahead.hard),
         good: Number(one.ahead.good),
         easy: Number(one.ahead.easy),
-      } satisfies Ahead)
+      } satisfies Intervals)
     : null,
 })

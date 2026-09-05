@@ -3,10 +3,10 @@ import { ref } from 'vue'
 import type { AgentPort, AgentStep } from '@numen/ui'
 
 import { asking } from './asking'
-import type { Asked } from './core'
+import type { CardFace } from './core'
 
 /** A card as the sitting hands one over. */
-const card = (more: Partial<Asked> = {}): Asked => ({
+const card = (more: Partial<CardFace> = {}): CardFace => ({
   deck: 'decks/Words.md',
   section: '',
   card: '3f4g5h6j7k',
@@ -41,14 +41,14 @@ const answers = (says: AgentStep[] = [{ kind: 'said', text: 'Because of the leav
  * test holds it the way the window does.
  */
 const panel = (
-  more: { card?: Asked | null; unreachable?: string; showing?: 'reading' | 'here' | 'asking' } = {},
+  more: { card?: CardFace | null; unreachable?: string; showing?: 'reading' | 'here' | 'asking' } = {},
 ) => {
   const { agent, asked, over } = answers()
-  const on = ref<Asked | null>(more.card === undefined ? card() : more.card)
+  const on = ref<CardFace | null>(more.card === undefined ? card() : more.card)
   const showing = ref<'reading' | 'here' | 'asking'>(more.showing ?? 'here')
   const said: string[] = []
   /** The cards a port was asked for, one to a conversation. */
-  const about: Asked[] = []
+  const about: CardFace[] = []
   const held = asking({
     agent: (one) => {
       about.push(one)

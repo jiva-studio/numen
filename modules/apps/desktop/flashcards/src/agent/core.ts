@@ -9,7 +9,7 @@ import { AgentService } from '@numen/protocol'
 import { agentPort } from '@numen/wire'
 
 import { transport } from '../transport'
-import type { Asked } from '../core'
+import type { CardFace } from '../core'
 
 const service = createClient(AgentService, transport)
 
@@ -21,7 +21,7 @@ const service = createClient(AgentService, transport)
  * read as instruction; `card_showing` gives the agent the same name as a tool's
  * answer, which is data.
  */
-export const core = (card: Asked) =>
+export const core = (card: CardFace) =>
   agentPort({
     askAgent: (request, options) =>
       service.askAgent({ ...request, card: card.card, face: card.face }, options),

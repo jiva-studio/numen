@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
 
 import { counting } from './counting'
-import type { Counted, Counts, Vaulted } from './counting'
+import type { CardsDueClient, Counted, Vaulted } from './counting'
 
 const vault = (id: string, said: Partial<Vaulted> = {}): Vaulted => ({
   name: id,
@@ -74,7 +74,7 @@ const feeding = () => {
   }
 
   return {
-    cards: { watchCardsDue } satisfies Counts,
+    cards: { watchCardsDue } satisfies CardsDueClient,
     says(one: Counted) {
       held.push(one)
       wake?.()
@@ -195,7 +195,7 @@ describe('counting what every vault owes', () => {
   it('runs one count however many ask for it at once', async () => {
     let asked = 0
     const front = feeding()
-    const cards: Counts = {
+    const cards: CardsDueClient = {
       watchCardsDue(said, how) {
         asked += 1
         return front.cards.watchCardsDue(said, how)
@@ -222,7 +222,7 @@ describe('counting what every vault owes', () => {
   it('counts again when asked after it has worked a row out', async () => {
     let asked = 0
     const front = feeding()
-    const cards: Counts = {
+    const cards: CardsDueClient = {
       watchCardsDue(said, how) {
         asked += 1
         return front.cards.watchCardsDue(said, how)
@@ -268,7 +268,7 @@ describe('counting what every vault owes', () => {
 
   it('says what went wrong and stops counting', async () => {
     const trouble: unknown[] = []
-    const cards: Counts = {
+    const cards: CardsDueClient = {
       watchCardsDue: async function* (): AsyncGenerator<Counted> {
         throw new Error('no registry')
       },

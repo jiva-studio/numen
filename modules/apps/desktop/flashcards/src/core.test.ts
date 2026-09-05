@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { Rating } from '@numen/protocol'
 
-import { ahead, called, deckName, rated, said } from './core'
+import { ahead, called, deckName, grades, rated } from './core'
 
 describe('how long a card is away for', () => {
   it('is read at the coarsest a person reads it by', () => {
@@ -37,7 +37,7 @@ describe('the name of a deck', () => {
 
 describe('the four answers', () => {
   it('are asked in the order they get harder to say', () => {
-    expect(said).toEqual(['again', 'hard', 'good', 'easy'])
+    expect(grades).toEqual(['again', 'hard', 'good', 'easy'])
   })
 
   // What is written down is what the person pressed. Nothing downstream can

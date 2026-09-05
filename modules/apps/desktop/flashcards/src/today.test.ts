@@ -8,9 +8,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Goal, StopReason } from '@numen/protocol'
 
 import { counting } from './counting'
-import type { Counts } from './counting'
+import type { CardsDueClient } from './counting'
 import { named, scheduling } from './scheduling'
-import type { Asks, SettingsMessage } from './scheduling'
+import type { PresetsClient, SettingsMessage } from './scheduling'
 import type { VaultCardsDue } from './core'
 
 const dated = (day: string): SettingsMessage => ({
@@ -38,7 +38,7 @@ const vault: VaultCardsDue = {
   reading: false,
 }
 
-const answering = (settings: SettingsMessage): Asks => ({
+const answering = (settings: SettingsMessage): PresetsClient => ({
   async getVaultDeckPreset() {
     return {
       preset: {
@@ -58,7 +58,7 @@ afterEach(() => {
 
 describe('the day a goal is weighed against', () => {
   it('is the one the application counted', async () => {
-    const cards: Counts = {
+    const cards: CardsDueClient = {
       async *watchCardsDue() {
         yield { day: '2026-09-04', vaults: [] }
       },
@@ -77,7 +77,7 @@ describe('the day a goal is weighed against', () => {
     vi.setSystemTime(new Date(2026, 8, 5, 1, 0, 0))
     expect(named(new Date())).toBe('2026-09-05')
 
-    const cards: Counts = {
+    const cards: CardsDueClient = {
       async *watchCardsDue() {
         yield { day: '2026-09-04', vaults: [] }
       },

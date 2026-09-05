@@ -14,18 +14,18 @@ import { conversation } from '@numen/ui'
 import type { AgentPort, Conversation, Turn } from '@numen/ui'
 
 import { WORDS as words } from './agent/words'
-import type { Asked } from './core'
+import type { CardFace } from './core'
 
 /** What the panel asks of the window it is drawn in. */
-export interface Talking {
+export interface AgentPanelDeps {
   /**
    * What answers a question about a card, asked for the card it is about. The
    * card travels beside every question of that conversation and never inside
    * one, so the agent reads its name as a tool's answer.
    */
-  readonly agent: (card: Asked) => AgentPort
+  readonly agent: (card: CardFace) => AgentPort
   /** The card in front of the person, and nothing between cards. */
-  readonly card: () => Asked | null
+  readonly card: () => CardFace | null
   /** Why nothing can be asked here, empty while something can. */
   readonly unreachable: () => string
   /** Whether the panel is what the window is showing. */
@@ -41,14 +41,14 @@ export interface Talking {
   readonly paint?: (draw: () => void) => void
 }
 
-export function asking(deps: Talking) {
+export function asking(deps: AgentPanelDeps) {
   /** Whether the panel is what the window is showing, which the window holds. */
   const open = computed(() => deps.open())
 
   const written = ref('')
 
   /** The card the open conversation is about, and nothing while none is. */
-  const about = shallowRef<Asked | null>(null)
+  const about = shallowRef<CardFace | null>(null)
 
   /** The talk itself, made when a card is first asked about. */
   const talk = shallowRef<Conversation | null>(null)
@@ -60,7 +60,7 @@ export function asking(deps: Talking) {
   const working = computed(() => talk.value?.working.value ?? false)
 
   /** The talk about one card, made once and let go of with the card. */
-  const talking = (card: Asked) => {
+  const talking = (card: CardFace) => {
     if (talk.value && about.value?.card === card.card && about.value?.face === card.face) return
     ends()
     about.value = card

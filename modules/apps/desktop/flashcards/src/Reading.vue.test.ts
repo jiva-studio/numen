@@ -6,7 +6,7 @@ import { nextTick, ref } from 'vue'
 import Reading from './Reading.vue'
 import { reading } from './reading'
 import { WORDS as words } from './reading/words'
-import type { Around, Neighbour } from './reading/core'
+import type { DeckNeighbourhood, Neighbour } from './reading/core'
 import type { Read } from './reading'
 
 /** One note as the window hands it over. */
@@ -23,7 +23,7 @@ const joined = (more: Partial<Neighbour> = {}): Neighbour => ({
 })
 
 /** The panel over one deck, with the sitting around it standing in for it. */
-const held = (around: Around): Read => {
+const held = (around: DeckNeighbourhood): Read => {
   const open = ref(false)
   return reading({
     open: () => open.value,
@@ -38,7 +38,7 @@ const held = (around: Around): Read => {
 }
 
 /** The panel, opened and drawn. */
-const shown = async (around: Around) => {
+const shown = async (around: DeckNeighbourhood) => {
   const panel = held(around)
   await panel.opens()
   return mount(Reading, { props: { held: panel } })

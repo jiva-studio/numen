@@ -14,7 +14,14 @@ import {
   stoppedWords,
   through,
 } from './scheduling'
-import type { Asks, Budget, Closes, Preset, Settings, SettingsMessage } from './scheduling'
+import type {
+  Budget,
+  BudgetKeys,
+  Preset,
+  PresetsClient,
+  Settings,
+  SettingsMessage,
+} from './scheduling'
 import type { Goal, PresetCardsDue, VaultCardsDue } from './core'
 
 const settings = (said: Partial<Settings> = {}): Settings => ({
@@ -47,10 +54,10 @@ const budget = (said: Partial<Budget> = {}): Budget => ({
 })
 
 /** A preset steered by how long its day runs, which is the ordinary one. */
-const byMinutes: Closes = { new: '', reviews: '', minutes: 'minutes_a_day' }
+const byMinutes: BudgetKeys ={ new: '', reviews: '', minutes: 'minutes_a_day' }
 
 /** One steered by what it asks of memory, where the counts are what close it. */
-const byCounts: Closes = { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' }
+const byCounts: BudgetKeys ={ new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' }
 
 const preset = (said: Partial<Preset> = {}): Preset => ({
   path: 'Sanskrit.md',
@@ -117,7 +124,7 @@ const vault = (
 /** An application answering one preset for each deck named here. */
 const answering = (
   by: Record<string, { path: string; title: string; settings: Settings; stopsOn?: StopReason }>,
-): Asks => ({
+): PresetsClient => ({
   async getVaultDeckPreset({ deck }) {
     const one = by[deck]
     if (!one) return {}

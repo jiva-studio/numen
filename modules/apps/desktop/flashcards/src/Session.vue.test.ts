@@ -5,11 +5,11 @@ import { describe, expect, it } from 'vitest'
 
 import Session from './Session.vue'
 import type { Where } from './Beside.vue'
-import { said } from './core'
-import type { Asked } from './core'
+import { grades } from './core'
+import type { CardFace } from './core'
 
 /** A card as the application hands it over. */
-const card: Asked = {
+const card: CardFace = {
   deck: 'decks/Words.md',
   section: '',
   card: '3f4g5h6j7k',
@@ -91,7 +91,7 @@ describe('a sitting with the panel up', () => {
   it('still draws the four answers, and still says which was pressed', async () => {
     const one = sitting({ at: 'after' })
     const answers = one.findAll('.session__answer')
-    expect(answers).toHaveLength(said.length)
+    expect(answers).toHaveLength(grades.length)
 
     await answers[0]?.trigger('click')
     expect(one.emitted('answer')).toEqual([['again']])

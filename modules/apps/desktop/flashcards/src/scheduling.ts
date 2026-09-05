@@ -12,12 +12,12 @@ import type { Goal as Goals, Refusal } from '@numen/protocol'
 import { deckName, goalOf } from './core'
 import type { DeckCardsDue, Goal } from './core'
 import { said } from './reading/core'
-import type { Closes, VaultCardsDue } from './core'
+import type { BudgetKeys, VaultCardsDue } from './core'
 
-export type { Closes }
+export type { BudgetKeys }
 
 /** A budget taking no part in the day, which nothing is weighed against. */
-export const CLOSES_NOTHING: Closes = { new: '', reviews: '', minutes: '' }
+export const CLOSES_NOTHING: BudgetKeys = { new: '', reviews: '', minutes: '' }
 
 /** How the decks pointing at one preset are scheduled. */
 export interface Settings {
@@ -52,7 +52,7 @@ export interface Budget {
  * names the vault it is about, the same way an answer names the one it is
  * written to.
  */
-export interface Asks {
+export interface PresetsClient {
   getVaultDeckPreset(said: { vault: string; deck: string }): Promise<{
     preset?:
       | {
@@ -89,7 +89,7 @@ export interface Preset {
   /** What the day holds under it, which is what today is weighed against. */
   readonly budget: Budget
   /** Which key each of those budgets closes on, and empty where it closes none. */
-  readonly closes: Closes
+  readonly closes: BudgetKeys
   /**
    * Cards answered under it since the day opened, and the minutes they took.
    * The two beside the total divide it the way a budget does, so each is
@@ -109,11 +109,11 @@ export interface Preset {
   readonly wrong: string
 }
 
-export interface Scheduling {
-  presets: Asks
+export interface SchedulingDeps {
+  presets: PresetsClient
 }
 
-export function scheduling(deps: Scheduling) {
+export function scheduling(deps: SchedulingDeps) {
   const presets = ref<readonly Preset[]>([])
 
   /** Which vault the presets on hand belong to. */
@@ -184,7 +184,11 @@ interface Answered {
 const UNREAD = 'the settings of this preset could not be read'
 
 /** The preset one deck is scheduled by, or why it could not be read. */
-const scheduled = async (presets: Asks, vault: string, deck: string): Promise<Answered> => {
+const scheduled = async (
+  presets: PresetsClient,
+  vault: string,
+  deck: string,
+): Promise<Answered> => {
   try {
     const answer = await presets.getVaultDeckPreset({ vault, deck })
     const settings = answer.preset?.settings

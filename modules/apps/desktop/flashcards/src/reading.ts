@@ -13,10 +13,10 @@
 import { ref, shallowRef } from 'vue'
 
 import { WORDS as words } from './reading/words'
-import type { Around, Neighbour } from './reading/core'
+import type { DeckNeighbourhood, Neighbour } from './reading/core'
 
 /** What the panel asks of the window it is drawn in. */
-export interface Beside {
+export interface ReadingPanelDeps {
   /** Whether the panel is what the window is showing. */
   readonly open: () => boolean
   /**
@@ -29,12 +29,12 @@ export interface Beside {
   /** The deck the card in front of the person stands in, empty between cards. */
   readonly deck: () => string
   /** What the deck is joined to. */
-  readonly around: (vault: string, deck: string) => Promise<Around>
+  readonly around: (vault: string, deck: string) => Promise<DeckNeighbourhood>
   /** Where the window says what a person has to know. */
   readonly says: (said: string) => void
 }
 
-export function reading(deps: Beside) {
+export function reading(deps: ReadingPanelDeps) {
   const notes = shallowRef<readonly Neighbour[]>([])
 
   /** How many at the end came named and not read. */

@@ -15,7 +15,7 @@ import type { StopReason } from '@numen/protocol'
 import type { VaultCardsDue } from './core'
 
 /** What the front door of the application answers. */
-export interface Counts {
+export interface CardsDueClient {
   watchCardsDue(said: Record<string, never>, how?: { signal?: AbortSignal }): AsyncIterable<Counted>
 }
 
@@ -71,12 +71,12 @@ export interface Counted {
 /** A length of time as the application holds one, which is in minutes. */
 const minutes = (ms: bigint): number => Number(ms) / 60000
 
-export interface Counting {
-  cards: Counts
+export interface CountingDeps {
+  cards: CardsDueClient
   failed(why: unknown): void
 }
 
-export function counting(deps: Counting) {
+export function counting(deps: CountingDeps) {
   const vaults = ref<readonly VaultCardsDue[]>([])
   const counting = ref(true)
 

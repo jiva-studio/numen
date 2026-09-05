@@ -21,13 +21,13 @@ export const itself = createClient(WindowService, transport)
 export const WINDOW = 'review'
 
 /** How well a card came back. A person says which of the four. */
-export type Said = 'again' | 'hard' | 'good' | 'easy'
+export type Grade = 'again' | 'hard' | 'good' | 'easy'
 
 /** The four, in the order they are offered and answered by number. */
-export const said: readonly Said[] = ['again', 'hard', 'good', 'easy']
+export const grades: readonly Grade[] = ['again', 'hard', 'good', 'easy']
 
 /** What each of them is called on the button that says it. */
-export const called: Readonly<Record<Said, string>> = {
+export const called: Readonly<Record<Grade, string>> = {
   again: 'Again',
   hard: 'Hard',
   good: 'Good',
@@ -35,7 +35,7 @@ export const called: Readonly<Record<Said, string>> = {
 }
 
 /** What the schema calls each of them. */
-export const rated: Readonly<Record<Said, Rating>> = {
+export const rated: Readonly<Record<Grade, Rating>> = {
   again: Rating.AGAIN,
   hard: Rating.HARD,
   good: Rating.GOOD,
@@ -105,7 +105,7 @@ export interface PresetCardsDue {
   readonly reviews: number
   readonly minutes: number
   /** Which key each budget closes the day on, and empty where it closes none. */
-  readonly closes: Closes
+  readonly closes: BudgetKeys
   /**
    * Why it schedules nothing on this day, as the core says it. A preset no deck
    * points at is answered here and nowhere else.
@@ -117,7 +117,7 @@ export interface PresetCardsDue {
  * The key each of the three budgets closes the day on, as the preset writes it.
  * An empty one is a budget taking no part, and nothing is weighed against it.
  */
-export interface Closes {
+export interface BudgetKeys {
   readonly new: string
   readonly reviews: string
   readonly minutes: string
@@ -148,7 +148,7 @@ export interface VaultCardsDue {
 }
 
 /** One card face as it is put to a person. */
-export interface Asked {
+export interface CardFace {
   readonly deck: string
   readonly section: string
   readonly card: string
@@ -159,14 +159,14 @@ export interface Asked {
   readonly back: string
   readonly seen: boolean
   /** Where each of the four would leave it. */
-  readonly ahead: Ahead | null
+  readonly ahead: Intervals | null
 }
 
 /**
  * How long each of the four would leave the card, in seconds from when it was
  * asked. A person choosing between the four is choosing between these.
  */
-export type Ahead = Readonly<Record<Said, number>>
+export type Intervals = Readonly<Record<Grade, number>>
 
 /**
  * A length of time, at the coarsest a person reads it by: minutes inside an
