@@ -34,7 +34,7 @@ type DerivedStore interface {
 	Write(ctx context.Context, name string, content []byte) error
 
 	// Append adds to what is under a name, creating it when there is nothing.
-	// A recognition is written as it is read, over an hour, and reading a
+	// A reading is written as it is read, over an hour, and reading a
 	// growing file back in order to rewrite it costs the square of its pages.
 	Append(ctx context.Context, name string, content []byte) error
 

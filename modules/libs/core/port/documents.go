@@ -17,7 +17,7 @@ import (
 type TextExtractor interface {
 	// Read is the whole of what a document says, the parts it names, and where
 	// each of its pages begins in that text.
-	Read(ctx context.Context, raw []byte) (Reading, error)
+	Read(ctx context.Context, raw []byte) (TextLayer, error)
 
 	// Highlights is where the words of the pages named sit, as fractions of the
 	// page, one box a word. Starts is where each page begins, as Read answered,
@@ -34,8 +34,10 @@ type PageRenderer interface {
 	Draw(ctx context.Context, raw []byte) (OpenDocument, error)
 }
 
-// A Reading is one document, read.
-type Reading struct {
+// A TextLayer is the text a document carries of its own, taken out. It is
+// deterministic and stored nowhere, and what a model reads off the same pages
+// is a reading and an artifact instead.
+type TextLayer struct {
 	// Text is every page's text in the order the document is paginated, as one
 	// stream. Every offset below is an offset into it.
 	Text string

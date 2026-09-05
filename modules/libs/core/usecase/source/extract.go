@@ -28,12 +28,12 @@ type Extract struct {
 	Known   port.SourceQueries
 
 	// Derived is optional. It holds what a recogniser wrote; without one, a
-	// source is read from its own bytes and a recognition is not looked for.
+	// source is read from its own bytes and a reading is not looked for.
 	Derived port.DerivedStore
 	// Documents is optional. It reads a format that needs a library; without
 	// one, a source in that format is unreadable.
 	Documents port.TextExtractor
-	// Area is the producer a recognition is kept under. Empty means the default.
+	// Area is the producer a reading is kept under. Empty means the default.
 	Area string
 
 	// Kinds are the sorts of source this cuts. Empty means the books and the
@@ -290,8 +290,8 @@ func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.Vaul
 	return nil
 }
 
-// holds says the store has something under one of these names. A recognition
-// still running is the text of the pages it has read.
+// holds says the store has something under one of these names. A reading
+// still being written is the text of the pages read so far.
 func (u Extract) holds(ctx context.Context, names ...string) bool {
 	for _, name := range names {
 		if _, err := u.Derived.Read(ctx, name); !errors.Is(err, fs.ErrNotExist) {
@@ -367,9 +367,9 @@ func (u Extract) One(ctx context.Context, v domain.Vault, path string) (ExtractR
 
 // source takes the text out of one book and writes the chunks it was cut into.
 //
-// A file that will not parse is counted and the run goes on. Extraction never
-// refuses: no structure is an ordinary outcome, and one bad book must not stop a
-// library.
+// A file that will not parse is counted and the run goes on: no structure is an
+// ordinary outcome, and one bad book must not stop a library. A vault out of
+// reach, or an index that will not take the chunks, stops it.
 //
 // The file is stated before it is read, so a file that changes while it is being
 // read keeps the older fingerprint and is asked for again.
@@ -504,27 +504,9 @@ func recipes(s chunking.Sizes) []string {
 	return out
 }
 
-// sizes fills in what configuration left unset with the defaults the cut applies,
-// so that the recipe names the sizes the text was cut into.
-func (u Extract) sizes() chunking.Sizes {
-	s := u.Sizes
-	if s.Large == 0 {
-		s.Large = chunking.DefaultLarge
-	}
-	if s.Small <= 0 {
-		s.Small = chunking.DefaultSmall
-	}
-	if s.LargeOverlap == 0 {
-		s.LargeOverlap = chunking.DefaultLargeOverlap
-	}
-	if s.SmallOverlap == 0 {
-		s.SmallOverlap = chunking.DefaultSmallOverlap
-	}
-	if s.Limit <= 0 {
-		s.Limit = chunking.DefaultLimit
-	}
-	return s
-}
+// sizes are the sizes the cut works to, which is what the recipe has to name:
+// a recipe describing anything else describes bytes that were never written.
+func (u Extract) sizes() chunking.Sizes { return u.Sizes.Resolved() }
 
 func (u Extract) progress(res ExtractResult) {
 	if u.OnProgress != nil {
@@ -534,9 +516,9 @@ func (u Extract) progress(res ExtractResult) {
 
 // text is what a source says, and which producer made it.
 //
-// A recognition of these bytes stands in for the file's own text layer: it is
+// A reading of these bytes stands in for the file's own text layer: it is
 // what a person asked for, and a document whose layer is unusable is why they
-// asked. A recognition still running is the text of the pages it has read.
+// asked. A reading still being written is the text of the pages read so far.
 // Where there is none, the file speaks for itself and no producer is named.
 func (u Extract) text(ctx context.Context, ref domain.Fingerprint, raw []byte, hash string) (*text.Document, string, error) {
 	if u.Derived != nil {
@@ -560,7 +542,7 @@ func (u Extract) text(ctx context.Context, ref domain.Fingerprint, raw []byte, h
 	return doc, "", err
 }
 
-// area is the producer a recognition is kept under, and the first part of every
+// area is the producer a reading is kept under, and the first part of every
 // name its files carry.
 func (u Extract) area() string {
 	if u.Area == "" {

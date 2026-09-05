@@ -61,7 +61,7 @@ type Recognitions struct {
 	// Runtime is what a page is recognised through.
 	Runtime RecognitionRuntime
 
-	// Proofreading is what a recognition is put right with.
+	// Proofreading is what a reading is put right with.
 	Proofreading ProofreadingConfig
 }
 
@@ -313,42 +313,30 @@ func (r *RecognitionWorker) recognise(ctx context.Context, v domain.Vault, id, p
 	return nil
 }
 
-// proofread puts a recognition right, where a person configured something to
+// proofread puts a reading right, where a person configured something to
 // proofread it with. An installation that named no profile, or asked for a
-// recognition to be put right by hand, does nothing here.
+// reading to be put right by hand, does nothing here.
 //
-// It reports itself under its own name, and a recognition whose proofreading
-// failed is the recognition as it was recognised.
+// It reports itself under its own name, and a reading whose proofreading
+// failed is the reading as it was read.
 func (r *RecognitionWorker) proofread(ctx context.Context, v domain.Vault, path string) {
 	said := r.with.Proofreading
 	if !said.Automatically {
 		return
 	}
 
-	by, err := said.By(proofread.ScanInstruction)
+	right, held, err := said.Reading(r.with.Readers, r.with.Derived)
 	if err != nil {
 		r.say(task.Task{ID: proofreadingID(path), Doing: "Proofreading a reading", About: path, Failed: err.Error()})
 		return
 	}
-	if by == nil {
-		return
-	}
-
-	// A proofreader with a queue is left the pages and answers later, and the
-	// batch is collected by whatever comes back for it.
-	queue, err := said.Queue(proofread.ScanInstruction)
-	if err != nil {
-		r.say(task.Task{ID: proofreadingID(path), Doing: "Proofreading a reading", About: path, Failed: err.Error()})
+	if !held {
 		return
 	}
 
 	id := proofreadingID(path)
 	r.say(task.Task{ID: id, Doing: "Proofreading a reading", About: path})
 
-	right := NewProofreadReading(r.with.Readers, r.with.Derived, by)
-	right.Queue = queue
-	right.Pages = said.Batch
-	right.MaxEditDistance = said.MaxEditDistance
 	right.Cut = r.Cut
 	right.OnProgress = func(res ProofreadReadingResult) {
 		r.say(task.Task{
@@ -433,11 +421,11 @@ func (r *RecognitionWorker) collecting(
 	}
 }
 
-// TakingUp puts right the recognitions of these vaults that stand short of
+// TakingUp puts right the readings of these vaults that stand short of
 // their last page, once, behind the caller.
 //
 // A proofreading stands at the page it reached, so a run that ended among the
-// batches is taken up at that page. A recognition no proofreader has been over
+// batches is taken up at that page. A reading no proofreader has been over
 // stands at its first page and is put right whole. A proofreader with a queue
 // leaves a batch behind it and is taken up by Collecting.
 func (r *RecognitionWorker) TakingUp(
@@ -466,7 +454,7 @@ func (r *RecognitionWorker) TakingUp(
 	}()
 }
 
-// collect takes up every recognition of one vault that stands short of its last
+// collect takes up every reading of one vault that stands short of its last
 // page.
 func (r *RecognitionWorker) collect(
 	ctx context.Context,
@@ -508,11 +496,11 @@ func (r *RecognitionWorker) collect(
 				About: one.Path, Failed: err.Error(),
 			}, false)
 		case res.Busy:
-			// The recognition is held by another run, and that run is the one
+			// The reading is held by another run, and that run is the one
 			// whose progress the list carries.
 		case res.None, res.Read >= res.Pages:
-			// A recognition with nothing left to put right is a recognition
-			// nobody is waiting on.
+			// A reading with nothing left to put right is a run nobody is
+			// waiting on.
 			r.done(id)
 		default:
 			r.says(task.Task{

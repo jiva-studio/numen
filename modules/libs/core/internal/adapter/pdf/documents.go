@@ -15,16 +15,16 @@ type Documents struct{}
 
 // Read is what one document says, with the parts it names and where each of
 // its pages begins.
-func (Documents) Read(ctx context.Context, raw []byte) (out port.Reading, err error) {
+func (Documents) Read(ctx context.Context, raw []byte) (out port.TextLayer, err error) {
 	defer survived("reading a document", &out, &err)
 	if err := ctx.Err(); err != nil {
-		return port.Reading{}, err
+		return port.TextLayer{}, err
 	}
 	book, err := Read(raw)
 	if err != nil {
-		return port.Reading{}, refused(err)
+		return port.TextLayer{}, refused(err)
 	}
-	out = port.Reading{Text: book.Text}
+	out = port.TextLayer{Text: book.Text}
 	for _, p := range book.Parts {
 		out.Parts = append(out.Parts, chunking.PartStart{Title: p.Title, Offset: p.Offset})
 	}

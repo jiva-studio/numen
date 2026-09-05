@@ -418,7 +418,7 @@ func (d *DerivedStore) area(clean string) (string, bool) {
 //
 // The name is joined under the area it names and checked against it with every
 // link on the way resolved. Without that check a name stored here could be a
-// link to a note, and a recognition would be read back as what a person wrote —
+// link to a note, and a reading would be read back as what a person wrote —
 // or would be written over it.
 //
 // The store's folder need not exist: as much of each path as does exist is
