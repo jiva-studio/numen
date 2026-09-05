@@ -74,44 +74,31 @@ func opened(t testing.TB, notes map[string]string) vaulted {
 	}
 
 	logs := filesystem.DerivedStores{Area: filesystem.FlashcardsDir}
-	standings := flashcards.ListCardFaces{
-		Readers: filesystem.VaultReaders{}, Notes: db.NoteQueries(), Links: db.NoteQueries(),
-	}
-	presets := flashcards.Presets{
-		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{},
-		Links: db.NoteQueries(), Notes: db.NoteQueries(),
-		Problems: db.NoteQueries(), Index: scanned, Now: time.Now,
-	}
+	standings := flashcards.NewListCardFaces(
+		filesystem.VaultReaders{}, db.NoteQueries(), db.NoteQueries())
+	presets := flashcards.NewPresets(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{},
+		db.NoteQueries(), db.NoteQueries(), review.Day{}, time.Now)
+	presets.Problems, presets.Index = db.NoteQueries(), scanned
 	// Each card is worked out at the share of the cards its own preset asks
 	// for, which is how the application builds this.
-	schedules := flashcards.Schedules{
-		Logs:      logs,
-		Cache:     appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards")),
-		By:        review.NewFSRS(),
-		Day:       today,
-		CardFaces: standings,
-		Presets:   presets,
-	}
+	schedules := flashcards.NewSchedules(logs, review.NewFSRS(), today, standings, presets)
+	schedules.Cache = appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards"))
+
+	counted := flashcards.NewCountReviews(logs, schedules, today, time.Now)
+	counted.Cache = appstate.SchedulesAt(filepath.Join(t.TempDir(), "days"))
 
 	return vaulted{
 		vault:     v,
 		standings: standings,
 		presets:   presets,
-		marking: flashcards.Marking{
-			Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{},
-			Notes: db.NoteQueries(), Links: db.NoteQueries(),
-			Index: scanned, Now: time.Now,
-		},
-		kept: schedules,
-		counted: flashcards.CountReviews{
-			Logs:      logs,
-			Cache:     appstate.SchedulesAt(filepath.Join(t.TempDir(), "days")),
-			Schedules: schedules,
-			Day:       today,
-			Now:       time.Now,
-		},
-		logs: logs,
-		scan: scanned,
+		marking: flashcards.NewMarking(
+			filesystem.VaultReaders{}, filesystem.VaultWriters{},
+			db.NoteQueries(), db.NoteQueries(), scanned, time.Now),
+		kept:    schedules,
+		counted: counted,
+		logs:    logs,
+		scan:    scanned,
 	}
 }
 
@@ -181,11 +168,13 @@ func (s vaulted) owedAt(day review.Day, now func() time.Time) flashcards.CountCa
 	}
 }
 
+// session is a sitting whose presets read nothing, so every deck of the vault
+// is scheduled by the defaults.
 func (s vaulted) session(day review.Day) flashcards.Session {
-	return flashcards.Session{
-		Marking: s.marking, CardFaces: s.standings, Schedules: s.kept,
-		Presets: flashcards.Presets{Now: time.Now}, Day: day, Now: time.Now,
-	}
+	return flashcards.NewSession(
+		s.marking, s.standings, s.kept,
+		flashcards.NewPresets(nil, nil, nil, nil, day, time.Now), day, time.Now,
+	)
 }
 
 // today is the day a session is counted in, on this machine.

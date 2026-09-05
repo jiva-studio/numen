@@ -376,7 +376,8 @@ func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 	}
 
 	blind := s.counted
-	blind.Schedules = flashcards.Schedules{Logs: s.logs}
+	blind.Schedules = flashcards.NewSchedules(
+		s.logs, nil, today, flashcards.ListCardFaces{}, flashcards.Presets{})
 
 	got, err := blind.Execute(t.Context(), s.vault)
 	if err != nil {

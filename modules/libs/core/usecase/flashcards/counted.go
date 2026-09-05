@@ -72,6 +72,18 @@ type CountReviews struct {
 	Now       port.Clock
 }
 
+// NewCountReviews is what a vault's days are counted through: where its answers
+// are kept, where those answers have left each card face, where one day of
+// review gives way to the next, and what time it is.
+//
+// All four are named here because a counting short of any one of them draws a
+// person a year of their own reviewing with days missing from it.
+func NewCountReviews(
+	logs port.DerivedStores, schedules Schedules, day review.Day, now port.Clock,
+) CountReviews {
+	return CountReviews{Logs: logs, Schedules: schedules, Day: day, Now: now}
+}
+
 // Execute counts one vault.
 func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts, error) {
 	log := Log{Stores: u.Logs}

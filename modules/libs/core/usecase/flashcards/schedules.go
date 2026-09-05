@@ -75,6 +75,24 @@ type Schedules struct {
 	At func(retention float64) review.Scheduler
 }
 
+// NewSchedules is what a vault's cards are placed through: where its answers
+// are kept, the scheduler that places a card, where one day of review gives way
+// to the next, and the card faces and presets that say which share of the cards
+// each card is worked out at.
+//
+// All five are named here because a schedule short of any one of them is a card
+// placed on the wrong day or on no day at all, and the count of what a person
+// owes is read straight off it.
+func NewSchedules(
+	logs port.DerivedStores,
+	by review.Scheduler,
+	day review.Day,
+	faces ListCardFaces,
+	presets Presets,
+) Schedules {
+	return Schedules{Logs: logs, By: by, Day: day, CardFaces: faces, Presets: presets}
+}
+
 // assignment is which scheduler each card face is worked out by, and what that
 // assignment comes to.
 //

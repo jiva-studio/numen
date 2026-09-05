@@ -32,6 +32,28 @@ type Marking struct {
 	Now port.Clock
 }
 
+// NewMarking is what a vault's cards are given marks through: the vault the
+// decks are read out of and written back to, what says which of its notes are
+// decks, where the wikilink a card names its stencil by lands, what brings a
+// written deck level in the index, and what time it is.
+//
+// All six are named here because a marking short of any one of them leaves a
+// card with no mark, which is a card the sitting after it cannot ask, or a mark
+// minted off the machine's clock rather than this installation's.
+func NewMarking(
+	readers port.VaultReaders,
+	writers port.VaultWriters,
+	notes port.NoteQueries,
+	links port.LinkQueries,
+	index func(ctx context.Context, v domain.Vault, paths []string) error,
+	now port.Clock,
+) Marking {
+	return Marking{
+		Readers: readers, Writers: writers, Notes: notes, Links: links,
+		Index: index, Now: now,
+	}
+}
+
 // MarkingResult is what the marking came to: the decks it could not write.
 type MarkingResult struct {
 	// Unwritten are the paths of the decks holding a card with no mark that

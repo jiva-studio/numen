@@ -70,6 +70,27 @@ type Presets struct {
 	Now port.Clock
 }
 
+// NewPresets is what a vault's presets are read and written through: the vault
+// their notes are read out of and written back to, where a deck's link to its
+// preset lands, what says which notes are presets and what each is called,
+// where one day of review gives way to the next, and what time it is.
+//
+// All six are named here because a preset short of any one of them schedules a
+// deck by something other than the note a person pointed it at, and says
+// nothing about having done so.
+func NewPresets(
+	readers port.VaultReaders,
+	writers port.VaultWriters,
+	links port.LinkQueries,
+	notes port.NoteQueries,
+	day review.Day,
+	now port.Clock,
+) Presets {
+	return Presets{
+		Readers: readers, Writers: writers, Links: links, Notes: notes, Day: day, Now: now,
+	}
+}
+
 // stops is why a preset schedules nothing, and why it schedules nothing today.
 func (u Presets) stops(p review.Preset) (review.StopReason, review.StopReason) {
 	at := u.Now()
@@ -88,10 +109,12 @@ type PresetSummary struct {
 // them: they are what schedules a deck naming no preset, and no note holds
 // them.
 //
-// The index says which notes are presets, so no file is opened.
+// The index says which notes are presets, so no file is opened. A build that
+// cannot ask it gets ErrNoPresets: a vault holding none is an answer, and a
+// build that cannot tell is not entitled to give it.
 func (u Presets) List(ctx context.Context, v domain.Vault) ([]PresetSummary, error) {
 	if u.Notes == nil {
-		return nil, nil
+		return nil, ErrNoPresets
 	}
 	paths, err := u.Notes.OfType(ctx, v.ID, domain.TypePreset)
 	if err != nil {

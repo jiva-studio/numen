@@ -284,8 +284,9 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 
 	// The same answers, worked out by the one scheduler and nothing else.
 	plain := s.kept
-	plain.CardFaces, plain.Cache = flashcards.ListCardFaces{}, nil
-	plain.Presets = flashcards.Presets{Now: time.Now}
+	plain.Cache = nil
+	plain.CardFaces = flashcards.NewListCardFaces(nil, nil, nil)
+	plain.Presets = flashcards.NewPresets(nil, nil, nil, nil, today, time.Now)
 	want, err := plain.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)

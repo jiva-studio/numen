@@ -62,6 +62,20 @@ func TestAVaultOfNoPresetsListsNone(t *testing.T) {
 	}
 }
 
+// A build that cannot ask which notes are presets says so, rather than
+// answering the list a vault holding none would get. The two are read the same
+// way on the screen, and only one of them is a fact about the vault.
+func TestABuildThatCannotReachThePresetsRefusesToListThem(t *testing.T) {
+	t.Parallel()
+	s := opened(t, choosing)
+
+	blind := s.presets
+	blind.Notes = nil
+	if _, err := blind.List(t.Context(), s.vault); !errors.Is(err, flashcards.ErrNoPresets) {
+		t.Errorf("listing the presets of a vault it cannot reach answered %v", err)
+	}
+}
+
 // A deck that named no preset names one, and is scheduled by it afterwards.
 func TestADeckIsPutOnAPreset(t *testing.T) {
 	t.Parallel()

@@ -39,6 +39,11 @@ var ErrNotAPreset = errors.New("this note is not a preset")
 // the settings are weighed before the file is opened.
 var ErrOutOfBounds = errors.New("this setting is outside what a preset may hold")
 
+// ErrNoPresets is a build that cannot say which notes of a vault are presets.
+// It reaches none of them by name, so it neither lists them nor points a deck
+// at one, and nothing is written.
+var ErrNoPresets = errors.New("this build cannot work the presets of a vault")
+
 // Point puts the deck at path on a preset, by writing the entry of its `links:`
 // block that carries `type: preset`.
 //

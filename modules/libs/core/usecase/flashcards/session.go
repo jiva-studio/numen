@@ -87,6 +87,24 @@ type Session struct {
 	Now     port.Clock
 }
 
+// NewSession is what a person sits down to their cards through: what gives the
+// unmarked cards their marks, what stands in the vault, where the answers have
+// left each card face, which preset each deck is scheduled by, where one day of
+// review gives way to the next, and what time it is.
+//
+// All six are named here because a sitting short of any one of them asks the
+// wrong cards, or asks past the budget the person set for the day, and the
+// answers it takes are written down all the same.
+func NewSession(
+	marking Marking, faces ListCardFaces, schedules Schedules, presets Presets,
+	day review.Day, now port.Clock,
+) Session {
+	return Session{
+		Marking: marking, CardFaces: faces, Schedules: schedules, Presets: presets,
+		Day: day, Now: now,
+	}
+}
+
 // Execute is what to ask, in order.
 //
 // Scope is the deck or the preset the sitting is opened over. Naming both is
