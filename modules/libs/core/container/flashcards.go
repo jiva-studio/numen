@@ -98,6 +98,7 @@ func (c Config) Counting() (port.ScheduleStore, error) {
 func (c Config) Flashcards(
 	notes port.NoteQueries,
 	links port.LinkQueries,
+	problems port.ProblemQueries,
 	index func(ctx context.Context, v domain.Vault, paths []string) error,
 ) Flashcards {
 	logs := c.Answers()
@@ -124,10 +125,8 @@ func (c Config) Flashcards(
 		c.VaultReaders(), c.VaultWriters(), links, notes, index, day, now,
 	)
 	// A link the index does not carry is accounted for in what parsing turned
-	// up, which is the same reader answering both.
-	if said, holds := notes.(port.ProblemQueries); holds {
-		presets.Problems = said
-	}
+	// up.
+	presets.Problems = problems
 
 	// Each card is worked out at the share of the cards its own preset asks
 	// for, which is what says which preset a card face stands under.

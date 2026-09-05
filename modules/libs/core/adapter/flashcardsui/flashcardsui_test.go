@@ -103,7 +103,7 @@ func windowed(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
 
 	// The window levels the index itself, so what it writes is what the next
 	// question is answered from.
-	running := cfg.Flashcards(db.Queries(), db.Links(), cfg.Level(db))
+	running := cfg.Flashcards(db.Queries(), db.Links(), db.Problems(), cfg.Level(db))
 	api := &API{
 		Registry:  registry{held: held},
 		CardsDue:  running.CardsDue,

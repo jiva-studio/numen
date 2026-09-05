@@ -210,7 +210,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	}
 	// A preset is a note the editor writes key by key, and the curve beside its
 	// one control is the same simulator the flashcards window runs on.
-	running := cfg.Flashcards(db.Queries(), db.Links(), opened.level)
+	running := cfg.Flashcards(db.Queries(), db.Links(), db.Problems(), opened.level)
 	api.Presets = &running.Presets
 	api.Curves = &running.Curves
 	api.Configuring = Configuring{

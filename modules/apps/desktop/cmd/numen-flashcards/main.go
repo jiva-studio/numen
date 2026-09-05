@@ -103,7 +103,7 @@ func run(cfg container.Config, noAgent bool) error {
 
 	notes, cutting := composed(cfg, db, vaults)
 
-	running := cfg.Flashcards(db.Queries(), db.Links(), vaults.level)
+	running := cfg.Flashcards(db.Queries(), db.Links(), db.Problems(), vaults.level)
 	api := &flashcardsui.API{
 		Registry:      registry,
 		CardsDue:      running.CardsDue,
