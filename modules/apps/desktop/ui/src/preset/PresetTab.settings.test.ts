@@ -10,7 +10,7 @@ import { ref, shallowRef } from 'vue'
 import { mount } from '@vue/test-utils'
 import PresetTab from './PresetTab.vue'
 import tabSource from './PresetTab.vue?raw'
-import controlSource from './Control.vue?raw'
+import sliderSource from './CurveSlider.vue?raw'
 import { NO_BOUNDS } from './core'
 import type { Field } from './curve'
 import type { PresetTabState, Said } from './kind'
@@ -278,8 +278,8 @@ describe('the line the tab is read against', () => {
 
   /** The blocks of the column that draw a box, and the ones that draw none. */
   const BOXED = [
-    [controlSource, '.control__material'],
-    [controlSource, '.control__island'],
+    [sliderSource, '.curve-slider__material'],
+    [sliderSource, '.curve-slider__island'],
     [tabSource, '.preset__stopped'],
   ] as const
   const BARE = [

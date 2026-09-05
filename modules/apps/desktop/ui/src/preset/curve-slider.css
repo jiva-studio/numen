@@ -1,13 +1,13 @@
 /*
- * The chrome a plot of the one control is drawn in: the name up its side, the
+ * The chrome a plot of the one slider is drawn in: the name up its side, the
  * room the picture takes, and the numbers read off its edges.
  *
  * The curve and the band under it are two pictures, and this is what they draw
- * alike. The lengths come off `.control`, which both stand inside.
+ * alike. The lengths come off `.curve-slider`, which both stand inside.
  */
 
 /* The y's name beside the plot, and the plot. */
-.control__frame {
+.curve-slider__frame {
   display: flex;
   align-items: stretch;
   gap: var(--numen-node-gap);
@@ -17,13 +17,13 @@
  * The room the y's name runs in. It is a box of its own width and no height of
  * its own, so however long the name is the plot keeps its height.
  */
-.control__axis {
+.curve-slider__axis {
   position: relative;
   flex: none;
-  inline-size: var(--control-axis);
+  inline-size: var(--curve-slider-axis);
 }
 
-.control__name {
+.curve-slider__name {
   margin: 0;
   color: var(--numen-hushed);
   font-family: var(--numen-font-sans);
@@ -32,7 +32,7 @@
 }
 
 /* Read up the picture, the way an axis is named on a chart. */
-.control__name--y {
+.curve-slider__name--y {
   position: absolute;
   inset: 0;
   display: flex;
@@ -43,20 +43,20 @@
   overflow: hidden;
 }
 
-.control__name--x {
+.curve-slider__name--x {
   text-align: center;
 }
 
 /* Everything read off the picture keeps the picture's own width. */
-.control__foot {
+.curve-slider__foot {
   display: flex;
   flex-direction: column;
   gap: var(--numen-dot-gap);
-  padding-inline-start: calc(var(--control-axis) + var(--numen-node-gap));
+  padding-inline-start: calc(var(--curve-slider-axis) + var(--numen-node-gap));
 }
 
 /* The picture, and what is named over it. */
-.control__over {
+.curve-slider__over {
   position: relative;
   flex: 1;
   min-inline-size: 0;
@@ -67,11 +67,11 @@
  * is inside it, so the box is one size while the answer is worked out, once it
  * has landed, and where there is nothing to draw.
  */
-.control__room {
+.curve-slider__room {
   inline-size: 100%;
 }
 
-.control__picture {
+.curve-slider__picture {
   display: block;
   inline-size: 100%;
   block-size: 100%;
@@ -80,7 +80,7 @@
   border-radius: var(--numen-radius-tight);
 }
 
-.control__rule {
+.curve-slider__rule {
   stroke: var(--numen-rule);
   stroke-width: 1;
 }
@@ -90,7 +90,7 @@
  * are the height of, and the value the knob stands at under it. The halo keeps
  * it legible where the line runs behind it.
  */
-.control__number {
+.curve-slider__number {
   position: absolute;
   padding-inline: var(--numen-edge-label-halo);
   color: var(--numen-hushed);
@@ -105,10 +105,10 @@
   pointer-events: none;
 }
 
-.control__ends {
+.curve-slider__ends {
   display: flex;
   justify-content: space-between;
-  min-block-size: var(--control-line);
+  min-block-size: var(--curve-slider-line);
   margin: 0;
   padding-inline: var(--numen-inset);
   color: var(--numen-hushed);

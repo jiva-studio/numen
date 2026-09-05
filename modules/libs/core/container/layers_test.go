@@ -159,6 +159,13 @@ func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
 // `var _ port.X = …` has named the need it answers, which puts the binding in
 // two places: the day the port grows a method, the adapter fails to compile
 // where nothing yet asks it for that method.
+//
+// A method returning `port.X` is not that claim. Where a port opens another —
+// `VaultReaders.Open` answers with a `VaultReader` — the return type is the
+// port's own signature, and an adapter bound to the first has to write the
+// second: Go has no covariance, and returning the concrete type stops the
+// adapter satisfying anything. The claim this refuses is the free-standing one,
+// which says nothing the composition root has not already said.
 func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 	var wrong []string
 	var read int

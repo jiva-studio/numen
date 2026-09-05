@@ -11,7 +11,7 @@
 import { computed } from 'vue'
 import { Days, NumberField, Segmented, Select, Slider, Switch, WEEK } from '@numen/ui'
 import type { Day } from '@numen/ui'
-import Control from './Control.vue'
+import CurveSlider from './CurveSlider.vue'
 import type { PresetTabState, Said } from './kind'
 import { COUNTS, GOALS, LOADS, RULES, WHOLE_LOAD, loadOn, loaded } from './core'
 import type { Bounds, Counts, Goal } from './core'
@@ -182,7 +182,7 @@ const stopped = computed(() => words.stopped(props.held.stopped.value))
           <p v-if="nothing" class="preset__unpointed" data-preset="unpointed">{{ saidInstead }}</p>
 
           <template v-else>
-            <Control
+            <CurveSlider
               :curve="curve"
               :material="props.held.material.value"
               :place="place"

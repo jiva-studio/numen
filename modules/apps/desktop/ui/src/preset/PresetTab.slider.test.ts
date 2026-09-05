@@ -1,7 +1,7 @@
 /**
- * The picture the one control is, drawn in a document.
+ * The picture the one slider is, drawn in a document.
  *
- * The curve is the control: one stop on the way round the screen, walked by the
+ * The curve is the track: one stop on the way round the screen, walked by the
  * arrow keys, and read back off wherever a pointer stands on it. What is asked
  * here is what the picture draws and what a gesture on it comes to.
  */
@@ -14,7 +14,7 @@ import { FOOT } from './drawing'
 import { drawn, heights, point, tabAt } from '../testing/preset'
 import { WORDS as words } from './words'
 
-describe('the one control', () => {
+describe('the one slider', () => {
   it('is the curve itself, and one stop on the way round the screen', () => {
     const { tab } = drawn()
     const control = tab.get('[data-control="picture"][role="slider"]')
