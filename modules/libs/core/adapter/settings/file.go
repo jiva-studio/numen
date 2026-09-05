@@ -35,15 +35,8 @@ func Read(path string) ([]byte, error) {
 // their own window outranks a caller that read the file, thought about it, and
 // arrived late. Nil is a caller that compares nothing, and its bytes land.
 func Write(path string, raw []byte, seen *string) error {
-	// The sections are the fields of one object, and the file is read as that
-	// object. A bare `null` unmarshals into anything and leaves it alone, so an
-	// object that came back nought is refused by name.
-	var whole map[string]json.RawMessage
-	if err := json.Unmarshal(raw, &whole); err != nil {
-		return fmt.Errorf("%w: %s", port.ErrNotASetting, where(err))
-	}
-	if whole == nil {
-		return fmt.Errorf("%w: the settings are the fields of one object", port.ErrNotASetting)
+	if err := object(raw); err != nil {
+		return err
 	}
 	if err := distinct(raw); err != nil {
 		return fmt.Errorf("%w: %s", port.ErrNotASetting, where(err))
@@ -73,6 +66,23 @@ func stands(path string, seen *string) error {
 	}
 	if string(held) != *seen {
 		return port.ErrChanged
+	}
+	return nil
+}
+
+// object says what is wrong with bytes that are not the one object the
+// settings are the fields of, and nothing where they are it.
+//
+// A bare `null` unmarshals into anything and leaves it alone, so bytes that
+// came back nought are refused by name rather than read as an installation
+// nobody has configured.
+func object(raw []byte) error {
+	var whole map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &whole); err != nil {
+		return fmt.Errorf("%w: %s", port.ErrNotASetting, where(err))
+	}
+	if whole == nil {
+		return fmt.Errorf("%w: the settings are the fields of one object", port.ErrNotASetting)
 	}
 	return nil
 }

@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -280,6 +281,10 @@ func (i Indexing) Transcribes() bool {
 	return i.TranscribeRecordings == nil || *i.TranscribeRecordings
 }
 
+// MostTranscribeUnderMB is as many megabytes as a size in bytes reaches. A
+// larger number names no limit any recording could pass.
+const MostTranscribeUnderMB = math.MaxInt64 >> 20
+
 // TranscribesUnder is how many bytes a recording may run to and still be
 // listened to unasked. A negative setting is no limit.
 func (i Indexing) TranscribesUnder() int64 {
@@ -288,6 +293,8 @@ func (i Indexing) TranscribesUnder() int64 {
 		return 0
 	case i.TranscribeUnderMB == 0:
 		return DefaultTranscribeUnderMB << 20
+	case i.TranscribeUnderMB > MostTranscribeUnderMB:
+		return math.MaxInt64
 	}
 	return int64(i.TranscribeUnderMB) << 20
 }
@@ -434,21 +441,40 @@ func At(path string) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	if err := object(raw); err != nil {
+		return Config{}, err
+	}
 	if err := json.Unmarshal(raw, &cfg); err != nil {
 		return Config{}, err
 	}
-	if cfg.Version == 0 {
+	// A file naming no version, and one naming a number that is no version at
+	// all, are both the shape the sections have always had.
+	if cfg.Version < 1 {
 		cfg.Version = 1
 	}
 	cfg.carrying(path, raw)
 	if err := cfg.Appearance.Check(); err != nil {
 		return Config{}, err
 	}
+	cfg.wearing()
 	if _, hour := cfg.Review.Starts(); !hour {
 		cfg.say("review.day_starts is an hour of the day, 00:00 to %s, and %s stands",
 			review.Clock(LatestDayStarts), review.Clock(DefaultStarts()))
 	}
 	return cfg, nil
+}
+
+// wearing stands the machine's own choice where the file names a word that is
+// no half of a colour pair, and says so. The word is left in the file, where
+// the person wrote it and where they will read it again.
+func (c *Config) wearing() {
+	switch c.Appearance.Mode {
+	case ModeSystem, ModeLight, ModeDark:
+		return
+	}
+	c.say("appearance.mode is %s, %s or %s, and %s stands",
+		ModeSystem, ModeLight, ModeDark, ModeSystem)
+	c.Appearance.Mode = ModeSystem
 }
 
 // carrying reads `appearance.zoom` as the setting that replaced it, and gives
