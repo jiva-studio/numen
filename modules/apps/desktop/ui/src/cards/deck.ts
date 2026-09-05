@@ -220,36 +220,6 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
     return deck
   }
 
-  /**
-   * What one tab was last drawn as, against the deck and the stencils it was
-   * drawn from. A deck that stands is drawn under the tiles it already has.
-   */
-  const grids = new Map<
-    string,
-    { deck: Deck; offers: readonly StencilSummary[]; drawn: readonly Drawn[] }
-  >()
-
-  const drawnAt = (id: string): readonly Drawn[] => {
-    const deck = deckAt(id)
-    const held = grids.get(id)
-    if (held && held.deck === deck && held.offers === offers.value) return held.drawn
-    const drawn = drawnOf(deck, offers.value)
-    grids.set(id, { deck, offers: offers.value, drawn })
-    return drawn
-  }
-
-  /** The sections one tab was last drawn under, against the deck they came from. */
-  const banded = new Map<string, { deck: Deck; bands: readonly Banded[] }>()
-
-  const bandsAt = (id: string): readonly Banded[] => {
-    const deck = deckAt(id)
-    const held = banded.get(id)
-    if (held && held.deck === deck) return held.bands
-    const bands = bandedOf(deck)
-    banded.set(id, { deck, bands })
-    return bands
-  }
-
   /** The problems one tab was last marked from, and the marks that came of it. */
   const marked = new Map<string, { problems: readonly Problem[]; marks: Marks }>()
 
@@ -422,43 +392,46 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
     return words.unreachable
   }
 
-  const held = (id: string): Held => ({
-    id,
-    shown: computed(() => store.shown(id)),
-    deck: computed(() => deckAt(id)),
-    drawn: computed(() => drawnAt(id)),
-    bands: computed(() => bandsAt(id)),
-    stencils,
-    marks: computed(() => marksAt(id)),
-    saying: computed(() => sayingOf(id)),
-    scheduled: computed(() => scheduledAt(id)),
-    choices,
-    schedules: (preset) => void schedules(id, preset),
-    adds: (stencil, values, section) =>
-      turns(id, added(deckAt(id), stencil, pathOfCut(offers.value, stencil), values, section)),
-    removes: (card) => turns(id, removed(deckAt(id), card)),
-    moves: (card, at) => turns(id, carried(deckAt(id), card, at)),
-    writes: (card, field, nth, text) => turns(id, filled(deckAt(id), card, field, nth, text)),
-    addsSection: (name) => turns(id, sectionAdded(deckAt(id), name)),
-    namesSection: (section, name) => turns(id, sectionNamed(deckAt(id), section, name)),
-    removesSection: (section) => turns(id, sectionGone(deckAt(id), section)),
-    keep: () => store.keep(id),
-    take: () => store.take(id),
-    /** The tab stands until the deck says the write is done, and goes then. */
-    shuts: (tab) => {
-      const path = store.where(id)
-      void store.shut(id).then((gone) => {
-        if (!gone) return
-        parsed.delete(id)
-        grids.delete(id)
-        banded.delete(id)
-        marked.delete(id)
-        chose.value.delete(id)
-        forgets(path)
-        host.closes(tab)
-      })
-    },
-  })
+  const held = (id: string): Held => {
+    /** The deck this tab is showing, which everything drawn of it follows. */
+    const deck = computed(() => deckAt(id))
+
+    return {
+      id,
+      shown: computed(() => store.shown(id)),
+      deck,
+      drawn: computed(() => drawnOf(deck.value, offers.value)),
+      bands: computed(() => bandedOf(deck.value)),
+      stencils,
+      marks: computed(() => marksAt(id)),
+      saying: computed(() => sayingOf(id)),
+      scheduled: computed(() => scheduledAt(id)),
+      choices,
+      schedules: (preset) => void schedules(id, preset),
+      adds: (stencil, values, section) =>
+        turns(id, added(deckAt(id), stencil, pathOfCut(offers.value, stencil), values, section)),
+      removes: (card) => turns(id, removed(deckAt(id), card)),
+      moves: (card, at) => turns(id, carried(deckAt(id), card, at)),
+      writes: (card, field, nth, text) => turns(id, filled(deckAt(id), card, field, nth, text)),
+      addsSection: (name) => turns(id, sectionAdded(deckAt(id), name)),
+      namesSection: (section, name) => turns(id, sectionNamed(deckAt(id), section, name)),
+      removesSection: (section) => turns(id, sectionGone(deckAt(id), section)),
+      keep: () => store.keep(id),
+      take: () => store.take(id),
+      /** The tab stands until the deck says the write is done, and goes then. */
+      shuts: (tab) => {
+        const path = store.where(id)
+        void store.shut(id).then((gone) => {
+          if (!gone) return
+          parsed.delete(id)
+          marked.delete(id)
+          chose.value.delete(id)
+          forgets(path)
+          host.closes(tab)
+        })
+      },
+    }
+  }
 
   /**
    * What the vault said about a file no tab of this window stands at any
