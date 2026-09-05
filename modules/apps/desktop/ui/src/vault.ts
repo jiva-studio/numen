@@ -57,11 +57,11 @@ import type { Cue, Recordings } from './recording/transcript'
 import type {
   Artifact as ArtifactOf,
   Cards,
-  Carded,
+  VaultCard,
   Core,
-  Decked,
+  VaultDeck,
   Entry,
-  Faced,
+  VaultFace,
   Fault,
   Configured,
   HangingSettings,
@@ -82,7 +82,7 @@ import type {
   ArtifactRunner,
   Seat,
   Source,
-  Stencilled,
+  VaultStencil,
   StencilSummary,
   Vault,
   VaultRefusalReason,
@@ -812,7 +812,7 @@ const offered = (one: {
 })
 
 /** A deck as the window carries it. */
-const decked = (one: DeckMessage): Decked => ({
+const decked = (one: DeckMessage): VaultDeck => ({
   path: one.path,
   title: one.title,
   preamble: one.preamble,
@@ -823,13 +823,13 @@ const decked = (one: DeckMessage): Decked => ({
 })
 
 /** A stencil as the window carries it. */
-const stencilled = (one: StencilMessage): Stencilled => ({
+const stencilled = (one: StencilMessage): VaultStencil => ({
   path: one.path,
   title: one.title,
   fields: one.fields,
   preamble: one.preamble,
   faces: one.faces.map(
-    (face): Faced => ({
+    (face): VaultFace => ({
       name: face.name,
       lead: face.lead,
       front: face.front,
@@ -840,7 +840,7 @@ const stencilled = (one: StencilMessage): Stencilled => ({
   problems: one.problems.map(problem),
 })
 
-const carded = (one: CardMessage): Carded => ({
+const carded = (one: CardMessage): VaultCard => ({
   mark: one.mark,
   section: one.section ?? null,
   heading: one.heading,
@@ -855,7 +855,7 @@ const carded = (one: CardMessage): Carded => ({
  * came: a write reads it again from the first field, except for the one card
  * whose stencil cannot be read, whose heading is left exactly as it stands.
  */
-const carding = (one: Carded) => ({
+const carding = (one: VaultCard) => ({
   mark: one.mark,
   ...(one.section === null ? {} : { section: one.section }),
   heading: one.heading,

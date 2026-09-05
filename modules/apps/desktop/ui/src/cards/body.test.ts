@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { CARD_HEAD, cardEndOf as endOfCards } from '@numen/ui'
-import type { Decked, Problem, Stencilled } from '../core'
+import type { VaultDeck, Problem, VaultStencil } from '../core'
 import {
   added,
   bodyOf,
@@ -47,7 +47,7 @@ const minting = () => {
   return () => `c${(at += 1)}`
 }
 
-const read = (over: Partial<Decked> = {}): Decked => ({
+const read = (over: Partial<VaultDeck> = {}): VaultDeck => ({
   path: 'Animals.md',
   title: 'Animals',
   preamble: 'about the animals\n',
@@ -85,9 +85,9 @@ const read = (over: Partial<Decked> = {}): Decked => ({
 const LLAMA = 'k7m2xq9fzp'
 const ALPACA = '3n8vr4tqch'
 
-const deck = (over: Partial<Decked> = {}): Deck => deckOf(read(over), minting())
+const deck = (over: Partial<VaultDeck> = {}): Deck => deckOf(read(over), minting())
 
-const cut = (over: Partial<Stencilled> = {}): Stencilled => ({
+const cut = (over: Partial<VaultStencil> = {}): VaultStencil => ({
   path: 'Animal.md',
   title: 'Animal',
   fields: ['Height', 'Life span'],
@@ -101,7 +101,7 @@ const cut = (over: Partial<Stencilled> = {}): Stencilled => ({
   ...over,
 })
 
-const sheet = (over: Partial<Stencilled> = {}): Sheet => sheetOf(cut(over), minting())
+const sheet = (over: Partial<VaultStencil> = {}): Sheet => sheetOf(cut(over), minting())
 
 const problem = (over: Partial<Problem> = {}): Problem => ({
   fault: 'cardWithoutAStencil',

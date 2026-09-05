@@ -17,12 +17,12 @@ import {
   type Drawn,
 } from '@numen/ui'
 import type {
-  Carded,
-  Decked,
-  Faced,
+  VaultCard,
+  VaultDeck,
+  VaultFace,
   Problem,
-  Sectioned,
-  Stencilled,
+  VaultSection,
+  VaultStencil,
   StencilSummary,
   Value,
 } from '../core'
@@ -36,7 +36,7 @@ const minting: Mint = () => crypto.randomUUID()
  * One card as the window holds it: what the file says, under the identity it is
  * addressed by.
  */
-export interface Card extends Omit<Carded, 'section'> {
+export interface Card extends Omit<VaultCard, 'section'> {
   readonly id: string
   /**
    * The section it stands under, by the identity this window knows that section
@@ -46,7 +46,7 @@ export interface Card extends Omit<Carded, 'section'> {
 }
 
 /** One section as the window holds it, under an identity of its own. */
-export interface Section extends Sectioned {
+export interface Section extends VaultSection {
   readonly id: string
 }
 
@@ -59,7 +59,7 @@ export interface Deck {
 }
 
 /** One face as the window holds it: what the file says, under an identity of its own. */
-export interface Face extends Faced {
+export interface Face extends VaultFace {
   readonly id: string
 }
 
@@ -89,7 +89,7 @@ export const NO_SHEET: Sheet = { fields: [], preamble: '', faces: [], tail: '' }
  * A card standing under a section this reading does not hold stands before the
  * first section, where it is drawn and where the next write puts it.
  */
-export const deckOf = (read: Decked, mint: Mint = minting): Deck => {
+export const deckOf = (read: VaultDeck, mint: Mint = minting): Deck => {
   const held = new Map<string, number>()
   for (const card of read.cards) held.set(card.mark, (held.get(card.mark) ?? 0) + 1)
   const sections = read.sections.map((section) => ({ ...section, id: mint() }))
@@ -106,7 +106,7 @@ export const deckOf = (read: Decked, mint: Mint = minting): Deck => {
 }
 
 /** A stencil as the vault read it, each face under an identity this window mints. */
-export const sheetOf = (read: Stencilled, mint: Mint = minting): Sheet => ({
+export const sheetOf = (read: VaultStencil, mint: Mint = minting): Sheet => ({
   fields: read.fields,
   preamble: read.preamble,
   faces: read.faces.map((face) => ({ id: mint(), ...face })),
@@ -165,7 +165,7 @@ export const sheetIn = (body: string): Sheet => (body ? (JSON.parse(body) as She
  * section it stands under stands in the deck's own, which is what the file
  * writes it under.
  */
-export const cardsOf = (deck: Deck): readonly Carded[] => {
+export const cardsOf = (deck: Deck): readonly VaultCard[] => {
   const at = new Map(deck.sections.map((section, index) => [section.id, index]))
   return deck.cards.map(({ mark, section, heading, stencil, stencilAt, lead, values }) => ({
     mark,
@@ -179,7 +179,7 @@ export const cardsOf = (deck: Deck): readonly Carded[] => {
 }
 
 /** The sections of a deck, in the shape the vault takes them. */
-export const sectionsOf = (deck: Deck): readonly Sectioned[] =>
+export const sectionsOf = (deck: Deck): readonly VaultSection[] =>
   deck.sections.map(({ name, lead }) => ({ name, lead }))
 
 /** The sections as the grid draws them, each under the identity it was read at. */
@@ -187,7 +187,7 @@ export const bandedOf = (deck: Deck): readonly Banded[] =>
   deck.sections.map(({ id, name }) => ({ id, name }))
 
 /** The faces of a stencil, in the shape the vault takes them. */
-export const facesOf = (sheet: Sheet): readonly Faced[] =>
+export const facesOf = (sheet: Sheet): readonly VaultFace[] =>
   sheet.faces.map(({ name, lead, front, back }) => ({ name, lead, front, back }))
 
 /**
@@ -238,7 +238,7 @@ export const sameDeck = (one: Deck, other: Deck): boolean =>
   JSON.stringify(written(one)) === JSON.stringify(written(other))
 
 /** The cards as somebody wrote them, without the heading a write reads back. */
-const written = (deck: Deck): readonly Omit<Carded, 'heading'>[] =>
+const written = (deck: Deck): readonly Omit<VaultCard, 'heading'>[] =>
   cardsOf(deck).map(({ heading: _heading, ...card }) => card)
 
 /**

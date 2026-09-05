@@ -3,7 +3,7 @@
  * writes back, and where what is wrong with it stands.
  */
 import { describe, expect, it } from 'vitest'
-import type { Cards, Faced, Problem, RefusalReason, FieldRenameResult } from '../core'
+import type { Cards, VaultFace, Problem, RefusalReason, FieldRenameResult } from '../core'
 import { putting } from '../putting'
 import { windowing } from '../windowing'
 import { STENCIL } from '../workspace'
@@ -17,7 +17,7 @@ const puts = () => putting({ fileKinds: async () => new Map() })
 /** A moment for whatever the tab asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))
 
-const FACES: readonly Faced[] = [
+const FACES: readonly VaultFace[] = [
   { name: 'Recognise', lead: '', front: '{{Height}}', back: '**Height:** {{Height}}' },
 ]
 
@@ -39,7 +39,7 @@ const vault = (
   /** Each field rename the tab asked the vault for. */
   const renamed: string[] = []
   let fields: readonly string[] = ['Height', 'Life span']
-  let faces: readonly Faced[] = FACES
+  let faces: readonly VaultFace[] = FACES
 
   const core: Cards = {
     stencils: async () => ({ stencils: [], held: 0 }),
@@ -95,7 +95,7 @@ const vault = (
     written,
     renamed,
     /** The file written from somewhere else, which the next read answers with. */
-    holds: (next: readonly Faced[]) => {
+    holds: (next: readonly VaultFace[]) => {
       faces = next
     },
   }

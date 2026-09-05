@@ -8,7 +8,7 @@
 // @vitest-environment jsdom
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
-import type { Cards, Faced, Problem } from '../core'
+import type { Cards, VaultFace, Problem } from '../core'
 import { putting } from '../putting'
 import { windowing } from '../windowing'
 import { STENCIL } from '../workspace'
@@ -31,7 +31,7 @@ const drawn = async (problems: readonly Problem[] = []) => {
   /** Each field rename the editor asked the vault for. */
   const renamed: string[] = []
   let fields: readonly string[] = ['Height', 'Life span']
-  let faces: readonly Faced[] = [
+  let faces: readonly VaultFace[] = [
     { name: 'Recognise', lead: '', front: '{{Life span}}', back: '{{Height}}' },
     { name: 'Name it', lead: '', front: '{{Life span}}', back: '' },
   ]

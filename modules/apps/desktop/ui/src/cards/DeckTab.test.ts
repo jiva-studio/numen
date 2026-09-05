@@ -8,7 +8,7 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
-import type { Cards, Carded, Problem, RefusalReason } from '../core'
+import type { Cards, VaultCard, Problem, RefusalReason } from '../core'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '../preset/core'
 import { putting } from '../putting'
 import { windowing } from '../windowing'
@@ -36,7 +36,7 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-const CARDS: readonly Carded[] = [
+const CARDS: readonly VaultCard[] = [
   {
     mark: 'k7m2xq9fzp',
     section: 0,

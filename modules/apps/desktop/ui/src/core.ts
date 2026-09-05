@@ -614,7 +614,7 @@ export interface Value {
 }
 
 /** One card as the vault reads it. */
-export interface Carded {
+export interface VaultCard {
   /**
    * What the card is, for as long as it exists, without the caret its heading
    * writes it behind. Empty for a card the application has not written yet.
@@ -648,7 +648,7 @@ export interface Carded {
  * One section of a deck as the vault reads it. It is a name and nothing else:
  * no fields, no stencil, no schedule, no mark.
  */
-export interface Sectioned {
+export interface VaultSection {
   /** What it is called, as its heading spells it. Two sections may carry one name. */
   readonly name: string
   /** The prose between its heading and its first card. */
@@ -656,21 +656,21 @@ export interface Sectioned {
 }
 
 /** A deck as the vault reads it. */
-export interface Decked {
+export interface VaultDeck {
   readonly path: string
   readonly title: string
   /** The prose below the frontmatter and above the first section or card. */
   readonly preamble: string
-  readonly cards: readonly Carded[]
+  readonly cards: readonly VaultCard[]
   /** The sections, in the order they stand in the note. */
-  readonly sections: readonly Sectioned[]
+  readonly sections: readonly VaultSection[]
   /** What the file ends with once the last value has been read. */
   readonly tail: string
   readonly problems: readonly Problem[]
 }
 
 /** One way a stencil shows a card. */
-export interface Faced {
+export interface VaultFace {
   readonly name: string
   /** The prose between the face's heading and its first side. */
   readonly lead: string
@@ -679,13 +679,13 @@ export interface Faced {
 }
 
 /** A stencil as the vault reads it. */
-export interface Stencilled {
+export interface VaultStencil {
   readonly path: string
   readonly title: string
   readonly fields: readonly string[]
   /** The prose below the frontmatter and above the first face. */
   readonly preamble: string
-  readonly faces: readonly Faced[]
+  readonly faces: readonly VaultFace[]
   /** What the file ends with once the last side has been read. */
   readonly tail: string
   readonly problems: readonly Problem[]
@@ -694,7 +694,7 @@ export interface Stencilled {
 /** What reading a deck came back with. */
 export interface DeckReadResult {
   /** Null when the deck was refused. */
-  readonly deck: Decked | null
+  readonly deck: VaultDeck | null
   readonly refusal: RefusalReason | null
   /** The file it came out of, to present at the next write. */
   readonly at: string
@@ -714,7 +714,7 @@ export interface DeckWriteResult {
 /** What reading a stencil came back with. */
 export interface StencilReadResult {
   /** Null when the stencil was refused. */
-  readonly stencil: Stencilled | null
+  readonly stencil: VaultStencil | null
   readonly refusal: RefusalReason | null
   readonly at: string
 }
@@ -785,8 +785,8 @@ export interface Cards {
     path: string,
     deck: {
       preamble: string
-      cards: readonly Carded[]
-      sections: readonly Sectioned[]
+      cards: readonly VaultCard[]
+      sections: readonly VaultSection[]
       tail: string
     },
     seen: string | null,
@@ -796,7 +796,7 @@ export interface Cards {
   writeStencil(
     path: string,
     fields: readonly string[],
-    stencil: { preamble: string; faces: readonly Faced[]; tail: string },
+    stencil: { preamble: string; faces: readonly VaultFace[]; tail: string },
     seen: string | null,
   ): Promise<StencilWriteResult>
 }

@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
-import type { Cards, Carded, Problem, RefusalReason } from '../core'
+import type { Cards, VaultCard, Problem, RefusalReason } from '../core'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '../preset/core'
 import { putting } from '../putting'
 import { windowing } from '../windowing'
@@ -23,7 +23,7 @@ const settles = () => new Promise((done) => setTimeout(done, 0))
 
 // The two cards name one stencil two ways: by a path from the root, and by a
 // name carrying an alias. Both reach the file the vault says they reach.
-const CARDS: readonly Carded[] = [
+const CARDS: readonly VaultCard[] = [
   {
     mark: 'k7m2xq9fzp',
     section: null,
@@ -60,7 +60,7 @@ const vault = (
     /** The write answers that the file moved past what the tab read. */
     changed?: boolean
     /** The cards the file holds, where a test wants other ones. */
-    cards?: readonly Carded[]
+    cards?: readonly VaultCard[]
     /** The sections the file holds, where a test wants some. */
     sections?: readonly { name: string; lead: string }[]
     /** The vault is out of reach, and a read of the deck reaches nothing. */
@@ -86,7 +86,7 @@ const vault = (
   const wrote: Parameters<Cards['writeDeck']>[1][] = []
   const seen: (string | null)[] = []
   let reads = 0
-  let cards: readonly Carded[] = answers.cards ?? CARDS
+  let cards: readonly VaultCard[] = answers.cards ?? CARDS
 
   let listed = 0
 
@@ -208,7 +208,7 @@ const vault = (
     reads: () => reads,
     listed: () => listed,
     /** The file written from somewhere else, which the next read answers with. */
-    holds: (next: readonly Carded[]) => {
+    holds: (next: readonly VaultCard[]) => {
       cards = next
     },
   }
@@ -442,7 +442,7 @@ describe('a value written over', () => {
   const WRITTEN = ['cards/Animal', 'Animal|животное', 'note://01J3ZQ8W0T7K9V2M4N6P8R0S1T']
 
   /** A deck of one card, under the wikilink it wrote for its stencil. */
-  const only = (stencil: string, stencilAt = 'Animal.md'): readonly Carded[] => [
+  const only = (stencil: string, stencilAt = 'Animal.md'): readonly VaultCard[] => [
     {
       mark: 'k7m2xq9fzp',
       section: null,
@@ -455,7 +455,7 @@ describe('a value written over', () => {
   ]
 
   /** A card writing one field twice, which the grid draws two boxes. */
-  const twice: readonly Carded[] = [
+  const twice: readonly VaultCard[] = [
     {
       mark: 'k7m2xq9fzp',
       section: null,
