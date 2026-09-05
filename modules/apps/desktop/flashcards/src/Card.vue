@@ -3,14 +3,11 @@
  * One card, as it stands in front of a person: the front, and the back once
  * they have said they are ready for it.
  *
- * A face is markdown, with the tags a person writes among the marks, and is
- * drawn through the one function that reads it. What comes out is measured
- * against what a card may be drawn with: a deck may have come from another
- * person, and what they wrote is not this window's to run, style or navigate
- * with.
+ * A face is drawn by the one component every face is drawn by, so a card reads
+ * here the way it reads where it was written.
  */
-import { computed, ref } from 'vue'
-import { drawn, scheme } from '@numen/ui'
+import { ref } from 'vue'
+import { CardProse, scheme } from '@numen/ui'
 
 const props = defineProps<{
   front: string
@@ -23,9 +20,6 @@ const emit = defineEmits<{
   (event: 'show'): void
   (event: 'read', named: string): void
 }>()
-
-const front = computed(() => drawn(props.front))
-const back = computed(() => drawn(props.back))
 
 /** A hand that moved less than this across was pressing and not dragging. */
 const STILL = 4
@@ -50,20 +44,19 @@ const plain = (named: string) => {
 }
 
 /**
- * The card is turned over by pressing it. A link inside one is never followed —
- * this window has one page — but a link into the vault opens the reading beside
- * the card on the note it names.
+ * A link inside a card is never followed — this window has one page — but a
+ * link into the vault opens the reading beside the card on the note it names.
  */
+const followed = (href: string, press: MouseEvent) => {
+  press.preventDefault()
+  // A name carrying no scheme points inside the vault, which is where the
+  // reading beside the card is.
+  if (scheme(href) === null) emit('read', plain(href))
+}
+
+/** The card is turned over by pressing it, a press spent on a link aside. */
 const pressed = (press: MouseEvent) => {
-  const link = (press.target as HTMLElement | null)?.closest?.('a')
-  if (link) {
-    press.preventDefault()
-    const named = link.getAttribute('href') ?? ''
-    // A name carrying no scheme points inside the vault, which is where the
-    // reading beside the card is.
-    if (named && scheme(named) === null) emit('read', plain(named))
-    return
-  }
+  if (press.defaultPrevented) return
   // A hand that took the card across was moving the panel into view, and a
   // press that went nowhere is a person asking for the answer.
   const went = from.value === null ? 0 : Math.abs(press.clientX - from.value)
@@ -74,16 +67,18 @@ const pressed = (press: MouseEvent) => {
 
 <template>
   <article class="card" @click="pressed" @pointerdown="took">
-    <!-- eslint-disable-next-line vue/no-v-html -- measured against what a card may be drawn with -->
-    <div class="card__side" v-html="front" />
+    <CardProse :text="front" @follow="followed" />
     <div v-if="shown" class="card__rule" />
-    <!-- eslint-disable-next-line vue/no-v-html -- measured against what a card may be drawn with -->
-    <div v-if="shown" class="card__side" v-html="back" />
+    <CardProse v-if="shown" :text="back" @follow="followed" />
   </article>
 </template>
 
 <style scoped>
 .card {
+  /* A card is read, not scanned, so it is set at the size reading is set at,
+     and so is the prose inside it. */
+  --numen-prose-size: var(--numen-reading-size);
+
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -93,16 +88,8 @@ const pressed = (press: MouseEvent) => {
   border: 1px solid var(--numen-rule);
   border-radius: var(--numen-radius);
   background: var(--numen-raised);
-  /* A card is read, not scanned, so it is set at the size reading is set at. */
   font-size: var(--numen-reading-size);
   gap: var(--numen-inset-wide);
-}
-
-/* What a person reads off a card is theirs to carry out of the window, so the
-   text takes a selection back. */
-.card__side {
-  user-select: text;
-  -webkit-user-select: text;
 }
 
 .card__rule {
