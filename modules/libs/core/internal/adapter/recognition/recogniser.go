@@ -110,8 +110,8 @@ func (r *Recogniser) Close() error {
 	return r.shape.Close()
 }
 
-// Read is one page: its parts, in the order the page is read, and what each of
-// them says.
+// Recognise is one page: its parts, in the order the page is read, and what
+// each of them says.
 //
 // A part whose kind the configuration does not ask for is not read at all. A
 // running head and a page ornament are printed on every page and are not what

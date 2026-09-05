@@ -42,7 +42,6 @@ type VaultWriter interface {
 	// something. Looking first and writing after is not the same promise: two
 	// callers can both look, both find nothing, and the second overwrite the
 	// first. Only the filesystem can answer this, and it answers it once.
-
 	Create(ctx context.Context, path string, content []byte) error
 
 	// Bring puts a file from this machine at a path, creating the folders above

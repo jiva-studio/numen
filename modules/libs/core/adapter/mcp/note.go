@@ -544,8 +544,9 @@ func fingerprintOf(ref domain.Fingerprint) string {
 	return strconv.FormatInt(ref.Size, 10) + "-" + strconv.FormatInt(stamp(ref.ModTime), 10)
 }
 
-// parseFingerprint is the fingerprint a caller presents. Every tool that writes
-// takes one, and a call carrying none is refused.
+// parseFingerprint is the fingerprint a caller presents. A tool that changes
+// what somebody may have read since takes one, and a call carrying none is
+// refused.
 func parseFingerprint(s string) (domain.Fingerprint, error) {
 	if s == "" {
 		return domain.Fingerprint{}, errors.New(
@@ -653,15 +654,15 @@ type RemoveOutcome struct {
 	Refused string `json:"refused,omitempty" jsonschema:"why this one was not removed, empty when it was"`
 }
 
-// sorts is the kinds of source a question names. A kind the vault has no word
-// for is a mistake in the asking and is said so, rather than quietly answering
-// about everything.
+// sorts is the kinds of source a question names. A search reaches notes and
+// books, so a kind outside those two is a mistake in the asking and is said so,
+// rather than quietly answering about everything.
 func sorts(named []string) ([]domain.SourceKind, error) {
 	out := make([]domain.SourceKind, 0, len(named))
 	for _, one := range named {
 		kind := domain.SourceKind(one)
 		if kind != domain.KindNote && kind != domain.KindBook {
-			return nil, fmt.Errorf("%q is not a sort of file this vault holds: try %q or %q",
+			return nil, fmt.Errorf("%q is not a sort of file a search reaches: try %q or %q",
 				one, domain.KindNote, domain.KindBook)
 		}
 		out = append(out, kind)

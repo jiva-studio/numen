@@ -59,8 +59,7 @@ func (s *Schedules) Write(_ context.Context, vaultID domain.VaultID, content []b
 
 	// The file is written whole beside itself and moved into place, so a second
 	// window writing the same vault leaves one of the two and never half of
-	// both. A move that fails leaves the temporary file, which the next write
-	// replaces.
+	// both. A write that fails anywhere takes its temporary file away with it.
 	tmp, err := os.CreateTemp(filepath.Dir(at), filepath.Base(at)+".*")
 	if err != nil {
 		return err
@@ -87,9 +86,9 @@ func (s *Schedules) Write(_ context.Context, vaultID domain.VaultID, content []b
 
 // at is the file one vault's schedules stand in.
 //
-// The identity is a ULID and is written into the name, so it is checked for
-// being one: a name arriving from anywhere else could otherwise reach a file
-// this folder does not hold.
+// The identity is written into the name, so it is refused a separator and a
+// dot: a name arriving from anywhere else could otherwise reach a file this
+// folder does not hold.
 func (s *Schedules) at(vaultID domain.VaultID) (string, error) {
 	name := string(vaultID)
 	if name == "" || strings.ContainsAny(name, `/\.`) {

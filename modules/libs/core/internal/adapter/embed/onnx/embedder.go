@@ -160,7 +160,7 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 	if err != nil {
 		return nil, err
 	}
-	// One entry per sequence length the buckets allow.
+	// One entry per sequence length the buckets allow, and two to spare.
 	e.exec = exec.SetMaxCache(e.maxTokens/tokenStep + 2)
 	return e, nil
 }

@@ -429,7 +429,7 @@ func (a Allowance) Paying(debt, begun int, owed, fresh bool) bool {
 	return debt*AllBacklog < a.Backlog*(debt+begun+1)
 }
 
-// closing is which budget closes this preset's day.
+// limits is which budget closes this preset's day.
 //
 // A goal of a date closes the day on a count of new cards, which is the share
 // of the material a day has to begin to be through it by then. The date is what

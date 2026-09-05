@@ -5,7 +5,8 @@
 //
 // A book is read in the order it declares: the container names a package
 // document, the package's spine names its documents, and their text is
-// concatenated into one stream. Everything a book names — a navigation entry, a
+// concatenated into one stream as far as the bounds a book is read within reach.
+// Everything a book names — a navigation entry, a
 // heading, a printed page — is an offset into that stream.
 //
 // A book that names nothing is still read. An error here means the file is not a
@@ -26,7 +27,8 @@ type Book struct {
 	// Title is the name the package document gives the book.
 	Title string
 
-	// Text is every spine document, in reading order, as one stream.
+	// Text is the spine documents the bounds admit, in reading order, as one
+	// stream.
 	Text string
 
 	// Documents are the spine documents and where each begins in Text.

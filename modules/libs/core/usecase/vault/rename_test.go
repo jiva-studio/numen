@@ -9,7 +9,7 @@ import (
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-func TestARenamedVaultIsCalledTheSameOnTheListAndInTheIndex(t *testing.T) {
+func TestARenamedVaultKeepsItsNameOnTheListAndItsRowInTheIndex(t *testing.T) {
 	t.Parallel()
 	_, renamed, registry := twoVaults(t)
 	index := &indexRows{}

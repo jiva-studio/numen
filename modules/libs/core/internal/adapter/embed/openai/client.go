@@ -20,8 +20,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// ErrRejected is a request the service refused to interpret. The batching rule
-// produced something the model will never accept, so the error is final.
+// ErrRejected is a request the service answered and will answer the same way
+// again: a malformed batch, a key it does not know, an address that is not a
+// model. Sending it a second time changes nothing, so the error is final.
 var ErrRejected = errors.New("the service rejected the request")
 
 // ErrNoKey is a service configured without a key anywhere to find it.

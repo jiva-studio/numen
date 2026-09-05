@@ -21,8 +21,8 @@ import (
 // VaultWriter changes one vault on disk.
 //
 // It is separate from the reader because reading and writing are different
-// rights: everything in the application may read a vault, and four use cases
-// may write one.
+// rights: everything in the application may read a vault, and only a use case
+// holding the writer may change one.
 type VaultWriter struct {
 	root    string
 	opts    Options

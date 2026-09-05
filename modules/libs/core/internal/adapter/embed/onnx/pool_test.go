@@ -69,8 +69,8 @@ func TestSequenceLengthsRoundUpToAStep(t *testing.T) {
 	}
 }
 
-// A shape is compiled the first time it appears and the cache holds one entry
-// per sequence length, so a batch that is not full is laid out as one that is.
+// A shape is compiled the first time it appears, so a batch that is not full is
+// laid out in as many rows as a full one and padding fills the rest.
 func TestABatchIsLaidOutAtTheSizeAFullOneCarries(t *testing.T) {
 	const rows, seq = 8, 64
 	for texts := 1; texts <= rows; texts++ {

@@ -14,8 +14,9 @@ import (
 // A Line is one run of words the recogniser read in one go: the number it is
 // known by, and what it says.
 //
-// A correction may cover a run of lines, and Through is the last of them. One
-// line's correction has Through equal to At.
+// A correction may cover a run of lines, and Last is the last of them. A line
+// standing on its own has Last equal to Number, or left at zero where nothing
+// put a run together.
 type Line struct {
 	Number int
 	Last   int

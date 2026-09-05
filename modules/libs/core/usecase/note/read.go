@@ -51,7 +51,8 @@ type Contents struct {
 	// one \n. It is empty for every outcome but Ok.
 	Body string
 	// Fingerprint is what the file was when it was asked about, which is before
-	// its bytes were read. It is set for a path the vault holds as a note.
+	// its bytes were read. It is set for any path the vault holds, whatever kind
+	// it holds it as, so a note refused on its size still says what it was.
 	Fingerprint domain.Fingerprint
 }
 

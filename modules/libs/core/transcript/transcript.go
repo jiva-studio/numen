@@ -3,13 +3,13 @@
 //
 //	WEBVTT
 //
-//	NOTE heard 9100
-//
 //	00:00:01.500 --> 00:00:04.200
 //	what was said
 //
 //	00:00:04.200 --> 00:00:09.100
 //	what was said next
+//
+//	NOTE heard 9100
 //
 // The format is the W3C one, so the file opens in a player, shows the words
 // against the recording in a browser, and is read by anything a person already

@@ -87,8 +87,9 @@ func names(said []string) []string {
 	return out
 }
 
-// named says whether a word is written the way a name is: a capital, and more
-// than one letter before whatever is stuck to it with an apostrophe.
+// named says whether a word is written the way a name is: a capital, and either
+// more than one letter before whatever is stuck to it with an apostrophe or more
+// than two after it, so that O'Brien is a name and I'm is not.
 func named(bare string) bool {
 	if letter, _ := utf8.DecodeRuneInString(bare); !unicode.IsUpper(letter) {
 		return false

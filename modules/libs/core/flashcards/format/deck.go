@@ -47,7 +47,7 @@ type cardSpan struct {
 	mark domain.CardID
 	// head is the byte the heading line begins at and from is the byte after
 	// it, which is the run the first field's value occupies. end is where the
-	// card stops: the next card, or the end of the file.
+	// card stops: the next card, the next section, or the end of the file.
 	head int
 	from int
 	end  int

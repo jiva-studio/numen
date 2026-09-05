@@ -65,7 +65,7 @@ func NewScan(
 
 // ScanResult reports what a scan did, in the terms the user cares about.
 //
-// `Seen` counts notes and nothing else, and every other number here is about
+// `Notes` counts notes and nothing else, and every other number here is about
 // those notes. What the walk found that is not a note is `Assets`.
 type ScanResult struct {
 	Notes      int // notes found in the vault

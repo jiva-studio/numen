@@ -193,7 +193,7 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 			"on its own, and waits behind nothing but the recordings asked for before " +
 			"it, so this is asked once and no more.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Path string `json:"path" jsonschema:"the recording, as source_list gives it"`
+		Path string `json:"path" jsonschema:"the recording, as a path inside the vault"`
 	}) (*sdk.CallToolResult, struct {
 		Started bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
 		Doing   string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
@@ -245,7 +245,8 @@ type Recogniser interface {
 // Transcriber is what the tools need in order to hear a recording: a way to
 // begin, and whether beginning would wait for anything to arrive.
 //
-// A server built without one serves no tool that would listen.
+// A server built without one serves the tool that would listen anyway, and it
+// answers that this installation cannot hear.
 type Transcriber interface {
 	// Ready says whether listening could begin now without waiting for anything
 	// to arrive.

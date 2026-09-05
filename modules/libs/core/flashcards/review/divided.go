@@ -9,7 +9,8 @@ import (
 // Divided hands a budget out in proportion to what each deck owes of it.
 //
 // A deck owing nine times another's takes nine times the share, a deck owing
-// nothing takes nothing, and no deck takes more than it owes. What the
+// nothing takes nothing, and no deck owing a whole number takes more than it
+// owes — the remainder is handed out a card at a time. What the
 // proportions leave over goes by the largest fraction, and where the fractions
 // stand equal the deck owing more takes it: the card moves the smaller deck
 // further off its proportion than the larger. Decks owing the same are alike in

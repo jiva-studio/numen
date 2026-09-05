@@ -3,9 +3,9 @@ package format
 import "regexp"
 
 // placeholderRe is `{{Field}}`, and the name inside is a field's name written
-// exactly. Nothing escapes the braces: wherever the two characters stand on a
-// face, a code span included, what runs to the next `}}` is a placeholder, and
-// a face wanting those characters as text has no way to write them.
+// exactly. There is no escape and no exemption: a code span holding the braces
+// is filled like anything else. What holds no brace between the two pairs is a
+// placeholder, so `{{a{b}}` is left as the text it is.
 var placeholderRe = regexp.MustCompile(`\{\{([^{}]*)\}\}`)
 
 // Lay fills a face of a stencil with one card: what stands before the answer

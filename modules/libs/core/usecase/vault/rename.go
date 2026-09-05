@@ -21,7 +21,8 @@ type Rename struct {
 }
 
 // NewRename is what a vault is called through: the list this installation
-// keeps, and the index, which holds the name beside the rows.
+// keeps, which is where the name stands, and the index, which holds the row the
+// vault's other rows point at.
 func NewRename(registry port.VaultRegistry, index port.VaultRepository) Rename {
 	return Rename{Registry: registry, Index: index}
 }
@@ -47,12 +48,12 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, name string) (domai
 
 	renamed := v
 	renamed.Name = name
-	// The list is what the name is on; the index never held it, and there is
-	// nothing here for the rename to write. This only covers a vault renamed
-	// before its first scan, so it still has a row to be scanned into.
 	if err := u.Registry.Save(renamed); err != nil {
 		return domain.Vault{}, err
 	}
+	// The index holds no name, so a rename writes nothing to it. This covers a
+	// vault renamed before its first scan, which has no row yet to be scanned
+	// into.
 	if err := u.Index.Register(ctx, renamed.ID); err != nil {
 		return domain.Vault{}, fmt.Errorf("register %s in the index: %w", v.Name, err)
 	}

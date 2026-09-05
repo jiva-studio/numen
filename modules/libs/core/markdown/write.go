@@ -89,8 +89,9 @@ func Open(raw []byte) (*Document, error) {
 	}
 
 	// A file that opens with the delimiter and never closes it is somebody's
-	// frontmatter with a line missing. The whole of it stands as body here, and
-	// every write to it is refused.
+	// frontmatter with a line missing. The whole of it stands as body here:
+	// every write to the frontmatter is refused, and a write to the body
+	// replaces the file, half-written block and all.
 	d.body = rest
 	d.unterminated = true
 	return d, nil

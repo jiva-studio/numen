@@ -11,8 +11,10 @@
 // a whole book on one line is cut like any other.
 //
 // Chunks are cut inside one division — the text from one named part to the next
-// — and never run across one. A text that names no parts is one division, which
-// is the ordinary case for half the books read.
+// — and never run across one. The exception is Sizes.Large set to Whole, which
+// asks for a single large chunk over the whole text and gets one. A text that
+// names no parts is one division, which is the ordinary case for half the books
+// read.
 //
 // Sizes.Limit is characters, and the caller sets it under the input limit of the
 // model that will embed a small chunk. What a word costs in tokens differs by

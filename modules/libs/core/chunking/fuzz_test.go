@@ -25,8 +25,7 @@ var cutSeeds = []string{
 
 // Every chunk of a cut is a stretch of the text it was cut from: inside it, of
 // no negative length, and cut at a character and never through one. A small
-// chunk holds no more characters than the limit it was cut under, and stands
-// under a large chunk that reaches its middle.
+// chunk stands under a large chunk that reaches its middle.
 //
 // The text is a stranger's: a source's text is whatever the file held.
 func FuzzCut(f *testing.F) {

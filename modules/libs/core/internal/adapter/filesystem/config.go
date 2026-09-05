@@ -12,7 +12,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
 )
 
-// DefaultServiceDir is the one folder the application writes into a vault.
+// DefaultServiceDir is where the application keeps a vault's own state. The
+// other folder it writes into a vault is TrashDir.
 const DefaultServiceDir = ".numen"
 
 const configName = "config.json"

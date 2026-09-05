@@ -43,7 +43,8 @@ type Move struct {
 
 // NewMove is what files a note somewhere else: the vault it is read and written
 // through, the links that point at it, what is asked which name reaches it,
-// where the index files it, what brings both paths level, and what time it is.
+// where the index files it, what brings the notes it repaired level, and what
+// time it is.
 //
 // All seven are named here because a move short of any one of them lands the
 // file and leaves something behind it — a link repaired to a bare name that

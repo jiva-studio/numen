@@ -248,9 +248,10 @@ func sharedPrefix(a, b string) int {
 // Backlinks returns the notes that point at one note.
 //
 // A link is a backlink because it *resolves* here, not because its text looks
-// like this note. Those differ in both directions: a link written as a path
-// never matches by name, and a link written as a bare name may resolve to a
-// nearer note of the same name. So every candidate goes through the same
+// like this note. Those differ in both directions: a link written as a path is
+// filed under its last segment and so is offered by name as well, and a link
+// written as a bare name may resolve to a nearer note of the same name. So
+// every candidate goes through the same
 // resolution the forward direction uses, and only the ones that land here are
 // kept.
 func (q *Queries) Backlinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error) {

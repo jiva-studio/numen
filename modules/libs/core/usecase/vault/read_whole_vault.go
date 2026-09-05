@@ -33,7 +33,7 @@ func NewReadWholeVault(notes Scan, books source.Extract, vectors source.Embed) R
 }
 
 // ReadWholeVaultResult is what each pass did. A pass that did not run is a zero
-// value, and Read says which of them were reached.
+// value, and nothing here tells that apart from a pass that found nothing.
 type ReadWholeVaultResult struct {
 	Notes   ScanResult
 	Books   source.ExtractResult

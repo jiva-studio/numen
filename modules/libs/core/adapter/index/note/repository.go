@@ -345,7 +345,7 @@ func encodeFrontmatter(n domain.Note) (value any, problem string) {
 }
 
 // noteType is what the file said it is. A note whose file says nothing is a
-// note, and the column holds one of the three words either way.
+// note, and the column holds one of the four words either way.
 func noteType(n domain.Note) domain.NoteType {
 	if n.Type == "" {
 		return domain.TypeNote

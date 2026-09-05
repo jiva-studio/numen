@@ -67,7 +67,7 @@ func note(r *rand.Rand, i, total int) string {
 	fmt.Fprintf(&b, "# Note %d\n\n", i)
 
 	// One note in a thousand carries a word no other note has. Every generated
-	// note otherwise draws on the same twenty words, so a query matches the
+	// note otherwise draws on one small vocabulary, so a query matches the
 	// whole corpus — which measures ranking, not searching. A real vault has a
 	// long tail, and RareTerm is how a benchmark can ask for it.
 	if i%1000 == 0 {
