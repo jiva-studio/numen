@@ -10,7 +10,7 @@
  * and kept while the cards of that deck go by; a sitting over a whole vault
  * walks several decks, and each is asked for as it comes round.
  */
-import { ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 
 import { WORDS as words } from './reading/words'
 import type { DeckNeighbourhood, Neighbour } from './reading/core'
@@ -35,6 +35,9 @@ export interface NotesPanelDeps {
 }
 
 export function reading(deps: NotesPanelDeps) {
+  /** Whether the panel is what the window is showing. */
+  const open = computed(() => deps.open())
+
   const notes = shallowRef<readonly Neighbour[]>([])
 
   /** How many at the end came named and not read. */
@@ -119,7 +122,7 @@ export function reading(deps: NotesPanelDeps) {
     unread,
     working,
     at,
-    open: deps.open,
+    open,
     opens,
     shuts,
     read,

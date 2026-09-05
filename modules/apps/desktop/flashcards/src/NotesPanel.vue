@@ -50,7 +50,7 @@ const named = (one: Neighbour) => one.title || one.written
 // panel comes in while they are still being asked for, and a note cannot be
 // scrolled to before it is drawn.
 watch(
-  () => [props.held.open(), props.held.at.value, props.held.notes.value] as const,
+  () => [props.held.open.value, props.held.at.value, props.held.notes.value] as const,
   ([open, at, notes]) => {
     if (!open || !at || !notes.length) return
     void nextTick(() => {
