@@ -85,7 +85,7 @@ const TRANSCRIBE: MenuItem = { id: 'transcribe', text: own.transcribe, band: BAN
 const RECOGNISE: MenuItem = { id: 'recognise', text: own.recognise, band: BAND.run }
 
 /** The run offered where this build can do it, and the file's own items alone where it cannot. */
-const runnable = (run: MenuItem, canRun: CanRun): readonly MenuItem[] =>
+const runnable = (run: MenuItem, canRun: RunGuard): readonly MenuItem[] =>
   canRun(run.id) ? filed(run) : FILED
 
 /** What a selection of several offers, which is what means something for all of them. */
@@ -98,7 +98,7 @@ export interface MenuRow {
 }
 
 /** Whether the window the menu is drawn in can do a run at all. */
-export type CanRun = (run: string) => boolean
+export type RunGuard = (run: string) => boolean
 
 /**
  * What the menu offers, in the order it is drawn: something to make where it
@@ -108,7 +108,7 @@ export type CanRun = (run: string) => boolean
 export const itemsFor = (
   on: MenuRow | null,
   several: boolean,
-  canRun: CanRun,
+  canRun: RunGuard,
 ): readonly MenuItem[] => {
   if (!on) return MADE
   if (several) return SEVERAL

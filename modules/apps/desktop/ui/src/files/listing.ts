@@ -61,7 +61,7 @@ export const freeName = (taken: readonly string[], word: string): string => {
   }
 }
 
-export type Listing = ReturnType<typeof listing>
+export type FileTree = ReturnType<typeof listing>
 
 export function listing(core: Folders) {
   /** What each folder that has been read holds, under the path of the folder. */

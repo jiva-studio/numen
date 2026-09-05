@@ -14,7 +14,7 @@ import type { Voice } from './telling'
  * What a file the window opens is opened as: which of three a note is, or the
  * preset a fourth kind of note holds.
  */
-export type Opened = NoteType | 'preset'
+export type EditorKind = NoteType | 'preset'
 
 /**
  * A file put in front of the person in one editor. A line is somewhere inside
@@ -44,7 +44,7 @@ const ORDINARY: FileKind = { kind: 'note', type: 'note' }
 
 export function putting(vault: FileOpenerDeps) {
   /** The editor each kind of note opens in, as its kind handed it over. */
-  const editors = new Map<Opened, FileOpener>()
+  const editors = new Map<EditorKind, FileOpener>()
 
   /**
    * The reader a document opens in and the player a recording is heard in, each
@@ -53,7 +53,7 @@ export function putting(vault: FileOpenerDeps) {
   const sources = new Map<FileKind['kind'], SourceReader>()
 
   /** A kind of tab hands over the way it puts a file in front of the person. */
-  const holds = (type: Opened, opens: FileOpener) => {
+  const holds = (type: EditorKind, opens: FileOpener) => {
     editors.set(type, opens)
   }
 
@@ -86,7 +86,7 @@ export function putting(vault: FileOpenerDeps) {
   const made = (
     path: string,
     title: string,
-    type: Opened,
+    type: EditorKind,
     showing: PlexShowing = 'here',
     line?: number,
   ): void => {
@@ -130,7 +130,7 @@ export function putting(vault: FileOpenerDeps) {
 export type FileOpeners = ReturnType<typeof putting>
 
 /** Which of the three a file is made as. */
-export type Cut = 'deck' | 'stencil' | 'preset'
+export type MakeKind = 'deck' | 'stencil' | 'preset'
 
 /** What the window asks the vault to make from nothing. */
 export interface CutWriter {
@@ -160,7 +160,7 @@ export interface CuttingWords {
  * no word of their own.
  */
 export function cutting(vault: CutWriter, puts: FileOpeners, words: CuttingWords, said: Voice) {
-  const makes = async (what: Cut, folder: string, name: string): Promise<string> => {
+  const makes = async (what: MakeKind, folder: string, name: string): Promise<string> => {
     try {
       const answer =
         what === 'deck'
@@ -180,7 +180,7 @@ export function cutting(vault: CutWriter, puts: FileOpeners, words: CuttingWords
   }
 
   /** The same, put in front of the person in a tab of its own. */
-  const opens = async (what: Cut, folder: string, name: string): Promise<string> => {
+  const opens = async (what: MakeKind, folder: string, name: string): Promise<string> => {
     const path = await makes(what, folder, name)
     if (!path) return ''
     puts.made(path, '', what)

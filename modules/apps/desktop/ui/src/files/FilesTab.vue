@@ -13,7 +13,7 @@ import type { Point, Row as TreeRow, RowMarker } from '@numen/ui'
 import { Book, File, Folder, FolderOpen, type LucideIcon } from '@lucide/vue'
 import type { NoteType, Source } from '../core'
 import { iconFor, iconOfNote } from '../icons'
-import type { Dropped, FilesTabState } from './kind'
+import type { DropPosition, FilesTabState } from './kind'
 import type { Row } from './listing'
 import { itemsFor } from './menu'
 import { WORDS as words } from './words'
@@ -108,7 +108,7 @@ onUnmounted(() => globalThis.removeEventListener('focus', again))
       @select="(rows: readonly string[]) => props.held.select(rows)"
       @activate="(row: string) => props.held.activate(row)"
       @rename="(row: string, name: string) => void props.held.rename(row, name)"
-      @move="(rows: readonly string[], at: Dropped) => void props.held.move(rows, at)"
+      @move="(rows: readonly string[], at: DropPosition) => void props.held.move(rows, at)"
       @carry="(rows: readonly string[]) => props.held.carry(rows)"
       @drop="props.held.drop()"
       @remove="(rows: readonly string[]) => props.held.remove(rows)"

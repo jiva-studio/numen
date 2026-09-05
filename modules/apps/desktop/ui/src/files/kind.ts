@@ -6,7 +6,7 @@
 import { ref } from 'vue'
 import type { Entry, Move, Source } from '../core'
 import type { SearchDestination } from '../finding'
-import { folderOf, landedIn, type Listing, ROOT } from './listing'
+import { folderOf, landedIn, type FileTree, ROOT } from './listing'
 import {
   NEW_DECK,
   NEW_FOLDER,
@@ -15,7 +15,7 @@ import {
   NEW_STENCIL,
   OFFERED,
   RENAME,
-  type CanRun,
+  type RunGuard,
 } from './menu'
 import type { Host, Kind } from '../windowing'
 import { FILES } from '../workspace'
@@ -30,7 +30,7 @@ export interface MenuRequest {
 }
 
 /** Where rows let go of landed, as the tree reports it. */
-export type Dropped = { readonly into: string } | { readonly before: string }
+export type DropPosition = { readonly into: string } | { readonly before: string }
 
 /** What a files tab asks of the window it is drawn in. */
 export interface FilesTabDeps {
@@ -71,11 +71,11 @@ export interface FilesTabDeps {
    * Whether this build can do a run at all, which decides whether the menu on
    * a row offers it. A window that says nothing offers every run.
    */
-  canRun?: CanRun
+  canRun?: RunGuard
 }
 
 /** One of the three files the vault names itself, made in a folder. */
-type Cut = (folder: string, name: string) => Promise<string>
+type FileMaker = (folder: string, name: string) => Promise<string>
 
 /**
  * Where a row activated takes the person: the file the row stands for, under
@@ -134,7 +134,7 @@ export type FilesTabState = ReturnType<typeof filing>
  * The files tab of a window. A window shows the vault once, so a second asked
  * for is the tree already open.
  */
-export function filesKind(host: Host, makes: () => Listing, deps: FilesTabDeps) {
+export function filesKind(host: Host, makes: () => FileTree, deps: FilesTabDeps) {
   const kind: Kind<FilesTabState> = {
     kind: FILES,
     opens: () => {
@@ -170,7 +170,7 @@ export function filesKind(host: Host, makes: () => Listing, deps: FilesTabDeps) 
   return { kind, reveals, changed }
 }
 
-export function filing(list: Listing, deps: FilesTabDeps) {
+export function filing(list: FileTree, deps: FilesTabDeps) {
   /** The menu on a row, for as long as it stands. */
   const menu = ref<MenuRequest | null>(null)
   /** The row whose name is in a field, and nothing while none is. */
@@ -226,7 +226,7 @@ export function filing(list: Listing, deps: FilesTabDeps) {
    * A row whose name is taken in that folder stays where it is and is said;
    * the rest go. The folders are read again once, when all of them are done.
    */
-  const move = async (paths: readonly string[], at: Dropped) => {
+  const move = async (paths: readonly string[], at: DropPosition) => {
     if (paths.length === 0) return
 
     const into = landedIn(at)
@@ -309,9 +309,9 @@ export function filing(list: Listing, deps: FilesTabDeps) {
    * answers where it stands, so a name already taken there comes back as a
    * refusal.
    */
-  const cuts = async (path: string | null, cut: Cut, name: string) => {
+  const cuts = async (path: string | null, makes: FileMaker, name: string) => {
     const into = folderFor(path)
-    const made = await cut(into, name)
+    const made = await makes(into, name)
     if (!made) return
     await list.opens(into)
     renaming.value = made
@@ -358,7 +358,7 @@ export function filing(list: Listing, deps: FilesTabDeps) {
   const sourceOf = (path: string): Source => list.entryAt(path)?.kind ?? 'other'
 
   /** Whether this build can do a run at all, as the menu on a row asks it. */
-  const canRun: CanRun = (run) => deps.canRun?.(run) ?? true
+  const canRun: RunGuard = (run) => deps.canRun?.(run) ?? true
 
   return {
     list,

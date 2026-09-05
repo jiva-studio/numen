@@ -9,7 +9,7 @@ import { banded } from '@numen/ui'
 import type { Source } from '../core'
 import {
   itemsFor,
-  type CanRun,
+  type RunGuard,
   NEW_DECK,
   NEW_FOLDER,
   NEW_NOTE,
@@ -19,10 +19,10 @@ import {
 } from './menu'
 
 /** A window that has been told nothing, which can do every run. */
-const anything: CanRun = () => true
+const anything: RunGuard = () => true
 
 /** What a row of that kind offers, by the identity of each item. */
-const on = (source: Source, folder = false, canRun: CanRun = anything): readonly string[] =>
+const on = (source: Source, folder = false, canRun: RunGuard = anything): readonly string[] =>
   itemsFor({ source, folder }, false, canRun).map((one) => one.id)
 
 /** The same, as it is drawn: each item, and the rule standing above it. */
@@ -106,7 +106,7 @@ describe('where a run stands in the menu', () => {
 
 describe('the menu where this build cannot do a run at all', () => {
   it('offers the recording nothing, and leaves the scan its own run', () => {
-    const but: CanRun = (run) => run !== 'transcribe'
+    const but: RunGuard = (run) => run !== 'transcribe'
 
     expect(on('recording', false, but)).not.toContain('transcribe')
     expect(on('book', false, but)).toContain('recognise')

@@ -8,7 +8,7 @@
 import type { PlexRelatedSeat } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
 import type { Deed, RunSupport, VaultRef } from './commanding'
-import type { Opened } from './putting'
+import type { EditorKind } from './putting'
 import type {
   Artifact,
   Movement,
@@ -46,7 +46,7 @@ export interface Notes {
    */
   opens(path: string, title: string, showing: 'here' | 'beside'): void
   /** A file just made here, put in front of the person as what it was made as. */
-  made(path: string, title: string, type: Opened, showing: 'here' | 'beside'): void
+  made(path: string, title: string, type: EditorKind, showing: 'here' | 'beside'): void
 }
 
 /**
