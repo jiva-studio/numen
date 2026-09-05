@@ -68,6 +68,10 @@ The frontend grew a house dialect — `Plexing`, `Filing`, `Drawn`, `Asked`, `Ab
 
 Nothing refuses any of 24–31. They are read by a person and by a reviewer.
 
+## Names on files
+
+32. **A file named by a gerund or a participle says that word in its own code.** A file answers with a declaration of its own — a type, a function, a constant, a package; a test answers with any name its code calls, being named after what it tests. Neither answers with a comment or a string. `owing_test.go` held the counting of a vault's cards due and said "owing" nowhere in itself, and no guard could see it, because every one of them read declarations and none read the name of the file it stood in. There is no dictionary and nothing is exempt: a verb form the code does not use is a word standing on nothing, and the file takes the name of what it declares. → `every Go file named by a verb form says that word in its own code`, in `modules/tools/lint/filenames.test.mjs`
+
 ## The reviewer
 
 `.claude/agents/go-reviewer.md` reviews Go changes against the same records, afterwards. The one place the two could have disagreed is the number of a port's callers: the reviewer's rule against abstracting before a second case predates the rule above, and both files now draw the line the same way. It holds for an ordinary Go interface; inside `port/` it does not, and "only one caller" is not a finding there.
