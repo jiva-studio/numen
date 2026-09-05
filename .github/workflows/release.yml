@@ -189,7 +189,7 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: "1.26"
+          go-version-file: modules/apps/desktop/go.mod
           # The window is built from both modules.
           cache-dependency-path: |
             modules/apps/desktop/go.sum
@@ -585,7 +585,7 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: "1.26"
+          go-version-file: modules/apps/desktop/go.mod
           # The window is built from both modules.
           cache-dependency-path: |
             modules/apps/desktop/go.sum
@@ -705,7 +705,7 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: "1.26"
+          go-version-file: modules/apps/desktop/go.mod
           # The window is built from both modules.
           cache-dependency-path: |
             modules/apps/desktop/go.sum
