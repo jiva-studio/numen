@@ -198,30 +198,50 @@ function heldCursor(): string | null {
 
 /** A place the pointer was at, and the cursor the splitter drew there. */
 interface Caught {
+  readonly away: number
   readonly at: Point
-  readonly cursor: string
+  readonly cursor: string | null
 }
 
 /**
- * Every place along a line across a handle where the splitter has the pointer,
- * and the cursor it draws there. The line is taken a quarter of the way along
- * the handle, clear of the handles a branch further in lays across this one.
+ * How far either side of the line the pointer is put, in pixels. The reach is a
+ * rectangle seven pixels out, so anywhere between two places it catches is
+ * caught too; what is worth asking about is where it ends. The line itself, the
+ * panel either side of it, the far edge of the reach a pixel in for where the
+ * window rounds the pointer to, and clear of it.
+ */
+const AWAY = [-10, -6, -3, 0, 3, 6, 10]
+
+/**
+ * Where the splitter has the pointer along a line across a handle, and the
+ * cursor it draws there. The line is taken a quarter of the way along the
+ * handle, clear of the handles a branch further in lays across this one.
  */
 async function caughtAcross(handle: HTMLElement, along: 'x' | 'y'): Promise<readonly Caught[]> {
   const box = boxOf(handle)
   const found: Caught[] = []
 
-  for (let away = -10; away <= 10; away += 1) {
+  for (const away of AWAY) {
     const at =
       along === 'x'
         ? { x: box.x + box.width / 2 + away, y: box.y + box.height / 4 }
         : { x: box.x + box.width / 4, y: box.y + box.height / 2 + away }
 
     await swept(at, at)
-    const cursor = heldCursor()
-    if (cursor) found.push({ at, cursor })
+    found.push({ away, at, cursor: heldCursor() })
   }
   return found
+}
+
+/** What a handle that catches its whole reach, and no further, draws at those places. */
+const reaching = (cursor: string) => AWAY.map((away) => [away, Math.abs(away) <= 6 ? cursor : null])
+
+/** The furthest out along that line the splitter still had the pointer. */
+function furthest(caught: readonly Caught[]): Point {
+  const held = caught.filter((place) => place.cursor)
+  const edge = held[held.length - 1]?.at
+  if (!edge) throw new Error('the handle caught nothing')
+  return edge
 }
 
 /** A tab picked up and let go somewhere, in as many steps as a hand takes. */
@@ -523,14 +543,12 @@ export const DragsFromItsWholeReach: Story = {
     const handle = canvasElement.querySelector('.branch__handle') as HTMLElement
     const caught = await caughtAcross(handle, 'x')
 
-    // The line and the reach either side of it, less a pixel for where the
-    // window rounds the pointer to.
-    await expect(caught.length).toBeGreaterThanOrEqual(14)
-    await expect(caught.map((place) => place.cursor)).toStrictEqual(caught.map(() => 'ew-resize'))
+    await expect(caught.map((place) => [place.away, place.cursor])).toStrictEqual(
+      reaching('ew-resize'),
+    )
     await expect(getComputedStyle(handle).cursor).toBe('ew-resize')
 
-    const edge = caught[caught.length - 1]?.at
-    if (!edge) throw new Error('the handle caught nothing')
+    const edge = furthest(caught)
     const before = paneBox(canvasElement, 'main').width
 
     await swept(edge, { x: edge.x + 40, y: edge.y })
@@ -552,12 +570,12 @@ export const DragsFromItsWholeReachDownwards: Story = {
     ) as HTMLElement
     const caught = await caughtAcross(handle, 'y')
 
-    await expect(caught.length).toBeGreaterThanOrEqual(14)
-    await expect(caught.map((place) => place.cursor)).toStrictEqual(caught.map(() => 'ns-resize'))
+    await expect(caught.map((place) => [place.away, place.cursor])).toStrictEqual(
+      reaching('ns-resize'),
+    )
     await expect(getComputedStyle(handle).cursor).toBe('ns-resize')
 
-    const edge = caught[caught.length - 1]?.at
-    if (!edge) throw new Error('the handle caught nothing')
+    const edge = furthest(caught)
     const before = paneBox(canvasElement, 'b').height
 
     await swept(edge, { x: edge.x, y: edge.y + 30 })
