@@ -149,7 +149,8 @@ func (u EditLinks) Remove(
 	})
 }
 
-// NameQueries is the one question writing a link asks of the vault.
+// NameQueries is the one question writing a link, or naming a new note, asks
+// of the vault.
 type NameQueries interface {
 	// Named is the paths of every note filed under one name. More than one is
 	// what makes a link written by that name mean the wrong note.

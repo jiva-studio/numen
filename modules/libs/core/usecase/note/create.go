@@ -18,7 +18,7 @@ import (
 // carry whole is written into the frontmatter, and nothing else writes that key.
 type Create struct {
 	Writers port.VaultWriters
-	Names   port.NoteQueries
+	Names   NameQueries
 	// Index brings the named notes up to date, so that a caller which creates
 	// a note and searches for it in the next breath finds it.
 	Index Levels
@@ -35,7 +35,7 @@ type Create struct {
 // vault cannot find, or one whose identifier was minted off the machine's
 // clock rather than off the one this installation keeps.
 func NewCreate(
-	writers port.VaultWriters, names port.NoteQueries, index Levels, now port.Clock,
+	writers port.VaultWriters, names NameQueries, index Levels, now port.Clock,
 ) Create {
 	return Create{Writers: writers, Names: names, Index: index, Now: now}
 }

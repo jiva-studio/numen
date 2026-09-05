@@ -55,13 +55,24 @@ type RenameResult struct {
 type RenameField struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
-	Notes   port.NoteQueries
+	Notes   TypeQueries
 	// Links answers where the wikilink a card names its stencil by lands, which
 	// is what says the card is cut by this stencil.
 	Links port.LinkQueries
 	Index note.Levels
 	// Now is when this is happening. An identifier written here carries it.
 	Now port.Clock
+}
+
+// TypeQueries is the one question a rename asks of the index. The whole of the
+// rename runs under the vault's write lock, so what it may ask is what it is
+// given: a question per note of the vault is every other write waiting behind
+// it.
+type TypeQueries interface {
+	// OfType is every note of one type the vault holds, by path. A caller after
+	// the decks or the stencils of a vault asks for them, and opens no file to
+	// find out what each note is.
+	OfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
 }
 
 // NewRenameField is what a stencil's field is renamed through: the vault the
@@ -75,7 +86,7 @@ type RenameField struct {
 func NewRenameField(
 	readers port.VaultReaders,
 	writers port.VaultWriters,
-	notes port.NoteQueries,
+	notes TypeQueries,
 	links port.LinkQueries,
 	index note.Levels,
 	now port.Clock,

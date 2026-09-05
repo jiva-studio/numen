@@ -20,7 +20,7 @@ type Scan struct {
 	Readers     port.VaultReaders
 	Vaults      port.VaultRepository
 	Notes       port.NoteRepository
-	Known       port.NoteQueries
+	Known       FingerprintQueries
 	Maintenance port.IndexMaintenance
 
 	// Walks is the turns the vaults being walked take. A scan given none takes
@@ -54,6 +54,15 @@ type ScanResult struct {
 	Removed    int // in the index, no longer on disk
 	Vanished   int // walked, but gone by the time it was read
 	Unreadable int // walked, still there, and the read refused
+}
+
+// FingerprintQueries is the one question a scan asks of the index, so that a
+// scan is handed what says which files have changed and nothing that answers
+// about a note.
+type FingerprintQueries interface {
+	// Fingerprints is what the index believes about each file, keyed by path,
+	// so a scan can decide what to reparse without reading anything.
+	Fingerprints(ctx context.Context, vaultID domain.VaultID) (map[string]domain.Fingerprint, error)
 }
 
 // Walks is the vaults being walked, a turn each.

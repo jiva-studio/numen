@@ -14,7 +14,16 @@ import (
 // are written nowhere: they are the other children of a shared parent.
 type ShowNeighbourhood struct {
 	Links port.LinkQueries
-	Notes port.NoteQueries
+	Notes RefQueries
+}
+
+// RefQueries is the one question a neighbourhood asks about the notes it has
+// found: what is needed to show each of them.
+type RefQueries interface {
+	// Notes returns what is needed to show a note, for the paths asked about.
+	// Paths that name nothing are absent from the answer: a link resolves as
+	// of now, and what it resolved to a moment ago may be gone.
+	Notes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error)
 }
 
 func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path string) (domain.Neighbourhood, error) {

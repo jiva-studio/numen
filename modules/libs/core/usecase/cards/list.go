@@ -22,12 +22,19 @@ type StencilSummary struct {
 // so a stencil that cannot be read is on the list with no fields on it.
 type List struct {
 	Readers port.VaultReaders
-	Notes   port.NoteQueries
+	Notes   StencilQueries
+}
+
+// StencilQueries is the one question listing them asks of the index.
+type StencilQueries interface {
+	// Stencils is every stencil one vault holds, by path. A card names the
+	// stencil it is cut by, and this is the list those names are picked from.
+	Stencils(ctx context.Context, vaultID domain.VaultID) ([]domain.Stencil, error)
 }
 
 // NewList is what the vault's stencils are listed through: what says which
 // notes are stencils, and the vault each is read out of for its fields.
-func NewList(readers port.VaultReaders, notes port.NoteQueries) List {
+func NewList(readers port.VaultReaders, notes StencilQueries) List {
 	return List{Readers: readers, Notes: notes}
 }
 
