@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -88,7 +89,7 @@ func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 	}
 	queries := db.Queries()
 	cutting := cfg.Cards(queries, db.Links(), index)
-	moving := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index)
+	moving := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index, time.Now)
 
 	core := mcp.Core{
 		Cards: mcp.Cards{
@@ -108,13 +109,13 @@ func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 			Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
 			Links:         note.ShowLinks{Links: db.Links()},
 			Problems:      check.Standard(db.Problems()),
-			Create:        note.NewCreate(writers, queries, index),
-			Write:         note.NewWrite(readers, writers, index),
-			Replace:       note.NewReplace(readers, writers, index),
+			Create:        note.NewCreate(writers, queries, index, time.Now),
+			Write:         note.NewWrite(readers, writers, index, time.Now),
+			Replace:       note.NewReplace(readers, writers, index, time.Now),
 			Move:          moving,
 			Rename:        note.NewRename(moving),
 			Remove:        note.NewRemove(writers, db.Links(), db.SourcesKnown(), index),
-			Linking:       note.NewEditLinks(readers, writers, index),
+			Linking:       note.NewEditLinks(readers, writers, index, time.Now),
 		},
 	}
 	return v, core

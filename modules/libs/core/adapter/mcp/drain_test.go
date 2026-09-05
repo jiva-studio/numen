@@ -90,7 +90,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	}
 
 	queries := db.Queries()
-	moving := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index)
+	moving := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index, time.Now)
 	core := mcp.Core{
 		Showing: mcp.One(v, v.Path), Readers: readers,
 		Notes: mcp.Notes{
@@ -99,12 +99,12 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 			Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
 			Links:         note.ShowLinks{Links: db.Links()},
 			Problems:      check.Standard(db.Problems()),
-			Create:        note.NewCreate(writers, queries, index),
-			Write:         note.NewWrite(readers, writers, index),
+			Create:        note.NewCreate(writers, queries, index, time.Now),
+			Write:         note.NewWrite(readers, writers, index, time.Now),
 			Move:          moving,
 			Rename:        note.NewRename(moving),
 			Remove:        note.NewRemove(writers, db.Links(), db.SourcesKnown(), index),
-			Linking:       note.NewEditLinks(readers, writers, index),
+			Linking:       note.NewEditLinks(readers, writers, index, time.Now),
 		},
 	}
 
