@@ -13,7 +13,7 @@ defineProps<{
 </script>
 
 <template>
-  <p class="warning" :class="{ 'warning--answering': answering }">
+  <p class="caution" :class="{ 'caution--answering': answering }">
     <slot />
   </p>
 </template>

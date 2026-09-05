@@ -585,7 +585,7 @@ describe('a command asked for on a node of the plex', () => {
     held.view.trouble.value = 'Gone.md is not in the vault'
     await settles()
 
-    expect(tab.find('.warning').text()).toBe('Gone.md is not in the vault')
+    expect(tab.find('.caution').text()).toBe('Gone.md is not in the vault')
     expect(cards(window)).toStrictEqual([])
   })
 

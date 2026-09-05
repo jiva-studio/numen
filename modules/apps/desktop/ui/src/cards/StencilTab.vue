@@ -30,7 +30,7 @@ const marks = computed(() => props.held.marks())
       @take="props.held.take()"
     />
 
-    <ul v-if="marks.whole.length" class="warning wrong" :aria-label="words.problems">
+    <ul v-if="marks.whole.length" class="caution wrong" :aria-label="words.problems">
       <li v-for="(text, at) in marks.whole" :key="at">{{ text }}</li>
     </ul>
 
