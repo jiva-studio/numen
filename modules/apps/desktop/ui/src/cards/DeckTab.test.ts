@@ -334,7 +334,7 @@ describe('a gesture in the grid', () => {
     const { window, tab } = await drawn()
     const roots = tab.bands.value[0]?.id ?? ''
 
-    await window.get(`[data-band="${roots}"]`).get('.remove').trigger('click')
+    await window.get(`[data-band="${roots}"]`).get('.remove-button').trigger('click')
 
     expect(tab.bands.value).toStrictEqual([])
     expect(window.findAll('[data-card]')).toHaveLength(2)
