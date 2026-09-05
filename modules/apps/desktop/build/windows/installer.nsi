@@ -86,6 +86,10 @@ Section "-WebView2"
 SectionEnd
 
 Section "Numen"
+  ; The program is installed for the machine, so its shortcuts belong to every
+  ; person on it and not to whoever answered the elevation prompt.
+  SetShellVarContext all
+
   SetOutPath "$INSTDIR"
   File "/oname=numen.exe" "${BINARY}"
   File "/oname=numen-flashcards.exe" "${FLASHCARDS}"
@@ -113,6 +117,10 @@ SectionEnd
 
 ; A vault is a folder of the person's own and is left where it is.
 Section "Uninstall"
+  ; The uninstaller runs as its own program and starts on the person running
+  ; it, so it is told again where the shortcuts were written.
+  SetShellVarContext all
+
   Delete "$INSTDIR\numen.exe"
   Delete "$INSTDIR\numen-flashcards.exe"
   Delete "$INSTDIR\numen.ico"
