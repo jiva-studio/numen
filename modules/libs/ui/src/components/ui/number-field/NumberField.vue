@@ -135,7 +135,7 @@ const settle = async () => {
  */
 const pressed = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
-    settle()
+    void settle()
     return
   }
   const said = walked(event.key, numberOf(typed.value) ?? model.value, bounds.value)

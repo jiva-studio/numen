@@ -141,6 +141,7 @@ lint: generate-check ## the checks CI runs, less the one needing a base branch
 	$(MAKE) lint-go
 	$(MAKE) vulncheck
 	cd $(PROTOCOL) && buf lint
+	cd $(UI) && npm run lint
 	cd $(UI) && npm run typecheck
 	cd $(WIRE) && npm run typecheck
 	cd $(DESKTOP)/ui && npm run typecheck

@@ -12,3 +12,13 @@ export const browserEnvironment: Environment = {
   schedule: (run) => requestAnimationFrame(run),
   cancel: (handle) => cancelAnimationFrame(handle),
 }
+
+/**
+ * The next frame where there is one, and now where there is none, for work
+ * that has nothing to cancel. A component takes this as a default and a test
+ * hands in its own.
+ */
+export const onNextFrame = (run: () => void): void => {
+  if (typeof requestAnimationFrame === 'function') browserEnvironment.schedule(run)
+  else run()
+}

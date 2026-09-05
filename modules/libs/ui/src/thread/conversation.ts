@@ -8,6 +8,7 @@
  * them all as one.
  */
 import { ref, type Ref } from 'vue'
+import { onNextFrame } from '../lib/environment'
 import { charsWord, type Turn } from './turn'
 import type { AgentPort, Place } from './agent'
 
@@ -45,11 +46,6 @@ export interface Conversation {
  * which is as often as anybody can see.
  */
 type Paint = (draw: () => void) => void
-
-const onNextFrame: Paint = (draw) => {
-  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(draw)
-  else draw()
-}
 
 /**
  * A tool as the panel says it. A tool served with a title of its own arrives

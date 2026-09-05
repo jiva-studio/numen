@@ -40,6 +40,11 @@ jobs:
       - name: Install
         run: npm ci --prefix modules/libs/ui
 
+      # Correctness and the boundaries ADR-0023 draws. It runs before the
+      # build, because what it refuses is cheaper to read than a type error.
+      - name: Lint
+        run: npm run lint --prefix modules/libs/ui
+
       - name: Build the components
         run: npm run build --prefix modules/libs/ui
 
