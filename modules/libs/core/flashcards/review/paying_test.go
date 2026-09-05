@@ -22,8 +22,8 @@ func spending(t *rapid.T) review.Allowance {
 // it is all debt, a day at none of it is all new cards, and a day at half of it
 // takes them one and one beginning with the debt.
 //
-// ADR-0038 — backlog is how much of a day goes to what is overdue before
-// anything new is offered.
+// Backlog is how much of a day goes to what is overdue before anything new is
+// offered.
 func TestTheDebtTakesItsShareOfEveryPointOfTheRun(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -51,7 +51,7 @@ func TestTheDebtTakesItsShareOfEveryPointOfTheRun(t *testing.T) {
 // never left unspent: whatever the share says, a day holding cards on one side
 // alone spends the whole of what it admits on that side.
 //
-// ADR-0038 — a side that runs short leaves the rest of the day to the other.
+// A side that runs short leaves the rest of the day to the other.
 func TestASideThatRunsShortLeavesTheDayToTheOther(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -85,7 +85,7 @@ func TestASideThatRunsShortLeavesTheDayToTheOther(t *testing.T) {
 // number of showings costs is the faces it showed. A budget counting showings
 // charges every one of them.
 //
-// ADR-0038 — a budget counts cards, and may be told to count showings.
+// A budget counts cards, and may be told to count showings.
 func TestWhatADayOfShowingsCosts(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {

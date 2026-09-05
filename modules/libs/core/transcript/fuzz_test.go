@@ -30,8 +30,8 @@ var vttSeeds = []string{
 // carries is where its text is to be found in the words the transcript reads
 // as, and the cues are in the order they were spoken.
 //
-// A transcript arrives from the transcriber (ADR-0043) and may be edited by
-// hand, so the bytes are a stranger's.
+// A transcript arrives from the transcriber and may be edited by hand, so the
+// bytes are a stranger's.
 func FuzzParse(f *testing.F) {
 	for _, seed := range vttSeeds {
 		f.Add(seed)
@@ -63,7 +63,7 @@ func FuzzParse(f *testing.F) {
 // line ends a cue in the format, so a cue holding one is two blocks and not one
 // cue, and it is not written as one.
 //
-// ADR-0043 — a transcript is WebVTT, and the artifact is what a person opens.
+// A transcript is WebVTT, and the artifact is what a person opens.
 func FuzzMarshal(f *testing.F) {
 	f.Add("the first thing said", "and the second", 0, 2500, 5000)
 	f.Add(" ", "said", 0, 0, 1)

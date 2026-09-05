@@ -87,8 +87,8 @@ func contains(all []string, one string) bool {
 // A note read and not written comes out as the bytes it went in as. Reading is
 // not rewriting: a note nobody changed is untouched down to its line endings.
 //
-// ADR-0018 — the frontmatter is shared with the person, and the application
-// does not own the whole of it.
+// The frontmatter is shared with the person, and the application does not own
+// the whole of it.
 func TestANoteNobodyWroteToComesOutAsItWentIn(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -106,8 +106,7 @@ func TestANoteNobodyWroteToComesOutAsItWentIn(t *testing.T) {
 // A key the application does not own is preserved verbatim, order included,
 // however many owned keys are written over it and in whatever order.
 //
-// ADR-0018 — keys the application does not own are preserved verbatim, order
-// included.
+// Keys the application does not own are preserved verbatim, order included.
 func TestWhatTheApplicationDoesNotOwnIsKeptVerbatim(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -179,7 +178,7 @@ func kept(t *rapid.T, note string, foreign []string, wrote string) {
 // and by the reader of a whole note alike. A title is what the note is called
 // afterwards, and an identifier is the one the note carries.
 //
-// ADR-0018 — the frontmatter is where the application's fields live.
+// The frontmatter is where the application's fields live.
 func TestAnOwnedKeyReadsBackAsItWasWritten(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {

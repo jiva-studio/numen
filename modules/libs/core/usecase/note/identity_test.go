@@ -68,9 +68,9 @@ func carried(t *rapid.T, root, path string) (string, bool) {
 // A note keeps the identifier it has under any sequence of renames and moves,
 // and a move never gives one to a note without.
 //
-// ADR-0019 — a note's identity is not its path; the identifier it has is the
-// one it keeps, an identifier is written when the application changes what is
-// in a note, and a move is not a change to what is in one.
+// A note's identity is not its path; the identifier it has is the one it
+// keeps, an identifier is written when the application changes what is in a
+// note, and a move is not a change to what is in one.
 func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 	t.Parallel()
 	c := changeable(t, map[string]string{"other.md": "# Other\n"})
@@ -140,8 +140,8 @@ func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 // without an identifier is still without one afterwards. A rename that writes
 // the title is a change to what is in the note, and stamps it.
 //
-// ADR-0019 — a rename that writes the title stamps, and one the filename alone
-// carries does not.
+// A rename that writes the title stamps, and one the filename alone carries
+// does not.
 func TestOnlyARenameThatWritesTheTitleStamps(t *testing.T) {
 	t.Parallel()
 	c := changeable(t, map[string]string{"other.md": "# Other\n"})

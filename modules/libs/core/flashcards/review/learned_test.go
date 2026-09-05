@@ -48,7 +48,7 @@ func ruleNamed(t *rapid.T) review.Preset {
 // A card face nobody has answered is learned by neither rule, whatever the
 // preset says and whenever it is asked.
 //
-// ADR-0037 — a card face nobody has answered is learned by neither rule.
+// A card face nobody has answered is learned by neither rule.
 func TestACardFaceNobodyHasAnsweredIsLearnedByNeitherRule(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -67,8 +67,7 @@ func TestACardFaceNobodyHasAnsweredIsLearnedByNeitherRule(t *testing.T) {
 // counts by the default rule at its default value. A key nobody wrote leaves
 // the default in force, and never a threshold every card passes.
 //
-// ADR-0037 — a preset that names no rule counts by the default rule at its
-// default value.
+// A preset that names no rule counts by the default rule at its default value.
 func TestAValueTheRuleCannotHoldCountsByTheDefault(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -98,8 +97,8 @@ func TestAValueTheRuleCannotHoldCountsByTheDefault(t *testing.T) {
 // presets count it learned: a card learned under one interval is learned under
 // every shorter one.
 //
-// ADR-0037 — under learned: interval a card is learned once the interval it is
-// sent away for reaches the preset's interval.
+// Under learned: interval a card is learned once the interval it is sent away
+// for reaches the preset's interval.
 func TestALongerIntervalIsLearnedByEveryShorterOne(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -124,8 +123,7 @@ func TestALongerIntervalIsLearnedByEveryShorterOne(t *testing.T) {
 // earlier one, and a lapse that collapses its stability takes it out of that
 // standing.
 //
-// ADR-0037 — learned is a state and not a milestone, asked of where the card
-// stands now.
+// Learned is a state and not a milestone, asked of where the card stands now.
 func TestRecallIsAStateAndNotAMilestone(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {

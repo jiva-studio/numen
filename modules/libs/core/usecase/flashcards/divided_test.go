@@ -37,7 +37,7 @@ func totalled(owes []float64) float64 {
 // where the budget is the smaller, and everything owed where it is not. What no
 // deck could use is not left on the day.
 //
-// ADR-0041 — a preset's day is divided over the decks it schedules.
+// A preset's day is divided over the decks it schedules.
 func TestADividedDayIsHandedOutWhole(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -55,7 +55,7 @@ func TestADividedDayIsHandedOutWhole(t *testing.T) {
 // takes nothing: a share is what a deck owes, so there is nothing to hand a
 // deck that owes nothing.
 //
-// ADR-0041 — the shares are proportional to what the decks owe.
+// The shares are proportional to what the decks owe.
 func TestNoDeckTakesMoreOfTheDayThanItOwes(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -75,8 +75,8 @@ func TestNoDeckTakesMoreOfTheDayThanItOwes(t *testing.T) {
 // over is under one card a deck, so no share is a whole card away from the
 // proportion it is drawn from.
 //
-// ADR-0041 — the shares are proportional, and what they leave over goes by the
-// largest fraction.
+// The shares are proportional, and what they leave over goes by the largest
+// fraction.
 func TestAShareIsTheProportionOfTheDayItsDeckOwes(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -99,8 +99,8 @@ func TestAShareIsTheProportionOfTheDayItsDeckOwes(t *testing.T) {
 // A deck owing more of the day never takes less of it than a deck owing less,
 // and decks owing the same take what is left over in the order they are given.
 //
-// ADR-0041 — a deck owing nine times another's takes nine times the share, and
-// decks standing equal take the remainder in the order their paths stand.
+// A deck owing nine times another's takes nine times the share, and decks
+// standing equal take the remainder in the order their paths stand.
 func TestADeckOwingMoreNeverTakesLess(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
@@ -201,7 +201,7 @@ func walking(load []deckLoad, order []int, keeps review.Budget) map[review.CardF
 // handed their shares in the order their paths stand, so the order a walk
 // reached them in decides nothing.
 //
-// ADR-0041 — a vault divides the same day however its files are walked.
+// A vault divides the same day however its files are walked.
 func TestTheWalkOfAVaultDoesNotChangeWhatADayHandsOver(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
