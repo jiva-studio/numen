@@ -35,14 +35,14 @@ export type FileOpener = (
 export type SourceReader = (path: string, stretches: readonly Stretch[]) => void
 
 /** What the window asks the vault about the file it is opening. */
-export interface PuttingDeps {
+export interface FileOpenerDeps {
   fileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>>
 }
 
 /** What a file the vault could not be asked about at all is opened as. */
 const ORDINARY: FileKind = { kind: 'note', type: 'note' }
 
-export function putting(vault: PuttingDeps) {
+export function putting(vault: FileOpenerDeps) {
   /** The editor each kind of note opens in, as its kind handed it over. */
   const editors = new Map<Opened, FileOpener>()
 
@@ -127,7 +127,7 @@ export function putting(vault: PuttingDeps) {
 }
 
 /** What the window puts files in front of the person with. */
-export type Putting = ReturnType<typeof putting>
+export type FileOpeners = ReturnType<typeof putting>
 
 /** Which of the three a file is made as. */
 export type Cut = 'deck' | 'stencil' | 'preset'
@@ -159,7 +159,7 @@ export interface CuttingWords {
  * answers nothing at all is said here, because the roads that ask for one carry
  * no word of their own.
  */
-export function cutting(vault: CutWriter, puts: Putting, words: CuttingWords, said: Voice) {
+export function cutting(vault: CutWriter, puts: FileOpeners, words: CuttingWords, said: Voice) {
   const makes = async (what: Cut, folder: string, name: string): Promise<string> => {
     try {
       const answer =

@@ -7,7 +7,7 @@
  */
 import type { Reading } from './reading'
 import type { Stretch } from '../core'
-import type { Putting } from '../putting'
+import type { FileOpeners } from '../putting'
 import type { Host, Kind } from '../windowing'
 import { DOCUMENT } from '../workspace'
 import DocumentTab from './DocumentTab.vue'
@@ -24,7 +24,7 @@ export type DocumentTabState = ReturnType<typeof documenting>
  * The document tabs of a window. A document is its own tab, so the same one
  * opened again is the tab it is already read in.
  */
-export function documentKind(host: Host, opens: (path: string) => DocumentTabState, puts: Putting) {
+export function documentKind(host: Host, opens: (path: string) => DocumentTabState, puts: FileOpeners) {
   const kind: Kind<DocumentTabState> = {
     kind: DOCUMENT,
     opens,

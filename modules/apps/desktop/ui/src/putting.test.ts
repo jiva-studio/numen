@@ -7,14 +7,14 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { FileKind, RefusalReason } from './core'
-import { cutting, putting, type CutWriter, type PuttingDeps } from './putting'
+import { cutting, putting, type CutWriter, type FileOpenerDeps } from './putting'
 import { voice } from './testing/voice'
 import { REFUSED } from './words'
 
 /** A vault that answers what it was told, and counts the questions. */
 const vault = (stands: Record<string, FileKind> = {}) => {
   const asked: (readonly string[])[] = []
-  const core: PuttingDeps = {
+  const core: FileOpenerDeps = {
     fileKinds: async (paths) => {
       asked.push(paths)
       const found = new Map<string, FileKind>()
@@ -37,7 +37,7 @@ const TALK: FileKind = { kind: 'recording', type: 'note' }
 const OTHER: FileKind = { kind: 'other', type: 'note' }
 
 /** A vault that cannot answer at all. */
-const unreachable: PuttingDeps = {
+const unreachable: FileOpenerDeps = {
   fileKinds: async () => {
     throw new Error('the vault is not there')
   },

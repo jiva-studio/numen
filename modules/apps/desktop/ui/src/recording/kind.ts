@@ -8,7 +8,7 @@
 import { computed } from 'vue'
 import type { Transcript } from './transcript'
 import type { Stretch, Task } from '../core'
-import type { Putting } from '../putting'
+import type { FileOpeners } from '../putting'
 import type { Host, Kind } from '../windowing'
 import { RECORDING } from '../workspace'
 import { DROP, PROOFREAD, TRANSCRIBE } from './words'
@@ -73,7 +73,7 @@ export function recordingKind(
   host: Host,
   opens: (path: string) => Transcript,
   asks: RecordingTabDeps,
-  puts: Putting,
+  puts: FileOpeners,
 ) {
   const kind: Kind<RecordingTabState> = {
     kind: RECORDING,

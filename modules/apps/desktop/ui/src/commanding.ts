@@ -96,7 +96,7 @@ export type Step =
   | 'exactly'
 
 /** What a command wants before it can happen, which is the step that asks. */
-export type AskingStep = Exclude<Step, 'commands'>
+export type PromptStep = Exclude<Step, 'commands'>
 
 /** The vault a command is over: the identity the list gives it, and its name. */
 export interface VaultRef {
@@ -163,9 +163,9 @@ export interface Command {
   /** The keystroke that reaches it away from the palette. */
   readonly keys?: PaletteKeys
   /** What it asks for before it happens. */
-  readonly needs?: AskingStep
+  readonly needs?: PromptStep
   /** The step it asks for once the first one is answered. */
-  readonly next?: AskingStep
+  readonly next?: PromptStep
   /** The band it is offered in. */
   readonly band: Band
   /** Whether it is offered at all over what is in front, in this window. */
@@ -687,7 +687,7 @@ export const offering = (
 
 /** One step of a command: what it asks for, and what it is over. */
 interface PendingStep {
-  readonly step: AskingStep
+  readonly step: PromptStep
   readonly command: Command
   readonly on: CommandTarget
 }

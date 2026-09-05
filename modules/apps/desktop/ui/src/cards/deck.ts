@@ -14,7 +14,7 @@ import type { PresetChoice, Presets, ReadResult } from '../preset/core'
 import { editing, type OpenNote } from '../note/editing'
 import { markOf } from '../note/tab'
 import type { Host, Kind } from '../windowing'
-import type { Putting } from '../putting'
+import type { FileOpeners } from '../putting'
 import { DECK } from '../workspace'
 import DeckTab from './DeckTab.vue'
 import {
@@ -46,7 +46,7 @@ import {
 import { WORDS as words } from './words'
 
 /** What the vault said about one file the last time it was read or written. */
-interface Told {
+interface VaultAnswer {
   /**
    * What is wrong with the file, in the order the cards were read in. Which
    * card each stands on is decided against the deck the grid is drawing, so a
@@ -61,7 +61,7 @@ interface Told {
   readonly bound: number
 }
 
-const NOTHING: Told = { problems: [], reading: null, writing: null, bound: 0 }
+const NOTHING: VaultAnswer = { problems: [], reading: null, writing: null, bound: 0 }
 
 /** The preset a deck is scheduled by, as the line at the top of it draws it. */
 export interface Scheduled {
@@ -145,9 +145,9 @@ export interface DeckTabState {
   shuts(id: string): void
 }
 
-export function decking(cards: Cards, presets: Presets, host: Host, puts: Putting) {
+export function decking(cards: Cards, presets: Presets, host: Host, puts: FileOpeners) {
   /** What the vault last said about each file, under the path it is filed at. */
-  const told = new Map<string, Told>()
+  const told = new Map<string, VaultAnswer>()
   /** What each file is called, as the vault last read it. */
   const titles = new Map<string, string>()
   /** The stencils of the vault, as they were last listed. */

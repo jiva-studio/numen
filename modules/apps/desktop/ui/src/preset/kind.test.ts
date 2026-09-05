@@ -24,7 +24,7 @@ import {
 import { BOUNDS } from '../testing/preset'
 import type { RefusalReason } from '../core'
 import type { Host } from '../windowing'
-import type { Putting } from '../putting'
+import type { FileOpeners } from '../putting'
 import { WORDS as words } from './words'
 
 const point = (over: Partial<Point> = {}): Point => ({
@@ -117,7 +117,7 @@ const opened = async (
     },
   }
   const host = { closes: (tab: string) => void closed.push(tab) } as unknown as Host
-  const puts = { holds: () => {} } as unknown as Putting
+  const puts = { holds: () => {} } as unknown as FileOpeners
   const kind = presetting(core, host, puts, () => {}, () => NOW)
   const held = await kind.kind.opens('Steady.md')
   // The read and the curve behind it are two answers, and both are awaited.
@@ -178,7 +178,7 @@ const opening = async (file: Partial<Settings>) => {
     curve: async () => curve,
   }
   const host = { closes: () => {} } as unknown as Host
-  const puts = { holds: () => {} } as unknown as Putting
+  const puts = { holds: () => {} } as unknown as FileOpeners
   const kind = presetting(core, host, puts, () => {}, () => NOW)
   return { tab: await kind.kind.opens('Steady.md'), written, lands }
 }

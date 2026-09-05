@@ -18,7 +18,7 @@ import { entering, ITSELF } from './entering'
 import { naming, type NamingDeps } from './naming'
 import NoteTab from './NoteTab.vue'
 import { markOf } from './tab'
-import type { Putting } from '../putting'
+import type { FileOpeners } from '../putting'
 
 /** The notes of the whole window, read and written by one store. */
 type Notes = ReturnType<typeof editing>
@@ -70,7 +70,7 @@ export function noting(
   notes: Notes,
   drawings: Drawings,
   host: Host,
-  puts: Putting,
+  puts: FileOpeners,
 ) {
   const names = naming(vault, notes)
   const keyboard = entering()

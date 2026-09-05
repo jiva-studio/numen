@@ -14,7 +14,7 @@ import { markOf } from '../note/tab'
 import type { Voice } from '../telling'
 import type { Host, Kind } from '../windowing'
 import { REFUSED } from '../words'
-import type { Putting } from '../putting'
+import type { FileOpeners } from '../putting'
 import { STENCIL } from '../workspace'
 import StencilTab from './StencilTab.vue'
 import {
@@ -39,7 +39,7 @@ import {
 import { WORDS as words } from './words'
 
 /** What the vault said about one file the last time it was read or written. */
-interface Told {
+interface VaultAnswer {
   /**
    * What is wrong with the file, in the order the faces were read in. Which
    * face each stands on is decided against the stencil the editor is drawing,
@@ -54,7 +54,7 @@ interface Told {
   readonly at: string
 }
 
-const NOTHING: Told = { problems: [], reading: null, writing: null, at: '' }
+const NOTHING: VaultAnswer = { problems: [], reading: null, writing: null, at: '' }
 
 /** What one stencil tab holds. */
 export interface StencilTabState {
@@ -88,11 +88,11 @@ export interface StencilTabState {
 export function stencilling(
   cards: Cards,
   host: Host,
-  puts: Putting,
+  puts: FileOpeners,
   says: Voice = () => {},
 ) {
   /** What the vault last said about each file, under the path it is filed at. */
-  const told = new Map<string, Told>()
+  const told = new Map<string, VaultAnswer>()
   /** What each file is called, as the vault last read it. */
   const titles = new Map<string, string>()
 

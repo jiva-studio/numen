@@ -8,12 +8,12 @@
  */
 import { ref, shallowRef, type Ref } from 'vue'
 import { StopReason } from '@numen/protocol'
-import { asking, type Asking } from '../asking'
+import { asking, type AnswerGuard } from '../asking'
 import type { PlexShowing } from '@numen/ui'
 import type { Move, RefusalReason } from '../core'
 import type { Voice } from '../telling'
 import type { Host, Kind } from '../windowing'
-import type { Putting } from '../putting'
+import type { FileOpeners } from '../putting'
 import { PRESET } from '../workspace'
 import PresetTab from './PresetTab.vue'
 import {
@@ -126,7 +126,7 @@ export interface PresetTabState {
 export function presetting(
   core: Presets,
   host: Host,
-  puts: Putting,
+  puts: FileOpeners,
   said: Voice,
   today: () => Date = () => new Date(),
 ) {
@@ -164,7 +164,7 @@ export function presetting(
     /** The tab was held once at its close and says why; asked again it goes. */
     told: boolean
     /** An answer for a goal this tab has since left is dropped. */
-    readonly asks: Asking
+    readonly asks: AnswerGuard
     /** A curve is out, and whether the settings moved again while it was. */
     drawing: boolean
     drawAgain: boolean
