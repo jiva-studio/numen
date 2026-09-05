@@ -192,7 +192,7 @@ func addCardReadingTools(server *sdk.Server, core Core) {
 			res.Sections = append(res.Sections, s.Name)
 		}
 		if in.Mark != "" {
-			at, err := standing(read.Body.Cards, in.Mark)
+			at, err := index(read.Body.Cards, in.Mark)
 			if err != nil {
 				return nil, out{}, err
 			}
@@ -292,7 +292,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 				card := domain.CardID(in.Mark)
 				// A call writing nothing still says whether the deck holds the
 				// card it was addressed to.
-				if _, err := standing(read.Body.Cards, in.Mark); err != nil {
+				if _, err := index(read.Body.Cards, in.Mark); err != nil {
 					return err
 				}
 				if in.Stencil != "" {
@@ -590,12 +590,12 @@ func changing(
 	}, wrote.Minted, nil
 }
 
-// standing is where the card of a mark stands. A deck holding no card of it is
+// index is where the card of a mark stands. A deck holding no card of it is
 // ErrNoSuchCard — a card typed in by hand carries none until the deck is
 // written, and no mark reaches it — and a deck holding two is ErrTwoCards:
 // both are read and both are shown, and choosing between them would be choosing
 // which of the two the person meant.
-func standing(held []format.Card, carried string) (int, error) {
+func index(held []format.Card, carried string) (int, error) {
 	at := -1
 	if carried != "" {
 		for i, card := range held {
