@@ -11,7 +11,7 @@ import type { Banded, Drawn, PlexShowing, Stencil } from '@numen/ui'
 import type { Cards, Move, Problem, RefusalReason, StencilSummary } from '../core'
 import type { Store } from '../doing'
 import type { Listed, Presets, Read } from '../preset/core'
-import { editing, type Editing } from '../note/editing'
+import { editing, type OpenNote } from '../note/editing'
 import { markOf } from '../note/tab'
 import type { Host, Kind } from '../windowing'
 import type { Putting } from '../putting'
@@ -90,7 +90,7 @@ export interface DeckTabState {
   /** The identity this deck opened under, which its tab keeps wherever it goes. */
   readonly id: string
   /** The deck as the window draws it: the state it is in, and what it stands at. */
-  readonly shown: ComputedRef<Editing>
+  readonly shown: ComputedRef<OpenNote>
   /** The cards, as the window holds them. */
   readonly deck: ComputedRef<Deck>
   /** The same, as the grid draws them, each under the stencil that cuts it. */

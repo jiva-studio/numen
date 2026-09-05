@@ -9,7 +9,7 @@ import { computed, type ComputedRef } from 'vue'
 import type { Half, PlexShowing } from '@numen/ui'
 import type { Cards, Move, Problem, RefusalReason } from '../core'
 import type { Store } from '../doing'
-import { editing, type Editing } from '../note/editing'
+import { editing, type OpenNote } from '../note/editing'
 import { markOf } from '../note/tab'
 import type { Voice } from '../telling'
 import type { Host, Kind } from '../windowing'
@@ -61,7 +61,7 @@ export interface StencilTabState {
   /** The identity this stencil opened under, which its tab keeps wherever it goes. */
   readonly id: string
   /** The stencil as the window draws it: the state it is in, and what it stands at. */
-  readonly shown: ComputedRef<Editing>
+  readonly shown: ComputedRef<OpenNote>
   /** The fields and the faces, as the editor draws them. */
   readonly sheet: ComputedRef<Sheet>
   /** What is wrong with the file, against the face or the field it stands on. */

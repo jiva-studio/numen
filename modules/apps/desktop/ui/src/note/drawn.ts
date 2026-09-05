@@ -6,9 +6,9 @@
  */
 import { ref } from 'vue'
 import type { Said } from '../core'
-import { drawing, holding, type Arm, type Change, type Holding } from './drawing'
+import { drawing, holding, type Arm, type Change, type HoldLimits } from './drawing'
 
-export function drawn(limits: Holding = holding) {
+export function drawn(limits: HoldLimits = holding) {
   const decided = drawing(limits)
   /** What each note is drawn with, which Vue reads to draw it. */
   const changes = ref(new Map<string, Change>())

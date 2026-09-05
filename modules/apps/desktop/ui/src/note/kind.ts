@@ -13,7 +13,7 @@ import type { Host, Kind } from '../windowing'
 import { NOTE } from '../workspace'
 import type { Change } from './drawing'
 import type { drawn } from './drawn'
-import type { Editing, editing } from './editing'
+import type { OpenNote, editing } from './editing'
 import { entering, ITSELF } from './entering'
 import { naming, type NamingDeps } from './naming'
 import NoteTab from './NoteTab.vue'
@@ -42,7 +42,7 @@ export interface NoteTabState {
   /** The identity this note opened under, which its tab keeps wherever it goes. */
   readonly id: string
   /** The note as the window draws it: the body, and the state it is in. */
-  readonly shown: ComputedRef<Editing>
+  readonly shown: ComputedRef<OpenNote>
   /** What could not be read or written, in words a person reads. */
   readonly saying: ComputedRef<string>
   /** What arrived from elsewhere, for the editor to take into what is typed. */

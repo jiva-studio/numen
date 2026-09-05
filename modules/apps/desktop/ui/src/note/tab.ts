@@ -120,13 +120,13 @@ const MARKS: Record<State, string | undefined> = {
 export const markOf = (state: State): string | undefined => MARKS[state]
 
 /** What a read answers. */
-export type Read =
+export type ReadResult =
   | { readonly kind: 'body'; readonly body: string; readonly at: FilePath }
   | { readonly kind: 'missing' }
   | { readonly kind: 'refused'; readonly refusal: Refusal }
 
 /** What a write answers. */
-export type Written =
+export type WriteResult =
   | { readonly kind: 'ok'; readonly at: FilePath }
   /** The file carries another fingerprint, and nothing was written. */
   | { readonly kind: 'changed' }
@@ -135,13 +135,13 @@ export type Written =
 /** What a tab is told about. */
 export type Event =
   /** A read of a generation answered. */
-  | { readonly kind: 'read'; readonly generation: number; readonly answer: Read }
+  | { readonly kind: 'read'; readonly generation: number; readonly answer: ReadResult }
   /** The person typed, and the whole body they left. */
   | { readonly kind: 'typed'; readonly body: string; readonly at: number }
   /** The interval fired. */
   | { readonly kind: 'fired' }
   /** The write in the air answered. */
-  | { readonly kind: 'written'; readonly answer: Written }
+  | { readonly kind: 'written'; readonly answer: WriteResult }
   /** The vault changed. A change carrying no paths is a reload. */
   | {
       readonly kind: 'changed'
@@ -193,14 +193,14 @@ export interface Transition {
 }
 
 /** The two limits a write waits on, in milliseconds. */
-export interface Waiting {
+export interface WriteLimits {
   /** How long the text has to have been still. */
   readonly quiet: number
   /** How old the first unwritten change gets before a write happens anyway. */
   readonly bound: number
 }
 
-export const waiting: Waiting = { quiet: 800, bound: 5000 }
+export const waiting: WriteLimits = { quiet: 800, bound: 5000 }
 
 /** A tab as it opens: nothing read yet, and the first read issued. */
 export const opening = (path: string): Transition => ({
@@ -220,7 +220,7 @@ export const opening = (path: string): Transition => ({
   effects: [{ kind: 'read', path, generation: 1 }],
 })
 
-export const tabAfter = (tab: Tab, event: Event, limits: Waiting = waiting): Transition => {
+export const tabAfter = (tab: Tab, event: Event, limits: WriteLimits = waiting): Transition => {
   switch (event.kind) {
     case 'read':
       return answered(tab, event.generation, event.answer)
@@ -271,7 +271,7 @@ const begins = (tab: Tab, seen: Seen | null): Transition => ({
  * asked for last. An overtaken tab takes the body over what it shows, which is
  * the take it asked for.
  */
-const answered = (tab: Tab, generation: number, answer: Read): Transition => {
+const answered = (tab: Tab, generation: number, answer: ReadResult): Transition => {
   const state = stateOf(tab)
   const loading = state === 'loading'
   // A read the tab has since replaced answers about the file it stood on then,
@@ -301,7 +301,7 @@ const answered = (tab: Tab, generation: number, answer: Read): Transition => {
  * When the write happens: once the text has been still for the quiet interval,
  * and no later than the bound after the first unwritten change.
  */
-const armFor = (since: number, at: number, limits: Waiting): number =>
+const armFor = (since: number, at: number, limits: WriteLimits): number =>
   Math.max(0, Math.min(limits.quiet, since + limits.bound - at))
 
 /**
@@ -312,7 +312,7 @@ const armFor = (since: number, at: number, limits: Waiting): number =>
 const mends = (tab: Tab): boolean =>
   tab.written !== null && tab.refused !== null && mendable.includes(tab.refused)
 
-const typed = (tab: Tab, body: string, at: number, limits: Waiting): Transition => {
+const typed = (tab: Tab, body: string, at: number, limits: WriteLimits): Transition => {
   const state = stateOf(tab)
   // A tab that has not read its note has no document to type into.
   if (state === 'loading') return still(tab)
@@ -333,7 +333,7 @@ const fired = (tab: Tab): Transition => {
   return still(tab)
 }
 
-const landed = (tab: Tab, answer: Written): Transition => {
+const landed = (tab: Tab, answer: WriteResult): Transition => {
   if (!tab.flight) return still(tab)
   if (answer.kind === 'refused') {
     // The buffer stays editable, and what is owed goes.

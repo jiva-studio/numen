@@ -21,7 +21,7 @@ import {
 import type { Answered, RefusalReason } from '../core'
 
 /** One open note as the window draws it. */
-export interface Editing {
+export interface OpenNote {
   readonly path: string
   readonly body: string
   readonly state: State
@@ -53,20 +53,20 @@ const words: Record<Refusal, string> = {
 }
 
 /** What a person is told and answers with when their tab was overtaken. */
-export interface Overtaken {
+export interface ConflictWords {
   readonly says: string
   readonly keep: string
   readonly take: string
 }
 
-const overtaken: Overtaken = {
+const overtaken: ConflictWords = {
   says: 'this note changed on disk, and saving stopped',
   keep: 'keep mine',
   take: "take the file's",
 }
 
 /** What the window hands the store of open notes, beside the vault itself. */
-export interface Keeping {
+export interface EditingOptions {
   /** How long the typing settles for, and how long a note may go unwritten. */
   limits?: typeof waiting
   /** What hears that a note on screen was replaced by what its file holds. */
@@ -75,7 +75,7 @@ export interface Keeping {
   now?(): number
 }
 
-export function editing(core: Notes, how: Keeping = {}) {
+export function editing(core: Notes, how: EditingOptions = {}) {
   const limits = how.limits ?? waiting
   const replaced = how.replaced ?? (() => {})
   const now = how.now ?? (() => Date.now())
@@ -165,7 +165,7 @@ export function editing(core: Notes, how: Keeping = {}) {
   /** The person takes what the file holds. */
   const take = (id: string): void => turn(id, { kind: 'taking' })
 
-  const shown = (id: string): Editing => {
+  const shown = (id: string): OpenNote => {
     const tab = tabs.value.get(id)
     return {
       path: tab?.path ?? id,
@@ -184,7 +184,7 @@ export function editing(core: Notes, how: Keeping = {}) {
   }
 
   /** What an overtaken note puts to the person, for the window to draw. */
-  const overtakenOf = (id: string): Overtaken | null => {
+  const overtakenOf = (id: string): ConflictWords | null => {
     const tab = tabs.value.get(id)
     return tab && stateOf(tab) === 'overtaken' ? overtaken : null
   }

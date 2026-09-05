@@ -20,7 +20,7 @@ export interface Change {
 }
 
 /** The two intervals a change that has ended waits on, in milliseconds. */
-export interface Holding {
+export interface HoldLimits {
   /** How long a change stays after the note changed under it. */
   readonly settle: number
   /** How long a change whose text never arrived stays at all. */
@@ -29,7 +29,7 @@ export interface Holding {
   readonly abandoned: number
 }
 
-export const holding: Holding = { settle: 900, bound: 4000, abandoned: 15000 }
+export const holding: HoldLimits = { settle: 900, bound: 4000, abandoned: 15000 }
 
 /** What should be done: the interval for one note, armed again over the last. */
 export interface Arm {
@@ -37,7 +37,7 @@ export interface Arm {
   readonly after: number
 }
 
-export function drawing(limits: Holding = holding) {
+export function drawing(limits: HoldLimits = holding) {
   const changes = new Map<string, Change>()
   /** The notes whose change is over and is being let go of. */
   const ending = new Set<string>()
