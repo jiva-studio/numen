@@ -12,7 +12,7 @@ import (
 
 // asked is what a reading or a transcription looks for its runtime by, with
 // nothing fetched.
-func asked() Settings { return Settings{Section: "recognition"} }
+func asked() Settings { return Settings{Section: "indexing.recognition"} }
 
 // A file that is there is not a library that loads, and every way of getting one
 // ends in the same question: does it open.

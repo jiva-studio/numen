@@ -46,7 +46,7 @@ type Config struct {
 // settings are what the runtime and the models are found by.
 func (c Config) settings() onnxruntime.Settings {
 	return onnxruntime.Settings{
-		Section:  "transcription",
+		Section:  "indexing.transcription",
 		Runtime:  c.Runtime,
 		Dir:      c.Dir,
 		Download: c.Download,
