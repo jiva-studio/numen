@@ -11,7 +11,7 @@
  * number will take and is not opened until it has one.
  */
 import { computed } from 'vue'
-import { DueCount, Spinner, Welcome } from '@numen/ui'
+import { DueCount, Spinner, WelcomePage } from '@numen/ui'
 import type { VaultRow } from '@numen/ui'
 import type { VaultCardsDue } from './core'
 
@@ -56,7 +56,7 @@ const waiting = computed(
 </script>
 
 <template>
-  <Welcome
+  <WelcomePage
     name="flashcards"
     :vaults="listed"
     heading="Vaults"
@@ -76,7 +76,7 @@ const waiting = computed(
         Reading the vaults
       </p>
     </template>
-  </Welcome>
+  </WelcomePage>
 </template>
 
 <style scoped>

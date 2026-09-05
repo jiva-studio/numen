@@ -9,11 +9,11 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { Bot, FolderPlus, Settings, SquarePen, Waypoints } from '@lucide/vue'
-import Welcome from './Welcome.vue'
-import type { Offer, VaultRow, Way } from './welcome'
+import WelcomePage from './WelcomePage.vue'
+import type { Offer, VaultRow, WelcomeAction } from './welcome'
 
 /** The ways in the editor's window offers, in the order it offers them. */
-const WAYS: readonly Way[] = [
+const WAYS: readonly WelcomeAction[] = [
   { id: 'find', text: 'Search the vault', keys: { icons: ['control'], letter: 'K' } },
   { id: 'commands', text: 'Show the commands', keys: { icons: ['control', 'shift'], letter: 'P' } },
   { id: 'note', text: 'New note', icon: SquarePen, keys: { icons: ['control'], letter: 'N' } },
@@ -61,12 +61,12 @@ interface Knobs {
   wide: number
   /** How tall the window is, in pixels. */
   high: number
-  ways: readonly Way[]
+  ways: readonly WelcomeAction[]
   vaults: readonly VaultRow[]
 }
 
 const meta: Meta<Knobs> = {
-  title: 'Application/Welcome',
+  title: 'Application/Welcome page',
   parameters: { layout: 'fullscreen' },
   argTypes: {
     wide: { control: { type: 'range', min: 320, max: 1600, step: 20 } },
@@ -74,7 +74,7 @@ const meta: Meta<Knobs> = {
   },
   args: { wide: 900, high: 640, ways: WAYS, vaults: VAULTS },
   render: (args) => ({
-    components: { Welcome },
+    components: { WelcomePage },
     setup: () => ({ args, OFFER }),
     template: `
       <div
@@ -87,7 +87,7 @@ const meta: Meta<Knobs> = {
           lineHeight: 'var(--numen-line-height)',
         }"
       >
-        <Welcome
+        <WelcomePage
           :ways="args.ways"
           :vaults="args.vaults"
           heading="Vaults"
@@ -139,7 +139,7 @@ export const ShortAndNarrow: Story = {
 export const Flashcards: Story = {
   args: { wide: 1120, high: 420, ways: [], vaults: MANY },
   render: (args) => ({
-    components: { Welcome },
+    components: { WelcomePage },
     setup: () => ({ args }),
     template: `
       <div
@@ -152,7 +152,7 @@ export const Flashcards: Story = {
           lineHeight: 'var(--numen-line-height)',
         }"
       >
-        <Welcome name="flashcards" :vaults="args.vaults" heading="Vaults" version="0.4.1" />
+        <WelcomePage name="flashcards" :vaults="args.vaults" heading="Vaults" version="0.4.1" />
       </div>
     `,
   }),

@@ -8,7 +8,7 @@
  * standing at it, which is the letter drawn on that row.
  */
 import { computed, onMounted, onUnmounted } from 'vue'
-import { opensVault, Welcome } from '@numen/ui'
+import { opensVault, WelcomePage } from '@numen/ui'
 import type { Tab } from '@numen/ui'
 import { deedOf, type CommandTarget, type Commands, type VaultRef } from './commanding'
 import type { VaultList } from './core'
@@ -92,7 +92,7 @@ onUnmounted(() => globalThis.removeEventListener('keydown', asked))
 </script>
 
 <template>
-  <Welcome
+  <WelcomePage
     :ways="ways"
     :vaults="onList"
     :heading="words.vaults"

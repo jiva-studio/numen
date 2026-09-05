@@ -9,7 +9,7 @@ import type { Component } from 'vue'
 import type { PaletteKeys } from '../palette/item'
 
 /** One way in: what it is called, what draws it, and the keystroke that reaches it. */
-export interface Way {
+export interface WelcomeAction {
   readonly id: string
   readonly text: string
   /** What is drawn in front of it. A way with none is drawn without one. */

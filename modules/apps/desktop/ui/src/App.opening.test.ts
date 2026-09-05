@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
-import { Plex, Tree, Welcome } from '@numen/ui'
+import { Plex, Tree, WelcomePage } from '@numen/ui'
 import AgentTab from './agent/AgentTab.vue'
 import DocumentTab from './document/DocumentTab.vue'
 import FilesTab from './files/FilesTab.vue'
@@ -71,7 +71,7 @@ describe('the window holding no tab', () => {
     const window = await drawn()
 
     expect(tabsOf(window)).toStrictEqual([])
-    expect(window.findComponent(Welcome).exists()).toBe(true)
+    expect(window.findComponent(WelcomePage).exists()).toBe(true)
   })
 
   it('comes to the same screen once every tab it opened with is closed', async () => {
@@ -80,7 +80,7 @@ describe('the window holding no tab', () => {
     await closesEvery(window)
 
     expect(tabsOf(window)).toStrictEqual([])
-    expect(window.findComponent(Welcome).exists()).toBe(true)
+    expect(window.findComponent(WelcomePage).exists()).toBe(true)
   })
 
   it('draws the vault the list is showing on it, said to be the one in front', async () => {
@@ -88,7 +88,7 @@ describe('the window holding no tab', () => {
 
     await closesEvery(window)
 
-    expect(window.findComponent(Welcome).props('vaults')).toStrictEqual([
+    expect(window.findComponent(WelcomePage).props('vaults')).toStrictEqual([
       { id: 'physics', name: 'Physics', path: '/vaults/Physics', detail: 'Current' },
     ])
   })
@@ -99,7 +99,7 @@ describe('the window holding no tab', () => {
     const window = await drawn()
 
     expect(cards(window).join(' ')).toContain('The vaults could not be listed')
-    expect(window.findComponent(Welcome).props('vaults')).toStrictEqual([])
+    expect(window.findComponent(WelcomePage).props('vaults')).toStrictEqual([])
   })
 })
 
@@ -168,7 +168,7 @@ describe('the vault offered below the list', () => {
 
     const window = await drawn()
 
-    expect(window.findComponent(Welcome).props('offer')).toMatchObject({
+    expect(window.findComponent(WelcomePage).props('offer')).toMatchObject({
       keys: { icons: ['control', 'shift'], letter: 'N' },
     })
   })

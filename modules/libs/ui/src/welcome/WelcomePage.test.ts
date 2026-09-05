@@ -8,9 +8,9 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import KeyCap from '../palette/KeyCap.vue'
-import Welcome from './Welcome.vue'
+import WelcomePage from './WelcomePage.vue'
 import { VAULT_LETTERS } from './picking'
-import type { Offer, VaultRow, Way } from './welcome'
+import type { Offer, VaultRow, WelcomeAction } from './welcome'
 
 const vault = (id: string): VaultRow => ({ id, name: id, path: `/vaults/${id}` })
 
@@ -21,7 +21,8 @@ const offer: Offer = {
   keys: { icons: ['control', 'shift'], letter: 'N' },
 }
 
-const draw = (vaults: readonly VaultRow[]) => mount(Welcome, { props: { vaults, heading: 'Vaults' } })
+const draw = (vaults: readonly VaultRow[]) =>
+  mount(WelcomePage, { props: { vaults, heading: 'Vaults' } })
 
 /** The letters drawn on the list, in the order the rows stand. */
 const caps = (screen: ReturnType<typeof draw>): readonly string[] =>
@@ -38,23 +39,23 @@ describe('a vault on the list', () => {
     const screen = draw([...many, vault('last')])
 
     expect(caps(screen)).toHaveLength(VAULT_LETTERS.length)
-    expect(screen.findAll('.welcome__row--vault')).toHaveLength(VAULT_LETTERS.length + 1)
+    expect(screen.findAll('.welcome-page__row--vault')).toHaveLength(VAULT_LETTERS.length + 1)
   })
 
   it('carries what the window says at the end of its row, and its letter after it', () => {
-    const screen = mount(Welcome, {
+    const screen = mount(WelcomePage, {
       props: { vaults: [vault('physics')], heading: 'Vaults' },
       slots: { vault: '<span class="owed">2</span>' },
     })
 
-    expect(screen.find('.welcome__row--vault').text()).toContain('2')
+    expect(screen.find('.welcome-page__row--vault').text()).toContain('2')
     expect(caps(screen)).toStrictEqual(['A'])
   })
 
   it('is still opened by the hand, by the identity it was given', async () => {
     const screen = draw([vault('physics'), vault('heat')])
 
-    await screen.findAll('.welcome__row--vault')[1]!.trigger('click')
+    await screen.findAll('.welcome-page__row--vault')[1]!.trigger('click')
 
     expect(screen.emitted('opens')).toStrictEqual([['heat']])
   })
@@ -66,13 +67,13 @@ describe('a vault the window has not answered for yet', () => {
   it('stands on the list under its own name', () => {
     const screen = draw([working('physics')])
 
-    expect(screen.find('.welcome__row--vault').text()).toContain('physics')
+    expect(screen.find('.welcome-page__row--vault').text()).toContain('physics')
   })
 
   it('is not opened by a hand', async () => {
     const screen = draw([working('physics'), vault('heat')])
 
-    await screen.findAll('.welcome__row--vault')[0]!.trigger('click')
+    await screen.findAll('.welcome-page__row--vault')[0]!.trigger('click')
 
     expect(screen.emitted('opens')).toBeUndefined()
   })
@@ -86,7 +87,7 @@ describe('a vault the window has not answered for yet', () => {
   it('is opened once the window has answered for it', async () => {
     const screen = draw([vault('physics')])
 
-    await screen.findAll('.welcome__row--vault')[0]!.trigger('click')
+    await screen.findAll('.welcome-page__row--vault')[0]!.trigger('click')
 
     expect(screen.emitted('opens')).toStrictEqual([['physics']])
   })
@@ -94,7 +95,7 @@ describe('a vault the window has not answered for yet', () => {
 
 describe('the room the list will fill', () => {
   const drawEmpty = (vaults: readonly VaultRow[]) =>
-    mount(Welcome, {
+    mount(WelcomePage, {
       props: { vaults, heading: 'Vaults' },
       slots: { waiting: '<p class="counting">Counting</p>' },
     })
@@ -102,25 +103,25 @@ describe('the room the list will fill', () => {
   it('holds what the window says while it has no rows to give', () => {
     const screen = drawEmpty([])
 
-    expect(screen.find('.welcome__waiting').text()).toBe('Counting')
-    expect(screen.find('.welcome__list').exists()).toBe(false)
+    expect(screen.find('.welcome-page__waiting').text()).toBe('Counting')
+    expect(screen.find('.welcome-page__list').exists()).toBe(false)
   })
 
   it('holds the rows once the window has them', () => {
     const screen = drawEmpty([vault('physics')])
 
-    expect(screen.find('.welcome__waiting').exists()).toBe(false)
-    expect(screen.findAll('.welcome__row--vault')).toHaveLength(1)
+    expect(screen.find('.welcome-page__waiting').exists()).toBe(false)
+    expect(screen.findAll('.welcome-page__row--vault')).toHaveLength(1)
   })
 
   it('stands empty where the window says nothing about it', () => {
-    expect(draw([]).find('.welcome__waiting').exists()).toBe(false)
+    expect(draw([]).find('.welcome-page__waiting').exists()).toBe(false)
   })
 })
 
 describe('what the screen offers below the list', () => {
   const drawWith = (one: Offer) =>
-    mount(Welcome, { props: { vaults: [vault('physics')], heading: 'Vaults', offer: one } })
+    mount(WelcomePage, { props: { vaults: [vault('physics')], heading: 'Vaults', offer: one } })
 
   it('carries the keystroke that reaches it, after the letters on the list', () => {
     expect(caps(drawWith(offer))).toStrictEqual(['A', 'N'])
@@ -139,7 +140,7 @@ describe('what the screen offers below the list', () => {
  */
 describe('the screen drawn narrow', () => {
   const drawWith = (one: Offer) =>
-    mount(Welcome, {
+    mount(WelcomePage, {
       props: {
         vaults: [vault('physics')],
         heading: 'Vaults',
@@ -151,20 +152,20 @@ describe('the screen drawn narrow', () => {
   it('marks every keystroke it gives up, on a way in, on a vault and on the offer', () => {
     const screen = drawWith(offer)
     expect(screen.findAllComponents(KeyCap)).toHaveLength(3)
-    expect(screen.findAll('.welcome__keys')).toHaveLength(3)
+    expect(screen.findAll('.welcome-page__keys')).toHaveLength(3)
   })
 
   it('leaves the row itself pressed by hand where its keystroke is given up', async () => {
     const screen = drawWith(offer)
 
-    await screen.get('.welcome__row').trigger('click')
+    await screen.get('.welcome-page__row').trigger('click')
 
     expect(screen.emitted('runs')).toStrictEqual([['find']])
   })
 
   it('marks what is said under a name, and keeps the whole path on the row', () => {
     const screen = drawWith(offer)
-    const path = screen.get('.welcome__row--vault .welcome__aside')
+    const path = screen.get('.welcome-page__row--vault .welcome-page__aside')
 
     expect(path.text()).toBe('/vaults/physics')
     expect(path.attributes('title')).toBe('/vaults/physics')
@@ -180,7 +181,7 @@ describe('the screen drawn narrow', () => {
  * pressed at every height.
  */
 describe('the screen drawn short', () => {
-  const WAYS: readonly Way[] = [
+  const WAYS: readonly WelcomeAction[] = [
     { id: 'find', text: 'Search the vault', keys: { icons: ['control'], letter: 'K' } },
     { id: 'commands', text: 'Show the commands' },
     { id: 'note', text: 'New note' },
@@ -190,7 +191,7 @@ describe('the screen drawn short', () => {
   ]
 
   const drawBoth = () =>
-    mount(Welcome, {
+    mount(WelcomePage, {
       props: {
         vaults: [vault('physics'), vault('heat'), vault('optics')],
         heading: 'Vaults',
@@ -202,20 +203,22 @@ describe('the screen drawn short', () => {
   it('holds the ways in and the vaults in regions of their own', () => {
     const screen = drawBoth()
 
-    expect(screen.get('.welcome__lead').findAll('.welcome__row')).toHaveLength(WAYS.length)
-    expect(screen.get('.welcome__vaults').findAll('.welcome__row--vault')).toHaveLength(3)
+    expect(screen.get('.welcome-page__lead').findAll('.welcome-page__row')).toHaveLength(WAYS.length)
+    expect(
+      screen.get('.welcome-page__vaults').findAll('.welcome-page__row--vault'),
+    ).toHaveLength(3)
   })
 
   it('keeps the glyph and the name with the ways in', () => {
-    const lead = drawBoth().get('.welcome__lead')
+    const lead = drawBoth().get('.welcome-page__lead')
 
-    expect(lead.find('.welcome__glyph').exists()).toBe(true)
-    expect(lead.find('.welcome__name').exists()).toBe(true)
+    expect(lead.find('.welcome-page__glyph').exists()).toBe(true)
+    expect(lead.find('.welcome-page__name').exists()).toBe(true)
   })
 
   it('drops no row from either region', () => {
     const screen = drawBoth()
-    const rows = screen.findAll('.welcome__row').map((row) => row.text())
+    const rows = screen.findAll('.welcome-page__row').map((row) => row.text())
 
     expect(rows).toHaveLength(WAYS.length + 4)
     expect(rows[0]).toContain('Search the vault')
@@ -225,8 +228,11 @@ describe('the screen drawn short', () => {
   it('presses a row of each region', async () => {
     const screen = drawBoth()
 
-    await screen.get('.welcome__lead').findAll('.welcome__row')[5]!.trigger('click')
-    await screen.get('.welcome__vaults').findAll('.welcome__row--vault')[2]!.trigger('click')
+    await screen.get('.welcome-page__lead').findAll('.welcome-page__row')[5]!.trigger('click')
+    await screen
+      .get('.welcome-page__vaults')
+      .findAll('.welcome-page__row--vault')[2]!
+      .trigger('click')
 
     expect(screen.emitted('runs')).toStrictEqual([['settings']])
     expect(screen.emitted('opens')).toStrictEqual([['optics']])

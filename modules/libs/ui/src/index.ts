@@ -58,11 +58,11 @@ export { beside } from './placing/place'
 export type { AxisPlacement, Box } from './placing/place'
 export { days as heatmapDays, fits as heatmapFits, weighs as heatmapWeighs } from './heatmap/heatmap'
 export type { Day as HeatmapDay, Room as HeatmapRoom, Tally as HeatmapTally } from './heatmap/heatmap'
-export { default as Welcome } from './welcome/Welcome.vue'
+export { default as WelcomePage } from './welcome/WelcomePage.vue'
 export { default as Glyph } from './welcome/Glyph.vue'
 /** The letter a vault on that screen is opened by, and what a keystroke opens. */
 export { opensVault, typing, vaultLetter, VAULT_LETTERS } from './welcome/picking'
-export type { Offer, VaultRow, Way } from './welcome/welcome'
+export type { Offer, VaultRow, WelcomeAction } from './welcome/welcome'
 
 export { default as Palette } from './palette/Palette.vue'
 export { default as KeyCap } from './palette/KeyCap.vue'

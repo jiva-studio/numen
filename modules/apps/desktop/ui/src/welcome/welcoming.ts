@@ -4,7 +4,7 @@
  * The screen draws these rows and decides nothing, so a test can ask what a
  * window standing on a vault, or on none, puts in front of the person.
  */
-import type { PaletteKeys, VaultRow, Way } from '@numen/ui'
+import type { PaletteKeys, VaultRow, WelcomeAction } from '@numen/ui'
 import type { VaultList } from '../core'
 import { keysOf } from '../keying'
 import { WORDS as own } from './words'
@@ -53,10 +53,10 @@ export const SETTINGS = 'settings'
  * Every keystroke drawn here is the one the table binds, so a key a person sees
  * is a key that works.
  */
-export const waysIn = (at: ShownVault, words: Words, agent: string): readonly Way[] => {
-  const settings: Way = { id: SETTINGS, text: words.settings, ...keysOf(SETTINGS, agent) }
+export const waysIn = (at: ShownVault, words: Words, agent: string): readonly WelcomeAction[] => {
+  const settings: WelcomeAction = { id: SETTINGS, text: words.settings, ...keysOf(SETTINGS, agent) }
   if (at.vault === '') return [settings]
-  const note: readonly Way[] = at.ready
+  const note: readonly WelcomeAction[] = at.ready
     ? [{ id: 'note', text: words.newNote, ...keysOf('note', agent) }]
     : []
   return [
