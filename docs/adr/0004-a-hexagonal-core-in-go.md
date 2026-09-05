@@ -114,7 +114,7 @@ modules/libs/core/
     agent/                 driven: which agent answers
     flashcardsui/          driving: the handler the review window asks
   internal/
-    adapter/               driven: what nothing outside composes
+    adapter/               driving or driven: what nothing outside composes
     onnxruntime/           the runtime two driven adapters run models through
     ulid/  cardid/         identifiers, and the ones a card is known by
     wire/                  what two driving adapters both put on the wire
@@ -132,7 +132,9 @@ A repository is a collection of aggregates: put one in, take one out, remove one
 
 ### `internal/` marks what nothing outside composes
 
-An application reaches the core's own language, the driving adapters it serves, and `container`. A driven adapter it does not name sits under `internal/`, where the compiler holds it, so binding an adapter to a port stays one package's work.
+An application reaches the core's own language, the driving adapters it serves, and `container`. An adapter it does not name sits under `internal/`, where the compiler holds it, so binding an adapter to a port stays one package's work.
+
+`internal/` is Go's visibility, and it says who may compose a thing — never which way a call goes through it. A driving adapter nothing outside composes belongs there as much as a driven one: `internal/adapter/theme` serves the schema and is mounted by two windows, and an application still reaches it through `container` rather than by naming it.
 
 ### Infrastructure two adapters share sits beside them
 
@@ -155,7 +157,7 @@ Schema and queries are `.sql` files embedded into the binary and loaded by name.
 - The parts most likely to change — driver, storage, entry point — are each one adapter.
 - Ports and adapters are indirection, and it is visible before the payoff is.
 - An application declares what it starts and nothing else, and a dependency two of them share is declared once.
-- A driven adapter an application composes is public, and the list of them is the core's surface to keep small.
+- An adapter an application composes is public, and the list of them is the core's surface to keep small.
 
 ## Alternatives considered
 
