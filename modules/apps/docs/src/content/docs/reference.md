@@ -107,7 +107,7 @@ How a vault is made searchable.
 | `recognition.proofread` |  | names the profile a reading is put right at. Automatically there says whether a reading just made is put right without anybody asking. |
 | `recognition.proofread.with` | text | the profile, by the name the profiles carry it under. |
 | `recognition.proofread.automatically` | yes or no | whether a reading already written down is put right without anybody asking for it. |
-| `proofreading` |  | what puts a reading right. `naming` no profile here is naming no proofreader, and a reading is used as it was read. |
+| `proofreading` |  | what puts a reading right. Naming no profile here is naming no proofreader, and a reading is used as it was read. |
 | `proofreading.max_edit_distance` | a number | how far a correction may stand from the line as read and still be a correction: the Levenshtein distance between their letters, as a share of the longer of the two. |
 | `proofreading.profiles` |  | the places a reading is put right at, by the name a consumer asks for one under. |
 | `transcription` |  | how a recording is listened to: which models hear it, where they came from, and how the speech in it is found. |
