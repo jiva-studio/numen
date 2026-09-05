@@ -303,13 +303,13 @@ func (d *Document) SetMapping(key string, entries []Entry) error {
 	if err != nil {
 		return err
 	}
-	standing := d.entries(node, key)
-	if standing == nil {
-		standing = &yaml.Node{Kind: yaml.MappingNode}
+	existing := d.entries(node, key)
+	if existing == nil {
+		existing = &yaml.Node{Kind: yaml.MappingNode}
 	}
 	mapping := &yaml.Node{Kind: yaml.MappingNode}
 	for _, one := range entries {
-		was := pair(standing, one.Key)
+		was := pair(existing, one.Key)
 		held := was.value
 		if !one.Standing {
 			held = &yaml.Node{}
