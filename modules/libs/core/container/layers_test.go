@@ -123,6 +123,7 @@ func TestTheLayersAreWhatTheyAre(t *testing.T) {
 // innermost layer, where every other package can see it.
 func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
 	var wrong []string
+	var read int
 	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, "_test.go") {
 			return err
@@ -134,6 +135,7 @@ func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
 		if err != nil {
 			return err
 		}
+		read++
 		for _, one := range file.Imports {
 			to, err := strconv.Unquote(one.Path.Value)
 			if err != nil || !strings.HasPrefix(to, module) {
@@ -151,6 +153,12 @@ func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
 	}
 	for _, one := range wrong {
 		t.Error(one)
+	}
+
+	// A walk that read no test of a pure package is a rule checked against
+	// nothing, and it passes.
+	if read < 20 {
+		t.Fatalf("%d tests of the pure packages read: the walk is not reading them", read)
 	}
 }
 
