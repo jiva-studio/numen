@@ -27,10 +27,10 @@ func (b *blank) Close() error {
 	return nil
 }
 
-// watched is a Recognising given what it reads with, and a way to know what it
+// watched is a RecognitionWorker given what it reads with, and a way to know what it
 // said.
 type watched struct {
-	*Recognising
+	*RecognitionWorker
 	tasks *task.Tasks
 	held  *blank
 
@@ -44,11 +44,11 @@ func recognising(t *testing.T, why error) *watched {
 	t.Helper()
 	tasks := task.New()
 	w := &watched{tasks: tasks, held: &blank{}}
-	w.Recognising = NewRecognising(context.Background(), Recognitions{
+	w.RecognitionWorker = NewRecognitionWorker(context.Background(), Recognitions{
 		Readers: vaultReaders,
 		Derived: derivedStores,
 		Tasks:   tasks,
-		Proofreading: Proofreading{
+		Proofreading: ProofreadingConfig{
 			Queue: func(string) (port.ProofreadQueue, error) { return nil, nil },
 		},
 		Runtime: RecognitionRuntime{
@@ -119,7 +119,7 @@ func TestADocumentNamedWhileOneIsBeingReadWaitsItsTurn(t *testing.T) {
 	w := recognising(t, errors.New("nothing to read with"))
 
 	reading, held := make(chan struct{}, 2), make(chan struct{})
-	w.Recognising.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.RecognitionWorker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 		w.mu.Lock()
 		w.open++
 		w.mu.Unlock()
@@ -230,7 +230,7 @@ func TestAReadingStoppedIsNotAFailure(t *testing.T) {
 	w := recognising(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
 	w.under = ctx
-	w.Recognising.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.RecognitionWorker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 		cancel()
 		return nil, nil, context.Canceled
 	}
@@ -254,7 +254,7 @@ func TestAReadingThatEndsAbruptlyDoesNotHoldTheNextOne(t *testing.T) {
 	// reading does.
 	abrupt := make(chan struct{}, 1)
 	abrupt <- struct{}{}
-	w.Recognising.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.RecognitionWorker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 		select {
 		case <-abrupt:
 			runtime.Goexit()
@@ -279,7 +279,7 @@ func TestAReadingThatEndsAbruptlyDoesNotHoldTheNextOne(t *testing.T) {
 // the document, so what was missing is fetched and nothing is read.
 func TestNothingIsReadThroughARuntimeMadeAfterTheWindow(t *testing.T) {
 	w := recognising(t, nil)
-	w.Recognising.with.Runtime.Prepared = func() bool { return false }
+	w.RecognitionWorker.with.Runtime.Prepared = func() bool { return false }
 
 	err := w.recognise(t.Context(), somewhere, "recognition-1", "a.pdf")
 	if !errors.Is(err, errLateRuntime) {
@@ -299,7 +299,7 @@ func TestTheApplicationWaitsForAReadingItStarted(t *testing.T) {
 	w := recognising(t, nil)
 
 	holding := make(chan struct{})
-	w.Recognising.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.RecognitionWorker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 		<-holding
 		return nil, nil, errors.New("nothing to read with")
 	}
@@ -328,7 +328,7 @@ func TestTheApplicationWaitsForAReadingItStarted(t *testing.T) {
 // is said. A person who configured a queue and is given none is owed the reason.
 func TestAProofreadQueueThatFailedToBuildIsSaid(t *testing.T) {
 	w := recognising(t, nil)
-	w.Recognising.with.Proofreading = Proofreading{
+	w.RecognitionWorker.with.Proofreading = ProofreadingConfig{
 		Named: true, Automatically: true,
 		By: func(string) (port.Proofreader, error) { return &puts{}, nil },
 		Queue: func(string) (port.ProofreadQueue, error) {

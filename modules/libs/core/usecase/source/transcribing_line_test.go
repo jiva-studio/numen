@@ -12,7 +12,7 @@ import (
 // whenIdle is what a run calls where it has found the line empty and is about
 // to stop the running. It stands beside the running and is set under the lock
 // the running is kept under.
-func (t *Transcribing) whenIdle(idle func()) {
+func (t *TranscriptionWorker) whenIdle(idle func()) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.idle = idle

@@ -44,8 +44,8 @@ func (c Config) Recognising(
 	ctx context.Context,
 	sources port.SourceRepository,
 	tasks *task.Tasks,
-) *source.Recognising {
-	return source.NewRecognising(ctx, source.Recognitions{
+) *source.RecognitionWorker {
+	return source.NewRecognitionWorker(ctx, source.Recognitions{
 		Readers:   c.VaultReaders(),
 		Derived:   c.DerivedStores(),
 		Documents: c.PageRenderer(),

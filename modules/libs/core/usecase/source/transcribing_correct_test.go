@@ -21,7 +21,7 @@ import (
 
 // shown is what the list of what is being done says about putting a transcript
 // right.
-func shown(held *Transcribing, path string) (doing, failed string) {
+func shown(held *TranscriptionWorker, path string) (doing, failed string) {
 	for _, at := range held.with.Tasks.List() {
 		if at.ID == proofreadingID(path) {
 			return at.Doing, at.Failed
@@ -40,7 +40,7 @@ func nowhere(string) (port.Proofreader, error) {
 // nothing and says nothing.
 func TestATranscriptIsPutRightOnlyWhereItWasAskedFor(t *testing.T) {
 	held, v := listens(t, &deaf{}, "talks/one.mp3")
-	held.with.Proofreading = Proofreading{Named: true, By: nowhere}
+	held.with.Proofreading = ProofreadingConfig{Named: true, By: nowhere}
 
 	held.proofread(t.Context(), v, "talks/one.mp3", false)
 
@@ -52,7 +52,7 @@ func TestATranscriptIsPutRightOnlyWhereItWasAskedFor(t *testing.T) {
 // A profile no settings name is a person's mistake, and they are shown it.
 func TestAProfileNoSettingsNameIsShown(t *testing.T) {
 	held, v := listens(t, &deaf{}, "talks/one.mp3")
-	held.with.Proofreading = Proofreading{Named: true, Automatically: true, By: nowhere}
+	held.with.Proofreading = ProofreadingConfig{Named: true, Automatically: true, By: nowhere}
 
 	held.proofread(t.Context(), v, "talks/one.mp3", false)
 
@@ -69,7 +69,7 @@ func TestAProfileNoSettingsNameIsShown(t *testing.T) {
 func TestSilenceIsNotPutRight(t *testing.T) {
 	by := &deaf{}
 	held, v := listens(t, by, "talks/one.mp3")
-	held.with.Proofreading = Proofreading{Named: true, Automatically: true, By: nowhere}
+	held.with.Proofreading = ProofreadingConfig{Named: true, Automatically: true, By: nowhere}
 
 	held.Start(v, "talks/one.mp3")
 	held.Wait()
@@ -121,7 +121,7 @@ func cues(words []string) []transcript.Cue {
 	return out
 }
 
-// stopped is a Transcribing over a vault holding one recording, with its
+// stopped is a TranscriptionWorker over a vault holding one recording, with its
 // transcript on the shelf and a proofreading of it standing at through lines.
 //
 // One line to a batch and one batch to a request, so the number a reply is
@@ -131,10 +131,10 @@ func stopped(
 	by port.Proofreader,
 	through int,
 	words ...string,
-) (*Transcribing, domain.Vault, port.DerivedStore, string) {
+) (*TranscriptionWorker, domain.Vault, port.DerivedStore, string) {
 	t.Helper()
 	held, v := listens(t, &deaf{}, recording)
-	held.with.Proofreading = Proofreading{
+	held.with.Proofreading = ProofreadingConfig{
 		Named: true, Automatically: true, Batch: 1, InFlight: 1,
 		By: func(string) (port.Proofreader, error) { return by, nil },
 	}

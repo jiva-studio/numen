@@ -69,9 +69,9 @@ func (quiet) Speech(context.Context, int, int) ([]port.Audio, error) { return ni
 
 func (quiet) Close() error { return nil }
 
-// listens is a Transcribing hearing through one transcriber, in a vault holding
+// listens is a TranscriptionWorker hearing through one transcriber, in a vault holding
 // the recordings named.
-func listens(t *testing.T, by *deaf, recordings ...string) (*Transcribing, domain.Vault) {
+func listens(t *testing.T, by *deaf, recordings ...string) (*TranscriptionWorker, domain.Vault) {
 	t.Helper()
 	root := t.TempDir()
 	for _, path := range recordings {
@@ -85,7 +85,7 @@ func listens(t *testing.T, by *deaf, recordings ...string) (*Transcribing, domai
 			t.Fatal(err)
 		}
 	}
-	held := NewTranscribing(context.Background(), Transcriptions{
+	held := NewTranscriptionWorker(context.Background(), Transcriptions{
 		Readers: vaultReaders,
 		Derived: derivedStores,
 		Tasks:   task.New(),

@@ -110,7 +110,7 @@ func TestCollectingRunsBehindTheCallerAndIsCountedBeforeIt(t *testing.T) {
 	defer stop()
 
 	w := recognising(t, nil)
-	w.Recognising.with.Proofreading = Proofreading{
+	w.RecognitionWorker.with.Proofreading = ProofreadingConfig{
 		Named: true, Batch: 1,
 		Queue: func(string) (port.ProofreadQueue, error) { return leaves{}, nil },
 	}

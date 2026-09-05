@@ -41,7 +41,7 @@ func printed(lines []string) ([]byte, []byte) {
 	return artifact, highlight.Pack(boxes)
 }
 
-// halted is a Recognising over a vault holding one document, with the reading of
+// halted is a RecognitionWorker over a vault holding one document, with the reading of
 // it on the shelf and a proofreading of it standing at through pages.
 func halted(
 	t *testing.T,
@@ -62,7 +62,7 @@ func halted(
 	v := domain.Vault{ID: "v", Path: root}
 
 	w := recognising(t, nil)
-	w.Recognising.with.Proofreading = Proofreading{
+	w.RecognitionWorker.with.Proofreading = ProofreadingConfig{
 		Named: true, Automatically: true, Batch: 1,
 		By:    func(string) (port.Proofreader, error) { return by, nil },
 		Queue: func(string) (port.ProofreadQueue, error) { return nil, nil },
@@ -182,7 +182,7 @@ func TestAReadingWithABatchOutIsLeftToTheCollection(t *testing.T) {
 	lines := []string{"the words one", "the words two"}
 	by := &puts{says: map[int]string{1: numbered(1, lines[1])}}
 	w, v, _, _ := halted(t, by, 1, lines...)
-	w.Recognising.with.Proofreading.Queue = func(string) (port.ProofreadQueue, error) { return leaves{}, nil }
+	w.RecognitionWorker.with.Proofreading.Queue = func(string) (port.ProofreadQueue, error) { return leaves{}, nil }
 
 	w.TakingUp(t.Context(), books{}, v)
 	w.Wait()

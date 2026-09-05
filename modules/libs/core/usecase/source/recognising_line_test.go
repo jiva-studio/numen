@@ -13,7 +13,7 @@ import (
 // whenIdle is what a run calls where it has found the line empty and is about
 // to stop the running. It stands beside the running and is set under the lock
 // the running is kept under.
-func (r *Recognising) whenIdle(idle func()) {
+func (r *RecognitionWorker) whenIdle(idle func()) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.idle = idle
@@ -115,7 +115,7 @@ func TestADocumentNamedAsTheLineEmptiesIsRead(t *testing.T) {
 	}()
 
 	reading := make(chan int, 8)
-	w.Recognising.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.RecognitionWorker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 		w.mu.Lock()
 		w.open++
 		n := w.open
@@ -150,7 +150,7 @@ func TestADocumentNamedAsTheLineEmptiesIsRead(t *testing.T) {
 	// The run that emptied the line ends now. Its end stands anywhere after it
 	// let the lock go, and it stops nothing but itself: the run it handed the
 	// line to is the one running, and a third document waits its turn.
-	w.Recognising.stopped(1)
+	w.RecognitionWorker.stopped(1)
 	if got := w.Start(somewhere, "c.pdf"); got != port.Queued {
 		t.Errorf("a document named while one was being read was told %v", got)
 	}

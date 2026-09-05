@@ -62,17 +62,17 @@ type Recognitions struct {
 	Runtime RecognitionRuntime
 
 	// Proofreading is what a recognition is put right with.
-	Proofreading Proofreading
+	Proofreading ProofreadingConfig
 }
 
-// Recognising recognises scanned documents behind whoever asked.
+// RecognitionWorker recognises scanned documents behind whoever asked.
 //
 // Nothing here is done inside the question that asked for it. Fetching the
 // models is minutes and recognising a book is an hour, and an answer that
 // arrives in an hour is a program that has hung. The ask starts the work and
 // says so, and how far it has got is put where everything else being done is
 // put.
-type Recognising struct {
+type RecognitionWorker struct {
 	with Recognitions
 
 	// under is what every recognition runs under, and going is every recognition
@@ -107,22 +107,22 @@ type Recognising struct {
 	named uint64
 }
 
-// NewRecognising is the recogniser an installation offers, reporting itself into
-// the list of what is being done.
-func NewRecognising(ctx context.Context, with Recognitions) *Recognising {
-	return &Recognising{with: with, under: ctx}
+// NewRecognitionWorker is the recogniser an installation offers, reporting
+// itself into the list of what is being done.
+func NewRecognitionWorker(ctx context.Context, with Recognitions) *RecognitionWorker {
+	return &RecognitionWorker{with: with, under: ctx}
 }
 
 // Ready says whether a document could be recognised now without waiting for
 // anything to arrive.
-func (r *Recognising) Ready() bool { return r.with.Runtime.Ready() }
+func (r *RecognitionWorker) Ready() bool { return r.with.Runtime.Ready() }
 
 // Wait is every recognition and every collection this started, ended. What they
 // write goes into an index the application still holds open.
-func (r *Recognising) Wait() { r.going.Wait() }
+func (r *RecognitionWorker) Wait() { r.going.Wait() }
 
 // Running says whether a document is being recognised.
-func (r *Recognising) Running() bool {
+func (r *RecognitionWorker) Running() bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return r.running
@@ -138,7 +138,7 @@ func (r *Recognising) Running() bool {
 //
 // It runs under the application, so whoever asked is answered at once and goes
 // away while the recognition carries on.
-func (r *Recognising) Start(v domain.Vault, path string) port.StartOutcome {
+func (r *RecognitionWorker) Start(v domain.Vault, path string) port.StartOutcome {
 	r.mu.Lock()
 	r.queue.add(v, path)
 	if r.running {
@@ -160,7 +160,7 @@ func (r *Recognising) Start(v domain.Vault, path string) port.StartOutcome {
 }
 
 // Waiting is how many documents a person named are still in line.
-func (r *Recognising) Waiting() int {
+func (r *RecognitionWorker) Waiting() int {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return r.queue.waiting()
@@ -176,7 +176,7 @@ func (r *Recognising) Waiting() int {
 // The context is asked before a document is taken, so what the line still holds
 // when the application closes is still in it: a document taken and then dropped
 // is one nobody is told about, on a count that fell for nothing.
-func (r *Recognising) drain(ctx context.Context) {
+func (r *RecognitionWorker) drain(ctx context.Context) {
 	for {
 		r.mu.Lock()
 		var (
@@ -200,7 +200,7 @@ func (r *Recognising) drain(ctx context.Context) {
 }
 
 // one is a single document recognised, put right, and reported.
-func (r *Recognising) one(ctx context.Context, v domain.Vault, path string) {
+func (r *RecognitionWorker) one(ctx context.Context, v domain.Vault, path string) {
 	r.mu.Lock()
 	before := r.last
 	r.named++
@@ -230,7 +230,7 @@ func (r *Recognising) one(ctx context.Context, v domain.Vault, path string) {
 
 // stopped stops the running where this run is still the one running, so a
 // recognition that ended where nothing expected it to leaves nothing running.
-func (r *Recognising) stopped(run uint64) {
+func (r *RecognitionWorker) stopped(run uint64) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.runs == run {
@@ -238,7 +238,7 @@ func (r *Recognising) stopped(run uint64) {
 	}
 }
 
-func (r *Recognising) context() context.Context {
+func (r *RecognitionWorker) context() context.Context {
 	if r.under == nil {
 		return context.Background()
 	}
@@ -247,7 +247,7 @@ func (r *Recognising) context() context.Context {
 
 // recognise is the work itself: what is missing arrives, and then the document
 // is recognised.
-func (r *Recognising) recognise(ctx context.Context, v domain.Vault, id, path string) (err error) {
+func (r *RecognitionWorker) recognise(ctx context.Context, v domain.Vault, id, path string) (err error) {
 	// One run holds the models on a machine: a recording being transcribed holds
 	// them, and this waits for it.
 	// A scan is recognised only where somebody asked for it.
@@ -319,7 +319,7 @@ func (r *Recognising) recognise(ctx context.Context, v domain.Vault, id, path st
 //
 // It reports itself under its own name, and a recognition whose proofreading
 // failed is the recognition as it was recognised.
-func (r *Recognising) proofread(ctx context.Context, v domain.Vault, path string) {
+func (r *RecognitionWorker) proofread(ctx context.Context, v domain.Vault, path string) {
 	said := r.with.Proofreading
 	if !said.Automatically {
 		return
@@ -371,18 +371,18 @@ func (r *Recognising) proofread(ctx context.Context, v domain.Vault, path string
 
 // say puts this recognition in the list of what is being done. A person asked
 // for it and is waiting to be told it began.
-func (r *Recognising) say(at task.Task) { r.says(at, true) }
+func (r *RecognitionWorker) say(at task.Task) { r.says(at, true) }
 
 // says puts one piece of work in the list. Work a person started is shown at
 // once, and work nobody asked for is shown once it has lasted.
-func (r *Recognising) says(at task.Task, asked bool) {
+func (r *RecognitionWorker) says(at task.Task, asked bool) {
 	at.Asked = asked
 	if r.with.Tasks != nil {
 		r.with.Tasks.Set(at)
 	}
 }
 
-func (r *Recognising) done(id string) {
+func (r *RecognitionWorker) done(id string) {
 	if r.with.Tasks != nil {
 		r.with.Tasks.Done(id)
 	}
@@ -396,7 +396,7 @@ func (r *Recognising) done(id string) {
 //
 // The count is taken here and not in the goroutine it counts, so a wait that
 // begins the instant this returns covers the rounds behind it.
-func (r *Recognising) Collecting(
+func (r *RecognitionWorker) Collecting(
 	ctx context.Context,
 	known port.SourceQueries,
 	every time.Duration,
@@ -414,7 +414,7 @@ func (r *Recognising) Collecting(
 }
 
 // collecting is the round over every vault, and the wait between rounds.
-func (r *Recognising) collecting(
+func (r *RecognitionWorker) collecting(
 	ctx context.Context,
 	known port.SourceQueries,
 	queue port.ProofreadQueue,
@@ -440,7 +440,7 @@ func (r *Recognising) collecting(
 // batches is taken up at that page. A recognition no proofreader has been over
 // stands at its first page and is put right whole. A proofreader with a queue
 // leaves a batch behind it and is taken up by Collecting.
-func (r *Recognising) TakingUp(
+func (r *RecognitionWorker) TakingUp(
 	ctx context.Context,
 	known port.SourceQueries,
 	vaults ...domain.Vault,
@@ -468,7 +468,7 @@ func (r *Recognising) TakingUp(
 
 // collect takes up every recognition of one vault that stands short of its last
 // page.
-func (r *Recognising) collect(
+func (r *RecognitionWorker) collect(
 	ctx context.Context,
 	known port.SourceQueries,
 	by port.Proofreader,

@@ -318,7 +318,7 @@ func (o *Installation) Refresh() vaults.Refresh {
 // Recognising reads a scanned document for whoever asks. It is one job for the
 // window and for an agent alike, so that what a person started through one of
 // them is shown by the other. Nothing while the window has no vault.
-func (o *Installation) Recognising() *source.Recognising {
+func (o *Installation) Recognising() *source.RecognitionWorker {
 	if on := o.API.showing.Load(); on != nil {
 		return on.recognising
 	}
@@ -329,7 +329,7 @@ func (o *Installation) Recognising() *source.Recognising {
 // vault. It is one job for the window and for an agent alike, so that what a
 // person started through one of them is shown by the other. Nothing while the
 // window has no vault.
-func (o *Installation) Transcribing() *source.Transcribing {
+func (o *Installation) Transcribing() *source.TranscriptionWorker {
 	if on := o.API.showing.Load(); on != nil {
 		return on.transcribing
 	}

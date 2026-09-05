@@ -34,8 +34,8 @@ func (c Config) Transcribing(
 	ctx context.Context,
 	sources port.SourceRepository,
 	tasks *task.Tasks,
-) *source.Transcribing {
-	return source.NewTranscribing(ctx, source.Transcriptions{
+) *source.TranscriptionWorker {
+	return source.NewTranscriptionWorker(ctx, source.Transcriptions{
 		Readers: c.VaultReaders(),
 		Derived: c.DerivedStores(),
 		Sources: sources,

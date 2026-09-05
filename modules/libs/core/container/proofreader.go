@@ -76,9 +76,9 @@ func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) 
 
 // proofreadingFor is what a reading of one kind is put right with: the profile
 // the settings name for it, opened when there is something to put right.
-func (c Config) proofreadingFor(said proofreading.Proofread) source.Proofreading {
+func (c Config) proofreadingFor(said proofreading.Proofread) source.ProofreadingConfig {
 	profile := c.Proofreading.Profiles[said.Profile]
-	return source.Proofreading{
+	return source.ProofreadingConfig{
 		Named:           said.Profile != "",
 		Automatically:   said.Automatically,
 		By:              func(what string) (port.Proofreader, error) { return c.Proofreader(said.Profile, what) },

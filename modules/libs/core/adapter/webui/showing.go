@@ -20,8 +20,8 @@ import (
 // It is published as one, through API.on, and every request reads it there.
 type passes struct {
 	opening      *container.VaultOpener
-	recognising  *source.Recognising
-	transcribing *source.Transcribing
+	recognising  *source.RecognitionWorker
+	transcribing *source.TranscriptionWorker
 
 	// recognises reads a scanned document, transcribes hears a recording, and
 	// proofreads puts a transcript right, each for whoever asks.
