@@ -16,7 +16,7 @@ import CardProse from './CardProse.vue'
 import NameBox from './NameBox.vue'
 import { useNaming } from './naming'
 import { Button } from '../components/ui/button'
-import { heading, type Half, type Refusal, type Way } from './order'
+import { heading, type Half, type Refusal, type StepDirection } from './order'
 import {
   panes,
   STENCIL_WORDS,
@@ -45,7 +45,7 @@ const emit = defineEmits<{
   (event: 'lift', press: DragEvent): void
   (event: 'release'): void
   /** The face asked to go one place along the order. */
-  (event: 'step', way: Way, press: KeyboardEvent): void
+  (event: 'step', direction: StepDirection, press: KeyboardEvent): void
   /** One half of it, as it now reads. */
   (event: 'write', half: Half, text: string): void
 }>()
@@ -128,7 +128,7 @@ const put = async (field: string): Promise<void> => {
       :carry="`${words.carry}: ${face.name}`"
       @dragstart="emit('lift', $event)"
       @dragend="emit('release')"
-      @step="(way, press) => emit('step', way, press)"
+      @step="(direction, press) => emit('step', direction, press)"
     >
       <div class="face__said">
         <div class="face__head flex items-center">

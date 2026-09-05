@@ -44,10 +44,10 @@ export function landing(
 }
 
 /** Which way along the order something is carried by the keyboard. */
-export type Way = 'up' | 'down'
+export type StepDirection = 'up' | 'down'
 
-/** The way along the order an arrow carries what is held, and nothing for any other key. */
-export const wayOf = (key: string): Way | null =>
+/** The direction along the order an arrow carries what is held, and nothing for any other key. */
+export const directionOf = (key: string): StepDirection | null =>
   key === 'ArrowUp' ? 'up' : key === 'ArrowDown' ? 'down' : null
 
 /**
@@ -58,11 +58,11 @@ export const wayOf = (key: string): Way | null =>
 export function stepped(
   names: readonly string[],
   carried: string,
-  way: Way,
+  direction: StepDirection,
 ): InsertionPoint | undefined {
   const at = names.indexOf(carried)
   if (at === -1) return undefined
-  if (way === 'up') return at === 0 ? undefined : (names[at - 1] ?? undefined)
+  if (direction === 'up') return at === 0 ? undefined : (names[at - 1] ?? undefined)
   if (at === names.length - 1) return undefined
   return names[at + 2] ?? null
 }

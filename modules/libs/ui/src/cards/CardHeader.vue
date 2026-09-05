@@ -8,7 +8,7 @@
  */
 import { onScopeDispose, shallowRef } from 'vue'
 import CardRow from './CardRow.vue'
-import { wayOf, type Way } from './order'
+import { directionOf, type StepDirection } from './order'
 
 defineProps<{
   /** What is said of taking hold of it. */
@@ -23,7 +23,7 @@ const emit = defineEmits<{
    * It was asked to go one place along the order, with the press itself.
    * Whether there is a place that way is the caller's.
    */
-  (event: 'step', way: Way, press: KeyboardEvent): void
+  (event: 'step', direction: StepDirection, press: KeyboardEvent): void
 }>()
 
 /** What a press lands on that is worked, and lets the press have it. */
@@ -59,8 +59,8 @@ onScopeDispose(release)
  */
 const carried = (event: KeyboardEvent): void => {
   if (event.target !== event.currentTarget) return
-  const way = wayOf(event.key)
-  if (way !== null) emit('step', way, event)
+  const direction = directionOf(event.key)
+  if (direction !== null) emit('step', direction, event)
 }
 </script>
 

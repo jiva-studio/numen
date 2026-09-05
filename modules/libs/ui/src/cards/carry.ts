@@ -6,7 +6,7 @@
  * what a landing comes to are the caller's, and each is stated once.
  */
 import { shallowRef, type ShallowRef } from 'vue'
-import { stepped, type InsertionPoint, type Way } from './order'
+import { stepped, type InsertionPoint, type StepDirection } from './order'
 
 /**
  * What following a carry takes: the order it runs along, and the rules.
@@ -42,7 +42,7 @@ export interface CarryState<At extends InsertionPoint | undefined> {
   /** It was let go where it stands. */
   readonly drop: () => void
   /** It was asked to go one place along the order. */
-  readonly step: (what: string, way: Way, press: KeyboardEvent) => void
+  readonly step: (what: string, direction: StepDirection, press: KeyboardEvent) => void
 }
 
 export function useCarry<At extends InsertionPoint | undefined>(carry: Carry<At>): CarryState<At> {
@@ -73,8 +73,8 @@ export function useCarry<At extends InsertionPoint | undefined>(carry: Carry<At>
     if (carry.lands(held, lands)) carry.moves(held, lands)
   }
 
-  const step = (what: string, way: Way, press: KeyboardEvent): void => {
-    const lands = stepped(carry.order(), what, way)
+  const step = (what: string, direction: StepDirection, press: KeyboardEvent): void => {
+    const lands = stepped(carry.order(), what, direction)
     if (lands === undefined || !carry.lands(what, lands)) return
     press.preventDefault()
     carry.moves(what, lands)

@@ -3,15 +3,7 @@
  * No DOM, no measurement.
  */
 import { describe, expect, it } from 'vitest'
-import {
-  landing,
-  numbered,
-  objection,
-  ordered,
-  reordered,
-  stepped,
-  wayOf,
-} from './order'
+import { directionOf, landing, numbered, objection, ordered, reordered, stepped } from './order'
 
 describe('ordered', () => {
   const NAMES = ['a', 'b', 'c']
@@ -122,15 +114,15 @@ describe('stepped', () => {
   })
 })
 
-describe('wayOf', () => {
+describe('directionOf', () => {
   it('reads the two arrows along the order', () => {
-    expect(wayOf('ArrowUp')).toBe('up')
-    expect(wayOf('ArrowDown')).toBe('down')
+    expect(directionOf('ArrowUp')).toBe('up')
+    expect(directionOf('ArrowDown')).toBe('down')
   })
 
-  it('reads every other key as no way at all', () => {
-    expect(wayOf('ArrowLeft')).toBeNull()
-    expect(wayOf('Enter')).toBeNull()
+  it('reads every other key as no direction at all', () => {
+    expect(directionOf('ArrowLeft')).toBeNull()
+    expect(directionOf('Enter')).toBeNull()
   })
 })
 

@@ -149,7 +149,7 @@ const addFace = (): void => {
         @remove="emit('remove-face', one.id)"
         @lift="liftFace(one.id, $event)"
         @release="releaseFace"
-        @step="(way, press) => stepFace(one.id, way, press)"
+        @step="(direction, press) => stepFace(one.id, direction, press)"
         @write="(half, text) => emit('write', one.id, half, text)"
       />
 

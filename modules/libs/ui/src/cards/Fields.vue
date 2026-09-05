@@ -20,7 +20,7 @@ import {
   landing,
   numbered,
   objection,
-  wayOf,
+  directionOf,
   type Problems,
   type InsertionPoint,
   type Objection,
@@ -96,8 +96,8 @@ const add = (): void => {
 
 /** A field asked by the keyboard to go one place along the order. */
 const onGripKey = (event: KeyboardEvent, field: string): void => {
-  const way = wayOf(event.key)
-  if (way !== null) step(field, way, event)
+  const direction = directionOf(event.key)
+  if (direction !== null) step(field, direction, event)
 }
 </script>
 

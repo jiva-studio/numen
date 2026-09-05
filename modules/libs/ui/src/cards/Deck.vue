@@ -168,7 +168,7 @@ const addSection = (): void => {
             @remove="emit('remove', tile.id)"
             @lift="lift(tile.id, $event)"
             @release="release"
-            @step="(way, press) => step(tile.id, way, press)"
+            @step="(direction, press) => step(tile.id, direction, press)"
             @write="(field, nth, text) => emit('write', tile.id, field, nth, text)"
           />
         </div>

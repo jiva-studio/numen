@@ -14,7 +14,7 @@ import RemoveButton from './RemoveButton.vue'
 import AutosizeTextarea from './AutosizeTextarea.vue'
 import Divider from '../divider/Divider.vue'
 import { DECK_WORDS, sealed, type CardWords, type PlacedFieldValue, type Tile } from './deck'
-import type { Way } from './order'
+import type { StepDirection } from './order'
 
 const props = withDefaults(
   defineProps<{
@@ -36,7 +36,7 @@ const emit = defineEmits<{
   (event: 'lift', press: DragEvent): void
   (event: 'release'): void
   /** The card asked to go one place along the order. */
-  (event: 'step', way: Way, press: KeyboardEvent): void
+  (event: 'step', direction: StepDirection, press: KeyboardEvent): void
   /**
    * One value as it now reads. A card writing a field twice is writing two
    * values, of which `nth` says which was typed in.
@@ -77,7 +77,7 @@ const wrongIn = (value: PlacedFieldValue): readonly string[] =>
       :carry="`${words.carry}: ${called}`"
       @dragstart="emit('lift', $event)"
       @dragend="emit('release')"
-      @step="(way, press) => emit('step', way, press)"
+      @step="(direction, press) => emit('step', direction, press)"
     >
       <!-- A deck holds cards cut by more than one stencil, so the strip says
            which cut this one, and where nothing did, that nothing did. A name
