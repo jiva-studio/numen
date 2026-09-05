@@ -20,9 +20,9 @@ import { WORDS as words } from './words'
 
 const props = defineProps<{ held: Held }>()
 
-const settings = computed(() => props.held.settings())
-const curve = computed(() => props.held.curve())
-const place = computed(() => props.held.place())
+const settings = computed(() => props.held.settings.value)
+const curve = computed(() => props.held.curve.value)
+const place = computed(() => props.held.place.value)
 
 /** Why the goal has nothing to work on, and empty where it has. */
 const nothing = computed(() => idle(curve.value))
@@ -81,7 +81,7 @@ const value = computed(() =>
 const reading = computed(() => words.value(curve.value.goal, value.value, day.value))
 
 /** How far each setting goes, as the last read answered it. */
-const bounds = computed(() => props.held.bounds())
+const bounds = computed(() => props.held.bounds.value)
 
 /** How far a control runs, and nothing at all where nothing was said. */
 type Ends = { min: number; max: number } | Record<string, never>
@@ -139,21 +139,21 @@ const dated = (said: Event) => {
 }
 
 /** Why the preset schedules nothing, and empty while it schedules something. */
-const stopped = computed(() => words.stopped(props.held.stopped()))
+const stopped = computed(() => words.stopped(props.held.stopped.value))
 </script>
 
 <template>
   <div class="preset">
     <!-- Reading the file again is the way out of anything the tab has to say,
          and it waits on nothing in the vault. -->
-    <p v-if="props.held.saying()" role="alert" class="preset__warning preset__answering">
-      {{ props.held.saying() }}
+    <p v-if="props.held.saying.value" role="alert" class="preset__warning preset__answering">
+      {{ props.held.saying.value }}
       <button type="button" class="answer" @click="props.held.again()">
         {{ words.reads }}
       </button>
     </p>
 
-    <p v-if="props.held.changed()" role="status" class="preset__warning preset__answering">
+    <p v-if="props.held.changed.value" role="status" class="preset__warning preset__answering">
       {{ words.changed }}
       <button type="button" class="answer" @click="props.held.again()">
         {{ words.reads }}
@@ -161,11 +161,11 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
     </p>
 
     <ul
-      v-if="props.held.problems().length"
+      v-if="props.held.problems.value.length"
       class="preset__warning preset__problems"
       :aria-label="words.problems"
     >
-      <li v-for="(text, at) in props.held.problems()" :key="at">{{ text }}</li>
+      <li v-for="(text, at) in props.held.problems.value" :key="at">{{ text }}</li>
     </ul>
 
     <div class="preset__page">
@@ -184,10 +184,10 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
           <template v-else>
             <Control
               :curve="curve"
-              :material="props.held.material()"
+              :material="props.held.material.value"
               :place="place"
               :value-text="reading"
-              :waiting="props.held.waiting()"
+              :waiting="props.held.waiting.value"
               @moves="(at: number) => props.held.moves(at)"
               @settles="props.held.settles()"
             />

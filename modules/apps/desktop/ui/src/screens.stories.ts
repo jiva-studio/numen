@@ -11,7 +11,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { StopReason } from '@numen/protocol'
 import { Workspace, branch, pane } from '@numen/ui'
 import type { Tab, WorkspaceLayout } from '@numen/ui'
-import { computed, nextTick, onMounted, ref, type Component } from 'vue'
+import { computed, nextTick, onMounted, ref, shallowRef, type Component } from 'vue'
 
 import SettingsTab from './settings/SettingsTab.vue'
 import type { Installation } from './settings/kind'
@@ -208,16 +208,16 @@ const BOUNDS: SettingsBounds = {
 
 const PRESET_HELD: PresetHeld = {
   id: 'Sanskrit.md',
-  settings: () => SETTINGS_OF_PRESET,
-  curve: () => CURVE,
-  material: () => ({ decks: 3, cards: 1_240, overdue: 96, unbegun: 410 }) as Material,
-  place: () => 4,
-  waiting: () => false,
-  bounds: () => BOUNDS,
-  problems: () => [],
-  stopped: () => StopReason.NOTHING,
-  saying: () => '',
-  changed: () => false,
+  settings: shallowRef(SETTINGS_OF_PRESET),
+  curve: shallowRef(CURVE),
+  material: shallowRef({ decks: 3, cards: 1_240, overdue: 96, unbegun: 410 } as Material),
+  place: ref(4),
+  waiting: ref(false),
+  bounds: shallowRef(BOUNDS),
+  problems: shallowRef([]),
+  stopped: ref(StopReason.NOTHING),
+  saying: ref(''),
+  changed: ref(false),
   again: () => {},
   chooses: () => {},
   moves: () => {},

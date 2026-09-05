@@ -6,6 +6,7 @@
  * come from one place, which is what the two sources are read for.
  */
 import { describe, expect, it } from 'vitest'
+import { ref, shallowRef } from 'vue'
 import { mount } from '@vue/test-utils'
 import PresetTab from './PresetTab.vue'
 import tabSource from './PresetTab.vue?raw'
@@ -127,7 +128,7 @@ describe('the settings under the control', () => {
   // itself with, rather than at ends the window made up.
   it('leaves a field the application has said nothing about at its own ends', () => {
     const one = tabAt({}, { learned: 'interval', interval: 21 })
-    const held: Held = { ...one.held, bounds: () => NO_BOUNDS }
+    const held: Held = { ...one.held, bounds: shallowRef(NO_BOUNDS) }
     const tab = mount(PresetTab, { props: { held } })
     const field = tab.get('[data-preset-row="interval"]').get<HTMLInputElement>('input')
     expect(field.element.value).toBe('21')
@@ -140,7 +141,7 @@ describe('the settings under the control', () => {
 describe('what the tab says went wrong', () => {
   const saying = (words: string) => {
     const one = tabAt()
-    const held: Held = { ...one.held, saying: () => words }
+    const held: Held = { ...one.held, saying: ref(words) }
     return { tab: mount(PresetTab, { props: { held } }), done: one.done }
   }
 
@@ -170,7 +171,7 @@ describe('what the tab says went wrong', () => {
 describe('a file that changed under the tab', () => {
   it('says so, and offers reading the file again', async () => {
     const one = tabAt()
-    const held: Held = { ...one.held, changed: () => true }
+    const held: Held = { ...one.held, changed: ref(true) }
     const tab = mount(PresetTab, { props: { held } })
     const said = tab.get('[role="status"].preset__answering')
     expect(said.text()).toContain(words.changed)

@@ -5,6 +5,7 @@
  * nothing to work on says so where the picture would stand.
  */
 import { describe, expect, it } from 'vitest'
+import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { StopReason } from '@numen/protocol'
 import PresetTab from './PresetTab.vue'
@@ -26,7 +27,7 @@ describe('a preset that schedules nothing', () => {
   /** The tab drawn for a preset stopped for that reason. */
   const stopped = (why: StopReason) => {
     const { held } = tabAt()
-    return mount(PresetTab, { props: { held: { ...held, stopped: () => why } } })
+    return mount(PresetTab, { props: { held: { ...held, stopped: ref(why) } } })
   }
 
   it('has a sentence of its own for each verdict there is', () => {

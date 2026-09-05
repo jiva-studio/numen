@@ -189,8 +189,8 @@ describe('the value the goal steers', () => {
     held.moves(3)
     held.settles()
     await Promise.resolve()
-    expect(held.place()).toBe(3)
-    expect(held.settings().minutesADay).toBe(30)
+    expect(held.place.value).toBe(3)
+    expect(held.settings.value.minutesADay).toBe(30)
     expect(written.at(-1)?.minutesADay).toBe(30)
   })
 
@@ -202,8 +202,8 @@ describe('the value the goal steers', () => {
     held.types('minutesADay', 21)
     held.settles()
     await Promise.resolve()
-    expect(held.place()).toBe(2)
-    expect(held.settings().minutesADay).toBe(21)
+    expect(held.place.value).toBe(2)
+    expect(held.settings.value.minutesADay).toBe(21)
     expect(written.at(-1)?.minutesADay).toBe(21)
   })
 
@@ -220,8 +220,8 @@ describe('the value the goal steers', () => {
     held.types('retention', 0.873)
     held.settles()
     await Promise.resolve()
-    expect(held.place()).toBe(1)
-    expect(held.settings().retention).toBe(0.873)
+    expect(held.place.value).toBe(1)
+    expect(held.settings.value.retention).toBe(0.873)
     expect(written.at(-1)?.retention).toBe(0.873)
   })
 
@@ -233,8 +233,8 @@ describe('the value the goal steers', () => {
     held.types('byDate', '2026-09-29')
     held.settles()
     await Promise.resolve()
-    expect(held.place()).toBe(2)
-    expect(held.settings().byDate).toBe('2026-09-29')
+    expect(held.place.value).toBe(2)
+    expect(held.settings.value.byDate).toBe('2026-09-29')
     expect(written.at(-1)?.byDate).toBe('2026-09-29')
   })
 
@@ -246,8 +246,8 @@ describe('the value the goal steers', () => {
     held.types('byDate', '2026-09-22')
     held.settles()
     await Promise.resolve()
-    expect(held.place()).toBe(1)
-    expect(held.settings().byDate).toBe('2026-09-22')
+    expect(held.place.value).toBe(1)
+    expect(held.settings.value.byDate).toBe('2026-09-22')
     expect(written.at(-1)?.byDate).toBe('2026-09-22')
   })
 
@@ -258,7 +258,7 @@ describe('the value the goal steers', () => {
     )
     held.types('byDate', '')
     await Promise.resolve()
-    expect(held.place()).toBe(0)
+    expect(held.place.value).toBe(0)
   })
 })
 
@@ -286,17 +286,17 @@ describe('the curve behind the knob', () => {
   // last answer counted them while the next one is out.
   it('keeps what the material comes to while a curve is on its way', async () => {
     const { held } = await opened()
-    expect(held.material()).toStrictEqual({ decks: 1, cards: 400, overdue: 0, unbegun: 0 })
+    expect(held.material.value).toStrictEqual({ decks: 1, cards: 400, overdue: 0, unbegun: 0 })
 
     held.types('newADay', 4)
-    expect(held.waiting()).toBe(true)
-    expect(held.curve().honest).toBe(false)
-    expect(held.material()).toStrictEqual({ decks: 1, cards: 400, overdue: 0, unbegun: 0 })
+    expect(held.waiting.value).toBe(true)
+    expect(held.curve.value.honest).toBe(false)
+    expect(held.material.value).toStrictEqual({ decks: 1, cards: 400, overdue: 0, unbegun: 0 })
   })
 
   it('counts the material at nothing until an answer has counted it', async () => {
     const { held } = await opened({}, () => new Promise<Curve>(() => {}))
-    expect(held.material()).toBeNull()
+    expect(held.material.value).toBeNull()
   })
 
   // A goal already worked out is drawn again as it was, so moving between the
@@ -315,10 +315,10 @@ describe('the curve behind the knob', () => {
 
     held.chooses('minutes')
     await settle()
-    expect(held.curve().honest).toBe(true)
+    expect(held.curve.value.honest).toBe(true)
     held.chooses('retention')
     await settle()
-    expect(held.curve().honest).toBe(true)
+    expect(held.curve.value.honest).toBe(true)
     expect(asked).toStrictEqual(['minutes', 'retention', 'date'])
   })
 
@@ -327,7 +327,7 @@ describe('the curve behind the knob', () => {
     held.moves(3)
     changed(['Steady.md'])
     await after()
-    expect(held.place()).toBe(3)
+    expect(held.place.value).toBe(3)
   })
 
   // The counts behind a curve are the vault's, not the preset's, so a file read
@@ -335,11 +335,11 @@ describe('the curve behind the knob', () => {
   it('is asked afresh on a re-read, so a deck pointed here since is seen', async () => {
     let decks = 0
     const { held, changed } = await opened({}, () => ({ ...curve, decks: decks++ }))
-    expect(held.curve().decks).toBe(0)
+    expect(held.curve.value.decks).toBe(0)
 
     changed(['Steady.md'])
     await after()
-    expect(held.curve().decks).toBe(1)
+    expect(held.curve.value.decks).toBe(1)
   })
 
   // The range the line is drawn over runs to the value the knob rides, so a
@@ -352,24 +352,24 @@ describe('the curve behind the knob', () => {
       now: { at: 2, value: asked.minutesADay, day: '' },
     })
     const { held, asked } = await opened({}, reaching)
-    expect(held.curve().grid.at(-1)).toBe(20)
+    expect(held.curve.value.grid.at(-1)).toBe(20)
 
     held.types('minutesADay', 120)
     await after()
     expect(asked).toStrictEqual(['minutes', 'minutes'])
-    expect(held.curve().grid.at(-1)).toBe(120)
+    expect(held.curve.value.grid.at(-1)).toBe(120)
   })
 
   // The figures over the picture are read as the answer to what stands on
   // screen, so the run of a settled question is nobody's answer to a new one.
   it('is nobody’s answer while the answer to the settings now standing is out', async () => {
     const { held } = await opened()
-    expect(held.curve().honest).toBe(true)
+    expect(held.curve.value.honest).toBe(true)
 
     held.types('newADay', 4)
-    expect(held.curve().honest).toBe(false)
+    expect(held.curve.value.honest).toBe(false)
     await after()
-    expect(held.curve().honest).toBe(true)
+    expect(held.curve.value.honest).toBe(true)
   })
 })
 
@@ -387,7 +387,7 @@ describe('the goal chosen', () => {
     const { held, written } = await opened({ byDate: '' }, dated)
     held.chooses('date')
     await after()
-    expect(held.settings().byDate).toBe('2026-09-29')
+    expect(held.settings.value.byDate).toBe('2026-09-29')
     expect(written.at(-1)?.byDate).toBe('2026-09-29')
   })
 
@@ -396,7 +396,7 @@ describe('the goal chosen', () => {
       const { held, written } = await opened({ byDate: day }, dated)
       held.chooses('date')
       await after()
-      expect(held.settings().byDate).toBe(day)
+      expect(held.settings.value.byDate).toBe(day)
       expect(written.at(-1)?.byDate).toBe(day)
     }
   })
@@ -437,7 +437,7 @@ describe('what the tab says it was refused for', () => {
     const said: string[] = []
     for (const refusal of refusals) {
       const { held } = await opened({}, curve, () => ({ preset: null, refusal }))
-      said.push(held.saying())
+      said.push(held.saying.value)
     }
     expect(said.every((one) => one !== '')).toBe(true)
     expect(new Set(said).size).toBe(refusals.length)
@@ -450,7 +450,7 @@ describe('what the tab says it was refused for', () => {
       held.types('newADay', 4)
       held.settles()
       await after()
-      said.push(held.saying())
+      said.push(held.saying.value)
     }
     expect(said.every((one) => one !== '')).toBe(true)
     expect(new Set(said).size).toBe(refusals.length)
@@ -476,21 +476,21 @@ describe('what the tab says it was refused for', () => {
 describe('a curve nobody answers', () => {
   it('leaves the tab saying why, and not saying it is reading', async () => {
     const { held } = await opened({}, () => Promise.reject(new Error('the vault is gone')))
-    expect(held.waiting()).toBe(false)
-    expect(held.saying()).not.toBe('')
+    expect(held.waiting.value).toBe(false)
+    expect(held.saying.value).not.toBe('')
   })
 
   it('is what a file refused leaves, so no answer is waited on', async () => {
     const { held } = await opened({}, curve, () => ({ preset: null, refusal: 'notAPreset' }))
-    expect(held.waiting()).toBe(false)
-    expect(held.saying()).not.toBe('')
+    expect(held.waiting.value).toBe(false)
+    expect(held.saying.value).not.toBe('')
   })
 
   it('is waited on again where the goal is moved to one nobody has answered', async () => {
     const { held } = await opened({}, () => new Promise<Curve>(() => {}))
     held.chooses('retention')
     await after()
-    expect(held.waiting()).toBe(true)
+    expect(held.waiting.value).toBe(true)
   })
 })
 
@@ -513,7 +513,7 @@ describe('what a tab still owes the file', () => {
     held.shuts('Steady.md')
     await after()
     expect(closed).toStrictEqual([])
-    expect(held.saying()).not.toBe('')
+    expect(held.saying.value).not.toBe('')
   })
 
   it('lets the tab go the second time it is asked, the person having been told', async () => {
@@ -532,7 +532,7 @@ describe('what a tab still owes the file', () => {
     held.shuts('Steady.md')
     await after()
     expect(closed).toStrictEqual([])
-    expect(held.changed()).toBe(true)
+    expect(held.changed.value).toBe(true)
   })
 
   it('is written when the window goes', async () => {
@@ -573,14 +573,14 @@ describe('a file read again', () => {
     held.types('newADay', 4)
     changed(['Steady.md'])
     await after()
-    expect(held.settings().newADay).toBe(4)
+    expect(held.settings.value.newADay).toBe(4)
   })
 
   it('takes the file up where nothing stands unwritten', async () => {
     const { held, changed } = await opened()
     changed(['Steady.md'])
     await after()
-    expect(held.settings().newADay).toBe(STEADY.newADay)
+    expect(held.settings.value.newADay).toBe(STEADY.newADay)
   })
 
   // Moving one field is not a claim on the rest: the file has the say over
@@ -604,9 +604,9 @@ describe('a file read again', () => {
     changed(['Steady.md'])
     await after()
 
-    expect(held.settings().newADay).toBe(4)
-    expect(held.settings().reviewsADay).toBe(33)
-    expect(held.settings().interval).toBe(40)
+    expect(held.settings.value.newADay).toBe(4)
+    expect(held.settings.value.reviewsADay).toBe(33)
+    expect(held.settings.value.interval).toBe(40)
   })
 
   it('drops the problems of the file it read before, where it is refused', async () => {
@@ -624,11 +624,11 @@ describe('a file read again', () => {
           }
         : { preset: null, refusal: 'notAPreset' },
     )
-    expect(held.problems()).toHaveLength(1)
+    expect(held.problems.value).toHaveLength(1)
 
     changed(['Steady.md'])
     await after()
-    expect(held.problems()).toStrictEqual([])
+    expect(held.problems.value).toStrictEqual([])
   })
 })
 
@@ -643,7 +643,7 @@ describe('what the control writes', () => {
     held.settles()
     await Promise.resolve()
 
-    expect(held.settings().minutesADay).toBe(30)
+    expect(held.settings.value.minutesADay).toBe(30)
     expect(written.at(-1)?.minutesADay).toBe(30)
     expect(written.at(-1)?.newADay).toBe(12)
     expect(written.at(-1)?.reviewsADay).toBe(0)
@@ -655,8 +655,8 @@ describe('what the control writes', () => {
     held.moves(1)
     held.settles()
     await Promise.resolve()
-    expect(held.settings().reviewsADay).toBe(12)
-    expect(held.settings().retention).toBe(0.95)
+    expect(held.settings.value.reviewsADay).toBe(12)
+    expect(held.settings.value.retention).toBe(0.95)
     expect(written.at(-1)?.reviewsADay).toBe(12)
     expect(written.at(-1)?.retention).toBe(0.95)
   })
@@ -667,7 +667,7 @@ describe('what the control writes', () => {
 describe('a setting the goal on screen does not name', () => {
   it('is not drawn, and keeps its value in the file across a write', async () => {
     const { held, written } = await opened({ minutesADay: 34, newADay: 12, reviewsADay: 7 })
-    expect(fieldsUnder(held.settings().goal, held.settings().learned)).not.toContain('reviewsADay')
+    expect(fieldsUnder(held.settings.value.goal, held.settings.value.learned)).not.toContain('reviewsADay')
 
     held.moves(1)
     held.settles()
@@ -688,8 +688,8 @@ describe('a setting the goal on screen does not name', () => {
     await Promise.resolve()
 
     expect(fieldsUnder('retention', DEFAULTS.learned)).toContain('reviewsADay')
-    expect(held.settings().reviewsADay).toBe(7)
-    expect(held.settings().newADay).toBe(12)
+    expect(held.settings.value.reviewsADay).toBe(7)
+    expect(held.settings.value.newADay).toBe(12)
     expect(written.at(-1)?.reviewsADay).toBe(7)
   })
 })
@@ -722,7 +722,7 @@ describe('a field the goal does not steer, typed', () => {
   // one thing and the next touch of the knob writes what the file already says.
   it('leaves the knob standing where the preset stands, whatever range comes back', async () => {
     const { held, written } = await opened({ minutesADay: 23 }, ranging)
-    expect(held.place()).toBe(held.curve().now.at)
+    expect(held.place.value).toBe(held.curve.value.now.at)
 
     held.types('backlog', 5)
     held.settles()
@@ -730,8 +730,8 @@ describe('a field the goal does not steer, typed', () => {
     await Promise.resolve()
     await Promise.resolve()
 
-    expect(held.place()).toBe(held.curve().now.at)
-    expect(held.settings().minutesADay).toBe(23)
+    expect(held.place.value).toBe(held.curve.value.now.at)
+    expect(held.settings.value.minutesADay).toBe(23)
     expect(written.at(-1)?.minutesADay).toBe(23)
   })
 
@@ -751,14 +751,14 @@ describe('a field the goal does not steer, typed', () => {
         if (field === steers(goal) || said === undefined) continue
 
         const { held, written } = await opened({ goal, minutesADay: 23 }, ranging)
-        const was = held.settings()
+        const was = held.settings.value
         held.types(field, said)
         held.settles()
         await Promise.resolve()
         await Promise.resolve()
         await Promise.resolve()
 
-        const now = held.settings()
+        const now = held.settings.value
         expect({ ...now, [field]: was[field] }).toStrictEqual(was)
         expect(written.at(-1)).toStrictEqual(now)
       }
@@ -781,21 +781,21 @@ describe('a field moved before the first read lands', () => {
       interval: 40,
     })
     // Nothing of the file has arrived: this is what the tab opened at.
-    expect(tab.settings().retention).toBe(DEFAULTS.retention)
-    expect(tab.settings().interval).toBe(DEFAULTS.interval)
+    expect(tab.settings.value.retention).toBe(DEFAULTS.retention)
+    expect(tab.settings.value.interval).toBe(DEFAULTS.interval)
 
     tab.types('backlog', 55)
     lands()
     await after()
 
-    expect(tab.settings().backlog).toBe(55)
-    expect(tab.settings().retention).toBe(0.93)
-    expect(tab.settings().newADay).toBe(3)
-    expect(tab.settings().interval).toBe(40)
+    expect(tab.settings.value.backlog).toBe(55)
+    expect(tab.settings.value.retention).toBe(0.93)
+    expect(tab.settings.value.newADay).toBe(3)
+    expect(tab.settings.value.interval).toBe(40)
 
     tab.settles()
     await after()
-    expect(written.at(-1)).toStrictEqual(tab.settings())
+    expect(written.at(-1)).toStrictEqual(tab.settings.value)
   })
 
   it('keeps the moved field where the person left it, whatever the file says', async () => {
@@ -803,7 +803,7 @@ describe('a field moved before the first read lands', () => {
     tab.types('backlog', 55)
     lands()
     await after()
-    expect(tab.settings().backlog).toBe(55)
+    expect(tab.settings.value.backlog).toBe(55)
   })
 })
 
@@ -812,21 +812,21 @@ describe('a field moved before the first read lands', () => {
 describe('how far each setting goes', () => {
   it('is what the read answered', async () => {
     const { held } = await opened()
-    expect(held.bounds()).toStrictEqual(BOUNDS)
+    expect(held.bounds.value).toStrictEqual(BOUNDS)
   })
 
   it('is nothing at all where the read answered none', async () => {
     const { held } = await opened({}, curve, () => ({ bounds: NO_BOUNDS }))
-    expect(held.bounds()).toStrictEqual({})
+    expect(held.bounds.value).toStrictEqual({})
   })
 
   it('holds a number typed past an end at the end the read answered', async () => {
     const { held } = await opened()
     held.types('interval', 9_000)
-    expect(held.settings().interval).toBe(BOUNDS.interval.most)
+    expect(held.settings.value.interval).toBe(BOUNDS.interval.most)
 
     held.types('newADay', -4)
-    expect(held.settings().newADay).toBe(BOUNDS.newADay.least)
+    expect(held.settings.value.newADay).toBe(BOUNDS.newADay.least)
   })
 })
 

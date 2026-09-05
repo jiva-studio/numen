@@ -76,35 +76,35 @@ export interface Held {
   /** The identity this preset opened under, which its tab keeps wherever it goes. */
   readonly id: string
   /** The settings as they now stand, whether or not they have been written. */
-  settings(): Settings
+  readonly settings: Readonly<Ref<Settings>>
   /** The curve of the goal, which is the control the person moves. */
-  curve(): Curve
+  readonly curve: Readonly<Ref<Curve>>
   /**
    * What the preset schedules, as the last answer counted it, and nothing until
    * one has. No setting moves these figures, so they stand while a curve asked
    * under other settings is on its way.
    */
-  material(): Material | null
+  readonly material: Readonly<Ref<Material | null>>
   /** Where the knob stands on that curve. */
-  place(): number
+  readonly place: Readonly<Ref<number>>
   /** An answer to the picture is on its way. */
-  waiting(): boolean
+  readonly waiting: Readonly<Ref<boolean>>
   /**
    * How far each setting goes, as the application answers it. They are its own
    * and not this preset's, and nothing is said of them until a read lands.
    */
-  bounds(): SettingsBounds
+  readonly bounds: Readonly<Ref<SettingsBounds>>
   /** What is wrong with the file, in the words to show. */
-  problems(): readonly string[]
+  readonly problems: Readonly<Ref<readonly string[]>>
   /**
    * Why it schedules nothing on the day it was read in, as the vault says it.
    * The rule is the core's, and it is the rule a sitting hands its cards out by.
    */
-  stopped(): StopReason
+  readonly stopped: Readonly<Ref<StopReason>>
   /** What the file was refused for, in words a person reads, or nothing. */
-  saying(): string
+  readonly saying: Readonly<Ref<string>>
   /** The file moved under the window and nothing was written. */
-  changed(): boolean
+  readonly changed: Readonly<Ref<boolean>>
   /** The file read again, which is the way out of that. */
   again(): void
   /** Another of the three goals steers this preset from now on. */
@@ -507,16 +507,16 @@ export function presetting(
   const holding = (one: Kept, id: string): Held => {
     return {
       id,
-      settings: () => one.settings.value,
-      curve: () => one.curve.value,
-      material: () => one.material.value,
-      place: () => one.place.value,
-      waiting: () => one.waiting.value,
-      bounds: () => bounds.value,
-      problems: () => one.problems.value,
-      stopped: () => one.stopped.value,
-      saying: () => one.saying.value,
-      changed: () => one.changed.value,
+      settings: one.settings,
+      curve: one.curve,
+      material: one.material,
+      place: one.place,
+      waiting: one.waiting,
+      bounds,
+      problems: one.problems,
+      stopped: one.stopped,
+      saying: one.saying,
+      changed: one.changed,
       again: () => void reads(one),
       chooses: (goal) => {
         const was = one.settings.value

@@ -10,7 +10,7 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { ref } from 'vue'
+import { ref, shallowRef } from 'vue'
 import { StopReason } from '@numen/protocol'
 import PresetTab from './PresetTab.vue'
 import {
@@ -93,16 +93,16 @@ const holding = (args: Knobs): Held => {
   const drawn = curve({ goal: args.goal, honest: args.honest })
   return {
     id: 'Sanskrit.md',
-    settings: () => ({ ...DEFAULTS, goal: args.goal }),
-    curve: () => drawn,
-    material: () => (args.honest ? MATERIAL : null),
-    place: () => place.value,
-    waiting: () => args.waiting,
-    bounds: () => BOUNDS,
-    problems: () => [],
-    stopped: () => StopReason.NOTHING,
-    saying: () => '',
-    changed: () => false,
+    settings: shallowRef({ ...DEFAULTS, goal: args.goal }),
+    curve: shallowRef(drawn),
+    material: shallowRef(args.honest ? MATERIAL : null),
+    place,
+    waiting: ref(args.waiting),
+    bounds: shallowRef(BOUNDS),
+    problems: shallowRef([]),
+    stopped: ref(StopReason.NOTHING),
+    saying: ref(''),
+    changed: ref(false),
     again: fn(),
     chooses: fn(),
     moves: (at: number) => {

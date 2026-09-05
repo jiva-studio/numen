@@ -5,7 +5,7 @@
  * asked to do is written down in the order it was asked.
  */
 import { afterEach, beforeEach, vi } from 'vitest'
-import { ref } from 'vue'
+import { ref, shallowRef } from 'vue'
 import { mount } from '@vue/test-utils'
 import { StopReason } from '@numen/protocol'
 
@@ -114,16 +114,16 @@ const tabAt = (
   const place = ref(2)
   const held: Held = {
     id: 'Sanskrit.md',
-    settings: () => ({ ...DEFAULTS, ...settings }),
-    curve: () => curve(over),
-    material: () => (told === undefined ? counted(curve(over)) : told),
-    place: () => place.value,
-    waiting: () => waiting,
-    bounds: () => BOUNDS,
-    problems: () => [],
-    stopped: () => StopReason.NOTHING,
-    saying: () => '',
-    changed: () => false,
+    settings: shallowRef({ ...DEFAULTS, ...settings }),
+    curve: shallowRef(curve(over)),
+    material: shallowRef(told === undefined ? counted(curve(over)) : told),
+    place,
+    waiting: ref(waiting),
+    bounds: shallowRef(BOUNDS),
+    problems: shallowRef([]),
+    stopped: ref(StopReason.NOTHING),
+    saying: ref(''),
+    changed: ref(false),
     again: () => void done.push('again'),
     chooses: (goal) => void done.push(`chooses ${goal}`),
     moves: (at) => {
