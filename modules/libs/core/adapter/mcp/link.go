@@ -94,7 +94,7 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 			}
 			// One note's links are one write, so the note they are written
 			// against is one note as one caller read it.
-			if standing, grouped := held[add.From]; grouped && standing != seen {
+			if first, grouped := held[add.From]; grouped && first != seen {
 				res.Added[i].Refused = "the links written into " + add.From +
 					" name two different fingerprints, and they are one write"
 				continue
