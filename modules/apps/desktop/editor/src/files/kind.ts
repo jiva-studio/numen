@@ -5,7 +5,7 @@
  */
 import { ref } from 'vue'
 import type { Entry, Move, Source } from '../core'
-import type { SearchDestination } from '../command/finding'
+import type { SearchDestination } from '../command/search'
 import { folderOf, landedIn, type FileTree, ROOT } from './listing'
 import {
   NEW_DECK,

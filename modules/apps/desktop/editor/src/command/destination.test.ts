@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { lands, type DestinationDeps } from './destination'
-import type { SearchDestination } from './finding'
+import type { SearchDestination } from './search'
 
 /** A window that writes down where it was taken. */
 const window = () => {

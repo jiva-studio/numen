@@ -2,7 +2,7 @@
  * The icon drawn beside a command wherever it is offered. A command has one
  * icon, from Lucide, so both menus draw the same thing for the same thing.
  *
- * A command is named here by the identity it carries in `commanding.ts` and in
+ * A command is named here by the identity it carries in `commands.ts` and in
  * what each tab does itself.
  */
 import {

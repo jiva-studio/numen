@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { ITEMS, NEW_NOTE, NONE, OFFERED } from './menu'
-import { commandsOf, overNote } from '../command/commanding'
+import { commandsOf, overNote } from '../command/commands'
 import { WORDS as words } from '../words'
 
 describe('what the menu offers', () => {

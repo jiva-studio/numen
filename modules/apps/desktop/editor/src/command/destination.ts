@@ -6,7 +6,7 @@
  * Which editor the source opens in is not decided here: a destination names the
  * file and the place in it, and `putting.ts` opens it.
  */
-import type { SearchDestination } from './finding'
+import type { SearchDestination } from './search'
 
 /** What the window offers whatever was chosen. */
 export interface DestinationDeps {

@@ -6,8 +6,8 @@
  * command the window does not have would draw a cap over silence.
  */
 import { describe, expect, it } from 'vitest'
-import { chorded, commandFor, keyOf, keysOf, CHORDS } from './keying'
-import { commandsOf } from './commanding'
+import { chorded, commandFor, keyOf, keysOf, CHORDS } from './chords'
+import { commandsOf } from './commands'
 import { WORDS as words } from '../words'
 
 const pressing = (over: Partial<KeyboardEventInit> = {}) => ({

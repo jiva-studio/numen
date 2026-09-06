@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { keyChord } from '@numen/ui'
 import type { VaultList, Vault } from '../core'
-import { keyOf } from '../command/keying'
+import { keyOf } from '../command/chords'
 import { COMMANDS, SETTINGS, vaultsOn, waysIn, type ShownVault, type Words } from './screen'
 import { WORDS as own } from './words'
 

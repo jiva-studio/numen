@@ -7,7 +7,7 @@
  * drawn only once the keyboard has stood on its row.
  */
 import { describe, expect, it, vi } from 'vitest'
-import type { StepGroup } from '../command/commanding'
+import type { StepGroup } from '../command/commands'
 import type { Catalogue, Themes } from './theme'
 import {
   INTERFACE_SCALE,

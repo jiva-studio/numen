@@ -21,8 +21,8 @@ records — are how the application is built, and stay there.
 
 | Page | Written from |
 | --- | --- |
-| `keyboard.md` | the window's table of chords, `editor/src/command/keying.ts` |
-| `commands.mdx` | every row of `editor/src/command/commanding.ts`, in the words `words.ts` draws them with |
+| `keyboard.md` | the window's table of chords, `editor/src/command/chords.ts` |
+| `commands.mdx` | every row of `editor/src/command/commands.ts`, in the words `words.ts` draws them with |
 | `reference.md` | the settings structs: `settings`, `embed`, `recognition`, `proofreading`, `agent` |
 | `starting.md` | the flags `cmd/numen/main.go` declares |
 | `cli.md` | what `numen-cli` prints when it is asked, in `adapter/cli/cli.go` |

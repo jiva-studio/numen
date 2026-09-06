@@ -66,7 +66,7 @@ export interface Passage {
 export type SearchMode = 'fused' | 'words' | 'meaning' | 'names'
 
 /** The two questions the palette asks of the vault. */
-export interface FindingDeps {
+export interface SearchDeps {
   /** The names in the vault that match: a note’s own title, and its headings. */
   names(query: string, limit: number): Promise<readonly NameMatch[]>
   /** The text the vault holds that answers, asked one way. */
@@ -156,13 +156,13 @@ interface SearchRow {
 const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
 
 /** What the window hands the palette, beside the vault and its own words. */
-export interface FindingOptions {
+export interface SearchOptions {
   wait?(ms: number): Promise<unknown>
   /** How far the vault has been read for meaning, where the window knows. */
   coverage?(): IndexCoverage
 }
 
-export function finding(core: FindingDeps, words: Words, how: FindingOptions = {}) {
+export function search(core: SearchDeps, words: Words, how: SearchOptions = {}) {
   const wait = how.wait ?? sleep
   const coverage = how.coverage
   /** Whether the palette is drawn at all. */
@@ -424,4 +424,4 @@ export function finding(core: FindingDeps, words: Words, how: FindingOptions = {
 }
 
 /** The search of one window: what the words typed turn up, and where each goes. */
-export type SearchState = ReturnType<typeof finding>
+export type SearchState = ReturnType<typeof search>

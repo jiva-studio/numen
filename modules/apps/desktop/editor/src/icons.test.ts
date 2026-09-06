@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 
 import { iconFor, iconOfKind, iconOfNote } from './icons'
 import { PRESET } from './tabs/workspace'
-import { commandsOf } from './command/commanding'
+import { commandsOf } from './command/commands'
 import { itemsFor } from './files/menu'
 import { ITEMS, NONE } from './plex/menu'
 import { waysIn } from './welcome/screen'

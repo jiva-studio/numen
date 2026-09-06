@@ -51,8 +51,8 @@ import { DEFAULT_PARTS } from './settings/hanging'
 import { DEFAULT_STARTS } from './settings/reviewing'
 import { settingAt } from './settings/store'
 import { write } from './settings/json5'
-import type { CommandingDeps } from './command/commanding'
-import type { FindingDeps, SearchMode } from './command/finding'
+import type { CommandsDeps } from './command/commands'
+import type { SearchDeps, SearchMode } from './command/search'
 import type { Documents, Page } from './document/reading'
 import type { Cue, Recordings } from './recording/transcript'
 import type {
@@ -269,7 +269,7 @@ export const cards: Cards = {
 }
 
 /** The same questions, in the shape the window asks them. */
-export const core: Core & FindingDeps & CommandingDeps = {
+export const core: Core & SearchDeps & CommandsDeps = {
   vaults: () => vaults.list(),
   neighbourhood: async (path) => around(await notes.getNeighbourhood({ path })),
   opening: async () => (await notes.getOpeningNote({})).note ?? null,

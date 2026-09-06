@@ -15,11 +15,11 @@ import {
   offering,
   type Commands,
   type CommandTarget,
-} from './commanding'
+} from './commands'
 import { does, type CommandDeps } from './handlers'
-import type { SearchState } from './finding'
+import type { SearchState } from './search'
 import { iconFor, iconOfNote, iconOfSource } from '../icons'
-import { chorded } from './keying'
+import { chorded } from './chords'
 import { lands, type DestinationDeps } from './destination'
 import { WORDS as words } from '../words'
 

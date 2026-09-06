@@ -10,7 +10,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import {
   asksCommands,
-  commanding,
+  commandPalette,
   commandsOf,
   creates,
   runSupport,
@@ -22,9 +22,9 @@ import {
   type RunSupport,
   type StepGroup,
   type CommandTarget,
-} from './commanding'
+} from './commands'
 import type { VaultList, Vault } from '../core'
-import type { NameMatch } from './finding'
+import type { NameMatch } from './search'
 import { WORDS as words } from '../words'
 
 /** What is in front, which a test moves under the commands. */
@@ -122,7 +122,7 @@ const asking = (
   }
   const window = held()
   const kept = holding(offers)
-  const commands = commanding(
+  const commands = commandPalette(
     core,
     words,
     () => at.value,
@@ -743,7 +743,7 @@ describe('a command that asks for a note', () => {
   it('says the vault could not answer, in the window’s own words', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     const at = ref(front())
-    const commands = commanding(
+    const commands = commandPalette(
       {
         names: async () => Promise.reject(new Error('no model is set')),
         vaults: async () => installation(),
@@ -1153,7 +1153,7 @@ describe('a command that asks for a vault', () => {
   it('says the list could not be asked, in the window’s own words', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     const at = ref(front())
-    const commands = commanding(
+    const commands = commandPalette(
       {
         names: async () => [],
         vaults: async () => Promise.reject(new Error('the list is not there')),

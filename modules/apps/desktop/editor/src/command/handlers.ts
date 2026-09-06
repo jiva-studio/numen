@@ -1,13 +1,13 @@
 /**
  * Carrying out a command, over what the window offers to do it with.
  *
- * Every command is one entry here, under the identity `commanding.ts` gives
+ * Every command is one entry here, under the identity `commands.ts` gives
  * it, so a command that is offered and a command that happens are the same
  * list. Nothing here draws anything.
  */
 import type { PlexRelatedSeat } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
-import type { Deed, RunSupport, VaultRef } from './commanding'
+import type { Deed, RunSupport, VaultRef } from './commands'
 import type { EditorKind } from '../tabs/putting'
 import type {
   Artifact,

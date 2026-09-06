@@ -19,11 +19,11 @@ import {
   type Vault,
   type VaultList,
 } from '../core'
-import { keysOf } from './keying'
-import type { EmptyWords, NameMatch } from './finding'
+import { keysOf } from './chords'
+import type { EmptyWords, NameMatch } from './search'
 
 /** What the commands ask of the application before anything is chosen. */
-export interface CommandingDeps {
+export interface CommandsDeps {
   /** The names in the vault that match. */
   names(query: string, limit: number): Promise<readonly NameMatch[]>
   /** Every vault the installation holds, and which of them this window shows. */
@@ -694,8 +694,8 @@ interface PendingStep {
 
 const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
 
-export function commanding(
-  core: CommandingDeps,
+export function commandPalette(
+  core: CommandsDeps,
   words: Words,
   at: () => CommandTarget,
   knows: NoteLookup,
@@ -1251,4 +1251,4 @@ export function commanding(
 }
 
 /** The commands of one window, over whatever is in front of the person. */
-export type Commands = ReturnType<typeof commanding>
+export type Commands = ReturnType<typeof commandPalette>
