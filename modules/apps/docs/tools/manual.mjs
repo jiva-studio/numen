@@ -98,16 +98,16 @@ const declaring = (source, name, what) => {
 /* ------------------------------------------------------------------ keys */
 
 /** Every chord the window carries out a command for, in the order it declares them. */
-const chords = (keying) => {
-  const table = declaring(keying, 'CHORDS', 'keying.ts no longer lists its chords')
+const chords = (source) => {
+  const table = declaring(source, 'CHORDS', 'chords.ts no longer lists its chords')
   const found = [
     ...table.text.matchAll(
       /\{\s*command:\s*'([A-Za-z]+)',\s*letter:\s*'([a-z])',\s*shift:\s*(true|false)\s*\}/g,
     ),
   ].map(([, command, letter, shift]) => ({ command, letter, shift: shift === 'true' }))
-  if (found.length === 0) die('no chords are declared in keying.ts')
+  if (found.length === 0) die('no chords are declared in chords.ts')
   if (found.length !== table.entries) {
-    die(`keying.ts lists ${table.entries} chords and this reads ${found.length}`)
+    die(`chords.ts lists ${table.entries} chords and this reads ${found.length}`)
   }
   return found
 }
