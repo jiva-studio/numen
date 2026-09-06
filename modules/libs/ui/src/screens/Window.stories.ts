@@ -28,7 +28,7 @@ import WorkspaceLayout from '@/workspace/WorkspaceLayout.vue'
 import Plex from '@/plex/Plex.vue'
 import Editor from '@/editor/Editor.vue'
 import Palette from '@/palette/Palette.vue'
-import Reader from '@/reader/Reader.vue'
+import PageReader from '@/reader/PageReader.vue'
 import Tree from '@/tree/Tree.vue'
 import Menu from '@/menu/Menu.vue'
 import type { MenuItem } from '@/menu/item'
@@ -608,7 +608,7 @@ const screen = ({
   menu = null,
   selected = [],
 }: Screen) => ({
-  components: { WorkspaceLayout, Plex, Editor, Agent, Palette, Reader, Tree, Menu },
+  components: { WorkspaceLayout, Plex, Editor, Agent, Palette, PageReader, Tree, Menu },
   setup() {
     const held = ref<State>(workspace())
     const text = ref(markdown)
@@ -683,7 +683,7 @@ const screen = ({
             :turns="TURNS"
             placeholder="Ask about the vault"
           />
-          <Reader
+          <PageReader
             v-else-if="id === BOOK"
             class="h-full"
             :pages="pages"

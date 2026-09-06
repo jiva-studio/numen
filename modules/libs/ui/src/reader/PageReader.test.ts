@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
-import Reader from './Reader.vue'
+import PageReader from './PageReader.vue'
 
 const SHEETS = Array.from({ length: 8 }, () => ({ wide: 612, high: 792 }))
 
@@ -9,7 +9,7 @@ const SHEETS = Array.from({ length: 8 }, () => ({ wide: 612, high: 792 }))
  * room says how big it is and the reader is told to take it again.
  */
 const reader = async (wide: number, high: number) => {
-  const held = mount(Reader, {
+  const held = mount(PageReader, {
     props: { pages: SHEETS.length, sheets: SHEETS, picture: (page: number) => `/p/${page}` },
     attachTo: document.body,
   })
@@ -90,7 +90,7 @@ describe('the pages drawn', () => {
   })
 
   it('draws nothing at all for a document with no pages', async () => {
-    const held = mount(Reader, { props: { pages: 0, sheets: [] }, attachTo: document.body })
+    const held = mount(PageReader, { props: { pages: 0, sheets: [] }, attachTo: document.body })
 
     expect(held.findAll('.reader__page')).toHaveLength(0)
     expect(held.find('.reader__row').exists()).toBe(false)

@@ -47,7 +47,7 @@ test('there are stories for the keyboard walk to run after', () => {
       30,
       [
         'modules/libs/ui/src/workspace/WorkspaceLayout.stories.ts',
-        'modules/libs/ui/src/reader/Reader.stories.ts',
+        'modules/libs/ui/src/reader/PageReader.stories.ts',
       ],
     ],
     '@numen/editor': [

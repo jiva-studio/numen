@@ -8,7 +8,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
-import { Agent, Editor, Palette, Plex, Reader, Tree, WorkspaceLayout, type Workspace } from '@numen/ui'
+import { Agent, Editor, Palette, PageReader, Plex, Tree, WorkspaceLayout, type Workspace } from '@numen/ui'
 import DocumentTab from './document/DocumentTab.vue'
 import NoteTab from './note/NoteTab.vue'
 import RecordingTab from './recording/RecordingTab.vue'
@@ -251,7 +251,7 @@ describe('a place an answer names', () => {
     await settles()
 
     expect(window.findComponent(DocumentTab).exists()).toBe(true)
-    expect(window.findComponent(DocumentTab).findComponent(Reader).exists()).toBe(true)
+    expect(window.findComponent(DocumentTab).findComponent(PageReader).exists()).toBe(true)
   })
 })
 

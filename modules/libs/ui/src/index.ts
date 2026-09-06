@@ -98,7 +98,7 @@ export { noticed } from './notices/notice'
 export type { Notice, Stay, Task } from './notices/notice'
 
 export { default as Agent } from './screens/Agent.vue'
-export { default as Reader } from './reader/Reader.vue'
+export { default as PageReader } from './reader/PageReader.vue'
 
 export { default as WorkspaceLayout } from './workspace/WorkspaceLayout.vue'
 export { closeTab, openTab, openTabBeside } from './workspace/edit'

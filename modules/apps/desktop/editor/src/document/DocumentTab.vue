@@ -4,7 +4,7 @@
  *
  * What the document could not be read as is said where the pages would be.
  */
-import { Reader } from '@numen/ui'
+import { PageReader } from '@numen/ui'
 import { WORDS as words } from './words'
 import type { DocumentTabState } from './kind'
 
@@ -12,7 +12,7 @@ const props = defineProps<{ state: DocumentTabState }>()
 </script>
 
 <template>
-  <Reader
+  <PageReader
     :ref="(reader: unknown) => props.state.drew(reader)"
     :pages="props.state.pages.value"
     :sheets="props.state.sheets.value"
@@ -25,5 +25,5 @@ const props = defineProps<{ state: DocumentTabState }>()
     @wide="(wide: number) => props.state.widen(wide)"
   >
     <template #silence>{{ props.state.trouble.value }}</template>
-  </Reader>
+  </PageReader>
 </template>

@@ -11,12 +11,12 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
-import Reader from './Reader.vue'
+import PageReader from './PageReader.vue'
 import { GAP } from './strip'
 import { framed } from '@/fixtures/frame'
 
 const meta = {
-  title: 'Reading/Reader',
+  title: 'Reading/PageReader',
   decorators: [framed],
   parameters: { layout: 'fullscreen' },
 } satisfies Meta
@@ -73,7 +73,7 @@ const drawn = (label: string, wide: number): string => {
 const book =
   (highlights: readonly Rect[] = [], pages = PAGES): Render =>
   () => ({
-    components: { Reader },
+    components: { PageReader },
     setup() {
       const at = ref(0)
       /** The width the reader last asked for, in device pixels. */
@@ -93,7 +93,7 @@ const book =
 
 const TEMPLATE = `
   <div class="h-full" :data-wide="wide">
-    <Reader
+    <PageReader
       class="h-full"
       :pages="pages"
       :sheets="sheets"
@@ -104,7 +104,7 @@ const TEMPLATE = `
       @wide="wide = $event"
     >
       <template #silence>Nothing drawn yet</template>
-    </Reader>
+    </PageReader>
   </div>
 `
 
@@ -286,7 +286,7 @@ export const HighlightedOver: Story = {
  */
 export const Undrawn: Story = {
   render: () => ({
-    components: { Reader },
+    components: { PageReader },
     setup() {
       const at = ref(0)
       const picture = (page: number) => `/assets/gone/pages/${page}?wide=400`
@@ -299,9 +299,9 @@ export const Undrawn: Story = {
       }
     },
     template: `
-      <Reader class="h-full" :pages="pages" :sheets="sheets" :at="at" :picture="picture" @go="go">
+      <PageReader class="h-full" :pages="pages" :sheets="sheets" :at="at" :picture="picture" @go="go">
         <template #silence>Nothing yet</template>
-      </Reader>
+      </PageReader>
     `,
   }),
   play: async ({ canvasElement }) => {

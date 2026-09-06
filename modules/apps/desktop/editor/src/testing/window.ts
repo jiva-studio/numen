@@ -454,7 +454,7 @@ const editor = answers('Editor', {
   measure: () => (asked.measured += 1),
   reveal: () => true,
 })
-const reader = answers('Reader', { measure: () => {} })
+const reader = answers('PageReader', { measure: () => {} })
 
 /**
  * Every window a test drew. A window listens for the keystrokes that open the
@@ -528,7 +528,7 @@ async function drawn() {
         Plex: true,
         Editor: editor,
         Agent: true,
-        Reader: reader,
+        PageReader: reader,
         Palette: true,
         Tree: true,
       },
@@ -565,7 +565,7 @@ const nodeInPlex = (window: VueWrapper): string => {
  */
 async function drawnWithPalette() {
   const window = mount(App, {
-    global: { stubs: { Plex: true, Editor: editor, Agent: true, Reader: reader, Tree: true } },
+    global: { stubs: { Plex: true, Editor: editor, Agent: true, PageReader: reader, Tree: true } },
     attachTo: document.body,
   })
   windows.push(window)
