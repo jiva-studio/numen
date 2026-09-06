@@ -72,7 +72,7 @@ export interface NoteRef {
   readonly title: string
 }
 
-export function creating(core: Core, said: MessageWriter) {
+export function noteMaker(core: Core, said: MessageWriter) {
   /**
    * One note asked for. A name the vault has already filed is handed back as
    * `occupied` for the caller to answer for.

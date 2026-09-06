@@ -17,7 +17,7 @@ import { cornerOf } from './notices/corner'
 import type { IndexCoverage } from './notices/coverage'
 import { editing } from './note/editing'
 import { noteChanges } from './note/changes'
-import { CREATABLE, creating } from './note/creating'
+import { CREATABLE, noteMaker } from './note/maker'
 import {
   deedOf,
   runSupport,
@@ -46,7 +46,7 @@ import { search } from './command/search'
 import { lands, type DestinationDeps } from './command/destination'
 import { fileMakers, putting } from './tabs/putting'
 import { flushing } from './saving/flushing'
-import { raising } from './saving/raising'
+import { raisesConflicts } from './saving/conflicts'
 import { windowing } from './tabs/windowing'
 import { messageLog } from './notices/messages'
 import { agentKind, talking } from './agent/kind'
@@ -77,7 +77,7 @@ export const useWindow = () => {
   const notes = editing(core, { replaced: changes.arrived })
   /** Every message the window holds, each part of it under a name of its own. */
   const log = messageLog()
-  const making = creating(core, log.under('made'))
+  const making = noteMaker(core, log.under('made'))
   /** The page drawn again, which is a clean window on the vault that arrived. */
   const reloads = () => globalThis.location.reload()
   const window = showing(core, {
@@ -99,7 +99,7 @@ export const useWindow = () => {
   const going = flushing(core)
   going.holds(notes.flush)
 
-  raising(notes, going)
+  raisesConflicts(notes, going)
 
   const { indexing, failure, trouble, unwatched, unreachable, holds } = window
   /** What carrying a command out leaves the person to be told. */
@@ -161,8 +161,8 @@ export const useWindow = () => {
   going.holds(decks.flush)
   going.holds(stencils.flush)
   going.holds(schedules.flush)
-  raising(decks, going)
-  raising(stencils, going)
+  raisesConflicts(decks, going)
+  raisesConflicts(stencils, going)
 
   /**
    * The notes being dragged from one pane of the window to another: the tree

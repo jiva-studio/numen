@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
-import { raising, type Notes } from './raising'
+import { raisesConflicts, type Notes } from './conflicts'
 import type { Conflict } from './flushing'
 
 /** The words this test puts its notes in. A screen has more; these are enough. */
@@ -50,7 +50,7 @@ const quit = () => {
 const window = () => {
   const store = notes()
   const going = quit()
-  raising(store.store, going.going)
+  raisesConflicts(store.store, going.going)
   return { ...store, ...going }
 }
 

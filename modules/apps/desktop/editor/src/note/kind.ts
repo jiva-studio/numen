@@ -14,7 +14,7 @@ import { NOTE } from '../tabs/workspace'
 import type { Change } from './drawing'
 import type { noteChanges } from './changes'
 import type { OpenNote, editing } from './editing'
-import { entering, ITSELF } from './entering'
+import { noteKeyboard, ITSELF } from './keyboard'
 import { naming, type NamingDeps } from './naming'
 import NoteTab from './NoteTab.vue'
 import { markOf } from './tab'
@@ -73,7 +73,7 @@ export function noting(
   puts: FileOpeners,
 ) {
   const names = naming(vault, notes)
-  const keyboard = entering()
+  const keyboard = noteKeyboard()
 
   /**
    * Every open note under the file it stands at now, against the identity it
