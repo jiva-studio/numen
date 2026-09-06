@@ -28,6 +28,7 @@ linters:
     - noctx
     - exhaustive
     - exhaustruct
+    - importas
     - usetesting
 
   settings:
@@ -88,6 +89,30 @@ linters:
         - pattern: ^fmt\.Print.*$
           pkg: ^fmt$
           msg: the core writes to no stream of its own — say it through port.Trouble
+
+    importas:
+      # Each of these is already spelled one way in every file that imports it,
+      # and the rule keeps it that way. The schema is the one that would hurt:
+      # it is named in a hundred files, its own package name is `numenv1`, and
+      # a second spelling turns a search for who says a message into a search
+      # for two words. The other four are aliased because the name they would
+      # come in under is taken — this repository has an `mcp` and an `ocr` of
+      # its own — or says nothing about what the package is.
+      #
+      # no-unaliased is what gives the list teeth: without it a rule refuses a
+      # second alias but not the bare import that started the argument.
+      no-unaliased: true
+      alias:
+        - pkg: github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1
+          alias: v1
+        - pkg: github.com/modelcontextprotocol/go-sdk/mcp
+          alias: sdk
+        - pkg: github.com/getcharzp/onnxruntime_purego
+          alias: ort
+        - pkg: github.com/getcharzp/go-ocr
+          alias: read
+        - pkg: github.com/open-spaced-repetition/go-fsrs/v3
+          alias: fsrs
 
     usetesting:
       # A test never touches the machine it runs on: it takes its context and
