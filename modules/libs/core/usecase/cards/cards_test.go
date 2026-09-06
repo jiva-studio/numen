@@ -333,7 +333,7 @@ func TestADeckThatChangedSinceItWasReadIsNotWrittenOver(t *testing.T) {
 	// The same fingerprint again is a caller holding what the file no longer is.
 	_, err = w.Deck(t.Context(), vs.first, "decks/Birds.md",
 		"## Wren\n\n[[Animal]]\n\n### Height\n\nsomething else\n", first.Fingerprint)
-	if !errors.Is(err, port.ErrChanged) {
+	if !errors.Is(err, port.ErrStale) {
 		t.Fatalf("write = %v, want it refused", err)
 	}
 	if after := read(t, vs.first, "decks/Birds.md"); after != written {

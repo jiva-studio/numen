@@ -543,8 +543,8 @@ func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 	}
 
 	_, err = writing.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", stale)
-	if !errors.Is(err, port.ErrChanged) {
-		t.Fatalf("want ErrChanged, got %v", err)
+	if !errors.Is(err, port.ErrStale) {
+		t.Fatalf("want ErrStale, got %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Theirs.") {
 		t.Errorf("the refused write landed anyway:\n%s", body)

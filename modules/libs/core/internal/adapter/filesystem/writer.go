@@ -83,13 +83,13 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 		mode = info.Mode().Perm()
 		if !fingerprint.IsZero() &&
 			(info.Size() != fingerprint.Size || !info.ModTime().Equal(fingerprint.ModTime)) {
-			return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, port.ErrChanged)
+			return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, port.ErrStale)
 		}
 	case errors.Is(err, fs.ErrNotExist):
 		// A note that is not there yet cannot have changed, and a caller that
 		// believed it was there is told so.
 		if !fingerprint.IsZero() {
-			return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, port.ErrChanged)
+			return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, port.ErrStale)
 		}
 	default:
 		return domain.Fingerprint{}, err

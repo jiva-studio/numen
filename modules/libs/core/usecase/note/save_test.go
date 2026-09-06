@@ -108,8 +108,8 @@ func TestASaveOverProseTheTabNeverReadIsStopped(t *testing.T) {
 	}
 
 	_, err := c.saving().Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", seen)
-	if !errors.Is(err, port.ErrChanged) {
-		t.Fatalf("want ErrChanged, got %v", err)
+	if !errors.Is(err, port.ErrStale) {
+		t.Fatalf("want ErrStale, got %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); body != theirs {
 		t.Errorf("a save that was stopped wrote anyway:\n%s", body)

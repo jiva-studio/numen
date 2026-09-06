@@ -578,7 +578,7 @@ type overtaken struct{ port.VaultWriter }
 func (overtaken) Write(
 	context.Context, string, []byte, domain.Fingerprint,
 ) (domain.Fingerprint, error) {
-	return domain.Fingerprint{}, port.ErrChanged
+	return domain.Fingerprint{}, port.ErrStale
 }
 
 // TestRenamingANoteWrittenElsewhereIsAQuestion. A note holding prose nobody

@@ -31,7 +31,7 @@ func Read(path string) ([]byte, error) {
 // person's keys, and nothing standing in it is repeated back.
 //
 // Seen is the file as the caller last read it. A file standing at anything else
-// is left alone and port.ErrChanged comes back: someone turning a setting in
+// is left alone and port.ErrStale comes back: someone turning a setting in
 // their own window outranks a caller that read the file, thought about it, and
 // arrived late. Nil is a caller that compares nothing, and its bytes land.
 func Write(path string, raw []byte, seen *string) error {
@@ -65,7 +65,7 @@ func stands(path string, seen *string) error {
 		return err
 	}
 	if string(held) != *seen {
-		return port.ErrChanged
+		return port.ErrStale
 	}
 	return nil
 }

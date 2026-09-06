@@ -198,7 +198,7 @@ func (c Config) ConfiguredFile() func() (string, string, error) {
 // file is left as it was.
 //
 // Seen is the file as the window last read it. A file standing at anything else
-// is left alone with port.ErrChanged.
+// is left alone with port.ErrStale.
 func (c Config) WritesConfiguredFile() func(written string, seen *string) error {
 	return func(written string, seen *string) error {
 		path, err := c.settingsFile()

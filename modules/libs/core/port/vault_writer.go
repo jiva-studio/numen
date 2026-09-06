@@ -8,10 +8,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// ErrChanged is what a write says when the file it was about to replace is no
+// ErrStale is what a write says when the file it was about to replace is no
 // longer the one the caller read. Nothing is written: a person editing their
 // own note outranks whatever was going to be put on top of it.
-var ErrChanged = errors.New("the note changed since it was read")
+var ErrStale = errors.New("the note changed since it was read")
 
 // ErrOccupied is what a move says when something already sits where a note was
 // going. Nothing is moved.
@@ -30,7 +30,7 @@ type VaultWriter interface {
 	//
 	// Fingerprint, when it is not the zero value, is what the caller believes
 	// is on disk. A file that no longer matches it is left alone and
-	// ErrChanged is returned: the caller read a note, thought about it, and
+	// ErrStale is returned: the caller read a note, thought about it, and
 	// something else wrote in the meantime.
 	//
 	// What comes back is the fingerprint of the file this write produced,

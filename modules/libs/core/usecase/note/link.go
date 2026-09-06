@@ -49,7 +49,7 @@ func NewEditLinks(
 //
 // Fingerprint is what the caller believes is on disk, and every one of these
 // takes it for the reason PointAt does: a note that changed since it was read
-// is left alone and port.ErrChanged comes back. The empty fingerprint is a
+// is left alone and port.ErrStale comes back. The empty fingerprint is a
 // caller holding itself to whatever the note is at the moment of the write.
 func (u EditLinks) Add(
 	ctx context.Context, v domain.Vault, from string, fingerprint domain.Fingerprint,
@@ -108,7 +108,7 @@ func (u EditLinks) Update(
 // other entry of the block comes out of the write as the bytes it went in as.
 //
 // Fingerprint, when it is given, is what the caller believes is on disk. A note
-// that has changed since it was read is left alone and port.ErrChanged comes
+// that has changed since it was read is left alone and port.ErrStale comes
 // back. What comes back otherwise is the fingerprint of the file this write
 // produced.
 func (u EditLinks) PointAt(

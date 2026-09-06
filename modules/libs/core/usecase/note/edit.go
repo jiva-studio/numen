@@ -142,7 +142,7 @@ func (e Edit) splice(
 	// A note that is not there cannot hold anything the caller has not read, so
 	// it is made.
 	if looked == nil && e.Seen.stale(on, markdown.Normalised(doc.Body())) {
-		return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, port.ErrChanged)
+		return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, port.ErrStale)
 	}
 
 	if err := change(doc); err != nil {

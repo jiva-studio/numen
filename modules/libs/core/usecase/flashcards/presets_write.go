@@ -52,7 +52,7 @@ var ErrNoPresets = errors.New("this build cannot work the presets of a vault")
 // and a path the vault holds no note at is refused note.ErrNoNote.
 //
 // Fingerprint, when it is given, is what the caller believes is on disk. A deck
-// that has changed since it was read is left alone and port.ErrChanged comes
+// that has changed since it was read is left alone and port.ErrStale comes
 // back. What comes back otherwise is the fingerprint of the file this write
 // produced, which is what the caller presents at its next write. An index that
 // could not be brought level is note.ErrUnlevelled beside that fingerprint.
@@ -89,7 +89,7 @@ func (u Presets) Point(
 // arrived.
 //
 // Fingerprint, when it is given, is what the caller believes is on disk. A note
-// that has changed since it was read is left alone and port.ErrChanged comes
+// that has changed since it was read is left alone and port.ErrStale comes
 // back. What comes back otherwise is the fingerprint of the file this write
 // produced, which is what the caller presents at its next write. An index that
 // could not be brought level is note.ErrUnlevelled beside that fingerprint.

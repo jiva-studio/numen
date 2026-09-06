@@ -40,7 +40,7 @@ func RefusalOf(o note.ReadOutcome) (v1.Refusal, bool) {
 // all. Anything else is the vault being out of reach.
 func RefusalBy(err error) (v1.Refusal, bool) {
 	switch {
-	case errors.Is(err, port.ErrChanged):
+	case errors.Is(err, port.ErrStale):
 		return v1.Refusal_REFUSAL_STALE, true
 	case errors.Is(err, note.ErrNoNote):
 		return v1.Refusal_REFUSAL_MISSING, true

@@ -74,7 +74,7 @@ func (a *API) WriteSettingsFile(
 	_ context.Context, r *connect.Request[v1.WriteSettingsFileRequest],
 ) (*connect.Response[v1.WriteSettingsFileResponse], error) {
 	if err := a.Configuring.WritesFile(r.Msg.GetWritten(), r.Msg.Seen); err != nil {
-		if errors.Is(err, port.ErrChanged) {
+		if errors.Is(err, port.ErrStale) {
 			stale := v1.Refusal_REFUSAL_STALE
 			return connect.NewResponse(&v1.WriteSettingsFileResponse{Refusal: &stale}), nil
 		}

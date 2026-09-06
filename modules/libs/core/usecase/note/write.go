@@ -83,7 +83,7 @@ func NewWrite(
 // Execute puts body in the note at path.
 //
 // Fingerprint, when it is given, is what the caller believes is on disk. A note
-// that has changed since it was read is left alone and port.ErrChanged comes
+// that has changed since it was read is left alone and port.ErrStale comes
 // back: someone editing their own note outranks a caller that read it, thought
 // about it, and arrived late.
 //
@@ -156,7 +156,7 @@ func (s *LastRead) stale(on domain.Fingerprint, prose string) bool {
 //
 // Seen is what the caller last saw of the note. Under the write lock the file
 // is read and held against it: a note the caller has seen is written over, and
-// a note holding prose it has not is left alone with port.ErrChanged. Nil is a
+// a note holding prose it has not is left alone with port.ErrStale. Nil is a
 // caller that compares nothing, and its body lands.
 //
 // What comes back is the fingerprint of the file the save produced, which is

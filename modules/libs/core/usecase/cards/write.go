@@ -18,7 +18,7 @@ import (
 //
 // A deck and a stencil are notes, so this is a note's write with a deck's bound
 // on it: the body is replaced whole, and a file that has changed since the
-// caller read it is left alone with port.ErrChanged. The frontmatter is the
+// caller read it is left alone with port.ErrStale. The frontmatter is the
 // person's, apart from the key a stencil declares its fields in and the
 // identifier an edit stamps on a note carrying none.
 type Write struct {

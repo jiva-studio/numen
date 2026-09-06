@@ -90,7 +90,7 @@ var ErrAlreadyWritten = fmt.Errorf("this replacement is already in the note")
 // Execute puts `becomes` where `stood` stands in the note at path.
 //
 // Fingerprint is what the caller believes is on disk. A note that has changed
-// since it was read is left alone and port.ErrChanged comes back.
+// since it was read is left alone and port.ErrStale comes back.
 func (u Replace) Execute(
 	ctx context.Context, v domain.Vault, path, stood, becomes string, fingerprint domain.Fingerprint,
 ) (ReplaceResult, error) {
