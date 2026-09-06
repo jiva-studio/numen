@@ -3,6 +3,7 @@ export const WORDS = {
   back: 'Previous page',
   next: 'Next page',
   page: 'Page',
+  pages: 'Pages',
   closer: 'Closer',
   further: 'Further',
 }

@@ -149,6 +149,9 @@ defineExpose({
       ref="area"
       class="reader__room h-full overflow-auto overscroll-x-contain"
       :class="dragging ? 'reader__room--held' : 'reader__room--takeable'"
+      tabindex="0"
+      role="region"
+      :aria-label="words.pages"
       @scroll.passive="scrolled"
       @pointerdown="took"
       @pointermove="pulled"
@@ -190,6 +193,13 @@ defineExpose({
 </template>
 
 <style scoped>
+/* The row scrolls under the arrows, so the keyboard is drawn where it stands.
+   Inside, because the row fills the reader to its edges. */
+.reader__room:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 var(--numen-ring-width) var(--numen-ring);
+}
+
 /* The row is taken hold of and pulled, so the hand says so before it is put
    down and while it is holding. */
 .reader__room--takeable {

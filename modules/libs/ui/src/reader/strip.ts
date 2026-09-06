@@ -21,6 +21,8 @@ export interface ReaderWords {
   readonly next: string
   /** What the field the page is typed in is called. */
   readonly page: string
+  /** What the row of pages is called, which the keyboard scrolls. */
+  readonly pages: string
   /** What drawing the page larger is called, and smaller. */
   readonly closer: string
   readonly further: string
@@ -30,6 +32,7 @@ export const READER_WORDS: ReaderWords = {
   back: 'Previous page',
   next: 'Next page',
   page: 'Page',
+  pages: 'Pages',
   closer: 'Closer',
   further: 'Further',
 }
