@@ -227,8 +227,8 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 // Recogniser is what the tools need in order to read a document: a way to
 // begin, a way to say how far it has got, and whether it could begin at once.
 //
-// It is an interface so that a server can be built without one, and so that the
-// tools can say "it has started" rather than "there is nothing to read with".
+// A server built without one serves the tool that would read anyway, and it
+// answers that this installation cannot read scans.
 type Recogniser interface {
 	// Ready says whether reading could begin now without waiting for anything
 	// to arrive.

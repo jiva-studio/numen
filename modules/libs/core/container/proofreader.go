@@ -47,8 +47,8 @@ func (c Config) profile(name string) (proofreading.Profile, error) {
 // is proofreading.
 //
 // Naming no profile is naming no proofreader: nothing comes back and a reading
-// is used exactly as it was read. A profile that cannot be opened — no key — is
-// that same absence, carrying the reason with it.
+// is used exactly as it was read. A profile that is named and cannot be opened
+// — no key — is an error, and the reason travels in it.
 func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) {
 	if name == "" {
 		return nil, nil

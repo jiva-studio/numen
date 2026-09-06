@@ -1,9 +1,9 @@
 // Package flashcards serves the window a person runs their cards in.
 //
 // What it answers is a different service over a different page, and what it
-// holds is a slice of the installation — the registry and the four scenarios
+// holds is a slice of the installation — the registry and the scenarios
 // flashcards is made of.
-// Nothing is embedded here. A vault the index does not carry is read into it,
+// No vector is computed here. A vault the index does not carry is read into it,
 // and what this window writes into a vault is levelled in the index by the paths
 // it touched.
 package flashcards

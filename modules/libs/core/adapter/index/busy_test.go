@@ -28,8 +28,8 @@ func impatient(t *testing.T, path string) *sql.DB {
 // A vault is written by whatever else in this process holds the index open, and
 // SQLite has one write lock for the whole file. A write that meets that lock
 // held by another process waits the busy timeout and is told the database is
-// locked — and that is transient, so it asks again. It used to reach the scan,
-// which stopped on it, and the person, who was shown it.
+// locked — and that is transient, so it asks again rather than reaching the
+// scan, which would stop on it, or the person, who would be shown it.
 func TestAWriteWaitsOutAWriterInAnotherProcess(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")

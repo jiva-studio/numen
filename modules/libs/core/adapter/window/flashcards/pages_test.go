@@ -59,8 +59,8 @@ func TestTheWindowIsDressedFromTheInstallationsThemes(t *testing.T) {
 }
 
 // A folder of themes that could not be made leaves the window undressed rather
-// than unopened: the page is served, and asking about themes is what fails.
-func TestAWindowWithNoThemesStillServesItsPage(t *testing.T) {
+// than unopened: it goes on answering, and asking about themes is what fails.
+func TestAWindowWithNoThemesStillAnswers(t *testing.T) {
 	api := &API{Registry: registry{}, Now: time.Now}
 
 	server := httptest.NewServer(api.Serving(http.NotFoundHandler()))

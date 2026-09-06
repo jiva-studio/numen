@@ -480,9 +480,9 @@ func TestANameNoAddressCanSpellIsNotWrittenIn(t *testing.T) {
 }
 
 // A file that opens the block and never closes it is somebody's frontmatter
-// with a line missing. Writing would put a second block above theirs and turn
-// their keys into prose.
-func TestANoteWithAnUnclosedBlockIsNotWrittenTo(t *testing.T) {
+// with a line missing. Writing a key would put a second block above theirs and
+// turn their keys into prose.
+func TestANoteWithAnUnclosedBlockRefusesAFrontmatterWrite(t *testing.T) {
 	raw := "---\ntitle: theirs\n"
 	d, err := Open([]byte(raw))
 	if err != nil {

@@ -289,11 +289,11 @@ func TestTheSettingsAdapterRunsNoOtherAdaptersWork(t *testing.T) {
 // owedInside are the packages of the core whose own tests build an adapter
 // from inside the package they exercise, and the list only shrinks.
 //
-// usecase/source is one because its twenty test files share one set of fakes
-// and two of them exercise a type the package does not export, so the three
-// that build an adapter — internal/adapter/pdf in highlight_test.go and
-// recognise_test.go, internal/adapter/filesystem in transcribing_test.go — do
-// not stand outside on their own.
+// usecase/source is one because its test files share one set of fakes and two
+// of them exercise a type the package does not export, so the three that build
+// an adapter — internal/adapter/pdf in highlight_test.go and recognise_test.go,
+// internal/adapter/filesystem in transcribing_test.go — do not stand outside on
+// their own.
 var owedInside = []string{"usecase/source"}
 
 // A test that builds an adapter stands outside the package it exercises. That
@@ -851,8 +851,8 @@ func TestEveryTypePortDeclaresIsNamedSomewhereElse(t *testing.T) {
 }
 
 // Read against port/ as the whole tree, nothing outside it names anything, and
-// the rule has to come back with everything the folder declares. It is what
-// says the passes above are passing on the naming and not on an empty walk.
+// the rule has to come back with the names below. It is what says the passes
+// above are passing on the naming and not on an empty walk.
 func TestWhatThePortRuleRefuses(t *testing.T) {
 	at := filepath.Join("..", "port")
 	unnamed, err := unnamedOutside(at, at, false)
@@ -886,7 +886,7 @@ func TestEveryPortMethodIsCalledSomewhereElse(t *testing.T) {
 }
 
 // Read against port/ as the whole tree, nothing outside it calls anything, and
-// the rule has to come back with every method the folder declares.
+// the rule has to come back with the methods below.
 func TestWhatThePortMethodRuleRefuses(t *testing.T) {
 	at := filepath.Join("..", "port")
 	uncalled, err := uncalledOutside(at, at)

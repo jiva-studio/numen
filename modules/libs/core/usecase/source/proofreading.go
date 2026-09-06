@@ -35,9 +35,9 @@ type ProofreadingConfig struct {
 // Reading is what puts a document's reading right, at the sizes this
 // installation proofreads at and against the profile it names for a scan.
 //
-// held is false where no proofreader answers, and a reading is then used
-// exactly as it was read: an installation that named no profile, and one whose
-// profile could not be opened, both arrive here.
+// held is false with no error where the installation named no profile, and the
+// reading is then used exactly as it was read. A profile that is named and
+// could not be opened is an error instead.
 //
 // Cut and OnProgress are the caller's: what a run says about itself while it
 // goes belongs to whoever asked for it.

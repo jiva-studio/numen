@@ -24,9 +24,8 @@ type Wikilink struct {
 // Brackets holding nothing point nowhere, so they are the text they are
 // written as.
 //
-// This is the only place the notation is read. What is a link in prose, what
-// names the stencil a card is cut by, and what a rename moves are one question,
-// and a second reading of the brackets would answer it a second way.
+// A link in prose, the stencil a card is cut by and what a rename moves all
+// come through here, so the brackets answer one question and not three.
 func WikilinksIn(line string) []Wikilink {
 	var out []Wikilink
 	for _, found := range wikilinkRe.FindAllStringSubmatchIndex(line, -1) {
