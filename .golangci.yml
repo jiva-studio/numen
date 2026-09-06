@@ -171,7 +171,13 @@ linters:
       # A walk's callback answers nil to go on walking, not to say that nothing
       # went wrong. What it could not read is carried out in the value the walk
       # builds — a count short, a shape short of a folder.
-      - path: (^|/)internal/adapter/(embed/onnx/embedder|filesystem/watch)\.go$
+      #
+      # The walk in the vault's folder shape is excused at the return itself.
+      # A path names where a line stands today, so moving that line to another
+      # file turns the excuse off and the split fails lint. Every rule keyed to
+      # a path here covers a single line and carries the same fault; a
+      # `//nolint` keys to the construct, and goes where the construct goes.
+      - path: (^|/)internal/adapter/embed/onnx/embedder\.go$
         linters: [nilerr]
 
       # A file that will not read is that file's outcome and not the caller's
@@ -191,8 +197,9 @@ linters:
       # request that set it going: the passes behind a vault under `o.under`,
       # a page drawn ahead under `a.behind()`, a proofreading under
       # `t.context()`. Handing it the caller's context is how a scan dies
-      # because the page that asked for a count was closed.
-      - path: (^|/)(adapter/window/(flashcards/reading|editor/(serve|showing|viewer))|usecase/source/transcribing)\.go$
+      # because the page that asked for a count was closed. The proofreading is
+      # excused at its goroutine, for the reason written above the walk.
+      - path: (^|/)adapter/window/(flashcards/reading|editor/(serve|showing|viewer))\.go$
         linters: [contextcheck]
 
       # A close is what runs when the context is already over, so it carries one

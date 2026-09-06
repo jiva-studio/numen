@@ -74,7 +74,8 @@ func BenchmarkFrontDoor(b *testing.B) {
 			if err != nil {
 				b.Fatal(err)
 			}
-			for stream.Receive() { //nolint:revive // the whole stream is the measurement
+			// The body is empty because the whole stream is the measurement.
+			for stream.Receive() {
 			}
 			if err := stream.Err(); err != nil {
 				b.Fatal(err)

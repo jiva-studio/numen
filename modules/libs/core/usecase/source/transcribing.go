@@ -379,6 +379,7 @@ func (t *TranscriptionWorker) Proofread(
 	said := make(chan outcome, 2)
 
 	t.going.Add(1)
+	//nolint:contextcheck // the run outlives the caller and carries t.context()
 	go func() {
 		defer t.going.Done()
 		res, err := t.proofreadTranscript(t.context(), v, path, true, func(began ProofreadTranscriptResult) {

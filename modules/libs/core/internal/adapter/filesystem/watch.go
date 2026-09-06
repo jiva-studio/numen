@@ -456,7 +456,7 @@ func (f *folders) inside(ctx context.Context, absolute string) (paths []string, 
 			// The rest of the walk still stands: as much of the shape as can be
 			// learnt is learnt, and the vault is read again for what cannot.
 			short = true
-			return nil
+			return nil //nolint:nilerr // what could not be read is carried out in whole
 		}
 		seen++
 		if seen > Entries {
