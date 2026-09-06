@@ -1,14 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  activity,
-  percentWord,
-  rateOf,
-  rateWord,
-  remainingWord,
-  shareOf,
-  sizeWord,
-  tallyWord,
-} from './tally'
+import { activity, percentWord, rateOf, remainingWord, shareOf } from './tally'
 
 describe('shareOf', () => {
   it.each([
@@ -77,65 +68,6 @@ describe('activity', () => {
     expect(
       activity({ says: 'reading', trouble: true, tally: { done: 2, total: 8 } }),
     ).toEqual({ state: 'trouble', counts: false })
-  })
-})
-
-describe('tallyWord', () => {
-  it.each([
-    { done: 0, total: 0, want: '0 of 0' },
-    { done: 7, total: 40, want: '7 of 40' },
-    { done: 1200, total: 36560, want: '1 200 of 36 560' },
-    { done: 145800, total: 145800, want: '145 800 of 145 800' },
-    { done: -5, total: 10, want: '0 of 10' },
-    // A vault loses a book mid-scan and the total falls below what was read.
-    // The bar is already full, and the count has to agree with it.
-    { done: 38, total: 37, want: '37 of 37' },
-  ])('reads $done of $total as $want', ({ done, total, want }) => {
-    expect(tallyWord({ done, total })).toBe(want)
-  })
-
-  it.each([
-    { done: 0, total: 470_268_510, want: '0 B of 470 MB' },
-    { done: 121_000_000, total: 470_268_510, want: '121 MB of 470 MB' },
-    { done: 470_268_510, total: 470_268_510, want: '470 MB of 470 MB' },
-  ])('counted in bytes, reads $done of $total as $want', ({ done, total, want }) => {
-    expect(tallyWord({ done, total }, 'bytes')).toBe(want)
-  })
-
-  it.each([
-    { done: 0, total: 5_400, want: '0:00 of 1:30:00' },
-    { done: 95, total: 5_400, want: '1:35 of 1:30:00' },
-    { done: 5_400, total: 5_400, want: '1:30:00 of 1:30:00' },
-  ])('counted in seconds, reads $done of $total as $want', ({ done, total, want }) => {
-    expect(tallyWord({ done, total }, 'seconds')).toBe(want)
-  })
-})
-
-describe('sizeWord', () => {
-  it.each([
-    { bytes: 0, want: '0 B' },
-    { bytes: 512, want: '512 B' },
-    { bytes: 17_082_730, want: '17 MB' },
-    { bytes: 470_268_510, want: '470 MB' },
-    { bytes: 2_400_000_000, want: '2.4 GB' },
-    { bytes: -1, want: '0 B' },
-  ])('reads $bytes as $want', ({ bytes, want }) => {
-    expect(sizeWord(bytes)).toBe(want)
-  })
-})
-
-describe('rateWord', () => {
-  it('says nothing about a rate nobody has measured', () => {
-    expect(rateWord(0, 'bytes')).toBe('')
-    expect(rateWord(-1, 'bytes')).toBe('')
-  })
-
-  it('reads a rate of bytes in the sizes a person reads', () => {
-    expect(rateWord(12_400_000, 'bytes')).toBe('12 MB/s')
-  })
-
-  it('counts everything else one by one', () => {
-    expect(rateWord(1420)).toBe('1 420/s')
   })
 })
 

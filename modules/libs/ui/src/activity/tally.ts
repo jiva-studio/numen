@@ -7,7 +7,6 @@
  * what the words are, so nothing here knows what is being counted.
  */
 
-import { grouped } from '../digits'
 import { clock } from '../player/clock'
 
 /**
@@ -91,62 +90,6 @@ export const activity = (input: {
     ? { state: 'working', counts: false }
     : { state: 'working', share, counts: true }
 }
-
-/**
- * A size in the units it is read in, in the thousands a machine reports its own
- * disk in.
- *
- * Whole units below a gigabyte: a figure with decimals in it changes every time
- * it is drawn, and a number that never settles reads as noise. A gigabyte is
- * coarse enough that a whole one of it settles for minutes, so it keeps a
- * figure after the point.
- */
-export const sizeWord = (bytes: number): string => {
-  const size = bytes < 0 ? 0 : bytes
-  if (size < 1e3) return `${Math.round(size)} B`
-  if (size < 1e6) return `${Math.round(size / 1e3)} kB`
-  if (size < 1e9) return `${Math.round(size / 1e6)} MB`
-  return `${(size / 1e9).toFixed(1)} GB`
-}
-
-/**
- * A tally as it is read out.
- *
- * Grouped in thousands, because the numbers this draws are counts of text and
- * reach six figures on an ordinary vault. A count that overtook its total reads
- * as the total: a vault loses a book mid-scan, and the bar is already full.
- */
-export const tallyWord = (tally: Tally, counting: TallyUnit = 'things'): string => {
-  const done = Math.min(tally.done, tally.total)
-  switch (counting) {
-    case 'bytes':
-      return `${sizeWord(done)} of ${sizeWord(tally.total)}`
-    case 'seconds':
-      return `${clock(done * 1000)} of ${clock(tally.total * 1000)}`
-    case 'things':
-      return `${grouped(done)} of ${grouped(tally.total)}`
-  }
-}
-
-/**
- * How fast a count is moving, in words.
- *
- * `perSecond` is measured by whoever is watching the count. A rate of nothing
- * is nothing known, and nothing is said. Seconds move against real time, so
- * they read as a multiple of it.
- */
-export const rateWord = (perSecond: number, counting: TallyUnit = 'things'): string => {
-  if (perSecond <= 0) return ''
-  switch (counting) {
-    case 'bytes':
-      return `${sizeWord(perSecond)}/s`
-    case 'seconds':
-      return `${Math.round(perSecond)}×`
-    case 'things':
-      return `${grouped(Math.round(perSecond))}/s`
-  }
-}
-
 
 /**
  * A share as a percentage, for reading beside the count.

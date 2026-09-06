@@ -69,34 +69,14 @@ const pixelsOf = (value: string): number => {
 }
 
 /**
- * A measurer for the titles a plex draws, taking its type and its lengths from
- * the document, which is where a theme's units are resolved. It stands before
- * anything is mounted, so the first arrangement is measured like every one
- * after it.
+ * The measurers for the titles a plex draws, taking their type and their
+ * lengths from the document and remade whenever that type changes. The first
+ * reading is taken before anything is drawn, and a reading that says what the
+ * last one said changes nothing.
  *
- * `icon` is the room to keep beside a title for an icon the caller draws there,
- * and nothing where none is drawn.
- *
- * Nothing where there is no canvas to measure against — jsdom, or a page
- * rendered on a server — and the arrangement then draws every box at its widest.
- */
-export function titleWidths(icon = 0): PlexMetrics | undefined {
-  const probe = openProbe()
-  if (!probe) return undefined
-
-  const type = typeOf(probe)
-  probe.box.remove()
-  return measuresFor(type, icon)
-}
-
-/**
- * The same measurers, remade whenever the type a title is set in changes. A
- * theme worn by a plex already standing rewrites the tokens under it, and the
- * probe's own width says so.
- *
- * The first reading is taken here, before anything is drawn, and a reading that
- * says what the last one said changes nothing: a box moves when the type moves
- * and at no other time.
+ * `icon` is the room to keep beside a title for one the caller draws there.
+ * Nothing at all where there is no canvas to measure against, and the
+ * arrangement then draws every box at its widest.
  */
 export function useTitleWidths(icon: () => number): Ref<PlexMetrics | undefined> {
   const probe = openProbe()
