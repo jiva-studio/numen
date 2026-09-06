@@ -1,6 +1,6 @@
 /** What a preset tab says: the one control, the settings under it, and what went wrong. */
 import { StopReason } from '@numen/protocol'
-import { many, percent } from '@numen/ui'
+import { many, percent, plural } from '@numen/ui'
 import type { RefusalReason } from '../core'
 import type { BudgetUnit, Goal, Rule } from './core'
 import type { Field } from './curve'
@@ -230,8 +230,8 @@ export const WORDS = {
    */
   material: (decks: number, cards: number, overdue: number, fresh: number) => {
     const said = [
-      { figure: count(decks), name: decks === 1 ? 'deck' : 'decks' },
-      { figure: count(cards), name: cards === 1 ? 'card' : 'cards' },
+      { figure: count(decks), name: plural(decks, 'deck') },
+      { figure: count(cards), name: plural(cards, 'card') },
     ]
     // A figure standing at nothing is left out.
     if (overdue > 0) said.push({ figure: count(overdue), name: 'overdue' })
