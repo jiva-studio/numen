@@ -614,8 +614,6 @@ const ROOTS = [
 
 /** Every story id the tree declares, under the same name Storybook gives it. */
 const stories = async () => {
-  const { readdir } = await import('node:fs/promises')
-
   const told = new Set()
   for (const root of ROOTS) {
     const files = (await readdir(root, { recursive: true })).filter((name) =>
