@@ -244,6 +244,16 @@ describe('measured', () => {
     expect(second.get('model')?.rate).toBe(2_000_000)
   })
 
+  it('measures a group over the stretch it took, not the moment it landed in', () => {
+    // Ten seconds of readings, four million arriving at the end of them. The
+    // work did four hundred thousand a second, whatever the last reading saw.
+    let moving = measured(new Map(), [fetching(0)], 1000)
+    for (let at = 1250; at < 11_000; at += 250) moving = measured(moving, [fetching(0)], at)
+    moving = measured(moving, [fetching(4_000_000)], 11_000)
+
+    expect(moving.get('model')?.rate).toBe(400_000)
+  })
+
   it('forgets work that is no longer standing', () => {
     const was: ReadonlyMap<string, Movement> = new Map([['gone', { done: 5, rate: 1, at: 0 }]])
 

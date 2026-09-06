@@ -85,13 +85,24 @@ const { now, read, beat, enters, leaves, holds, lets } = useNoticeStack(
 /** The ones whose caller has already been told they are finished with. */
 const forgotten = new Set<string>()
 
+/**
+ * The clock forward, and every count read against it.
+ *
+ * A count is read on the clock rather than as it arrives, so how fast it is
+ * moving is measured over stretches of time and not over however often the work
+ * behind it happens to speak.
+ */
+const sample = (): void => {
+  beat()
+  moving.value = measured(moving.value, props.notices, now.value)
+}
+
 watch(
   () => props.notices,
   (all) => {
-    beat()
+    sample()
     arrived.value = arrivals(arrived.value, all, read.value)
     away.value = remembered(away.value, all)
-    moving.value = measured(moving.value, all, now.value)
     const here = new Set(readable(all).map((one) => one.id))
     for (const id of [...forgotten]) if (!here.has(id)) forgotten.delete(id)
   },
@@ -134,11 +145,14 @@ const dwelling = computed(() =>
   ),
 )
 
+/** Whether anything drawn is counting, and so has a rate to be read. */
+const counting = computed(() => drawn.value.some((one) => tallyOf(one) !== undefined))
+
 // The corner changes by itself while nothing else changes, so the moment is
 // watched for as long as something is waiting on it.
 watchEffect((clean) => {
-  if (!coming.value && !dwelling.value) return
-  const tick = setInterval(beat, 250)
+  if (!coming.value && !dwelling.value && !counting.value) return
+  const tick = setInterval(sample, 250)
   clean(() => clearInterval(tick))
 })
 

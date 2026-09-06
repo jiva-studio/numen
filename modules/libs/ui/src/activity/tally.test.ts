@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { activity, percentWord, rateOf, remainingWord, shareOf } from './tally'
+import { activity, percentWord, rateOf, remainingWord, shareOf, SMOOTHING } from './tally'
 
 describe('shareOf', () => {
   it.each([
@@ -106,7 +106,18 @@ describe('rateOf', () => {
 
   it('leans on the rate already known when something moved', () => {
     expect(rateOf({ done: 20, rate: 10 }, 40, 2)).toBeCloseTo(10, 5)
-    expect(rateOf({ done: 20, rate: 10 }, 60, 2)).toBeCloseTo(13, 5)
+    expect(rateOf({ done: 20, rate: 10 }, 60, 2)).toBeGreaterThan(10)
+    expect(rateOf({ done: 20, rate: 10 }, 60, 2)).toBeLessThan(20)
+  })
+
+  it('leans further the longer the reading covers', () => {
+    const brief = rateOf({ done: 20, rate: 10 }, 40, 1)
+    const long = rateOf({ done: 20 * SMOOTHING, rate: 10 }, 40 * SMOOTHING, SMOOTHING)
+    // Both saw twenty a second. The one that watched for a smoothing length
+    // moved most of the way there; the one that watched for a second barely
+    // moved.
+    expect(brief).toBeLessThan(11)
+    expect(long).toBeGreaterThan(15)
   })
 
   it('stands where it is when nothing moved, so no estimate grows out of it', () => {

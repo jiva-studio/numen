@@ -115,13 +115,19 @@ export const remainingWord = (left: number, perSecond: number): string => {
   return clock((left / perSecond) * 1000)
 }
 
+/** How long a rate is averaged over, in seconds. */
+export const SMOOTHING = 10
+
 /**
  * The rate a count is moving at, from two readings and the time between them.
  *
- * A count written in groups stands still between them, and a reading that saw no
- * movement measured nothing: the rate already known stands, and what is drawn
- * from it stands with it. Movement is smoothed towards what was known, so one
- * group arriving at once does not become the rate.
+ * `seconds` is the time since the count last moved, so a count written in groups
+ * is measured over the stretch a group took rather than over the moment it
+ * landed in.
+ *
+ * Movement is smoothed towards what was known over that stretch, so a reading
+ * taken a moment after the last counts for a moment and one taken a minute later
+ * counts for a minute.
  *
  * A count that went backwards is a fresh start, and has no rate until it is read
  * twice.
@@ -137,5 +143,5 @@ export const rateOf = (
   if (moved === 0) return previous.rate
   const now = moved / seconds
   if (previous.rate <= 0) return now
-  return previous.rate * 0.7 + now * 0.3
+  return previous.rate + (1 - Math.exp(-seconds / SMOOTHING)) * (now - previous.rate)
 }
