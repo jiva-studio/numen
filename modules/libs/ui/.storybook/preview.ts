@@ -1,5 +1,7 @@
 import type { Preview } from '@storybook/vue3-vite'
 import { configure } from 'storybook/test'
+import { walk } from './keyboard'
+import { faults } from './reach'
 import '../src/tokens/theme.css'
 import './preview.css'
 
@@ -12,6 +14,9 @@ configure({ asyncUtilTimeout: 5_000 })
  * outside these, so nothing reachable from the toolbar is a size a person
  * could not ask for.
  */
+/** The story the keyboard walk is proved against, and what it must find there. */
+const PROOF = { story: 'workspace--crowded', stops: 5 }
+
 const INTERFACE = [0.8, 1, 1.25, 1.5, 2]
 const READING = [0.8, 1, 1.25, 1.5, 1.75]
 
@@ -67,6 +72,22 @@ const preview: Preview = {
     },
   },
   initialGlobals: { theme: 'light', interface: '1', font: '1' },
+  afterEach: async (context) => {
+    if (context.parameters['reach'] === false) return
+
+    const found = await walk()
+
+    // A walk that finds nothing passes everything. This one story is crowded
+    // enough that finding nothing in it means the walk itself has stopped
+    // working, and every other story's silence means nothing.
+    if (context.id === PROOF.story && found.stops.length < PROOF.stops)
+      throw new Error(
+        `the keyboard walk found ${found.stops.length} stops in ${PROOF.story}, where it must find ${PROOF.stops}`,
+      )
+
+    const wrong = faults(found)
+    if (wrong.length) throw new Error(`${context.id}: ${wrong.join('; ')}`)
+  },
   decorators: [
     (story, context) => {
       const theme = context.globals['theme'] === 'dark' ? 'dark' : 'light'

@@ -179,9 +179,13 @@ export const AValueNotAmongThem: Story = {
   },
 }
 
-/** Nothing said on the segments at all. */
+/**
+ * Nothing said on the segments at all. The keyboard rule is off here because
+ * these are segments with nothing to read out, which is what the story draws.
+ */
 export const NoTextAtAll: Story = {
   args: { words: ' \n \n ', chosen: '' },
+  parameters: { reach: false },
 }
 
 /** A control nobody may turn. */
