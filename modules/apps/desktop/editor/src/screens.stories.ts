@@ -119,6 +119,7 @@ const INSTALLATION: Installation = {
   syncing: ref(true),
   hangs: ref(true),
   parts: ref(6),
+  partsBounds: ref({ least: 1, most: 12 }),
   choosesParts: () => {},
   dayStarts: ref('04:00'),
   latestDayStarts: ref('12:00'),

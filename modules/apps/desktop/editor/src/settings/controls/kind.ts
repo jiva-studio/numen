@@ -9,7 +9,7 @@ import type { Ref } from 'vue'
 import type { Model, SettingEdit } from '../../core'
 import type { Kind, WindowHandle } from '../../tabs/windowing'
 import { SETTINGS } from '../../tabs/workspace'
-import type { Mode, Ranges, Sizes, Theme } from '../theme'
+import type { Bounds, Mode, Ranges, Sizes, Theme } from '../theme'
 import SettingsTab from './SettingsTab.vue'
 import { WORDS as words } from './words'
 
@@ -34,6 +34,8 @@ export interface Installation {
   readonly hangs: Ref<boolean>
   /** How many parts a day is hung in. A field offers no number as well. */
   readonly parts: Readonly<Ref<number>>
+  /** How many the vault takes, which it says when it is asked what it holds. */
+  readonly partsBounds: Readonly<Ref<Bounds>>
   choosesParts(count: number): void
   /** The hour a day of review begins at, written as `04:00`. */
   readonly dayStarts: Readonly<Ref<string>>

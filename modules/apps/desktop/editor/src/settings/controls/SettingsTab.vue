@@ -208,8 +208,8 @@ const profiles = computed<readonly SelectChoice[]>(() => {
         >
           <NumberField
             :model-value="installation.parts.value"
-            :min="1"
-            :max="12"
+            :min="installation.partsBounds.value.least"
+            :max="installation.partsBounds.value.most"
             :step="1"
             :aria-labelledby="labelledBy"
             class="settings__number"

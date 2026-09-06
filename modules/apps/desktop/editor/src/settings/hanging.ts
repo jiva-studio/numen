@@ -150,5 +150,5 @@ export function hanging(core: HangingDeps, words: Words, said: MessageWriter) {
     parts.value = was
   }
 
-  return { hangs, parts, start, offers, counts, chooses, choosesCount }
+  return { hangs, parts, ends, start, offers, counts, chooses, choosesCount }
 }

@@ -35,6 +35,7 @@ const installation = (): Installation =>
     syncing: ref(false),
     hangs: ref(false),
     parts: ref(0),
+    partsBounds: ref({ least: 1, most: 12 }),
     choosesParts: vi.fn(),
     dayStarts: ref('04:00'),
     latestDayStarts: ref('12:00'),

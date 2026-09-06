@@ -493,6 +493,7 @@ export const useWindow = () => {
       set: (on) => void hungParts.chooses(on ? ON : OFF),
     }),
     parts: hungParts.parts,
+    partsBounds: hungParts.ends,
     choosesParts: (count) => void hungParts.choosesCount(`${count}`),
     dayStarts: dayBegins.starts,
     latestDayStarts: dayBegins.latest,

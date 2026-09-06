@@ -104,6 +104,7 @@ const configured = (pinned = false, file: Record<string, unknown> = {}) => {
       },
     }),
     parts: ref(6),
+    partsBounds: ref({ least: 2, most: 9 }),
     choosesParts: (count) => void done.push(`parts ${count}`),
     dayStarts: ref('04:00'),
     latestDayStarts: ref('12:00'),
@@ -215,6 +216,14 @@ describe('the settings tab', () => {
     expect(tab.text()).toContain(words.ocrModel)
     expect(tab.text()).toContain(words.transcribing)
     expect(tab.text()).toContain(words.agentUse)
+  })
+
+  it('holds the number of parts inside what the vault says it takes', () => {
+    const { tab } = configured()
+    const parts = tab.get(control('settings-parts'))
+
+    expect(parts.attributes('aria-valuemin')).toBe('2')
+    expect(parts.attributes('aria-valuemax')).toBe('9')
   })
 
   it('draws each of the two proofreadings beside the thing it puts right', () => {
