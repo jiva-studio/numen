@@ -235,6 +235,18 @@ func corpus(t *testing.T) []string {
 		t.Skipf("the corpus is not here: %v (set %s to say where it is)", err, corpusEnv)
 	}
 
+	books, err := booksUnder(root)
+	if err != nil {
+		t.Fatalf("walk the corpus: %v", err)
+	}
+	if len(books) == 0 {
+		t.Skipf("the corpus at %s holds no books", root)
+	}
+	return books
+}
+
+// booksUnder is every EPUB file under a folder.
+func booksUnder(root string) ([]string, error) {
 	var books []string
 	err := filepath.WalkDir(root, func(at string, entry os.DirEntry, err error) error {
 		if err != nil {
@@ -245,11 +257,5 @@ func corpus(t *testing.T) []string {
 		}
 		return nil
 	})
-	if err != nil {
-		t.Fatalf("walk the corpus: %v", err)
-	}
-	if len(books) == 0 {
-		t.Skipf("the corpus at %s holds no books", root)
-	}
-	return books
+	return books, err
 }
