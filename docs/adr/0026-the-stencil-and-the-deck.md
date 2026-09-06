@@ -45,9 +45,9 @@ fields:
 
 ### Back
 
-**Height:** {{Height}}
-**Weight:** {{Weight}}
-**Life span:** {{Life span}}
+<b>Height:</b> {{Height}}
+<b>Weight:</b> {{Weight}}
+<b>Life span:</b> {{Life span}}
 ```
 
 A face naming a field the stencil does not declare is a problem against the stencil, and the rest of it is read as usual.
