@@ -13,8 +13,8 @@ func TestPaddingIsNotAveragedIn(t *testing.T) {
 		3, 0, 100, 100, 100, 100,
 		0, 3, 100, 100, 100, 100,
 	}
-	mask := [][]int64{{1, 0, 0}, {1, 0, 0}}
-	got := meanPool(flat, mask, 2)
+	mask := []int64{1, 0, 0, 1, 0, 0}
+	got := meanPool(flat, mask, 2, 3, 2)
 	if !slices.Equal(got[0], []float32{1, 0}) || !slices.Equal(got[1], []float32{0, 1}) {
 		t.Errorf("got %v", got)
 	}
@@ -25,7 +25,7 @@ func TestTokensAreAveragedAndTheResultIsUnitLength(t *testing.T) {
 		1, 0,
 		0, 1,
 	}
-	got := meanPool(flat, [][]int64{{1, 1}}, 2)
+	got := meanPool(flat, []int64{1, 1}, 1, 2, 2)
 	want := float32(math.Sqrt2 / 2)
 	if math.Abs(float64(got[0][0]-want)) > 1e-6 || math.Abs(float64(got[0][1]-want)) > 1e-6 {
 		t.Errorf("got %v, want %v", got[0], want)
@@ -46,82 +46,64 @@ func TestTheFirstTokenIsTheVectorWhenTheModelPoolsThatWay(t *testing.T) {
 }
 
 func TestAllPaddingIsAZeroVector(t *testing.T) {
-	got := meanPool([]float32{5, 5}, [][]int64{{0}}, 2)
+	got := meanPool([]float32{5, 5}, []int64{0}, 1, 1, 2)
 	if !slices.Equal(got[0], []float32{0, 0}) {
 		t.Errorf("got %v", got)
 	}
 }
 
-func TestSequenceLengthsRoundUpToAStep(t *testing.T) {
+// A batch carries what its texts hold and no more: a short batch is not laid out
+// at the length of a long one.
+func TestABatchIsAsLongAsItsLongestText(t *testing.T) {
+	rows, seq, ids, mask, types := padded([][]int{{7, 8, 9}, {4}}, 1)
+	if rows != 2 || seq != 3 {
+		t.Fatalf("two texts of three and one tokens were laid out %dx%d", rows, seq)
+	}
+	for _, held := range [][]int64{ids, mask, types} {
+		if len(held) != rows*seq {
+			t.Fatalf("a row of %d holds %d", seq, len(held))
+		}
+	}
+	if !slices.Equal(ids, []int64{7, 8, 9, 4, 1, 1}) {
+		t.Errorf("the shorter text was padded with %v", ids)
+	}
+	if !slices.Equal(mask, []int64{1, 1, 1, 1, 0, 0}) {
+		t.Errorf("the padding is marked: %v", mask)
+	}
+}
+
+// A text the tokenizer gave nothing for is still a text, and what pools its row
+// divides by something.
+func TestAnEmptyTextIsMarkedAtOneToken(t *testing.T) {
+	rows, seq, _, mask, _ := padded([][]int{{}}, 1)
+	if rows != 1 || seq != 1 {
+		t.Fatalf("one empty text was laid out %dx%d", rows, seq)
+	}
+	if !slices.Equal(mask, []int64{1}) {
+		t.Errorf("an empty text is marked %v", mask)
+	}
+}
+
+func TestAnOutputIsChosenByName(t *testing.T) {
 	for _, c := range []struct {
-		tokens, want int
+		named []string
+		want  string
 	}{
-		{1, 64},
-		{64, 64},
-		{65, 128},
-		{200, 256},
-		{256, 256},
-		{9000, 256},
+		{[]string{"last_hidden_state", "pooler_output"}, "last_hidden_state"},
+		{[]string{"pooler_output", "sentence_embedding"}, "sentence_embedding"},
+		{[]string{"token_embeddings", "sentence_embedding"}, "sentence_embedding"},
+		{[]string{"the_only_one"}, "the_only_one"},
 	} {
-		if got := bucket(c.tokens, 64, 256); got != c.want {
-			t.Errorf("%d tokens gave %d, want %d", c.tokens, got, c.want)
+		got, err := chooseOutput(c.named)
+		if err != nil {
+			t.Errorf("%v: %v", c.named, err)
+			continue
+		}
+		if got != c.want {
+			t.Errorf("%v gave %q, want %q", c.named, got, c.want)
 		}
 	}
-}
-
-// A shape is compiled the first time it appears, so a batch that is not full is
-// laid out in as many rows as a full one and padding fills the rest.
-func TestABatchIsLaidOutAtTheSizeAFullOneCarries(t *testing.T) {
-	const rows, seq = 8, 64
-	for texts := 1; texts <= rows; texts++ {
-		batch := make([][]int, texts)
-		for i := range batch {
-			batch[i] = []int{7, 8, 9}
-		}
-		ids, mask, types := padded(batch, rows, seq, 1)
-		for _, held := range [][][]int64{ids, mask, types} {
-			if len(held) != rows {
-				t.Fatalf("%d texts were laid out in %d rows", texts, len(held))
-			}
-			for _, row := range held {
-				if len(row) != seq {
-					t.Fatalf("%d texts gave a row of %d", texts, len(row))
-				}
-			}
-		}
-		// A row nothing was written into is padding, and what pools it divides
-		// by the tokens it is marked at.
-		for row := texts; row < rows; row++ {
-			if ids[row][0] != 1 {
-				t.Errorf("row %d of %d holds %d", row, texts, ids[row][0])
-			}
-			var marked int64
-			for _, at := range mask[row] {
-				marked += at
-			}
-			if marked != 1 {
-				t.Errorf("row %d of %d is marked at %d tokens", row, texts, marked)
-			}
-		}
-	}
-}
-
-// The shapes one run meets are the sequence lengths and no more, whatever a
-// batch holds.
-func TestARunMeetsOneShapePerSequenceLength(t *testing.T) {
-	const rows, limit, step = 8, 256, 64
-	seen := map[[2]int]bool{}
-	for texts := 1; texts <= rows; texts++ {
-		for _, tokens := range []int{1, 40, 65, 200, 300} {
-			batch := make([][]int, texts)
-			for i := range batch {
-				batch[i] = make([]int, tokens)
-			}
-			ids, _, _ := padded(batch, rows, bucket(tokens, step, limit), 1)
-			seen[[2]int{len(ids), len(ids[0])}] = true
-		}
-	}
-	if want := limit/step + 2; len(seen) > want {
-		t.Errorf("a run met %d shapes, and the cache holds %d", len(seen), want)
+	if _, err := chooseOutput([]string{"one", "another"}); err == nil {
+		t.Error("a model naming neither and answering twice was taken at a guess")
 	}
 }

@@ -99,10 +99,28 @@ type LocalModel struct {
 	File string `json:"file"`
 	// BatchTexts is how many texts one forward pass carries.
 	BatchTexts int `json:"batch_texts"`
+	// Runtime is the ONNX Runtime shared library. Empty means the one beside the
+	// application, and then the one the platform holds.
+	Runtime string `json:"runtime"`
+	// Threads is how many of this machine one forward pass may use.
+	Threads int `json:"threads"`
 	// Download allows fetching the model when it is not on this machine. Turned
 	// off, and with no directory named, a vault is searched by its words.
 	Download bool `json:"download"`
 }
+
+// Threading is how much of this machine one forward pass may use. A recognition
+// runs beside this one and is told the same, and between them they leave the
+// machine something.
+func (m LocalModel) Threading() int {
+	if m.Threads <= 0 {
+		return defaultThreads
+	}
+	return m.Threads
+}
+
+// defaultThreads is what a forward pass takes where the settings say nothing.
+const defaultThreads = 4
 
 // From is where this machine reads the weights: the directory when one is
 // named, and the repository otherwise, with the file that is run inside it. A
