@@ -20,9 +20,9 @@ type Replace struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
 	Index   Levels
-	// Telling is told what this change is doing while it is being made. Nothing
+	// Drawing is told what this change is doing while it is being made. Nothing
 	// is told where nobody is drawing the note.
-	Telling ReportEdit
+	Drawing TellEdit
 	Now     port.Clock
 }
 
@@ -128,7 +128,7 @@ func (u Replace) Execute(
 
 		// A client counts text its own way, and a span named in bytes lands
 		// somewhere else in prose that is not ASCII.
-		ends = u.Telling.begins(ctx, u.Now, domain.Edit{
+		ends = u.Drawing.begins(ctx, u.Now, domain.Edit{
 			Path: path,
 			From: markdown.Counted(body, span.From),
 			To:   markdown.Counted(body, span.To),

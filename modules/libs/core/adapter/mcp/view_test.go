@@ -35,16 +35,16 @@ func watched(t *testing.T, notes map[string]string) (*sdk.ClientSession, *window
 	_, core := built(t, notes)
 	looking := &window{}
 	core.View = looking
-	tells := note.ReportEdit(func(ctx context.Context, said domain.Edit) {
+	tells := note.TellEdit(func(ctx context.Context, said domain.Edit) {
 		_ = looking.Editing(ctx, said)
 	})
-	core.Notes.Write.Telling = tells
-	core.Notes.Replace.Telling = tells
+	core.Notes.Write.Drawing = tells
+	core.Notes.Replace.Drawing = tells
 	moving := note.TellMove(func(ctx context.Context, went domain.Move) {
 		_ = looking.Moved(ctx, went)
 	})
-	core.Notes.Move.Moving = moving
-	core.Notes.Rename.Moving = moving
+	core.Notes.Move.Drawing = moving
+	core.Notes.Rename.Drawing = moving
 	return connectedTo(t, core), looking
 }
 

@@ -56,9 +56,9 @@ type Write struct {
 	// Bound is the most the file may be, measured as it goes to disk. Zero is
 	// MaxBytes. A caller whose files are read at a bound of their own sets it.
 	Bound int
-	// Telling is told what a write is doing while it is being made. Nothing is
+	// Drawing is told what a write is doing while it is being made. Nothing is
 	// told where nobody is drawing the note.
-	Telling ReportEdit
+	Drawing TellEdit
 }
 
 // Levels brings the named notes up to date in the index, so that what a write
@@ -114,7 +114,7 @@ func (u Write) Execute(
 			return err
 		}
 		if at.From != at.To || insert != "" {
-			ends = u.Telling.begins(ctx, u.Now, domain.Edit{
+			ends = u.Drawing.begins(ctx, u.Now, domain.Edit{
 				Path: path,
 				From: markdown.Counted(was, at.From),
 				To:   markdown.Counted(was, at.To),

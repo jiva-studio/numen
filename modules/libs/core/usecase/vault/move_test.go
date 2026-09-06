@@ -67,7 +67,7 @@ func (f filing) moving(kept note.SyncTitleAndFilename) vaults.Move {
 		f.db.Links(), f.db.Queries(), f.db.Sources(), f.index, time.Now,
 	)
 	notes.Sync = func() note.SyncTitleAndFilename { return kept }
-	notes.Moving = func(_ context.Context, went domain.Move) {
+	notes.Drawing = func(_ context.Context, went domain.Move) {
 		*f.went = append(*f.went, went)
 	}
 	return vaults.NewMove(

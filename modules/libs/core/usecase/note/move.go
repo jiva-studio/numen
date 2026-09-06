@@ -32,9 +32,9 @@ type Move struct {
 	// filename is an edit, and an edit stamps the identifier a note arrived
 	// without.
 	Now port.Clock
-	// Moving is told where the note went, so that whoever is showing it at the
+	// Drawing is told where the note went, so that whoever is showing it at the
 	// name it had follows it. Nothing is told where nobody is drawing.
-	Moving TellMove
+	Drawing TellMove
 	// Sync is asked, as each rename is made, whether a note's title and its
 	// filename are kept as one name. Nothing asked keeps the two one name,
 	// which is what an installation nobody has configured does.
@@ -127,8 +127,8 @@ func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, point
 
 	// The file is where it now is and the index is level with it. Whoever is
 	// reading this note at the name it had is reading a name with no file.
-	if u.Moving != nil {
-		u.Moving(ctx, domain.Move{From: from, To: to})
+	if u.Drawing != nil {
+		u.Drawing(ctx, domain.Move{From: from, To: to})
 	}
 
 	// What a repaired link is pointed at: the name the note is filed under, or
