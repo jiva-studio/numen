@@ -63,12 +63,28 @@ jobs:
 
       - name: Formatting
         run: |
-          unformatted=$(gofmt -l ./bind)
+          unformatted=$(gofmt -l ./bind tools.go)
           if [ -n "$unformatted" ]; then
             echo "not gofmt-ed:"; echo "$unformatted"; exit 1
           fi
 
       - run: go vet ./...
+
+      # What .golangci.yml asks for, beyond the gofmt and go vet above. The
+      # phone is a binding layer over the core and answers to the same rules as
+      # the core, the window and the schema: it fails on what it finds.
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.12.2
+          working-directory: modules/apps/mobile
+          args: --timeout 15m
+
+      # The vulnerability list is kept elsewhere and read at the time of the
+      # run, so this step can find something on a branch that changed nothing.
+      # It answers for the standard library of the Go above as well as for what
+      # is required, which is why nothing here is pinned.
+      - name: Vulnerabilities
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
       # A test builds its vault in a temporary folder, and there is memory here
       # to hold every one of them.

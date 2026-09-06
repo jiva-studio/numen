@@ -171,15 +171,17 @@ graph: ## draw what the interface modules depend on, into docs/dependencies.md
 graph-check: graph ## fail if the drawing that is committed is out of date
 	git diff --exit-code -- docs/dependencies.md
 
-# What .golangci.yml asks for. The phone binds the core and is left out of it.
+# What .golangci.yml asks for, in all four Go modules. The phone binds the core
+# and is held to the same rules as what it binds.
 #
 # Every module fails on what it finds. A check nobody can go red on is a check
 # nobody reads.
 .PHONY: lint-go
-lint-go: ## what golangci-lint finds, in every module that is checked
+lint-go: ## what golangci-lint finds, in every Go module
 	cd $(CORE) && golangci-lint run ./...
 	cd $(DESKTOP) && golangci-lint run ./...
 	cd $(PROTOCOL) && golangci-lint run ./...
+	cd $(MOBILE) && golangci-lint run ./...
 
 # The only check whose answer changes with nothing in the repository changing:
 # it asks a database that is kept elsewhere, and it answers for the standard
