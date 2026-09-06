@@ -471,6 +471,56 @@ export const Filling: Story = {
 }
 
 /**
+ * A search that came back with nothing, and what a reader is told of it.
+ *
+ * A group that answered with rows is read out by the row the keyboard lands
+ * on. A group that answered with none has no row to land on, so what it says
+ * in place of one is read out where a sighted person reads it. While it is
+ * still working it has answered nothing, and nothing is said.
+ */
+export const NothingHeard: Story = {
+  render: (args) => ({
+    components: { Palette },
+    setup() {
+      const open = ref(true)
+      const typed = ref('ent')
+      const groups = ref<PaletteGroup[]>([{ ...NAMES, items: [], working: true }])
+
+      let waiting: ReturnType<typeof setTimeout> | undefined
+      onMounted(() => {
+        waiting = setTimeout(
+          () => (groups.value = [{ ...NAMES, items: [], silence: 'No note answers to that' }]),
+          700,
+        )
+      })
+      onUnmounted(() => clearTimeout(waiting))
+
+      return { args, open, typed, groups }
+    },
+    template: `
+      <div class="numen" style="height:100vh;background:var(--numen-surface)">
+        <Palette
+          v-model="typed"
+          :groups="groups"
+          :open="open"
+          @choose="args.onChoose"
+          @dismiss="args.onDismiss"
+        />
+      </div>
+    `,
+  }),
+  play: async () => {
+    const region = () => document.body.querySelector('[data-palette="said"]')
+
+    await waitFor(() => expect(region()).not.toBeNull())
+    await expect(region()).toHaveAttribute('aria-live', 'polite')
+    await expect(said(region())).toBe('')
+
+    await waitFor(() => expect(said(region())).toBe('No note answers to that'), { timeout: 3000 })
+  },
+}
+
+/**
  * Every group was asked and answered with nothing. A group that has answered and
  * has nothing to say is worth no heading of its own, so none of them is drawn
  * and what stands there is what the caller says in place of a list.

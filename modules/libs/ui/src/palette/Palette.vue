@@ -8,7 +8,8 @@
  * for as long as it stands, which is what it says of itself.
  *
  * `data-palette` names each part of the panel: `ground`, `panel`, `crumb`,
- * `field`, `nothing`, `key` and `more`. The list under the field names its own.
+ * `field`, `said`, `nothing`, `key` and `more`. The list under the field names
+ * its own.
  */
 import {
   computed,
@@ -142,6 +143,19 @@ const shown = computed(() => ordered(props.groups))
 
 const places = computed(() => flatten(shown.value))
 const placed = computed(() => placePalette(shown.value))
+
+/**
+ * What is read out of a search. A group that answered with rows is read out by
+ * the row the keyboard lands on; a group that answered with none has no row to
+ * land on, so what it says in place of one is read out instead. A group still
+ * working has answered nothing yet and is left alone.
+ */
+const said = computed(() =>
+  shown.value
+    .filter((group) => !group.working && group.items.length === 0 && group.silence)
+    .map((group) => group.silence)
+    .join('. '),
+)
 
 /** The item the keyboard is on, by its identity rather than by where it sits. */
 const held = ref('')
@@ -376,6 +390,11 @@ onBeforeUnmount(() => {
             :aria-activedescendant="!panel && here >= 0 ? optionId(uid, here) : undefined"
           />
         </div>
+
+        <!-- What a search came back with, where it came back with nothing. It
+             stands here for as long as the palette does, so what lands in it
+             is read out. -->
+        <span class="sr-only" aria-live="polite" data-palette="said">{{ said }}</span>
 
         <PaletteResults
           v-if="placed.length"
