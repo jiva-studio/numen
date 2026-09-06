@@ -36,27 +36,13 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: |
-            modules/libs/protocol/package-lock.json
-            modules/libs/ui/package-lock.json
-            modules/libs/wire/package-lock.json
-            modules/apps/desktop/editor/package-lock.json
-            modules/apps/desktop/flashcards/package-lock.json
-            modules/apps/mobile/package-lock.json
-            modules/tools/depgraph/package-lock.json
+          cache-dependency-path: modules/package-lock.json
 
-      # A cruise resolves what a module imports out of that module's own
-      # node_modules, so every module the list names is installed. One that is
-      # not would read as a module importing nothing.
+      # A cruise resolves what a module imports, so every module the cruise
+      # walks is installed. One that is not would read as a module importing
+      # nothing.
       - name: Install
-        run: |
-          npm ci --prefix modules/libs/protocol
-          npm ci --prefix modules/libs/ui
-          npm ci --prefix modules/libs/wire
-          npm ci --prefix modules/apps/desktop/editor
-          npm ci --prefix modules/apps/desktop/flashcards
-          npm ci --prefix modules/apps/mobile
-          npm ci --prefix modules/tools/depgraph
+        run: npm ci --prefix modules
 
       # A window reaches the components through their build.
       - name: Build the components

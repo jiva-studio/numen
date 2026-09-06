@@ -12,23 +12,17 @@ modules/libs/ui/             shared interface components
 modules/tools/git-hooks/     repo-level tooling (commit validation)
 ```
 
-The repo is mixed-language by design. Each module owns its toolchain; the root
-carries no build system.
+The repo is mixed-language by design. Each module owns its own build and its own tests; the root carries no build system. The npm packages share one install, at `modules/`, because a package installed twice is two types that never match.
 
 ## Setup
 
 ```bash
-cd modules/tools/git-hooks && npm install
+cd modules && npm install
 ```
 
-That is the whole setup for repo-level tooling. It installs commitlint, wires the
-`commit-msg` git hook through husky, and points `commit.template` at the message
-template. Modules under `modules/` carry their own toolchains.
+That is the whole setup. `modules/` is the npm workspace root, so one install fetches every package under it — the interface libraries, the two windows, the phone, the sites and the tools — and one copy of a package answers for all of them. It also installs commitlint, wires the `commit-msg` git hook through husky, and points `commit.template` at the message template.
 
-The Node install lives in `modules/tools/git-hooks/` rather than at the repo
-root, deliberately: the repo is mixed-language, and a `package.json` +
-`node_modules` in the root would read as "this is a Node project". Nothing
-outside that directory depends on Node.
+The install lives in `modules/` rather than at the repository root, deliberately: the repo is mixed-language, and a `package.json` and `node_modules` in the root would read as "this is a Node project". The root carries no build system; `modules/` is the source root, and the Go modules under it are built by go.
 
 ## Labels
 

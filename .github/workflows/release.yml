@@ -199,12 +199,7 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: |
-            modules/libs/protocol/package-lock.json
-            modules/libs/ui/package-lock.json
-            modules/apps/desktop/editor/package-lock.json
-            modules/apps/desktop/flashcards/package-lock.json
-            modules/apps/landing/package-lock.json
+          cache-dependency-path: modules/package-lock.json
 
       # The window links against the system's own browser, so the machine that
       # compiles it needs that browser's headers.
@@ -598,12 +593,7 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: |
-            modules/libs/protocol/package-lock.json
-            modules/libs/ui/package-lock.json
-            modules/apps/desktop/editor/package-lock.json
-            modules/apps/desktop/flashcards/package-lock.json
-            modules/apps/landing/package-lock.json
+          cache-dependency-path: modules/package-lock.json
 
       # The number the window draws in its corner is written into the page here.
       - name: Interface
@@ -721,12 +711,7 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: |
-            modules/libs/protocol/package-lock.json
-            modules/libs/ui/package-lock.json
-            modules/apps/desktop/editor/package-lock.json
-            modules/apps/desktop/flashcards/package-lock.json
-            modules/apps/landing/package-lock.json
+          cache-dependency-path: modules/package-lock.json
 
       # The number the window draws in its corner is written into the page here.
       - name: Interface

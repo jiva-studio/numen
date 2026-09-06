@@ -31,9 +31,11 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: modules/tools/git-hooks/package-lock.json
+          cache-dependency-path: modules/package-lock.json
 
+      # The install is the source root's; what it fetched is found from here.
       - run: npm ci
+        working-directory: modules
 
       # PR: validate every commit in the range. Push: validate the last one.
       - name: Validate commit messages

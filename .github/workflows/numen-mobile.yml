@@ -119,17 +119,11 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: |
-            modules/libs/protocol/package-lock.json
-            modules/libs/ui/package-lock.json
-            modules/apps/mobile/package-lock.json
+          cache-dependency-path: modules/package-lock.json
 
       # A screen reaches the components through their build.
       - name: Install
-        run: |
-          npm ci --prefix modules/libs/protocol
-          npm ci --prefix modules/libs/ui
-          npm ci --prefix modules/apps/mobile
+        run: npm ci --prefix modules
 
       - name: Build the components
         run: npm run build --prefix modules/libs/ui

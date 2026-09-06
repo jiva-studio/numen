@@ -4,6 +4,7 @@
 # npm. What is here is the list of things worth doing and where they are done,
 # so that neither has to be remembered.
 
+MODULES  := modules
 CORE     := modules/libs/core
 DESKTOP  := modules/apps/desktop
 MOBILE   := modules/apps/mobile
@@ -36,19 +37,11 @@ help:
 # does not: `make install INSTALL="npm ci"`.
 INSTALL ?= npm install
 
-# The schema's compiler is on PATH and what it produces is committed, so the
-# copy of it npm offers is a download nothing here reads.
+# `modules/` is the workspace root, so one install fetches every package below
+# it and one copy of a package answers for all of them.
 .PHONY: install
 install: ## fetch every module's dependencies
-	cd $(PROTOCOL) && $(INSTALL) --omit=dev
-	cd $(UI) && $(INSTALL)
-	cd $(WIRE) && $(INSTALL)
-	cd $(DESKTOP)/editor && $(INSTALL)
-	cd $(DESKTOP)/flashcards && $(INSTALL)
-	cd $(MOBILE) && $(INSTALL)
-	cd $(DOCS) && $(INSTALL)
-	cd $(LANDING) && $(INSTALL)
-	cd $(DEPGRAPH) && $(INSTALL)
+	cd $(MODULES) && $(INSTALL)
 
 .PHONY: generate
 generate: ## compile the schema into Go and TypeScript
@@ -109,7 +102,7 @@ shoot: ## take the landing page's picture of the window from its story
 
 .PHONY: icons
 icons: ## cut every platform's icon from the one drawing
-	cd $(ICON) && npm install && npm run build
+	cd $(ICON) && npm run build
 
 # The window's tests reach the library through its build, so the library is
 # built before they run.

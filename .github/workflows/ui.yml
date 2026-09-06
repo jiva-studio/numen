@@ -35,10 +35,10 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: modules/libs/ui/package-lock.json
+          cache-dependency-path: modules/package-lock.json
 
       - name: Install
-        run: npm ci --prefix modules/libs/ui
+        run: npm ci --prefix modules
 
       # Correctness and the boundaries between the modules. It runs before the
       # build, because what it refuses is cheaper to read than a type error.
@@ -68,21 +68,21 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: modules/libs/ui/package-lock.json
+          cache-dependency-path: modules/package-lock.json
 
       - name: Install
-        run: npm ci --prefix modules/libs/ui
+        run: npm ci --prefix modules
 
       # The engines are a download of their own and answer to the version in
       # the lockfile. Whatever the cache does not hold is fetched below.
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ hashFiles('modules/libs/ui/package-lock.json') }}
+          key: playwright-${{ hashFiles('modules/package-lock.json') }}
           restore-keys: playwright-
 
       - name: The browsers the stories run in
-        run: npx --prefix modules/libs/ui playwright install chromium webkit --with-deps
+        run: npx --prefix modules playwright install chromium webkit --with-deps
 
       - name: Test
         run: npm run test:stories --prefix modules/libs/ui
