@@ -8,9 +8,12 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
@@ -199,4 +202,82 @@ func TestTheAgentsGoBeforeTheEndpoint(t *testing.T) {
 	if err := <-shut; err != nil {
 		t.Fatal(err)
 	}
+}
+
+// The panel's child is told which tools it may call, one by one. The endpoint
+// in front of it serves the whole surface for an agent a person configured
+// themselves, and a name absent from the allowance is refused under the mode
+// this runs in.
+func TestThePanelsChildIsAllowedTheToolsOfItsSurfaceByName(t *testing.T) {
+	cfg := installed(t)
+	cfg.Agent = agent.Defaults()
+
+	dir := t.TempDir()
+	script := filepath.Join(dir, "claude")
+	written := filepath.Join(dir, "argv")
+	body := "#!/bin/sh\nfor a in \"$@\"; do printf '%s\\n' \"$a\"; done > " + written + "\n"
+	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	cfg.Agent.Claude.Command = []string{script}
+
+	core := vault(t)
+	served, err := Serve(t.Context(), Options{
+		Config: cfg, Core: core, Token: "secret", Root: dir, Out: io.Discard,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = served.Close() })
+	if served.Agent == nil {
+		t.Fatal("the settings name an agent and none was started")
+	}
+
+	work, err := served.Agent.Take(t.Context(), port.Task{Question: "what is here?"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for range work.Steps() {
+	}
+	raw, err := os.ReadFile(written)
+	if err != nil {
+		t.Fatal(err)
+	}
+	argv := strings.Split(strings.TrimRight(string(raw), "\n"), "\n")
+
+	allowed := strings.Split(after(t, argv, "--allowedTools"), ",")
+	if slices.Contains(allowed, claudecode.Tool("*")) {
+		t.Fatalf("the allowance is %q", allowed)
+	}
+	words, err := mcp.Vocabulary(t.Context(), core)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(words) == 0 {
+		t.Fatal("the surface serves no tool, and an allowance naming none would pass")
+	}
+	for name := range words {
+		if !slices.Contains(allowed, claudecode.Tool(name)) {
+			t.Errorf("%s is served and is not in the allowance %q", name, allowed)
+		}
+	}
+	// The search stands beside them, and nothing else the command line brings.
+	if !slices.Contains(allowed, "WebSearch") {
+		t.Errorf("the allowance is %q", allowed)
+	}
+	if len(allowed) != len(words)+1 {
+		t.Errorf("the allowance is %q, and the surface serves %d tools", allowed, len(words))
+	}
+}
+
+// after is what one flag on a command line was given.
+func after(t *testing.T, argv []string, flag string) string {
+	t.Helper()
+	for i := len(argv) - 2; i >= 0; i-- {
+		if argv[i] == flag {
+			return argv[i+1]
+		}
+	}
+	t.Fatalf("nothing names %s: %q", flag, argv)
+	return ""
 }

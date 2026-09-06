@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"slices"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode"
@@ -160,8 +161,8 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 // Claude is what the window asks on the person's behalf.
 //
 // It reaches the same tools over the same port as an agent somebody configured
-// themselves, and is given all of them: what it changes appears in the window
-// as it happens.
+// themselves, and is allowed each tool of the vocabulary by name: what it
+// changes appears in the window as it happens.
 func Claude(
 	cfg container.Config,
 	root, url, secret string,
@@ -170,7 +171,9 @@ func Claude(
 	out io.Writer,
 ) *claudecode.Agent {
 	words := make(map[string]claudecode.ToolDeclaration, len(vocabulary))
+	allowed := make([]string, 0, len(vocabulary))
 	for name, said := range vocabulary {
+		allowed = append(allowed, claudecode.Tool(name))
 		words[claudecode.Tool(name)] = claudecode.ToolDeclaration{
 			Title: said.Title,
 			Kind:  said.Kind,
@@ -182,11 +185,12 @@ func Claude(
 			},
 		}
 	}
+	slices.Sort(allowed)
 	return &claudecode.Agent{
 		Command:             cfg.Agent.Claude.Command,
 		Root:                root,
 		Tools:               claudecode.Endpoint{URL: url, Token: secret},
-		Allowed:             []string{claudecode.Tool("*")},
+		Allowed:             allowed,
 		Words:               words,
 		Drafting:            drafting,
 		Model:               cfg.Agent.Claude.Model,
