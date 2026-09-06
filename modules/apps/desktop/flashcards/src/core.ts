@@ -4,7 +4,7 @@
  * Nothing here draws: it is the client, and the words the answers arrive in.
  */
 import { createClient } from '@connectrpc/connect'
-import { Goal as Goals, Rating, FlashcardsService, WindowService } from '@numen/protocol'
+import { Rating, FlashcardsService, WindowService } from '@numen/protocol'
 import type { StopReason } from '@numen/protocol'
 import { namesOf, transport } from '@numen/wire'
 
@@ -48,17 +48,6 @@ const graded: Readonly<Record<Rating, Grade | null>> = {
 
 /** What the schema calls each of them, read off the words above. */
 export const rated: Readonly<Record<Grade, Rating>> = namesOf<Grade, Rating>(graded)
-
-/** Which value the one control of a preset steers. */
-export type Goal = 'minutes' | 'retention' | 'date'
-
-/** The goal in this window's own words. A preset naming none aims at minutes. */
-export const goalOf: Readonly<Record<Goals, Goal>> = {
-  [Goals.UNSPECIFIED]: 'minutes',
-  [Goals.MINUTES_A_DAY]: 'minutes',
-  [Goals.RETENTION]: 'retention',
-  [Goals.BY_DATE]: 'date',
-}
 
 /** One deck's share of what a vault owes. */
 export interface DeckCardsDue {
