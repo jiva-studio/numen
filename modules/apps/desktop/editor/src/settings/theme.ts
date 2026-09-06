@@ -49,7 +49,7 @@ export type Sizes = Scales<number>
 export type Ranges = Scales<Bounds>
 
 /** Every theme there is, and what the settings say the window wears. */
-export interface Catalogue {
+export interface Appearance {
   readonly themes: readonly Theme[]
   readonly applied: string
   readonly mode: Mode
@@ -59,7 +59,7 @@ export interface Catalogue {
 
 /** What the window asks about how it is drawn. */
 export interface Themes {
-  catalogue(): Promise<Catalogue>
+  appearance(): Promise<Appearance>
   /** The text of one theme's file, as the file stands when it is asked for. */
   text(name: string): Promise<string>
   /**
@@ -76,7 +76,7 @@ export interface Themes {
 
 /** The same questions, in the shape the window asks them. */
 export const themes: Themes = {
-  catalogue: async () => {
+  appearance: async () => {
     const answer = await theme.listThemes({})
     return {
       themes: answer.themes.map((one) => ({

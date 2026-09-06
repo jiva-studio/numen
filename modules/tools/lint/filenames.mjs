@@ -46,7 +46,6 @@ export const owed = [
   'modules/libs/ui/src/editor/replacing.ts',
   'modules/libs/ui/src/following/following.ts',
   'modules/apps/desktop/editor/src/note/drawing.ts',
-  'modules/apps/desktop/editor/src/settings/wearing.ts',
   'modules/apps/desktop/editor/src/showing.ts',
 ]
 

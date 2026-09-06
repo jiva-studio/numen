@@ -367,7 +367,7 @@ vi.mock('../agent/core', () => ({ core: { ask: held, finish: async () => {} } })
 
 vi.mock('../settings/theme', () => ({
   themes: {
-    catalogue: async () => ({
+    appearance: async () => ({
       themes: [
         { name: 'preset:numen', title: 'numen', shipped: true, pinned: false },
         { name: 'mine:sea', title: 'sea', shipped: false, pinned: false },

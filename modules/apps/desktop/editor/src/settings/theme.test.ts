@@ -50,7 +50,7 @@ describe('every theme there is', () => {
       }),
     )
 
-    const { themes: every } = await themes.catalogue()
+    const { themes: every } = await themes.appearance()
     expect(every).toEqual([
       { name: 'preset/Numen.css', title: 'Numen', shipped: true, pinned: false },
       { name: 'own/Dusk.css', title: 'Dusk', shipped: false, pinned: true },
@@ -66,7 +66,7 @@ describe('which half of a colour pair is read', () => {
       [Modes.SYSTEM, 'system'],
     ] as const) {
       asked.listThemes.mockResolvedValue(answering({ mode: said }))
-      expect((await themes.catalogue()).mode).toBe(word)
+      expect((await themes.appearance()).mode).toBe(word)
     }
   })
 
@@ -74,7 +74,7 @@ describe('which half of a colour pair is read', () => {
   // a window that was never told anything is drawn as.
   it('is the system’s where the window has no word for what was said', async () => {
     asked.listThemes.mockResolvedValue(answering({ mode: 99 }))
-    expect((await themes.catalogue()).mode).toBe('system')
+    expect((await themes.appearance()).mode).toBe('system')
   })
 
   it('is carried back to the application as the schema names it', async () => {
@@ -93,7 +93,7 @@ describe('which half of a colour pair is read', () => {
 describe('how far a size goes', () => {
   it('is the two ends the application named', async () => {
     asked.listThemes.mockResolvedValue(answering())
-    const { sizes, bounds } = await themes.catalogue()
+    const { sizes, bounds } = await themes.appearance()
 
     expect(sizes).toEqual({ interfaceScale: 1, textScale: 1 })
     expect(bounds).toEqual({
@@ -109,7 +109,7 @@ describe('how far a size goes', () => {
       answering({ interfaceScaleBounds: undefined, textScaleBounds: undefined }),
     )
 
-    expect((await themes.catalogue()).bounds).toEqual({
+    expect((await themes.appearance()).bounds).toEqual({
       interfaceScale: { least: 0, most: 0 },
       textScale: { least: 0, most: 0 },
     })

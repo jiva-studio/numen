@@ -22,7 +22,7 @@ import type { SettingsTabState } from './kind'
  */
 import AT from './paths.json'
 import type { Mode } from '../theme'
-import { INTERFACE_SCALE, MODE, TEXT_SCALE } from '../wearing'
+import { INTERFACE_SCALE, MODE, TEXT_SCALE } from '../appearance'
 import { choicesFor } from './models'
 import { write } from '../json5'
 import { WORDS as words } from './words'

@@ -15,7 +15,7 @@ import { answerGuard } from '../questions'
 import type { StepGroup, StepRow } from '../command/commands'
 import { following, percent } from '@numen/ui'
 import type { MessageWriter } from '../notices/messages'
-import type { Bounds, Catalogue, Mode, Ranges, Scales, Sizes, Theme, Themes } from './theme'
+import type { Appearance, Bounds, Mode, Ranges, Scales, Sizes, Theme, Themes } from './theme'
 
 /** Everything the appearance says in the window's voice. */
 export interface Words {
@@ -216,7 +216,7 @@ const its = <T,>(both: Scales<T>, which: ScaleKind): T => both[which]
 /** The pair with what is said of one of the two put in its place. */
 const onto = <T,>(both: Scales<T>, which: ScaleKind, one: T): Scales<T> => ({ ...both, [which]: one })
 
-export function wearing(
+export function windowAppearance(
   core: Themes,
   words: Words,
   said: MessageWriter,
@@ -239,7 +239,7 @@ export function wearing(
   const bounds = ref<Ranges>({ interfaceScale: NOWHERE, textScale: NOWHERE })
 
   /**
-   * What the catalogue lost touch with, said until it has it back.
+   * What the appearance lost touch with, said until it has it back.
    *
    * It is a state and not a word, so the window carries it where it carries
    * everything else that is simply so.
@@ -338,9 +338,9 @@ export function wearing(
 
   /** Every theme there is, and what the settings say the window is drawn as. */
   const lists = async () => {
-    let answer: Catalogue
+    let answer: Appearance
     try {
-      answer = await core.catalogue()
+      answer = await core.appearance()
     } catch (error) {
       console.error(error)
       said(words.unlisted, 'refusal')

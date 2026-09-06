@@ -8,7 +8,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { StepGroup } from '../command/commands'
-import type { Catalogue, Themes } from './theme'
+import type { Appearance, Themes } from './theme'
 import {
   INTERFACE_SCALE,
   IS_MODE,
@@ -16,8 +16,8 @@ import {
   IS_THEME,
   MARKER,
   TEXT_SCALE,
-  wearing,
-} from './wearing'
+  windowAppearance,
+} from './appearance'
 import { WORDS as words } from '../words'
 
 /** What the page was served wearing. */
@@ -58,7 +58,7 @@ const themed = (sheet: Document) => dressing(sheet)[1]
 /** What the sizes' element holds, which is the last of them. */
 const sizes = (sheet: Document) => dressing(sheet)[2]
 
-const CATALOGUE: Catalogue = {
+const APPEARANCE: Appearance = {
   themes: [
     { name: 'preset:numen', title: 'numen', shipped: true, pinned: false },
     { name: 'preset:dracula', title: 'dracula', shipped: true, pinned: true },
@@ -112,20 +112,20 @@ const folder = () => {
 }
 
 /** The window wearing a theme, over a page a test can read the head of. */
-const window = (over: Partial<Catalogue> = {}, served = SERVED) => {
+const window = (over: Partial<Appearance> = {}, served = SERVED) => {
   const sheet = page(served)
   const said = folder()
   const asked: string[] = []
   const chosen: string[] = []
-  let catalogue: Catalogue = { ...CATALOGUE, ...over }
+  let appearance: Appearance = { ...APPEARANCE, ...over }
   let listed = 0
   let failed = ''
   let refused = ''
   const texts: Record<string, string> = {}
   const core: Themes = {
-    catalogue: async () => {
+    appearance: async () => {
       listed += 1
-      return catalogue
+      return appearance
     },
     text: async (name) => {
       asked.push(name)
@@ -141,7 +141,12 @@ const window = (over: Partial<Catalogue> = {}, served = SERVED) => {
   /** What the window was told, in the order it was told. */
   const told: { text: string; kind: string }[] = []
   return {
-    worn: wearing(core, words, (text, kind = 'report') => void told.push({ text, kind }), sheet),
+    worn: windowAppearance(
+      core,
+      words,
+      (text, kind = 'report') => void told.push({ text, kind }),
+      sheet,
+    ),
     sheet,
     asked,
     chosen,
@@ -151,12 +156,12 @@ const window = (over: Partial<Catalogue> = {}, served = SERVED) => {
     writes: (name: string, css: string) => (texts[name] = css),
     fails: (why: string) => (failed = why),
     refuses: (why: string) => (refused = why),
-    holds: (next: Partial<Catalogue>) => (catalogue = { ...catalogue, ...next }),
+    holds: (next: Partial<Appearance>) => (appearance = { ...appearance, ...next }),
   }
 }
 
 /** The window listing what it can wear, over a page it was served dressed. */
-const dressed = async (over: Partial<Catalogue> = {}, served = SERVED) => {
+const dressed = async (over: Partial<Appearance> = {}, served = SERVED) => {
   const one = window(over, served)
   await one.worn.start()
   await settles()
@@ -204,9 +209,9 @@ describe('the page as it was served', () => {
 
   it('makes the pair itself, mode first, for a page served in nothing', async () => {
     const sheet = document.implementation.createHTMLDocument('numen')
-    const bare = wearing(
+    const bare = windowAppearance(
       {
-        catalogue: async () => CATALOGUE,
+        appearance: async () => APPEARANCE,
         text: async (name) => `:root { --numen-surface: ${name} }`,
         chooses: async () => '',
         changed: async function* (): AsyncIterable<readonly string[]> {
@@ -345,7 +350,7 @@ describe('the themes the step offers', () => {
   })
 
   it('says where a person’s own themes go while they have none', async () => {
-    const one = await dressed({ themes: CATALOGUE.themes.slice(0, 2) })
+    const one = await dressed({ themes: APPEARANCE.themes.slice(0, 2) })
 
     const own = one.worn.offers().find((group) => group.id === 'owned')
     expect(own?.items).toStrictEqual([])
@@ -702,7 +707,7 @@ describe('the person editing their own theme file', () => {
 
   it('lists what the folder holds again, so a file made or taken out is offered', async () => {
     const one = await dressed()
-    one.holds({ themes: [...CATALOGUE.themes.slice(0, 2)] })
+    one.holds({ themes: [...APPEARANCE.themes.slice(0, 2)] })
 
     await one.says('mine:sea')
 

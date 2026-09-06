@@ -16,7 +16,7 @@ import {
   said,
   settles,
 } from './testing/window'
-import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from './settings/wearing'
+import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from './settings/appearance'
 
 describe('the four commands over how the window is drawn', () => {
   /** What the mode's element holds while the tokens are read as a pair. */

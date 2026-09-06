@@ -36,8 +36,8 @@ import {
   INTERFACE_SCALE,
   MODE,
   TEXT_SCALE,
-  wearing,
-} from './settings/wearing'
+  windowAppearance,
+} from './settings/appearance'
 import { reviewSetting } from './settings/review'
 import { OFF, ON, SYNCING, syncSetting } from './settings/sync'
 import { HANGING, PARTS, hanging } from './settings/hanging'
@@ -452,7 +452,7 @@ export const useWindow = () => {
   }
 
   /** How the window is drawn: the theme it wears, its half of a pair, its sizes. */
-  const dressed = wearing(themes, words, log.under('worn'))
+  const dressed = windowAppearance(themes, words, log.under('worn'))
 
   /** Whether a note's title and the name of its file are kept as one name. */
   const oneName = syncSetting(core, words, log.under('named'))
