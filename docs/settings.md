@@ -476,6 +476,40 @@ A scan goes forty printed lines to a request, on a queue at half the price that 
 
 A `with` naming a profile `profiles` does not carry is an error at startup. An installation that meant to proofread and misspelled the name is told so, and does not run quietly proofreading nothing.
 
+## Reaching an address
+
+`importing` is how what a link note points at is fetched, and where the tools that fetch it are. What is kept, and where, is [Importing an address](importing.md).
+
+```json
+{
+  "importing": {
+    "fetch_unasked": false,
+    "captions": ["en"],
+    "automatic_captions": true,
+    "copy_under_mb": 500,
+    "copies_to_vault": false,
+    "yt_dlp": { "command": [], "arguments": [] },
+    "ffmpeg": { "command": [], "arguments": [] }
+  }
+}
+```
+
+| | |
+| --- | --- |
+| `fetch_unasked` | whether a link note nothing has been fetched for is fetched on its own. Off. Reaching off the machine is a gesture, and a note written by hand in another editor is not one. |
+| `captions` | which languages published words are preferred in, best first. Empty takes the language the video was spoken in. |
+| `automatic_captions` | whether words a machine wrote count where a person published none. On. |
+| `copy_under_mb` | how large a copy of a video may be. Above it, a copy asked for says what it would have taken and nothing is fetched. |
+| `copies_to_vault` | whether a copy is kept beside the note as a file of the person's own. Off. |
+| `yt_dlp.command`, `ffmpeg.command` | what starts it: the tool's path, and anything it is started through. Empty asks the `PATH`. |
+| `yt_dlp.arguments`, `ffmpeg.arguments` | what every run is handed before its own arguments. |
+
+**A command is a list, and that is the whole answer to a machine with no fixed paths.** A tool that lives where nothing may write a path down is started through whatever does know — `["nix", "run", "nixpkgs#yt-dlp", "--"]`, a wrapper on the `PATH`, a store path in full. Nothing here has an opinion about how a machine keeps its tools.
+
+`arguments` is what answers a site that refuses an unattended request. Cookies from a browser, an extractor argument carrying a token, a runtime that mints one: each is that machine's own, is passed through as it stands, and what the tool said when it refused is what the person is shown.
+
+None of this is turned in the window. Every key here is a machine's answer rather than a person's taste, and a control for it would be a control for something set once, on the day the machine was set up.
+
 ## Which agent answers
 
 `agent` is which agent answers in the panel, what it may reach, and whether the tools go on a port. What an agent may ask of a vault is in [Agents](agents.md).
