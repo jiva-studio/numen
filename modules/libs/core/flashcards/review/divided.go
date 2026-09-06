@@ -9,16 +9,19 @@ import (
 // Divided hands a budget out in proportion to what each deck owes of it.
 //
 // A deck owing nine times another's takes nine times the share, a deck owing
-// nothing takes nothing, and no deck owing a whole number takes more than it
-// owes — the remainder is handed out a card at a time. What the proportions
-// leave over goes by the largest fraction, and where the fractions
-// stand equal the deck owing more takes it: the card moves the smaller deck
-// further off its proportion than the larger. Decks owing the same are alike in
-// everything the division knows of them, and take it in the order they are
-// given.
-func Divided(budget float64, owes []float64) []float64 {
-	out := make([]float64, len(owes))
-	var total float64
+// nothing takes nothing, and no deck takes more than it owes — the remainder is
+// handed out a card at a time. What the proportions leave over goes by the
+// largest fraction, and where the fractions stand equal the deck owing more
+// takes it: the card moves the smaller deck further off its proportion than the
+// larger. Decks owing the same are alike in everything the division knows of
+// them, and take it in the order they are given.
+//
+// The proportion itself is worked out in floating point, because a budget of
+// nanoseconds times what one deck owes of them overflows an integer. Only the
+// fraction left over is read off it, and every share handed back is whole.
+func Divided(budget int, owes []int) []int {
+	out := make([]int, len(owes))
+	total := 0
 	for _, one := range owes {
 		total += one
 	}
@@ -33,9 +36,9 @@ func Divided(budget float64, owes []float64) []float64 {
 	parts := make([]float64, len(owes))
 	left := budget
 	for at, one := range owes {
-		exact := budget * one / total
-		out[at] = math.Floor(exact)
-		parts[at] = exact - out[at]
+		exact := float64(budget) * float64(one) / float64(total)
+		out[at] = int(math.Floor(exact))
+		parts[at] = exact - float64(out[at])
 		left -= out[at]
 		over[at] = at
 	}
@@ -45,7 +48,7 @@ func Divided(budget float64, owes []float64) []float64 {
 			cmp.Compare(owes[b], owes[a]),
 		)
 	})
-	for _, at := range over[:min(len(over), int(left))] {
+	for _, at := range over[:min(len(over), left)] {
 		out[at]++
 	}
 	return out

@@ -14,18 +14,14 @@ import (
 // budget there is to divide between them. A budget larger than the whole of
 // what is owed and one smaller than any single share both fall inside the
 // range, so both ends of the division are generated as often as the middle.
-func dividing(t *rapid.T) (float64, []float64) {
+func dividing(t *rapid.T) (int, []int) {
 	owes := rapid.SliceOfN(rapid.IntRange(0, 400), 0, 8).Draw(t, "owes")
-	out := make([]float64, len(owes))
-	for at, one := range owes {
-		out[at] = float64(one)
-	}
-	return float64(rapid.IntRange(0, 1200).Draw(t, "budget")), out
+	return rapid.IntRange(0, 1200).Draw(t, "budget"), owes
 }
 
 // totalled is what a set of decks owes altogether.
-func totalled(owes []float64) float64 {
-	var out float64
+func totalled(owes []int) int {
+	out := 0
 	for _, one := range owes {
 		out += one
 	}
@@ -42,7 +38,7 @@ func TestADividedDayIsHandedOutWhole(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		budget, owes := dividing(t)
 		got := totalled(review.Divided(budget, owes))
-		want := math.Min(budget, totalled(owes))
+		want := min(budget, totalled(owes))
 		if got != want {
 			t.Fatalf("a budget of %v over %v handed out %v, want %v",
 				budget, owes, got, want)
@@ -85,8 +81,8 @@ func TestAShareIsTheProportionOfTheDayItsDeckOwes(t *testing.T) {
 			return
 		}
 		for at, share := range review.Divided(budget, owes) {
-			exact := budget * owes[at] / total
-			if share < math.Floor(exact) || share > math.Ceil(exact) {
+			exact := float64(budget) * float64(owes[at]) / float64(total)
+			if float64(share) < math.Floor(exact) || float64(share) > math.Ceil(exact) {
 				t.Fatalf("a deck owing %v of %v took %v of a budget of %v, "+
 					"where its proportion of it is %v",
 					owes[at], total, share, budget, exact)
@@ -132,7 +128,7 @@ func TestTheOrderDecksAreGivenInDoesNotChangeTheShares(t *testing.T) {
 		for at := range places {
 			places[at] = at
 		}
-		otherwise := make([]float64, len(owes))
+		otherwise := make([]int, len(owes))
 		for at, one := range rapid.Permutation(places).Draw(t, "order") {
 			otherwise[at] = owes[one]
 		}
@@ -156,8 +152,8 @@ func TestTheOrderDecksAreGivenInDoesNotChangeTheShares(t *testing.T) {
 // Where the fractions stand equal the deck owing more takes the remainder.
 func TestDecksLevelOnTheFractionAreSplitByWhatTheyOwe(t *testing.T) {
 	t.Parallel()
-	owes := []float64{0, 1, 1, 7, 239, 400}
-	want := []float64{0, 0, 0, 4, 120, 200}
+	owes := []int{0, 1, 1, 7, 239, 400}
+	want := []int{0, 0, 0, 4, 120, 200}
 	if got := review.Divided(324, owes); !slices.Equal(got, want) {
 		t.Fatalf("half a day over %v was handed out as %v, want %v",
 			owes, got, want)
