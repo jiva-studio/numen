@@ -520,7 +520,7 @@ export const MakingOne: Story = {
  * Only a browser can answer any of it: a real matrix, a pointer the plex never
  * took hold of, and a drawing that follows it across.
  */
-export const CarryingThemIn: Story = {
+export const DraggingThemIn: Story = {
   args: {
     ...invented.args,
     dragged: ['physics/Entropy.md', 'physics/Kelvin.md', 'Heat.md'],

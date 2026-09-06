@@ -401,7 +401,7 @@ export const ReachesToARow: Story = {
 }
 
 /** Two rows dragged at once, held part way to the folder they are going into. */
-export const CarryingSeveral: Story = {
+export const DraggingSeveral: Story = {
   args: { selected: ['notes', 'loose'] },
   play: async ({ canvasElement }) => {
     const from = rowIn(canvasElement, 'loose')
