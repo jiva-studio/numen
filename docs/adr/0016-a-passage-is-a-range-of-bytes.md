@@ -23,7 +23,7 @@ What goes from a search, or from an agent, to the thing that shows a passage is 
 
 Two things produce it and nothing above asks which: a recognition, kept on disk because a model made it and no machine here remakes it cheaply, and a document's own text layer, kept nowhere because it answers per word on demand.
 
-Which one answers is decided by `text_from` together with a check that the file is still the bytes the reading was made from. A document rewritten since is lit from its own layer, which is the words that are there now.
+Which one answers is decided by `producer` together with a check that the file is still the bytes the reading was made from. A document rewritten since is lit from its own layer, which is the words that are there now.
 
 **The layer's boxes are never written down.** A file of them would need invalidating, sweeping, and a rule for the day a recognition arrives, and the wrong answer to that last one puts one producer's rectangles against another producer's offsets, which lights the wrong words and says nothing.
 
@@ -34,14 +34,16 @@ The window is sent a picture of a page. A scan is hundreds of megabytes, PDF is 
 ### A vault file is an asset, and a drawn page is all it answers
 
 ```
-GET /assets/<id>/pages/<n>?wide=W   one page drawn, where the asset has any
+GET /assets/<id>/pages/<n>?wide=W&size=S&mtime=T   one page drawn, where the asset has any
 ```
+
+`size` and `mtime` are the document's fingerprint, so one address names one drawing of one document and answers the same picture for as long as it answers at all.
 
 **Nothing else of a file is addressed here.** What a document is, how long a recording runs, and where a run of a source's text sits are `AssetService`; a reading, a transcript and a transcript put right are `ArtifactService`, where one is listed, asked for, read, written and taken away. Only bytes stay on these routes, because only bytes are what a browser's own elements speak.
 
 `AssetService` is a service of its own for the reason a service is carved at all: the phone serves the vault's notes to a network and must not serve what is in its files, and a service is the unit of what a binary answers.
 
-A recording's bytes are not here either. They are served ranged, from a loopback port, at an address `AssetService.Recording` carries: a media element speaks the protocols of the world and not the scheme one application serves its window under.
+A recording's bytes are not here either. They are served ranged, from a loopback port, at the address `AssetService.GetRecording` answers with under `media`: a media element speaks the protocols of the world and not the scheme one application serves its window under.
 
 `<id>` is the vault path, percent-encoded, because a file has no other name the window holds. **The handler routes on the escaped path**: Go decodes before a handler sees it, and a decoded separator runs the member and what hangs off it together. This route is served by the same adapter that serves the generated handler.
 
