@@ -12,6 +12,7 @@
  * dictionary, not a list of exemptions: a reader can apply the rule without
  * reading it, and a word that has left the source has to leave the dictionary.
  */
+import { code } from './source.mjs'
 
 /** The words of ours ending in -ing or -ed that are ordinary English nouns. */
 export const nouns = {
@@ -50,9 +51,9 @@ export function refused(name) {
   return !Object.hasOwn(nouns, said[said.length - 1] ?? '')
 }
 
-/** Every type, interface, class and enum one file declares. */
+/** Every type, interface, class and enum one file declares, and none a comment says. */
 const DECLARED = /^[ \t]*(?:export\s+)?(?:declare\s+)?(?:abstract\s+)?(?:type|interface|class|enum)\s+([A-Za-z_$][\w$]*)/gm
 
 export function declares(source) {
-  return [...source.matchAll(DECLARED)].map((one) => one[1])
+  return [...code(source).matchAll(DECLARED)].map((one) => one[1])
 }

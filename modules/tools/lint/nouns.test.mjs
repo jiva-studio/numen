@@ -91,6 +91,12 @@ test('what counts as a declaration', () => {
     'export abstract class Epsilon {}',
     'export enum Zeta { One }',
     ' * type Eta is named only in a comment',
+    '/*',
+    'type Plexing = 1',
+    '*/',
+    'const theta = `',
+    'type Filing = 2',
+    '`',
   ].join('\n')
   assert.deepEqual(declares(source), ['Alpha', 'Beta', 'Epsilon', 'Zeta'])
 })
