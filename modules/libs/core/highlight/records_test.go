@@ -5,22 +5,14 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/highlight"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 )
-
-// box is one run of prose on a page, over the rectangle it covers.
-func box(page, start, length int, over highlight.Rect) highlight.Box {
-	return highlight.Box{
-		Page:    page,
-		Stretch: highlight.Stretch{Start: start, Length: length},
-		Rect:    over,
-	}
-}
 
 func TestBoxesComeBackAsTheyWereWritten(t *testing.T) {
 	boxes := []highlight.Box{
-		box(0, 0, 5, highlight.Rect{MinX: 0, MinY: 0.25, MaxX: 0.5, MaxY: 0.75}),
-		box(1, 25, 7, highlight.Rect{MinX: 0.125, MinY: 0.5, MaxX: 1, MaxY: 1}),
-		box(17, 4096, 1, highlight.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.3, MaxY: 0.4}),
+		testsupport.Box(0, 0, 5, highlight.Rect{MinX: 0, MinY: 0.25, MaxX: 0.5, MaxY: 0.75}),
+		testsupport.Box(1, 25, 7, highlight.Rect{MinX: 0.125, MinY: 0.5, MaxX: 1, MaxY: 1}),
+		testsupport.Box(17, 4096, 1, highlight.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.3, MaxY: 0.4}),
 	}
 	raw := highlight.Pack(boxes)
 
@@ -36,8 +28,8 @@ func TestATornTailGivesBackTheWholeRecords(t *testing.T) {
 	// A run stopped part way through writing leaves a record half written.
 	// What was written whole is still a box.
 	boxes := []highlight.Box{
-		box(0, 0, 5, highlight.Rect{MaxX: 0.5, MaxY: 0.5}),
-		box(0, 6, 4, highlight.Rect{MaxX: 0.75, MaxY: 0.5}),
+		testsupport.Box(0, 0, 5, highlight.Rect{MaxX: 0.5, MaxY: 0.5}),
+		testsupport.Box(0, 6, 4, highlight.Rect{MaxX: 0.75, MaxY: 0.5}),
 	}
 	raw := highlight.Pack(boxes)
 

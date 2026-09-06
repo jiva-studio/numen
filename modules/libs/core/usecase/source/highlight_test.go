@@ -9,19 +9,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/fixes"
 	"github.com/jiva-studio/numen/modules/libs/core/highlight"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
-
-// boxed is one word of a page: where it stands in the prose, and the fraction
-// of the page it covers.
-func boxed(page, start, length int, over highlight.Rect) highlight.Box {
-	return highlight.Box{
-		Page:    page,
-		Stretch: highlight.Stretch{Start: start, Length: length},
-		Rect:    over,
-	}
-}
 
 // layered reads a document with the library and answers where its words sit
 // with what the test put in.
@@ -110,9 +101,9 @@ func TestARecognisedSourceIsLitFromWhatWasReadInIt(t *testing.T) {
 	// Two words on one page and a third on the next, as a model reading the
 	// pages wrote them down.
 	written := []highlight.Box{
-		boxed(4, 0, 5, highlight.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}),
-		boxed(4, 6, 4, highlight.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
-		boxed(5, 11, 5, highlight.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
+		testsupport.Box(4, 0, 5, highlight.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}),
+		testsupport.Box(4, 6, 4, highlight.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
+		testsupport.Box(5, 11, 5, highlight.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
 	}
 	if err := store.Write(t.Context(), text.Boxes("ocr", "abc123"), highlight.Pack(written)); err != nil {
 		t.Fatal(err)
@@ -309,7 +300,7 @@ func TestAFileRewrittenSinceItWasReadIsLitFromItself(t *testing.T) {
 
 	// A reading whose words sit at the top of the first page.
 	if err := store.Write(ctx, text.Boxes("ocr", "abc123"), highlight.Pack([]highlight.Box{
-		boxed(0, 0, 400, highlight.Rect{MinX: 0.1, MinY: 0.1, MaxX: 0.9, MaxY: 0.2}),
+		testsupport.Box(0, 0, 400, highlight.Rect{MinX: 0.1, MinY: 0.1, MaxX: 0.9, MaxY: 0.2}),
 	})); err != nil {
 		t.Fatal(err)
 	}
@@ -337,9 +328,9 @@ func TestAProofreadReadingIsLitWhereItsWordsNowStand(t *testing.T) {
 	holds(t, index, shelved, "ocr", "abc123")
 
 	written := []highlight.Box{
-		boxed(4, 0, 5, highlight.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}),
-		boxed(4, 6, 4, highlight.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
-		boxed(5, 11, 5, highlight.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
+		testsupport.Box(4, 0, 5, highlight.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}),
+		testsupport.Box(4, 6, 4, highlight.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
+		testsupport.Box(5, 11, 5, highlight.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
 	}
 	if err := store.Write(t.Context(), text.Boxes("ocr", "abc123"), highlight.Pack(written)); err != nil {
 		t.Fatal(err)
