@@ -68,6 +68,11 @@ jobs:
       - name: The house rules
         run: npm run check --prefix modules/tools/lint
 
+      # Every story the tree declares, under the name a page names it by. It
+      # installs nothing.
+      - name: The story names
+        run: npm run check --prefix modules/tools/stories
+
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: modules/apps/desktop/go.mod

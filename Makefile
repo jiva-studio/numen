@@ -13,6 +13,7 @@ LANDING  := modules/apps/landing
 ICON     := modules/tools/icon
 DEPGRAPH := modules/tools/depgraph
 LINTER   := modules/tools/lint
+STORIES  := modules/tools/stories
 UI       := modules/libs/ui
 WIRE     := modules/libs/wire
 PROTOCOL := modules/libs/protocol
@@ -155,6 +156,7 @@ lint: generate-check ## the checks CI runs, less the one needing a base branch
 	cd $(LANDING) && npm run stories:check
 	cd $(DEPGRAPH) && npm run check
 	cd $(LINTER) && npm run check
+	cd $(STORIES) && npm run check
 	$(MAKE) graph-check
 
 # The drawing, taken from the code rather than from memory. A map made this way
