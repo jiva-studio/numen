@@ -5,8 +5,8 @@
  * is served. Nothing here runs on a phone: what a WebView makes of the policy is
  * answered by a device and by nothing else.
  */
-import { readFileSync, readdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import NoteSheet from './note/NoteSheet.vue'
@@ -71,6 +71,18 @@ const STYLESHEETS = [
   '@numen/ui/dist/numen-ui.css',
 ]
 
+/**
+ * Where a file of a dependency stands. The install hoists to the source root,
+ * so the first `node_modules` up the tree that holds it is the one answering.
+ */
+function installed(path: string): string {
+  for (let at = here; ; at = dirname(at)) {
+    const found = join(at, 'node_modules', path)
+    if (existsSync(found)) return found
+    if (dirname(at) === at) throw new Error(`nothing installed answers for ${path}`)
+  }
+}
+
 afterEach(() => {
   vi.unstubAllGlobals()
   vi.resetModules()
@@ -127,7 +139,7 @@ describe('what the page asks for', () => {
 
   it('asks for nothing from a stylesheet', () => {
     for (const sheet of STYLESHEETS) {
-      const css = readFileSync(join(here, 'node_modules', sheet), 'utf8')
+      const css = readFileSync(installed(sheet), 'utf8')
       expect([sheet, [...css.matchAll(/url\(\s*['"]?([^'")]*)/g)].map((at) => at[1])]).toStrictEqual(
         [sheet, []],
       )

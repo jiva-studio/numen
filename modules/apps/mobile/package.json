@@ -20,8 +20,8 @@
     "@connectrpc/connect": "^2.1.2",
     "@connectrpc/connect-web": "^2.1.2",
     "@ionic/vue": "^8.5.0",
-    "@numen/protocol": "file:../../libs/protocol",
-    "@numen/ui": "file:../../libs/ui",
+    "@numen/protocol": "*",
+    "@numen/ui": "*",
     "vue": "^3.5.0",
     "vue-router": "^4.5.0"
   },

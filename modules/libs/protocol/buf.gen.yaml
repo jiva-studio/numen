@@ -12,7 +12,7 @@ plugins:
     out: gen
     opt: paths=source_relative
 
-  - local: ./node_modules/.bin/protoc-gen-es
+  - local: ../../node_modules/.bin/protoc-gen-es
     out: src
     opt:
       - target=ts

@@ -29,10 +29,13 @@ const forbidden = [
       'folder. There is no module at the repository root, and a ' +
       'relative path across two of them is one the build cannot see. A test ' +
       'and a story are outside the rule: the corpora they read stand in the ' +
-      'schema package, which exports none of them.',
+      'schema package, which exports none of them. So is an installed ' +
+      'package: the install hoists to the source root, so where a package ' +
+      'landed is the installer\'s business and `no-reach-past-the-manifest` ' +
+      'is what answers for whether the module may name it.',
     severity: 'error',
     from: { path: '^(src|index\\.ts)', pathNot: '\\.(test|stories)\\.ts$' },
-    to: { path: '^\\.\\.' },
+    to: { path: '^\\.\\.', pathNot: '(^|/)node_modules/' },
   },
   {
     name: 'nothing-unresolved',
@@ -69,9 +72,10 @@ const forbidden = [
 module.exports = {
   forbidden,
   options: {
-    // The link a `file:` dependency makes is followed as the link it is, so a
-    // window's use of the components reads as one edge to a package and stops
-    // there. What is drawn is the shape of the source, not of an install.
+    // The link the workspace root makes to a package of ours is followed as the
+    // link it is, so a window's use of the components reads as one edge to a
+    // package and stops there. Followed to what it points at, the components
+    // stop being a package and their build is walked file by file.
     preserveSymlinks: true,
     // Which imports a type alone is read off the compiler rather than off the
     // text, so `import type` is one edge everywhere. Without this a `.vue` is

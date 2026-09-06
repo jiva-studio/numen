@@ -17,9 +17,9 @@
   "dependencies": {
     "@connectrpc/connect": "^2.1.2",
     "@connectrpc/connect-web": "^2.1.2",
-    "@numen/protocol": "file:../../../libs/protocol",
-    "@numen/ui": "file:../../../libs/ui",
-    "@numen/wire": "file:../../../libs/wire",
+    "@numen/protocol": "*",
+    "@numen/ui": "*",
+    "@numen/wire": "*",
     "vue": "^3.5.0"
   },
   "devDependencies": {

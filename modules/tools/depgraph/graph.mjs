@@ -35,6 +35,29 @@ const ordered = (mermaid) => {
   return out.join('\n')
 }
 
+/**
+ * The drawing without the climb out of the module.
+ *
+ * Everything a module reaches but its own files stands above it — the packages
+ * at the source root the install hoists to, the corpora in the schema — so the
+ * reporter opens a box for each `..` on the way up. How far up a thing sits is
+ * where the module happens to stand in the tree, and the box that names it is
+ * the next one in.
+ */
+const inward = (mermaid) => {
+  const climb = /^subgraph\s+[A-Za-z0-9]+\["\.\."\]$/
+  const dropped = []
+  const out = []
+  for (const line of mermaid.split('\n')) {
+    if (line.startsWith('subgraph ')) {
+      dropped.push(climb.test(line))
+      if (dropped.at(-1)) continue
+    } else if (line === 'end' && dropped.pop()) continue
+    out.push(line)
+  }
+  return out.join('\n')
+}
+
 const drawn = ({ name, at, sources, says }) => {
   const mermaid = execFileSync(
     depcruise,
@@ -53,7 +76,7 @@ const drawn = ({ name, at, sources, says }) => {
     ],
     { cwd: join(root, at), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
   ).trim()
-  return `## ${name}\n\n${says}\n\n\`${at}\`\n\n\`\`\`mermaid\n${ordered(mermaid)}\n\`\`\`\n`
+  return `## ${name}\n\n${says}\n\n\`${at}\`\n\n\`\`\`mermaid\n${ordered(inward(mermaid))}\n\`\`\`\n`
 }
 
 const page = [

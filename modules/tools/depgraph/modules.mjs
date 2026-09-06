@@ -1,4 +1,5 @@
 /** Where the cruise finds its rules and its binary. The modules are the tools'. */
+import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -7,7 +8,20 @@ export { modules, root } from '../modules.mjs'
 export const here = dirname(fileURLToPath(import.meta.url))
 export const config = join(here, 'rules.cjs')
 export const screens = join(here, 'screens.cjs')
-export const depcruise = join(here, 'node_modules/.bin/depcruise')
+
+/**
+ * The cruiser's own command. The install hoists to the source root, so the
+ * first `node_modules` up the tree that holds it is the one answering.
+ */
+function installed(path) {
+  for (let at = here; ; at = dirname(at)) {
+    const found = join(at, 'node_modules', path)
+    if (existsSync(found)) return found
+    if (dirname(at) === at) throw new Error(`nothing installed answers for ${path}`)
+  }
+}
+
+export const depcruise = installed('.bin/depcruise')
 
 /**
  * The modules whose folders are read as screens and shared folders, each with
@@ -58,5 +72,9 @@ export const owed = new Map([
   ],
 ])
 
-/** One box per folder of ours and one per package, which is the level a drawing reads at. */
-export const COLLAPSE = '^(node_modules/@[a-z0-9-]+|node_modules|src)/[^/]+'
+/**
+ * One box per folder of ours and one per package, which is the level a drawing
+ * reads at. The install hoists to the source root, so a package is named from
+ * the module it is reached from and the climb up is part of the name.
+ */
+export const COLLAPSE = '^((\\.\\./)*node_modules/@[a-z0-9-]+|(\\.\\./)*node_modules|src)/[^/]+'
