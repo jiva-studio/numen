@@ -6,8 +6,8 @@
  * holds, choosing another writes it, and the plex reads both as it draws.
  */
 import { ref } from 'vue'
-import type { StepGroup, StepRow } from '../command/commanding'
-import type { Voice } from '../notices/telling'
+import type { StepGroup, StepRow } from '../command/commands'
+import type { MessageWriter } from '../notices/messages'
 
 /** The command whose step offers the two, and the one that offers the counts. */
 export const HANGING = 'hanging'
@@ -58,7 +58,7 @@ export interface HangingDeps {
 const ladder = (least: number, most: number): readonly number[] =>
   Array.from({ length: Math.max(0, most - least + 1) }, (_, at) => least + at)
 
-export function hanging(core: HangingDeps, words: Words, said: Voice) {
+export function hanging(core: HangingDeps, words: Words, said: MessageWriter) {
   /**
    * The two settings. They open on what an installation nobody has configured
    * does, and are asked of the vault as the window opens.

@@ -11,7 +11,7 @@ import { StopReason } from '@numen/protocol'
 import { asking, type AnswerGuard } from '../asking'
 import type { PlexShowing } from '@numen/ui'
 import type { Move, RefusalReason } from '../core'
-import type { Voice } from '../notices/telling'
+import type { MessageWriter } from '../notices/messages'
 import type { Host, Kind } from '../tabs/windowing'
 import type { FileOpeners } from '../tabs/putting'
 import { PRESET } from '../tabs/workspace'
@@ -125,7 +125,7 @@ export function presetting(
   core: Presets,
   host: Host,
   puts: FileOpeners,
-  said: Voice,
+  said: MessageWriter,
   today: () => Date = () => new Date(),
 ) {
   /** What each preset is called, as the vault last read it. */

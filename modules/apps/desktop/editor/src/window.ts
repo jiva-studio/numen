@@ -19,15 +19,15 @@ import { editing } from './note/editing'
 import { noteChanges } from './note/changes'
 import { CREATABLE, creating } from './note/creating'
 import {
-  commanding,
+  commandPalette,
   deedOf,
   runSupport,
   type PaletteLists,
   type NoteLookup,
   type VaultRef,
   type CommandTarget,
-} from './command/commanding'
-import { chorded, commandFor } from './command/keying'
+} from './command/commands'
+import { chorded, commandFor } from './command/chords'
 import { iconOfKind } from './icons'
 import { themes } from './settings/theme'
 import {
@@ -42,13 +42,13 @@ import { reviewing } from './settings/reviewing'
 import { OFF, ON, SYNCING, syncing } from './settings/syncing'
 import { HANGING, PARTS, hanging } from './settings/hanging'
 import { does, reaching, type CommandDeps, type Store } from './command/handlers'
-import { finding } from './command/finding'
+import { search } from './command/search'
 import { lands, type DestinationDeps } from './command/destination'
 import { fileMakers, putting } from './tabs/putting'
 import { flushing } from './saving/flushing'
 import { raising } from './saving/raising'
 import { windowing } from './tabs/windowing'
-import { telling } from './notices/telling'
+import { messageLog } from './notices/messages'
 import { agentKind, talking } from './agent/kind'
 import { decking } from './cards/deck'
 import { stencilling } from './cards/stencil'
@@ -75,9 +75,9 @@ import { AGENT, CONVERSATION, FILES, PLEX, named, opening } from './tabs/workspa
 export const useWindow = () => {
   const changes = noteChanges()
   const notes = editing(core, { replaced: changes.arrived })
-  /** Everything the window has said, each part of it under a name of its own. */
-  const tell = telling()
-  const making = creating(core, tell.under('made'))
+  /** Every message the window holds, each part of it under a name of its own. */
+  const log = messageLog()
+  const making = creating(core, log.under('made'))
   /** The page drawn again, which is a clean window on the vault that arrived. */
   const reloads = () => globalThis.location.reload()
   const window = showing(core, {
@@ -103,7 +103,7 @@ export const useWindow = () => {
 
   const { indexing, failure, trouble, unwatched, unreachable, holds } = window
   /** What carrying a command out leaves the person to be told. */
-  const told = tell.under('command')
+  const told = log.under('command')
   const { chunks, embedded, embedding, tasks } = window
 
   /** How far this vault has been read for meaning, as the window last heard. */
@@ -117,7 +117,7 @@ export const useWindow = () => {
   const notices = computed<readonly Notice[]>(() =>
     cornerOf(
       tasks.value,
-      tell.said.value,
+      log.messages.value,
       {
         unwatched: unwatched.value,
         unread: trouble.value,
@@ -153,10 +153,10 @@ export const useWindow = () => {
 
   /** The decks and the stencils the window has open, each saved the way a note is. */
   const decks = decking(cards, presets, held.host, puts)
-  const stencils = stencilling(cards, held.host, puts, tell.under('stencil'))
+  const stencils = stencilling(cards, held.host, puts, log.under('stencil'))
 
   /** The presets the window has open, each written as one group of settings. */
-  const schedules = presetting(presets, held.host, puts, tell.under('preset'))
+  const schedules = presetting(presets, held.host, puts, log.under('preset'))
 
   going.holds(decks.flush)
   going.holds(stencils.flush)
@@ -172,7 +172,7 @@ export const useWindow = () => {
   const carried = shallowRef<readonly string[]>([])
 
   /** Whether a node hangs the parts of its note under the box, and how many. */
-  const hungParts = hanging(core, words, tell.under('hanging'))
+  const hungParts = hanging(core, words, log.under('hanging'))
 
   /** The plex tabs, and the one the person is looking at. */
   const plexes = plexKind(held.host, () => view(core), {
@@ -302,7 +302,7 @@ export const useWindow = () => {
   ])
 
   /** The palette: one keystroke, and everything the words typed turn up. */
-  const palette = finding(core, words, { coverage })
+  const palette = search(core, words, { coverage })
 
   /** The vault this window is showing, as the list of vaults has it. */
   const shown = ref<VaultRef>({ id: '', name: '' })
@@ -311,7 +311,7 @@ export const useWindow = () => {
   const listed = ref<VaultList>({ vaults: [], showing: '' })
 
   /** What asking for the list of vaults leaves the person to be told. */
-  const unlisted = tell.under('listed')
+  const unlisted = log.under('listed')
 
   /** Which of the vaults on the list this window is showing, and what it is called. */
   const listing = async () => {
@@ -452,16 +452,16 @@ export const useWindow = () => {
   }
 
   /** How the window is drawn: the theme it wears, its half of a pair, its sizes. */
-  const dressed = wearing(themes, words, tell.under('worn'))
+  const dressed = wearing(themes, words, log.under('worn'))
 
   /** Whether a note's title and the name of its file are kept as one name. */
-  const oneName = syncing(core, words, tell.under('named'))
+  const oneName = syncing(core, words, log.under('named'))
 
   /** The hour a day of review begins at, on the clock on the wall. */
-  const dayBegins = reviewing(core, words, tell.under('reviewed'))
+  const dayBegins = reviewing(core, words, log.under('reviewed'))
 
   /** The rest of the settings file, which no command of the window turns. */
-  const rest = settingsStore(core, words, tell.under('configured'))
+  const rest = settingsStore(core, words, log.under('configured'))
 
   /** The settings file itself, opened whole in a tab of its own. */
   const file = editingSettingsFile(held.host, core, () => void rest.start())
@@ -538,7 +538,7 @@ export const useWindow = () => {
   }
 
   /** The commands, over whatever is in front. */
-  const commands = commanding(core, words, where, knows, kept, runs)
+  const commands = commandPalette(core, words, where, knows, kept, runs)
 
   /** What the window offers a command being carried out, one port to a job. */
   const doing: CommandDeps = {
@@ -670,12 +670,12 @@ export const useWindow = () => {
     held,
     layout,
     listed,
+    log,
     notices,
     palette,
     places,
     shut,
     tabIcon,
-    tell,
     titled,
     where,
   }

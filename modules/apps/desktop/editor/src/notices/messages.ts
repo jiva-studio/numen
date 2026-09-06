@@ -1,7 +1,7 @@
 /**
- * What the window has said, and for how long it holds on to it.
+ * What the window has to say, and for how long it holds on to it.
  *
- * Every part of the window that answers a person speaks here under a name of
+ * Every part of the window that answers a person writes here under a name of
  * its own, and the corner draws what stands. Nothing here knows how any of it
  * is drawn.
  */
@@ -16,60 +16,60 @@ import { shallowRef, type Ref } from 'vue'
  */
 export type MessageKind = 'refusal' | 'caution' | 'report' | 'state'
 
-/** One thing the window has said. */
+/** One message the window holds. */
 export interface WindowMessage {
-  /** What this utterance is addressed by, which no two of them share. */
+  /** What this message is addressed by, which no two of them share. */
   readonly id: string
-  /** Who said it. A second word under one name replaces the first. */
+  /** The part of the window that wrote it, which holds one message at a time. */
   readonly name: string
   readonly kind: MessageKind
-  readonly says: string
+  readonly text: string
 }
 
-/** One part of the window speaking. Nothing said clears what it last said. */
-export type Voice = (text: string, kind?: MessageKind) => void
+/** How one part of the window writes a message, replacing what it last wrote. */
+export type MessageWriter = (text: string, kind?: MessageKind) => void
 
-/** What the window has said, and what changes it. */
+/** The messages the window holds, and what changes them. */
 export interface MessageLog {
-  readonly said: Ref<readonly WindowMessage[]>
-  /** A voice under a name of its own. */
-  under(name: string): Voice
-  /** A word the person is finished with, by the identity it was given. */
+  readonly messages: Ref<readonly WindowMessage[]>
+  /** A writer under a name of its own. */
+  under(name: string): MessageWriter
+  /** A message the person is finished with, by the identity it was given. */
   forget(id: string): void
 }
 
 /**
- * Every word gets an identity of its own.
+ * Every message gets an identity of its own.
  *
  * What draws these remembers by identity when each arrived and which the person
- * put away, so a second word under one name is a second word and is read as
+ * put away, so a replacement under one name is a new message and is read as
  * one.
  */
-export function telling(): MessageLog {
-  const said = shallowRef<readonly WindowMessage[]>([])
+export function messageLog(): MessageLog {
+  const messages = shallowRef<readonly WindowMessage[]>([])
   let minted = 0
 
   const under =
-    (name: string): Voice =>
+    (name: string): MessageWriter =>
     (text, kind = 'report') => {
-      // A voice saying again what it is already saying has said nothing new,
-      // and what stands keeps its identity and its place.
-      const stood = said.value.find((one) => one.name === name)
+      // The same text written again is nothing new, and what stands keeps its
+      // identity and its place.
+      const stood = messages.value.find((one) => one.name === name)
       if (stood === undefined && text === '') return
-      if (stood?.says === text && stood.kind === kind) return
+      if (stood?.text === text && stood.kind === kind) return
 
-      const rest = said.value.filter((one) => one.name !== name)
+      const rest = messages.value.filter((one) => one.name !== name)
       if (text === '') {
-        said.value = rest
+        messages.value = rest
         return
       }
       minted += 1
-      said.value = [...rest, { id: `${name}#${minted}`, name, kind, says: text }]
+      messages.value = [...rest, { id: `${name}#${minted}`, name, kind, text }]
     }
 
   const forget = (id: string): void => {
-    said.value = said.value.filter((one) => one.id !== id)
+    messages.value = messages.value.filter((one) => one.id !== id)
   }
 
-  return { said, under, forget }
+  return { messages, under, forget }
 }

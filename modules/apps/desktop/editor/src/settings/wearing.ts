@@ -12,9 +12,9 @@
  */
 import { computed, ref, shallowRef, watch } from 'vue'
 import { asking } from '../asking'
-import type { StepGroup, StepRow } from '../command/commanding'
+import type { StepGroup, StepRow } from '../command/commands'
 import { following, percent } from '@numen/ui'
-import type { Voice } from '../notices/telling'
+import type { MessageWriter } from '../notices/messages'
 import type { Bounds, Catalogue, Mode, Ranges, Scales, Sizes, Theme, Themes } from './theme'
 
 /** Everything the appearance says in the window's voice. */
@@ -219,7 +219,7 @@ const onto = <T,>(both: Scales<T>, which: ScaleKind, one: T): Scales<T> => ({ ..
 export function wearing(
   core: Themes,
   words: Words,
-  said: Voice,
+  said: MessageWriter,
   sheet: Document = document,
   wait: (ms: number) => Promise<unknown> = sleep,
 ) {

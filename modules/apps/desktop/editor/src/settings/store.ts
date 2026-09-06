@@ -9,7 +9,7 @@
 import { ref, shallowRef } from 'vue'
 import { troubleWords } from '@numen/wire'
 import type { Model, SettingEdit } from '../core'
-import type { Voice } from '../notices/telling'
+import type { MessageWriter } from '../notices/messages'
 import { write } from './json5'
 
 /** Everything this says in the window's voice. */
@@ -42,7 +42,7 @@ export const settingAt = (held: unknown, at: readonly string[]): unknown => {
   return value
 }
 
-export function settingsStore(core: SettingsStoreDeps, words: Words, said: Voice) {
+export function settingsStore(core: SettingsStoreDeps, words: Words, said: MessageWriter) {
   /** Every setting as it stands. It holds nothing until the vault has answered. */
   const held = shallowRef<unknown>({})
 

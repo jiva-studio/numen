@@ -8,7 +8,7 @@
 import type { PlexRelatedSeat } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
 import type { Core, NewLink, RefusalReason, Role } from '../core'
-import type { Voice } from '../notices/telling'
+import type { MessageWriter } from '../notices/messages'
 import { REFUSED } from '../words'
 
 /**
@@ -72,7 +72,7 @@ export interface NoteRef {
   readonly title: string
 }
 
-export function creating(core: Core, said: Voice) {
+export function creating(core: Core, said: MessageWriter) {
   /**
    * One note asked for. A name the vault has already filed is handed back as
    * `occupied` for the caller to answer for.

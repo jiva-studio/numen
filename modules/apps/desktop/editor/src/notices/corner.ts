@@ -9,7 +9,7 @@ import { noticed } from '@numen/ui'
 import type { Notice, Stay, Tone } from '@numen/ui'
 import type { Task } from '../core'
 import { wordsOnly, type IndexCoverage } from './coverage'
-import type { MessageKind, WindowMessage } from './telling'
+import type { MessageKind, WindowMessage } from './messages'
 
 /** The sentences the corner draws that are the window's own. */
 export interface Words {
@@ -132,7 +132,7 @@ export const cornerOf = (
 
   const said: Notice[] = told.map((one) => ({
     id: one.id,
-    says: one.says,
+    says: one.text,
     working: false,
     asked: true,
     ...manner[one.kind],

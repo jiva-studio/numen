@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import type { FileKind, RefusalReason } from '../core'
 import { fileMakers, putting, type VaultMaker, type FileOpenerDeps } from './putting'
-import { voice } from '../testing/voice'
+import { writer } from '../testing/writer'
 import { REFUSED } from '../words'
 
 /** A vault that answers what it was told, and counts the questions. */
@@ -310,7 +310,7 @@ describe('a deck, a stencil or a preset made', () => {
   it('says what the vault refused, and nothing opens', async () => {
     const puts = putting(unreachable)
     const opened = editors(puts)
-    const told = voice()
+    const told = writer()
     const made = fileMakers(maker('occupied'), puts, MAKING, told.says)
 
     expect(await made.decks('zoology', 'Animals')).toBe('')
@@ -319,7 +319,7 @@ describe('a deck, a stencil or a preset made', () => {
   })
 
   it('says a vault that could not be asked at all', async () => {
-    const told = voice()
+    const told = writer()
     const made = fileMakers(maker(null, true), putting(unreachable), MAKING, told.says)
 
     expect(await made.decks('zoology', 'Animals')).toBe('')

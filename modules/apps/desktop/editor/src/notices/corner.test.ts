@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { cornerOf, type State, type Words } from './corner'
 import type { Task } from '../core'
 import type { IndexCoverage } from './coverage'
-import type { WindowMessage } from './telling'
+import type { WindowMessage } from './messages'
 
 const words: Words = {
   unwatched: 'not following the vault',
@@ -51,7 +51,7 @@ const told = (over: Partial<WindowMessage> = {}): WindowMessage => ({
   id: 'command#1',
   name: 'command',
   kind: 'report',
-  says: 'The note is in the trash',
+  text: 'The note is in the trash',
   ...over,
 })
 
@@ -245,19 +245,19 @@ describe('what the window said', () => {
   })
 
   it('draws a caution to be read and left standing', () => {
-    const drawn = corner([], [told({ kind: 'caution', says: 'that note changed on disk' })])
+    const drawn = corner([], [told({ kind: 'caution', text: 'that note changed on disk' })])
 
     expect(drawn[0]).toMatchObject({ tone: 'caution', stay: 'kept' })
   })
 
   it('draws a refusal as trouble that stands until it is put away', () => {
-    const drawn = corner([], [told({ kind: 'refusal', says: 'a note of that name is filed there' })])
+    const drawn = corner([], [told({ kind: 'refusal', text: 'a note of that name is filed there' })])
 
     expect(drawn[0]).toMatchObject({ tone: 'alarm', stay: 'kept' })
   })
 
   it('draws a state for as long as whoever said it keeps saying it', () => {
-    const drawn = corner([], [told({ kind: 'state', says: 'the themes stopped arriving' })])
+    const drawn = corner([], [told({ kind: 'state', text: 'the themes stopped arriving' })])
 
     expect(drawn[0]).toMatchObject({ tone: 'plain', stay: 'holds' })
   })

@@ -8,7 +8,7 @@
 import type { PlexShowing } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
 import type { FileKind, MakeResult, NoteType, RefusalReason, Stretch } from '../core'
-import type { Voice } from '../notices/telling'
+import type { MessageWriter } from '../notices/messages'
 
 /**
  * What a file the window opens is opened as: which of three a note is, or the
@@ -161,7 +161,7 @@ export interface MakeWords {
  * answers nothing at all is said here, because the roads that ask for one carry
  * no word of their own.
  */
-export function fileMakers(vault: VaultMaker, puts: FileOpeners, words: MakeWords, said: Voice) {
+export function fileMakers(vault: VaultMaker, puts: FileOpeners, words: MakeWords, said: MessageWriter) {
   const makes = async (what: MakeKind, folder: string, name: string): Promise<string> => {
     try {
       const answer =

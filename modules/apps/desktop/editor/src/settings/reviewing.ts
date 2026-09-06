@@ -8,7 +8,7 @@
 import { ref } from 'vue'
 import { troubleWords } from '@numen/wire'
 import type { ReviewSettings } from '../core'
-import type { Voice } from '../notices/telling'
+import type { MessageWriter } from '../notices/messages'
 
 /** The hour an installation nobody has configured begins the day at. */
 export const DEFAULT_STARTS = '04:00'
@@ -27,7 +27,7 @@ export interface ReviewingDeps {
   choosesReviewing(starts: string): Promise<string | null>
 }
 
-export function reviewing(core: ReviewingDeps, words: Words, said: Voice) {
+export function reviewing(core: ReviewingDeps, words: Words, said: MessageWriter) {
   /** The hour in force. It opens where an installation nobody has configured begins. */
   const starts = ref(DEFAULT_STARTS)
 

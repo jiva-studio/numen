@@ -33,12 +33,12 @@ const {
   held,
   layout,
   listed,
+  log,
   notices,
   palette,
   places,
   shut,
   tabIcon,
-  tell,
   titled,
   where,
 } = useWindow()
@@ -87,7 +87,7 @@ const {
       :name="words.working"
       :put-away="words.putAway"
       :more="words.more"
-      @gone="tell.forget"
+      @gone="log.forget"
     />
 
     <UnsavedChangesPrompt

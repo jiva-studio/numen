@@ -1,88 +1,88 @@
 /**
- * What the window has said, and for how long it holds on to it.
+ * What the window has to say, and for how long it holds on to it.
  */
 import { describe, expect, it } from 'vitest'
-import { telling } from './telling'
+import { messageLog } from './messages'
 
-describe('a voice under a name', () => {
-  it('says one thing at a time, and the second replaces the first', () => {
-    const tell = telling()
-    const command = tell.under('command')
+describe('a writer under a name', () => {
+  it('holds one message at a time, and the second replaces the first', () => {
+    const log = messageLog()
+    const command = log.under('command')
 
     command('The note is in the trash')
     command('a note of that name is filed there', 'refusal')
 
-    expect(tell.said.value).toHaveLength(1)
-    expect(tell.said.value[0]).toMatchObject({
+    expect(log.messages.value).toHaveLength(1)
+    expect(log.messages.value[0]).toMatchObject({
       name: 'command',
       kind: 'refusal',
-      says: 'a note of that name is filed there',
+      text: 'a note of that name is filed there',
     })
   })
 
-  it('gives every utterance an identity of its own', () => {
-    const tell = telling()
-    const command = tell.under('command')
+  it('gives every message an identity of its own', () => {
+    const log = messageLog()
+    const command = log.under('command')
 
     command('One')
-    const first = tell.said.value[0]?.id
+    const first = log.messages.value[0]?.id
     command('Two')
 
-    expect(tell.said.value[0]?.id).not.toBe(first)
+    expect(log.messages.value[0]?.id).not.toBe(first)
   })
 
-  it('says nothing again where it is already saying it', () => {
+  it('writes nothing where the same text already stands', () => {
     // A stream that is down says so every second, and a card that arrived
     // again is a card read out again.
-    const tell = telling()
-    const worn = tell.under('worn')
+    const log = messageLog()
+    const worn = log.under('worn')
 
     worn('the themes stopped arriving', 'state')
-    const first = tell.said.value[0]?.id
+    const first = log.messages.value[0]?.id
     worn('the themes stopped arriving', 'state')
 
-    expect(tell.said.value[0]?.id).toBe(first)
+    expect(log.messages.value[0]?.id).toBe(first)
   })
 
-  it('clears what it was saying when it says nothing', () => {
-    const tell = telling()
-    tell.under('command')('Renamed')
-    tell.under('made')('a note of that name is filed there', 'refusal')
+  it('clears what it wrote when it writes nothing', () => {
+    const log = messageLog()
+    log.under('command')('Renamed')
+    log.under('made')('a note of that name is filed there', 'refusal')
 
-    tell.under('command')('')
+    log.under('command')('')
 
-    expect(tell.said.value.map((one) => one.name)).toStrictEqual(['made'])
+    expect(log.messages.value.map((one) => one.name)).toStrictEqual(['made'])
   })
 
   it('leaves the list alone where it had nothing to clear', () => {
-    const tell = telling()
-    tell.under('made')('Renamed')
-    const was = tell.said.value
+    const log = messageLog()
+    log.under('made')('Renamed')
+    const was = log.messages.value
 
-    tell.under('command')('')
+    log.under('command')('')
 
-    expect(tell.said.value).toBe(was)
+    expect(log.messages.value).toBe(was)
   })
 })
 
-describe('a word the person is finished with', () => {
+describe('a message the person is finished with', () => {
   it('is dropped by the identity it was given, and nothing else is', () => {
-    const tell = telling()
-    tell.under('command')('Renamed')
-    tell.under('made')('Filed there already', 'refusal')
-    const first = tell.said.value[0]!
+    const log = messageLog()
+    log.under('command')('Renamed')
+    log.under('made')('Filed there already', 'refusal')
+    const first = log.messages.value[0]!
 
-    tell.forget(first.id)
+    log.forget(first.id)
 
-    expect(tell.said.value.map((one) => one.name)).toStrictEqual(['made'])
+    expect(log.messages.value.map((one) => one.name)).toStrictEqual(['made'])
   })
 
-  it('is nothing at all where no word carries that identity', () => {
-    const tell = telling()
-    tell.under('command')('Renamed')
+  it('is nothing at all where no message carries that identity', () => {
+    const log = messageLog()
+    log.under('command')('Renamed')
 
-    tell.forget('reading the books')
+    log.forget('reading the books')
 
-    expect(tell.said.value).toHaveLength(1)
+    expect(log.messages.value).toHaveLength(1)
   })
 })

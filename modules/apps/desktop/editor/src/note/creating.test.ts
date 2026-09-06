@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 
 import { CREATABLE, UNTITLED, creating } from './creating'
 import type { Core, MakeResult, NewLink, NewNote } from '../core'
-import { voice } from '../testing/voice'
+import { writer } from '../testing/writer'
 
 const pathOf = (note: NewNote): string =>
   note.folder ? `${note.folder}/${note.title}.md` : `${note.title}.md`
@@ -31,7 +31,7 @@ function fake(answers: MakeResult[] = [], refusals: MakeResult['refusal'][] = []
       return refusals.shift() ?? null
     },
   } as unknown as Core
-  return { core, asked, joined, ...voice() }
+  return { core, asked, joined, ...writer() }
 }
 
 describe('making a note in a seat of another', () => {
@@ -108,7 +108,7 @@ describe('making a note in a seat of another', () => {
         throw new Error('the vault is out of reach')
       },
     } as unknown as Core
-    const { says, last } = voice()
+    const { says, last } = writer()
     const making = creating(core, says)
 
     expect(await making.make('Ontology.md', 'child')).toBeNull()

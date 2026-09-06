@@ -1,25 +1,25 @@
 /**
- * A voice a test speaks through, which keeps what it was told.
+ * A message writer a test hands over, which keeps what was written through it.
  *
- * Everything in the window that says something takes a `Voice`, so a test that
- * wants to read what was said hands one of these over.
+ * Everything in the window that has something to say takes a `MessageWriter`,
+ * so a test that wants to read what was written hands one of these over.
  */
-import type { MessageKind, Voice } from '../notices/telling'
+import type { MessageKind, MessageWriter } from '../notices/messages'
 
-export function voice() {
+export function writer() {
   const told: { text: string; kind: MessageKind }[] = []
-  const says: Voice = (text, kind = 'report') => void told.push({ text, kind })
+  const says: MessageWriter = (text, kind = 'report') => void told.push({ text, kind })
   return {
     says,
-    /** Everything it was told, each with the voice it was said in. */
+    /** Everything written through it, each with the kind it was written as. */
     told,
-    /** The same, as the words alone, in the order it was told them. */
+    /** The same, as the words alone, in the order they were written. */
     get said(): readonly string[] {
       return told.map((one) => one.text)
     },
     /**
-     * The last word it was given. A voice nothing has been said through has
-     * none, which is not the same as having said nothing.
+     * The last message given to it. A writer nothing has been written through
+     * has none, which is not the same as having written nothing.
      */
     last: () => told.at(-1)?.text,
   }
