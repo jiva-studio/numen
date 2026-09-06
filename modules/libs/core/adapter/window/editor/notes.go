@@ -33,6 +33,12 @@ func (a *API) ReadNote(
 		// What the file was when this prose came out of it, for the client to
 		// present when it puts prose back.
 		out.At = fingerprintOf(found.Fingerprint)
+		if at := found.Address; at.URL != "" {
+			out.Url = &at.URL
+			if embed := at.Embed(); embed != "" {
+				out.Embed = &embed
+			}
+		}
 	}
 	return connect.NewResponse(out), nil
 }

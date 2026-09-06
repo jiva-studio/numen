@@ -11,6 +11,7 @@ import { pointsAtNote, type PlexShowing } from '@numen/ui'
 import type { Store } from '../command/handlers'
 import type { Kind, WindowHandle } from '../tabs/windowing'
 import { NOTE } from '../tabs/workspace'
+import type { Pointed } from '../core'
 import type { Change } from './drawing'
 import type { noteChanges } from './changes'
 import type { OpenNote, openNotes } from './notes'
@@ -43,6 +44,11 @@ export interface NoteTabState {
   readonly id: string
   /** The note as the window draws it: the body, and the state it is in. */
   readonly shown: ComputedRef<OpenNote>
+  /**
+   * Where this note points, and nothing where it points nowhere. What is at it
+   * is drawn over the prose.
+   */
+  readonly points: ComputedRef<Pointed | null>
   /** What could not be read or written, in words a person reads. */
   readonly saying: ComputedRef<string>
   /** What arrived from elsewhere, for the editor to take into what is typed. */
@@ -155,6 +161,7 @@ export function noting(
   const held = (id: string): NoteTabState => ({
     id,
     shown: computed(() => notes.shown(id)),
+    points: computed(() => notes.points(id)),
     saying: computed(() => notes.saying(id)),
     change: computed(() => changes.shown(notes.where(id))),
     typed: (body: string) => notes.typed(id, body),

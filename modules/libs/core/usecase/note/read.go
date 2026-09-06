@@ -54,6 +54,10 @@ type Contents struct {
 	// its bytes were read. It is set for any path the vault holds, whatever kind
 	// it holds it as, so a note refused on its size still says what it was.
 	Fingerprint domain.Fingerprint
+	// Address is where a link note points, and is empty on every other note.
+	// What is at it is drawn over the prose, so whatever reads the prose is
+	// told it in the same breath.
+	Address domain.WebAddress
 }
 
 // Read hands over the prose of one note.
@@ -130,6 +134,22 @@ func (u Read) Execute(ctx context.Context, v domain.Vault, path string) (Content
 		return out, nil
 	}
 	out.Body = markdown.Normalised(doc.Body())
+	out.Address = pointsAt(doc)
 	out.Outcome = Ok
 	return out, nil
+}
+
+// pointsAt is where a link note points. An address that cannot be fetched is a
+// problem against the note, reported where the vault is read, and here it is
+// nowhere to point.
+func pointsAt(doc *markdown.Document) domain.WebAddress {
+	if kind, _ := doc.Scalar("type"); domain.NoteType(kind) != domain.TypeLink {
+		return domain.WebAddress{}
+	}
+	written, _ := doc.Scalar("url")
+	at, err := domain.ParseWebAddress(written)
+	if err != nil {
+		return domain.WebAddress{}
+	}
+	return at
 }

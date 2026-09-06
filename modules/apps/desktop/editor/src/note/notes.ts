@@ -18,7 +18,7 @@ import {
   type State,
   type Tab,
 } from './tab'
-import type { NoteResult, RefusalReason } from '../core'
+import type { NoteResult, Pointed, RefusalReason } from '../core'
 
 /** One open note as the window draws it. */
 export interface OpenNote {
@@ -85,6 +85,12 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
   /** The bodies the editors are showing, which Vue writes into as a person types. */
   const bodies = ref(new Map<string, string>())
+  /**
+   * Where each open note points, for the notes that point anywhere. It is what
+   * the last read said: the key is in the frontmatter, which is not the prose a
+   * tab writes, so it moves only when the file is read again.
+   */
+  const points = ref(new Map<string, Pointed>())
 
   /** A note opened under an identity, on the file it opens at. */
   const open = (id: string, path: string = id): void => {
@@ -267,6 +273,8 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
       turn(id, { kind: 'read', generation, answer: { kind: 'refused', refusal: 'unreachable' } })
       return
     }
+    if (answered.points) points.value.set(id, answered.points)
+    else points.value.delete(id)
     turn(id, {
       kind: 'read',
       generation,
@@ -313,6 +321,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     timers.delete(id)
     tabs.value.delete(id)
     bodies.value.delete(id)
+    points.value.delete(id)
     closing.get(id)?.(true)
     closing.delete(id)
     settled(id)
@@ -337,6 +346,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     keep,
     take,
     shown,
+    points: (id: string): Pointed | null => points.value.get(id) ?? null,
     all,
     saying: sayingOf,
     overtaken: overtakenOf,

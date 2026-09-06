@@ -6,4 +6,6 @@ export const WORDS = {
   keep: 'Keep mine',
   take: "Take the file's",
   newNote: 'New note',
+  /** What is at the address a link note points at, drawn over its prose. */
+  playing: 'What this note points at',
 }

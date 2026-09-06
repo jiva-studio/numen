@@ -65,6 +65,7 @@ const notes = (states: Record<string, State> = {}) => {
       refusal: null,
     }),
     where,
+    points: () => null,
     saying: () => '',
     typed: () => {},
     save: () => {},

@@ -605,3 +605,57 @@ describe('closing a note that could not be written', () => {
     expect(notes.all()).toEqual([])
   })
 })
+
+describe('a note that points somewhere', () => {
+  const pointed = {
+    body: 'What I made of it.',
+    refusal: null,
+    at: marked('What I made of it.'),
+    points: {
+      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      embed: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1',
+    },
+  }
+
+  it('carries where it points, beside the prose it was read with', async () => {
+    const { core } = fake({ read: async () => pointed })
+    const notes = openNotes(core, { limits: quick })
+
+    notes.open('Entropy.md')
+    await settle()
+
+    expect(notes.points('Entropy.md')).toStrictEqual(pointed.points)
+    expect(notes.shown('Entropy.md').body).toBe('What I made of it.')
+  })
+
+  it('points nowhere once a read says it points nowhere', async () => {
+    let points: (typeof pointed)['points'] | undefined = pointed.points
+    const { core } = fake({
+      read: async () => ({ body: '', refusal: null, at: marked(''), ...(points ? { points } : {}) }),
+    })
+    const notes = openNotes(core, { limits: quick })
+
+    notes.open('Entropy.md')
+    await settle()
+    expect(notes.points('Entropy.md')).not.toBeNull()
+
+    points = undefined
+    notes.changed(['Entropy.md'])
+    await settle()
+
+    expect(notes.points('Entropy.md')).toBeNull()
+  })
+})
+
+describe('a note that points nowhere', () => {
+  it('says so, which is what draws no player over its prose', async () => {
+    const { core, files } = fake()
+    files.set('Heat.md', 'entropy grows')
+    const notes = openNotes(core, { limits: quick })
+
+    notes.open('Heat.md')
+    await settle()
+
+    expect(notes.points('Heat.md')).toBeNull()
+  })
+})

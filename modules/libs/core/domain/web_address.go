@@ -26,6 +26,25 @@ type WebAddress struct {
 // decides that a tab plays something and that words are asked for with times.
 func (a WebAddress) IsVideo() bool { return a.Video != "" }
 
+// embedded is where a frame plays a video from. The host serves no cookies of
+// its own, and `enablejsapi` is what makes the frame answer the page holding
+// it, so a passage is played from the second it was said without that host's
+// script running inside the window.
+const embedded = "https://www.youtube-nocookie.com/embed/"
+
+// Embed is where a frame plays what is at this address, and nothing where
+// nothing plays.
+func (a WebAddress) Embed() string {
+	if a.Video == "" {
+		return ""
+	}
+	return embedded + a.Video + "?enablejsapi=1"
+}
+
+// EmbedHosts are the origins a window may frame. Every one of them runs its own
+// scripts inside its own frame and reaches its own machines.
+func EmbedHosts() []string { return []string{"https://www.youtube-nocookie.com"} }
+
 // ParseWebAddress reads what a person pasted.
 //
 // The scheme and the host are lowercased, a default port and a fragment are

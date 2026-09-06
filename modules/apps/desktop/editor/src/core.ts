@@ -489,6 +489,17 @@ export interface Core {
 export interface NoteResult {
   body: string
   refusal: RefusalReason | null
+  /** Where a link note points, and nothing on every other note. */
+  points?: Pointed
+}
+
+/**
+ * Where a link note points: the address itself, and where a frame plays what is
+ * at it. A frame plays nothing for an address nothing plays.
+ */
+export interface Pointed {
+  readonly url: string
+  readonly embed: string
 }
 
 export type RefusalReason =

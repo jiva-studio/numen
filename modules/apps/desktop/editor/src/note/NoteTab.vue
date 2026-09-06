@@ -9,6 +9,7 @@
 import { watch } from 'vue'
 import { Editor } from '@numen/ui'
 import FileConflictPrompt from '../saving/FileConflictPrompt.vue'
+import Pointing from './Pointing.vue'
 import { conflictIn } from '../saving/flushing'
 import { WORDS as words } from './words'
 import type { NoteTabState } from './kind'
@@ -27,6 +28,8 @@ watch(
 
 <template>
   <div class="note">
+    <Pointing v-if="props.state.points.value" :points="props.state.points.value" :words="words" />
+
     <FileConflictPrompt
       :saying="props.state.saying.value"
       :conflict="conflictIn(props.state.shown.value.state)"

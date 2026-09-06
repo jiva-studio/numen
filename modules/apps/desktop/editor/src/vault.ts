@@ -424,6 +424,8 @@ const answered = (from: {
   body?: string | undefined
   refusal?: Refusal | undefined
   at?: { path: string; size: bigint; mtime: bigint } | undefined
+  url?: string | undefined
+  embed?: string | undefined
 }): NoteResult & { at?: string; changed: boolean } => {
   const at = stamp(from.at)
   return {
@@ -431,6 +433,7 @@ const answered = (from: {
     refusal: refusalIn(from),
     changed: staleIn(from),
     ...(at === undefined ? {} : { at }),
+    ...(from.url === undefined ? {} : { points: { url: from.url, embed: from.embed ?? '' } }),
   }
 }
 
