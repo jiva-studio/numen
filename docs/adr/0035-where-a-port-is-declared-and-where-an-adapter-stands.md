@@ -8,7 +8,7 @@
 
 ## Context
 
-The core declares thirty-six interfaces in one folder, and whether a given one belongs there has been settled a case at a time: by how many callers it has, by which way the call goes through it, by which folder read better on the day. Each answer stood on its own and no two were the same rule, so the next one is argued from the start again.
+The core declares thirty-seven interfaces in one folder, and whether a given one belongs there has been settled a case at a time: by how many callers it has, by which way the call goes through it, by which folder read better on the day. Each answer stood on its own and no two were the same rule, so the next one is argued from the start again.
 
 Two questions are the shape of it. A one-method interface a single use case asks for — is it a port, or is one caller too few? And an adapter that serves the schema while sitting under `internal/` — is it in the wrong folder, or is the folder about something else?
 
@@ -20,7 +20,7 @@ A port is a purposeful conversation between the core and something outside it. `
 
 **The number of consumers decides nothing.** It is not a criterion in the literature this architecture is taken from, and the two extremes it would push towards are both named there as wrong: a port for every use case, and one port to a side.
 
-`IndexMaintenance`, `VaultWatcher` and `VectorQueries` are ports. So are the thirty-three others.
+`IndexMaintenance`, `VaultWatcher` and `VectorQueries` are ports. So are thirty-one of the thirty-four others. The three that are not — `Run`, `Recording` and `OpenDocument` — are handles a port hands back, and a handle is part of the signature of the conversation that opens it rather than a conversation of its own; nothing binds one.
 
 ### What has to see it decides where it is declared
 
