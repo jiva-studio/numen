@@ -5,7 +5,10 @@
  * the half that decides, and it decides from four words about a stop.
  */
 import { describe, expect, it } from 'vitest'
-import { faults, type Stop } from './reach'
+import { faults, type Stop, type Walk } from './reach'
+
+/** A walk of a page that came to rest and kept the keyboard nowhere. */
+const walkOf = (stops: Stop[]): Walk => ({ stops, trapped: null, settled: true })
 
 /** A stop that breaks none of it, which each case then spoils one way. */
 const SOUND: Stop = { where: 'button.tab__close', name: 'Close', rings: true, shown: true, typed: false }
@@ -32,18 +35,18 @@ describe('what the keyboard rule refuses', () => {
 
   it('refuses what it is meant to and nothing else', () => {
     const refused = cases
-      .filter((one) => faults({ stops: [one.stop], trapped: null }).length > 0)
+      .filter((one) => faults(walkOf([one.stop])).length > 0)
       .map((one) => one.says)
     expect(refused).toEqual(cases.filter((one) => !one.allowed).map((one) => one.says))
   })
 
   it('says where each fault stands, so a person can find it', () => {
-    expect(faults({ stops: [stop({ rings: false })], trapped: null })).toEqual([
+    expect(faults(walkOf([stop({ rings: false })]))).toEqual([
       'button.tab__close (Close) draws nothing when the keyboard lands on it',
     ])
   })
 
   it('lets a story holding nothing focusable through', () => {
-    expect(faults({ stops: [], trapped: null })).toEqual([])
+    expect(faults(walkOf([]))).toEqual([])
   })
 })

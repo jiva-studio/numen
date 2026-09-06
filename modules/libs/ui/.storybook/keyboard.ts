@@ -167,14 +167,19 @@ const STILLNESS = 3
  * A swap runs its two halves one after the other, and between them the page
  * holds nothing moving at all, so one quiet frame proves nothing and several
  * running are asked for.
+ *
+ * Whether it came to rest is answered rather than assumed: a walk that ran out
+ * of time reads a half-drawn page as a page a person cannot see, and a fault
+ * found on the way there is worth less than one found at rest.
  */
-const settles = async (): Promise<void> => {
+const settles = async (): Promise<boolean> => {
   const until = performance.now() + SETTLING
   let still = 0
   while (still < STILLNESS && performance.now() < until) {
     await frame()
     still = moving() ? 0 : still + 1
   }
+  return still >= STILLNESS
 }
 
 /**
@@ -185,7 +190,7 @@ const settles = async (): Promise<void> => {
  * for `:focus-visible` is a difference these two readings can see.
  */
 export async function walk(): Promise<Walk> {
-  await settles()
+  const settled = await settles()
 
   const still = document.createElement('style')
   still.textContent = STILL
@@ -253,5 +258,5 @@ export async function walk(): Promise<Walk> {
 
   document.body.removeAttribute('tabindex')
   still.remove()
-  return { stops, trapped }
+  return { stops, trapped, settled }
 }

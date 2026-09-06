@@ -23,6 +23,8 @@ export interface Walk {
   readonly stops: readonly Stop[]
   /** Where Tab went and stayed, having refused to move twice running. */
   readonly trapped: string | null
+  /** Whether the page had come to rest before the census was taken. */
+  readonly settled: boolean
 }
 
 /**

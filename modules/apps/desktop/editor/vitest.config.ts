@@ -10,7 +10,7 @@
 import { accessSync, constants } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
-import { configDefaults, coverageConfigDefaults, defineConfig } from 'vitest/config'
+import { coverageConfigDefaults, defineConfig } from 'vitest/config'
 import type { BrowserCommand } from 'vitest/node'
 import { playwright } from '@vitest/browser-playwright'
 import vue from '@vitejs/plugin-vue'
@@ -103,9 +103,6 @@ export default defineConfig({
           // Every story is drawn twice, and the frames of all of them come off
           // one machine.
           testTimeout: 30_000,
-          // The screens of the whole window are staged for a picture beside the
-          // components they arrange, and are drawn in the library.
-          exclude: [...configDefaults.exclude, 'src/screens.stories.ts'],
           browser: {
             enabled: true,
             headless: true,
