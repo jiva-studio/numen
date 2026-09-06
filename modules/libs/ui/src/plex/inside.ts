@@ -73,8 +73,8 @@ export interface HungParts {
   readonly height: number
 }
 
-/** What settling how wide the parts are drawn needs to know. */
-export interface Room {
+/** What settling where and how wide the parts are drawn needs to know. */
+export interface PartsDeps {
   /**
    * The width one part's box needs for its words, padding included. Where
    * there is nothing to measure text with, the parts take the node's own box.
@@ -136,7 +136,7 @@ export function hangParts(
   node: PlacedNode,
   parts: readonly PlexPart[],
   options: Pick<PlexOptions, 'partHeight' | 'partIndent' | 'maxParts'>,
-  room: Room,
+  deps: PartsDeps,
 ): HungParts | null {
   if (parts.length === 0) return null
 
@@ -147,7 +147,7 @@ export function hangParts(
   // They hang below the node and stay inside the window, so how many of them
   // are drawn is how many the depth left under it holds. A node with room for
   // none hangs nothing.
-  const depth = room.viewport.height / 2 - room.margin - (node.y + top)
+  const depth = deps.viewport.height / 2 - deps.margin - (node.y + top)
   const rows = Math.min(maxParts + 1, Math.floor((depth - 2 * pad) / partHeight))
   if (rows < 1) return null
 
@@ -166,7 +166,7 @@ export function hangParts(
     partHeight,
     pad,
     shown,
-    ...across(node, hung, pad, room),
+    ...across(node, hung, pad, deps),
     parts: hung,
     height: shown * partHeight + 2 * pad,
   }
@@ -215,18 +215,18 @@ function across(
   node: PlacedNode,
   hung: readonly HungPart[],
   pad: number,
-  room: Room,
+  deps: PartsDeps,
 ): { width: number; offset: number } {
-  const measure = room.measure
+  const measure = deps.measure
   const asked = measure
     ? Math.max(...hung.map((part) => measure(part.text) + part.indent))
     : 0
   const width = Math.min(
     Math.max(asked + 2 * pad, node.width),
-    room.viewport.width - 2 * room.margin,
+    deps.viewport.width - 2 * deps.margin,
   )
 
-  const furthest = room.viewport.width / 2 - room.margin - width / 2
+  const furthest = deps.viewport.width / 2 - deps.margin - width / 2
   const middle = Math.min(Math.max(node.x, -furthest), furthest)
   return { width, offset: middle - node.x }
 }

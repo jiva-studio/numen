@@ -18,7 +18,7 @@ const reader = async (wide: number, high: number) => {
 }
 
 const room = async (held: ReturnType<typeof mount>, wide: number, high: number) => {
-  const area = held.find('.reader__room').element as HTMLElement
+  const area = held.find('.reader__viewport').element as HTMLElement
   // jsdom lays nothing out and scrolls nothing.
   area.scrollTo = () => {}
   Object.defineProperty(area, 'clientWidth', { value: wide, configurable: true })
@@ -100,9 +100,9 @@ describe('the pages drawn', () => {
 describe('the page it says it stands on', () => {
   /** The row scrolled by hand, and the reader told about it. */
   const moved = async (held: ReturnType<typeof mount>, to: number) => {
-    const area = held.find('.reader__room').element as HTMLElement
+    const area = held.find('.reader__viewport').element as HTMLElement
     area.scrollLeft = to
-    await held.find('.reader__room').trigger('scroll')
+    await held.find('.reader__viewport').trigger('scroll')
   }
 
   /** Which pages the reader has asked to be turned to, in the order it asked. */
@@ -135,7 +135,7 @@ describe('the page it says it stands on', () => {
     // The room moves when it is told to and the event saying so comes after.
     // A turn asked for in between is a turn to a page the row is not on.
     const held = await reader(1000, 800)
-    const area = held.find('.reader__room').element as HTMLElement
+    const area = held.find('.reader__viewport').element as HTMLElement
     const sent: number[] = []
     area.scrollTo = ((to: ScrollToOptions) => {
       sent.push(to.left ?? 0)

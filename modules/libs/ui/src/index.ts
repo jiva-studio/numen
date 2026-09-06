@@ -59,7 +59,7 @@ export type { AxisPlacement, Box } from './placing/place'
 /** A day of the calendar, written down, read back and counted against another. */
 export { dayAfter, dayNamed, dayOf, daysBetween, isDay } from './calendar/day'
 export { days as heatmapDays, fits as heatmapFits, weighs as heatmapWeighs } from './heatmap/heatmap'
-export type { Day as HeatmapDay, Room as HeatmapRoom, Tally as HeatmapTally } from './heatmap/heatmap'
+export type { Day as HeatmapDay, HeatmapMetrics, Tally as HeatmapTally } from './heatmap/heatmap'
 export { default as WelcomePage } from './welcome/WelcomePage.vue'
 /** The letter a vault on that screen is opened by, and what a keystroke opens. */
 export { opensVault, typing, vaultLetter, VAULT_LETTERS } from './welcome/letters'

@@ -1,21 +1,21 @@
 /**
- * The room a document is read in, measured and measured again as it changes.
+ * The viewport a document is read in, measured and measured again as it changes.
  *
- * A room with no size is not a measurement: a reader mounted out of sight has
- * none, and the row is laid out only against a room that has one.
+ * A viewport with no size is not a measurement: a reader mounted out of sight
+ * has none, and the row is laid out only against one that has a size.
  */
 import { onBeforeUnmount, onMounted, ref, type Ref, type ShallowRef } from 'vue'
-import type { Room } from './strip'
+import type { Viewport } from './strip'
 
-export interface RoomState {
-  /** The room, in CSS pixels. Nothing until something has been measured. */
-  readonly room: Ref<Room>
+export interface ViewportState {
+  /** The viewport, in CSS pixels. Nothing until something has been measured. */
+  readonly viewport: Ref<Viewport>
   /** Take it again. The caller says when a reader is on screen. */
   readonly measure: () => void
 }
 
-export function useRoom(area: Readonly<ShallowRef<HTMLElement | null>>): RoomState {
-  const room = ref<Room>({ wide: 0, high: 0 })
+export function useViewport(area: Readonly<ShallowRef<HTMLElement | null>>): ViewportState {
+  const viewport = ref<Viewport>({ wide: 0, high: 0 })
   let watching: ResizeObserver | undefined
 
   const measure = (): void => {
@@ -23,7 +23,7 @@ export function useRoom(area: Readonly<ShallowRef<HTMLElement | null>>): RoomSta
     const wide = area.value.clientWidth
     const high = area.value.clientHeight
     if (wide <= 0 || high <= 0) return
-    room.value = { wide, high }
+    viewport.value = { wide, high }
   }
 
   onMounted(() => {
@@ -37,5 +37,5 @@ export function useRoom(area: Readonly<ShallowRef<HTMLElement | null>>): RoomSta
     watching?.disconnect()
   })
 
-  return { room, measure }
+  return { viewport, measure }
 }

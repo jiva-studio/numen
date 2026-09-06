@@ -119,7 +119,7 @@ const pictureAt = (canvasElement: HTMLElement, page: number) =>
 
 /** The room the strip is scrolled in. */
 const roomOf = (canvasElement: HTMLElement) =>
-  canvasElement.querySelector('.reader__room') as HTMLElement
+  canvasElement.querySelector('.reader__viewport') as HTMLElement
 
 /**
  * The row has arrived at a page when that page stands against the near edge of

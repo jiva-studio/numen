@@ -210,8 +210,8 @@ const hung = computed(() => {
   if (!held) return undefined
 
   const { margin } = options.value
-  const room = { measure: measures.value?.part, viewport: viewport.value, margin }
-  return (node: PlacedNode) => hangParts(node, held(node.id), options.value, room)
+  const deps = { measure: measures.value?.part, viewport: viewport.value, margin }
+  return (node: PlacedNode) => hangParts(node, held(node.id), options.value, deps)
 })
 
 const { frame, moving } = usePlexTransition(

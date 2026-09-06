@@ -9,8 +9,8 @@ import {
   hangParts,
   openedTo,
   woundBy,
+  type PartsDeps,
   type PlexPart,
-  type Room,
 } from './inside'
 import type { PlacedNode } from './node'
 
@@ -32,7 +32,7 @@ const MOST = 6
 const SIZES = { partHeight: 20, partIndent: 10, maxParts: MOST }
 
 /** A window with room to spare, and a measurer of ten pixels the letter. */
-const ROOM: Room = {
+const DEPS: PartsDeps = {
   measure: (text: string) => 10 * text.length,
   viewport: { width: 1000, height: 600 },
   margin: 20,
@@ -46,7 +46,7 @@ const parts = (count: number, level = 1): PlexPart[] =>
     level,
   }))
 
-const hung = (held: readonly PlexPart[], room = ROOM) => hangParts(NODE, held, SIZES, room)
+const hung = (held: readonly PlexPart[], deps = DEPS) => hangParts(NODE, held, SIZES, deps)
 
 describe('what a node hangs', () => {
   it('is nothing at all for a node with no parts', () => {
@@ -94,7 +94,7 @@ describe('more parts than the window holds', () => {
   })
 
   it('stands as many as the options ask for', () => {
-    const settled = hangParts(NODE, parts(MOST + 4), { ...SIZES, maxParts: 3 }, ROOM)!
+    const settled = hangParts(NODE, parts(MOST + 4), { ...SIZES, maxParts: 3 }, DEPS)!
     expect(settled.shown).toBe(3)
     expect(furthest(settled)).toBe(MOST + 1)
   })
@@ -233,7 +233,7 @@ describe('the opening', () => {
 })
 
 describe('how wide the parts are drawn', () => {
-  const wide = (held: readonly PlexPart[], room = ROOM) => hung(held, room)!
+  const wide = (held: readonly PlexPart[], deps = DEPS) => hung(held, deps)!
 
   it('is the room the longest of them asks for, and the ground beside it', () => {
     const longest = 'A good deal longer than that'
@@ -258,13 +258,13 @@ describe('how wide the parts are drawn', () => {
   })
 
   it('is the node’s own box where there is nothing to measure text with', () => {
-    const bare = { viewport: ROOM.viewport, margin: ROOM.margin }
+    const bare = { viewport: DEPS.viewport, margin: DEPS.margin }
     expect(wide(parts(3), bare).width).toBe(NODE.width)
   })
 
   it('is held inside the window, however long the words run', () => {
     const long = [{ id: '0', text: 'x'.repeat(400), level: 1 }]
-    expect(wide(long).width).toBe(ROOM.viewport.width - 2 * ROOM.margin)
+    expect(wide(long).width).toBe(DEPS.viewport.width - 2 * DEPS.margin)
   })
 
   it('grows about the node’s own middle where the window has room', () => {
@@ -274,9 +274,9 @@ describe('how wide the parts are drawn', () => {
   it('slides back inside the window where the middle leaves no room', () => {
     const near = { ...NODE, x: 460 }
     const held = [{ id: '0', text: 'A heading of some length', level: 1 }]
-    const settled = hangParts(near, held, SIZES, ROOM)!
+    const settled = hangParts(near, held, SIZES, DEPS)!
     expect(near.x + settled.offset + settled.width / 2).toBeLessThanOrEqual(
-      ROOM.viewport.width / 2 - ROOM.margin,
+      DEPS.viewport.width / 2 - DEPS.margin,
     )
   })
 })
@@ -285,11 +285,11 @@ describe('a node with little room under it', () => {
   /** The same node, dropped so much of the window is left beneath it. */
   const low = (left: number): PlacedNode => ({
     ...NODE,
-    y: ROOM.viewport.height / 2 - ROOM.margin - NODE.height / 2 - left,
+    y: DEPS.viewport.height / 2 - DEPS.margin - NODE.height / 2 - left,
   })
 
   const under = (left: number, held = parts(MOST + 3)) =>
-    hangParts(low(left), held, SIZES, ROOM)
+    hangParts(low(left), held, SIZES, DEPS)
 
   it('hangs nothing where there is depth for not one part', () => {
     expect(under(SIZES.partHeight)).toBeNull()
@@ -306,12 +306,12 @@ describe('a node with little room under it', () => {
       const settled = under(left)
       if (!settled) continue
       const bottom = low(left).y + settled.top + settled.height
-      expect(bottom).toBeLessThanOrEqual(ROOM.viewport.height / 2 - ROOM.margin)
+      expect(bottom).toBeLessThanOrEqual(DEPS.viewport.height / 2 - DEPS.margin)
     }
   })
 
   it('stands them all at once where the depth holds every one of them', () => {
-    const settled = hangParts(low(400), parts(3), SIZES, ROOM)!
+    const settled = hangParts(low(400), parts(3), SIZES, DEPS)!
     expect(settled.shown).toBe(3)
     expect(furthest(settled)).toBe(0)
   })
@@ -366,14 +366,14 @@ describe('what a wheel winds', () => {
 
 describe('however many parts stand at once', () => {
   /** A node with depth under it for as many parts as the ceiling allows. */
-  const room = (ceiling: number) =>
-    hangParts(NODE, parts(ceiling + 4), { ...SIZES, maxParts: ceiling }, ROOM)!
+  const under = (ceiling: number) =>
+    hangParts(NODE, parts(ceiling + 4), { ...SIZES, maxParts: ceiling }, DEPS)!
 
   it('every one of them is up by the time it is all the way open', () => {
     // A lead that outran the opening left the last of them at nothing at all,
     // on a ground drawn deep enough to hold them.
     for (const ceiling of [1, 2, 6, 9, 12, 20]) {
-      const settled = room(ceiling)
+      const settled = under(ceiling)
       const drawn = openedTo(settled, 1)!.parts
       expect(drawn).toHaveLength(settled.shown)
       for (const part of drawn) expect(part.opacity).toBe(1)
@@ -382,12 +382,12 @@ describe('however many parts stand at once', () => {
 
   it('the first of them is still ahead of the last partway through', () => {
     for (const ceiling of [2, 6, 12, 20]) {
-      const drawn = openedTo(room(ceiling), 0.5)!.parts
+      const drawn = openedTo(under(ceiling), 0.5)!.parts
       expect(drawn[0]!.opacity).toBeGreaterThan(drawn.at(-1)!.opacity)
     }
   })
 
   it('one alone opens with the whole of the opening to itself', () => {
-    expect(openedTo(room(1), 0.5)!.parts[0]!.opacity).toBe(easeOut(0.5))
+    expect(openedTo(under(1), 0.5)!.parts[0]!.opacity).toBe(easeOut(0.5))
   })
 })

@@ -55,7 +55,7 @@ export interface Day extends Tally {
 export const AHEAD = 4
 
 /** What a grid is laid out to. */
-export interface Room {
+export interface HeatmapMetrics {
   /** How wide the grid may be, in pixels. */
   width: number
   /** How large one cell is drawn. */
@@ -73,17 +73,17 @@ export interface Room {
  * room. What is left over is spread between the cells, which keeps the grid
  * flush to both edges.
  */
-export function fits(room: Room): { columns: number; cell: number; gap: number } {
-  const cell = Math.max(1, room.cell)
-  const gap = Math.max(0, room.gap)
+export function fits(metrics: HeatmapMetrics): { columns: number; cell: number; gap: number } {
+  const cell = Math.max(1, metrics.cell)
+  const gap = Math.max(0, metrics.gap)
   const step = cell + gap
-  if (room.width <= 0) return { columns: 1, cell, gap }
+  if (metrics.width <= 0) return { columns: 1, cell, gap }
 
-  const columns = Math.max(1, Math.floor((room.width + gap) / step))
+  const columns = Math.max(1, Math.floor((metrics.width + gap) / step))
   if (columns < 2) return { columns, cell, gap }
 
   // The room the cells do not take is the room between them.
-  const between = Math.max(gap, (room.width - columns * cell) / (columns - 1))
+  const between = Math.max(gap, (metrics.width - columns * cell) / (columns - 1))
   return { columns, cell, gap: between }
 }
 
