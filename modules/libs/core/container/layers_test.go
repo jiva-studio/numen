@@ -292,7 +292,7 @@ func TestTheSettingsAdapterRunsNoOtherAdaptersWork(t *testing.T) {
 // usecase/source is one because its test files share one set of fakes and two
 // of them exercise a type the package does not export, so the three that build
 // an adapter — internal/adapter/pdf in highlight_test.go and recognise_test.go,
-// internal/adapter/filesystem in transcribing_test.go — do not stand outside on
+// internal/adapter/filesystem in transcription_test.go — do not stand outside on
 // their own.
 var owedInside = []string{"usecase/source"}
 
