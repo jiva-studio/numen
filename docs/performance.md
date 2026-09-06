@@ -102,12 +102,14 @@ A search still costs more while a scan is continuously rewriting the index. WAL 
 
 A cold scan, by profile, taken 2026-09-06 over one run of `ColdScan/10000` — 34.7 s of wall time, 37.6 s of samples over sixteen threads. Reading the files is about 1 % and parsing the markdown a few percent, as before; what has moved is inside the writing.
 
-| | share of the scan |
-| --- | --- |
-| `Scan.Execute` | 84 % |
-| ↳ `note.Repository.Save` → `saveNote` | 78 % |
-| ↳ `chunk.Replace` — the note as its own chunks | **42 %** |
-| SQLite parsing SQL text (`sqlite3RunParser`) | **20 %** |
+| | share of the scan | with the statements kept compiled |
+| --- | --- | --- |
+| `Scan.Execute` | 84 % | 82 % |
+| ↳ `note.Repository.Save` → `saveNote` | 78 % | 74 % |
+| ↳ `chunk.Replace` — the note as its own chunks | **42 %** | 42 % |
+| SQLite parsing SQL text (`sqlite3RunParser`) | **20 %** | **nothing the profile shows** |
+
+The second column is the same benchmark after the two changes below, and one run of it costs 20.7 s of samples where it cost 32.9 s.
 
 **Ending transactions is no longer the largest part.** The 2026-08-15 profile read 1 % reading, 5 % parsing, 77 % storing, of which 43 % of the whole scan was ending transactions. Since then a note is written into the passage index as well as the note index — the chunk enclosing it, the small chunks tiled inside it, and every one of them indexed for its words in `chunks_fts` and `sections_fts`. That path is 42 % of the scan and it is why the cold scan costs what it now costs.
 
@@ -115,7 +117,9 @@ A cold scan, by profile, taken 2026-09-06 over one run of `ColdScan/10000` — 3
 
 **A statement text that ends in a newline is compiled twice on every call.** The driver compiles the text when the statement is made, and keeps what it compiled only where the text held one statement and nothing after it; a text with anything past the semicolon is a script to it, and a script is compiled again inside every `Exec` and `Query`. Every statement of this index is a file, and a file ends in a newline. Taking the whitespace off what `sqlfile` loads is **half of the parsing**: 22.5 % of the profile becomes 11.5 %, and the samples one run of `ColdScan/10000` costs fall from 32.9 s to 21.6 s.
 
-The record's line that reusing prepared statements across a group makes no difference is under "What does not work", and it is no longer true: it was measured on 2026-08-15, when a note save was a handful of statements and `chunk.Replace` was not on the path.
+**A transaction now keeps the statements it prepared.** `writing.Transaction` prepares each text the first time the transaction runs it and runs the prepared statement after that, so a group of five hundred notes compiles its two dozen statements once between them. That is the other half: 11.5 % of the profile becomes nothing the profile shows, and one run costs 20.7 s of samples where it cost 21.6 s. The reuse alone, measured against the record and without the text change above, was 22.5 % of parsing become 17.9 % and 32.9 s of samples become 23.9 s — the two answer the same waste from either end, and both are needed to take it out.
+
+The record's line that reusing prepared statements across a group makes no difference is under "What does not work", and it was measured on 2026-08-15, when a note save was a handful of statements and `chunk.Replace` was not on the path.
 
 **Read the shares here and not the clock.** The machine was carrying five other agents and a load average between 6 and 43 while these were measured, so the wall time of one scan says more about the hour than about the code. What a profile counts is this process's own samples, and the share of them one function holds is what the paragraphs above compare.
 
@@ -147,13 +151,13 @@ Measured, on ten thousand notes written in groups of five hundred.
 | Larger full-text page size (`pgsz = 8000`) | 1.7× slower |
 | Merge thresholds either way (`automerge` 8 and 16, `crisismerge` 8) | no difference |
 | Page cache of 4 MB, 64 MB, 256 MB | no difference |
-| Reusing prepared statements across a group | no difference on 2026-08-15; **no longer true** |
+| Reusing prepared statements across a group | no difference on 2026-08-15; **a third of a cold scan's samples on 2026-09-06** |
 | Groups of five thousand | 7 % faster than five hundred, for ten times the memory |
 | `synchronous = OFF` | 13 % faster, and the file can be corrupt rather than merely stale |
 
 The first two are what a search returns for "slow SQLite inserts".
 
-The fifth row was measured when a note save was a handful of statements. A note save now runs `chunk.Replace`, which prepares and closes four statements of its own per note, and the whole of it is a fifth of a cold scan — measured 2026-09-06 and set out under "Where the time goes".
+The fifth row was measured when a note save was a handful of statements. A note save now runs `chunk.Replace`, and a transaction spanning five hundred notes ran the same two dozen statements five hundred times over — a fifth of a cold scan, measured 2026-09-06 and set out under "Where the time goes", where what taking it out was worth is also written.
 
 ## Two things that were invisible in review
 

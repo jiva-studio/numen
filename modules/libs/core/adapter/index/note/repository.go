@@ -54,7 +54,7 @@ func (r *Repository) Cut(sizes chunking.Sizes, reads chunking.Legibility) *Repos
 // exec runs a named statement and says which one failed. A bare driver error
 // from one of the many statements in a transaction is a schema mistake nobody
 // can locate.
-func exec(ctx context.Context, tx *sql.Tx, name string, args ...any) error {
+func exec(ctx context.Context, tx *writing.Transaction, name string, args ...any) error {
 	if _, err := tx.ExecContext(ctx, stmt.Get(name), args...); err != nil {
 		return fmt.Errorf("%s: %w", name, err)
 	}
@@ -91,7 +91,7 @@ func (r *Repository) Save(ctx context.Context, vaultID domain.VaultID, notes []d
 }
 
 func saveNote(
-	ctx context.Context, tx *sql.Tx, vault int64, n domain.Note,
+	ctx context.Context, tx *writing.Transaction, vault int64, n domain.Note,
 	sizes chunking.Sizes, reads chunking.Legibility,
 ) error {
 	frontmatter, storeErr := encodeFrontmatter(n)
@@ -147,19 +147,12 @@ func saveNote(
 	if err := exec(ctx, tx, "insert_heading_names", row); err != nil {
 		return err
 	}
-	if len(n.Links) > 0 {
-		insert, err := tx.PrepareContext(ctx, stmt.Get("insert_link"))
-		if err != nil {
+	for i, l := range n.Links {
+		if _, err := tx.ExecContext(ctx, stmt.Get("insert_link"), row, i,
+			l.Target.Scheme, l.Target.Value, domain.FoldName(domain.LinkName(l.Target.Value)),
+			string(l.Role), nullable(l.Type), nullable(l.Why), nullable(l.Label),
+		); err != nil {
 			return fmt.Errorf("store what this note points at: %w", err)
-		}
-		defer insert.Close()
-		for i, l := range n.Links {
-			if _, err := insert.ExecContext(ctx, row, i,
-				l.Target.Scheme, l.Target.Value, domain.FoldName(domain.LinkName(l.Target.Value)),
-				string(l.Role), nullable(l.Type), nullable(l.Why), nullable(l.Label),
-			); err != nil {
-				return fmt.Errorf("store what this note points at: %w", err)
-			}
 		}
 	}
 	for _, detail := range n.Problems {

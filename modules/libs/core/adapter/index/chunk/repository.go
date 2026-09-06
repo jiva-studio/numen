@@ -315,7 +315,7 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, fr
 //
 // The rows that are moving stand still: a folder moved inside itself holds
 // them, and they are the ones about to be filed.
-func displace(ctx context.Context, tx *sql.Tx, vault int64, from, to string) error {
+func displace(ctx context.Context, tx *writing.Transaction, vault int64, from, to string) error {
 	first, past := under(to)
 	rows, err := tx.QueryContext(ctx, stmt.Get("sources_under"), vault, to, first, past)
 	if err != nil {
@@ -361,7 +361,7 @@ func displace(ctx context.Context, tx *sql.Tx, vault int64, from, to string) err
 //
 // The name goes into the title index with it: that is what a search by name
 // ranks and highlights against.
-func rename(ctx context.Context, tx *sql.Tx, vault int64, from, to string) error {
+func rename(ctx context.Context, tx *writing.Transaction, vault int64, from, to string) error {
 	name := domain.Basename(to)
 	if name == domain.Basename(from) {
 		return nil
@@ -399,7 +399,7 @@ func under(folder string) (first, past string) {
 // The rows in the three virtual tables go first, by the chunk's own number.
 // Nothing cascades into a virtual table, and a chunk's number is handed to the
 // next chunk that wants one, so a row left behind answers for that one.
-func Clear(ctx context.Context, tx *sql.Tx, source int64) error {
+func Clear(ctx context.Context, tx *writing.Transaction, source int64) error {
 	for _, name := range []string{"clear_fts", "clear_vec", "clear_sections"} {
 		if err := exec(ctx, tx, name, source); err != nil {
 			return err
@@ -424,7 +424,7 @@ func Clear(ctx context.Context, tx *sql.Tx, source int64) error {
 //
 // Every chunk written is indexed for the words it holds, large and small alike,
 // so that a search asked by words and one asked by meaning name one kind of row.
-func Replace(ctx context.Context, tx *sql.Tx, source, vault int64, chunks []Chunk) error {
+func Replace(ctx context.Context, tx *writing.Transaction, source, vault int64, chunks []Chunk) error {
 	held, err := chunksOf(ctx, tx, source)
 	if err != nil {
 		return err
@@ -435,19 +435,13 @@ func Replace(ctx context.Context, tx *sql.Tx, source, vault int64, chunks []Chun
 		return fmt.Errorf("take the names of this source's sections out of the index: %w", err)
 	}
 
-	w, err := prepare(ctx, tx)
-	if err != nil {
-		return err
-	}
-	defer w.close()
-
 	for _, large := range chunks {
-		row, err := w.put(ctx, held, source, vault, large, nil)
+		row, err := put(ctx, tx, held, source, vault, large, nil)
 		if err != nil {
 			return err
 		}
 		for _, small := range large.Small {
-			if _, err := w.put(ctx, held, source, vault, small, row); err != nil {
+			if _, err := put(ctx, tx, held, source, vault, small, row); err != nil {
 				return err
 			}
 		}
@@ -458,65 +452,36 @@ func Replace(ctx context.Context, tx *sql.Tx, source, vault int64, chunks []Chun
 	return forget(ctx, tx, held.forgotten())
 }
 
-// statements are what a cut runs per chunk, prepared once for the whole
-// source.
-type statements struct{ insert, index, names, move *sql.Stmt }
-
-func prepare(ctx context.Context, tx *sql.Tx) (statements, error) {
-	var w statements
-	for _, s := range []struct {
-		name string
-		at   **sql.Stmt
-	}{
-		{"insert_chunk", &w.insert},
-		{"insert_fts", &w.index},
-		{"insert_section", &w.names},
-		{"move_chunk", &w.move},
-	} {
-		prepared, err := tx.PrepareContext(ctx, stmt.Get(s.name))
-		if err != nil {
-			w.close()
-			return statements{}, fmt.Errorf("%s: %w", s.name, err)
-		}
-		*s.at = prepared
-	}
-	return w, nil
-}
-
-func (w statements) close() {
-	for _, s := range []*sql.Stmt{w.insert, w.index, w.names, w.move} {
-		if s != nil {
-			s.Close()
-		}
-	}
-}
-
 // put is the row one chunk is held on, and moves or writes it.
 //
 // A chunk inside another arrives with the row enclosing it, and a large chunk
 // with nothing, which is also what the row's `parent_id` becomes.
-func (w statements) put(ctx context.Context, held *rows, source, vault int64, c Chunk, parent any) (int64, error) {
+func put(
+	ctx context.Context, tx *writing.Transaction, held *rows,
+	source, vault int64, c Chunk, parent any,
+) (int64, error) {
 	key := textID{hash: hashOf(c.Text), small: parent != nil}
 	if row, kept := held.claim(key); kept {
-		if _, err := w.move.ExecContext(ctx, c.Start, c.Length, parent, nullable(c.Location), row); err != nil {
+		if _, err := tx.ExecContext(ctx, stmt.Get("move_chunk"),
+			c.Start, c.Length, parent, nullable(c.Location), row); err != nil {
 			return 0, fmt.Errorf("move a chunk to where its text now is: %w", err)
 		}
-		if err := w.opens(ctx, row, c); err != nil {
+		if err := opens(ctx, tx, row, c); err != nil {
 			return 0, err
 		}
 		return row, nil
 	}
 
 	var row int64
-	err := w.insert.QueryRowContext(ctx,
+	err := tx.QueryRowContext(ctx, stmt.Get("insert_chunk"),
 		source, vault, c.Start, c.Length, parent, nullable(c.Location), key.hash).Scan(&row)
 	if err != nil {
 		return 0, fmt.Errorf("store a chunk of this source: %w", err)
 	}
-	if _, err := w.index.ExecContext(ctx, row, c.Text); err != nil {
+	if _, err := tx.ExecContext(ctx, stmt.Get("insert_fts"), row, c.Text); err != nil {
 		return 0, fmt.Errorf("index a chunk for the words in it: %w", err)
 	}
-	if err := w.opens(ctx, row, c); err != nil {
+	if err := opens(ctx, tx, row, c); err != nil {
 		return 0, err
 	}
 	return row, nil
@@ -524,11 +489,11 @@ func (w statements) put(ctx context.Context, held *rows, source, vault int64, c 
 
 // opens keeps the names of the sections one chunk begins, so a section can be
 // found by its name and answer with the chunk it opens.
-func (w statements) opens(ctx context.Context, row int64, c Chunk) error {
+func opens(ctx context.Context, tx *writing.Transaction, row int64, c Chunk) error {
 	if len(c.Opens) == 0 {
 		return nil
 	}
-	if _, err := w.names.ExecContext(ctx, row, strings.Join(c.Opens, "\n")); err != nil {
+	if _, err := tx.ExecContext(ctx, stmt.Get("insert_section"), row, strings.Join(c.Opens, "\n")); err != nil {
 		return fmt.Errorf("index the names of the sections a chunk opens: %w", err)
 	}
 	return nil
@@ -551,7 +516,7 @@ type rows struct {
 	hash map[int64]string
 }
 
-func chunksOf(ctx context.Context, tx *sql.Tx, source int64) (*rows, error) {
+func chunksOf(ctx context.Context, tx *writing.Transaction, source int64) (*rows, error) {
 	cursor, err := tx.QueryContext(ctx, stmt.Get("chunks_of"), source)
 	if err != nil {
 		return nil, fmt.Errorf("the chunks this source is already cut into: %w", err)
@@ -603,7 +568,7 @@ func (h *rows) unclaimed() []int64 {
 // search with a chunk that no longer exists. A large chunk takes the chunks
 // inside it, so a row here may already be gone from `chunks` by the time it is
 // reached.
-func remove(ctx context.Context, tx *sql.Tx, rows []int64) error {
+func remove(ctx context.Context, tx *writing.Transaction, rows []int64) error {
 	for _, row := range rows {
 		for _, name := range []string{"delete_fts", "delete_vec", "delete_chunk"} {
 			if err := exec(ctx, tx, name, row); err != nil {
@@ -622,7 +587,7 @@ func hashOf(s string) string {
 }
 
 // exec runs a named statement and says which one failed.
-func exec(ctx context.Context, tx *sql.Tx, name string, args ...any) error {
+func exec(ctx context.Context, tx *writing.Transaction, name string, args ...any) error {
 	if _, err := tx.ExecContext(ctx, stmt.Get(name), args...); err != nil {
 		return fmt.Errorf("%s: %w", name, err)
 	}
@@ -681,7 +646,7 @@ func (h *rows) forgotten() []string {
 // replaced. A source the vault no longer offers takes nothing with it: a folder
 // that could not be read looks the same from here as one whose files were
 // deleted, and a vector was bought.
-func forget(ctx context.Context, tx *sql.Tx, texts []string) error {
+func forget(ctx context.Context, tx *writing.Transaction, texts []string) error {
 	for _, hash := range texts {
 		if err := exec(ctx, tx, "forget_vector", hash, hash); err != nil {
 			return err

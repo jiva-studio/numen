@@ -61,7 +61,7 @@ func (db *DB) FitVectors(ctx context.Context, dims int, recipe string) error {
 // fillCoarse writes a coarse row for every vector the recipe holds of the width
 // given. A vector of another width belongs to another model and is left where
 // it is.
-func fillCoarse(ctx context.Context, tx *sql.Tx, dims int, recipe string) error {
+func fillCoarse(ctx context.Context, tx *writing.Transaction, dims int, recipe string) error {
 	rows, err := tx.QueryContext(ctx,
 		`SELECT c.id, c.vault_id, v.embedding
 		 FROM vectors v JOIN chunks c ON unhex(c.hash) = v.hash
