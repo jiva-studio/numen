@@ -113,7 +113,7 @@ func vaultRename(ctx context.Context, out io.Writer, deps Deps, args []string) e
 	if err != nil {
 		return err
 	}
-	v, err := found(vaults, args[0])
+	v, err := vaults.find(args[0])
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func vaultForget(ctx context.Context, out io.Writer, deps Deps, args []string) e
 	if err != nil {
 		return err
 	}
-	v, err := found(vaults, args[0])
+	v, err := vaults.find(args[0])
 	if err != nil {
 		return err
 	}
@@ -173,7 +173,7 @@ func vaultErase(ctx context.Context, out io.Writer, deps Deps, args []string) er
 	if err != nil {
 		return err
 	}
-	v, err := found(vaults, rest[0])
+	v, err := vaults.find(rest[0])
 	if err != nil {
 		return err
 	}
@@ -223,7 +223,7 @@ func vaultOpen(out io.Writer, deps Deps, args []string) error {
 	if err != nil {
 		return err
 	}
-	v, err := found(vaults, args[0])
+	v, err := vaults.find(args[0])
 	if err != nil {
 		return err
 	}
@@ -240,16 +240,5 @@ func findVault(deps Deps, nameOrPath string) (domain.Vault, error) {
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	return found(vaults, nameOrPath)
-}
-
-// found is the same against a list already open and, when what was typed
-// resolves to nothing, says what to do about it. Talking to a person belongs
-// here.
-func found(vaults Vaults, nameOrPath string) (domain.Vault, error) {
-	v, err := vault.NewFind(vaults.Registry).Execute(nameOrPath)
-	if err != nil {
-		return domain.Vault{}, fmt.Errorf("%w — add it with: numen-cli vault add %s", err, nameOrPath)
-	}
-	return v, nil
+	return vaults.find(nameOrPath)
 }
