@@ -3,7 +3,7 @@
  * Neither answer touches a chip.
  */
 import { describe, expect, it } from 'vitest'
-import { filled, offering, percent, weekFrom, WEEK } from './week'
+import { filled, filledPercent, offering, weekFrom, WEEK } from './week'
 
 const ids = (days: readonly { id: string }[]): readonly string[] => days.map((day) => day.id)
 
@@ -38,11 +38,11 @@ describe('how full a day is drawn', () => {
   })
 
   it('is written out as a share of the whole', () => {
-    expect(percent(0.5)).toBe('50%')
-    expect(percent(1)).toBe('100%')
-    expect(percent(0)).toBe('0%')
-    expect(percent(0.37)).toBe('37%')
-    expect(percent(4)).toBe('100%')
+    expect(filledPercent(0.5)).toBe('50%')
+    expect(filledPercent(1)).toBe('100%')
+    expect(filledPercent(0)).toBe('0%')
+    expect(filledPercent(0.37)).toBe('37%')
+    expect(filledPercent(4)).toBe('100%')
   })
 })
 

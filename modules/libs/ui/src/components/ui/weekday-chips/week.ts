@@ -47,7 +47,7 @@ export const weekFrom = <One extends DayName>(id: string, week: readonly One[]):
 export const filled = (level: number): number => Math.min(Math.max(level, 0), 1)
 
 /** How full a chip stands, written out as a share of the whole. */
-export const percent = (level: number): string => `${Math.round(filled(level) * 100)}%`
+export const filledPercent = (level: number): string => `${Math.round(filled(level) * 100)}%`
 
 /**
  * The levels on offer, holding the one a day stands at. A level the offer does

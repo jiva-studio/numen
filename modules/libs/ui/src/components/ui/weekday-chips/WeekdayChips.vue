@@ -11,7 +11,7 @@ import { RovingFocusGroup, RovingFocusItem } from 'reka-ui'
 import { cn } from '@/classes'
 import Menu from '@/menu/Menu.vue'
 import type { Position } from '@/lib/geometry'
-import { filled, offering, percent, type Day } from './week'
+import { filled, filledPercent, offering, type Day } from './week'
 
 // The row and the levels it offers are two things drawn, so what a caller
 // names the row by is put on the row itself.
@@ -40,7 +40,7 @@ const asking = ref<{ day: string; level: number; at: Position; from: HTMLElement
 const offered = computed(() =>
   offering(props.levels, asking.value?.level ?? null).map((level) => ({
     id: `${level}`,
-    text: percent(level),
+    text: filledPercent(level),
   })),
 )
 
@@ -93,7 +93,7 @@ const filling = (level: number) => {
       <button
         type="button"
         :aria-disabled="disabled || undefined"
-        :aria-label="`${day.long}, ${percent(day.level)}`"
+        :aria-label="`${day.long}, ${filledPercent(day.level)}`"
         aria-haspopup="menu"
         :aria-expanded="asking?.day === day.id"
         :style="filling(day.level)"
