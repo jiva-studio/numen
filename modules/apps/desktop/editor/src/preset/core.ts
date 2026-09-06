@@ -8,7 +8,7 @@
 import { createClient } from '@connectrpc/connect'
 import {
   BudgetName,
-  Counts as BudgetUnits,
+  BudgetUnit as BudgetUnits,
   Rule as Rules,
   PresetsService,
 } from '@numen/protocol'
