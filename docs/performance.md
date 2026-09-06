@@ -65,12 +65,15 @@ Each cell is the best of the runs stated, with the spread beside it. The best is
 | | 2026-08-15 | 1 000 notes | 10 000 notes |
 | --- | --- | --- | --- |
 | Cold scan — every note read, parsed, written | 0.46 s · 5.9 s | 1.80 s (6 runs, 1.80–2.84) | 20.1 s (6, 20.1–39.7) |
+| The same, with the statements kept compiled | | 1.19 s (6, 1.19–1.41) | 15.2 s (6, 15.2–17.4) |
 | Warm scan — nothing changed, no file opened | 4.7 ms · 50 ms | 9.2 ms (3, 9.2–15.3) | 58 ms (3, 58–122) |
 | Incremental — one note edited | 8.0 ms · 55 ms | 12.4 ms (3, 12.4–17.6) | 64 ms (3, 64–136) |
 | Resolving one note's links | 0.18 ms · 0.18 ms | 0.64 ms (3, 0.64–0.68) | 0.43 ms (3, 0.43–0.61) |
 | Backlinks of one note | 0.88 ms · 1.11 ms | 2.94 ms (3, 2.94–3.28) | 3.18 ms (3, 3.18–4.63) |
 
 Neither link figure grows with the vault, which is the claim those two rows carry: the columns are ten times apart in size and a fraction of a millisecond apart in answer, as they were.
+
+The second row was measured in a quieter hour of the same day, where `BenchmarkChunkIdentity` answered 22.2–27.6 ns against the 23 ns of the record; it is the first row's benchmark after the two changes set out under "Where the time goes". A run of the first row in that same hour answered 2.20 s and 24.7 s as the machine filled again, so the pair to compare are 20.1 s and 15.2 s, and what the profile counts is the firmer figure.
 
 **The cold scan is three to four times the record here, and six and a half times it at a hundred thousand.** A note now goes into the passage index as its own chunks, so `chunk.Replace` runs inside `saveNote`; by profile it is 42 % of the scan, and the index it fills is twice the size it was. What is left over is the machine and one repeated pass, both below.
 
