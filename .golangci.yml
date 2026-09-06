@@ -31,6 +31,7 @@ linters:
     - importas
     - usetesting
     - gocritic
+    - nolintlint
 
   settings:
     errcheck:
@@ -137,6 +138,13 @@ linters:
       # its directory from testing. Both checks are off until they are named.
       context-background: true
       os-temp-dir: true
+
+    nolintlint:
+      # A directive names the one linter it answers, and says why. A bare
+      # //nolint silences the next fault written under it as well, and one with
+      # no reason cannot be judged once the code around it has moved.
+      require-specific: true
+      require-explanation: true
 
   exclusions:
     generated: lax

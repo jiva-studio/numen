@@ -1016,7 +1016,7 @@ Recorded 2026-09-06, `vite build` in each window's own folder, into the Go packa
 
 **The editor did not move, as it was expected not to.** It was 1 628 kB and is 1 631 kB. It draws more of the library and more of its own, and the tree shaking that took two thirds off the smaller window takes almost nothing off this one: what the editor imports, it uses.
 
-The editor's `vue-tsc` step does not pass in this tree, so its figure comes from `vite build` alone. Two copies of `@vue/runtime-core` are installed — one under the editor and one under the interface library — and every component's props typecheck against the wrong one. That is a state of `node_modules` and not of the source; the bundle is unaffected, since Vite resolves one copy.
+The editor's `vue-tsc` step did not pass off that install, so its figure comes from `vite build` alone. Two copies of `@vue/runtime-core` were there — one under the editor and one under the interface library — and every component's props typechecked against the wrong one. That was a state of `node_modules` and not of the source, and the bundle was unaffected, since Vite resolves one copy.
 
 ### The same two, off one install
 

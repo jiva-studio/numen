@@ -14,5 +14,8 @@ export default defineConfig({
     name: 'unit',
     environment: 'jsdom',
     include: ['src/**/*.test.ts'],
+    // A test here waits on an import out of one install shared by every
+    // package, which the default five seconds does not cover on a cold cache.
+    testTimeout: 30_000,
   },
 })
