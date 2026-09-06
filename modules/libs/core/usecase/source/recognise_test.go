@@ -215,10 +215,10 @@ func TestWhatIsReadIsWrittenDownAndClaimed(t *testing.T) {
 	// The artifact is named by the hash of what was read, and the source now
 	// says its text is there.
 	src := index.sources[v.ID][documentPath]
-	if src.TextFrom == "" {
+	if src.Producer == "" {
 		t.Fatal("the source does not say which producer made its text")
 	}
-	raw, err := shelf.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
+	raw, err := shelf.Read(t.Context(), text.Artifact(src.Producer, src.Hash))
 	if err != nil {
 		t.Fatalf("the artifact is not where the source says: %v", err)
 	}
@@ -252,8 +252,8 @@ func TestADocumentSayingNothingWritesNothing(t *testing.T) {
 	if names := shelf.names(); len(names) != 0 {
 		t.Errorf("it wrote %v", names)
 	}
-	if src, held := index.sources[v.ID][documentPath]; held && src.TextFrom != "" {
-		t.Errorf("the source was pointed at %q", src.TextFrom)
+	if src, held := index.sources[v.ID][documentPath]; held && src.Producer != "" {
+		t.Errorf("the source was pointed at %q", src.Producer)
 	}
 }
 
@@ -347,7 +347,7 @@ func TestAReadingDeletedByHandIsNoticed(t *testing.T) {
 		t.Fatal(err)
 	}
 	stood := index.sources[v.ID][documentPath]
-	if stood.TextFrom == "" {
+	if stood.Producer == "" {
 		t.Fatal("the source does not stand on a reading")
 	}
 
@@ -360,7 +360,7 @@ func TestAReadingDeletedByHandIsNoticed(t *testing.T) {
 		t.Fatal("the source was not cut, so this cannot tell anything")
 	}
 
-	if err := shelf.Remove(t.Context(), text.Artifact(stood.TextFrom, stood.Hash)); err != nil {
+	if err := shelf.Remove(t.Context(), text.Artifact(stood.Producer, stood.Hash)); err != nil {
 		t.Fatal(err)
 	}
 	res, err := extract.Execute(t.Context(), v)
@@ -370,7 +370,7 @@ func TestAReadingDeletedByHandIsNoticed(t *testing.T) {
 	if res.Forgotten != 1 {
 		t.Errorf("noticed %d readings gone, want 1", res.Forgotten)
 	}
-	if got := index.sources[v.ID][documentPath].TextFrom; got != "" {
+	if got := index.sources[v.ID][documentPath].Producer; got != "" {
 		t.Errorf("the source still stands on %q", got)
 	}
 }
@@ -444,11 +444,11 @@ func TestEveryCoordinateNamesTheWordsItWasReadFrom(t *testing.T) {
 		t.Fatal(err)
 	}
 	src := index.sources[v.ID][documentPath]
-	raw, err := shelf.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
+	raw, err := shelf.Read(t.Context(), text.Artifact(src.Producer, src.Hash))
 	if err != nil {
 		t.Fatal(err)
 	}
-	packed, err := shelf.Read(t.Context(), text.Boxes(src.TextFrom, src.Hash))
+	packed, err := shelf.Read(t.Context(), text.Boxes(src.Producer, src.Hash))
 	if err != nil {
 		t.Fatalf("the coordinates are not beside the artifact: %v", err)
 	}
@@ -492,11 +492,11 @@ func TestCoordinatesAheadOfTheCountAreDropped(t *testing.T) {
 		t.Fatal(err)
 	}
 	src := index.sources[v.ID][documentPath]
-	raw, err := shelf.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
+	raw, err := shelf.Read(t.Context(), text.Artifact(src.Producer, src.Hash))
 	if err != nil {
 		t.Fatal(err)
 	}
-	packed, err := shelf.Read(t.Context(), text.Boxes(src.TextFrom, src.Hash))
+	packed, err := shelf.Read(t.Context(), text.Boxes(src.Producer, src.Hash))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -560,7 +560,7 @@ func TestABatchThatDidNotLandWholeIsReadAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 	src := index.sources[v.ID][documentPath]
-	raw, err := shelf.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
+	raw, err := shelf.Read(t.Context(), text.Artifact(src.Producer, src.Hash))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -572,7 +572,7 @@ func TestABatchThatDidNotLandWholeIsReadAgain(t *testing.T) {
 		t.Errorf("a count is in the prose: %q", prose)
 	}
 
-	packed, err := shelf.Read(t.Context(), text.Boxes(src.TextFrom, src.Hash))
+	packed, err := shelf.Read(t.Context(), text.Boxes(src.Producer, src.Hash))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -619,7 +619,7 @@ func TestAPartialCarryingNoCountIsReadFromTheBeginning(t *testing.T) {
 		t.Errorf("it took up a file carrying no count at page %d", res.Resumed)
 	}
 	src := index.sources[v.ID][documentPath]
-	raw, err := shelf.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
+	raw, err := shelf.Read(t.Context(), text.Artifact(src.Producer, src.Hash))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -627,7 +627,7 @@ func TestAPartialCarryingNoCountIsReadFromTheBeginning(t *testing.T) {
 	if len(marks) != res.Pages {
 		t.Errorf("the artifact names %d pages and the document has %d", len(marks), res.Pages)
 	}
-	packed, err := shelf.Read(t.Context(), text.Boxes(src.TextFrom, src.Hash))
+	packed, err := shelf.Read(t.Context(), text.Boxes(src.Producer, src.Hash))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -660,7 +660,7 @@ func TestCoordinatesThatDidNotLandWholeAreNotReadAsRecords(t *testing.T) {
 		t.Fatal(err)
 	}
 	src := index.sources[v.ID][documentPath]
-	raw, err := shelf.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
+	raw, err := shelf.Read(t.Context(), text.Artifact(src.Producer, src.Hash))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -680,7 +680,7 @@ func TestCoordinatesThatDidNotLandWholeAreNotReadAsRecords(t *testing.T) {
 func artifact(t *testing.T, v domain.Vault, index *store, written *shelf) []byte {
 	t.Helper()
 	src := index.sources[v.ID][documentPath]
-	raw, err := written.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
+	raw, err := written.Read(t.Context(), text.Artifact(src.Producer, src.Hash))
 	if err != nil {
 		t.Fatalf("the artifact is not where the source says: %v", err)
 	}
@@ -700,11 +700,11 @@ func TestAReadingNamesItsParts(t *testing.T) {
 		t.Fatal(err)
 	}
 	src := index.sources[v.ID][documentPath]
-	raw, err := shelf.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
+	raw, err := shelf.Read(t.Context(), text.Artifact(src.Producer, src.Hash))
 	if err != nil {
 		t.Fatal(err)
 	}
-	parts, err := shelf.Read(t.Context(), text.Parts(src.TextFrom, src.Hash))
+	parts, err := shelf.Read(t.Context(), text.Parts(src.Producer, src.Hash))
 	if err != nil {
 		t.Fatalf("the parts are not beside the artifact: %v", err)
 	}
@@ -751,11 +751,11 @@ func TestPartsAheadOfTheCountAreDropped(t *testing.T) {
 		t.Fatal(err)
 	}
 	src := index.sources[v.ID][documentPath]
-	raw, err := shelf.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
+	raw, err := shelf.Read(t.Context(), text.Artifact(src.Producer, src.Hash))
 	if err != nil {
 		t.Fatal(err)
 	}
-	parts, err := shelf.Read(t.Context(), text.Parts(src.TextFrom, src.Hash))
+	parts, err := shelf.Read(t.Context(), text.Parts(src.Producer, src.Hash))
 	if err != nil {
 		t.Fatal(err)
 	}

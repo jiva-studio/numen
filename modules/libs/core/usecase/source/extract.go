@@ -434,7 +434,7 @@ func (u Extract) source(
 			Fingerprint: ref,
 			Hash:        hash,
 			Recipe:      recipe(name, sizes),
-			TextFrom:    from,
+			Producer:    from,
 		},
 		Chunks: chunks,
 	}

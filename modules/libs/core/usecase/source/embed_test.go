@@ -301,7 +301,7 @@ func TestASourceStandingOnAReadingIsEmbeddedFromIt(t *testing.T) {
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	}
-	if index.sources[first.ID][bookPath].TextFrom == "" {
+	if index.sources[first.ID][bookPath].Producer == "" {
 		t.Fatal("the source does not stand on a reading, so embedding it proves nothing")
 	}
 	small := index.small(first.ID)

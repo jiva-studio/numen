@@ -138,13 +138,13 @@ func TestWhatIsHeardIsWrittenDownAndClaimed(t *testing.T) {
 	}
 
 	src := index.sources[v.ID][recordingPath]
-	if src.TextFrom != "asr" {
-		t.Fatalf("the source says its text comes from %q", src.TextFrom)
+	if src.Producer != "asr" {
+		t.Fatalf("the source says its text comes from %q", src.Producer)
 	}
 	if src.Hash != hash {
 		t.Errorf("the source is named %q and the recording hashes to %q", src.Hash, hash)
 	}
-	raw, err := shelf.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
+	raw, err := shelf.Read(t.Context(), text.Artifact(src.Producer, src.Hash))
 	if err != nil {
 		t.Fatalf("the artifact is not where the source says: %v", err)
 	}
@@ -274,8 +274,8 @@ func TestARecordingWithNothingToHearIsAnsweredOnce(t *testing.T) {
 			t.Errorf("it left %q behind", name)
 		}
 	}
-	if src := index.sources[v.ID][recordingPath]; src.TextFrom != "" {
-		t.Errorf("the source was pointed at %q", src.TextFrom)
+	if src := index.sources[v.ID][recordingPath]; src.Producer != "" {
+		t.Errorf("the source was pointed at %q", src.Producer)
 	}
 
 	heard := len(model.heard)
@@ -305,8 +305,8 @@ func TestARecordingNothingCanOpenIsAnsweredOnce(t *testing.T) {
 	if !res.Unopened {
 		t.Error("a recording nothing can open was not reported as such")
 	}
-	if src := index.sources[v.ID][recordingPath]; src.TextFrom != "" {
-		t.Errorf("the source was pointed at %q", src.TextFrom)
+	if src := index.sources[v.ID][recordingPath]; src.Producer != "" {
+		t.Errorf("the source was pointed at %q", src.Producer)
 	}
 	raw, err := shelf.Read(t.Context(), text.Answer("asr", hash))
 	if err != nil {

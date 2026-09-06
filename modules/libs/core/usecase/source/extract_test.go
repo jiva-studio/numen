@@ -407,12 +407,12 @@ func TestASourceCutFromAPartialReadsBackFromThePartial(t *testing.T) {
 		t.Fatal(err)
 	}
 	src := index.sources[first.ID][bookPath]
-	if src.TextFrom != "ocr" {
-		t.Fatalf("the source names %q as the producer of its text, want ocr", src.TextFrom)
+	if src.Producer != "ocr" {
+		t.Fatalf("the source names %q as the producer of its text, want ocr", src.Producer)
 	}
 
 	of := text.Reader{Vault: shelf, Derived: made}
-	doc, err := of.Of(ctx, bookPath, src.TextFrom, src.Hash)
+	doc, err := of.Of(ctx, bookPath, src.Producer, src.Hash)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -423,7 +423,7 @@ func TestASourceCutFromAPartialReadsBackFromThePartial(t *testing.T) {
 	if err := made.Write(ctx, text.Artifact("ocr", hash), []byte(whole)); err != nil {
 		t.Fatal(err)
 	}
-	doc, err = of.Of(ctx, bookPath, src.TextFrom, src.Hash)
+	doc, err = of.Of(ctx, bookPath, src.Producer, src.Hash)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -455,7 +455,7 @@ func TestABookTakenOutTakesTheFilesOfItsReading(t *testing.T) {
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	}
-	if index.sources[first.ID]["library/gone.epub"].TextFrom == "" {
+	if index.sources[first.ID]["library/gone.epub"].Producer == "" {
 		t.Fatal("the book was not cut from its reading, so its removal proves nothing")
 	}
 
@@ -499,7 +499,7 @@ func TestARenamedBookKeepsItsReading(t *testing.T) {
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	}
-	if index.sources[first.ID]["library/before.epub"].TextFrom == "" {
+	if index.sources[first.ID]["library/before.epub"].Producer == "" {
 		t.Fatal("the book was not cut from its reading, so renaming it proves nothing")
 	}
 
@@ -514,7 +514,7 @@ func TestARenamedBookKeepsItsReading(t *testing.T) {
 			t.Errorf("renaming the book threw away %s: %v", name, err)
 		}
 	}
-	if from := index.sources[first.ID]["library/after.epub"].TextFrom; from == "" {
+	if from := index.sources[first.ID]["library/after.epub"].Producer; from == "" {
 		t.Error("the renamed book does not stand on its reading")
 	}
 }
@@ -549,7 +549,7 @@ func TestOneOfTwoCopiesTakenOutLeavesTheOtherReading(t *testing.T) {
 			t.Errorf("one copy going took %s with it: %v", name, err)
 		}
 	}
-	if from := index.sources[first.ID]["shelf/two.epub"].TextFrom; from == "" {
+	if from := index.sources[first.ID]["shelf/two.epub"].Producer; from == "" {
 		t.Error("the copy that stayed lost its reading")
 	}
 }
@@ -609,8 +609,8 @@ func TestARecordingIsCutFromWhatWasHeardInIt(t *testing.T) {
 	}
 
 	src := index.sources[first.ID][talkPath]
-	if src.TextFrom != text.ASR {
-		t.Errorf("the source names %q as the producer of its text, want %q", src.TextFrom, text.ASR)
+	if src.Producer != text.ASR {
+		t.Errorf("the source names %q as the producer of its text, want %q", src.Producer, text.ASR)
 	}
 	if want := recipe(text.ReaderRecording, extract.sizes()); src.Recipe != want {
 		t.Errorf("recipe = %q, want %q", src.Recipe, want)

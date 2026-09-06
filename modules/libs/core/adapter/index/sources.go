@@ -102,7 +102,7 @@ func (s queries) Unembedded(ctx context.Context, vaultID domain.VaultID, model p
 		out = append(out, domain.Passage{
 			ChunkID:    chunk.ID(p.Chunk),
 			Source:     p.Path,
-			TextFrom:   p.TextFrom,
+			Producer:   p.Producer,
 			SourceHash: p.Hash,
 			Start:      p.Start,
 			Length:     p.Length,
@@ -134,7 +134,7 @@ func stored(s domain.Source) chunk.Source {
 		MTime:    chunk.Stamp(s.Fingerprint.ModTime),
 		Hash:     s.Hash,
 		Recipe:   s.Recipe,
-		TextFrom: s.TextFrom,
+		Producer: s.Producer,
 	}
 }
 

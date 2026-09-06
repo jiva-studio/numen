@@ -1199,7 +1199,7 @@ func recognised(t *testing.T, db *DB, vault domain.Vault, path, hash string) {
 	t.Helper()
 
 	if err := db.Chunks().SaveSource(t.Context(), vault.ID, chunk.Source{
-		Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: hash, TextFrom: "ocr",
+		Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: hash, Producer: "ocr",
 	}); err != nil {
 		t.Fatal(err)
 	}

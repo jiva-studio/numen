@@ -158,7 +158,7 @@ func (s *store) Unembedded(_ context.Context, vaultID domain.VaultID, model port
 		src := s.sources[c.vault][c.path]
 		out = append(out, domain.Passage{
 			ChunkID: chunkID(c.id), Source: c.path, Start: c.start, Length: c.length, Location: c.location,
-			TextFrom: src.TextFrom, SourceHash: src.Hash, ChunkHash: hashOf(c.text),
+			Producer: src.Producer, SourceHash: src.Hash, ChunkHash: hashOf(c.text),
 		})
 		last = c.id
 		if len(out) == limit {
@@ -530,7 +530,7 @@ func (s *store) Reading(_ context.Context, vaultID domain.VaultID, path string) 
 		Fingerprint: domain.Fingerprint{
 			Path: path, Size: src.Fingerprint.Size, ModTime: src.Fingerprint.ModTime,
 		},
-		Producer: src.TextFrom,
+		Producer: src.Producer,
 		Hash:     src.Hash,
 	}, true, nil
 }
@@ -538,10 +538,10 @@ func (s *store) Reading(_ context.Context, vaultID domain.VaultID, path string) 
 func (s *store) Recognised(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]port.SourceText, error) {
 	var out []port.SourceText
 	for path, src := range s.sources[vaultID] {
-		if src.Fingerprint.Kind == kind && src.TextFrom != "" {
+		if src.Fingerprint.Kind == kind && src.Producer != "" {
 			out = append(out, port.SourceText{
 				Fingerprint: domain.Fingerprint{Path: path},
-				Producer:    src.TextFrom,
+				Producer:    src.Producer,
 				Hash:        src.Hash,
 			})
 		}

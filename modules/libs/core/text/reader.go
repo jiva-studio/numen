@@ -39,9 +39,9 @@ type Reader struct {
 // A source naming a producer reads what that producer wrote or reads nothing.
 // Falling back to the document would slice one text at another text's offsets,
 // which is a wrong answer given confidently and is worse than no answer.
-func (r Reader) Of(ctx context.Context, path, reader, hash string) (*Document, error) {
-	if reader != "" {
-		return r.recognised(ctx, reader, hash)
+func (r Reader) Of(ctx context.Context, path, producer, hash string) (*Document, error) {
+	if producer != "" {
+		return r.recognised(ctx, producer, hash)
 	}
 	ref, err := r.Vault.Stat(ctx, path)
 	if err != nil {
@@ -84,11 +84,11 @@ func (r Reader) recognised(ctx context.Context, from, hash string) (*Document, e
 func Composed(
 	ctx context.Context,
 	store port.DerivedStore,
-	reader, hash string,
+	producer, hash string,
 	raw []byte,
 ) (*Document, error) {
-	if reader == ASR {
-		put, err := beside(ctx, store, Corrections(reader, hash))
+	if producer == ASR {
+		put, err := beside(ctx, store, Corrections(producer, hash))
 		if err != nil {
 			return nil, err
 		}
@@ -99,17 +99,17 @@ func Composed(
 		}
 		return Transcribed(raw), nil
 	}
-	parts, err := beside(ctx, store, Parts(reader, hash))
+	parts, err := beside(ctx, store, Parts(producer, hash))
 	if err != nil {
 		return nil, err
 	}
-	corrections, err := beside(ctx, store, Corrections(reader, hash))
+	corrections, err := beside(ctx, store, Corrections(producer, hash))
 	if err != nil {
 		return nil, err
 	}
 	var boxes []byte
 	if len(corrections) > 0 {
-		if boxes, err = beside(ctx, store, Boxes(reader, hash)); err != nil {
+		if boxes, err = beside(ctx, store, Boxes(producer, hash)); err != nil {
 			return nil, err
 		}
 	}

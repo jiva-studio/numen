@@ -31,9 +31,9 @@ type Passage struct {
 	Length   int
 	Location string
 	Parent   int64
-	// TextFrom names the producer of the text this chunk is a place in. Empty
-	// where the source's own bytes are the text, which is the ordinary case.
-	TextFrom string
+	// Producer is what made the text this chunk is a place in. Empty where the
+	// source's own bytes are the text, which is the ordinary case.
+	Producer string
 	// Hash addresses the content of the source, and is what the files of a
 	// reading of it are kept under.
 	Hash string
@@ -169,7 +169,7 @@ func (q *Queries) Lexical(ctx context.Context, vaultID domain.VaultID, query str
 	for rows.Next() {
 		var p domain.Passage
 		var row int64
-		if err := rows.Scan(&row, &p.Source, &p.Kind, &p.TextFrom, &p.SourceHash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
+		if err := rows.Scan(&row, &p.Source, &p.Kind, &p.Producer, &p.SourceHash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
 			return nil, err
 		}
 		p.ChunkID = ID(row)
@@ -215,7 +215,7 @@ func (q *Queries) Named(ctx context.Context, vaultID domain.VaultID, query strin
 	for rows.Next() {
 		var p domain.Passage
 		var row int64
-		if err := rows.Scan(&row, &p.Source, &p.Kind, &p.TextFrom, &p.SourceHash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
+		if err := rows.Scan(&row, &p.Source, &p.Kind, &p.Producer, &p.SourceHash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
 			return nil, err
 		}
 		p.ChunkID = ID(row)
@@ -300,7 +300,7 @@ func (q *Queries) enclosing(ctx context.Context, vault int64, chunks []int64) ([
 	for _, chunk := range chunks {
 		p := domain.Passage{ChunkID: ID(chunk)}
 		err := enclosing.QueryRowContext(ctx, chunk, vault).
-			Scan(&p.Source, &p.Kind, &p.TextFrom, &p.SourceHash, &p.Start, &p.Length, &p.Location, &p.HitAt)
+			Scan(&p.Source, &p.Kind, &p.Producer, &p.SourceHash, &p.Start, &p.Length, &p.Location, &p.HitAt)
 		if errors.Is(err, sql.ErrNoRows) {
 			continue
 		}
@@ -328,7 +328,7 @@ func (q *Queries) Passage(ctx context.Context, vaultID domain.VaultID, chunk int
 
 func scanPassage(row *sql.Row, chunk int64) (Passage, bool, error) {
 	p := Passage{Chunk: chunk}
-	err := row.Scan(&p.Path, &p.TextFrom, &p.Hash, &p.Start, &p.Length, &p.Location, &p.Parent)
+	err := row.Scan(&p.Path, &p.Producer, &p.Hash, &p.Start, &p.Length, &p.Location, &p.Parent)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Passage{}, false, nil
 	}
@@ -382,7 +382,7 @@ func (q *Queries) Unembedded(ctx context.Context, vaultID domain.VaultID, recipe
 	var out []Passage
 	for rows.Next() {
 		var p Passage
-		if err := rows.Scan(&p.Chunk, &p.Path, &p.TextFrom, &p.Hash, &p.Start, &p.Length, &p.Location, &p.Parent, &p.ChunkHash); err != nil {
+		if err := rows.Scan(&p.Chunk, &p.Path, &p.Producer, &p.Hash, &p.Start, &p.Length, &p.Location, &p.Parent, &p.ChunkHash); err != nil {
 			return nil, err
 		}
 		out = append(out, p)

@@ -90,7 +90,7 @@ func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 	if wrote.Source.Fingerprint.Path != talk {
 		t.Errorf("the index was told about %q", wrote.Source.Fingerprint.Path)
 	}
-	if wrote.Source.TextFrom != "" || wrote.Source.Hash != "" || wrote.Source.Recipe != "" {
+	if wrote.Source.Producer != "" || wrote.Source.Hash != "" || wrote.Source.Recipe != "" {
 		t.Errorf("the source still stands on a reading: %+v", wrote.Source)
 	}
 	if len(wrote.Chunks) != 0 {

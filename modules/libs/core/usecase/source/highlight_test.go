@@ -76,7 +76,7 @@ func holds(t *testing.T, index *store, shelved *library, from, hash string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	index.put(first.ID, domain.Source{Fingerprint: ref, Hash: hash, TextFrom: from})
+	index.put(first.ID, domain.Source{Fingerprint: ref, Hash: hash, Producer: from})
 }
 
 // run is where a word of the document is: its offset in the text, and how long

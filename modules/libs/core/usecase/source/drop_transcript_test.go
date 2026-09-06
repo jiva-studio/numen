@@ -84,7 +84,7 @@ func TestDroppingATranscriptLeavesTheRecordingAsItWas(t *testing.T) {
 	}
 
 	src := index.sources[v.ID][recordingPath]
-	if src.TextFrom != "" || src.Hash != "" || src.Recipe != "" {
+	if src.Producer != "" || src.Hash != "" || src.Recipe != "" {
 		t.Errorf("the source still stands on a reading: %+v", src)
 	}
 	if src.Fingerprint.Path != recordingPath || src.Fingerprint.Kind != domain.KindRecording {
@@ -119,7 +119,7 @@ func TestARecordingIsHeardAgainAfterItsTranscriptIsDropped(t *testing.T) {
 	if said := spoken(t, raw); !slices.Equal(said, model.words) {
 		t.Errorf("the artifact says %q and the recording says %q", said, model.words)
 	}
-	if index.sources[v.ID][recordingPath].TextFrom != text.ASR {
+	if index.sources[v.ID][recordingPath].Producer != text.ASR {
 		t.Error("the source does not stand on the transcript the second run wrote")
 	}
 	chunks := cutFrom(index, v, recordingPath)
@@ -237,7 +237,7 @@ func TestARecordingWhoseStoreWasEmptiedIsDroppedFromTheIndex(t *testing.T) {
 	if res.None {
 		t.Error("a recording the index stands on came back as nothing to drop")
 	}
-	if src := index.sources[v.ID][recordingPath]; src.TextFrom != "" || src.Hash != "" {
+	if src := index.sources[v.ID][recordingPath]; src.Producer != "" || src.Hash != "" {
 		t.Errorf("the source still stands on a reading: %+v", src)
 	}
 	if chunks := cutFrom(index, v, recordingPath); len(chunks) != 0 {
@@ -282,7 +282,7 @@ func TestATranscriptBeingWrittenIsNotDropped(t *testing.T) {
 	if _, err := kept.Read(t.Context(), text.Artifact(text.ASR, hash)); err != nil {
 		t.Errorf("the transcript went out from under the run: %v", err)
 	}
-	if index.sources[v.ID][recordingPath].TextFrom != text.ASR {
+	if index.sources[v.ID][recordingPath].Producer != text.ASR {
 		t.Error("the source was taken off its transcript")
 	}
 }

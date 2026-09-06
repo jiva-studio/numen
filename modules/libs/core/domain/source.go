@@ -3,21 +3,20 @@ package domain
 // Source is one file with text that the index holds: what the file was when it
 // was read, and what read it.
 //
-// Hash addresses the content, and Recipe names the extractor and the sizes that
-// produced the source's chunks. Both are empty on a source nothing has taken
-// text out of yet.
+// Hash addresses the content, and Recipe names what took the text out and the
+// sizes that produced the source's chunks. Both are empty on a source nothing
+// has taken text out of yet.
 type Source struct {
 	Fingerprint Fingerprint
 	Hash        string
 	Recipe      string
 
-	// TextFrom names the producer of the text this source's chunks are places
-	// in. Empty where the source's own bytes are the text, which is the
-	// ordinary case.
+	// Producer is what made the text this source's chunks are places in. Empty
+	// where the source's own bytes are the text, which is the ordinary case.
 	//
 	// It is cleared by a write that records a fingerprint alone, because a file
 	// that changed is a file whose reading was of other bytes.
-	TextFrom string
+	Producer string
 }
 
 // Chunk is one cut of a source's text, as the index holds it. Location is where
