@@ -17,11 +17,11 @@
 const OURS = ['@numen/ui', '@numen/wire', '@numen/editor', '@numen/flashcards']
 
 /**
- * owed are the borders this installation still renames across, and the list
+ * baseline are the borders this installation still renames across, and the list
  * only shrinks. Each is a name the window and the library both want; the fix
  * is a rename in one of them, not an entry here.
  */
-export const owed = []
+export const baseline = []
 
 /** The `{ … }` clause of every import and export naming a package. */
 const CLAUSES = /(?:^|[\n;])\s*(?:import|export)\s+(?:type\s+)?\{([^}]*)\}\s*from\s*['"]([^'"]+)['"]/g

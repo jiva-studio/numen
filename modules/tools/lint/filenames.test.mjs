@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  baseline,
   calls,
   carries,
   echoes,
@@ -8,7 +9,6 @@ import {
   goDeclares,
   holds,
   named,
-  owed,
   refused,
   stemOf,
   tsDeclares,
@@ -24,12 +24,14 @@ import {
 test('every file named by a verb form says that word in its own code', () => {
   const found = named()
   const wrong = found
-    .filter(({ at, wrong }) => wrong.length > 0 && !owed.includes(at))
+    .filter(({ at, wrong }) => wrong.length > 0 && !baseline.includes(at))
     .map(({ at, wrong }) => `${at}: nothing here is called ${wrong.join(' or ')}`)
   assert.deepEqual(wrong, [])
 
-  const paid = owed.filter((at) => !found.some((one) => one.at === at && one.wrong.length > 0))
-  assert.deepEqual(paid, [], 'a debt paid leaves the list; these are answered for now')
+  const settled = baseline.filter(
+    (at) => !found.some((one) => one.at === at && one.wrong.length > 0),
+  )
+  assert.deepEqual(settled, [], 'a name answered for leaves the list; these are answered for now')
 
   // A walk that read no file is a rule checked against nothing, and it passes.
   // A count cannot say which files it read, so one file of each kind it reads

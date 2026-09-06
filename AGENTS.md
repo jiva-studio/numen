@@ -11,7 +11,7 @@ Paths below are relative to `modules/libs/core/` unless they say otherwise. The 
 ## The core
 
 1. `domain/`, `port/`, `usecase/**`, and every other package of the core, are compiled from no `adapter/**`, no `internal/adapter/**`, no `container` and no `modules/libs/protocol` — at any remove, not only in the import block. → `TestNothingTheCoreIsCompiledFromReachesOutward`
-2. `internal/wire` is the one package that may name the generated schema, because two driving adapters both put its types on the wire. → `owedWire` in `direction_test.go`
+2. `internal/wire` is the one package that may name the generated schema, because two driving adapters both put its types on the wire. → `wireBaseline` in `direction_test.go`
 3. `container` may name `domain`, `port`, `usecase/**` and the adapters, and nothing else of the core. It binds; it does none of the core's work. → `refused` / `assembling`
 4. `container` may not name the generated schema. It is the one package answering for what it names rather than for everything it is built from. → `answering`
 5. `domain`, `flashcards`, `markdown`, `internal/cardid` and `internal/ulid` import only each other. A pure package reaching a sibling of the core takes on its goroutines, its channels and its schema. → `pure` in `layers_test.go`
@@ -26,7 +26,7 @@ Paths below are relative to `modules/libs/core/` unless they say otherwise. The 
 11. Only a driving adapter imports `usecase/**`. The driving adapters are `adapter/cli`, `adapter/mcp`, `adapter/window/editor`, `adapter/window/flashcards`, `internal/adapter/theme`. → `driving` in `layers_test.go`
 12. An adapter importing the generated schema is a driving adapter and is listed as one. Direction is read off the messages an adapter handles, never off the folder it sits in: `internal/` says only that nothing outside composes it. → `TestEveryAdapterServingTheSchemaIsDriving`
 13. `adapter/` holds exactly `agent, cli, index, mcp, settings, window/editor, window/flashcards`. `adapter/window/` groups adapters and is not one. `internal/adapter/` holds exactly `appstate, embed, filesystem, pdf, proofreading, recognition, theme, transcription, trash`. A new adapter is a line added to the list, which is what makes it a decision. → `TestTheCoresPublicAdaptersAreTheseAndNoOthers`, `TestTheCoresHeldAdaptersAreTheseAndNoOthers`
-14. An existing edge that breaks a rule above is an entry in `owed`, and that list only shrinks. The rule stays as it is written; the debt is what carries the exception.
+14. An existing edge that breaks a rule above is an entry in `baseline`, and that list only shrinks. The rule stays as it is written; the baseline entry is what carries the exception.
 
 ## Ports
 
@@ -38,7 +38,7 @@ Paths below are relative to `modules/libs/core/` unless they say otherwise. The 
 
 ## Applications
 
-20. An application under `modules/apps/**` takes `container`, the adapters it serves something through, `domain` and `port`. Everything else of the core is the core's work, and an application doing it is an entry in that module's `owed`. → `TestNoApplicationDoesTheCoresWork` in `modules/apps/desktop/internal/layers/`
+20. An application under `modules/apps/**` takes `container`, the adapters it serves something through, `domain` and `port`. Everything else of the core is the core's work, and an application doing it is an entry in that module's `baseline`. → `TestNoApplicationDoesTheCoresWork` in `modules/apps/desktop/internal/layers/`
 21. What two applications share is a library under `modules/libs/`, which is how each reaches the other's work without reaching the other. → the same test
 
 ## The interface library

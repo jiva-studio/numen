@@ -30,13 +30,13 @@ export const nouns = {
 }
 
 /**
- * owed are the types still named by a gerund, and the list only shrinks.
+ * baseline are the types still named by a gerund, and the list only shrinks.
  *
  * PlexShowing is the last of them because the stem runs through SHOWINGS,
  * ShowingDescriptor and showingOf, and renaming the type alone would leave the
  * family behind. That is one decision, not five.
  */
-export const owed = ['PlexShowing']
+export const baseline = ['PlexShowing']
 
 /** The words of one name, as a reader says them. */
 export const words = (name) =>

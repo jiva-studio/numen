@@ -51,7 +51,7 @@ export const unscreened = {
  * list only shrinks: an entry naming an edge nobody draws any more is a rule
  * kept alive by a line nobody reads, and the check refuses that too.
  */
-export const owed = new Map([
+export const baseline = new Map([
   [
     '@numen/editor',
     [

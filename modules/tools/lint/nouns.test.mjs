@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { declares, nouns, owed, refused, words } from './nouns.mjs'
+import { baseline, declares, nouns, refused, words } from './nouns.mjs'
 import { sources } from './source.mjs'
 
 const declared = () => {
@@ -19,7 +19,7 @@ const declared = () => {
 test('no type of the interface modules is named by a gerund or a participle', () => {
   const found = declared()
   const wrong = found
-    .filter(({ name }) => refused(name) && !owed.includes(name))
+    .filter(({ name }) => refused(name) && !baseline.includes(name))
     .map(({ at, name }) => `${at} declares ${name}`)
   assert.deepEqual(wrong, [])
 
@@ -38,7 +38,7 @@ test('no type of the interface modules is named by a gerund or a participle', ()
  * dictionary that keeps them fills up until it reads as a census. Both lists
  * only shrink.
  */
-test('every word in the dictionary names something, and every debt is still owed', () => {
+test('every word in the dictionary names something, and every baseline entry stands', () => {
   const found = declared()
   const said = new Set()
   for (const { name } of found) {
@@ -51,7 +51,7 @@ test('every word in the dictionary names something, and every debt is still owed
 
   const names = new Set(found.map((one) => one.name))
   assert.deepEqual(
-    owed.filter((one) => !names.has(one)),
+    baseline.filter((one) => !names.has(one)),
     [],
   )
 })

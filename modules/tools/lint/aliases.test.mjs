@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { owed, renames } from './aliases.mjs'
+import { baseline, renames } from './aliases.mjs'
 import { sources } from './source.mjs'
 
 /**
@@ -16,7 +16,7 @@ test('no name is renamed on its way across our own border', () => {
     read.push(at)
     for (const one of renames(text)) {
       const said = `${at}: ${one}`
-      if (!owed.includes(said)) wrong.push(said)
+      if (!baseline.includes(said)) wrong.push(said)
     }
   }
   assert.deepEqual(wrong, [])
@@ -39,7 +39,7 @@ test('no name is renamed on its way across our own border', () => {
   for (const { at, text } of sources(['.ts', '.vue'])) {
     for (const one of renames(text)) standing.add(`${at}: ${one}`)
   }
-  assert.deepEqual(owed.filter((one) => !standing.has(one)), [])
+  assert.deepEqual(baseline.filter((one) => !standing.has(one)), [])
 })
 
 /**

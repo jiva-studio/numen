@@ -14,12 +14,12 @@ import { blocks, code, root, sources } from './source.mjs'
 const generated = new Set(['modules/libs/protocol'])
 
 /**
- * owed are the files whose name is answered only by a word taken from that
+ * baseline are the files whose name is answered only by a word taken from that
  * name, and the list only shrinks: a rename takes its line out. Every one is a
  * module called after the doing of a thing and holding a factory called the
  * same, which is the dialect this rule was written to find.
  */
-export const owed = [
+export const baseline = [
   'modules/apps/desktop/editor/src/note/drawing.ts',
   'modules/apps/desktop/editor/src/showing.ts',
 ]

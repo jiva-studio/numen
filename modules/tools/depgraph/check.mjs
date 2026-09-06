@@ -8,10 +8,10 @@
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
 import {
+  baseline,
   config,
   depcruise,
   modules,
-  owed,
   root,
   screened,
   screens,
@@ -64,17 +64,17 @@ for (const { name, at, sources, reads } of modules) {
     `${name} (${at}): ${totalCruised} modules, ${totalDependenciesCruised} dependencies${aside}`,
   )
 
-  const debts = owed.get(name) ?? []
+  const accepted = baseline.get(name) ?? []
   const standing = violations.map((one) => `${one.rule.name}: ${one.from} → ${one.to}`)
   for (const [at, one] of standing.entries()) {
-    if (debts.includes(one)) continue
+    if (accepted.includes(one)) continue
     wrong(`${violations[at].rule.severity} ${one}`)
   }
 
   // An entry naming an edge nobody draws any more is a rule kept alive by a
   // line nobody reads. The list only shrinks.
-  for (const one of debts) {
-    if (!standing.includes(one)) wrong(`owed, and nobody draws it: ${one}`)
+  for (const one of accepted) {
+    if (!standing.includes(one)) wrong(`in the baseline, and nobody draws it: ${one}`)
   }
 
   const read = new Set(cruised.modules.map((one) => one.source))
