@@ -25,9 +25,8 @@ type ProjectCurve struct {
 	// By is the scheduler asking for a share of the cards to come back. A build
 	// holding none reads FSRS.
 	By func(retention float64) review.Scheduler
-	// Cores is how many places of a curve are worked out at once. It is a fact
-	// about the machine, so it is given here rather than asked of the runtime,
-	// and a build holding none works one place at a time.
+	// Cores is how many places of a curve are worked out at once. A build
+	// holding none works one place at a time.
 	Cores int
 }
 

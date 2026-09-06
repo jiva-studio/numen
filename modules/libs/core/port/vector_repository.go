@@ -12,7 +12,7 @@ import (
 const QuantisedInt8 = "int8"
 
 // Int8Scale is what a stored byte of 127 stands for. Bytes on two scales are
-// numbers on two grids, which is why the recipe carries it.
+// numbers on two grids, and the recipe carries the scale they were made at.
 //
 // One number serves every width. A wider vector spends fewer of the 127 levels,
 // and what that costs a cosine does not grow with the width. What 0.4 buys is

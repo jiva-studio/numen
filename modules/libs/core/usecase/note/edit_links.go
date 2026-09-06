@@ -108,7 +108,7 @@ func (u EditLinks) Update(
 //
 // Fingerprint, when it is given, is what the caller believes is on disk. A note
 // that has changed since it was read is left alone and port.ErrStale comes
-// back. What comes back otherwise is the fingerprint of the file this write
+// back. A write that landed answers with the fingerprint of the file it
 // produced.
 func (u EditLinks) PointAt(
 	ctx context.Context, v domain.Vault, from, of string,

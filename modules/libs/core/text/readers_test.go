@@ -30,8 +30,8 @@ func TestEveryReaderDeclaredIsOneReadersAnswersWith(t *testing.T) {
 }
 
 // declared is every `Reader…` constant this package declares, by name. The
-// source is read rather than the compiled package, because a constant nothing
-// names is a constant reflection cannot reach.
+// source is what is read: a constant nothing names is a constant reflection
+// cannot reach.
 func declared(t *testing.T) map[string]string {
 	t.Helper()
 	entries, err := os.ReadDir(".")

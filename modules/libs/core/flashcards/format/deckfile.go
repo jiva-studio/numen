@@ -311,11 +311,10 @@ func cardBlock(card Card) string {
 // one card of a file somebody else writes by hand wants OpenDeckBody, which
 // splices and leaves every card it did not reach alone.
 //
-// A card carries which section it stands under, so
-// a section no card reaches is written where it stands: in front of the cards
-// of the sections after it, or at the end where nothing stands under it. A card
-// standing under a section the deck does not hold is ErrNoSuchSection: writing
-// it somewhere else moves a card nobody asked to move.
+// A card carries which section it stands under, so a section no card reaches is
+// written where it stands: in front of the cards of the sections after it, or at
+// the end where nothing stands under it. A card standing under a section the
+// deck does not hold is ErrNoSuchSection.
 func DeckBody(d Deck) (string, error) {
 	scratch, err := OpenDeck(markdown.Create("", d.Preamble))
 	if err != nil {

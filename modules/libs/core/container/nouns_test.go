@@ -15,13 +15,10 @@ import (
 // nouns are the words of ours ending in -ing or -ed that are ordinary English
 // nouns, and what each one means.
 //
-// A type is a noun or a noun phrase: a gerund says what is happening to a
-// thing rather than what the thing is, and a stranger meeting one cannot say
-// what it holds or whose it is. A machine reading a name sees only how it
-// ends, and no suffix tells a gerund from a word that merely finishes those
-// letters — so the words that are not gerunds are written down with a gloss.
-// It is a dictionary and not a list of exemptions: a reader applies the rule
-// without reading it, and a word nothing is named by any more has to go.
+// A machine reading a name sees only how it ends, and no suffix tells a gerund
+// from a word that merely finishes those letters, so the words that are not
+// gerunds are written down with a gloss. A word nothing is named by any more
+// has to go.
 var nouns = map[string]string{
 	"embed":     "the scenario that gives a vault's chunks their vectors, in the family of verb-named use cases",
 	"heading":   "a line a section of a note stands under",
@@ -148,8 +145,7 @@ func TestEveryWordOfTheDictionaryNamesAType(t *testing.T) {
 // is never this rule's business however it reads.
 //
 // Drawn is the participle the rule names and this reading cannot see: an
-// irregular one has no ending to test for, and a machine that tried would be
-// reading English rather than a suffix. A person catches those.
+// irregular one has no ending to test for. A person catches those.
 func TestWhatTheNounRuleRefuses(t *testing.T) {
 	cases := []struct {
 		says    string

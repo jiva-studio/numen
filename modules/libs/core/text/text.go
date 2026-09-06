@@ -109,9 +109,9 @@ const (
 	ReaderRecording = "recording-1"
 )
 
-// Readers is every one of them. Whoever lists the recipes in use reads this
-// rather than naming the readers again: a reader left out of that list is a
-// reader whose sources owe their text on every run, for ever.
+// Readers is every one of them, and is what a list of the recipes in use is
+// read from. A reader left out of such a list is a reader whose sources owe
+// their text on every run.
 func Readers() []string {
 	return []string{ReaderNote, ReaderEPUB, ReaderPDF, ReaderRecording}
 }

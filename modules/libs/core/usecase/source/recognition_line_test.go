@@ -95,9 +95,7 @@ func TestADocumentInLineOutlivesTheContext(t *testing.T) {
 // the line empty stops the running under the same lock, so the ask that follows
 // is told it began and reads the document itself.
 //
-// Nothing else reads this line: a document told it was queued with no run to
-// read it is a document never read, and a person left waiting on a count that
-// never falls.
+// Nothing else reads this line.
 //
 // The run that ended stops nothing but itself. Its end stands after it let the
 // lock go, by which time the run it handed the line to is the one running, and

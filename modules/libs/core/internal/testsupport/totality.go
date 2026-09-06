@@ -21,7 +21,7 @@ type SchemaEnum interface {
 }
 
 // Handled fails for every value of the enum that reaches nothing on the way in.
-// Reading answers whether the value was acted on rather than fallen through.
+// Reading answers whether the value was acted on.
 func Handled[E SchemaEnum](t *testing.T, reading func(E) bool) {
 	t.Helper()
 	each(t, func(t *testing.T, value protoreflect.EnumValueDescriptor, one E) {

@@ -171,12 +171,9 @@ func (p Provider) arriving(role string) arrival {
 // it that are here. Fetching it and compiling it are one wait.
 //
 // The count is bytes and says so, and the sizes a person reads them in are the
-// window's to write. A share is drawn once some of the model is here: none of
-// it counted is nothing known about how long the rest will take.
+// window's to write. A share is drawn once some of the model is here.
 //
-// A run with no list to tell is told nothing and still asks: what says how far
-// the work has got is called wherever the work is, and a run in a terminal
-// takes the same road as a window.
+// A run with no list to tell is told nothing and still asks.
 func preparing(tasks *task.Tasks, at arrival) func(done, total int64) {
 	if tasks == nil {
 		return func(int64, int64) {}

@@ -12,13 +12,11 @@ import (
 // nothing takes nothing, and no deck takes more than it owes — the remainder is
 // handed out a card at a time. What the proportions leave over goes by the
 // largest fraction, and where the fractions stand equal the deck owing more
-// takes it: the card moves the smaller deck further off its proportion than the
-// larger. Decks owing the same are alike in everything the division knows of
-// them, and take it in the order they are given.
+// takes it; decks owing the same take it in the order they are given.
 //
-// The proportion itself is worked out in floating point, because a budget of
-// nanoseconds times what one deck owes of them overflows an integer. Only the
-// fraction left over is read off it, and every share handed back is whole.
+// The proportion itself is worked out in floating point: a budget of
+// nanoseconds times what one deck owes of them overflows an integer. Every
+// share handed back is whole.
 func Shares(budget int, owes []int) []int {
 	out := make([]int, len(owes))
 	total := 0

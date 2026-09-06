@@ -233,8 +233,8 @@ func (c Config) Models() func() []port.Model {
 }
 
 // PartsUnderANodeBounds is how many parts a node may be asked to hang, at each
-// end. A number outside it is refused, so a client asking a person for one is
-// told them rather than holding a second copy.
+// end. A number outside it is refused, and a client asking a person for one is
+// told them.
 func (Config) PartsUnderANodeBounds() settings.Bounds {
 	return settings.PartsUnderANodeBounds
 }

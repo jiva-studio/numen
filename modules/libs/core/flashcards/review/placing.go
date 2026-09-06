@@ -68,8 +68,7 @@ func weekday(number int) time.Weekday {
 //
 // A preset aiming at a day moves no card face. The days beyond the front of a
 // projection carry nothing, so the lightest day of a window is its last, and a
-// card put there is a card asked for later. The pace is what spreads a date's
-// material over its days, and the days it has are the days it needs.
+// card put there is a card asked for later.
 //
 // It is the one place a day is chosen. A session and a projection of it both
 // come here.

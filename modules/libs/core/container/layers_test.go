@@ -41,9 +41,9 @@ var owed = map[string][]string{
 // scenarios; a driven adapter stands behind a port and calls none, so what a
 // scenario is written over is a port and never an adapter's own answer.
 //
-// Which way an adapter faces has nothing to do with where it stands. internal/
-// says nothing outside composes this, and a driving adapter mounted by another
-// adapter rather than by an application is composed by nothing outside.
+// Which way an adapter faces has nothing to do with where it stands: internal/
+// says only that nothing outside composes it, which holds of a driving adapter
+// another adapter mounts.
 var driving = map[string]bool{
 	"adapter/cli":               true,
 	"adapter/mcp":               true,
@@ -173,16 +173,12 @@ func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
 
 // A port is named after the need and an adapter after the technology, and the
 // binding between them is the composition root's. An adapter that writes
-// `var _ port.X = …` has named the need it answers, which puts the binding in
-// two places: the day the port grows a method, the adapter fails to compile
-// where nothing yet asks it for that method.
+// `var _ port.X = …` puts that binding in two places.
 //
 // A method returning `port.X` is not that claim. Where a port opens another —
 // `VaultReaders.Open` answers with a `VaultReader` — the return type is the
 // port's own signature, and an adapter bound to the first has to write the
-// second: Go has no covariance, and returning the concrete type stops the
-// adapter satisfying anything. The claim this refuses is the free-standing one,
-// which says nothing the composition root has not already said.
+// second. What this refuses is the free-standing claim.
 func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 	var wrong []string
 	var read int
@@ -214,9 +210,8 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 	}
 
 	// A walk that read no file of an adapter is a rule checked against nothing,
-	// and it passes. A count says how much and never what, and the adapters the
-	// compiler holds are half of them: every adapter there is is named, so one
-	// the filter stopped recognising says so instead of thinning the count.
+	// and it passes. Every adapter there is is named, so the count stands
+	// against all of them.
 	if read < 50 {
 		t.Fatalf("%d files of the adapters read: the walk is not reading them", read)
 	}
@@ -1232,7 +1227,7 @@ func assembling(to string) bool {
 // package under it, which share the settings section they are built from.
 func sibling(from, to string) bool { return family(from) == family(to) }
 
-// grouping are the folders that hold adapters rather than being one: adapter/
+// grouping are the folders that hold adapters and are none themselves: adapter/
 // itself, the folder the compiler holds them in, and the folder holding one
 // adapter to a window. What stands directly under any of them is an adapter.
 var grouping = []string{"adapter", "internal/adapter", "adapter/window"}
@@ -1311,8 +1306,7 @@ func TestTheCoresPublicAdaptersAreTheseAndNoOthers(t *testing.T) {
 }
 
 // held are the adapters the compiler keeps to this module. Naming them is what
-// makes a new one arrive as a decision: the folder is otherwise unread, and an
-// adapter put there is bound to a port by nobody and noticed by nothing.
+// makes a new one arrive as a decision.
 var held = []string{
 	"appstate", "embed", "filesystem", "pdf", "proofreading",
 	"recognition", "theme", "transcription", "trash",

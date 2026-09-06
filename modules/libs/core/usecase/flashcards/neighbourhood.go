@@ -34,7 +34,7 @@ type Neighbour struct {
 	Body  string
 	// Label is what the person called the relationship, where they did.
 	Label string
-	// Backlink is this note pointing at the deck; otherwise the deck points
+	// Backlink is this note pointing at the deck. False is the deck pointing
 	// at it.
 	Backlink bool
 	// Ambiguous is several notes answering to the name that was written. The
@@ -148,7 +148,7 @@ func (u ShowNeighbourhood) Execute(
 				continue
 			}
 			// An ordinary note is what the cards were written from, and is
-			// taken below rather than passed over here.
+			// taken below.
 			//exhaustive:ignore
 			switch kinds[one.Path] {
 			case domain.TypeStencil:

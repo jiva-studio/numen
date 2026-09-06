@@ -8,11 +8,10 @@ import "strings"
 // submitted anywhere.
 //
 // Where the window itself goes is no directive of a policy. A link leading
-// outward is held by the page, which hands the address to the person's own
-// browser.
+// outward is held by the page.
 //
-// Inline style is allowed because a page positions what it draws through the
-// style attribute.
+// Inline style is allowed: a page positions what it draws through the style
+// attribute.
 func (s Sources) Policy() string {
 	return "default-src 'self'; img-src " + named(s.Images) +
 		"; media-src " + named(s.Media) +

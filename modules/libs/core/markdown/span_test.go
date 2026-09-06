@@ -21,8 +21,7 @@ func TestASpanIsFoundWhereItStands(t *testing.T) {
 	}
 }
 
-// Two of the same span are two answers, so a caller can refuse rather than
-// pick one.
+// Two of the same span are two answers, and a caller may refuse them.
 func TestASpanWrittenTwiceIsFoundTwice(t *testing.T) {
 	at, _ := Where("a foe, and another foe", "foe")
 	if len(at) != 2 {

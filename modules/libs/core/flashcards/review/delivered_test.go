@@ -101,9 +101,9 @@ func TestASchedulesDoesNotDependOnHowTheRunsWereDelivered(t *testing.T) {
 	}
 }
 
-// An answer taken back leaves the schedule the answers around it would have
-// left on their own: a person who took one back is not counted as having given
-// it, whatever else the file holds and however many lines take it back.
+// An answer taken back leaves the schedule the answers around it leave on their
+// own: a person who took one back is not counted as having given it, whatever
+// else the file holds and however many lines take it back.
 func TestAnAnswerTakenBackLeavesTheScheduleItWasNeverGivenIn(t *testing.T) {
 	t.Parallel()
 	var took, twice int

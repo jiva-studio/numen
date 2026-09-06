@@ -29,8 +29,7 @@ func (h *holding) Fingerprints(
 	case <-h.let:
 	case <-ctx.Done():
 	}
-	// Nothing was read, so the round ends here rather than going on to ask what
-	// this set of queries does not answer.
+	// Nothing was read, so the round ends here.
 	return nil, errHeld
 }
 
@@ -104,7 +103,7 @@ func TestAQueueRunsBehindTheCallerAndIsCountedBeforeIt(t *testing.T) {
 
 // TestCollectingRunsBehindTheCallerAndIsCountedBeforeIt. The batches left with a
 // proofreader are asked after on the same terms as the queue: behind whoever
-// asked, and counted in the call rather than in the goroutine it counts.
+// asked, and counted in the call that starts them.
 func TestCollectingRunsBehindTheCallerAndIsCountedBeforeIt(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()

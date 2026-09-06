@@ -46,9 +46,6 @@ func TestARecordingInLineOutlivesTheContext(t *testing.T) {
 // empty under, so the ask that follows is told it began and transcribes the
 // recording itself.
 //
-// A recording told it was queued with no run to transcribe it is a recording
-// never transcribed, and a person left waiting on a count that never falls.
-//
 // The run that ended stops nothing but itself. Its end stands after it let the
 // lock go, by which time the run it handed the line to is the one running, and
 // a third recording named then is told it waits its turn.

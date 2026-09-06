@@ -24,8 +24,7 @@ type Source struct {
 // format named none.
 //
 // Text is indexed for the words it holds and is not kept: it is the text at
-// Start for Length in the source, so a chunk whose text says something the
-// source does not is a chunk that cannot be read back.
+// Start for Length in the source.
 //
 // Small are the chunks inside this one. A Chunk with none of its own is a large
 // chunk all the same: what makes it large is that nothing encloses it.

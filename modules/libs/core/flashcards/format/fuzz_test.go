@@ -34,12 +34,8 @@ var deckSeeds = []string{
 // finished: every card carries a mark that could have been minted, no card is
 // gained or lost, and every mark this minted names the card it was minted for.
 //
-// Passing what came out through again changes nothing and mints nothing. That
-// is what makes the pass safe to make on every write: a deck the application has
-// already written is not rewritten because it was opened again.
-//
-// A deck is a file in a person's own folder, hand-edited and synced from
-// another machine, so its body is a stranger's.
+// Passing what came out through again changes nothing and mints nothing, so the
+// pass is safe to make on every write.
 func FuzzWhole(f *testing.F) {
 	for _, seed := range deckSeeds {
 		f.Add(seed, "Word")

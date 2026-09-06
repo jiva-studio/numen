@@ -279,10 +279,9 @@ func (d drawing) retention(ctx context.Context) (Curve, error) {
 // and what the budget the preset keeps gets through by then.
 //
 // The range stands on the vault and not on the day the file names, so a person
-// can always give themselves longer than they have. It begins tomorrow, because
-// a date of today is no period at all, and reaches whichever is further off:
-// twice as far as the day named, or the day the material would be through at
-// one card a day, which is the slowest a day of review goes.
+// can always give themselves longer than they have. It begins tomorrow and
+// reaches whichever is further off: twice as far as the day named, or the day
+// the material is through at one card a day, the slowest a day of review goes.
 func (d drawing) date(ctx context.Context) (Curve, error) {
 	run, now, p, at, unseen := d.run, d.now, d.preset, d.at, d.unseen
 

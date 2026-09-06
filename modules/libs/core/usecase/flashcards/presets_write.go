@@ -53,9 +53,9 @@ var ErrNoPresets = errors.New("this build cannot work the presets of a vault")
 //
 // Fingerprint, when it is given, is what the caller believes is on disk. A deck
 // that has changed since it was read is left alone and port.ErrStale comes
-// back. What comes back otherwise is the fingerprint of the file this write
-// produced, which is what the caller presents at its next write. An index that
-// could not be brought level is note.ErrUnlevelled beside that fingerprint.
+// back. A write that landed answers with the fingerprint of the file it
+// produced, which the caller presents at its next write. An index that could
+// not be brought level is note.ErrUnlevelled beside that fingerprint.
 func (u Presets) Point(
 	ctx context.Context, v domain.Vault, deck, preset string, fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
@@ -90,9 +90,9 @@ func (u Presets) Point(
 //
 // Fingerprint, when it is given, is what the caller believes is on disk. A note
 // that has changed since it was read is left alone and port.ErrStale comes
-// back. What comes back otherwise is the fingerprint of the file this write
-// produced, which is what the caller presents at its next write. An index that
-// could not be brought level is note.ErrUnlevelled beside that fingerprint.
+// back. A write that landed answers with the fingerprint of the file it
+// produced, which the caller presents at its next write. An index that could
+// not be brought level is note.ErrUnlevelled beside that fingerprint.
 func (u Presets) Save(
 	ctx context.Context, v domain.Vault, path string, settings review.Preset,
 	fingerprint domain.Fingerprint,

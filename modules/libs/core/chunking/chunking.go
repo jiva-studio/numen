@@ -3,22 +3,18 @@
 // result shows.
 //
 // It is pure: no filesystem, no clock, no database. The same text and the same
-// parts give the same offsets, which is what lets a chunk keep an offset and
-// not the text.
+// parts give the same offsets, so a chunk keeps an offset and not the text.
 //
 // Every offset is a byte offset into the text given, and a chunk's own text is
 // text[Start : Start+Length]. A chunk is bounded in words, so a file that puts
 // a whole book on one line is cut like any other.
 //
 // Chunks are cut inside one division — the text from one named part to the next
-// — and never run across one. The exception is Sizes.Large set to Whole, which
-// asks for a single large chunk over the whole text and gets one. A text that
-// names no parts is one division, which is the ordinary case for half the books
-// read.
+// — and never run across one. Sizes.Large set to Whole asks for a single large
+// chunk over the whole text, and a text that names no parts is one division.
 //
 // Sizes.Limit is characters, and the caller sets it under the input limit of the
-// model that will embed a small chunk. What a word costs in tokens differs by
-// script and is recorded in docs/performance.md.
+// model that will embed a small chunk.
 package chunking
 
 import (
@@ -319,8 +315,7 @@ func extent(words []word, at [2]int, location string) Chunk {
 }
 
 // Resolved fills in what configuration left unset and keeps every size usable.
-// It is what Cut works to, so a caller that has to name the sizes the text was
-// cut into asks for it rather than filling the blanks a second way.
+// It is the sizes Cut works to, and what a caller names them by.
 func (s Sizes) Resolved() Sizes {
 	if s.Large == 0 {
 		s.Large = DefaultLarge

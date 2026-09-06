@@ -89,9 +89,9 @@ func TestOneScaleServesEveryWidth(t *testing.T) {
 // table: whatever width a model answers at, a stored vector puts the rerank's
 // similarity within a few of the steps the scale sets.
 //
-// The width is drawn from 256 upwards because below that a unit-length vector
-// starts to carry a component beyond the scale, which is clamped, and clamping
-// is what the scale is chosen to leave room for rather than what it bounds.
+// The width is drawn from 256 upwards: below that a unit-length vector starts
+// to carry a component beyond the scale, which is clamped, and the scale is
+// chosen to leave room for clamping.
 func TestQuantisingCostsTheSameAtEveryWidth(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		d := rapid.IntRange(256, 4096).Draw(t, "dimensions")

@@ -38,8 +38,7 @@ func owing(from, dep string) bool {
 }
 
 // answering is what a package of this module may not be compiled from, and
-// whether it answers for what it names itself rather than for everything it is
-// built from.
+// whether it answers for what it names itself.
 //
 // The core answers for the whole of what it is built from. The composition root
 // binds the adapters and is built from them, so it answers for what it names,
@@ -116,9 +115,8 @@ func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 		}
 	}
 
-	// The composition root is the one package answering for what it names
-	// rather than for everything it is built from, and everything else is held
-	// to the whole of what it is compiled from.
+	// The composition root is the one package answering for what it names, and
+	// everything else is held to the whole of what it is compiled from.
 	if _, named := answering(module + "container"); !named {
 		t.Error("the composition root answers for everything it is built from")
 	}

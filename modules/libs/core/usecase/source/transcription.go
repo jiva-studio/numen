@@ -185,8 +185,7 @@ func (t *TranscriptionWorker) drain(ctx context.Context) {
 //
 // The queue is not stored: which recordings owe their text is a question the
 // index already answers, so a round interrupted by the application closing is
-// taken up when it opens. It is asked again every so often, because a recording
-// dropped into a folder is one the last round did not see.
+// taken up when it opens, and it is asked again every so often.
 //
 // The count is taken here and not in the goroutine it counts, so a wait that
 // begins the instant this returns covers the rounds behind it.

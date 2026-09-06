@@ -131,7 +131,7 @@ func TestTwoProvidersAnsweringAlikeAreOneModel(t *testing.T) {
 
 // Two providers that answer one text differently are two models, and the second
 // is let go of: a question embedded in another space finds nothing the first
-// indexed. It is said in the list rather than nowhere.
+// indexed. It is said in the list of what is being done.
 func TestTwoProvidersThatDisagreeAreNotOneModel(t *testing.T) {
 	first := answering("indexed-here", 1, 0, 0)
 	second := answering("somewhere-else", 0, 1, 0)
@@ -279,7 +279,7 @@ func TestAModelThatArrivedIsNoLongerBeingPreparedFor(t *testing.T) {
 }
 
 // A run with no list to tell asks for a model like any other, and waits for it.
-// A model that never arrives says why rather than answering with nothing.
+// A model that never arrives says why.
 func TestARunWithNoListToTellStillOpensAModel(t *testing.T) {
 	one, letGo := embedders.One(t.Context(),
 		embedders.Fetched(is("never-arrives"), "never-arrives", unfetched))

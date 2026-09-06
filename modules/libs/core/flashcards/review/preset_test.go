@@ -342,8 +342,7 @@ func TestADayAtNoLoadStopsTheDayAndNotThePreset(t *testing.T) {
 }
 
 // A week no day of which carries any of the load stops the preset itself: there
-// is no next day for the cards to be picked up on, which is what a quiet day of
-// an otherwise loud week promises.
+// is no next day for the cards to be picked up on.
 func TestAWeekAtNoLoadStopsThePresetAndNotOneDay(t *testing.T) {
 	day := review.Day{Starts: review.DayStarts, In: time.UTC}
 	at := time.Date(2026, 9, 10, 10, 0, 0, 0, time.UTC)

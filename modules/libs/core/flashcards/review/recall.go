@@ -33,7 +33,7 @@ func Recall(away time.Duration, stability float64) float64 {
 type RecallChance func(Schedule, time.Time) float64
 
 // AsModelled is the chance the scheduler's own forgetting curve gives a card
-// face, and is what a run not told otherwise reads.
+// face. A run told no other chance reads this one.
 func AsModelled(c Schedule, at time.Time) float64 {
 	return Recall(at.Sub(c.Last), c.Stability)
 }

@@ -33,8 +33,8 @@ func TestAMachineWithNoCacheFolderIsAnsweredNoStoreAtAll(t *testing.T) {
 	}
 }
 
-// How many cores this machine has is read here and nowhere else, so the
-// simulator behind a preset's control is told it rather than asking.
+// How many cores this machine has is read here and nowhere else, and the
+// simulator behind a preset's control is told it.
 func TestTheCurvesAssembledAreToldTheMachinesCores(t *testing.T) {
 	held := container.Config{ServiceDir: ".numen"}.Flashcards(nil, nil, nil, nil)
 	if got := held.Curves.Cores; got != runtime.GOMAXPROCS(0) {

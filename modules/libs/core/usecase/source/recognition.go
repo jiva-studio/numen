@@ -138,8 +138,7 @@ func (r *RecognitionWorker) Running() bool {
 // Start recognises one document a person named, and says whether it began now
 // or waits its turn.
 //
-// One at a time: the models hold a worker each, and a second recognition would
-// take twice as long and say so half as clearly. A document named while one is
+// One at a time: the models hold a worker each. A document named while one is
 // being recognised goes to the back of the line and is recognised as soon as
 // the run before it ends.
 //
@@ -181,8 +180,7 @@ func (r *RecognitionWorker) Waiting() int {
 // run that answers it.
 //
 // The context is asked before a document is taken, so what the line still holds
-// when the application closes is still in it: a document taken and then dropped
-// is one nobody is told about, on a count that fell for nothing.
+// when the application closes is still in it.
 func (r *RecognitionWorker) drain(ctx context.Context) {
 	for {
 		r.mu.Lock()
