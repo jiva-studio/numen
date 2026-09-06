@@ -25,8 +25,7 @@ import (
 //	NUMEN_LOAD=1 go test ./adapter/window/editor/ -run TestEditLoad -v -timeout 20m
 //	NUMEN_LOAD=1 NUMEN_LOAD_NOTES=10000 go test ...   # a smaller rehearsal
 //
-// It reports rather than asserts, for the reason the vault load test does: a
-// threshold that fails on a slower machine teaches people to ignore the test.
+// It reports what it measured and asserts nothing.
 func TestEditLoad(t *testing.T) {
 	if os.Getenv("NUMEN_LOAD") == "" {
 		t.Skip("set NUMEN_LOAD=1 to run the load test")

@@ -293,7 +293,7 @@ func TestAPageTheDocumentDoesNotHaveIsRefused(t *testing.T) {
 //
 // It is what lets a drawn page be kept: the address stands for one drawing of
 // one document, so a document rewritten under the same name is a different
-// address and this one is gone rather than answering another picture.
+// address and this one is gone.
 func TestAnAddressNamingOtherBytesIsRefused(t *testing.T) {
 	api, handler := drawnFrom(t, sheets(4))
 	alone(api)
@@ -468,7 +468,7 @@ func TestADocumentThatCannotBeReachedInTimeIsBusy(t *testing.T) {
 	t.Cleanup(letIn)
 
 	// What a document is is asked of the schema and a page of a URL, and both
-	// say the document is busy rather than holding the caller.
+	// answer that the document is busy.
 	_, err := api.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
 	if connect.CodeOf(err) != connect.CodeUnavailable {
 		t.Errorf("what the document is was refused %v, not that it is busy", err)

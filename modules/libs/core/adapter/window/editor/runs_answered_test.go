@@ -19,8 +19,8 @@ import (
 // about a recording under it, and whoever asks works it out the same way.
 func sounded() string { return derived.Fingerprint([]byte(sound)) }
 
-// A run that got no words out of a source wrote down what it got instead, and
-// asking again says so rather than starting a run that answers the same.
+// A run that got no words out of a source wrote down what came of it, and
+// asking again says that.
 func TestASourceAlreadyAnsweredSaysWhatCameOfIt(t *testing.T) {
 	const said = "the mp3 recording: mp3: MPEG version 2.5 is not supported"
 	talks := willRun()

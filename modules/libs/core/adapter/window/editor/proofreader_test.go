@@ -108,7 +108,7 @@ func TestARecordingNothingHasListenedToHasNothingToProofread(t *testing.T) {
 		t.Error("a run was given a recording holding no words")
 	}
 	// Nothing stands, and the window that asked what the recording carries is
-	// told so rather than offering the run at all.
+	// told so.
 	if state := carrying(t, api, talk)[correctedOf]; state != v1.State_STATE_NONE {
 		t.Errorf("the corrections of a recording nothing heard are %s", state)
 	}

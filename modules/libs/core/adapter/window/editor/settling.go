@@ -89,13 +89,9 @@ func (o *Installation) Answered(ctx context.Context) bool { return o.API.Window.
 // and then the writes already taken finish. It answers with whether the vault
 // settled.
 //
-// A client that says nothing is bounded by ctx: what it owes sits in a webview
-// this process cannot reach into. A client raising a question has said
-// something, and the round ends on it: the vault stays open, the door stays
-// open, and the wait from there is on a person.
-//
-// The writes are not bounded, because the door is shut first and what is left
-// is a fixed set of filesystem operations.
+// A client that says nothing is bounded by ctx. A client raising a question
+// ends the round: the vault and the door stay open, and the wait from there is
+// on a person. The writes are not bounded.
 func settling(ctx context.Context, pages *wire.Window, writes *inflight) bool {
 	if !pages.Settling(ctx) {
 		return false

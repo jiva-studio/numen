@@ -96,7 +96,7 @@ func TestAFileNothingIsMadeFromCarriesNothing(t *testing.T) {
 }
 
 // A path the vault does not hold carries nothing that can be asked about, and
-// is refused rather than answered with an empty list.
+// the question is refused.
 func TestWhatAPathTheVaultDoesNotHoldCarriesIsNotFound(t *testing.T) {
 	api, _ := running(t, stored{}, nothingRead(), willRun(), willRun())
 

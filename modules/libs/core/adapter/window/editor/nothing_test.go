@@ -310,8 +310,7 @@ func TestAWindowStandingOnNothingRefusesEveryQuestionAboutAVault(t *testing.T) {
 }
 
 // TestAWindowStandingOnNothingSearchesNothing. The palette is a keystroke away
-// from a person who has added no vault, and typing in it turns up nothing
-// rather than a failure.
+// from a person who has added no vault, and typing in it turns up nothing.
 func TestAWindowStandingOnNothingSearchesNothing(t *testing.T) {
 	f := standingOnNothing(t)
 

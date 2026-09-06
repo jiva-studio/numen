@@ -235,8 +235,8 @@ type SettingsPorts struct {
 
 	// PartsUnderANode is how many parts a node may be asked to hang, at each
 	// end, and LatestDayStarts how late in the day a day of review may be made
-	// to begin, on the clock as `HH:MM`. Each is refused outside, so the window
-	// is told them rather than holding a second copy.
+	// to begin, on the clock as `HH:MM`. Each is refused outside, and the window
+	// is told both.
 	PartsUnderANode Bounds
 	LatestDayStarts string
 

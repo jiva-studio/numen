@@ -18,14 +18,9 @@ import (
 )
 
 // Two processes write the index, so a write that reached the vault may find the
-// index held open by the other one. The file is on disk either way, and a
-// person told their save failed loses the fingerprint the next save presents.
-//
-// So the write is answered, and the answer says the index is behind: the file
-// is on disk and search does not hold what it now says. Nothing repairs that on
-// its own — the watcher's event for this write arrives while the index is still
-// held, and an event arrives once — so a caller told nothing would have no way
-// of knowing its note is unfindable.
+// index held open by the other one. The write is answered, and the answer says
+// the index is behind: the file is on disk and search does not hold what it now
+// says.
 
 // jammed is an index that will not come level with what was written.
 func jammed(context.Context, domain.Vault, []string) error {

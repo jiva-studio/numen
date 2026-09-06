@@ -17,9 +17,8 @@ import (
 // errNoMode is a search that named no mode to ask it in.
 var errNoMode = errors.New("a search says how it is asked")
 
-// errTooManyPaths is a filter naming more paths than are answered at once. It
-// is refused rather than answered in part: an answer cut to fit is one a caller
-// cannot tell from an answer with nothing to say about the paths it left out.
+// errTooManyPaths is a filter naming more paths than are answered at once. The
+// whole filter is refused, and no part of it is answered.
 var errTooManyPaths = errors.New("that is more paths than are answered at once")
 
 // How many answers a client gets when it names no number, and the most it may

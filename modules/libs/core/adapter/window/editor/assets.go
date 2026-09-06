@@ -15,12 +15,8 @@ import (
 //
 //	GET /assets/<id>/pages/<n>?wide=W&size=S&mtime=T   one page, drawn to that width
 //
-// The id is the file's path in the vault, escaped. A file has no other name the
-// window holds.
-//
-// Nothing else of a file is here. What a file is, where a run of its text sits,
-// and what a model made from it are questions of the schema; a page is a
-// picture, and a picture is what an `img` loads.
+// The id is the file's path in the vault, escaped. A page is the whole of what
+// this route answers; everything else about a file is asked over the schema.
 const assetsRoute = "/assets/"
 
 // The one facet an asset offers.

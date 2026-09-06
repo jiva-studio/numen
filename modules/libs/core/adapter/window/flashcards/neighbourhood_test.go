@@ -25,7 +25,7 @@ var joined = map[string]string{
 }
 
 // Reading around a deck reaches only the vaults this installation holds, and a
-// question about another is refused rather than answered off some other vault.
+// question about another is refused.
 func TestReadingAroundIsRefusedForAVaultThisInstallationDoesNotHold(t *testing.T) {
 	api, _ := windowed(t, joined)
 

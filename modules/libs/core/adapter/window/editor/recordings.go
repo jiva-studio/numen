@@ -193,9 +193,7 @@ func spoken(cues []transcript.Cue) []*v1.Cue {
 // the one before it ends. A cue whose words trim away is dropped, and its
 // timings still bound the cue after it.
 //
-// A transcript carrying no words at all is refused: what was heard comes back
-// by deleting the file beside it, and writing nothing over the words leaves the
-// recording saying nothing with nothing to edit.
+// A transcript carrying no words at all is refused.
 func ordered(cues []*v1.Cue) ([]transcript.Cue, error) {
 	out := make([]transcript.Cue, 0, len(cues))
 	last := transcript.Cue{From: -1, To: -1}

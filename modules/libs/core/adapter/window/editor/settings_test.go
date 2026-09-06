@@ -35,7 +35,7 @@ func setting(t *testing.T, f *going, at ...string) any {
 }
 
 // The settings read out hold what the file leaves out, so the window draws what
-// this installation is doing rather than what a person happened to type.
+// this installation is doing.
 func TestTheSettingsReadOutStandOnTheDefaults(t *testing.T) {
 	f := opening(t, nil, nil, true)
 

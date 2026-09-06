@@ -52,10 +52,9 @@ var errAsking = errors.New("a page is holding work a person has to answer for")
 //
 // Nothing is taken away until the vault asked for reads as a vault and every
 // page has written what only it holds. A page holding text a person has to
-// answer for calls the swap off, and the window stays on the vault it had.
-//
-// A vault that will not come up leaves the window on the one it was showing. A
-// window neither of them comes up in stands on nothing and says so.
+// answer for calls the swap off, and so does a vault that will not come up: the
+// window stays on the one it had, and a window neither comes up in stands on
+// nothing and says so.
 func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	if v.ID == o.API.Showing().ID {
 		return nil

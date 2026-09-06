@@ -14,8 +14,8 @@ import (
 
 // following is everyone listening for something moving underneath the window.
 //
-// A listener that is busy is passed over rather than waited for: every message
-// says the same thing, and one lost is one the next says over.
+// A listener that is busy is passed over: every message says the same thing,
+// and one lost is one the next says over.
 type following struct {
 	mu        sync.Mutex
 	next      int

@@ -176,7 +176,7 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 }
 
 // peeking is a model that says what was being done when it was asked for a
-// vector, which is what a person watching the corner would have read.
+// vector, which is what a person watching the corner reads.
 type peeking struct {
 	*asked
 	tasks *task.Tasks
@@ -318,7 +318,7 @@ func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
 
 // overheard is a model that keeps the list of what is being done as it stood
 // every time it was asked anything, which is what a person watching the corner
-// would have read.
+// reads.
 type overheard struct {
 	*asked
 	tasks *task.Tasks

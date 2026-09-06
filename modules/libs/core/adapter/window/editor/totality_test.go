@@ -124,9 +124,6 @@ func TestEveryArtifactStateIsWrittenFromOne(t *testing.T) {
 
 // Every artifact the schema names stands under a name in the store, and is
 // carried by a file of some kind.
-//
-// The two lists used to be a comment: a fourth artifact compiled on both sides,
-// passed every check, and reached the person as a button that was never drawn.
 func TestEveryArtifactTheSchemaNamesStandsSomewhere(t *testing.T) {
 	testsupport.Handled(t, func(of v1.ArtifactKind) bool {
 		id, named := standing(of)

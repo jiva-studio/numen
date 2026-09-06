@@ -80,9 +80,8 @@ type API struct {
 	agent atomic.Pointer[port.Agent]
 
 	// showing is the card the last question was asked about, which the tools
-	// answer with. It is held rather than written into the question: a deck is
-	// named by whoever synced it, and a name in a question is read as
-	// instruction where a tool's answer is data.
+	// answer with. It is held here, and the question carries none of it: a
+	// tool's answer is data where a question is read as instruction.
 	showing atomic.Pointer[CurrentCard]
 
 	runs     sessions

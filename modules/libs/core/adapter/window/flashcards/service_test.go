@@ -92,7 +92,7 @@ func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
 }
 
 // Taking back an answer nobody named is the caller's mistake, and is refused as
-// one rather than as trouble with the file.
+// one.
 func TestTakingBackWithoutNamingAnAnswerIsRefused(t *testing.T) {
 	api, held := windowed(t, deck)
 	v := held[0]

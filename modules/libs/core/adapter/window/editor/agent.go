@@ -12,9 +12,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// errNoAgent is a vault with none. Whether one can be reached is what the
-// window is told in the vault's state, and is a fact about this vault and this
-// moment rather than about what the binary was built to answer.
+// errNoAgent is a vault with none. Whether one can be reached is a fact about
+// this vault at this moment, and the window is told it in the vault's state.
 var errNoAgent = errors.New("no agent is set up for this vault")
 
 // AskAgent hands the person's task to the agent and reports what it does for as

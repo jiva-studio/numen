@@ -58,14 +58,8 @@ func raise(nudge chan struct{}) {
 // pending is the sources a recognition has written more of than their chunks
 // account for.
 //
-// One document is read at a time and a document asks many times over, so this
-// holds a source once however many batches it wrote. It holds more than one
-// because a nudge can be dropped while the pass is busy, and a document that
-// finished while another was being asked for is a book cut to the page it
-// reached.
-//
-// It belongs to the vault that was being read, and goes with it: a path read in
-// one vault is not cut under the vault that arrives.
+// A source stands here once, however many batches it wrote, and several stand
+// at a time. It belongs to the vault that was being read and goes with it.
 type pending struct {
 	mu    sync.Mutex
 	paths map[string]domain.Vault

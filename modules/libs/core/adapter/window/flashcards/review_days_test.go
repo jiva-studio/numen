@@ -99,8 +99,7 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 	if coming.GetAnswered() != 1 {
 		t.Errorf("%d cards fall on %s, want the one", coming.GetAnswered(), coming.GetDay())
 	}
-	// A day is written so that it sorts as text the way it sorts in time, which
-	// is what says this day is ahead of today and not behind it.
+	// A day is written so that it sorts as text the way it sorts in time.
 	if today := counting.Names(time.Now()); coming.GetDay() <= today {
 		t.Errorf("what is coming falls on %s, which is not after %s", coming.GetDay(), today)
 	}

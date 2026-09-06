@@ -232,8 +232,8 @@ func started(t *testing.T, api *API, v domain.Vault) *v1.StartSessionResponse {
 	return out.Msg
 }
 
-// A run belongs to the vault it was opened on. An answer naming another vault's
-// run is refused rather than written into a history it has no part in.
+// A run belongs to the vault it was opened on, and an answer naming another
+// vault's run is refused.
 func TestARunIsAnsweredOnlyOnTheVaultItWasOpenedOn(t *testing.T) {
 	api, held := windowed(t, deck, other)
 	one, two := held[0], held[1]

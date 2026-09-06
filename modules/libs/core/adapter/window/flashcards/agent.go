@@ -13,8 +13,8 @@ import (
 )
 
 // ErrNoAgent is a question asked at a window that can reach none. Whether one
-// can be reached is what GetAgentState answers, and is a fact about this window
-// and this moment rather than about what the binary was built to answer.
+// can be reached is a fact about this window at this moment, and GetAgentState
+// answers it.
 var ErrNoAgent = errors.New("no agent is set up for this window")
 
 // GetAgentState is whether a card can be asked about here, and on which cards

@@ -72,13 +72,12 @@ var errNoVault = errors.New("the window has no vault")
 // none opens the one shown last. An installation holding no vault opens a
 // window standing on nothing, and a person makes or adds one there.
 //
-// The scan is started and left running. A vault of a hundred thousand notes
-// takes a minute and a half, and the first note is answerable long before that.
+// The scan is started and left running, and a note is answerable before it
+// ends.
 //
 // Going takes two steps. Settle is called while the window is still drawn: the
 // clients write what only they hold and the writes in the air land. Closing
-// then stops the scan, waits for it, and closes the database — in that order,
-// because the database is what the scan writes to.
+// then stops the scan, waits for it, and closes the database, in that order.
 func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer) (*Installation, error) {
 	registry, err := cfg.Registry()
 	if err != nil {
