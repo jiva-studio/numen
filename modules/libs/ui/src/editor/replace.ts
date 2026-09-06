@@ -71,7 +71,7 @@ const lone = (code: number) => code >= 0xd800 && code <= 0xdbff
 const paired = (code: number) => code >= 0xdc00 && code <= 0xdfff
 
 /** The text of `fresh`, put in over what the state holds. */
-export const replacing = (state: EditorState, fresh: string): TransactionSpec => {
+export const replace = (state: EditorState, fresh: string): TransactionSpec => {
   const now = state.toText(fresh)
   const ranges = state.selection.ranges.map((range) =>
     EditorSelection.range(

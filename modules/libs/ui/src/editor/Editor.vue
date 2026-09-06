@@ -26,7 +26,7 @@ import {
 } from './setup'
 import { wholly } from './languages'
 import { opening, resolving, saving } from './outside'
-import { replacing } from './replacing'
+import { replace } from './replace'
 
 const props = withDefaults(
   defineProps<{
@@ -119,7 +119,7 @@ onBeforeUnmount(() => {
 // they were, and the replacement is no step to undo.
 watch(text, (fresh) => {
   if (!view || view.state.doc.toString() === fresh) return
-  view.dispatch(replacing(view.state, fresh))
+  view.dispatch(replace(view.state, fresh))
 })
 
 watch(

@@ -43,7 +43,6 @@ const generated = new Set(['modules/libs/protocol'])
  */
 export const owed = [
   'modules/libs/core/internal/adapter/filesystem/imported_files.go',
-  'modules/libs/ui/src/editor/replacing.ts',
   'modules/libs/ui/src/following/following.ts',
   'modules/apps/desktop/editor/src/note/drawing.ts',
   'modules/apps/desktop/editor/src/showing.ts',

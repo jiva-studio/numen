@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { EditorSelection, EditorState, Transaction } from '@codemirror/state'
-import { replacing } from './replacing'
+import { replace } from './replace'
 
 const DOC = 'one\ntwo\nthree\nfour'
 
@@ -10,7 +10,7 @@ const SEVERAL = EditorState.allowMultipleSelections.of(true)
 /** Where every end of every range lands, as a line and a column. */
 const after = (doc: string, selection: EditorSelection, fresh: string) => {
   const state = EditorState.create({ doc, selection, extensions: [SEVERAL] })
-  const put = state.update(replacing(state, fresh)).state
+  const put = state.update(replace(state, fresh)).state
   const place = (at: number) => {
     const line = put.doc.lineAt(at)
     return [line.number, at - line.from]
@@ -30,7 +30,7 @@ const changed = (doc: string, fresh: string) => {
   const state = EditorState.create({ doc })
   const found: [number, number, string][] = []
   state
-    .update(replacing(state, fresh))
+    .update(replace(state, fresh))
     .changes.iterChanges((from, to, _at, _to, insert) =>
       void found.push([from, to, insert.toString()]),
     )
@@ -44,7 +44,7 @@ describe('a document put in over another', () => {
 
   it('is no step to undo', () => {
     const state = EditorState.create({ doc: DOC })
-    expect(state.update(replacing(state, 'fresh')).annotation(Transaction.addToHistory)).toBe(false)
+    expect(state.update(replace(state, 'fresh')).annotation(Transaction.addToHistory)).toBe(false)
   })
 
   it('changes what differs and no more than that', () => {
@@ -190,7 +190,7 @@ describe('a document whose shared lines reach the first', () => {
   for (const [was, now] of shapes) {
     it(`is ${JSON.stringify(now)} after ${JSON.stringify(was)}`, () => {
       const state = EditorState.create({ doc: was })
-      expect(state.update(replacing(state, now)).state.doc.toString()).toBe(now)
+      expect(state.update(replace(state, now)).state.doc.toString()).toBe(now)
     })
   }
 })
