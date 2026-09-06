@@ -118,7 +118,7 @@ describe('the curve as it is drawn', () => {
     expect(positions.every((one) => one.y === FOOT)).toBe(true)
   })
 
-  it('stands a extent on nothing, whatever the run it holds comes to', () => {
+  it('stands an extent on nothing, whatever the run it holds comes to', () => {
     expect(extentOf(curve([0, 0, 0]))).toStrictEqual({ least: 0, most: 0 })
     expect(extentOf(curve([40, 45, 41]))).toStrictEqual({ least: 0, most: 45 })
     expect(extentOf(curve([0, 20, 5]))).toStrictEqual({ least: 0, most: 20 })
@@ -413,8 +413,8 @@ describe('the numbers read off the picture’s edges', () => {
     ])
   })
 
-  // A extent of no width has one number and nothing else to read.
-  it('is one number on the foot for a extent of no width', () => {
+  // An extent of no width has one number and nothing else to read.
+  it('is one number on the foot for an extent of no width', () => {
     const numbers = heightsOf({ least: 4, most: 4 }, clear, [], null, said)
 
     expect(numbers).toStrictEqual([
