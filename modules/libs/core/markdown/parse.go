@@ -72,10 +72,11 @@ func Parse(ref domain.Fingerprint, raw []byte) domain.Note {
 				"type "+name+" is not a note, a deck, a stencil, a preset or a link")
 		}
 	}
-	// Where a link note points. The key is read on a link note and nowhere
-	// else: an address written on any other note is the person's own key.
+	// Where a link note points is read where every kind of note's own keys are
+	// read, and what is wrong with it is said against the note that wrote it.
 	if n.Type == domain.TypeLink {
-		problems = append(problems, address(&n)...)
+		_, wrong := domain.ReadAddress(n.Frontmatter)
+		problems = append(problems, wrong...)
 	}
 
 	n.Problems = problems
@@ -112,24 +113,12 @@ func splitFrontmatter(raw []byte) (frontmatter, body []byte, ok bool) {
 	}
 }
 
-// address reads where a link note points. A link note with nowhere to point is
-// a note whose whole subject is missing, so it is said rather than guessed at,
-// and the note is read as every other note is.
-func address(n *domain.Note) []string {
-	raw, present := n.Frontmatter["url"]
-	if !present || raw == nil {
-		return []string{"a link carries no url"}
-	}
-	written, isText := raw.(string)
-	if !isText {
-		return []string{"url is not text"}
-	}
-	at, err := domain.ParseWebAddress(written)
-	if err != nil {
-		return []string{"url " + written + " is not a web address"}
-	}
-	n.Address = at
-	return nil
+// Body is the prose below the frontmatter, as the bytes it stands as in the
+// file. It is what a note's chunks are offsets into, so whatever cuts a note
+// and whatever reads a passage back out of one ask for it the same way.
+func Body(raw []byte) string {
+	_, body, _ := splitFrontmatter(raw)
+	return string(body)
 }
 
 // headings walks the body a line at a time, so each heading carries the byte its

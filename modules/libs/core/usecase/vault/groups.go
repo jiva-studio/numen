@@ -22,15 +22,15 @@ const (
 // different sizes: a folder dropped into a watched vault arrives as one event
 // naming thousands of notes.
 type grouping struct {
-	write func(context.Context, []domain.Note) error
+	write func(context.Context, []domain.IndexedNote) error
 
-	notes []domain.Note
+	notes []domain.IndexedNote
 	bytes int
 }
 
 // add takes one note and its size on disk, writing the group when either bound
 // is reached.
-func (g *grouping) add(ctx context.Context, note domain.Note, size int) error {
+func (g *grouping) add(ctx context.Context, note domain.IndexedNote, size int) error {
 	g.notes = append(g.notes, note)
 	g.bytes += size
 	if len(g.notes) >= notesPerWrite || g.bytes >= bytesPerWrite {

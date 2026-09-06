@@ -610,8 +610,8 @@ func TestANoteMadePointingSomewhereIsALink(t *testing.T) {
 	if written.Type != domain.TypeLink {
 		t.Errorf("type = %q", written.Type)
 	}
-	if written.Address.URL != "https://www.youtube.com/watch?v=dQw4w9WgXcQ" {
-		t.Errorf("points at %q", written.Address.URL)
+	if at, _ := domain.ReadAddress(written.Frontmatter); at.URL != "https://www.youtube.com/watch?v=dQw4w9WgXcQ" {
+		t.Errorf("points at %q", at.URL)
 	}
 	if len(written.Problems) != 0 {
 		t.Errorf("problems = %v", written.Problems)

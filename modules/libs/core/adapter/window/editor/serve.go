@@ -312,13 +312,15 @@ func (o *Installation) Refresh() vaults.Refresh {
 	if on := o.API.showing.Load(); on != nil {
 		return on.opening.Refreshing()
 	}
-	return vaults.NewRefresh(
+	refresh := vaults.NewRefresh(
 		o.cfg.VaultReaders(),
 		o.Index.Vaults(),
 		o.Index.NotesCutAt(o.cfg.Chunking(), o.cfg.Legibility()),
 		o.Index.SourcesKnown(),
 		o.Index.Sources(),
 	)
+	refresh.Derived = o.cfg.DerivedStores()
+	return refresh
 }
 
 // Recognising reads a scanned document for whoever asks. It is one job for the

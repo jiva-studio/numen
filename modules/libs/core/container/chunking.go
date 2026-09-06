@@ -49,6 +49,7 @@ func (c Config) Scan(db *Index) vault.Scan {
 	)
 	scan.Walks = db.Walks()
 	scan.RebuildIndex = c.RebuildIndex
+	scan.Derived = c.DerivedStores()
 	return scan
 }
 

@@ -8,8 +8,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 )
 
-// A link note carries where it points, in the one form every spelling of it
-// reaches.
+// A link note carries where it points in the frontmatter, where every kind of
+// note carries what is its own, and it is read from there.
 func TestALinkNoteCarriesWhereItPoints(t *testing.T) {
 	n := markdown.Parse(domain.Fingerprint{Path: "Entropy.md"}, []byte(
 		"---\ntype: link\nurl: https://youtu.be/dQw4w9WgXcQ?si=Ab1Cd2Ef3\n---\n\nWhat I made of it.\n"))
@@ -17,10 +17,14 @@ func TestALinkNoteCarriesWhereItPoints(t *testing.T) {
 	if n.Type != domain.TypeLink {
 		t.Fatalf("type = %q", n.Type)
 	}
-	if n.Address.URL != "https://www.youtube.com/watch?v=dQw4w9WgXcQ" {
-		t.Errorf("points at %q", n.Address.URL)
+	at, wrong := domain.ReadAddress(n.Frontmatter)
+	if len(wrong) != 0 {
+		t.Fatalf("problems = %v", wrong)
 	}
-	if !n.Address.IsVideo() {
+	if at.URL != "https://www.youtube.com/watch?v=dQw4w9WgXcQ" {
+		t.Errorf("points at %q", at.URL)
+	}
+	if !at.IsVideo() {
 		t.Errorf("points at no video")
 	}
 	if len(n.Problems) != 0 {
@@ -45,11 +49,11 @@ func TestALinkNoteWithNowhereToPoint(t *testing.T) {
 		if n.Type != domain.TypeLink {
 			t.Errorf("%q: type = %q", written, n.Type)
 		}
-		if n.Address != (domain.WebAddress{}) {
-			t.Errorf("%q: points at %+v", written, n.Address)
-		}
 		if len(n.Problems) != 1 || !strings.Contains(n.Problems[0], "url") {
 			t.Errorf("%q: problems = %v", written, n.Problems)
+		}
+		if at, wrong := domain.ReadAddress(n.Frontmatter); at != (domain.WebAddress{}) || len(wrong) == 0 {
+			t.Errorf("%q: points at %+v", written, at)
 		}
 	}
 }
@@ -62,9 +66,6 @@ func TestAnAddressOnAnyOtherNoteIsTheirOwnKey(t *testing.T) {
 
 	if n.Type != domain.TypeNote {
 		t.Fatalf("type = %q", n.Type)
-	}
-	if n.Address != (domain.WebAddress{}) {
-		t.Errorf("points at %+v", n.Address)
 	}
 	if len(n.Problems) != 0 {
 		t.Errorf("problems = %v", n.Problems)

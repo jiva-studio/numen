@@ -14,11 +14,11 @@ import (
 // saving saves one note of a title of its own through the opening given.
 func saving(t *testing.T, db *DB, v domain.Vault, path, title string) error {
 	t.Helper()
-	return db.Notes().Cut(chunking.Sizes{}, chunking.Legibility{}).Save(t.Context(), v.ID, []domain.Note{{
+	return db.Notes().Cut(chunking.Sizes{}, chunking.Legibility{}).Save(t.Context(), v.ID, []domain.IndexedNote{{Note: domain.Note{
 		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: int64(len(title)), ModTime: walked},
 		Title:       title,
 		Type:        domain.TypeNote,
-	}})
+	}}})
 }
 
 // What one opening writes is what another one reads, while both hold the index

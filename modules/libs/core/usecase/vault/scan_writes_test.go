@@ -23,13 +23,13 @@ type groupedWrites struct {
 	fail   error
 }
 
-func (g *groupedWrites) Save(_ context.Context, _ domain.VaultID, notes []domain.Note) error {
+func (g *groupedWrites) Save(_ context.Context, _ domain.VaultID, notes []domain.IndexedNote) error {
 	if g.fail != nil {
 		return g.fail
 	}
 	paths := make([]string, len(notes))
 	for i, n := range notes {
-		paths[i] = n.Fingerprint.Path
+		paths[i] = n.Note.Fingerprint.Path
 	}
 	g.groups = append(g.groups, paths)
 	return nil

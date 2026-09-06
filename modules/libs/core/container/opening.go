@@ -67,8 +67,16 @@ func (c Config) VaultOpenerWith(
 		watcher: watcher,
 		scan:    scan,
 		held:    held,
-		refresh: vault.NewRefresh(c.VaultReaders(), db.Vaults(), held, db.SourcesKnown(), db.Sources()),
+		refresh: refreshing(c, db, held),
 	}
+}
+
+// refreshing brings named notes up to date, cut at this installation's sizes
+// and carrying what was fetched for a link note.
+func refreshing(c Config, db *Index, notes port.NoteRepository) vault.Refresh {
+	refresh := vault.NewRefresh(c.VaultReaders(), db.Vaults(), notes, db.SourcesKnown(), db.Sources())
+	refresh.Derived = c.DerivedStores()
+	return refresh
 }
 
 // Refreshing brings named notes up to date, through whatever is following the
@@ -189,9 +197,9 @@ type writes struct {
 	over  bool
 }
 
-func (h *holding) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.Note) error {
-	for _, n := range notes {
-		h.hold(n.Fingerprint.Path)
+func (h *holding) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.IndexedNote) error {
+	for _, one := range notes {
+		h.hold(one.Note.Fingerprint.Path)
 	}
 	return h.NoteRepository.Save(ctx, vaultID, notes)
 }

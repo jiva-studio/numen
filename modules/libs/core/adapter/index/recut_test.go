@@ -81,7 +81,7 @@ func noParts(n domain.Note) domain.Note {
 
 func save(t *testing.T, db *DB, vault domain.Vault, n domain.Note) {
 	t.Helper()
-	if err := db.Notes().Save(t.Context(), vault.ID, []domain.Note{n}); err != nil {
+	if err := db.Notes().Save(t.Context(), vault.ID, domain.Indexed(n)); err != nil {
 		t.Fatal(err)
 	}
 }

@@ -28,6 +28,10 @@ type Refresh struct {
 	// takes those rows out.
 	Known   port.SourceQueries
 	Sources port.SourceRepository
+
+	// Derived is where what was fetched for a link note is kept. A run given
+	// none indexes every note as the prose in its file.
+	Derived port.DerivedStores
 }
 
 // NewRefresh is how the index is brought level with a handful of files: the
@@ -78,11 +82,12 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	if err := u.Vaults.Register(ctx, v.ID); err != nil {
 		return res, fmt.Errorf("register vault: %w", err)
 	}
+	fetches := store(u.Derived, v)
 
 	// The same bounds a scan writes in. One event can name a whole folder — a
 	// checkout, a restore, a sync client unpacking an archive — so the number of
 	// paths handed here is not small because they were named individually.
-	group := grouping{write: func(ctx context.Context, notes []domain.Note) error {
+	group := grouping{write: func(ctx context.Context, notes []domain.IndexedNote) error {
 		return u.Notes.Save(ctx, v.ID, notes)
 	}}
 
@@ -130,7 +135,7 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 			res.Unreadable = append(res.Unreadable, path)
 			continue
 		}
-		if err := group.add(ctx, markdown.Parse(ref, raw), len(raw)); err != nil {
+		if err := group.add(ctx, indexed(ctx, fetches, markdown.Parse(ref, raw)), len(raw)); err != nil {
 			return res, fmt.Errorf("index: %w", err)
 		}
 		res.Indexed = append(res.Indexed, path)

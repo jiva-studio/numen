@@ -9,8 +9,10 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/chunking"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/fixes"
 	"github.com/jiva-studio/numen/modules/libs/core/highlight"
+	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
@@ -19,6 +21,24 @@ import (
 // ASR is the producer that writes down what a model heard in a recording. What
 // it writes is WebVTT, and the names it keeps its files under say so.
 const ASR = "asr"
+
+// The producers that bring back what is at an address a link note points at.
+// Each is named for what made the files, as ASR is.
+const (
+	// Captions is the words published with a video, which nothing here heard.
+	Captions = "captions"
+	// Article is the prose of a page, without the furniture around it.
+	Article = "article"
+)
+
+// timed says whether a producer writes words with the times they were said at.
+// Those are WebVTT and open in a player; everything else is prose.
+func timed(producer string) bool { return producer == ASR || producer == Captions }
+
+// Separator is what stands between a link note's own prose and what was fetched
+// for it. The two are one text, and a chunk is cut across neither into the
+// other.
+const Separator = "\n\n"
 
 // A Reader is where a source's text comes from: the file itself, or the file a
 // recognition wrote.
@@ -41,6 +61,12 @@ type Reader struct {
 // which is a wrong answer given confidently and is worse than no answer.
 func (r Reader) Of(ctx context.Context, path, producer, hash string) (*Document, error) {
 	if producer != "" {
+		// A note naming a producer is a link: what a person wrote and what was
+		// fetched for the address they wrote it about are one text, and an
+		// offset in it falls in whichever of the two it lands in.
+		if strings.HasSuffix(path, domain.NoteExtension) {
+			return r.pointed(ctx, path, producer, hash)
+		}
 		return r.recognised(ctx, producer, hash)
 	}
 	ref, err := r.Vault.Stat(ctx, path)
@@ -75,6 +101,84 @@ func (r Reader) recognised(ctx context.Context, from, hash string) (*Document, e
 	return nil, ErrUnreadable
 }
 
+// pointed is a link note: the prose its person wrote, and what was fetched from
+// the address it points at, as one text.
+//
+// The prose comes first because it is what the person opened the note to write.
+// A note whose fetch brought back nothing is its prose alone, and one nothing
+// has fetched for yet is the same.
+func (r Reader) pointed(ctx context.Context, path, producer, hash string) (*Document, error) {
+	raw, err := r.Vault.Read(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+	doc := &Document{Text: markdown.Body(raw)}
+	fetched, err := r.recognised(ctx, producer, hash)
+	if errors.Is(err, ErrUnreadable) {
+		return doc, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return Joined(doc.Text, fetched), nil
+}
+
+// Joined is a link note's prose and what was fetched for it, as one text.
+//
+// What the fetch named — the moment a stretch of speech was said, the parts of
+// an article — is moved out by as much as the prose and what stands between
+// them, so a place in the fetched half is the place it was.
+func Joined(prose string, fetched *Document) *Document {
+	at := len(prose) + len(Separator)
+	doc := &Document{Text: prose + Separator + fetched.Text}
+	for _, part := range fetched.Parts {
+		part.Offset += at
+		doc.Parts = append(doc.Parts, part)
+	}
+	for _, one := range fetched.named {
+		doc.named = append(doc.named, namedPlace{Offset: one.Offset + at, Name: one.Name})
+	}
+	for _, one := range fetched.paged {
+		doc.paged = append(doc.paged, namedPlace{Offset: one.Offset + at, Name: one.Name})
+	}
+	return doc
+}
+
+// Producers are the ones that bring back what is at an address, in the order
+// one of them is read: what a model here heard stands over what a site
+// published, because listening is asked for and publishing is not.
+func Producers() []string { return []string{ASR, Captions, Article} }
+
+// Fetched is what was brought back for an address, as the text a link note is
+// cut with, and which producer brought it.
+//
+// Nothing fetched is no text and no producer, which is a link note nothing has
+// been fetched for and is its ordinary state until something is.
+func Fetched(
+	ctx context.Context, store port.DerivedStore, hash string,
+) (words, producer string, err error) {
+	if store == nil {
+		return "", "", nil
+	}
+	for _, from := range Producers() {
+		for _, name := range []string{Artifact(from, hash), Partial(from, hash)} {
+			raw, err := store.Read(ctx, name)
+			if errors.Is(err, fs.ErrNotExist) {
+				continue
+			}
+			if err != nil {
+				return "", "", err
+			}
+			doc, err := Composed(ctx, store, from, hash, raw)
+			if err != nil {
+				return "", "", err
+			}
+			return doc.Text, from, nil
+		}
+	}
+	return "", "", nil
+}
+
 // Composed is a reading and everything kept beside it, as the text a source's
 // chunks are places in.
 //
@@ -87,7 +191,7 @@ func Composed(
 	producer, hash string,
 	raw []byte,
 ) (*Document, error) {
-	if producer == ASR {
+	if timed(producer) {
 		put, err := beside(ctx, store, Corrections(producer, hash))
 		if err != nil {
 			return nil, err
@@ -208,7 +312,7 @@ func Fingerprint(raw []byte) string {
 // The extension is the producer's: a transcript is WebVTT and opens in a player
 // under the name a player knows it by.
 func Artifact(from, hash string) string {
-	if from == ASR {
+	if timed(from) {
 		return from + "/" + hash + ".vtt"
 	}
 	return from + "/" + hash + ".txt"
@@ -217,7 +321,7 @@ func Artifact(from, hash string) string {
 // Partial is the name a producer's recognition still running is kept under. It
 // is not an artifact until it is complete, and nothing reads it back as one.
 func Partial(from, hash string) string {
-	if from == ASR {
+	if timed(from) {
 		return from + "/" + hash + ".partial.vtt"
 	}
 	return from + "/" + hash + ".partial"
@@ -231,7 +335,7 @@ func Partial(from, hash string) string {
 // under the extension that format is opened by; a reading's are one record to
 // a line put right, keyed by the box the line was read from.
 func Corrections(from, hash string) string {
-	if from == ASR {
+	if timed(from) {
 		return from + "/" + hash + ".corrected.vtt"
 	}
 	return from + "/" + hash + ".fixes"
@@ -300,7 +404,7 @@ func Beside(from, hash string) string {
 // Each producer's own files are named: a sweep works through this list, and a
 // transcription writes no coordinates or parts.
 func Names(from, hash string) []string {
-	if from == ASR {
+	if timed(from) {
 		return []string{
 			Artifact(from, hash),
 			Partial(from, hash),

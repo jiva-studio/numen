@@ -11,10 +11,6 @@ type Note struct {
 	// which is nearly every file in a vault.
 	Type NoteType
 
-	// Address is where a link note points, read from `url`. It is empty on
-	// every other note, and on a link note whose address could not be read.
-	Address WebAddress
-
 	// ID is what the note carries in its frontmatter, if it carries one. A note
 	// written outside the application has none: it is indexed in full and simply
 	// cannot be a stable target.
