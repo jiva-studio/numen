@@ -10,6 +10,7 @@ import { ref, shallowRef } from 'vue'
 import { mount } from '@vue/test-utils'
 import PresetTab from './PresetTab.vue'
 import tabSource from './PresetTab.vue?raw'
+import rowsSource from './PresetSettings.vue?raw'
 import sliderSource from './CurveSlider.vue?raw'
 import { NO_BOUNDS } from './core'
 import type { Field } from './curve'
@@ -285,7 +286,7 @@ describe('the line the tab is read against', () => {
   const BARE = [
     [tabSource, '.preset__label'],
     [tabSource, '.preset__unpointed'],
-    [tabSource, '.preset__row'],
+    [rowsSource, '.preset-settings__row'],
   ] as const
 
   it('puts the edge of every box on the edge of the column', () => {
