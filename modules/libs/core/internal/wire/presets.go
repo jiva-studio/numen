@@ -174,9 +174,12 @@ func BudgetsOf(names review.BudgetNames) []v1.BudgetName {
 	return out
 }
 
-// BudgetOf is one budget, as the schema names it.
+// BudgetOf is one budget, as the schema names it. Every budget the core holds
+// is named here, so a budget added to the core is a case added beside them.
 func BudgetOf(name review.BudgetName) v1.BudgetName {
 	switch name {
+	case review.ClosedNothing:
+		return v1.BudgetName_BUDGET_NAME_UNSPECIFIED
 	case review.ClosedMinutes:
 		return v1.BudgetName_BUDGET_NAME_MINUTES_A_DAY
 	case review.ClosedNew:
@@ -189,9 +192,8 @@ func BudgetOf(name review.BudgetName) v1.BudgetName {
 		return v1.BudgetName_BUDGET_NAME_BACKLOG
 	case review.ClosedPaused:
 		return v1.BudgetName_BUDGET_NAME_PAUSED
-	default:
-		return v1.BudgetName_BUDGET_NAME_UNSPECIFIED
 	}
+	return v1.BudgetName_BUDGET_NAME_UNSPECIFIED
 }
 
 func placeOf(p review.Place) *v1.Place {
