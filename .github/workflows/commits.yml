@@ -9,6 +9,12 @@ on:
   push:
     branches: [main]
 
+# One run at a time per branch, and on a pull request the newest is the one that
+# matters.
+concurrency:
+  group: commits-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
 
