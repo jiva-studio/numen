@@ -4,20 +4,33 @@
  */
 import { Role } from '@numen/protocol'
 import type { PlexRelatedSeat } from '@numen/ui'
+import { namesOf } from '@numen/wire'
 
 /**
- * A seat and the role that seats a note in it are one relationship named twice,
- * so they carry the same word. A seat the schema has no role of that name for
- * is written nowhere, and a sibling is one.
+ * Which seat each relationship puts a note in. Keyed by the schema, so a role
+ * added to it has to be seated here before this compiles. A role the picture
+ * draws no seat for sits in none, and a sibling is seated by no role at all.
  */
-export const ROLES: Partial<Record<PlexRelatedSeat, Role>> = {
-  parent: Role.PARENT,
-  child: Role.CHILD,
-  jump: Role.JUMP,
+const seated: Record<Role, PlexRelatedSeat | null> = {
+  [Role.UNSPECIFIED]: null,
+  [Role.PARENT]: 'parent',
+  [Role.CHILD]: 'child',
+  [Role.JUMP]: 'jump',
+  [Role.REF]: null,
+  [Role.ATTACHMENT]: null,
 }
 
+/** A seat a link can write, which a gesture may therefore produce. */
+export type CreatableSeat = NonNullable<(typeof seated)[Role]>
+
+/** What a seat writes into a note, as the schema names it. */
+export const ROLES = namesOf<CreatableSeat, Role>(seated)
+
 /** A gesture may produce a seat exactly where a link can write one. */
-export const CREATABLE: readonly PlexRelatedSeat[] = Object.keys(ROLES) as PlexRelatedSeat[]
+export const CREATABLE: readonly CreatableSeat[] = Object.keys(ROLES) as CreatableSeat[]
+
+/** Whether a link can write the seat a gesture asked for. */
+export const isCreatable = (seat: PlexRelatedSeat): seat is CreatableSeat => seat in ROLES
 
 /** The note a seeded vault opens on. The Go side writes the graph and names it. */
 export const SEEDED = 'Physics.md'

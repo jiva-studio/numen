@@ -20,7 +20,7 @@ import NoteSheet from '../note/NoteSheet.vue'
 import { reach, type Core } from '../core'
 import { follow } from './following'
 import { asPlex } from './picture'
-import { CREATABLE, ROLES, SEEDED } from './seats'
+import { CREATABLE, isCreatable, ROLES, SEEDED } from './seats'
 
 const core = ref<Core | null>(null)
 const picture = ref<PlexNeighbourhood | null>(null)
@@ -57,9 +57,10 @@ async function made(from: string, seat: PlexRelatedSeat) {
 
 async function joined(from: string, to: string, seat: PlexRelatedSeat) {
   if (!core.value) return
-  const role = ROLES[seat]
-  if (role === undefined) return
-  const said = await core.value.notes.writeLink({ path: from, link: { to, role } })
+  // The picture is only ever asked for a seat it offers, and it offers no
+  // sibling: no link writes one.
+  if (!isCreatable(seat)) return
+  const said = await core.value.notes.writeLink({ path: from, link: { to, role: ROLES[seat] } })
   if (said.refusal) {
     trouble.value = refusalWords(said.refusal)
     return
