@@ -3,20 +3,13 @@ title: Settings reference
 description: Every key numen.json can hold, section by section, taken from the application itself.
 ---
 
-Every key `numen.json` can hold. The pages under Settings say which of these are worth touching
-and why; this one is here so that nothing is missing.
+Every key `numen.json` can hold. The pages under Settings say which of these are worth touching and why; this one is here so that nothing is missing.
 
-Each heading below is a section of the file, and the keys under it are written the way they are
-written inside that section — `model.name` under `indexing.embedding` is
-`indexing.embedding.model.name` if you write it out in full.
+Each heading below is a section of the file, and the keys under it are written the way they are written inside that section — `model.name` under `indexing.embedding` is `indexing.embedding.model.name` if you write it out in full.
 
-A key you leave out keeps its default, so a file naming one setting is a complete file. A key
-numen does not know is carried through untouched. A row with no kind beside it is a group
-holding the keys under it.
+A key you leave out keeps its default, so a file naming one setting is a complete file. A key numen does not know is carried through untouched. A row with no kind beside it is a group holding the keys under it.
 
-Two things are not settings and are not in here: which files count as notes, and what a vault's
-own folder is called. Both are asked for on the command line, by
-[`numen-cli`](/cli/#where-it-puts-things).
+Two things are not settings and are not in here: which files count as notes, and what a vault's own folder is called. Both are asked for on the command line, by [`numen-cli`](/cli/#where-it-puts-things).
 
 <!-- BEGIN AUTOGEN -->
 | | | |
