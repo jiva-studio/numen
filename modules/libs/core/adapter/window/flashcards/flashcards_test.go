@@ -64,7 +64,14 @@ func (r registry) Save(domain.Vault) error      { return nil }
 func (r registry) Remove(domain.VaultID) error  { return nil }
 func (r registry) Opened(domain.VaultID) error  { return nil }
 
-func (r registry) Find(string) (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
+func (r registry) Find(id string) (domain.Vault, bool, error) {
+	for _, v := range r.held {
+		if string(v.ID) == id {
+			return v, true, nil
+		}
+	}
+	return domain.Vault{}, false, nil
+}
 
 func (r registry) Last() (domain.Vault, bool, error) {
 	for _, v := range r.held {
@@ -495,7 +502,7 @@ func TestAQuestionAboutAVaultNobodyHoldsIsRefused(t *testing.T) {
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("refused with %v", connect.CodeOf(err))
 	}
-	if !errors.Is(err, ErrNoVault) {
+	if !errors.Is(err, vaults.ErrUnknown) {
 		t.Errorf("refused with %v", err)
 	}
 }

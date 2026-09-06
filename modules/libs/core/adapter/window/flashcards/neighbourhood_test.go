@@ -8,6 +8,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -38,7 +39,7 @@ func TestReadingAroundIsRefusedForAVaultThisInstallationDoesNotHold(t *testing.T
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("refused with %v", connect.CodeOf(err))
 	}
-	if !errors.Is(err, ErrNoVault) {
+	if !errors.Is(err, vaults.ErrUnknown) {
 		t.Errorf("refused because %v", err)
 	}
 }

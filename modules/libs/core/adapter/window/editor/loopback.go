@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // A Loopback is a socket on the loopback address that answers with the vault's
@@ -205,16 +206,11 @@ func (a *API) vaultOf(id string) (domain.Vault, bool) {
 	if a.Vaults.Registry == nil {
 		return domain.Vault{}, false
 	}
-	all, err := a.Vaults.Registry.All()
+	one, err := vaults.NewFind(a.Vaults.Registry).Execute(id)
 	if err != nil {
 		return domain.Vault{}, false
 	}
-	for _, one := range all {
-		if string(one.ID) == id {
-			return one, true
-		}
-	}
-	return domain.Vault{}, false
+	return one, true
 }
 
 // named is where the window may play from, for the policy the page is served

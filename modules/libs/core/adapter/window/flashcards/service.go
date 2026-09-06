@@ -3,7 +3,6 @@ package flashcards
 import (
 	"context"
 	"errors"
-	"slices"
 	"sync"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // atOnce is how many vaults are counted alongside each other.
@@ -33,14 +33,16 @@ func (a *API) WatchCardsDue(
 	ctx context.Context, _ *connect.Request[v1.WatchCardsDueRequest],
 	out *connect.ServerStream[v1.WatchCardsDueResponse],
 ) error {
-	all, err := a.Registry.All()
+	known, err := vaults.NewKnownVaults(a.Registry, nil).Execute("")
 	if err != nil {
 		return connect.NewError(connect.CodeInternal, err)
 	}
 
-	listed := make([]*v1.VaultCardsDue, 0, len(all))
-	for _, v := range all {
-		listed = append(listed, &v1.VaultCardsDue{Name: string(v.ID), DisplayName: v.Name, Path: v.Path})
+	listed := make([]*v1.VaultCardsDue, 0, len(known))
+	for _, one := range known {
+		listed = append(listed, &v1.VaultCardsDue{
+			Name: string(one.Vault.ID), DisplayName: one.Vault.Name, Path: one.Vault.Path,
+		})
 	}
 	// The day these counts stand in, which is the day a goal is weighed against.
 	standing := func() *v1.WatchCardsDueResponse {
@@ -64,7 +66,7 @@ func (a *API) WatchCardsDue(
 	repeat := time.NewTicker(wire.Again)
 	defer repeat.Stop()
 
-	counted := a.counting(ctx, a.wanted(all))
+	counted := a.counting(ctx, wanted(known))
 	for counted != nil {
 		select {
 		case one, open := <-counted:
@@ -85,22 +87,22 @@ func (a *API) WatchCardsDue(
 	return nil
 }
 
-// wanted is the order the vaults are counted in: the one opened last, then the
-// rest as the registry holds them. A person coming back to this window is most
-// often coming back to the vault they were last in.
-func (a *API) wanted(all []domain.Vault) []domain.Vault {
-	last, held, err := a.Registry.Last()
-	if err != nil || !held {
-		return all
+// wanted is the order the vaults are counted in: the current one, then the rest
+// as the list holds them. A person coming back to this window is most often
+// coming back to the vault they were last in.
+func wanted(known []vaults.KnownVault) []domain.Vault {
+	order := make([]domain.Vault, 0, len(known))
+	for _, one := range known {
+		if one.Current {
+			order = append(order, one.Vault)
+		}
 	}
-	at := slices.IndexFunc(all, func(v domain.Vault) bool { return v.ID == last.ID })
-	if at <= 0 {
-		return all
+	for _, one := range known {
+		if !one.Current {
+			order = append(order, one.Vault)
+		}
 	}
-	order := make([]domain.Vault, 0, len(all))
-	order = append(order, all[at])
-	order = append(order, all[:at]...)
-	return append(order, all[at+1:]...)
+	return order
 }
 
 // counting works the vaults out, a few at a time, and hands each over as it

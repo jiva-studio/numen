@@ -22,11 +22,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
-
-// ErrNoVault is a question about a vault this installation does not hold.
-var ErrNoVault = errors.New("no vault of that identity")
 
 // ErrNoRun is an answer named against a run this window did not open. A run is
 // one session at one window, and an answer belongs to the session it was given
@@ -165,18 +163,9 @@ func (a *API) Answers(taking port.Agent) {
 	a.agent.Store(&taking)
 }
 
-// Vault is the vault of an identity, as the registry holds it.
+// Vault is the vault of an identity, as the list holds it.
 func (a *API) Vault(id string) (domain.Vault, error) {
-	all, err := a.Registry.All()
-	if err != nil {
-		return domain.Vault{}, err
-	}
-	for _, v := range all {
-		if string(v.ID) == id {
-			return v, nil
-		}
-	}
-	return domain.Vault{}, fmt.Errorf("%w: %s", ErrNoVault, id)
+	return vaults.NewFind(a.Registry).Execute(id)
 }
 
 // opened starts a run and remembers it under its own name.

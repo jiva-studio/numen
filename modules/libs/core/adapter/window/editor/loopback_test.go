@@ -21,7 +21,14 @@ type heldVaults []domain.Vault
 
 func (l heldVaults) All() ([]domain.Vault, error) { return l, nil }
 
-func (l heldVaults) Find(string) (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
+func (l heldVaults) Find(id string) (domain.Vault, bool, error) {
+	for _, v := range l {
+		if string(v.ID) == id {
+			return v, true, nil
+		}
+	}
+	return domain.Vault{}, false, nil
+}
 
 func (l heldVaults) Last() (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
 

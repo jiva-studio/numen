@@ -6,6 +6,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -101,10 +102,13 @@ func TestTheVaultOpenedLastIsCountedFirst(t *testing.T) {
 		"one the list dropped": {"four", []string{"one", "two", "three"}},
 	} {
 		t.Run(name, func(t *testing.T) {
-			api := &API{Registry: registry{held: all, last: c.last}}
+			known, err := vaults.NewKnownVaults(registry{held: all, last: c.last}, nil).Execute("")
+			if err != nil {
+				t.Fatal(err)
+			}
 
 			got := make([]string, 0, len(all))
-			for _, v := range api.wanted(all) {
+			for _, v := range wanted(known) {
 				got = append(got, string(v.ID))
 			}
 			if len(got) != len(c.want) {
