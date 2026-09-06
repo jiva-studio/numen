@@ -24,7 +24,7 @@ func marked(is string) string { return `<style ` + appearance.Marker + `="` + is
 // theme's file is a person's own CSS and says nothing about itself, so the mark
 // is the whole of what a window has to tell them apart by.
 func TestEachStyleElementSaysWhichItIs(t *testing.T) {
-	head := appearance.Styles(dressed())
+	head := dressed().Styles()
 
 	for _, is := range []string{appearance.IsMode, appearance.IsTheme, appearance.IsSizes} {
 		if count := strings.Count(head, marked(is)); count != 1 {
@@ -40,7 +40,7 @@ func TestEachStyleElementSaysWhichItIs(t *testing.T) {
 // theme pinning `color-scheme` is the later of two declarations weighing the
 // same, and the sizes are the last word on how large the window is drawn.
 func TestTheThreeStandInTheOrderTheyWeigh(t *testing.T) {
-	head := appearance.Styles(dressed())
+	head := dressed().Styles()
 
 	mode := strings.Index(head, marked(appearance.IsMode))
 	theme := strings.Index(head, marked(appearance.IsTheme))
@@ -53,7 +53,7 @@ func TestTheThreeStandInTheOrderTheyWeigh(t *testing.T) {
 // A window at no size of its own is left to `tokens.css`, and nothing in the
 // head is marked as the sizes'.
 func TestAWindowAtNoSizeOfItsOwnCarriesNothingMarkedAsTheSizes(t *testing.T) {
-	head := appearance.Styles(appearance.Settings{Mode: appearance.Light})
+	head := appearance.Settings{Mode: appearance.Light}.Styles()
 
 	if strings.Contains(head, marked(appearance.IsSizes)) {
 		t.Errorf("the head ends with %q", head)
@@ -65,7 +65,7 @@ func TestAWindowAtNoSizeOfItsOwnCarriesNothingMarkedAsTheSizes(t *testing.T) {
 // inside it.
 func TestAThemeCannotMarkAnElementOfItsOwn(t *testing.T) {
 	forged := `</style>` + marked(appearance.IsMode) + `:root{color-scheme:light}`
-	head := appearance.Styles(appearance.Settings{Mode: appearance.Dark, Theme: forged})
+	head := appearance.Settings{Mode: appearance.Dark, Theme: forged}.Styles()
 
 	if count := strings.Count(head, "</style>"); count != 2 {
 		t.Errorf("the head ends with %d elements: %q", count, head)

@@ -55,18 +55,18 @@ type Settings struct {
 // The page arrives carrying all of them, so no frame is drawn in the default
 // colours or at a size nobody asked for. A size arriving after the first frame
 // relays out the document.
-func Styles(c Settings) string {
+func (s Settings) Styles() string {
 	// The mode first and the theme second. A theme pinning `color-scheme` is
 	// the later of two declarations weighing the same, and light and dark are
 	// then that theme's own.
-	out := styled(IsMode, ":root { color-scheme: "+scheme(c.Mode)+"; }")
-	if c.Theme != "" {
-		out += styled(IsTheme, c.Theme)
+	out := styled(IsMode, ":root { color-scheme: "+scheme(s.Mode)+"; }")
+	if s.Theme != "" {
+		out += styled(IsTheme, s.Theme)
 	}
 	// The two sizes last. They are what a person set this window to, inside the
 	// bounds each goes to, and the element carrying them is the last word on
 	// them.
-	return out + sized(c.InterfaceScale, c.TextScale)
+	return out + sized(s.InterfaceScale, s.TextScale)
 }
 
 // Into is the page carrying those elements, put where the head ends. A page
