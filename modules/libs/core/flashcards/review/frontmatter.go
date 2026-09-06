@@ -47,8 +47,8 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 		switch {
 		case !isText:
 			problems = append(problems, "counts is not text")
-		case KnownCounts(Counts(name)):
-			p.Counts = Counts(name)
+		case KnownBudgetUnit(BudgetUnit(name)):
+			p.Counts = BudgetUnit(name)
 		default:
 			problems = append(problems, "counts "+name+" is not cards or shows")
 		}

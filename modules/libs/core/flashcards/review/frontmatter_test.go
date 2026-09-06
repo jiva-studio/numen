@@ -55,10 +55,10 @@ even_load: true
 // What a day's budget is spent on is read from the file, and a preset saying
 // nothing spends it on cards.
 func TestWhatABudgetIsSpentOn(t *testing.T) {
-	for written, want := range map[string]review.Counts{
-		"":                review.CountsCards,
-		"counts: cards\n": review.CountsCards,
-		"counts: shows\n": review.CountsShows,
+	for written, want := range map[string]review.BudgetUnit{
+		"":                review.BudgetUnitCards,
+		"counts: cards\n": review.BudgetUnitCards,
+		"counts: shows\n": review.BudgetUnitShows,
 	} {
 		p, problems := review.ReadPreset(front(t, written))
 		if len(problems) != 0 {

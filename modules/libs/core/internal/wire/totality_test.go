@@ -27,8 +27,8 @@ func TestEveryRuleCrossesBothWays(t *testing.T) {
 	testsupport.RoundTrip(t, RuleIn, RuleOf)
 }
 
-func TestEveryCountsCrossesBothWays(t *testing.T) {
-	testsupport.RoundTrip(t, CountsIn, CountsOf)
+func TestEveryBudgetUnitCrossesBothWays(t *testing.T) {
+	testsupport.RoundTrip(t, BudgetUnitIn, BudgetUnitOf)
 }
 
 func TestEveryVerdictIsWrittenFromOne(t *testing.T) {

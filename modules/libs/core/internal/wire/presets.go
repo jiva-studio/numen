@@ -76,7 +76,7 @@ func StopReasonOf(s review.StopReason) v1.StopReason {
 func SettingsOf(p review.Preset) *v1.Settings {
 	out := &v1.Settings{
 		Goal:        GoalOf(p.Goal),
-		Counts:      CountsOf(p.Counts),
+		Counts:      BudgetUnitOf(p.Counts),
 		MinutesADay: int32(p.MinutesADay),
 		NewADay:     int32(p.NewADay),
 		ReviewsADay: int32(p.ReviewsADay),
@@ -102,7 +102,7 @@ func SettingsOf(p review.Preset) *v1.Settings {
 func SettingsIn(s *v1.Settings) (review.Preset, error) {
 	out := review.Preset{
 		Goal:        GoalIn(s.GetGoal()),
-		Counts:      CountsIn(s.GetCounts()),
+		Counts:      BudgetUnitIn(s.GetCounts()),
 		MinutesADay: int(s.GetMinutesADay()),
 		NewADay:     int(s.GetNewADay()),
 		ReviewsADay: int(s.GetReviewsADay()),
@@ -252,27 +252,27 @@ func RuleIn(r v1.Rule) review.LearnedRule {
 	}
 }
 
-// CountsOf is what a day's budget is spent on, as the schema names it.
-func CountsOf(c review.Counts) v1.Counts {
-	switch c {
-	case review.CountsCards:
-		return v1.Counts_COUNTS_CARDS
-	case review.CountsShows:
-		return v1.Counts_COUNTS_SHOWS
+// BudgetUnitOf is what a day's budget is counted in, as the schema names it.
+func BudgetUnitOf(u review.BudgetUnit) v1.BudgetUnit {
+	switch u {
+	case review.BudgetUnitCards:
+		return v1.BudgetUnit_BUDGET_UNIT_CARDS
+	case review.BudgetUnitShows:
+		return v1.BudgetUnit_BUDGET_UNIT_SHOWS
 	default:
-		return v1.Counts_COUNTS_UNSPECIFIED
+		return v1.BudgetUnit_BUDGET_UNIT_UNSPECIFIED
 	}
 }
 
-// CountsIn is what a client said a day's budget is spent on, in the words the
-// core holds it in. A value the schema does not name is refused where the
+// BudgetUnitIn is what a client said a day's budget is counted in, in the words
+// the core holds it in. A value the schema does not name is refused where the
 // settings are weighed.
-func CountsIn(c v1.Counts) review.Counts {
-	switch c {
-	case v1.Counts_COUNTS_CARDS:
-		return review.CountsCards
-	case v1.Counts_COUNTS_SHOWS:
-		return review.CountsShows
+func BudgetUnitIn(u v1.BudgetUnit) review.BudgetUnit {
+	switch u {
+	case v1.BudgetUnit_BUDGET_UNIT_CARDS:
+		return review.BudgetUnitCards
+	case v1.BudgetUnit_BUDGET_UNIT_SHOWS:
+		return review.BudgetUnitShows
 	default:
 		return ""
 	}

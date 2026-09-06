@@ -145,7 +145,7 @@ func (u ProjectCurve) Execute(
 	run := review.Simulation{
 		By: u.at(p.Retention), Day: u.Day, Cost: cost,
 		Spent: review.SpentUnder(u.Day, u.Day.Names(now), held.Answers, under,
-			map[string]review.Counts{path: p.Counts})[path],
+			map[string]review.BudgetUnit{path: p.Counts})[path],
 	}
 	out, err := run.Curve(ctx, now, p, at, unseen, u.at, u.places)
 	if err != nil {

@@ -35,7 +35,7 @@ type budgets struct {
 type allowance struct {
 	admits review.Allowance
 	cost   review.AnswerCost
-	counts review.Counts
+	counts review.BudgetUnit
 	spent  review.Spent
 }
 
@@ -86,7 +86,7 @@ func budgeted(
 	}
 
 	out.decks = asked
-	counting := make(map[string]review.Counts, len(asked))
+	counting := make(map[string]review.BudgetUnit, len(asked))
 	for deck, path := range asked {
 		counting[deck] = settings[path].Counts
 	}

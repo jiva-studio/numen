@@ -263,17 +263,17 @@ func goldenPresets() []goldenPreset {
 		{"minutes, a light week", review.Preset{
 			Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			Retention: 0.9, Rule: review.RuleInterval, Interval: 21,
-			Counts: review.CountsCards, Backlog: 100, Load: light, EvenLoad: true,
+			Counts: review.BudgetUnitCards, Backlog: 100, Load: light, EvenLoad: true,
 		}},
 		{"minutes, no even load, new material first", review.Preset{
 			Goal: review.GoalMinutes, MinutesADay: 35, NewADay: 12, ReviewsADay: 60,
 			Retention: 0.9, Rule: review.RuleInterval, Interval: 10,
-			Counts: review.CountsShows, Backlog: 0,
+			Counts: review.BudgetUnitShows, Backlog: 0,
 		}},
 		{"minutes, learned by a chance of recall", review.Preset{
 			Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			Retention: 0.87, Rule: review.RuleRetention,
-			Counts: review.CountsCards, Backlog: 100, EvenLoad: true,
+			Counts: review.BudgetUnitCards, Backlog: 100, EvenLoad: true,
 		}},
 		{"minutes, a pause", review.Preset{
 			Goal: review.GoalMinutes, MinutesADay: 0, NewADay: 8, ReviewsADay: 45,
@@ -282,30 +282,30 @@ func goldenPresets() []goldenPreset {
 		{"retention, asking much of memory", review.Preset{
 			Goal: review.GoalRetention, MinutesADay: 20, NewADay: 6, ReviewsADay: 30,
 			Retention: 0.97, Rule: review.RuleInterval, Interval: 21,
-			Counts: review.CountsCards, Backlog: 60, Load: light, EvenLoad: true,
+			Counts: review.BudgetUnitCards, Backlog: 60, Load: light, EvenLoad: true,
 		}},
 		{"retention, counting showings", review.Preset{
 			Goal: review.GoalRetention, MinutesADay: 20, NewADay: 6, ReviewsADay: 30,
 			Retention: 0.97, Rule: review.RuleInterval, Interval: 21,
-			Counts: review.CountsShows, Backlog: 60, Load: light, EvenLoad: true,
+			Counts: review.BudgetUnitShows, Backlog: 60, Load: light, EvenLoad: true,
 		}},
 		{"a date, forty-five days off", review.Preset{
 			Goal: review.GoalDate, By: goldenNow.AddDate(0, 0, 45),
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			Retention: 0.9, Rule: review.RuleInterval, Interval: 7,
-			Counts: review.CountsCards, EvenLoad: true,
+			Counts: review.BudgetUnitCards, EvenLoad: true,
 		}},
 		{"a date, counting showings", review.Preset{
 			Goal: review.GoalDate, By: goldenNow.AddDate(0, 0, 45),
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			Retention: 0.9, Rule: review.RuleInterval, Interval: 7,
-			Counts: review.CountsShows, EvenLoad: true,
+			Counts: review.BudgetUnitShows, EvenLoad: true,
 		}},
 		{"a date, learned by a chance of recall", review.Preset{
 			Goal: review.GoalDate, By: goldenNow.AddDate(0, 0, 20),
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			Retention: 0.85, Rule: review.RuleRetention,
-			Counts: review.CountsCards, Load: light,
+			Counts: review.BudgetUnitCards, Load: light,
 		}},
 	}
 }

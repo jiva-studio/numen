@@ -288,9 +288,9 @@ func bounded(p review.Preset) error {
 		return fmt.Errorf("%w: learned %s is not %s or %s",
 			ErrOutOfBounds, p.Rule, review.RuleInterval, review.RuleRetention)
 	}
-	if !review.KnownCounts(p.Counts) {
+	if !review.KnownBudgetUnit(p.Counts) {
 		return fmt.Errorf("%w: counts %s is not %s or %s",
-			ErrOutOfBounds, p.Counts, review.CountsCards, review.CountsShows)
+			ErrOutOfBounds, p.Counts, review.BudgetUnitCards, review.BudgetUnitShows)
 	}
 	for _, one := range []struct {
 		key    string

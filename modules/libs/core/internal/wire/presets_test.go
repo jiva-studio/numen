@@ -18,7 +18,7 @@ import (
 func TestSettingsThatNameNoRuleCountByTheDefault(t *testing.T) {
 	old := &v1.Settings{
 		Goal:        v1.Goal_GOAL_RETENTION,
-		Counts:      v1.Counts_COUNTS_CARDS,
+		Counts:      v1.BudgetUnit_BUDGET_UNIT_CARDS,
 		MinutesADay: 10,
 		NewADay:     12,
 		ReviewsADay: 5,
@@ -78,7 +78,9 @@ func TestAPlaceWithNoDayToNameCarriesNone(t *testing.T) {
 // the other's field would be read without complaint. Each value of each is put
 // through and read back beside every value of the other.
 func TestWhatABudgetCountsIsNotWhatCountsAsLearned(t *testing.T) {
-	for _, counts := range []v1.Counts{v1.Counts_COUNTS_CARDS, v1.Counts_COUNTS_SHOWS} {
+	for _, counts := range []v1.BudgetUnit{
+		v1.BudgetUnit_BUDGET_UNIT_CARDS, v1.BudgetUnit_BUDGET_UNIT_SHOWS,
+	} {
 		for _, rule := range []v1.Rule{v1.Rule_RULE_INTERVAL, v1.Rule_RULE_RETENTION} {
 			p, err := SettingsIn(&v1.Settings{
 				Goal: v1.Goal_GOAL_MINUTES_A_DAY, Counts: counts, Learned: rule,
@@ -88,7 +90,7 @@ func TestWhatABudgetCountsIsNotWhatCountsAsLearned(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if p.Counts != CountsIn(counts) {
+			if p.Counts != BudgetUnitIn(counts) {
 				t.Errorf("%v beside %v was read as a budget spent on %q", counts, rule, p.Counts)
 			}
 			if p.Rule != RuleIn(rule) {
@@ -120,7 +122,7 @@ func TestEverySettingComesBackAsItWentOut(t *testing.T) {
 		Retention:   0.87,
 		Rule:        review.RuleRetention,
 		Interval:    14,
-		Counts:      review.CountsShows,
+		Counts:      review.BudgetUnitShows,
 		Backlog:     40,
 		Load:        map[time.Weekday]int{time.Monday: 80, time.Saturday: 50, time.Sunday: 0},
 		EvenLoad:    true,
@@ -190,7 +192,7 @@ func TestAnUnspecifiedSettingIsNotAValue(t *testing.T) {
 	if review.KnownRule(p.Rule) {
 		t.Errorf("an unspecified rule was read as %q", p.Rule)
 	}
-	if review.KnownCounts(p.Counts) {
+	if review.KnownBudgetUnit(p.Counts) {
 		t.Errorf("an unspecified counts was read as %q", p.Counts)
 	}
 }
@@ -237,7 +239,7 @@ func TestAWordTheSchemaDoesNotNameCrossesAsUnspecified(t *testing.T) {
 	if got := RuleOf(review.LearnedRule("sideways")); got != v1.Rule_RULE_UNSPECIFIED {
 		t.Errorf("a rule the schema does not name crosses as %v", got)
 	}
-	if got := CountsOf(review.Counts("sideways")); got != v1.Counts_COUNTS_UNSPECIFIED {
+	if got := BudgetUnitOf(review.BudgetUnit("sideways")); got != v1.BudgetUnit_BUDGET_UNIT_UNSPECIFIED {
 		t.Errorf("a count the schema does not name crosses as %v", got)
 	}
 }

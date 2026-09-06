@@ -524,7 +524,7 @@ func TestACardIsAskedWithWhatEachAnswerWouldDoToIt(t *testing.T) {
 // `data:` URI is no request, and it is the whole of what this window widens:
 // no script, no form submitted anywhere, and nothing fetched off the machine.
 func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
-	held := appearance.Policy(appearance.Sources{Images: []string{"data:"}})
+	held := appearance.Sources{Images: []string{"data:"}}.Policy()
 	if policy != held {
 		t.Errorf("the policy reads %q", policy)
 	}
@@ -1214,14 +1214,14 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 	for _, one := range []struct {
 		what             string
 		newADay, reviews int
-		counts           review.Counts
+		counts           review.BudgetUnit
 		climbs           bool
 	}{
 		// A budget of one showing is a day the target cannot spend, whatever it
 		// is. Counting cards it could: the one card is asked again for nothing,
 		// and how often it comes back is the target's own answer.
-		{"a count binding at every place", 12, 1, review.CountsShows, false},
-		{"counts that never bind", 50, 200, review.CountsCards, true},
+		{"a count binding at every place", 12, 1, review.BudgetUnitShows, false},
+		{"counts that never bind", 50, 200, review.BudgetUnitCards, true},
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			api, held := windowed(t, lived)

@@ -1301,11 +1301,11 @@ func TestADayCountingShowingsSpendsASlotOnEveryShowing(t *testing.T) {
 	reviews := 6
 
 	for _, one := range []struct {
-		counts review.Counts
+		counts review.BudgetUnit
 		want   int
 	}{
-		{review.CountsShows, reviews},
-		{review.CountsCards, reviews * review.MostShowings},
+		{review.BudgetUnitShows, reviews},
+		{review.BudgetUnitCards, reviews * review.MostShowings},
 	} {
 		p := review.Preset{
 			Goal: review.GoalRetention, NewADay: 0, ReviewsADay: reviews, Counts: one.counts,
@@ -1347,9 +1347,9 @@ func TestWhatADaysBudgetIsSpentOnIsReadUnderEachGoal(t *testing.T) {
 			p.By = now.AddDate(0, 0, 40).Truncate(24 * time.Hour)
 		}
 
-		p.Counts = review.CountsCards
+		p.Counts = review.BudgetUnitCards
 		cards := ran(t, run, now, p, at, 40).Load[0]
-		p.Counts = review.CountsShows
+		p.Counts = review.BudgetUnitShows
 		shows := ran(t, run, now, p, at, 40).Load[0]
 
 		if !one.binds {
@@ -1443,9 +1443,9 @@ func TestABudgetThatNeverBindsGetsThroughTheSameAtEitherCounting(t *testing.T) {
 	run := review.Simulation{By: by, Day: ahead, Cost: review.DefaultCost, Days: 20}
 
 	p := review.Preset{Goal: review.GoalRetention, NewADay: 9999, ReviewsADay: 9999}
-	p.Counts = review.CountsCards
+	p.Counts = review.BudgetUnitCards
 	cards := ran(t, run, now, p, at, 20)
-	p.Counts = review.CountsShows
+	p.Counts = review.BudgetUnitShows
 	shows := ran(t, run, now, p, at, 20)
 
 	if !slices.Equal(cards.Load, shows.Load) {
@@ -1461,7 +1461,7 @@ func TestADeckOfNothingProjectsNothingAtEitherCounting(t *testing.T) {
 		By: review.NewFSRS(), Day: ahead, Cost: review.DefaultCost, Days: 10,
 	}
 
-	for _, counts := range []review.Counts{review.CountsCards, review.CountsShows} {
+	for _, counts := range []review.BudgetUnit{review.BudgetUnitCards, review.BudgetUnitShows} {
 		p := review.Preset{
 			Goal: review.GoalRetention, NewADay: 10, ReviewsADay: 40, Counts: counts,
 		}

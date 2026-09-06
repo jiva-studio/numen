@@ -95,14 +95,14 @@ type Spent struct {
 // it is answered in it. Every one of those answers counts its time either way.
 func SpentUnder(
 	d Day, day string, answers []Answer,
-	under map[CardFaceID]string, counts map[string]Counts,
+	under map[CardFaceID]string, counts map[string]BudgetUnit,
 ) map[string]Spent {
 	return Give(answers).SpentUnder(d, day, under, counts)
 }
 
 // SpentUnder is the same over a history already in order.
 func (h History) SpentUnder(
-	d Day, day string, under map[CardFaceID]string, counts map[string]Counts,
+	d Day, day string, under map[CardFaceID]string, counts map[string]BudgetUnit,
 ) map[string]Spent {
 	// Which card faces have been answered before the answer in hand, over the
 	// whole history and not this day alone.

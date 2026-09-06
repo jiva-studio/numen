@@ -155,14 +155,14 @@ func TestACardAnsweredAgainInTheDayIsCountedBothWays(t *testing.T) {
 	}
 
 	cards := review.SpentUnder(counting, "2026-08-29", answers, under,
-		map[string]review.Counts{"Steady.md": review.CountsCards})
+		map[string]review.BudgetUnit{"Steady.md": review.BudgetUnitCards})
 	want := review.Spent{Answered: 1, New: 1, Took: 36 * time.Second}
 	if cards["Steady.md"] != want {
 		t.Errorf("counting in cards the day came to %+v, want %+v", cards["Steady.md"], want)
 	}
 
 	shows := review.SpentUnder(counting, "2026-08-29", answers, under,
-		map[string]review.Counts{"Steady.md": review.CountsShows})
+		map[string]review.BudgetUnit{"Steady.md": review.BudgetUnitShows})
 	want = review.Spent{Answered: 9, New: 1, Reviews: 8, Took: 36 * time.Second}
 	if shows["Steady.md"] != want {
 		t.Errorf("counting in shows the day came to %+v, want %+v", shows["Steady.md"], want)

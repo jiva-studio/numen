@@ -68,7 +68,7 @@ var pointed = map[string]string{
 func settings() *v1.Settings {
 	return &v1.Settings{
 		Goal:        v1.Goal_GOAL_MINUTES_A_DAY,
-		Counts:      v1.Counts_COUNTS_CARDS,
+		Counts:      v1.BudgetUnit_BUDGET_UNIT_CARDS,
 		MinutesADay: 20,
 		NewADay:     8,
 		ReviewsADay: 45,
@@ -204,7 +204,7 @@ func TestWhatABudgetCountsSurvivesAReadAndAWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 	held := read.Msg.GetPreset().GetSettings()
-	if held.GetCounts() != v1.Counts_COUNTS_SHOWS {
+	if held.GetCounts() != v1.BudgetUnit_BUDGET_UNIT_SHOWS {
 		t.Fatalf("the preset was read as counting %v", held.GetCounts())
 	}
 
@@ -231,7 +231,7 @@ func TestChangingWhatABudgetCountsIsWritten(t *testing.T) {
 		t.Fatal(err)
 	}
 	held := read.Msg.GetPreset().GetSettings()
-	held.Counts = v1.Counts_COUNTS_SHOWS
+	held.Counts = v1.BudgetUnit_BUDGET_UNIT_SHOWS
 
 	if _, err := f.client.WritePreset(t.Context(), connect.NewRequest(&v1.WritePresetRequest{
 		Path: "Shows.md", Settings: held, Seen: read.Msg.GetAt(),
@@ -248,7 +248,7 @@ func TestChangingWhatABudgetCountsIsWritten(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := again.Msg.GetPreset().GetSettings().GetCounts(); got != v1.Counts_COUNTS_SHOWS {
+	if got := again.Msg.GetPreset().GetSettings().GetCounts(); got != v1.BudgetUnit_BUDGET_UNIT_SHOWS {
 		t.Errorf("the preset is read back as counting %v", got)
 	}
 }
@@ -260,7 +260,7 @@ func TestAClientNamingNoCountsIsRefused(t *testing.T) {
 	f := steering(t, map[string]string{"Shows.md": counting})
 
 	asked := settings()
-	asked.Counts = v1.Counts_COUNTS_UNSPECIFIED
+	asked.Counts = v1.BudgetUnit_BUDGET_UNIT_UNSPECIFIED
 	_, err := f.client.WritePreset(t.Context(), connect.NewRequest(&v1.WritePresetRequest{
 		Path: "Shows.md", Settings: asked,
 	}))
@@ -389,7 +389,7 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 		t.Errorf("retention %g at an interval of %d days",
 			settled.GetRetention(), settled.GetInterval())
 	}
-	if settled.GetCounts() != v1.Counts_COUNTS_CARDS || settled.GetBacklog() != 100 {
+	if settled.GetCounts() != v1.BudgetUnit_BUDGET_UNIT_CARDS || settled.GetBacklog() != 100 {
 		t.Errorf("a day counts %v and gives %d to the debt",
 			settled.GetCounts(), settled.GetBacklog())
 	}

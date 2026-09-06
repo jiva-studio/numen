@@ -698,7 +698,7 @@ func TestWhatStandsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 		alter func(p *review.Preset)
 	}{
 		{"a budget spent on every showing", func(p *review.Preset) {
-			p.Counts = review.CountsShows
+			p.Counts = review.BudgetUnitShows
 		}},
 		{"a day spent on new cards first", func(p *review.Preset) { p.Backlog = 0 }},
 		{"an even load off", func(p *review.Preset) { p.EvenLoad = false }},

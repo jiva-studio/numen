@@ -89,8 +89,8 @@ func TestASideThatRunsShortLeavesTheDayToTheOther(t *testing.T) {
 func TestWhatADayOfShowingsCosts(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
-		counts := rapid.SampledFrom([]review.Counts{
-			review.CountsCards, review.CountsShows,
+		counts := rapid.SampledFrom([]review.BudgetUnit{
+			review.BudgetUnitCards, review.BudgetUnitShows,
 		}).Draw(t, "counts")
 		shows := rapid.SliceOfN(rapid.IntRange(0, 5), 0, 40).Draw(t, "shows")
 
@@ -104,7 +104,7 @@ func TestWhatADayOfShowingsCosts(t *testing.T) {
 		}
 
 		want := len(faced)
-		if counts == review.CountsShows {
+		if counts == review.BudgetUnitShows {
 			want = len(shows)
 		}
 		if charged != want {

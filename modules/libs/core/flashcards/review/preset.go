@@ -37,9 +37,9 @@ type Preset struct {
 	// days, and is read under RuleInterval.
 	Interval int
 
-	// Counts is what a day's budget is spent on: the cards a day holds, or the
+	// Counts is what a day's budget is counted in: the cards a day holds, or the
 	// times they are put to a person.
-	Counts Counts
+	Counts BudgetUnit
 
 	// Backlog is how much of a day goes to what is overdue before anything
 	// unbegun is offered, as a share in hundredths. At a hundred the debt is
@@ -170,28 +170,28 @@ func (p Preset) counting() (LearnedRule, int, float64) {
 	return rule, interval, retention
 }
 
-// Counts is what a day's budget is spent on.
+// BudgetUnit is what a day's budget is counted in.
 //
-// Under CountsCards a card face is charged the first time it is answered in a
-// review day and comes round again in it for nothing. Under CountsShows every
-// showing is charged.
-type Counts string
+// Under BudgetUnitCards a card face is charged the first time it is answered in
+// a review day and comes round again in it for nothing. Under BudgetUnitShows
+// every showing is charged.
+type BudgetUnit string
 
 const (
-	CountsCards Counts = "cards"
-	CountsShows Counts = "shows"
+	BudgetUnitCards BudgetUnit = "cards"
+	BudgetUnitShows BudgetUnit = "shows"
 )
 
 // Charges reports whether a showing of a card face spends a slot of a day's
 // count, where shown is whether the day has asked that face already.
 //
 // It is the one place the counting is read.
-func (c Counts) Charges(shown bool) bool { return c == CountsShows || !shown }
+func (u BudgetUnit) Charges(shown bool) bool { return u == BudgetUnitShows || !shown }
 
-// KnownCounts reports whether a value is one of the two.
-func KnownCounts(c Counts) bool {
-	switch c {
-	case CountsCards, CountsShows:
+// KnownBudgetUnit reports whether a value is one of the two.
+func KnownBudgetUnit(u BudgetUnit) bool {
+	switch u {
+	case BudgetUnitCards, BudgetUnitShows:
 		return true
 	}
 	return false
@@ -228,7 +228,7 @@ func Defaults() Preset {
 		Retention:   0.9,
 		Rule:        RuleInterval,
 		Interval:    21,
-		Counts:      CountsCards,
+		Counts:      BudgetUnitCards,
 		Backlog:     AllBacklog,
 		EvenLoad:    true,
 	}
