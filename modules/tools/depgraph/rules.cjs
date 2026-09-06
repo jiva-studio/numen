@@ -38,6 +38,17 @@ const forbidden = [
     to: { path: '^\\.\\.', pathNot: '(^|/)node_modules/' },
   },
   {
+    name: 'no-path-into-the-install',
+    comment:
+      'A module names a package; where the installer put it is the ' +
+      "installer's business. A relative path into node_modules is read by no " +
+      'manifest, so `no-reach-past-the-manifest` has nothing to answer for, ' +
+      'and the path breaks the day the install hoists one folder further up.',
+    severity: 'error',
+    from: {},
+    to: { path: '(^|/)node_modules/', dependencyTypes: ['local'] },
+  },
+  {
     name: 'nothing-unresolved',
     comment: 'An import nothing answers: a package never installed, or a path that moved.',
     severity: 'error',

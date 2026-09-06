@@ -98,7 +98,14 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ['@numen/protocol', '@numen/protocol/*', '@numen/editor', '@numen/wire'],
+              group: [
+                '@numen/protocol',
+                '@numen/protocol/*',
+                '@numen/editor',
+                '@numen/wire',
+                // The same packages named by the path the install put them at.
+                '**/node_modules/@numen/**',
+              ],
               message:
                 'a component knows nothing about the domain or the wire — take props in a drawing vocabulary and emit opaque identifiers',
             },
