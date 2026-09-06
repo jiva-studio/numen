@@ -53,6 +53,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck --prefix modules/apps/landing
 
+      - name: Lint
+        run: npm run lint --prefix modules/apps/landing
+
       - name: Build
         env:
           PUBLIC_NUMEN_DOWNLOADS_BASE: ${{ vars.PUBLIC_NUMEN_DOWNLOADS_BASE }}

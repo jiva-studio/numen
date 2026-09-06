@@ -78,6 +78,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck --prefix modules/apps/docs
 
+      - name: Lint
+        run: npm run lint --prefix modules/apps/docs
+
       - name: Build
         run: npm run build --prefix modules/apps/docs
 
