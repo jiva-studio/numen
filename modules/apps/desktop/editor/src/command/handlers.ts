@@ -21,7 +21,6 @@ import type {
   VaultRefusalReason,
   Vaults,
 } from '../core'
-import type { NoteRef } from '../note/creating'
 import type { Voice } from '../notices/telling'
 import { AGENT, FILES, NOTE, PLEX, SETTINGS } from '../tabs/workspace'
 
@@ -99,10 +98,16 @@ export const reaching = (
   }
 }
 
+/** A note a command made: where it is filed, and what it is called. */
+export interface NewNote {
+  readonly path: string
+  readonly title: string
+}
+
 /** The vault as a command changes what it holds. */
 export interface VaultWriter {
   /** A note made under the name it is given, in a seat of another one. */
-  makes(title: string, from: string, seat: PlexRelatedSeat | null): Promise<NoteRef | null>
+  makes(title: string, from: string, seat: PlexRelatedSeat | null): Promise<NewNote | null>
   /** A note given a different name, and its file renamed with it where the two are one name. */
   renames(path: string, title: string): Promise<RenameResult>
   /** A note taken out of the vault, into the trash or off the disk. */
