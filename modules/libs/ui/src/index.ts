@@ -100,6 +100,11 @@ export type { Notice, Stay, Task } from './notices/notice'
 export { default as Agent } from './screens/Agent.vue'
 export { default as PageReader } from './reader/PageReader.vue'
 
+/** A book made for a screen, set in columns and turned a page at a time. */
+export { default as BookReader } from './book/BookReader.vue'
+/** Where a person is reading, and what a book runs between: bytes of its text. */
+export type { Span as BookSpan } from './book/spread'
+
 export { default as WorkspaceLayout } from './workspace/WorkspaceLayout.vue'
 export { closeTab, openTab, openTabBeside } from './workspace/edit'
 

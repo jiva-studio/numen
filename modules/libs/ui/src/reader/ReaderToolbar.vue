@@ -7,26 +7,39 @@
  */
 import { computed, ref } from 'vue'
 import { Button } from '@/components/ui/button'
-import { clamped, CLOSEST, FURTHEST, NEARER, READER_WORDS, type ReaderWords } from './strip'
+import { CLOSEST, FURTHEST, NEARER, READER_WORDS, clamped, type ReaderWords } from './strip'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     /** How many pages the document has. */
     pages?: number
     /** The words they are drawn with. */
     words?: ReaderWords
+    /** How far the size buttons reach either way, and how much one press moves. */
+    least?: number
+    most?: number
+    step?: number
   }>(),
   {
     pages: 0,
     words: () => READER_WORDS,
+    least: FURTHEST,
+    most: CLOSEST,
+    step: NEARER,
   },
 )
 
 /** Which page is in front, counted from the first. */
 const at = defineModel<number>('at', { default: 0 })
 
-/** How close the page is drawn, which is never past either end. */
-const zoom = defineModel<number>('zoom', { default: 1, set: clamped })
+/**
+ * What the size buttons set: how close a page is drawn, or how large the text
+ * is. It is never past either end.
+ */
+const zoom = defineModel<number>('zoom', {
+  default: 1,
+  set: (value: number) => clamped(value, props.least, props.most),
+})
 
 /**
  * What is being typed over the page in front, and nothing while nothing is. A
@@ -122,8 +135,8 @@ const turn = () => {
         size="icon-small"
         class="rounded-pill"
         :aria-label="words.further"
-        :disabled="zoom <= FURTHEST"
-        @click="zoom /= NEARER"
+        :disabled="zoom <= least"
+        @click="zoom /= step"
       >
         <svg
           viewBox="0 0 16 16"
@@ -141,8 +154,8 @@ const turn = () => {
         size="icon-small"
         class="rounded-pill"
         :aria-label="words.closer"
-        :disabled="zoom >= CLOSEST"
-        @click="zoom *= NEARER"
+        :disabled="zoom >= most"
+        @click="zoom *= step"
       >
         <svg
           viewBox="0 0 16 16"

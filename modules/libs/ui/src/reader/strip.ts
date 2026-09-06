@@ -187,7 +187,7 @@ export const STAGE = 128
  */
 export const SETTLED = 150
 
-/** How close a page is drawn, never past either end. */
-export function clamped(zoom: number): number {
-  return Math.min(Math.max(zoom, FURTHEST), CLOSEST)
+/** A number brought inside its bounds. */
+export function clamped(value: number, least: number, most: number): number {
+  return Math.min(Math.max(value, least), most)
 }

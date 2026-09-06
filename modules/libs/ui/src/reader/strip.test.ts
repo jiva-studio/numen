@@ -145,20 +145,23 @@ describe('where the row stands', () => {
 })
 
 describe('how close a page is drawn', () => {
+  /** The ends a page is drawn between, which are what the controls carry. */
+  const between = (zoom: number) => clamped(zoom, FURTHEST, CLOSEST)
+
   it('goes no further out than a whole page in the viewport', () => {
     // Further than that is a page smaller than the viewport it stands in, which
     // is room going to waste.
-    expect(clamped(FURTHEST / NEARER)).toBe(FURTHEST)
-    expect(clamped(FURTHEST)).toBeCloseTo(FURTHEST, 5)
+    expect(between(FURTHEST / NEARER)).toBe(FURTHEST)
+    expect(between(FURTHEST)).toBeCloseTo(FURTHEST, 5)
   })
 
   it('goes no closer in than the closest', () => {
-    expect(clamped(CLOSEST * NEARER)).toBe(CLOSEST)
+    expect(between(CLOSEST * NEARER)).toBe(CLOSEST)
   })
 
   it('leaves alone what stands between the two', () => {
-    expect(clamped(2 * NEARER)).toBeCloseTo(2 * NEARER, 5)
-    expect(clamped(2 / NEARER)).toBeCloseTo(2 / NEARER, 5)
+    expect(between(2 * NEARER)).toBeCloseTo(2 * NEARER, 5)
+    expect(between(2 / NEARER)).toBeCloseTo(2 / NEARER, 5)
   })
 })
 
