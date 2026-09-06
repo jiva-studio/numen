@@ -153,6 +153,103 @@ func (a *API) WriteLink(
 	return connect.NewResponse(&v1.WriteLinkResponse{}), nil
 }
 
+func (a *API) GetOpeningNote(
+	ctx context.Context, _ *connect.Request[v1.GetOpeningNoteRequest],
+) (*connect.Response[v1.GetOpeningNoteResponse], error) {
+	showing := a.Showing()
+	if showing.ID == "" {
+		// A window standing on nothing opens on no note.
+		return connect.NewResponse(&v1.GetOpeningNoteResponse{}), nil
+	}
+
+	ref, found, err := a.Notes.Queries.Opening(ctx, showing.ID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	out := &v1.GetOpeningNoteResponse{}
+	if found {
+		out.Note = noteOf(ref)
+	}
+	return connect.NewResponse(out), nil
+}
+
+func (a *API) GetNeighbourhood(
+	ctx context.Context, r *connect.Request[v1.GetNeighbourhoodRequest],
+) (*connect.Response[v1.GetNeighbourhoodResponse], error) {
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
+	found, err := note.NewShowNeighbourhood(a.Notes.Links, a.Notes.Queries).
+		Execute(ctx, showing, r.Msg.GetPath())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	// Which of four each note on the picture is, asked once for the whole of
+	// it, so a client draws a deck and a stencil as what they are.
+	paths := []string{found.Focus.Path}
+	for _, related := range found.Related {
+		paths = append(paths, related.Path)
+	}
+	types, err := a.typesAt(ctx, showing, paths)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	out := &v1.GetNeighbourhoodResponse{
+		Focus:     noteOf(found.Focus),
+		FocusType: typeOf(types[found.Focus.Path]),
+	}
+	for _, related := range found.Related {
+		out.Related = append(out.Related, &v1.Neighbour{
+			Note:    noteOf(related.NoteRef),
+			Seat:    seatOf(related.Seat),
+			Label:   related.Label,
+			Through: related.Parent,
+			Mutual:  related.Mutual,
+			Type:    typeOf(types[related.Path]),
+		})
+	}
+	return connect.NewResponse(out), nil
+}
+
+// ResolveAddresses answers where addresses written in one note land. An address
+// that reaches nothing is left out of the answer.
+func (a *API) ResolveAddresses(
+	ctx context.Context, r *connect.Request[v1.ResolveAddressesRequest],
+) (*connect.Response[v1.ResolveAddressesResponse], error) {
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
+	found, err := a.Notes.Links.Resolve(ctx, showing.ID, r.Msg.GetFrom(), r.Msg.GetWritten())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	// In the order they were asked about, and an address asked about twice is
+	// one answer.
+	out := &v1.ResolveAddressesResponse{}
+	said := make(map[string]bool, len(found))
+	for _, written := range r.Msg.GetWritten() {
+		one, reached := found[written]
+		if !reached || said[written] {
+			continue
+		}
+		said[written] = true
+		vault, crossed := one.InVault(showing.ID)
+		out.Resolved = append(out.Resolved, &v1.ResolvedAddress{
+			Written:   written,
+			Path:      one.To,
+			Vault:     string(vault),
+			Crossed:   crossed,
+			Ambiguous: one.Ambiguous,
+		})
+	}
+	return connect.NewResponse(out), nil
+}
+
 // written turns the links a request carries into the links a note is written
 // with, and refuses the lot where one of them cannot be written.
 func (a *API) written(ctx context.Context, links []*v1.NewLink) ([]domain.Link, error) {
@@ -215,6 +312,25 @@ func roleOf(role v1.Role) (domain.LinkRole, bool) {
 		return domain.RoleAttachment, true
 	default:
 		return "", false
+	}
+}
+
+func noteOf(n domain.NoteRef) *v1.Note {
+	return &v1.Note{Path: n.Path, Title: n.Title, Identifier: n.ID}
+}
+
+func seatOf(s domain.Relation) v1.Seat {
+	switch s {
+	case domain.SeatParent:
+		return v1.Seat_SEAT_PARENT
+	case domain.SeatChild:
+		return v1.Seat_SEAT_CHILD
+	case domain.SeatJump:
+		return v1.Seat_SEAT_JUMP
+	case domain.SeatSibling:
+		return v1.Seat_SEAT_SIBLING
+	default:
+		return v1.Seat_SEAT_UNSPECIFIED
 	}
 }
 
