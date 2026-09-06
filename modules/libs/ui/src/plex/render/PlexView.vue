@@ -10,8 +10,7 @@ import { computed, ref, useId, useTemplateRef, watch } from 'vue'
 import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import PlexNodeView from './PlexNodeView.vue'
-import type { EdgeLine } from './lines'
-import { edgeKey } from '../edge'
+import { linesOf } from './lines'
 import type { PlexFrame } from '../frame'
 import { ghostNode, handleIn, type GestureRole, type PlacedNode, type Position } from '../node'
 import { seatWord, type PlexRelatedSeat } from '../seat'
@@ -20,13 +19,7 @@ import { byHandle, type ReachStrategy } from '../reaching'
 import { byDoubleClick, type PlexShowing, type ShowStrategy } from '../showing'
 import type { HungParts } from '../inside'
 import { browserClock, type Clock } from '../transition'
-import {
-  arrowTransformOf,
-  pathOf,
-  readingPathOf,
-  threadOf,
-  type Drop,
-} from '../arrange'
+import { threadOf, type Drop } from '../arrange'
 import type { MenuOpening } from '../../menu/item'
 
 const props = withDefaults(
@@ -148,23 +141,7 @@ const viewBox = computed(() => {
 /** Two plexes on one page each name their own paths. */
 const uid = useId()
 
-/**
- * Every edge with what the drawing asks of it. A title is always set along the
- * line it belongs to, in the words the arrangement cut for it and at the place
- * along it the arrangement chose.
- */
-const lines = computed<readonly EdgeLine[]>(() =>
-  props.frame.edges.map((edge, at) => ({
-    edge,
-    key: `${edge.from}->${edge.to}`,
-    pair: edgeKey(edge),
-    d: pathOf(edge),
-    arrow: edge.arrowhead ? arrowTransformOf(edge.arrowhead) : null,
-    titlePath: edge.words ? `${uid}-title-${at}` : null,
-    titleLine: readingPathOf(edge),
-    titleAt: `${100 * edge.wordsAt}%`,
-  })),
-)
+const lines = computed(() => linesOf(props.frame.edges, uid))
 
 /** The edge the hand is on, by a key that survives the re-routing of a move. */
 const over = ref<string | null>(null)
