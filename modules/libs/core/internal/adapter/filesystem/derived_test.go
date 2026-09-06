@@ -570,3 +570,69 @@ func TestAnAreaThatIsALinkHoldsNothing(t *testing.T) {
 		t.Errorf("the vault's identity is now %q", got)
 	}
 }
+
+// Where the store's folder is was asked once, and the answer holds only while
+// the folder is still there. The folder is repointed from a subfolder to the
+// folder holding it, its identity moved with it as the same file, and a link
+// inside the new one leads back into the old: a name down that link lands in
+// the old area, which is no area of the store now, and the store opened before
+// the move refuses it as one opened after would.
+func TestAStoreDoesNotWriteIntoWhereItsFolderWasBefore(t *testing.T) {
+	held := t.TempDir()
+	old := filepath.Join(held, "old")
+	root := filepath.Join(t.TempDir(), "vault")
+	for _, folder := range []string{old, root, filepath.Join(held, filesystem.OCRDir)} {
+		if err := os.MkdirAll(folder, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	service := filepath.Join(root, filesystem.DefaultServiceDir)
+	if err := os.Symlink(old, service); err != nil {
+		t.Skipf("this filesystem has no links: %v", err)
+	}
+	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	derived, err := filesystem.OpenDerived(root, filesystem.Options{}, filesystem.OCRDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := t.Context()
+	if err := derived.Write(ctx, "ocr/a.txt", []byte("one")); err != nil {
+		t.Fatalf("writing into the folder the store has: %v", err)
+	}
+
+	if err := os.Rename(filepath.Join(old, "config.json"), filepath.Join(held, "config.json")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(service); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(held, service); err != nil {
+		t.Fatal(err)
+	}
+	back := filepath.Join(held, filesystem.OCRDir, "back")
+	if err := os.Symlink(filepath.Join("..", "old", filesystem.OCRDir), back); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := derived.Write(ctx, "ocr/back/x.txt", []byte("two")); err == nil {
+		t.Error("the store wrote into where its folder was before")
+	}
+	if _, err := os.Stat(filepath.Join(old, filesystem.OCRDir, "x.txt")); err == nil {
+		t.Error("the file landed in the old area")
+	}
+	fresh, err := filesystem.OpenDerived(root, filesystem.Options{}, filesystem.OCRDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := fresh.Write(ctx, "ocr/back/y.txt", []byte("three")); err == nil {
+		t.Error("a store opened after the move wrote into the old area")
+	}
+	if err := derived.Write(ctx, "ocr/b.txt", []byte("four")); err != nil {
+		t.Errorf("writing into the folder the store now has: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(held, filesystem.OCRDir, "b.txt")); err != nil {
+		t.Errorf("the file did not land where the folder is: %v", err)
+	}
+}

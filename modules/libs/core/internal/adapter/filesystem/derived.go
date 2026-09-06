@@ -74,6 +74,16 @@ func (p *places) holds(real, area string) bool {
 	return named && under(real, bound)
 }
 
+// current says the store's folder still resolves to the place found.
+func (d *DerivedStore) current(p *places) bool {
+	found, err := os.Lstat(p.root)
+	if err != nil {
+		return false
+	}
+	now, err := os.Stat(d.root)
+	return err == nil && os.SameFile(found, now)
+}
+
 // locate resolves the store's folder and places each area inside it.
 func (d *DerivedStore) locate() (*places, error) {
 	root, err := deepest(d.root)
@@ -497,12 +507,11 @@ func (d *DerivedStore) at(name string) (string, error) {
 // stays inside the area it was written into, so what no name expresses no link
 // expresses either.
 //
-// The folders it is judged against are the ones resolved when the store was
-// opened. A name they refuse is judged again against where those folders are
-// now, so a store whose area was made, moved or replaced after it was opened
-// answers for what it holds today.
+// The folder it is judged against is the one resolved last, and an answer
+// stands only while the store's folder is still that one. A name it refuses,
+// and a folder that has moved, are judged against where the folder is now.
 func (d *DerivedStore) encloses(real, area string) (bool, error) {
-	if where := d.where.Load(); where != nil && where.holds(real, area) {
+	if where := d.where.Load(); where != nil && where.holds(real, area) && d.current(where) {
 		return true, nil
 	}
 	where, err := d.locate()
