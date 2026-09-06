@@ -94,7 +94,10 @@ modules/libs/core/           the core every client is built on
 modules/libs/protocol/       the schema every client is generated from
 modules/libs/ui/             shared interface components
 modules/libs/wire/           what the windows' ports are answered with
-modules/tools/git-hooks/     repo-level tooling
+modules/tools/depgraph/      the dependency rules, and the drawing of them
+modules/tools/git-hooks/     commit validation
+modules/tools/icon/          the icons, at every size a platform asks for
+modules/tools/lint/          the house rules a linter has no rule for
 ```
 
 Mixed-language by design. Each module owns its toolchain; the root carries no

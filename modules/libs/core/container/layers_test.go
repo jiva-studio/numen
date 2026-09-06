@@ -32,8 +32,8 @@ var owed = map[string][]string{
 		"adapter/agent", "internal/adapter/embed", "internal/adapter/proofreading",
 		"internal/adapter/recognition", "internal/adapter/transcription",
 	},
-	// The two source queues stand here, so the words for a piece of work, a
-	// schedule and a cut are read in place.
+	// The queues and the schedule are assembled here, so the words for a piece
+	// of work, a schedule and a cut are read in place.
 	"container": {"chunking", "flashcards/review", "task"},
 }
 

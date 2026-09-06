@@ -2,15 +2,7 @@
 
 ## Layout
 
-```
-docs/adr/                    architecture decision records
-modules/apps/desktop/        the desktop client alone
-modules/apps/mobile/         mobile client
-modules/libs/core/           the core: domain, ports, use cases and the adapters that serve them
-modules/libs/protocol/       wire/vault protocol
-modules/libs/ui/             shared interface components
-modules/tools/git-hooks/     repo-level tooling (commit validation)
-```
+Every module is listed in the [README](README.md#layout), which is the one place they are written down.
 
 The repo is mixed-language by design. Each module owns its own build and its own tests; the root carries no build system. The npm packages share one install, at `modules/`, because a package installed twice is two types that never match.
 
