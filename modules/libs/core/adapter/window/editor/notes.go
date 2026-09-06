@@ -92,15 +92,22 @@ func (a *API) CreateNote(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
+	var address domain.WebAddress
+	if written := r.Msg.GetUrl(); written != "" {
+		if address, err = domain.ParseWebAddress(written); err != nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
+	}
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
 	defer a.Writing.done()
 
 	made, err := a.Notes.Create.Execute(ctx, showing, note.NewNote{
-		Title:  r.Msg.GetTitle(),
-		Folder: r.Msg.GetFolder(),
-		Links:  links,
+		Title:   r.Msg.GetTitle(),
+		Folder:  r.Msg.GetFolder(),
+		Links:   links,
+		Address: address,
 	})
 	behind := a.unlevelled(err)
 	if made.Path != "" {

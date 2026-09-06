@@ -110,7 +110,8 @@ func saveNote(
 		return fmt.Errorf("record the source this note is: %w", err)
 	}
 	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.Fingerprint.Path)),
-		n.Title, string(noteType(n)), nullable(n.ID), frontmatter, nullable(problem)); err != nil {
+		n.Title, string(noteType(n)), nullable(n.ID), frontmatter, nullable(problem),
+		nullable(n.Address.URL)); err != nil {
 		return err
 	}
 

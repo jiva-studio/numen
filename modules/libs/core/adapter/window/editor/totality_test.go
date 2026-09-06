@@ -64,6 +64,7 @@ func TestEveryNoteTypeIsWrittenFromOne(t *testing.T) {
 		v1.NoteType_NOTE_TYPE_DECK:    domain.TypeDeck,
 		v1.NoteType_NOTE_TYPE_STENCIL: domain.TypeStencil,
 		v1.NoteType_NOTE_TYPE_PRESET:  domain.TypePreset,
+		v1.NoteType_NOTE_TYPE_LINK:    domain.TypeLink,
 	}, typeOf)
 }
 

@@ -494,12 +494,13 @@ const around = (said: NeighbourhoodMessage): Neighbourhood => ({
   }),
 })
 
-/** Which of four a note is, in the words the window uses. */
+/** Which of five a note is, in the words the window uses. */
 const typed: Record<NoteTypes, NoteType> = {
   [NoteTypes.UNSPECIFIED]: 'note',
   [NoteTypes.DECK]: 'deck',
   [NoteTypes.STENCIL]: 'stencil',
   [NoteTypes.PRESET]: 'preset',
+  [NoteTypes.LINK]: 'link',
 }
 
 /** A kind this window has no word for is an ordinary note. */

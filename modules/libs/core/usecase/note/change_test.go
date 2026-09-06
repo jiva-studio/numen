@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
@@ -584,5 +585,53 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Two.") {
 		t.Errorf("the second write did not land:\n%s", body)
+	}
+}
+
+// A note made pointing somewhere is a link: it carries the type and the
+// address, in the one form every spelling of that address reaches, and the
+// body is the person's own.
+func TestANoteMadePointingSomewhereIsALink(t *testing.T) {
+	t.Parallel()
+	c := changeable(t, nil)
+
+	at, err := domain.ParseWebAddress("https://youtu.be/dQw4w9WgXcQ?si=Ab1Cd2Ef3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	created, err := c.create().Execute(t.Context(), c.vault, note.NewNote{
+		Title: "Entropy explained", Address: at,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	written := markdown.Parse(domain.Fingerprint{Path: created.Path}, []byte(c.read(t, created.Path)))
+	if written.Type != domain.TypeLink {
+		t.Errorf("type = %q", written.Type)
+	}
+	if written.Address.URL != "https://www.youtube.com/watch?v=dQw4w9WgXcQ" {
+		t.Errorf("points at %q", written.Address.URL)
+	}
+	if len(written.Problems) != 0 {
+		t.Errorf("problems = %v", written.Problems)
+	}
+	if written.ID != created.ID {
+		t.Errorf("identifier = %q, want %q", written.ID, created.ID)
+	}
+}
+
+// Every other note is made as it was before: nothing writes the type or the
+// address into a note that points nowhere.
+func TestANoteMadePointingNowhereCarriesNeitherKey(t *testing.T) {
+	t.Parallel()
+	c := changeable(t, nil)
+
+	created, err := c.create().Execute(t.Context(), c.vault, note.NewNote{Title: "Entropy"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if raw := c.read(t, created.Path); strings.Contains(raw, "type:") || strings.Contains(raw, "url:") {
+		t.Errorf("the note was made as %q", raw)
 	}
 }

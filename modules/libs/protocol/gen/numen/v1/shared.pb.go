@@ -135,7 +135,7 @@ func (Refusal) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_shared_proto_rawDescGZIP(), []int{0}
 }
 
-// NoteType is which of four a note is: the `type` key of its frontmatter. It
+// NoteType is which of five a note is: the `type` key of its frontmatter. It
 // says what the note is; whether the application reads text out of the file is
 // SourceKind.
 type NoteType int32
@@ -150,6 +150,10 @@ const (
 	NoteType_NOTE_TYPE_STENCIL NoteType = 2
 	// A note saying how the decks pointing at it are scheduled.
 	NoteType_NOTE_TYPE_PRESET NoteType = 3
+	// A note pointing at a web address, which it carries in `url`. What is at
+	// that address is fetched into the vault's own folder, and the note is cut
+	// from its own body and that together.
+	NoteType_NOTE_TYPE_LINK NoteType = 4
 )
 
 // Enum value maps for NoteType.
@@ -159,12 +163,14 @@ var (
 		1: "NOTE_TYPE_DECK",
 		2: "NOTE_TYPE_STENCIL",
 		3: "NOTE_TYPE_PRESET",
+		4: "NOTE_TYPE_LINK",
 	}
 	NoteType_value = map[string]int32{
 		"NOTE_TYPE_UNSPECIFIED": 0,
 		"NOTE_TYPE_DECK":        1,
 		"NOTE_TYPE_STENCIL":     2,
 		"NOTE_TYPE_PRESET":      3,
+		"NOTE_TYPE_LINK":        4,
 	}
 )
 
@@ -339,12 +345,13 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x12\x1a\n" +
 	"\x16REFUSAL_DECK_TOO_LARGE\x10\v\x12\x18\n" +
 	"\x14REFUSAL_NOT_A_PRESET\x10\f\x12\x11\n" +
-	"\rREFUSAL_STALE\x10\r*f\n" +
+	"\rREFUSAL_STALE\x10\r*z\n" +
 	"\bNoteType\x12\x19\n" +
 	"\x15NOTE_TYPE_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eNOTE_TYPE_DECK\x10\x01\x12\x15\n" +
 	"\x11NOTE_TYPE_STENCIL\x10\x02\x12\x14\n" +
-	"\x10NOTE_TYPE_PRESET\x10\x03BIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x10NOTE_TYPE_PRESET\x10\x03\x12\x12\n" +
+	"\x0eNOTE_TYPE_LINK\x10\x04BIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_shared_proto_rawDescOnce sync.Once

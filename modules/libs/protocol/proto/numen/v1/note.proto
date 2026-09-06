@@ -285,6 +285,11 @@ message CreateNoteRequest {
 
   // What the note is joined to, written into it as it is made.
   repeated NewLink links = 3;
+
+  // Where the note points. Set, it is made a link: it carries `type: link` and
+  // this address, read into the one form every spelling of it reaches. An
+  // address nothing can be fetched from is refused and no note is made.
+  optional string url = 4;
 }
 
 message CreateNoteResponse {

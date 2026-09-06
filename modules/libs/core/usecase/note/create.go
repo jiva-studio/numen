@@ -45,6 +45,10 @@ type NewNote struct {
 	// Links are what it is joined to, written in the same breath as the note
 	// itself, so that it never exists as an island.
 	Links []domain.Link
+	// Address is where the note points. Set, the note is made a link: it
+	// carries `type: link` and the address, and what is at that address is
+	// fetched afterwards.
+	Address domain.WebAddress
 }
 
 // CreateResult is the note that now exists.
@@ -78,6 +82,10 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	}
 
 	content, err := titled(markdown.Create(identifier, in.Body), title, exact)
+	if err != nil {
+		return CreateResult{}, err
+	}
+	content, err = pointed(content, in.Address)
 	if err != nil {
 		return CreateResult{}, err
 	}
@@ -126,6 +134,25 @@ func titled(content []byte, title string, exact bool) ([]byte, error) {
 		return nil, err
 	}
 	if err := doc.SetTitle(title); err != nil {
+		return nil, err
+	}
+	return doc.Bytes(), nil
+}
+
+// pointed writes where the note points, which is what makes it a link. A note
+// pointing nowhere is left as it was made.
+func pointed(content []byte, at domain.WebAddress) ([]byte, error) {
+	if at.URL == "" {
+		return content, nil
+	}
+	doc, err := markdown.Open(content)
+	if err != nil {
+		return nil, err
+	}
+	if err := doc.SetScalar("type", string(domain.TypeLink)); err != nil {
+		return nil, err
+	}
+	if err := doc.SetScalar("url", at.URL); err != nil {
 		return nil, err
 	}
 	return doc.Bytes(), nil

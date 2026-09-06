@@ -27,6 +27,7 @@ import {
   FolderRoot,
   FolderTree,
   Gauge,
+  Globe,
   Layers,
   LayoutTemplate,
   ListTree,
@@ -151,6 +152,7 @@ const NOTES: ReadonlyMap<NoteType, LucideIcon> = new Map([
   ['deck', Layers],
   ['stencil', LayoutTemplate],
   ['preset', Gauge],
+  ['link', Globe],
 ])
 
 /** The icon for a kind of note. Every kind has one. */

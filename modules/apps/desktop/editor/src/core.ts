@@ -87,10 +87,10 @@ export interface NoteHeading {
 export type Source = 'note' | 'book' | 'recording' | 'other'
 
 /**
- * Which of four a note is, as the `type` key of its frontmatter says. It says
+ * Which of five a note is, as the `type` key of its frontmatter says. It says
  * nothing about a file that is not a note.
  */
-export type NoteType = 'note' | 'deck' | 'stencil' | 'preset'
+export type NoteType = 'note' | 'deck' | 'stencil' | 'preset' | 'link'
 
 /** What stands at a path: which source it is, and which of three a note is. */
 export interface FileKind {

@@ -65,7 +65,7 @@ enum Refusal {
   REFUSAL_STALE = 13;
 }
 
-// NoteType is which of four a note is: the `type` key of its frontmatter. It
+// NoteType is which of five a note is: the `type` key of its frontmatter. It
 // says what the note is; whether the application reads text out of the file is
 // SourceKind.
 enum NoteType {
@@ -81,6 +81,11 @@ enum NoteType {
 
   // A note saying how the decks pointing at it are scheduled.
   NOTE_TYPE_PRESET = 3;
+
+  // A note pointing at a web address, which it carries in `url`. What is at
+  // that address is fetched into the vault's own folder, and the note is cut
+  // from its own body and that together.
+  NOTE_TYPE_LINK = 4;
 }
 
 // Fingerprint is which file this is: where it is filed, how big it is, and when

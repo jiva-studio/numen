@@ -63,13 +63,13 @@ describe('the icon a command is drawn with', () => {
 // One mark to a kind: a preset is the same thing in the tree, in the plex and
 // in the tab it opens in.
 describe('the icon of a kind of note', () => {
-  const kinds: readonly NoteType[] = ['note', 'deck', 'stencil', 'preset']
+  const kinds: readonly NoteType[] = ['note', 'deck', 'stencil', 'preset', 'link']
 
   it('is there for every kind a note may be', () => {
     for (const kind of kinds) expect(iconOfNote(kind), kind).toBeTruthy()
   })
 
-  it('tells the four kinds apart', () => {
+  it('tells the five kinds apart', () => {
     expect(new Set(kinds.map(iconOfNote)).size).toBe(kinds.length)
   })
 

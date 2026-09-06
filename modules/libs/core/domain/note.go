@@ -7,9 +7,13 @@ type Note struct {
 	Fingerprint Fingerprint
 	Title       string
 
-	// Type is which of four the note is. A note carrying no `type` is a note,
+	// Type is which of five the note is. A note carrying no `type` is a note,
 	// which is nearly every file in a vault.
 	Type NoteType
+
+	// Address is where a link note points, read from `url`. It is empty on
+	// every other note, and on a link note whose address could not be read.
+	Address WebAddress
 
 	// ID is what the note carries in its frontmatter, if it carries one. A note
 	// written outside the application has none: it is indexed in full and simply
@@ -33,7 +37,7 @@ type Note struct {
 	FrontmatterErr string
 }
 
-// NoteType is which of four a note is. The list is closed: a value outside it
+// NoteType is which of five a note is. The list is closed: a value outside it
 // is shown as a problem and the file is read as an ordinary note.
 type NoteType string
 
@@ -43,12 +47,16 @@ const (
 	TypeStencil NoteType = "stencil"
 	// TypePreset is a note saying how the decks pointing at it are scheduled.
 	TypePreset NoteType = "preset"
+	// TypeLink is a note pointing at a web address, which it carries in `url`.
+	// What is at that address is fetched into the vault's own folder, and the
+	// note is cut from its own body and that together.
+	TypeLink NoteType = "link"
 )
 
-// KnownNoteType reports whether a type is one of the four.
+// KnownNoteType reports whether a type is one of the five.
 func KnownNoteType(t NoteType) bool {
 	switch t {
-	case TypeNote, TypeDeck, TypeStencil, TypePreset:
+	case TypeNote, TypeDeck, TypeStencil, TypePreset, TypeLink:
 		return true
 	}
 	return false

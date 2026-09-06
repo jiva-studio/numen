@@ -56,7 +56,7 @@ func Parse(ref domain.Fingerprint, raw []byte) domain.Note {
 			problems = append(problems, "id "+id+" is not a ULID")
 		}
 	}
-	// One key says what a note is, out of a closed list of four. A key with
+	// One key says what a note is, out of a closed list of five. A key with
 	// nothing in it says nothing, and the note is a note.
 	n.Type = domain.TypeNote
 	if raw, present := n.Frontmatter["type"]; present && raw != nil {
@@ -68,8 +68,14 @@ func Parse(ref domain.Fingerprint, raw []byte) domain.Note {
 		case domain.KnownNoteType(domain.NoteType(name)):
 			n.Type = domain.NoteType(name)
 		default:
-			problems = append(problems, "type "+name+" is not a note, a deck, a stencil or a preset")
+			problems = append(problems,
+				"type "+name+" is not a note, a deck, a stencil, a preset or a link")
 		}
+	}
+	// Where a link note points. The key is read on a link note and nowhere
+	// else: an address written on any other note is the person's own key.
+	if n.Type == domain.TypeLink {
+		problems = append(problems, address(&n)...)
 	}
 
 	n.Problems = problems
@@ -104,6 +110,26 @@ func splitFrontmatter(raw []byte) (frontmatter, body []byte, ok bool) {
 		collected = append(collected, '\n')
 		scan = remainder
 	}
+}
+
+// address reads where a link note points. A link note with nowhere to point is
+// a note whose whole subject is missing, so it is said rather than guessed at,
+// and the note is read as every other note is.
+func address(n *domain.Note) []string {
+	raw, present := n.Frontmatter["url"]
+	if !present || raw == nil {
+		return []string{"a link carries no url"}
+	}
+	written, isText := raw.(string)
+	if !isText {
+		return []string{"url is not text"}
+	}
+	at, err := domain.ParseWebAddress(written)
+	if err != nil {
+		return []string{"url " + written + " is not a web address"}
+	}
+	n.Address = at
+	return nil
 }
 
 // headings walks the body a line at a time, so each heading carries the byte its
