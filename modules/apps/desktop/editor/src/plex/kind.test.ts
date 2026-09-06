@@ -1053,7 +1053,7 @@ const window = (opening = 'Opening.md') => {
     return view.view
   }
   const held = windowing()
-  const plexes = plexKind(held.host, makes, {
+  const plexes = plexKind(held.handle, makes, {
     makes: making().makes,
     ready: ref(true),
     hangs,

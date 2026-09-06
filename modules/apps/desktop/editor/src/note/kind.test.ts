@@ -125,7 +125,7 @@ const window = (
     fileKinds: async (paths) =>
       new Map(paths.map((path) => [path, { kind: 'note' as const, type: 'note' as const }])),
   })
-  const noted = noting(vault(titles, reaches), store.store, drawing.store, held.host, puts)
+  const noted = noting(vault(titles, reaches), store.store, drawing.store, held.handle, puts)
   held.declares([noted.kind])
   /** Every note tab the window holds now. */
   const open = () => held.tabs.value.map((tab) => tab.id)

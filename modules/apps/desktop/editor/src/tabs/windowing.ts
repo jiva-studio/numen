@@ -109,7 +109,7 @@ export interface ActiveTab {
 }
 
 /** What a kind may ask of the window its tabs are drawn in. */
-export interface Host {
+export interface WindowHandle {
   /** A tab of a kind, opened on something and put in front. */
   opens(kind: string, at?: string): Promise<string>
   /** The same, drawn beside the pane the person is in. */
@@ -142,7 +142,7 @@ export function windowing() {
    * What every kind is given. It is there before any kind is, so a kind is
    * made with it and declared to the window it already has.
    */
-  const host: Host = {
+  const handle: WindowHandle = {
     opens: (kind, at) => opens(kind, at),
     beside: (kind, at) => beside(kind, at),
     shows: (id) => shows(id),
@@ -316,7 +316,7 @@ export function windowing() {
   return {
     layout,
     tabs,
-    host,
+    handle,
     declares,
     heldIn,
     holdsIn,

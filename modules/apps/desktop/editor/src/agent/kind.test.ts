@@ -58,7 +58,7 @@ const tabs = (about = { path: '', title: '' }) => {
   const talks: ReturnType<typeof tab>[] = []
   const held = windowing()
   const agents = agentKind(
-    held.host,
+    held.handle,
     () => {
       const one = tab()
       talks.push(one)

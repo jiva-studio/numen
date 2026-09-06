@@ -9,7 +9,7 @@ import { computed } from 'vue'
 import type { TranscriptState } from './transcript'
 import type { Stretch, Task } from '../core'
 import type { FileOpeners } from '../tabs/openers'
-import type { Host, Kind } from '../tabs/windowing'
+import type { Kind, WindowHandle } from '../tabs/windowing'
 import { RECORDING } from '../tabs/workspace'
 import { DROP, PROOFREAD, TRANSCRIBE } from './words'
 import RecordingTab from './RecordingTab.vue'
@@ -70,7 +70,7 @@ export function transcribed(read: TranscriptState, asks: RecordingTabDeps) {
  * opened again is the tab it is already played in.
  */
 export function recordingKind(
-  host: Host,
+  handle: WindowHandle,
   opens: (path: string) => TranscriptState,
   asks: RecordingTabDeps,
   puts: FileOpeners,
@@ -95,8 +95,8 @@ export function recordingKind(
   // The player of recordings. The person is taken to the moment the first of
   // the stretches asked for was spoken at.
   const hears = async (path: string, stretches: readonly Stretch[]) => {
-    const id = await host.opens(RECORDING, path)
-    void host.holds<RecordingTabState>(RECORDING, id)?.reach(...stretches)
+    const id = await handle.opens(RECORDING, path)
+    void handle.holds<RecordingTabState>(RECORDING, id)?.reach(...stretches)
   }
   puts.hears((path, stretches) => void hears(path, stretches))
 
@@ -105,7 +105,7 @@ export function recordingKind(
    * named there is being transcribed, and asks for the words again.
    */
   const ticked = (tasks: readonly Task[]) => {
-    for (const one of host.each<RecordingTabState>(RECORDING)) {
+    for (const one of handle.each<RecordingTabState>(RECORDING)) {
       one.held.ticks(tasks.some((task) => task.about === one.held.path))
     }
   }
@@ -115,7 +115,7 @@ export function recordingKind(
    * words again, and finds there are none.
    */
   const dropped = (path: string) => {
-    for (const one of host.each<RecordingTabState>(RECORDING)) {
+    for (const one of handle.each<RecordingTabState>(RECORDING)) {
       if (one.held.path === path) one.held.again()
     }
   }

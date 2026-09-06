@@ -12,7 +12,7 @@ import { answerGuard, type AnswerGuard } from '../questions'
 import type { PlexShowing } from '@numen/ui'
 import type { Move, RefusalReason } from '../core'
 import type { MessageWriter } from '../notices/messages'
-import type { Host, Kind } from '../tabs/windowing'
+import type { Kind, WindowHandle } from '../tabs/windowing'
 import type { FileOpeners } from '../tabs/openers'
 import { PRESET } from '../tabs/workspace'
 import PresetTab from './PresetTab.vue'
@@ -123,7 +123,7 @@ export interface PresetTabState {
 
 export function presetting(
   core: Presets,
-  host: Host,
+  handle: WindowHandle,
   puts: FileOpeners,
   said: MessageWriter,
   today: () => Date = () => new Date(),
@@ -555,7 +555,7 @@ export function presetting(
         void shut(one).then((gone) => {
           if (!gone) return
           open.delete(one.path.value)
-          host.closes(tab)
+          handle.closes(tab)
         })
       },
     }
@@ -596,7 +596,7 @@ export function presetting(
   /** A preset put in front of the person, in a tab of its own. */
   const shows = (path: string, title = '', showing: PlexShowing = 'here'): void => {
     if (title) titles.set(path, title)
-    void (showing === 'beside' ? host.beside(PRESET, path) : host.opens(PRESET, path))
+    void (showing === 'beside' ? handle.beside(PRESET, path) : handle.opens(PRESET, path))
   }
 
   // The editor of a preset, which is its one control and the settings under it.

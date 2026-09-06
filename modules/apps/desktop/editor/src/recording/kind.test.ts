@@ -19,7 +19,7 @@ const recording = (path: string, heard: number, length: number) =>
 const kind = (held: RecordingTabState) => {
   const window = windowing()
   return recordingKind(
-    window.host,
+    window.handle,
     () => held as unknown as TranscriptState,
     { runs: () => {} },
     fileOpeners({ fileKinds: async () => new Map() }),

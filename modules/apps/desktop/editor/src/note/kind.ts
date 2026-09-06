@@ -9,7 +9,7 @@
 import { computed, type ComputedRef } from 'vue'
 import { pointsAtNote, type PlexShowing } from '@numen/ui'
 import type { Store } from '../command/handlers'
-import type { Host, Kind } from '../tabs/windowing'
+import type { Kind, WindowHandle } from '../tabs/windowing'
 import { NOTE } from '../tabs/workspace'
 import type { Change } from './drawing'
 import type { noteChanges } from './changes'
@@ -69,7 +69,7 @@ export function noting(
   vault: NoteTabDeps,
   notes: Notes,
   changes: NoteChanges,
-  host: Host,
+  handle: WindowHandle,
   puts: FileOpeners,
 ) {
   const names = noteTitles(vault, notes)
@@ -124,7 +124,7 @@ export function noting(
   const shows = (path: string, title = '', showing: PlexShowing = 'here') => {
     const id = mints(path)
     if (title) names.calls(id, title)
-    void (showing === 'beside' ? host.beside(NOTE, id) : host.opens(NOTE, id))
+    void (showing === 'beside' ? handle.beside(NOTE, id) : handle.opens(NOTE, id))
     keyboard.owes(id)
   }
 
@@ -141,7 +141,7 @@ export function noting(
 
   /** The tab holding a note lets go of it, wherever the window draws it. */
   const shuts = (id: string) => {
-    const tab = host.each<NoteTabState>(NOTE).find((one) => one.held.id === id)
+    const tab = handle.each<NoteTabState>(NOTE).find((one) => one.held.id === id)
     tab?.held.shuts(tab.id)
   }
 
@@ -175,7 +175,7 @@ export function noting(
       void notes.shut(id).then((gone) => {
         if (!gone) return
         names.forgets(id)
-        host.closes(tab)
+        handle.closes(tab)
       })
     },
   })

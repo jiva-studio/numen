@@ -10,7 +10,7 @@ import { computed, ref, shallowRef, watch } from 'vue'
 import { pointsAtNote, wikilinksIn, type Conversation, type Turn } from '@numen/ui'
 import { same, spotOf, spotsIn } from './places'
 import type { Stretch } from '../core'
-import type { Host, Kind } from '../tabs/windowing'
+import type { Kind, WindowHandle } from '../tabs/windowing'
 import { AGENT, shortened } from '../tabs/workspace'
 import AgentTab from './AgentTab.vue'
 import { WORDS as words } from './words'
@@ -137,7 +137,7 @@ export function talking(talk: Conversation, deps: AgentTabDeps) {
  * A talk is about no note of its own, so a command asked from one is asked over
  * the note the plex the person was last in is standing on.
  */
-export function agentKind(host: Host, opens: () => AgentTabState, about: () => NoteRef) {
+export function agentKind(handle: WindowHandle, opens: () => AgentTabState, about: () => NoteRef) {
   const kind: Kind<AgentTabState> = {
     kind: AGENT,
     opens,
@@ -153,9 +153,9 @@ export function agentKind(host: Host, opens: () => AgentTabState, about: () => N
 
   /** Something to ask, put in the agent the person was last in and put in front. */
   const asks = async (text: string) => {
-    const id = host.last<AgentTabState>(AGENT)?.id ?? (await host.opens(AGENT))
-    host.holds<AgentTabState>(AGENT, id)?.writing(text)
-    host.shows(id)
+    const id = handle.last<AgentTabState>(AGENT)?.id ?? (await handle.opens(AGENT))
+    handle.holds<AgentTabState>(AGENT, id)?.writing(text)
+    handle.shows(id)
   }
 
   return { kind, asks }

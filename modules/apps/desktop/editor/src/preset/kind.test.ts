@@ -23,7 +23,7 @@ import {
 } from './core'
 import { BOUNDS } from './drawn'
 import type { RefusalReason } from '../core'
-import type { Host } from '../tabs/windowing'
+import type { WindowHandle } from '../tabs/windowing'
 import type { FileOpeners } from '../tabs/openers'
 import { WORDS as words } from './words'
 
@@ -116,9 +116,9 @@ const opened = async (
       return typeof answers === 'function' ? answers(put) : answers
     },
   }
-  const host = { closes: (tab: string) => void closed.push(tab) } as unknown as Host
+  const handle = { closes: (tab: string) => void closed.push(tab) } as unknown as WindowHandle
   const puts = { holds: () => {} } as unknown as FileOpeners
-  const kind = presetting(core, host, puts, () => {}, () => NOW)
+  const kind = presetting(core, handle, puts, () => {}, () => NOW)
   const held = await kind.kind.opens('Steady.md')
   // The read and the curve behind it are two answers, and both are awaited.
   await Promise.resolve()
@@ -177,9 +177,9 @@ const opening = async (file: Partial<Settings>) => {
     },
     curve: async () => curve,
   }
-  const host = { closes: () => {} } as unknown as Host
+  const handle = { closes: () => {} } as unknown as WindowHandle
   const puts = { holds: () => {} } as unknown as FileOpeners
-  const kind = presetting(core, host, puts, () => {}, () => NOW)
+  const kind = presetting(core, handle, puts, () => {}, () => NOW)
   return { tab: await kind.kind.opens('Steady.md'), written, lands }
 }
 

@@ -167,11 +167,11 @@ const drawn = async (
   }
 
   const held = windowing()
-  const decks = decking(core, presets, held.host, puts())
+  const decks = decking(core, presets, held.handle, puts())
   held.declares([decks.kind])
   const id = await held.opens(DECK, 'Animals.md')
   await settles()
-  const tab = held.host.holds<DeckTabState>(DECK, id) as DeckTabState
+  const tab = held.handle.holds<DeckTabState>(DECK, id) as DeckTabState
   // A mark is teleported into the tile it is about, so the grid has to stand in
   // the document for the tile to be found.
   const window = mount(DeckTab, { props: { held: tab }, attachTo: document.body })

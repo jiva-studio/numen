@@ -7,7 +7,7 @@
  */
 import type { Ref } from 'vue'
 import type { Model, SettingEdit } from '../../core'
-import type { Host, Kind } from '../../tabs/windowing'
+import type { Kind, WindowHandle } from '../../tabs/windowing'
 import { SETTINGS } from '../../tabs/workspace'
 import type { Mode, Ranges, Sizes, Theme } from '../theme'
 import SettingsTab from './SettingsTab.vue'
@@ -59,7 +59,7 @@ export interface SettingsTabState {
   readonly installation: Installation
 }
 
-export function settling(host: Host, installation: Installation) {
+export function settling(handle: WindowHandle, installation: Installation) {
   const held: SettingsTabState = { installation }
 
   /** One settings tab to a window: the settings are the installation's, not a file's. */
@@ -72,7 +72,7 @@ export function settling(host: Host, installation: Installation) {
   }
 
   /** The settings put in front of the person. */
-  const shows = (): void => void host.opens(SETTINGS)
+  const shows = (): void => void handle.opens(SETTINGS)
 
   return { kind, held, shows }
 }

@@ -17,7 +17,7 @@ import {
   RENAME,
   type RunGuard,
 } from './menu'
-import type { Host, Kind } from '../tabs/windowing'
+import type { Kind, WindowHandle } from '../tabs/windowing'
 import { FILES } from '../tabs/workspace'
 import FilesTab from './FilesTab.vue'
 import { WORDS as words } from './words'
@@ -134,7 +134,7 @@ export type FilesTabState = ReturnType<typeof filing>
  * The files tab of a window. A window shows the vault once, so a second asked
  * for is the tree already open.
  */
-export function filesKind(host: Host, makes: () => FileTree, deps: FilesTabDeps) {
+export function filesKind(handle: WindowHandle, makes: () => FileTree, deps: FilesTabDeps) {
   const kind: Kind<FilesTabState> = {
     kind: FILES,
     opens: () => {
@@ -152,15 +152,15 @@ export function filesKind(host: Host, makes: () => FileTree, deps: FilesTabDeps)
   }
 
   /** The tree of this window, and nothing while it holds none. */
-  const front = (): FilesTabState | null => host.last<FilesTabState>(FILES)?.held ?? null
+  const front = (): FilesTabState | null => handle.last<FilesTabState>(FILES)?.held ?? null
 
   /**
    * The tree put in front of the person, walked down to a path. The window that
    * holds none opens one on it.
    */
   const reveals = async (path: string) => {
-    const id = await host.opens(FILES)
-    await host.holds<FilesTabState>(FILES, id)?.list.reveals(path)
+    const id = await handle.opens(FILES)
+    await handle.holds<FilesTabState>(FILES, id)?.list.reveals(path)
   }
 
   /** The vault changed, and every open folder a named path sits in is read again. */

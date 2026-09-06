@@ -8,7 +8,7 @@
 import type { OpenDocumentState } from './open'
 import type { Stretch } from '../core'
 import type { FileOpeners } from '../tabs/openers'
-import type { Host, Kind } from '../tabs/windowing'
+import type { Kind, WindowHandle } from '../tabs/windowing'
 import { DOCUMENT } from '../tabs/workspace'
 import DocumentTab from './DocumentTab.vue'
 
@@ -24,7 +24,7 @@ export type DocumentTabState = ReturnType<typeof documenting>
  * The document tabs of a window. A document is its own tab, so the same one
  * opened again is the tab it is already read in.
  */
-export function documentKind(host: Host, opens: (path: string) => DocumentTabState, puts: FileOpeners) {
+export function documentKind(handle: WindowHandle, opens: (path: string) => DocumentTabState, puts: FileOpeners) {
   const kind: Kind<DocumentTabState> = {
     kind: DOCUMENT,
     opens,
@@ -47,8 +47,8 @@ export function documentKind(host: Host, opens: (path: string) => DocumentTabSta
   // highlighted, and the tab turns to the first page of them; the rest are
   // highlighted where they fall, each of them somewhere else to look.
   const reads = async (path: string, stretches: readonly Stretch[]) => {
-    const id = await host.opens(DOCUMENT, path)
-    void host.holds<DocumentTabState>(DOCUMENT, id)?.reach(...stretches)
+    const id = await handle.opens(DOCUMENT, path)
+    void handle.holds<DocumentTabState>(DOCUMENT, id)?.reach(...stretches)
   }
   puts.reads((path, stretches) => void reads(path, stretches))
 

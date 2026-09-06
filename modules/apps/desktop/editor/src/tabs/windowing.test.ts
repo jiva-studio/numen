@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest'
 import { panesOf } from '@numen/ui'
 import type { WorkspaceLayout } from '@numen/ui'
-import { windowing, type AnyKind, type Host } from './windowing'
+import { windowing, type AnyKind, type WindowHandle } from './windowing'
 
 /**
  * A kind that records what it was asked to do, under the names it opened on. A
@@ -38,9 +38,9 @@ const kind = ({ keeps = false, ...over }: Partial<AnyKind> & { keeps?: boolean }
 }
 
 /** A window told what kinds it draws, each of them made with what it is given. */
-const told = (declared: readonly ((host: Host) => AnyKind)[]) => {
+const told = (declared: readonly ((handle: WindowHandle) => AnyKind)[]) => {
   const window = windowing()
-  window.declares(declared.map((one) => one(window.host)))
+  window.declares(declared.map((one) => one(window.handle)))
   return window
 }
 
@@ -117,13 +117,13 @@ describe('a tab of a kind', () => {
 describe('what a kind is given', () => {
   it('lets it open a tab of another kind, and put one it holds in front', async () => {
     const other = kind({ kind: 'other' })
-    let host: Host | null = null
+    let handle: WindowHandle | null = null
     const thing = kind()
-    const window = told([(given: Host) => ((host = given), thing.one), other.declared])
+    const window = told([(given: WindowHandle) => ((handle = given), thing.one), other.declared])
 
-    const opened = await host!.opens('other', 'Note.md')
+    const opened = await handle!.opens('other', 'Note.md')
     const mine = await window.opens('thing')
-    host!.shows(opened)
+    handle!.shows(opened)
 
     expect(other.opened).toEqual(['Note.md'])
     expect(onScreen(window.layout.value)).toContain(mine)
@@ -164,7 +164,7 @@ describe('a tab that closes', () => {
     const id = await window.opens('thing', 'Note.md')
     window.shut(id)
 
-    window.host.closes(id)
+    window.handle.closes(id)
 
     expect(window.heldIn(id)).toBeNull()
     expect(onScreen(window.layout.value)).not.toContain(id)
@@ -224,7 +224,7 @@ describe('the tab the person is looking at', () => {
     await window.opens('thing', 'One.md')
     const two = await window.opens('thing', 'Two.md')
 
-    expect(window.host.front()).toEqual({
+    expect(window.handle.front()).toEqual({
       id: two,
       kind: 'thing',
       held: { at: 'Two.md', title: 'Two.md' },
@@ -235,13 +235,13 @@ describe('the tab the person is looking at', () => {
     const thing = kind()
     const window = told([thing.declared])
     const one = await window.opens('thing', 'One.md')
-    const two = await window.host.beside('thing', 'Two.md')
+    const two = await window.handle.beside('thing', 'Two.md')
     window.shows(one)
     // Every pane says what it is showing when it is drawn.
     window.shown(two)
 
-    expect(window.host.front()?.id).toBe(one)
-    expect(window.host.last('thing')?.id).toBe(two)
+    expect(window.handle.front()?.id).toBe(one)
+    expect(window.handle.last('thing')?.id).toBe(two)
   })
 
   it('answers under no kind for a tab the window has let go of', async () => {
@@ -250,13 +250,13 @@ describe('the tab the person is looking at', () => {
     const id = await window.opens('thing', 'Note.md')
     window.shut(id)
 
-    expect(window.host.front()).toEqual({ id, kind: null, held: null })
+    expect(window.handle.front()).toEqual({ id, kind: null, held: null })
   })
 
   it('is nothing while the pane in front holds no tab', () => {
     const window = told([kind().declared])
 
-    expect(window.host.front()).toBeNull()
+    expect(window.handle.front()).toBeNull()
   })
 })
 

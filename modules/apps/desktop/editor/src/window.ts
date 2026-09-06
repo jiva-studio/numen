@@ -149,14 +149,14 @@ export const useWindow = () => {
   const runs = runSupport()
 
   /** The notes the window has open: what each is called, and what each tab of one holds. */
-  const noted = noting(core, notes, changes, held.host, puts)
+  const noted = noting(core, notes, changes, held.handle, puts)
 
   /** The decks and the stencils the window has open, each saved the way a note is. */
-  const decks = decking(cards, presets, held.host, puts)
-  const stencils = stencilling(cards, held.host, puts, log.under('stencil'))
+  const decks = decking(cards, presets, held.handle, puts)
+  const stencils = stencilling(cards, held.handle, puts, log.under('stencil'))
 
   /** The presets the window has open, each written as one group of settings. */
-  const schedules = presetting(presets, held.host, puts, log.under('preset'))
+  const schedules = presetting(presets, held.handle, puts, log.under('preset'))
 
   going.holds(decks.flush)
   going.holds(stencils.flush)
@@ -175,7 +175,7 @@ export const useWindow = () => {
   const hungParts = hanging(core, words, log.under('hanging'))
 
   /** The plex tabs, and the one the person is looking at. */
-  const plexes = plexKind(held.host, () => view(core), {
+  const plexes = plexKind(held.handle, () => view(core), {
     makes: making,
     ready: computed(() => !failure.value && !indexing.value),
     hangs: hungParts.hangs,
@@ -194,7 +194,7 @@ export const useWindow = () => {
 
   /** The agent tabs, and the one a question about a note is put in. */
   const agents = agentKind(
-    held.host,
+    held.handle,
     () =>
       talking(conversation(agent, talk, named(CONVERSATION)), {
         opens: (path, ...runs) => void puts.opensAt(path, runs),
@@ -209,14 +209,14 @@ export const useWindow = () => {
   )
 
   /** The document tabs, each reading the document it is filed at. */
-  const read = documentKind(held.host, (path) => documenting(openDocument(documents, path)), puts)
+  const read = documentKind(held.handle, (path) => documenting(openDocument(documents, path)), puts)
 
   /** What this window can play, asked once for each kind of sound. */
   const plays = playable()
 
   /** The recording tabs, each playing the recording it is filed at. */
   const heard = recordingKind(
-    held.host,
+    held.handle,
     (path) => transcript(recordings, path, { plays }),
     {
       runs: (id, path, called) =>
@@ -261,7 +261,7 @@ export const useWindow = () => {
   )
 
   /** The tree of the vault, and what a gesture on a row of it comes to. */
-  const files = filesKind(held.host, () => folders(core), {
+  const files = filesKind(held.handle, () => folders(core), {
     lands: (landing) => void lands(landing, places),
     runs: (id, paths, name, source) => {
       const path = paths[0] ?? ''
@@ -332,7 +332,7 @@ export const useWindow = () => {
    * nothing is over neither.
    */
   const where = (): CommandTarget => {
-    const front = held.host.front()
+    const front = held.handle.front()
     const tab = front?.id ?? ''
     const on = front && held.heldIn(tab)?.kind.at?.(front.held)
     const file = on?.file ?? ''
@@ -382,7 +382,7 @@ export const useWindow = () => {
    * the tab in front of one is the one they were last in beside it.
    */
   const looked = (): string => {
-    const at = held.host.front()
+    const at = held.handle.front()
     if (at && at.kind !== AGENT) return at.id
     const beside = [...held.tabs.value]
       .reverse()
@@ -464,13 +464,13 @@ export const useWindow = () => {
   const rest = settingsStore(core, words, log.under('configured'))
 
   /** The settings file itself, opened whole in a tab of its own. */
-  const file = editingSettingsFile(held.host, core, () => void rest.start())
+  const file = editingSettingsFile(held.handle, core, () => void rest.start())
 
   /**
    * Everything this installation is configured as, in a tab of its own. It holds
    * nothing: each row reaches the same value the command of that name reaches.
    */
-  const configured = settling(held.host, {
+  const configured = settling(held.handle, {
     themes: dressed.list,
     applied: dressed.applied,
     mode: dressed.mode,

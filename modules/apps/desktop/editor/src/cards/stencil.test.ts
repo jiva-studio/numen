@@ -109,11 +109,11 @@ const open = async (answers: Parameters<typeof vault>[0] = {}, path = 'Animal.md
   /** Everything the window was given to say about this stencil. */
   const said: string[] = []
   const road = puts()
-  const stencils = stencilling(one.core, held.host, road, (text) => void said.push(text))
+  const stencils = stencilling(one.core, held.handle, road, (text) => void said.push(text))
   held.declares([stencils.kind])
   const id = await held.opens(STENCIL, path)
   await settles()
-  const tab = held.host.holds<StencilTabState>(STENCIL, id) as StencilTabState
+  const tab = held.handle.holds<StencilTabState>(STENCIL, id) as StencilTabState
   return { ...one, held, road, stencils, id, tab, said }
 }
 
@@ -435,7 +435,7 @@ describe('a stencil renamed under the window', () => {
     await settles()
 
     expect(one.stencils.all()).toHaveLength(1)
-    expect(one.held.host.each(STENCIL)).toHaveLength(1)
+    expect(one.held.handle.each(STENCIL)).toHaveLength(1)
   })
 
   it('is called what the file was called, before the name it went to is read', async () => {

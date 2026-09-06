@@ -13,7 +13,7 @@ import type { Store } from '../command/handlers'
 import { openNotes, type OpenNote } from '../note/notes'
 import { markOf } from '../note/tab'
 import type { MessageWriter } from '../notices/messages'
-import type { Host, Kind } from '../tabs/windowing'
+import type { Kind, WindowHandle } from '../tabs/windowing'
 import { REFUSED } from '../words'
 import type { FileOpeners } from '../tabs/openers'
 import { STENCIL } from '../tabs/workspace'
@@ -86,7 +86,7 @@ export interface StencilTabState {
 
 export function stencilling(
   cards: Cards,
-  host: Host,
+  handle: WindowHandle,
   puts: FileOpeners,
   says: MessageWriter = () => {},
 ) {
@@ -245,7 +245,7 @@ export function stencilling(
         parsed.delete(id)
         marked.delete(id)
         forgets(path)
-        host.closes(tab)
+        handle.closes(tab)
       })
     },
   })
@@ -265,7 +265,7 @@ export function stencilling(
 
   /** The tab holding a stencil lets go of it, wherever the window draws it. */
   const shuts = (id: string): void => {
-    const tab = host.each<StencilTabState>(STENCIL).find((one) => one.held.id === id)
+    const tab = handle.each<StencilTabState>(STENCIL).find((one) => one.held.id === id)
     tab?.held.shuts(tab.id)
   }
 
@@ -336,7 +336,7 @@ export function stencilling(
   const shows = (path: string, title = '', showing: PlexShowing = 'here'): void => {
     const id = mints(path)
     if (title) titles.set(path, title)
-    void (showing === 'beside' ? host.beside(STENCIL, id) : host.opens(STENCIL, id))
+    void (showing === 'beside' ? handle.beside(STENCIL, id) : handle.opens(STENCIL, id))
   }
 
   // The editor of a stencil, which is its fields and its faces. A face stands

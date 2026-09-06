@@ -10,7 +10,7 @@ import { DOCUMENT } from '../tabs/workspace'
 import type { OpenDocumentState } from './open'
 import type { FileOpeners, SourceReader } from '../tabs/openers'
 import type { Stretch } from '../core'
-import type { Host } from '../tabs/windowing'
+import type { WindowHandle } from '../tabs/windowing'
 
 /** A document being read, with only the parts a tab of it reaches for. */
 const read = (path: string, close = vi.fn()) => ({ path, close }) as unknown as OpenDocumentState
@@ -18,14 +18,14 @@ const read = (path: string, close = vi.fn()) => ({ path, close }) as unknown as 
 /** A window, writing down what it was asked to open and holding what it made. */
 const window_ = (held: DocumentTabState | null = null) => {
   const opened: string[] = []
-  const host = {
+  const handle = {
     opens: async (kind: string, at?: string) => {
       opened.push(`${kind} ${at ?? ''}`.trim())
       return `id of ${at}`
     },
     holds: () => held,
-  } as unknown as Host
-  return { host, opened }
+  } as unknown as WindowHandle
+  return { handle, opened }
 }
 
 /** What puts documents in front, keeping the reader it is handed. */
@@ -43,7 +43,7 @@ const openedAt = (path: string, page: number, pages: number) =>
   ({ path, at: ref(page), pages: ref(pages) }) as unknown as DocumentTabState
 
 /** The kind, over a window holding the document it is handed. */
-const kindOver = (held: DocumentTabState) => documentKind(window_(held).host, () => held, openers().puts).kind
+const kindOver = (held: DocumentTabState) => documentKind(window_(held).handle, () => held, openers().puts).kind
 
 describe('what a document tab holds', () => {
   it('measures the page again once there is a page to measure', () => {
@@ -78,9 +78,9 @@ describe('what a document tab holds', () => {
 
 describe('a document tab', () => {
   const kindOf = () => {
-    const { host } = window_()
+    const { handle } = window_()
     const { puts } = openers()
-    return documentKind(host, (path) => documenting(read(path)), puts)
+    return documentKind(handle, (path) => documenting(read(path)), puts)
   }
 
   it('is called by the file and not by the folders above it', () => {
@@ -123,9 +123,9 @@ describe('a search that landed in a document', () => {
   it('opens the document and turns it to what was found', async () => {
     const reached = vi.fn()
     const held = { reach: reached } as unknown as DocumentTabState
-    const { host, opened } = window_(held)
+    const { handle, opened } = window_(held)
     const { puts, opens } = openers()
-    documentKind(host, (path) => documenting(read(path)), puts)
+    documentKind(handle, (path) => documenting(read(path)), puts)
 
     const stretches: readonly Stretch[] = [
       { start: 0, length: 12 },

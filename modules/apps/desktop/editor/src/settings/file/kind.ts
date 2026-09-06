@@ -7,7 +7,7 @@
  */
 import { computed, readonly, ref } from 'vue'
 import { troubleWords } from '@numen/wire'
-import type { Host, Kind } from '../../tabs/windowing'
+import type { Kind, WindowHandle } from '../../tabs/windowing'
 import { SETTINGS_FILE } from '../../tabs/workspace'
 import SettingsFileTab from './SettingsFileTab.vue'
 import { WORDS as words } from './words'
@@ -130,7 +130,7 @@ const mark = (held: SettingsFileTabState): string | undefined => {
  * The settings file's tab. There is one file, so opening it again is the tab it
  * already stands in.
  */
-export function editingSettingsFile(host: Host, core: SettingsFileTabDeps, reads: () => void) {
+export function editingSettingsFile(handle: WindowHandle, core: SettingsFileTabDeps, reads: () => void) {
   const kind: Kind<SettingsFileTabState> = {
     kind: SETTINGS_FILE,
     opens: () => {
@@ -145,7 +145,7 @@ export function editingSettingsFile(host: Host, core: SettingsFileTabDeps, reads
   }
 
   /** The file put in front of the person, beside what they were looking at. */
-  const shows = (): void => void host.beside(SETTINGS_FILE)
+  const shows = (): void => void handle.beside(SETTINGS_FILE)
 
   return { kind, shows }
 }

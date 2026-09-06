@@ -223,11 +223,11 @@ const open = async (
   const one = vault(answers)
   const held = windowing()
   const road = puts()
-  const decks = decking(one.core, one.presets, held.host, road)
+  const decks = decking(one.core, one.presets, held.handle, road)
   held.declares([decks.kind])
   const id = await held.opens(DECK, path)
   await settles()
-  const tab = held.host.holds<DeckTabState>(DECK, id) as DeckTabState
+  const tab = held.handle.holds<DeckTabState>(DECK, id) as DeckTabState
   return { ...one, held, road, decks, id, tab }
 }
 
@@ -255,7 +255,7 @@ describe('a deck opened', () => {
   it('is called what the file is called', async () => {
     const { decks, id, held } = await open()
 
-    expect(decks.kind.called(held.host.holds<DeckTabState>(DECK, id) as DeckTabState)).toBe('Animals')
+    expect(decks.kind.called(held.handle.holds<DeckTabState>(DECK, id) as DeckTabState)).toBe('Animals')
   })
 
   it('offers every stencil the vault holds as a cut', async () => {
@@ -557,7 +557,7 @@ describe('the vault changing under the window', () => {
   it('asks for no stencil while the window holds no deck', async () => {
     const one = vault()
     const held = windowing()
-    const decks = decking(one.core, one.presets, held.host, puts())
+    const decks = decking(one.core, one.presets, held.handle, puts())
     held.declares([decks.kind])
 
     decks.changed(['Notes.md'])
@@ -789,7 +789,7 @@ describe('a deck renamed under the window', () => {
     await settles()
 
     expect(one.decks.all()).toHaveLength(1)
-    expect(one.held.host.each(DECK)).toHaveLength(1)
+    expect(one.held.handle.each(DECK)).toHaveLength(1)
   })
 
   it('keeps what the vault said about it, which stands at the name it went to', async () => {

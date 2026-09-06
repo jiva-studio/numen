@@ -19,7 +19,7 @@ import { asParts, asPlex, typesIn } from './picture'
 import type { View } from './view'
 import { ticketing } from './tickets'
 import type { Move, NoteHeading, NoteType } from '../core'
-import type { Host, Kind } from '../tabs/windowing'
+import type { Kind, WindowHandle } from '../tabs/windowing'
 import { PLEX, plexCalled } from '../tabs/workspace'
 import PlexTab from './PlexTab.vue'
 import { WORDS as words } from './words'
@@ -98,10 +98,10 @@ export type PlexTabState = ReturnType<typeof plexing>
  * the window is put in front of, and the one a plex opened after it stands
  * beside.
  */
-export function plexKind(host: Host, makes: () => View, deps: PlexTabDeps) {
+export function plexKind(handle: WindowHandle, makes: () => View, deps: PlexTabDeps) {
   /** Every plex the window holds, and the one the person was last in. */
-  const all = () => host.each<PlexTabState>(PLEX)
-  const front = (): PlexTabState | null => host.last<PlexTabState>(PLEX)?.held ?? null
+  const all = () => handle.each<PlexTabState>(PLEX)
+  const front = (): PlexTabState | null => handle.last<PlexTabState>(PLEX)?.held ?? null
 
   const kind: Kind<PlexTabState> = {
     kind: PLEX,
@@ -136,12 +136,12 @@ export function plexKind(host: Host, makes: () => View, deps: PlexTabDeps) {
    * on it.
    */
   const travel = async (path: string) => {
-    const one = host.last<PlexTabState>(PLEX)
+    const one = handle.last<PlexTabState>(PLEX)
     if (!one) {
-      await host.opens(PLEX, path)
+      await handle.opens(PLEX, path)
       return
     }
-    host.shows(one.id)
+    handle.shows(one.id)
     await one.held.view.go(path)
   }
 

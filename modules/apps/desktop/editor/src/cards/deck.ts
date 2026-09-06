@@ -14,7 +14,7 @@ import type { Store } from '../command/handlers'
 import type { PresetChoice, Presets, ReadResult } from '../preset/core'
 import { openNotes, type OpenNote } from '../note/notes'
 import { markOf } from '../note/tab'
-import type { Host, Kind } from '../tabs/windowing'
+import type { Kind, WindowHandle } from '../tabs/windowing'
 import type { FileOpeners } from '../tabs/openers'
 import { DECK } from '../tabs/workspace'
 import DeckTab from './DeckTab.vue'
@@ -144,7 +144,7 @@ export interface DeckTabState {
   shuts(id: string): void
 }
 
-export function decking(cards: Cards, presets: Presets, host: Host, puts: FileOpeners) {
+export function decking(cards: Cards, presets: Presets, handle: WindowHandle, puts: FileOpeners) {
   /** What the vault last said about each file, under the path it is filed at. */
   const told = new Map<string, VaultAnswer>()
   /** What each file is called, as the vault last read it. */
@@ -428,7 +428,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: FileOp
           marked.delete(id)
           chose.value.delete(id)
           forgets(path)
-          host.closes(tab)
+          handle.closes(tab)
         })
       },
     }
@@ -450,7 +450,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: FileOp
 
   /** The tab holding a deck lets go of it, wherever the window draws it. */
   const shuts = (id: string): void => {
-    const tab = host.each<DeckTabState>(DECK).find((one) => one.held.id === id)
+    const tab = handle.each<DeckTabState>(DECK).find((one) => one.held.id === id)
     tab?.held.shuts(tab.id)
   }
 
@@ -531,7 +531,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: FileOp
   const shows = (path: string, title = '', showing: PlexShowing = 'here'): void => {
     const id = mints(path)
     if (title) titles.set(path, title)
-    void (showing === 'beside' ? host.beside(DECK, id) : host.opens(DECK, id))
+    void (showing === 'beside' ? handle.beside(DECK, id) : handle.opens(DECK, id))
   }
 
   // The editor of a deck, which is the grid of its cards. A card stands on no
