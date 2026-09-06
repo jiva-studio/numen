@@ -460,13 +460,14 @@ describe('Stencil, the faces', () => {
       { id: 'three', name: 'Three', front: '', back: '' },
     ]
 
-    const stripOf = (held: Editor, id: string) => held.get(`[data-face="${id}"] .card-header`)
+    const stripOf = (held: Editor, id: string) =>
+      held.get(`[data-face="${id}"] .card-header__grip`)
 
-    it('names the strip a face is dragged by, and gives it a place in the order', () => {
+    it('names the handle a face is dragged by, and gives it a place in the order', () => {
       const strip = stripOf(mountStencil({ faces: THREE }), 'two')
       expect(strip.attributes('aria-label')).toBe('Reorder: Two')
       expect(strip.attributes('tabindex')).toBe('0')
-      expect(strip.attributes('role')).toBe('group')
+      expect(strip.attributes('role')).toBe('button')
     })
 
     it('emits a face dragged one place down the order', () => {

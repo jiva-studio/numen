@@ -392,7 +392,7 @@ describe('Face, what it is asked', () => {
 
   it('emits the way it is asked to go along the order', async () => {
     const held = mountFace()
-    await held.get('.card-header').trigger('keydown', { key: 'ArrowDown' })
+    await held.get('.card-header__grip').trigger('keydown', { key: 'ArrowDown' })
     expect(held.emitted('step')?.[0]?.[0]).toBe('down')
   })
 })

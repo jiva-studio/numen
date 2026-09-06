@@ -60,7 +60,7 @@ describe('Card', () => {
   it('announces a card by the place it stands in the deck, and by no name of its own', () => {
     const held = mountCard(tileOf('yak'), { words: WORDS })
     expect(held.get('[data-card]').attributes('aria-label')).toBe('Card 2')
-    expect(held.get('[data-grip]').attributes('aria-label')).toBe('Reorder: Card 2')
+    expect(held.get('.card-header__grip').attributes('aria-label')).toBe('Reorder: Card 2')
   })
 
   it('says which section it stands under, and nothing where it stands under none', () => {

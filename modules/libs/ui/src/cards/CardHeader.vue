@@ -5,10 +5,16 @@
  * It runs the whole width of what it heads, like the bar across the top of a
  * window: what it holds stands at its start, what it is pressed for at its end,
  * and the strip itself is what a gesture takes hold of.
+ *
+ * The strip holds a name box and buttons, so it is a container and not a
+ * control, and the keyboard does not stop on it. What the keyboard takes hold
+ * of is the handle at its start, as it is on every other row that is reordered
+ * here: a control, named, and worked by the arrows along the order.
  */
 import { onScopeDispose, shallowRef } from 'vue'
 import CardRow from './CardRow.vue'
-import { directionOf, type StepDirection } from './order'
+import Icon from './Icon.vue'
+import { directionOf, STEP_KEYS, type StepDirection } from './order'
 
 defineProps<{
   /** What is said of taking hold of it. */
@@ -52,13 +58,8 @@ const press = (event: PointerEvent): void => {
 
 onScopeDispose(release)
 
-/**
- * The strip is what a gesture takes hold of, so it is what the keyboard takes
- * hold of too: an arrow along the order drags it one place. A key struck in
- * something the strip holds belongs to that thing.
- */
+/** The handle asked by an arrow to carry what it heads one place along. */
 const step = (event: KeyboardEvent): void => {
-  if (event.target !== event.currentTarget) return
   const direction = directionOf(event.key)
   if (direction !== null) emit('step', direction, event)
 }
@@ -70,16 +71,25 @@ const step = (event: KeyboardEvent): void => {
     tone="header"
     class="card-header"
     data-grip
-    role="group"
-    tabindex="0"
     :draggable="held"
-    :aria-label="drag"
     :title="drag"
     @dragstart="emit('dragstart', $event)"
     @dragend="emit('dragend', $event)"
     @pointerdown="press"
-    @keydown="step"
   >
+    <!-- The handle is what the keyboard takes hold of. The pointer has the
+         whole strip, so it takes no drag of its own. -->
+    <span
+      class="card-header__grip flex shrink-0 items-center text-hushed"
+      role="button"
+      tabindex="0"
+      :aria-label="drag"
+      :aria-keyshortcuts="STEP_KEYS"
+      @keydown="step"
+    >
+      <Icon shows="grip" />
+    </span>
+
     <span class="card-header__held min-w-0 flex-1"><slot /></span>
     <span class="card-header__deeds flex shrink-0 items-center"><slot name="deeds" /></span>
   </CardRow>
@@ -99,6 +109,14 @@ const step = (event: KeyboardEvent): void => {
   cursor: grabbing;
 }
 
+/* The handle is drawn quietly for as long as nothing is reaching for the
+   strip, as the handle on every other row that is reordered here is. */
+.card-header__grip {
+  cursor: grab;
+  opacity: 0.45;
+  transition: opacity var(--numen-motion-hover) var(--numen-easing);
+}
+
 /* What the strip is pressed for is not drawn until the strip is reached for,
    by the pointer or by the keyboard. It is drawn on a plane of its own, kept
    for as long as the card stands. */
@@ -108,12 +126,15 @@ const step = (event: KeyboardEvent): void => {
   transition: opacity var(--numen-motion-hover) var(--numen-easing);
 }
 
+.card-header:hover .card-header__grip,
+.card-header:focus-within .card-header__grip,
 .card-header:hover .card-header__deeds,
 .card-header:focus-within .card-header__deeds {
   opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .card-header__grip,
   .card-header__deeds {
     transition: none;
   }

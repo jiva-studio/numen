@@ -280,13 +280,13 @@ describe('DeckEditor', () => {
   })
 
   describe('dragging a tile by the keyboard', () => {
-    const stripOf = (held: Grid, id: string) => tileFor(held, id).get('[data-grip]')
+    const stripOf = (held: Grid, id: string) => tileFor(held, id).get('.card-header__grip')
 
-    it('names the strip a tile is dragged by, and gives it a place in the order', () => {
+    it('names the handle a tile is dragged by, and gives it a place in the order', () => {
       const strip = stripOf(mountDeck(), 'llama')
       expect(strip.attributes('aria-label')).toBe('Reorder: Card 1')
       expect(strip.attributes('tabindex')).toBe('0')
-      expect(strip.attributes('role')).toBe('group')
+      expect(strip.attributes('role')).toBe('button')
     })
 
     it('emits a tile dragged one place down the order', () => {
@@ -644,14 +644,14 @@ describe('DeckEditor', () => {
 
       it('emit the first card of the deck dragged out of its section', () => {
         const held = mountSectioned({ cards: INSIDE })
-        const press = pressing(tileFor(held, 'llama').get('[data-grip]').element, 'ArrowUp')
+        const press = pressing(tileFor(held, 'llama').get('.card-header__grip').element, 'ArrowUp')
         expect(press.defaultPrevented).toBe(true)
         expect(held.emitted('move')).toEqual([['llama', HEAD]])
       })
 
       it('move nothing where the card dragged up already stands there', () => {
         const held = mountSectioned()
-        const press = pressing(tileFor(held, 'loose').get('[data-grip]').element, 'ArrowUp')
+        const press = pressing(tileFor(held, 'loose').get('.card-header__grip').element, 'ArrowUp')
         expect(press.defaultPrevented).toBe(false)
         expect(held.emitted('move')).toBeUndefined()
       })

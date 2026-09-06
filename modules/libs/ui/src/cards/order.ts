@@ -50,6 +50,9 @@ export type StepDirection = 'up' | 'down'
 export const directionOf = (key: string): StepDirection | null =>
   key === 'ArrowUp' ? 'up' : key === 'ArrowDown' ? 'down' : null
 
+/** The keys that drag what is held one place, as a reader is told them. */
+export const STEP_KEYS = 'ArrowUp ArrowDown'
+
 /**
  * Where a dragged entry lands one place along the order, and nothing where
  * there is no place that way. Landing before the entry past the next one is
