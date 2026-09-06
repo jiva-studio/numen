@@ -3,6 +3,7 @@ package editor
 import (
 	"context"
 	"errors"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -31,7 +32,16 @@ func (a *API) GetSettings(
 		Models:                offered(models),
 		PartsUnderANodeBounds: &v1.Bounds{Least: held.Least, Most: held.Most},
 		LatestDayStarts:       a.Configuring.LatestDayStarts,
+		Day:                   a.Configuring.Day.Names(a.Configuring.now()),
 	}), nil
+}
+
+// now is when this is happening, by the clock the settings were handed.
+func (s SettingsPorts) now() time.Time {
+	if s.Now == nil {
+		return time.Now()
+	}
+	return s.Now()
 }
 
 // WriteSettings writes settings into that file. A value the settings could not

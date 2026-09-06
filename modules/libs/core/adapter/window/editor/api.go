@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
@@ -238,6 +239,13 @@ type SettingsPorts struct {
 	// is told them rather than holding a second copy.
 	PartsUnderANode Bounds
 	LatestDayStarts string
+
+	// Day is where one day of review gives way to the next, and Now is when
+	// this is happening. The window counts in review days and is told the one
+	// standing. A build naming no clock reads this machine's, which an adapter
+	// is allowed to.
+	Day review.Day
+	Now port.Clock
 }
 
 // Bounds is how far a setting holding a number goes, at each end.

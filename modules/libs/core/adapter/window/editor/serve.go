@@ -228,6 +228,8 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 			Most:  cfg.PartsUnderANodeBounds().Most,
 		},
 		LatestDayStarts: cfg.LatestDayStarts(),
+		Day:             running.Day,
+		Now:             cfg.Clock(),
 	}
 
 	held := &opened.vaults
