@@ -64,13 +64,13 @@ func Open(
 	if !indexing.named() {
 		return nil, nil, nil
 	}
-	first := open(ctx, tasks, indexing, indexing.arriving(forIndexing))
+	first := open(ctx, tasks, indexing.arriving(forIndexing))
 	if !query.named() {
 		return first.Filling(), first.Asking(), first.Close
 	}
 
 	at := query.arriving(forQuery)
-	second := open(ctx, tasks, query, at)
+	second := open(ctx, tasks, at)
 	go func() {
 		if err := agreeing(ctx, first, second); err != nil {
 			_ = second.Disown(err)
@@ -87,24 +87,24 @@ func One(ctx context.Context, from Provider) (port.Embedder, func() error) {
 	if !from.named() {
 		return nil, nil
 	}
-	held := open(ctx, nil, from, line{})
+	held := open(ctx, nil, arrival{from: from})
 	return held.Filling(), held.Close
 }
 
 // open is one provider held under the identity its vectors are kept under. What
 // it is is known before it is here, so the index is fitted and a vector claimed
 // under the right recipe while the weights are still coming down.
-func open(ctx context.Context, tasks *task.Tasks, from Provider, at line) *embedding.Embedder {
-	held := embedding.Arriving(from.model)
-	if from.fetch == nil {
-		held.Landed(from.held, nil)
+func open(ctx context.Context, tasks *task.Tasks, at arrival) *embedding.Embedder {
+	held := embedding.Arriving(at.from.model)
+	if at.from.fetch == nil {
+		held.Landed(at.from.held, nil)
 		return held
 	}
 
 	tell := preparing(tasks, at)
 	tell(0, 0)
 	go func() {
-		model, err := from.fetch(ctx, tell)
+		model, err := at.from.fetch(ctx, tell)
 		if err != nil {
 			held.Landed(nil, err)
 			failed(tasks, at, err)
@@ -153,16 +153,18 @@ func agreeing(ctx context.Context, first, second *embedding.Embedder) error {
 	return nil
 }
 
-// line is one provider's arrival in the list of what is being done: what that
-// line is called, and the name to show on it.
-type line struct {
+// arrival is one provider on its way: the provider itself, and its line in the
+// list of what is being done — what that line is called, and the name to show
+// on it.
+type arrival struct {
+	from     Provider
 	id, name string
 }
 
 // arriving is how one provider appears while it is on its way, under the name it
 // is reached by and the half of the work it was named for.
-func (p Provider) arriving(role string) line {
-	return line{id: "getting ready: " + role + ": " + p.name, name: p.name}
+func (p Provider) arriving(role string) arrival {
+	return arrival{from: p, id: "getting ready: " + role + ": " + p.name, name: p.name}
 }
 
 // preparing tells the list how far the model has got, counted in the bytes of
@@ -175,7 +177,7 @@ func (p Provider) arriving(role string) line {
 // A run with no list to tell is told nothing and still asks: what says how far
 // the work has got is called wherever the work is, and a run in a terminal
 // takes the same road as a window.
-func preparing(tasks *task.Tasks, at line) func(done, total int64) {
+func preparing(tasks *task.Tasks, at arrival) func(done, total int64) {
 	if tasks == nil {
 		return func(int64, int64) {}
 	}
@@ -188,14 +190,14 @@ func preparing(tasks *task.Tasks, at line) func(done, total int64) {
 	}
 }
 
-func ready(tasks *task.Tasks, at line) {
+func ready(tasks *task.Tasks, at arrival) {
 	if tasks != nil {
 		tasks.Done(at.id)
 	}
 }
 
 // failed leaves the model in the list under what stopped it.
-func failed(tasks *task.Tasks, at line, why error) {
+func failed(tasks *task.Tasks, at arrival, why error) {
 	if tasks != nil {
 		tasks.Set(task.Task{
 			ID: at.id, Doing: "Preparing the model", About: at.name,
