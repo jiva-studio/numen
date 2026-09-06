@@ -10,7 +10,7 @@
  * What each of them means is prose, written by hand around the block. Only the
  * list itself is written here.
  */
-import { readFile, writeFile } from 'node:fs/promises'
+import { readFile, readdir, writeFile } from 'node:fs/promises'
 
 const UI = new URL('../../desktop/editor/src/', import.meta.url)
 const GO = new URL('../../../libs/core/', import.meta.url)
@@ -360,17 +360,38 @@ const meaning = (doc, name, keys) => {
 }
 
 /**
- * Which file declares each package's settings, so the walk crosses from one to
- * the next by itself. The whole file is walked from `settings.Config` down, and
- * a package nobody listed here stops the build rather than the walk.
+ * Where each package's settings are declared, so the walk crosses from one to
+ * the next by itself. The walk runs from `settings.Config` down, and a package
+ * nobody listed here stops the build rather than the walk.
  */
-const FILES = {
-  settings: 'adapter/settings/settings.go',
-  embed: 'internal/adapter/embed/config.go',
-  recognition: 'internal/adapter/recognition/config.go',
-  transcription: 'internal/adapter/transcription/config.go',
-  proofreading: 'internal/adapter/proofreading/config.go',
-  agent: 'adapter/agent/config.go',
+const PACKAGES = {
+  settings: 'adapter/settings',
+  embed: 'internal/adapter/embed',
+  recognition: 'internal/adapter/recognition',
+  transcription: 'internal/adapter/transcription',
+  proofreading: 'internal/adapter/proofreading',
+  agent: 'adapter/agent',
+}
+
+const held = new Map()
+
+/**
+ * One package's Go, every file of it read as one.
+ *
+ * A section stands in whichever file of its package a reader put it in, and
+ * what the manual is about is what the settings are rather than where they are
+ * written down. Reading one named file instead makes a page of the manual
+ * disappear the day a type is moved next door.
+ */
+const sourceOf = async (pkg) => {
+  if (!held.has(pkg)) {
+    const at = new URL(`${pkg}/`, GO)
+    const names = (await readdir(at))
+      .filter((name) => name.endsWith('.go') && !name.endsWith('_test.go'))
+      .sort()
+    held.set(pkg, (await Promise.all(names.map((name) => read(at, name)))).join('\n'))
+  }
+  return held.get(pkg)
 }
 
 /** Every Go name in one file, against the key it is written under. */
@@ -391,49 +412,49 @@ const named = (source) => {
  * A package nobody listed above is where the walk would stop, and stopping
  * there costs every key beneath it, so it stops the build instead.
  */
-const declaredIn = (file, type) => {
+const declaredIn = (pkg, type) => {
   const bare = type.replace(/^\*/, '')
   if (kindOf(bare) !== '' || !/^(?:[a-z][a-z0-9]*\.)?[A-Z][A-Za-z0-9]*$/.test(bare)) return null
   const elsewhere = bare.match(/^([a-z][a-z0-9]*)\.([A-Z][A-Za-z0-9]*)$/)
-  if (!elsewhere) return { file, type: bare }
-  const [, pkg, name] = elsewhere
-  if (!FILES[pkg]) die(`${file} names ${bare}, and no file is listed for the package ${pkg}`)
-  return { file: FILES[pkg], type: name }
+  if (!elsewhere) return { pkg, type: bare }
+  const [, owner, name] = elsewhere
+  if (!PACKAGES[owner]) die(`${pkg} names ${bare}, and no package is listed for ${owner}`)
+  return { pkg: PACKAGES[owner], type: name }
 }
 
 /** Every key under one type, its own and those of the sections inside it. */
-const keysOf = async (file, type, under, depth = 0, seen = new Set()) => {
-  const source = await read(GO, file)
+const keysOf = async (pkg, type, under, depth = 0, seen = new Set()) => {
+  const source = await sourceOf(pkg)
   const keys = named(source)
   const fields = structOf(source, type)
-  if (!fields) die(`${file} declares no settings under ${type}`)
+  if (!fields) die(`${pkg} declares no settings under ${type}`)
 
   const out = []
   for (const field of fields) {
     // An embedded type has no key of its own: its keys are written where it is
     // embedded, at the level the settings file holds them at.
     if (field.embedded) {
-      const at = declaredIn(file, field.type)
-      if (!at) die(`${file} embeds ${field.type} in ${type}, which is no section`)
-      const stamp = `${at.file}:${at.type}`
+      const at = declaredIn(pkg, field.type)
+      if (!at) die(`${pkg} embeds ${field.type} in ${type}, which is no section`)
+      const stamp = `${at.pkg}:${at.type}`
       if (seen.has(stamp)) die(`${at.type} is embedded inside itself`)
-      out.push(...(await keysOf(at.file, at.type, under, depth, new Set([...seen, stamp]))))
+      out.push(...(await keysOf(at.pkg, at.type, under, depth, new Set([...seen, stamp]))))
       continue
     }
 
     const path = under ? `${under}.${field.key}` : field.key
-    const at = declaredIn(file, field.type)
-    const stamp = at && `${at.file}:${at.type}`
+    const at = declaredIn(pkg, field.type)
+    const stamp = at && `${at.pkg}:${at.type}`
     let inside = null
     if (at && !seen.has(stamp)) {
-      inside = structOf(await read(GO, at.file), at.type)
-      if (!inside) die(`${path} is a section, and ${at.file} declares no settings under ${at.type}`)
+      inside = structOf(await sourceOf(at.pkg), at.type)
+      if (!inside) die(`${path} is a section, and ${at.pkg} declares no settings under ${at.type}`)
     }
 
     if (inside) {
-      const doc = field.doc || docOf(await read(GO, at.file), at.type)
+      const doc = field.doc || docOf(await sourceOf(at.pkg), at.type)
       out.push({ path, depth, group: true, meaning: meaning(doc, field.go, keys), kind: '' })
-      out.push(...(await keysOf(at.file, at.type, path, depth + 1, new Set([...seen, stamp]))))
+      out.push(...(await keysOf(at.pkg, at.type, path, depth + 1, new Set([...seen, stamp]))))
       continue
     }
     out.push({
@@ -467,9 +488,9 @@ const sectioned = (keys) => {
 }
 
 const settings = async () => {
-  // The whole file, walked from the top: a section nobody thought to list is
+  // The whole package, walked from the top: a section nobody thought to list is
   // still walked into, and a key added to one turns up here.
-  const keys = await keysOf(FILES.settings, 'Config', '')
+  const keys = await keysOf(PACKAGES.settings, 'Config', '')
 
   const row = (key, section) =>
     `| \`${section ? key.path.slice(section.length + 1) : key.path}\` | ${key.kind} | ${key.meaning} |`
