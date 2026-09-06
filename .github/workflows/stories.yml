@@ -42,7 +42,7 @@ permissions:
 
 jobs:
   named:
-    name: "Check :: The pictures name stories that exist"
+    name: "Check :: Shots"
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

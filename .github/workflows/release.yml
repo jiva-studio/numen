@@ -1097,7 +1097,7 @@ jobs:
       # The one thing worth proving: that a stranger with no key can fetch what
       # was just put up, at the address the page sends them to, and that what
       # comes back is the file that went up.
-      - name: Fetch it as a stranger would
+      - name: Fetch published
         env:
           SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
         run: |

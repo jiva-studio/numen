@@ -126,7 +126,7 @@ jobs:
       # A page removed from the site is still on the disk it was put on. What
       # this build did not write is taken down, so what is served is what was
       # built and nothing else.
-      - name: Down with what is no longer there
+      - name: Prune storage
         env:
           ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
           ZONE: ${{ vars.BUNNY_SITE_STORAGE_ZONE }}
@@ -177,7 +177,7 @@ jobs:
           echo "purge $code"
           case "$code" in 20*) ;; *) echo "::error::the cache was not purged: $code"; exit 1 ;; esac
 
-      - name: Fetch it as a stranger would
+      - name: Fetch published
         env:
           SERVED_FROM: ${{ vars.BUNNY_SITE_SERVED_FROM }}
         run: |

@@ -5,13 +5,13 @@ on:
     paths:
       - "modules/apps/docs/**"
       # What the manual writes itself from.
-      - "modules/apps/desktop/editor/src/command/keying.ts"
+      - "modules/apps/desktop/editor/src/command/chords.ts"
       - "modules/apps/desktop/editor/src/words.ts"
-      - "modules/apps/desktop/editor/src/command/commanding.ts"
+      - "modules/apps/desktop/editor/src/command/commands.ts"
       - "modules/apps/desktop/editor/src/command/CommandPalette.vue"
       - "modules/apps/desktop/cmd/numen/main.go"
       - "modules/libs/core/adapter/cli/cli.go"
-      - "modules/libs/core/adapter/settings/settings.go"
+      - "modules/libs/core/adapter/settings/**"
       - "modules/libs/core/internal/adapter/embed/config.go"
       - "modules/libs/core/internal/adapter/recognition/config.go"
       - "modules/libs/core/internal/adapter/transcription/config.go"
@@ -23,13 +23,13 @@ on:
     paths:
       - "modules/apps/docs/**"
       # What the manual writes itself from.
-      - "modules/apps/desktop/editor/src/command/keying.ts"
+      - "modules/apps/desktop/editor/src/command/chords.ts"
       - "modules/apps/desktop/editor/src/words.ts"
-      - "modules/apps/desktop/editor/src/command/commanding.ts"
+      - "modules/apps/desktop/editor/src/command/commands.ts"
       - "modules/apps/desktop/editor/src/command/CommandPalette.vue"
       - "modules/apps/desktop/cmd/numen/main.go"
       - "modules/libs/core/adapter/cli/cli.go"
-      - "modules/libs/core/adapter/settings/settings.go"
+      - "modules/libs/core/adapter/settings/**"
       - "modules/libs/core/internal/adapter/embed/config.go"
       - "modules/libs/core/internal/adapter/recognition/config.go"
       - "modules/libs/core/internal/adapter/transcription/config.go"
@@ -72,7 +72,7 @@ jobs:
       - name: Install
         run: npm ci --prefix modules
 
-      - name: The manual says what the application does
+      - name: Manual
         run: npm run manual:check --prefix modules/apps/docs
 
       - name: Typecheck
@@ -149,7 +149,7 @@ jobs:
       # A page removed from the manual is still on the disk it was put on. What
       # this build did not write is taken down, so what is served is what was
       # built and nothing else.
-      - name: Down with what is no longer there
+      - name: Prune storage
         env:
           ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
           ZONE: ${{ vars.BUNNY_DOCS_STORAGE_ZONE }}
@@ -200,7 +200,7 @@ jobs:
           echo "purge $code"
           case "$code" in 20*) ;; *) echo "::error::the cache was not purged: $code"; exit 1 ;; esac
 
-      - name: Fetch it as a stranger would
+      - name: Fetch published
         env:
           SERVED_FROM: ${{ vars.BUNNY_DOCS_SERVED_FROM }}
         run: |

@@ -81,7 +81,7 @@ jobs:
           key: playwright-${{ hashFiles('modules/package-lock.json') }}
           restore-keys: playwright-
 
-      - name: The browsers the stories run in
+      - name: Install browsers
         run: npx --prefix modules playwright install chromium webkit --with-deps
 
       - name: Test
