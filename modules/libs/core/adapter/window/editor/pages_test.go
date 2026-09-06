@@ -85,17 +85,16 @@ func handed(handler http.Handler, path string) *httptest.ResponseRecorder {
 	return out
 }
 
-// The policy the window is held to, written out here as well as in the handler.
+// The policy the window is held to. What each directive says is `appearance`'s
+// to say and is asserted there; what this window widens is asserted here.
 //
-// A theme is an ordinary stylesheet a person may have downloaded, and this line
+// A build that opened no socket plays from nowhere, so it widens nothing. A
+// theme is an ordinary stylesheet a person may have downloaded, and the policy
 // is the whole of what stops one reaching the network: a remote `url()` is
 // refused by `img-src` and `font-src`, and the element the theme is spliced
 // into is permitted by `style-src`.
 func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
-	const held = "default-src 'self'; img-src 'self'; media-src 'self'; " +
-		"style-src 'self' 'unsafe-inline'; " +
-		"font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; " +
-		"form-action 'none'; frame-ancestors 'none'"
+	held := appearance.Policy(appearance.Sources{})
 
 	handler := (&API{}).Serving(http.NotFoundHandler())
 	for _, path := range []string{"", "/", "/index.html", "/built/index.css", assetOf("a.pdf")} {

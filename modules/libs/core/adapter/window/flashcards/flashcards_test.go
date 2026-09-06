@@ -15,6 +15,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/appearance"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
@@ -516,16 +517,14 @@ func TestACardIsAskedWithWhatEachAnswerWouldDoToIt(t *testing.T) {
 	}
 }
 
-// The policy the window is held to, written out here as well as in the handler.
+// The policy the window is held to. What each directive says is `appearance`'s
+// to say and is asserted there; what this window widens is asserted here.
 //
-// A card is HTML from the person's own vault, and this line is what stands
-// behind the allowlist it is drawn through: no script, no form submitted
-// anywhere, and no request off the machine.
+// A card is HTML from the person's own vault and carries its own pictures. A
+// `data:` URI is no request, and it is the whole of what this window widens:
+// no script, no form submitted anywhere, and nothing fetched off the machine.
 func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
-	const held = "default-src 'self'; img-src 'self' data:; media-src 'self'; " +
-		"style-src 'self' 'unsafe-inline'; " +
-		"font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; " +
-		"form-action 'none'; frame-ancestors 'none'"
+	held := appearance.Policy(appearance.Sources{Images: []string{"data:"}})
 	if policy != held {
 		t.Errorf("the policy reads %q", policy)
 	}
