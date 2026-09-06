@@ -75,10 +75,6 @@ type Presets struct {
 // preset lands, what says which notes are presets and what each is called, what
 // brings a write level in the index, where one day of review gives way to the
 // next, and what time it is.
-//
-// All seven are named here because a preset short of any one of them schedules
-// a deck by something other than the note a person pointed it at, and says
-// nothing about having done so.
 func NewPresets(
 	readers port.VaultReaders,
 	writers port.VaultWriters,

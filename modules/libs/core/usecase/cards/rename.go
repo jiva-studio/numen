@@ -79,10 +79,6 @@ type TypeQueries interface {
 // stencil and every deck are read and written through, what says which notes
 // are decks, where each card's wikilink lands, what brings every file the
 // rename touched level in the index, and what time it is.
-//
-// All six are named here because a rename short of any one of them leaves the
-// name written in one place and not another, or an identifier minted off the
-// machine's clock.
 func NewRenameField(
 	readers port.VaultReaders,
 	writers port.VaultWriters,

@@ -68,10 +68,6 @@ type Read struct {
 
 // NewRead is what a deck or a stencil is read through: the vault its file is
 // read out of, and where the wikilink each card names its stencil by lands.
-//
-// Both are named here because a read short of the links answers with cards
-// nothing says the stencil of, which is not the same answer as a card that
-// names none.
 func NewRead(readers port.VaultReaders, links port.LinkQueries) Read {
 	return Read{Readers: readers, Links: links}
 }

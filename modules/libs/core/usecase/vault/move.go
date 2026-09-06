@@ -37,9 +37,6 @@ type Move struct {
 // is moved within, the links that pointed at what travelled, what the index
 // holds about the files under the path and where it files them, and the one
 // note.Move every note that travelled settles through.
-//
-// All five are named here because a move short of any one of them lands the
-// file and leaves the index or the links standing at the path it came from.
 func NewMove(
 	writers port.VaultWriters,
 	links port.LinkQueries,

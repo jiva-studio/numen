@@ -33,9 +33,6 @@ type Remove struct {
 // NewRemove is what takes a note out of the vault: the vault it is moved
 // within, the links that pointed at it, what the index holds about the files
 // under it, and what brings the path it left level.
-//
-// All four are named here because a removal short of any one of them takes the
-// file away and leaves the vault answering about it.
 func NewRemove(
 	writers port.VaultWriters, links port.LinkQueries, known port.SourceQueries, index Levels,
 ) Remove {

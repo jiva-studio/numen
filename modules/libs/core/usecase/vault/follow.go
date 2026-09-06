@@ -31,9 +31,7 @@ type Follow struct {
 // a file changed, what brings the named files up to date, and the walk that is
 // taken when what changed cannot be worked out.
 //
-// All three are named here because the last two are reached from Run, which a
-// caller starts and does not wait on: a follow short of either begins its watch
-// like any other and goes down on the first edit, away from whoever asked.
+// The last two are reached from Run, which a caller starts and does not wait on.
 func NewFollow(watcher port.VaultWatcher, refresh Refresh, scan Scan) Follow {
 	return Follow{Watcher: watcher, Refresh: refresh, Scan: scan}
 }

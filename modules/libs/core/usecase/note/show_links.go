@@ -23,9 +23,6 @@ type ShowLinks struct {
 
 // NewShowLinks is what both halves are asked of: the index that answers what a
 // note points at and what points at it.
-//
-// It is named here because a note's links and its backlinks are one answer, and
-// there is nowhere else either half could come from.
 func NewShowLinks(links port.LinkQueries) ShowLinks {
 	return ShowLinks{Links: links}
 }

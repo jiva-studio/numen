@@ -35,10 +35,6 @@ type Write struct {
 // NewWrite is what a deck or a stencil goes back through: the vault it is read
 // and written through, where the wikilink each card names its stencil by lands,
 // what brings the file level in the index, and what time it is.
-//
-// All five are named here because a write short of any one of them puts the
-// file back and leaves something behind it — a card cut by the wrong stencil,
-// a deck the vault cannot find, or a mark minted off the machine's clock.
 func NewWrite(
 	readers port.VaultReaders,
 	writers port.VaultWriters,

@@ -33,11 +33,6 @@ type Refresh struct {
 // NewRefresh is how the index is brought level with a handful of files: the
 // vault they are read out of, the row it is filed under, where a note is filed,
 // and the two the rows of a book and a recording are swept through.
-//
-// All five are named here because a refresh short of the last two takes the
-// note away and leaves the book and the recording at a path the vault no longer
-// holds, until something asks for a whole scan — and one short of the vault
-// writes nothing at all until a walk has been past.
 func NewRefresh(
 	readers port.VaultReaders,
 	vaults port.VaultRepository,

@@ -27,10 +27,6 @@ type Record struct {
 
 // NewRecord is what an answer is written down through: the run its line is
 // appended to, and what time it is.
-//
-// Both are named here because an answer recorded without a run is an answer
-// nothing holds, and one recorded off the machine's clock rather than this
-// installation's falls on a day the person did not review.
 func NewRecord(run *LogWriter, now port.Clock) Record {
 	return Record{Run: run, Now: now}
 }

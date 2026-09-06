@@ -56,10 +56,6 @@ type Recognise struct {
 // NewRecognise is what a scan is read through: the vault it is read out of,
 // where what the vault holds is recorded, the store the reading is written
 // into, what draws a page for the model, and the model itself.
-//
-// All five are named here because a recognition short of any one of them is a
-// document a person asked to have read and did not get back — nothing to draw
-// the pages, nothing to read them, or nowhere to keep what was read.
 func NewRecognise(
 	readers port.VaultReaders,
 	sources port.SourceRepository,

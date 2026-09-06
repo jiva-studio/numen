@@ -61,9 +61,7 @@ type ShowNeighbourhood struct {
 // deck is joined to, what says which of those notes are decks and stencils of
 // its own, and what the prose of each is read out of.
 //
-// All three are named here because the last is reached only once a deck names
-// something: a build short of it opens every deck that points nowhere and goes
-// down on the first one a person wrote a link into.
+// The prose is read only where a deck names something.
 func NewShowNeighbourhood(
 	linked note.ShowLinks, notes port.NoteQueries, reads note.Read,
 ) ShowNeighbourhood {

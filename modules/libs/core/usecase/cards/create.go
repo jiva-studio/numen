@@ -38,10 +38,6 @@ type Create struct {
 // NewCreate is what a deck, a stencil or a preset is made through: the vault it
 // is written into, what brings the new file level in the index, and what time
 // it is.
-//
-// All three are named here because a file made and not levelled is one the
-// vault cannot be asked for in the next breath, which is what making it was
-// for, and one made without a clock carries an identifier off the machine's.
 func NewCreate(writers port.VaultWriters, index note.Levels, now port.Clock) Create {
 	return Create{Writers: writers, Index: index, Now: now}
 }

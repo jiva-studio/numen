@@ -65,9 +65,6 @@ type Read struct {
 }
 
 // NewRead is what a note is read out of: the vault it stands in.
-//
-// It is named here because the window and an agent each build this where they
-// stand, and neither has anything to hand a person without it.
 func NewRead(readers port.VaultReaders) Read {
 	return Read{Readers: readers}
 }

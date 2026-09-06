@@ -45,12 +45,6 @@ type Move struct {
 // through, the links that point at it, what is asked which name reaches it,
 // where the index files it, what brings the notes it repaired level, and what
 // time it is.
-//
-// All seven are named here because a move short of any one of them lands the
-// file and leaves something behind it — a link repaired to a bare name that
-// reaches another note, a row still filed at the path the file left, a vault
-// that cannot find what it now holds, or a title brought into line under an
-// identifier minted off the machine's clock.
 func NewMove(
 	readers port.VaultReaders,
 	writers port.VaultWriters,

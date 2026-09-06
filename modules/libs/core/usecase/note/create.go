@@ -29,11 +29,6 @@ type Create struct {
 // NewCreate is what a note is made through: the vault it is written into, what
 // is asked which names are taken, what brings the new file level in the index,
 // and what time it is.
-//
-// All four are named here because a note made without any one of them is a
-// note half made — one filed under a name that reaches another note, one the
-// vault cannot find, or one whose identifier was minted off the machine's
-// clock rather than off the one this installation keeps.
 func NewCreate(
 	writers port.VaultWriters, names NameQueries, index Levels, now port.Clock,
 ) Create {

@@ -92,10 +92,6 @@ type Session struct {
 // unmarked cards their marks, what stands in the vault, where the answers have
 // left each card face, which preset each deck is scheduled by, where one day of
 // review gives way to the next, and what time it is.
-//
-// All six are named here because a session short of any one of them asks the
-// wrong cards, or asks past the budget the person set for the day, and the
-// answers it takes are written down all the same.
 func NewSession(
 	marks MarkCards, faces ListCardFaces, schedules Schedules, presets Presets,
 	day review.Day, now port.Clock,

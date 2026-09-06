@@ -18,9 +18,6 @@ type FolderCheck struct {
 
 // NewFolderCheck is what the question is asked through: the vault the folder
 // is opened as.
-//
-// It is named here because a build that cannot open a vault would answer that
-// every folder is gone, which is a person told their notes have vanished.
 func NewFolderCheck(readers port.VaultReaders) FolderCheck {
 	return FolderCheck{Readers: readers}
 }

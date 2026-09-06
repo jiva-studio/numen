@@ -36,10 +36,6 @@ type MarkCards struct {
 // decks are read out of and written back to, what says which of its notes are
 // decks, where the wikilink a card names its stencil by lands, what brings a
 // written deck level in the index, and what time it is.
-//
-// All six are named here because a marking short of any one of them leaves a
-// card with no mark, which is a card the session after it cannot ask, or a mark
-// minted off the machine's clock rather than this installation's.
 func NewMarkCards(
 	readers port.VaultReaders,
 	writers port.VaultWriters,

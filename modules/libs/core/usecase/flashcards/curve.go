@@ -35,9 +35,6 @@ type ProjectCurve struct {
 // stands in the vault, where the answers have left each card face, which preset
 // each deck is scheduled by, where one day of review gives way to the next, and
 // what time it is.
-//
-// All five are named here because a curve short of any one of them is drawn
-// over the wrong cards, and the person moves the control by it.
 func NewProjectCurve(
 	faces ListCardFaces, schedules Schedules, presets Presets,
 	day review.Day, now port.Clock,

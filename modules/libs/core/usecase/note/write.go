@@ -68,12 +68,6 @@ type Levels func(ctx context.Context, v domain.Vault, paths []string) error
 // NewWrite is the writer a note somebody is saving goes to disk through: the
 // vault it is read and written through, what brings it level in the index, and
 // what time it is.
-//
-// All four are named here because a write without any one of them is a save
-// that half happens. A caller that forgets the levelling or the clock does not
-// compile, where a struct built field by field would save the note and quietly
-// leave the vault unable to find what it now holds, or stamp it off the clock
-// of whichever machine happened to be running.
 func NewWrite(
 	readers port.VaultReaders, writers port.VaultWriters, index Levels, now port.Clock,
 ) Write {

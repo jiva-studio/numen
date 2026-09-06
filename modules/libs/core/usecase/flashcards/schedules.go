@@ -79,10 +79,6 @@ type Schedules struct {
 // are kept, the scheduler that places a card, where one day of review gives way
 // to the next, and the card faces and presets that say which share of the cards
 // each card is worked out at.
-//
-// All five are named here because a schedule short of any one of them is a card
-// placed on the wrong day or on no day at all, and the count of what a person
-// owes is read straight off it.
 func NewSchedules(
 	logs port.DerivedStores,
 	by review.Scheduler,

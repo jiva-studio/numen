@@ -51,10 +51,6 @@ type Embed struct {
 // NewEmbed is what a vault's chunks are given vectors through: the vault the
 // text is read out of, what says which chunks owe a vector from the model in
 // use, and where the vectors are written.
-//
-// All three are named here because embedding short of any one of them cannot
-// tell what it has already done, and a run that cannot tell that does the whole
-// vault again or none of it.
 func NewEmbed(
 	readers port.VaultReaders, chunks port.VectorQueries, vectors port.VectorRepository,
 ) Embed {

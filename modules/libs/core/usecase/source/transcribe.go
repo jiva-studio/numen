@@ -56,10 +56,6 @@ type Transcribe struct {
 // NewTranscribe is what a recording is listened to through: the vault it is
 // read out of, where what the vault holds is recorded, the store the transcript
 // is written into, and the model that hears it.
-//
-// All four are named here because a transcription short of any one of them is a
-// recording heard and lost — nothing to hear it with, nowhere to put the words,
-// or a vault that goes on believing the recording owes its text.
 func NewTranscribe(
 	readers port.VaultReaders,
 	sources port.SourceRepository,

@@ -55,10 +55,6 @@ type ListCardFaces struct {
 // NewListCardFaces is what a vault's card faces are read through: the vault the
 // decks and the stencils are read out of, what says which of its notes are
 // decks, and where the wikilink a card names its stencil by lands.
-//
-// All three are named here because a listing short of any one of them answers
-// that the vault carries nothing, or that its cards are cut by no stencil, and
-// a person is shown a vault of no cards either way.
 func NewListCardFaces(
 	readers port.VaultReaders, notes port.NoteQueries, links port.LinkQueries,
 ) ListCardFaces {

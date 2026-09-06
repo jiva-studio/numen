@@ -59,10 +59,6 @@ type ProofreadTranscript struct {
 // the recording is read out of, the store the transcript and the words as they
 // now stand are kept in, and the proofreader that answers about a batch of
 // lines.
-//
-// All three are named here because a proofreading short of any one of them has
-// nothing to correct, nothing to correct it with, or nowhere to put the words
-// it settled on, and the lines a person paid for are asked about again.
 func NewProofreadTranscript(
 	readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader,
 ) ProofreadTranscript {

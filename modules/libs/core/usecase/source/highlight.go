@@ -37,10 +37,6 @@ type Highlight struct {
 // NewHighlight is what places a run of text on the pages it was read from: the
 // vault the document is read out of, what says which producer made the text the
 // runs are places in, and the store that producer's coordinates are kept in.
-//
-// All three are named here because a highlighter short of any one of them
-// answers that the words are nowhere, which is the same answer it gives for a
-// document that truly carries no coordinates.
 func NewHighlight(
 	readers port.VaultReaders, sources port.SourceQueries, derived port.DerivedStores,
 ) Highlight {

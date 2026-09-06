@@ -66,10 +66,6 @@ type Extract struct {
 // NewExtract is what a vault's sources are cut into chunks through: the vault
 // they are read out of, where a source and its chunks are written, and what
 // says which sources the index already holds.
-//
-// All three are named here because extraction short of any one of them cuts a
-// library and writes it nowhere, or reads every file afresh each time because
-// nothing says what was seen before.
 func NewExtract(
 	readers port.VaultReaders, sources port.SourceRepository, known port.SourceQueries,
 ) Extract {

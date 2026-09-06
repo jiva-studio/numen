@@ -19,10 +19,6 @@ type Find struct {
 
 // NewFind is what a name, a path or an identity is resolved against: the list
 // this installation keeps.
-//
-// It is named here because a find short of the list has nowhere to look, and so
-// cannot tell a vault this installation does not hold from one it never asked
-// about.
 func NewFind(registry port.VaultRegistry) Find {
 	return Find{Registry: registry}
 }

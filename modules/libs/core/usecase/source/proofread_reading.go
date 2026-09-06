@@ -59,10 +59,6 @@ type ProofreadReading struct {
 // NewProofreadReading is what a reading is put right through: the vault it is
 // read out of, the store the reading and its corrections are kept in, and the
 // proofreader that answers about a page.
-//
-// All three are named here because a proofreading short of any one of them has
-// nothing to correct, nothing to correct it with, or nowhere to put the
-// corrections, and the pages a person paid for are asked about again.
 func NewProofreadReading(
 	readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader,
 ) ProofreadReading {

@@ -45,10 +45,7 @@ type Scan struct {
 // the index already believes about each file, and the upkeep a changed index
 // owes.
 //
-// All five are named here because each is reached in the ordinary course of a
-// walk — the upkeep only where the walk found something, so a build short of it
-// scans an untouched vault for as long as nobody edits a note, and goes down on
-// the first one that is.
+// The upkeep is reached only where the walk found something.
 func NewScan(
 	readers port.VaultReaders,
 	vaults port.VaultRepository,
