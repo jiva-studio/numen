@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"image"
 	"image/draw"
+	"strings"
 
 	read "github.com/getcharzp/go-ocr"
 	"github.com/getcharzp/go-ocr/paddle"
@@ -210,4 +211,10 @@ func set(names []string) map[string]bool {
 		out[n] = true
 	}
 	return out
+}
+
+// spaced is one line as the recogniser wrote it, with a run of space between
+// words standing as one space.
+func spaced(text string) string {
+	return strings.Join(strings.Fields(text), " ")
 }
