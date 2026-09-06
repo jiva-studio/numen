@@ -27,7 +27,9 @@ const forbidden = [
     comment:
       'A module reaches another by its name, not by a path out of its own ' +
       'folder. There is no module at the repository root, and a ' +
-      'relative path across two of them is one the build cannot see.',
+      'relative path across two of them is one the build cannot see. A test ' +
+      'and a story are outside the rule: the corpora they read stand in the ' +
+      'schema package, which exports none of them.',
     severity: 'error',
     from: { path: '^(src|index\\.ts)', pathNot: '\\.(test|stories)\\.ts$' },
     to: { path: '^\\.\\.' },
