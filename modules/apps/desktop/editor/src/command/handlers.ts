@@ -21,7 +21,7 @@ import type {
   VaultRefusalReason,
   Vaults,
 } from '../core'
-import type { Voice } from '../notices/telling'
+import type { MessageWriter } from '../notices/messages'
 import { AGENT, FILES, NOTE, PLEX, SETTINGS } from '../tabs/workspace'
 
 /**
@@ -204,7 +204,7 @@ export interface CommandDeps {
    * What was done, or could not be, in words a person reads. One command's
    * word replaces the last, and nothing said clears it.
    */
-  readonly says: Voice
+  readonly says: MessageWriter
 }
 
 /** Everything carrying a command out says in the window's voice. */
