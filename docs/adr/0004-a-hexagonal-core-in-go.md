@@ -125,7 +125,10 @@ modules/apps/<app>/
   go.mod
   cmd/<binary>/            entry point and the process's own concerns
   internal/adapter/        what this application alone can start
+  <window>/                an npm package to each window this application opens
 ```
+
+The desktop's windows are `editor/` and `flashcards/`, published as `@numen/editor` and `@numen/flashcards`. Each is built by `make interface` and carried inside the binary, and each takes `@numen/ui`, `@numen/protocol` and `@numen/wire` from `modules/libs/`.
 
 The unit of organisation is the thing, not the kind of thing. An aggregate is a folder holding its repository, its queries and its SQL together; a use case is a file named after the scenario.
 
