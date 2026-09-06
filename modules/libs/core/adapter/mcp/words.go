@@ -5,7 +5,9 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
@@ -26,6 +28,30 @@ func why(c note.Contents) string {
 			c.Fingerprint.Size, note.MaxBytes)
 	}
 	return said(reason)
+}
+
+// whyNotADeck says why a path is no deck to write cards into, and nothing where
+// it is one.
+func whyNotADeck(read cards.DeckContents) string {
+	if read.Outcome == note.Ok && read.Type != domain.TypeDeck {
+		return "this note is not a deck"
+	}
+	switch read.Outcome {
+	case note.Ok:
+		return ""
+	case note.TooLarge:
+		return fmt.Sprintf("it is %d bytes, larger than the %d a deck is read at; open the file instead",
+			read.Fingerprint.Size, cards.MaxBytes)
+	case note.Missing:
+		return "there is no note at this path"
+	case note.NotANote:
+		return "this is not a note the vault holds"
+	case note.NotText:
+		return "this file is not text: some of it is not valid UTF-8, so open it as a file"
+	case note.Unreadable:
+		return "the frontmatter of this note cannot be read, so it can be neither read nor written from here"
+	}
+	return string(read.Outcome)
 }
 
 // refusing is a write's error in words an agent can act on. An error that is no

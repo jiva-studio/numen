@@ -643,30 +643,6 @@ func placed(d format.Deck, section int) (int, error) {
 	return len(d.Cards), nil
 }
 
-// whyNotADeck says why a path is no deck to write cards into, and nothing where
-// it is one.
-func whyNotADeck(read cards.DeckContents) string {
-	if read.Outcome == note.Ok && read.Type != domain.TypeDeck {
-		return "this note is not a deck"
-	}
-	switch read.Outcome {
-	case note.Ok:
-		return ""
-	case note.TooLarge:
-		return fmt.Sprintf("it is %d bytes, larger than the %d a deck is read at; open the file instead",
-			read.Fingerprint.Size, cards.MaxBytes)
-	case note.Missing:
-		return "there is no note at this path"
-	case note.NotANote:
-		return "this is not a note the vault holds"
-	case note.NotText:
-		return "this file is not text: some of it is not valid UTF-8, so open it as a file"
-	case note.Unreadable:
-		return "the frontmatter of this note cannot be read, so it can be neither read nor written from here"
-	}
-	return string(read.Outcome)
-}
-
 func carded(card format.Card) Card {
 	out := Card{Mark: string(card.Mark), Section: card.Section, Stencil: card.Stencil}
 	for _, v := range card.Values {
