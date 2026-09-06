@@ -13,7 +13,7 @@ import Activity from '../activity/Activity.vue'
 import LiveRegions from './LiveRegions.vue'
 import { remainingWord } from '../activity/tally'
 import { useAnnouncer } from './announcer'
-import { useHeld } from './held'
+import { useNoticeStack } from './stack'
 import {
   arrivals,
   dwellOf,
@@ -72,7 +72,7 @@ const moving = shallowRef<ReadonlyMap<string, Movement>>(new Map())
 const stack = useTemplateRef<HTMLElement>('stack')
 
 /** What a person has put away, and how long the corner has been held for. */
-const { away, arrived, now, read, beat, enters, leaves, holds, lets } = useHeld(
+const { away, arrived, now, read, beat, enters, leaves, holds, lets } = useNoticeStack(
   stack,
   () => props.clock(),
   () => props.hidden(),

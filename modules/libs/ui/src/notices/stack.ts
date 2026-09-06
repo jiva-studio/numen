@@ -9,7 +9,7 @@
 import { computed, ref, shallowRef, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 
 /** What the corner keeps of a person's attention. */
-export interface Held {
+export interface NoticeStackState {
   /** The ones a person has put away. */
   readonly away: Ref<ReadonlySet<string>>
   /** When each of the rest arrived. */
@@ -28,11 +28,11 @@ export interface Held {
   readonly lets: (event: FocusEvent) => void
 }
 
-export function useHeld(
+export function useNoticeStack(
   stack: Readonly<ShallowRef<HTMLElement | null>>,
   clock: () => number,
   hidden: () => boolean,
-): Held {
+): NoticeStackState {
   const away = shallowRef<ReadonlySet<string>>(new Set())
   const arrived = shallowRef<ReadonlyMap<string, number>>(new Map())
   const now = ref(clock())
