@@ -47,7 +47,7 @@ func Ask(
 			if !working {
 				return nil
 			}
-			for _, out := range StepsOf(step) {
+			for _, out := range stepsOf(step) {
 				if err := stream.Send(out); err != nil {
 					return err
 				}
@@ -59,11 +59,11 @@ func Ask(
 	}
 }
 
-// StepsOf says a step of an agent's work in the schema's words.
+// stepsOf says a step of an agent's work in the schema's words.
 //
 // Every kind that names a tool is drawn as one, whatever that tool does to the
 // vault, and carries where in the vault it is working.
-func StepsOf(step port.Step) []*v1.AskAgentResponse {
+func stepsOf(step port.Step) []*v1.AskAgentResponse {
 	switch step.Kind {
 	case port.StepToolCall, port.StepRead, port.StepEdit,
 		port.StepRemove, port.StepMove, port.StepSearch:
