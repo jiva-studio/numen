@@ -23,10 +23,11 @@ import {
   placeholder,
   rectangularSelection,
 } from '@codemirror/view'
+import { following } from './address'
 import { changing, marked, pacing, type EditorChange } from './change'
 import { highlighting } from './highlight'
 import { LANGUAGES } from './languages'
-import { following, live, wholeLines } from './live'
+import { live, wholeLines } from './live'
 import { GFM } from '@lezer/markdown'
 import { saving } from './outside'
 import { monospaced, theme } from './theme'
