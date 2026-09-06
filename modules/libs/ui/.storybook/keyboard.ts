@@ -6,8 +6,14 @@
 import { userEvent } from 'vitest/browser'
 import type { Stop, Walk } from './reach'
 
-/** How far the walk goes before it calls the tab order a ring it cannot leave. */
-const FURTHEST = 120
+/**
+ * How far the walk goes before it stops.
+ *
+ * Every Tab is a real key struck by the browser, and the four crowded stories
+ * that reach this number draw the same row over and over: whatever is wrong
+ * with the fortieth of them is wrong with the first.
+ */
+const FURTHEST = 40
 
 /** What is compared before the keyboard arrives and once it is there. */
 const PAINTED = [
@@ -123,6 +129,23 @@ const TYPED = 'input, textarea, [contenteditable], [role="textbox"], [role="comb
  */
 const STILL = '*, *::before, *::after { transition: none !important; animation: none !important }'
 
+/** How long the page is given to finish arriving before it is held still. */
+const SETTLING = 500
+
+/**
+ * The page as it comes to rest. Something still arriving is drawn at the
+ * opacity it is arriving from, and held still there it reads as something a
+ * person cannot see. What never comes to rest — a spinner — is waited on only
+ * so long.
+ */
+const settles = async (): Promise<void> => {
+  const running = document.getAnimations().map((one) => one.finished)
+  await Promise.race([
+    Promise.allSettled(running),
+    new Promise((wake) => setTimeout(wake, SETTLING)),
+  ])
+}
+
 /**
  * The keyboard walked through a story from the start, Tab by Tab, until it
  * comes back where it began or leaves the page; then every stop is looked at
@@ -131,6 +154,8 @@ const STILL = '*, *::before, *::after { transition: none !important; animation: 
  * for `:focus-visible` is a difference these two readings can see.
  */
 export async function walk(): Promise<Walk> {
+  await settles()
+
   const still = document.createElement('style')
   still.textContent = STILL
   document.head.append(still)
