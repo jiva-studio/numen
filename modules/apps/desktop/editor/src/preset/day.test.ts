@@ -92,9 +92,9 @@ const opened = async (settings: Partial<Settings>, answer?: Curve) => {
   const handle = { closes: () => {} } as unknown as WindowHandle
   const puts = { holds: () => {} } as unknown as FileOpeners
   const kind = presetting(core, handle, puts, () => {}, () => DAY)
-  const held = await kind.kind.opens('Sanskrit.md')
+  const state = await kind.kind.opens('Sanskrit.md')
   for (let i = 0; i < 10; i += 1) await Promise.resolve()
-  return { held, written }
+  return { state, written }
 }
 
 afterEach(() => {
@@ -111,28 +111,28 @@ describe('a goal of a date', () => {
   })
 
   it('counts the days to it from the review day', async () => {
-    const { held } = await opened({ goal: 'date', byDate: BY })
+    const { state } = await opened({ goal: 'date', byDate: BY })
 
-    expect(held.curve.value.now.value).toBe(8)
+    expect(state.curve.value.now.value).toBe(8)
   })
 
   it('leaves the knob where it stands when the day it already aims at is typed', async () => {
     const answered = honest()
-    const { held } = await opened({ goal: 'date', byDate: BY }, answered)
-    expect(held.place.value).toBe(answered.now.at)
+    const { state } = await opened({ goal: 'date', byDate: BY }, answered)
+    expect(state.place.value).toBe(answered.now.at)
 
-    held.types('byDate', BY)
+    state.types('byDate', BY)
 
-    expect(held.place.value).toBe(answered.now.at)
+    expect(state.place.value).toBe(answered.now.at)
   })
 
   it('opens on a day counted from the review day where the file names none', async () => {
-    const { held, written } = await opened({ goal: 'minutes', byDate: '' })
+    const { state, written } = await opened({ goal: 'minutes', byDate: '' })
 
-    held.chooses('date')
+    state.chooses('date')
     for (let i = 0; i < 10; i += 1) await Promise.resolve()
 
-    expect(held.settings.value.byDate).toBe('2026-10-04')
+    expect(state.settings.value.byDate).toBe('2026-10-04')
     expect(written.at(-1)?.byDate).toBe('2026-10-04')
   })
 })
