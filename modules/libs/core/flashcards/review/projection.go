@@ -128,6 +128,35 @@ func (p Projection) Admits() int {
 	return out
 }
 
+// minutesADay is MinutesADay over the days of the run up to and including one.
+//
+// A day the preset does not admit is no session at all and takes no part: a
+// week of five days runs its minutes over five days.
+func (p Projection) minutesADay(through int) float64 {
+	var all time.Duration
+	days := 0
+	for i, one := range p.Spent[:through+1] {
+		if !p.Admitted[i] {
+			continue
+		}
+		all += one
+		days++
+	}
+	if days == 0 {
+		return 0
+	}
+	return all.Minutes() / float64(days)
+}
+
+// reached reports whether every card face that can be learned by this day of
+// the run stands learned on it. Short is how many cannot be, whatever the pace.
+func (p Projection) reached(day int) bool {
+	if p.Faces == 0 {
+		return true
+	}
+	return p.Through[day] >= float64(p.Faces-p.Short)/float64(p.Faces)
+}
+
 // Session is the first day of this run the preset admits: the next session a
 // person will actually sit down to. False is a run admession no day at all,
 // which holds no session.

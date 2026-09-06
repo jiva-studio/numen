@@ -342,14 +342,14 @@ func (d drawing) date(ctx context.Context) (Curve, error) {
 		one := Point{
 			// What it costs is what the days up to that one spend, and the days
 			// past it are no part of getting through by it.
-			Minutes: costing(ran.Spent[:day+1], ran.Admitted[:day+1]),
+			Minutes: ran.minutesADay(day),
 			// A place of this range is read on the day it names. Past that day
 			// the preset schedules nothing, so a debt read off the end of the
 			// horizon is a debt nobody was asked to pay.
 			Owed:     ran.Backlog[day],
 			Retained: back,
 			Share:    ran.Through[day],
-			Enough:   reached(ran, day, ran.Short),
+			Enough:   ran.reached(day),
 			Short:    ran.Short,
 			Closed:   BudgetNames{ClosedPaused},
 			Clears:   ran.Clears,
@@ -422,15 +422,6 @@ func learnt(
 // face out of reach of it, and the pace it sets through every one of them.
 func learns(one Point) bool { return one.Short == 0 && one.Enough }
 
-// reached reports whether every card face that can be learned by this day of a
-// run stands learned on it. Short is how many cannot be, whatever the pace.
-func reached(p Projection, day, short int) bool {
-	if p.Faces == 0 {
-		return true
-	}
-	return p.Through[day] >= float64(p.Faces-short)/float64(p.Faces)
-}
-
 // point is a projection as one place of a curve, at the load it carries over
 // the days the preset admits.
 func point(p Projection) Point {
@@ -489,24 +480,4 @@ func carried(p Projection) float64 {
 		return 0
 	}
 	return p.Spent[day].Minutes()
-}
-
-// costing is how long a day of review runs over these days, in minutes.
-//
-// A day the preset does not admit is no session at all and takes no part: a
-// week of five days runs its minutes over five days.
-func costing(spent []time.Duration, admitted []bool) float64 {
-	var all time.Duration
-	days := 0
-	for i, one := range spent {
-		if i < len(admitted) && !admitted[i] {
-			continue
-		}
-		all += one
-		days++
-	}
-	if days == 0 {
-		return 0
-	}
-	return all.Minutes() / float64(days)
 }
