@@ -40,6 +40,8 @@ const props = withDefaults(
     language?: string
     readonly?: boolean
     placeholder?: string
+    /** What it is announced as. What has been typed here is no name for it. */
+    name?: string
     /** A change being made to this text by something other than the reader. */
     change?: EditorChange | null
     /** What an address in the text becomes before the window loads it. */
@@ -52,6 +54,7 @@ const props = withDefaults(
     language: '',
     readonly: false,
     placeholder: 'Write',
+    name: 'Editor',
     change: null,
     extensions: () => [],
   },
@@ -80,6 +83,7 @@ onMounted(() => {
           live: props.live,
           readonly: props.readonly,
           placeholder: props.placeholder,
+          name: props.name,
           change: props.change,
           extensions: props.extensions,
         }),

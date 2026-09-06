@@ -37,6 +37,11 @@ export interface Settings {
   readonly live?: boolean
   readonly readonly?: boolean
   readonly placeholder?: string
+  /**
+   * What the editor is announced as. A box typed into is not named by what has
+   * been typed in it, so the placeholder is no name and this is the only one.
+   */
+  readonly name?: string
   /** A change being made to the text by something other than the reader. */
   readonly change?: EditorChange | null
   /** What whoever put the editor on the screen draws into it. */
@@ -82,6 +87,7 @@ export const setup = (settings: Settings = {}): Extension => [
   syntaxHighlighting(highlighting),
   theme,
   placeholder(settings.placeholder ?? ''),
+  EditorView.contentAttributes.of({ 'aria-label': settings.name ?? 'Editor' }),
   marked,
   pacing(),
   drawing.of(preview(settings.live ?? true)),
