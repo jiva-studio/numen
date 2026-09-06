@@ -41,6 +41,14 @@ The video plays in a frame, from the hosts the window may frame and no others. T
 
 An address nothing plays is the address itself over the prose, and what was fetched from it is searched like any other.
 
+## A copy
+
+**Download a copy of this video** fetches the video itself onto this disk, and the tab plays that instead of the frame: it plays offline, and nothing of the site it came from is loaded to play it. At the command line it is `numen-cli import <vault> <note> --copy`.
+
+It is asked for by hand. An hour of video on somebody's disk is not what pasting an address asks for, and `importing.copy_under_mb` is what a copy may run to at all.
+
+The copy is kept in the vault's own folder, named by the address like everything else fetched for it, and it is played from there — the vault's own reader is refused that folder, so what serves it is the same socket, reading the store. Taking the copy away leaves the note pointing where it pointed, and the tab frames the address again.
+
 ## The tools
 
 `yt-dlp` reaches a video, and `ffmpeg` brings sound to what a transcriber opens. Neither is shipped: each is a program the machine already has, named by a setting holding a command and what it is started through. A machine with neither cannot import, says so, and offers it nowhere afterwards.

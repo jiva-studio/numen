@@ -80,7 +80,14 @@ export const useWindow = () => {
   // The words fetched for a link note are read where a recording's are: they
   // are words with times in them, and one call answers about both.
   const notes = openNotes(
-    { ...core, cues: async (path) => (await recordings.cues(path)).cues },
+    {
+      ...core,
+      cues: async (path) => (await recordings.cues(path)).cues,
+      copy: async (path) => {
+        const played = await recordings.listened(path)
+        return { media: played.media, type: played.type }
+      },
+    },
     { replaced: changes.arrived },
   )
   /** Every message the window holds, each part of it under a name of its own. */

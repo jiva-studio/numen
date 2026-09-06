@@ -103,7 +103,7 @@ func listener(t *testing.T, words ...string) (Transcribe, domain.Vault, *store, 
 	return Transcribe{
 		Readers: vaults{first.ID: shelved},
 		Sources: index,
-		Derived: kept,
+		Derived: shelves{kept},
 		By:      model,
 		Batch:   1,
 	}, first, index, kept, model, text.Fingerprint(raw)

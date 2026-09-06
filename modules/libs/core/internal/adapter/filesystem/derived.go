@@ -1,6 +1,7 @@
 package filesystem
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -193,6 +194,54 @@ func (d *DerivedStore) Read(_ context.Context, name string) ([]byte, error) {
 	return root.ReadFile(at)
 }
 
+// Open is one file of the store to read a part of, and how many bytes it holds.
+// A copy of a video is played from the middle, and holding an hour of it in
+// memory to answer for a second is what this is not.
+func (d *DerivedStore) Open(_ context.Context, name string) (io.ReadSeekCloser, int64, error) {
+	target, err := d.at(name)
+	if err != nil {
+		return nil, 0, err
+	}
+	root, at, err := d.beneath(target)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer root.Close()
+	file, err := root.Open(at)
+	if err != nil {
+		return nil, 0, err
+	}
+	about, err := file.Stat()
+	if err != nil {
+		file.Close()
+		return nil, 0, err
+	}
+	return file, about.Size(), nil
+}
+
+// Take puts what a reader gives under a name, through the same rename every
+// other write here lands by: what a fetch was still writing when a machine
+// stopped is not a file anything reads afterwards.
+func (d *DerivedStore) Take(_ context.Context, name string, from io.Reader) (int64, error) {
+	target, err := d.at(name)
+	if err != nil {
+		return 0, err
+	}
+	root, at, err := d.making(target)
+	if err != nil {
+		return 0, err
+	}
+	defer root.Close()
+	if err := root.MkdirAll(filepath.Dir(at), 0o755); err != nil {
+		return 0, err
+	}
+	written, err := replace(root, at, from, 0o644)
+	if err != nil {
+		return 0, err
+	}
+	return written.Size, settle(root, filepath.Dir(at))
+}
+
 func (d *DerivedStore) Write(_ context.Context, name string, content []byte) error {
 	target, err := d.at(name)
 	if err != nil {
@@ -206,7 +255,7 @@ func (d *DerivedStore) Write(_ context.Context, name string, content []byte) err
 	if err := root.MkdirAll(filepath.Dir(at), 0o755); err != nil {
 		return err
 	}
-	if _, err := replace(root, at, content, 0o644); err != nil {
+	if _, err := replace(root, at, bytes.NewReader(content), 0o644); err != nil {
 		return err
 	}
 	return settle(root, filepath.Dir(at))

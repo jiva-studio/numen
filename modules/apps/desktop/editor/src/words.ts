@@ -65,6 +65,15 @@ export const MADE: Record<Artifact, Record<ArtifactState, string>> = {
     empty: 'There were no words in this transcript to put right.',
     failed: 'This transcript could not be put right:',
   },
+  copy: {
+    none: 'No copy of this video is on this disk.',
+    queued: 'This video is in line, behind the one being fetched now.',
+    running: 'This video is being fetched now.',
+    stopped: 'Fetching this video stopped part way.',
+    done: 'A copy of this video is on this disk.',
+    empty: 'There is no video at this address to copy.',
+    failed: 'This video was not copied:',
+  },
   fetched: {
     none: 'Nothing has been fetched from this address.',
     queued: 'This address is in line, behind the one being fetched now.',
@@ -128,6 +137,8 @@ export const WORDS = {
   recognise: 'Recognise the text of this document',
   /** The transcript of the recording in front, put right by a proofreader. */
   proofread: 'Proofread the transcript of this recording',
+  /** A copy of the video a link note points at, fetched onto this disk. */
+  download: 'Download a copy of this video',
   /** The transcript of the recording in front, taken away, and the two answers. */
   dropTranscript: 'Delete the transcript of this recording',
   keepsTranscript: 'Keep the transcript',

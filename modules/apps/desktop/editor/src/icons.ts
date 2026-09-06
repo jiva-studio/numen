@@ -28,6 +28,7 @@ import {
   FolderTree,
   Gauge,
   Globe,
+  HardDriveDownload,
   Layers,
   LayoutTemplate,
   ListTree,
@@ -86,6 +87,7 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['proofread', SpellCheck],
   ['dropTranscript', CaptionsOff],
   ['recognise', ScanText],
+  ['download', HardDriveDownload],
   // What a tab of the tree does itself.
   ['newNote', FilePlus],
   ['newDeck', Layers],

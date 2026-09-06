@@ -31,18 +31,18 @@ func (n *noting) SaveExtraction(_ context.Context, _ domain.VaultID, e domain.So
 // dropper is a window holding one recording a model has listened to, with the
 // use case that takes what it heard away. `known` is what the index says the
 // recording stands on.
-func dropper(t *testing.T, held port.DerivedStores, known indexed) (*API, *noting, http.Handler) {
+func dropper(t *testing.T, held port.DerivedStore, known indexed) (*API, *noting, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
 	index := &noting{}
 	api := &API{
 		Readers:   filesystem.VaultReaders{},
-		Highlight: &source.Highlight{Sources: known, Derived: held},
+		Highlight: &source.Highlight{Sources: known, Derived: storing{held}},
 		Drops: &source.DropTranscript{
 			Readers: filesystem.VaultReaders{},
 			Sources: index,
 			Known:   known,
-			Derived: held,
+			Derived: storing{held},
 		},
 	}
 	api.show(vault)

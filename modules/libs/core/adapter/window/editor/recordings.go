@@ -62,10 +62,44 @@ func (a *API) GetRecording(
 		Media:  a.Playing.Address(showing, ref),
 		Type:   domain.MediaType(ref.Path),
 	}
+	// A link note plays the copy fetched for it, where one stands. A note with
+	// none plays nothing here, and the tab frames the address instead.
+	if ref.Kind == domain.KindNote {
+		out.Media, out.Type = a.copied(ctx, showing, ref)
+	}
 	if len(cues) > 0 {
 		out.Length = max(out.Length, int32(cues[len(cues)-1].To))
 	}
 	return connect.NewResponse(out), nil
+}
+
+// copied is where the copy fetched for a link note is played from, and what a
+// player is told it is. A note nothing has been fetched a copy for plays from
+// nowhere, which is what leaves the tab framing the address.
+func (a *API) copied(
+	ctx context.Context, v domain.Vault, ref domain.Fingerprint,
+) (media, kind string) {
+	_, stores, ready := a.hearing()
+	if !ready {
+		return "", ""
+	}
+	at := a.points(ctx, v, ref)
+	if !at.IsVideo() {
+		return "", ""
+	}
+	store, err := stores.Open(v)
+	if err != nil {
+		return "", ""
+	}
+	file, size, err := store.Open(ctx, derived.Copy(derived.Fingerprint([]byte(at.URL))))
+	if err != nil {
+		return "", ""
+	}
+	_ = file.Close()
+	// The address names how large the copy was when it was given out, as a
+	// recording's names the bytes it was: a copy fetched again is another
+	// address.
+	return a.Playing.Address(v, domain.Fingerprint{Path: ref.Path, Size: size}), derived.CopyType
 }
 
 // ReadTranscript answers with the transcript of a recording, each stretch of

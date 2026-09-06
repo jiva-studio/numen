@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"slices"
 	"strings"
@@ -31,6 +32,9 @@ type ImportURL struct {
 	Readers port.VaultReaders
 	Derived port.DerivedStores
 	By      port.Fetcher
+
+	// CopyUnder is how many bytes a copy may run to. Zero is no limit.
+	CopyUnder int64
 
 	// Languages are the languages published words are preferred in, best
 	// first, and Automatic is whether words a machine wrote count where a
@@ -74,28 +78,7 @@ type ImportURLResult struct {
 // Execute fetches what is at one link note's address.
 func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (ImportURLResult, error) {
 	res := ImportURLResult{Path: path}
-	reader, err := u.Readers.Open(v)
-	if err != nil {
-		return res, err
-	}
-	ref, err := reader.Stat(ctx, path)
-	if err != nil {
-		return res, fmt.Errorf("stat %s: %w", path, err)
-	}
-	raw, err := reader.Read(ctx, path)
-	if err != nil {
-		return res, fmt.Errorf("read %s: %w", path, err)
-	}
-	n := markdown.Parse(ref, raw)
-	if n.Type != domain.TypeLink {
-		return res, fmt.Errorf("%s: %w", path, ErrNotALink)
-	}
-	at, wrong := domain.ReadAddress(n.Frontmatter)
-	if len(wrong) > 0 {
-		return res, fmt.Errorf("%s: %w: %s", path, ErrNotALink, strings.Join(wrong, "; "))
-	}
-
-	store, err := u.Derived.Open(v)
+	at, n, store, err := u.pointed(ctx, v, path)
 	if err != nil {
 		return res, err
 	}
@@ -143,14 +126,122 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 	res.Title, res.Length = meta.Title, meta.Length
 
 	if at.IsVideo() {
-		res, err = u.video(ctx, v, ref, at, meta, hash, store, res)
+		res, err = u.video(ctx, v, n.Fingerprint, at, meta, hash, store, res)
 	} else {
-		res, err = u.page(ctx, v, ref, at, hash, store, res)
+		res, err = u.page(ctx, v, n.Fingerprint, at, hash, store, res)
 	}
 	if err != nil {
 		return res, err
 	}
 	return u.named(ctx, v, n, at, res)
+}
+
+// CopyResult reports what downloading a copy did.
+type CopyResult struct {
+	Path string
+	// Bytes is how large the copy is, and Held whether one already stood.
+	Bytes int64
+	Held  bool
+	// TooLarge is a video over the size the settings name. Nothing was fetched,
+	// and Bytes is what it would have taken.
+	TooLarge bool
+	Busy     bool
+}
+
+// Copy fetches what is at a link note's address as a person plays it.
+//
+// It is asked for by hand: a copy is an hour of video on somebody's disk, and
+// pasting an address is not asking for one. What is fetched is played from the
+// vault's own folder, where losing it costs another fetch.
+func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyResult, error) {
+	res := CopyResult{Path: path}
+	at, _, store, err := u.pointed(ctx, v, path)
+	if err != nil {
+		return res, err
+	}
+	if !at.IsVideo() {
+		return res, fmt.Errorf("%s: %w", path, ErrNotALink)
+	}
+	hash := text.Fingerprint([]byte(at.URL))
+
+	// One run to a copy, held for as long as the fetch takes.
+	release, err := store.Claim(ctx, text.Copy(hash)+".claiming")
+	if errors.Is(err, port.ErrClaimed) {
+		res.Busy = true
+		return res, nil
+	}
+	if err != nil {
+		return res, err
+	}
+	defer release()
+
+	if _, size, err := store.Open(ctx, text.Copy(hash)); err == nil {
+		res.Held, res.Bytes = true, size
+		return res, nil
+	} else if !errors.Is(err, fs.ErrNotExist) {
+		return res, err
+	}
+
+	meta, err := u.By.Metadata(ctx, at)
+	if err != nil {
+		return res, err
+	}
+	if u.CopyUnder > 0 && meta.Bytes > u.CopyUnder {
+		res.TooLarge, res.Bytes = true, meta.Bytes
+		return res, nil
+	}
+
+	// The copy is written through the store's own rename, so a fetch that
+	// stopped leaves nothing anything plays.
+	read, write := io.Pipe()
+	going := make(chan error, 1)
+	go func() {
+		_, err := u.By.Download(ctx, at, write)
+		going <- err
+		_ = write.CloseWithError(err)
+	}()
+	size, err := store.Take(ctx, text.Copy(hash), read)
+	if fetching := <-going; fetching != nil {
+		return res, fetching
+	}
+	if err != nil {
+		return res, err
+	}
+	res.Bytes = size
+	return res, nil
+}
+
+// pointed is one link note: where it points, the note itself, and the store
+// what is fetched for it is kept in.
+func (u ImportURL) pointed(
+	ctx context.Context, v domain.Vault, path string,
+) (domain.WebAddress, domain.Note, port.DerivedStore, error) {
+	reader, err := u.Readers.Open(v)
+	if err != nil {
+		return domain.WebAddress{}, domain.Note{}, nil, err
+	}
+	ref, err := reader.Stat(ctx, path)
+	if err != nil {
+		return domain.WebAddress{}, domain.Note{}, nil, fmt.Errorf("stat %s: %w", path, err)
+	}
+	raw, err := reader.Read(ctx, path)
+	if err != nil {
+		return domain.WebAddress{}, domain.Note{}, nil, fmt.Errorf("read %s: %w", path, err)
+	}
+	n := markdown.Parse(ref, raw)
+	if n.Type != domain.TypeLink {
+		return domain.WebAddress{}, domain.Note{}, nil, fmt.Errorf("%s: %w", path, ErrNotALink)
+	}
+	at, wrong := domain.ReadAddress(n.Frontmatter)
+	if len(wrong) > 0 {
+		return domain.WebAddress{}, domain.Note{}, nil,
+			fmt.Errorf("%s: %w: %s", path, ErrNotALink, strings.Join(wrong, "; "))
+	}
+	store, err := u.Derived.Open(v)
+	if err != nil {
+		return domain.WebAddress{}, domain.Note{}, nil, err
+	}
+	return at, n, store, nil
 }
 
 // named gives the note the name what is at the address calls itself.

@@ -33,6 +33,8 @@ const (
 	correctedID = derived.ASR + ".corrected"
 	// fetchedID is what is at the address a link note points at.
 	fetchedID = "link"
+	// copiedID is the copy of a video played from this disk.
+	copiedID = "link.copy"
 )
 
 // errNoArtifact is a kind no file of the vault carries, and errNotCarried one
@@ -57,7 +59,10 @@ func carried(kind domain.SourceKind, points bool) []v1.ArtifactKind {
 			v1.ArtifactKind_ARTIFACT_KIND_CORRECTED,
 		}
 	case kind == domain.KindNote && points:
-		return []v1.ArtifactKind{v1.ArtifactKind_ARTIFACT_KIND_FETCHED}
+		return []v1.ArtifactKind{
+			v1.ArtifactKind_ARTIFACT_KIND_FETCHED,
+			v1.ArtifactKind_ARTIFACT_KIND_COPY,
+		}
 	default:
 		return nil
 	}
@@ -75,6 +80,8 @@ func standing(of v1.ArtifactKind) (string, bool) {
 		return correctedID, true
 	case v1.ArtifactKind_ARTIFACT_KIND_FETCHED:
 		return fetchedID, true
+	case v1.ArtifactKind_ARTIFACT_KIND_COPY:
+		return copiedID, true
 	default:
 		return "", false
 	}
@@ -125,6 +132,87 @@ func (a *API) fetched(
 	}
 	return out, nil
 }
+
+// drops takes the copy of a video off this disk. The note stands as it did,
+// pointing at the address, and the tab frames it again.
+func (a *API) drops(
+	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.WebAddress,
+) (*connect.Response[v1.DeleteArtifactResponse], error) {
+	_, stores, held := a.hearing()
+	if !held {
+		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
+	}
+	store, err := stores.Open(v)
+	if err != nil {
+		return nil, connect.NewError(reaching(err), err)
+	}
+	name := derived.Copy(derived.Fingerprint([]byte(at.URL)))
+	if err := store.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return nil, connect.NewError(reaching(err), err)
+	}
+	return connect.NewResponse(&v1.DeleteArtifactResponse{
+		Artifact: &v1.Artifact{
+			Name:  named(v, ref.Path, copiedID),
+			Kind:  v1.ArtifactKind_ARTIFACT_KIND_COPY,
+			State: v1.State_STATE_NONE,
+		},
+	}), nil
+}
+
+// copyOf is whether a copy of the video at an address stands on this disk, and
+// how large it is.
+func (a *API) copyOf(
+	ctx context.Context, v domain.Vault, path string, at domain.WebAddress,
+) *v1.Artifact {
+	out := &v1.Artifact{
+		Name:  named(v, path, copiedID),
+		Kind:  v1.ArtifactKind_ARTIFACT_KIND_COPY,
+		State: v1.State_STATE_NONE,
+	}
+	_, stores, held := a.hearing()
+	if !held || !at.IsVideo() {
+		return out
+	}
+	store, err := stores.Open(v)
+	if err != nil {
+		return out
+	}
+	file, size, err := store.Open(ctx, derived.Copy(derived.Fingerprint([]byte(at.URL))))
+	if err != nil {
+		return out
+	}
+	_ = file.Close()
+	out.State, out.Size = v1.State_STATE_DONE, size
+	return out
+}
+
+// copies fetches a copy of the video at an address and answers with what stands
+// once it has. A copy over the size the settings name is not fetched, and what
+// it would have taken is said.
+func (a *API) copies(
+	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.WebAddress,
+) (*v1.Artifact, error) {
+	if a.Imports == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoFetcher)
+	}
+	got, err := a.Imports.Copy(ctx, v, ref.Path)
+	if err != nil {
+		return nil, connect.NewError(reaching(err), err)
+	}
+	out := a.copyOf(ctx, v, ref.Path, at)
+	switch {
+	case got.Busy:
+		out.State = v1.State_STATE_RUNNING
+	case got.TooLarge:
+		out.State, out.Size = v1.State_STATE_FAILED, got.Bytes
+		out.Error = errTooLarge.Error()
+	}
+	return out, nil
+}
+
+// errTooLarge is a copy over the size the settings name. Nothing was fetched,
+// and how large it would have been is on the answer.
+var errTooLarge = errors.New("this video is larger than importing.copy_under_mb")
 
 // ListArtifacts is every artifact the file at a path can carry and what has
 // become of each.
@@ -184,6 +272,8 @@ func (a *API) CreateArtifact(
 		made, err = a.proofreadTranscript(ctx, showing, ref)
 	case v1.ArtifactKind_ARTIFACT_KIND_FETCHED:
 		made, err = a.fetch(ctx, showing, ref, at)
+	case v1.ArtifactKind_ARTIFACT_KIND_COPY:
+		made, err = a.copies(ctx, showing, ref, at)
 	default:
 		made, err = a.run(ctx, showing, ref, of)
 	}
@@ -203,6 +293,11 @@ func (a *API) DeleteArtifact(
 	showing, ref, err := a.held(ctx, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(reaching(err), err)
+	}
+	// A copy of a video is bytes and no words: taking it away leaves the note
+	// as it was, pointing at the address it points at.
+	if at := a.points(ctx, showing, ref); at.IsVideo() {
+		return a.drops(ctx, showing, ref, at)
 	}
 	if ref.Kind != domain.KindRecording {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNotCarried)
@@ -380,6 +475,9 @@ func (a *API) artifact(
 	}
 	if of == v1.ArtifactKind_ARTIFACT_KIND_FETCHED {
 		return a.fetched(ctx, v, ref.Path, at)
+	}
+	if of == v1.ArtifactKind_ARTIFACT_KIND_COPY {
+		return a.copyOf(ctx, v, ref.Path, at), nil
 	}
 	got, err := a.far(ctx, v, ref.Path, ref.Kind)
 	if err != nil {

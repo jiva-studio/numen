@@ -98,6 +98,11 @@ enum ArtifactKind {
   // prose. It stands under `link`, and which producer brought it is the
   // store's business and not a client's.
   ARTIFACT_KIND_FETCHED = 4;
+
+  // A copy of the video at that address, played from this disk. It stands
+  // under `link.copy`, and it is asked for by hand: an hour of video is not
+  // what pasting an address asks for.
+  ARTIFACT_KIND_COPY = 5;
 }
 
 // State is what has become of one artifact.

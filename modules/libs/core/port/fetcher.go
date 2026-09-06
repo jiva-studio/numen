@@ -32,6 +32,9 @@ func (f FetchModel) Recipe() string { return f.Tool + "|" + f.Version }
 type Metadata struct {
 	// Title is what the video or the page calls itself.
 	Title string
+	// Bytes is how large a copy of it would be, and zero where the site does not
+	// say.
+	Bytes int64
 	// Length is how long a video runs, in milliseconds, and zero for an address
 	// nothing plays.
 	Length int

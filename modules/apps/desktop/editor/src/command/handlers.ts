@@ -272,6 +272,8 @@ const carried: Record<string, CommandHandler> = {
     began(invocation, await on.runs.makes(invocation.file, 'transcript'), on, words),
   recognise: async (invocation, on, words) =>
     began(invocation, await on.runs.makes(invocation.file, 'reading'), on, words),
+  download: async (invocation, on, words) =>
+    began(invocation, await on.runs.makes(invocation.file, 'copy'), on, words),
   proofread: async (invocation, on, words) =>
     began(invocation, await on.runs.makes(invocation.file, 'corrections'), on, words),
   dropTranscript: async (invocation, on, words) => {

@@ -55,6 +55,11 @@ export interface NoteTabState {
    * nothing has been fetched for has none.
    */
   readonly cues: ComputedRef<readonly Cue[]>
+  /**
+   * Where the copy fetched for that address plays from, and nothing where no
+   * copy stands on this disk.
+   */
+  readonly copy: ComputedRef<string>
   /** What could not be read or written, in words a person reads. */
   readonly saying: ComputedRef<string>
   /** What arrived from elsewhere, for the editor to take into what is typed. */
@@ -169,6 +174,7 @@ export function noting(
     shown: computed(() => notes.shown(id)),
     points: computed(() => notes.points(id)),
     cues: computed(() => notes.cues(id)),
+    copy: computed(() => notes.copy(id)),
     saying: computed(() => notes.saying(id)),
     change: computed(() => changes.shown(notes.where(id))),
     typed: (body: string) => notes.typed(id, body),

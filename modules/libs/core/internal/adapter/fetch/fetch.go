@@ -97,6 +97,8 @@ func (f *Fetcher) Metadata(ctx context.Context, at domain.WebAddress) (port.Meta
 		Title              string                `json:"title"`
 		Language           string                `json:"language"`
 		Duration           float64               `json:"duration"`
+		Filesize           int64                 `json:"filesize"`
+		Approximate        int64                 `json:"filesize_approx"`
 		Subtitles          map[string][]struct{} `json:"subtitles"`
 		AutomaticCaptions  map[string][]struct{} `json:"automatic_captions"`
 		RequestedSubtitles map[string][]struct{} `json:"requested_subtitles"`
@@ -108,6 +110,7 @@ func (f *Fetcher) Metadata(ctx context.Context, at domain.WebAddress) (port.Meta
 		Title:    strings.TrimSpace(held.Title),
 		Length:   int(held.Duration * 1000),
 		Language: held.Language,
+		Bytes:    max(held.Filesize, held.Approximate),
 	}
 	found.Captions = languages(held.Subtitles)
 	found.Automatic = languages(held.AutomaticCaptions)

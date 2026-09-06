@@ -26,7 +26,7 @@ func dropping(t *testing.T, words ...string) (Transcribe, DropTranscript, domain
 	listen := Transcribe{
 		Readers: vaults{first.ID: shelved},
 		Sources: index,
-		Derived: kept,
+		Derived: shelves{kept},
 		By:      model,
 		Batch:   1,
 		Cut: func(ctx context.Context, v domain.Vault, path string) error {
@@ -38,7 +38,7 @@ func dropping(t *testing.T, words ...string) (Transcribe, DropTranscript, domain
 		Readers: vaults{first.ID: shelved},
 		Sources: index,
 		Known:   index,
-		Derived: kept,
+		Derived: shelves{kept},
 	}
 	return listen, drop, first, index, kept, model, text.Fingerprint(raw)
 }

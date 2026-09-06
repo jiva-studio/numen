@@ -67,6 +67,7 @@ const notes = (states: Record<string, State> = {}) => {
     where,
     points: () => null,
     cues: () => [],
+    copy: () => '',
     saying: () => '',
     typed: () => {},
     save: () => {},

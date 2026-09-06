@@ -74,7 +74,7 @@ func fetching(t *testing.T, written string, from *site) (ImportURL, *shelf, stri
 	cut := []string{}
 	return ImportURL{
 		Readers: vaults{first.ID: shelved},
-		Derived: kept,
+		Derived: shelves{kept},
 		By:      from,
 		Cut: func(_ context.Context, _ domain.Vault, path string) error {
 			cut = append(cut, path)

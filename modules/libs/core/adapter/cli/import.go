@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 // importCommand fetches what is at the address a link note points at.
@@ -14,18 +16,21 @@ import (
 // The window asks for it as the note is made; this is the hand asking for one,
 // and `--again` is how a person asks a site for its words afresh.
 func importCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
-	again := false
+	again, copying := false, false
 	rest := make([]string, 0, len(args))
 	for _, one := range args {
-		if one == "--again" {
+		switch one {
+		case "--again":
 			again = true
-			continue
+		case "--copy":
+			copying = true
+		default:
+			rest = append(rest, one)
 		}
-		rest = append(rest, one)
 	}
 	args = rest
 	if len(args) != 2 {
-		return errors.New("usage: numen-cli import <vault> <note> [--again]")
+		return errors.New("usage: numen-cli import <vault> <note> [--again] [--copy]")
 	}
 	v, err := findVault(deps, args[0])
 	if err != nil {
@@ -39,6 +44,9 @@ func importCommand(ctx context.Context, out io.Writer, deps Deps, args []string)
 
 	fetch := open.ImportURL
 	fetch.Again = again
+	if copying {
+		return copied(ctx, out, fetch, v, args[1])
+	}
 	fmt.Fprintf(out, "fetching what %s points at\n", args[1])
 
 	res, err := fetch.Execute(ctx, v, args[1])
@@ -59,4 +67,39 @@ func importCommand(ctx context.Context, out io.Writer, deps Deps, args []string)
 		fmt.Fprintln(out)
 	}
 	return nil
+}
+
+// copied fetches a copy of the video an address names, onto this disk.
+func copied(
+	ctx context.Context,
+	out io.Writer,
+	fetch source.ImportURL,
+	v domain.Vault,
+	path string,
+) error {
+	fmt.Fprintf(out, "fetching a copy of what %s points at\n", path)
+	res, err := fetch.Copy(ctx, v, path)
+	if err != nil {
+		return err
+	}
+	switch {
+	case res.Busy:
+		fmt.Fprintf(out, "%s is already being fetched, and nothing was done\n", res.Path)
+	case res.TooLarge:
+		fmt.Fprintf(out, "%s would take %s, over importing.copy_under_mb\n",
+			res.Path, sized(res.Bytes))
+	case res.Held:
+		fmt.Fprintf(out, "a copy of %s is already here\n", sized(res.Bytes))
+	default:
+		fmt.Fprintf(out, "a copy of %s is here\n", sized(res.Bytes))
+	}
+	return nil
+}
+
+// sized is how large something is, in the unit a person reads it in.
+func sized(bytes int64) string {
+	if bytes < 1<<20 {
+		return fmt.Sprintf("%d bytes", bytes)
+	}
+	return fmt.Sprintf("%d MB", bytes>>20)
 }

@@ -174,7 +174,7 @@ func TestALinkNoteCarriesWhatIsAtItsAddress(t *testing.T) {
 	api, _ := running(t, stored{}, nothingRead(), willRun(), willRun())
 
 	held := carrying(t, api, pointed)
-	if len(held) != 1 {
+	if len(held) != 2 {
 		t.Fatalf("a link note carries %v", held)
 	}
 	if held[fetchedOf] != v1.State_STATE_NONE {
@@ -232,5 +232,28 @@ func TestTheWordsOfALinkNoteAreReadBack(t *testing.T) {
 	cues := out.Msg.GetCues()
 	if len(cues) != 1 || cues[0].GetText() != "what was said" || cues[0].GetFrom() != 1000 {
 		t.Errorf("the words read %+v", cues)
+	}
+}
+
+// A copy of a video is asked for by hand, and taking it away leaves the note
+// pointing where it pointed.
+func TestACopyIsFetchedAndTakenAway(t *testing.T) {
+	hash := derived.Fingerprint([]byte(pointsAt))
+	held := stored{derived.Copy(hash): []byte("the bytes of a video")}
+	api, _ := running(t, held, nothingRead(), willRun(), willRun())
+
+	if carrying(t, api, pointed)[copyOf] != v1.State_STATE_DONE {
+		t.Fatalf("a note with a copy carries %v", carrying(t, api, pointed))
+	}
+
+	if _, err := api.DeleteArtifact(t.Context(),
+		connect.NewRequest(&v1.DeleteArtifactRequest{Path: pointed})); err != nil {
+		t.Fatal(err)
+	}
+	if carrying(t, api, pointed)[copyOf] != v1.State_STATE_NONE {
+		t.Errorf("the copy is still here: %v", carrying(t, api, pointed))
+	}
+	if _, held := held[derived.Copy(hash)]; held {
+		t.Error("the bytes are still in the store")
 	}
 }

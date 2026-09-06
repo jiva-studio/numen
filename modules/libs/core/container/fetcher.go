@@ -33,6 +33,7 @@ func (c Config) ImportURL(ctx context.Context, db *Index, by port.Fetcher) sourc
 		Readers:   c.VaultReaders(),
 		Derived:   c.DerivedStores(),
 		By:        by,
+		CopyUnder: c.Fetching.CopyBytes(),
 		Languages: c.Fetching.Captions,
 		Automatic: c.Fetching.Automatic(),
 		Cut: func(ctx context.Context, v domain.Vault, path string) error {

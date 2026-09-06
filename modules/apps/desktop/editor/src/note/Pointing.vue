@@ -16,11 +16,18 @@ import type { Cue } from '../recording/transcript'
 const props = defineProps<{
   points: Pointed
   cues: readonly Cue[]
+  /**
+   * Where a copy of it on this disk is played from, and nothing where there is
+   * none. A copy is played in place of the frame: it plays offline, and nothing
+   * of the site it came from is loaded to play it.
+   */
+  copy: string
   /** What the frame is called, for whoever is not looking at it. */
   words: { readonly playing: string }
 }>()
 
 const frame = useTemplateRef<HTMLIFrameElement>('frame')
+const player = useTemplateRef<HTMLVideoElement>('player')
 
 // The frame is told which page holds it, so nothing else reaching this machine
 // can drive the player.
@@ -28,8 +35,16 @@ const framed = computed(
   () => `${props.points.embed}&origin=${encodeURIComponent(window.location.origin)}`,
 )
 
-/** The moment a stretch of speech was said, played from there. */
+/**
+ * The moment a stretch of speech was said, played from there — in the copy on
+ * this disk where there is one, and in the frame otherwise.
+ */
 const plays = (cue: Cue): void => {
+  if (player.value) {
+    player.value.currentTime = cue.from / 1000
+    void player.value.play()
+    return
+  }
   frame.value?.contentWindow?.postMessage(
     JSON.stringify({ event: 'command', func: 'seekTo', args: [cue.from / 1000, true] }),
     new URL(props.points.embed).origin,
@@ -39,8 +54,18 @@ const plays = (cue: Cue): void => {
 
 <template>
   <div class="pointing">
+    <video
+      v-if="props.copy"
+      ref="player"
+      class="pointing__frame"
+      :src="props.copy"
+      :title="props.words.playing"
+      controls
+      preload="metadata"
+    ></video>
+
     <iframe
-      v-if="props.points.embed"
+      v-else-if="props.points.embed"
       ref="frame"
       class="pointing__frame"
       :src="framed"
@@ -50,7 +75,7 @@ const plays = (cue: Cue): void => {
       referrerpolicy="no-referrer"
     ></iframe>
 
-    <p v-else class="pointing__address">{{ props.points.url }}</p>
+    <p v-else-if="!props.points.embed" class="pointing__address">{{ props.points.url }}</p>
 
     <ol v-if="props.cues.length > 0" class="pointing__words">
       <li v-for="(cue, at) in props.cues" :key="at">

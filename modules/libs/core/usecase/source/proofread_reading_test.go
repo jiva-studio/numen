@@ -70,7 +70,7 @@ func proofreading(t *testing.T, says map[int]string) (ProofreadReading, domain.V
 	by := &corrector{says: says}
 	return ProofreadReading{
 		Readers: read.Readers,
-		Derived: shelved,
+		Derived: shelves{shelved},
 		By:      by,
 		Pages:   2,
 	}, v, shelved, by

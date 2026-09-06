@@ -32,6 +32,7 @@ watch(
       v-if="props.state.points.value"
       :points="props.state.points.value"
       :cues="props.state.cues.value"
+      :copy="props.state.copy.value"
       :words="words"
     />
 

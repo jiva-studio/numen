@@ -35,6 +35,6 @@ address, in one diff somebody reads.
 
 ## Alternatives considered
 
-**No frame: a copy is downloaded and played locally.** Rejected as the only way: the person pasted an address to watch what is there, and an hour of video on their disk is not what they asked for. It stands as the other way, for offline and for what a site will not let a frame play.
+**No frame: a copy is downloaded and played locally.** Rejected as the only way: the person pasted an address to watch what is there, and an hour of video on their disk is not what they asked for. It stands as the other way, asked for by hand — a copy is played in place of the frame, from the vault's own folder, and a note with one loads nothing of the site at all.
 
 **The host's own player script, loaded into the window.** Rejected: it would run in the window rather than inside a frame of its own, which is exactly what the policy exists to stop.

@@ -44,6 +44,10 @@ const (
 	// prose. It stands under `link`, and which producer brought it is the
 	// store's business and not a client's.
 	ArtifactKind_ARTIFACT_KIND_FETCHED ArtifactKind = 4
+	// A copy of the video at that address, played from this disk. It stands
+	// under `link.copy`, and it is asked for by hand: an hour of video is not
+	// what pasting an address asks for.
+	ArtifactKind_ARTIFACT_KIND_COPY ArtifactKind = 5
 )
 
 // Enum value maps for ArtifactKind.
@@ -54,6 +58,7 @@ var (
 		2: "ARTIFACT_KIND_HEARD",
 		3: "ARTIFACT_KIND_CORRECTED",
 		4: "ARTIFACT_KIND_FETCHED",
+		5: "ARTIFACT_KIND_COPY",
 	}
 	ArtifactKind_value = map[string]int32{
 		"ARTIFACT_KIND_UNSPECIFIED": 0,
@@ -61,6 +66,7 @@ var (
 		"ARTIFACT_KIND_HEARD":       2,
 		"ARTIFACT_KIND_CORRECTED":   3,
 		"ARTIFACT_KIND_FETCHED":     4,
+		"ARTIFACT_KIND_COPY":        5,
 	}
 )
 
@@ -877,13 +883,14 @@ const file_numen_v1_artifact_proto_rawDesc = "" +
 	"\x04cues\x18\x02 \x03(\v2\r.numen.v1.CueR\x04cues\"X\n" +
 	"\x17WriteTranscriptResponse\x12!\n" +
 	"\x04cues\x18\x01 \x03(\v2\r.numen.v1.CueR\x04cues\x12\x1a\n" +
-	"\beditable\x18\x02 \x01(\bR\beditable*\x99\x01\n" +
+	"\beditable\x18\x02 \x01(\bR\beditable*\xb1\x01\n" +
 	"\fArtifactKind\x12\x1d\n" +
 	"\x19ARTIFACT_KIND_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15ARTIFACT_KIND_READING\x10\x01\x12\x17\n" +
 	"\x13ARTIFACT_KIND_HEARD\x10\x02\x12\x1b\n" +
 	"\x17ARTIFACT_KIND_CORRECTED\x10\x03\x12\x19\n" +
-	"\x15ARTIFACT_KIND_FETCHED\x10\x04*\x99\x01\n" +
+	"\x15ARTIFACT_KIND_FETCHED\x10\x04\x12\x16\n" +
+	"\x12ARTIFACT_KIND_COPY\x10\x05*\x99\x01\n" +
 	"\x05State\x12\x15\n" +
 	"\x11STATE_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +

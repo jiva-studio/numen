@@ -41,6 +41,11 @@ export interface Notes {
    * were said. A note pointing nowhere has none, and nothing asks.
    */
   cues?(path: string): Promise<readonly Cue[]>
+  /**
+   * Where the copy fetched for a link note is played from, and what a player is
+   * told it is. A note with no copy on this disk plays from nowhere.
+   */
+  copy?(path: string): Promise<{ media: string; type: string }>
   write(
     path: string,
     body: string,
@@ -99,6 +104,8 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
   const points = ref(new Map<string, Pointed>())
   /** The words fetched for each of them, for the notes anything was fetched for. */
   const cues = ref(new Map<string, readonly Cue[]>())
+  /** Where the copy fetched for each of them plays from, for those a copy stands for. */
+  const copies = ref(new Map<string, string>())
 
   /** A note opened under an identity, on the file it opens at. */
   const open = (id: string, path: string = id): void => {
@@ -284,9 +291,11 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     if (answered.points) {
       points.value.set(id, answered.points)
       void fetched(id, path)
+      void copied(id, path)
     } else {
       points.value.delete(id)
       cues.value.delete(id)
+      copies.value.delete(id)
     }
     turn(id, {
       kind: 'read',
@@ -305,6 +314,21 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
    * nothing has been fetched for has none, and that is the answer rather than a
    * failure: a vault that could not be reached leaves the prose standing.
    */
+  /**
+   * Where the copy fetched for a link note plays from, read after the note. A
+   * note with none plays from nowhere, and the tab frames the address instead.
+   */
+  async function copied(id: string, path: string): Promise<void> {
+    if (!core.copy) return
+    try {
+      const played = await core.copy(path)
+      if (played.media) copies.value.set(id, played.media)
+      else copies.value.delete(id)
+    } catch {
+      copies.value.delete(id)
+    }
+  }
+
   async function fetched(id: string, path: string): Promise<void> {
     if (!core.cues) return
     try {
@@ -349,6 +373,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     tabs.value.delete(id)
     bodies.value.delete(id)
     points.value.delete(id)
+    copies.value.delete(id)
     cues.value.delete(id)
     closing.get(id)?.(true)
     closing.delete(id)
@@ -376,6 +401,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     shown,
     points: (id: string): Pointed | null => points.value.get(id) ?? null,
     cues: (id: string): readonly Cue[] => cues.value.get(id) ?? [],
+    copy: (id: string): string => copies.value.get(id) ?? '',
     all,
     saying: sayingOf,
     overtaken: overtakenOf,

@@ -35,6 +35,19 @@ const (
 // Those are WebVTT and open in a player; everything else is prose.
 func timed(producer string) bool { return producer == ASR || producer == Captions }
 
+// The container a copy of a video is fetched and kept in, and what a player is
+// told it is. One is asked for and one is kept, so what a player is handed is
+// what every player this window is drawn in opens.
+const (
+	CopyExtension = ".mp4"
+	CopyType      = "video/mp4"
+)
+
+// Copy is the name a copy of what is at an address is kept under. It is not
+// text and nothing reads it as any: it is the bytes a person plays, kept where
+// they can be fetched again from the address the note carries.
+func Copy(hash string) string { return Captions + "/" + hash + CopyExtension }
+
 // Separator is what stands between a link note's own prose and what was fetched
 // for it. The two are one text, and a chunk is cut across neither into the
 // other.

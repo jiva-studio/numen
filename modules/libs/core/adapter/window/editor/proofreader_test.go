@@ -42,7 +42,7 @@ func (p *proofreads) Proofread(
 
 // proofreading is a window over the same vault the runs are asked for over,
 // with a proofreading a test watches.
-func proofreading(t *testing.T, held port.DerivedStores, read indexed) (*API, http.Handler, *proofreads) {
+func proofreading(t *testing.T, held port.DerivedStore, read indexed) (*API, http.Handler, *proofreads) {
 	t.Helper()
 	api, handler := running(t, held, read, willRun(), willRun())
 	by := &proofreads{ready: true}

@@ -46,7 +46,7 @@ func placing(t *testing.T, pages [][]string) (Highlight, *store, *shelf, documen
 	return Highlight{
 		Readers:   vaults{first.ID: shelved},
 		Sources:   index,
-		Derived:   store,
+		Derived:   shelves{store},
 		Documents: documents{},
 	}, index, store, book, shelved
 }

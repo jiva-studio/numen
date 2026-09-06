@@ -71,6 +71,7 @@ const drawn: Readonly<Record<Kinds, ArtifactOf | null>> = {
   [Kinds.HEARD]: 'transcript',
   [Kinds.CORRECTED]: 'corrections',
   [Kinds.FETCHED]: 'fetched',
+  [Kinds.COPY]: 'copy',
 }
 
 /** And back, for asking for one. */

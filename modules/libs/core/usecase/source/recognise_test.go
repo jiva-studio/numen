@@ -1,10 +1,12 @@
 package source
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"image"
+	"io"
 	"io/fs"
 	"slices"
 	"strings"
@@ -27,7 +29,38 @@ type shelf struct {
 
 func newShelf() *shelf { return &shelf{files: map[string][]byte{}, held: map[string]bool{}} }
 
-func (s *shelf) Open(domain.Vault) (port.DerivedStore, error) { return s, nil }
+// shelves hands the one shelf to whatever opens a vault's store.
+type shelves struct{ *shelf }
+
+func (s shelves) Open(domain.Vault) (port.DerivedStore, error) { return s.shelf, nil }
+
+// Open is one file of the store, which a copy of a video is played from.
+func (s *shelf) Open(_ context.Context, name string) (io.ReadSeekCloser, int64, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	raw, held := s.files[name]
+	if !held {
+		return nil, 0, fs.ErrNotExist
+	}
+	return nopCloser{bytes.NewReader(raw)}, int64(len(raw)), nil
+}
+
+// Take puts what a reader gives under a name.
+func (s *shelf) Take(_ context.Context, name string, from io.Reader) (int64, error) {
+	raw, err := io.ReadAll(from)
+	if err != nil {
+		return 0, err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.files[name] = raw
+	return int64(len(raw)), nil
+}
+
+// nopCloser is a reader of bytes already in memory, closed by nobody.
+type nopCloser struct{ *bytes.Reader }
+
+func (nopCloser) Close() error { return nil }
 
 func (s *shelf) Read(_ context.Context, name string) ([]byte, error) {
 	s.mu.Lock()
@@ -185,7 +218,7 @@ func reading(t *testing.T, says string, pages [][]string) (Recognise, domain.Vau
 	return Recognise{
 		Readers:   readers,
 		Sources:   index,
-		Derived:   shelf,
+		Derived:   shelves{shelf},
 		Documents: documents{},
 		By:        model,
 		Batch:     1,

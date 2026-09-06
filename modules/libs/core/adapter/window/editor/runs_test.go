@@ -57,8 +57,6 @@ type claimed struct {
 	name string
 }
 
-func (c claimed) Open(domain.Vault) (port.DerivedStore, error) { return c, nil }
-
 func (c claimed) Claim(_ context.Context, name string) (func() error, error) {
 	if name == c.name {
 		return nil, port.ErrClaimed
@@ -73,7 +71,7 @@ func (c claimed) Claim(_ context.Context, name string) (func() error, error) {
 // not name is one nothing has produced a text of.
 func running(
 	t *testing.T,
-	held port.DerivedStores,
+	held port.DerivedStore,
 	read indexed,
 	scans, hears Runner,
 ) (*API, http.Handler) {
@@ -86,7 +84,7 @@ func running(
 	})
 	api := &API{
 		Readers:   filesystem.VaultReaders{},
-		Highlight: &source.Highlight{Sources: read, Derived: held},
+		Highlight: &source.Highlight{Sources: read, Derived: storing{held}},
 	}
 	// A note is read to find out where it points, which is what says whether
 	// anything is made from it.
@@ -113,6 +111,7 @@ const (
 	heardOf     = v1.ArtifactKind_ARTIFACT_KIND_HEARD
 	correctedOf = v1.ArtifactKind_ARTIFACT_KIND_CORRECTED
 	fetchedOf   = v1.ArtifactKind_ARTIFACT_KIND_FETCHED
+	copyOf      = v1.ArtifactKind_ARTIFACT_KIND_COPY
 )
 
 // makes asks for an artifact of a file to be made, and answers with what came

@@ -174,6 +174,8 @@ export interface Words extends EmptyWords {
   readonly recognise: string
   /** The transcript of the recording in front, put right by a proofreader. */
   readonly proofread: string
+  /** A copy of the video a link note points at, fetched onto this disk. */
+  readonly download: string
   /** The transcript of the recording in front, taken away, and the two answers. */
   readonly dropTranscript: string
   readonly keepsTranscript: string
@@ -396,6 +398,16 @@ export const commandsOf = (
     text: words.transcribe,
     group: 'file',
     where: onEvidence('transcribe', 'recording', (made) => owed(made.transcript)),
+  },
+  {
+    id: 'download',
+    text: words.download,
+    group: 'file',
+    // Only a note pointing at a video carries a copy at all, so the row being
+    // there is what says this file is one. An hour of video on somebody's disk
+    // is asked for by hand, and one already here is not asked for again.
+    where: (at, runs) =>
+      at.ready && runs.canRun('download') && at.made.copy !== undefined && owed(at.made.copy),
   },
   {
     id: 'proofread',
