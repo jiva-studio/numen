@@ -2,33 +2,22 @@ package mcp
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"strconv"
-	"strings"
-	"time"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
 
 // How much one call may ask for. A tool with no ceiling is a way to put a whole
 // vault in a context window by accident, and a limit that truncates in silence
 // reads as "that is all there is" — so going over is refused and says so.
 const (
-	maxRefs    = 50
-	maxBodies  = 10
-	maxMatches = 100
+	maxRefs   = 50
+	maxBodies = 10
 )
-
-// passagesEach is how many places in one file a search answers with. A book
-// speaks about a thing in several places, and a reader who cannot turn the page
-// is told about all of them.
-const passagesEach = 3
 
 // maxBytes is the most one call will carry in either direction, whether that is
 // one note or a batch of them. It is the ceiling a read holds a note to.
@@ -47,17 +36,6 @@ type Note struct {
 
 func noteOf(ref domain.NoteRef) Note {
 	return Note{Path: ref.Path, Title: ref.Title, ID: ref.ID}
-}
-
-// Passage is what a search returns: the text around a hit, and where it came
-// from. A hit inside a book names the book, and a hit inside a note names the
-// note.
-type Passage struct {
-	Source   string `json:"source" jsonschema:"the file the text is read from, relative to the vault folder"`
-	Location string `json:"location,omitempty" jsonschema:"where this sits in the source's own numbering — a chapter, a printed page — absent when the format offered none"`
-	Text     string `json:"text" jsonschema:"the passage itself"`
-	Start    int    `json:"start" jsonschema:"where the passage begins in the source's text, in bytes; hand it to source_focus to put this place in front of the person"`
-	Length   int    `json:"length" jsonschema:"how long the passage is, in bytes"`
 }
 
 func addNoteTools(server *sdk.Server, core Core) {
@@ -94,55 +72,7 @@ func addNoteResolve(server *sdk.Server, core Core) {
 }
 
 func addNoteReadingTools(server *sdk.Server, core Core) {
-	sdk.AddTool(server, &sdk.Tool{
-		Name:  "note_search",
-		Title: "Search the vault",
-		Description: "Search everything the vault holds — the notes, and the books and " +
-			"papers filed beside them — for the words typed and for what they mean. " +
-			"Returns passages, best first: the text around each hit and the file it was " +
-			"read from. A file answers with at most a few of its passages, so a long " +
-			"book does not take the answer. " +
-			"A passage is a window cut to a size, and it ends where it was cut, which " +
-			"is mid-sentence as often as not: read on with source_read before " +
-			"concluding that a book says nothing about something. " +
-			"Use this before assuming something is or is not written down. " +
-			"When the person asks about a book — find it in the book, what does the " +
-			"book say — pass kinds: [\"book\"]. A vault holds far more notes than " +
-			"books, and a search told to look everywhere answers with notes.",
-	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Query string   `json:"query" jsonschema:"words to look for"`
-		Kinds []string `json:"kinds,omitempty" jsonschema:"which sorts of file to look in: note, book. All of them when left out"`
-		Limit int      `json:"limit,omitempty" jsonschema:"how many passages to return, 20 by default"`
-	}) (*sdk.CallToolResult, struct {
-		Matches []Passage `json:"matches"`
-	}, error) {
-		type out = struct {
-			Matches []Passage `json:"matches"`
-		}
-		if in.Limit > maxMatches {
-			return nil, out{}, fmt.Errorf("ask for at most %d passages at a time", maxMatches)
-		}
-		of, err := sorts(in.Kinds)
-		if err != nil {
-			return nil, out{}, err
-		}
-		found, err := core.Notes.Search.Execute(ctx, core.shown().Vault, in.Query,
-			search.Parameters{Kinds: of, Limit: in.Limit, Each: passagesEach})
-		if err != nil {
-			return nil, out{}, err
-		}
-		matches := make([]Passage, 0, len(found))
-		for _, p := range found {
-			matches = append(matches, Passage{
-				Source:   p.Source,
-				Location: p.Location,
-				Text:     p.Text,
-				Start:    p.Start,
-				Length:   p.Length,
-			})
-		}
-		return nil, out{Matches: matches}, nil
-	})
+	addNoteSearch(server, core)
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "note_titles",
@@ -538,55 +468,6 @@ type Neighbour struct {
 	Mutual  bool   `json:"mutual,omitempty" jsonschema:"set when both notes name this relationship, the label being then the word the note in focus wrote"`
 }
 
-// fingerprintOf is what a note was when it was read, in a form an agent hands
-// back without having to understand it.
-func fingerprintOf(ref domain.Fingerprint) string {
-	return strconv.FormatInt(ref.Size, 10) + "-" + strconv.FormatInt(stamp(ref.ModTime), 10)
-}
-
-// parseFingerprint is the fingerprint a caller presents. A tool that changes
-// what somebody may have read since takes one, and a call carrying none is
-// refused.
-func parseFingerprint(s string) (domain.Fingerprint, error) {
-	if s == "" {
-		return domain.Fingerprint{}, errors.New(
-			"present the fingerprint the read gave you: note_read for a note, card_read for a deck")
-	}
-	size, mtime, found := strings.Cut(s, "-")
-	if !found {
-		return domain.Fingerprint{}, fmt.Errorf("%q is not a fingerprint note_read gave out", s)
-	}
-	ref := domain.Fingerprint{}
-	var err error
-	if ref.Size, err = strconv.ParseInt(size, 10, 64); err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("%q is not a fingerprint note_read gave out", s)
-	}
-	nanos, err := strconv.ParseInt(mtime, 10, 64)
-	if err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("%q is not a fingerprint note_read gave out", s)
-	}
-	ref.ModTime = instant(nanos)
-	return ref, nil
-}
-
-// stamp and instant are a modification time as an agent hands it back and forth
-// — nanoseconds since the epoch — and as the core holds one. Zero is a file
-// nothing was said about, not the epoch.
-
-func stamp(t time.Time) int64 {
-	if t.IsZero() {
-		return 0
-	}
-	return t.UnixNano()
-}
-
-func instant(nanos int64) time.Time {
-	if nanos == 0 {
-		return time.Time{}
-	}
-	return time.Unix(0, nanos)
-}
-
 // The filesystem offers no transaction over many files: the twenty-ninth can
 // fail on its own. A batch says what happened to each.
 
@@ -605,67 +486,14 @@ type NewNote struct {
 	Links  []NewLink `json:"links,omitempty" jsonschema:"the relationships to write into it, so it arrives already joined"`
 }
 
-// NewLink is a relationship written into a note as it is made.
-type NewLink struct {
-	To    string `json:"to" jsonschema:"the other note's name, or note://<identifier> when the name is ambiguous"`
-	Role  string `json:"role" jsonschema:"what kind of relationship this is: parent, child, jump, ref or attachment"`
-	Type  string `json:"type,omitempty" jsonschema:"leave this out: a value is introduced together with the code that reads it, and none is defined yet"`
-	Label string `json:"label,omitempty" jsonschema:"a few words naming the relationship, shown along the line"`
-	Why   string `json:"note,omitempty" jsonschema:"why the link exists, in the person's words"`
-}
-
 // CreateOutcome is what happened to one note in a batch.
 type CreateOutcome struct {
 	note.CreateResult
 	Refused string `json:"refused,omitempty" jsonschema:"why this one was not made, empty when it was"`
 }
 
-// writes turns what was asked for into what the core writes.
-func writes(l NewLink) domain.Link {
-	return domain.Link{
-		Target: domain.ParseAddress(l.To),
-		Role:   domain.LinkRole(l.Role),
-		Type:   l.Type,
-		Label:  l.Label,
-		Why:    l.Why,
-	}
-}
-
-func written(links []NewLink) []domain.Link {
-	if len(links) == 0 {
-		return nil
-	}
-	out := make([]domain.Link, 0, len(links))
-	for _, l := range links {
-		out = append(out, writes(l))
-	}
-	return out
-}
-
-// carried is how many bytes a link will put in a file. Every field of one is
-// written into the frontmatter, so every field is measured.
-func carried(l NewLink) int {
-	return len(l.To) + len(l.Role) + len(l.Type) + len(l.Label) + len(l.Why)
-}
-
 // RemoveOutcome is the same for removing.
 type RemoveOutcome struct {
 	note.RemoveResult
 	Refused string `json:"refused,omitempty" jsonschema:"why this one was not removed, empty when it was"`
-}
-
-// sorts is the kinds of source a question names. A search reaches notes and
-// books, so a kind outside those two is a mistake in the asking and is said so,
-// rather than quietly answering about everything.
-func sorts(named []string) ([]domain.SourceKind, error) {
-	out := make([]domain.SourceKind, 0, len(named))
-	for _, one := range named {
-		kind := domain.SourceKind(one)
-		if kind != domain.KindNote && kind != domain.KindBook {
-			return nil, fmt.Errorf("%q is not a sort of file a search reaches: try %q or %q",
-				one, domain.KindNote, domain.KindBook)
-		}
-		out = append(out, kind)
-	}
-	return out, nil
 }

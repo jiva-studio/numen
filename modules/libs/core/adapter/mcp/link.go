@@ -221,6 +221,44 @@ func linksOf(links []domain.ResolvedLink) []Link {
 	return out
 }
 
+// NewLink is a relationship written into a note, whether the note is being made
+// or is already there.
+type NewLink struct {
+	To    string `json:"to" jsonschema:"the other note's name, or note://<identifier> when the name is ambiguous"`
+	Role  string `json:"role" jsonschema:"what kind of relationship this is: parent, child, jump, ref or attachment"`
+	Type  string `json:"type,omitempty" jsonschema:"leave this out: a value is introduced together with the code that reads it, and none is defined yet"`
+	Label string `json:"label,omitempty" jsonschema:"a few words naming the relationship, shown along the line"`
+	Why   string `json:"note,omitempty" jsonschema:"why the link exists, in the person's words"`
+}
+
+// writes turns what was asked for into what the core writes.
+func writes(l NewLink) domain.Link {
+	return domain.Link{
+		Target: domain.ParseAddress(l.To),
+		Role:   domain.LinkRole(l.Role),
+		Type:   l.Type,
+		Label:  l.Label,
+		Why:    l.Why,
+	}
+}
+
+func written(links []NewLink) []domain.Link {
+	if len(links) == 0 {
+		return nil
+	}
+	out := make([]domain.Link, 0, len(links))
+	for _, l := range links {
+		out = append(out, writes(l))
+	}
+	return out
+}
+
+// carried is how many bytes a link will put in a file. Every field of one is
+// written into the frontmatter, so every field is measured.
+func carried(l NewLink) int {
+	return len(l.To) + len(l.Role) + len(l.Type) + len(l.Label) + len(l.Why)
+}
+
 // ChangeOutcome is what a tool that changed one note says: which note it was,
 // and what to present at the next write of it.
 type ChangeOutcome struct {
