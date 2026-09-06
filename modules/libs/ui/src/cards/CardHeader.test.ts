@@ -47,10 +47,10 @@ describe('the strip itself', () => {
 })
 
 describe('a press on something the strip holds', () => {
-  const HELD = '<input class="inside" /><span class="plain">said</span>'
+  const INSIDE = '<input class="inside" /><span class="plain">said</span>'
 
   it('lets a box to type in have the press, rather than carrying the strip', async () => {
-    drawn = mountHeader({ default: HELD })
+    drawn = mountHeader({ default: INSIDE })
     expect(header(drawn).attributes('draggable')).toBe('true')
 
     await pressOn(drawn, '.inside')
@@ -58,7 +58,7 @@ describe('a press on something the strip holds', () => {
   })
 
   it('leaves the strip to be carried where the press landed on nothing worked', async () => {
-    drawn = mountHeader({ default: HELD })
+    drawn = mountHeader({ default: INSIDE })
     await pressOn(drawn, '.plain')
     expect(header(drawn).attributes('draggable')).toBe('true')
   })
@@ -66,7 +66,7 @@ describe('a press on something the strip holds', () => {
   // A press that began in a box may travel off the strip and be let go
   // anywhere, so the end of it is heard wherever it happens.
   it('may be carried again once the press is let go of, wherever that was', async () => {
-    drawn = mountHeader({ default: HELD })
+    drawn = mountHeader({ default: INSIDE })
     await pressOn(drawn, '.inside')
 
     window.dispatchEvent(new Event('pointerup'))
@@ -75,7 +75,7 @@ describe('a press on something the strip holds', () => {
   })
 
   it('may be carried again where the press was cancelled', async () => {
-    drawn = mountHeader({ default: HELD })
+    drawn = mountHeader({ default: INSIDE })
     await pressOn(drawn, '.inside')
 
     window.dispatchEvent(new Event('pointercancel'))

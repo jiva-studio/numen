@@ -530,7 +530,7 @@ export const TenOpenTabs: Story = {
 }
 
 /** The two tabs of the pane below, and the one of them holding the note. */
-const HELD = 'note'
+const NOTE_TAB = 'note'
 const BESIDE = 'beside'
 
 /**
@@ -544,18 +544,18 @@ export const ShownAgain: Story = {
   render: () => ({
     components: { Editor, WorkspacePane },
     setup: () => {
-      const held = ref(pane('main', [HELD, BESIDE], HELD))
+      const held = ref(pane('main', [NOTE_TAB, BESIDE], NOTE_TAB))
       const editors = new Map<string, { measure: () => void }>()
       return {
         held,
-        HELD,
+        NOTE_TAB,
         text: BEFORE,
-        titles: { [HELD]: 'Note', [BESIDE]: 'Beside' },
+        titles: { [NOTE_TAB]: 'Note', [BESIDE]: 'Beside' },
         choose: (tab: string) => {
-          held.value = pane('main', [HELD, BESIDE], tab)
+          held.value = pane('main', [NOTE_TAB, BESIDE], tab)
         },
         drew: (editor: unknown) => {
-          if (editor) editors.set(HELD, editor as { measure: () => void })
+          if (editor) editors.set(NOTE_TAB, editor as { measure: () => void })
         },
         shown: (tab: string) => editors.get(tab)?.measure(),
       }
@@ -565,7 +565,7 @@ export const ShownAgain: Story = {
         <WorkspacePane :pane="held" :titles="titles" @choose="choose" @show="shown">
           <template #tab="{ id }">
             <Editor
-              v-if="id === HELD"
+              v-if="id === NOTE_TAB"
               :ref="drew"
               :model-value="text"
               class="h-full"
@@ -592,7 +592,7 @@ export const ShownAgain: Story = {
     await settled()
     await expect(view.scrollDOM.scrollTop).toBe(0)
 
-    await userEvent.click(tab(HELD))
+    await userEvent.click(tab(NOTE_TAB))
     await settled()
     await settled()
 
