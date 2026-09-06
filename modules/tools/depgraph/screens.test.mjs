@@ -16,6 +16,9 @@ import { depcruise, here, screens } from './modules.mjs'
 /** The fixture window: five folders, eight edges, two of them wrong. */
 const at = join(here, 'testdata/screens')
 
+/** Two folders that each reach the other, where no one file is in a cycle. */
+const ring = join(here, 'testdata/ring')
+
 /** Every edge the fixture holds, and whether the rule is meant to refuse it. */
 const edges = [
   { says: 'a screen reaching another screen', refused: true, edge: 'src/cards/deck.ts → src/note/tab.ts' },
@@ -43,25 +46,26 @@ const edges = [
   },
 ]
 
-/** The fixture cruised, as `{ from → to }` for the one rule under test. */
-function cruised() {
+/** One fixture cruised, with the edges each rule refused and the files read. */
+function cruised(where) {
   const run = spawnSync(depcruise, ['--config', screens, '--output-type', 'json', 'src'], {
-    cwd: at,
+    cwd: where,
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
   })
   assert.ok(run.stdout, `the fixture cruise did not run: ${run.stderr?.trim() || run.error}`)
   const out = JSON.parse(run.stdout)
+  const under = (rule) =>
+    out.summary.violations.filter((one) => one.rule.name === rule).map((one) => `${one.from} → ${one.to}`)
   return {
-    refused: out.summary.violations
-      .filter((one) => one.rule.name === 'no-screen-reaches-a-screen')
-      .map((one) => `${one.from} → ${one.to}`),
+    refused: under('no-screen-reaches-a-screen'),
+    rings: under('no-folder-going-round'),
     read: out.modules.map((one) => one.source),
   }
 }
 
 test('what the screen rule refuses, and what it lets through', () => {
-  const { refused, read } = cruised()
+  const { refused, rings, read } = cruised(at)
 
   // A cruise that read nothing refuses nothing and says so in the same words as
   // a clean one. Every file of the fixture is named, so a walk that lost one of
@@ -92,4 +96,27 @@ test('what the screen rule refuses, and what it lets through', () => {
     refused.sort(),
     edges.filter((one) => one.refused).map((one) => one.edge).sort(),
   )
+
+  // The two rules are separate: nothing in this fixture is a ring.
+  assert.deepEqual(rings, [])
+})
+
+/**
+ * A ring that runs through the folder boundary and through no file. The
+ * file-level rule cannot see it — neither `putting.ts` nor `telling.ts` is in a
+ * cycle — which is why the folder-level one is written at all.
+ */
+test('two folders that each reach the other', () => {
+  const { refused, rings, read } = cruised(ring)
+
+  for (const file of ['src/tabs/putting.ts', 'src/tabs/marking.ts', 'src/notices/telling.ts']) {
+    assert.ok(read.includes(file), `the ring fixture cruise did not read ${file}`)
+  }
+
+  assert.deepEqual(rings.sort(), ['src/notices → src/tabs', 'src/tabs → src/notices'])
+
+  // Both folders are shared, so the screen rule has nothing to say here. A
+  // ring caught by the wrong rule would say the folder check works when it
+  // does not.
+  assert.deepEqual(refused, [])
 })

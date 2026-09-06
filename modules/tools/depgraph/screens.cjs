@@ -35,5 +35,18 @@ module.exports = {
       from: { path: SCREEN },
       to: { path: SCREEN, pathNot: '^src/$1/' },
     },
+    {
+      name: 'no-folder-going-round',
+      comment:
+        'Two folders that each reach the other have no order between them, so ' +
+        'neither can be read first and neither can be taken out on its own. ' +
+        'This is the same fault `no-going-round` refuses between two files, and ' +
+        'that rule cannot see it: the ring runs through the folder boundary, ' +
+        'and no single file of either folder is in a cycle.',
+      severity: 'error',
+      scope: 'folder',
+      from: { path: '^src/[^/]+' },
+      to: { circular: true },
+    },
   ],
 }
