@@ -10,6 +10,7 @@
     "sync": "npm run build && cap sync android",
     "android": "cap run android",
     "typecheck": "vue-tsc --build --force",
+    "lint": "eslint .",
     "test": "vitest run"
   },
   "//": "vue-router is named in no source file here and is required all the same: @ionic/vue imports routeLocationKey, useRoute and matchedRouteKey from it at the top of its entry, and declares no peer dependency on it.",
@@ -28,11 +29,16 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^7.0.0",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^24.13.3",
     "@vitejs/plugin-vue": "^6.0.0",
     "@vue/test-utils": "^2.4.6",
+    "eslint": "^10.10.0",
+    "eslint-plugin-vue": "^10.10.0",
+    "globals": "^17.12.0",
     "jsdom": "^27.0.0",
     "typescript": "^6.0.3",
+    "typescript-eslint": "^8.69.0",
     "vite": "^7.0.0",
     "vitest": "^4.1.11",
     "vue-tsc": "^3.0.0"

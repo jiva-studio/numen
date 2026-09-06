@@ -9,6 +9,7 @@
     "build": "npm run manual && astro build",
     "preview": "astro preview",
     "typecheck": "astro check",
+    "lint": "eslint .",
     "manual": "node tools/manual.mjs",
     "manual:check": "node tools/manual.mjs --check",
     "shoot": "node tools/shoot.mjs"
@@ -23,7 +24,12 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.10.0",
+    "eslint-plugin-astro": "^3.1.0",
+    "globals": "^17.12.0",
     "playwright": "^1.62.1",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.69.0"
   }
 }
