@@ -37,7 +37,7 @@ import { fingerprint, refusalIn, staleIn, stamp } from './answers'
 import { DEFAULT_PARTS } from './settings/hanging'
 import { DEFAULT_STARTS } from './settings/review'
 import { settingAt } from './settings/store'
-import { write } from './settings/json5'
+import { write } from './settings/write'
 import type { CommandsDeps } from './command/commands'
 import type { SearchDeps, SearchMode } from './command/search'
 import type {
@@ -361,8 +361,8 @@ const counted: Record<Units, TallyUnit> = {
 }
 
 /**
- * Whether a rename wrote the title into the note rather than moving its file.
- * Keyed by the schema, so a namer added to it has to be answered here before
+ * Whether a rename wrote the title into the note, by the namer it was named
+ * with. Keyed by the schema, so a namer added to it is answered here before
  * this compiles.
  */
 const writes: Record<NamedBy, boolean> = {

@@ -10,7 +10,7 @@ import { ref, shallowRef } from 'vue'
 import { troubleWords } from '@numen/wire'
 import type { Model, SettingEdit } from '../core'
 import type { MessageWriter } from '../notices/messages'
-import { write } from './json5'
+import { write } from './write'
 
 /** Everything this says in the window's voice. */
 export interface Words {

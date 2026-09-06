@@ -2,7 +2,7 @@
  * A setting written back into the file the person types.
  */
 import { describe, expect, it } from 'vitest'
-import { write } from './json5'
+import { write } from './write'
 
 describe('what is written back', () => {
   it('is JSON, laid out to be read', () => {
