@@ -20,7 +20,7 @@ var pages embed.FS
 // draws it through the allowlist the library keeps and this line stands behind
 // that. A picture written into a card is a `data:` URI, which is the card's own
 // bytes and no request at all.
-var policy = appearance.Policy(appearance.Sources{Images: []string{"data:"}})
+var policy = appearance.Sources{Images: []string{"data:"}}.Policy()
 
 // Pages is the interface itself, built by `make interface` and carried inside
 // the binary. A binary built without it says so.
