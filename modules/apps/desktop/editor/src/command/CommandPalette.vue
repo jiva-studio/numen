@@ -13,9 +13,9 @@ import {
   creates,
   MAKING,
   offering,
-  type Commands,
   type CommandTarget,
 } from './commands'
+import type { Commands } from './palette'
 import { does, type CommandDeps } from './handlers'
 import type { SearchState } from './search'
 import { iconFor, iconOfNote, iconOfSource } from '../icons'

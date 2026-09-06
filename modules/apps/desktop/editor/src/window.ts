@@ -19,7 +19,6 @@ import { editing } from './note/editing'
 import { noteChanges } from './note/changes'
 import { CREATABLE, creating } from './note/creating'
 import {
-  commandPalette,
   deedOf,
   runSupport,
   type PaletteLists,
@@ -27,6 +26,7 @@ import {
   type VaultRef,
   type CommandTarget,
 } from './command/commands'
+import { commandPalette } from './command/palette'
 import { chorded, commandFor } from './command/chords'
 import { iconOfKind } from './icons'
 import { themes } from './settings/theme'
