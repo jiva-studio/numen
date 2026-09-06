@@ -1,5 +1,5 @@
 /**
- * The strip a tile or a block is carried by: what a gesture on it takes hold
+ * The strip a tile or a block is dragged by: what a gesture on it takes hold
  * of, and what a key struck on it does.
  */
 import { mount } from '@vue/test-utils'
@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import CardHeader from './CardHeader.vue'
 
 const mountHeader = (slots: Record<string, string> = {}) =>
-  mount(CardHeader, { props: { carry: 'Carry this block' }, attachTo: document.body, slots })
+  mount(CardHeader, { props: { drag: 'Drag this block' }, attachTo: document.body, slots })
 
 let drawn: ReturnType<typeof mountHeader> | null = null
 
@@ -26,8 +26,8 @@ const pressOn = async (strip: ReturnType<typeof mountHeader>, selector: string) 
 describe('the strip itself', () => {
   it('says what taking hold of it does, to a reader and to a pointer', () => {
     drawn = mountHeader()
-    expect(header(drawn).attributes('aria-label')).toBe('Carry this block')
-    expect(header(drawn).attributes('title')).toBe('Carry this block')
+    expect(header(drawn).attributes('aria-label')).toBe('Drag this block')
+    expect(header(drawn).attributes('title')).toBe('Drag this block')
     expect(header(drawn).attributes('role')).toBe('group')
   })
 
@@ -57,7 +57,7 @@ describe('a press on something the strip holds', () => {
     expect(header(drawn).attributes('draggable')).toBe('false')
   })
 
-  it('leaves the strip to be carried where the press landed on nothing worked', async () => {
+  it('leaves the strip to be dragged where the press landed on nothing worked', async () => {
     drawn = mountHeader({ default: INSIDE })
     await pressOn(drawn, '.plain')
     expect(header(drawn).attributes('draggable')).toBe('true')
@@ -65,7 +65,7 @@ describe('a press on something the strip holds', () => {
 
   // A press that began in a box may travel off the strip and be let go
   // anywhere, so the end of it is heard wherever it happens.
-  it('may be carried again once the press is let go of, wherever that was', async () => {
+  it('may be dragged again once the press is let go of, wherever that was', async () => {
     drawn = mountHeader({ default: INSIDE })
     await pressOn(drawn, '.inside')
 
@@ -74,7 +74,7 @@ describe('a press on something the strip holds', () => {
     expect(header(drawn).attributes('draggable')).toBe('true')
   })
 
-  it('may be carried again where the press was cancelled', async () => {
+  it('may be dragged again where the press was cancelled', async () => {
     drawn = mountHeader({ default: INSIDE })
     await pressOn(drawn, '.inside')
 

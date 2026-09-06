@@ -22,7 +22,7 @@ describe('fieldRows', () => {
 
   it('marks the one row on its way and no other', () => {
     const rows = fieldRows(FIELDS, 'Weight')
-    expect(rows.map((row) => row.carried)).toEqual([false, true])
+    expect(rows.map((row) => row.dragged)).toEqual([false, true])
   })
 
   it('marks the first row as the one naming the cards, and no other', () => {

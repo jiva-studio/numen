@@ -1,5 +1,5 @@
 /*
- * The line saying where what is carried would land.
+ * The line saying where what is dragged would land.
  *
  * It stands `--caret-out` from the edge it marks, in the room its host keeps,
  * and takes no room of its own. The host is what stands relative. A host that

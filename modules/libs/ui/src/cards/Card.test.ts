@@ -18,7 +18,7 @@ const CARDS: readonly DeckCard[] = [
 /** The words one card is drawn with, which say nothing of adding cards. */
 const WORDS: CardWords = {
   remove: 'Remove',
-  carry: 'Reorder',
+  drag: 'Reorder',
   cut: 'Stencil',
   cardStem: 'Card',
   nothing: 'Nothing in it',

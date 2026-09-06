@@ -33,7 +33,7 @@ export interface StencilWords {
   readonly addField: string
   readonly addFace: string
   readonly remove: string
-  readonly carry: string
+  readonly drag: string
   readonly insert: string
   readonly noFields: string
   readonly noFaces: string
@@ -60,7 +60,7 @@ export const STENCIL_WORDS: StencilWords = {
   addField: 'Add a field',
   addFace: 'Add a face',
   remove: 'Remove',
-  carry: 'Reorder',
+  drag: 'Reorder',
   insert: 'Insert',
   noFields: 'No fields yet',
   noFaces: 'No faces yet',
@@ -105,13 +105,13 @@ export interface FieldRow {
   /** It stands first, so it is what a card cut by this stencil is named by. */
   readonly names: boolean
   /** It is on its way somewhere else in the order. */
-  readonly carried: boolean
+  readonly dragged: boolean
 }
 
 /** The rows a stencil's fields are drawn as, one to a field. */
 export function fieldRows(
   fields: readonly string[],
-  carried: string | null,
+  dragged: string | null,
 ): readonly FieldRow[] {
   const stood = declared(fields)
   return stood.map((field, index) => ({
@@ -119,7 +119,7 @@ export function fieldRows(
     at: index + 1,
     of: stood.length,
     names: index === 0,
-    carried: field === carried,
+    dragged: field === dragged,
   }))
 }
 

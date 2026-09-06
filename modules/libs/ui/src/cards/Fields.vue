@@ -13,7 +13,7 @@ import Icon from './Icon.vue'
 import NameBox from './NameBox.vue'
 import Divider from '../divider/Divider.vue'
 import CardRow from './CardRow.vue'
-import { useCarry } from './carry'
+import { useDrag } from './drag'
 import { useNaming } from './naming'
 import { Button } from '../components/ui/button'
 import {
@@ -72,14 +72,14 @@ const objects = (field: string): Objection | null => naming.objection(field)
  * a field, at the end, or nowhere. The first field names every card, so nothing
  * lands above it and it goes nowhere itself.
  */
-const { carried, at, lift, over, release, drop, step } = useCarry<InsertionPoint | undefined>({
+const { dragged, at, lift, over, release, drop, step } = useDrag<InsertionPoint | undefined>({
   order: () => props.fields,
   nowhere: undefined,
   lands: (held, lands) => landing(props.fields, held, lands),
   moves: (held, lands) => emit('move', held, lands),
 })
 
-const rows = computed(() => fieldRows(props.fields, carried.value))
+const rows = computed(() => fieldRows(props.fields, dragged.value))
 
 /** What is said of a field's name that cannot be used, and nothing while it can. */
 const says = (field: string): string | null => {
@@ -120,7 +120,7 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
         class="stencil__field caret-above"
         :data-field="row.field"
         :data-names="row.names || undefined"
-        :data-carried="row.carried || undefined"
+        :data-dragged="row.dragged || undefined"
         :data-before="row.field === at || undefined"
         @dragover.stop="over(row.names ? undefined : row.field, $event)"
         @drop.stop="drop"
@@ -128,7 +128,7 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
         <CardRow class="stencil__row" :data-objects="objects(row.field) ?? undefined">
           <!-- The first field names every card, so its handle is there and
                turned off, and the row keeps the shape every other row has. The
-               handle is what a row is carried by, by the pointer and by the
+               handle is what a row is dragged by, by the pointer and by the
                arrows along the order alike. -->
           <span
             class="stencil__grip flex shrink-0 items-center text-hushed"
@@ -138,8 +138,8 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
             :draggable="!row.names"
             :data-disabled="row.names || undefined"
             :aria-disabled="row.names || undefined"
-            :aria-label="row.names ? words.pinned : `${words.carry}: ${row.field}`"
-            :title="row.names ? words.pinned : `${words.carry}: ${row.field}`"
+            :aria-label="row.names ? words.pinned : `${words.drag}: ${row.field}`"
+            :title="row.names ? words.pinned : `${words.drag}: ${row.field}`"
             @dragstart="lift(row.field, $event)"
             @dragend="release"
             @keydown="onGripKey($event, row.field)"
@@ -198,7 +198,7 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
 </template>
 
 <style scoped>
-@import './carrying.css';
+@import './caret.css';
 
 .stencil__fields {
   display: flex;
@@ -220,7 +220,7 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
   gap: 0.125rem;
 }
 
-.stencil__field[data-carried] {
+.stencil__field[data-dragged] {
   opacity: 0.5;
 }
 

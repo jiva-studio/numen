@@ -3,7 +3,7 @@
  * what it emits.
  *
  * What one face draws is that face's own, and is in `Face.test.ts`. Here are
- * the two orders, the two carries, and what each face is handed.
+ * the two orders, the two drags, and what each face is handed.
  *
  * The negatives are here: the first field has no handle and no way to go, a
  * name that objects renames nothing, a name abandoned renames nothing, and a
@@ -62,7 +62,7 @@ const pressing = (on: Element, key: string): KeyboardEvent => {
   return press
 }
 
-/** A field picked up and the carry ended without it being let go anywhere. */
+/** A field picked up and the drag ended without it being let go anywhere. */
 const dragOff = async (held: Editor, field: string, over: string | null): Promise<void> => {
   const grip = rowFor(held, field).get('[data-grip]')
   await grip.trigger('dragstart')
@@ -257,14 +257,14 @@ describe('Stencil, the fields', () => {
     expect(held.emitted('move-field')).toBeUndefined()
   })
 
-  it('moves nothing where a carry ends with the field let go nowhere', async () => {
+  it('moves nothing where a drag ends with the field let go nowhere', async () => {
     const held = mountStencil()
     await dragOff(held, 'Weight', null)
     expect(held.emitted('move-field')).toBeUndefined()
-    expect(rowFor(held, 'Weight').attributes('data-carried')).toBeUndefined()
+    expect(rowFor(held, 'Weight').attributes('data-dragged')).toBeUndefined()
   })
 
-  it('moves nothing where a carry over another field ends with it let go nowhere', async () => {
+  it('moves nothing where a drag over another field ends with it let go nowhere', async () => {
     const held = mountStencil()
     await dragOff(held, 'Weight', 'Height')
     expect(held.emitted('move-field')).toBeUndefined()
@@ -273,8 +273,8 @@ describe('Stencil, the fields', () => {
   it('marks the field on its way, and no other', async () => {
     const held = mountStencil()
     await rowFor(held, 'Weight').get('[data-grip]').trigger('dragstart')
-    expect(rowFor(held, 'Weight').attributes('data-carried')).toBe('true')
-    expect(rowFor(held, 'Height').attributes('data-carried')).toBeUndefined()
+    expect(rowFor(held, 'Weight').attributes('data-dragged')).toBe('true')
+    expect(rowFor(held, 'Height').attributes('data-dragged')).toBeUndefined()
   })
 
   it('draws one row for a name the stencil declares twice', () => {
@@ -296,7 +296,7 @@ describe('Stencil, the fields', () => {
     expect(boxIn(mountStencil(), 'Height').attributes('aria-describedby')).toBeUndefined()
   })
 
-  describe('carrying a field by the keyboard', () => {
+  describe('dragging a field by the keyboard', () => {
     const gripFor = (held: Editor, field: string) => rowFor(held, field).get('[data-grip]')
 
     it('names the handle, and gives it a place in the order', () => {
@@ -316,26 +316,26 @@ describe('Stencil, the fields', () => {
       expect(grip.attributes('aria-disabled')).toBe('true')
     })
 
-    it('emits a field carried one place down the order', () => {
+    it('emits a field dragged one place down the order', () => {
       const held = mountStencil()
       const press = pressing(gripFor(held, 'Height').element, 'ArrowDown')
       expect(press.defaultPrevented).toBe(true)
       expect(held.emitted('move-field')).toEqual([['Height', null]])
     })
 
-    it('emits a field carried one place up the order', () => {
+    it('emits a field dragged one place up the order', () => {
       const held = mountStencil()
       pressing(gripFor(held, 'Weight').element, 'ArrowUp')
       expect(held.emitted('move-field')).toEqual([['Weight', 'Height']])
     })
 
-    it('carries nothing above the first field, which names every card', () => {
+    it('drags nothing above the first field, which names every card', () => {
       const held = mountStencil()
       pressing(gripFor(held, 'Height').element, 'ArrowUp')
       expect(held.emitted('move-field')).toBeUndefined()
     })
 
-    it('carries the first field nowhere', () => {
+    it('drags the first field nowhere', () => {
       const held = mountStencil()
       pressing(gripFor(held, 'Name').element, 'ArrowDown')
       expect(held.emitted('move-field')).toBeUndefined()
@@ -453,7 +453,7 @@ describe('Stencil, the faces', () => {
     expect(held.emitted('rename-face')).toEqual([['recognise', 'Name it']])
   })
 
-  describe('carrying a face by the keyboard', () => {
+  describe('dragging a face by the keyboard', () => {
     const THREE: readonly StencilFace[] = [
       { id: 'one', name: 'One', front: '', back: '' },
       { id: 'two', name: 'Two', front: '', back: '' },
@@ -462,21 +462,21 @@ describe('Stencil, the faces', () => {
 
     const stripOf = (held: Editor, id: string) => held.get(`[data-face="${id}"] .card-header`)
 
-    it('names the strip a face is carried by, and gives it a place in the order', () => {
+    it('names the strip a face is dragged by, and gives it a place in the order', () => {
       const strip = stripOf(mountStencil({ faces: THREE }), 'two')
       expect(strip.attributes('aria-label')).toBe('Reorder: Two')
       expect(strip.attributes('tabindex')).toBe('0')
       expect(strip.attributes('role')).toBe('group')
     })
 
-    it('emits a face carried one place down the order', () => {
+    it('emits a face dragged one place down the order', () => {
       const held = mountStencil({ faces: THREE })
       const press = pressing(stripOf(held, 'one').element, 'ArrowDown')
       expect(press.defaultPrevented).toBe(true)
       expect(held.emitted('move-face')).toEqual([['one', 'three']])
     })
 
-    it('emits a face carried one place up the order: nothing among them is fixed', () => {
+    it('emits a face dragged one place up the order: nothing among them is fixed', () => {
       const held = mountStencil({ faces: THREE })
       pressing(stripOf(held, 'two').element, 'ArrowUp')
       expect(held.emitted('move-face')).toEqual([['two', 'one']])
@@ -499,7 +499,7 @@ describe('Stencil, the faces', () => {
     const faceFor = (editor: Editor, id: string) => editor.get(`[data-face="${id}"]`)
 
     /** A face picked up by its strip and let go over another, or over the tail. */
-    const carry = async (editor: Editor, id: string, onto: string | null): Promise<void> => {
+    const drag = async (editor: Editor, id: string, onto: string | null): Promise<void> => {
       await faceFor(editor, id).get('.card-header').trigger('dragstart')
       const over = onto === null ? editor.findAll('section')[1] : faceFor(editor, onto)
       await over?.trigger('dragover')
@@ -508,65 +508,65 @@ describe('Stencil, the faces', () => {
 
     it('emits a face let go before another', async () => {
       const editor = mountStencil({ faces: THREE })
-      await carry(editor, 'three', 'one')
+      await drag(editor, 'three', 'one')
       expect(editor.emitted('move-face')).toEqual([['three', 'one']])
     })
 
     it('emits a face let go past the last of them', async () => {
       const editor = mountStencil({ faces: THREE })
-      await carry(editor, 'one', null)
+      await drag(editor, 'one', null)
       expect(editor.emitted('move-face')).toEqual([['one', null]])
     })
 
     it('moves the first face like any other: nothing among the faces is fixed', async () => {
       const editor = mountStencil({ faces: THREE })
-      await carry(editor, 'one', 'three')
+      await drag(editor, 'one', 'three')
       expect(editor.emitted('move-face')).toEqual([['one', 'three']])
     })
 
     it('lands a face above the first, which no rule forbids', async () => {
       const editor = mountStencil({ faces: THREE })
-      await carry(editor, 'two', 'one')
+      await drag(editor, 'two', 'one')
       expect(editor.emitted('move-face')).toEqual([['two', 'one']])
     })
 
     it('moves nothing where a face is let go where it stands', async () => {
       const editor = mountStencil({ faces: THREE })
-      await carry(editor, 'two', 'two')
+      await drag(editor, 'two', 'two')
       expect(editor.emitted('move-face')).toBeUndefined()
     })
 
-    /** A face picked up and the carry ended without it being let go anywhere. */
-    const carryOff = async (editor: Editor, id: string, onto: string | null): Promise<void> => {
+    /** A face picked up and the drag ended without it being let go anywhere. */
+    const dragOff = async (editor: Editor, id: string, onto: string | null): Promise<void> => {
       const header = faceFor(editor, id).get('.card-header')
       await header.trigger('dragstart')
       if (onto !== null) await faceFor(editor, onto).trigger('dragover')
       await header.trigger('dragend')
     }
 
-    it('moves nothing where a carry ends with the face let go nowhere', async () => {
+    it('moves nothing where a drag ends with the face let go nowhere', async () => {
       const editor = mountStencil({ faces: THREE })
-      await carryOff(editor, 'two', null)
+      await dragOff(editor, 'two', null)
       expect(editor.emitted('move-face')).toBeUndefined()
-      expect(faceFor(editor, 'two').attributes('data-carried')).toBeUndefined()
+      expect(faceFor(editor, 'two').attributes('data-dragged')).toBeUndefined()
     })
 
-    it('moves nothing where a carry over another face ends with it let go nowhere', async () => {
+    it('moves nothing where a drag over another face ends with it let go nowhere', async () => {
       const editor = mountStencil({ faces: THREE })
-      await carryOff(editor, 'two', 'one')
+      await dragOff(editor, 'two', 'one')
       expect(editor.emitted('move-face')).toBeUndefined()
     })
 
     it('marks the face on its way, and no other', async () => {
       const editor = mountStencil({ faces: THREE })
       await faceFor(editor, 'two').get('.card-header').trigger('dragstart')
-      expect(faceFor(editor, 'two').attributes('data-carried')).toBe('true')
-      expect(faceFor(editor, 'one').attributes('data-carried')).toBeUndefined()
+      expect(faceFor(editor, 'two').attributes('data-dragged')).toBe('true')
+      expect(faceFor(editor, 'one').attributes('data-dragged')).toBeUndefined()
     })
 
-    it('moves no field when a face is carried', async () => {
+    it('moves no field when a face is dragged', async () => {
       const editor = mountStencil({ faces: THREE })
-      await carry(editor, 'three', 'one')
+      await drag(editor, 'three', 'one')
       expect(editor.emitted('move-field')).toBeUndefined()
     })
   })

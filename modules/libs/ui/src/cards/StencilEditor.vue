@@ -12,7 +12,7 @@ import Face from './Face.vue'
 import Fields from './Fields.vue'
 import Icon from './Icon.vue'
 import Divider from '../divider/Divider.vue'
-import { useCarry } from './carry'
+import { useDrag } from './drag'
 import { Button } from '../components/ui/button'
 import { declared, numbered, type Half, type InsertionPoint } from './order'
 import {
@@ -78,14 +78,14 @@ const asked = computed(() => declared(props.fields))
  * nothing among them is fixed and a face lands anywhere but where it stands.
  */
 const {
-  carried: face,
+  dragged: face,
   at: faceAt,
   lift: liftFace,
   over: overFace,
   release: releaseFace,
   drop: dropFace,
   step: stepFace,
-} = useCarry<InsertionPoint>({
+} = useDrag<InsertionPoint>({
   order: () => props.faces.map((each) => each.id),
   nowhere: null,
   lands: (held, lands) => lands !== held,
@@ -141,7 +141,7 @@ const addFace = (): void => {
         :face="one"
         :wrong="wrongWithFace(one.id)"
         :words="words"
-        :data-carried="one.id === face || undefined"
+        :data-dragged="one.id === face || undefined"
         :data-before="one.id === faceAt || undefined"
         @dragover.stop="overFace(one.id, $event)"
         @drop.stop="dropFace"
@@ -164,7 +164,7 @@ const addFace = (): void => {
 </template>
 
 <style scoped>
-@import './carrying.css';
+@import './caret.css';
 
 .stencil {
   /* The room between one part and the next, and between the rows of a part. */
@@ -187,7 +187,7 @@ const addFace = (): void => {
   gap: var(--row-gap);
 }
 
-.stencil__face[data-carried] {
+.stencil__face[data-dragged] {
   opacity: 0.5;
 }
 </style>

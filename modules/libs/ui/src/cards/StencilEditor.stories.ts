@@ -319,7 +319,7 @@ export const AStencil: Story = {
 
 /**
  * What a person does to a stencil: a field written into one face and no other,
- * a field asked for, and a face carried to another place. The order of the
+ * a field asked for, and a face dragged to another place. The order of the
  * faces is the order a card's repetitions are taken from it, so nothing among
  * them is fixed.
  */
@@ -360,9 +360,9 @@ export const WhatAPersonDoesToIt: Story = {
     onto.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true }))
 
     // The one on its way is quiet, and the line it would land on is drawn.
-    const carried = found(canvasElement, '[data-face="name-it"]')
+    const dragged = found(canvasElement, '[data-face="name-it"]')
     await waitFor(() => {
-      expect(Number.parseFloat(getComputedStyle(carried).opacity)).toBeLessThan(1)
+      expect(Number.parseFloat(getComputedStyle(dragged).opacity)).toBeLessThan(1)
       expect(Number.parseFloat(getComputedStyle(onto, '::before').blockSize)).toBeGreaterThan(0)
     })
 

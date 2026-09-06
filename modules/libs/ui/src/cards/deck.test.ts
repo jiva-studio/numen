@@ -242,7 +242,7 @@ describe('grid', () => {
   })
 
   it('marks the one tile on its way and no other', () => {
-    expect(tilesOf(grid(CARDS, [], CUTS, 'llama')).map((tile) => tile.carried)).toEqual([
+    expect(tilesOf(grid(CARDS, [], CUTS, 'llama')).map((tile) => tile.dragged)).toEqual([
       true,
       false,
     ])

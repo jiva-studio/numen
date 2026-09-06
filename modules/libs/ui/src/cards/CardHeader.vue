@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The strip a tile or a block is carried by.
+ * The strip a tile or a block is dragged by.
  *
  * It runs the whole width of what it heads, like the bar across the top of a
  * window: what it holds stands at its start, what it is pressed for at its end,
@@ -12,7 +12,7 @@ import { directionOf, type StepDirection } from './order'
 
 defineProps<{
   /** What is said of taking hold of it. */
-  carry: string
+  drag: string
 }>()
 
 const emit = defineEmits<{
@@ -54,10 +54,10 @@ onScopeDispose(release)
 
 /**
  * The strip is what a gesture takes hold of, so it is what the keyboard takes
- * hold of too: an arrow along the order carries it one place. A key struck in
+ * hold of too: an arrow along the order drags it one place. A key struck in
  * something the strip holds belongs to that thing.
  */
-const carried = (event: KeyboardEvent): void => {
+const step = (event: KeyboardEvent): void => {
   if (event.target !== event.currentTarget) return
   const direction = directionOf(event.key)
   if (direction !== null) emit('step', direction, event)
@@ -73,12 +73,12 @@ const carried = (event: KeyboardEvent): void => {
     role="group"
     tabindex="0"
     :draggable="held"
-    :aria-label="carry"
-    :title="carry"
+    :aria-label="drag"
+    :title="drag"
     @dragstart="emit('dragstart', $event)"
     @dragend="emit('dragend', $event)"
     @pointerdown="press"
-    @keydown="carried"
+    @keydown="step"
   >
     <span class="card-header__held min-w-0 flex-1"><slot /></span>
     <span class="card-header__deeds flex shrink-0 items-center"><slot name="deeds" /></span>

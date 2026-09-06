@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * One face of a stencil, edited: a strip it is carried by, holding its name and
+ * One face of a stencil, edited: a strip it is dragged by, holding its name and
  * one row of the fields, and under that one window divided into four parts.
  *
  * Each half is written in a box of its own, and beside it stands what that half
@@ -125,7 +125,7 @@ const put = async (field: string): Promise<void> => {
 <template>
   <article class="face flex flex-col rounded-node bg-raised" :data-face="face.id">
     <CardHeader
-      :carry="`${words.carry}: ${face.name}`"
+      :drag="`${words.drag}: ${face.name}`"
       @dragstart="emit('lift', $event)"
       @dragend="emit('release')"
       @step="(direction, press) => emit('step', direction, press)"

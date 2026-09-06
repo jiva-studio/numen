@@ -22,7 +22,7 @@ import {
   drawnSectionsOf,
   bodyOf,
   cardsOf,
-  carried,
+  dropped,
   stencilsOf,
   deckIn,
   deckOf,
@@ -227,7 +227,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: FileOp
    * What is wrong with a file, against the card the grid is drawing. A problem
    * carries where it stood in the file it was read from, so it is put against
    * a card once, when the reading it came in on is the newest one: a card
-   * carried elsewhere in the order or a card removed beside it takes its mark
+   * dragged elsewhere in the order or a card removed beside it takes its mark
    * with it from there.
    */
   const marksAt = (id: string): Marks => {
@@ -413,7 +413,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: FileOp
       adds: (stencil, values, section) =>
         turns(id, added(deckAt(id), stencil, pathOfCut(offers.value, stencil), values, section)),
       removes: (card) => turns(id, removed(deckAt(id), card)),
-      moves: (card, at) => turns(id, carried(deckAt(id), card, at)),
+      moves: (card, at) => turns(id, dropped(deckAt(id), card, at)),
       writes: (card, field, nth, text) => turns(id, filled(deckAt(id), card, field, nth, text)),
       addsSection: (name) => turns(id, sectionAdded(deckAt(id), name)),
       namesSection: (section, name) => turns(id, sectionNamed(deckAt(id), section, name)),

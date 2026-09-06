@@ -19,13 +19,13 @@ import { STENCIL } from '../tabs/workspace'
 import StencilTab from './StencilTab.vue'
 import {
   faceAdded,
-  faceCarried,
+  faceDropped,
   faceGone,
   faceNamed,
   faceWritten,
   facesOf,
   fieldAdded,
-  fieldCarried,
+  fieldDropped,
   fieldGone,
   marksOf,
   sameMarks,
@@ -155,7 +155,7 @@ export function stencilling(
    * What is wrong with a file, against the face the editor is drawing. A
    * problem carries where it stood in the file it was read from, so it is put
    * against a face once, when the reading it came in on is the newest one: a
-   * face carried elsewhere takes its mark with it from there.
+   * face dragged elsewhere takes its mark with it from there.
    */
   const marksAt = (id: string): Marks => {
     const problems = (told.get(store.where(id)) ?? NOTHING).problems
@@ -231,11 +231,11 @@ export function stencilling(
     addsField: (name) => turns(id, fieldAdded(sheetAt(id), name)),
     namesField: (field, name) => void renames(id, field, name),
     removesField: (field) => turns(id, fieldGone(sheetAt(id), field)),
-    movesField: (field, at) => turns(id, fieldCarried(sheetAt(id), field, at)),
+    movesField: (field, at) => turns(id, fieldDropped(sheetAt(id), field, at)),
     addsFace: (name) => turns(id, faceAdded(sheetAt(id), name)),
     namesFace: (face, name) => turns(id, faceNamed(sheetAt(id), face, name)),
     removesFace: (face) => turns(id, faceGone(sheetAt(id), face)),
-    movesFace: (face, at) => turns(id, faceCarried(sheetAt(id), face, at)),
+    movesFace: (face, at) => turns(id, faceDropped(sheetAt(id), face, at)),
     writes: (face, half, text) => turns(id, faceWritten(sheetAt(id), face, half, text)),
     keep: () => store.keep(id),
     take: () => store.take(id),

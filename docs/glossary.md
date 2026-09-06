@@ -170,7 +170,8 @@ A word means one thing inside its context, and the same word in two contexts is 
 | tree | A hierarchy of rows drawn as an indented list, some of them holding others. The vault's folders and files are shown in one. | |
 | row | One line of a tree: an entry, at the depth it sits. | node |
 | selection | The rows of a tree chosen together. A gesture made on one of them is made on all of them. | |
-| carry | A gesture that lifts something in one part of the window and lets it go in another. The tree says what it has lifted; the plex says which seat letting go over it comes to, and never what is being carried. | |
+| drag | The gesture while it runs: what has been lifted, and where the pointer is. The tree says what it has lifted; the plex draws a line to it and never looks at what it is. In code it is `drag` and `dragged`, and the element on its way is `data-dragged`. The English *carry* is not this: in this repository's prose it means to bear — a note carries an identifier, a line carries a title — and it names nothing in the code. | carry |
+| drop | Where a drag lands and what that comes to: the seat, the place in an order, the link that gets written. In code it is `drop` and `dropped`. A drop is also what is taken away from a recording, which is the other thing the word is spent on. | |
 | anchor | The row a selection is reached from, which is where a plain or joining press last landed. | |
 | unsaved | A tab whose text is not the text in its file. | |
 | stuck | A tab whose file can be neither read nor written: not a note, not text, over the ceiling, or frontmatter that will not parse. | |

@@ -9,7 +9,7 @@ import {
   added,
   bodyOf,
   cardsOf,
-  carried,
+  dropped,
   stencilsOf,
   deckIn,
   deckOf,
@@ -20,7 +20,7 @@ import {
   faceWritten,
   facesOf,
   fieldAdded,
-  fieldCarried,
+  fieldDropped,
   fieldGone,
   filled,
   linkTo,
@@ -363,7 +363,7 @@ describe('how a card names the stencil it is cut by', () => {
   })
 })
 
-describe('a card taken out and carried', () => {
+describe('a card taken out and dragged', () => {
   it('goes, and the rest stay in the order they were in', () => {
     expect(removed(deck(), LLAMA).cards.map((card) => card.id)).toStrictEqual([ALPACA])
   })
@@ -373,21 +373,21 @@ describe('a card taken out and carried', () => {
   })
 
   it('lands before the card it was let go on', () => {
-    expect(carried(deck(), ALPACA, LLAMA).cards.map((card) => card.id)).toStrictEqual([
+    expect(dropped(deck(), ALPACA, LLAMA).cards.map((card) => card.id)).toStrictEqual([
       ALPACA,
       LLAMA,
     ])
   })
 
   it('lands last where it was let go on nothing', () => {
-    expect(carried(deck(), LLAMA, null).cards.map((card) => card.id)).toStrictEqual([
+    expect(dropped(deck(), LLAMA, null).cards.map((card) => card.id)).toStrictEqual([
       ALPACA,
       LLAMA,
     ])
   })
 })
 
-describe('a card carried among the sections', () => {
+describe('a card dragged among the sections', () => {
   /** Two sections, the first card in the first of them and the second in neither. */
   const sectioned = (): Deck => {
     const bare = read()
@@ -399,7 +399,7 @@ describe('a card carried among the sections', () => {
 
   it('takes the section of the card it was let go before', () => {
     const held = sectioned()
-    const moved = carried(held, LLAMA, ALPACA)
+    const moved = dropped(held, LLAMA, ALPACA)
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
       [LLAMA, held.sections[0]?.id],
       [ALPACA, held.sections[0]?.id],
@@ -408,7 +408,7 @@ describe('a card carried among the sections', () => {
 
   it('stands under the last section where it was let go on nothing', () => {
     const held = sectioned()
-    expect(carried(held, LLAMA, null).cards.map((card) => card.section)).toStrictEqual([
+    expect(dropped(held, LLAMA, null).cards.map((card) => card.section)).toStrictEqual([
       held.sections[0]?.id,
       held.sections[1]?.id,
     ])
@@ -417,7 +417,7 @@ describe('a card carried among the sections', () => {
   it('lands at the head of a section it was let go on', () => {
     const held = sectioned()
     const roots = held.sections[0]?.id ?? ''
-    const moved = carried(held, LLAMA, roots)
+    const moved = dropped(held, LLAMA, roots)
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
       [LLAMA, roots],
       [ALPACA, roots],
@@ -427,7 +427,7 @@ describe('a card carried among the sections', () => {
   it('lands at the head of a section holding no card', () => {
     const held = sectioned()
     const leaves = held.sections[1]?.id ?? ''
-    const moved = carried(held, LLAMA, leaves)
+    const moved = dropped(held, LLAMA, leaves)
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
       [ALPACA, held.sections[0]?.id],
       [LLAMA, leaves],
@@ -436,13 +436,13 @@ describe('a card carried among the sections', () => {
 
   it('moves nothing where it was let go on nothing the deck holds', () => {
     const held = sectioned()
-    expect(carried(held, LLAMA, 'nowhere')).toStrictEqual(held)
+    expect(dropped(held, LLAMA, 'nowhere')).toStrictEqual(held)
   })
 
   it('stands last under the section it was let go past the end of', () => {
     const held = sectioned()
     const roots = held.sections[0]?.id ?? ''
-    const moved = carried(held, LLAMA, cardEndOf(roots))
+    const moved = dropped(held, LLAMA, cardEndOf(roots))
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
       [ALPACA, roots],
       [LLAMA, roots],
@@ -451,7 +451,7 @@ describe('a card carried among the sections', () => {
 
   it('stands last under no section where it was let go past those before the first', () => {
     const held = sectioned()
-    const moved = carried(held, ALPACA, cardEndOf(CARD_HEAD))
+    const moved = dropped(held, ALPACA, cardEndOf(CARD_HEAD))
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
       [LLAMA, null],
       [ALPACA, null],
@@ -468,7 +468,7 @@ describe('a card carried among the sections', () => {
     }
     const deckLost = { ...held, cards: [lost, held.cards[1]!] }
 
-    const moved = carried(deckLost, ALPACA, cardEndOf(CARD_HEAD))
+    const moved = dropped(deckLost, ALPACA, cardEndOf(CARD_HEAD))
 
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
       [LLAMA, 'gone'],
@@ -478,12 +478,12 @@ describe('a card carried among the sections', () => {
 
   it('leaves the deck as it was where the card already stands last under that heading', () => {
     const held = sectioned()
-    expect(carried(held, ALPACA, cardEndOf(held.sections[0]?.id ?? ''))).toStrictEqual(held)
+    expect(dropped(held, ALPACA, cardEndOf(held.sections[0]?.id ?? ''))).toStrictEqual(held)
   })
 
   it('stands first and under no section where it was let go at the head of the deck', () => {
     const held = sectioned()
-    const moved = carried(held, ALPACA, CARD_HEAD)
+    const moved = dropped(held, ALPACA, CARD_HEAD)
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
       [ALPACA, null],
       [LLAMA, null],
@@ -671,14 +671,14 @@ describe('a field of a stencil', () => {
   })
 
   it('lands before the field it was let go on', () => {
-    expect(fieldCarried(sheet({ fields: ['Name', 'Height', 'Life span'] }), 'Life span', 'Height')
+    expect(fieldDropped(sheet({ fields: ['Name', 'Height', 'Life span'] }), 'Life span', 'Height')
       .fields).toStrictEqual(['Name', 'Life span', 'Height'])
   })
 
   it('leaves the first field first, wherever the move came from', () => {
     const held = sheet({ fields: ['Name', 'Height', 'Life span'] })
-    expect(fieldCarried(held, 'Height', 'Name').fields).toStrictEqual(held.fields)
-    expect(fieldCarried(held, 'Name', null).fields).toStrictEqual(held.fields)
+    expect(fieldDropped(held, 'Height', 'Name').fields).toStrictEqual(held.fields)
+    expect(fieldDropped(held, 'Name', null).fields).toStrictEqual(held.fields)
   })
 })
 

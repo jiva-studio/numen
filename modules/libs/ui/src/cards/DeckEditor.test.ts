@@ -90,7 +90,7 @@ const pressing = (on: Element, key: string): KeyboardEvent => {
   return press
 }
 
-/** A card picked up and the carry ended without it being let go anywhere. */
+/** A card picked up and the drag ended without it being let go anywhere. */
 const dragOff = async (held: Grid, id: string, over: string | null): Promise<void> => {
   const grip = tileFor(held, id).get('[data-grip]')
   await grip.trigger('dragstart')
@@ -213,13 +213,13 @@ describe('DeckEditor', () => {
     expect(head.text().trim()).toBe('Animal')
   })
 
-  it('carries a tile by the strip itself, and not by a handle inside it', () => {
+  it('drags a tile by the strip itself, and not by a handle inside it', () => {
     const tile = tileFor(mountDeck(), 'llama')
     expect(tile.findAll('[data-grip]')).toHaveLength(1)
     expect(tile.get('[data-grip]').element.tagName).toBe('HEADER')
   })
 
-  it('leaves the way to remove a card out of what carries it', () => {
+  it('leaves the way to remove a card out of what drags it', () => {
     const away = tileFor(mountDeck(), 'llama').get('.card-header button')
     expect(away.attributes('draggable')).toBe('false')
   })
@@ -227,7 +227,7 @@ describe('DeckEditor', () => {
   describe('a press landing on something the strip holds', () => {
     const stripOf = (held: Grid, id: string) => tileFor(held, id).get('[data-grip]')
 
-    it('lets that thing have the press, so the strip is not carried by it', async () => {
+    it('lets that thing have the press, so the strip is not dragged by it', async () => {
       const held = mountDeck()
       await stripOf(held, 'llama').get('button').trigger('pointerdown')
       expect(stripOf(held, 'llama').attributes('draggable')).toBe('false')
@@ -238,7 +238,7 @@ describe('DeckEditor', () => {
       await stripOf(held, 'llama').get('button').trigger('pointerdown')
 
       // The pointer may be let go far outside the strip, and the strip is
-      // carried again from there.
+      // dragged again from there.
       document.body.dispatchEvent(new Event('pointerup', { bubbles: true }))
       await nextTick()
 
@@ -255,7 +255,7 @@ describe('DeckEditor', () => {
       expect(stripOf(held, 'llama').attributes('draggable')).toBe('true')
     })
 
-    it('carries the strip from a press landing on the strip itself', async () => {
+    it('drags the strip from a press landing on the strip itself', async () => {
       const held = mountDeck()
       await stripOf(held, 'llama').trigger('pointerdown')
       expect(stripOf(held, 'llama').attributes('draggable')).toBe('true')
@@ -279,24 +279,24 @@ describe('DeckEditor', () => {
     expect(tileFor(held, 'yak').attributes('aria-label')).toBe('Card 2')
   })
 
-  describe('carrying a tile by the keyboard', () => {
+  describe('dragging a tile by the keyboard', () => {
     const stripOf = (held: Grid, id: string) => tileFor(held, id).get('[data-grip]')
 
-    it('names the strip a tile is carried by, and gives it a place in the order', () => {
+    it('names the strip a tile is dragged by, and gives it a place in the order', () => {
       const strip = stripOf(mountDeck(), 'llama')
       expect(strip.attributes('aria-label')).toBe('Reorder: Card 1')
       expect(strip.attributes('tabindex')).toBe('0')
       expect(strip.attributes('role')).toBe('group')
     })
 
-    it('emits a tile carried one place down the order', () => {
+    it('emits a tile dragged one place down the order', () => {
       const held = mountDeck()
       const press = pressing(stripOf(held, 'llama').element, 'ArrowDown')
       expect(press.defaultPrevented).toBe(true)
       expect(held.emitted('move')).toEqual([['llama', null]])
     })
 
-    it('emits a tile carried one place up the order', () => {
+    it('emits a tile dragged one place up the order', () => {
       const held = mountDeck()
       pressing(stripOf(held, 'yak').element, 'ArrowUp')
       expect(held.emitted('move')).toEqual([['yak', 'llama']])
@@ -383,7 +383,7 @@ describe('DeckEditor', () => {
     expect(held.emitted('move')).toBeUndefined()
   })
 
-  it('forgets where a card would land once it is carried off every place', async () => {
+  it('forgets where a card would land once it is dragged off every place', async () => {
     const held = mountDeck()
     await tileFor(held, 'llama').get('[data-grip]').trigger('dragstart')
     await tileFor(held, 'yak').trigger('dragover')
@@ -398,14 +398,14 @@ describe('DeckEditor', () => {
     expect(held.emitted('move')).toBeUndefined()
   })
 
-  it('moves nothing where a carry ends with the card let go nowhere', async () => {
+  it('moves nothing where a drag ends with the card let go nowhere', async () => {
     const held = mountDeck()
     await dragOff(held, 'yak', null)
     expect(held.emitted('move')).toBeUndefined()
-    expect(tileFor(held, 'yak').attributes('data-carried')).toBeUndefined()
+    expect(tileFor(held, 'yak').attributes('data-dragged')).toBeUndefined()
   })
 
-  it('moves nothing where a carry over another card ends with it let go nowhere', async () => {
+  it('moves nothing where a drag over another card ends with it let go nowhere', async () => {
     const held = mountDeck()
     await dragOff(held, 'yak', 'llama')
     expect(held.emitted('move')).toBeUndefined()
@@ -642,14 +642,14 @@ describe('DeckEditor', () => {
         expect(held.emitted('move')).toEqual([['yak', HEAD]])
       })
 
-      it('emit the first card of the deck carried out of its section', () => {
+      it('emit the first card of the deck dragged out of its section', () => {
         const held = mountSectioned({ cards: INSIDE })
         const press = pressing(tileFor(held, 'llama').get('[data-grip]').element, 'ArrowUp')
         expect(press.defaultPrevented).toBe(true)
         expect(held.emitted('move')).toEqual([['llama', HEAD]])
       })
 
-      it('move nothing where the card carried up already stands there', () => {
+      it('move nothing where the card dragged up already stands there', () => {
         const held = mountSectioned()
         const press = pressing(tileFor(held, 'loose').get('[data-grip]').element, 'ArrowUp')
         expect(press.defaultPrevented).toBe(false)

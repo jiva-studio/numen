@@ -3,7 +3,7 @@
  * A deck, edited: its cards as tiles in a grid, standing under the sections
  * they are in, and a plus standing last.
  *
- * The grid lays the cards out, carries one from place to place, and asks which
+ * The grid lays the cards out, drags one from place to place, and asks which
  * stencil a new one is cut by. What a card holds is the card's own. What a card
  * stands for is the caller's.
  */
@@ -12,7 +12,7 @@ import SectionHeading from './SectionHeading.vue'
 import Card from './Card.vue'
 import Icon from './Icon.vue'
 import Divider from '../divider/Divider.vue'
-import { useCarry } from './carry'
+import { useDrag } from './drag'
 import { Button } from '../components/ui/button'
 import {
   DECK_WORDS,
@@ -89,16 +89,16 @@ const asking = shallowRef<string | null>(null)
  * let go where it stands moves nothing, and nothing else among them is fixed.
  *
  * The head of the deck stands first in the order, so the card at the top of the
- * first section is carried out of it by the keyboard as it is by the pointer.
+ * first section is dragged out of it by the keyboard as it is by the pointer.
  */
-const { carried, at, lift, over, release, drop, step } = useCarry<InsertionPoint | undefined>({
+const { dragged, at, lift, over, release, drop, step } = useDrag<InsertionPoint | undefined>({
   order: () => [HEAD, ...props.cards.map((card) => card.id)],
   nowhere: undefined,
   lands: (held: string, at: InsertionPoint): boolean => lands(shown.value.runs, held, at),
   moves: (held, at) => emit('move', held, at),
 })
 
-const shown = computed(() => grid(props.cards, props.sections, props.stencils, carried.value))
+const shown = computed(() => grid(props.cards, props.sections, props.stencils, dragged.value))
 
 /** Where the plus of a run stands in the order: past everything under it. */
 const after = (run: Run): InsertionPoint => endOf(run.id)
@@ -231,7 +231,7 @@ const addSection = (): void => {
 </template>
 
 <style scoped>
-@import './carrying.css';
+@import './caret.css';
 
 /* The deck is what scrolls. The grid inside it is as tall as its rows, which is
    what lets every row take the height of the tallest tile of the whole deck.

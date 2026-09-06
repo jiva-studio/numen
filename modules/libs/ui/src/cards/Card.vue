@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * One card of a deck, as a tile: a strip it is carried by and removed from, and
+ * One card of a deck, as a tile: a strip it is dragged by and removed from, and
  * under it the card's values, each in a box that is always open to typing.
  *
  * Every field of the stencil stands under its own name and holds as many lines
@@ -71,10 +71,10 @@ const wrongIn = (value: PlacedFieldValue): readonly string[] =>
     :aria-setsize="tile.of"
     :data-card="tile.id"
     :data-section="tile.section ?? undefined"
-    :data-carried="tile.carried || undefined"
+    :data-dragged="tile.dragged || undefined"
   >
     <CardHeader
-      :carry="`${words.carry}: ${called}`"
+      :drag="`${words.drag}: ${called}`"
       @dragstart="emit('lift', $event)"
       @dragend="emit('release')"
       @step="(direction, press) => emit('step', direction, press)"
@@ -187,7 +187,7 @@ const wrongIn = (value: PlacedFieldValue): readonly string[] =>
   margin-inline: calc(-1 * var(--numen-box-air));
 }
 
-.card[data-carried] {
+.card[data-dragged] {
   opacity: 0.5;
 }
 

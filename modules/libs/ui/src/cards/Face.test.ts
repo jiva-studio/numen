@@ -382,7 +382,7 @@ describe('Face, what it is asked', () => {
     expect(held.emitted('remove')).toEqual([[]])
   })
 
-  it('emits the carry its strip is taken up by, and the carry let go', async () => {
+  it('emits the drag its strip is taken up by, and the drag let go', async () => {
     const held = mountFace()
     await held.get('.card-header').trigger('dragstart')
     expect(held.emitted('lift')).toHaveLength(1)

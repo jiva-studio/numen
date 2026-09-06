@@ -63,7 +63,7 @@ export interface DeckSection {
 /** The words one card is drawn with, declared once. */
 export interface CardWords {
   readonly remove: string
-  readonly carry: string
+  readonly drag: string
   readonly cut: string
   /** What a card is announced by, before the place it stands in the deck. */
   readonly cardStem: string
@@ -98,7 +98,7 @@ export const DECK_WORDS: DeckWords = {
   add: 'Add a card',
   addSection: 'Add a section',
   remove: 'Remove',
-  carry: 'Reorder',
+  drag: 'Reorder',
   cut: 'Stencil',
   cardStem: 'Card',
   sectionStem: 'Section',
@@ -207,7 +207,7 @@ export interface Tile {
   /** The stencil it names is among the ones handed in. */
   readonly known: boolean
   /** It is on its way somewhere else in the order. */
-  readonly carried: boolean
+  readonly dragged: boolean
 }
 
 /** One section as the grid draws it: the section, and where it stands. */
@@ -257,7 +257,7 @@ export function grid(
   cards: readonly DeckCard[],
   sections: readonly DeckSection[],
   stencils: readonly Stencil[],
-  carried: string | null,
+  dragged: string | null,
 ): Grid {
   const sectioned = new Set(sections.map((section) => section.id))
   const tiles = cards.map((card) => {
@@ -296,7 +296,7 @@ export function grid(
       at: 0,
       of: 0,
       known: cut !== undefined,
-      carried: card.id === carried,
+      dragged: card.id === dragged,
     }
   })
 
@@ -332,15 +332,15 @@ export function grid(
 }
 
 /**
- * Whether letting a carried card go there moves it. A card let go where it
+ * Whether letting a dragged card go there moves it. A card let go where it
  * stands moves nothing: the head of the deck is where the first card standing
  * under no section already is, and the end of a run is where its last card is.
  */
-export const lands = (runs: readonly Run[], carried: string, at: InsertionPoint): boolean => {
-  if (at === carried) return false
-  if (at === HEAD) return runs[0]?.tiles[0]?.id !== carried
+export const lands = (runs: readonly Run[], dragged: string, at: InsertionPoint): boolean => {
+  if (at === dragged) return false
+  if (at === HEAD) return runs[0]?.tiles[0]?.id !== dragged
 
   const run = ended(at)
-  if (run !== null) return runs.find((each) => each.id === run)?.tiles.at(-1)?.id !== carried
+  if (run !== null) return runs.find((each) => each.id === run)?.tiles.at(-1)?.id !== dragged
   return true
 }
