@@ -9,7 +9,6 @@ import './window.css'
 
 export { default as Plex } from './plex/Plex.vue'
 export { browserClock } from './plex/transition'
-export { browserViewport } from './lib/viewport'
 export { isStop } from './plex/node'
 export { countOf, seatWord, SEATS } from './plex/seat'
 export { showingOf, SHOWINGS } from './plex/showing'
@@ -152,8 +151,7 @@ export {
 export type { Address, Wikilink } from './linking/address'
 
 /** A link that leads out of the application, and the window held against it. */
-export { holdsTheWindow, pointsOutward } from './linking/outward'
-export type { LinkOpener } from './linking/outward'
+export { holdsTheWindow } from './linking/outward'
 
 /** Numbers as they are read out, which both windows read the same way. */
 export { many, percent, plural } from './digits'
@@ -220,7 +218,6 @@ export { default as Tree } from './tree/Tree.vue'
 export {
   between,
   dragged,
-  dragLabel,
   everyRow,
   flatten,
   holderOf,
@@ -251,20 +248,12 @@ export { default as Card } from './cards/Card.vue'
 /** One face of a stencil, which is what the stencil lays out. */
 export { default as Face } from './cards/Face.vue'
 export { default as CardProse } from './cards/CardProse.vue'
-/** The heading one section of a deck stands under. */
-export { default as SectionHeading } from './cards/SectionHeading.vue'
-/** The strip a tile is carried by. */
-export { default as CardHeader } from './cards/CardHeader.vue'
-/** A rule with something standing on it, in its middle or at its start. */
-export { default as Divider } from './divider/Divider.vue'
 
 /**
  * A card's HTML, measured against what a card may be drawn with. A deck may
  * come from another person, so anything drawing one goes through this.
  */
 export { safe, scheme } from './cards/safe'
-/** What a card is written with, drawn: the HTML a person wrote, measured. */
-export { rendered } from './cards/render'
 /** For putting a card or a field where a person let it go, without drawing it. */
 export { ordered, reordered } from './cards/order'
 export type { Half, InsertionPoint } from './cards/order'
@@ -277,8 +266,7 @@ export { declared as cardFields } from './cards/order'
 export type { DeckCard, DeckSection, FieldValue } from './cards/deck'
 export type { Stencil } from './cards/stencil'
 
-export type { Clock, PlexTransition } from './plex/transition'
-export type { Viewport } from './lib/viewport'
+export type { PlexTransition } from './plex/transition'
 export { byHandle, byHolding } from './plex/reaching'
 export { APART, byDoubleClick, byDoubleTap, TAP } from './plex/showing'
 export type { ShowStrategy, ShowSite } from './plex/showing'
