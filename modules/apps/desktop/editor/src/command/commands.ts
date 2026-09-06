@@ -317,11 +317,8 @@ const onSource =
 
 /**
  * A run over the file in front that is offered on what has been made from it,
- * and not on its kind alone: a book already read is not offered to be read.
- *
- * A file nothing has been asked about carries nothing, and it is offered as it
- * would have been. The application refuses what it has already made, so the
- * person is never left holding an item that would do nothing.
+ * and not on its kind alone: a book already read is not offered to be read. A
+ * file nothing has been asked about carries nothing, and is offered.
  */
 const onEvidence =
   (run: string, source: Source, made: (carries: ArtifactStates) => boolean) =>
@@ -330,7 +327,7 @@ const onEvidence =
 
 const isEmpty = (carries: ArtifactStates): boolean => Object.keys(carries).length === 0
 
-/** An artifact a run over the file would begin, rather than be refused for. */
+/** An artifact a run over the file would begin. */
 const owed = (made: ArtifactState | undefined): boolean =>
   made === undefined || made === 'none' || made === 'stopped'
 

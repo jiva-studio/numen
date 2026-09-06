@@ -67,8 +67,7 @@ describe('the role a link carries', () => {
     ])
   })
 
-  // Taken from the schema rather than typed out, so a role added there is one
-  // this asks for, and the window is caught having no word for it.
+  // The roles are the schema's, so a role added there is one this asks for.
   it('is every role the schema names, on a link written into a note that is there', async () => {
     const carried = Object.keys(Role).filter(
       (name) => Number.isNaN(Number(name)) && name !== 'UNSPECIFIED',

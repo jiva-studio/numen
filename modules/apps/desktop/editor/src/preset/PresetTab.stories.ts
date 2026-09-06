@@ -1,12 +1,8 @@
 /**
  * The preset tab: the goal, the picture of it, the backlog under that, and the
- * rows of settings the answer produced.
- *
- * What is asked here is what only a browser can answer. The rows are laid out
- * on the settings' own columns, which nothing without a layout engine resolves.
- * The readout under the knob, the bubble over it and the numbers along the axis
- * are put where they belong by the `translate` property, and where that leaves
- * them is the browser's answer and no test's.
+ * rows of settings the answer produced. What is asked here is what only a
+ * browser can answer: where the columns, the readout under the knob, the bubble
+ * over it and the numbers along the axis are put.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'

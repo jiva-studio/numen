@@ -95,8 +95,8 @@ export const useWindow = () => {
    * The two ways in, each of them also the way out: a person who brought a panel
    * in with a key or a control takes it away with the same one.
    *
-   * A link pressed in the card names the note to open on, and asks for the
-   * reading rather than toggling it: the press was about that note.
+   * A link pressed in the card names the note to open on and brings the reading
+   * in: the press was about that note.
    */
   const reads = (named = '') => {
     if (named === '' && showing.value === 'reading') notesPanel.shuts()
@@ -303,8 +303,7 @@ export const useWindow = () => {
     void follows(
       () => cards.watchReloads({}),
       async (said) => {
-        // The stream says nothing on its own account so that a page that has gone
-        // fails the write. Only a move is a move.
+        // A message carrying no reload keeps the stream open and moves nothing.
         if (!said.reload) return
         if (on.value === 'session') return
         await count()

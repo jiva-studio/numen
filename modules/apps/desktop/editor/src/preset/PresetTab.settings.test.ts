@@ -125,8 +125,8 @@ describe('the settings under the control', () => {
   })
 
   // A tab draws its rows before the first read lands. Until the application
-  // has said how far a field goes, the field is left at the ends it draws
-  // itself with, rather than at ends the window made up.
+  // has said how far a field goes, the field stands at the ends it draws
+  // itself with.
   it('leaves a field the application has said nothing about at its own ends', () => {
     const one = tabAt({}, { learned: 'interval', interval: 21 })
     const state: PresetTabState = { ...one.state, bounds: shallowRef(NO_BOUNDS) }

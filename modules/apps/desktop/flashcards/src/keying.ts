@@ -36,18 +36,11 @@ export const ASKS = 'a'
 export const READS = 'r'
 
 /**
- * The keys a whole session is done with: the space bar turns a card over, the
- * four numbers say how it went, `u` takes the last answer back and escape goes
- * back to the decks.
- *
- * A key held down repeats, and a card is answered once. A key pressed with a
- * modifier is the machine's own shortcut and is not an answer. Once the card is
- * over, space and enter are left to whatever the person has moved focus to, so
- * a button reached with the keyboard is pressed with the keyboard.
- *
- * While a question is being written none of these are pressed: the letters are
- * the question. Escape there sends the panel away and leaves the session where
- * it is.
+ * The keys a whole session is done with: space turns a card over, the four
+ * numbers say how it went, `u` takes the last answer back and escape goes back
+ * to the decks. A key held down, a key pressed with a modifier, a key typed
+ * into a question and space or enter on a button the focus has moved to answer
+ * nothing.
  */
 export function asks(press: KeyboardEvent, showing: ScreenState): SessionKeyIntent | null {
   // A field takes the overlay key too: control and A is how a person selects

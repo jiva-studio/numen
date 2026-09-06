@@ -5,9 +5,8 @@ import { Refusal, RefusalSchema } from '@numen/protocol'
 import { refusalWords, troubleWords } from './trouble'
 
 describe('a refusal', () => {
-  // The list walked here is the descriptor the generated code carries, so the
-  // schema is the only list of refusals there is: one added to it arrives
-  // wordless and fails, rather than being drawn as nothing.
+  // The list walked here is the descriptor the generated code carries, so a
+  // refusal added to the schema arrives wordless and fails.
   it.each(RefusalSchema.values.map((value) => [value.name, value.number] as const))(
     'has words of its own for %s',
     (name, number) => {

@@ -171,9 +171,8 @@ export function windowing() {
   const open = shallowRef<ReadonlyMap<string, WindowTab>>(new Map())
 
   /**
-   * What each open tab watches, kept apart so that letting go of the tab lets
-   * go of it. A kind makes what its tab holds outside any component, so nothing
-   * else would ever stop what it started.
+   * What each open tab watches. A kind makes what its tab holds outside any
+   * component, and the scope is what stops it when the tab goes.
    */
   const scopes = new Map<string, EffectScope>()
 

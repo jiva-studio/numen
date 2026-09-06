@@ -1,23 +1,8 @@
 /**
- * What went wrong, in words a person reads.
- *
- * Every window catches what a call threw and is answered refusals, and neither
- * is anything to put in front of a person as it stands: a class name, a stack
- * and a message written for whoever wrote the server all read the same to
- * whoever is looking at the screen. What is said here is what happened and,
- * where there is one, what they can do about it.
- *
- * What a call carried back is repeated on four codes and on no other. Those
- * four the application only ever raises with a sentence it wrote — *this
- * recording is being listened to*, *no agent is set up for this vault* — and
- * the sentence says what no code could. Every other code wraps whatever error
- * came back, and *sql: no rows in result set* is not something to put in front
- * of anybody.
- *
- * Both are clauses rather than sentences, because both are read after
- * something that says which thing went wrong — `That setting could not be
- * written:`, a note's title, the row a refusal is set beside. A window that
- * wants a sentence of one makes it one.
+ * What went wrong, in words a person reads. Both are clauses, read after
+ * something that says which thing went wrong — a note's title, the row a
+ * refusal is set beside — and a window that wants a sentence of one makes it
+ * one.
  */
 import { Code, ConnectError } from '@connectrpc/connect'
 import { Refusal } from '@numen/protocol'
@@ -26,17 +11,9 @@ import { Refusal } from '@numen/protocol'
 const UNEXPECTED = 'something inside numen went wrong'
 
 /**
- * What a call that could not be answered says.
- *
- * Six of these the application sends itself — invalid argument, internal, not
- * found, unavailable, failed precondition and unimplemented — and the client
- * raises cancelled, unknown and deadline exceeded on its own, unknown being
- * what a connection that has gone arrives as. The rest nothing here produces,
- * and a sentence invented for one would be a sentence nobody could act on, so
- * they say what is true and no more.
- *
- * A call the window itself stopped says nothing, because nobody but the window
- * asked for it to stop.
+ * What a call that could not be answered says. Unknown is what a connection
+ * that has gone arrives as, a code nothing here produces says what is true and
+ * no more, and a call the window itself stopped says nothing.
  */
 const TROUBLE: Record<Code, string> = {
   [Code.Canceled]: '',

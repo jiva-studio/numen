@@ -1,20 +1,9 @@
 <script setup lang="ts">
 /**
  * The one slider of a preset: the goal's curve, drawn as the track a person
- * drags the knob along.
- *
- * A pointer anywhere over the picture takes the nearest place of the grid, and
- * the height is read off the curve and never off the pointer.
- *
- * Every word on the picture is HTML set over it. Where two of them touch, the
- * one further down this file's order gives way and its name is dropped.
- *
- * `data-control` names each part: `material`, `learned`, `tile`, `figure`,
- * `word`, `over`, `room`, `waiting`, `picture`, `rule`, `line`, `drop`,
- * `suggested`, `knob`, `label`, `number`, `callout`, `bought`, `tail`, `foot`,
- * `under`, `ends` and `name`. The picture is the slider; a name carries
- * `data-axis`, the reading at the knob carries `data-at-knob`, and a tail
- * turned under carries `data-under`.
+ * drags the knob along. A pointer anywhere over the picture takes the nearest
+ * place of the grid, and the height is read off the curve and never off the
+ * pointer.
  */
 import { computed, shallowRef, watch, useTemplateRef } from 'vue'
 import { Spinner } from '@numen/ui'

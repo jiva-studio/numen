@@ -1,13 +1,10 @@
 <script setup lang="ts">
 /**
- * Three panels in a row, one of them in the window at a time.
- *
- * The three are a strip the width of all of them, and which of them is in the
- * window is where that strip is scrolled to. A hand takes it there and lets go
- * where it likes; the strip settles on the nearest of the three.
- *
- * The middle is never drawn narrower, and the strip rests on it. Narrow, either
- * side is the width of the window and the middle is scrolled out of it whole.
+ * Three panels in a row, one of them in the window at a time. The three are a
+ * strip the width of all of them, scrolled to the one in the window, and the
+ * strip settles on the nearest of the three where a hand lets go. The middle is
+ * never drawn narrower; narrow, either side is the width of the window and the
+ * middle is scrolled out of it whole.
  */
 import { nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 

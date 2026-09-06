@@ -1,12 +1,9 @@
 /**
- * Flushing the window's unwritten work, when the application asks to quit.
- *
- * A tab saves once the typing stops, so the last seconds of work are in a
- * buffer here and nowhere else. The application asks for them over a stream
- * this page listens on for as long as it is drawn, and waits for the answer.
- *
- * Text that cannot be written raises a conflict, and the window stays until
- * every conflict is settled.
+ * Flushing the window's unwritten work, when the application asks to quit. A
+ * tab saves once the typing stops, so the last seconds of work are in a buffer
+ * here and nowhere else, and the application asks for them over a stream this
+ * page listens on for as long as it is drawn. Text that cannot be written
+ * raises a conflict, and the window stays until every conflict is settled.
  */
 import { shallowRef, type Ref } from 'vue'
 import { following } from '@numen/ui'
