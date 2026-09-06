@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { NOWHERE, type Curve, type Point } from './core'
+import { NOWHERE, type Curve, type DataPoint } from './core'
 import {
   against,
   againstBox,
@@ -32,7 +32,7 @@ import {
   readingAt,
   RIGHT,
   shortOf,
-  spotsOf,
+  pointsOf,
   TOP,
   walked,
   WIDE,
@@ -40,10 +40,10 @@ import {
   yOfGridline,
   type Box,
   type Mark,
-  type Spot,
+  type Point,
 } from './plot'
 
-const point = (over: Partial<Point> = {}): Point => ({
+const dataPoint = (over: Partial<DataPoint> = {}): DataPoint => ({
   reviews: 0,
   minutes: 0,
   retained: 0,
@@ -63,7 +63,7 @@ const curve = (cards: readonly number[], enough: readonly boolean[] = []): Curve
   goal: 'minutes',
   grid: cards.map((_, at) => at * 10),
   days: [],
-  at: cards.map((one, at) => point({ reviews: one, enough: enough[at] ?? true })),
+  at: cards.map((one, at) => dataPoint({ reviews: one, enough: enough[at] ?? true })),
   now: NOWHERE,
   suggested: NOWHERE,
   decks: 1,
@@ -93,29 +93,29 @@ describe('the curve as it is drawn', () => {
   it('is scaled to the extent it is given, between the foot and the top', () => {
     const one = curve([0, 0.5, 1])
     expect(extentOf(one)).toStrictEqual({ least: 0, most: 1 })
-    const spots = spotsOf(one, extentOf(one))
-    expect(spots[0]?.y).toBe(FOOT)
-    expect(spots[2]?.y).toBe(TOP)
+    const points = pointsOf(one, extentOf(one))
+    expect(points[0]?.y).toBe(FOOT)
+    expect(points[2]?.y).toBe(TOP)
   })
 
   // The extent is the goal's and not this answer's, so an answer that moves
   // little inside it is drawn as the little it moves.
   it('draws a curve that is flat within its extent flat', () => {
-    const spots = spotsOf(curve([0.9, 0.9, 0.9]), { least: 0, most: 1 })
-    expect(spots.every((spot) => spot.y === spots[0]?.y)).toBe(true)
+    const points = pointsOf(curve([0.9, 0.9, 0.9]), { least: 0, most: 1 })
+    expect(points.every((point) => point.y === points[0]?.y)).toBe(true)
   })
 
   it('keeps a curve past either end of its extent inside the picture', () => {
-    const spots = spotsOf(curve([-1, 0.5, 2]), { least: 0, most: 1 })
-    expect(spots[0]?.y).toBe(FOOT)
-    expect(spots[2]?.y).toBe(TOP)
+    const points = pointsOf(curve([-1, 0.5, 2]), { least: 0, most: 1 })
+    expect(points[0]?.y).toBe(FOOT)
+    expect(points[2]?.y).toBe(TOP)
   })
 
   // A count does not go below nothing, so nothing is the foot of the picture
   // and a run of it lies along that foot.
   it('lies along the floor where the extent has no width', () => {
-    const spots = spotsOf(curve([0, 0, 0]), { least: 0, most: 0 })
-    expect(spots.every((one) => one.y === FOOT)).toBe(true)
+    const points = pointsOf(curve([0, 0, 0]), { least: 0, most: 0 })
+    expect(points.every((one) => one.y === FOOT)).toBe(true)
   })
 
   it('stands a extent on nothing, whatever the run it holds comes to', () => {
@@ -129,18 +129,18 @@ describe('the curve as it is drawn', () => {
   it('draws nothing on the foot under every run', () => {
     for (const run of [[0, 0, 0], [0, 20, 5], [40, 45, 41]]) {
       const one = curve(run)
-      const spots = spotsOf(one, extentOf(one))
+      const points = pointsOf(one, extentOf(one))
       for (const [at, value] of run.entries()) {
-        if (value === 0) expect(spots[at]?.y).toBe(FOOT)
-        expect(spots[at]?.y).toBeLessThanOrEqual(FOOT)
+        if (value === 0) expect(points[at]?.y).toBe(FOOT)
+        expect(points[at]?.y).toBeLessThanOrEqual(FOOT)
       }
     }
   })
 
   it('is one line through every place', () => {
-    const spots = spotsOf(curve([0, 0.5, 1]), { least: 0, most: 1 })
-    expect(lineOf(spots).startsWith('M')).toBe(true)
-    expect(lineOf(spots).split('L')).toHaveLength(3)
+    const points = pointsOf(curve([0, 0.5, 1]), { least: 0, most: 1 })
+    expect(lineOf(points).startsWith('M')).toBe(true)
+    expect(lineOf(points).split('L')).toHaveLength(3)
   })
 
   it('is nothing at all where the curve holds no place', () => {
@@ -151,17 +151,17 @@ describe('the curve as it is drawn', () => {
 describe('the stretch a budget does not get through', () => {
   it('is a line of its own over the places the budget falls short at', () => {
     const one = curve([0, 0.4, 0.7, 1], [true, false, false, true])
-    expect(shortOf(one, spotsOf(one, extentOf(one))).startsWith('M')).toBe(true)
+    expect(shortOf(one, pointsOf(one, extentOf(one))).startsWith('M')).toBe(true)
   })
 
   it('is nothing where the budget gets through all of it', () => {
     const one = curve([0, 0.4, 1])
-    expect(shortOf(one, spotsOf(one, extentOf(one)))).toBe('')
+    expect(shortOf(one, pointsOf(one, extentOf(one)))).toBe('')
   })
 
   it('is nothing where it falls short at one place alone, which draws no line', () => {
     const one = curve([0, 0.4, 1], [true, false, true])
-    expect(shortOf(one, spotsOf(one, extentOf(one)))).toBe('')
+    expect(shortOf(one, pointsOf(one, extentOf(one)))).toBe('')
   })
 })
 
@@ -176,10 +176,10 @@ describe('the place a pointer stands over', () => {
     expect(placeUnder(WIDE, 25)).toBe(24)
   })
 
-  it('reads back the place a spot was drawn at', () => {
+  it('reads back the place a point was drawn at', () => {
     const one = curve([0, 0.25, 0.5, 0.75, 1])
-    const spots = spotsOf(one, extentOf(one))
-    spots.forEach((spot, at) => expect(placeUnder(spot.x, spots.length)).toBe(at))
+    const points = pointsOf(one, extentOf(one))
+    points.forEach((point, at) => expect(placeUnder(point.x, points.length)).toBe(at))
   })
 
   it('is the first place of a grid holding one', () => {
@@ -281,7 +281,7 @@ describe('where a keystroke takes the knob', () => {
 
 const mark = (key: string, x: number, y: number, text = key): Mark => ({
   key,
-  spot: { x, y },
+  point: { x, y },
   text,
 })
 
@@ -317,11 +317,11 @@ describe('the bubble over the knob', () => {
   })
 
   it.each([
-    { where: 'the left edge', spot: { x: LEFT, y: 120 }, back: '0%' },
-    { where: 'the middle', spot: { x: WIDE / 2, y: 120 }, back: '-50%' },
-    { where: 'the right edge', spot: { x: RIGHT, y: 120 }, back: '-100%' },
-  ])('is pulled back inside the picture at $where', ({ spot, back }) => {
-    const callout = calloutOf(spot)
+    { where: 'the left edge', point: { x: LEFT, y: 120 }, back: '0%' },
+    { where: 'the middle', point: { x: WIDE / 2, y: 120 }, back: '-50%' },
+    { where: 'the right edge', point: { x: RIGHT, y: 120 }, back: '-100%' },
+  ])('is pulled back inside the picture at $where', ({ point, back }) => {
+    const callout = calloutOf(point)
 
     expect(callout.at.translate).toBe(`${back} -100%`)
     expect(inside(callout.box)).toBe(true)
@@ -381,12 +381,12 @@ describe('the names of the marks that fit', () => {
   })
 
   it.each([
-    { where: 'the left edge', spot: { x: LEFT, y: 100 } },
-    { where: 'the right edge', spot: { x: RIGHT, y: 100 } },
-    { where: 'the top', spot: { x: WIDE / 2, y: TOP } },
-    { where: 'the foot', spot: { x: WIDE / 2, y: FOOT } },
-  ])('keeps the room a name takes at $where inside the picture', ({ spot }) => {
-    const names = labelsOf([mark('suggested', spot.x, spot.y)], null)
+    { where: 'the left edge', point: { x: LEFT, y: 100 } },
+    { where: 'the right edge', point: { x: RIGHT, y: 100 } },
+    { where: 'the top', point: { x: WIDE / 2, y: TOP } },
+    { where: 'the foot', point: { x: WIDE / 2, y: FOOT } },
+  ])('keeps the room a name takes at $where inside the picture', ({ point }) => {
+    const names = labelsOf([mark('suggested', point.x, point.y)], null)
 
     expect(names).toHaveLength(1)
     expect(inside(names[0]!.box)).toBe(true)
@@ -397,7 +397,7 @@ describe('the names of the marks that fit', () => {
 const said = (value: number): string => String(value)
 
 /** A curve drawn well clear of the left edge, where no number is read. */
-const clear: readonly Spot[] = [
+const clear: readonly Point[] = [
   { x: 300, y: TOP },
   { x: RIGHT, y: FOOT },
 ]

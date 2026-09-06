@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PresetTab from './PresetTab.vue'
-import { NOWHERE, type Curve, type Point } from './core'
+import { NOWHERE, type Curve, type DataPoint } from './core'
 import { clearing } from './curve'
 import { FOOT } from './plot'
 import { drawn, heights, point, tabAt } from './drawn'
@@ -296,7 +296,7 @@ describe('what a day cannot reach', () => {
   const bought = (tab: ReturnType<typeof mount>) =>
     tab.findAll('[data-control="bought"]').map((one) => one.text())
 
-  const dated = (over: Partial<Point> = {}) =>
+  const dated = (over: Partial<DataPoint> = {}) =>
     drawn(
       {
         goal: 'date',
