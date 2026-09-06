@@ -129,6 +129,7 @@ func (u Read) Execute(ctx context.Context, v domain.Vault, path string) (Content
 	doc, err := markdown.Open(raw)
 	if err != nil {
 		out.Outcome = Unreadable
+		//nolint:nilerr // a file that will not read is this file's outcome, not the caller's error
 		return out, nil
 	}
 	out.Body = markdown.Normalised(doc.Body())

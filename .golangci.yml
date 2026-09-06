@@ -168,46 +168,6 @@ linters:
         text: Error return value is not checked
         linters: [errcheck]
 
-      # A walk's callback answers nil to go on walking, not to say that nothing
-      # went wrong. What it could not read is carried out in the value the walk
-      # builds — a count short, a shape short of a folder.
-      #
-      # The walk in the vault's folder shape is excused at the return itself.
-      # A path names where a line stands today, so moving that line to another
-      # file turns the excuse off and the split fails lint. Every rule keyed to
-      # a path here covers a single line and carries the same fault; a
-      # `//nolint` keys to the construct, and goes where the construct goes.
-      - path: (^|/)internal/adapter/embed/onnx/embedder\.go$
-        linters: [nilerr]
-
-      # A file that will not read is that file's outcome and not the caller's
-      # error: Missing, NotANote, NotText, Unreadable, a theme with no file, a
-      # record naming nobody, or one more on a batch's Unreadable count. The
-      # caller is told what happened and goes on to the next file.
-      - path: (^|/)(usecase/(cards/read|note/read|flashcards/presets|source/extract|source/proofread_transcript)|internal/adapter/theme/service)\.go$
-        linters: [nilerr]
-
-      # A comparison nobody got an answer out of, and a folder whose parent
-      # nothing may look at. Only a context that ended excuses the first, and
-      # the second is the top of the volume by definition.
-      - path: (^|/)(usecase/embedders/open|internal/adapter/trash/trash_linux)\.go$
-        linters: [nilerr]
-
-      # Work nobody is waiting for runs under a life of its own, not under the
-      # request that set it going: the passes behind a vault under `o.under`,
-      # a page drawn ahead under `a.behind()`, a proofreading under
-      # `t.context()`. Handing it the caller's context is how a scan dies
-      # because the page that asked for a count was closed. The proofreading is
-      # excused at its goroutine, for the reason written above the walk.
-      - path: (^|/)adapter/window/(flashcards/reading|editor/(serve|showing|viewer))\.go$
-        linters: [contextcheck]
-
-      # A close is what runs when the context is already over, so it carries one
-      # of its own with a bound. A readiness a person is shown in a terminal is
-      # a question about this machine, and asks nothing that can be waited for.
-      - path: (^|/)(cmd/(numen/main|numen-cli/deps)|internal/agents/serve)\.go$
-        linters: [contextcheck]
-
       # The four statements a cut prepares are closed by the `defer w.close()`
       # of whoever prepared them and on the way out of preparing them, through
       # a `**sql.Stmt` sqlclosecheck cannot follow. The rows a wipe reads are

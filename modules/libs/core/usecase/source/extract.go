@@ -425,6 +425,7 @@ func (u Extract) source(
 	doc, from, err := u.text(ctx, ref, raw, hash)
 	if err != nil {
 		res.Unreadable++
+		//nolint:nilerr // one book nobody could read is one more on the batch's count
 		return nil
 	}
 

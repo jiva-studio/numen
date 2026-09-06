@@ -205,6 +205,7 @@ func (a *API) Page(w http.ResponseWriter, r *http.Request, path, page string) {
 		refuse(w, err)
 		return
 	}
+	//nolint:contextcheck // the page drawn ahead is nobody's request, and runs under a.behind()
 	a.readAhead(reader, key)
 
 	w.Header().Set("Content-Type", "image/jpeg")

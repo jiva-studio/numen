@@ -300,6 +300,7 @@ func closing(
 	retry func(),
 ) bool {
 	s.hide()
+	//nolint:contextcheck // the settling runs when the caller's context is already over, under a bound of its own
 	if g.wait() {
 		return true
 	}

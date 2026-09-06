@@ -325,6 +325,7 @@ func (u ProofreadTranscript) taken(ctx context.Context, store port.DerivedStore,
 	}
 	var stood putting
 	if err := json.Unmarshal(raw, &stood); err != nil {
+		//nolint:nilerr // a record nothing here can read names nobody
 		return putting{}, nil
 	}
 	return stood, nil

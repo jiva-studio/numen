@@ -125,7 +125,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Window:    &wire.Window{Named: wire.Editor, Tasking: tasks},
 		Wrote:     func() { raise(wake.notes) },
 		Readers:   cfg.VaultReaders(),
-		Viewer:    keepingDrawings(cfg.PageRenderer()),
+		Viewer:    keepingDrawings(cfg.PageRenderer()), //nolint:contextcheck // a document stays open for the window, not for the request that opened it
 		Highlight: &highlighting,
 		Notes: Notes{
 			Queries: db.Queries(),
@@ -246,6 +246,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 
 	// Reading every file again is what this launch was asked for, and is not
 	// carried to a vault opened later.
+	//nolint:contextcheck // the passes behind a vault run under o.under, for as long as the window stands
 	if err := opened.arrive(first, cfg.RebuildIndex); err != nil {
 		_ = closeEmbedder()
 		_ = db.Close()

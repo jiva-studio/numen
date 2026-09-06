@@ -106,6 +106,7 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 	if opts.Announcing {
 		gone, err := Announce(opts.Config, endpoint.URL, secret)
 		if err != nil {
+			//nolint:contextcheck // an endpoint taken down again is closed whatever became of the context it opened under
 			endpoint.Close(context.Background())
 			return nil, err
 		}
@@ -136,6 +137,7 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 	}
 
 	started := served.Agent
+	//nolint:contextcheck // a close runs when the context is already over, so it carries one of its own with a bound
 	served.close = func() error {
 		forget()
 		// The agents this window started go first: each is in a process group

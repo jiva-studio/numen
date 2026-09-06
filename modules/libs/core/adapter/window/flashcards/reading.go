@@ -106,6 +106,7 @@ func (a *API) reading(ctx context.Context, v domain.Vault) (underway bool, faile
 	if read == nil {
 		return running, failed
 	}
+	//nolint:contextcheck // a vault is read for the life of the window, under behind, not under the count that asked
 	go a.walk(behind, read, v, a.carries(ctx, v))
 	return true, ""
 }

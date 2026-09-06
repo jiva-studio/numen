@@ -116,6 +116,7 @@ func (s *Service) ReadTheme(
 ) (*connect.Response[v1.ReadThemeResponse], error) {
 	text, err := s.Catalogue.Text(req.Msg.GetName())
 	if err != nil {
+		//nolint:nilerr // a name with no file is no theme, and no CSS is the answer to it
 		return connect.NewResponse(&v1.ReadThemeResponse{}), nil
 	}
 	return connect.NewResponse(&v1.ReadThemeResponse{Css: text}), nil

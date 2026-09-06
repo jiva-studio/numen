@@ -270,6 +270,7 @@ func (u Read) looked(
 		return domain.Note{}, ref, note.NotText, nil
 	}
 	if _, err := markdown.Open(raw); err != nil {
+		//nolint:nilerr // a file that will not read is this file's outcome, not the caller's error
 		return domain.Note{}, ref, note.Unreadable, nil
 	}
 	return markdown.Parse(ref, raw), ref, note.Ok, nil

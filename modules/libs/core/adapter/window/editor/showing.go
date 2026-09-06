@@ -80,9 +80,10 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	o.leave()
 	o.forget()
 
+	//nolint:contextcheck // the passes behind a vault run under o.under, for as long as the window stands
 	err := o.arrive(v, false)
 	if err != nil {
-		if back := o.arrive(was, false); back != nil {
+		if back := o.arrive(was, false); back != nil { //nolint:contextcheck // and so do the ones behind the vault it goes back to
 			// The window is standing on nothing: it says so, and the door on
 			// writes stays shut.
 			o.API.show(domain.Vault{})

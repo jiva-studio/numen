@@ -125,7 +125,7 @@ func agreeing(ctx context.Context, first, second *embedding.Embedder) error {
 	// stopped is owed no answer.
 	unchecked := func(why error) error {
 		if ctx.Err() != nil {
-			return nil
+			return nil //nolint:nilerr // a run somebody stopped is owed no answer
 		}
 		return fmt.Errorf("%s and %s were not compared as one model: %w",
 			first.Model(), second.Model(), why)

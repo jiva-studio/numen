@@ -89,6 +89,7 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 			Recognise: func(
 				ctx context.Context, v domain.Vault, fetching func(),
 			) (cli.Recognise, error) {
+				//nolint:contextcheck // whether a model is on this machine is asked of the disk, and waits for nothing
 				if !cfg.RecogniserReady() {
 					fetching()
 				}
@@ -120,6 +121,7 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 			Transcribe: func(
 				ctx context.Context, v domain.Vault, fetching func(),
 			) (cli.Transcribe, error) {
+				//nolint:contextcheck // whether a model is on this machine is asked of the disk, and waits for nothing
 				if !cfg.TranscriberReady() {
 					fetching()
 				}

@@ -464,7 +464,9 @@ func weighed(dir string, files []string, sizes map[string]int64) int64 {
 	var sum int64
 	_ = filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() {
-			return nil
+			// A folder the walk could not read weighs nothing, and the sum
+			// carries that as a count short of what is on disk.
+			return nil //nolint:nilerr // what could not be read is carried out in the sum
 		}
 		was, ours := wanted[strings.TrimSuffix(filepath.Base(path), ".incomplete")]
 		if !ours {

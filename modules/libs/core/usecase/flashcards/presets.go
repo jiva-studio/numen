@@ -344,6 +344,7 @@ func (u Presets) opened(ctx context.Context, v domain.Vault, path string) (Prese
 	}
 	if _, err := markdown.Open(raw); err != nil {
 		out.Outcome = note.Unreadable
+		//nolint:nilerr // a file that will not read is this file's outcome, not the caller's error
 		return out, nil
 	}
 
