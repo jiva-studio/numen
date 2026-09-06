@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
 
-// errNoWay is a search that named no way to ask it.
-var errNoWay = errors.New("a search says how it is asked")
+// errNoMode is a search that named no mode to ask it in.
+var errNoMode = errors.New("a search says how it is asked")
 
 // errTooManyPaths is a filter naming more paths than are answered at once. It
 // is refused rather than answered in part: an answer cut to fit is one a caller
@@ -115,13 +115,13 @@ func (a *API) SearchPassages(
 		return connect.NewResponse(&v1.SearchPassagesResponse{}), nil
 	}
 
-	way, named := wayOf(r.Msg.GetWay())
+	mode, named := modeOf(r.Msg.GetMode())
 	if !named {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errNoWay)
+		return nil, connect.NewError(connect.CodeInvalidArgument, errNoMode)
 	}
 
 	found, err := a.Finds.Execute(ctx, showing,
-		query, search.Typing(way, atMost(r.Msg.GetLimit())))
+		query, search.Typing(mode, atMost(r.Msg.GetLimit())))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -167,20 +167,20 @@ func (a *API) SearchPassages(
 	return connect.NewResponse(out), nil
 }
 
-// wayOf is the way the client named, as the use case names it, and whether it
+// modeOf is the mode the client named, as the use case names it, and whether it
 // named one at all.
-func wayOf(way v1.Way) (search.SearchWay, bool) {
-	switch way {
-	case v1.Way_WAY_WORDS:
+func modeOf(mode v1.SearchMode) (search.Mode, bool) {
+	switch mode {
+	case v1.SearchMode_SEARCH_MODE_WORDS:
 		return search.Lexical, true
-	case v1.Way_WAY_MEANING:
+	case v1.SearchMode_SEARCH_MODE_MEANING:
 		return search.Dense, true
-	case v1.Way_WAY_NAMES:
+	case v1.SearchMode_SEARCH_MODE_NAMES:
 		return search.ByName, true
-	case v1.Way_WAY_EVERY:
-		return search.EveryWay, true
+	case v1.SearchMode_SEARCH_MODE_HYBRID:
+		return search.Hybrid, true
 	default:
-		return search.EveryWay, false
+		return search.Hybrid, false
 	}
 }
 

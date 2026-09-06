@@ -324,7 +324,7 @@ func TestAWindowStandingOnNothingSearchesNothing(t *testing.T) {
 	}
 
 	found, err := f.vault.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
-		Query: "one", Way: v1.Way_WAY_EVERY,
+		Query: "one", Mode: v1.SearchMode_SEARCH_MODE_HYBRID,
 	}))
 	if err != nil {
 		t.Fatalf("the vault cannot be searched: %v", err)

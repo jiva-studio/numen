@@ -105,7 +105,7 @@ func TestAPassageSaysWhichOfFourItsNoteIs(t *testing.T) {
 	})
 
 	answer, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
-		Query: "reversible", Way: v1.Way_WAY_WORDS,
+		Query: "reversible", Mode: v1.SearchMode_SEARCH_MODE_WORDS,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -133,7 +133,7 @@ func TestAPassageSaysWhatTheVaultHoldsAtItsPath(t *testing.T) {
 	kinds := map[string]v1.SourceKind{}
 	for range 500 {
 		answer, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
-			Query: "book", Way: v1.Way_WAY_WORDS,
+			Query: "book", Mode: v1.SearchMode_SEARCH_MODE_WORDS,
 		}))
 		if err != nil {
 			t.Fatal(err)
@@ -159,7 +159,7 @@ func TestAPassageSaysWhatTheVaultHoldsAtItsPath(t *testing.T) {
 	}
 }
 
-func TestEachWayIsAskedByItself(t *testing.T) {
+func TestEachModeIsAskedByItself(t *testing.T) {
 	client, _ := opened(t, map[string]string{
 		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n\nNo engine beats a reversible engine.\n",
 	})
@@ -168,7 +168,7 @@ func TestEachWayIsAskedByItself(t *testing.T) {
 	// the words half answers on its own. Which is which is the handler's to get
 	// right: both halves answer with the same shape.
 	words, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
-		Query: "reversible", Way: v1.Way_WAY_WORDS,
+		Query: "reversible", Mode: v1.SearchMode_SEARCH_MODE_WORDS,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -178,7 +178,7 @@ func TestEachWayIsAskedByItself(t *testing.T) {
 	}
 
 	meaning, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
-		Query: "reversible", Way: v1.Way_WAY_MEANING,
+		Query: "reversible", Mode: v1.SearchMode_SEARCH_MODE_MEANING,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -194,7 +194,7 @@ func TestAPassageSaysWhichNoteItCameOutOf(t *testing.T) {
 	})
 
 	answer, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
-		Query: "reversible", Way: v1.Way_WAY_WORDS,
+		Query: "reversible", Mode: v1.SearchMode_SEARCH_MODE_WORDS,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -224,7 +224,7 @@ func TestAPassageSaysWhereInItsSourceItStands(t *testing.T) {
 	})
 
 	answer, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
-		Query: "reversible", Way: v1.Way_WAY_WORDS,
+		Query: "reversible", Mode: v1.SearchMode_SEARCH_MODE_WORDS,
 	}))
 	if err != nil {
 		t.Fatal(err)

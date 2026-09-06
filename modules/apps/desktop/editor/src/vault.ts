@@ -19,6 +19,7 @@ import {
   NoteType as NoteTypes,
   Presence as Presences,
   Role as Roles,
+  SearchMode as Modes,
   SearchService,
   Seat as Seats,
   SettingsService,
@@ -28,7 +29,6 @@ import {
   VaultService,
   VaultsRefusal,
   VaultsService,
-  Way as Ways,
   WindowService,
 } from '@numen/protocol'
 import type {
@@ -452,9 +452,9 @@ export const core: Core & SearchDeps & CommandsDeps = {
       type: noteType(one.type),
     }))
   },
-  /** The text the vault holds that answers what is typed, asked one way. */
-  search: async (query, way, limit) => {
-    const answer = await finding.searchPassages({ query, limit, way: ways[way] })
+  /** The text the vault holds that answers what is typed, asked in one mode. */
+  search: async (query, mode, limit) => {
+    const answer = await finding.searchPassages({ query, limit, mode: modes[mode] })
     return answer.found.map((one) => ({
       path: one.path,
       title: one.note?.title ?? '',
@@ -673,18 +673,18 @@ const writes: Record<NamedBy, boolean> = {
 
 /**
  * How a search is asked, in the words the window uses. Keyed by the schema, so
- * a way added to it has to be given a word here before this compiles.
+ * a mode added to it has to be given a word here before this compiles.
  */
-const asked: Record<Ways, SearchMode | null> = {
-  [Ways.UNSPECIFIED]: null,
-  [Ways.EVERY]: 'fused',
-  [Ways.WORDS]: 'words',
-  [Ways.MEANING]: 'meaning',
-  [Ways.NAMES]: 'names',
+const asked: Record<Modes, SearchMode | null> = {
+  [Modes.UNSPECIFIED]: null,
+  [Modes.HYBRID]: 'hybrid',
+  [Modes.WORDS]: 'words',
+  [Modes.MEANING]: 'meaning',
+  [Modes.NAMES]: 'names',
 }
 
 /** How a search is asked, as the schema names it. */
-const ways = namesOf<SearchMode, Ways>(asked)
+const modes = namesOf<SearchMode, Modes>(asked)
 
 /** A run of text, kept as the plain pair the window carries it as. */
 const run = (span: { from: number; to: number }) => ({ from: span.from, to: span.to })

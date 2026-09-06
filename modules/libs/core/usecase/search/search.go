@@ -307,13 +307,13 @@ func proseOpens(raw string) int {
 	return len(raw) - len(doc.Body())
 }
 
-// SearchWay is how a search is asked. Each way is an order of its own, and a
-// search asked every way fuses them into one.
-type SearchWay int
+// Mode is how a search is asked. Each mode is an order of its own, and a
+// hybrid search fuses them into one.
+type Mode int
 
 const (
-	// EveryWay: all of them, fused into one ranking.
-	EveryWay SearchWay = iota
+	// Hybrid: all of them, fused into one ranking.
+	Hybrid Mode = iota
 	// Lexical: what is written, matched as words.
 	Lexical
 	// Dense: what the query means, against the vectors the index holds.
@@ -322,22 +322,22 @@ const (
 	ByName
 )
 
-// Typing is the parameters for a search asked the way named, while a person is
-// still typing it: the last word is matched by its opening.
+// Typing is the parameters for a search asked in the mode named, while a person
+// is still typing it: the last word is matched by its opening.
 //
-// A way that is not wanted keeps no candidates, which is how a way is told not
-// to run. Every way but the one named is silenced, so a caller drawing the ways
+// A mode that is not wanted keeps no candidates, which is how one is told not
+// to run. Every mode but the one named is silenced, so a caller drawing them
 // apart is shown one of them and not one and a half.
-func Typing(way SearchWay, limit int) Parameters {
+func Typing(mode Mode, limit int) Parameters {
 	p := Parameters{Limit: limit, Growing: true}.filled()
-	switch way {
+	switch mode {
 	case Lexical:
 		p.Dense, p.Named = 0, 0
 	case Dense:
 		p.Lexical, p.Named = 0, 0
 	case ByName:
 		p.Lexical, p.Dense = 0, 0
-	case EveryWay:
+	case Hybrid:
 	}
 	return p
 }

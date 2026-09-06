@@ -66,7 +66,7 @@ A word means one thing inside its context, and the same word in two contexts is 
 | refresh | Bringing named notes up to date. | |
 | group | What a scan writes in: one transaction's worth. | |
 | searchable | A vault whose notes are read, whose books are read, and whose chunks have their vectors. The three are one pass in one order. | |
-| way | How a search is asked: `words`, `meaning`, `names`, or every way fused into one ranking. In the core the four are `Lexical`, `Dense`, `ByName` and `EveryWay`. | |
+| search mode | How a search is asked: `words`, `meaning`, `names`, or all three fused into one ranking, which the retrieval literature calls `hybrid`. In the core the four are `Lexical`, `Dense`, `ByName` and `Hybrid`. On the wire the enum is `SearchMode`, because the theme's `Mode` already holds that name in the package. | |
 | vector | What a model made of one chunk's text. Kept by its text and its recipe. | |
 | kept | Held past the run that made it, and claimed again by what it was made from. | |
 | recipe | Everything that decides what a thing made from text is: for a cut, the reader and the sizes; for a vector, where it was made, which model, how wide, where the text was cut off and how it is kept. | |

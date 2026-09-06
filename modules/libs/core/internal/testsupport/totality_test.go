@@ -32,6 +32,7 @@ var walked = map[protoreflect.FullName]string{
 	"numen.v1.Refusal":       "adapter/mcp: worded by said",
 	"numen.v1.Role":          "adapter/window/editor: read by roleOf",
 	"numen.v1.Rule":          "internal/wire: round trip through RuleIn and RuleOf",
+	"numen.v1.SearchMode":    "adapter/window/editor: read by modeOf",
 	"numen.v1.Seat":          "adapter/window/editor: written by seatOf",
 	"numen.v1.Shelf":         "internal/adapter/theme: written by shelved",
 	"numen.v1.SourceKind":    "adapter/window/editor: written by kindOf",
@@ -39,7 +40,6 @@ var walked = map[protoreflect.FullName]string{
 	"numen.v1.StopReason":    "internal/wire: written by StopReasonOf",
 	"numen.v1.Unit":          "internal/wire: written by unitOf",
 	"numen.v1.VaultsRefusal": "adapter/window/editor: written by vaultRefusedBy",
-	"numen.v1.Way":           "adapter/window/editor: read by wayOf",
 }
 
 // TestEveryEnumOfTheSchemaIsWalked. An enum nothing walks is an enum whose next

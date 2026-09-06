@@ -581,7 +581,7 @@ func TestAQuestionAboutBooksIsAnsweredFromBooks(t *testing.T) {
 	}
 }
 
-func TestEveryWayIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
+func TestEveryModeIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
 	// One half left unfiltered answers about the wrong kind, and the fused
 	// order carries it: a way that ignores the kind is a half that undoes it.
 	ctx := t.Context()

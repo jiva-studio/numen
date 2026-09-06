@@ -19,9 +19,9 @@ import (
 // The values are walked from the schema, so a value added there is a test that
 // fails and not a field that quietly carries the unspecified value.
 
-func TestEveryWayIsRead(t *testing.T) {
-	testsupport.Handled(t, func(way v1.Way) bool {
-		_, named := wayOf(way)
+func TestEverySearchModeIsRead(t *testing.T) {
+	testsupport.Handled(t, func(mode v1.SearchMode) bool {
+		_, named := modeOf(mode)
 		return named
 	})
 }

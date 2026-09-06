@@ -27,66 +27,69 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Way is how a search is asked. Each way is an order of its own, and a search
-// asked every way fuses them into one.
-type Way int32
+// SearchMode is how a search is asked. Each mode is an order of its own, and a
+// hybrid search fuses them into one.
+//
+// The theme's `Mode` already holds that name in this package, so the search's
+// own carries what it is a mode of.
+type SearchMode int32
 
 const (
-	Way_WAY_UNSPECIFIED Way = 0
+	SearchMode_SEARCH_MODE_UNSPECIFIED SearchMode = 0
 	// The words typed, matched as words.
-	Way_WAY_WORDS Way = 1
+	SearchMode_SEARCH_MODE_WORDS SearchMode = 1
 	// What the words mean, matched against the vectors the index holds. A vault
 	// nothing has embedded answers with nothing.
-	Way_WAY_MEANING Way = 2
+	SearchMode_SEARCH_MODE_MEANING SearchMode = 2
 	// The names of the sections a source divides into. A hit is the section, and
 	// it answers at its own beginning.
-	Way_WAY_NAMES Way = 3
+	SearchMode_SEARCH_MODE_NAMES SearchMode = 3
 	// Every one of them, fused into one ranking.
-	Way_WAY_EVERY Way = 4
+	SearchMode_SEARCH_MODE_HYBRID SearchMode = 4
 )
 
-// Enum value maps for Way.
+// Enum value maps for SearchMode.
 var (
-	Way_name = map[int32]string{
-		0: "WAY_UNSPECIFIED",
-		1: "WAY_WORDS",
-		2: "WAY_MEANING",
-		3: "WAY_NAMES",
-		4: "WAY_EVERY",
+	SearchMode_name = map[int32]string{
+		0: "SEARCH_MODE_UNSPECIFIED",
+		1: "SEARCH_MODE_WORDS",
+		2: "SEARCH_MODE_MEANING",
+		3: "SEARCH_MODE_NAMES",
+		4: "SEARCH_MODE_HYBRID",
 	}
-	Way_value = map[string]int32{
-		"WAY_UNSPECIFIED": 0,
-		"WAY_WORDS":       1,
-		"WAY_MEANING":     2,
-		"WAY_NAMES":       3,
-		"WAY_EVERY":       4,
+	SearchMode_value = map[string]int32{
+		"SEARCH_MODE_UNSPECIFIED": 0,
+		"SEARCH_MODE_WORDS":       1,
+		"SEARCH_MODE_MEANING":     2,
+		"SEARCH_MODE_NAMES":       3,
+		"SEARCH_MODE_HYBRID":      4,
 	}
 )
 
-func (x Way) Enum() *Way {
-	p := new(Way)
+func (x SearchMode) Enum() *SearchMode {
+	p := new(SearchMode)
 	*p = x
 	return p
 }
 
-func (x Way) String() string {
+func (x SearchMode) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (Way) Descriptor() protoreflect.EnumDescriptor {
+func (SearchMode) Descriptor() protoreflect.EnumDescriptor {
 	return file_numen_v1_search_proto_enumTypes[0].Descriptor()
 }
 
-func (Way) Type() protoreflect.EnumType {
+func (SearchMode) Type() protoreflect.EnumType {
 	return &file_numen_v1_search_proto_enumTypes[0]
 }
 
-func (x Way) Number() protoreflect.EnumNumber {
+func (x SearchMode) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use Way.Descriptor instead.
-func (Way) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use SearchMode.Descriptor instead.
+func (SearchMode) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_search_proto_rawDescGZIP(), []int{0}
 }
 
@@ -273,8 +276,8 @@ type SearchPassagesRequest struct {
 	Query string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	// How many passages to answer with. Zero takes the number the vault chooses.
 	Limit int32 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
-	// How the search is asked. A request naming no way is refused.
-	Way           Way `protobuf:"varint,3,opt,name=way,proto3,enum=numen.v1.Way" json:"way,omitempty"`
+	// How the search is asked. A request naming no mode is refused.
+	Mode          SearchMode `protobuf:"varint,3,opt,name=mode,proto3,enum=numen.v1.SearchMode" json:"mode,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -323,11 +326,11 @@ func (x *SearchPassagesRequest) GetLimit() int32 {
 	return 0
 }
 
-func (x *SearchPassagesRequest) GetWay() Way {
+func (x *SearchPassagesRequest) GetMode() SearchMode {
 	if x != nil {
-		return x.Way
+		return x.Mode
 	}
-	return Way_WAY_UNSPECIFIED
+	return SearchMode_SEARCH_MODE_UNSPECIFIED
 }
 
 type SearchPassagesResponse struct {
@@ -579,11 +582,11 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x02at\x18\x03 \x03(\v2\x0e.numen.v1.SpanR\x02at\x12&\n" +
 	"\x04type\x18\x04 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04typeB\n" +
 	"\n" +
-	"\b_heading\"d\n" +
+	"\b_heading\"m\n" +
 	"\x15SearchPassagesRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x1f\n" +
-	"\x03way\x18\x03 \x01(\x0e2\r.numen.v1.WayR\x03way\"A\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12(\n" +
+	"\x04mode\x18\x03 \x01(\x0e2\x14.numen.v1.SearchModeR\x04mode\"A\n" +
 	"\x16SearchPassagesResponse\x12'\n" +
 	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\xb3\x02\n" +
 	"\aPassage\x12\x12\n" +
@@ -601,13 +604,14 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x05_note\"*\n" +
 	"\x04Span\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\x05R\x04from\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\x05R\x02to*X\n" +
-	"\x03Way\x12\x13\n" +
-	"\x0fWAY_UNSPECIFIED\x10\x00\x12\r\n" +
-	"\tWAY_WORDS\x10\x01\x12\x0f\n" +
-	"\vWAY_MEANING\x10\x02\x12\r\n" +
-	"\tWAY_NAMES\x10\x03\x12\r\n" +
-	"\tWAY_EVERY\x10\x042\xb0\x01\n" +
+	"\x02to\x18\x02 \x01(\x05R\x02to*\x88\x01\n" +
+	"\n" +
+	"SearchMode\x12\x1b\n" +
+	"\x17SEARCH_MODE_UNSPECIFIED\x10\x00\x12\x15\n" +
+	"\x11SEARCH_MODE_WORDS\x10\x01\x12\x17\n" +
+	"\x13SEARCH_MODE_MEANING\x10\x02\x12\x15\n" +
+	"\x11SEARCH_MODE_NAMES\x10\x03\x12\x16\n" +
+	"\x12SEARCH_MODE_HYBRID\x10\x042\xb0\x01\n" +
 	"\rSearchService\x12J\n" +
 	"\vSearchNames\x12\x1c.numen.v1.SearchNamesRequest\x1a\x1d.numen.v1.SearchNamesResponse\x12S\n" +
 	"\x0eSearchPassages\x12\x1f.numen.v1.SearchPassagesRequest\x1a .numen.v1.SearchPassagesResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
@@ -627,7 +631,7 @@ func file_numen_v1_search_proto_rawDescGZIP() []byte {
 var file_numen_v1_search_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_search_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_numen_v1_search_proto_goTypes = []any{
-	(Way)(0),                       // 0: numen.v1.Way
+	(SearchMode)(0),                // 0: numen.v1.SearchMode
 	(*SearchNamesRequest)(nil),     // 1: numen.v1.SearchNamesRequest
 	(*SearchNamesResponse)(nil),    // 2: numen.v1.SearchNamesResponse
 	(*NameMatch)(nil),              // 3: numen.v1.NameMatch
@@ -646,7 +650,7 @@ var file_numen_v1_search_proto_depIdxs = []int32{
 	9,  // 2: numen.v1.NameMatch.heading:type_name -> numen.v1.Heading
 	7,  // 3: numen.v1.NameMatch.at:type_name -> numen.v1.Span
 	10, // 4: numen.v1.NameMatch.type:type_name -> numen.v1.NoteType
-	0,  // 5: numen.v1.SearchPassagesRequest.way:type_name -> numen.v1.Way
+	0,  // 5: numen.v1.SearchPassagesRequest.mode:type_name -> numen.v1.SearchMode
 	6,  // 6: numen.v1.SearchPassagesResponse.found:type_name -> numen.v1.Passage
 	8,  // 7: numen.v1.Passage.note:type_name -> numen.v1.Note
 	7,  // 8: numen.v1.Passage.at:type_name -> numen.v1.Span

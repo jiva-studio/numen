@@ -22,7 +22,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/search.proto.
  */
 export const file_numen_v1_search: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIjIKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSI5ChNTZWFyY2hOYW1lc1Jlc3BvbnNlEiIKBWZvdW5kGAEgAygLMhMubnVtZW4udjEuTmFtZU1hdGNoIpwBCglOYW1lTWF0Y2gSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJwoHaGVhZGluZxgCIAEoCzIRLm51bWVuLnYxLkhlYWRpbmdIAIgBARIaCgJhdBgDIAMoCzIOLm51bWVuLnYxLlNwYW4SIAoEdHlwZRgEIAEoDjISLm51bWVuLnYxLk5vdGVUeXBlQgoKCF9oZWFkaW5nIlEKFVNlYXJjaFBhc3NhZ2VzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIaCgN3YXkYAyABKA4yDS5udW1lbi52MS5XYXkiOgoWU2VhcmNoUGFzc2FnZXNSZXNwb25zZRIgCgVmb3VuZBgBIAMoCzIRLm51bWVuLnYxLlBhc3NhZ2Ui8gEKB1Bhc3NhZ2USDAoEcGF0aBgBIAEoCRIhCgRub3RlGAIgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBEgwKBHRleHQYAyABKAkSGgoCYXQYBCADKAsyDi5udW1lbi52MS5TcGFuEhAKCGxvY2F0aW9uGAUgASgJEg0KBXN0YXJ0GAYgASgFEg4KBmxlbmd0aBgHIAEoBRIMCgRsaW5lGAggASgFEiAKBHR5cGUYCSABKA4yEi5udW1lbi52MS5Ob3RlVHlwZRIiCgRraW5kGAogASgOMhQubnVtZW4udjEuU291cmNlS2luZEIHCgVfbm90ZSIgCgRTcGFuEgwKBGZyb20YASABKAUSCgoCdG8YAiABKAUqWAoDV2F5EhMKD1dBWV9VTlNQRUNJRklFRBAAEg0KCVdBWV9XT1JEUxABEg8KC1dBWV9NRUFOSU5HEAISDQoJV0FZX05BTUVTEAMSDQoJV0FZX0VWRVJZEAQysAEKDVNlYXJjaFNlcnZpY2USSgoLU2VhcmNoTmFtZXMSHC5udW1lbi52MS5TZWFyY2hOYW1lc1JlcXVlc3QaHS5udW1lbi52MS5TZWFyY2hOYW1lc1Jlc3BvbnNlElMKDlNlYXJjaFBhc3NhZ2VzEh8ubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXF1ZXN0GiAubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_file, file_numen_v1_note, file_numen_v1_shared]);
+  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIjIKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSI5ChNTZWFyY2hOYW1lc1Jlc3BvbnNlEiIKBWZvdW5kGAEgAygLMhMubnVtZW4udjEuTmFtZU1hdGNoIpwBCglOYW1lTWF0Y2gSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJwoHaGVhZGluZxgCIAEoCzIRLm51bWVuLnYxLkhlYWRpbmdIAIgBARIaCgJhdBgDIAMoCzIOLm51bWVuLnYxLlNwYW4SIAoEdHlwZRgEIAEoDjISLm51bWVuLnYxLk5vdGVUeXBlQgoKCF9oZWFkaW5nIlkKFVNlYXJjaFBhc3NhZ2VzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIiCgRtb2RlGAMgASgOMhQubnVtZW4udjEuU2VhcmNoTW9kZSI6ChZTZWFyY2hQYXNzYWdlc1Jlc3BvbnNlEiAKBWZvdW5kGAEgAygLMhEubnVtZW4udjEuUGFzc2FnZSLyAQoHUGFzc2FnZRIMCgRwYXRoGAEgASgJEiEKBG5vdGUYAiABKAsyDi5udW1lbi52MS5Ob3RlSACIAQESDAoEdGV4dBgDIAEoCRIaCgJhdBgEIAMoCzIOLm51bWVuLnYxLlNwYW4SEAoIbG9jYXRpb24YBSABKAkSDQoFc3RhcnQYBiABKAUSDgoGbGVuZ3RoGAcgASgFEgwKBGxpbmUYCCABKAUSIAoEdHlwZRgJIAEoDjISLm51bWVuLnYxLk5vdGVUeXBlEiIKBGtpbmQYCiABKA4yFC5udW1lbi52MS5Tb3VyY2VLaW5kQgcKBV9ub3RlIiAKBFNwYW4SDAoEZnJvbRgBIAEoBRIKCgJ0bxgCIAEoBSqIAQoKU2VhcmNoTW9kZRIbChdTRUFSQ0hfTU9ERV9VTlNQRUNJRklFRBAAEhUKEVNFQVJDSF9NT0RFX1dPUkRTEAESFwoTU0VBUkNIX01PREVfTUVBTklORxACEhUKEVNFQVJDSF9NT0RFX05BTUVTEAMSFgoSU0VBUkNIX01PREVfSFlCUklEEAQysAEKDVNlYXJjaFNlcnZpY2USSgoLU2VhcmNoTmFtZXMSHC5udW1lbi52MS5TZWFyY2hOYW1lc1JlcXVlc3QaHS5udW1lbi52MS5TZWFyY2hOYW1lc1Jlc3BvbnNlElMKDlNlYXJjaFBhc3NhZ2VzEh8ubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXF1ZXN0GiAubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_file, file_numen_v1_note, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.SearchNamesRequest
@@ -133,11 +133,11 @@ export type SearchPassagesRequest = Message<"numen.v1.SearchPassagesRequest"> & 
   limit: number;
 
   /**
-   * How the search is asked. A request naming no way is refused.
+   * How the search is asked. A request naming no mode is refused.
    *
-   * @generated from field: numen.v1.Way way = 3;
+   * @generated from field: numen.v1.SearchMode mode = 3;
    */
-  way: Way;
+  mode: SearchMode;
 };
 
 /**
@@ -281,21 +281,24 @@ export const SpanSchema: GenMessage<Span> = /*@__PURE__*/
   messageDesc(file_numen_v1_search, 6);
 
 /**
- * Way is how a search is asked. Each way is an order of its own, and a search
- * asked every way fuses them into one.
+ * SearchMode is how a search is asked. Each mode is an order of its own, and a
+ * hybrid search fuses them into one.
  *
- * @generated from enum numen.v1.Way
+ * The theme's `Mode` already holds that name in this package, so the search's
+ * own carries what it is a mode of.
+ *
+ * @generated from enum numen.v1.SearchMode
  */
-export enum Way {
+export enum SearchMode {
   /**
-   * @generated from enum value: WAY_UNSPECIFIED = 0;
+   * @generated from enum value: SEARCH_MODE_UNSPECIFIED = 0;
    */
   UNSPECIFIED = 0,
 
   /**
    * The words typed, matched as words.
    *
-   * @generated from enum value: WAY_WORDS = 1;
+   * @generated from enum value: SEARCH_MODE_WORDS = 1;
    */
   WORDS = 1,
 
@@ -303,7 +306,7 @@ export enum Way {
    * What the words mean, matched against the vectors the index holds. A vault
    * nothing has embedded answers with nothing.
    *
-   * @generated from enum value: WAY_MEANING = 2;
+   * @generated from enum value: SEARCH_MODE_MEANING = 2;
    */
   MEANING = 2,
 
@@ -311,22 +314,22 @@ export enum Way {
    * The names of the sections a source divides into. A hit is the section, and
    * it answers at its own beginning.
    *
-   * @generated from enum value: WAY_NAMES = 3;
+   * @generated from enum value: SEARCH_MODE_NAMES = 3;
    */
   NAMES = 3,
 
   /**
    * Every one of them, fused into one ranking.
    *
-   * @generated from enum value: WAY_EVERY = 4;
+   * @generated from enum value: SEARCH_MODE_HYBRID = 4;
    */
-  EVERY = 4,
+  HYBRID = 4,
 }
 
 /**
- * Describes the enum numen.v1.Way.
+ * Describes the enum numen.v1.SearchMode.
  */
-export const WaySchema: GenEnum<Way> = /*@__PURE__*/
+export const SearchModeSchema: GenEnum<SearchMode> = /*@__PURE__*/
   enumDesc(file_numen_v1_search, 0);
 
 /**
