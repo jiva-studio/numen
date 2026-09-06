@@ -412,7 +412,7 @@ An installation naming no profile proofreads nothing, and nothing asks for a key
 | `max_edit_distance` | how far a correction may move a line's letters and still be a correction: the Levenshtein distance between what is left after spaces, punctuation, symbols, diacritics and case come off, as a share of the longer of the two. 0.30. A correction standing further apart is dropped and that line is left as it was. It stands above the profiles because it is one threshold for the installation: how far a correction may move says nothing about what it was asked for through. |
 | `profiles` | a map of name to profile. The name is what a consumer says under `proofread.with`, and it is the person's own word. |
 
-A profile is flat: every key sits at the profile's own level, and `use` says which of them apply. A key `use` does not apply to is ignored, so a profile keeps a station it is not on and the other is a word away.
+A profile is flat: every key sits at the profile's own level, and `use` says which of them apply. A key `use` does not apply to is ignored, so a profile keeps the keys of the one it is not reached through and the other is a word away.
 
 | | |
 | --- | --- |

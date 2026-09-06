@@ -15,7 +15,7 @@ A settings file that is not there is not a refusal. It is written, holding exact
 
 ## A refusal is drawn in a window
 
-The application opens one and puts in it what stopped it, the facts it holds about the state it found, and what to do about it. It writes one line to standard error as well, for a terminal and for a log, and leaves with a failing status.
+The application opens one and puts in it what stopped it, the facts it holds about the state it found, and what to do about it. It writes one line to standard error as well, for a terminal and for whatever collects a process that failed to start, and leaves with a failing status.
 
 The heading names what could not be opened: the index, or the person's own settings file, or nothing more particular than the application itself. No vault is named, because no vault is what stopped it.
 

@@ -373,7 +373,7 @@ An index that has to be held in memory to be searched is out whatever its speed.
 
 **A stored vector's type is guessed from the length of its blob.** An int8 vector of 1024 dimensions is 1024 bytes, which is also a float32 vector of 256, and the extension reads it as the latter. Both sides of a comparison name their type. A bit vector is written and matched through `vec_bit(?)` for the same reason.
 
-**A cascade does not reach a virtual table.** Deleting a source cascades to its chunks and stops there; the vector rows stay. They are deleted explicitly, by the chunk number, which is the virtual table's rowid — the same rule `notes_fts` already obeys.
+**A cascade does not reach a virtual table.** Deleting a source cascades to its chunks and stops there; the vector rows stay. They are deleted explicitly, by the chunk number, which is the virtual table's rowid — the same rule `chunks_fts` and `sections_fts` already obey.
 
 **`INSERT OR REPLACE` is not honoured by `vec0`.** It raises `UNIQUE constraint failed`, so a vector that is being replaced is deleted first.
 

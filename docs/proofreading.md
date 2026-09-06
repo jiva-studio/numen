@@ -107,7 +107,7 @@ A printed line holds its words: on a page they stay where they were printed. Spe
 
 A profile is a way of reaching a proofreader, under a name. `indexing.proofreading.profiles` is a map of name to profile, and each consumer names the profile it uses.
 
-A profile is flat: `use`, the keys of both stations and the two sizes all sit at the profile's own level. `use` says which of them apply, and a key it does not apply to is ignored.
+A profile is flat: `use`, the keys of the service and the keys of the command line, and the two sizes all sit at the profile's own level. `use` says which of them apply, and a key it does not apply to is ignored.
 
 `use` is one of two:
 
