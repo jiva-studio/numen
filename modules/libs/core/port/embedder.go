@@ -52,9 +52,13 @@ func (m EmbeddingModel) String() string {
 //
 // Where the vector was made leads it. Two places serving one name are two sets
 // of rows, and a question is asked under the recipe the index was filled with.
+//
+// How the numbers are stored is the quantisation and the scale it was applied
+// at. The scale is the grid the bytes sit on, so a scale moved makes every byte
+// already stored mean something else, and the recipe is what notices.
 func (m EmbeddingModel) Recipe() string {
-	return fmt.Sprintf("%s|%s|%d|%d|%s|%s",
-		m.From, m.Name, m.Dimensions, m.MaxTokens, m.Pooling, QuantisedInt8)
+	return fmt.Sprintf("%s|%s|%d|%d|%s|%s@%g",
+		m.From, m.Name, m.Dimensions, m.MaxTokens, m.Pooling, QuantisedInt8, Int8Scale)
 }
 
 // Embedder turns text into vectors. The core asks for it and does not know

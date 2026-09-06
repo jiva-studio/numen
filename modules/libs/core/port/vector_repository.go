@@ -11,6 +11,15 @@ import (
 // recorded because a blob does not say what it holds.
 const QuantisedInt8 = "int8"
 
+// Int8Scale is the value a stored byte of 127 stands for, and so what one unit
+// of a stored byte is worth. A vector quantised at one scale and a vector
+// quantised at another are numbers on two grids, which is why this stands in
+// the recipe and not only in the code that applies it.
+//
+// 0.4 is headroom over the largest component a unit-length vector is expected
+// to carry, not a resolution the width was fitted to.
+const Int8Scale = 0.4
+
 // Vector is one chunk's embedding, in both representations that are stored.
 //
 // Value is the rerank's copy, quantised as Kind says. Coarse is one bit per
