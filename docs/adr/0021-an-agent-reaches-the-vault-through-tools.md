@@ -55,7 +55,17 @@ The agent this window starts for the panel is a port of its own, and reaches the
 
 ### The tool surface is authored
 
-The tools are written by hand. The schema is shaped for a window — one focus, one neighbourhood, a stream of what changed. A tool surface is shaped for a model: few tools, named for what they do, described in prose the model reads before choosing. Both consume the same use cases. Two surfaces, one core.
+The tools are written by hand. The schema is shaped for a window — one focus, one neighbourhood, a stream of what changed. A tool surface is shaped for a model: few tools, named for what they do, described in prose the model reads before choosing. Every surface consumes the same use cases.
+
+### Three surfaces, one core
+
+Each family of tools registers its reading half and its writing half separately, and a surface is a choice of halves. `adapter/mcp` builds three:
+
+- **The whole surface** is every tool the vault has, and the editor window serves it. That window is where a person asks for the vault to be changed, and the endpoint it puts up is the one an agent a person configured themselves reaches, with the vault's writers on it. The set is exact, so a tool added to the server is a tool this window is knowingly given. → `TestTheWindowAPersonWritesInServesEveryToolTheVaultHas`
+- **The reading surface** is every tool that reads and no writer at all. An agent answering from it changes nothing.
+- **The reviewing surface** is what the window a person runs their cards in serves: everything that reads, and the cards of a deck. Nothing on it makes a deck or a stencil, and nothing on it writes a note, a link or a document.
+
+The panel's child is narrowed by its allowance: it is told, tool by tool, which of the surface it may call, and under the mode it runs in a tool outside that list is refused.
 
 ### A call carrying names takes many; a call carrying a document's text takes one
 
@@ -87,7 +97,7 @@ An agent is configured once, by a person, in a file of its own. So the token is 
 
 ### The tools ship in the binary a person runs
 
-The binaries are split by build profile: a window links against the system's browser through cgo, and the command line is pure Go and cross-compiles. The tools go in a window, because they exist to be watched — `numen` serves them, and so does `numen-flashcards` over a surface of its own. `numen-cli` is the developer's and automation's tool, and nothing of the tools is linked into it.
+The binaries are split by build profile: a window links against the system's browser through cgo, and the command line is pure Go and cross-compiles. The tools go in a window, because they exist to be watched — `numen` serves the whole surface, and `numen-flashcards` the reviewing one. `numen-cli` is the developer's and automation's tool, and nothing of the tools is linked into it.
 
 ### A change reaches the window the way any other edit does
 
@@ -100,7 +110,7 @@ The tools themselves, family by family, and the limits on what one call may carr
 ## Consequences
 
 - The repository opens a port where an installation asks for one, and what stands in front of it is a token and an origin check.
-- A second surface to keep true as the core changes. Nothing generates it against the schema; only tests hold it there.
+- Three surfaces to keep true as the core changes. Nothing generates them against the schema; only tests hold them there.
 - An agent with write tools can damage a vault as thoroughly as a person can. The damage is visible and reversible, which is weaker than prevention and is what is available.
 - A tool that writes waits for a refresh, so a write costs what indexing that note costs.
 - The tools are absent from the binary that cross-compiles.
