@@ -366,7 +366,9 @@ func (c Config) DerivedStores() port.DerivedStores {
 	return filesystem.DerivedStores{
 		Options: c.vaultOptions(),
 		Area:    filesystem.OCRDir,
-		Areas:   []string{filesystem.SpeechDir},
+		Areas: []string{
+			filesystem.SpeechDir, filesystem.CaptionsDir, filesystem.ArticleDir,
+		},
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"slices"
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -130,14 +131,14 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 		return res, nil
 	}
 
-	found, err := u.By.Look(ctx, at)
+	meta, err := u.By.Metadata(ctx, at)
 	if err != nil {
 		return res, err
 	}
-	res.Title, res.Length = found.Title, found.Length
+	res.Title, res.Length = meta.Title, meta.Length
 
 	if at.IsVideo() {
-		return u.video(ctx, v, ref, at, hash, store, res)
+		return u.video(ctx, v, ref, at, meta, hash, store, res)
 	}
 	return u.page(ctx, v, ref, at, hash, store, res)
 }
@@ -149,11 +150,12 @@ func (u ImportURL) video(
 	v domain.Vault,
 	ref domain.Fingerprint,
 	at domain.WebAddress,
+	meta port.Metadata,
 	hash string,
 	store port.DerivedStore,
 	res ImportURLResult,
 ) (ImportURLResult, error) {
-	cues, err := u.By.Words(ctx, at, u.Languages)
+	cues, err := u.By.Subtitles(ctx, at, language(meta, u.Languages, u.Automatic))
 	switch {
 	case errors.Is(err, port.ErrNothingFetched):
 		// Nobody published words for it. That is an answer, and it is written
@@ -176,6 +178,41 @@ func (u ImportURL) video(
 	return res, u.cut(ctx, v, ref.Path)
 }
 
+// language is the one a video's words are asked for in.
+//
+// What a person published is preferred over what a machine wrote; among those,
+// the languages this installation named, and then the language the video was
+// spoken in. A video somebody has translated into thirty languages publishes
+// words in all thirty, and what was said in it is one of them.
+func language(meta port.Metadata, languages []string, automatic bool) string {
+	tracks := meta.Captions
+	if len(tracks) == 0 && automatic {
+		tracks = meta.Automatic
+	}
+	if len(tracks) == 0 {
+		return ""
+	}
+	for _, wanted := range append(append([]string(nil), languages...), meta.Language) {
+		if one := slices.IndexFunc(tracks, in(wanted)); one >= 0 {
+			return tracks[one]
+		}
+	}
+	if one := slices.IndexFunc(tracks, original); one >= 0 {
+		return tracks[one]
+	}
+	return tracks[0]
+}
+
+// in says whether a track is in one language. A machine's own is that language
+// with a word after it, and its translations of that one are other languages.
+func in(language string) func(string) bool {
+	return func(track string) bool { return track == language || track == language+"-orig" }
+}
+
+// original says whether a track is what was said rather than a translation of
+// it.
+func original(track string) bool { return strings.HasSuffix(track, "-orig") }
+
 // page writes down the prose of a page.
 func (u ImportURL) page(
 	ctx context.Context,
@@ -186,7 +223,7 @@ func (u ImportURL) page(
 	store port.DerivedStore,
 	res ImportURLResult,
 ) (ImportURLResult, error) {
-	article, err := u.By.Prose(ctx, at)
+	article, err := u.By.Article(ctx, at)
 	switch {
 	case errors.Is(err, port.ErrNothingFetched):
 		res.Nothing = true

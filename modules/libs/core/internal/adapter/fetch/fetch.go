@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -81,35 +82,47 @@ func (f *Fetcher) Fetching() port.FetchModel {
 }
 
 // Look is what stands at the address, taking none of it.
-func (f *Fetcher) Look(ctx context.Context, at domain.WebAddress) (port.Found, error) {
+func (f *Fetcher) Metadata(ctx context.Context, at domain.WebAddress) (port.Metadata, error) {
 	if !at.IsVideo() {
-		return f.pages.look(ctx, at)
+		return f.pages.metadata(ctx, at)
 	}
 	if f.video == nil {
-		return port.Found{}, ErrNoTool
+		return port.Metadata{}, ErrNoTool
 	}
 	said, err := run(ctx, f.video, nil, "--dump-single-json", "--no-playlist", at.URL)
 	if err != nil {
-		return port.Found{}, err
+		return port.Metadata{}, err
 	}
 	var held struct {
 		Title              string                `json:"title"`
+		Language           string                `json:"language"`
 		Duration           float64               `json:"duration"`
 		Subtitles          map[string][]struct{} `json:"subtitles"`
 		AutomaticCaptions  map[string][]struct{} `json:"automatic_captions"`
 		RequestedSubtitles map[string][]struct{} `json:"requested_subtitles"`
 	}
 	if err := json.Unmarshal(said, &held); err != nil {
-		return port.Found{}, fmt.Errorf("what yt-dlp said about %s: %w", at.URL, err)
+		return port.Metadata{}, fmt.Errorf("what yt-dlp said about %s: %w", at.URL, err)
 	}
-	found := port.Found{Title: strings.TrimSpace(held.Title), Length: int(held.Duration * 1000)}
-	for language := range held.Subtitles {
-		found.Captions = append(found.Captions, language)
+	found := port.Metadata{
+		Title:    strings.TrimSpace(held.Title),
+		Length:   int(held.Duration * 1000),
+		Language: held.Language,
 	}
-	for language := range held.AutomaticCaptions {
-		found.Captions = append(found.Captions, language)
-	}
+	found.Captions = languages(held.Subtitles)
+	found.Automatic = languages(held.AutomaticCaptions)
 	return found, nil
+}
+
+// named are the languages of one set of tracks, in one order however the tool
+// listed them.
+func languages(tracks map[string][]struct{}) []string {
+	out := make([]string, 0, len(tracks))
+	for language := range tracks {
+		out = append(out, language)
+	}
+	sort.Strings(out)
+	return out
 }
 
 // Words are the words published with a video.
@@ -118,10 +131,10 @@ func (f *Fetcher) Look(ctx context.Context, at domain.WebAddress) (port.Found, e
 // cue. What a site draws as two lines scrolling is one stretch said once, and
 // asking for the format a player is fed would put every line into the index
 // twice.
-func (f *Fetcher) Words(
-	ctx context.Context, at domain.WebAddress, languages []string,
+func (f *Fetcher) Subtitles(
+	ctx context.Context, at domain.WebAddress, language string,
 ) ([]transcript.Cue, error) {
-	if !at.IsVideo() {
+	if !at.IsVideo() || language == "" {
 		return nil, port.ErrNothingFetched
 	}
 	if f.video == nil {
@@ -133,13 +146,9 @@ func (f *Fetcher) Words(
 	}
 	defer func() { _ = os.RemoveAll(into) }()
 
-	wanted := "all"
-	if len(languages) > 0 {
-		wanted = strings.Join(languages, ",")
-	}
 	if _, err := run(ctx, f.video, nil,
 		"--skip-download", "--write-subs", "--write-auto-subs",
-		"--sub-langs", wanted, "--sub-format", "json3",
+		"--sub-langs", language, "--sub-format", "json3",
 		"--no-playlist", "-o", filepath.Join(into, "words"), at.URL,
 	); err != nil {
 		return nil, err
@@ -148,7 +157,7 @@ func (f *Fetcher) Words(
 	if err != nil || len(found) == 0 {
 		return nil, port.ErrNothingFetched
 	}
-	raw, err := os.ReadFile(preferred(found, languages))
+	raw, err := os.ReadFile(found[0])
 	if err != nil {
 		return nil, err
 	}
@@ -162,22 +171,9 @@ func (f *Fetcher) Words(
 	return cues, nil
 }
 
-// preferred is the file in the language asked for first, and the first file
-// otherwise: a site that has none of them publishes what it publishes.
-func preferred(found []string, languages []string) string {
-	for _, language := range languages {
-		for _, one := range found {
-			if strings.HasSuffix(one, "."+language+".json3") {
-				return one
-			}
-		}
-	}
-	return found[0]
-}
-
 // Sound is a video's sound as the container a transcriber opens: one channel at
 // 16 kHz, which is what a model takes.
-func (f *Fetcher) Sound(ctx context.Context, at domain.WebAddress, into io.Writer) error {
+func (f *Fetcher) Audio(ctx context.Context, at domain.WebAddress, into io.Writer) error {
 	if f.video == nil || f.sound == nil {
 		return ErrNoTool
 	}
@@ -209,24 +205,24 @@ func (f *Fetcher) Sound(ctx context.Context, at domain.WebAddress, into io.Write
 	if err := bringing.Wait(); err != nil {
 		_ = taking.Process.Kill()
 		_ = taking.Wait()
-		return fmt.Errorf("%w: %s", err, trouble(saidToo.String()))
+		return fmt.Errorf("%w: %s", err, lastLine(saidToo.String()))
 	}
 	if err := taking.Wait(); err != nil {
-		return fmt.Errorf("%w: %s", err, trouble(said.String()))
+		return fmt.Errorf("%w: %s", err, lastLine(said.String()))
 	}
 	return nil
 }
 
 // Copy is the video as a person plays it, in the one container every player
 // this window is drawn in opens.
-func (f *Fetcher) Copy(
+func (f *Fetcher) Download(
 	ctx context.Context, at domain.WebAddress, into io.Writer,
-) (port.CopyResult, error) {
+) (port.Download, error) {
 	if !at.IsVideo() {
-		return port.CopyResult{}, port.ErrNothingFetched
+		return port.Download{}, port.ErrNothingFetched
 	}
 	if f.video == nil {
-		return port.CopyResult{}, ErrNoTool
+		return port.Download{}, ErrNoTool
 	}
 	taking := exec.CommandContext(ctx, f.video[0],
 		append(append([]string(nil), f.video[1:]...),
@@ -234,14 +230,14 @@ func (f *Fetcher) Copy(
 	var said bytes.Buffer
 	taking.Stdout, taking.Stderr = into, &said
 	if err := taking.Run(); err != nil {
-		return port.CopyResult{}, fmt.Errorf("%w: %s", err, trouble(said.String()))
+		return port.Download{}, fmt.Errorf("%w: %s", err, lastLine(said.String()))
 	}
-	return port.CopyResult{MediaType: "video/mp4", Extension: ".mp4"}, nil
+	return port.Download{MediaType: "video/mp4", Extension: ".mp4"}, nil
 }
 
 // Prose is what an address that plays nothing says.
-func (f *Fetcher) Prose(ctx context.Context, at domain.WebAddress) (port.Article, error) {
-	return f.pages.prose(ctx, at)
+func (f *Fetcher) Article(ctx context.Context, at domain.WebAddress) (port.Article, error) {
+	return f.pages.article(ctx, at)
 }
 
 // run is one tool, waited for. What it wrote to its error stream is what a
@@ -256,14 +252,14 @@ func run(ctx context.Context, command []string, into io.Writer, arguments ...str
 		running.Stdout = into
 	}
 	if err := running.Run(); err != nil {
-		return nil, fmt.Errorf("%w: %s", err, trouble(said.String()))
+		return nil, fmt.Errorf("%w: %s", err, lastLine(said.String()))
 	}
 	return out.Bytes(), nil
 }
 
-// trouble is what the tool said, as one line a person reads. A tool that
+// lastLine is what the tool said, as one line a person reads. A tool that
 // refuses says why at length, and the last of it is the reason.
-func trouble(said string) string {
+func lastLine(said string) string {
 	lines := strings.Split(strings.TrimSpace(said), "\n")
 	for i := len(lines) - 1; i >= 0; i-- {
 		if line := strings.TrimSpace(lines[i]); line != "" {

@@ -19,6 +19,11 @@ import (
 // wrote, and something larger is a download wearing a page's clothes.
 const mostBytes = 8 << 20
 
+// browser is what a page is asked for as. A great many sites answer a request
+// carrying no such name with a refusal.
+const browser = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
+	"(KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+
 // A page is fetched as a person's browser would fetch it, and what it says is
 // bytes from a stranger: the parse is somebody else's library, fed a bounded
 // read.
@@ -30,25 +35,30 @@ func newPages() *pages {
 
 // look is what a page calls itself, which is the whole of what a look at one
 // needs. It is the same fetch the prose comes out of, and a page is small.
-func (p *pages) look(ctx context.Context, at domain.WebAddress) (port.Found, error) {
-	article, err := p.prose(ctx, at)
+func (p *pages) metadata(ctx context.Context, at domain.WebAddress) (port.Metadata, error) {
+	article, err := p.article(ctx, at)
 	if err != nil {
-		return port.Found{}, err
+		return port.Metadata{}, err
 	}
-	return port.Found{Title: article.Title}, nil
+	return port.Metadata{Title: article.Title}, nil
 }
 
 // prose is the article a page is written around.
-func (p *pages) prose(ctx context.Context, at domain.WebAddress) (port.Article, error) {
+func (p *pages) article(ctx context.Context, at domain.WebAddress) (port.Article, error) {
 	address, err := url.Parse(at.URL)
 	if err != nil {
 		return port.Article{}, err
 	}
-	asked, err := http.NewRequestWithContext(ctx, http.MethodGet, at.URL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, at.URL, nil)
 	if err != nil {
 		return port.Article{}, err
 	}
-	answer, err := p.through.Do(asked)
+	// A page is asked for the way the browser this person pasted the address
+	// out of would ask for it. A site that refuses everything else refuses this
+	// too, and says so in its answer.
+	req.Header.Set("User-Agent", browser)
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+	answer, err := p.through.Do(req)
 	if err != nil {
 		return port.Article{}, err
 	}

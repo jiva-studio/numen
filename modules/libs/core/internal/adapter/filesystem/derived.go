@@ -28,6 +28,13 @@ const OCRDir = "ocr"
 // SpeechDir is where the words a model heard in a recording are kept.
 const SpeechDir = text.ASR
 
+// CaptionsDir is where the words published with a video are kept, and
+// ArticleDir the prose of a page. Both are what a link note points at, fetched.
+const (
+	CaptionsDir = text.Captions
+	ArticleDir  = text.Article
+)
+
 // FlashcardsDir is where the answers a person gave their cards are kept. They
 // are the one thing here nobody can produce a second time: the notes are the
 // person's own writing, and a year of answers to them is not.

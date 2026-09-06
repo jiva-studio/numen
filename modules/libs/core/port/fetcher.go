@@ -28,16 +28,23 @@ type FetchModel struct {
 // value.
 func (f FetchModel) Recipe() string { return f.Tool + "|" + f.Version }
 
-// Found is what stands at an address, before any of it is taken.
-type Found struct {
+// Metadata is what a site says about an address, before any of it is taken.
+type Metadata struct {
 	// Title is what the video or the page calls itself.
 	Title string
 	// Length is how long a video runs, in milliseconds, and zero for an address
 	// nothing plays.
 	Length int
-	// Captions are the languages words are published in for it, as the site
-	// names them. A language a machine wrote is named here like any other.
-	Captions []string
+	// Language is what the site says the video is in, as it names it. A video
+	// publishes words in every language somebody has translated it into, and
+	// this is the one it was spoken in.
+	Language string
+	// Captions are the languages a person published words in for it, and
+	// Automatic those a machine wrote, both as the site names them. They are
+	// two lists because they are worth different amounts: a person's words are
+	// what was said, and a machine's are what a machine heard.
+	Captions  []string
+	Automatic []string
 }
 
 // Fetcher is the conversation: what is at this address, and what of it can be
@@ -47,31 +54,35 @@ type Fetcher interface {
 	// Fetching is what every address this fetcher reaches is fetched by.
 	Fetching() FetchModel
 
-	// Look is what stands at the address, taking none of it.
-	Look(ctx context.Context, at domain.WebAddress) (Found, error)
+	// Metadata is what the site says about the address, taking none of it.
+	Metadata(ctx context.Context, at domain.WebAddress) (Metadata, error)
 
-	// Words are the words published with a video, in the first of those
-	// languages the site has. A video nobody published any for is
+	// Subtitles are the words published with a video in one language, as the site
+	// names that language. A video that publishes none in it is
 	// ErrNothingFetched.
-	Words(ctx context.Context, at domain.WebAddress, languages []string) ([]transcript.Cue, error)
+	//
+	// One language is asked for and not a list: a site that publishes a machine
+	// translation into every language it knows is asked for one of them, and
+	// asking for the lot is hundreds of requests it answers by refusing.
+	Subtitles(ctx context.Context, at domain.WebAddress, language string) ([]transcript.Cue, error)
 
-	// Sound is a video's sound, written as the container a transcriber opens.
+	// Audio is a video's sound, written as the container a transcriber opens.
 	// It is what a machine listens to, and is not what a person plays.
-	Sound(ctx context.Context, at domain.WebAddress, into io.Writer) error
+	Audio(ctx context.Context, at domain.WebAddress, into io.Writer) error
 
-	// Copy is what is at the address as a person plays it, written as it was
+	// Download is what is at the address as a person plays it, written as it was
 	// published. How large it may be is the caller's to hold to.
-	Copy(ctx context.Context, at domain.WebAddress, into io.Writer) (CopyResult, error)
+	Download(ctx context.Context, at domain.WebAddress, into io.Writer) (Download, error)
 
-	// Prose is what an address that plays nothing says: the article a page is
+	// Article is what an address that plays nothing says: the prose a page is
 	// written around, without the furniture around it. A page carrying none is
 	// ErrNothingFetched.
-	Prose(ctx context.Context, at domain.WebAddress) (Article, error)
+	Article(ctx context.Context, at domain.WebAddress) (Article, error)
 }
 
-// CopyResult is what a copy came to: what a player is told it is, and the
+// A Download is what a copy came to: what a player is told it is, and the
 // extension the bytes are kept under.
-type CopyResult struct {
+type Download struct {
 	MediaType string
 	Extension string
 }

@@ -119,7 +119,7 @@ func saveNote(
 	var row int64
 	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
 		vault, n.Fingerprint.Path, kind, n.Fingerprint.Size, chunk.Stamp(n.Fingerprint.ModTime),
-		nullable(made(address, artifact)), nullable(cutBy(artifact, sizes)), nullable(artifact.Producer),
+		nullable(addressHash(address, artifact)), nullable(recipeOf(artifact, sizes)), nullable(artifact.Producer),
 	).Scan(&row); err != nil {
 		return fmt.Errorf("record the source this note is: %w", err)
 	}
@@ -247,20 +247,20 @@ func cut(
 	return out
 }
 
-// made is what a link note's text was fetched from, which is the address it
+// address is the hash a link note's text is kept under, which is the address it
 // points at and not the bytes of the file. A person typing in the note changes
 // the file and not what is at the address, and what was fetched is theirs to
 // keep. Every other note is made from itself and names nothing.
-func made(address string, artifact domain.Artifact) string {
+func addressHash(address string, artifact domain.Artifact) string {
 	if artifact.IsZero() {
 		return ""
 	}
 	return text.Fingerprint([]byte(address))
 }
 
-// cutBy names what produced a link note's text and the sizes it was cut into.
+// recipeOf names what produced a link note's text and the sizes it was cut into.
 // A note carrying another one owes its text again.
-func cutBy(artifact domain.Artifact, sizes chunking.Sizes) string {
+func recipeOf(artifact domain.Artifact, sizes chunking.Sizes) string {
 	if artifact.IsZero() {
 		return ""
 	}
