@@ -178,7 +178,7 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 			row.Learned++
 		}
 	}
-	for deck, one := range day.sat {
+	for deck, one := range day.spentUnder {
 		at(deck).Answered = one.Answered
 	}
 	// What each preset leaves is counted from the same pass the deck rows are,

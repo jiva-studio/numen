@@ -56,9 +56,9 @@ func walking(load []deckLoad, order []int, keeps review.Budget) map[review.CardF
 			cost:   review.DefaultCost,
 			counts: review.CountsCards,
 		}},
-		decks: make(map[string]string),
-		faced: make(map[review.CardFaceID]bool),
-		sat:   make(map[string]review.Spent),
+		decks:      make(map[string]string),
+		faced:      make(map[review.CardFaceID]bool),
+		spentUnder: make(map[string]review.Spent),
 	}
 
 	var owed, fresh []CardFace

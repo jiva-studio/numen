@@ -56,8 +56,8 @@ func TestGivingAHistoryOnceAnswersWhatGivingItFourTimesAnswered(t *testing.T) {
 			t.Errorf("%s kept %+v, want %+v", day1, got, want)
 		}
 	}
-	for path, want := range review.Sat(day, named, answers, under, nil) {
-		if got := given.Sat(day, named, under, nil)[path]; got != want {
+	for path, want := range review.SpentUnder(day, named, answers, under, nil) {
+		if got := given.SpentUnder(day, named, under, nil)[path]; got != want {
 			t.Errorf("%s spent %+v, want %+v", path, got, want)
 		}
 	}

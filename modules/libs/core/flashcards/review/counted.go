@@ -84,8 +84,8 @@ type Spent struct {
 	Took     time.Duration
 }
 
-// Sat is what the day named came to under each preset, by the path the card
-// faces are grouped under.
+// SpentUnder is what the day named came to under each preset, by the path the
+// card faces are grouped under.
 //
 // A card face nothing groups is left out, and so is an answer taken back. Each
 // answer counts for what Answer.Counted makes of it.
@@ -93,15 +93,15 @@ type Spent struct {
 // Counts says how each preset counts, by the same path, and a path it does not
 // name counts in cards: a card face counts once for the day however many times
 // it is answered in it. Every one of those answers counts its time either way.
-func Sat(
+func SpentUnder(
 	d Day, day string, answers []Answer,
 	under map[CardFaceID]string, counts map[string]Counts,
 ) map[string]Spent {
-	return Give(answers).Sat(d, day, under, counts)
+	return Give(answers).SpentUnder(d, day, under, counts)
 }
 
-// Sat is the same over a history already in order.
-func (h History) Sat(
+// SpentUnder is the same over a history already in order.
+func (h History) SpentUnder(
 	d Day, day string, under map[CardFaceID]string, counts map[string]Counts,
 ) map[string]Spent {
 	// Which card faces have been answered before the answer in hand, over the

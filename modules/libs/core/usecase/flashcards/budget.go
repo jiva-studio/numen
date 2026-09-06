@@ -26,8 +26,8 @@ type budgets struct {
 	cards map[string]int
 	// faced are the card faces answered in the review day being sat.
 	faced map[review.CardFaceID]bool
-	// sat is what the review day being sat came to in each deck.
-	sat map[string]review.Spent
+	// spentUnder is what the review day came to in each deck.
+	spentUnder map[string]review.Spent
 }
 
 // allowance is one preset's day: what the day admits, what an answer under it
@@ -95,9 +95,9 @@ func budgeted(
 
 	// A card face stands in one deck and one preset, so a preset's day is the
 	// sum of the days of the decks that name it.
-	out.sat = review.Sat(day, named, log.Answers, in, counting)
+	out.spentUnder = review.SpentUnder(day, named, log.Answers, in, counting)
 	spent := make(map[string]review.Spent, len(settings))
-	for deck, one := range out.sat {
+	for deck, one := range out.spentUnder {
 		at := spent[asked[deck]]
 		at.Answered += one.Answered
 		at.New += one.New
@@ -296,7 +296,7 @@ func (q *deckShare) remaining(out taken) int {
 // given is how much of the day a deck has had, in the time it took: what an
 // earlier session spent of today, and what the deck's own share has just spent.
 func (b *budgets) given(q *deckShare, cost review.AnswerCost) time.Duration {
-	return b.sat[q.deck].Took +
+	return b.spentUnder[q.deck].Took +
 		time.Duration(q.debt)*cost.Review + time.Duration(q.begun)*cost.New
 }
 
@@ -340,7 +340,7 @@ func (b *budgets) spends(owed, fresh []CardFace) taken {
 	// A deck already sat through today holds a share of the day whether or not
 	// it has a card left to give, so what it took stands against its own share.
 	for deck, path := range b.decks {
-		if _, sat := b.sat[deck]; sat {
+		if _, spent := b.spentUnder[deck]; spent {
 			into(path, deck)
 		}
 	}
@@ -401,11 +401,11 @@ func (b *budgets) divides(one *allowance, decks []*deckShare) []allowance {
 	begun := make([]float64, len(decks))
 	minutes := make([]float64, len(decks))
 	for at, q := range decks {
-		sat := b.sat[q.deck]
-		reviews[at] = float64(len(q.owed) + sat.Reviews)
-		begun[at] = float64(len(q.fresh) + sat.New)
+		spent := b.spentUnder[q.deck]
+		reviews[at] = float64(len(q.owed) + spent.Reviews)
+		begun[at] = float64(len(q.fresh) + spent.New)
 		minutes[at] = float64(time.Duration(len(q.owed))*one.cost.Review +
-			time.Duration(len(q.fresh))*one.cost.New + sat.Took)
+			time.Duration(len(q.fresh))*one.cost.New + spent.Took)
 	}
 	keeps := one.admits.Keeps
 	reviews = review.Divided(float64(keeps.Reviews), reviews)
@@ -414,11 +414,11 @@ func (b *budgets) divides(one *allowance, decks []*deckShare) []allowance {
 
 	out := make([]allowance, len(decks))
 	for at, q := range decks {
-		sat := b.sat[q.deck]
+		spent := b.spentUnder[q.deck]
 		out[at] = *one
-		out[at].admits.Reviews = max(0, int(reviews[at])-sat.Reviews)
-		out[at].admits.New = max(0, int(begun[at])-sat.New)
-		out[at].admits.Minutes = max(0, time.Duration(minutes[at])-sat.Took)
+		out[at].admits.Reviews = max(0, int(reviews[at])-spent.Reviews)
+		out[at].admits.New = max(0, int(begun[at])-spent.New)
+		out[at].admits.Minutes = max(0, time.Duration(minutes[at])-spent.Took)
 	}
 	return out
 }

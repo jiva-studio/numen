@@ -37,9 +37,9 @@ type reaching struct {
 	vault domain.Vault
 }
 
-// Sat is a session opening on a vault. A session opened on the same vault
+// Opened is a session opening on a vault. A session opened on the same vault
 // again leaves the agent where it is.
-func (r *reaching) Sat(_ context.Context, v domain.Vault) {
+func (r *reaching) Opened(_ context.Context, v domain.Vault) {
 	r.mu.Lock()
 	again := r.vault.ID == v.ID
 	r.vault = v
@@ -119,7 +119,7 @@ func serveAgents(
 		Trouble:     func(err error) { fmt.Fprintln(out, "numen-flashcards: agents:", err) },
 	}
 
-	api.Opened = held.Sat
+	api.Opened = held.Opened
 	return func() error {
 		held.swapping.Off()
 		return nil

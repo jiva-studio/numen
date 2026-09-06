@@ -123,7 +123,7 @@ func TestWhatADayCameToUnderEachPreset(t *testing.T) {
 		said("01G", root, "2026-08-31T09:00:00", 4*time.Second),
 	}
 
-	got := review.Sat(counting, "2026-08-29", answers, under, nil)
+	got := review.SpentUnder(counting, "2026-08-29", answers, under, nil)
 
 	// Each card face is new the first time it is answered, and counts once for
 	// the day however many answers it took.
@@ -154,14 +154,14 @@ func TestACardAnsweredAgainInTheDayIsCountedBothWays(t *testing.T) {
 		})
 	}
 
-	cards := review.Sat(counting, "2026-08-29", answers, under,
+	cards := review.SpentUnder(counting, "2026-08-29", answers, under,
 		map[string]review.Counts{"Steady.md": review.CountsCards})
 	want := review.Spent{Answered: 1, New: 1, Took: 36 * time.Second}
 	if cards["Steady.md"] != want {
 		t.Errorf("counting in cards the day came to %+v, want %+v", cards["Steady.md"], want)
 	}
 
-	shows := review.Sat(counting, "2026-08-29", answers, under,
+	shows := review.SpentUnder(counting, "2026-08-29", answers, under,
 		map[string]review.Counts{"Steady.md": review.CountsShows})
 	want = review.Spent{Answered: 9, New: 1, Reviews: 8, Took: 36 * time.Second}
 	if shows["Steady.md"] != want {
@@ -184,7 +184,7 @@ func TestTheFirstAnswerOfACardFaceIsTheEarliestOne(t *testing.T) {
 			Rating: review.Good, Took: 7 * time.Second},
 	}
 
-	got := review.Sat(counting, "2026-08-31", answers, under, nil)
+	got := review.SpentUnder(counting, "2026-08-31", answers, under, nil)
 
 	want := review.Spent{Answered: 1, Reviews: 1, Took: 5 * time.Second}
 	if got["Steady.md"] != want {
@@ -198,7 +198,7 @@ func TestALongAnswerIsCountedAtItsBound(t *testing.T) {
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	under := map[review.CardFaceID]string{on: ""}
 
-	got := review.Sat(counting, "2026-08-29", []review.Answer{
+	got := review.SpentUnder(counting, "2026-08-29", []review.Answer{
 		{ID: "01A", CardFace: on, At: moment(t, "2026-08-29T09:00:00"),
 			Rating: review.Good, Took: time.Hour},
 	}, under, nil)
