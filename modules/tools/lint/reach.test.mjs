@@ -1,33 +1,19 @@
 import assert from 'node:assert/strict'
-import { existsSync, readFileSync } from 'node:fs'
-import { join, relative } from 'node:path'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import test from 'node:test'
-import { root } from './source.mjs'
-import { corpora, idOf } from './reach.mjs'
-
-/** Where the one walk is written, and what a preview reaches it by. */
-const CHECK = 'modules/libs/ui/.storybook/check.ts'
-
-const read = (at) => readFileSync(join(root, at), 'utf8')
+import { corpora, idOf, unproved, unshared, unstaged, unwalked } from './reach.mjs'
 
 /**
  * Every package that runs stories walks them. The judging is a rule only for
  * as long as it is wired to every story of every package that draws one: an
- * `afterEach` in a preview is what makes it every story rather than the handful
- * that remembered to ask, and a package whose preview holds no walk is a corner
- * of the tree the audit reports as clean without having looked at it.
+ * `afterEach` in a preview is what makes it every story, and a package whose
+ * preview holds no walk is a corner of the tree the audit reports as clean
+ * without having looked at it.
  */
 test('every package that runs stories walks them', () => {
-  for (const { name, preview, stories } of corpora()) {
-    assert.ok(existsSync(join(root, preview)), `${name} draws ${stories.length} stories and has no ${preview}`)
-    const text = read(preview)
-    assert.match(text, /afterEach/, `${preview} runs nothing after a story`)
-    assert.match(
-      text,
-      /afterEach:\s*reachCheck\(/,
-      `${preview} does not walk the keyboard through the story it has just drawn`,
-    )
-  }
+  for (const one of corpora()) assert.deepEqual(unwalked(one), [])
 })
 
 /**
@@ -36,18 +22,7 @@ test('every package that runs stories walks them', () => {
  * step with the first, and the two diverge the week after they are written.
  */
 test('there is one keyboard walk, and every preview reaches it', () => {
-  const check = read(CHECK)
-  assert.match(check, /await walk\(\)/, `${CHECK} does not walk the keyboard`)
-  assert.match(check, /faults\(/, `${CHECK} walks the keyboard and makes nothing of what it finds`)
-
-  for (const { preview } of corpora()) {
-    const to = relative(join(root, preview, '..'), join(root, CHECK)).replace(/\.ts$/, '')
-    const at = to.startsWith('.') ? to : `./${to}`
-    assert.ok(
-      read(preview).includes(`from '${at}'`),
-      `${preview} does not take the walk from ${CHECK}`,
-    )
-  }
+  assert.deepEqual(unshared(corpora()), [])
 })
 
 /**
@@ -57,15 +32,7 @@ test('there is one keyboard walk, and every preview reaches it', () => {
  * named against a story that does not exist proves nothing about any.
  */
 test('each walk is proved against a story of its own package', () => {
-  for (const { name, preview, ids } of corpora()) {
-    const proof = /story:\s*'([^']+)',\s*stops:\s*(\d+)/.exec(read(preview))
-    assert.ok(proof, `${preview} names no story to prove its walk against`)
-    assert.ok(
-      ids.has(proof[1]),
-      `${preview} is proved against ${proof[1]}, which is no story of ${name}`,
-    )
-    assert.ok(Number(proof[2]) > 0, `${preview} asks its walk to find no stops, which anything does`)
-  }
+  for (const one of corpora()) assert.deepEqual(unproved(one), [])
 })
 
 /**
@@ -75,8 +42,6 @@ test('each walk is proved against a story of its own package', () => {
  * and not those is reading the wrong tree.
  */
 test('there are stories for the keyboard walk to run after', () => {
-  const held = new Map(corpora().map((one) => [one.name, one.stories]))
-
   const wanted = {
     '@numen/ui': [
       30,
@@ -91,15 +56,57 @@ test('there are stories for the keyboard walk to run after', () => {
     ],
     '@numen/flashcards': [1, ['modules/apps/desktop/flashcards/src/screens.stories.ts']],
   }
+  assert.deepEqual(unstaged(corpora(), wanted), [])
+})
 
-  for (const [name, [least, named]] of Object.entries(wanted)) {
-    const found = held.get(name) ?? []
-    assert.ok(
-      found.length >= least,
-      `${found.length} story files found under ${name}: the walk is not reading them`,
+/**
+ * What the four rules refuse, read against a package written to be refused:
+ * one story, a preview that runs something else after it, proves its walk
+ * against a story it does not hold, and takes no walk from a check that walks
+ * nothing.
+ */
+test('what the reach rules refuse', () => {
+  const under = mkdtempSync(join(tmpdir(), 'reach-'))
+  try {
+    mkdirSync(join(under, 'scratch/src'), { recursive: true })
+    mkdirSync(join(under, 'scratch/.storybook'), { recursive: true })
+    writeFileSync(
+      join(under, 'scratch/src/Thing.stories.ts'),
+      ["const meta = {", "  title: 'Thing',", '}', 'export default meta', 'export const Plain = {}', ''].join('\n'),
     )
-    for (const one of named)
-      assert.ok(found.includes(one), `no ${one}, which the keyboard rule was written for`)
+    writeFileSync(
+      join(under, 'scratch/.storybook/preview.ts'),
+      ['export default {', '  afterEach: () => {},', "  parameters: { story: 'thing--other', stops: 3 },", '}', ''].join('\n'),
+    )
+    writeFileSync(join(under, 'check.ts'), 'export const reachCheck = () => async () => {}\n')
+
+    const found = corpora([{ name: 'scratch', at: 'scratch' }], under)
+    assert.equal(found.length, 1)
+    const [one] = found
+    assert.deepEqual(one.stories, ['scratch/src/Thing.stories.ts'])
+    assert.deepEqual([...one.ids], ['thing--plain'])
+
+    const preview = 'scratch/.storybook/preview.ts'
+    assert.deepEqual(unwalked(one, under), [
+      `${preview} does not walk the keyboard through the story it has just drawn`,
+    ])
+    assert.deepEqual(unshared(found, under, 'check.ts'), [
+      'check.ts does not walk the keyboard',
+      'check.ts walks the keyboard and makes nothing of what it finds',
+      `${preview} does not take the walk from check.ts`,
+    ])
+    assert.deepEqual(unproved(one, under), [
+      `${preview} is proved against thing--other, which is no story of scratch`,
+    ])
+    assert.deepEqual(
+      unstaged(found, { scratch: [2, ['scratch/src/Thing.stories.ts', 'scratch/src/Other.stories.ts']] }),
+      [
+        '1 story files found under scratch: the walk is not reading them',
+        'no scratch/src/Other.stories.ts, which the keyboard rule was written for',
+      ],
+    )
+  } finally {
+    rmSync(under, { recursive: true, force: true })
   }
 })
 
