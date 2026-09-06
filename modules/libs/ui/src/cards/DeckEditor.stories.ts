@@ -508,13 +508,13 @@ export const InSections: Story = {
     // The bin takes no room until the name is reached for, so the line runs
     // unbroken up to it. Once it is drawn it stands inside the rule, which
     // keeps nothing that hangs past it.
-    const deeds = found(canvasElement, '[data-section-head="roots"] .section-heading__deeds')
-    expect(deeds.getBoundingClientRect().width).toBe(0)
+    const actions = found(canvasElement, '[data-section-head="roots"] .section-heading__actions')
+    expect(actions.getBoundingClientRect().width).toBe(0)
 
     found(canvasElement, '[data-section-head="roots"] input').focus()
     const drawn = found(canvasElement, '[data-section-head="roots"] .remove-button').getBoundingClientRect()
     const rule = found(canvasElement, '[data-section-head="roots"] .divider__held').getBoundingClientRect()
-    expect(deeds.getBoundingClientRect().width).toBeGreaterThan(0)
+    expect(actions.getBoundingClientRect().width).toBeGreaterThan(0)
     expect(drawn.right).toBeLessThanOrEqual(Math.ceil(rule.right))
     expect(drawn.left).toBeGreaterThanOrEqual(Math.floor(rule.left))
 

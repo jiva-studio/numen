@@ -378,7 +378,7 @@ describe('Face, its name', () => {
 describe('Face, what it is asked', () => {
   it('emits when it is asked to go', async () => {
     const held = mountFace()
-    await held.get('.card-header__deeds button').trigger('click')
+    await held.get('.card-header__actions button').trigger('click')
     expect(held.emitted('remove')).toEqual([[]])
   })
 

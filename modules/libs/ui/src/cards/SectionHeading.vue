@@ -78,7 +78,7 @@ const stem = computed(() => `${props.words.sectionStem} ${props.section.at}`)
           />
         </span>
 
-        <span class="section-heading__deeds">
+        <span class="section-heading__actions">
           <RemoveButton :label="`${words.remove}: ${stem}`" @press="emit('remove')" />
         </span>
       </span>
@@ -145,7 +145,7 @@ const stem = computed(() => `${props.words.sectionStem} ${props.section.at}`)
 /* What the section is pressed to be rid of is not drawn until its name is
    reached for, by the pointer or by the keyboard. Until then it takes no room
    at all, and the line runs unbroken up to the name. */
-.section-heading__deeds {
+.section-heading__actions {
   display: flex;
   flex: none;
   align-items: center;
@@ -156,15 +156,15 @@ const stem = computed(() => `${props.words.sectionStem} ${props.section.at}`)
   transition: opacity var(--numen-motion-hover) var(--numen-easing);
 }
 
-.section-heading__held:hover .section-heading__deeds,
-.section-heading__held:focus-within .section-heading__deeds {
+.section-heading__held:hover .section-heading__actions,
+.section-heading__held:focus-within .section-heading__actions {
   inline-size: auto;
   padding-inline-start: var(--numen-inset);
   opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .section-heading__deeds {
+  .section-heading__actions {
     transition: none;
   }
 }

@@ -91,7 +91,7 @@ const step = (event: KeyboardEvent): void => {
     </span>
 
     <span class="card-header__held min-w-0 flex-1"><slot /></span>
-    <span class="card-header__deeds flex shrink-0 items-center"><slot name="deeds" /></span>
+    <span class="card-header__actions flex shrink-0 items-center"><slot name="actions" /></span>
   </CardRow>
 </template>
 
@@ -120,7 +120,7 @@ const step = (event: KeyboardEvent): void => {
 /* What the strip is pressed for is not drawn until the strip is reached for,
    by the pointer or by the keyboard. It is drawn on a plane of its own, kept
    for as long as the card stands. */
-.card-header__deeds {
+.card-header__actions {
   opacity: 0;
   will-change: opacity;
   transition: opacity var(--numen-motion-hover) var(--numen-easing);
@@ -128,14 +128,14 @@ const step = (event: KeyboardEvent): void => {
 
 .card-header:hover .card-header__grip,
 .card-header:focus-within .card-header__grip,
-.card-header:hover .card-header__deeds,
-.card-header:focus-within .card-header__deeds {
+.card-header:hover .card-header__actions,
+.card-header:focus-within .card-header__actions {
   opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .card-header__grip,
-  .card-header__deeds {
+  .card-header__actions {
     transition: none;
   }
 }

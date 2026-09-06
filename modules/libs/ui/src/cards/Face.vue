@@ -180,7 +180,7 @@ const put = async (field: string): Promise<void> => {
         </div>
       </div>
 
-      <template #deeds>
+      <template #actions>
         <RemoveButton :label="`${words.remove}: ${face.name}`" @press="emit('remove')" />
       </template>
     </CardHeader>

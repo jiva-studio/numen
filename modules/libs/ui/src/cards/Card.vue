@@ -92,7 +92,7 @@ const wrongIn = (value: PlacedFieldValue): readonly string[] =>
         {{ cut }}
       </p>
 
-      <template #deeds>
+      <template #actions>
         <RemoveButton :label="`${words.remove}: ${called}`" @press="emit('remove')" />
       </template>
     </CardHeader>

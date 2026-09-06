@@ -7,7 +7,7 @@
  * reaches the palette underneath.
  *
  * `data-actions` names each part: `panel`, `list`, `name`, `hint`, `silence`
- * and `hunt`. A deed is an option.
+ * and `hunt`. An action is an option.
  */
 import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
 import KeyCap from './KeyCap.vue'
@@ -74,7 +74,7 @@ const reveal = async () => {
 /** The rows as they are drawn, each under the action it stands for. */
 const drawn = new Map<string, HTMLElement>()
 
-const holdDeed = (action: string, row: unknown): void => {
+const hold = (action: string, row: unknown): void => {
   if (row) drawn.set(action, row as HTMLElement)
   else drawn.delete(action)
 }
@@ -148,27 +148,27 @@ const onKey = (event: KeyboardEvent) => {
       :aria-label="words.name"
     >
       <div
-        v-for="deed in actions"
-        :id="actionName(deed.at)"
-        :ref="(row) => holdDeed(deed.action.id, row)"
-        :key="deed.action.id"
-        class="actions__deed flex items-center gap-3 rounded-node px-2 py-1.5"
+        v-for="row in actions"
+        :id="actionName(row.at)"
+        :ref="(element) => hold(row.action.id, element)"
+        :key="row.action.id"
+        class="actions__item flex items-center gap-3 rounded-node px-2 py-1.5"
         role="option"
-        :aria-selected="deed.at === here"
-        :data-here="deed.at === here || undefined"
-        @pointermove="over(deed.at, $event)"
+        :aria-selected="row.at === here"
+        :data-here="row.at === here || undefined"
+        @pointermove="over(row.at, $event)"
         @pointerdown.prevent
-        @click="run(deed.at)"
+        @click="run(row.at)"
       >
         <span class="actions__name min-w-0 flex-1" data-actions="name">
           <span
-            v-for="(part, piece) in deed.name"
+            v-for="(part, piece) in row.name"
             :key="piece"
             :data-hit="part.hit || undefined"
             >{{ part.text }}</span
           >
         </span>
-        <KeyCap v-if="deed.key" class="actions__hint" data-actions="hint" :keys="deed.key" />
+        <KeyCap v-if="row.key" class="actions__hint" data-actions="hint" :keys="row.key" />
       </div>
     </div>
 
@@ -222,13 +222,13 @@ const onKey = (event: KeyboardEvent) => {
   overscroll-behavior: contain;
 }
 
-.actions__deed {
+.actions__item {
   cursor: default;
   user-select: none;
   -webkit-user-select: none;
 }
 
-.actions__deed[data-here] {
+.actions__item[data-here] {
   background: var(--numen-bubble-bg);
 }
 

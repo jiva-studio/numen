@@ -443,7 +443,7 @@ describe('Stencil, the faces', () => {
 
   it('emits the face asked to go', async () => {
     const held = mountStencil()
-    await held.get('[data-face="recognise"] .card-header__deeds button').trigger('click')
+    await held.get('[data-face="recognise"] .card-header__actions button').trigger('click')
     expect(held.emitted('remove-face')).toEqual([['recognise']])
   })
 

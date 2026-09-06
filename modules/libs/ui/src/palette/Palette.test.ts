@@ -94,9 +94,9 @@ const marksOf = (cap: Element | null | undefined): readonly string[] =>
 
 const sheet = () => document.body.querySelector<HTMLElement>('[data-actions="panel"]')
 const hunt = () => document.body.querySelector<HTMLInputElement>('[data-actions="hunt"]')
-const deeds = () =>
+const actions = () =>
   Array.from(document.body.querySelectorAll<HTMLElement>('[data-actions="list"] [role="option"]'))
-const litDeed = () =>
+const litAction = () =>
   document.body.querySelector<HTMLElement>('[data-actions="list"] [role="option"][data-here]')
 
 const pressOn = async (on: Element | null, key: string, more: KeyboardEventInit = {}) => {
@@ -642,14 +642,14 @@ describe('the action panel', () => {
   it('opens on the chord and lists everything the lit item offers', async () => {
     await open()
 
-    expect(deeds().map((deed) => said(deed.querySelector('[data-actions="name"]')))).toEqual([
+    expect(actions().map((row) => said(row.querySelector('[data-actions="name"]')))).toEqual([
       'Show in plex',
       'Open the note',
       'Open beside',
       'Rename',
       'Move to trash',
     ])
-    expect(deeds().map((deed) => spoken(deed.querySelector('[data-actions="hint"]')))).toEqual([
+    expect(actions().map((row) => spoken(row.querySelector('[data-actions="hint"]')))).toEqual([
       'Return',
       'Shift Return',
       '',
@@ -685,38 +685,38 @@ describe('the action panel', () => {
     await open()
 
     expect(field()?.getAttribute('aria-activedescendant')).toBeNull()
-    expect(hunt()?.getAttribute('aria-activedescendant')).toBe(deeds()[0]?.id)
+    expect(hunt()?.getAttribute('aria-activedescendant')).toBe(actions()[0]?.id)
     expect(hunt()?.getAttribute('aria-controls')).toBe(
       document.body.querySelector('[data-actions="list"]')?.id,
     )
-    expect(deeds()[0]?.getAttribute('aria-selected')).toBe('true')
-    expect(deeds()[1]?.getAttribute('aria-selected')).toBe('false')
+    expect(actions()[0]?.getAttribute('aria-selected')).toBe('true')
+    expect(actions()[1]?.getAttribute('aria-selected')).toBe('false')
   })
 
   it('walks its own list, and leaves the list underneath where it was', async () => {
     await open()
 
     await pressOn(hunt(), 'ArrowDown')
-    expect(litDeed()?.textContent).toContain('Open the note')
+    expect(litAction()?.textContent).toContain('Open the note')
     expect(lit()?.textContent).toContain('Entropy')
 
     await pressOn(hunt(), 'ArrowUp')
     await pressOn(hunt(), 'ArrowUp')
-    expect(litDeed()?.textContent).toContain('Move to trash')
+    expect(litAction()?.textContent).toContain('Move to trash')
   })
 
   it('keeps to the actions the words in its field name', async () => {
     await open()
 
     await typeIn(hunt(), 'open')
-    expect(deeds().map((deed) => said(deed.querySelector('[data-actions="name"]')))).toEqual([
+    expect(actions().map((row) => said(row.querySelector('[data-actions="name"]')))).toEqual([
       'Open the note',
       'Open beside',
     ])
-    expect(litDeed()?.textContent).toContain('Open the note')
+    expect(litAction()?.textContent).toContain('Open the note')
 
     await typeIn(hunt(), 'nowhere')
-    expect(deeds()).toHaveLength(0)
+    expect(actions()).toHaveLength(0)
     expect(document.body.querySelector('[data-actions="silence"]')).not.toBeNull()
   })
 
@@ -735,18 +735,18 @@ describe('the action panel', () => {
   it('lights the action a pointer that has moved is over', async () => {
     await open()
 
-    deeds()[2]?.dispatchEvent(
+    actions()[2]?.dispatchEvent(
       new PointerEvent('pointermove', { bubbles: true, clientX: 80, clientY: 80 }),
     )
     await nextTick()
 
-    expect(litDeed()?.textContent).toContain('Open beside')
+    expect(litAction()?.textContent).toContain('Open beside')
   })
 
   it('runs the action a press lands on', async () => {
     const palette = await open()
 
-    deeds()[3]?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    actions()[3]?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     await settle()
 
     expect(palette.emitted('choose')?.at(-1)).toEqual(['entropy', 'rename'])
@@ -793,7 +793,7 @@ describe('the action panel', () => {
     await nextTick()
 
     expect(lit()?.textContent).toContain('Entropy')
-    expect(deeds()).toHaveLength(5)
+    expect(actions()).toHaveLength(5)
   })
 
   it('goes when the item it is about stops offering anything', async () => {
@@ -820,7 +820,7 @@ describe('the action panel', () => {
     const palette = await open()
     await pressOn(hunt(), 'ArrowDown')
     await pressOn(hunt(), 'ArrowDown')
-    expect(litDeed()?.textContent).toContain('Open beside')
+    expect(litAction()?.textContent).toContain('Open beside')
 
     // The same groups in arrays of their own, as a caller building them from
     // what the window holds hands over.
@@ -843,13 +843,13 @@ describe('the action panel', () => {
     })
     await settle()
 
-    expect(litDeed()?.textContent).toContain('Open beside')
+    expect(litAction()?.textContent).toContain('Open beside')
   })
 
   it('stands on the first action left when the one it was on is gone', async () => {
     const palette = await open()
     await pressOn(hunt(), 'ArrowDown')
-    expect(litDeed()?.textContent).toContain('Open the note')
+    expect(litAction()?.textContent).toContain('Open the note')
 
     await palette.setProps({
       groups: [
@@ -862,7 +862,7 @@ describe('the action panel', () => {
     })
     await settle()
 
-    expect(litDeed()?.textContent).toContain('Show in plex')
+    expect(litAction()?.textContent).toContain('Show in plex')
   })
 
   it('goes on a press on the ground, and the palette stays where it is', async () => {
@@ -922,23 +922,25 @@ describe('what the action panel is called', () => {
     mountPalette({
       groups: OFFERING,
       actionWords: {
-        name: 'Deeds',
-        placeholder: 'Look for a deed',
-        silence: 'No deed by that name',
+        name: 'What you can do',
+        placeholder: 'Look for something',
+        silence: 'Nothing like that here',
       },
     })
     await settle()
     await press('k', { ctrlKey: true })
     await settle()
 
-    expect(sheet()?.getAttribute('aria-label')).toBe('Deeds')
-    expect(hunt()?.getAttribute('aria-label')).toBe('Look for a deed')
-    expect(hunt()?.placeholder).toBe('Look for a deed')
-    expect(document.body.querySelector('[data-palette="more"]')?.textContent).toContain('Deeds')
+    expect(sheet()?.getAttribute('aria-label')).toBe('What you can do')
+    expect(hunt()?.getAttribute('aria-label')).toBe('Look for something')
+    expect(hunt()?.placeholder).toBe('Look for something')
+    expect(document.body.querySelector('[data-palette="more"]')?.textContent).toContain(
+      'What you can do',
+    )
 
     await typeIn(hunt(), 'zzz')
     expect(document.body.querySelector('[data-actions="silence"]')?.textContent?.trim()).toBe(
-      'No deed by that name',
+      'Nothing like that here',
     )
   })
 })

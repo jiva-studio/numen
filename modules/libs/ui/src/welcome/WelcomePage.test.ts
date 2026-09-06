@@ -45,7 +45,7 @@ describe('a vault on the list', () => {
   it('carries what the window says at the end of its row, and its letter after it', () => {
     const screen = mount(WelcomePage, {
       props: { vaults: [vault('physics')], heading: 'Vaults' },
-      slots: { vault: '<span class="owed">2</span>' },
+      slots: { vault: '<span class="due">2</span>' },
     })
 
     expect(screen.find('.welcome-page__row--vault').text()).toContain('2')

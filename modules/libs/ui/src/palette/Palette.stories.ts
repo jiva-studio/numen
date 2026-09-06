@@ -228,7 +228,7 @@ const options = () =>
 const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
 const sheet = () => document.body.querySelector<HTMLElement>('[data-actions="panel"]')
 const hunt = () => document.body.querySelector<HTMLInputElement>('[data-actions="hunt"]')
-const deeds = () =>
+const actions = () =>
   Array.from(document.body.querySelectorAll<HTMLElement>('[data-actions="list"] [role="option"]'))
 
 /** What a line says, with the runs it is written in run together. */
@@ -915,14 +915,14 @@ export const ActionPanel: Story = {
     await userEvent.keyboard('{Control>}k{/Control}')
     await waitFor(() => expect(sheet()).not.toBeNull())
 
-    await expect(deeds()).toHaveLength(EVERYTHING.length)
+    await expect(actions()).toHaveLength(EVERYTHING.length)
     await expect(document.activeElement).toBe(hunt())
     await expect(field()?.getAttribute('aria-activedescendant')).toBeNull()
-    await expect(hunt()?.getAttribute('aria-activedescendant')).toBe(deeds()[0]?.id)
+    await expect(hunt()?.getAttribute('aria-activedescendant')).toBe(actions()[0]?.id)
 
     // Walking back from the first brings the last row into sight.
     await userEvent.keyboard('{ArrowUp}')
-    const last = deeds().at(-1)!
+    const last = actions().at(-1)!
     const inside = last.getBoundingClientRect()
     const room = document.body.querySelector<HTMLElement>('[data-actions="list"]')!.getBoundingClientRect()
     await expect(inside.bottom).toBeLessThanOrEqual(Math.ceil(room.bottom))
@@ -930,11 +930,11 @@ export const ActionPanel: Story = {
 
     await userEvent.keyboard('{Home}')
     await userEvent.keyboard('name')
-    await waitFor(() => expect(deeds()).toHaveLength(1))
-    await expect(deeds()[0]?.textContent).toContain('Rename')
+    await waitFor(() => expect(actions()).toHaveLength(1))
+    await expect(actions()[0]?.textContent).toContain('Rename')
 
     await userEvent.clear(hunt()!)
-    await waitFor(() => expect(deeds()).toHaveLength(EVERYTHING.length))
+    await waitFor(() => expect(actions()).toHaveLength(EVERYTHING.length))
   },
 }
 
@@ -1002,7 +1002,7 @@ export const Steps: Story = {
     await userEvent.keyboard('{Control>}k{/Control}')
     await waitFor(() => expect(sheet()).not.toBeNull())
     await userEvent.keyboard('name')
-    await waitFor(() => expect(deeds()).toHaveLength(1))
+    await waitFor(() => expect(actions()).toHaveLength(1))
     await userEvent.keyboard('{Enter}')
 
     await waitFor(() =>
