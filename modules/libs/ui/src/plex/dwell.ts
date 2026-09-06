@@ -49,6 +49,19 @@ export function widenedFor(
 }
 
 /**
+ * The box as it is drawn: the one the node was placed with, carried towards the
+ * one it opens to as far as it has got. A node with nothing more of its title
+ * to show is drawn as it was placed, however long the attention rests on it.
+ */
+export function boxOf(node: PlacedNode, wide: WideBox | null, open: number): WideBox {
+  if (!wide || open <= 0) return { width: node.width, offset: 0 }
+  return {
+    width: lerp(node.width, wide.width, open),
+    offset: lerp(0, wide.offset, open),
+  }
+}
+
+/**
  * How far open a box stands, from nothing at all to the whole way: shut until
  * the attention has been on it for the wait, then open, and shut again the
  * moment the attention leaves.

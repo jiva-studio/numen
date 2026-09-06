@@ -21,11 +21,10 @@ import {
 import PlexNodeHandle from './PlexNodeHandle.vue'
 import PlexNodeParts from './PlexNodeParts.vue'
 import { isMenuKey, isPress, isShowKey } from './keys'
-import { DWELL, useDwell, type WideBox } from '../dwell'
+import { boxOf, DWELL, useDwell, type WideBox } from '../dwell'
 import { byHandle, type ReachStrategy } from '../reaching'
 import { byDoubleClick, joined, showingOf, type PlexShowing, type ShowStrategy } from '../showing'
 import type { HungParts } from '../inside'
-import { lerp } from '../arrange'
 import { browserClock, type Clock } from '../transition'
 import type { MenuOpening } from '../../menu/item'
 import {
@@ -269,15 +268,7 @@ const under = computed(() =>
 
 const open = useDwell(() => under.value, () => props.dwell, props.clock)
 
-/** The box as it is drawn: the one it was placed with, opened towards the widened one. */
-const box = computed<WideBox>(() => {
-  const wide = props.wide
-  if (!wide || open.value <= 0) return { width: props.node.width, offset: 0 }
-  return {
-    width: lerp(props.node.width, wide.width, open.value),
-    offset: lerp(0, wide.offset, open.value),
-  }
-})
+const box = computed(() => boxOf(props.node, props.wide, open.value))
 
 /** Where the box begins, which everything drawn in it is placed from. */
 const startsAt = computed(() => box.value.offset - box.value.width / 2)
