@@ -10,7 +10,7 @@
  */
 import type { Decorator, Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import BookReader from './BookReader.vue'
 import { GAP, bytesIn, type Span } from './spread'
 import { PROSE, VERSES, chapterOf, type Chapter } from '@/fixtures/book'
@@ -96,6 +96,52 @@ const reading =
           :marked="marked"
           @go="go"
         />
+      </div>
+    `,
+  })
+
+/**
+ * The reader drawn where a tab held out of sight is drawn: no room to lay
+ * anything out, and the document arriving after the room does.
+ */
+const outOfSight =
+  (chapter: Chapter): Render =>
+  () => ({
+    components: { BookReader },
+    setup() {
+      const at = ref(chapter.span.begins)
+      const room = ref(false)
+      const markup = ref('')
+      onMounted(() => {
+        setTimeout(() => {
+          room.value = true
+        }, 50)
+        setTimeout(() => {
+          markup.value = chapter.markup
+        }, 150)
+      })
+      return {
+        at,
+        room,
+        markup,
+        span: chapter.span,
+        go: (to: number) => {
+          at.value = to
+        },
+      }
+    },
+    template: `
+      <div class="h-full" :data-front="at">
+        <div class="h-full" :style="{ display: room ? 'block' : 'none' }">
+          <BookReader
+            class="h-full"
+            :markup="markup"
+            :span="span"
+            :book="span"
+            :at="at"
+            @go="go"
+          />
+        </div>
       </div>
     `,
   })
@@ -318,7 +364,7 @@ export const SetLarger: Story = {
     await waitFor(
       async () => {
         const standing = runsOf(canvasElement).find(
-          (run) => Number(run.dataset['at']) === before,
+          (run) => Number(run.dataset['offset']) === before,
         )!
         const rect = standing.getClientRects()[0]!
         const area = areaOf(canvasElement).getBoundingClientRect()
@@ -373,5 +419,23 @@ export const TurnedByHand: Story = {
     await waitFor(async () => await expect(inFrontOf(canvasElement)).toBeGreaterThan(0), {
       timeout: ITS_OWN_PACE,
     })
+  },
+}
+
+/**
+ * A book is turned and never scrolled, so a reader drawn out of sight shows
+ * nothing until it has been measured, and is set in columns as soon as it has
+ * room, with nobody asking.
+ */
+export const DrawnOutOfSight: Story = {
+  decorators: [WIDE],
+  render: outOfSight(chapterOf(PROSE)),
+  play: async ({ canvasElement }) => {
+    await laid(canvasElement)
+
+    const area = areaOf(canvasElement)
+    await expect(paperOf(canvasElement).scrollHeight).toBeLessThanOrEqual(area.clientHeight + 1)
+    await expect(area.scrollHeight).toBeLessThanOrEqual(area.clientHeight + 1)
+    await expect(columnOf(canvasElement)).toBeCloseTo((area.clientWidth - GAP) / 2, -1)
   },
 }

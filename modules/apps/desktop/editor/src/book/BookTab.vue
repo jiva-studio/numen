@@ -1,42 +1,91 @@
 <script setup lang="ts">
 /**
  * A book tab: the document of the book the person is standing in, and the list
- * of what the book divides into beside it.
+ * of what the book divides into, which comes over it.
  *
  * What the book could not be read as is said where the text would be.
  */
-import { ref } from 'vue'
+import { onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import { BookContents, BookReader } from '@numen/ui'
 import { WORDS as words } from './words'
 import type { BookTabState } from './kind'
 
 const props = defineProps<{ state: BookTabState }>()
 
-/** Whether the list of what the book divides into stands beside the text. */
+/** Whether the list of what the book divides into stands over the text. */
 const listing = ref(false)
+
+const panel = useTemplateRef<HTMLElement>('panel')
+const way = useTemplateRef<HTMLElement>('way')
+
+/** A press that landed neither in the list nor on the way into it. */
+const outside = (event: Event) => {
+  const target = event.target
+  if (!(target instanceof Node)) return
+  if (panel.value?.contains(target) || way.value?.contains(target)) return
+  listing.value = false
+}
+
+const onWindowKey = (event: KeyboardEvent) => {
+  if (event.key !== 'Escape') return
+  event.preventDefault()
+  listing.value = false
+  way.value?.focus()
+}
+
+/** What the open list installed on the window, if anything. */
+let detach: (() => void) | null = null
+
+const leave = () => {
+  detach?.()
+  detach = null
+}
+
+watch(listing, (open) => {
+  if (!open) return leave()
+  // Escape is read before the panel the tab stands in sees it.
+  window.addEventListener('pointerdown', outside, true)
+  window.addEventListener('keydown', onWindowKey, true)
+  detach = () => {
+    window.removeEventListener('pointerdown', outside, true)
+    window.removeEventListener('keydown', onWindowKey, true)
+  }
+})
+
+onBeforeUnmount(leave)
+
+/** A place chosen in the list: the book is turned to it and the list goes. */
+const chose = (at: number) => {
+  listing.value = false
+  void props.state.go(at)
+}
 </script>
 
 <template>
   <div class="book-tab">
-    <aside v-if="listing" class="book-tab__contents">
-      <BookContents
-        :entries="props.state.contents.value"
-        :at="props.state.at.value"
-        :words="words"
-        @go="(at: number) => void props.state.go(at)"
-      />
-    </aside>
-
     <div class="book-tab__reading">
       <button
+        ref="way"
         type="button"
         class="book-tab__list"
         :aria-label="listing ? words.hides : words.shows"
         :aria-pressed="listing"
+        :aria-expanded="listing"
         @click="listing = !listing"
       >
         {{ words.contents }}
       </button>
+
+      <Transition name="book-tab__over">
+        <aside v-if="listing" ref="panel" class="book-tab__contents">
+          <BookContents
+            :entries="props.state.contents.value"
+            :at="props.state.at.value"
+            :words="words"
+            @go="chose"
+          />
+        </aside>
+      </Transition>
 
       <p v-if="props.state.trouble.value" class="book-tab__silence">
         {{ props.state.trouble.value }}
@@ -45,6 +94,7 @@ const listing = ref(false)
         v-else
         :ref="(reader: unknown) => props.state.drew(reader)"
         :markup="props.state.markup.value"
+        :path="props.state.drawn.value"
         :span="props.state.reading.value"
         :book="props.state.span.value"
         :at="props.state.at.value"
@@ -52,6 +102,7 @@ const listing = ref(false)
         :also="props.state.also.value"
         :words="words"
         @go="(at: number) => void props.state.go(at)"
+        @follow="(path: string) => void props.state.follow(path)"
       />
     </div>
   </div>
@@ -59,23 +110,14 @@ const listing = ref(false)
 
 <style scoped>
 .book-tab {
-  display: flex;
   block-size: 100%;
   min-block-size: 0;
-}
-
-.book-tab__contents {
-  flex: 0 0 auto;
-  inline-size: 15rem;
-  min-block-size: 0;
-  border-inline-end: var(--numen-stroke) solid var(--numen-rule);
 }
 
 .book-tab__reading {
   position: relative;
-  flex: 1 1 auto;
-  min-inline-size: 0;
   block-size: 100%;
+  min-inline-size: 0;
 }
 
 /* Standing over the text, so it carries a panel's own ground and lets what is
@@ -84,7 +126,7 @@ const listing = ref(false)
   position: absolute;
   inset-block-start: 0.25rem;
   inset-inline-start: 0.25rem;
-  z-index: 1;
+  z-index: 2;
   padding: 0.25rem 0.5rem;
   border: var(--numen-stroke) solid var(--numen-panel-border);
   border-radius: var(--numen-radius-tight);
@@ -95,6 +137,38 @@ const listing = ref(false)
 
 .book-tab__list:focus-visible {
   outline: var(--numen-ring-width) solid var(--numen-ring);
+}
+
+/* The list comes down over the text and takes no room from it, so the columns
+   behind it stand where they stood. */
+.book-tab__contents {
+  position: absolute;
+  inset-block-start: 2.25rem;
+  inset-inline-start: 0.25rem;
+  z-index: 1;
+  inline-size: 15rem;
+  max-inline-size: calc(100% - 0.5rem);
+  /* A height of its own, so a book of a thousand names scrolls inside it. */
+  block-size: min(26rem, calc(100% - 3rem));
+  overflow: hidden;
+  border: var(--numen-stroke) solid var(--numen-panel-border);
+  border-radius: var(--numen-radius-panel);
+  background: var(--numen-panel-bg);
+  backdrop-filter: blur(var(--numen-panel-blur));
+  box-shadow: var(--numen-panel-shadow);
+}
+
+.book-tab__over-enter-active,
+.book-tab__over-leave-active {
+  transition:
+    translate var(--numen-motion) var(--numen-easing),
+    opacity var(--numen-motion) var(--numen-easing);
+}
+
+.book-tab__over-enter-from,
+.book-tab__over-leave-to {
+  translate: 0 -0.5rem;
+  opacity: 0;
 }
 
 .book-tab__silence {

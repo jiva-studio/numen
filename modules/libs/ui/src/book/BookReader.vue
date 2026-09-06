@@ -8,11 +8,13 @@
  * the book's text: setting the text larger sets the columns again, and the
  * offset stays where it was.
  */
-import { computed, onBeforeUnmount, ref, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import ReaderToolbar from '@/reader/ReaderToolbar.vue'
 import { useViewport } from '@/reader/viewport'
 import { onNextFrame } from '@/lib/clock'
+import { pointsOutward } from '@/linking/outward'
 import { ALSO, HIGHLIGHT, highlight, unhighlight } from './highlight'
+import { placeIn, type BookLink } from './link'
 import {
   BOOK_WORDS,
   GAP,
@@ -45,6 +47,8 @@ const props = withDefaults(
      * It reaches this component already measured against what may be drawn.
      */
     markup?: string
+    /** The document being drawn, as the book's archive names it. */
+    path?: string
     /** Where this document stands in the book, in bytes of the book's text. */
     span?: Span
     /** Where the book itself runs between, in bytes. */
@@ -60,6 +64,7 @@ const props = withDefaults(
   }>(),
   {
     markup: '',
+    path: '',
     span: () => ({ begins: 0, ends: 0 }),
     book: () => ({ begins: 0, ends: 0 }),
     at: 0,
@@ -72,6 +77,11 @@ const props = withDefaults(
 const emit = defineEmits<{
   /** The offset now in front, in bytes of the book's text. */
   (event: 'go', at: number): void
+  /**
+   * A link led to another document of the book, named as the archive names it.
+   * The reader lands on the place inside it once that document is drawn.
+   */
+  (event: 'follow', path: string): void
 }>()
 
 /** How large the text is set. What that may be is `spread.ts`. */
@@ -94,6 +104,12 @@ const marks = shallowRef<readonly Mark[]>([])
 
 /** Each run of the text, and the element it is set in, in the order the text is. */
 let runs: readonly { readonly at: number; readonly element: HTMLElement }[] = []
+
+/**
+ * Whether the reading area has been measured. A book is turned and never
+ * scrolled, so its text is drawn only against an area of a known size.
+ */
+const measured = computed(() => viewport.value.wide > 0 && viewport.value.high > 0)
 
 const columns = computed(() => columnsIn(viewport.value.wide, size.value))
 
@@ -134,7 +150,7 @@ const gather = () => {
   const found: { at: number; element: HTMLElement }[] = []
   const placed: Mark[] = []
   for (const element of text.querySelectorAll<HTMLElement>('[data-offset]')) {
-    const said = Number(element.dataset['at'])
+    const said = Number(element.dataset['offset'])
     if (!Number.isFinite(said)) continue
     found.push({ at: said, element })
     const first = element.getClientRects()[0]
@@ -169,18 +185,55 @@ const goTo = (spread: number) => {
 const keeping = () => inFront(marks.value, flow.value, standing.value) ?? props.at
 
 /**
+ * The offset a place named inside the book stands at: the run the named element
+ * falls in, or the first run after a name standing between runs.
+ */
+const offsetAt = (fragment: string): number | undefined => {
+  const text = paper.value
+  if (!text || fragment === '') return undefined
+
+  let named: HTMLElement | undefined
+  for (const element of text.querySelectorAll<HTMLElement>('[id]')) {
+    if (element.id === fragment) {
+      named = element
+      break
+    }
+  }
+  if (!named) return undefined
+
+  const run =
+    named.closest<HTMLElement>('[data-offset]') ?? named.querySelector<HTMLElement>('[data-offset]')
+  if (run) {
+    const said = Number(run.dataset['offset'])
+    return Number.isFinite(said) ? said : undefined
+  }
+  for (const after of runs) {
+    if (named.compareDocumentPosition(after.element) & Node.DOCUMENT_POSITION_FOLLOWING) {
+      return after.at
+    }
+  }
+  return undefined
+}
+
+/**
  * The text set in columns again, with one offset kept in front. The columns are
  * measured after the browser has laid them out, and only an area that overflows
  * has a length to measure.
+ *
+ * A place a link led to is found here, in markup that has only now been drawn.
  */
-const settle = (keep: number) => {
+const settle = (keep: number, led?: BookLink) => {
+  measure()
+  if (!measured.value) return
   onNextFrame(() => {
     const box = area.value
     if (!box) return
-    measure()
     along.value = box.scrollWidth
     gather()
-    stand(holding(marks.value, flow.value, keep), 'auto')
+    const landed =
+      led && (led.path === '' || led.path === props.path) ? offsetAt(led.fragment) : undefined
+    stand(holding(marks.value, flow.value, landed ?? keep), 'auto')
+    if (landed !== undefined) emit('go', landed)
     marking()
   })
 }
@@ -228,6 +281,43 @@ const letGo = (event: PointerEvent) => {
 
   const press = pressTurn(event.clientX - box.getBoundingClientRect().left, box.clientWidth)
   if (press) turn(press)
+}
+
+/** Where a link led, held until the document holding that place is drawn. */
+let led: BookLink | undefined
+
+/** Whether an address names somewhere the window is not served from. */
+const outward = (href: string): boolean => {
+  const here = new URL(window.location.href)
+  try {
+    return pointsOutward(new URL(href, here), here)
+  } catch {
+    // An href that is no address names nowhere outward, and the book is asked
+    // for the place it names instead.
+    return false
+  }
+}
+
+/**
+ * A link pressed in the text. Nothing a book contains navigates the window: a
+ * link inside the book is a move within the book, and one leading out of it is
+ * the window's own to hand on.
+ */
+const follow = (press: MouseEvent) => {
+  const link = (press.target as Element | null)?.closest?.('a[href]')
+  const href = link?.getAttribute('href')
+  if (href === null || href === undefined) return
+
+  press.preventDefault()
+  if (outward(href)) return
+
+  const place = placeIn(href)
+  if (place.path !== '' && place.path !== props.path) {
+    led = place
+    emit('follow', place.path)
+    return
+  }
+  emit('go', offsetAt(place.fragment) ?? props.span.begins)
 }
 
 /**
@@ -297,8 +387,10 @@ watch([() => viewport.value.wide, () => viewport.value.high, size], () => {
 watch(
   () => props.markup,
   () => {
+    const place = led
+    led = undefined
     standing.value = 0
-    settle(props.at)
+    settle(props.at, place)
   },
 )
 
@@ -314,6 +406,13 @@ watch(
     if (want !== standing.value) stand(want, 'smooth')
   },
 )
+
+onMounted(() => {
+  settle(props.at)
+  // The columns are counted over the type the book is set in, which arrives
+  // after the markup does.
+  void document.fonts?.ready.then(() => settle(keeping()))
+})
 
 onBeforeUnmount(() => {
   unhighlight(props)
@@ -345,9 +444,12 @@ defineExpose({
              be drawn. -->
         <!-- eslint-disable-next-line vue/no-v-html -->
         <div
+          v-show="measured"
           ref="paper"
           class="book__paper prose prose-sm prose-numen max-w-none"
           :style="setting"
+          @click="follow"
+          @auxclick="follow"
           v-html="markup"
         />
       </div>

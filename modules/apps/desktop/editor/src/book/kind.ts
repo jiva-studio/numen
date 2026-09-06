@@ -64,13 +64,13 @@ export function bookKind(
 
 export function booking(read: OpenBookState) {
   /** The book as it is drawn, for as long as its tab is drawn. */
-  let drawn: BookHandle | null = null
+  let reader: BookHandle | null = null
 
   const drew = (held: unknown) => {
-    drawn = (held as BookHandle | null) ?? null
+    reader = (held as BookHandle | null) ?? null
   }
 
-  const measure = () => drawn?.measure()
+  const measure = () => reader?.measure()
 
   return { ...read, drew, measure }
 }

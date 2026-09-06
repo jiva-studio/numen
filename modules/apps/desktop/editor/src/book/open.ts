@@ -186,6 +186,9 @@ export function openBook(books: Books, path: string, words: BookWords) {
   /** Where the document being read stands in the book's text. */
   const reading = computed<BookSpan>(() => standing.value?.span ?? { begins: 0, ends: 0 })
 
+  /** The document being read, as the book's archive names it. */
+  const drawn = computed(() => standing.value?.path ?? '')
+
   /** Whether the tab this book stands in is still open. */
   let open = true
 
@@ -245,6 +248,19 @@ export function openBook(books: Books, path: string, words: BookWords) {
   }
 
   /**
+   * A link inside the book followed to another of its documents. That document
+   * is drawn from its beginning, and a link naming a document the book does not
+   * hold leads nowhere.
+   */
+  const follow = async (target: string) => {
+    await shape
+    if (!open) return
+    const wanted = documents.value.find((one) => one.path === target)
+    if (!wanted) return
+    await go(wanted.span.begins)
+  }
+
+  /**
    * Stretches of the book's text reached: the person is sent to the first of
    * them and it is marked where it stands, and the rest are marked more faintly
    * wherever they fall.
@@ -277,11 +293,13 @@ export function openBook(books: Books, path: string, words: BookWords) {
     page,
     at,
     reading,
+    drawn,
     markup,
     marked,
     also,
     trouble,
     go,
+    follow,
     reach,
     close,
   }

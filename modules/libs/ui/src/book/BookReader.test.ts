@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import BookReader from './BookReader.vue'
 import { chapterOf } from '@/fixtures/book'
+import { bytesIn } from './spread'
 
 /**
  * A chapter standing in the middle of a book, with a document before it and a
@@ -43,6 +44,14 @@ describe('a document nothing has laid out', () => {
     const held = await reader()
 
     expect(asked(held)).toHaveLength(0)
+  })
+
+  it('shows nothing at all', async () => {
+    // A book is turned and never scrolled, so its text is drawn only against an
+    // area of a known size.
+    const held = await reader()
+
+    expect((held.find('.book__paper').element as HTMLElement).style.display).toBe('none')
   })
 })
 
@@ -93,5 +102,82 @@ describe('a document with no text at all', () => {
     expect(held.find('.book__paper').exists()).toBe(true)
     expect(held.findAll('[data-offset]')).toHaveLength(0)
     expect(asked(held)).toHaveLength(0)
+  })
+})
+
+/** A document whose text points inside the book and once out of it. */
+const POINTING = chapterOf(
+  [
+    {
+      tag: 'p',
+      text: 'Onward: ',
+      inside: '<a href="OEBPS/second.xhtml#alpha">the second parva</a>',
+    },
+    { tag: 'p', text: 'Down: ', inside: '<a href="#beta">the note</a>' },
+    { tag: 'p', text: 'Away: ', inside: '<a href="https://example.invalid/away">elsewhere</a>' },
+    { tag: 'p', text: 'The note pointed down to.', inside: '<span id="beta"></span>' },
+  ],
+  400,
+)
+
+/** A reader drawing that document, and the press a link in it was given. */
+const pointing = async () => {
+  const held = mount(BookReader, {
+    props: {
+      markup: POINTING.markup,
+      path: 'OEBPS/first.xhtml',
+      span: POINTING.span,
+      book: BOOK,
+      at: POINTING.span.begins,
+    },
+    attachTo: document.body,
+  })
+  const area = held.find('.book__area').element as HTMLElement
+  area.scrollTo = () => {}
+  await held.vm.$nextTick()
+  return held
+}
+
+/** One link of the document pressed, and the press as the page left it. */
+const press = async (held: Awaited<ReturnType<typeof pointing>>, says: string) => {
+  const link = held.findAll('a').find((one) => one.text() === says)!
+  const event = new MouseEvent('click', { bubbles: true, cancelable: true })
+  link.element.dispatchEvent(event)
+  await held.vm.$nextTick()
+  return event
+}
+
+describe('a link inside a book', () => {
+  it('is taken by the reader, and never reaches the browser', async () => {
+    const held = await pointing()
+
+    for (const says of ['the second parva', 'the note', 'elsewhere']) {
+      expect((await press(held, says)).defaultPrevented).toBe(true)
+    }
+  })
+
+  it('asks for the document it names, where that is another of the book', async () => {
+    const held = await pointing()
+
+    await press(held, 'the second parva')
+
+    expect(held.emitted('follow')).toEqual([['OEBPS/second.xhtml']])
+  })
+
+  it('asks for the offset the place stands at, inside the document being read', async () => {
+    const held = await pointing()
+
+    await press(held, 'the note')
+
+    expect(asked(held)).toEqual([POINTING.span.ends - bytesIn('The note pointed down to.')])
+  })
+
+  it('asks for nothing of the book, where the link leads out of it', async () => {
+    const held = await pointing()
+
+    await press(held, 'elsewhere')
+
+    expect(asked(held)).toHaveLength(0)
+    expect(held.emitted('follow')).toBeUndefined()
   })
 })

@@ -282,3 +282,27 @@ describe('a book tab closed', () => {
     expect(read.markup.value).toBe('')
   })
 })
+
+describe('a link inside a book followed', () => {
+  it('draws the document it names, from the beginning of that document', async () => {
+    const { books } = shelf()
+    const book = openBook(books, 'library/mbh.epub', WORDS)
+    await settles()
+
+    await book.follow('text/part0003.xhtml')
+
+    expect(book.at.value).toBe(6_000)
+    expect(book.drawn.value).toBe('text/part0003.xhtml')
+  })
+
+  it('leads nowhere, where the book holds no such document', async () => {
+    const { books } = shelf()
+    const book = openBook(books, 'library/mbh.epub', WORDS)
+    await settles()
+
+    await book.follow('text/nowhere.xhtml')
+
+    expect(book.at.value).toBe(0)
+    expect(book.drawn.value).toBe('text/part0001.xhtml')
+  })
+})

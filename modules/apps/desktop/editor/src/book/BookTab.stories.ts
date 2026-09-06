@@ -1,14 +1,16 @@
 /**
  * A book tab: the text of the document the person is standing in, and the list
- * of what the book divides into beside it.
+ * of what the book divides into, which comes over it.
  *
- * What is asked here is what only a browser can answer. The list and the text
- * share the pane, and the columns are laid out against the room that leaves —
- * so whether opening the list narrows the text, and whether a place chosen in
- * it is turned to, are questions about boxes a browser placed.
+ * What is asked here is what only a browser can answer. Whether the list leaves
+ * the columns behind it where they stood, whether a place chosen in it is
+ * turned to, whether the tab lays itself out once it has room, and what a press
+ * on a link in the text does, are questions about boxes a browser placed and
+ * about a press it delivered.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { onMounted, ref } from 'vue'
 import BookTab from './BookTab.vue'
 import { booking } from './kind'
 import { openBook, type Book, type Books } from './open'
@@ -32,18 +34,34 @@ const PARAGRAPHS: readonly string[] = [
   ),
 ]
 
-/** The paragraphs written out as one document, each carrying where it begins. */
-const document_ = (() => {
-  let at = 0
+/** One line of a document, as the window is handed one. */
+interface Line {
+  readonly text: string
+  /** What the book names the line, for a link inside it to land on. */
+  readonly id?: string
+  /** Markup standing in the line that the text stream carries nothing of. */
+  readonly inside?: string
+}
+
+/** The lines written out as one document, each carrying where it begins. */
+const documentOf = (lines: readonly Line[], begins: number) => {
+  let at = begins
   const written: string[] = []
   const offsets: number[] = []
-  for (const line of PARAGRAPHS) {
+  for (const line of lines) {
     offsets.push(at)
-    written.push(`<p data-offset="${at}">${line}</p>`)
-    at += bytesIn(line)
+    const named = line.id === undefined ? '' : ` id="${line.id}"`
+    written.push(`<p${named} data-offset="${at}">${line.text}${line.inside ?? ''}</p>`)
+    at += bytesIn(line.text)
   }
   return { markup: written.join('\n'), offsets, ends: at }
-})()
+}
+
+/** The paragraphs written out as one document, each carrying where it begins. */
+const document_ = documentOf(
+  PARAGRAPHS.map((text) => ({ text })),
+  0,
+)
 
 /** A book of one document, naming three places inside it. */
 const NAMED: Book = {
@@ -69,6 +87,60 @@ const shelf = (book: Book): Books => ({
   markup: async () => document_.markup,
   entry: (_path, name) => `/assets/book.epub/entries/${encodeURIComponent(name)}`,
 })
+
+/** The two documents of a book whose text points about inside itself. */
+const FIRST_PATH = 'OEBPS/part0001.xhtml'
+const SECOND_PATH = 'OEBPS/part0002.xhtml'
+
+/** Where a link leading out of the book points. */
+const AWAY = 'https://example.invalid/away'
+
+/** What each of the three links is called, so a story presses the one it means. */
+const ONWARD = 'the second parva'
+const BACK = 'the note below'
+const ELSEWHERE = 'elsewhere'
+
+const FIRST = documentOf(
+  [
+    { text: 'Ādi Parva' },
+    { text: 'Onward to ', inside: `<a href="${SECOND_PATH}#alpha">${ONWARD}</a>` },
+    { text: 'Down to ', inside: `<a href="#beta">${BACK}</a>` },
+    { text: 'And out of the book to ', inside: `<a href="${AWAY}">${ELSEWHERE}</a>` },
+    ...PARAGRAPHS.slice(3).map((text) => ({ text })),
+    { text: 'The note the first parva points down to.', id: 'beta' },
+  ],
+  0,
+)
+
+const SECOND = documentOf(
+  [
+    { text: 'Sabhā Parva' },
+    { text: 'The place the first parva points on to.', id: 'alpha' },
+    ...PARAGRAPHS.slice(3, 14).map((text) => ({ text })),
+  ],
+  FIRST.ends,
+)
+
+/** A book of two documents, its text pointing into both of them and out of itself. */
+const CROSSED: Book = {
+  title: 'Mahābhārata',
+  span: { begins: 0, ends: SECOND.ends },
+  documents: [
+    { path: FIRST_PATH, span: { begins: 0, ends: FIRST.ends } },
+    { path: SECOND_PATH, span: { begins: FIRST.ends, ends: SECOND.ends } },
+  ],
+  parts: [],
+  printed: [],
+  pages: 24,
+  at: '20480 1700000000000000000 mahabharata.epub',
+}
+
+/** That book on a shelf, each document of the spine drawn as it stands. */
+const crossed: Books = {
+  shape: async () => CROSSED,
+  markup: async (_path, document) => (document === SECOND_PATH ? SECOND.markup : FIRST.markup),
+  entry: (_path, name) => `/assets/book.epub/entries/${encodeURIComponent(name)}`,
+}
 
 interface Knobs {
   /** The book being read. One naming nothing is reached by its documents. */
@@ -107,10 +179,20 @@ const runsOf = (canvasElement: HTMLElement) => [
   ...canvasElement.querySelectorAll<HTMLElement>('.book__paper [data-offset]'),
 ]
 
-/** The text laid out in columns, once the browser has laid it out. */
+/** How many spreads the text came to, as the controls count them. */
+const spreadsIn = (canvasElement: HTMLElement) =>
+  within(canvasElement).getByLabelText(words.page).getAttribute('max')
+
+/**
+ * The text laid out in columns, once the browser has laid it out. The controls
+ * are drawn from the spreads the text came to, so they stand there when it has.
+ */
 const laid = async (canvasElement: HTMLElement) =>
   await waitFor(
-    async () => await expect(runsOf(canvasElement)[0]?.getClientRects().length).toBeGreaterThan(0),
+    async () => {
+      await expect(runsOf(canvasElement)[0]?.getClientRects().length).toBeGreaterThan(0)
+      await expect(within(canvasElement).getByLabelText(words.page)).toBeInTheDocument()
+    },
     { timeout: ITS_OWN_PACE },
   )
 
@@ -118,26 +200,51 @@ const laid = async (canvasElement: HTMLElement) =>
 export const ABook: Story = {}
 
 /**
- * The list stands beside the text and the text is set in what it leaves. A list
- * drawn over the columns hides the words it was opened to find.
+ * The list comes over the text and takes no room from it. A list that took a
+ * column of the pane would set the book in columns again, and a person opening
+ * it to find a place would find the book repaginated under them.
  */
-export const TheListStandsBesideTheText: Story = {
+export const TheListComesOverTheText: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await laid(canvasElement)
     const before = areaOf(canvasElement).getBoundingClientRect()
+    const spreads = spreadsIn(canvasElement)
 
     await userEvent.click(canvas.getByLabelText(words.shows))
+    const list = await canvas.findByRole('navigation')
 
     await waitFor(
-      async () => {
-        const after = areaOf(canvasElement).getBoundingClientRect()
-        await expect(after.width).toBeLessThan(before.width)
-        const list = canvas.getByRole('navigation').getBoundingClientRect()
-        await expect(list.right).toBeLessThanOrEqual(after.left + 1)
-      },
+      async () => await expect(list.getBoundingClientRect().height).toBeGreaterThan(0),
       { timeout: ITS_OWN_PACE },
     )
+    const after = areaOf(canvasElement).getBoundingClientRect()
+    await expect(after.width).toBe(before.width)
+    await expect(spreadsIn(canvasElement)).toBe(spreads)
+
+    // What stands where the list is drawn is the list, and the text is behind it.
+    const box = list.getBoundingClientRect()
+    const over = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
+    await expect(list.contains(over)).toBe(true)
+  },
+}
+
+/** The list goes on Escape, and the keyboard is left on the way back into it. */
+export const TheListIsPutAway: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await laid(canvasElement)
+
+    const way = canvas.getByLabelText(words.shows)
+    await userEvent.click(way)
+    await expect(await canvas.findByRole('navigation')).toBeInTheDocument()
+
+    await userEvent.keyboard('{Escape}')
+    await waitFor(
+      async () => await expect(canvas.queryByRole('navigation')).not.toBeInTheDocument(),
+      { timeout: ITS_OWN_PACE },
+    )
+    await expect(canvas.getByLabelText(words.shows)).toHaveFocus()
   },
 }
 
@@ -157,7 +264,7 @@ export const APlaceChosenIsTurnedTo: Story = {
     await waitFor(
       async () => {
         const run = runsOf(canvasElement).find(
-          (one) => Number(one.dataset['at']) === wanted.at,
+          (one) => Number(one.dataset['offset']) === wanted.at,
         )!
         const box = run.getClientRects()[0]!
         const area = areaOf(canvasElement).getBoundingClientRect()
@@ -183,5 +290,138 @@ export const ABookThatNamesNothing: Story = {
 
     await expect(await canvas.findByText('part0001')).toBeInTheDocument()
     await expect(canvas.queryByText(words.nothing)).not.toBeInTheDocument()
+  },
+}
+
+/**
+ * The tab drawn where a pane draws one that is not showing, and given room
+ * afterwards with nobody asking for it. A book is turned and never scrolled, so
+ * the text is in columns as soon as there is room for them.
+ */
+export const DrawnOutOfSight: Story = {
+  render: (args: Knobs) => ({
+    components: { BookTab },
+    setup() {
+      const state = booking(openBook(shelf(args.book), 'library/mbh.epub', words))
+      const room = ref(false)
+      onMounted(() => {
+        setTimeout(() => {
+          room.value = true
+        }, 100)
+      })
+      return { args, state, room }
+    },
+    template: `
+      <div class="numen" :style="{ height: '100vh', width: args.width, background: 'var(--numen-surface)' }">
+        <div :style="{ display: room ? 'block' : 'none', height: '100%' }">
+          <BookTab :state="state" />
+        </div>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await laid(canvasElement)
+
+    const area = areaOf(canvasElement)
+    await expect(area.scrollHeight).toBeLessThanOrEqual(area.clientHeight + 1)
+  },
+}
+
+/** The book whose text points about inside itself and once out of itself. */
+const pointing = () => ({
+  components: { BookTab },
+  setup: () => ({ state: booking(openBook(crossed, 'library/mbh.epub', words)) }),
+  template: `
+    <div class="numen" style="height: 100vh; background: var(--numen-surface)">
+      <BookTab :state="state" />
+    </div>
+  `,
+})
+
+/** The press the window would have followed, once the page has had it. */
+const pressing = async (link: HTMLElement) => {
+  let taken: MouseEvent | undefined
+  const watching = (event: Event) => {
+    taken = event as MouseEvent
+  }
+  window.addEventListener('click', watching)
+  try {
+    await userEvent.click(link)
+  } finally {
+    window.removeEventListener('click', watching)
+  }
+  return taken
+}
+
+/** The run standing at an offset, and nothing where the document holds none. */
+const runAt = (canvasElement: HTMLElement, at: number) =>
+  runsOf(canvasElement).find((one) => Number(one.dataset['offset']) === at)
+
+/** Whether a run stands in the spread the person is looking at. */
+const inFront = (canvasElement: HTMLElement, run: HTMLElement) => {
+  const box = run.getClientRects()[0]
+  const area = areaOf(canvasElement).getBoundingClientRect()
+  return box !== undefined && box.left >= area.left - 1 && box.left < area.right
+}
+
+/**
+ * A link into the document being read is a move within the book, and the press
+ * never reaches the browser. The window is the application, and a page it
+ * navigates to is the application gone.
+ */
+export const ALinkIntoTheSameDocument: Story = {
+  render: pointing,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await laid(canvasElement)
+
+    const press = await pressing(canvas.getByText(BACK))
+    await expect(press?.defaultPrevented).toBe(true)
+
+    const note = FIRST.offsets[FIRST.offsets.length - 1]!
+    await waitFor(async () => await expect(inFront(canvasElement, runAt(canvasElement, note)!)).toBe(true), {
+      timeout: ITS_OWN_PACE,
+    })
+  },
+}
+
+/**
+ * A link into another document of the book draws that document and lands on the
+ * place it names.
+ */
+export const ALinkIntoAnotherDocument: Story = {
+  render: pointing,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await laid(canvasElement)
+
+    const press = await pressing(canvas.getByText(ONWARD))
+    await expect(press?.defaultPrevented).toBe(true)
+
+    const alpha = SECOND.offsets[1]!
+    await waitFor(
+      async () => {
+        const run = runAt(canvasElement, alpha)
+        await expect(run).toBeDefined()
+        await expect(inFront(canvasElement, run!)).toBe(true)
+      },
+      { timeout: ITS_OWN_PACE },
+    )
+  },
+}
+
+/**
+ * A link leading out of the book never carries the window off either: where the
+ * address goes is the window's own to settle, and the page is not navigated.
+ */
+export const ALinkOutOfTheBook: Story = {
+  render: pointing,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await laid(canvasElement)
+
+    const press = await pressing(canvas.getByText(ELSEWHERE))
+
+    await expect(press?.defaultPrevented).toBe(true)
   },
 }
