@@ -149,3 +149,23 @@ func links(line string) [][]int {
 	}
 	return out
 }
+
+// oneLine is what a name a caller composed a heading from stands as. A heading
+// is one line, so it holds what stands in front of the first break in it.
+func oneLine(name string) string {
+	line := markdown.Normalised(name)
+	if at := strings.IndexByte(line, '\n'); at >= 0 {
+		line = line[:at]
+	}
+	return strings.TrimSpace(line)
+}
+
+// headingLine is the line a card, a face, a field or a side stands under. A
+// heading carrying no text is the hashes and nothing after them.
+func headingLine(level int, name string) string {
+	hashes := strings.Repeat("#", level)
+	if name == "" {
+		return hashes
+	}
+	return hashes + " " + name
+}
