@@ -9,7 +9,6 @@ import { createClient } from '@connectrpc/connect'
 import {
   BudgetName,
   Counts as Countings,
-  Goal as Goals,
   Rule as Rules,
   PresetsService,
 } from '@numen/protocol'
@@ -22,12 +21,13 @@ import type {
   Settings as SettingsMessage,
   SettingsBounds as SettingsBoundsMessage,
 } from '@numen/protocol'
-import { namesOf, transport } from '@numen/wire'
+import { goalNames, goalOf, namesOf, transport } from '@numen/wire'
+import type { Goal } from '@numen/wire'
 import { fingerprint, refusalIn, staleIn, stamp } from '../answers'
 import type { RefusalReason } from '../core'
 
-/** Which value the one control steers. */
-export type Goal = 'minutes' | 'retention' | 'date'
+/** Which value the one control steers. Both windows say it in the same words. */
+export type { Goal }
 
 /** The three, in the order they are offered. */
 export const GOALS: readonly Goal[] = ['minutes', 'retention', 'date']
@@ -418,7 +418,7 @@ const settingsOf = (said: SettingsMessage | undefined): Settings =>
   said === undefined
     ? DEFAULTS
     : {
-        goal: WORDED[said.goal] ?? DEFAULTS.goal,
+        goal: goalOf[said.goal] ?? DEFAULTS.goal,
         byDate: said.byDate,
         minutesADay: said.minutesADay,
         newADay: said.newADay,
@@ -434,7 +434,7 @@ const settingsOf = (said: SettingsMessage | undefined): Settings =>
 
 /** The settings in the shape the schema carries them. */
 const sent = (settings: Settings) => ({
-  goal: ASKED[settings.goal],
+  goal: goalNames[settings.goal],
   byDate: settings.byDate,
   minutesADay: settings.minutesADay,
   newADay: settings.newADay,
@@ -450,7 +450,7 @@ const sent = (settings: Settings) => ({
 
 /** A curve as the window carries it. An answer holding none is an empty one. */
 const curved = (said: CurveMessage | undefined): Curve => ({
-  goal: (said && WORDED[said.goal]) ?? DEFAULTS.goal,
+  goal: (said && goalOf[said.goal]) ?? DEFAULTS.goal,
   grid: said?.grid ?? [],
   days: said?.days ?? [],
   at: (said?.at ?? []).map((one) => ({
@@ -479,21 +479,6 @@ const curved = (said: CurveMessage | undefined): Curve => ({
 
 const placed = (said: PlaceMessage | undefined): Place =>
   said === undefined ? NOWHERE : { at: said.at, value: said.value, day: said.day }
-
-/**
- * The goal in the window's own words. A preset naming none takes the default.
- * Keyed by the schema, so a goal added to it has to be given a word here before
- * this compiles.
- */
-const WORDED: Record<Goals, Goal | null> = {
-  [Goals.UNSPECIFIED]: null,
-  [Goals.MINUTES_A_DAY]: 'minutes',
-  [Goals.RETENTION]: 'retention',
-  [Goals.BY_DATE]: 'date',
-}
-
-/** The goal as the schema names it, read off the words above. */
-const ASKED = namesOf<Goal, Goals>(WORDED)
 
 /**
  * What counts as learned, in the window's own words. A preset naming none takes
