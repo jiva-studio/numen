@@ -60,17 +60,17 @@ export interface Passage {
 }
 
 /**
- * How a search over the text is asked. Each way is an order of its own, and
- * `fused` is every way in one ranking.
+ * How a search over the text is asked. Each mode is an order of its own, and
+ * `hybrid` is all of them in one ranking.
  */
-export type SearchMode = 'fused' | 'words' | 'meaning' | 'names'
+export type SearchMode = 'hybrid' | 'words' | 'meaning' | 'names'
 
 /** The two questions the palette asks of the vault. */
 export interface SearchDeps {
   /** The names in the vault that match: a note’s own title, and its headings. */
   names(query: string, limit: number): Promise<readonly NameMatch[]>
-  /** The text the vault holds that answers, asked one way. */
-  search(query: string, way: SearchMode, limit: number): Promise<readonly Passage[]>
+  /** The text the vault holds that answers, asked in one mode. */
+  search(query: string, mode: SearchMode, limit: number): Promise<readonly Passage[]>
 }
 
 /** What a group of a palette says when it holds nothing. */
