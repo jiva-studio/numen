@@ -14,6 +14,8 @@ export interface Stop {
   readonly rings: boolean
   /** Whether the browser draws it where a person could see it. */
   readonly shown: boolean
+  /** Whether the page says it is still on its way in or out. */
+  readonly moving: boolean
   /** Whether it is typed into, and so draws a caret of its own. */
   readonly typed: boolean
 }
@@ -32,8 +34,14 @@ export interface Walk {
  * it is, and shows that the keyboard is there.
  *
  * A thing typed into is not asked for a ring: its caret is where the keyboard
- * is, and a second mark around a field a person is typing in is noise. Nothing
- * else is excused.
+ * is, and a second mark around a field a person is typing in is noise.
+ *
+ * A stop the page says is still on its way is not asked whether it can be
+ * seen. The walk holds the page still to read a colour off it, and something
+ * held still halfway in is held at the opacity it was passing through: what
+ * that reading answers is the holding, not the page. It is asked everything
+ * else, and a stop standing at rest and drawn nowhere is a fault as it was.
+ * Nothing else is excused.
  *
  * What answers Tab by keeping it is not judged here. Two things in this
  * library do it — a palette a person leaves with Escape, and the editor, which
@@ -48,7 +56,7 @@ export function faults({ stops }: Walk): string[] {
   const wrong: string[] = []
   for (const stop of stops) {
     const at = `${stop.where}${stop.name ? ` (${stop.name})` : ''}`
-    if (!stop.shown) wrong.push(`${at} is a stop a person cannot see`)
+    if (!stop.shown && !stop.moving) wrong.push(`${at} is a stop a person cannot see`)
     if (!stop.name) wrong.push(`${stop.where} is a stop with no name to read out`)
     if (!stop.rings && !stop.typed) wrong.push(`${at} draws nothing when the keyboard lands on it`)
   }

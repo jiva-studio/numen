@@ -11,7 +11,14 @@ import { faults, type Stop, type Walk } from './reach'
 const walkOf = (stops: Stop[]): Walk => ({ stops, trapped: null, settled: true })
 
 /** A stop that breaks none of it, which each case then spoils one way. */
-const SOUND: Stop = { where: 'button.tab__close', name: 'Close', rings: true, shown: true, typed: false }
+const SOUND: Stop = {
+  where: 'button.tab__close',
+  name: 'Close',
+  rings: true,
+  shown: true,
+  moving: false,
+  typed: false,
+}
 
 const stop = (how: Partial<Stop>): Stop => ({ ...SOUND, ...how })
 
@@ -30,6 +37,21 @@ describe('what the keyboard rule refuses', () => {
       says: 'a field typed into with no name',
       allowed: false,
       stop: stop({ name: '', typed: true }),
+    },
+    {
+      says: 'a stop caught on its way in, held still at the opacity it passed',
+      allowed: true,
+      stop: stop({ shown: false, moving: true }),
+    },
+    {
+      says: 'a stop on its way in with no name, which arriving does not excuse',
+      allowed: false,
+      stop: stop({ name: '', moving: true }),
+    },
+    {
+      says: 'a stop on its way in that nothing is painted for',
+      allowed: false,
+      stop: stop({ rings: false, moving: true }),
     },
   ]
 

@@ -143,7 +143,16 @@ const TYPED = 'input, textarea, [contenteditable], [role="textbox"], [role="comb
  */
 const STILL = '*, *::before, *::after { transition: none !important; animation: none !important }'
 
-/** How long the page is given to finish arriving before it is held still. */
+/**
+ * How long the page may go on moving before it is called restless.
+ *
+ * It bounds the moving and not the waiting. A frame arrives when the machine
+ * has one to give, and on a machine drawing two engines at once they arrive
+ * far apart; a budget spent waiting for them calls a page restless for being
+ * looked at on a busy afternoon. So the still frames are taken however slowly
+ * they come, and only a page that is *still moving* when the budget is out has
+ * failed to arrive.
+ */
 const SETTLING = 500
 
 /**
@@ -185,15 +194,25 @@ const STILLNESS = 3
  * Whether it came to rest is answered rather than assumed: a walk that ran out
  * of time reads a half-drawn page as a page a person cannot see, and a fault
  * found on the way there is worth less than one found at rest.
+ *
+ * So the answer says something about the page and nothing about the machine.
+ * A page that has stopped moving is given its still frames however long the
+ * machine takes to draw them; only one still moving when the budget is out is
+ * a page that never arrives.
  */
 const settles = async (): Promise<boolean> => {
   const until = performance.now() + SETTLING
   let still = 0
-  while (still < STILLNESS && performance.now() < until) {
+  while (still < STILLNESS) {
     await frame()
-    still = moving() ? 0 : still + 1
+    if (!moving()) {
+      still += 1
+      continue
+    }
+    still = 0
+    if (performance.now() >= until) return false
   }
-  return still >= STILLNESS
+  return true
 }
 
 /**
@@ -260,6 +279,9 @@ export async function walk(): Promise<Walk> {
         where: whereOf(here),
         name: nameOf(here),
         shown: shown(here),
+        // The stop itself, or whatever it is drawn inside: a row on its way in
+        // carries every control standing on it.
+        moving: here.closest(MOVING) !== null,
         typed: here.matches(TYPED),
       },
       drawn: around(here).map((one) => [one, painting(one)] as [Element, string]),
