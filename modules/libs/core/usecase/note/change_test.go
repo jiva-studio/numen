@@ -552,7 +552,7 @@ func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 }
 
 // A caller that wrote a note and writes it again presents the fingerprint its
-// own write answered with. Holding the one it read would leave every sitting
+// own write answered with. Holding the one it read would leave every session
 // with one write in it.
 func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	t.Parallel()

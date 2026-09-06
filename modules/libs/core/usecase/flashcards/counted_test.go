@@ -106,7 +106,7 @@ func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 	}
 }
 
-// A run that grew is counted afresh, so a sitting's own answers are in the
+// A run that grew is counted afresh, so a session's own answers are in the
 // counting as they are written.
 func TestARunThatGrewIsCountedAfresh(t *testing.T) {
 	t.Parallel()

@@ -340,7 +340,7 @@ type PresetCardsDue struct {
 	// state.
 	Cards int32 `protobuf:"varint,9,opt,name=cards,proto3" json:"cards,omitempty"`
 	// What the day leaves under it: the card faces owed and the ones nobody has
-	// answered, held to its budget. Their sum is what a sitting over this preset
+	// answered, held to its budget. Their sum is what a session over this preset
 	// asks, because a preset is the whole scope of its own budget.
 	OwedDue int32 `protobuf:"varint,10,opt,name=owed_due,json=owedDue,proto3" json:"owed_due,omitempty"`
 	OwedNew int32 `protobuf:"varint,11,opt,name=owed_new,json=owedNew,proto3" json:"owed_new,omitempty"`
@@ -370,7 +370,7 @@ type PresetCardsDue struct {
 	ClosesBacklog string `protobuf:"bytes,15,opt,name=closes_backlog,json=closesBacklog,proto3" json:"closes_backlog,omitempty"`
 	// Why the preset schedules nothing on this day: whatever stops it at all, and
 	// a day of the week carrying none of the load. It is the core's own verdict,
-	// so a window says of a preset what the sitting hands its cards out by.
+	// so a window says of a preset what the session hands its cards out by.
 	StopsOn       StopReason `protobuf:"varint,16,opt,name=stops_on,json=stopsOn,proto3,enum=numen.v1.StopReason" json:"stops_on,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -908,12 +908,12 @@ func (x *StartSessionRequest) GetPreset() string {
 
 type StartSessionResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Run is what an answer given in this sitting is written to, and it is what
+	// Run is what an answer given in this session is written to, and it is what
 	// an AnswerCard names.
 	Run   string   `protobuf:"bytes,1,opt,name=run,proto3" json:"run,omitempty"`
 	Asked []*Asked `protobuf:"bytes,2,rep,name=asked,proto3" json:"asked,omitempty"`
 	// Unwritten are the decks holding a card with no mark that could not be given
-	// one. Their cards are not in this sitting and are asked for at the next.
+	// one. Their cards are not in this session and are asked for at the next.
 	Unwritten []string `protobuf:"bytes,3,rep,name=unwritten,proto3" json:"unwritten,omitempty"`
 	// Skipped is how many lines of the vault's answers could not be read: a run
 	// that stopped partway, or a line of a version this build does not know.
@@ -1582,7 +1582,7 @@ type GetDeckNeighbourhoodResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Notes []*DeckNeighbour       `protobuf:"bytes,1,rep,name=notes,proto3" json:"notes,omitempty"`
 	// Unread is how many at the end of the list came without their text. Reading
-	// stops once a sitting's worth has been gathered, so a deck at the centre of
+	// stops once a session's worth has been gathered, so a deck at the centre of
 	// a vault is still answered promptly and says how much it left.
 	Unread        int32 `protobuf:"varint,2,opt,name=unread,proto3" json:"unread,omitempty"`
 	unknownFields protoimpl.UnknownFields

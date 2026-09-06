@@ -395,7 +395,7 @@ Window size moves it as much as the flag does: the same model answers 6.0/s at 1
 
 For comparison, a hosted service embedded 145 800 chunks of the source corpus in **10 minutes** for about ten cents.
 
-What that means for the default: a personal vault of a few thousand notes is ten to twenty thousand chunks, which finishes locally in one to two hours. A hundred thousand notes is four hundred thousand chunks, and local is then a day and a half of background work. The vector index fills in behind the lexical one and may never finish, so neither figure blocks anything — but only the service answers a corpus of that size in a sitting.
+What that means for the default: a personal vault of a few thousand notes is ten to twenty thousand chunks, which finishes locally in one to two hours. A hundred thousand notes is four hundred thousand chunks, and local is then a day and a half of background work. The vector index fills in behind the lexical one and may never finish, so neither figure blocks anything — but only the service answers a corpus of that size in a session.
 
 The default model is a 470 MB fp32 ONNX file, fetched on first use. An int8 export was not tried.
 
@@ -739,7 +739,7 @@ Each column is the median of three runs. The allocation columns are the ones the
 
 **The identity was read out of the file at every name.** `config.json` opened, its bytes parsed and the identity in it checked, which is 19.9 µs and 12 allocations on its own — a fifth of a read and a quarter of a listing. It is now a stat of that file, and a file of the same length and the same age carries the identity already read out of it. A file that moved is read again, so a folder carrying another vault's identity is still refused at the first name after it arrives.
 
-**An append is what a person answering a card pays**, one file of the log to a sitting, and it is unchanged in every way that shows: the `fsync` at the end of it is two milliseconds of the two and a quarter.
+**An append is what a person answering a card pays**, one file of the log to a session, and it is unchanged in every way that shows: the `fsync` at the end of it is two milliseconds of the two and a quarter.
 
 **A vault carrying no identity is stated by its folder.** A store opened on a folder that never held one has none to lose, and the check now asks whether that folder is there.
 
@@ -752,7 +752,7 @@ Each row is one request through its use case. The first three are warm, which is
 | | Before | After |
 | --- | --- | --- |
 | The front door, one vault counted | 0.82 s · 605 MB | 0.85 s · 605 MB |
-| Starting a sitting | 1.25 s · 836 MB | 1.19 s · 793 MB |
+| Starting a session | 1.25 s · 836 MB | 1.19 s · 793 MB |
 | The history screen | 0.71 s · 536 MB | 0.71 s · 493 MB |
 | The history screen, nothing counted yet | 0.78 s · 554 MB | 0.68 s · 490 MB |
 
@@ -764,13 +764,13 @@ What was counted, per warm request:
 
 | | Before | After |
 | --- | --- | --- |
-| Starting a sitting: the schedule cache read | 0 | 1 |
-| Starting a sitting: the schedule cache written | 1 | 0 |
+| Starting a session: the schedule cache read | 0 | 1 |
+| Starting a session: the schedule cache written | 1 | 0 |
 | Opening the history: the schedule cache read | 0 | 1 |
 | Opening the history: the schedule cache written | 1 | 0 |
 | The history screen, nothing counted yet: run files opened | 360 | 180 |
 
-A sitting and the history screen each worked the whole log out again and wrote what it came to, whatever the cache held; both now ask it first. The history screen read the log twice — once for the days behind and once for the days ahead — and now reads it once and hands the reading on.
+A session and the history screen each worked the whole log out again and wrote what it came to, whatever the cache held; both now ask it first. The history screen read the log twice — once for the days behind and once for the days ahead — and now reads it once and hands the reading on.
 
 **A reading of the answers is put in order once.** De-duplicating the log and sorting it by when is what every question of a history begins with, and four of them were each doing it: where the answers leave each card face, how much came back, what a day spent, and how long an answer takes. A reading now carries that order, worked out at the first asking. Two of the four read it. The other two are `Sat` and `Faced` in `usecase/flashcards/budget.go` and `usecase/flashcards/curve.go`, and `Costed` and `CostedUnder` in `flashcards/review/cost.go`, which still put the answers in order for themselves; each is a one-line change to the reading's order, and 27 000 answers sorted is what each of them costs.
 

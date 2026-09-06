@@ -19,7 +19,7 @@ type CardsDue struct {
 	Faces int
 	// Due is the card faces answered before and owed in the day holding now.
 	// New is the ones nobody has answered. Both are held to what the budgets of
-	// the day leave, so they are what a sitting will ask.
+	// the day leave, so they are what a session will ask.
 	Due   int
 	New   int
 	Decks []DeckCardsDue
@@ -58,7 +58,7 @@ type PresetCardsDue struct {
 	Decks int
 	Cards int
 	// Due and New are what the day leaves under it: the card faces owed and the
-	// ones nobody has answered, held to its budget. They are what a sitting over
+	// ones nobody has answered, held to its budget. They are what a session over
 	// this preset asks, because a preset is the whole scope of its own budget.
 	Due int
 	New int
@@ -99,7 +99,7 @@ type CountCardsDue struct {
 // time it is.
 //
 // All five are named here because a count short of any one of them is a number
-// on a person's front door that no sitting behind it agrees with.
+// on a person's front door that no session behind it agrees with.
 func NewCountCardsDue(
 	faces ListCardFaces, schedules Schedules, presets Presets,
 	day review.Day, now port.Clock,
@@ -112,7 +112,7 @@ func NewCountCardsDue(
 // Execute counts one vault.
 //
 // The log is read once here and the schedules worked out from it, so the count
-// and the sitting it stands for are the one reading. Nothing is written into
+// and the session it stands for are the one reading. Nothing is written into
 // the vault: the person is shown every vault they hold, and none of them is
 // written for that. What a replay came to is kept, because this is the path
 // every launch waits on.
@@ -182,7 +182,7 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 		at(deck).Answered = one.Answered
 	}
 	// What each preset leaves is counted from the same pass the deck rows are,
-	// so the tile over a preset and the sitting it opens are one number.
+	// so the tile over a preset and the session it opens are one number.
 	due, fresh := make(map[string]int), make(map[string]int)
 	for _, one := range holds.seen {
 		out.Due++

@@ -46,7 +46,7 @@ const FIELDS: Record<Field, readonly [string, string]> = {
   interval: ['Days apart', 'How far apart reviews stand before a card counts as learned.'],
   backlog: [
     'Overdue share',
-    'What part of a sitting goes to the overdue pile before new material is offered, in per cent. ' +
+    'What part of a session goes to the overdue pile before new material is offered, in per cent. ' +
       'It moves what fills a day and not how much it holds, and at nothing the new material ' +
       'goes first while there is any.',
   ],
@@ -164,7 +164,7 @@ export const WORDS = {
   countsName: (counts: Counts) => COUNTS[counts],
   ruleName: (rule: Rule) => RULES[rule],
   /** What each axis measures, said along the axis it names. */
-  axisY: (goal: Goal) => (goal === 'minutes' ? 'Cards in a sitting' : 'Minutes a day'),
+  axisY: (goal: Goal) => (goal === 'minutes' ? 'Cards in a session' : 'Minutes a day'),
   axisX: (goal: Goal) => {
     if (goal === 'retention') return 'Retention'
     return goal === 'date' ? 'Days from today' : 'Minutes a day'
@@ -207,7 +207,7 @@ export const WORDS = {
       goal === 'minutes' ? `${many(at.value, 'minute')} a day` : `${percent(at.value)} remembered`
     const buys =
       goal === 'minutes'
-        ? `${many(at.reviews, 'card')} a sitting`
+        ? `${many(at.reviews, 'card')} a session`
         : `${many(at.minutes, 'minute')} a day`
     if (at.clears === null) return [held, buys]
     const gone =

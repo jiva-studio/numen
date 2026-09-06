@@ -92,7 +92,7 @@ export interface PresetCardsDue {
   readonly cards: number
   /**
    * What the day leaves under it, already held to the budgets that close it.
-   * It is what a sitting over this preset asks, and is printed as it stands.
+   * It is what a session over this preset asks, and is printed as it stands.
    */
   readonly owed: number
   /**

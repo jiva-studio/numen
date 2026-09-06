@@ -37,7 +37,7 @@ func TestAnAnswerSaysWhichCardAndThroughWhichFace(t *testing.T) {
 }
 
 // Taking back an answer names the one it takes back. Nothing here guesses which
-// of a sitting's answers a person meant.
+// of a session's answers a person meant.
 func TestTakingBackNamesTheAnswerItTakesBack(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)

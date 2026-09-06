@@ -42,13 +42,13 @@ interface Tile {
   /** What stands at the right of the tile: the figure, or words in its place. */
   readonly says: string
   /**
-   * What sitting down to it would ask, or why it would ask nothing. A preset
+   * What starting a session on it would ask, or why it would ask nothing. A preset
    * scheduling nothing has said why under its name, and stands here empty.
    */
   readonly left: string
   /** Whether the day is past its budget, which is the one thing to catch the eye. */
   readonly over: boolean
-  /** Whether it has a sitting to offer, which is what makes the tile pressable. */
+  /** Whether it has a session to offer, which is what makes the tile pressable. */
   readonly opens: boolean
 }
 
@@ -80,7 +80,7 @@ const tiles = computed<Tile[]>(() =>
   <section v-if="tiles.length" class="presets">
     <ul class="presets__list" aria-label="What the goals of this vault come to today">
       <li v-for="tile in tiles" :key="tile.one.path" class="presets__tile">
-        <!-- Sitting down to a preset is the same act as sitting down to a deck,
+        <!-- Starting a session on a preset is the same act as starting a session on a deck,
              one level up, so it is the same button. One with nothing to offer
              is not pressed, and has said above why. -->
         <Button
@@ -102,7 +102,7 @@ const tiles = computed<Tile[]>(() =>
                would ask or why it would ask nothing. A preset scheduling
                nothing has said so under its name, and stands here empty.
 
-               A sitting is left back onto this screen with these figures moved,
+               A session is left back onto this screen with these figures moved,
                so they are said again where they are read aloud. -->
           <span v-if="!tile.one.paused" class="presets__figures" aria-live="polite">
             <span class="presets__done" :data-over="tile.over ? '' : undefined">{{
@@ -193,7 +193,7 @@ const tiles = computed<Tile[]>(() =>
   font-variant-numeric: tabular-nums;
 }
 
-/* What the sitting would ask, in the small print a count is read in. */
+/* What the session would ask, in the small print a count is read in. */
 .presets__left {
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);

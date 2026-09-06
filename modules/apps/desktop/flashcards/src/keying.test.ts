@@ -19,7 +19,7 @@ const into = (tag: string, written = false): Partial<KeyboardEvent> => ({
   target: { tagName: tag, isContentEditable: written } as unknown as EventTarget,
 })
 
-describe('the keys a sitting is done with', () => {
+describe('the keys a session is done with', () => {
   it('turns the card over with the space bar, and only while it is face up', () => {
     expect(asks(pressed(' '), { shown: false })).toEqual({ does: 'show' })
     expect(asks(pressed(' '), { shown: true })).toBeNull()
@@ -43,7 +43,7 @@ describe('the keys a sitting is done with', () => {
     expect(asks(pressed('U'), { shown: true })).toEqual({ does: 'takeBack' })
   })
 
-  it('leaves the sitting on escape', () => {
+  it('leaves the session on escape', () => {
     expect(asks(pressed('Escape'), { shown: true })).toEqual({ does: 'leave' })
   })
 
@@ -72,8 +72,8 @@ describe('the keys a sitting is done with', () => {
     }
   })
 
-  // With a panel up, escape sends it away and the sitting stays where it is.
-  it('sends the panel away on escape before it leaves the sitting', () => {
+  // With a panel up, escape sends it away and the session stays where it is.
+  it('sends the panel away on escape before it leaves the session', () => {
     expect(asks(pressed('Escape'), { shown: true, asking: true })).toEqual({ does: 'shut' })
     expect(asks(pressed('Escape'), { shown: true, reading: true })).toEqual({ does: 'shut' })
     expect(asks(pressed('Escape'), { shown: true, asking: false })).toEqual({ does: 'leave' })

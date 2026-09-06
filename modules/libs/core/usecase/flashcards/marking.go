@@ -38,7 +38,7 @@ type MarkCards struct {
 // written deck level in the index, and what time it is.
 //
 // All six are named here because a marking short of any one of them leaves a
-// card with no mark, which is a card the sitting after it cannot ask, or a mark
+// card with no mark, which is a card the session after it cannot ask, or a mark
 // minted off the machine's clock rather than this installation's.
 func NewMarkCards(
 	readers port.VaultReaders,
@@ -57,7 +57,7 @@ func NewMarkCards(
 // MarkCardsResult is what the marking came to: the decks it could not write.
 type MarkCardsResult struct {
 	// Unwritten are the paths of the decks holding a card with no mark that
-	// could not be given one. Their cards are left out of this sitting.
+	// could not be given one. Their cards are left out of this session.
 	Unwritten []string
 }
 
@@ -65,7 +65,7 @@ type MarkCardsResult struct {
 //
 // A deck that could not be written is left as it is and is not an error: the
 // editor may be saving it, and the vault's write lock lives in one process. Its
-// cards are left out of this sitting and marked at the next, and it is named in
+// cards are left out of this session and marked at the next, and it is named in
 // what comes back so that a person is told which deck that was.
 func (u MarkCards) Execute(ctx context.Context, v domain.Vault) (MarkCardsResult, error) {
 	paths, err := u.Notes.OfType(ctx, v.ID, domain.TypeDeck)
@@ -91,7 +91,7 @@ func (u MarkCards) Execute(ctx context.Context, v domain.Vault) (MarkCardsResult
 			continue
 		}
 		// A deck the index could not be brought level with carries its marks all
-		// the same, and its cards stand in this sitting.
+		// the same, and its cards stand in this session.
 		if _, err := write.Deck(ctx, v, path, body, deck.Fingerprint); err != nil &&
 			!errors.Is(err, note.ErrUnlevelled) {
 			out.Unwritten = append(out.Unwritten, path)

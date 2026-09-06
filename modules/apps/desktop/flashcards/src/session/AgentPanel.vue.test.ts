@@ -10,7 +10,7 @@ import type { AgentPanelState } from './panel'
 import { WORDS as words } from './agent/words'
 import type { CardFace } from '../core'
 
-/** A card as the sitting hands one over. */
+/** A card as the session hands one over. */
 const card: CardFace = {
   deck: 'decks/Words.md',
   section: '',
@@ -31,7 +31,7 @@ const agent: AgentPort = {
   async finish() {},
 }
 
-/** The panel over one card, with the sitting around it standing in for it. */
+/** The panel over one card, with the session around it standing in for it. */
 const holding = (unreachable = ''): AgentPanelState => {
   // What the window is showing is the window's, and the test holds it for it.
   const open = ref(false)
@@ -60,7 +60,7 @@ const held = (unreachable = ''): AgentPanelState => {
 const shown = (panel: AgentPanelState) => mount(AgentPanel, { props: { held: panel } })
 
 describe('the panel a card is asked about in', () => {
-  // The card it is about is the card the sitting is on, and the sitting says
+  // The card it is about is the card the session is on, and the session says
   // which above both of them.
   it('names no card of its own', () => {
     const one = shown(held())

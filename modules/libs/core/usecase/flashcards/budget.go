@@ -41,7 +41,7 @@ type allowance struct {
 
 // budgeted works out the day's budgets over the cards standing.
 //
-// What has been answered since the day opened is off it, so a second sitting
+// What has been answered since the day opened is off it, so a second session
 // takes up where the first left off.
 func budgeted(
 	ctx context.Context, v domain.Vault, reading *PresetReads, day review.Day,
@@ -189,10 +189,10 @@ type asking struct {
 	fresh []CardFace
 }
 
-// holds reports whether a card standing here is one of the cards the sitting is
+// holds reports whether a card standing here is one of the cards the session is
 // opened over.
 //
-// A sitting over a preset takes the cards of every deck pointing at it, so the
+// A session over a preset takes the cards of every deck pointing at it, so the
 // one budget spent is that preset's.
 func (b *budgets) holds(one CardFace, over Scope) bool {
 	if over.Named {
@@ -226,7 +226,7 @@ func (b *budgets) refuses(preset string) error {
 // answered after it, in the order they stand in their decks.
 //
 // The day is divided over every deck the preset schedules before anything is
-// held back, and the sitting is then the slice of that division belonging to
+// held back, and the session is then the slice of that division belonging to
 // what it was opened over. A deck's row on the front door and what pressing
 // that deck hands over are the one division.
 func (b *budgets) asks(
@@ -294,7 +294,7 @@ func (q *deckShare) remaining(out taken) int {
 }
 
 // given is how much of the day a deck has had, in the time it took: what an
-// earlier sitting spent of today, and what the deck's own share has just spent.
+// earlier session spent of today, and what the deck's own share has just spent.
 func (b *budgets) given(q *deckShare, cost review.AnswerCost) time.Duration {
 	return b.sat[q.deck].Took +
 		time.Duration(q.debt)*cost.Review + time.Duration(q.begun)*cost.New
@@ -344,8 +344,8 @@ func (b *budgets) spends(owed, fresh []CardFace) taken {
 			into(path, deck)
 		}
 	}
-	// The presets are asked in one order, so a sitting asked twice is the same
-	// sitting.
+	// The presets are asked in one order, so a session asked twice is the same
+	// session.
 	slices.Sort(order)
 
 	for _, path := range order {

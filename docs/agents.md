@@ -83,7 +83,7 @@ The tools themselves are the same tools: each family registers its reading half 
 
 That window opens the index for reading alone, and nothing embeds behind it, so a search there answers by the words in the vault and not by what they mean. It serves its port on a loopback address the machine picks, with a token that lives in memory, and writes no `agents.json`: the address file names one window's vault, and a second window rewriting it would point a person's own agent at whichever started last.
 
-The agent is told which vault it works when it is started, so it is started when a sitting opens and stopped when a sitting opens on another vault or the window closes.
+The agent is told which vault it works when it is started, so it is started when a session opens and stopped when a session opens on another vault or the window closes.
 
 ## An agent a person runs themselves
 

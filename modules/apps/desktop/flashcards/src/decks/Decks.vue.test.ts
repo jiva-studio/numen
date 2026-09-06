@@ -208,8 +208,8 @@ describe('a deck with nothing waiting', () => {
   })
 })
 
-// Sitting down to a preset is the deck screen's act, carried up from the tile
-// to whatever opens a sitting.
+// Starting a session on a preset is the deck screen's act, carried up from the tile
+// to whatever opens a session.
 describe('a preset pressed', () => {
   it('is passed on by the note it stands in', () => {
     const one = shown([preset()])

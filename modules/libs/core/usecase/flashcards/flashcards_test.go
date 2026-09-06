@@ -168,7 +168,7 @@ func (s vaulted) owedAt(day review.Day, now func() time.Time) flashcards.CountCa
 	}
 }
 
-// session is a sitting whose presets read nothing, so every deck of the vault
+// session is a session whose presets read nothing, so every deck of the vault
 // is scheduled by the defaults.
 func (s vaulted) session(day review.Day) flashcards.Session {
 	return flashcards.NewSession(
@@ -344,9 +344,9 @@ func touched(t *testing.T, v domain.Vault, path string) time.Time {
 	return at.ModTime()
 }
 
-// A person sitting down to a vault has its cards given marks, and what stands
+// A person starting a session on a vault has its cards given marks, and what stands
 // then is what they are asked.
-func TestSittingDownToAVaultMarksItsCards(t *testing.T) {
+func TestSessionDownToAVaultMarksItsCards(t *testing.T) {
 	t.Parallel()
 	s := opened(t, handwritten)
 
@@ -490,11 +490,11 @@ func TestACardPutDaysAwayIsNotOwedToday(t *testing.T) {
 		}
 	}
 
-	sitting, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Scope{})
+	session, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Scope{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range sitting.Queue {
+	for _, one := range session.Queue {
 		if one.ID == on {
 			t.Error("the card is days away and was asked today")
 		}
@@ -627,11 +627,11 @@ func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sitting, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Scope{})
+	session, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Scope{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	asked := sitting.Queue
+	asked := session.Queue
 	if len(asked) < 2 {
 		t.Fatalf("asked %d", len(asked))
 	}
@@ -657,11 +657,11 @@ func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
 
-	sitting, err := s.session(today).Execute(t.Context(), s.vault, flashcards.OverDeck("decks/Words.md"))
+	session, err := s.session(today).Execute(t.Context(), s.vault, flashcards.OverDeck("decks/Words.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	asked := sitting.Queue
+	asked := session.Queue
 	if len(asked) != 1 || asked[0].Deck != "decks/Words.md" {
 		t.Errorf("asked %+v, want the one card of that deck", asked)
 	}
@@ -775,7 +775,7 @@ func TestARunTheCacheHasNotSeenIsCountedIn(t *testing.T) {
 	}
 }
 
-// A sitting appends to one file all evening, so what was worked out before an
+// A session appends to one file all evening, so what was worked out before an
 // answer was written is out of date the moment it is. A cache that went by the
 // names alone would call itself current and never count the rest of the file.
 func TestAnAnswerAppendedToARunAlreadyCountedIsCountedIn(t *testing.T) {
@@ -795,7 +795,7 @@ func TestAnAnswerAppendedToARunAlreadyCountedIsCountedIn(t *testing.T) {
 		t.Fatalf("one answer left %d behind it", first[on].Reps)
 	}
 
-	// The same sitting, the same file: a second answer appended under the name
+	// The same session, the same file: a second answer appended under the name
 	// the cache already knows.
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -809,7 +809,7 @@ func TestAnAnswerAppendedToARunAlreadyCountedIsCountedIn(t *testing.T) {
 	}
 }
 
-// An answer taken back in the sitting it was given in is not counted, for the
+// An answer taken back in the session it was given in is not counted, for the
 // same reason: the line is appended to a file already read.
 func TestAnAnswerTakenBackInTheSameRunIsNotCounted(t *testing.T) {
 	t.Parallel()

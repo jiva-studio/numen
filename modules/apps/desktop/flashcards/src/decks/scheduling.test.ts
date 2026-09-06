@@ -280,8 +280,8 @@ describe('how far through its day a preset stands', () => {
   })
 })
 
-describe('what sitting down to a preset would ask', () => {
-  // The count is what the sitting will put in front of a person, so it is
+describe('what starting a session on a preset would ask', () => {
+  // The count is what the session will put in front of a person, so it is
   // printed as it stands, under every goal.
   it('is the count itself, whatever budget the preset keeps', () => {
     expect(leftWords(preset({ cards: 34 }))).toBe('34 cards')
@@ -300,7 +300,7 @@ describe('what sitting down to a preset would ask', () => {
 })
 
 // The row of a deck and the letter drawn on it are one act, and both ask this.
-describe('whether sitting down to a deck is offered', () => {
+describe('whether starting a session on a deck is offered', () => {
   const deck = (due: number, fresh = 0) => ({
     deck: 'decks/Words.md',
     faces: 20,

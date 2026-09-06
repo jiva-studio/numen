@@ -83,7 +83,7 @@ export interface Preset {
   /** How many card faces stand in those decks. */
   readonly faces: number
   /**
-   * What sitting down to it would ask, as the count gives it: the cards its
+   * What starting a session on it would ask, as the count gives it: the cards its
    * decks owe today, already held to the budgets that close the day.
    */
   readonly cards: number
@@ -278,7 +278,7 @@ const gather = (vault: VaultCardsDue, answered: readonly DeckPresetResult[], tod
       decks: one.decks,
       named: day?.decks ?? one.decks.length,
       faces: day?.cards ?? 0,
-      // What a sitting over it asks is the count's own figure, and a build that
+      // What a session over it asks is the count's own figure, and a build that
       // answered none falls back to what its decks owe between them.
       cards: day?.owed ?? one.due + one.fresh,
       budget: { new: budget.new, reviews: budget.reviews, minutes: budget.minutes },
@@ -334,7 +334,7 @@ const refusedFor = (answered: readonly DeckPresetResult[]): string => {
 }
 
 /**
- * Whether sitting down to one deck is offered: it owes something today, and the
+ * Whether starting a session on one deck is offered: it owes something today, and the
  * preset scheduling it schedules something.
  */
 export const opens = (deck: DeckCardsDue, by: ReadonlyMap<string, Preset>): boolean =>
@@ -418,10 +418,10 @@ export const learned = (deck: DeckCardsDue): number | null =>
   deck.faces > 0 ? deck.learned / deck.faces : null
 
 /**
- * How many cards sitting down to this preset would put in front of a person,
+ * How many cards starting a session on this preset would put in front of a person,
  * which is what its decks still owe today, or why it would put none there.
  *
- * It is the count the sitting itself will ask, so it is printed as it stands.
+ * It is the count the session itself will ask, so it is printed as it stands.
  */
 export const leftWords = (one: Preset): string => {
   if (one.cards > 0) return many(one.cards, 'card')
@@ -449,7 +449,7 @@ const WHY: Record<StopReason, (settings: Settings | null, today: string) => stri
  * Why a preset schedules nothing today, in the words to show, and empty while
  * it schedules something.
  *
- * The verdict is the core's: it is what the sitting hands its cards out by. Two
+ * The verdict is the core's: it is what the session hands its cards out by. Two
  * of the reasons name a day, and the settings carry the one a date aimed at.
  */
 export const stoppedWords = (why: StopReason, settings: Settings | null, today: string): string =>

@@ -53,7 +53,7 @@ func (s vaulted) presses(t *testing.T, now time.Time, deck string) int {
 	return len(sat.Queue)
 }
 
-// sits answers everything one deck hands over, sitting again until it hands
+// sits answers everything one deck hands over, session again until it hands
 // over nothing, and says how many card faces went through. A card the day comes
 // back to is the one card.
 func (s vaulted) sits(t *testing.T, now time.Time, deck string) int {
@@ -203,9 +203,9 @@ func TestTheDeckRowIsWhatPressingTheDeckHandsOver(t *testing.T) {
 	}
 }
 
-// Sitting deck by deck spends the same day whichever deck is sat first, and no
+// Session deck by deck spends the same day whichever deck is sat first, and no
 // deck's own share grows because another was sat before it.
-func TestSittingTheDecksInAnyOrderSpendsTheOneDay(t *testing.T) {
+func TestSessionTheDecksInAnyOrderSpendsTheOneDay(t *testing.T) {
 	t.Parallel()
 	for _, order := range [][]int{{0, 1, 2}, {2, 1, 0}, {1, 0, 2}} {
 		t.Run(fmt.Sprint(order), func(t *testing.T) {
@@ -217,7 +217,7 @@ func TestSittingTheDecksInAnyOrderSpendsTheOneDay(t *testing.T) {
 				whole += took
 			}
 			if whole != 30 {
-				t.Errorf("sitting the decks in the order %v spends %d of a day of 30", order, whole)
+				t.Errorf("session the decks in the order %v spends %d of a day of 30", order, whole)
 			}
 			for at := range 3 {
 				if each[deckAt(at)] != 10 {

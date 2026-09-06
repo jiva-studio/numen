@@ -22,7 +22,7 @@ const joined = (more: Partial<Neighbour> = {}): Neighbour => ({
   ...more,
 })
 
-/** The panel over one deck, with the sitting around it standing in for it. */
+/** The panel over one deck, with the session around it standing in for it. */
 const held = (around: DeckNeighbourhood): NotesPanelState => {
   const open = ref(false)
   return reading({

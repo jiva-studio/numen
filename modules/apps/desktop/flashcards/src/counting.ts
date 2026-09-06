@@ -2,7 +2,7 @@
  * What every vault the installation holds comes to today.
  *
  * Apart from the template because counting is asked for from three places — the
- * window opening, a sitting ending, and a vault moving underneath it — and one
+ * window opening, a session ending, and a vault moving underneath it — and one
  * count runs at a time however many ask.
  *
  * The vaults arrive first, by name and by where they are, and each count

@@ -30,7 +30,7 @@ A card whose first field is empty is asked like any other. Its heading is empty,
 
 A card is owed when the day holding now reaches the day its schedule falls on. **A card owed today is owed for the whole of it**, whatever hour it falls at, because a person sits down when they sit down.
 
-A day begins four hours past midnight, and that is `review.day_starts` in [Settings](settings.md). A person answering cards at one in the morning is finishing the day before, not starting the next, and a boundary at midnight would split one sitting in two. The hour is an hour on the clock on the wall, so the day an hour is put into or taken out of begins and ends where a person reads it.
+A day begins four hours past midnight, and that is `review.day_starts` in [Settings](settings.md). A person answering cards at one in the morning is finishing the day before, not starting the next, and a boundary at midnight would split one session in two. The hour is an hour on the clock on the wall, so the day an hour is put into or taken out of begins and ends where a person reads it.
 
 A card nobody has answered is owed the first time it is asked about.
 
@@ -81,7 +81,7 @@ A deck joined to a great many notes has the text of the first thirty read and th
 <vault>/.numen/flashcards/<ulid>.jsonl
 ```
 
-One sitting writes one file and nothing ever appends to it again. The whole history is those files put together, so a vault carried between a phone and a desktop comes away with one history and one set of counts, and no file is ever written by two machines.
+One session writes one file and nothing ever appends to it again. The whole history is those files put together, so a vault carried between a phone and a desktop comes away with one history and one set of counts, and no file is ever written by two machines.
 
 The answers are the vault's and travel with it. What is worked out from them — when each card comes round — is kept with the application, and deleting it costs a person the working out and nothing else.
 

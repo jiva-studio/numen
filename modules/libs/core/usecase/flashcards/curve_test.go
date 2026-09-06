@@ -548,12 +548,12 @@ func TestABacklogIsMeasuredOverTheSameHorizonOnEveryGoal(t *testing.T) {
 	}
 }
 
-// A day at none of the load is no sitting, so the curve draws the day after it.
+// A day at none of the load is no session, so the curve draws the day after it.
 //
 // A person who has just given today's weekday nothing is the person most in
 // need of the picture, and a picture reading nought at every place of the range
 // says nothing about the setting it is there to steer.
-func TestACurveOnADayAtNoneOfTheLoadDrawsTheNextSitting(t *testing.T) {
+func TestACurveOnADayAtNoneOfTheLoadDrawsTheNextSession(t *testing.T) {
 	t.Parallel()
 	s := opened(t, studied(30))
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
@@ -892,9 +892,9 @@ func TestAPlaceOfADateIsOneRun(t *testing.T) {
 	}
 }
 
-// A day at none of the load is no sitting under a date either, so the curve
+// A day at none of the load is no session under a date either, so the curve
 // draws the day after it.
-func TestACurveOfADateOnADayAtNoneOfTheLoadDrawsTheNextSitting(t *testing.T) {
+func TestACurveOfADateOnADayAtNoneOfTheLoadDrawsTheNextSession(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 30)
 	if noon.Weekday() != time.Monday {
@@ -1004,13 +1004,13 @@ func TestADateFurtherOffThanTheProjectionReachesStillDrawsARange(t *testing.T) {
 // The curve opens on the day a person is already partway through.
 //
 // The first place of a run is a real day and not a fresh one: what it draws is
-// what a sitting opened now would hand over. An evening re-opening of the tab
+// what a session opened now would hand over. An evening re-opening of the tab
 // otherwise draws a day already spent as a day still to come.
 func TestACurveDrawsWhatIsLeftOfTheDay(t *testing.T) {
 	t.Parallel()
 	s := opened(t, studied(30))
 	// The preset the deck points at says what the curve is asked for, so the
-	// sitting and the picture are held to one day.
+	// session and the picture are held to one day.
 	write(t, s, "Sanskrit.md", "---\ntype: preset\ngoal: minutes_a_day\n"+
 		"minutes_a_day: 3\nnew_a_day: 0\nreviews_a_day: 0\n---\n\n# Sanskrit\n")
 	// Every card face owed today, at six seconds an answer.
@@ -1042,7 +1042,7 @@ func TestACurveDrawsWhatIsLeftOfTheDay(t *testing.T) {
 	}
 	sat := s.under(t, today, noon, "Sanskrit.md")
 	if got := float64(len(sat.Queue)); got != after.Points[after.Now.Index].Reviews {
-		t.Errorf("the sitting offers %v card faces and the curve draws %v",
+		t.Errorf("the session offers %v card faces and the curve draws %v",
 			got, after.Points[after.Now.Index].Reviews)
 	}
 }

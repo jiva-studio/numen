@@ -79,10 +79,10 @@ const typedByHand = "---\ntype: deck\nlinks:\n" +
 	"\n## Yaffle\n\n[[Term]]\n\n### Word\n\nYaffle\n" +
 	"\n### Meaning\n\nA green woodpecker\n"
 
-// Sitting down mints a mark for the card that carries none, and the deck it
-// writes is level in the index by the time the sitting is handed over. Nothing
+// Starting a session mints a mark for the card that carries none, and the deck it
+// writes is level in the index by the time the session is handed over. Nothing
 // else is running over the vault, and nothing rescans it.
-func TestAMarkMintedOnSittingDownLevelsTheDeck(t *testing.T) {
+func TestAMarkMintedOnSessionDownLevelsTheDeck(t *testing.T) {
 	api, held := windowed(t, handwritten)
 	v := held[0]
 

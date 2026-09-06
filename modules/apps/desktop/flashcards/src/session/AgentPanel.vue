@@ -30,7 +30,7 @@ watch(
 <template>
   <section class="asking" aria-label="Ask about this card">
     <!-- The field sends by a control of its own: enter in a panel inside a
-         sitting would otherwise be read as an answer to the card. -->
+         session would otherwise be read as an answer to the card. -->
     <Agent
       ref="talk"
       class="asking__talk"

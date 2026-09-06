@@ -43,9 +43,9 @@ var presetted = map[string]string{
 // naming is the preset a request names, as the window sends it.
 func naming(preset string) *string { return &preset }
 
-// The window draws a tile per preset, and pressing one opens a sitting over the
+// The window draws a tile per preset, and pressing one opens a session over the
 // cards of every deck pointing at it, held to that preset's budget.
-func TestASittingIsOpenedOverOnePreset(t *testing.T) {
+func TestASessionIsOpenedOverOnePreset(t *testing.T) {
 	api, held := windowed(t, presetted)
 	v := held[0]
 
@@ -61,7 +61,7 @@ func TestASittingIsOpenedOverOnePreset(t *testing.T) {
 	}
 	for _, one := range asked {
 		if one.GetDeck() != "decks/Birds.md" {
-			t.Errorf("the sitting asked %s, which another preset schedules", one.GetDeck())
+			t.Errorf("the session asked %s, which another preset schedules", one.GetDeck())
 		}
 	}
 }
@@ -145,7 +145,7 @@ func TestThePresetOfADeckCarriesWhyItSchedulesNothing(t *testing.T) {
 }
 
 // A preset with nothing to ask is refused with the reason, which is what the
-// window shows in place of an empty sitting.
+// window shows in place of an empty session.
 func TestAPresetThatSchedulesNothingIsRefusedWithItsReason(t *testing.T) {
 	api, held := windowed(t, presetted)
 	v := held[0]

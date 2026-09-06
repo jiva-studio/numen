@@ -82,7 +82,7 @@ var reviewDay = review.Day{Starts: 4 * time.Hour, In: time.UTC}
 var firstMorning = time.Date(2026, 4, 6, 9, 0, 0, 0, time.UTC)
 
 // setNow puts the whole window on one instant: the day the counts stand in,
-// the day a sitting is held to, and the day a curve is drawn for.
+// the day a session is held to, and the day a curve is drawn for.
 func setNow(api *API, now time.Time) {
 	at := func() time.Time { return now }
 	api.Now = at
@@ -107,13 +107,13 @@ func lives(t *testing.T, api *API, v domain.Vault, days int) {
 			continue
 		}
 
-		sitting := started(t, api, v)
+		session := started(t, api, v)
 		// How far a person got before they stopped, which is not always the end.
-		through := len(sitting.GetAsked())
+		through := len(session.GetAsked())
 		if day%3 == 1 {
 			through = through * 2 / 3
 		}
-		for i, one := range sitting.GetAsked()[:through] {
+		for i, one := range session.GetAsked()[:through] {
 			// The times run over a spread a person's would, and every one of
 			// them is counted whole.
 			took := time.Duration(4+(i+day)%9) * time.Second
@@ -122,7 +122,7 @@ func lives(t *testing.T, api *API, v domain.Vault, days int) {
 				rating = v1.Rating_RATING_AGAIN
 			}
 			_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
-				Vault: string(v.ID), Run: sitting.GetRun(),
+				Vault: string(v.ID), Run: session.GetRun(),
 				Mark: one.GetMark(), Face: one.GetFace(),
 				Rating: rating, TookMs: took.Milliseconds(),
 			}))
@@ -286,8 +286,8 @@ func TestTheCurveCarriesWhatThePresetSchedules(t *testing.T) {
 // front door divided among the decks of that preset went to this one.
 var sole = map[string]bool{"decks/Roots.md": true, "decks/Loose.md": true}
 
-// What each deck offers adds up to what the vault offers, and sitting down to
-// one deck asks for that deck's share and nothing else.
+// What each deck offers adds up to what the vault offers, and a session on one
+// deck asks for that deck's share and nothing else.
 func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 	api, held := windowed(t, lived)
 	v := held[0]
@@ -316,16 +316,16 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 		want := int(one.GetDue()) + int(one.GetNew())
 		got := len(sat.Msg.GetAsked())
 		if sole[one.GetDeck()] && got != want {
-			t.Errorf("%s offers %d card faces and its sitting asks %d",
+			t.Errorf("%s offers %d card faces and its session asks %d",
 				one.GetDeck(), want, got)
 		}
 		if got < want {
-			t.Errorf("%s offers %d card faces and its sitting asks %d",
+			t.Errorf("%s offers %d card faces and its session asks %d",
 				one.GetDeck(), want, got)
 		}
 		for _, card := range sat.Msg.GetAsked() {
 			if card.GetDeck() != one.GetDeck() {
-				t.Fatalf("a sitting over %s asked a card of %s",
+				t.Fatalf("a session over %s asked a card of %s",
 					one.GetDeck(), card.GetDeck())
 			}
 		}

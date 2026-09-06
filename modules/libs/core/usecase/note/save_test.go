@@ -188,7 +188,7 @@ func TestTheSameBytesWrittenAgainAreNotAChange(t *testing.T) {
 }
 
 // A tab that saved and did not read again holds the file its own write
-// produced. Holding the one it read would leave every sitting with one save in
+// produced. Holding the one it read would leave every session with one save in
 // it.
 func TestASaveFollowsASaveWithNoReadBetween(t *testing.T) {
 	t.Parallel()

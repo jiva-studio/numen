@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * The sitting: one card in front of a person, and the four ways of answering it.
+ * The session: one card in front of a person, and the four ways of answering it.
  *
  * It holds nothing. Which card is up, whether the answer is showing and what
- * has been written are the sitting's, and this draws them.
+ * has been written are the session's, and this draws them.
  */
 import { Button, KeyCap, keyChord } from '@numen/ui'
 

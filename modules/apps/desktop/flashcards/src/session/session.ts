@@ -1,5 +1,5 @@
 /**
- * One sitting: the cards left to ask, where in them a person is, and what has
+ * One session: the cards left to ask, where in them a person is, and what has
  * been written into the vault.
  *
  * Apart from the template because these are the rules that decide what a person
@@ -12,7 +12,7 @@ import type { Ref } from 'vue'
 import { rated } from '../core'
 import type { CardFace, Grade, Intervals } from '../core'
 
-/** What a sitting asks of the application, and no more of it than that. */
+/** What a session asks of the application, and no more of it than that. */
 export interface SessionClient {
   /**
    * Deck is one deck, or empty for every deck the vault holds. Preset holds it
@@ -30,7 +30,7 @@ export interface SessionClient {
   takeBackAnswer(said: { vault: string; run: string; answer: string }): Promise<unknown>
 }
 
-/** What opening a sitting comes back with. */
+/** What opening a session comes back with. */
 export interface SessionStart {
   run: string
   asked: readonly {
@@ -48,7 +48,7 @@ export interface SessionStart {
   skipped: number
 }
 
-/** What a sitting could not act on, for the window to say once as it opens. */
+/** What a session could not act on, for the window to say once as it opens. */
 export interface Report {
   /** The decks holding a card that could not be given a mark. */
   readonly unwritten: readonly string[]
@@ -56,7 +56,7 @@ export interface Report {
   readonly skipped: number
 }
 
-/** What a sitting is built over: the application, and what it says went wrong. */
+/** What a session is built over: the application, and what it says went wrong. */
 export interface SessionDeps {
   cards: SessionClient
   failed(why: unknown): void
@@ -89,12 +89,12 @@ export function session(deps: SessionDeps) {
   const left = computed(() => asked.value.length - at.value)
   const over = computed(() => card.value === null)
 
-  /** How many answers this sitting has written, which is what stands at the end. */
+  /** How many answers this session has written, which is what stands at the end. */
   const done = computed(() => answers.value.length)
 
   /**
-   * The sitting let go of. What was answered is in the vault, and the next
-   * sitting is opened whole: a card kept here is one a screen could fall back
+   * The session let go of. What was answered is in the vault, and the next
+   * session is opened whole: a card kept here is one a screen could fall back
    * to showing with nothing able to answer it.
    */
   const forget = () => {
@@ -108,7 +108,7 @@ export function session(deps: SessionDeps) {
 
   /**
    * Sit down to a vault, or to one deck of it. What comes back is what the
-   * sitting could not act on, and nothing when it could not be opened at all.
+   * session could not act on, and nothing when it could not be opened at all.
    */
   /**
    * Preset is the note one preset stands in, and the empty path is the preset

@@ -54,7 +54,7 @@ type ReviewCounts struct {
 // What a day came to is a sum, and a sum is worked out one file at a time: a
 // run arriving from another machine adds to the days it holds and disturbs
 // nothing that was counted before it. So the cache is kept by run — a file of
-// the name and length it was read at is not read again, and a sitting's own
+// the name and length it was read at is not read again, and a session's own
 // file is the only one re-read all evening.
 //
 // This is what a schedule cannot do. Where an answer leaves a card depends on
@@ -170,7 +170,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 }
 
 // added is two days' answers put together, which is how the runs of one day are
-// added up: a person may have answered in two sittings, and it is one day.
+// added up: a person may have answered in two sessions, and it is one day.
 func added(one, other review.Tally) review.Tally {
 	return review.Tally{
 		Answered: one.Answered + other.Answered,

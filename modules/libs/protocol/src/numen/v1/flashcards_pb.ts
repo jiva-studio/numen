@@ -209,7 +209,7 @@ export type PresetCardsDue = Message<"numen.v1.PresetCardsDue"> & {
 
   /**
    * What the day leaves under it: the card faces owed and the ones nobody has
-   * answered, held to its budget. Their sum is what a sitting over this preset
+   * answered, held to its budget. Their sum is what a session over this preset
    * asks, because a preset is the whole scope of its own budget.
    *
    * @generated from field: int32 owed_due = 10;
@@ -295,7 +295,7 @@ export type PresetCardsDue = Message<"numen.v1.PresetCardsDue"> & {
   /**
    * Why the preset schedules nothing on this day: whatever stops it at all, and
    * a day of the week carrying none of the load. It is the core's own verdict,
-   * so a window says of a preset what the sitting hands its cards out by.
+   * so a window says of a preset what the session hands its cards out by.
    *
    * @generated from field: numen.v1.StopReason stops_on = 16;
    */
@@ -522,7 +522,7 @@ export const StartSessionRequestSchema: GenMessage<StartSessionRequest> = /*@__P
  */
 export type StartSessionResponse = Message<"numen.v1.StartSessionResponse"> & {
   /**
-   * Run is what an answer given in this sitting is written to, and it is what
+   * Run is what an answer given in this session is written to, and it is what
    * an AnswerCard names.
    *
    * @generated from field: string run = 1;
@@ -536,7 +536,7 @@ export type StartSessionResponse = Message<"numen.v1.StartSessionResponse"> & {
 
   /**
    * Unwritten are the decks holding a card with no mark that could not be given
-   * one. Their cards are not in this sitting and are asked for at the next.
+   * one. Their cards are not in this session and are asked for at the next.
    *
    * @generated from field: repeated string unwritten = 3;
    */
@@ -865,7 +865,7 @@ export type GetDeckNeighbourhoodResponse = Message<"numen.v1.GetDeckNeighbourhoo
 
   /**
    * Unread is how many at the end of the list came without their text. Reading
-   * stops once a sitting's worth has been gathered, so a deck at the centre of
+   * stops once a session's worth has been gathered, so a deck at the centre of
    * a vault is still answered promptly and says how much it left.
    *
    * @generated from field: int32 unread = 2;
@@ -1122,7 +1122,7 @@ export const FlashcardsService: GenService<{
    *
    * Naming both is refused. A preset with nothing to ask today is refused with
    * the reason, so a person pressing it is told why and not shown an empty
-   * sitting.
+   * session.
    *
    * @generated from rpc numen.v1.FlashcardsService.StartSession
    */
@@ -1188,7 +1188,7 @@ export const FlashcardsService: GenService<{
     output: typeof GetAgentStateResponseSchema;
   },
   /**
-   * GetDeckNeighbourhood is what the deck a person is sitting to is joined to:
+   * GetDeckNeighbourhood is what the deck of a person's session is joined to:
    * the notes it points at and the notes that point at it, with the text of
    * each. A card is a line out of something longer, and what it was cut from is
    * what a person reaches for when it will not come back to them.

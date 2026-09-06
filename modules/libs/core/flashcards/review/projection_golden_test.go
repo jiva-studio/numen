@@ -15,7 +15,7 @@ import (
 // update writes the projections down again, and compares against none of them.
 var update = flag.Bool("update", false, "write testdata/projection.golden again")
 
-// The projection is the arithmetic every picture and every sitting rests on, so
+// The projection is the arithmetic every picture and every session rests on, so
 // what it answers over a spread of materials and settings is written down whole
 // — every scalar and every series, day by day — and compared against on every
 // run.

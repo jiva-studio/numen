@@ -34,7 +34,7 @@ type ReviewLog struct {
 	// cache it is out of date is any difference in this list.
 	//
 	// A run is appended to and never rewritten, so its length is what says
-	// whether it has changed. A name alone says nothing: the file a sitting is
+	// whether it has changed. A name alone says nothing: the file a session is
 	// writing to keeps its name and grows all evening.
 	Files []port.Entry
 	// Skipped is how many lines could not be acted on: a run that stopped
@@ -169,7 +169,7 @@ func (u Log) Open(ctx context.Context, v domain.Vault, at time.Time) (*LogWriter
 	return &LogWriter{store: store, name: Area + "/" + id + Suffix}, nil
 }
 
-// LogWriter is one sitting of review, and the file it appends to.
+// LogWriter is one session of review, and the file it appends to.
 type LogWriter struct {
 	store port.DerivedStore
 	name  string

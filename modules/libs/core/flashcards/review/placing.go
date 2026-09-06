@@ -71,7 +71,7 @@ func weekday(number int) time.Weekday {
 // card put there is a card asked for later. The pace is what spreads a date's
 // material over its days, and the days it has are the days it needs.
 //
-// It is the one place a day is chosen. A sitting and a projection of it both
+// It is the one place a day is chosen. A session and a projection of it both
 // come here.
 func (p Preset) Places(s *DueByDay, at, due time.Time) time.Time {
 	out := p.lands(s, at, due)

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * The end of a sitting: nothing left to ask today, and what was answered.
+ * The end of a session: nothing left to ask today, and what was answered.
  */
 import { Button } from '@numen/ui'
 
 defineProps<{
-  /** How many answers this sitting wrote. */
+  /** How many answers this session wrote. */
   done: number
 }>()
 

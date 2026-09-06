@@ -74,7 +74,7 @@ On, a node in the plex hangs the parts of the note it stands for under its box �
 | --- | --- |
 | `day_starts` | the hour a day of review begins at, on the clock on the wall. `04:00`, and it goes from `00:00` to `12:00`. |
 
-An answer given before that hour is written into the day before: a person answering at one in the morning is finishing the evening they sat down in, and a boundary at midnight would cut one sitting in two. The hour is an hour on the wall, so a day is read where a person reads it — [Flashcards](flashcards.md).
+An answer given before that hour is written into the day before: a person answering at one in the morning is finishing the evening they sat down in, and a boundary at midnight would cut one session in two. The hour is an hour on the wall, so a day is read where a person reads it — [Flashcards](flashcards.md).
 
 Anything that is not an hour of the day is said, and `04:00` stands. The file is left as the person wrote it.
 

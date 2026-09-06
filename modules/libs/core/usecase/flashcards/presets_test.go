@@ -102,7 +102,7 @@ func TestADeckWhosePresetNoteIsGoneStandsOnTheDefaults(t *testing.T) {
 		"Sanskrit.md":    preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/Roots.md": deckOf("Sanskrit", 20, 0),
 	})
-	if got := unseen(s.sittingAt(t, today, saturday)); got != 2 {
+	if got := unseen(s.sessionAt(t, today, saturday)); got != 2 {
 		t.Fatalf("under the preset the day was asked %d new cards, want 2", got)
 	}
 
@@ -123,7 +123,7 @@ func TestADeckWhosePresetNoteIsGoneStandsOnTheDefaults(t *testing.T) {
 	}
 	// The defaults are steered by their minutes, and twenty of them hold every
 	// card the deck has left.
-	if got := unseen(s.sittingAt(t, today, saturday)); got != 20 {
+	if got := unseen(s.sessionAt(t, today, saturday)); got != 20 {
 		t.Errorf("on the defaults the day was asked %d new cards, want 20", got)
 	}
 }
@@ -139,7 +139,7 @@ func TestADeckNamingTwoPresetsIsHeldToTheFirstsBudget(t *testing.T) {
 		"decks/Roots.md": deckNaming([]string{"Few", "Many"}, 20, 0),
 	})
 
-	if got := unseen(s.sittingAt(t, today, saturday)); got != 2 {
+	if got := unseen(s.sessionAt(t, today, saturday)); got != 2 {
 		t.Errorf("the day was asked %d new cards, want the two the first preset keeps", got)
 	}
 }

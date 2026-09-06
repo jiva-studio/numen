@@ -71,7 +71,7 @@ func (s vaulted) minutes(t *testing.T, day review.Day, now time.Time) time.Durat
 }
 
 // And the same ceiling holds when a person sits to one deck at a time.
-func TestSittingDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
+func TestSessionDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
 	t.Parallel()
 	files := map[string]string{
 		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +

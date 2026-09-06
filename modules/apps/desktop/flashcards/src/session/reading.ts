@@ -7,7 +7,7 @@
  *
  * What is read belongs to the deck and not to the card, because a link is
  * written in a file and the file is the deck. So it is asked for once a deck
- * and kept while the cards of that deck go by; a sitting over a whole vault
+ * and kept while the cards of that deck go by; a session over a whole vault
  * walks several decks, and each is asked for as it comes round.
  */
 import { computed, ref, shallowRef } from 'vue'
@@ -24,7 +24,7 @@ export interface NotesPanelDeps {
    * so it is the window that holds which, and every panel moves that one thing.
    */
   readonly shows: (open: boolean) => void
-  /** The vault the sitting is on. */
+  /** The vault the session is on. */
   readonly vault: () => string
   /** The deck the card in front of the person stands in, empty between cards. */
   readonly deck: () => string
@@ -64,7 +64,7 @@ export function reading(deps: NotesPanelDeps) {
     working.value = true
     try {
       const around = await deps.around(vault, deck)
-      // A card answered while this was in flight moves the sitting to another
+      // A card answered while this was in flight moves the session to another
       // deck, and what came back is then about the deck behind it.
       if (asked !== deck) return
       notes.value = around.notes
@@ -112,7 +112,7 @@ export function reading(deps: NotesPanelDeps) {
     asked = ''
   }
 
-  /** The sitting is over: the panel holds nothing and is put away. */
+  /** The session is over: the panel holds nothing and is put away. */
   const ends = () => {
     forgets()
     at.value = ''

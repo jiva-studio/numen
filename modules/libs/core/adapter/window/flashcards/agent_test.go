@@ -244,10 +244,10 @@ func TestWhetherACardCanBeAskedAboutIsSaid(t *testing.T) {
 	}
 }
 
-// The page asks once, as it opens, and no sitting is open then. An agent that
+// The page asks once, as it opens, and no session is open then. An agent that
 // is started when a person sits down to a vault has not started yet, and the
 // page is not told this window can ask nothing.
-func TestAWindowAskedBeforeASittingIsNotSaidToHaveNoAgent(t *testing.T) {
+func TestAWindowAskedBeforeASessionIsNotSaidToHaveNoAgent(t *testing.T) {
 	api := &API{}
 	api.Unreachable.Store("")
 
@@ -301,9 +301,9 @@ func TestTheAgentIsServedBesideTheCards(t *testing.T) {
 	}
 }
 
-// The agent works the vault the person is sitting to, and it is told which when
-// the sitting opens.
-func TestTheAgentIsToldWhichVaultTheSittingIsOn(t *testing.T) {
+// The agent works the vault the person's session is on, and it is told which
+// when the session opens.
+func TestTheAgentIsToldWhichVaultTheSessionIsOn(t *testing.T) {
 	api, vaults := windowed(t, deck, other)
 	var told []string
 	api.Opened = func(_ context.Context, v domain.Vault) { told = append(told, string(v.ID)) }
@@ -318,6 +318,6 @@ func TestTheAgentIsToldWhichVaultTheSittingIsOn(t *testing.T) {
 	}
 
 	if strings.Join(told, "|") != strings.Join(opened, "|") {
-		t.Errorf("sittings opened on %v and the agent was told %v", opened, told)
+		t.Errorf("sessions opened on %v and the agent was told %v", opened, told)
 	}
 }

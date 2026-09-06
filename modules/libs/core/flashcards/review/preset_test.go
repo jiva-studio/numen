@@ -402,7 +402,7 @@ func TestThePlacingCarriesEverythingThatMovesACard(t *testing.T) {
 }
 
 // What the day has already gone through is off what it still admits, so a
-// second sitting takes up where the first left off.
+// second session takes up where the first left off.
 func TestADaysSpendIsOffWhatItStillAdmits(t *testing.T) {
 	day := review.Day{Starts: review.DayStarts}
 	p := review.Defaults()

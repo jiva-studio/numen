@@ -39,7 +39,7 @@ func TestADeckThatCouldNotBeWrittenIsNamed(t *testing.T) {
 }
 
 // A deck the index could not be brought level with was written all the same.
-// Its cards carry the marks that were minted, so they stand in this sitting and
+// Its cards carry the marks that were minted, so they stand in this session and
 // nothing has to mint them a second time.
 func TestADeckWrittenWithNoLevellingIsNotNamed(t *testing.T) {
 	t.Parallel()

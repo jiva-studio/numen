@@ -2,7 +2,7 @@
  * The flashcards window put together: what it holds is which screen is on and
  * which vault is open.
  *
- * The rules are beside it: what a sitting is, what a keystroke asks for, what
+ * The rules are beside it: what a session is, what a keystroke asks for, what
  * the vaults come to, and what the window has to say. Everything here is made
  * once, as the window opens, and what comes out stands under the screen it
  * belongs to.
@@ -35,7 +35,7 @@ export const useWindow = () => {
 
   const { notices, says, failed, doing, putAway } = raising()
   const { vaults, counting: busy, day: today, count, stop } = counting({ cards, failed })
-  const sat = session({ cards, failed })
+  const state = session({ cards, failed })
   const done = reviewed({ cards, failed })
   const schedules = scheduling({ presets: cards })
 
@@ -66,7 +66,7 @@ export const useWindow = () => {
 
   const agentPanel = panel({
     agent,
-    card: () => sat.card.value,
+    card: () => state.card.value,
     unreachable: () => unreachable.value,
     open: () => showing.value === 'asking',
     // A panel put away takes the window back to the card only when the window is
@@ -86,7 +86,7 @@ export const useWindow = () => {
       else if (showing.value === 'reading') showing.value = 'here'
     },
     vault: () => vault.value,
-    deck: () => sat.card.value?.deck ?? '',
+    deck: () => state.card.value?.deck ?? '',
     around,
     says: (said) => says(said, 'caution'),
   })
@@ -120,7 +120,7 @@ export const useWindow = () => {
         vault.value = ''
       },
     ],
-    session: [sat.forget, agentPanel.ends, notesPanel.ends],
+    session: [state.forget, agentPanel.ends, notesPanel.ends],
   })
 
   /** What is read, so the keys can scroll it: the caret is nowhere in it. */
@@ -141,8 +141,8 @@ export const useWindow = () => {
   }
 
   /**
-   * What the sitting could not act on, said once as it opens: a deck whose cards
-   * could not be given marks holds cards this sitting does not ask, and a line of
+   * What the session could not act on, said once as it opens: a deck whose cards
+   * could not be given marks holds cards this session does not ask, and a line of
    * the vault's answers that could not be read is a card standing where the rest
    * of its history left it.
    */
@@ -159,7 +159,7 @@ export const useWindow = () => {
   }
 
   const start = async (deck: string) => {
-    const said = await sat.start(vault.value, deck)
+    const said = await state.start(vault.value, deck)
     if (!said) return
     goes('session')
     reported(said)
@@ -167,14 +167,14 @@ export const useWindow = () => {
 
   /** Sit down to every deck one preset schedules, held to the budget it keeps. */
   const startPreset = async (preset: string) => {
-    const said = await sat.start(vault.value, '', preset)
+    const said = await state.start(vault.value, '', preset)
     if (!said) return
     goes('session')
     reported(said)
   }
 
   /**
-   * Out of a sitting and back to the decks, with the counts as they now stand and
+   * Out of a session and back to the decks, with the counts as they now stand and
    * the days too: what a person just answered is part of what they have done.
    */
   const leave = async () => {
@@ -196,7 +196,7 @@ export const useWindow = () => {
    */
   const answered = async (how: Grade) => {
     agentPanel.ends()
-    await sat.answer(how)
+    await state.answer(how)
   }
 
   const keyed = (press: KeyboardEvent) => {
@@ -205,7 +205,7 @@ export const useWindow = () => {
     if (on.value !== 'session') return
 
     const asked = asks(press, {
-      shown: sat.shown.value,
+      shown: state.shown.value,
       asking: showing.value === 'asking',
       reading: showing.value === 'reading',
     })
@@ -214,13 +214,13 @@ export const useWindow = () => {
 
     switch (asked.does) {
       case 'show':
-        sat.show()
+        state.show()
         break
       case 'answer':
         void answered(asked.how)
         break
       case 'takeBack':
-        void sat.takeBack()
+        void state.takeBack()
         break
       case 'leave':
         void leave()
@@ -298,7 +298,7 @@ export const useWindow = () => {
         unreachable.value = WORDS.unreachable
       })
     // A deck written or a card changed underneath the window is counted again
-    // without a person asking. A sitting is left alone: its cards were laid out
+    // without a person asking. A session is left alone: its cards were laid out
     // when it opened, and what a deck says now is read at the next one.
     void follows(
       () => cards.watchReloads({}),
@@ -348,7 +348,7 @@ export const useWindow = () => {
     /** One vault's decks and presets, and the ways to sit down to them. */
     decks: { chosen, today, done, schedules, start, startPreset, vaultsAgain },
 
-    /** The sitting, and the two panels standing beside the card. */
-    session: { sat, at, moved, answered, talks, reads, leave, agentPanel, notesPanel },
+    /** The session, and the two panels standing beside the card. */
+    session: { state, at, moved, answered, talks, reads, leave, agentPanel, notesPanel },
   }
 }

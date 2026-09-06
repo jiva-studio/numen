@@ -138,7 +138,7 @@ describe('the one slider', () => {
       .map((one) => one.text())
     expect(said).toStrictEqual([
       '20 minutes a day',
-      '80 cards a sitting',
+      '80 cards a session',
       'overdue gone in 3 days',
     ])
     // Its own value on the width stays on its own line under the picture.
@@ -190,7 +190,7 @@ describe('the one slider', () => {
     })
     expect(none.tab.findAll('[data-control="bought"]').map((one) => one.text())).toStrictEqual([
       '20 minutes a day',
-      '80 cards a sitting',
+      '80 cards a session',
     ])
 
     const never = drawn({
@@ -198,7 +198,7 @@ describe('the one slider', () => {
     })
     expect(never.tab.findAll('[data-control="bought"]').map((one) => one.text())).toStrictEqual([
       '20 minutes a day',
-      '80 cards a sitting',
+      '80 cards a session',
       'not within 3 days',
     ])
   })
@@ -642,7 +642,7 @@ describe('what the control stands at', () => {
   it('is read out in the units of its goal, with what it buys over the knob', () => {
     const { tab } = drawn()
     expect(tab.text()).toContain(words.value('minutes', 20, ''))
-    expect(tab.findAll('[data-control="bought"]').map((one) => one.text())).toContain('80 cards a sitting')
+    expect(tab.findAll('[data-control="bought"]').map((one) => one.text())).toContain('80 cards a session')
   })
 
   // Nobody reads under the picture while dragging, so what a place buys is
@@ -661,8 +661,8 @@ describe('what the control stands at', () => {
   it('reads the cards off the place the knob stands at', () => {
     const { tab } = drawn()
     const said = tab.findAll('[data-control="bought"]').map((one) => one.text())
-    expect(said).toContain('80 cards a sitting')
-    expect(said).not.toContain('0 cards a sitting')
+    expect(said).toContain('80 cards a session')
+    expect(said).not.toContain('0 cards a session')
   })
 
   // The figure is what a person would recall when a card comes round, said as
@@ -689,13 +689,13 @@ describe('what the control stands at', () => {
   })
 
   // The height, the bubble over the knob and the axis are one number: every
-  // card the sitting puts in front of the person, new and returning.
-  it('names the height, the bubble and the axis in cards of a sitting', () => {
+  // card the session puts in front of the person, new and returning.
+  it('names the height, the bubble and the axis in cards of a session', () => {
     const { tab } = drawn()
     expect(tab.get('[data-control="name"][data-axis="y"]').text()).toBe(words.axisY('minutes'))
-    expect(tab.get('[data-control="name"][data-axis="y"]').text()).toContain('sitting')
+    expect(tab.get('[data-control="name"][data-axis="y"]').text()).toContain('session')
     expect(tab.text()).toContain(words.heightAt('minutes', 120))
-    expect(tab.findAll('[data-control="bought"]').map((one) => one.text())).toContain('80 cards a sitting')
+    expect(tab.findAll('[data-control="bought"]').map((one) => one.text())).toContain('80 cards a session')
   })
 
   // The window's own arithmetic never reaches the eye as a figure now: until
@@ -776,7 +776,7 @@ describe('what the control stands at', () => {
       expect(tab.get('[data-control="name"][data-axis="y"]').text()).toBe(words.axisY(goal))
       expect(tab.get('[data-control="name"][data-axis="x"]').text()).toBe(words.axisX(goal))
     }
-    expect(words.axisY('minutes')).toBe('Cards in a sitting')
+    expect(words.axisY('minutes')).toBe('Cards in a session')
     expect(words.axisX('minutes')).toBe('Minutes a day')
     expect(words.axisY('retention')).toBe('Minutes a day')
     expect(words.axisX('retention')).toBe('Retention')

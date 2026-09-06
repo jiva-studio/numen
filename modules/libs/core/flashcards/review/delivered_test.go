@@ -11,13 +11,13 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
 
-// sitting generates a vault's answers: a few card faces answered over a few
+// session generates a vault's answers: a few card faces answered over a few
 // weeks, some of them in the same millisecond, each answer under an identifier
 // of its own.
 //
 // The identifiers are what a history is held together by, so they are minted
 // here as they are minted anywhere: one to an answer, and no two alike.
-func sitting(t *rapid.T) []review.Answer {
+func session(t *rapid.T) []review.Answer {
 	cards := rapid.SliceOfNDistinct(
 		rapid.StringMatching(`[0-9abcdefghjkmnpqrstvwxyz]{10}`), 1, 3,
 		func(s string) string { return s },
@@ -57,7 +57,7 @@ func TestASchedulesDoesNotDependOnHowTheRunsWereDelivered(t *testing.T) {
 	t.Parallel()
 	var copied, level int
 	rapid.Check(t, func(t *rapid.T) {
-		answers := sitting(t)
+		answers := session(t)
 		// Two answers of one instant are put in the order of their identifiers,
 		// which is the one place the order is not the clock's.
 		when := make(map[review.CardFaceID]map[time.Time]bool)
@@ -106,7 +106,7 @@ func TestAnAnswerTakenBackLeavesTheScheduleItWasNeverGivenIn(t *testing.T) {
 	t.Parallel()
 	var took, twice int
 	rapid.Check(t, func(t *rapid.T) {
-		answers := sitting(t)
+		answers := session(t)
 
 		kept := make([]review.Answer, 0, len(answers))
 		with := make([]review.Answer, 0, 2*len(answers))

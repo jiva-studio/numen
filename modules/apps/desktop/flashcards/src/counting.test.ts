@@ -190,7 +190,7 @@ describe('counting what every vault owes', () => {
     expect(one.counting.value).toBe(false)
   })
 
-  // The window opening, a sitting ending and a vault moving underneath it all
+  // The window opening, a session ending and a vault moving underneath it all
   // ask, and they arrive together. One count answers all three.
   it('runs one count however many ask for it at once', async () => {
     let asked = 0

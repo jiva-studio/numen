@@ -49,22 +49,22 @@ const { on, notices, putAway, vaults, decks, session } = useWindow()
     />
 
     <SessionSummary
-      v-else-if="session.sat.over.value"
-      :done="session.sat.done.value"
+      v-else-if="session.state.over.value"
+      :done="session.state.done.value"
       @leave="session.leave"
     />
 
     <Session
-      v-else-if="session.sat.card.value"
-      :card="session.sat.card.value"
-      :shown="session.sat.shown.value"
-      :left="session.sat.left.value"
-      :taken-back="session.sat.answers.value.length > 0"
+      v-else-if="session.state.card.value"
+      :card="session.state.card.value"
+      :shown="session.state.shown.value"
+      :left="session.state.left.value"
+      :taken-back="session.state.answers.value.length > 0"
       :at="session.at.value"
       @update:at="session.moved"
-      @show="session.sat.show"
+      @show="session.state.show"
       @answer="session.answered"
-      @take-back="session.sat.takeBack"
+      @take-back="session.state.takeBack"
       @leave="session.leave"
       @ask="session.talks"
       @read="session.reads"

@@ -10,15 +10,15 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// ErrBothNamed is a sitting named a deck and a preset at once. Which cards were
+// ErrBothNamed is a session named a deck and a preset at once. Which cards were
 // meant is a question, and it is put back to the caller.
-var ErrBothNamed = errors.New("a sitting is opened over one deck or over one preset")
+var ErrBothNamed = errors.New("a session is opened over one deck or over one preset")
 
 // ErrSchedulesNothing is a preset with nothing to ask in the day being sat. The
 // message says which of the reasons it is, in the person's own words.
 var ErrSchedulesNothing = errors.New("this preset schedules nothing today")
 
-// Scope is what a sitting is opened over: every deck the vault holds, one of
+// Scope is what a session is opened over: every deck the vault holds, one of
 // its decks, or one of its presets.
 //
 // The whole vault is the ordinary way to sit down to this: a person owes what
@@ -33,14 +33,14 @@ type Scope struct {
 	Named  bool
 }
 
-// OverDeck is a sitting over one deck.
+// OverDeck is a session over one deck.
 func OverDeck(path string) Scope { return Scope{Deck: path} }
 
-// ByPreset is a sitting over the cards of every deck pointing at one preset,
+// ByPreset is a session over the cards of every deck pointing at one preset,
 // held to that preset's budget.
 func ByPreset(preset string) Scope { return Scope{Preset: preset, Named: true} }
 
-// QueuedCardFace is one card face as the sitting queues it: where it stands,
+// QueuedCardFace is one card face as the session queues it: where it stands,
 // how it is laid out, and where the answers so far have left it.
 type QueuedCardFace struct {
 	CardFace
@@ -58,7 +58,7 @@ type SessionResult struct {
 	Queue []QueuedCardFace
 	// Unwritten are the decks holding a card with no mark that could not be
 	// given one. Their cards are not in the queue and are asked for at the next
-	// sitting.
+	// session.
 	Unwritten []string
 	// Skipped is how many lines of the vault's answers could not be read: a run
 	// that stopped partway, or a line of a version this build does not know.
@@ -93,7 +93,7 @@ type Session struct {
 // left each card face, which preset each deck is scheduled by, where one day of
 // review gives way to the next, and what time it is.
 //
-// All six are named here because a sitting short of any one of them asks the
+// All six are named here because a session short of any one of them asks the
 // wrong cards, or asks past the budget the person set for the day, and the
 // answers it takes are written down all the same.
 func NewSession(
@@ -108,7 +108,7 @@ func NewSession(
 
 // Execute is what to ask, in order.
 //
-// Scope is the deck or the preset the sitting is opened over. Naming both is
+// Scope is the deck or the preset the session is opened over. Naming both is
 // ErrBothNamed, and a preset with nothing to ask today is ErrSchedulesNothing
 // with the reason.
 func (u Session) Execute(

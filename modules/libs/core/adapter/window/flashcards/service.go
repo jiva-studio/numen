@@ -189,10 +189,10 @@ func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultCardsDue {
 	return one
 }
 
-// StartSession opens a sitting and hands over what to ask, in order.
+// StartSession opens a session and hands over what to ask, in order.
 //
-// A sitting is opened over one deck, over one preset, or over the whole vault.
-// A refused sitting opens no run: the file a vault's answers go to is written
+// A session is opened over one deck, over one preset, or over the whole vault.
+// A refused session opens no run: the file a vault's answers go to is written
 // when there is something to answer.
 func (a *API) StartSession(
 	ctx context.Context, r *connect.Request[v1.StartSessionRequest],
@@ -206,7 +206,7 @@ func (a *API) StartSession(
 		Preset: r.Msg.GetPreset(),
 		Named:  r.Msg.Preset != nil,
 	}
-	sitting, err := a.Session.Execute(ctx, v, over)
+	session, err := a.Session.Execute(ctx, v, over)
 	if err != nil {
 		switch {
 		case errors.Is(err, flashcards.ErrBothNamed):
@@ -224,11 +224,11 @@ func (a *API) StartSession(
 
 	out := &v1.StartSessionResponse{
 		Run:       run.Name(),
-		Asked:     make([]*v1.Asked, 0, len(sitting.Queue)),
-		Unwritten: sitting.Unwritten,
-		Skipped:   int32(sitting.Skipped),
+		Asked:     make([]*v1.Asked, 0, len(session.Queue)),
+		Unwritten: session.Unwritten,
+		Skipped:   int32(session.Skipped),
 	}
-	for _, one := range sitting.Queue {
+	for _, one := range session.Queue {
 		out.Asked = append(out.Asked, askedOf(one))
 	}
 	return connect.NewResponse(out), nil

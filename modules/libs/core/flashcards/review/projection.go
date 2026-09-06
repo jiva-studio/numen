@@ -81,7 +81,7 @@ type Projection struct {
 	Faced []int
 	Spent []time.Duration
 	// Admitted is whether the preset admitted each day projected. A day it did
-	// not is no sitting at all, and the summaries over the run pass over it.
+	// not is no session at all, and the summaries over the run pass over it.
 	Admitted []bool
 	// Closed is every budget that stopped each day projected asking for more,
 	// one entry a day.
@@ -144,14 +144,14 @@ func (p Projection) Admits() int {
 	return out
 }
 
-// Sitting is the first day of this run the preset admits: the next sitting a
-// person will actually sit down to. False is a run admitting no day at all,
-// which holds no sitting.
+// Session is the first day of this run the preset admits: the next session a
+// person will actually sit down to. False is a run admession no day at all,
+// which holds no session.
 //
 // It is one real day of the run, so the count read off it is the count a
-// sitting on that day hands a person. A day the preset does not admit is no
-// sitting, and the day after it is the one a person meets.
-func (p Projection) Sitting() (int, bool) {
+// session on that day hands a person. A day the preset does not admit is no
+// session, and the day after it is the one a person meets.
+func (p Projection) Session() (int, bool) {
 	for day, admitted := range p.Admitted {
 		if admitted {
 			return day, true
@@ -182,7 +182,7 @@ func Overdue(d Day, at map[CardFaceID]Schedule, now time.Time) int {
 //
 // The share of the load each day of the week carries scales what that day
 // admits, and an even load moves cards onto the days carrying least. Both are
-// Preset's, and the sitting reads them the same way.
+// Preset's, and the session reads them the same way.
 type Simulation struct {
 	By   Scheduler
 	Day  Day
@@ -201,7 +201,7 @@ type Simulation struct {
 	Recalls RecallChance
 	// Spent is what the day holding now has already gone through under this
 	// preset. The first day of a run is a real day a person may be halfway
-	// through, and what it has left is what a sitting opened now would offer.
+	// through, and what it has left is what a session opened now would offer.
 	Spent Spent
 }
 
@@ -307,7 +307,7 @@ func (s Simulation) Run(
 		var used time.Duration
 
 		// What the day admits is the one answer, and it is the answer the
-		// sitting of that day will be held to.
+		// session of that day will be held to.
 		// The first day of a run is the day holding now, which a person may be
 		// halfway through. Every day after it opens unspent.
 		gone := Spent{}
@@ -356,7 +356,7 @@ func (s Simulation) Run(
 
 			// A day hands over everything it owes and everything it begins
 			// before it comes back to a card it has already shown, which is the
-			// order the sittings of that day put them in.
+			// order the sessions of that day put them in.
 			repeat := !owed && !fresh
 			if repeat || admits.Paying(seen, begun, owed, fresh) {
 				at := 0

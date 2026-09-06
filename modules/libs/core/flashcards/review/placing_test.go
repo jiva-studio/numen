@@ -116,11 +116,11 @@ func widest(load []int) int {
 	return out
 }
 
-// A sitting works out the day from a local now, and a replay from the stamp its
+// A session works out the day from a local now, and a replay from the stamp its
 // log carries, which is read back in UTC. One card and one answer, over the
 // night the clock goes back: both land on one moment, and not merely on one
 // date.
-func TestTheSittingAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
+func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 	in, err := time.LoadLocation("Europe/Warsaw")
 	if err != nil {
 		t.Skipf("this machine holds no zone whose clock changes: %v", err)

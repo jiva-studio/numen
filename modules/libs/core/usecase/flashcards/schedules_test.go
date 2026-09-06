@@ -298,7 +298,7 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 
 // The day a card comes back on is one answer, whether it is answered or
 // projected. A preset evening its days out moves the card off the day carrying
-// none of the load, and the sitting and the picture move it to the same one.
+// none of the load, and the session and the picture move it to the same one.
 //
 // The card is answered twice at the hour the day opens: a card answered no time
 // at all since its last answer is one the projection is certain came back, so
@@ -413,11 +413,11 @@ func TestACardFallingOnADayAtNoneOfTheLoadStandsOver(t *testing.T) {
 	}
 
 	opens := today.Ends(fell).AddDate(0, 0, -1)
-	if asked := s.sittingAt(t, today, opens.Add(6*time.Hour)).Queue; len(asked) != 0 {
+	if asked := s.sessionAt(t, today, opens.Add(6*time.Hour)).Queue; len(asked) != 0 {
 		t.Errorf("a %v carrying none of the load asked %d cards", fell.Weekday(), len(asked))
 	}
 	after := today.Ends(fell).Add(6 * time.Hour)
-	if asked := s.sittingAt(t, today, after).Queue; len(asked) != 1 {
+	if asked := s.sessionAt(t, today, after).Queue; len(asked) != 1 {
 		t.Errorf("the day after asked %d cards, want the one standing over", len(asked))
 	}
 }

@@ -742,9 +742,9 @@ type Point struct {
 	// `reviews` is counted in card faces and `minutes` in the showings they take,
 	// so a face the day comes back to costs its minutes and is the one card.
 	//
-	// Under a goal of minutes, the next sitting a person will sit down to: the
+	// Under a goal of minutes, the next session a person will sit down to: the
 	// first day the preset admits, which is the day the deck screen offers. A day
-	// at none of the load is no sitting, so the day after it is drawn. Under a
+	// at none of the load is no session, so the day after it is drawn. Under a
 	// goal of retention, the load over the days the preset admits.
 	//
 	// A goal of a date reads `reviews` off that first day, and fills `minutes`

@@ -5,7 +5,7 @@ import type { AgentPort, AgentStep } from '@numen/ui'
 import { agentPanel } from './panel'
 import type { CardFace } from '../core'
 
-/** A card as the sitting hands one over. */
+/** A card as the session hands one over. */
 const card = (more: Partial<CardFace> = {}): CardFace => ({
   deck: 'decks/Words.md',
   section: '',
@@ -36,7 +36,7 @@ const answers = (says: AgentStep[] = [{ kind: 'said', text: 'Because of the leav
 }
 
 /**
- * The panel, with the sitting around it standing in for the window. What the
+ * The panel, with the session around it standing in for the window. What the
  * window is showing is the window's, one thing for all of the panels, so the
  * test holds it the way the window does.
  */
@@ -76,7 +76,7 @@ describe('the panel coming in', () => {
     expect(held.open.value).toBe(false)
   })
 
-  it('comes in on the card the sitting is on, turned or not', () => {
+  it('comes in on the card the session is on, turned or not', () => {
     const { held } = panel()
     held.opens()
     expect(held.open.value).toBe(true)

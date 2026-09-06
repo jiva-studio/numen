@@ -37,11 +37,11 @@ func TestTheWindowsUnderTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 		}
 	}
 
-	sitting := flashcards.Session{
+	session := flashcards.Session{
 		Marks: s.marking, CardFaces: s.standings, Schedules: s.kept,
 		Presets: s.presets, Day: today, Now: func() time.Time { return at },
 	}
-	held, err := sitting.Execute(t.Context(), s.vault, flashcards.Scope{})
+	held, err := session.Execute(t.Context(), s.vault, flashcards.Scope{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +101,7 @@ func TestTheWindowsUnderTheFourNameTheDayTheCardComesBackOn(t *testing.T) {
 		asked, differ, worst := 0, 0, time.Duration(0)
 		for step := range 60 {
 			at := saturday.Add(time.Duration(step) * time.Second)
-			sat := s.sittingAt(t, today, at)
+			sat := s.sessionAt(t, today, at)
 			if len(sat.Queue) == 0 {
 				break
 			}

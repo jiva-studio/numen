@@ -90,7 +90,7 @@ func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 }
 
 // The fingerprint a write answers with is what the client presents at its next
-// write, and it is what lets a sitting hold more than one save.
+// write, and it is what lets a session hold more than one save.
 func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	api := editable(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	seen := at(t, api, "Entropy.md")

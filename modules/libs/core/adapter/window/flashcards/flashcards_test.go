@@ -214,7 +214,7 @@ func asked(t *testing.T, client numenv1connect.FlashcardsServiceClient) *v1.Watc
 	return out
 }
 
-// started is a sitting opened on one vault, and what it holds to ask.
+// started is a session opened on one vault, and what it holds to ask.
 func started(t *testing.T, api *API, v domain.Vault) *v1.StartSessionResponse {
 	t.Helper()
 	out, err := api.StartSession(t.Context(),
@@ -231,15 +231,15 @@ func TestARunIsAnsweredOnlyOnTheVaultItWasOpenedOn(t *testing.T) {
 	api, held := windowed(t, deck, other)
 	one, two := held[0], held[1]
 
-	sitting := started(t, api, one)
-	if len(sitting.GetAsked()) == 0 {
+	session := started(t, api, one)
+	if len(session.GetAsked()) == 0 {
 		t.Fatal("the vault owes nothing to answer")
 	}
-	card := sitting.GetAsked()[0]
+	card := session.GetAsked()[0]
 
 	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault:  string(two.ID),
-		Run:    sitting.GetRun(),
+		Run:    session.GetRun(),
 		Mark:   card.GetMark(),
 		Face:   card.GetFace(),
 		Rating: v1.Rating_RATING_GOOD,
@@ -274,16 +274,16 @@ func runs(t *testing.T, v domain.Vault) []string {
 	return out
 }
 
-// A sitting that is over is over: the run it wrote is never appended to again,
+// A session that is over is over: the run it wrote is never appended to again,
 // so a page holding its name from an hour ago writes nothing.
-func TestARunIsClosedByTheNextSittingOnItsVault(t *testing.T) {
+func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
 	api, held := windowed(t, deck)
 	v := held[0]
 
 	was := started(t, api, v)
 	now := started(t, api, v)
 	if was.GetRun() == now.GetRun() {
-		t.Fatal("a second sitting wrote to the file the first opened")
+		t.Fatal("a second session wrote to the file the first opened")
 	}
 
 	card := now.GetAsked()[0]
@@ -295,7 +295,7 @@ func TestARunIsClosedByTheNextSittingOnItsVault(t *testing.T) {
 		Rating: v1.Rating_RATING_GOOD,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
-		t.Fatalf("the sitting was over and the answer was refused with %v", connect.CodeOf(err))
+		t.Fatalf("the session was over and the answer was refused with %v", connect.CodeOf(err))
 	}
 	if !errors.Is(err, ErrNoRun) {
 		t.Errorf("refused with %v", err)
@@ -311,10 +311,10 @@ func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
 
 	was := counted(t, front(t, api), string(two.ID))
 
-	sitting := started(t, api, one)
-	for _, card := range sitting.GetAsked() {
+	session := started(t, api, one)
+	for _, card := range session.GetAsked() {
 		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
-			Vault: string(one.ID), Run: sitting.GetRun(),
+			Vault: string(one.ID), Run: session.GetRun(),
 			Mark: card.GetMark(), Face: card.GetFace(),
 			Rating: v1.Rating_RATING_EASY,
 		})); err != nil {
@@ -354,12 +354,12 @@ func TestAnAnswerIsWrittenAndCanBeTakenBack(t *testing.T) {
 	api, held := windowed(t, deck)
 	v := held[0]
 
-	sitting := started(t, api, v)
-	card := sitting.GetAsked()[0]
+	session := started(t, api, v)
+	card := session.GetAsked()[0]
 
 	given, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault:  string(v.ID),
-		Run:    sitting.GetRun(),
+		Run:    session.GetRun(),
 		Mark:   card.GetMark(),
 		Face:   card.GetFace(),
 		Rating: v1.Rating_RATING_GOOD,
@@ -374,14 +374,14 @@ func TestAnAnswerIsWrittenAndCanBeTakenBack(t *testing.T) {
 
 	if _, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
 		Vault:  string(v.ID),
-		Run:    sitting.GetRun(),
+		Run:    session.GetRun(),
 		Answer: given.Msg.GetAnswer(),
 	})); err != nil {
 		t.Fatal(err)
 	}
 
 	if names := runs(t, v); len(names) != 1 {
-		t.Errorf("a sitting writes one file, the vault holds %v", names)
+		t.Errorf("a session writes one file, the vault holds %v", names)
 	}
 }
 
@@ -389,11 +389,11 @@ func TestAnAnswerIsWrittenAndCanBeTakenBack(t *testing.T) {
 func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 	api, held := windowed(t, deck)
 	v := held[0]
-	sitting := started(t, api, v)
-	card := sitting.GetAsked()[0]
+	session := started(t, api, v)
+	card := session.GetAsked()[0]
 
 	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
-		Vault: string(v.ID), Run: sitting.GetRun(),
+		Vault: string(v.ID), Run: session.GetRun(),
 		Mark: card.GetMark(), Face: card.GetFace(),
 		Rating: v1.Rating_RATING_UNSPECIFIED,
 	}))
@@ -470,8 +470,8 @@ func TestAVaultTheIndexDoesNotCarryIsUncountedWhereNothingReadsIt(t *testing.T) 
 	}
 }
 
-// Sitting down to a vault the index does not carry is refused, and says so.
-func TestSittingDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
+// A session opened on a vault the index does not carry is refused, and says so.
+func TestSessionDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
 	api, _ := windowed(t)
 	api.Reading(t.Context(), nil)
 	unread := testsupport.NewVault(t, deck)
@@ -504,8 +504,8 @@ func TestAQuestionAboutAVaultNobodyHoldsIsRefused(t *testing.T) {
 // person choosing between them is shown what they are choosing between.
 func TestACardIsAskedWithWhatEachAnswerWouldDoToIt(t *testing.T) {
 	api, held := windowed(t, deck)
-	sitting := started(t, api, held[0])
-	ahead := sitting.GetAsked()[0].GetAhead()
+	session := started(t, api, held[0])
+	ahead := session.GetAsked()[0].GetAhead()
 
 	if ahead == nil {
 		t.Fatal("the card was asked without saying where the four would leave it")
@@ -576,7 +576,7 @@ func TestTheFourRatingsAreCarriedAcross(t *testing.T) {
 
 // A deck that could not be given marks is named to the person, so they know
 // which of their cards are not in front of them.
-func TestASittingSaysWhichDecksItCouldNotMark(t *testing.T) {
+func TestASessionSaysWhichDecksItCouldNotMark(t *testing.T) {
 	api, held := windowed(t, map[string]string{
 		"Term.md": deck["Term.md"],
 		// The card carries no mark, so the deck is written to give it one.
@@ -586,15 +586,15 @@ func TestASittingSaysWhichDecksItCouldNotMark(t *testing.T) {
 	v := held[0]
 
 	// A deck nothing may write is a deck that keeps its cards out of the
-	// sitting, and it is named.
+	// session, and it is named.
 	testsupport.Unwritable(t, filepath.Join(v.Path, "decks", "Own.md"))
 
-	sitting := started(t, api, v)
-	if len(sitting.GetUnwritten()) != 1 || sitting.GetUnwritten()[0] != "decks/Own.md" {
-		t.Errorf("the sitting says %v could not be marked", sitting.GetUnwritten())
+	session := started(t, api, v)
+	if len(session.GetUnwritten()) != 1 || session.GetUnwritten()[0] != "decks/Own.md" {
+		t.Errorf("the session says %v could not be marked", session.GetUnwritten())
 	}
-	if len(sitting.GetAsked()) != 0 {
-		t.Errorf("a card with no mark was asked: %+v", sitting.GetAsked())
+	if len(session.GetAsked()) != 0 {
+		t.Errorf("a card with no mark was asked: %+v", session.GetAsked())
 	}
 }
 
@@ -656,13 +656,13 @@ func TestTheFrontDoorSaysWhatTodayCameToUnderEachPreset(t *testing.T) {
 	api, held := windowed(t, pointed)
 	v := held[0]
 
-	sitting := started(t, api, v)
-	if len(sitting.GetAsked()) == 0 {
+	session := started(t, api, v)
+	if len(session.GetAsked()) == 0 {
 		t.Fatal("the vault owes nothing to answer")
 	}
-	card := sitting.GetAsked()[0]
+	card := session.GetAsked()[0]
 	if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
-		Vault: string(v.ID), Run: sitting.GetRun(),
+		Vault: string(v.ID), Run: session.GetRun(),
 		Mark: card.GetMark(), Face: card.GetFace(),
 		Rating: v1.Rating_RATING_GOOD, TookMs: 6000,
 	})); err != nil {
@@ -720,9 +720,9 @@ var twoPresets = map[string]string{
 		"\n## three ^y6u7i8o9p0\n\n[[Term]]\n\n### Word\n\nsanti\n\n### Meaning\n\npeace\n",
 }
 
-// A sitting over a vault of two presets is the union of them: each deck is held
+// A session over a vault of two presets is the union of them: each deck is held
 // to its own preset's budget, and one preset running out closes its own decks.
-func TestASittingOverTwoPresetsIsTheUnionOfTheirBudgets(t *testing.T) {
+func TestASessionOverTwoPresetsIsTheUnionOfTheirBudgets(t *testing.T) {
 	api, held := windowed(t, twoPresets)
 
 	got := make(map[string]int)
@@ -736,7 +736,7 @@ func TestASittingOverTwoPresetsIsTheUnionOfTheirBudgets(t *testing.T) {
 		}
 	}
 	if len(got) != len(want) {
-		t.Errorf("the sitting held %v, want %v", got, want)
+		t.Errorf("the session held %v, want %v", got, want)
 	}
 }
 
@@ -1022,18 +1022,18 @@ var spread = map[string]string{
 	"decks/Odds.md":  written("One", "", 60, 4000),
 }
 
-// The tile over a preset and the sitting it opens are one number.
+// The tile over a preset and the session it opens are one number.
 //
 // A preset is the whole scope of its own budget, so what the count leaves under
-// it is what a sitting over it asks, and the count carries that figure.
-func TestThePresetTileAndTheSittingItOpensAreOneNumber(t *testing.T) {
+// it is what a session over it asks, and the count carries that figure.
+func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 	api, held := windowed(t, spread)
 	v := held[0]
 	lives(t, api, v, 14)
 	setNow(api, firstMorning.AddDate(0, 0, 14))
 
 	said := owing(t, api, v)
-	// Which decks each preset schedules, so what a sitting asks can be checked
+	// Which decks each preset schedules, so what a session asks can be checked
 	// against the rows it was gathered from.
 	under := make(map[string][]string)
 	rows := make(map[string]*v1.DeckCardsDue, len(said.GetDecks()))
@@ -1064,7 +1064,7 @@ func TestThePresetTileAndTheSittingItOpensAreOneNumber(t *testing.T) {
 			t.Fatal(err)
 		}
 		if got := len(sat.Msg.GetAsked()); got != want {
-			t.Errorf("the tile over %q says %d and the sitting it opens asks %d",
+			t.Errorf("the tile over %q says %d and the session it opens asks %d",
 				one.GetPreset(), want, got)
 		}
 
@@ -1267,12 +1267,12 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 	}
 }
 
-// sat is what a sitting over one preset came to: how many cards, and how they
+// sat is what a session over one preset came to: how many cards, and how they
 // divided between the debt and the material it had not begun.
 type sat struct{ asked, owed, fresh int }
 
-// sitting opens a sitting over one preset, the way pressing its tile does.
-func sitting(t *testing.T, api *API, v domain.Vault, preset string) sat {
+// session opens a session over one preset, the way pressing its tile does.
+func session(t *testing.T, api *API, v domain.Vault, preset string) sat {
 	t.Helper()
 	out, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
 		Vault: string(v.ID), Preset: naming(preset),
@@ -1291,14 +1291,14 @@ func sitting(t *testing.T, api *API, v domain.Vault, preset string) sat {
 	return held
 }
 
-// The share of a day that goes to the debt moves the sitting and the projection
+// The share of a day that goes to the debt moves the session and the projection
 // alike, and moves them together.
 //
 // A share is read where a day is spent, which is one place, so the cards a
 // person is asked for and the cards the picture is drawn from are the same
 // cards. Were the projection to read its own rule, moving the share would
-// change tomorrow's sitting and leave the curve and the overdue band standing.
-func TestTheBacklogShareMovesTheSittingAndTheProjectionTogether(t *testing.T) {
+// change tomorrow's session and leave the curve and the overdue band standing.
+func TestTheBacklogShareMovesTheSessionAndTheProjectionTogether(t *testing.T) {
 	held := make(map[int]sat, 2)
 	bands := make(map[int][]int32, 2)
 
@@ -1326,9 +1326,9 @@ func TestTheBacklogShareMovesTheSittingAndTheProjectionTogether(t *testing.T) {
 				value, drawn.GetGrid()[at])
 		}
 
-		one := sitting(t, api, v, "Sanskrit.md")
+		one := session(t, api, v, "Sanskrit.md")
 		if got := int(drawn.GetAt()[at].GetReviews()); got != one.asked {
-			t.Errorf("giving the debt %d of the day, the sitting asks %d cards and the "+
+			t.Errorf("giving the debt %d of the day, the session asks %d cards and the "+
 				"picture draws %d", share, one.asked, got)
 		}
 		held[share], bands[share] = one, drawn.GetAt()[at].GetBacklog()
@@ -1340,7 +1340,7 @@ func TestTheBacklogShareMovesTheSittingAndTheProjectionTogether(t *testing.T) {
 		t.Fatalf("paying the debt first asked %+v and putting it last %+v, and neither "+
 			"side is under test", held[100], held[0])
 	}
-	// The two shares are two different days, in the sitting and in the picture
+	// The two shares are two different days, in the session and in the picture
 	// both. A setting inert in either half would show as one of these matching.
 	if held[100].owed == held[0].owed {
 		t.Errorf("paying the debt first asked %+v and putting it last %+v",

@@ -19,10 +19,10 @@ func TestWhatAVaultWasAnsweredOnComesBackInOrder(t *testing.T) {
 	api, held := windowed(t, deck)
 	v := held[0]
 
-	sitting := started(t, api, v)
-	for _, card := range sitting.GetAsked() {
+	session := started(t, api, v)
+	for _, card := range session.GetAsked() {
 		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
-			Vault: string(v.ID), Run: sitting.GetRun(),
+			Vault: string(v.ID), Run: session.GetRun(),
 			Mark: card.GetMark(), Face: card.GetFace(),
 			Rating: v1.Rating_RATING_GOOD,
 		})); err != nil {
@@ -36,8 +36,8 @@ func TestWhatAVaultWasAnsweredOnComesBackInOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 	said := out.Msg
-	if said.GetAnswered() != int32(len(sitting.GetAsked())) {
-		t.Errorf("the vault holds %d answers, want %d", said.GetAnswered(), len(sitting.GetAsked()))
+	if said.GetAnswered() != int32(len(session.GetAsked())) {
+		t.Errorf("the vault holds %d answers, want %d", said.GetAnswered(), len(session.GetAsked()))
 	}
 	if said.GetStreak() != 1 {
 		t.Errorf("the streak is %d on the first day, want 1", said.GetStreak())
@@ -72,13 +72,13 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 	api, held := windowed(t, deck)
 	v := held[0]
 
-	sitting := started(t, api, v)
-	if len(sitting.GetAsked()) == 0 {
+	session := started(t, api, v)
+	if len(session.GetAsked()) == 0 {
 		t.Fatal("the vault owes nothing to answer")
 	}
-	card := sitting.GetAsked()[0]
+	card := session.GetAsked()[0]
 	if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
-		Vault: string(v.ID), Run: sitting.GetRun(),
+		Vault: string(v.ID), Run: session.GetRun(),
 		Mark: card.GetMark(), Face: card.GetFace(),
 		Rating: v1.Rating_RATING_EASY,
 	})); err != nil {

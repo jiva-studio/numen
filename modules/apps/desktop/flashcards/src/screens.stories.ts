@@ -194,7 +194,7 @@ const BY_DECK = new Map<string, Preset>(
   PRESETS.flatMap((one) => one.decks.map((path) => [path, one] as const)),
 )
 
-/** One card face, as the sitting puts it. */
+/** One card face, as the session puts it. */
 const CARD: CardFace = {
   deck: 'Sanskrit/Roots.md',
   section: 'Verbs of going',

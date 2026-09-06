@@ -129,7 +129,7 @@ describe('a person who went in and came back out', () => {
     await window.decks.start('decks/Suffixes.md')
     window.session.talks()
     window.session.reads()
-    window.session.sat.show()
+    window.session.state.show()
     await settles()
     await settles()
 
@@ -152,7 +152,7 @@ describe('a person who went in and came back out', () => {
     await settles()
 
     expect(window.on.value).toBe('session')
-    expect(window.session.sat.card.value?.mark).toBe('mark-1')
+    expect(window.session.state.card.value?.mark).toBe('mark-1')
     expect(window.decks.done.streak.value).toBe(4)
     expect(window.session.agentPanel.about.value).not.toBeNull()
     expect(window.session.notesPanel.notes.value).toHaveLength(1)

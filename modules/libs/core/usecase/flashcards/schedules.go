@@ -262,7 +262,7 @@ func (u Schedules) worked(held ReviewLog, asks assignment) map[review.CardFaceID
 
 // replayed is the same, with what a replay came to kept for the next launch.
 //
-// Every path through this asks the cache first. A sitting and the front door
+// Every path through this asks the cache first. A session and the front door
 // stand on the same log and the same assignment, so the second of them to run
 // is told what the first worked out.
 func (u Schedules) replayed(

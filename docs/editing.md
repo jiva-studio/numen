@@ -15,7 +15,7 @@ Nothing changed is nothing written. `Ctrl+S` writes what is owed at the moment i
 
 Closing a tab and quitting the window write what is owed and wait for it. Renaming or removing the file does the same, and that write reaches the path the tab still stands at.
 
-A save reaches the index at once: the note is parsed again, cut again, and found by word. Its vectors are asked for once the vault has been quiet for eight seconds, and every write puts that pass off again. The cooldown is longer than the bound above, so one sitting at one note is embedded once.
+A save reaches the index at once: the note is parsed again, cut again, and found by word. Its vectors are asked for once the vault has been quiet for eight seconds, and every write puts that pass off again. The cooldown is longer than the bound above, so one session at one note is embedded once.
 
 ## What counts as a change
 

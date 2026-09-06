@@ -30,15 +30,15 @@ func TestTheCountCarriesHowMuchOfADeckStandsLearned(t *testing.T) {
 
 	// One card of each deck answered, so the two decks differ by their rule
 	// alone and not by what was done to them.
-	sitting := started(t, api, v)
+	session := started(t, api, v)
 	answered := map[string]bool{}
-	for _, one := range sitting.GetAsked() {
+	for _, one := range session.GetAsked() {
 		if answered[one.GetDeck()] {
 			continue
 		}
 		answered[one.GetDeck()] = true
 		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
-			Vault: string(v.ID), Run: sitting.GetRun(),
+			Vault: string(v.ID), Run: session.GetRun(),
 			Mark: one.GetMark(), Face: one.GetFace(),
 			Rating: v1.Rating_RATING_GOOD, TookMs: 5000,
 		})); err != nil {

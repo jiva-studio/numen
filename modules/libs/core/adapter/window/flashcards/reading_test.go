@@ -15,7 +15,7 @@ import (
 )
 
 // A vault being read is work the window reports, named by the vault it is on
-// and by how far it has got. A window sitting on a blank frame reads as broken.
+// and by how far it has got. A window session on a blank frame reads as broken.
 func TestReadingAVaultIsReportedAsWork(t *testing.T) {
 	api, _ := windowed(t)
 	unread := testsupport.NewVault(t, deck)

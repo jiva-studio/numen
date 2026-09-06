@@ -34,7 +34,7 @@ func loading(t *rapid.T) []deckLoad {
 }
 
 // walking is what a day of this budget hands over, with the decks reached in
-// this order: the card faces the sitting takes, by name.
+// this order: the card faces the session takes, by name.
 //
 // The order stands for the order the vault was walked in. Each deck's own cards
 // keep the order they stand in, which is the deck's and not the walk's. A

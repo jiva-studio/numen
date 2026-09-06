@@ -46,7 +46,7 @@ const { counted, started, waits } = vi.hoisted(() => ({
       },
     ],
   },
-  /** Every sitting the window opened, by what it was opened over. */
+  /** Every session the window opened, by what it was opened over. */
   started: [] as { deck: string }[],
   /** A stream that stays open, so nothing the window follows ever ends. */
   async *waits(): AsyncGenerator<never> {
@@ -147,8 +147,8 @@ describe('a letter pressed on the vaults', () => {
 })
 
 // The letter drawn on a row and the row itself are one act, so a row that
-// cannot be pressed is a letter that does nothing. A sitting opened over a deck
-// owing nothing is an empty sitting, and it mints marks in the vault to hold it.
+// cannot be pressed is a letter that does nothing. A session opened over a deck
+// owing nothing is an empty session, and it mints marks in the vault to hold it.
 describe('a letter pressed on the decks', () => {
   /** The window on the decks of the vault standing at this letter. */
   const on = async (vault: string) => {

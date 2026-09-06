@@ -12,7 +12,7 @@ import (
 // GetDeckNeighbourhood hands over what the deck being sat to is joined to.
 //
 // Nothing here writes and no run is named: a person may read around a deck
-// before they have started on it, and reading is not part of a sitting.
+// before they have started on it, and reading is not part of a session.
 func (a *API) GetDeckNeighbourhood(
 	ctx context.Context, r *connect.Request[v1.GetDeckNeighbourhoodRequest],
 ) (*connect.Response[v1.GetDeckNeighbourhoodResponse], error) {

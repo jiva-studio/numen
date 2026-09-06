@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-// placing is every arithmetic that places a card's day: the sitting that hands
+// placing is every arithmetic that places a card's day: the session that hands
 // the cards out, and the projection drawn beside a control. Both go through
 // Places, and that is the whole of the list.
 //
@@ -23,7 +23,7 @@ var placing = []string{"History.Replay", "Simulation.step"}
 // A day is chosen in one function, and a caller wanting one comes to it. The
 // walk is over this package's own files, because Places is where a day is
 // decided and the deciding is all here.
-func TestTheSittingAndTheProjectionAreWhatPlacesADay(t *testing.T) {
+func TestTheSessionAndTheProjectionAreWhatPlacesADay(t *testing.T) {
 	held, err := os.ReadDir(".")
 	if err != nil {
 		t.Fatal(err)

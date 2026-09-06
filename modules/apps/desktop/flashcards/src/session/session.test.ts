@@ -16,7 +16,7 @@ const asked = (mark: string) => ({
   ahead: undefined,
 })
 
-/** opening is what starting a sitting comes back with. */
+/** opening is what starting a session comes back with. */
 const opening = (...cards: string[]): SessionStart => ({
   run: 'flashcards/01A.jsonl',
   asked: cards.map(asked),
@@ -55,10 +55,10 @@ function held(said?: { answering?: Promise<{ answer: string }>; refuses?: unknow
   return { one, asks, trouble }
 }
 
-// A sitting is opened over a deck, over the whole vault, or over one preset.
+// A session is opened over a deck, over the whole vault, or over one preset.
 // The empty path is a preset of its own — the one scheduling the decks that
 // name none — so it is told apart from naming no preset at all.
-describe('what a sitting is opened over', () => {
+describe('what a session is opened over', () => {
   it('names no preset where it is opened over decks', async () => {
     const { one, asks } = held()
 
@@ -103,7 +103,7 @@ describe('what a sitting is opened over', () => {
   })
 })
 
-describe('a sitting', () => {
+describe('a session', () => {
   it('opens on the cards it was handed, at the first of them', async () => {
     const { one } = held()
     const report = await one.start('01VAULT', '')

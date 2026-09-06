@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
-// faces is the card faces a sitting asks, in the order it asks them.
+// faces is the card faces a session asks, in the order it asks them.
 func faces(sat flashcards.SessionResult) []review.CardFaceID {
 	out := make([]review.CardFaceID, 0, len(sat.Queue))
 	for _, one := range sat.Queue {
@@ -52,10 +52,10 @@ func TestTheDebtIsPaidOldestFirst(t *testing.T) {
 	}
 }
 
-// A sitting over several presets is one sitting however many times it is asked
+// A session over several presets is one session however many times it is asked
 // for: the same request over the same vault is the same cards in the same
 // order, card face by card face.
-func TestASittingOverSeveralPresetsIsTheSameSittingTwice(t *testing.T) {
+func TestASessionOverSeveralPresetsIsTheSameSessionTwice(t *testing.T) {
 	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":    term,
@@ -78,13 +78,13 @@ func TestASittingOverSeveralPresetsIsTheSameSittingTwice(t *testing.T) {
 		}
 	}
 
-	first := faces(s.sittingAt(t, today, saturday))
+	first := faces(s.sessionAt(t, today, saturday))
 	if len(first) == 0 {
-		t.Fatal("the sitting asked nothing")
+		t.Fatal("the session asked nothing")
 	}
 	for range 5 {
-		if again := faces(s.sittingAt(t, today, saturday)); !slices.Equal(first, again) {
-			t.Fatalf("the sitting asked %v, and the same request asked %v", first, again)
+		if again := faces(s.sessionAt(t, today, saturday)); !slices.Equal(first, again) {
+			t.Fatalf("the session asked %v, and the same request asked %v", first, again)
 		}
 	}
 }

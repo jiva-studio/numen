@@ -29,16 +29,16 @@ import (
 var ErrNoVault = errors.New("no vault of that identity")
 
 // ErrNoRun is an answer named against a run this window did not open. A run is
-// one sitting at one window, and an answer belongs to the sitting it was given
+// one session at one window, and an answer belongs to the session it was given
 // in.
 var ErrNoRun = errors.New("no run of that name is open")
 
 // API is what the page may ask.
 //
-// The runs it holds are the sittings open in this window, one to a vault. A run
+// The runs it holds are the sessions open in this window, one to a vault. A run
 // is a file in a vault that only this window appends to, and it is let go of
-// when another sitting opens on that vault or the window closes: what was
-// written stands, and the next sitting opens a file of its own.
+// when another session opens on that vault or the window closes: what was
+// written stands, and the next session opens a file of its own.
 type API struct {
 	Registry port.VaultRegistry
 	// What this window does, one scenario to a field: what a vault owes, what to
@@ -70,8 +70,8 @@ type API struct {
 	// adapter is allowed to and a scenario is not.
 	Now port.Clock
 
-	// Opened is called with the vault a sitting has just opened on. What answers
-	// about a card works one vault, and it is told which when the sitting is.
+	// Opened is called with the vault a session has just opened on. What answers
+	// about a card works one vault, and it is told which when the session is.
 	Opened func(context.Context, domain.Vault)
 
 	// Unreachable is why an agent cannot be reached, when one cannot.
@@ -87,22 +87,22 @@ type API struct {
 	// instruction where a tool's answer is data.
 	showing atomic.Pointer[CurrentCard]
 
-	runs     sittings
+	runs     sessions
 	readings readings
 
 	// listeners is everyone waiting to hear that a vault moved.
 	listeners following
 }
 
-// sittings is the run open on each vault, by the vault's identity. One sitting
+// sessions is the run open on each vault, by the vault's identity. One session
 // to a vault: opening another lets go of the one before it, and the file that
 // one wrote is never appended to again.
-type sittings struct {
+type sessions struct {
 	mu  sync.Mutex
 	run map[domain.VaultID]*flashcards.LogWriter
 }
 
-func (s *sittings) remember(v domain.Vault, run *flashcards.LogWriter) {
+func (s *sessions) remember(v domain.Vault, run *flashcards.LogWriter) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.run == nil {
@@ -118,8 +118,8 @@ func (s *sittings) remember(v domain.Vault, run *flashcards.LogWriter) {
 // vault its run was opened on: a run named against another vault would put a
 // person's answer in a history it does not belong to, and an answer written is
 // not written again. The name is asked for as well, so a page holding the name
-// of a sitting that is over cannot go on writing to it.
-func (s *sittings) named(vault domain.VaultID, name string) (*flashcards.LogWriter, error) {
+// of a session that is over cannot go on writing to it.
+func (s *sessions) named(vault domain.VaultID, name string) (*flashcards.LogWriter, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	run, is := s.run[vault]
@@ -186,8 +186,8 @@ func (a *API) opened(ctx context.Context, v domain.Vault) (*flashcards.LogWriter
 		return nil, err
 	}
 	a.runs.remember(v, run)
-	// The agent works the vault the person is sitting to, and it is told which
-	// once, when the sitting opens.
+	// The agent works the vault the person's session is on, and it is told
+	// which once, when the session opens.
 	if a.Opened != nil {
 		a.Opened(ctx, v)
 	}

@@ -25,10 +25,10 @@ import (
 // unnamed is what the panel is told where the settings name no agent.
 const unnamed = "no agent is named in the settings"
 
-// reaching is the agent on the vault a person is sitting to.
+// reaching is the agent on the vault a person's session is on.
 //
-// A sitting is on one vault and an agent is told which vault it works when it
-// starts, so the endpoint is stopped and served again when a sitting opens on
+// A session is on one vault and an agent is told which vault it works when it
+// starts, so the endpoint is stopped and served again when a session opens on
 // another one.
 type reaching struct {
 	swapping *agents.Endpoint
@@ -37,8 +37,8 @@ type reaching struct {
 	vault domain.Vault
 }
 
-// Sat is a sitting opening on a vault. Sitting down to the same vault again
-// leaves the agent where it is.
+// Sat is a session opening on a vault. A session opened on the same vault
+// again leaves the agent where it is.
 func (r *reaching) Sat(_ context.Context, v domain.Vault) {
 	r.mu.Lock()
 	again := r.vault.ID == v.ID
@@ -127,7 +127,7 @@ func serveAgents(
 }
 
 // reviewing is the tools this window serves: everything that reads, and the
-// cards of a deck a person is sitting to.
+// cards of the deck of a person's session.
 //
 // A card is written here because that is what a person is doing. A deck and a
 // stencil are not made here: they are what a vault is arranged into, and

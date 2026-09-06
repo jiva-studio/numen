@@ -62,7 +62,7 @@ type Curve struct {
 // face the day comes back to costs its minutes and is the one card.
 //
 // What the two are the height of is the goal's own question. Under a goal of
-// minutes they are the first day of the run the preset admits: the next sitting
+// minutes they are the first day of the run the preset admits: the next session
 // a person will actually sit down to. Under a goal of retention they are the
 // load over the days the preset admits.
 //
@@ -174,7 +174,7 @@ func (s Simulation) Curve(
 // minutes is the curve of how long a day of review runs.
 //
 // It runs from a short day to twice what carrying the whole load costs, so the
-// place where the load is carried stands inside it. Each place is the sitting a
+// place where the load is carried stands inside it. Each place is the session a
 // person would sit down to now, which is the day the deck screen offers.
 func (d drawing) minutes(ctx context.Context) (Curve, error) {
 	run, now, p, at, unseen := d.run, d.now, d.preset, d.at, d.unseen
@@ -204,7 +204,7 @@ func (d drawing) minutes(ctx context.Context) (Curve, error) {
 		if err != nil {
 			return err
 		}
-		place := sitting(ran)
+		place := session(ran)
 		if place.Learns, err = learnt(ctx, run, now, one, at, unseen); err != nil {
 			return err
 		}
@@ -337,9 +337,9 @@ func (d drawing) date(ctx context.Context) (Curve, error) {
 			return err
 		}
 		back, _ := ran.Retained.On(day)
-		// A day at none of the load is no sitting at all, so what a day of
+		// A day at none of the load is no session at all, so what a day of
 		// review holds is read off the first day this run admits.
-		opening, sitting := ran.Sitting()
+		opening, session := ran.Session()
 		out.Grid[i] = float64(day)
 		out.Days[i] = run.Day.Names(aiming.By)
 		one := Point{
@@ -360,7 +360,7 @@ func (d drawing) date(ctx context.Context) (Curve, error) {
 			Learns:   ran.Learns,
 			Backlog:  ran.Backlog,
 		}
-		if sitting {
+		if session {
 			one.Reviews, one.Closed = float64(ran.Faced[opening]), ran.Closed[opening]
 		}
 		out.Points[i] = one
@@ -458,25 +458,25 @@ func point(p Projection) Point {
 	}
 }
 
-// closing is what closed the first day the preset admits. A preset admitting no
+// closing is what closed the first day the preset admits. A preset admession no
 // day is closed by the pause.
 func closing(p Projection) BudgetNames {
-	day, any := p.Sitting()
+	day, any := p.Session()
 	if !any {
 		return BudgetNames{ClosedPaused}
 	}
 	return p.Closed[day]
 }
 
-// sitting is a projection as one place of a curve, at the first day of it the
-// preset admits: the next sitting a person will sit down to.
+// session is a projection as one place of a curve, at the first day of it the
+// preset admits: the next session a person will sit down to.
 //
 // It is one real day of the run, worked out by the arithmetic the deck screen
-// runs, so the count here is the count that sitting hands a person. A preset
-// admitting no day at all holds no sitting, and stands at nothing.
-func sitting(p Projection) Point {
+// runs, so the count here is the count that session hands a person. A preset
+// admession no day at all holds no session, and stands at nothing.
+func session(p Projection) Point {
 	out := point(p)
-	day, any := p.Sitting()
+	day, any := p.Session()
 	if !any {
 		return out
 	}
@@ -550,9 +550,9 @@ func abs(one int) int {
 }
 
 // carried is how long the first day the preset admits took, which is what
-// carrying the whole load costs on the next sitting.
+// carrying the whole load costs on the next session.
 func carried(p Projection) float64 {
-	day, any := p.Sitting()
+	day, any := p.Session()
 	if !any {
 		return 0
 	}
@@ -583,7 +583,7 @@ func nearest(grid []float64, value float64) int {
 
 // costing is how long a day of review runs over these days, in minutes.
 //
-// A day the preset does not admit is no sitting at all and takes no part: a
+// A day the preset does not admit is no session at all and takes no part: a
 // week of five days runs its minutes over five days.
 func costing(spent []time.Duration, admitted []bool) float64 {
 	var all time.Duration

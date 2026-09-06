@@ -68,7 +68,7 @@ func TestWhatAVaultHoldsIsEveryRunItWasReadFrom(t *testing.T) {
 		t.Errorf("the vault holds %d answers, want the two written", len(held.Answers))
 	}
 	if len(held.Files) != 2 {
-		t.Errorf("read from %d runs, want the two sittings", len(held.Files))
+		t.Errorf("read from %d runs, want the two sessions", len(held.Files))
 	}
 	for _, one := range held.Files {
 		if one.Size == 0 {
@@ -177,11 +177,11 @@ func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 	}
 }
 
-// A vault folder that is gone mid-sitting is not somewhere to go on answering
+// A vault folder that is gone mid-session is not somewhere to go on answering
 // into. An unmounted disk and a sync folder that vanished leave a path the
 // application would fill with a stub, and an evening of answers in it is
 // shadowed the moment the real vault comes back.
-func TestASittingIntoAVaultThatIsGoneStops(t *testing.T) {
+func TestASessionIntoAVaultThatIsGoneStops(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
@@ -203,7 +203,7 @@ func TestASittingIntoAVaultThatIsGoneStops(t *testing.T) {
 
 	log := flashcards.Log{Stores: s.logs}
 	if _, err := log.Open(t.Context(), s.vault, time.Now()); err == nil {
-		t.Error("a sitting opened on a vault that is gone")
+		t.Error("a session opened on a vault that is gone")
 	}
 	if _, err := log.Read(t.Context(), s.vault); err == nil {
 		t.Error("the history of a vault that is gone was read as no history at all")
@@ -211,7 +211,7 @@ func TestASittingIntoAVaultThatIsGoneStops(t *testing.T) {
 }
 
 // brimming is a store that takes one append and refuses every one after it,
-// which is a disk filling up under a sitting.
+// which is a disk filling up under a session.
 type brimming struct {
 	port.DerivedStores
 	store *filling
@@ -316,7 +316,7 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 	}
 
 	if _, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Scope{}); err != nil {
-		t.Errorf("starting a sitting came back with %v", err)
+		t.Errorf("starting a session came back with %v", err)
 	}
 	if _, err := s.counted.Execute(t.Context(), s.vault); err != nil {
 		t.Errorf("the counting came back with %v", err)

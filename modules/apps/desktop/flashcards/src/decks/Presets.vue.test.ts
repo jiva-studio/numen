@@ -275,7 +275,7 @@ describe('what the goals come to today', () => {
 
     expect(one.text()).toContain('The defaults')
     expect(one.findAll('.presets__done')).toHaveLength(1)
-    // Sitting down to it is the whole tile, the way it is for a preset that
+    // Starting a session on it is the whole tile, the way it is for a preset that
     // names itself: the tile carries no act of its own beside that.
     expect(one.get('.presets__preset').findAll('button, a, [role="button"]')).toHaveLength(0)
   })
@@ -286,7 +286,7 @@ describe('what the goals come to today', () => {
 })
 
 // The tiles are a list with nothing over them, and the figures on them change
-// under a person who has just left a sitting.
+// under a person who has just left a session.
 describe('the tiles read aloud', () => {
   it('names the list', () => {
     expect(shown([preset()]).find('.presets__list').attributes('aria-label')).toBe(
@@ -339,7 +339,7 @@ describe('what pressing a preset would ask', () => {
   })
 })
 
-describe('sitting down to a preset', () => {
+describe('starting a session on a preset', () => {
   /** Which tiles can be pressed, in the order they stand. */
   const pressable = (one: ReturnType<typeof shown>): readonly boolean[] =>
     one.findAll('.presets__preset').map((tile) => tile.attributes('disabled') === undefined)
@@ -366,7 +366,7 @@ describe('sitting down to a preset', () => {
   })
 
   // A preset with nothing to offer has said above why, and is not pressed.
-  it('offers no sitting where the day under it is already done', async () => {
+  it('offers no session where the day under it is already done', async () => {
     const one = shown([preset({ cards: 0 })])
 
     expect(pressable(one)).toStrictEqual([false])
@@ -376,7 +376,7 @@ describe('sitting down to a preset', () => {
     expect(one.emitted('start')).toBeUndefined()
   })
 
-  it('offers no sitting where the preset schedules nothing today', () => {
+  it('offers no session where the preset schedules nothing today', () => {
     expect(pressable(shown([preset({ cards: 0, paused: 'no cards a day' })]))).toStrictEqual([
       false,
     ])

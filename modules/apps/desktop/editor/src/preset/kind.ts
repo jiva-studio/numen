@@ -96,7 +96,7 @@ export interface PresetTabState {
   readonly problems: Readonly<Ref<readonly string[]>>
   /**
    * Why it schedules nothing on the day it was read in, as the vault says it.
-   * The rule is the core's, and it is the rule a sitting hands its cards out by.
+   * The rule is the core's, and it is the rule a session hands its cards out by.
    */
   readonly stopped: Readonly<Ref<StopReason>>
   /** What the file was refused for, in words a person reads, or nothing. */

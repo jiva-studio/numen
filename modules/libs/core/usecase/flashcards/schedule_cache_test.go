@@ -36,9 +36,9 @@ func TestTheFrontDoorConsultsTheScheduleCache(t *testing.T) {
 	}
 }
 
-// Starting a sitting is answered from the cache like the front door, so a
-// person sitting down waits for a listing and not for the whole history.
-func TestStartingASittingConsultsTheScheduleCache(t *testing.T) {
+// Starting a session is answered from the cache like the front door, so a
+// person starting one waits for a listing and not for the whole history.
+func TestStartingASessionConsultsTheScheduleCache(t *testing.T) {
 	t.Parallel()
 	l := load(t, loadCards, loadDays, loadPerDay)
 	ctx := t.Context()
@@ -51,10 +51,10 @@ func TestStartingASittingConsultsTheScheduleCache(t *testing.T) {
 		return err
 	})
 	if warm.Consulted == 0 {
-		t.Error("starting a sitting never consulted the cache")
+		t.Error("starting a session never consulted the cache")
 	}
 	if warm.Rewritten != 0 {
-		t.Errorf("starting a sitting rewrote the cache %d times", warm.Rewritten)
+		t.Errorf("starting a session rewrote the cache %d times", warm.Rewritten)
 	}
 }
 

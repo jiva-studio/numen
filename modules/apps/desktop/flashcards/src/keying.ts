@@ -8,8 +8,8 @@ import { typing } from '@numen/ui'
 import { grades } from './core'
 import type { Grade } from './core'
 
-/** What a keystroke asks for in a sitting, and nothing when it asks nothing. */
-export type SittingKeyIntent =
+/** What a keystroke asks for in a session, and nothing when it asks nothing. */
+export type SessionKeyIntent =
   | { does: 'show' }
   | { does: 'takeBack' }
   | { does: 'leave' }
@@ -36,7 +36,7 @@ export const ASKS = 'a'
 export const READS = 'r'
 
 /**
- * The keys a whole sitting is done with: the space bar turns a card over, the
+ * The keys a whole session is done with: the space bar turns a card over, the
  * four numbers say how it went, `u` takes the last answer back and escape goes
  * back to the decks.
  *
@@ -46,10 +46,10 @@ export const READS = 'r'
  * a button reached with the keyboard is pressed with the keyboard.
  *
  * While a question is being written none of these are pressed: the letters are
- * the question. Escape there sends the panel away and leaves the sitting where
+ * the question. Escape there sends the panel away and leaves the session where
  * it is.
  */
-export function asks(press: KeyboardEvent, showing: ScreenState): SittingKeyIntent | null {
+export function asks(press: KeyboardEvent, showing: ScreenState): SessionKeyIntent | null {
   // A field takes the overlay key too: control and A is how a person selects
   // what they have written.
   if (typing(press)) return press.key === 'Escape' ? { does: 'shut' } : null
@@ -85,7 +85,7 @@ export function asks(press: KeyboardEvent, showing: ScreenState): SittingKeyInte
  * keyboard, and the letter would be the first thing typed into it. So is space
  * over the reading, which the page would otherwise scroll instead.
  */
-export const swallows = (asked: SittingKeyIntent | null): boolean =>
+export const swallows = (asked: SessionKeyIntent | null): boolean =>
   asked?.does === 'show' ||
   asked?.does === 'ask' ||
   asked?.does === 'read' ||

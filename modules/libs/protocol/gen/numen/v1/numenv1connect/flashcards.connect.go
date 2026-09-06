@@ -96,7 +96,7 @@ type FlashcardsServiceClient interface {
 	//
 	// Naming both is refused. A preset with nothing to ask today is refused with
 	// the reason, so a person pressing it is told why and not shown an empty
-	// sitting.
+	// session.
 	StartSession(context.Context, *connect.Request[v1.StartSessionRequest]) (*connect.Response[v1.StartSessionResponse], error)
 	// AnswerCard writes down how a card came back. What comes back is the
 	// identifier of the line, which is what taking that answer back names.
@@ -114,7 +114,7 @@ type FlashcardsServiceClient interface {
 	// GetAgentState is whether a card can be asked about here at all. The way in
 	// stands on every card, so nothing else has to be said about which.
 	GetAgentState(context.Context, *connect.Request[v1.GetAgentStateRequest]) (*connect.Response[v1.GetAgentStateResponse], error)
-	// GetDeckNeighbourhood is what the deck a person is sitting to is joined to:
+	// GetDeckNeighbourhood is what the deck of a person's session is joined to:
 	// the notes it points at and the notes that point at it, with the text of
 	// each. A card is a line out of something longer, and what it was cut from is
 	// what a person reaches for when it will not come back to them.
@@ -276,7 +276,7 @@ type FlashcardsServiceHandler interface {
 	//
 	// Naming both is refused. A preset with nothing to ask today is refused with
 	// the reason, so a person pressing it is told why and not shown an empty
-	// sitting.
+	// session.
 	StartSession(context.Context, *connect.Request[v1.StartSessionRequest]) (*connect.Response[v1.StartSessionResponse], error)
 	// AnswerCard writes down how a card came back. What comes back is the
 	// identifier of the line, which is what taking that answer back names.
@@ -294,7 +294,7 @@ type FlashcardsServiceHandler interface {
 	// GetAgentState is whether a card can be asked about here at all. The way in
 	// stands on every card, so nothing else has to be said about which.
 	GetAgentState(context.Context, *connect.Request[v1.GetAgentStateRequest]) (*connect.Response[v1.GetAgentStateResponse], error)
-	// GetDeckNeighbourhood is what the deck a person is sitting to is joined to:
+	// GetDeckNeighbourhood is what the deck of a person's session is joined to:
 	// the notes it points at and the notes that point at it, with the text of
 	// each. A card is a line out of something longer, and what it was cut from is
 	// what a person reaches for when it will not come back to them.

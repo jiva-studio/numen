@@ -90,6 +90,7 @@ A word means one thing inside its context, and the same word in two contexts is 
 | section (of a deck) | A first-level heading in a deck, and the cards standing under it until the next one. It is a name and nothing else: no fields, no stencil, no schedule, no mark. | |
 | deck | A note whose body is cards, in sections where a person made them — [Cards](cards.md). | |
 | preset | A note saying how the decks pointing at it are scheduled — [Cards](cards.md). A deck points at one with a link carrying `type: preset`, and a deck pointing at none is scheduled by the defaults. The word is spent twice: a theme that ships inside the application is named `preset:numen`. | |
+| session | One run of answering cards: what is asked, in the order it is asked, and what was answered — [Flashcards](flashcards.md). A session is on one vault and over one deck, one preset, or the whole of it. Anki, SuperMemo and Mochi all call it this. In the core it is `flashcards.Session`, on the wire `StartSession`, and in the window `Session.vue`. | sitting |
 | goal | Which of three a preset's one control steers: minutes a day, a retention target, or a day the material is to be in the head by. | |
 | budget | What one day of a preset holds: how many new cards, how many reviews, and how long the day runs. Anki calls the three settings *daily limits*, and this is the thing they add up to, which Anki has no word for: a `BudgetName` is which of them closed a day, and it is the key the preset writes. | daily limit |
 | rating | Which of the four a person answered a card face with, as the wire and the review log carry it: `again`, `hard`, `good` or `easy`, and an unspecified nothing beside them. It is `review.Rating` in the core and `rating` in the log on disk. | grade |
@@ -122,8 +123,7 @@ A word means one thing inside its context, and the same word in two contexts is 
 | tool | One operation an agent can call, by the name it is served under. A tool is not a use case: several tools reach one, and one tool reaches several. | a use case |
 | MCP | The protocol this vault's tools are served over, so another program can reach them — [The agent](agents.md), [Settings](settings.md). The setting is `agent.serve_tools`, and the address is `-mcp-addr`. | |
 | client | A consumer of the schema that draws a vault. An agent acts on a vault; a client draws one. | an agent |
-| conversation | One thread of talk with an agent, named by the client and carried in every question of it. Where the English word is wanted the phrase is *thread of talk*, and the field is still `conversation`. | |
-| session | What the agent's own program calls a conversation it is keeping, named by that program. It never leaves the adapter that started it. | |
+| conversation | One thread of talk with an agent, named by the client and carried in every question of it. Where the English word is wanted the phrase is *thread of talk*, and the field is still `conversation`. Claude Code calls the conversation it is keeping a `session_id`; that word is the other program's and never leaves the adapter that started it. | a session |
 | finish | Saying a conversation is over: nothing is asked under its name again, and what the agent kept of it is let go of. One answer given up on is a stop, and the conversation stays open. | |
 | step | One thing an agent said, did, or stopped for, as the panel is told about it. | |
 | call | What an agent named one use of a tool, so every step reporting it is known to be one. | |

@@ -17,7 +17,7 @@ const joined = (more: Partial<Neighbour> = {}): Neighbour => ({
   ...more,
 })
 
-/** The panel, with the sitting around it standing in for the window. */
+/** The panel, with the session around it standing in for the window. */
 const panel = (more: { deck?: string; refuses?: boolean } = {}) => {
   const asked: { vault: string; deck: string }[] = []
   const open = ref(false)
@@ -95,9 +95,9 @@ describe('what is read belongs to the deck', () => {
     expect(held.notes.value[0]?.written).toBe('decks/Trees.md')
   })
 
-  // A card answered while the asking is in flight moves the sitting to another
+  // A card answered while the asking is in flight moves the session to another
   // deck, and what comes back is then about the deck behind it.
-  it('does not take an answer about the deck the sitting has left', async () => {
+  it('does not take an answer about the deck the session has left', async () => {
     const waiting: (() => void)[] = []
     const open = ref(false)
     const deck = ref('decks/Words.md')
@@ -158,7 +158,7 @@ describe('what is read belongs to the deck', () => {
     expect(held.notes.value[0]?.path).toBe('decks/Trees.md')
   })
 
-  it('holds nothing once the sitting is over', async () => {
+  it('holds nothing once the session is over', async () => {
     const { held, open } = panel()
     await held.opens()
     held.ends()
@@ -167,7 +167,7 @@ describe('what is read belongs to the deck', () => {
     expect(open.value).toBe(false)
   })
 
-  it('asks again for a deck the sitting has been away from', async () => {
+  it('asks again for a deck the session has been away from', async () => {
     const { held, asked } = panel()
     await held.opens()
     held.ends()

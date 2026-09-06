@@ -33,12 +33,12 @@ var scheduled = map[string]string{
 var saturday = time.Date(2026, 9, 5, 10, 0, 0, 0, time.Local)
 
 // What a day came to is counted under the preset each deck names, over as many
-// sittings as the day held. A deck naming no preset comes under the defaults.
+// sessions as the day held. A deck naming no preset comes under the defaults.
 func TestWhatADayCameToUnderEachPresetOfAVault(t *testing.T) {
 	t.Parallel()
 	s := opened(t, scheduled)
 
-	// Two sittings of the one day, each writing a file of its own.
+	// Two sessions of the one day, each writing a file of its own.
 	morning := s.run(t, saturday)
 	answer(t, morning, "k7m2xq9fzp", 6*time.Second)
 	evening := s.run(t, saturday.Add(9*time.Hour))
@@ -147,9 +147,9 @@ func TestADayHoldsWhatWasAnsweredInIt(t *testing.T) {
 	before := s.run(t, saturday.AddDate(0, 0, -1))
 	answer(t, before, "k7m2xq9fzp", 6*time.Second)
 
-	sitting := s.run(t, saturday)
-	given := answer(t, sitting, "zpqrstvwxy", 9*time.Second)
-	if _, err := sitting.TakeBack(t.Context(), given); err != nil {
+	session := s.run(t, saturday)
+	given := answer(t, session, "zpqrstvwxy", 9*time.Second)
+	if _, err := session.TakeBack(t.Context(), given); err != nil {
 		t.Fatal(err)
 	}
 
@@ -197,7 +197,7 @@ func TestWhatEachDeckWasAnsweredIsCountedOnTheDeck(t *testing.T) {
 // The front door counts out of the cache it filled.
 //
 // It is asked for every vault a person holds, and again whenever the window
-// opens, a sitting ends or a vault moves, so a count over answers nothing has
+// opens, a session ends or a vault moves, so a count over answers nothing has
 // changed replays nothing.
 func TestASecondCountReadsTheSchedulesOutOfTheCache(t *testing.T) {
 	t.Parallel()
@@ -246,7 +246,7 @@ func answer(t *testing.T, record flashcards.Record, card string, took time.Durat
 }
 
 // again writes down one card the person could not recall, which comes round
-// again in the same sitting.
+// again in the same session.
 func again(t *testing.T, record flashcards.Record, card string, took time.Duration) string {
 	t.Helper()
 	return said(t, record, card, review.Again, took)

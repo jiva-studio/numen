@@ -342,7 +342,7 @@ type Limits struct {
 // Allowance is what one day of a preset admits: how many cards of each kind it
 // has room for, how long the day still runs, and which of the three closes it.
 //
-// It is the one answer to what a day admits: a sitting spends against it, and a
+// It is the one answer to what a day admits: a session spends against it, and a
 // projection runs on it.
 type Allowance struct {
 	// Keeps is what the preset keeps for the whole of this day, the day of the

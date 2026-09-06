@@ -146,9 +146,9 @@ func TestTheReviewerWritesDownNoAddressAndNoToken(t *testing.T) {
 	}
 }
 
-// The agent works the vault the person sat down to. Sitting to another vault
-// starts it again there; sitting to the same one leaves it where it is.
-func TestTheAgentFollowsTheVaultTheSittingIsOn(t *testing.T) {
+// The agent works the vault the person's session is on. A session on another
+// vault starts it again there; one on the same vault leaves it where it is.
+func TestTheAgentFollowsTheVaultTheSessionIsOn(t *testing.T) {
 	cfg, db, opening, api, vaults := built(t)
 	cfg.Agent = agent.Defaults()
 
@@ -163,12 +163,12 @@ func TestTheAgentFollowsTheVaultTheSittingIsOn(t *testing.T) {
 	api.Opened(t.Context(), vaults[0])
 	first := api.Answering()
 	if first == nil {
-		t.Fatal("nothing answers about a card once a sitting is open")
+		t.Fatal("nothing answers about a card once a session is open")
 	}
 
 	api.Opened(t.Context(), vaults[0])
 	if api.Answering() != first {
-		t.Error("sitting to the same vault again started the agent over")
+		t.Error("a session on the same vault again started the agent over")
 	}
 
 	api.Opened(t.Context(), vaults[1])
