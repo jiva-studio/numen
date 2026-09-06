@@ -19,7 +19,7 @@ import { raising } from './notices'
 import { reviewed } from './decks/reviewed'
 import { opens, scheduling } from './decks/scheduling'
 import { session } from './session/session'
-import { asking } from './session/asking'
+import { agentPanel as panel } from './session/panel'
 import { reading } from './session/reading'
 import { screens } from './screens'
 import { around } from './session/reading/core'
@@ -64,7 +64,7 @@ export const useWindow = () => {
     else showing.value = 'here'
   }
 
-  const agentPanel = asking({
+  const agentPanel = panel({
     agent,
     card: () => sat.card.value,
     unreachable: () => unreachable.value,

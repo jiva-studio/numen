@@ -10,7 +10,7 @@ import { nextTick, useTemplateRef, watch } from 'vue'
 import { Agent } from '@numen/ui'
 
 import { WORDS as words } from './agent/words'
-import type { AgentPanelState } from './asking'
+import type { AgentPanelState } from './panel'
 
 const props = defineProps<{ held: AgentPanelState }>()
 

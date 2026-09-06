@@ -41,7 +41,7 @@ export interface AgentPanelDeps {
   readonly paint?: (draw: () => void) => void
 }
 
-export function asking(deps: AgentPanelDeps) {
+export function agentPanel(deps: AgentPanelDeps) {
   /** Whether the panel is what the window is showing, which the window holds. */
   const open = computed(() => deps.open())
 
@@ -135,4 +135,4 @@ export function asking(deps: AgentPanelDeps) {
 }
 
 /** What one panel holds. */
-export type AgentPanelState = ReturnType<typeof asking>
+export type AgentPanelState = ReturnType<typeof agentPanel>
