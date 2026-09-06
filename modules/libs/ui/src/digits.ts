@@ -15,15 +15,22 @@
 export const percent = (share: number): string => `${Math.round(share * 100)}%`
 
 /**
+ * The thing a count counts, in the singular where there is one of it.
+ *
+ * Apart from `many` because a layout that puts the figure and the noun in
+ * fields of their own still has the noun to make plural.
+ */
+export const plural = (count: number, one: string): string =>
+  Math.round(count) === 1 ? one : `${one}s`
+
+/**
  * A count and the thing it counts, in the singular where there is one of it.
  *
  * The count is rounded before it is read and before it is made plural, because
  * a curve answers in fractions and a person is being told how many cards.
  */
-export const many = (count: number, one: string): string => {
-  const whole = Math.round(count)
-  return `${whole} ${whole === 1 ? one : `${one}s`}`
-}
+export const many = (count: number, one: string): string =>
+  `${Math.round(count)} ${plural(count, one)}`
 
 /** A whole number, grouped in thousands. */
 export const grouped = (n: number): string => {

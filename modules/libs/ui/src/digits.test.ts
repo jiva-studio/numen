@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { grouped, many, percent } from './digits'
+import { grouped, many, percent, plural } from './digits'
 
 describe('a whole number', () => {
   it('is grouped in thousands', () => {
@@ -19,6 +19,19 @@ describe('a share', () => {
   it('is rounded to the whole per cent', () => {
     expect(percent(0.3749)).toBe('37%')
     expect(percent(0.375)).toBe('38%')
+  })
+})
+
+describe('the thing a count counts', () => {
+  it('is singular where there is one of it', () => {
+    expect(plural(1, 'deck')).toBe('deck')
+    expect(plural(0, 'deck')).toBe('decks')
+    expect(plural(2, 'card')).toBe('cards')
+  })
+
+  it('rounds a fraction before it is made plural', () => {
+    expect(plural(1.4, 'card')).toBe('card')
+    expect(plural(1.5, 'card')).toBe('cards')
   })
 })
 

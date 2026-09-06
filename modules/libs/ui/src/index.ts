@@ -9,6 +9,7 @@ import './window.css'
 
 export { default as Plex } from './plex/Plex.vue'
 export { browserClock } from './plex/transition'
+export { browserViewport } from './lib/viewport'
 export { isStop } from './plex/node'
 export { countOf, seatWord, SEATS } from './plex/seat'
 export { showingOf, SHOWINGS } from './plex/showing'
@@ -155,7 +156,7 @@ export { holdsTheWindow, pointsOutward } from './linking/outward'
 export type { LinkOpener } from './linking/outward'
 
 /** Numbers as they are read out, which both windows read the same way. */
-export { many, percent } from './digits'
+export { many, percent, plural } from './digits'
 
 export { default as Prose } from './prose/Prose.vue'
 export { default as ToolCall } from './tool/ToolCall.vue'
@@ -277,6 +278,7 @@ export type { DeckCard, DeckSection, FieldValue } from './cards/deck'
 export type { Stencil } from './cards/stencil'
 
 export type { Clock, PlexTransition } from './plex/transition'
+export type { Viewport } from './lib/viewport'
 export { byHandle, byHolding } from './plex/reaching'
 export { APART, byDoubleClick, byDoubleTap, TAP } from './plex/showing'
 export type { ShowStrategy, ShowSite } from './plex/showing'
