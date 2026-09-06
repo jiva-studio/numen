@@ -40,20 +40,11 @@ const generated = new Set(['modules/libs/protocol'])
  * name, and the list only shrinks: a rename takes its line out. Every one is a
  * module called after the doing of a thing and holding a factory called the
  * same, which is the dialect this rule was written to find.
- *
- * `ring.ts` is here for the three letters alone: no verb is in it, and a walk
- * reading an ending cannot see that.
  */
 export const owed = [
-  'modules/libs/core/container/chunking.go',
-  'modules/libs/core/flashcards/review/counted.go',
-  'modules/libs/core/flashcards/review/divided.go',
   'modules/libs/core/internal/adapter/filesystem/imported_files.go',
-  'modules/libs/core/usecase/flashcards/locked_other.go',
-  'modules/libs/core/usecase/flashcards/locked_windows.go',
   'modules/libs/ui/src/editor/replacing.ts',
   'modules/libs/ui/src/following/following.ts',
-  'modules/libs/ui/src/plex/fixtures/ring.ts',
   'modules/apps/desktop/editor/src/asking.ts',
   'modules/apps/desktop/editor/src/document/reading.ts',
   'modules/apps/desktop/editor/src/note/creating.ts',
@@ -117,6 +108,14 @@ export const words = (name) =>
   [...name.matchAll(/[A-Z]+(?![a-z])|[A-Z][a-z0-9]*|[a-z][a-z0-9]*/g)].map((one) =>
     one[0].toLowerCase(),
   )
+
+/**
+ * Whether a word reads as a verb form at all, rather than merely ending in
+ * those letters. Two letters is the shortest an English verb runs to — owing,
+ * doing, being — so one letter in front of the ending is a word that ends there
+ * by accident: a ring is a thing and nobody rings it here.
+ */
+export const verbal = (word) => /^.{2,}(ing|ed)$/.test(word)
 
 /** A verb form with the tense taken off: naming and named both give nam. */
 function verbStem(word) {
@@ -233,15 +232,38 @@ export function holds({ at, text }) {
   return tsDeclares(text)
 }
 
+const IMPORTED = /^import\s+\(([\s\S]*?)^\)/m
+const IMPORT = /^import\s+([^\n]*)$/m
+const BROUGHT = /^[ \t]*(?:([A-Za-z_]\w*)\s+)?"([^"]+)"/gm
+
+/**
+ * The packages a Go file brings in and then says. `chunking.Sizes` says
+ * chunking, and the word is the imported package's rather than anything this
+ * file chose, so it is read whole the way a package clause is. A package
+ * brought in and never qualified says nothing.
+ */
+export function imported(text) {
+  const block = IMPORTED.exec(text) ?? IMPORT.exec(text)
+  if (!block) return []
+  const found = []
+  for (const one of block[1].matchAll(BROUGHT)) {
+    const name = one[1] ?? one[2].split('/').at(-1)
+    if (new RegExp(`\\b${name}\\.`).test(text)) found.push(name)
+  }
+  return found
+}
+
 /**
  * What answers for a file without being a name the file chose: a Go package
- * clause, which is the folder's word and the same in every file of it, and a
- * component's own name, which is what every template addresses it by.
+ * clause, which is the folder's word and the same in every file of it, the
+ * packages that file names, and a component's own name, which is what every
+ * template addresses it by.
  */
 export function given({ at, text }) {
   if (at.endsWith('.vue')) return [stemOf(at).stem]
-  const clause = at.endsWith('.go') ? /^package\s+([A-Za-z_]\w*)/m.exec(text) : null
-  return clause ? [clause[1]] : []
+  if (!at.endsWith('.go')) return []
+  const clause = /^package\s+([A-Za-z_]\w*)/m.exec(text)
+  return [...(clause ? [clause[1]] : []), ...imported(text)]
 }
 
 /**
@@ -253,7 +275,7 @@ export function given({ at, text }) {
  * so what stands for it from outside is read whole.
  */
 export function refused(stem, names, given = []) {
-  const verbs = words(stem).filter((one) => /(ing|ed)$/.test(one))
+  const verbs = words(stem).filter(verbal)
   if (verbs.length === 0) return []
   const chosen = names.filter((one) => !echoes(stem, one))
   const said = new Set([...chosen, ...given].flatMap(words))

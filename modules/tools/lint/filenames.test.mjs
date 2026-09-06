@@ -71,6 +71,7 @@ test('what the file-name rule refuses', () => {
     { says: 'a participle whose verb the file declares', allowed: true, stem: 'placed', names: ['place'] },
     { says: 'a gerund a Deps and a verb of its own answer', allowed: true, stem: 'finding', names: ['FindingDeps', 'find'] },
     { says: 'a gerund the package is named after', allowed: true, stem: 'chunking', names: [], given: ['chunking'] },
+    { says: 'a word ending in those letters by accident', allowed: true, stem: 'ring', names: ['seats'] },
     { says: 'a gerund a composable is named after', allowed: true, stem: 'placing', names: ['usePlace'] },
     { says: 'a plural of what the file declares', allowed: true, stem: 'weighed', names: ['weighs'] },
     { says: 'a name that is no verb form', allowed: true, stem: 'vault', names: ['Nothing'] },
@@ -112,6 +113,28 @@ test('what a file says its own names are', () => {
 
   const test = ['func TestKappa(t *testing.T) {', '\tlambda(mu)', '\t_ = "Nu"', '\t// Xi', '}'].join('\n')
   assert.deepEqual(calls(test), ['func', 'TestKappa', 't', 'testing', 'T', 'lambda', 'mu', '_'])
+})
+
+/**
+ * A package's word is the package's, not the file's, so a file saying
+ * `chunking.Sizes` says chunking however it is called. A package brought in and
+ * never qualified says nothing, and neither does one only a comment names.
+ */
+test('what a Go file is told by the packages it names', () => {
+  const source = [
+    'package container',
+    'import (',
+    '\t"github.com/x/chunking"',
+    '\tsaid "github.com/x/trouble"',
+    '\t"github.com/x/embedding"',
+    ')',
+    '// embedding is named only here',
+    'func (c Config) Chunking() chunking.Sizes { return chunking.Sizes{said.None} }',
+  ].join('\n')
+  const at = 'a/b/chunking.go'
+  assert.deepEqual(given({ at, text: source }), ['container', 'chunking', 'said'])
+  assert.deepEqual(refused('chunking', ['Chunking'], given({ at, text: source })), [])
+  assert.deepEqual(refused('chunking', ['Chunking'], ['container']), ['chunking'])
 })
 
 /**

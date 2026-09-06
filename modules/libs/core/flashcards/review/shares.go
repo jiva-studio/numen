@@ -6,7 +6,7 @@ import (
 	"slices"
 )
 
-// Divided hands a budget out in proportion to what each deck owes of it.
+// Shares is a budget handed out in proportion to what each deck owes of it.
 //
 // A deck owing nine times another's takes nine times the share, a deck owing
 // nothing takes nothing, and no deck takes more than it owes — the remainder is
@@ -19,7 +19,7 @@ import (
 // The proportion itself is worked out in floating point, because a budget of
 // nanoseconds times what one deck owes of them overflows an integer. Only the
 // fraction left over is read off it, and every share handed back is whole.
-func Divided(budget int, owes []int) []int {
+func Shares(budget int, owes []int) []int {
 	out := make([]int, len(owes))
 	total := 0
 	for _, one := range owes {
