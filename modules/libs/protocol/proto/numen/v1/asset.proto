@@ -101,6 +101,15 @@ message GetBookResponse {
   // own, so they are counted over its text and not over anything drawn.
   int32 pages = 7;
 
+  // How many bytes the book's text is, and how many of them stand on one page.
+  // A page is a number of letters and a letter is several bytes in most of the
+  // scripts a book is written in, so the size is measured in this book's own.
+  //
+  // The page an offset falls on is counted from these, and comes to the same
+  // page wherever it is counted.
+  int32 length = 12;
+  int32 page_bytes = 13;
+
   // Which bytes the book was read from. It stands in the address the markup of
   // a document and the bytes of an entry are answered at, so an address names
   // one reading of one file.

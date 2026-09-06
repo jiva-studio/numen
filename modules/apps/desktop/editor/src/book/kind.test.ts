@@ -40,11 +40,12 @@ const openers = () => {
 const settles = () => new Promise((done) => setTimeout(done, 0))
 
 /** A book open at an offset of a file, as far as the window reads one. */
-const openedAt = (path: string, at: number, page: number, pages: number) =>
+const openedAt = (path: string, at: number, page: number, pages: number, length = 5_120_000) =>
   ({
     path,
     title: ref(''),
     at: ref(at),
+    span: computed(() => ({ begins: 0, ends: length })),
     page: computed(() => page),
     pages: computed(() => pages),
   }) as unknown as BookTabState
@@ -86,12 +87,12 @@ describe('what a book tab is called', () => {
 })
 
 describe('what a book tab tells whoever answers for the person', () => {
-  it('is the page the offset in front falls on, and how many the book has', () => {
+  it('is the offset in front, and the page it falls on', () => {
     const held = openedAt('library/Mahabharata.epub', 1_200_000, 1_201, 5_000)
 
     expect(kindOver(held).attends?.(held)).toStrictEqual({
       path: 'library/Mahabharata.epub',
-      document: { page: 1_201, pages: 5_000 },
+      book: { offset: 1_200_000, length: 5_120_000, page: 1_201, pages: 5_000 },
     })
   })
 })

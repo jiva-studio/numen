@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QimQIKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIMCgRuYW1lGBIgASgJEhQKDGRpc3BsYXlfbmFtZRgBIAEoCRIMCgRwYXRoGAIgASgJEg0KBXJlYWR5GAQgASgIEg4KBmZhaWxlZBgFIAEoCRIRCgl1bndhdGNoZWQYBiABKAkSEwoLdW5yZWFjaGFibGUYESABKAkSDgoGY2h1bmtzGAcgASgDEhAKCGVtYmVkZGVkGAggASgDEhEKCWVtYmVkZGluZxgKIAEoCEoECAMQBEoECAkQCkoECAsQEVIFYm9va3NSCmJvb2tzX3JlYWRSBGJ1c3lSB2luZGV4ZWRSCGxlYXJuaW5nUgRtYWRlUgVvd2luZ1IHcmVhZGluZyIaChhXYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QiWwoZV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZRINCgVwYXRocxgBIAMoCRIOCgZyZWxvYWQYAiABKAgSHwoHcmVuYW1lZBgDIAMoCzIOLm51bWVuLnYxLk1vdmUiIAoETW92ZRIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIhMKEVdhdGNoRm9jdXNSZXF1ZXN0ImIKEldhdGNoRm9jdXNSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBXN0YXJ0GAIgASgFEg4KBmxlbmd0aBgDIAEoBRIfCgRhbHNvGAQgAygLMhEubnVtZW4udjEuU3RyZXRjaCJCChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIhcKFVdyaXRlT3BlblRhYnNSZXNwb25zZSKmAQoDVGFiEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDAoEcGF0aBgDIAEoCRINCgV0aXRsZRgEIAEoCRIoCghkb2N1bWVudBgHIAEoCzIWLm51bWVuLnYxLk9wZW5Eb2N1bWVudBIqCglyZWNvcmRpbmcYCCABKAsyFy5udW1lbi52MS5PcGVuUmVjb3JkaW5nSgQIBRAGSgQIBhAHUgJhdFICb2YiKwoMT3BlbkRvY3VtZW50EgwKBHBhZ2UYASABKAUSDQoFcGFnZXMYAiABKAUiLgoNT3BlblJlY29yZGluZxINCgVoZWFyZBgBIAEoBRIOCgZsZW5ndGgYAiABKAUy3QIKDFZhdWx0U2VydmljZRJQCg1HZXRWYXVsdFN0YXRlEh4ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVzcG9uc2USXgoRV2F0Y2hWYXVsdENoYW5nZXMSIi5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QaIy5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlMAESSQoKV2F0Y2hGb2N1cxIbLm51bWVuLnYxLldhdGNoRm9jdXNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hGb2N1c1Jlc3BvbnNlMAESUAoNV3JpdGVPcGVuVGFicxIeLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVPcGVuVGFic1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QimQIKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIMCgRuYW1lGBIgASgJEhQKDGRpc3BsYXlfbmFtZRgBIAEoCRIMCgRwYXRoGAIgASgJEg0KBXJlYWR5GAQgASgIEg4KBmZhaWxlZBgFIAEoCRIRCgl1bndhdGNoZWQYBiABKAkSEwoLdW5yZWFjaGFibGUYESABKAkSDgoGY2h1bmtzGAcgASgDEhAKCGVtYmVkZGVkGAggASgDEhEKCWVtYmVkZGluZxgKIAEoCEoECAMQBEoECAkQCkoECAsQEVIFYm9va3NSCmJvb2tzX3JlYWRSBGJ1c3lSB2luZGV4ZWRSCGxlYXJuaW5nUgRtYWRlUgVvd2luZ1IHcmVhZGluZyIaChhXYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QiWwoZV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZRINCgVwYXRocxgBIAMoCRIOCgZyZWxvYWQYAiABKAgSHwoHcmVuYW1lZBgDIAMoCzIOLm51bWVuLnYxLk1vdmUiIAoETW92ZRIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIhMKEVdhdGNoRm9jdXNSZXF1ZXN0ImIKEldhdGNoRm9jdXNSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBXN0YXJ0GAIgASgFEg4KBmxlbmd0aBgDIAEoBRIfCgRhbHNvGAQgAygLMhEubnVtZW4udjEuU3RyZXRjaCJCChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIhcKFVdyaXRlT3BlblRhYnNSZXNwb25zZSLIAQoDVGFiEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDAoEcGF0aBgDIAEoCRINCgV0aXRsZRgEIAEoCRIoCghkb2N1bWVudBgHIAEoCzIWLm51bWVuLnYxLk9wZW5Eb2N1bWVudBIqCglyZWNvcmRpbmcYCCABKAsyFy5udW1lbi52MS5PcGVuUmVjb3JkaW5nEiAKBGJvb2sYCSABKAsyEi5udW1lbi52MS5PcGVuQm9va0oECAUQBkoECAYQB1ICYXRSAm9mIisKDE9wZW5Eb2N1bWVudBIMCgRwYWdlGAEgASgFEg0KBXBhZ2VzGAIgASgFIkcKCE9wZW5Cb29rEg4KBm9mZnNldBgBIAEoBRIOCgZsZW5ndGgYAiABKAUSDAoEcGFnZRgDIAEoBRINCgVwYWdlcxgEIAEoBSIuCg1PcGVuUmVjb3JkaW5nEg0KBWhlYXJkGAEgASgFEg4KBmxlbmd0aBgCIAEoBTLdAgoMVmF1bHRTZXJ2aWNlElAKDUdldFZhdWx0U3RhdGUSHi5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVxdWVzdBofLm51bWVuLnYxLkdldFZhdWx0U3RhdGVSZXNwb25zZRJeChFXYXRjaFZhdWx0Q2hhbmdlcxIiLm51bWVuLnYxLldhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdBojLm51bWVuLnYxLldhdGNoVmF1bHRDaGFuZ2VzUmVzcG9uc2UwARJJCgpXYXRjaEZvY3VzEhsubnVtZW4udjEuV2F0Y2hGb2N1c1JlcXVlc3QaHC5udW1lbi52MS5XYXRjaEZvY3VzUmVzcG9uc2UwARJQCg1Xcml0ZU9wZW5UYWJzEh4ubnVtZW4udjEuV3JpdGVPcGVuVGFic1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZU9wZW5UYWJzUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetVaultStateRequest
@@ -332,8 +332,8 @@ export type Tab = Message<"numen.v1.Tab"> & {
 
   /**
    * Where the person stands in what the tab holds. A tab holding a document
-   * sets document, a tab holding a recording sets recording, and a tab of any
-   * other kind sets neither.
+   * sets document, one holding a book that reflows sets book, one holding a
+   * recording sets recording, and a tab of any other kind sets none of them.
    *
    * @generated from field: numen.v1.OpenDocument document = 7;
    */
@@ -343,6 +343,11 @@ export type Tab = Message<"numen.v1.Tab"> & {
    * @generated from field: numen.v1.OpenRecording recording = 8;
    */
   recording?: OpenRecording | undefined;
+
+  /**
+   * @generated from field: numen.v1.OpenBook book = 9;
+   */
+  book?: OpenBook | undefined;
 };
 
 /**
@@ -381,6 +386,49 @@ export const OpenDocumentSchema: GenMessage<OpenDocument> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 10);
 
 /**
+ * An OpenBook is the book that reflows a tab holds, as the person is reading
+ * it. Such a book has no pages of its own, so where the person is is an offset
+ * into its text.
+ *
+ * @generated from message numen.v1.OpenBook
+ */
+export type OpenBook = Message<"numen.v1.OpenBook"> & {
+  /**
+   * Offset is where they are reading, in bytes of the book's text, and length
+   * is how many bytes that text is.
+   *
+   * @generated from field: int32 offset = 1;
+   */
+  offset: number;
+
+  /**
+   * @generated from field: int32 length = 2;
+   */
+  length: number;
+
+  /**
+   * Page is the page the offset falls on, counted from one, and pages is how
+   * many the book is read in. Both are counted over the text by the size of a
+   * page the book was answered with, which is not here.
+   *
+   * @generated from field: int32 page = 3;
+   */
+  page: number;
+
+  /**
+   * @generated from field: int32 pages = 4;
+   */
+  pages: number;
+};
+
+/**
+ * Describes the message numen.v1.OpenBook.
+ * Use `create(OpenBookSchema)` to create a new message.
+ */
+export const OpenBookSchema: GenMessage<OpenBook> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 11);
+
+/**
  * An OpenRecording is the recording a tab holds, as far as it has been written
  * down.
  *
@@ -407,7 +455,7 @@ export type OpenRecording = Message<"numen.v1.OpenRecording"> & {
  * Use `create(OpenRecordingSchema)` to create a new message.
  */
 export const OpenRecordingSchema: GenMessage<OpenRecording> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 11);
+  messageDesc(file_numen_v1_vault, 12);
 
 /**
  * VaultService answers what the one vault a client is looking at is, and what

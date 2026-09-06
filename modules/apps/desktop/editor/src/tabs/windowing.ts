@@ -17,7 +17,7 @@ import {
 } from 'vue'
 import { closeTab, openTab, openTabBeside, pane, paneById } from '@numen/ui'
 import type { Tab, Workspace } from '@numen/ui'
-import type { OpenDocument, OpenRecording, Source } from '../core'
+import type { OpenBook, OpenDocument, OpenRecording, Source } from '../core'
 import { named } from './workspace'
 
 /**
@@ -33,12 +33,13 @@ export interface TabTarget {
 
 /**
  * What one tab holds, as whoever answers on the person's behalf is told it: the
- * file it stands at, and the document or the recording it stands in.
+ * file it stands at, and the document, the book or the recording it stands in.
  */
 export interface OpenTab {
   readonly path: string
   readonly document?: OpenDocument
   readonly recording?: OpenRecording
+  readonly book?: OpenBook
 }
 
 /** A kind of tab: what it holds, what it is called, and what it lets go of. */

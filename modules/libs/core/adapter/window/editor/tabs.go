@@ -29,6 +29,14 @@ func (a *API) WriteOpenTabs(
 		if doc := one.GetDocument(); doc != nil {
 			tab.Document = &domain.OpenDocument{Page: int(doc.GetPage()), Pages: int(doc.GetPages())}
 		}
+		if book := one.GetBook(); book != nil {
+			tab.Book = &domain.OpenBook{
+				Offset: int(book.GetOffset()),
+				Length: int(book.GetLength()),
+				Page:   int(book.GetPage()),
+				Pages:  int(book.GetPages()),
+			}
+		}
 		if rec := one.GetRecording(); rec != nil {
 			tab.Recording = &domain.OpenRecording{Heard: int(rec.GetHeard()), Length: int(rec.GetLength())}
 		}

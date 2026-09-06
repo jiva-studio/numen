@@ -75,6 +75,7 @@ const NAMED: Book = {
   ],
   printed: [],
   pages: 12,
+  pageBytes: Math.ceil(document_.ends / 12),
   at: '20480 1700000000000000000 mahabharata.epub',
 }
 
@@ -132,6 +133,7 @@ const CROSSED: Book = {
   parts: [],
   printed: [],
   pages: 24,
+  pageBytes: Math.ceil(SECOND.ends / 24),
   at: '20480 1700000000000000000 mahabharata.epub',
 }
 

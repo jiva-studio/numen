@@ -82,6 +82,11 @@ func inFront(t domain.Tab) string {
 			return fmt.Sprintf("the document %s is in front of them", name)
 		}
 		return fmt.Sprintf("the document %s is in front of them, open at %s", name, where)
+	case domain.TabBook:
+		if where == "" {
+			return fmt.Sprintf("the book %s is in front of them", name)
+		}
+		return fmt.Sprintf("the book %s is in front of them, open at %s", name, where)
 	case domain.TabRecording:
 		return fmt.Sprintf("the recording %s is in front of them, with %s", name, where)
 	}
@@ -109,6 +114,13 @@ func stands(t domain.Tab) string {
 			return ""
 		}
 		return fmt.Sprintf("page %d of %d", t.Document.Page, t.Document.Pages)
+	case domain.TabBook:
+		// A place in a book that reflows is an offset, and the page is how far
+		// through that offset stands.
+		if t.Book == nil || t.Book.Pages <= 0 {
+			return ""
+		}
+		return fmt.Sprintf("page %d of %d, at byte %d", t.Book.Page, t.Book.Pages, t.Book.Offset)
 	case domain.TabRecording:
 		var heard, length int
 		if t.Recording != nil {

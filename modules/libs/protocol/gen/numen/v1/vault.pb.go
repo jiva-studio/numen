@@ -572,10 +572,11 @@ type Tab struct {
 	// Title is what the tab is called, as the person reads it.
 	Title string `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
 	// Where the person stands in what the tab holds. A tab holding a document
-	// sets document, a tab holding a recording sets recording, and a tab of any
-	// other kind sets neither.
+	// sets document, one holding a book that reflows sets book, one holding a
+	// recording sets recording, and a tab of any other kind sets none of them.
 	Document      *OpenDocument  `protobuf:"bytes,7,opt,name=document,proto3" json:"document,omitempty"`
 	Recording     *OpenRecording `protobuf:"bytes,8,opt,name=recording,proto3" json:"recording,omitempty"`
+	Book          *OpenBook      `protobuf:"bytes,9,opt,name=book,proto3" json:"book,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -652,6 +653,13 @@ func (x *Tab) GetRecording() *OpenRecording {
 	return nil
 }
 
+func (x *Tab) GetBook() *OpenBook {
+	if x != nil {
+		return x.Book
+	}
+	return nil
+}
+
 // An OpenDocument is the document a tab holds, as the person is reading it.
 type OpenDocument struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -707,6 +715,82 @@ func (x *OpenDocument) GetPages() int32 {
 	return 0
 }
 
+// An OpenBook is the book that reflows a tab holds, as the person is reading
+// it. Such a book has no pages of its own, so where the person is is an offset
+// into its text.
+type OpenBook struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Offset is where they are reading, in bytes of the book's text, and length
+	// is how many bytes that text is.
+	Offset int32 `protobuf:"varint,1,opt,name=offset,proto3" json:"offset,omitempty"`
+	Length int32 `protobuf:"varint,2,opt,name=length,proto3" json:"length,omitempty"`
+	// Page is the page the offset falls on, counted from one, and pages is how
+	// many the book is read in. Both are counted over the text by the size of a
+	// page the book was answered with, which is not here.
+	Page          int32 `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	Pages         int32 `protobuf:"varint,4,opt,name=pages,proto3" json:"pages,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OpenBook) Reset() {
+	*x = OpenBook{}
+	mi := &file_numen_v1_vault_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OpenBook) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OpenBook) ProtoMessage() {}
+
+func (x *OpenBook) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_vault_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OpenBook.ProtoReflect.Descriptor instead.
+func (*OpenBook) Descriptor() ([]byte, []int) {
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *OpenBook) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+func (x *OpenBook) GetLength() int32 {
+	if x != nil {
+		return x.Length
+	}
+	return 0
+}
+
+func (x *OpenBook) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *OpenBook) GetPages() int32 {
+	if x != nil {
+		return x.Pages
+	}
+	return 0
+}
+
 // An OpenRecording is the recording a tab holds, as far as it has been written
 // down.
 type OpenRecording struct {
@@ -721,7 +805,7 @@ type OpenRecording struct {
 
 func (x *OpenRecording) Reset() {
 	*x = OpenRecording{}
-	mi := &file_numen_v1_vault_proto_msgTypes[11]
+	mi := &file_numen_v1_vault_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -733,7 +817,7 @@ func (x *OpenRecording) String() string {
 func (*OpenRecording) ProtoMessage() {}
 
 func (x *OpenRecording) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[11]
+	mi := &file_numen_v1_vault_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -746,7 +830,7 @@ func (x *OpenRecording) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OpenRecording.ProtoReflect.Descriptor instead.
 func (*OpenRecording) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{11}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *OpenRecording) GetHeard() int32 {
@@ -800,17 +884,23 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x14WriteOpenTabsRequest\x12!\n" +
 	"\x04tabs\x18\x01 \x03(\v2\r.numen.v1.TabR\x04tabs\x12\x14\n" +
 	"\x05front\x18\x02 \x01(\tR\x05front\"\x17\n" +
-	"\x15WriteOpenTabsResponse\"\xd2\x01\n" +
+	"\x15WriteOpenTabsResponse\"\xfa\x01\n" +
 	"\x03Tab\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x04 \x01(\tR\x05title\x122\n" +
 	"\bdocument\x18\a \x01(\v2\x16.numen.v1.OpenDocumentR\bdocument\x125\n" +
-	"\trecording\x18\b \x01(\v2\x17.numen.v1.OpenRecordingR\trecordingJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\x02atR\x02of\"8\n" +
+	"\trecording\x18\b \x01(\v2\x17.numen.v1.OpenRecordingR\trecording\x12&\n" +
+	"\x04book\x18\t \x01(\v2\x12.numen.v1.OpenBookR\x04bookJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\x02atR\x02of\"8\n" +
 	"\fOpenDocument\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x14\n" +
-	"\x05pages\x18\x02 \x01(\x05R\x05pages\"=\n" +
+	"\x05pages\x18\x02 \x01(\x05R\x05pages\"d\n" +
+	"\bOpenBook\x12\x16\n" +
+	"\x06offset\x18\x01 \x01(\x05R\x06offset\x12\x16\n" +
+	"\x06length\x18\x02 \x01(\x05R\x06length\x12\x12\n" +
+	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x14\n" +
+	"\x05pages\x18\x04 \x01(\x05R\x05pages\"=\n" +
 	"\rOpenRecording\x12\x14\n" +
 	"\x05heard\x18\x01 \x01(\x05R\x05heard\x12\x16\n" +
 	"\x06length\x18\x02 \x01(\x05R\x06length2\xdd\x02\n" +
@@ -833,7 +923,7 @@ func file_numen_v1_vault_proto_rawDescGZIP() []byte {
 	return file_numen_v1_vault_proto_rawDescData
 }
 
-var file_numen_v1_vault_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_numen_v1_vault_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_numen_v1_vault_proto_goTypes = []any{
 	(*GetVaultStateRequest)(nil),      // 0: numen.v1.GetVaultStateRequest
 	(*GetVaultStateResponse)(nil),     // 1: numen.v1.GetVaultStateResponse
@@ -846,28 +936,30 @@ var file_numen_v1_vault_proto_goTypes = []any{
 	(*WriteOpenTabsResponse)(nil),     // 8: numen.v1.WriteOpenTabsResponse
 	(*Tab)(nil),                       // 9: numen.v1.Tab
 	(*OpenDocument)(nil),              // 10: numen.v1.OpenDocument
-	(*OpenRecording)(nil),             // 11: numen.v1.OpenRecording
-	(*Stretch)(nil),                   // 12: numen.v1.Stretch
+	(*OpenBook)(nil),                  // 11: numen.v1.OpenBook
+	(*OpenRecording)(nil),             // 12: numen.v1.OpenRecording
+	(*Stretch)(nil),                   // 13: numen.v1.Stretch
 }
 var file_numen_v1_vault_proto_depIdxs = []int32{
 	4,  // 0: numen.v1.WatchVaultChangesResponse.renamed:type_name -> numen.v1.Move
-	12, // 1: numen.v1.WatchFocusResponse.also:type_name -> numen.v1.Stretch
+	13, // 1: numen.v1.WatchFocusResponse.also:type_name -> numen.v1.Stretch
 	9,  // 2: numen.v1.WriteOpenTabsRequest.tabs:type_name -> numen.v1.Tab
 	10, // 3: numen.v1.Tab.document:type_name -> numen.v1.OpenDocument
-	11, // 4: numen.v1.Tab.recording:type_name -> numen.v1.OpenRecording
-	0,  // 5: numen.v1.VaultService.GetVaultState:input_type -> numen.v1.GetVaultStateRequest
-	2,  // 6: numen.v1.VaultService.WatchVaultChanges:input_type -> numen.v1.WatchVaultChangesRequest
-	5,  // 7: numen.v1.VaultService.WatchFocus:input_type -> numen.v1.WatchFocusRequest
-	7,  // 8: numen.v1.VaultService.WriteOpenTabs:input_type -> numen.v1.WriteOpenTabsRequest
-	1,  // 9: numen.v1.VaultService.GetVaultState:output_type -> numen.v1.GetVaultStateResponse
-	3,  // 10: numen.v1.VaultService.WatchVaultChanges:output_type -> numen.v1.WatchVaultChangesResponse
-	6,  // 11: numen.v1.VaultService.WatchFocus:output_type -> numen.v1.WatchFocusResponse
-	8,  // 12: numen.v1.VaultService.WriteOpenTabs:output_type -> numen.v1.WriteOpenTabsResponse
-	9,  // [9:13] is the sub-list for method output_type
-	5,  // [5:9] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	12, // 4: numen.v1.Tab.recording:type_name -> numen.v1.OpenRecording
+	11, // 5: numen.v1.Tab.book:type_name -> numen.v1.OpenBook
+	0,  // 6: numen.v1.VaultService.GetVaultState:input_type -> numen.v1.GetVaultStateRequest
+	2,  // 7: numen.v1.VaultService.WatchVaultChanges:input_type -> numen.v1.WatchVaultChangesRequest
+	5,  // 8: numen.v1.VaultService.WatchFocus:input_type -> numen.v1.WatchFocusRequest
+	7,  // 9: numen.v1.VaultService.WriteOpenTabs:input_type -> numen.v1.WriteOpenTabsRequest
+	1,  // 10: numen.v1.VaultService.GetVaultState:output_type -> numen.v1.GetVaultStateResponse
+	3,  // 11: numen.v1.VaultService.WatchVaultChanges:output_type -> numen.v1.WatchVaultChangesResponse
+	6,  // 12: numen.v1.VaultService.WatchFocus:output_type -> numen.v1.WatchFocusResponse
+	8,  // 13: numen.v1.VaultService.WriteOpenTabs:output_type -> numen.v1.WriteOpenTabsResponse
+	10, // [10:14] is the sub-list for method output_type
+	6,  // [6:10] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_vault_proto_init() }
@@ -882,7 +974,7 @@ func file_numen_v1_vault_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_vault_proto_rawDesc), len(file_numen_v1_vault_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

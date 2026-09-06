@@ -286,6 +286,8 @@ export interface Tab {
   readonly document?: OpenDocument
   /** The recording it holds, absent in a tab holding none. */
   readonly recording?: OpenRecording
+  /** The book that reflows it holds, absent in a tab holding none. */
+  readonly book?: OpenBook
 }
 
 /** The document a tab holds, as the person is reading it. */
@@ -293,6 +295,21 @@ export interface OpenDocument {
   /** The page in front of them, counted from one. */
   readonly page: number
   /** How many pages the document has. */
+  readonly pages: number
+}
+
+/**
+ * The book that reflows a tab holds, as the person is reading it. Such a book
+ * has no pages of its own, so where the person is is an offset into its text.
+ */
+export interface OpenBook {
+  /** Where they are reading, in bytes of the book's text. */
+  readonly offset: number
+  /** How many bytes that text is. */
+  readonly length: number
+  /** The page the offset falls on, counted from one. */
+  readonly page: number
+  /** How many pages the book is read in. */
   readonly pages: number
 }
 

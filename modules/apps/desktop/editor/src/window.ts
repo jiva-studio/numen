@@ -435,6 +435,7 @@ export const useWindow = () => {
         path: said?.path ?? '',
         ...(said?.document ? { document: said.document } : {}),
         ...(said?.recording ? { recording: said.recording } : {}),
+        ...(said?.book ? { book: said.book } : {}),
       }
     }),
   })

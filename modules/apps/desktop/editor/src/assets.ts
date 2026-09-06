@@ -59,8 +59,7 @@ export const books: Books = {
     const documents = answer.documents.map(spined)
     return {
       title: answer.title,
-      // The book's text runs as far as the documents crossing to the window do.
-      span: { begins: 0, ends: documents.at(-1)?.span.ends ?? 0 },
+      span: { begins: 0, ends: answer.length },
       documents,
       parts: answer.parts.map((one) => ({
         title: one.title,
@@ -69,6 +68,7 @@ export const books: Books = {
       })),
       printed: answer.printed.map((one) => ({ label: one.label, at: one.offset })),
       pages: answer.pages,
+      pageBytes: answer.pageBytes,
       at: stamp(answer.fingerprint) ?? '',
     }
   },

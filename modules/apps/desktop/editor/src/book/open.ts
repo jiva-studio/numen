@@ -59,6 +59,8 @@ export interface Book {
   readonly printed: readonly PrintedPage[]
   /** How many pages the book is read in, counted over its text. */
   readonly pages: number
+  /** How many bytes of that text stand on one page, in the book's own script. */
+  readonly pageBytes: number
   /** The file these were read from, as the one string the window carries. */
   readonly at: string
 }
@@ -97,14 +99,12 @@ const spanOf = (stretch: Stretch): BookSpan => ({
 
 /**
  * The page an offset falls on, counted from one, and none for a book with no
- * pages. A page of a book that reflows is a run of the text apiece, so the page
- * is where the offset stands along the text.
+ * pages. A page is a run of the text apiece, so the page is the offset over the
+ * size of one, and the size is the book's own.
  */
-export function pageAt(span: BookSpan, pages: number, at: number): number {
-  const length = span.ends - span.begins
-  if (pages <= 0 || length <= 0) return 0
-  const along = Math.floor(((at - span.begins) * pages) / length)
-  return Math.min(Math.max(along + 1, 1), pages)
+export function pageAt(pageBytes: number, pages: number, at: number): number {
+  if (pages <= 0 || pageBytes <= 0) return 0
+  return Math.min(Math.max(Math.floor(at / pageBytes) + 1, 1), pages)
 }
 
 /**
@@ -160,8 +160,9 @@ export function openBook(books: Books, path: string, words: BookWords) {
   const documents = shallowRef<readonly SpineDocument[]>([])
   /** What the book is reached by: its places, its printed pages, or its documents. */
   const contents = shallowRef<readonly ContentsEntry[]>([])
-  /** How many pages the book is read in. */
+  /** How many pages the book is read in, and how many bytes stand on one. */
   const pages = ref(0)
+  const pageBytes = ref(0)
   /** Where the person is reading, in bytes of the book's text. */
   const at = ref(0)
   /** The document the person is reading, and none until the book has opened. */
@@ -181,7 +182,7 @@ export function openBook(books: Books, path: string, words: BookWords) {
   const trouble = ref('')
 
   /** The page the person is on, counted from one. */
-  const page = computed(() => pageAt(span.value, pages.value, at.value))
+  const page = computed(() => pageAt(pageBytes.value, pages.value, at.value))
 
   /** Where the document being read stands in the book's text. */
   const reading = computed<BookSpan>(() => standing.value?.span ?? { begins: 0, ends: 0 })
@@ -225,6 +226,7 @@ export function openBook(books: Books, path: string, words: BookWords) {
       span.value = said.span
       documents.value = said.documents
       pages.value = said.pages
+      pageBytes.value = said.pageBytes
       contents.value = contentsOf(said, words)
       seen.value = said.at
       at.value = said.span.begins
@@ -282,6 +284,7 @@ export function openBook(books: Books, path: string, words: BookWords) {
     documents.value = []
     contents.value = []
     pages.value = 0
+    pageBytes.value = 0
   }
 
   return {

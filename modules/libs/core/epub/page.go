@@ -23,26 +23,28 @@ func pageBytes(text string) int {
 // PageCount is how many pages the book is read in. A book with no text is one
 // page, which is the page a person is looking at.
 func (b *Book) PageCount() int {
-	size := b.pageSize()
+	size := b.PageBytes()
 	return max(1, (len(b.Text)+size-1)/size)
 }
 
 // PageOf is the page an offset falls on.
 func (b *Book) PageOf(offset int) int {
-	return min(max(1, offset/b.pageSize()+1), b.PageCount())
+	return min(max(1, offset/b.PageBytes()+1), b.PageCount())
 }
 
 // PageStart is where a page begins in the text. A page begins at a letter, and
 // a letter is several bytes in most of the scripts a book is written in.
 func (b *Book) PageStart(page int) int {
-	at := min(max(0, (page-1)*b.pageSize()), len(b.Text))
+	at := min(max(0, (page-1)*b.PageBytes()), len(b.Text))
 	for at < len(b.Text) && !utf8.RuneStart(b.Text[at]) {
 		at++
 	}
 	return at
 }
 
-func (b *Book) pageSize() int {
+// PageBytes is how many bytes of this book's text stand on one page. Whoever
+// counts a page of this book counts it by this number.
+func (b *Book) PageBytes() int {
 	if b.pageBytes <= 0 {
 		return lettersPerPage
 	}

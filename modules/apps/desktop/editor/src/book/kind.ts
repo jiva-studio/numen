@@ -42,11 +42,16 @@ export function bookKind(
       return true
     },
     at: (state) => ({ file: state.path, source: 'book' }),
-    // A page of a book that reflows is a run of its text, so the page reported
-    // here is the page the offset in front falls on.
+    // Where a person is in a book that reflows is an offset into its text, and
+    // the page beside it is the page that offset falls on.
     attends: (state) => ({
       path: state.path,
-      document: { page: state.page.value, pages: state.pages.value },
+      book: {
+        offset: state.at.value,
+        length: state.span.value.ends,
+        page: state.page.value,
+        pages: state.pages.value,
+      },
     }),
   }
 

@@ -76,6 +76,19 @@ func TestWhatABookIsIsItsDocumentsAndWhatItNamesInThem(t *testing.T) {
 	if told.GetPages() < 1 {
 		t.Errorf("the book is read in %d pages", told.GetPages())
 	}
+	// The window is told the text and the size of a page, so the page an offset
+	// falls on comes to the same page there as it does here.
+	length, size := told.GetLength(), told.GetPageBytes()
+	if length < 1 || size < 1 {
+		t.Fatalf("the text is %d bytes and a page of it is %d", length, size)
+	}
+	if want := (length + size - 1) / size; want != told.GetPages() {
+		t.Errorf("the book is read in %d pages, and %d bytes at %d to a page is %d",
+			told.GetPages(), length, size, want)
+	}
+	if last := told.GetDocuments()[1]; last.GetOffset()+last.GetLength() > length {
+		t.Errorf("a document runs past the %d bytes the text is said to be", length)
+	}
 	if told.GetFingerprint().GetPath() != reflowed || told.GetFingerprint().GetSize() == 0 {
 		t.Errorf("the book was read from %+v", told.GetFingerprint())
 	}

@@ -204,12 +204,21 @@ func (b *builder) attributes(n *html.Node) []Attribute {
 // address is where a link points: inside the book, the archive entry it names
 // and the place in it; outward, an address in one of the few schemes a person
 // may be sent to. Anything else leads nowhere and the attribute goes.
+//
+// An href naming no document names a place in the document being read, and
+// crosses as the fragment it is.
 func address(base, said string) string {
 	if named := scheme(bare(said)); named != "" {
 		if reachable[named] {
 			return bare(said)
 		}
 		return ""
+	}
+	if target, fragment := splitHref(said); target == "" {
+		if fragment == "" {
+			return ""
+		}
+		return "#" + fragment
 	}
 	return hrefIn(base, said)
 }

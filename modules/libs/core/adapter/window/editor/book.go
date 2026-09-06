@@ -68,6 +68,8 @@ func (a *API) GetBook(
 		Reflowable:   read.Layout != epub.PrePaginated,
 		Progression:  progressing(read.Direction),
 		Pages:        int32(read.PageCount()),
+		Length:       int32(len(read.Text)),
+		PageBytes:    int32(read.PageBytes()),
 		Fingerprint:  &v1.Fingerprint{Path: print.path, Size: print.size, Mtime: print.mtime},
 		Spine:        int32(len(read.Documents)),
 		Named:        int32(len(read.Parts)),

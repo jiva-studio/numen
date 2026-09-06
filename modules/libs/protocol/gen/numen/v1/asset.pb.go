@@ -315,6 +315,14 @@ type GetBookResponse struct {
 	// How many pages the book is read in. A book that reflows has none of its
 	// own, so they are counted over its text and not over anything drawn.
 	Pages int32 `protobuf:"varint,7,opt,name=pages,proto3" json:"pages,omitempty"`
+	// How many bytes the book's text is, and how many of them stand on one page.
+	// A page is a number of letters and a letter is several bytes in most of the
+	// scripts a book is written in, so the size is measured in this book's own.
+	//
+	// The page an offset falls on is counted from these, and comes to the same
+	// page wherever it is counted.
+	Length    int32 `protobuf:"varint,12,opt,name=length,proto3" json:"length,omitempty"`
+	PageBytes int32 `protobuf:"varint,13,opt,name=page_bytes,json=pageBytes,proto3" json:"page_bytes,omitempty"`
 	// Which bytes the book was read from. It stands in the address the markup of
 	// a document and the bytes of an entry are answered at, so an address names
 	// one reading of one file.
@@ -404,6 +412,20 @@ func (x *GetBookResponse) GetPrinted() []*PrintedPage {
 func (x *GetBookResponse) GetPages() int32 {
 	if x != nil {
 		return x.Pages
+	}
+	return 0
+}
+
+func (x *GetBookResponse) GetLength() int32 {
+	if x != nil {
+		return x.Length
+	}
+	return 0
+}
+
+func (x *GetBookResponse) GetPageBytes() int32 {
+	if x != nil {
+		return x.PageBytes
 	}
 	return 0
 }
@@ -1034,7 +1056,7 @@ const file_numen_v1_asset_proto_rawDesc = "" +
 	"\x04wide\x18\x01 \x01(\x01R\x04wide\x12\x12\n" +
 	"\x04high\x18\x02 \x01(\x01R\x04high\"$\n" +
 	"\x0eGetBookRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xb6\x03\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\xed\x03\n" +
 	"\x0fGetBookResponse\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x1e\n" +
 	"\n" +
@@ -1044,7 +1066,10 @@ const file_numen_v1_asset_proto_rawDesc = "" +
 	"\tdocuments\x18\x04 \x03(\v2\x17.numen.v1.SpineDocumentR\tdocuments\x12(\n" +
 	"\x05parts\x18\x05 \x03(\v2\x12.numen.v1.BookPartR\x05parts\x12/\n" +
 	"\aprinted\x18\x06 \x03(\v2\x15.numen.v1.PrintedPageR\aprinted\x12\x14\n" +
-	"\x05pages\x18\a \x01(\x05R\x05pages\x127\n" +
+	"\x05pages\x18\a \x01(\x05R\x05pages\x12\x16\n" +
+	"\x06length\x18\f \x01(\x05R\x06length\x12\x1d\n" +
+	"\n" +
+	"page_bytes\x18\r \x01(\x05R\tpageBytes\x127\n" +
 	"\vfingerprint\x18\b \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\x12\x14\n" +
 	"\x05spine\x18\t \x01(\x05R\x05spine\x12\x14\n" +
 	"\x05named\x18\n" +

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>A Book Across the Seam</dc:title>
+    <dc:language>en</dc:language>
+    <dc:identifier id="id">seam-1</dc:identifier>
+  </metadata>
+  <manifest>
+    <item id="opening" href="opening.xhtml" media-type="application/xhtml+xml"/>
+    <item id="middle" href="middle.xhtml" media-type="application/xhtml+xml"/>
+    <item id="plate" href="pictures/plate.png" media-type="image/png"/>
+  </manifest>
+  <spine>
+    <itemref idref="opening"/>
+    <itemref idref="middle"/>
+  </spine>
+</package>

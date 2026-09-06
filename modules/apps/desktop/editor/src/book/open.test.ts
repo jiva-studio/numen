@@ -30,6 +30,7 @@ const BOOK: Book = {
   ],
   printed: [],
   pages: 3,
+  pageBytes: 3_000,
   at: '20480 1700000000000000000 mahabharata.epub',
 }
 
@@ -75,21 +76,23 @@ function shelf(book: Book | Error = BOOK, markup: Error | null = null) {
 const settles = () => new Promise((done) => setTimeout(done, 0))
 
 describe('the page an offset falls on', () => {
-  it('is where the offset stands along the text, counted from one', () => {
-    const span = { begins: 0, ends: 9_000 }
-
-    expect(pageAt(span, 3, 0)).toBe(1)
-    expect(pageAt(span, 3, 2_999)).toBe(1)
-    expect(pageAt(span, 3, 3_000)).toBe(2)
-    expect(pageAt(span, 3, 8_999)).toBe(3)
+  it('is the offset over the bytes a page of this book holds, counted from one', () => {
+    // The numbers are the application's own: it says how many bytes stand on a
+    // page and how many pages the book is read in, and nothing here divides the
+    // text up again.
+    expect(pageAt(3_000, 3, 0)).toBe(1)
+    expect(pageAt(3_000, 3, 2_999)).toBe(1)
+    expect(pageAt(3_000, 3, 3_000)).toBe(2)
+    expect(pageAt(3_000, 3, 8_999)).toBe(3)
   })
 
   it('is never past the last page', () => {
-    expect(pageAt({ begins: 0, ends: 9_000 }, 3, 900_000)).toBe(3)
+    expect(pageAt(3_000, 3, 900_000)).toBe(3)
   })
 
   it('is no page at all for a book with none', () => {
-    expect(pageAt({ begins: 0, ends: 0 }, 0, 0)).toBe(0)
+    expect(pageAt(0, 0, 0)).toBe(0)
+    expect(pageAt(0, 3, 100)).toBe(0)
   })
 })
 

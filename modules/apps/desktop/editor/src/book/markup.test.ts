@@ -3,6 +3,7 @@
  * loads them from.
  */
 import { describe, expect, it } from 'vitest'
+import spine from '../../../../../libs/protocol/testdata/spine.html?raw'
 import { pointedAt } from './markup'
 
 /** Where one entry of the archive is served, as the test reads an address. */
@@ -32,5 +33,34 @@ describe('the runs of the text', () => {
     expect(drawn).toContain('data-offset="1200"')
     expect(drawn).toContain('data-offset="1215"')
     expect(drawn).toContain('सत्यं')
+  })
+})
+
+/**
+ * The corpus is one spine document as the application writes it, held to what
+ * that writer emits by a test beside it. What is asked here is what this window
+ * does to markup that really arrived, rather than to markup it wrote itself.
+ */
+describe('a document of a book as it arrives', () => {
+  it('draws its picture from the entry of the archive the markup names', () => {
+    const held = new DOMParser().parseFromString(spine, 'text/html')
+    const named = [...held.body.querySelectorAll('img[src]')].map((one) => one.getAttribute('src'))
+    expect(named).not.toHaveLength(0)
+
+    const drawn = pointedAt(spine, entry)
+
+    for (const name of named) {
+      expect(name).toMatch(/^[^:]+\/[^:]+$/)
+      expect(drawn).toContain(`src="${entry(name!)}"`)
+    }
+  })
+
+  it('leaves every offset the application counted where it stands', () => {
+    const offsets = (markup: string) =>
+      [...new DOMParser().parseFromString(markup, 'text/html').body.querySelectorAll('[data-offset]')]
+        .map((one) => one.getAttribute('data-offset'))
+
+    expect(offsets(spine)).not.toHaveLength(0)
+    expect(offsets(pointedAt(spine, entry))).toEqual(offsets(spine))
   })
 })

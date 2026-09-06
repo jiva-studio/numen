@@ -82,6 +82,27 @@ func TestWindowTabsSaysWhereInADocumentThePersonIs(t *testing.T) {
 	}
 }
 
+// A book that reflows has no pages of its own, so where the person stands in
+// one is an offset into its text, and the page is how far through that offset
+// is.
+func TestWindowTabsSaysWhereInABookThePersonIs(t *testing.T) {
+	session := attending(t, domain.OpenTabs{
+		FrontID: "one",
+		Tabs: []domain.Tab{
+			{ID: "one", Kind: domain.TabBook, Path: "library/Adi.epub", Title: "The Adi Parva",
+				Book: &domain.OpenBook{Offset: 145203, Length: 982331, Page: 142, Pages: 960}},
+		},
+	})
+
+	out := tabs(t, session)
+
+	want := `the book "The Adi Parva" at library/Adi.epub is in front of them, ` +
+		`open at page 142 of 960, at byte 145203`
+	if out.Looking != want {
+		t.Errorf("says %q", out.Looking)
+	}
+}
+
 // A window is free to open a kind of tab nothing here has words for, and such a
 // tab is named by its own kind.
 func TestWindowTabsNamesAKindItHasNoWordsForAndNoNote(t *testing.T) {

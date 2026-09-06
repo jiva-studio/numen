@@ -349,7 +349,13 @@ func tinyBook(tb testing.TB, replace map[string]string, omit ...string) []byte {
 // tinyParts is the committed fixture as the files it is made of.
 func tinyParts(tb testing.TB) map[string][]byte {
 	tb.Helper()
-	root := filepath.Join("testdata", "tiny")
+	return partsIn(tb, filepath.Join("testdata", "tiny"))
+}
+
+// partsIn is a committed fixture book as the files it is made of, named as the
+// archive names them.
+func partsIn(tb testing.TB, root string) map[string][]byte {
+	tb.Helper()
 
 	parts := map[string][]byte{}
 	err := filepath.WalkDir(root, func(at string, entry fs.DirEntry, err error) error {

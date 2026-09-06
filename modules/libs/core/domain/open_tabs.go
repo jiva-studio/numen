@@ -39,6 +39,9 @@ type Tab struct {
 	// Recording is the recording the tab holds, and nothing in a tab holding
 	// none.
 	Recording *OpenRecording
+	// Book is the book that reflows the tab holds, and nothing in a tab holding
+	// none.
+	Book *OpenBook
 }
 
 // An OpenDocument is the document a tab holds, as the person is reading it.
@@ -46,6 +49,20 @@ type OpenDocument struct {
 	// Page is the page in front of them, counted from one.
 	Page int
 	// Pages is how many pages the document has.
+	Pages int
+}
+
+// An OpenBook is the book that reflows a tab holds, as the person is reading
+// it. Such a book has no pages of its own, so where the person is is an offset
+// into its text.
+type OpenBook struct {
+	// Offset is where they are reading, in bytes of the book's text, and Length
+	// is how many bytes that text is.
+	Offset int
+	Length int
+	// Page is the page the offset falls on, counted from one, and Pages how many
+	// the book is read in.
+	Page  int
 	Pages int
 }
 
@@ -63,6 +80,7 @@ type OpenRecording struct {
 const (
 	TabNote      = "note"
 	TabDocument  = "document"
+	TabBook      = "book"
 	TabRecording = "recording"
 	TabPlex      = "plex"
 )
