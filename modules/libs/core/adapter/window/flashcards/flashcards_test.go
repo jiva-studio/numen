@@ -441,7 +441,7 @@ func TestAVaultTheIndexCarriesIsReadAgainOnOpening(t *testing.T) {
 		return nil
 	})
 
-	waitFor(t, func() bool {
+	testsupport.WaitFor(t, func() bool {
 		api.counted(t.Context(), v)
 		return read.Load() == 1
 	})
@@ -484,18 +484,6 @@ func TestSittingDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
 	if !errors.Is(err, flashcards.ErrNotCarried) {
 		t.Errorf("says %q, and not that the index does not carry the vault", err)
 	}
-}
-
-// waitFor holds until something is so, and fails the test if it never is.
-func waitFor(t *testing.T, so func() bool) {
-	t.Helper()
-	for at := time.Now(); time.Since(at) < 20*time.Second; {
-		if so() {
-			return
-		}
-		time.Sleep(20 * time.Millisecond)
-	}
-	t.Fatal("it never came to be so")
 }
 
 // A question about a vault the installation does not hold is refused.

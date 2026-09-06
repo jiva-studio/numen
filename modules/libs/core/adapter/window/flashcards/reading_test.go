@@ -31,7 +31,7 @@ func TestReadingAVaultIsReportedAsWork(t *testing.T) {
 	if one := api.counted(t.Context(), unread); !one.GetReading() || one.GetUnread() != "" {
 		t.Fatalf("the vault came back %+v", one)
 	}
-	waitFor(t, func() bool {
+	testsupport.WaitFor(t, func() bool {
 		for _, at := range api.Window.Tasking.List() {
 			if at.Doing == "Reading the vault" && at.About == "Sanskrit" && at.Asked {
 				return true
@@ -42,7 +42,7 @@ func TestReadingAVaultIsReportedAsWork(t *testing.T) {
 
 	// The reading ends, and the work goes with it.
 	close(holding)
-	waitFor(t, func() bool { return len(api.Window.Tasking.List()) == 0 })
+	testsupport.WaitFor(t, func() bool { return len(api.Window.Tasking.List()) == 0 })
 }
 
 // A vault the index already carries is drawn from what it holds, so reading it
@@ -57,7 +57,7 @@ func TestReadingAVaultTheIndexCarriesIsNotWorkAPersonAskedFor(t *testing.T) {
 	})
 
 	api.counted(t.Context(), held[0])
-	waitFor(t, func() bool { return len(api.Window.Tasking.List()) == 1 })
+	testsupport.WaitFor(t, func() bool { return len(api.Window.Tasking.List()) == 1 })
 
 	if at := api.Window.Tasking.List()[0]; at.Asked {
 		t.Errorf("reading a vault the index carries came back as work asked for: %+v", at)
@@ -78,7 +78,7 @@ func TestAVaultThatCouldNotBeReadSaysWhyAndIsLetAlone(t *testing.T) {
 		return errors.New("the folder is not there")
 	})
 
-	waitFor(t, func() bool {
+	testsupport.WaitFor(t, func() bool {
 		return api.counted(t.Context(), unread).GetUnread() == "the folder is not there"
 	})
 	api.counted(t.Context(), unread)
@@ -90,7 +90,7 @@ func TestAVaultThatCouldNotBeReadSaysWhyAndIsLetAlone(t *testing.T) {
 	// again.
 	api.Forget(unread.ID)
 	api.counted(t.Context(), unread)
-	waitFor(t, func() bool { return tried.Load() == 2 })
+	testsupport.WaitFor(t, func() bool { return tried.Load() == 2 })
 }
 
 // The list of work is answered whether or not the window keeps one, so the page

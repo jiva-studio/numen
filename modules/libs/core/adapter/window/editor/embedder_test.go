@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -107,17 +108,5 @@ func TestAVaultSaysWhatItIsDoingWhileItReadsItself(t *testing.T) {
 
 	// Each pass takes itself out when it ends, so a vault that has been read
 	// says it is doing nothing.
-	waitFor(t, func() bool { return len(opened.API.Window.Tasking.List()) == 0 })
-}
-
-// waitFor gives a background reading its time and says what it was waiting for.
-func waitFor(t *testing.T, done func() bool) {
-	t.Helper()
-	for range 200 {
-		if done() {
-			return
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	t.Fatal("the vault never said it was finished, so a client asks for ever")
+	testsupport.WaitFor(t, func() bool { return len(opened.API.Window.Tasking.List()) == 0 })
 }

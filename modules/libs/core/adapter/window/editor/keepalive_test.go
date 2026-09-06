@@ -9,11 +9,11 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 )
 
@@ -58,18 +58,18 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	for name, open := range streams {
 		t.Run(name, func(t *testing.T) {
 			api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
-			api.Answers(silentAgent{})
+			api.Answers(testsupport.SilentAgent{})
 
 			entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)
 			mux := http.NewServeMux()
 			vault, vaults := numenv1connect.NewVaultServiceHandler(api)
-			mux.Handle(vault, rooted(vaults, entered, returned))
+			mux.Handle(vault, testsupport.Rooted(vaults, entered, returned))
 			filed, notes := numenv1connect.NewNoteServiceHandler(api)
-			mux.Handle(filed, rooted(notes, entered, returned))
+			mux.Handle(filed, testsupport.Rooted(notes, entered, returned))
 			agent, agents := numenv1connect.NewAgentServiceHandler(api)
-			mux.Handle(agent, rooted(agents, entered, returned))
+			mux.Handle(agent, testsupport.Rooted(agents, entered, returned))
 			drawn, itself := numenv1connect.NewWindowServiceHandler(api.Window)
-			mux.Handle(drawn, rooted(itself, entered, returned))
+			mux.Handle(drawn, testsupport.Rooted(itself, entered, returned))
 			server := httptest.NewServer(mux)
 			t.Cleanup(server.Close)
 
@@ -79,7 +79,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 
 			select {
 			case <-entered:
-			case <-time.After(10 * time.Second):
+			case <-time.After(testsupport.Patience):
 				t.Fatal("the stream never reached the handler")
 			}
 
@@ -89,34 +89,9 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 
 			select {
 			case <-returned:
-			case <-time.After(10 * time.Second):
+			case <-time.After(testsupport.Patience):
 				t.Fatal("the client went away and the stream is still standing")
 			}
 		})
 	}
 }
-
-// rooted serves the handler the way the window does: the request context is the
-// process's own, and ends when the application ends and at no other moment.
-func rooted(handler http.Handler, entered, returned chan<- struct{}) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		entered <- struct{}{}
-		defer func() { returned <- struct{}{} }()
-		handler.ServeHTTP(w, r.WithContext(context.Background()))
-	})
-}
-
-// silentAgent takes a task and says nothing about it, which is what an agent
-// waiting on a model looks like.
-type silentAgent struct{}
-
-func (silentAgent) Take(context.Context, port.Task) (port.Run, error) {
-	return silentWork{steps: make(chan port.Step)}, nil
-}
-
-func (silentAgent) Finish(context.Context, string) error { return nil }
-
-type silentWork struct{ steps chan port.Step }
-
-func (w silentWork) Steps() <-chan port.Step { return w.steps }
-func (w silentWork) Stop() error             { return nil }

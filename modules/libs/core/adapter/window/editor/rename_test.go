@@ -15,6 +15,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
@@ -33,7 +34,7 @@ func gone(t *testing.T, root, path string) bool {
 // already on disk into the index and the links they carry with them.
 func scanned(t *testing.T, f *going) {
 	t.Helper()
-	waitFor(t, f.opened.API.Ready.Load)
+	testsupport.WaitFor(t, f.opened.API.Ready.Load)
 }
 
 // TestRenamingWritesTheNoteAndMovesTheFile. A note is shown by its title, so
