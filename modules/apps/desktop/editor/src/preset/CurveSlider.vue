@@ -159,7 +159,7 @@ const reading = computed(() => readingAt(knob.value))
 const atKnob = computed(() => words.widthAt(props.curve.goal, held.value))
 
 /** What the control is acting on, in the pieces the row is scanned in. */
-const figures = computed(() => {
+const counts = computed(() => {
   const one = props.material
   return one ? words.material(one.decks, one.cards, one.overdue, one.unbegun) : []
 })
@@ -239,7 +239,7 @@ const released = (event: KeyboardEvent) => {
          figure is its own tile, and the tiles share the width of the column.
          The figures stand while the answer to a new curve is on its way. -->
     <div class="curve-slider__material" data-control="material">
-      <span v-for="one in figures" :key="one.name" class="curve-slider__tile" data-control="tile">
+      <span v-for="one in counts" :key="one.name" class="curve-slider__tile" data-control="tile">
         <span class="curve-slider__figure" data-control="figure">{{ one.figure }}</span>
         <span class="curve-slider__word" data-control="word">{{ one.name }}</span>
       </span>
