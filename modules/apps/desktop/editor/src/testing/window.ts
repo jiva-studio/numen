@@ -395,8 +395,8 @@ const App = (await import('../App.vue')).default
 /** A moment for whatever the window asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))
 
-/** Longer than the palette holds a keystroke before it asks the vault. */
-const HELD = 200
+/** Longer than the palette debounces a keystroke before it asks the vault. */
+const DEBOUNCE = 200
 
 /** One name the vault answers a search with, of a note of one of three kinds. */
 const nameSaid = (path: string, title: string, type: 'note' | 'deck' | 'stencil' = 'note') => ({
@@ -582,11 +582,11 @@ export {
   asked,
   cards,
   maker,
+  DEBOUNCE,
   drawn,
   drawnWithPalette,
   editor,
   folders,
-  HELD,
   layoutOf,
   listed,
   nameSaid,

@@ -39,7 +39,7 @@ import {
   wearing,
 } from './settings/wearing'
 import { reviewing } from './settings/reviewing'
-import { OFF, ON, SYNCING, syncing } from './settings/syncing'
+import { OFF, ON, SYNCING, syncSetting } from './settings/sync'
 import { HANGING, PARTS, hanging } from './settings/hanging'
 import { does, reaching, type CommandDeps, type Store } from './command/handlers'
 import { search } from './command/search'
@@ -455,7 +455,7 @@ export const useWindow = () => {
   const dressed = wearing(themes, words, log.under('worn'))
 
   /** Whether a note's title and the name of its file are kept as one name. */
-  const oneName = syncing(core, words, log.under('named'))
+  const oneName = syncSetting(core, words, log.under('named'))
 
   /** The hour a day of review begins at, on the clock on the wall. */
   const dayBegins = reviewing(core, words, log.under('reviewed'))

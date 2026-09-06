@@ -30,14 +30,14 @@ export interface Words {
 }
 
 /** What this asks of the vault. */
-export interface SyncingDeps {
+export interface SyncDeps {
   /** Whether the two are one name, as the settings hold it. */
   syncing(): Promise<boolean>
   /** The setting written. What could not be written, and nothing where it was. */
   choosesSyncing(kept: boolean): Promise<string | null>
 }
 
-export function syncing(core: SyncingDeps, words: Words, said: MessageWriter) {
+export function syncSetting(core: SyncDeps, words: Words, said: MessageWriter) {
   /**
    * Whether the two are one name. It opens on what an installation nobody has
    * configured does, and is asked of the vault as the window opens.

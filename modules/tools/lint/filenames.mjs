@@ -51,7 +51,6 @@ export const owed = [
   'modules/apps/desktop/editor/src/note/editing.ts',
   'modules/apps/desktop/editor/src/note/naming.ts',
   'modules/apps/desktop/editor/src/settings/reviewing.ts',
-  'modules/apps/desktop/editor/src/settings/syncing.ts',
   'modules/apps/desktop/editor/src/settings/wearing.ts',
   'modules/apps/desktop/editor/src/showing.ts',
   'modules/apps/desktop/editor/src/tabs/putting.ts',

@@ -27,9 +27,9 @@ import {
   asked,
   cards,
   maker,
+  DEBOUNCE,
   drawn,
   drawnWithPalette,
-  HELD,
   nameSaid,
   nodeInPlex,
   paneKinds,
@@ -78,7 +78,7 @@ describe('the palette', () => {
     pressed('k')
     await settles()
     window.findComponent(Palette).vm.$emit('update:modelValue', 'ani')
-    await new Promise((done) => setTimeout(done, HELD))
+    await new Promise((done) => setTimeout(done, DEBOUNCE))
     window.findComponent(Palette).vm.$emit('choose', path, 'note')
     await settles()
     await settles()
@@ -89,7 +89,7 @@ describe('the palette', () => {
     pressed('k')
     await settles()
     window.findComponent(Palette).vm.$emit('update:modelValue', 'ani')
-    await new Promise((done) => setTimeout(done, HELD))
+    await new Promise((done) => setTimeout(done, DEBOUNCE))
     await settles()
   }
 
@@ -231,7 +231,7 @@ describe('the palette', () => {
     pressed('k')
     await settles()
     window.findComponent(Palette).vm.$emit('update:modelValue', 'en')
-    await new Promise((done) => setTimeout(done, HELD))
+    await new Promise((done) => setTimeout(done, DEBOUNCE))
     window.findComponent(Palette).vm.$emit('choose', 'physics/Entropy.md', 'plex')
     await settles()
 
@@ -423,7 +423,7 @@ describe('a command reached by its own keystroke', () => {
     pressed('g')
     await settles()
     await type('en')
-    await new Promise((done) => setTimeout(done, HELD))
+    await new Promise((done) => setTimeout(done, DEBOUNCE))
     await press('Enter')
     await settles()
 

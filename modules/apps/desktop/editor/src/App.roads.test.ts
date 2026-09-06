@@ -15,9 +15,9 @@ import RecordingTab from './recording/RecordingTab.vue'
 import {
   asked,
   cards,
+  DEBOUNCE,
   drawn,
   folders,
-  HELD,
   nameSaid,
   nodeInPlex,
   outside,
@@ -102,7 +102,7 @@ describe('every road to a file', () => {
     pressing('k')
     await settles()
     window.findComponent(Palette).vm.$emit('update:modelValue', typed)
-    await new Promise((done) => setTimeout(done, HELD))
+    await new Promise((done) => setTimeout(done, DEBOUNCE))
   }
 
   /** The root of the vault holds one file of each of four. */
