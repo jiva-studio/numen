@@ -133,17 +133,48 @@ const STILL = '*, *::before, *::after { transition: none !important; animation: 
 const SETTLING = 500
 
 /**
+ * What Vue writes on an element for as long as it is entering or leaving. It
+ * is on there a frame before the transition it describes exists, which is the
+ * whole reason to read it: `getAnimations` lists what has started, and a
+ * transition Vue has only just queued has not.
+ */
+const MOVING = '[class*="-enter-active"], [class*="-leave-active"]'
+
+/** One drawn frame, which is when a transition the page has queued begins. */
+const frame = (): Promise<void> =>
+  new Promise((wake) => {
+    requestAnimationFrame(() => wake())
+  })
+
+/**
+ * Whether anything on the page is on its way somewhere. An animation that has
+ * finished stays on the list when it fills forwards, and where it stopped is
+ * where it stays.
+ */
+const moving = (): boolean =>
+  document.getAnimations().some((one) => one.playState === 'running') ||
+  document.querySelector(MOVING) !== null
+
+/** How many still frames running say the page is done and not between halves. */
+const STILLNESS = 3
+
+/**
  * The page as it comes to rest. Something still arriving is drawn at the
  * opacity it is arriving from, and held still there it reads as something a
  * person cannot see. What never comes to rest — a spinner — is waited on only
  * so long.
+ *
+ * A swap runs its two halves one after the other, and between them the page
+ * holds nothing moving at all, so one quiet frame proves nothing and several
+ * running are asked for.
  */
 const settles = async (): Promise<void> => {
-  const running = document.getAnimations().map((one) => one.finished)
-  await Promise.race([
-    Promise.allSettled(running),
-    new Promise((wake) => setTimeout(wake, SETTLING)),
-  ])
+  const until = performance.now() + SETTLING
+  let still = 0
+  while (still < STILLNESS && performance.now() < until) {
+    await frame()
+    still = moving() ? 0 : still + 1
+  }
 }
 
 /**
