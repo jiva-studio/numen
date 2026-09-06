@@ -27,6 +27,10 @@ type extractor struct {
 	headings   []Part
 	pagebreaks []Page
 
+	// markup gathers the elements of the document being read, and is nil when
+	// only the text is wanted.
+	markup *builder
+
 	// preformattedDepth counts the pre elements open around the text being written.
 	preformattedDepth int
 }
@@ -77,6 +81,11 @@ func (x *extractor) node(n *html.Node) {
 		return
 	case atom.Br:
 		x.breakLine()
+		// The line it ended is behind it, so the break stands at the line it
+		// begins.
+		if x.markup.opened(n, len(x.out)) {
+			x.markup.close()
+		}
 		return
 	case atom.Td, atom.Th:
 		x.write(" ")
@@ -94,6 +103,7 @@ func (x *extractor) node(n *html.Node) {
 	if n.DataAtom == atom.Pre {
 		x.preformattedDepth++
 	}
+	element := x.markup.opened(n, start)
 	x.children(n)
 	if n.DataAtom == atom.Pre {
 		x.preformattedDepth--
@@ -115,6 +125,10 @@ func (x *extractor) node(n *html.Node) {
 	if block {
 		x.breakLine()
 	}
+	// The line a block ends is the block's own, so it closes over it.
+	if element {
+		x.markup.close()
+	}
 }
 
 func (x *extractor) children(n *html.Node) {
@@ -126,18 +140,22 @@ func (x *extractor) children(n *html.Node) {
 // write appends text. A run of space is one space, and text inside a pre element
 // is kept as it was written.
 func (x *extractor) write(text string) {
+	start := len(x.out)
 	if x.preformattedDepth > 0 {
 		x.out = append(x.out, text...)
-		return
-	}
-	for _, r := range text {
-		if unicode.IsSpace(r) {
-			if last, ok := x.last(); ok && last != ' ' && last != '\n' {
-				x.out = append(x.out, ' ')
+	} else {
+		for _, r := range text {
+			if unicode.IsSpace(r) {
+				if last, ok := x.last(); ok && last != ' ' && last != '\n' {
+					x.out = append(x.out, ' ')
+				}
+				continue
 			}
-			continue
+			x.out = utf8.AppendRune(x.out, r)
 		}
-		x.out = utf8.AppendRune(x.out, r)
+	}
+	if len(x.out) > start {
+		x.markup.run(start)
 	}
 }
 
@@ -147,7 +165,9 @@ func (x *extractor) breakLine() {
 		x.out = x.out[:len(x.out)-1]
 	}
 	if last, ok := x.last(); ok && last != '\n' {
+		start := len(x.out)
 		x.out = append(x.out, '\n')
+		x.markup.run(start)
 	}
 }
 

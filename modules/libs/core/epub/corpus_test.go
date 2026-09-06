@@ -135,6 +135,71 @@ func checkBook(t *testing.T, book *epub.Book) {
 	if book.Tier == epub.FromNothing && len(book.Parts) != 0 {
 		t.Errorf("a book that names nothing came back with %d parts", len(book.Parts))
 	}
+
+	checkMarkup(t, book)
+}
+
+// checkMarkup holds every document to the one property a reader is built on: the
+// words of the markup are the words of the text, at the offsets the text is
+// chunked and searched at. A reader takes an offset off an attribute and never
+// counts one out itself, so a document where the two differ by a byte lights the
+// wrong words.
+func checkMarkup(t *testing.T, book *epub.Book) {
+	t.Helper()
+
+	for _, doc := range book.Documents {
+		drawn, err := book.Markup(doc.Path)
+		if err != nil {
+			t.Fatalf("markup of %s: %v", doc.Path, err)
+		}
+		if drawn.Offset != doc.Offset || drawn.Length != doc.Length {
+			t.Fatalf("markup of %s runs from %d for %d, and the document from %d for %d",
+				doc.Path, drawn.Offset, drawn.Length, doc.Offset, doc.Length)
+		}
+		want := book.Text[doc.Offset : doc.Offset+doc.Length]
+		if got := said(drawn.Nodes); got != want {
+			t.Fatalf("the markup of %s says %d bytes and its text is %d:\n%q\n%q",
+				doc.Path, len(got), len(want), excerpt(got, 0), excerpt(want, 0))
+		}
+		checkSpans(t, book.Text, doc, drawn.Nodes, doc.Offset+doc.Length)
+	}
+}
+
+// checkSpans holds every node to the run of text it stands over. A node reaches
+// to where the next one begins, and what it and everything under it says is that
+// run of the book's text, byte for byte: a word that slipped out of the element
+// it was written in is a word a reader draws in the wrong place.
+func checkSpans(t *testing.T, text string, doc epub.Document, nodes []epub.Node, limit int) {
+	t.Helper()
+	for i, node := range nodes {
+		to := limit
+		if i+1 < len(nodes) {
+			to = nodes[i+1].Offset
+		}
+		if node.Offset < doc.Offset || node.Offset > to || to > len(text) {
+			t.Fatalf("a node of %s runs from %d to %d, outside the document at %d for %d",
+				doc.Path, node.Offset, to, doc.Offset, doc.Length)
+		}
+		if got := said([]epub.Node{node}); got != text[node.Offset:to] {
+			t.Fatalf("a %q of %s says %q and stands over %q",
+				node.Name, doc.Path, got, text[node.Offset:to])
+		}
+		checkSpans(t, text, doc, node.Children, to)
+	}
+}
+
+// said is the text a document's markup carries, in reading order.
+func said(nodes []epub.Node) string {
+	var out strings.Builder
+	var walk func([]epub.Node)
+	walk = func(nodes []epub.Node) {
+		for _, node := range nodes {
+			out.WriteString(node.Text)
+			walk(node.Children)
+		}
+	}
+	walk(nodes)
+	return out.String()
 }
 
 // corpus is where the books are, or a reason to stand aside.

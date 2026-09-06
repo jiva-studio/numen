@@ -15,6 +15,10 @@ import (
 // that reads the bound out of the code under test measures nothing.
 const mostPerBook = 256 << 20
 
+// mostFuzzed is how much of one book's text is read as markup before the target
+// moves on to the next file.
+const mostFuzzed = 1 << 20
+
 // A book read without complaint is one the rest of the application can hold:
 // every spine document, every named part and every printed page stands at an
 // offset inside the text that was read, in the order they are read in, and each
@@ -25,8 +29,8 @@ const mostPerBook = 256 << 20
 // about the size of its entries is believed about nothing.
 //
 // A file that could not be read is refused as one that is no archive, one that
-// holds no container, or one that holds no package document. A book that names
-// nothing is read, and is a different answer.
+// holds no container, one that holds no package document, or one whose spine is
+// ciphertext. A book that names nothing is read, and is a different answer.
 func FuzzRead(f *testing.F) {
 	whole := tinyBook(f, nil)
 	f.Add(whole)
@@ -78,6 +82,18 @@ func FuzzRead(f *testing.F) {
 		"../../outside.xhtml": []byte(`<html><body><p>Out of the archive</p></body></html>`),
 	}))
 
+	// A book whose fonts are scrambled, and one whose first document is.
+	for _, locked := range []string{"OEBPS/fonts/serif.otf", "OEBPS/first.xhtml"} {
+		sealed := clone(parts)
+		sealed["META-INF/encryption.xml"] = []byte(
+			`<encryption xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+			  <EncryptedData xmlns="http://www.w3.org/2001/04/xmlenc#">
+			    <CipherData><CipherReference URI="` + locked + `"/></CipherData>
+			  </EncryptedData>
+			</encryption>`)
+		f.Add(zipped(f, sealed))
+	}
+
 	// A document saying it is written in one encoding and written in another.
 	lying := clone(parts)
 	lying["OEBPS/first.xhtml"] = []byte(
@@ -106,7 +122,8 @@ func FuzzRead(f *testing.F) {
 		if err != nil {
 			named := errors.Is(err, epub.ErrNotArchive) ||
 				errors.Is(err, epub.ErrNoContainer) ||
-				errors.Is(err, epub.ErrNoPackage)
+				errors.Is(err, epub.ErrNoPackage) ||
+				errors.Is(err, epub.ErrEncrypted)
 			if !named {
 				t.Fatalf("a file of %d bytes was refused as %v, which says nothing about it",
 					len(raw), err)
@@ -265,4 +282,76 @@ func oversized(raw []byte) []byte {
 		copy(changed[at+24:at+28], []byte{0xff, 0xff, 0xff, 0x7f})
 	}
 	return changed
+}
+
+// The markup of a document is the text of that document: the same walk writes
+// both, and a reader takes its offsets off the markup and counts none itself. So
+// whatever the file, the words of the markup are the words of the text, in
+// order, and every element stands inside the document it was read from.
+//
+// A document the book was read from is always answered; nothing else is.
+func FuzzMarkup(f *testing.F) {
+	f.Add(tinyBook(f, nil))
+	f.Add(tinyBook(f, map[string]string{"OEBPS/second.xhtml": "variant/drawn.xhtml"}))
+	f.Add(tinyBook(f, map[string]string{"OEBPS/first.xhtml": "variant/plain.xhtml"}))
+
+	// A document that is not well formed, and one whose markup is nothing but
+	// elements the reader does not draw.
+	torn := clone(tinyParts(f))
+	torn["OEBPS/second.xhtml"] = []byte(`<html><body><p>Delta<div><span>&nope; &#xZZ;`)
+	f.Add(zipped(f, torn))
+	undrawn := clone(tinyParts(f))
+	undrawn["OEBPS/first.xhtml"] = []byte(
+		`<html><body><form><object><embed>Alpha</embed></object></form><iframe>Beta</iframe></body></html>`)
+	f.Add(zipped(f, undrawn))
+
+	f.Fuzz(func(t *testing.T, raw []byte) {
+		book, err := epub.Read(raw)
+		if err != nil {
+			return
+		}
+		read := 0
+		for _, doc := range book.Documents {
+			// What is fuzzed is the reading of one document, so a book whose
+			// every document is a megabyte of zeros is not read to the end.
+			if read > mostFuzzed {
+				break
+			}
+			read += doc.Length
+
+			drawn, err := book.Markup(doc.Path)
+			if err != nil {
+				t.Fatalf("%s is a document of the book and was refused as %v", doc.Path, err)
+			}
+			if drawn.Offset != doc.Offset || drawn.Length != doc.Length {
+				t.Fatalf("%s runs from %d for %d as markup and from %d for %d as text",
+					doc.Path, drawn.Offset, drawn.Length, doc.Offset, doc.Length)
+			}
+			want := book.Text[doc.Offset : doc.Offset+doc.Length]
+			if got := said(drawn.Nodes); got != want {
+				t.Fatalf("the markup of %s says %d bytes and its text is %d",
+					doc.Path, len(got), len(want))
+			}
+			shaped(t, doc, drawn.Nodes)
+			checkSpans(t, book.Text, doc, drawn.Nodes, doc.Offset+doc.Length)
+		}
+		if _, err := book.Markup("nothing/the-spine-names.xhtml"); !errors.Is(err, epub.ErrNoDocument) {
+			t.Fatalf("a document the book was not read from was answered with %v", err)
+		}
+	})
+}
+
+// shaped holds every node to being one thing: an element carries a name and
+// holds what is under it, and a run carries text and holds nothing.
+func shaped(t *testing.T, doc epub.Document, nodes []epub.Node) {
+	t.Helper()
+	for _, node := range nodes {
+		if node.Name != "" && node.Text != "" {
+			t.Fatalf("a %s element of %s carries text of its own", node.Name, doc.Path)
+		}
+		if node.Name == "" && len(node.Children) != 0 {
+			t.Fatalf("a run of text in %s holds %d elements", doc.Path, len(node.Children))
+		}
+		shaped(t, doc, node.Children)
+	}
 }
