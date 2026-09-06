@@ -425,23 +425,28 @@ func TestAPathSaysWhatStandsThere(t *testing.T) {
 		"Animals.md":   "---\ntype: deck\n---\n\n## Llama\n\n[[Animal]]\n",
 		"Sanskrit.md":  "---\ntype: preset\nminutes_a_day: 20\n---\n\n# Sanskrit\n",
 		"Physics.epub": "an epub\n",
+		"Scan.pdf":     "a scan\n",
 		"Notes.txt":    "a list\n",
 	})
 	f.read(t)
 
 	held := stands(t, f, "Animals.md", "Animal.md", "Sanskrit.md",
-		"Entropy.md", "Physics.epub", "Notes.txt", "Gone.md")
+		"Entropy.md", "Physics.epub", "Scan.pdf", "Notes.txt", "Gone.md")
 
+	// One book reflows and the other is drawn as pictures, and a window opens
+	// each in the reader made for it.
 	want := map[string]struct {
-		kind v1.SourceKind
-		is   v1.NoteType
+		kind   v1.SourceKind
+		is     v1.NoteType
+		format v1.BookFormat
 	}{
-		"Animals.md":   {v1.SourceKind_SOURCE_KIND_NOTE, v1.NoteType_NOTE_TYPE_DECK},
-		"Animal.md":    {v1.SourceKind_SOURCE_KIND_NOTE, v1.NoteType_NOTE_TYPE_STENCIL},
-		"Sanskrit.md":  {v1.SourceKind_SOURCE_KIND_NOTE, v1.NoteType_NOTE_TYPE_PRESET},
-		"Entropy.md":   {v1.SourceKind_SOURCE_KIND_NOTE, v1.NoteType_NOTE_TYPE_UNSPECIFIED},
-		"Physics.epub": {v1.SourceKind_SOURCE_KIND_BOOK, v1.NoteType_NOTE_TYPE_UNSPECIFIED},
-		"Notes.txt":    {v1.SourceKind_SOURCE_KIND_UNSPECIFIED, v1.NoteType_NOTE_TYPE_UNSPECIFIED},
+		"Animals.md":   {v1.SourceKind_SOURCE_KIND_NOTE, v1.NoteType_NOTE_TYPE_DECK, v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
+		"Animal.md":    {v1.SourceKind_SOURCE_KIND_NOTE, v1.NoteType_NOTE_TYPE_STENCIL, v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
+		"Sanskrit.md":  {v1.SourceKind_SOURCE_KIND_NOTE, v1.NoteType_NOTE_TYPE_PRESET, v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
+		"Entropy.md":   {v1.SourceKind_SOURCE_KIND_NOTE, v1.NoteType_NOTE_TYPE_UNSPECIFIED, v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
+		"Physics.epub": {v1.SourceKind_SOURCE_KIND_BOOK, v1.NoteType_NOTE_TYPE_UNSPECIFIED, v1.BookFormat_BOOK_FORMAT_EPUB},
+		"Scan.pdf":     {v1.SourceKind_SOURCE_KIND_BOOK, v1.NoteType_NOTE_TYPE_UNSPECIFIED, v1.BookFormat_BOOK_FORMAT_PDF},
+		"Notes.txt":    {v1.SourceKind_SOURCE_KIND_UNSPECIFIED, v1.NoteType_NOTE_TYPE_UNSPECIFIED, v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
 	}
 	for path, one := range want {
 		stood, answered := held[path]
@@ -449,9 +454,10 @@ func TestAPathSaysWhatStandsThere(t *testing.T) {
 			t.Errorf("%s was not answered about at all", path)
 			continue
 		}
-		if stood.GetKind() != one.kind || stood.GetType() != one.is {
-			t.Errorf("%s stands as %v %v, want %v %v",
-				path, stood.GetKind(), stood.GetType(), one.kind, one.is)
+		if stood.GetKind() != one.kind || stood.GetType() != one.is || stood.GetFormat() != one.format {
+			t.Errorf("%s stands as %v %v %v, want %v %v %v",
+				path, stood.GetKind(), stood.GetType(), stood.GetFormat(),
+				one.kind, one.is, one.format)
 		}
 	}
 

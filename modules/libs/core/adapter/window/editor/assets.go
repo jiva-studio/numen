@@ -10,17 +10,24 @@ import (
 	"time"
 )
 
-// A page of a document the vault holds is bytes, and bytes are what this route
+// What a file the vault holds is made of is bytes, and bytes are what this route
 // answers:
 //
 //	GET /assets/<id>/pages/<n>?wide=W&size=S&mtime=T   one page, drawn to that width
+//	GET /assets/<id>/markup/<doc>?size=S&mtime=T       one document of a book
+//	GET /assets/<id>/entries/<name>?size=S&mtime=T     one picture the book carries
 //
-// The id is the file's path in the vault, escaped. A page is the whole of what
-// this route answers; everything else about a file is asked over the schema.
+// The id is the file's path in the vault, escaped, and so is what a facet is
+// named with. Bytes are the whole of what this route answers; everything else
+// about a file is asked over the schema.
 const assetsRoute = "/assets/"
 
-// The one facet an asset offers.
-const pagesFacet = "pages"
+// The facets an asset offers.
+const (
+	pagesFacet   = "pages"
+	markupFacet  = "markup"
+	entriesFacet = "entries"
+)
 
 // An address is one question about one asset: which file, which facet, and what
 // the facet was named with.
@@ -49,7 +56,9 @@ func addressed(r *http.Request) (address, bool) {
 		held.facet = parts[1]
 	}
 	if len(parts) > 2 {
-		held.at = parts[2]
+		if held.at, err = url.PathUnescape(parts[2]); err != nil {
+			return address{}, false
+		}
 	}
 	if len(parts) > 3 {
 		return address{}, false
@@ -57,18 +66,23 @@ func addressed(r *http.Request) (address, bool) {
 	return held, true
 }
 
-// Asset answers with the bytes of one page of one file of the vault.
+// Asset answers with the bytes one file of the vault is made of.
 func (a *API) Asset(w http.ResponseWriter, r *http.Request) {
 	at, ok := addressed(r)
 	if !ok {
 		http.Error(w, "not an asset", http.StatusBadRequest)
 		return
 	}
-	if at.facet != pagesFacet {
-		http.Error(w, "an asset answers with a page and nothing else", http.StatusNotFound)
-		return
+	switch at.facet {
+	case pagesFacet:
+		a.Page(w, r, at.path, at.at)
+	case markupFacet:
+		a.Markup(w, r, at.path, at.at)
+	case entriesFacet:
+		a.Entry(w, r, at.path, at.at)
+	default:
+		http.Error(w, "an asset answers with none of that", http.StatusNotFound)
 	}
-	a.Page(w, r, at.path, at.at)
 }
 
 // assetOf is where a file of the vault is drawn from, and pageOf one page of
@@ -78,6 +92,21 @@ func assetOf(path string) string { return assetsRoute + url.PathEscape(path) }
 
 func pageOf(path string, at, wide int, print fingerprint) string {
 	return fmt.Sprintf("%s/%s/%d?wide=%d&%s", assetOf(path), pagesFacet, at, wide, printing(print))
+}
+
+// markupOf is one document of a book, and entryOf one entry of the archive it
+// was read out of. What names either is a path inside that archive, escaped
+// whole the way the file's own path is.
+func markupOf(path, document string, print fingerprint) string {
+	return facetOf(path, markupFacet, document, print)
+}
+
+func entryOf(path, entry string, print fingerprint) string {
+	return facetOf(path, entriesFacet, entry, print)
+}
+
+func facetOf(path, facet, at string, print fingerprint) string {
+	return fmt.Sprintf("%s/%s/%s?%s", assetOf(path), facet, url.PathEscape(at), printing(print))
 }
 
 // An address that names which bytes it is about answers those bytes or nothing,

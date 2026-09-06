@@ -17,6 +17,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/modules/libs/core/epub"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -53,6 +54,9 @@ type viewer struct {
 	open  func(raw []byte) (scan, error)
 	docs  atomic.Pointer[documents]
 	drawn atomic.Pointer[pictures]
+	// read holds the books open. A book is an archive unpacked and parsed, and
+	// what it costs is memory.
+	read atomic.Pointer[books]
 	// kept is the same pages on disk, so a document opened again is not drawn
 	// again. It is nothing where this machine names no cache folder.
 	kept *cache
@@ -111,6 +115,7 @@ func looking(docs port.PageRenderer) *viewer {
 	}
 	v.docs.Store(keeping())
 	v.drawn.Store(drawings())
+	v.read.Store(holding())
 	return v
 }
 
@@ -118,13 +123,15 @@ func looking(docs port.PageRenderer) *viewer {
 // folder they were kept in ended and waited for.
 func (v *viewer) close() {
 	v.docs.Load().close()
+	v.read.Load().close()
 	v.kept.close()
 }
 
-// empty closes the documents the window has open and drops the pages drawn from
-// them. It goes on looking, at whatever it is given next.
+// empty closes the documents the window has open, lets go of the books, and
+// drops the pages drawn. It goes on looking, at whatever it is given next.
 func (v *viewer) empty() {
 	v.docs.Swap(keeping()).close()
+	v.read.Swap(holding()).close()
 	v.drawn.Store(drawings())
 }
 
@@ -399,9 +406,9 @@ func refusedDrawing(err error) connect.Code {
 	switch {
 	case errors.Is(err, errBusy):
 		return connect.CodeUnavailable
-	case errors.Is(err, errNoPage):
+	case errors.Is(err, errNoPage), errors.Is(err, epub.ErrNoDocument), errors.Is(err, epub.ErrNoEntry):
 		return connect.CodeNotFound
-	case errors.Is(err, port.ErrNotADocument), errors.Is(err, port.ErrEncrypted):
+	case errors.Is(err, port.ErrNotADocument), errors.Is(err, port.ErrEncrypted), notABook(err):
 		return connect.CodeFailedPrecondition
 	default:
 		return reaching(err)
@@ -415,11 +422,12 @@ func refuse(w http.ResponseWriter, err error) {
 		// The window is told when to ask again.
 		w.Header().Set("Retry-After", "1")
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
-	case errors.Is(err, errNoPage), errors.Is(err, errChanged), port.NoNote(err):
+	case errors.Is(err, errNoPage), errors.Is(err, errChanged), port.NoNote(err),
+		errors.Is(err, epub.ErrNoDocument), errors.Is(err, epub.ErrNoEntry):
 		http.Error(w, err.Error(), http.StatusNotFound)
 	case errors.Is(err, port.ErrOutside):
 		http.Error(w, err.Error(), http.StatusBadRequest)
-	case errors.Is(err, port.ErrNotADocument), errors.Is(err, port.ErrEncrypted):
+	case errors.Is(err, port.ErrNotADocument), errors.Is(err, port.ErrEncrypted), notABook(err):
 		http.Error(w, err.Error(), http.StatusUnsupportedMediaType)
 	case errors.Is(err, errNoVault):
 		http.Error(w, err.Error(), http.StatusConflict)

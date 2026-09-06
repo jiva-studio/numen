@@ -7,6 +7,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/epub"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -73,6 +74,20 @@ func TestEverySourceKindIsWrittenFromOne(t *testing.T) {
 		v1.SourceKind_SOURCE_KIND_BOOK:      domain.KindBook,
 		v1.SourceKind_SOURCE_KIND_RECORDING: domain.KindRecording,
 	}, kindOf)
+}
+
+func TestEveryBookFormatIsWrittenFromOne(t *testing.T) {
+	testsupport.Produced(t, map[v1.BookFormat]string{
+		v1.BookFormat_BOOK_FORMAT_EPUB: "library/a.epub",
+		v1.BookFormat_BOOK_FORMAT_PDF:  "library/a.pdf",
+	}, func(path string) v1.BookFormat { return formatOf(path, domain.KindBook) })
+}
+
+func TestEveryPageProgressionIsWrittenFromOne(t *testing.T) {
+	testsupport.Produced(t, map[v1.PageProgression]epub.Direction{
+		v1.PageProgression_PAGE_PROGRESSION_LEFT_TO_RIGHT: epub.LeftToRight,
+		v1.PageProgression_PAGE_PROGRESSION_RIGHT_TO_LEFT: epub.RightToLeft,
+	}, progressing)
 }
 
 func TestEveryNamingIsWrittenFromOne(t *testing.T) {

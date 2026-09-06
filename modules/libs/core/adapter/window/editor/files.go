@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	derived "github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
 // ListFiles is what one folder of the vault holds. The vault settles the order
@@ -111,7 +112,11 @@ func (a *API) ListFileKinds(
 		if err != nil && !errors.Is(err, port.ErrNotANote) {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		out.Kinds = append(out.Kinds, &v1.FileKind{Path: path, Kind: kindOf(ref.Kind)})
+		out.Kinds = append(out.Kinds, &v1.FileKind{
+			Path:   path,
+			Kind:   kindOf(ref.Kind),
+			Format: formatOf(path, ref.Kind),
+		})
 		if ref.Kind == domain.KindNote {
 			notes = append(notes, path)
 		}
@@ -212,6 +217,23 @@ func typeOf(noteType domain.NoteType) v1.NoteType {
 		return v1.NoteType_NOTE_TYPE_PRESET
 	default:
 		return v1.NoteType_NOTE_TYPE_UNSPECIFIED
+	}
+}
+
+// formatOf is which sort of book stands at a path, as the schema carries it.
+// One is drawn as pictures a page at a time and the other reflows, and which
+// reads the file is decided from its name.
+func formatOf(path string, kind domain.SourceKind) v1.BookFormat {
+	if kind != domain.KindBook {
+		return v1.BookFormat_BOOK_FORMAT_UNSPECIFIED
+	}
+	switch reader, _ := derived.ReaderName(domain.Fingerprint{Path: path, Kind: kind}); reader {
+	case derived.ReaderEPUB:
+		return v1.BookFormat_BOOK_FORMAT_EPUB
+	case derived.ReaderPDF:
+		return v1.BookFormat_BOOK_FORMAT_PDF
+	default:
+		return v1.BookFormat_BOOK_FORMAT_UNSPECIFIED
 	}
 }
 
