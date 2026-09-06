@@ -1,7 +1,6 @@
 package epub_test
 
 import (
-	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -121,9 +120,8 @@ type run struct {
 	said string
 }
 
-// offsets are the runs of text the markup says, in the order their offsets put
-// them. A table takes what stands between its cells and puts it before itself,
-// so the order of the markup is not always the order of the book.
+// offsets are the runs of text the markup says, in the order the markup writes
+// them.
 func offsets(t *testing.T, root *html.Node) []run {
 	t.Helper()
 	var out []run
@@ -144,7 +142,6 @@ func offsets(t *testing.T, root *html.Node) []run {
 		}
 	}
 	walk(root)
-	sort.SliceStable(out, func(i, j int) bool { return out[i].at < out[j].at })
 	return out
 }
 

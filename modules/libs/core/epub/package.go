@@ -187,7 +187,8 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 			read.title == "" {
 			read.title = tidy(entry.Value)
 		}
-		// A meta refining another element speaks for that element alone.
+		// A meta refining another element speaks for that element alone, and
+		// `rendition` is a reserved prefix, read as it is written.
 		if entry.XMLName.Local == "meta" && entry.Refines == "" &&
 			entry.Property == "rendition:layout" {
 			read.layout = layout(entry.Value, read.layout)

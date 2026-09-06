@@ -676,7 +676,7 @@ func TestABookIsCutTheWayItAlwaysWas(t *testing.T) {
 	}
 
 	sizes := extract.sizes()
-	if want := "epub-1/large=200+40/small=50+10/limit=1000"; recipe(text.ReaderEPUB, sizes) != want {
+	if want := "epub-2/large=200+40/small=50+10/limit=1000"; recipe(text.ReaderEPUB, sizes) != want {
 		t.Errorf("a book is cut by %q, want %q", recipe(text.ReaderEPUB, sizes), want)
 	}
 	if got := index.sources[first.ID][bookPath].Recipe; got != recipe(text.ReaderEPUB, sizes) {

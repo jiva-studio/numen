@@ -349,9 +349,7 @@ func FuzzMarkup(f *testing.F) {
 // a person may not be sent to. It is put on the page unescaped, so whatever the
 // book wrote, this is what the browser parses.
 //
-// The runs say the document's text, in the order their offsets put them. A table
-// takes what stands between its cells and puts it before itself, which is why
-// they are read by offset and not by the order they are written in.
+// The runs say the document's text, in the order the markup writes them.
 func checkHTML(t *testing.T, book *epub.Book, doc epub.Document, drawn *epub.Markup) {
 	t.Helper()
 	root := parsed(t, drawn.HTML())

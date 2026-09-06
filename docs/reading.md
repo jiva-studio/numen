@@ -70,7 +70,7 @@ What crosses is the book's own markup taken down to the elements a book is read 
 
 **Where a person is.** An offset into the text, never a page: the number of pages belongs to the window and changes with its width and with the size the text is set at. It is the address a chunk, a search result and a passage already carry.
 
-**What is refused.** A book whose spine documents `META-INF/encryption.xml` names is ciphertext, and reading it produced text that was not the book's. It is refused, and nothing of it reaches the index. A book whose fonts alone are obfuscated reads as any other. A book of fixed layout says so and is not reflowed.
+**What is refused.** A book whose spine documents `META-INF/encryption.xml` names is ciphertext, and reading it produced text that was not the book's. It is refused, and none of it is cut into chunks. A vault cut before the refusal keeps the chunks the earlier reading produced: a source nothing can read is left as it stands, and taking the file out of the vault is what takes them out. A book whose fonts alone are obfuscated reads as any other. A book of fixed layout says so and is not reflowed.
 
 ## Parts
 

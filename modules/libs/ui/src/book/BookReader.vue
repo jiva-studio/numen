@@ -139,6 +139,9 @@ const setting = computed(() => ({
  * Where each run of the text stands, taken off the runs themselves. The first
  * of a run's rectangles is the one that counts: a run broken over a column edge
  * has one in each column, and it begins in the first.
+ *
+ * The markup writes the runs in the order of their offsets, and they are kept
+ * in it.
  */
 const gather = () => {
   const box = area.value
@@ -156,8 +159,6 @@ const gather = () => {
     const first = element.getClientRects()[0]
     if (first) placed.push({ at: said, x: first.left - origin })
   }
-  found.sort((one, two) => one.at - two.at)
-  placed.sort((one, two) => one.at - two.at)
   runs = found
   marks.value = placed
 }

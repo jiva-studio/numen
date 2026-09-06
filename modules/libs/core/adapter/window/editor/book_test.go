@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -199,6 +200,30 @@ func TestAnEntryThatIsNotAPictureIsNotServed(t *testing.T) {
 	}
 }
 
+// A book opening on an SVG cover is drawn from the picture the cover wraps, and
+// that address is one this window answers.
+func TestACoverIsDrawnFromThePictureItWraps(t *testing.T) {
+	vault := testsupport.NewVault(t, map[string]string{reflowed: string(coveredBook(t))})
+	api := &API{Readers: filesystem.VaultReaders{}, Viewer: looking(pdf.Documents{})}
+	api.show(vault)
+	t.Cleanup(api.Viewer.close)
+	handler := api.Serving(http.NotFoundHandler())
+	print := printOf(t, api, reflowed)
+
+	out := ask(handler, markupOf(reflowed, "OEBPS/cover.svg", print))
+	if out.Code != http.StatusOK {
+		t.Fatalf("asked for the cover and got %d: %s", out.Code, out.Body)
+	}
+	if page := out.Body.String(); !strings.Contains(page, `src="OEBPS/pictures/plate.png"`) {
+		t.Fatalf("the cover is drawn as\n%s", page)
+	}
+
+	drawn := ask(handler, entryOf(reflowed, "OEBPS/pictures/plate.png", print))
+	if drawn.Code != http.StatusOK {
+		t.Errorf("the picture the cover names came back %d", drawn.Code)
+	}
+}
+
 // An address names the bytes it is about, and is answered while the file is
 // still those bytes and no longer.
 func TestAnAddressIntoABookThatChanged(t *testing.T) {
@@ -236,7 +261,7 @@ func TestAPathTheVaultDoesNotHoldIsNoBook(t *testing.T) {
 
 // An archive is unpacked and parsed once, however many chapters are turned.
 func TestABookIsReadOnceHoweverManyChaptersAreTurned(t *testing.T) {
-	held := holding()
+	held := holding(mostRead, readIdleFor)
 	t.Cleanup(held.close)
 
 	var reads int
@@ -261,7 +286,7 @@ func TestABookIsReadOnceHoweverManyChaptersAreTurned(t *testing.T) {
 // Few are held: a book is the whole of its text in memory beside the archive it
 // was read out of.
 func TestOnlyTheBooksInFrontOfThePersonAreHeld(t *testing.T) {
-	held := holding()
+	held := holding(mostRead, readIdleFor)
 	t.Cleanup(held.close)
 
 	raw := bookOf(t)
@@ -271,22 +296,21 @@ func TestOnlyTheBooksInFrontOfThePersonAreHeld(t *testing.T) {
 			t.Fatalf("take the book: %v", err)
 		}
 	}
-	held.mu.Lock()
-	open := len(held.open)
-	held.mu.Unlock()
-	if open != mostRead {
-		t.Errorf("%d books are held, want %d", open, mostRead)
+	if got := openBooks(held); got != mostRead {
+		t.Errorf("%d books are held, want %d", got, mostRead)
 	}
 }
 
 // A caller that ran out of patience is told the book is busy, and the reading
 // goes on and is there for the next ask.
 func TestABookThatIsStillBeingReadIsBusy(t *testing.T) {
-	held := holding()
+	held := holding(mostRead, readIdleFor)
 	t.Cleanup(held.close)
 
 	gate := make(chan struct{})
+	var reads atomic.Int64
 	read := func() (*epub.Book, error) {
+		reads.Add(1)
 		<-gate
 		return epub.Read(bookOf(t))
 	}
@@ -301,6 +325,54 @@ func TestABookThatIsStillBeingReadIsBusy(t *testing.T) {
 	if _, err := held.take(t.Context(), print, read); err != nil {
 		t.Errorf("the book the first ask left open: %v", err)
 	}
+	if got := reads.Load(); got != 1 {
+		t.Errorf("the archive was read %d times, and the reading the first ask left running is one", got)
+	}
+}
+
+// A book nobody has asked about for a while is let go: what a book holds is
+// memory.
+func TestABookNobodyIsReadingIsLetGo(t *testing.T) {
+	held := holding(mostRead, time.Millisecond)
+	t.Cleanup(held.close)
+
+	print := fingerprint{path: reflowed, size: 1}
+	if _, err := held.take(t.Context(), print, func() (*epub.Book, error) { return epub.Read(bookOf(t)) }); err != nil {
+		t.Fatalf("take the book: %v", err)
+	}
+	for at := time.Now(); openBooks(held) != 0; {
+		if time.Since(at) > time.Second {
+			t.Fatal("a book nobody is reading is still held")
+		}
+		time.Sleep(time.Millisecond)
+	}
+}
+
+// What is open belongs to the vault it was opened in, and another vault coming
+// into the window is every book let go.
+func TestTheBooksOfAVaultAreLetGoWhenAnotherComesIn(t *testing.T) {
+	api, _ := readFrom(t)
+	whatBook(t, api)
+	if openBooks(api.Viewer.read.Load()) == 0 {
+		t.Fatal("reading a book left none held")
+	}
+
+	before := api.Viewer.read.Load()
+	api.Viewer.empty()
+
+	if got := openBooks(before); got != 0 {
+		t.Errorf("%d books of the vault that went are still held", got)
+	}
+	if got := openBooks(api.Viewer.read.Load()); got != 0 {
+		t.Errorf("the window came back to %d books open", got)
+	}
+}
+
+// openBooks is how many books are held.
+func openBooks(held *books) int {
+	held.mu.Lock()
+	defer held.mu.Unlock()
+	return len(held.open)
 }
 
 // readFrom is a window looking at one book of its vault.
@@ -369,6 +441,37 @@ func bookOf(t *testing.T) []byte {
 		lastDoc:                    `<html><body><h1>The Last Part</h1><p>Set apart from the reading order.</p></body></html>`,
 		"OEBPS/pictures/plate.png": plate,
 		"OEBPS/pictures/cover.svg": cover,
+	})
+}
+
+// coveredBook is an EPUB whose spine opens on an SVG cover drawn around a
+// picture the archive carries.
+func coveredBook(t *testing.T) []byte {
+	t.Helper()
+	return archived(t, map[string]string{
+		"mimetype": "application/epub+zip",
+		"META-INF/container.xml": `<?xml version="1.0"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+  <rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles>
+</container>`,
+		"OEBPS/content.opf": `<?xml version="1.0"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>A Covered Book</dc:title>
+    <dc:identifier id="id">covered</dc:identifier>
+  </metadata>
+  <manifest>
+    <item id="a" href="cover.svg" media-type="image/svg+xml"/>
+    <item id="b" href="first.xhtml" media-type="application/xhtml+xml"/>
+    <item id="c" href="pictures/plate.png" media-type="image/png"/>
+  </manifest>
+  <spine><itemref idref="a"/><itemref idref="b"/></spine>
+</package>`,
+		"OEBPS/cover.svg": `<svg xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 600 800">
+  <image width="600" height="800" xlink:href="pictures/plate.png"/></svg>`,
+		firstDoc:                   `<html><body><h1>The First Part</h1><p>Alpha.</p></body></html>`,
+		"OEBPS/pictures/plate.png": plate,
 	})
 }
 

@@ -119,23 +119,14 @@ func TestMarkup(t *testing.T) {
 	})
 }
 
-// A spine document that is a picture is a cover, and there is nothing in it to
-// reflow. It is answered as the picture it is, and what a reader draws is the
-// entry of the archive.
-func TestASpineDocumentThatIsAPicture(t *testing.T) {
-	book := read(t, spined(t, `<?xml version="1.0"?>
-		<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id">
-		  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>A Cover</dc:title></metadata>
-		  <manifest>
-		    <item id="a" href="cover.svg" media-type="image/svg+xml"/>
-		    <item id="b" href="one.xhtml" media-type="application/xhtml+xml"/>
-		  </manifest>
-		  <spine><itemref idref="a"/><itemref idref="b"/></spine>
-		</package>`, map[string]string{
-		"OEBPS/cover.svg": `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800">
-			<image width="600" height="800" xlink:href="plate.png"/></svg>`,
-		"OEBPS/one.xhtml": `<html><body><p>Nu.</p></body></html>`,
-	}))
+// A spine document that is an SVG is a cover drawn around a picture, and there
+// is nothing in it to reflow. What a reader draws is the picture it wraps: an
+// SVG served from the window's own origin is a document there, and its own
+// addresses reach no entry of the archive.
+func TestASpineDocumentThatIsACoverDrawnAroundAPicture(t *testing.T) {
+	book := read(t, coverBook(t, `<svg xmlns="http://www.w3.org/2000/svg"
+		xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 600 800">
+		<image width="600" height="800" xlink:href="pictures/plate.png"/></svg>`))
 
 	drawn, err := book.Markup("OEBPS/cover.svg")
 	if err != nil {
@@ -144,13 +135,81 @@ func TestASpineDocumentThatIsAPicture(t *testing.T) {
 	if len(drawn.Nodes) == 0 || drawn.Nodes[0].Name != "img" {
 		t.Fatalf("the cover was drawn as %v", drawn.Nodes)
 	}
-	if got := attribute(&drawn.Nodes[0], "src"); got != "OEBPS/cover.svg" {
-		t.Errorf("the cover is at %q", got)
+	if got := attribute(&drawn.Nodes[0], "src"); got != "OEBPS/pictures/plate.png" {
+		t.Errorf("the cover is drawn from %q", got)
+	}
+	if _, err := book.Entry(attribute(&drawn.Nodes[0], "src")); err != nil {
+		t.Errorf("the cover is drawn from an address the archive answers with %v", err)
 	}
 	doc := document(t, book, "OEBPS/cover.svg")
 	if want := book.Text[doc.Offset : doc.Offset+doc.Length]; said(drawn.Nodes) != want {
 		t.Errorf("the picture says %q and its text is %q", said(drawn.Nodes), want)
 	}
+}
+
+// A cover naming no picture of the archive draws none: an address the window
+// refuses is a broken picture on the page.
+func TestACoverThatWrapsNoPictureDrawsNone(t *testing.T) {
+	for _, one := range []struct{ name, svg string }{
+		{"nothing at all", `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800">
+			<rect width="600" height="800"/></svg>`},
+		{"an entry the archive does not hold", `<svg xmlns="http://www.w3.org/2000/svg"
+			xmlns:xlink="http://www.w3.org/1999/xlink"><image xlink:href="gone.png"/></svg>`},
+		{"an address off the machine", `<svg xmlns="http://www.w3.org/2000/svg"
+			xmlns:xlink="http://www.w3.org/1999/xlink"><image xlink:href="https://example.invalid/p.png"/></svg>`},
+	} {
+		t.Run(one.name, func(t *testing.T) {
+			drawn, err := read(t, coverBook(t, one.svg)).Markup("OEBPS/cover.svg")
+			if err != nil {
+				t.Fatalf("markup: %v", err)
+			}
+			if found := findAll(drawn.Nodes, "img"); len(found) != 0 {
+				t.Errorf("the cover drew %d pictures", len(found))
+			}
+		})
+	}
+}
+
+// A cover written in the version of SVG that names what it draws with href, and
+// one carrying the picture itself.
+func TestACoverNamesThePictureItDraws(t *testing.T) {
+	const written = "data:image/png;base64,iVBORw0KGgo="
+	for _, one := range []struct{ svg, want string }{
+		{`<svg xmlns="http://www.w3.org/2000/svg"><image href="pictures/plate.png"/></svg>`,
+			"OEBPS/pictures/plate.png"},
+		{`<svg xmlns="http://www.w3.org/2000/svg"><g><image href="` + written + `"/></g></svg>`, written},
+	} {
+		drawn, err := read(t, coverBook(t, one.svg)).Markup("OEBPS/cover.svg")
+		if err != nil {
+			t.Fatalf("markup: %v", err)
+		}
+		found := findAll(drawn.Nodes, "img")
+		if len(found) != 1 {
+			t.Fatalf("the cover drew %d pictures", len(found))
+		}
+		if got := attribute(found[0], "src"); got != one.want {
+			t.Errorf("the cover is drawn from %q, want %q", got, one.want)
+		}
+	}
+}
+
+// coverBook is a book whose spine opens with an SVG cover.
+func coverBook(t *testing.T, cover string) []byte {
+	t.Helper()
+	return spined(t, `<?xml version="1.0"?>
+		<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id">
+		  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>A Cover</dc:title></metadata>
+		  <manifest>
+		    <item id="a" href="cover.svg" media-type="image/svg+xml"/>
+		    <item id="b" href="one.xhtml" media-type="application/xhtml+xml"/>
+		    <item id="c" href="pictures/plate.png" media-type="image/png"/>
+		  </manifest>
+		  <spine><itemref idref="a"/><itemref idref="b"/></spine>
+		</package>`, map[string]string{
+		"OEBPS/cover.svg":          cover,
+		"OEBPS/one.xhtml":          `<html><body><p>Nu.</p></body></html>`,
+		"OEBPS/pictures/plate.png": "\x89PNG\r\n\x1a\n",
+	})
 }
 
 // document is one document of the book, by name.

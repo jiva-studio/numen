@@ -115,7 +115,7 @@ func looking(docs port.PageRenderer) *viewer {
 	}
 	v.docs.Store(keeping())
 	v.drawn.Store(drawings())
-	v.read.Store(holding())
+	v.read.Store(holding(mostRead, readIdleFor))
 	return v
 }
 
@@ -131,7 +131,7 @@ func (v *viewer) close() {
 // drops the pages drawn. It goes on looking, at whatever it is given next.
 func (v *viewer) empty() {
 	v.docs.Swap(keeping()).close()
-	v.read.Swap(holding()).close()
+	v.read.Swap(holding(mostRead, readIdleFor)).close()
 	v.drawn.Store(drawings())
 }
 
@@ -408,7 +408,7 @@ func refusedDrawing(err error) connect.Code {
 		return connect.CodeUnavailable
 	case errors.Is(err, errNoPage), errors.Is(err, epub.ErrNoDocument), errors.Is(err, epub.ErrNoEntry):
 		return connect.CodeNotFound
-	case errors.Is(err, port.ErrNotADocument), errors.Is(err, port.ErrEncrypted), notABook(err):
+	case errors.Is(err, port.ErrNotADocument), errors.Is(err, port.ErrEncrypted), misnamed(err):
 		return connect.CodeFailedPrecondition
 	default:
 		return reaching(err)
@@ -427,7 +427,7 @@ func refuse(w http.ResponseWriter, err error) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 	case errors.Is(err, port.ErrOutside):
 		http.Error(w, err.Error(), http.StatusBadRequest)
-	case errors.Is(err, port.ErrNotADocument), errors.Is(err, port.ErrEncrypted), notABook(err):
+	case errors.Is(err, port.ErrNotADocument), errors.Is(err, port.ErrEncrypted), misnamed(err):
 		http.Error(w, err.Error(), http.StatusUnsupportedMediaType)
 	case errors.Is(err, errNoVault):
 		http.Error(w, err.Error(), http.StatusConflict)

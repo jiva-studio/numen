@@ -1,7 +1,10 @@
 package epub
 
 import (
+	"bytes"
+	"encoding/xml"
 	"fmt"
+	"io"
 	"path"
 	"slices"
 	"strings"
@@ -62,13 +65,46 @@ func (b *Book) Markup(docPath string) (*Markup, error) {
 	read := x.document(docPath, raw)
 	nodes := x.markup.finish(string(x.out), read.Length)
 
-	// A spine document the manifest calls an SVG is one picture, and what a
-	// reader draws is the file itself.
+	// A spine document the manifest calls an SVG is a cover drawn around a
+	// picture, and what a reader draws is that picture. One that draws none is
+	// answered with the text it carries and nothing else.
 	if doc.mediaType == mediaSVG {
-		nodes = append([]Node{{Name: "img", Attributes: []Attribute{{Name: "src", Value: docPath}}}}, nodes...)
+		if at, ok := b.wrapped(path.Dir(docPath), raw); ok {
+			nodes = append([]Node{{Name: "img", Attributes: []Attribute{{Name: "src", Value: at}}}}, nodes...)
+		}
 	}
 	shift(nodes, doc.Offset)
 	return &Markup{Path: docPath, Offset: doc.Offset, Length: doc.Length, Nodes: nodes}, nil
+}
+
+// wrapped is the picture an SVG is drawn around: the first image element of it
+// naming an entry the archive holds, or one written into the file itself.
+func (b *Book) wrapped(base string, raw []byte) (string, bool) {
+	decoder := xml.NewDecoder(bytes.NewReader(raw))
+	decoder.Strict = false
+	decoder.CharsetReader = func(_ string, in io.Reader) (io.Reader, error) { return in, nil }
+	for {
+		token, err := decoder.Token()
+		if err != nil {
+			return "", false
+		}
+		start, ok := token.(xml.StartElement)
+		if !ok || start.Name.Local != "image" {
+			continue
+		}
+		for _, a := range start.Attr {
+			// An SVG names what it draws with href, and with xlink:href in the
+			// version most books are written in.
+			if a.Name.Local != "href" {
+				continue
+			}
+			switch at := picture(base, a.Value); {
+			case at == "":
+			case inlineImage(at), b.files[at] != nil:
+				return at, true
+			}
+		}
+	}
 }
 
 // A builder gathers the elements of one document as its text is read.
@@ -83,6 +119,9 @@ type builder struct {
 	base string
 	// stack is the elements standing open, the first being the document itself.
 	stack []Node
+	// waiting are the runs written in a table before its first cell, which the
+	// cell takes when it opens.
+	waiting []Node
 }
 
 func newBuilder(base string) *builder {
@@ -95,7 +134,12 @@ func (b *builder) opened(n *html.Node, offset int) bool {
 	if b == nil || !drawn[n.DataAtom] {
 		return false
 	}
-	b.stack = append(b.stack, Node{Name: n.Data, Offset: offset, Attributes: b.attributes(n)})
+	opening := Node{Name: n.Data, Offset: offset, Attributes: b.attributes(n)}
+	if cells[opening.Name] && len(b.waiting) > 0 {
+		opening.Children, opening.Offset = b.waiting, b.waiting[0].Offset
+		b.waiting = nil
+	}
+	b.stack = append(b.stack, opening)
 	return true
 }
 
@@ -105,18 +149,57 @@ func (b *builder) close() {
 	}
 	done := b.stack[len(b.stack)-1]
 	b.stack = b.stack[:len(b.stack)-1]
+	// A table that opened no cell keeps the runs written inside it, in the
+	// order they stand.
+	if len(b.waiting) > 0 && tabular[done.Name] && !tabular[b.stack[len(b.stack)-1].Name] {
+		done.Children, done.Offset = append(b.waiting, done.Children...), b.waiting[0].Offset
+		b.waiting = nil
+	}
 	b.hold(done)
 }
 
 // run marks a run of text written at an offset, whether it was written from the
 // markup or to end a line. What it says is filled in when the document has been
 // read, so a space taken back by the line that follows is taken back here too.
+//
+// A run written in a table stands inside a cell of it: a browser foster-parents
+// one standing between the cells out in front of the table.
 func (b *builder) run(offset int) {
 	if b == nil {
 		return
 	}
-	b.hold(Node{Offset: offset})
+	top := &b.stack[len(b.stack)-1]
+	switch cell := lastCell(top); {
+	case cell != nil:
+		cell.Children = append(cell.Children, Node{Offset: offset})
+	case tabular[top.Name]:
+		b.waiting = append(b.waiting, Node{Offset: offset})
+	default:
+		b.hold(Node{Offset: offset})
+	}
 }
+
+// lastCell is the last cell opened under an element, and nil where the element
+// is no part of a table or holds no cell yet.
+func lastCell(in *Node) *Node {
+	for tabular[in.Name] && len(in.Children) > 0 {
+		last := &in.Children[len(in.Children)-1]
+		if cells[last.Name] {
+			return last
+		}
+		in = last
+	}
+	return nil
+}
+
+// tabular are the elements that hold rows and cells and no text of their own,
+// and cells are the ones that hold text.
+var (
+	tabular = map[string]bool{
+		"table": true, "thead": true, "tbody": true, "tfoot": true, "tr": true,
+	}
+	cells = map[string]bool{"td": true, "th": true}
+)
 
 func (b *builder) hold(n Node) {
 	top := &b.stack[len(b.stack)-1]

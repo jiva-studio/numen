@@ -209,9 +209,10 @@ func progressing(said epub.Direction) v1.PageProgression {
 	}
 }
 
-// notABook is whether a file is no book at all, which is the one thing a person
-// can act on: the file in the vault is not what its name says it is.
-func notABook(err error) bool {
+// misnamed is whether the bytes are not what they are called: a file that is no
+// book, and an entry of one that is no picture. It is the one thing a person can
+// act on.
+func misnamed(err error) bool {
 	return errors.Is(err, epub.ErrNotArchive) ||
 		errors.Is(err, epub.ErrNoContainer) ||
 		errors.Is(err, epub.ErrNoPackage) ||

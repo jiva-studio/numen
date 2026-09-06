@@ -2,6 +2,7 @@ package epub_test
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/epub"
 )
 
-// update writes the spine document down again, and compares against none of it.
-var update = flag.Bool("update", false, "write the spine document of the corpus again")
+// update writes the goldens down again, and compares against none of them.
+var update = flag.Bool("update", false, "write the goldens of the corpus again")
 
 // spineCorpus is one spine document as this package emits it, which the window
 // that draws it is tested against. It stands with the corpora the two sides
@@ -25,6 +26,53 @@ const spineCorpus = "../../protocol/testdata/spine.html"
 // middleDoc is the document the corpus is taken from. A document stands before
 // it in the spine, so its offsets begin where nothing else does.
 const middleDoc = "OEBPS/middle.xhtml"
+
+// textGolden is the whole of one book as this package reads it: the text, and
+// where every document, part and printed page of it stands. A chunk keeps an
+// offset into that text and not the text itself, so a byte moving here moves
+// every chunk cut before it, and the name of the reader has to move with it.
+const textGolden = "testdata/seam.text"
+
+// A change meaning to move the text moves this file with it, under -update, and
+// the diff is what it moved.
+func TestABookIsReadAsTheGoldenSaysItIs(t *testing.T) {
+	got := written(read(t, seamBook(t)))
+	if *update {
+		if err := os.WriteFile(textGolden, []byte(got), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return
+	}
+	want, err := os.ReadFile(textGolden)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != string(want) {
+		t.Fatalf("the book is read as\n%s\nand the golden says\n%s", got, want)
+	}
+}
+
+// written is the book as the golden holds it. The text comes last, so a diff in
+// the numbers is read before a diff in the words.
+func written(book *epub.Book) string {
+	var out strings.Builder
+	fmt.Fprintf(&out, "title\t%s\ntier\t%s\nlayout\t%s\ndirection\t%s\nbytes\t%d\npage\t%d\npages\t%d\n",
+		book.Title, book.Tier, book.Layout, book.Direction, len(book.Text), book.PageBytes(), book.PageCount())
+	out.WriteString("\ndocuments\n")
+	for _, doc := range book.Documents {
+		fmt.Fprintf(&out, "\t%d\t%d\t%v\t%s\n", doc.Offset, doc.Length, doc.Linear, doc.Path)
+	}
+	out.WriteString("\nparts\n")
+	for _, part := range book.Parts {
+		fmt.Fprintf(&out, "\t%d\t%d\t%s\n", part.Offset, part.Level, part.Title)
+	}
+	out.WriteString("\nprinted\n")
+	for _, page := range book.Pages {
+		fmt.Fprintf(&out, "\t%d\t%s\n", page.Offset, page.Label)
+	}
+	fmt.Fprintf(&out, "\ntext\n%s", book.Text)
+	return out.String()
+}
 
 // A change meaning to move the markup moves this file with it, under -update,
 // and the diff is what it moved.

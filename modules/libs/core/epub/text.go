@@ -87,8 +87,6 @@ func (x *extractor) node(n *html.Node) {
 			x.markup.close()
 		}
 		return
-	case atom.Td, atom.Th:
-		x.write(" ")
 	}
 
 	block := blocks[n.DataAtom]
@@ -104,6 +102,11 @@ func (x *extractor) node(n *html.Node) {
 		x.preformattedDepth++
 	}
 	element := x.markup.opened(n, start)
+	if n.DataAtom == atom.Td || n.DataAtom == atom.Th {
+		// A cell is set off from the one before it by a space, and the space
+		// stands inside the cell it opens.
+		x.write(" ")
+	}
 	x.children(n)
 	if n.DataAtom == atom.Pre {
 		x.preformattedDepth--
