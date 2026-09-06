@@ -62,6 +62,19 @@ func pair(node *yaml.Node, key string) held {
 	return held{}
 }
 
+// valueOf is the node one key of an entry holds, or nil when it has no such key.
+func valueOf(item *yaml.Node, key string) *yaml.Node {
+	if item.Kind != yaml.MappingNode {
+		return nil
+	}
+	for i := 0; i+1 < len(item.Content); i += 2 {
+		if item.Content[i].Value == key {
+			return item.Content[i+1]
+		}
+	}
+	return nil
+}
+
 // carry puts the comment written on a key's own line onto the nodes replacing
 // it. A mapping or a list carries it on the key and a scalar on the value, so
 // both are read off both.
@@ -121,6 +134,14 @@ func (d *Document) commit(front []byte) error {
 		return err
 	}
 	return nil
+}
+
+// splice puts bytes in place of a range of the frontmatter.
+func (d *Document) splice(start, end int, rendered []byte) {
+	front := make([]byte, 0, len(d.front)-(end-start)+len(rendered))
+	front = append(front, d.front[:start]...)
+	front = append(front, rendered...)
+	d.front = append(front, d.front[end:]...)
 }
 
 // indent is the whitespace the frontmatter's own keys stand at. A block written

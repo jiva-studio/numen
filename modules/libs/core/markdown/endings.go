@@ -109,3 +109,18 @@ func columnOffset(block []byte, lines []int, line, column int) int {
 	}
 	return at
 }
+
+func leading(line string) string {
+	return line[:len(line)-len(strings.TrimLeft(line, " \t"))]
+}
+
+// offsetLine is the 1-based line a byte offset begins, or zero when it is the
+// end of the block.
+func offsetLine(lines []int, offset int) int {
+	for i, at := range lines {
+		if at == offset {
+			return i + 1
+		}
+	}
+	return 0
+}
