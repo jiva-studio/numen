@@ -24,8 +24,8 @@ graph TD
     P["a passage<br/>path, start, length"]
     VW["the viewer<br/>pages drawn here, highlights lit"]
 
-    F -->|text_from is null| TL
-    F -->|text_from names the producer| R
+    F -->|producer is null| TL
+    F -->|producer names what made the text| R
     R --> A
     R --> S
     S -.one run made them.- A
@@ -53,7 +53,7 @@ A text layer is deterministic local extraction, so it is read on every scan and 
 
 There is no reliable test of a text layer. A page of Chinese inside an English book is ordinary; a page of English recognised as Chinese is a defect; and nothing in the words says which. Which documents have been read is a question the index answers, so an agent asking for one is asking about a document it can see the state of.
 
-### `text_from` names the producer
+### `producer` names what made the text
 
 It holds a producer, never a filename. The files one reading is kept under are all composed from the producer and the hash, and the hash is a column already, so a name is composed where it is needed.
 
@@ -65,7 +65,7 @@ Three rules hold it together.
 
 Rule 3 is also what a sweep asks. A source that leaves the vault takes the files of its reading with it, and the question is whether **any** source still names that reading, never whether the path that named it went.
 
-`text_from` is not in the recipe. **A recipe names a procedure**, and it is compared against the strings the running binary produces, so a per-source value in it would leave every recognised source permanently unequal to all of them.
+`producer` is not in the recipe. **A recipe names a procedure**, and it is compared against the strings the running binary produces, so a per-source value in it would leave every recognised source permanently unequal to all of them.
 
 ### One reader type answers for every kind of source
 
