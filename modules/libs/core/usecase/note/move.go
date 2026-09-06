@@ -250,7 +250,11 @@ func (u Move) repair(
 	if err != nil {
 		return false, false, err
 	}
-	moved := inBlock + doc.PointProseAt(address, reaches)
+	inProse, err := doc.PointProseAt(address, reaches)
+	if err != nil {
+		return false, false, err
+	}
+	moved := inBlock + inProse
 	if moved == 0 {
 		return false, false, nil
 	}

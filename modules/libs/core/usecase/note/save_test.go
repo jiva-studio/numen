@@ -62,6 +62,25 @@ func TestSavingANoteWhoseFrontmatterIsWrittenOnOneLine(t *testing.T) {
 	}
 }
 
+// A note whose frontmatter block is never closed has no prose of its own: the
+// whole file, keys and all, stands as its body. A save writes the tab's prose
+// over the body, so it would write over the half-written block, and the person
+// would lose the keys they were in the middle of typing. They are told the note
+// cannot be read instead, and the file is left as it is.
+func TestASaveOverANoteWhoseFrontmatterNeverClosesIsRefused(t *testing.T) {
+	t.Parallel()
+	half := "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRC\ntitle: Heat death\n"
+	c := changeable(t, map[string]string{"Heat.md": half})
+
+	_, err := c.saving().Save(t.Context(), c.vault, "Heat.md", "# Heat death\n\nMine.\n", nil)
+	if !errors.Is(err, note.ErrUnterminated) {
+		t.Fatalf("want ErrUnterminated, got %v", err)
+	}
+	if body := c.read(t, "Heat.md"); body != half {
+		t.Errorf("the half-written block was written over\n want %q\n  got %q", half, body)
+	}
+}
+
 // A note renamed or removed under an open tab is put back where it was opened.
 func TestSavingANoteThatIsNotThereMakesIt(t *testing.T) {
 	t.Parallel()

@@ -265,7 +265,10 @@ func TestPointingALinkSomewhereElseChangesOnlyTheAddress(t *testing.T) {
 	if err != nil {
 		t.Fatalf("point links: %v", err)
 	}
-	inProse := d.PointProseAt(from, "Entropy")
+	inProse, err := d.PointProseAt(from, "Entropy")
+	if err != nil {
+		t.Fatalf("point prose: %v", err)
+	}
 	if inBlock != 1 || inProse != 1 {
 		t.Fatalf("want one of each, got %d in the block and %d in prose", inBlock, inProse)
 	}
@@ -420,7 +423,11 @@ func TestANameNoAddressCanSpellIsNotWrittenIn(t *testing.T) {
 			if err != nil {
 				t.Fatalf("point links: %v", err)
 			}
-			if inBlock != 0 || d.PointProseAt(from, name) != 0 {
+			inProse, err := d.PointProseAt(from, name)
+			if err != nil {
+				t.Fatalf("point prose: %v", err)
+			}
+			if inBlock != 0 || inProse != 0 {
 				t.Errorf("a name no link can spell was written in anyway:\n%s", d.Bytes())
 			}
 			if got := string(d.Bytes()); got != raw {
@@ -441,6 +448,30 @@ func TestANoteWithAnUnclosedBlockRefusesAFrontmatterWrite(t *testing.T) {
 	}
 	if err := d.SetIdentifier("01J8"); !errors.Is(err, ErrUnterminated) {
 		t.Fatalf("want ErrUnterminated, got %v", err)
+	}
+	if got := string(d.Bytes()); got != raw {
+		t.Errorf("the note changed\n want %q\n  got %q", raw, got)
+	}
+}
+
+// The whole of such a file stands as its body, so writing the prose writes over
+// the half-written block, and pointing the prose's links at a new name reaches
+// the links inside it.
+func TestANoteWithAnUnclosedBlockRefusesABodyWrite(t *testing.T) {
+	raw := "---\ntitle: theirs\nlinks:\n  - to: notes/Old\n"
+	d, err := Open([]byte(raw))
+	if err != nil {
+		t.Fatalf("reading it is still fine: %v", err)
+	}
+	if err := d.SetBody("mine\n"); !errors.Is(err, ErrUnterminated) {
+		t.Fatalf("SetBody: want ErrUnterminated, got %v", err)
+	}
+	moved, err := d.PointProseAt(domain.ParseAddress("notes/Old"), "New")
+	if !errors.Is(err, ErrUnterminated) {
+		t.Fatalf("PointProseAt: want ErrUnterminated, got %v", err)
+	}
+	if moved != 0 {
+		t.Errorf("it moved %d links", moved)
 	}
 	if got := string(d.Bytes()); got != raw {
 		t.Errorf("the note changed\n want %q\n  got %q", raw, got)

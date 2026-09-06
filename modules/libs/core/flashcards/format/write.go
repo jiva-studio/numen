@@ -87,7 +87,9 @@ func (f *DeckFile) Whole(
 	if err != nil {
 		return nil, err
 	}
-	f.doc.SetBody(body)
+	if err := f.doc.SetBody(body); err != nil {
+		return nil, err
+	}
 	return minted, nil
 }
 

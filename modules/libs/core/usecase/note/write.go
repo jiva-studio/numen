@@ -108,6 +108,11 @@ func (u Write) Execute(
 		// a person watching sees is the change and not the note.
 		was := markdown.Normalised(doc.Body())
 		at, insert := markdown.Differs(was, markdown.Normalised(body))
+		// Told after the write is settled: a refusal is not a stretch anybody
+		// watching should see change.
+		if err := doc.SetBody(body); err != nil {
+			return err
+		}
 		if at.From != at.To || insert != "" {
 			ends = u.Telling.begins(ctx, u.Now, domain.Edit{
 				Path: path,
@@ -116,7 +121,6 @@ func (u Write) Execute(
 				Text: insert,
 			})
 		}
-		doc.SetBody(body)
 		return nil
 	})
 }
@@ -174,8 +178,7 @@ func (u Write) Save(
 		Bound:     u.bound(),
 	}
 	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
-		doc.SetBody(body)
-		return nil
+		return doc.SetBody(body)
 	})
 }
 

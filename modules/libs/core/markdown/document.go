@@ -88,10 +88,9 @@ func Open(raw []byte) (*Document, error) {
 	}
 
 	// A file that opens with the delimiter and never closes it is somebody's
-	// frontmatter with a line missing. The whole of it stands as body here.
-	// The frontmatter writers and SpliceBody refuse it; SetBody and
-	// PointProseAt do not, and either replaces the file, half-written block and
-	// all.
+	// frontmatter with a line missing. The whole of it stands as body here, so
+	// nothing written to the body is written: what a write would replace is the
+	// half-written block as well as the prose.
 	d.body = rest
 	d.unterminated = true
 	return d, nil
@@ -126,7 +125,14 @@ func (d *Document) Body() string { return string(d.body) }
 
 // SetBody replaces the prose and leaves the frontmatter alone. The prose is
 // written with the file's own line ending, and ends with one.
-func (d *Document) SetBody(body string) {
+//
+// A note whose frontmatter block is never closed holds no prose to replace —
+// the whole file stands as its body — so this is ErrUnterminated and the file
+// is left as it is.
+func (d *Document) SetBody(body string) error {
+	if d.unterminated {
+		return ErrUnterminated
+	}
 	text := Normalised(body)
 	if text != "" && !strings.HasSuffix(text, "\n") {
 		text += "\n"
@@ -135,6 +141,7 @@ func (d *Document) SetBody(body string) {
 		text = strings.ReplaceAll(text, "\n", "\r\n")
 	}
 	d.body = []byte(text)
+	return nil
 }
 
 // SpliceBody replaces one run of the prose, addressed by bytes of the body as

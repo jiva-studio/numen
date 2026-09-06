@@ -122,6 +122,9 @@ func (u Replace) Execute(
 
 		span := where[0]
 		written := body[:span.From] + becomes + body[span.To:]
+		if err := doc.SetBody(written); err != nil {
+			return err
+		}
 
 		// A client counts text its own way, and a span named in bytes lands
 		// somewhere else in prose that is not ASCII.
@@ -135,7 +138,6 @@ func (u Replace) Execute(
 		done.Span = markdown.Span{From: span.From, To: span.From + len(becomes)}
 		done.Matched = body[span.From:span.To]
 		done.Plainly = plainly
-		doc.SetBody(written)
 		return nil
 	})
 	if err != nil {

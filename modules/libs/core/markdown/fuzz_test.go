@@ -105,7 +105,9 @@ func FuzzSetBody(f *testing.F) {
 			return
 		}
 		head := string(d.bom) + string(d.open) + string(d.front) + string(d.shut)
-		d.SetBody(body)
+		if err := d.SetBody(body); err != nil {
+			return
+		}
 		if got := string(d.Bytes()); !strings.HasPrefix(got, head) {
 			t.Fatalf("writing the prose changed the frontmatter\n want %q\n  got %q", head, got)
 		}

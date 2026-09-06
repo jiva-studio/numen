@@ -127,7 +127,9 @@ func (u Write) stencil(
 	e := note.NewEdit(u.Readers, u.Writers, u.Index, u.Now)
 	e.Fingerprint, e.Bound = fingerprint, note.MaxBytes
 	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
-		doc.SetBody(body)
+		if err := doc.SetBody(body); err != nil {
+			return err
+		}
 		// A stencil already declaring these, in this order, keeps the bytes the
 		// person wrote them as.
 		if declared, _ := doc.List(fieldsKey); !slices.Equal(declared, fields) {

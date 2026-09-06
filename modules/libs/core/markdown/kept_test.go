@@ -132,7 +132,7 @@ func TestWhatTheApplicationDoesNotOwnIsKeptVerbatim(t *testing.T) {
 					"Height", "Weight", "Shoulder height",
 				}), 0, 3).Draw(t, "names"))
 			case "body":
-				doc.SetBody(rapid.SampledFrom([]string{
+				err = doc.SetBody(rapid.SampledFrom([]string{
 					"", "new prose\n", "# A heading\n\nand a sentence\n",
 				}).Draw(t, "prose"))
 			}
