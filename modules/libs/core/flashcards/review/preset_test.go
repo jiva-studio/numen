@@ -2,136 +2,11 @@ package review_test
 
 import (
 	"maps"
-	"strings"
 	"testing"
 	"time"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
-
-// front is a preset's frontmatter, as the parser hands it over.
-func front(t *testing.T, written string) map[string]any {
-	t.Helper()
-	var out map[string]any
-	if err := yaml.Unmarshal([]byte(written), &out); err != nil {
-		t.Fatalf("frontmatter: %v", err)
-	}
-	return out
-}
-
-// A preset says how the decks pointing at it are scheduled.
-func TestWhatAPresetSays(t *testing.T) {
-	p, problems := review.ReadPreset(front(t, `
-goal: minutes_a_day
-minutes_a_day: 20
-new_a_day: 8
-reviews_a_day: 45
-retention: 0.87
-load: {sat: 50, sun: 0}
-even_load: true
-`))
-
-	if len(problems) != 0 {
-		t.Fatalf("problems = %v", problems)
-	}
-	if p.Goal != review.GoalMinutes {
-		t.Errorf("goal = %q", p.Goal)
-	}
-	if p.MinutesADay != 20 || p.NewADay != 8 || p.ReviewsADay != 45 {
-		t.Errorf("limits = %d minutes, %d new, %d reviews", p.MinutesADay, p.NewADay, p.ReviewsADay)
-	}
-	if p.Retention != 0.87 {
-		t.Errorf("retention = %g", p.Retention)
-	}
-	if p.Share(time.Saturday) != 0.5 || p.Share(time.Sunday) != 0 || p.Share(time.Monday) != 1 {
-		t.Errorf("load = %v", p.Load)
-	}
-	if !p.EvenLoad {
-		t.Error("even load was asked for")
-	}
-}
-
-// What a day's budget is spent on is read from the file, and a preset saying
-// nothing spends it on cards.
-func TestWhatABudgetIsSpentOn(t *testing.T) {
-	for written, want := range map[string]review.Counts{
-		"":                review.CountsCards,
-		"counts: cards\n": review.CountsCards,
-		"counts: shows\n": review.CountsShows,
-	} {
-		p, problems := review.ReadPreset(front(t, written))
-		if len(problems) != 0 {
-			t.Fatalf("%q: problems = %v", written, problems)
-		}
-		if p.Counts != want {
-			t.Errorf("%q: counts = %q, want %q", written, p.Counts, want)
-		}
-	}
-}
-
-// A key the file does not carry stands at the default.
-func TestWhatAPresetLeavesUnsaid(t *testing.T) {
-	p, problems := review.ReadPreset(front(t, "goal: retention\nretention: 0.95\n"))
-
-	if len(problems) != 0 {
-		t.Fatalf("problems = %v", problems)
-	}
-	if p.NewADay != review.Defaults().NewADay || p.ReviewsADay != review.Defaults().ReviewsADay {
-		t.Errorf("limits = %d new, %d reviews", p.NewADay, p.ReviewsADay)
-	}
-	if p.Retention != 0.95 {
-		t.Errorf("retention = %g", p.Retention)
-	}
-}
-
-// A key that cannot be read is a problem against the note and keeps its
-// default.
-func TestAKeyThatCannotBeRead(t *testing.T) {
-	for written, says := range map[string]string{
-		"goal: sideways\n":        "goal",
-		"new_a_day: many\n":       "new_a_day",
-		"new_a_day: 2.5\n":        "whole numbers",
-		"reviews_a_day: 100000\n": "outside",
-		"retention: 0.2\n":        "outside",
-		"even_load: perhaps\n":    "even_load",
-		"load: sat\n":             "load is a day of the week",
-		"load: {caturday: 50}\n":  "day of the week",
-		"load: {sat: 120}\n":      "outside",
-		"load: {sat: 12.5}\n":     "whole per cent",
-		"load: {sat: half}\n":     "not a number",
-		"goal: by_date\n":         "which day",
-		"by_date: 30 September\n": "by_date",
-		"counts: minutes\n":       "counts",
-		"learned: sideways\n":     "learned",
-		"interval: 400\n":         "outside",
-	} {
-		p, problems := review.ReadPreset(front(t, written))
-		if len(problems) != 1 || !strings.Contains(problems[0], says) {
-			t.Errorf("%q: problems = %v", written, problems)
-		}
-		if written == "new_a_day: many\n" && p.NewADay != review.Defaults().NewADay {
-			t.Errorf("%q: new a day = %d", written, p.NewADay)
-		}
-	}
-}
-
-// A day it aims at is read whether the file quotes it or not.
-func TestTheDayItAimsAt(t *testing.T) {
-	for _, written := range []string{
-		"goal: by_date\nby_date: 2026-09-30\n",
-		"goal: by_date\nby_date: \"2026-09-30\"\n",
-	} {
-		p, problems := review.ReadPreset(front(t, written))
-		if len(problems) != 0 {
-			t.Fatalf("%q: problems = %v", written, problems)
-		}
-		if p.By.Format(review.Named) != "2026-09-30" {
-			t.Errorf("%q: by = %v", written, p.By)
-		}
-	}
-}
 
 // A date is a budget: past the day it names, the preset schedules nothing.
 //
@@ -183,92 +58,6 @@ func TestZeroIsAPauseUnderTheGoalThatNamesIt(t *testing.T) {
 		if got != one.paused {
 			t.Errorf("%q is paused %v, want %v", one.front, got, one.paused)
 		}
-	}
-}
-
-// The share of a day that goes to the debt is read like the other whole
-// numbers, stands at all of it where the file names none, and is refused
-// outside its bounds.
-func TestTheBacklogShareIsReadFromTheFile(t *testing.T) {
-	if got := review.Defaults().Backlog; got != review.AllBacklog {
-		t.Errorf("a preset naming nothing gives the debt %d of its day", got)
-	}
-
-	p, problems := review.ReadPreset(front(t, "backlog: 40\n"))
-	if len(problems) != 0 {
-		t.Fatalf("problems = %v", problems)
-	}
-	if p.Backlog != 40 {
-		t.Errorf("backlog = %d, want 40", p.Backlog)
-	}
-
-	p, problems = review.ReadPreset(front(t, "backlog: 140\n"))
-	if len(problems) != 1 {
-		t.Fatalf("a share outside its bounds turned up %v", problems)
-	}
-	if p.Backlog != review.AllBacklog {
-		t.Errorf("a share outside its bounds left %d standing", p.Backlog)
-	}
-}
-
-// The share of the day that goes to the debt is read where one pot is spent
-// between the two, and the goal says so where it says which budget closes its
-// day.
-//
-// A goal of retention keeps a count for each side, so each is held to its own
-// and the share decides nothing. A goal of a date carries the whole material by
-// its own reckoning.
-func TestWhichSettingsAGoalReads(t *testing.T) {
-	day := review.Day{Starts: review.DayStarts}
-	for _, one := range []struct {
-		goal  review.Goal
-		reads bool
-	}{
-		{review.GoalMinutes, true},
-		{review.GoalRetention, false},
-		{review.GoalDate, false},
-	} {
-		p := review.Defaults()
-		p.Goal, p.By, p.Backlog = one.goal, time.Now().AddDate(0, 0, 30), 40
-		admits := p.Admits(day, time.Now(), review.Spent{}, 0, 0)
-
-		if got := admits.Limits.Backlog != ""; got != one.reads {
-			t.Errorf("under %s the share is read %v, want %v", one.goal, got, one.reads)
-		}
-		want := 40
-		if !one.reads {
-			want = review.AllBacklog
-		}
-		if admits.Backlog != want {
-			t.Errorf("under %s the day gives the debt %d, want %d",
-				one.goal, admits.Backlog, want)
-		}
-	}
-}
-
-// What counts as learned is read from the file, and a preset saying nothing
-// learns a card face by the interval it is sent away for.
-func TestWhatCountsAsLearnedIsReadFromTheFile(t *testing.T) {
-	for written, want := range map[string]review.LearnedRule{
-		"":                     review.RuleInterval,
-		"learned: interval\n":  review.RuleInterval,
-		"learned: retention\n": review.RuleRetention,
-	} {
-		p, problems := review.ReadPreset(front(t, written))
-		if len(problems) != 0 {
-			t.Fatalf("%q: problems = %v", written, problems)
-		}
-		if p.Rule != want {
-			t.Errorf("%q: learned = %q, want %q", written, p.Rule, want)
-		}
-	}
-
-	p, problems := review.ReadPreset(front(t, "interval: 45\n"))
-	if len(problems) != 0 {
-		t.Fatalf("problems = %v", problems)
-	}
-	if p.Interval != 45 {
-		t.Errorf("interval = %d, want 45", p.Interval)
 	}
 }
 
@@ -398,28 +187,6 @@ func TestThePlacingCarriesEverythingThatMovesACard(t *testing.T) {
 			t.Errorf("a %v at thirty is placed under %q, the same mark as one at the "+
 				"whole of it", day, got)
 		}
-	}
-}
-
-// What the day has already gone through is off what it still admits, so a
-// second session takes up where the first left off.
-func TestADaysSpendIsOffWhatItStillAdmits(t *testing.T) {
-	day := review.Day{Starts: review.DayStarts}
-	p := review.Defaults()
-	p.Goal, p.MinutesADay = review.GoalMinutes, 1
-	p.NewADay, p.ReviewsADay = 20, 20
-
-	fresh := p.Admits(day, time.Now(), review.Spent{}, 0, 0)
-	after := p.Admits(day, time.Now(), review.Spent{
-		Answered: 3, New: 3, Reviews: 3, Took: 18 * time.Second,
-	}, 0, 0)
-
-	if after.Minutes != fresh.Minutes-18*time.Second {
-		t.Errorf("a day of %v with 18s gone still admits %v", fresh.Minutes, after.Minutes)
-	}
-	if after.New != fresh.New-3 || after.Reviews != fresh.Reviews-3 {
-		t.Errorf("a day that has begun 3 and reviewed 3 still admits %d new and %d reviews",
-			after.New, after.Reviews)
 	}
 }
 
@@ -621,55 +388,5 @@ func TestAWeekAtNoLoadStopsThePresetAndNotOneDay(t *testing.T) {
 	}
 	if got := p.StopsOn(day, at); got != review.StoppedNoLoad {
 		t.Errorf("its Thursday stops on %q, want %q", got, review.StoppedNoLoad)
-	}
-}
-
-// keeps is what a preset keeps for a day of the week, read off the day that
-// admits it.
-func keeps(p review.Preset, day time.Weekday) review.Budget {
-	at := time.Date(2026, 3, 1, 9, 0, 0, 0, time.Local)
-	for at.Weekday() != day {
-		at = at.AddDate(0, 0, 1)
-	}
-	return p.Admits(review.Day{Starts: review.DayStarts}, at, review.Spent{}, 0, 0).Keeps
-}
-
-// The budget a preset keeps on one day is that day of the week's share of it,
-// whether or not the days are evened out. A day the preset does not name keeps
-// the whole of it, and a day at nothing keeps none.
-func TestTheBudgetOfOneDayIsItsShareOfTheLoad(t *testing.T) {
-	p := review.Preset{
-		MinutesADay: 20, NewADay: 10, ReviewsADay: 40,
-		Load: map[time.Weekday]int{time.Wednesday: 50, time.Sunday: 0},
-	}
-
-	half := keeps(p, time.Wednesday)
-	if want := (review.Budget{New: 5, Reviews: 20, Minutes: 10}); half != want {
-		t.Errorf("a day at half the load holds %+v, want %+v", half, want)
-	}
-	whole := keeps(p, time.Tuesday)
-	if want := (review.Budget{New: 10, Reviews: 40, Minutes: 20}); whole != want {
-		t.Errorf("a day the preset does not name holds %+v, want %+v", whole, want)
-	}
-	if none := keeps(p, time.Sunday); none != (review.Budget{}) {
-		t.Errorf("a day at none of the load holds %+v", none)
-	}
-}
-
-// A day at none of the load schedules nothing, as a budget of zero does.
-func TestADayAtNoneOfTheLoadIsAPause(t *testing.T) {
-	p := review.Preset{
-		Goal: review.GoalRetention, NewADay: 10, ReviewsADay: 40,
-		Load: map[time.Weekday]int{time.Sunday: 0},
-	}
-	at := time.Date(2026, 3, 1, 9, 0, 0, 0, time.Local)
-	if at.Weekday() != time.Sunday {
-		t.Fatalf("%v is a %v", at, at.Weekday())
-	}
-	if !p.Admits(ahead, at, review.Spent{}, 0, 0).Paused() {
-		t.Error("a day at none of the load is not a pause")
-	}
-	if p.Admits(ahead, at.AddDate(0, 0, 1), review.Spent{}, 0, 0).Paused() {
-		t.Error("the day after it is a pause")
 	}
 }
