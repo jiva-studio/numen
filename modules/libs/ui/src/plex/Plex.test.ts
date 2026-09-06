@@ -6,7 +6,8 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import Plex from './Plex.vue'
-import { DEFAULT_OPTIONS } from './arrange'
+import { DEFAULT_OPTIONS, type Size } from './arrange'
+import type { Viewport } from '../lib/viewport'
 import { neighbourhoods } from './fixtures/neighbourhoods'
 
 /** No movement unless a test is about movement. */
@@ -323,5 +324,28 @@ describe('being given the next neighbourhood', () => {
     // Four clicks in a second end at the fourth, not at a queue of three.
     expect(plex.find('[aria-label^="Recursive CTE"]').exists()).toBe(true)
     expect(plex.vm.moving).toBe(false)
+  })
+})
+
+describe('how much room the plex has', () => {
+  /** A window of the size a test names, whatever the machine laid out. */
+  const roomOf = (size: Size): Viewport => ({
+    watch: (_of, took) => {
+      took(size)
+      return () => {}
+    },
+  })
+
+  it('draws to the size it is handed', async () => {
+    const plex = mountPlex({ viewport: roomOf({ width: 900, height: 700 }) })
+    await nextTick()
+    expect(plex.get('svg').attributes('viewBox')).toBe('-450 -350 900 700')
+  })
+
+  it('lets go of the watching when it is taken down', () => {
+    const stop = vi.fn()
+    const plex = mountPlex({ viewport: { watch: () => stop } })
+    plex.unmount()
+    expect(stop).toHaveBeenCalledOnce()
   })
 })

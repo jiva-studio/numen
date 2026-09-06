@@ -24,7 +24,8 @@ import { byHandle, type ReachStrategy } from './reaching'
 import { byDoubleClick, type ShowStrategy } from './showing'
 import { hangParts, type PlexPart } from './inside'
 import { usePlexTransition, browserClock, type Clock } from './transition'
-import type { Placement, PlexOptionsInput } from './arrange'
+import { browserViewport, type Viewport } from '../lib/viewport'
+import type { Placement, PlexOptionsInput, Size } from './arrange'
 import type { PlexNeighbourhood } from './neighbourhood'
 import type { PlacedNode, Position } from './node'
 import { countOf, seatWord, type PlexRelatedSeat } from './seat'
@@ -45,6 +46,11 @@ const props = withDefaults(
     duration?: number
     /** The clock. Browser by default; a test hands in its own. */
     clock?: Clock
+    /**
+     * How much room the plex has, and what it becomes. Browser by default; a
+     * test hands in its own and every coordinate is then a value it can name.
+     */
+    viewport?: Viewport
     /**
      * Seats a gesture may produce. A sibling is another of the parent's
      * children, so it is left out; which relationships exist is the caller's
@@ -89,6 +95,7 @@ const props = withDefaults(
     showEdgeLabels: true,
     duration: 420,
     clock: () => browserClock,
+    viewport: () => browserViewport,
     creatable: () => ['parent', 'child', 'jump'],
     dragThreshold: 8,
     dwell: DWELL,
@@ -144,30 +151,28 @@ defineSlots<{
   overflow?(props: { overflow: readonly [PlexRelatedSeat, number][] }): unknown
 }>()
 
-/** What the window is taken to be until it has been measured. */
+/** What the room is taken to be until it has been measured. */
 const FALLBACK = { width: 1200, height: 800 }
 
 const frameElement = useTemplateRef<HTMLElement>('frame')
 /** The drawing, which a drag crossing the plex is measured against. */
 const view = useTemplateRef<InstanceType<typeof PlexView>>('view')
-const viewport = ref(FALLBACK)
+/** How much room the plex has, as it was last measured. */
+const room = ref<Size>(FALLBACK)
 
 onMounted(() => {
   const element = frameElement.value
-  if (!element || typeof ResizeObserver === 'undefined') return
+  if (!element) return
 
-  const observer = new ResizeObserver(([entry]) => {
-    const box = entry?.contentRect
-    if (box && box.width > 0 && box.height > 0) {
-      viewport.value = { width: box.width, height: box.height }
-    }
-  })
-  observer.observe(element)
-  onScopeDispose(() => observer.disconnect())
+  onScopeDispose(
+    props.viewport.watch(element, (size) => {
+      room.value = size
+    }),
+  )
 })
 
 /** Settled once and read by the measuring, the gesture and the drawing. */
-const options = computed(() => resolveOptions({ ...props.options, viewport: viewport.value }))
+const options = computed(() => resolveOptions({ ...props.options, viewport: room.value }))
 
 const slots = useSlots()
 
@@ -197,7 +202,7 @@ const widen = computed(() => {
   if (!measure) return undefined
 
   const { margin } = options.value
-  const within = viewport.value
+  const within = room.value
   return (node: PlacedNode) => widenedFor(node, measure(node), within, margin)
 })
 
@@ -210,14 +215,14 @@ const hung = computed(() => {
   if (!held) return undefined
 
   const { margin } = options.value
-  const deps = { measure: measures.value?.part, viewport: viewport.value, margin }
+  const deps = { measure: measures.value?.part, viewport: room.value, margin }
   return (node: PlacedNode) => hangParts(node, held(node.id), options.value, deps)
 })
 
 const { frame, moving } = usePlexTransition(
   () => props.neighbourhood,
   () => ({
-    options: { ...props.options, viewport: viewport.value },
+    options: { ...props.options, viewport: room.value },
     placement: props.placement,
     measure: measures.value?.node,
     measureLabel: measures.value?.label,
@@ -263,7 +268,7 @@ const dragging = usePlexDrag({
   dragged: () => props.dragged,
   frame: () => frame.value,
   options: () => options.value,
-  viewport: () => viewport.value,
+  viewport: () => room.value,
   allowed: () => props.creatable,
   threshold: () => props.dragThreshold,
   settle: (dragged, seat) => emit('bring', dragged, seat),
@@ -307,7 +312,7 @@ defineExpose({
     <PlexView
       ref="view"
       :frame="frame"
-      :viewport="viewport"
+      :viewport="room"
       :node-size="options.nodeSize"
       :show-edge-labels="showEdgeLabels"
       :may-reach="mayReach"
