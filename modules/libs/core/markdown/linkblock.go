@@ -583,3 +583,13 @@ func (d *Document) Links() ([]domain.Link, error) {
 	}
 	return out, nil
 }
+
+// linkEntry is one record of the `links:` block, in the order the format
+// specification lists the fields.
+type linkEntry struct {
+	To    string `yaml:"to"`
+	Role  string `yaml:"role"`
+	Type  string `yaml:"type,omitempty"`
+	Note  string `yaml:"note,omitempty"`
+	Label string `yaml:"label,omitempty"`
+}
