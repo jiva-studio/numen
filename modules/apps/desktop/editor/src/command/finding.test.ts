@@ -208,7 +208,7 @@ describe('answers arriving', () => {
   it('says the vault holds no vectors, where meaning came back with nothing', async () => {
     const vault = asking()
     const read = { chunks: 4, embedded: 0, embedding: true }
-    const palette = finding(vault.core, WORDS, { wait: now, reading: () => read })
+    const palette = finding(vault.core, WORDS, { wait: now, coverage: () => read })
 
     void palette.typing('ent')
     await settled()
@@ -225,7 +225,7 @@ describe('answers arriving', () => {
   it('says nothing reads the vault for meaning, where nothing is set to', async () => {
     const vault = asking()
     const read = { chunks: 4, embedded: 0, embedding: false }
-    const palette = finding(vault.core, WORDS, { wait: now, reading: () => read })
+    const palette = finding(vault.core, WORDS, { wait: now, coverage: () => read })
 
     void palette.typing('ent')
     await settled()

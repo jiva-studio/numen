@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { cornerOf, type State, type Words } from './corner'
 import type { Task } from '../core'
-import type { Meaning } from './meaning'
+import type { IndexCoverage } from './coverage'
 import type { WindowMessage } from './telling'
 
 const words: Words = {
@@ -28,7 +28,7 @@ const well = (over: Partial<State> = {}): State => ({
   ...over,
 })
 
-const vault = (over: Partial<Meaning> = {}): Meaning => ({
+const vault = (over: Partial<IndexCoverage> = {}): IndexCoverage => ({
   chunks: 0,
   embedded: 0,
   embedding: true,
@@ -59,8 +59,8 @@ const corner = (
   tasks: readonly Task[] = [],
   said: readonly WindowMessage[] = [],
   state: State = well(),
-  meaning: Meaning = vault(),
-) => cornerOf(tasks, said, state, meaning, words)
+  coverage: IndexCoverage = vault(),
+) => cornerOf(tasks, said, state, coverage, words)
 
 describe('a document being read', () => {
   it('draws one card, whatever else the vault says about itself', () => {

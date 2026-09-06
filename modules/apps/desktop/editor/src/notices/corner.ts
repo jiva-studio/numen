@@ -8,7 +8,7 @@
 import { noticed } from '@numen/ui'
 import type { Notice, Stay, Tone } from '@numen/ui'
 import type { Task } from '../core'
-import { wordsOnly, type Meaning } from './meaning'
+import { wordsOnly, type IndexCoverage } from './coverage'
 import type { MessageKind, WindowMessage } from './telling'
 
 /** The sentences the corner draws that are the window's own. */
@@ -105,7 +105,7 @@ export const cornerOf = (
   tasks: readonly Task[],
   told: readonly WindowMessage[],
   state: State,
-  vault: Meaning,
+  vault: IndexCoverage,
   words: Words,
 ): readonly Notice[] => {
   const working: readonly Notice[] = alone(tasks).map(noticed)

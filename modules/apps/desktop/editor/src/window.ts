@@ -14,7 +14,7 @@ import { showing } from './showing'
 import { view } from './plex/view'
 import { reading } from './document/reading'
 import { cornerOf } from './notices/corner'
-import type { Meaning } from './notices/meaning'
+import type { IndexCoverage } from './notices/coverage'
 import { editing } from './note/editing'
 import { noteChanges } from './note/changes'
 import { CREATABLE, creating } from './note/creating'
@@ -107,7 +107,7 @@ export const useWindow = () => {
   const { chunks, embedded, embedding, tasks } = window
 
   /** How far this vault has been read for meaning, as the window last heard. */
-  const meaning = (): Meaning => ({
+  const coverage = (): IndexCoverage => ({
     chunks: chunks.value,
     embedded: embedded.value,
     embedding: embedding.value,
@@ -125,7 +125,7 @@ export const useWindow = () => {
         reading: indexing.value,
         holds: holds.value,
       },
-      meaning(),
+      coverage(),
       words,
     ),
   )
@@ -302,7 +302,7 @@ export const useWindow = () => {
   ])
 
   /** The palette: one keystroke, and everything the words typed turn up. */
-  const palette = finding(core, words, { reading: meaning })
+  const palette = finding(core, words, { coverage })
 
   /** The vault this window is showing, as the list of vaults has it. */
   const shown = ref<VaultRef>({ id: '', name: '' })

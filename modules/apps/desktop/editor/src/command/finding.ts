@@ -10,7 +10,7 @@ import { computed, ref, shallowRef } from 'vue'
 import type { PaletteItem, PaletteGroup } from '@numen/ui'
 import { asking, type Question } from '../asking'
 import type { NoteType, Source } from '../core'
-import { wordsOnly, type Meaning } from '../notices/meaning'
+import { wordsOnly, type IndexCoverage } from '../notices/coverage'
 
 /** A run of a name or a passage, counted the way this window counts text. */
 export interface Span {
@@ -159,12 +159,12 @@ const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
 export interface FindingOptions {
   wait?(ms: number): Promise<unknown>
   /** How far the vault has been read for meaning, where the window knows. */
-  reading?(): Meaning
+  coverage?(): IndexCoverage
 }
 
 export function finding(core: FindingDeps, words: Words, how: FindingOptions = {}) {
   const wait = how.wait ?? sleep
-  const reading = how.reading
+  const coverage = how.coverage
   /** Whether the palette is drawn at all. */
   const open = ref(false)
   const typed = ref('')
@@ -350,7 +350,7 @@ export function finding(core: FindingDeps, words: Words, how: FindingOptions = {
    */
   const silenceOf = (id: SearchGroup): string => {
     if (said.value[id]) return said.value[id]
-    const read = id === 'meaning' ? reading?.() : undefined
+    const read = id === 'meaning' ? coverage?.() : undefined
     if (!read) return ''
     if (wordsOnly(read)) return words.wordsOnly
     return read.embedded === 0 ? words.notEmbedded : ''
