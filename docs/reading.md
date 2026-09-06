@@ -58,6 +58,20 @@ What the paper printed is not kept. The page-label dictionary a born-digital PDF
 
 An EPUB is the exception. A book made for a screen has no pages of its own, so the page breaks it names from the printed edition it was set from are the only page names it has, and a page of one is called by its label.
 
+## A book made for a screen
+
+Nothing here reads an EPUB. It carries its own text, a library takes that text out, and there is no artifact and no recogniser — see [An EPUB is reflowed in the window](adr/0038-an-epub-is-reflowed-in-the-window.md). What follows is what such a book gives a reader beyond that text.
+
+**The markup, at the offsets of the text.** One document of the spine is read a second time as the elements a book is drawn from, by the same walk that writes the text, so every run of markup stands at the offset the chunks were cut at. The window reads that number off the markup and counts none of its own: the offsets are bytes, and a string in a browser is not.
+
+What crosses is the book's own markup taken down to the elements a book is read in — headings, emphasis, lists, quotations, tables, pictures. The book's stylesheets do not, and neither does a link naming a scheme a person cannot be sent to, nor a picture naming anything but a file the book carries. A picture is served as the picture it is found to be and never as what the book's own manifest calls it, and what is not a picture is not served at all.
+
+**Its pages.** How many pages such a book is read in is arithmetic over the one text stream, taken without laying anything out. A page is a number of letters, and how many bytes that comes to is measured in the book's own script, so two books of one length are the same number of pages whatever they are written in. These are not the printed pages above, which the book names itself and which are shown where it names them.
+
+**Where a person is.** An offset into the text, never a page: the number of pages belongs to the window and changes with its width and with the size the text is set at. It is the address a chunk, a search result and a passage already carry.
+
+**What is refused.** A book whose spine documents `META-INF/encryption.xml` names is ciphertext, and reading it produced text that was not the book's. It is refused, and nothing of it reaches the index. A book whose fonts alone are obfuscated reads as any other. A book of fixed layout says so and is not reflowed.
+
 ## Parts
 
 A reading names its parts. The layout model names the headings, and one record a heading goes into `.parts`: where the heading begins in the prose, how far it runs, and how deep it sits, counted from zero with a document title above the section titles within it.
