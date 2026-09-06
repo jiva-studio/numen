@@ -152,9 +152,9 @@ func (a *Agent) Finish(_ context.Context, conversation string) error {
 	return failed
 }
 
-// Carrying is the session the next question of this conversation is asked in,
+// carries is the session the next question of this conversation is asked in,
 // empty for a conversation nothing has been asked in yet.
-func (a *Agent) Carrying(conversation string) string {
+func (a *Agent) carries(conversation string) string {
 	if conversation == "" {
 		return ""
 	}
@@ -336,7 +336,7 @@ func (a *Agent) arguments(task port.Task, configuration string) []string {
 	// --tools offers it; the allowance is what lets it be called, and nothing
 	// outside the allowance is called at all under this mode.
 	args = append(args, "--allowedTools", strings.Join(append([]string{brought}, a.Allowed...), ","))
-	if session := a.Carrying(task.Conversation); session != "" {
+	if session := a.carries(task.Conversation); session != "" {
 		args = append(args, "--resume", session)
 	}
 	return args
