@@ -6,7 +6,7 @@
  * holds, choosing another writes it, and the plex reads both as it draws.
  */
 import { ref } from 'vue'
-import type { StepGroup, StepRow } from '../command/commands'
+import type { StepGroup, StepRow } from '../command/lists'
 import type { MessageWriter } from '../notices/messages'
 
 /** The command whose step offers the two, and the one that offers the counts. */

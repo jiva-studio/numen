@@ -21,11 +21,10 @@ import { CREATABLE, noteMaker } from './note/maker'
 import {
   invocationOf,
   runSupport,
-  type PaletteLists,
-  type NoteLookup,
   type VaultRef,
   type CommandTarget,
 } from './command/commands'
+import type { NoteLookup, PaletteLists } from './command/lists'
 import { commandPalette } from './command/palette'
 import { chorded, commandFor } from './command/chords'
 import { iconOfKind } from './icons'

@@ -12,7 +12,7 @@
  */
 import { computed, ref, shallowRef, watch } from 'vue'
 import { answerGuard } from '../questions'
-import type { StepGroup, StepRow } from '../command/commands'
+import type { StepGroup, StepRow } from '../command/lists'
 import { following, percent } from '@numen/ui'
 import type { MessageWriter } from '../notices/messages'
 import type { Appearance, Bounds, Mode, Ranges, Scales, Sizes, Theme, Themes } from './theme'

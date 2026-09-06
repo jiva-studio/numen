@@ -21,14 +21,12 @@ import {
   type CommandTarget,
   type ConfirmWords,
   type CommandInvocation,
-  type NoteLookup,
-  type PaletteLists,
   type PromptStep,
   type RetypeWords,
   type RunSupport,
-  type StepRow,
   type Words,
 } from './commands'
+import type { NoteLookup, PaletteLists, StepRow } from './lists'
 import type { NameMatch } from './search'
 
 /** The one item of a step that asks for one thing. */
