@@ -55,10 +55,6 @@ const themes = computed<readonly SelectChoice[]>(() =>
 /** How fine a size may be turned, which is where the ladder of them steps. */
 const STEP = 0.1
 
-/** How early in the day a day of review may be asked to begin. */
-const EARLIEST = '00:00'
-
-
 /**
  * The ends the two fields type between. A field settles on the number inside
  * its ends, so an end the settings do not hold is a number of the person's cut
@@ -248,7 +244,6 @@ const profiles = computed<readonly SelectChoice[]>(() => {
         >
           <TimeField
             :model-value="installation.dayStarts.value"
-            :min="EARLIEST"
             :max="installation.latestDayStarts.value"
             :aria-labelledby="labelledBy"
             class="settings__number"
