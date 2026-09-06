@@ -138,6 +138,7 @@ func TestAStampInSecondsIsNotTheSameFileAsOneInNanoseconds(t *testing.T) {
 func TestOneInstantInTwoZonesIsOneFile(t *testing.T) {
 	at := time.Date(2026, 9, 3, 11, 4, 5, 123456789, time.UTC)
 	elsewhere := at.In(time.FixedZone("Kathmandu", 5*3600+45*60))
+	//nolint:gocritic // the operator is what this test is about
 	if at == elsewhere {
 		t.Fatal("the two are the same value, and this test proves nothing")
 	}
@@ -151,6 +152,7 @@ func TestOneInstantInTwoZonesIsOneFile(t *testing.T) {
 // and no round trip preserves.
 func TestAStampCarryingAMonotonicReadingIsTheSameFileWithoutIt(t *testing.T) {
 	at := time.Now()
+	//nolint:gocritic // the operator is what this test is about
 	if at.Round(0) == at {
 		t.Skip("this clock hands out no monotonic reading")
 	}

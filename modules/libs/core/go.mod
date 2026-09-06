@@ -16,6 +16,7 @@ require (
 	github.com/mewkiz/flac v1.0.14
 	github.com/modelcontextprotocol/go-sdk v1.7.0
 	github.com/open-spaced-repetition/go-fsrs/v3 v3.3.1
+	github.com/quasilyte/go-ruleguard/dsl v0.3.23
 	github.com/rjeczalik/notify v0.9.3
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	golang.org/x/image v0.45.0

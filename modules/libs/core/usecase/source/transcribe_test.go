@@ -351,7 +351,7 @@ func TestWhatHasBeenHeardIsCutBeforeTheRestIs(t *testing.T) {
 	for n := range model.words {
 		at = append(at, n+1)
 	}
-	if want := append(at, len(model.words)); !slices.Equal(cuts, want) {
+	if want := slices.Concat(at, []int{len(model.words)}); !slices.Equal(cuts, want) {
 		t.Errorf("it cut after %v stretches and the batches end at %v", cuts, want)
 	}
 }

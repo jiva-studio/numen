@@ -3,7 +3,6 @@ package vault_test
 import (
 	"errors"
 	"os"
-	"path/filepath"
 	"testing"
 
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -32,7 +31,7 @@ func TestARenamedVaultKeepsItsNameOnTheListAndItsRowInTheIndex(t *testing.T) {
 	if len(index.saved) != 1 || index.saved[0] != got.ID {
 		t.Errorf("the index was told about %v, want %s", index.saved, got.ID)
 	}
-	if _, err := os.Stat(filepath.Join(renamed.Path)); err != nil {
+	if _, err := os.Stat(renamed.Path); err != nil {
 		t.Errorf("the folder was renamed with the vault: %v", err)
 	}
 }

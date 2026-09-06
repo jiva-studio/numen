@@ -5,6 +5,7 @@ go 1.26.8
 require (
 	github.com/jiva-studio/numen/modules/libs/core v0.0.0
 	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
+	github.com/quasilyte/go-ruleguard/dsl v0.3.23
 	golang.org/x/mobile v0.0.0-20260821190718-4776eadac327
 )
 

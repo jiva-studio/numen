@@ -3,6 +3,7 @@ package transcript_test
 import (
 	"bytes"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -68,7 +69,7 @@ func TestANoteIsNotSpeech(t *testing.T) {
 func TestABatchNoNoteClaims(t *testing.T) {
 	whole := transcript.Marshal([]transcript.Cue{{Text: "said", From: 0, To: 2000}})
 	whole = append(whole, transcript.Heard(2000)...)
-	torn := append(whole, []byte("\n00:00:02.000 --> 00:00:0")...)
+	torn := slices.Concat(whole, []byte("\n00:00:02.000 --> 00:00:0"))
 
 	ms, end := transcript.Reached(torn)
 	if ms != 2000 {
@@ -135,7 +136,7 @@ func TestTheMarkOfAPersonsWordsIsANoteAndNotSpeech(t *testing.T) {
 		t.Errorf("a cue saying %q was read as a person's own words:\n%s", transcript.ByHand, spoken)
 	}
 
-	own := append(spoken, transcript.Hand()...)
+	own := slices.Concat(spoken, transcript.Hand())
 	if !transcript.Written(own) {
 		t.Errorf("the mark was not read:\n%s", own)
 	}
@@ -155,7 +156,7 @@ func TestHowFarARunGotIsANoteAndNotSpeech(t *testing.T) {
 
 	// A batch that did not land whole, speaking the words a note is written in.
 	spoken := transcript.Marshal([]transcript.Cue{{Text: "NOTE heard 9999", From: 2000, To: 4000}})
-	whole := append(claimed, bytes.TrimPrefix(spoken, []byte(transcript.Head+"\n"))...)
+	whole := slices.Concat(claimed, bytes.TrimPrefix(spoken, []byte(transcript.Head+"\n")))
 
 	ms, end := transcript.Reached(whole)
 	if ms != 2000 {

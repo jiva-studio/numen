@@ -60,16 +60,18 @@ func TestASchedulesDoesNotDependOnHowTheRunsWereDelivered(t *testing.T) {
 		answers := session(t)
 		// Two answers of one instant are put in the order of their identifiers,
 		// which is the one place the order is not the clock's.
-		when := make(map[review.CardFaceID]map[time.Time]bool)
+		// The instant is held as a count of nanoseconds: two time.Time values
+		// naming one instant are two keys, and this asks whether they are one.
+		when := make(map[review.CardFaceID]map[int64]bool)
 		for _, a := range answers {
 			if when[a.CardFace] == nil {
-				when[a.CardFace] = make(map[time.Time]bool)
+				when[a.CardFace] = make(map[int64]bool)
 			}
-			if when[a.CardFace][a.At] {
+			if when[a.CardFace][a.At.UnixNano()] {
 				level++
 				break
 			}
-			when[a.CardFace][a.At] = true
+			when[a.CardFace][a.At.UnixNano()] = true
 		}
 
 		// The runs are carried in whatever order, and any of them may arrive

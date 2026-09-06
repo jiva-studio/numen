@@ -71,6 +71,9 @@ require (
 
 replace github.com/jiva-studio/numen/modules/libs/protocol => ../../libs/protocol
 
-require github.com/jiva-studio/numen/modules/libs/core v0.0.0
+require (
+	github.com/jiva-studio/numen/modules/libs/core v0.0.0
+	github.com/quasilyte/go-ruleguard/dsl v0.3.23
+)
 
 replace github.com/jiva-studio/numen/modules/libs/core => ../../libs/core

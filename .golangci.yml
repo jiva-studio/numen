@@ -30,6 +30,7 @@ linters:
     - exhaustruct
     - importas
     - usetesting
+    - gocritic
 
   settings:
     errcheck:
@@ -45,6 +46,23 @@ linters:
         - (*database/sql.Tx).Rollback
         - (*os.Root).Remove
         - (github.com/jiva-studio/numen/modules/libs/core/port.Run).Stop
+
+    gocritic:
+      # The default checkers found eight things in 851 files, and five of them
+      # were real: four appends whose result went to another name, and a Join
+      # of one argument. The three that were not are all argOrder, which reads
+      # `strings.Contains(SomeInstruction, word)` as reversed because the
+      # needle is the shorter name. It is wrong every time it fires here.
+      disabled-checks:
+        - argOrder
+      enabled-checks:
+        - ruleguard
+      settings:
+        ruleguard:
+          # A rules file that will not typecheck is a rule that silently
+          # refuses nothing.
+          failOn: dsl
+          rules: ${base-path}/gorules/timeeq.go
 
     exhaustive:
       # A switch that names a default has answered for the cases it did not
