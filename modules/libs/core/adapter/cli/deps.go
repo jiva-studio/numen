@@ -55,6 +55,10 @@ type Deps struct {
 	// Recognise does.
 	Transcribe func(ctx context.Context, v domain.Vault, fetching func()) (Transcribe, error)
 
+	// ImportURL opens what reaches the address a link note points at. A machine
+	// holding neither of the tools that reach one opens nothing.
+	ImportURL func(ctx context.Context, v domain.Vault) (ImportURL, error)
+
 	// ProofreadReading opens what puts a document's reading right, and
 	// ProofreadTranscript what puts a recording's transcript right. They are
 	// two openers because a file is one or the other and nothing opens for the
@@ -149,6 +153,13 @@ type Transcribe struct {
 	// searchable while the rest is still being heard.
 	Cut   source.Extract
 	Close func() error
+}
+
+// ImportURL is what is at the address a link note points at, fetched into the
+// vault.
+type ImportURL struct {
+	ImportURL source.ImportURL
+	Close     func() error
 }
 
 // ProofreadReading is one document's reading put right with a model.

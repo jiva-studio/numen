@@ -19,14 +19,14 @@ import (
 // somewhere. Nothing is fetched for it.
 var ErrNotALink = errors.New("this note points nowhere")
 
-// Import fetches what is at the address a link note points at and writes it
+// ImportURL fetches what is at the address a link note points at and writes it
 // into the vault's own folder.
 //
 // A person asks for it, once, by pasting the address. What comes back is an
 // artifact: no machine here makes it again, and a site may stop publishing it.
 // It is named by the address rather than by the note's bytes, so typing in the
 // note leaves it where it is and two notes pointing at one video share it.
-type Import struct {
+type ImportURL struct {
 	Readers port.VaultReaders
 	Derived port.DerivedStores
 	By      port.Fetcher
@@ -47,8 +47,8 @@ type Import struct {
 	Again bool
 }
 
-// ImportResult reports what fetching did.
-type ImportResult struct {
+// ImportURLResult reports what fetching did.
+type ImportURLResult struct {
 	Path string
 	// Title is what the address calls itself, and Length how long a video runs
 	// in milliseconds.
@@ -66,8 +66,8 @@ type ImportResult struct {
 }
 
 // Execute fetches what is at one link note's address.
-func (u Import) Execute(ctx context.Context, v domain.Vault, path string) (ImportResult, error) {
-	res := ImportResult{Path: path}
+func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (ImportURLResult, error) {
+	res := ImportURLResult{Path: path}
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return res, err
@@ -144,15 +144,15 @@ func (u Import) Execute(ctx context.Context, v domain.Vault, path string) (Impor
 
 // video writes down the words published with a video, and hands the video to a
 // model where nobody published any.
-func (u Import) video(
+func (u ImportURL) video(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
 	at domain.WebAddress,
 	hash string,
 	store port.DerivedStore,
-	res ImportResult,
-) (ImportResult, error) {
+	res ImportURLResult,
+) (ImportURLResult, error) {
 	cues, err := u.By.Words(ctx, at, u.Languages)
 	switch {
 	case errors.Is(err, port.ErrNothingFetched):
@@ -177,15 +177,15 @@ func (u Import) video(
 }
 
 // page writes down the prose of a page.
-func (u Import) page(
+func (u ImportURL) page(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
 	at domain.WebAddress,
 	hash string,
 	store port.DerivedStore,
-	res ImportResult,
-) (ImportResult, error) {
+	res ImportURLResult,
+) (ImportURLResult, error) {
 	article, err := u.By.Prose(ctx, at)
 	switch {
 	case errors.Is(err, port.ErrNothingFetched):
@@ -211,12 +211,12 @@ func (u Import) page(
 // any path that answers a question reads it: it is there so a person can ask
 // what produced a text they are reading, and so everything one tool produced
 // can be found again.
-func (u Import) record(
+func (u ImportURL) record(
 	ctx context.Context,
 	store port.DerivedStore,
 	producer, hash string,
 	at domain.WebAddress,
-	res ImportResult,
+	res ImportURLResult,
 ) error {
 	written, err := json.Marshal(struct {
 		Address  string `json:"address"`
@@ -238,7 +238,7 @@ func (u Import) record(
 }
 
 // cut brings the note level in the index, so the words are searched with it.
-func (u Import) cut(ctx context.Context, v domain.Vault, path string) error {
+func (u ImportURL) cut(ctx context.Context, v domain.Vault, path string) error {
 	if u.Cut == nil {
 		return nil
 	}

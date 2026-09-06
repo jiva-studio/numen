@@ -66,13 +66,13 @@ const videoNote = "notes/Entropy.md"
 
 // fetching is a vault holding one link note, and the store what is fetched for
 // it is kept in.
-func fetching(t *testing.T, written string, from *site) (Import, *shelf, string) {
+func fetching(t *testing.T, written string, from *site) (ImportURL, *shelf, string) {
 	t.Helper()
 	shelved := newLibrary()
 	shelved.hold(videoNote, domain.KindNote, []byte(written), 1)
 	kept := newShelf()
 	cut := []string{}
-	return Import{
+	return ImportURL{
 		Readers: vaults{first.ID: shelved},
 		Derived: kept,
 		By:      from,

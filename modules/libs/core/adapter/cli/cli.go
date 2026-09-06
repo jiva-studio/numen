@@ -27,6 +27,7 @@ usage:
   numen-cli recognise <vault> <file>          read a scanned document with a model
   numen-cli proofread <vault> <file>          put a document's reading right with a model
   numen-cli transcribe <vault> <file> [--again]  write down what a model hears in a recording
+  numen-cli import <vault> <note> [--again]    fetch what the address a note points at holds
   numen-cli search <vault> <query>             full-text search within one vault
   numen-cli links <vault> <note>               what a note points at, and what points at it
   numen-cli problems <vault> [<check>...]      what the vault holds that was not guessed at
@@ -92,6 +93,8 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 		return proofreadCommand(ctx, out, deps, rest[1:])
 	case "transcribe":
 		return transcribeCommand(ctx, out, deps, rest[1:])
+	case "import":
+		return importCommand(ctx, out, deps, rest[1:])
 	case "search":
 		return searchCommand(ctx, out, errOut, deps, rest[1:])
 	case "links":

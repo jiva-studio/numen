@@ -3,8 +3,10 @@ package container
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/fetch"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 // Fetcher is what reaches an address on this machine, and nothing where the
@@ -19,4 +21,21 @@ func (c Config) Fetcher(ctx context.Context) port.Fetcher {
 		return nil
 	}
 	return fetcher
+}
+
+// ImportURL is one link note's address, fetched into the vault, with the note
+// cut again as soon as what was fetched is written. A machine holding neither
+// tool has none.
+func (c Config) ImportURL(ctx context.Context, db *Index, by port.Fetcher) source.ImportURL {
+	level := c.Level(db)
+	return source.ImportURL{
+		Readers:   c.VaultReaders(),
+		Derived:   c.DerivedStores(),
+		By:        by,
+		Languages: c.Fetching.Captions,
+		Automatic: c.Fetching.Automatic(),
+		Cut: func(ctx context.Context, v domain.Vault, path string) error {
+			return level(ctx, v, []string{path})
+		},
+	}
 }
