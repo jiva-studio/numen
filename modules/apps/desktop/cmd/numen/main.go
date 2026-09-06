@@ -109,6 +109,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	}
 	cfg = cfg.Indexing(chosen.Indexing)
 	cfg.Agent = chosen.Agent
+	cfg.Fetching = chosen.Importing
 	cfg.InterfaceScale, cfg.TextScale = sizes.interfaceScale, sizes.textScale
 
 	// Before the window: every page this process reads is read through the
