@@ -40,7 +40,7 @@ const meta: Meta<Knobs> = {
     template: `
       <div :style="{ padding: '2rem', width: args.width }">
         <Divider :at="args.at">
-          <Button variant="outline" size="small">
+          <Button variant="outline" size="small" aria-label="Add a field">
             <Icon shows="plus" />
             {{ args.said }}
           </Button>

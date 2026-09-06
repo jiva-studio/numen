@@ -38,11 +38,13 @@ const meta: Meta<Knobs> = {
       const on = ref(args.on)
       return { args, on }
     },
+    // A switch is not a form control, so a label around it names nothing: the
+    // words beside it are pointed at instead, which is how a window does it.
     template: `
-      <label style="display: flex; align-items: center; gap: 0.625rem; padding: 2rem; inline-size: 20rem">
-        <Switch v-model="on" :disabled="args.disabled" />
-        <span style="min-inline-size: 0; overflow-wrap: anywhere">{{ args.said }}</span>
-      </label>
+      <div style="display: flex; align-items: center; gap: 0.625rem; padding: 2rem; inline-size: 20rem">
+        <Switch v-model="on" :disabled="args.disabled" aria-labelledby="switch-said" />
+        <span id="switch-said" style="min-inline-size: 0; overflow-wrap: anywhere">{{ args.said }}</span>
+      </div>
     `,
   }),
 }
@@ -76,8 +78,11 @@ export const FarTooLong: Story = {
 /** A name with nothing in it to break at. */
 export const Unbroken: Story = { args: { said: UNBROKEN } }
 
-/** No name at all. */
-export const NoTextAtAll: Story = { args: { said: '' } }
+/**
+ * No name at all. The keyboard rule is off here because this is a switch with
+ * nothing to read out, which is the whole of what the story draws.
+ */
+export const NoTextAtAll: Story = { args: { said: '' }, parameters: { reach: false } }
 
 /**
  * The switch on the dark set of tokens. Which way it stands is told by the
