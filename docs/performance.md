@@ -22,47 +22,69 @@ go test ./adapter/index/ -run XXX -bench SaveVectors -benchmem -count 10 -bencht
 go test ./adapter/index/ -run XXX -bench ChunkIdentity -benchmem -count 10
 ```
 
+The bundle each window is built into, from the repository root:
+
+```
+npm run build --prefix modules/apps/desktop/flashcards
+npm run build --prefix modules/apps/desktop/editor
+```
+
 The vault is generated, not downloaded: `testsupport.GenerateVault` writes notes of varying length across fifty folders, each naming a parent and pointing at a few others, from a fixed seed.
 
 Only the cold scan is pinned to a single iteration — it takes seconds, and repeating it measures patience. The rest run many times: a single sample of a millisecond-scale benchmark varies by tens of percent, and the link benchmarks read a single-figure answer out of a large table, where one run measures the page cache.
 
 ## At the size this is designed for
 
-A hundred thousand notes, from the load test.
+A hundred thousand notes, from the load test. Measured 2026-09-06, one run, on a machine carrying five other agents' work; the 2026-09-01 column is what it answered then.
 
-| | Measured | Target |
-| --- | --- | --- |
-| Cold scan | 1 m 22 s (0.82 ms/note, 1216 notes/s) | under 3 minutes |
-| Warm scan — what a startup pays | 0.52 s | under 1 second |
-| An edit the watcher names, until a client is told | 66 ms | under 100 ms |
-| Index size | 162 MB (1.6 MB per thousand notes) | not decided |
-| Search, rare term, under load | p50 2 ms · p95 4 ms · p99 5 ms · max 42 ms | p95 under 50 ms |
-| Search, term matching every note | p50 0.90 s · p95 1.01 s | not covered |
+| | 2026-09-01 | Measured | Target |
+| --- | --- | --- | --- |
+| Cold scan | 1 m 22 s (0.82 ms/note) | **8 m 52 s (5.32 ms/note, 188 notes/s)** | under 3 minutes |
+| Warm scan — what a startup pays | 0.52 s | **1.07 s** | under 1 second |
+| An edit the watcher names, until a client is told | 66 ms | not re-measured | under 100 ms |
+| Index size | 162 MB | **344 MB (3.4 MB per thousand notes)** | not decided |
+| Search, rare term, under load | p50 2 · p95 4 · p99 5 · max 42 ms | p50 3 · p95 6 · p99 8 · max 102 ms | p95 under 50 ms |
+| Search, term matching every note | p50 0.90 s · p95 1.01 s | p50 3.37 s · p95 4.25 s | not covered |
+
+**Two of these targets are now missed, and the index size says why.** It has gone from 162 MB to 344 MB over the same 164 MB of markdown, and that figure owes nothing to a busy machine. A note is now written into the passage index as well as the note index — the chunk enclosing it, the small chunks tiled inside it, each of them indexed for its words in `chunks_fts` and again in `sections_fts` — so a scan writes about twice as much, and a query that matches everything ranks several rows a note instead of one.
+
+**What a person's own search costs has held.** The rare-term row is 3 ms at the median and 6 at the ninety-fifth, well inside a target of fifty, against 2 and 4 on a quieter machine. The read side did not move; the write side and the size did.
 
 Both search rows come from four concurrent readers running against a scan that rewrote the whole vault continuously. The difference between them is not the database: one query matches a hundred notes and the other matches all hundred thousand, and ranking a hundred thousand matches is linear work. Real queries look like the first row; a vault generated from twenty words produces only the second, which is why the load test asks both.
 
-The vault itself is 164 MB of markdown, so the index is about the size of the text it describes.
+The vault itself is 164 MB of markdown, so the index is now about twice the size of the text it describes.
 
 ## Baseline
 
-Recorded 2026-08-15 on an AMD Ryzen 7 6800U, `modernc.org/sqlite`, WAL with `synchronous = NORMAL`.
+Re-measured 2026-09-06 on the same AMD Ryzen 7 6800U, `modernc.org/sqlite`, WAL with `synchronous = NORMAL`. The 2026-08-15 column is kept beside it because the two are not the same measurement everywhere, and the rows below say where.
 
-| | 1 000 notes | 10 000 notes |
-| --- | --- | --- |
-| Cold scan — every note read, parsed, written | 0.46 s (1 run) | 5.9 s (3 runs) |
-| Warm scan — nothing changed, no file opened | 4.7 ms (231 runs) | 50 ms (10) |
-| Incremental — one note edited | 8.0 ms (139) | 55 ms (19) |
-| Search — two terms, twenty results | 2.5 ms (300) | 20 ms (300) |
-| Search while a scan is writing | — | 60 ms (21) |
-| Resolving one note's links | 0.18 ms (300) | 0.18 ms (300) |
-| Backlinks of one note | 0.88 ms (300) | 1.11 ms (300) |
-| Index size | 1.6 MB | 15.5 MB |
+**The machine was shared with five other agents throughout, and that is the largest single fact about the two 2026-09-06 columns.** The one-minute load average ran between 4 and 61 over the session, against sixteen threads. The noise floor is read off `BenchmarkChunkIdentity`, which is arithmetic and touches nothing: the two conversions recorded at 25 ns and 23 ns on 2026-09-05 answer 29–37 ns and 26–31 ns over ten runs here, so **a figure that touches no disk runs about 1.3× the record on this machine today**. Everything that touches the disk runs further out than that, and no row below is quoted closer than its spread.
 
-Neither link figure grows with the vault: the two columns are ten times apart in size and within a fraction of a millisecond of each other.
+Each cell is the best of the runs stated, with the spread beside it. The best is quoted rather than the median because every source of noise here is additive.
 
-A search costs more while a scan is continuously rewriting the index. WAL lets a reader answer without waiting for the writer, and the write pool is capped at one connection, so writers queue in Go.
+| | 2026-08-15 | 1 000 notes | 10 000 notes |
+| --- | --- | --- | --- |
+| Cold scan — every note read, parsed, written | 0.46 s · 5.9 s | 1.80 s (6 runs, 1.80–2.84) | 20.1 s (6, 20.1–39.7) |
+| Warm scan — nothing changed, no file opened | 4.7 ms · 50 ms | 9.2 ms (3, 9.2–15.3) | 58 ms (3, 58–122) |
+| Incremental — one note edited | 8.0 ms · 55 ms | 12.4 ms (3, 12.4–17.6) | 64 ms (3, 64–136) |
+| Resolving one note's links | 0.18 ms · 0.18 ms | 0.64 ms (3, 0.64–0.68) | 0.43 ms (3, 0.43–0.61) |
+| Backlinks of one note | 0.88 ms · 1.11 ms | 2.94 ms (3, 2.94–3.28) | 3.18 ms (3, 3.18–4.63) |
 
-**How much more is unsettled.** The two rows above are 20 ms quiet against 60 ms under a scan — the same query, the same ten thousand notes, three times as long. `BenchmarkSearchDuringScan` was reported on the same date as **64 ms against 48 ms** on a quiet database, which is a third more. The loaded figures are close and the quiet ones are not, and nothing establishes which quiet run the table holds. Both are 2026-08-15.
+Neither link figure grows with the vault, which is the claim those two rows carry: the columns are ten times apart in size and a fraction of a millisecond apart in answer, as they were.
+
+**The cold scan is three to four times the record here, and six and a half times it at a hundred thousand.** A note now goes into the passage index as its own chunks, so `chunk.Replace` runs inside `saveNote`; by profile it is 42 % of the scan, and the index it fills is twice the size it was. What is left over is the machine and one repeated pass, both below.
+
+**The two search rows of 2026-08-15 cannot be reproduced, and are not carried forward.** They measured `Queries.Search` and `search.sql`, which read `chunks_fts` and grouped the hits back to notes. That statement was deleted on 2026-09-05 as dead production code, and the benchmark now asks `port.PassageQueries.Lexical` — the query the application has been searching through all along. It is a heavier plan: a join to `sources`, the folder filter through `json_each` behind a bloom filter, a left join to the enclosing chunk, and a temp B-tree for the ordering. Against the generated vault's twenty-word vocabulary the query matches every note, so what it measures is ranking the whole corpus.
+
+| | Measured 2026-09-06 |
+| --- | --- |
+| `Lexical`, a term matching every note, 1 000 | 11.8 ms (3 runs, 11.8–29.6) |
+| `Lexical`, a term matching every note, 10 000 | 101 ms (3, 101–155) |
+| The same while a scan is writing, 10 000 | 149 ms (3, 149–641) |
+
+Those belong beside the "term matching every note" row of the load test, not beside a search figure. What a person's own search costs is the rare-term row further up, which the load test measures and this benchmark cannot: a vault built from twenty words has no rare terms but the one that was planted.
+
+A search still costs more while a scan is continuously rewriting the index. WAL lets a reader answer without waiting for the writer, and the write pool is capped at one connection, so writers queue in Go.
 
 ## What these numbers are not
 
@@ -72,15 +94,26 @@ A search costs more while a scan is continuously rewriting the index. WAL lets a
 
 **The cold scan reads notes this same process wrote seconds earlier**, so the read side is measured against a warm page cache. On a real vault that has been sitting on disk, this is optimistic about I/O.
 
-**Nothing here measures a cold start of the application**, only of the scan.
+**Nothing here measures a cold start of the application**, only of the scan. What the start costs on the Go side is measured under "What a window costs before a person can type".
 
 **A flashcard benchmark runs on an index that does not flush.** It shares its setup with the tests around it, and what it times is scheduling arithmetic. The vault benchmarks and the load test ask for the index the application ships with, so those two numbers are not one another's.
 
 ## Where the time goes
 
-A cold scan, by profile, taken 2026-08-15 with one transaction per note: 1 % reading the files, 5 % parsing them, 77 % storing what was parsed — of which **43 % of the whole scan is ending transactions**, the largest single part. Parsing in parallel is therefore worth at most a few percent, and has been measured and left alone.
+A cold scan, by profile, taken 2026-09-06 over one run of `ColdScan/10000` — 34.7 s of wall time, 37.6 s of samples over sixteen threads. Reading the files is about 1 % and parsing the markdown a few percent, as before; what has moved is inside the writing.
 
-The full-text index accounts for about 45 % of what a write costs, which is most of what the 43 % leaves inside the 77 %.
+| | share of the scan |
+| --- | --- |
+| `Scan.Execute` | 84 % |
+| ↳ `note.Repository.Save` → `saveNote` | 78 % |
+| ↳ `chunk.Replace` — the note as its own chunks | **42 %** |
+| SQLite parsing SQL text (`sqlite3RunParser`) | **20 %** |
+
+**Ending transactions is no longer the largest part.** The 2026-08-15 profile read 1 % reading, 5 % parsing, 77 % storing, of which 43 % of the whole scan was ending transactions. Since then a note is written into the passage index as well as the note index — the chunk enclosing it, the small chunks tiled inside it, and every one of them indexed for its words in `chunks_fts` and `sections_fts`. That path is 42 % of the scan and it is why the cold scan costs what it now costs.
+
+**A fifth of a cold scan is SQLite reading SQL text it has read before.** `chunk.prepare` prepares four statements and closes them inside `chunk.Replace`, which `saveNote` calls once per note; `insert_link` is prepared per note beside it; and the dozen or so `exec` helpers go through `tx.ExecContext`, which the driver prepares afresh on every call. The transaction spans a group of five hundred notes, so every one of those could be prepared once for the group and reused. Ten thousand notes parse the same statement texts something like a hundred and fifty thousand times.
+
+The record's line that reusing prepared statements across a group makes no difference is under "What does not work", and it is no longer true: it was measured on 2026-08-15, when a note save was a handful of statements and `chunk.Replace` was not on the path.
 
 A transaction boundary costs the same whether one note crossed it or five hundred did, which is why notes are written in groups. A cgo build of SQLite is roughly twice as fast on inserts in published comparisons; it is not measured here, and it costs the cross-compilation the pure-Go driver is chosen for.
 
@@ -110,11 +143,13 @@ Measured, on ten thousand notes written in groups of five hundred.
 | Larger full-text page size (`pgsz = 8000`) | 1.7× slower |
 | Merge thresholds either way (`automerge` 8 and 16, `crisismerge` 8) | no difference |
 | Page cache of 4 MB, 64 MB, 256 MB | no difference |
-| Reusing prepared statements across a group | no difference |
+| Reusing prepared statements across a group | no difference on 2026-08-15; **no longer true** |
 | Groups of five thousand | 7 % faster than five hundred, for ten times the memory |
 | `synchronous = OFF` | 13 % faster, and the file can be corrupt rather than merely stale |
 
 The first two are what a search returns for "slow SQLite inserts".
+
+The fifth row was measured when a note save was a handful of statements. A note save now runs `chunk.Replace`, which prepares and closes four statements of its own per note, and the whole of it is a fifth of a cold scan — measured 2026-09-06 and set out under "Where the time goes".
 
 ## Two things that were invisible in review
 
@@ -727,15 +762,21 @@ A held arrow key crosses a row of the size list every 40 ms, and a size is worn 
 
 ## What a name of the derived store costs
 
-Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkDerived` in `internal/adapter/filesystem`. Every name the store takes is answered where the vault still is, and the check that it is asks the folder what identity it carries.
+Recorded 2026-09-01 and re-measured 2026-09-06 on the same AMD Ryzen 7 6800U, from `BenchmarkDerived` in `internal/adapter/filesystem`. Every name the store takes is answered where the vault still is, and the check that it is asks the folder what identity it carries.
 
-| | Before | After |
-| --- | --- | --- |
-| One name read | 92.2 µs · 5504 B · 57 allocs | 67.0 µs · 4584 B · 48 allocs |
-| One folder listed | 79.6 µs · 4895 B · 60 allocs | 66.9 µs · 3989 B · 51 allocs |
-| One line appended | 2.43 ms · 5334 B · 58 allocs | 2.24 ms · 4413 B · 49 allocs |
+| | Before | After | 2026-09-06 |
+| --- | --- | --- | --- |
+| One name read | 92.2 µs · 5504 B · 57 allocs | 67.0 µs · 4584 B · 48 allocs | 64.9 µs · 6496 B · **76 allocs** |
+| One folder listed | 79.6 µs · 4895 B · 60 allocs | 66.9 µs · 3989 B · 51 allocs | 51.9 µs · 5672 B · **71 allocs** |
+| One line appended | 2.43 ms · 5334 B · 58 allocs | 2.24 ms · 4413 B · 49 allocs | 2.29 ms · 6400 B · **80 allocs** |
 
-Each column is the median of three runs. The allocation columns are the ones these are read on: a run of the read row spread by 10 % on the clock and not at all on the allocations.
+Each column is the median of three runs; the third names the best of three on the clock, and the same allocations on all three. The allocation columns are the ones these are read on: a run of the read row spread by 10 % on the clock and not at all on the allocations.
+
+**The allocations have gone past where the change above started, and the reason is a containment fix.** On 2026-09-04 a name was held to the area it says it is in, because a link written into an area — by a sync client, by another tool — pointed back at the vault's identity and a transcript appended down it landed on `config.json`. The check is right and the hole was real.
+
+**What is not owed is doing it three times.** `DerivedStore.at` resolves symlinks on the target, then on the store's area, then on the store's own root. The last two are paths fixed for the life of the store, and `deepest` is a `filepath.EvalSymlinks` walk — one `lstat` per segment of an absolute path, every time. By allocation profile **60.5 % of one `Read` is inside `EvalSymlinks`**, which is the whole of the difference between 48 allocations and 76. Resolving the root and the areas once when the store is opened, and again where `still()` already notices the file has moved, would put the row back where the second column has it.
+
+This is a name a person pays per card answered and per run file read. A history screen over 180 run files pays it 180 times, twice over each.
 
 **The identity was read out of the file at every name.** `config.json` opened, its bytes parsed and the identity in it checked, which is 19.9 µs and 12 allocations on its own — a fifth of a read and a quarter of a listing. It is now a stat of that file, and a file of the same length and the same age carries the identity already read out of it. A file that moved is read again, so a folder carrying another vault's identity is still refused at the first name after it arrives.
 
@@ -745,18 +786,20 @@ Each column is the median of three runs. The allocation columns are the ones the
 
 ## What a window asks of one vault
 
-Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkVault` in `usecase/flashcards`. The vault is generated: fifty thousand card faces over twenty decks, answered a hundred and fifty times a day for six months — 27 000 answers in 180 run files.
+Recorded 2026-09-01 and re-measured 2026-09-06 on the same AMD Ryzen 7 6800U, from `BenchmarkVault` in `usecase/flashcards`. The vault is generated: fifty thousand card faces over twenty decks, answered a hundred and fifty times a day for six months — 27 000 answers in 180 run files.
 
 Each row is one request through its use case. The first three are warm, which is a person's second question of an evening: the schedule cache and the day counts are filled before the clock starts. The fourth is the history screen on a build that keeps no counting, which is what the first question of a launch pays.
 
-| | Before | After |
-| --- | --- | --- |
-| The front door, one vault counted | 0.82 s · 605 MB | 0.85 s · 605 MB |
-| Starting a session | 1.25 s · 836 MB | 1.19 s · 793 MB |
-| The history screen | 0.71 s · 536 MB | 0.71 s · 493 MB |
-| The history screen, nothing counted yet | 0.78 s · 554 MB | 0.68 s · 490 MB |
+| | Before | After | 2026-09-06 |
+| --- | --- | --- | --- |
+| The front door, one vault counted | 0.82 s · 605 MB | 0.85 s · 605 MB | 1.06 s · 617 MB |
+| Starting a session | 1.25 s · 836 MB | 1.19 s · 793 MB | 1.46 s · 824 MB |
+| The history screen | 0.71 s · 536 MB | 0.71 s · 493 MB | 0.83 s · 502 MB |
+| The history screen, nothing counted yet | 0.78 s · 554 MB | 0.68 s · 490 MB | 0.82 s · 498 MB |
 
-Both columns are the median of two runs of five. The memory column is what a request allocates, which is the steadier of the two: the times of repeated runs of one build spread by about 5 %, and the memory by under 0.1 %.
+Every column is the median of two runs of five. The memory column is what a request allocates, which is the steadier of the two: the times of repeated runs of one build spread by about 5 %, and the memory by under 0.1 %.
+
+**The four rows hold.** Read on the memory column, which is what these are read on, every one is between 1.7 % and 3.9 % of where the change above left it. The clock is 17 % to 23 % slower and the machine carried five other agents while it was taken, so the clock says nothing here that the memory does not say better.
 
 **The front door is unchanged, and is here as the thing the others are read against.** It was already asking the schedule cache first, and nothing was taken off its path.
 
@@ -903,16 +946,67 @@ Both columns are the median of two runs of three on an idle machine. **The clock
 
 Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkFrontDoor` in `adapter/window/flashcards`. The installation is generated: four vaults, each of five thousand card faces over twenty decks, answered a hundred times a day for sixty days — 6 000 answers in 60 run files a vault. The schedule caches are filled before the clock starts, which is a person's second opening of a day.
 
-| | Measured |
-| --- | --- |
-| Every vault counted inside one answer — what the window opened on before | 0.52 s |
-| The list of vaults on screen | 1.3 ms |
-| The last of the four counts landing | 0.21 s |
+| | Measured 2026-09-01 | Measured 2026-09-06 |
+| --- | --- | --- |
+| Every vault counted inside one answer — what the window opened on before | 0.52 s | 0.52 s (6, 0.52–0.66) |
+| The list of vaults on screen | 1.3 ms | 1.0 ms (6, 1.0–3.3) |
+| The last of the four counts landing | 0.21 s | 0.20 s (6, 0.20–0.29) |
 
-Each figure is the median of two runs of five. The first row is the old front door, run here as it stood: the four vaults counted one after another before anything was handed over.
+The first column is the median of two runs of five. The second is six runs of five taken on a machine carrying five other agents' work, quoted at the best of the six with the spread beside it.
+
+**Nothing here has moved.** Every row's best run lands on the figure recorded, and the whole of the spread above it is the machine: the list on screen varies threefold between runs because it is a millisecond of work, and the two counts vary by a quarter. Read the three together — they hold.
+
+The first row is the old front door, run here as it stood: the four vaults counted one after another before anything was handed over.
 
 **What a person waits for is a reading of the registry.** The list is names and paths, which the registry answers before any database is opened, so it is on screen in about a millisecond whatever the vaults hold. Everything after that arrives at its own row.
 
 **Four counts at once cost the slowest, not the sum.** The four vaults here are the same size, so the last count lands in about a quarter of what counting them in turn took, less what they spend competing for the same cores. An installation of one vault waits exactly as long as it did.
 
 Nothing here says what a vault of fifty thousand card faces does to the row beside it: these four are alike on purpose, and the claim being measured is the shape and not the spread.
+
+## What a window costs before a person can type
+
+Recorded 2026-09-06 on the same AMD Ryzen 7 6800U, over the flashcards window's own start: the settings read, the registry opened, the index opened, the use cases assembled, the themes read, the pages handler built, and the first page fetched from it. Three runs of each part; the spread is quoted because the machine carried other work throughout.
+
+**A window is not measured here, and cannot be.** What a person waits for is the process starting, the Go side assembling, WebKit creating a webview, and the bundle being parsed and run — and the three that are not Go need a window on a screen. What is below is the Go side alone, which is the part a change to the composition root could move.
+
+| | Measured | Allocations |
+| --- | --- | --- |
+| The settings read | 0.13 ms (0.13–0.15) | 14.9 kB · 164 |
+| The registry opened | 50 ns (49–63) | 24 B · 1 |
+| The index opened, no file there yet | 13.7 ms (13.7–16.4) | 64 kB · 608 |
+| The index opened, the file already there | 1.07 ms (1.07–1.32) | 36 kB · 164 |
+| The themes read | 13.0 µs (13.0–18.3) | 3.0 kB · 20 |
+| The pages handler built | 0.55 µs (0.55–0.96) | 120 B · 6 |
+| The use cases assembled | 0.26 ms (0.26–0.44) | 19 kB · 270 |
+| The first page served | 0.73 ms (0.73–1.13) | 24 kB · 138 |
+| **All of it, first launch on a new machine** | **31.9 ms (31.9–41.0)** | 236 kB · 2 553 |
+
+**The Go side is thirty milliseconds and the schema is most of it.** Opening an index that is not there yet runs the migrations, and that is 14 ms of the 32; on every launch after the first it is one millisecond. Assembling every use case the window serves is a quarter of a millisecond, and building the handler that serves the pages is half a microsecond. Nothing the night's moves touched is measurable from here.
+
+**So what a person waits for is not this.** A launch on an existing installation spends under 20 ms in Go before the first byte of the page. The rest of the wait is the webview and the bundle the section below measures, and neither is reached by anything in `container`.
+
+The harness for this is not in the tree. It was taken with a benchmark written against `container` and the flashcards window package and then removed, so the table cannot be reproduced from a checkout as it stands. Every path it named — the index, the registry, the settings, the themes, the schedules — was pointed at a temporary folder, so nothing on the machine was read.
+
+## What the two windows are built into
+
+Recorded 2026-09-06, `vite build` in each window's own folder, into the Go package that embeds it. The figure is the one file the window loads.
+
+| | JavaScript | gzip | CSS | modules |
+| --- | --- | --- | --- | --- |
+| flashcards | 507 kB | 176 kB | 100 kB | 726 |
+| editor | 1 631 kB | 562 kB | 111 kB | 2 601 |
+
+**The flashcards window's fall held.** It was 1 180 kB before `preserveModules` and `sideEffects` landed together in the interface library and 506 kB after; it builds at 507 kB today, a kilobyte of the day's own work.
+
+**The editor did not move, as it was expected not to.** It was 1 628 kB and is 1 631 kB. It draws more of the library and more of its own, and the tree shaking that took two thirds off the smaller window takes almost nothing off this one: what the editor imports, it uses.
+
+The editor's `vue-tsc` step does not pass in this tree, so its figure comes from `vite build` alone. Two copies of `@vue/runtime-core` are installed — one under the editor and one under the interface library — and every component's props typecheck against the wrong one. That is a state of `node_modules` and not of the source; the bundle is unaffected, since Vite resolves one copy.
+
+## A recipe that moved, and whether it settles
+
+The quantisation scale now stands in the recipe a vector is kept under, so every vector made before it is owed again. Read 2026-09-06, from the code rather than the clock.
+
+**It settles.** `port.EmbeddingModel.Recipe` is a `Sprintf` over the model's five fields, the name of the quantisation and `port.Int8Scale`. The five fields come from the settings file; the other two are constants. Nothing in it is read from the clock, from a random source, or from a path that differs between launches, so two runs of one installation ask for the same recipe and the second finds every vector the first bought. The cost is once, and `TestAScaleThatMovedBuysTheVectorsAgain` is what holds it there.
+
+**What it does not settle is the space.** `vectors` is keyed by the text's hash and the recipe together, and `forget_vector` takes a row out only where no chunk holds that text at all. A chunk whose text did not change keeps its old-recipe row for ever beside its new one, so a scale that moves doubles what the vectors cost on disk and leaves it doubled. At the corpus measured under "Dimensions cost more than bits" that is 149 MB become 298 MB. Nothing sweeps the rows of a recipe no longer in force.
