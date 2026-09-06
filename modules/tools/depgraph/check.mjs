@@ -7,13 +7,38 @@
  */
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
-import { config, depcruise, modules, owed, root, screened, screens } from './modules.mjs'
+import {
+  config,
+  depcruise,
+  modules,
+  owed,
+  root,
+  screened,
+  screens,
+  unscreened,
+} from './modules.mjs'
 
 let broke = false
 
 const wrong = (said) => {
   console.error(`  ${said}`)
   broke = true
+}
+
+// A module the screen rule neither reads nor is told to leave alone is a rule
+// stopping at a border with nobody told, which is what the rule itself refuses
+// one level down. Silence is the failure; a stated reason is not.
+for (const { name } of modules) {
+  const read = screened.has(name)
+  const excused = Object.hasOwn(unscreened, name)
+  if (read === excused) {
+    console.log(name)
+    wrong(
+      read
+        ? 'the screen rule reads it and `unscreened` says why it does not'
+        : 'the screen rule does not read it and `unscreened` gives no reason',
+    )
+  }
 }
 
 for (const { name, at, sources, reads } of modules) {
@@ -34,7 +59,10 @@ for (const { name, at, sources, reads } of modules) {
 
   const cruised = JSON.parse(run.stdout)
   const { violations, totalCruised, totalDependenciesCruised } = cruised.summary
-  console.log(`${name} (${at}): ${totalCruised} modules, ${totalDependenciesCruised} dependencies`)
+  const aside = unscreened[name] ? `, no screens: ${unscreened[name]}` : ''
+  console.log(
+    `${name} (${at}): ${totalCruised} modules, ${totalDependenciesCruised} dependencies${aside}`,
+  )
 
   const debts = owed.get(name) ?? []
   const standing = violations.map((one) => `${one.rule.name}: ${one.from} → ${one.to}`)

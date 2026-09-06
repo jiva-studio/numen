@@ -10,6 +10,14 @@
 // added tomorrow is a screen until somebody argues otherwise — which is the
 // safe way round: a list would let a new folder in unread.
 //
+// A screen is one of the things a window shows instead of the others. A sheet
+// is drawn over what is behind it by the screen that owns it, is handed what it
+// needs and hands back what it did, and is that screen's own component however
+// deep the folder holding it: the phone's `note/` is one, and `plex/` is the
+// whole of that application. So a module with one screen has nothing for this
+// rule to divide, and is named in `unscreened` with the reason rather than left
+// out of `screened` in silence.
+//
 // This stands beside `rules.cjs` rather than in it because it is not true of
 // every module. `modules/libs/ui` is a library of components and composition is
 // the whole point of it: its cards folder draws a divider, its heatmap draws a

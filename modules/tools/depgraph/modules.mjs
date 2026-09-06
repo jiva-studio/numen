@@ -13,16 +13,24 @@ export const depcruise = join(here, 'node_modules/.bin/depcruise')
  * The modules whose folders are read as screens and shared folders, each with
  * one file under a screen the cruise has to have reached. A cruise that read
  * only a module's root would find no screen to judge and pass.
- *
- * `@numen/ui` is not here and will not be: it is a library of components, and
- * a component drawing another is what it is for. `@numen/mobile` is not here
- * either — the phone is one page with a note sheet on it, so which of its two
- * folders is a screen is a question nobody has answered.
  */
 export const screened = new Map([
   ['@numen/editor', 'src/cards/deck.ts'],
   ['@numen/flashcards', 'src/decks/scheduling.ts'],
 ])
+
+/**
+ * The modules the screen rule does not read, each with the reason. A module is
+ * here or it is above, and `check.mjs` refuses one that is in neither: a module
+ * quietly outside a check is the same fault as a screen quietly reaching a
+ * screen, one level up.
+ */
+export const unscreened = {
+  '@numen/ui': 'a library of components, where one drawing another is the whole point of it',
+  '@numen/wire': 'one file, with no folders to divide',
+  '@numen/mobile':
+    'one screen — App.vue mounts PlexPage alone, and note/ is the sheet that page draws over itself',
+}
 
 /**
  * The edges that break a rule today, by module, as the check prints them. The
