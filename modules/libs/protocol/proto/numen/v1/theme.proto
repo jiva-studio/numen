@@ -48,7 +48,8 @@ enum Shelf {
   SHELF_MINE = 2;
 }
 
-// Mode is what chooses between the two halves of a `light-dark()` pair.
+// Mode is what chooses between the two halves of a `light-dark()` pair. The
+// core calls it `appearance.ColorScheme`.
 enum Mode {
   MODE_UNSPECIFIED = 0;
 

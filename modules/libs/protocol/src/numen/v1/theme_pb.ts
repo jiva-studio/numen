@@ -326,7 +326,8 @@ export const ShelfSchema: GenEnum<Shelf> = /*@__PURE__*/
   enumDesc(file_numen_v1_theme, 0);
 
 /**
- * Mode is what chooses between the two halves of a `light-dark()` pair.
+ * Mode is what chooses between the two halves of a `light-dark()` pair. The
+ * core calls it `appearance.ColorScheme`.
  *
  * @generated from enum numen.v1.Mode
  */

@@ -82,7 +82,8 @@ func (Shelf) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_theme_proto_rawDescGZIP(), []int{0}
 }
 
-// Mode is what chooses between the two halves of a `light-dark()` pair.
+// Mode is what chooses between the two halves of a `light-dark()` pair. The
+// core calls it `appearance.ColorScheme`.
 type Mode int32
 
 const (
