@@ -33,6 +33,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// PageProgression is the direction a book's pages progress in. A book that says
+// nothing is unspecified, and a window lays it out the way its language is
+// written.
+type PageProgression int32
+
+const (
+	PageProgression_PAGE_PROGRESSION_UNSPECIFIED   PageProgression = 0
+	PageProgression_PAGE_PROGRESSION_LEFT_TO_RIGHT PageProgression = 1
+	PageProgression_PAGE_PROGRESSION_RIGHT_TO_LEFT PageProgression = 2
+)
+
+// Enum value maps for PageProgression.
+var (
+	PageProgression_name = map[int32]string{
+		0: "PAGE_PROGRESSION_UNSPECIFIED",
+		1: "PAGE_PROGRESSION_LEFT_TO_RIGHT",
+		2: "PAGE_PROGRESSION_RIGHT_TO_LEFT",
+	}
+	PageProgression_value = map[string]int32{
+		"PAGE_PROGRESSION_UNSPECIFIED":   0,
+		"PAGE_PROGRESSION_LEFT_TO_RIGHT": 1,
+		"PAGE_PROGRESSION_RIGHT_TO_LEFT": 2,
+	}
+)
+
+func (x PageProgression) Enum() *PageProgression {
+	p := new(PageProgression)
+	*p = x
+	return p
+}
+
+func (x PageProgression) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (PageProgression) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_asset_proto_enumTypes[0].Descriptor()
+}
+
+func (PageProgression) Type() protoreflect.EnumType {
+	return &file_numen_v1_asset_proto_enumTypes[0]
+}
+
+func (x PageProgression) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use PageProgression.Descriptor instead.
+func (PageProgression) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_asset_proto_rawDescGZIP(), []int{0}
+}
+
 type GetDocumentRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The file, as the vault holds it.
@@ -198,6 +250,385 @@ func (x *Sheet) GetHigh() float64 {
 	return 0
 }
 
+type GetBookRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The file, as the vault holds it.
+	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetBookRequest) Reset() {
+	*x = GetBookRequest{}
+	mi := &file_numen_v1_asset_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetBookRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetBookRequest) ProtoMessage() {}
+
+func (x *GetBookRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_asset_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetBookRequest.ProtoReflect.Descriptor instead.
+func (*GetBookRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_asset_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetBookRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+type GetBookResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// What the package document calls the book.
+	Title string `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	// Whether the book's documents can be reflowed. A book laid out once and
+	// drawn as it stands is false, and a window draws it at the size it was made
+	// at.
+	Reflowable bool `protobuf:"varint,2,opt,name=reflowable,proto3" json:"reflowable,omitempty"`
+	// Which way its pages progress.
+	Progression PageProgression `protobuf:"varint,3,opt,name=progression,proto3,enum=numen.v1.PageProgression" json:"progression,omitempty"`
+	// The documents of the spine, in reading order.
+	Documents []*SpineDocument `protobuf:"bytes,4,rep,name=documents,proto3" json:"documents,omitempty"`
+	// What the book names, ascending by offset.
+	Parts []*BookPart `protobuf:"bytes,5,rep,name=parts,proto3" json:"parts,omitempty"`
+	// The pages of the printed book this file was made from, ascending by
+	// offset. Most books carry none.
+	Printed []*PrintedPage `protobuf:"bytes,6,rep,name=printed,proto3" json:"printed,omitempty"`
+	// How many pages the book is read in. A book that reflows has none of its
+	// own, so they are counted over its text and not over anything drawn.
+	Pages int32 `protobuf:"varint,7,opt,name=pages,proto3" json:"pages,omitempty"`
+	// Which bytes the book was read from. It stands in the address the markup of
+	// a document and the bytes of an entry are answered at, so an address names
+	// one reading of one file.
+	Fingerprint *Fingerprint `protobuf:"bytes,8,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	// How many of each the book holds. A count standing above the length of the
+	// list above it says the rest are not here: a book names as many parts as it
+	// likes, and what crosses is bounded.
+	Spine         int32 `protobuf:"varint,9,opt,name=spine,proto3" json:"spine,omitempty"`
+	Named         int32 `protobuf:"varint,10,opt,name=named,proto3" json:"named,omitempty"`
+	PagesPrinted  int32 `protobuf:"varint,11,opt,name=pages_printed,json=pagesPrinted,proto3" json:"pages_printed,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetBookResponse) Reset() {
+	*x = GetBookResponse{}
+	mi := &file_numen_v1_asset_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetBookResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetBookResponse) ProtoMessage() {}
+
+func (x *GetBookResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_asset_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetBookResponse.ProtoReflect.Descriptor instead.
+func (*GetBookResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_asset_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetBookResponse) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *GetBookResponse) GetReflowable() bool {
+	if x != nil {
+		return x.Reflowable
+	}
+	return false
+}
+
+func (x *GetBookResponse) GetProgression() PageProgression {
+	if x != nil {
+		return x.Progression
+	}
+	return PageProgression_PAGE_PROGRESSION_UNSPECIFIED
+}
+
+func (x *GetBookResponse) GetDocuments() []*SpineDocument {
+	if x != nil {
+		return x.Documents
+	}
+	return nil
+}
+
+func (x *GetBookResponse) GetParts() []*BookPart {
+	if x != nil {
+		return x.Parts
+	}
+	return nil
+}
+
+func (x *GetBookResponse) GetPrinted() []*PrintedPage {
+	if x != nil {
+		return x.Printed
+	}
+	return nil
+}
+
+func (x *GetBookResponse) GetPages() int32 {
+	if x != nil {
+		return x.Pages
+	}
+	return 0
+}
+
+func (x *GetBookResponse) GetFingerprint() *Fingerprint {
+	if x != nil {
+		return x.Fingerprint
+	}
+	return nil
+}
+
+func (x *GetBookResponse) GetSpine() int32 {
+	if x != nil {
+		return x.Spine
+	}
+	return 0
+}
+
+func (x *GetBookResponse) GetNamed() int32 {
+	if x != nil {
+		return x.Named
+	}
+	return 0
+}
+
+func (x *GetBookResponse) GetPagesPrinted() int32 {
+	if x != nil {
+		return x.PagesPrinted
+	}
+	return 0
+}
+
+// SpineDocument is one document of the book, and where its text stands in the
+// book's text.
+type SpineDocument struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Path is the document's name inside the archive, which the markup of it is
+	// asked for by.
+	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	// Where the document's text begins in the book's text, and how many bytes of
+	// it the document is.
+	Offset int32 `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
+	Length int32 `protobuf:"varint,3,opt,name=length,proto3" json:"length,omitempty"`
+	// Linear is false for a document the spine sets apart from the reading order:
+	// a note, an appendix, the back of a plate. Its text is in the book's text
+	// all the same.
+	Linear        bool `protobuf:"varint,4,opt,name=linear,proto3" json:"linear,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SpineDocument) Reset() {
+	*x = SpineDocument{}
+	mi := &file_numen_v1_asset_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SpineDocument) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SpineDocument) ProtoMessage() {}
+
+func (x *SpineDocument) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_asset_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SpineDocument.ProtoReflect.Descriptor instead.
+func (*SpineDocument) Descriptor() ([]byte, []int) {
+	return file_numen_v1_asset_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *SpineDocument) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *SpineDocument) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+func (x *SpineDocument) GetLength() int32 {
+	if x != nil {
+		return x.Length
+	}
+	return 0
+}
+
+func (x *SpineDocument) GetLinear() bool {
+	if x != nil {
+		return x.Linear
+	}
+	return false
+}
+
+// BookPart is a named division of the book, at the offset its text begins.
+type BookPart struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Title  string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	Offset int32                  `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
+	// Level is the depth of the heading the part came from, and zero for one the
+	// book's own navigation document named.
+	Level         int32 `protobuf:"varint,3,opt,name=level,proto3" json:"level,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BookPart) Reset() {
+	*x = BookPart{}
+	mi := &file_numen_v1_asset_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BookPart) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BookPart) ProtoMessage() {}
+
+func (x *BookPart) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_asset_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BookPart.ProtoReflect.Descriptor instead.
+func (*BookPart) Descriptor() ([]byte, []int) {
+	return file_numen_v1_asset_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *BookPart) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *BookPart) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+func (x *BookPart) GetLevel() int32 {
+	if x != nil {
+		return x.Level
+	}
+	return 0
+}
+
+// PrintedPage is one page of the printed book, at the offset it starts.
+type PrintedPage struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Label         string                 `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
+	Offset        int32                  `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PrintedPage) Reset() {
+	*x = PrintedPage{}
+	mi := &file_numen_v1_asset_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PrintedPage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PrintedPage) ProtoMessage() {}
+
+func (x *PrintedPage) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_asset_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PrintedPage.ProtoReflect.Descriptor instead.
+func (*PrintedPage) Descriptor() ([]byte, []int) {
+	return file_numen_v1_asset_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *PrintedPage) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *PrintedPage) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
 type GetRecordingRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The file, as the vault holds it.
@@ -208,7 +639,7 @@ type GetRecordingRequest struct {
 
 func (x *GetRecordingRequest) Reset() {
 	*x = GetRecordingRequest{}
-	mi := &file_numen_v1_asset_proto_msgTypes[3]
+	mi := &file_numen_v1_asset_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -220,7 +651,7 @@ func (x *GetRecordingRequest) String() string {
 func (*GetRecordingRequest) ProtoMessage() {}
 
 func (x *GetRecordingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_asset_proto_msgTypes[3]
+	mi := &file_numen_v1_asset_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -233,7 +664,7 @@ func (x *GetRecordingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRecordingRequest.ProtoReflect.Descriptor instead.
 func (*GetRecordingRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_asset_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_asset_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetRecordingRequest) GetPath() string {
@@ -262,7 +693,7 @@ type GetRecordingResponse struct {
 
 func (x *GetRecordingResponse) Reset() {
 	*x = GetRecordingResponse{}
-	mi := &file_numen_v1_asset_proto_msgTypes[4]
+	mi := &file_numen_v1_asset_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -274,7 +705,7 @@ func (x *GetRecordingResponse) String() string {
 func (*GetRecordingResponse) ProtoMessage() {}
 
 func (x *GetRecordingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_asset_proto_msgTypes[4]
+	mi := &file_numen_v1_asset_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -287,7 +718,7 @@ func (x *GetRecordingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRecordingResponse.ProtoReflect.Descriptor instead.
 func (*GetRecordingResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_asset_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_asset_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetRecordingResponse) GetLength() int32 {
@@ -331,7 +762,7 @@ type ListHighlightsRequest struct {
 
 func (x *ListHighlightsRequest) Reset() {
 	*x = ListHighlightsRequest{}
-	mi := &file_numen_v1_asset_proto_msgTypes[5]
+	mi := &file_numen_v1_asset_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -343,7 +774,7 @@ func (x *ListHighlightsRequest) String() string {
 func (*ListHighlightsRequest) ProtoMessage() {}
 
 func (x *ListHighlightsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_asset_proto_msgTypes[5]
+	mi := &file_numen_v1_asset_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -356,7 +787,7 @@ func (x *ListHighlightsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListHighlightsRequest.ProtoReflect.Descriptor instead.
 func (*ListHighlightsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_asset_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_asset_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ListHighlightsRequest) GetPath() string {
@@ -383,7 +814,7 @@ type ListHighlightsResponse struct {
 
 func (x *ListHighlightsResponse) Reset() {
 	*x = ListHighlightsResponse{}
-	mi := &file_numen_v1_asset_proto_msgTypes[6]
+	mi := &file_numen_v1_asset_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -395,7 +826,7 @@ func (x *ListHighlightsResponse) String() string {
 func (*ListHighlightsResponse) ProtoMessage() {}
 
 func (x *ListHighlightsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_asset_proto_msgTypes[6]
+	mi := &file_numen_v1_asset_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -408,7 +839,7 @@ func (x *ListHighlightsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListHighlightsResponse.ProtoReflect.Descriptor instead.
 func (*ListHighlightsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_asset_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_asset_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ListHighlightsResponse) GetRuns() []*Highlight {
@@ -429,7 +860,7 @@ type Highlight struct {
 
 func (x *Highlight) Reset() {
 	*x = Highlight{}
-	mi := &file_numen_v1_asset_proto_msgTypes[7]
+	mi := &file_numen_v1_asset_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -441,7 +872,7 @@ func (x *Highlight) String() string {
 func (*Highlight) ProtoMessage() {}
 
 func (x *Highlight) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_asset_proto_msgTypes[7]
+	mi := &file_numen_v1_asset_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -454,7 +885,7 @@ func (x *Highlight) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Highlight.ProtoReflect.Descriptor instead.
 func (*Highlight) Descriptor() ([]byte, []int) {
-	return file_numen_v1_asset_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_asset_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *Highlight) GetPages() []*Page {
@@ -476,7 +907,7 @@ type Page struct {
 
 func (x *Page) Reset() {
 	*x = Page{}
-	mi := &file_numen_v1_asset_proto_msgTypes[8]
+	mi := &file_numen_v1_asset_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -488,7 +919,7 @@ func (x *Page) String() string {
 func (*Page) ProtoMessage() {}
 
 func (x *Page) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_asset_proto_msgTypes[8]
+	mi := &file_numen_v1_asset_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -501,7 +932,7 @@ func (x *Page) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Page.ProtoReflect.Descriptor instead.
 func (*Page) Descriptor() ([]byte, []int) {
-	return file_numen_v1_asset_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_asset_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *Page) GetIndex() int32 {
@@ -532,7 +963,7 @@ type Rect struct {
 
 func (x *Rect) Reset() {
 	*x = Rect{}
-	mi := &file_numen_v1_asset_proto_msgTypes[9]
+	mi := &file_numen_v1_asset_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -544,7 +975,7 @@ func (x *Rect) String() string {
 func (*Rect) ProtoMessage() {}
 
 func (x *Rect) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_asset_proto_msgTypes[9]
+	mi := &file_numen_v1_asset_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -557,7 +988,7 @@ func (x *Rect) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Rect.ProtoReflect.Descriptor instead.
 func (*Rect) Descriptor() ([]byte, []int) {
-	return file_numen_v1_asset_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_asset_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *Rect) GetMinX() float32 {
@@ -601,7 +1032,36 @@ const file_numen_v1_asset_proto_rawDesc = "" +
 	"\vfingerprint\x18\x03 \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\"/\n" +
 	"\x05Sheet\x12\x12\n" +
 	"\x04wide\x18\x01 \x01(\x01R\x04wide\x12\x12\n" +
-	"\x04high\x18\x02 \x01(\x01R\x04high\")\n" +
+	"\x04high\x18\x02 \x01(\x01R\x04high\"$\n" +
+	"\x0eGetBookRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\xb6\x03\n" +
+	"\x0fGetBookResponse\x12\x14\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x1e\n" +
+	"\n" +
+	"reflowable\x18\x02 \x01(\bR\n" +
+	"reflowable\x12;\n" +
+	"\vprogression\x18\x03 \x01(\x0e2\x19.numen.v1.PageProgressionR\vprogression\x125\n" +
+	"\tdocuments\x18\x04 \x03(\v2\x17.numen.v1.SpineDocumentR\tdocuments\x12(\n" +
+	"\x05parts\x18\x05 \x03(\v2\x12.numen.v1.BookPartR\x05parts\x12/\n" +
+	"\aprinted\x18\x06 \x03(\v2\x15.numen.v1.PrintedPageR\aprinted\x12\x14\n" +
+	"\x05pages\x18\a \x01(\x05R\x05pages\x127\n" +
+	"\vfingerprint\x18\b \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\x12\x14\n" +
+	"\x05spine\x18\t \x01(\x05R\x05spine\x12\x14\n" +
+	"\x05named\x18\n" +
+	" \x01(\x05R\x05named\x12#\n" +
+	"\rpages_printed\x18\v \x01(\x05R\fpagesPrinted\"k\n" +
+	"\rSpineDocument\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x16\n" +
+	"\x06offset\x18\x02 \x01(\x05R\x06offset\x12\x16\n" +
+	"\x06length\x18\x03 \x01(\x05R\x06length\x12\x16\n" +
+	"\x06linear\x18\x04 \x01(\bR\x06linear\"N\n" +
+	"\bBookPart\x12\x14\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x16\n" +
+	"\x06offset\x18\x02 \x01(\x05R\x06offset\x12\x14\n" +
+	"\x05level\x18\x03 \x01(\x05R\x05level\";\n" +
+	"\vPrintedPage\x12\x14\n" +
+	"\x05label\x18\x01 \x01(\tR\x05label\x12\x16\n" +
+	"\x06offset\x18\x02 \x01(\x05R\x06offset\")\n" +
 	"\x13GetRecordingRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"n\n" +
 	"\x14GetRecordingResponse\x12\x16\n" +
@@ -623,9 +1083,14 @@ const file_numen_v1_asset_proto_rawDesc = "" +
 	"\x05min_x\x18\x01 \x01(\x02R\x04minX\x12\x13\n" +
 	"\x05min_y\x18\x02 \x01(\x02R\x04minY\x12\x13\n" +
 	"\x05max_x\x18\x03 \x01(\x02R\x04maxX\x12\x13\n" +
-	"\x05max_y\x18\x04 \x01(\x02R\x04maxY2\xfe\x01\n" +
+	"\x05max_y\x18\x04 \x01(\x02R\x04maxY*{\n" +
+	"\x0fPageProgression\x12 \n" +
+	"\x1cPAGE_PROGRESSION_UNSPECIFIED\x10\x00\x12\"\n" +
+	"\x1ePAGE_PROGRESSION_LEFT_TO_RIGHT\x10\x01\x12\"\n" +
+	"\x1ePAGE_PROGRESSION_RIGHT_TO_LEFT\x10\x022\xbe\x02\n" +
 	"\fAssetService\x12J\n" +
-	"\vGetDocument\x12\x1c.numen.v1.GetDocumentRequest\x1a\x1d.numen.v1.GetDocumentResponse\x12M\n" +
+	"\vGetDocument\x12\x1c.numen.v1.GetDocumentRequest\x1a\x1d.numen.v1.GetDocumentResponse\x12>\n" +
+	"\aGetBook\x12\x18.numen.v1.GetBookRequest\x1a\x19.numen.v1.GetBookResponse\x12M\n" +
 	"\fGetRecording\x12\x1d.numen.v1.GetRecordingRequest\x1a\x1e.numen.v1.GetRecordingResponse\x12S\n" +
 	"\x0eListHighlights\x12\x1f.numen.v1.ListHighlightsRequest\x1a .numen.v1.ListHighlightsResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
@@ -641,39 +1106,53 @@ func file_numen_v1_asset_proto_rawDescGZIP() []byte {
 	return file_numen_v1_asset_proto_rawDescData
 }
 
-var file_numen_v1_asset_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_numen_v1_asset_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_numen_v1_asset_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_numen_v1_asset_proto_goTypes = []any{
-	(*GetDocumentRequest)(nil),     // 0: numen.v1.GetDocumentRequest
-	(*GetDocumentResponse)(nil),    // 1: numen.v1.GetDocumentResponse
-	(*Sheet)(nil),                  // 2: numen.v1.Sheet
-	(*GetRecordingRequest)(nil),    // 3: numen.v1.GetRecordingRequest
-	(*GetRecordingResponse)(nil),   // 4: numen.v1.GetRecordingResponse
-	(*ListHighlightsRequest)(nil),  // 5: numen.v1.ListHighlightsRequest
-	(*ListHighlightsResponse)(nil), // 6: numen.v1.ListHighlightsResponse
-	(*Highlight)(nil),              // 7: numen.v1.Highlight
-	(*Page)(nil),                   // 8: numen.v1.Page
-	(*Rect)(nil),                   // 9: numen.v1.Rect
-	(*Fingerprint)(nil),            // 10: numen.v1.Fingerprint
-	(*Stretch)(nil),                // 11: numen.v1.Stretch
+	(PageProgression)(0),           // 0: numen.v1.PageProgression
+	(*GetDocumentRequest)(nil),     // 1: numen.v1.GetDocumentRequest
+	(*GetDocumentResponse)(nil),    // 2: numen.v1.GetDocumentResponse
+	(*Sheet)(nil),                  // 3: numen.v1.Sheet
+	(*GetBookRequest)(nil),         // 4: numen.v1.GetBookRequest
+	(*GetBookResponse)(nil),        // 5: numen.v1.GetBookResponse
+	(*SpineDocument)(nil),          // 6: numen.v1.SpineDocument
+	(*BookPart)(nil),               // 7: numen.v1.BookPart
+	(*PrintedPage)(nil),            // 8: numen.v1.PrintedPage
+	(*GetRecordingRequest)(nil),    // 9: numen.v1.GetRecordingRequest
+	(*GetRecordingResponse)(nil),   // 10: numen.v1.GetRecordingResponse
+	(*ListHighlightsRequest)(nil),  // 11: numen.v1.ListHighlightsRequest
+	(*ListHighlightsResponse)(nil), // 12: numen.v1.ListHighlightsResponse
+	(*Highlight)(nil),              // 13: numen.v1.Highlight
+	(*Page)(nil),                   // 14: numen.v1.Page
+	(*Rect)(nil),                   // 15: numen.v1.Rect
+	(*Fingerprint)(nil),            // 16: numen.v1.Fingerprint
+	(*Stretch)(nil),                // 17: numen.v1.Stretch
 }
 var file_numen_v1_asset_proto_depIdxs = []int32{
-	2,  // 0: numen.v1.GetDocumentResponse.sheets:type_name -> numen.v1.Sheet
-	10, // 1: numen.v1.GetDocumentResponse.fingerprint:type_name -> numen.v1.Fingerprint
-	11, // 2: numen.v1.ListHighlightsRequest.at:type_name -> numen.v1.Stretch
-	7,  // 3: numen.v1.ListHighlightsResponse.runs:type_name -> numen.v1.Highlight
-	8,  // 4: numen.v1.Highlight.pages:type_name -> numen.v1.Page
-	9,  // 5: numen.v1.Page.rects:type_name -> numen.v1.Rect
-	0,  // 6: numen.v1.AssetService.GetDocument:input_type -> numen.v1.GetDocumentRequest
-	3,  // 7: numen.v1.AssetService.GetRecording:input_type -> numen.v1.GetRecordingRequest
-	5,  // 8: numen.v1.AssetService.ListHighlights:input_type -> numen.v1.ListHighlightsRequest
-	1,  // 9: numen.v1.AssetService.GetDocument:output_type -> numen.v1.GetDocumentResponse
-	4,  // 10: numen.v1.AssetService.GetRecording:output_type -> numen.v1.GetRecordingResponse
-	6,  // 11: numen.v1.AssetService.ListHighlights:output_type -> numen.v1.ListHighlightsResponse
-	9,  // [9:12] is the sub-list for method output_type
-	6,  // [6:9] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	3,  // 0: numen.v1.GetDocumentResponse.sheets:type_name -> numen.v1.Sheet
+	16, // 1: numen.v1.GetDocumentResponse.fingerprint:type_name -> numen.v1.Fingerprint
+	0,  // 2: numen.v1.GetBookResponse.progression:type_name -> numen.v1.PageProgression
+	6,  // 3: numen.v1.GetBookResponse.documents:type_name -> numen.v1.SpineDocument
+	7,  // 4: numen.v1.GetBookResponse.parts:type_name -> numen.v1.BookPart
+	8,  // 5: numen.v1.GetBookResponse.printed:type_name -> numen.v1.PrintedPage
+	16, // 6: numen.v1.GetBookResponse.fingerprint:type_name -> numen.v1.Fingerprint
+	17, // 7: numen.v1.ListHighlightsRequest.at:type_name -> numen.v1.Stretch
+	13, // 8: numen.v1.ListHighlightsResponse.runs:type_name -> numen.v1.Highlight
+	14, // 9: numen.v1.Highlight.pages:type_name -> numen.v1.Page
+	15, // 10: numen.v1.Page.rects:type_name -> numen.v1.Rect
+	1,  // 11: numen.v1.AssetService.GetDocument:input_type -> numen.v1.GetDocumentRequest
+	4,  // 12: numen.v1.AssetService.GetBook:input_type -> numen.v1.GetBookRequest
+	9,  // 13: numen.v1.AssetService.GetRecording:input_type -> numen.v1.GetRecordingRequest
+	11, // 14: numen.v1.AssetService.ListHighlights:input_type -> numen.v1.ListHighlightsRequest
+	2,  // 15: numen.v1.AssetService.GetDocument:output_type -> numen.v1.GetDocumentResponse
+	5,  // 16: numen.v1.AssetService.GetBook:output_type -> numen.v1.GetBookResponse
+	10, // 17: numen.v1.AssetService.GetRecording:output_type -> numen.v1.GetRecordingResponse
+	12, // 18: numen.v1.AssetService.ListHighlights:output_type -> numen.v1.ListHighlightsResponse
+	15, // [15:19] is the sub-list for method output_type
+	11, // [11:15] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_asset_proto_init() }
@@ -687,13 +1166,14 @@ func file_numen_v1_asset_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_asset_proto_rawDesc), len(file_numen_v1_asset_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   10,
+			NumEnums:      1,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_numen_v1_asset_proto_goTypes,
 		DependencyIndexes: file_numen_v1_asset_proto_depIdxs,
+		EnumInfos:         file_numen_v1_asset_proto_enumTypes,
 		MessageInfos:      file_numen_v1_asset_proto_msgTypes,
 	}.Build()
 	File_numen_v1_asset_proto = out.File

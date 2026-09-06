@@ -47,6 +47,8 @@ const (
 	// AssetServiceGetDocumentProcedure is the fully-qualified name of the AssetService's GetDocument
 	// RPC.
 	AssetServiceGetDocumentProcedure = "/numen.v1.AssetService/GetDocument"
+	// AssetServiceGetBookProcedure is the fully-qualified name of the AssetService's GetBook RPC.
+	AssetServiceGetBookProcedure = "/numen.v1.AssetService/GetBook"
 	// AssetServiceGetRecordingProcedure is the fully-qualified name of the AssetService's GetRecording
 	// RPC.
 	AssetServiceGetRecordingProcedure = "/numen.v1.AssetService/GetRecording"
@@ -65,6 +67,11 @@ type AssetServiceClient interface {
 	// could not have one inside the wait is answered unavailable and asks again;
 	// a held request is not an answer.
 	GetDocument(context.Context, *connect.Request[v1.GetDocumentRequest]) (*connect.Response[v1.GetDocumentResponse], error)
+	// GetBook is what a book that reflows is: what it is called, which way its
+	// pages progress, the documents it is read in and what it names inside them.
+	// The markup of one of those documents and the bytes of one entry of the
+	// archive are each at an address of its own.
+	GetBook(context.Context, *connect.Request[v1.GetBookRequest]) (*connect.Response[v1.GetBookResponse], error)
 	// GetRecording is what a recording is: how long it runs, how much of it has
 	// been listened to, and where its bytes are played from.
 	GetRecording(context.Context, *connect.Request[v1.GetRecordingRequest]) (*connect.Response[v1.GetRecordingResponse], error)
@@ -91,6 +98,12 @@ func NewAssetServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(assetServiceMethods.ByName("GetDocument")),
 			connect.WithClientOptions(opts...),
 		),
+		getBook: connect.NewClient[v1.GetBookRequest, v1.GetBookResponse](
+			httpClient,
+			baseURL+AssetServiceGetBookProcedure,
+			connect.WithSchema(assetServiceMethods.ByName("GetBook")),
+			connect.WithClientOptions(opts...),
+		),
 		getRecording: connect.NewClient[v1.GetRecordingRequest, v1.GetRecordingResponse](
 			httpClient,
 			baseURL+AssetServiceGetRecordingProcedure,
@@ -109,6 +122,7 @@ func NewAssetServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 // assetServiceClient implements AssetServiceClient.
 type assetServiceClient struct {
 	getDocument    *connect.Client[v1.GetDocumentRequest, v1.GetDocumentResponse]
+	getBook        *connect.Client[v1.GetBookRequest, v1.GetBookResponse]
 	getRecording   *connect.Client[v1.GetRecordingRequest, v1.GetRecordingResponse]
 	listHighlights *connect.Client[v1.ListHighlightsRequest, v1.ListHighlightsResponse]
 }
@@ -116,6 +130,11 @@ type assetServiceClient struct {
 // GetDocument calls numen.v1.AssetService.GetDocument.
 func (c *assetServiceClient) GetDocument(ctx context.Context, req *connect.Request[v1.GetDocumentRequest]) (*connect.Response[v1.GetDocumentResponse], error) {
 	return c.getDocument.CallUnary(ctx, req)
+}
+
+// GetBook calls numen.v1.AssetService.GetBook.
+func (c *assetServiceClient) GetBook(ctx context.Context, req *connect.Request[v1.GetBookRequest]) (*connect.Response[v1.GetBookResponse], error) {
+	return c.getBook.CallUnary(ctx, req)
 }
 
 // GetRecording calls numen.v1.AssetService.GetRecording.
@@ -138,6 +157,11 @@ type AssetServiceHandler interface {
 	// could not have one inside the wait is answered unavailable and asks again;
 	// a held request is not an answer.
 	GetDocument(context.Context, *connect.Request[v1.GetDocumentRequest]) (*connect.Response[v1.GetDocumentResponse], error)
+	// GetBook is what a book that reflows is: what it is called, which way its
+	// pages progress, the documents it is read in and what it names inside them.
+	// The markup of one of those documents and the bytes of one entry of the
+	// archive are each at an address of its own.
+	GetBook(context.Context, *connect.Request[v1.GetBookRequest]) (*connect.Response[v1.GetBookResponse], error)
 	// GetRecording is what a recording is: how long it runs, how much of it has
 	// been listened to, and where its bytes are played from.
 	GetRecording(context.Context, *connect.Request[v1.GetRecordingRequest]) (*connect.Response[v1.GetRecordingResponse], error)
@@ -160,6 +184,12 @@ func NewAssetServiceHandler(svc AssetServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(assetServiceMethods.ByName("GetDocument")),
 		connect.WithHandlerOptions(opts...),
 	)
+	assetServiceGetBookHandler := connect.NewUnaryHandler(
+		AssetServiceGetBookProcedure,
+		svc.GetBook,
+		connect.WithSchema(assetServiceMethods.ByName("GetBook")),
+		connect.WithHandlerOptions(opts...),
+	)
 	assetServiceGetRecordingHandler := connect.NewUnaryHandler(
 		AssetServiceGetRecordingProcedure,
 		svc.GetRecording,
@@ -176,6 +206,8 @@ func NewAssetServiceHandler(svc AssetServiceHandler, opts ...connect.HandlerOpti
 		switch r.URL.Path {
 		case AssetServiceGetDocumentProcedure:
 			assetServiceGetDocumentHandler.ServeHTTP(w, r)
+		case AssetServiceGetBookProcedure:
+			assetServiceGetBookHandler.ServeHTTP(w, r)
 		case AssetServiceGetRecordingProcedure:
 			assetServiceGetRecordingHandler.ServeHTTP(w, r)
 		case AssetServiceListHighlightsProcedure:
@@ -191,6 +223,10 @@ type UnimplementedAssetServiceHandler struct{}
 
 func (UnimplementedAssetServiceHandler) GetDocument(context.Context, *connect.Request[v1.GetDocumentRequest]) (*connect.Response[v1.GetDocumentResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AssetService.GetDocument is not implemented"))
+}
+
+func (UnimplementedAssetServiceHandler) GetBook(context.Context, *connect.Request[v1.GetBookRequest]) (*connect.Response[v1.GetBookResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AssetService.GetBook is not implemented"))
 }
 
 func (UnimplementedAssetServiceHandler) GetRecording(context.Context, *connect.Request[v1.GetRecordingRequest]) (*connect.Response[v1.GetRecordingResponse], error) {

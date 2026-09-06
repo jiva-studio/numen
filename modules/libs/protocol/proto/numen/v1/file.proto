@@ -82,6 +82,16 @@ enum SourceKind {
   SOURCE_KIND_RECORDING = 3;
 }
 
+// BookFormat is which sort of book stands at a path, so a client opens it in
+// the reader made for it: one is drawn as pictures a page at a time, the other
+// reflows. It is decided from the file's name, as SourceKind is, and a file
+// that is no book is unspecified.
+enum BookFormat {
+  BOOK_FORMAT_UNSPECIFIED = 0;
+  BOOK_FORMAT_PDF = 1;
+  BOOK_FORMAT_EPUB = 2;
+}
+
 message ListFileKindsRequest {
   // The paths to answer about, as the vault files them. More than the vault
   // answers at once are refused.
@@ -102,6 +112,9 @@ message FileKind {
 
   // Which of three the note is. It says nothing about a path holding no note.
   NoteType type = 3;
+
+  // Which sort of book it is. It says nothing about a path holding no book.
+  BookFormat format = 4;
 }
 
 message MoveFileRequest {

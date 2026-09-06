@@ -14,8 +14,8 @@
 // serves the notes to a network need not serve the files, and a service is the
 // unit of what a binary answers.
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Fingerprint, Stretch } from "./shared_pb.js";
 import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
@@ -24,7 +24,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/asset.proto.
  */
 export const file_numen_v1_asset: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9hc3NldC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkicQoTR2V0RG9jdW1lbnRSZXNwb25zZRINCgVwYWdlcxgBIAEoBRIfCgZzaGVldHMYAiADKAsyDy5udW1lbi52MS5TaGVldBIqCgtmaW5nZXJwcmludBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50IiMKBVNoZWV0EgwKBHdpZGUYASABKAESDAoEaGlnaBgCIAEoASIjChNHZXRSZWNvcmRpbmdSZXF1ZXN0EgwKBHBhdGgYASABKAkiUgoUR2V0UmVjb3JkaW5nUmVzcG9uc2USDgoGbGVuZ3RoGAEgASgFEg0KBWhlYXJkGAIgASgFEg0KBW1lZGlhGAMgASgJEgwKBHR5cGUYBCABKAkiRAoVTGlzdEhpZ2hsaWdodHNSZXF1ZXN0EgwKBHBhdGgYASABKAkSHQoCYXQYAiADKAsyES5udW1lbi52MS5TdHJldGNoIjsKFkxpc3RIaWdobGlnaHRzUmVzcG9uc2USIQoEcnVucxgBIAMoCzITLm51bWVuLnYxLkhpZ2hsaWdodCIqCglIaWdobGlnaHQSHQoFcGFnZXMYASADKAsyDi5udW1lbi52MS5QYWdlIjQKBFBhZ2USDQoFaW5kZXgYASABKAUSHQoFcmVjdHMYAiADKAsyDi5udW1lbi52MS5SZWN0IkIKBFJlY3QSDQoFbWluX3gYASABKAISDQoFbWluX3kYAiABKAISDQoFbWF4X3gYAyABKAISDQoFbWF4X3kYBCABKAIy/gEKDEFzc2V0U2VydmljZRJKCgtHZXREb2N1bWVudBIcLm51bWVuLnYxLkdldERvY3VtZW50UmVxdWVzdBodLm51bWVuLnYxLkdldERvY3VtZW50UmVzcG9uc2USTQoMR2V0UmVjb3JkaW5nEh0ubnVtZW4udjEuR2V0UmVjb3JkaW5nUmVxdWVzdBoeLm51bWVuLnYxLkdldFJlY29yZGluZ1Jlc3BvbnNlElMKDkxpc3RIaWdobGlnaHRzEh8ubnVtZW4udjEuTGlzdEhpZ2hsaWdodHNSZXF1ZXN0GiAubnVtZW4udjEuTGlzdEhpZ2hsaWdodHNSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS9hc3NldC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkicQoTR2V0RG9jdW1lbnRSZXNwb25zZRINCgVwYWdlcxgBIAEoBRIfCgZzaGVldHMYAiADKAsyDy5udW1lbi52MS5TaGVldBIqCgtmaW5nZXJwcmludBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50IiMKBVNoZWV0EgwKBHdpZGUYASABKAESDAoEaGlnaBgCIAEoASIeCg5HZXRCb29rUmVxdWVzdBIMCgRwYXRoGAEgASgJIssCCg9HZXRCb29rUmVzcG9uc2USDQoFdGl0bGUYASABKAkSEgoKcmVmbG93YWJsZRgCIAEoCBIuCgtwcm9ncmVzc2lvbhgDIAEoDjIZLm51bWVuLnYxLlBhZ2VQcm9ncmVzc2lvbhIqCglkb2N1bWVudHMYBCADKAsyFy5udW1lbi52MS5TcGluZURvY3VtZW50EiEKBXBhcnRzGAUgAygLMhIubnVtZW4udjEuQm9va1BhcnQSJgoHcHJpbnRlZBgGIAMoCzIVLm51bWVuLnYxLlByaW50ZWRQYWdlEg0KBXBhZ2VzGAcgASgFEioKC2ZpbmdlcnByaW50GAggASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnQSDQoFc3BpbmUYCSABKAUSDQoFbmFtZWQYCiABKAUSFQoNcGFnZXNfcHJpbnRlZBgLIAEoBSJNCg1TcGluZURvY3VtZW50EgwKBHBhdGgYASABKAkSDgoGb2Zmc2V0GAIgASgFEg4KBmxlbmd0aBgDIAEoBRIOCgZsaW5lYXIYBCABKAgiOAoIQm9va1BhcnQSDQoFdGl0bGUYASABKAkSDgoGb2Zmc2V0GAIgASgFEg0KBWxldmVsGAMgASgFIiwKC1ByaW50ZWRQYWdlEg0KBWxhYmVsGAEgASgJEg4KBm9mZnNldBgCIAEoBSIjChNHZXRSZWNvcmRpbmdSZXF1ZXN0EgwKBHBhdGgYASABKAkiUgoUR2V0UmVjb3JkaW5nUmVzcG9uc2USDgoGbGVuZ3RoGAEgASgFEg0KBWhlYXJkGAIgASgFEg0KBW1lZGlhGAMgASgJEgwKBHR5cGUYBCABKAkiRAoVTGlzdEhpZ2hsaWdodHNSZXF1ZXN0EgwKBHBhdGgYASABKAkSHQoCYXQYAiADKAsyES5udW1lbi52MS5TdHJldGNoIjsKFkxpc3RIaWdobGlnaHRzUmVzcG9uc2USIQoEcnVucxgBIAMoCzITLm51bWVuLnYxLkhpZ2hsaWdodCIqCglIaWdobGlnaHQSHQoFcGFnZXMYASADKAsyDi5udW1lbi52MS5QYWdlIjQKBFBhZ2USDQoFaW5kZXgYASABKAUSHQoFcmVjdHMYAiADKAsyDi5udW1lbi52MS5SZWN0IkIKBFJlY3QSDQoFbWluX3gYASABKAISDQoFbWluX3kYAiABKAISDQoFbWF4X3gYAyABKAISDQoFbWF4X3kYBCABKAIqewoPUGFnZVByb2dyZXNzaW9uEiAKHFBBR0VfUFJPR1JFU1NJT05fVU5TUEVDSUZJRUQQABIiCh5QQUdFX1BST0dSRVNTSU9OX0xFRlRfVE9fUklHSFQQARIiCh5QQUdFX1BST0dSRVNTSU9OX1JJR0hUX1RPX0xFRlQQAjK+AgoMQXNzZXRTZXJ2aWNlEkoKC0dldERvY3VtZW50EhwubnVtZW4udjEuR2V0RG9jdW1lbnRSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0RG9jdW1lbnRSZXNwb25zZRI+CgdHZXRCb29rEhgubnVtZW4udjEuR2V0Qm9va1JlcXVlc3QaGS5udW1lbi52MS5HZXRCb29rUmVzcG9uc2USTQoMR2V0UmVjb3JkaW5nEh0ubnVtZW4udjEuR2V0UmVjb3JkaW5nUmVxdWVzdBoeLm51bWVuLnYxLkdldFJlY29yZGluZ1Jlc3BvbnNlElMKDkxpc3RIaWdobGlnaHRzEh8ubnVtZW4udjEuTGlzdEhpZ2hsaWdodHNSZXF1ZXN0GiAubnVtZW4udjEuTGlzdEhpZ2hsaWdodHNSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetDocumentRequest
@@ -107,6 +107,219 @@ export const SheetSchema: GenMessage<Sheet> = /*@__PURE__*/
   messageDesc(file_numen_v1_asset, 2);
 
 /**
+ * @generated from message numen.v1.GetBookRequest
+ */
+export type GetBookRequest = Message<"numen.v1.GetBookRequest"> & {
+  /**
+   * The file, as the vault holds it.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message numen.v1.GetBookRequest.
+ * Use `create(GetBookRequestSchema)` to create a new message.
+ */
+export const GetBookRequestSchema: GenMessage<GetBookRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_asset, 3);
+
+/**
+ * @generated from message numen.v1.GetBookResponse
+ */
+export type GetBookResponse = Message<"numen.v1.GetBookResponse"> & {
+  /**
+   * What the package document calls the book.
+   *
+   * @generated from field: string title = 1;
+   */
+  title: string;
+
+  /**
+   * Whether the book's documents can be reflowed. A book laid out once and
+   * drawn as it stands is false, and a window draws it at the size it was made
+   * at.
+   *
+   * @generated from field: bool reflowable = 2;
+   */
+  reflowable: boolean;
+
+  /**
+   * Which way its pages progress.
+   *
+   * @generated from field: numen.v1.PageProgression progression = 3;
+   */
+  progression: PageProgression;
+
+  /**
+   * The documents of the spine, in reading order.
+   *
+   * @generated from field: repeated numen.v1.SpineDocument documents = 4;
+   */
+  documents: SpineDocument[];
+
+  /**
+   * What the book names, ascending by offset.
+   *
+   * @generated from field: repeated numen.v1.BookPart parts = 5;
+   */
+  parts: BookPart[];
+
+  /**
+   * The pages of the printed book this file was made from, ascending by
+   * offset. Most books carry none.
+   *
+   * @generated from field: repeated numen.v1.PrintedPage printed = 6;
+   */
+  printed: PrintedPage[];
+
+  /**
+   * How many pages the book is read in. A book that reflows has none of its
+   * own, so they are counted over its text and not over anything drawn.
+   *
+   * @generated from field: int32 pages = 7;
+   */
+  pages: number;
+
+  /**
+   * Which bytes the book was read from. It stands in the address the markup of
+   * a document and the bytes of an entry are answered at, so an address names
+   * one reading of one file.
+   *
+   * @generated from field: numen.v1.Fingerprint fingerprint = 8;
+   */
+  fingerprint?: Fingerprint | undefined;
+
+  /**
+   * How many of each the book holds. A count standing above the length of the
+   * list above it says the rest are not here: a book names as many parts as it
+   * likes, and what crosses is bounded.
+   *
+   * @generated from field: int32 spine = 9;
+   */
+  spine: number;
+
+  /**
+   * @generated from field: int32 named = 10;
+   */
+  named: number;
+
+  /**
+   * @generated from field: int32 pages_printed = 11;
+   */
+  pagesPrinted: number;
+};
+
+/**
+ * Describes the message numen.v1.GetBookResponse.
+ * Use `create(GetBookResponseSchema)` to create a new message.
+ */
+export const GetBookResponseSchema: GenMessage<GetBookResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_asset, 4);
+
+/**
+ * SpineDocument is one document of the book, and where its text stands in the
+ * book's text.
+ *
+ * @generated from message numen.v1.SpineDocument
+ */
+export type SpineDocument = Message<"numen.v1.SpineDocument"> & {
+  /**
+   * Path is the document's name inside the archive, which the markup of it is
+   * asked for by.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * Where the document's text begins in the book's text, and how many bytes of
+   * it the document is.
+   *
+   * @generated from field: int32 offset = 2;
+   */
+  offset: number;
+
+  /**
+   * @generated from field: int32 length = 3;
+   */
+  length: number;
+
+  /**
+   * Linear is false for a document the spine sets apart from the reading order:
+   * a note, an appendix, the back of a plate. Its text is in the book's text
+   * all the same.
+   *
+   * @generated from field: bool linear = 4;
+   */
+  linear: boolean;
+};
+
+/**
+ * Describes the message numen.v1.SpineDocument.
+ * Use `create(SpineDocumentSchema)` to create a new message.
+ */
+export const SpineDocumentSchema: GenMessage<SpineDocument> = /*@__PURE__*/
+  messageDesc(file_numen_v1_asset, 5);
+
+/**
+ * BookPart is a named division of the book, at the offset its text begins.
+ *
+ * @generated from message numen.v1.BookPart
+ */
+export type BookPart = Message<"numen.v1.BookPart"> & {
+  /**
+   * @generated from field: string title = 1;
+   */
+  title: string;
+
+  /**
+   * @generated from field: int32 offset = 2;
+   */
+  offset: number;
+
+  /**
+   * Level is the depth of the heading the part came from, and zero for one the
+   * book's own navigation document named.
+   *
+   * @generated from field: int32 level = 3;
+   */
+  level: number;
+};
+
+/**
+ * Describes the message numen.v1.BookPart.
+ * Use `create(BookPartSchema)` to create a new message.
+ */
+export const BookPartSchema: GenMessage<BookPart> = /*@__PURE__*/
+  messageDesc(file_numen_v1_asset, 6);
+
+/**
+ * PrintedPage is one page of the printed book, at the offset it starts.
+ *
+ * @generated from message numen.v1.PrintedPage
+ */
+export type PrintedPage = Message<"numen.v1.PrintedPage"> & {
+  /**
+   * @generated from field: string label = 1;
+   */
+  label: string;
+
+  /**
+   * @generated from field: int32 offset = 2;
+   */
+  offset: number;
+};
+
+/**
+ * Describes the message numen.v1.PrintedPage.
+ * Use `create(PrintedPageSchema)` to create a new message.
+ */
+export const PrintedPageSchema: GenMessage<PrintedPage> = /*@__PURE__*/
+  messageDesc(file_numen_v1_asset, 7);
+
+/**
  * @generated from message numen.v1.GetRecordingRequest
  */
 export type GetRecordingRequest = Message<"numen.v1.GetRecordingRequest"> & {
@@ -123,7 +336,7 @@ export type GetRecordingRequest = Message<"numen.v1.GetRecordingRequest"> & {
  * Use `create(GetRecordingRequestSchema)` to create a new message.
  */
 export const GetRecordingRequestSchema: GenMessage<GetRecordingRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_asset, 3);
+  messageDesc(file_numen_v1_asset, 8);
 
 /**
  * @generated from message numen.v1.GetRecordingResponse
@@ -164,7 +377,7 @@ export type GetRecordingResponse = Message<"numen.v1.GetRecordingResponse"> & {
  * Use `create(GetRecordingResponseSchema)` to create a new message.
  */
 export const GetRecordingResponseSchema: GenMessage<GetRecordingResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_asset, 4);
+  messageDesc(file_numen_v1_asset, 9);
 
 /**
  * @generated from message numen.v1.ListHighlightsRequest
@@ -191,7 +404,7 @@ export type ListHighlightsRequest = Message<"numen.v1.ListHighlightsRequest"> & 
  * Use `create(ListHighlightsRequestSchema)` to create a new message.
  */
 export const ListHighlightsRequestSchema: GenMessage<ListHighlightsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_asset, 5);
+  messageDesc(file_numen_v1_asset, 10);
 
 /**
  * @generated from message numen.v1.ListHighlightsResponse
@@ -210,7 +423,7 @@ export type ListHighlightsResponse = Message<"numen.v1.ListHighlightsResponse"> 
  * Use `create(ListHighlightsResponseSchema)` to create a new message.
  */
 export const ListHighlightsResponseSchema: GenMessage<ListHighlightsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_asset, 6);
+  messageDesc(file_numen_v1_asset, 11);
 
 /**
  * Highlight is where one run of the text sits: the pages it falls on and, on
@@ -230,7 +443,7 @@ export type Highlight = Message<"numen.v1.Highlight"> & {
  * Use `create(HighlightSchema)` to create a new message.
  */
 export const HighlightSchema: GenMessage<Highlight> = /*@__PURE__*/
-  messageDesc(file_numen_v1_asset, 7);
+  messageDesc(file_numen_v1_asset, 12);
 
 /**
  * Page is one page of a highlight, and what to light on it.
@@ -256,7 +469,7 @@ export type Page = Message<"numen.v1.Page"> & {
  * Use `create(PageSchema)` to create a new message.
  */
 export const PageSchema: GenMessage<Page> = /*@__PURE__*/
-  messageDesc(file_numen_v1_asset, 8);
+  messageDesc(file_numen_v1_asset, 13);
 
 /**
  * Rect is a place on a page, in fractions of that page, so a page drawn at any
@@ -291,7 +504,37 @@ export type Rect = Message<"numen.v1.Rect"> & {
  * Use `create(RectSchema)` to create a new message.
  */
 export const RectSchema: GenMessage<Rect> = /*@__PURE__*/
-  messageDesc(file_numen_v1_asset, 9);
+  messageDesc(file_numen_v1_asset, 14);
+
+/**
+ * PageProgression is the direction a book's pages progress in. A book that says
+ * nothing is unspecified, and a window lays it out the way its language is
+ * written.
+ *
+ * @generated from enum numen.v1.PageProgression
+ */
+export enum PageProgression {
+  /**
+   * @generated from enum value: PAGE_PROGRESSION_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: PAGE_PROGRESSION_LEFT_TO_RIGHT = 1;
+   */
+  LEFT_TO_RIGHT = 1,
+
+  /**
+   * @generated from enum value: PAGE_PROGRESSION_RIGHT_TO_LEFT = 2;
+   */
+  RIGHT_TO_LEFT = 2,
+}
+
+/**
+ * Describes the enum numen.v1.PageProgression.
+ */
+export const PageProgressionSchema: GenEnum<PageProgression> = /*@__PURE__*/
+  enumDesc(file_numen_v1_asset, 0);
 
 /**
  * AssetService answers what a file of the vault is, for whatever opens it.
@@ -314,6 +557,19 @@ export const AssetService: GenService<{
     methodKind: "unary";
     input: typeof GetDocumentRequestSchema;
     output: typeof GetDocumentResponseSchema;
+  },
+  /**
+   * GetBook is what a book that reflows is: what it is called, which way its
+   * pages progress, the documents it is read in and what it names inside them.
+   * The markup of one of those documents and the bytes of one entry of the
+   * archive are each at an address of its own.
+   *
+   * @generated from rpc numen.v1.AssetService.GetBook
+   */
+  getBook: {
+    methodKind: "unary";
+    input: typeof GetBookRequestSchema;
+    output: typeof GetBookResponseSchema;
   },
   /**
    * GetRecording is what a recording is: how long it runs, how much of it has
