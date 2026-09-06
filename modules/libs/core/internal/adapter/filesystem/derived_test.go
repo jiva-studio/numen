@@ -537,3 +537,36 @@ func TestEveryAreaOfAStoreIsOneFolder(t *testing.T) {
 		t.Error("opened a store on a name that is not one folder")
 	}
 }
+
+// An area is one folder of the store's own. A link standing where the area
+// should be — here to the service folder itself — is not one, and a name under
+// it lands nowhere: the vault's identity is a step down that link, and a store
+// that followed it would write over the one file every index row points at.
+func TestAnAreaThatIsALinkHoldsNothing(t *testing.T) {
+	derived, root := store(t)
+	identity := filepath.Join(root, filesystem.DefaultServiceDir, "config.json")
+	before, err := os.ReadFile(identity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(".", filepath.Join(root, filesystem.DefaultServiceDir, filesystem.OCRDir)); err != nil {
+		t.Skipf("this filesystem has no links: %v", err)
+	}
+
+	ctx := t.Context()
+	if _, err := derived.Read(ctx, "ocr/config.json"); err == nil {
+		t.Error("the store read the vault's identity through an area that is a link")
+	}
+	if err := derived.Write(ctx, "ocr/config.json", []byte(`{"id":"stolen"}`)); err == nil {
+		t.Error("the store wrote the vault's identity through an area that is a link")
+	}
+	if err := derived.Append(ctx, "ocr/config.json", []byte("transcript\n")); err == nil {
+		t.Error("the store appended to the vault's identity through an area that is a link")
+	}
+	if _, err := derived.List(ctx, filesystem.OCRDir); err == nil {
+		t.Error("the store listed the service folder as its area")
+	}
+	if got, _ := os.ReadFile(identity); string(got) != string(before) {
+		t.Errorf("the vault's identity is now %q", got)
+	}
+}

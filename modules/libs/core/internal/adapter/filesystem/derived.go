@@ -53,26 +53,28 @@ type DerivedStore struct {
 	// read out of it. Every name checks the identity, and a file that has not
 	// moved carries the identity already read.
 	last atomic.Pointer[fileInfo]
-	// where the store's own folders are, with every link on the way to them
-	// resolved. They are what a name is judged inside, and a name that lands
-	// outside them is judged again against where they are now.
+	// where the store's own folder is, with every link on the way to it
+	// resolved. It is what a name is judged inside, and it is asked again
+	// whenever the store's folder is no longer there.
 	where atomic.Pointer[places]
 }
 
-// places is the store's folder and its areas as they are on this machine.
+// places is the store's folder as it is on this machine, and its areas as the
+// folders directly inside it.
 type places struct {
 	root  string
 	areas map[string]string
 }
 
-// holds says a resolved name is inside the area it claims, and that area inside
-// the store's folder.
+// holds says a resolved name is inside the area it claims. An area is one
+// folder of the store's own, so a link standing where an area should be holds
+// nothing.
 func (p *places) holds(real, area string) bool {
 	bound, named := p.areas[area]
-	return named && under(bound, p.root) && under(real, bound)
+	return named && under(real, bound)
 }
 
-// locate resolves the store's folder and each of its areas.
+// locate resolves the store's folder and places each area inside it.
 func (d *DerivedStore) locate() (*places, error) {
 	root, err := deepest(d.root)
 	if err != nil {
@@ -80,11 +82,7 @@ func (d *DerivedStore) locate() (*places, error) {
 	}
 	found := &places{root: root, areas: make(map[string]string, len(d.areas))}
 	for _, area := range d.areas {
-		bound, err := deepest(filepath.Join(d.root, area))
-		if err != nil {
-			return nil, err
-		}
-		found.areas[area] = bound
+		found.areas[area] = filepath.Join(root, area)
 	}
 	return found, nil
 }
@@ -474,8 +472,7 @@ func (d *DerivedStore) at(name string) (string, error) {
 		return "", err
 	}
 	// A name says which area it belongs to, and a store answers for its own
-	// only. That is what keeps the vault's identity out of reach: `config.json`
-	// is in the folder and in no area, so no name can express it.
+	// only.
 	area, held := d.area(clean)
 	if !held {
 		return "", fmt.Errorf("%s is not in the %s store: %w", name, d.Area(), ErrOutside)
