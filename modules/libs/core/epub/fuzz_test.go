@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/net/html"
+
 	"github.com/jiva-studio/numen/modules/libs/core/epub"
 )
 
@@ -334,11 +336,75 @@ func FuzzMarkup(f *testing.F) {
 			}
 			shaped(t, doc, drawn.Nodes)
 			checkSpans(t, book.Text, doc, drawn.Nodes, doc.Offset+doc.Length)
+			checkHTML(t, book, doc, drawn)
 		}
 		if _, err := book.Markup("nothing/the-spine-names.xhtml"); !errors.Is(err, epub.ErrNoDocument) {
 			t.Fatalf("a document the book was not read from was answered with %v", err)
 		}
 	})
+}
+
+// checkHTML holds the markup a window is handed to what a window may be handed:
+// nothing that runs, nothing that dresses the page, and no address in a scheme
+// a person may not be sent to. It is put on the page unescaped, so whatever the
+// book wrote, this is what the browser parses.
+//
+// The runs say the document's text, in the order their offsets put them. A table
+// takes what stands between its cells and puts it before itself, which is why
+// they are read by offset and not by the order they are written in.
+func checkHTML(t *testing.T, book *epub.Book, doc epub.Document, drawn *epub.Markup) {
+	t.Helper()
+	root := parsed(t, drawn.HTML())
+	for _, name := range []string{
+		"script", "style", "link", "meta", "iframe", "frame", "object", "embed",
+		"form", "input", "button", "base", "svg", "math", "template",
+	} {
+		if found := elements(root, name); len(found) > 0 {
+			t.Fatalf("the markup of %s carries a %s element", doc.Path, name)
+		}
+	}
+	var walk func(*html.Node)
+	walk = func(n *html.Node) {
+		for _, a := range n.Attr {
+			switch {
+			case strings.HasPrefix(a.Key, "on"), a.Key == "style", a.Key == "class",
+				a.Key == "srcset", a.Namespace != "":
+				t.Fatalf("a %s of %s carries %s=%q", n.Data, doc.Path, a.Key, a.Val)
+			case a.Key == "href", a.Key == "src":
+				if named := strings.ToLower(schemeOf(a.Val)); named != "" && !sendable[named] {
+					t.Fatalf("a %s of %s points at %q", n.Data, doc.Path, a.Val)
+				}
+			}
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			walk(c)
+		}
+	}
+	walk(root)
+
+	var said strings.Builder
+	for _, one := range offsets(t, root) {
+		said.WriteString(one.said)
+	}
+	if want := book.Text[doc.Offset : doc.Offset+doc.Length]; said.String() != want {
+		t.Fatalf("the runs of %s say %d bytes and the document is %d",
+			doc.Path, said.Len(), len(want))
+	}
+}
+
+// sendable are the schemes an address the markup carries may name. A picture
+// written into the markup is the one that is not an address at all.
+var sendable = map[string]bool{
+	"http": true, "https": true, "mailto": true, "tel": true, "data": true,
+}
+
+// schemeOf is the scheme an address names, and empty for one that names none.
+func schemeOf(said string) string {
+	head, _, named := strings.Cut(said, ":")
+	if !named || strings.ContainsAny(head, "/?# \t\r\n") {
+		return ""
+	}
+	return head
 }
 
 // shaped holds every node to being one thing: an element carries a name and

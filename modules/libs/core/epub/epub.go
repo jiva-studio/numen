@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"path"
 	"sort"
 	"strings"
 )
@@ -147,6 +148,8 @@ var (
 	ErrEncrypted = errors.New("epub: a spine document is encrypted")
 	// ErrNoDocument: the book was not read from a document of this name.
 	ErrNoDocument = errors.New("epub: no such spine document")
+	// ErrNoEntry: the archive holds nothing readable under this name.
+	ErrNoEntry = errors.New("epub: no such entry")
 )
 
 // Read extracts one book from the bytes of an EPUB file.
@@ -222,6 +225,22 @@ func Read(raw []byte) (*Book, error) {
 		return book.Pages[i].Offset < book.Pages[j].Offset
 	})
 	return book, nil
+}
+
+// Entry is the bytes of one entry of the archive, which is how a picture a book
+// carries is drawn. An entry larger than a document is read at is not there.
+//
+// What the entry holds is the file's own bytes, and what the manifest calls it
+// is not among them.
+func (b *Book) Entry(name string) ([]byte, error) {
+	if name == "" {
+		return nil, fmt.Errorf("%w: the archive is not named", ErrNoEntry)
+	}
+	raw, ok := within(b.files[path.Clean(name)], mostPerDocument)
+	if !ok {
+		return nil, fmt.Errorf("%w: %s", ErrNoEntry, name)
+	}
+	return raw, nil
 }
 
 // A Location is where an offset in the text falls.

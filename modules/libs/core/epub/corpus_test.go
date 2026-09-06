@@ -183,6 +183,7 @@ func checkMarkup(t *testing.T, book *epub.Book) {
 				doc.Path, len(got), len(want), excerpt(got, 0), excerpt(want, 0))
 		}
 		checkSpans(t, book.Text, doc, drawn.Nodes, doc.Offset+doc.Length)
+		checkHTML(t, book, doc, drawn)
 	}
 }
 
