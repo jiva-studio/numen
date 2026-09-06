@@ -7,6 +7,9 @@ on:
       - "modules/libs/protocol/**"
       - "tests/**"
       - ".github/workflows/core.yml"
+      # The rules the linter is held to, and the ones written here in Go.
+      - ".golangci.yml"
+      - "**/gorules/**"
   push:
     branches: [main]
     paths:
@@ -14,6 +17,9 @@ on:
       - "modules/libs/protocol/**"
       - "tests/**"
       - ".github/workflows/core.yml"
+      # The rules the linter is held to, and the ones written here in Go.
+      - ".golangci.yml"
+      - "**/gorules/**"
   # A platform can be asked for after the checks have already run, without
   # rewriting a commit to carry the trailer.
   workflow_dispatch:

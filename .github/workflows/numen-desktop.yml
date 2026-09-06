@@ -9,6 +9,9 @@ on:
       - "modules/libs/wire/**"
       - "modules/libs/protocol/**"
       - ".github/workflows/numen-desktop.yml"
+      # The rules the linter is held to, and the ones written here in Go.
+      - ".golangci.yml"
+      - "**/gorules/**"
   push:
     branches: [main]
     paths:
@@ -18,6 +21,9 @@ on:
       - "modules/libs/wire/**"
       - "modules/libs/protocol/**"
       - ".github/workflows/numen-desktop.yml"
+      # The rules the linter is held to, and the ones written here in Go.
+      - ".golangci.yml"
+      - "**/gorules/**"
 
 # One run at a time per branch, and on a pull request the newest is the one that
 # matters. A run on main is left to finish: it fills the cache the branches read.

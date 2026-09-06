@@ -5,11 +5,17 @@ on:
     paths:
       - "modules/libs/protocol/**"
       - ".github/workflows/protocol.yml"
+      # The rules the linter is held to, and the ones written here in Go.
+      - ".golangci.yml"
+      - "**/gorules/**"
   push:
     branches: [main]
     paths:
       - "modules/libs/protocol/**"
       - ".github/workflows/protocol.yml"
+      # The rules the linter is held to, and the ones written here in Go.
+      - ".golangci.yml"
+      - "**/gorules/**"
 
 permissions:
   contents: read
