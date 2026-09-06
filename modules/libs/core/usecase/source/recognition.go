@@ -61,6 +61,10 @@ type Recognitions struct {
 	// Runtime is what a page is recognised through.
 	Runtime RecognitionRuntime
 
+	// Models is this machine's models and processor, held by one run at a time.
+	// A worker given none holds one of its own, and takes its turn with nobody.
+	Models *Lock
+
 	// Proofreading is what a reading is put right with.
 	Proofreading ProofreadingConfig
 }
@@ -110,6 +114,9 @@ type RecognitionWorker struct {
 // NewRecognitionWorker is the recogniser an installation offers, reporting
 // itself into the list of what is being done.
 func NewRecognitionWorker(ctx context.Context, with Recognitions) *RecognitionWorker {
+	if with.Models == nil {
+		with.Models = &Lock{}
+	}
 	return &RecognitionWorker{with: with, under: ctx}
 }
 
@@ -251,7 +258,7 @@ func (r *RecognitionWorker) recognise(ctx context.Context, v domain.Vault, id, p
 	// One run holds the models on a machine: a recording being transcribed holds
 	// them, and this waits for it.
 	// A scan is recognised only where somebody asked for it.
-	release, err := models.acquire(ctx, true, func() {
+	release, err := r.with.Models.acquire(ctx, true, func() {
 		r.say(task.Task{ID: id, Doing: "Waiting for the models", About: path})
 	})
 	if err != nil {

@@ -9,7 +9,7 @@ import (
 // Work a person is sitting in front of takes the lock before work the vault set
 // itself, whatever order they arrived in.
 func TestTheLockGoesToWhatWasAskedFor(t *testing.T) {
-	var g lock
+	var g Lock
 
 	held, err := g.acquire(t.Context(), false, nil)
 	if err != nil {
@@ -49,7 +49,7 @@ func TestTheLockGoesToWhatWasAskedFor(t *testing.T) {
 // A run that gave up while waiting takes no lock, and the one behind it is not
 // left standing.
 func TestARunThatLeavesHandsTheLockOn(t *testing.T) {
-	var g lock
+	var g Lock
 
 	held, err := g.acquire(t.Context(), true, nil)
 	if err != nil {

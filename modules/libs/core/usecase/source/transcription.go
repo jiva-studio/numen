@@ -48,6 +48,10 @@ type Transcriptions struct {
 	// Runtime is what a recording is transcribed through.
 	Runtime TranscriptionRuntime
 
+	// Models is this machine's models and processor, held by one run at a time.
+	// A worker given none holds one of its own, and takes its turn with nobody.
+	Models *Lock
+
 	// Unasked is how many bytes a recording may run to and still be transcribed
 	// where nobody asked for it. A larger one is left for somebody to ask for by
 	// name. Zero is no limit.
@@ -98,6 +102,9 @@ type TranscriptionWorker struct {
 // NewTranscriptionWorker is the transcriber an installation offers, reporting
 // itself into the list of what is being done.
 func NewTranscriptionWorker(ctx context.Context, with Transcriptions) *TranscriptionWorker {
+	if with.Models == nil {
+		with.Models = &Lock{}
+	}
 	return &TranscriptionWorker{with: with, under: ctx, answered: map[string]bool{}}
 }
 
@@ -523,7 +530,7 @@ func (t *TranscriptionWorker) transcribe(
 ) (res TranscribeResult, err error) {
 	// One run holds the models on a machine: a scan being recognised holds them,
 	// and this waits for it.
-	release, err := models.acquire(ctx, asked, func() {
+	release, err := t.with.Models.acquire(ctx, asked, func() {
 		t.say(task.Task{ID: id, Doing: "Waiting for the models", About: path}, asked)
 	})
 	if err != nil {

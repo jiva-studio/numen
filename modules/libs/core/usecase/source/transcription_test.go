@@ -345,7 +345,7 @@ func TestARecordingWaitsForTheModelsAScanHolds(t *testing.T) {
 	by := &deaf{}
 	listening, v := listens(t, by, "talks/one.mp3")
 
-	held, err := models.acquire(t.Context(), true, nil)
+	held, err := listening.with.Models.acquire(t.Context(), true, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

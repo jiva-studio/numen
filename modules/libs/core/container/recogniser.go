@@ -47,10 +47,14 @@ func (c Config) Recognise(sources port.SourceRepository, by port.Recogniser) sou
 // Recognising is the queue that reads this installation's scanned documents,
 // built against the adapters it was configured with and reporting itself into
 // the list of what is being done.
+//
+// models is what it takes its turn at with the queue that listens to
+// recordings: one run holds this machine's models at a time.
 func (c Config) Recognising(
 	ctx context.Context,
 	sources port.SourceRepository,
 	tasks *task.Tasks,
+	models *source.Lock,
 ) *source.RecognitionWorker {
 	return source.NewRecognitionWorker(ctx, source.Recognitions{
 		Readers:   c.VaultReaders(),
@@ -58,6 +62,7 @@ func (c Config) Recognising(
 		Documents: c.PageRenderer(),
 		Sources:   sources,
 		Tasks:     tasks,
+		Models:    models,
 		Runtime: source.RecognitionRuntime{
 			Open: func(
 				ctx context.Context, tell func(what string, done, total int64),

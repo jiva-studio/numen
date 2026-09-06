@@ -138,7 +138,7 @@ func (o *Installation) begins(v domain.Vault, rebuild bool) (*passes, error) {
 	}
 
 	watching, stop := context.WithCancel(o.under)
-	recognising := o.cfg.Recognising(watching, o.Index.Sources(), o.tasks)
+	recognising := o.cfg.Recognising(watching, o.Index.Sources(), o.tasks, o.models)
 
 	// What a recognition writes down is cut where every other cut happens. A
 	// document being read and a vault being scanned are then never two passes
@@ -162,7 +162,7 @@ func (o *Installation) begins(v domain.Vault, rebuild bool) (*passes, error) {
 	// A recording says nothing until a model has listened to it, so the ones
 	// this vault holds no transcript for are work whether or not anybody asks.
 	// What it writes is cut where every other cut happens.
-	transcribing := o.cfg.Transcribing(watching, o.Index.Sources(), o.tasks)
+	transcribing := o.cfg.Transcribing(watching, o.Index.Sources(), o.tasks, o.models)
 	transcribing.Cut = recognising.Cut
 	if o.cfg.Transcribes {
 		transcribing.Queue(watching, o.Index.SourcesKnown(), heardEvery, v)

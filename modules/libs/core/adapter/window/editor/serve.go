@@ -45,6 +45,9 @@ type Installation struct {
 	registry port.VaultRegistry
 	tasks    *task.Tasks
 	out      io.Writer
+	// models is this machine's models and processor. Reading a scan and
+	// listening to a recording each hold them, one run at a time.
+	models *source.Lock
 	// under is what every vault's passes run under.
 	under context.Context
 	wake  nudges
@@ -174,6 +177,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		cfg:          cfg,
 		registry:     registry,
 		tasks:        tasks,
+		models:       &source.Lock{},
 		out:          out,
 		under:        ctx,
 		wake:         wake,

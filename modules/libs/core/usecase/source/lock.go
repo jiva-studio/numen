@@ -6,11 +6,6 @@ import (
 	"sync"
 )
 
-// models is the models and the processor this machine reads with. Recognising a
-// scan and transcribing a recording each hold them, and one run holds them at a
-// time.
-var models lock
-
 // The priorities a run waits at, the first of them served first. Work a person
 // is sitting in front of goes before work the vault set itself.
 const (
@@ -19,9 +14,10 @@ const (
 	priorities
 )
 
-// A lock is held by one run at a time. A run waits at the priority its work
-// belongs to and is served in the order it arrived there.
-type lock struct {
+// A Lock is the models and the processor this machine reads with, held by one
+// run at a time. A run waits at the priority its work belongs to and is served
+// in the order it arrived there.
+type Lock struct {
 	mu      sync.Mutex
 	held    bool
 	waiting [priorities][]chan struct{}
@@ -30,7 +26,7 @@ type lock struct {
 // acquire waits for the lock and hands back what releases it. waiting is called
 // where the lock is not free, so that a person watching is told why nothing is
 // moving. A context that ends while waiting acquires nothing.
-func (g *lock) acquire(ctx context.Context, asked bool, waiting func()) (func(), error) {
+func (g *Lock) acquire(ctx context.Context, asked bool, waiting func()) (func(), error) {
 	at := priorityUnasked
 	if asked {
 		at = priorityAsked
@@ -60,7 +56,7 @@ func (g *lock) acquire(ctx context.Context, asked bool, waiting func()) (func(),
 
 // release hands the lock to whoever has waited longest at the first priority
 // anybody stands at, and lets it go where nobody does.
-func (g *lock) release() {
+func (g *Lock) release() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	for at := range g.waiting {
@@ -76,7 +72,7 @@ func (g *lock) release() {
 
 // leave takes a run out of the line it stands in. One already handed the lock
 // holds it, and hands it on.
-func (g *lock) leave(at int, stand chan struct{}) {
+func (g *Lock) leave(at int, stand chan struct{}) {
 	g.mu.Lock()
 	for i, one := range g.waiting[at] {
 		if one == stand {
