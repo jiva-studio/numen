@@ -48,7 +48,11 @@ test('what the composable rule refuses', () => {
   const cases = [
     { says: 'a use* over plain values', allowed: false, text: 'export function useSum(a, b) {\n  return a + b\n}' },
     { says: 'a use* handing back a frozen table', allowed: false, text: 'export const useIcons = () => {\n  return ICONS\n}' },
+    { says: 'a use* handing back a frozen table with no braces', allowed: false, text: 'export const useIcons = () => ICONS' },
+    { says: 'a use* naming a ref only in a comment', allowed: false, text: 'export function useSum(a, b) {\n  // like ref(\n  return a + b\n}' },
+    { says: 'a use* reading a value only in a string', allowed: false, text: 'export function useSaid() {\n  return "held.value"\n}' },
     { says: 'a use* making a ref', allowed: true, text: 'export function useTally() {\n  const n = ref(0)\n}' },
+    { says: 'a use* reading a value inside a template literal', allowed: true, text: 'export function useLabel(n) {\n  return `${n.value} cards`\n}' },
     { says: 'a use* taking a ref', allowed: true, text: 'export function useWidth(held: Ref<Element>) {\n  return 1\n}' },
     { says: 'a use* reading a value', allowed: true, text: 'export function useSaid(held) {\n  return held.value\n}' },
     { says: 'a use* holding another composable', allowed: true, text: 'export function useBoth(el) {\n  return useWidth(el)\n}' },
@@ -81,4 +85,23 @@ test('a declaration is read past a signature closed at the margin', () => {
   ].join('\n')
   assert.ok(declaration(text, text.indexOf('<At>')).includes('shallowRef'))
   assert.deepEqual(composables(text), [{ name: 'useDrag', reactive: true }])
+})
+
+/** The body of a brace-less arrow is its expression, and the next declaration is another's. */
+test('a brace-less arrow ends where its expression does', () => {
+  const text = [
+    'export const useIcons = () => ICONS',
+    'export const useHeld = (held) =>',
+    '  held.value',
+    '',
+    'export function useTally() {',
+    '  const n = ref(0)',
+    '}',
+  ].join('\n')
+  assert.equal(declaration(text, text.indexOf(' = () => ICONS')), ' = () => ICONS')
+  assert.deepEqual(composables(text), [
+    { name: 'useIcons', reactive: false },
+    { name: 'useHeld', reactive: true },
+    { name: 'useTally', reactive: true },
+  ])
 })
