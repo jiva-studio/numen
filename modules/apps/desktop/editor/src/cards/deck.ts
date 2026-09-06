@@ -30,20 +30,18 @@ import {
   drawnOf,
   filled,
   headed,
-  marksOf,
   named,
   pathOfCut,
   removed,
   sameDeck,
-  sameMarks,
   sameOffers,
   sectionAdded,
   sectionGone,
   sectionNamed,
   sectionsOf,
   type Deck,
-  type Marks,
 } from './body'
+import { marksOf, sameMarks, type Marks } from './marks'
 import { WORDS as words } from './words'
 
 /** What the vault said about one file the last time it was read or written. */

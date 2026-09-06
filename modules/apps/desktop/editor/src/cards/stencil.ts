@@ -28,15 +28,13 @@ import {
   fieldAdded,
   fieldDropped,
   fieldGone,
-  marksOf,
-  sameMarks,
   sameSheet,
   sheetBodyOf,
   sheetIn,
   sheetOf,
-  type Marks,
   type Sheet,
 } from './body'
+import { marksOf, sameMarks, type Marks } from './marks'
 import { WORDS as words } from './words'
 
 /** What the vault said about one file the last time it was read or written. */
