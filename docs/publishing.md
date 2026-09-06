@@ -1,15 +1,10 @@
 # Publishing
 
-Where the page, the manual and the builds are served from, and what has to
-exist for the workflows to put them there.
+Where the page, the manual and the builds are served from, and what has to exist for the workflows to put them there.
 
 ## Three stores, three doors
 
-Storage on bunny.net is never readable from the web: reading it needs the
-zone's password, and the password is a secret. What serves a file to the world
-is a **pull zone** standing in front of a storage zone. So a store is public
-exactly to the extent that a pull zone points at it, and each of the three has
-a store of its own — nothing in one can be reached through the other.
+Storage on bunny.net is never readable from the web: reading it needs the zone's password, and the password is a secret. What serves a file to the world is a **pull zone** standing in front of a storage zone. So a store is public exactly to the extent that a pull zone points at it, and each of the three has a store of its own — nothing in one can be reached through the other.
 
 | | Storage zone | Pull zone | Served from |
 | --- | --- | --- | --- |
@@ -17,16 +12,11 @@ a store of its own — nothing in one can be reached through the other.
 | The manual | `numen-docs` | `numen-docs` | `numen-docs.b-cdn.net`, and `docs.numen.md` |
 | The builds | `numen` | `numen-dl` | `numen-dl.b-cdn.net`, and `dl.numen.md` |
 
-Every store is in Falkenstein, so the endpoint is `storage.bunnycdn.com`. Each
-zone serves from every continent and holds what it was given for thirty days;
-the builds' zone is on the volume tier, which is what large files that are
-rarely fetched should be on.
+Every store is in Falkenstein, so the endpoint is `storage.bunnycdn.com`. Each zone serves from every continent and holds what it was given for thirty days; the builds' zone is on the volume tier, which is what large files that are rarely fetched should be on.
 
 The page and the manual go into the root of their stores. The builds go into three folders of theirs.
 
-The manual is a folder of folders, each holding an `index.html`, and a pull
-zone in front of storage answers `/install/` and `/install` alike with the file
-inside. Nothing has to be configured for that.
+The manual is a folder of folders, each holding an `index.html`, and a pull zone in front of storage answers `/install/` and `/install` alike with the file inside. Nothing has to be configured for that.
 
 ## What is in the store
 
@@ -88,8 +78,7 @@ The version, the build number and the commit go into the binary at the link, and
 
 ## Where the page looks for them
 
-`PUBLIC_NUMEN_DOWNLOADS_BASE`, read when the page is built and set to
-`https://dl.numen.md`. Unset, it is `https://numen-dl.b-cdn.net`.
+`PUBLIC_NUMEN_DOWNLOADS_BASE`, read when the page is built and set to `https://dl.numen.md`. Unset, it is `https://numen-dl.b-cdn.net`.
 
 ## What the workflows are told
 
@@ -109,25 +98,15 @@ Variables:
 | `BUNNY_DOCS_SERVED_FROM` | `https://docs.numen.md` |
 | `PUBLIC_NUMEN_DOWNLOADS_BASE` | `https://dl.numen.md` |
 
-Secrets: `BUNNY_STORAGE_KEY`, `BUNNY_SITE_STORAGE_KEY` and
-`BUNNY_DOCS_STORAGE_KEY` are the three stores' own passwords; `BUNNY_API_KEY`
-is the account key, which is what purging asks for. They are in 1Password
-beside the account key they came from.
+Secrets: `BUNNY_STORAGE_KEY`, `BUNNY_SITE_STORAGE_KEY` and `BUNNY_DOCS_STORAGE_KEY` are the three stores' own passwords; `BUNNY_API_KEY` is the account key, which is what purging asks for. They are in 1Password beside the account key they came from.
 
-Each workflow names every one of these before it does anything, so a missing
-one is reported by name rather than as a refusal further down.
+Each workflow names every one of these before it does anything, so a missing one is reported by name rather than as a refusal further down.
 
 ## How it happens
 
-**The page.** `site.yml` builds it on every pull request. On the default
-branch it also uploads what was built, takes down anything in the store that
-this build did not write, purges the edge, and then fetches the page over the
-public address to prove a stranger can read it.
+**The page.** `site.yml` builds it on every pull request. On the default branch it also uploads what was built, takes down anything in the store that this build did not write, purges the edge, and then fetches the page over the public address to prove a stranger can read it.
 
-**The manual.** `docs.yml` does the same for `modules/apps/docs`, and checks
-one thing more before it builds: that the five pages that write themselves
-still say what the application does. It runs on a pull request touching the
-manual and on the twelve files those pages are written from.
+**The manual.** `docs.yml` does the same for `modules/apps/docs`, and checks one thing more before it builds: that the five pages that write themselves still say what the application does. It runs on a pull request touching the manual and on the twelve files those pages are written from.
 
 **The builds.** `release.yml` is asked for by hand and answers for one channel. A stable release is named for the month it is made in and for how many stable releases that month already holds — `2026.9.0`, then `2026.9.1` — and goes into `latest/` and `releases/`, which is where the page looks. A beta is named for the stable release it precedes and for the number of commits behind it — `2026.9.1-beta.884` — and goes into `beta/` and `builds/`, where nothing points at it. Either way it renames what each platform produced to the names above, writes `latest.json`, uploads, purges, and fetches every file back over the public address, checking that what comes down is the file that went up.
 
@@ -145,20 +124,10 @@ The page stands on one host and the builds on another, so the builds' zone has t
 
 Two settings on every pull zone, and they are not the same one.
 
-**The edge holds what it was given for thirty days**, and each deploy purges the
-zone it wrote to, so what a stranger is handed is what was last published.
+**The edge holds what it was given for thirty days**, and each deploy purges the zone it wrote to, so what a stranger is handed is what was last published.
 
-**A browser is told sixty seconds.** A page names the files it was built with,
-and those names carry a hash of what is in them, so a browser holding a page for
-longer holds the names of files that are gone: the page comes back whole and its
-pictures do not. Sixty seconds is `CacheControlPublicMaxAgeOverride` on the zone,
-and it is the setting to look at when a change is published and somebody still
-sees what was there before.
+**A browser is told sixty seconds.** A page names the files it was built with, and those names carry a hash of what is in them, so a browser holding a page for longer holds the names of files that are gone: the page comes back whole and its pictures do not. Sixty seconds is `CacheControlPublicMaxAgeOverride` on the zone, and it is the setting to look at when a change is published and somebody still sees what was there before.
 
 ## The names on the web
 
-`numen.md`, `www.numen.md`, `docs.numen.md` and `dl.numen.md` answer, each with
-a certificate of its own, and each is what its `SERVED_FROM` variable names. A
-name is put on the web in three steps: add the hostname to the pull zone, point
-a CNAME at the zone's `b-cdn.net` address, and ask for the free certificate —
-which is refused until the CNAME resolves.
+`numen.md`, `www.numen.md`, `docs.numen.md` and `dl.numen.md` answer, each with a certificate of its own, and each is what its `SERVED_FROM` variable names. A name is put on the web in three steps: add the hostname to the pull zone, point a CNAME at the zone's `b-cdn.net` address, and ask for the free certificate — which is refused until the CNAME resolves.
