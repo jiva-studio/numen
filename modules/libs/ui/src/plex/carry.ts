@@ -20,7 +20,7 @@ export interface PlexCarryState {
 }
 
 /** What following a carry takes: the drawing, the picture, and the rules. */
-export interface Carry {
+export interface PlexCarryDeps {
   /** The drawing, which turns screen pixels into the plex's own coordinates. */
   readonly surface: () => SVGSVGElement | null
   /** What is being carried, each of them opaque. Empty while nothing is. */
@@ -43,7 +43,7 @@ export interface Carry {
  * window for as long as there is something to carry, and it is over the
  * instant the pointer comes up wherever that is.
  */
-export function usePlexCarry(carry: Carry): PlexCarryState {
+export function usePlexCarry(carry: PlexCarryDeps): PlexCarryState {
   /** Where the pointer is, and nothing at all while nothing is being carried. */
   const at = ref<Point | null>(null)
 

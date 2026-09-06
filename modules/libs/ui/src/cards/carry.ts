@@ -16,7 +16,7 @@ import { stepped, type InsertionPoint, type StepDirection } from './order'
  * `InsertionPoint | undefined`, and `nowhere` is the landing that stands for
  * that.
  */
-export interface Carry<At extends InsertionPoint | undefined> {
+export interface CarryDeps<At extends InsertionPoint | undefined> {
   /** The order, as the thing carried is stepped along it. */
   readonly order: () => readonly string[]
   /** Where a landing stands while the pointer is over nothing that takes one. */
@@ -45,7 +45,9 @@ export interface CarryState<At extends InsertionPoint | undefined> {
   readonly step: (what: string, direction: StepDirection, press: KeyboardEvent) => void
 }
 
-export function useCarry<At extends InsertionPoint | undefined>(carry: Carry<At>): CarryState<At> {
+export function useCarry<At extends InsertionPoint | undefined>(
+  carry: CarryDeps<At>,
+): CarryState<At> {
   const carried = shallowRef<string | null>(null)
   const at: ShallowRef<At> = shallowRef(carry.nowhere)
 
