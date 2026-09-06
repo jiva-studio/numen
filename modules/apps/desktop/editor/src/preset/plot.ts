@@ -63,7 +63,7 @@ export interface Extent {
  * the picture is nothing under every run and a height is read against it.
  */
 export const extentOf = (curve: Curve): Extent => {
-  const costs = curve.at.map((one) => costOf(curve.goal, one))
+  const costs = curve.at.map((point) => costOf(curve.goal, point))
   return { least: 0, most: costs.length === 0 ? 0 : Math.max(0, ...costs) }
 }
 
@@ -96,7 +96,7 @@ export const backlogPositionsOf = (
  */
 export const positionsOf = (curve: Curve, extent: Extent): readonly Position[] =>
   seriesOf(
-    curve.at.map((one) => costOf(curve.goal, one)),
+    curve.at.map((point) => costOf(curve.goal, point)),
     extent,
   )
 
@@ -182,10 +182,10 @@ export const clearAt = (
 export const shortOf = (curve: Curve, places: readonly Position[]): string => {
   const runs: string[] = []
   let run: Position[] = []
-  curve.at.forEach((one, place) => {
+  curve.at.forEach((point, place) => {
     const at = places[place]
     if (!at) return
-    if (one.enough) {
+    if (point.enough) {
       if (run.length > 1) runs.push(lineOf(run))
       run = []
       return

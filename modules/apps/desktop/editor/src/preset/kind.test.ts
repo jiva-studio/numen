@@ -15,7 +15,7 @@ import {
   NO_BOUNDS,
   type Curve,
   type Goal,
-  type DataPoint,
+  type Point,
   type Presets,
   type ReadResult,
   type Settings,
@@ -27,7 +27,7 @@ import type { Host } from '../tabs/windowing'
 import type { FileOpeners } from '../tabs/putting'
 import { WORDS as words } from './words'
 
-const point = (over: Partial<DataPoint> = {}): DataPoint => ({
+const point = (over: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,

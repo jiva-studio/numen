@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { NOWHERE, type Curve, type DataPoint } from './core'
+import { NOWHERE, type Curve, type Point } from './core'
 import {
   against,
   againstBox,
@@ -43,7 +43,7 @@ import {
   type Position,
 } from './plot'
 
-const dataPoint = (over: Partial<DataPoint> = {}): DataPoint => ({
+const point = (over: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,
@@ -63,7 +63,7 @@ const curve = (cards: readonly number[], enough: readonly boolean[] = []): Curve
   goal: 'minutes',
   grid: cards.map((_, at) => at * 10),
   days: [],
-  at: cards.map((one, at) => dataPoint({ reviews: one, enough: enough[at] ?? true })),
+  at: cards.map((one, at) => point({ reviews: one, enough: enough[at] ?? true })),
   now: NOWHERE,
   suggested: NOWHERE,
   decks: 1,

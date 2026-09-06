@@ -132,16 +132,16 @@ const marks = computed(() => {
 /** What this place of the curve buys, said in a bubble over the knob. */
 const callout = computed(() => {
   const at = knob.value
-  const one = props.curve.at[props.place]
-  if (!honest.value || !at || !one) return null
+  const point = props.curve.at[props.place]
+  if (!honest.value || !at || !point) return null
   const backlog = runAt(props.curve, props.place)
   const lines = words.buys(props.curve.goal, {
     value: held.value,
-    reviews: one.reviews,
-    minutes: one.minutes,
+    reviews: point.reviews,
+    minutes: point.minutes,
     horizon: backlog.length,
     clears: clearing(backlog),
-    short: one.short,
+    short: point.short,
     cards: props.curve.cards,
   })
   return { lines, ...calloutOf(at) }
@@ -178,9 +178,9 @@ const figures = computed(() => {
  * picture and the tiles cannot disagree.
  */
 const learning = computed(() => {
-  const one = props.curve.at[props.place]
-  if (!one) return []
-  return words.learning(one.learns, one.learned, props.curve.cards)
+  const point = props.curve.at[props.place]
+  if (!point) return []
+  return words.learning(point.learns, point.learned, props.curve.cards)
 })
 
 /** An end the knob is standing on is left to the knob, which says it already. */

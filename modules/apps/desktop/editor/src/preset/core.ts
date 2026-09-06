@@ -197,8 +197,8 @@ export interface MakeResult {
   readonly refusal: RefusalReason | null
 }
 
-/** What a preset comes to at one place of the grid: one data point of the curve. */
-export interface DataPoint {
+/** What a preset comes to at one place of the grid. */
+export interface Point {
   readonly reviews: number
   readonly minutes: number
   /** The share of the material that comes back. */
@@ -286,7 +286,7 @@ export interface Curve extends Material {
   readonly grid: readonly number[]
   /** The day of each place, filled for a goal of a date. */
   readonly days: readonly string[]
-  readonly at: readonly DataPoint[]
+  readonly at: readonly Point[]
   readonly now: Place
   readonly suggested: Place
   /**

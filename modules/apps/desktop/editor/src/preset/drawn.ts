@@ -14,7 +14,7 @@ import {
   DEFAULTS,
   type Curve,
   type Material,
-  type DataPoint,
+  type Point,
   type Settings,
   type SettingsBounds,
 } from './core'
@@ -64,7 +64,7 @@ const heights = (d: string): readonly number[] =>
     .slice(1)
     .map((one) => Number(one.trim().split(' ')[1]))
 
-const point = (over: Partial<DataPoint> = {}): DataPoint => ({
+const point = (over: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,

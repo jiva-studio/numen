@@ -11,9 +11,9 @@ import { DEFAULTS, NOWHERE } from './core'
 import type {
   Bounds,
   Curve,
-  DataPoint,
   Goal,
   Place,
+  Point,
   Rule,
   Settings,
   SettingsBounds,
@@ -167,7 +167,7 @@ export const shapeOf = (settings: Settings): string => {
  * a day answers, which is what a longer day buys; the other two are read in
  * the minutes they cost.
  */
-export const costOf = (goal: Goal, point: DataPoint): number =>
+export const costOf = (goal: Goal, point: Point): number =>
   goal === 'minutes' ? point.reviews : point.minutes
 
 /**
@@ -277,7 +277,7 @@ const ladder = (least: number, most: number, rounds: (one: number) => number): r
  * review brings back more of the material the longer it runs, and asking for
  * more of it back costs more of the day.
  */
-const guessed = (settings: Settings, value: number, grid: readonly number[]): DataPoint => {
+const guessed = (settings: Settings, value: number, grid: readonly number[]): Point => {
   const flat = {
     retained: 0,
     owed: 0,

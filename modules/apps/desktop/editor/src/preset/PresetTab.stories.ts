@@ -17,7 +17,7 @@ import {
   DEFAULTS,
   type Curve,
   type Material,
-  type DataPoint,
+  type Point,
   type Settings,
   type SettingsBounds,
 } from './core'
@@ -25,7 +25,7 @@ import { BACKLOG_HIGH, HIGH, WIDE } from './plot'
 import type { PresetTabState } from './kind'
 import { WORDS as words } from './words'
 
-const point = (over: Partial<DataPoint> = {}): DataPoint => ({
+const point = (over: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,

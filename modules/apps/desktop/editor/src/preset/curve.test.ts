@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULTS, NOWHERE, type Curve, type DataPoint, type Settings } from './core'
+import { DEFAULTS, NOWHERE, type Curve, type Point, type Settings } from './core'
 import { BOUNDS } from './drawn'
 import {
   approximate,
@@ -34,7 +34,7 @@ const today = new Date(2026, 7, 30, 12)
 
 const settings = (over: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...over })
 
-const point = (over: Partial<DataPoint> = {}): DataPoint => ({
+const point = (over: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,

@@ -20,7 +20,7 @@ import {
   DEFAULTS,
   type Curve,
   type Material,
-  type DataPoint,
+  type Point,
   type Settings as Scheduling,
   type SettingsBounds,
 } from './preset/core'
@@ -138,7 +138,7 @@ export const Settings: Story = {
 /* A preset. ---------------------------------------------------------------- */
 
 /** One place on the curve: what a day there costs, and what it comes to. */
-const point = (over: Partial<DataPoint> = {}): DataPoint => ({
+const point = (over: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,
@@ -162,7 +162,7 @@ const GRID = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
 const backlogAt = (rate: number): readonly number[] =>
   Array.from({ length: 60 }, (_, day) => Math.max(0, Math.round(96 - day * rate + day * day * rate * 0.004)))
 
-const AT: readonly DataPoint[] = GRID.map((minutes, at) =>
+const AT: readonly Point[] = GRID.map((minutes, at) =>
   point({
     minutes,
     // A longer day buys fewer extra cards than the one before it.
