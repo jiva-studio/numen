@@ -216,92 +216,6 @@ vi.mock('../vault', () => ({
       return null
     },
   },
-  documents: {
-    shape: async () => ({ pages: 1, sheets: [{ wide: 100, high: 100 }] }),
-    page: () => '',
-    places: async () => [],
-  },
-  cards: {
-    // A card is named by the first field of the stencil it is cut by, so the
-    // window is told of one.
-    stencils: async () => ({
-      stencils: [{ path: 'Animal.md', title: 'Animal', fields: ['Name'] }],
-      held: 1,
-    }),
-    makeDeck: async (title: string, folder: string) => {
-      asked.cards.push(`deck ${folder || '/'} ${title}`)
-      return maker.makes(title, folder)
-    },
-    makeStencil: async (title: string, folder: string, fields: readonly string[]) => {
-      asked.cards.push(`stencil ${folder || '/'} ${title} [${fields.join(', ')}]`)
-      return maker.makes(title, folder)
-    },
-    renameField: async (path: string, from: string, to: string) => {
-      asked.renamedField.push(`${path} ${from} ${to}`)
-      return said.renaming
-    },
-    readDeck: async (path: string) => ({
-      deck: {
-        path,
-        title: path,
-        preamble: '',
-        cards: [],
-        sections: [],
-        tail: '',
-        problems: [],
-      },
-      refusal: null,
-      at: 'a1',
-      bound: 0,
-    }),
-    writeDeck: async (
-      path: string,
-      deck: { cards: readonly { values: readonly { text: string }[] }[] },
-    ) => {
-      asked.cards.push(`deck ${path}`)
-      asked.wrote.push(deck.cards.map((card) => card.values[0]?.text ?? '').join(', '))
-      return { refusal: null, changed: false, at: 'a2', bound: 0 }
-    },
-    readStencil: async (path: string) => ({
-      stencil: { path, title: path, fields: [], faces: [], problems: [] },
-      refusal: null,
-      at: 'a1',
-    }),
-    writeStencil: async (path: string) => {
-      asked.cards.push(`stencil ${path}`)
-      return { refusal: null, changed: false, at: 'a2' }
-    },
-  },
-  recordings: {
-    listened: async (path: string) => {
-      asked.listened.push(path)
-      const { length, media, type } = said.heard
-      // How far the words reach is the last thing written down, which is what
-      // the application counts it as.
-      return { length, media, type, heard: said.heard.cues.at(-1)?.to ?? 0 }
-    },
-    cues: async () => ({ cues: said.heard.cues, editable: said.heard.editable }),
-    writes: async (path: string, cues: readonly { text: string }[]) => {
-      asked.transcribed.push(`${path} ${cues.map((one) => one.text).join(' / ')}`)
-    },
-    plays: async (path: string, stretch: { start: number }) =>
-      said.heard.cues.find((one) => one.from >= stretch.start)?.from ?? null,
-  },
-  running: {
-    carries: async (path: string) => {
-      asked.carried.push(path)
-      if (!said.carrying) throw new Error('what the file carries cannot be asked')
-      return said.carries[path] ?? {}
-    },
-    makes: async (path: string, of: string) => {
-      asked.ran.push(`${of} ${path}`)
-      return { able: true, of, made: 'queued', error: '' }
-    },
-    drops: async (path: string) => {
-      asked.ran.push(`drop ${path}`)
-      return true
-    },
-  },
   core: {
     vaults: async () => {
       if (!said.listable) throw new Error('the vaults are not there')
@@ -360,6 +274,101 @@ vi.mock('../vault', () => ({
     fileKinds: async (paths: readonly string[]) =>
       new Map(paths.map((path) => [path, stands(path)])),
     headings: async () => new Map(),
+  },
+}))
+
+vi.mock('../assets', () => ({
+  documents: {
+    shape: async () => ({ pages: 1, sheets: [{ wide: 100, high: 100 }] }),
+    page: () => '',
+    places: async () => [],
+  },
+  recordings: {
+    listened: async (path: string) => {
+      asked.listened.push(path)
+      const { length, media, type } = said.heard
+      // How far the words reach is the last thing written down, which is what
+      // the application counts it as.
+      return { length, media, type, heard: said.heard.cues.at(-1)?.to ?? 0 }
+    },
+    cues: async () => ({ cues: said.heard.cues, editable: said.heard.editable }),
+    writes: async (path: string, cues: readonly { text: string }[]) => {
+      asked.transcribed.push(`${path} ${cues.map((one) => one.text).join(' / ')}`)
+    },
+    plays: async (path: string, stretch: { start: number }) =>
+      said.heard.cues.find((one) => one.from >= stretch.start)?.from ?? null,
+  },
+}))
+
+vi.mock('../artifacts', () => ({
+  running: {
+    carries: async (path: string) => {
+      asked.carried.push(path)
+      if (!said.carrying) throw new Error('what the file carries cannot be asked')
+      return said.carries[path] ?? {}
+    },
+    makes: async (path: string, of: string) => {
+      asked.ran.push(`${of} ${path}`)
+      return { able: true, of, made: 'queued', error: '' }
+    },
+    drops: async (path: string) => {
+      asked.ran.push(`drop ${path}`)
+      return true
+    },
+  },
+}))
+
+vi.mock('../cards/vault', () => ({
+  cards: {
+    // A card is named by the first field of the stencil it is cut by, so the
+    // window is told of one.
+    stencils: async () => ({
+      stencils: [{ path: 'Animal.md', title: 'Animal', fields: ['Name'] }],
+      held: 1,
+    }),
+    makeDeck: async (title: string, folder: string) => {
+      asked.cards.push(`deck ${folder || '/'} ${title}`)
+      return maker.makes(title, folder)
+    },
+    makeStencil: async (title: string, folder: string, fields: readonly string[]) => {
+      asked.cards.push(`stencil ${folder || '/'} ${title} [${fields.join(', ')}]`)
+      return maker.makes(title, folder)
+    },
+    renameField: async (path: string, from: string, to: string) => {
+      asked.renamedField.push(`${path} ${from} ${to}`)
+      return said.renaming
+    },
+    readDeck: async (path: string) => ({
+      deck: {
+        path,
+        title: path,
+        preamble: '',
+        cards: [],
+        sections: [],
+        tail: '',
+        problems: [],
+      },
+      refusal: null,
+      at: 'a1',
+      bound: 0,
+    }),
+    writeDeck: async (
+      path: string,
+      deck: { cards: readonly { values: readonly { text: string }[] }[] },
+    ) => {
+      asked.cards.push(`deck ${path}`)
+      asked.wrote.push(deck.cards.map((card) => card.values[0]?.text ?? '').join(', '))
+      return { refusal: null, changed: false, at: 'a2', bound: 0 }
+    },
+    readStencil: async (path: string) => ({
+      stencil: { path, title: path, fields: [], faces: [], problems: [] },
+      refusal: null,
+      at: 'a1',
+    }),
+    writeStencil: async (path: string) => {
+      asked.cards.push(`stencil ${path}`)
+      return { refusal: null, changed: false, at: 'a2' }
+    },
   },
 }))
 

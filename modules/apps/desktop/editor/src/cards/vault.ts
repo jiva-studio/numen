@@ -7,6 +7,16 @@
  * A write presents what the read gave, so a file that moved under this window
  * is answered and not overwritten.
  */
+import { createClient } from '@connectrpc/connect'
+import { CardsService, Fault as Faults } from '@numen/protocol'
+import type {
+  Card as CardMessage,
+  Deck as DeckMessage,
+  Problem as ProblemMessage,
+  Stencil as StencilMessage,
+} from '@numen/protocol'
+import { transport } from '@numen/wire'
+import { fingerprint, refusalIn, staleIn, stamp } from '../answers'
 import type { MakeResult, RefusalReason } from '../core'
 
 /** One stencil as the list of them names it. */
@@ -241,4 +251,181 @@ export interface Cards {
     stencil: { preamble: string; faces: readonly VaultFace[]; tail: string },
     seen: string | null,
   ): Promise<StencilWriteResult>
+}
+
+const cardsService = createClient(CardsService, transport)
+
+/** The stencils and the decks of that vault, in the shape the window asks about them. */
+export const cards: Cards = {
+  stencils: async (limit) => {
+    const answer = await cardsService.listStencils({ limit: limit ?? 0 })
+    return { stencils: answer.stencils.map(offered), held: answer.total }
+  },
+  makeDeck: async (title, folder) => {
+    const answer = await cardsService.createDeck({ title, folder })
+    return { path: answer.path, refusal: refusalIn(answer) }
+  },
+  makeStencil: async (title, folder, fields) => {
+    const answer = await cardsService.createStencil({ title, folder, fields: [...fields] })
+    return { path: answer.path, refusal: refusalIn(answer) }
+  },
+  renameField: async (path, from, to, seen) => {
+    const answer = await cardsService.renameStencilField({
+      path,
+      from,
+      to,
+      ...(seen === null ? {} : { seen: fingerprint(seen) }),
+    })
+    return {
+      decks: answer.decks,
+      cards: answer.cards,
+      notWritten: answer.notWritten.map((one) => ({
+        path: one.path,
+        text: one.problem?.text ?? '',
+      })),
+      refusal: refusalIn(answer),
+      changed: staleIn(answer),
+      at: stamp(answer.at) ?? '',
+    }
+  },
+  readDeck: async (path) => {
+    const answer = await cardsService.readDeck({ path })
+    return {
+      deck: answer.deck ? decked(answer.deck) : null,
+      refusal: refusalIn(answer),
+      at: stamp(answer.at) ?? '',
+      bound: Number(answer.bound),
+    }
+  },
+  writeDeck: async (path, deck, seen) => {
+    const answer = await cardsService.writeDeck({
+      path,
+      preamble: deck.preamble,
+      cards: deck.cards.map(carding),
+      sections: deck.sections.map((section) => ({ name: section.name, lead: section.lead })),
+      tail: deck.tail,
+      ...(seen === null ? {} : { seen: fingerprint(seen) }),
+    })
+    return {
+      refusal: refusalIn(answer),
+      changed: staleIn(answer),
+      at: stamp(answer.at) ?? '',
+      bound: Number(answer.bound),
+    }
+  },
+  readStencil: async (path) => {
+    const answer = await cardsService.readStencil({ path })
+    return {
+      stencil: answer.stencil ? stencilled(answer.stencil) : null,
+      refusal: refusalIn(answer),
+      at: stamp(answer.at) ?? '',
+    }
+  },
+  writeStencil: async (path, fields, stencil, seen) => {
+    const answer = await cardsService.writeStencil({
+      path,
+      fields: [...fields],
+      preamble: stencil.preamble,
+      faces: stencil.faces.map((face) => ({
+        name: face.name,
+        lead: face.lead,
+        front: face.front,
+        back: face.back,
+      })),
+      tail: stencil.tail,
+      ...(seen === null ? {} : { seen: fingerprint(seen) }),
+    })
+    return {
+      refusal: refusalIn(answer),
+      changed: staleIn(answer),
+      at: stamp(answer.at) ?? '',
+    }
+  },
+}
+
+/** One stencil of the list, kept as the plain value the window carries it as. */
+const offered = (one: {
+  path: string
+  title: string
+  fields: string[]
+}): StencilSummary => ({
+  path: one.path,
+  title: one.title,
+  fields: one.fields,
+})
+
+/** A deck as the window carries it. */
+const decked = (one: DeckMessage): VaultDeck => ({
+  path: one.path,
+  title: one.title,
+  preamble: one.preamble,
+  cards: one.cards.map(carded),
+  sections: one.sections.map((section) => ({ name: section.name, lead: section.lead })),
+  tail: one.tail,
+  problems: one.problems.map(problem),
+})
+
+/** A stencil as the window carries it. */
+const stencilled = (one: StencilMessage): VaultStencil => ({
+  path: one.path,
+  title: one.title,
+  fields: one.fields,
+  preamble: one.preamble,
+  faces: one.faces.map(
+    (face): VaultFace => ({
+      name: face.name,
+      lead: face.lead,
+      front: face.front,
+      back: face.back,
+    }),
+  ),
+  tail: one.tail,
+  problems: one.problems.map(problem),
+})
+
+const carded = (one: CardMessage): VaultCard => ({
+  mark: one.mark,
+  section: one.section ?? null,
+  heading: one.heading,
+  stencil: one.stencil,
+  stencilAt: one.stencilAt,
+  lead: one.lead,
+  values: one.values.map((value) => ({ field: value.field, text: value.text })),
+})
+
+/**
+ * One card in the shape the schema carries it. The heading goes back as it
+ * came: a write reads it again from the first field, except for the one card
+ * whose stencil cannot be read, whose heading is left exactly as it stands.
+ */
+const carding = (one: VaultCard) => ({
+  mark: one.mark,
+  ...(one.section === null ? {} : { section: one.section }),
+  heading: one.heading,
+  stencil: one.stencil,
+  lead: one.lead,
+  values: one.values.map((value) => ({ field: value.field, text: value.text })),
+})
+
+/** One problem, with where it stands kept as a number or as nothing. */
+const problem = (one: ProblemMessage): Problem => ({
+  fault: faulted[one.fault],
+  card: one.card ?? null,
+  face: one.face ?? null,
+  field: one.field,
+  text: one.text,
+})
+
+/** What a problem is, in the words the window uses. */
+const faulted: Record<Faults, Fault> = {
+  [Faults.UNSPECIFIED]: 'unknown',
+  [Faults.FIELD_DECLARED_TWICE]: 'fieldDeclaredTwice',
+  [Faults.STENCIL_WITHOUT_FIELDS]: 'stencilWithoutFields',
+  [Faults.FACE_MISSING_A_SIDE]: 'faceMissingASide',
+  [Faults.PLACEHOLDER_UNDECLARED]: 'placeholderUndeclared',
+  [Faults.CARD_WITHOUT_A_STENCIL]: 'cardWithoutAStencil',
+  [Faults.STENCIL_IS_NOT_ONE]: 'stencilIsNotOne',
+  [Faults.MARK_CARRIED_TWICE]: 'markCarriedTwice',
+  [Faults.FIELD_WRITTEN_TWICE]: 'fieldWrittenTwice',
+  [Faults.FIELD_NOT_RENAMED]: 'fieldNotRenamed',
 }

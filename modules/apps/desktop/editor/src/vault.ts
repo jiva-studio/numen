@@ -4,14 +4,8 @@
  * Nothing here describes what an answer looks like: that is the schema, and
  * both halves are generated from it.
  */
-import { Code, createClient } from '@connectrpc/connect'
-import type { ConnectError } from '@connectrpc/connect'
+import { createClient } from '@connectrpc/connect'
 import {
-  ArtifactKind as Kinds,
-  ArtifactService,
-  AssetService,
-  CardsService,
-  Fault as Faults,
   FileService,
   FlushResult,
   NamedBy,
@@ -24,7 +18,6 @@ import {
   Seat as Seats,
   SettingsService,
   SourceKind,
-  State as States,
   Unit as Units,
   VaultService,
   VaultsRefusal,
@@ -32,16 +25,10 @@ import {
   WindowService,
 } from '@numen/protocol'
 import type {
-  Card as CardMessage,
-  Cue as CueMessage,
-  Deck as DeckMessage,
   Entry as EntryMessage,
   MoveResult as MoveResultMessage,
   GetNeighbourhoodResponse as NeighbourhoodMessage,
-  Page as PageMessage,
-  Problem as ProblemMessage,
   Refusal,
-  Stencil as StencilMessage,
   Vault as VaultMessage,
 } from '@numen/protocol'
 import type { TallyUnit } from '@numen/ui'
@@ -53,10 +40,7 @@ import { settingAt } from './settings/store'
 import { write } from './settings/json5'
 import type { CommandsDeps } from './command/commands'
 import type { SearchDeps, SearchMode } from './command/search'
-import type { Documents, Page } from './document/open'
-import type { Cue, Recordings } from './recording/transcript'
 import type {
-  Artifact as ArtifactOf,
   Core,
   Entry,
   Configuration,
@@ -70,11 +54,9 @@ import type {
   NoteResult,
   NoteType,
   Presence,
-  ArtifactState,
   RemoveResult,
   RenameResult,
   Role,
-  ArtifactRunner,
   Seat,
   Source,
   Vault,
@@ -82,16 +64,6 @@ import type {
   VaultResult,
   Vaults,
 } from './core'
-import type {
-  Cards,
-  Fault,
-  Problem,
-  StencilSummary,
-  VaultCard,
-  VaultDeck,
-  VaultFace,
-  VaultStencil,
-} from './cards/vault'
 
 export const vault = createClient(VaultService, transport)
 
@@ -106,19 +78,11 @@ const finding = createClient(SearchService, transport)
 
 const vaultsService = createClient(VaultsService, transport)
 
-const cardsService = createClient(CardsService, transport)
-
 /** The file this installation is configured in, which is no vault's. */
 const settingsService = createClient(SettingsService, transport)
 
 /** This window itself, which is the editor and not the one cards are run in. */
 const windowService = createClient(WindowService, transport)
-
-/** What a model has made from the files of the vault. */
-const artifacts = createClient(ArtifactService, transport)
-
-/** What the files of the vault are, for whatever opens one. */
-const assets = createClient(AssetService, transport)
 
 /** The window every question about a window names. */
 const WINDOW = 'editor'
@@ -179,94 +143,6 @@ export const vaults: Vaults = {
     added(await vaultsService.renameVault({ name: id, displayName: called })),
   remove: async (id, trash) => turnedDown(await vaultsService.removeVault({ name: id, trash })),
   open: async (id) => turnedDown(await vaultsService.openVault({ name: id })),
-}
-
-/** The stencils and the decks of that vault, in the shape the window asks about them. */
-export const cards: Cards = {
-  stencils: async (limit) => {
-    const answer = await cardsService.listStencils({ limit: limit ?? 0 })
-    return { stencils: answer.stencils.map(offered), held: answer.total }
-  },
-  makeDeck: async (title, folder) => {
-    const answer = await cardsService.createDeck({ title, folder })
-    return { path: answer.path, refusal: refusalIn(answer) }
-  },
-  makeStencil: async (title, folder, fields) => {
-    const answer = await cardsService.createStencil({ title, folder, fields: [...fields] })
-    return { path: answer.path, refusal: refusalIn(answer) }
-  },
-  renameField: async (path, from, to, seen) => {
-    const answer = await cardsService.renameStencilField({
-      path,
-      from,
-      to,
-      ...(seen === null ? {} : { seen: fingerprint(seen) }),
-    })
-    return {
-      decks: answer.decks,
-      cards: answer.cards,
-      notWritten: answer.notWritten.map((one) => ({
-        path: one.path,
-        text: one.problem?.text ?? '',
-      })),
-      refusal: refusalIn(answer),
-      changed: staleIn(answer),
-      at: stamp(answer.at) ?? '',
-    }
-  },
-  readDeck: async (path) => {
-    const answer = await cardsService.readDeck({ path })
-    return {
-      deck: answer.deck ? decked(answer.deck) : null,
-      refusal: refusalIn(answer),
-      at: stamp(answer.at) ?? '',
-      bound: Number(answer.bound),
-    }
-  },
-  writeDeck: async (path, deck, seen) => {
-    const answer = await cardsService.writeDeck({
-      path,
-      preamble: deck.preamble,
-      cards: deck.cards.map(carding),
-      sections: deck.sections.map((section) => ({ name: section.name, lead: section.lead })),
-      tail: deck.tail,
-      ...(seen === null ? {} : { seen: fingerprint(seen) }),
-    })
-    return {
-      refusal: refusalIn(answer),
-      changed: staleIn(answer),
-      at: stamp(answer.at) ?? '',
-      bound: Number(answer.bound),
-    }
-  },
-  readStencil: async (path) => {
-    const answer = await cardsService.readStencil({ path })
-    return {
-      stencil: answer.stencil ? stencilled(answer.stencil) : null,
-      refusal: refusalIn(answer),
-      at: stamp(answer.at) ?? '',
-    }
-  },
-  writeStencil: async (path, fields, stencil, seen) => {
-    const answer = await cardsService.writeStencil({
-      path,
-      fields: [...fields],
-      preamble: stencil.preamble,
-      faces: stencil.faces.map((face) => ({
-        name: face.name,
-        lead: face.lead,
-        front: face.front,
-        back: face.back,
-      })),
-      tail: stencil.tail,
-      ...(seen === null ? {} : { seen: fingerprint(seen) }),
-    })
-    return {
-      refusal: refusalIn(answer),
-      changed: staleIn(answer),
-      at: stamp(answer.at) ?? '',
-    }
-  },
 }
 
 /** The same questions, in the shape the window asks them. */
@@ -474,183 +350,6 @@ export const core: Core & SearchDeps & CommandsDeps = {
 }
 
 /**
- * The documents the vault holds, over the addresses the application serves the
- * window at. A page is a picture at an address of its own, drawn to the width
- * it is asked for in device pixels.
- */
-export const documents: Documents = {
-  shape: async (path) => {
-    const answer = await waiting(() => assets.getDocument({ path }))
-    return {
-      pages: answer.pages,
-      sheets: answer.sheets.map((one) => ({ wide: one.wide, high: one.high })),
-      at: stamp(answer.fingerprint) ?? '',
-    }
-  },
-  page: (path, at, wide, seen) =>
-    `${asset(path)}/pages/${at}?wide=${wide}&${named(seen)}`,
-  highlights: async (path, stretches) => {
-    const answer = await waiting(() => assets.listHighlights({ path, at: [...stretches] }))
-    return stretches.map((_, i) => answer.runs[i]?.pages.map(highlighted) ?? [])
-  },
-}
-
-/** One page of a highlight, as the window carries it. */
-const highlighted = (one: PageMessage): Page => ({
-  page: one.index,
-  rects: one.rects.map((box) => ({
-    minX: box.minX,
-    minY: box.minY,
-    maxX: box.maxX,
-    maxY: box.maxY,
-  })),
-})
-
-/**
- * The recordings the vault holds, over the same addresses. The player is given
- * an address of its own: the window is drawn from a scheme a browser does not
- * load sound through, and the application answers where it does.
- */
-export const recordings: Recordings = {
-  listened: async (path) => {
-    const answer = await waiting(() => assets.getRecording({ path }))
-    return {
-      length: answer.length,
-      heard: answer.heard,
-      media: answer.media,
-      type: answer.type,
-    }
-  },
-  cues: async (path) => {
-    const answer = await waiting(() => artifacts.readTranscript({ path }))
-    return { cues: answer.cues.map(spoken), editable: answer.editable }
-  },
-  writes: async (path, cues) => {
-    await waiting(() => artifacts.writeTranscript({ path, cues: [...cues] }))
-  },
-  plays: async (path, stretch) => {
-    const answer = await waiting(() => artifacts.readTranscript({ path, at: stretch }))
-    return answer.cues[0]?.from ?? null
-  },
-}
-
-/** One stretch of speech, kept as the plain value the window carries it as. */
-const spoken = (one: CueMessage): Cue => ({ text: one.text, from: one.from, to: one.to })
-
-/**
- * What a model makes from one file of the vault, asked for by name. Which model
- * does the work follows from the file, so the window names the artifact and
- * never the producer.
- */
-export const running: ArtifactRunner = {
-  carries: async (path) => {
-    const answer = await artifacts.listArtifacts({ path })
-    const held: Record<string, ArtifactState> = {}
-    for (const one of answer.artifacts) {
-      const of = drawn[one.kind]
-      if (of) held[of] = reached(one.state)
-    }
-    return held
-  },
-  makes: async (path, of) => {
-    try {
-      const answer = await artifacts.createArtifact({ path, kind: asking[of] })
-      return {
-        able: true,
-        of,
-        made: reached(answer.artifact?.state),
-        error: answer.artifact?.error ?? '',
-      }
-    } catch (error) {
-      // A build that cannot make it at all says so, and it is offered nowhere
-      // from then on.
-      if (Code.Unimplemented === (error as ConnectError).code) return { able: false }
-      throw error
-    }
-  },
-  drops: async (path) => {
-    try {
-      await artifacts.deleteArtifact({ path })
-      return true
-    } catch (error) {
-      if (Code.Unimplemented === (error as ConnectError).code) return false
-      throw error
-    }
-  },
-}
-
-/**
- * What each artifact the schema names is called in the window. Keyed by the
- * schema, so an artifact added to it has to be given a word here before this
- * compiles.
- */
-const drawn: Readonly<Record<Kinds, ArtifactOf | null>> = {
-  [Kinds.UNSPECIFIED]: null,
-  [Kinds.READING]: 'reading',
-  [Kinds.HEARD]: 'transcript',
-  [Kinds.CORRECTED]: 'corrections',
-}
-
-/** And back, for asking for one. */
-const asking = namesOf<ArtifactOf, Kinds>(drawn)
-
-/** What has become of an artifact, in the words the window uses. */
-const become: Record<States, ArtifactState> = {
-  [States.UNSPECIFIED]: 'none',
-  [States.NONE]: 'none',
-  [States.QUEUED]: 'queued',
-  [States.RUNNING]: 'running',
-  [States.STOPPED]: 'stopped',
-  [States.DONE]: 'done',
-  [States.EMPTY]: 'empty',
-  [States.FAILED]: 'failed',
-}
-
-/** A state this window has no word for is an artifact nothing has made. */
-const reached = (state: States | undefined): ArtifactState =>
-  (state === undefined ? undefined : become[state]) ?? 'none'
-
-/**
- * Where a file of the vault is asked about. The path is written out whole, so a
- * file in a folder is one part of the address and the facet asked of it is the
- * next.
- */
-const asset = (path: string): string => `/assets/${encodeURIComponent(path)}`
-
-/**
- * Which bytes an address is about, as the address writes them. The path is a
- * part of the address already, so what is written here is the rest of what says
- * which file it is.
- */
-const named = (seen: string): string => {
-  const at = fingerprint(seen)
-  return `size=${at.size}&mtime=${at.mtime}`
-}
-
-/** How often a document that is busy is waited out before it is a refusal. */
-const PATIENCE = 3
-
-/** How long the window waits before asking a busy document again. */
-const AGAIN = 1000
-
-/**
- * What the application answered. A document held by whoever is drawing from it
- * says so, and is asked again after a wait.
- */
-const waiting = async <T>(ask: () => Promise<T>): Promise<T> => {
-  for (let asked = 0; ; asked++) {
-    try {
-      return await ask()
-    } catch (error) {
-      if (Code.Unavailable !== (error as ConnectError).code || asked >= PATIENCE) throw error
-      await sleep(AGAIN)
-    }
-  }
-}
-
-const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
-
-/**
  * What a piece of work counts, in the words the window uses. One it has no word
  * for is counted one by one.
  */
@@ -804,93 +503,6 @@ const typed: Record<NoteTypes, NoteType> = {
 
 /** A kind this window has no word for is an ordinary note. */
 const noteType = (of: NoteTypes): NoteType => typed[of] ?? 'note'
-
-/** One stencil of the list, kept as the plain value the window carries it as. */
-const offered = (one: {
-  path: string
-  title: string
-  fields: string[]
-}): StencilSummary => ({
-  path: one.path,
-  title: one.title,
-  fields: one.fields,
-})
-
-/** A deck as the window carries it. */
-const decked = (one: DeckMessage): VaultDeck => ({
-  path: one.path,
-  title: one.title,
-  preamble: one.preamble,
-  cards: one.cards.map(carded),
-  sections: one.sections.map((section) => ({ name: section.name, lead: section.lead })),
-  tail: one.tail,
-  problems: one.problems.map(problem),
-})
-
-/** A stencil as the window carries it. */
-const stencilled = (one: StencilMessage): VaultStencil => ({
-  path: one.path,
-  title: one.title,
-  fields: one.fields,
-  preamble: one.preamble,
-  faces: one.faces.map(
-    (face): VaultFace => ({
-      name: face.name,
-      lead: face.lead,
-      front: face.front,
-      back: face.back,
-    }),
-  ),
-  tail: one.tail,
-  problems: one.problems.map(problem),
-})
-
-const carded = (one: CardMessage): VaultCard => ({
-  mark: one.mark,
-  section: one.section ?? null,
-  heading: one.heading,
-  stencil: one.stencil,
-  stencilAt: one.stencilAt,
-  lead: one.lead,
-  values: one.values.map((value) => ({ field: value.field, text: value.text })),
-})
-
-/**
- * One card in the shape the schema carries it. The heading goes back as it
- * came: a write reads it again from the first field, except for the one card
- * whose stencil cannot be read, whose heading is left exactly as it stands.
- */
-const carding = (one: VaultCard) => ({
-  mark: one.mark,
-  ...(one.section === null ? {} : { section: one.section }),
-  heading: one.heading,
-  stencil: one.stencil,
-  lead: one.lead,
-  values: one.values.map((value) => ({ field: value.field, text: value.text })),
-})
-
-/** One problem, with where it stands kept as a number or as nothing. */
-const problem = (one: ProblemMessage): Problem => ({
-  fault: faulted[one.fault],
-  card: one.card ?? null,
-  face: one.face ?? null,
-  field: one.field,
-  text: one.text,
-})
-
-/** What a problem is, in the words the window uses. */
-const faulted: Record<Faults, Fault> = {
-  [Faults.UNSPECIFIED]: 'unknown',
-  [Faults.FIELD_DECLARED_TWICE]: 'fieldDeclaredTwice',
-  [Faults.STENCIL_WITHOUT_FIELDS]: 'stencilWithoutFields',
-  [Faults.FACE_MISSING_A_SIDE]: 'faceMissingASide',
-  [Faults.PLACEHOLDER_UNDECLARED]: 'placeholderUndeclared',
-  [Faults.CARD_WITHOUT_A_STENCIL]: 'cardWithoutAStencil',
-  [Faults.STENCIL_IS_NOT_ONE]: 'stencilIsNotOne',
-  [Faults.MARK_CARRIED_TWICE]: 'markCarriedTwice',
-  [Faults.FIELD_WRITTEN_TWICE]: 'fieldWrittenTwice',
-  [Faults.FIELD_NOT_RENAMED]: 'fieldNotRenamed',
-}
 
 /** One vault of the list, kept as the plain value the window carries it as. */
 const held = (one: VaultMessage): Vault => ({
