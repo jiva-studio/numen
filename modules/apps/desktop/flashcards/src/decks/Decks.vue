@@ -40,7 +40,7 @@ defineEmits<{
 }>()
 
 /** What the whole vault owes: what is due today and what has never been asked. */
-const owed = computed(() => props.vault.due + props.vault.new)
+const due = computed(() => props.vault.due + props.vault.new)
 
 /** Why a deck is not studied today, and empty while its preset schedules it. */
 const stopped = (deck: string): string => props.byDeck.get(deck)?.paused ?? ''
@@ -133,10 +133,10 @@ const share = (deck: DeckCardsDue): string => {
         <KeyCap :keys="{ icons: [], letter: 'esc' }" />
         Another vault
       </Button>
-      <Button class="decks__all" :disabled="owed === 0" @click="$emit('start', '')">
+      <Button class="decks__all" :disabled="due === 0" @click="$emit('start', '')">
         <KeyCap :keys="{ icons: [], letter: 'enter' }" />
         Review
-        <DueCount :due="owed" bare over />
+        <DueCount :due="due" bare over />
       </Button>
     </footer>
   </section>
