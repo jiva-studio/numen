@@ -15,7 +15,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
@@ -87,6 +86,15 @@ func Start(dir string) (int, error) {
 		_ = opened.Close()
 		return 0, err
 	}
+	// The port is the whole of what Start answers, so a listener holding no TCP
+	// address leaves the caller nothing to reach and this ends here.
+	addr, ok := listener.Addr().(*net.TCPAddr)
+	if !ok {
+		stop()
+		_ = listener.Close()
+		_ = opened.Close()
+		return 0, fmt.Errorf("listening on %s, which is no TCP address", listener.Addr())
+	}
 
 	// The phone draws the vault it is showing, the notes in it and the tree they
 	// are filed in, and asks the core nothing else. What is served here is
@@ -106,7 +114,7 @@ func Start(dir string) (int, error) {
 	go func() { _ = server.Serve(listener) }()
 
 	running = &held{
-		port:   listener.Addr().(*net.TCPAddr).Port,
+		port:   addr.Port,
 		stop:   stop,
 		opened: opened,
 		server: server,
@@ -173,7 +181,7 @@ func known(cfg container.Config, root string) (string, error) {
 	added, err := vaults.Add{
 		Identity: cfg.VaultIdentity(),
 		Registry: registry,
-		Now:      time.Now,
+		Now:      cfg.Clock(),
 	}.Execute(root, "numen")
 	if err != nil {
 		return "", err
