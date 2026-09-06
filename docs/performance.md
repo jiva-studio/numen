@@ -111,9 +111,13 @@ A cold scan, by profile, taken 2026-09-06 over one run of `ColdScan/10000` — 3
 
 **Ending transactions is no longer the largest part.** The 2026-08-15 profile read 1 % reading, 5 % parsing, 77 % storing, of which 43 % of the whole scan was ending transactions. Since then a note is written into the passage index as well as the note index — the chunk enclosing it, the small chunks tiled inside it, and every one of them indexed for its words in `chunks_fts` and `sections_fts`. That path is 42 % of the scan and it is why the cold scan costs what it now costs.
 
-**A fifth of a cold scan is SQLite reading SQL text it has read before.** `chunk.prepare` prepares four statements and closes them inside `chunk.Replace`, which `saveNote` calls once per note; `insert_link` is prepared per note beside it; and the dozen or so `exec` helpers go through `tx.ExecContext`, which the driver prepares afresh on every call. The transaction spans a group of five hundred notes, so every one of those could be prepared once for the group and reused. Ten thousand notes parse the same statement texts something like a hundred and fifty thousand times.
+**A fifth of a cold scan was SQLite reading SQL text it had read before.** `chunk.prepare` prepared four statements and closed them inside `chunk.Replace`, which `saveNote` calls once per note; `insert_link` was prepared per note beside it; and the dozen or so `exec` helpers go through `tx.ExecContext`, which the driver prepares afresh on every call. The transaction spans a group of five hundred notes, so ten thousand notes parsed the same statement texts something like a hundred and fifty thousand times.
+
+**A statement text that ends in a newline is compiled twice on every call.** The driver compiles the text when the statement is made, and keeps what it compiled only where the text held one statement and nothing after it; a text with anything past the semicolon is a script to it, and a script is compiled again inside every `Exec` and `Query`. Every statement of this index is a file, and a file ends in a newline. Taking the whitespace off what `sqlfile` loads is **half of the parsing**: 22.5 % of the profile becomes 11.5 %, and the samples one run of `ColdScan/10000` costs fall from 32.9 s to 21.6 s.
 
 The record's line that reusing prepared statements across a group makes no difference is under "What does not work", and it is no longer true: it was measured on 2026-08-15, when a note save was a handful of statements and `chunk.Replace` was not on the path.
+
+**Read the shares here and not the clock.** The machine was carrying five other agents and a load average between 6 and 43 while these were measured, so the wall time of one scan says more about the hour than about the code. What a profile counts is this process's own samples, and the share of them one function holds is what the paragraphs above compare.
 
 A transaction boundary costs the same whether one note crossed it or five hundred did, which is why notes are written in groups. A cgo build of SQLite is roughly twice as fast on inserts in published comparisons; it is not measured here, and it costs the cross-compilation the pure-Go driver is chosen for.
 
@@ -1006,6 +1010,19 @@ Recorded 2026-09-06, `vite build` in each window's own folder, into the Go packa
 **The editor did not move, as it was expected not to.** It was 1 628 kB and is 1 631 kB. It draws more of the library and more of its own, and the tree shaking that took two thirds off the smaller window takes almost nothing off this one: what the editor imports, it uses.
 
 The editor's `vue-tsc` step does not pass in this tree, so its figure comes from `vite build` alone. Two copies of `@vue/runtime-core` are installed — one under the editor and one under the interface library — and every component's props typecheck against the wrong one. That is a state of `node_modules` and not of the source; the bundle is unaffected, since Vite resolves one copy.
+
+### The same two, off one install
+
+Recorded 2026-09-06, the same command, with `modules/` an npm workspace root.
+
+| | JavaScript | gzip | CSS | modules |
+| --- | --- | --- | --- | --- |
+| flashcards | 432 kB | 155 kB | 101 kB | 571 |
+| editor | 1 556 kB | 543 kB | 112 kB | 2 476 |
+
+**Each window carried the protobuf runtime twice and now carries it once.** Eleven installs meant `@numen/protocol` resolved `@bufbuild/protobuf` out of its own `node_modules` and the window resolved another out of its own, so both were bundled: `google/protobuf/descriptor.proto` appears once in each bundle now and appeared twice in each before. It is 76 kB off both windows, which is the whole of the fall — nothing else about either window changed.
+
+The two copies of `@vue/runtime-core` went the same way, and the editor's `vue-tsc` passes.
 
 ## A recipe that moved, and whether it settles
 
