@@ -13,88 +13,58 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	format "github.com/jiva-studio/numen/modules/libs/core/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/check"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // Version is what an agent is told it is talking to.
 const Version = "0.1.0"
 
-// Core is everything the tools work through. Every field is a use case or a
-// query the rest of the application already has: nothing about a vault is
-// decided here.
+// Core is everything the tools work through, in the four things a vault is
+// worked as. Every field of every group is a use case or a query the rest of
+// the application already has: nothing about a vault is decided here.
 type Core struct {
 	// Showing is the vault the tools work, asked at every call so that they
 	// follow the window.
-	Showing func() Shown
+	Showing func() ShownVault
 
+	// Readers is the vault's files, which the notes, the documents and the
+	// window are all read out of.
 	Readers port.VaultReaders
-	Notes   port.NoteQueries
 
 	// View is the person's window, where there is one. Without it an agent is
 	// served the vault and nothing that puts a note in front of anybody.
-	View port.View
+	View port.Window
 
 	// Attending is what the person has open, asked at every call so that an
 	// agent reads the window as it stands. Without it an agent is told nothing
 	// of what is in front of anybody.
-	Attending func() domain.Attention
+	Attending func() domain.OpenTabs
 
-	// Vaults is the list of vaults this installation holds. Without it an agent
-	// is told of the vault it is working and of no other.
-	Vaults port.VaultRegistry
-	// Choosing puts this machine's own folder picker in front of the person, for
-	// a vault added without a path. Without it a folder is named or nothing is
-	// added.
-	Choosing port.Folders
-	// Adding turns a folder into a vault, Renaming is what a person calls one,
-	// and Forgetting takes one off the list. Each tool is served where what it
-	// works through is here.
-	Adding     *usecase.Add
-	Renaming   *usecase.Rename
-	Forgetting *usecase.Forget
-	// Opens puts another vault in the window. The tools are served for the vault
-	// that is going, so the session asking for the swap ends with it.
-	Opens func(context.Context, domain.Vault) error
+	// Reviewing is the card the person is looking at, asked at every call for
+	// the same reason. Without it an agent is told nothing of what card anybody
+	// is on.
+	Reviewing func() AskedCard
 
-	// Sources and Recognise are the documents a vault holds beside its notes.
-	// Without them the tools for those documents are not added.
-	Sources   port.SourceQueries
-	Recognise Recognising
-	// Transcribe hears a recording. Without it the tool that asks for one is
-	// served and answers that this installation cannot.
-	Transcribe Transcribing
-	// Derived is where a reading of a document is kept. Without it a document
-	// stands on its own bytes, which for a scan is nothing.
-	Derived port.DerivedStores
-	// Documents reads a format that needs a library, for a document standing on
-	// its own bytes.
-	Documents port.Documents
+	Notes   Notes
+	Vaults  Vaults
+	Cards   Cards
+	Sources Sources
+}
 
+// Notes is a vault's notes: what is asked of them, and what changes them.
+type Notes struct {
+	Queries       port.NoteQueries
 	Search        search.Search
 	Neighbourhood note.ShowNeighbourhood
 	Links         note.ShowLinks
 	Problems      check.Checks
-
-	// Cards reads a deck or a stencil, Stencils lists the stencils the vault
-	// holds, Cuts puts a deck back, Cutting makes a stencil and FieldRename
-	// gives one of a stencil's fields a different name in every card it cuts.
-	Cards       cards.Read
-	Stencils    cards.List
-	Cuts        cards.Write
-	Cutting     cards.Create
-	FieldRename cards.RenameField
-	// DeckBody is the markdown a deck of cards is written as, and StencilBody
-	// the markdown a stencil's faces are. A tool changes cards and hands them
-	// back; what the file then reads as is the format's.
-	DeckBody    func(d format.Deck) (string, error)
-	StencilBody func(preamble string, faces []format.Face, tail string) (string, error)
 
 	Create  note.Create
 	Write   note.Write
@@ -102,29 +72,90 @@ type Core struct {
 	Move    note.Move
 	Rename  note.Rename
 	Remove  note.Remove
-	Linking note.Linking
+	Linking note.EditLinks
 }
 
-// Shown is the vault a call is answered about: the vault itself, and where it
-// sits on this machine. An agent that can open files joins the folder to a
+// Vaults is the list of vaults this installation holds, and what a person does
+// to it. Without a registry an agent is told of the vault it is working and of
+// no other, and each tool is served where what it works through is here.
+type Vaults struct {
+	Registry port.VaultRegistry
+	// FolderDialog puts this machine's own folder dialog in front of the person,
+	// for a vault added without a path. Without it a folder is named or nothing
+	// is added.
+	FolderDialog port.FolderDialog
+	// Add turns a folder into a vault, Rename is what a person calls one, and
+	// Forget takes one off the list.
+	Add    *vaults.Add
+	Rename *vaults.Rename
+	Forget *vaults.Forget
+	// Opens puts another vault in the window. The tools are served for the vault
+	// that is going, so the session asking for the swap ends with it.
+	Opens func(context.Context, domain.Vault) error
+}
+
+// Cards is the decks and stencils a vault is arranged into. Read takes a deck
+// or a stencil, List the stencils the vault holds, Write puts a deck back,
+// Create makes a stencil and RenameField gives one of a stencil's fields a
+// different name in every card it cuts.
+type Cards struct {
+	Read        cards.Read
+	List        cards.List
+	Write       cards.Write
+	Create      cards.Create
+	RenameField cards.RenameField
+	// DeckEdit holds a deck's body open so that one card can be changed and every
+	// other byte left as it arrived, and StencilBody is the markdown a stencil's
+	// faces are written as.
+	DeckEdit    func(body string) *format.DeckFile
+	StencilBody func(preamble string, faces []format.FaceTemplate, tail string) (string, error)
+}
+
+// Sources is the documents a vault holds beside its notes. Without Queries the
+// tools for those documents are not added.
+type Sources struct {
+	Queries   port.SourceQueries
+	Recognise Recogniser
+	// Transcribe hears a recording. Without it the tool that asks for one is
+	// served and answers that this installation cannot.
+	Transcribe Transcriber
+	// Derived is where a reading of a document is kept. Without it a document
+	// stands on its own bytes, which for a scan is nothing.
+	Derived port.DerivedStores
+	// Documents reads a format that needs a library, for a document standing on
+	// its own bytes.
+	Documents port.TextExtractor
+}
+
+// AskedCard is the card in front of the person, as an agent is told about it.
+// The deck is the file it stands in and the mark is what every card tool
+// addresses it by.
+type AskedCard struct {
+	Deck string `json:"deck" jsonschema:"the deck the card stands in, by the path the vault files it under; empty when no card is in front of them"`
+	Card string `json:"card,omitempty" jsonschema:"the card's mark, as card_read gives it"`
+	Face string `json:"face,omitempty" jsonschema:"the face it is being shown through, spelled as the stencil writes it"`
+}
+
+// ShownVault is the vault a call is answered about: the vault itself, and where
+// it sits on this machine. An agent that can open files joins the folder to a
 // path itself; one that cannot reads through a tool.
-type Shown struct {
+type ShownVault struct {
 	Vault domain.Vault
 	Root  string
 }
 
 // shown is the vault this call is about. A build that named none answers about
 // no vault at all.
-func (c Core) shown() Shown {
+func (c Core) shown() ShownVault {
 	if c.Showing == nil {
-		return Shown{}
+		return ShownVault{}
 	}
 	return c.Showing()
 }
 
-// One is a Core working one vault for as long as it is served.
-func One(v domain.Vault, root string) func() Shown {
-	return func() Shown { return Shown{Vault: v, Root: root} }
+// ShowingOne answers with the same vault for as long as the server is served.
+func ShowingOne(v domain.Vault, root string) func() ShownVault {
+	return func() ShownVault { return ShownVault{Vault: v, Root: root} }
 }
 
 // New builds the server an agent connects to.
@@ -191,6 +222,7 @@ func NewReviewing(core Core) *sdk.Server {
 	addNoteReadingTools(server, core)
 	addCardReadingTools(server, core)
 	addCardEditingTools(server, core)
+	addCardShowing(server, core)
 	addLinkReadingTools(server, core)
 	addSourceReadingTools(server, core)
 	addVaultGet(server, core)
@@ -234,7 +266,7 @@ func instructions(core Core) string {
 	b.WriteString("book's sections are searched by name, and a section named what was asked ")
 	b.WriteString("for is what the search answers with.\n")
 	b.WriteString("- A search answers with several places of one book. Show every place you ")
-	b.WriteString("speak about: `source_show` takes the rest under `also`, and the person is ")
+	b.WriteString("speak about: `source_focus` takes the rest under `also`, and the person is ")
 	b.WriteString("taken to the first.\n")
 	b.WriteString("- A passage is a window cut to a size and it ends where it was cut, which ")
 	b.WriteString("is mid-sentence as often as not. Read on with `source_read` before saying ")
@@ -265,7 +297,7 @@ func opening(b *strings.Builder, core Core) {
 	b.WriteString("files, `note_read` gives you the same text.\n\n")
 
 	if core.Attending != nil {
-		b.WriteString("What the person has open is `window_tabs`: every tab of their window, ")
+		b.WriteString("What the person has open is `window_tab_list`: every tab of their window, ")
 		b.WriteString("and which of them they are looking at. Ask it before saying anything ")
 		b.WriteString("about what is in front of them, and ask again when it matters — they ")
 		b.WriteString("move between tabs while you work.\n\n")
@@ -307,6 +339,12 @@ func reviewingInstructions(core Core) string {
 	b.WriteString("reads: you write the cards of a deck, and nothing you can call writes a ")
 	b.WriteString("note, a link or a document, makes a deck or a stencil, or moves the ")
 	b.WriteString("person's window.\n\n")
+
+	if core.Reviewing != nil {
+		b.WriteString("Which card they are on is `card_showing`: the deck, the card's mark ")
+		b.WriteString("and the face it is shown through. A question that says \"this card\" ")
+		b.WriteString("means the one it names, and nothing else here says which that is.\n\n")
+	}
 
 	b.WriteString("A card is written into a deck that is already there, cut by a stencil ")
 	b.WriteString("that already exists. Read the deck with `card_read` before changing it, ")

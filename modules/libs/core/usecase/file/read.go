@@ -19,25 +19,25 @@ import (
 // MostRead is how much of a file one read carries.
 const MostRead = 16000
 
-// Outcome is how a read ended.
-type Outcome string
+// ReadOutcome is how a read ended.
+type ReadOutcome string
 
 const (
 	// Ok is the text coming back.
-	Ok Outcome = "ok"
+	Ok ReadOutcome = "ok"
 	// Missing is a path with no file behind it.
-	Missing Outcome = "missing"
+	Missing ReadOutcome = "missing"
 	// LeftAlone is a file the vault's own rules pass over.
-	LeftAlone Outcome = "left alone"
+	LeftAlone ReadOutcome = "left alone"
 	// AFolder is a path holding a folder.
-	AFolder Outcome = "a folder"
+	AFolder ReadOutcome = "a folder"
 	// NotText is a run of bytes that is not valid UTF-8.
-	NotText Outcome = "not text"
+	NotText ReadOutcome = "not text"
 )
 
-// Contents is one run of a file as a read hands it over.
-type Contents struct {
-	Outcome Outcome
+// ReadResult is one run of a file as a read hands it over.
+type ReadResult struct {
+	Outcome ReadOutcome
 	// Text is the run that was read. It is empty for every outcome but Ok.
 	Text string
 	// Start and Length are the run that came back: what was asked for, held
@@ -65,8 +65,8 @@ type Read struct {
 // inside it. What is wrong with the file itself is an outcome.
 func (u Read) Execute(
 	ctx context.Context, v domain.Vault, path string, start, length int,
-) (Contents, error) {
-	out := Contents{Start: start}
+) (ReadResult, error) {
+	out := ReadResult{Start: start}
 	if start < 0 {
 		return out, fmt.Errorf("a run of %s begins at %d", path, start)
 	}
@@ -79,7 +79,7 @@ func (u Read) Execute(
 
 	reader, err := u.Readers.Open(v)
 	if err != nil {
-		return Contents{}, err
+		return ReadResult{}, err
 	}
 	file, err := reader.Open(ctx, path)
 	switch {
@@ -87,14 +87,14 @@ func (u Read) Execute(
 		out.Outcome = Missing
 		return out, nil
 	case err != nil:
-		return Contents{}, err
+		return ReadResult{}, err
 	}
 	defer file.Close()
 
 	// A listing of the folder above is the vault saying what it holds there.
 	held, err := reported(ctx, reader, path)
 	if err != nil {
-		return Contents{}, err
+		return ReadResult{}, err
 	}
 	if held != Ok {
 		out.Outcome = held
@@ -103,19 +103,19 @@ func (u Read) Execute(
 
 	whole, err := file.Seek(0, io.SeekEnd)
 	if err != nil {
-		return Contents{}, fmt.Errorf("read %s: %w", path, err)
+		return ReadResult{}, fmt.Errorf("read %s: %w", path, err)
 	}
 	out.Whole = int(whole)
 
 	start = min(start, out.Whole)
 	length = min(length, out.Whole-start)
 	if _, err := file.Seek(int64(start), io.SeekStart); err != nil {
-		return Contents{}, fmt.Errorf("read %s: %w", path, err)
+		return ReadResult{}, fmt.Errorf("read %s: %w", path, err)
 	}
 	raw := make([]byte, length)
 	read, err := io.ReadFull(file, raw)
 	if err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
-		return Contents{}, fmt.Errorf("read %s: %w", path, err)
+		return ReadResult{}, fmt.Errorf("read %s: %w", path, err)
 	}
 	raw = raw[:read]
 
@@ -134,7 +134,7 @@ func (u Read) Execute(
 // reported is what the vault names at this path among the entries of the folder
 // above it: Ok for a file, AFolder for a folder, LeftAlone for a path it does
 // not report at all.
-func reported(ctx context.Context, reader port.VaultReader, path string) (Outcome, error) {
+func reported(ctx context.Context, reader port.VaultReader, path string) (ReadOutcome, error) {
 	clean := pathpkg.Clean(filepath.ToSlash(path))
 	folder := pathpkg.Dir(clean)
 	if folder == "." {
@@ -151,7 +151,7 @@ func reported(ctx context.Context, reader port.VaultReader, path string) (Outcom
 		if entry.Path != clean {
 			continue
 		}
-		if entry.Folder {
+		if entry.IsFolder {
 			return AFolder, nil
 		}
 		return Ok, nil

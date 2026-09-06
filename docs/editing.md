@@ -15,7 +15,7 @@ Nothing changed is nothing written. `Ctrl+S` writes what is owed at the moment i
 
 Closing a tab and quitting the window write what is owed and wait for it. Renaming or removing the file does the same, and that write reaches the path the tab still stands at.
 
-A save reaches the index at once: the note is parsed again, cut again, and found by word. Its vectors are asked for once the vault has been quiet for eight seconds, and every write puts that pass off again. The cooldown is longer than the bound above, so one sitting at one note is embedded once.
+A save reaches the index at once: the note is parsed again, cut again, and found by word. Its vectors are asked for once the vault has been quiet for eight seconds, and every write puts that pass off again. The cooldown is longer than the bound above, so one session at one note is embedded once.
 
 ## What counts as a change
 
@@ -43,8 +43,8 @@ The predicates are read in order, so a tab is in exactly one state. The mark is 
 
 | State | What it means | Mark |
 | --- | --- | --- |
-| `loading` | the first read has not answered; there is no document to type into | — |
 | `stuck` | reading or writing this note is impossible, and the tab says why | `stuck` |
+| `loading` | the first read has not answered; there is no document to type into | — |
 | `gone` | the name the tab stands at has no file behind it | `gone` |
 | `overtaken` | the file moved past the prose this tab read, and the save stopped | `overtaken` |
 | `saving` | a write is in the air | `unsaved` |
@@ -66,9 +66,9 @@ A keystroke is worth trying again after three of them — `tooLarge`, `bodyRefus
 
 ## What a save writes
 
-The buffer holds the body. The save reads the file under the vault's write lock, takes the frontmatter as it then stands, puts the body on it, and replaces the file. The read and the rename are one act against every other write that reads a note and puts it back — see [ADR-0020](adr/0020-one-process-one-lifetime.md).
+The buffer holds the body. The save reads the file under the vault's write lock, takes the frontmatter as it then stands, puts the body on it, and replaces the file. The read and the rename are one act against every other write that reads a note and puts it back — see [One process, one lifetime](adr/0020-one-process-one-lifetime.md).
 
-**A save writes no identifier.** What it puts in the note is the person's. A note the save makes — a name with no file behind it, kept — is made with no frontmatter at all. An identifier arrives from the operations that change what is in a note: a create, a link, a rename that writes the `title` key. See [ADR-0019](adr/0019-a-note-is-identified-by-a-ulid.md).
+**A save writes no identifier.** What it puts in the note is the person's. A note the save makes — a name with no file behind it, kept — is made with no frontmatter at all. An identifier arrives from the operations that change what is in a note: a create, a link, a rename that writes the `title` key. See [A note is identified by a ULID in its frontmatter](adr/0019-a-note-is-identified-by-a-ulid.md).
 
 **A note this application moves is followed.** The move knows both names, so the tab takes the one the note now has and goes on reading and writing it there. It is the move that says so, and this holds for every caller of one.
 
@@ -94,9 +94,9 @@ A link in the prose is followed with the platform's modifier held down. `[[Entro
 
 ## Creating a note
 
-`note_create` is given a title. The file is named after it, and that is the whole mechanism: a note is shown by its `title`, else by its filename. The note is filed under the first extension the vault holds as notes, `.md` by default.
+`note_create` is given a title. The file is named after it, and that is the whole mechanism: a note is shown by its `title`, else by its filename. The note is filed under `.md`, which is the one extension a vault holds notes under.
 
-The reduction from a title to a filename drops control characters, writes `-` for each of `/ \ : * ? " < > | #`, collapses a doubled `[` or `]` to one, cuts the name to 120 bytes without splitting a character in half, and trims a dot or a space off either end.
+The reduction from a title to a filename drops control characters, writes `-` for each of `/ \ : * ? " < > | #`, collapses a doubled `[` or `]` to one, cuts the name to 120 bytes without splitting a character in half, and trims a dot or a space off either end. A name Windows keeps for a device takes a `-` after it, and a title reduced that way did not survive whole.
 
 Where a title survives that whole, the filename says it and nothing is written into the frontmatter. Where it does not, the name is what survived and the frontmatter carries the exact title under `title`.
 
@@ -124,7 +124,7 @@ Creating a note and renaming one are the same convention read in two directions:
 
 **A note whose frontmatter cannot be read is not renamed.** The order above cannot be walked without reading the frontmatter, and a block that does not parse is one the application refuses to read past. It cannot be known whether the note carries a `title`, so it cannot be known what renaming the note means. The application says so and changes nothing.
 
-**The file keeps the extension it had.** What a vault files new notes under is a setting about creating one.
+**The file keeps the extension it had.** A note is created under `.md`, and a rename never touches what a note already carries.
 
 **A heading in the prose names nothing.** What a person types into the body is the body: writing `# Something` at the top of a note does not rename it, and neither does changing one. The name is the `title` key, else the filename.
 
@@ -172,7 +172,7 @@ The window is asked for everything it still holds, and it answers once every tab
 
 A page that goes with a question standing is still owed. Its work is held by a window this process cannot reach into, and a page that comes back takes it over and raises the question again.
 
-The window then settles in one order — the page, the agents, the scan and the follower, the database. A page has three seconds to hand over what it holds; the agents' transport has two seconds to be cut off; the writes already taken are waited for with no bound, the door having been shut first. A quit that does not arrive through the window happens once, the same way. See [ADR-0020](adr/0020-one-process-one-lifetime.md).
+The window then settles in one order — the page, the agents, the scan and the follower, the database. A page has three seconds to hand over what it holds; the agents' transport has two seconds to be cut off; the writes already taken are waited for with no bound, the door having been shut first. A quit that does not arrive through the window happens once, the same way. See [One process, one lifetime](adr/0020-one-process-one-lifetime.md).
 
 ## The states, drawn
 

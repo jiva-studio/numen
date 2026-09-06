@@ -2,6 +2,6 @@
 --
 -- It outlives the chunk that asked for it: chunks are renumbered by every cut,
 -- and a vector is bought.
-INSERT INTO vectors (fingerprint, recipe, v)
+INSERT INTO vectors (hash, recipe, embedding)
 VALUES (?, ?, ?)
-ON CONFLICT (fingerprint, recipe) DO UPDATE SET v = excluded.v;
+ON CONFLICT (hash, recipe) DO UPDATE SET embedding = excluded.embedding;

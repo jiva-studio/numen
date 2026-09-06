@@ -1,16 +1,16 @@
 /** The decisions, as values: no DOM, no Vue, no clock. */
 export { arrangePlex, type ArrangeInput } from './arrange'
-export { crowdingFor, packed, type Counts } from './crowding'
+export { crowdingFor, packed, type SeatCounts } from './crowding'
 export { limitsFor, type Limits, type RoleLimits } from './limits'
 export {
   nodeAt,
   resolveDrop,
-  seatCarried,
+  seatDropped,
   seatTowards,
   seatWithoutDirection,
-  type CarriedInput,
   type Drop,
   type DropInput,
+  type DroppedInput,
 } from './drop'
 export { interpolatePlex } from './interpolate'
 export { rowsAndColumns, type Placement, type Seating, type Widths } from './placement'

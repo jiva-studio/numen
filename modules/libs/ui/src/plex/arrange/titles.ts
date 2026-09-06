@@ -7,14 +7,8 @@
  * place while it is not, cut to the longest clear stretch where the whole of the
  * words stand nowhere, and dropped where that stretch holds less than half.
  */
-import {
-  headingOf,
-  lengthOf,
-  rulerOf,
-  type PlacedEdge,
-  type PlacedNode,
-  type Point,
-} from '../model'
+import { headingOf, lengthOf, rulerOf, type PlacedEdge } from '../edge'
+import type { PlacedNode, Position } from '../node'
 import { cutToFit, MIDDLE, type Routing } from './routing'
 
 /** An upright box in the plex's own coordinates. */
@@ -31,8 +25,8 @@ interface Stretch {
   readonly to: number
 }
 
-/** What a line offers the title it carries. */
-interface Room {
+/** How long a line is, and how long the words it carries are. */
+interface TitleMetrics {
   readonly arc: number
   readonly extent: number
 }
@@ -88,19 +82,19 @@ export function settleTitles(
   const titles: Box[] = []
   const settled = [...edges]
 
-  for (const { edge, at, room } of tightestFirst(edges, width)) {
+  for (const { edge, at, metrics } of tightestFirst(edges, width)) {
     const boxAt = runBoxes(edge, routing.labelDepth + 2 * apart)
-    const ends = (edge.arrow ? routing.arrowRoom : 0) / room.arc
-    const clear = clearStretches(boxAt, [...boxes, ...titles], ends, STEP / room.arc)
+    const ends = (edge.arrow ? routing.arrowRoom : 0) / metrics.arc
+    const clear = clearStretches(boxAt, [...boxes, ...titles], ends, STEP / metrics.arc)
 
-    const found = settle(clear, edge.words!, room, width)
+    const found = settle(clear, edge.words!, metrics, width)
     if (!found) {
       settled[at] = { ...edge, words: undefined, wordsAt: MIDDLE }
       continue
     }
 
-    const half = found.extent / 2 / room.arc
-    titles.push(...ribbonOf(boxAt, found.at - half, found.at + half, STEP / room.arc))
+    const half = found.extent / 2 / metrics.arc
+    titles.push(...ribbonOf(boxAt, found.at - half, found.at + half, STEP / metrics.arc))
 
     // The reading direction is the tangent where the words end up, and the
     // words of a curve taken the other way round are read from its far end.
@@ -124,20 +118,20 @@ export function settleTitles(
 function tightestFirst(
   edges: readonly PlacedEdge[],
   width: (label: string) => number,
-): { edge: PlacedEdge; at: number; room: Room }[] {
-  const measured: { edge: PlacedEdge; at: number; room: Room }[] = []
+): { edge: PlacedEdge; at: number; metrics: TitleMetrics }[] {
+  const measured: { edge: PlacedEdge; at: number; metrics: TitleMetrics }[] = []
 
   for (const [at, edge] of edges.entries()) {
     if (!edge.words) continue
     const arc = lengthOf(edge)
     const extent = width(edge.words)
     if (arc <= 0 || extent <= 0) continue
-    measured.push({ edge, at, room: { arc, extent } })
+    measured.push({ edge, at, metrics: { arc, extent } })
   }
 
   return measured.sort(
     (one, other) =>
-      one.room.arc - one.room.extent - (other.room.arc - other.room.extent) ||
+      one.metrics.arc - one.metrics.extent - (other.metrics.arc - other.metrics.extent) ||
       one.at - other.at,
   )
 }
@@ -151,11 +145,11 @@ function tightestFirst(
 function settle(
   clear: readonly Stretch[],
   words: string,
-  room: Room,
+  metrics: TitleMetrics,
   width: (label: string) => number,
 ): { words: string; at: number; extent: number } | null {
-  const whole = nearestPlace(clear, room.extent / 2 / room.arc)
-  if (whole !== null) return { words, at: whole, extent: room.extent }
+  const whole = nearestPlace(clear, metrics.extent / 2 / metrics.arc)
+  if (whole !== null) return { words, at: whole, extent: metrics.extent }
 
   const longest = clear.reduce<Stretch | null>(
     (widest, stretch) => (!widest || spanOf(stretch) > spanOf(widest) ? stretch : widest),
@@ -163,8 +157,8 @@ function settle(
   )
   if (!longest) return null
 
-  const held = spanOf(longest) * room.arc
-  if (held < LEAST * room.extent) return null
+  const held = spanOf(longest) * metrics.arc
+  if (held < LEAST * metrics.extent) return null
 
   const cut = cutToFit(words, held, width)
   return { words: cut, at: (longest.from + longest.to) / 2, extent: width(cut) }
@@ -198,7 +192,7 @@ function ribbonOf(
  */
 function clearStretches(
   boxAt: (from: number, to: number) => Box,
-  standing: readonly Box[],
+  placed: readonly Box[],
   ends: number,
   step: number,
 ): Stretch[] {
@@ -210,7 +204,7 @@ function clearStretches(
 
   for (let at = ends; at < last; at += step) {
     const box = boxAt(at, Math.min(at + step, last))
-    if (standing.some((other) => meets(other, box))) {
+    if (placed.some((other) => meets(other, box))) {
       if (open !== null) stretches.push({ from: open, to: at })
       open = null
     } else if (open === null) {
@@ -251,7 +245,7 @@ function runBoxes(edge: PlacedEdge, depth: number): (from: number, to: number) =
   const deep = depth / 2
 
   return (from, to) => {
-    const run: Point[] = []
+    const run: Position[] = []
     for (let sample = 0; sample <= RUN_SAMPLES; sample += 1) {
       run.push(along(from + ((to - from) * sample) / RUN_SAMPLES))
     }

@@ -11,8 +11,8 @@ import "encoding/binary"
 // A Line is one printed line put right: the number the line is known by in the
 // reading, and what it should say.
 type Line struct {
-	At   int
-	Text string
+	Number int
+	Text   string
 }
 
 // A record is one corrected line: its number, the bytes of its text, and the
@@ -25,7 +25,7 @@ func Pack(lines []Line) []byte {
 	raw := make([]byte, 0, len(lines)*(head+32))
 	var one [head]byte
 	for _, line := range lines {
-		binary.LittleEndian.PutUint32(one[0:], uint32(int32(line.At)))
+		binary.LittleEndian.PutUint32(one[0:], uint32(int32(line.Number)))
 		binary.LittleEndian.PutUint32(one[4:], uint32(len(line.Text)))
 		raw = append(raw, one[:]...)
 		raw = append(raw, line.Text...)
@@ -44,8 +44,8 @@ func Unpack(raw []byte) []Line {
 		}
 		text := raw[at+head : at+head+int(n)]
 		lines = append(lines, Line{
-			At:   int(int32(binary.LittleEndian.Uint32(raw[at:]))),
-			Text: string(text),
+			Number: int(int32(binary.LittleEndian.Uint32(raw[at:]))),
+			Text:   string(text),
 		})
 		at += head + int(n)
 	}

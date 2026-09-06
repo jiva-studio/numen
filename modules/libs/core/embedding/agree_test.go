@@ -8,7 +8,7 @@ import (
 )
 
 func TestTwoMachinesRunningOneModelAgree(t *testing.T) {
-	// Two stations of one model differ by what arithmetic leaves.
+	// Two providers of one model differ by what arithmetic leaves.
 	a := []float32{1, 0, 0}
 	b := []float32{float32(math.Sqrt(1 - 1e-6)), 1e-3, 0}
 	if !embedding.Agreed(a, b) {

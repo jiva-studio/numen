@@ -59,16 +59,16 @@ func spelt(i int) string {
 // noteAt is one note as the index holds it, with the body given.
 func noteAt(path, title, body string) domain.Note {
 	return domain.Note{
-		Ref:   domain.FileRef{Path: path, Size: int64(len(body)), MTime: 1},
-		Title: title,
-		Body:  body,
+		Fingerprint: domain.Fingerprint{Path: path, Size: int64(len(body)), ModTime: walked},
+		Title:       title,
+		Body:        body,
 	}
 }
 
 // parsedAt is one note as the parser produces it, so the headings a cut is
 // bounded by are the ones the file names and their offsets are the parser's.
 func parsedAt(path, body string) domain.Note {
-	return markdown.Parse(domain.FileRef{Path: path, Size: int64(len(body)), MTime: 1}, []byte(body))
+	return markdown.Parse(domain.Fingerprint{Path: path, Size: int64(len(body)), ModTime: walked}, []byte(body))
 }
 
 // noParts is the same note with nothing naming a section in it. A note that
@@ -109,7 +109,7 @@ func smallChunks(t *testing.T, db *DB, vault domain.Vault, path string) []int64 
 	return rowsOf(t, db, `SELECT c.id FROM chunks c
 	                      JOIN sources s ON s.id = c.source_id
 	                      JOIN vaults v ON v.id = c.vault_id
-	                      WHERE v.identifier = ? AND s.path = ? AND c.parent IS NOT NULL
+	                      WHERE v.identifier = ? AND s.path = ? AND c.parent_id IS NOT NULL
 	                      ORDER BY c.start, c.length`, vault.ID, path)
 }
 
@@ -119,7 +119,7 @@ func largeChunk(t *testing.T, db *DB, vault domain.Vault, path string) int64 {
 	rows := rowsOf(t, db, `SELECT c.id FROM chunks c
 	                       JOIN sources s ON s.id = c.source_id
 	                       JOIN vaults v ON v.id = c.vault_id
-	                       WHERE v.identifier = ? AND s.path = ? AND c.parent IS NULL`, vault.ID, path)
+	                       WHERE v.identifier = ? AND s.path = ? AND c.parent_id IS NULL`, vault.ID, path)
 	if len(rows) != 1 {
 		t.Fatalf("%d large chunks for %s", len(rows), path)
 	}
@@ -181,14 +181,14 @@ func TestEditingTheEndOfANoteAsksForOneVector(t *testing.T) {
 	if asked := model.run(t, db, first); asked != 5 {
 		t.Fatalf("a note of 200 words owes %d vectors, want 5", asked)
 	}
-	was := smallChunks(t, db, first, n.Ref.Path)
+	was := smallChunks(t, db, first, n.Fingerprint.Path)
 	if len(was) != 5 {
 		t.Fatalf("%d chunks carry a vector", len(was))
 	}
 
-	save(t, db, first, noteAt(n.Ref.Path, n.Title, body+" wordzz"))
+	save(t, db, first, noteAt(n.Fingerprint.Path, n.Title, body+" wordzz"))
 
-	now := smallChunks(t, db, first, n.Ref.Path)
+	now := smallChunks(t, db, first, n.Fingerprint.Path)
 	if len(now) != 5 {
 		t.Fatalf("%d chunks carry a vector after the edit", len(now))
 	}
@@ -229,18 +229,18 @@ func TestAChunkThatMovedInTheFileKeepsItsVector(t *testing.T) {
 	save(t, db, first, n)
 	model.run(t, db, first)
 
-	was := smallChunks(t, db, first, n.Ref.Path)
-	enclosing := largeChunk(t, db, first, n.Ref.Path)
+	was := smallChunks(t, db, first, n.Fingerprint.Path)
+	enclosing := largeChunk(t, db, first, n.Fingerprint.Path)
 
 	const frontmatter = 20
 	moved := n
-	moved.Ref.Size = int64(len(body) + frontmatter)
+	moved.Fingerprint.Size = int64(len(body) + frontmatter)
 	save(t, db, first, moved)
 
-	if got := smallChunks(t, db, first, n.Ref.Path); !slices.Equal(got, was) {
+	if got := smallChunks(t, db, first, n.Fingerprint.Path); !slices.Equal(got, was) {
 		t.Errorf("the chunks are rows %v, and were rows %v", got, was)
 	}
-	if got := largeChunk(t, db, first, n.Ref.Path); got != enclosing {
+	if got := largeChunk(t, db, first, n.Fingerprint.Path); got != enclosing {
 		t.Errorf("the large chunk is row %d, and was row %d", got, enclosing)
 	}
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != len(was) {
@@ -259,7 +259,7 @@ func TestAChunkThatMovedInTheFileKeepsItsVector(t *testing.T) {
 		if !found {
 			t.Fatalf("row %d is gone", row)
 		}
-		if p.Start < frontmatter || p.Start+p.Length > int(moved.Ref.Size) {
+		if p.Start < frontmatter || p.Start+p.Length > int(moved.Fingerprint.Size) {
 			t.Errorf("row %d is read at %d for %d, and the body begins at %d",
 				row, p.Start, p.Length, frontmatter)
 		}
@@ -280,11 +280,11 @@ func TestEditingTheMiddleOfANoteRecutsWhatFollowsIt(t *testing.T) {
 	if asked := model.run(t, db, first); asked != 5 {
 		t.Fatalf("a note of 200 words owes %d vectors, want 5", asked)
 	}
-	was := smallChunks(t, db, first, n.Ref.Path)
+	was := smallChunks(t, db, first, n.Fingerprint.Path)
 
-	save(t, db, first, noteAt(n.Ref.Path, n.Title, typedBefore(body, 96)))
+	save(t, db, first, noteAt(n.Fingerprint.Path, n.Title, typedBefore(body, 96)))
 
-	now := smallChunks(t, db, first, n.Ref.Path)
+	now := smallChunks(t, db, first, n.Fingerprint.Path)
 	if len(now) != 5 {
 		t.Fatalf("%d chunks carry a vector after the edit", len(now))
 	}
@@ -331,10 +331,10 @@ func costOf(t *testing.T, before, after domain.Note) cost {
 	if asked := model.run(t, db, first); asked == 0 {
 		t.Fatal("the note owes no vector, so this measures nothing")
 	}
-	was := smallChunks(t, db, first, before.Ref.Path)
+	was := smallChunks(t, db, first, before.Fingerprint.Path)
 
 	save(t, db, first, after)
-	now := smallChunks(t, db, first, after.Ref.Path)
+	now := smallChunks(t, db, first, after.Fingerprint.Path)
 
 	kept := 0
 	for _, row := range now {
@@ -359,7 +359,7 @@ func TestAHeadingBoundsWhatAnEditRecuts(t *testing.T) {
 	body := sectionsOf(192, 48)
 
 	frontmattered := parsedAt(path, body)
-	frontmattered.Ref.Size += 20
+	frontmattered.Fingerprint.Size += 20
 
 	for _, edit := range []struct {
 		name           string
@@ -415,14 +415,14 @@ func TestEditingTheStartOfANoteRecutsAllOfIt(t *testing.T) {
 	if asked := model.run(t, db, first); asked != 5 {
 		t.Fatalf("a note of 200 words owes %d vectors, want 5", asked)
 	}
-	was := smallChunks(t, db, first, n.Ref.Path)
+	was := smallChunks(t, db, first, n.Fingerprint.Path)
 
-	save(t, db, first, noteAt(n.Ref.Path, n.Title, "wordzz "+body))
+	save(t, db, first, noteAt(n.Fingerprint.Path, n.Title, "wordzz "+body))
 
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
 		t.Errorf("%d vectors survived an edit at the start of the note", got)
 	}
-	now := smallChunks(t, db, first, n.Ref.Path)
+	now := smallChunks(t, db, first, n.Fingerprint.Path)
 	for _, row := range now {
 		if slices.Contains(was, row) {
 			t.Errorf("row %d holds text it did not hold before", row)
@@ -435,8 +435,8 @@ func TestEditingTheStartOfANoteRecutsAllOfIt(t *testing.T) {
 
 func TestARecutKeepsAChunkInsideALargeOneThatChanged(t *testing.T) {
 	// The large chunk covers the whole note, so its text moves on every edit and
-	// it is a new row every time. `chunks.parent … ON DELETE CASCADE` takes every
-	// chunk inside a large one with it, so the chunks that were kept are
+	// it is a new row every time. `chunks.parent_id … ON DELETE CASCADE` takes
+	// every chunk inside a large one with it, so the chunks that were kept are
 	// pointed at the new large chunk before the old one comes out.
 	db := opened(t)
 	model := embedder{seed: 0x22}
@@ -446,15 +446,15 @@ func TestARecutKeepsAChunkInsideALargeOneThatChanged(t *testing.T) {
 	save(t, db, first, n)
 	model.run(t, db, first)
 
-	enclosing := largeChunk(t, db, first, n.Ref.Path)
-	kept := smallChunks(t, db, first, n.Ref.Path)[0]
+	enclosing := largeChunk(t, db, first, n.Fingerprint.Path)
+	kept := smallChunks(t, db, first, n.Fingerprint.Path)[0]
 	if !vectored(t, db, kept) {
 		t.Fatal("the chunk this is about carries no vector, so it would pass either way")
 	}
 
-	save(t, db, first, noteAt(n.Ref.Path, n.Title, body+" wordzz"))
+	save(t, db, first, noteAt(n.Fingerprint.Path, n.Title, body+" wordzz"))
 
-	now := largeChunk(t, db, first, n.Ref.Path)
+	now := largeChunk(t, db, first, n.Fingerprint.Path)
 	if now == enclosing {
 		t.Fatalf("the large chunk is row %d after the note was edited, so its text did not move", now)
 	}
@@ -464,7 +464,7 @@ func TestARecutKeepsAChunkInsideALargeOneThatChanged(t *testing.T) {
 	if !vectored(t, db, kept) {
 		t.Error("the chunk whose text did not change lost its vector")
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE id = ? AND parent = ?`, kept, now); got != 1 {
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE id = ? AND parent_id = ?`, kept, now); got != 1 {
 		t.Error("the chunk that was kept does not sit inside the large chunk that is there now")
 	}
 }
@@ -479,11 +479,11 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 	n := noteAt("notes/Entropy.md", "Entropy", body)
 	save(t, db, first, n)
 
-	kept := smallChunks(t, db, first, n.Ref.Path)[0]
+	kept := smallChunks(t, db, first, n.Fingerprint.Path)[0]
 	// A word of the first chunk, which an edit at the other end does not reach.
 	opening := "word" + spelt(3)
 
-	save(t, db, first, noteAt(n.Ref.Path, n.Title, body+" wordzz"))
+	save(t, db, first, noteAt(n.Fingerprint.Path, n.Title, body+" wordzz"))
 
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_fts WHERE rowid = ?`, kept); got != 1 {
 		t.Errorf("%d full-text rows for the chunk that was kept", got)
@@ -506,8 +506,8 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 		t.Fatalf("the note is not findable by %s, which is in the chunk that was kept", opening)
 	}
 	for _, p := range found {
-		if p.Source != n.Ref.Path {
-			t.Errorf("%s answered for a word of %s", p.Source, n.Ref.Path)
+		if p.Source != n.Fingerprint.Path {
+			t.Errorf("%s answered for a word of %s", p.Source, n.Fingerprint.Path)
 		}
 	}
 	typed, err := db.ChunkQueries().Lexical(ctx, first.ID, "wordzz", nil, 10, false)
@@ -535,14 +535,14 @@ func TestARecutStaysInsideItsVault(t *testing.T) {
 	model.run(t, db, first)
 	model.run(t, db, second)
 
-	untouched := smallChunks(t, db, second, theirs.Ref.Path)
+	untouched := smallChunks(t, db, second, theirs.Fingerprint.Path)
 	if len(untouched) == 0 {
 		t.Fatal("the second vault holds no chunk that carries a vector")
 	}
 	was := chunksIn(t, db, second)
 	vectors := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`)
 
-	save(t, db, first, noteAt(mine.Ref.Path, mine.Title, mine.Body+" wordzz"))
+	save(t, db, first, noteAt(mine.Fingerprint.Path, mine.Title, mine.Body+" wordzz"))
 
 	for _, row := range untouched {
 		if !vectored(t, db, row) {
@@ -584,7 +584,7 @@ func locationsOf(t *testing.T, db *DB, vault domain.Vault, path string) []string
 	rows, err := db.read.QueryContext(t.Context(), `SELECT COALESCE(c.location, '') FROM chunks c
 	                                                JOIN sources s ON s.id = c.source_id
 	                                                JOIN vaults v ON v.id = c.vault_id
-	                                                WHERE v.identifier = ? AND s.path = ? AND c.parent IS NOT NULL
+	                                                WHERE v.identifier = ? AND s.path = ? AND c.parent_id IS NOT NULL
 	                                                ORDER BY c.start, c.length`, vault.ID, path)
 	if err != nil {
 		t.Fatal(err)
@@ -614,7 +614,7 @@ func TestAChunkIsNamedAfterTheSectionItWasCutInside(t *testing.T) {
 	save(t, db, first, n)
 
 	want := []string{"Sectiona", "Sectionei", "Sectionjg", "Sectionbee"}
-	if got := locationsOf(t, db, first, n.Ref.Path); !slices.Equal(got, want) {
+	if got := locationsOf(t, db, first, n.Fingerprint.Path); !slices.Equal(got, want) {
 		t.Errorf("the chunks are located %v, want %v", got, want)
 	}
 }
@@ -642,7 +642,7 @@ func TestANoteWithSectionsIsStillFoundByItsTitle(t *testing.T) {
 	}
 	// The enclosing chunk is the note: it begins at the first word of the body and
 	// ends at the last.
-	p, ok, err := db.ChunkQueries().Passage(ctx, first.ID, largeChunk(t, db, first, n.Ref.Path))
+	p, ok, err := db.ChunkQueries().Passage(ctx, first.ID, largeChunk(t, db, first, n.Fingerprint.Path))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -733,7 +733,7 @@ func TestTheWorstCaseIsBoundedByTheSectionAndNotByTheNote(t *testing.T) {
 	body := sectionsOf(1000, 200)
 
 	frontmattered := parsedAt(path, body)
-	frontmattered.Ref.Size += 20
+	frontmattered.Fingerprint.Size += 20
 
 	for _, edit := range []struct {
 		name           string
@@ -790,10 +790,10 @@ func TestASectionShorterThanAChunkIsAChunkOfItsOwn(t *testing.T) {
 	save(t, db, first, named)
 	save(t, db, first, unnamed)
 
-	if got := len(smallChunks(t, db, first, named.Ref.Path)); got != 40 {
+	if got := len(smallChunks(t, db, first, named.Fingerprint.Path)); got != 40 {
 		t.Errorf("a note of forty sections is cut into %d chunks, want 40", got)
 	}
-	if got := len(smallChunks(t, db, first, unnamed.Ref.Path)); got != 7 {
+	if got := len(smallChunks(t, db, first, unnamed.Fingerprint.Path)); got != 7 {
 		t.Errorf("the same words with no part named are cut into %d chunks, want 7", got)
 	}
 }

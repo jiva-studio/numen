@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // What these measure against: a scan of an unchanged vault fast enough to run
@@ -21,7 +21,7 @@ import (
 // measurements, in docs/performance.md, so that one place says what fast enough
 // means.
 //
-//	go test ./internal/core/usecase/vault/ -run XXX -bench . -benchtime 1x
+//	go test ./usecase/vault/ -run XXX -bench . -benchtime 1x
 
 func openIndexFor(b *testing.B) *container.Index {
 	b.Helper()
@@ -36,9 +36,9 @@ func openIndexFor(b *testing.B) *container.Index {
 	return db
 }
 
-func scanFor(db *container.Index) usecase.Scan {
-	return usecase.Scan{
-		Readers:     filesystem.Readers{},
+func scanFor(db *container.Index) vaults.Scan {
+	return vaults.Scan{
+		Readers:     filesystem.VaultReaders{},
 		Vaults:      db.Vaults(),
 		Notes:       db.Notes(),
 		Known:       db.Queries(),
@@ -138,11 +138,13 @@ func BenchmarkSearch(b *testing.B) {
 			if _, err := scanFor(db).Execute(b.Context(), v); err != nil {
 				b.Fatal(err)
 			}
-			queries := db.Queries()
+			queries := db.Passages()
 
 			b.ResetTimer()
 			for range b.N {
-				if _, err := queries.Search(b.Context(), v.ID, "entropy observer", 20); err != nil {
+				if _, err := queries.Lexical(
+					b.Context(), v.ID, "entropy observer", notesOnly, 20, false,
+				); err != nil {
 					b.Fatal(err)
 				}
 			}
@@ -203,10 +205,10 @@ func BenchmarkSearchDuringScan(b *testing.B) {
 		}
 	}()
 
-	queries := db.Queries()
+	queries := db.Passages()
 	b.ResetTimer()
 	for range b.N {
-		if _, err := queries.Search(ctx, v.ID, "entropy observer", 20); err != nil {
+		if _, err := queries.Lexical(ctx, v.ID, "entropy observer", notesOnly, 20, false); err != nil {
 			b.Fatal(err)
 		}
 	}

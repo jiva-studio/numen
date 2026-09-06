@@ -7,7 +7,7 @@
  * once the field is left. Bounds that move under the number bring it in.
  */
 import { computed, nextTick, ref, useTemplateRef, watch, type HTMLAttributes } from 'vue'
-import { cn } from '@/lib/utils'
+import { cn } from '@/classes'
 import {
   allowed,
   clamped,
@@ -75,13 +75,13 @@ const refused = computed(() => {
 const saying = computed(() => (refused.value ? typed.value.trim() : undefined))
 
 /** The number in force, which is a number the bounds hold. */
-const standing = computed(() =>
+const inForce = computed(() =>
   model.value === null ? null : clamped(model.value, bounds.value),
 )
 
 /** A number the bounds no longer hold is brought in, and stands there written out. */
 watch(
-  standing,
+  inForce,
   (now) => {
     if (now === model.value) return
     model.value = now
@@ -135,7 +135,7 @@ const settle = async () => {
  */
 const pressed = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
-    settle()
+    void settle()
     return
   }
   const said = walked(event.key, numberOf(typed.value) ?? model.value, bounds.value)

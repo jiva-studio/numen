@@ -1,7 +1,7 @@
 package proofread
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
@@ -13,8 +13,11 @@ import (
 // order, so batches and their lines come back in it.
 //
 // A box reaching past the prose was written for other bytes, and the reading is
-// refused whole.
-func Scanned(prose string, boxes []lit.Box) []Batch {
+// refused whole. So is a box on a page the reading has already left behind: a
+// batch is asked about and answered for by its page, and two batches under one
+// page would take one reply between them, writing one page's corrections onto
+// the other's lines.
+func Scanned(prose string, boxes []highlight.Box) []Batch {
 	var out []Batch
 	for at, box := range boxes {
 		if box.Length <= 0 {
@@ -24,12 +27,17 @@ func Scanned(prose string, boxes []lit.Box) []Batch {
 		if box.Start < 0 || end > len(prose) {
 			return nil
 		}
-		line := Line{At: at, Text: prose[box.Start:end]}
-		if n := len(out); n > 0 && out[n-1].At == box.Page {
-			out[n-1].Lines = append(out[n-1].Lines, line)
-			continue
+		line := Line{Number: at, Text: prose[box.Start:end]}
+		if n := len(out); n > 0 {
+			switch {
+			case box.Page == out[n-1].Number:
+				out[n-1].Lines = append(out[n-1].Lines, line)
+				continue
+			case box.Page < out[n-1].Number:
+				return nil
+			}
 		}
-		out = append(out, Batch{At: box.Page, Lines: []Line{line}})
+		out = append(out, Batch{Number: box.Page, Lines: []Line{line}})
 	}
 	return out
 }
@@ -53,7 +61,7 @@ func Spoken(cues []transcript.Cue, size, overlap int) []Batch {
 	var out []Batch
 	for start := 0; start < len(lines); start += step {
 		end := min(start+size, len(lines))
-		out = append(out, Batch{At: len(out), Lines: lines[start:end:end], Joining: true})
+		out = append(out, Batch{Number: len(out), Lines: lines[start:end:end], Joinable: true})
 		if end == len(lines) {
 			break
 		}
@@ -95,9 +103,9 @@ func Seams(cues []transcript.Cue, size, overlap int, cuts []int) []Batch {
 		reach = end
 		start := max(end-size, 0)
 		out = append(out, Batch{
-			At:      len(batches) + len(out),
-			Lines:   lines[start:end:end],
-			Joining: true,
+			Number:   len(batches) + len(out),
+			Lines:    lines[start:end:end],
+			Joinable: true,
 		})
 	}
 	return out
@@ -111,7 +119,7 @@ func heard(cues []transcript.Cue) []Line {
 		if cue.Text == "" {
 			continue
 		}
-		out = append(out, Line{At: at, Text: cue.Text})
+		out = append(out, Line{Number: at, Text: cue.Text})
 	}
 	return out
 }

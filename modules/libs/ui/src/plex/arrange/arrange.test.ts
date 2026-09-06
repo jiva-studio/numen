@@ -3,14 +3,10 @@ import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { DEFAULT_OPTIONS } from './options'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
-import type {
-  PlacedNode,
-  PlexFrame,
-  PlexNeighbourhood,
-  PlexNode,
-  PlexRelatedSeat,
-  PlexSeat,
-} from '../model'
+import type { PlexFrame } from '../frame'
+import type { PlexNeighbourhood } from '../neighbourhood'
+import type { PlacedNode, PlexNode } from '../node'
+import type { PlexRelatedSeat, PlexSeat } from '../seat'
 import type { Placement } from './placement'
 
 const every = Object.entries(neighbourhoods)

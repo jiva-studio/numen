@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
 
 import { raising } from './notices'
-import type { Task } from './notices'
+import type { Task } from '@numen/ui'
 
 describe('what the window has to say', () => {
   it('names each thing once, so putting one away leaves the rest', () => {
@@ -21,7 +21,7 @@ describe('what the window has to say', () => {
 
   it('says trouble in the person’s own words, and stands until they put it away', () => {
     const one = raising()
-    one.failed(new Error('the vault could not be read'))
+    one.failed(new ConnectError('the vault could not be read', Code.Unavailable))
 
     const said = one.notices.value[0]!
     expect(said.says).toBe('The vault could not be read.')
@@ -44,7 +44,7 @@ describe('what the window has to say', () => {
 
   it('leaves a sentence that already ends where it ends', () => {
     const one = raising()
-    one.failed(new Error('The deck could not be written.'))
+    one.failed(new ConnectError('The deck could not be written.', Code.Unavailable))
 
     expect(one.notices.value[0]!.says).toBe('The deck could not be written.')
   })

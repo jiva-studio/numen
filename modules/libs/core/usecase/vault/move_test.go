@@ -8,15 +8,16 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // filing is a scanned vault whose files can be moved about, with the index kept
@@ -29,23 +30,23 @@ type filing struct {
 	// files whose bytes were read.
 	readers *countingReaders
 	// went is every note whoever is drawing was told about, in order.
-	went *[]domain.Went
+	went *[]domain.Move
 }
 
 func fileable(t *testing.T, notes map[string]string) filing {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	db := openIndex(t)
-	if _, err := scanner(filesystem.Readers{}, db).Execute(t.Context(), v); err != nil {
+	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	readers := &countingReaders{VaultReaders: filesystem.Readers{}}
-	refresh := usecase.Refresh{Readers: readers, Notes: db.Notes()}
+	readers := &countingReaders{VaultReaders: filesystem.VaultReaders{}}
+	refresh := vaults.Refresh{Readers: readers, Vaults: db.Vaults(), Notes: db.Notes()}
 	return filing{
 		db:      db,
 		vault:   v,
 		readers: readers,
-		went:    &[]domain.Went{},
+		went:    &[]domain.Move{},
 		index: func(ctx context.Context, v domain.Vault, paths []string) error {
 			_, err := refresh.Execute(ctx, v, paths)
 			return err
@@ -55,29 +56,24 @@ func fileable(t *testing.T, notes map[string]string) filing {
 
 // move is the move an installation nobody has configured does: a title and a
 // filename kept as one name.
-func (f filing) move() usecase.Move { return f.moving(true) }
+func (f filing) move() vaults.Move { return f.moving(true) }
 
 // apart is the move an installation that has turned the two apart does.
-func (f filing) apart() usecase.Move { return f.moving(false) }
+func (f filing) apart() vaults.Move { return f.moving(false) }
 
-func (f filing) moving(kept note.Sync) usecase.Move {
-	return usecase.Move{
-		Writers: filesystem.Writers{},
-		Links:   f.db.Links(),
-		Known:   f.db.SourcesKnown(),
-		Sources: f.db.Sources(),
-		Notes: note.Move{
-			Readers: f.readers,
-			Writers: filesystem.Writers{},
-			Links:   f.db.Links(),
-			Sources: f.db.Sources(),
-			Index:   f.index,
-			Sync:    func() note.Sync { return kept },
-			Moving: func(_ context.Context, went domain.Went) {
-				*f.went = append(*f.went, went)
-			},
-		},
+func (f filing) moving(kept note.SyncTitleAndFilename) vaults.Move {
+	notes := note.NewMove(
+		f.readers, filesystem.VaultWriters{},
+		f.db.Links(), f.db.Queries(), f.db.Sources(), f.index, time.Now,
+	)
+	notes.Sync = func() note.SyncTitleAndFilename { return kept }
+	notes.Drawing = func(_ context.Context, went domain.Move) {
+		*f.went = append(*f.went, went)
 	}
+	return vaults.NewMove(
+		filesystem.VaultWriters{},
+		f.db.Links(), f.db.SourcesKnown(), f.db.Sources(), notes,
+	)
 }
 
 // resolves is where the one link written in a note reaches.
@@ -191,12 +187,12 @@ func TestWhatIsUnderAPathIsWhatAWalkFinds(t *testing.T) {
 // by path.
 func walked(t *testing.T, f filing, path string) []string {
 	t.Helper()
-	reader, err := filesystem.Readers{}.Open(f.vault)
+	reader, err := filesystem.VaultReaders{}.Open(f.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var out []string
-	if err := reader.Walk(t.Context(), func(ref domain.FileRef) error {
+	if err := reader.Walk(t.Context(), func(ref domain.Fingerprint) error {
 		if ref.Path == path || strings.HasPrefix(ref.Path, path+"/") {
 			out = append(out, ref.Path)
 		}
@@ -241,7 +237,7 @@ func TestAFolderThatMovedIsFiledWhereItIsWithoutBeingRead(t *testing.T) {
 
 	// The chunks are still the source's, so a search answers with the note at
 	// the path it is filed under now.
-	searching := search.New(f.db.Passages(), filesystem.Readers{}, nil, nil, nil, 0, nil)
+	searching := search.New(f.db.Passages(), filesystem.VaultReaders{}, nil, nil, nil, 0, nil)
 	found, err := searching.Execute(t.Context(), f.vault, "disorder", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)

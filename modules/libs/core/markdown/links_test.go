@@ -11,7 +11,7 @@ import (
 
 func parse(t *testing.T, body string) domain.Note {
 	t.Helper()
-	return markdown.Parse(domain.FileRef{Path: "notes/Source.md"}, []byte(body))
+	return markdown.Parse(domain.Fingerprint{Path: "notes/Source.md"}, []byte(body))
 }
 
 func targets(n domain.Note) []string {
@@ -77,7 +77,7 @@ body
 		t.Fatalf("got %v", targets(n))
 	}
 	l := n.Links[0]
-	if l.Role != domain.RoleParent || l.Type != "requires" || l.Note == "" {
+	if l.Role != domain.RoleParent || l.Type != "requires" || l.Why == "" {
 		t.Errorf("got %+v", l)
 	}
 }

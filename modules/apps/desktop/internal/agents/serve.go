@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"slices"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode"
@@ -55,28 +56,28 @@ type Options struct {
 	Out io.Writer
 }
 
-// Served is the tools on a port, and the agent the settings name reaching them.
-type Served struct {
+// Server is the tools on a port, and the agent the settings name reaching them.
+type Server struct {
 	// Agent is the agent this window asks on the person's behalf, and nothing
 	// where the settings name none.
 	Agent *claudecode.Agent
 	// URL is where an agent reaches the tools, naming the port that was bound.
 	URL string
 
-	shut func() error
+	close func() error
 }
 
 // Close takes the agents away and then the endpoint.
-func (s *Served) Close() error {
-	if s == nil || s.shut == nil {
+func (s *Server) Close() error {
+	if s == nil || s.close == nil {
 		return nil
 	}
-	return s.shut()
+	return s.close()
 }
 
 // Serve puts the tools on a port and starts the agent the settings name
 // against them.
-func Serve(ctx context.Context, opts Options) (*Served, error) {
+func Serve(ctx context.Context, opts Options) (*Server, error) {
 	secret := opts.Token
 	if secret == "" {
 		minted, err := Token(opts.Config)
@@ -106,6 +107,7 @@ func Serve(ctx context.Context, opts Options) (*Served, error) {
 	if opts.Announcing {
 		gone, err := Announce(opts.Config, endpoint.URL, secret)
 		if err != nil {
+			//nolint:contextcheck // an endpoint taken down again is closed whatever became of the context it opened under
 			endpoint.Close(context.Background())
 			return nil, err
 		}
@@ -117,7 +119,7 @@ func Serve(ctx context.Context, opts Options) (*Served, error) {
 		fmt.Fprintf(opts.Out, "agents: %s is reachable from the network, not only from this machine\n", addr)
 	}
 
-	served := &Served{URL: endpoint.URL}
+	served := &Server{URL: endpoint.URL}
 	if opts.Config.Agent.Use == agent.UseClaude {
 		// What the window says about a call is what the tool declared about
 		// itself, asked for over the protocol an agent is answered by.
@@ -136,7 +138,8 @@ func Serve(ctx context.Context, opts Options) (*Served, error) {
 	}
 
 	started := served.Agent
-	served.shut = func() error {
+	//nolint:contextcheck // a close runs when the context is already over, so it carries one of its own with a bound
+	served.close = func() error {
 		forget()
 		// The agents this window started go first: each is in a process group
 		// of its own, so nothing else reaches them, and one still answering
@@ -158,31 +161,36 @@ func Serve(ctx context.Context, opts Options) (*Served, error) {
 // Claude is what the window asks on the person's behalf.
 //
 // It reaches the same tools over the same port as an agent somebody configured
-// themselves, and is given all of them: what it changes appears in the window
-// as it happens.
+// themselves, and is allowed each tool of the vocabulary by name: what it
+// changes appears in the window as it happens.
 func Claude(
 	cfg container.Config,
 	root, url, secret string,
-	served map[string]mcp.Words,
+	vocabulary map[string]mcp.Tool,
 	drafting claudecode.Drafting,
 	out io.Writer,
 ) *claudecode.Agent {
-	words := make(map[string]claudecode.Words, len(served))
-	for name, said := range served {
-		words[claudecode.Tool(name)] = claudecode.Words{
-			Title:   said.Title,
-			About:   said.About,
-			Inside:  said.Inside,
-			Kind:    said.Kind,
-			Stood:   said.Stood,
-			Becomes: said.Becomes,
+	words := make(map[string]claudecode.ToolDeclaration, len(vocabulary))
+	allowed := make([]string, 0, len(vocabulary))
+	for name, said := range vocabulary {
+		allowed = append(allowed, claudecode.Tool(name))
+		words[claudecode.Tool(name)] = claudecode.ToolDeclaration{
+			Title: said.Title,
+			Kind:  said.Kind,
+			Arguments: claudecode.Arguments{
+				About:   said.About,
+				Element: said.Inside,
+				Match:   said.Match,
+				Text:    said.Text,
+			},
 		}
 	}
+	slices.Sort(allowed)
 	return &claudecode.Agent{
 		Command:             cfg.Agent.Claude.Command,
 		Root:                root,
 		Tools:               claudecode.Endpoint{URL: url, Token: secret},
-		Allowed:             []string{claudecode.Tool("*")},
+		Allowed:             allowed,
 		Words:               words,
 		Drafting:            drafting,
 		Model:               cfg.Agent.Claude.Model,

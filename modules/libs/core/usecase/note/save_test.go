@@ -11,28 +11,29 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 func (c changing) saving() note.Write {
 	return note.Write{
-		Readers: filesystem.Readers{}, Writers: filesystem.Writers{}, Index: c.index,
+		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}, Index: c.index,
+		Now: time.Now,
 	}
 }
 
 // opened is a tab that has just read a note: the prose it was given, and the
 // file it came out of.
-func (c changing) opened(t *testing.T, path string) *note.Seen {
+func (c changing) opened(t *testing.T, path string) *note.LastRead {
 	t.Helper()
-	found, err := (note.Read{Readers: filesystem.Readers{}}).Execute(t.Context(), c.vault, path)
+	found, err := (note.Read{Readers: filesystem.VaultReaders{}}).Execute(t.Context(), c.vault, path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &note.Seen{Prose: found.Body, At: found.Ref}
+	return &note.LastRead{Prose: found.Body, Fingerprint: found.Fingerprint}
 }
 
 // A flow sequence is the commonest frontmatter line there is, and an identifier
@@ -58,6 +59,25 @@ func TestSavingANoteWhoseFrontmatterIsWrittenOnOneLine(t *testing.T) {
 	}
 	if strings.Contains(body, "id:") {
 		t.Errorf("a save stamped an identifier:\n%s", body)
+	}
+}
+
+// A note whose frontmatter block is never closed has no prose of its own: the
+// whole file, keys and all, stands as its body. A save writes the tab's prose
+// over the body, so it would write over the half-written block, and the person
+// would lose the keys they were in the middle of typing. They are told the note
+// cannot be read instead, and the file is left as it is.
+func TestASaveOverANoteWhoseFrontmatterNeverClosesIsRefused(t *testing.T) {
+	t.Parallel()
+	half := "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRC\ntitle: Heat death\n"
+	c := changeable(t, map[string]string{"Heat.md": half})
+
+	_, err := c.saving().Save(t.Context(), c.vault, "Heat.md", "# Heat death\n\nMine.\n", nil)
+	if !errors.Is(err, note.ErrUnterminated) {
+		t.Fatalf("want ErrUnterminated, got %v", err)
+	}
+	if body := c.read(t, "Heat.md"); body != half {
+		t.Errorf("the half-written block was written over\n want %q\n  got %q", half, body)
 	}
 }
 
@@ -107,8 +127,8 @@ func TestASaveOverProseTheTabNeverReadIsStopped(t *testing.T) {
 	}
 
 	_, err := c.saving().Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", seen)
-	if !errors.Is(err, port.ErrChanged) {
-		t.Fatalf("want ErrChanged, got %v", err)
+	if !errors.Is(err, port.ErrStale) {
+		t.Fatalf("want ErrStale, got %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); body != theirs {
 		t.Errorf("a save that was stopped wrote anyway:\n%s", body)
@@ -187,7 +207,7 @@ func TestTheSameBytesWrittenAgainAreNotAChange(t *testing.T) {
 }
 
 // A tab that saved and did not read again holds the file its own write
-// produced. Holding the one it read would leave every sitting with one save in
+// produced. Holding the one it read would leave every session with one save in
 // it.
 func TestASaveFollowsASaveWithNoReadBetween(t *testing.T) {
 	t.Parallel()
@@ -199,12 +219,12 @@ func TestASaveFollowsASaveWithNoReadBetween(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if at == (domain.FileRef{}) {
+	if at.IsZero() {
 		t.Fatal("the save answered with no fingerprint")
 	}
 
 	if _, err := saving.Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTwo.\n",
-		&note.Seen{Prose: seen.Prose, At: at}); err != nil {
+		&note.LastRead{Prose: seen.Prose, Fingerprint: at}); err != nil {
 		t.Fatalf("the save after a save was stopped: %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Two.") {
@@ -230,7 +250,7 @@ func TestALinkAnAgentAddsBetweenTwoSavesIsNotAChange(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := c.linking().Add(t.Context(), c.vault, "Heat.md", domain.Link{
+	if _, err := c.linking().Add(t.Context(), c.vault, "Heat.md", domain.Fingerprint{}, domain.Link{
 		Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"},
 		Role:   domain.RoleParent,
 	}); err != nil {
@@ -238,7 +258,7 @@ func TestALinkAnAgentAddsBetweenTwoSavesIsNotAChange(t *testing.T) {
 	}
 
 	if _, err := saving.Save(t.Context(), c.vault, "Heat.md", "# Heat\n\nMine, and more.\n",
-		&note.Seen{Prose: mine, At: at}); err != nil {
+		&note.LastRead{Prose: mine, Fingerprint: at}); err != nil {
 		t.Fatalf("a link written into the frontmatter stopped a save: %v", err)
 	}
 
@@ -296,43 +316,46 @@ func TestALinkWrittenWhileASaveIsReadingSurvivesIt(t *testing.T) {
 
 	agentRead := make(chan struct{})
 	agentMayWrite := make(chan struct{})
-	agent := note.Linking{
-		Readers: watchedReaders{inner: filesystem.Readers{}, read: func(path string) {
+	agent := note.EditLinks{
+		Readers: watchedReaders{inner: filesystem.VaultReaders{}, read: func(path string) {
 			if path == "Heat.md" {
 				close(agentRead)
 				<-agentMayWrite
 			}
 		}},
-		Writers: filesystem.Writers{},
+		Writers: filesystem.VaultWriters{},
 		Index:   c.index,
+		Now:     time.Now,
 	}
 
 	saveAsking := make(chan struct{})
 	saveRead := make(chan struct{})
 	saveMayWrite := make(chan struct{})
 	saving := note.Write{
-		Readers: watchedReaders{inner: filesystem.Readers{}, read: func(path string) {
+		Readers: watchedReaders{inner: filesystem.VaultReaders{}, read: func(path string) {
 			if path == "Heat.md" {
 				close(saveRead)
 				<-saveMayWrite
 			}
 		}},
-		Writers: watchedWriters{inner: filesystem.Writers{}, hold: func() { close(saveAsking) }},
+		Writers: watchedWriters{inner: filesystem.VaultWriters{}, hold: func() { close(saveAsking) }},
 		Index:   c.index,
+		Now:     time.Now,
 	}
 
 	added := make(chan error, 1)
 	go func() {
-		added <- agent.Add(context.Background(), c.vault, "Heat.md", domain.Link{
+		_, err := agent.Add(t.Context(), c.vault, "Heat.md", domain.Fingerprint{}, domain.Link{
 			Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"},
 			Role:   domain.RoleParent,
 		})
+		added <- err
 	}()
 	<-agentRead
 
 	saved := make(chan error, 1)
 	go func() {
-		_, err := saving.Save(context.Background(), c.vault, "Heat.md", "# Heat\n\nWhat the person typed.\n", nil)
+		_, err := saving.Save(t.Context(), c.vault, "Heat.md", "# Heat\n\nWhat the person typed.\n", nil)
 		saved <- err
 	}()
 
@@ -383,36 +406,39 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 	mendRead := make(chan struct{})
 	mendMayWrite := make(chan struct{})
 	moving := note.Move{
-		Readers: watchedReaders{inner: filesystem.Readers{}, read: func(path string) {
+		Readers: watchedReaders{inner: filesystem.VaultReaders{}, read: func(path string) {
 			if path != "physics/Heat.md" {
 				return
 			}
 			reading.Do(func() { close(mendRead) })
 			<-mendMayWrite
 		}},
-		Writers: filesystem.Writers{},
+		Writers: filesystem.VaultWriters{},
 		Links:   c.db.Links(),
+		Names:   c.db.Queries(),
 		Sources: c.db.Sources(),
 		Index:   c.index,
+		Now:     time.Now,
 	}
 
 	saveAsking := make(chan struct{})
 	saveRead := make(chan struct{})
 	saveMayWrite := make(chan struct{})
 	saving := note.Write{
-		Readers: watchedReaders{inner: filesystem.Readers{}, read: func(path string) {
+		Readers: watchedReaders{inner: filesystem.VaultReaders{}, read: func(path string) {
 			if path == "physics/Heat.md" {
 				close(saveRead)
 				<-saveMayWrite
 			}
 		}},
-		Writers: watchedWriters{inner: filesystem.Writers{}, hold: func() { close(saveAsking) }},
+		Writers: watchedWriters{inner: filesystem.VaultWriters{}, hold: func() { close(saveAsking) }},
 		Index:   c.index,
+		Now:     time.Now,
 	}
 
 	moved := make(chan error, 1)
 	go func() {
-		_, err := moving.Execute(context.Background(), c.vault,
+		_, err := moving.Execute(t.Context(), c.vault,
 			"physics/Entropy.md", "archive/Thermodynamics.md")
 		moved <- err
 	}()
@@ -420,7 +446,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 
 	saved := make(chan error, 1)
 	go func() {
-		_, err := saving.Save(context.Background(), c.vault, "physics/Heat.md",
+		_, err := saving.Save(t.Context(), c.vault, "physics/Heat.md",
 			"# Heat\n\nWhat the person typed.\n", nil)
 		saved <- err
 	}()
@@ -506,12 +532,12 @@ func TestANoteIsWrittenNoLargerThanItCanBeRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found, err := (note.Read{Readers: filesystem.Readers{}}).Execute(t.Context(), c.vault, "Entropy.md")
+	found, err := (note.Read{Readers: filesystem.VaultReaders{}}).Execute(t.Context(), c.vault, "Entropy.md")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if found.Outcome != note.Ok {
-		t.Errorf("the save left a note the read answers %q to, of %d bytes", found.Outcome, found.Ref.Size)
+		t.Errorf("the save left a note the read answers %q to, of %d bytes", found.Outcome, found.Fingerprint.Size)
 	}
 }
 
@@ -546,7 +572,7 @@ func TestWritingMoreTextThanANoteHolds(t *testing.T) {
 	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	_, err := c.saving().Execute(
-		t.Context(), c.vault, "Entropy.md", strings.Repeat("x", note.MaxBytes+1), domain.FileRef{})
+		t.Context(), c.vault, "Entropy.md", strings.Repeat("x", note.MaxBytes+1), domain.Fingerprint{})
 	if !errors.Is(err, note.ErrTooLarge) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
@@ -584,7 +610,8 @@ func TestARefreshTellsAFileTheVaultLeavesAloneFromANoteThatVanished(t *testing.T
 		t.Fatal(err)
 	}
 
-	refresh := usecase.Refresh{Readers: filesystem.Readers{}, Notes: c.db.Notes()}
+	refresh := vaults.NewRefresh(
+		filesystem.VaultReaders{}, c.db.Vaults(), c.db.Notes(), c.db.SourcesKnown(), c.db.Sources())
 	res, err := refresh.Execute(t.Context(), c.vault, []string{"photo.png", "Gone.md", "Entropy.md"})
 	if err != nil {
 		t.Fatal(err)
@@ -638,7 +665,7 @@ func (w watchedReader) Read(ctx context.Context, path string) ([]byte, error) {
 	return raw, err
 }
 
-func (w watchedReader) Stat(ctx context.Context, path string) (domain.FileRef, error) {
+func (w watchedReader) Stat(ctx context.Context, path string) (domain.Fingerprint, error) {
 	ref, err := w.VaultReader.Stat(ctx, path)
 	if w.stat != nil {
 		w.stat(path)

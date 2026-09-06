@@ -27,8 +27,16 @@ const STRUCK = new Set([
   'applet', 'canvas', 'audio', 'video', 'source', 'track', 'portal',
 ])
 
-/** The attributes any tag may carry. */
-const ANY = new Set(['class', 'dir', 'lang', 'title'])
+/**
+ * The attributes any tag may carry.
+ *
+ * A class is not among them. The window's own stylesheet is in the page a card
+ * is drawn on, so a class names rules a deck's author never wrote and cannot
+ * see: one from somebody else could stand a card over the window it is being
+ * read in. How a card looks is the window's, and what a deck carries is what a
+ * card says.
+ */
+const ANY = new Set(['dir', 'lang', 'title'])
 
 /** What each tag may carry beyond those. */
 const OWN: Readonly<Record<string, readonly string[]>> = {
@@ -42,7 +50,10 @@ const OWN: Readonly<Record<string, readonly string[]>> = {
   colgroup: ['span'],
 }
 
-/** The schemes a link may point at. An address naming none is the caller's to resolve. */
+/**
+ * The schemes a link may point at. An address naming none is the caller's to
+ * resolve, and one leading outward opens in the person's own browser.
+ */
 const SCHEMES = new Set(['http:', 'https:', 'mailto:', 'tel:'])
 
 /** The declarations a tag may be styled with. */
@@ -73,8 +84,19 @@ const points = (url: string): boolean => {
   return said === null || SCHEMES.has(said)
 }
 
-const shows = (url: string): boolean =>
-  scheme(url) === 'data:' ? INLINE_IMAGE.test(bare(url)) : points(url)
+/**
+ * A picture a card may draw: its own bytes, or a file this window serves.
+ *
+ * An address off the machine is a request the moment the card is drawn, which
+ * tells whoever wrote the deck that it was read, and from where.
+ */
+const shows = (url: string): boolean => {
+  const said = bare(url)
+  if (scheme(said) === 'data:') return INLINE_IMAGE.test(said)
+  // An address opening with two slashes names a host and keeps the window's
+  // own scheme, so it names no scheme and reaches off the machine all the same.
+  return scheme(said) === null && !/^[\\/]{2}/.test(said)
+}
 
 /** A style with every declaration that is not drawn with dropped. */
 const styled = (value: string): string =>

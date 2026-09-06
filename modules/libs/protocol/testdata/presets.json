@@ -1,0 +1,19 @@
+{
+  "invariant": "a preset is scheduled by the same numbers wherever they are read",
+  "defaults": {
+    "goal": "minutes_a_day",
+    "byDate": "",
+    "minutesADay": 20,
+    "newADay": 10,
+    "reviewsADay": 200,
+    "retention": 0.9,
+    "counts": "cards",
+    "backlog": 100,
+    "load": {},
+    "evenLoad": true,
+    "learned": "interval",
+    "interval": 21
+  },
+  "fullLoad": 100,
+  "retentionBounds": { "least": 0.7, "most": 0.99 }
+}

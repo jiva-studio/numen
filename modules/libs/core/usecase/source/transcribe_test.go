@@ -35,8 +35,8 @@ func stretch(n int) port.Audio {
 	return port.Audio{From: n * 1000, To: n*1000 + 800}
 }
 
-func (s *voice) Transcription() port.Transcription {
-	return port.Transcription{Model: "ear", Segmenter: "pauses", Cutting: "0.50/500/200/30000/100/2500", From: "a test"}
+func (s *voice) Transcription() port.TranscriptionModel {
+	return port.TranscriptionModel{Model: "ear", Segmenter: "pauses", Cutting: "0.50/500/200/30000/100/2500", From: "a test"}
 }
 
 func (s *voice) Open(_ context.Context, _ []byte) (port.Recording, error) {
@@ -47,7 +47,7 @@ func (s *voice) Open(_ context.Context, _ []byte) (port.Recording, error) {
 	return played{s}, nil
 }
 
-func (s *voice) Hear(ctx context.Context, audio port.Audio) (string, error) {
+func (s *voice) Transcribe(ctx context.Context, audio port.Audio) (string, error) {
 	s.heard = append(s.heard, audio.From)
 	if s.stop != nil {
 		s.stop(len(s.heard))
@@ -138,13 +138,13 @@ func TestWhatIsHeardIsWrittenDownAndClaimed(t *testing.T) {
 	}
 
 	src := index.sources[v.ID][recordingPath]
-	if src.TextFrom != "asr" {
-		t.Fatalf("the source says its text comes from %q", src.TextFrom)
+	if src.Producer != "asr" {
+		t.Fatalf("the source says its text comes from %q", src.Producer)
 	}
 	if src.Hash != hash {
 		t.Errorf("the source is named %q and the recording hashes to %q", src.Hash, hash)
 	}
-	raw, err := shelf.Read(t.Context(), text.Artifact(src.TextFrom, src.Hash))
+	raw, err := shelf.Read(t.Context(), text.Artifact(src.Producer, src.Hash))
 	if err != nil {
 		t.Fatalf("the artifact is not where the source says: %v", err)
 	}
@@ -274,8 +274,8 @@ func TestARecordingWithNothingToHearIsAnsweredOnce(t *testing.T) {
 			t.Errorf("it left %q behind", name)
 		}
 	}
-	if src := index.sources[v.ID][recordingPath]; src.TextFrom != "" {
-		t.Errorf("the source was pointed at %q", src.TextFrom)
+	if src := index.sources[v.ID][recordingPath]; src.Producer != "" {
+		t.Errorf("the source was pointed at %q", src.Producer)
 	}
 
 	heard := len(model.heard)
@@ -305,8 +305,8 @@ func TestARecordingNothingCanOpenIsAnsweredOnce(t *testing.T) {
 	if !res.Unopened {
 		t.Error("a recording nothing can open was not reported as such")
 	}
-	if src := index.sources[v.ID][recordingPath]; src.TextFrom != "" {
-		t.Errorf("the source was pointed at %q", src.TextFrom)
+	if src := index.sources[v.ID][recordingPath]; src.Producer != "" {
+		t.Errorf("the source was pointed at %q", src.Producer)
 	}
 	raw, err := shelf.Read(t.Context(), text.Answer("asr", hash))
 	if err != nil {
@@ -351,7 +351,7 @@ func TestWhatHasBeenHeardIsCutBeforeTheRestIs(t *testing.T) {
 	for n := range model.words {
 		at = append(at, n+1)
 	}
-	if want := append(at, len(model.words)); !slices.Equal(cuts, want) {
+	if want := slices.Concat(at, []int{len(model.words)}); !slices.Equal(cuts, want) {
 		t.Errorf("it cut after %v stretches and the batches end at %v", cuts, want)
 	}
 }

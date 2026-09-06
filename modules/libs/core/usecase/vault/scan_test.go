@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // The fixture vault is deliberately awkward: a note with no frontmatter, broken
@@ -27,8 +27,8 @@ func vaultAt(t *testing.T, root string) (domain.Vault, port.VaultReaders) {
 	if err != nil {
 		t.Fatalf("fixture vault has no identity: %v", err)
 	}
-	return domain.Vault{ID: cfg.ID, Name: "fixture", Path: root},
-		filesystem.Readers{}
+	return domain.Vault{ID: domain.VaultID(cfg.ID), Name: "fixture", Path: root},
+		filesystem.VaultReaders{}
 }
 
 func openIndex(t *testing.T) *container.Index {
@@ -41,13 +41,35 @@ func openIndex(t *testing.T) *container.Index {
 	return db
 }
 
-func scanner(readers port.VaultReaders, db *container.Index) usecase.Scan {
-	return usecase.Scan{
+// notesOnly keeps a search to what the vault holds as notes.
+var notesOnly = []domain.SourceKind{domain.KindNote}
+
+// searched is the notes of a vault whose text matches the words typed, by path.
+// The words are indexed over chunks, so a note matching in more than one of its
+// own is named once.
+func searched(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
+	t.Helper()
+	found, err := db.Passages().Lexical(t.Context(), v.ID, query, notesOnly, 20, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := make([]string, 0, len(found))
+	for _, p := range found {
+		if !slices.Contains(out, p.Source) {
+			out = append(out, p.Source)
+		}
+	}
+	return out
+}
+
+func scanner(readers port.VaultReaders, db *container.Index) vaults.Scan {
+	return vaults.Scan{
 		Readers:     readers,
 		Vaults:      db.Vaults(),
 		Notes:       db.Notes(),
 		Known:       db.Queries(),
 		Maintenance: db.Maintenance(),
+		Walks:       db.Walks(),
 	}
 }
 
@@ -61,8 +83,8 @@ func TestScanIndexesEveryNoteOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Seen != 14 {
-		t.Errorf("saw %d markdown files, want 14 — check what the walk skipped", res.Seen)
+	if res.Notes != 14 {
+		t.Errorf("saw %d markdown files, want 14 — check what the walk skipped", res.Notes)
 	}
 	if res.Indexed != 14 || res.Unchanged != 0 || res.Removed != 0 {
 		t.Errorf("first scan: %+v", res)
@@ -92,8 +114,8 @@ func TestAScanSeesBooksBesideNotes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Seen != 14 {
-		t.Errorf("saw %d notes, want the 14 the fixture holds", res.Seen)
+	if res.Notes != 14 {
+		t.Errorf("saw %d notes, want the 14 the fixture holds", res.Notes)
 	}
 	// The fixture carries a PDF of its own beside the EPUB written here.
 	if res.Assets != 2 {
@@ -133,8 +155,8 @@ func TestAFormatNothingExtractsIsNotSeenAtAll(t *testing.T) {
 	if res.Assets != 1 {
 		t.Errorf("counted %d sources of another kind, want the document alone", res.Assets)
 	}
-	if res.Seen != 14 {
-		t.Errorf("saw %d notes, want 14", res.Seen)
+	if res.Notes != 14 {
+		t.Errorf("saw %d notes, want 14", res.Notes)
 	}
 }
 
@@ -157,20 +179,20 @@ func TestTwoVaultsCountAndAnswerForTheirOwnSourcesOnly(t *testing.T) {
 	testsupport.WriteBook(t, second.Path, "shelf/Cosmology.epub")
 
 	db := openIndex(t)
-	scan := scanner(filesystem.Readers{}, db)
+	scan := scanner(filesystem.VaultReaders{}, db)
 
 	one, err := scan.Execute(ctx, first)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if one.Seen != 1 || one.Assets != 1 {
+	if one.Notes != 1 || one.Assets != 1 {
 		t.Errorf("the first vault scanned as %+v, want one note and one book", one)
 	}
 	two, err := scan.Execute(ctx, second)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if two.Seen != 2 || two.Assets != 2 {
+	if two.Notes != 2 || two.Assets != 2 {
 		t.Errorf("the second vault scanned as %+v, want two notes and two books", two)
 	}
 
@@ -197,13 +219,9 @@ func TestScanSkipsWhatIsNotVaultContent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	matches, err := db.Queries().Search(ctx, v.ID, "hidden", 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, m := range matches {
-		if m.Path == ".obsidian/note-in-a-hidden-folder.md" {
-			t.Errorf("indexed a file from a hidden folder: %+v", m)
+	for _, path := range searched(t, db, v, "hidden") {
+		if path == ".obsidian/note-in-a-hidden-folder.md" {
+			t.Errorf("indexed a file from a hidden folder: %s", path)
 		}
 	}
 }
@@ -228,7 +246,7 @@ func TestSecondScanOpensNoFiles(t *testing.T) {
 	if counter.reads != 0 {
 		t.Errorf("second scan read %d files, want 0", counter.reads)
 	}
-	if second.Unchanged != second.Seen || second.Indexed != 0 {
+	if second.Unchanged != second.Notes || second.Indexed != 0 {
 		t.Errorf("second scan: %+v", second)
 	}
 }
@@ -272,21 +290,12 @@ func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
 		t.Errorf("removed %d notes, want 1", res.Removed)
 	}
 
-	queries := db.Queries()
-	matches, err := queries.Search(ctx, v.ID, "crystallography", 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(matches) != 1 {
-		t.Errorf("new text not searchable: %+v", matches)
+	if matches := searched(t, db, v, "crystallography"); len(matches) != 1 {
+		t.Errorf("new text not searchable: %v", matches)
 	}
 	// The vault is authoritative: what is not on disk is not in the index.
-	stale, err := queries.Search(ctx, v.ID, "windows", 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(stale) != 0 {
-		t.Errorf("deleted note still searchable: %+v", stale)
+	if stale := searched(t, db, v, "windows"); len(stale) != 0 {
+		t.Errorf("deleted note still searchable: %v", stale)
 	}
 }
 
@@ -313,7 +322,7 @@ type cancellingReader struct {
 	parent *cancellingReaders
 }
 
-func (c *cancellingReader) Walk(ctx context.Context, fn func(domain.FileRef) error) error {
+func (c *cancellingReader) Walk(ctx context.Context, fn func(domain.Fingerprint) error) error {
 	err := c.VaultReader.Walk(ctx, fn)
 	c.parent.cancel()
 	return err
@@ -360,34 +369,21 @@ func TestSearchNeverCrossesVaults(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	queries := db.Queries()
-
 	// The two vaults hold disjoint words, so a query that forgets its vault
 	// shows up as a match that cannot belong to the vault being searched. One
 	// database for every vault makes that failure invisible by construction,
 	// and a test that shares content between the vaults cannot see it either.
-	leaked, err := queries.Search(ctx, first.ID, "quasar", 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(leaked) != 0 {
-		t.Errorf("searching the first vault returned the second vault's notes: %+v", leaked)
+	if leaked := searched(t, db, first, "quasar"); len(leaked) != 0 {
+		t.Errorf("searching the first vault returned the second vault's notes: %v", leaked)
 	}
 
-	other, err := queries.Search(ctx, second.ID, "entropy", 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(other) != 0 {
-		t.Errorf("searching the second vault returned the first vault's notes: %+v", other)
+	if other := searched(t, db, second, "entropy"); len(other) != 0 {
+		t.Errorf("searching the second vault returned the first vault's notes: %v", other)
 	}
 
-	own, err := queries.Search(ctx, second.ID, "quasar", 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(own) != 1 || own[0].Path != "quasar.md" {
-		t.Errorf("the second vault cannot find its own note: %+v", own)
+	own := searched(t, db, second, "quasar")
+	if len(own) != 1 || own[0] != "quasar.md" {
+		t.Errorf("the second vault cannot find its own note: %v", own)
 	}
 }
 
@@ -408,7 +404,7 @@ func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
 		shared:     "# Entropy\n\nthe second vault\n",
 		"extra.md": "# Extra\n\nonly the second vault has this\n",
 	})
-	readers := filesystem.Readers{}
+	readers := filesystem.VaultReaders{}
 
 	if _, err := scanner(readers, db).Execute(ctx, first); err != nil {
 		t.Fatal(err)
@@ -484,8 +480,8 @@ func TestAFileThatDisappearsDuringAScanDoesNotStopIt(t *testing.T) {
 	if res.Vanished != 1 {
 		t.Errorf("vanished = %d, want 1", res.Vanished)
 	}
-	if res.Indexed != res.Seen-1 {
-		t.Errorf("indexed %d of %d seen", res.Indexed, res.Seen)
+	if res.Indexed != res.Notes-1 {
+		t.Errorf("indexed %d of %d seen", res.Indexed, res.Notes)
 	}
 
 	if res.Removed != 0 {
@@ -534,8 +530,8 @@ func TestAFileNobodyCanReadDoesNotStopAScan(t *testing.T) {
 	if res.Unreadable != 1 {
 		t.Errorf("unreadable = %d, want 1", res.Unreadable)
 	}
-	if res.Indexed != res.Seen-1 {
-		t.Errorf("indexed %d of %d seen", res.Indexed, res.Seen)
+	if res.Indexed != res.Notes-1 {
+		t.Errorf("indexed %d of %d seen", res.Indexed, res.Notes)
 	}
 	if res.Removed != 0 {
 		t.Errorf("removed %d notes: a file nobody can read is not a deletion", res.Removed)
@@ -571,12 +567,8 @@ func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
 	if _, kept := known[gone]; !kept {
 		t.Error("a note that was briefly absent was dropped from the index")
 	}
-	matches, err := db.Queries().Search(ctx, v.ID, "uncertainty", 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(matches) != 1 {
-		t.Errorf("the note is no longer searchable: %+v", matches)
+	if matches := searched(t, db, v, "uncertainty"); len(matches) != 1 {
+		t.Errorf("the note is no longer searchable: %v", matches)
 	}
 }
 
@@ -590,15 +582,11 @@ func TestFrontmatterThatCannotBeStoredDoesNotFailTheScan(t *testing.T) {
 		"odd.md": "---\nvalue: .nan\n---\n\n# Odd\n\nsearchable all the same\n",
 	})
 
-	if _, err := scanner(filesystem.Readers{}, db).Execute(ctx, v); err != nil {
+	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(ctx, v); err != nil {
 		t.Fatalf("a note with unstorable frontmatter ended the scan: %v", err)
 	}
-	matches, err := db.Queries().Search(ctx, v.ID, "searchable", 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(matches) != 1 {
-		t.Errorf("the note was not indexed: %+v", matches)
+	if matches := searched(t, db, v, "searchable"); len(matches) != 1 {
+		t.Errorf("the note was not indexed: %v", matches)
 	}
 }
 
@@ -643,15 +631,15 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 	v := testsupport.GenerateVault(t, 600)
 	db := openIndex(t)
 
-	scan := scanner(filesystem.Readers{}, db)
-	scan.OnProgress = func(usecase.ScanResult) { cancel() }
+	scan := scanner(filesystem.VaultReaders{}, db)
+	scan.OnProgress = func(vaults.ScanResult) { cancel() }
 
 	res, err := scan.Execute(ctx, v)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("a cancelled scan returned %v", err)
 	}
-	if res.Seen != 500 {
-		t.Errorf("a cancelled scan walked %d files, want the 500 it had reached", res.Seen)
+	if res.Notes != 500 {
+		t.Errorf("a cancelled scan walked %d files, want the 500 it had reached", res.Notes)
 	}
 
 	known, err := db.Queries().Fingerprints(t.Context(), v.ID)
@@ -674,20 +662,20 @@ func TestAWarmScanStopsWhenCancelled(t *testing.T) {
 	t.Parallel()
 	v := testsupport.GenerateVault(t, 600)
 	db := openIndex(t)
-	scan := scanner(filesystem.Readers{}, db)
+	scan := scanner(filesystem.VaultReaders{}, db)
 
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 
 	ctx, cancel := context.WithCancel(t.Context())
-	warm := scanner(&cancellingReaders{VaultReaders: filesystem.Readers{}, cancel: cancel}, db)
+	warm := scanner(&cancellingReaders{VaultReaders: filesystem.VaultReaders{}, cancel: cancel}, db)
 
 	res, err := warm.Execute(ctx, v)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("a cancelled warm scan returned %v", err)
 	}
-	if res.Seen != 0 {
-		t.Errorf("a warm scan cancelled before its first note looked at %d of 600", res.Seen)
+	if res.Notes != 0 {
+		t.Errorf("a warm scan cancelled before its first note looked at %d of 600", res.Notes)
 	}
 }

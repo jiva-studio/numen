@@ -13,17 +13,18 @@ syntax = "proto3";
 // writes nothing.
 package numen.v1;
 
-import "numen/v1/vault.proto";
+import "numen/v1/shared.proto";
+import "numen/v1/theme.proto";
 
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
 
 // PresetsService answers about the presets of the one vault a client is looking
 // at.
 service PresetsService {
-  // Scheduling is the preset a deck is scheduled by. A deck naming none is
+  // GetDeckPreset is the preset a deck is scheduled by. A deck naming none is
   // answered with the defaults under no path, and a deck whose link reaches
   // something that is not a preset is answered with the defaults and told so.
-  rpc Scheduling(SchedulingRequest) returns (SchedulingResponse);
+  rpc GetDeckPreset(GetDeckPresetRequest) returns (GetDeckPresetResponse);
 
   // ListPresets is every preset the vault holds, by path and by what it is
   // called. It is the list a deck's preset is chosen from, and the defaults are
@@ -31,15 +32,15 @@ service PresetsService {
   // holds them.
   rpc ListPresets(ListPresetsRequest) returns (ListPresetsResponse);
 
-  // MakePreset puts a preset naming none of its settings in the vault. The
+  // CreatePreset puts a preset naming none of its settings in the vault. The
   // file says it is a preset from the moment it exists, so it is one to
   // everything that reads the vault before a setting has been chosen.
   //
   // A key the file does not carry stands at the default, so the decks pointed
   // at it are scheduled by the defaults until the person moves one.
-  rpc MakePreset(MakePresetRequest) returns (MakePresetResponse);
+  rpc CreatePreset(CreatePresetRequest) returns (CreatePresetResponse);
 
-  // Schedule puts a deck on a preset, by writing the entry of its `links:`
+  // ScheduleDeck puts a deck on a preset, by writing the entry of its `links:`
   // block that carries `type: preset`. The entry keeps the role and the words
   // the person wrote on it, and every other entry of the block is left as the
   // bytes it was. An empty preset takes the entry out, and the deck is
@@ -47,8 +48,8 @@ service PresetsService {
   //
   // A preset the vault holds no note at is refused `missing`, and a preset
   // naming a note that is not one is refused `not_a_preset`. A deck that no
-  // longer holds what the caller read is left alone and answered `changed`.
-  rpc Schedule(ScheduleRequest) returns (ScheduleResponse);
+  // longer holds what the caller read is left alone and refused `stale`.
+  rpc ScheduleDeck(ScheduleDeckRequest) returns (ScheduleDeckResponse);
 
   // ReadPreset is the settings of one preset. A note that is not a preset is
   // answered with the defaults and a problem: what is wrong with the file is
@@ -61,12 +62,12 @@ service PresetsService {
   //
   // A path the vault holds no note at is refused `missing`. A note that is not
   // a preset is refused `not_a_preset`, and one that no longer holds what the
-  // caller read is left alone and answered `changed`.
+  // caller read is left alone and refused `stale`.
   rpc WritePreset(WritePresetRequest) returns (WritePresetResponse);
 
-  // Curve is what the settings come to over the whole range of the goal they
-  // name. The whole range is worked out in one pass.
-  rpc Curve(CurveRequest) returns (CurveResponse);
+  // ComputeCurve is what the settings come to over the whole range of the goal
+  // they name. The whole range is worked out in one pass.
+  rpc ComputeCurve(ComputeCurveRequest) returns (ComputeCurveResponse);
 }
 
 // Goal is which value the one control steers. The value itself stands in the
@@ -98,16 +99,16 @@ enum Rule {
   RULE_RETENTION = 2;
 }
 
-// Counts is what a day's budget is spent on, and stands under `counts`.
-enum Counts {
-  COUNTS_UNSPECIFIED = 0;
+// BudgetUnit is what a day's budget is counted in, and stands under `counts`.
+enum BudgetUnit {
+  BUDGET_UNIT_UNSPECIFIED = 0;
 
   // A card face is charged the first time it is answered in a review day, and
   // comes round again in that day for nothing.
-  COUNTS_CARDS = 1;
+  BUDGET_UNIT_CARDS = 1;
 
   // Every showing is charged.
-  COUNTS_SHOWS = 2;
+  BUDGET_UNIT_SHOWS = 2;
 }
 
 // Settings are how the decks pointing at one preset are scheduled. A preset
@@ -137,9 +138,9 @@ message Settings {
   // Whether days are made to resemble each other.
   bool even_load = 8;
 
-  // What a day's budget is spent on. Unspecified is the default, which charges
-  // a card face once a review day.
-  Counts counts = 9;
+  // What a day's budget is counted in. Unspecified is the default, which
+  // charges a card face once a review day.
+  BudgetUnit counts = 9;
 
   // How much of a day goes to what is overdue before anything unbegun is
   // offered, as a share in hundredths. A hundred pays the debt first and begins
@@ -164,35 +165,61 @@ message Settings {
   int32 interval = 13;
 }
 
-// Stopped is why a preset schedules nothing. The list is closed, and a client
-// maps a value to a sentence.
-enum Stopped {
-  // A build that said nothing about it. It is read as scheduling.
-  STOPPED_UNSPECIFIED = 0;
+// StopReason is why a preset schedules nothing. The list is closed, and a
+// client maps a value to a sentence.
+enum StopReason {
+  STOP_REASON_UNSPECIFIED = 0;
 
   // The preset schedules: its decks are handed a day of review.
-  STOPPED_NOTHING = 1;
+  STOP_REASON_NOTHING = 1;
 
   // A goal of minutes with the minutes at zero.
-  STOPPED_NO_MINUTES = 2;
+  STOP_REASON_NO_MINUTES = 2;
 
   // A goal of retention with both card counts at zero.
-  STOPPED_NO_CARDS = 3;
+  STOP_REASON_NO_CARDS = 3;
 
   // A goal of a date naming no day. The budget the goal names is the day, and
   // a goal that cannot read its own budget schedules nothing.
-  STOPPED_NO_DAY = 4;
+  STOP_REASON_NO_DAY = 4;
 
   // A goal of a date whose day is behind us.
-  STOPPED_PAST_DAY = 5;
+  STOP_REASON_PAST_DAY = 5;
 
   // A day of the week carrying none of the load. It is a fact about one day,
   // so only `stops_on` ever carries it.
-  STOPPED_NO_LOAD = 6;
+  STOP_REASON_NO_LOAD = 6;
 
   // A week carrying none of the load: every day of it stands at nothing, so
   // there is no next day to pick the cards up.
-  STOPPED_NO_WEEK = 7;
+  STOP_REASON_NO_WEEK = 7;
+}
+
+// BudgetName is one budget of a preset, named after the key the preset writes
+// it under. The list is closed, and a client maps a value to a word.
+//
+// A day of review is closed by the budgets it ran out of. Two of these close no
+// day and stand here because a goal either reads them or leaves them idle.
+enum BudgetName {
+  BUDGET_NAME_UNSPECIFIED = 0;
+
+  // How long the day runs, under `minutes_a_day`.
+  BUDGET_NAME_MINUTES_A_DAY = 1;
+
+  // How many cards of each kind the day holds, under `new_a_day` and
+  // `reviews_a_day`.
+  BUDGET_NAME_NEW_A_DAY = 2;
+  BUDGET_NAME_REVIEWS_A_DAY = 3;
+
+  // A day paced by the day the preset aims at, under `by_date`.
+  BUDGET_NAME_BY_DATE = 4;
+
+  // The share of the day that goes to the debt, under `backlog`. It closes
+  // nothing and says what the day is spent on.
+  BUDGET_NAME_BACKLOG = 5;
+
+  // A preset scheduling nothing at all.
+  BUDGET_NAME_PAUSED = 6;
 }
 
 // Preset is one preset as a read hands it over.
@@ -212,12 +239,12 @@ message Preset {
   // Why the preset schedules nothing, asked against the day holding now: a goal
   // of a date stops once the day it names is behind that one. It is the answer
   // a window has before any curve exists.
-  Stopped stops = 5;
+  StopReason stops = 5;
 
   // The same asked of the day holding now: whatever stops the preset at all,
   // and a day of the week carrying none of the load. A preset with a light
   // Sunday is not a stopped preset; it is a preset with a stopped Sunday.
-  Stopped stops_on = 6;
+  StopReason stops_on = 6;
 }
 
 // Curve is what the one control comes to over the whole range of its goal.
@@ -235,8 +262,8 @@ message Curve {
   repeated Point at = 4;
 
   // Where the preset stands, and what is suggested.
-  Mark now = 5;
-  Mark suggested = 6;
+  Place now = 5;
+  Place suggested = 6;
 
   // How many decks are scheduled by this preset. Zero is a preset no deck
   // points at, and every place of the curve stands at zero with it.
@@ -266,9 +293,9 @@ message Point {
   // `reviews` is counted in card faces and `minutes` in the showings they take,
   // so a face the day comes back to costs its minutes and is the one card.
   //
-  // Under a goal of minutes, the next sitting a person will sit down to: the
+  // Under a goal of minutes, the next session a person will sit down to: the
   // first day the preset admits, which is the day the deck screen offers. A day
-  // at none of the load is no sitting, so the day after it is drawn. Under a
+  // at none of the load is no session, so the day after it is drawn. Under a
   // goal of retention, the load over the days the preset admits.
   //
   // A goal of a date reads `reviews` off that first day, and fills `minutes`
@@ -290,15 +317,14 @@ message Point {
   double through = 5;
   bool enough = 6;
 
-  // Every budget that closed the day here, each written as the preset writes
-  // the key: minutes_a_day, new_a_day, reviews_a_day, by_date, or paused. None
-  // is a day that asked for every card there was, so the material itself ran
-  // out. A budget the goal does not name is never here.
+  // Every budget that closed the day here. An empty list is a day that asked
+  // for every card there was, so the material itself ran out, and a budget the
+  // goal does not name is never here.
   //
   // A goal of retention holds a day to both card counts, and a day that ran out
   // of new cards and of reviews names both: a person raising one of them and
   // finding nothing changed is reading a day the other closed too.
-  repeated string closed = 8;
+  repeated BudgetName closed = 8;
 
   // How many days of review at this place it takes before nothing is overdue.
   // Zero is a curve standing over nothing overdue, and -1 is a pace that never
@@ -334,25 +360,25 @@ message Point {
   int32 short = 13;
 }
 
-// Mark is one place on the curve worth pointing at.
-message Mark {
+// Place is one place on the curve worth pointing at.
+message Place {
   // Where on the grid it stands, and -1 for a value that falls outside it.
   int32 at = 1;
 
-  // The goal's value at the mark, in the units of the grid. What the preset
+  // The goal's value at the place, in the units of the grid. What the preset
   // stands at need not sit on the grid.
   double value = 2;
 
-  // The day at the mark, filled for a goal of a date.
+  // The day at the place, filled for a goal of a date.
   string day = 3;
 }
 
-message SchedulingRequest {
+message GetDeckPresetRequest {
   // The deck whose preset this is, by the path it is filed under.
   string deck = 1;
 }
 
-message SchedulingResponse {
+message GetDeckPresetResponse {
   // Absent when the preset was refused.
   optional Preset preset = 1;
 
@@ -363,24 +389,28 @@ message SchedulingResponse {
   // write. Absent for a deck naming no preset, and when the preset was
   // refused.
   optional Fingerprint at = 3;
+
+  // How far each setting goes. A client asking a person for a number says
+  // these, and a number outside them is refused here.
+  SettingsBounds bounds = 4;
 }
 
 message ListPresetsRequest {}
 
 message ListPresetsResponse {
-  repeated Listed presets = 1;
+  repeated PresetSummary presets = 1;
 }
 
-// Listed is one preset as a person choosing between them sees it: where the
-// file is, and what it is called.
-message Listed {
+// PresetSummary is one preset as a person choosing between them sees it: where
+// the file is, and what it is called.
+message PresetSummary {
   string path = 1;
 
   // What the preset is called. Empty where nothing names the note.
   string title = 2;
 }
 
-message MakePresetRequest {
+message CreatePresetRequest {
   // What the preset is called. The file is named after it.
   string title = 1;
 
@@ -388,15 +418,20 @@ message MakePresetRequest {
   string folder = 2;
 }
 
-message MakePresetResponse {
+message CreatePresetResponse {
   // Where the preset is filed. Empty when nothing was made.
   string path = 1;
 
   // Set when nothing was made, and why.
   optional Refusal refusal = 2;
+
+  // Set when the preset is on disk and the index would not come level with it.
+  // The preset was made and `path` stands; search does not answer about it
+  // until a walk goes past.
+  bool unlevelled = 3;
 }
 
-message ScheduleRequest {
+message ScheduleDeckRequest {
   // The deck to schedule, by the path it is filed under.
   string deck = 1;
 
@@ -409,17 +444,23 @@ message ScheduleRequest {
   optional Fingerprint seen = 3;
 }
 
-message ScheduleResponse {
-  // Set when nothing was written, and why.
-  optional Refusal refusal = 1;
+message ScheduleDeckResponse {
+  reserved 2;
+  reserved "changed";
 
-  // Set when the deck is no longer the one this caller read. Nothing was
-  // written, and the person chooses what happens next.
-  bool changed = 2;
+  // Set when nothing was written, and why. A deck that is no longer the one
+  // this caller read is REFUSAL_STALE, and the person chooses what happens
+  // next.
+  optional Refusal refusal = 1;
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
   optional Fingerprint at = 3;
+
+  // Set when the deck is on disk and the index would not come level with it.
+  // The write happened and `at` stands; search answers about this file as it
+  // read it last, until a walk goes past.
+  bool unlevelled = 4;
 }
 
 message ReadPresetRequest {
@@ -436,6 +477,27 @@ message ReadPresetResponse {
   // The file the settings came out of, for the caller to present at its next
   // write. Absent when the preset was refused.
   optional Fingerprint at = 3;
+
+  // How far each setting goes. A client asking a person for a number says
+  // these, and a number outside them is refused here.
+  SettingsBounds bounds = 4;
+}
+
+// SettingsBounds is how far each setting of a preset may go. They are the
+// application's and not the preset's: the same bounds answer every read, and a
+// number outside the one it belongs to is refused where it is written.
+//
+// A setting no bound is given for goes as far as its type does.
+message SettingsBounds {
+  Bounds minutes_a_day = 1;
+  Bounds new_a_day = 2;
+  Bounds reviews_a_day = 3;
+  Bounds retention = 4;
+  Bounds backlog = 5;
+  Bounds interval = 6;
+
+  // How much of a day's load one day of the week may carry, in per cent.
+  Bounds load = 7;
 }
 
 message WritePresetRequest {
@@ -451,19 +513,25 @@ message WritePresetRequest {
 }
 
 message WritePresetResponse {
-  // Set when nothing was written, and why.
-  optional Refusal refusal = 1;
+  reserved 2;
+  reserved "changed";
 
-  // Set when the file is no longer the one this caller read. Nothing was
-  // written, and the person chooses what happens to their settings.
-  bool changed = 2;
+  // Set when nothing was written, and why. A file that is no longer the one
+  // this caller read is REFUSAL_STALE, and the person chooses what happens to
+  // their settings.
+  optional Refusal refusal = 1;
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
   optional Fingerprint at = 3;
+
+  // Set when the preset is on disk and the index would not come level with it.
+  // The write happened and `at` stands; search answers about this file as it
+  // read it last, until a walk goes past.
+  bool unlevelled = 4;
 }
 
-message CurveRequest {
+message ComputeCurveRequest {
   // The note the preset stands in, which names the decks it schedules. Empty
   // is the preset that schedules the decks naming none.
   string path = 1;
@@ -473,6 +541,6 @@ message CurveRequest {
   Settings settings = 2;
 }
 
-message CurveResponse {
+message ComputeCurveResponse {
   Curve curve = 1;
 }

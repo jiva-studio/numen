@@ -13,7 +13,6 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
@@ -56,13 +55,13 @@ func refuse(cfg container.Config, why error) {
 // refusal is what the page says: what could not be opened, the sentence, the
 // facts behind it, and what to do about it.
 type refusal struct {
-	Head  string
-	Says  string
-	Facts []fact
-	Do    string
+	Heading  string
+	Sentence string
+	Facts    []fact
+	Remedy   string
 }
 
-type fact struct{ Name, Value string }
+type fact struct{ Name, Content string }
 
 // The headings a refusal is drawn under. Each names the thing that could not be
 // opened, which is the index or the person's own settings file.
@@ -99,21 +98,7 @@ func (refusal) page(cfg container.Config, why error) ([]byte, error) {
 // stopped is the state the application is in, said in its own words: what it
 // could not open, what it found, and what a person can do about it.
 func stopped(cfg container.Config, why error) refusal {
-	var ahead *index.Ahead
-	if errors.As(why, &ahead) {
-		return refusal{
-			Head: openingTheIndex,
-			Says: "This index was written by a later version of numen.",
-			Facts: []fact{
-				{"schema the index holds", fmt.Sprint(ahead.Held)},
-				{"schema this build knows", fmt.Sprint(ahead.Known)},
-				{"index", indexAt(cfg)},
-			},
-			Do: "Update numen to the version that wrote it.",
-		}
-	}
-
-	var outside *settings.Outside
+	var outside *settings.OutsideBounds
 	if errors.As(why, &outside) {
 		return sized(cfg, outside)
 	}
@@ -129,50 +114,50 @@ func stopped(cfg container.Config, why error) refusal {
 	var typed *json.UnmarshalTypeError
 	if errors.As(why, &syntax) || errors.As(why, &typed) {
 		return refusal{
-			Head:  readingTheSettings,
-			Says:  "This settings file is not JSON, so numen cannot tell what it was asked for.",
-			Facts: []fact{{"settings", settingsAt(cfg)}, {"what was read", why.Error()}},
-			Do: "Put the file right, or move it aside: " +
+			Heading:  readingTheSettings,
+			Sentence: "This settings file is not JSON, so numen cannot tell what it was asked for.",
+			Facts:    []fact{{"settings", settingsAt(cfg)}, {"what was read", why.Error()}},
+			Remedy: "Put the file right, or move it aside: " +
 				"numen writes a new one holding what it is doing.",
 		}
 	}
 
 	return refusal{
-		Head:  startingAtAll,
-		Says:  why.Error(),
-		Facts: []fact{{"index", indexAt(cfg)}, {"settings", settingsAt(cfg)}},
-		Do:    "Start numen again, and report what this window says if it stops here every time.",
+		Heading:  startingAtAll,
+		Sentence: why.Error(),
+		Facts:    []fact{{"index", indexAt(cfg)}, {"settings", settingsAt(cfg)}},
+		Remedy:   "Start numen again, and report what this window says if it stops here every time.",
 	}
 }
 
 // sized is a number a size does not take, from the file or from the command
 // line.
-func sized(cfg container.Config, outside *settings.Outside) refusal {
+func sized(cfg container.Config, outside *settings.OutsideBounds) refusal {
 	far := fmt.Sprintf("%v to %v", outside.Least, outside.Most)
-	written := fmt.Sprint(outside.Value)
+	written := fmt.Sprint(outside.Number)
 
 	if strings.HasPrefix(outside.At, "-") {
 		return refusal{
-			Head: startingAtAll,
-			Says: fmt.Sprintf("%s was given a number the size does not take.", outside.At),
+			Heading:  startingAtAll,
+			Sentence: fmt.Sprintf("%s was given a number the size does not take.", outside.At),
 			Facts: []fact{
 				{"on the command line", outside.At},
 				{"given", written},
 				{"as far as the size goes", far},
 			},
-			Do: fmt.Sprintf("Give %s a number from %s, or leave it out.", outside.At, far),
+			Remedy: fmt.Sprintf("Give %s a number from %s, or leave it out.", outside.At, far),
 		}
 	}
 	return refusal{
-		Head: readingTheSettings,
-		Says: fmt.Sprintf("%s is a number the size does not take.", outside.At),
+		Heading:  readingTheSettings,
+		Sentence: fmt.Sprintf("%s is a number the size does not take.", outside.At),
 		Facts: []fact{
 			{"settings", settingsAt(cfg)},
 			{"field", outside.At},
 			{"written", written},
 			{"as far as the size goes", far},
 		},
-		Do: fmt.Sprintf("Write a number from %s in %s, or take the field out to run at 1.",
+		Remedy: fmt.Sprintf("Write a number from %s in %s, or take the field out to run at 1.",
 			far, outside.At),
 	}
 }
@@ -188,7 +173,7 @@ const (
 // path can fail to be an index.
 func indexing(cfg container.Config, code int, why error) refusal {
 	at := indexAt(cfg)
-	said := refusal{Head: openingTheIndex, Facts: []fact{{"index", at}}}
+	said := refusal{Heading: openingTheIndex, Facts: []fact{{"index", at}}}
 
 	folder := false
 	if info, err := os.Stat(at); err == nil {
@@ -197,20 +182,20 @@ func indexing(cfg container.Config, code int, why error) refusal {
 
 	switch {
 	case code == notADatabase:
-		said.Says = "This file is not a numen index."
-		said.Do = "Move it aside. The index is a cache: numen makes a new one " +
+		said.Sentence = "This file is not a numen index."
+		said.Remedy = "Move it aside. The index is a cache: numen makes a new one " +
 			"and fills it from your vaults."
 	case code == cannotOpen && folder:
-		said.Says = "An index is a file, and this path is a folder."
-		said.Do = "Point -index at a file, or move the folder out of the way."
+		said.Sentence = "An index is a file, and this path is a folder."
+		said.Remedy = "Point -index at a file, or move the folder out of the way."
 	case code == cannotOpen:
-		said.Says = "numen could neither open an index here nor make one."
+		said.Sentence = "numen could neither open an index here nor make one."
 		said.Facts = append(said.Facts, fact{"folder", filepath.Dir(at)})
-		said.Do = "Give yourself permission to write in the folder, " +
+		said.Remedy = "Give yourself permission to write in the folder, " +
 			"or point -index somewhere you can write."
 	default:
-		said.Says = why.Error()
-		said.Do = "Point -index at another path, and report what this window says."
+		said.Sentence = why.Error()
+		said.Remedy = "Point -index at another path, and report what this window says."
 	}
 	return said
 }
@@ -262,15 +247,15 @@ var refusalPage = template.Must(template.New("refusal").Parse(`<!doctype html>
 </style>
 </head>
 <body>
-  <h1>{{ .Head }}</h1>
-  <p>{{ .Says }}</p>
+  <h1>{{ .Heading }}</h1>
+  <p>{{ .Sentence }}</p>
   <dl>
   {{- range .Facts }}
-    <dt>{{ .Name }}</dt><dd>{{ .Value }}</dd>
+    <dt>{{ .Name }}</dt><dd>{{ .Content }}</dd>
   {{- end }}
   </dl>
-  {{- if .Do }}
-  <p class="do">{{ .Do }}</p>
+  {{- if .Remedy }}
+  <p class="do">{{ .Remedy }}</p>
   {{- end }}
 </body>
 </html>

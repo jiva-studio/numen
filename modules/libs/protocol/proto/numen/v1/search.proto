@@ -1,0 +1,149 @@
+syntax = "proto3";
+
+// What a client may ask of a vault by typing into it.
+//
+// Two questions are asked as a person types, and they answer with different
+// things: SearchNames answers with names, and SearchPassages with the passages
+// of text a vault holds. A client drawing them apart asks each of them.
+package numen.v1;
+
+import "numen/v1/file.proto";
+import "numen/v1/note.proto";
+import "numen/v1/shared.proto";
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// SearchService answers what a vault holds that matches what was typed.
+service SearchService {
+  // SearchNames is the names in a vault that match what was typed: a note's own
+  // title, and the headings inside notes. It is asked as a person types, and
+  // the last word matches on its prefix.
+  //
+  // It reads names and nothing else. Searching the text a vault holds is
+  // SearchPassages, and that answers with passages.
+  rpc SearchNames(SearchNamesRequest) returns (SearchNamesResponse);
+
+  // SearchPassages is the text a vault holds that answers what was typed, by
+  // the words in it or by what it means or by what a section is called. The
+  // caller says which way it is asked, so a client drawing them apart asks once
+  // for each.
+  rpc SearchPassages(SearchPassagesRequest) returns (SearchPassagesResponse);
+}
+
+message SearchNamesRequest {
+  // What was typed, as it was typed. Words are matched together, and the last
+  // of them on its prefix.
+  string query = 1;
+
+  // How many names to answer with. Zero takes the number the vault chooses.
+  int32 limit = 2;
+}
+
+message SearchNamesResponse {
+  // The names that matched, best first, with a note's own title before a
+  // heading inside one.
+  repeated NameMatch found = 1;
+}
+
+// NameMatch is one name that matched, and the note it stands for. A note's own
+// title matched when there is no heading here; otherwise the note is what the
+// heading stands in.
+message NameMatch {
+  Note note = 1;
+
+  // The heading that matched, absent when the note's own title did.
+  optional Heading heading = 2;
+
+  // Where in that name the words stand, counted the way a client counts text:
+  // in UTF-16 code units.
+  // A word reached by its prefix is marked whole.
+  repeated Span at = 3;
+
+  // Which of three the note is, so a client draws a deck and a stencil as what
+  // they are. A heading carries the type of the note it stands in.
+  NoteType type = 4;
+}
+
+// SearchMode is how a search is asked. Each mode is an order of its own, and a
+// hybrid search fuses them into one.
+//
+// The theme's `Mode` already holds that name in this package, so the search's
+// own carries what it is a mode of.
+enum SearchMode {
+  SEARCH_MODE_UNSPECIFIED = 0;
+
+  // The words typed, matched as words.
+  SEARCH_MODE_WORDS = 1;
+
+  // What the words mean, matched against the vectors the index holds. A vault
+  // nothing has embedded answers with nothing.
+  SEARCH_MODE_MEANING = 2;
+
+  // The names of the sections a source divides into. A hit is the section, and
+  // it answers at its own beginning.
+  SEARCH_MODE_NAMES = 3;
+
+  // Every one of them, fused into one ranking.
+  SEARCH_MODE_HYBRID = 4;
+}
+
+message SearchPassagesRequest {
+  string query = 1;
+
+  // How many passages to answer with. Zero takes the number the vault chooses.
+  int32 limit = 2;
+
+  // How the search is asked. A request naming no mode is refused.
+  SearchMode mode = 3;
+}
+
+message SearchPassagesResponse {
+  // The passages that answer, best first, one per source.
+  repeated Passage found = 1;
+}
+
+// Passage is what a search returns: the text around a hit, and where it came
+// from.
+message Passage {
+  // The file the text was read out of, as the vault calls it.
+  string path = 1;
+
+  // The note the text was read out of, absent for a source that is not one.
+  // A window that opens notes offers to open these and no others.
+  optional Note note = 2;
+
+  string text = 3;
+
+  // Where in that text the words typed stand, counted the way a client counts
+  // text: in UTF-16 code units. Empty for a hit by meaning, which stands on no
+  // word in particular.
+  repeated Span at = 4;
+
+  // What the source's own numbering calls the place, empty when the format
+  // offered none.
+  string location = 5;
+
+  // Where the passage stands in the text of the source it was read out of,
+  // counted in bytes. It is what opens that source here, and a hit in a note
+  // carries it as every other hit does.
+  int32 start = 6;
+  int32 length = 7;
+
+  // Where the chunk that matched stands, counted from the first line of the
+  // source's prose. It is the line a note opens on, and the caret stands there.
+  int32 line = 8;
+
+  // Which of three the note is, so a client draws a deck and a stencil as what
+  // they are. It says nothing about a source that is not a note.
+  NoteType type = 9;
+
+  // What the vault holds at that path, so a client draws a book and a
+  // recording as what they are.
+  SourceKind kind = 10;
+}
+
+// Span is a run of text, by where it begins and where it ends.
+message Span {
+  int32 from = 1;
+  int32 to = 2;
+}

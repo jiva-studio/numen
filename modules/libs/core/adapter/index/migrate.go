@@ -10,6 +10,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/writing"
 )
 
 // SQL lives in .sql files: it is a language of its own, and anything that
@@ -40,9 +42,10 @@ type migration struct {
 // a failure leaves the database at the last version that fully applied rather
 // than half-way through one.
 //
-// An index at a version this build does not carry was written by a later one:
-// its schema holds what this build cannot read, so it is reported and left
-// exactly as it stands.
+// An index at a version this build does not carry is emptied and built again
+// from the first migration. The index is a cache: what it holds is a reading of
+// the vault, and the next scan reads the vault again. Refusing it instead would
+// stop the application on a database it is free to throw away.
 func migrate(ctx context.Context, db *sql.DB) error {
 	available, err := loadMigrations()
 	if err != nil {
@@ -58,7 +61,10 @@ func migrate(ctx context.Context, db *sql.DB) error {
 		newest = available[len(available)-1].version
 	}
 	if current > newest {
-		return &Ahead{Held: current, Known: newest}
+		if err := discard(ctx, db); err != nil {
+			return fmt.Errorf("emptying an index at schema %d: %w", current, err)
+		}
+		current = 0
 	}
 
 	for _, m := range available {
@@ -72,18 +78,74 @@ func migrate(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-// Ahead is an index a later build wrote. Nothing is done to it: the schema it
-// holds is one this build cannot read, and the way out is the build that made
-// it.
-type Ahead struct {
-	Held  int
-	Known int
-}
+// discard empties an index of everything a migration made, so the migrations
+// can run again from the first.
+//
+// What is dropped is read back each time round: a virtual table takes its
+// shadow tables down with it. The loop ends when a pass drops nothing, which is
+// an empty schema or one this cannot empty, and the second is reported.
+//
+// It runs on one connection with foreign keys off: the tables go in whatever
+// order the schema lists them, and a child outlives its parent for the rest of
+// the pass.
+func discard(ctx context.Context, db *sql.DB) error {
+	conn, err := db.Conn(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	if _, err := conn.ExecContext(ctx, "PRAGMA foreign_keys = OFF"); err != nil {
+		return fmt.Errorf("setting the keys aside: %w", err)
+	}
 
-func (e *Ahead) Error() string {
-	return fmt.Sprintf(
-		"this index was written by a later version of numen: it is at schema %d and this build knows %d",
-		e.Held, e.Known)
+	for {
+		rows, err := conn.QueryContext(ctx,
+			`SELECT type, name FROM sqlite_master
+			  WHERE type IN ('table', 'view', 'trigger', 'index')
+			    AND name NOT LIKE 'sqlite_%'`)
+		if err != nil {
+			return fmt.Errorf("what this index holds: %w", err)
+		}
+		var kinds, names []string
+		for rows.Next() {
+			var kind, name string
+			if err := rows.Scan(&kind, &name); err != nil {
+				_ = rows.Close()
+				return err
+			}
+			kinds, names = append(kinds, kind), append(names, name)
+		}
+		if err := rows.Err(); err != nil {
+			_ = rows.Close()
+			return err
+		}
+		if err := rows.Close(); err != nil {
+			return err
+		}
+		if len(names) == 0 {
+			break
+		}
+
+		dropped := false
+		var why error
+		for i, name := range names {
+			// An object already taken down by the one before it is gone, not a
+			// failure: the next pass is what decides whether anything is left.
+			if _, err := conn.ExecContext(ctx,
+				fmt.Sprintf("DROP %s IF EXISTS %q", strings.ToUpper(kinds[i]), name)); err != nil {
+				why = fmt.Errorf("%s %s: %w", kinds[i], name, err)
+			} else {
+				dropped = true
+			}
+		}
+		if !dropped {
+			return fmt.Errorf("%d objects stand and none could be dropped: %w", len(names), why)
+		}
+	}
+	if _, err := conn.ExecContext(ctx, "PRAGMA user_version = 0"); err != nil {
+		return fmt.Errorf("putting the version back: %w", err)
+	}
+	return nil
 }
 
 // remember is where an index keeps what migrated it. It is not one of the
@@ -93,7 +155,7 @@ func (e *Ahead) Error() string {
 // A table carrying a column this build does not write is brought to the shape
 // this build writes, which is the one thing the bookkeeping owes itself.
 func remember(ctx context.Context, db *sql.DB) error {
-	if _, err := db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS applied (
+	if _, err := writing.Exec(ctx, db, `CREATE TABLE IF NOT EXISTS schema_migrations (
 		version INTEGER PRIMARY KEY,
 		name    TEXT NOT NULL
 	)`); err != nil {
@@ -102,7 +164,7 @@ func remember(ctx context.Context, db *sql.DB) error {
 
 	var spare int
 	if err := db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM pragma_table_info('applied') WHERE name NOT IN ('version', 'name')`,
+		`SELECT COUNT(*) FROM pragma_table_info('schema_migrations') WHERE name NOT IN ('version', 'name')`,
 	).Scan(&spare); err != nil {
 		return fmt.Errorf("what this index was migrated by: %w", err)
 	}
@@ -110,12 +172,12 @@ func remember(ctx context.Context, db *sql.DB) error {
 		return nil
 	}
 	for _, statement := range []string{
-		`CREATE TABLE applied_next (version INTEGER PRIMARY KEY, name TEXT NOT NULL)`,
-		`INSERT INTO applied_next (version, name) SELECT version, name FROM applied`,
-		`DROP TABLE applied`,
-		`ALTER TABLE applied_next RENAME TO applied`,
+		`CREATE TABLE schema_migrations_next (version INTEGER PRIMARY KEY, name TEXT NOT NULL)`,
+		`INSERT INTO schema_migrations_next (version, name) SELECT version, name FROM schema_migrations`,
+		`DROP TABLE schema_migrations`,
+		`ALTER TABLE schema_migrations_next RENAME TO schema_migrations`,
 	} {
-		if _, err := db.ExecContext(ctx, statement); err != nil {
+		if _, err := writing.Exec(ctx, db, statement); err != nil {
 			return fmt.Errorf("what this index was migrated by: %w", err)
 		}
 	}
@@ -126,7 +188,7 @@ func apply(ctx context.Context, db *sql.DB, m migration) error {
 	if err := remember(ctx, db); err != nil {
 		return err
 	}
-	tx, err := db.BeginTx(ctx, nil)
+	tx, err := writing.Begin(ctx, db)
 	if err != nil {
 		return err
 	}
@@ -144,7 +206,7 @@ func apply(ctx context.Context, db *sql.DB, m migration) error {
 	// What ran is recorded beside the number, so a person can read what state
 	// this index is in.
 	if _, err := tx.ExecContext(ctx,
-		`INSERT INTO applied (version, name) VALUES (?, ?)
+		`INSERT INTO schema_migrations (version, name) VALUES (?, ?)
 		 ON CONFLICT (version) DO UPDATE SET name = excluded.name`,
 		m.version, m.name); err != nil {
 		return err

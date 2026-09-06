@@ -6,10 +6,10 @@
  * not.
  */
 import type { Component } from 'vue'
-import type { PaletteKeys } from '../palette/model'
+import type { PaletteKeys } from '../palette/item'
 
 /** One way in: what it is called, what draws it, and the keystroke that reaches it. */
-export interface Way {
+export interface WelcomeAction {
   readonly id: string
   readonly text: string
   /** What is drawn in front of it. A way with none is drawn without one. */
@@ -18,7 +18,7 @@ export interface Way {
 }
 
 /** One vault of the list, as the screen draws it. */
-export interface Held {
+export interface VaultRow {
   readonly id: string
   readonly name: string
   /** The folder it stands for, absolute on this machine. */
@@ -29,7 +29,7 @@ export interface Held {
    * Whether what the window has to say about this row is still on its way. Such
    * a row is drawn and carries no letter, and it is not pressed until it is.
    */
-  readonly waiting?: boolean
+  readonly working?: boolean
 }
 
 /** What the screen offers below the list, where a window offers anything. */

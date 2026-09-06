@@ -2,11 +2,11 @@
 
 Running the cards a vault holds. This is a specification, not a decision record: every rule here traces to an accepted ADR.
 
-Flashcards is an application of its own, beside the editor and over the same core ([ADR-0030](adr/0030-review-is-an-application-of-its-own.md)). Writing cards is occasional and running them is daily, so the daily one is not reached through the other.
+Flashcards is an application of its own, beside the editor and over the same core ([Review is an application of its own](adr/0027-review-is-an-application-of-its-own.md)). Writing cards is occasional and running them is daily, so the daily one is not reached through the other.
 
 ## The front door
 
-The window opens on the vaults this installation holds and what is due in each ([ADR-0030](adr/0030-review-is-an-application-of-its-own.md)). The list is names and where the vaults are, which the registry answers before any vault is opened, so the whole of it is on screen at once.
+The window opens on the vaults this installation holds and what is due in each ([Review is an application of its own](adr/0027-review-is-an-application-of-its-own.md)). The list is names and where the vaults are, which the registry answers before any vault is opened, so the whole of it is on screen at once.
 
 Each vault's count arrives on its own and fills in the row it belongs to. A vault whose count has not landed shows the shape the number will take, and is not opened until it has one, by hand or by its letter. A vault counted a moment ago keeps that count while the next count runs, so a list already drawn is never emptied to be filled again. A vault that could not be read says why, in the place its number would stand.
 
@@ -30,7 +30,7 @@ A card whose first field is empty is asked like any other. Its heading is empty,
 
 A card is owed when the day holding now reaches the day its schedule falls on. **A card owed today is owed for the whole of it**, whatever hour it falls at, because a person sits down when they sit down.
 
-A day begins four hours past midnight, and that is `review.day_starts` in [Settings](settings.md). A person answering cards at one in the morning is finishing the day before, not starting the next, and a boundary at midnight would split one sitting in two. The hour is an hour on the clock on the wall, so the day an hour is put into or taken out of begins and ends where a person reads it.
+A day begins four hours past midnight, and that is `review.day_starts` in [Settings](settings.md). A person answering cards at one in the morning is finishing the day before, not starting the next, and a boundary at midnight would split one session in two. The hour is an hour on the clock on the wall, so the day an hour is put into or taken out of begins and ends where a person reads it.
 
 A card nobody has answered is owed the first time it is asked about.
 
@@ -53,7 +53,7 @@ A card is answered by how well it came back, not by whether it did:
 | **Good** | it came back |
 | **Easy** | it came back with none |
 
-The better it came back, the longer it is left. What that comes to is FSRS's ([ADR-0031](adr/0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)), and nothing about the intervals is written into a vault: they are worked out from the answers whenever they are wanted.
+The better it came back, the longer it is left. What that comes to is FSRS's ([An answer is an artifact, a schedule is a cache](adr/0028-an-answer-is-an-artifact-a-schedule-is-a-cache.md)), and nothing about the intervals is written into a vault: they are worked out from the answers whenever they are wanted.
 
 ### Taking one back
 
@@ -81,7 +81,7 @@ A deck joined to a great many notes has the text of the first thirty read and th
 <vault>/.numen/flashcards/<ulid>.jsonl
 ```
 
-One sitting writes one file and nothing ever appends to it again. The whole history is those files put together, so a vault carried between a phone and a desktop comes away with one history and one set of counts, and no file is ever written by two machines.
+One session writes one file and nothing ever appends to it again. The whole history is those files put together, so a vault carried between a phone and a desktop comes away with one history and one set of counts, and no file is ever written by two machines.
 
 The answers are the vault's and travel with it. What is worked out from them — when each card comes round — is kept with the application, and deleting it costs a person the working out and nothing else.
 

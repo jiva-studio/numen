@@ -3,9 +3,10 @@ package note
 import (
 	"strings"
 	"testing"
+	"time"
 	"unicode/utf8"
 
-	"github.com/jiva-studio/numen/modules/libs/core/cutting"
+	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
@@ -15,13 +16,13 @@ import (
 func TestASmallChunkIsCutUnderTheLimitGiven(t *testing.T) {
 	body := strings.TrimSpace(strings.Repeat("chunks carry vectors ", 200))
 	n := domain.Note{
-		Ref:   domain.FileRef{Path: "notes/cut.md", Size: int64(len(body)), MTime: 1},
-		Title: "Cut",
-		Body:  body,
+		Fingerprint: domain.Fingerprint{Path: "notes/cut.md", Size: int64(len(body)), ModTime: time.Unix(0, 1)},
+		Title:       "Cut",
+		Body:        body,
 	}
 
 	for _, limit := range []int{64, 512} {
-		chunks := cut(n, outline(n), cutting.Sizes{Limit: limit})
+		chunks := cut(n, outline(n), chunking.Sizes{Limit: limit}, chunking.Legibility{})
 		if len(chunks) != 1 {
 			t.Fatalf("a note is one large chunk, and it was cut into %d", len(chunks))
 		}

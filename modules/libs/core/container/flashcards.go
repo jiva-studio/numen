@@ -3,15 +3,15 @@ package container
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
@@ -19,29 +19,29 @@ import (
 // Flashcards is everything that runs a vault's cards: what stands in it, what it
 // owes, what to ask next, and what an answer is written to.
 type Flashcards struct {
-	Standings flashcards.Standings
-	Marking   flashcards.Marking
+	CardFaces flashcards.ListCardFaces
+	Marks     flashcards.MarkCards
 	Schedules flashcards.Schedules
-	Owed      flashcards.Owed
+	CardsDue  flashcards.CountCardsDue
 	Session   flashcards.Session
 	Log       flashcards.Log
 	// Counted is how much of a vault was answered on each day it was reviewed.
-	Counted flashcards.Counted
+	Counted flashcards.CountReviews
 	// Presets is which preset each deck is scheduled by, and how one is read,
 	// written and made.
 	Presets flashcards.Presets
 	// Curves is what the one control of a preset comes to over the whole range
 	// of its goal.
-	Curves flashcards.Curves
+	Curves flashcards.ProjectCurve
 	// Day is where one day of review gives way to the next.
-	Day history.Day
+	Day review.Day
 }
 
 // Answers opens the shelf a vault's answers are kept on. It is the same folder
 // the application keeps everything else of its own in, under an area of its
 // own.
 func (c Config) Answers() port.DerivedStores {
-	return filesystem.DerivedStores{Options: c.VaultOptions(), Area: filesystem.FlashcardsDir}
+	return filesystem.DerivedStores{Options: c.vaultOptions(), Area: filesystem.FlashcardsDir}
 }
 
 // DayStarts is how long past midnight a day of review begins, as the settings
@@ -59,93 +59,98 @@ func (c Config) DayStarts() time.Duration {
 	return held.DayStarts()
 }
 
-// Kept is where the working out is remembered between launches: the folder the
-// configuration names, or the platform's cache location.
-func (c Config) Kept() (port.Schedules, error) {
+// Schedules is where the working out is remembered between launches: the folder
+// the configuration names, or the platform's cache location.
+func (c Config) Schedules() (port.ScheduleStore, error) {
 	if c.SchedulesPath != "" {
 		return appstate.SchedulesAt(c.SchedulesPath), nil
 	}
-	return appstate.OpenSchedules()
+	// A returned *Schedules is nil where there is no cache folder, and a nil
+	// pointer in an interface is not a nil interface: the caller's check for one
+	// would pass and the first call on it would panic.
+	kept, err := appstate.OpenSchedules()
+	if err != nil {
+		return nil, err
+	}
+	return kept, nil
 }
 
 // Counting is where what each day came to is remembered. It stands beside the
 // schedules and not in them, because the two go out of date by different rules:
 // a schedule is the whole history read again, and a day is a sum one file at a
 // time.
-func (c Config) Counting() (port.Schedules, error) {
+func (c Config) Counting() (port.ScheduleStore, error) {
 	if c.SchedulesPath != "" {
 		return appstate.SchedulesAt(filepath.Join(c.SchedulesPath, "days")), nil
 	}
-	return appstate.OpenCounting()
+	counting, err := appstate.OpenCounting()
+	if err != nil {
+		return nil, err
+	}
+	return counting, nil
 }
 
 // Flashcards builds the scenarios against this installation.
 //
-// Kept is where the working out is remembered between launches. It is a cache
-// and it is this machine's, so it stands in the platform's cache location and a
-// machine that has none works the schedules out at every launch.
+// The cache is where the working out is remembered between launches. It is this
+// machine's, so it stands in the platform's cache location and a machine that
+// has none works the schedules out at every launch.
 func (c Config) Flashcards(
 	notes port.NoteQueries,
 	links port.LinkQueries,
+	problems port.ProblemQueries,
 	index func(ctx context.Context, v domain.Vault, paths []string) error,
 ) Flashcards {
 	logs := c.Answers()
-	kept, err := c.Kept()
+	now := c.Clock()
+	kept, err := c.Schedules()
 	if err != nil {
 		// A machine that cannot say where its caches go works the schedules out
-		// at every launch. That is slower and no less correct, and it is said
-		// once here so the slowness is not a mystery.
-		fmt.Fprintln(os.Stderr, "numen: the schedules are worked out at every launch:", err)
+		// at every launch. That is slower and no less correct.
+		c.trouble(fmt.Errorf("the schedules are worked out at every launch: %w", err))
 	}
 
-	standing := flashcards.Standings{Readers: c.VaultReaders(), Notes: notes, Links: links}
-	marking := flashcards.Marking{
-		Readers: c.VaultReaders(), Writers: c.VaultWriters(),
-		Notes: notes, Links: links, Index: index, Now: time.Now,
-	}
-	day := history.Day{Starts: c.DayStarts()}
+	faces := flashcards.NewListCardFaces(c.VaultReaders(), notes, links)
+	marking := flashcards.NewMarkCards(
+		c.VaultReaders(), c.VaultWriters(), notes, links, index, now,
+	)
+	day := review.Day{Starts: c.DayStarts()}
 
 	counting, err := c.Counting()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "numen: the days are counted again at every launch:", err)
+		c.trouble(fmt.Errorf("the days are counted again at every launch: %w", err))
 	}
 
-	presets := flashcards.Presets{
-		Readers: c.VaultReaders(), Writers: c.VaultWriters(),
-		Links: links, Notes: notes, Index: index, Day: day, Now: time.Now,
-	}
+	presets := flashcards.NewPresets(
+		c.VaultReaders(), c.VaultWriters(), links, notes, index, day, now,
+	)
 	// A link the index does not carry is accounted for in what parsing turned
-	// up, which is the same reader answering both.
-	if said, holds := notes.(port.ProblemQueries); holds {
-		presets.Problems = said
-	}
+	// up.
+	presets.Problems = problems
 
 	// Each card is worked out at the share of the cards its own preset asks
 	// for, which is what says which preset a card face stands under.
-	schedules := flashcards.Schedules{
-		Logs: logs, Kept: kept, By: history.NewFSRS(), Day: day,
-		Standings: standing, Presets: presets,
-	}
+	schedules := flashcards.NewSchedules(logs, review.NewFSRS(), day, faces, presets)
+	schedules.Cache = kept
+
+	counted := flashcards.NewCountReviews(logs, schedules, day, now)
+	counted.Cache = counting
+
+	curves := flashcards.NewProjectCurve(faces, schedules, presets, day, now)
+	// How many places of a curve run at once is what this machine can run at
+	// once, which is a fact only here is allowed to read.
+	curves.Cores = runtime.GOMAXPROCS(0)
 
 	return Flashcards{
-		Standings: standing,
-		Marking:   marking,
+		CardFaces: faces,
+		Marks:     marking,
 		Schedules: schedules,
-		Owed: flashcards.Owed{
-			Standings: standing, Schedules: schedules, Presets: presets, Day: day, Now: time.Now,
-		},
-		Session: flashcards.Session{
-			Marking: marking, Standings: standing, Schedules: schedules,
-			Presets: presets, Day: day, Now: time.Now,
-		},
-		Log: flashcards.Log{Stores: logs},
-		Counted: flashcards.Counted{
-			Logs: logs, Kept: counting, Schedules: schedules, Day: day, Now: time.Now,
-		},
-		Presets: presets,
-		Curves: flashcards.Curves{
-			Standings: standing, Schedules: schedules, Presets: presets, Day: day, Now: time.Now,
-		},
-		Day: day,
+		CardsDue:  flashcards.NewCountCardsDue(faces, schedules, presets, day, now),
+		Session:   flashcards.NewSession(marking, faces, schedules, presets, day, now),
+		Log:       flashcards.Log{Stores: logs},
+		Counted:   counted,
+		Presets:   presets,
+		Curves:    curves,
+		Day:       day,
 	}
 }

@@ -14,30 +14,31 @@ import (
 // A Line is one run of words the recogniser read in one go: the number it is
 // known by, and what it says.
 //
-// A correction may cover a run of lines, and Through is the last of them. One
-// line's correction has Through equal to At.
+// A correction may cover a run of lines, and Last is the last of them. A line
+// standing on its own has Last equal to Number, or left at zero where nothing
+// put a run together.
 type Line struct {
-	At      int
-	Through int
-	Text    string
+	Number int
+	Last   int
+	Text   string
 }
 
 // Joins says whether this correction puts more than one line together.
-func (l Line) Joins() bool { return l.Through > l.At }
+func (l Line) Joins() bool { return l.Last > l.Number }
 
 // A Batch is the lines one reply is accepted or refused as a whole: the number
 // it is known by, and its lines in the order they are read.
 type Batch struct {
-	At    int
-	Lines []Line
+	Number int
+	Lines  []Line
 
-	// Joining is whether a reply may answer for a run of these lines as one.
+	// Joinable is whether a reply may answer for a run of these lines as one.
 	// Where it does not, a run refuses the batch.
-	Joining bool
+	Joinable bool
 
-	// About is what the whole text holds, said in its own words. It stands
+	// Context is what the whole text holds, said in its own words. It stands
 	// before the lines in the question and is answered for by nothing.
-	About string
+	Context string
 }
 
 // Last is the number of the final line a batch carries, and nothing below the
@@ -46,7 +47,7 @@ func (b Batch) Last() int {
 	if len(b.Lines) == 0 {
 		return -1
 	}
-	return b.Lines[len(b.Lines)-1].At
+	return b.Lines[len(b.Lines)-1].Number
 }
 
 // A line's number is written between marks no recogniser can produce, so a mark
@@ -125,8 +126,8 @@ as the first and the last of them:
 // the next one. What the text is about stands before the first of them.
 func Ask(batch Batch) string {
 	var out strings.Builder
-	if batch.About != "" {
-		out.WriteString(batch.About)
+	if batch.Context != "" {
+		out.WriteString(batch.Context)
 		out.WriteString("\n\n")
 	}
 	for i, line := range batch.Lines {
@@ -134,7 +135,7 @@ func Ask(batch Batch) string {
 			out.WriteString(" ")
 		}
 		out.WriteString(Opens)
-		out.WriteString(strconv.Itoa(line.At))
+		out.WriteString(strconv.Itoa(line.Number))
 		out.WriteString(Closes)
 		out.WriteString(line.Text)
 	}

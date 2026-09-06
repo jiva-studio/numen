@@ -4,10 +4,10 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
 
@@ -32,18 +32,18 @@ func scanned(t *testing.T) (container.Config, domain.Vault) {
 	}
 	defer db.Close()
 
-	if err := db.Vaults().Save(t.Context(), vault); err != nil {
+	if err := db.Vaults().Register(t.Context(), vault.ID); err != nil {
 		t.Fatal(err)
 	}
-	err = db.Sources().SaveExtraction(t.Context(), vault.ID, port.Extraction{
-		Source: port.Source{
-			Ref:    domain.FileRef{Path: "Entropy.md", Kind: domain.KindNote, Size: int64(len(entropy)), MTime: 1},
-			Hash:   "hash-entropy",
-			Recipe: "markdown",
+	err = db.Sources().SaveExtraction(t.Context(), vault.ID, domain.SourceChunks{
+		Source: domain.Source{
+			Fingerprint: domain.Fingerprint{Path: "Entropy.md", Kind: domain.KindNote, Size: int64(len(entropy)), ModTime: time.Unix(0, 1)},
+			Hash:        "hash-entropy",
+			Recipe:      "markdown",
 		},
-		Chunks: []port.Chunk{{
+		Chunks: []domain.Chunk{{
 			Start: 0, Length: len(entropy), Text: entropy,
-			Small: []port.Chunk{{Start: 0, Length: len(entropy), Text: entropy}},
+			Small: []domain.Chunk{{Start: 0, Length: len(entropy), Text: entropy}},
 		}},
 	})
 	if err != nil {

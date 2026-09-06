@@ -7,7 +7,7 @@
  * are not written under the same rules.
  */
 import { afterEach, describe, expect, it } from 'vitest'
-import { useNaming, type Naming } from './naming'
+import { useNaming, type NamingState } from './naming'
 import { heading, objection, type Objection, type Refusal } from './order'
 
 /** A naming of the fields a stencil declares, with what it renamed. */
@@ -39,7 +39,7 @@ const overFaces = (faces: ReadonlyMap<string, string>) => {
 }
 
 /** A key struck in the box a name is typed in, which is what a break blurs. */
-const press = <Why>(naming: Naming<Why>, over: string, key: string): HTMLInputElement => {
+const press = <Why>(naming: NamingState<Why>, over: string, key: string): HTMLInputElement => {
   const box = document.createElement('input')
   document.body.append(box)
   box.addEventListener('keydown', (event) => naming.onKey(event, over))

@@ -11,13 +11,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	adapteragent "github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
@@ -86,7 +87,7 @@ type Config struct {
 	// AgentProofreader opens a profile that reaches the command line a person
 	// already has. The platform supplies it, since core starts no process; an
 	// installation that supplies none names no such profile.
-	AgentProofreader func(AgentProofreading) (port.Proofreader, error)
+	AgentProofreader func(ProofreaderSpec) (port.Proofreader, error)
 
 	// Agent is which agent answers in the panel. It arrives the way Embedding
 	// does.
@@ -97,6 +98,30 @@ type Config struct {
 	// person with a vault restored from an archive is not asked which binary they
 	// are holding.
 	RebuildIndex bool
+
+	// Trouble is where what is assembled here says what went wrong in work it
+	// carries on past. An installation that sets none is told nothing.
+	Trouble port.Trouble
+
+	// Now is what time it is, for every scenario that stamps a note or asks
+	// what is due today. An installation that names none reads this machine's
+	// clock, and this is the one place in the core allowed to.
+	Now port.Clock
+}
+
+// Clock is the clock every scenario assembled here is handed.
+func (c Config) Clock() port.Clock {
+	if c.Now != nil {
+		return c.Now
+	}
+	return time.Now
+}
+
+// trouble says what went wrong to whoever asked to be told.
+func (c Config) trouble(err error) {
+	if c.Trouble != nil {
+		c.Trouble(err)
+	}
 }
 
 // Indexing is this configuration carrying what a settings file says about
@@ -118,11 +143,11 @@ func (c Config) Indexing(said settings.Indexing) Config {
 	return c
 }
 
-// Syncing reads, as each rename is made, whether a note's title and its
+// SyncSetting reads, as each rename is made, whether a note's title and its
 // filename are kept as one name. A file that cannot be read keeps them one
 // name, which is what an installation nobody has configured does.
-func (c Config) Syncing() note.Syncing {
-	return func() note.Sync {
+func (c Config) SyncSetting() note.SyncSetting {
+	return func() note.SyncTitleAndFilename {
 		path, err := c.settingsFile()
 		if err != nil {
 			return true
@@ -131,115 +156,7 @@ func (c Config) Syncing() note.Syncing {
 		if err != nil {
 			return true
 		}
-		return note.Sync(held.Sync())
-	}
-}
-
-// Turns writes into the settings whether a note's title and its filename are
-// kept as one name. The file is patched as an object, so every key a person
-// typed stays where it was.
-func (c Config) Turns() func(kept note.Sync) error {
-	return func(kept note.Sync) error {
-		path, err := c.settingsFile()
-		if err != nil {
-			return err
-		}
-		return settings.Save(path, settings.Setting{
-			At: []string{"naming", "sync_title_and_filename"}, Value: bool(kept),
-		})
-	}
-}
-
-// Hanging reads, as the window asks, whether a node hangs the headings of its
-// note under it. A file that cannot be read hangs them, which is what an
-// installation nobody has configured does.
-func (c Config) Hanging() func() bool {
-	return func() bool {
-		path, err := c.settingsFile()
-		if err != nil {
-			return true
-		}
-		held, err := settings.At(path)
-		if err != nil {
-			return true
-		}
-		return held.Hangs()
-	}
-}
-
-// TurnsHanging writes into the settings whether a node hangs the headings of
-// its note under it. The file is patched as an object, so every key a person
-// typed stays where it was.
-func (c Config) TurnsHanging() func(hangs bool) error {
-	return func(hangs bool) error {
-		path, err := c.settingsFile()
-		if err != nil {
-			return err
-		}
-		return settings.Save(path, settings.Setting{
-			At: []string{"appearance", "hang_parts_under_a_node"}, Value: hangs,
-		})
-	}
-}
-
-// Parts reads, as the window asks, how many headings stand under a node at
-// once. A file that cannot be read stands the default of them.
-func (c Config) Parts() func() int {
-	return func() int {
-		path, err := c.settingsFile()
-		if err != nil {
-			return settings.DefaultParts
-		}
-		held, err := settings.At(path)
-		if err != nil {
-			return settings.DefaultParts
-		}
-		return held.Parts()
-	}
-}
-
-// TurnsParts writes into the settings how many headings stand under a node at
-// once. A number outside what the setting goes to is refused and the file is
-// left as it is.
-func (c Config) TurnsParts() func(parts int) error {
-	return func(parts int) error {
-		if err := settings.PartsUnderANodeBounds.Check(
-			"appearance.parts_under_a_node", float64(parts),
-		); err != nil {
-			return err
-		}
-		path, err := c.settingsFile()
-		if err != nil {
-			return err
-		}
-		return settings.Save(path, settings.Setting{
-			At: []string{"appearance", "parts_under_a_node"}, Value: parts,
-		})
-	}
-}
-
-// Reviewing reads, as the window asks, the hour a day of review begins at. A
-// file that cannot be read begins the day where an installation nobody has
-// configured begins it.
-func (c Config) Reviewing() func() string {
-	return func() string { return flashcards.Clock(c.DayStarts()) }
-}
-
-// TurnsReviewing writes into the settings the hour a day of review begins at.
-// An hour the setting does not take is refused and the file is left as it is.
-func (c Config) TurnsReviewing() func(starts string) error {
-	return func(starts string) error {
-		written, err := settings.Starting(starts)
-		if err != nil {
-			return err
-		}
-		path, err := c.settingsFile()
-		if err != nil {
-			return err
-		}
-		return settings.Save(path, settings.Setting{
-			At: []string{"review", "day_starts"}, Value: written,
-		})
+		return note.SyncTitleAndFilename(held.Sync())
 	}
 }
 
@@ -281,7 +198,7 @@ func (c Config) ConfiguredFile() func() (string, string, error) {
 // file is left as it was.
 //
 // Seen is the file as the window last read it. A file standing at anything else
-// is left alone with port.ErrChanged.
+// is left alone with port.ErrStale.
 func (c Config) WritesConfiguredFile() func(written string, seen *string) error {
 	return func(written string, seen *string) error {
 		path, err := c.settingsFile()
@@ -296,6 +213,9 @@ func (c Config) WritesConfiguredFile() func(written string, seen *string) error 
 // be set to, and the programs the agent setting can name. The settings are read
 // with them, so every row is answered against what is in force; a file that
 // cannot be read is answered against the defaults.
+//
+// Whether a model's files are on this machine is looked for by the adapter that
+// would fetch them, bound here as every other adapter is.
 func (c Config) Models() func() []port.Model {
 	return func() []port.Model {
 		held := settings.Defaults()
@@ -304,8 +224,25 @@ func (c Config) Models() func() []port.Model {
 				held = read
 			}
 		}
-		return append(settings.Models(held), settings.Agents()...)
+		fetched := settings.Fetches{
+			Embedding:   embed.Fetched,
+			Recognising: recognition.Fetched,
+		}
+		return append(settings.Models(held, fetched), settings.Agents()...)
 	}
+}
+
+// PartsUnderANodeBounds is how many parts a node may be asked to hang, at each
+// end. A number outside it is refused, and a client asking a person for one is
+// told them.
+func (Config) PartsUnderANodeBounds() settings.Bounds {
+	return settings.PartsUnderANodeBounds
+}
+
+// LatestDayStarts is how late in the day a day of review may be made to begin,
+// on the clock on the wall. An hour past it is refused.
+func (Config) LatestDayStarts() string {
+	return review.Clock(settings.LatestDayStarts)
 }
 
 // TurnsSetting writes settings into the file. The file is patched as an object,
@@ -316,10 +253,10 @@ func (c Config) TurnsSetting() func(written []port.Setting) error {
 		held := make([]settings.Setting, 0, len(written))
 		for _, one := range written {
 			var value json.RawMessage
-			if err := json.Unmarshal([]byte(one.Value), &value); err != nil {
+			if err := json.Unmarshal([]byte(one.JSON), &value); err != nil {
 				return fmt.Errorf("%w: %w", port.ErrNotASetting, err)
 			}
-			held = append(held, settings.Setting{At: one.At, Value: value})
+			held = append(held, settings.Setting{At: one.Path, Written: value})
 		}
 		path, err := c.settingsFile()
 		if err != nil {
@@ -371,31 +308,41 @@ func (c Config) Registry() (port.VaultRegistry, error) {
 
 // VaultReaders opens vaults for reading.
 func (c Config) VaultReaders() port.VaultReaders {
-	return filesystem.Readers{Options: c.VaultOptions()}
+	return filesystem.VaultReaders{Options: c.vaultOptions()}
 }
 
 // VaultWriters opens vaults for changing. It is a separate opener from the
 // readers because reading and writing a person's notes are different rights.
 func (c Config) VaultWriters() port.VaultWriters {
-	return filesystem.Writers{Options: c.VaultOptions()}
+	return filesystem.VaultWriters{Options: c.vaultOptions()}
+}
+
+// ImportedFiles reads what a person handed this application from outside every
+// vault. On a machine with a filesystem that is a path; a phone hands over
+// something else, and this is where the two part.
+func (c Config) ImportedFiles() port.ImportedFiles {
+	return filesystem.ImportedFiles{}
 }
 
 // VaultWatcher follows vaults for changes the application did not make.
 func (c Config) VaultWatcher() port.VaultWatcher {
-	return filesystem.Watcher{Options: c.VaultOptions()}
+	return filesystem.Watcher{Options: c.vaultOptions()}
 }
 
 // VaultIdentity gives folders their identity.
 func (c Config) VaultIdentity() port.VaultIdentity {
-	return filesystem.Identity{Options: c.VaultOptions()}
+	return filesystem.VaultIdentity{Options: c.vaultOptions()}
 }
 
 // Trash is the place this machine keeps what a person deleted.
 func (c Config) Trash() port.Trash { return trash.New() }
 
-// VaultOptions is how a vault on disk is read: which folder is ours, and which
+// vaultOptions is how a vault on disk is read: which folder is ours, and which
 // files count as books. The same answer for whatever looks at it.
-func (c Config) VaultOptions() filesystem.Options {
+//
+// It is not exported: an application is handed a port, and `filesystem.Options`
+// is the adapter's own type.
+func (c Config) vaultOptions() filesystem.Options {
 	return filesystem.Options{
 		ServiceDir:     c.ServiceDir,
 		BookExtensions: c.BookExtensions,
@@ -411,7 +358,7 @@ func (c Config) VaultOptions() filesystem.Options {
 // a use case that places a passage reads both.
 func (c Config) DerivedStores() port.DerivedStores {
 	return filesystem.DerivedStores{
-		Options: c.VaultOptions(),
+		Options: c.vaultOptions(),
 		Area:    filesystem.OCRDir,
 		Areas:   []string{filesystem.SpeechDir},
 	}

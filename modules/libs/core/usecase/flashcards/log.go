@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -24,44 +24,44 @@ const Suffix = ".jsonl"
 // Log is one vault's answers: every run that was ever written there.
 type Log struct{ Stores port.DerivedStores }
 
-// Held is what a vault's log came to.
-type Held struct {
-	Answers []history.Answer
-	// order is what Given hands out, worked out at the first asking and kept
+// ReviewLog is what a vault's log came to.
+type ReviewLog struct {
+	Answers []review.Answer
+	// order is what History hands out, worked out at the first asking and kept
 	// for the rest of them.
-	order func() history.Given
+	order func() review.History
 	// Files are what the answers were read from, sorted by name. What tells a
 	// cache it is out of date is any difference in this list.
 	//
 	// A run is appended to and never rewritten, so its length is what says
-	// whether it has changed. A name alone says nothing: the file a sitting is
+	// whether it has changed. A name alone says nothing: the file a session is
 	// writing to keeps its name and grows all evening.
-	Files []port.Stored
+	Files []port.Entry
 	// Skipped is how many lines could not be acted on: a run that stopped
 	// partway, or a line of a version this build does not know.
 	Skipped int
 }
 
-// Given is the answers in the order they were given: nothing a line takes back,
-// one line to an identifier, earliest first.
+// History is the answers in the order they were given: nothing a line takes
+// back, one line to an identifier, earliest first.
 //
 // One request asks several things of one reading, and each of them reads this
 // order. It is worked out once for the reading and handed to all of them.
-func (h Held) Given() history.Given {
+func (h ReviewLog) History() review.History {
 	if h.order == nil {
-		return history.Give(h.Answers)
+		return review.Give(h.Answers)
 	}
 	return h.order()
 }
 
 // ordered is a reading that works its order out at the first asking.
-func ordered(answers []history.Answer) func() history.Given {
-	return sync.OnceValue(func() history.Given { return history.Give(answers) })
+func ordered(answers []review.Answer) func() review.History {
+	return sync.OnceValue(func() review.History { return review.Give(answers) })
 }
 
 // Files is what the vault's log is made of, without reading any of it. It is
 // what a cache is measured against, and measuring it costs one listing.
-func (u Log) Files(ctx context.Context, v domain.Vault) ([]port.Stored, error) {
+func (u Log) Files(ctx context.Context, v domain.Vault) ([]port.Entry, error) {
 	store, err := u.Stores.Open(v)
 	if err != nil {
 		return nil, err
@@ -73,36 +73,36 @@ func (u Log) Files(ctx context.Context, v domain.Vault) ([]port.Stored, error) {
 //
 // A vault nobody has reviewed holds no folder and no files, which is an answer
 // and not a failure.
-func (u Log) Read(ctx context.Context, v domain.Vault) (Held, error) {
+func (u Log) Read(ctx context.Context, v domain.Vault) (ReviewLog, error) {
 	store, err := u.Stores.Open(v)
 	if err != nil {
-		return Held{}, err
+		return ReviewLog{}, err
 	}
 	files, err := runs(ctx, store)
 	if err != nil {
-		return Held{}, err
+		return ReviewLog{}, err
 	}
 
-	var out Held
+	var out ReviewLog
 	for _, file := range files {
-		ran, err := u.Run(ctx, store, file)
+		ran, err := u.ReadFile(ctx, store, file)
 		if err != nil {
-			return Held{}, err
+			return ReviewLog{}, err
 		}
 		out.Skipped += ran.Skipped
 		if ran.Gone || ran.Shut {
 			continue
 		}
 		out.Answers = append(out.Answers, ran.Answers...)
-		out.Files = append(out.Files, port.Stored{Name: file.Name, Size: ran.Size})
+		out.Files = append(out.Files, port.Entry{Name: file.Name, Size: ran.Size})
 	}
 	out.order = ordered(out.Answers)
 	return out, nil
 }
 
-// Ran is one file of the log as it was read.
-type Ran struct {
-	Answers []history.Answer
+// LogFile is one file of the log as it was read.
+type LogFile struct {
+	Answers []review.Answer
 	// Size is the length read, which is what says whether the file has changed.
 	// It is the length read and not the length listed: a run this machine is
 	// writing grows between the two.
@@ -119,29 +119,31 @@ type Ran struct {
 	Shut bool
 }
 
-// Run is one file of a vault's log, read.
-func (u Log) Run(ctx context.Context, store port.DerivedStore, file port.Stored) (Ran, error) {
+// ReadFile reads one file of a vault's log.
+func (u Log) ReadFile(
+	ctx context.Context, store port.DerivedStore, file port.Entry,
+) (LogFile, error) {
 	raw, err := store.Read(ctx, file.Name)
 	if errors.Is(err, fs.ErrNotExist) {
-		return Ran{Gone: true}, nil
+		return LogFile{Gone: true}, nil
 	}
 	if errors.Is(err, fs.ErrPermission) || locked(err) {
-		return Ran{Shut: true, Skipped: 1}, nil
+		return LogFile{Shut: true, Skipped: 1}, nil
 	}
 	if err != nil {
-		return Ran{}, err
+		return LogFile{}, err
 	}
-	answers, skipped := history.Read(raw)
-	return Ran{Answers: answers, Size: len(raw), Skipped: skipped}, nil
+	answers, skipped := review.Read(raw)
+	return LogFile{Answers: answers, Size: len(raw), Skipped: skipped}, nil
 }
 
 // runs is the files of the log, sorted by name.
-func runs(ctx context.Context, store port.DerivedStore) ([]port.Stored, error) {
+func runs(ctx context.Context, store port.DerivedStore) ([]port.Entry, error) {
 	held, err := store.List(ctx, Area)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]port.Stored, 0, len(held))
+	out := make([]port.Entry, 0, len(held))
 	for _, one := range held {
 		if strings.HasSuffix(one.Name, Suffix) {
 			out = append(out, one)
@@ -155,7 +157,7 @@ func runs(ctx context.Context, store port.DerivedStore) ([]port.Stored, error) {
 // A run writes one file of its own and nothing else ever appends to it, which
 // is what makes two machines' histories merge by being put together: no file is
 // ever written by two of them.
-func (u Log) Open(ctx context.Context, v domain.Vault, at time.Time) (*Run, error) {
+func (u Log) Open(ctx context.Context, v domain.Vault, at time.Time) (*LogWriter, error) {
 	store, err := u.Stores.Open(v)
 	if err != nil {
 		return nil, err
@@ -164,11 +166,11 @@ func (u Log) Open(ctx context.Context, v domain.Vault, at time.Time) (*Run, erro
 	if err != nil {
 		return nil, err
 	}
-	return &Run{store: store, name: Area + "/" + id + Suffix}, nil
+	return &LogWriter{store: store, name: Area + "/" + id + Suffix}, nil
 }
 
-// Run is one sitting of review, and the file it appends to.
-type Run struct {
+// LogWriter is one session of review, and the file it appends to.
+type LogWriter struct {
 	store port.DerivedStore
 	name  string
 	// stopped is the append that did not land. A run whose file refused one
@@ -178,17 +180,17 @@ type Run struct {
 }
 
 // Name is the file this run writes, as a name of the vault's own store.
-func (r *Run) Name() string { return r.name }
+func (r *LogWriter) Name() string { return r.name }
 
 // Append writes one answer to the end of the run's file.
 //
 // An append is not atomic: a machine that stopped mid-line leaves a tail no
 // newline closes, and reading the file back leaves that line out.
-func (r *Run) Append(ctx context.Context, a history.Answer) error {
+func (r *LogWriter) Append(ctx context.Context, a review.Answer) error {
 	if r.stopped != nil {
 		return r.stopped
 	}
-	raw, err := history.Write(a)
+	raw, err := review.Write(a)
 	if err != nil {
 		return err
 	}

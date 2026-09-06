@@ -1,13 +1,11 @@
 package vault
 
 import (
-	"cmp"
 	"context"
 	"errors"
 	"fmt"
 	"io/fs"
 	"slices"
-	"sync"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
@@ -20,8 +18,12 @@ type Scan struct {
 	Readers     port.VaultReaders
 	Vaults      port.VaultRepository
 	Notes       port.NoteRepository
-	Known       port.NoteQueries
+	Known       FingerprintQueries
 	Maintenance port.IndexMaintenance
+
+	// Walks is the turns the vaults being walked take. A scan given none takes
+	// its turn from nobody and waits for nobody.
+	Walks *Walks
 
 	// RebuildIndex reads every file and puts it in the index again, whatever the
 	// index remembers about it.
@@ -38,12 +40,31 @@ type Scan struct {
 	OnProgress func(ScanResult)
 }
 
+// NewScan is what a walk of a vault reads and writes through: the vault it is
+// read out of, the row every note of it points at, where a note is filed, what
+// the index already believes about each file, and the upkeep a changed index
+// owes.
+//
+// The upkeep is reached only where the walk found something.
+func NewScan(
+	readers port.VaultReaders,
+	vaults port.VaultRepository,
+	notes port.NoteRepository,
+	known FingerprintQueries,
+	maintenance port.IndexMaintenance,
+) Scan {
+	return Scan{
+		Readers: readers, Vaults: vaults, Notes: notes,
+		Known: known, Maintenance: maintenance,
+	}
+}
+
 // ScanResult reports what a scan did, in the terms the user cares about.
 //
-// `Seen` counts notes and nothing else, and every other number here is about
+// `Notes` counts notes and nothing else, and every other number here is about
 // those notes. What the walk found that is not a note is `Assets`.
 type ScanResult struct {
-	Seen       int // notes found in the vault
+	Notes      int // notes found in the vault
 	Assets     int // sources of another kind found in the vault
 	Indexed    int // parsed and written, because they were new or had changed
 	Unchanged  int // skipped on size and modification time alone
@@ -52,23 +73,13 @@ type ScanResult struct {
 	Unreadable int // walked, still there, and the read refused
 }
 
-// walks is the vaults this process is walking, a turn each.
-var walks sync.Map
-
-// oneWalk takes the vault's turn and answers with the release of it. Walks of
-// different vaults do not wait on each other.
-func oneWalk(ctx context.Context, vaultID string) (func(), error) {
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-	held, _ := walks.LoadOrStore(vaultID, make(chan struct{}, 1))
-	turn := held.(chan struct{})
-	select {
-	case turn <- struct{}{}:
-		return func() { <-turn }, nil
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	}
+// FingerprintQueries is the one question a scan asks of the index, so that a
+// scan is handed what says which files have changed and nothing that answers
+// about a note.
+type FingerprintQueries interface {
+	// Fingerprints is what the index believes about each file, keyed by path,
+	// so a scan can decide what to reparse without reading anything.
+	Fingerprints(ctx context.Context, vaultID domain.VaultID) (map[string]domain.Fingerprint, error)
 }
 
 // Execute walks the vault once.
@@ -77,13 +88,13 @@ func oneWalk(ctx context.Context, vaultID string) (func(), error) {
 // are read and parsed; the rest are not opened at all. That is what keeps a scan
 // of an unchanged vault cheap enough to run at startup.
 //
-// One walk of a vault runs at a time in this process. A walk writes in groups
-// from what it read, so its copy of a note lands last however early the note
-// was read.
+// One walk of a vault runs at a time among the scans sharing its turns. A walk
+// writes in groups from what it read, so its copy of a note lands last however
+// early the note was read.
 func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	var res ScanResult
 
-	over, err := oneWalk(ctx, v.ID)
+	over, err := u.Walks.one(ctx, v.ID)
 	if err != nil {
 		return res, err
 	}
@@ -95,7 +106,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	}
 	// The rows the walk writes point at the vault's own row. What the vault is
 	// called and where it is stay as the list has them.
-	if err := u.Vaults.Register(ctx, v); err != nil {
+	if err := u.Vaults.Register(ctx, v.ID); err != nil {
 		return res, fmt.Errorf("register vault: %w", err)
 	}
 
@@ -108,20 +119,20 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	// chosen. A vault has a working set and an archive, and they are not the
 	// same size: notes touched recently are what the person is looking for while
 	// the scan runs, so they are indexed first.
-	var found []domain.FileRef
-	if err := reader.Walk(ctx, func(ref domain.FileRef) error {
+	var found []domain.Fingerprint
+	if err := reader.Walk(ctx, func(ref domain.Fingerprint) error {
 		found = append(found, ref)
 		return nil
 	}); err != nil {
 		return res, err
 	}
-	slices.SortFunc(found, func(a, b domain.FileRef) int { return cmp.Compare(b.MTime, a.MTime) })
+	slices.SortFunc(found, func(a, b domain.Fingerprint) int { return b.ModTime.Compare(a.ModTime) })
 
 	group := grouping{write: func(ctx context.Context, notes []domain.Note) error {
 		if err := u.Notes.Save(ctx, v.ID, notes); err != nil {
 			// The failure is somewhere in a group, so say which one.
 			return fmt.Errorf("index %d notes of %s, %s to %s: %w",
-				len(notes), v.Name, notes[0].Ref.Path, notes[len(notes)-1].Ref.Path, err)
+				len(notes), v.Name, notes[0].Fingerprint.Path, notes[len(notes)-1].Fingerprint.Path, err)
 		}
 		res.Indexed += len(notes)
 		if u.OnProgress != nil {
@@ -141,7 +152,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 			res.Assets++
 			continue
 		}
-		res.Seen++
+		res.Notes++
 		seen[ref.Path] = true
 
 		if previous, ok := known[ref.Path]; ok && !u.RebuildIndex && previous.Unchanged(ref) {

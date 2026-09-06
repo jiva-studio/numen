@@ -15,7 +15,7 @@ export interface Box {
 }
 
 /** What placing something beside a span takes, on one axis. */
-export interface Beside {
+export interface AxisPlacement {
   /** Where the span it stands beside begins, and where it ends. */
   readonly from: number
   readonly to: number
@@ -35,7 +35,7 @@ export interface Beside {
  * way it is brought inside the edges it may touch. Larger than the area it is
  * placed in, it sits at the near edge.
  */
-export const beside = ({ from, to, size, room, margin, gap }: Beside): number => {
+export const beside = ({ from, to, size, room, margin, gap }: AxisPlacement): number => {
   const on = to + gap
   const back = from - gap - size
   const start = on + size + margin <= room || back < margin ? on : back

@@ -16,10 +16,11 @@ type Proofreader interface {
 	// Name is what made a correction, recorded beside it.
 	Name() string
 
-	// Read hands over the batches and answers with what came back about each,
-	// by the batch it is about. Whether a reply is an answer is decided above
-	// this; a batch nothing came back about is a batch left as it was read.
-	Read(ctx context.Context, batches []proofread.Batch) (map[int]string, error)
+	// Proofread hands over the batches and answers with what came back about
+	// each, by the batch it is about. Whether a reply is an answer is decided
+	// above this; a batch nothing came back about is a batch left as it was
+	// read.
+	Proofread(ctx context.Context, batches []proofread.Batch) (map[int]string, error)
 }
 
 // A ProofreadQueue is a proofreader that takes a run of batches away and

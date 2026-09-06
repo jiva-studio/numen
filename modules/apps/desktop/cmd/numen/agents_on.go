@@ -11,11 +11,11 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
-	format "github.com/jiva-studio/numen/modules/libs/core/cards"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/check"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
@@ -29,7 +29,7 @@ const defaultAgentAddr = mcp.DefaultAddr
 // unnamed is what the panel is told where the settings name no agent.
 const unnamed = "no agent is named in the settings"
 
-func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened, opts agentOptions, out io.Writer) (func() error, error) {
+func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Installation, opts agentOptions, out io.Writer) (func() error, error) {
 	if opts.off {
 		return func() error { return nil }, nil
 	}
@@ -54,13 +54,18 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 		addr = mcp.DefaultAddr
 	}
 
+	// The whole surface, and this is the one endpoint an agent a person runs
+	// themselves reaches too, announced with the token it presents. Serving a
+	// narrow one here would take the vault's writers off that agent, which is
+	// not what a person configured it for. What the panel's own child may call
+	// is that child's allowance and is narrowed there.
 	served, err := agents.Serve(ctx, agents.Options{
 		Config:     cfg,
 		Core:       agentCore(cfg, opened, root, out),
 		Addr:       addr,
 		Announcing: true,
 		Root:       root,
-		Drafting:   drafting(cfg, opened),
+		Drafting:   drafting(opened),
 		Out:        out,
 	})
 	if err != nil {
@@ -79,13 +84,13 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 
 // drafting is how a change the agent is making reaches the window before it
 // lands. Where a stretch stands is the vault's to say.
-func drafting(cfg container.Config, opened *webui.Opened) claudecode.Drafting {
-	reading := note.Read{Readers: cfg.VaultReaders()}
+func drafting(opened *editor.Installation) claudecode.Drafting {
+	reading := opened.Notes().Read
 	return claudecode.Drafting{
-		Tell: func(ctx context.Context, said domain.Editing) {
+		Report: func(ctx context.Context, said domain.Edit) {
 			_ = opened.API.Viewing().Editing(ctx, said)
 		},
-		Where: func(ctx context.Context, path, stood string) (int, int, bool) {
+		Location: func(ctx context.Context, path, stood string) (int, int, bool) {
 			contents, err := reading.Execute(ctx, opened.Showing(), path)
 			if err != nil || contents.Outcome != note.Ok {
 				return 0, 0, false
@@ -100,83 +105,71 @@ func drafting(cfg container.Config, opened *webui.Opened) claudecode.Drafting {
 	}
 }
 
-// agentCore wires the tools to the same use cases everything else uses. The
-// index is brought level by the same refresh the watcher drives, so a tool that
-// writes a note leaves it findable.
-func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.Writer) mcp.Core {
-	index := func(ctx context.Context, v domain.Vault, paths []string) error {
-		_, err := opened.Refresh().Execute(ctx, v, paths)
-		return err
-	}
-	readers := cfg.VaultReaders()
-	writers := cfg.VaultWriters()
-	queries := opened.Index.Queries()
-	viewing := opened.API.Viewing()
-	// What a write is doing reaches the window the way a note put in front of
-	// the person does. A build with no window draws nothing and is told nothing.
-	tells := note.Telling(func(ctx context.Context, said domain.Editing) {
-		if viewing == nil {
-			return
-		}
-		_ = viewing.Editing(ctx, said)
-	})
-	went := note.Moving(func(ctx context.Context, gone domain.Went) {
-		if viewing == nil {
-			return
-		}
-		_ = viewing.Moved(ctx, gone)
-	})
-	moves := note.Move{
-		Readers: readers, Writers: writers, Links: opened.Index.Links(),
-		Names:   queries,
-		Sources: opened.Index.Sources(), Index: index,
-		Moving: went,
-		Sync:   cfg.Syncing(),
-	}
-
-	cutting := cfg.Cards(queries, opened.Index.Links(), index)
+// agentCore wires the tools to the use cases the window works this vault
+// through. They are built once, where the window was put together, so a tool
+// and the person reach the vault through the one set: the index is brought
+// level by the same refresh the watcher drives, and a note a tool writes is
+// findable and drawn wherever it is shown.
+//
+// The one difference is Drawing, and it is why: a note a tool writes is drawn
+// as the stretch that changed, and a note the person writes is not, because
+// they are looking at the text they typed.
+func agentCore(cfg container.Config, opened *editor.Installation, root string, out io.Writer) mcp.Core {
+	notes := opened.Notes().Drawing(opened.API.Viewing())
+	cutting := opened.Cards()
 
 	return mcp.Core{
-		Showing:   mcp.One(opened.Showing(), root),
-		Readers:   readers,
+		Showing:   mcp.ShowingOne(opened.Showing(), root),
+		Readers:   cfg.VaultReaders(),
 		View:      opened.API.Viewing(),
 		Attending: opened.API.Attended,
-		Notes:     queries,
 
-		Vaults:     opened.API.Vaults,
-		Choosing:   opened.API.Choosing,
-		Adding:     opened.API.Adding,
-		Renaming:   opened.API.Renaming,
-		Forgetting: opened.API.Forgetting,
-		Opens:      opening(opened, out),
+		// The list is the window's own, and an agent does not erase a vault:
+		// the folder that goes is a person's to ask for.
+		Vaults: mcp.Vaults{
+			Registry:     opened.API.Vaults.Registry,
+			FolderDialog: opened.API.Vaults.FolderDialog,
+			Add:          opened.API.Vaults.Add,
+			Rename:       opened.API.Vaults.Rename,
+			Forget:       opened.API.Vaults.Forget,
+			Opens:        opening(opened, out),
+		},
 
-		Sources:    opened.Index.SourcesKnown(),
-		Recognise:  recogniser(opened),
-		Transcribe: opened.Transcribing(),
-		Derived:    cfg.DerivedStores(),
-		Documents:  cfg.Documents(),
+		Sources: mcp.Sources{
+			Queries:    opened.Index.SourcesKnown(),
+			Recognise:  recogniser(opened),
+			Transcribe: opened.Transcribing(),
+			Derived:    cfg.DerivedStores(),
+			Documents:  cfg.TextExtractor(),
+		},
 
-		Search: cfg.Searching(opened.Index, opened.Asking,
-			func(err error) { fmt.Fprintln(out, "agents: answering by words alone:", err) }),
-		Neighbourhood: note.ShowNeighbourhood{Links: opened.Index.Links(), Notes: queries},
-		Links:         note.ShowLinks{Links: opened.Index.Links()},
-		Problems:      check.Standard(opened.Index.Problems()),
+		Cards: mcp.Cards{
+			Read:        cutting.Read,
+			List:        cutting.List,
+			Write:       cutting.Write,
+			Create:      cutting.Create,
+			RenameField: cutting.Rename,
+			DeckEdit:    format.OpenDeckBody,
+			StencilBody: format.StencilBody,
+		},
 
-		Cards:       cutting.Read,
-		Stencils:    cutting.List,
-		Cuts:        cutting.Write,
-		Cutting:     cutting.Create,
-		FieldRename: cutting.Rename,
-		DeckBody:    format.DeckBody,
-		StencilBody: container.StencilBody,
+		Notes: mcp.Notes{
+			Queries: opened.Index.Queries(),
+			// The one search the window offers. A model that could not be
+			// fitted is said where the person is, and not twice.
+			Search:        *opened.API.Finds,
+			Neighbourhood: notes.Neighbourhood,
+			Links:         notes.Links,
+			Problems:      check.Standard(opened.Index.Problems()),
 
-		Create:  note.Create{Writers: writers, Names: queries, Index: index},
-		Write:   note.Write{Readers: readers, Writers: writers, Index: index, Telling: tells},
-		Replace: note.Replace{Readers: readers, Writers: writers, Index: index, Telling: tells},
-		Move:    moves,
-		Rename:  note.Rename{Move: moves},
-		Remove:  note.Remove{Writers: writers, Links: opened.Index.Links(), Known: opened.Index.SourcesKnown(), Index: index},
-		Linking: note.Linking{Readers: readers, Writers: writers, Index: index},
+			Create:  notes.Create,
+			Write:   notes.Write,
+			Replace: notes.Replace,
+			Move:    notes.Move,
+			Rename:  notes.Rename,
+			Remove:  notes.Remove,
+			Linking: notes.Linking,
+		},
 	}
 }
 
@@ -185,7 +178,7 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 // The session that asked is served for the vault that is going and ends with
 // it, so what went wrong is said here. A window that cannot be moved serves no
 // tool that would move it.
-func opening(opened *webui.Opened, out io.Writer) func(context.Context, domain.Vault) error {
+func opening(opened *editor.Installation, out io.Writer) func(context.Context, domain.Vault) error {
 	if opened.API.Opens == nil {
 		return nil
 	}
@@ -203,6 +196,6 @@ func opening(opened *webui.Opened, out io.Writer) func(context.Context, domain.V
 // It is always served, even on a machine holding none of the models: what is
 // missing is fetched behind whoever asked, and the tool says so. A tool that is
 // not served at all leaves an agent saying the vault cannot do a thing it can.
-func recogniser(opened *webui.Opened) mcp.Recognising {
+func recogniser(opened *editor.Installation) mcp.Recogniser {
 	return opened.Recognising()
 }

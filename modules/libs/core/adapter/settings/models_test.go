@@ -10,14 +10,19 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
+
+// fetches are the adapters that would fetch a model, as the composition root
+// hands them in: a row says what is on this machine because they looked.
+var fetches = Fetches{Embedding: embed.Fetched, Recognising: recognition.Fetched}
 
 // A model is nothing to the window unless it says where it is read from and
 // what choosing it writes.
 func TestEveryModelSaysWhereItIsReadAndWhatItWrites(t *testing.T) {
-	for _, one := range append(Models(Defaults()), Agents()...) {
-		if len(one.NamedAt) == 0 {
+	for _, one := range append(Models(Defaults(), fetches), Agents()...) {
+		if len(one.Path) == 0 {
 			t.Errorf("%q is read from nowhere", one.Title)
 		}
 		if one.Title == "" {
@@ -32,9 +37,9 @@ func TestEveryModelSaysWhereItIsReadAndWhatItWrites(t *testing.T) {
 // One setting, one model an installation nobody has configured runs on.
 func TestOneModelToASettingIsTheDefault(t *testing.T) {
 	byDefault := map[string]int{}
-	for _, one := range append(Models(Defaults()), Agents()...) {
-		if one.ByDefault {
-			byDefault[at(one.NamedAt)]++
+	for _, one := range append(Models(Defaults(), fetches), Agents()...) {
+		if one.Default {
+			byDefault[at(one.Path)]++
 		}
 	}
 	for _, setting := range []string{
@@ -47,15 +52,15 @@ func TestOneModelToASettingIsTheDefault(t *testing.T) {
 }
 
 // The model the vault is indexed by is the one this application is built
-// around, and choosing it writes the station that runs it.
-func TestTheIndexingModelIsWrittenWithItsStation(t *testing.T) {
+// around, and choosing it writes the provider that runs it.
+func TestTheIndexingModelIsWrittenWithItsProvider(t *testing.T) {
 	held := models(t, Defaults(), EmbeddingModelAt)
 	if len(held) != 1 {
 		t.Fatalf("the vault is indexed by %d models", len(held))
 	}
 	written := []string{}
 	for _, one := range held[0].Writes {
-		written = append(written, at(one.At))
+		written = append(written, at(one.Path))
 	}
 	for _, want := range []string{
 		"indexing.embedding.model",
@@ -72,7 +77,7 @@ func TestTheIndexingModelIsWrittenWithItsStation(t *testing.T) {
 // otherwise, and the sizes and the names in full stand on shelves of their own.
 func TestTheAgentAnswersWithWhateverTheMachineAnswersWith(t *testing.T) {
 	held := models(t, Defaults(), AgentModelAt)
-	if held[0].Name != "" || !held[0].ByDefault {
+	if held[0].Name != "" || !held[0].Default {
 		t.Errorf("the agent opens on %+v", held[0])
 	}
 	shelves := map[string]bool{}
@@ -93,7 +98,7 @@ func TestAModelWhoseFilesAreHereIsPresent(t *testing.T) {
 	dir := t.TempDir()
 	written(t, filepath.Join(dir, embed.ModelFile))
 	written(t, filepath.Join(dir, embed.TokenizerFile))
-	held.Indexing.Embedding.Indexing.Local.Dir = dir
+	held = runningIn(t, held, dir)
 
 	if got := models(t, held, EmbeddingModelAt)[0].Presence; got != port.Present {
 		t.Errorf("the model in %s stands at %v", dir, got)
@@ -104,7 +109,7 @@ func TestAModelWhoseFilesAreHereIsPresent(t *testing.T) {
 // at, and that is where the row reads it.
 func TestAModelInTheCacheIsPresent(t *testing.T) {
 	held := alone(t)
-	held.Indexing.Embedding.Indexing.Local.Dir = ""
+	held = runningIn(t, held, "")
 	snapshot := filepath.Join(
 		os.Getenv("XDG_CACHE_HOME"), "huggingface", "hub",
 		"models--intfloat--multilingual-e5-small", "snapshots", "0a1b2c3d",
@@ -122,8 +127,7 @@ func TestAModelInTheCacheIsPresent(t *testing.T) {
 
 // A model this machine runs and has not fetched is a wait, and the row says so.
 func TestAModelWhoseFilesAreNotHereIsNotFetched(t *testing.T) {
-	held := alone(t)
-	held.Indexing.Embedding.Indexing.Local.Dir = t.TempDir()
+	held := runningIn(t, alone(t), t.TempDir())
 
 	if got := models(t, held, EmbeddingModelAt)[0].Presence; got != port.NotFetched {
 		t.Errorf("a model nothing has fetched stands at %v", got)
@@ -188,8 +192,29 @@ func alone(t *testing.T) Config {
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	held := Defaults()
 	held.Indexing.Recognition.Dir = t.TempDir()
-	held.Indexing.Embedding.Indexing.Local.Dir = t.TempDir()
+	return runningIn(t, held, t.TempDir())
+}
+
+// runningIn is the settings with the model this machine runs read out of dir.
+func runningIn(t *testing.T, held Config, dir string) Config {
+	t.Helper()
+	local, ok := held.Indexing.Embedding.Indexing.Local()
+	if !ok {
+		t.Fatal("these settings run no model on this machine")
+	}
+	local.Dir = dir
+	held.Indexing.Embedding.Indexing = held.Indexing.Embedding.Indexing.Running(local)
 	return held
+}
+
+// runningAt is the folder the settings read the model this machine runs out of.
+func runningAt(t *testing.T, held Config) string {
+	t.Helper()
+	local, ok := held.Indexing.Embedding.Indexing.Local()
+	if !ok {
+		t.Fatal("these settings run no model on this machine")
+	}
+	return local.Dir
 }
 
 // written is an empty file where a fetch would have put one.
@@ -205,8 +230,8 @@ func written(t *testing.T, at string) {
 func models(t *testing.T, held Config, setting []string) []port.Model {
 	t.Helper()
 	found := []port.Model{}
-	for _, one := range append(Models(held), Agents()...) {
-		if at(one.NamedAt) == at(setting) {
+	for _, one := range append(Models(held, fetches), Agents()...) {
+		if at(one.Path) == at(setting) {
 			found = append(found, one)
 		}
 	}
@@ -219,16 +244,16 @@ func models(t *testing.T, held Config, setting []string) []port.Model {
 // at is a path through the file, as one word.
 func at(path []string) string { return strings.Join(path, ".") }
 
-// A station reaching a service fetches nothing, whichever model a row names.
+// A provider reaching a service fetches nothing, whichever model a row names.
 // The files of a model this machine once ran stay in the cache, and they say
 // nothing about a vault indexed over the network.
-func TestEveryRowOfAStationReachingAServiceHasNothingToFetch(t *testing.T) {
+func TestEveryRowOfAProviderReachingAServiceHasNothingToFetch(t *testing.T) {
 	held := alone(t)
+	// The model the preset offers, fetched, and left where a fetch put it.
+	dir := runningAt(t, held)
 	held.Indexing.Embedding.Indexing.Use = embed.UseService
 	held.Indexing.Embedding.Model.Name = "baai/bge-m3"
 
-	// The model the preset offers, fetched, and left where a fetch put it.
-	dir := held.Indexing.Embedding.Indexing.Local.Dir
 	written(t, filepath.Join(dir, embed.ModelFile))
 	written(t, filepath.Join(dir, embed.TokenizerFile))
 
@@ -239,9 +264,9 @@ func TestEveryRowOfAStationReachingAServiceHasNothingToFetch(t *testing.T) {
 	}
 }
 
-// Which of the two a station is is `use`. A station running a model here says
+// Which of the two a provider is is `use`. A provider running a model here says
 // where its files are, whatever the model is called.
-func TestAStationRunningAModelHereSaysWhereItsFilesAre(t *testing.T) {
+func TestAProviderRunningAModelHereSaysWhereItsFilesAre(t *testing.T) {
 	held := alone(t)
 	held.Indexing.Embedding.Indexing.Use = embed.UseLocal
 	held.Indexing.Embedding.Model.Name = "somewhere/of-my-own"

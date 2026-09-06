@@ -30,6 +30,9 @@ func TestNamesThatAreOneName(t *testing.T) {
 	}{
 		{"Cyrillic", "ЭНТРОПИЯ", "энтропия"},
 		{"an acute", "CAFÉ", "café"},
+		// COLLATE NOCASE only touches ASCII, and Å is outside it: it would leave
+		// this pair two names.
+		{"a ring above", "ÅNGSTRÖM", "ångström"},
 		{"Greek", "ΣΙΓΜΑ", "σιγμα"},
 		{"a Greek final sigma", "ὈΔΥΣΣΕΎΣ", "ὀδυσσεύς"},
 		{"a German sharp s", "STRASSE", "straße"},

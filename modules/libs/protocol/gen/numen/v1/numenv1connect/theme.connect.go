@@ -39,35 +39,37 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// ThemeServiceThemesProcedure is the fully-qualified name of the ThemeService's Themes RPC.
-	ThemeServiceThemesProcedure = "/numen.v1.ThemeService/Themes"
-	// ThemeServiceThemeProcedure is the fully-qualified name of the ThemeService's Theme RPC.
-	ThemeServiceThemeProcedure = "/numen.v1.ThemeService/Theme"
-	// ThemeServiceChooseProcedure is the fully-qualified name of the ThemeService's Choose RPC.
-	ThemeServiceChooseProcedure = "/numen.v1.ThemeService/Choose"
-	// ThemeServiceChangedProcedure is the fully-qualified name of the ThemeService's Changed RPC.
-	ThemeServiceChangedProcedure = "/numen.v1.ThemeService/Changed"
+	// ThemeServiceListThemesProcedure is the fully-qualified name of the ThemeService's ListThemes RPC.
+	ThemeServiceListThemesProcedure = "/numen.v1.ThemeService/ListThemes"
+	// ThemeServiceReadThemeProcedure is the fully-qualified name of the ThemeService's ReadTheme RPC.
+	ThemeServiceReadThemeProcedure = "/numen.v1.ThemeService/ReadTheme"
+	// ThemeServiceWriteAppearanceProcedure is the fully-qualified name of the ThemeService's
+	// WriteAppearance RPC.
+	ThemeServiceWriteAppearanceProcedure = "/numen.v1.ThemeService/WriteAppearance"
+	// ThemeServiceWatchThemesProcedure is the fully-qualified name of the ThemeService's WatchThemes
+	// RPC.
+	ThemeServiceWatchThemesProcedure = "/numen.v1.ThemeService/WatchThemes"
 )
 
 // ThemeServiceClient is a client for the numen.v1.ThemeService service.
 type ThemeServiceClient interface {
-	// Themes is every theme there is — the ones this application ships and the
-	// ones in the person's themes folder — which of them is applied, and the two
-	// sizes the window is drawn at.
-	Themes(context.Context, *connect.Request[v1.ThemesRequest]) (*connect.Response[v1.ThemesResponse], error)
-	// Theme is the text of one theme's file, as the file stands when it is
+	// ListThemes is every theme there is — the ones this application ships and
+	// the ones in the person's themes folder — which of them is applied, and the
+	// two sizes the window is drawn at.
+	ListThemes(context.Context, *connect.Request[v1.ListThemesRequest]) (*connect.Response[v1.ListThemesResponse], error)
+	// ReadTheme is the text of one theme's file, as the file stands when it is
 	// asked for. It is asked once for each theme that is tried on, and again
 	// when that theme's file changes.
-	Theme(context.Context, *connect.Request[v1.ThemeRequest]) (*connect.Response[v1.ThemeResponse], error)
-	// Choose writes the theme, the mode and the two sizes into the settings. The
-	// file is patched as an object, so every key a person typed stays where it
-	// was. A size outside its bounds is refused and the settings are left as
-	// they are.
-	Choose(context.Context, *connect.Request[v1.ChooseRequest]) (*connect.Response[v1.ChooseResponse], error)
-	// Changed reports the person's themes folder having changed, for as long as
-	// the caller listens. It says which themes, and nothing about them: the
+	ReadTheme(context.Context, *connect.Request[v1.ReadThemeRequest]) (*connect.Response[v1.ReadThemeResponse], error)
+	// WriteAppearance writes the theme, the mode and the two sizes into the
+	// settings. The file is patched as an object, so every key a person typed
+	// stays where it was. A size outside its bounds is refused and the settings
+	// are left as they are.
+	WriteAppearance(context.Context, *connect.Request[v1.WriteAppearanceRequest]) (*connect.Response[v1.WriteAppearanceResponse], error)
+	// WatchThemes reports the person's themes folder having changed, for as long
+	// as the caller listens. It says which themes, and nothing about them: the
 	// caller knows what it is showing and asks for what it needs.
-	Changed(context.Context, *connect.Request[v1.ChangedRequest]) (*connect.ServerStreamForClient[v1.ChangedResponse], error)
+	WatchThemes(context.Context, *connect.Request[v1.WatchThemesRequest]) (*connect.ServerStreamForClient[v1.WatchThemesResponse], error)
 }
 
 // NewThemeServiceClient constructs a client for the numen.v1.ThemeService service. By default, it
@@ -81,28 +83,28 @@ func NewThemeServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 	baseURL = strings.TrimRight(baseURL, "/")
 	themeServiceMethods := v1.File_numen_v1_theme_proto.Services().ByName("ThemeService").Methods()
 	return &themeServiceClient{
-		themes: connect.NewClient[v1.ThemesRequest, v1.ThemesResponse](
+		listThemes: connect.NewClient[v1.ListThemesRequest, v1.ListThemesResponse](
 			httpClient,
-			baseURL+ThemeServiceThemesProcedure,
-			connect.WithSchema(themeServiceMethods.ByName("Themes")),
+			baseURL+ThemeServiceListThemesProcedure,
+			connect.WithSchema(themeServiceMethods.ByName("ListThemes")),
 			connect.WithClientOptions(opts...),
 		),
-		theme: connect.NewClient[v1.ThemeRequest, v1.ThemeResponse](
+		readTheme: connect.NewClient[v1.ReadThemeRequest, v1.ReadThemeResponse](
 			httpClient,
-			baseURL+ThemeServiceThemeProcedure,
-			connect.WithSchema(themeServiceMethods.ByName("Theme")),
+			baseURL+ThemeServiceReadThemeProcedure,
+			connect.WithSchema(themeServiceMethods.ByName("ReadTheme")),
 			connect.WithClientOptions(opts...),
 		),
-		choose: connect.NewClient[v1.ChooseRequest, v1.ChooseResponse](
+		writeAppearance: connect.NewClient[v1.WriteAppearanceRequest, v1.WriteAppearanceResponse](
 			httpClient,
-			baseURL+ThemeServiceChooseProcedure,
-			connect.WithSchema(themeServiceMethods.ByName("Choose")),
+			baseURL+ThemeServiceWriteAppearanceProcedure,
+			connect.WithSchema(themeServiceMethods.ByName("WriteAppearance")),
 			connect.WithClientOptions(opts...),
 		),
-		changed: connect.NewClient[v1.ChangedRequest, v1.ChangedResponse](
+		watchThemes: connect.NewClient[v1.WatchThemesRequest, v1.WatchThemesResponse](
 			httpClient,
-			baseURL+ThemeServiceChangedProcedure,
-			connect.WithSchema(themeServiceMethods.ByName("Changed")),
+			baseURL+ThemeServiceWatchThemesProcedure,
+			connect.WithSchema(themeServiceMethods.ByName("WatchThemes")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -110,51 +112,51 @@ func NewThemeServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 
 // themeServiceClient implements ThemeServiceClient.
 type themeServiceClient struct {
-	themes  *connect.Client[v1.ThemesRequest, v1.ThemesResponse]
-	theme   *connect.Client[v1.ThemeRequest, v1.ThemeResponse]
-	choose  *connect.Client[v1.ChooseRequest, v1.ChooseResponse]
-	changed *connect.Client[v1.ChangedRequest, v1.ChangedResponse]
+	listThemes      *connect.Client[v1.ListThemesRequest, v1.ListThemesResponse]
+	readTheme       *connect.Client[v1.ReadThemeRequest, v1.ReadThemeResponse]
+	writeAppearance *connect.Client[v1.WriteAppearanceRequest, v1.WriteAppearanceResponse]
+	watchThemes     *connect.Client[v1.WatchThemesRequest, v1.WatchThemesResponse]
 }
 
-// Themes calls numen.v1.ThemeService.Themes.
-func (c *themeServiceClient) Themes(ctx context.Context, req *connect.Request[v1.ThemesRequest]) (*connect.Response[v1.ThemesResponse], error) {
-	return c.themes.CallUnary(ctx, req)
+// ListThemes calls numen.v1.ThemeService.ListThemes.
+func (c *themeServiceClient) ListThemes(ctx context.Context, req *connect.Request[v1.ListThemesRequest]) (*connect.Response[v1.ListThemesResponse], error) {
+	return c.listThemes.CallUnary(ctx, req)
 }
 
-// Theme calls numen.v1.ThemeService.Theme.
-func (c *themeServiceClient) Theme(ctx context.Context, req *connect.Request[v1.ThemeRequest]) (*connect.Response[v1.ThemeResponse], error) {
-	return c.theme.CallUnary(ctx, req)
+// ReadTheme calls numen.v1.ThemeService.ReadTheme.
+func (c *themeServiceClient) ReadTheme(ctx context.Context, req *connect.Request[v1.ReadThemeRequest]) (*connect.Response[v1.ReadThemeResponse], error) {
+	return c.readTheme.CallUnary(ctx, req)
 }
 
-// Choose calls numen.v1.ThemeService.Choose.
-func (c *themeServiceClient) Choose(ctx context.Context, req *connect.Request[v1.ChooseRequest]) (*connect.Response[v1.ChooseResponse], error) {
-	return c.choose.CallUnary(ctx, req)
+// WriteAppearance calls numen.v1.ThemeService.WriteAppearance.
+func (c *themeServiceClient) WriteAppearance(ctx context.Context, req *connect.Request[v1.WriteAppearanceRequest]) (*connect.Response[v1.WriteAppearanceResponse], error) {
+	return c.writeAppearance.CallUnary(ctx, req)
 }
 
-// Changed calls numen.v1.ThemeService.Changed.
-func (c *themeServiceClient) Changed(ctx context.Context, req *connect.Request[v1.ChangedRequest]) (*connect.ServerStreamForClient[v1.ChangedResponse], error) {
-	return c.changed.CallServerStream(ctx, req)
+// WatchThemes calls numen.v1.ThemeService.WatchThemes.
+func (c *themeServiceClient) WatchThemes(ctx context.Context, req *connect.Request[v1.WatchThemesRequest]) (*connect.ServerStreamForClient[v1.WatchThemesResponse], error) {
+	return c.watchThemes.CallServerStream(ctx, req)
 }
 
 // ThemeServiceHandler is an implementation of the numen.v1.ThemeService service.
 type ThemeServiceHandler interface {
-	// Themes is every theme there is — the ones this application ships and the
-	// ones in the person's themes folder — which of them is applied, and the two
-	// sizes the window is drawn at.
-	Themes(context.Context, *connect.Request[v1.ThemesRequest]) (*connect.Response[v1.ThemesResponse], error)
-	// Theme is the text of one theme's file, as the file stands when it is
+	// ListThemes is every theme there is — the ones this application ships and
+	// the ones in the person's themes folder — which of them is applied, and the
+	// two sizes the window is drawn at.
+	ListThemes(context.Context, *connect.Request[v1.ListThemesRequest]) (*connect.Response[v1.ListThemesResponse], error)
+	// ReadTheme is the text of one theme's file, as the file stands when it is
 	// asked for. It is asked once for each theme that is tried on, and again
 	// when that theme's file changes.
-	Theme(context.Context, *connect.Request[v1.ThemeRequest]) (*connect.Response[v1.ThemeResponse], error)
-	// Choose writes the theme, the mode and the two sizes into the settings. The
-	// file is patched as an object, so every key a person typed stays where it
-	// was. A size outside its bounds is refused and the settings are left as
-	// they are.
-	Choose(context.Context, *connect.Request[v1.ChooseRequest]) (*connect.Response[v1.ChooseResponse], error)
-	// Changed reports the person's themes folder having changed, for as long as
-	// the caller listens. It says which themes, and nothing about them: the
+	ReadTheme(context.Context, *connect.Request[v1.ReadThemeRequest]) (*connect.Response[v1.ReadThemeResponse], error)
+	// WriteAppearance writes the theme, the mode and the two sizes into the
+	// settings. The file is patched as an object, so every key a person typed
+	// stays where it was. A size outside its bounds is refused and the settings
+	// are left as they are.
+	WriteAppearance(context.Context, *connect.Request[v1.WriteAppearanceRequest]) (*connect.Response[v1.WriteAppearanceResponse], error)
+	// WatchThemes reports the person's themes folder having changed, for as long
+	// as the caller listens. It says which themes, and nothing about them: the
 	// caller knows what it is showing and asks for what it needs.
-	Changed(context.Context, *connect.Request[v1.ChangedRequest], *connect.ServerStream[v1.ChangedResponse]) error
+	WatchThemes(context.Context, *connect.Request[v1.WatchThemesRequest], *connect.ServerStream[v1.WatchThemesResponse]) error
 }
 
 // NewThemeServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -164,40 +166,40 @@ type ThemeServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewThemeServiceHandler(svc ThemeServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	themeServiceMethods := v1.File_numen_v1_theme_proto.Services().ByName("ThemeService").Methods()
-	themeServiceThemesHandler := connect.NewUnaryHandler(
-		ThemeServiceThemesProcedure,
-		svc.Themes,
-		connect.WithSchema(themeServiceMethods.ByName("Themes")),
+	themeServiceListThemesHandler := connect.NewUnaryHandler(
+		ThemeServiceListThemesProcedure,
+		svc.ListThemes,
+		connect.WithSchema(themeServiceMethods.ByName("ListThemes")),
 		connect.WithHandlerOptions(opts...),
 	)
-	themeServiceThemeHandler := connect.NewUnaryHandler(
-		ThemeServiceThemeProcedure,
-		svc.Theme,
-		connect.WithSchema(themeServiceMethods.ByName("Theme")),
+	themeServiceReadThemeHandler := connect.NewUnaryHandler(
+		ThemeServiceReadThemeProcedure,
+		svc.ReadTheme,
+		connect.WithSchema(themeServiceMethods.ByName("ReadTheme")),
 		connect.WithHandlerOptions(opts...),
 	)
-	themeServiceChooseHandler := connect.NewUnaryHandler(
-		ThemeServiceChooseProcedure,
-		svc.Choose,
-		connect.WithSchema(themeServiceMethods.ByName("Choose")),
+	themeServiceWriteAppearanceHandler := connect.NewUnaryHandler(
+		ThemeServiceWriteAppearanceProcedure,
+		svc.WriteAppearance,
+		connect.WithSchema(themeServiceMethods.ByName("WriteAppearance")),
 		connect.WithHandlerOptions(opts...),
 	)
-	themeServiceChangedHandler := connect.NewServerStreamHandler(
-		ThemeServiceChangedProcedure,
-		svc.Changed,
-		connect.WithSchema(themeServiceMethods.ByName("Changed")),
+	themeServiceWatchThemesHandler := connect.NewServerStreamHandler(
+		ThemeServiceWatchThemesProcedure,
+		svc.WatchThemes,
+		connect.WithSchema(themeServiceMethods.ByName("WatchThemes")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/numen.v1.ThemeService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case ThemeServiceThemesProcedure:
-			themeServiceThemesHandler.ServeHTTP(w, r)
-		case ThemeServiceThemeProcedure:
-			themeServiceThemeHandler.ServeHTTP(w, r)
-		case ThemeServiceChooseProcedure:
-			themeServiceChooseHandler.ServeHTTP(w, r)
-		case ThemeServiceChangedProcedure:
-			themeServiceChangedHandler.ServeHTTP(w, r)
+		case ThemeServiceListThemesProcedure:
+			themeServiceListThemesHandler.ServeHTTP(w, r)
+		case ThemeServiceReadThemeProcedure:
+			themeServiceReadThemeHandler.ServeHTTP(w, r)
+		case ThemeServiceWriteAppearanceProcedure:
+			themeServiceWriteAppearanceHandler.ServeHTTP(w, r)
+		case ThemeServiceWatchThemesProcedure:
+			themeServiceWatchThemesHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -207,18 +209,18 @@ func NewThemeServiceHandler(svc ThemeServiceHandler, opts ...connect.HandlerOpti
 // UnimplementedThemeServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedThemeServiceHandler struct{}
 
-func (UnimplementedThemeServiceHandler) Themes(context.Context, *connect.Request[v1.ThemesRequest]) (*connect.Response[v1.ThemesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ThemeService.Themes is not implemented"))
+func (UnimplementedThemeServiceHandler) ListThemes(context.Context, *connect.Request[v1.ListThemesRequest]) (*connect.Response[v1.ListThemesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ThemeService.ListThemes is not implemented"))
 }
 
-func (UnimplementedThemeServiceHandler) Theme(context.Context, *connect.Request[v1.ThemeRequest]) (*connect.Response[v1.ThemeResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ThemeService.Theme is not implemented"))
+func (UnimplementedThemeServiceHandler) ReadTheme(context.Context, *connect.Request[v1.ReadThemeRequest]) (*connect.Response[v1.ReadThemeResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ThemeService.ReadTheme is not implemented"))
 }
 
-func (UnimplementedThemeServiceHandler) Choose(context.Context, *connect.Request[v1.ChooseRequest]) (*connect.Response[v1.ChooseResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ThemeService.Choose is not implemented"))
+func (UnimplementedThemeServiceHandler) WriteAppearance(context.Context, *connect.Request[v1.WriteAppearanceRequest]) (*connect.Response[v1.WriteAppearanceResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ThemeService.WriteAppearance is not implemented"))
 }
 
-func (UnimplementedThemeServiceHandler) Changed(context.Context, *connect.Request[v1.ChangedRequest], *connect.ServerStream[v1.ChangedResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ThemeService.Changed is not implemented"))
+func (UnimplementedThemeServiceHandler) WatchThemes(context.Context, *connect.Request[v1.WatchThemesRequest], *connect.ServerStream[v1.WatchThemesResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ThemeService.WatchThemes is not implemented"))
 }

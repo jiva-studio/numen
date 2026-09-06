@@ -3,7 +3,7 @@ package ocr
 import (
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 )
 
 // The artifact is plain text with the pages marked in it:
@@ -26,8 +26,8 @@ const (
 	pageStart = "\x0c"
 )
 
-// A Mark is a page of the artifact, at the offset its prose begins.
-type Mark struct {
+// A PageStart is a page of the artifact, at the offset its prose begins.
+type PageStart struct {
 	Offset int
 }
 
@@ -40,9 +40,9 @@ type Mark struct {
 // A box and a part are both placed in the prose, which is what Read gives back.
 // The mark and the newline closing it are bookkeeping and are counted in none of
 // them.
-func Write(pages []Page) ([]byte, []lit.Box, []Part) {
+func Write(pages []Page) ([]byte, []highlight.Box, []Part) {
 	var out strings.Builder
-	var boxes []lit.Box
+	var boxes []highlight.Box
 	var parts []Part
 	prose := 0
 	for _, page := range pages {
@@ -55,7 +55,7 @@ func Write(pages []Page) ([]byte, []lit.Box, []Part) {
 				prose += len(blockGap)
 			}
 			boxes = append(boxes, within(page, block, prose)...)
-			if block.Head && block.Text != "" {
+			if block.Heading && block.Text != "" {
 				parts = append(parts, Part{Start: prose, Length: len(block.Text), Depth: block.Depth})
 			}
 			out.WriteString(block.Text)
@@ -67,24 +67,25 @@ func Write(pages []Page) ([]byte, []lit.Box, []Part) {
 	return []byte(out.String()), boxes, parts
 }
 
-// within is where each span of a block sits: at its offset from base in the
+// within is where each stretch of a block sits: at its offset from base in the
 // prose, and over the fraction of the page its rectangle covers. A page nothing
 // was measured on gives no boxes, having no size to take a fraction of.
-func within(page Page, block Block, base int) []lit.Box {
+func within(page Page, block Block, base int) []highlight.Box {
 	if page.Size.X <= 0 || page.Size.Y <= 0 {
 		return nil
 	}
 	wide, high := float32(page.Size.X), float32(page.Size.Y)
-	boxes := make([]lit.Box, 0, len(block.Spans))
-	for _, span := range block.Spans {
-		boxes = append(boxes, lit.Box{
-			Page:   page.At,
-			Start:  base + span.Start,
-			Length: span.Length,
-			MinX:   float32(span.Box.Min.X) / wide,
-			MinY:   float32(span.Box.Min.Y) / high,
-			MaxX:   float32(span.Box.Max.X) / wide,
-			MaxY:   float32(span.Box.Max.Y) / high,
+	boxes := make([]highlight.Box, 0, len(block.Stretches))
+	for _, stretch := range block.Stretches {
+		boxes = append(boxes, highlight.Box{
+			Page:    page.Index,
+			Stretch: highlight.Stretch{Start: base + stretch.Start, Length: stretch.Length},
+			Rect: highlight.Rect{
+				MinX: float32(stretch.Box.Min.X) / wide,
+				MinY: float32(stretch.Box.Min.Y) / high,
+				MaxX: float32(stretch.Box.Max.X) / wide,
+				MaxY: float32(stretch.Box.Max.Y) / high,
+			},
 		})
 	}
 	return boxes
@@ -105,14 +106,14 @@ const Note = "\x00"
 // Anything before the first mark is prose belonging to no page, which is what a
 // file written by something else looks like. It is kept, because dropping text
 // silently is worse than naming its page wrongly.
-func Read(raw []byte) (string, []Mark) {
+func Read(raw []byte) (string, []PageStart) {
 	text := withoutNotes(string(raw))
 	if !strings.ContainsRune(text, pageMark) {
 		return text, nil
 	}
 
 	var out strings.Builder
-	var marks []Mark
+	var marks []PageStart
 	rest := text
 	for {
 		before, after, found := strings.Cut(rest, pageStart)
@@ -127,7 +128,7 @@ func Read(raw []byte) (string, []Mark) {
 			break
 		}
 		prose = strings.TrimPrefix(prose, "\n")
-		marks = append(marks, Mark{Offset: out.Len()})
+		marks = append(marks, PageStart{Offset: out.Len()})
 		rest = prose
 	}
 	return out.String(), marks

@@ -172,7 +172,7 @@ func TestWriteOverAFileThatMovedPastWhatWasReadIsRefused(t *testing.T) {
 	path := beside(t, held)
 
 	err := settings.Write(path, []byte(`{"agent": {"use": "gemini"}}`), seen(read))
-	if !errors.Is(err, port.ErrChanged) {
+	if !errors.Is(err, port.ErrStale) {
 		t.Fatalf("refused with %v, wanted the file to have moved past what was read", err)
 	}
 

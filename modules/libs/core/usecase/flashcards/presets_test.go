@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -42,8 +42,8 @@ func TestADeckIsScheduledByThePresetItNames(t *testing.T) {
 	if len(held.Problems) != 0 {
 		t.Errorf("problems = %v", held.Problems)
 	}
-	if held.Preset.MinutesADay != 20 || held.Preset.NewADay != 8 || held.Preset.ReviewsADay != 45 {
-		t.Errorf("preset = %+v", held.Preset)
+	if held.Settings.MinutesADay != 20 || held.Settings.NewADay != 8 || held.Settings.ReviewsADay != 45 {
+		t.Errorf("preset = %+v", held.Settings)
 	}
 }
 
@@ -59,8 +59,8 @@ func TestADeckNamingNoPreset(t *testing.T) {
 	if held.Path != "" {
 		t.Errorf("read from %q", held.Path)
 	}
-	if !reflect.DeepEqual(held.Preset, history.Defaults()) {
-		t.Errorf("preset = %+v", held.Preset)
+	if !reflect.DeepEqual(held.Settings, review.Defaults()) {
+		t.Errorf("preset = %+v", held.Settings)
 	}
 }
 
@@ -82,8 +82,8 @@ func TestADeckWhosePresetLinkHasNoRole(t *testing.T) {
 	if held.Path != "" {
 		t.Errorf("read from %q", held.Path)
 	}
-	if !reflect.DeepEqual(held.Preset, history.Defaults()) {
-		t.Errorf("preset = %+v", held.Preset)
+	if !reflect.DeepEqual(held.Settings, review.Defaults()) {
+		t.Errorf("preset = %+v", held.Settings)
 	}
 	if len(held.Problems) != 1 || !strings.Contains(held.Problems[0], "no role") {
 		t.Fatalf("problems = %v", held.Problems)
@@ -102,7 +102,7 @@ func TestADeckWhosePresetNoteIsGoneStandsOnTheDefaults(t *testing.T) {
 		"Sanskrit.md":    preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/Roots.md": deckOf("Sanskrit", 20, 0),
 	})
-	if got := unseen(s.sittingAt(t, today, saturday)); got != 2 {
+	if got := unseen(s.sessionAt(t, today, saturday)); got != 2 {
 		t.Fatalf("under the preset the day was asked %d new cards, want 2", got)
 	}
 
@@ -115,15 +115,15 @@ func TestADeckWhosePresetNoteIsGoneStandsOnTheDefaults(t *testing.T) {
 	if held.Path != "" {
 		t.Errorf("read from %q", held.Path)
 	}
-	if !reflect.DeepEqual(held.Preset, history.Defaults()) {
-		t.Errorf("preset = %+v", held.Preset)
+	if !reflect.DeepEqual(held.Settings, review.Defaults()) {
+		t.Errorf("preset = %+v", held.Settings)
 	}
 	if len(held.Problems) != 1 || !strings.Contains(held.Problems[0], "Sanskrit") {
 		t.Errorf("problems = %v, want the one naming the note that is gone", held.Problems)
 	}
 	// The defaults are steered by their minutes, and twenty of them hold every
 	// card the deck has left.
-	if got := unseen(s.sittingAt(t, today, saturday)); got != 20 {
+	if got := unseen(s.sessionAt(t, today, saturday)); got != 20 {
 		t.Errorf("on the defaults the day was asked %d new cards, want 20", got)
 	}
 }
@@ -139,7 +139,7 @@ func TestADeckNamingTwoPresetsIsHeldToTheFirstsBudget(t *testing.T) {
 		"decks/Roots.md": deckNaming([]string{"Few", "Many"}, 20, 0),
 	})
 
-	if got := unseen(s.sittingAt(t, today, saturday)); got != 2 {
+	if got := unseen(s.sessionAt(t, today, saturday)); got != 2 {
 		t.Errorf("the day was asked %d new cards, want the two the first preset keeps", got)
 	}
 }
@@ -157,14 +157,14 @@ func TestAPresetWrittenWithNoLevellingHandsBackItsFingerprint(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	settings := held.Preset
+	settings := held.Settings
 	settings.MinutesADay = 35
 
-	at, err := presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, held.Ref)
+	at, err := presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, held.Fingerprint)
 	if !errors.Is(err, note.ErrUnlevelled) {
 		t.Fatalf("a levelling that failed came back as %v", err)
 	}
-	if at == (domain.FileRef{}) {
+	if at.IsZero() {
 		t.Fatal("the write handed back no fingerprint")
 	}
 
@@ -191,9 +191,9 @@ func TestAPresetLeftAloneIsNotAnUnlevelledWrite(t *testing.T) {
 	}
 	// A fingerprint no file answers to, which is the note having moved on since
 	// the caller read it.
-	stale := held.Ref
+	stale := held.Fingerprint
 	stale.Size += 100
-	settings := held.Preset
+	settings := held.Settings
 	settings.MinutesADay = 35
 
 	_, err = s.presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, stale)
@@ -237,8 +237,8 @@ func TestADeckNamingANoteThatIsNotAPreset(t *testing.T) {
 	if held.Path != "" {
 		t.Errorf("read from %q", held.Path)
 	}
-	if !reflect.DeepEqual(held.Preset, history.Defaults()) {
-		t.Errorf("preset = %+v", held.Preset)
+	if !reflect.DeepEqual(held.Settings, review.Defaults()) {
+		t.Errorf("preset = %+v", held.Settings)
 	}
 	if len(held.Problems) != 1 || !strings.Contains(held.Problems[0], "not a preset") {
 		t.Errorf("problems = %v", held.Problems)
@@ -261,8 +261,8 @@ func TestADeckNamingTwoPresets(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held.Preset.NewADay != 8 {
-		t.Errorf("new a day = %d", held.Preset.NewADay)
+	if held.Settings.NewADay != 8 {
+		t.Errorf("new a day = %d", held.Settings.NewADay)
 	}
 	if len(held.Problems) != 1 || !strings.Contains(held.Problems[0], "more than one preset") {
 		t.Errorf("problems = %v", held.Problems)
@@ -280,8 +280,8 @@ var settled = map[string]string{
 }
 
 // minutes is a preset steered by how long a day runs.
-func minutes() history.Preset {
-	p := history.Defaults()
+func minutes() review.Preset {
+	p := review.Defaults()
 	p.MinutesADay, p.NewADay, p.ReviewsADay, p.Retention = 35, 8, 45, 0.87
 	return p
 }
@@ -296,7 +296,7 @@ func frontmatter(t *testing.T, s vaulted, path string) map[string]any {
 	if _, err := markdown.Open(raw); err != nil {
 		t.Fatalf("the note cannot be opened after the write: %v\n%s", err, raw)
 	}
-	n := markdown.Parse(domain.FileRef{Path: path}, raw)
+	n := markdown.Parse(domain.Fingerprint{Path: path}, raw)
 	if n.FrontmatterErr != "" {
 		t.Fatalf("the frontmatter cannot be read after the write: %s\n%s", n.FrontmatterErr, raw)
 	}
@@ -309,7 +309,7 @@ func TestAWriteLeavesWhatItDoesNotOwn(t *testing.T) {
 	t.Parallel()
 	s := opened(t, settled)
 
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileRef{}); err != nil {
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -352,7 +352,7 @@ func TestAWriteIntoAnIndentedBlock(t *testing.T) {
 			"  goal: minutes_a_day\n  minutes_a_day: 20\n  colour: green\n---\n\n# Sanskrit\n",
 	})
 
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileRef{}); err != nil {
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -369,8 +369,8 @@ func TestAWriteIntoAnIndentedBlock(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held.Preset.MinutesADay != 35 {
-		t.Errorf("the note reads back at %d minutes a day", held.Preset.MinutesADay)
+	if held.Settings.MinutesADay != 35 {
+		t.Errorf("the note reads back at %d minutes a day", held.Settings.MinutesADay)
 	}
 }
 
@@ -383,7 +383,7 @@ func TestAWriteKeepsTheLineEndingsAndTheMark(t *testing.T) {
 			"minutes_a_day: 20\r\n---\r\n\r\n# Sanskrit\r\n",
 	})
 
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileRef{}); err != nil {
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -407,7 +407,7 @@ func TestASettingOutsideItsBoundsWritesNothing(t *testing.T) {
 
 	p := minutes()
 	p.Retention = 1.5
-	_, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileRef{})
+	_, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.Fingerprint{})
 	if !errors.Is(err, flashcards.ErrOutOfBounds) {
 		t.Fatalf("saving a retention of 1.5 said %v", err)
 	}
@@ -422,7 +422,7 @@ func TestANoteThatIsNotAPresetIsNotWritten(t *testing.T) {
 	s := opened(t, settled)
 	was := read(t, s.vault, "Grammar.md")
 
-	_, err := s.presets.Save(t.Context(), s.vault, "Grammar.md", minutes(), domain.FileRef{})
+	_, err := s.presets.Save(t.Context(), s.vault, "Grammar.md", minutes(), domain.Fingerprint{})
 	if !errors.Is(err, flashcards.ErrNotAPreset) {
 		t.Fatalf("saving into an ordinary note said %v", err)
 	}
@@ -438,7 +438,7 @@ func TestTheLoadComesBackAsItWentIn(t *testing.T) {
 
 	p := minutes()
 	p.Load = map[time.Weekday]int{time.Saturday: 50, time.Sunday: 0}
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileRef{}); err != nil {
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -449,8 +449,8 @@ func TestTheLoadComesBackAsItWentIn(t *testing.T) {
 	if len(held.Problems) != 0 {
 		t.Errorf("problems = %v", held.Problems)
 	}
-	if !reflect.DeepEqual(held.Preset.Load, p.Load) {
-		t.Errorf("load = %v", held.Preset.Load)
+	if !reflect.DeepEqual(held.Settings.Load, p.Load) {
+		t.Errorf("load = %v", held.Settings.Load)
 	}
 }
 
@@ -466,7 +466,7 @@ func TestASaveLeavesTheLoadItCouldNotRead(t *testing.T) {
 
 	p := minutes()
 	p.Load = map[time.Weekday]int{time.Sunday: 0}
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileRef{}); err != nil {
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -502,7 +502,7 @@ func TestASaveLeavesALoadItCouldReadNoneOf(t *testing.T) {
 
 	p := minutes()
 	p.Load = map[time.Weekday]int{time.Sunday: 0}
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileRef{}); err != nil {
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -523,7 +523,7 @@ func TestASaveLeavesALoadThatIsNotAWeek(t *testing.T) {
 
 	p := minutes()
 	p.Load = map[time.Weekday]int{time.Saturday: 50}
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileRef{}); err != nil {
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -538,8 +538,8 @@ func TestAGoalOfADateWritesTheDay(t *testing.T) {
 	s := opened(t, settled)
 
 	p := minutes()
-	p.Goal, p.By = history.GoalDate, time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileRef{}); err != nil {
+	p.Goal, p.By = review.GoalDate, time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -550,8 +550,8 @@ func TestAGoalOfADateWritesTheDay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held.Preset.Goal != history.GoalDate || !held.Preset.By.Equal(p.By) {
-		t.Errorf("preset = %+v", held.Preset)
+	if held.Settings.Goal != review.GoalDate || !held.Settings.By.Equal(p.By) {
+		t.Errorf("preset = %+v", held.Settings)
 	}
 }
 
@@ -563,8 +563,8 @@ func TestTheRuleNotNamedKeepsItsValue(t *testing.T) {
 	s := opened(t, settled)
 
 	p := minutes()
-	p.Rule, p.Interval, p.Retention = history.RuleRetention, 45, 0.87
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileRef{}); err != nil {
+	p.Rule, p.Interval, p.Retention = review.RuleRetention, 45, 0.87
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -582,8 +582,8 @@ func TestTheRuleNotNamedKeepsItsValue(t *testing.T) {
 	if len(back.Problems) != 0 {
 		t.Errorf("problems = %v", back.Problems)
 	}
-	if back.Preset.Rule != history.RuleRetention || back.Preset.Interval != 45 {
-		t.Errorf("preset = %+v", back.Preset)
+	if back.Settings.Rule != review.RuleRetention || back.Settings.Interval != 45 {
+		t.Errorf("preset = %+v", back.Settings)
 	}
 }
 
@@ -608,8 +608,8 @@ func TestAPresetWrittenBeforeTheRuleCountsByTheDefault(t *testing.T) {
 	if len(read.Problems) != 0 {
 		t.Fatalf("problems = %v", read.Problems)
 	}
-	p := read.Preset
-	if p.Rule != history.RuleInterval || p.Interval != history.Defaults().Interval {
+	p := read.Settings
+	if p.Rule != review.RuleInterval || p.Interval != review.Defaults().Interval {
 		t.Errorf("a file naming no rule was read as %q at %d days", p.Rule, p.Interval)
 	}
 
@@ -617,7 +617,7 @@ func TestAPresetWrittenBeforeTheRuleCountsByTheDefault(t *testing.T) {
 	// by twenty-one.
 	now := time.Date(2026, 8, 31, 9, 0, 0, 0, time.Local)
 	last := now.AddDate(0, 0, -1)
-	at := map[history.CardFace]history.Schedule{
+	at := map[review.CardFaceID]review.Schedule{
 		{Card: "near", Face: "Recognise"}: {
 			Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16,
 		},
@@ -625,13 +625,13 @@ func TestAPresetWrittenBeforeTheRuleCountsByTheDefault(t *testing.T) {
 			Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21,
 		},
 	}
-	if p.Learned(at[history.CardFace{Card: "near", Face: "Recognise"}], now) {
+	if p.Learned(at[review.CardFaceID{Card: "near", Face: "Recognise"}], now) {
 		t.Error("a card face sixteen days off is learned at an interval of twenty-one")
 	}
 
 	// And the counts the window draws off the projection say the same.
-	run := history.Simulation{
-		By: history.NewFSRSAt(p.Retention), Day: today, Cost: history.DefaultCost, Days: 1,
+	run := review.Simulation{
+		By: review.NewFSRSAt(p.Retention), Day: today, Cost: review.DefaultCost, Days: 1,
 	}
 	ran, err := run.Run(t.Context(), now, p, at, 0)
 	if err != nil {
@@ -657,7 +657,7 @@ func TestASaveRefusesANoteOverTheBound(t *testing.T) {
 	})
 	was := read(t, s.vault, "Sanskrit.md")
 
-	_, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileRef{})
+	_, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.Fingerprint{})
 	if !errors.Is(err, note.ErrTooLarge) {
 		t.Fatalf("saving into a note of %d bytes said %v", len(was), err)
 	}
@@ -698,10 +698,10 @@ func TestASaveLeavesTheSettingsItCouldNotRead(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			settings := held.Preset
+			settings := held.Settings
 			settings.MinutesADay = 35
 			if _, err := s.presets.Save(
-				t.Context(), s.vault, "Sanskrit.md", settings, domain.FileRef{}); err != nil {
+				t.Context(), s.vault, "Sanskrit.md", settings, domain.Fingerprint{}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -729,10 +729,10 @@ func TestASaveWritesTheSettingThePersonMoved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	settings := held.Preset
+	settings := held.Settings
 	settings.EvenLoad = false
 	if _, err := s.presets.Save(
-		t.Context(), s.vault, "Sanskrit.md", settings, domain.FileRef{}); err != nil {
+		t.Context(), s.vault, "Sanskrit.md", settings, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -752,7 +752,7 @@ func TestASaveOfWhatTheNoteAlreadySaysWritesNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := s.presets.Save(
-		t.Context(), s.vault, "Sanskrit.md", held.Preset, domain.FileRef{}); err != nil {
+		t.Context(), s.vault, "Sanskrit.md", held.Settings, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -772,7 +772,7 @@ func TestADayTheBlockNamesIsRewrittenWhereItStands(t *testing.T) {
 
 	p := minutes()
 	p.Load = map[time.Weekday]int{time.Wednesday: 30, time.Monday: 80}
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileRef{}); err != nil {
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -785,8 +785,8 @@ func TestADayTheBlockNamesIsRewrittenWhereItStands(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(held.Preset.Load, p.Load) {
-		t.Errorf("load = %v, want %v", held.Preset.Load, p.Load)
+	if !reflect.DeepEqual(held.Settings.Load, p.Load) {
+		t.Errorf("load = %v, want %v", held.Settings.Load, p.Load)
 	}
 }
 
@@ -802,7 +802,7 @@ func TestADayNamedTwiceIsSavedWhereTheReadTakesIt(t *testing.T) {
 
 	p := minutes()
 	p.Load = map[time.Weekday]int{time.Monday: 80}
-	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileRef{}); err != nil {
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -810,7 +810,7 @@ func TestADayNamedTwiceIsSavedWhereTheReadTakesIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := held.Preset.Load[time.Monday]; got != 80 {
+	if got := held.Settings.Load[time.Monday]; got != 80 {
 		t.Errorf("monday came back at %d, and the save put it at 80\n%s",
 			got, read(t, s.vault, "Sanskrit.md"))
 	}

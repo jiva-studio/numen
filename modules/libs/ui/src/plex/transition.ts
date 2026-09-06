@@ -2,10 +2,11 @@
 import { onScopeDispose, ref, shallowRef, watch, type Ref } from 'vue'
 import { arrangePlex, easeOut, interpolatePlex } from './arrange'
 import type { ArrangeInput } from './arrange'
-import type { PlexFrame, PlexNeighbourhood } from './model'
-import { browserEnvironment, type Environment } from '../lib/environment'
+import type { PlexFrame } from './frame'
+import type { PlexNeighbourhood } from './neighbourhood'
+import { browserClock, type Clock } from '../lib/clock'
 
-export { browserEnvironment, type Environment }
+export { browserClock, type Clock }
 
 export interface PlexTransition {
   readonly frame: Ref<PlexFrame>
@@ -20,7 +21,7 @@ export function usePlexTransition(
   neighbourhood: () => PlexNeighbourhood,
   input: () => ArrangeInput | undefined,
   duration: () => number,
-  environment: Environment = browserEnvironment,
+  clock: Clock = browserClock,
 ): PlexTransition {
   const target = () => arrangePlex(neighbourhood(), input())
 
@@ -30,7 +31,7 @@ export function usePlexTransition(
   let handle: number | null = null
 
   const stop = () => {
-    if (handle !== null) environment.cancel(handle)
+    if (handle !== null) clock.cancel(handle)
     handle = null
     moving.value = false
   }
@@ -56,14 +57,14 @@ export function usePlexTransition(
       const t = Math.min(1, (now - started) / ms)
       frame.value = interpolatePlex(from, to, easeOut(t), input()?.options)
       if (t < 1) {
-        handle = environment.schedule(step)
+        handle = clock.schedule(step)
       } else {
         handle = null
         moving.value = false
       }
     }
 
-    handle = environment.schedule(step)
+    handle = clock.schedule(step)
   }
 
   watch(

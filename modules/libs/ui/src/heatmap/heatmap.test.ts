@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { days, fits, names, NOTHING, ROWS, weighs } from './heatmap'
+import { days, fits, NOTHING, ROWS, weighs } from './heatmap'
+import { dayNamed } from '../calendar/day'
 import type { Tally } from './heatmap'
 
 describe('how much of a year fits', () => {
@@ -147,7 +148,7 @@ describe('the days a grid draws', () => {
   it('reads what was done on each day it draws', () => {
     const on = new Date('2026-08-29T12:00:00')
     const counted = answeredOn([
-      [names(on), 12],
+      [dayNamed(on), 12],
       ['2026-08-28', 60],
     ])
     const shown = days(4, on, counted)
@@ -175,12 +176,5 @@ describe('how dark a day is drawn', () => {
     expect(weighs(49)).toBe(3)
     expect(weighs(50)).toBe(4)
     expect(weighs(5000)).toBe(4)
-  })
-})
-
-describe('the name of a day', () => {
-  it('is the year, the month and the day, each padded', () => {
-    expect(names(new Date(2026, 0, 5))).toBe('2026-01-05')
-    expect(names(new Date(2026, 11, 31))).toBe('2026-12-31')
   })
 })

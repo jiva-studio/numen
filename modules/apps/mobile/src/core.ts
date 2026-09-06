@@ -7,26 +7,32 @@
 import { registerPlugin } from '@capacitor/core'
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { VaultService } from '@numen/protocol'
+import { NoteService, VaultService } from '@numen/protocol'
 
-interface Core {
+interface CorePlugin {
   start(): Promise<{ port: number; dir: string }>
 }
 
-const NumenCore = registerPlugin<Core>('NumenCore')
+const NumenCore = registerPlugin<CorePlugin>('NumenCore')
 
 /** Where the core is, and what it holds. */
-export interface Reached {
+export interface Core {
   port: number
   dir: string
-  vault: ReturnType<typeof client>
+  /** The vault itself: what it is, and what has changed in it. */
+  vault: ReturnType<typeof vaultClient>
+  /** Its notes: what one holds, what it is joined to, and how one is written. */
+  notes: ReturnType<typeof noteClient>
 }
 
-const client = (port: number) =>
-  createClient(VaultService, createConnectTransport({ baseUrl: `http://127.0.0.1:${port}` }))
+const reaching = (port: number) =>
+  createConnectTransport({ baseUrl: `http://127.0.0.1:${port}` })
 
-/** Start the core and answer with a client onto the vault it opened. */
-export async function reach(): Promise<Reached> {
+const vaultClient = (port: number) => createClient(VaultService, reaching(port))
+const noteClient = (port: number) => createClient(NoteService, reaching(port))
+
+/** Start the core and answer with clients onto the vault it opened. */
+export async function reach(): Promise<Core> {
   const { port, dir } = await NumenCore.start()
-  return { port, dir, vault: client(port) }
+  return { port, dir, vault: vaultClient(port), notes: noteClient(port) }
 }

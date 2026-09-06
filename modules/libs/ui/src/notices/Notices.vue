@@ -8,27 +8,27 @@
  *
  * It takes no room from what it covers, and what each card says is the caller's.
  */
-import { computed, nextTick, ref, useTemplateRef, watch, watchEffect } from 'vue'
+import { computed, nextTick, ref, shallowRef, useTemplateRef, watch, watchEffect } from 'vue'
 import Activity from '../activity/Activity.vue'
-import Announce from './Announce.vue'
-import { remainingWord } from '../activity/model'
-import { useAnnouncer } from './announcing'
-import { useHeld } from './held'
+import LiveRegions from './LiveRegions.vue'
+import { remainingWord } from '../activity/tally'
+import { useAnnouncer } from './announcer'
+import { useNoticeStack } from './stack'
 import {
   arrivals,
   dwellOf,
   finished,
   folded,
   measured,
+  readable,
   remembered,
   ROOM,
   showing,
-  standing,
   tallyOf,
   WAIT,
   type Movement,
   type Notice,
-} from './model'
+} from './notice'
 
 const props = withDefaults(
   defineProps<{
@@ -67,12 +67,16 @@ const emit = defineEmits<{
 }>()
 
 /** How fast each count is moving. This is the clock the rate is read against. */
-const moving = ref<ReadonlyMap<string, Movement>>(new Map())
+const moving = shallowRef<ReadonlyMap<string, Movement>>(new Map())
+
+/** The ones a person has put away, and when each of the rest arrived. */
+const away = shallowRef<ReadonlySet<string>>(new Set())
+const arrived = shallowRef<ReadonlyMap<string, number>>(new Map())
 
 const stack = useTemplateRef<HTMLElement>('stack')
 
-/** What a person has put away, and how long the corner has been held for. */
-const { away, arrived, now, read, beat, enters, leaves, holds, lets } = useHeld(
+/** How long the corner has been held for, and the moment a card is read against. */
+const { now, read, beat, enters, leaves, holds, lets } = useNoticeStack(
   stack,
   () => props.clock(),
   () => props.hidden(),
@@ -88,7 +92,7 @@ watch(
     arrived.value = arrivals(arrived.value, all, read.value)
     away.value = remembered(away.value, all)
     moving.value = measured(moving.value, all, now.value)
-    const here = new Set(standing(all).map((one) => one.id))
+    const here = new Set(readable(all).map((one) => one.id))
     for (const id of [...forgotten]) if (!here.has(id)) forgotten.delete(id)
   },
   { immediate: true },
@@ -115,10 +119,10 @@ watch(drawn, (all) => {
   if (all.length <= props.room) opened.value = false
 })
 
-/** Whether anything standing has not yet lasted long enough to be drawn. */
+/** Whether anything readable has not yet lasted long enough to be drawn. */
 const coming = computed(() => {
   const shown = new Set(drawn.value.map((one) => one.id))
-  return standing(props.notices).some(
+  return readable(props.notices).some(
     (one) => one.stay !== 'read' && !away.value.has(one.id) && !shown.has(one.id),
   )
 })
@@ -178,7 +182,7 @@ const { told, cried } = useAnnouncer(() => drawn.value)
 
 <template>
   <div class="notices numen font-sans text-small">
-    <Announce :told="told" :cried="cried" />
+    <LiveRegions :told="told" :cried="cried" />
 
     <aside
       v-if="folds.shown.length || folds.over"
@@ -220,7 +224,7 @@ const { told, cried } = useAnnouncer(() => drawn.value)
           <button
             :ref="(way) => holdWay(one.id, way)"
             type="button"
-            class="notice__away ring-numen"
+            class="notice__away outline-none ring-numen"
             :aria-label="`${putAway}: ${one.says}`"
             @click="put(one.id)"
           >
@@ -250,7 +254,7 @@ const { told, cried } = useAnnouncer(() => drawn.value)
   gap: var(--gap);
 }
 
-/* As wide as it needs, and never wider than a narrow window. */
+/* One width whatever it says, and never wider than a narrow window. */
 .notice {
   --room: 24rem;
 
@@ -262,10 +266,10 @@ const { told, cried } = useAnnouncer(() => drawn.value)
   max-inline-size: calc(100vw - 2 * var(--numen-inset-wide));
   padding-block: 0.5rem;
   padding-inline: 0.75rem 0.5rem;
-  border: var(--numen-stroke) solid var(--numen-node-border);
+  border: var(--numen-stroke) solid var(--numen-rule);
   border-radius: var(--numen-radius-panel);
-  background: var(--numen-node-bg);
-  color: var(--numen-node-fg);
+  background: var(--numen-raised);
+  color: var(--numen-ink);
   box-shadow: var(--numen-shadow-card);
   text-align: start;
 }

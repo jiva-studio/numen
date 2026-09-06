@@ -11,13 +11,12 @@
  */
 :root {
   --numen-surface: light-dark(#fdf6e3, #002b36);
-  --numen-node-bg: light-dark(#eee8d5, #073642);
-  --numen-node-fg: light-dark(#586e75, #93a1a1);
-  --numen-node-border: light-dark(#ded8c5, #0f4653);
+  --numen-raised: light-dark(#eee8d5, #073642);
+  --numen-ink: light-dark(#586e75, #93a1a1);
+  --numen-rule: light-dark(#ded8c5, #0f4653);
 
-  --numen-focus-bg: light-dark(#268bd2, #268bd2);
-  --numen-focus-fg: light-dark(#fdf6e3, #002b36);
-  --numen-focus-border: light-dark(#268bd2, #268bd2);
+  --numen-accent: light-dark(#268bd2, #268bd2);
+  --numen-accent-ink: light-dark(#fdf6e3, #002b36);
 
   /* Blue is what the node in hand is painted, so a parent takes cyan and the
      four seats stand apart from it. */

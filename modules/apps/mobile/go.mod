@@ -1,9 +1,11 @@
 module github.com/jiva-studio/numen/modules/apps/mobile
 
-go 1.26.5
+go 1.26.8
 
 require (
 	github.com/jiva-studio/numen/modules/libs/core v0.0.0
+	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
+	github.com/quasilyte/go-ruleguard/dsl v0.3.23
 	golang.org/x/mobile v0.0.0-20260821190718-4776eadac327
 )
 
@@ -23,7 +25,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
 	github.com/icza/bitio v1.1.0 // indirect
-	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0 // indirect
 	github.com/jolestar/go-commons-pool/v2 v2.1.2 // indirect
 	github.com/klippa-app/go-pdfium v1.19.8 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect

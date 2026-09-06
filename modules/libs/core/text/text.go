@@ -20,7 +20,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/cutting"
+	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/epub"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -38,17 +38,17 @@ type Document struct {
 
 	// Parts are where the source names something, and are what chunks are cut
 	// inside so that one never runs across a part into the next.
-	Parts []cutting.Part
+	Parts []chunking.PartStart
 
 	// named and paged are what the source calls the place an offset falls in,
 	// in the vocabulary of its own format. Both ascend by offset, and either may
 	// be empty: half the books read name neither.
-	named []mark
-	paged []mark
+	named []namedPlace
+	paged []namedPlace
 }
 
-// A mark is somewhere the source gives a name to.
-type mark struct {
+// A namedPlace is somewhere the source gives a name to.
+type namedPlace struct {
 	Offset int
 	Name   string
 }
@@ -86,22 +86,22 @@ func (d *Document) Opens(offset int) []string {
 	return names
 }
 
-// sheet is what a page of a file is called: where it stands in it.
+// page is what a page of a file is called: where it stands in it.
 //
 // A person is told the number a viewer opens at, so there is one number and it
 // is the one on the screen. What the paper printed is a second number for the
 // same page, and a person shown both has to work out which is being talked
 // about.
-func sheet(at int) string {
+func page(at int) string {
 	return fmt.Sprintf("page %d of the file", at+1)
 }
 
-func preceding(marks []mark, offset int) int {
-	return sort.Search(len(marks), func(i int) bool { return marks[i].Offset > offset }) - 1
+func preceding(namedPlaces []namedPlace, offset int) int {
+	return sort.Search(len(namedPlaces), func(i int) bool { return namedPlaces[i].Offset > offset }) - 1
 }
 
-// Readers are the names of what takes text out of a file. A name is part of a
-// source's recipe and changes when the text or the offsets it produces do.
+// The names of what takes text out of a file. A name is part of a source's
+// recipe and changes when the text or the offsets it produces do.
 const (
 	ReaderNote      = "note-1"
 	ReaderEPUB      = "epub-1"
@@ -109,9 +109,16 @@ const (
 	ReaderRecording = "recording-1"
 )
 
+// Readers is every one of them, and is what a list of the recipes in use is
+// read from. A reader left out of such a list is a reader whose sources owe
+// their text on every run.
+func Readers() []string {
+	return []string{ReaderNote, ReaderEPUB, ReaderPDF, ReaderRecording}
+}
+
 // ReaderName names what would read this file. A file nothing reads has no name,
 // and nothing asks for its text.
-func ReaderName(ref domain.FileRef) (string, bool) {
+func ReaderName(ref domain.Fingerprint) (string, bool) {
 	if ref.Kind == domain.KindNote {
 		return ReaderNote, true
 	}
@@ -137,7 +144,17 @@ func ReaderName(ref domain.FileRef) (string, bool) {
 // archive at a text offset returns compressed noise.
 //
 // One format is read by a library, which is given rather than reached for.
-func Read(ctx context.Context, docs port.Documents, ref domain.FileRef, raw []byte) (*Document, error) {
+//
+// The bytes are somebody else's: a book in a synced vault was put there by
+// whoever synced it, and a library taking text out of it is a library being
+// fed. A panic inside one is answered here as an unreadable file, so that one
+// crafted book costs one file and not the process the window runs in.
+func Read(ctx context.Context, docs port.TextExtractor, ref domain.Fingerprint, raw []byte) (doc *Document, err error) {
+	defer func() {
+		if raised := recover(); raised != nil {
+			doc, err = nil, fmt.Errorf("%w: reading %s raised %v", ErrUnreadable, ref.Path, raised)
+		}
+	}()
 	reader, ok := ReaderName(ref)
 	if !ok {
 		return nil, ErrUnreadable
@@ -167,8 +184,8 @@ func fromEPUB(raw []byte) (*Document, error) {
 	}
 	doc := &Document{Text: book.Text}
 	for _, p := range book.Parts {
-		doc.Parts = append(doc.Parts, cutting.Part{Title: p.Title, Offset: p.Offset})
-		doc.named = append(doc.named, mark{Offset: p.Offset, Name: p.Title})
+		doc.Parts = append(doc.Parts, chunking.PartStart{Title: p.Title, Offset: p.Offset})
+		doc.named = append(doc.named, namedPlace{Offset: p.Offset, Name: p.Title})
 	}
 	// A book made for a screen has no pages of its own, and those it names are
 	// the printed edition it was set from. That is the only name they have.
@@ -176,14 +193,14 @@ func fromEPUB(raw []byte) (*Document, error) {
 		if p.Label == "" {
 			continue
 		}
-		doc.paged = append(doc.paged, mark{Offset: p.Offset, Name: p.Label})
+		doc.paged = append(doc.paged, namedPlace{Offset: p.Offset, Name: p.Label})
 	}
 	return doc, nil
 }
 
 // fromPages is a document whose text is laid out on printed pages, and whose
 // pages are named by where they stand.
-func fromPages(ctx context.Context, docs port.Documents, raw []byte) (*Document, error) {
+func fromPages(ctx context.Context, docs port.TextExtractor, raw []byte) (*Document, error) {
 	book, err := docs.Read(ctx, raw)
 	if err != nil {
 		if ctx.Err() != nil {
@@ -194,10 +211,10 @@ func fromPages(ctx context.Context, docs port.Documents, raw []byte) (*Document,
 	doc := &Document{Text: book.Text}
 	for _, p := range book.Parts {
 		doc.Parts = append(doc.Parts, p)
-		doc.named = append(doc.named, mark{Offset: p.Offset, Name: p.Title})
+		doc.named = append(doc.named, namedPlace{Offset: p.Offset, Name: p.Title})
 	}
 	for i, at := range book.Pages {
-		doc.paged = append(doc.paged, mark{Offset: at, Name: sheet(i)})
+		doc.paged = append(doc.paged, namedPlace{Offset: at, Name: page(i)})
 	}
 	return doc, nil
 }

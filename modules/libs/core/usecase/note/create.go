@@ -4,7 +4,6 @@ import (
 	"context"
 	pathpkg "path"
 	"strings"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
@@ -19,12 +18,21 @@ import (
 // carry whole is written into the frontmatter, and nothing else writes that key.
 type Create struct {
 	Writers port.VaultWriters
-	Names   port.NoteQueries
+	Names   NameQueries
 	// Index brings the named notes up to date, so that a caller which creates
 	// a note and searches for it in the next breath finds it.
-	Index func(ctx context.Context, v domain.Vault, paths []string) error
+	Index Levels
 	// Now is when this is happening. An identifier carries it.
-	Now func() time.Time
+	Now port.Clock
+}
+
+// NewCreate is what a note is made through: the vault it is written into, what
+// is asked which names are taken, what brings the new file level in the index,
+// and what time it is.
+func NewCreate(
+	writers port.VaultWriters, names NameQueries, index Levels, now port.Clock,
+) Create {
+	return Create{Writers: writers, Names: names, Index: index, Now: now}
 }
 
 // NewNote is what to make.
@@ -39,62 +47,62 @@ type NewNote struct {
 	Links []domain.Link
 }
 
-// Created is the note that now exists.
-type Created struct {
-	Path       string
-	Identifier string
-	Title      string
+// CreateResult is the note that now exists.
+type CreateResult struct {
+	Path  string
+	ID    string
+	Title string
 	// Shares is the other notes already filed under this name. Creating one
 	// anyway is allowed, and said out loud.
 	Shares []string
 }
 
-func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Created, error) {
+func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (CreateResult, error) {
 	title := strings.TrimSpace(in.Title)
-	name, exact, err := nameOf(title)
+	name, exact, err := domain.Filename(title)
 	if err != nil {
-		return Created{}, err
+		return CreateResult{}, err
 	}
 	path := pathpkg.Join(in.Folder, name+domain.NoteExtension)
 
 	// Before anything is made: a link the note cannot carry leaves no file.
 	for _, link := range in.Links {
 		if err := Writable(link); err != nil {
-			return Created{}, err
+			return CreateResult{}, err
 		}
 	}
 
-	identifier, err := ulid.New(u.now())
+	identifier, err := ulid.New(u.Now())
 	if err != nil {
-		return Created{}, err
+		return CreateResult{}, err
 	}
 
 	content, err := titled(markdown.Create(identifier, in.Body), title, exact)
 	if err != nil {
-		return Created{}, err
+		return CreateResult{}, err
 	}
 	content, err = joined(content, in.Links)
 	if err != nil {
-		return Created{}, err
+		return CreateResult{}, err
 	}
 
-	if err := bounded(path, content, MaxBytes); err != nil {
-		return Created{}, err
+	if err := Bounded(path, len(content), MaxBytes); err != nil {
+		return CreateResult{}, err
 	}
 
 	writer, err := u.Writers.Open(v)
 	if err != nil {
-		return Created{}, err
+		return CreateResult{}, err
 	}
 	// Whether the path was free is the filesystem's to answer, at the moment
 	// the file is made.
 	if err := writer.Create(ctx, path, content); err != nil {
-		return Created{}, err
+		return CreateResult{}, err
 	}
 
 	// The note is on disk from here on, so everything after it answers with
 	// where it is, whether or not it succeeds.
-	made := Created{Path: path, Identifier: identifier, Title: title}
+	made := CreateResult{Path: path, ID: identifier, Title: title}
 	if err := u.index(ctx, v, path); err != nil {
 		return made, err
 	}
@@ -141,18 +149,8 @@ func joined(content []byte, links []domain.Link) ([]byte, error) {
 	return doc.Bytes(), nil
 }
 
-func (u Create) now() time.Time {
-	if u.Now == nil {
-		return time.Now()
-	}
-	return u.Now()
-}
-
 func (u Create) index(ctx context.Context, v domain.Vault, paths ...string) error {
-	if u.Index == nil {
-		return nil
-	}
-	return u.Index(ctx, v, paths)
+	return Levelled(u.Index(ctx, v, paths), paths...)
 }
 
 func without(paths []string, path string) []string {

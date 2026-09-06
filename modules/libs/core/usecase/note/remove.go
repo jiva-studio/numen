@@ -27,11 +27,20 @@ type Remove struct {
 	// Known is what the index holds about each file, and is what says which
 	// sources sit under the path being removed.
 	Known port.SourceQueries
-	Index func(ctx context.Context, v domain.Vault, paths []string) error
+	Index Levels
 }
 
-// Removed says what happened to what was removed and what it leaves behind.
-type Removed struct {
+// NewRemove is what takes a note out of the vault: the vault it is moved
+// within, the links that pointed at it, what the index holds about the files
+// under it, and what brings the path it left level.
+func NewRemove(
+	writers port.VaultWriters, links port.LinkQueries, known port.SourceQueries, index Levels,
+) Remove {
+	return Remove{Writers: writers, Links: links, Known: known, Index: index}
+}
+
+// RemoveResult says what happened to what was removed and what it leaves behind.
+type RemoveResult struct {
 	Path string
 	// Trashed is where it now sits, empty when it was destroyed.
 	Trashed string
@@ -43,8 +52,8 @@ type Removed struct {
 
 // Execute puts the file or the folder in the trash, with everything a folder
 // holds. Destroy takes one note out of the world.
-func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Removed, error) {
-	res := Removed{Path: path}
+func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
+	res := RemoveResult{Path: path}
 
 	went, err := u.Known.Under(ctx, v.ID, path)
 	if err != nil {
@@ -98,9 +107,9 @@ func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Remov
 	if len(level) == 0 {
 		level = append(level, path)
 	}
-	if err := u.index(ctx, v, level...); err != nil {
-		return res, err
-	}
+	// The file is in the trash from here on, so what the levelling came to
+	// stands beside the links that now reach nothing.
+	levelled := u.index(ctx, v, level...)
 	for _, was := range pointing {
 		// A note that wrote a link and went to the trash beside its target has
 		// nothing left to reach from.
@@ -109,12 +118,12 @@ func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Remov
 		}
 		res.Dangling = append(res.Dangling, was.From)
 	}
-	return res, nil
+	return res, levelled
 }
 
 // Destroy takes the file off the disk. Nothing brings it back.
-func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (Removed, error) {
-	res := Removed{Path: path}
+func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
+	res := RemoveResult{Path: path}
 
 	pointing, err := u.Links.Backlinks(ctx, v.ID, path)
 	if err != nil {
@@ -127,20 +136,17 @@ func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (Remov
 	if err := writer.Remove(ctx, path); err != nil {
 		return res, missing(err)
 	}
-	if err := u.index(ctx, v, path); err != nil {
-		return res, err
-	}
+	// The file is off the disk from here on, so what the levelling came to
+	// stands beside the links that now reach nothing.
+	levelled := u.index(ctx, v, path)
 	for _, was := range pointing {
 		res.Dangling = append(res.Dangling, was.From)
 	}
-	return res, nil
+	return res, levelled
 }
 
 func (u Remove) index(ctx context.Context, v domain.Vault, paths ...string) error {
-	if u.Index == nil {
-		return nil
-	}
-	return u.Index(ctx, v, paths)
+	return Levelled(u.Index(ctx, v, paths), paths...)
 }
 
 // withSuffix puts something before the extension: `note.md` and `-2` make

@@ -22,13 +22,12 @@
   color-scheme: dark;
 
   --numen-surface: #2b2b2b;
-  --numen-node-bg: #363636;
-  --numen-node-fg: #e8dcc0;
-  --numen-node-border: #4a4a4a;
+  --numen-raised: #363636;
+  --numen-ink: #e8dcc0;
+  --numen-rule: #4a4a4a;
 
-  --numen-focus-bg: #d6870f;
-  --numen-focus-fg: #2b2b2b;
-  --numen-focus-border: #d6870f;
+  --numen-accent: #d6870f;
+  --numen-accent-ink: #2b2b2b;
 
   --numen-seat-parent: #649bc4;
   --numen-seat-child: #77ac53;

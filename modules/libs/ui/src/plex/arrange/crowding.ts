@@ -1,11 +1,10 @@
-import type { PlexRelatedSeat } from '../model'
-import { RELATED_SEATS } from '../model'
+import { RELATED_SEATS, type PlexRelatedSeat } from '../seat'
 import { limitsFor } from './limits'
 import { lerp } from './math'
 import type { PlexOptions } from './options'
 
 /** How many of each seat arrived. */
-export type Counts = Readonly<Record<PlexRelatedSeat, number>>
+export type SeatCounts = Readonly<Record<PlexRelatedSeat, number>>
 
 /** How finely the loosest packing is found, as halvings of the range. */
 const HALVINGS = 7
@@ -42,7 +41,7 @@ export function packed(options: PlexOptions, tightness: number): PlexOptions {
  * act on is a node drawn small; a node that is not drawn says only that there
  * were more.
  */
-export function crowdingFor(options: PlexOptions, counts: Counts): PlexOptions {
+export function crowdingFor(options: PlexOptions, counts: SeatCounts): PlexOptions {
   if (!options.viewport || options.squeeze >= 1) return options
   if (seatsAll(options, counts)) return options
 
@@ -57,7 +56,7 @@ export function crowdingFor(options: PlexOptions, counts: Counts): PlexOptions {
 }
 
 /** Whether the window holds every node of every seat. */
-function seatsAll(options: PlexOptions, counts: Counts): boolean {
+function seatsAll(options: PlexOptions, counts: SeatCounts): boolean {
   const limits = limitsFor(options, counts)
   return RELATED_SEATS.every(
     (seat) => limits[seat].perLine * limits[seat].lines >= counts[seat],

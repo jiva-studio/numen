@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"image"
 	"image/draw"
+	"strings"
 
 	read "github.com/getcharzp/go-ocr"
 	"github.com/getcharzp/go-ocr/paddle"
@@ -37,46 +38,46 @@ type Recogniser struct {
 	body   map[string]bool
 	head   map[string]int
 	margin int
-	named  port.Recognition
+	model  port.RecognitionModel
 }
 
 // Open loads the models and compiles them. It is expensive — the weights are
 // read — and the result is reusable for the life of the process.
 func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
-	paths, err := locate(ctx, cfg)
+	opened, found, err := locate(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
-	options, err := paths.engine.NewSessionOptions()
+	options, err := opened.engine.NewSessionOptions()
 	if err != nil {
 		return nil, err
 	}
-	if err := options.SetIntraOpNumThreads(int32(cfg.Page.threads())); err != nil {
+	if err := options.SetIntraOpNumThreads(int32(cfg.Recognise.threads())); err != nil {
 		return nil, err
 	}
 
-	layout, err := OpenLayout(paths.engine, paths.layout, options,
+	layout, err := OpenLayout(opened.engine, found.layout, options,
 		cfg.Layout.labels(), cfg.Layout.minimum(), cfg.Layout.overlap())
 	if err != nil {
 		return nil, err
 	}
 
-	classes, dict, err := alphabet(paths.recognise, cfg.Recognise)
+	classes, dict, err := alphabet(found.recognise, cfg.Recognise)
 	if err != nil {
 		layout.Close()
 		return nil, err
 	}
 	lines, err := paddle.NewEngine(paddle.Config{
-		OnnxRuntimeLibPath:  paths.runtime,
-		DetModelPath:        paths.detect,
-		RecModelPath:        paths.recognise,
+		OnnxRuntimeLibPath:  opened.at,
+		DetModelPath:        found.detect,
+		RecModelPath:        found.recognise,
 		DictPath:            dict,
 		RecModelNumClasses:  classes,
 		DetMaxSideLen:       cfg.Detect.maxSide(),
 		DetOutsideExpandPix: cfg.Detect.expand(),
 		HeatmapThreshold:    cfg.Detect.minimum(),
 		RecHeight:           cfg.Recognise.height(),
-		NumThreads:          cfg.Page.threads(),
+		NumThreads:          cfg.Recognise.threads(),
 		ThreadCount:         cfg.Recognise.sessions(),
 	})
 	if err != nil {
@@ -92,16 +93,16 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		body:   set(cfg.Regions.body()),
 		head:   depths(cfg.Regions.head()),
 		margin: cfg.Layout.margin(),
-		named: port.Recognition{
-			Layout:     name(paths.layout),
-			Recogniser: name(paths.recognise),
-			DPI:        cfg.Page.dpi(),
-			From:       paths.from,
+		model: port.RecognitionModel{
+			Layout:     name(found.layout),
+			Recogniser: name(found.recognise),
+			DPI:        cfg.Recognise.dpi(),
+			From:       found.from,
 		},
 	}, nil
 }
 
-func (r *Recogniser) Recognition() port.Recognition { return r.named }
+func (r *Recogniser) Recognition() port.RecognitionModel { return r.model }
 
 // Close lets go of the models this reading loaded. The runtime they ran on is
 // the process's and stays.
@@ -110,8 +111,8 @@ func (r *Recogniser) Close() error {
 	return r.shape.Close()
 }
 
-// Read is one page: its parts, in the order the page is read, and what each of
-// them says.
+// Recognise is one page: its parts, in the order the page is read, and what
+// each of them says.
 //
 // A part whose kind the configuration does not ask for is not read at all. A
 // running head and a page ornament are printed on every page and are not what
@@ -119,7 +120,7 @@ func (r *Recogniser) Close() error {
 //
 // A part the configuration calls a head opens a part of the document, and
 // carries how deep that part sits.
-func (r *Recogniser) Read(ctx context.Context, page image.Image) ([]ocr.Block, error) {
+func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Block, error) {
 	regions, err := r.layout(page)
 	if err != nil {
 		return nil, err
@@ -160,14 +161,14 @@ func (r *Recogniser) Read(ctx context.Context, page image.Image) ([]ocr.Block, e
 				Score: line.Score,
 			})
 		}
-		if text, spans := ocr.Assemble(lines); text != "" {
+		if text, stretches := ocr.Assemble(lines); text != "" {
 			depth, head := r.head[region.Label]
 			out = append(out, ocr.Block{
-				Label: region.Label,
-				Text:  text,
-				Head:  head,
-				Depth: depth,
-				Spans: spans,
+				Label:     region.Label,
+				Text:      text,
+				Heading:   head,
+				Depth:     depth,
+				Stretches: stretches,
 			})
 		}
 	}
@@ -184,8 +185,8 @@ func (r *Recogniser) Read(ctx context.Context, page image.Image) ([]ocr.Block, e
 // addressed from the crop, and has to be read as a box of the page. The
 // widening is because the first letter of a line sits on the boundary the
 // layout model drew.
-func cropped(page image.Image, rect image.Rectangle, by int) (image.Image, image.Point) {
-	wider := rect.Inset(-by).Intersect(page.Bounds())
+func cropped(page image.Image, rect image.Rectangle, margin int) (image.Image, image.Point) {
+	wider := rect.Inset(-margin).Intersect(page.Bounds())
 	if wider.Empty() {
 		return nil, image.Point{}
 	}
@@ -210,4 +211,10 @@ func set(names []string) map[string]bool {
 		out[n] = true
 	}
 	return out
+}
+
+// spaced is one line as the recogniser wrote it, with a run of space between
+// words standing as one space.
+func spaced(text string) string {
+	return strings.Join(strings.Fields(text), " ")
 }

@@ -1,9 +1,9 @@
-# ADR-0022: The agent this application starts is a port
+# The agent this application starts is a port
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/core` — `port`, `adapter/agent`; `modules/apps/desktop` — `internal/adapter/claudecode`
-- **Related:** ADR-0004, ADR-0020, ADR-0021
+- **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [One process, one lifetime](0020-one-process-one-lifetime.md), [An agent reaches the vault through tools](0021-an-agent-reaches-the-vault-through-tools.md)
 
 ## Context
 
@@ -17,15 +17,17 @@ The folder it is started in is the vault, and a vault arrives from elsewhere: sy
 
 A task goes in and steps come out. Everything above that interface sees one agent and never which. Starting a program, writing its command line and reading what it prints is an adapter behind the port, and one program's stream is that adapter's business alone.
 
-Which agent answers is a setting, and each carries a section of its own; a section is kept whether it is the one in use or not. Empty names no agent, and the panel says there is none. Whether the tools go on a port is a setting of its own, so an installation that names none opens one only where it asks for one (ADR-0021).
+Which agent answers is a setting, and each carries a section of its own; a section is kept whether it is the one in use or not. Empty names no agent, and the panel says there is none. Whether the tools go on a port is a setting of its own, so an installation that names none opens one only where it asks for one.
 
 ### What that agent may reach is constructed here
 
 The command line, the environment and the working directory are built by this application. What is absent is absent because this decision says so.
 
-### It brings a web search and a web fetch, and no other built-in
+### It brings a web search, and no other built-in
 
-The set of built-in tools is named in full, so every other one is absent: no shell, no file reader, no file writer, no subagent. A shell and a file writer reach into the vault under a name the index does not know, and into the rest of the machine. The web tools reach neither, and looking something up is part of writing a note about it.
+The set of built-in tools is named in full, so every other one is absent: no shell, no file reader, no file writer, no subagent. A shell and a file writer reach into the vault under a name the index does not know, and into the rest of the machine. A search reaches neither, and looking something up is part of writing a note about it.
+
+A web *fetch* is absent, and the reason is not the same. A search cannot be told where to send anything: an injected note names no recipient, and what comes back is read by the model that was already reading the note. A fetch takes its address from the text, so a note somebody synced chooses where the run reaches — and the run is approved ahead of time, so nothing intervenes. That makes it a channel out of the vault rather than a way into the web, and the proofreader in the same package already runs with both refused.
 
 This vault's tools are approved ahead of the run, so nothing is asked about them while it is on.
 

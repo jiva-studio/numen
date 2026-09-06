@@ -12,8 +12,8 @@ import (
 // What answers is a program of somebody else's making, reached over a protocol
 // of its own. Everything above this interface sees one agent and never which.
 type Agent interface {
-	// Take gives the agent a task and hands back the work it has begun.
-	Take(ctx context.Context, task Task) (Work, error)
+	// Take gives the agent a task and hands back the run it has begun.
+	Take(ctx context.Context, task Task) (Run, error)
 	// Finish says a conversation is over. What the agent kept of it is let go
 	// of, and whatever is still being worked in it is stopped and waited for.
 	// Empty is no conversation, and there is nothing to finish.
@@ -23,7 +23,7 @@ type Agent interface {
 // Task is what the person asked, where they were looking when they asked it,
 // and which conversation they asked it in.
 type Task struct {
-	Asked string
+	Question string
 	// Focus is the note the window is showing, empty when it shows none.
 	Focus string
 	// Conversation is which thread of talk this question belongs to, named by
@@ -35,26 +35,26 @@ type Task struct {
 	Conversation string
 }
 
-// Work is one task being worked.
-type Work interface {
+// Run is one task being worked. Task is the request; this is its execution.
+type Run interface {
 	// Steps arrive in the order the agent takes them, and the channel closes
 	// when there are no more.
 	Steps() <-chan Step
-	// Stop ends the work and returns once nothing of it is still running.
+	// Stop ends the run and returns once nothing of it is still running.
 	Stop() error
 }
 
 // StepKind is what a step is.
 //
 // A step naming a call says what that call does to the vault. A call whose kind
-// is not known is StepCalling.
+// is not known is StepToolCall.
 type StepKind int
 
 const (
-	// StepCalling names a tool the agent is using. It arrives more than once for
+	// StepToolCall names a tool the agent is using. It arrives more than once for
 	// one call: the tool is named as soon as it is reached for, and again as its
 	// arguments are written, because writing them is most of the wait.
-	StepCalling StepKind = iota
+	StepToolCall StepKind = iota
 	// StepRead names a call that reads the vault and leaves it as it was.
 	StepRead
 	// StepEdit names a call that writes a note.
@@ -93,10 +93,10 @@ type Step struct {
 	// Place is where in the vault the call is working, empty when what the
 	// call is about is not a source the vault holds.
 	Place domain.Place
-	// Written is how much of the call has been written, in characters. A call
+	// Count is how much of the call has been written, in characters. A call
 	// carrying the text of a note is written for minutes, and this is the only
 	// thing that moves while it is.
-	Written int
-	// Failed is why the work stopped, empty when the agent was done.
-	Failed string
+	Count int
+	// Detail is why the work stopped, empty when the agent was done.
+	Detail string
 }

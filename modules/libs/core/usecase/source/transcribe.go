@@ -44,22 +44,36 @@ type Transcribe struct {
 	// model is configured now, and nothing sets it on its own.
 	Again bool
 
-	// Cut makes a source's chunks. It is called as speech is written down, so
-	// what has been heard is searchable before the rest of it is.
+	// Cut is optional. It makes a source's chunks, and is called as speech is
+	// written down, so what has been heard is searchable before the rest of it
+	// is. Where nothing cuts, the source is recorded as owing its text and the
+	// next scan cuts it.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
 
 	OnProgress func(TranscribeResult)
 }
 
-// TranscribeResult reports what listening did.
+// NewTranscribe is what a recording is listened to through: the vault it is
+// read out of, where what the vault holds is recorded, the store the transcript
+// is written into, and the model that hears it.
+func NewTranscribe(
+	readers port.VaultReaders,
+	sources port.SourceRepository,
+	derived port.DerivedStores,
+	by port.Transcriber,
+) Transcribe {
+	return Transcribe{Readers: readers, Sources: sources, Derived: derived, By: by}
+}
+
+// TranscribeResult reports what transcribing did.
 type TranscribeResult struct {
-	Path     string // the recording being listened to
+	Path     string // the recording being transcribed
 	Length   int    // how long it is, in milliseconds
 	Heard    int    // how much of it has been written down, this run and before it
 	Resumed  int    // how much a run before this one had already written down
 	Silent   bool   // it carries no speech, and that is what was written
 	Unopened bool   // nothing here can open it, and that is what was written
-	Busy     bool   // somebody else is listening to these bytes, and nothing was done
+	Busy     bool   // somebody else is transcribing these bytes, and nothing was done
 }
 
 // DefaultHeard is how many stretches of speech are heard before they are
@@ -69,10 +83,6 @@ const DefaultHeard = 16
 // Execute listens to one recording.
 func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (TranscribeResult, error) {
 	res := TranscribeResult{Path: path}
-	if u.By == nil {
-		return res, errors.New("no transcriber: none is configured")
-	}
-
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return res, err
@@ -183,7 +193,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 		reached := from
 		cues := make([]transcript.Cue, 0, len(speech))
 		for _, audio := range speech {
-			words, err := u.By.Hear(ctx, audio)
+			words, err := u.By.Transcribe(ctx, audio)
 			if err != nil {
 				return res, fmt.Errorf("hear %s at %s: %w", path, transcript.Stamp(audio.From), err)
 			}
@@ -235,7 +245,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 func (u Transcribe) answer(
 	ctx context.Context,
 	v domain.Vault,
-	ref domain.FileRef,
+	ref domain.Fingerprint,
 	hash, area string,
 	store port.DerivedStore,
 	gave string,
@@ -258,11 +268,11 @@ func (u Transcribe) answer(
 // from it, in one statement, and the two are one fact. Where nothing cuts here
 // the source is recorded as owing its text, and the scan that cuts it writes
 // both.
-func (u Transcribe) stand(ctx context.Context, v domain.Vault, ref domain.FileRef, hash, from string) error {
+func (u Transcribe) stand(ctx context.Context, v domain.Vault, ref domain.Fingerprint, hash, from string) error {
 	if u.Cut != nil {
 		return u.Cut(ctx, v, ref.Path)
 	}
-	return u.Sources.SaveSource(ctx, v.ID, port.Source{Ref: ref, Hash: hash, TextFrom: from})
+	return u.Sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref, Hash: hash, Producer: from})
 }
 
 // cut makes this source's chunks from what has been heard so far.

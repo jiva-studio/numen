@@ -5,7 +5,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   braced,
-  fill,
   insert,
   previewed,
   renamedIn,
@@ -14,10 +13,62 @@ import {
   strayIn,
 } from './fill'
 
+/**
+ * A card face is shown on two surfaces and each lays it out for itself: this
+ * library for the preview beside the stencil being written, and the core's
+ * flashcards/format for the window a card is reviewed in. The table both are
+ * held to is one file, and neither owns it.
+ */
+import corpus from '../../../protocol/testdata/faces.json'
+
 const VALUES = [
   { field: 'Height', text: 'about 45"' },
   { field: 'Life span', text: 'about 20 years' },
 ]
+
+/**
+ * A card face means the same thing on every surface it is shown on.
+ *
+ * Laying a face out is the step each surface takes for itself; drawing what
+ * comes out is one implementation both of them reach, so what is compared is
+ * the text the slots have been filled in, and text that agrees is drawn alike.
+ *
+ * Every slot of the table names a field the stencil declares. A slot naming
+ * none is where the two surfaces part on purpose — the review window lays it
+ * out as nothing and the preview marks it where it stands, because the stencil
+ * is what the preview is there to settle — and it is held to below instead.
+ */
+describe('a card face', () => {
+  it('means the same on every surface it is shown on', () => {
+    if (corpus.invariant === '') throw new Error('the table names no invariant')
+    if (corpus.faces.length === 0 || corpus.count === 0 || corpus.changed === 0) {
+      throw new Error(
+        `the table holds ${corpus.faces.length} faces and declares ${corpus.count}, ` +
+          `${corpus.changed} of which the slots change`,
+      )
+    }
+
+    const named = new Set<string>()
+    let laid = 0
+    let changed = 0
+    for (const { name, construct, face, fields, values, laid: want } of corpus.faces) {
+      if (name === '' || construct === '') {
+        throw new Error(`a face of the table is called "${name}" and pins "${construct}"`)
+      }
+      if (named.has(name)) throw new Error(`two faces of the table are called "${name}"`)
+      named.add(name)
+
+      laid += 1
+      if (want !== face) changed += 1
+
+      const said = { name, construct, laid: want }
+      expect({ name, construct, laid: previewed(face, values, fields) }).toStrictEqual(said)
+    }
+
+    expect(laid).toBe(corpus.count)
+    expect(changed).toBe(corpus.changed)
+  })
+})
 
 describe('slotsIn', () => {
   it('finds every slot where it stands', () => {
@@ -40,51 +91,50 @@ describe('slotsIn', () => {
   })
 })
 
-describe('fill', () => {
-  it('stands a value in every slot that names a field', () => {
-    expect(fill('**Height:** {{Height}}', VALUES)).toBe('**Height:** about 45"')
+describe('previewed', () => {
+  it('stands a value in every slot the fields name', () => {
+    expect(previewed('{{Height}}', VALUES, ['Height'])).toBe('about 45"')
   })
 
   it('stands the naming field like any other', () => {
-    expect(fill('{{Name}} is tall', [{ field: 'Name', text: 'Llama' }])).toBe('Llama is tall')
-  })
-
-  it('fills no slot whose name is written with space around it', () => {
-    expect(fill('{{ Height }}', VALUES)).toBe('')
+    const values = [{ field: 'Name', text: 'Llama' }]
+    expect(previewed('{{Name}} is tall', values, ['Name'])).toBe('Llama is tall')
   })
 
   it('leaves a slot nothing was handed for empty', () => {
-    expect(fill('[{{Weight}}]', VALUES)).toBe('[]')
+    expect(previewed('[{{Weight}}]', VALUES, ['Weight'])).toBe('[]')
   })
 
   it('keeps the markup around the slots', () => {
-    expect(fill('- {{Height}}\n- {{Life span}}\n', VALUES)).toBe(
-      '- about 45"\n- about 20 years\n',
+    const fields = ['Height', 'Life span']
+    expect(previewed('<li>{{Height}}</li>\n<li>{{Life span}}</li>\n', VALUES, fields)).toBe(
+      '<li>about 45"</li>\n<li>about 20 years</li>\n',
     )
   })
 
-  it('stands a value that is itself markdown', () => {
-    const values = [{ field: 'Picture', text: '![[llama.jpg]]' }]
-    expect(fill('{{Picture}}', values)).toBe('![[llama.jpg]]')
+  it('stands a value that is itself markup', () => {
+    const values = [{ field: 'Picture', text: '<img src="llama.jpg" alt="a llama">' }]
+    expect(previewed('{{Picture}}', values, ['Picture'])).toBe(
+      '<img src="llama.jpg" alt="a llama">',
+    )
   })
 
   it('does not read the braces a value stands in the text', () => {
-    const values = [{ field: 'One', text: '{{Two}}' }]
-    expect(fill('{{One}}', [...values, { field: 'Two', text: 'caught' }])).toBe('{{Two}}')
+    const values = [
+      { field: 'One', text: '{{Two}}' },
+      { field: 'Two', text: 'caught' },
+    ]
+    expect(previewed('{{One}}', values, ['One', 'Two'])).toBe('{{Two}}')
   })
 
-  it('fills text that is not Latin', () => {
+  it('stands text that is not Latin', () => {
     const values = [
       { field: 'Перевод', text: 'compost' },
       { field: 'Слово', text: 'Компост' },
     ]
-    expect(fill('{{Перевод}} — {{Слово}}', values)).toBe('compost — Компост')
-  })
-})
-
-describe('previewed', () => {
-  it('stands a value in every slot the fields name', () => {
-    expect(previewed('{{Height}}', VALUES, ['Height'])).toBe('about 45"')
+    expect(previewed('{{Перевод}} — {{Слово}}', values, ['Перевод', 'Слово'])).toBe(
+      'compost — Компост',
+    )
   })
 
   it('leaves a slot the fields do not name in its braces, marked where it stands', () => {

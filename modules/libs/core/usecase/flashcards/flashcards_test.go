@@ -9,15 +9,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // One vault of two stencils and two decks. The animal stencil has two faces, so
@@ -40,11 +40,11 @@ var vault = map[string]string{
 // vaulted is one vault on disk, scanned, and the scenarios built over it.
 type vaulted struct {
 	vault     domain.Vault
-	standings flashcards.Standings
+	standings flashcards.ListCardFaces
 	presets   flashcards.Presets
-	marking   flashcards.Marking
+	marking   flashcards.MarkCards
 	kept      flashcards.Schedules
-	counted   flashcards.Counted
+	counted   flashcards.CountReviews
 	logs      filesystem.DerivedStores
 	// scan brings the index level with what the vault now holds.
 	scan func(ctx context.Context, v domain.Vault, paths []string) error
@@ -60,9 +60,9 @@ func opened(t testing.TB, notes map[string]string) vaulted {
 	}
 	t.Cleanup(func() { db.Close() })
 
-	scan := usecase.Scan{
-		Readers: filesystem.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
-		Known: db.NoteQueries(), Maintenance: db.Statistics(),
+	scan := vaults.Scan{
+		Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes(),
+		Known: db.NoteQueries(), Maintenance: db.Maintenance(),
 	}
 	v := testsupport.NewVault(t, notes)
 	if _, err := scan.Execute(ctx, v); err != nil {
@@ -74,44 +74,31 @@ func opened(t testing.TB, notes map[string]string) vaulted {
 	}
 
 	logs := filesystem.DerivedStores{Area: filesystem.FlashcardsDir}
-	standings := flashcards.Standings{
-		Readers: filesystem.Readers{}, Notes: db.NoteQueries(), Links: db.NoteQueries(),
-	}
-	presets := flashcards.Presets{
-		Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
-		Links: db.NoteQueries(), Notes: db.NoteQueries(),
-		Problems: db.NoteQueries(), Index: scanned,
-	}
+	standings := flashcards.NewListCardFaces(
+		filesystem.VaultReaders{}, db.NoteQueries(), db.NoteQueries())
+	presets := flashcards.NewPresets(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{},
+		db.NoteQueries(), db.NoteQueries(), scanned, review.Day{}, time.Now)
+	presets.Problems = db.NoteQueries()
 	// Each card is worked out at the share of the cards its own preset asks
 	// for, which is how the application builds this.
-	schedules := flashcards.Schedules{
-		Logs:      logs,
-		Kept:      appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards")),
-		By:        history.NewFSRS(),
-		Day:       today,
-		Standings: standings,
-		Presets:   presets,
-	}
+	schedules := flashcards.NewSchedules(logs, review.NewFSRS(), today, standings, presets)
+	schedules.Cache = appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards"))
+
+	counted := flashcards.NewCountReviews(logs, schedules, today, time.Now)
+	counted.Cache = appstate.SchedulesAt(filepath.Join(t.TempDir(), "days"))
 
 	return vaulted{
 		vault:     v,
 		standings: standings,
 		presets:   presets,
-		marking: flashcards.Marking{
-			Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
-			Notes: db.NoteQueries(), Links: db.NoteQueries(),
-			Index: scanned, Now: time.Now,
-		},
-		kept: schedules,
-		counted: flashcards.Counted{
-			Logs:      logs,
-			Kept:      appstate.SchedulesAt(filepath.Join(t.TempDir(), "days")),
-			Schedules: schedules,
-			Day:       today,
-			Now:       time.Now,
-		},
-		logs: logs,
-		scan: scanned,
+		marking: flashcards.NewMarkCards(
+			filesystem.VaultReaders{}, filesystem.VaultWriters{},
+			db.NoteQueries(), db.NoteQueries(), scanned, time.Now),
+		kept:    schedules,
+		counted: counted,
+		logs:    logs,
+		scan:    scanned,
 	}
 }
 
@@ -171,24 +158,27 @@ func (s vaulted) runNamed(t *testing.T, named, given time.Time) flashcards.Recor
 	return flashcards.Record{Run: run, Now: func() time.Time { return given }}
 }
 
-func (s vaulted) owed(day history.Day) flashcards.Owed {
+func (s vaulted) owed(day review.Day) flashcards.CountCardsDue {
 	return s.owedAt(day, time.Now)
 }
 
-func (s vaulted) owedAt(day history.Day, now func() time.Time) flashcards.Owed {
-	return flashcards.Owed{
-		Standings: s.standings, Schedules: s.kept, Presets: s.presets, Day: day, Now: now,
+func (s vaulted) owedAt(day review.Day, now func() time.Time) flashcards.CountCardsDue {
+	return flashcards.CountCardsDue{
+		CardFaces: s.standings, Schedules: s.kept, Presets: s.presets, Day: day, Now: now,
 	}
 }
 
-func (s vaulted) session(day history.Day) flashcards.Session {
-	return flashcards.Session{
-		Marking: s.marking, Standings: s.standings, Schedules: s.kept, Day: day, Now: time.Now,
-	}
+// session is a session whose presets read nothing, so every deck of the vault
+// is scheduled by the defaults.
+func (s vaulted) session(day review.Day) flashcards.Session {
+	return flashcards.NewSession(
+		s.marking, s.standings, s.kept,
+		flashcards.NewPresets(nil, nil, nil, nil, nil, day, time.Now), day, time.Now,
+	)
 }
 
 // today is the day a session is counted in, on this machine.
-var today = history.Day{Starts: history.DayStarts}
+var today = review.Day{Starts: review.DayStarts}
 
 // A card stands once for each face of the stencil that cuts it, because each
 // face asks a different thing.
@@ -206,10 +196,10 @@ func TestACardStandsOnceForEachFaceOfItsStencil(t *testing.T) {
 
 	faces := map[string]int{}
 	for _, one := range stood {
-		faces[one.CardFace.Face]++
+		faces[one.ID.Face]++
 		front, back := one.Lay()
-		if one.CardFace.Card == "" || front == "" || back == "" {
-			t.Errorf("nothing laid out for %+v", one.CardFace)
+		if one.ID.Card == "" || front == "" || back == "" {
+			t.Errorf("nothing laid out for %+v", one.ID)
 		}
 	}
 	for face, want := range map[string]int{"Recognise": 2, "Name it": 2, "Say it": 1} {
@@ -230,7 +220,7 @@ func TestAFaceIsLaidOutWithTheCardsOwnValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, one := range stood {
-		if one.CardFace.Card != "k7m2xq9fzp" || one.CardFace.Face != "Name it" {
+		if one.ID.Card != "k7m2xq9fzp" || one.ID.Face != "Name it" {
 			continue
 		}
 		front, back := one.Lay()
@@ -354,9 +344,9 @@ func touched(t *testing.T, v domain.Vault, path string) time.Time {
 	return at.ModTime()
 }
 
-// A person sitting down to a vault has its cards given marks, and what stands
+// A person starting a session on a vault has its cards given marks, and what stands
 // then is what they are asked.
-func TestSittingDownToAVaultMarksItsCards(t *testing.T) {
+func TestSessionDownToAVaultMarksItsCards(t *testing.T) {
 	t.Parallel()
 	s := opened(t, handwritten)
 
@@ -370,7 +360,7 @@ func TestSittingDownToAVaultMarksItsCards(t *testing.T) {
 	if len(stood) != 1 {
 		t.Fatalf("one card of a one-faced stencil stands once, got %d", len(stood))
 	}
-	if stood[0].CardFace.Card == "" {
+	if stood[0].ID.Card == "" {
 		t.Error("the card came back with no mark to record an answer against")
 	}
 }
@@ -407,7 +397,7 @@ func TestACardWithNoStencilIsLeftOut(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(stood) != 1 || stood[0].CardFace.Card != "3f4g5h6j7k" {
+	if len(stood) != 1 || stood[0].ID.Card != "3f4g5h6j7k" {
 		t.Errorf("stands = %+v, want the one card whose stencil is one", stood)
 	}
 }
@@ -430,7 +420,7 @@ func TestAFaceMissingASideIsNotAsked(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(stood) != 1 || stood[0].CardFace.Face != "Say it" {
+	if len(stood) != 1 || stood[0].ID.Face != "Say it" {
 		t.Errorf("stands = %+v, want the one face with both its sides", stood)
 	}
 }
@@ -482,8 +472,8 @@ func TestAVaultNobodyAnsweredOwesEverythingAsNew(t *testing.T) {
 func TestACardPutDaysAwayIsNotOwedToday(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Easy, 0); err != nil {
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Easy, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -500,12 +490,12 @@ func TestACardPutDaysAwayIsNotOwedToday(t *testing.T) {
 		}
 	}
 
-	sitting, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Over{})
+	session, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Scope{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range sitting.Asked {
-		if one.CardFace == on {
+	for _, one := range session.Queue {
+		if one.ID == on {
 			t.Error("the card is days away and was asked today")
 		}
 	}
@@ -516,8 +506,8 @@ func TestACardPutDaysAwayIsNotOwedToday(t *testing.T) {
 func TestACardComesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -558,9 +548,9 @@ func TestAnAnswerIsWrittenDownAndReadBack(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
 	when := time.Now()
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
-	if _, err := s.run(t, when).Answer(t.Context(), on, history.Good, 4*time.Second); err != nil {
+	if _, err := s.run(t, when).Answer(t.Context(), on, review.Good, 4*time.Second); err != nil {
 		t.Fatal(err)
 	}
 
@@ -586,10 +576,10 @@ func TestAnAnswerTakenBackLeavesTheCardUnanswered(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
 	when := time.Now()
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	record := s.run(t, when)
-	given, err := record.Answer(t.Context(), on, history.Good, time.Second)
+	given, err := record.Answer(t.Context(), on, review.Good, time.Second)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -614,7 +604,7 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 	record := s.run(t, time.Now())
 
 	if _, err := record.Answer(
-		t.Context(), history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}, history.Rating(9), 0,
+		t.Context(), review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}, review.Rating(9), 0,
 	); err == nil {
 		t.Error("a rating of nine was written down")
 	}
@@ -628,25 +618,25 @@ func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
 	long := time.Now().Add(-30 * 24 * time.Hour)
 	recent := time.Now().Add(-3 * 24 * time.Hour)
 
-	waited := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
-	lately := history.CardFace{Card: "zpqrstvwxy", Face: "Recognise"}
-	if _, err := s.run(t, long).Answer(t.Context(), waited, history.Good, 0); err != nil {
+	waited := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	lately := review.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
+	if _, err := s.run(t, long).Answer(t.Context(), waited, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.run(t, recent).Answer(t.Context(), lately, history.Good, 0); err != nil {
+	if _, err := s.run(t, recent).Answer(t.Context(), lately, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
-	sitting, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Over{})
+	session, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Scope{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	asked := sitting.Asked
+	asked := session.Queue
 	if len(asked) < 2 {
 		t.Fatalf("asked %d", len(asked))
 	}
-	if asked[0].CardFace != waited {
-		t.Errorf("asked %+v first, want the one waiting longest", asked[0].CardFace)
+	if asked[0].ID != waited {
+		t.Errorf("asked %+v first, want the one waiting longest", asked[0].ID)
 	}
 	for i, one := range asked {
 		if one.Schedule.Seen() {
@@ -667,11 +657,11 @@ func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
 
-	sitting, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Deck("decks/Words.md"))
+	session, err := s.session(today).Execute(t.Context(), s.vault, flashcards.OverDeck("decks/Words.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	asked := sitting.Asked
+	asked := session.Queue
 	if len(asked) != 1 || asked[0].Deck != "decks/Words.md" {
 		t.Errorf("asked %+v, want the one card of that deck", asked)
 	}
@@ -683,11 +673,11 @@ func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 func TestACacheReadBackSaysWhatTheAnswersSay(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	when := time.Now().Add(-72 * time.Hour)
 
 	record := s.run(t, when)
-	for _, r := range []history.Rating{history.Good, history.Again, history.Hard, history.Easy} {
+	for _, r := range []review.Rating{review.Good, review.Again, review.Hard, review.Easy} {
 		if _, err := record.Answer(t.Context(), on, r, time.Second); err != nil {
 			t.Fatal(err)
 		}
@@ -706,7 +696,7 @@ func TestACacheReadBackSaysWhatTheAnswersSay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	replayed := history.Replay(today, history.NewFSRS(), held.Answers)
+	replayed := review.Replay(today, review.NewFSRS(), held.Answers)
 
 	if len(cached) != len(replayed) {
 		t.Fatalf("the cache holds %d card faces and the answers say %d", len(cached), len(replayed))
@@ -723,10 +713,10 @@ func TestACacheReadBackSaysWhatTheAnswersSay(t *testing.T) {
 func TestACacheOfAShapeThisBuildDoesNotKnowIsThrownAway(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
-	invented := history.CardFace{Card: "nobodyhasit", Face: "Recognise"}
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	invented := review.CardFaceID{Card: "nobodyhasit", Face: "Recognise"}
 
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.kept.Execute(t.Context(), s.vault); err != nil {
@@ -757,10 +747,10 @@ func TestACacheOfAShapeThisBuildDoesNotKnowIsThrownAway(t *testing.T) {
 func TestARunTheCacheHasNotSeenIsCountedIn(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	when := time.Now().Add(-24 * time.Hour)
 
-	if _, err := s.run(t, when).Answer(t.Context(), on, history.Good, 0); err != nil {
+	if _, err := s.run(t, when).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 	first, err := s.kept.Execute(t.Context(), s.vault)
@@ -773,7 +763,7 @@ func TestARunTheCacheHasNotSeenIsCountedIn(t *testing.T) {
 
 	// A second run, which is a second file: the kind of thing that arrives from
 	// another machine after the first was already counted.
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 	second, err := s.kept.Execute(t.Context(), s.vault)
@@ -785,16 +775,16 @@ func TestARunTheCacheHasNotSeenIsCountedIn(t *testing.T) {
 	}
 }
 
-// A sitting appends to one file all evening, so what was worked out before an
+// A session appends to one file all evening, so what was worked out before an
 // answer was written is out of date the moment it is. A cache that went by the
 // names alone would call itself current and never count the rest of the file.
 func TestAnAnswerAppendedToARunAlreadyCountedIsCountedIn(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	record := s.run(t, time.Now())
 
-	if _, err := record.Answer(t.Context(), on, history.Good, 0); err != nil {
+	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 	first, err := s.kept.Execute(t.Context(), s.vault)
@@ -805,9 +795,9 @@ func TestAnAnswerAppendedToARunAlreadyCountedIsCountedIn(t *testing.T) {
 		t.Fatalf("one answer left %d behind it", first[on].Reps)
 	}
 
-	// The same sitting, the same file: a second answer appended under the name
+	// The same session, the same file: a second answer appended under the name
 	// the cache already knows.
-	if _, err := record.Answer(t.Context(), on, history.Good, 0); err != nil {
+	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 	second, err := s.kept.Execute(t.Context(), s.vault)
@@ -819,15 +809,15 @@ func TestAnAnswerAppendedToARunAlreadyCountedIsCountedIn(t *testing.T) {
 	}
 }
 
-// An answer taken back in the sitting it was given in is not counted, for the
+// An answer taken back in the session it was given in is not counted, for the
 // same reason: the line is appended to a file already read.
 func TestAnAnswerTakenBackInTheSameRunIsNotCounted(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	record := s.run(t, time.Now())
 
-	given, err := record.Answer(t.Context(), on, history.Good, 0)
+	given, err := record.Answer(t.Context(), on, review.Good, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -852,10 +842,10 @@ func TestAnAnswerTakenBackInTheSameRunIsNotCounted(t *testing.T) {
 func TestACacheFilledByAnotherSchedulerIsThrownAway(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
-	invented := history.CardFace{Card: "nobodyhasit", Face: "Recognise"}
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	invented := review.CardFaceID{Card: "nobodyhasit", Face: "Recognise"}
 
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -863,7 +853,7 @@ func TestACacheFilledByAnotherSchedulerIsThrownAway(t *testing.T) {
 	// what no reading of the answers could: the card answered seven times, and
 	// a card face the vault has never held.
 	other := s.kept
-	other.By = named{Scheduler: history.NewFSRS(), name: "another-one"}
+	other.By = named{Scheduler: review.NewFSRS(), name: "another-one"}
 	if _, err := other.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
@@ -911,13 +901,13 @@ type plantedFace struct {
 	Reps int    `json:"reps"`
 }
 
-func stamped(at time.Time) string { return at.UTC().Format(history.Stamp) }
+func stamped(at time.Time) string { return at.UTC().Format(review.Stamp) }
 
 // rewrite changes the cache a vault holds, so that a test can say what a cache
 // claims and see whether it was believed.
 func rewrite(t *testing.T, s vaulted, change func(*plantedCache)) {
 	t.Helper()
-	raw, err := s.kept.Kept.Read(t.Context(), s.vault.ID)
+	raw, err := s.kept.Cache.Read(t.Context(), s.vault.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -930,7 +920,7 @@ func rewrite(t *testing.T, s vaulted, change func(*plantedCache)) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.kept.Kept.Write(t.Context(), s.vault.ID, now); err != nil {
+	if err := s.kept.Cache.Write(t.Context(), s.vault.ID, now); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -938,7 +928,7 @@ func rewrite(t *testing.T, s vaulted, change func(*plantedCache)) {
 // named is a scheduler under another name, which is what a cache is judged
 // against.
 type named struct {
-	history.Scheduler
+	review.Scheduler
 	name string
 }
 

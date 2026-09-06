@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest'
 import PlexView from './PlexView.vue'
 import PlexNodeView from './PlexNodeView.vue'
 import { arrangePlex, DEFAULT_OPTIONS, interpolatePlex } from '../arrange'
-import type { PlacedNode, PlexNeighbourhood } from '../model'
+import type { PlexNeighbourhood } from '../neighbourhood'
+import type { PlacedNode } from '../node'
 
 const before: PlexNeighbourhood = {
   nodes: [

@@ -25,7 +25,7 @@ type Endpoint struct {
 
 	server *http.Server
 	// calls is the tool calls taken and not yet answered.
-	calls working
+	calls calls
 	// stop lets go of the goroutine waiting on the context, so that closing one
 	// endpoint does not leave a watcher behind until the application exits.
 	stop func()
@@ -51,11 +51,11 @@ func (e *Endpoint) counting(next sdk.MethodHandler) sdk.MethodHandler {
 	}
 }
 
-// working is the calls taken and not yet answered.
+// calls tracks the tool calls taken and not yet answered.
 //
 // What is counted is the call itself, and not the answer travelling back to
 // the agent.
-type working struct {
+type calls struct {
 	mu     sync.Mutex
 	count  int
 	sealed bool
@@ -64,47 +64,47 @@ type working struct {
 }
 
 // begin takes a call, and refuses one that arrives after the door is shut.
-func (w *working) begin() bool {
-	w.mu.Lock()
-	defer w.mu.Unlock()
+func (c *calls) begin() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
-	if w.sealed {
+	if c.sealed {
 		return false
 	}
-	w.count++
+	c.count++
 	return true
 }
 
-func (w *working) done() {
-	w.mu.Lock()
-	defer w.mu.Unlock()
+func (c *calls) done() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
-	w.count--
-	w.reckon()
+	c.count--
+	c.reckon()
 }
 
 // seal shuts the door on new calls and answers with what closes once the ones
 // already taken have finished. The set it waits on is therefore finite and
 // does not grow.
-func (w *working) seal() <-chan struct{} {
-	w.mu.Lock()
-	defer w.mu.Unlock()
+func (c *calls) seal() <-chan struct{} {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
-	w.sealed = true
-	if w.idle == nil {
-		w.idle = make(chan struct{})
+	c.sealed = true
+	if c.idle == nil {
+		c.idle = make(chan struct{})
 	}
-	w.reckon()
-	return w.idle
+	c.reckon()
+	return c.idle
 }
 
 // reckon ends the wait once nothing is running. The lock is held.
-func (w *working) reckon() {
-	if !w.sealed || w.over || w.count > 0 {
+func (c *calls) reckon() {
+	if !c.sealed || c.over || c.count > 0 {
 		return
 	}
-	w.over = true
-	close(w.idle)
+	c.over = true
+	close(c.idle)
 }
 
 // ServeHTTP starts the server and returns once it is listening.

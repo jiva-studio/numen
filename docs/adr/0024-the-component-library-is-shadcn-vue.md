@@ -1,15 +1,15 @@
-# ADR-0024: The component library is shadcn-vue on Tailwind
+# The component library is shadcn-vue on Tailwind
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/ui`
-- **Related:** ADR-0023, ADR-0025
+- **Related:** [How an interface component is built](0023-how-an-interface-component-is-built.md), [How this application is tested](0025-how-this-application-is-tested.md)
 
 ## Context
 
 Beside the plex there are buttons, dialogs, menus, fields and popovers, and none of them is what this product is for. Their behaviour — focus, dismissal, keyboard order, what a screen reader is told — is where the defects are, and it is written down already.
 
-The module they arrive into has one styling contract and strict compiler settings (ADR-0023).
+The module they arrive into has one styling contract and strict compiler settings.
 
 ## Decision
 

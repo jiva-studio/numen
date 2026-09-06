@@ -13,7 +13,7 @@ export const HOLD = 400
 /** How far it may stray in that time and still be resting, in pixels. */
 export const STRAY = 12
 
-export interface Holding {
+export interface HoldState {
   /** True while a rest has been asked for and has neither come nor been given up on. */
   readonly resting: () => boolean
   readonly down: (event: PointerEvent) => void
@@ -31,7 +31,7 @@ export function useHold(
   ready: () => boolean,
   reached: (event: PointerEvent) => void,
   after: () => number = () => HOLD,
-): Holding {
+): HoldState {
   const held = ref<{ timer: number; x: number; y: number } | null>(null)
 
   const letGo = () => {
@@ -54,9 +54,9 @@ export function useHold(
   }
 
   const move = (event: PointerEvent) => {
-    const standing = held.value
-    if (!standing) return
-    if (Math.hypot(event.clientX - standing.x, event.clientY - standing.y) > STRAY) letGo()
+    const began = held.value
+    if (!began) return
+    if (Math.hypot(event.clientX - began.x, event.clientY - began.y) > STRAY) letGo()
   }
 
   onScopeDispose(letGo)

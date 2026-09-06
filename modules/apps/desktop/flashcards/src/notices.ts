@@ -5,28 +5,20 @@
  * stands are rules, and a name that repeats is a notice that puts another away
  * with it.
  */
-import { computed, ref } from 'vue'
-import { ConnectError } from '@connectrpc/connect'
+import { computed, shallowRef } from 'vue'
 
-import type { Notice, Tone } from '@numen/ui'
-
-/** One piece of work the window is doing behind itself, as the answer holds it. */
-export interface Task {
-  readonly id: string
-  readonly doing: string
-  readonly about: string
-  readonly failed: string
-  readonly asked: boolean
-}
+import { noticed } from '@numen/ui'
+import type { Notice, Task, Tone } from '@numen/ui'
+import { troubleWords } from '@numen/wire'
 
 export function raising() {
   /** What the window is doing behind itself, which stands above what it said. */
-  const working = ref<readonly Notice[]>([])
+  const tasks = shallowRef<readonly Notice[]>([])
 
   /** What it has told the person, newest last. */
-  const told = ref<readonly Notice[]>([])
+  const told = shallowRef<readonly Notice[]>([])
 
-  const notices = computed<readonly Notice[]>(() => [...working.value, ...told.value])
+  const notices = computed<readonly Notice[]>(() => [...tasks.value, ...told.value])
 
   /** How many have been raised, which is what names the next one. */
   let raised = 0
@@ -48,22 +40,21 @@ export function raising() {
     ]
   }
 
-  /** Trouble, in the person's own words: what the application said, as a sentence. */
-  const failed = (why: unknown) => says(sentence(ConnectError.from(why).rawMessage), 'alarm')
+  /**
+   * Trouble, in the person's own words. A call the window itself stopped has
+   * nothing to say, and nothing is raised for it.
+   */
+  const failed = (why: unknown) => {
+    const said = sentence(troubleWords(why))
+    if (said) says(said, 'alarm')
+  }
 
   /**
    * What is being done behind the window, as cards to draw. The whole list
    * arrives at once, so the whole list is what stands.
    */
-  const doing = (tasks: readonly Task[]) => {
-    working.value = tasks.map((at) => ({
-      id: at.id,
-      says: at.failed || at.doing,
-      about: at.about,
-      working: at.failed === '',
-      asked: at.asked || at.failed !== '',
-      ...(at.failed ? { tone: 'alarm' as const, stay: 'kept' as const } : {}),
-    }))
+  const doing = (said: readonly Task[]) => {
+    tasks.value = said.map(noticed)
   }
 
   /** One card let go of. Work put away is the corner's own to keep away. */

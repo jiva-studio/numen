@@ -1,9 +1,9 @@
-# ADR-0016: A passage is a range of bytes
+# A passage is a range of bytes
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/apps/desktop`
-- **Related:** ADR-0004, ADR-0005, ADR-0011, ADR-0014, ADR-0015
+- **Applies to:** `modules/libs/core`, `modules/apps/desktop` — the asset routes
+- **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [A client is generated from the protocol](0005-a-client-is-generated-from-the-protocol.md), [Text is cut twice](0011-text-is-cut-twice.md), [One search, three rankings, merged by rank](0014-one-search-three-rankings.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [One service to a subject](0034-one-service-to-a-subject.md)
 
 ## Context
 
@@ -15,15 +15,15 @@ What travels from the core to the window is settled once, because every producer
 
 ### A passage travels as a range of bytes
 
-What goes from a search, or from an agent, to the thing that shows a passage is `{path, start, length}` — a run of the text the source's chunks are places in. **Nothing above the viewer holds a rectangle.** Each format turns that range into its own address, so a third format is one new viewer and no change above it. The schema that carries it to the window is ADR-0005's.
+What goes from a search, or from an agent, to the thing that shows a passage is `{path, start, length}` — a run of the text the source's chunks are places in. **Nothing above the viewer holds a rectangle.** Each format turns that range into its own address, so a third format is one new viewer and no change above it. The schema that carries it to the window is the protocol's.
 
 ### One shape says where a run of text sits, and it has two producers
 
-`lit` holds it: a box is a page, a run of bytes, and a rectangle in **fractions of the page**, so a page drawn at any size lines up by multiplying.
+`highlight` holds it: a box is a page, a run of bytes, and a rectangle in **fractions of the page**, so a page drawn at any size lines up by multiplying.
 
 Two things produce it and nothing above asks which: a recognition, kept on disk because a model made it and no machine here remakes it cheaply, and a document's own text layer, kept nowhere because it answers per word on demand.
 
-Which one answers is decided by `text_from` together with a check that the file is still the bytes the reading was made from. A document rewritten since is lit from its own layer, which is the words that are there now.
+Which one answers is decided by `producer` together with a check that the file is still the bytes the reading was made from. A document rewritten since is lit from its own layer, which is the words that are there now.
 
 **The layer's boxes are never written down.** A file of them would need invalidating, sweeping, and a rule for the day a recognition arrives, and the wrong answer to that last one puts one producer's rectangles against another producer's offsets, which lights the wrong words and says nothing.
 
@@ -31,15 +31,21 @@ Which one answers is decided by `text_from` together with a check that the file 
 
 The window is sent a picture of a page. A scan is hundreds of megabytes, PDF is a poor format to deliver a piece at a time, and what says where such a book's words sit is the recognition, which is here.
 
-### A vault file is an asset
+### A vault file is an asset, and a drawn page is all it answers
 
 ```
-GET /assets/<id>                          what it is
-GET /assets/<id>/pages/<n>?wide=W         one page, where the asset has any
-GET /assets/<id>/marks?start=N&length=M   where a run of its text sits
+GET /assets/<id>/pages/<n>?wide=W&size=S&mtime=T   one page drawn, where the asset has any
 ```
 
-`<id>` is the vault path, percent-encoded, because a file has no other name the window holds. **The handler routes on the escaped path**: Go decodes before a handler sees it, and a decoded separator runs the member and what hangs off it together. These routes are served by the same adapter that serves the generated handler (ADR-0005).
+`size` and `mtime` are the document's fingerprint, so one address names one drawing of one document and answers the same picture for as long as it answers at all.
+
+**Nothing else of a file is addressed here.** What a document is, how long a recording runs, and where a run of a source's text sits are `AssetService`; a reading, a transcript and a transcript put right are `ArtifactService`, where one is listed, asked for, read, written and taken away. Only bytes stay on these routes, because only bytes are what a browser's own elements speak.
+
+`AssetService` is a service of its own for the reason a service is carved at all: the phone serves the vault's notes to a network and must not serve what is in its files, and a service is the unit of what a binary answers.
+
+A recording's bytes are not here either. They are served ranged, from a loopback port, at the address `AssetService.GetRecording` answers with under `media`: a media element speaks the protocols of the world and not the scheme one application serves its window under.
+
+`<id>` is the vault path, percent-encoded, because a file has no other name the window holds. **The handler routes on the escaped path**: Go decodes before a handler sees it, and a decoded separator runs the member and what hangs off it together. This route is served by the same adapter that serves the generated handler.
 
 ### Two bounds on what is held
 
@@ -57,6 +63,7 @@ What a page is called, and what a location says to a person, is [`../reading.md`
 - A page asked for with the pool full comes back busy, and the window has to show that.
 - A document rewritten since its recognition is lit by its own layer, and the two disagree about where a word is.
 - Drawn pages are lost with the cache folder, and cost the drawing again.
+- A recording's cues are read and written on `ArtifactService`, beside the artifact they are the words of.
 
 ## Alternatives considered
 
@@ -68,6 +75,6 @@ What a page is called, and what a location says to a person, is [`../reading.md`
 
 ## Notes
 
-pdfium reports a page's size **as it is drawn** and its characters in the space its text is written in. On a page carrying a quarter turn the two disagree, and dividing one by the other gives rectangles inside `[0,1]` and wrong, with nothing saying so. The turn is asked for and the corners mapped through it. It was settled against ink: a page was drawn, the bounding box of its dark pixels taken, and the boxes checked against it, upright and turned.
+pdfium reports a page's size **as it is drawn** and its characters in the space its text is written in. On a page carrying a quarter turn the two disagree, and dividing one by the other gives rectangles inside `[0,1]` and wrong, with nothing saying so. The turn is asked for and the corners mapped through it.
 
-The offsets of the two producers had to be the same offsets, and that was checked before anything was built: the characters pdfium hands over join into exactly what it returns as the page's text. `TestTheCharactersOfAPageAreItsText` keeps it true.
+The offsets of the two producers are the same offsets: the characters pdfium hands over join into exactly what it returns as the page's text.

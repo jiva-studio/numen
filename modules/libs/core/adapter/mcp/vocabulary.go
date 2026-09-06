@@ -8,13 +8,13 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Words are how a tool is spoken about to a person: what it is called, and
+// Tool is how one tool is spoken about to a person: what it is called, and
 // which of its arguments says what a call was about.
 //
 // Both are the tool's own declaration. A display name is the title it carries,
 // falling back to the name it is served under; what a call is about is the
 // first argument the tool requires.
-type Words struct {
+type Tool struct {
 	Title string
 	About string
 	// Inside names the field of one element that says which element it is, for
@@ -23,11 +23,11 @@ type Words struct {
 	Inside string
 	// Kind is what this call does to the vault.
 	Kind port.StepKind
-	// Stood and Becomes name the arguments carrying the text a call replaces
-	// and what it puts in that text's place. Both are empty for a call that
+	// Match and Text name the arguments carrying the text a call replaces and
+	// what it puts in that text's place. Both are empty for a call that
 	// replaces no stretch.
-	Stood   string
-	Becomes string
+	Match string
+	Text  string
 }
 
 // doing is what each tool this vault serves does, and the arguments a call
@@ -35,36 +35,41 @@ type Words struct {
 //
 // The tools are written out by hand and so is this. A schema says what a call
 // takes and cannot say what taking it means.
-var doing = map[string]Words{
+var doing = map[string]Tool{
 	"note_search":         {Kind: port.StepSearch},
-	"note_get":            {Kind: port.StepRead},
+	"note_titles":         {Kind: port.StepRead},
 	"note_read":           {Kind: port.StepRead},
+	"note_resolve":        {Kind: port.StepRead},
 	"note_neighbourhood":  {Kind: port.StepRead},
 	"note_create":         {Kind: port.StepEdit},
-	"note_write":          {Kind: port.StepEdit},
-	"note_edit":           {Kind: port.StepEdit, Stood: "stood", Becomes: "becomes"},
+	"note_rewrite":        {Kind: port.StepEdit},
+	"note_edit":           {Kind: port.StepEdit, Match: "match", Text: "text"},
 	"note_rename":         {Kind: port.StepMove},
 	"note_move":           {Kind: port.StepMove},
 	"note_remove":         {Kind: port.StepRemove},
 	"note_focus":          {Kind: port.StepRead},
 	"file_read":           {Kind: port.StepRead},
-	"card_stencils":       {Kind: port.StepRead},
+	"card_stencil_list":   {Kind: port.StepRead},
 	"card_read":           {Kind: port.StepRead},
+	"card_showing":        {Kind: port.StepRead},
 	"card_add":            {Kind: port.StepEdit},
 	"card_edit":           {Kind: port.StepEdit},
+	"card_value_remove":   {Kind: port.StepRemove},
 	"card_remove":         {Kind: port.StepRemove},
 	"card_section_add":    {Kind: port.StepEdit},
+	"card_section_rename": {Kind: port.StepMove},
+	"card_section_remove": {Kind: port.StepRemove},
 	"card_deck_create":    {Kind: port.StepEdit},
 	"card_stencil_create": {Kind: port.StepEdit},
 	// A field's name stands in the stencil that declares it and in every card
 	// that stencil cuts, so renaming it is a write to as many files as hold one.
-	"card_rename_field": {Kind: port.StepMove},
+	"card_field_rename": {Kind: port.StepMove},
 	"link_add":          {Kind: port.StepEdit},
 	"link_update":       {Kind: port.StepEdit},
 	"link_remove":       {Kind: port.StepEdit},
 	"link_list":         {Kind: port.StepRead},
+	"window_tab_list":   {Kind: port.StepRead},
 	"vault_get":         {Kind: port.StepRead},
-	"vault_named":       {Kind: port.StepRead},
 	"vault_problems":    {Kind: port.StepRead},
 	"vault_list":        {Kind: port.StepRead},
 	"vault_add":         {Kind: port.StepEdit},
@@ -73,7 +78,7 @@ var doing = map[string]Words{
 	"vault_open":        {Kind: port.StepRead},
 	"source_list":       {Kind: port.StepRead},
 	"source_read":       {Kind: port.StepRead},
-	"source_show":       {Kind: port.StepRead},
+	"source_focus":      {Kind: port.StepRead},
 	// Reading a document changes what the vault holds — it writes down what a
 	// model saw — so it is shown as a change and not as a look. Listening to a
 	// recording writes down what a model heard, and is shown the same way.
@@ -84,22 +89,22 @@ var doing = map[string]Words{
 // Vocabulary asks the server what it serves, and reads the answer.
 //
 // What the window says about a call is what an agent was told about it.
-func Vocabulary(ctx context.Context, core Core) (map[string]Words, error) {
+func Vocabulary(ctx context.Context, core Core) (map[string]Tool, error) {
 	return vocabulary(ctx, New(core))
 }
 
 // ReadingVocabulary is the same, for a window served the tools that read. A
 // window is told about the tools it serves and no others.
-func ReadingVocabulary(ctx context.Context, core Core) (map[string]Words, error) {
+func ReadingVocabulary(ctx context.Context, core Core) (map[string]Tool, error) {
 	return vocabulary(ctx, NewReading(core))
 }
 
 // ReviewingVocabulary is the same, for the window a person runs their cards in.
-func ReviewingVocabulary(ctx context.Context, core Core) (map[string]Words, error) {
+func ReviewingVocabulary(ctx context.Context, core Core) (map[string]Tool, error) {
 	return vocabulary(ctx, NewReviewing(core))
 }
 
-func vocabulary(ctx context.Context, server *sdk.Server) (map[string]Words, error) {
+func vocabulary(ctx context.Context, server *sdk.Server) (map[string]Tool, error) {
 	here, there := sdk.NewInMemoryTransports()
 	if _, err := server.Connect(ctx, here, nil); err != nil {
 		return nil, err
@@ -116,16 +121,16 @@ func vocabulary(ctx context.Context, server *sdk.Server) (map[string]Words, erro
 		return nil, err
 	}
 
-	words := make(map[string]Words, len(listed.Tools))
+	words := make(map[string]Tool, len(listed.Tools))
 	for _, tool := range listed.Tools {
 		about := firstRequired(tool.InputSchema)
-		words[tool.Name] = Words{
-			Title:   titleOf(tool),
-			About:   about,
-			Inside:  firstRequiredInside(tool.InputSchema, about),
-			Kind:    doing[tool.Name].Kind,
-			Stood:   doing[tool.Name].Stood,
-			Becomes: doing[tool.Name].Becomes,
+		words[tool.Name] = Tool{
+			Title:  titleOf(tool),
+			About:  about,
+			Inside: firstRequiredInside(tool.InputSchema, about),
+			Kind:   doing[tool.Name].Kind,
+			Match:  doing[tool.Name].Match,
+			Text:   doing[tool.Name].Text,
 		}
 	}
 	return words, nil

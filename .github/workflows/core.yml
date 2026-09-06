@@ -7,6 +7,9 @@ on:
       - "modules/libs/protocol/**"
       - "tests/**"
       - ".github/workflows/core.yml"
+      # The rules the linter is held to, and the ones written here in Go.
+      - ".golangci.yml"
+      - "**/gorules/**"
   push:
     branches: [main]
     paths:
@@ -14,6 +17,9 @@ on:
       - "modules/libs/protocol/**"
       - "tests/**"
       - ".github/workflows/core.yml"
+      # The rules the linter is held to, and the ones written here in Go.
+      - ".golangci.yml"
+      - "**/gorules/**"
   # A platform can be asked for after the checks have already run, without
   # rewriting a commit to carry the trailer.
   workflow_dispatch:
@@ -33,20 +39,25 @@ concurrency:
   group: core-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+permissions:
+  contents: read
+
 jobs:
   # Which machines this run is for. Linux always; a Windows or a mac runner
   # costs two and ten times a Linux one, and is asked for by name.
   asked:
     name: Platforms
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       matrix: ${{ steps.said.outputs.matrix }}
     steps:
       # The trailer is looked for in every commit the branch adds, so the whole
       # range has to be here to be read.
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - id: said
         env:
@@ -100,6 +111,84 @@ jobs:
           echo "matrix=[$entries]" >> "$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
 
+  # What .golangci.yml asks for, beyond the gofmt and go vet the test job runs.
+  # Once, on the cheapest machine: a rule about the shape of the code answers
+  # the same on all three.
+  #
+  # The core fails on what is found, as the window and the protocol do. The
+  # check arrived after the code did, and the backlog it named is empty.
+  lint:
+    name: "Lint :: Go"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: modules/libs/core/go.mod
+          cache-dependency-path: modules/libs/core/go.sum
+
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.12.2
+          working-directory: modules/libs/core
+          args: --timeout 15m
+
+      # The schema's Go is generated and holds the set clean, so here the
+      # linter is allowed to say no.
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.12.2
+          working-directory: modules/libs/protocol
+          args: --timeout 10m
+
+      # The vulnerability list is kept elsewhere and read at the time of the
+      # run, so this step can find something on a branch that changed nothing.
+      # It answers for the standard library of the Go above as well as for what
+      # is required.
+      - name: Vulnerabilities
+        run: |
+          go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+        working-directory: modules/libs/core
+
+      - name: Vulnerabilities
+        run: |
+          go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+        working-directory: modules/libs/protocol
+
+  # A numbered file a released build has run is a step somebody's index was
+  # brought through, and rewriting or deleting it moves a database this build
+  # can no longer reach. The schema goes forward by another number.
+  #
+  # Only a pull request has a base to compare against, and the base commit has
+  # to be in the clone to be read.
+  migration:
+    name: "Check :: Migrations"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # A rule nothing has been seen to refuse is an assumption, so the rule is
+      # put through a repository built to be refused before it is trusted with
+      # this one. It needs no base and runs on every event.
+      - name: What the rule refuses
+        run: modules/libs/core/adapter/index/migration-forward-only.sh --self-test
+
+      # Git holds the hashes, so nothing here is written down twice: a file the
+      # base already carries has to still be what it was there.
+      - name: Forward only
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: modules/libs/core/adapter/index/migration-forward-only.sh "$BASE"
+
   go:
     name: "Test :: Go :: ${{ matrix.name }}"
     needs: [asked]
@@ -118,14 +207,16 @@ jobs:
         shell: bash
         working-directory: modules/libs/core
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # The two caches are keyed apart: the modules answer to go.sum, the build
       # answers to the commit. Both carry the machine, because what a compiler
       # leaves behind is that machine's.
-      - uses: actions/setup-go@v7
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: "1.26"
+          go-version-file: modules/libs/core/go.mod
           cache: false
 
       # Where the compiler keeps what it built is the machine's own answer.
@@ -134,7 +225,7 @@ jobs:
           echo "build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
           echo "modules=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ steps.paths.outputs.modules }}
           key: go-mod-core-${{ matrix.runner }}-${{ hashFiles('modules/libs/core/go.sum') }}
@@ -143,7 +234,7 @@ jobs:
       # What the last compile and test run left behind: a run compiles what
       # changed and re-runs the tests that changed. The key carries the commit,
       # so the newest cache the branch can see is the one restored.
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ steps.paths.outputs.build }}
           key: go-build-core-${{ matrix.runner }}-${{ github.sha }}
@@ -185,7 +276,7 @@ jobs:
       # push to it and main's before that.
       # A run that found something still built most of it, and the next one is
       # the one that reads this back.
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         if: ${{ !cancelled() }}
         with:
           path: ${{ steps.paths.outputs.build }}

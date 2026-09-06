@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * One card of a deck, as a tile: a strip it is carried by and removed from, and
+ * One card of a deck, as a tile: a strip it is dragged by and removed from, and
  * under it the card's values, each in a box that is always open to typing.
  *
  * Every field of the stencil stands under its own name and holds as many lines
@@ -8,13 +8,13 @@
  * what is wrong with one value is said under that value.
  */
 import { computed, useId } from 'vue'
-import Amiss from './Amiss.vue'
-import Bar from './Bar.vue'
-import Deed from './Deed.vue'
-import Grown from './Grown.vue'
-import Rule from '../rule/Rule.vue'
-import { DECK_WORDS, sealed, type CardWords, type Stood, type Tile } from './deck'
-import type { Way } from './order'
+import ErrorMessage from './ErrorMessage.vue'
+import CardHeader from './CardHeader.vue'
+import RemoveButton from './RemoveButton.vue'
+import AutosizeTextarea from './AutosizeTextarea.vue'
+import Divider from '../divider/Divider.vue'
+import { DECK_WORDS, sealed, type CardWords, type PlacedFieldValue, type Tile } from './deck'
+import type { StepDirection } from './order'
 
 const props = withDefaults(
   defineProps<{
@@ -36,7 +36,7 @@ const emit = defineEmits<{
   (event: 'lift', press: DragEvent): void
   (event: 'release'): void
   /** The card asked to go one place along the order. */
-  (event: 'step', way: Way, press: KeyboardEvent): void
+  (event: 'step', direction: StepDirection, press: KeyboardEvent): void
   /**
    * One value as it now reads. A card writing a field twice is writing two
    * values, of which `nth` says which was typed in.
@@ -56,10 +56,10 @@ const called = computed(() => `${props.words.cardStem} ${props.tile.at}`)
 /** What the strip says cut the card, and where nothing cut it, that nothing did. */
 const cut = computed(() => props.tile.stencil ?? props.words.unknown(null))
 
-const boxId = (value: Stood): string => `${uid}-${encodeURIComponent(value.key)}`
+const boxId = (value: PlacedFieldValue): string => `${uid}-${encodeURIComponent(value.key)}`
 
 /** What is wrong with one value, said once, under the last box standing for its field. */
-const wrongIn = (value: Stood): readonly string[] =>
+const wrongIn = (value: PlacedFieldValue): readonly string[] =>
   value.last ? (props.wrongUnder.get(value.field) ?? []) : []
 </script>
 
@@ -71,13 +71,13 @@ const wrongIn = (value: Stood): readonly string[] =>
     :aria-setsize="tile.of"
     :data-card="tile.id"
     :data-section="tile.section ?? undefined"
-    :data-carried="tile.carried || undefined"
+    :data-dragged="tile.dragged || undefined"
   >
-    <Bar
-      :carry="`${words.carry}: ${called}`"
+    <CardHeader
+      :drag="`${words.drag}: ${called}`"
       @dragstart="emit('lift', $event)"
       @dragend="emit('release')"
-      @step="(way, press) => emit('step', way, press)"
+      @step="(direction, press) => emit('step', direction, press)"
     >
       <!-- A deck holds cards cut by more than one stencil, so the strip says
            which cut this one, and where nothing did, that nothing did. A name
@@ -92,21 +92,21 @@ const wrongIn = (value: Stood): readonly string[] =>
         {{ cut }}
       </p>
 
-      <template #deeds>
-        <Deed :label="`${words.remove}: ${called}`" @press="emit('remove')" />
+      <template #actions>
+        <RemoveButton :label="`${words.remove}: ${called}`" @press="emit('remove')" />
       </template>
-    </Bar>
+    </CardHeader>
 
     <div class="card__body flex flex-col">
       <!-- A card is waiting for a stencil only where it names one. -->
-      <Amiss
+      <ErrorMessage
         v-if="!tile.known && tile.stencil !== null"
         class="card__objects"
         role="alert"
         :said="words.unknown(tile.stencil)"
       />
 
-      <Amiss
+      <ErrorMessage
         v-if="wrong.length"
         class="card__objects"
         data-wrong
@@ -115,7 +115,7 @@ const wrongIn = (value: Stood): readonly string[] =>
       />
 
       <div v-for="value in tile.filled" :key="value.key" class="card__value">
-        <Rule at="start">
+        <Divider at="start">
           <label
             v-if="value.declared"
             class="card__field text-small text-hushed"
@@ -124,9 +124,9 @@ const wrongIn = (value: Stood): readonly string[] =>
             {{ value.field }}
           </label>
           <span v-else class="card__field text-small text-hushed">{{ value.field }}</span>
-        </Rule>
+        </Divider>
 
-        <Grown
+        <AutosizeTextarea
           v-if="value.declared"
           :id="boxId(value)"
           :text="value.text"
@@ -144,7 +144,7 @@ const wrongIn = (value: Stood): readonly string[] =>
           :data-wrote="value.field"
         >{{ value.text }}</p>
 
-        <Amiss
+        <ErrorMessage
           v-if="wrongIn(value).length"
           class="card__objects"
           :data-wrong-value="value.field"
@@ -168,7 +168,7 @@ const wrongIn = (value: Stood): readonly string[] =>
 
   position: relative;
   min-inline-size: 0;
-  border: var(--numen-stroke) solid var(--numen-node-border);
+  border: var(--numen-stroke) solid var(--numen-rule);
   overflow: hidden;
   overflow-wrap: anywhere;
 }
@@ -181,18 +181,18 @@ const wrongIn = (value: Stood): readonly string[] =>
   padding: var(--numen-box-air);
 }
 
-/* A rule divides the whole tile, so it runs to both edges of it. */
-.card__value > .rule {
+/* A divider divides the whole tile, so it runs to both edges of it. */
+.card__value > .divider {
   inline-size: auto;
   margin-inline: calc(-1 * var(--numen-box-air));
 }
 
-.card[data-carried] {
+.card[data-dragged] {
   opacity: 0.5;
 }
 
 /* What cut the card stands in the middle of the strip itself, and keeps clear
-   of the deed at its end. */
+   of the button at its end. */
 .card__cut {
   position: absolute;
   inset-inline: 2rem;

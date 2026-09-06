@@ -48,7 +48,7 @@ func TestAnEmptyLinksKeyTakesTheFirstEntry(t *testing.T) {
 	got := string(d.Bytes())
 	if again, err := Open([]byte(got)); err != nil {
 		t.Fatalf("the note stopped being readable: %v\n%s", err, got)
-	} else if links := Parse(domain.FileRef{Path: "D.md"}, []byte(again.Bytes())).Links; len(links) != 1 {
+	} else if links := Parse(domain.Fingerprint{Path: "D.md"}, []byte(again.Bytes())).Links; len(links) != 1 {
 		t.Errorf("links = %v\n%s", links, got)
 	}
 }

@@ -14,46 +14,69 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
+// SettingsBounds is how far each setting of a preset goes, as the schema
+// carries it. They are the domain's own, so a client draws the field a person
+// types into from what the write is held to.
+func SettingsBounds() *v1.SettingsBounds {
+	return &v1.SettingsBounds{
+		MinutesADay: bounded(review.MinutesADayBounds),
+		NewADay:     bounded(review.NewADayBounds),
+		ReviewsADay: bounded(review.ReviewsADayBounds),
+		Retention:   bounded(review.RetentionBounds),
+		Backlog:     bounded(review.BacklogBounds),
+		Interval:    bounded(review.IntervalBounds),
+		Load:        bounded(review.LoadBounds),
+	}
+}
+
+// bounded is one pair of bounds as the schema carries it.
+func bounded(b review.Bounds) *v1.Bounds {
+	return &v1.Bounds{Least: b.Least, Most: b.Most}
+}
+
 // PresetOf is one preset as the schema carries it.
-func PresetOf(p flashcards.Preset, title string) *v1.Preset {
+func PresetOf(p flashcards.PresetContents, title string) *v1.Preset {
 	return &v1.Preset{
 		Path:     p.Path,
 		Title:    title,
-		Settings: SettingsOf(p.Preset),
+		Settings: SettingsOf(p.Settings),
 		Problems: p.Problems,
-		Stops:    StoppedOf(p.Stops),
-		StopsOn:  StoppedOf(p.StopsToday),
+		Stops:    StopReasonOf(p.Stops),
+		StopsOn:  StopReasonOf(p.StopsToday),
 	}
 }
 
-// StoppedOf is why a preset schedules nothing, as the schema names it.
-func StoppedOf(s history.Stopped) v1.Stopped {
+// StopReasonOf is why a preset schedules nothing, as the schema names it.
+func StopReasonOf(s review.StopReason) v1.StopReason {
 	switch s {
-	case history.StoppedNoMinutes:
-		return v1.Stopped_STOPPED_NO_MINUTES
-	case history.StoppedNoCards:
-		return v1.Stopped_STOPPED_NO_CARDS
-	case history.StoppedNoDay:
-		return v1.Stopped_STOPPED_NO_DAY
-	case history.StoppedPastDay:
-		return v1.Stopped_STOPPED_PAST_DAY
-	case history.StoppedNoLoad:
-		return v1.Stopped_STOPPED_NO_LOAD
-	case history.StoppedNoWeek:
-		return v1.Stopped_STOPPED_NO_WEEK
+	case review.StoppedNoMinutes:
+		return v1.StopReason_STOP_REASON_NO_MINUTES
+	case review.StoppedNoCards:
+		return v1.StopReason_STOP_REASON_NO_CARDS
+	case review.StoppedNoDay:
+		return v1.StopReason_STOP_REASON_NO_DAY
+	case review.StoppedPastDay:
+		return v1.StopReason_STOP_REASON_PAST_DAY
+	case review.StoppedNoLoad:
+		return v1.StopReason_STOP_REASON_NO_LOAD
+	case review.StoppedNoWeek:
+		return v1.StopReason_STOP_REASON_NO_WEEK
+	case review.StoppedNothing:
+		return v1.StopReason_STOP_REASON_NOTHING
+	default:
+		return v1.StopReason_STOP_REASON_UNSPECIFIED
 	}
-	return v1.Stopped_STOPPED_NOTHING
 }
 
 // SettingsOf is how a preset schedules, as the schema carries it.
-func SettingsOf(p history.Preset) *v1.Settings {
+func SettingsOf(p review.Preset) *v1.Settings {
 	out := &v1.Settings{
 		Goal:        GoalOf(p.Goal),
-		Counts:      CountsOf(p.Counts),
+		Counts:      BudgetUnitOf(p.Counts),
 		MinutesADay: int32(p.MinutesADay),
 		NewADay:     int32(p.NewADay),
 		ReviewsADay: int32(p.ReviewsADay),
@@ -65,10 +88,10 @@ func SettingsOf(p history.Preset) *v1.Settings {
 		Load:        make(map[string]int32, len(p.Load)),
 	}
 	if !p.By.IsZero() {
-		out.ByDate = p.By.Format(history.Named)
+		out.ByDate = p.By.Format(review.Named)
 	}
 	for day, share := range p.Load {
-		out.Load[history.DayName(day)] = int32(share)
+		out.Load[review.DayName(day)] = int32(share)
 	}
 	return out
 }
@@ -76,10 +99,10 @@ func SettingsOf(p history.Preset) *v1.Settings {
 // SettingsIn is the settings a client is putting into a preset, in the words
 // the core holds them in. A day that is not one and a load kept on something
 // that is not a day of the week are the client's to correct.
-func SettingsIn(s *v1.Settings) (history.Preset, error) {
-	out := history.Preset{
+func SettingsIn(s *v1.Settings) (review.Preset, error) {
+	out := review.Preset{
 		Goal:        GoalIn(s.GetGoal()),
-		Counts:      CountsIn(s.GetCounts()),
+		Counts:      BudgetUnitIn(s.GetCounts()),
 		MinutesADay: int(s.GetMinutesADay()),
 		NewADay:     int(s.GetNewADay()),
 		ReviewsADay: int(s.GetReviewsADay()),
@@ -90,16 +113,16 @@ func SettingsIn(s *v1.Settings) (history.Preset, error) {
 		EvenLoad:    s.GetEvenLoad(),
 	}
 	if written := strings.TrimSpace(s.GetByDate()); written != "" {
-		day, err := time.Parse(history.Named, written)
+		day, err := time.Parse(review.Named, written)
 		if err != nil {
-			return history.Preset{}, err
+			return review.Preset{}, err
 		}
 		out.By = day
 	}
 	for _, name := range slices.Sorted(maps.Keys(s.GetLoad())) {
-		day, known := history.Weekday(name)
+		day, known := review.Weekday(name)
 		if !known {
-			return history.Preset{}, errors.New(name + " is not a day of the week")
+			return review.Preset{}, errors.New(name + " is not a day of the week")
 		}
 		if out.Load == nil {
 			out.Load = make(map[time.Weekday]int, len(s.GetLoad()))
@@ -110,28 +133,28 @@ func SettingsIn(s *v1.Settings) (history.Preset, error) {
 }
 
 // CurveOf is a curve as the schema carries it.
-func CurveOf(c flashcards.Curve) *v1.Curve {
+func CurveOf(c review.Curve) *v1.Curve {
 	out := &v1.Curve{
 		Goal:      GoalOf(c.Goal),
 		Grid:      c.Grid,
 		Days:      c.Days,
-		At:        make([]*v1.Point, 0, len(c.At)),
-		Now:       markOf(c.Now),
-		Suggested: markOf(c.Suggested),
+		At:        make([]*v1.Point, 0, len(c.Points)),
+		Now:       placeOf(c.Now),
+		Suggested: placeOf(c.Suggested),
 		Decks:     int32(c.Decks),
 		Cards:     int32(c.Cards),
 		Overdue:   int32(c.Overdue),
 		Unbegun:   int32(c.Unbegun),
 	}
-	for _, one := range c.At {
+	for _, one := range c.Points {
 		out.At = append(out.At, &v1.Point{
 			Reviews:  one.Reviews,
 			Minutes:  one.Minutes,
 			Retained: one.Retained,
 			Owed:     int32(one.Owed),
-			Through:  one.Through,
+			Through:  one.Share,
 			Enough:   one.Enough,
-			Closed:   one.Closed.Names(),
+			Closed:   BudgetsOf(one.Closed),
 			Short:    int32(one.Short),
 			Clears:   int32(one.Clears),
 			Learned:  int32(one.Learned),
@@ -142,18 +165,49 @@ func CurveOf(c flashcards.Curve) *v1.Curve {
 	return out
 }
 
-func markOf(m flashcards.Mark) *v1.Mark {
-	return &v1.Mark{At: int32(m.At), Value: m.Value, Day: m.Day}
+// BudgetsOf are the budgets that closed a day, as the schema names them.
+func BudgetsOf(names review.BudgetNames) []v1.BudgetName {
+	out := make([]v1.BudgetName, 0, len(names))
+	for _, one := range names {
+		out = append(out, BudgetOf(one))
+	}
+	return out
+}
+
+// BudgetOf is one budget, as the schema names it. Every budget the core holds
+// is named here, so a budget added to the core is a case added beside them.
+func BudgetOf(name review.BudgetName) v1.BudgetName {
+	switch name {
+	case review.ClosedNothing:
+		return v1.BudgetName_BUDGET_NAME_UNSPECIFIED
+	case review.ClosedMinutes:
+		return v1.BudgetName_BUDGET_NAME_MINUTES_A_DAY
+	case review.ClosedNew:
+		return v1.BudgetName_BUDGET_NAME_NEW_A_DAY
+	case review.ClosedReviews:
+		return v1.BudgetName_BUDGET_NAME_REVIEWS_A_DAY
+	case review.ClosedDate:
+		return v1.BudgetName_BUDGET_NAME_BY_DATE
+	case review.ClosedBacklog:
+		return v1.BudgetName_BUDGET_NAME_BACKLOG
+	case review.ClosedPaused:
+		return v1.BudgetName_BUDGET_NAME_PAUSED
+	}
+	return v1.BudgetName_BUDGET_NAME_UNSPECIFIED
+}
+
+func placeOf(p review.Place) *v1.Place {
+	return &v1.Place{At: int32(p.Index), Value: p.Value, Day: p.Day}
 }
 
 // GoalOf is which value the control steers, as the schema names it.
-func GoalOf(g history.Goal) v1.Goal {
+func GoalOf(g review.Goal) v1.Goal {
 	switch g {
-	case history.GoalMinutes:
+	case review.GoalMinutes:
 		return v1.Goal_GOAL_MINUTES_A_DAY
-	case history.GoalRetention:
+	case review.GoalRetention:
 		return v1.Goal_GOAL_RETENTION
-	case history.GoalDate:
+	case review.GoalDate:
 		return v1.Goal_GOAL_BY_DATE
 	default:
 		return v1.Goal_GOAL_UNSPECIFIED
@@ -162,25 +216,25 @@ func GoalOf(g history.Goal) v1.Goal {
 
 // GoalIn is the goal a client named, in the words the core holds it in. A goal
 // the schema does not name is refused where the settings are weighed.
-func GoalIn(g v1.Goal) history.Goal {
+func GoalIn(g v1.Goal) review.Goal {
 	switch g {
 	case v1.Goal_GOAL_MINUTES_A_DAY:
-		return history.GoalMinutes
+		return review.GoalMinutes
 	case v1.Goal_GOAL_RETENTION:
-		return history.GoalRetention
+		return review.GoalRetention
 	case v1.Goal_GOAL_BY_DATE:
-		return history.GoalDate
+		return review.GoalDate
 	default:
 		return ""
 	}
 }
 
 // RuleOf is what counts as learned, as the schema names it.
-func RuleOf(r history.Rule) v1.Rule {
+func RuleOf(r review.LearnedRule) v1.Rule {
 	switch r {
-	case history.RuleInterval:
+	case review.RuleInterval:
 		return v1.Rule_RULE_INTERVAL
-	case history.RuleRetention:
+	case review.RuleRetention:
 		return v1.Rule_RULE_RETENTION
 	default:
 		return v1.Rule_RULE_UNSPECIFIED
@@ -189,38 +243,38 @@ func RuleOf(r history.Rule) v1.Rule {
 
 // RuleIn is the rule a client named, in the words the core holds it in. A rule
 // the schema does not name is refused where the settings are weighed.
-func RuleIn(r v1.Rule) history.Rule {
+func RuleIn(r v1.Rule) review.LearnedRule {
 	switch r {
 	case v1.Rule_RULE_INTERVAL:
-		return history.RuleInterval
+		return review.RuleInterval
 	case v1.Rule_RULE_RETENTION:
-		return history.RuleRetention
+		return review.RuleRetention
 	default:
 		return ""
 	}
 }
 
-// CountsOf is what a day's budget is spent on, as the schema names it.
-func CountsOf(c history.Counts) v1.Counts {
-	switch c {
-	case history.CountsCards:
-		return v1.Counts_COUNTS_CARDS
-	case history.CountsShows:
-		return v1.Counts_COUNTS_SHOWS
+// BudgetUnitOf is what a day's budget is counted in, as the schema names it.
+func BudgetUnitOf(u review.BudgetUnit) v1.BudgetUnit {
+	switch u {
+	case review.BudgetUnitCards:
+		return v1.BudgetUnit_BUDGET_UNIT_CARDS
+	case review.BudgetUnitShows:
+		return v1.BudgetUnit_BUDGET_UNIT_SHOWS
 	default:
-		return v1.Counts_COUNTS_UNSPECIFIED
+		return v1.BudgetUnit_BUDGET_UNIT_UNSPECIFIED
 	}
 }
 
-// CountsIn is what a client said a day's budget is spent on, in the words the
-// core holds it in. A value the schema does not name is refused where the
+// BudgetUnitIn is what a client said a day's budget is counted in, in the words
+// the core holds it in. A value the schema does not name is refused where the
 // settings are weighed.
-func CountsIn(c v1.Counts) history.Counts {
-	switch c {
-	case v1.Counts_COUNTS_CARDS:
-		return history.CountsCards
-	case v1.Counts_COUNTS_SHOWS:
-		return history.CountsShows
+func BudgetUnitIn(u v1.BudgetUnit) review.BudgetUnit {
+	switch u {
+	case v1.BudgetUnit_BUDGET_UNIT_CARDS:
+		return review.BudgetUnitCards
+	case v1.BudgetUnit_BUDGET_UNIT_SHOWS:
+		return review.BudgetUnitShows
 	default:
 		return ""
 	}
@@ -229,7 +283,7 @@ func CountsIn(c v1.Counts) history.Counts {
 // learns is the day the whole material stands learned, as the schema carries
 // it. A place with no such day to name carries none.
 func learns(day int) *int32 {
-	if day == history.LearnsUnasked {
+	if day == review.LearnsUnasked {
 		return nil
 	}
 	out := int32(day)

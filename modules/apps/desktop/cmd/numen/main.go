@@ -13,25 +13,25 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path"
-	"sync"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/letgo"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/platform"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 func main() {
-	cfg := platform.Config()
+	cfg := configured(os.Stderr)
 	var letting agentOptions
 	var said sizes
 	var vault string
@@ -43,9 +43,9 @@ func main() {
 	flag.StringVar(&letting.addr, "mcp-addr", defaultAgentAddr,
 		"where agents reach this vault; anything but a loopback address opens it to the network")
 	flag.BoolVar(&letting.off, "no-mcp", false, "do not let agents reach this vault")
-	flag.Float64Var(&said.drawn, "interface-scale", 0,
+	flag.Float64Var(&said.interfaceScale, "interface-scale", 0,
 		"how large the interface is drawn, 1 being as designed; this launch alone")
-	flag.Float64Var(&said.set, "text-scale", 0,
+	flag.Float64Var(&said.textScale, "text-scale", 0,
 		"how large the text a person reads is set, 1 being as designed; this launch alone")
 	flag.BoolVar(&cfg.RebuildIndex, "rebuild-index", false,
 		"read every file and put it in the index again, whatever the index remembers")
@@ -64,30 +64,39 @@ func main() {
 	}
 }
 
+// configured is what this binary starts from: what the machine supplies the
+// core, and where the core says what it went wrong at and carried on past. That
+// is the same place everything else this binary could not do is said.
+func configured(out io.Writer) container.Config {
+	cfg := platform.Config()
+	cfg.Trouble = func(err error) { fmt.Fprintln(out, "numen:", err) }
+	return cfg
+}
+
 // sizes are what the command line said about size: how large the interface is
 // drawn, and how large the text a person reads is set. Zero is not said, and
 // the settings file stands.
-type sizes struct{ drawn, set float64 }
+type sizes struct{ interfaceScale, textScale float64 }
 
 // check is what is wrong with a number the setting it says does not take.
 func (s sizes) check() error {
-	if s.drawn > 0 {
-		if err := settings.InterfaceScaleBounds.Check("-interface-scale", s.drawn); err != nil {
+	if s.interfaceScale > 0 {
+		if err := settings.InterfaceScaleBounds.Check("-interface-scale", s.interfaceScale); err != nil {
 			return err
 		}
 	}
-	if s.set > 0 {
-		return settings.TextScaleBounds.Check("-text-scale", s.set)
+	if s.textScale > 0 {
+		return settings.TextScaleBounds.Check("-text-scale", s.textScale)
 	}
 	return nil
 }
 
-func run(cfg container.Config, letting agentOptions, vault string, said sizes) error {
-	if err := said.check(); err != nil {
+func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) error {
+	if err := sizes.check(); err != nil {
 		return err
 	}
 
-	// Before anything draws: the settings a folder picker reads are looked for
+	// Before anything draws: the settings a folder dialog reads are looked for
 	// once, the first time something asks for one.
 	findSchemas()
 
@@ -100,7 +109,7 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 	}
 	cfg = cfg.Indexing(chosen.Indexing)
 	cfg.Agent = chosen.Agent
-	cfg.InterfaceScale, cfg.TextScale = said.drawn, said.set
+	cfg.InterfaceScale, cfg.TextScale = sizes.interfaceScale, sizes.textScale
 
 	// Before the window: every page this process reads is read through the
 	// runtime made here, and one made after the window reads a page as nothing.
@@ -108,12 +117,12 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 	if err := cfg.PrepareRecogniser(ctx); err != nil {
 		fmt.Fprintln(os.Stderr, "numen: nothing to read a scan with:", err)
 	}
-	pages, err := webui.Pages()
+	pages, err := editor.Pages()
 	if err != nil {
 		return err
 	}
 
-	opened, err := webui.Open(ctx, cfg, vault, os.Stdout)
+	opened, err := editor.Open(ctx, cfg, vault, os.Stdout)
 	if err != nil {
 		return err
 	}
@@ -124,12 +133,12 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 
 	// The agents' endpoint on the vault in the window, let in once the window is
 	// built.
-	reachable := &agents.Swapping{
+	reachable := &agents.Endpoint{
 		Serve: func() (func() error, error) {
-			return serveAgents(ctx, cfg, opened, letting, os.Stdout)
+			return serveAgents(ctx, cfg, opened, mcp, os.Stdout)
 		},
-		Standing:    opened.Showing,
-		Answers:     opened.API.Answers,
+		Showing:     opened.Showing,
+		Handler:     opened.API.Answers,
 		Unreachable: func(said string) { opened.API.Unreachable.Store(said) },
 		Trouble:     func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
 	}
@@ -139,7 +148,7 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 	// Everything behind the settling, in the order each part needs the next: the
 	// agents are let go of, then the scan and the follower stop and the database
 	// closes, then what they ran under ends.
-	behind := letgo.InOrder(
+	behind := shutdown.InOrder(
 		reachable.Off,
 		func() {
 			if err := opened.Close(); err != nil {
@@ -160,7 +169,7 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 	// where a page calls the close off: the question is asked on the screen the
 	// person is looking at.
 	var window *application.WebviewWindow
-	seen := sight{
+	seen := visibility{
 		hide: func() { window.Hide() },
 		show: func() { window.Show() },
 	}
@@ -198,12 +207,12 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 		EnableFileDrop: true,
 	})
 
-	// Picking a folder is the machine's own, and it opens over this window.
-	opened.API.Choosing = &picker{window: window}
+	// Choosing a folder is the machine's own, and it opens over this window.
+	opened.API.Vaults.FolderDialog = &folderDialog{window: window}
 
 	// The window is named after what the person is looking at, and is named
 	// again each time the page says what it has open.
-	naming := func(open domain.Attention) { window.SetTitle(titled(opened.Showing(), open)) }
+	naming := func(open domain.OpenTabs) { window.SetTitle(titled(opened.Showing(), open)) }
 	opened.API.Attends = naming
 
 	// Files let go of over the window, copied into the folder the mark under
@@ -217,7 +226,7 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 		if !marked {
 			return
 		}
-		opened.Brings(ctx, into, event.Context().DroppedFiles())
+		opened.Imports(ctx, into, event.Context().DroppedFiles())
 	})
 
 	// Opening another vault, as a person asks for it. The agents are told which
@@ -229,7 +238,7 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 		return err
 	}
 
-	// A tool is served where what it works through is there, so the picker and
+	// A tool is served where what it works through is there, so the dialog and
 	// the swap above stand before the agents are let in.
 	//
 	// An agent nobody can reach is a panel that says so, not a window that does
@@ -258,7 +267,7 @@ const droppedInto = "data-file-drop-target"
 // titled is what the window is called: the application, and the file the
 // person is looking at. A window with no file in front of it is called after
 // the vault it is showing.
-func titled(v domain.Vault, open domain.Attention) string {
+func titled(v domain.Vault, open domain.OpenTabs) string {
 	if front, held := open.Fronted(); held && front.Path != "" {
 		return "numen — " + path.Base(front.Path)
 	}
@@ -266,126 +275,6 @@ func titled(v domain.Vault, open domain.Attention) string {
 		return "numen"
 	}
 	return "numen — " + v.Name
-}
-
-// sight is the window going out of sight and coming back into it. Hiding
-// leaves the page drawing and answering, so what only it holds is handed over
-// after the window is gone from the screen.
-type sight struct {
-	hide func()
-	show func()
-}
-
-// closing is the window being asked to go, and answers with whether it may.
-//
-// The window goes out of sight first and the vault settles behind it. A page
-// holding text a person has to answer for calls the close off, the window comes
-// back, and the close is asked for again once they have answered. That wait is
-// on a person and is not measured.
-func closing(
-	ctx context.Context,
-	g *going,
-	s sight,
-	answered func(context.Context) bool,
-	again func(),
-) bool {
-	s.hide()
-	if g.wait() {
-		return true
-	}
-	s.show()
-	go func() {
-		if answered(ctx) {
-			again()
-		}
-	}()
-	return false
-}
-
-// asked is a quit that did not come through the window, and answers with
-// whether the application may go.
-//
-// It is answered on the thread the page is served on, so the window is hidden
-// and the settling happens off it, and the quit is asked for again once it is
-// over. A settling that ended with a question standing puts the window back and
-// asks for nothing: the person is answering it, and that is the whole of what
-// the goroutine left behind may do.
-func asked(g *going, s sight, quit func()) bool {
-	if g.settled() {
-		return true
-	}
-	go func() {
-		s.hide()
-		if g.wait() {
-			quit()
-			return
-		}
-		s.show()
-	}()
-	return false
-}
-
-// quitBound is how long the window waits for a page that says nothing to write
-// what only it holds. A vault being changed waits under the same bound.
-const quitBound = webui.HandedOverIn
-
-// going is the vault settling, whichever way the window is asked to go.
-//
-// A settling that ends with a question standing leaves the vault as it was, and
-// the next ask begins another one.
-type going struct {
-	settle func(context.Context) bool
-
-	mu   sync.Mutex
-	turn *turn
-	done bool
-}
-
-// turn is one settling, and what it answered.
-type turn struct {
-	over    chan struct{}
-	settled bool
-}
-
-// wait settles the vault and answers with whether it did. A settling already
-// running is joined and its answer shared.
-func (g *going) wait() bool {
-	g.mu.Lock()
-	if g.done {
-		g.mu.Unlock()
-		return true
-	}
-	this := g.turn
-	if this == nil {
-		this = &turn{over: make(chan struct{})}
-		g.turn = this
-		go g.begin(this)
-	}
-	g.mu.Unlock()
-
-	<-this.over
-	return this.settled
-}
-
-// settled reports whether there is nothing left owed.
-func (g *going) settled() bool {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	return g.done
-}
-
-func (g *going) begin(this *turn) {
-	defer close(this.over)
-
-	ctx, cancel := context.WithTimeout(context.Background(), quitBound)
-	defer cancel()
-	settled := g.settle(ctx)
-
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	this.settled = settled
-	g.done = settled
-	g.turn = nil
 }
 
 // agentOptions is what the person said about letting agents in.

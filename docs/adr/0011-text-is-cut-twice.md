@@ -1,9 +1,9 @@
-# ADR-0011: Text is cut twice
+# Text is cut twice
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/apps/desktop`
-- **Related:** ADR-0010, ADR-0012, ADR-0013, ADR-0014, ADR-0015, ADR-0016
+- **Applies to:** `modules/libs/core`
+- **Related:** [A source is text in one table](0010-a-source-is-text-in-one-table.md), [A chunk is identified by its text](0012-a-chunk-is-identified-by-its-text.md), [The vector index stays inside SQLite](0013-the-vector-index-stays-inside-sqlite.md), [One search, three rankings, merged by rank](0014-one-search-three-rankings.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [A passage is a range of bytes](0016-a-passage-is-a-range-of-bytes.md)
 
 ## Context
 
@@ -42,14 +42,14 @@ A note is cut into the same small chunks as a book, and a note's large chunk is 
 
 A file that puts a whole book on four lines is cut like any other. The small chunk is checked against the model's input limit and stays under it with margin.
 
-The word counts, the two overlaps and the legibility thresholds are constants in `cutting`. The character limit is the one value settings reach, and it is derived from the model's input limit.
+The word counts, the two overlaps and the legibility thresholds are constants in `chunking`. The character limit is the one value settings reach, and it is derived from the model's input limit.
 
 ## Consequences
 
 - Two cuts of one text are stored, and the small one multiplies the number of vectors several times over.
 - A part shorter than the small chunk is a chunk of its own.
-- Sizes tuned against one corpus are not guaranteed on another, and the acceptance set is what makes a bad choice visible (ADR-0014).
-- A model with a smaller input limit forces the small chunk down, and the cut moves with it (ADR-0012).
+- Sizes tuned against one corpus are not guaranteed on another, and the acceptance set is what makes a bad choice visible.
+- A model with a smaller input limit forces the small chunk down, and the cut moves with it.
 - What the sizes cost to store and to embed is in [performance](../performance.md).
 
 ## Alternatives considered

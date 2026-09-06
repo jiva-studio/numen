@@ -1,284 +1,53 @@
 syntax = "proto3";
 
-// What a client may ask about a vault.
+// What a client may ask about the vault a window is showing, taken whole.
 //
-// This file is the contract, and the only place it is written down. The Go that
-// answers and the TypeScript that asks are both generated from it, so a field
-// that changes here fails to compile on the side that has not caught up.
-//
-// Nothing of the index is described here: a note is addressed by the path it is
-// filed under, which is what the vault calls it.
+// What the vault is, what has changed in it, and where in it the person stands:
+// the questions that are about the vault itself and not about anything filed in
+// it. Its files are file.proto, its notes note.proto and its text search.proto.
 package numen.v1;
+
+import "numen/v1/shared.proto";
 
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
 
-// VaultService answers questions about the one vault a client is looking at.
+// VaultService answers what the one vault a client is looking at is, and what
+// the person is at in it.
 service VaultService {
-  // State is what the vault is and how far reading it has got.
-  rpc State(StateRequest) returns (StateResponse);
+  // GetVaultState is what the vault is and how far reading it has got.
+  rpc GetVaultState(GetVaultStateRequest) returns (GetVaultStateResponse);
 
-  // Opening is the note to show when nothing else has been chosen. It answers
-  // with nothing until a scan has stored something.
-  rpc Opening(OpeningRequest) returns (OpeningResponse);
+  // WatchVaultChanges reports the notes that changed on disk, for as long as
+  // the caller listens. It says which notes, and nothing about them: the caller
+  // knows what it is showing and asks for what it needs.
+  rpc WatchVaultChanges(WatchVaultChangesRequest) returns (stream WatchVaultChangesResponse);
 
-  // Neighbourhood is one note and everything joined to it.
-  rpc Neighbourhood(NeighbourhoodRequest) returns (NeighbourhoodResponse);
-
-  // Resolve answers where addresses written in one note land.
-  rpc Resolve(ResolveRequest) returns (ResolveResponse);
-
-  // Names is the names in a vault that match what was typed: a note's own
-  // title, and the headings inside notes. It is asked as a person types, and
-  // the last word matches on its prefix.
-  //
-  // It reads names and nothing else. Searching the text a vault holds is
-  // Search, and that answers with passages.
-  rpc Names(NamesRequest) returns (NamesResponse);
-
-  // Headings is what each note asked about is divided into, in the order the
-  // headings stand in it. A path that names no note, and a note carrying no
-  // headings, are both absent from the answer.
-  //
-  // The answer carries one entry per note, and a path named twice is answered
-  // once. A path past the ceiling the vault sets is not answered at all.
-  rpc Headings(HeadingsRequest) returns (HeadingsResponse);
-
-  // Standing is what the vault holds at each of those paths, so a client
-  // holding a path opens what stands there in the editor made for it. The kind
-  // is read off the vault itself, so a path nothing has scanned is answered
-  // with what stands there. A path with nothing at it is absent from the
-  // answer.
-  rpc Standing(StandingRequest) returns (StandingResponse);
-
-  // Search is the text a vault holds that answers what was typed, by the words
-  // in it or by what it means or by what a section is called. The caller says
-  // which way it is asked, so a client drawing them apart asks once for each.
-  rpc Search(SearchRequest) returns (SearchResponse);
-
-  // Changes reports the notes that changed on disk, for as long as the caller
-  // listens. It says which notes, and nothing about them: the caller knows
-  // what it is showing and asks for what it needs.
-  rpc Changes(ChangesRequest) returns (stream ChangesResponse);
-
-  // Focus reports the places something else asked to be put in front of the
-  // person — an agent working the vault beside them — for as long as the
+  // WatchFocus reports the places something else asked to be put in front of
+  // the person — an agent working the vault beside them — for as long as the
   // caller listens. What travelling there looks like is the client's.
-  rpc Focus(FocusRequest) returns (stream FocusResponse);
+  rpc WatchFocus(WatchFocusRequest) returns (stream WatchFocusResponse);
 
-  // Attending says what the person has open — every tab of the window, and
+  // WriteOpenTabs says what the person has open — every tab of the window, and
   // which of them is in front. The client says so again whenever any of it
   // changes, and an agent working the vault beside them reads what it last
   // said.
-  rpc Attending(AttendingRequest) returns (AttendingResponse);
-
-  // Editing reports a change being made to a note's prose while it is being
-  // made, for as long as the caller listens. It is what a person reading that
-  // note is shown; the note itself arrives the way every other change does.
-  rpc Editing(EditingRequest) returns (stream EditingResponse);
-
-  // Tasks reports everything the application is doing behind the window, for as
-  // long as the caller listens: what it is, what it is on, and how far it has
-  // got.
-  //
-  // The whole list arrives every time any of it changes, and the first arrives
-  // at once, so a window that opened while work was running is told about it.
-  // It is a stream rather than a question asked over and over, because what is
-  // being done is known here the moment it changes and work can begin without
-  // the window asking for it — an agent is told to read a document, and this is
-  // where the person watching sees it happen.
-  rpc Tasks(TasksRequest) returns (stream TasksResponse);
-
-  // List is what one folder of the vault holds. A tree asks for a folder as it
-  // is opened, one folder to a request.
-  rpc List(ListRequest) returns (ListResponse);
-
-  // Read answers with the prose of a note, below its frontmatter.
-  rpc Read(ReadRequest) returns (ReadResponse);
-
-  // Write puts prose into a note, keeping the frontmatter the file has when the
-  // write lands and creating the file where there is none. A note that no
-  // longer holds the prose the caller read is left alone and answered
-  // `changed`.
-  rpc Write(WriteRequest) returns (WriteResponse);
-
-  // Create makes a note. The file is named after the title, and the links the
-  // note carries are written into it as it is made, so it arrives joined.
-  rpc Create(CreateRequest) returns (CreateResponse);
-
-  // Join writes a relationship into one note. The note at the other end is left
-  // alone: a link is one end's account of a relationship.
-  rpc Join(JoinRequest) returns (JoinResponse);
-
-  // Rename gives a note a different name. A note is shown by its title, else by
-  // its first level-one heading, else by its filename: whichever of the three
-  // names it is brought into line, and the file follows it where a title and a
-  // filename are kept as one name.
-  rpc Rename(RenameRequest) returns (RenameResponse);
-
-  // Move puts a file or a folder somewhere else in the vault. Renaming a file
-  // is a move within one folder.
-  rpc Move(MoveRequest) returns (MoveResponse);
-
-  // Syncing is whether renaming either a note's title or the name of its file
-  // brings the other into line.
-  rpc Syncing(SyncingRequest) returns (SyncingResponse);
-
-  // ChooseSyncing writes that setting into the file a person configures this
-  // installation in. The file is patched as an object, so every key a person
-  // typed stays where it was, and the next rename reads what was written.
-  rpc ChooseSyncing(ChooseSyncingRequest) returns (ChooseSyncingResponse);
-
-  // Hanging is whether a node in the plex hangs the headings of its note under
-  // the box, and how many of them stand there at once.
-  rpc Hanging(HangingRequest) returns (HangingResponse);
-
-  // ChooseHanging writes those settings into the file a person configures this
-  // installation in. The file is patched as an object, so every key a person
-  // typed stays where it was.
-  rpc ChooseHanging(ChooseHangingRequest) returns (ChooseHangingResponse);
-
-  // Reviewing is the hour a day of review begins at, on the clock on the wall.
-  rpc Reviewing(ReviewingRequest) returns (ReviewingResponse);
-
-  // ChooseReviewing writes that hour into the file a person configures this
-  // installation in. The file is patched as an object, so every key a person
-  // typed stays where it was.
-  rpc ChooseReviewing(ChooseReviewingRequest) returns (ChooseReviewingResponse);
-
-  // Settings is every setting of the file a person configures this
-  // installation in, and the models the settings that name one can be set to.
-  rpc Settings(SettingsRequest) returns (SettingsResponse);
-
-  // ChooseSettings writes settings into that file. The file is patched as an
-  // object, so every key a person typed stays where it was, and a file the
-  // settings could not be read out of again is not written at all.
-  rpc ChooseSettings(ChooseSettingsRequest) returns (ChooseSettingsResponse);
-
-  // SettingsFile is that file as its person wrote it, byte for byte.
-  rpc SettingsFile(SettingsFileRequest) returns (SettingsFileResponse);
-
-  // WriteSettingsFile replaces that file whole, with the bytes as they were
-  // typed. A file the settings cannot be read out of is refused and the file is
-  // left as it was; what is said names where in the file the trouble is. A file
-  // standing at anything other than what the caller presents is left alone and
-  // answered `changed`.
-  rpc WriteSettingsFile(WriteSettingsFileRequest) returns (WriteSettingsFileResponse);
-
-  // Remove takes a file or a folder out of the vault, into the trash it can be
-  // brought back from. The links that pointed at it are left as they were
-  // written: a link is not wrong because the note it names is gone.
-  rpc Remove(RemoveRequest) returns (RemoveResponse);
-
-  // MakeFolder makes an empty folder. The folders above it are made with it.
-  rpc MakeFolder(MakeFolderRequest) returns (MakeFolderResponse);
-
-  // Quitting says the window is going, for as long as the caller listens. A
-  // caller holding work that is only in its own memory writes it now and
-  // answers with Flushed.
-  rpc Quitting(QuittingRequest) returns (stream QuittingResponse);
-
-  // Flushed says what a caller has left. Nothing left lets the window go; work
-  // a person is being asked about keeps it open. A caller that never says it is
-  // waited for and then left behind.
-  rpc Flushed(FlushedRequest) returns (FlushedResponse);
+  rpc WriteOpenTabs(WriteOpenTabsRequest) returns (WriteOpenTabsResponse);
 }
 
-// Refusal is why a note could not be read or written.
-enum Refusal {
-  REFUSAL_UNSPECIFIED = 0;
+message GetVaultStateRequest {}
 
-  // Nothing is at the path. A read says so; a write creates the file.
-  REFUSAL_MISSING = 1;
-
-  // The file is in the vault and is not a note.
-  REFUSAL_NOT_A_NOTE = 2;
-
-  // The file is not text this can carry.
-  REFUSAL_NOT_TEXT = 3;
-
-  // The file is past the size a note is read at.
-  REFUSAL_TOO_LARGE = 4;
-
-  // The prose opens with a frontmatter delimiter, so writing it would put a
-  // second block inside the first.
-  REFUSAL_BODY_REFUSED = 5;
-
-  // The frontmatter cannot be read, so the note can be neither read nor written
-  // from here.
-  REFUSAL_UNREADABLE = 6;
-
-  // A file is already where the note would go. Nothing is written there; a
-  // rename may already have written the note it was moving.
-  REFUSAL_OCCUPIED = 7;
-
-  // A note cannot be called this: the title leaves nothing a file can be named
-  // after, it is more than one line, or a heading would read it back as
-  // something else. Nothing is written.
-  REFUSAL_UNNAMEABLE = 8;
-
-  // The note at the path is not a stencil, and a stencil was asked for.
-  REFUSAL_NOT_A_STENCIL = 9;
-
-  // The note at the path is not a deck, and a deck was asked for.
-  REFUSAL_NOT_A_DECK = 10;
-
-  // The file is past the size a deck is read at, which stands above the size a
-  // note is read at.
-  REFUSAL_DECK_TOO_LARGE = 11;
-
-  // The note at the path is not a preset, and a preset was asked for.
-  REFUSAL_NOT_A_PRESET = 12;
-}
-
-// Note is a note as something else refers to it.
-message Note {
-  // Path is what the vault calls the note, and how it is asked for again.
-  string path = 1;
-  string title = 2;
-  // Identifier is what the file carries, empty for a note made outside the
-  // application.
-  string identifier = 3;
-}
-
-// Seat is where a note sits relative to the one in focus. A sibling is written
-// nowhere: it is another child of a shared parent.
-enum Seat {
-  SEAT_UNSPECIFIED = 0;
-  SEAT_PARENT = 1;
-  SEAT_CHILD = 2;
-  SEAT_JUMP = 3;
-  SEAT_SIBLING = 4;
-}
-
-message Seated {
-  Note note = 1;
-  Seat seat = 2;
-  // What the person wrote on the link, when they wrote anything.
-  string label = 3;
-
-  // The note the relationship runs from, when that is not the one in focus: a
-  // sibling is another child of a shared parent, and this is that parent.
-  string through = 4;
-
-  // Set when both notes name this relationship, each in its own words. The
-  // label is then the one the note in focus wrote, and the arrow drawn on the
-  // line points at the note it was written about.
-  bool mutual = 5;
-
-  // Which of three the note is, so a client draws a deck and a stencil as what
-  // they are.
-  NoteType type = 6;
-}
-
-message StateRequest {}
-
-message StateResponse {
+message GetVaultStateResponse {
   // What is being done behind the window is Tasks. What is here is what the
   // vault is.
   reserved 3, 9, 11 to 16;
   reserved "books", "books_read", "busy", "indexed", "learning", "made", "owing", "reading";
 
-  string name = 1;
+  // Name is the identity the folder carries, and how this vault is asked for
+  // again. DisplayName is what the person calls it, which is what a window
+  // titles itself with. The list says both of a vault the same way.
+  string name = 18;
+  string display_name = 1;
+
   string path = 2;
   // Ready is set when the scan has finished.
   bool ready = 4;
@@ -308,67 +77,9 @@ message StateResponse {
   bool embedding = 10;
 }
 
-message TasksRequest {}
+message WatchVaultChangesRequest {}
 
-message TasksResponse {
-  // Everything being done now, in the order the work began. The list arrives
-  // whole, because what is being done is a list and not a set of differences to
-  // apply.
-  repeated Task tasks = 1;
-}
-
-// A Task is one piece of work the application is doing behind the window.
-//
-// Every kind of work is one of these. That is the point: the next kind is an
-// entry in a list rather than another field on the state, another thing for the
-// window to poll, and another branch in what draws it.
-message Task {
-  // Id is what this work is called, so that the same work reported again
-  // replaces itself rather than appearing twice.
-  string id = 1;
-
-  // Doing is the work, in the words to show. About is what it is on, and is
-  // empty for work that is on nothing in particular.
-  string doing = 2;
-  string about = 3;
-
-  // Done and total are how far it has got, when there is a total to count
-  // against. Both zero is work running with nothing to count, which is an
-  // ordinary state and not an unknown one.
-  int64 done = 4;
-  int64 total = 5;
-
-  // Failed is why the work stopped, when it stopped badly.
-  string failed = 6;
-
-  // Asked is set for work a person started and is waiting to be told about.
-  // Work nobody asked for is drawn once it has lasted, and most of it is over
-  // before that.
-  bool asked = 7;
-
-  // Counting is what done and total are counted in.
-  Counting counting = 8;
-}
-
-// Counting is what a piece of work counts. Bytes are read out in the sizes a
-// person reads them in, and everything else is counted one by one.
-enum Counting {
-  COUNTING_UNSPECIFIED = 0;
-  COUNTING_THINGS = 1;
-  COUNTING_BYTES = 2;
-}
-
-message OpeningRequest {}
-
-message OpeningResponse {
-  // Absent while a scan has stored nothing, and for a vault that holds no
-  // notes.
-  optional Note note = 1;
-}
-
-message ChangesRequest {}
-
-message ChangesResponse {
+message WatchVaultChangesResponse {
   // Paths of the files that changed, notes and assets alike. One that was
   // removed is named here too: what changed about it is that it is gone.
   repeated string paths = 1;
@@ -379,12 +90,12 @@ message ChangesResponse {
 
   // The notes that were renamed by this application, each by where it was and
   // where it now is. A client showing one of them follows it there.
-  repeated Went renamed = 3;
+  repeated Move renamed = 3;
 }
 
-// Went is a note that is no longer where it was. The bytes do not change on the
+// Move is a note that is no longer where it was. The bytes do not change on the
 // way, so this says nothing about what the note holds.
-message Went {
+message Move {
   // Where the note was filed.
   string from = 1;
 
@@ -393,9 +104,9 @@ message Went {
 }
 
 
-message FocusRequest {}
+message WatchFocusRequest {}
 
-message FocusResponse {
+message WatchFocusResponse {
   // The source to put in front of the person: a note to see the neighbourhood
   // from, or a document to open.
   string path = 1;
@@ -411,14 +122,7 @@ message FocusResponse {
   repeated Stretch also = 4;
 }
 
-// A Stretch is a run of a source's text, counted in bytes over the text the
-// source is read as.
-message Stretch {
-  int32 start = 1;
-  int32 length = 2;
-}
-
-message AttendingRequest {
+message WriteOpenTabsRequest {
   // Every tab the window has open, in the order the person was last in them.
   repeated Tab tabs = 1;
 
@@ -427,7 +131,7 @@ message AttendingRequest {
   string front = 2;
 }
 
-message AttendingResponse {}
+message WriteOpenTabsResponse {}
 
 // A Tab is one tab of the window: what kind it is, and what it holds.
 //
@@ -447,732 +151,31 @@ message Tab {
   // Title is what the tab is called, as the person reads it.
   string title = 4;
 
-  // At is where in what it holds the person stands, and of is how much there
-  // is of it, both counted in whatever that thing is measured in: a document
-  // in pages, counted from one, and a recording in milliseconds, where at is
-  // how much of it has been written down. Both zero is a tab that measures
-  // nothing.
-  int32 at = 5;
-  int32 of = 6;
-}
-
-message EditingRequest {}
-
-message EditingResponse {
-  // The change this reports on. Every report of one change carries the same
-  // name, and no two changes carry one.
-  string change = 1;
-  // The note being changed.
-  string path = 2;
-  // The stretch being replaced, counted the way a client counts text: in UTF-16
-  // code units over the prose a read answers with.
-  int32 from = 3;
-  int32 to = 4;
-  // What is going in where that stretch stands.
-  string text = 5;
-  // The last report of this change, which arrives whether the change landed or
-  // was refused.
-  bool done = 6;
-}
-
-message NeighbourhoodRequest {
-  string path = 1;
-}
-
-message NeighbourhoodResponse {
-  Note focus = 1;
-  repeated Seated related = 2;
-
-  // Which of three the note in focus is, so a client draws a deck and a stencil
-  // as what they are.
-  NoteType focus_type = 3;
-}
-
-message ResolveRequest {
-  // The note the addresses are written in. A name resolves by a path relative
-  // to it, so a caller with no note to name gets the priority that is left.
-  string from = 1;
-
-  // The addresses to answer about. A scheme written before `://` is read as
-  // one — `name://Entropy`, `note://<identifier>` — and everything else is a
-  // name, so what a file carries between its brackets is taken as it stands.
-  repeated string written = 2;
-}
-
-message ResolveResponse {
-  // Where each address lands, in the order they were asked about. One that
-  // reaches nothing is absent, and so is one asked about twice.
-  repeated Reached reached = 1;
-}
-
-// Reached is one address and the note it reaches now.
-message Reached {
-  // The address as it was asked about, which is how the caller finds its answer.
-  string written = 1;
-
-  // Where the note it reaches is filed.
-  string path = 2;
-
-  // The vault holding that note. An identifier names one note in the world, so
-  // an address may land outside the vault it was written in.
-  string vault = 3;
-
-  // Set where that vault is not the one this call was answered about.
-  bool crossed = 4;
-
-  // Set where several notes answer to the name. It reaches the nearest of them,
-  // which is a fact about where the notes currently sit.
-  bool ambiguous = 5;
-}
-
-message NamesRequest {
-  // What was typed, as it was typed. Words are matched together, and the last
-  // of them on its prefix.
-  string query = 1;
-
-  // How many names to answer with. Zero takes the number the vault chooses.
-  int32 limit = 2;
-}
-
-message NamesResponse {
-  // The names that matched, best first, with a note's own title before a
-  // heading inside one.
-  repeated Named found = 1;
-}
-
-// Named is one name that matched, and the note it stands for. A note's own
-// title matched when there is no heading here; otherwise the note is what the
-// heading stands in.
-message Named {
-  Note note = 1;
-
-  // The heading that matched, absent when the note's own title did.
-  optional Heading heading = 2;
-
-  // Where in that name the words stand, counted the way a client counts text:
-  // in UTF-16 code units.
-  // A word reached by its prefix is marked whole.
-  repeated Span at = 3;
-
-  // Which of three the note is, so a client draws a deck and a stencil as what
-  // they are. A heading carries the type of the note it stands in.
-  NoteType type = 4;
-}
-
-// Heading is one line of a note that names what stands below it.
-message Heading {
-  string text = 1;
-
-  // The line it stands on, counted from the first line of the prose.
-  int32 line = 2;
-
-  // How deep it sits, from one for the shallowest a note can carry. Zero where
-  // the answer does not say: a name that matched carries the heading's words
-  // and where it stands, and nothing about its depth.
-  int32 level = 3;
-}
-
-message HeadingsRequest {
-  // The notes to answer about, by the paths the vault files them under. The
-  // vault sets a ceiling on how many it answers at once.
-  repeated string paths = 1;
-}
-
-message HeadingsResponse {
-  repeated NoteHeadings found = 1;
-}
-
-// NoteHeadings is what one note is divided into.
-message NoteHeadings {
-  string path = 1;
-
-  // In the order they stand in the note.
-  repeated Heading headings = 2;
-}
-
-message StandingRequest {
-  // The paths to answer about, as the vault files them.
-  repeated string paths = 1;
-}
-
-message StandingResponse {
-  repeated Standing found = 1;
-}
-
-// Standing is what the vault holds at one path.
-message Standing {
-  string path = 1;
-
-  // What the vault holds here. A file it holds no source for — a picture, an
-  // archive — is unspecified.
-  SourceKind kind = 2;
-
-  // Which of three the note is. It says nothing about a path holding no note.
-  NoteType type = 3;
-}
-
-// Span is a run of text, by where it begins and where it ends.
-message Span {
-  int32 from = 1;
-  int32 to = 2;
-}
-
-// Way is how a search is asked. Each way is an order of its own, and a search
-// asked every way fuses them into one.
-enum Way {
-  // Every way, fused into one ranking.
-  WAY_UNSPECIFIED = 0;
-
-  // The words typed, matched as words.
-  WAY_WORDS = 1;
-
-  // What the words mean, matched against the vectors the index holds. A vault
-  // nothing has embedded answers with nothing.
-  WAY_MEANING = 2;
-
-  // The names of the sections a source divides into. A hit is the section, and
-  // it answers at its own beginning.
-  WAY_NAMES = 3;
-}
-
-message SearchRequest {
-  string query = 1;
-
-  // How many passages to answer with. Zero takes the number the vault chooses.
-  int32 limit = 2;
-
-  Way way = 3;
-}
-
-message SearchResponse {
-  // The passages that answer, best first, one per source.
-  repeated Passage found = 1;
-}
-
-// Passage is what a search returns: the text around a hit, and where it came
-// from.
-message Passage {
-  // The file the text was read out of, as the vault calls it.
-  string path = 1;
-
-  // The note the text was read out of, absent for a source that is not one.
-  // A window that opens notes offers to open these and no others.
-  optional Note note = 2;
-
-  string text = 3;
-
-  // Where in that text the words typed stand, counted the way a client counts
-  // text: in UTF-16 code units. Empty for a hit by meaning, which stands on no
-  // word in particular.
-  repeated Span at = 4;
-
-  // What the source's own numbering calls the place, empty when the format
-  // offered none.
-  string location = 5;
-
-  // Where the passage stands in the text of the source it was read out of,
-  // counted in bytes. It is what opens that source here, and a hit in a note
-  // carries it as every other hit does.
-  int32 start = 6;
-  int32 length = 7;
-
-  // Where the chunk that matched stands, counted from the first line of the
-  // source's prose. It is the line a note opens on, and the caret stands there.
-  int32 line = 8;
-
-  // Which of three the note is, so a client draws a deck and a stencil as what
-  // they are. It says nothing about a source that is not a note.
-  NoteType type = 9;
-
-  // What the vault holds at that path, so a client draws a book and a
-  // recording as what they are.
-  SourceKind kind = 10;
-}
-
-message ListRequest {
-  // The folder to list, relative to the root. Empty is the root.
-  string folder = 1;
-}
-
-message ListResponse {
-  // What the folder holds, folders first and then files, each group by name
-  // with case ignored. This is the order to draw them in.
-  repeated Entry entries = 1;
-}
-
-// Entry is one file or folder, as a listing of the folder it sits in reports
-// it.
-message Entry {
-  // Path is what the vault calls it, relative to the root, with forward
-  // slashes.
-  string path = 1;
-
-  // The last segment of the path.
-  string name = 2;
-
-  bool folder = 3;
-
-  // What the vault holds here.
-  SourceKind kind = 4;
-
-  reserved 5;
-  reserved "size";
-
-  // Which of three the note is. It says nothing about an entry that is not a
-  // note.
-  NoteType type = 6;
-}
-
-// SourceKind is what the vault holds at a path. A file the index holds no text
-// for — a picture, an archive — is unspecified.
-enum SourceKind {
-  SOURCE_KIND_UNSPECIFIED = 0;
-  SOURCE_KIND_NOTE = 1;
-  SOURCE_KIND_BOOK = 2;
-  SOURCE_KIND_RECORDING = 3;
-}
-
-// NoteType is which of four a note is: the `type` key of its frontmatter. It
-// says what the note is; whether the application reads text out of the file is
-// SourceKind.
-enum NoteType {
-  // An ordinary note, which is a note carrying no `type` at all and so nearly
-  // every note in a vault.
-  NOTE_TYPE_UNSPECIFIED = 0;
-
-  // A note whose body is cards.
-  NOTE_TYPE_DECK = 1;
-
-  // A note declaring the fields a card has and the faces it is shown by.
-  NOTE_TYPE_STENCIL = 2;
-
-  // A note saying how the decks pointing at it are scheduled.
-  NOTE_TYPE_PRESET = 3;
-}
-
-message ReadRequest {
-  string path = 1;
-}
-
-message ReadResponse {
-  // The prose below the frontmatter, with line endings as LF. Empty when the
-  // note is refused.
-  string body = 1;
-
-  // Set when the note was not read, and why.
-  optional Refusal refusal = 2;
-
-  // The file this prose came out of. Absent when the note was refused.
-  optional Fingerprint at = 3;
-}
-
-// Fingerprint is which file this is: where it is filed, how big it is, and when
-// it last changed.
-message Fingerprint {
-  string path = 1;
-  int64 size = 2;
-
-  // When the file last changed, in nanoseconds since the epoch.
-  int64 mtime = 3;
-}
-
-// Seen is what a caller last saw of a note: the prose a read gave it, and the
-// file that read came out of. A note still holding either is the note this
-// caller read.
-message Seen {
-  // The prose below the frontmatter, with line endings as LF, as the read gave
-  // it.
-  string prose = 1;
-
-  // The file the prose came out of.
-  Fingerprint at = 2;
-}
-
-message WriteRequest {
-  string path = 1;
-
-  // The prose to put below the frontmatter, with line endings as LF.
-  string body = 2;
-
-  // What this caller last saw of the note. Absent for a write that lands on
-  // whatever the note now holds.
-  optional Seen seen = 3;
-}
-
-message WriteResponse {
-  // Set when nothing was written, and why.
-  optional Refusal refusal = 1;
-
-  // Set when the note holds prose this caller has not read. Nothing was
-  // written, and the person chooses what happens to their text.
-  bool changed = 2;
-
-  // The file the write produced, for the caller to present at its next write.
-  // Absent when nothing was written.
-  optional Fingerprint at = 3;
-}
-
-// Role is what kind of relationship a link is. The list is closed: navigation
-// and drawing read it, so a role nobody decided on has no behaviour.
-enum Role {
-  ROLE_UNSPECIFIED = 0;
-  ROLE_PARENT = 1;
-  ROLE_CHILD = 2;
-  ROLE_JUMP = 3;
-  ROLE_REF = 4;
-  ROLE_ATTACHMENT = 5;
-}
-
-// NewLink is one relationship as the note it is written in declares it: the
-// note at the other end, by the path it is filed under, and what kind of
-// relationship it is.
-message NewLink {
-  string to = 1;
-  Role role = 2;
-
-  // What the person calls this relationship, when they call it anything.
-  string label = 3;
-}
-
-message CreateRequest {
-  // What the note is called. The file is named after it.
-  string title = 1;
-
-  // Where in the vault it goes, relative to the root. Empty is the root.
-  string folder = 2;
-
-  // What the note is joined to, written into it as it is made.
-  repeated NewLink links = 3;
-}
-
-message CreateResponse {
-  // Where the note is filed. Empty when nothing was made.
-  string path = 1;
-
-  // Set when nothing was made, and why.
-  optional Refusal refusal = 2;
-}
-
-message JoinRequest {
-  // The note the link is written in.
-  string path = 1;
-  NewLink link = 2;
-}
-
-message JoinResponse {
-  // Set when nothing was written, and why.
-  optional Refusal refusal = 1;
-
-  // Set when the note changed between being read and being written. Nothing
-  // was written, and the caller reads the note again before asking for this.
-  bool changed = 2;
-}
-
-// Naming is which of the three a note is shown by, and so which one a rename
-// brings into line.
-enum Naming {
-  // Nothing named the note.
-  NAMING_UNSPECIFIED = 0;
-
-  // The `title` key of the frontmatter.
-  NAMING_FRONTMATTER = 1;
-
-  // The first level-one heading of the prose.
-  NAMING_HEADING = 2;
-
-  // The filename, which a rename moves and does not write.
-  NAMING_FILENAME = 3;
-}
-
-message RenameRequest {
-  // The note to rename.
-  string path = 1;
-
-  // What the note is called from now on. The file is named after it.
-  string title = 2;
-}
-
-message RenameResponse {
-  // Where the note is filed. Empty when the note was never opened. The note is
-  // brought into line before the file is, so a refused move answers with the
-  // path the note still has.
-  string path = 1;
-
-  // What the note is called. Empty when the note was never opened.
-  string title = 2;
-
-  // Which of the three names the note, and so which the rename brought into
-  // line. NAMING_UNSPECIFIED when the note was never opened.
-  Naming by = 3;
-
-  // What the file did. Absent when it stayed where it was.
-  optional Moved moved = 4;
-
-  // Set when the rename did not finish, and why. The note may already have been
-  // written: `path`, `title` and `by` say what stands.
-  optional Refusal refusal = 5;
-
-  // The note holds prose the caller never saw, so nothing was written. Read it
-  // again and ask again.
-  bool changed = 6;
-}
-
-// Moved is a file under a different name, and what that did to the links
-// written by the name it had.
-message Moved {
-  // Where the file was.
-  string from = 1;
-
-  // Where it is now.
-  string to = 2;
-
-  // The notes whose link stopped resolving and was written again, by name.
-  repeated string repaired = 3;
-
-  reserved 4;
-  reserved "retargeted";
-}
-
-message SyncingRequest {}
-
-message SyncingResponse {
-  // Whether renaming either a note's title or the name of its file brings the
-  // other into line. It is the `naming.sync_title_and_filename` of the settings
-  // file, and an installation nobody has configured keeps the two one name.
-  bool sync_title_and_filename = 1;
-}
-
-message ChooseSyncingRequest {
-  bool sync_title_and_filename = 1;
-}
-
-message ChooseSyncingResponse {
-  // Set when nothing was written, and why. What the settings hold is unchanged.
-  optional Refusal refusal = 1;
-}
-
-message HangingRequest {}
-
-message HangingResponse {
-  // Whether a node in the plex hangs the headings of its note under the box. It
-  // is the `appearance.hang_parts_under_a_node` of the settings file, and an
-  // installation nobody has configured hangs them.
-  bool hang_parts_under_a_node = 1;
-
-  // How many of them stand under a node at once, the rest being wound to. It is
-  // the `appearance.parts_under_a_node` of the settings file.
-  int32 parts_under_a_node = 2;
-}
-
-message ChooseHangingRequest {
-  bool hang_parts_under_a_node = 1;
-
-  // How many of them stand under a node at once. A count left unset stands as
-  // it is.
-  optional int32 parts_under_a_node = 2;
-}
-
-message ChooseHangingResponse {
-  // Set when nothing was written, and why. What the settings hold is unchanged.
-  optional Refusal refusal = 1;
-}
-
-message ReviewingRequest {}
-
-message ReviewingResponse {
-  // The hour a day of review begins at, written as `04:00`. It is the
-  // `review.day_starts` of the settings file, and an installation nobody has
-  // configured begins the day at four.
-  string day_starts = 1;
-}
-
-message ChooseReviewingRequest {
-  // The hour to begin the day at, written as `04:00`. An hour outside 00:00 to
-  // 12:00 is refused, and the file is left as it was.
-  string day_starts = 1;
-}
-
-message ChooseReviewingResponse {
-  // Set when nothing was written, and why. What the settings hold is unchanged.
-  optional Refusal refusal = 1;
-}
-
-message SettingsRequest {}
-
-message SettingsResponse {
-  // Every setting as it stands, as JSON: what the file says, and what an
-  // installation nobody has configured does under everything it does not.
-  string written = 1;
-
-  // The file itself, absolute on this machine.
-  string path = 2;
-
-  // The models the settings that name one can be set to.
-  repeated Model models = 3;
-}
-
-// Model is one model a setting that names a model can be set to.
-message Model {
-  // The setting the model is read from, as a path through the file. The model
-  // in force is the one whose name stands there.
-  repeated string named_at = 1;
-
-  // What stands there while this model is the one in force.
-  string name = 2;
-
-  // What is drawn on the row, and the shelf the rows around it stand under.
-  string title = 3;
-  string shelf = 4;
-
-  // Set on the model an installation nobody has configured runs on.
-  bool by_default = 5;
-
-  // What choosing it writes. One model is several keys where the model decides
-  // more than its own name.
-  repeated Setting writes = 6;
-
-  // What this model's files are on this machine.
-  Presence presence = 7;
-}
-
-// Presence is what a model's files are on this machine. It says where files
-// stand and nothing else: it is no reason to prefer one model to another.
-enum Presence {
-  // Nothing was said about this model's files.
-  PRESENCE_UNSPECIFIED = 0;
-
-  // The files stand where a fetch puts them.
-  PRESENCE_PRESENT = 1;
-
-  // The files are not on this machine. They are fetched when the model is next
-  // needed.
-  PRESENCE_NOT_FETCHED = 2;
-
-  // The model is reached over the network, and nothing of it is fetched.
-  PRESENCE_NOTHING_TO_FETCH = 3;
-}
-
-// Setting is one setting of the file and what to put there.
-message Setting {
-  // The setting, as a path through the file.
-  repeated string at = 1;
-
-  // What to write there, as JSON. A value the settings cannot be read out of
-  // again is refused, and the file is left as it was.
-  string value = 2;
-}
-
-message ChooseSettingsRequest {
-  // The settings to write. They are written together, or none of them is.
-  repeated Setting settings = 1;
-}
-
-message ChooseSettingsResponse {}
-
-message SettingsFileRequest {}
-
-message SettingsFileResponse {
-  // The file as its person wrote it. A file that is not there is an empty
-  // object, which is what an installation nobody has configured runs on.
-  string written = 1;
+  reserved 5, 6;
+  reserved "at", "of";
 
-  // The file itself, absolute on this machine.
-  string path = 2;
+  // Where the person stands in what the tab holds. A tab holding a document
+  // sets document, a tab holding a recording sets recording, and a tab of any
+  // other kind sets neither.
+  OpenDocument document = 7;
+  OpenRecording recording = 8;
 }
 
-message WriteSettingsFileRequest {
-  // What is to stand in the file, written as it was typed.
-  string written = 1;
+// An OpenDocument is the document a tab holds, as the person is reading it.
+message OpenDocument {
+  // Page is the page in front of them, counted from one.
+  int32 page = 1;
 
-  // The file as this caller last read it. Absent for a write that lands on
-  // whatever the file now holds.
-  optional string seen = 2;
+  // Pages is how many pages the document has.
+  int32 pages = 2;
 }
 
-message WriteSettingsFileResponse {
-  // Set when the file holds bytes this caller has not read. Nothing was
-  // written, and the person chooses what happens to their text.
-  bool changed = 1;
-}
-
-message MoveRequest {
-  // The file or folder to move, as the vault calls it.
-  string from = 1;
-
-  // Where it is filed from now on. The last segment is what it is called.
-  string to = 2;
-}
-
-message MoveResponse {
-  // What the file did. Absent when nothing was moved.
-  optional Moved moved = 1;
-
-  // Set when nothing was moved, and why.
-  optional Refusal refusal = 2;
-}
-
-message MakeFolderRequest {
-  // Where the folder goes, relative to the root. The folders above it are made
-  // with it.
-  string path = 1;
-}
-
-message MakeFolderResponse {
-  // Set when nothing was made, and why.
-  optional Refusal refusal = 1;
-}
-
-message RemoveRequest {
-  // The file or folder to remove.
-  string path = 1;
-
-  // Destroy takes the file off the disk. Nothing brings it back, and only a
-  // note is destroyed.
-  bool destroy = 2;
-}
+// An OpenRecording is the recording a tab holds, as far as it has been written
+// down.
+message OpenRecording {
+  // Heard is how much of it has been written down, in milliseconds.
+  int32 heard = 1;
 
-message RemoveResponse {
-  // Where the file or folder sits in the trash. Empty when it was destroyed,
-  // and when nothing was removed.
-  string trashed = 1;
-
-  // The notes whose links pointed at what was removed and now reach nothing.
-  repeated string dangling = 2;
-
-  // Set when nothing was removed, and why.
-  optional Refusal refusal = 3;
-}
-
-message QuittingRequest {}
-
-message QuittingResponse {
-  // What this caller answers Flushed with. The stream opens by saying it, so
-  // a caller knows it is listening before anything is asked of it.
-  string token = 1;
-
-  // Set when the window is going and this caller's unwritten work has to land.
-  bool flush = 2;
-}
-
-// Owed is what a caller has left when it answers.
-enum Owed {
-  // Nothing is left.
-  OWED_UNSPECIFIED = 0;
-
-  // Everything this caller held is written.
-  OWED_WRITTEN = 1;
-
-  // Something this caller holds could not be written, and a person is being
-  // asked what to do with it. The window stays until they answer.
-  OWED_ASKING = 2;
+  // Length is how long the recording is, in milliseconds.
+  int32 length = 2;
 }
-
-message FlushedRequest {
-  // The token this caller was given when it began listening.
-  string token = 1;
-
-  // What this caller has left.
-  Owed owed = 2;
-}
-
-message FlushedResponse {}

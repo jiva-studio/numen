@@ -9,8 +9,8 @@
  */
 import { computed, nextTick, shallowRef, useTemplateRef, watch } from 'vue'
 import {
-  carried,
-  carries,
+  dragged,
+  dragLabel,
   everyRow,
   flatten,
   holderOf,
@@ -21,19 +21,20 @@ import {
   selects,
   stepTo,
   PLAIN,
-  type Carried,
-  type Landing,
-  type Marking,
+  type DragLabel,
+  type RowLanding,
   type Press,
-  type Pressed,
   type Row,
+  type RowMarker,
+  type RowSelection,
   type RowId,
   type ShownRow,
-} from './model'
-import type { Point } from '../lib/geometry'
-import { browserEnvironment, type Environment } from '../lib/environment'
-import CarriedLabel from '../press/CarriedLabel.vue'
+} from './row'
+import type { Position } from '../lib/geometry'
+import { browserClock, type Clock } from '../lib/clock'
+import DragPreview from '../press/DragPreview.vue'
 import { usePressDrag } from '../press/press'
+import TreeField from './TreeField.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -47,7 +48,7 @@ const props = withDefaults(
     threshold?: number
     /** What the tree is announced as. */
     name?: string
-    /** How many rows are being carried, said at the pointer. */
+    /** How many rows are being dragged, said at the pointer. */
     counted?: (rows: number) => string
     /**
      * An attribute written onto the rows and onto the tree, for something
@@ -55,9 +56,9 @@ const props = withDefaults(
      * and a row answered with nothing is left unmarked; the tree itself is
      * asked about as no row at all.
      */
-    marking?: Marking | undefined
+    marking?: RowMarker | undefined
     /** The clock. Browser by default; a test hands in its own. */
-    environment?: Environment
+    clock?: Clock
   }>(),
   {
     open: () => [],
@@ -66,7 +67,7 @@ const props = withDefaults(
     name: 'Tree',
     counted: (rows: number) => `${rows} rows`,
     marking: undefined,
-    environment: () => browserEnvironment,
+    clock: () => browserClock,
   },
 )
 
@@ -83,18 +84,18 @@ const emit = defineEmits<{
   /** A name typed and committed. */
   (event: 'rename', row: RowId, name: string): void
   /** The rows let go somewhere, all of them landing in the one place. */
-  (event: 'move', rows: readonly RowId[], at: Landing): void
+  (event: 'move', rows: readonly RowId[], at: RowLanding): void
   /**
    * The rows lifted clear of the tree, on their way across whatever is drawn
    * beside it. Where they end up there is not the tree's to say.
    */
-  (event: 'carry', rows: readonly RowId[]): void
+  (event: 'drag', rows: readonly RowId[]): void
   /** The rows let go of, wherever the pointer had got to. */
   (event: 'drop'): void
   /** The selection asked to go. */
   (event: 'remove', rows: readonly RowId[]): void
   /** A menu asked for, and where the pointer was. Nothing for a press off every row. */
-  (event: 'menu', row: RowId | null, at: Point): void
+  (event: 'menu', row: RowId | null, at: Position): void
 }>()
 
 defineSlots<{
@@ -110,7 +111,7 @@ const list = useTemplateRef<HTMLElement>('list')
 const box = useTemplateRef<HTMLElement>('box')
 
 /** The field a name is typed in. One row is renamed at a time. */
-const field = useTemplateRef<HTMLInputElement[]>('field')
+const field = useTemplateRef<InstanceType<typeof TreeField>[]>('field')
 
 const shown = computed(() => flatten(props.rows, new Set(props.open)))
 
@@ -136,9 +137,9 @@ const tabbed = computed<RowId | null>(() => {
 /** Whether the press being made has said what the selection is already. */
 const said = shallowRef(false)
 
-const { dragging, at, point, lift } = usePressDrag<readonly RowId[], Landing>({
+const { dragging, at, position, lift } = usePressDrag<readonly RowId[], RowLanding>({
   threshold: () => props.threshold,
-  environment: () => props.environment,
+  clock: () => props.clock,
   landingAt,
   settle: (rows, found) => {
     if (found) emit('move', rows, found)
@@ -146,21 +147,21 @@ const { dragging, at, point, lift } = usePressDrag<readonly RowId[], Landing>({
   },
   // The rows are clear of the tree the moment the press turns into a drag,
   // and said once for the whole of it.
-  began: (rows) => emit('carry', rows),
+  began: (rows) => emit('drag', rows),
 })
 
 const into = computed(() => (at.value && 'into' in at.value ? at.value.into : null))
 const before = computed(() => (at.value && 'before' in at.value ? at.value.before : null))
 
-/** The rows a live drag is carrying, for asking one row at a time. */
-const lifted = computed(() => new Set(point.value ? (dragging.value?.held ?? []) : []))
+/** The rows a live drag holds, for asking one row at a time. */
+const lifted = computed(() => new Set(position.value ? (dragging.value?.held ?? []) : []))
 
 /** What follows the pointer, and nothing until a press has become a drag. */
-const carrying = computed<Carried | null>(() => {
+const label = computed<DragLabel | null>(() => {
   const held = dragging.value
-  const where = point.value
+  const where = position.value
   if (!held?.moved || !where) return null
-  return carried(shown.value, held.held, where, props.counted)
+  return dragLabel(shown.value, held.held, where, props.counted)
 })
 
 /** What a row is marked with, and nothing where it is marked with nothing. */
@@ -194,7 +195,7 @@ const turn = (row: ShownRow): void => {
 }
 
 /** A selection a press came to, said, and the anchor put where it names. */
-const takes = (pressed: Pressed): readonly RowId[] => {
+const takes = (pressed: RowSelection): readonly RowId[] => {
   anchor.value = pressed.anchor
   if (!sameRows(pressed.rows, props.selected)) emit('select', pressed.rows)
   return pressed.rows
@@ -213,11 +214,11 @@ const act = (row: ShownRow): void => {
 }
 
 /** A menu asked for on a row, which the selection takes in first, or off every row. */
-const askMenu = (row: ShownRow | null, point: Point): void => {
+const askMenu = (row: ShownRow | null, at: Position): void => {
   if (row && !picked.value.has(row.id)) {
     takes(selects(shown.value, props.selected, anchor.value, row.id, PLAIN))
   }
-  emit('menu', row?.id ?? null, point)
+  emit('menu', row?.id ?? null, at)
 }
 
 const onKey = (event: KeyboardEvent): void => {
@@ -277,7 +278,7 @@ const onKey = (event: KeyboardEvent): void => {
  * selects no text as it travels, and takes the keyboard itself.
  *
  * A row standing outside the selection is what the press selects, and it is
- * carried alone; a row standing in the selection carries the whole of it, and
+ * dragged alone; a row standing in the selection drags the whole of it, and
  * a plain press collapses the selection onto it once the pointer has let go
  * without travelling.
  */
@@ -292,19 +293,19 @@ function press(row: RowId, event: PointerEvent): void {
     ? takes(selects(shown.value, props.selected, anchor.value, row, how))
     : props.selected
 
-  lift(carries(taken, row), event)
+  lift(dragged(taken, row), event)
 }
 
 /**
  * Where the pointer is, asked of the drawing: the rows are one height each,
  * and the height is whatever they are drawn at.
  */
-function landingAt(rows: readonly RowId[], at: Point): Landing | null {
+function landingAt(rows: readonly RowId[], at: Position): RowLanding | null {
   const drawn = list.value
   const over = box.value?.getBoundingClientRect()
   if (!drawn || !over) return null
 
-  // A pointer that has left the tree is carrying what it holds somewhere else.
+  // A pointer that has left the tree is taking what it holds somewhere else.
   const inside =
     at.x >= over.left && at.x <= over.right && at.y >= over.top && at.y <= over.bottom
   if (!inside) return null
@@ -318,35 +319,23 @@ function landingAt(rows: readonly RowId[], at: Point): Landing | null {
   return refuses(props.rows, rows, holderOf(shown.value, found)) ? null : found
 }
 
-/** The field, once it is drawn, with the name in it ready to be replaced. */
+/** The keyboard into the field once it is drawn. */
 watch(renaming, (row) => {
   if (row === null) return
-  void nextTick(() => {
-    const typing = field.value?.[0]
-    typing?.focus()
-    typing?.select()
-  })
+  void nextTick(() => field.value?.[0]?.focus())
 })
 
-function onFieldKey(event: KeyboardEvent): void {
-  const field = event.currentTarget as HTMLInputElement
-  const row = renaming.value
+/** A name taken, and the keyboard back on the row it belongs to. */
+const rename = (row: RowId, name: string): void => {
+  renaming.value = null
+  emit('rename', row, name)
+  void goTo(row)
+}
 
-  if (event.key === 'Enter') {
-    event.preventDefault()
-    renaming.value = null
-    if (row !== null) {
-      emit('rename', row, field.value)
-      void goTo(row)
-    }
-    return
-  }
-
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    renaming.value = null
-    void goTo(row)
-  }
+/** A name left as it was, and the keyboard back on the row. */
+const abandon = (row: RowId): void => {
+  renaming.value = null
+  void goTo(row)
 }
 </script>
 
@@ -378,7 +367,7 @@ function onFieldKey(event: KeyboardEvent): void {
         :tabindex="row.id === tabbed ? 0 : -1"
         :data-tree-row="row.id"
         :data-selected="picked.has(row.id) || undefined"
-        :data-carried="lifted.has(row.id) || undefined"
+        :data-dragged="lifted.has(row.id) || undefined"
         :data-last="row.last || undefined"
         :data-into="row.id === into || undefined"
         :data-before="row.id === before || undefined"
@@ -394,17 +383,13 @@ function onFieldKey(event: KeyboardEvent): void {
           <slot name="icon" :id="row.id" :holds="row.holds" :open="row.open" />
         </span>
 
-        <input
+        <TreeField
           v-if="renaming === row.id"
           ref="field"
-          class="tree__field min-w-0 grow rounded-node"
-          type="text"
           :value="row.name"
-          :aria-label="name"
-          @pointerdown.stop
-          @click.stop
-          @dblclick.stop
-          @keydown.stop="onFieldKey"
+          :name="name"
+          @rename="rename(row.id, $event)"
+          @abandon="abandon(row.id)"
           @blur="renaming = null"
         />
         <!-- The whole name is on the element, for one too long to be drawn. -->
@@ -416,11 +401,11 @@ function onFieldKey(event: KeyboardEvent): void {
       <slot name="silence">Nothing here</slot>
     </p>
 
-    <CarriedLabel
-      v-if="carrying"
-      class="tree__carried"
-      :at="carrying.at"
-      :says="carrying.says"
+    <DragPreview
+      v-if="label"
+      class="tree__dragged"
+      :at="label.at"
+      :says="label.says"
     />
   </div>
 </template>
@@ -434,7 +419,7 @@ function onFieldKey(event: KeyboardEvent): void {
   --pad: 0.25rem;
   --gap: 0.25rem;
   /* How plainly a row on its way somewhere is drawn. */
-  --carried-fade: 0.5;
+  --dragged-fade: 0.5;
 
   display: flex;
   flex-direction: column;
@@ -460,18 +445,17 @@ function onFieldKey(event: KeyboardEvent): void {
 }
 
 .tree__row[data-selected] {
-  background: var(--numen-focus-bg);
-  color: var(--numen-focus-fg);
+  background: var(--numen-accent);
+  color: var(--numen-accent-ink);
 }
 
 /* A row on its way somewhere, drawn plainly where it stands. */
-.tree__row[data-carried] {
-  opacity: var(--carried-fade);
+.tree__row[data-dragged] {
+  opacity: var(--dragged-fade);
 }
 
-/* Where the keyboard stands, in a row and in the field a name is typed in. */
-.tree__row:focus-visible,
-.tree__field:focus-visible {
+/* Where the keyboard stands. */
+.tree__row:focus-visible {
   outline: var(--numen-ring-width) solid var(--numen-ring);
   outline-offset: calc(-1 * var(--numen-ring-width));
 }
@@ -501,13 +485,6 @@ function onFieldKey(event: KeyboardEvent): void {
   margin-inline-end: var(--gap);
 }
 
-.tree__field {
-  border: var(--numen-stroke) solid var(--numen-field-border);
-  background: var(--numen-field-bg);
-  color: var(--numen-node-fg);
-  font: inherit;
-}
-
 /* What is said in place of the rows stands in the middle of the tree. */
 .tree__silence {
   display: flex;
@@ -518,8 +495,8 @@ function onFieldKey(event: KeyboardEvent): void {
   text-align: center;
 }
 
-/* The rows being carried stand over the tree. */
-.tree__carried {
+/* The rows being dragged stand over the tree. */
+.tree__dragged {
   z-index: 3;
 }
 </style>

@@ -20,7 +20,7 @@ import (
 type DropTranscript struct {
 	Readers port.VaultReaders
 	Sources port.SourceRepository
-	Owing   port.SourceQueries
+	Known   port.SourceQueries
 	Derived port.DerivedStores
 
 	// Forgets takes a recording out of what a queue has already had an answer
@@ -98,7 +98,7 @@ func (u DropTranscript) Execute(ctx context.Context, v domain.Vault, path string
 	// The source is recorded as it was walked: no fingerprint, no recipe, no
 	// producer, and no chunks. What the index knew about the words goes in the
 	// one write that says the recording owes its text again.
-	if err := u.Sources.SaveExtraction(ctx, v.ID, port.Extraction{Source: port.Source{Ref: ref}}); err != nil {
+	if err := u.Sources.SaveExtraction(ctx, v.ID, domain.SourceChunks{Source: domain.Source{Fingerprint: ref}}); err != nil {
 		return res, fmt.Errorf("record %s: %w", path, err)
 	}
 	if u.Forgets != nil {
@@ -121,12 +121,12 @@ func (u DropTranscript) produced(
 	reader port.VaultReader,
 	path string,
 ) (from, hash string, stood bool, err error) {
-	said, held, err := u.Owing.Reading(ctx, v.ID, path)
+	said, held, err := u.Known.Reading(ctx, v.ID, path)
 	if err != nil {
 		return "", "", false, fmt.Errorf("read index: %w", err)
 	}
-	if held && said.From != "" {
-		return said.From, said.Hash, true, nil
+	if held && said.Producer != "" {
+		return said.Producer, said.Hash, true, nil
 	}
 	raw, err := reader.Read(ctx, path)
 	if err != nil {

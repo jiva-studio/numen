@@ -21,12 +21,26 @@ import (
 // source. A path that is not a note is said back and left alone.
 type Refresh struct {
 	Readers port.VaultReaders
-	Notes   port.NoteRepository
+	// Vaults is where the vault gets the row every note of it points at.
+	Vaults port.VaultRepository
+	Notes  port.NoteRepository
 	// Known says which kind of source the index holds at a path, and Sources
-	// takes those rows out. Left nil, a book and a recording keep their rows
-	// until a scan.
+	// takes those rows out.
 	Known   port.SourceQueries
 	Sources port.SourceRepository
+}
+
+// NewRefresh is how the index is brought level with a handful of files: the
+// vault they are read out of, the row it is filed under, where a note is filed,
+// and the two the rows of a book and a recording are swept through.
+func NewRefresh(
+	readers port.VaultReaders,
+	vaults port.VaultRepository,
+	notes port.NoteRepository,
+	known port.SourceQueries,
+	sources port.SourceRepository,
+) Refresh {
+	return Refresh{Readers: readers, Vaults: vaults, Notes: notes, Known: known, Sources: sources}
 }
 
 // RefreshResult is what happened, in the terms a caller acts on: the notes that
@@ -57,6 +71,12 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return res, err
+	}
+	// A note is filed under the vault's row, and a vault nothing has walked yet
+	// has none: a note written into a vault the moment it opens is levelled
+	// here or nowhere.
+	if err := u.Vaults.Register(ctx, v.ID); err != nil {
+		return res, fmt.Errorf("register vault: %w", err)
 	}
 
 	// The same bounds a scan writes in. One event can name a whole folder — a
@@ -135,7 +155,7 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 // A note leaves through the note repository; a book and a recording are filed
 // by kind and leave through their own, with their chunks and their vectors.
 func (u Refresh) swept(ctx context.Context, v domain.Vault, paths []string) error {
-	if u.Known == nil || u.Sources == nil || len(paths) == 0 {
+	if len(paths) == 0 {
 		return nil
 	}
 	// A path names one file, and a folder names everything under it.

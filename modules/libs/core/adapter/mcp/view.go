@@ -41,7 +41,7 @@ func addViewTools(server *sdk.Server, core Core) {
 			return nil, out{}, errors.New("name the note to put in focus")
 		}
 
-		found, err := core.Notes.Notes(ctx, core.shown().Vault.ID, []string{in.Path})
+		found, err := core.Notes.Queries.Notes(ctx, core.shown().Vault.ID, []string{in.Path})
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -56,8 +56,8 @@ func addViewTools(server *sdk.Server, core Core) {
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
-		Name:  "source_show",
-		Title: "Show the person a passage of a document",
+		Name:  "source_focus",
+		Title: "Put a passage in front of the person",
 		Description: "Open one of the vault's documents in front of the person at one " +
 			"passage: the page it stands on is drawn, and the words of it are lit. " +
 			"`note_search` gives the range of every passage it answers with, and this " +
@@ -75,12 +75,12 @@ func addViewTools(server *sdk.Server, core Core) {
 			Length int `json:"length"`
 		} `json:"also,omitempty" jsonschema:"the other passages of the same document to light, as a search gives them"`
 	}) (*sdk.CallToolResult, struct {
-		Shown bool   `json:"shown"`
-		Says  string `json:"says"`
+		Shown   bool   `json:"shown"`
+		Looking string `json:"looking" jsonschema:"what the person is now looking at, in words to say back to them"`
 	}, error) {
 		type out = struct {
-			Shown bool   `json:"shown"`
-			Says  string `json:"says"`
+			Shown   bool   `json:"shown"`
+			Looking string `json:"looking" jsonschema:"what the person is now looking at, in words to say back to them"`
 		}
 		if in.Path == "" {
 			return nil, out{}, errors.New("name the document to show")
@@ -90,8 +90,8 @@ func addViewTools(server *sdk.Server, core Core) {
 				"a passage begins at or after the start of the text, and its length is zero or more")
 		}
 
-		if 1+len(in.Also) > domain.MostLit {
-			return nil, out{}, fmt.Errorf("light at most %d places of one document", domain.MostLit)
+		if 1+len(in.Also) > domain.MostHighlights {
+			return nil, out{}, fmt.Errorf("light at most %d places of one document", domain.MostHighlights)
 		}
 
 		ref, err := holding(ctx, core, in.Path)
@@ -104,31 +104,31 @@ func addViewTools(server *sdk.Server, core Core) {
 				return nil, out{}, errors.New(
 					"a passage begins at or after the start of the text, and is longer than nothing")
 			}
-			at.Also = append(at.Also, domain.Stretch{Start: one.Start, Length: one.Length})
+			at.Stretches = append(at.Stretches, domain.Stretch{Start: one.Start, Length: one.Length})
 		}
 		if err := core.View.Focus(ctx, at); err != nil {
 			return nil, out{}, err
 		}
-		return nil, out{Shown: true, Says: showing(ref.Kind, in.Length)}, nil
+		return nil, out{Shown: true, Looking: showing(ref.Kind, in.Length)}, nil
 	})
 }
 
 // holding is what the vault holds at a path, and says so when it holds nothing
 // there. A file the vault leaves alone is a file it does not hold.
-func holding(ctx context.Context, core Core, path string) (domain.FileRef, error) {
+func holding(ctx context.Context, core Core, path string) (domain.Fingerprint, error) {
 	if core.Readers == nil {
-		return domain.FileRef{}, errors.New("this vault's files are not open")
+		return domain.Fingerprint{}, errors.New("this vault's files are not open")
 	}
 	reader, err := core.Readers.Open(core.shown().Vault)
 	if err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 	ref, err := reader.Stat(ctx, path)
 	if port.NoNote(err) {
-		return domain.FileRef{}, fmt.Errorf("this vault holds nothing at %s", path)
+		return domain.Fingerprint{}, fmt.Errorf("this vault holds nothing at %s", path)
 	}
 	if err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 	return ref, nil
 }

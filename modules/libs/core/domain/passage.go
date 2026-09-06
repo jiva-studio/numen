@@ -1,5 +1,9 @@
 package domain
 
+// ChunkID names one chunk of one source. The index hands it out and answers for
+// it; nothing here reads anything into how it is spelled.
+type ChunkID string
+
 // Passage is what a search returns: the text around a hit, and where it came
 // from. It is a read model — a chunk is not reconstructed from it.
 //
@@ -7,8 +11,8 @@ package domain
 // of the file `Source` names, and `Text` is what stands there once the file has
 // been read.
 type Passage struct {
-	// Chunk is the row a ranking named. Two rankings are merged on it.
-	Chunk int64
+	// ChunkID is the chunk a ranking named. Two rankings are merged on it.
+	ChunkID ChunkID
 
 	// Source is the path of the file the text is read from, relative to the
 	// vault folder.
@@ -25,14 +29,14 @@ type Passage struct {
 	// when the format offered none.
 	Location string
 
-	// TextFrom names the producer of the text the words are read from. Empty
-	// where the source's own bytes are the text.
-	TextFrom string
+	// Producer is what made the text the words are read from. Empty where the
+	// source's own bytes are the text.
+	Producer string
 
-	// Hash addresses the content of the source, and is what the files of a
+	// SourceHash addresses the content of the source, and is what the files of a
 	// reading of it are kept under. Reading a passage back composes the name
-	// from this and TextFrom.
-	Hash string
+	// from this and Producer.
+	SourceHash string
 
 	// HitAt is where the chunk that matched begins inside Text, in bytes. A
 	// passage whose hit is the chunk itself begins at its own beginning.
@@ -43,9 +47,9 @@ type Passage struct {
 	// counted.
 	Line int
 
-	// Fingerprint is the text this chunk holds, as the index recorded it. It is
-	// what a vector made from that text is found by.
-	Fingerprint string
+	// ChunkHash addresses the text this chunk held when the index cut it. It is
+	// what a vector made from that text is kept under and found by.
+	ChunkHash string
 
 	Text string
 }

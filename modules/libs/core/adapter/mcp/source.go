@@ -11,9 +11,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
-// A Document is one source of a vault that is not a note, as an agent is told
+// A Source is one source of a vault that is not a note, as an agent is told
 // about it.
-type Document struct {
+type Source struct {
 	Path string `json:"path"`
 	// Read says whether this document stands on what a model read in it. A
 	// reading still running stands on the pages it has reached, so this is true
@@ -43,43 +43,43 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 			"that does carry text says whether that text is any good. Use this before " +
 			"asking for one to be read.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, _ struct{}) (*sdk.CallToolResult, struct {
-		Documents []Document `json:"documents"`
-		Says      string     `json:"says,omitempty"`
+		Documents []Source `json:"documents"`
+		Reading   string   `json:"reading,omitempty" jsonschema:"what stands in the way of having a scan read now, when anything does"`
 	}, error) {
 		type out = struct {
-			Documents []Document `json:"documents"`
-			Says      string     `json:"says,omitempty"`
+			Documents []Source `json:"documents"`
+			Reading   string   `json:"reading,omitempty" jsonschema:"what stands in the way of having a scan read now, when anything does"`
 		}
-		if core.Sources == nil {
+		if core.Sources.Queries == nil {
 			return nil, out{}, fmt.Errorf("this vault's sources are not open")
 		}
 		shown := core.shown()
-		known, err := core.Sources.Fingerprints(ctx, shown.Vault.ID, domain.KindBook)
+		known, err := core.Sources.Queries.Fingerprints(ctx, shown.Vault.ID, domain.KindBook)
 		if err != nil {
 			return nil, out{}, err
 		}
-		read, err := core.Sources.Recognised(ctx, shown.Vault.ID, domain.KindBook)
+		read, err := core.Sources.Queries.Recognised(ctx, shown.Vault.ID, domain.KindBook)
 		if err != nil {
 			return nil, out{}, err
 		}
 		stands := make(map[string]bool, len(read))
 		for _, one := range read {
-			stands[one.Path] = one.From != ""
+			stands[one.Path] = one.Producer != ""
 		}
-		documents := make([]Document, 0, len(known))
+		documents := make([]Source, 0, len(known))
 		for path := range known {
-			documents = append(documents, Document{Path: path, Read: stands[path]})
+			documents = append(documents, Source{Path: path, Read: stands[path]})
 		}
-		says := ""
-		if core.Recognise != nil {
+		reading := ""
+		if core.Sources.Recognise != nil {
 			switch {
-			case core.Recognise.Running():
-				says = "one document is being read now"
-			case !core.Recognise.Ready():
-				says = "what is needed to read scans is not here yet, and is fetched when one is asked for"
+			case core.Sources.Recognise.Running():
+				reading = "one document is being read now"
+			case !core.Sources.Recognise.Ready():
+				reading = "what is needed to read scans is not here yet, and is fetched when one is asked for"
 			}
 		}
-		return nil, out{Documents: documents, Says: says}, nil
+		return nil, out{Documents: documents, Reading: reading}, nil
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
@@ -101,23 +101,23 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 		Location string `json:"location,omitempty" jsonschema:"where the run begins in the document's own numbering"`
 		Start    int    `json:"start" jsonschema:"where the run begins, which is what was asked for held within the text"`
 		Length   int    `json:"length" jsonschema:"how long the run is"`
-		Whole    int    `json:"whole" jsonschema:"how long the document's text is, so what stands on either side can be asked for"`
+		Size     int    `json:"size" jsonschema:"how long the document's whole text is, in bytes, so what stands on either side can be asked for"`
 	}, error) {
 		type out = struct {
 			Text     string `json:"text"`
 			Location string `json:"location,omitempty" jsonschema:"where the run begins in the document's own numbering"`
 			Start    int    `json:"start" jsonschema:"where the run begins, which is what was asked for held within the text"`
 			Length   int    `json:"length" jsonschema:"how long the run is"`
-			Whole    int    `json:"whole" jsonschema:"how long the document's text is, so what stands on either side can be asked for"`
+			Size     int    `json:"size" jsonschema:"how long the document's whole text is, in bytes, so what stands on either side can be asked for"`
 		}
-		if core.Sources == nil {
+		if core.Sources.Queries == nil {
 			return nil, out{}, fmt.Errorf("this vault's sources are not open")
 		}
 		res, err := source.Read{
 			Readers:   core.Readers,
-			Sources:   core.Sources,
-			Derived:   core.Derived,
-			Documents: core.Documents,
+			Sources:   core.Sources.Queries,
+			Derived:   core.Sources.Derived,
+			Documents: core.Sources.Documents,
 		}.Execute(ctx, core.shown().Vault, in.Path, in.Start, in.Length)
 		if err != nil {
 			return nil, out{}, err
@@ -127,7 +127,7 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 			Location: res.Location,
 			Start:    res.Start,
 			Length:   res.Length,
-			Whole:    res.Whole,
+			Size:     res.Whole,
 		}, nil
 	})
 }
@@ -136,8 +136,10 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_recognise",
 		Title: "Read a scanned document",
-		Description: "Have a model read one scanned document and write down what it says. " +
-			"The pages it has read are searchable as it goes, so a search finds the " +
+		Description: "Have a model read one scanned document and write what it says into " +
+			"the vault. The words land as files under `.numen/ocr/`, beside the person's " +
+			"notes and inside the folder they sync — a book is megabytes of them. The " +
+			"pages it has read are searchable as it goes, so a search finds the " +
 			"beginning of a book long before the end of it is read; the part not yet " +
 			"read answers nothing until it is. This is slow — an hour for a book — and " +
 			"it is never done on its own, because whether a document's own text is any " +
@@ -149,38 +151,40 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 		Path string `json:"path" jsonschema:"the document, as source_list gives it"`
 	}) (*sdk.CallToolResult, struct {
 		Started bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
-		Says    string `json:"says"`
+		Doing   string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
 	}, error) {
 		type out = struct {
 			Started bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
-			Says    string `json:"says"`
+			Doing   string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
 		}
-		if core.Recognise == nil {
+		if core.Sources.Recognise == nil {
 			return nil, out{}, fmt.Errorf("this installation cannot read scans")
 		}
 
 		// Nothing here happens inside this question. Fetching the models is
 		// minutes and reading a book is an hour, and how far either has got is
 		// among everything else the window shows being done.
-		says := "started; it runs in the background, the pages it has read are searchable " +
+		doing := "started; it runs in the background, the pages it has read are searchable " +
 			"as it goes, and the window shows how far it has got"
-		switch core.Recognise.Start(core.shown().Vault, in.Path) {
+		switch core.Sources.Recognise.Start(core.shown().Vault, in.Path) {
 		case port.Queued:
-			says = "queued; another document is being read and this one is in line behind " +
+			doing = "queued; another document is being read and this one is in line behind " +
 				"it — nothing more is needed, it begins when that reading is over"
 		default:
-			if !core.Recognise.Ready() {
-				says = "started; what is needed to read scans is being fetched first, about 160 MB"
+			if !core.Sources.Recognise.Ready() {
+				doing = "started; what is needed to read scans is being fetched first, about 160 MB"
 			}
 		}
-		return nil, out{Started: true, Says: says}, nil
+		return nil, out{Started: true, Doing: doing}, nil
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_transcribe",
 		Title: "Write down what a recording says",
-		Description: "Have a model listen to one recording and write down the words it " +
-			"carries. What has been heard is searchable as it goes, so a search finds " +
+		Description: "Have a model listen to one recording and write the words it carries " +
+			"into the vault. They land as files under `.numen/asr/`, beside the person's " +
+			"notes and inside the folder they sync — an hour of talk is megabytes of " +
+			"them. What has been heard is searchable as it goes, so a search finds " +
 			"the first minutes of a talk long before the last of them are heard. This " +
 			"is slow — about as long as the recording itself. A vault's recordings are " +
 			"listened to on their own where the installation is set to; ask for this " +
@@ -189,43 +193,43 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 			"on its own, and waits behind nothing but the recordings asked for before " +
 			"it, so this is asked once and no more.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Path string `json:"path" jsonschema:"the recording, as source_list gives it"`
+		Path string `json:"path" jsonschema:"the recording, as a path inside the vault"`
 	}) (*sdk.CallToolResult, struct {
 		Started bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
-		Says    string `json:"says"`
+		Doing   string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
 	}, error) {
 		type out = struct {
 			Started bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
-			Says    string `json:"says"`
+			Doing   string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
 		}
-		if core.Transcribe == nil {
+		if core.Sources.Transcribe == nil {
 			return nil, out{}, fmt.Errorf("this installation cannot hear recordings")
 		}
 
 		// Nothing here happens inside this question. Fetching the models is
 		// minutes and transcribing a talk is an hour, and how far either has got
 		// is among everything else the window shows being done.
-		says := "started; it runs in the background, and what has been transcribed is " +
+		doing := "started; it runs in the background, and what has been transcribed is " +
 			"searchable as it goes"
-		switch core.Transcribe.Start(core.shown().Vault, in.Path) {
+		switch core.Sources.Transcribe.Start(core.shown().Vault, in.Path) {
 		case port.Queued:
-			says = "queued; another recording is being transcribed and this one is in line " +
+			doing = "queued; another recording is being transcribed and this one is in line " +
 				"behind it — nothing more is needed, it begins when that one is over"
 		default:
-			if !core.Transcribe.Ready() {
-				says = "started; what is needed to transcribe recordings is being fetched first"
+			if !core.Sources.Transcribe.Ready() {
+				doing = "started; what is needed to transcribe recordings is being fetched first"
 			}
 		}
-		return nil, out{Started: true, Says: says}, nil
+		return nil, out{Started: true, Doing: doing}, nil
 	})
 }
 
-// Recognising is what the tools need in order to read a document: a way to
+// Recogniser is what the tools need in order to read a document: a way to
 // begin, a way to say how far it has got, and whether it could begin at once.
 //
-// It is an interface so that a server can be built without one, and so that the
-// tools can say "it has started" rather than "there is nothing to read with".
-type Recognising interface {
+// A server built without one serves the tool that would read anyway, and it
+// answers that this installation cannot read scans.
+type Recogniser interface {
 	// Ready says whether reading could begin now without waiting for anything
 	// to arrive.
 	Ready() bool
@@ -235,14 +239,15 @@ type Recognising interface {
 	// now or waits behind the reading already going. A document is never
 	// refused, and it runs under the application rather than under the call
 	// that asked for it.
-	Start(v domain.Vault, path string) port.Taking
+	Start(v domain.Vault, path string) port.StartOutcome
 }
 
-// Transcribing is what the tools need in order to hear a recording: a way to
+// Transcriber is what the tools need in order to hear a recording: a way to
 // begin, and whether beginning would wait for anything to arrive.
 //
-// A server built without one serves no tool that would listen.
-type Transcribing interface {
+// A server built without one serves the tool that would listen anyway, and it
+// answers that this installation cannot hear.
+type Transcriber interface {
 	// Ready says whether listening could begin now without waiting for anything
 	// to arrive.
 	Ready() bool
@@ -250,5 +255,5 @@ type Transcribing interface {
 	// began now or waits behind the listening already going. A recording is
 	// never refused, and it runs under the application rather than under the
 	// call that asked for it.
-	Start(v domain.Vault, path string) port.Taking
+	Start(v domain.Vault, path string) port.StartOutcome
 }

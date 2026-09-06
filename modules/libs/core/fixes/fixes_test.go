@@ -9,9 +9,9 @@ import (
 
 func TestCorrectionsComeBackAsTheyWereWritten(t *testing.T) {
 	lines := []fixes.Line{
-		{At: 0, Text: "Śrī Jayadeva Gosvāmī"},
-		{At: 7, Text: ""},
-		{At: 4096, Text: "the last line."},
+		{Number: 0, Text: "Śrī Jayadeva Gosvāmī"},
+		{Number: 7, Text: ""},
+		{Number: 4096, Text: "the last line."},
 	}
 	raw := fixes.Pack(lines)
 
@@ -28,8 +28,8 @@ func TestATornTailGivesBackTheWholeCorrections(t *testing.T) {
 	// A run stopped part way through writing leaves a record half written. What
 	// was written whole is still a correction.
 	lines := []fixes.Line{
-		{At: 0, Text: "Śrī Jayadeva Gosvāmī"},
-		{At: 1, Text: "and the second line."},
+		{Number: 0, Text: "Śrī Jayadeva Gosvāmī"},
+		{Number: 1, Text: "and the second line."},
 	}
 	raw := fixes.Pack(lines)
 
@@ -46,8 +46,8 @@ func TestATornTailGivesBackTheWholeCorrections(t *testing.T) {
 }
 
 func TestAppendedRunsReadAsOneFile(t *testing.T) {
-	first := []fixes.Line{{At: 0, Text: "Śrī Jayadeva Gosvāmī"}}
-	second := []fixes.Line{{At: 3, Text: ""}, {At: 4, Text: "the last line."}}
+	first := []fixes.Line{{Number: 0, Text: "Śrī Jayadeva Gosvāmī"}}
+	second := []fixes.Line{{Number: 3, Text: ""}, {Number: 4, Text: "the last line."}}
 
 	raw := append(fixes.Pack(first), fixes.Pack(second)...)
 

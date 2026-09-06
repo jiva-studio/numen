@@ -3,20 +3,12 @@
  * No DOM, no measurement.
  */
 import { describe, expect, it } from 'vitest'
-import {
-  landing,
-  numbered,
-  objection,
-  ordered,
-  reordered,
-  stepped,
-  wayOf,
-} from './order'
+import { directionOf, landing, numbered, objection, ordered, reordered, stepped } from './order'
 
 describe('ordered', () => {
   const NAMES = ['a', 'b', 'c']
 
-  it('puts a carried name before the one it lands on', () => {
+  it('puts a dragged name before the one it lands on', () => {
     expect(ordered(NAMES, 'c', 'a')).toEqual(['c', 'a', 'b'])
   })
 
@@ -36,7 +28,7 @@ describe('ordered', () => {
     expect(ordered(NAMES, 'b', 'z')).toEqual(NAMES)
   })
 
-  it('leaves the order alone where what is carried is not there', () => {
+  it('leaves the order alone where what is dragged is not there', () => {
     expect(ordered(NAMES, 'z', 'a')).toEqual(NAMES)
   })
 
@@ -85,7 +77,7 @@ describe('reordered', () => {
     expect(reordered(FIELDS, 'Weight', 'Height')).toEqual(['Name', 'Weight', 'Height'])
   })
 
-  it('leaves the order alone where the first field is carried', () => {
+  it('leaves the order alone where the first field is dragged', () => {
     expect(reordered(FIELDS, 'Name', null)).toEqual(FIELDS)
   })
 
@@ -97,12 +89,12 @@ describe('reordered', () => {
 describe('stepped', () => {
   const NAMES = ['a', 'b', 'c']
 
-  it('lands what is carried up before the one above it', () => {
+  it('lands what is dragged up before the one above it', () => {
     expect(stepped(NAMES, 'c', 'up')).toBe('b')
     expect(ordered(NAMES, 'c', stepped(NAMES, 'c', 'up') ?? null)).toEqual(['a', 'c', 'b'])
   })
 
-  it('lands what is carried down before the one below the one below it', () => {
+  it('lands what is dragged down before the one below the one below it', () => {
     expect(stepped(NAMES, 'a', 'down')).toBe('c')
     expect(ordered(NAMES, 'a', stepped(NAMES, 'a', 'down') ?? null)).toEqual(['b', 'a', 'c'])
   })
@@ -122,15 +114,15 @@ describe('stepped', () => {
   })
 })
 
-describe('wayOf', () => {
+describe('directionOf', () => {
   it('reads the two arrows along the order', () => {
-    expect(wayOf('ArrowUp')).toBe('up')
-    expect(wayOf('ArrowDown')).toBe('down')
+    expect(directionOf('ArrowUp')).toBe('up')
+    expect(directionOf('ArrowDown')).toBe('down')
   })
 
-  it('reads every other key as no way at all', () => {
-    expect(wayOf('ArrowLeft')).toBeNull()
-    expect(wayOf('Enter')).toBeNull()
+  it('reads every other key as no direction at all', () => {
+    expect(directionOf('ArrowLeft')).toBeNull()
+    expect(directionOf('Enter')).toBeNull()
   })
 })
 

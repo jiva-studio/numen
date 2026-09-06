@@ -8,13 +8,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// addVaultTools gives an agent the vault it is working: where it is, what it
-// holds under one name, and what in it could not be read. Every one of them
-// reads.
+// addVaultTools gives an agent the vault it is working: where it is, and what
+// in it could not be read. Both of them read.
 func addVaultTools(server *sdk.Server, core Core) {
 	addVaultGet(server, core)
 	addVaultProblems(server, core)
-	addVaultNamed(server, core)
 }
 
 func addVaultGet(server *sdk.Server, core Core) {
@@ -38,14 +36,14 @@ func addVaultGet(server *sdk.Server, core Core) {
 			Headings int    `json:"headings"`
 		}
 		shown := core.shown()
-		summary, err := core.Notes.Summary(ctx, shown.Vault.ID)
+		summary, err := core.Notes.Queries.Summary(ctx, shown.Vault.ID)
 		if err != nil {
 			return nil, out{}, err
 		}
 		return nil, out{
 			Name:     shown.Vault.Name,
 			Folder:   shown.Root,
-			ID:       shown.Vault.ID,
+			ID:       string(shown.Vault.ID),
 			Notes:    summary.Notes,
 			Headings: summary.Headings,
 		}, nil
@@ -77,7 +75,7 @@ func addVaultProblems(server *sdk.Server, core Core) {
 		for _, name := range in.Checks {
 			named = append(named, domain.Check(name))
 		}
-		found, err := core.Problems.Run(ctx, core.shown().Vault, named...)
+		found, err := core.Notes.Problems.Run(ctx, core.shown().Vault, named...)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -86,43 +84,20 @@ func addVaultProblems(server *sdk.Server, core Core) {
 		if len(res.Ran) == 0 {
 			// Saying which checks an empty answer covers is the difference
 			// between "nothing is wrong" and "nothing I looked at is wrong".
-			for _, name := range core.Problems.Loud() {
+			for _, name := range core.Notes.Problems.Loud() {
 				res.Ran = append(res.Ran, string(name))
 			}
 		}
 		for _, p := range found {
 			res.Problems = append(res.Problems, Problem{
 				Path:       p.Path,
-				Check:      string(p.Check),
+				Check:      string(p.Kind),
 				Detail:     p.Detail,
 				Address:    p.Target.String(),
 				Candidates: p.Candidates,
 			})
 		}
 		return nil, res, nil
-	})
-}
-
-func addVaultNamed(server *sdk.Server, core Core) {
-	sdk.AddTool(server, &sdk.Tool{
-		Name:  "vault_named",
-		Title: "Find notes by name",
-		Description: "Every note filed under one name. More than one means a link " +
-			"written by that name is ambiguous and reaches the nearest of them, which " +
-			"can change when either note is moved.",
-	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Name string `json:"name" jsonschema:"a note's filename without its extension"`
-	}) (*sdk.CallToolResult, struct {
-		Paths []string `json:"paths"`
-	}, error) {
-		type out = struct {
-			Paths []string `json:"paths"`
-		}
-		paths, err := core.Notes.Named(ctx, core.shown().Vault.ID, domain.LinkName(in.Name))
-		if err != nil {
-			return nil, out{}, err
-		}
-		return nil, out{Paths: paths}, nil
 	})
 }
 

@@ -41,16 +41,16 @@ type Checker interface {
 // because what they answer stops being true when a note somewhere else moves,
 // and a written-down answer would go on saying it.
 type Checks struct {
-	Checks []Checker
+	List []Checker
 }
 
 // Standard is the set of checks a vault is held to.
 func Standard(queries port.ProblemQueries) Checks {
-	return Checks{Checks: []Checker{
-		parse{queries},
-		frontmatter{queries},
-		ambiguous{queries},
-		dangling{queries},
+	return Checks{List: []Checker{
+		parseCheck{queries},
+		frontmatterCheck{queries},
+		ambiguousCheck{queries},
+		danglingCheck{queries},
 	}}
 }
 
@@ -80,15 +80,15 @@ func (c Checks) Run(ctx context.Context, v domain.Vault, named ...domain.Check) 
 		if out[i].Path != out[j].Path {
 			return out[i].Path < out[j].Path
 		}
-		return out[i].Check < out[j].Check
+		return out[i].Kind < out[j].Kind
 	})
 	return out, nil
 }
 
 // Names is every check there is, quiet ones included.
 func (c Checks) Names() []domain.Check {
-	out := make([]domain.Check, 0, len(c.Checks))
-	for _, check := range c.Checks {
+	out := make([]domain.Check, 0, len(c.List))
+	for _, check := range c.List {
 		out = append(out, check.Name())
 	}
 	return out
@@ -102,7 +102,7 @@ func (c Checks) wanted(named []domain.Check) ([]Checker, error) {
 	var out []Checker
 	for _, name := range named {
 		found := false
-		for _, check := range c.Checks {
+		for _, check := range c.List {
 			if check.Name() == name {
 				out, found = append(out, check), true
 				break
@@ -135,7 +135,7 @@ func (c Checks) Loud() []domain.Check {
 // loud is every check that does not wait to be asked for.
 func (c Checks) loud() []Checker {
 	var out []Checker
-	for _, check := range c.Checks {
+	for _, check := range c.List {
 		if !check.Quiet() {
 			out = append(out, check)
 		}

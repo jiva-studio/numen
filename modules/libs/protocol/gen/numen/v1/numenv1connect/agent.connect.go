@@ -38,20 +38,21 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// AgentServiceAskProcedure is the fully-qualified name of the AgentService's Ask RPC.
-	AgentServiceAskProcedure = "/numen.v1.AgentService/Ask"
-	// AgentServiceFinishProcedure is the fully-qualified name of the AgentService's Finish RPC.
-	AgentServiceFinishProcedure = "/numen.v1.AgentService/Finish"
+	// AgentServiceAskAgentProcedure is the fully-qualified name of the AgentService's AskAgent RPC.
+	AgentServiceAskAgentProcedure = "/numen.v1.AgentService/AskAgent"
+	// AgentServiceFinishConversationProcedure is the fully-qualified name of the AgentService's
+	// FinishConversation RPC.
+	AgentServiceFinishConversationProcedure = "/numen.v1.AgentService/FinishConversation"
 )
 
 // AgentServiceClient is a client for the numen.v1.AgentService service.
 type AgentServiceClient interface {
-	// Ask hands over a task and reports what the agent does, in the order it
+	// AskAgent hands over a task and reports what the agent does, in the order it
 	// does it, until it is done. Letting go of the stream stops the agent.
-	Ask(context.Context, *connect.Request[v1.AskRequest]) (*connect.ServerStreamForClient[v1.AskResponse], error)
-	// Finish says a conversation is over. What the agent kept of it is let go
-	// of, and whatever is still being answered in it stops.
-	Finish(context.Context, *connect.Request[v1.FinishRequest]) (*connect.Response[v1.FinishResponse], error)
+	AskAgent(context.Context, *connect.Request[v1.AskAgentRequest]) (*connect.ServerStreamForClient[v1.AskAgentResponse], error)
+	// FinishConversation says a conversation is over. What the agent kept of it
+	// is let go of, and whatever is still being answered in it stops.
+	FinishConversation(context.Context, *connect.Request[v1.FinishConversationRequest]) (*connect.Response[v1.FinishConversationResponse], error)
 }
 
 // NewAgentServiceClient constructs a client for the numen.v1.AgentService service. By default, it
@@ -65,16 +66,16 @@ func NewAgentServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 	baseURL = strings.TrimRight(baseURL, "/")
 	agentServiceMethods := v1.File_numen_v1_agent_proto.Services().ByName("AgentService").Methods()
 	return &agentServiceClient{
-		ask: connect.NewClient[v1.AskRequest, v1.AskResponse](
+		askAgent: connect.NewClient[v1.AskAgentRequest, v1.AskAgentResponse](
 			httpClient,
-			baseURL+AgentServiceAskProcedure,
-			connect.WithSchema(agentServiceMethods.ByName("Ask")),
+			baseURL+AgentServiceAskAgentProcedure,
+			connect.WithSchema(agentServiceMethods.ByName("AskAgent")),
 			connect.WithClientOptions(opts...),
 		),
-		finish: connect.NewClient[v1.FinishRequest, v1.FinishResponse](
+		finishConversation: connect.NewClient[v1.FinishConversationRequest, v1.FinishConversationResponse](
 			httpClient,
-			baseURL+AgentServiceFinishProcedure,
-			connect.WithSchema(agentServiceMethods.ByName("Finish")),
+			baseURL+AgentServiceFinishConversationProcedure,
+			connect.WithSchema(agentServiceMethods.ByName("FinishConversation")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -82,28 +83,28 @@ func NewAgentServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 
 // agentServiceClient implements AgentServiceClient.
 type agentServiceClient struct {
-	ask    *connect.Client[v1.AskRequest, v1.AskResponse]
-	finish *connect.Client[v1.FinishRequest, v1.FinishResponse]
+	askAgent           *connect.Client[v1.AskAgentRequest, v1.AskAgentResponse]
+	finishConversation *connect.Client[v1.FinishConversationRequest, v1.FinishConversationResponse]
 }
 
-// Ask calls numen.v1.AgentService.Ask.
-func (c *agentServiceClient) Ask(ctx context.Context, req *connect.Request[v1.AskRequest]) (*connect.ServerStreamForClient[v1.AskResponse], error) {
-	return c.ask.CallServerStream(ctx, req)
+// AskAgent calls numen.v1.AgentService.AskAgent.
+func (c *agentServiceClient) AskAgent(ctx context.Context, req *connect.Request[v1.AskAgentRequest]) (*connect.ServerStreamForClient[v1.AskAgentResponse], error) {
+	return c.askAgent.CallServerStream(ctx, req)
 }
 
-// Finish calls numen.v1.AgentService.Finish.
-func (c *agentServiceClient) Finish(ctx context.Context, req *connect.Request[v1.FinishRequest]) (*connect.Response[v1.FinishResponse], error) {
-	return c.finish.CallUnary(ctx, req)
+// FinishConversation calls numen.v1.AgentService.FinishConversation.
+func (c *agentServiceClient) FinishConversation(ctx context.Context, req *connect.Request[v1.FinishConversationRequest]) (*connect.Response[v1.FinishConversationResponse], error) {
+	return c.finishConversation.CallUnary(ctx, req)
 }
 
 // AgentServiceHandler is an implementation of the numen.v1.AgentService service.
 type AgentServiceHandler interface {
-	// Ask hands over a task and reports what the agent does, in the order it
+	// AskAgent hands over a task and reports what the agent does, in the order it
 	// does it, until it is done. Letting go of the stream stops the agent.
-	Ask(context.Context, *connect.Request[v1.AskRequest], *connect.ServerStream[v1.AskResponse]) error
-	// Finish says a conversation is over. What the agent kept of it is let go
-	// of, and whatever is still being answered in it stops.
-	Finish(context.Context, *connect.Request[v1.FinishRequest]) (*connect.Response[v1.FinishResponse], error)
+	AskAgent(context.Context, *connect.Request[v1.AskAgentRequest], *connect.ServerStream[v1.AskAgentResponse]) error
+	// FinishConversation says a conversation is over. What the agent kept of it
+	// is let go of, and whatever is still being answered in it stops.
+	FinishConversation(context.Context, *connect.Request[v1.FinishConversationRequest]) (*connect.Response[v1.FinishConversationResponse], error)
 }
 
 // NewAgentServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -113,24 +114,24 @@ type AgentServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewAgentServiceHandler(svc AgentServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	agentServiceMethods := v1.File_numen_v1_agent_proto.Services().ByName("AgentService").Methods()
-	agentServiceAskHandler := connect.NewServerStreamHandler(
-		AgentServiceAskProcedure,
-		svc.Ask,
-		connect.WithSchema(agentServiceMethods.ByName("Ask")),
+	agentServiceAskAgentHandler := connect.NewServerStreamHandler(
+		AgentServiceAskAgentProcedure,
+		svc.AskAgent,
+		connect.WithSchema(agentServiceMethods.ByName("AskAgent")),
 		connect.WithHandlerOptions(opts...),
 	)
-	agentServiceFinishHandler := connect.NewUnaryHandler(
-		AgentServiceFinishProcedure,
-		svc.Finish,
-		connect.WithSchema(agentServiceMethods.ByName("Finish")),
+	agentServiceFinishConversationHandler := connect.NewUnaryHandler(
+		AgentServiceFinishConversationProcedure,
+		svc.FinishConversation,
+		connect.WithSchema(agentServiceMethods.ByName("FinishConversation")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/numen.v1.AgentService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case AgentServiceAskProcedure:
-			agentServiceAskHandler.ServeHTTP(w, r)
-		case AgentServiceFinishProcedure:
-			agentServiceFinishHandler.ServeHTTP(w, r)
+		case AgentServiceAskAgentProcedure:
+			agentServiceAskAgentHandler.ServeHTTP(w, r)
+		case AgentServiceFinishConversationProcedure:
+			agentServiceFinishConversationHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -140,10 +141,10 @@ func NewAgentServiceHandler(svc AgentServiceHandler, opts ...connect.HandlerOpti
 // UnimplementedAgentServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedAgentServiceHandler struct{}
 
-func (UnimplementedAgentServiceHandler) Ask(context.Context, *connect.Request[v1.AskRequest], *connect.ServerStream[v1.AskResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AgentService.Ask is not implemented"))
+func (UnimplementedAgentServiceHandler) AskAgent(context.Context, *connect.Request[v1.AskAgentRequest], *connect.ServerStream[v1.AskAgentResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AgentService.AskAgent is not implemented"))
 }
 
-func (UnimplementedAgentServiceHandler) Finish(context.Context, *connect.Request[v1.FinishRequest]) (*connect.Response[v1.FinishResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AgentService.Finish is not implemented"))
+func (UnimplementedAgentServiceHandler) FinishConversation(context.Context, *connect.Request[v1.FinishConversationRequest]) (*connect.Response[v1.FinishConversationResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AgentService.FinishConversation is not implemented"))
 }

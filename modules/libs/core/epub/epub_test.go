@@ -147,8 +147,8 @@ func TestStructureFallsThroughTheTiers(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			book := read(t, tinyBook(t, c.replace))
 
-			if book.Structure != c.want {
-				t.Errorf("structure = %q, want %q (parts: %v)", book.Structure, c.want, titles(book))
+			if book.Tier != c.want {
+				t.Errorf("structure = %q, want %q (parts: %v)", book.Tier, c.want, titles(book))
 			}
 			if got := titles(book); !slices.Equal(got, c.parts) {
 				t.Errorf("parts = %v, want %v", got, c.parts)
@@ -330,8 +330,25 @@ func excerpt(text string, at int) string {
 //
 // replace maps a path in the archive to the fixture file that fills it, adding
 // the path when the fixture has no such file; omit drops paths.
-func tinyBook(t *testing.T, replace map[string]string, omit ...string) []byte {
-	t.Helper()
+func tinyBook(tb testing.TB, replace map[string]string, omit ...string) []byte {
+	tb.Helper()
+	parts := tinyParts(tb)
+	for at, from := range replace {
+		raw, err := os.ReadFile(filepath.Join("testdata", filepath.FromSlash(from)))
+		if err != nil {
+			tb.Fatalf("read the fixture: %v", err)
+		}
+		parts[at] = raw
+	}
+	for _, at := range omit {
+		delete(parts, at)
+	}
+	return zipped(tb, parts)
+}
+
+// tinyParts is the committed fixture as the files it is made of.
+func tinyParts(tb testing.TB) map[string][]byte {
+	tb.Helper()
 	root := filepath.Join("testdata", "tiny")
 
 	parts := map[string][]byte{}
@@ -351,22 +368,18 @@ func tinyBook(t *testing.T, replace map[string]string, omit ...string) []byte {
 		return nil
 	})
 	if err != nil {
-		t.Fatalf("read the fixture: %v", err)
+		tb.Fatalf("read the fixture: %v", err)
 	}
-	for at, from := range replace {
-		raw, err := os.ReadFile(filepath.Join("testdata", filepath.FromSlash(from)))
-		if err != nil {
-			t.Fatalf("read the fixture: %v", err)
-		}
-		parts[at] = raw
-	}
-	for _, at := range omit {
-		delete(parts, at)
-	}
+	return parts
+}
 
-	// The mimetype comes first because the specification asks for it. The rest
-	// are written in reverse, so that the order of the archive is not the order
-	// of the book.
+// zipped writes the files into one archive.
+//
+// The mimetype comes first because the specification asks for it. The rest are
+// written in reverse, so that the order of the archive is not the order of the
+// book.
+func zipped(tb testing.TB, parts map[string][]byte) []byte {
+	tb.Helper()
 	names := slices.Sorted(maps.Keys(parts))
 	slices.Reverse(names)
 	if i := slices.Index(names, "mimetype"); i >= 0 {
@@ -382,14 +395,14 @@ func tinyBook(t *testing.T, replace map[string]string, omit ...string) []byte {
 		}
 		entry, err := archive.CreateHeader(&zip.FileHeader{Name: name, Method: method})
 		if err != nil {
-			t.Fatalf("write the archive: %v", err)
+			tb.Fatalf("write the archive: %v", err)
 		}
 		if _, err := entry.Write(parts[name]); err != nil {
-			t.Fatalf("write the archive: %v", err)
+			tb.Fatalf("write the archive: %v", err)
 		}
 	}
 	if err := archive.Close(); err != nil {
-		t.Fatalf("write the archive: %v", err)
+		tb.Fatalf("write the archive: %v", err)
 	}
 	return out.Bytes()
 }

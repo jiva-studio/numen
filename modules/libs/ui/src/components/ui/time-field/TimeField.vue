@@ -7,7 +7,7 @@
  * at half an hour, or at nothing, hands nothing on and is left where it stands.
  */
 import { computed, useTemplateRef, type HTMLAttributes } from 'vue'
-import { cn } from '@/lib/utils'
+import { cn } from '@/classes'
 import { onTheClock } from './clock'
 
 const props = withDefaults(
@@ -30,7 +30,7 @@ const raises = defineEmits<{
 }>()
 
 /** What stands in the field, which is an hour of the day or nothing at all. */
-const standing = computed(() => (onTheClock(model.value) ? model.value : ''))
+const inForce = computed(() => (onTheClock(model.value) ? model.value : ''))
 
 const element = useTemplateRef<HTMLInputElement>('element')
 
@@ -53,7 +53,7 @@ defineExpose({
     ref="element"
     type="time"
     data-slot="time-field"
-    :value="standing"
+    :value="inForce"
     :disabled="disabled"
     :min="min || undefined"
     :max="max || undefined"

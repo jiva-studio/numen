@@ -10,18 +10,18 @@ import (
 )
 
 // serving says whether the tools are in front of the agents.
-func (s *Swapping) serving() bool {
+func (s *Endpoint) serving() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.shut != nil
+	return s.close != nil
 }
 
-// standing is a window on a vault, serving tools that do nothing.
-func standing() *Swapping {
-	return &Swapping{
+// newEndpoint is a window on a vault, serving tools that do nothing.
+func newEndpoint() *Endpoint {
+	return &Endpoint{
 		Serve:       func() (func() error, error) { return func() error { return nil }, nil },
-		Standing:    func() domain.Vault { return domain.Vault{ID: "one"} },
-		Answers:     func(port.Agent) {},
+		Showing:     func() domain.Vault { return domain.Vault{ID: "one"} },
+		Handler:     func(port.Agent) {},
 		Unreachable: func(string) {},
 		Trouble:     func(error) {},
 	}
@@ -31,7 +31,7 @@ func standing() *Swapping {
 // the window, so a second swap arriving while one runs does not put them back
 // in front of the agents on the vault that is going.
 func TestOneSwapHoldsTheAgentsUntilItIsOver(t *testing.T) {
-	s := standing()
+	s := newEndpoint()
 	s.On()
 	if !s.serving() {
 		t.Fatal("the tools were never served")

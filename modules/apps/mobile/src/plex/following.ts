@@ -6,7 +6,7 @@
  * and the picture is drawn again each time.
  */
 import { onScopeDispose } from 'vue'
-import type { Reached } from '../core'
+import type { Core } from '../core'
 
 /**
  * Draw again on every change, until the scope this was made in goes.
@@ -14,13 +14,13 @@ import type { Reached } from '../core'
  * The stream ends when the vault is closed, and an error is the same thing
  * seen from here: there is nothing to follow any more.
  */
-export function follow(core: Reached, again: () => void): void {
+export function follow(core: Core, again: () => void): void {
   const stop = new AbortController()
   onScopeDispose(() => stop.abort())
 
   void (async () => {
     try {
-      for await (const _ of core.vault.changes({}, { signal: stop.signal })) {
+      for await (const _ of core.vault.watchVaultChanges({}, { signal: stop.signal })) {
         again()
       }
     } catch {

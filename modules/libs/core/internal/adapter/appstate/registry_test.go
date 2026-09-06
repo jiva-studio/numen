@@ -299,7 +299,7 @@ func TestConcurrentWritesLoseNothing(t *testing.T) {
 	const each = 10
 	r := newRegistry(t)
 	for i := range each {
-		if err := r.Save(domain.Vault{ID: fmt.Sprintf("01OLD%02d", i), Name: fmt.Sprintf("old %d", i), Path: fmt.Sprintf("/old/%d", i)}); err != nil {
+		if err := r.Save(domain.Vault{ID: domain.VaultID(fmt.Sprintf("01OLD%02d", i)), Name: fmt.Sprintf("old %d", i), Path: fmt.Sprintf("/old/%d", i)}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -310,11 +310,11 @@ func TestConcurrentWritesLoseNothing(t *testing.T) {
 		writing.Add(2)
 		go func() {
 			defer writing.Done()
-			errs <- r.Save(domain.Vault{ID: fmt.Sprintf("01NEW%02d", i), Name: fmt.Sprintf("new %d", i), Path: fmt.Sprintf("/new/%d", i)})
+			errs <- r.Save(domain.Vault{ID: domain.VaultID(fmt.Sprintf("01NEW%02d", i)), Name: fmt.Sprintf("new %d", i), Path: fmt.Sprintf("/new/%d", i)})
 		}()
 		go func() {
 			defer writing.Done()
-			errs <- r.Remove(fmt.Sprintf("01OLD%02d", i))
+			errs <- r.Remove(domain.VaultID(fmt.Sprintf("01OLD%02d", i)))
 		}()
 	}
 	writing.Wait()
@@ -331,7 +331,7 @@ func TestConcurrentWritesLoseNothing(t *testing.T) {
 	}
 	var names []string
 	for _, v := range got {
-		names = append(names, v.ID)
+		names = append(names, string(v.ID))
 	}
 	slices.Sort(names)
 	var want []string

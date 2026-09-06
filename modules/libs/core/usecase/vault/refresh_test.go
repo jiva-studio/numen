@@ -8,26 +8,28 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
+	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // refreshing is a vault already scanned once, and the use case that brings named
 // notes up to date afterwards.
-func refreshing(t *testing.T, notes map[string]string) (usecase.Refresh, *container.Index, domain.Vault) {
+func refreshing(t *testing.T, notes map[string]string) (vaults.Refresh, *container.Index, domain.Vault) {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	db := openIndex(t)
-	if _, err := scanner(filesystem.Readers{}, db).Execute(t.Context(), v); err != nil {
+	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	return usecase.Refresh{
-		Readers: filesystem.Readers{},
+	return vaults.Refresh{
+		Readers: filesystem.VaultReaders{},
+		Vaults:  db.Vaults(),
 		Notes:   db.Notes(),
 		Known:   db.SourcesKnown(),
 		Sources: db.Sources(),
@@ -49,16 +51,38 @@ func passages(t *testing.T, db *container.Index, v domain.Vault, query string) [
 
 func titles(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
 	t.Helper()
-	matches, err := db.Queries().Search(t.Context(), v.ID, query, 10)
+	paths := searched(t, db, v, query)
+	named, err := db.Queries().Notes(t.Context(), v.ID, paths)
 	if err != nil {
 		t.Fatal(err)
 	}
-	out := make([]string, 0, len(matches))
-	for _, m := range matches {
-		out = append(out, m.Title)
+	out := make([]string, 0, len(paths))
+	for _, path := range paths {
+		out = append(out, named[path].Title)
 	}
 	slices.Sort(out)
 	return out
+}
+
+// TestANoteIsLevelledInAVaultNothingHasWalked. A note is filed under the
+// vault's row in the index, and a vault nothing has walked has none. A person
+// who writes in the moment a vault opens is racing the first walk, and their
+// note is findable either way.
+func TestANoteIsLevelledInAVaultNothingHasWalked(t *testing.T) {
+	t.Parallel()
+	v := testsupport.NewVault(t, map[string]string{
+		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
+	})
+	db := openIndex(t)
+	refresh := vaults.NewRefresh(
+		filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources())
+
+	if _, err := refresh.Execute(t.Context(), v, []string{"Note.md"}); err != nil {
+		t.Fatal(err)
+	}
+	if found := titles(t, db, v, "entropy"); !slices.Equal(found, []string{"Note"}) {
+		t.Errorf("the note is found as %v", found)
+	}
 }
 
 // TestARefreshedNoteIsWhatIsOnDisk.
@@ -150,13 +174,13 @@ func TestABookThatWentLeavesTheIndex(t *testing.T) {
 	})
 	const book = "library/A Book.epub"
 	testsupport.WriteBook(t, v.Path, book)
-	if err := db.Sources().SaveExtraction(t.Context(), v.ID, port.Extraction{
-		Source: port.Source{
-			Ref:    domain.FileRef{Path: book, Kind: domain.KindBook, Size: 1, MTime: 1},
-			Hash:   "a-hash",
-			Recipe: "epub",
+	if err := db.Sources().SaveExtraction(t.Context(), v.ID, domain.SourceChunks{
+		Source: domain.Source{
+			Fingerprint: domain.Fingerprint{Path: book, Kind: domain.KindBook, Size: 1, ModTime: time.Unix(0, 1)},
+			Hash:        "a-hash",
+			Recipe:      "epub",
 		},
-		Chunks: []port.Chunk{{Start: 0, Length: 19, Text: "a reversible engine"}},
+		Chunks: []domain.Chunk{{Start: 0, Length: 19, Text: "a reversible engine"}},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -246,7 +270,7 @@ func TestOneUnreadableFileDoesNotCostTheRest(t *testing.T) {
 		}
 	}
 
-	refresh.Readers = unreadableReaders{VaultReaders: filesystem.Readers{}, refuses: "Locked.md"}
+	refresh.Readers = unreadableReaders{VaultReaders: filesystem.VaultReaders{}, refuses: "Locked.md"}
 	res, err := refresh.Execute(t.Context(), v, []string{"Locked.md", "Note.md"})
 	if err != nil {
 		t.Fatalf("one unreadable file ended the refresh: %v", err)
@@ -277,7 +301,9 @@ func TestARefreshWritesInGroups(t *testing.T) {
 
 	v := testsupport.NewVault(t, notes)
 	written := &countingNotes{}
-	refresh := usecase.Refresh{Readers: filesystem.Readers{}, Notes: written}
+	refresh := vaults.Refresh{
+		Readers: filesystem.VaultReaders{}, Vaults: &indexRows{}, Notes: written,
+	}
 
 	if _, err := refresh.Execute(t.Context(), v, paths); err != nil {
 		t.Fatal(err)
@@ -303,14 +329,14 @@ type countingNotes struct {
 	sizes  []int
 }
 
-func (c *countingNotes) Save(_ context.Context, _ string, notes []domain.Note) error {
+func (c *countingNotes) Save(_ context.Context, _ domain.VaultID, notes []domain.Note) error {
 	c.groups++
 	c.notes += len(notes)
 	c.sizes = append(c.sizes, len(notes))
 	return nil
 }
 
-func (c *countingNotes) Remove(context.Context, string, []string) error { return nil }
+func (c *countingNotes) Remove(context.Context, domain.VaultID, []string) error { return nil }
 
 // TestANoteThatVanishesMidReadKeepsItsRow. A file that is briefly absent is
 // what an editor saving through a temporary file looks like, and the save that
@@ -321,7 +347,7 @@ func TestANoteThatVanishesMidReadKeepsItsRow(t *testing.T) {
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
 
-	refresh.Readers = vanishingReaders{VaultReaders: filesystem.Readers{}, gone: "Note.md"}
+	refresh.Readers = vanishingReaders{VaultReaders: filesystem.VaultReaders{}, gone: "Note.md"}
 	res, err := refresh.Execute(t.Context(), v, []string{"Note.md"})
 	if err != nil {
 		t.Fatal(err)

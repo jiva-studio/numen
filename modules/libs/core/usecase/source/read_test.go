@@ -8,7 +8,7 @@ import (
 // reader is a Read over a vault whose one document has been read by a model.
 func reader(t *testing.T) (Read, *shelf) {
 	t.Helper()
-	read, _, index, shelved, _ := reading(t, "the words", "outline.pdf")
+	read, _, index, shelved, _ := reading(t, "the words", outline)
 	if _, err := read.Execute(t.Context(), first, documentPath); err != nil {
 		t.Fatal(err)
 	}

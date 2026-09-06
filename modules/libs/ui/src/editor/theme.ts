@@ -43,7 +43,7 @@ export const theme = EditorView.theme({
     '--editor-comment': 'var(--numen-syntax-comment)',
     '--editor-punctuation': 'var(--numen-syntax-punctuation)',
 
-    color: 'var(--numen-node-fg)',
+    color: 'var(--numen-ink)',
     backgroundColor: 'transparent',
     fontFamily: 'var(--numen-font-sans)',
     fontSize: 'var(--numen-reading-size)',
@@ -62,13 +62,13 @@ export const theme = EditorView.theme({
   /* The prose opens close to the top of its box and keeps the gutter's room
      below it, so the last line can be brought clear of the edge. */
   '.cm-content': {
-    caretColor: 'var(--numen-node-fg)',
+    caretColor: 'var(--numen-ink)',
     paddingTop: 'var(--editor-lead, var(--editor-room))',
     paddingBottom: 'var(--numen-gutter)',
     maxWidth: 'var(--editor-measure, none)',
   },
   '.cm-gutters': { maxWidth: 'var(--editor-measure, none)' },
-  '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--numen-node-fg)' },
+  '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--numen-ink)' },
   '.cm-line': { padding: '0 var(--numen-gutter)' },
   '.cm-placeholder': { color: 'var(--numen-edge-label)' },
   /* The editor draws a buffer either side of replaced content and measures it
@@ -151,7 +151,7 @@ export const theme = EditorView.theme({
     borderLeft: 'var(--editor-quote-rule) solid var(--numen-ring)',
     marginLeft: 'calc(var(--numen-gutter) - var(--editor-quote-room))',
     paddingLeft: 'calc(var(--editor-quote-room) - var(--editor-quote-rule))',
-    color: 'var(--numen-node-fg)',
+    color: 'var(--numen-ink)',
     fontStyle: 'italic',
   },
 
@@ -159,14 +159,14 @@ export const theme = EditorView.theme({
   '.cm-box': {
     verticalAlign: 'middle',
     margin: '0 2px 2px 0',
-    accentColor: 'var(--numen-focus-bg)',
+    accentColor: 'var(--numen-accent)',
     cursor: 'pointer',
   },
 
   '.cm-rule': { padding: '6px 0' },
   '.cm-rule hr': {
     border: 'none',
-    borderTop: '1px solid var(--numen-node-border)',
+    borderTop: '1px solid var(--numen-rule)',
     margin: '0',
   },
 
@@ -184,7 +184,7 @@ export const theme = EditorView.theme({
 
   '.cm-picture-lost': {
     height: '2em',
-    border: '1px dashed var(--numen-node-border)',
+    border: '1px dashed var(--numen-rule)',
     borderRadius: 'var(--numen-radius)',
   },
 
@@ -223,11 +223,11 @@ export const theme = EditorView.theme({
   '.cm-add-row': { gridColumn: '1', gridRow: '2' },
   '.cm-table:hover .cm-add-column, .cm-table:hover .cm-add-row': { opacity: '1' },
   '.cm-add-column:hover, .cm-add-row:hover': {
-    borderColor: 'var(--numen-node-border)',
-    color: 'var(--numen-node-fg)',
+    borderColor: 'var(--numen-rule)',
+    color: 'var(--numen-ink)',
   },
   '.cm-table th, .cm-table td': {
-    border: '1px solid var(--numen-node-border)',
+    border: '1px solid var(--numen-rule)',
     padding: 'var(--editor-cell-padding)',
     textAlign: 'start',
     verticalAlign: 'top',

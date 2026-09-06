@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -15,45 +14,57 @@ import (
 // Replace puts one stretch of a note's prose in place of another, and leaves
 // every byte around it as it was.
 //
-// What is replaced is named by the text standing there rather than by where it
-// stands. Text says both where the stretch is and that the note still holds
-// what the caller was working from, so nothing else has to be presented for a
-// write to be safe.
+// What is replaced is named by the text standing there, not by where it stands,
+// and the caller presents the fingerprint of the note it read.
 type Replace struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
-	Index   func(ctx context.Context, v domain.Vault, paths []string) error
-	// Telling is told what this change is doing while it is being made. Nothing
+	Index   Levels
+	// Drawing is told what this change is doing while it is being made. Nothing
 	// is told where nobody is drawing the note.
-	Telling Telling
-	Now     func() time.Time
+	Drawing TellEdit
+	Now     port.Clock
 }
 
-// Replaced is what a replacement did.
-type Replaced struct {
-	// At is the fingerprint of the file this write produced.
-	At domain.FileRef
-	// Stretch is where the stretch stood, as byte offsets into the prose a read
-	// hands out.
-	Stretch markdown.Stretch
-	// Stood is the stretch as the note held it, which is not always the text
-	// the caller asked for.
-	Stood string
-	// Plainly says the stretch was found only once punctuation or spacing were
+// NewReplace is what one stretch of a note is put right through: the vault it
+// is read and written through, what brings it level in the index, and what time
+// it is.
+//
+// All four are named here for the reason NewWrite names them: a replacement
+// short of the levelling changes the file and leaves the vault unable to find
+// what it now says, and one short of the clock stamps the note off the
+// machine's.
+func NewReplace(
+	readers port.VaultReaders, writers port.VaultWriters, index Levels, now port.Clock,
+) Replace {
+	return Replace{Readers: readers, Writers: writers, Index: index, Now: now}
+}
+
+// ReplaceResult is what a replacement did.
+type ReplaceResult struct {
+	// Fingerprint is of the file this write produced.
+	Fingerprint domain.Fingerprint
+	// Span is where the span stood, as byte offsets into the prose a read hands
+	// out.
+	Span markdown.Span
+	// Matched is the span as the note held it, which is not always the text the
+	// caller asked for.
+	Matched string
+	// Plainly says the span was found only once punctuation or spacing were
 	// allowed to differ.
 	Plainly bool
 }
 
-// Nowhere is a stretch that is not in the note, and where a copy of it stopped
+// MissingStretch is a stretch that is not in the note, and where a copy of it stopped
 // agreeing with what is there.
-type Nowhere struct {
+type MissingStretch struct {
 	// Matched is the longest opening of what was asked for that does stand in
 	// the note, and Instead is what stands in the note from there.
 	Matched string
 	Instead string
 }
 
-func (e Nowhere) Error() string {
+func (e MissingStretch) Error() string {
 	if e.Matched == "" {
 		return "no part of this stretch is in the note"
 	}
@@ -61,13 +72,13 @@ func (e Nowhere) Error() string {
 		e.Instead, e.Matched+"…")
 }
 
-// Twice is a stretch standing in more than one place, which is a stretch that
-// does not say which of them was meant.
-type Twice struct {
+// AmbiguousStretch is a stretch standing in more than one place, which is a
+// stretch that does not say which of them was meant.
+type AmbiguousStretch struct {
 	Places int
 }
 
-func (e Twice) Error() string {
+func (e AmbiguousStretch) Error() string {
 	return fmt.Sprintf("this stretch stands in %d places; take in enough of what is around "+
 		"one of them to tell it from the others", e.Places)
 }
@@ -77,29 +88,32 @@ func (e Twice) Error() string {
 var ErrAlreadyWritten = fmt.Errorf("this replacement is already in the note")
 
 // Execute puts `becomes` where `stood` stands in the note at path.
+//
+// Fingerprint is what the caller believes is on disk. A note that has changed
+// since it was read is left alone and port.ErrStale comes back.
 func (u Replace) Execute(
-	ctx context.Context, v domain.Vault, path, stood, becomes string,
-) (Replaced, error) {
+	ctx context.Context, v domain.Vault, path, stood, becomes string, fingerprint domain.Fingerprint,
+) (ReplaceResult, error) {
 	if stood == "" {
-		return Replaced{}, fmt.Errorf("name the text to replace")
+		return ReplaceResult{}, fmt.Errorf("name the text to replace")
 	}
 
-	done := Replaced{}
+	done := ReplaceResult{}
 	ends := func() {}
 	defer func() { ends() }()
 
-	e := editing{
-		readers: u.Readers, writers: u.Writers, index: u.Index, now: u.Now,
-		bound: MaxBytes,
+	e := Edit{
+		Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now,
+		Fingerprint: fingerprint, Bound: MaxBytes,
 	}
-	at, err := e.apply(ctx, v, path, func(doc *markdown.Document) error {
+	at, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		body := markdown.Normalised(doc.Body())
 
 		where, plainly := markdown.Where(body, stood)
 		switch {
 		case len(where) == 1:
 		case len(where) > 1:
-			return Twice{Places: len(where)}
+			return AmbiguousStretch{Places: len(where)}
 		case becomes != "" && strings.Contains(body, becomes):
 			return ErrAlreadyWritten
 		default:
@@ -108,26 +122,28 @@ func (u Replace) Execute(
 
 		span := where[0]
 		written := body[:span.From] + becomes + body[span.To:]
+		if err := doc.SetBody(written); err != nil {
+			return err
+		}
 
-		// A client counts text its own way, and a stretch named in bytes lands
+		// A client counts text its own way, and a span named in bytes lands
 		// somewhere else in prose that is not ASCII.
-		ends = u.Telling.begins(ctx, domain.Editing{
+		ends = u.Drawing.begins(ctx, u.Now, domain.Edit{
 			Path: path,
 			From: markdown.Counted(body, span.From),
 			To:   markdown.Counted(body, span.To),
 			Text: becomes,
 		})
 
-		done.Stretch = markdown.Stretch{From: span.From, To: span.From + len(becomes)}
-		done.Stood = body[span.From:span.To]
+		done.Span = markdown.Span{From: span.From, To: span.From + len(becomes)}
+		done.Matched = body[span.From:span.To]
 		done.Plainly = plainly
-		doc.SetBody(written)
 		return nil
 	})
 	if err != nil {
-		return Replaced{}, err
+		return ReplaceResult{}, err
 	}
-	done.At = at
+	done.Fingerprint = at
 	return done, nil
 }
 
@@ -136,7 +152,7 @@ func (u Replace) Execute(
 //
 // The opening is found by halving, which the text being present for every
 // shorter opening allows.
-func nowhere(body, stood string) Nowhere {
+func nowhere(body, stood string) MissingStretch {
 	low, high := 0, len(stood)
 	for low < high {
 		middle := low + (high-low+1)/2
@@ -156,16 +172,16 @@ func nowhere(body, stood string) Nowhere {
 		}
 	}
 	if low == 0 {
-		return Nowhere{}
+		return MissingStretch{}
 	}
 	matched := stood[:low]
 	at, _ := markdown.Where(body, matched)
 	if len(at) == 0 {
-		return Nowhere{}
+		return MissingStretch{}
 	}
 	end := min(at[0].From+len(stood), len(body))
 	for end < len(body) && !utf8.RuneStart(body[end]) {
 		end++
 	}
-	return Nowhere{Matched: matched, Instead: body[at[0].From:end]}
+	return MissingStretch{Matched: matched, Instead: body[at[0].From:end]}
 }

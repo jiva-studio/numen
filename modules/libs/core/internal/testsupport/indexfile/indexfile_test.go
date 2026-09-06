@@ -8,7 +8,6 @@ import (
 	_ "modernc.org/sqlite"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 )
 
@@ -57,8 +56,7 @@ func TestCopiesAreIndependent(t *testing.T) {
 	}
 	defer two.Close()
 
-	v := domain.Vault{ID: "abcdefghijklmnop", Name: "Only in one", Path: t.TempDir()}
-	if err := one.Vaults().Save(t.Context(), v); err != nil {
+	if err := one.Vaults().Register(t.Context(), "abcdefghijklmnop"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -87,7 +85,8 @@ func vaultsIn(t *testing.T, path string) int {
 
 func appliedIn(t *testing.T, path string) []string {
 	t.Helper()
-	rows, err := openFile(t, path).QueryContext(t.Context(), "SELECT name FROM applied ORDER BY version")
+	rows, err := openFile(t, path).QueryContext(t.Context(),
+		"SELECT name FROM schema_migrations ORDER BY version")
 	if err != nil {
 		t.Fatal(err)
 	}

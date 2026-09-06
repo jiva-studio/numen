@@ -18,8 +18,8 @@ import (
 // a fact about this index and not about the search, so the number is here.
 const coarseCandidates = 8
 
-// scored is one candidate and how near the query it turned out to be.
-type scored struct {
+// candidate is one candidate and how near the query it turned out to be.
+type candidate struct {
 	chunk      int64
 	similarity float64
 }
@@ -56,16 +56,16 @@ func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, ca
 			return nil, fmt.Errorf("chunk %d holds %d dimensions where the query has %d",
 				chunk, len(stored), len(query))
 		}
-		similarity[chunk] = embedding.Similarity(query, signed(stored))
+		similarity[chunk] = embedding.Similarity(query, embedding.Dimensions(stored))
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	kept := make([]scored, 0, len(candidates))
+	kept := make([]candidate, 0, len(candidates))
 	for _, chunk := range candidates {
 		if s, held := similarity[chunk]; held && s >= floor {
-			kept = append(kept, scored{chunk: chunk, similarity: s})
+			kept = append(kept, candidate{chunk: chunk, similarity: s})
 		}
 	}
 	// Two chunks of equal similarity keep the coarse pass's order between them.
@@ -76,13 +76,4 @@ func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, ca
 		out = append(out, k.chunk)
 	}
 	return out, nil
-}
-
-// signed reads a stored vector as the dimensions it holds, one per byte.
-func signed(stored []byte) []int8 {
-	out := make([]int8, len(stored))
-	for i, b := range stored {
-		out[i] = int8(b)
-	}
-	return out
 }

@@ -16,8 +16,8 @@ import (
 // Setting is one field of the file and where in it that field sits:
 // `appearance.theme` is `Setting{At: []string{"appearance", "theme"}}`.
 type Setting struct {
-	At    []string
-	Value any
+	At      []string
+	Written any
 }
 
 // Save writes settings into the file, leaving every other byte of it as it was.
@@ -78,9 +78,9 @@ func holds(raw []byte) error {
 }
 
 // takes says what is wrong with the settings this call wrote, and nothing where
-// each is a number its setting takes.
+// each is a number its setting takes and an hour its setting begins at.
 //
-// A number outside its setting that the file already held is one the person
+// A value outside its setting that the file already held is one the person
 // typed and one they can still reach: what is refused is what was handed in.
 func takes(raw []byte, wrote []Setting) error {
 	held := Defaults()
@@ -94,8 +94,19 @@ func takes(raw []byte, wrote []Setting) error {
 			}
 		}
 	}
+	for _, setting := range wrote {
+		if !covers(setting.At, dayStartsAt) {
+			continue
+		}
+		if _, err := Starting(held.Review.DayStarts); err != nil {
+			return err
+		}
+	}
 	return nil
 }
+
+// dayStartsAt is where the hour a day of review begins at sits in the file.
+const dayStartsAt = "review.day_starts"
 
 // covers is whether a setting handed in at one name wrote the field at another:
 // the field itself, or a field inside the section named.
@@ -197,7 +208,7 @@ func set(raw []byte, setting Setting) ([]byte, error) {
 	if len(setting.At) == 0 {
 		return nil, errors.New("a setting with no name")
 	}
-	value, err := json.Marshal(setting.Value)
+	value, err := json.Marshal(setting.Written)
 	if err != nil {
 		return nil, err
 	}
@@ -232,9 +243,9 @@ func put(object []byte, at []string, value []byte, outer string) ([]byte, error)
 	return held.appending(object, at, value, outer), nil
 }
 
-// pair is one member of an object: its name, where that name is written, and
+// member is one member of an object: its name, where that name is written, and
 // where its value sits in the bytes the object was read from.
-type pair struct {
+type member struct {
 	key string
 	// nameFrom and nameTo are the name as the file has it, quotes and all. Both
 	// are nought for a name written with escapes in it, which is a name this
@@ -247,7 +258,7 @@ type pair struct {
 // written, where another one would go, and the indentation they are laid out
 // with.
 type shape struct {
-	pairs []pair
+	pairs []member
 	// last is where the final member's value ends, and where a comma and
 	// another member go. An object holding nothing has it just past the brace.
 	last int
@@ -283,7 +294,7 @@ func members(object []byte) (shape, error) {
 		if held.holds(key) {
 			return shape{}, fmt.Errorf("%s: %w", key, errRepeated)
 		}
-		one := pair{key: key}
+		one := member{key: key}
 		quoted, err := json.Marshal(key)
 		if err != nil {
 			return shape{}, err

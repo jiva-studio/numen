@@ -5,6 +5,7 @@
  * how dark it is drawn are arithmetic, and arithmetic inside a component is
  * arithmetic nobody can check without a screen.
  */
+import { dayNamed, dayOf } from '../calendar/day'
 
 /** How many days stand in one column. A column is a week. */
 export const ROWS = 7
@@ -54,7 +55,7 @@ export interface Day extends Tally {
 export const AHEAD = 4
 
 /** What a grid is laid out to. */
-export interface Room {
+export interface HeatmapMetrics {
   /** How wide the grid may be, in pixels. */
   width: number
   /** How large one cell is drawn. */
@@ -72,17 +73,17 @@ export interface Room {
  * room. What is left over is spread between the cells, which keeps the grid
  * flush to both edges.
  */
-export function fits(room: Room): { columns: number; cell: number; gap: number } {
-  const cell = Math.max(1, room.cell)
-  const gap = Math.max(0, room.gap)
+export function fits(metrics: HeatmapMetrics): { columns: number; cell: number; gap: number } {
+  const cell = Math.max(1, metrics.cell)
+  const gap = Math.max(0, metrics.gap)
   const step = cell + gap
-  if (room.width <= 0) return { columns: 1, cell, gap }
+  if (metrics.width <= 0) return { columns: 1, cell, gap }
 
-  const columns = Math.max(1, Math.floor((room.width + gap) / step))
+  const columns = Math.max(1, Math.floor((metrics.width + gap) / step))
   if (columns < 2) return { columns, cell, gap }
 
   // The room the cells do not take is the room between them.
-  const between = Math.max(gap, (room.width - columns * cell) / (columns - 1))
+  const between = Math.max(gap, (metrics.width - columns * cell) / (columns - 1))
   return { columns, cell, gap: between }
 }
 
@@ -102,7 +103,7 @@ export function days(
   now: Date,
   did: ReadonlyMap<string, Tally>,
   due: ReadonlyMap<string, number> = new Map(),
-  named: (at: Date) => string = names,
+  named: (at: Date) => string = dayNamed,
 ): Day[] {
   const out: Day[] = []
   if (columns < 1) return out
@@ -159,10 +160,7 @@ function began(
     if (first === '' || day < first) first = day
   }
   if (first === '') return now
-  const [year, month, day] = first.split('-').map(Number)
-  const at = new Date(now)
-  at.setFullYear(year ?? now.getFullYear(), (month ?? 1) - 1, day ?? 1)
-  at.setHours(12, 0, 0, 0)
+  const at = dayOf(first)
   return at > now ? now : at
 }
 
@@ -193,9 +191,3 @@ export function weighs(did: number): Day['weight'] {
   return 4
 }
 
-/** A day as it is written down: the year, the month and the day. */
-export function names(at: Date): string {
-  const month = String(at.getMonth() + 1).padStart(2, '0')
-  const day = String(at.getDate()).padStart(2, '0')
-  return `${at.getFullYear()}-${month}-${day}`
-}

@@ -216,25 +216,25 @@ func TestALineWrittenForTheWriterIsNotProse(t *testing.T) {
 func TestEveryBoxSaysWhereItsWordsAreInTheProse(t *testing.T) {
 	// Two pages, and the first of them two regions. The offsets are in the
 	// prose, so the second page's boxes are past everything the first says.
-	first, firstSpans := ocr.Assemble([]ocr.Line{
+	first, firstStretches := ocr.Assemble([]ocr.Line{
 		line(0, 0, 50, 20, "Alpha"),
 		line(60, 0, 100, 20, "beta"),
 		line(0, 40, 60, 60, "gamma"),
 	})
-	last, lastSpans := ocr.Assemble([]ocr.Line{
+	last, lastStretches := ocr.Assemble([]ocr.Line{
 		line(0, 0, 70, 20, "Epsilon"),
 		line(80, 0, 120, 20, "zeta"),
 	})
 	opening := []ocr.Block{
-		{Label: "text", Text: first, Spans: firstSpans},
+		{Label: "text", Text: first, Stretches: firstStretches},
 		// A region read by something that reports no rectangles. It says
 		// what it says and the prose after it moves along by that much.
 		{Label: "text", Text: "Delta."},
 	}
 	pages := []ocr.Page{
-		{At: 0, Size: image.Pt(600, 800), Blocks: opening},
-		{At: 1, Size: image.Pt(600, 800), Blocks: []ocr.Block{
-			{Label: "text", Text: last, Spans: lastSpans},
+		{Index: 0, Size: image.Pt(600, 800), Blocks: opening},
+		{Index: 1, Size: image.Pt(600, 800), Blocks: []ocr.Block{
+			{Label: "text", Text: last, Stretches: lastStretches},
 		}},
 	}
 	raw, boxes, _ := ocr.Write(pages)
@@ -293,10 +293,10 @@ func TestAJoinedWordLeavesTheHyphenBoxOneByteShorter(t *testing.T) {
 func TestAPageNothingWasMeasuredOnHasNoBoxes(t *testing.T) {
 	// A page with no size gives no fraction of itself to divide a rectangle by.
 	raw, boxes, _ := ocr.Write([]ocr.Page{
-		{At: 0, Blocks: []ocr.Block{{
-			Label: "text",
-			Text:  "Alpha beta",
-			Spans: []ocr.Span{{Box: image.Rect(0, 0, 50, 20), Start: 0, Length: 5}},
+		{Index: 0, Blocks: []ocr.Block{{
+			Label:     "text",
+			Text:      "Alpha beta",
+			Stretches: []ocr.Stretch{{Box: image.Rect(0, 0, 50, 20), Start: 0, Length: 5}},
 		}}},
 	})
 
@@ -339,14 +339,14 @@ func TestAJoinedWordLeavesTheHyphenBoxShorterByTheHyphen(t *testing.T) {
 // heading badly still says where its part starts.
 func TestAHeadingSaysWhereAPartOfTheDocumentBegins(t *testing.T) {
 	raw, _, parts := ocr.Write([]ocr.Page{
-		{At: 0, Blocks: []ocr.Block{
-			{Label: "doc_title", Text: "IAYADEVA GOSVAMI", Head: true, Depth: 0},
+		{Index: 0, Blocks: []ocr.Block{
+			{Label: "doc_title", Text: "IAYADEVA GOSVAMI", Heading: true, Depth: 0},
 			{Label: "text", Text: "He was born in Kenduli."},
-			{Label: "paragraph_title", Text: "His Youth", Head: true, Depth: 1},
+			{Label: "paragraph_title", Text: "His Youth", Heading: true, Depth: 1},
 		}},
-		{At: 1, Blocks: []ocr.Block{
+		{Index: 1, Blocks: []ocr.Block{
 			{Label: "text", Text: "The village stands there still."},
-			{Label: "paragraph_title", Text: "The Journey", Head: true, Depth: 1},
+			{Label: "paragraph_title", Text: "The Journey", Heading: true, Depth: 1},
 		}},
 	})
 	text, _ := ocr.Read(raw)

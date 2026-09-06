@@ -1,7 +1,6 @@
 package claudecode
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -46,7 +45,7 @@ func counting(t *testing.T) (command []string, most func() int) {
 func batches(n int) []proofread.Batch {
 	out := make([]proofread.Batch, n)
 	for i := range out {
-		out[i] = proofread.Batch{At: i, Lines: []proofread.Line{{At: i, Text: "a line"}}}
+		out[i] = proofread.Batch{Number: i, Lines: []proofread.Line{{Number: i, Text: "a line"}}}
 	}
 	return out
 }
@@ -58,7 +57,7 @@ func TestNoMoreRunsStandAtOnceThanWereAllowed(t *testing.T) {
 		command, most := counting(t)
 		by := &Proofreader{Command: command, Instruction: "put it right", InFlight: allowed}
 
-		if _, err := by.Read(context.Background(), batches(6)); err != nil {
+		if _, err := by.Proofread(t.Context(), batches(6)); err != nil {
 			t.Fatal(err)
 		}
 		if got := most(); got > allowed {
@@ -74,7 +73,7 @@ func TestAProfileNamingNoneRunsOneAtATime(t *testing.T) {
 	command, most := counting(t)
 	by := &Proofreader{Command: command, Instruction: "put it right"}
 
-	if _, err := by.Read(context.Background(), batches(4)); err != nil {
+	if _, err := by.Proofread(t.Context(), batches(4)); err != nil {
 		t.Fatal(err)
 	}
 	if got := most(); got != 1 {
@@ -93,7 +92,7 @@ func TestTwoCallersAtOnceShareTheLimit(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if _, err := by.Read(context.Background(), batches(3)); err != nil {
+			if _, err := by.Proofread(t.Context(), batches(3)); err != nil {
 				t.Error(err)
 			}
 		}()

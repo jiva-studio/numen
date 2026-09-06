@@ -1,11 +1,19 @@
 import type { Preview } from '@storybook/vue3-vite'
 import { configure } from 'storybook/test'
+import { reachCheck, type Proof } from './check'
 import '../src/tokens/theme.css'
 import './preview.css'
 
 // A story waits on a real browser drawing a frame, and two engines draw at
 // once on one machine.
 configure({ asyncUtilTimeout: 5_000 })
+
+/**
+ * The story the keyboard walk is proved against, and what it must find there.
+ * The number is the whole of that story's tab order, counted in both engines,
+ * so a walk that loses its way anywhere in it is short.
+ */
+const PROOF: Proof = { story: 'workspace--crowded', stops: 7 }
 
 /**
  * The two multipliers, as far as each goes. The window refuses a number
@@ -28,10 +36,10 @@ const preview: Preview = {
     layout: 'fullscreen',
     controls: { matchers: { color: /(background|colou?r)$/i } },
     backgrounds: { disable: true },
-    // A stencil cuts the cards a deck holds, and a face is one side of what
-    // the two of them come to, so the three read in that order.
+    // A stencil cuts the cards a deck holds, and a card is what the two of
+    // them come to, so the three read in that order.
     options: {
-      storySort: { order: ['*', 'Flash Cards', ['Stencil', 'Deck', 'Card', 'Face']] },
+      storySort: { order: ['*', 'Flash Cards', ['Stencil', 'Deck', 'Card']] },
     },
   },
   globalTypes: {
@@ -67,6 +75,7 @@ const preview: Preview = {
     },
   },
   initialGlobals: { theme: 'light', interface: '1', font: '1' },
+  afterEach: reachCheck(PROOF),
   decorators: [
     (story, context) => {
       const theme = context.globals['theme'] === 'dark' ? 'dark' : 'light'

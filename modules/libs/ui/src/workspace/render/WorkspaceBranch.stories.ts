@@ -8,11 +8,11 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { computed, provide, ref } from 'vue'
 import WorkspaceBranch from './WorkspaceBranch.vue'
-import { WORKSPACING, type Workspacing } from './context'
-import Filling from '../fixtures/Filling.vue'
+import { WORKSPACE_CONTEXT, type WorkspaceContext } from './context'
+import TabStub from '../fixtures/TabStub.vue'
 import { split, stack } from '../fixtures/build'
-import { type Branch, type NodeId, type Tab, type TabId } from '../model'
-import { fit } from '../model/shares'
+import { type Branch, type NodeId, type Tab, type TabId } from '../node'
+import { fit } from '../shares'
 
 const TITLES: Readonly<Record<string, string>> = {
   one: 'One',
@@ -72,7 +72,7 @@ const meta: Meta<Knobs> = {
   },
   args: { arrangement: 'two panes', minimum: 220, room: '100%' },
   render: (args) => ({
-    components: { WorkspaceBranch, Filling },
+    components: { WorkspaceBranch, TabStub },
     setup() {
       const held = ref<Branch>(ARRANGEMENTS[args.arrangement]())
 
@@ -82,8 +82,8 @@ const meta: Meta<Knobs> = {
       }
 
       provide(
-        WORKSPACING,
-        computed<Workspacing>(() => ({
+        WORKSPACE_CONTEXT,
+        computed<WorkspaceContext>(() => ({
           tabOf: (id: TabId): Tab | undefined =>
             TITLES[id] === undefined ? undefined : { id, title: TITLES[id] },
           focus: 'left',
@@ -102,7 +102,7 @@ const meta: Meta<Knobs> = {
     template: `
       <div :style="{ height: '100vh', inlineSize: args.room, padding: 0 }">
         <WorkspaceBranch :node="held" axis="horizontal" :depth="0">
-          <template #tab="{ id }"><Filling :name="id" /></template>
+          <template #tab="{ id }"><TabStub :name="id" /></template>
         </WorkspaceBranch>
       </div>
     `,

@@ -1,13 +1,13 @@
-# ADR-0009: The vault is watched
+# The vault is watched
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/apps/desktop`
-- **Related:** ADR-0001, ADR-0005, ADR-0006, ADR-0008
+- **Applies to:** `modules/libs/core`
+- **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [A client is generated from the protocol](0005-a-client-is-generated-from-the-protocol.md), [What the index stores](0006-what-the-index-stores.md), [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md)
 
 ## Context
 
-A vault is edited by whatever the person opens it with: this application, an editor beside it, a synchroniser, a checkout. The index is level with the vault until one of them writes. A scan (ADR-0008) reads the whole vault; what says which files changed since is settled here.
+A vault is edited by whatever the person opens it with: this application, an editor beside it, a synchroniser, a checkout. The index is level with the vault until one of them writes. A scan reads the whole vault; what says which files changed since is settled here.
 
 ## Decision
 
@@ -21,9 +21,9 @@ macOS and Windows watch a tree in one call; Linux and BSD take one directory eac
 
 What counts as a note, what the service folder is called, and what the vault says to leave alone are asked of the same reader by the walk and by the watcher. What is configured, and in what syntax, is in [settings](../settings.md) and [the note format](../note-format.md).
 
-### Events fold by path over a hold
+### Events are debounced by path over a hold
 
-One save is several events and a path arrives many times in a moment. Events are read into a buffer, held briefly, and folded so a path is reported once however often it was named. The hold is measured from the first event of a batch.
+One save is several events and a path arrives many times in a moment. Events are read into a buffer, held briefly, and debounced so a path is reported once however often it was named. The hold is measured from the first event of a batch.
 
 Reading events and delivering them are kept apart. A listener takes as long as it takes to refresh what it was told about, and the system goes on producing events meanwhile.
 
@@ -35,7 +35,7 @@ Reading events and delivering them are kept apart. A listener takes as long as i
 
 ### The watcher reports paths
 
-It produces the set of sources that changed and nothing about them. Whoever listens knows what it is showing and asks for what it needs; the client hears about it over ADR-0005's stream.
+It produces the set of sources that changed and nothing about them. Whoever listens knows what it is showing and asks for what it needs; the client hears about it over the protocol's stream.
 
 ### A vault that cannot be watched says so
 
@@ -51,7 +51,7 @@ stateDiagram-v2
     watching --> scanning: the watch is placed
     watching --> unwatched: no watch could be placed
     scanning --> following: the walk is done, held events acted on
-    following --> following: paths folded, notes refreshed
+    following --> following: paths debounced, notes refreshed
     following --> rescanning: the buffer overflowed
     following --> rescanning: a watched folder is gone
     rescanning --> following: the vault is read again, listeners told to ask again

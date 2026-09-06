@@ -52,8 +52,6 @@ const (
 // last in the file of pieces, after every token the model can write.
 const blankPiece = "<blk>"
 
-var _ port.Transcriber = (*Transcriber)(nil)
-
 // A Transcriber is the models this machine hears a recording with.
 type Transcriber struct {
 	encoder *ort.Session
@@ -66,9 +64,9 @@ type Transcriber struct {
 	// speech is the model that finds the stretches, and cutting is how it cuts
 	// them. A recording opened by this transcriber is cut by them.
 	speech  *ort.Session
-	cutting SpeechModel
+	cutting SegmenterModel
 
-	named port.Transcription
+	model port.TranscriptionModel
 
 	// One set of sessions, one stretch at a time. The library is safe to call
 	// from several goroutines, and a stretch is heard start to finish.
@@ -78,11 +76,11 @@ type Transcriber struct {
 // Open loads the models and compiles them. It is expensive — the weights are
 // read — and the result is reusable for the life of the process.
 func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
-	found, err := locate(ctx, cfg)
+	opened, found, err := locate(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
-	options, err := found.engine.NewSessionOptions()
+	options, err := opened.engine.NewSessionOptions()
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +101,7 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 		pieces:  said,
 		blank:   blank,
 		cutting: cfg.Speech,
-		named: port.Transcription{
+		model: port.TranscriptionModel{
 			Model:     named(cfg.Model.Name, found.encoder),
 			Segmenter: named(cfg.Speech.Name, found.speech),
 			Cutting:   cfg.Speech.cutting(),
@@ -111,27 +109,27 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 		},
 	}
 	for _, one := range []struct {
-		into **ort.Session
+		dst  **ort.Session
 		at   string
-		what string
+		kind string
 	}{
 		{&out.encoder, found.encoder, "encoder"},
 		{&out.decoder, found.decoder, "decoder"},
 		{&out.joiner, found.joiner, "joiner"},
 		{&out.speech, found.speech, "speech model"},
 	} {
-		session, err := found.engine.NewSession(one.at, options)
+		session, err := opened.engine.NewSession(one.at, options)
 		if err != nil {
 			out.Close()
-			return nil, fmt.Errorf("the %s %s: %w", one.what, one.at, err)
+			return nil, fmt.Errorf("the %s %s: %w", one.kind, one.at, err)
 		}
-		*one.into = session
+		*one.dst = session
 	}
 	return out, nil
 }
 
 // Transcription is what every recording this transcriber hears was heard by.
-func (t *Transcriber) Transcription() port.Transcription { return t.named }
+func (t *Transcriber) Transcription() port.TranscriptionModel { return t.model }
 
 // Close lets go of the models this transcriber loaded. The runtime they ran on
 // is the process's and stays.
@@ -144,8 +142,8 @@ func (t *Transcriber) Close() error {
 	return nil
 }
 
-// Hear is one stretch of speech, as the words it carries.
-func (t *Transcriber) Hear(ctx context.Context, audio port.Audio) (string, error) {
+// Transcribe is one stretch of speech, as the words it carries.
+func (t *Transcriber) Transcribe(ctx context.Context, audio port.Audio) (string, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -219,7 +217,7 @@ func (t *Transcriber) decode(ctx context.Context, out map[string]*ort.Value) ([]
 	return transducer{
 		frames: width,
 		blank:  t.blank,
-		encoded: func(at int) []float32 {
+		encoder: func(at int) []float32 {
 			// The frames are channel after channel, each holding every frame.
 			one := make([]float32, encoded)
 			for c := range one {
@@ -227,7 +225,7 @@ func (t *Transcriber) decode(ctx context.Context, out map[string]*ort.Value) ([]
 			}
 			return one
 		},
-		predict: func(token int) ([]float32, error) {
+		predictor: func(token int) ([]float32, error) {
 			said, next, cells, err := t.predict(token, state, cell)
 			if err != nil {
 				return nil, err
@@ -338,83 +336,6 @@ func (t *Transcriber) joint(frame, said []float32) ([]float32, error) {
 		return nil, err
 	}
 	return append([]float32(nil), raw...), nil
-}
-
-// A transducer is the three graphs as the decoding sees them: how many frames
-// there are, how to reach one, what the predictor says after a token, and what
-// the two say together.
-type transducer struct {
-	frames  int
-	blank   int
-	encoded func(at int) []float32
-	predict func(token int) ([]float32, error)
-	joint   func(frame, said []float32) ([]float32, error)
-}
-
-// decode reads the frames from the first to the last and answers with the
-// tokens they carry.
-//
-// The joiner names a token and how many frames it covers. A token that is not
-// the blank is said and moves the predictor on; the frame is left behind either
-// way, so that a stretch is always read to its end.
-func (d transducer) decode(ctx context.Context) ([]int, error) {
-	// The predictor opens on the blank: nothing has been said yet.
-	upto, err := d.predict(d.blank)
-	if err != nil {
-		return nil, err
-	}
-
-	var said []int
-	// How many words one frame has given. A frame may give several: the model
-	// answers with a duration of nothing to say it has more to say here.
-	spoken := 0
-	for at := 0; at < d.frames; {
-		if err := ctx.Err(); err != nil {
-			return nil, err
-		}
-		scores, err := d.joint(d.encoded(at), upto)
-		if err != nil {
-			return nil, err
-		}
-		if len(scores) <= d.blank+1 {
-			return nil, fmt.Errorf("the joiner answered with %d scores and the blank is %d", len(scores), d.blank)
-		}
-		token := largest(scores[:d.blank+1])
-		step := largest(scores[d.blank+1:])
-		if token != d.blank {
-			said = append(said, token)
-			if upto, err = d.predict(token); err != nil {
-				return nil, err
-			}
-			spoken++
-		}
-		// The blank moves on whatever it says, and a frame that has given all
-		// the words one frame may give moves on too.
-		if step < 1 && (token == d.blank || spoken >= mostPerFrame) {
-			step = 1
-		}
-		if step > 0 {
-			spoken = 0
-		}
-		at += step
-	}
-	return said, nil
-}
-
-// mostPerFrame is how many words one frame may give before the decoding moves
-// on whatever the model says. It is what keeps a run of durations of nothing
-// from standing on one frame for ever.
-const mostPerFrame = 10
-
-// largest is where the highest of a run of scores stands.
-func largest(scores []float32) int {
-	at := 0
-	for i, v := range scores {
-		if v > scores[at] {
-			at = i
-		}
-	}
-	return at
 }
 
 func names(m map[string]*ort.Value) []string {

@@ -8,9 +8,9 @@ import (
 	"io/fs"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/cutting"
+	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/fixes"
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
@@ -31,7 +31,7 @@ type Reader struct {
 	Derived port.DerivedStore
 	// Documents reads a format that needs a library. A vault holding none is
 	// read without one.
-	Documents port.Documents
+	Documents port.TextExtractor
 }
 
 // Of is the text a source's chunks are places in.
@@ -39,9 +39,9 @@ type Reader struct {
 // A source naming a producer reads what that producer wrote or reads nothing.
 // Falling back to the document would slice one text at another text's offsets,
 // which is a wrong answer given confidently and is worse than no answer.
-func (r Reader) Of(ctx context.Context, path, from, hash string) (*Document, error) {
-	if from != "" {
-		return r.recognised(ctx, from, hash)
+func (r Reader) Of(ctx context.Context, path, producer, hash string) (*Document, error) {
+	if producer != "" {
+		return r.recognised(ctx, producer, hash)
 	}
 	ref, err := r.Vault.Stat(ctx, path)
 	if err != nil {
@@ -84,11 +84,11 @@ func (r Reader) recognised(ctx context.Context, from, hash string) (*Document, e
 func Composed(
 	ctx context.Context,
 	store port.DerivedStore,
-	from, hash string,
+	producer, hash string,
 	raw []byte,
 ) (*Document, error) {
-	if from == ASR {
-		put, err := beside(ctx, store, Corrected(from, hash))
+	if producer == ASR {
+		put, err := beside(ctx, store, Corrections(producer, hash))
 		if err != nil {
 			return nil, err
 		}
@@ -99,17 +99,17 @@ func Composed(
 		}
 		return Transcribed(raw), nil
 	}
-	parts, err := beside(ctx, store, Parts(from, hash))
+	parts, err := beside(ctx, store, Parts(producer, hash))
 	if err != nil {
 		return nil, err
 	}
-	corrections, err := beside(ctx, store, Fixes(from, hash))
+	corrections, err := beside(ctx, store, Corrections(producer, hash))
 	if err != nil {
 		return nil, err
 	}
 	var boxes []byte
 	if len(corrections) > 0 {
-		if boxes, err = beside(ctx, store, Boxes(from, hash)); err != nil {
+		if boxes, err = beside(ctx, store, Boxes(producer, hash)); err != nil {
 			return nil, err
 		}
 	}
@@ -142,15 +142,15 @@ func Recognised(raw, parts, boxes, corrections []byte) *Document {
 	prose, marks := ocr.Read(raw)
 	named := ocr.Unpack(parts)
 	if put := fixes.Unpack(corrections); len(put) > 0 {
-		prose, marks, named = fixes.Prose(prose, marks, lit.Unpack(boxes), named, put)
+		prose, marks, named = fixes.Prose(prose, marks, highlight.Unpack(boxes), named, put)
 	}
 	doc := &Document{Text: prose}
 	for _, p := range divided(prose, named) {
 		doc.Parts = append(doc.Parts, p)
-		doc.named = append(doc.named, mark{Offset: p.Offset, Name: p.Title})
+		doc.named = append(doc.named, namedPlace{Offset: p.Offset, Name: p.Title})
 	}
 	for i, m := range marks {
-		doc.paged = append(doc.paged, mark{Offset: m.Offset, Name: sheet(i)})
+		doc.paged = append(doc.paged, namedPlace{Offset: m.Offset, Name: page(i)})
 	}
 	return doc
 }
@@ -164,7 +164,7 @@ func Transcribed(raw []byte) *Document {
 	prose, cues := transcript.Parse(raw)
 	doc := &Document{Text: prose}
 	for _, cue := range cues {
-		doc.paged = append(doc.paged, mark{Offset: cue.At, Name: transcript.Clock(cue.From)})
+		doc.paged = append(doc.paged, namedPlace{Offset: cue.Offset, Name: transcript.Clock(cue.From)})
 	}
 	return doc
 }
@@ -175,15 +175,15 @@ func Transcribed(raw []byte) *Document {
 // The parts of one artifact begin in the order the prose is read and end within
 // it. A sidecar that says otherwise was written for other bytes, and none of it
 // is used.
-func divided(prose string, parts []ocr.Part) []cutting.Part {
-	out := make([]cutting.Part, 0, len(parts))
+func divided(prose string, parts []ocr.Part) []chunking.PartStart {
+	out := make([]chunking.PartStart, 0, len(parts))
 	at := 0
 	for _, p := range parts {
 		if p.Start < at || p.Length <= 0 || p.Start+p.Length > len(prose) {
 			return nil
 		}
 		at = p.Start
-		out = append(out, cutting.Part{
+		out = append(out, chunking.PartStart{
 			Title:  prose[p.Start : p.Start+p.Length],
 			Offset: p.Start,
 		})
@@ -223,13 +223,18 @@ func Partial(from, hash string) string {
 	return from + "/" + hash + ".partial"
 }
 
-// Corrected is the name a transcript put right is kept under: the words as they
-// now stand, WebVTT under the extension that format is opened by.
+// Corrections is the name what put a producer's text right is kept under. A
+// text nothing proofread and nobody edited has no such file.
 //
-// The artifact stays what was heard, so deleting this file gives that back. A
-// transcript nothing put right has no such file.
-func Corrected(from, hash string) string {
-	return from + "/" + hash + ".corrected.vtt"
+// The artifact stays what was read or heard, so deleting this file gives that
+// back. A transcript's corrections are the words as they now stand, WebVTT
+// under the extension that format is opened by; a reading's are one record to
+// a line put right, keyed by the box the line was read from.
+func Corrections(from, hash string) string {
+	if from == ASR {
+		return from + "/" + hash + ".corrected.vtt"
+	}
+	return from + "/" + hash + ".fixes"
 }
 
 // Parts is the name the parts of a reading are kept under. A reading whose
@@ -242,12 +247,6 @@ func Parts(from, hash string) string {
 // kept because no machine here remakes them cheaply.
 func Boxes(from, hash string) string {
 	return from + "/" + hash + ".boxes"
-}
-
-// Fixes is the name a reading's corrections are kept under. A reading nothing
-// proofread has no such file.
-func Fixes(from, hash string) string {
-	return from + "/" + hash + ".fixes"
 }
 
 // Proofread is the name of what says who put a reading right and how far they
@@ -305,7 +304,7 @@ func Names(from, hash string) []string {
 		return []string{
 			Artifact(from, hash),
 			Partial(from, hash),
-			Corrected(from, hash),
+			Corrections(from, hash),
 			Proofread(from, hash),
 			Answer(from, hash),
 			Beside(from, hash),
@@ -316,7 +315,7 @@ func Names(from, hash string) []string {
 		Partial(from, hash),
 		Boxes(from, hash),
 		Parts(from, hash),
-		Fixes(from, hash),
+		Corrections(from, hash),
 		Proofread(from, hash),
 		Beside(from, hash),
 	}

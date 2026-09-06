@@ -42,10 +42,10 @@ withDefaults(
 }
 
 .plex__edge-line--lifted .plex__edge {
-  stroke: color-mix(in oklab, var(--numen-edge), var(--numen-node-fg) 55%);
+  stroke: color-mix(in oklab, var(--numen-edge), var(--numen-ink) 55%);
 }
 
 .plex__edge-line--lifted .plex__edge-arrow {
-  fill: color-mix(in oklab, var(--numen-edge), var(--numen-node-fg) 55%);
+  fill: color-mix(in oklab, var(--numen-edge), var(--numen-ink) 55%);
 }
 </style>

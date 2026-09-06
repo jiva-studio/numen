@@ -15,13 +15,14 @@ import {
   type PlexNeighbourhood,
   type PlexRelatedSeat,
 } from '@numen/ui'
+import { refusalWords, troubleWords } from '@numen/wire'
 import NoteSheet from '../note/NoteSheet.vue'
-import { reach, type Reached } from '../core'
+import { reach, type Core } from '../core'
 import { follow } from './following'
 import { asPlex } from './picture'
-import { CREATABLE, ROLES, SEEDED } from './seats'
+import { CREATABLE, isCreatable, ROLES, SEEDED } from './seats'
 
-const core = ref<Reached | null>(null)
+const core = ref<Core | null>(null)
 const picture = ref<PlexNeighbourhood | null>(null)
 const at = ref(SEEDED)
 const trouble = ref('')
@@ -37,7 +38,7 @@ const writing = ref<string | null>(null)
 
 async function draw(path: string) {
   if (!core.value) return
-  const said = await core.value.vault.neighbourhood({ path })
+  const said = await core.value.notes.getNeighbourhood({ path })
   at.value = path
   picture.value = asPlex(said)
 }
@@ -46,9 +47,9 @@ async function made(from: string, seat: PlexRelatedSeat) {
   if (!core.value) return
   const title = window.prompt(`A new ${seat}`)
   if (!title?.trim()) return
-  const created = await core.value.vault.create({ title: title.trim(), folder: '' })
+  const created = await core.value.notes.createNote({ title: title.trim(), folder: '' })
   if (!created.path) {
-    trouble.value = `nothing was made: ${JSON.stringify(created.refusal)}`
+    trouble.value = refusalWords(created.refusal)
     return
   }
   await joined(from, created.path, seat)
@@ -56,9 +57,12 @@ async function made(from: string, seat: PlexRelatedSeat) {
 
 async function joined(from: string, to: string, seat: PlexRelatedSeat) {
   if (!core.value) return
-  const said = await core.value.vault.join({ path: from, link: { to, role: ROLES[seat] } })
+  // The picture is only ever asked for a seat it offers, and it offers no
+  // sibling: no link writes one.
+  if (!isCreatable(seat)) return
+  const said = await core.value.notes.writeLink({ path: from, link: { to, role: ROLES[seat] } })
   if (said.refusal) {
-    trouble.value = `nothing was written: ${JSON.stringify(said.refusal)}`
+    trouble.value = refusalWords(said.refusal)
     return
   }
   await draw(at.value)
@@ -71,7 +75,7 @@ onMounted(async () => {
     // The vault is still being read; the picture is drawn again as it lands.
     follow(core.value, () => void draw(at.value))
   } catch (why) {
-    trouble.value = String(why)
+    trouble.value = troubleWords(why)
   }
 })
 </script>

@@ -42,22 +42,23 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// CardsServiceStencilsProcedure is the fully-qualified name of the CardsService's Stencils RPC.
-	CardsServiceStencilsProcedure = "/numen.v1.CardsService/Stencils"
-	// CardsServiceMakeStencilProcedure is the fully-qualified name of the CardsService's MakeStencil
+	// CardsServiceListStencilsProcedure is the fully-qualified name of the CardsService's ListStencils
 	// RPC.
-	CardsServiceMakeStencilProcedure = "/numen.v1.CardsService/MakeStencil"
+	CardsServiceListStencilsProcedure = "/numen.v1.CardsService/ListStencils"
+	// CardsServiceCreateStencilProcedure is the fully-qualified name of the CardsService's
+	// CreateStencil RPC.
+	CardsServiceCreateStencilProcedure = "/numen.v1.CardsService/CreateStencil"
 	// CardsServiceReadStencilProcedure is the fully-qualified name of the CardsService's ReadStencil
 	// RPC.
 	CardsServiceReadStencilProcedure = "/numen.v1.CardsService/ReadStencil"
 	// CardsServiceWriteStencilProcedure is the fully-qualified name of the CardsService's WriteStencil
 	// RPC.
 	CardsServiceWriteStencilProcedure = "/numen.v1.CardsService/WriteStencil"
-	// CardsServiceRenameFieldProcedure is the fully-qualified name of the CardsService's RenameField
-	// RPC.
-	CardsServiceRenameFieldProcedure = "/numen.v1.CardsService/RenameField"
-	// CardsServiceMakeDeckProcedure is the fully-qualified name of the CardsService's MakeDeck RPC.
-	CardsServiceMakeDeckProcedure = "/numen.v1.CardsService/MakeDeck"
+	// CardsServiceRenameStencilFieldProcedure is the fully-qualified name of the CardsService's
+	// RenameStencilField RPC.
+	CardsServiceRenameStencilFieldProcedure = "/numen.v1.CardsService/RenameStencilField"
+	// CardsServiceCreateDeckProcedure is the fully-qualified name of the CardsService's CreateDeck RPC.
+	CardsServiceCreateDeckProcedure = "/numen.v1.CardsService/CreateDeck"
 	// CardsServiceReadDeckProcedure is the fully-qualified name of the CardsService's ReadDeck RPC.
 	CardsServiceReadDeckProcedure = "/numen.v1.CardsService/ReadDeck"
 	// CardsServiceWriteDeckProcedure is the fully-qualified name of the CardsService's WriteDeck RPC.
@@ -66,36 +67,36 @@ const (
 
 // CardsServiceClient is a client for the numen.v1.CardsService service.
 type CardsServiceClient interface {
-	// Stencils is what a person choosing what kind of card to write next is
+	// ListStencils is what a person choosing what kind of card to write next is
 	// shown: every stencil in the vault, by what it is called and what it asks
 	// for. The faces are read one stencil at a time.
 	//
 	// A stencil that could not be read is absent from the answer.
-	Stencils(context.Context, *connect.Request[v1.StencilsRequest]) (*connect.Response[v1.StencilsResponse], error)
-	// MakeStencil puts a stencil in the vault, declaring the fields it is given
+	ListStencils(context.Context, *connect.Request[v1.ListStencilsRequest]) (*connect.Response[v1.ListStencilsResponse], error)
+	// CreateStencil puts a stencil in the vault, declaring the fields it is given
 	// and showing no face. The file says it is a stencil from the moment it
 	// exists, so it is one to everything that reads the vault before a card is
 	// cut by it.
 	//
 	// The first field is what a card's heading is read from, so a stencil is
 	// made with at least one.
-	MakeStencil(context.Context, *connect.Request[v1.MakeStencilRequest]) (*connect.Response[v1.MakeStencilResponse], error)
+	CreateStencil(context.Context, *connect.Request[v1.CreateStencilRequest]) (*connect.Response[v1.CreateStencilResponse], error)
 	// ReadStencil is the fields and the faces of one stencil.
 	ReadStencil(context.Context, *connect.Request[v1.ReadStencilRequest]) (*connect.Response[v1.ReadStencilResponse], error)
 	// WriteStencil puts fields and faces into a stencil. A path the vault holds
-	// no note at is refused `missing`; MakeStencil is what puts a stencil in the
-	// vault. Every frontmatter key but `fields` stays as the person wrote it, and
-	// a stencil that no longer holds what the caller read is left alone and
-	// answered `changed`.
+	// no note at is refused `missing`; CreateStencil is what puts a stencil in
+	// the vault. Every frontmatter key but `fields` stays as the person wrote it,
+	// and a stencil that no longer holds what the caller read is left alone and
+	// refused `stale`.
 	//
 	// The preamble, the tail and each face's lead are written back as they
 	// arrive, so the parts of the file a client did not touch come out as the
 	// bytes they went in as.
 	WriteStencil(context.Context, *connect.Request[v1.WriteStencilRequest]) (*connect.Response[v1.WriteStencilResponse], error)
-	// RenameField gives one of a stencil's fields a different name, everywhere it
-	// is written: where the stencil declares it, in the braces of every face that
-	// places it, and as a heading in every card of every deck that stencil cuts.
-	// What stands under each heading is left as it was.
+	// RenameStencilField gives one of a stencil's fields a different name,
+	// everywhere it is written: where the stencil declares it, in the braces of
+	// every face that places it, and as a heading in every card of every deck
+	// that stencil cuts. What stands under each heading is left as it was.
 	//
 	// Every field a stencil declares stands under its own heading in every card,
 	// the first included, so renaming any of them reaches every deck that
@@ -103,20 +104,20 @@ type CardsServiceClient interface {
 	// heading and comes back under `not_written`.
 	//
 	// A stencil that no longer holds what the caller read is left alone and
-	// answered `changed`, and then no deck is written either.
-	RenameField(context.Context, *connect.Request[v1.RenameFieldRequest]) (*connect.Response[v1.RenameFieldResponse], error)
-	// MakeDeck puts a deck of no cards in the vault. The file says it is a deck
+	// refused `stale`, and then no deck is written either.
+	RenameStencilField(context.Context, *connect.Request[v1.RenameStencilFieldRequest]) (*connect.Response[v1.RenameStencilFieldResponse], error)
+	// CreateDeck puts a deck of no cards in the vault. The file says it is a deck
 	// from the moment it exists, so it is one to everything that reads the vault
 	// before a card is written into it.
-	MakeDeck(context.Context, *connect.Request[v1.MakeDeckRequest]) (*connect.Response[v1.MakeDeckResponse], error)
+	CreateDeck(context.Context, *connect.Request[v1.CreateDeckRequest]) (*connect.Response[v1.CreateDeckResponse], error)
 	// ReadDeck is the sections and the cards of one deck, in the order they
 	// stand in the file. Each card says which section it stands under.
 	ReadDeck(context.Context, *connect.Request[v1.ReadDeckRequest]) (*connect.Response[v1.ReadDeckResponse], error)
 	// WriteDeck puts sections and cards into a deck, in the order they are
-	// given. A path the vault holds no note at is refused `missing`; MakeDeck is
-	// what puts a deck in the vault. The frontmatter stays as the person wrote
+	// given. A path the vault holds no note at is refused `missing`; CreateDeck
+	// is what puts a deck in the vault. The frontmatter stays as the person wrote
 	// it, and a deck that no longer holds what the caller read is left alone and
-	// answered `changed`.
+	// refused `stale`.
 	//
 	// A card carrying no section stands before the first one, and a section no
 	// card stands under is written where the cards around it put it.
@@ -138,16 +139,16 @@ func NewCardsServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 	baseURL = strings.TrimRight(baseURL, "/")
 	cardsServiceMethods := v1.File_numen_v1_cards_proto.Services().ByName("CardsService").Methods()
 	return &cardsServiceClient{
-		stencils: connect.NewClient[v1.StencilsRequest, v1.StencilsResponse](
+		listStencils: connect.NewClient[v1.ListStencilsRequest, v1.ListStencilsResponse](
 			httpClient,
-			baseURL+CardsServiceStencilsProcedure,
-			connect.WithSchema(cardsServiceMethods.ByName("Stencils")),
+			baseURL+CardsServiceListStencilsProcedure,
+			connect.WithSchema(cardsServiceMethods.ByName("ListStencils")),
 			connect.WithClientOptions(opts...),
 		),
-		makeStencil: connect.NewClient[v1.MakeStencilRequest, v1.MakeStencilResponse](
+		createStencil: connect.NewClient[v1.CreateStencilRequest, v1.CreateStencilResponse](
 			httpClient,
-			baseURL+CardsServiceMakeStencilProcedure,
-			connect.WithSchema(cardsServiceMethods.ByName("MakeStencil")),
+			baseURL+CardsServiceCreateStencilProcedure,
+			connect.WithSchema(cardsServiceMethods.ByName("CreateStencil")),
 			connect.WithClientOptions(opts...),
 		),
 		readStencil: connect.NewClient[v1.ReadStencilRequest, v1.ReadStencilResponse](
@@ -162,16 +163,16 @@ func NewCardsServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(cardsServiceMethods.ByName("WriteStencil")),
 			connect.WithClientOptions(opts...),
 		),
-		renameField: connect.NewClient[v1.RenameFieldRequest, v1.RenameFieldResponse](
+		renameStencilField: connect.NewClient[v1.RenameStencilFieldRequest, v1.RenameStencilFieldResponse](
 			httpClient,
-			baseURL+CardsServiceRenameFieldProcedure,
-			connect.WithSchema(cardsServiceMethods.ByName("RenameField")),
+			baseURL+CardsServiceRenameStencilFieldProcedure,
+			connect.WithSchema(cardsServiceMethods.ByName("RenameStencilField")),
 			connect.WithClientOptions(opts...),
 		),
-		makeDeck: connect.NewClient[v1.MakeDeckRequest, v1.MakeDeckResponse](
+		createDeck: connect.NewClient[v1.CreateDeckRequest, v1.CreateDeckResponse](
 			httpClient,
-			baseURL+CardsServiceMakeDeckProcedure,
-			connect.WithSchema(cardsServiceMethods.ByName("MakeDeck")),
+			baseURL+CardsServiceCreateDeckProcedure,
+			connect.WithSchema(cardsServiceMethods.ByName("CreateDeck")),
 			connect.WithClientOptions(opts...),
 		),
 		readDeck: connect.NewClient[v1.ReadDeckRequest, v1.ReadDeckResponse](
@@ -191,24 +192,24 @@ func NewCardsServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 
 // cardsServiceClient implements CardsServiceClient.
 type cardsServiceClient struct {
-	stencils     *connect.Client[v1.StencilsRequest, v1.StencilsResponse]
-	makeStencil  *connect.Client[v1.MakeStencilRequest, v1.MakeStencilResponse]
-	readStencil  *connect.Client[v1.ReadStencilRequest, v1.ReadStencilResponse]
-	writeStencil *connect.Client[v1.WriteStencilRequest, v1.WriteStencilResponse]
-	renameField  *connect.Client[v1.RenameFieldRequest, v1.RenameFieldResponse]
-	makeDeck     *connect.Client[v1.MakeDeckRequest, v1.MakeDeckResponse]
-	readDeck     *connect.Client[v1.ReadDeckRequest, v1.ReadDeckResponse]
-	writeDeck    *connect.Client[v1.WriteDeckRequest, v1.WriteDeckResponse]
+	listStencils       *connect.Client[v1.ListStencilsRequest, v1.ListStencilsResponse]
+	createStencil      *connect.Client[v1.CreateStencilRequest, v1.CreateStencilResponse]
+	readStencil        *connect.Client[v1.ReadStencilRequest, v1.ReadStencilResponse]
+	writeStencil       *connect.Client[v1.WriteStencilRequest, v1.WriteStencilResponse]
+	renameStencilField *connect.Client[v1.RenameStencilFieldRequest, v1.RenameStencilFieldResponse]
+	createDeck         *connect.Client[v1.CreateDeckRequest, v1.CreateDeckResponse]
+	readDeck           *connect.Client[v1.ReadDeckRequest, v1.ReadDeckResponse]
+	writeDeck          *connect.Client[v1.WriteDeckRequest, v1.WriteDeckResponse]
 }
 
-// Stencils calls numen.v1.CardsService.Stencils.
-func (c *cardsServiceClient) Stencils(ctx context.Context, req *connect.Request[v1.StencilsRequest]) (*connect.Response[v1.StencilsResponse], error) {
-	return c.stencils.CallUnary(ctx, req)
+// ListStencils calls numen.v1.CardsService.ListStencils.
+func (c *cardsServiceClient) ListStencils(ctx context.Context, req *connect.Request[v1.ListStencilsRequest]) (*connect.Response[v1.ListStencilsResponse], error) {
+	return c.listStencils.CallUnary(ctx, req)
 }
 
-// MakeStencil calls numen.v1.CardsService.MakeStencil.
-func (c *cardsServiceClient) MakeStencil(ctx context.Context, req *connect.Request[v1.MakeStencilRequest]) (*connect.Response[v1.MakeStencilResponse], error) {
-	return c.makeStencil.CallUnary(ctx, req)
+// CreateStencil calls numen.v1.CardsService.CreateStencil.
+func (c *cardsServiceClient) CreateStencil(ctx context.Context, req *connect.Request[v1.CreateStencilRequest]) (*connect.Response[v1.CreateStencilResponse], error) {
+	return c.createStencil.CallUnary(ctx, req)
 }
 
 // ReadStencil calls numen.v1.CardsService.ReadStencil.
@@ -221,14 +222,14 @@ func (c *cardsServiceClient) WriteStencil(ctx context.Context, req *connect.Requ
 	return c.writeStencil.CallUnary(ctx, req)
 }
 
-// RenameField calls numen.v1.CardsService.RenameField.
-func (c *cardsServiceClient) RenameField(ctx context.Context, req *connect.Request[v1.RenameFieldRequest]) (*connect.Response[v1.RenameFieldResponse], error) {
-	return c.renameField.CallUnary(ctx, req)
+// RenameStencilField calls numen.v1.CardsService.RenameStencilField.
+func (c *cardsServiceClient) RenameStencilField(ctx context.Context, req *connect.Request[v1.RenameStencilFieldRequest]) (*connect.Response[v1.RenameStencilFieldResponse], error) {
+	return c.renameStencilField.CallUnary(ctx, req)
 }
 
-// MakeDeck calls numen.v1.CardsService.MakeDeck.
-func (c *cardsServiceClient) MakeDeck(ctx context.Context, req *connect.Request[v1.MakeDeckRequest]) (*connect.Response[v1.MakeDeckResponse], error) {
-	return c.makeDeck.CallUnary(ctx, req)
+// CreateDeck calls numen.v1.CardsService.CreateDeck.
+func (c *cardsServiceClient) CreateDeck(ctx context.Context, req *connect.Request[v1.CreateDeckRequest]) (*connect.Response[v1.CreateDeckResponse], error) {
+	return c.createDeck.CallUnary(ctx, req)
 }
 
 // ReadDeck calls numen.v1.CardsService.ReadDeck.
@@ -243,36 +244,36 @@ func (c *cardsServiceClient) WriteDeck(ctx context.Context, req *connect.Request
 
 // CardsServiceHandler is an implementation of the numen.v1.CardsService service.
 type CardsServiceHandler interface {
-	// Stencils is what a person choosing what kind of card to write next is
+	// ListStencils is what a person choosing what kind of card to write next is
 	// shown: every stencil in the vault, by what it is called and what it asks
 	// for. The faces are read one stencil at a time.
 	//
 	// A stencil that could not be read is absent from the answer.
-	Stencils(context.Context, *connect.Request[v1.StencilsRequest]) (*connect.Response[v1.StencilsResponse], error)
-	// MakeStencil puts a stencil in the vault, declaring the fields it is given
+	ListStencils(context.Context, *connect.Request[v1.ListStencilsRequest]) (*connect.Response[v1.ListStencilsResponse], error)
+	// CreateStencil puts a stencil in the vault, declaring the fields it is given
 	// and showing no face. The file says it is a stencil from the moment it
 	// exists, so it is one to everything that reads the vault before a card is
 	// cut by it.
 	//
 	// The first field is what a card's heading is read from, so a stencil is
 	// made with at least one.
-	MakeStencil(context.Context, *connect.Request[v1.MakeStencilRequest]) (*connect.Response[v1.MakeStencilResponse], error)
+	CreateStencil(context.Context, *connect.Request[v1.CreateStencilRequest]) (*connect.Response[v1.CreateStencilResponse], error)
 	// ReadStencil is the fields and the faces of one stencil.
 	ReadStencil(context.Context, *connect.Request[v1.ReadStencilRequest]) (*connect.Response[v1.ReadStencilResponse], error)
 	// WriteStencil puts fields and faces into a stencil. A path the vault holds
-	// no note at is refused `missing`; MakeStencil is what puts a stencil in the
-	// vault. Every frontmatter key but `fields` stays as the person wrote it, and
-	// a stencil that no longer holds what the caller read is left alone and
-	// answered `changed`.
+	// no note at is refused `missing`; CreateStencil is what puts a stencil in
+	// the vault. Every frontmatter key but `fields` stays as the person wrote it,
+	// and a stencil that no longer holds what the caller read is left alone and
+	// refused `stale`.
 	//
 	// The preamble, the tail and each face's lead are written back as they
 	// arrive, so the parts of the file a client did not touch come out as the
 	// bytes they went in as.
 	WriteStencil(context.Context, *connect.Request[v1.WriteStencilRequest]) (*connect.Response[v1.WriteStencilResponse], error)
-	// RenameField gives one of a stencil's fields a different name, everywhere it
-	// is written: where the stencil declares it, in the braces of every face that
-	// places it, and as a heading in every card of every deck that stencil cuts.
-	// What stands under each heading is left as it was.
+	// RenameStencilField gives one of a stencil's fields a different name,
+	// everywhere it is written: where the stencil declares it, in the braces of
+	// every face that places it, and as a heading in every card of every deck
+	// that stencil cuts. What stands under each heading is left as it was.
 	//
 	// Every field a stencil declares stands under its own heading in every card,
 	// the first included, so renaming any of them reaches every deck that
@@ -280,20 +281,20 @@ type CardsServiceHandler interface {
 	// heading and comes back under `not_written`.
 	//
 	// A stencil that no longer holds what the caller read is left alone and
-	// answered `changed`, and then no deck is written either.
-	RenameField(context.Context, *connect.Request[v1.RenameFieldRequest]) (*connect.Response[v1.RenameFieldResponse], error)
-	// MakeDeck puts a deck of no cards in the vault. The file says it is a deck
+	// refused `stale`, and then no deck is written either.
+	RenameStencilField(context.Context, *connect.Request[v1.RenameStencilFieldRequest]) (*connect.Response[v1.RenameStencilFieldResponse], error)
+	// CreateDeck puts a deck of no cards in the vault. The file says it is a deck
 	// from the moment it exists, so it is one to everything that reads the vault
 	// before a card is written into it.
-	MakeDeck(context.Context, *connect.Request[v1.MakeDeckRequest]) (*connect.Response[v1.MakeDeckResponse], error)
+	CreateDeck(context.Context, *connect.Request[v1.CreateDeckRequest]) (*connect.Response[v1.CreateDeckResponse], error)
 	// ReadDeck is the sections and the cards of one deck, in the order they
 	// stand in the file. Each card says which section it stands under.
 	ReadDeck(context.Context, *connect.Request[v1.ReadDeckRequest]) (*connect.Response[v1.ReadDeckResponse], error)
 	// WriteDeck puts sections and cards into a deck, in the order they are
-	// given. A path the vault holds no note at is refused `missing`; MakeDeck is
-	// what puts a deck in the vault. The frontmatter stays as the person wrote
+	// given. A path the vault holds no note at is refused `missing`; CreateDeck
+	// is what puts a deck in the vault. The frontmatter stays as the person wrote
 	// it, and a deck that no longer holds what the caller read is left alone and
-	// answered `changed`.
+	// refused `stale`.
 	//
 	// A card carrying no section stands before the first one, and a section no
 	// card stands under is written where the cards around it put it.
@@ -311,16 +312,16 @@ type CardsServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewCardsServiceHandler(svc CardsServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	cardsServiceMethods := v1.File_numen_v1_cards_proto.Services().ByName("CardsService").Methods()
-	cardsServiceStencilsHandler := connect.NewUnaryHandler(
-		CardsServiceStencilsProcedure,
-		svc.Stencils,
-		connect.WithSchema(cardsServiceMethods.ByName("Stencils")),
+	cardsServiceListStencilsHandler := connect.NewUnaryHandler(
+		CardsServiceListStencilsProcedure,
+		svc.ListStencils,
+		connect.WithSchema(cardsServiceMethods.ByName("ListStencils")),
 		connect.WithHandlerOptions(opts...),
 	)
-	cardsServiceMakeStencilHandler := connect.NewUnaryHandler(
-		CardsServiceMakeStencilProcedure,
-		svc.MakeStencil,
-		connect.WithSchema(cardsServiceMethods.ByName("MakeStencil")),
+	cardsServiceCreateStencilHandler := connect.NewUnaryHandler(
+		CardsServiceCreateStencilProcedure,
+		svc.CreateStencil,
+		connect.WithSchema(cardsServiceMethods.ByName("CreateStencil")),
 		connect.WithHandlerOptions(opts...),
 	)
 	cardsServiceReadStencilHandler := connect.NewUnaryHandler(
@@ -335,16 +336,16 @@ func NewCardsServiceHandler(svc CardsServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(cardsServiceMethods.ByName("WriteStencil")),
 		connect.WithHandlerOptions(opts...),
 	)
-	cardsServiceRenameFieldHandler := connect.NewUnaryHandler(
-		CardsServiceRenameFieldProcedure,
-		svc.RenameField,
-		connect.WithSchema(cardsServiceMethods.ByName("RenameField")),
+	cardsServiceRenameStencilFieldHandler := connect.NewUnaryHandler(
+		CardsServiceRenameStencilFieldProcedure,
+		svc.RenameStencilField,
+		connect.WithSchema(cardsServiceMethods.ByName("RenameStencilField")),
 		connect.WithHandlerOptions(opts...),
 	)
-	cardsServiceMakeDeckHandler := connect.NewUnaryHandler(
-		CardsServiceMakeDeckProcedure,
-		svc.MakeDeck,
-		connect.WithSchema(cardsServiceMethods.ByName("MakeDeck")),
+	cardsServiceCreateDeckHandler := connect.NewUnaryHandler(
+		CardsServiceCreateDeckProcedure,
+		svc.CreateDeck,
+		connect.WithSchema(cardsServiceMethods.ByName("CreateDeck")),
 		connect.WithHandlerOptions(opts...),
 	)
 	cardsServiceReadDeckHandler := connect.NewUnaryHandler(
@@ -361,18 +362,18 @@ func NewCardsServiceHandler(svc CardsServiceHandler, opts ...connect.HandlerOpti
 	)
 	return "/numen.v1.CardsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case CardsServiceStencilsProcedure:
-			cardsServiceStencilsHandler.ServeHTTP(w, r)
-		case CardsServiceMakeStencilProcedure:
-			cardsServiceMakeStencilHandler.ServeHTTP(w, r)
+		case CardsServiceListStencilsProcedure:
+			cardsServiceListStencilsHandler.ServeHTTP(w, r)
+		case CardsServiceCreateStencilProcedure:
+			cardsServiceCreateStencilHandler.ServeHTTP(w, r)
 		case CardsServiceReadStencilProcedure:
 			cardsServiceReadStencilHandler.ServeHTTP(w, r)
 		case CardsServiceWriteStencilProcedure:
 			cardsServiceWriteStencilHandler.ServeHTTP(w, r)
-		case CardsServiceRenameFieldProcedure:
-			cardsServiceRenameFieldHandler.ServeHTTP(w, r)
-		case CardsServiceMakeDeckProcedure:
-			cardsServiceMakeDeckHandler.ServeHTTP(w, r)
+		case CardsServiceRenameStencilFieldProcedure:
+			cardsServiceRenameStencilFieldHandler.ServeHTTP(w, r)
+		case CardsServiceCreateDeckProcedure:
+			cardsServiceCreateDeckHandler.ServeHTTP(w, r)
 		case CardsServiceReadDeckProcedure:
 			cardsServiceReadDeckHandler.ServeHTTP(w, r)
 		case CardsServiceWriteDeckProcedure:
@@ -386,12 +387,12 @@ func NewCardsServiceHandler(svc CardsServiceHandler, opts ...connect.HandlerOpti
 // UnimplementedCardsServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedCardsServiceHandler struct{}
 
-func (UnimplementedCardsServiceHandler) Stencils(context.Context, *connect.Request[v1.StencilsRequest]) (*connect.Response[v1.StencilsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.CardsService.Stencils is not implemented"))
+func (UnimplementedCardsServiceHandler) ListStencils(context.Context, *connect.Request[v1.ListStencilsRequest]) (*connect.Response[v1.ListStencilsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.CardsService.ListStencils is not implemented"))
 }
 
-func (UnimplementedCardsServiceHandler) MakeStencil(context.Context, *connect.Request[v1.MakeStencilRequest]) (*connect.Response[v1.MakeStencilResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.CardsService.MakeStencil is not implemented"))
+func (UnimplementedCardsServiceHandler) CreateStencil(context.Context, *connect.Request[v1.CreateStencilRequest]) (*connect.Response[v1.CreateStencilResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.CardsService.CreateStencil is not implemented"))
 }
 
 func (UnimplementedCardsServiceHandler) ReadStencil(context.Context, *connect.Request[v1.ReadStencilRequest]) (*connect.Response[v1.ReadStencilResponse], error) {
@@ -402,12 +403,12 @@ func (UnimplementedCardsServiceHandler) WriteStencil(context.Context, *connect.R
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.CardsService.WriteStencil is not implemented"))
 }
 
-func (UnimplementedCardsServiceHandler) RenameField(context.Context, *connect.Request[v1.RenameFieldRequest]) (*connect.Response[v1.RenameFieldResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.CardsService.RenameField is not implemented"))
+func (UnimplementedCardsServiceHandler) RenameStencilField(context.Context, *connect.Request[v1.RenameStencilFieldRequest]) (*connect.Response[v1.RenameStencilFieldResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.CardsService.RenameStencilField is not implemented"))
 }
 
-func (UnimplementedCardsServiceHandler) MakeDeck(context.Context, *connect.Request[v1.MakeDeckRequest]) (*connect.Response[v1.MakeDeckResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.CardsService.MakeDeck is not implemented"))
+func (UnimplementedCardsServiceHandler) CreateDeck(context.Context, *connect.Request[v1.CreateDeckRequest]) (*connect.Response[v1.CreateDeckResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.CardsService.CreateDeck is not implemented"))
 }
 
 func (UnimplementedCardsServiceHandler) ReadDeck(context.Context, *connect.Request[v1.ReadDeckRequest]) (*connect.Response[v1.ReadDeckResponse], error) {

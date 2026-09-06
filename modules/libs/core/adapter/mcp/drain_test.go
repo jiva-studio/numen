@@ -9,16 +9,16 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/libs/core/check"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // sequence is what happened, in the order it happened.
@@ -58,8 +58,8 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 		t.Fatal(err)
 	}
 
-	readers, writers := filesystem.Readers{}, filesystem.Writers{}
-	scan := usecase.Scan{
+	readers, writers := filesystem.VaultReaders{}, filesystem.VaultWriters{}
+	scan := vaults.Scan{
 		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.Queries(), Maintenance: db.Maintenance(),
 	}
@@ -73,7 +73,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	var once sync.Once
 	// release lets the held write through, from now on.
 	release := func() { once.Do(func() { close(until) }) }
-	refresh := usecase.Refresh{Readers: readers, Notes: db.Notes()}
+	refresh := vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources())
 	// The index hook is where a write reaches the database. Held open, it is a
 	// write that has not finished at the moment the application is asked to go.
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {
@@ -90,18 +90,22 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	}
 
 	queries := db.Queries()
+	moving := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index, time.Now)
 	core := mcp.Core{
-		Showing: mcp.One(v, v.Path), Readers: readers, Notes: queries,
-		Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
-		Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
-		Links:         note.ShowLinks{Links: db.Links()},
-		Problems:      check.Standard(db.Problems()),
-		Create:        note.Create{Writers: writers, Names: queries, Index: index},
-		Write:         note.Write{Readers: readers, Writers: writers, Index: index},
-		Move:          note.Move{Readers: readers, Writers: writers, Links: db.Links(), Sources: db.Sources(), Index: index},
-		Rename:        note.Rename{Move: note.Move{Readers: readers, Writers: writers, Links: db.Links(), Sources: db.Sources(), Index: index}},
-		Remove:        note.Remove{Writers: writers, Links: db.Links(), Known: db.SourcesKnown(), Index: index},
-		Linking:       note.Linking{Readers: readers, Writers: writers, Index: index},
+		Showing: mcp.ShowingOne(v, v.Path), Readers: readers,
+		Notes: mcp.Notes{
+			Queries:       queries,
+			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
+			Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
+			Links:         note.ShowLinks{Links: db.Links()},
+			Problems:      check.Standard(db.Problems()),
+			Create:        note.NewCreate(writers, queries, index, time.Now),
+			Write:         note.NewWrite(readers, writers, index, time.Now),
+			Move:          moving,
+			Rename:        note.NewRename(moving),
+			Remove:        note.NewRemove(writers, db.Links(), db.SourcesKnown(), index),
+			Linking:       note.NewEditLinks(readers, writers, index, time.Now),
+		},
 	}
 
 	const secret = "the-token"
@@ -123,11 +127,14 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	// before the session it is answered over is closed under it.
 	defer release()
 
+	was := fingerprint(t, session, "Note.md")
 	wrote := make(chan error, 1)
 	go func() {
-		res, err := session.CallTool(context.Background(), &sdk.CallToolParams{
-			Name:      "note_write",
-			Arguments: map[string]any{"path": "Note.md", "body": "# What the agent wrote\n"},
+		res, err := session.CallTool(t.Context(), &sdk.CallToolParams{
+			Name: "note_rewrite",
+			Arguments: map[string]any{
+				"path": "Note.md", "body": "# What the agent wrote\n", "fingerprint": was,
+			},
 		})
 		switch {
 		case err != nil:
@@ -152,7 +159,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	shut := make(chan struct{})
 	go func() {
 		defer close(shut)
-		ctx, cancel := context.WithTimeout(context.Background(), drain)
+		ctx, cancel := context.WithTimeout(t.Context(), drain)
 		defer cancel()
 		endpoint.Close(ctx)
 		db.Close()

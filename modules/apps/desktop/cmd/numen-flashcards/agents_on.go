@@ -11,12 +11,11 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/flashcardsui"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
-	format "github.com/jiva-studio/numen/modules/libs/core/cards"
+	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 )
 
 // This file is the only one that knows a card can be asked about. Built with
@@ -26,24 +25,24 @@ import (
 // unnamed is what the panel is told where the settings name no agent.
 const unnamed = "no agent is named in the settings"
 
-// reaching is the agent on the vault a person is sitting to.
+// reaching is the agent on the vault a person's session is on.
 //
-// A sitting is on one vault and an agent is told which vault it works when it
-// starts, so the endpoint is stopped and served again when a sitting opens on
+// A session is on one vault and an agent is told which vault it works when it
+// starts, so the endpoint is stopped and served again when a session opens on
 // another one.
 type reaching struct {
-	swapping *agents.Swapping
+	swapping *agents.Endpoint
 
-	mu sync.Mutex
-	on domain.Vault
+	mu    sync.Mutex
+	vault domain.Vault
 }
 
-// Sat is a sitting opening on a vault. Sitting down to the same vault again
-// leaves the agent where it is.
-func (r *reaching) Sat(_ context.Context, v domain.Vault) {
+// Opened is a session opening on a vault. A session opened on the same vault
+// again leaves the agent where it is.
+func (r *reaching) Opened(_ context.Context, v domain.Vault) {
 	r.mu.Lock()
-	again := r.on.ID == v.ID
-	r.on = v
+	again := r.vault.ID == v.ID
+	r.vault = v
 	r.mu.Unlock()
 
 	if again {
@@ -52,10 +51,10 @@ func (r *reaching) Sat(_ context.Context, v domain.Vault) {
 	_ = r.swapping.Around(func() error { return nil })
 }
 
-func (r *reaching) standing() domain.Vault {
+func (r *reaching) showing() domain.Vault {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return r.on
+	return r.vault
 }
 
 // serveAgents lets a card be asked about, and answers with what takes that
@@ -69,8 +68,9 @@ func serveAgents(
 	ctx context.Context,
 	cfg container.Config,
 	db *container.Index,
-	vaults *opened,
-	api *flashcardsui.API,
+	notes container.Notes,
+	cutting container.Cards,
+	api *window.API,
 	off bool,
 	out io.Writer,
 ) func() error {
@@ -92,16 +92,16 @@ func serveAgents(
 	api.Unreachable.Store("")
 
 	held := &reaching{}
-	held.swapping = &agents.Swapping{
+	held.swapping = &agents.Endpoint{
 		Serve: func() (func() error, error) {
-			v := held.standing()
+			v := held.showing()
 			root, err := filepath.Abs(v.Path)
 			if err != nil {
 				return nil, err
 			}
 			served, err := agents.Serve(ctx, agents.Options{
 				Config:  cfg,
-				Core:    reviewing(cfg, db, vaults, v, root, out),
+				Core:    reviewing(cfg, db, notes, cutting, api, v, root, out),
 				Reviews: true,
 				Token:   secret,
 				Root:    root,
@@ -113,13 +113,13 @@ func serveAgents(
 			api.Answers(served.Agent)
 			return served.Close, nil
 		},
-		Standing:    held.standing,
-		Answers:     api.Answers,
+		Showing:     held.showing,
+		Handler:     api.Answers,
 		Unreachable: func(why string) { api.Unreachable.Store(why) },
 		Trouble:     func(err error) { fmt.Fprintln(out, "numen-flashcards: agents:", err) },
 	}
 
-	api.Sat = held.Sat
+	api.Opened = held.Opened
 	return func() error {
 		held.swapping.Off()
 		return nil
@@ -127,7 +127,7 @@ func serveAgents(
 }
 
 // reviewing is the tools this window serves: everything that reads, and the
-// cards of a deck a person is sitting to.
+// cards of the deck of a person's session.
 //
 // A card is written here because that is what a person is doing. A deck and a
 // stencil are not made here: they are what a vault is arranged into, and
@@ -139,31 +139,43 @@ func serveAgents(
 func reviewing(
 	cfg container.Config,
 	db *container.Index,
-	vaults *opened,
+	notes container.Notes,
+	cutting container.Cards,
+	api *window.API,
 	v domain.Vault,
 	root string,
 	out io.Writer,
 ) mcp.Core {
-	queries := db.Queries()
-	links := db.Links()
-
-	cutting := cfg.Cards(queries, links, vaults.level)
-
 	return mcp.Core{
-		Showing:       mcp.One(v, root),
-		Readers:       cfg.VaultReaders(),
-		Notes:         queries,
-		Sources:       db.SourcesKnown(),
-		Derived:       cfg.DerivedStores(),
-		Documents:     cfg.Documents(),
-		Neighbourhood: note.ShowNeighbourhood{Links: links, Notes: queries},
-		Links:         note.ShowLinks{Links: links},
-		Search: cfg.SearchingOver(db.Passages(), nil,
-			func(err error) { fmt.Fprintln(out, "agents: answering by words alone:", err) }),
+		Showing: mcp.ShowingOne(v, root),
+		Readers: cfg.VaultReaders(),
+		// Which card the person is on is a tool's answer and never part of the
+		// question, so a deck named by whoever synced it is data and not
+		// instruction.
+		Reviewing: func() mcp.AskedCard {
+			on := api.Current()
+			return mcp.AskedCard{Deck: on.Deck, Card: on.Card, Face: on.Face}
+		},
 
-		Cards:    cutting.Read,
-		Stencils: cutting.List,
-		Cuts:     cutting.Write,
-		DeckBody: format.DeckBody,
+		Notes: mcp.Notes{
+			Queries:       db.Queries(),
+			Neighbourhood: notes.Neighbourhood,
+			Links:         notes.Links,
+			Search: cfg.SearchingOver(db.Passages(), nil,
+				func(err error) { fmt.Fprintln(out, "agents: answering by words alone:", err) }),
+		},
+
+		Sources: mcp.Sources{
+			Queries:   db.SourcesKnown(),
+			Derived:   cfg.DerivedStores(),
+			Documents: cfg.TextExtractor(),
+		},
+
+		Cards: mcp.Cards{
+			Read:     cutting.Read,
+			List:     cutting.List,
+			Write:    cutting.Write,
+			DeckEdit: format.OpenDeckBody,
+		},
 	}
 }

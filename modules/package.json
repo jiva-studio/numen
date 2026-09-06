@@ -1,0 +1,12 @@
+{
+  "name": "numen",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The source root of the interface modules. Holds no code and declares no dependencies of its own; every package below is installed from here so that one copy of a package answers for all of them.",
+  "workspaces": [
+    "libs/*",
+    "apps/*",
+    "apps/desktop/*",
+    "tools/*"
+  ]
+}

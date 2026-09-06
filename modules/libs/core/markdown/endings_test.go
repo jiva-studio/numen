@@ -35,7 +35,9 @@ func TestTheProseOfACRLFNoteIsWrittenWithCRLF(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	d.SetBody("first\nsecond\n")
+	if err := d.SetBody("first\nsecond\n"); err != nil {
+		t.Fatalf("set body: %v", err)
+	}
 
 	got := string(d.Bytes())
 	if strings.Contains(strings.ReplaceAll(got, "\r\n", ""), "\n") {
@@ -55,7 +57,9 @@ func TestAMixedNoteIsNotRewrittenEndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	d.SetBody("first\nsecond\n")
+	if err := d.SetBody("first\nsecond\n"); err != nil {
+		t.Fatalf("set body: %v", err)
+	}
 
 	if got := string(d.Bytes()); got != raw {
 		t.Errorf("the prose was rewritten\n want %q\n  got %q", raw, got)

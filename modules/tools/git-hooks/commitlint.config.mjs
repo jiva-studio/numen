@@ -2,7 +2,7 @@
  * Conventional Commits — https://www.conventionalcommits.org
  *
  * Enforced locally by the .husky/commit-msg hook and in CI by
- * .github/workflows/commitlint.yml (so unhooked clones still get caught).
+ * .github/workflows/commits.yml (so unhooked clones still get caught).
  */
 export default {
   extends: ['@commitlint/config-conventional'],
@@ -18,9 +18,10 @@ export default {
         'mobile',    // modules/apps/mobile
         'landing',   // modules/apps/landing
         'core',      // modules/libs/core
-        'domain',    // modules/libs/domain
+        'domain',    // modules/libs/core/domain
         'protocol',  // modules/libs/protocol
         'ui',        // modules/libs/ui
+        'wire',      // modules/libs/wire
         'adr',       // docs/adr
         'docs',      // everything else under docs/
         'vault',     // vault format spec and parser-facing changes

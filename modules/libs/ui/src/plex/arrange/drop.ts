@@ -1,5 +1,6 @@
-import type { PlacedNode, PlexFrame, PlexRelatedSeat, Point } from '../model'
-import { RELATED_SEATS } from '../model'
+import type { PlexFrame } from '../frame'
+import type { PlacedNode, Position } from '../node'
+import { RELATED_SEATS, type PlexRelatedSeat } from '../seat'
 import type { Direction, PlexOptions, Size } from './options'
 
 /**
@@ -60,8 +61,8 @@ function towards(dx: number, dy: number, bias: number): Direction | null {
  * rule written the other way would quietly contradict the drawing.
  */
 export function seatTowards(
-  from: Point,
-  to: Point,
+  from: Position,
+  to: Position,
   options: PlexOptions,
 ): PlexRelatedSeat | null {
   const heading = towards(to.x - from.x, to.y - from.y, options.gesture.verticalBias)
@@ -76,13 +77,13 @@ export function seatTowards(
  * in or out, and it would be a link to something the reader never saw. That is
  * the same rule that decides the click and the tab stop.
  */
-export function nodeAt(point: Point, frame: PlexFrame): PlacedNode | null {
+export function nodeAt(at: Position, frame: PlexFrame): PlacedNode | null {
   for (let i = frame.nodes.length - 1; i >= 0; i--) {
     const node = frame.nodes[i]
     if (!node || node.opacity < 1) continue
     if (
-      Math.abs(point.x - node.x) <= node.width / 2 &&
-      Math.abs(point.y - node.y) <= node.height / 2
+      Math.abs(at.x - node.x) <= node.width / 2 &&
+      Math.abs(at.y - node.y) <= node.height / 2
     ) {
       return node
     }
@@ -96,7 +97,7 @@ export interface DropInput {
   /** The node the gesture started from. */
   readonly from: string
   /** Where it was let go, in the plex's own coordinates. */
-  readonly at: Point
+  readonly at: Position
   /** Seats a gesture is allowed to produce. */
   readonly allowed: readonly PlexRelatedSeat[]
 }
@@ -120,8 +121,8 @@ export function resolveDrop({
   const landedOn = nodeAt(at, frame)
   if (landedOn?.id === from) return null
 
-  const towardsPoint = landedOn ? { x: landedOn.x, y: landedOn.y } : at
-  const seat = seatTowards(source, towardsPoint, options)
+  const target = landedOn ? { x: landedOn.x, y: landedOn.y } : at
+  const seat = seatTowards(source, target, options)
   if (!seat || !allowed.includes(seat)) return null
 
   return landedOn
@@ -129,13 +130,13 @@ export function resolveDrop({
     : { kind: 'create', from, seat }
 }
 
-export interface CarriedInput {
+export interface DroppedInput {
   readonly frame: PlexFrame
   readonly options: PlexOptions
   /** The window the plex is drawn in, centred on the focus. */
   readonly viewport: Size
   /** Where the pointer is, in the plex's own coordinates. */
-  readonly at: Point
+  readonly at: Position
   /** Seats a gesture is allowed to produce. */
   readonly allowed: readonly PlexRelatedSeat[]
   /** How far from the focus the pointer stands before it names a direction. */
@@ -143,20 +144,20 @@ export interface CarriedInput {
 }
 
 /**
- * The seat something carried in from outside comes to.
+ * The seat something dragged in from outside comes to.
  *
  * Measured from the focus, which is what the arrangement is built around. A
  * node the pointer crosses is not a landing: the seat is read off the
  * direction, and letting go anywhere in the window is answered the same way.
  */
-export function seatCarried({
+export function seatDropped({
   frame,
   options,
   viewport,
   at,
   allowed,
   threshold,
-}: CarriedInput): PlexRelatedSeat | null {
+}: DroppedInput): PlexRelatedSeat | null {
   const focus = frame.nodes.find((node) => node.seat === 'focus')
   if (!focus) return null
 

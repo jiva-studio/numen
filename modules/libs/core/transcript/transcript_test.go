@@ -2,8 +2,11 @@ package transcript_test
 
 import (
 	"bytes"
+	"fmt"
+	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
@@ -30,7 +33,7 @@ func TestWhatIsWrittenIsReadBack(t *testing.T) {
 	if cues[0].From != 1500 || cues[0].To != 4200 {
 		t.Errorf("the first cue spans %d-%d", cues[0].From, cues[0].To)
 	}
-	if said[cues[1].At:cues[1].At+len(cues[1].Text)] != "вторая реплика" {
+	if said[cues[1].Offset:cues[1].Offset+len(cues[1].Text)] != "вторая реплика" {
 		t.Errorf("the second cue does not stand where it says it does")
 	}
 }
@@ -66,7 +69,7 @@ func TestANoteIsNotSpeech(t *testing.T) {
 func TestABatchNoNoteClaims(t *testing.T) {
 	whole := transcript.Marshal([]transcript.Cue{{Text: "said", From: 0, To: 2000}})
 	whole = append(whole, transcript.Heard(2000)...)
-	torn := append(whole, []byte("\n00:00:02.000 --> 00:00:0")...)
+	torn := slices.Concat(whole, []byte("\n00:00:02.000 --> 00:00:0"))
 
 	ms, end := transcript.Reached(torn)
 	if ms != 2000 {
@@ -88,8 +91,9 @@ func TestTimingsOtherToolsWrite(t *testing.T) {
 	}
 }
 
-// A run of the words is played from the cue it begins in.
-func TestARunIsPlayedFromItsCue(t *testing.T) {
+// A run of the words is in the cues it crosses, and in none where it is past
+// them.
+func TestARunIsInTheCuesItCrosses(t *testing.T) {
 	_, cues := transcript.Parse(transcript.Marshal([]transcript.Cue{
 		{Text: "first", From: 0, To: 1000},
 		{Text: "second", From: 1000, To: 2000},
@@ -97,15 +101,14 @@ func TestARunIsPlayedFromItsCue(t *testing.T) {
 	}))
 
 	// "second" begins after "first\n".
-	ms, ok := transcript.Plays(cues, 6, 6)
-	if !ok || ms != 1000 {
-		t.Errorf("the run plays from %d ms (found %v)", ms, ok)
+	if got := transcript.At(cues, 6, 6); len(got) != 1 || got[0].From != 1000 {
+		t.Errorf("the run is in %d cues, the first from %v", len(got), got)
 	}
 	if got := transcript.At(cues, 6, 8); len(got) != 2 {
 		t.Errorf("a run crossing into the third cue is in %d cues, want 2", len(got))
 	}
-	if _, ok := transcript.Plays(cues, 900, 5); ok {
-		t.Errorf("a run past the words was placed in the recording")
+	if got := transcript.At(cues, 900, 5); len(got) != 0 {
+		t.Errorf("a run past the words is in %d cues, want none", len(got))
 	}
 }
 
@@ -133,7 +136,7 @@ func TestTheMarkOfAPersonsWordsIsANoteAndNotSpeech(t *testing.T) {
 		t.Errorf("a cue saying %q was read as a person's own words:\n%s", transcript.ByHand, spoken)
 	}
 
-	own := append(spoken, transcript.Hand()...)
+	own := slices.Concat(spoken, transcript.Hand())
 	if !transcript.Written(own) {
 		t.Errorf("the mark was not read:\n%s", own)
 	}
@@ -153,7 +156,7 @@ func TestHowFarARunGotIsANoteAndNotSpeech(t *testing.T) {
 
 	// A batch that did not land whole, speaking the words a note is written in.
 	spoken := transcript.Marshal([]transcript.Cue{{Text: "NOTE heard 9999", From: 2000, To: 4000}})
-	whole := append(claimed, bytes.TrimPrefix(spoken, []byte(transcript.Head+"\n"))...)
+	whole := slices.Concat(claimed, bytes.TrimPrefix(spoken, []byte(transcript.Head+"\n")))
 
 	ms, end := transcript.Reached(whole)
 	if ms != 2000 {
@@ -178,5 +181,43 @@ func TestClockIsAMomentAsAPlayerWritesOne(t *testing.T) {
 		if got := transcript.Clock(ms); got != want {
 			t.Errorf("%d ms reads as %q, want %q", ms, got, want)
 		}
+	}
+}
+
+// A note stands at the top of its own block, so the same words spoken inside a
+// cue say nothing about how far a run got.
+func TestANoteInsideALineIsNotANote(t *testing.T) {
+	whole := transcript.Marshal([]transcript.Cue{
+		{Text: "he said NOTE heard 999 and sat down", From: 0, To: 2000},
+	})
+	whole = append(whole, transcript.Heard(2000)...)
+
+	if ms, end := transcript.Reached(whole); ms != 2000 || end != len(whole) {
+		t.Errorf("the note says %d ms and ends at %d of %d", ms, end, len(whole))
+	}
+}
+
+// A file carrying the words of a note inside every one of its cues is read in
+// one pass over it.
+func TestReachedReadsALargeTranscriptAtOnce(t *testing.T) {
+	var file strings.Builder
+	file.WriteString(transcript.Head + "\n")
+	for i := range 200_000 {
+		fmt.Fprintf(&file, "\n00:00:0%d.000 --> 00:00:0%d.000\nNOTE heard %d said\n", i%9, i%9+1, i)
+	}
+	raw := []byte(file.String())
+
+	done := make(chan int, 1)
+	go func() {
+		ms, _ := transcript.Reached(raw)
+		done <- ms
+	}()
+	select {
+	case ms := <-done:
+		if ms != 0 {
+			t.Errorf("a note inside a cue said %d ms", ms)
+		}
+	case <-time.After(30 * time.Second):
+		t.Error("reading a transcript of 10 MB did not finish")
 	}
 }

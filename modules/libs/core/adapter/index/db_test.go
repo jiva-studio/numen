@@ -7,10 +7,14 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
+
+// walked is when a walk said every file these tests put in last changed.
+var walked = time.Unix(0, 1)
 
 func TestEveryConnectionGetsThePragmas(t *testing.T) {
 	// The bug this guards against is invisible to an ordinary test: executing
@@ -180,7 +184,7 @@ func narrow(t *testing.T, db *DB, vault domain.Vault, dims int) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().SaveChunks(ctx, vault.ID, "book", path, []chunk.Chunk{{
+	if err := db.Chunks().ReplaceChunks(ctx, vault.ID, "book", path, []chunk.Chunk{{
 		Start: 0, Length: 50, Text: "whole",
 		Small: []chunk.Chunk{{Start: 0, Length: 50, Text: "a chunk of text"}},
 	}}); err != nil {
@@ -196,14 +200,14 @@ func narrow(t *testing.T, db *DB, vault domain.Vault, dims int) {
 	}
 	vectors := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
-		// A vector is found by the text the chunk holds, which is the chunk's
-		// own hash.
-		print, err := hex.DecodeString(p.Fingerprint)
-		if err != nil || len(print) == 0 {
-			t.Fatalf("chunk %d owes a vector under fingerprint %q", p.Chunk, p.Fingerprint)
+		// A vector is found by the address of the text the chunk holds, which
+		// is the chunk's own hash.
+		hash, err := hex.DecodeString(p.ChunkHash)
+		if err != nil || len(hash) == 0 {
+			t.Fatalf("chunk %d owes a vector under hash %q", p.Chunk, p.ChunkHash)
 		}
 		vectors = append(vectors, chunk.Vector{
-			Chunk: p.Chunk, Fingerprint: print, Recipe: narrowRecipe(dims),
+			Chunk: p.Chunk, Hash: hash, Recipe: narrowRecipe(dims),
 			Value: make([]byte, dims), Coarse: make([]byte, dims/8),
 		})
 	}

@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 )
 
 // VaultDir returns the fixture vault every test scans.
@@ -68,5 +68,5 @@ func NewVault(t testing.TB, notes map[string]string) domain.Vault {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return domain.Vault{ID: cfg.ID, Name: filepath.Base(root), Path: root}
+	return domain.Vault{ID: domain.VaultID(cfg.ID), Name: filepath.Base(root), Path: root}
 }

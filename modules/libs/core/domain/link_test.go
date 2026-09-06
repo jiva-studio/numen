@@ -1,6 +1,8 @@
 package domain_test
 
 import (
+	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -21,46 +23,35 @@ func TestARoleNobodyDecidedOnIsNotActedOn(t *testing.T) {
 	}
 }
 
-// A title carries a colon of its own, and only a written scheme tells the two
-// apart.
-func TestATitleWithAColonIsAName(t *testing.T) {
-	for _, raw := range []string{
-		"Lecture 3: entropy",
-		"[[Lecture 3: entropy]]",
-		"note:not-a-scheme",
-		"http:/one-slash",
-	} {
-		got := domain.ParseAddress(raw)
-		if got.Scheme != domain.SchemeName {
-			t.Errorf("%q read as %v", raw, got)
-		}
-	}
+// The addresses in a note travel on the wire as they were written, so the
+// window reads them too. Both read this one corpus, and neither owns it.
+const corpus = "../../protocol/testdata/addresses.json"
+
+type written struct {
+	Written string `json:"written"`
+	Scheme  string `json:"scheme"`
+	Value   string `json:"value"`
 }
 
-func TestAWrittenSchemeIsRead(t *testing.T) {
-	for raw, want := range map[string]domain.Address{
-		"note://01ABC":        {Scheme: domain.SchemeNote, Value: "01ABC"},
-		"[[note://01ABC]]":    {Scheme: domain.SchemeNote, Value: "01ABC"},
-		"asset://picture.png": {Scheme: domain.SchemeAsset, Value: "picture.png"},
-		"name://Entropy":      {Scheme: domain.SchemeName, Value: "Entropy"},
-	} {
-		if got := domain.ParseAddress(raw); got != want {
-			t.Errorf("%q read as %v, want %v", raw, got, want)
-		}
+// A title carries a colon of its own, an alias and a fragment are not part of
+// where a link points, and only a written scheme tells any of them apart.
+func TestAnAddressIsReadTheWayTheSchemaSaysItIs(t *testing.T) {
+	raw, err := os.ReadFile(corpus)
+	if err != nil {
+		t.Fatal(err)
 	}
-}
+	var cases []written
+	if err := json.Unmarshal(raw, &cases); err != nil {
+		t.Fatal(err)
+	}
+	if len(cases) == 0 {
+		t.Fatal("the corpus is empty")
+	}
 
-// An alias and a fragment are not part of where a link points.
-func TestAnAliasAndAFragmentAreNotPartOfTheAddress(t *testing.T) {
-	want := domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}
-	for _, raw := range []string{
-		"[[Entropy|what disorder means]]",
-		"[[Entropy#a-heading]]",
-		"[[Entropy#a-heading|what disorder means]]",
-		"  [[ Entropy ]]  ",
-	} {
-		if got := domain.ParseAddress(raw); got != want {
-			t.Errorf("%q read as %v", raw, got)
+	for _, one := range cases {
+		want := domain.Address{Scheme: one.Scheme, Value: one.Value}
+		if got := domain.ParseAddress(one.Written); got != want {
+			t.Errorf("%q read as %v, want %v", one.Written, got, want)
 		}
 	}
 }

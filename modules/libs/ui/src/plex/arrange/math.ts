@@ -1,4 +1,4 @@
-import type { Extent } from '../model'
+import type { Extent } from '../frame'
 
 export const lerp = (from: number, to: number, t: number): number =>
   from + (to - from) * t

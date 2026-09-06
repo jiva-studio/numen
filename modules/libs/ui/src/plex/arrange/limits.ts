@@ -1,5 +1,4 @@
-import type { PlexRelatedSeat } from '../model'
-import { RELATED_SEATS } from '../model'
+import { RELATED_SEATS, type PlexRelatedSeat } from '../seat'
 import { isVertical, type PlexOptions } from './options'
 
 /** How one seat wraps: how many along a line, and how many lines. */

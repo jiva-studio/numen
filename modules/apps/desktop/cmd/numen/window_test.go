@@ -6,15 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // windowOn is a window open on a vault of this test's own.
-func windowOn(t *testing.T) (*webui.Opened, container.Config) {
+func windowOn(t *testing.T) (*editor.Installation, container.Config) {
 	t.Helper()
 
 	cfg := container.Config{
@@ -26,15 +25,12 @@ func windowOn(t *testing.T) (*webui.Opened, container.Config) {
 		t.Fatal(err)
 	}
 	root := t.TempDir()
-	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
-		t.Fatal(err)
-	}
-	add := usecase.Add{Identity: cfg.VaultIdentity(), Registry: registry, Now: time.Now}
+	add := vaults.Add{Identity: cfg.VaultIdentity(), Registry: registry, Now: time.Now}
 	if _, err := add.Execute(root, "one"); err != nil {
 		t.Fatal(err)
 	}
 
-	opened, err := webui.Open(t.Context(), cfg, "one", io.Discard)
+	opened, err := editor.Open(t.Context(), cfg, "one", io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,13 +44,13 @@ func TestTheWindowIsNamedAfterTheFileInFrontOfThePerson(t *testing.T) {
 	vault := domain.Vault{ID: "one", Name: "Notes"}
 	for name, c := range map[string]struct {
 		vault domain.Vault
-		open  domain.Attention
+		open  domain.OpenTabs
 		want  string
 	}{
 		"a note in front": {
 			vault: vault,
-			open: domain.Attention{
-				Front: "two",
+			open: domain.OpenTabs{
+				FrontID: "two",
 				Tabs: []domain.Tab{
 					{ID: "one", Kind: domain.TabPlex, Path: "Entropy.md"},
 					{ID: "two", Kind: domain.TabNote, Path: "Reading/Order.md"},
@@ -64,15 +60,15 @@ func TestTheWindowIsNamedAfterTheFileInFrontOfThePerson(t *testing.T) {
 		},
 		"a tab holding no file": {
 			vault: vault,
-			open: domain.Attention{
-				Front: "one",
-				Tabs:  []domain.Tab{{ID: "one", Kind: "settings"}},
+			open: domain.OpenTabs{
+				FrontID: "one",
+				Tabs:    []domain.Tab{{ID: "one", Kind: "settings"}},
 			},
 			want: "numen — Notes",
 		},
 		"a window with nothing open": {vault: vault, want: "numen — Notes"},
 		"a window standing on no vault": {
-			open: domain.Attention{Front: "one", Tabs: []domain.Tab{{ID: "one", Kind: "files"}}},
+			open: domain.OpenTabs{FrontID: "one", Tabs: []domain.Tab{{ID: "one", Kind: "files"}}},
 			want: "numen",
 		},
 	} {

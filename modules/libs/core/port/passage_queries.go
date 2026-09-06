@@ -20,12 +20,12 @@ type PassageQueries interface {
 	// Lexical is the chunks of one vault whose text matches the words typed,
 	// best first, at most `limit` of them. `growing` says the last word may
 	// still be being typed, and is then matched by its opening.
-	Lexical(ctx context.Context, vaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error)
+	Lexical(ctx context.Context, vaultID domain.VaultID, query string, kinds []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error)
 
 	// Named is the sections of one vault whose names match the words typed,
 	// best first. A section answers with the chunk it opens, so what comes back
 	// stands where the section begins.
-	Named(ctx context.Context, vaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error)
+	Named(ctx context.Context, vaultID domain.VaultID, query string, kinds []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error)
 
 	// Nearest is the chunks of one vault nearest a query vector, nearest first,
 	// at most `limit` of them. `query` is the full precision the model answered
@@ -34,5 +34,5 @@ type PassageQueries interface {
 	//
 	// `recipe` is what a vector is kept under, which is everything about the
 	// model that decides what a vector is. A name alone finds none of them.
-	Nearest(ctx context.Context, vaultID, recipe string, query []float32, of []domain.SourceKind, limit int, floor float64) ([]domain.Passage, error)
+	Nearest(ctx context.Context, vaultID domain.VaultID, recipe string, query []float32, kinds []domain.SourceKind, limit int, floor float64) ([]domain.Passage, error)
 }

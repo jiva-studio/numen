@@ -1,10 +1,11 @@
 /** What a drag away from a node comes to, worked out without a pointer. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
-import { nodeAt, resolveDrop, seatCarried, seatTowards } from './drop'
+import { nodeAt, resolveDrop, seatDropped, seatTowards } from './drop'
 import { DEFAULT_OPTIONS, resolveOptions } from './options'
 import { build } from '../fixtures/build'
-import type { PlexFrame, PlexRelatedSeat } from '../model'
+import type { PlexFrame } from '../frame'
+import type { PlexRelatedSeat } from '../seat'
 
 const ALLOWED: readonly PlexRelatedSeat[] = ['parent', 'child', 'jump']
 
@@ -166,15 +167,15 @@ describe('the node under the pointer', () => {
   })
 })
 
-describe('the seat something carried in comes to', () => {
+describe('the seat something dragged in comes to', () => {
   const VIEWPORT = { width: 1200, height: 800 }
   const THRESHOLD = 8
 
-  const carried = (
+  const dropped = (
     at: { x: number; y: number },
-    over: Partial<Parameters<typeof seatCarried>[0]> = {},
+    over: Partial<Parameters<typeof seatDropped>[0]> = {},
   ) =>
-    seatCarried({
+    seatDropped({
       frame,
       options: DEFAULT_OPTIONS,
       viewport: VIEWPORT,
@@ -185,37 +186,37 @@ describe('the seat something carried in comes to', () => {
     })
 
   it('is a parent above the focus, a child below it, and a jump to the side', () => {
-    expect(carried({ x: focus.x, y: focus.y - 300 })).toBe('parent')
-    expect(carried({ x: focus.x, y: focus.y + 300 })).toBe('child')
-    expect(carried({ x: focus.x - 500, y: focus.y })).toBe('jump')
+    expect(dropped({ x: focus.x, y: focus.y - 300 })).toBe('parent')
+    expect(dropped({ x: focus.x, y: focus.y + 300 })).toBe('child')
+    expect(dropped({ x: focus.x - 500, y: focus.y })).toBe('jump')
   })
 
   it('reads which way a seat lies off the arrangement', () => {
     const upside = resolveOptions({
       direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' },
     })
-    expect(carried({ x: focus.x, y: focus.y - 300 }, { options: upside })).toBe('child')
-    expect(carried({ x: focus.x, y: focus.y + 300 }, { options: upside })).toBe('parent')
+    expect(dropped({ x: focus.x, y: focus.y - 300 }, { options: upside })).toBe('child')
+    expect(dropped({ x: focus.x, y: focus.y + 300 }, { options: upside })).toBe('parent')
   })
 
   it('counts a wide row as down, though it reaches further sideways', () => {
     // The outermost child of a row is further from the focus sideways than it
-    // is downwards, and carrying a note to where the children plainly are has
+    // is downwards, and dragging a note to where the children plainly are has
     // to name a child.
     const leftmost = frame.nodes
       .filter((n) => n.seat === 'child')
       .reduce((a, b) => (a.x <= b.x ? a : b))
     expect(Math.abs(leftmost.x)).toBeGreaterThan(Math.abs(leftmost.y))
-    expect(carried(leftmost)).toBe('child')
+    expect(dropped(leftmost)).toBe('child')
 
     const flat = resolveOptions({ gesture: { verticalBias: 1 } })
-    expect(carried(leftmost, { options: flat })).toBe('jump')
+    expect(dropped(leftmost, { options: flat })).toBe('jump')
   })
 
   it('is nothing towards a seat the caller did not allow', () => {
     const beside = { x: focus.x + 500, y: focus.y }
-    expect(carried(beside)).toBeNull()
-    expect(carried(beside, { allowed: [...ALLOWED, 'sibling'] })).toBe('sibling')
+    expect(dropped(beside)).toBeNull()
+    expect(dropped(beside, { allowed: [...ALLOWED, 'sibling'] })).toBe('sibling')
   })
 
   it('is measured from the focus, wherever the focus is drawn', () => {
@@ -225,20 +226,20 @@ describe('the seat something carried in comes to', () => {
       ...frame,
       nodes: frame.nodes.map((node) => ({ ...node, x: node.x + 300 })),
     }
-    expect(carried({ x: 0, y: 0 }, { frame: shifted })).toBe('jump')
-    expect(carried({ x: 0, y: 0 })).toBeNull()
+    expect(dropped({ x: 0, y: 0 }, { frame: shifted })).toBe('jump')
+    expect(dropped({ x: 0, y: 0 })).toBeNull()
   })
 
   it('is nothing past the edge of the window, and a seat on it', () => {
-    expect(carried({ x: focus.x, y: 400 })).toBe('child')
-    expect(carried({ x: focus.x, y: 401 })).toBeNull()
-    expect(carried({ x: -600, y: focus.y })).toBe('jump')
-    expect(carried({ x: -601, y: focus.y })).toBeNull()
+    expect(dropped({ x: focus.x, y: 400 })).toBe('child')
+    expect(dropped({ x: focus.x, y: 401 })).toBeNull()
+    expect(dropped({ x: -600, y: focus.y })).toBe('jump')
+    expect(dropped({ x: -601, y: focus.y })).toBeNull()
   })
 
   it('is nothing until the pointer stands clear of the focus', () => {
-    expect(carried({ x: focus.x, y: focus.y + THRESHOLD - 1 })).toBeNull()
-    expect(carried({ x: focus.x, y: focus.y + THRESHOLD })).toBe('child')
+    expect(dropped({ x: focus.x, y: focus.y + THRESHOLD - 1 })).toBeNull()
+    expect(dropped({ x: focus.x, y: focus.y + THRESHOLD })).toBe('child')
   })
 
   it('is nothing where there is no focus to measure from', () => {
@@ -246,6 +247,6 @@ describe('the seat something carried in comes to', () => {
       ...frame,
       nodes: frame.nodes.filter((node) => node.seat !== 'focus'),
     }
-    expect(carried({ x: focus.x, y: focus.y + 300 }, { frame: nowhere })).toBeNull()
+    expect(dropped({ x: focus.x, y: focus.y + 300 }, { frame: nowhere })).toBeNull()
   })
 })

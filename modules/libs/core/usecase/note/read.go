@@ -20,39 +20,40 @@ import (
 // without its bytes being read.
 const MaxBytes = 1 << 20
 
-// Outcome is how a read ended. Each one leaves the caller with something
+// ReadOutcome is how a read ended. Each one leaves the caller with something
 // different to do: a missing note is created by writing it, a note that is too
 // large is opened in something else, and a file that is not a note or not text
 // is left alone.
-type Outcome string
+type ReadOutcome string
 
 const (
 	// Ok is the body coming back.
-	Ok Outcome = "ok"
+	Ok ReadOutcome = "ok"
 	// Missing is a path with no file behind it.
-	Missing Outcome = "missing"
+	Missing ReadOutcome = "missing"
 	// NotANote is a file the vault does not hold as one: an attachment, an
 	// export, whatever the vault's own rules leave alone.
-	NotANote Outcome = "not a note"
+	NotANote ReadOutcome = "not a note"
 	// NotText is a file that is not valid UTF-8.
-	NotText Outcome = "not text"
+	NotText ReadOutcome = "not text"
 	// TooLarge is a file over MaxBytes.
-	TooLarge Outcome = "too large"
+	TooLarge ReadOutcome = "too large"
 	// Unreadable is a note whose frontmatter cannot be read. Such a note can be
 	// neither read nor written from here.
-	Unreadable Outcome = "unreadable"
+	Unreadable ReadOutcome = "unreadable"
 )
 
 // Contents is one note as a read hands it over.
 type Contents struct {
 	Path    string
-	Outcome Outcome
+	Outcome ReadOutcome
 	// Body is the prose below the frontmatter, with every line break written as
 	// one \n. It is empty for every outcome but Ok.
 	Body string
-	// Ref is what the file was when it was asked about, which is before its
-	// bytes were read. It is set for a path the vault holds as a note.
-	Ref domain.FileRef
+	// Fingerprint is what the file was when it was asked about, which is before
+	// its bytes were read. It is set for any path the vault holds, whatever kind
+	// it holds it as, so a note refused on its size still says what it was.
+	Fingerprint domain.Fingerprint
 }
 
 // Read hands over the prose of one note.
@@ -61,6 +62,11 @@ type Contents struct {
 // refused to the other, and the rules for it are written once.
 type Read struct {
 	Readers port.VaultReaders
+}
+
+// NewRead is what a note is read out of: the vault it stands in.
+func NewRead(readers port.VaultReaders) Read {
+	return Read{Readers: readers}
 }
 
 // Execute reads the note at path.
@@ -80,7 +86,7 @@ func (u Read) Execute(ctx context.Context, v domain.Vault, path string) (Content
 	held := err == nil
 	switch {
 	case held:
-		out.Ref = ref
+		out.Fingerprint = ref
 		// A vault holds several kinds of source and this reads one of them.
 		if ref.Kind != domain.KindNote {
 			out.Outcome = NotANote
@@ -120,6 +126,7 @@ func (u Read) Execute(ctx context.Context, v domain.Vault, path string) (Content
 	doc, err := markdown.Open(raw)
 	if err != nil {
 		out.Outcome = Unreadable
+		//nolint:nilerr // a file that will not read is this file's outcome, not the caller's error
 		return out, nil
 	}
 	out.Body = markdown.Normalised(doc.Body())

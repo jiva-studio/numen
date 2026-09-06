@@ -5,15 +5,16 @@
  * over while the core still schedules it.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Goal, Stopped } from '@numen/protocol'
+import { Goal, StopReason } from '@numen/protocol'
 
 import { counting } from './counting'
-import type { Counts } from './counting'
-import { named, scheduling } from './scheduling'
-import type { Asks, Settings } from './scheduling'
-import type { Owing } from './core'
+import type { CardsDueClient } from './counting'
+import { dayNamed } from '@numen/ui'
+import { vaultPresets } from './decks/presets'
+import type { PresetsClient, SettingsMessage } from './decks/presets'
+import type { VaultCardsDue } from './core'
 
-const dated = (day: string): Settings => ({
+const dated = (day: string): SettingsMessage => ({
   goal: Goal.BY_DATE,
   byDate: day,
   minutesADay: 20,
@@ -24,8 +25,8 @@ const dated = (day: string): Settings => ({
   evenLoad: true,
 })
 
-const vault: Owing = {
-  vaultId: '01A',
+const vault: VaultCardsDue = {
+  vault: '01A',
   name: 'Vault',
   path: '/vaults/01A',
   counted: true,
@@ -38,15 +39,15 @@ const vault: Owing = {
   reading: false,
 }
 
-const answering = (settings: Settings): Asks => ({
-  async scheduling() {
+const answering = (settings: SettingsMessage): PresetsClient => ({
+  async getVaultDeckPreset() {
     return {
       preset: {
         path: 'Sanskrit.md',
         title: 'Sanskrit',
         settings,
         problems: [],
-        stopsOn: Stopped.NOTHING,
+        stopsOn: StopReason.NOTHING,
       },
     }
   },
@@ -58,8 +59,8 @@ afterEach(() => {
 
 describe('the day a goal is weighed against', () => {
   it('is the one the application counted', async () => {
-    const cards: Counts = {
-      async *owing() {
+    const cards: CardsDueClient = {
+      async *watchCardsDue() {
         yield { day: '2026-09-04', vaults: [] }
       },
     }
@@ -75,17 +76,17 @@ describe('the day a goal is weighed against', () => {
     // began at four on the fourth is still running.
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 8, 5, 1, 0, 0))
-    expect(named(new Date())).toBe('2026-09-05')
+    expect(dayNamed(new Date())).toBe('2026-09-05')
 
-    const cards: Counts = {
-      async *owing() {
+    const cards: CardsDueClient = {
+      async *watchCardsDue() {
         yield { day: '2026-09-04', vaults: [] }
       },
     }
     const held = counting({ cards, failed: () => {} })
     await held.count()
 
-    const one = scheduling({ presets: answering(dated('2026-09-04')) })
+    const one = vaultPresets({ presets: answering(dated('2026-09-04')) })
     await one.read(vault, held.day.value)
 
     expect(one.presets.value[0]?.paused).toBe('')

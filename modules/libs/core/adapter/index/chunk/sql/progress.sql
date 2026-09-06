@@ -7,7 +7,7 @@
 -- One pass over an index, joining each chunk to its vector by the text it
 -- holds. Counting a nullable column counts the rows where it is present, which
 -- is what "has a vector under this recipe" means.
-SELECT count(*), count(v.fingerprint)
+SELECT count(*), count(v.hash)
   FROM chunks c
-  LEFT JOIN vectors v ON v.fingerprint = unhex(c.hash) AND v.recipe = ?
- WHERE c.vault_id = ? AND c.parent IS NOT NULL;
+  LEFT JOIN vectors v ON v.hash = unhex(c.hash) AND v.recipe = ?
+ WHERE c.vault_id = ? AND c.parent_id IS NOT NULL;

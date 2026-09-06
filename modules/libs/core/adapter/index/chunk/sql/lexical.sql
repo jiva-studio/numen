@@ -7,7 +7,7 @@
 --
 -- The kinds are a JSON array, and an empty one is every kind: a question that
 -- says nothing about what sort of file it wants asks about all of them.
-SELECT c.id, s.path, s.kind, COALESCE(s.text_from, ''), COALESCE(s.hash, ''),
+SELECT c.id, s.path, s.kind, COALESCE(s.producer, ''), COALESCE(s.hash, ''),
        COALESCE(p.start, c.start),
        COALESCE(p.length, c.length),
        COALESCE(p.location, c.location, ''),
@@ -15,7 +15,7 @@ SELECT c.id, s.path, s.kind, COALESCE(s.text_from, ''), COALESCE(s.hash, ''),
 FROM chunks_fts
 JOIN chunks c ON c.id = chunks_fts.rowid
 JOIN sources s ON s.id = c.source_id
-LEFT JOIN chunks p ON p.id = c.parent
+LEFT JOIN chunks p ON p.id = c.parent_id
 WHERE chunks_fts MATCH ?1
   AND c.vault_id = ?2
   AND (json_array_length(?3) = 0 OR s.kind IN (SELECT value FROM json_each(?3)))

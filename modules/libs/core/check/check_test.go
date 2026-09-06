@@ -4,13 +4,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/check"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // checked scans a vault and hands back the checks over it.
@@ -23,8 +23,8 @@ func checked(t *testing.T, notes map[string]string) (check.Checks, domain.Vault)
 	}
 	t.Cleanup(func() { db.Close() })
 
-	scan := usecase.Scan{
-		Readers: filesystem.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
+	scan := vaults.Scan{
+		Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.Queries(), Maintenance: db.Maintenance(),
 	}
 	if _, err := scan.Execute(t.Context(), v); err != nil {
@@ -45,7 +45,7 @@ func run(t *testing.T, l check.Checks, v domain.Vault, named ...domain.Check) []
 func only(found []domain.VaultProblem, check domain.Check) []domain.VaultProblem {
 	var out []domain.VaultProblem
 	for _, p := range found {
-		if p.Check == check {
+		if p.Kind == check {
 			out = append(out, p)
 		}
 	}
@@ -161,7 +161,7 @@ func TestAskingForACheckThatDoesNotExistSaysWhatDoes(t *testing.T) {
 // Adding a check is adding a file, and what runs is whatever the set holds.
 func TestTheSetOfChecksIsWhatRuns(t *testing.T) {
 	l, v := checked(t, map[string]string{"Heat.md": "---\nlinks:\n  - to: Entropy\n---\n# Heat\n"})
-	l.Checks = nil
+	l.List = nil
 
 	if found := run(t, l, v); len(found) != 0 {
 		t.Errorf("an empty set of checks found %+v", found)

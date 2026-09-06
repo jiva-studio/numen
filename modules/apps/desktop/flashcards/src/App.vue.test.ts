@@ -18,8 +18,8 @@ const { counted, started, waits } = vi.hoisted(() => ({
     day: '2026-08-31',
     vaults: [
       {
-        vaultId: 'physics',
-        name: 'Physics',
+        name: 'physics',
+        displayName: 'Physics',
         path: '/vaults/Physics',
         faces: 2,
         due: 0,
@@ -30,8 +30,8 @@ const { counted, started, waits } = vi.hoisted(() => ({
         reading: false,
       },
       {
-        vaultId: 'words',
-        name: 'Words',
+        name: 'words',
+        displayName: 'Words',
         path: '/vaults/Words',
         faces: 4,
         due: 2,
@@ -46,7 +46,7 @@ const { counted, started, waits } = vi.hoisted(() => ({
       },
     ],
   },
-  /** Every sitting the window opened, by what it was opened over. */
+  /** Every session the window opened, by what it was opened over. */
   started: [] as { deck: string }[],
   /** A stream that stays open, so nothing the window follows ever ends. */
   async *waits(): AsyncGenerator<never> {
@@ -58,24 +58,24 @@ vi.mock('./core', async (original) => ({
   ...(await original<typeof import('./core')>()),
   cards: {
     // The vaults, then each of their counts, the way the front door answers.
-    owing: async function* () {
+    watchCardsDue: async function* () {
       yield { day: counted.day, vaults: counted.vaults }
       for (const one of counted.vaults) yield { day: '', vaults: [], counted: one }
     },
-    moving: () => waits(),
-    tasks: () => waits(),
-    asking: async () => ({ unreachable: '' }),
-    reviewed: async () => ({ days: [], due: [], streak: 0, answered: 0 }),
-    scheduling: async () => ({ preset: undefined }),
-    start: async (said: { deck: string }) => {
+    watchReloads: () => waits(),
+    getAgentState: async () => ({ unreachable: '' }),
+    listReviewDays: async () => ({ days: [], due: [], streak: 0, answered: 0 }),
+    getVaultDeckPreset: async () => ({ preset: undefined }),
+    startSession: async (said: { deck: string }) => {
       started.push(said)
       return { run: 'run', asked: [], unwritten: [], skipped: 0 }
     },
   },
+  itself: { watchTasks: () => waits() },
 }))
 
 const { default: App } = await import('./App.vue')
-const Decks = (await import('./Decks.vue')).default
+const Decks = (await import('./decks/Decks.vue')).default
 
 /** The window drawn, with the vaults counted and on the screen. */
 const drawn = async () => {
@@ -109,7 +109,7 @@ const press = async (key: string, more: KeyboardEventInit = {}) => {
 /** The vault the window went into, and nothing while it is still on the list. */
 const opened = (window: VueWrapper): string => {
   const decks = window.findComponent(Decks)
-  return decks.exists() ? (decks.props('vault') as { vaultId: string }).vaultId : ''
+  return decks.exists() ? (decks.props('vault') as { vault: string }).vault : ''
 }
 
 describe('a letter pressed on the vaults', () => {
@@ -147,8 +147,8 @@ describe('a letter pressed on the vaults', () => {
 })
 
 // The letter drawn on a row and the row itself are one act, so a row that
-// cannot be pressed is a letter that does nothing. A sitting opened over a deck
-// owing nothing is an empty sitting, and it mints marks in the vault to hold it.
+// cannot be pressed is a letter that does nothing. A session opened over a deck
+// owing nothing is an empty session, and it mints marks in the vault to hold it.
 describe('a letter pressed on the decks', () => {
   /** The window on the decks of the vault standing at this letter. */
   const on = async (vault: string) => {
@@ -162,7 +162,7 @@ describe('a letter pressed on the decks', () => {
 
     await press('a')
 
-    expect(started).toStrictEqual([{ vaultId: 'words', deck: 'decks/Words.md' }])
+    expect(started).toStrictEqual([{ vault: 'words', deck: 'decks/Words.md' }])
   })
 
   it('sits down to nothing where that deck owes nothing', async () => {
@@ -186,6 +186,6 @@ describe('a letter pressed on the decks', () => {
 
     await press('Enter')
 
-    expect(started).toStrictEqual([{ vaultId: 'words', deck: '' }])
+    expect(started).toStrictEqual([{ vault: 'words', deck: '' }])
   })
 })

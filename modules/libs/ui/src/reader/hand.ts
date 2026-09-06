@@ -7,19 +7,19 @@
  */
 
 /** How far something is to be moved, in CSS pixels. */
-export interface Moved {
+export interface Offset {
   readonly x: number
   readonly y: number
 }
 
 /** What a wheel said, in the pixels it said it in. */
-export interface Turned {
+export interface Wheel {
   readonly x: number
   readonly y: number
 }
 
 /** How far the hand travels before it is dragging and not pressing. */
-export const HELD = 3
+export const DRAG_THRESHOLD = 3
 
 /**
  * How far a wheel moves the row.
@@ -29,9 +29,9 @@ export const HELD = 3
  * the room has both, and then a wheel turned down means down — the way it does
  * everywhere else — and sideways is what a wheel says sideways.
  */
-export function wheeled(turned: Turned, hasBelow: boolean): Moved {
-  if (hasBelow) return { x: turned.x, y: turned.y }
-  return { x: turned.x + turned.y, y: 0 }
+export function wheeled(wheel: Wheel, hasBelow: boolean): Offset {
+  if (hasBelow) return { x: wheel.x, y: wheel.y }
+  return { x: wheel.x + wheel.y, y: 0 }
 }
 
 /**
@@ -42,12 +42,12 @@ export function wheeled(turned: Turned, hasBelow: boolean): Moved {
  * pixel takes the click off whatever was under it.
  */
 export class Hand {
-  private from: Moved | undefined
-  private stood: Moved = { x: 0, y: 0 }
+  private from: Offset | undefined
+  private stood: Offset = { x: 0, y: 0 }
   private moved = false
 
   /** The hand took hold, at a point, with the row standing here. */
-  take(at: Moved, stood: Moved) {
+  take(at: Offset, stood: Offset) {
     this.from = at
     this.stood = stood
     this.moved = false
@@ -70,10 +70,10 @@ export class Hand {
    * The row follows the hand, so it moves against the way the hand went: a hand
    * pulled left brings the pages after this one into the room.
    */
-  to(at: Moved): Moved | undefined {
+  to(at: Offset): Offset | undefined {
     if (!this.from) return undefined
     const by = { x: at.x - this.from.x, y: at.y - this.from.y }
-    if (!this.moved && Math.hypot(by.x, by.y) < HELD) return undefined
+    if (!this.moved && Math.hypot(by.x, by.y) < DRAG_THRESHOLD) return undefined
     this.moved = true
     return { x: this.stood.x - by.x, y: this.stood.y - by.y }
   }

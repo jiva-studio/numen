@@ -9,14 +9,15 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import Heatmap from './Heatmap.vue'
-import { names, ROWS } from './heatmap'
+import { ROWS } from './heatmap'
+import { dayNamed } from '../calendar/day'
 import type { Tally } from './heatmap'
 import type { Words } from './words'
 import { lightness } from '@/fixtures/colour'
 import { DARK, drawnDark } from '@/fixtures/theme'
 
 const meta = {
-  title: 'Generic/Heatmap',
+  title: 'Flash Cards/Heatmap',
   component: Heatmap,
 } satisfies Meta<typeof Heatmap>
 
@@ -49,7 +50,7 @@ function worked(): Map<string, Tally> {
     if (on.getDay() === 0) continue
     const answered = ((back * 7) % 60) + 1
     const again = back % 5 === 0 ? 2 : 0
-    out.set(names(on), {
+    out.set(dayNamed(on), {
       answered,
       again,
       hard: 1,
@@ -159,7 +160,7 @@ export const Nothing: Story = {
 }
 
 /** The day the accounts below are pointed at, which is the one holding now. */
-const TODAY = names(now)
+const TODAY = dayNamed(now)
 
 /** A day drawn on its own, so the cell pointed at is the one holding now. */
 const alone = (tally: Tally): Map<string, Tally> => new Map([[TODAY, tally]])
@@ -175,7 +176,7 @@ const pointsAtToday = async (canvas: HTMLElement): Promise<HTMLElement> => {
   const today = canvas.querySelector('[data-today]')
   await expect(today).not.toBeNull()
   await userEvent.hover(today as Element)
-  const said = canvas.querySelector('[data-summary="account"]')
+  const said = canvas.querySelector('[data-day-summary="account"]')
   await expect(said).not.toBeNull()
   return said as HTMLElement
 }
@@ -196,13 +197,13 @@ export const ADayReviewed: Story = {
   render: room,
   play: async ({ canvasElement }) => {
     const said = await pointsAtToday(canvasElement)
-    await expect(said.querySelector('[data-summary="day"]')?.textContent).toBe(TODAY)
-    await expect(said.querySelector('[data-summary="count"]')?.textContent?.trim()).toBe('26 answered')
+    await expect(said.querySelector('[data-day-summary="day"]')?.textContent).toBe(TODAY)
+    await expect(said.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe('26 answered')
 
-    const four = [...said.querySelectorAll('[data-summary="four"] li')].map((one) => one.textContent)
+    const four = [...said.querySelectorAll('[data-day-summary="four"] li')].map((one) => one.textContent)
     await expect(four).toEqual(['Again2', 'Hard3', 'Good18', 'Easy3'])
 
-    const came = said.querySelector('[data-summary="came"]') as HTMLElement
+    const came = said.querySelector('[data-day-summary="came"]') as HTMLElement
     await expect(came.textContent?.trim()).toBe('83% of cards you are reviewing came back')
 
     // 8rem is the least the panel is drawn at and not the most, so the panel
@@ -226,9 +227,9 @@ export const ADayOfNewCards: Story = {
   render: room,
   play: async ({ canvasElement }) => {
     const said = await pointsAtToday(canvasElement)
-    await expect(said.querySelector('[data-summary="count"]')?.textContent?.trim()).toBe('12 answered')
-    await expect(said.querySelectorAll('[data-summary="four"] li')).toHaveLength(3)
-    await expect(said.querySelector('[data-summary="came"]')).toBeNull()
+    await expect(said.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe('12 answered')
+    await expect(said.querySelectorAll('[data-day-summary="four"] li')).toHaveLength(3)
+    await expect(said.querySelector('[data-day-summary="came"]')).toBeNull()
   },
 }
 
@@ -238,9 +239,9 @@ export const ADayOfNothing: Story = {
   render: room,
   play: async ({ canvasElement }) => {
     const said = await pointsAtToday(canvasElement)
-    await expect(said.querySelector('[data-summary="count"]')?.textContent?.trim()).toBe('Nothing answered')
-    await expect(said.querySelector('[data-summary="four"]')).toBeNull()
-    await expect(said.querySelector('[data-summary="came"]')).toBeNull()
+    await expect(said.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe('Nothing answered')
+    await expect(said.querySelector('[data-day-summary="four"]')).toBeNull()
+    await expect(said.querySelector('[data-day-summary="came"]')).toBeNull()
   },
 }
 

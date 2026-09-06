@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { rowsAndColumns, type Seating, type Widths } from './placement'
 import { DEFAULT_OPTIONS, type PlexOptions } from './options'
 import type { Limits, RoleLimits } from './limits'
-import type { PlacedNode, PlexNode, PlexRelatedSeat } from '../model'
-import { RELATED_SEATS } from '../model'
+import type { PlacedNode, PlexNode } from '../node'
+import { RELATED_SEATS, type PlexRelatedSeat } from '../seat'
 
 const { nodeSize, focusSize, gap, lineGap, focusGap } = DEFAULT_OPTIONS
 

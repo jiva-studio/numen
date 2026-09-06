@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -78,13 +79,19 @@ func TestEveryToolServedSaysWhatItDoes(t *testing.T) {
 	// tools for the list of vaults only where there is a list, so a vault with
 	// somebody looking at it and an installation holding several are asked as
 	// well.
-	for _, core := range []mcp.Core{{}, {View: &window{}}, onTheList(t).core} {
+	attending := func() domain.OpenTabs { return domain.OpenTabs{} }
+	for _, core := range []mcp.Core{
+		{},
+		{View: &window{}},
+		{Attending: attending},
+		onTheList(t).core,
+	} {
 		words, err := mcp.Vocabulary(t.Context(), core)
 		if err != nil {
 			t.Fatal(err)
 		}
 		for name, said := range words {
-			if said.Kind == port.StepCalling {
+			if said.Kind == port.StepToolCall {
 				t.Errorf("%s says nothing about what it does", name)
 			}
 		}
@@ -99,11 +106,11 @@ func TestAnEditNamesTheArgumentsItReplacesTextWith(t *testing.T) {
 		t.Fatal(err)
 	}
 	edit := words["note_edit"]
-	if edit.Stood != "stood" || edit.Becomes != "becomes" {
-		t.Fatalf("an edit replaces %q with %q", edit.Stood, edit.Becomes)
+	if edit.Match != "match" || edit.Text != "text" {
+		t.Fatalf("an edit replaces %q with %q", edit.Match, edit.Text)
 	}
-	for _, tool := range []string{"note_write", "note_read"} {
-		if words[tool].Stood != "" || words[tool].Becomes != "" {
+	for _, tool := range []string{"note_rewrite", "note_read"} {
+		if words[tool].Match != "" || words[tool].Text != "" {
 			t.Errorf("%s claims to replace a stretch", tool)
 		}
 	}

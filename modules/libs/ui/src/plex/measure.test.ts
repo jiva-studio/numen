@@ -6,10 +6,13 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { effectScope } from 'vue'
-import { titleWidths, useTitleWidths } from './measure'
-import type { PlexNode } from './model'
+import { useTitleWidths } from './measure'
+import type { PlexNode } from './node'
 
 const node = (title: string): PlexNode => ({ id: title, title, seat: 'child' })
+
+/** The measurers read once, where nothing on the platform watches a box. */
+const widths = (icon = 0) => useTitleWidths(() => icon).value
 
 const PER_CHARACTER = 7
 
@@ -111,13 +114,13 @@ describe('where there is nothing to measure with', () => {
     // handed no measurer, it draws every box at its widest.
     themed()
     stubStyles()
-    expect(titleWidths()).toBeUndefined()
+    expect(widths()).toBeUndefined()
   })
 
   it('leaves nothing of itself in the page', () => {
     themed()
     stubStyles()
-    titleWidths()
+    widths()
     expect(document.body.children).toHaveLength(0)
   })
 })
@@ -127,7 +130,7 @@ describe('what a title needs', () => {
     stubCanvas()
     stubStyles()
     themed()
-    const measures = titleWidths()!
+    const measures = widths()!
     expect(measures.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20)
   })
 
@@ -137,7 +140,7 @@ describe('what a title needs', () => {
     const { context } = stubCanvas()
     stubStyles()
     themed({ '--numen-font-size': '1.0625rem', '--numen-node-padding': '0.25rem' })
-    const measures = titleWidths()!
+    const measures = widths()!
     expect(measures.node(node('ab'))).toBe(2 * PER_CHARACTER + 8)
     expect(context.font).toBe('17px Test Sans, sans-serif')
   })
@@ -146,7 +149,7 @@ describe('what a title needs', () => {
     stubCanvas()
     stubStyles()
     themed()
-    const measures = titleWidths()!
+    const measures = widths()!
     expect(measures.node(node(''))).toBe(20)
   })
 
@@ -155,7 +158,7 @@ describe('what a title needs', () => {
     stubStyles()
     themed()
     context.measureText = (text: string) => ({ width: text.length * 6.4 }) as TextMetrics
-    const measures = titleWidths()!
+    const measures = widths()!
     expect(measures.node(node('abc'))).toBe(Math.ceil(3 * 6.4) + 20)
   })
 
@@ -163,7 +166,7 @@ describe('what a title needs', () => {
     const { asked } = stubCanvas()
     stubStyles()
     themed()
-    const measures = titleWidths()!
+    const measures = widths()!
 
     measures.node({ id: 'a', title: 'Adapter', seat: 'child' })
     measures.node({ id: 'b', title: 'Adapter', seat: 'parent' })
@@ -180,14 +183,14 @@ describe('where a caller draws an icon', () => {
     stubCanvas()
     stubStyles()
     themed()
-    expect(titleWidths(18)!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20 + 18 + 6)
+    expect(widths(18)!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20 + 18 + 6)
   })
 
   it('keeps neither where no icon is drawn', () => {
     stubCanvas()
     stubStyles()
     themed()
-    expect(titleWidths(0)!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20)
+    expect(widths(0)!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 20)
   })
 })
 
@@ -196,14 +199,14 @@ describe('what a label needs', () => {
     stubCanvas()
     stubStyles()
     themed()
-    expect(titleWidths()!.label('names')).toBe(5 * PER_CHARACTER)
+    expect(widths()!.label('names')).toBe(5 * PER_CHARACTER)
   })
 
   it('is measured in the size a label is set at, not a title', () => {
     const { context } = stubCanvas()
     stubStyles()
     themed()
-    const measures = titleWidths()!
+    const measures = widths()!
 
     measures.node(node('Domain'))
     expect(context.font).toBe('13px Test Sans, sans-serif')
@@ -223,7 +226,7 @@ describe('what a label needs', () => {
         fontBoundingBoxDescent: 2.5,
       }) as TextMetrics
 
-    expect(titleWidths()!.labelDepth).toBe(12)
+    expect(widths()!.labelDepth).toBe(12)
   })
 
   it('is as deep as a label is set, however tall a title is set', () => {
@@ -233,7 +236,7 @@ describe('what a label needs', () => {
     stubStyles()
     themed({ '--numen-font-size': '20px', '--numen-edge-label-size': '11px' })
 
-    expect(titleWidths()!.labelDepth).toBe(11)
+    expect(widths()!.labelDepth).toBe(11)
   })
 })
 

@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlfile"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/writing"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
@@ -18,22 +19,15 @@ var files embed.FS
 var stmt = sqlfile.Load(files, "sql")
 
 // Repository is the collection of vaults. Rows elsewhere point at these, which
-// is why a vault is saved before anything is stored for it.
+// is why a vault is registered before anything is stored for it.
 type Repository struct{ db *sql.DB }
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
-// Save writes what the vault is called and where it is, which the list is the
-// authority on.
-func (r *Repository) Save(ctx context.Context, v domain.Vault) error {
-	_, err := r.db.ExecContext(ctx, stmt.Get("save"), v.ID, v.Name, v.Path)
-	return err
-}
-
 // Register gives the vault a row for other rows to point at. A vault the index
-// already knows keeps the name and the path it holds.
-func (r *Repository) Register(ctx context.Context, v domain.Vault) error {
-	_, err := r.db.ExecContext(ctx, stmt.Get("register"), v.ID, v.Name, v.Path)
+// already knows keeps the row it has.
+func (r *Repository) Register(ctx context.Context, vaultID domain.VaultID) error {
+	_, err := writing.Exec(ctx, r.db, stmt.Get("register"), string(vaultID))
 	return err
 }
 
@@ -41,7 +35,7 @@ func (r *Repository) Register(ctx context.Context, v domain.Vault) error {
 // first: nothing cascades into one, and the numbers four of them are addressed
 // by are read from the tables the last statement takes away.
 var forgetting = []string{
-	"clear_vec", "clear_fts", "clear_parts", "clear_title_names", "clear_heading_names", "delete",
+	"clear_vec", "clear_fts", "clear_sections", "clear_title_names", "clear_heading_names", "delete",
 }
 
 // Forget takes everything the index holds for one vault, and the vault's own
@@ -49,20 +43,20 @@ var forgetting = []string{
 //
 // The vectors stay. One is addressed by the text it was made from, so chunks of
 // several vaults hold the same vector.
-func (r *Repository) Forget(ctx context.Context, vaultID string) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+func (r *Repository) Forget(ctx context.Context, vaultID domain.VaultID) error {
+	tx, err := writing.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
 	defer tx.Rollback()
 
 	var row int64
-	err = tx.QueryRowContext(ctx, stmt.Get("vault_row"), vaultID).Scan(&row)
+	err = tx.QueryRowContext(ctx, stmt.Get("vault_row"), string(vaultID)).Scan(&row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("vault_row: %w", err)
+		return fmt.Errorf("which row this vault is filed under: %w", err)
 	}
 	for _, name := range forgetting {
 		if _, err := tx.ExecContext(ctx, stmt.Get(name), row); err != nil {

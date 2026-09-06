@@ -1,0 +1,16 @@
+{
+  "name": "@numen/depgraph",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Which way the interface modules are allowed to point, and the drawing of which way they do.",
+  "scripts": {
+    "check": "node --test ./*.test.mjs && node check.mjs",
+    "graph": "node graph.mjs"
+  },
+  "devDependencies": {
+    "@vue/compiler-sfc": "^3.5.42",
+    "dependency-cruiser": "^18.2.0",
+    "typescript": "^6.0.3"
+  }
+}

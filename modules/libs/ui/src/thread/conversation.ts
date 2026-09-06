@@ -8,11 +8,12 @@
  * them all as one.
  */
 import { ref, type Ref } from 'vue'
-import { charsWord, type Turn } from './model'
-import type { AgentPort, Place } from './agent'
+import { onNextFrame } from '../lib/clock'
+import { charsWord, type Turn } from './turn'
+import type { AgentPort, Passage } from './agent'
 
 /** The words the panel puts up itself. */
-export interface Wording {
+export interface ConversationStrings {
   /** The line shown before the agent has reached for anything. */
   readonly thinking: string
   /** What is said when the agent could not be reached at all. */
@@ -27,7 +28,7 @@ export interface Conversation {
   readonly working: Ref<boolean>
   readonly ask: (asked: string, focus: string) => Promise<void>
   /** The stretch of a source one line names, for a line that says it opens one. */
-  readonly place: (turn: string) => Place | null
+  readonly passage: (turn: string) => Passage | null
   /** The answer on its way is let go of, and the conversation keeps what arrived. */
   readonly stop: () => void
   /**
@@ -46,11 +47,6 @@ export interface Conversation {
  */
 type Paint = (draw: () => void) => void
 
-const onNextFrame: Paint = (draw) => {
-  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(draw)
-  else draw()
-}
-
 /**
  * A tool as the panel says it. A tool served with a title of its own arrives
  * with one; the rest arrive named the way a program is named.
@@ -59,7 +55,7 @@ const spoken = (tool: string) => tool.replaceAll('_', ' ')
 
 export function conversation(
   agent: AgentPort,
-  words: Wording,
+  words: ConversationStrings,
   /** What this thread of talk is called, for as long as it is open. */
   conversation: string,
   paint: Paint = onNextFrame,
@@ -68,7 +64,7 @@ export function conversation(
   const working = ref(false)
 
   /** The stretch of a source each line about work names, under the line's name. */
-  const places = new Map<string, Place>()
+  const passages = new Map<string, Passage>()
 
   let next = 0
   let inFlight: AbortController | null = null
@@ -119,7 +115,7 @@ export function conversation(
 
     const takeDown = () => {
       drop(doing)
-      places.delete(doing)
+      passages.delete(doing)
       up = false
     }
 
@@ -131,7 +127,7 @@ export function conversation(
         about,
         aside: charsWord(written),
         state,
-        ...(places.has(doing) ? { opens: true } : {}),
+        ...(passages.has(doing) ? { opens: true } : {}),
       })
       up = true
     }
@@ -202,7 +198,7 @@ export function conversation(
             show()
             break
 
-          case 'doing':
+          case 'toolCall':
             settleAnswer()
             waiting(false)
             calls.add(`${step.tool}\u0000${step.about}`)
@@ -210,8 +206,8 @@ export function conversation(
             about = step.about
             // A call naming a stretch of a source's text names somewhere the
             // line can be pressed to open.
-            if (step.place?.length) places.set(doing, step.place)
-            else places.delete(doing)
+            if (step.passage?.length) passages.set(doing, step.passage)
+            else passages.delete(doing)
             nowDoing('arriving', step.written)
             break
 
@@ -253,6 +249,9 @@ export function conversation(
         else if (!said) put({ id: `${next++}`, voice: 'answered', text: words.nothing })
       }
     } catch {
+      // The turn ends however it went wrong, and the person is told it could
+      // not be reached. That is what all but one of these are; the exception is
+      // a fault in the reading above, and this cannot tell the two apart.
       takeDown()
       waiting(false)
       settleAnswer()
@@ -290,5 +289,12 @@ export function conversation(
     }
   }
 
-  return { turns, working, ask, place: (turn: string) => places.get(turn) ?? null, stop, finish }
+  return {
+    turns,
+    working,
+    ask,
+    passage: (turn: string) => passages.get(turn) ?? null,
+    stop,
+    finish,
+  }
 }

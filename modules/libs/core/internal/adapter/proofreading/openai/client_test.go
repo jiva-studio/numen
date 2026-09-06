@@ -68,9 +68,9 @@ func reply(w http.ResponseWriter, text string) {
 }
 
 func page(at int, lines ...string) proofread.Batch {
-	p := proofread.Batch{At: at}
+	p := proofread.Batch{Number: at}
 	for i, text := range lines {
-		p.Lines = append(p.Lines, proofread.Line{At: at*100 + i, Text: text})
+		p.Lines = append(p.Lines, proofread.Line{Number: at*100 + i, Text: text})
 	}
 	return p
 }
@@ -90,7 +90,7 @@ func TestTheServiceIsAskedAboutOnePageWithTheInstruction(t *testing.T) {
 		reply(w, "700|the first line")
 	})
 
-	if _, err := client(t, s.URL).Read(context.Background(), []proofread.Batch{one}); err != nil {
+	if _, err := client(t, s.URL).Proofread(t.Context(), []proofread.Batch{one}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -133,7 +133,7 @@ func TestEveryPageComesBackUnderItsOwnNumber(t *testing.T) {
 		reply(w, asked)
 	})
 
-	got, err := client(t, s.URL).Read(context.Background(), pages)
+	got, err := client(t, s.URL).Proofread(t.Context(), pages)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,14 +141,14 @@ func TestEveryPageComesBackUnderItsOwnNumber(t *testing.T) {
 		t.Fatalf("got %d answers: %v", len(got), got)
 	}
 	for _, p := range pages {
-		if p.At == 3 {
+		if p.Number == 3 {
 			if _, ok := got[3]; ok {
 				t.Errorf("page 3 was answered: %q", got[3])
 			}
 			continue
 		}
-		if got[p.At] != proofread.Ask(p) {
-			t.Errorf("page %d came back as %q", p.At, got[p.At])
+		if got[p.Number] != proofread.Ask(p) {
+			t.Errorf("page %d came back as %q", p.Number, got[p.Number])
 		}
 	}
 }
@@ -161,7 +161,7 @@ func TestARefusedRunNamesTheStatusAndNotTheKey(t *testing.T) {
 				fmt.Fprintf(w, "the service says no, and quotes %s back", r.Header.Get("Authorization"))
 			})
 
-			got, err := client(t, s.URL).Read(context.Background(), []proofread.Batch{page(1, "a line")})
+			got, err := client(t, s.URL).Proofread(t.Context(), []proofread.Batch{page(1, "a line")})
 			if err == nil {
 				t.Fatal("no error")
 			}
@@ -192,13 +192,13 @@ func TestACancelledContextStopsTheRun(t *testing.T) {
 	// server, so it runs before the server is closed.
 	t.Cleanup(func() { close(release) })
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	go func() {
 		<-arrived
 		cancel()
 	}()
 
-	_, err := client(t, s.URL).Read(ctx, []proofread.Batch{page(1, "a line"), page(2, "another")})
+	_, err := client(t, s.URL).Proofread(ctx, []proofread.Batch{page(1, "a line"), page(2, "another")})
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("want a cancelled context, got %v", err)
 	}

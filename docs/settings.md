@@ -6,7 +6,7 @@ Every field left out keeps its default. A file naming one setting is a valid fil
 
 A setting the window draws a control for is turned by that control, which patches the file as an object and leaves every other byte of it where it was. The window also opens the file whole, in a tab of its own, from the settings page: what is typed there is written as it stands, and a file the settings cannot be read out of is refused with where in it the trouble is.
 
-This document is every section of the file, and it is the one place a key is written down. Where what a key does is specified elsewhere, the page that specifies it is linked from the section.
+This document is every section of the file, and says of each section which keys are worth turning and why. The complete list is the manual's [settings reference](../modules/apps/docs/src/content/docs/reference.md), which is written out of the code itself and checked against it on every build — `indexing.recognition` alone holds twenty-six keys, and three of them are below. Where what a key does is specified elsewhere, the page that specifies it is linked from the section.
 
 ## Appearance
 
@@ -74,7 +74,7 @@ On, a node in the plex hangs the parts of the note it stands for under its box �
 | --- | --- |
 | `day_starts` | the hour a day of review begins at, on the clock on the wall. `04:00`, and it goes from `00:00` to `12:00`. |
 
-An answer given before that hour is written into the day before: a person answering at one in the morning is finishing the evening they sat down in, and a boundary at midnight would cut one sitting in two. The hour is an hour on the wall, so a day is read where a person reads it — [Flashcards](flashcards.md).
+An answer given before that hour is written into the day before: a person answering at one in the morning is finishing the evening they sat down in, and a boundary at midnight would cut one session in two. The hour is an hour on the wall, so a day is read where a person reads it — [Flashcards](flashcards.md).
 
 Anything that is not an hour of the day is said, and `04:00` stands. The file is left as the person wrote it.
 
@@ -144,7 +144,7 @@ A model gathers what a text says either into the token that opens it or across a
 
 Where a model's own output is already one vector per text, nothing is pooled and this says nothing about it.
 
-## The two stations
+## The two providers
 
 Each is `{"use": "local" | "service", "local": {…}, "service": {…}}`. The sections not in use are kept, so the other is a word away.
 
@@ -155,7 +155,7 @@ Trying the other for an afternoon costs nothing under `query`. Under `indexing` 
 - **Filling an index** is a pass over the whole vault, once. A service does in an hour what this machine does in a day.
 - **Asking a question** is twenty tokens, all day. This machine answers in milliseconds where a network is a round trip — and answers with no network at all.
 
-Two stations are asked whether they are one model: both embed the same short text at startup, and vectors that do not land together mean the second is not used. Nothing in this file could show it — two stations name a model by whatever each of them calls it.
+Two providers are asked whether they are one model: both embed the same short text at startup, and vectors that do not land together mean the second is not used. Nothing in this file could show it — two providers name a model by whatever each of them calls it.
 
 ### local
 
@@ -348,9 +348,9 @@ The boundary the detector answers with is the text's own outline drawn inside th
 | --- | --- |
 | `transcribe_recordings` | whether a recording the vault holds no transcript for is listened to on its own. On. A vault of a hundred hours is a day of a machine, and turning this off leaves it to the hand — the command line's `transcribe`, and the tool an agent asks through. |
 | `transcribe_under_mb` | how large a recording may be and still be listened to unasked, in megabytes. 300, which is a talk of a few hours. A larger one waits to be asked for by name, because a folder of albums is days of a machine. A negative number is no limit. |
-| `runtime` | the ONNX Runtime shared library. Empty takes the one beside the application, and then the one the platform holds. |
+| `runtime` | the ONNX Runtime shared library. Empty takes the one beside the application, then the one the platform holds, and then the published one, fetched and checked against the sum this build carries. One process opens one, and both a recognition and a transcription run their models through it. |
 | `dir` | a folder holding the models. Empty takes the folder beside the application, and then the download cache. |
-| `download` | whether what is not on this machine may be fetched. |
+| `download` | whether what is not on this machine may be fetched. A model is fetched from the address named here and checked against no sum: the runtime's address is this build's and carries one, and a model's is the person's own setting, which nobody but them could publish a sum for. A model named here is a model trusted. |
 | `threads` | how many threads one model may use. 4. |
 | `model.name` | what the transducer is called in the record kept beside a transcript. |
 | `model.from` | the folder its four files are fetched from. The encoder, the decoder, the joiner and the tokens are one model: three graphs from two exports write nothing anybody can read. |
@@ -412,7 +412,7 @@ An installation naming no profile proofreads nothing, and nothing asks for a key
 | `max_edit_distance` | how far a correction may move a line's letters and still be a correction: the Levenshtein distance between what is left after spaces, punctuation, symbols, diacritics and case come off, as a share of the longer of the two. 0.30. A correction standing further apart is dropped and that line is left as it was. It stands above the profiles because it is one threshold for the installation: how far a correction may move says nothing about what it was asked for through. |
 | `profiles` | a map of name to profile. The name is what a consumer says under `proofread.with`, and it is the person's own word. |
 
-A profile is flat: every key sits at the profile's own level, and `use` says which of them apply. A key `use` does not apply to is ignored, so a profile keeps a station it is not on and the other is a word away.
+A profile is flat: every key sits at the profile's own level, and `use` says which of them apply. A key `use` does not apply to is ignored, so a profile keeps the keys of the one it is not reached through and the other is a word away.
 
 | | |
 | --- | --- |
@@ -472,7 +472,7 @@ The key is in the environment, under the name `key_env` gives. Nothing in this f
 }
 ```
 
-A scan goes forty printed lines to a request, on a queue at half the price that survives a restart. A page ends where a page ends, so nothing carries over and `overlap` is 0. Speech goes twenty cues to a request, answered by a subscription already paid for, one batch at a time and no key at all; a sentence runs across the cue a batch ends on, so two cues are shared with the batch on either side.
+A scan goes forty printed lines to a request, on a queue at half the price that survives a restart. A page ends where a page ends, so nothing carries over and `overlap` is 0. Speech goes sixty cues to a request, answered by a subscription already paid for, three batches at a time and no key at all; a sentence runs across the cue a batch ends on, so two cues are shared with the batch on either side.
 
 A `with` naming a profile `profiles` does not carry is an error at startup. An installation that meant to proofread and misspelled the name is told so, and does not run quietly proofreading nothing.
 
@@ -500,7 +500,7 @@ A `with` naming a profile `profiles` does not carry is an error at startup. An i
 | `use` | which agent answers. `claude` is Claude Code, reached by starting it and reading what it prints. Empty answers with none, and the panel says so. |
 | `serve_tools` | whether the tools go on a port, which is how an agent a person runs themselves reaches this vault. Off. The agent `use` names is served either way, so an installation naming one has the port open for it. |
 | `claude.command` | what starts it: the command line's path, and anything it is started through. Empty asks the path, then the folders its installers write to. Worth naming for an installation those folders do not cover, and for one machine carrying several. |
-| `claude.model` | which of its models answers — `opus`, `sonnet`, or a full name. Empty takes whatever that installation answers with. Worth naming because a panel is read while somebody waits. |
+| `claude.model` | which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. Empty takes whatever that installation answers with. Worth naming because a panel is read while somebody waits. |
 | `claude.max_steps` | how many times it may go to the model before it is stopped. 30. |
 | `claude.reads_hooks_and_skills` | whether it reads what this machine holds configured for it: hooks, skills, standing instructions in `CLAUDE.md`, plugins. Off. A hook is a shell command Claude Code runs itself, and a question typed into a panel is not asking for one. On, what is configured for this person is read; what a vault carries is refused either way, since a vault arrives from elsewhere. |
 

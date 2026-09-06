@@ -8,17 +8,18 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
-	format "github.com/jiva-studio/numen/modules/libs/core/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // The two vaults every test here uses. They share no word: a heading renamed in
@@ -63,15 +64,15 @@ var (
 	}
 )
 
-// vaults is two vaults on disk, indexed, and the ports every scenario is built
+// vaulted is two vaults on disk, indexed, and the ports every scenario is built
 // out of.
-type vaults struct {
+type vaulted struct {
 	db     *index.DB
 	first  domain.Vault
 	second domain.Vault
 }
 
-func indexed(t *testing.T) vaults {
+func indexed(t *testing.T) vaulted {
 	t.Helper()
 	ctx := t.Context()
 
@@ -81,11 +82,11 @@ func indexed(t *testing.T) vaults {
 	}
 	t.Cleanup(func() { db.Close() })
 
-	scan := usecase.Scan{
-		Readers: filesystem.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
-		Known: db.NoteQueries(), Maintenance: db.Statistics(),
+	scan := vaults.Scan{
+		Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes(),
+		Known: db.NoteQueries(), Maintenance: db.Maintenance(),
 	}
-	out := vaults{db: db}
+	out := vaulted{db: db}
 	for i, notes := range []map[string]string{animals, minerals} {
 		v := testsupport.NewVault(t, notes)
 		if _, err := scan.Execute(ctx, v); err != nil {
@@ -100,17 +101,21 @@ func indexed(t *testing.T) vaults {
 	return out
 }
 
-func (vs vaults) index(t *testing.T) func(context.Context, domain.Vault, []string) error {
+func (vs vaulted) index(t *testing.T) func(context.Context, domain.Vault, []string) error {
 	t.Helper()
-	scan := usecase.Scan{
-		Readers: filesystem.Readers{}, Vaults: vs.db.Vaults(), Notes: vs.db.Notes(),
-		Known: vs.db.NoteQueries(), Maintenance: vs.db.Statistics(),
+	scan := vaults.Scan{
+		Readers: filesystem.VaultReaders{}, Vaults: vs.db.Vaults(), Notes: vs.db.Notes(),
+		Known: vs.db.NoteQueries(), Maintenance: vs.db.Maintenance(),
 	}
 	return func(ctx context.Context, v domain.Vault, _ []string) error {
 		_, err := scan.Execute(ctx, v)
 		return err
 	}
 }
+
+// unlevelled brings nothing level: these tests read the file back and not the
+// index. The ones that ask the index level it with a whole scan.
+func unlevelled(context.Context, domain.Vault, []string) error { return nil }
 
 func read(t *testing.T, v domain.Vault, path string) string {
 	t.Helper()
@@ -139,19 +144,21 @@ func TestADeckReadAndWrittenBackIsTheFileItWas(t *testing.T) {
 	vs := indexed(t)
 	before := read(t, vs.first, "decks/Mammals.md")
 
-	got, err := cards.Read{Readers: filesystem.Readers{}}.Deck(t.Context(), vs.first, "decks/Mammals.md")
+	got, err := cards.Read{Readers: filesystem.VaultReaders{}}.Deck(t.Context(), vs.first, "decks/Mammals.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
 	if got.Outcome != note.Ok || got.Type != domain.TypeDeck {
 		t.Fatalf("outcome = %q, type = %q", got.Outcome, got.Type)
 	}
-	if len(got.Deck.Cards) != 2 || got.Deck.Preamble != "\nCards I am learning.\n\n" {
-		t.Fatalf("deck = %+v", got.Deck)
+	if len(got.Body.Cards) != 2 || got.Body.Preamble != "\nCards I am learning.\n\n" {
+		t.Fatalf("deck = %+v", got.Body)
 	}
 
-	w := cards.Write{Readers: filesystem.Readers{}, Writers: filesystem.Writers{}}
-	if _, err := w.Deck(t.Context(), vs.first, "decks/Mammals.md", prose(t, before), got.Ref); err != nil {
+	w := cards.NewWrite(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), unlevelled,
+		time.Now)
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Mammals.md", prose(t, before), got.Fingerprint); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	if after := read(t, vs.first, "decks/Mammals.md"); after != before {
@@ -177,31 +184,31 @@ func TestACardWritingItsFirstFieldTwiceIsOneFieldWrittenTwice(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	u := cards.Read{Readers: filesystem.Readers{}, Links: vs.db.NoteQueries()}
+	u := cards.Read{Readers: filesystem.VaultReaders{}, Links: vs.db.NoteQueries()}
 	got, err := u.Deck(t.Context(), vs.first, "decks/Mammals.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
 
 	var filed []format.Problem
-	for _, p := range got.Deck.Problems {
-		if p.Check == format.CheckTwoValues {
+	for _, p := range got.Body.Problems {
+		if p.Fault == format.FaultTwoValues {
 			filed = append(filed, p)
 		}
 	}
 	if len(filed) != 1 {
-		t.Fatalf("problems = %+v, want the one card that writes it twice", got.Deck.Problems)
+		t.Fatalf("problems = %+v, want the one card that writes it twice", got.Body.Problems)
 	}
 	if filed[0].Card != 0 || filed[0].Field != "Name" {
 		t.Errorf("problem = %+v, want it against the first card and Name", filed[0])
 	}
 
 	// Both are kept, and the first stands.
-	if held, ok := got.Deck.Cards[0].Value("Name"); !ok || held != "Llama" {
+	if held, ok := got.Body.Cards[0].Value("Name"); !ok || held != "Llama" {
 		t.Errorf("Name = %q, want the first", held)
 	}
-	if len(got.Deck.Cards) != 2 {
-		t.Errorf("cards = %+v", got.Deck.Cards)
+	if len(got.Body.Cards) != 2 {
+		t.Errorf("cards = %+v", got.Body.Cards)
 	}
 }
 
@@ -217,20 +224,20 @@ func TestACardNamingANoteThatIsNotAStencilIsReported(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	u := cards.Read{Readers: filesystem.Readers{}, Links: vs.db.NoteQueries()}
+	u := cards.Read{Readers: filesystem.VaultReaders{}, Links: vs.db.NoteQueries()}
 	got, err := u.Deck(t.Context(), vs.first, "decks/Loose.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
 
 	var filed []format.Problem
-	for _, p := range got.Deck.Problems {
-		if p.Check == format.CheckNotAStencil {
+	for _, p := range got.Body.Problems {
+		if p.Fault == format.FaultNotAStencil {
 			filed = append(filed, p)
 		}
 	}
 	if len(filed) != 1 {
-		t.Fatalf("problems = %+v, want the one card naming a note that is not a stencil", got.Deck.Problems)
+		t.Fatalf("problems = %+v, want the one card naming a note that is not a stencil", got.Body.Problems)
 	}
 	if filed[0].Card != 1 {
 		t.Errorf("problem = %+v, want it against the second card", filed[0])
@@ -239,8 +246,8 @@ func TestACardNamingANoteThatIsNotAStencilIsReported(t *testing.T) {
 		t.Errorf("the note was not named: %q", filed[0].Detail)
 	}
 	// The values are read either way.
-	if held, ok := got.Deck.Cards[1].Value("Height"); !ok || held == "" {
-		t.Errorf("the card was not read: %+v", got.Deck.Cards[1])
+	if held, ok := got.Body.Cards[1].Value("Height"); !ok || held == "" {
+		t.Errorf("the card was not read: %+v", got.Body.Cards[1])
 	}
 }
 
@@ -267,7 +274,7 @@ func TestADeckOverTheBoundIsNotRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	counted := &counting{VaultReaders: filesystem.Readers{}}
+	counted := &counting{VaultReaders: filesystem.VaultReaders{}}
 	got, err := cards.Read{Readers: counted}.Deck(t.Context(), vs.first, "decks/Mammals.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
@@ -278,11 +285,11 @@ func TestADeckOverTheBoundIsNotRead(t *testing.T) {
 	if counted.reads != 0 {
 		t.Errorf("the file was opened %d times", counted.reads)
 	}
-	if len(got.Deck.Problems) != 1 || got.Deck.Problems[0].Check != format.CheckTooLarge {
-		t.Errorf("problems = %+v", got.Deck.Problems)
+	if len(got.Body.Problems) != 1 || got.Body.Problems[0].Fault != format.FaultTooLarge {
+		t.Errorf("problems = %+v", got.Body.Problems)
 	}
-	if !strings.Contains(got.Deck.Problems[0].Detail, "8388608") {
-		t.Errorf("the bound was not said: %q", got.Deck.Problems[0].Detail)
+	if !strings.Contains(got.Body.Problems[0].Detail, "8388608") {
+		t.Errorf("the bound was not said: %q", got.Body.Problems[0].Detail)
 	}
 }
 
@@ -296,7 +303,7 @@ func TestAStencilIsBoundedAsANote(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := cards.Read{Readers: filesystem.Readers{}}.Stencil(t.Context(), vs.first, "Animal.md")
+	got, err := cards.Read{Readers: filesystem.VaultReaders{}}.Stencil(t.Context(), vs.first, "Animal.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -309,22 +316,24 @@ func TestAStencilIsBoundedAsANote(t *testing.T) {
 // file outranks a caller that read it, thought about it, and arrived late.
 func TestADeckThatChangedSinceItWasReadIsNotWrittenOver(t *testing.T) {
 	vs := indexed(t)
-	w := cards.Write{Readers: filesystem.Readers{}, Writers: filesystem.Writers{}}
+	w := cards.NewWrite(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), unlevelled,
+		time.Now)
 
-	first, err := cards.Read{Readers: filesystem.Readers{}}.Deck(t.Context(), vs.first, "decks/Birds.md")
+	first, err := cards.Read{Readers: filesystem.VaultReaders{}}.Deck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := w.Deck(t.Context(), vs.first, "decks/Birds.md",
-		"## Wren\n\n[[Animal]]\n\n### Height\n\nabout 5\"\n", first.Ref); err != nil {
+		"## Wren\n\n[[Animal]]\n\n### Height\n\nabout 5\"\n", first.Fingerprint); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	written := read(t, vs.first, "decks/Birds.md")
 
 	// The same fingerprint again is a caller holding what the file no longer is.
 	_, err = w.Deck(t.Context(), vs.first, "decks/Birds.md",
-		"## Wren\n\n[[Animal]]\n\n### Height\n\nsomething else\n", first.Ref)
-	if !errors.Is(err, port.ErrChanged) {
+		"## Wren\n\n[[Animal]]\n\n### Height\n\nsomething else\n", first.Fingerprint)
+	if !errors.Is(err, port.ErrStale) {
 		t.Fatalf("write = %v, want it refused", err)
 	}
 	if after := read(t, vs.first, "decks/Birds.md"); after != written {
@@ -337,7 +346,7 @@ func TestADeckThatChangedSinceItWasReadIsNotWrittenOver(t *testing.T) {
 // it.
 func TestWhatIsMadeSaysWhatItIs(t *testing.T) {
 	vs := indexed(t)
-	u := cards.Create{Writers: filesystem.Writers{}, Index: vs.index(t)}
+	u := cards.NewCreate(filesystem.VaultWriters{}, vs.index(t), time.Now)
 
 	deck, err := u.Deck(t.Context(), vs.first, cards.New{Title: "Birds of prey", Folder: "decks"})
 	if err != nil {
@@ -374,7 +383,7 @@ func TestWhatIsMadeSaysWhatItIs(t *testing.T) {
 // settings, and every key it does not carry stands at the default.
 func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
 	vs := indexed(t)
-	u := cards.Create{Writers: filesystem.Writers{}, Index: vs.index(t)}
+	u := cards.NewCreate(filesystem.VaultWriters{}, vs.index(t), time.Now)
 
 	made, err := u.Preset(t.Context(), vs.first, cards.New{Title: "Prosody", Folder: "presets"})
 	if err != nil {
@@ -406,7 +415,7 @@ func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
 // with one and nothing is written where there is none.
 func TestAStencilIsMadeWithAFirstField(t *testing.T) {
 	vs := indexed(t)
-	u := cards.Create{Writers: filesystem.Writers{}, Index: vs.index(t)}
+	u := cards.NewCreate(filesystem.VaultWriters{}, vs.index(t), time.Now)
 
 	if _, err := u.Stencil(t.Context(), vs.first, cards.New{Title: "Bird"}); !errors.Is(
 		err, cards.ErrNoFields,
@@ -427,7 +436,7 @@ func TestAStencilIsMadeWithAFirstField(t *testing.T) {
 // stencils, and from no other vault's.
 func TestTheStencilsOfOneVaultAreListed(t *testing.T) {
 	vs := indexed(t)
-	u := cards.List{Readers: filesystem.Readers{}, Notes: vs.db.NoteQueries()}
+	u := cards.List{Readers: filesystem.VaultReaders{}, Notes: vs.db.NoteQueries()}
 
 	got, held, err := u.Execute(t.Context(), vs.first, 0)
 	if err != nil {
@@ -463,7 +472,7 @@ func TestTheStencilsOfOneVaultAreListed(t *testing.T) {
 // count still says how many the vault holds.
 func TestAListReadsNoMoreThanItAnswersWith(t *testing.T) {
 	vs := indexed(t)
-	counted := &counting{VaultReaders: filesystem.Readers{}}
+	counted := &counting{VaultReaders: filesystem.VaultReaders{}}
 
 	got, held, err := (cards.List{Readers: counted, Notes: vs.db.NoteQueries()}).
 		Execute(t.Context(), vs.first, 1)
@@ -529,10 +538,10 @@ type refusingWriter struct {
 }
 
 func (w refusingWriter) Write(
-	ctx context.Context, path string, content []byte, fingerprint domain.FileRef,
-) (domain.FileRef, error) {
+	ctx context.Context, path string, content []byte, fingerprint domain.Fingerprint,
+) (domain.Fingerprint, error) {
 	if path == w.path {
-		return domain.FileRef{}, errRefused
+		return domain.Fingerprint{}, errRefused
 	}
 	return w.VaultWriter.Write(ctx, path, content, fingerprint)
 }

@@ -1,13 +1,10 @@
 package embedding
 
-import "math"
+import (
+	"math"
 
-// Int8Scale is what one unit of an int8 dimension is worth. It is a constant,
-// so the same float32 quantises to the same byte in every run and a vector
-// stored today is comparable with one stored after the next book is added.
-//
-// 0.4 is the scale a unit-length 1024-dimension vector is quantised at.
-const Int8Scale = 0.4
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
 
 // Bits keeps one bit per dimension: the sign, which is the coarse pass's whole
 // question. Dimension i is bit 7-i%8 of byte i/8, so the first dimension is the
@@ -39,12 +36,14 @@ func Coarse(q []int8) []byte {
 	return out
 }
 
-// Bytes keeps one byte per dimension, for the rerank. Values beyond what
-// Int8Scale reaches are clamped; a unit-length vector puts almost nothing there.
+// Bytes keeps one byte per dimension, for the rerank, on the grid
+// port.Int8Scale sets. Values beyond what that scale reaches are clamped, and a
+// clamped dimension is the one loss quantisation here can do that rounding
+// cannot undo.
 func Bytes(v []float32) []int8 {
 	out := make([]int8, len(v))
 	for i, x := range v {
-		q := math.Round(float64(x) / Int8Scale * 127)
+		q := math.Round(float64(x) / port.Int8Scale * 127)
 		switch {
 		case q > 127:
 			q = 127
@@ -56,13 +55,12 @@ func Bytes(v []float32) []int8 {
 	return out
 }
 
-// Floats reads bytes back as float32. The result differs from what was
-// quantised by up to half a step, and that difference is what the rerank
-// tolerates.
-func Floats(q []int8) []float32 {
-	out := make([]float32, len(q))
-	for i, b := range q {
-		out[i] = float32(float64(b) / 127 * Int8Scale)
+// Dimensions reads a stored vector back as the dimensions it holds, one per
+// byte. It is what Bytes wrote, arriving from storage as unsigned.
+func Dimensions(stored []byte) []int8 {
+	out := make([]int8, len(stored))
+	for i, b := range stored {
+		out[i] = int8(b)
 	}
 	return out
 }

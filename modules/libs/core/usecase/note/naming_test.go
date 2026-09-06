@@ -11,8 +11,8 @@ import (
 func TestWhatARenameBringsIntoLine(t *testing.T) {
 	t.Parallel()
 	for name, c := range map[string]struct {
-		sync   note.Sync
-		by     note.Naming
+		sync   note.SyncTitleAndFilename
+		by     note.NameSource
 		moves  bool
 		writes bool
 	}{

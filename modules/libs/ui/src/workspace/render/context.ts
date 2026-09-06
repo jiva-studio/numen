@@ -3,9 +3,9 @@
  * A branch holds branches, so there is no depth to thread anything through.
  */
 import type { InjectionKey, Ref } from 'vue'
-import type { NodeId, Tab, TabId } from '../model'
+import type { NodeId, Tab, TabId } from '../node'
 
-export interface Workspacing {
+export interface WorkspaceContext {
   /** The tab an identity stands for, and nothing for one the workspace has lost. */
   readonly tabOf: (id: TabId) => Tab | undefined
   /** The pane a tab opens into. */
@@ -20,4 +20,4 @@ export interface Workspacing {
   readonly show: (tab: TabId) => void
 }
 
-export const WORKSPACING = Symbol('workspacing') as InjectionKey<Ref<Workspacing>>
+export const WORKSPACE_CONTEXT = Symbol('workspace') as InjectionKey<Ref<WorkspaceContext>>

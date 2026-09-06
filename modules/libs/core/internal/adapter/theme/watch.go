@@ -14,7 +14,7 @@ import (
 // ErrNoFolder is a catalogue with nowhere to read the person's themes from.
 var ErrNoFolder = errors.New("there is no themes folder")
 
-// Backlog is how many events are held while they are being folded. The folder
+// Backlog is how many events are held while they are being debounced. The folder
 // holds a handful of files.
 const Backlog = 256
 
@@ -41,21 +41,21 @@ func (c Catalogue) Watching(ctx context.Context, hold time.Duration) (<-chan []s
 		return nil, fmt.Errorf("watch %s: %w", c.dir, err)
 	}
 
-	folded := make(chan []string)
+	debounced := make(chan []string)
 	go func() {
 		defer notify.Stop(raw)
-		defer close(folded)
-		c.fold(ctx, hold, raw, folded)
+		defer close(debounced)
+		c.debounce(ctx, hold, raw, debounced)
 	}()
-	return folded, nil
+	return debounced, nil
 }
 
-// fold collects events for a hold and reports each theme once.
+// debounce collects events for a hold and reports each theme once.
 //
 // Reading the events and delivering them are kept apart: whoever listens takes
 // as long as it takes, and the operating system goes on producing events
 // meanwhile.
-func (c Catalogue) fold(
+func (c Catalogue) debounce(
 	ctx context.Context,
 	hold time.Duration,
 	raw <-chan notify.EventInfo,

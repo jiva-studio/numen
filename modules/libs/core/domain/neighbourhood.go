@@ -1,23 +1,23 @@
 package domain
 
-// Seat is where a note sits relative to the one being looked at.
+// Relation is where a note sits relative to the one being looked at.
 //
 // It is not a link role. A role is written in a file and says what one link is
 // for; a seat is worked out from both ends of every link at once, and one of
 // them — the sibling — is written nowhere at all.
-type Seat string
+type Relation string
 
 const (
-	SeatParent  Seat = "parent"
-	SeatChild   Seat = "child"
-	SeatJump    Seat = "jump"
-	SeatSibling Seat = "sibling"
+	SeatParent  Relation = "parent"
+	SeatChild   Relation = "child"
+	SeatJump    Relation = "jump"
+	SeatSibling Relation = "sibling"
 )
 
 // SeatRank orders the seats a note can take. A note can answer to two of them —
 // a pair that are each other's parent, a jump between siblings — and can be
 // shown in only one place, so it takes the first it qualifies for.
-func SeatRank(s Seat) int {
+func SeatRank(s Relation) int {
 	switch s {
 	case SeatParent:
 		return 0
@@ -42,10 +42,10 @@ type NoteRef struct {
 	ID string
 }
 
-// Seated is a note, where it sits, and what the link that seated it says.
-type Seated struct {
+// Neighbour is a note, where it sits, and what the link that seated it says.
+type Neighbour struct {
 	NoteRef
-	Seat Seat
+	Seat Relation
 
 	// Label is what the person wrote on the link.
 	Label string
@@ -54,20 +54,20 @@ type Seated struct {
 	// words. Label is then the word the note in focus wrote for it.
 	Mutual bool
 
-	// Through is the note the relationship runs from, when that is not the one
+	// Parent is the note the relationship runs from, when that is not the one
 	// in focus. A sibling is another child of a shared parent, and which parent
 	// is a fact about the vault.
-	Through string
+	Parent string
 }
 
 // Neighbourhood is one note and everything joined to it, seen from that note.
 type Neighbourhood struct {
 	Focus   NoteRef
-	Related []Seated
+	Related []Neighbour
 }
 
 // Take seats a note. The focus is not related to itself.
-func (n *Neighbourhood) Take(note NoteRef, seated Seated) {
+func (n *Neighbourhood) Take(note NoteRef, seated Neighbour) {
 	if note.Path == n.Focus.Path {
 		return
 	}

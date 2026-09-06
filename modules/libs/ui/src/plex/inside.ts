@@ -7,7 +7,7 @@
  */
 import { clamp01, easeOut, lerp } from './arrange'
 import type { PlexOptions, Size } from './arrange'
-import type { PlacedNode, Point } from './model'
+import type { PlacedNode, Position } from './node'
 
 /**
  * How far behind the one above it each part sets off, as a fraction of the
@@ -28,8 +28,8 @@ const DEEPEST = 3
 /** How far below its place a part sets off, as a fraction of its own height. */
 const RISE = 0.7
 
-/** How wide a mark at an edge of the ground is drawn, and how deep. */
-const MARK = { wide: 4, deep: 2.5 }
+/** How wide an arrow at an edge of the ground is drawn, and how deep. */
+const ARROW = { wide: 4, deep: 2.5 }
 
 /** The ground kept clear around the parts, as a fraction of a part's height. */
 const PAD = 0.25
@@ -73,8 +73,8 @@ export interface HungParts {
   readonly height: number
 }
 
-/** What settling how wide the parts are drawn needs to know. */
-export interface Room {
+/** What settling where and how wide the parts are drawn needs to know. */
+export interface PartsDeps {
   /**
    * The width one part's box needs for its words, padding included. Where
    * there is nothing to measure text with, the parts take the node's own box.
@@ -105,15 +105,15 @@ export interface OpenParts {
   /** Whether the window has parts above it, and parts below it. */
   readonly above: boolean
   readonly below: boolean
-  /** The marks at either edge, one per direction there is more to wind to. */
-  readonly marks: readonly Mark[]
+  /** The arrows at either edge, one per direction there is more to wind to. */
+  readonly arrows: readonly Arrow[]
 }
 
-/** A mark at an edge of the ground, saying which way there is more. */
-export interface Mark {
+/** An arrow at an edge of the ground, saying which way there is more. */
+export interface Arrow {
   readonly at: 'above' | 'below'
   /** The three corners it is drawn through, from the middle of the node. */
-  readonly points: readonly Point[]
+  readonly points: readonly Position[]
 }
 
 /**
@@ -136,7 +136,7 @@ export function hangParts(
   node: PlacedNode,
   parts: readonly PlexPart[],
   options: Pick<PlexOptions, 'partHeight' | 'partIndent' | 'maxParts'>,
-  room: Room,
+  deps: PartsDeps,
 ): HungParts | null {
   if (parts.length === 0) return null
 
@@ -147,7 +147,7 @@ export function hangParts(
   // They hang below the node and stay inside the window, so how many of them
   // are drawn is how many the depth left under it holds. A node with room for
   // none hangs nothing.
-  const depth = room.viewport.height / 2 - room.margin - (node.y + top)
+  const depth = deps.viewport.height / 2 - deps.margin - (node.y + top)
   const rows = Math.min(maxParts + 1, Math.floor((depth - 2 * pad) / partHeight))
   if (rows < 1) return null
 
@@ -166,7 +166,7 @@ export function hangParts(
     partHeight,
     pad,
     shown,
-    ...across(node, hung, pad, room),
+    ...across(node, hung, pad, deps),
     parts: hung,
     height: shown * partHeight + 2 * pad,
   }
@@ -215,18 +215,18 @@ function across(
   node: PlacedNode,
   hung: readonly HungPart[],
   pad: number,
-  room: Room,
+  deps: PartsDeps,
 ): { width: number; offset: number } {
-  const measure = room.measure
+  const measure = deps.measure
   const asked = measure
     ? Math.max(...hung.map((part) => measure(part.text) + part.indent))
     : 0
   const width = Math.min(
     Math.max(asked + 2 * pad, node.width),
-    room.viewport.width - 2 * room.margin,
+    deps.viewport.width - 2 * deps.margin,
   )
 
-  const furthest = room.viewport.width / 2 - room.margin - width / 2
+  const furthest = deps.viewport.width / 2 - deps.margin - width / 2
   const middle = Math.min(Math.max(node.x, -furthest), furthest)
   return { width, offset: middle - node.x }
 }
@@ -247,19 +247,19 @@ export function openedTo(hung: HungParts, open: number, wound = 0): OpenParts | 
 
   // The window stands whole on the parts, wound by one at a time.
   const first = Math.min(Math.max(Math.round(wound), 0), furthest(hung))
-  const standing = hung.parts.slice(first, first + hung.shown)
+  const shown = hung.parts.slice(first, first + hung.shown)
 
   // Each part sets off a lead behind the one above it, and the leads together
   // take the same share of the opening whatever number of parts stand. What is
   // left for any one of them to run in is the opening less every lead before it.
-  const many = standing.length
+  const many = shown.length
   const lead = many > 1 ? Math.min(LEAD, SPREAD / (many - 1)) : 0
   const runs = 1 - lead * (many - 1)
 
   /** The deepest a part may set off from and still stand on the ground. */
   const floor = hung.height - 2 * hung.pad - hung.partHeight
 
-  const parts = standing.map((part, at) => {
+  const parts = shown.map((part, at) => {
     const own = easeOut(clamp01((opened - at * lead) / runs))
     const rests = at * hung.partHeight
     const from = Math.min(rests + RISE * hung.partHeight, floor)
@@ -275,26 +275,26 @@ export function openedTo(hung: HungParts, open: number, wound = 0): OpenParts | 
     first,
     above,
     below,
-    marks: [
-      ...(above ? [markAt(hung, hung.pad / 2, -1)] : []),
-      ...(below ? [markAt(hung, hung.height - hung.pad / 2, 1)] : []),
+    arrows: [
+      ...(above ? [arrowAt(hung, hung.pad / 2, -1)] : []),
+      ...(below ? [arrowAt(hung, hung.height - hung.pad / 2, 1)] : []),
     ],
   }
 }
 
 /**
- * A mark at one edge of the ground, pointing the way there is more to wind to.
- * It is drawn about the middle of what is hung, which is where the eye is.
+ * An arrow at one edge of the ground, pointing the way there is more to wind
+ * to. It is drawn about the middle of what is hung, which is where the eye is.
  */
-function markAt(hung: HungParts, down: number, facing: 1 | -1): Mark {
+function arrowAt(hung: HungParts, down: number, facing: 1 | -1): Arrow {
   const middle = hung.offset
   const y = hung.top + down
   return {
     at: facing > 0 ? 'below' : 'above',
     points: [
-      { x: middle - MARK.wide, y: y - facing * MARK.deep },
-      { x: middle, y: y + facing * MARK.deep },
-      { x: middle + MARK.wide, y: y - facing * MARK.deep },
+      { x: middle - ARROW.wide, y: y - facing * ARROW.deep },
+      { x: middle, y: y + facing * ARROW.deep },
+      { x: middle + ARROW.wide, y: y - facing * ARROW.deep },
     ],
   }
 }

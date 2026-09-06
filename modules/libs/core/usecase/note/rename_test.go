@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
@@ -25,7 +25,7 @@ func (c changing) rename() note.Rename {
 // apart is the rename an installation that has turned the two apart does.
 func (c changing) apart() note.Rename {
 	moving := c.move()
-	moving.Sync = func() note.Sync { return false }
+	moving.Sync = func() note.SyncTitleAndFilename { return false }
 	return note.Rename{Move: moving}
 }
 
@@ -48,7 +48,7 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 		raw   string
 		title string
 		path  string
-		by    note.Naming
+		by    note.NameSource
 		holds []string
 		lacks []string
 	}{
@@ -269,6 +269,29 @@ func TestRenamingCanLeaveTheFileWhereItIs(t *testing.T) {
 	}
 }
 
+// A file the person renamed themselves has landed before the note is opened at
+// all, so frontmatter one key cannot be changed in leaves the title unwritten
+// and reports nothing. An anchor is that case as much as one line is: neither
+// is written, and the two come out of the same guard.
+func TestAFileRenamedUnderFrontmatterThatCannotBeChangedIsLeftAlone(t *testing.T) {
+	t.Parallel()
+	for name, raw := range map[string]string{
+		"a block written on one line": "---\n{title: Old, id: b}\n---\nA measure.\n",
+		"a block carrying an anchor":  "---\ntitle: &t Old\nalias: *t\n---\nA measure.\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			c := changeable(t, map[string]string{"Entropy.md": raw})
+
+			if err := c.move().Called(t.Context(), c.vault, "Entropy.md"); err != nil {
+				t.Fatalf("the file had already landed: %v", err)
+			}
+			if got := c.read(t, "Entropy.md"); got != raw {
+				t.Errorf("want the note untouched, got %q", got)
+			}
+		})
+	}
+}
+
 func TestRenamingRefusesToLandOnAnExistingNote(t *testing.T) {
 	t.Parallel()
 	c := changeable(t, map[string]string{
@@ -300,7 +323,7 @@ type sulking struct {
 	refuse error
 }
 
-func (s sulking) MoveSources(context.Context, string, string, string) error { return s.refuse }
+func (s sulking) MoveSources(context.Context, domain.VaultID, string, string) error { return s.refuse }
 
 // The answer says where the file is. A move that landed says so however the
 // rest of the work goes.
@@ -454,7 +477,7 @@ func TestRemovingSaysWhenThereIsNoSuchNote(t *testing.T) {
 	t.Parallel()
 	c := changeable(t, map[string]string{"Old.md": "# Old\n"})
 	remove := note.Remove{
-		Writers: filesystem.Writers{},
+		Writers: filesystem.VaultWriters{},
 		Links:   c.db.Links(), Known: c.db.SourcesKnown(), Index: c.index,
 	}
 
@@ -504,7 +527,7 @@ func TestRenamingLeavesTheFileWhereItIsWhereTheTwoAreToldApart(t *testing.T) {
 	for name, c := range map[string]struct {
 		raw   string
 		title string
-		by    note.Naming
+		by    note.NameSource
 		holds string
 	}{
 		"a title in the frontmatter": {

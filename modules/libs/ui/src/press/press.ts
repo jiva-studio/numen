@@ -5,11 +5,11 @@
  * letting go comes to are the caller's.
  */
 import { onScopeDispose, shallowRef, type ShallowRef } from 'vue'
-import type { Point } from '../lib/geometry'
-import type { Environment } from '../lib/environment'
+import type { Position } from '../lib/geometry'
+import type { Clock } from '../lib/clock'
 
 /** What is being carried, and whether the pointer has gone far enough to mean it. */
-export interface Pressing<Held> {
+export interface Drag<Held> {
   readonly held: Held
   readonly moved: boolean
 }
@@ -24,9 +24,9 @@ export interface Press<Held, At> {
   /** How far the pointer travels before a press becomes a drag. */
   readonly threshold: () => number
   /** The clock the release is held against. */
-  readonly environment: () => Environment
-  /** Where letting go at this point would put what is held. */
-  readonly landingAt: (held: Held, at: Point) => At | null
+  readonly clock: () => Clock
+  /** Where letting go here would put what is held. */
+  readonly landingAt: (held: Held, at: Position) => At | null
   /** What letting go after a drag comes to. The landing is nothing off any target. */
   readonly settle: (held: Held, at: At | null) => void
   /** Said once, when the press turns into a drag. */
@@ -34,20 +34,20 @@ export interface Press<Held, At> {
 }
 
 /** What a press answers: what is held, where it would land, and how to start one. */
-export interface Pressed<Held, At> {
-  readonly dragging: ShallowRef<Pressing<Held> | null>
+export interface PressDragState<Held, At> {
+  readonly dragging: ShallowRef<Drag<Held> | null>
   readonly at: ShallowRef<At | null>
   /** Where the pointer is, for as long as a drag is live. */
-  readonly point: ShallowRef<Point | null>
+  readonly position: ShallowRef<Position | null>
   readonly lift: (held: Held, event: PointerEvent) => void
 }
 
-export function usePressDrag<Held, At>(press: Press<Held, At>): Pressed<Held, At> {
-  const dragging = shallowRef<Pressing<Held> | null>(null)
+export function usePressDrag<Held, At>(press: Press<Held, At>): PressDragState<Held, At> {
+  const dragging = shallowRef<Drag<Held> | null>(null)
   const at = shallowRef<At | null>(null)
-  const point = shallowRef<Point | null>(null)
+  const position = shallowRef<Position | null>(null)
 
-  let start: Point = { x: 0, y: 0 }
+  let start: Position = { x: 0, y: 0 }
 
   const detach = (): void => {
     window.removeEventListener('pointermove', drag)
@@ -59,14 +59,14 @@ export function usePressDrag<Held, At>(press: Press<Held, At>): Pressed<Held, At
     const held = dragging.value
     if (!held) return
 
-    const now: Point = { x: event.clientX, y: event.clientY }
+    const now: Position = { x: event.clientX, y: event.clientY }
     const moved =
       held.moved ||
       Math.abs(now.x - start.x) > press.threshold() ||
       Math.abs(now.y - start.y) > press.threshold()
 
     dragging.value = { held: held.held, moved }
-    point.value = moved ? now : null
+    position.value = moved ? now : null
     at.value = moved ? press.landingAt(held.held, now) : null
 
     if (moved && !held.moved) press.began?.(held.held)
@@ -78,11 +78,11 @@ export function usePressDrag<Held, At>(press: Press<Held, At>): Pressed<Held, At
 
     detach()
     at.value = null
-    point.value = null
+    position.value = null
     if (held?.moved) press.settle(held.held, found)
     // Held one frame longer: the click that follows the release reads it and
     // stands down.
-    press.environment().schedule(() => {
+    press.clock().schedule(() => {
       dragging.value = null
     })
   }
@@ -98,9 +98,9 @@ export function usePressDrag<Held, At>(press: Press<Held, At>): Pressed<Held, At
   onScopeDispose(() => {
     detach()
     at.value = null
-    point.value = null
+    position.value = null
     dragging.value = null
   })
 
-  return { dragging, at, point, lift }
+  return { dragging, at, position, lift }
 }

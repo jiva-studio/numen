@@ -1,10 +1,10 @@
 # How a book is read
 
-What a machine reads off the pages of a scanned document, where it is kept, and what is done to it afterwards. A recognition is written into the vault's own folder, under `.numen/ocr/`, and the source is cut from it (see [ADR-0015](adr/0015-a-books-text-is-a-cache-or-an-artifact.md)).
+What a machine reads off the pages of a scanned document, where it is kept, and what is done to it afterwards. A reading is written into the vault's own folder, under `.numen/ocr/`, and the source is cut from it (see [A book's text is a cache or an artifact](adr/0015-a-books-text-is-a-cache-or-an-artifact.md)).
 
 ## The files of one reading
 
-A recognition is named by the hash of the bytes it was made from. A document renamed or moved keeps its reading, and two copies of one document in a vault share one. Seven names are composed from the producer and that hash:
+A reading is named by the hash of the bytes it was made from. A document renamed or moved keeps its reading, and two copies of one document in a vault share one. Seven names are composed from the producer and that hash:
 
 | Name | What it holds |
 | --- | --- |

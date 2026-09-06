@@ -2,27 +2,27 @@
  * What every vault the installation holds comes to today.
  *
  * Apart from the template because counting is asked for from three places — the
- * window opening, a sitting ending, and a vault moving underneath it — and one
+ * window opening, a session ending, and a vault moving underneath it — and one
  * count runs at a time however many ask.
  *
  * The vaults arrive first, by name and by where they are, and each count
  * follows on its own. A vault whose count has not arrived stands on the list
  * with nothing said about what it holds.
  */
-import { ref } from 'vue'
-import type { Stopped } from '@numen/protocol'
+import { ref, shallowRef } from 'vue'
+import type { StopReason } from '@numen/protocol'
 
-import type { Owing } from './core'
+import type { VaultCardsDue } from './core'
 
 /** What the front door of the application answers. */
-export interface Counts {
-  owing(said: Record<string, never>, how?: { signal?: AbortSignal }): AsyncIterable<Counted>
+export interface CardsDueClient {
+  watchCardsDue(said: Record<string, never>, how?: { signal?: AbortSignal }): AsyncIterable<DueCounts>
 }
 
 /** One vault, as the count answers about it. */
-export interface Vaulted {
-  vaultId: string
+export interface VaultCounts {
   name: string
+  displayName: string
   path: string
   faces: number
   due: number
@@ -52,32 +52,32 @@ export interface Vaulted {
     closesNew: string
     closesReviews: string
     closesMinutes: string
-    stopsOn: Stopped
+    stopsOn: StopReason
   }[]
   unread: string
   reading: boolean
 }
 
 /** One message of the count. */
-export interface Counted {
+export interface DueCounts {
   /** The review day these counts stand in, which begins at the hour the settings name. */
   day: string
   /** Every vault the installation holds, in the first message and in no other. */
-  vaults: readonly Vaulted[]
+  vaults: readonly VaultCounts[]
   /** One vault worked out, in every message after the first. */
-  counted?: Vaulted | undefined
+  counted?: VaultCounts | undefined
 }
 
 /** A length of time as the application holds one, which is in minutes. */
 const minutes = (ms: bigint): number => Number(ms) / 60000
 
-export interface Counting {
-  cards: Counts
+export interface CountingDeps {
+  cards: CardsDueClient
   failed(why: unknown): void
 }
 
-export function counting(deps: Counting) {
-  const vaults = ref<readonly Owing[]>([])
+export function counting(deps: CountingDeps) {
+  const vaults = shallowRef<readonly VaultCardsDue[]>([])
   const counting = ref(true)
 
   /**
@@ -134,9 +134,9 @@ export function counting(deps: Counting) {
   }
 
   /** A vault on the list before its count has arrived. */
-  const listed = (one: Vaulted): Owing => ({
-    vaultId: one.vaultId,
-    name: one.name,
+  const listed = (one: VaultCounts): VaultCardsDue => ({
+    vault: one.name,
+    name: one.displayName,
     path: one.path,
     counted: false,
     faces: 0,
@@ -149,9 +149,9 @@ export function counting(deps: Counting) {
   })
 
   /** A vault as its own count leaves it. */
-  const owed = (one: Vaulted): Owing => ({
-    vaultId: one.vaultId,
-    name: one.name,
+  const counted = (one: VaultCounts): VaultCardsDue => ({
+    vault: one.name,
+    name: one.displayName,
     path: one.path,
     counted: true,
     faces: one.faces,
@@ -194,11 +194,11 @@ export function counting(deps: Counting) {
    * ago keeps that count until its new one lands, so a list already drawn is
    * never emptied to be filled again.
    */
-  const stands = (all: readonly Vaulted[]) => {
-    const held = new Map(vaults.value.map((one) => [one.vaultId, one]))
+  const stands = (all: readonly VaultCounts[]) => {
+    const held = new Map(vaults.value.map((one) => [one.vault, one]))
     vaults.value = all.map((one) => {
-      const was = held.get(one.vaultId)
-      return was?.counted ? { ...was, name: one.name, path: one.path } : listed(one)
+      const was = held.get(one.name)
+      return was?.counted ? { ...was, name: one.displayName, path: one.path } : listed(one)
     })
   }
 
@@ -206,9 +206,9 @@ export function counting(deps: Counting) {
    * One vault's count, into the row it belongs to. A vault being read into the
    * index has no count yet, and its row goes on waiting for one.
    */
-  const fills = (one: Vaulted) => {
-    const now = one.reading ? listed(one) : owed(one)
-    vaults.value = vaults.value.map((row) => (row.vaultId === one.vaultId ? now : row))
+  const fills = (one: VaultCounts) => {
+    const now = one.reading ? listed(one) : counted(one)
+    vaults.value = vaults.value.map((row) => (row.vault === one.name ? now : row))
   }
 
   /** One count, answering whether it ran to the end. */
@@ -218,7 +218,7 @@ export function counting(deps: Counting) {
     const ends = new AbortController()
     taking = ends
     try {
-      for await (const said of deps.cards.owing({}, { signal: ends.signal })) {
+      for await (const said of deps.cards.watchCardsDue({}, { signal: ends.signal })) {
         sampled = true
         if (said.counted) fills(said.counted)
         else {

@@ -14,7 +14,7 @@ import (
 // the test stands aside when it is not there.
 const corpusEnv = "NUMEN_EPUB_CORPUS"
 
-const relativeCorpus = "../../../../../../../../resources/mahabharata"
+const relativeCorpus = "../../../../../../resources/mahabharata"
 
 // What the corpus holds, measured. These numbers are the test: a change that
 // moves a book from one tier to another has changed what a reader is shown, and
@@ -57,7 +57,7 @@ func TestTheCorpusIsRead(t *testing.T) {
 			if err != nil {
 				t.Fatalf("read the book: %v", err)
 			}
-			structure[book.Structure]++
+			structure[book.Tier]++
 			total += len(book.Text)
 
 			checkBook(t, book)
@@ -114,7 +114,7 @@ func checkBook(t *testing.T, book *epub.Book) {
 		if i > 0 && book.Parts[i-1].Offset > part.Offset {
 			t.Fatalf("part %q is out of order", part.Title)
 		}
-		if book.Structure == epub.FromHeadings && !strings.HasPrefix(book.Text[part.Offset:], part.Title) {
+		if book.Tier == epub.FromHeadings && !strings.HasPrefix(book.Text[part.Offset:], part.Title) {
 			t.Fatalf("heading %q does not begin at its offset %d", part.Title, part.Offset)
 		}
 		at := book.Locate(part.Offset)
@@ -132,7 +132,7 @@ func checkBook(t *testing.T, book *epub.Book) {
 		}
 	}
 
-	if book.Structure == epub.FromNothing && len(book.Parts) != 0 {
+	if book.Tier == epub.FromNothing && len(book.Parts) != 0 {
 		t.Errorf("a book that names nothing came back with %d parts", len(book.Parts))
 	}
 }

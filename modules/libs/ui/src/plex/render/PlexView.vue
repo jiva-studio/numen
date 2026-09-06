@@ -10,32 +10,17 @@ import { computed, ref, useId, useTemplateRef, watch } from 'vue'
 import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import PlexNodeView from './PlexNodeView.vue'
-import type { EdgeLine } from './lines'
-import {
-  edgeKey,
-  ghostNode,
-  handleIn,
-  seatWord,
-  type NodeStanding,
-  type PlacedNode,
-  type PlexFrame,
-  type PlexRelatedSeat,
-  type PlexShowing,
-  type Point,
-} from '../model'
-import { DWELL, type Widened } from '../dwell'
-import { byHandle, type Reaching } from '../reaching'
-import { byDoubleClick, type Showing } from '../showing'
+import { linesOf } from './lines'
+import type { PlexFrame } from '../frame'
+import { ghostNode, handleIn, type GestureRole, type PlacedNode, type Position } from '../node'
+import { seatWord, type PlexRelatedSeat } from '../seat'
+import { DWELL, type WideBox } from '../dwell'
+import { byHandle, type ReachStrategy } from '../reaching'
+import { byDoubleClick, type PlexShowing, type ShowStrategy } from '../showing'
 import type { HungParts } from '../inside'
-import { browserEnvironment, type Environment } from '../transition'
-import {
-  arrowTransformOf,
-  pathOf,
-  readingPathOf,
-  threadOf,
-  type Drop,
-} from '../arrange'
-import type { MenuOpening } from '../../menu/model'
+import { browserClock, type Clock } from '../transition'
+import { threadOf, type Drop } from '../arrange'
+import type { MenuOpening } from '../../menu/item'
 
 const props = withDefaults(
   defineProps<{
@@ -59,7 +44,7 @@ const props = withDefaults(
      * for a node with no more of its title to show. Text is measured where the
      * plex is drawn, so this arrives already worked out.
      */
-    widen?: ((node: PlacedNode) => Widened | null) | undefined
+    widen?: ((node: PlacedNode) => WideBox | null) | undefined
     /**
      * The parts a node hangs under its box while the attention rests on it,
      * and nothing for a node with none. Which parts a node holds is the
@@ -69,27 +54,27 @@ const props = withDefaults(
     /** How long the attention rests on a box before it widens. Milliseconds. */
     dwell?: number
     /** How a node offers to be reached out of. The handle by default. */
-    reaching?: Reaching
+    reaching?: ReachStrategy
     /** How a node is asked for on its own. The second click by default. */
-    showing?: Showing
+    showing?: ShowStrategy
     /** The clock a box opens on. Browser by default; a test hands in its own. */
-    environment?: Environment
+    clock?: Clock
     /** A gesture in progress: where it started, where it is, what it means. */
     gestureFrom?: string | null
-    gestureAt?: Point | null
+    gestureAt?: Position | null
     gestureOutcome?: Drop | null
     /**
-     * Something carried over the picture from outside it: where the pointer
+     * Something dragged over the picture from outside it: where the pointer
      * is, and the seat letting go there comes to. Both, or the picture draws
      * none of it.
      */
-    carriedAt?: Point | null
-    carriedSeat?: PlexRelatedSeat | null
+    draggedAt?: Position | null
+    dropSeat?: PlexRelatedSeat | null
     /**
-     * What to call what letting go with something carried in would do, for the
+     * What to call what letting go with something dragged in would do, for the
      * one place it is written into the picture. English by default.
      */
-    carriedName?: (seat: PlexRelatedSeat) => string
+    dropName?: (seat: PlexRelatedSeat) => string
   }>(),
   {
     showEdgeLabels: true,
@@ -98,13 +83,13 @@ const props = withDefaults(
     dwell: DWELL,
     reaching: () => byHandle,
     showing: () => byDoubleClick,
-    environment: () => browserEnvironment,
+    clock: () => browserClock,
     gestureFrom: null,
     gestureAt: null,
     gestureOutcome: null,
-    carriedAt: null,
-    carriedSeat: null,
-    carriedName: seatWord,
+    draggedAt: null,
+    dropSeat: null,
+    dropName: seatWord,
   },
 )
 
@@ -118,9 +103,14 @@ const emit = defineEmits<{
   /** A handle was pressed from the keyboard, where there is nowhere to drag. */
   (event: 'ask', id: string): void
   /** A menu was asked for on a node: which, where, and by what. */
-  (event: 'menu', id: string, at: Point, opening: MenuOpening): void
+  (event: 'menu', id: string, at: Position, opening: MenuOpening): void
   /** A part of a node was chosen. Both identifiers are the caller's. */
   (event: 'enter', id: string, part: string): void
+}>()
+
+defineSlots<{
+  /** What is drawn beside a node's title. */
+  icon?(props: { node: PlacedNode }): unknown
 }>()
 
 const svg = useTemplateRef<SVGSVGElement>('svg')
@@ -151,23 +141,7 @@ const viewBox = computed(() => {
 /** Two plexes on one page each name their own paths. */
 const uid = useId()
 
-/**
- * Every edge with what the drawing asks of it. A title is always set along the
- * line it belongs to, in the words the arrangement cut for it and at the place
- * along it the arrangement chose.
- */
-const lines = computed<readonly EdgeLine[]>(() =>
-  props.frame.edges.map((edge, at) => ({
-    edge,
-    key: `${edge.from}->${edge.to}`,
-    pair: edgeKey(edge),
-    d: pathOf(edge),
-    arrow: edge.arrowhead ? arrowTransformOf(edge.arrowhead) : null,
-    titlePath: edge.words ? `${uid}-title-${at}` : null,
-    titleLine: readingPathOf(edge),
-    titleAt: `${100 * edge.wordsAt}%`,
-  })),
-)
+const lines = computed(() => linesOf(props.frame.edges, uid))
 
 /** The edge the hand is on, by a key that survives the re-routing of a move. */
 const over = ref<string | null>(null)
@@ -191,7 +165,7 @@ const resting = computed(() => lines.value.filter((line) => line.pair !== over.v
  * while one is running: the hand is somewhere else entirely, and a second
  * handle under it would offer to start a gesture already under way.
  */
-const standingOf = (node: PlacedNode): NodeStanding => {
+const roleOf = (node: PlacedNode): GestureRole => {
   const outcome = props.gestureOutcome
   if (outcome?.kind === 'link' && outcome.to === node.id) return 'target'
   if (props.gestureFrom === node.id) return 'source'
@@ -226,20 +200,20 @@ const thread = computed(() => {
 })
 
 /**
- * Something carried over the picture: the line from the focus to the pointer,
+ * Something dragged over the picture: the line from the focus to the pointer,
  * and the shape letting go would leave there.
  *
  * Drawn only where letting go comes to a seat, so what the reader sees and
  * what the gesture answers are the one thing. The shape is a box like any
  * other, saying which seat it would take in whatever words it was given.
  */
-const carrying = computed(() => {
-  const seat = props.carriedSeat
-  const to = props.carriedAt
+const dragging = computed(() => {
+  const seat = props.dropSeat
+  const to = props.draggedAt
   const focus = props.frame.nodes.find((node) => node.seat === 'focus')
   if (!seat || !to || !focus) return null
 
-  const ghost = ghostNode('carried', props.carriedName(seat), seat, to, props.nodeSize)
+  const ghost = ghostNode('dragged', props.dropName(seat), seat, to, props.nodeSize)
   return { thread: threadOf(focus, to), ghost }
 })
 
@@ -297,13 +271,13 @@ const ghost = computed<PlacedNode | null>(() => {
       v-for="node in drawn"
       :key="node.id"
       :node="node"
-      :standing="standingOf(node)"
+      :gesture-role="roleOf(node)"
       :wide="widen?.(node) ?? null"
       :hung="hung?.(node) ?? null"
       :dwell="dwell"
       :reaching="reaching"
       :showing="showing"
-      :environment="environment"
+      :clock="clock"
       @activate="emit('activate', node.id)"
       @show="emit('show', node.id, $event)"
       @reach="emit('reach', node.id, $event)"
@@ -328,13 +302,13 @@ const ghost = computed<PlacedNode | null>(() => {
     <!-- The gesture itself, drawn over everything it may land on. -->
     <g v-if="thread" class="plex__reach">
       <path class="plex__thread" :d="thread" aria-hidden="true" />
-      <PlexNodeView v-if="ghost" :node="ghost" standing="ghost" />
+      <PlexNodeView v-if="ghost" :node="ghost" gesture-role="ghost" />
     </g>
 
-    <!-- Something carried in from outside, drawn over everything it crosses. -->
-    <g v-if="carrying" class="plex__carried">
-      <path class="plex__thread" :d="carrying.thread" aria-hidden="true" />
-      <PlexNodeView :node="carrying.ghost" standing="ghost" />
+    <!-- Something dragged in from outside, drawn over everything it crosses. -->
+    <g v-if="dragging" class="plex__dragged">
+      <path class="plex__thread" :d="dragging.thread" aria-hidden="true" />
+      <PlexNodeView :node="dragging.ghost" gesture-role="ghost" />
     </g>
   </svg>
 </template>
@@ -349,7 +323,7 @@ const ghost = computed<PlacedNode | null>(() => {
   user-select: none;
   -webkit-user-select: none;
   /* Every touch on the picture belongs to the picture, and a finger that
-     travels is carrying something across it. */
+     travels is dragging something across it. */
   touch-action: none;
   -webkit-touch-callout: none;
 }
@@ -375,8 +349,8 @@ const ghost = computed<PlacedNode | null>(() => {
   pointer-events: none;
 }
 
-/* What is carried across the picture catches nothing on its way over. */
-.plex__carried {
+/* What is dragged across the picture catches nothing on its way over. */
+.plex__dragged {
   pointer-events: none;
 }
 

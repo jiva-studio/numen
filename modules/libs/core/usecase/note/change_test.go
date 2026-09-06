@@ -8,14 +8,15 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // changing is a vault that can be both asked about and written to, with the
@@ -29,7 +30,8 @@ type changing struct {
 func changeable(t *testing.T, notes map[string]string) changing {
 	t.Helper()
 	db, v := indexed(t, notes)
-	refresh := usecase.Refresh{Readers: filesystem.Readers{}, Notes: db.Notes()}
+	refresh := vaults.NewRefresh(
+		filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources())
 	return changing{
 		db:    db,
 		vault: v,
@@ -42,34 +44,28 @@ func changeable(t *testing.T, notes map[string]string) changing {
 
 // search is the one search, with no embedder: the words half answers alone.
 func (c changing) search() search.Search {
-	return search.New(c.db.Passages(), filesystem.Readers{}, nil, nil, nil, 0, nil)
+	return search.New(c.db.Passages(), filesystem.VaultReaders{}, nil, nil, nil, 0, nil)
 }
 
 func (c changing) create() note.Create {
-	return note.Create{
-		Writers: filesystem.Writers{}, Names: c.db.Queries(), Index: c.index,
-	}
+	return note.NewCreate(filesystem.VaultWriters{}, c.db.Queries(), c.index, time.Now)
 }
 
 func (c changing) move() note.Move {
-	return note.Move{
-		Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
-		Links: c.db.Links(), Names: c.db.Queries(),
-		Sources: c.db.Sources(), Index: c.index,
-	}
+	return note.NewMove(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{},
+		c.db.Links(), c.db.Queries(), c.db.Sources(), c.index, time.Now,
+	)
 }
 
 func (c changing) remove() note.Remove {
-	return note.Remove{
-		Writers: filesystem.Writers{},
-		Links:   c.db.Links(), Known: c.db.SourcesKnown(), Index: c.index,
-	}
+	return note.NewRemove(
+		filesystem.VaultWriters{}, c.db.Links(), c.db.SourcesKnown(), c.index)
 }
 
-func (c changing) linking() note.Linking {
-	return note.Linking{
-		Readers: filesystem.Readers{}, Writers: filesystem.Writers{}, Index: c.index,
-	}
+func (c changing) linking() note.EditLinks {
+	return note.NewEditLinks(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, c.index, time.Now)
 }
 
 func (c changing) read(t *testing.T, path string) string {
@@ -94,7 +90,7 @@ func TestACreatedNoteIsNamedAfterItsTitleAndFoundByIt(t *testing.T) {
 	if created.Path != "physics/Entropy.md" {
 		t.Errorf("want physics/Entropy.md, got %s", created.Path)
 	}
-	if created.Identifier == "" {
+	if created.ID == "" {
 		t.Error("a note the application made carries an identifier")
 	}
 	if len(created.Shares) != 0 {
@@ -429,7 +425,7 @@ func TestLinkingWritesTheIdentifierTheNoteDidNotHave(t *testing.T) {
 		"Heat.md":    "# Heat\n",
 	})
 
-	if err := c.linking().Add(t.Context(), c.vault, "Heat.md", domain.Link{
+	if _, err := c.linking().Add(t.Context(), c.vault, "Heat.md", domain.Fingerprint{}, domain.Link{
 		Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"},
 		Role:   domain.RoleParent,
 		Label:  "follows from",
@@ -464,11 +460,11 @@ func TestPointingANoteAtAPlaceUnderATypeReplacesTheEntryItHad(t *testing.T) {
 	})
 
 	at, err := c.linking().PointAt(t.Context(), c.vault, "Roots.md", "preset",
-		domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, domain.RoleRef, domain.FileRef{})
+		domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, domain.RoleRef, domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if at == (domain.FileRef{}) {
+	if at.IsZero() {
 		t.Error("the write says nothing about the file it made")
 	}
 
@@ -508,8 +504,9 @@ func TestRemovingALinkLeavesTheOtherNoteAlone(t *testing.T) {
 	})
 	before := c.read(t, "Entropy.md")
 
-	if err := c.linking().Remove(t.Context(), c.vault, "Heat.md",
-		domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, ""); err != nil {
+	if _, err := c.linking().Remove(t.Context(), c.vault, "Heat.md",
+		domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, "",
+		domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -528,11 +525,10 @@ func TestRemovingALinkLeavesTheOtherNoteAlone(t *testing.T) {
 func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 	t.Parallel()
 	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	writing := note.Write{
-		Readers: filesystem.Readers{}, Writers: filesystem.Writers{}, Index: c.index,
-	}
+	writing := note.NewWrite(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, c.index, time.Now)
 
-	reader, err := (filesystem.Readers{}).Open(c.vault)
+	reader, err := (filesystem.VaultReaders{}).Open(c.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -542,13 +538,13 @@ func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 	}
 
 	// Somebody else gets there first.
-	if _, err := writing.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTheirs.\n", domain.FileRef{}); err != nil {
+	if _, err := writing.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTheirs.\n", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
 	_, err = writing.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", stale)
-	if !errors.Is(err, port.ErrChanged) {
-		t.Fatalf("want ErrChanged, got %v", err)
+	if !errors.Is(err, port.ErrStale) {
+		t.Fatalf("want ErrStale, got %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Theirs.") {
 		t.Errorf("the refused write landed anyway:\n%s", body)
@@ -556,16 +552,15 @@ func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 }
 
 // A caller that wrote a note and writes it again presents the fingerprint its
-// own write answered with. Holding the one it read would leave every sitting
+// own write answered with. Holding the one it read would leave every session
 // with one write in it.
 func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	t.Parallel()
 	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	writing := note.Write{
-		Readers: filesystem.Readers{}, Writers: filesystem.Writers{}, Index: c.index,
-	}
+	writing := note.NewWrite(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, c.index, time.Now)
 
-	reader, err := (filesystem.Readers{}).Open(c.vault)
+	reader, err := (filesystem.VaultReaders{}).Open(c.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -578,7 +573,7 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if at == (domain.FileRef{}) {
+	if at.IsZero() {
 		t.Fatal("the write answered with no fingerprint")
 	}
 

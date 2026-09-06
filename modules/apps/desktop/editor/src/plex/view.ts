@@ -1,0 +1,75 @@
+/**
+ * What one plex is showing, and how it travels.
+ *
+ * A plex tab holds one of these, and holds nothing else: the vault is read once
+ * for the whole window, and `showing.ts` tells every plex when to ask again.
+ */
+import { ref } from 'vue'
+import { troubleWords } from '@numen/wire'
+import { answerGuard } from '../questions'
+import { movedTo, type Neighbourhood, type Move } from '../core'
+import { alike } from './picture'
+
+/** The one question a plex asks of the vault: what is around a note. */
+export interface Neighbours {
+  neighbourhood(path: string): Promise<Neighbourhood>
+}
+
+export type View = ReturnType<typeof view>
+
+export function view(core: Neighbours) {
+  const neighbourhood = ref<Neighbourhood | null>(null)
+  /**
+   * The note this plex is showing, as it asked for it.
+   *
+   * It is kept apart from what came back: the answer for a note that is gone
+   * carries no path, and this is what the next question is asked with.
+   */
+  const here = ref('')
+  /** What this plex could not show, in words the window puts up for it. */
+  const trouble = ref('')
+
+  /** Two answers can be in flight — a click while a change is being followed. */
+  const asks = answerGuard()
+
+  async function go(path: string) {
+    if (!asks.open()) return
+    const mine = asks.ask()
+    try {
+      const answer = await core.neighbourhood(path)
+      if (!mine.current) return
+      if (!answer.focus.path) {
+        // The vault no longer holds it. What is on screen stays, and following
+        // goes on, so putting the file back brings it straight back.
+        trouble.value = `${path} is not in the vault`
+        return
+      }
+      trouble.value = ''
+      here.value = path
+      // The picture on screen is kept where the answer draws the same one, so
+      // a vault that changed elsewhere leaves this plex standing.
+      if (!alike(neighbourhood.value, answer)) neighbourhood.value = answer
+    } catch (error) {
+      if (!mine.current) return
+      trouble.value = troubleWords(error)
+    }
+  }
+
+  /**
+   * A note that moved. A plex standing on it stands on where it went, and an
+   * answer on its way is let go of.
+   */
+  const follows = (renamed: readonly Move[]) => {
+    const to = movedTo(renamed, here.value)
+    if (!to) return
+    here.value = to
+    asks.drop()
+  }
+
+  /** The tab has closed. An answer still on its way is let go of. */
+  const close = () => {
+    asks.close()
+  }
+
+  return { neighbourhood, here, trouble, go, follows, close }
+}

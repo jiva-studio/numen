@@ -1,6 +1,10 @@
 package port
 
-import "context"
+import (
+	"context"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+)
 
 // IndexProgress is how far reading a vault for meaning has got.
 //
@@ -16,5 +20,5 @@ type IndexProgress interface {
 	//
 	// A chunk with no vector is searchable by its words and not by its meaning,
 	// and a vault spends most of its life that way.
-	Progress(ctx context.Context, vaultID, model string) (held, embedded int64, err error)
+	Progress(ctx context.Context, vaultID domain.VaultID, model string) (held, embedded int64, err error)
 }

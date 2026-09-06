@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 )
 
 // GenerateVault writes a vault of n notes and gives it an identity.
@@ -42,7 +42,7 @@ func GenerateVault(tb testing.TB, n int) domain.Vault {
 	if err != nil {
 		tb.Fatal(err)
 	}
-	return domain.Vault{ID: cfg.ID, Name: "generated", Path: root}
+	return domain.Vault{ID: domain.VaultID(cfg.ID), Name: "generated", Path: root}
 }
 
 // RareTerm appears in one generated note in a thousand.
@@ -66,10 +66,9 @@ func note(r *rand.Rand, i, total int) string {
 	b.WriteString("---\n\n")
 	fmt.Fprintf(&b, "# Note %d\n\n", i)
 
-	// One note in a thousand carries a word no other note has. Every generated
-	// note otherwise draws on the same twenty words, so a query matches the
-	// whole corpus — which measures ranking, not searching. A real vault has a
-	// long tail, and RareTerm is how a benchmark can ask for it.
+	// One note in a thousand carries a word no other note has. The rest draw on
+	// one small vocabulary, where a query matches the whole corpus and measures
+	// ranking; a real vault has a long tail, and RareTerm asks for it.
 	if i%1000 == 0 {
 		b.WriteString(RareTerm + "\n\n")
 	}

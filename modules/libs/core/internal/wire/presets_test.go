@@ -7,8 +7,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
 
 // Settings that name no rule count by the default rule at its default value.
@@ -19,7 +18,7 @@ import (
 func TestSettingsThatNameNoRuleCountByTheDefault(t *testing.T) {
 	old := &v1.Settings{
 		Goal:        v1.Goal_GOAL_RETENTION,
-		Counts:      v1.Counts_COUNTS_CARDS,
+		Counts:      v1.BudgetUnit_BUDGET_UNIT_CARDS,
 		MinutesADay: 10,
 		NewADay:     12,
 		ReviewsADay: 5,
@@ -36,11 +35,11 @@ func TestSettingsThatNameNoRuleCountByTheDefault(t *testing.T) {
 	last := now.AddDate(0, 0, -1)
 	// A card face first seen yesterday and put off by sixteen days, which is
 	// under the default interval of twenty-one.
-	near := history.Schedule{Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16}
+	near := review.Schedule{Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16}
 	if p.Learned(near, now) {
 		t.Error("a card face sixteen days off is learned under settings naming no rule")
 	}
-	far := history.Schedule{Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21}
+	far := review.Schedule{Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21}
 	if !p.Learned(far, now) {
 		t.Error("a card face twenty-one days off is not learned at the default interval")
 	}
@@ -49,21 +48,21 @@ func TestSettingsThatNameNoRuleCountByTheDefault(t *testing.T) {
 // A place with no day to name carries none, and a place whose horizon ended
 // first carries the day it never reached.
 func TestAPlaceWithNoDayToNameCarriesNone(t *testing.T) {
-	got := CurveOf(flashcards.Curve{
-		Goal: history.GoalRetention,
+	got := CurveOf(review.Curve{
+		Goal: review.GoalRetention,
 		Grid: []float64{0.9},
-		At: []flashcards.Point{
-			{Learns: history.LearnsUnasked},
-			{Learns: history.NeverLearns},
+		Points: []review.Point{
+			{Learns: review.LearnsUnasked},
+			{Learns: review.NeverLearns},
 			{Learns: 12},
 		},
-		Now: flashcards.Nowhere, Suggested: flashcards.Nowhere,
+		Now: review.Nowhere, Suggested: review.Nowhere,
 	})
 
 	if at := got.GetAt()[0]; at.Learns != nil {
 		t.Errorf("a place with no day to name carries %d", at.GetLearns())
 	}
-	if at := got.GetAt()[1]; at.Learns == nil || at.GetLearns() != history.NeverLearns {
+	if at := got.GetAt()[1]; at.Learns == nil || at.GetLearns() != review.NeverLearns {
 		t.Errorf("a place whose horizon ended first carries %+v", at.Learns)
 	}
 	if at := got.GetAt()[2]; at.Learns == nil || at.GetLearns() != 12 {
@@ -79,7 +78,9 @@ func TestAPlaceWithNoDayToNameCarriesNone(t *testing.T) {
 // the other's field would be read without complaint. Each value of each is put
 // through and read back beside every value of the other.
 func TestWhatABudgetCountsIsNotWhatCountsAsLearned(t *testing.T) {
-	for _, counts := range []v1.Counts{v1.Counts_COUNTS_CARDS, v1.Counts_COUNTS_SHOWS} {
+	for _, counts := range []v1.BudgetUnit{
+		v1.BudgetUnit_BUDGET_UNIT_CARDS, v1.BudgetUnit_BUDGET_UNIT_SHOWS,
+	} {
 		for _, rule := range []v1.Rule{v1.Rule_RULE_INTERVAL, v1.Rule_RULE_RETENTION} {
 			p, err := SettingsIn(&v1.Settings{
 				Goal: v1.Goal_GOAL_MINUTES_A_DAY, Counts: counts, Learned: rule,
@@ -89,7 +90,7 @@ func TestWhatABudgetCountsIsNotWhatCountsAsLearned(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if p.Counts != CountsIn(counts) {
+			if p.Counts != BudgetUnitIn(counts) {
 				t.Errorf("%v beside %v was read as a budget spent on %q", counts, rule, p.Counts)
 			}
 			if p.Rule != RuleIn(rule) {
@@ -112,16 +113,16 @@ func TestWhatABudgetCountsIsNotWhatCountsAsLearned(t *testing.T) {
 // A setting dropped on either side is a person moving a control, watching the
 // value never leave the window, and finding the note written without it.
 func TestEverySettingComesBackAsItWentOut(t *testing.T) {
-	was := history.Preset{
-		Goal:        history.GoalDate,
+	was := review.Preset{
+		Goal:        review.GoalDate,
 		By:          time.Date(2026, 9, 30, 0, 0, 0, 0, time.UTC),
 		MinutesADay: 35,
 		NewADay:     8,
 		ReviewsADay: 45,
 		Retention:   0.87,
-		Rule:        history.RuleRetention,
+		Rule:        review.RuleRetention,
 		Interval:    14,
-		Counts:      history.CountsShows,
+		Counts:      review.BudgetUnitShows,
 		Backlog:     40,
 		Load:        map[time.Weekday]int{time.Monday: 80, time.Saturday: 50, time.Sunday: 0},
 		EvenLoad:    true,
@@ -136,7 +137,7 @@ func TestEverySettingComesBackAsItWentOut(t *testing.T) {
 		t.Errorf("goal came back as %q", got.Goal)
 	}
 	if !got.By.Equal(was.By) {
-		t.Errorf("by_date came back as %s", got.By.Format(history.Named))
+		t.Errorf("by_date came back as %s", got.By.Format(review.Named))
 	}
 	if got.MinutesADay != was.MinutesADay {
 		t.Errorf("minutes_a_day came back as %d", got.MinutesADay)
@@ -185,13 +186,13 @@ func TestAnUnspecifiedSettingIsNotAValue(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if history.KnownGoal(p.Goal) {
+	if review.KnownGoal(p.Goal) {
 		t.Errorf("an unspecified goal was read as %q", p.Goal)
 	}
-	if history.KnownRule(p.Rule) {
+	if review.KnownRule(p.Rule) {
 		t.Errorf("an unspecified rule was read as %q", p.Rule)
 	}
-	if history.KnownCounts(p.Counts) {
+	if review.KnownBudgetUnit(p.Counts) {
 		t.Errorf("an unspecified counts was read as %q", p.Counts)
 	}
 }
@@ -203,23 +204,26 @@ func TestAnUnspecifiedSettingIsNotAValue(t *testing.T) {
 // front of the person.
 func TestEveryVerdictCrossesAsItself(t *testing.T) {
 	for _, one := range []struct {
-		why  history.Stopped
-		said v1.Stopped
+		why  review.StopReason
+		said v1.StopReason
 	}{
-		{history.StoppedNothing, v1.Stopped_STOPPED_NOTHING},
-		{history.StoppedNoMinutes, v1.Stopped_STOPPED_NO_MINUTES},
-		{history.StoppedNoCards, v1.Stopped_STOPPED_NO_CARDS},
-		{history.StoppedNoDay, v1.Stopped_STOPPED_NO_DAY},
-		{history.StoppedPastDay, v1.Stopped_STOPPED_PAST_DAY},
-		{history.StoppedNoLoad, v1.Stopped_STOPPED_NO_LOAD},
-		{history.StoppedNoWeek, v1.Stopped_STOPPED_NO_WEEK},
+		{review.StoppedNothing, v1.StopReason_STOP_REASON_NOTHING},
+		{review.StoppedNoMinutes, v1.StopReason_STOP_REASON_NO_MINUTES},
+		{review.StoppedNoCards, v1.StopReason_STOP_REASON_NO_CARDS},
+		{review.StoppedNoDay, v1.StopReason_STOP_REASON_NO_DAY},
+		{review.StoppedPastDay, v1.StopReason_STOP_REASON_PAST_DAY},
+		{review.StoppedNoLoad, v1.StopReason_STOP_REASON_NO_LOAD},
+		{review.StoppedNoWeek, v1.StopReason_STOP_REASON_NO_WEEK},
 	} {
-		if got := StoppedOf(one.why); got != one.said {
+		if got := StopReasonOf(one.why); got != one.said {
 			t.Errorf("%q crosses as %v, and it is %v", one.why, got, one.said)
 		}
 	}
 
-	if got := StoppedOf(history.Stopped("sideways")); got != v1.Stopped_STOPPED_NOTHING {
+	// A verdict nobody has taught this table is not "the preset schedules". A
+	// preset stopped for a reason the schema has no word for would be drawn as
+	// one handing out a day of review.
+	if got := StopReasonOf(review.StopReason("sideways")); got != v1.StopReason_STOP_REASON_UNSPECIFIED {
 		t.Errorf("a verdict the schema does not name crosses as %v", got)
 	}
 }
@@ -229,13 +233,13 @@ func TestEveryVerdictCrossesAsItself(t *testing.T) {
 // A note names them in its own words, and a word the reader made nothing of
 // leaves the field where its default stands.
 func TestAWordTheSchemaDoesNotNameCrossesAsUnspecified(t *testing.T) {
-	if got := GoalOf(history.Goal("sideways")); got != v1.Goal_GOAL_UNSPECIFIED {
+	if got := GoalOf(review.Goal("sideways")); got != v1.Goal_GOAL_UNSPECIFIED {
 		t.Errorf("a goal the schema does not name crosses as %v", got)
 	}
-	if got := RuleOf(history.Rule("sideways")); got != v1.Rule_RULE_UNSPECIFIED {
+	if got := RuleOf(review.LearnedRule("sideways")); got != v1.Rule_RULE_UNSPECIFIED {
 		t.Errorf("a rule the schema does not name crosses as %v", got)
 	}
-	if got := CountsOf(history.Counts("sideways")); got != v1.Counts_COUNTS_UNSPECIFIED {
+	if got := BudgetUnitOf(review.BudgetUnit("sideways")); got != v1.BudgetUnit_BUDGET_UNIT_UNSPECIFIED {
 		t.Errorf("a count the schema does not name crosses as %v", got)
 	}
 }
@@ -254,7 +258,7 @@ func TestSettingsTheCoreCannotMakeOutAreRefused(t *testing.T) {
 		if err == nil {
 			t.Errorf("%s is taken", one.named)
 		}
-		if !reflect.DeepEqual(p, history.Preset{}) {
+		if !reflect.DeepEqual(p, review.Preset{}) {
 			t.Errorf("%s comes back as a preset", one.named)
 		}
 	}

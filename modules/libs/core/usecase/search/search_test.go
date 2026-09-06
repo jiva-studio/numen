@@ -8,16 +8,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/embedding"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // dimensions is the width the vector index is built at.
@@ -57,10 +57,10 @@ func indexed(t *testing.T) corpus {
 	}
 	t.Cleanup(func() { db.Close() })
 
-	readers := filesystem.Readers{}
-	scan := usecase.Scan{
+	readers := filesystem.VaultReaders{}
+	scan := vaults.Scan{
 		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
-		Known: db.NoteQueries(), Maintenance: db.Statistics(),
+		Known: db.NoteQueries(), Maintenance: db.Maintenance(),
 	}
 
 	c := corpus{db: db}
@@ -82,7 +82,7 @@ func indexed(t *testing.T) corpus {
 // each carrying its own words. A small chunk is what a vector belongs to.
 func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) {
 	t.Helper()
-	reader, err := filesystem.Readers{}.Open(v)
+	reader, err := filesystem.VaultReaders{}.Open(v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +94,7 @@ func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) 
 	for _, text := range small {
 		chunks.Small = append(chunks.Small, chunk.Chunk{Start: 0, Length: len(raw), Text: text})
 	}
-	if err := c.db.Chunks().SaveChunks(t.Context(), v.ID, "note", path, []chunk.Chunk{chunks}); err != nil {
+	if err := c.db.Chunks().ReplaceChunks(t.Context(), v.ID, "note", path, []chunk.Chunk{chunks}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -112,12 +112,12 @@ func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 	}
 	vectors := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
-		raw, err := hex.DecodeString(p.Fingerprint)
+		raw, err := hex.DecodeString(p.ChunkHash)
 		if err != nil {
 			t.Fatal(err)
 		}
 		vectors = append(vectors, chunk.Vector{
-			Chunk: p.Chunk, Fingerprint: raw, Recipe: model.Recipe(),
+			Chunk: p.Chunk, Hash: raw, Recipe: model.Recipe(),
 			Value: precise(direction), Coarse: embedding.Bits(direction),
 		})
 	}
@@ -137,7 +137,7 @@ func precise(v []float32) []byte {
 }
 
 func (c corpus) search(embedder port.Embedder) search.Search {
-	return search.New(c.db.ChunkQueries(), filesystem.Readers{}, nil, nil, embedder, 0, nil)
+	return search.New(c.db.ChunkQueries(), filesystem.VaultReaders{}, nil, nil, embedder, 0, nil)
 }
 
 var model = port.EmbeddingModel{Name: "test", Dimensions: dimensions}
@@ -301,7 +301,7 @@ func TestAModelOutOfReachLeavesTheWordsToAnswer(t *testing.T) {
 	c := indexed(t)
 
 	var said []error
-	finds := search.New(c.db.ChunkQueries(), filesystem.Readers{}, nil, nil,
+	finds := search.New(c.db.ChunkQueries(), filesystem.VaultReaders{}, nil, nil,
 		outOfReach{why: errors.New("dial tcp: network is unreachable")}, 0,
 		func(err error) { said = append(said, err) })
 
@@ -323,7 +323,7 @@ func TestASearchTheCallerStoppedIsNotAnAnswer(t *testing.T) {
 	ctx := t.Context()
 	c := indexed(t)
 
-	finds := search.New(c.db.ChunkQueries(), filesystem.Readers{}, nil, nil,
+	finds := search.New(c.db.ChunkQueries(), filesystem.VaultReaders{}, nil, nil,
 		outOfReach{why: context.Canceled}, 0, func(error) {})
 
 	if _, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{}); !errors.Is(err, context.Canceled) {
@@ -392,7 +392,7 @@ func (c corpus) sectioned(t *testing.T, v domain.Vault, path string) {
 				"Madhavendra Puri is said. Madhavendra Puri again.",
 		},
 	}
-	if err := c.db.Chunks().SaveChunks(t.Context(), v.ID, "note", path, chunks); err != nil {
+	if err := c.db.Chunks().ReplaceChunks(t.Context(), v.ID, "note", path, chunks); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -437,9 +437,9 @@ func TestAPassageCarriesTheLineItStandsOnInTheProse(t *testing.T) {
 	const path = "notes/Isotherm.md"
 	const held = "The curve holds throughout."
 	v := testsupport.NewVault(t, map[string]string{path: isotherm})
-	scan := usecase.Scan{
-		Readers: filesystem.Readers{}, Vaults: c.db.Vaults(), Notes: c.db.Notes(),
-		Known: c.db.NoteQueries(), Maintenance: c.db.Statistics(),
+	scan := vaults.Scan{
+		Readers: filesystem.VaultReaders{}, Vaults: c.db.Vaults(), Notes: c.db.Notes(),
+		Known: c.db.NoteQueries(), Maintenance: c.db.Maintenance(),
 	}
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
@@ -450,7 +450,7 @@ func TestAPassageCarriesTheLineItStandsOnInTheProse(t *testing.T) {
 		Start: 0, Length: len(isotherm), Text: isotherm,
 		Small: []chunk.Chunk{{Start: at, Length: len(held), Text: held}},
 	}
-	if err := c.db.Chunks().SaveChunks(ctx, v.ID, "note", path, []chunk.Chunk{whole}); err != nil {
+	if err := c.db.Chunks().ReplaceChunks(ctx, v.ID, "note", path, []chunk.Chunk{whole}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -562,7 +562,7 @@ func TestAQuestionAboutBooksIsAnsweredFromBooks(t *testing.T) {
 	// This vault holds notes alone, so a question about books is answered by
 	// nothing: what is asserted is that the kind reached every half.
 	books, err := c.search(oneWay{pointing(+1)}).Execute(ctx, c.first, "Madhavendra Puri",
-		search.Parameters{Of: []domain.SourceKind{domain.KindBook}})
+		search.Parameters{Kinds: []domain.SourceKind{domain.KindBook}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -571,7 +571,7 @@ func TestAQuestionAboutBooksIsAnsweredFromBooks(t *testing.T) {
 	}
 
 	notes, err := c.search(oneWay{pointing(+1)}).Execute(ctx, c.first, "Madhavendra Puri",
-		search.Parameters{Of: []domain.SourceKind{domain.KindNote}})
+		search.Parameters{Kinds: []domain.SourceKind{domain.KindNote}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -581,7 +581,7 @@ func TestAQuestionAboutBooksIsAnsweredFromBooks(t *testing.T) {
 	}
 }
 
-func TestEveryWayIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
+func TestEveryModeIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
 	// One half left unfiltered answers about the wrong kind, and the fused
 	// order carries it: a way that ignores the kind is a half that undoes it.
 	ctx := t.Context()

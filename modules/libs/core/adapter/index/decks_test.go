@@ -26,11 +26,11 @@ func laid(
 		body += headings[i].Text + "\n"
 	}
 	n := domain.Note{
-		Ref:      domain.FileRef{Path: path, Kind: domain.KindNote, Size: int64(len(body)), MTime: 1},
-		Title:    path,
-		Type:     kind,
-		Body:     body,
-		Headings: headings,
+		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: int64(len(body)), ModTime: walked},
+		Title:       path,
+		Type:        kind,
+		Body:        body,
+		Headings:    headings,
 	}
 	if err := db.Notes().Save(t.Context(), vault.ID, []domain.Note{n}); err != nil {
 		t.Fatal(err)
@@ -272,11 +272,11 @@ func TestAnOrdinaryNoteKeepsEveryHeadingItHas(t *testing.T) {
 func TestADeckIsANoteInEveryOtherWay(t *testing.T) {
 	db := opened(t)
 	n := domain.Note{
-		Ref:   domain.FileRef{Path: "decks/mammals.md", Kind: domain.KindNote, Size: 100, MTime: 1},
-		Title: "Mammals",
-		Type:  domain.TypeDeck,
-		ID:    "01HQXMAMMALS",
-		Body:  "## Compost ^k7m2xq9fzp\n",
+		Fingerprint: domain.Fingerprint{Path: "decks/mammals.md", Kind: domain.KindNote, Size: 100, ModTime: walked},
+		Title:       "Mammals",
+		Type:        domain.TypeDeck,
+		ID:          "01HQXMAMMALS",
+		Body:        "## Compost ^k7m2xq9fzp\n",
 		Links: []domain.Link{{
 			Target: domain.Address{Scheme: "note", Value: "stencils/Term"},
 			Role:   domain.RoleRef,

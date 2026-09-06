@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // The load test runs at the size the product is designed for, which no
@@ -23,7 +23,7 @@ import (
 // putting that in the ordinary suite would make everyone wait for something
 // almost nobody needs.
 //
-//	NUMEN_LOAD=1 go test ./internal/core/usecase/vault/ -run TestLoad -v -timeout 40m
+//	NUMEN_LOAD=1 go test ./usecase/vault/ -run TestLoad -v -timeout 40m
 //	NUMEN_LOAD=1 NUMEN_LOAD_NOTES=10000 go test ...   # a smaller rehearsal
 //
 // It reports rather than asserts. A threshold that fails on a slower laptop
@@ -57,8 +57,8 @@ func TestLoad(t *testing.T) {
 	}
 	defer db.Close()
 
-	scan := usecase.Scan{
-		Readers:     filesystem.Readers{},
+	scan := vaults.Scan{
+		Readers:     filesystem.VaultReaders{},
 		Vaults:      db.Vaults(),
 		Notes:       db.Notes(),
 		Known:       db.Queries(),
@@ -103,7 +103,7 @@ func TestLoad(t *testing.T) {
 // on average while the index is being rewritten, but what the slowest one in
 // twenty costs. An application feels slow at its ninety-fifth percentile, not at
 // its median.
-func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan usecase.Scan, query string) {
+func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan vaults.Scan, query string) {
 	const (
 		readers  = 4
 		duration = 15 * time.Second
@@ -131,11 +131,11 @@ func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan us
 		reading.Add(1)
 		go func() {
 			defer reading.Done()
-			queries := db.Queries()
+			queries := db.Passages()
 			deadline := time.Now().Add(duration)
 			for time.Now().Before(deadline) && ctx.Err() == nil {
 				started := time.Now()
-				if _, err := queries.Search(ctx, v.ID, query, 20); err != nil {
+				if _, err := queries.Lexical(ctx, v.ID, query, notesOnly, 20, false); err != nil {
 					return
 				}
 				latencies[i] = append(latencies[i], time.Since(started))

@@ -24,7 +24,7 @@ func (a answering) Read(context.Context, string) ([]byte, error) { return nil, a
 func TestARunNobodyMayOpenIsOneSkippedRun(t *testing.T) {
 	store := answering{why: &os.PathError{Op: "open", Path: "run.jsonl", Err: fs.ErrPermission}}
 
-	ran, err := Log{}.Run(t.Context(), store, port.Stored{Name: "run.jsonl"})
+	ran, err := Log{}.ReadFile(t.Context(), store, port.Entry{Name: "run.jsonl"})
 	if err != nil {
 		t.Fatalf("a file nobody may open refused the whole history: %v", err)
 	}
@@ -38,7 +38,7 @@ func TestARunNobodyMayOpenIsOneSkippedRun(t *testing.T) {
 func TestARunTakenAwayBeforeItWasReadIsNoRun(t *testing.T) {
 	store := answering{why: &os.PathError{Op: "open", Path: "run.jsonl", Err: fs.ErrNotExist}}
 
-	ran, err := Log{}.Run(t.Context(), store, port.Stored{Name: "run.jsonl"})
+	ran, err := Log{}.ReadFile(t.Context(), store, port.Entry{Name: "run.jsonl"})
 	if err != nil {
 		t.Fatalf("a file that was gone refused the whole history: %v", err)
 	}
@@ -51,7 +51,7 @@ func TestARunTakenAwayBeforeItWasReadIsNoRun(t *testing.T) {
 func TestARunThatWouldNotBeReadForAnyOtherReasonIsTrouble(t *testing.T) {
 	store := answering{why: fmt.Errorf("the disk is not there")}
 
-	if _, err := (Log{}).Run(t.Context(), store, port.Stored{Name: "run.jsonl"}); err == nil {
+	if _, err := (Log{}).ReadFile(t.Context(), store, port.Entry{Name: "run.jsonl"}); err == nil {
 		t.Error("a store that could not answer was taken as a run that was read")
 	}
 }

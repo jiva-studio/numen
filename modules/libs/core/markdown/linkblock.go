@@ -10,10 +10,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// ErrNotOurs is what changing an entry says when the entry carries something
+// ErrNotOwned is what changing an entry says when the entry carries something
 // the application does not own. A collision is the person's win: the link is
 // named in the error and left as they wrote it.
-var ErrNotOurs = fmt.Errorf("this link carries something the application does not own")
+var ErrNotOwned = fmt.Errorf("this link carries something the application does not own")
 
 // owned is every key an entry of the `links:` block may carry. Anything else
 // in there is the person's, and the entry it sits in is left alone.
@@ -181,7 +181,7 @@ func (d *Document) RemoveLink(to domain.Address, role domain.LinkRole) (int, err
 //
 // An entry carrying a key the application does not own is refused, and one it
 // cannot read is left as it was written.
-func (d *Document) SetLinkOfType(of string, to domain.Address, role domain.LinkRole) error {
+func (d *Document) SetLinkOfType(kind string, to domain.Address, role domain.LinkRole) error {
 	b, err := d.block()
 	if err != nil {
 		return err
@@ -190,12 +190,12 @@ func (d *Document) SetLinkOfType(of string, to domain.Address, role domain.LinkR
 	var carrying []int
 	kept := 0
 	for i, e := range b.entries {
-		if e.link.Type != of || !e.readable {
+		if e.link.Type != kind || !e.readable {
 			kept++
 			continue
 		}
 		if !e.ours {
-			return fmt.Errorf("%w: %s", ErrNotOurs, e.link.Target)
+			return fmt.Errorf("%w: %s", ErrNotOwned, e.link.Target)
 		}
 		carrying = append(carrying, i)
 	}
@@ -207,7 +207,7 @@ func (d *Document) SetLinkOfType(of string, to domain.Address, role domain.LinkR
 			continue
 		}
 		next := e.link
-		next.Target, next.Type = to, of
+		next.Target, next.Type = to, kind
 		rendered, err := renderEntry(next, b.indent, d.eol)
 		if err != nil {
 			return err
@@ -225,7 +225,7 @@ func (d *Document) SetLinkOfType(of string, to domain.Address, role domain.LinkR
 		return nil
 	}
 
-	rendered, err := renderEntry(domain.Link{Target: to, Role: role, Type: of}, b.indent, d.eol)
+	rendered, err := renderEntry(domain.Link{Target: to, Role: role, Type: kind}, b.indent, d.eol)
 	if err != nil {
 		return err
 	}
@@ -256,7 +256,7 @@ func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error
 			continue
 		}
 		if !e.ours {
-			return 0, fmt.Errorf("%w: %s", ErrNotOurs, e.link.Target)
+			return 0, fmt.Errorf("%w: %s", ErrNotOwned, e.link.Target)
 		}
 		// What was not sent is kept, and every field here behaves the same way.
 		next := e.link
@@ -266,8 +266,8 @@ func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error
 		if change.Type != "" {
 			next.Type = change.Type
 		}
-		if change.Note != "" {
-			next.Note = change.Note
+		if change.Why != "" {
+			next.Why = change.Why
 		}
 		if change.Label != "" {
 			next.Label = change.Label
@@ -324,90 +324,6 @@ func (d *Document) PointLinksAt(from domain.Address, to string) (int, error) {
 	return moved, nil
 }
 
-// scalarSpan is the bytes one scalar occupies, so that changing a value leaves
-// everything else on its line — a trailing comment, the spacing, the other keys
-// of the entry — exactly where it was.
-//
-// The span covers the whole token, quotes and all.
-//
-// A scalar written over lines of its own — with `|`, with `>`, or a quoted one
-// carried across a line break — is not one token on one line. Its link stays as
-// it was written and shows as a problem.
-func (d *Document) scalarSpan(node *yaml.Node) (start, end int, ok bool) {
-	if node.Kind != yaml.ScalarNode {
-		return 0, 0, false
-	}
-	lines := lineOffsets(d.front)
-	if node.Line < 1 || node.Line >= len(lines) || node.Column < 1 {
-		return 0, 0, false
-	}
-	start = columnOffset(d.front, lines, node.Line, node.Column)
-	if start >= len(d.front) {
-		return 0, 0, false
-	}
-
-	switch {
-	case node.Style == 0:
-		end = start + len(node.Value)
-		if end > len(d.front) || string(d.front[start:end]) != node.Value {
-			return 0, 0, false
-		}
-	case node.Style&yaml.SingleQuotedStyle != 0:
-		if end, ok = quotedEnd(d.front, start, '\''); !ok {
-			return 0, 0, false
-		}
-	case node.Style&yaml.DoubleQuotedStyle != 0:
-		if end, ok = quotedEnd(d.front, start, '"'); !ok {
-			return 0, 0, false
-		}
-	default:
-		return 0, 0, false
-	}
-
-	// What the token says, read back. A span that does not say what the node
-	// said is the wrong span, and nothing is written over.
-	var said string
-	if err := yaml.Unmarshal(d.front[start:end], &said); err != nil || said != node.Value {
-		return 0, 0, false
-	}
-	return start, end, true
-}
-
-// quotedEnd is where a quoted scalar ends, counting from the quote it opens
-// with. Inside a single-quoted one a doubled quote is a quote; inside a
-// double-quoted one a backslash escapes what follows.
-func quotedEnd(front []byte, start int, quote byte) (int, bool) {
-	if front[start] != quote {
-		return 0, false
-	}
-	for at := start + 1; at < len(front); at++ {
-		if breakWidth(front, at) > 0 {
-			return 0, false
-		}
-		switch front[at] {
-		case '\\':
-			if quote == '"' && at+1 < len(front) && breakWidth(front, at+1) == 0 {
-				at++
-			}
-		case quote:
-			if quote == '\'' && at+1 < len(front) && front[at+1] == '\'' {
-				at++
-				continue
-			}
-			return at + 1, true
-		}
-	}
-	return 0, false
-}
-
-// splice puts bytes in place of a range of the frontmatter.
-func (d *Document) splice(start, end int, rendered []byte) {
-	front := make([]byte, 0, len(d.front)-(end-start)+len(rendered))
-	front = append(front, d.front[:start]...)
-	front = append(front, rendered...)
-	d.front = append(front, d.front[end:]...)
-}
-
 // renderEntry writes one entry, indented as the block already is.
 func renderEntry(l domain.Link, indent, eol string) ([]byte, error) {
 	var out bytes.Buffer
@@ -417,7 +333,7 @@ func renderEntry(l domain.Link, indent, eol string) ([]byte, error) {
 		To:    l.Target.Written(),
 		Role:  string(l.Role),
 		Type:  l.Type,
-		Note:  l.Note,
+		Note:  l.Why,
 		Label: l.Label,
 	}}); err != nil {
 		return nil, err
@@ -451,7 +367,7 @@ func linkOf(item *yaml.Node) domain.Link {
 		case "type":
 			l.Type = value
 		case "note":
-			l.Note = value
+			l.Why = value
 		case "label":
 			l.Label = value
 		}
@@ -479,49 +395,6 @@ func ours(item *yaml.Node) bool {
 	return true
 }
 
-func leading(line string) string {
-	return line[:len(line)-len(strings.TrimLeft(line, " \t"))]
-}
-
-// offsetLine is the 1-based line a byte offset begins, or zero when it is the
-// end of the block.
-func offsetLine(lines []int, offset int) int {
-	for i, at := range lines {
-		if at == offset {
-			return i + 1
-		}
-	}
-	return 0
-}
-
-// valueOf is the node one key of an entry holds, or nil when it has no such key.
-func valueOf(item *yaml.Node, key string) *yaml.Node {
-	if item.Kind != yaml.MappingNode {
-		return nil
-	}
-	for i := 0; i+1 < len(item.Content); i += 2 {
-		if item.Content[i].Value == key {
-			return item.Content[i+1]
-		}
-	}
-	return nil
-}
-
-// scalar is a value as YAML has to spell it, so that a name carrying `[`, `#`,
-// `&` or a word YAML reads as a number goes into a file as the text it is.
-func scalar(value string) (string, error) {
-	var out bytes.Buffer
-	enc := yaml.NewEncoder(&out)
-	enc.SetIndent(2)
-	if err := enc.Encode(value); err != nil {
-		return "", err
-	}
-	if err := enc.Close(); err != nil {
-		return "", err
-	}
-	return strings.TrimRight(out.String(), "\n"), nil
-}
-
 // asItWasWritten is a name in the notation the name it replaces was in. Double
 // brackets are how a person writes a link, and an alias after `|` or a place
 // after `#` is theirs: the target is what moved, and the rest is left standing.
@@ -530,31 +403,6 @@ func asItWasWritten(was, to string) string {
 		return to
 	}
 	return "[[" + to + keptAfterTarget(was[2:len(was)-2]) + "]]"
-}
-
-// scalarLike is a value spelled the way the value it replaces was spelled. How
-// somebody quotes their own frontmatter is theirs. A style the value cannot be
-// written in is written as YAML has to spell it.
-func scalarLike(value string, style yaml.Style) (string, error) {
-	if style == 0 {
-		return scalar(value)
-	}
-	var out bytes.Buffer
-	enc := yaml.NewEncoder(&out)
-	enc.SetIndent(2)
-	if err := enc.Encode(&yaml.Node{Kind: yaml.ScalarNode, Style: style, Value: value}); err != nil {
-		return "", err
-	}
-	if err := enc.Close(); err != nil {
-		return "", err
-	}
-	written := strings.TrimRight(out.String(), "\n")
-
-	var said string
-	if err := yaml.Unmarshal([]byte(written), &said); err != nil || said != value {
-		return scalar(value)
-	}
-	return written, nil
 }
 
 // Links are the relationships written in the `links:` block. Links written in
@@ -582,4 +430,14 @@ func (d *Document) Links() ([]domain.Link, error) {
 		out = append(out, linkOf(item))
 	}
 	return out, nil
+}
+
+// linkEntry is one record of the `links:` block, in the order the format
+// specification lists the fields.
+type linkEntry struct {
+	To    string `yaml:"to"`
+	Role  string `yaml:"role"`
+	Type  string `yaml:"type,omitempty"`
+	Note  string `yaml:"note,omitempty"`
+	Label string `yaml:"label,omitempty"`
 }

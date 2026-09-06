@@ -8,14 +8,14 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { onScopeDispose, ref } from 'vue'
-import Workspace from '@/workspace/Workspace.vue'
+import WorkspaceLayout from '@/workspace/WorkspaceLayout.vue'
 import Plex from '@/plex/Plex.vue'
 import Agent from './Agent.vue'
-import { branch, pane, type Tab, type Workspace as State } from '@/workspace/model'
+import { branch, pane, type Tab, type Workspace as State } from '@/workspace/node'
 import { neighbourhoods } from '@/plex/fixtures/neighbourhoods'
 import { LONG, MULTILINE } from '@/fixtures/prose'
-import type { PlexNeighbourhood } from '@/plex/model'
-import type { Turn } from '@/thread/model'
+import type { PlexNeighbourhood } from '@/plex/neighbourhood'
+import type { Turn } from '@/thread/turn'
 
 const PLEX = 'plex'
 const AGENT = 'agent'
@@ -57,7 +57,7 @@ const meta: Meta<Knobs> = {
   },
   args: { neighbourhood: neighbourhoods.typical },
   render: (args) => ({
-    components: { Workspace, Plex, Agent },
+    components: { WorkspaceLayout, Plex, Agent },
     setup() {
       const held = ref<State>(opening())
       const turns = ref<Turn[]>([...OPENING])
@@ -102,7 +102,7 @@ const meta: Meta<Knobs> = {
     },
     template: `
       <div style="height: 100vh">
-        <Workspace v-model="held" :tabs="TABS">
+        <WorkspaceLayout v-model="held" :tabs="TABS">
           <template #tab="{ id }">
             <Plex
               v-if="id === PLEX"
@@ -118,7 +118,7 @@ const meta: Meta<Knobs> = {
               @submit="onSubmit"
             />
           </template>
-        </Workspace>
+        </WorkspaceLayout>
       </div>
     `,
   }),

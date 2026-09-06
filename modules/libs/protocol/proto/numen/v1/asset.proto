@@ -1,0 +1,121 @@
+syntax = "proto3";
+
+// What a client may ask about a file of the vault as it opens it.
+//
+// A file is the person's own bytes: a scanned book, a recording, a picture.
+// What is here is what a viewer has to know before it can draw one — how many
+// pages, how long it runs, where a passage sits on the page — and never the
+// bytes themselves. Those are answered at addresses of their own, because a
+// browser's own elements speak bytes and not this.
+//
+// It is a service apart from the vault's notes for one reason: a window that
+// serves the notes to a network need not serve the files, and a service is the
+// unit of what a binary answers.
+package numen.v1;
+
+import "numen/v1/shared.proto";
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// AssetService answers what a file of the vault is, for whatever opens it.
+service AssetService {
+  // GetDocument is what a document is: how many pages it has and how large each
+  // of them is. A page itself is a picture at an address of its own, drawn to
+  // the width it is asked for.
+  //
+  // Opening a document holds a worker of the library's pool. A caller that
+  // could not have one inside the wait is answered unavailable and asks again;
+  // a held request is not an answer.
+  rpc GetDocument(GetDocumentRequest) returns (GetDocumentResponse);
+
+  // GetRecording is what a recording is: how long it runs, how much of it has
+  // been listened to, and where its bytes are played from.
+  rpc GetRecording(GetRecordingRequest) returns (GetRecordingResponse);
+
+  // ListHighlights is where runs of a source's text sit on the pages it was
+  // read from. A source with no pages has nowhere to put them, and is answered
+  // with none.
+  rpc ListHighlights(ListHighlightsRequest) returns (ListHighlightsResponse);
+}
+
+message GetDocumentRequest {
+  // The file, as the vault holds it.
+  string path = 1;
+}
+
+message GetDocumentResponse {
+  // How many pages it has.
+  int32 pages = 1;
+
+  // How large each page is, in page order. A page whose size could not be read
+  // stands at nothing, and the page after it is still where it was.
+  repeated Sheet sheets = 2;
+
+  // Which bytes these pages were read from. It stands in the address a page is
+  // drawn at, so an address names one drawing of one document and answers the
+  // same picture for as long as it answers at all.
+  Fingerprint fingerprint = 3;
+}
+
+// A Sheet is one page's size in the document's own units. A client draws a page
+// at whatever width it likes and keeps the shape by this.
+message Sheet {
+  double wide = 1;
+  double high = 2;
+}
+
+message GetRecordingRequest {
+  // The file, as the vault holds it.
+  string path = 1;
+}
+
+message GetRecordingResponse {
+  // How far the words reach, and how much of it a run has written down, both in
+  // milliseconds. A recording nothing has listened to reaches nowhere, and the
+  // player it is loaded into is what then says how long it runs.
+  int32 length = 1;
+  int32 heard = 2;
+
+  // Where the recording is played from, and what it is played as. A media
+  // element speaks the protocols of the world and not the scheme a window is
+  // served under, so the bytes are answered at an address of their own. Empty
+  // where this build serves them nowhere.
+  string media = 3;
+  string type = 4;
+}
+
+message ListHighlightsRequest {
+  // The file, as the vault holds it.
+  string path = 1;
+
+  // The runs of its text to answer about, counted in bytes over the text the
+  // source is read as. A request naming none is not one.
+  repeated Stretch at = 2;
+}
+
+message ListHighlightsResponse {
+  // One entry per run asked about, in the order they were asked about.
+  repeated Highlight runs = 1;
+}
+
+// Highlight is where one run of the text sits: the pages it falls on and, on
+// each, the rectangles covering it.
+message Highlight {
+  repeated Page pages = 1;
+}
+
+// Page is one page of a highlight, and what to light on it.
+message Page {
+  // Where the page stands in the document, counted from the first.
+  int32 index = 1;
+  repeated Rect rects = 2;
+}
+
+// Rect is a place on a page, in fractions of that page, so a page drawn at any
+// size lines up by multiplying.
+message Rect {
+  float min_x = 1;
+  float min_y = 2;
+  float max_x = 3;
+  float max_y = 4;
+}

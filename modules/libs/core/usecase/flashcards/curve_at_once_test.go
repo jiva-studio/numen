@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
 
 // A curve works every place of its grid out alongside the others, and the curve
@@ -45,33 +44,33 @@ func TestACurveIsTheSameCurveEveryTimeItIsAsked(t *testing.T) {
 // that work a grid out are asked the question.
 func atOnceGoals() []struct {
 	name   string
-	preset history.Preset
+	preset review.Preset
 } {
 	return []struct {
 		name   string
-		preset history.Preset
+		preset review.Preset
 	}{
-		{"minutes", history.Preset{
-			Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
-			Retention: 0.87, Rule: history.RuleInterval, Interval: 21,
-			Counts: history.CountsCards, Backlog: 100, EvenLoad: true,
+		{"minutes", review.Preset{
+			Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+			Retention: 0.87, Rule: review.RuleInterval, Interval: 21,
+			Counts: review.BudgetUnitCards, Backlog: 100, EvenLoad: true,
 		}},
-		{"retention", history.Preset{
-			Goal: history.GoalRetention, MinutesADay: 20, NewADay: 6, ReviewsADay: 30,
-			Retention: 0.9, Rule: history.RuleInterval, Interval: 21,
-			Counts: history.CountsCards, Backlog: 60, EvenLoad: true,
+		{"retention", review.Preset{
+			Goal: review.GoalRetention, MinutesADay: 20, NewADay: 6, ReviewsADay: 30,
+			Retention: 0.9, Rule: review.RuleInterval, Interval: 21,
+			Counts: review.BudgetUnitCards, Backlog: 60, EvenLoad: true,
 		}},
-		{"a date", history.Preset{
-			Goal: history.GoalDate, By: noon.AddDate(0, 0, 45),
+		{"a date", review.Preset{
+			Goal: review.GoalDate, By: noon.AddDate(0, 0, 45),
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
-			Retention: 0.9, Rule: history.RuleInterval, Interval: 7,
-			Counts: history.CountsCards, EvenLoad: true,
+			Retention: 0.9, Rule: review.RuleInterval, Interval: 7,
+			Counts: review.BudgetUnitCards, EvenLoad: true,
 		}},
 	}
 }
 
 // drawn is a whole curve written out, every scalar and every series of it, so
 // that two of them are compared by what they say and not by what they point at.
-func drawn(c flashcards.Curve) string {
+func drawn(c review.Curve) string {
 	return fmt.Sprintf("%v", c)
 }

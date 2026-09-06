@@ -15,7 +15,7 @@ import (
 // drawn is a window that keeps what it was told about a change being made, and
 // a vault that says one stretch stands in one place.
 type drawn struct {
-	said  []domain.Editing
+	said  []domain.Edit
 	at    time.Time
 	found bool
 	asked []string
@@ -23,8 +23,8 @@ type drawn struct {
 
 func (d *drawn) drafting() claudecode.Drafting {
 	return claudecode.Drafting{
-		Tell: func(_ context.Context, said domain.Editing) { d.said = append(d.said, said) },
-		Where: func(_ context.Context, path, stood string) (int, int, bool) {
+		Report: func(_ context.Context, said domain.Edit) { d.said = append(d.said, said) },
+		Location: func(_ context.Context, path, stood string) (int, int, bool) {
 			d.asked = append(d.asked, stood)
 			return 3, 9, d.found
 		},
@@ -34,7 +34,7 @@ func (d *drawn) drafting() claudecode.Drafting {
 }
 
 // drafting is the agent with a window behind it, fed a canned stream.
-func drafting(t *testing.T, window *drawn, prints string) port.Work {
+func drafting(t *testing.T, window *drawn, prints string) port.Run {
 	t.Helper()
 
 	dir := t.TempDir()
@@ -47,15 +47,17 @@ func drafting(t *testing.T, window *drawn, prints string) port.Work {
 		Command: []string{script},
 		Root:    dir,
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
-		Words: map[string]claudecode.Words{
+		Words: map[string]claudecode.ToolDeclaration{
 			claudecode.Tool("note_edit"): {
-				Title: "Edit a note", About: "path", Kind: port.StepEdit,
-				Stood: "stood", Becomes: "becomes",
+				Title: "Edit a note", Kind: port.StepEdit,
+				Arguments: claudecode.Arguments{
+					About: "path", Match: "stood", Text: "becomes",
+				},
 			},
 		},
 		Drafting: window.drafting(),
 	}
-	work, err := claude.Take(t.Context(), port.Task{Asked: "change it"})
+	work, err := claude.Take(t.Context(), port.Task{Question: "change it"})
 	if err != nil {
 		t.Fatal(err)
 	}

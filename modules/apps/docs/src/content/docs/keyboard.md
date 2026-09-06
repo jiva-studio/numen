@@ -3,16 +3,13 @@ title: Keyboard shortcuts
 description: Every key numen answers — in the panel, in the plex, in a note, in a table, in the agent.
 ---
 
-Two keys open everything else: <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>K</kbd> searches the vault, and
-<kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>P</kbd> opens the [commands](/commands/). Each closes the
-other, and <kbd>Escape</kbd> puts either away.
+Two keys open everything else: <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>K</kbd> searches the vault, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>P</kbd> opens the [commands](/commands/). Each closes the other, and <kbd>Escape</kbd> puts either away.
 
 Everywhere below, <kbd>Ctrl</kbd> and <kbd>⌘</kbd> are the same key: whichever your keyboard has.
 
 ## Commands with a key of their own
 
-A command earns a key by being reached often and by leaving nothing behind you would have to
-undo. Nothing that removes a note, a vault or a file is ever one keystroke away.
+A command earns a key by being reached often and by leaving nothing behind you would have to undo. Nothing that removes a note, a vault or a file is ever one keystroke away.
 
 <!-- BEGIN AUTOGEN -->
 | | |
@@ -20,6 +17,7 @@ undo. Nothing that removes a note, a vault or a file is ever one keystroke away.
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>K</kbd> | Search the vault |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>P</kbd> | Commands |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>N</kbd> | New note |
+| <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>N</kbd> | New vault |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>G</kbd> | Go to a note |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>P</kbd> | Show in plex |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>X</kbd> | New plex |

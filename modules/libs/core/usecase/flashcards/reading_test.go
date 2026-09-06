@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -67,7 +67,7 @@ type lookups struct {
 	looks map[string]int
 }
 
-func (a lookups) Links(ctx context.Context, vaultID, from string) ([]domain.ResolvedLink, error) {
+func (a lookups) Links(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error) {
 	a.looks[from]++
 	return a.LinkQueries.Links(ctx, vaultID, from)
 }
@@ -93,7 +93,7 @@ func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
 	presets.Links = lookups{LinkQueries: presets.Links, looks: looks}
 
 	owed := s.owedAt(today, func() time.Time { return saturday })
-	owed.Standings = standings
+	owed.CardFaces = standings
 	owed.Presets = presets
 
 	if _, err := owed.Execute(t.Context(), s.vault); err != nil {
@@ -169,7 +169,7 @@ func TestTheAnswerLogIsReadOnce(t *testing.T) {
 func TestACurveAnswersTheCallersCancellation(t *testing.T) {
 	t.Parallel()
 	s := opened(t, studied(30))
-	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
+	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 
 	ctx, stop := context.WithCancel(t.Context())
 	stop()

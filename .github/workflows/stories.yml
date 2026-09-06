@@ -1,0 +1,63 @@
+name: Stories
+
+# Every picture the manual and the page show is a story named as a string, and
+# a string is not a reference: renaming a story leaves the name pointing at
+# nothing. The manual's own build would catch its half, but only on a change to
+# the manual — and nothing at all ran over the page's half, so a renamed story
+# surfaced there as a missing screenshot at a release.
+#
+# So the two lists are held against the tree here, started by a change to
+# either side. Both checks read files and nothing else, so nothing is installed
+# and the run costs seconds.
+#
+# A shot names the theme it is taken in, and the manual holds that name against
+# the presets folder, so the core's themes start a run.
+on:
+  pull_request:
+    paths:
+      - "modules/libs/ui/src/**"
+      - "modules/apps/desktop/editor/src/**"
+      - "modules/apps/desktop/flashcards/src/**"
+      - "modules/apps/docs/tools/**"
+      - "modules/apps/landing/tools/**"
+      - "modules/libs/core/internal/adapter/theme/presets/**"
+      - ".github/workflows/stories.yml"
+  push:
+    branches: [main]
+    paths:
+      - "modules/libs/ui/src/**"
+      - "modules/apps/desktop/editor/src/**"
+      - "modules/apps/desktop/flashcards/src/**"
+      - "modules/apps/docs/tools/**"
+      - "modules/apps/landing/tools/**"
+      - "modules/libs/core/internal/adapter/theme/presets/**"
+      - ".github/workflows/stories.yml"
+
+concurrency:
+  group: stories-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  named:
+    name: "Check :: Shots"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+
+      # The manual writes its pages from the window's own source as well, so
+      # this answers for every name it holds and not for the pictures alone.
+      - name: The manual
+        run: node modules/apps/docs/tools/manual.mjs --check
+
+      - name: The page
+        run: node modules/apps/landing/tools/stories.mjs

@@ -7,7 +7,7 @@ SELECT path
 FROM sources s
 WHERE s.vault_id = ? AND s.kind = ?
   AND NOT EXISTS (
-      SELECT 1 FROM chunks c WHERE c.source_id = s.id AND c.parent IS NOT NULL
+      SELECT 1 FROM chunks c WHERE c.source_id = s.id AND c.parent_id IS NOT NULL
   )
 ORDER BY path
 LIMIT ?;

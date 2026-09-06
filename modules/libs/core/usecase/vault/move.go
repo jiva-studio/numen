@@ -33,13 +33,27 @@ type Move struct {
 	Notes note.Move
 }
 
+// NewMove is what files anything the vault holds somewhere else: the vault it
+// is moved within, the links that pointed at what travelled, what the index
+// holds about the files under the path and where it files them, and the one
+// note.Move every note that travelled settles through.
+func NewMove(
+	writers port.VaultWriters,
+	links port.LinkQueries,
+	known port.SourceQueries,
+	sources port.SourceRepository,
+	notes note.Move,
+) Move {
+	return Move{Writers: writers, Links: links, Known: known, Sources: sources, Notes: notes}
+}
+
 // Execute moves the path and repairs what pointed at the notes under it.
 //
 // A folder is one rename, so what it holds arrives whole or stays where it was.
 // A link repair that fails afterwards leaves that link broken and visible as a
 // problem.
-func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (note.Moved, error) {
-	res := note.Moved{From: from, To: to}
+func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (note.MoveResult, error) {
+	res := note.MoveResult{From: from, To: to}
 	if from == to {
 		return res, nil
 	}
@@ -96,6 +110,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 		}
 		settled, err := u.Notes.Settle(ctx, v, source.Path, relocated(from, to, source.Path), pointing[source.Path])
 		res.Repaired = append(res.Repaired, settled.Repaired...)
+		res.Dangling = append(res.Dangling, settled.Dangling...)
 		if err != nil {
 			return res, err
 		}
@@ -106,7 +121,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 // renaming is whether this move is one note given a different name, in the
 // folder and under the extension it already has. Travelling is everything the
 // index files under from.
-func renaming(travelling []domain.FileRef, from, to string) bool {
+func renaming(travelling []domain.Fingerprint, from, to string) bool {
 	if pathpkg.Dir(from) != pathpkg.Dir(to) || pathpkg.Ext(from) != pathpkg.Ext(to) {
 		return false
 	}

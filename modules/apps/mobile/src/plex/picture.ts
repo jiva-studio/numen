@@ -6,7 +6,7 @@
  * says nothing about drawing.
  */
 import { Seat } from '@numen/protocol'
-import type { NeighbourhoodResponse } from '@numen/protocol'
+import type { GetNeighbourhoodResponse } from '@numen/protocol'
 import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedSeat } from '@numen/ui'
 
 const seats: Record<Seat, PlexRelatedSeat | null> = {
@@ -24,7 +24,7 @@ const seats: Record<Seat, PlexRelatedSeat | null> = {
  * the focus at all: it hangs off the parent the two share. A relationship both
  * notes named carries an arrow at the end away from the focus.
  */
-export function asPlex(neighbourhood: NeighbourhoodResponse): PlexNeighbourhood {
+export function asPlex(neighbourhood: GetNeighbourhoodResponse): PlexNeighbourhood {
   const focus: PlexNode = {
     id: neighbourhood.focus?.path ?? '',
     title: neighbourhood.focus?.title ?? '',

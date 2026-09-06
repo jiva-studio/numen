@@ -8,10 +8,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// ErrChanged is what a write says when the file it was about to replace is no
+// ErrStale is what a write says when the file it was about to replace is no
 // longer the one the caller read. Nothing is written: a person editing their
 // own note outranks whatever was going to be put on top of it.
-var ErrChanged = errors.New("the note changed since it was read")
+var ErrStale = errors.New("the note changed since it was read")
 
 // ErrOccupied is what a move says when something already sits where a note was
 // going. Nothing is moved.
@@ -30,19 +30,18 @@ type VaultWriter interface {
 	//
 	// Fingerprint, when it is not the zero value, is what the caller believes
 	// is on disk. A file that no longer matches it is left alone and
-	// ErrChanged is returned: the caller read a note, thought about it, and
+	// ErrStale is returned: the caller read a note, thought about it, and
 	// something else wrote in the meantime.
 	//
 	// What comes back is the fingerprint of the file this write produced,
 	// which is what the caller presents at its next write. It is the zero
 	// value when nothing was written.
-	Write(ctx context.Context, path string, content []byte, fingerprint domain.FileRef) (domain.FileRef, error)
+	Write(ctx context.Context, path string, content []byte, fingerprint domain.Fingerprint) (domain.Fingerprint, error)
 
 	// Create puts content where there is nothing, and refuses where there is
 	// something. Looking first and writing after is not the same promise: two
 	// callers can both look, both find nothing, and the second overwrite the
 	// first. Only the filesystem can answer this, and it answers it once.
-
 	Create(ctx context.Context, path string, content []byte) error
 
 	// Bring puts a file from this machine at a path, creating the folders above

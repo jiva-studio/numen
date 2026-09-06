@@ -1,7 +1,6 @@
 package mcp_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -19,7 +18,7 @@ func TestAPortServingTheReadingToolsOffersNoOther(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { endpoint.Close(context.Background()) })
+	t.Cleanup(func() { endpoint.Close(t.Context()) })
 
 	tools, err := listing(t, endpoint.URL)
 	if err != nil {
@@ -27,8 +26,8 @@ func TestAPortServingTheReadingToolsOffersNoOther(t *testing.T) {
 	}
 
 	onlyOffers(t, tools.Tools, "the reading port", []string{
-		"note_search", "note_get", "note_read", "note_neighbourhood", "link_list",
-		"source_list", "source_read", "card_stencils", "card_read", "vault_get",
+		"note_search", "note_titles", "note_read", "note_neighbourhood", "link_list",
+		"source_list", "source_read", "card_stencil_list", "card_read", "vault_get",
 	})
 }
 
@@ -41,7 +40,7 @@ func TestAPortServingTheReviewingToolsOffersNoOther(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { endpoint.Close(context.Background()) })
+	t.Cleanup(func() { endpoint.Close(t.Context()) })
 
 	tools, err := listing(t, endpoint.URL)
 	if err != nil {
@@ -49,9 +48,10 @@ func TestAPortServingTheReviewingToolsOffersNoOther(t *testing.T) {
 	}
 
 	onlyOffers(t, tools.Tools, "the reviewing port", []string{
-		"note_search", "note_get", "note_read", "note_neighbourhood", "link_list",
-		"source_list", "source_read", "card_stencils", "card_read", "vault_get",
-		"card_add", "card_edit", "card_remove", "card_section_add",
+		"note_search", "note_titles", "note_read", "note_neighbourhood", "link_list",
+		"source_list", "source_read", "card_stencil_list", "card_read", "vault_get",
+		"card_add", "card_edit", "card_value_remove", "card_remove",
+		"card_section_add", "card_section_rename", "card_section_remove",
 	})
 }
 

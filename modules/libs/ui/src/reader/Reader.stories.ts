@@ -1,6 +1,6 @@
 /**
- * A document read, in one piece: its pages side by side, what is lit over them,
- * and the controls floating over the page rather than taking a row from it.
+ * A document read, in one piece: its pages side by side, what is highlighted
+ * over them, and the controls floating over the page.
  *
  * Where the drawing is judged: whether a whole page stands in the room, whether
  * the width asked for is the width of the screen and not of the layout, whether
@@ -36,15 +36,15 @@ const MANY = 500
 const ITS_OWN_PACE = 10_000
 
 /** Where something sits on a page, in fractions of it. */
-interface Lit {
+interface Rect {
   readonly minX: number
   readonly minY: number
   readonly maxX: number
   readonly maxY: number
 }
 
-/** A run of the text, lit where it sits on the page it was read from. */
-const LIT: readonly Lit[] = [
+/** A run of the text, highlighted where it sits on the page it was read from. */
+const HIGHLIGHTS: readonly Rect[] = [
   { minX: 0.12, minY: 0.2, maxX: 0.62, maxY: 0.26 },
   { minX: 0.12, minY: 0.27, maxX: 0.44, maxY: 0.33 },
 ]
@@ -71,7 +71,7 @@ const drawn = (label: string, wide: number): string => {
  * drawn to, and it is written on the frame so a test can read it.
  */
 const book =
-  (lit: readonly Lit[] = [], pages = PAGES): Render =>
+  (highlights: readonly Rect[] = [], pages = PAGES): Render =>
   () => ({
     components: { Reader },
     setup() {
@@ -80,13 +80,13 @@ const book =
       const wide = ref(0)
       const picture = (page: number) =>
         wide.value > 0 ? drawn(String(page + 1), wide.value) : ''
-      const litOn = (page: number) => (page === 0 ? lit : [])
+      const highlightsOn = (page: number) => (page === 0 ? highlights : [])
 
       const go = (page: number) => {
         at.value = Math.min(Math.max(page, 0), pages - 1)
       }
 
-      return { at, wide, picture, litOn, pages, sheets: sheets(pages), go }
+      return { at, wide, picture, highlightsOn, pages, sheets: sheets(pages), go }
     },
     template: TEMPLATE,
   })
@@ -99,7 +99,7 @@ const TEMPLATE = `
       :sheets="sheets"
       :at="at"
       :picture="picture"
-      :lit="litOn"
+      :highlights="highlightsOn"
       @go="go"
       @wide="wide = $event"
     >
@@ -118,7 +118,7 @@ const pictureAt = (canvasElement: HTMLElement, page: number) =>
 
 /** The room the strip is scrolled in. */
 const roomOf = (canvasElement: HTMLElement) =>
-  canvasElement.querySelector('.reader__room') as HTMLElement
+  canvasElement.querySelector('.reader__viewport') as HTMLElement
 
 /**
  * The row has arrived at a page when that page stands against the near edge of
@@ -137,7 +137,7 @@ const arrived = async (canvasElement: HTMLElement, page: number) =>
 
 /** Turn the pages, scroll the strip, type a page to go to, and draw it closer. */
 export const Playground: Story = {
-  render: book(LIT),
+  render: book(HIGHLIGHTS),
 }
 
 /**
@@ -236,24 +236,26 @@ export const Scrolling: Story = {
  * Where the rectangles sit is a fraction of the page, so drawing the page
  * larger carries them along and nothing is worked out again.
  */
-export const LitOver: Story = {
-  render: book(LIT),
+export const HighlightedOver: Story = {
+  render: book(HIGHLIGHTS),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await waitFor(async () =>
       await expect(
-        canvasElement.querySelectorAll('.reader__page[data-page="0"] .reader__lit'),
-      ).toHaveLength(LIT.length),
+        canvasElement.querySelectorAll('.reader__page[data-page="0"] .reader__highlight'),
+      ).toHaveLength(HIGHLIGHTS.length),
     )
 
-    /** Every lit rectangle, as a share of the page it is drawn over. */
+    /** Every highlighted rectangle, as a share of the page it is drawn over. */
     const over = async () => {
       const picture = sheetAt(canvasElement, 0)!.getBoundingClientRect()
-      const lit = [...canvasElement.querySelectorAll('.reader__page[data-page="0"] .reader__lit')]
-      await expect(lit).toHaveLength(LIT.length)
-      for (const [index, one] of lit.entries()) {
+      const drawn = [
+        ...canvasElement.querySelectorAll('.reader__page[data-page="0"] .reader__highlight'),
+      ]
+      await expect(drawn).toHaveLength(HIGHLIGHTS.length)
+      for (const [index, one] of drawn.entries()) {
         const box = one.getBoundingClientRect()
-        const want = LIT[index]!
+        const want = HIGHLIGHTS[index]!
         await expect((box.left - picture.left) / picture.width).toBeCloseTo(want.minX, 2)
         await expect((box.top - picture.top) / picture.height).toBeCloseTo(want.minY, 2)
         await expect(box.width / picture.width).toBeCloseTo(want.maxX - want.minX, 2)
@@ -315,15 +317,15 @@ export const Undrawn: Story = {
 }
 
 /**
- * Nothing is lit until the page it is lit on is there. A rectangle over a page
- * still coming is a mark on nothing, standing where the page is not.
+ * Nothing is highlighted until the page it stands on is there. A rectangle over
+ * a page still coming is a mark on nothing, standing where the page is not.
  */
-export const LitOnlyOnceThePageIsThere: Story = {
-  render: book(LIT),
+export const HighlightedOnlyOnceThePageIsThere: Story = {
+  render: book(HIGHLIGHTS),
   play: async ({ canvasElement }) => {
     // Before anything has arrived, the first page is a ring turning and no
     // rectangles at all.
-    await expect(canvasElement.querySelectorAll('.reader__lit')).toHaveLength(0)
+    await expect(canvasElement.querySelectorAll('.reader__highlight')).toHaveLength(0)
 
     await waitFor(async () => {
       const picture = pictureAt(canvasElement, 0)
@@ -332,8 +334,8 @@ export const LitOnlyOnceThePageIsThere: Story = {
     })
     await waitFor(async () =>
       await expect(
-        canvasElement.querySelectorAll('.reader__page[data-page="0"] .reader__lit'),
-      ).toHaveLength(LIT.length),
+        canvasElement.querySelectorAll('.reader__page[data-page="0"] .reader__highlight'),
+      ).toHaveLength(HIGHLIGHTS.length),
     )
   },
 }

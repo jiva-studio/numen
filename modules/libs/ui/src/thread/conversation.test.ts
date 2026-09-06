@@ -6,10 +6,10 @@
  * from one exchange landing in the next.
  */
 import { describe, expect, it } from 'vitest'
-import { conversation, type Wording } from './conversation'
-import type { AgentPort, AgentStep, Place } from './agent'
+import { conversation, type ConversationStrings } from './conversation'
+import type { AgentPort, AgentStep, Passage } from './agent'
 
-const words: Wording = {
+const words: ConversationStrings = {
   thinking: 'Thinking',
   unreachable: 'Not reached',
   nothing: 'Said nothing',
@@ -36,12 +36,12 @@ const nap = () => new Promise((wake) => setTimeout(wake, 0))
 const now = (draw: () => void) => draw()
 
 const said = (text: string): AgentStep => ({ kind: 'said', text })
-const used = (tool: string, about = '', written = 0, place?: Place): AgentStep => ({
-  kind: 'doing',
+const used = (tool: string, about = '', written = 0, passage?: Passage): AgentStep => ({
+  kind: 'toolCall',
   tool,
   about,
   written,
-  ...(place ? { place } : {}),
+  ...(passage ? { passage } : {}),
 })
 const answered = (): AgentStep => ({ kind: 'answered' })
 const thinking = (): AgentStep => ({ kind: 'thinking' })
@@ -287,8 +287,8 @@ describe('a wait that explains itself', () => {
 })
 
 
-describe('a call that was working on a place', () => {
-  const place: Place = { path: 'library/gardening.epub', start: 40_512, length: 31 }
+describe('a call that was working on a passage', () => {
+  const passage: Passage = { path: 'library/gardening.epub', start: 40_512, length: 31 }
 
   it('makes the line about it one a person can press, and says where it goes', async () => {
     let release = () => {}
@@ -296,7 +296,7 @@ describe('a call that was working on a place', () => {
       release = go
     })
     const talk = conversation(
-      doing([used('Read a document', 'gardening.epub', 0, place)], held),
+      doing([used('Read a document', 'gardening.epub', 0, passage)], held),
       words,
       called,
       now,
@@ -306,7 +306,7 @@ describe('a call that was working on a place', () => {
 
     const line = talk.turns.value.find((turn) => turn.voice === 'doing')
     expect(line?.opens).toBe(true)
-    expect(talk.place(line?.id ?? '')).toEqual(place)
+    expect(talk.passage(line?.id ?? '')).toEqual(passage)
 
     release()
     await asking
@@ -317,7 +317,7 @@ describe('a call that was working on a place', () => {
     const held = new Promise<void>((go) => {
       release = go
     })
-    const whole: Place = { path: 'notes/heat.md', start: 0, length: 0 }
+    const whole: Passage = { path: 'notes/heat.md', start: 0, length: 0 }
     const talk = conversation(
       doing([used('Read a note', 'notes/heat.md', 0, whole)], held),
       words,
@@ -329,7 +329,7 @@ describe('a call that was working on a place', () => {
 
     const line = talk.turns.value.find((turn) => turn.voice === 'doing')
     expect(line?.opens).toBeUndefined()
-    expect(talk.place(line?.id ?? '')).toBeNull()
+    expect(talk.passage(line?.id ?? '')).toBeNull()
 
     release()
     await asking
@@ -346,7 +346,7 @@ describe('a call that was working on a place', () => {
 
     const line = talk.turns.value.find((turn) => turn.voice === 'doing')
     expect(line?.opens).toBeUndefined()
-    expect(talk.place(line?.id ?? '')).toBeNull()
+    expect(talk.passage(line?.id ?? '')).toBeNull()
 
     release()
     await asking

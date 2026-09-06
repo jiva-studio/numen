@@ -8,15 +8,16 @@
  * one does are the caller's.
  */
 import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
-import { banded, landsOn, placeMenu, stepTo, type MenuItem, type MenuOpening } from './model'
-import type { Point, Size } from '../lib/geometry'
+import { grouped, landsOn, placeMenu, stepTo, type MenuItem, type MenuOpening } from './item'
+import { isLetter, jumpTo, NOTHING_TYPED, type Typeahead } from './typeahead'
+import type { Position, Size } from '../lib/geometry'
 
 const props = withDefaults(
   defineProps<{
     /** What can be chosen, in the order it is drawn. */
     items: readonly MenuItem[]
     /** Where it was asked for, in the coordinates of the area it is drawn into. */
-    at: Point
+    at: Position
     /** Whether it is drawn at all. */
     open?: boolean
     /** What opened it. Opened by hand it appears with nothing chosen. */
@@ -32,10 +33,10 @@ const props = withDefaults(
     /** The area it is placed in. The browser's own by default. */
     viewport?: Size | null
     /**
-     * Whether the name of a band is drawn over it. A menu whose bands are
+     * Whether the name of a group is drawn over it. A menu whose groups are
      * named by identifiers draws none.
      */
-    bands?: boolean
+    groups?: boolean
     /**
      * How wide what asked for it is. The menu is never narrower than that, and
      * grows past it for what it holds.
@@ -54,7 +55,7 @@ const props = withDefaults(
     current: null,
     from: null,
     viewport: null,
-    bands: false,
+    groups: false,
     asking: 0,
     margin: 8,
     to: 'body',
@@ -88,8 +89,8 @@ const size = ref<Size>({ width: 0, height: 0 })
 /** Which item the keyboard is on, or -1 when it is on none. */
 const here = ref(-1)
 
-/** The items with the rules that stand between their bands. */
-const rows = computed(() => banded(props.items))
+/** The items with the rules that stand between their groups. */
+const rows = computed(() => grouped(props.items))
 
 /** The area to stay inside. The browser's, unless a caller measures its own. */
 const room = computed<Size>(
@@ -151,42 +152,15 @@ const onWindowKey = (event: KeyboardEvent) => {
   emit('dismiss')
 }
 
-/** What has been typed to jump by, and when the last letter of it arrived. */
-let typed = ''
-let struck = 0
+/** The word being typed to jump by, which the next letter carries on. */
+let typed: Typeahead = NOTHING_TYPED
 
-/** How long a run of letters stays one word. */
-const TYPING = 1000
-
-/**
- * The keyboard onto the next item beginning with what has been typed. A run of
- * letters is one word, and stands where it is while the word grows. One letter
- * struck again and again walks the items beginning with it.
- */
-const jumpTo = (letter: string) => {
-  const now = Date.now()
-  typed = now - struck > TYPING ? letter : typed + letter
-  struck = now
-  const one = typed[0]!
-  const drumming = [...typed].every((each) => each === one)
-  const word = drumming ? one : typed
-  const total = props.items.length
-  const from = here.value < 0 ? 0 : here.value + (typed.length > 1 && !drumming ? 0 : 1)
-  const said = word.toLowerCase()
-  for (let step = 0; step < total; step += 1) {
-    const at = (from + step) % total
-    const item = props.items[at]
-    if (!item || item.disabled) continue
-    if (item.text.toLowerCase().startsWith(said)) {
-      goTo(at)
-      return
-    }
-  }
+/** The keyboard onto the item a letter names, and nowhere where it names none. */
+const jump = (letter: string) => {
+  const jumped = jumpTo(props.items, typed, letter, here.value, Date.now())
+  typed = jumped.typed
+  if (jumped.at !== null) goTo(jumped.at)
 }
-
-/** A key that stands for a letter a person meant to type. */
-const letters = (event: KeyboardEvent): boolean =>
-  event.key.length === 1 && event.key !== ' ' && !event.ctrlKey && !event.metaKey && !event.altKey
 
 /**
  * The keyboard, while the menu is open. Tab moves within the items and wraps,
@@ -203,9 +177,9 @@ const onKey = (event: KeyboardEvent) => {
   else if (event.key === 'Home') step(1, -1)
   else if (event.key === 'End') step(-1, 0)
   else if (event.key === 'Tab') step(event.shiftKey ? -1 : 1)
-  else if (letters(event)) {
+  else if (isLetter(event)) {
     event.preventDefault()
-    jumpTo(event.key)
+    jump(event.key)
   }
 }
 
@@ -280,11 +254,11 @@ onBeforeUnmount(leave)
     >
       <template v-for="(item, index) in rows" :key="item.id">
         <p
-          v-if="bands && item.band && (item.rule || index === 0)"
-          class="menu__band px-2 py-1 text-hushed"
+          v-if="groups && item.group && (item.rule || index === 0)"
+          class="menu__group-name px-2 py-1 text-hushed"
           aria-hidden="true"
         >
-          {{ item.band }}
+          {{ item.group }}
         </p>
         <hr v-else-if="item.rule" class="menu__rule" role="separator" />
 
@@ -302,7 +276,7 @@ onBeforeUnmount(leave)
           <span v-if="$slots.icon" class="menu__icon flex shrink-0 items-center">
             <slot name="icon" :id="item.id" />
           </span>
-          <span class="menu__said flex min-w-0 flex-col">
+          <span class="flex min-w-0 flex-col">
             <span class="menu__text">{{ item.text }}</span>
             <span v-if="item.detail" class="menu__detail">{{ item.detail }}</span>
           </span>
@@ -337,8 +311,8 @@ onBeforeUnmount(leave)
 
   position: fixed;
   z-index: var(--lift);
-  /* As wide as the longest thing it offers, and always between these two
-     widths. */
+  /* As wide as the longest thing it offers, within these two widths — or as
+     wide as what asked for it, where that is wider than either. */
   inline-size: max-content;
   min-inline-size: max(var(--narrowest), var(--asking));
   max-inline-size: max(var(--widest), var(--asking));
@@ -399,8 +373,8 @@ onBeforeUnmount(leave)
   font-size: var(--numen-text-1);
 }
 
-/* The name of a band, set as this product sets a label over what it names. */
-.menu__band {
+/* The name of a group, set as this product sets a label over what it names. */
+.menu__group-name {
   margin: 0;
   font-size: var(--numen-text-1);
   font-weight: 600;

@@ -7,20 +7,10 @@
  */
 import {
   branch,
-  isBranch,
-  isPane,
   leads,
-  nodeAt,
-  normalize,
   orientationAt,
   orientationOf,
   pane,
-  paneById,
-  paneWithTab,
-  panesOf,
-  pathTo,
-  replaceAt,
-  withChildren,
   type NodeId,
   type Orientation,
   type Pane,
@@ -28,11 +18,23 @@ import {
   type TabId,
   type Workspace,
   type WorkspaceNode,
-} from './model'
-import { insert } from './model/shares'
+} from './node'
+import { normalize } from './normalize'
+import {
+  isBranch,
+  isPane,
+  nodeAt,
+  paneById,
+  paneWithTab,
+  panesOf,
+  pathTo,
+  replaceAt,
+  withChildren,
+} from './tree'
+import { insert } from './shares'
 
 /** Where an identity for a pane or a branch a gesture makes comes from. */
-export type Naming = () => NodeId
+export type NodeIdFactory = () => NodeId
 
 export interface TabDrop {
   readonly tab: TabId
@@ -89,7 +91,7 @@ export function openTabBeside(
   workspace: Workspace,
   tab: TabId,
   side: Side,
-  naming: Naming,
+  naming: NodeIdFactory,
   onto: NodeId = workspace.focus,
 ): Workspace {
   const target = paneById(workspace.root, onto) ?? panesOf(workspace.root)[0]
@@ -137,7 +139,7 @@ export function moveTabWithin(workspace: Workspace, tab: TabId, slot: number): W
  *
  * A tab let go where it started, with nowhere else to go, is only shown.
  */
-export function dropTab(workspace: Workspace, drop: TabDrop, naming: Naming): Workspace {
+export function dropTab(workspace: Workspace, drop: TabDrop, naming: NodeIdFactory): Workspace {
   const target = paneById(workspace.root, drop.onto)
   const source = paneWithTab(workspace.root, drop.tab)
   if (!target || !source) return workspace
@@ -166,7 +168,7 @@ export function dropOnEdge(
   workspace: Workspace,
   tab: TabId,
   side: Side,
-  naming: Naming,
+  naming: NodeIdFactory,
 ): Workspace {
   if (!paneWithTab(workspace.root, tab) || side === 'center') return workspace
 
@@ -192,7 +194,7 @@ export function resizeBranch(
   }
 }
 
-interface Landed {
+interface Landing {
   readonly root: WorkspaceNode
   readonly axis: Orientation
   readonly focus: NodeId
@@ -212,8 +214,8 @@ function beside(
   tab: TabId,
   side: Side,
   axis: Orientation,
-  id: Naming,
-): Landed {
+  id: NodeIdFactory,
+): Landing {
   const wanted = orientationOf(side)
   const path = pathTo(root, onto)
   if (!wanted || !path) return { root, axis, focus: onto }

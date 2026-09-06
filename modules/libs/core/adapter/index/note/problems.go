@@ -10,19 +10,19 @@ import (
 
 // Noted is what parsing each file turned up. The wording is the parser's and is
 // carried through as it was written.
-func (q *Queries) Noted(ctx context.Context, vaultID string) ([]domain.VaultProblem, error) {
-	return q.said(ctx, vaultID, "noted")
+func (q *Queries) Noted(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error) {
+	return q.said(ctx, vaultID, "problems")
 }
 
 // Unreadable is the notes whose frontmatter is not YAML.
-func (q *Queries) Unreadable(ctx context.Context, vaultID string) ([]domain.VaultProblem, error) {
-	return q.said(ctx, vaultID, "unreadable")
+func (q *Queries) Unreadable(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error) {
+	return q.said(ctx, vaultID, "frontmatter_errors")
 }
 
 // said reads the two questions that come back as a path and a line of text. What
 // the line means is the caller's to say: a query answers what is stored and does
 // not compose sentences about it.
-func (q *Queries) said(ctx context.Context, vaultID, statement string) ([]domain.VaultProblem, error) {
+func (q *Queries) said(ctx context.Context, vaultID domain.VaultID, statement string) ([]domain.VaultProblem, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -52,7 +52,7 @@ func (q *Queries) said(ctx context.Context, vaultID, statement string) ([]domain
 //
 // The query is the whole answer here: a link with no candidate resolves to
 // nothing whichever priority rule is applied to it.
-func (q *Queries) Dangling(ctx context.Context, vaultID string) ([]domain.ResolvedLink, error) {
+func (q *Queries) Dangling(ctx context.Context, vaultID domain.VaultID) ([]domain.ResolvedLink, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -84,7 +84,7 @@ func (q *Queries) Dangling(ctx context.Context, vaultID string) ([]domain.Resolv
 // really ambiguous is settled by the same resolution a link goes through
 // anywhere else. Writing that rule a second time in SQL is how two answers to
 // one question start disagreeing.
-func (q *Queries) Ambiguous(ctx context.Context, vaultID string) ([]domain.AmbiguousLink, error) {
+func (q *Queries) Ambiguous(ctx context.Context, vaultID domain.VaultID) ([]domain.AmbiguousLink, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -141,7 +141,7 @@ func scanWritten(rows *sql.Rows) (domain.ResolvedLink, error) {
 	var l domain.ResolvedLink
 	var role string
 	if err := rows.Scan(&l.From, &l.Target.Scheme, &l.Target.Value, &role,
-		&l.Type, &l.Note, &l.Label); err != nil {
+		&l.Type, &l.Why, &l.Label); err != nil {
 		return domain.ResolvedLink{}, err
 	}
 	l.Role = domain.LinkRole(role)

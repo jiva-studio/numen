@@ -4,75 +4,78 @@
  * measurement, no clock.
  */
 
-/** Where a carried entry lands: before the entry named, or at the end. */
-export type Landing = string | null
+/** Where a dragged entry lands: before the entry named, or at the end. */
+export type InsertionPoint = string | null
 
 /**
- * The order a carried entry lands in. The entry is taken out first, so landing
+ * The order a dragged entry lands in. The entry is taken out first, so landing
  * before itself, before nothing, or before a name that is not there leaves the
  * order as it was.
  */
 export function ordered(
   names: readonly string[],
-  carried: string,
-  at: Landing,
+  dragged: string,
+  at: InsertionPoint,
 ): readonly string[] {
-  if (!names.includes(carried)) return names
+  if (!names.includes(dragged)) return names
 
-  const left = names.filter((name) => name !== carried)
-  if (at === null) return [...left, carried]
+  const left = names.filter((name) => name !== dragged)
+  if (at === null) return [...left, dragged]
 
   const before = left.indexOf(at)
   if (before === -1) return names
-  return [...left.slice(0, before), carried, ...left.slice(before)]
+  return [...left.slice(0, before), dragged, ...left.slice(before)]
 }
 
 /**
- * A carried field may land where it was let go. The first field names every
+ * A dragged field may land where it was let go. The first field names every
  * card the stencil cuts, so it stays first: it does not move, and nothing lands
  * above it. A field let go where it stands moves nothing either.
  */
 export function landing(
   fields: readonly string[],
-  carried: string,
-  at: Landing,
+  dragged: string,
+  at: InsertionPoint,
 ): boolean {
   const first = fields[0]
   if (first === undefined) return false
-  if (carried === first || at === first) return false
-  return carried !== at
+  if (dragged === first || at === first) return false
+  return dragged !== at
 }
 
-/** Which way along the order something is carried by the keyboard. */
-export type Way = 'up' | 'down'
+/** Which way along the order something is dragged by the keyboard. */
+export type StepDirection = 'up' | 'down'
 
-/** The way along the order an arrow carries what is held, and nothing for any other key. */
-export const wayOf = (key: string): Way | null =>
+/** The direction along the order an arrow drags what is held, and nothing for any other key. */
+export const directionOf = (key: string): StepDirection | null =>
   key === 'ArrowUp' ? 'up' : key === 'ArrowDown' ? 'down' : null
 
+/** The keys that drag what is held one place, as a reader is told them. */
+export const STEP_KEYS = 'ArrowUp ArrowDown'
+
 /**
- * Where a carried entry lands one place along the order, and nothing where
+ * Where a dragged entry lands one place along the order, and nothing where
  * there is no place that way. Landing before the entry past the next one is
  * what puts it one place further down, the entry being taken out first.
  */
 export function stepped(
   names: readonly string[],
-  carried: string,
-  way: Way,
-): Landing | undefined {
-  const at = names.indexOf(carried)
+  dragged: string,
+  direction: StepDirection,
+): InsertionPoint | undefined {
+  const at = names.indexOf(dragged)
   if (at === -1) return undefined
-  if (way === 'up') return at === 0 ? undefined : (names[at - 1] ?? undefined)
+  if (direction === 'up') return at === 0 ? undefined : (names[at - 1] ?? undefined)
   if (at === names.length - 1) return undefined
   return names[at + 2] ?? null
 }
 
-/** The order a carried field lands in, with the first field left where it is. */
+/** The order a dragged field lands in, with the first field left where it is. */
 export const reordered = (
   fields: readonly string[],
-  carried: string,
-  at: Landing,
-): readonly string[] => (landing(fields, carried, at) ? ordered(fields, carried, at) : fields)
+  dragged: string,
+  at: InsertionPoint,
+): readonly string[] => (landing(fields, dragged, at) ? ordered(fields, dragged, at) : fields)
 
 /** Why a name cannot be used, and nothing where it can. */
 export type Objection = 'blank' | 'taken' | 'braced'
@@ -126,4 +129,4 @@ export type Half = 'front' | 'back'
 export const HALVES: readonly Half[] = ['front', 'back']
 
 /** What is wrong with each of a number of things, under what each is known by. */
-export type Against = ReadonlyMap<string, readonly string[]>
+export type Problems = ReadonlyMap<string, readonly string[]>

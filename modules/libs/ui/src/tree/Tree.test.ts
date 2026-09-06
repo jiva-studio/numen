@@ -8,9 +8,9 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Tree from './Tree.vue'
-import type { Row } from './model'
-import { stubEnvironment } from '../fixtures/clock'
-import type { Environment } from '../lib/environment'
+import type { Row } from './row'
+import { stubClock } from '../fixtures/clock'
+import type { Clock } from '../lib/clock'
 
 const ROWS: readonly Row[] = [
   {
@@ -35,7 +35,7 @@ const ROWS: readonly Row[] = [
 const HEIGHT = 24
 
 /** A clock whose next frame is now. */
-const atOnce: Environment = {
+const atOnce: Clock = {
   now: () => 0,
   schedule: (run) => {
     run(0)
@@ -47,7 +47,7 @@ const atOnce: Environment = {
 const mountTree = (props: Record<string, unknown> = {}, slots: Record<string, string> = {}) =>
   mount(Tree, {
     attachTo: document.body,
-    props: { rows: ROWS, open: ['work'], environment: atOnce, ...props },
+    props: { rows: ROWS, open: ['work'], clock: atOnce, ...props },
     slots,
   })
 
@@ -128,7 +128,7 @@ const dragTo = async (held: Tree, row: string, y: number): Promise<void> => {
   await held.vm.$nextTick()
 }
 
-const carriedIn = (held: Tree) => held.find('.tree__carried')
+const draggedIn = (held: Tree) => held.find('.tree__dragged')
 
 describe('what is drawn', () => {
   it('is the rows an open row holds, in their place', () => {
@@ -394,7 +394,7 @@ describe('a drag', () => {
     expect(held.emitted('move')).toStrictEqual([[['loose'], { before: 'work' }]])
   })
 
-  it('carries the whole selection, off a row standing in it', async () => {
+  it('drags the whole selection, off a row standing in it', async () => {
     const held = mountTree({ selected: ['notes', 'loose'] })
     await dragTo(held, 'loose', 12)
 
@@ -402,7 +402,7 @@ describe('a drag', () => {
     expect(held.emitted('select')).toBeUndefined()
   })
 
-  it('selects a row standing outside the selection, and carries it alone', async () => {
+  it('selects a row standing outside the selection, and drags it alone', async () => {
     const held = mountTree({ selected: ['notes'] })
     await dragTo(held, 'loose', 12)
 
@@ -416,7 +416,7 @@ describe('a drag', () => {
     expect(held.emitted('move')).toBeUndefined()
   })
 
-  it('is refused into what any of the rows carried holds, and moves nothing', async () => {
+  it('is refused into what any of the rows dragged holds, and moves nothing', async () => {
     const held = mountTree({ selected: ['work', 'loose'] })
     await dragTo(held, 'loose', HEIGHT + 12)
     expect(held.emitted('move')).toBeUndefined()
@@ -460,22 +460,22 @@ describe('a drag', () => {
   })
 
   it('leaves the press that follows it standing down', async () => {
-    const clock = stubEnvironment()
-    const held = mountTree({ selected: ['loose'], environment: clock.environment })
+    const world = stubClock()
+    const held = mountTree({ selected: ['loose'], clock: world.clock })
 
     await dragTo(held, 'loose', 12)
     await rowIn(held, 'notes').trigger('click')
 
     expect(held.emitted('select')).toBeUndefined()
 
-    clock.run()
+    world.run()
     await rowIn(held, 'notes').trigger('click')
     expect(held.emitted('select')).toStrictEqual([[['notes']]])
   })
 })
 
-describe('rows carried out of the tree', () => {
-  it('says which rows are being carried, once for the whole drag', async () => {
+describe('rows dragged out of the tree', () => {
+  it('says which rows are being dragged, once for the whole drag', async () => {
     const held = mountTree({ selected: ['notes', 'loose'] })
     const from = rowIn(held, 'loose').element
 
@@ -484,7 +484,7 @@ describe('rows carried out of the tree', () => {
     pointer('pointermove', 4 * HEIGHT)
     await held.vm.$nextTick()
 
-    expect(held.emitted('carry')).toStrictEqual([[['notes', 'loose']]])
+    expect(held.emitted('drag')).toStrictEqual([[['notes', 'loose']]])
   })
 
   it('says so for a drag over another pane, where nothing in the tree is landed on', async () => {
@@ -496,7 +496,7 @@ describe('rows carried out of the tree', () => {
     pointer('pointerup', 2 * HEIGHT, window, { clientX: 400 })
     await held.vm.$nextTick()
 
-    expect(held.emitted('carry')).toStrictEqual([[['work']]])
+    expect(held.emitted('drag')).toStrictEqual([[['work']]])
     expect(held.emitted('drop')).toStrictEqual([[]])
     expect(held.emitted('move')).toBeUndefined()
   })
@@ -509,35 +509,35 @@ describe('rows carried out of the tree', () => {
     expect(held.emitted('drop')).toStrictEqual([[]])
   })
 
-  it('carries nothing where the pointer did not travel far enough', async () => {
+  it('drags nothing where the pointer did not travel far enough', async () => {
     const held = mountTree()
     pointer('pointerdown', 108, rowIn(held, 'loose').element)
     pointer('pointermove', 110)
     pointer('pointerup', 110)
     await held.vm.$nextTick()
 
-    expect(held.emitted('carry')).toBeUndefined()
+    expect(held.emitted('drag')).toBeUndefined()
     expect(held.emitted('drop')).toBeUndefined()
   })
 })
 
 describe('what follows the pointer', () => {
-  it('says the name of the one row being carried', async () => {
+  it('says the name of the one row being dragged', async () => {
     const held = mountTree()
     pointer('pointerdown', 108, rowIn(held, 'loose').element)
     pointer('pointermove', 60)
     await held.vm.$nextTick()
 
-    expect(carriedIn(held).text()).toBe('Loose')
+    expect(draggedIn(held).text()).toBe('Loose')
   })
 
-  it('says how many are being carried, where there are several', async () => {
+  it('says how many are being dragged, where there are several', async () => {
     const held = mountTree({ selected: ['notes', 'loose'] })
     pointer('pointerdown', 108, rowIn(held, 'loose').element)
     pointer('pointermove', 60)
     await held.vm.$nextTick()
 
-    expect(carriedIn(held).text()).toBe('2 rows')
+    expect(draggedIn(held).text()).toBe('2 rows')
   })
 
   it('says it in the words the caller gave for how many', async () => {
@@ -549,7 +549,7 @@ describe('what follows the pointer', () => {
     pointer('pointermove', 60)
     await held.vm.$nextTick()
 
-    expect(carriedIn(held).text()).toBe('2 files')
+    expect(draggedIn(held).text()).toBe('2 files')
   })
 
   it('stands where the pointer is', async () => {
@@ -558,7 +558,7 @@ describe('what follows the pointer', () => {
     pointer('pointermove', 60)
     await held.vm.$nextTick()
 
-    expect(carriedIn(held).attributes('style')).toContain('top: 60px')
+    expect(draggedIn(held).attributes('style')).toContain('top: 60px')
   })
 
   it('is drawn nowhere before the pointer has travelled far enough', async () => {
@@ -567,18 +567,18 @@ describe('what follows the pointer', () => {
     pointer('pointermove', 110)
     await held.vm.$nextTick()
 
-    expect(carriedIn(held).exists()).toBe(false)
+    expect(draggedIn(held).exists()).toBe(false)
   })
 
   it('is drawn nowhere once the rows have been let go of', async () => {
     const held = mountTree()
     await dragTo(held, 'loose', 12)
 
-    expect(carriedIn(held).exists()).toBe(false)
+    expect(draggedIn(held).exists()).toBe(false)
   })
 
-  it('is drawn nowhere at all while nothing is being carried', () => {
-    expect(carriedIn(mountTree()).exists()).toBe(false)
+  it('is drawn nowhere at all while nothing is being dragged', () => {
+    expect(draggedIn(mountTree()).exists()).toBe(false)
   })
 })
 

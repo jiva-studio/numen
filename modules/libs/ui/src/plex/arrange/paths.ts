@@ -4,8 +4,8 @@
  * Where a line runs is settled in `routing.ts`; this is only how that is
  * written down.
  */
-import { ARROW_LENGTH, type EdgeCurve, type PlacedArrow, type PlacedEdge } from '../model'
-import type { Point } from '../../lib/geometry'
+import { ARROW_LENGTH, type EdgeCurve, type PlacedArrow, type PlacedEdge } from '../edge'
+import type { Position } from '../../lib/geometry'
 
 /** The curve, from where it leaves to where it arrives. */
 export const pathOf = (edge: EdgeCurve): string =>
@@ -34,7 +34,7 @@ export const arrowTransformOf = (arrow: PlacedArrow): string =>
  * A line between two loose points: out of the first and into the second, each
  * end square-on, reaching half the sideways distance between them.
  */
-export const threadOf = (start: Point, to: Point): string => {
+export const threadOf = (start: Position, to: Position): string => {
   const reachOut = Math.abs(to.x - start.x) / 2
   return (
     `M ${start.x} ${start.y}` +

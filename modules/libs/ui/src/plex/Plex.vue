@@ -20,24 +20,20 @@ import {
 import PlexView from './render/PlexView.vue'
 import { useTitleWidths } from './measure'
 import { DWELL, widenedFor } from './dwell'
-import { byHandle, type Reaching } from './reaching'
-import { byDoubleClick, type Showing } from './showing'
+import { byHandle, type ReachStrategy } from './reaching'
+import { byDoubleClick, type ShowStrategy } from './showing'
 import { hangParts, type PlexPart } from './inside'
-import { usePlexTransition, browserEnvironment, type Environment } from './transition'
-import type { Placement, PlexOptionsInput } from './arrange'
-import {
-  countOf,
-  seatWord,
-  type PlacedNode,
-  type PlexNeighbourhood,
-  type PlexRelatedSeat,
-  type PlexShowing,
-  type Point,
-} from './model'
+import { usePlexTransition, browserClock, type Clock } from './transition'
+import { browserViewport, type Viewport } from '../lib/viewport'
+import type { Placement, PlexOptionsInput, Size } from './arrange'
+import type { PlexNeighbourhood } from './neighbourhood'
+import type { PlacedNode, Position } from './node'
+import { countOf, seatWord, type PlexRelatedSeat } from './seat'
+import type { PlexShowing } from './showing'
 import { resolveOptions } from './arrange'
-import { usePlexCarry } from './carry'
+import { usePlexDrag } from './drag'
 import { usePlexGesture } from './gesture'
-import type { MenuOpening } from '../menu/model'
+import type { MenuOpening } from '../menu/item'
 
 const props = withDefaults(
   defineProps<{
@@ -49,7 +45,12 @@ const props = withDefaults(
     /** Milliseconds. Zero arrives instantly. */
     duration?: number
     /** The clock. Browser by default; a test hands in its own. */
-    environment?: Environment
+    clock?: Clock
+    /**
+     * How much room the plex has, and what it becomes. Browser by default; a
+     * test hands in its own and every coordinate is then a value it can name.
+     */
+    viewport?: Viewport
     /**
      * Seats a gesture may produce. A sibling is another of the parent's
      * children, so it is left out; which relationships exist is the caller's
@@ -64,9 +65,9 @@ const props = withDefaults(
      */
     dwell?: number
     /** How a node offers to be reached out of. The handle by default. */
-    reaching?: Reaching
+    reaching?: ReachStrategy
     /** How a node is asked for on its own. The second click by default. */
-    showing?: Showing
+    showing?: ShowStrategy
     /**
      * The parts of a node, asked for by the node's own identifier. They come
      * out from under its box while the attention rests on it, and a node named
@@ -79,29 +80,30 @@ const props = withDefaults(
      */
     seatName?: (seat: PlexRelatedSeat) => string
     /**
-     * What is being carried over the picture from somewhere else. Each
+     * What is being dragged over the picture from somewhere else. Each
      * identifier is opaque and all of them are handed back untouched; an empty
-     * list is nothing carried, and the picture then draws none of it.
+     * list is nothing dragged, and the picture then draws none of it.
      */
-    carried?: readonly string[]
+    dragged?: readonly string[]
     /**
-     * What to call what letting go with something carried in would do. English
+     * What to call what letting go with something dragged in would do. English
      * by default.
      */
-    carriedName?: (seat: PlexRelatedSeat) => string
+    dropName?: (seat: PlexRelatedSeat) => string
   }>(),
   {
     showEdgeLabels: true,
     duration: 420,
-    environment: () => browserEnvironment,
+    clock: () => browserClock,
+    viewport: () => browserViewport,
     creatable: () => ['parent', 'child', 'jump'],
     dragThreshold: 8,
     dwell: DWELL,
     reaching: () => byHandle,
     showing: () => byDoubleClick,
     seatName: seatWord,
-    carried: () => [],
-    carriedName: seatWord,
+    dragged: () => [],
+    dropName: seatWord,
   },
 )
 
@@ -119,11 +121,11 @@ const emit = defineEmits<{
   /** Reached out onto another node: relate the two in this seat. */
   (event: 'link', from: string, to: string, seat: PlexRelatedSeat): void
   /**
-   * What was carried in from outside was let go over the picture: relate each
+   * What was dragged in from outside was let go over the picture: relate each
    * of them to the focus in this seat. The identifiers are the ones they were
    * handed in as.
    */
-  (event: 'bring', carried: readonly string[], seat: PlexRelatedSeat): void
+  (event: 'bring', dragged: readonly string[], seat: PlexRelatedSeat): void
   /**
    * A menu was asked for on a node: which node, where on the screen, and what
    * asked for it. A keypress carries no point, so the middle of the box is
@@ -132,7 +134,7 @@ const emit = defineEmits<{
    * Every node answers this, the focus included. What the menu holds and what
    * choosing an item does are the caller's.
    */
-  (event: 'menu', id: string, at: Point, opening: MenuOpening): void
+  (event: 'menu', id: string, at: Position, opening: MenuOpening): void
   /** A menu asked for on a node has nothing left to stand on. */
   (event: 'dismiss'): void
   /**
@@ -142,30 +144,35 @@ const emit = defineEmits<{
   (event: 'enter', id: string, part: string): void
 }>()
 
-/** What the window is taken to be until it has been measured. */
+defineSlots<{
+  /** What is drawn beside a node's title. A node with none is drawn narrower. */
+  icon?(props: { node: PlacedNode }): unknown
+  /** What is said about the neighbours that did not fit, in the caller's words. */
+  overflow?(props: { overflow: readonly [PlexRelatedSeat, number][] }): unknown
+}>()
+
+/** What the room is taken to be until it has been measured. */
 const FALLBACK = { width: 1200, height: 800 }
 
 const frameElement = useTemplateRef<HTMLElement>('frame')
-/** The drawing, which a carry crossing the plex is measured against. */
+/** The drawing, which a drag crossing the plex is measured against. */
 const view = useTemplateRef<InstanceType<typeof PlexView>>('view')
-const viewport = ref(FALLBACK)
+/** How much room the plex has, as it was last measured. */
+const room = ref<Size>(FALLBACK)
 
 onMounted(() => {
   const element = frameElement.value
-  if (!element || typeof ResizeObserver === 'undefined') return
+  if (!element) return
 
-  const observer = new ResizeObserver(([entry]) => {
-    const box = entry?.contentRect
-    if (box && box.width > 0 && box.height > 0) {
-      viewport.value = { width: box.width, height: box.height }
-    }
-  })
-  observer.observe(element)
-  onScopeDispose(() => observer.disconnect())
+  onScopeDispose(
+    props.viewport.watch(element, (size) => {
+      room.value = size
+    }),
+  )
 })
 
 /** Settled once and read by the measuring, the gesture and the drawing. */
-const options = computed(() => resolveOptions({ ...props.options, viewport: viewport.value }))
+const options = computed(() => resolveOptions({ ...props.options, viewport: room.value }))
 
 const slots = useSlots()
 
@@ -195,7 +202,7 @@ const widen = computed(() => {
   if (!measure) return undefined
 
   const { margin } = options.value
-  const within = viewport.value
+  const within = room.value
   return (node: PlacedNode) => widenedFor(node, measure(node), within, margin)
 })
 
@@ -208,21 +215,21 @@ const hung = computed(() => {
   if (!held) return undefined
 
   const { margin } = options.value
-  const room = { measure: measures.value?.part, viewport: viewport.value, margin }
-  return (node: PlacedNode) => hangParts(node, held(node.id), options.value, room)
+  const deps = { measure: measures.value?.part, viewport: room.value, margin }
+  return (node: PlacedNode) => hangParts(node, held(node.id), options.value, deps)
 })
 
 const { frame, moving } = usePlexTransition(
   () => props.neighbourhood,
   () => ({
-    options: { ...props.options, viewport: viewport.value },
+    options: { ...props.options, viewport: room.value },
     placement: props.placement,
     measure: measures.value?.node,
     measureLabel: measures.value?.label,
     labelDepth: measures.value?.labelDepth,
   }),
   () => props.duration,
-  props.environment,
+  props.clock,
 )
 
 /**
@@ -251,20 +258,20 @@ const gesture = usePlexGesture(
 )
 
 /**
- * Something carried across the picture from outside it.
+ * Something dragged across the picture from outside it.
  *
  * The plex works out which seat letting go comes to, measured from the focus,
- * and says so. What is being carried it never looks at.
+ * and says so. What is being dragged it never looks at.
  */
-const carrying = usePlexCarry({
+const dragging = usePlexDrag({
   surface: () => view.value?.svg ?? null,
-  carried: () => props.carried,
+  dragged: () => props.dragged,
   frame: () => frame.value,
   options: () => options.value,
-  viewport: () => viewport.value,
+  viewport: () => room.value,
   allowed: () => props.creatable,
   threshold: () => props.dragThreshold,
-  settle: (carried, seat) => emit('bring', carried, seat),
+  settle: (dragged, seat) => emit('bring', dragged, seat),
 })
 
 /**
@@ -305,7 +312,7 @@ defineExpose({
     <PlexView
       ref="view"
       :frame="frame"
-      :viewport="viewport"
+      :viewport="room"
       :node-size="options.nodeSize"
       :show-edge-labels="showEdgeLabels"
       :may-reach="mayReach"
@@ -315,13 +322,13 @@ defineExpose({
       :dwell="dwell"
       :reaching="reaching"
       :showing="showing"
-      :environment="environment"
+      :clock="clock"
       :gesture-from="gesture.from.value"
       :gesture-at="gesture.at.value"
       :gesture-outcome="gesture.outcome.value"
-      :carried-at="carrying.at.value"
-      :carried-seat="carrying.seat.value"
-      :carried-name="carriedName"
+      :dragged-at="dragging.at.value"
+      :drop-seat="dragging.seat.value"
+      :drop-name="dropName"
       @activate="emit('activate', $event)"
       @show="(id, showing) => emit('show', id, showing)"
       @reach="gesture.begin"

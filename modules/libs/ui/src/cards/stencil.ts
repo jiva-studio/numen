@@ -4,12 +4,12 @@
  * means is the caller's. No DOM, no measurement, no clock.
  */
 
-import { sealed, type Filled } from './deck'
+import { sealed, type FieldValue } from './deck'
 import { previewed, strayIn } from './fill'
-import { declared, HALVES, type Against, type Half, type Objection, type Refusal } from './order'
+import { declared, HALVES, type Problems, type Half, type Objection, type Refusal } from './order'
 
 /** One way a stencil shows a card. */
-export interface Shown {
+export interface StencilFace {
   readonly id: string
   readonly name: string
   readonly front: string
@@ -17,7 +17,7 @@ export interface Shown {
 }
 
 /** One stencil a card may be cut by: the word it is shown as, and its slots. */
-export interface Cut {
+export interface Stencil {
   readonly name: string
   /** The slots it names, in the order a person is asked for them. */
   readonly fields: readonly string[]
@@ -33,7 +33,7 @@ export interface StencilWords {
   readonly addField: string
   readonly addFace: string
   readonly remove: string
-  readonly carry: string
+  readonly drag: string
   readonly insert: string
   readonly noFields: string
   readonly noFaces: string
@@ -60,7 +60,7 @@ export const STENCIL_WORDS: StencilWords = {
   addField: 'Add a field',
   addFace: 'Add a face',
   remove: 'Remove',
-  carry: 'Reorder',
+  drag: 'Reorder',
   insert: 'Insert',
   noFields: 'No fields yet',
   noFaces: 'No faces yet',
@@ -84,9 +84,9 @@ export const STENCIL_WORDS: StencilWords = {
  */
 export interface StencilWrong {
   /** What is wrong with each face, under the identity it was drawn by. */
-  readonly at: Against
+  readonly at: Problems
   /** What is wrong with each field, under the name it is declared by. */
-  readonly fields: Against
+  readonly fields: Problems
 }
 
 /** Nothing wrong with any face and nothing wrong with any field. */
@@ -105,13 +105,13 @@ export interface FieldRow {
   /** It stands first, so it is what a card cut by this stencil is named by. */
   readonly names: boolean
   /** It is on its way somewhere else in the order. */
-  readonly carried: boolean
+  readonly dragged: boolean
 }
 
 /** The rows a stencil's fields are drawn as, one to a field. */
 export function fieldRows(
   fields: readonly string[],
-  carried: string | null,
+  dragged: string | null,
 ): readonly FieldRow[] {
   const stood = declared(fields)
   return stood.map((field, index) => ({
@@ -119,12 +119,12 @@ export function fieldRows(
     at: index + 1,
     of: stood.length,
     names: index === 0,
-    carried: field === carried,
+    dragged: field === dragged,
   }))
 }
 
-/** One face of a stencil, as its block is drawn. */
-export interface FaceBlock {
+/** One face of a stencil, as its row is drawn. */
+export interface FaceRow {
   readonly id: string
   readonly name: string
   /** Where it stands, counting from one, which is what it is announced as. */
@@ -139,35 +139,35 @@ export interface FaceBlock {
   readonly front: string
   readonly back: string
   /** The same two, with the sample values standing in the braces. */
-  readonly frontShown: string
-  readonly backShown: string
+  readonly frontPreview: string
+  readonly backPreview: string
   /** The slots each half names that the fields do not, each said once. */
   readonly frontStray: readonly string[]
   readonly backStray: readonly string[]
 }
 
 /**
- * The blocks a stencil's faces are drawn as, each carrying what its preview
- * shows and what is wrong in each half of it.
+ * A stencil's faces as they are drawn, each carrying what its preview shows and
+ * what is wrong in each half of it.
  */
-export function faceBlocks(
-  faces: readonly Shown[],
+export function faceRows(
+  shown: readonly StencilFace[],
   fields: readonly string[],
-  sample: readonly Filled[],
-): readonly FaceBlock[] {
-  const names = faces.map((each) => each.name)
-  return faces.map((face, index) => {
+  sample: readonly FieldValue[],
+): readonly FaceRow[] {
+  const names = shown.map((each) => each.name)
+  return shown.map((face, index) => {
     return {
       id: face.id,
       name: face.name,
       at: index + 1,
-      of: faces.length,
+      of: shown.length,
       fields,
       taken: names.filter((_, at) => at !== index),
       front: face.front,
       back: face.back,
-      frontShown: previewed(face.front, sample, fields),
-      backShown: previewed(face.back, sample, fields),
+      frontPreview: previewed(face.front, sample, fields),
+      backPreview: previewed(face.back, sample, fields),
       frontStray: strayIn(face.front, fields),
       backStray: strayIn(face.back, fields),
     }
@@ -175,12 +175,12 @@ export function faceBlocks(
 }
 
 /** What one part of the window a face is edited in holds. */
-export type Shows = 'written' | 'preview'
+export type PaneMode = 'written' | 'preview'
 
 /** One part of the window a face is edited in. */
 export interface Pane {
   readonly half: Half
-  readonly shows: Shows
+  readonly shows: PaneMode
   /** What the part is called while nothing stands in it. */
   readonly said: string
   /** What the part is announced as. */
@@ -198,11 +198,11 @@ export interface Pane {
  * and then what that markup comes to. Two parts to a row stand the front above
  * the back; one to a row stands each preview under the half it is of.
  */
-export function panes(block: FaceBlock, words: StencilWords = STENCIL_WORDS): readonly Pane[] {
+export function panes(face: FaceRow, words: StencilWords = STENCIL_WORDS): readonly Pane[] {
   return HALVES.flatMap((half): readonly Pane[] => {
     const said = half === 'front' ? words.front : words.back
-    const written = half === 'front' ? block.front : block.back
-    const shown = half === 'front' ? block.frontShown : block.backShown
+    const written = half === 'front' ? face.front : face.back
+    const shown = half === 'front' ? face.frontPreview : face.backPreview
     return [
       {
         half,
@@ -211,13 +211,13 @@ export function panes(block: FaceBlock, words: StencilWords = STENCIL_WORDS): re
         named: said,
         text: written,
         blank: written.trim() === '',
-        stray: half === 'front' ? block.frontStray : block.backStray,
+        stray: half === 'front' ? face.frontStray : face.backStray,
       },
       {
         half,
         shows: 'preview',
         said: words.preview,
-        named: `${words.preview}: ${block.name} ${said}`,
+        named: `${words.preview}: ${face.name} ${said}`,
         text: shown,
         blank: shown.trim() === '',
         stray: [],

@@ -1,9 +1,9 @@
-# ADR-0012: A chunk is identified by its text
+# A chunk is identified by its text
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/apps/desktop`
-- **Related:** ADR-0008, ADR-0010, ADR-0011, ADR-0013, ADR-0014, ADR-0016
+- **Applies to:** `modules/libs/core`
+- **Related:** [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [A source is text in one table](0010-a-source-is-text-in-one-table.md), [Text is cut twice](0011-text-is-cut-twice.md), [The vector index stays inside SQLite](0013-the-vector-index-stays-inside-sqlite.md), [One search, three rankings, merged by rank](0014-one-search-three-rankings.md), [A passage is a range of bytes](0016-a-passage-is-a-range-of-bytes.md)
 
 ## Context
 
@@ -19,7 +19,7 @@ A chunk whose hash is on a row of this source **keeps that row**, its vector and
 
 **A row is claimed once**, so text occurring twice in one source is two rows and stays two. **A large chunk and a chunk inside one are two populations**, so the same text cut at both sizes is a row at each.
 
-The text is hashed and indexed. No table holds a copy of it (ADR-0010).
+The text is hashed and indexed. No table holds a copy of it.
 
 ### `start` and `length` are where a chunk is
 

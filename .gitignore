@@ -26,6 +26,10 @@ node_modules/
 /result
 /result-*
 
+# The case a property test failed on, written where it ran so the next run
+# replays it. It is one machine's, and the fix is the commit.
+testdata/rapid/
+
 # A spike-only workspace pointing outside the tree.
 go.work
 go.work.sum

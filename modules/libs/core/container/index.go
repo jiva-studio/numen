@@ -3,10 +3,11 @@ package container
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -16,6 +17,10 @@ import (
 type Index struct {
 	db   *index.DB
 	path string
+	// walks is the turn each vault takes to be walked into this index. It is
+	// the index's because a walk is what writes into one: two indexes are
+	// walked at once, and one index is walked a vault at a time.
+	walks vault.Walks
 }
 
 // OpenIndex opens the cache. Closing it belongs to the caller, which is what
@@ -34,16 +39,20 @@ func (c Config) OpenIndex(ctx context.Context) (*Index, error) {
 
 func (i *Index) Close() error { return i.db.Close() }
 
+// Walks is the turns the vaults walked into this index take.
+func (i *Index) Walks() *vault.Walks { return &i.walks }
+
 // Level brings the notes at the paths given up to date in the index. Whatever
 // writes a note calls it with the paths it touched, so what it wrote is
 // findable by the time the write returns.
-func (c Config) Level(db *Index) func(ctx context.Context, v domain.Vault, paths []string) error {
-	refresh := vault.Refresh{
-		Readers: c.VaultReaders(),
-		Notes:   db.NotesCutAt(c.Cutting()),
-		Known:   db.SourcesKnown(),
-		Sources: db.Sources(),
-	}
+func (c Config) Level(db *Index) note.Levels {
+	refresh := vault.NewRefresh(
+		c.VaultReaders(),
+		db.Vaults(),
+		db.NotesCutAt(c.Chunking(), c.Legibility()),
+		db.SourcesKnown(),
+		db.Sources(),
+	)
 	return func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
@@ -57,7 +66,7 @@ func (c Config) Moves(ctx context.Context) (<-chan struct{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return filesystem.Watcher{Options: c.VaultOptions()}.File(ctx, path)
+	return filesystem.Watcher{Options: c.vaultOptions()}.File(ctx, path)
 }
 
 // FitVectors makes the vector index hold vectors of the width given, filled
@@ -65,6 +74,15 @@ func (c Config) Moves(ctx context.Context) (<-chan struct{}, error) {
 func (i *Index) FitVectors(ctx context.Context, dims int, recipe string) error {
 	return i.db.FitVectors(ctx, dims, recipe)
 }
+
+// ForgetOtherRecipes takes out the vectors kept under any recipe but the one in
+// use, and says how many went.
+func (i *Index) ForgetOtherRecipes(ctx context.Context, recipe string) (int64, error) {
+	return i.db.ForgetOtherRecipes(ctx, recipe)
+}
+
+// Compact hands back the space the index no longer holds.
+func (i *Index) Compact(ctx context.Context) error { return i.db.Compact(ctx) }
 
 func (i *Index) Vaults() port.VaultRepository { return i.db.Vaults() }
 func (i *Index) Notes() port.NoteRepository   { return i.db.Notes() }
@@ -74,7 +92,7 @@ func (i *Index) Queries() port.NoteQueries    { return i.db.NoteQueries() }
 // while a scan is still writing.
 func (i *Index) Passages() port.PassageQueries { return i.db.ChunkQueries() }
 
-// Progress is how far cutting and embedding have got, for a window to say so.
+// Progress is how far chunking and embedding have got, for a window to say so.
 func (i *Index) Progress() port.IndexProgress { return i.db.ChunkQueries() }
 
 // Sources holds what has text and what was made from it. One type answers all
@@ -86,7 +104,7 @@ func (i *Index) Vectors() port.VectorRepository   { return i.db.Sources() }
 func (i *Index) VectorsOwing() port.VectorQueries { return i.db.Sources() }
 
 // Maintenance is how the index is told that it has changed wholesale.
-func (i *Index) Maintenance() port.IndexMaintenance { return i.db.Statistics() }
+func (i *Index) Maintenance() port.IndexMaintenance { return i.db.Maintenance() }
 
 // Path is where the database file is, which a load test needs in order to say
 // how large the index got.

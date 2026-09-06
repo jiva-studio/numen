@@ -13,11 +13,9 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/cli"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // session is one installation: its own registry and index, so a test never
@@ -26,6 +24,11 @@ type session struct {
 	t     *testing.T
 	vault string
 	base  []string
+	// bin is where an erased folder goes. A test sends nothing to the trash of
+	// the machine it runs on.
+	bin *bin
+	// said is what the commands run here wrote beside their answers.
+	said bytes.Buffer
 }
 
 func newSession(t *testing.T) *session {
@@ -34,6 +37,7 @@ func newSession(t *testing.T) *session {
 	return &session{
 		t:     t,
 		vault: testsupport.CopyVault(t),
+		bin:   &bin{into: t.TempDir()},
 		base: []string{
 			"--registry", filepath.Join(dir, "vaults.json"),
 			"--index", filepath.Join(dir, "index.db"),
@@ -46,8 +50,7 @@ func (s *session) run(args ...string) (string, error) {
 	var out bytes.Buffer
 	// No embedder and nothing this machine supplies: a test must not reach a
 	// model, a service, an account or a process.
-	err := cli.Run(context.Background(), &out, append(s.base, args...),
-		settings.Indexing{}, container.Config{})
+	err := cli.Run(context.Background(), &out, &s.said, append(s.base, args...), s.deps)
 	return out.String(), err
 }
 
@@ -101,12 +104,12 @@ func (b *bin) Trash(path string) error {
 	return os.Rename(path, filepath.Join(b.into, filepath.Base(path)))
 }
 
-// trash puts a bin where an erased folder goes, for as long as the test runs.
+// trash is the bin an erased folder goes to, answering refuse where one is
+// given.
 func (s *session) trash(refuse error) *bin {
 	s.t.Helper()
-	b := &bin{into: s.t.TempDir(), refuse: refuse}
-	s.t.Cleanup(cli.ErasesInto(b))
-	return b
+	s.bin.refuse = refuse
+	return s.bin
 }
 
 // marks is the two characters vault list puts before a vault's name.
@@ -146,6 +149,12 @@ func TestAddScanSearch(t *testing.T) {
 	found := s.mustRun("search", "demo", "entropy")
 	if !strings.Contains(found, "Entropy") {
 		t.Errorf("search said:\n%s", found)
+	}
+
+	// An installation with no model searches by words alone and says nothing
+	// about it: half a search is a whole answer.
+	if s.said.Len() > 0 {
+		t.Errorf("the commands said beside their answers:\n%s", s.said.String())
 	}
 }
 
@@ -504,9 +513,9 @@ func TestTheOnlyVaultAnInstallationHasStays(t *testing.T) {
 		{"vault", "erase", "single", "--yes"},
 	} {
 		out, err := s.run(args...)
-		if !errors.Is(err, usecase.ErrLastVault) {
+		if !errors.Is(err, vaults.ErrLastVault) {
 			t.Errorf("numen-cli %s gave %v, want %v\n%s",
-				strings.Join(args, " "), err, usecase.ErrLastVault, out)
+				strings.Join(args, " "), err, vaults.ErrLastVault, out)
 		}
 	}
 	if len(b.took) != 0 {

@@ -15,9 +15,16 @@ import (
 //
 // What stands inside a code fence is an example of a link, not one, and is left
 // as it was written.
-func (d *Document) PointProseAt(from domain.Address, to string) int {
+//
+// A note whose frontmatter block is never closed holds no prose of its own —
+// the whole file stands as its body, links in the block included — so this is
+// ErrUnterminated and the file is left as it is.
+func (d *Document) PointProseAt(from domain.Address, to string) (int, error) {
+	if d.unterminated {
+		return 0, ErrUnterminated
+	}
 	if !domain.Nameable(to) {
-		return 0
+		return 0, nil
 	}
 	var out strings.Builder
 	var f Fence
@@ -34,24 +41,25 @@ func (d *Document) PointProseAt(from domain.Address, to string) int {
 			at = end + 1
 			continue
 		}
-		for _, found := range wikilinkRe.FindAllStringSubmatchIndex(line, -1) {
-			inside := line[found[2]:found[3]]
-			if domain.ParseAddress(inside) != from {
+		for _, found := range WikilinksIn(line) {
+			if found.Target != from {
 				continue
 			}
-			out.WriteString(body[last : at+found[2]])
-			out.WriteString(to + keptAfterTarget(inside))
-			last = at + found[3]
+			// The brackets stay where they were: only the target between them
+			// moves, and each of them is two bytes.
+			out.WriteString(body[last : at+found.At+2])
+			out.WriteString(to + keptAfterTarget(found.Inside))
+			last = at + found.To - 2
 			moved++
 		}
 		at = end + 1
 	}
 	if moved == 0 {
-		return 0
+		return 0, nil
 	}
 	out.WriteString(body[last:])
 	d.body = []byte(out.String())
-	return moved
+	return moved, nil
 }
 
 // keptAfterTarget is the part of a wikilink that is not the address: the

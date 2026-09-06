@@ -16,11 +16,10 @@ import {
   type ViewUpdate,
   type WidgetType,
 } from '@codemirror/view'
-import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common'
-import { wikilinkAt } from '../linking/address'
-import { gridOf } from './table'
+import type { SyntaxNodeRef } from '@lezer/common'
+import { childOf } from './address'
+import { gridOf } from './grid'
 import { Box, Bullet, Picture, Rule } from './widgets'
-import { opening } from './outside'
 
 const HEADING = /^(?:ATX|Setext)Heading([1-6])$/
 const BULLET = /^[-+*]$/
@@ -42,13 +41,6 @@ const mark = (name: string) => {
   return drawn
 }
 
-const childOf = (node: SyntaxNode, name: string) => {
-  for (let child = node.firstChild; child; child = child.nextSibling) {
-    if (child.name === name) return child
-  }
-  return null
-}
-
 /**
  * What is drawn between `from` and `to`.
  *
@@ -66,14 +58,14 @@ const build = (
   const doc = state.doc
   const blocks = wants === 'blocks'
 
-  const standing = (start: number, end: number) =>
+  const selected = (start: number, end: number) =>
     state.selection.ranges.some((range) => range.from <= end && range.to >= start)
 
-  const away = (node: SyntaxNodeRef) => !standing(node.from, node.to)
+  const away = (node: SyntaxNodeRef) => !selected(node.from, node.to)
 
   const under = (node: SyntaxNodeRef) => {
     const parent = node.node.parent
-    return parent ? standing(parent.from, parent.to) : true
+    return parent ? selected(parent.from, parent.to) : true
   }
 
   /** A mark and the space it is separated from its content by. */
@@ -311,50 +303,3 @@ export const live = ViewPlugin.fromClass(
       EditorView.atomicRanges.of((view) => view.plugin(plugin)?.decorations ?? Decoration.none),
   },
 )
-
-/** Whether a position stands in code, where a link is an example of one. */
-const coded = (node: SyntaxNode): boolean => {
-  for (let one: SyntaxNode | null = node; one; one = one.parent) {
-    if (one.name === 'FencedCode' || one.name === 'CodeBlock' || one.name === 'InlineCode') {
-      return true
-    }
-  }
-  return false
-}
-
-/**
- * The address a position in the text stands in, and nothing where it stands in
- * none. A note in brackets is read by the parser every link is read by.
- */
-export const addressAt = (state: EditorState, at: number): string | null => {
-  const standing = syntaxTree(state).resolveInner(at, 1)
-  if (!coded(standing)) {
-    const line = state.doc.lineAt(at)
-    const wiki = wikilinkAt(line.text, at - line.from)
-    if (wiki) return wiki.address
-  }
-
-  for (let node: SyntaxNode | null = standing; node; node = node.parent) {
-    if (node.name !== 'Link' && node.name !== 'Autolink') continue
-    const address = childOf(node, 'URL')
-    return address
-      ? state.doc.sliceString(address.from, address.to)
-      : state.doc.sliceString(node.from + 1, node.to - 1)
-  }
-  return null
-}
-
-/** A drawn link is followed with the platform's modifier held down. */
-export const following = EditorView.domEventHandlers({
-  mousedown(event, view) {
-    if (!event.metaKey && !event.ctrlKey) return false
-    const at = view.posAtCoords({ x: event.clientX, y: event.clientY })
-    if (at === null) return false
-
-    const address = addressAt(view.state, at)
-    if (address === null) return false
-    view.state.facet(opening)(address)
-    event.preventDefault()
-    return true
-  },
-})

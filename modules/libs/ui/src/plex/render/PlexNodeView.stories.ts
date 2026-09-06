@@ -13,13 +13,9 @@ import PlexNodeView from './PlexNodeView.vue'
 import { awkwardLabels } from '../fixtures/neighbourhoods'
 import { hovered, lightness } from '@/fixtures/colour'
 import { DARK, drawnDark } from '@/fixtures/theme'
-import {
-  RELATED_SEATS,
-  type NodeStanding,
-  type PlacedNode,
-  type PlexSeat,
-  type PlexShowing,
-} from '../model'
+import type { GestureRole, PlacedNode } from '../node'
+import { RELATED_SEATS, type PlexSeat } from '../seat'
+import type { PlexShowing } from '../showing'
 
 interface Knobs {
   title: string
@@ -29,7 +25,7 @@ interface Knobs {
   /** Below one, a node is on its way in or out and cannot be chosen. */
   opacity: number
   /** What the node is to a gesture. One setting, because it is one of these. */
-  standing: NodeStanding
+  gestureRole: GestureRole
   /** Fill the icon slot. What goes in it is the application's, not the plex's. */
   icon: boolean
 
@@ -39,7 +35,7 @@ interface Knobs {
   onAsk: () => void
 }
 
-const STANDINGS: readonly NodeStanding[] = ['open', 'closed', 'source', 'target', 'ghost']
+const ROLES: readonly GestureRole[] = ['open', 'closed', 'source', 'target', 'ghost']
 
 /**
  * Something to put in the slot. Any markup will do — a node has no idea what
@@ -89,7 +85,7 @@ const on =
             v-for="node in scene"
             :key="node.id"
             :node="node"
-            :standing="args.standing"
+            :gesture-role="args.gestureRole"
             @activate="args.onActivate"
             @show="args.onShow"
             @reach="args.onReach"
@@ -127,7 +123,7 @@ const meta: Meta<Knobs> = {
           'draws with is already on the node it was handed, and whether a ' +
           'pointer is over it is its own affair — hover it and the handle ' +
           'appears. The one thing it cannot work out is what it is to a ' +
-          'gesture, which arrives as its standing.',
+          'gesture, which arrives as its role in one.',
       },
     },
   },
@@ -139,7 +135,7 @@ const meta: Meta<Knobs> = {
     height: range(20, 96, 2),
     opacity: range(0, 1, 0.05),
     icon: { control: 'boolean' },
-    standing: { control: 'select', options: STANDINGS },
+    gestureRole: { control: 'select', options: ROLES },
 
     onActivate: { table: { disable: true } },
     onShow: { table: { disable: true } },
@@ -154,7 +150,7 @@ const meta: Meta<Knobs> = {
     height: 36,
     opacity: 1,
     icon: false,
-    standing: 'open',
+    gestureRole: 'open',
     onActivate: fn(),
     onShow: fn(),
     onReach: fn(),

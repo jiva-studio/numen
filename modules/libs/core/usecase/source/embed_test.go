@@ -17,7 +17,7 @@ const dimensions = 32
 // cutBooks extracts one vault's books and answers with the chunks that owe a vector.
 func cutBooks(t *testing.T, index *store, shelf *library, v domain.Vault) []storedChunk {
 	t.Helper()
-	if _, err := (Extract{Readers: vaults{v.ID: shelf}, Sources: index, Owing: index}).Execute(t.Context(), v); err != nil {
+	if _, err := (Extract{Readers: vaults{v.ID: shelf}, Sources: index, Known: index}).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 	small := index.small(v.ID)
@@ -57,7 +57,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 	// left names a chunk that is there.
 	for chunk := range index.vectors {
 		if !index.holds(chunk) {
-			t.Fatalf("a vector was written for chunk %d, which the index does not hold", chunk)
+			t.Fatalf("a vector was written for chunk %s, which the index does not hold", chunk)
 		}
 	}
 
@@ -73,12 +73,12 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 		t.Errorf("the second run embedded %d chunks, want the %d the first did not", res.Embedded, want)
 	}
 	for _, chunk := range small {
-		switch len(index.vectors[chunk.id]) {
+		switch len(index.made(chunk)) {
 		case 1:
 		case 0:
 			t.Fatalf("chunk %d was skipped by both runs", chunk.id)
 		default:
-			t.Fatalf("chunk %d was embedded %d times", chunk.id, len(index.vectors[chunk.id]))
+			t.Fatalf("chunk %d was embedded %d times", chunk.id, len(index.made(chunk)))
 		}
 	}
 	if len(index.vectors) != len(small) {
@@ -121,22 +121,22 @@ func TestBothRepresentationsOfAVectorAreWrittenTogether(t *testing.T) {
 	for _, group := range index.groups {
 		for _, v := range group {
 			if v.Kind != port.QuantisedInt8 {
-				t.Errorf("chunk %d was stored as %q", v.Chunk, v.Kind)
+				t.Errorf("chunk %s was stored as %q", v.ChunkID, v.Kind)
 			}
 			if len(v.Value) != dimensions {
-				t.Errorf("chunk %d holds %d bytes for %d dimensions", v.Chunk, len(v.Value), dimensions)
+				t.Errorf("chunk %s holds %d bytes for %d dimensions", v.ChunkID, len(v.Value), dimensions)
 			}
 			if want := (dimensions + 7) / 8; len(v.Coarse) != want {
-				t.Errorf("chunk %d holds %d coarse bytes, want %d", v.Chunk, len(v.Coarse), want)
+				t.Errorf("chunk %s holds %d coarse bytes, want %d", v.ChunkID, len(v.Coarse), want)
 			}
 			if v.Model != model.Model() {
-				t.Errorf("chunk %d was stored under %s", v.Chunk, v.Model)
+				t.Errorf("chunk %s was stored under %s", v.ChunkID, v.Model)
 			}
 		}
 	}
 	for _, chunk := range small {
-		if len(index.vectors[chunk.id]) != 1 {
-			t.Fatalf("chunk %d carries %d vectors", chunk.id, len(index.vectors[chunk.id]))
+		if len(index.made(chunk)) != 1 {
+			t.Fatalf("chunk %d carries %d vectors", chunk.id, len(index.made(chunk)))
 		}
 	}
 
@@ -246,7 +246,7 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 	shelves[second.ID].hold("library/latin.epub", domain.KindBook,
 		bookOf(t, "Latin", words(latin, 400)), 1)
 
-	extract := Extract{Readers: shelves, Sources: index, Owing: index}
+	extract := Extract{Readers: shelves, Sources: index, Known: index}
 	for _, v := range []domain.Vault{first, second} {
 		if _, err := extract.Execute(ctx, v); err != nil {
 			t.Fatal(err)
@@ -262,12 +262,12 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, chunk := range mine {
-		if len(index.vectors[chunk.id]) != 1 {
-			t.Fatalf("chunk %d of its own vault carries %d vectors", chunk.id, len(index.vectors[chunk.id]))
+		if len(index.made(chunk)) != 1 {
+			t.Fatalf("chunk %d of its own vault carries %d vectors", chunk.id, len(index.made(chunk)))
 		}
 	}
 	for _, chunk := range theirs {
-		if len(index.vectors[chunk.id]) != 0 {
+		if len(index.made(chunk)) != 0 {
 			t.Fatalf("embedding the first vault gave chunk %d of the second a vector", chunk.id)
 		}
 	}
@@ -276,9 +276,9 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, chunk := range append(append([]storedChunk{}, mine...), theirs...) {
-		if len(index.vectors[chunk.id]) != 1 {
+		if len(index.made(chunk)) != 1 {
 			t.Fatalf("chunk %d carries %d vectors after both vaults were embedded",
-				chunk.id, len(index.vectors[chunk.id]))
+				chunk.id, len(index.made(chunk)))
 		}
 	}
 }
@@ -292,16 +292,16 @@ func TestASourceStandingOnAReadingIsEmbeddedFromIt(t *testing.T) {
 
 	raw := bookOf(t, "Scanned", words(sanskrit, 400))
 	shelf.hold(bookPath, domain.KindBook, raw, 1)
-	read, _, _ := ocr.Write([]ocr.Page{{At: 0, Blocks: []ocr.Block{{Label: "text", Text: words(sanskrit, 400)}}}})
+	read, _, _ := ocr.Write([]ocr.Page{{Index: 0, Blocks: []ocr.Block{{Label: "text", Text: words(sanskrit, 400)}}}})
 	if err := made.Write(ctx, text.Artifact("ocr", text.Fingerprint(raw)), read); err != nil {
 		t.Fatal(err)
 	}
 
-	extract := Extract{Readers: vaults{first.ID: shelf}, Sources: index, Owing: index, Derived: made}
+	extract := Extract{Readers: vaults{first.ID: shelf}, Sources: index, Known: index, Derived: made}
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	}
-	if index.sources[first.ID][bookPath].TextFrom == "" {
+	if index.sources[first.ID][bookPath].Producer == "" {
 		t.Fatal("the source does not stand on a reading, so embedding it proves nothing")
 	}
 	small := index.small(first.ID)

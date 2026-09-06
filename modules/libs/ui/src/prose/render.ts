@@ -18,11 +18,11 @@ export const WORD = 'prose__word'
 const REACHES = 'data-reaches'
 
 /** The addresses a text points at that reach nothing. */
-export type Unresolved = ReadonlySet<string>
+export type BrokenAddresses = ReadonlySet<string>
 
-const NONE: Unresolved = new Set()
+const NONE: BrokenAddresses = new Set()
 
-export const render = (text: string, unresolved: Unresolved = NONE): VNode[] =>
+export const render = (text: string, unresolved: BrokenAddresses = NONE): VNode[] =>
   nodes(marks.parse(text, {}), unresolved)
 
 /**
@@ -35,7 +35,7 @@ interface Frame {
   children: (VNode | string)[]
 }
 
-const nodes = (tokens: readonly Token[], unresolved: Unresolved): VNode[] => {
+const nodes = (tokens: readonly Token[], unresolved: BrokenAddresses): VNode[] => {
   const root: Frame = { tag: '', attrs: {}, children: [] }
   const stack: Frame[] = [root]
   const top = () => stack[stack.length - 1]!
@@ -92,7 +92,7 @@ const nodes = (tokens: readonly Token[], unresolved: Unresolved): VNode[] => {
  */
 const inline = (
   tokens: readonly Token[],
-  unresolved: Unresolved,
+  unresolved: BrokenAddresses,
   next: () => number,
 ): (VNode | string)[] => {
   const root: Frame = { tag: '', attrs: {}, children: [] }
@@ -151,7 +151,7 @@ const words = (text: string, next: () => number): (VNode | string)[] =>
       /^\s+$/.test(piece) ? piece : h('span', { key: next(), class: WORD }, piece),
     )
 
-const attrs = (token: Token, unresolved: Unresolved = NONE): Record<string, string> => {
+const attrs = (token: Token, unresolved: BrokenAddresses = NONE): Record<string, string> => {
   const written: Record<string, string> = Object.fromEntries(
     (token.attrs ?? []).map(([name, value]) => [name, String(value)]),
   )

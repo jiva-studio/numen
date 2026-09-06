@@ -26,12 +26,12 @@ func filled(t *testing.T, db *DB, vault domain.Vault, stem string, seed byte) {
 
 	body := stem + " heading\n" + stem + " body"
 	n := domain.Note{
-		Ref:      domain.FileRef{Path: "notes/" + stem + ".md", Kind: domain.KindNote, Size: int64(len(body)), MTime: 1},
-		Title:    stem + " title",
-		Body:     body,
-		Headings: []domain.Heading{{Level: 2, Text: stem + " heading", Line: 0, Offset: 0}},
-		Links:    []domain.Link{{Target: domain.Address{Scheme: domain.SchemeName, Value: stem + " elsewhere"}, Role: domain.RoleRef}},
-		Problems: []string{stem + " problem"},
+		Fingerprint: domain.Fingerprint{Path: "notes/" + stem + ".md", Kind: domain.KindNote, Size: int64(len(body)), ModTime: walked},
+		Title:       stem + " title",
+		Body:        body,
+		Headings:    []domain.Heading{{Level: 2, Text: stem + " heading", Line: 0, Offset: 0}},
+		Links:       []domain.Link{{Target: domain.Address{Scheme: domain.SchemeName, Value: stem + " elsewhere"}, Role: domain.RoleRef}},
+		Problems:    []string{stem + " problem"},
 	}
 	if err := db.Notes().Save(ctx, vault.ID, []domain.Note{n}); err != nil {
 		t.Fatal(err)
@@ -45,7 +45,7 @@ func filled(t *testing.T, db *DB, vault domain.Vault, stem string, seed byte) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().SaveChunks(ctx, vault.ID, "book", path, []chunk.Chunk{
+	if err := db.Chunks().ReplaceChunks(ctx, vault.ID, "book", path, []chunk.Chunk{
 		{
 			Start: 0, Length: 100, Location: stem + " section",
 			Opens: []string{stem + " section"},
@@ -102,7 +102,7 @@ func virtual(t *testing.T, db *DB, c contents) map[string]int {
 	return map[string]int{
 		"chunks_vec":   counted(t, db, `SELECT COUNT(*) FROM chunks_vec WHERE chunk_id IN `+list(c.chunks)),
 		"chunks_fts":   counted(t, db, `SELECT COUNT(*) FROM chunks_fts WHERE rowid IN `+list(c.chunks)),
-		"parts_fts":    counted(t, db, `SELECT COUNT(*) FROM parts_fts WHERE rowid IN `+list(c.chunks)),
+		"sections_fts": counted(t, db, `SELECT COUNT(*) FROM sections_fts WHERE rowid IN `+list(c.chunks)),
 		"titles_fts":   counted(t, db, `SELECT COUNT(*) FROM titles_fts WHERE rowid IN `+list(c.notes)),
 		"headings_fts": counted(t, db, `SELECT COUNT(*) FROM headings_fts WHERE rowid IN `+list(c.headings)),
 	}
@@ -171,7 +171,7 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 	keptVirtual, keptOrdinary := virtual(t, db, kept), ordinary(t, db, kept)
 
 	vectors := counted(t, db, `SELECT COUNT(*) FROM vectors`)
-	bought := numbers(t, db, `SELECT rowid FROM vectors WHERE fingerprint IN
+	bought := numbers(t, db, `SELECT rowid FROM vectors WHERE hash IN
 		(SELECT unhex(hash) FROM chunks WHERE id IN `+list(gone.chunks)+`)`)
 	if len(bought) == 0 {
 		t.Fatal("the vault that is forgotten paid for no vector, so this test would pass either way")

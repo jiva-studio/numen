@@ -27,8 +27,8 @@ type extractor struct {
 	headings   []Part
 	pagebreaks []Page
 
-	// preformatted counts the pre elements open around the text being written.
-	preformatted int
+	// preformattedDepth counts the pre elements open around the text being written.
+	preformattedDepth int
 }
 
 func newExtractor() *extractor {
@@ -92,11 +92,11 @@ func (x *extractor) node(n *html.Node) {
 	start := len(x.out)
 
 	if n.DataAtom == atom.Pre {
-		x.preformatted++
+		x.preformattedDepth++
 	}
 	x.children(n)
 	if n.DataAtom == atom.Pre {
-		x.preformatted--
+		x.preformattedDepth--
 	}
 
 	if level := headingLevel(n.DataAtom); level > 0 {
@@ -126,7 +126,7 @@ func (x *extractor) children(n *html.Node) {
 // write appends text. A run of space is one space, and text inside a pre element
 // is kept as it was written.
 func (x *extractor) write(text string) {
-	if x.preformatted > 0 {
+	if x.preformattedDepth > 0 {
 		x.out = append(x.out, text...)
 		return
 	}

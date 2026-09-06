@@ -1,0 +1,48 @@
+/*
+ * What more than one of the window's own components draws the same way.
+ *
+ * A value only one component uses stays in that component.
+ */
+
+/*
+ * The band a tab says something in. It carries a filesystem path, and a long
+ * one breaks where it stands.
+ */
+.caution {
+  margin: 0;
+  padding: 0.4rem 1rem;
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-2);
+  background: var(--numen-caution-bg);
+  color: var(--numen-caution-fg);
+  overflow-wrap: break-word;
+}
+
+/* The answers ride on the line the sentence is on, so the band stands one line high. */
+.caution--conflict {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.9rem;
+}
+
+/* An answer inside a sentence, drawn as the words around it with a line under. */
+.answer {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+
+.answer:hover {
+  text-decoration-thickness: 2px;
+}
+
+.answer:focus-visible {
+  outline: var(--numen-stroke) solid currentColor;
+  outline-offset: var(--numen-caret);
+}

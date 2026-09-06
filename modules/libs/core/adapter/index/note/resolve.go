@@ -11,7 +11,7 @@ import (
 )
 
 // Links returns the links written in one note, resolved.
-func (q *Queries) Links(ctx context.Context, vaultID, from string) ([]domain.ResolvedLink, error) {
+func (q *Queries) Links(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -40,7 +40,7 @@ func (q *Queries) Links(ctx context.Context, vaultID, from string) ([]domain.Res
 		var r domain.ResolvedLink
 		var role string
 		if err := rows.Scan(&r.Target.Scheme, &r.Target.Value, &role,
-			&r.Type, &r.Note, &r.Label); err != nil {
+			&r.Type, &r.Why, &r.Label); err != nil {
 			return nil, err
 		}
 		r.Role = domain.LinkRole(role)
@@ -93,7 +93,7 @@ func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
 // written. The priority is the one every name resolves by, so a wikilink
 // nobody recorded as a link is answered as a link is.
 func (q *Queries) Resolve(
-	ctx context.Context, vaultID, from string, written []string,
+	ctx context.Context, vaultID domain.VaultID, from string, written []string,
 ) (map[string]domain.ResolvedLink, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
@@ -121,7 +121,7 @@ func (q *Queries) Resolve(
 	return out, nil
 }
 
-func (q *Queries) resolve(ctx context.Context, vault int64, vaultID, from string, r *domain.ResolvedLink) error {
+func (q *Queries) resolve(ctx context.Context, vault int64, vaultID domain.VaultID, from string, r *domain.ResolvedLink) error {
 	switch r.Target.Scheme {
 	case domain.SchemeNote:
 		// An identifier names one note in the world, so this lookup is not
@@ -248,12 +248,12 @@ func sharedPrefix(a, b string) int {
 // Backlinks returns the notes that point at one note.
 //
 // A link is a backlink because it *resolves* here, not because its text looks
-// like this note. Those differ in both directions: a link written as a path
-// never matches by name, and a link written as a bare name may resolve to a
-// nearer note of the same name. So every candidate goes through the same
-// resolution the forward direction uses, and only the ones that land here are
-// kept.
-func (q *Queries) Backlinks(ctx context.Context, vaultID, to string) ([]domain.ResolvedLink, error) {
+// like this note. Those differ in both directions: a link written as a path is
+// filed under its last segment and so is offered by name as well, and a link
+// written as a bare name may resolve to a nearer note of the same name. So
+// every candidate goes through the same resolution the forward direction uses,
+// and only the ones that land here are kept.
+func (q *Queries) Backlinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -286,7 +286,7 @@ func (q *Queries) Backlinks(ctx context.Context, vaultID, to string) ([]domain.R
 		var role string
 		var position int
 		if err := rows.Scan(&r.From, &r.Target.Scheme, &r.Target.Value, &role,
-			&r.Type, &r.Note, &r.Label, &position); err != nil {
+			&r.Type, &r.Why, &r.Label, &position); err != nil {
 			return nil, err
 		}
 		r.Role = domain.LinkRole(role)

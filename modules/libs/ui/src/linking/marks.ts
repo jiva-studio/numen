@@ -15,6 +15,9 @@ const wikilink = (state: StateInline, silent: boolean): boolean => {
 
   const found = wikilinksIn(src.slice(pos, end + 2))[0]
   if (!found || found.at !== 0) return false
+  // The address is held to what every other link is held to. Brackets around
+  // an address that does not pass are the text they are written as.
+  if (!state.md.validateLink(found.address)) return false
 
   if (!silent) {
     state.push('link_open', 'a', 1).attrSet('href', found.address)

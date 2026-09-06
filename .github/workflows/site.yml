@@ -23,6 +23,11 @@ concurrency:
   group: landing-${{ github.ref }}
   cancel-in-progress: true
 
+# The deploy goes to storage with a key of its own; nothing here writes to the
+# repository.
+permissions:
+  contents: read
+
 jobs:
   # The page is static and carries no framework, so what there is to check is
   # that its markup typechecks and that the site builds — pictures included,
@@ -30,25 +35,33 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
 
       - name: Install
-        run: npm ci --prefix modules/apps/landing
+        run: npm ci --prefix modules
 
       - name: Typecheck
         run: npm run typecheck --prefix modules/apps/landing
+
+      - name: Lint
+        run: npm run lint --prefix modules/apps/landing
 
       - name: Build
         env:
           PUBLIC_NUMEN_DOWNLOADS_BASE: ${{ vars.PUBLIC_NUMEN_DOWNLOADS_BASE }}
         run: npm run build --prefix modules/apps/landing
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: landing
           path: modules/apps/landing/dist
@@ -62,6 +75,7 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: What this needs
         env:
@@ -81,7 +95,7 @@ jobs:
             exit 1
           fi
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: landing
           path: dist
@@ -93,11 +107,16 @@ jobs:
           KEY: ${{ secrets.BUNNY_SITE_STORAGE_KEY }}
         run: |
           set -euo pipefail
+          # The key is handed over in a file. A command line is read by anything
+          # on the machine and is what an error prints.
+          umask 077
+          printf 'AccessKey: %s\n' "$KEY" > "$RUNNER_TEMP/storage.header"
+
           cd dist
           find . -type f | sed 's|^\./||' | while read -r path; do
             code=$(curl -sS -o /dev/null -w '%{http_code}' \
               -X PUT "https://$ENDPOINT/$ZONE/$path" \
-              -H "AccessKey: $KEY" \
+              -H @"$RUNNER_TEMP/storage.header" \
               -H 'Content-Type: application/octet-stream' \
               --data-binary "@$path")
             echo "$code  $path"
@@ -107,19 +126,23 @@ jobs:
       # A page removed from the site is still on the disk it was put on. What
       # this build did not write is taken down, so what is served is what was
       # built and nothing else.
-      - name: Down with what is no longer there
+      - name: Prune storage
         env:
           ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
           ZONE: ${{ vars.BUNNY_SITE_STORAGE_ZONE }}
           KEY: ${{ secrets.BUNNY_SITE_STORAGE_KEY }}
         run: |
           set -euo pipefail
+          umask 077
+          printf 'AccessKey: %s\n' "$KEY" > "$RUNNER_TEMP/storage.header"
+
           built=$(cd dist && find . -type f | sed 's|^\./||' | sort)
 
           # Storage lists one folder at a time, so the walk is done here.
           walk() {
             local under="$1"
-            curl -fsS "https://$ENDPOINT/$ZONE/$under" -H "AccessKey: $KEY" \
+            curl -fsS "https://$ENDPOINT/$ZONE/$under" \
+              -H @"$RUNNER_TEMP/storage.header" \
               | jq -r '.[] | [.IsDirectory, .ObjectName] | @tsv' \
               | while IFS=$'\t' read -r directory name; do
                   if [ "$directory" = true ]; then
@@ -134,7 +157,8 @@ jobs:
           comm -23 /tmp/there <(printf '%s\n' "$built") | while read -r stale; do
             [ -n "$stale" ] || continue
             code=$(curl -sS -o /dev/null -w '%{http_code}' \
-              -X DELETE "https://$ENDPOINT/$ZONE/$stale" -H "AccessKey: $KEY")
+              -X DELETE "https://$ENDPOINT/$ZONE/$stale" \
+              -H @"$RUNNER_TEMP/storage.header")
             echo "removed $code  $stale"
           done
 
@@ -144,13 +168,16 @@ jobs:
           API_KEY: ${{ secrets.BUNNY_API_KEY }}
         run: |
           set -euo pipefail
+          umask 077
+          printf 'AccessKey: %s\n' "$API_KEY" > "$RUNNER_TEMP/api.header"
+
           code=$(curl -sS -o /dev/null -w '%{http_code}' \
             -X POST "https://api.bunny.net/pullzone/$PULL_ZONE/purgeCache" \
-            -H "AccessKey: $API_KEY" -H 'Content-Length: 0')
+            -H @"$RUNNER_TEMP/api.header" -H 'Content-Length: 0')
           echo "purge $code"
           case "$code" in 20*) ;; *) echo "::error::the cache was not purged: $code"; exit 1 ;; esac
 
-      - name: Fetch it as a stranger would
+      - name: Fetch published
         env:
           SERVED_FROM: ${{ vars.BUNNY_SITE_SERVED_FROM }}
         run: |

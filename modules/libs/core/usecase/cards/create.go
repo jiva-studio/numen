@@ -6,7 +6,6 @@ import (
 	"fmt"
 	pathpkg "path"
 	"strings"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
@@ -31,9 +30,16 @@ type Create struct {
 	Writers port.VaultWriters
 	// Index brings the new file up to date, so that a caller which makes a deck
 	// and lists the vault's decks in the next breath finds it.
-	Index func(ctx context.Context, v domain.Vault, paths []string) error
+	Index note.Levels
 	// Now is when this is happening. An identifier carries it.
-	Now func() time.Time
+	Now port.Clock
+}
+
+// NewCreate is what a deck, a stencil or a preset is made through: the vault it
+// is written into, what brings the new file level in the index, and what time
+// it is.
+func NewCreate(writers port.VaultWriters, index note.Levels, now port.Clock) Create {
+	return Create{Writers: writers, Index: index, Now: now}
 }
 
 // New is what to make.
@@ -48,15 +54,15 @@ type New struct {
 	Fields []string
 }
 
-// Made is the file that now exists.
-type Made struct {
-	Path       string
-	Identifier string
-	Title      string
+// CreateNoteResult is the file that now exists.
+type CreateNoteResult struct {
+	Path  string
+	ID    string
+	Title string
 }
 
 // Deck makes a deck of no cards.
-func (u Create) Deck(ctx context.Context, v domain.Vault, in New) (Made, error) {
+func (u Create) Deck(ctx context.Context, v domain.Vault, in New) (CreateNoteResult, error) {
 	in.Fields = nil
 	return u.make(ctx, v, domain.TypeDeck, in)
 }
@@ -66,9 +72,9 @@ func (u Create) Deck(ctx context.Context, v domain.Vault, in New) (Made, error) 
 var ErrNoFields = errors.New("a stencil declares at least one field")
 
 // Stencil makes a stencil declaring the fields it was given.
-func (u Create) Stencil(ctx context.Context, v domain.Vault, in New) (Made, error) {
+func (u Create) Stencil(ctx context.Context, v domain.Vault, in New) (CreateNoteResult, error) {
 	if len(in.Fields) == 0 {
-		return Made{}, fmt.Errorf("%w: %q was given none", ErrNoFields, in.Title)
+		return CreateNoteResult{}, fmt.Errorf("%w: %q was given none", ErrNoFields, in.Title)
 	}
 	return u.make(ctx, v, domain.TypeStencil, in)
 }
@@ -76,69 +82,55 @@ func (u Create) Stencil(ctx context.Context, v domain.Vault, in New) (Made, erro
 // Preset makes a preset naming none of its settings. A key the file does not
 // carry stands at the default, so the decks pointing here are scheduled by
 // them until the person moves one.
-func (u Create) Preset(ctx context.Context, v domain.Vault, in New) (Made, error) {
+func (u Create) Preset(ctx context.Context, v domain.Vault, in New) (CreateNoteResult, error) {
 	in.Fields = nil
 	return u.make(ctx, v, domain.TypePreset, in)
 }
 
-func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, in New) (Made, error) {
+func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, in New) (CreateNoteResult, error) {
 	title := strings.TrimSpace(in.Title)
-	name, exact := domain.Filename(title)
-	switch {
-	case name == "":
-		return Made{}, fmt.Errorf(
-			"%w: %q leaves nothing a file can be named after", note.ErrUnnameable, title)
-	case strings.ContainsAny(title, "\n\r"):
-		return Made{}, fmt.Errorf("%w: %q is more than one line", note.ErrUnnameable, title)
+	name, exact, err := domain.Filename(title)
+	if err != nil {
+		return CreateNoteResult{}, err
 	}
 	path := pathpkg.Join(in.Folder, name+domain.NoteExtension)
 
-	identifier, err := ulid.New(u.now())
+	identifier, err := ulid.New(u.Now())
 	if err != nil {
-		return Made{}, err
+		return CreateNoteResult{}, err
 	}
 	doc, err := markdown.Open(markdown.Create(identifier, in.Body))
 	if err != nil {
-		return Made{}, err
+		return CreateNoteResult{}, err
 	}
 	if err := doc.SetScalar(typeKey, string(kind)); err != nil {
-		return Made{}, err
+		return CreateNoteResult{}, err
 	}
 	if len(in.Fields) > 0 {
 		if err := doc.SetList(fieldsKey, in.Fields); err != nil {
-			return Made{}, err
+			return CreateNoteResult{}, err
 		}
 	}
 	// A note is shown by its `title`, else by its filename, so the key is
 	// written only where the filename cannot carry the whole name.
 	if !exact {
 		if err := doc.SetTitle(title); err != nil {
-			return Made{}, err
+			return CreateNoteResult{}, err
 		}
 	}
 
 	writer, err := u.Writers.Open(v)
 	if err != nil {
-		return Made{}, err
+		return CreateNoteResult{}, err
 	}
 	// Whether the path was free is the filesystem's to answer, at the moment
 	// the file is made.
 	if err := writer.Create(ctx, path, doc.Bytes()); err != nil {
-		return Made{}, err
+		return CreateNoteResult{}, err
 	}
 
 	// The file is on disk from here on, so what comes back says where it is
 	// whether or not the index caught up.
-	made := Made{Path: path, Identifier: identifier, Title: title}
-	if u.Index == nil {
-		return made, nil
-	}
-	return made, u.Index(ctx, v, []string{path})
-}
-
-func (u Create) now() time.Time {
-	if u.Now == nil {
-		return time.Now()
-	}
-	return u.Now()
+	made := CreateNoteResult{Path: path, ID: identifier, Title: title}
+	return made, note.Levelled(u.Index(ctx, v, []string{path}), path)
 }

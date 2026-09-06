@@ -13,8 +13,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -38,14 +36,15 @@ type Agent struct {
 	Root string
 	// Tools is where it reaches this vault.
 	Tools Endpoint
-	// Allowed are the tools it may use without being asked. It names this
-	// vault's tools; the two the agent brings — searching the web and fetching
-	// a page — are named where they are brought.
+	// Allowed are the tools it may use without being asked, and the only ones
+	// it may use at all: the mode this runs in asks nobody, so a tool absent
+	// from the allowance is refused. It names this vault's tools; the search
+	// the agent brings is allowed wherever the arguments are written.
 	Allowed []string
 	// Words are how the tools this vault serves are spoken about, by the name
 	// the agent calls them. A tool that is not here is named as it named
 	// itself.
-	Words map[string]Words
+	Words map[string]ToolDeclaration
 	// Drafting is how a change this agent is making is drawn before it lands.
 	Drafting Drafting
 	// Model is which model answers, by the name the command line knows it as.
@@ -153,9 +152,9 @@ func (a *Agent) Finish(_ context.Context, conversation string) error {
 	return failed
 }
 
-// Carrying is the session the next question of this conversation is asked in,
+// carries is the session the next question of this conversation is asked in,
 // empty for a conversation nothing has been asked in yet.
-func (a *Agent) Carrying(conversation string) string {
+func (a *Agent) carries(conversation string) string {
 	if conversation == "" {
 		return ""
 	}
@@ -180,22 +179,31 @@ func (a *Agent) carrying(conversation string) func(string) {
 	}
 }
 
-// Name is what the server this agent is served by calls itself, and the prefix
-// its tools arrive under.
-const Name = "numen"
-
 // DefaultTurns is how many times an agent may go round on one task.
 const DefaultTurns = 30
 
 // Take starts the agent on a task.
-func (a *Agent) Take(ctx context.Context, task port.Task) (port.Work, error) {
+func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
 	if a.Tools.URL == "" || a.Tools.Token == "" {
 		return nil, errors.New("no tools to give an agent")
 	}
 
+	configuration, err := a.configuration()
+	if err != nil {
+		return nil, fmt.Errorf("write the tools an agent is given: %w", err)
+	}
+	// The child reads the file as it starts and the run holds it until the
+	// process is done with it.
+	started := false
+	defer func() {
+		if !started {
+			os.Remove(configuration)
+		}
+	}()
+
 	running, stop := context.WithCancel(ctx)
 	name, rest := a.command()
-	cmd := exec.CommandContext(running, name, append(rest, a.arguments(task)...)...)
+	cmd := exec.CommandContext(running, name, append(rest, a.arguments(task, configuration)...)...)
 	cmd.Dir = a.Root
 	cmd.Env = environment(os.Environ())
 	detach(cmd)
@@ -204,6 +212,10 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Work, error) {
 	// grandchild holding the child's error output keeps a wait from returning.
 	cmd.Cancel = func() error { return kill(cmd) }
 	cmd.WaitDelay = 2 * time.Second
+
+	// The question goes on the input. A question is a person's own words and a
+	// note's, and words on a command line are read for options first.
+	cmd.Stdin = strings.NewReader(task.Question)
 
 	out, err := cmd.StdoutPipe()
 	if err != nil {
@@ -230,11 +242,13 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Work, error) {
 		stop()
 		return nil, fmt.Errorf("start %s: %w", name, err)
 	}
-	w.reading.Add(1)
+	started = true
+	w.reader.Add(1)
 	go func() {
-		defer w.reading.Done()
+		defer w.reader.Done()
 		defer a.letGo(w)
 		defer close(w.steps)
+		defer os.Remove(configuration)
 
 		failed := read(running, out, w.steps, a.Words, a.carrying(task.Conversation), a.Drafting)
 
@@ -247,7 +261,7 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Work, error) {
 			failed = reason(err, said.String())
 		}
 		select {
-		case w.steps <- port.Step{Kind: port.StepStopped, Failed: failed}:
+		case w.steps <- port.Step{Kind: port.StepStopped, Detail: failed}:
 		case <-running.Done():
 		}
 		if err != nil && a.Trouble != nil {
@@ -264,118 +278,41 @@ func (a *Agent) command() (string, []string) {
 	return a.Command[0], a.Command[1:]
 }
 
-// places are where the command line is looked for when the path does not name
-// it.
-//
-// An application opened from a desktop is given the system path alone, so every
-// folder an installer writes to is named here. A leading ~ is this person's
-// home, and a * is expanded.
-//
-// A mac carries programs inside application bundles, and the bundle the
-// command line's installer leaves there holds a link to it.
-var places = []string{
-	"~/.local/bin/claude",
-	"~/.claude/local/claude",
-	"~/Applications/Claude Code URL Handler.app/Contents/MacOS/claude",
-	"/Applications/Claude Code URL Handler.app/Contents/MacOS/claude",
-	"~/.bun/bin/claude",
-	"~/.volta/bin/claude",
-	"~/.npm-global/bin/claude",
-	"~/.nvm/versions/node/*/bin/claude",
-	"~/.nix-profile/bin/claude",
-	"/opt/homebrew/bin/claude",
-	"/usr/local/bin/claude",
-	"/run/current-system/sw/bin/claude",
-	"/nix/var/nix/profiles/default/bin/claude",
-}
-
-// installed is the command line to start: the path first, then the places.
-//
-// The bare name is the answer when it is nowhere, and starting that says it is
-// not installed.
-func installed() string {
-	if named, err := exec.LookPath("claude"); err == nil {
-		return named
-	}
-	home, err := os.UserHomeDir()
-	if err != nil {
-		home = ""
-	}
-	if found := found(home, places); found != "" {
-		return found
-	}
-	return "claude"
-}
-
-// found is the first of places that is a program this machine can run. Empty
-// says none of them is.
-func found(home string, places []string) string {
-	for _, place := range places {
-		if strings.HasPrefix(place, "~/") {
-			if home == "" {
-				continue
-			}
-			place = filepath.Join(home, place[2:])
-		}
-		matches, err := filepath.Glob(place)
-		if err != nil {
-			continue
-		}
-		for _, match := range matches {
-			if runnable(match) {
-				return match
-			}
-		}
-	}
-	return ""
-}
-
-// runnable is a file with an execute bit on it, held under the name it was
-// looked for by.
-//
-// A mac filesystem answers to a name in any case, so the folder is asked which
-// name it keeps.
-func runnable(path string) bool {
-	about, err := os.Stat(path)
-	if err != nil || !about.Mode().IsRegular() || about.Mode().Perm()&0o111 == 0 {
-		return false
-	}
-	entries, err := os.ReadDir(filepath.Dir(path))
-	if err != nil {
-		return false
-	}
-	name := filepath.Base(path)
-	return slices.ContainsFunc(entries, func(e os.DirEntry) bool { return e.Name() == name })
-}
-
 // brought is the tools the agent may use besides this vault's own: it may look
 // something up, and it may not touch this machine. Every other built-in — a
 // shell, a file writer, a file reader — is absent.
-const brought = "WebSearch,WebFetch"
+//
+// Looking something up is a search and not a fetch. A note may have been
+// written by anybody and the agent reads notes, so a tool that goes to an
+// address the text names is an address the text chooses: the vault leaves in
+// the request. A search names no address, and the words of it reach the model
+// that is reading them already.
+const brought = "WebSearch"
 
 // arguments are what the agent is started with.
 //
-// Only what the command line documents: the task on the command line, the
-// answer as one JSON object per line, this vault's tools and no other server's,
-// and the tools named in Allowed approved ahead of the run.
+// Only what the command line documents: the answer as one JSON object per line,
+// this vault's tools and no other server's, and the tools named in Allowed
+// approved ahead of the run. The question itself is not here — it goes on the
+// input, where nothing reads it for options.
 //
-// The tools it brings are the two that reach the web; every other built-in is
-// disabled. An agent works this vault through the tools this vault serves, and
+// The one tool it brings is the search; every other built-in is disabled. An
+// agent works this vault through the tools this vault serves, and
 // every one of those goes through a use case that says what a note is and keeps
 // the index level with the file.
-func (a *Agent) arguments(task port.Task) []string {
+func (a *Agent) arguments(task port.Task, configuration string) []string {
 	turns := a.Turns
 	if turns <= 0 {
 		turns = DefaultTurns
 	}
 
 	args := []string{
-		"-p", task.Asked,
+		"-p",
 		"--output-format", "stream-json",
 		"--verbose",
 		"--include-partial-messages",
 		"--strict-mcp-config",
-		"--mcp-config", a.servers(),
+		"--mcp-config", configuration,
 		"--tools", brought,
 		"--permission-mode", "dontAsk",
 		"--max-turns", fmt.Sprint(turns),
@@ -385,10 +322,8 @@ func (a *Agent) arguments(task port.Task) []string {
 	// telling this machine what to run. Naming the sources read is what refuses
 	// them: none by default, and only the person's own when they ask. A vault's
 	// are refused either way.
-	//
-	// Named rather than turned off wholesale, because turning every
-	// customisation off takes this vault's own tools with it — they arrive on a
-	// command line and are read as a customisation like any other.
+	// The sources are named one by one because this vault's own tools arrive on
+	// a command line and are read as a customisation like any other.
 	sources := ""
 	if a.ReadsHooksAndSkills {
 		sources = "user"
@@ -397,45 +332,14 @@ func (a *Agent) arguments(task port.Task) []string {
 	if a.Model != "" {
 		args = append(args, "--model", a.Model)
 	}
-	if len(a.Allowed) > 0 {
-		args = append(args, "--allowedTools", strings.Join(a.Allowed, ","))
-	}
-	if session := a.Carrying(task.Conversation); session != "" {
+	// The search is allowed alongside this vault's tools. Naming a tool on
+	// --tools offers it; the allowance is what lets it be called, and nothing
+	// outside the allowance is called at all under this mode.
+	args = append(args, "--allowedTools", strings.Join(append([]string{brought}, a.Allowed...), ","))
+	if session := a.carries(task.Conversation); session != "" {
 		args = append(args, "--resume", session)
 	}
 	return args
-}
-
-// dropped names the environment variables that describe a Claude Code session
-// somebody else is running.
-//
-// A window is not one, so these are stripped from the environment the agent is
-// started with. What says how to reach a model is not here: that belongs to the
-// installation and is passed on.
-var dropped = []string{
-	"CLAUDECODE",
-	"CLAUDE_CODE_SESSION_ID",
-	"CLAUDE_CODE_CHILD_SESSION",
-	"CLAUDE_CODE_ENTRYPOINT",
-	"CLAUDE_CODE_EXECPATH",
-	"CLAUDE_CODE_MESSAGING_SOCKET",
-	"CLAUDE_CODE_MESSAGING_TOKEN",
-	"CLAUDE_PID",
-	"CLAUDE_EFFORT",
-}
-
-// environment is what the agent is started with: everything the machine holds,
-// less what belongs to a session it is not part of.
-func environment(held []string) []string {
-	out := make([]string, 0, len(held))
-	for _, entry := range held {
-		name, _, found := strings.Cut(entry, "=")
-		if found && slices.Contains(dropped, name) {
-			continue
-		}
-		out = append(out, entry)
-	}
-	return out
 }
 
 // manners is what the agent is told about the person it is answering.
@@ -451,15 +355,19 @@ func manners(task port.Task) string {
 	b.WriteString("they are how the tools address a note and mean nothing to the person.\n")
 	b.WriteString("Keep it short. They are reading in a narrow panel, not a terminal.\n")
 
+	// The path is not written here. A note in a synced vault is named by
+	// whoever synced it, and a name in the system prompt is read as
+	// instruction. `window_tab_list` names it as a tool's answer, which is data.
 	if task.Focus != "" {
-		fmt.Fprintf(&b, "\nThe note in front of them is at %s. A task that says \"this note\" means that one.\n", task.Focus)
+		b.WriteString("\nA task that says \"this note\" means the one they are looking at, ")
+		b.WriteString("which `window_tab_list` names.\n")
 	}
 	return b.String()
 }
 
 // servers is the one server this agent is given, written the way the command
 // line reads it.
-func (a *Agent) servers() string {
+func (a *Agent) servers() ([]byte, error) {
 	type server struct {
 		Type    string            `json:"type"`
 		URL     string            `json:"url"`
@@ -473,39 +381,40 @@ func (a *Agent) servers() string {
 		Headers: map[string]string{"Authorization": "Bearer " + a.Tools.Token},
 	}}}
 
-	written, err := json.Marshal(config)
-	if err != nil {
-		return "{}"
-	}
-	return string(written)
+	return json.Marshal(config)
 }
 
-// prefix is what a tool of this vault's server is called under once it reaches
-// an agent.
-const prefix = "mcp__" + Name + "__"
-
-// Tool is what a tool of this vault's server is called once it reaches an
-// agent.
-func Tool(name string) string { return prefix + name }
-
-// Words are how one tool is spoken about to a person: what it calls itself,
-// which of its arguments says what a call was about, and what a call of it does
-// to the vault. Each is the tool's own declaration, read from what the server
-// serves.
-type Words struct {
-	Title string
-	About string
-	// Inside names the field of one element that says which element it is, for
-	// a call that takes a collection.
-	Inside string
-	// Stood and Becomes name the arguments carrying the text a call replaces
-	// and what it puts in that text's place. Both are empty for a call that
-	// replaces no stretch.
-	Stood   string
-	Becomes string
-	// Kind is what a call of this tool does to the vault. A tool that declares
-	// nothing about it is port.StepCalling.
-	Kind port.StepKind
+// configuration writes the server this agent is given to a file of its own and
+// answers with its path.
+//
+// The configuration carries the bearer token for this vault's tools. The file
+// is this user's to read and nobody else's, and a command line is not, so the
+// path is what the child is given. Whoever makes it removes it.
+func (a *Agent) configuration() (string, error) {
+	written, err := a.servers()
+	if err != nil {
+		return "", err
+	}
+	file, err := os.CreateTemp("", "numen-tools-*.json")
+	if err != nil {
+		return "", err
+	}
+	at := file.Name()
+	if err := file.Chmod(0o600); err != nil {
+		file.Close()
+		os.Remove(at)
+		return "", err
+	}
+	if _, err := file.Write(written); err != nil {
+		file.Close()
+		os.Remove(at)
+		return "", err
+	}
+	if err := file.Close(); err != nil {
+		os.Remove(at)
+		return "", err
+	}
+	return at, nil
 }
 
 // work is one task being worked, and what stops it.
@@ -516,7 +425,7 @@ type work struct {
 	// question asked in none. Finishing that conversation stops this work.
 	conversation string
 	steps        chan port.Step
-	reading      sync.WaitGroup
+	reader       sync.WaitGroup
 	once         sync.Once
 }
 
@@ -529,7 +438,7 @@ func (w *work) Steps() <-chan port.Step { return w.steps }
 // this work was taken with is cancelled.
 func (w *work) Stop() error {
 	w.once.Do(w.stop)
-	w.reading.Wait()
+	w.reader.Wait()
 	return nil
 }
 
@@ -560,17 +469,17 @@ func lastLine(said string) string {
 // written. Nothing here is a write: the vault is what changes a note, and this
 // only says what is on its way.
 type Drafting struct {
-	// Tell is told each time more of the change has arrived.
-	Tell func(ctx context.Context, said domain.Editing)
-	// Where says where a stretch stands in a note, and whether it stands in
+	// Report is told each time more of the change has arrived.
+	Report func(ctx context.Context, said domain.Edit)
+	// Location says where a stretch stands in a note, and whether it stands in
 	// exactly one place. A stretch that stands nowhere or twice is not drawn.
-	Where func(ctx context.Context, path, stood string) (from, to int, one bool)
+	Location func(ctx context.Context, path, stood string) (from, to int, unique bool)
 	// Now is the clock the pace is kept by.
 	Now func() time.Time
 }
 
 // drawing reports whether anything can be drawn at all.
-func (d Drafting) drawing() bool { return d.Tell != nil && d.Where != nil }
+func (d Drafting) drawing() bool { return d.Report != nil && d.Location != nil }
 
 func (d Drafting) now() time.Time {
 	if d.Now == nil {

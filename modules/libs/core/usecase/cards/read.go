@@ -7,8 +7,8 @@ import (
 	"io/fs"
 	"unicode/utf8"
 
-	format "github.com/jiva-studio/numen/modules/libs/core/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -21,33 +21,38 @@ import (
 // opened, so a deck over the bound is refused with none of its bytes read.
 const MaxBytes = 8 << 20
 
-// Deck is one deck as a read hands it over.
-type Deck struct {
+// DeckContents is one deck as a read hands it over.
+type DeckContents struct {
 	Path string
 	// Outcome is how the read ended, out of the list an ordinary note's read
 	// answers with.
-	Outcome note.Outcome
+	Outcome note.ReadOutcome
 	// Type is what the note at the path says it is, so a caller that asked for
 	// a deck and was handed a stencil is told so.
 	Type domain.NoteType
-	// Deck is what the file says. It holds no cards for any outcome but Ok, and
+	// Body is what the file says. It holds no cards for any outcome but Ok, and
 	// a deck over the bound carries the problem that says why.
-	Deck format.Deck
+	Body format.Deck
+	// Raw is the prose of the file as it stands, which is what a caller changing
+	// one card splices. It is empty for any outcome but Ok.
+	Raw string
 	// Stencils is where the wikilink under each card's heading lands, keyed by
 	// what stands in the brackets. A name that reaches no note is absent.
 	Stencils map[string]string
-	// Ref is what the file was when it was asked about, which is before its
-	// bytes were read.
-	Ref domain.FileRef
+	// Fingerprint is what the file was when it was asked about, which is before
+	// its bytes were read.
+	Fingerprint domain.Fingerprint
 }
 
-// Stencil is one stencil as a read hands it over.
-type Stencil struct {
+// StencilContents is one stencil as a read hands it over.
+type StencilContents struct {
 	Path    string
-	Outcome note.Outcome
+	Outcome note.ReadOutcome
 	Type    domain.NoteType
-	Stencil format.Stencil
-	Ref     domain.FileRef
+	// Body is what the file says: the fields a card is asked for and the faces
+	// it is shown through. It says nothing for any outcome but Ok.
+	Body        format.Stencil
+	Fingerprint domain.Fingerprint
 }
 
 // Read hands over a deck or a stencil, read out of the vault.
@@ -57,38 +62,47 @@ type Stencil struct {
 type Read struct {
 	Readers port.VaultReaders
 	// Links answers where the wikilink a card names its stencil by lands. A
-	// build holding none reads the cards and says where no stencil is filed.
+	// stencil holds no cards, so reading one asks nothing of it.
 	Links port.LinkQueries
+}
+
+// NewRead is what a deck or a stencil is read through: the vault its file is
+// read out of, and where the wikilink each card names its stencil by lands.
+func NewRead(readers port.VaultReaders, links port.LinkQueries) Read {
+	return Read{Readers: readers, Links: links}
 }
 
 // Deck reads the deck at path.
 //
 // An error is the vault being out of reach. What is wrong with the file itself
 // is an outcome, and the caller is told which one.
-func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (Deck, error) {
-	out := Deck{Path: path}
+func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckContents, error) {
+	out := DeckContents{Path: path}
 	n, ref, outcome, err := u.looked(ctx, v, path, MaxBytes)
 	if err != nil {
-		return Deck{}, err
+		return DeckContents{}, err
 	}
-	out.Ref, out.Outcome, out.Type = ref, outcome, n.Type
+	out.Fingerprint, out.Outcome, out.Type = ref, outcome, n.Type
+	// A file that will not read is carried out in the outcome above, and adds
+	// nothing to a body nobody read.
+	//exhaustive:ignore
 	switch outcome {
 	case note.Ok:
-		out.Deck = format.ReadDeck(n)
-		out.Stencils, err = cutting(ctx, u.Links, v.ID, path, out.Deck)
+		out.Body, out.Raw = format.ReadDeck(n), n.Body
+		out.Stencils, err = cutting(ctx, u.Links, v.ID, path, out.Body)
 		if err != nil {
-			return Deck{}, err
+			return DeckContents{}, err
 		}
 		// A card is laid out by the stencil its wikilink lands on, so a name
 		// reaching a note that is not one is a card no face shows.
 		_, ordinary, err := u.stencils(ctx, v, out.Stencils)
 		if err != nil {
-			return Deck{}, err
+			return DeckContents{}, err
 		}
-		out.Deck.Problems = append(out.Deck.Problems, notStencils(out.Deck, ordinary)...)
+		out.Body.Problems = append(out.Body.Problems, notStencils(out.Body, ordinary)...)
 	case note.TooLarge:
-		out.Deck = format.Deck{Ref: ref, Problems: []format.Problem{format.OnFile(
-			format.CheckTooLarge,
+		out.Body = format.Deck{Ref: ref, Problems: []format.Problem{format.OnFile(
+			format.FaultTooLarge,
 			fmt.Sprintf("this deck is %d bytes, and %d is the most one is read at", ref.Size, MaxBytes),
 		)}}
 	}
@@ -116,7 +130,7 @@ func (u Read) Cutting(
 // brackets. The link is written in the deck, so it resolves against the deck's
 // own folder the way every name in that file does.
 func cutting(
-	ctx context.Context, links port.LinkQueries, vaultID, path string, d format.Deck,
+	ctx context.Context, links port.LinkQueries, vaultID domain.VaultID, path string, d format.Deck,
 ) (map[string]string, error) {
 	if links == nil {
 		return nil, nil
@@ -164,7 +178,7 @@ func (u Read) stencils(
 				return nil, nil, err
 			}
 			if found.Outcome == note.Ok && found.Type == domain.TypeStencil {
-				held = found.Stencil
+				held = found.Body
 			}
 			read[path] = held
 			loose[path] = found.Outcome == note.Ok && found.Type != domain.TypeStencil
@@ -186,22 +200,22 @@ func notStencils(d format.Deck, ordinary map[string]bool) []format.Problem {
 		if !ordinary[card.Stencil] {
 			continue
 		}
-		out = append(out, format.OnCard(at, format.CheckNotAStencil,
+		out = append(out, format.OnCard(at, format.FaultNotAStencil,
 			card.Stencil+" is a note and not a stencil, so this card is shown by no face"))
 	}
 	return out
 }
 
 // Stencil reads the stencil at path. A stencil is a note and is bounded as one.
-func (u Read) Stencil(ctx context.Context, v domain.Vault, path string) (Stencil, error) {
-	out := Stencil{Path: path}
+func (u Read) Stencil(ctx context.Context, v domain.Vault, path string) (StencilContents, error) {
+	out := StencilContents{Path: path}
 	n, ref, outcome, err := u.looked(ctx, v, path, note.MaxBytes)
 	if err != nil {
-		return Stencil{}, err
+		return StencilContents{}, err
 	}
-	out.Ref, out.Outcome, out.Type = ref, outcome, n.Type
+	out.Fingerprint, out.Outcome, out.Type = ref, outcome, n.Type
 	if outcome == note.Ok {
-		out.Stencil = format.ReadStencil(n)
+		out.Body = format.ReadStencil(n)
 	}
 	return out, nil
 }
@@ -210,10 +224,10 @@ func (u Read) Stencil(ctx context.Context, v domain.Vault, path string) (Stencil
 // bytes parse to once everything that would refuse them has been asked.
 func (u Read) looked(
 	ctx context.Context, v domain.Vault, path string, bound int64,
-) (domain.Note, domain.FileRef, note.Outcome, error) {
+) (domain.Note, domain.Fingerprint, note.ReadOutcome, error) {
 	reader, err := u.Readers.Open(v)
 	if err != nil {
-		return domain.Note{}, domain.FileRef{}, "", err
+		return domain.Note{}, domain.Fingerprint{}, "", err
 	}
 
 	// The vault says what is at a path without opening it: a note, a file it
@@ -230,9 +244,9 @@ func (u Read) looked(
 			return domain.Note{}, ref, note.TooLarge, nil
 		}
 	case errors.Is(err, port.ErrNotANote):
-		return domain.Note{}, domain.FileRef{}, note.NotANote, nil
+		return domain.Note{}, domain.Fingerprint{}, note.NotANote, nil
 	case !errors.Is(err, fs.ErrNotExist):
-		return domain.Note{}, domain.FileRef{}, "", fmt.Errorf("look at %s: %w", path, err)
+		return domain.Note{}, domain.Fingerprint{}, "", fmt.Errorf("look at %s: %w", path, err)
 	}
 
 	raw, err := reader.Read(ctx, path)
@@ -252,6 +266,7 @@ func (u Read) looked(
 		return domain.Note{}, ref, note.NotText, nil
 	}
 	if _, err := markdown.Open(raw); err != nil {
+		//nolint:nilerr // a file that will not read is this file's outcome, not the caller's error
 		return domain.Note{}, ref, note.Unreadable, nil
 	}
 	return markdown.Parse(ref, raw), ref, note.Ok, nil

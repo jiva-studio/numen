@@ -27,27 +27,27 @@ const (
 	IsSizes = "sizes"
 )
 
-// Mode is which half of every colour pair the tokens are read as.
-type Mode int
+// ColorScheme is which half of every colour pair the tokens are read as.
+type ColorScheme int
 
 const (
 	// System is both halves, and the machine decides between them.
-	System Mode = iota
+	System ColorScheme = iota
 	Light
 	Dark
 )
 
-// Chosen is what a person set their windows to.
-type Chosen struct {
-	Mode Mode
+// Settings is what a person set their windows to.
+type Settings struct {
+	Mode ColorScheme
 	// Theme is the stylesheet chosen, as its text. A window wearing none is
 	// left to `tokens.css`.
 	Theme string
-	// Drawn is how large the interface is drawn and Set how large the text a
-	// person reads is set, one being as designed. A size nobody named is zero
-	// and is left to `tokens.css` as well.
-	Drawn float64
-	Set   float64
+	// InterfaceScale is how large the interface is drawn and TextScale how
+	// large the text a person reads is set, one being as designed. A size
+	// nobody named is zero and is left to `tokens.css` as well.
+	InterfaceScale float64
+	TextScale      float64
 }
 
 // Styles is the elements the head ends with.
@@ -55,18 +55,18 @@ type Chosen struct {
 // The page arrives carrying all of them, so no frame is drawn in the default
 // colours or at a size nobody asked for. A size arriving after the first frame
 // relays out the document.
-func Styles(c Chosen) string {
+func (s Settings) Styles() string {
 	// The mode first and the theme second. A theme pinning `color-scheme` is
 	// the later of two declarations weighing the same, and light and dark are
 	// then that theme's own.
-	out := styled(IsMode, ":root { color-scheme: "+scheme(c.Mode)+"; }")
-	if c.Theme != "" {
-		out += styled(IsTheme, c.Theme)
+	out := styled(IsMode, ":root { color-scheme: "+scheme(s.Mode)+"; }")
+	if s.Theme != "" {
+		out += styled(IsTheme, s.Theme)
 	}
 	// The two sizes last. They are what a person set this window to, inside the
 	// bounds each goes to, and the element carrying them is the last word on
 	// them.
-	return out + sized(c.Drawn, c.Set)
+	return out + sized(s.InterfaceScale, s.TextScale)
 }
 
 // Into is the page carrying those elements, put where the head ends. A page
@@ -101,14 +101,15 @@ func sized(drawn, set float64) string {
 func number(size float64) string { return strconv.FormatFloat(size, 'f', -1, 64) }
 
 // scheme is which half of every colour pair the tokens are read as.
-func scheme(mode Mode) string {
+func scheme(mode ColorScheme) string {
 	switch mode {
 	case Light:
 		return "light"
 	case Dark:
 		return "dark"
+	default:
+		return "light dark"
 	}
-	return "light dark"
 }
 
 // styled is one stylesheet as the page carries it, marked as the one of the

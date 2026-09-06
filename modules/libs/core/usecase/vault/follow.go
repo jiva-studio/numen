@@ -20,16 +20,25 @@ type Follow struct {
 
 	// Changed, if set, is called each time the index and the vault are level
 	// again. What is done with that is the caller's business.
-	Changed func(Moved)
+	Changed func(VaultChanges)
 	// Trouble, if set, is called with what went wrong, and with nil when a
 	// later attempt succeeds. Both, so what is reported is the state of things
 	// now.
 	Trouble func(error)
 }
 
-// Moved is what a caller is told: the notes that are different now, or that the
+// NewFollow is what keeps the index level with a vault being edited: what says
+// a file changed, what brings the named files up to date, and the walk that is
+// taken when what changed cannot be worked out.
+//
+// The last two are reached from Run, which a caller starts and does not wait on.
+func NewFollow(watcher port.VaultWatcher, refresh Refresh, scan Scan) Follow {
+	return Follow{Watcher: watcher, Refresh: refresh, Scan: scan}
+}
+
+// VaultChanges is what a caller is told: the notes that are different now, or that the
 // whole vault has to be looked at again.
-type Moved struct {
+type VaultChanges struct {
 	Paths  []string
 	Reload bool
 	// Assets is the paths of the files that changed and are not notes. Reading
@@ -40,7 +49,7 @@ type Moved struct {
 
 // Reading says whether an asset owes a read: one changed, or the whole vault is
 // being looked at again and every asset with it.
-func (m Moved) Reading() bool { return m.Reload || len(m.Assets) > 0 }
+func (m VaultChanges) Reading() bool { return m.Reload || len(m.Assets) > 0 }
 
 // Begin starts watching. Acting on what it collects is Run, and the two are
 // separate because they belong at different moments.
@@ -48,16 +57,16 @@ func (m Moved) Reading() bool { return m.Reload || len(m.Assets) > 0 }
 // The watch belongs before the first scan: an edit made while the vault is
 // being read is then held. Reading the vault again waits its turn behind a walk
 // already running.
-func (u Follow) Begin(ctx context.Context, v domain.Vault) (*Following, error) {
+func (u Follow) Begin(ctx context.Context, v domain.Vault) (*Watch, error) {
 	changes, lost, err := u.Watcher.Watch(ctx, v)
 	if err != nil {
 		return nil, err
 	}
-	return &Following{follow: u, vault: v, changes: changes, lost: lost}, nil
+	return &Watch{follow: u, vault: v, changes: changes, lost: lost}, nil
 }
 
-// Following is a vault being watched, whose events are not being acted on yet.
-type Following struct {
+// Watch is a vault being watched, whose events are not being acted on yet.
+type Watch struct {
 	follow  Follow
 	vault   domain.Vault
 	changes <-chan []string
@@ -66,7 +75,7 @@ type Following struct {
 
 // Run acts on everything the watch has collected, and goes on until ctx is
 // done or the watch stops.
-func (f *Following) Run(ctx context.Context) {
+func (f *Watch) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -82,7 +91,7 @@ func (f *Following) Run(ctx context.Context) {
 				continue
 			}
 			f.trouble(nil)
-			f.changed(Moved{Paths: res.Changed(), Assets: res.Assets})
+			f.changed(VaultChanges{Paths: res.Changed(), Assets: res.Assets})
 
 		case <-f.lost:
 			// More changed at once than could be followed, or something went
@@ -95,18 +104,18 @@ func (f *Following) Run(ctx context.Context) {
 			f.trouble(nil)
 			// Read again from the top, so whatever changed is among what the
 			// walk finds.
-			f.changed(Moved{Reload: true})
+			f.changed(VaultChanges{Reload: true})
 		}
 	}
 }
 
-func (f *Following) changed(m Moved) {
+func (f *Watch) changed(m VaultChanges) {
 	if f.follow.Changed != nil {
 		f.follow.Changed(m)
 	}
 }
 
-func (f *Following) trouble(err error) {
+func (f *Watch) trouble(err error) {
 	if f.follow.Trouble != nil {
 		f.follow.Trouble(err)
 	}

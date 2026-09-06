@@ -7,18 +7,17 @@ import (
 	"io"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
+func scanCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	// `--rebuild-index` reads every file, whatever the index remembers.
+	rebuild := false
 	rest := make([]string, 0, len(args))
 	for _, arg := range args {
 		if arg == "--rebuild-index" {
-			cfg.RebuildIndex = true
+			rebuild = true
 			continue
 		}
 		rest = append(rest, arg)
@@ -26,34 +25,27 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 	if len(rest) != 1 {
 		return errors.New("usage: numen-cli scan <vault> [--rebuild-index]")
 	}
-	v, err := findVault(cfg, rest[0])
+	v, err := findVault(deps, rest[0])
 	if err != nil {
 		return err
 	}
-	db, err := cfg.OpenIndex(ctx)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
 
 	// The vectors are made here too. The window does all three in the
 	// background; here they are waited for, which is this adapter's property
 	// and not the use case's.
-	embedder, closeEmbedder, why := cfg.Embedder(ctx)
-	if why != nil {
-		fmt.Fprintf(out, "not embedding %s: %v\n", v.Name, why)
-	}
-	if closeEmbedder != nil {
-		defer func() { _ = closeEmbedder() }()
-	}
-	making, err := cfg.Searchable(ctx, db, embedder, v)
+	open, err := deps.Scan(ctx, v, rebuild)
 	if err != nil {
 		return err
 	}
+	defer closing(open.Close)
+	if open.Unembedded != nil {
+		fmt.Fprintf(out, "not embedding %s: %v\n", v.Name, open.Unembedded)
+	}
+	making := open.Read
 
 	// A terminal that prints nothing for a minute looks broken. One group is
 	// about half a second, and the line rewrites itself.
-	making.Notes.OnProgress = func(res usecase.ScanResult) {
+	making.Notes.OnProgress = func(res vaults.ScanResult) {
 		fmt.Fprintf(out, "  %d indexed\r", res.Indexed)
 	}
 	making.Books.OnProgress = func(res source.ExtractResult) {
@@ -71,7 +63,7 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 		return err
 	}
 
-	summary, err := db.Queries().Summary(ctx, v.ID)
+	summary, err := open.Summary(ctx)
 	if err != nil {
 		return err
 	}
@@ -84,20 +76,6 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 	}
 	fmt.Fprintf(out, "index now holds %d notes and %d headings\n", summary.Notes, summary.Headings)
 	return nil
-}
-
-// findVault resolves what the person typed and, when it resolves to nothing,
-// says what to do about it. Talking to a person belongs here.
-func findVault(cfg container.Config, nameOrPath string) (domain.Vault, error) {
-	registry, err := cfg.Registry()
-	if err != nil {
-		return domain.Vault{}, err
-	}
-	v, err := usecase.Find{Registry: registry}.Execute(nameOrPath)
-	if err != nil {
-		return domain.Vault{}, fmt.Errorf("%w — add it with: numen-cli vault add %s", err, nameOrPath)
-	}
-	return v, nil
 }
 
 // describeSources puts the reading of what nobody typed here into words: the
@@ -118,9 +96,9 @@ func describeSources(r source.ExtractResult) string {
 // describe puts a scan into words. The use case counts; how that is said to a
 // person belongs to this adapter, and a graphical shell will say it differently
 // or not at all.
-func describe(r usecase.ScanResult) string {
+func describe(r vaults.ScanResult) string {
 	s := fmt.Sprintf("%d notes: %d indexed, %d unchanged, %d removed",
-		r.Seen, r.Indexed, r.Unchanged, r.Removed)
+		r.Notes, r.Indexed, r.Unchanged, r.Removed)
 	if r.Vanished > 0 {
 		s += fmt.Sprintf(", %d gone before they could be read", r.Vanished)
 	}

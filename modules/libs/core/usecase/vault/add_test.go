@@ -9,21 +9,18 @@ import (
 
 	"golang.org/x/text/unicode/norm"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // adding is the use case over a registry of its own, and the registry, which a
 // test reads to see what was written.
-func adding(t *testing.T) (usecase.Add, *appstate.VaultRegistry) {
+func adding(t *testing.T) (vaults.Add, *appstate.VaultRegistry) {
 	t.Helper()
 	registry := registryAt(t)
-	return usecase.Add{
-		Identity: filesystem.Identity{},
-		Registry: registry,
-		Now:      time.Now,
-	}, registry
+	return vaults.NewAdd(filesystem.VaultIdentity{}, registry, time.Now), registry
 }
 
 func registryAt(t *testing.T) *appstate.VaultRegistry {
@@ -97,10 +94,10 @@ func TestAVaultInsideAnotherIsRefused(t *testing.T) {
 	if err := os.MkdirAll(inner, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := add.Execute(inner, ""); !errors.Is(err, usecase.ErrOverlaps) {
+	if _, err := add.Execute(inner, ""); !errors.Is(err, domain.ErrOverlaps) {
 		t.Errorf("a folder inside a vault was answered %v", err)
 	}
-	if _, carriesOne, err := (filesystem.Identity{}).Of(inner); err != nil || carriesOne {
+	if _, carriesOne, err := (filesystem.VaultIdentity{}).Of(inner); err != nil || carriesOne {
 		t.Errorf("the refused folder was given an identity: %v %v", carriesOne, err)
 	}
 }
@@ -116,7 +113,7 @@ func TestAVaultHoldingAnotherIsRefused(t *testing.T) {
 	if _, err := add.Execute(inner, ""); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := add.Execute(outer, ""); !errors.Is(err, usecase.ErrOverlaps) {
+	if _, err := add.Execute(outer, ""); !errors.Is(err, domain.ErrOverlaps) {
 		t.Errorf("a folder holding a vault was answered %v", err)
 	}
 }

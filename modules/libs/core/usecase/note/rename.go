@@ -18,28 +18,33 @@ import (
 // leaves a note that says what it is called under a filename that does not.
 type Rename struct{ Move }
 
-// Renamed says what the note is called now and what the file did.
-type Renamed struct {
+// NewRename is the rename over one move. A note that travelled because it was
+// renamed and one that travelled because it was filed elsewhere settle the same
+// way, so both go through the one Move.
+func NewRename(moving Move) Rename { return Rename{Move: moving} }
+
+// RenameResult says what the note is called now and what the file did.
+type RenameResult struct {
 	Path  string // where the note is filed now
 	Title string
-	By    Naming
-	Moved *Moved // nil when the file is not at a different path
+	By    NameSource
+	Moved *MoveResult // nil when the file is not at a different path
 }
 
 // errFilenameNamesIt ends the edit without writing. A note its filename names
 // has nothing in it to bring into line, and is moved and not edited.
 var errFilenameNamesIt = errors.New("the filename says it")
 
-func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string) (Renamed, error) {
+func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string) (RenameResult, error) {
 	title = strings.TrimSpace(title)
-	name, exact, err := nameOf(title)
+	name, exact, err := domain.Filename(title)
 	if err != nil {
-		return Renamed{}, err
+		return RenameResult{}, err
 	}
 
-	var by Naming
-	e := editing{readers: u.Readers, writers: u.Writers, index: u.Index}
-	_, err = e.apply(ctx, v, path, func(doc *markdown.Document) error {
+	var by NameSource
+	e := Edit{Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now}
+	_, err = e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		if _, titled := doc.Title(); titled {
 			by = ByFrontmatter
 			return doc.SetTitle(title)
@@ -53,12 +58,12 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 		return doc.SetTitle(title)
 	})
 	if err != nil && !errors.Is(err, errFilenameNamesIt) {
-		return Renamed{}, err
+		return RenameResult{}, err
 	}
 
 	// The answer carries the note's name whatever the file does, the file's new
 	// path once the file is at it, and the path it still has until then.
-	res := Renamed{Path: path, Title: title, By: by}
+	res := RenameResult{Path: path, Title: title, By: by}
 	if moves, _ := u.Sync.Kept().Renaming(by); !moves {
 		return res, nil
 	}
@@ -80,8 +85,8 @@ func (u Move) Called(ctx context.Context, v domain.Vault, path string) error {
 	}
 
 	name := domain.Basename(path)
-	e := editing{readers: u.Readers, writers: u.Writers, index: u.Index}
-	_, err := e.apply(ctx, v, path, func(doc *markdown.Document) error {
+	e := Edit{Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now}
+	_, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		if _, titled := doc.Title(); titled {
 			return doc.SetTitle(name)
 		}
@@ -92,9 +97,11 @@ func (u Move) Called(ctx context.Context, v domain.Vault, path string) error {
 		return nil
 	case errors.Is(err, markdown.ErrUnreadable),
 		errors.Is(err, markdown.ErrInline),
-		errors.Is(err, markdown.ErrUnterminated):
+		errors.Is(err, markdown.ErrUnterminated),
+		errors.Is(err, markdown.ErrAnchored):
 		// A note whose frontmatter cannot be read is never written, and its
-		// file is renamed like any other.
+		// file is renamed like any other. These four are the whole of what a
+		// frontmatter that cannot be changed a key at a time answers with.
 		return nil
 	}
 	return err

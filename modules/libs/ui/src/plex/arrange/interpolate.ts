@@ -5,13 +5,9 @@
  * Nodes are matched by identifier alone, which is why this needs no knowledge
  * of what a node stands for.
  */
-import {
-  edgeKey,
-  type PlacedEdge,
-  type PlacedNode,
-  type PlexEdge,
-  type PlexFrame,
-} from '../model'
+import { edgeKey, type PlacedEdge, type PlexEdge } from '../edge'
+import type { PlexFrame } from '../frame'
+import type { PlacedNode } from '../node'
 import { clamp01, lerp, lerpExtent } from './math'
 import { resolveOptions, type PlexOptionsInput } from './options'
 import { routeEdges, routingFor } from './routing'

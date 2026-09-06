@@ -4,11 +4,9 @@
  * Nothing here draws: it is the client, and the words the answers arrive in.
  */
 import { createClient } from '@connectrpc/connect'
-import { createConnectTransport } from '@connectrpc/connect-web'
-import { Rating, FlashcardsService } from '@numen/protocol'
-import type { Stopped } from '@numen/protocol'
-
-const transport = createConnectTransport({ baseUrl: window.location.origin })
+import { Rating, FlashcardsService, WindowService } from '@numen/protocol'
+import type { StopReason } from '@numen/protocol'
+import { namesOf, transport } from '@numen/wire'
 
 /**
  * What this window asks, presets among it. Every question names the vault it is
@@ -16,30 +14,43 @@ const transport = createConnectTransport({ baseUrl: window.location.origin })
  */
 export const cards = createClient(FlashcardsService, transport)
 
+/** This window itself, which is the one cards are run in and not the editor. */
+export const itself = createClient(WindowService, transport)
+
+/** The window every question about a window names. */
+export const WINDOW = 'review'
+
 /** How well a card came back. A person says which of the four. */
-export type Said = 'again' | 'hard' | 'good' | 'easy'
+export type Grade = 'again' | 'hard' | 'good' | 'easy'
 
 /** The four, in the order they are offered and answered by number. */
-export const said: readonly Said[] = ['again', 'hard', 'good', 'easy']
+export const grades: readonly Grade[] = ['again', 'hard', 'good', 'easy']
 
 /** What each of them is called on the button that says it. */
-export const called: Readonly<Record<Said, string>> = {
+export const called: Readonly<Record<Grade, string>> = {
   again: 'Again',
   hard: 'Hard',
   good: 'Good',
   easy: 'Easy',
 }
 
-/** What the schema calls each of them. */
-export const rated: Readonly<Record<Said, Rating>> = {
-  again: Rating.AGAIN,
-  hard: Rating.HARD,
-  good: Rating.GOOD,
-  easy: Rating.EASY,
+/**
+ * What each of them is called in this window's own words. Keyed by the schema,
+ * so a rating added to it has to be given a word here before this compiles.
+ */
+const graded: Readonly<Record<Rating, Grade | null>> = {
+  [Rating.UNSPECIFIED]: null,
+  [Rating.AGAIN]: 'again',
+  [Rating.HARD]: 'hard',
+  [Rating.GOOD]: 'good',
+  [Rating.EASY]: 'easy',
 }
 
+/** What the schema calls each of them, read off the words above. */
+export const rated: Readonly<Record<Grade, Rating>> = namesOf<Grade, Rating>(graded)
+
 /** One deck's share of what a vault owes. */
-export interface DeckOwing {
+export interface DeckCardsDue {
   readonly deck: string
   readonly faces: number
   readonly due: number
@@ -58,7 +69,7 @@ export interface DeckOwing {
 }
 
 /** One preset of a vault, and what the day comes to under it. */
-export interface PresetOwing {
+export interface PresetCardsDue {
   /** The note it stands in, and empty for the decks naming no preset. */
   readonly preset: string
   /** What it is called, and empty where nothing names the note. */
@@ -69,7 +80,7 @@ export interface PresetOwing {
   readonly cards: number
   /**
    * What the day leaves under it, already held to the budgets that close it.
-   * It is what a sitting over this preset asks, and is printed as it stands.
+   * It is what a session over this preset asks, and is printed as it stands.
    */
   readonly owed: number
   /**
@@ -90,27 +101,27 @@ export interface PresetOwing {
   readonly reviews: number
   readonly minutes: number
   /** Which key each budget closes the day on, and empty where it closes none. */
-  readonly closes: Closes
+  readonly closes: BudgetKeys
   /**
    * Why it schedules nothing on this day, as the core says it. A preset no deck
    * points at is answered here and nowhere else.
    */
-  readonly stopsOn: Stopped
+  readonly stopsOn: StopReason
 }
 
 /**
  * The key each of the three budgets closes the day on, as the preset writes it.
  * An empty one is a budget taking no part, and nothing is weighed against it.
  */
-export interface Closes {
+export interface BudgetKeys {
   readonly new: string
   readonly reviews: string
   readonly minutes: string
 }
 
 /** One vault, and what its cards come to today. */
-export interface Owing {
-  readonly vaultId: string
+export interface VaultCardsDue {
+  readonly vault: string
   readonly name: string
   readonly path: string
   /**
@@ -121,8 +132,8 @@ export interface Owing {
   readonly faces: number
   readonly due: number
   readonly new: number
-  readonly decks: readonly DeckOwing[]
-  readonly presets: readonly PresetOwing[]
+  readonly decks: readonly DeckCardsDue[]
+  readonly presets: readonly PresetCardsDue[]
   /** Why nothing was counted, where nothing was. */
   readonly unread: string
   /**
@@ -133,10 +144,11 @@ export interface Owing {
 }
 
 /** One card face as it is put to a person. */
-export interface Asked {
+export interface CardFace {
   readonly deck: string
   readonly section: string
-  readonly card: string
+  /** What the card is known by. */
+  readonly mark: string
   readonly face: string
   /** What the card's heading shows, which is the first line of its first field. */
   readonly heading: string
@@ -144,14 +156,14 @@ export interface Asked {
   readonly back: string
   readonly seen: boolean
   /** Where each of the four would leave it. */
-  readonly ahead: Ahead | null
+  readonly ahead: Intervals | null
 }
 
 /**
  * How long each of the four would leave the card, in seconds from when it was
  * asked. A person choosing between the four is choosing between these.
  */
-export type Ahead = Readonly<Record<Said, number>>
+export type Intervals = Readonly<Record<Grade, number>>
 
 /**
  * A length of time, at the coarsest a person reads it by: minutes inside an

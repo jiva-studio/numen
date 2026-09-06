@@ -1,10 +1,10 @@
 # What the panel's agent can reach
 
-A person types a question into the panel beside their notes, and the application starts an agent to answer it. It chooses the program, the model, the tools, the working directory and the environment. This page is what that agent is given and what it is refused; the decisions behind it are [ADR-0021](adr/0021-an-agent-reaches-the-vault-through-tools.md).
+A person types a question into the panel beside their notes, and the application starts an agent to answer it. It chooses the program, the model, the tools, the working directory and the environment. This page is what that agent is given and what it is refused; the decisions behind it are [An agent reaches the vault through tools](adr/0021-an-agent-reaches-the-vault-through-tools.md).
 
 ## What the agent is given
 
-Two built-in tools: a web search and a web fetch. The set is named in full on the command line, so every other built-in is absent — no shell, no file reader, no file writer, no subagent.
+One built-in tool: a web search. The set is named in full on the command line, so every other built-in is absent — no shell, no file reader, no file writer, no subagent, and no web fetch. A fetch goes to an address the text names, and a note may have been written by anybody, so the address would be the vault's to choose.
 
 One tools server: this vault's, at the address the application is already serving on, presented with the bearer token. No other server's configuration is read.
 
@@ -58,12 +58,12 @@ Five families and a reader of files, served over the vault's own endpoint.
 
 | Family | What it is for |
 | --- | --- |
-| `note_*` | search the vault, look notes up, read and write their prose, edit a stretch, rename, move, remove, and put one in front of the person |
+| `note_*` | search the vault, look notes up by path and by the name a link writes, read and rewrite their prose, edit a stretch, rename, move, remove, and put one in front of the person |
 | `file_read` | read a run of any file the vault holds, by its path from the vault folder |
 | `link_*` | add, change, remove and list the links a note carries |
 | `card_*` | list the stencils a vault holds, read a deck and the cards in it, and make, change and remove one card at a time |
 | `source_*` | list the documents a vault holds, read a run of one's text, ask for a scanned one to be read, and show the person a passage |
-| `vault_*` | show the vault and what a scan could not act on, find notes by name, and list, add, rename, forget and open vaults |
+| `vault_*` | show the vault and what a scan could not act on, and list, add, rename, forget and open vaults |
 
 A call that carries names takes as many as are wanted — at most fifty for a lookup, at most ten for reading prose. A call that carries the text of a document takes one: creating a note, writing one and editing one are each a call of their own, and each is filed as it is finished.
 
@@ -75,7 +75,7 @@ A tool that writes returns only once the index is level again. An agent that cre
 
 ## The reviewer's surface
 
-The window a person runs their cards in serves a surface of its own. It reads the whole vault — `note_search`, `note_get`, `note_read`, `note_neighbourhood`, `link_list`, `source_list`, `source_read`, `card_stencils`, `card_read` and `vault_get` — and writes cards alone: `card_add`, `card_edit`, `card_remove` and `card_section_add`. Nothing else is on it. A deck and a stencil are what a vault is arranged into, and nothing there makes one; no note, link or document is written there either. The decisions behind it are [ADR-0032](adr/0032-the-reviewers-agent-writes-only-cards.md).
+The window a person runs their cards in serves a surface of its own. It reads the whole vault — `note_search`, `note_titles`, `note_read`, `note_neighbourhood`, `link_list`, `source_list`, `source_read`, `card_stencil_list`, `card_read` and `vault_get` — and writes cards alone: `card_add`, `card_edit`, `card_value_remove`, `card_remove`, `card_section_add`, `card_section_rename` and `card_section_remove`. It also serves `card_showing`, which answers with the card in front of the person and is on no other surface. Nothing else is on it. A deck and a stencil are what a vault is arranged into, and nothing there makes one; no note, link or document is written there either. The decisions behind it are [Review is an application of its own](adr/0027-review-is-an-application-of-its-own.md).
 
 The reading half of it is a surface in its own right, with no writer on it at all.
 
@@ -83,7 +83,7 @@ The tools themselves are the same tools: each family registers its reading half 
 
 That window opens the index for reading alone, and nothing embeds behind it, so a search there answers by the words in the vault and not by what they mean. It serves its port on a loopback address the machine picks, with a token that lives in memory, and writes no `agents.json`: the address file names one window's vault, and a second window rewriting it would point a person's own agent at whichever started last.
 
-The agent is told which vault it works when it is started, so it is started when a sitting opens and stopped when a sitting opens on another vault or the window closes.
+The agent is told which vault it works when it is started, so it is started when a session opens and stopped when a session opens on another vault or the window closes.
 
 ## An agent a person runs themselves
 
@@ -105,4 +105,4 @@ Where `command` is empty, the path is asked first, then the folders the command 
 
 **A file the agent leaves in the vault is read by the person's own terminal.** The panel's agent reads the vault's instructions in neither mode. A note it writes stays in the folder, though, and the person's own agent, started in that folder, reads what is there. Where a note may be written is bounded to places a note may live and this application's own folders, so another tool's dot-folder is refused; the vault's root is not, and a file named for what another tool reads can land in it.
 
-**Two hand-maintained lists track somebody else's program.** The nine refused variables and the two named built-in tools are both lists, and the program they filter changes without asking. Each release is a thing to check, and nothing checks it automatically.
+**Two hand-maintained lists track somebody else's program.** The nine refused variables and the named built-in tools are both lists, and the program they filter changes without asking. Each release is a thing to check, and nothing checks it automatically.

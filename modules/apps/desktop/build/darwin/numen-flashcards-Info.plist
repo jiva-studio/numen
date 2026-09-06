@@ -8,8 +8,6 @@
     <string>Numen Flashcards</string>
     <key>CFBundleExecutable</key>
     <string>numen-flashcards</string>
-    <!-- The two windows wear one icon, because they are one application to the
-         person using them. -->
     <key>CFBundleIconFile</key>
     <string>numen-flashcards</string>
     <key>CFBundleIdentifier</key>

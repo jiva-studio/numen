@@ -66,12 +66,12 @@ func (c *Client) inFlight() int {
 	return c.service.InFlight
 }
 
-// Read asks about every page and answers with what came back about each, by the
-// page it is about. A page nothing came back about is left out.
+// Proofread asks about every page and answers with what came back about each,
+// by the page it is about. A page nothing came back about is left out.
 //
 // One page that fails ends the run: the pages already answered are dropped and
 // the caller asks again.
-func (c *Client) Read(ctx context.Context, pages []proofread.Batch) (map[int]string, error) {
+func (c *Client) Proofread(ctx context.Context, pages []proofread.Batch) (map[int]string, error) {
 	if len(pages) == 0 {
 		return nil, nil
 	}
@@ -110,7 +110,7 @@ func (c *Client) Read(ctx context.Context, pages []proofread.Batch) (map[int]str
 						stop()
 					}
 				case reply != "":
-					out[page.At] = reply
+					out[page.Number] = reply
 				}
 				mu.Unlock()
 				if err != nil {
@@ -168,19 +168,19 @@ func (c *Client) ask(ctx context.Context, page proofread.Batch) (string, error) 
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("page %d: %w", page.At, err)
+		return "", fmt.Errorf("page %d: %w", page.Number, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-		return "", fmt.Errorf("page %d: %d %s: %s", page.At,
+		return "", fmt.Errorf("page %d: %d %s: %s", page.Number,
 			resp.StatusCode, http.StatusText(resp.StatusCode), c.detail(body))
 	}
 
 	var parsed response
 	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return "", fmt.Errorf("page %d: %w", page.At, err)
+		return "", fmt.Errorf("page %d: %w", page.Number, err)
 	}
 	if len(parsed.Choices) == 0 {
 		return "", nil

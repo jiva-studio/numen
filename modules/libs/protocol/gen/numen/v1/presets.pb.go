@@ -145,134 +145,206 @@ func (Rule) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{1}
 }
 
-// Counts is what a day's budget is spent on, and stands under `counts`.
-type Counts int32
+// BudgetUnit is what a day's budget is counted in, and stands under `counts`.
+type BudgetUnit int32
 
 const (
-	Counts_COUNTS_UNSPECIFIED Counts = 0
+	BudgetUnit_BUDGET_UNIT_UNSPECIFIED BudgetUnit = 0
 	// A card face is charged the first time it is answered in a review day, and
 	// comes round again in that day for nothing.
-	Counts_COUNTS_CARDS Counts = 1
+	BudgetUnit_BUDGET_UNIT_CARDS BudgetUnit = 1
 	// Every showing is charged.
-	Counts_COUNTS_SHOWS Counts = 2
+	BudgetUnit_BUDGET_UNIT_SHOWS BudgetUnit = 2
 )
 
-// Enum value maps for Counts.
+// Enum value maps for BudgetUnit.
 var (
-	Counts_name = map[int32]string{
-		0: "COUNTS_UNSPECIFIED",
-		1: "COUNTS_CARDS",
-		2: "COUNTS_SHOWS",
+	BudgetUnit_name = map[int32]string{
+		0: "BUDGET_UNIT_UNSPECIFIED",
+		1: "BUDGET_UNIT_CARDS",
+		2: "BUDGET_UNIT_SHOWS",
 	}
-	Counts_value = map[string]int32{
-		"COUNTS_UNSPECIFIED": 0,
-		"COUNTS_CARDS":       1,
-		"COUNTS_SHOWS":       2,
+	BudgetUnit_value = map[string]int32{
+		"BUDGET_UNIT_UNSPECIFIED": 0,
+		"BUDGET_UNIT_CARDS":       1,
+		"BUDGET_UNIT_SHOWS":       2,
 	}
 )
 
-func (x Counts) Enum() *Counts {
-	p := new(Counts)
+func (x BudgetUnit) Enum() *BudgetUnit {
+	p := new(BudgetUnit)
 	*p = x
 	return p
 }
 
-func (x Counts) String() string {
+func (x BudgetUnit) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (Counts) Descriptor() protoreflect.EnumDescriptor {
+func (BudgetUnit) Descriptor() protoreflect.EnumDescriptor {
 	return file_numen_v1_presets_proto_enumTypes[2].Descriptor()
 }
 
-func (Counts) Type() protoreflect.EnumType {
+func (BudgetUnit) Type() protoreflect.EnumType {
 	return &file_numen_v1_presets_proto_enumTypes[2]
 }
 
-func (x Counts) Number() protoreflect.EnumNumber {
+func (x BudgetUnit) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use Counts.Descriptor instead.
-func (Counts) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use BudgetUnit.Descriptor instead.
+func (BudgetUnit) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{2}
 }
 
-// Stopped is why a preset schedules nothing. The list is closed, and a client
-// maps a value to a sentence.
-type Stopped int32
+// StopReason is why a preset schedules nothing. The list is closed, and a
+// client maps a value to a sentence.
+type StopReason int32
 
 const (
-	// A build that said nothing about it. It is read as scheduling.
-	Stopped_STOPPED_UNSPECIFIED Stopped = 0
+	StopReason_STOP_REASON_UNSPECIFIED StopReason = 0
 	// The preset schedules: its decks are handed a day of review.
-	Stopped_STOPPED_NOTHING Stopped = 1
+	StopReason_STOP_REASON_NOTHING StopReason = 1
 	// A goal of minutes with the minutes at zero.
-	Stopped_STOPPED_NO_MINUTES Stopped = 2
+	StopReason_STOP_REASON_NO_MINUTES StopReason = 2
 	// A goal of retention with both card counts at zero.
-	Stopped_STOPPED_NO_CARDS Stopped = 3
+	StopReason_STOP_REASON_NO_CARDS StopReason = 3
 	// A goal of a date naming no day. The budget the goal names is the day, and
 	// a goal that cannot read its own budget schedules nothing.
-	Stopped_STOPPED_NO_DAY Stopped = 4
+	StopReason_STOP_REASON_NO_DAY StopReason = 4
 	// A goal of a date whose day is behind us.
-	Stopped_STOPPED_PAST_DAY Stopped = 5
+	StopReason_STOP_REASON_PAST_DAY StopReason = 5
 	// A day of the week carrying none of the load. It is a fact about one day,
 	// so only `stops_on` ever carries it.
-	Stopped_STOPPED_NO_LOAD Stopped = 6
+	StopReason_STOP_REASON_NO_LOAD StopReason = 6
 	// A week carrying none of the load: every day of it stands at nothing, so
 	// there is no next day to pick the cards up.
-	Stopped_STOPPED_NO_WEEK Stopped = 7
+	StopReason_STOP_REASON_NO_WEEK StopReason = 7
 )
 
-// Enum value maps for Stopped.
+// Enum value maps for StopReason.
 var (
-	Stopped_name = map[int32]string{
-		0: "STOPPED_UNSPECIFIED",
-		1: "STOPPED_NOTHING",
-		2: "STOPPED_NO_MINUTES",
-		3: "STOPPED_NO_CARDS",
-		4: "STOPPED_NO_DAY",
-		5: "STOPPED_PAST_DAY",
-		6: "STOPPED_NO_LOAD",
-		7: "STOPPED_NO_WEEK",
+	StopReason_name = map[int32]string{
+		0: "STOP_REASON_UNSPECIFIED",
+		1: "STOP_REASON_NOTHING",
+		2: "STOP_REASON_NO_MINUTES",
+		3: "STOP_REASON_NO_CARDS",
+		4: "STOP_REASON_NO_DAY",
+		5: "STOP_REASON_PAST_DAY",
+		6: "STOP_REASON_NO_LOAD",
+		7: "STOP_REASON_NO_WEEK",
 	}
-	Stopped_value = map[string]int32{
-		"STOPPED_UNSPECIFIED": 0,
-		"STOPPED_NOTHING":     1,
-		"STOPPED_NO_MINUTES":  2,
-		"STOPPED_NO_CARDS":    3,
-		"STOPPED_NO_DAY":      4,
-		"STOPPED_PAST_DAY":    5,
-		"STOPPED_NO_LOAD":     6,
-		"STOPPED_NO_WEEK":     7,
+	StopReason_value = map[string]int32{
+		"STOP_REASON_UNSPECIFIED": 0,
+		"STOP_REASON_NOTHING":     1,
+		"STOP_REASON_NO_MINUTES":  2,
+		"STOP_REASON_NO_CARDS":    3,
+		"STOP_REASON_NO_DAY":      4,
+		"STOP_REASON_PAST_DAY":    5,
+		"STOP_REASON_NO_LOAD":     6,
+		"STOP_REASON_NO_WEEK":     7,
 	}
 )
 
-func (x Stopped) Enum() *Stopped {
-	p := new(Stopped)
+func (x StopReason) Enum() *StopReason {
+	p := new(StopReason)
 	*p = x
 	return p
 }
 
-func (x Stopped) String() string {
+func (x StopReason) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (Stopped) Descriptor() protoreflect.EnumDescriptor {
+func (StopReason) Descriptor() protoreflect.EnumDescriptor {
 	return file_numen_v1_presets_proto_enumTypes[3].Descriptor()
 }
 
-func (Stopped) Type() protoreflect.EnumType {
+func (StopReason) Type() protoreflect.EnumType {
 	return &file_numen_v1_presets_proto_enumTypes[3]
 }
 
-func (x Stopped) Number() protoreflect.EnumNumber {
+func (x StopReason) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use Stopped.Descriptor instead.
-func (Stopped) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use StopReason.Descriptor instead.
+func (StopReason) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{3}
+}
+
+// BudgetName is one budget of a preset, named after the key the preset writes
+// it under. The list is closed, and a client maps a value to a word.
+//
+// A day of review is closed by the budgets it ran out of. Two of these close no
+// day and stand here because a goal either reads them or leaves them idle.
+type BudgetName int32
+
+const (
+	BudgetName_BUDGET_NAME_UNSPECIFIED BudgetName = 0
+	// How long the day runs, under `minutes_a_day`.
+	BudgetName_BUDGET_NAME_MINUTES_A_DAY BudgetName = 1
+	// How many cards of each kind the day holds, under `new_a_day` and
+	// `reviews_a_day`.
+	BudgetName_BUDGET_NAME_NEW_A_DAY     BudgetName = 2
+	BudgetName_BUDGET_NAME_REVIEWS_A_DAY BudgetName = 3
+	// A day paced by the day the preset aims at, under `by_date`.
+	BudgetName_BUDGET_NAME_BY_DATE BudgetName = 4
+	// The share of the day that goes to the debt, under `backlog`. It closes
+	// nothing and says what the day is spent on.
+	BudgetName_BUDGET_NAME_BACKLOG BudgetName = 5
+	// A preset scheduling nothing at all.
+	BudgetName_BUDGET_NAME_PAUSED BudgetName = 6
+)
+
+// Enum value maps for BudgetName.
+var (
+	BudgetName_name = map[int32]string{
+		0: "BUDGET_NAME_UNSPECIFIED",
+		1: "BUDGET_NAME_MINUTES_A_DAY",
+		2: "BUDGET_NAME_NEW_A_DAY",
+		3: "BUDGET_NAME_REVIEWS_A_DAY",
+		4: "BUDGET_NAME_BY_DATE",
+		5: "BUDGET_NAME_BACKLOG",
+		6: "BUDGET_NAME_PAUSED",
+	}
+	BudgetName_value = map[string]int32{
+		"BUDGET_NAME_UNSPECIFIED":   0,
+		"BUDGET_NAME_MINUTES_A_DAY": 1,
+		"BUDGET_NAME_NEW_A_DAY":     2,
+		"BUDGET_NAME_REVIEWS_A_DAY": 3,
+		"BUDGET_NAME_BY_DATE":       4,
+		"BUDGET_NAME_BACKLOG":       5,
+		"BUDGET_NAME_PAUSED":        6,
+	}
+)
+
+func (x BudgetName) Enum() *BudgetName {
+	p := new(BudgetName)
+	*p = x
+	return p
+}
+
+func (x BudgetName) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (BudgetName) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_presets_proto_enumTypes[4].Descriptor()
+}
+
+func (BudgetName) Type() protoreflect.EnumType {
+	return &file_numen_v1_presets_proto_enumTypes[4]
+}
+
+func (x BudgetName) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use BudgetName.Descriptor instead.
+func (BudgetName) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_presets_proto_rawDescGZIP(), []int{4}
 }
 
 // Settings are how the decks pointing at one preset are scheduled. A preset
@@ -294,9 +366,9 @@ type Settings struct {
 	Retention float64 `protobuf:"fixed64,6,opt,name=retention,proto3" json:"retention,omitempty"`
 	// Whether days are made to resemble each other.
 	EvenLoad bool `protobuf:"varint,8,opt,name=even_load,json=evenLoad,proto3" json:"even_load,omitempty"`
-	// What a day's budget is spent on. Unspecified is the default, which charges
-	// a card face once a review day.
-	Counts Counts `protobuf:"varint,9,opt,name=counts,proto3,enum=numen.v1.Counts" json:"counts,omitempty"`
+	// What a day's budget is counted in. Unspecified is the default, which
+	// charges a card face once a review day.
+	Counts BudgetUnit `protobuf:"varint,9,opt,name=counts,proto3,enum=numen.v1.BudgetUnit" json:"counts,omitempty"`
 	// How much of a day goes to what is overdue before anything unbegun is
 	// offered, as a share in hundredths. A hundred pays the debt first and begins
 	// new cards on what is left, nothing puts the new material first, and between
@@ -398,11 +470,11 @@ func (x *Settings) GetEvenLoad() bool {
 	return false
 }
 
-func (x *Settings) GetCounts() Counts {
+func (x *Settings) GetCounts() BudgetUnit {
 	if x != nil {
 		return x.Counts
 	}
-	return Counts_COUNTS_UNSPECIFIED
+	return BudgetUnit_BUDGET_UNIT_UNSPECIFIED
 }
 
 func (x *Settings) GetBacklog() int32 {
@@ -448,11 +520,11 @@ type Preset struct {
 	// Why the preset schedules nothing, asked against the day holding now: a goal
 	// of a date stops once the day it names is behind that one. It is the answer
 	// a window has before any curve exists.
-	Stops Stopped `protobuf:"varint,5,opt,name=stops,proto3,enum=numen.v1.Stopped" json:"stops,omitempty"`
+	Stops StopReason `protobuf:"varint,5,opt,name=stops,proto3,enum=numen.v1.StopReason" json:"stops,omitempty"`
 	// The same asked of the day holding now: whatever stops the preset at all,
 	// and a day of the week carrying none of the load. A preset with a light
 	// Sunday is not a stopped preset; it is a preset with a stopped Sunday.
-	StopsOn       Stopped `protobuf:"varint,6,opt,name=stops_on,json=stopsOn,proto3,enum=numen.v1.Stopped" json:"stops_on,omitempty"`
+	StopsOn       StopReason `protobuf:"varint,6,opt,name=stops_on,json=stopsOn,proto3,enum=numen.v1.StopReason" json:"stops_on,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -515,18 +587,18 @@ func (x *Preset) GetProblems() []string {
 	return nil
 }
 
-func (x *Preset) GetStops() Stopped {
+func (x *Preset) GetStops() StopReason {
 	if x != nil {
 		return x.Stops
 	}
-	return Stopped_STOPPED_UNSPECIFIED
+	return StopReason_STOP_REASON_UNSPECIFIED
 }
 
-func (x *Preset) GetStopsOn() Stopped {
+func (x *Preset) GetStopsOn() StopReason {
 	if x != nil {
 		return x.StopsOn
 	}
-	return Stopped_STOPPED_UNSPECIFIED
+	return StopReason_STOP_REASON_UNSPECIFIED
 }
 
 // Curve is what the one control comes to over the whole range of its goal.
@@ -541,8 +613,8 @@ type Curve struct {
 	// What the preset comes to at each place of the grid, one for one with it.
 	At []*Point `protobuf:"bytes,4,rep,name=at,proto3" json:"at,omitempty"`
 	// Where the preset stands, and what is suggested.
-	Now       *Mark `protobuf:"bytes,5,opt,name=now,proto3" json:"now,omitempty"`
-	Suggested *Mark `protobuf:"bytes,6,opt,name=suggested,proto3" json:"suggested,omitempty"`
+	Now       *Place `protobuf:"bytes,5,opt,name=now,proto3" json:"now,omitempty"`
+	Suggested *Place `protobuf:"bytes,6,opt,name=suggested,proto3" json:"suggested,omitempty"`
 	// How many decks are scheduled by this preset. Zero is a preset no deck
 	// points at, and every place of the curve stands at zero with it.
 	Decks int32 `protobuf:"varint,7,opt,name=decks,proto3" json:"decks,omitempty"`
@@ -620,14 +692,14 @@ func (x *Curve) GetAt() []*Point {
 	return nil
 }
 
-func (x *Curve) GetNow() *Mark {
+func (x *Curve) GetNow() *Place {
 	if x != nil {
 		return x.Now
 	}
 	return nil
 }
 
-func (x *Curve) GetSuggested() *Mark {
+func (x *Curve) GetSuggested() *Place {
 	if x != nil {
 		return x.Suggested
 	}
@@ -668,9 +740,9 @@ type Point struct {
 	// `reviews` is counted in card faces and `minutes` in the showings they take,
 	// so a face the day comes back to costs its minutes and is the one card.
 	//
-	// Under a goal of minutes, the next sitting a person will sit down to: the
+	// Under a goal of minutes, the next session a person will sit down to: the
 	// first day the preset admits, which is the day the deck screen offers. A day
-	// at none of the load is no sitting, so the day after it is drawn. Under a
+	// at none of the load is no session, so the day after it is drawn. Under a
 	// goal of retention, the load over the days the preset admits.
 	//
 	// A goal of a date reads `reviews` off that first day, and fills `minutes`
@@ -688,15 +760,14 @@ type Point struct {
 	// be learned by it.
 	Through float64 `protobuf:"fixed64,5,opt,name=through,proto3" json:"through,omitempty"`
 	Enough  bool    `protobuf:"varint,6,opt,name=enough,proto3" json:"enough,omitempty"`
-	// Every budget that closed the day here, each written as the preset writes
-	// the key: minutes_a_day, new_a_day, reviews_a_day, by_date, or paused. None
-	// is a day that asked for every card there was, so the material itself ran
-	// out. A budget the goal does not name is never here.
+	// Every budget that closed the day here. An empty list is a day that asked
+	// for every card there was, so the material itself ran out, and a budget the
+	// goal does not name is never here.
 	//
 	// A goal of retention holds a day to both card counts, and a day that ran out
 	// of new cards and of reviews names both: a person raising one of them and
 	// finding nothing changed is reading a day the other closed too.
-	Closed []string `protobuf:"bytes,8,rep,name=closed,proto3" json:"closed,omitempty"`
+	Closed []BudgetName `protobuf:"varint,8,rep,packed,name=closed,proto3,enum=numen.v1.BudgetName" json:"closed,omitempty"`
 	// How many days of review at this place it takes before nothing is overdue.
 	// Zero is a curve standing over nothing overdue, and -1 is a pace that never
 	// gets there, which a person reads as not at this one.
@@ -801,7 +872,7 @@ func (x *Point) GetEnough() bool {
 	return false
 }
 
-func (x *Point) GetClosed() []string {
+func (x *Point) GetClosed() []BudgetName {
 	if x != nil {
 		return x.Closed
 	}
@@ -843,34 +914,34 @@ func (x *Point) GetShort() int32 {
 	return 0
 }
 
-// Mark is one place on the curve worth pointing at.
-type Mark struct {
+// Place is one place on the curve worth pointing at.
+type Place struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Where on the grid it stands, and -1 for a value that falls outside it.
 	At int32 `protobuf:"varint,1,opt,name=at,proto3" json:"at,omitempty"`
-	// The goal's value at the mark, in the units of the grid. What the preset
+	// The goal's value at the place, in the units of the grid. What the preset
 	// stands at need not sit on the grid.
 	Value float64 `protobuf:"fixed64,2,opt,name=value,proto3" json:"value,omitempty"`
-	// The day at the mark, filled for a goal of a date.
+	// The day at the place, filled for a goal of a date.
 	Day           string `protobuf:"bytes,3,opt,name=day,proto3" json:"day,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Mark) Reset() {
-	*x = Mark{}
+func (x *Place) Reset() {
+	*x = Place{}
 	mi := &file_numen_v1_presets_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Mark) String() string {
+func (x *Place) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Mark) ProtoMessage() {}
+func (*Place) ProtoMessage() {}
 
-func (x *Mark) ProtoReflect() protoreflect.Message {
+func (x *Place) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_presets_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -882,33 +953,33 @@ func (x *Mark) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Mark.ProtoReflect.Descriptor instead.
-func (*Mark) Descriptor() ([]byte, []int) {
+// Deprecated: Use Place.ProtoReflect.Descriptor instead.
+func (*Place) Descriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *Mark) GetAt() int32 {
+func (x *Place) GetAt() int32 {
 	if x != nil {
 		return x.At
 	}
 	return 0
 }
 
-func (x *Mark) GetValue() float64 {
+func (x *Place) GetValue() float64 {
 	if x != nil {
 		return x.Value
 	}
 	return 0
 }
 
-func (x *Mark) GetDay() string {
+func (x *Place) GetDay() string {
 	if x != nil {
 		return x.Day
 	}
 	return ""
 }
 
-type SchedulingRequest struct {
+type GetDeckPresetRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The deck whose preset this is, by the path it is filed under.
 	Deck          string `protobuf:"bytes,1,opt,name=deck,proto3" json:"deck,omitempty"`
@@ -916,20 +987,20 @@ type SchedulingRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SchedulingRequest) Reset() {
-	*x = SchedulingRequest{}
+func (x *GetDeckPresetRequest) Reset() {
+	*x = GetDeckPresetRequest{}
 	mi := &file_numen_v1_presets_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SchedulingRequest) String() string {
+func (x *GetDeckPresetRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SchedulingRequest) ProtoMessage() {}
+func (*GetDeckPresetRequest) ProtoMessage() {}
 
-func (x *SchedulingRequest) ProtoReflect() protoreflect.Message {
+func (x *GetDeckPresetRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_presets_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -941,19 +1012,19 @@ func (x *SchedulingRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SchedulingRequest.ProtoReflect.Descriptor instead.
-func (*SchedulingRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetDeckPresetRequest.ProtoReflect.Descriptor instead.
+func (*GetDeckPresetRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *SchedulingRequest) GetDeck() string {
+func (x *GetDeckPresetRequest) GetDeck() string {
 	if x != nil {
 		return x.Deck
 	}
 	return ""
 }
 
-type SchedulingResponse struct {
+type GetDeckPresetResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Absent when the preset was refused.
 	Preset *Preset `protobuf:"bytes,1,opt,name=preset,proto3,oneof" json:"preset,omitempty"`
@@ -962,25 +1033,28 @@ type SchedulingResponse struct {
 	// The file the settings came out of, for the caller to present at its next
 	// write. Absent for a deck naming no preset, and when the preset was
 	// refused.
-	At            *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	// How far each setting goes. A client asking a person for a number says
+	// these, and a number outside them is refused here.
+	Bounds        *SettingsBounds `protobuf:"bytes,4,opt,name=bounds,proto3" json:"bounds,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SchedulingResponse) Reset() {
-	*x = SchedulingResponse{}
+func (x *GetDeckPresetResponse) Reset() {
+	*x = GetDeckPresetResponse{}
 	mi := &file_numen_v1_presets_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SchedulingResponse) String() string {
+func (x *GetDeckPresetResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SchedulingResponse) ProtoMessage() {}
+func (*GetDeckPresetResponse) ProtoMessage() {}
 
-func (x *SchedulingResponse) ProtoReflect() protoreflect.Message {
+func (x *GetDeckPresetResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_presets_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -992,28 +1066,35 @@ func (x *SchedulingResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SchedulingResponse.ProtoReflect.Descriptor instead.
-func (*SchedulingResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetDeckPresetResponse.ProtoReflect.Descriptor instead.
+func (*GetDeckPresetResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *SchedulingResponse) GetPreset() *Preset {
+func (x *GetDeckPresetResponse) GetPreset() *Preset {
 	if x != nil {
 		return x.Preset
 	}
 	return nil
 }
 
-func (x *SchedulingResponse) GetRefusal() Refusal {
+func (x *GetDeckPresetResponse) GetRefusal() Refusal {
 	if x != nil && x.Refusal != nil {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
 }
 
-func (x *SchedulingResponse) GetAt() *Fingerprint {
+func (x *GetDeckPresetResponse) GetAt() *Fingerprint {
 	if x != nil {
 		return x.At
+	}
+	return nil
+}
+
+func (x *GetDeckPresetResponse) GetBounds() *SettingsBounds {
+	if x != nil {
+		return x.Bounds
 	}
 	return nil
 }
@@ -1056,7 +1137,7 @@ func (*ListPresetsRequest) Descriptor() ([]byte, []int) {
 
 type ListPresetsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Presets       []*Listed              `protobuf:"bytes,1,rep,name=presets,proto3" json:"presets,omitempty"`
+	Presets       []*PresetSummary       `protobuf:"bytes,1,rep,name=presets,proto3" json:"presets,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1091,16 +1172,16 @@ func (*ListPresetsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *ListPresetsResponse) GetPresets() []*Listed {
+func (x *ListPresetsResponse) GetPresets() []*PresetSummary {
 	if x != nil {
 		return x.Presets
 	}
 	return nil
 }
 
-// Listed is one preset as a person choosing between them sees it: where the
-// file is, and what it is called.
-type Listed struct {
+// PresetSummary is one preset as a person choosing between them sees it: where
+// the file is, and what it is called.
+type PresetSummary struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// What the preset is called. Empty where nothing names the note.
@@ -1109,20 +1190,20 @@ type Listed struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Listed) Reset() {
-	*x = Listed{}
+func (x *PresetSummary) Reset() {
+	*x = PresetSummary{}
 	mi := &file_numen_v1_presets_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Listed) String() string {
+func (x *PresetSummary) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Listed) ProtoMessage() {}
+func (*PresetSummary) ProtoMessage() {}
 
-func (x *Listed) ProtoReflect() protoreflect.Message {
+func (x *PresetSummary) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_presets_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1134,26 +1215,26 @@ func (x *Listed) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Listed.ProtoReflect.Descriptor instead.
-func (*Listed) Descriptor() ([]byte, []int) {
+// Deprecated: Use PresetSummary.ProtoReflect.Descriptor instead.
+func (*PresetSummary) Descriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *Listed) GetPath() string {
+func (x *PresetSummary) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *Listed) GetTitle() string {
+func (x *PresetSummary) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-type MakePresetRequest struct {
+type CreatePresetRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// What the preset is called. The file is named after it.
 	Title string `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
@@ -1163,20 +1244,20 @@ type MakePresetRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *MakePresetRequest) Reset() {
-	*x = MakePresetRequest{}
+func (x *CreatePresetRequest) Reset() {
+	*x = CreatePresetRequest{}
 	mi := &file_numen_v1_presets_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *MakePresetRequest) String() string {
+func (x *CreatePresetRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MakePresetRequest) ProtoMessage() {}
+func (*CreatePresetRequest) ProtoMessage() {}
 
-func (x *MakePresetRequest) ProtoReflect() protoreflect.Message {
+func (x *CreatePresetRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_presets_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1188,49 +1269,53 @@ func (x *MakePresetRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MakePresetRequest.ProtoReflect.Descriptor instead.
-func (*MakePresetRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreatePresetRequest.ProtoReflect.Descriptor instead.
+func (*CreatePresetRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *MakePresetRequest) GetTitle() string {
+func (x *CreatePresetRequest) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-func (x *MakePresetRequest) GetFolder() string {
+func (x *CreatePresetRequest) GetFolder() string {
 	if x != nil {
 		return x.Folder
 	}
 	return ""
 }
 
-type MakePresetResponse struct {
+type CreatePresetResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Where the preset is filed. Empty when nothing was made.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Set when nothing was made, and why.
-	Refusal       *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Refusal *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	// Set when the preset is on disk and the index would not come level with it.
+	// The preset was made and `path` stands; search does not answer about it
+	// until a walk goes past.
+	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *MakePresetResponse) Reset() {
-	*x = MakePresetResponse{}
+func (x *CreatePresetResponse) Reset() {
+	*x = CreatePresetResponse{}
 	mi := &file_numen_v1_presets_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *MakePresetResponse) String() string {
+func (x *CreatePresetResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MakePresetResponse) ProtoMessage() {}
+func (*CreatePresetResponse) ProtoMessage() {}
 
-func (x *MakePresetResponse) ProtoReflect() protoreflect.Message {
+func (x *CreatePresetResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_presets_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1242,26 +1327,33 @@ func (x *MakePresetResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MakePresetResponse.ProtoReflect.Descriptor instead.
-func (*MakePresetResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreatePresetResponse.ProtoReflect.Descriptor instead.
+func (*CreatePresetResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *MakePresetResponse) GetPath() string {
+func (x *CreatePresetResponse) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *MakePresetResponse) GetRefusal() Refusal {
+func (x *CreatePresetResponse) GetRefusal() Refusal {
 	if x != nil && x.Refusal != nil {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
 }
 
-type ScheduleRequest struct {
+func (x *CreatePresetResponse) GetUnlevelled() bool {
+	if x != nil {
+		return x.Unlevelled
+	}
+	return false
+}
+
+type ScheduleDeckRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The deck to schedule, by the path it is filed under.
 	Deck string `protobuf:"bytes,1,opt,name=deck,proto3" json:"deck,omitempty"`
@@ -1275,20 +1367,20 @@ type ScheduleRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ScheduleRequest) Reset() {
-	*x = ScheduleRequest{}
+func (x *ScheduleDeckRequest) Reset() {
+	*x = ScheduleDeckRequest{}
 	mi := &file_numen_v1_presets_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ScheduleRequest) String() string {
+func (x *ScheduleDeckRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ScheduleRequest) ProtoMessage() {}
+func (*ScheduleDeckRequest) ProtoMessage() {}
 
-func (x *ScheduleRequest) ProtoReflect() protoreflect.Message {
+func (x *ScheduleDeckRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_presets_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1300,60 +1392,63 @@ func (x *ScheduleRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ScheduleRequest.ProtoReflect.Descriptor instead.
-func (*ScheduleRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ScheduleDeckRequest.ProtoReflect.Descriptor instead.
+func (*ScheduleDeckRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *ScheduleRequest) GetDeck() string {
+func (x *ScheduleDeckRequest) GetDeck() string {
 	if x != nil {
 		return x.Deck
 	}
 	return ""
 }
 
-func (x *ScheduleRequest) GetPreset() string {
+func (x *ScheduleDeckRequest) GetPreset() string {
 	if x != nil {
 		return x.Preset
 	}
 	return ""
 }
 
-func (x *ScheduleRequest) GetSeen() *Fingerprint {
+func (x *ScheduleDeckRequest) GetSeen() *Fingerprint {
 	if x != nil {
 		return x.Seen
 	}
 	return nil
 }
 
-type ScheduleResponse struct {
+type ScheduleDeckResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Set when nothing was written, and why.
+	// Set when nothing was written, and why. A deck that is no longer the one
+	// this caller read is REFUSAL_STALE, and the person chooses what happens
+	// next.
 	Refusal *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
-	// Set when the deck is no longer the one this caller read. Nothing was
-	// written, and the person chooses what happens next.
-	Changed bool `protobuf:"varint,2,opt,name=changed,proto3" json:"changed,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
-	At            *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	// Set when the deck is on disk and the index would not come level with it.
+	// The write happened and `at` stands; search answers about this file as it
+	// read it last, until a walk goes past.
+	Unlevelled    bool `protobuf:"varint,4,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ScheduleResponse) Reset() {
-	*x = ScheduleResponse{}
+func (x *ScheduleDeckResponse) Reset() {
+	*x = ScheduleDeckResponse{}
 	mi := &file_numen_v1_presets_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ScheduleResponse) String() string {
+func (x *ScheduleDeckResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ScheduleResponse) ProtoMessage() {}
+func (*ScheduleDeckResponse) ProtoMessage() {}
 
-func (x *ScheduleResponse) ProtoReflect() protoreflect.Message {
+func (x *ScheduleDeckResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_presets_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1365,30 +1460,30 @@ func (x *ScheduleResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ScheduleResponse.ProtoReflect.Descriptor instead.
-func (*ScheduleResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ScheduleDeckResponse.ProtoReflect.Descriptor instead.
+func (*ScheduleDeckResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *ScheduleResponse) GetRefusal() Refusal {
+func (x *ScheduleDeckResponse) GetRefusal() Refusal {
 	if x != nil && x.Refusal != nil {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
 }
 
-func (x *ScheduleResponse) GetChanged() bool {
-	if x != nil {
-		return x.Changed
-	}
-	return false
-}
-
-func (x *ScheduleResponse) GetAt() *Fingerprint {
+func (x *ScheduleDeckResponse) GetAt() *Fingerprint {
 	if x != nil {
 		return x.At
 	}
 	return nil
+}
+
+func (x *ScheduleDeckResponse) GetUnlevelled() bool {
+	if x != nil {
+		return x.Unlevelled
+	}
+	return false
 }
 
 type ReadPresetRequest struct {
@@ -1443,7 +1538,10 @@ type ReadPresetResponse struct {
 	Refusal *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
 	// The file the settings came out of, for the caller to present at its next
 	// write. Absent when the preset was refused.
-	At            *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	// How far each setting goes. A client asking a person for a number says
+	// these, and a number outside them is refused here.
+	Bounds        *SettingsBounds `protobuf:"bytes,4,opt,name=bounds,proto3" json:"bounds,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1499,6 +1597,111 @@ func (x *ReadPresetResponse) GetAt() *Fingerprint {
 	return nil
 }
 
+func (x *ReadPresetResponse) GetBounds() *SettingsBounds {
+	if x != nil {
+		return x.Bounds
+	}
+	return nil
+}
+
+// SettingsBounds is how far each setting of a preset may go. They are the
+// application's and not the preset's: the same bounds answer every read, and a
+// number outside the one it belongs to is refused where it is written.
+//
+// A setting no bound is given for goes as far as its type does.
+type SettingsBounds struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	MinutesADay *Bounds                `protobuf:"bytes,1,opt,name=minutes_a_day,json=minutesADay,proto3" json:"minutes_a_day,omitempty"`
+	NewADay     *Bounds                `protobuf:"bytes,2,opt,name=new_a_day,json=newADay,proto3" json:"new_a_day,omitempty"`
+	ReviewsADay *Bounds                `protobuf:"bytes,3,opt,name=reviews_a_day,json=reviewsADay,proto3" json:"reviews_a_day,omitempty"`
+	Retention   *Bounds                `protobuf:"bytes,4,opt,name=retention,proto3" json:"retention,omitempty"`
+	Backlog     *Bounds                `protobuf:"bytes,5,opt,name=backlog,proto3" json:"backlog,omitempty"`
+	Interval    *Bounds                `protobuf:"bytes,6,opt,name=interval,proto3" json:"interval,omitempty"`
+	// How much of a day's load one day of the week may carry, in per cent.
+	Load          *Bounds `protobuf:"bytes,7,opt,name=load,proto3" json:"load,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SettingsBounds) Reset() {
+	*x = SettingsBounds{}
+	mi := &file_numen_v1_presets_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SettingsBounds) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SettingsBounds) ProtoMessage() {}
+
+func (x *SettingsBounds) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_presets_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SettingsBounds.ProtoReflect.Descriptor instead.
+func (*SettingsBounds) Descriptor() ([]byte, []int) {
+	return file_numen_v1_presets_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *SettingsBounds) GetMinutesADay() *Bounds {
+	if x != nil {
+		return x.MinutesADay
+	}
+	return nil
+}
+
+func (x *SettingsBounds) GetNewADay() *Bounds {
+	if x != nil {
+		return x.NewADay
+	}
+	return nil
+}
+
+func (x *SettingsBounds) GetReviewsADay() *Bounds {
+	if x != nil {
+		return x.ReviewsADay
+	}
+	return nil
+}
+
+func (x *SettingsBounds) GetRetention() *Bounds {
+	if x != nil {
+		return x.Retention
+	}
+	return nil
+}
+
+func (x *SettingsBounds) GetBacklog() *Bounds {
+	if x != nil {
+		return x.Backlog
+	}
+	return nil
+}
+
+func (x *SettingsBounds) GetInterval() *Bounds {
+	if x != nil {
+		return x.Interval
+	}
+	return nil
+}
+
+func (x *SettingsBounds) GetLoad() *Bounds {
+	if x != nil {
+		return x.Load
+	}
+	return nil
+}
+
 type WritePresetRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
@@ -1514,7 +1717,7 @@ type WritePresetRequest struct {
 
 func (x *WritePresetRequest) Reset() {
 	*x = WritePresetRequest{}
-	mi := &file_numen_v1_presets_proto_msgTypes[16]
+	mi := &file_numen_v1_presets_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1526,7 +1729,7 @@ func (x *WritePresetRequest) String() string {
 func (*WritePresetRequest) ProtoMessage() {}
 
 func (x *WritePresetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_presets_proto_msgTypes[16]
+	mi := &file_numen_v1_presets_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1539,7 +1742,7 @@ func (x *WritePresetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WritePresetRequest.ProtoReflect.Descriptor instead.
 func (*WritePresetRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_presets_proto_rawDescGZIP(), []int{16}
+	return file_numen_v1_presets_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *WritePresetRequest) GetPath() string {
@@ -1565,21 +1768,24 @@ func (x *WritePresetRequest) GetSeen() *Fingerprint {
 
 type WritePresetResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Set when nothing was written, and why.
+	// Set when nothing was written, and why. A file that is no longer the one
+	// this caller read is REFUSAL_STALE, and the person chooses what happens to
+	// their settings.
 	Refusal *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
-	// Set when the file is no longer the one this caller read. Nothing was
-	// written, and the person chooses what happens to their settings.
-	Changed bool `protobuf:"varint,2,opt,name=changed,proto3" json:"changed,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
-	At            *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	// Set when the preset is on disk and the index would not come level with it.
+	// The write happened and `at` stands; search answers about this file as it
+	// read it last, until a walk goes past.
+	Unlevelled    bool `protobuf:"varint,4,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *WritePresetResponse) Reset() {
 	*x = WritePresetResponse{}
-	mi := &file_numen_v1_presets_proto_msgTypes[17]
+	mi := &file_numen_v1_presets_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1591,7 +1797,7 @@ func (x *WritePresetResponse) String() string {
 func (*WritePresetResponse) ProtoMessage() {}
 
 func (x *WritePresetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_presets_proto_msgTypes[17]
+	mi := &file_numen_v1_presets_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1604,7 +1810,7 @@ func (x *WritePresetResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WritePresetResponse.ProtoReflect.Descriptor instead.
 func (*WritePresetResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_presets_proto_rawDescGZIP(), []int{17}
+	return file_numen_v1_presets_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *WritePresetResponse) GetRefusal() Refusal {
@@ -1614,13 +1820,6 @@ func (x *WritePresetResponse) GetRefusal() Refusal {
 	return Refusal_REFUSAL_UNSPECIFIED
 }
 
-func (x *WritePresetResponse) GetChanged() bool {
-	if x != nil {
-		return x.Changed
-	}
-	return false
-}
-
 func (x *WritePresetResponse) GetAt() *Fingerprint {
 	if x != nil {
 		return x.At
@@ -1628,7 +1827,14 @@ func (x *WritePresetResponse) GetAt() *Fingerprint {
 	return nil
 }
 
-type CurveRequest struct {
+func (x *WritePresetResponse) GetUnlevelled() bool {
+	if x != nil {
+		return x.Unlevelled
+	}
+	return false
+}
+
+type ComputeCurveRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The note the preset stands in, which names the decks it schedules. Empty
 	// is the preset that schedules the decks naming none.
@@ -1640,21 +1846,21 @@ type CurveRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CurveRequest) Reset() {
-	*x = CurveRequest{}
-	mi := &file_numen_v1_presets_proto_msgTypes[18]
+func (x *ComputeCurveRequest) Reset() {
+	*x = ComputeCurveRequest{}
+	mi := &file_numen_v1_presets_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CurveRequest) String() string {
+func (x *ComputeCurveRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CurveRequest) ProtoMessage() {}
+func (*ComputeCurveRequest) ProtoMessage() {}
 
-func (x *CurveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_presets_proto_msgTypes[18]
+func (x *ComputeCurveRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_presets_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1665,47 +1871,47 @@ func (x *CurveRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CurveRequest.ProtoReflect.Descriptor instead.
-func (*CurveRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_presets_proto_rawDescGZIP(), []int{18}
+// Deprecated: Use ComputeCurveRequest.ProtoReflect.Descriptor instead.
+func (*ComputeCurveRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_presets_proto_rawDescGZIP(), []int{19}
 }
 
-func (x *CurveRequest) GetPath() string {
+func (x *ComputeCurveRequest) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *CurveRequest) GetSettings() *Settings {
+func (x *ComputeCurveRequest) GetSettings() *Settings {
 	if x != nil {
 		return x.Settings
 	}
 	return nil
 }
 
-type CurveResponse struct {
+type ComputeCurveResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Curve         *Curve                 `protobuf:"bytes,1,opt,name=curve,proto3" json:"curve,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CurveResponse) Reset() {
-	*x = CurveResponse{}
-	mi := &file_numen_v1_presets_proto_msgTypes[19]
+func (x *ComputeCurveResponse) Reset() {
+	*x = ComputeCurveResponse{}
+	mi := &file_numen_v1_presets_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CurveResponse) String() string {
+func (x *ComputeCurveResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CurveResponse) ProtoMessage() {}
+func (*ComputeCurveResponse) ProtoMessage() {}
 
-func (x *CurveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_presets_proto_msgTypes[19]
+func (x *ComputeCurveResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_presets_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1716,12 +1922,12 @@ func (x *CurveResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CurveResponse.ProtoReflect.Descriptor instead.
-func (*CurveResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_presets_proto_rawDescGZIP(), []int{19}
+// Deprecated: Use ComputeCurveResponse.ProtoReflect.Descriptor instead.
+func (*ComputeCurveResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_presets_proto_rawDescGZIP(), []int{20}
 }
 
-func (x *CurveResponse) GetCurve() *Curve {
+func (x *ComputeCurveResponse) GetCurve() *Curve {
 	if x != nil {
 		return x.Curve
 	}
@@ -1732,7 +1938,7 @@ var File_numen_v1_presets_proto protoreflect.FileDescriptor
 
 const file_numen_v1_presets_proto_rawDesc = "" +
 	"\n" +
-	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x14numen/v1/vault.proto\"\xed\x03\n" +
+	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\x1a\x14numen/v1/theme.proto\"\xf1\x03\n" +
 	"\bSettings\x12\"\n" +
 	"\x04goal\x18\x01 \x01(\x0e2\x0e.numen.v1.GoalR\x04goal\x12\x17\n" +
 	"\aby_date\x18\x02 \x01(\tR\x06byDate\x12\"\n" +
@@ -1740,8 +1946,8 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\tnew_a_day\x18\x04 \x01(\x05R\anewADay\x12\"\n" +
 	"\rreviews_a_day\x18\x05 \x01(\x05R\vreviewsADay\x12\x1c\n" +
 	"\tretention\x18\x06 \x01(\x01R\tretention\x12\x1b\n" +
-	"\teven_load\x18\b \x01(\bR\bevenLoad\x12(\n" +
-	"\x06counts\x18\t \x01(\x0e2\x10.numen.v1.CountsR\x06counts\x12\x18\n" +
+	"\teven_load\x18\b \x01(\bR\bevenLoad\x12,\n" +
+	"\x06counts\x18\t \x01(\x0e2\x14.numen.v1.BudgetUnitR\x06counts\x12\x18\n" +
 	"\abacklog\x18\n" +
 	" \x01(\x05R\abacklog\x120\n" +
 	"\x04load\x18\v \x03(\v2\x1c.numen.v1.Settings.LoadEntryR\x04load\x12(\n" +
@@ -1750,107 +1956,124 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\tLoadEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01J\x04\b\a\x10\bR\n" +
-	"light_days\"\xd5\x01\n" +
+	"light_days\"\xdb\x01\n" +
 	"\x06Preset\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12.\n" +
 	"\bsettings\x18\x03 \x01(\v2\x12.numen.v1.SettingsR\bsettings\x12\x1a\n" +
-	"\bproblems\x18\x04 \x03(\tR\bproblems\x12'\n" +
-	"\x05stops\x18\x05 \x01(\x0e2\x11.numen.v1.StoppedR\x05stops\x12,\n" +
-	"\bstops_on\x18\x06 \x01(\x0e2\x11.numen.v1.StoppedR\astopsOn\"\xa4\x02\n" +
+	"\bproblems\x18\x04 \x03(\tR\bproblems\x12*\n" +
+	"\x05stops\x18\x05 \x01(\x0e2\x14.numen.v1.StopReasonR\x05stops\x12/\n" +
+	"\bstops_on\x18\x06 \x01(\x0e2\x14.numen.v1.StopReasonR\astopsOn\"\xa6\x02\n" +
 	"\x05Curve\x12\"\n" +
 	"\x04goal\x18\x01 \x01(\x0e2\x0e.numen.v1.GoalR\x04goal\x12\x12\n" +
 	"\x04grid\x18\x02 \x03(\x01R\x04grid\x12\x12\n" +
 	"\x04days\x18\x03 \x03(\tR\x04days\x12\x1f\n" +
-	"\x02at\x18\x04 \x03(\v2\x0f.numen.v1.PointR\x02at\x12 \n" +
-	"\x03now\x18\x05 \x01(\v2\x0e.numen.v1.MarkR\x03now\x12,\n" +
-	"\tsuggested\x18\x06 \x01(\v2\x0e.numen.v1.MarkR\tsuggested\x12\x14\n" +
+	"\x02at\x18\x04 \x03(\v2\x0f.numen.v1.PointR\x02at\x12!\n" +
+	"\x03now\x18\x05 \x01(\v2\x0f.numen.v1.PlaceR\x03now\x12-\n" +
+	"\tsuggested\x18\x06 \x01(\v2\x0f.numen.v1.PlaceR\tsuggested\x12\x14\n" +
 	"\x05decks\x18\a \x01(\x05R\x05decks\x12\x14\n" +
 	"\x05cards\x18\b \x01(\x05R\x05cards\x12\x18\n" +
 	"\aoverdue\x18\t \x01(\x05R\aoverdue\x12\x18\n" +
 	"\aunbegun\x18\n" +
-	" \x01(\x05R\aunbegun\"\xca\x02\n" +
+	" \x01(\x05R\aunbegun\"\xe0\x02\n" +
 	"\x05Point\x12\x18\n" +
 	"\areviews\x18\x01 \x01(\x01R\areviews\x12\x18\n" +
 	"\aminutes\x18\x02 \x01(\x01R\aminutes\x12\x1a\n" +
 	"\bretained\x18\x03 \x01(\x01R\bretained\x12\x12\n" +
 	"\x04owed\x18\x04 \x01(\x05R\x04owed\x12\x18\n" +
 	"\athrough\x18\x05 \x01(\x01R\athrough\x12\x16\n" +
-	"\x06enough\x18\x06 \x01(\bR\x06enough\x12\x16\n" +
-	"\x06closed\x18\b \x03(\tR\x06closed\x12\x16\n" +
+	"\x06enough\x18\x06 \x01(\bR\x06enough\x12,\n" +
+	"\x06closed\x18\b \x03(\x0e2\x14.numen.v1.BudgetNameR\x06closed\x12\x16\n" +
 	"\x06clears\x18\t \x01(\x05R\x06clears\x12\x18\n" +
 	"\abacklog\x18\n" +
 	" \x03(\x05R\abacklog\x12\x18\n" +
 	"\alearned\x18\v \x01(\x05R\alearned\x12\x1b\n" +
 	"\x06learns\x18\f \x01(\x05H\x00R\x06learns\x88\x01\x01\x12\x14\n" +
 	"\x05short\x18\r \x01(\x05R\x05shortB\t\n" +
-	"\a_learnsJ\x04\b\a\x10\bR\x03met\">\n" +
-	"\x04Mark\x12\x0e\n" +
+	"\a_learnsJ\x04\b\a\x10\bR\x03met\"?\n" +
+	"\x05Place\x12\x0e\n" +
 	"\x02at\x18\x01 \x01(\x05R\x02at\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x01R\x05value\x12\x10\n" +
-	"\x03day\x18\x03 \x01(\tR\x03day\"'\n" +
-	"\x11SchedulingRequest\x12\x12\n" +
-	"\x04deck\x18\x01 \x01(\tR\x04deck\"\xbf\x01\n" +
-	"\x12SchedulingResponse\x12-\n" +
+	"\x03day\x18\x03 \x01(\tR\x03day\"*\n" +
+	"\x14GetDeckPresetRequest\x12\x12\n" +
+	"\x04deck\x18\x01 \x01(\tR\x04deck\"\xf4\x01\n" +
+	"\x15GetDeckPresetResponse\x12-\n" +
 	"\x06preset\x18\x01 \x01(\v2\x10.numen.v1.PresetH\x00R\x06preset\x88\x01\x01\x120\n" +
 	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x02R\x02at\x88\x01\x01B\t\n" +
+	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x02R\x02at\x88\x01\x01\x120\n" +
+	"\x06bounds\x18\x04 \x01(\v2\x18.numen.v1.SettingsBoundsR\x06boundsB\t\n" +
 	"\a_presetB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
 	"\x03_at\"\x14\n" +
-	"\x12ListPresetsRequest\"A\n" +
-	"\x13ListPresetsResponse\x12*\n" +
-	"\apresets\x18\x01 \x03(\v2\x10.numen.v1.ListedR\apresets\"2\n" +
-	"\x06Listed\x12\x12\n" +
+	"\x12ListPresetsRequest\"H\n" +
+	"\x13ListPresetsResponse\x121\n" +
+	"\apresets\x18\x01 \x03(\v2\x17.numen.v1.PresetSummaryR\apresets\"9\n" +
+	"\rPresetSummary\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"A\n" +
-	"\x11MakePresetRequest\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"C\n" +
+	"\x13CreatePresetRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x16\n" +
-	"\x06folder\x18\x02 \x01(\tR\x06folder\"f\n" +
-	"\x12MakePresetResponse\x12\x12\n" +
+	"\x06folder\x18\x02 \x01(\tR\x06folder\"\x88\x01\n" +
+	"\x14CreatePresetResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x120\n" +
-	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
+	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x1e\n" +
 	"\n" +
-	"\b_refusal\"v\n" +
-	"\x0fScheduleRequest\x12\x12\n" +
+	"unlevelled\x18\x03 \x01(\bR\n" +
+	"unlevelledB\n" +
+	"\n" +
+	"\b_refusal\"z\n" +
+	"\x13ScheduleDeckRequest\x12\x12\n" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x16\n" +
 	"\x06preset\x18\x02 \x01(\tR\x06preset\x12.\n" +
 	"\x04seen\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\x9d\x01\n" +
-	"\x10ScheduleResponse\x120\n" +
-	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x18\n" +
-	"\achanged\x18\x02 \x01(\bR\achanged\x12*\n" +
-	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01B\n" +
+	"\x05_seen\"\xb6\x01\n" +
+	"\x14ScheduleDeckResponse\x120\n" +
+	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
+	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
+	"\n" +
+	"unlevelled\x18\x04 \x01(\bR\n" +
+	"unlevelledB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_at\"'\n" +
+	"\x03_atJ\x04\b\x02\x10\x03R\achanged\"'\n" +
 	"\x11ReadPresetRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xbf\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\xf1\x01\n" +
 	"\x12ReadPresetResponse\x12-\n" +
 	"\x06preset\x18\x01 \x01(\v2\x10.numen.v1.PresetH\x00R\x06preset\x88\x01\x01\x120\n" +
 	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x02R\x02at\x88\x01\x01B\t\n" +
+	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x02R\x02at\x88\x01\x01\x120\n" +
+	"\x06bounds\x18\x04 \x01(\v2\x18.numen.v1.SettingsBoundsR\x06boundsB\t\n" +
 	"\a_presetB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_at\"\x91\x01\n" +
+	"\x03_at\"\xda\x02\n" +
+	"\x0eSettingsBounds\x124\n" +
+	"\rminutes_a_day\x18\x01 \x01(\v2\x10.numen.v1.BoundsR\vminutesADay\x12,\n" +
+	"\tnew_a_day\x18\x02 \x01(\v2\x10.numen.v1.BoundsR\anewADay\x124\n" +
+	"\rreviews_a_day\x18\x03 \x01(\v2\x10.numen.v1.BoundsR\vreviewsADay\x12.\n" +
+	"\tretention\x18\x04 \x01(\v2\x10.numen.v1.BoundsR\tretention\x12*\n" +
+	"\abacklog\x18\x05 \x01(\v2\x10.numen.v1.BoundsR\abacklog\x12,\n" +
+	"\binterval\x18\x06 \x01(\v2\x10.numen.v1.BoundsR\binterval\x12$\n" +
+	"\x04load\x18\a \x01(\v2\x10.numen.v1.BoundsR\x04load\"\x91\x01\n" +
 	"\x12WritePresetRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
 	"\bsettings\x18\x02 \x01(\v2\x12.numen.v1.SettingsR\bsettings\x12.\n" +
 	"\x04seen\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xa0\x01\n" +
+	"\x05_seen\"\xb5\x01\n" +
 	"\x13WritePresetResponse\x120\n" +
-	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x18\n" +
-	"\achanged\x18\x02 \x01(\bR\achanged\x12*\n" +
-	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01B\n" +
+	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
+	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
+	"\n" +
+	"unlevelled\x18\x04 \x01(\bR\n" +
+	"unlevelledB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_at\"R\n" +
-	"\fCurveRequest\x12\x12\n" +
+	"\x03_atJ\x04\b\x02\x10\x03R\achanged\"Y\n" +
+	"\x13ComputeCurveRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
-	"\bsettings\x18\x02 \x01(\v2\x12.numen.v1.SettingsR\bsettings\"6\n" +
-	"\rCurveResponse\x12%\n" +
+	"\bsettings\x18\x02 \x01(\v2\x12.numen.v1.SettingsR\bsettings\"=\n" +
+	"\x14ComputeCurveResponse\x12%\n" +
 	"\x05curve\x18\x01 \x01(\v2\x0f.numen.v1.CurveR\x05curve*Z\n" +
 	"\x04Goal\x12\x14\n" +
 	"\x10GOAL_UNSPECIFIED\x10\x00\x12\x16\n" +
@@ -1860,31 +2083,40 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x04Rule\x12\x14\n" +
 	"\x10RULE_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rRULE_INTERVAL\x10\x01\x12\x12\n" +
-	"\x0eRULE_RETENTION\x10\x02*D\n" +
-	"\x06Counts\x12\x16\n" +
-	"\x12COUNTS_UNSPECIFIED\x10\x00\x12\x10\n" +
-	"\fCOUNTS_CARDS\x10\x01\x12\x10\n" +
-	"\fCOUNTS_SHOWS\x10\x02*\xb9\x01\n" +
-	"\aStopped\x12\x17\n" +
-	"\x13STOPPED_UNSPECIFIED\x10\x00\x12\x13\n" +
-	"\x0fSTOPPED_NOTHING\x10\x01\x12\x16\n" +
-	"\x12STOPPED_NO_MINUTES\x10\x02\x12\x14\n" +
-	"\x10STOPPED_NO_CARDS\x10\x03\x12\x12\n" +
-	"\x0eSTOPPED_NO_DAY\x10\x04\x12\x14\n" +
-	"\x10STOPPED_PAST_DAY\x10\x05\x12\x13\n" +
-	"\x0fSTOPPED_NO_LOAD\x10\x06\x12\x13\n" +
-	"\x0fSTOPPED_NO_WEEK\x10\a2\x80\x04\n" +
-	"\x0ePresetsService\x12G\n" +
+	"\x0eRULE_RETENTION\x10\x02*W\n" +
 	"\n" +
-	"Scheduling\x12\x1b.numen.v1.SchedulingRequest\x1a\x1c.numen.v1.SchedulingResponse\x12J\n" +
-	"\vListPresets\x12\x1c.numen.v1.ListPresetsRequest\x1a\x1d.numen.v1.ListPresetsResponse\x12G\n" +
+	"BudgetUnit\x12\x1b\n" +
+	"\x17BUDGET_UNIT_UNSPECIFIED\x10\x00\x12\x15\n" +
+	"\x11BUDGET_UNIT_CARDS\x10\x01\x12\x15\n" +
+	"\x11BUDGET_UNIT_SHOWS\x10\x02*\xdc\x01\n" +
 	"\n" +
-	"MakePreset\x12\x1b.numen.v1.MakePresetRequest\x1a\x1c.numen.v1.MakePresetResponse\x12A\n" +
-	"\bSchedule\x12\x19.numen.v1.ScheduleRequest\x1a\x1a.numen.v1.ScheduleResponse\x12G\n" +
+	"StopReason\x12\x1b\n" +
+	"\x17STOP_REASON_UNSPECIFIED\x10\x00\x12\x17\n" +
+	"\x13STOP_REASON_NOTHING\x10\x01\x12\x1a\n" +
+	"\x16STOP_REASON_NO_MINUTES\x10\x02\x12\x18\n" +
+	"\x14STOP_REASON_NO_CARDS\x10\x03\x12\x16\n" +
+	"\x12STOP_REASON_NO_DAY\x10\x04\x12\x18\n" +
+	"\x14STOP_REASON_PAST_DAY\x10\x05\x12\x17\n" +
+	"\x13STOP_REASON_NO_LOAD\x10\x06\x12\x17\n" +
+	"\x13STOP_REASON_NO_WEEK\x10\a*\xcc\x01\n" +
+	"\n" +
+	"BudgetName\x12\x1b\n" +
+	"\x17BUDGET_NAME_UNSPECIFIED\x10\x00\x12\x1d\n" +
+	"\x19BUDGET_NAME_MINUTES_A_DAY\x10\x01\x12\x19\n" +
+	"\x15BUDGET_NAME_NEW_A_DAY\x10\x02\x12\x1d\n" +
+	"\x19BUDGET_NAME_REVIEWS_A_DAY\x10\x03\x12\x17\n" +
+	"\x13BUDGET_NAME_BY_DATE\x10\x04\x12\x17\n" +
+	"\x13BUDGET_NAME_BACKLOG\x10\x05\x12\x16\n" +
+	"\x12BUDGET_NAME_PAUSED\x10\x062\xb0\x04\n" +
+	"\x0ePresetsService\x12P\n" +
+	"\rGetDeckPreset\x12\x1e.numen.v1.GetDeckPresetRequest\x1a\x1f.numen.v1.GetDeckPresetResponse\x12J\n" +
+	"\vListPresets\x12\x1c.numen.v1.ListPresetsRequest\x1a\x1d.numen.v1.ListPresetsResponse\x12M\n" +
+	"\fCreatePreset\x12\x1d.numen.v1.CreatePresetRequest\x1a\x1e.numen.v1.CreatePresetResponse\x12M\n" +
+	"\fScheduleDeck\x12\x1d.numen.v1.ScheduleDeckRequest\x1a\x1e.numen.v1.ScheduleDeckResponse\x12G\n" +
 	"\n" +
 	"ReadPreset\x12\x1b.numen.v1.ReadPresetRequest\x1a\x1c.numen.v1.ReadPresetResponse\x12J\n" +
-	"\vWritePreset\x12\x1c.numen.v1.WritePresetRequest\x1a\x1d.numen.v1.WritePresetResponse\x128\n" +
-	"\x05Curve\x12\x16.numen.v1.CurveRequest\x1a\x17.numen.v1.CurveResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\vWritePreset\x12\x1c.numen.v1.WritePresetRequest\x1a\x1d.numen.v1.WritePresetResponse\x12M\n" +
+	"\fComputeCurve\x12\x1d.numen.v1.ComputeCurveRequest\x1a\x1e.numen.v1.ComputeCurveResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_presets_proto_rawDescOnce sync.Once
@@ -1898,85 +2130,98 @@ func file_numen_v1_presets_proto_rawDescGZIP() []byte {
 	return file_numen_v1_presets_proto_rawDescData
 }
 
-var file_numen_v1_presets_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_numen_v1_presets_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_numen_v1_presets_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_numen_v1_presets_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_numen_v1_presets_proto_goTypes = []any{
-	(Goal)(0),                   // 0: numen.v1.Goal
-	(Rule)(0),                   // 1: numen.v1.Rule
-	(Counts)(0),                 // 2: numen.v1.Counts
-	(Stopped)(0),                // 3: numen.v1.Stopped
-	(*Settings)(nil),            // 4: numen.v1.Settings
-	(*Preset)(nil),              // 5: numen.v1.Preset
-	(*Curve)(nil),               // 6: numen.v1.Curve
-	(*Point)(nil),               // 7: numen.v1.Point
-	(*Mark)(nil),                // 8: numen.v1.Mark
-	(*SchedulingRequest)(nil),   // 9: numen.v1.SchedulingRequest
-	(*SchedulingResponse)(nil),  // 10: numen.v1.SchedulingResponse
-	(*ListPresetsRequest)(nil),  // 11: numen.v1.ListPresetsRequest
-	(*ListPresetsResponse)(nil), // 12: numen.v1.ListPresetsResponse
-	(*Listed)(nil),              // 13: numen.v1.Listed
-	(*MakePresetRequest)(nil),   // 14: numen.v1.MakePresetRequest
-	(*MakePresetResponse)(nil),  // 15: numen.v1.MakePresetResponse
-	(*ScheduleRequest)(nil),     // 16: numen.v1.ScheduleRequest
-	(*ScheduleResponse)(nil),    // 17: numen.v1.ScheduleResponse
-	(*ReadPresetRequest)(nil),   // 18: numen.v1.ReadPresetRequest
-	(*ReadPresetResponse)(nil),  // 19: numen.v1.ReadPresetResponse
-	(*WritePresetRequest)(nil),  // 20: numen.v1.WritePresetRequest
-	(*WritePresetResponse)(nil), // 21: numen.v1.WritePresetResponse
-	(*CurveRequest)(nil),        // 22: numen.v1.CurveRequest
-	(*CurveResponse)(nil),       // 23: numen.v1.CurveResponse
-	nil,                         // 24: numen.v1.Settings.LoadEntry
-	(Refusal)(0),                // 25: numen.v1.Refusal
-	(*Fingerprint)(nil),         // 26: numen.v1.Fingerprint
+	(Goal)(0),                     // 0: numen.v1.Goal
+	(Rule)(0),                     // 1: numen.v1.Rule
+	(BudgetUnit)(0),               // 2: numen.v1.BudgetUnit
+	(StopReason)(0),               // 3: numen.v1.StopReason
+	(BudgetName)(0),               // 4: numen.v1.BudgetName
+	(*Settings)(nil),              // 5: numen.v1.Settings
+	(*Preset)(nil),                // 6: numen.v1.Preset
+	(*Curve)(nil),                 // 7: numen.v1.Curve
+	(*Point)(nil),                 // 8: numen.v1.Point
+	(*Place)(nil),                 // 9: numen.v1.Place
+	(*GetDeckPresetRequest)(nil),  // 10: numen.v1.GetDeckPresetRequest
+	(*GetDeckPresetResponse)(nil), // 11: numen.v1.GetDeckPresetResponse
+	(*ListPresetsRequest)(nil),    // 12: numen.v1.ListPresetsRequest
+	(*ListPresetsResponse)(nil),   // 13: numen.v1.ListPresetsResponse
+	(*PresetSummary)(nil),         // 14: numen.v1.PresetSummary
+	(*CreatePresetRequest)(nil),   // 15: numen.v1.CreatePresetRequest
+	(*CreatePresetResponse)(nil),  // 16: numen.v1.CreatePresetResponse
+	(*ScheduleDeckRequest)(nil),   // 17: numen.v1.ScheduleDeckRequest
+	(*ScheduleDeckResponse)(nil),  // 18: numen.v1.ScheduleDeckResponse
+	(*ReadPresetRequest)(nil),     // 19: numen.v1.ReadPresetRequest
+	(*ReadPresetResponse)(nil),    // 20: numen.v1.ReadPresetResponse
+	(*SettingsBounds)(nil),        // 21: numen.v1.SettingsBounds
+	(*WritePresetRequest)(nil),    // 22: numen.v1.WritePresetRequest
+	(*WritePresetResponse)(nil),   // 23: numen.v1.WritePresetResponse
+	(*ComputeCurveRequest)(nil),   // 24: numen.v1.ComputeCurveRequest
+	(*ComputeCurveResponse)(nil),  // 25: numen.v1.ComputeCurveResponse
+	nil,                           // 26: numen.v1.Settings.LoadEntry
+	(Refusal)(0),                  // 27: numen.v1.Refusal
+	(*Fingerprint)(nil),           // 28: numen.v1.Fingerprint
+	(*Bounds)(nil),                // 29: numen.v1.Bounds
 }
 var file_numen_v1_presets_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.Settings.goal:type_name -> numen.v1.Goal
-	2,  // 1: numen.v1.Settings.counts:type_name -> numen.v1.Counts
-	24, // 2: numen.v1.Settings.load:type_name -> numen.v1.Settings.LoadEntry
+	2,  // 1: numen.v1.Settings.counts:type_name -> numen.v1.BudgetUnit
+	26, // 2: numen.v1.Settings.load:type_name -> numen.v1.Settings.LoadEntry
 	1,  // 3: numen.v1.Settings.learned:type_name -> numen.v1.Rule
-	4,  // 4: numen.v1.Preset.settings:type_name -> numen.v1.Settings
-	3,  // 5: numen.v1.Preset.stops:type_name -> numen.v1.Stopped
-	3,  // 6: numen.v1.Preset.stops_on:type_name -> numen.v1.Stopped
+	5,  // 4: numen.v1.Preset.settings:type_name -> numen.v1.Settings
+	3,  // 5: numen.v1.Preset.stops:type_name -> numen.v1.StopReason
+	3,  // 6: numen.v1.Preset.stops_on:type_name -> numen.v1.StopReason
 	0,  // 7: numen.v1.Curve.goal:type_name -> numen.v1.Goal
-	7,  // 8: numen.v1.Curve.at:type_name -> numen.v1.Point
-	8,  // 9: numen.v1.Curve.now:type_name -> numen.v1.Mark
-	8,  // 10: numen.v1.Curve.suggested:type_name -> numen.v1.Mark
-	5,  // 11: numen.v1.SchedulingResponse.preset:type_name -> numen.v1.Preset
-	25, // 12: numen.v1.SchedulingResponse.refusal:type_name -> numen.v1.Refusal
-	26, // 13: numen.v1.SchedulingResponse.at:type_name -> numen.v1.Fingerprint
-	13, // 14: numen.v1.ListPresetsResponse.presets:type_name -> numen.v1.Listed
-	25, // 15: numen.v1.MakePresetResponse.refusal:type_name -> numen.v1.Refusal
-	26, // 16: numen.v1.ScheduleRequest.seen:type_name -> numen.v1.Fingerprint
-	25, // 17: numen.v1.ScheduleResponse.refusal:type_name -> numen.v1.Refusal
-	26, // 18: numen.v1.ScheduleResponse.at:type_name -> numen.v1.Fingerprint
-	5,  // 19: numen.v1.ReadPresetResponse.preset:type_name -> numen.v1.Preset
-	25, // 20: numen.v1.ReadPresetResponse.refusal:type_name -> numen.v1.Refusal
-	26, // 21: numen.v1.ReadPresetResponse.at:type_name -> numen.v1.Fingerprint
-	4,  // 22: numen.v1.WritePresetRequest.settings:type_name -> numen.v1.Settings
-	26, // 23: numen.v1.WritePresetRequest.seen:type_name -> numen.v1.Fingerprint
-	25, // 24: numen.v1.WritePresetResponse.refusal:type_name -> numen.v1.Refusal
-	26, // 25: numen.v1.WritePresetResponse.at:type_name -> numen.v1.Fingerprint
-	4,  // 26: numen.v1.CurveRequest.settings:type_name -> numen.v1.Settings
-	6,  // 27: numen.v1.CurveResponse.curve:type_name -> numen.v1.Curve
-	9,  // 28: numen.v1.PresetsService.Scheduling:input_type -> numen.v1.SchedulingRequest
-	11, // 29: numen.v1.PresetsService.ListPresets:input_type -> numen.v1.ListPresetsRequest
-	14, // 30: numen.v1.PresetsService.MakePreset:input_type -> numen.v1.MakePresetRequest
-	16, // 31: numen.v1.PresetsService.Schedule:input_type -> numen.v1.ScheduleRequest
-	18, // 32: numen.v1.PresetsService.ReadPreset:input_type -> numen.v1.ReadPresetRequest
-	20, // 33: numen.v1.PresetsService.WritePreset:input_type -> numen.v1.WritePresetRequest
-	22, // 34: numen.v1.PresetsService.Curve:input_type -> numen.v1.CurveRequest
-	10, // 35: numen.v1.PresetsService.Scheduling:output_type -> numen.v1.SchedulingResponse
-	12, // 36: numen.v1.PresetsService.ListPresets:output_type -> numen.v1.ListPresetsResponse
-	15, // 37: numen.v1.PresetsService.MakePreset:output_type -> numen.v1.MakePresetResponse
-	17, // 38: numen.v1.PresetsService.Schedule:output_type -> numen.v1.ScheduleResponse
-	19, // 39: numen.v1.PresetsService.ReadPreset:output_type -> numen.v1.ReadPresetResponse
-	21, // 40: numen.v1.PresetsService.WritePreset:output_type -> numen.v1.WritePresetResponse
-	23, // 41: numen.v1.PresetsService.Curve:output_type -> numen.v1.CurveResponse
-	35, // [35:42] is the sub-list for method output_type
-	28, // [28:35] is the sub-list for method input_type
-	28, // [28:28] is the sub-list for extension type_name
-	28, // [28:28] is the sub-list for extension extendee
-	0,  // [0:28] is the sub-list for field type_name
+	8,  // 8: numen.v1.Curve.at:type_name -> numen.v1.Point
+	9,  // 9: numen.v1.Curve.now:type_name -> numen.v1.Place
+	9,  // 10: numen.v1.Curve.suggested:type_name -> numen.v1.Place
+	4,  // 11: numen.v1.Point.closed:type_name -> numen.v1.BudgetName
+	6,  // 12: numen.v1.GetDeckPresetResponse.preset:type_name -> numen.v1.Preset
+	27, // 13: numen.v1.GetDeckPresetResponse.refusal:type_name -> numen.v1.Refusal
+	28, // 14: numen.v1.GetDeckPresetResponse.at:type_name -> numen.v1.Fingerprint
+	21, // 15: numen.v1.GetDeckPresetResponse.bounds:type_name -> numen.v1.SettingsBounds
+	14, // 16: numen.v1.ListPresetsResponse.presets:type_name -> numen.v1.PresetSummary
+	27, // 17: numen.v1.CreatePresetResponse.refusal:type_name -> numen.v1.Refusal
+	28, // 18: numen.v1.ScheduleDeckRequest.seen:type_name -> numen.v1.Fingerprint
+	27, // 19: numen.v1.ScheduleDeckResponse.refusal:type_name -> numen.v1.Refusal
+	28, // 20: numen.v1.ScheduleDeckResponse.at:type_name -> numen.v1.Fingerprint
+	6,  // 21: numen.v1.ReadPresetResponse.preset:type_name -> numen.v1.Preset
+	27, // 22: numen.v1.ReadPresetResponse.refusal:type_name -> numen.v1.Refusal
+	28, // 23: numen.v1.ReadPresetResponse.at:type_name -> numen.v1.Fingerprint
+	21, // 24: numen.v1.ReadPresetResponse.bounds:type_name -> numen.v1.SettingsBounds
+	29, // 25: numen.v1.SettingsBounds.minutes_a_day:type_name -> numen.v1.Bounds
+	29, // 26: numen.v1.SettingsBounds.new_a_day:type_name -> numen.v1.Bounds
+	29, // 27: numen.v1.SettingsBounds.reviews_a_day:type_name -> numen.v1.Bounds
+	29, // 28: numen.v1.SettingsBounds.retention:type_name -> numen.v1.Bounds
+	29, // 29: numen.v1.SettingsBounds.backlog:type_name -> numen.v1.Bounds
+	29, // 30: numen.v1.SettingsBounds.interval:type_name -> numen.v1.Bounds
+	29, // 31: numen.v1.SettingsBounds.load:type_name -> numen.v1.Bounds
+	5,  // 32: numen.v1.WritePresetRequest.settings:type_name -> numen.v1.Settings
+	28, // 33: numen.v1.WritePresetRequest.seen:type_name -> numen.v1.Fingerprint
+	27, // 34: numen.v1.WritePresetResponse.refusal:type_name -> numen.v1.Refusal
+	28, // 35: numen.v1.WritePresetResponse.at:type_name -> numen.v1.Fingerprint
+	5,  // 36: numen.v1.ComputeCurveRequest.settings:type_name -> numen.v1.Settings
+	7,  // 37: numen.v1.ComputeCurveResponse.curve:type_name -> numen.v1.Curve
+	10, // 38: numen.v1.PresetsService.GetDeckPreset:input_type -> numen.v1.GetDeckPresetRequest
+	12, // 39: numen.v1.PresetsService.ListPresets:input_type -> numen.v1.ListPresetsRequest
+	15, // 40: numen.v1.PresetsService.CreatePreset:input_type -> numen.v1.CreatePresetRequest
+	17, // 41: numen.v1.PresetsService.ScheduleDeck:input_type -> numen.v1.ScheduleDeckRequest
+	19, // 42: numen.v1.PresetsService.ReadPreset:input_type -> numen.v1.ReadPresetRequest
+	22, // 43: numen.v1.PresetsService.WritePreset:input_type -> numen.v1.WritePresetRequest
+	24, // 44: numen.v1.PresetsService.ComputeCurve:input_type -> numen.v1.ComputeCurveRequest
+	11, // 45: numen.v1.PresetsService.GetDeckPreset:output_type -> numen.v1.GetDeckPresetResponse
+	13, // 46: numen.v1.PresetsService.ListPresets:output_type -> numen.v1.ListPresetsResponse
+	16, // 47: numen.v1.PresetsService.CreatePreset:output_type -> numen.v1.CreatePresetResponse
+	18, // 48: numen.v1.PresetsService.ScheduleDeck:output_type -> numen.v1.ScheduleDeckResponse
+	20, // 49: numen.v1.PresetsService.ReadPreset:output_type -> numen.v1.ReadPresetResponse
+	23, // 50: numen.v1.PresetsService.WritePreset:output_type -> numen.v1.WritePresetResponse
+	25, // 51: numen.v1.PresetsService.ComputeCurve:output_type -> numen.v1.ComputeCurveResponse
+	45, // [45:52] is the sub-list for method output_type
+	38, // [38:45] is the sub-list for method input_type
+	38, // [38:38] is the sub-list for extension type_name
+	38, // [38:38] is the sub-list for extension extendee
+	0,  // [0:38] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_presets_proto_init() }
@@ -1984,22 +2229,23 @@ func file_numen_v1_presets_proto_init() {
 	if File_numen_v1_presets_proto != nil {
 		return
 	}
-	file_numen_v1_vault_proto_init()
+	file_numen_v1_shared_proto_init()
+	file_numen_v1_theme_proto_init()
 	file_numen_v1_presets_proto_msgTypes[3].OneofWrappers = []any{}
 	file_numen_v1_presets_proto_msgTypes[6].OneofWrappers = []any{}
 	file_numen_v1_presets_proto_msgTypes[11].OneofWrappers = []any{}
 	file_numen_v1_presets_proto_msgTypes[12].OneofWrappers = []any{}
 	file_numen_v1_presets_proto_msgTypes[13].OneofWrappers = []any{}
 	file_numen_v1_presets_proto_msgTypes[15].OneofWrappers = []any{}
-	file_numen_v1_presets_proto_msgTypes[16].OneofWrappers = []any{}
 	file_numen_v1_presets_proto_msgTypes[17].OneofWrappers = []any{}
+	file_numen_v1_presets_proto_msgTypes[18].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_presets_proto_rawDesc), len(file_numen_v1_presets_proto_rawDesc)),
-			NumEnums:      4,
-			NumMessages:   21,
+			NumEnums:      5,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

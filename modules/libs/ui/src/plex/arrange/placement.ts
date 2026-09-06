@@ -1,4 +1,5 @@
-import type { PlacedNode, PlexNode, PlexRelatedSeat } from '../model'
+import type { PlacedNode, PlexNode } from '../node'
+import type { PlexRelatedSeat } from '../seat'
 import type { Limits, RoleLimits } from './limits'
 import { isVertical, type Direction, type PlexOptions } from './options'
 
@@ -9,8 +10,8 @@ export type Seating = Readonly<Partial<Record<PlexRelatedSeat, readonly PlexNode
 export type Widths = (node: PlexNode) => number
 
 /**
- * Where the nodes go. A strategy, so a radial mind map is another
- * implementation rather than a branch inside this one.
+ * Where the nodes go, as a strategy: a radial mind map is another
+ * implementation of this.
  *
  * It decides coordinates and nothing else: how much is admitted is settled
  * before it is called, how wide each box is comes in as a number, and routing

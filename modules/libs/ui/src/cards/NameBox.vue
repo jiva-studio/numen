@@ -6,11 +6,11 @@
  * itself and not as a thing to fill in. What is wrong with what is typed is
  * said by whatever draws this, under the row the box stands in.
  */
-import type { Naming } from './naming'
+import type { NamingState } from './naming'
 
 const props = defineProps<{
   /** The naming this box types into. */
-  naming: Naming<unknown>
+  naming: NamingState<unknown>
   /** What is being typed over, as the naming addresses it. */
   over: string
   /** What the box is announced by, and what stands in it while it is empty. */
@@ -43,7 +43,7 @@ const objects = (): boolean => props.naming.objection(props.over) !== null
 <style scoped>
 /* The air a row keeps at its ends, where the box stands in one. */
 .name-box {
-  padding: var(--slab-pad-block, 0.125rem) var(--slab-pad-inline, 0.375rem);
+  padding: var(--card-row-pad-block, 0.125rem) var(--card-row-pad-inline, 0.375rem);
   border: none;
   background: none;
   color: inherit;

@@ -5,11 +5,11 @@
  * clock.
  */
 
-import { declared, type Against, type Landing } from './order'
-import type { Cut } from './stencil'
+import { declared, type Problems, type InsertionPoint } from './order'
+import type { Stencil } from './stencil'
 
 /** One named slot and what stands in it. */
-export interface Filled {
+export interface FieldValue {
   readonly field: string
   readonly text: string
 }
@@ -29,14 +29,14 @@ const END = 'the end of '
  * under that heading, and under the heading itself. The run before the first
  * section is named by the head of the deck.
  */
-export const endOf = (run: string): Landing => `${END}${run}`
+export const endOf = (run: string): InsertionPoint => `${END}${run}`
 
 /** Which run's end a landing is, and nothing for a landing that is not one. */
-export const ended = (at: Landing): string | null =>
+export const ended = (at: InsertionPoint): string | null =>
   typeof at === 'string' && at.startsWith(END) ? at.slice(END.length) : null
 
 /** One card as the deck draws it. */
-export interface Drawn {
+export interface DeckCard {
   /**
    * What tells this card from every other of the deck, for as long as it is
    * drawn. It is the caller's own word for the card and travels back in every
@@ -47,7 +47,7 @@ export interface Drawn {
   readonly section: string | null
   /** What the card is cut by, as a word to show, and nothing where nothing cuts it. */
   readonly stencil: string | null
-  readonly filled: readonly Filled[]
+  readonly filled: readonly FieldValue[]
 }
 
 /**
@@ -55,7 +55,7 @@ export interface Drawn {
  * section carries no mark and its name need not be unique, so nothing the file
  * holds tells one from another.
  */
-export interface Banded {
+export interface DeckSection {
   readonly id: string
   readonly name: string
 }
@@ -63,7 +63,7 @@ export interface Banded {
 /** The words one card is drawn with, declared once. */
 export interface CardWords {
   readonly remove: string
-  readonly carry: string
+  readonly drag: string
   readonly cut: string
   /** What a card is announced by, before the place it stands in the deck. */
   readonly cardStem: string
@@ -98,7 +98,7 @@ export const DECK_WORDS: DeckWords = {
   add: 'Add a card',
   addSection: 'Add a section',
   remove: 'Remove',
-  carry: 'Reorder',
+  drag: 'Reorder',
   cut: 'Stencil',
   cardStem: 'Card',
   sectionStem: 'Section',
@@ -115,12 +115,12 @@ export const DECK_WORDS: DeckWords = {
  */
 export interface Wrong {
   /** What is wrong with each card, under the identity it was drawn by. */
-  readonly at: Against
+  readonly at: Problems
   /**
    * What is wrong with one value of a card, under that card's identity and then
    * the field the value stands in.
    */
-  readonly under: ReadonlyMap<string, Against>
+  readonly under: ReadonlyMap<string, Problems>
 }
 
 /**
@@ -138,11 +138,11 @@ export function sealed<K, V>(): ReadonlyMap<K, V> {
 /** Nothing wrong with anything. */
 export const NOTHING_WRONG: Wrong = Object.freeze({
   at: sealed<string, readonly string[]>(),
-  under: sealed<string, Against>(),
+  under: sealed<string, Problems>(),
 })
 
 /** One value of a card, laid out under the stencil that cuts it. */
-export interface Laid extends Filled {
+export interface CardFieldValue extends FieldValue {
   /** The stencil names this slot. */
   readonly declared: boolean
 }
@@ -154,7 +154,10 @@ export interface Laid extends Filled {
  * names nothing for come after the rest, marked as named by nothing, and what
  * is drawn of them is the caller's.
  */
-export function laid(filled: readonly Filled[], fields: readonly string[]): readonly Laid[] {
+export function laid(
+  filled: readonly FieldValue[],
+  fields: readonly string[],
+): readonly CardFieldValue[] {
   const stood = declared(fields).flatMap((field) => {
     const written = filled.filter((each) => each.field === field)
     if (!written.length) return [{ field, text: '', declared: true }]
@@ -167,11 +170,11 @@ export function laid(filled: readonly Filled[], fields: readonly string[]): read
 }
 
 /** The empty values a stencil's slots make, for a card nobody has typed into. */
-export const blanks = (fields: readonly string[]): readonly Filled[] =>
+export const blanks = (fields: readonly string[]): readonly FieldValue[] =>
   fields.map((field) => ({ field, text: '' }))
 
 /** One value of a card as its tile draws it. */
-export interface Stood extends Laid {
+export interface PlacedFieldValue extends CardFieldValue {
   /** Where it stands among the values, counting from one. */
   readonly at: number
   /**
@@ -196,7 +199,7 @@ export interface Tile {
   readonly section: string | null
   readonly stencil: string | null
   /** Its values, in the order its stencil asks for them. */
-  readonly filled: readonly Stood[]
+  readonly filled: readonly PlacedFieldValue[]
   /** Where it stands among the tiles, counting from one, which is what it is announced as. */
   readonly at: number
   /** How many stand in the grid with it, the plus among them. */
@@ -204,11 +207,11 @@ export interface Tile {
   /** The stencil it names is among the ones handed in. */
   readonly known: boolean
   /** It is on its way somewhere else in the order. */
-  readonly carried: boolean
+  readonly dragged: boolean
 }
 
-/** One section as the grid draws it. */
-export interface Band extends Banded {
+/** One section as the grid draws it: the section, and where it stands. */
+export interface PlacedSection extends DeckSection {
   /** Where it stands among the sections, counting from one. */
   readonly at: number
 }
@@ -218,7 +221,7 @@ export interface Run {
   /** Where a card let go on the run itself lands, which is at the head of it. */
   readonly id: string
   /** The section they stand under, and nothing for the cards before the first. */
-  readonly band: Band | null
+  readonly section: PlacedSection | null
   readonly tiles: readonly Tile[]
   /**
    * It draws a landing of its own. A run under a section is landed on by that
@@ -251,14 +254,14 @@ export interface Grid {
  * first section, where every card handed in is drawn and counted.
  */
 export function grid(
-  cards: readonly Drawn[],
-  sections: readonly Banded[],
-  cuts: readonly Cut[],
-  carried: string | null,
+  cards: readonly DeckCard[],
+  sections: readonly DeckSection[],
+  stencils: readonly Stencil[],
+  dragged: string | null,
 ): Grid {
-  const banded = new Set(sections.map((section) => section.id))
+  const sectioned = new Set(sections.map((section) => section.id))
   const tiles = cards.map((card) => {
-    const cut = cuts.find((each) => each.name === card.stencil)
+    const cut = stencils.find((each) => each.name === card.stencil)
     const fields = declared(cut?.fields ?? [])
 
     /** How many values the card writes under each field, as they are counted off. */
@@ -284,7 +287,7 @@ export function grid(
 
     return {
       id: card.id,
-      section: card.section !== null && banded.has(card.section) ? card.section : null,
+      section: card.section !== null && sectioned.has(card.section) ? card.section : null,
       stencil: card.stencil,
       filled: counted.map((each) => ({
         ...each,
@@ -293,20 +296,20 @@ export function grid(
       at: 0,
       of: 0,
       known: cut !== undefined,
-      carried: card.id === carried,
+      dragged: card.id === dragged,
     }
   })
 
-  const standing = (section: string | null): readonly Tile[] =>
+  const tilesUnder = (section: string | null): readonly Tile[] =>
     tiles.filter((tile) => tile.section === section)
 
-  const head = standing(null)
+  const head = tilesUnder(null)
   const drawn = [
-    { id: HEAD, band: null, tiles: head, landing: head.length === 0 && sections.length > 0 },
+    { id: HEAD, section: null, tiles: head, landing: head.length === 0 && sections.length > 0 },
     ...sections.map((section, index) => ({
       id: section.id,
-      band: { id: section.id, name: section.name, at: index + 1 },
-      tiles: standing(section.id),
+      section: { id: section.id, name: section.name, at: index + 1 },
+      tiles: tilesUnder(section.id),
       landing: false,
     })),
   ]
@@ -317,7 +320,7 @@ export function grid(
   let seat = 0
   const runs: readonly Run[] = drawn.map((run) => {
     const laid = run.tiles.map((tile) => ({ ...tile, at: ++seat }))
-    const plus = run.band !== null || laid.length > 0 || drawn.length === 1
+    const plus = run.section !== null || laid.length > 0 || drawn.length === 1
     return { ...run, tiles: laid, plusAt: plus ? ++seat : null }
   })
   const of = seat
@@ -329,15 +332,15 @@ export function grid(
 }
 
 /**
- * Whether letting a carried card go there moves it. A card let go where it
+ * Whether letting a dragged card go there moves it. A card let go where it
  * stands moves nothing: the head of the deck is where the first card standing
  * under no section already is, and the end of a run is where its last card is.
  */
-export const lands = (runs: readonly Run[], carried: string, at: Landing): boolean => {
-  if (at === carried) return false
-  if (at === HEAD) return runs[0]?.tiles[0]?.id !== carried
+export const lands = (runs: readonly Run[], dragged: string, at: InsertionPoint): boolean => {
+  if (at === dragged) return false
+  if (at === HEAD) return runs[0]?.tiles[0]?.id !== dragged
 
   const run = ended(at)
-  if (run !== null) return runs.find((each) => each.id === run)?.tiles.at(-1)?.id !== carried
+  if (run !== null) return runs.find((each) => each.id === run)?.tiles.at(-1)?.id !== dragged
   return true
 }

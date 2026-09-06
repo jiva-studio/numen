@@ -3,13 +3,13 @@
 //
 //	WEBVTT
 //
-//	NOTE heard 9100
-//
 //	00:00:01.500 --> 00:00:04.200
 //	what was said
 //
 //	00:00:04.200 --> 00:00:09.100
 //	what was said next
+//
+//	NOTE heard 9100
 //
 // The format is the W3C one, so the file opens in a player, shows the words
 // against the recording in a browser, and is read by anything a person already
@@ -41,10 +41,10 @@ const arrow = "-->"
 // stands in the words a transcript reads as. At is filled by reading, because
 // only then is there a text for it to be an offset into.
 type Cue struct {
-	Text string
-	From int
-	To   int
-	At   int
+	Text   string
+	From   int
+	To     int
+	Offset int
 }
 
 // Marshal is the artifact for a run of cues.
@@ -80,7 +80,7 @@ func Parse(raw []byte) (string, []Cue) {
 		if out.Len() > 0 {
 			out.WriteString("\n")
 		}
-		cue.At = out.Len()
+		cue.Offset = out.Len()
 		out.WriteString(cue.Text)
 		cues = append(cues, cue)
 	}
@@ -187,24 +187,14 @@ func At(cues []Cue, start, length int) []Cue {
 	// The first cue that reaches into the run. A cue before it ends before the
 	// run begins.
 	at := sort.Search(len(cues), func(i int) bool {
-		return cues[i].At+len(cues[i].Text) > start
+		return cues[i].Offset+len(cues[i].Text) > start
 	})
 
 	var out []Cue
-	for ; at < len(cues) && cues[at].At < end; at++ {
+	for ; at < len(cues) && cues[at].Offset < end; at++ {
 		out = append(out, cues[at])
 	}
 	return out
-}
-
-// Plays is the millisecond a run of the words is played from, and whether any
-// cue holds it. A run no cue holds is nowhere to play.
-func Plays(cues []Cue, start, length int) (int, bool) {
-	found := At(cues, start, length)
-	if len(found) == 0 {
-		return 0, false
-	}
-	return found[0].From, true
 }
 
 // Heard is the note a run stopped part way leaves: how many milliseconds of the
@@ -242,21 +232,26 @@ func Written(raw []byte) bool {
 // Reached is how far a run before this one got, and where the last note about
 // it ends. A file carrying none is a recording nothing has listened to.
 func Reached(raw []byte) (ms, end int) {
-	const note = "NOTE heard "
-	at := strings.LastIndex(string(raw), note)
-	if at < 0 {
-		return 0, 0
+	note := []byte("NOTE heard ")
+	// Each note is looked at once, and only what stands between it and the one
+	// after it is read.
+	for end := len(raw); ; {
+		at := bytes.LastIndex(raw[:end], note)
+		if at < 0 {
+			return 0, 0
+		}
+		line := raw[at+len(note) : end]
+		end = at
+		stop := bytes.IndexByte(line, '\n')
+		if stop < 0 || !begins(raw, at) {
+			continue
+		}
+		ms, err := strconv.Atoi(strings.TrimSpace(string(line[:stop])))
+		if err != nil {
+			continue
+		}
+		return ms, at + len(note) + stop + 1
 	}
-	line := string(raw[at+len(note):])
-	stop := strings.IndexByte(line, '\n')
-	if stop < 0 || !begins(raw, at) {
-		return Reached(raw[:at])
-	}
-	ms, err := strconv.Atoi(strings.TrimSpace(line[:stop]))
-	if err != nil {
-		return Reached(raw[:at])
-	}
-	return ms, at + len(note) + stop + 1
 }
 
 // begins says whether a byte is where a block of the file starts: the top of

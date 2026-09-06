@@ -6,15 +6,15 @@
 --
 -- A name is looked for as a path and as a filename, one index lookup each. The
 -- third shape resolution uses — the name with an extension added — needs no
--- branch here: a note it would find has that name as its basename, so the
+-- branch here: a note it would find has that name as its folded name, so the
 -- second condition already covers it.
 --
 -- Only names are asked about. An identifier no vault here holds is not
 -- dangling: it names one note in the world, and the vault holding it may simply
 -- not be open on this machine. Reporting it would tell somebody to mend a link
 -- that is fine everywhere they use it.
-SELECT s.path, l.scheme, l.value, l.role,
-       COALESCE(l.type, ''), COALESCE(l.note, ''), COALESCE(l.label, '')
+SELECT s.path, l.scheme, l.target, l.role,
+       COALESCE(l.type, ''), COALESCE(l.why, ''), COALESCE(l.label, '')
 FROM links l
 JOIN sources s ON s.id = l.note_id
 WHERE s.vault_id = ?
@@ -22,10 +22,10 @@ WHERE s.vault_id = ?
   AND NOT EXISTS (
     SELECT 1 FROM sources t
     JOIN notes tn ON tn.source_id = t.id
-    WHERE t.vault_id = s.vault_id AND t.path = l.value
+    WHERE t.vault_id = s.vault_id AND t.path = l.target
   )
   AND NOT EXISTS (
     SELECT 1 FROM notes tn
-    WHERE tn.vault_id = s.vault_id AND tn.basename = l.value_base
+    WHERE tn.vault_id = s.vault_id AND tn.folded_name = l.folded_name
   )
 ORDER BY s.path, l.position;

@@ -4,11 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
@@ -57,10 +58,11 @@ func answering(t *testing.T, cards int) vaulted {
 }
 
 // curves is the simulator over one vault, on a named day.
-func (s vaulted) curves(now time.Time) flashcards.Curves {
-	return flashcards.Curves{
-		Standings: s.standings, Schedules: s.kept, Presets: s.presets,
+func (s vaulted) curves(now time.Time) flashcards.ProjectCurve {
+	return flashcards.ProjectCurve{
+		CardFaces: s.standings, Schedules: s.kept, Presets: s.presets,
 		Day: today, Now: func() time.Time { return now },
+		Cores: runtime.GOMAXPROCS(0),
 	}
 }
 
@@ -73,12 +75,12 @@ var noon = time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
 func TestACurveWritesNoScheduleCache(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 30)
-	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
+	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 
 	if _, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p); err != nil {
 		t.Fatal(err)
 	}
-	if raw, err := s.kept.Kept.Read(t.Context(), s.vault.ID); err == nil {
+	if raw, err := s.kept.Cache.Read(t.Context(), s.vault.ID); err == nil {
 		t.Errorf("a curve wrote a cache of %d bytes", len(raw))
 	}
 }
@@ -88,31 +90,31 @@ func TestACurveWritesNoScheduleCache(t *testing.T) {
 func TestTheCurveOfMinutesCoversTheWholeRange(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 30)
-	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
+	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got.Grid) != flashcards.Points || len(got.At) != flashcards.Points {
-		t.Fatalf("the curve has %d places and %d values", len(got.Grid), len(got.At))
+	if len(got.Grid) != review.Points || len(got.Points) != review.Points {
+		t.Fatalf("the curve has %d places and %d values", len(got.Grid), len(got.Points))
 	}
 	for i := 1; i < len(got.Grid); i++ {
 		if got.Grid[i] <= got.Grid[i-1] {
 			t.Fatalf("the grid runs %v then %v", got.Grid[i-1], got.Grid[i])
 		}
-		if got.At[i].Reviews < got.At[i-1].Reviews {
+		if got.Points[i].Reviews < got.Points[i-1].Reviews {
 			t.Errorf("a longer day answers %v, a shorter one %v",
-				got.At[i].Reviews, got.At[i-1].Reviews)
+				got.Points[i].Reviews, got.Points[i-1].Reviews)
 		}
-		if got.At[i].Owed > got.At[i-1].Owed {
+		if got.Points[i].Owed > got.Points[i-1].Owed {
 			t.Errorf("a longer day leaves %d owed, a shorter one %d",
-				got.At[i].Owed, got.At[i-1].Owed)
+				got.Points[i].Owed, got.Points[i-1].Owed)
 		}
 	}
 	inRange(t, got, "now", "suggested")
-	if got.At[len(got.At)-1].Owed != 0 {
-		t.Errorf("the longest day on the grid still leaves %d owed", got.At[len(got.At)-1].Owed)
+	if got.Points[len(got.Points)-1].Owed != 0 {
+		t.Errorf("the longest day on the grid still leaves %d owed", got.Points[len(got.Points)-1].Owed)
 	}
 }
 
@@ -123,30 +125,30 @@ func TestTheShortestDayThatAsksEverythingIsSuggested(t *testing.T) {
 	// A vault deep enough that the short days of the grid are cut short by the
 	// clock and the long ones are not.
 	s := answering(t, 200)
-	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
+	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := flashcards.Nowhere
-	for i, one := range got.At {
+	want := review.Nowhere
+	for i, one := range got.Points {
 		if len(one.Closed) == 0 {
-			want = flashcards.Mark{At: i, Value: got.Grid[i]}
+			want = review.Place{Index: i, Value: got.Grid[i]}
 			break
 		}
 	}
-	if want.At <= 0 || want.At >= len(got.At)-1 {
+	if want.Index <= 0 || want.Index >= len(got.Points)-1 {
 		t.Fatalf("the first place asking everything the day holds is %d of %d",
-			want.At, len(got.At))
+			want.Index, len(got.Points))
 	}
 	if got.Suggested != want {
 		t.Errorf("%+v is suggested, and the shortest day asking everything is %+v",
 			got.Suggested, want)
 	}
 	// And the place before it is one the minutes closed.
-	if before := got.At[want.At-1]; !before.Closed.Holds(history.ClosedMinutes) {
-		t.Errorf("the place under the one suggested was closed by %v", before.Closed.Names())
+	if before := got.Points[want.Index-1]; !before.Closed.Holds(review.ClosedMinutes) {
+		t.Errorf("the place under the one suggested was closed by %v", before.Closed)
 	}
 }
 
@@ -155,35 +157,35 @@ func TestTheShortestDayThatAsksEverythingIsSuggested(t *testing.T) {
 func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 30)
-	p := history.Preset{
-		Goal: history.GoalRetention, Retention: 0.87, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+	p := review.Preset{
+		Goal: review.GoalRetention, Retention: 0.87, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 	}
 
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got.Grid) != flashcards.Points {
+	if len(got.Grid) != review.Points {
 		t.Fatalf("the curve has %d places", len(got.Grid))
 	}
-	if got.Grid[0] != history.RetentionBounds.Least ||
-		got.Grid[len(got.Grid)-1] != history.RetentionBounds.Most {
+	if got.Grid[0] != review.RetentionBounds.Least ||
+		got.Grid[len(got.Grid)-1] != review.RetentionBounds.Most {
 		t.Errorf("the grid runs from %v to %v", got.Grid[0], got.Grid[len(got.Grid)-1])
 	}
-	for i := 1; i < len(got.At); i++ {
-		if got.At[i].Minutes < got.At[i-1].Minutes-1e-9 {
+	for i := 1; i < len(got.Points); i++ {
+		if got.Points[i].Minutes < got.Points[i-1].Minutes-1e-9 {
 			t.Errorf("a target of %v costs %v minutes, one of %v costs %v",
-				got.Grid[i], got.At[i].Minutes, got.Grid[i-1], got.At[i-1].Minutes)
+				got.Grid[i], got.Points[i].Minutes, got.Grid[i-1], got.Points[i-1].Minutes)
 		}
 	}
 	inRange(t, got, "now")
 
-	if got.Suggested != flashcards.Nowhere {
+	if got.Suggested != review.Nowhere {
 		t.Errorf("a target of %v is suggested, and this goal points at none",
 			got.Suggested.Value)
 	}
 	// What the cost buys climbs the whole range, and peaks at the far end of it.
-	least, most := got.At[0].Retained, got.At[len(got.At)-1].Retained
+	least, most := got.Points[0].Retained, got.Points[len(got.Points)-1].Retained
 	if most <= least {
 		t.Errorf("the easiest target retains %v and the hardest %v", least, most)
 	}
@@ -196,20 +198,20 @@ func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 30)
-	p := history.Preset{
-		Goal: history.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
+	p := review.Preset{
+		Goal: review.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 		// A card face sent away for three weeks, so the days near the left of
 		// the range cannot learn one and the days to the right can.
-		Rule: history.RuleInterval, Interval: 21, Retention: 0.9,
+		Rule: review.RuleInterval, Interval: 21, Retention: 0.9,
 	}
 
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got.Grid) != len(got.Days) || len(got.Grid) != len(got.At) {
-		t.Fatalf("%d places, %d days, %d values", len(got.Grid), len(got.Days), len(got.At))
+	if len(got.Grid) != len(got.Days) || len(got.Grid) != len(got.Points) {
+		t.Fatalf("%d places, %d days, %d values", len(got.Grid), len(got.Days), len(got.Points))
 	}
 	if len(got.Grid) < 2 {
 		t.Fatalf("the curve has %d places", len(got.Grid))
@@ -221,16 +223,16 @@ func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 	if last := got.Grid[len(got.Grid)-1]; last <= 20 {
 		t.Errorf("the curve runs to %v days off, and the day named is 20 off", last)
 	}
-	if got.Now.Value != 20 || got.Now.Day != p.By.Format(history.Named) {
+	if got.Now.Value != 20 || got.Now.Day != p.By.Format(review.Named) {
 		t.Errorf("the preset stands at %+v, and the day it names is 20 days off", got.Now)
 	}
-	if got.Now.At <= 0 || got.Now.At >= len(got.Grid)-1 {
+	if got.Now.Index <= 0 || got.Now.Index >= len(got.Grid)-1 {
 		t.Errorf("the day named stands at place %d of %d, and is not inside the range",
-			got.Now.At, len(got.Grid))
+			got.Now.Index, len(got.Grid))
 	}
 
-	for i := 1; i < len(got.At); i++ {
-		was, now := got.At[i-1], got.At[i]
+	for i := 1; i < len(got.Points); i++ {
+		was, now := got.Points[i-1], got.Points[i]
 		// Where a day is out of reach the pace is the whole material at once,
 		// which is the same pace at every such day, and what separates their
 		// costs is how many days of review each is averaged over.
@@ -238,9 +240,9 @@ func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 			t.Errorf("%s wants %v minutes a day and %s, a day earlier, wants %v",
 				got.Days[i], now.Minutes, got.Days[i-1], was.Minutes)
 		}
-		if now.Through < was.Through-1e-9 {
+		if now.Share < was.Share-1e-9 {
 			t.Errorf("%s gets through %v and %s, a day earlier, gets through %v",
-				got.Days[i], now.Through, got.Days[i-1], was.Through)
+				got.Days[i], now.Share, got.Days[i-1], was.Share)
 		}
 	}
 	inRange(t, got, "now", "suggested")
@@ -254,12 +256,12 @@ func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 30)
-	p := history.Preset{
-		Goal: history.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
+	p := review.Preset{
+		Goal: review.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 		// A card face sent away for three weeks, so a day of the range pays for
 		// the reviews that get it there and not for the one that begins it.
-		Rule: history.RuleInterval, Interval: 21, Retention: 0.9,
+		Rule: review.RuleInterval, Interval: 21, Retention: 0.9,
 	}
 
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
@@ -267,26 +269,26 @@ func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for i, one := range got.At {
+	for i, one := range got.Points {
 		if one.Minutes <= 0 {
 			t.Errorf("%s wants %v minutes a day, and no day is got through for nothing",
 				got.Days[i], one.Minutes)
 		}
-		if i > 0 && one.Short == 0 && got.At[i-1].Short == 0 &&
-			one.Minutes > got.At[i-1].Minutes {
+		if i > 0 && one.Short == 0 && got.Points[i-1].Short == 0 &&
+			one.Minutes > got.Points[i-1].Minutes {
 			t.Errorf("%s wants %v minutes a day and %s, a day earlier, wants %v",
-				got.Days[i], one.Minutes, got.Days[i-1], got.At[i-1].Minutes)
+				got.Days[i], one.Minutes, got.Days[i-1], got.Points[i-1].Minutes)
 		}
 	}
 	// And the range holds both regimes, so the fall is said of a pace that
 	// thins and not of one that never changed.
-	if got.At[0].Short == 0 || got.At[len(got.At)-1].Short != 0 {
+	if got.Points[0].Short == 0 || got.Points[len(got.Points)-1].Short != 0 {
 		t.Errorf("the range leaves %d card faces short at one end and %d at the other",
-			got.At[0].Short, got.At[len(got.At)-1].Short)
+			got.Points[0].Short, got.Points[len(got.Points)-1].Short)
 	}
-	if got.At[0].Minutes <= got.At[len(got.At)-1].Minutes {
+	if got.Points[0].Minutes <= got.Points[len(got.Points)-1].Minutes {
 		t.Errorf("the first day wants %v minutes a day and the last wants %v",
-			got.At[0].Minutes, got.At[len(got.At)-1].Minutes)
+			got.Points[0].Minutes, got.Points[len(got.Points)-1].Minutes)
 	}
 }
 
@@ -296,33 +298,33 @@ func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
 func TestADateIsMetAtWhateverItCosts(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 30)
-	p := history.Preset{
-		Goal: history.GoalDate, By: noon.AddDate(0, 0, 25).Truncate(24 * time.Hour),
+	p := review.Preset{
+		Goal: review.GoalDate, By: noon.AddDate(0, 0, 25).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 1, ReviewsADay: 45,
 		// A card face sent away for three weeks, which twenty-five days leave
 		// room for and the days near the left of the range do not.
-		Rule: history.RuleInterval, Interval: 21, Retention: 0.9,
+		Rule: review.RuleInterval, Interval: 21, Retention: 0.9,
 	}
 
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i, one := range got.At {
+	for i, one := range got.Points {
 		if !one.Enough {
 			t.Errorf("%s is out of reach at %+v, and a date paces what it holds",
 				got.Days[i], one)
 		}
 	}
-	if got.Now.At < 0 {
+	if got.Now.Index < 0 {
 		t.Fatalf("the preset stands nowhere on its own curve: %+v", got.Now)
 	}
-	stands := got.At[got.Now.At]
-	if stands.Through < 1 || !stands.Enough || stands.Short != 0 {
+	stands := got.Points[got.Now.Index]
+	if stands.Share < 1 || !stands.Enough || stands.Short != 0 {
 		t.Errorf("the day it aims at gets through %v of the material, and %d of it stands short",
-			stands.Through, stands.Short)
+			stands.Share, stands.Short)
 	}
-	if got.Suggested == flashcards.Nowhere {
+	if got.Suggested == review.Nowhere {
 		t.Error("no day is suggested, and the day it aims at is through the material")
 	}
 }
@@ -332,8 +334,8 @@ func TestADateIsMetAtWhateverItCosts(t *testing.T) {
 func TestADayThatHasPassedHasNoCurve(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 4)
-	p := history.Preset{
-		Goal: history.GoalDate, By: noon.AddDate(0, 0, -3).Truncate(24 * time.Hour),
+	p := review.Preset{
+		Goal: review.GoalDate, By: noon.AddDate(0, 0, -3).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 	}
 
@@ -341,7 +343,7 @@ func TestADayThatHasPassedHasNoCurve(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got.Grid) != 0 || got.Now != flashcards.Nowhere || got.Suggested != flashcards.Nowhere {
+	if len(got.Grid) != 0 || got.Now != review.Nowhere || got.Suggested != review.Nowhere {
 		t.Errorf("curve = %+v, want nothing", got)
 	}
 }
@@ -351,8 +353,8 @@ func TestADayThatHasPassedHasNoCurve(t *testing.T) {
 func TestTheCurveIsWorkedOutWithTheLoadAndAnEvenLoad(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 30)
-	p := history.Preset{
-		Goal: history.GoalRetention, Retention: 0.9,
+	p := review.Preset{
+		Goal: review.GoalRetention, Retention: 0.9,
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 	}
 
@@ -364,17 +366,17 @@ func TestTheCurveIsWorkedOutWithTheLoadAndAnEvenLoad(t *testing.T) {
 	light.Load = map[time.Weekday]int{time.Wednesday: 50, time.Sunday: 0}
 	even.EvenLoad = true
 
-	for name, one := range map[string]history.Preset{"a light week": light, "an even load": even} {
+	for name, one := range map[string]review.Preset{"a light week": light, "an even load": even} {
 		got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", one)
 		if err != nil {
 			t.Fatal(err)
 		}
 		inRange(t, got, "now")
-		if got.Now.At != flat.Now.At {
+		if got.Now.Index != flat.Now.Index {
 			t.Fatalf("with %s the preset stands at place %d, and without at %d",
-				name, got.Now.At, flat.Now.At)
+				name, got.Now.Index, flat.Now.Index)
 		}
-		one, was := got.At[got.Now.At], flat.At[flat.Now.At]
+		one, was := got.Points[got.Now.Index], flat.Points[flat.Now.Index]
 		if one.Reviews == was.Reviews && one.Minutes == was.Minutes &&
 			one.Retained == was.Retained {
 			t.Errorf("with %s the preset comes to %+v, the same as a preset keeping neither",
@@ -388,7 +390,7 @@ func TestTheCurveIsWorkedOutWithTheLoadAndAnEvenLoad(t *testing.T) {
 func TestACurveIsOverTheDecksPointingAtThePreset(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 30)
-	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
+	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 
 	mine, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
 	if err != nil {
@@ -401,9 +403,9 @@ func TestACurveIsOverTheDecksPointingAtThePreset(t *testing.T) {
 
 	// Thirty cards of a one-faced stencil against one, so the day the load
 	// wants is not the same day.
-	if mine.At[0].Reviews <= rest.At[0].Reviews {
+	if mine.Points[0].Reviews <= rest.Points[0].Reviews {
 		t.Errorf("the preset's deck answers %v a day and the deck naming none answers %v",
-			mine.At[0].Reviews, rest.At[0].Reviews)
+			mine.Points[0].Reviews, rest.Points[0].Reviews)
 	}
 }
 
@@ -411,7 +413,7 @@ func TestACurveIsOverTheDecksPointingAtThePreset(t *testing.T) {
 // decks hold nothing is told apart from one nothing points at.
 func TestACurveCarriesTheCardFacesUnderThePreset(t *testing.T) {
 	t.Parallel()
-	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
+	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 
 	s := answering(t, 30)
 	full, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
@@ -444,7 +446,7 @@ func TestWorkingOutACurveWritesNothingToTheVault(t *testing.T) {
 	s := answering(t, 4)
 	before := read(t, s.vault, "Sanskrit.md")
 	deck := read(t, s.vault, "decks/Roots.md")
-	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
+	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 
 	if _, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p); err != nil {
 		t.Fatal(err)
@@ -459,29 +461,29 @@ func TestWorkingOutACurveWritesNothingToTheVault(t *testing.T) {
 
 // inRange says the two marks fall on the curve, and that each mark named
 // stands on it at all.
-func inRange(t *testing.T, c flashcards.Curve, stands ...string) {
+func inRange(t *testing.T, c review.Curve, stands ...string) {
 	t.Helper()
-	marks := map[string]flashcards.Mark{"now": c.Now, "suggested": c.Suggested}
+	marks := map[string]review.Place{"now": c.Now, "suggested": c.Suggested}
 	for _, name := range stands {
-		if marks[name] == flashcards.Nowhere {
+		if marks[name] == review.Nowhere {
 			t.Errorf("the %s mark stands nowhere on a curve of %d places", name, len(c.Grid))
 		}
 	}
 	for name, mark := range marks {
-		if mark == flashcards.Nowhere {
+		if mark == review.Nowhere {
 			continue
 		}
-		if mark.At < 0 || mark.At >= len(c.Grid) {
-			t.Errorf("the %s mark is at place %d of %d", name, mark.At, len(c.Grid))
+		if mark.Index < 0 || mark.Index >= len(c.Grid) {
+			t.Errorf("the %s mark is at place %d of %d", name, mark.Index, len(c.Grid))
 			continue
 		}
 		// A mark stands on a place of the grid, so the figures a person reads
 		// under it are the figures of the setting they are standing at.
-		if mark.Value != c.Grid[mark.At] {
+		if mark.Value != c.Grid[mark.Index] {
 			t.Errorf("the %s mark is at %v and the place it names is %v",
-				name, mark.Value, c.Grid[mark.At])
+				name, mark.Value, c.Grid[mark.Index])
 		}
-		if c.Goal == history.GoalDate && !strings.Contains(mark.Day, "-") {
+		if c.Goal == review.GoalDate && !strings.Contains(mark.Day, "-") {
 			t.Errorf("the %s mark names no day: %q", name, mark.Day)
 		}
 	}
@@ -494,8 +496,8 @@ func TestANearDateStillLeavesRoomToGiveYourselfLonger(t *testing.T) {
 	s := opened(t, studied(30))
 	// The day after tomorrow, which is the shortest range a person could have
 	// left themselves with.
-	p := history.Preset{
-		Goal: history.GoalDate, By: noon.AddDate(0, 0, 2).Truncate(24 * time.Hour),
+	p := review.Preset{
+		Goal: review.GoalDate, By: noon.AddDate(0, 0, 2).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 	}
 
@@ -508,12 +510,12 @@ func TestANearDateStillLeavesRoomToGiveYourselfLonger(t *testing.T) {
 	if last := got.Grid[len(got.Grid)-1]; last < 30 {
 		t.Errorf("a date two days off is a range of %v days, and the material is 30 cards", last)
 	}
-	if got.Now.At < 0 {
+	if got.Now.Index < 0 {
 		t.Errorf("the day named stands nowhere on the range: %+v", got.Now)
 	}
-	if got.At[got.Now.At].Minutes <= got.At[len(got.At)-1].Minutes {
+	if got.Points[got.Now.Index].Minutes <= got.Points[len(got.Points)-1].Minutes {
 		t.Errorf("the day named costs %v minutes a day and the furthest day %v",
-			got.At[got.Now.At].Minutes, got.At[len(got.At)-1].Minutes)
+			got.Points[got.Now.Index].Minutes, got.Points[len(got.Points)-1].Minutes)
 	}
 }
 
@@ -526,8 +528,8 @@ func TestANearDateStillLeavesRoomToGiveYourselfLonger(t *testing.T) {
 func TestABacklogIsMeasuredOverTheSameHorizonOnEveryGoal(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 30)
-	p := history.Preset{
-		Goal: history.GoalDate, By: noon.AddDate(0, 0, 3).Truncate(24 * time.Hour),
+	p := review.Preset{
+		Goal: review.GoalDate, By: noon.AddDate(0, 0, 3).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45, Retention: 0.9,
 	}
 
@@ -538,23 +540,23 @@ func TestABacklogIsMeasuredOverTheSameHorizonOnEveryGoal(t *testing.T) {
 	if got.Grid[0] != 1 {
 		t.Fatalf("the curve begins %v days off", got.Grid[0])
 	}
-	for i, one := range got.At {
-		if len(one.Backlog) < history.Ahead {
+	for i, one := range got.Points {
+		if len(one.Backlog) < review.Ahead {
 			t.Errorf("%v days off carries %d days of backlog, and a clearing is asked "+
-				"over %d", got.Grid[i], len(one.Backlog), history.Ahead)
+				"over %d", got.Grid[i], len(one.Backlog), review.Ahead)
 		}
 	}
 }
 
-// A day at none of the load is no sitting, so the curve draws the day after it.
+// A day at none of the load is no session, so the curve draws the day after it.
 //
 // A person who has just given today's weekday nothing is the person most in
 // need of the picture, and a picture reading nought at every place of the range
 // says nothing about the setting it is there to steer.
-func TestACurveOnADayAtNoneOfTheLoadDrawsTheNextSitting(t *testing.T) {
+func TestACurveOnADayAtNoneOfTheLoadDrawsTheNextSession(t *testing.T) {
 	t.Parallel()
 	s := opened(t, studied(30))
-	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
+	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 	if noon.Weekday() != time.Monday {
 		t.Fatalf("the day these curves are drawn on is a %v", noon.Weekday())
 	}
@@ -564,10 +566,10 @@ func TestACurveOnADayAtNoneOfTheLoadDrawsTheNextSitting(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.At[0].Reviews == 0 {
+	if got.Points[0].Reviews == 0 {
 		t.Error("the shortest day of the range draws nothing")
 	}
-	if first, last := got.At[0].Reviews, got.At[len(got.At)-1].Reviews; !(last > first) {
+	if first, last := got.Points[0].Reviews, got.Points[len(got.Points)-1].Reviews; !(last > first) {
 		t.Errorf("the range runs from %g cards to %g, and says nothing about the setting",
 			first, last)
 	}
@@ -578,7 +580,7 @@ func TestACurveOnADayAtNoneOfTheLoadDrawsTheNextSitting(t *testing.T) {
 func TestADayAtNoneOfTheLoadAwayFromTodayLeavesTheCurve(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 30)
-	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
+	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 	if noon.Weekday() == time.Saturday {
 		t.Fatal("the day these curves are drawn on is the day being given nothing")
 	}
@@ -594,11 +596,11 @@ func TestADayAtNoneOfTheLoadAwayFromTodayLeavesTheCurve(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for i := range got.At {
-		if got.At[i].Reviews != was.At[i].Reviews || got.At[i].Minutes != was.At[i].Minutes {
+	for i := range got.Points {
+		if got.Points[i].Reviews != was.Points[i].Reviews || got.Points[i].Minutes != was.Points[i].Minutes {
 			t.Errorf("at %g the curve draws %g cards in %g minutes, and drew %g in %g",
-				got.Grid[i], got.At[i].Reviews, got.At[i].Minutes,
-				was.At[i].Reviews, was.At[i].Minutes)
+				got.Grid[i], got.Points[i].Reviews, got.Points[i].Minutes,
+				was.Points[i].Reviews, was.Points[i].Minutes)
 		}
 	}
 }
@@ -612,10 +614,10 @@ func TestADayAtNoneOfTheLoadAwayFromTodayLeavesTheCurve(t *testing.T) {
 func TestACurveOfADateSaysWhatNoPaceReaches(t *testing.T) {
 	t.Parallel()
 	s := opened(t, studied(30))
-	p := history.Preset{
-		Goal: history.GoalDate, By: noon.AddDate(0, 0, 3).Truncate(24 * time.Hour),
+	p := review.Preset{
+		Goal: review.GoalDate, By: noon.AddDate(0, 0, 3).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
-		Rule: history.RuleInterval, Interval: 21,
+		Rule: review.RuleInterval, Interval: 21,
 	}
 
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
@@ -625,37 +627,37 @@ func TestACurveOfADateSaysWhatNoPaceReaches(t *testing.T) {
 	if got.Cards == 0 {
 		t.Fatal("the preset schedules nothing, and there is nothing to fall short")
 	}
-	if first := got.At[0]; first.Short != got.Cards {
+	if first := got.Points[0]; first.Short != got.Cards {
 		t.Errorf("%s leaves %d of the %d card faces short, and a day is no time to learn any",
 			got.Days[0], first.Short, got.Cards)
 	}
-	if last := got.At[len(got.At)-1]; last.Short != 0 {
+	if last := got.Points[len(got.Points)-1]; last.Short != 0 {
 		t.Errorf("%s leaves %d card faces short, and it is %v days off",
 			got.Days[len(got.Days)-1], last.Short, got.Grid[len(got.Grid)-1])
 	}
-	for i := 1; i < len(got.At); i++ {
-		if got.At[i].Short > got.At[i-1].Short {
+	for i := 1; i < len(got.Points); i++ {
+		if got.Points[i].Short > got.Points[i-1].Short {
 			t.Errorf("%s leaves %d short and %s, a day earlier, leaves %d",
-				got.Days[i], got.At[i].Short, got.Days[i-1], got.At[i-1].Short)
+				got.Days[i], got.Points[i].Short, got.Days[i-1], got.Points[i-1].Short)
 		}
 	}
 	// A day nothing can be learned by is met by the pace all the same: every
 	// card face that can be learned by it is, and there are none.
-	if !got.At[0].Enough {
+	if !got.Points[0].Enough {
 		t.Error("a day no card face can be learned by is not met by the pace that reaches every one that can")
 	}
 }
 
 // learnedAt is what a curve of these settings says stands learned, at every
 // place of it, without repeating a value.
-func learnedAt(t *testing.T, s vaulted, p history.Preset) []int {
+func learnedAt(t *testing.T, s vaulted, p review.Preset) []int {
 	t.Helper()
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var out []int
-	for _, one := range got.At {
+	for _, one := range got.Points {
 		if len(out) == 0 || out[len(out)-1] != one.Learned {
 			out = append(out, one.Learned)
 		}
@@ -681,10 +683,10 @@ func TestWhatStandsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 		}
 	}
 
-	base := history.Defaults()
-	base.Goal, base.MinutesADay = history.GoalMinutes, 20
+	base := review.Defaults()
+	base.Goal, base.MinutesADay = review.GoalMinutes, 20
 	base.NewADay, base.ReviewsADay = 8, 45
-	base.Rule, base.Interval = history.RuleInterval, 21
+	base.Rule, base.Interval = review.RuleInterval, 21
 
 	standing := learnedAt(t, s, base)
 	if len(standing) != 1 || standing[0] == 0 {
@@ -693,20 +695,20 @@ func TestWhatStandsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 
 	for _, one := range []struct {
 		what  string
-		alter func(p *history.Preset)
+		alter func(p *review.Preset)
 	}{
-		{"a budget spent on every showing", func(p *history.Preset) {
-			p.Counts = history.CountsShows
+		{"a budget spent on every showing", func(p *review.Preset) {
+			p.Counts = review.BudgetUnitShows
 		}},
-		{"a day spent on new cards first", func(p *history.Preset) { p.Backlog = 0 }},
-		{"an even load off", func(p *history.Preset) { p.EvenLoad = false }},
-		{"a Saturday at nothing", func(p *history.Preset) {
+		{"a day spent on new cards first", func(p *review.Preset) { p.Backlog = 0 }},
+		{"an even load off", func(p *review.Preset) { p.EvenLoad = false }},
+		{"a Saturday at nothing", func(p *review.Preset) {
 			p.Load = map[time.Weekday]int{time.Saturday: 0}
 		}},
-		{"no new cards a day", func(p *history.Preset) { p.NewADay = 0 }},
-		{"one review a day", func(p *history.Preset) { p.ReviewsADay = 1 }},
-		{"a minute a day", func(p *history.Preset) { p.MinutesADay = 1 }},
-		{"a goal of retention", func(p *history.Preset) { p.Goal = history.GoalRetention }},
+		{"no new cards a day", func(p *review.Preset) { p.NewADay = 0 }},
+		{"one review a day", func(p *review.Preset) { p.ReviewsADay = 1 }},
+		{"a minute a day", func(p *review.Preset) { p.MinutesADay = 1 }},
+		{"a goal of retention", func(p *review.Preset) { p.Goal = review.GoalRetention }},
 	} {
 		p := base
 		one.alter(&p)
@@ -717,12 +719,12 @@ func TestWhatStandsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 
 	// And what does move it: the rule, and the threshold that rule reads.
 	other := base
-	other.Rule = history.RuleRetention
+	other.Rule = review.RuleRetention
 	if got := learnedAt(t, s, other); reflect.DeepEqual(got, standing) {
 		t.Errorf("a material months past its answers stands %v learned under both rules", got)
 	}
 	tighter := base
-	tighter.Interval = int(history.IntervalBounds.Most)
+	tighter.Interval = int(review.IntervalBounds.Most)
 	if got := learnedAt(t, s, tighter); got[0] >= standing[0] {
 		t.Errorf("an interval of a year learns %v of what an interval of three weeks learns %v",
 			got, standing)
@@ -745,11 +747,11 @@ func TestTheDayTheMaterialIsLearnedIsDrawnUnderMinutesAndRetention(t *testing.T)
 		}
 	}
 
-	p := history.Defaults()
+	p := review.Defaults()
 	p.MinutesADay, p.NewADay, p.ReviewsADay = 20, 4, 60
-	p.Rule, p.Interval = history.RuleInterval, 21
+	p.Rule, p.Interval = review.RuleInterval, 21
 
-	for _, goal := range []history.Goal{history.GoalMinutes, history.GoalRetention} {
+	for _, goal := range []review.Goal{review.GoalMinutes, review.GoalRetention} {
 		one := p
 		one.Goal = goal
 		got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", one)
@@ -757,8 +759,8 @@ func TestTheDayTheMaterialIsLearnedIsDrawnUnderMinutesAndRetention(t *testing.T)
 			t.Fatal(err)
 		}
 		named := false
-		for i, place := range got.At {
-			if place.Learns == history.LearnsUnasked {
+		for i, place := range got.Points {
+			if place.Learns == review.LearnsUnasked {
 				t.Errorf("steered by its %s, %v names no day the material is learned",
 					goal, got.Grid[i])
 			}
@@ -772,14 +774,14 @@ func TestTheDayTheMaterialIsLearnedIsDrawnUnderMinutesAndRetention(t *testing.T)
 	}
 
 	dated := p
-	dated.Goal = history.GoalDate
+	dated.Goal = review.GoalDate
 	dated.By = noon.AddDate(0, 0, 40).Truncate(24 * time.Hour)
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", dated)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i, place := range got.At {
-		if place.Learns != history.LearnsUnasked {
+	for i, place := range got.Points {
+		if place.Learns != review.LearnsUnasked {
 			t.Errorf("aiming at a day, %v names day %d as well", got.Grid[i], place.Learns)
 		}
 	}
@@ -794,26 +796,26 @@ func TestTheMarkOfADateStandsOnTheDayTheFileNames(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 30)
 	for _, days := range []int{1, 2, 7, 14, 21, 30, 90, 365} {
-		p := history.Preset{
-			Goal: history.GoalDate, By: noon.AddDate(0, 0, days).Truncate(24 * time.Hour),
+		p := review.Preset{
+			Goal: review.GoalDate, By: noon.AddDate(0, 0, days).Truncate(24 * time.Hour),
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
-			Rule: history.RuleRetention, Retention: 0.9,
+			Rule: review.RuleRetention, Retention: 0.9,
 		}
 
 		got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got.Now.At < 0 {
+		if got.Now.Index < 0 {
 			t.Fatalf("a date %d days off stands nowhere on its own range", days)
 		}
-		if got.Days[got.Now.At] != got.Now.Day {
+		if got.Days[got.Now.Index] != got.Now.Day {
 			t.Errorf("a date %d days off is marked at %s and the place under the mark is %s",
-				days, got.Now.Day, got.Days[got.Now.At])
+				days, got.Now.Day, got.Days[got.Now.Index])
 		}
-		if got.Grid[got.Now.At] != got.Now.Value {
+		if got.Grid[got.Now.Index] != got.Now.Value {
 			t.Errorf("a date %d days off is marked at %v days and the place under the mark "+
-				"is %v days", days, got.Now.Value, got.Grid[got.Now.At])
+				"is %v days", days, got.Now.Value, got.Grid[got.Now.Index])
 		}
 		// The range still begins tomorrow and still runs past the day named.
 		if got.Grid[0] != 1 {
@@ -836,22 +838,22 @@ func TestTheMarkOfADateStandsOnTheDayTheFileNames(t *testing.T) {
 func TestAPlaceOfADateIsReadOnTheDayItNames(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 30)
-	p := history.Preset{
-		Goal: history.GoalDate, By: noon.AddDate(0, 0, 30).Truncate(24 * time.Hour),
+	p := review.Preset{
+		Goal: review.GoalDate, By: noon.AddDate(0, 0, 30).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
-		Rule: history.RuleRetention, Retention: 0.9,
+		Rule: review.RuleRetention, Retention: 0.9,
 	}
 
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Now.At < 0 {
+	if got.Now.Index < 0 {
 		t.Fatal("the preset stands nowhere on its own curve")
 	}
-	stands := got.At[got.Now.At]
-	if stands.Through < 1 {
-		t.Fatalf("the day it aims at gets through %v of the material", stands.Through)
+	stands := got.Points[got.Now.Index]
+	if stands.Share < 1 {
+		t.Fatalf("the day it aims at gets through %v of the material", stands.Share)
 	}
 	if stands.Owed != 0 {
 		t.Errorf("the day it aims at is through the material and leaves %d card faces owed",
@@ -872,36 +874,36 @@ func TestAPlaceOfADateIsReadOnTheDayItNames(t *testing.T) {
 func TestAPlaceOfADateIsOneRun(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 30)
-	p := history.Preset{
-		Goal: history.GoalDate, By: noon.AddDate(0, 0, 5).Truncate(24 * time.Hour),
+	p := review.Preset{
+		Goal: review.GoalDate, By: noon.AddDate(0, 0, 5).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
-		Rule: history.RuleRetention, Retention: 0.9,
+		Rule: review.RuleRetention, Retention: 0.9,
 	}
 
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i, one := range got.At {
-		if i > 0 && got.At[i-1].Enough && !one.Enough {
+	for i, one := range got.Points {
+		if i > 0 && got.Points[i-1].Enough && !one.Enough {
 			t.Errorf("%s is got through and %s, a day later, is not",
 				got.Days[i-1], got.Days[i])
 		}
 	}
 }
 
-// A day at none of the load is no sitting under a date either, so the curve
+// A day at none of the load is no session under a date either, so the curve
 // draws the day after it.
-func TestACurveOfADateOnADayAtNoneOfTheLoadDrawsTheNextSitting(t *testing.T) {
+func TestACurveOfADateOnADayAtNoneOfTheLoadDrawsTheNextSession(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 30)
 	if noon.Weekday() != time.Monday {
 		t.Fatalf("the day these curves are drawn on is a %v", noon.Weekday())
 	}
-	p := history.Preset{
-		Goal: history.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
+	p := review.Preset{
+		Goal: review.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
-		Rule: history.RuleRetention, Retention: 0.9,
+		Rule: review.RuleRetention, Retention: 0.9,
 		Load: map[time.Weekday]int{time.Monday: 0},
 	}
 
@@ -909,7 +911,7 @@ func TestACurveOfADateOnADayAtNoneOfTheLoadDrawsTheNextSitting(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i, one := range got.At {
+	for i, one := range got.Points {
 		if one.Reviews == 0 {
 			t.Fatalf("%s draws nothing for the day of review it names", got.Days[i])
 		}
@@ -924,27 +926,27 @@ func TestACurveOfADateOnADayAtNoneOfTheLoadDrawsTheNextSitting(t *testing.T) {
 func TestTheDaySuggestedForADateGetsThroughTheMaterial(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 30)
-	p := history.Preset{
-		Goal: history.GoalDate, By: noon.AddDate(0, 0, 25).Truncate(24 * time.Hour),
+	p := review.Preset{
+		Goal: review.GoalDate, By: noon.AddDate(0, 0, 25).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
-		Rule: history.RuleInterval, Interval: 21, Retention: 0.9,
+		Rule: review.RuleInterval, Interval: 21, Retention: 0.9,
 	}
 
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Suggested == flashcards.Nowhere {
+	if got.Suggested == review.Nowhere {
 		t.Fatal("no day is suggested, and the range holds days the material is through by")
 	}
-	stands := got.At[got.Suggested.At]
-	if stands.Short != 0 || !stands.Enough || stands.Through < 1 {
+	stands := got.Points[got.Suggested.Index]
+	if stands.Short != 0 || !stands.Enough || stands.Share < 1 {
 		t.Errorf("%s is suggested, and it leaves %d card faces out of reach and gets "+
-			"through %v of the material", got.Suggested.Day, stands.Short, stands.Through)
+			"through %v of the material", got.Suggested.Day, stands.Short, stands.Share)
 	}
 	// And it is the soonest such day.
-	for i, one := range got.At {
-		if i < got.Suggested.At && one.Short == 0 && one.Enough &&
+	for i, one := range got.Points {
+		if i < got.Suggested.Index && one.Short == 0 && one.Enough &&
 			one.Minutes <= float64(p.MinutesADay) {
 			t.Errorf("%s is suggested and %s, earlier, is through the material too",
 				got.Suggested.Day, got.Days[i])
@@ -959,13 +961,13 @@ func TestTheDaySuggestedForADateGetsThroughTheMaterial(t *testing.T) {
 // over instead, with no count and no minutes to close the day.
 func TestADateNamingNoDaySchedulesNothing(t *testing.T) {
 	t.Parallel()
-	p := history.Preset{
-		Goal: history.GoalDate, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+	p := review.Preset{
+		Goal: review.GoalDate, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 	}
 	if !p.Paused(today, noon) {
 		t.Error("a preset aiming at a day and naming none schedules something")
 	}
-	admits := p.Admits(today, noon, history.Spent{}, history.Left{New: 30})
+	admits := p.Admits(today, noon, review.Spent{}, 30, 0)
 	if !admits.Paused() {
 		t.Errorf("the day of a preset aiming at no day admits %+v", admits)
 	}
@@ -980,10 +982,10 @@ func TestADateNamingNoDaySchedulesNothing(t *testing.T) {
 func TestADateFurtherOffThanTheProjectionReachesStillDrawsARange(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 2)
-	p := history.Preset{
-		Goal: history.GoalDate, By: noon.AddDate(20, 0, 0).Truncate(24 * time.Hour),
+	p := review.Preset{
+		Goal: review.GoalDate, By: noon.AddDate(20, 0, 0).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
-		Rule: history.RuleRetention, Retention: 0.9,
+		Rule: review.RuleRetention, Retention: 0.9,
 	}
 
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
@@ -993,7 +995,7 @@ func TestADateFurtherOffThanTheProjectionReachesStillDrawsARange(t *testing.T) {
 	if len(got.Grid) == 0 {
 		t.Fatal("a day twenty years off draws no range at all, as a day already past does")
 	}
-	if got.Now != flashcards.Nowhere {
+	if got.Now != review.Nowhere {
 		t.Errorf("a day twenty years off stands at %+v on a range reaching %v days",
 			got.Now, got.Grid[len(got.Grid)-1])
 	}
@@ -1002,13 +1004,13 @@ func TestADateFurtherOffThanTheProjectionReachesStillDrawsARange(t *testing.T) {
 // The curve opens on the day a person is already partway through.
 //
 // The first place of a run is a real day and not a fresh one: what it draws is
-// what a sitting opened now would hand over. An evening re-opening of the tab
+// what a session opened now would hand over. An evening re-opening of the tab
 // otherwise draws a day already spent as a day still to come.
 func TestACurveDrawsWhatIsLeftOfTheDay(t *testing.T) {
 	t.Parallel()
 	s := opened(t, studied(30))
 	// The preset the deck points at says what the curve is asked for, so the
-	// sitting and the picture are held to one day.
+	// session and the picture are held to one day.
 	write(t, s, "Sanskrit.md", "---\ntype: preset\ngoal: minutes_a_day\n"+
 		"minutes_a_day: 3\nnew_a_day: 0\nreviews_a_day: 0\n---\n\n# Sanskrit\n")
 	// Every card face owed today, at six seconds an answer.
@@ -1016,8 +1018,8 @@ func TestACurveDrawsWhatIsLeftOfTheDay(t *testing.T) {
 	for i := range 30 {
 		answer(t, before, mark(i), 6*time.Second)
 	}
-	p := history.Preset{
-		Goal: history.GoalMinutes, MinutesADay: 3, NewADay: 0, ReviewsADay: 0,
+	p := review.Preset{
+		Goal: review.GoalMinutes, MinutesADay: 3, NewADay: 0, ReviewsADay: 0,
 	}
 
 	fresh, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
@@ -1034,14 +1036,14 @@ func TestACurveDrawsWhatIsLeftOfTheDay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if after.At[after.Now.At].Reviews >= fresh.At[fresh.Now.At].Reviews {
+	if after.Points[after.Now.Index].Reviews >= fresh.Points[fresh.Now.Index].Reviews {
 		t.Errorf("a day with a minute of it spent draws %v cards and an unspent day %v",
-			after.At[after.Now.At].Reviews, fresh.At[fresh.Now.At].Reviews)
+			after.Points[after.Now.Index].Reviews, fresh.Points[fresh.Now.Index].Reviews)
 	}
 	sat := s.under(t, today, noon, "Sanskrit.md")
-	if got := float64(len(sat.Asked)); got != after.At[after.Now.At].Reviews {
-		t.Errorf("the sitting offers %v card faces and the curve draws %v",
-			got, after.At[after.Now.At].Reviews)
+	if got := float64(len(sat.Queue)); got != after.Points[after.Now.Index].Reviews {
+		t.Errorf("the session offers %v card faces and the curve draws %v",
+			got, after.Points[after.Now.Index].Reviews)
 	}
 }
 
@@ -1060,35 +1062,35 @@ func TestTheMarkStandsOnTheSettingThePresetHolds(t *testing.T) {
 	}
 
 	for _, minutes := range []int{1, 3, 15, 20, 200} {
-		p := history.Preset{
-			Goal: history.GoalMinutes, MinutesADay: minutes, NewADay: 8, ReviewsADay: 45,
+		p := review.Preset{
+			Goal: review.GoalMinutes, MinutesADay: minutes, NewADay: 8, ReviewsADay: 45,
 		}
 		got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got.Now.At < 0 {
+		if got.Now.Index < 0 {
 			t.Errorf("a day of %d minutes stands nowhere on its own curve", minutes)
 			continue
 		}
-		if got.Grid[got.Now.At] != float64(minutes) {
+		if got.Grid[got.Now.Index] != float64(minutes) {
 			t.Errorf("a day of %d minutes is marked at the place drawing %v minutes",
-				minutes, got.Grid[got.Now.At])
+				minutes, got.Grid[got.Now.Index])
 		}
 	}
 
 	for _, share := range []float64{0.71, 0.87, 0.9, 0.98} {
-		p := history.Preset{
-			Goal: history.GoalRetention, Retention: share,
+		p := review.Preset{
+			Goal: review.GoalRetention, Retention: share,
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 		}
 		got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got.Now.At < 0 || got.Grid[got.Now.At] != share {
+		if got.Now.Index < 0 || got.Grid[got.Now.Index] != share {
 			t.Errorf("a target of %v is marked at place %d, which draws %v",
-				share, got.Now.At, got.Grid[got.Now.At])
+				share, got.Now.Index, got.Grid[got.Now.Index])
 		}
 	}
 }
@@ -1099,21 +1101,21 @@ func TestACurveCarriesTheVerdictOnTheSettingsItWasDrawnUnder(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 30)
 	for _, one := range []struct {
-		why history.Stopped
-		p   history.Preset
+		why review.StopReason
+		p   review.Preset
 	}{
-		{history.StoppedNothing, history.Preset{
-			Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+		{review.StoppedNothing, review.Preset{
+			Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 		}},
-		{history.StoppedNoMinutes, history.Preset{
-			Goal: history.GoalMinutes, MinutesADay: 0, NewADay: 8, ReviewsADay: 45,
+		{review.StoppedNoMinutes, review.Preset{
+			Goal: review.GoalMinutes, MinutesADay: 0, NewADay: 8, ReviewsADay: 45,
 		}},
-		{history.StoppedNoCards, history.Preset{
-			Goal: history.GoalRetention, Retention: 0.9,
+		{review.StoppedNoCards, review.Preset{
+			Goal: review.GoalRetention, Retention: 0.9,
 		}},
-		{history.StoppedNoDay, history.Preset{Goal: history.GoalDate}},
-		{history.StoppedPastDay, history.Preset{
-			Goal: history.GoalDate, By: noon.AddDate(0, 0, -3).Truncate(24 * time.Hour),
+		{review.StoppedNoDay, review.Preset{Goal: review.GoalDate}},
+		{review.StoppedPastDay, review.Preset{
+			Goal: review.GoalDate, By: noon.AddDate(0, 0, -3).Truncate(24 * time.Hour),
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 		}},
 	} {
@@ -1137,8 +1139,8 @@ func TestACurveCarriesTheVerdictOnTheSettingsItWasDrawnUnder(t *testing.T) {
 func TestOnlyADateDrawsAPlaceAsFallingShort(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 30)
-	for _, goal := range []history.Goal{history.GoalMinutes, history.GoalRetention} {
-		p := history.Preset{
+	for _, goal := range []review.Goal{review.GoalMinutes, review.GoalRetention} {
+		p := review.Preset{
 			Goal: goal, MinutesADay: 20, NewADay: 8, ReviewsADay: 45, Retention: 0.9,
 		}
 
@@ -1146,7 +1148,7 @@ func TestOnlyADateDrawsAPlaceAsFallingShort(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for i, one := range got.At {
+		for i, one := range got.Points {
 			if !one.Enough {
 				t.Errorf("%s draws place %d as one the budget does not get through", goal, i)
 				break
@@ -1165,16 +1167,16 @@ func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
 	s := answering(t, 4)
 	for _, one := range []struct {
 		named string
-		said  history.Preset
+		said  review.Preset
 	}{
-		{"a chance of recall past one", history.Preset{
-			Goal: history.GoalRetention, NewADay: 8, ReviewsADay: 45, Retention: 5,
+		{"a chance of recall past one", review.Preset{
+			Goal: review.GoalRetention, NewADay: 8, ReviewsADay: 45, Retention: 5,
 		}},
-		{"a chance of recall at nothing", history.Preset{
-			Goal: history.GoalRetention, NewADay: 8, ReviewsADay: 45,
+		{"a chance of recall at nothing", review.Preset{
+			Goal: review.GoalRetention, NewADay: 8, ReviewsADay: 45,
 		}},
-		{"a day longer than one runs", history.Preset{
-			Goal: history.GoalMinutes, MinutesADay: 1 << 30, NewADay: 8, ReviewsADay: 45,
+		{"a day longer than one runs", review.Preset{
+			Goal: review.GoalMinutes, MinutesADay: 1 << 30, NewADay: 8, ReviewsADay: 45,
 		}},
 	} {
 		_, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", one.said)
@@ -1184,17 +1186,17 @@ func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
 	}
 }
 
-// A build carrying no index reaches no deck, and answers ErrUnread.
+// A build carrying no index reaches no deck, and answers ErrNotCarried.
 func TestABuildWithNoIndexDrawsNoCurve(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 4)
 	u := s.curves(noon)
-	u.Standings.Notes = nil
+	u.CardFaces.Notes = nil
 
-	p := history.Preset{
-		Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+	p := review.Preset{
+		Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 	}
-	if _, err := u.Execute(t.Context(), s.vault, "Sanskrit.md", p); !errors.Is(err, flashcards.ErrUnread) {
+	if _, err := u.Execute(t.Context(), s.vault, "Sanskrit.md", p); !errors.Is(err, flashcards.ErrNotCarried) {
 		t.Errorf("a build with no index answered %v", err)
 	}
 }

@@ -1,13 +1,7 @@
 package recognition
 
 import (
-	"context"
-	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
-
-	ort "github.com/getcharzp/onnxruntime_purego"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 )
 
 // Config is what a person may change about reading a scanned page: which
@@ -31,19 +25,22 @@ type Config struct {
 	Layout    LayoutModel     `json:"layout"`
 	Detect    DetectModel     `json:"detect"`
 	Recognise RecogniserModel `json:"recognise"`
-	Page      PageReading     `json:"page"`
 	Regions   RegionKinds     `json:"regions"`
 
-	// Fetching is told how far a download has got, when anything is listening.
+	// Progress is told how far a download has got, when anything is listening.
 	// It is not a setting and is not written down: it is how the wait reaches
 	// whoever is watching it.
-	Fetching func(what string, done, total int64) `json:"-"`
+	Progress func(what string, done, total int64) `json:"-"`
 }
 
-// say reports how far a download has got, and does nothing when nobody asked.
-func (c Config) say(what string, done, total int64) {
-	if c.Fetching != nil {
-		c.Fetching(what, done, total)
+// settings are what the runtime and the models are found by.
+func (c Config) settings() onnxruntime.Settings {
+	return onnxruntime.Settings{
+		Section:  "indexing.recognition",
+		Runtime:  c.Runtime,
+		Dir:      c.Dir,
+		Download: c.Download,
+		Fetching: c.Progress,
 	}
 }
 
@@ -84,7 +81,8 @@ type DetectModel struct {
 	Minimum float32 `json:"minimum"`
 }
 
-// RecogniserModel reads what a line says.
+// RecogniserModel reads what a line says: which model, at what size a page and
+// a line reach it, and how much of the machine it takes.
 type RecogniserModel struct {
 	// Name is where this model is fetched from.
 	Name string `json:"name"`
@@ -98,17 +96,13 @@ type RecogniserModel struct {
 	// the model. A number that disagrees with the model is refused.
 	Classes int64 `json:"classes"`
 
-	// Height is what a line is scaled to before it is read.
-	Height int `json:"height"`
-	// Sessions is how many lines are read at once.
-	Sessions int `json:"sessions"`
-}
-
-// PageReading is how a page becomes an image, and how much of the machine one
-// page may use.
-type PageReading struct {
 	// DPI is what a page is rendered at.
 	DPI int `json:"dpi"`
+	// Height is what a line is scaled to before it is read.
+	Height int `json:"height"`
+
+	// Sessions is how many lines are read at once.
+	Sessions int `json:"sessions"`
 	// Threads is how many threads one model may use.
 	Threads int `json:"threads"`
 }
@@ -138,9 +132,10 @@ func Defaults() Config {
 			Name: "https://huggingface.co/PaddlePaddle/PP-OCRv5_mobile_det_onnx/resolve/main/inference.onnx",
 		},
 		Recognise: RecogniserModel{
-			Name: "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx",
+			Name:    "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx",
+			DPI:     300,
+			Threads: 4,
 		},
-		Page: PageReading{DPI: 300, Threads: 4},
 
 		// What a reading needs is fetched when it is wanted.
 		Download: true,
@@ -208,6 +203,13 @@ func (d DetectModel) minimum() float32 {
 	return d.Minimum
 }
 
+func (r RecogniserModel) dpi() int {
+	if r.DPI <= 0 {
+		return 300
+	}
+	return r.DPI
+}
+
 func (r RecogniserModel) height() int {
 	if r.Height <= 0 {
 		return 48
@@ -222,18 +224,11 @@ func (r RecogniserModel) sessions() int {
 	return r.Sessions
 }
 
-func (p PageReading) dpi() int {
-	if p.DPI <= 0 {
-		return 300
-	}
-	return p.DPI
-}
-
-func (p PageReading) threads() int {
-	if p.Threads <= 0 {
+func (r RecogniserModel) threads() int {
+	if r.Threads <= 0 {
 		return 4
 	}
-	return p.Threads
+	return r.Threads
 }
 
 // body are the parts of a page that carry what the document says.
@@ -253,106 +248,4 @@ func (r RegionKinds) head() []string {
 		return r.Head
 	}
 	return []string{"doc_title", "paragraph_title"}
-}
-
-// paths are the files this run reads its models out of, and where they were
-// found.
-type paths struct {
-	// engine is the ONNX Runtime this run loaded, and runtime is where it came
-	// from.
-	engine    *ort.Engine
-	runtime   string
-	layout    string
-	detect    string
-	recognise string
-	from      string
-}
-
-// locate finds the runtime and the models.
-//
-// Three places are tried in order and each is a setting: a path written down,
-// the folder the application was installed into, and what was downloaded. A
-// path that is written down is used as given, and its absence is an error
-// rather than a reason to look elsewhere — a person who said where a model is
-// meant it.
-func locate(ctx context.Context, cfg Config) (paths, error) {
-	found := paths{from: "settings"}
-
-	var err error
-	if found.engine, found.runtime, err = library(ctx, cfg); err != nil {
-		return paths{}, err
-	}
-	for _, one := range []struct {
-		into             *string
-		path, name, what string
-	}{
-		{&found.layout, cfg.Layout.Path, cfg.Layout.Name, "layout"},
-		{&found.detect, cfg.Detect.Path, cfg.Detect.Name, "detect"},
-		{&found.recognise, cfg.Recognise.Path, cfg.Recognise.Name, "recognise"},
-	} {
-		if *one.into, err = model(ctx, cfg, one.path, one.name, one.what); err != nil {
-			return paths{}, err
-		}
-	}
-	if cfg.Dir != "" {
-		found.from = cfg.Dir
-	}
-	return found, nil
-}
-
-// model is where one model's file is.
-//
-// A path written down is used as given, and its absence is an error rather than
-// a reason to look elsewhere: a person who said where a model is meant it. A
-// name is looked for beside the application and then fetched.
-func model(ctx context.Context, cfg Config, path, name, what string) (string, error) {
-	if path != "" {
-		if _, err := os.Stat(path); err != nil {
-			return "", fmt.Errorf("the %s model: %w", what, err)
-		}
-		return path, nil
-	}
-	if name == "" {
-		return "", fmt.Errorf("no %s model: name one, or say where it is", what)
-	}
-	for _, at := range beside(cfg.Dir, filepath.Base(name)) {
-		if _, err := os.Stat(at); err == nil {
-			return at, nil
-		}
-	}
-	if !address(name) {
-		return "", fmt.Errorf("the %s model %q is not beside the application, and is not somewhere to fetch it from", what, name)
-	}
-	found, err := fetched(ctx, cfg, name, cfg.Download)
-	if err != nil {
-		return "", fmt.Errorf("the %s model: %w", what, err)
-	}
-	return found, nil
-}
-
-// beside is where a file may be: in the folder the settings name, and in the
-// folder the application was installed into.
-func beside(dir string, names ...string) []string {
-	var out []string
-	for _, name := range names {
-		if dir != "" {
-			out = append(out, filepath.Join(dir, name))
-		}
-		if self, err := os.Executable(); err == nil {
-			out = append(out, filepath.Join(filepath.Dir(self), name))
-			out = append(out, filepath.Join(filepath.Dir(self), "models", name))
-		}
-	}
-	return out
-}
-
-// name is what a model is called, for the record kept beside what it produced.
-func name(path string) string {
-	return strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
-}
-
-// spaced is one line as the recogniser wrote it, with a run of space between
-// words standing as one space.
-func spaced(text string) string {
-	return strings.Join(strings.Fields(text), " ")
 }

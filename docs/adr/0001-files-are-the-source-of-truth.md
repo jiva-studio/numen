@@ -1,9 +1,9 @@
-# ADR-0001: Files on disk are the source of truth
+# Files on disk are the source of truth
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** the product — every application in this repository
-- **Related:** ADR-0002, ADR-0008, ADR-0009, ADR-0011, ADR-0012, ADR-0015, ADR-0017, ADR-0018
+- **Related:** [One database for all vaults, outside them](0002-one-database-for-all-vaults.md), [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [The vault is watched](0009-the-vault-is-watched.md), [Text is cut twice](0011-text-is-cut-twice.md), [A chunk is identified by its text](0012-a-chunk-is-identified-by-its-text.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [The application writes to the vault](0017-the-application-writes-to-the-vault.md), [The note file](0018-the-note-file.md)
 
 ## Context
 
@@ -15,13 +15,13 @@ A tool of this shape accumulates many kinds of data: note text, link markup, a l
 
 Notes are `.md` files with YAML frontmatter, in whatever folder structure the person likes, and the application neither imposes nor rearranges that layout. The link markup lives in the note file — see [the note format](../note-format.md). The application stores nothing unique in its own database, and deleting the index in full loses nothing.
 
-Third-party tools therefore work on live data: `rg`, `git`, vim, another markdown editor, a sync client, the person's own scripts, with the application closed. What that costs is a watcher (ADR-0009), a scan that reads a moving vault (ADR-0008), rows that outlive the files they describe, and a write path that puts a file back whole (ADR-0017).
+Third-party tools therefore work on live data: `rg`, `git`, vim, another markdown editor, a sync client, the person's own scripts, with the application closed. What that costs is a watcher, a scan that reads a moving vault, rows that outlive the files they describe, and a write path that puts a file back whole.
 
 ### Three classes, and one question that sorts them
 
 > **Can this be reproduced locally, deterministically, and for free?**
 
-- **Yes → it is a cache.** It lives in SQLite, outside the vault (ADR-0002), and deleting it costs a scan.
+- **Yes → it is a cache.** It lives in SQLite, outside the vault, and deleting it costs a scan.
 - **No, a person made it → it is an artifact.** It lives in the vault, in an open text format.
 - **No, a machine was paid for it → it is bought.** A vector is bought: minutes of a machine, or money and a network.
 
@@ -57,11 +57,11 @@ graph TD
 
 ### A vector is kept, and dropped at one moment
 
-A vector lives in SQLite beside the cache and is kept. It is addressed by the text it was made from and the recipe it was made under — where a model runs, its width, where the text was cut off, how its output becomes one vector, how the numbers are stored. It is dropped at one moment: a source is cut again and the text the vector was made from is held by no chunk (ADR-0011, ADR-0012). Nothing else deletes one.
+A vector lives in SQLite beside the cache and is kept. It is addressed by the text it was made from and the recipe it was made under — where a model runs, its width, where the text was cut off, how its output becomes one vector, how the numbers are stored. It is dropped when a source is cut again and the text the vector was made from is held by no chunk, and by a numbered migration that empties the table. Nothing else deletes one.
 
 ### Anything producing artifacts rebuilds its cache from them
 
-Whatever writes an artifact into a vault can rebuild every cache derived from that artifact out of the vault alone, offline. The text a reading takes out of a document that carries none is an artifact for this reason (ADR-0015).
+Whatever writes an artifact into a vault can rebuild every cache derived from that artifact out of the vault alone, offline. The text a reading takes out of a document that carries none is an artifact for this reason.
 
 ## Consequences
 

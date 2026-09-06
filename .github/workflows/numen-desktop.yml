@@ -6,16 +6,24 @@ on:
       - "modules/apps/desktop/**"
       - "modules/libs/core/**"
       - "modules/libs/ui/**"
+      - "modules/libs/wire/**"
       - "modules/libs/protocol/**"
       - ".github/workflows/numen-desktop.yml"
+      # The rules the linter is held to, and the ones written here in Go.
+      - ".golangci.yml"
+      - "**/gorules/**"
   push:
     branches: [main]
     paths:
       - "modules/apps/desktop/**"
       - "modules/libs/core/**"
       - "modules/libs/ui/**"
+      - "modules/libs/wire/**"
       - "modules/libs/protocol/**"
       - ".github/workflows/numen-desktop.yml"
+      # The rules the linter is held to, and the ones written here in Go.
+      - ".golangci.yml"
+      - "**/gorules/**"
 
 # One run at a time per branch, and on a pull request the newest is the one that
 # matters. A run on main is left to finish: it fills the cache the branches read.
@@ -23,24 +31,30 @@ concurrency:
   group: numen-desktop-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+permissions:
+  contents: read
+
 jobs:
   go:
     name: "Test :: Go"
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: modules/apps/desktop
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # The two caches are keyed apart: the modules answer to go.sum, the build
       # answers to the commit.
-      - uses: actions/setup-go@v7
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: "1.26"
+          go-version-file: modules/apps/desktop/go.mod
           cache: false
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/go/pkg/mod
           key: go-mod-modules/apps/desktop-${{ hashFiles('modules/apps/desktop/go.sum') }}
@@ -49,7 +63,7 @@ jobs:
       # What the last compile and test run left behind: a run compiles what
       # changed and re-runs the tests that changed. The key carries the commit,
       # so the newest cache the branch can see is the one restored.
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/.cache/go-build
           key: go-build-modules/apps/desktop-${{ github.sha }}
@@ -77,6 +91,26 @@ jobs:
 
       - run: go vet ./...
 
+      # What .golangci.yml asks for, beyond gofmt and go vet. It runs inside
+      # this job because the window's packages only compile on a machine that
+      # already has the webview's headers, and this is the machine that does.
+      #
+      # It fails on what it finds, as the core and the protocol do: the backlog
+      # it arrived to a list of is empty, and a check that cannot go red is a
+      # check nobody reads.
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.12.2
+          working-directory: modules/apps/desktop
+          args: --timeout 15m
+
+      # The vulnerability list is kept elsewhere and read at the time of the
+      # run, so this step can find something on a branch that changed nothing.
+      # It answers for the standard library of the Go above as well as for what
+      # is required.
+      - name: Vulnerabilities
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
       # A test builds its vault in a temporary folder, and there is memory here
       # to hold every one of them.
       - run: go test -race ./...
@@ -85,7 +119,7 @@ jobs:
 
       # Every run writes what it built. A branch reads its own back on the next
       # push to it and main's before that.
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/.cache/go-build
           key: go-build-modules/apps/desktop-${{ github.sha }}
@@ -95,14 +129,17 @@ jobs:
   cli:
     name: "Cross-compile :: Command line tool"
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: modules/apps/desktop
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          go-version: "1.26"
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: modules/apps/desktop/go.mod
           cache-dependency-path: |
             modules/apps/desktop/go.sum
             modules/libs/core/go.sum
@@ -112,54 +149,58 @@ jobs:
             GOOS=${target%/*} GOARCH=${target#*/} CGO_ENABLED=0 go build -o /dev/null ./cmd/numen-cli
           done
 
-  # The two screens the desktop draws. Both are typed against the schema and
-  # against the components, so a change to either fails here rather than on
-  # screen.
-  windows:
-    name: "Test :: Windows"
+  # The two screens the desktop draws, and the wire they read their answers
+  # through. All three are typed against the schema and against the components,
+  # so a change to either fails here.
+  screens:
+    name: "Test :: Screens"
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: |
-            modules/libs/protocol/package-lock.json
-            modules/libs/ui/package-lock.json
-            modules/apps/desktop/ui/package-lock.json
-            modules/apps/desktop/flashcards/package-lock.json
+          cache-dependency-path: modules/package-lock.json
 
-      # A window reaches the components through their build.
+      # A window reaches the components through their build; everything else it
+      # names is linked or fetched by the one install at the source root.
       - name: Install
-        run: |
-          npm install --prefix modules/libs/protocol
-          npm ci --prefix modules/libs/ui
-          npm install --prefix modules/apps/desktop/ui
-          npm install --prefix modules/apps/desktop/flashcards
+        run: npm ci --prefix modules
 
       # The engines are a download of their own and answer to the version in
       # the lockfile. Whatever the cache does not hold is fetched below.
-      - uses: actions/cache@v4
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ hashFiles('modules/libs/ui/package-lock.json') }}
+          key: playwright-${{ hashFiles('modules/package-lock.json') }}
           restore-keys: playwright-
 
-      - name: The browsers the stories run in
-        run: npx --prefix modules/libs/ui playwright install chromium webkit --with-deps
+      - name: Install browsers
+        run: npx --prefix modules playwright install chromium webkit --with-deps
 
       - name: Build the components
         run: npm run build --prefix modules/libs/ui
 
+      - name: Lint
+        run: |
+          npm run lint --prefix modules/apps/desktop/editor
+          npm run lint --prefix modules/apps/desktop/flashcards
+
       - name: Typecheck
         run: |
-          npm run typecheck --prefix modules/apps/desktop/ui
+          npm run typecheck --prefix modules/libs/wire
+          npm run typecheck --prefix modules/apps/desktop/editor
           npm run typecheck --prefix modules/apps/desktop/flashcards
 
       - name: Test
         run: |
-          npm run test:unit --prefix modules/apps/desktop/ui -- --coverage
-          npm run test:stories --prefix modules/apps/desktop/ui
-          npm test --prefix modules/apps/desktop/flashcards
+          npm test --prefix modules/libs/wire
+          npm run test:unit --prefix modules/apps/desktop/editor -- --coverage
+          npm run test:stories --prefix modules/apps/desktop/editor
+          npm run test:unit --prefix modules/apps/desktop/flashcards -- --coverage
+          npm run test:stories --prefix modules/apps/desktop/flashcards

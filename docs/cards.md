@@ -37,9 +37,9 @@ fields:
 
 ### Back
 
-**Height:** {{Height}}
-**Weight:** {{Weight}}
-**Life span:** {{Life span}}
+<b>Height:</b> {{Height}}
+<b>Weight:</b> {{Weight}}
+<b>Life span:</b> {{Life span}}
 
 ## Name it
 
@@ -78,7 +78,7 @@ A field renamed in a stencil is renamed in every card that stencil cuts. Each de
 
 A deck that cannot be written — a deck whose frontmatter does not parse, a file the filesystem refuses — keeps the old heading, and that is a problem against the deck.
 
-A rename is the application changing what is in a file, so a deck it reaches carries an `id` afterwards if it carried none ([ADR-0019](adr/0019-a-note-is-identified-by-a-ulid.md)). One rename can therefore write an identifier into a deck a person wrote by hand and never opened here.
+A rename is the application changing what is in a file, so a deck it reaches carries an `id` afterwards if it carried none ([A note is identified by a ULID in its frontmatter](adr/0019-a-note-is-identified-by-a-ulid.md)). One rename can therefore write an identifier into a deck a person wrote by hand and never opened here.
 
 ### Faces
 
@@ -96,7 +96,7 @@ A placeholder naming a field the stencil does not declare is a problem against t
 
 Everything around a placeholder is HTML and is drawn as the markup it is.
 
-`{{` is not escaped. Wherever the two characters stand in a face, what runs to the next `}}` is read as a placeholder, and a face that wants those characters as text has no way to write them. This is a known limit of the format.
+`{{` is not escaped, and a code span is no exemption: wherever the two characters stand in a face with no brace between them and the next `}}`, what runs between the pairs is read as a placeholder. A face wanting those characters as text has only the accident that a brace in the middle spoils the match. This is a known limit of the format.
 
 ## The deck
 
@@ -257,7 +257,7 @@ A deck's tab reads which preset schedules it, and offers the defaults and every 
 | --- | --- |
 | `goal` | which value the one control steers: `minutes_a_day`, `retention` or `by_date`. The value stands under the key it names. |
 | `by_date` | the day the material is to be learned by, written `2026-09-30`. What learned means is this preset's own `learned` rule, asked of every card on that day. |
-| `minutes_a_day` | how long a day of review runs, spent against the time each answer took. Zero keeps no budget in time. |
+| `minutes_a_day` | how long a day of review runs, spent against the time each answer took. Zero under this goal is a pause. Under the other two goals the value is not read at all. |
 | `new_a_day` | how many unseen cards a day holds. 10. |
 | `reviews_a_day` | how many returning cards a day holds. 200. |
 | `retention` | the share of cards recalled when they come round again. 0.90, and it goes from 0.70 to 0.99. |
@@ -270,9 +270,9 @@ A deck's tab reads which preset schedules it, and offers the defaults and every 
 
 Several decks pointing at one preset is what sharing it looks like, and scheduling a deck differently is repointing one link. **A deck naming no preset is scheduled by the defaults**, and one naming a note that is not a preset is scheduled by the defaults with a problem against it.
 
-Each preset's budget is spent on the cards of the decks pointing at it, and a sitting over the whole vault is the union of them. Inside one preset, the budget its `goal` names is what closes the day: the minutes under `minutes_a_day`, the two card counts under `retention`, and under `by_date` what has to be got through to have the material learned by that day. A setting the goal does not name keeps its value and takes no part until its own goal is chosen again.
+Each preset's budget is spent on the cards of the decks pointing at it, and a session over the whole vault is the union of them. Inside one preset, the budget its `goal` names is what closes the day: the minutes under `minutes_a_day`, the two card counts under `retention`, and under `by_date` what has to be got through to have the material learned by that day. A setting the goal does not name keeps its value and takes no part until its own goal is chosen again.
 
-**A preset's day is divided over the decks pointing at it**, and pressing one deck hands over that deck's share of it — the same count the deck stands at on the front door. The shares go by what each deck owes: three decks owing the same take a third each, and a deck owing nine times another's takes nine times the share. A share too small to buy a card, or larger than the deck has cards to spend it on, goes to the decks that can use it, so the day spends what it holds. What a deck was already sat through today comes off that deck's own share, so sitting one deck does not take from another and the decks may be sat in any order. Adding a deck adds nothing to the day's work; it spreads the same work over more decks, and raising the work is raising the budget ([ADR-0041](adr/0041-a-day-is-divided-over-the-decks.md)).
+**A preset's day is divided over the decks pointing at it**, and pressing one deck hands over that deck's share of it — the same count the deck stands at on the front door. The shares go by what each deck owes: three decks owing the same take a third each, and a deck owing nine times another's takes nine times the share. A share too small to buy a card, or larger than the deck has cards to spend it on, goes to the decks that can use it, so the day spends what it holds. What a deck was already sat through today comes off that deck's own share, so a session on one deck does not take from another and the decks may be taken in any order. Adding a deck adds nothing to the day's work; it spreads the same work over more decks, and raising the work is raising the budget ([A preset is a note, and one arithmetic schedules it](adr/0029-the-preset.md)).
 
 **A day asks a card as often as it falls due in it.** An answer a card did not come back on sends it away for minutes, so it lands back inside the day it was asked in and that day asks it again. Under `counts: cards` a card face spends a slot the first time the day asks it and comes round again in it for nothing; under `counts: shows` every showing spends one. The minutes go on every showing either way, and the count a person reads beside the control is in cards: a card the day comes back to is the one card, and the showings it takes are what the clock runs out on.
 
@@ -310,7 +310,7 @@ A problem is something that could not be acted on and was not guessed at, filed 
 
 | Problem | Against | What it is |
 | --- | --- | --- |
-| a `type` outside the list | the note | `type` is not `note`, `deck` or `stencil`. The note is read as an ordinary note. |
+| a `type` outside the list | the note | `type` is not `note`, `deck`, `stencil` or `preset`. The note is read as an ordinary note. |
 | two fields of one name | the stencil | `fields` declares a name twice. The first stands. |
 | a stencil declaring no field | the stencil | `fields` is absent or empty, so a card cut by it has nothing to be filled with. |
 | a face missing a side | the stencil | no `### Front` or no `### Back` under a second-level heading. The face lays out nothing. |
@@ -328,7 +328,7 @@ A card carrying a field its stencil does not declare is not a problem. Neither i
 
 ## What is not in these files
 
-**No schedule.** When a card is due, how long its intervals have grown and how it has been answered are computed from the history of answers, so they are a cache and live in the index ([ADR-0015](adr/0015-a-books-text-is-a-cache-or-an-artifact.md)). A deck is not rewritten because a card was reviewed.
+**No schedule.** When a card is due, how long its intervals have grown and how it has been answered are computed from the history of answers, so they are a cache and live in the index ([A book's text is a cache or an artifact](adr/0015-a-books-text-is-a-cache-or-an-artifact.md)). A deck is not rewritten because a card was reviewed.
 
 ## What is searched
 

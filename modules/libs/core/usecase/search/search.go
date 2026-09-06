@@ -55,12 +55,12 @@ type Parameters struct {
 	// Growing says the last word typed may still be being typed, so the index
 	// matches it by its opening. A question that is finished is asked exactly.
 	Growing bool
-	// Of are the kinds of source the question is about. None is every kind,
+	// Kinds are the kinds of source the question is about. None is every kind,
 	// which is what a question that says nothing about the sort of file it
 	// wants asks for.
 	//
 	// A person asking a book about something is asking about the book.
-	Of []domain.SourceKind
+	Kinds []domain.SourceKind
 }
 
 // filled supplies what the caller left out.
@@ -92,7 +92,7 @@ type Search struct {
 	readers   port.VaultReaders
 	embedder  port.Embedder
 	derived   port.DerivedStores
-	documents port.Documents
+	documents port.TextExtractor
 	floor     float64
 	trouble   func(error)
 }
@@ -109,7 +109,7 @@ type Search struct {
 //
 // `trouble` hears about a half that could not answer. Nothing is said by
 // passing nothing.
-func New(passages port.PassageQueries, readers port.VaultReaders, derived port.DerivedStores, documents port.Documents, embedder port.Embedder, floor float64, trouble func(error)) Search {
+func New(passages port.PassageQueries, readers port.VaultReaders, derived port.DerivedStores, documents port.TextExtractor, embedder port.Embedder, floor float64, trouble func(error)) Search {
 	if floor == 0 {
 		floor = DefaultFloor
 	}
@@ -141,7 +141,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 
 	var rankings [][]domain.Passage
 	if p.Lexical > 0 {
-		lexical, err := u.passages.Lexical(ctx, v.ID, query, p.Of, p.Lexical, p.Growing)
+		lexical, err := u.passages.Lexical(ctx, v.ID, query, p.Kinds, p.Lexical, p.Growing)
 		if err != nil {
 			return nil, err
 		}
@@ -149,7 +149,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	}
 	var named []domain.Passage
 	if p.Named > 0 {
-		found, err := u.passages.Named(ctx, v.ID, query, p.Of, p.Named, p.Growing)
+		found, err := u.passages.Named(ctx, v.ID, query, p.Kinds, p.Named, p.Growing)
 		if err != nil {
 			return nil, err
 		}
@@ -191,7 +191,7 @@ func (u Search) nearest(ctx context.Context, v domain.Vault, query string, p Par
 	// A vector is kept under the recipe it was made by, which is everything
 	// about the model that decides what a vector is. Asked under anything else,
 	// no vector is found and this half answers nothing at all.
-	return u.passages.Nearest(ctx, v.ID, u.embedder.Model().Recipe(), vectors[0], p.Of, p.Dense, p.Floor)
+	return u.passages.Nearest(ctx, v.ID, u.embedder.Model().Recipe(), vectors[0], p.Kinds, p.Dense, p.Floor)
 }
 
 // read fills in the text of each passage from the vault. A chunk is a place in a
@@ -226,7 +226,7 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 	for _, p := range found {
 		prose, held := read[p.Source]
 		if !held && !gone[p.Source] {
-			prose, err = extracted(ctx, of, p.Source, p.TextFrom, p.Hash)
+			prose, err = extracted(ctx, of, p.Source, p.Producer, p.SourceHash)
 			if port.NoNote(err) || errors.Is(err, errUnreadable) {
 				gone[p.Source] = true
 				continue
@@ -260,8 +260,8 @@ var errUnreadable = errors.New("nothing could be read from the source")
 //
 // Which reader produces it is decided in one place, so that what a search slices
 // and what an extractor cut are the same text.
-func extracted(ctx context.Context, of text.Reader, path, from, hash string) (string, error) {
-	doc, err := of.Of(ctx, path, from, hash)
+func extracted(ctx context.Context, reader text.Reader, path, from, hash string) (string, error) {
+	doc, err := reader.Of(ctx, path, from, hash)
 	if errors.Is(err, text.ErrUnreadable) {
 		return "", errUnreadable
 	}
@@ -307,37 +307,37 @@ func proseOpens(raw string) int {
 	return len(raw) - len(doc.Body())
 }
 
-// Way is how a search is asked. Each way is an order of its own, and a search
-// asked every way fuses them into one.
-type Way int
+// Mode is how a search is asked. Each mode is an order of its own, and a
+// hybrid search fuses them into one.
+type Mode int
 
 const (
-	// EveryWay: all of them, fused into one ranking.
-	EveryWay Way = iota
-	// ByWords: what is written, matched as words.
-	ByWords
-	// ByMeaning: what the query means, against the vectors the index holds.
-	ByMeaning
+	// Hybrid: all of them, fused into one ranking.
+	Hybrid Mode = iota
+	// Lexical: what is written, matched as words.
+	Lexical
+	// Dense: what the query means, against the vectors the index holds.
+	Dense
 	// ByName: the names of the sections a source divides into.
 	ByName
 )
 
-// Typing is the parameters for a search asked the way named, while a person is
-// still typing it: the last word is matched by its opening.
+// Typing is the parameters for a search asked in the mode named, while a person
+// is still typing it: the last word is matched by its opening.
 //
-// A way that is not wanted keeps no candidates, which is how a way is told not
-// to run. Every way but the one named is silenced, so a caller drawing the ways
+// A mode that is not wanted keeps no candidates, which is how one is told not
+// to run. Every mode but the one named is silenced, so a caller drawing them
 // apart is shown one of them and not one and a half.
-func Typing(way Way, limit int) Parameters {
+func Typing(mode Mode, limit int) Parameters {
 	p := Parameters{Limit: limit, Growing: true}.filled()
-	switch way {
-	case ByWords:
+	switch mode {
+	case Lexical:
 		p.Dense, p.Named = 0, 0
-	case ByMeaning:
+	case Dense:
 		p.Lexical, p.Named = 0, 0
 	case ByName:
 		p.Lexical, p.Dense = 0, 0
-	case EveryWay:
+	case Hybrid:
 	}
 	return p
 }

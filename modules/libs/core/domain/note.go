@@ -4,8 +4,8 @@ package domain
 // application owns a closed set of keys and preserves everything else verbatim,
 // so the parser is not allowed to normalise or drop what it does not recognise.
 type Note struct {
-	Ref   FileRef
-	Title string
+	Fingerprint Fingerprint
+	Title       string
 
 	// Type is which of four the note is. A note carrying no `type` is a note,
 	// which is nearly every file in a vault.
@@ -74,8 +74,8 @@ type Heading struct {
 // For a link that reaches two notes that is the note the link is written in,
 // and neither of the notes it could mean.
 type VaultProblem struct {
-	Path  string
-	Check Check
+	Path string
+	Kind Check
 	// Detail says what is wrong, in the terms the file itself uses.
 	Detail string
 

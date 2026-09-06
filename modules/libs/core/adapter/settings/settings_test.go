@@ -39,7 +39,8 @@ func TestAnUntouchedInstallationEmbedsLocallyAndIsDrawnAsDesigned(t *testing.T) 
 	if cfg.Indexing.Embedding.Indexing.Use != embed.UseLocal {
 		t.Errorf("uses %q", cfg.Indexing.Embedding.Indexing.Use)
 	}
-	if cfg.Indexing.Embedding.Indexing.Local.Name == "" || cfg.Indexing.Embedding.Model.Dimensions == 0 {
+	local, _ := cfg.Indexing.Embedding.Indexing.Local()
+	if local.Name == "" || cfg.Indexing.Embedding.Model.Dimensions == 0 {
 		t.Errorf("no model to run: %+v", cfg.Indexing.Embedding)
 	}
 	// Both sizes are as designed, so an installation nobody has sized draws
@@ -89,11 +90,11 @@ func TestASizeOutsideWhatItGoesToIsRefused(t *testing.T) {
 	}
 
 	_, err := settings.At(write(t, `{"appearance":{"text_scale":3}}`))
-	var outside *settings.Outside
+	var outside *settings.OutsideBounds
 	if !errors.As(err, &outside) {
 		t.Fatalf("refused with %v", err)
 	}
-	if outside.At != "appearance.text_scale" || outside.Value != 3 {
+	if outside.At != "appearance.text_scale" || outside.Number != 3 {
 		t.Errorf("refused %+v", outside)
 	}
 	if outside.Least != settings.TextScaleBounds.Least || outside.Most != settings.TextScaleBounds.Most {
@@ -431,7 +432,8 @@ func TestAnInstallationNobodyConfiguredWritesItsSettingsDown(t *testing.T) {
 	if back.Indexing.Embedding.Model != cfg.Indexing.Embedding.Model {
 		t.Errorf("the model is %+v, was %+v", back.Indexing.Embedding.Model, cfg.Indexing.Embedding.Model)
 	}
-	if !back.Indexing.Embedding.Indexing.Local.Download {
+	local, ok := back.Indexing.Embedding.Indexing.Local()
+	if !ok || !local.Download {
 		t.Error("a machine with no model would fetch none")
 	}
 	// A key nobody set is not a field of the file.
@@ -450,12 +452,29 @@ func TestOneSettingIsAValidFile(t *testing.T) {
 	}
 	// A file that names the window must leave the embedder alone. Both are
 	// sections of one file, and the section nobody wrote about is unchanged.
-	if cfg.Indexing.Embedding.Indexing.Local.Name != embed.Defaults().Indexing.Local.Name {
-		t.Errorf("local model is %q", cfg.Indexing.Embedding.Indexing.Local.Name)
+	held, _ := cfg.Indexing.Embedding.Indexing.Local()
+	offered, _ := embed.Defaults().Indexing.Local()
+	if held.Name != offered.Name {
+		t.Errorf("local model is %q", held.Name)
 	}
 	if cfg.Indexing.Embedding.Indexing.Use != embed.UseLocal {
 		t.Errorf("uses %q", cfg.Indexing.Embedding.Indexing.Use)
 	}
+}
+
+// asLocal and asService are the halves a provider carries, whichever of them is
+// in force. The word is what puts one there, and a test reading the other says
+// so before it does.
+func asLocal(where embed.Provider) embed.LocalModel {
+	where.Use = embed.UseLocal
+	m, _ := where.Local()
+	return m
+}
+
+func asService(where embed.Provider) embed.ServiceModel {
+	where.Use = embed.UseService
+	m, _ := where.Service()
+	return m
 }
 
 // A file naming one field of one section leaves everything else alone.
@@ -477,11 +496,14 @@ func TestAFileNamingOneFieldKeepsTheDefaultsForTheRest(t *testing.T) {
 	if e.Model.MaxTokens != embed.Defaults().Model.MaxTokens {
 		t.Errorf("the model cuts at %d", e.Model.MaxTokens)
 	}
-	if e.Indexing.Service.BaseURL != embed.Defaults().Indexing.Service.BaseURL {
-		t.Errorf("base URL is %q", e.Indexing.Service.BaseURL)
+	service, _ := e.Indexing.Service()
+	if service.BaseURL != asService(embed.Defaults().Indexing).BaseURL {
+		t.Errorf("base URL is %q", service.BaseURL)
 	}
-	if e.Indexing.Local.Name != embed.Defaults().Indexing.Local.Name {
-		t.Errorf("local model is %q", e.Indexing.Local.Name)
+	// The half the file is not on keeps the defaults as well, and the word is
+	// all that stands between the two.
+	if local := asLocal(e.Indexing); local.Name != asLocal(embed.Defaults().Indexing).Name {
+		t.Errorf("local model is %q", local.Name)
 	}
 	// A question is asked the way the vault was indexed.
 	if got := e.Asking(); got.Use != embed.UseService {
@@ -516,15 +538,17 @@ func TestAVaultIndexedByAServiceIsAskedOnThisMachine(t *testing.T) {
 	if e.Model.Name != "bge-m3" || e.Model.Dimensions != 1024 || e.Model.Pooling != embed.PoolHead {
 		t.Errorf("the model is %+v", e.Model)
 	}
-	if e.Indexing.Use != embed.UseService || e.Indexing.Service.Name != "baai/bge-m3" {
+	indexing, byService := e.Indexing.Service()
+	if !byService || indexing.Name != "baai/bge-m3" {
 		t.Errorf("indexed by %+v", e.Indexing)
 	}
-	if got := e.Asking(); got.Use != embed.UseLocal || got.Local.Name != "BAAI/bge-m3" {
-		t.Errorf("asked by %+v", got)
+	asking, here := e.Asking().Local()
+	if !here || asking.Name != "BAAI/bge-m3" {
+		t.Errorf("asked by %+v", e.Asking())
 	}
 	// The section nobody wrote about keeps its default.
-	if e.Indexing.Service.BatchCharacters != embed.Defaults().Indexing.Service.BatchCharacters {
-		t.Errorf("batch is %d", e.Indexing.Service.BatchCharacters)
+	if indexing.BatchCharacters != asService(embed.Defaults().Indexing).BatchCharacters {
+		t.Errorf("batch is %d", indexing.BatchCharacters)
 	}
 }
 
@@ -549,7 +573,7 @@ func TestTheKeyComesFromTheFileOrTheEnvironment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cfg.Indexing.Embedding.Indexing.Service.Key(); got != "from-the-file" {
+	if got := asService(cfg.Indexing.Embedding.Indexing).Key(); got != "from-the-file" {
 		t.Errorf("got %q", got)
 	}
 
@@ -557,7 +581,7 @@ func TestTheKeyComesFromTheFileOrTheEnvironment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cfg.Indexing.Embedding.Indexing.Service.Key(); got != "from-the-environment" {
+	if got := asService(cfg.Indexing.Embedding.Indexing).Key(); got != "from-the-environment" {
 		t.Errorf("got %q", got)
 	}
 }
@@ -568,7 +592,7 @@ func TestAnInstallationMayNameItsOwnEnvironmentVariable(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cfg.Indexing.Embedding.Indexing.Service.Key(); got != "from-openrouter" {
+	if got := asService(cfg.Indexing.Embedding.Indexing).Key(); got != "from-openrouter" {
 		t.Errorf("got %q", got)
 	}
 }
@@ -769,10 +793,10 @@ func TestEachReadingNamesTheProfileThatPutsItRight(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cfg.Indexing.Recognition.Proofread; got.With != "openrouter" || !got.Automatically {
+	if got := cfg.Indexing.Recognition.Proofread; got.Profile != "openrouter" || !got.Automatically {
 		t.Errorf("a scan is put right by %+v", got)
 	}
-	if got := cfg.Indexing.Transcription.Proofread; got.With != "agent" || got.Automatically {
+	if got := cfg.Indexing.Transcription.Proofread; got.Profile != "agent" || got.Automatically {
 		t.Errorf("a transcript is put right by %+v", got)
 	}
 }
@@ -967,11 +991,11 @@ func TestACountOfPartsOutsideWhatItGoesToIsRefused(t *testing.T) {
 	}
 
 	_, err := settings.At(write(t, `{"appearance":{"parts_under_a_node":20}}`))
-	var outside *settings.Outside
+	var outside *settings.OutsideBounds
 	if !errors.As(err, &outside) {
 		t.Fatalf("refused with %v", err)
 	}
-	if outside.At != "appearance.parts_under_a_node" || outside.Value != 20 {
+	if outside.At != "appearance.parts_under_a_node" || outside.Number != 20 {
 		t.Errorf("refused %+v", outside)
 	}
 	if outside.Least != settings.PartsUnderANodeBounds.Least ||

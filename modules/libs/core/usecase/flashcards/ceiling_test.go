@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
@@ -45,25 +45,25 @@ func TestAGoalIsACeilingOverEveryDeckOfThePreset(t *testing.T) {
 
 // minutes is how long the whole day of review took, driven the way a person
 // drives it.
-func (s vaulted) minutes(t *testing.T, day history.Day, now time.Time) time.Duration {
+func (s vaulted) minutes(t *testing.T, day review.Day, now time.Time) time.Duration {
 	t.Helper()
 	var out time.Duration
 	for range 200 {
 		sat, err := flashcards.Session{
-			Marking: s.marking, Standings: s.standings, Schedules: s.kept,
+			Marks: s.marking, CardFaces: s.standings, Schedules: s.kept,
 			Presets: s.presets, Day: day, Now: func() time.Time { return now },
-		}.Execute(t.Context(), s.vault, flashcards.Over{})
-		if err != nil || len(sat.Asked) == 0 {
+		}.Execute(t.Context(), s.vault, flashcards.Scope{})
+		if err != nil || len(sat.Queue) == 0 {
 			return out
 		}
 		record := s.run(t, now)
-		for _, one := range sat.Asked {
-			cost := history.DefaultCost.Review
+		for _, one := range sat.Queue {
+			cost := review.DefaultCost.Review
 			if !one.Schedule.Seen() {
-				cost = history.DefaultCost.New
+				cost = review.DefaultCost.New
 			}
 			out += cost
-			answer(t, record, one.CardFace.Card, cost)
+			answer(t, record, one.ID.Card, cost)
 		}
 	}
 	t.Fatal("the day never ran out")
@@ -71,7 +71,7 @@ func (s vaulted) minutes(t *testing.T, day history.Day, now time.Time) time.Dura
 }
 
 // And the same ceiling holds when a person sits to one deck at a time.
-func TestSittingDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
+func TestSessionDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
 	t.Parallel()
 	files := map[string]string{
 		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
@@ -92,23 +92,23 @@ func TestSittingDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
 	now := time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
 	var out time.Duration
 	for d := range 3 {
-		over := flashcards.Over{Deck: fmt.Sprintf("decks/D%d.md", d)}
+		over := flashcards.Scope{Deck: fmt.Sprintf("decks/D%d.md", d)}
 		for range 200 {
 			sat, err := flashcards.Session{
-				Marking: s.marking, Standings: s.standings, Schedules: s.kept,
+				Marks: s.marking, CardFaces: s.standings, Schedules: s.kept,
 				Presets: s.presets, Day: today, Now: func() time.Time { return now },
 			}.Execute(t.Context(), s.vault, over)
-			if err != nil || len(sat.Asked) == 0 {
+			if err != nil || len(sat.Queue) == 0 {
 				break
 			}
 			record := s.run(t, now)
-			for _, one := range sat.Asked {
-				cost := history.DefaultCost.Review
+			for _, one := range sat.Queue {
+				cost := review.DefaultCost.Review
 				if !one.Schedule.Seen() {
-					cost = history.DefaultCost.New
+					cost = review.DefaultCost.New
 				}
 				out += cost
-				answer(t, record, one.CardFace.Card, cost)
+				answer(t, record, one.ID.Card, cost)
 			}
 		}
 		if out > theCeiling {
@@ -144,9 +144,9 @@ func TestOneDeckIsHandedNoMoreThanTheDayHolds(t *testing.T) {
 
 	s := opened(t, files)
 	now := time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
-	sits := func(over flashcards.Over) flashcards.Sitting {
+	sits := func(over flashcards.Scope) flashcards.SessionResult {
 		sat, err := flashcards.Session{
-			Marking: s.marking, Standings: s.standings, Schedules: s.kept,
+			Marks: s.marking, CardFaces: s.standings, Schedules: s.kept,
 			Presets: s.presets, Day: today, Now: func() time.Time { return now },
 		}.Execute(t.Context(), s.vault, over)
 		if err != nil {
@@ -156,7 +156,7 @@ func TestOneDeckIsHandedNoMoreThanTheDayHolds(t *testing.T) {
 	}
 
 	whole := 0
-	for _, held := range byDeck(sits(flashcards.Over{})) {
+	for _, held := range byDeck(sits(flashcards.Scope{})) {
 		whole += held
 	}
 	if whole != 30 {
@@ -164,7 +164,7 @@ func TestOneDeckIsHandedNoMoreThanTheDayHolds(t *testing.T) {
 	}
 	for d := range 3 {
 		deck := fmt.Sprintf("decks/D%d.md", d)
-		if got := len(sits(flashcards.Over{Deck: deck}).Asked); got > 30 {
+		if got := len(sits(flashcards.Scope{Deck: deck}).Queue); got > 30 {
 			t.Errorf("%s alone hands over %d card faces, and the day holds 30", deck, got)
 		}
 	}

@@ -8,21 +8,22 @@
  * field's row.
  */
 import { computed, useId } from 'vue'
-import Amiss from './Amiss.vue'
-import Glyph from './Glyph.vue'
+import ErrorMessage from './ErrorMessage.vue'
+import Icon from './Icon.vue'
 import NameBox from './NameBox.vue'
-import Rule from '../rule/Rule.vue'
-import Slab from './Slab.vue'
-import { useCarry } from './carry'
+import Divider from '../divider/Divider.vue'
+import CardRow from './CardRow.vue'
+import { useDrag } from './drag'
 import { useNaming } from './naming'
 import { Button } from '../components/ui/button'
 import {
   landing,
   numbered,
   objection,
-  wayOf,
-  type Against,
-  type Landing,
+  directionOf,
+  STEP_KEYS,
+  type Problems,
+  type InsertionPoint,
   type Objection,
 } from './order'
 import { fieldRows, STENCIL_WORDS, type StencilWords } from './stencil'
@@ -32,7 +33,7 @@ const props = withDefaults(
     /** The fields a card is asked for, each named once, in the order they stand. */
     fields: readonly string[]
     /** What the caller found wrong with each field, under the name it is declared by. */
-    wrong?: Against | null
+    wrong?: Problems | null
     /** The words they are drawn with. */
     words?: StencilWords
   }>(),
@@ -44,7 +45,7 @@ const emit = defineEmits<{
   (event: 'rename', field: string, name: string): void
   (event: 'remove', field: string): void
   /** A field let go somewhere in the order: before another, or at the end. */
-  (event: 'move', field: string, at: Landing): void
+  (event: 'move', field: string, at: InsertionPoint): void
 }>()
 
 /** What these objections are named by, which is this list's alone. */
@@ -72,14 +73,14 @@ const objects = (field: string): Objection | null => naming.objection(field)
  * a field, at the end, or nowhere. The first field names every card, so nothing
  * lands above it and it goes nowhere itself.
  */
-const { carried, at, lift, over, release, drop, step } = useCarry<Landing | undefined>({
+const { dragged, at, lift, over, release, drop, step } = useDrag<InsertionPoint | undefined>({
   order: () => props.fields,
   nowhere: undefined,
   lands: (held, lands) => landing(props.fields, held, lands),
   moves: (held, lands) => emit('move', held, lands),
 })
 
-const rows = computed(() => fieldRows(props.fields, carried.value))
+const rows = computed(() => fieldRows(props.fields, dragged.value))
 
 /** What is said of a field's name that cannot be used, and nothing while it can. */
 const says = (field: string): string | null => {
@@ -96,8 +97,8 @@ const add = (): void => {
 
 /** A field asked by the keyboard to go one place along the order. */
 const onGripKey = (event: KeyboardEvent, field: string): void => {
-  const way = wayOf(event.key)
-  if (way !== null) step(field, way, event)
+  const direction = directionOf(event.key)
+  if (direction !== null) step(field, direction, event)
 }
 </script>
 
@@ -120,15 +121,15 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
         class="stencil__field caret-above"
         :data-field="row.field"
         :data-names="row.names || undefined"
-        :data-carried="row.carried || undefined"
+        :data-dragged="row.dragged || undefined"
         :data-before="row.field === at || undefined"
         @dragover.stop="over(row.names ? undefined : row.field, $event)"
         @drop.stop="drop"
       >
-        <Slab class="stencil__row" :data-objects="objects(row.field) ?? undefined">
+        <CardRow class="stencil__row" :data-objects="objects(row.field) ?? undefined">
           <!-- The first field names every card, so its handle is there and
                turned off, and the row keeps the shape every other row has. The
-               handle is what a row is carried by, by the pointer and by the
+               handle is what a row is dragged by, by the pointer and by the
                arrows along the order alike. -->
           <span
             class="stencil__grip flex shrink-0 items-center text-hushed"
@@ -138,13 +139,14 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
             :draggable="!row.names"
             :data-disabled="row.names || undefined"
             :aria-disabled="row.names || undefined"
-            :aria-label="row.names ? words.pinned : `${words.carry}: ${row.field}`"
-            :title="row.names ? words.pinned : `${words.carry}: ${row.field}`"
+            :aria-label="row.names ? words.pinned : `${words.drag}: ${row.field}`"
+            :aria-keyshortcuts="row.names ? undefined : STEP_KEYS"
+            :title="row.names ? words.pinned : `${words.drag}: ${row.field}`"
             @dragstart="lift(row.field, $event)"
             @dragend="release"
             @keydown="onGripKey($event, row.field)"
           >
-            <Glyph shows="grip" />
+            <Icon shows="grip" />
           </span>
 
           <NameBox
@@ -164,11 +166,11 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
             :aria-label="`${words.remove}: ${row.field}`"
             @click="emit('remove', row.field)"
           >
-            <Glyph shows="cross" />
+            <Icon shows="cross" />
           </Button>
-        </Slab>
+        </CardRow>
 
-        <Amiss
+        <ErrorMessage
           v-if="says(row.field)"
           :id="objectsId(row.field)"
           class="stencil__objects"
@@ -176,7 +178,7 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
           :said="says(row.field) ?? ''"
         />
 
-        <Amiss
+        <ErrorMessage
           v-if="wrongWith(row.field).length"
           class="stencil__objects"
           data-wrong
@@ -188,22 +190,24 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
 
     <p v-else class="stencil__silence caps-numen m-0 text-small text-hushed">{{ words.noFields }}</p>
 
-    <Rule>
+    <Divider>
       <Button variant="ghost" size="small" @click="add">
-        <Glyph shows="plus" />
+        <Icon shows="plus" />
         {{ words.addField }}
       </Button>
-    </Rule>
+    </Divider>
   </section>
 </template>
 
 <style scoped>
-@import './carrying.css';
+@import './caret.css';
 
 .stencil__fields {
   display: flex;
   flex-direction: column;
-  gap: var(--row-gap);
+  /* The room between rows is the editor's, and this is what it comes to
+     where the rows stand anywhere else. */
+  gap: var(--row-gap, 0.5rem);
   inline-size: 100%;
   margin: 0;
   padding: 0;
@@ -218,7 +222,7 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
   gap: 0.125rem;
 }
 
-.stencil__field[data-carried] {
+.stencil__field[data-dragged] {
   opacity: 0.5;
 }
 

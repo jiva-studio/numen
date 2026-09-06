@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // groupedWrites stands in for the index and remembers how it was called: not
@@ -23,19 +23,19 @@ type groupedWrites struct {
 	fail   error
 }
 
-func (g *groupedWrites) Save(_ context.Context, _ string, notes []domain.Note) error {
+func (g *groupedWrites) Save(_ context.Context, _ domain.VaultID, notes []domain.Note) error {
 	if g.fail != nil {
 		return g.fail
 	}
 	paths := make([]string, len(notes))
 	for i, n := range notes {
-		paths[i] = n.Ref.Path
+		paths[i] = n.Fingerprint.Path
 	}
 	g.groups = append(g.groups, paths)
 	return nil
 }
 
-func (g *groupedWrites) Remove(context.Context, string, []string) error { return nil }
+func (g *groupedWrites) Remove(context.Context, domain.VaultID, []string) error { return nil }
 
 type countedMeasurements struct{ n int }
 
@@ -50,8 +50,8 @@ func TestNotesAreWrittenInGroups(t *testing.T) {
 	written := &groupedWrites{}
 	db := openIndex(t)
 
-	scan := usecase.Scan{
-		Readers:     filesystem.Readers{},
+	scan := vaults.Scan{
+		Readers:     filesystem.VaultReaders{},
 		Vaults:      db.Vaults(),
 		Notes:       written,
 		Known:       db.Queries(),
@@ -98,12 +98,12 @@ func TestALongNoteClosesTheGroupEarly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	v := domain.Vault{ID: cfg.ID, Name: "transcripts", Path: root}
+	v := domain.Vault{ID: domain.VaultID(cfg.ID), Name: "transcripts", Path: root}
 
 	written := &groupedWrites{}
 	db := openIndex(t)
-	scan := usecase.Scan{
-		Readers:     filesystem.Readers{},
+	scan := vaults.Scan{
+		Readers:     filesystem.VaultReaders{},
 		Vaults:      db.Vaults(),
 		Notes:       written,
 		Known:       db.Queries(),
@@ -130,8 +130,8 @@ func TestAFailedWriteCountsNothing(t *testing.T) {
 	refused := errors.New("disk full")
 	db := openIndex(t)
 
-	scan := usecase.Scan{
-		Readers:     filesystem.Readers{},
+	scan := vaults.Scan{
+		Readers:     filesystem.VaultReaders{},
 		Vaults:      db.Vaults(),
 		Notes:       &groupedWrites{fail: refused},
 		Known:       db.Queries(),
@@ -154,7 +154,7 @@ func TestTheIndexIsMeasuredWhenItChanges(t *testing.T) {
 	db := openIndex(t)
 	measured := &countedMeasurements{}
 
-	scan := usecase.Scan{
+	scan := vaults.Scan{
 		Readers:     readers,
 		Vaults:      db.Vaults(),
 		Notes:       db.Notes(),

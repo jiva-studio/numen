@@ -36,8 +36,18 @@ on:
         type: boolean
         default: true
 
+# Two runs at once would count the same version, push the same tag and write
+# over each other on the shelf. The second waits; neither is stopped, because a
+# run that has begun putting files up leaves the shelf half written if it is.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+# Building and putting the files on the shelf needs nothing of the repository
+# but the clone. The tag and the release are made by one job, and that job says
+# so for itself.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   # What this run is called and where it goes. A stable release is named for
@@ -46,6 +56,7 @@ jobs:
   naming:
     name: Version
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     outputs:
       version: ${{ steps.said.outputs.version }}
       build: ${{ steps.said.outputs.build }}
@@ -62,9 +73,10 @@ jobs:
     steps:
       # The build number is how many commits stand behind this one, so the whole
       # history has to be here for it to be counted.
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - id: said
         env:
@@ -124,10 +136,12 @@ jobs:
     name: Notes
     needs: [naming]
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Git-cliff
         env:
@@ -156,7 +170,7 @@ jobs:
           fi
           cat "$RUNNER_TEMP/notes.md"
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: notes
           path: ${{ runner.temp }}/notes.md
@@ -167,27 +181,25 @@ jobs:
     needs: [naming]
     if: needs.naming.outputs.linux == 'true'
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-go@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          go-version: "1.26"
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: modules/apps/desktop/go.mod
           # The window is built from both modules.
           cache-dependency-path: |
             modules/apps/desktop/go.sum
             modules/libs/core/go.sum
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: |
-            modules/libs/protocol/package-lock.json
-            modules/libs/ui/package-lock.json
-            modules/apps/desktop/ui/package-lock.json
-            modules/apps/desktop/flashcards/package-lock.json
-            modules/apps/landing/package-lock.json
+          cache-dependency-path: modules/package-lock.json
 
       # The window links against the system's own browser, so the machine that
       # compiles it needs that browser's headers.
@@ -213,7 +225,10 @@ jobs:
           # Both binaries say what they are out of the one package the linker
           # writes the numbers into.
           into=github.com/jiva-studio/numen/modules/apps/desktop/internal/version
-          stamp="-X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
+          # -s -w drop the debugging tables, which are a quarter of the binary
+          # and reach nobody: a panic is symbolised from the pcln table, which
+          # neither flag touches.
+          stamp="-s -w -X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
 
           CGO_ENABLED=1 go build -trimpath -ldflags "$stamp" \
             -o "$RUNNER_TEMP/numen" ./cmd/numen
@@ -387,7 +402,7 @@ jobs:
 
           tar czf "$RUNNER_TEMP/numen-nix.tar.gz" -C "$flake" .
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: numen-linux-amd64
           path: |
@@ -398,7 +413,7 @@ jobs:
 
       # The two recipes stand on their own: they are read rather than run, and
       # they go on the shelf under names with no version in them.
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: numen-linux-recipes
           path: |
@@ -416,10 +431,13 @@ jobs:
     needs: [naming, linux]
     if: needs.naming.outputs.linux == 'true'
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: numen-linux-amd64
           path: ${{ runner.temp }}/built
@@ -480,7 +498,7 @@ jobs:
             *) echo "::error::the sandboxed window calls itself $said"; exit 1 ;;
           esac
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: numen-linux-amd64-flatpak
           path: ${{ runner.temp }}/numen_*_linux_amd64.flatpak
@@ -494,10 +512,13 @@ jobs:
     needs: [naming, linux]
     if: needs.naming.outputs.linux == 'true'
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: numen-linux-amd64
           path: ${{ runner.temp }}/built
@@ -524,7 +545,7 @@ jobs:
           cp "$at/snapcraft.yaml" "$work/snap/"
           find "$staged" -type f -printf '%P\n' | sort
 
-      - uses: snapcore/action-build@v1
+      - uses: snapcore/action-build@3bdaa03e1ba6bf59a65f84a751d943d549a54e79 # v1.3.0
         with:
           path: ${{ runner.temp }}/work
 
@@ -541,7 +562,7 @@ jobs:
           mv "$built" "$RUNNER_TEMP/numen_${VERSION}_linux_amd64.snap"
           ls -la "$RUNNER_TEMP/numen_${VERSION}_linux_amd64.snap"
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: numen-linux-amd64-snap
           path: ${{ runner.temp }}/numen_*_linux_amd64.snap
@@ -554,27 +575,25 @@ jobs:
     needs: [naming]
     if: needs.naming.outputs.windows == 'true'
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-go@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          go-version: "1.26"
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: modules/apps/desktop/go.mod
           # The window is built from both modules.
           cache-dependency-path: |
             modules/apps/desktop/go.sum
             modules/libs/core/go.sum
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: |
-            modules/libs/protocol/package-lock.json
-            modules/libs/ui/package-lock.json
-            modules/apps/desktop/ui/package-lock.json
-            modules/apps/desktop/flashcards/package-lock.json
-            modules/apps/landing/package-lock.json
+          cache-dependency-path: modules/package-lock.json
 
       # The number the window draws in its corner is written into the page here.
       - name: Interface
@@ -596,7 +615,10 @@ jobs:
           go install github.com/akavel/rsrc@v0.10.2
 
           into=github.com/jiva-studio/numen/modules/apps/desktop/internal/version
-          stamp="-X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
+          # -s -w drop the debugging tables, which are a quarter of the binary
+          # and reach nobody: a panic is symbolised from the pcln table, which
+          # neither flag touches.
+          stamp="-s -w -X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
 
           # The two windows are always the same build: they ship together, one
           # version, one installer. A resource is linked into the command it is
@@ -617,14 +639,32 @@ jobs:
       # The installer carries Microsoft's own bootstrapper and runs it on a
       # machine whose Windows does not already have the engine the window draws
       # through.
+      #
+      # It is not signed, and no step here can sign it. A publicly trusted
+      # code-signing key may not leave hardware, so the shape the mac job uses —
+      # a .p12 in a secret, imported into a keychain — is not issued for Windows
+      # at all: what it takes is a key a service holds, either Azure Artifact
+      # Signing or a cloud-HSM certificate from a certificate authority. Both
+      # sign from a Linux runner, so what is missing is an identity and not a
+      # toolchain. Until there is one, SmartScreen warns on first run and the
+      # sha256 the manifest carries is what a person has to check.
       - name: Installer
         env:
           VERSION: ${{ needs.naming.outputs.version }}
           NUMERIC: ${{ needs.naming.outputs.numeric }}
+          # Microsoft's short link hands out whatever is current and publishes
+          # no digest, so what is fetched is the address that link resolved to
+          # and the bytes are checked against it. What the bootstrapper then
+          # installs is the engine current on the person's machine, so holding
+          # this file still holds no engine still. A link Microsoft retires
+          # fails this job, which is how it is noticed.
+          WEBVIEW2: https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/474c9f1d-0fd5-49da-b3b0-df536d328170/MicrosoftEdgeWebview2Setup.exe
+          SHA256: 17debf797a6c737959bc588236e897936ffac1af5f7e515e674ab32f9edfe719
         run: |
+          set -euo pipefail
           sudo apt-get update && sudo apt-get install -y nsis
-          curl -sfSL "https://go.microsoft.com/fwlink/p/?LinkId=2124703" \
-            -o "$RUNNER_TEMP/webview2.exe"
+          curl -sfSL "$WEBVIEW2" -o "$RUNNER_TEMP/webview2.exe"
+          echo "$SHA256  $RUNNER_TEMP/webview2.exe" | sha256sum -c -
 
           makensis -V2 \
             "-DVERSION=$VERSION" \
@@ -638,7 +678,7 @@ jobs:
             modules/apps/desktop/build/windows/installer.nsi
           ls -la "$RUNNER_TEMP"/Numen-*.exe
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: numen-windows-amd64
           path: |
@@ -651,27 +691,27 @@ jobs:
     needs: [naming]
     if: needs.naming.outputs.macos == 'true'
     runs-on: macos-15
+    # Notarizing gives itself half an hour and fails on its own; the rest is
+    # what two universal builds, an image and a mac runner cost.
+    timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-go@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          go-version: "1.26"
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: modules/apps/desktop/go.mod
           # The window is built from both modules.
           cache-dependency-path: |
             modules/apps/desktop/go.sum
             modules/libs/core/go.sum
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: |
-            modules/libs/protocol/package-lock.json
-            modules/libs/ui/package-lock.json
-            modules/apps/desktop/ui/package-lock.json
-            modules/apps/desktop/flashcards/package-lock.json
-            modules/apps/landing/package-lock.json
+          cache-dependency-path: modules/package-lock.json
 
       # The number the window draws in its corner is written into the page here.
       - name: Interface
@@ -692,7 +732,10 @@ jobs:
           COMMIT: ${{ needs.naming.outputs.commit }}
         run: |
           into=github.com/jiva-studio/numen/modules/apps/desktop/internal/version
-          stamp="-X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
+          # -s -w drop the debugging tables, which are a quarter of the binary
+          # and reach nobody: a panic is symbolised from the pcln table, which
+          # neither flag touches.
+          stamp="-s -w -X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
           # The two windows are always the same build: they ship together, one
           # version, one image.
           for window in numen numen-flashcards; do
@@ -827,7 +870,7 @@ jobs:
           spctl --assess --type execute -vv "$RUNNER_TEMP/mounted/Numen Flashcards.app"
           hdiutil detach "$RUNNER_TEMP/mounted" -quiet
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: numen-macos-universal
           path: ${{ runner.temp }}/Numen-*.dmg
@@ -842,9 +885,22 @@ jobs:
   # name carrying its version, in a folder that is written once and kept.
   publish:
     name: Publish
-    if: ${{ !cancelled() && needs.naming.outputs.publish == 'true' }}
+    # A platform left out by input is not a platform that failed. Every one of
+    # them has to have been built or left out; a failed one would put the
+    # release up with a file missing from it and nothing saying so.
+    if: >-
+      ${{ needs.naming.outputs.publish == 'true'
+      && needs.notes.result == 'success'
+      && (needs.linux.result == 'success' || needs.linux.result == 'skipped')
+      && (needs.flatpak.result == 'success' || needs.flatpak.result == 'skipped')
+      && (needs.snap.result == 'success' || needs.snap.result == 'skipped')
+      && (needs.windows.result == 'success' || needs.windows.result == 'skipped')
+      && (needs.macos.result == 'success' || needs.macos.result == 'skipped') }}
     needs: [naming, notes, linux, flatpak, snap, windows, macos]
     runs-on: ubuntu-24.04
+    # Fetching every path back can wait eight times ten seconds on each of
+    # them, which after a purge is twenty minutes of sleeping alone.
+    timeout-minutes: 60
     steps:
       # Every one of these has to be set before a build can go anywhere, and a
       # missing one is worth saying by name rather than as a 401 further down.
@@ -866,12 +922,12 @@ jobs:
             exit 1
           fi
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: ${{ runner.temp }}/built
           pattern: numen-*
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: notes
           path: ${{ runner.temp }}
@@ -1004,12 +1060,17 @@ jobs:
           KEY: ${{ secrets.BUNNY_STORAGE_KEY }}
         run: |
           set -euo pipefail
+          # The key is handed over in a file. A command line is read by anything
+          # on the machine and is what an error prints.
+          umask 077
+          printf 'AccessKey: %s\n' "$KEY" > "$RUNNER_TEMP/storage.header"
+
           cd "$RUNNER_TEMP/upload"
           mapfile -t paths < <(find . -type f -printf '%P\n' | sort)
           for at in "${paths[@]}"; do
             code=$(curl -sS -o /dev/null -w '%{http_code}' \
               -X PUT "https://$ENDPOINT/$ZONE/$at" \
-              -H "AccessKey: $KEY" \
+              -H @"$RUNNER_TEMP/storage.header" \
               -H 'Content-Type: application/octet-stream' \
               --data-binary "@$at")
             echo "$code  $at"
@@ -1024,16 +1085,19 @@ jobs:
           API_KEY: ${{ secrets.BUNNY_API_KEY }}
         run: |
           set -euo pipefail
+          umask 077
+          printf 'AccessKey: %s\n' "$API_KEY" > "$RUNNER_TEMP/api.header"
+
           code=$(curl -sS -o /dev/null -w '%{http_code}' \
             -X POST "https://api.bunny.net/pullzone/$PULL_ZONE/purgeCache" \
-            -H "AccessKey: $API_KEY" -H 'Content-Length: 0')
+            -H @"$RUNNER_TEMP/api.header" -H 'Content-Length: 0')
           echo "purge $code"
           case "$code" in 20*) ;; *) echo "::error::the cache was not purged: $code"; exit 1 ;; esac
 
       # The one thing worth proving: that a stranger with no key can fetch what
       # was just put up, at the address the page sends them to, and that what
       # comes back is the file that went up.
-      - name: Fetch it as a stranger would
+      - name: Fetch published
         env:
           SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
         run: |
@@ -1079,17 +1143,22 @@ jobs:
     if: ${{ !cancelled() && needs.naming.outputs.publish == 'true' && needs.publish.result == 'success' }}
     needs: [naming, notes, publish]
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # The tag is pushed and the release is made from here, and nowhere else.
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v7
+      # The one clone that keeps the token: the tag is pushed through it.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: ${{ runner.temp }}/built
           pattern: numen-*
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: notes
           path: ${{ runner.temp }}
@@ -1124,3 +1193,23 @@ jobs:
             --notes-file "$RUNNER_TEMP/notes.md" \
             $prerelease \
             "${files[@]}"
+
+      # What a machine installing this by nix fetches. It reads the shelf, so it
+      # runs after the shelf is written, and it carries the hash the shelf
+      # published.
+      #
+      # A beta moves nothing: the pin is what an ordinary installation follows,
+      # and somebody wanting a beta runs `nix/update.sh beta` themselves.
+      - name: The pin
+        if: ${{ needs.naming.outputs.channel == 'stable' }}
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          set -euo pipefail
+          nix/update.sh
+          git diff --quiet -- nix/release.json && exit 0
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add nix/release.json
+          git commit -m "chore(repo): point nix at $VERSION"
+          git push origin "HEAD:$GITHUB_REF_NAME"

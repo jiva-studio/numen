@@ -4,75 +4,59 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/onnx"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/openai"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedders"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
 
 // Embedders are what makes the vectors a vault is searched by and what makes
 // the vector a question is asked with.
 //
-// They are one model where the settings name one station. Naming a station
+// They are one model where the settings name one provider. Naming a provider
 // for questions is what puts a vault indexed over a network within reach of a
-// machine that has none.
+// machine that has none, and the two are held to being one model behind this.
 //
-// A model on this machine is fetched and compiled behind this, and the window
-// is drawn while it arrives. Until it is here the words answer alone, and the
-// model and its width are known from the settings.
-//
-// An embedder is optional: an installation naming no station answers with
-// nothing. A station that cannot be built — no key, no base URL — is a
+// An embedder is optional: an installation naming no provider answers with
+// nothing. A provider that cannot be built — no key, no base URL — is a
 // reason, and nothing is built at all.
 func (c Config) Embedders(ctx context.Context, tasks *task.Tasks) (indexing, asking port.Embedder, close func() error, why error) {
-	first, why := c.placed(ctx, c.Embedding.Indexing, forIndexing, tasks)
-	if why != nil || first == nil {
-		return nil, nil, nil, why
-	}
-	if c.Embedding.Query.Use == "" {
-		return first.Filling(), first.Asking(), first.Close, nil
-	}
-
-	second, why := c.placed(ctx, c.Embedding.Query, forQuery, tasks)
+	first, why := c.provider(c.Embedding.Indexing)
 	if why != nil {
-		_ = first.Close()
 		return nil, nil, nil, why
 	}
-	if second == nil {
-		return first.Filling(), nil, first.Close, nil
+	second, why := c.provider(c.Embedding.Query)
+	if why != nil {
+		return nil, nil, nil, why
 	}
-	// Two stations are asked whether they are one model, once both are here.
-	go func() {
-		if err := agreeing(ctx, first, second); err != nil {
-			_ = second.Disown(err)
-			failed(tasks, arriving(forQuery, c.Embedding.Query), err)
-		}
-	}()
-	return first.Filling(), second.Asking(), both(first.Close, second.Close), nil
+	indexing, asking, close = embedders.Open(ctx, tasks, first, second)
+	return indexing, asking, close, nil
 }
 
 // Embedder is what makes the vectors a vault is searched by, waited for. A run
 // with nowhere to show that a model is arriving waits for it instead.
 func (c Config) Embedder(ctx context.Context) (port.Embedder, func() error, error) {
-	held, err := c.placed(ctx, c.Embedding.Indexing, forIndexing, nil)
-	if err != nil || held == nil {
+	held, err := c.provider(c.Embedding.Indexing)
+	if err != nil {
 		return nil, nil, err
 	}
-	return held.Filling(), held.Close, nil
+	embedder, close := embedders.One(ctx, held)
+	return embedder, close, nil
 }
 
 // Asking is what embeds a question, for a run that fills no index. Only the
-// station that answers questions is opened, and it answers under the identity
+// provider that answers questions is opened, and it answers under the identity
 // the index is filled with.
 func (c Config) Asking(ctx context.Context) (port.Embedder, func() error, error) {
-	held, err := c.placed(ctx, c.Embedding.Asking(), forQuery, nil)
-	if err != nil || held == nil {
+	held, err := c.provider(c.Embedding.Asking())
+	if err != nil {
 		return nil, nil, err
 	}
-	return held.Filling(), held.Close, nil
+	embedder, close := embedders.One(ctx, held)
+	return embedder, close, nil
 }
 
 // Searching is the search a question is answered by, put together the one way:
@@ -88,168 +72,41 @@ func (c Config) Searching(db *Index, asking port.Embedder, trouble func(error)) 
 // SearchingOver is that search over the passages given, for a run that holds
 // the index open for asking alone.
 func (c Config) SearchingOver(passages port.PassageQueries, asking port.Embedder, trouble func(error)) search.Search {
-	return search.New(passages, c.VaultReaders(), c.DerivedStores(), c.Documents(),
+	return search.New(passages, c.VaultReaders(), c.DerivedStores(), c.TextExtractor(),
 		asking, c.Embedding.Floor, trouble)
 }
 
-// placed is what one station makes: a service, which answers at once, or a
-// model on this machine, which is loaded behind the window. Nothing for a
-// station that names neither.
+// provider is which adapter answers for one half of the work, under the
+// identity the index is filled with and the name that half is reached by.
 //
-// Whichever it is, it answers under the identity the index is filled with, and
-// the two stations are held to it by being compared as one model.
-func (c Config) placed(ctx context.Context, where embed.Station, role string, tasks *task.Tasks) (*embedding.Embedding, error) {
+// Nothing for a provider that names neither kind. A word that is neither is a
+// word nobody implements: left to mean nothing, it is a vault searched by its
+// words and no reason given.
+func (c Config) provider(where embed.Provider) (embedders.Provider, error) {
 	is := c.Embedding.Stored()
 	switch where.Use {
 	case embed.UseService:
-		client, err := openai.New(is, where.Service)
+		service, _ := where.Service()
+		client, err := openai.New(is, service)
 		if err != nil {
-			return nil, err
+			return embedders.Provider{}, err
 		}
-		held := embedding.Arriving(is)
-		held.Landed(client, nil)
-		return held, nil
+		return embedders.Reached(is, service.Name, client), nil
 
 	case embed.UseLocal:
-		held := embedding.Arriving(is)
-		at := arriving(role, where)
-		doing := preparing(tasks, at)
-		doing(0, 0)
-		go func() {
-			model, err := onnx.Open(ctx, is, where.Local, doing)
+		local, _ := where.Local()
+		open := func(ctx context.Context, tell func(done, total int64)) (port.Embedder, error) {
+			model, err := onnx.Open(ctx, is, local, tell)
 			if err != nil {
-				held.Landed(nil, err)
-				failed(tasks, at, err)
-				return
+				return nil, err
 			}
-			held.Landed(model, nil)
-			ready(tasks, at)
-		}()
-		return held, nil
+			return model, nil
+		}
+		return embedders.Fetched(is, local.Name, open), nil
 
 	case "":
-		return nil, nil
+		return embedders.Provider{}, nil
 	}
-	// A word neither of them is a word nobody implements. Left to mean nothing,
-	// it is a vault searched by its words and no reason given.
-	return nil, fmt.Errorf("vectors are made %q, and they are made %q or %q",
+	return embedders.Provider{}, fmt.Errorf("vectors are made %q, and they are made %q or %q",
 		where.Use, embed.UseLocal, embed.UseService)
-}
-
-// agreeing is the two stations answering one text alike, once both are here.
-//
-// A question embedded in another space finds nothing the first indexed, and
-// nothing in a settings file shows that two stations are one model. A
-// comparison that did not happen is not agreement, and only a context that
-// ended excuses one.
-func agreeing(ctx context.Context, first, second *embedding.Embedding) error {
-	// unchecked is a comparison nobody got an answer out of. A run somebody
-	// stopped is owed no answer.
-	unchecked := func(why error) error {
-		if ctx.Err() != nil {
-			return nil
-		}
-		return fmt.Errorf("%s and %s were not compared as one model: %w",
-			first.Model(), second.Model(), why)
-	}
-
-	if err := first.Wait(ctx); err != nil {
-		return unchecked(err)
-	}
-	if err := second.Wait(ctx); err != nil {
-		return unchecked(err)
-	}
-
-	said, err := first.Filling().Embed(ctx, []string{embedding.Asked})
-	if err != nil {
-		return unchecked(err)
-	}
-	back, err := second.Filling().Embed(ctx, []string{embedding.Asked})
-	if err != nil {
-		return unchecked(err)
-	}
-	if len(said) != 1 || len(back) != 1 || !embedding.Agreed(said[0], back[0]) {
-		return fmt.Errorf("%s and %s are not one model, and a question embedded by the second finds nothing the first indexed",
-			first.Model(), second.Model())
-	}
-	return nil
-}
-
-// Which half of the work a station is for. An arrival is called by its role
-// and its name, and two stations naming one repository are two lines.
-const (
-	forIndexing = "indexing"
-	forQuery    = "query"
-)
-
-// listing is one station's arrival in the list of what is being done: what
-// that line is called, and the name to show on it.
-type listing struct {
-	id, name string
-}
-
-// arriving is how one station appears while it is on its way. A model on this
-// machine is named by its repository and a service by the model it is asked
-// for.
-func arriving(role string, where embed.Station) listing {
-	name := where.Service.Name
-	if where.Use == embed.UseLocal {
-		name = where.Local.Name
-	}
-	return listing{id: "getting ready: " + role + ": " + name, name: name}
-}
-
-// preparing tells the list how far the model has got, counted in the bytes of
-// it that are here. Fetching it and compiling it are one wait.
-//
-// The count is bytes and says so, and the sizes a person reads them in are the
-// window's to write. A share is drawn once some of the model is here: none of
-// it counted is nothing known about how long the rest will take.
-//
-// A run with no list to tell is told nothing and still asks: what says how far
-// the work has got is called wherever the work is, and a run in a terminal
-// takes the same road as a window.
-func preparing(tasks *task.Tasks, at listing) onnx.Fetching {
-	if tasks == nil {
-		return func(int64, int64) {}
-	}
-	return func(done, total int64) {
-		held := task.Task{ID: at.id, Doing: "Preparing the model", About: at.name}
-		if done > 0 {
-			held.Done, held.Total, held.Counting = done, total, task.Bytes
-		}
-		tasks.Set(held)
-	}
-}
-
-func ready(tasks *task.Tasks, at listing) {
-	if tasks != nil {
-		tasks.Done(at.id)
-	}
-}
-
-// failed leaves the model in the list under what stopped it.
-func failed(tasks *task.Tasks, at listing, why error) {
-	if tasks != nil {
-		tasks.Set(task.Task{
-			ID: at.id, Doing: "Preparing the model", About: at.name,
-			Failed: why.Error(),
-		})
-	}
-}
-
-// both is one closer for two, letting go of the second whatever the first says.
-func both(first, second func() error) func() error {
-	return func() error {
-		var why error
-		if second != nil {
-			why = second()
-		}
-		if first != nil {
-			if err := first(); why == nil {
-				why = err
-			}
-		}
-		return why
-	}
 }

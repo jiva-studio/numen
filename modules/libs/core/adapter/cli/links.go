@@ -6,26 +6,24 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-func linksCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
+func linksCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli links <vault> <note>")
 	}
-	v, err := findVault(cfg, args[0])
+	v, err := findVault(deps, args[0])
 	if err != nil {
 		return err
 	}
-	db, err := cfg.OpenIndex(ctx)
+	open, err := deps.Links(ctx)
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer closing(open.Close)
 
-	links, err := note.ShowLinks{Links: db.Links()}.Execute(ctx, v, args[1])
+	links, err := open.Show.Execute(ctx, v, args[1])
 	if err != nil {
 		return err
 	}
@@ -66,14 +64,14 @@ func describeLink(from domain.Vault, l domain.ResolvedLink) string {
 		where += "  (several notes answer to that name)"
 	}
 	if vault, crossed := l.InVault(from.ID); crossed {
-		where += "  (in another vault: " + vault + ")"
+		where += "  (in another vault: " + string(vault) + ")"
 	}
 	line := fmt.Sprintf("%-10s %s", l.Role, where)
 	if l.Type != "" {
 		line += "  [" + l.Type + "]"
 	}
-	if l.Note != "" {
-		line += "  — " + l.Note
+	if l.Why != "" {
+		line += "  — " + l.Why
 	}
 	return line
 }

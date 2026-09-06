@@ -8,7 +8,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // Queries answers questions about notes in shapes that are not notes: what the
@@ -17,10 +16,10 @@ type Queries struct{ db *sql.DB }
 
 func NewQueries(db *sql.DB) *Queries { return &Queries{db: db} }
 
-func (q *Queries) Fingerprints(ctx context.Context, vaultID string) (map[string]domain.FileRef, error) {
+func (q *Queries) Fingerprints(ctx context.Context, vaultID domain.VaultID) (map[string]domain.Fingerprint, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
-		return map[string]domain.FileRef{}, nil
+		return map[string]domain.Fingerprint{}, nil
 	}
 	if err != nil {
 		return nil, err
@@ -32,59 +31,21 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID string) (map[string]
 	}
 	defer rows.Close()
 
-	out := map[string]domain.FileRef{}
+	out := map[string]domain.Fingerprint{}
 	for rows.Next() {
-		var ref domain.FileRef
-		if err := rows.Scan(&ref.Path, &ref.Size, &ref.MTime); err != nil {
+		var ref domain.Fingerprint
+		var mtime int64
+		if err := rows.Scan(&ref.Path, &ref.Size, &mtime); err != nil {
 			return nil, err
 		}
+		ref.ModTime = chunk.Instant(mtime)
 		out[ref.Path] = ref
 	}
 	return out, rows.Err()
 }
 
-// Search is the notes whose text matches the words typed, each ranked by its
-// best chunk. A search over everything the vault holds answers with passages;
-// this answers with notes.
-func (q *Queries) Search(ctx context.Context, vaultID, query string, limit int) ([]domain.NoteMatch, error) {
-	if limit <= 0 {
-		// How many results a person wants is not something a database adapter
-		// knows. The caller decides, and arriving here without one is a
-		// mistake in the caller.
-		return nil, fmt.Errorf("search limit must be positive, got %d", limit)
-	}
-	expression := chunk.Expression(query, false)
-	if expression == "" {
-		return nil, nil
-	}
-	vault, err := vaultRow(ctx, q.db, vaultID)
-	if errors.Is(err, errNoVault) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := q.db.QueryContext(ctx, stmt.Get("search"), expression, vault, limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var out []domain.NoteMatch
-	for rows.Next() {
-		var m domain.NoteMatch
-		var score float64
-		if err := rows.Scan(&m.Path, &m.Title, &score); err != nil {
-			return nil, err
-		}
-		out = append(out, m)
-	}
-	return out, rows.Err()
-}
-
 // Holds reports whether the index carries this vault at all.
-func (q *Queries) Holds(ctx context.Context, vaultID string) (bool, error) {
+func (q *Queries) Holds(ctx context.Context, vaultID domain.VaultID) (bool, error) {
 	_, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return false, nil
@@ -95,7 +56,7 @@ func (q *Queries) Holds(ctx context.Context, vaultID string) (bool, error) {
 	return true, nil
 }
 
-func (q *Queries) Summary(ctx context.Context, vaultID string) (domain.VaultSummary, error) {
+func (q *Queries) Summary(ctx context.Context, vaultID domain.VaultID) (domain.VaultSummary, error) {
 	var s domain.VaultSummary
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
@@ -117,7 +78,7 @@ func Statements() map[string]string { return stmt }
 // Named is every note filed under one name. A name that answers for more than
 // one note is what makes a link written by that name ambiguous, and
 // is worth saying out loud before it surprises anyone.
-func (q *Queries) Named(ctx context.Context, vaultID, name string) ([]string, error) {
+func (q *Queries) Named(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -144,7 +105,7 @@ func (q *Queries) Named(ctx context.Context, vaultID, name string) ([]string, er
 }
 
 // Stencils is every stencil one vault holds, by path.
-func (q *Queries) Stencils(ctx context.Context, vaultID string) ([]port.Stencil, error) {
+func (q *Queries) Stencils(ctx context.Context, vaultID domain.VaultID) ([]domain.Stencil, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -159,9 +120,9 @@ func (q *Queries) Stencils(ctx context.Context, vaultID string) ([]port.Stencil,
 	}
 	defer rows.Close()
 
-	var out []port.Stencil
+	var out []domain.Stencil
 	for rows.Next() {
-		var s port.Stencil
+		var s domain.Stencil
 		if err := rows.Scan(&s.Path, &s.Title); err != nil {
 			return nil, err
 		}
@@ -179,7 +140,7 @@ const mostPerNote = 2
 // The two are ranked apart and a title comes first, so what is cut by the limit
 // is a heading of a note already named or a name matched less well. What one
 // note may contribute is settled before the limit is applied.
-func (q *Queries) Names(ctx context.Context, vaultID, query string, limit int) ([]domain.NameMatch, error) {
+func (q *Queries) Names(ctx context.Context, vaultID domain.VaultID, query string, limit int) ([]domain.NameMatch, error) {
 	if limit <= 0 {
 		// How many results a person wants is not something a database adapter
 		// knows. The caller decides, and arriving here without one is a
@@ -219,7 +180,7 @@ func (q *Queries) Names(ctx context.Context, vaultID, query string, limit int) (
 		}
 		m.Type = domain.NoteType(held)
 		name, at := split(marked)
-		m.At = at
+		m.Spans = at
 		if kind != 0 {
 			m.Heading, m.Line = name, line
 		}

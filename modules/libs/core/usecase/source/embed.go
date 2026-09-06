@@ -27,12 +27,14 @@ type Embed struct {
 	Chunks  port.VectorQueries
 	Vectors port.VectorRepository
 
-	// Derived holds what a recogniser wrote. A chunk of a recognised document
-	// is re-sliced out of that and not out of the document.
+	// Derived is optional. It holds what a recogniser wrote, and a chunk of a
+	// recognised document is re-sliced out of that and not out of the document;
+	// without one such a chunk is left owing its vector.
 	Derived port.DerivedStore
-	// Documents reads a format that needs a library, for a source standing on
-	// its own bytes.
-	Documents port.Documents
+	// Documents is optional. It reads a format that needs a library, for a
+	// source standing on its own bytes; without one such a chunk is left owing
+	// its vector.
+	Documents port.TextExtractor
 
 	// Embedder is optional. Without one nothing is embedded and a search answers
 	// on its words alone, which is a whole search: the vector index fills in
@@ -44,6 +46,15 @@ type Embed struct {
 
 	// OnProgress, if set, is called each time a group of vectors is written.
 	OnProgress func(EmbedResult)
+}
+
+// NewEmbed is what a vault's chunks are given vectors through: the vault the
+// text is read out of, what says which chunks owe a vector from the model in
+// use, and where the vectors are written.
+func NewEmbed(
+	readers port.VaultReaders, chunks port.VectorQueries, vectors port.VectorRepository,
+) Embed {
+	return Embed{Readers: readers, Chunks: chunks, Vectors: vectors}
 }
 
 // EmbedResult reports what embedding did.
@@ -76,20 +87,24 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 	}
 	source := extracted{of: text.Reader{Vault: reader, Derived: store, Documents: u.Documents}}
 
-	after := int64(0)
+	var after port.ChunkCursor
 	for {
 		if err := ctx.Err(); err != nil {
 			return res, err
 		}
-		owing, err := u.Chunks.Unembedded(ctx, v.ID, model, after, chunksPerQuery)
+		owing, next, err := u.Chunks.Unembedded(ctx, v.ID, model, after, chunksPerQuery)
 		if err != nil {
 			return res, fmt.Errorf("what owes a vector from %s: %w", model, err)
 		}
 		if len(owing) == 0 {
 			return res, nil
 		}
+		// A group answered without moving on would be answered again forever.
+		if next == after {
+			return res, fmt.Errorf("what owes a vector from %s does not carry on past %d chunks", model, len(owing))
+		}
 		res.Owing += len(owing)
-		after = owing[len(owing)-1].Chunk
+		after = next
 
 		chunks, texts, err := u.read(ctx, &source, owing, &res)
 		if err != nil {
@@ -121,7 +136,7 @@ func (u Embed) read(ctx context.Context, source *extracted, owing []domain.Passa
 			res.Reading = p.Source
 			u.progress(*res)
 		}
-		prose, ok, err := source.textOf(ctx, p.Source, p.TextFrom, p.Hash)
+		prose, ok, err := source.textOf(ctx, p.Source, p.Producer, p.SourceHash)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -151,18 +166,18 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 	}
 	recipe := model.Recipe()
 
-	// The text each chunk holds, as the index recorded it when the source was
-	// cut. That record is what a chunk is identified by, and what every
-	// question about what still owes a vector is asked against.
-	prints := make([][]byte, len(texts))
+	// The address of the text each chunk held when the source was cut. It is
+	// what a chunk is identified by, what a vector is kept under, and what
+	// every question about what still owes a vector is asked against.
+	hashes := make([][]byte, len(texts))
 	for i := range texts {
-		raw, err := hex.DecodeString(owing[i].Fingerprint)
+		raw, err := hex.DecodeString(owing[i].ChunkHash)
 		if err != nil || len(raw) == 0 {
 			continue
 		}
-		prints[i] = raw
+		hashes[i] = raw
 	}
-	kept, err := u.Vectors.Kept(ctx, recipe, prints)
+	kept, err := u.Vectors.Kept(ctx, recipe, hashes)
 	if err != nil {
 		return fmt.Errorf("what is already made: %w", err)
 	}
@@ -171,20 +186,20 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 	var asking []string
 	var askingFor []int
 	for i := range texts {
-		value, held := kept[hex.EncodeToString(prints[i])]
-		if !held || len(prints[i]) == 0 {
+		value, held := kept[hex.EncodeToString(hashes[i])]
+		if !held || len(hashes[i]) == 0 {
 			asking = append(asking, texts[i])
 			askingFor = append(askingFor, i)
 			continue
 		}
 		// Bought once. What the coarse pass needs is read back out of it.
 		out = append(out, port.Vector{
-			Chunk:       owing[i].Chunk,
-			Fingerprint: prints[i],
-			Model:       model,
-			Kind:        port.QuantisedInt8,
-			Value:       value,
-			Coarse:      embedding.Coarse(unsigned(value)),
+			ChunkID: owing[i].ChunkID,
+			Hash:    hashes[i],
+			Model:   model,
+			Kind:    port.QuantisedInt8,
+			Value:   value,
+			Coarse:  embedding.Coarse(embedding.Dimensions(value)),
 		})
 		res.Reused++
 	}
@@ -207,12 +222,12 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 			at := askingFor[i]
 			quantised := embedding.Bytes(v)
 			out = append(out, port.Vector{
-				Chunk:       owing[at].Chunk,
-				Fingerprint: prints[at],
-				Model:       model,
-				Kind:        port.QuantisedInt8,
-				Value:       signed(quantised),
-				Coarse:      embedding.Coarse(quantised),
+				ChunkID: owing[at].ChunkID,
+				Hash:    hashes[at],
+				Model:   model,
+				Kind:    port.QuantisedInt8,
+				Value:   signed(quantised),
+				Coarse:  embedding.Coarse(quantised),
 			})
 		}
 	}
@@ -223,15 +238,6 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 	res.Embedded += len(out)
 	u.progress(*res)
 	return nil
-}
-
-// unsigned is a stored vector as the dimensions it holds, one per byte.
-func unsigned(stored []byte) []int8 {
-	out := make([]int8, len(stored))
-	for i, b := range stored {
-		out[i] = int8(b)
-	}
-	return out
 }
 
 func (u Embed) progress(res EmbedResult) {

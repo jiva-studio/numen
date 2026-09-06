@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
 
@@ -88,7 +87,7 @@ func openedAt(t *testing.T, path string) *DB {
 	t.Cleanup(func() { db.Close() })
 
 	for _, v := range []domain.Vault{first, second} {
-		if err := db.Vaults().Save(t.Context(), v); err != nil {
+		if err := db.Vaults().Register(t.Context(), v.ID); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -111,7 +110,7 @@ func book(t *testing.T, db *DB, vault domain.Vault, path string, seed byte) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := chunks.SaveChunks(ctx, vault.ID, "book", path, []chunk.Chunk{{
+	if err := chunks.ReplaceChunks(ctx, vault.ID, "book", path, []chunk.Chunk{{
 		Start: 0, Length: 100, Location: "chapter 1",
 		Text: stem + " opening " + stem + " middle",
 		Small: []chunk.Chunk{
@@ -136,7 +135,7 @@ func vectorise(t *testing.T, db *DB, vault domain.Vault, seed byte) {
 	vectors := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
 		vectors = append(vectors, chunk.Vector{
-			Chunk: p.Chunk, Fingerprint: fingerprintOf(t, db, p.Chunk), Recipe: "model",
+			Chunk: p.Chunk, Hash: hashOf(t, db, p.Chunk), Recipe: "model",
 			Value: precise(direction(seed)), Coarse: bits(seed),
 		})
 	}
@@ -145,10 +144,10 @@ func vectorise(t *testing.T, db *DB, vault domain.Vault, seed byte) {
 	}
 }
 
-// fingerprintOf is the text one chunk holds, as the vector made from it is
-// addressed. The real path hashes what it is about to send; a fixture reads
-// what the cut already recorded.
-func fingerprintOf(t *testing.T, db *DB, chunk int64) []byte {
+// hashOf addresses the text one chunk holds, which is what the vector made
+// from it is kept under. The real path hashes what it is about to send; a
+// fixture reads what the cut already recorded.
+func hashOf(t *testing.T, db *DB, chunk int64) []byte {
 	t.Helper()
 
 	var held string
@@ -280,8 +279,8 @@ func TestAHitComesBackAsTheChunkThatIsRead(t *testing.T) {
 		if p.Location != "chapter 1" {
 			t.Errorf("a hit came back at the location %q", p.Location)
 		}
-		if p.Chunk == 0 {
-			t.Error("a hit came back naming no row, so nothing can be merged on it")
+		if p.ChunkID == "" {
+			t.Error("a hit came back naming no chunk, so nothing can be merged on it")
 		}
 	}
 }
@@ -341,7 +340,7 @@ func source(t *testing.T, db *DB, vault domain.Vault, path string, kind domain.S
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := chunks.SaveChunks(ctx, vault.ID, string(kind), path, []chunk.Chunk{{
+	if err := chunks.ReplaceChunks(ctx, vault.ID, string(kind), path, []chunk.Chunk{{
 		Start: 0, Length: 100, Location: "opening", Opens: []string{"opening"}, Text: text,
 		Small: []chunk.Chunk{{Start: 0, Length: 50, Text: text}},
 	}}); err != nil {
@@ -389,9 +388,9 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 	db := opened(t)
 
 	note := domain.Note{
-		Ref:   domain.FileRef{Path: "notes/Entropy.md", Size: 14, MTime: 1},
-		Title: "Entropy",
-		Body:  "the first body",
+		Fingerprint: domain.Fingerprint{Path: "notes/Entropy.md", Size: 14, ModTime: walked},
+		Title:       "Entropy",
+		Body:        "the first body",
 	}
 	if err := db.Notes().Save(ctx, first.ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
@@ -399,10 +398,10 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 
 	// A note is cut the way a book is: one large chunk over the whole of it, and
 	// the small chunks inside it that carry the vectors.
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent IS NULL`); got != 1 {
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent_id IS NULL`); got != 1 {
 		t.Errorf("%d large chunks for one note", got)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent IS NOT NULL`); got == 0 {
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent_id IS NOT NULL`); got == 0 {
 		t.Fatal("a note has no small chunks, so nothing about it can be embedded")
 	}
 	vectorise(t, db, first, 0x00)
@@ -411,19 +410,19 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 		t.Fatal("the note was not embedded, so this test would pass either way")
 	}
 
-	note.Ref.Size = 23
+	note.Fingerprint.Size = 23
 	note.Body = "the second body, longer"
 	if err := db.Notes().Save(ctx, first.ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
 	}
 
 	// What is left is the note as it stands now, cut once.
-	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent IS NULL`); got != 1 {
+	if got := counted(t, db, `SELECT COUNT(*) FROM chunks WHERE parent_id IS NULL`); got != 1 {
 		t.Errorf("%d large chunks after a note was rewritten", got)
 	}
 	if got := counted(t, db,
-		`SELECT COUNT(*) FROM chunks c WHERE c.parent IS NOT NULL
-		   AND c.parent NOT IN (SELECT id FROM chunks WHERE parent IS NULL)`); got != 0 {
+		`SELECT COUNT(*) FROM chunks c WHERE c.parent_id IS NOT NULL
+		   AND c.parent_id NOT IN (SELECT id FROM chunks WHERE parent_id IS NULL)`); got != 0 {
 		t.Errorf("%d small chunks sit inside a large one that is gone", got)
 	}
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
@@ -437,7 +436,7 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) == 0 || found[0].Source != note.Ref.Path {
+	if len(found) == 0 || found[0].Source != note.Fingerprint.Path {
 		t.Errorf("the rewritten note is not findable by its new words: %+v", found)
 	}
 	if stale, err := db.ChunkQueries().Lexical(ctx, first.ID, "first", nil, 10, false); err != nil {
@@ -459,9 +458,9 @@ func TestANoteIsCutIntoChunksThatCanCarryAVector(t *testing.T) {
 
 	body := strings.Repeat("entropy is the measure of disorder in a closed system. ", 8)
 	note := domain.Note{
-		Ref:   domain.FileRef{Path: "notes/Entropy.md", Size: int64(len(body)), MTime: 1},
-		Title: "Entropy",
-		Body:  body,
+		Fingerprint: domain.Fingerprint{Path: "notes/Entropy.md", Size: int64(len(body)), ModTime: walked},
+		Title:       "Entropy",
+		Body:        body,
 	}
 	if err := db.Notes().Save(ctx, first.ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
@@ -476,7 +475,7 @@ func TestANoteIsCutIntoChunksThatCanCarryAVector(t *testing.T) {
 	}
 	// Every offset is into the file, so the text of a passage can be read back.
 	for _, p := range owing {
-		if p.Start < 0 || p.Start+p.Length > int(note.Ref.Size) {
+		if p.Start < 0 || p.Start+p.Length > int(note.Fingerprint.Size) {
 			t.Errorf("a chunk lies outside the file: %+v", p)
 		}
 	}
@@ -525,14 +524,14 @@ func TestRemovingANoteTakesItsIndexedRows(t *testing.T) {
 	db := opened(t)
 
 	note := domain.Note{
-		Ref:   domain.FileRef{Path: "notes/Entropy.md", Size: 6, MTime: 1},
-		Title: "Entropy",
-		Body:  "a body",
+		Fingerprint: domain.Fingerprint{Path: "notes/Entropy.md", Size: 6, ModTime: walked},
+		Title:       "Entropy",
+		Body:        "a body",
 	}
 	if err := db.Notes().Save(ctx, first.ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().SaveChunks(ctx, first.ID, "note", note.Ref.Path, []chunk.Chunk{{
+	if err := db.Chunks().ReplaceChunks(ctx, first.ID, "note", note.Fingerprint.Path, []chunk.Chunk{{
 		Start: 0, Length: 6, Text: note.Body,
 		Small: []chunk.Chunk{{Start: 0, Length: 6, Text: note.Body}},
 	}}); err != nil {
@@ -540,7 +539,7 @@ func TestRemovingANoteTakesItsIndexedRows(t *testing.T) {
 	}
 	vectorise(t, db, first, 0x00)
 
-	if err := db.Notes().Remove(ctx, first.ID, []string{note.Ref.Path}); err != nil {
+	if err := db.Notes().Remove(ctx, first.ID, []string{note.Fingerprint.Path}); err != nil {
 		t.Fatal(err)
 	}
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
@@ -563,9 +562,9 @@ func TestANoteScanDoesNotSeeABook(t *testing.T) {
 	book(t, db, first, "library/first.epub", 0x00)
 
 	note := domain.Note{
-		Ref:   domain.FileRef{Path: "notes/Entropy.md", Size: 20, MTime: 1},
-		Title: "Entropy",
-		Body:  "a body",
+		Fingerprint: domain.Fingerprint{Path: "notes/Entropy.md", Size: 20, ModTime: walked},
+		Title:       "Entropy",
+		Body:        "a body",
 	}
 	if err := db.Notes().Save(ctx, first.ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
@@ -622,7 +621,7 @@ func TestAChunkCannotClaimAnotherVault(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err := db.write.ExecContext(ctx,
-		`INSERT INTO chunks (source_id, vault_id, start, length, parent, location)
+		`INSERT INTO chunks (source_id, vault_id, start, length, parent_id, location)
 		 VALUES (?, ?, 0, 10, NULL, NULL)`, source, theirs)
 	if err == nil {
 		t.Error("a chunk was written into a vault its source does not belong to")
@@ -730,7 +729,7 @@ func TestTheChildKeyOfAChunkIsIndexed(t *testing.T) {
 	ctx := t.Context()
 	db := opened(t)
 
-	for column, want := range map[string]string{"parent": "chunks_by_parent", "source_id": "chunks_by_source"} {
+	for column, want := range map[string]string{"parent_id": "chunks_by_parent", "source_id": "chunks_by_source"} {
 		if !leads(ctx, t, db, "chunks", column) {
 			t.Errorf("no index of chunks leads with %s, so %s is missing", column, want)
 		}
@@ -782,7 +781,7 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 			},
 		})
 	}
-	if err := db.Chunks().SaveChunks(ctx, vault.ID, "book", "library/one.epub", large); err != nil {
+	if err := db.Chunks().ReplaceChunks(ctx, vault.ID, "book", "library/one.epub", large); err != nil {
 		t.Fatal(err)
 	}
 
@@ -844,7 +843,7 @@ func cutInto(t *testing.T, db *DB, vault domain.Vault, path string, texts ...str
 			Small: []chunk.Chunk{{Start: i * 100, Length: 50, Text: text}},
 		})
 	}
-	if err := db.Chunks().SaveChunks(ctx, vault.ID, "book", path, cut); err != nil {
+	if err := db.Chunks().ReplaceChunks(ctx, vault.ID, "book", path, cut); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -872,7 +871,7 @@ func TestAChunkThatWentIsWrittenNoVectorAndStopsNothing(t *testing.T) {
 	vectors := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
 		vectors = append(vectors, chunk.Vector{
-			Chunk: p.Chunk, Fingerprint: fingerprintOf(t, db, p.Chunk), Recipe: "model",
+			Chunk: p.Chunk, Hash: hashOf(t, db, p.Chunk), Recipe: "model",
 			Value: bits(1), Coarse: bits(1),
 		})
 	}
@@ -946,10 +945,10 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 		t.Fatalf("%d chunks owe a vector, want the two small chunks", len(owing))
 	}
 	if err := db.Chunks().SaveVectors(ctx, []chunk.Vector{{
-		Chunk: owing[0].Chunk, Fingerprint: fingerprintOf(t, db, owing[0].Chunk), Recipe: "model",
+		Chunk: owing[0].Chunk, Hash: hashOf(t, db, owing[0].Chunk), Recipe: "model",
 		Coarse: bits(0xff), Value: precise(direction(0xfe)),
 	}, {
-		Chunk: owing[1].Chunk, Fingerprint: fingerprintOf(t, db, owing[1].Chunk), Recipe: "model",
+		Chunk: owing[1].Chunk, Hash: hashOf(t, db, owing[1].Chunk), Recipe: "model",
 		Coarse: bits(0xfe), Value: precise(direction(0xff)),
 	}}); err != nil {
 		t.Fatal(err)
@@ -989,7 +988,7 @@ func TestAVectorIsKeptByTheTextItWasMadeFrom(t *testing.T) {
 	sum := sha256.Sum256([]byte(text))
 	value := precise(direction(0x11))
 	if err := db.Chunks().SaveVectors(ctx, []chunk.Vector{{
-		Chunk: owing[0].Chunk, Fingerprint: sum[:], Recipe: "a recipe",
+		Chunk: owing[0].Chunk, Hash: sum[:], Recipe: "a recipe",
 		Coarse: bits(0x11), Value: value,
 	}}); err != nil {
 		t.Fatal(err)
@@ -1047,7 +1046,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 	made := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
 		made = append(made, chunk.Vector{
-			Chunk: p.Chunk, Fingerprint: fingerprintOf(t, db, p.Chunk), Recipe: "another-model",
+			Chunk: p.Chunk, Hash: hashOf(t, db, p.Chunk), Recipe: "another-model",
 			Coarse: bits(0x00), Value: precise(direction(0x00)),
 		})
 	}
@@ -1107,7 +1106,7 @@ func TestTextThatWentTakesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 			t.Fatal(err)
 		}
 		made = append(made, chunk.Vector{
-			Chunk: p.Chunk, Fingerprint: raw, Recipe: "model",
+			Chunk: p.Chunk, Hash: raw, Recipe: "model",
 			Coarse: bits(0x00), Value: precise(direction(0x00)),
 		})
 	}
@@ -1163,7 +1162,7 @@ func TestAVectorStaysWhileAnyChunkStillHoldsItsText(t *testing.T) {
 			t.Fatal(err)
 		}
 		made = append(made, chunk.Vector{
-			Chunk: p.Chunk, Fingerprint: raw, Recipe: "model",
+			Chunk: p.Chunk, Hash: raw, Recipe: "model",
 			Coarse: bits(0x00), Value: precise(direction(0x00)),
 		})
 	}
@@ -1200,7 +1199,7 @@ func recognised(t *testing.T, db *DB, vault domain.Vault, path, hash string) {
 	t.Helper()
 
 	if err := db.Chunks().SaveSource(t.Context(), vault.ID, chunk.Source{
-		Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: hash, TextFrom: "ocr",
+		Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: hash, Producer: "ocr",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -1217,10 +1216,10 @@ func TestRecognisedStaysInsideItsVault(t *testing.T) {
 
 	for _, c := range []struct {
 		vault domain.Vault
-		want  chunk.Recognised
+		want  chunk.SourceText
 	}{
-		{first, chunk.Recognised{Path: "library/first.pdf", From: "ocr", Hash: "hash-first"}},
-		{second, chunk.Recognised{Path: "library/second.pdf", From: "ocr", Hash: "hash-second"}},
+		{first, chunk.SourceText{Path: "library/first.pdf", Producer: "ocr", Hash: "hash-first"}},
+		{second, chunk.SourceText{Path: "library/second.pdf", Producer: "ocr", Hash: "hash-second"}},
 	} {
 		found, err := db.ChunkQueries().Recognised(t.Context(), c.vault.ID, "book")
 		if err != nil {
@@ -1270,7 +1269,7 @@ func sectioned(t *testing.T, db *DB, vault domain.Vault, path string) {
 			Small: []chunk.Chunk{{Start: 200, Length: 100, Text: "Alice Fenn met him."}},
 		},
 	}
-	if err := chunks.SaveChunks(ctx, vault.ID, "book", path, cut); err != nil {
+	if err := chunks.ReplaceChunks(ctx, vault.ID, "book", path, cut); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -1308,8 +1307,8 @@ func TestASectionIsFoundByItsName(t *testing.T) {
 	if named[0].Location != "Madhavendra Puri" {
 		t.Errorf("the section came back as %q", named[0].Location)
 	}
-	if named[0].Chunk == 0 {
-		t.Error("the section names no row, so nothing can be merged on it")
+	if named[0].ChunkID == "" {
+		t.Error("the section names no chunk, so nothing can be merged on it")
 	}
 }
 
@@ -1357,7 +1356,7 @@ func TestASectionNameLeavesWithTheSourceItCameFrom(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := chunks.SaveChunks(ctx, first.ID, "book", "library/gone.pdf", []chunk.Chunk{{
+	if err := chunks.ReplaceChunks(ctx, first.ID, "book", "library/gone.pdf", []chunk.Chunk{{
 		Start: 0, Length: 100, Location: "Thermodynamics",
 		Opens: []string{"Thermodynamics"},
 		Text:  "Heat moves one way.",
@@ -1376,7 +1375,7 @@ func TestASectionNameLeavesWithTheSourceItCameFrom(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := chunks.SaveChunks(ctx, first.ID, "book", "library/next.pdf", []chunk.Chunk{{
+	if err := chunks.ReplaceChunks(ctx, first.ID, "book", "library/next.pdf", []chunk.Chunk{{
 		Start: 0, Length: 100, Location: "Whales",
 		Text:  "A whale breathes air.",
 		Small: []chunk.Chunk{{Start: 0, Length: 100, Text: "A whale breathes air."}},
@@ -1402,7 +1401,7 @@ func TestASectionCutAwayIsNotFoundByItsName(t *testing.T) {
 	sectioned(t, db, first, "library/chaitanya.pdf")
 
 	// Cut again, and this time nothing opens a section.
-	if err := db.Chunks().SaveChunks(ctx, first.ID, "book", "library/chaitanya.pdf",
+	if err := db.Chunks().ReplaceChunks(ctx, first.ID, "book", "library/chaitanya.pdf",
 		[]chunk.Chunk{{
 			Start: 0, Length: 100, Location: "Madhavendra Puri",
 			Text:  "Madhavendra Puri appeared in the fourteenth century.",
@@ -1427,19 +1426,19 @@ func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
 	ctx := t.Context()
 	db := opened(t)
 
-	if err := db.Sources().SaveExtraction(ctx, first.ID, port.Extraction{
-		Source: port.Source{
-			Ref: domain.FileRef{
-				Path: "library/chaitanya.pdf", Kind: domain.KindBook, Size: 1000, MTime: 1,
+	if err := db.Sources().SaveExtraction(ctx, first.ID, domain.SourceChunks{
+		Source: domain.Source{
+			Fingerprint: domain.Fingerprint{
+				Path: "library/chaitanya.pdf", Kind: domain.KindBook, Size: 1000, ModTime: walked,
 			},
 			Hash:   "hash",
 			Recipe: "pdf",
 		},
-		Chunks: []port.Chunk{{
+		Chunks: []domain.Chunk{{
 			Start: 0, Length: 60, Location: "Madhavendra Puri",
 			Opens: []string{"Madhavendra Puri"},
 			Text:  "Madhavendra Puri appeared in the fourteenth century.",
-			Small: []port.Chunk{{Start: 0, Length: 60, Text: "Madhavendra Puri appeared."}},
+			Small: []domain.Chunk{{Start: 0, Length: 60, Text: "Madhavendra Puri appeared."}},
 		}},
 	}); err != nil {
 		t.Fatal(err)

@@ -4,22 +4,23 @@
  * Apart from the template because what a key means is a rule, and a rule inside
  * a component can only be exercised by pressing a key at a screen.
  */
-import { said } from './core'
-import type { Said } from './core'
+import { typing } from '@numen/ui'
+import { grades } from './core'
+import type { Grade } from './core'
 
-/** What a keystroke asks for in a sitting, and nothing when it asks nothing. */
-export type Asks =
+/** What a keystroke asks for in a session, and nothing when it asks nothing. */
+export type SessionKeyIntent =
   | { does: 'show' }
   | { does: 'takeBack' }
   | { does: 'leave' }
-  | { does: 'answer'; how: Said }
+  | { does: 'answer'; how: Grade }
   | { does: 'ask' }
   | { does: 'read' }
   | { does: 'scroll'; back: boolean }
   | { does: 'shut' }
 
 /** What the window is showing when the key is pressed. */
-export interface Showing {
+export interface ScreenState {
   /** Whether the answer is already showing. */
   shown: boolean
   /** Whether the panel a card is asked about in is up. */
@@ -35,30 +36,13 @@ export const ASKS = 'a'
 export const READS = 'r'
 
 /**
- * Whether the key was pressed into something being written in. A letter is
- * text there, and a sitting reads none of its own keys out of a field.
+ * The keys a whole session is done with: space turns a card over, the four
+ * numbers say how it went, `u` takes the last answer back and escape goes back
+ * to the decks. A key held down, a key pressed with a modifier, a key typed
+ * into a question and space or enter on a button the focus has moved to answer
+ * nothing.
  */
-export const typing = (press: KeyboardEvent): boolean => {
-  const at = press.target as HTMLElement | null
-  if (!at) return false
-  return at.tagName === 'INPUT' || at.tagName === 'TEXTAREA' || at.isContentEditable === true
-}
-
-/**
- * The keys a whole sitting is done with: the space bar turns a card over, the
- * four numbers say how it went, `u` takes the last answer back and escape goes
- * back to the decks.
- *
- * A key held down repeats, and a card is answered once. A key pressed with a
- * modifier is the machine's own shortcut and is not an answer. Once the card is
- * over, space and enter are left to whatever the person has moved focus to, so
- * a button reached with the keyboard is pressed with the keyboard.
- *
- * While a question is being written none of these are pressed: the letters are
- * the question. Escape there sends the panel away and leaves the sitting where
- * it is.
- */
-export function asks(press: KeyboardEvent, showing: Showing): Asks | null {
+export function asks(press: KeyboardEvent, showing: ScreenState): SessionKeyIntent | null {
   // A field takes the overlay key too: control and A is how a person selects
   // what they have written.
   if (typing(press)) return press.key === 'Escape' ? { does: 'shut' } : null
@@ -81,8 +65,8 @@ export function asks(press: KeyboardEvent, showing: Showing): Asks | null {
   if (press.key === ' ' && !showing.shown) return { does: 'show' }
 
   const which = Number(press.key)
-  if (Number.isInteger(which) && which >= 1 && which <= said.length) {
-    const how = said[which - 1]
+  if (Number.isInteger(which) && which >= 1 && which <= grades.length) {
+    const how = grades[which - 1]
     if (how) return { does: 'answer', how }
   }
   return null
@@ -94,14 +78,14 @@ export function asks(press: KeyboardEvent, showing: Showing): Asks | null {
  * keyboard, and the letter would be the first thing typed into it. So is space
  * over the reading, which the page would otherwise scroll instead.
  */
-export const swallows = (asked: Asks | null): boolean =>
+export const swallows = (asked: SessionKeyIntent | null): boolean =>
   asked?.does === 'show' ||
   asked?.does === 'ask' ||
   asked?.does === 'read' ||
   asked?.does === 'scroll'
 
 /** What a keystroke asks for while a person is choosing what to sit down to. */
-export type Picks = { does: 'all' } | { does: 'deck'; at: number } | { does: 'back' }
+export type PickerKeyIntent = { does: 'all' } | { does: 'deck'; at: number } | { does: 'back' }
 
 /** The letters the decks are picked by, in the order they are listed. */
 export const LETTERS = 'abcdefghijklmnopqrstuvwxyz'
@@ -120,7 +104,7 @@ export const letterOf = (at: number): string => LETTERS[at] ?? ''
  * The whole vault is the daily act, so it is the key under the hand. A deck is
  * a letter because a person reads down the list and presses what they see.
  */
-export function picks(press: KeyboardEvent, decks: number): Picks | null {
+export function picks(press: KeyboardEvent, decks: number): PickerKeyIntent | null {
   if (spoken(press)) return null
   if (press.key === 'Escape') return { does: 'back' }
   if (press.key === 'Enter' || press.key === ' ') return { does: 'all' }

@@ -29,7 +29,9 @@ if [ -z "$url" ] || [ "$url" = null ]; then
   exit 1
 fi
 
-hash=$(nix hash convert --hash-algo sha256 --to sri --from base16 "$sum")
+# The same conversion `nix hash convert --to sri` makes, done with coreutils so
+# that the release workflow can run this on a machine with no nix on it.
+hash=sha256-$(printf '%s' "$sum" | tr 'a-f' 'A-F' | basenc --base16 -d | base64 -w0)
 
 jq -n --arg version "$version" --arg url "$url" --arg hash "$hash" \
   '{ $version, $url, $hash }' > "$at"

@@ -20,6 +20,13 @@ type Rename struct {
 	Index    port.VaultRepository
 }
 
+// NewRename is what a vault is called through: the list this installation
+// keeps, which is where the name stands, and the index, which holds the row the
+// vault's other rows point at.
+func NewRename(registry port.VaultRegistry, index port.VaultRepository) Rename {
+	return Rename{Registry: registry, Index: index}
+}
+
 // Execute answers with the vault under its new name. The name a vault already
 // has is not a change and not an error.
 func (u Rename) Execute(ctx context.Context, v domain.Vault, name string) (domain.Vault, error) {
@@ -34,21 +41,21 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, name string) (domai
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	for _, other := range known {
-		if other.ID != v.ID && sameName(other.Name, name) {
-			return domain.Vault{}, fmt.Errorf("%w: the vault at %s is already called %s",
-				ErrNameTaken, other.Path, other.Name)
-		}
+	if other, taken := domain.Vaults(known).Called(name, v.ID); taken {
+		return domain.Vault{}, fmt.Errorf("%w: the vault at %s is already called %s",
+			ErrNameTaken, other.Path, other.Name)
 	}
 
 	renamed := v
 	renamed.Name = name
-	// The list is what the name is on, and the index holds a copy of it.
 	if err := u.Registry.Save(renamed); err != nil {
 		return domain.Vault{}, err
 	}
-	if err := u.Index.Save(ctx, renamed); err != nil {
-		return domain.Vault{}, fmt.Errorf("rename %s in the index: %w", v.Name, err)
+	// The index holds no name, so a rename writes nothing to it. This covers a
+	// vault renamed before its first scan, which has no row yet to be scanned
+	// into.
+	if err := u.Index.Register(ctx, renamed.ID); err != nil {
+		return domain.Vault{}, fmt.Errorf("register %s in the index: %w", v.Name, err)
 	}
 	return renamed, nil
 }

@@ -7,17 +7,17 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/cutting"
+	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// writing saves one note of a title of its own through the opening given.
-func writing(t *testing.T, db *DB, v domain.Vault, path, title string) error {
+// saving saves one note of a title of its own through the opening given.
+func saving(t *testing.T, db *DB, v domain.Vault, path, title string) error {
 	t.Helper()
-	return db.Notes().Cut(cutting.Sizes{}).Save(t.Context(), v.ID, []domain.Note{{
-		Ref:   domain.FileRef{Path: path, Kind: domain.KindNote, Size: int64(len(title)), MTime: 1},
-		Title: title,
-		Type:  domain.TypeNote,
+	return db.Notes().Cut(chunking.Sizes{}, chunking.Legibility{}).Save(t.Context(), v.ID, []domain.Note{{
+		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: int64(len(title)), ModTime: walked},
+		Title:       title,
+		Type:        domain.TypeNote,
 	}})
 }
 
@@ -33,7 +33,7 @@ func TestASecondOpeningReadsWhatTheFirstWrote(t *testing.T) {
 	}
 	t.Cleanup(func() { two.Close() })
 
-	if err := writing(t, one, first, "notes/entropy.md", "Entropy"); err != nil {
+	if err := saving(t, one, first, "notes/entropy.md", "Entropy"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -69,7 +69,7 @@ func TestTwoWritersOverOneIndexLoseNothing(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				name := fmt.Sprintf("%s-%d", who, i)
-				err := writing(t, db, first, "notes/"+name+".md", name)
+				err := saving(t, db, first, "notes/"+name+".md", name)
 				if err != nil {
 					mu.Lock()
 					failed = append(failed, err)

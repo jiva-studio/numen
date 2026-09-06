@@ -1,32 +1,37 @@
 package mcp_test
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // reads is every tool the reading server serves.
 var reads = []string{
-	"note_search", "note_get", "note_read", "note_neighbourhood",
+	"note_search", "note_titles", "note_read", "note_neighbourhood",
 	"link_list", "source_list", "source_read",
-	"card_stencils", "card_read", "vault_get",
+	"card_stencil_list", "card_read", "vault_get",
 }
 
 // The reading server stands on what it does not serve, so the list is exact:
 // one writing tool reaching it fails this.
+// unlevelled brings nothing level. It stands where a use case that never
+// writes is built, so nothing ever calls it.
+func unlevelled(context.Context, domain.Vault, []string) error { return nil }
+
 func TestTheReadingServerServesTheToolsThatRead(t *testing.T) {
 	cfg, db := opened(t)
 	v := testsupport.NewVault(t, kinetics())
@@ -61,13 +66,13 @@ func TestEveryReadingToolAnswersWithoutAWriter(t *testing.T) {
 		args any
 	}{
 		{"note_search", map[string]any{"query": "microstates"}},
-		{"note_get", map[string]any{"paths": []string{"Entropy.md"}}},
+		{"note_titles", map[string]any{"paths": []string{"Entropy.md"}}},
 		{"note_read", map[string]any{"paths": []string{"Entropy.md"}}},
 		{"note_neighbourhood", map[string]any{"path": "Entropy.md"}},
 		{"link_list", map[string]any{"path": "Entropy.md"}},
 		{"source_list", map[string]any{}},
 		{"source_read", map[string]any{"path": "Entropy.md", "start": 0, "length": 200}},
-		{"card_stencils", map[string]any{}},
+		{"card_stencil_list", map[string]any{}},
 		{"card_read", map[string]any{"path": "Kinetics.md"}},
 		{"vault_get", map[string]any{}},
 	}
@@ -121,7 +126,7 @@ type side struct {
 	session *sdk.ClientSession
 	note    string
 	deck    string
-	// called is what that note is called, which is the whole of what note_get
+	// called is what that note is called, which is the whole of what note_titles
 	// carries beside the path it was asked by.
 	called string
 	// own is a word this vault's own answers must carry, so that a tool
@@ -146,7 +151,7 @@ func (s side) answers(t *testing.T) {
 	looked := call[struct {
 		Notes   []mcp.Note `json:"notes"`
 		Missing []string   `json:"missing"`
-	}](t, s.session, "note_get", map[string]any{"paths": []string{s.note}})
+	}](t, s.session, "note_titles", map[string]any{"paths": []string{s.note}})
 	if len(looked.Notes) != 1 || looked.Notes[0].Title != s.called {
 		t.Errorf("%s does not look up its own note: %+v", s.what, looked)
 	}
@@ -157,7 +162,7 @@ func (s side) answers(t *testing.T) {
 	}
 
 	near := call[struct {
-		Related []mcp.Seated `json:"related"`
+		Related []mcp.Neighbour `json:"related"`
 	}](t, s.session, "note_neighbourhood", map[string]any{"path": s.note})
 	if len(near.Related) == 0 {
 		t.Errorf("%s sees nothing joined to its own note", s.what)
@@ -178,7 +183,7 @@ func (s side) answers(t *testing.T) {
 	}
 
 	hand := dealt(t, s.session, map[string]any{"path": s.deck})
-	if hand.Held == 0 {
+	if hand.Total == 0 {
 		t.Errorf("%s reads no card out of its own deck", s.what)
 	}
 }
@@ -193,7 +198,7 @@ func (s side) holdsNothingOf(t *testing.T, other side) {
 		args any
 	}{
 		{"note_search", map[string]any{"query": other.own}},
-		{"note_get", map[string]any{"paths": []string{other.note}}},
+		{"note_titles", map[string]any{"paths": []string{other.note}}},
 		{"note_read", map[string]any{"paths": []string{other.note}}},
 		{"note_neighbourhood", map[string]any{"path": other.note}},
 		{"link_list", map[string]any{"path": other.note}},
@@ -242,8 +247,8 @@ func opened(t *testing.T) (container.Config, *container.Index) {
 func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Vault) mcp.Core {
 	t.Helper()
 
-	readers := filesystem.Readers{}
-	scan := usecase.Scan{
+	readers := filesystem.VaultReaders{}
+	scan := vaults.Scan{
 		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.Queries(), Maintenance: db.Maintenance(),
 	}
@@ -251,18 +256,21 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 		t.Fatal(err)
 	}
 	queries := db.Queries()
-	cutting := cfg.Cards(queries, db.Links(), nil)
+	// Only the tools that read are served here, and none of them writes, so
+	// nothing is ever brought level.
+	cutting := cfg.Cards(queries, db.Links(), unlevelled)
 
 	return mcp.Core{
-		Showing:       mcp.One(v, v.Path),
-		Readers:       readers,
-		Notes:         queries,
-		Sources:       db.SourcesKnown(),
-		Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
-		Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
-		Links:         note.ShowLinks{Links: db.Links()},
-		Cards:         cutting.Read,
-		Stencils:      cutting.List,
+		Showing: mcp.ShowingOne(v, v.Path),
+		Readers: readers,
+		Notes: mcp.Notes{
+			Queries:       queries,
+			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
+			Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
+			Links:         note.ShowLinks{Links: db.Links()},
+		},
+		Cards:   mcp.Cards{Read: cutting.Read, List: cutting.List},
+		Sources: mcp.Sources{Queries: db.SourcesKnown()},
 	}
 }
 

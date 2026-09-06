@@ -1,10 +1,9 @@
-# ADR-0018: The note file
+# The note file
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** the vault format — every application that reads or writes one
-- **Related:** ADR-0001, ADR-0004, ADR-0017, ADR-0019, ADR-0026
-- **Amended by:** ADR-0028 — a stencil and a deck carry two additions of their own
+- **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [The application writes to the vault](0017-the-application-writes-to-the-vault.md), [A note is identified by a ULID in its frontmatter](0019-a-note-is-identified-by-a-ulid.md), [The stencil, the deck and the card](0026-the-stencil-and-the-deck.md)
 
 ## Context
 
@@ -18,13 +17,15 @@ A note is a UTF-8 markdown file. An addition is permitted only where it renders 
 
 Every note may carry two: **YAML frontmatter** at the top of the file, and **`[[wikilink]]`** in the body. What a wikilink resolves to is in [links](../links.md).
 
-A note of `type: stencil` or `type: deck` carries two more, and no other kind of note may (ADR-0028): **`{{Field}}`** in a stencil's face, where a card's value is laid out, and **`^` and a card's mark** at the end of a card's heading in a deck.
+A note of `type: stencil` or `type: deck` carries two more, and no other kind of note may: **`{{Field}}`** in a stencil's face, where a card's value is laid out, and **`^` and a card's mark** at the end of a card's heading in a deck. Both render as plain text in an editor that never heard of this application, which is the test above.
 
-Nothing else — no custom fences, no HTML comments carrying data, no sidecar files, no private extension. A kind of note that wants an addition of its own asks for it in a record, as those two did, and the count above is what is kept current.
+Nothing else — no custom fences, no HTML comments carrying data, no sidecar files, no private extension. A kind of note that wants an addition of its own asks for it in a record, and the count above is what is kept current.
 
 ### Which files are notes
 
-A note is a file named `.md`. A stencil, a deck and a preset are notes, so one extension answers for all of them.
+A note is an ordinary file named `.md`, read whole up to a bound the core holds every reader to. A device, a socket or a FIFO hands over no bytes whatever it is named, and a file over the bound is a file the vault does not hold as a note; both are answered the same way. What the bound is, and what a person sees when a file passes it, are in [editing](../editing.md).
+
+A stencil, a deck and a preset are notes, so one extension answers for all of them.
 
 Two places are never notes: the application's own folder inside the vault, and any directory whose name begins with a dot. Both are skipped whole, without being descended into.
 
@@ -43,6 +44,7 @@ The owned keys, the extensions a note may carry, and the order a note's displaye
 - `title` is an ordinary English word taken as an owned key, and a person's own key of that name collides.
 - A reported collision stands until the person settles it, and the note carries a field the application will not read.
 - Markdown written under another name — `.markdown`, `.mdown` — is prose to this application, and the person renames it to bring it in.
+- A generated `.md` larger than the bound is outside the vault as far as this application is concerned, and splitting it is what brings it in.
 
 ## Alternatives considered
 

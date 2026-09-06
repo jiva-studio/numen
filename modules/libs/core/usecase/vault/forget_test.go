@@ -9,47 +9,35 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// indexRows is the index as a vault is written to and taken out of it. `rows`
-// answers the way the table does: Save writes the row whole, and a vault the
-// index already holds keeps its name and its path through Register.
+// indexRows is the index as a vault is written to and taken out of it: a set
+// of identifiers, each either registered or not. A vault already registered
+// keeps the row it has.
 type indexRows struct {
-	saved  []domain.Vault
-	rows   map[string]domain.Vault
-	forgot []string
+	saved  []domain.VaultID
+	rows   map[domain.VaultID]bool
+	forgot []domain.VaultID
 	fails  error
 	steps  *[]string
 }
 
-func (r *indexRows) Save(_ context.Context, v domain.Vault) error {
-	r.saved = append(r.saved, v)
+func (r *indexRows) Register(_ context.Context, id domain.VaultID) error {
 	if r.fails != nil {
 		return r.fails
 	}
-	r.put(v)
-	return nil
-}
-
-func (r *indexRows) Register(_ context.Context, v domain.Vault) error {
-	if r.fails != nil {
-		return r.fails
-	}
-	if _, there := r.rows[v.ID]; !there {
-		r.put(v)
+	if !r.rows[id] {
+		r.saved = append(r.saved, id)
+		if r.rows == nil {
+			r.rows = map[domain.VaultID]bool{}
+		}
+		r.rows[id] = true
 	}
 	return nil
 }
 
-func (r *indexRows) put(v domain.Vault) {
-	if r.rows == nil {
-		r.rows = map[string]domain.Vault{}
-	}
-	r.rows[v.ID] = v
-}
-
-func (r *indexRows) Forget(_ context.Context, vaultID string) error {
+func (r *indexRows) Forget(_ context.Context, vaultID domain.VaultID) error {
 	r.forgot = append(r.forgot, vaultID)
 	if r.steps != nil {
 		*r.steps = append(*r.steps, "forget")
@@ -82,7 +70,7 @@ func TestForgetTakesTheVaultOffTheListAndOutOfTheIndex(t *testing.T) {
 	kept, gone, registry := twoVaults(t)
 	index := &indexRows{}
 
-	if err := (usecase.Forget{Registry: registry, Index: index}).Execute(t.Context(), gone); err != nil {
+	if err := (vaults.Forget{Registry: registry, Index: index}).Execute(t.Context(), gone); err != nil {
 		t.Fatal(err)
 	}
 
@@ -102,7 +90,7 @@ func TestForgetLeavesTheFolderWhereItIs(t *testing.T) {
 	t.Parallel()
 	_, gone, registry := twoVaults(t)
 
-	if err := (usecase.Forget{Registry: registry, Index: &indexRows{}}).Execute(t.Context(), gone); err != nil {
+	if err := (vaults.Forget{Registry: registry, Index: &indexRows{}}).Execute(t.Context(), gone); err != nil {
 		t.Fatal(err)
 	}
 
@@ -120,8 +108,8 @@ func TestForgetRefusesTheOnlyVault(t *testing.T) {
 	}
 	index := &indexRows{}
 
-	err = (usecase.Forget{Registry: registry, Index: index}).Execute(t.Context(), only)
-	if !errors.Is(err, usecase.ErrLastVault) {
+	err = (vaults.Forget{Registry: registry, Index: index}).Execute(t.Context(), only)
+	if !errors.Is(err, vaults.ErrLastVault) {
 		t.Fatalf("the last vault was answered %v", err)
 	}
 	known, err := registry.All()
@@ -141,10 +129,10 @@ func TestAVaultTheIndexCouldNotForgetStaysOnTheList(t *testing.T) {
 	_, gone, registry := twoVaults(t)
 	index := &indexRows{fails: errors.New("the index is locked")}
 
-	if err := (usecase.Forget{Registry: registry, Index: index}).Execute(t.Context(), gone); err == nil {
+	if err := (vaults.Forget{Registry: registry, Index: index}).Execute(t.Context(), gone); err == nil {
 		t.Fatal("an index that refused was reported as success")
 	}
-	if _, found, err := registry.Find(gone.ID); err != nil || !found {
+	if _, found, err := registry.Find(string(gone.ID)); err != nil || !found {
 		t.Errorf("the vault left the list with its rows still in the index: %v %v", found, err)
 	}
 }

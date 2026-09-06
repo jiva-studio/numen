@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
 
 // curveLoad is the vault the window's requests are measured on, with its decks
@@ -62,8 +62,8 @@ func BenchmarkCurveCards(b *testing.B) {
 			if _, err := s.kept.Execute(ctx, s.vault); err != nil {
 				b.Fatal(err)
 			}
-			p := history.Preset{
-				Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+			p := review.Preset{
+				Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			}
 			curves := s.curves(time.Now())
 			if _, err := curves.Execute(ctx, s.vault, "Whole.md", p); err != nil {
@@ -96,7 +96,7 @@ func BenchmarkPresetCurve(b *testing.B) {
 	if _, err := s.kept.Execute(ctx, s.vault); err != nil {
 		b.Fatal(err)
 	}
-	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
+	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 	curves := s.curves(time.Now())
 
 	for _, path := range []string{"Small.md", "Large.md"} {

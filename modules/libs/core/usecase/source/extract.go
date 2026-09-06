@@ -7,15 +7,11 @@ import (
 	"io/fs"
 	"slices"
 
-	"github.com/jiva-studio/numen/modules/libs/core/cutting"
+	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
-
-// extractor names the reader that takes text out of a book. It is part of the
-// recipe, and it changes when the text or the offsets the reader produces do.
-const extractor = "epub-1"
 
 // sourcesPerQuery bounds one answer about what owes its text, so that a library
 // of any size is worked through in pieces.
@@ -29,15 +25,15 @@ const sourcesPerQuery = 100
 type Extract struct {
 	Readers port.VaultReaders
 	Sources port.SourceRepository
-	Owing   port.SourceQueries
+	Known   port.SourceQueries
 
-	// Derived holds what a recogniser wrote. Without one, a source is read from
-	// its own bytes and a recognition is not looked for.
+	// Derived is optional. It holds what a recogniser wrote; without one, a
+	// source is read from its own bytes and a reading is not looked for.
 	Derived port.DerivedStore
-	// Documents reads a format that needs a library. Without one, a source in
-	// that format is unreadable.
-	Documents port.Documents
-	// Area is the producer a recognition is kept under. Empty means the default.
+	// Documents is optional. It reads a format that needs a library; without
+	// one, a source in that format is unreadable.
+	Documents port.TextExtractor
+	// Area is the producer a reading is kept under. Empty means the default.
 	Area string
 
 	// Kinds are the sorts of source this cuts. Empty means the books and the
@@ -46,7 +42,11 @@ type Extract struct {
 
 	// Sizes are how the text is cut. They are named in the recipe, so a source
 	// cut at other sizes owes its text again.
-	Sizes cutting.Sizes
+	Sizes chunking.Sizes
+
+	// Legibility is what a chunk has to read like to be kept. It is not in the
+	// recipe: a chunk dropped as unreadable is not a different cut of the text.
+	Legibility chunking.Legibility
 
 	// RebuildIndex reads every file and puts it in the index again, whatever the
 	// index remembers about it.
@@ -61,6 +61,15 @@ type Extract struct {
 	// written. A library takes minutes, and something has to be able to say how
 	// far it has got.
 	OnProgress func(ExtractResult)
+}
+
+// NewExtract is what a vault's sources are cut into chunks through: the vault
+// they are read out of, where a source and its chunks are written, and what
+// says which sources the index already holds.
+func NewExtract(
+	readers port.VaultReaders, sources port.SourceRepository, known port.SourceQueries,
+) Extract {
+	return Extract{Readers: readers, Sources: sources, Known: known}
 }
 
 // ExtractResult reports what extraction did.
@@ -90,7 +99,7 @@ func (u Extract) Execute(ctx context.Context, v domain.Vault) (ExtractResult, er
 	if err != nil {
 		return res, err
 	}
-	var swept []port.Recognised
+	var swept []port.SourceText
 	if err := u.discover(ctx, v, reader, &res, &swept); err != nil {
 		return res, err
 	}
@@ -111,11 +120,11 @@ func (u Extract) discover(
 	v domain.Vault,
 	reader port.VaultReader,
 	res *ExtractResult,
-	swept *[]port.Recognised,
+	swept *[]port.SourceText,
 ) error {
-	known := make(map[domain.SourceKind]map[string]domain.FileRef, len(u.kinds()))
+	known := make(map[domain.SourceKind]map[string]domain.Fingerprint, len(u.kinds()))
 	for _, kind := range u.kinds() {
-		held, err := u.Owing.Fingerprints(ctx, v.ID, kind)
+		held, err := u.Known.Fingerprints(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
@@ -123,7 +132,7 @@ func (u Extract) discover(
 	}
 
 	found := make(map[string]bool)
-	if err := reader.Walk(ctx, func(ref domain.FileRef) error {
+	if err := reader.Walk(ctx, func(ref domain.Fingerprint) error {
 		held, ours := known[ref.Kind]
 		if !ours {
 			return nil
@@ -134,7 +143,7 @@ func (u Extract) discover(
 			res.Unchanged++
 			return nil
 		}
-		if err := u.Sources.SaveSource(ctx, v.ID, port.Source{Ref: ref}); err != nil {
+		if err := u.Sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref}); err != nil {
 			return fmt.Errorf("record %s: %w", ref.Path, err)
 		}
 		res.Recorded++
@@ -161,7 +170,7 @@ func (u Extract) discover(
 		// What those paths stood on, before the rows saying so are taken out.
 		// Which of those readings nothing stands on any more is a question for
 		// once every source has been cut.
-		went, err := u.standing(ctx, v, kind, gone)
+		went, err := u.recognised(ctx, v, kind, gone)
 		if err != nil {
 			return err
 		}
@@ -174,28 +183,28 @@ func (u Extract) discover(
 	return nil
 }
 
-// standing is the reading each of these paths stood on, for the ones that stood
-// on any.
-func (u Extract) standing(
+// recognised is the reading each of these paths stood on, for the ones that
+// stood on any.
+func (u Extract) recognised(
 	ctx context.Context,
 	v domain.Vault,
 	kind domain.SourceKind,
 	paths []string,
-) ([]port.Recognised, error) {
+) ([]port.SourceText, error) {
 	if u.Derived == nil {
 		return nil, nil
 	}
-	held, err := u.Owing.Recognised(ctx, v.ID, kind)
+	held, err := u.Known.Recognised(ctx, v.ID, kind)
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
-	made := make(map[string]port.Recognised, len(held))
+	made := make(map[string]port.SourceText, len(held))
 	for _, r := range held {
 		made[r.Path] = r
 	}
-	out := make([]port.Recognised, 0, len(paths))
+	out := make([]port.SourceText, 0, len(paths))
 	for _, path := range paths {
-		if r, on := made[path]; on && r.From != "" {
+		if r, on := made[path]; on && r.Producer != "" {
 			out = append(out, r)
 		}
 	}
@@ -211,25 +220,25 @@ func (u Extract) standing(
 //
 // A walk that failed returns before any of this, so a folder that could not be
 // read takes nothing with it.
-func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.Recognised) error {
+func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceText) error {
 	if u.Derived == nil || len(went) == 0 {
 		return nil
 	}
-	stood := make(map[port.Recognised]bool)
+	stood := make(map[port.SourceText]bool)
 	for _, kind := range u.kinds() {
-		held, err := u.Owing.Recognised(ctx, v.ID, kind)
+		held, err := u.Known.Recognised(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
 		for _, r := range held {
-			stood[port.Recognised{From: r.From, Hash: r.Hash}] = true
+			stood[port.SourceText{Producer: r.Producer, Hash: r.Hash}] = true
 		}
 	}
 	for _, r := range went {
-		if stood[port.Recognised{From: r.From, Hash: r.Hash}] {
+		if stood[port.SourceText{Producer: r.Producer, Hash: r.Hash}] {
 			continue
 		}
-		for _, name := range text.Names(r.From, r.Hash) {
+		for _, name := range text.Names(r.Producer, r.Hash) {
 			if err := u.Derived.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 				return fmt.Errorf("remove %s: %w", name, err)
 			}
@@ -250,15 +259,15 @@ func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.Vaul
 		return nil
 	}
 	for _, kind := range u.kinds() {
-		standing, err := u.Owing.Recognised(ctx, v.ID, kind)
+		recognised, err := u.Known.Recognised(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
-		for _, r := range standing {
+		for _, r := range recognised {
 			if err := ctx.Err(); err != nil {
 				return err
 			}
-			if u.holds(ctx, text.Artifact(r.From, r.Hash), text.Partial(r.From, r.Hash)) {
+			if u.holds(ctx, text.Artifact(r.Producer, r.Hash), text.Partial(r.Producer, r.Hash)) {
 				continue
 			}
 			ref, err := reader.Stat(ctx, r.Path)
@@ -268,7 +277,7 @@ func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.Vaul
 			if err != nil {
 				return fmt.Errorf("stat %s: %w", r.Path, err)
 			}
-			if err := u.Sources.SaveSource(ctx, v.ID, port.Source{Ref: ref}); err != nil {
+			if err := u.Sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref}); err != nil {
 				return fmt.Errorf("record %s: %w", r.Path, err)
 			}
 			res.Forgotten++
@@ -277,8 +286,8 @@ func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.Vaul
 	return nil
 }
 
-// holds says the store has something under one of these names. A recognition
-// still running is the text of the pages it has read.
+// holds says the store has something under one of these names. A reading
+// still being written is the text of the pages read so far.
 func (u Extract) holds(ctx context.Context, names ...string) bool {
 	for _, name := range names {
 		if _, err := u.Derived.Read(ctx, name); !errors.Is(err, fs.ErrNotExist) {
@@ -304,10 +313,10 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 	for _, kind := range u.kinds() {
 		questions = append(questions,
 			func(ctx context.Context) ([]string, error) {
-				return u.Owing.Unchunked(ctx, v.ID, kind, sourcesPerQuery)
+				return u.Known.Unchunked(ctx, v.ID, kind, sourcesPerQuery)
 			},
 			func(ctx context.Context) ([]string, error) {
-				return u.Owing.ByOtherRecipe(ctx, v.ID, kind, known, sourcesPerQuery)
+				return u.Known.ByOtherRecipe(ctx, v.ID, kind, known, sourcesPerQuery)
 			},
 		)
 	}
@@ -354,9 +363,9 @@ func (u Extract) One(ctx context.Context, v domain.Vault, path string) (ExtractR
 
 // source takes the text out of one book and writes the chunks it was cut into.
 //
-// A file that will not parse is counted and the run goes on. Extraction never
-// refuses: no structure is an ordinary outcome, and one bad book must not stop a
-// library.
+// A file that will not parse is counted and the run goes on: no structure is an
+// ordinary outcome, and one bad book must not stop a library. A vault out of
+// reach, or an index that will not take the chunks, stops it.
 //
 // The file is stated before it is read, so a file that changes while it is being
 // read keeps the older fingerprint and is asked for again.
@@ -365,7 +374,7 @@ func (u Extract) source(
 	v domain.Vault,
 	reader port.VaultReader,
 	path string,
-	sizes cutting.Sizes,
+	sizes chunking.Sizes,
 	res *ExtractResult,
 ) error {
 	res.Reading = path
@@ -412,16 +421,17 @@ func (u Extract) source(
 	doc, from, err := u.text(ctx, ref, raw, hash)
 	if err != nil {
 		res.Unreadable++
+		//nolint:nilerr // one book nobody could read is one more on the batch's count
 		return nil
 	}
 
-	chunks := chunksOf(doc, sizes)
-	extraction := port.Extraction{
-		Source: port.Source{
-			Ref:      ref,
-			Hash:     hash,
-			Recipe:   recipe(name, sizes),
-			TextFrom: from,
+	chunks := chunksOf(doc, sizes, u.Legibility)
+	extraction := domain.SourceChunks{
+		Source: domain.Source{
+			Fingerprint: ref,
+			Hash:        hash,
+			Recipe:      recipe(name, sizes),
+			Producer:    from,
 		},
 		Chunks: chunks,
 	}
@@ -436,9 +446,9 @@ func (u Extract) source(
 
 // chunksOf cuts one source's text: the large chunks a result shows, each
 // holding the small chunks that carry a vector.
-func chunksOf(doc *text.Document, sizes cutting.Sizes) []port.Chunk {
-	var out []port.Chunk
-	for _, large := range cutting.Cut(doc.Text, doc.Parts, sizes) {
+func chunksOf(doc *text.Document, sizes chunking.Sizes, reads chunking.Legibility) []domain.Chunk {
+	var out []domain.Chunk
+	for _, large := range chunking.Cut(doc.Text, doc.Parts, sizes, reads) {
 		c := chunkAt(doc, large)
 		// The name of a section is kept on the chunk that begins it, and on that
 		// one only: a small chunk standing at the same offset is inside it, and
@@ -454,8 +464,8 @@ func chunksOf(doc *text.Document, sizes cutting.Sizes) []port.Chunk {
 
 // chunkAt is one chunk with what it holds and where the source says it is. The
 // text goes with it to be indexed for its words and is not kept.
-func chunkAt(doc *text.Document, c cutting.Chunk) port.Chunk {
-	return port.Chunk{
+func chunkAt(doc *text.Document, c chunking.Chunk) domain.Chunk {
+	return domain.Chunk{
 		Start:    c.Start,
 		Length:   c.Length,
 		Location: doc.Locate(c.Start),
@@ -464,7 +474,7 @@ func chunkAt(doc *text.Document, c cutting.Chunk) port.Chunk {
 }
 
 // counted is how many chunks of both sizes a cut produced.
-func counted(chunks []port.Chunk) int {
+func counted(chunks []domain.Chunk) int {
 	n := len(chunks)
 	for _, c := range chunks {
 		n += len(c.Small)
@@ -475,15 +485,15 @@ func counted(chunks []port.Chunk) int {
 // recipe names what produced a source's text: the reader that took it out, and
 // the sizes it was cut into. Both are asked as one question — a source whose
 // recipe is not this one owes its text again.
-func recipe(reader string, s cutting.Sizes) string {
+func recipe(reader string, s chunking.Sizes) string {
 	return fmt.Sprintf("%s/large=%d+%d/small=%d+%d/limit=%d",
 		reader, s.Large, s.LargeOverlap, s.Small, s.SmallOverlap, s.Limit)
 }
 
 // recipes are what every reader would produce at these sizes. A source carrying
 // none of them owes its text: its own reader has changed, or the sizes have.
-func recipes(s cutting.Sizes) []string {
-	named := []string{text.ReaderEPUB, text.ReaderPDF, text.ReaderRecording}
+func recipes(s chunking.Sizes) []string {
+	named := text.Readers()
 	out := make([]string, 0, len(named))
 	for _, reader := range named {
 		out = append(out, recipe(reader, s))
@@ -491,27 +501,9 @@ func recipes(s cutting.Sizes) []string {
 	return out
 }
 
-// sizes fills in what configuration left unset with the defaults the cut applies,
-// so that the recipe names the sizes the text was cut into.
-func (u Extract) sizes() cutting.Sizes {
-	s := u.Sizes
-	if s.Large == 0 {
-		s.Large = cutting.DefaultLarge
-	}
-	if s.Small <= 0 {
-		s.Small = cutting.DefaultSmall
-	}
-	if s.LargeOverlap == 0 {
-		s.LargeOverlap = cutting.DefaultLargeOverlap
-	}
-	if s.SmallOverlap == 0 {
-		s.SmallOverlap = cutting.DefaultSmallOverlap
-	}
-	if s.Limit <= 0 {
-		s.Limit = cutting.DefaultLimit
-	}
-	return s
-}
+// sizes are the sizes the cut works to, which is what the recipe has to name:
+// a recipe describing anything else describes bytes that were never written.
+func (u Extract) sizes() chunking.Sizes { return u.Sizes.Resolved() }
 
 func (u Extract) progress(res ExtractResult) {
 	if u.OnProgress != nil {
@@ -521,11 +513,11 @@ func (u Extract) progress(res ExtractResult) {
 
 // text is what a source says, and which producer made it.
 //
-// A recognition of these bytes stands in for the file's own text layer: it is
+// A reading of these bytes stands in for the file's own text layer: it is
 // what a person asked for, and a document whose layer is unusable is why they
-// asked. A recognition still running is the text of the pages it has read.
+// asked. A reading still being written is the text of the pages read so far.
 // Where there is none, the file speaks for itself and no producer is named.
-func (u Extract) text(ctx context.Context, ref domain.FileRef, raw []byte, hash string) (*text.Document, string, error) {
+func (u Extract) text(ctx context.Context, ref domain.Fingerprint, raw []byte, hash string) (*text.Document, string, error) {
 	if u.Derived != nil {
 		from := u.producer(ref)
 		for _, name := range []string{text.Artifact(from, hash), text.Partial(from, hash)} {
@@ -547,7 +539,7 @@ func (u Extract) text(ctx context.Context, ref domain.FileRef, raw []byte, hash 
 	return doc, "", err
 }
 
-// area is the producer a recognition is kept under, and the first part of every
+// area is the producer a reading is kept under, and the first part of every
 // name its files carry.
 func (u Extract) area() string {
 	if u.Area == "" {
@@ -558,7 +550,7 @@ func (u Extract) area() string {
 
 // producer is who would have written this file's text down: a recording is
 // listened to, and everything else is read.
-func (u Extract) producer(ref domain.FileRef) string {
+func (u Extract) producer(ref domain.Fingerprint) string {
 	if ref.Kind == domain.KindRecording {
 		return text.ASR
 	}

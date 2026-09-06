@@ -20,8 +20,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// ErrRejected is a request the service refused to interpret. The batching rule
-// produced something the model will never accept, so the error is final.
+// ErrRejected is a request the service answered with anything but a 5xx or a
+// 429 — a malformed batch, a key it does not know, an address that is not a
+// model. Nothing sends it again.
 var ErrRejected = errors.New("the service rejected the request")
 
 // ErrNoKey is a service configured without a key anywhere to find it.
@@ -29,9 +30,9 @@ var ErrNoKey = errors.New("no key in the configuration or the environment")
 
 // Client is one hosted model.
 type Client struct {
-	model embed.ServiceModel
-	is    port.EmbeddingModel
-	http  *http.Client
+	model    embed.ServiceModel
+	identity port.EmbeddingModel
+	http     *http.Client
 
 	// Attempts is how many times one request is sent before its error is
 	// reported. A real run meets "engine overloaded" repeatedly.
@@ -61,14 +62,14 @@ func New(is port.EmbeddingModel, model embed.ServiceModel) (*Client, error) {
 	}
 	return &Client{
 		model:    model,
-		is:       is,
+		identity: is,
 		http:     &http.Client{Timeout: 90 * time.Second},
 		Attempts: 5,
 		Delay:    time.Second,
 	}, nil
 }
 
-func (c *Client) Model() port.EmbeddingModel { return c.is }
+func (c *Client) Model() port.EmbeddingModel { return c.identity }
 
 // Close releases what the model holds on this machine, which is nothing: the
 // weights are the service's.
@@ -103,15 +104,15 @@ type response struct {
 	} `json:"data"`
 }
 
-// temporary is an error worth sending the same request for again, carrying what
-// the service asked to be waited.
-type temporary struct {
+// temporaryError is an error worth sending the same request for again, carrying
+// what the service asked to be waited.
+type temporaryError struct {
 	err   error
-	after time.Duration
+	delay time.Duration
 }
 
-func (t temporary) Error() string { return t.err.Error() }
-func (t temporary) Unwrap() error { return t.err }
+func (t temporaryError) Error() string { return t.err.Error() }
+func (t temporaryError) Unwrap() error { return t.err }
 
 // request sends one batch, retrying what the service says is temporary.
 func (c *Client) request(ctx context.Context, texts []string) ([][]float32, error) {
@@ -133,13 +134,13 @@ func (c *Client) request(ctx context.Context, texts []string) ([][]float32, erro
 		if err == nil {
 			return vectors, nil
 		}
-		var again temporary
+		var again temporaryError
 		if !errors.As(err, &again) {
 			return nil, err
 		}
 		last = err
-		if again.after > 0 {
-			delay = again.after
+		if again.delay > 0 {
+			delay = again.delay
 		}
 	}
 	return nil, fmt.Errorf("%d attempts: %w", attempts, last)
@@ -156,7 +157,7 @@ func (c *Client) send(ctx context.Context, body []byte) ([][]float32, error) {
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return nil, temporary{err: err}
+		return nil, temporaryError{err: err}
 	}
 	defer resp.Body.Close()
 
@@ -167,21 +168,31 @@ func (c *Client) send(ctx context.Context, body []byte) ([][]float32, error) {
 
 	var parsed response
 	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return nil, temporary{err: err}
+		return nil, temporaryError{err: err}
 	}
 	return c.collect(parsed)
 }
 
+// detail is a short piece of what the service said, with the key struck out of
+// it. A service that quotes the request back quotes the key back.
+func (c *Client) detail(body []byte) string {
+	text := strings.TrimSpace(string(body))
+	if key := c.model.Key(); key != "" {
+		text = strings.ReplaceAll(text, key, "…")
+	}
+	return text
+}
+
 func (c *Client) statusError(resp *http.Response, detail []byte) error {
 	status := resp.StatusCode
-	summary := strings.TrimSpace(string(detail))
+	summary := c.detail(detail)
 	if status == http.StatusBadRequest {
 		return fmt.Errorf("%w as malformed, which is the batching rule to fix: %s", ErrRejected, summary)
 	}
 	if status >= 500 || status == http.StatusTooManyRequests {
-		return temporary{
+		return temporaryError{
 			err:   fmt.Errorf("%d %s: %s", status, http.StatusText(status), summary),
-			after: retryDelay(resp),
+			delay: retryDelay(resp),
 		}
 	}
 	return fmt.Errorf("%w with %d %s: %s", ErrRejected, status, http.StatusText(status), summary)
@@ -195,9 +206,9 @@ func (c *Client) collect(parsed response) ([][]float32, error) {
 		if item.Index < 0 || item.Index >= len(vectors) {
 			return nil, fmt.Errorf("vector %d of %d is out of range", item.Index, len(vectors))
 		}
-		if len(item.Embedding) != c.is.Dimensions {
+		if len(item.Embedding) != c.identity.Dimensions {
 			return nil, fmt.Errorf("%s returned %d dimensions, configured as %d",
-				c.model.Name, len(item.Embedding), c.is.Dimensions)
+				c.model.Name, len(item.Embedding), c.identity.Dimensions)
 		}
 		if vectors[item.Index] != nil {
 			return nil, fmt.Errorf("vector %d arrived twice", item.Index)

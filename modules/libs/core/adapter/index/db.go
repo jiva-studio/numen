@@ -9,7 +9,6 @@ package index
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"net/url"
 	"slices"
 	"strings"
@@ -32,7 +31,8 @@ import (
 // while a scan is still running.
 //
 // Several processes open the one file. Their writers queue in SQLite, under the
-// busy timeout, and a writer still waiting when it runs out says so.
+// busy timeout, and a writer still waiting when it runs out asks again — see
+// the writing package, which every write on this pool goes through.
 type DB struct {
 	write *sql.DB
 	read  *sql.DB
@@ -52,7 +52,8 @@ var pragmas = []string{
 	// Foreign keys so removing a vault cannot leave rows pointing at nothing.
 	"foreign_keys(1)",
 	// Wait for a writer, up to five seconds, before SQLITE_BUSY. The writer
-	// waited for may be in another process.
+	// waited for may be in another process, and a write that waited it out asks
+	// again.
 	"busy_timeout(5000)",
 	"cache_size(-65536)",
 }
@@ -77,9 +78,6 @@ func Unsynchronised(testonly.Grant) { synchronous = unsynchronised }
 func AsShipped(testonly.Grant) { synchronous = shipped }
 
 func Open(ctx context.Context, path string) (*DB, error) {
-	if folding != nil {
-		return nil, fmt.Errorf("the name fold is not available to SQL: %w", folding)
-	}
 	write, err := sql.Open("sqlite", writeDSN(path))
 	if err != nil {
 		return nil, err
@@ -113,8 +111,8 @@ func (d *DB) Vaults() *vault.Repository { return vault.NewRepository(d.write) }
 func (d *DB) Notes() *note.Repository   { return note.NewRepository(d.write) }
 func (d *DB) Chunks() *chunk.Repository { return chunk.NewRepository(d.write) }
 
-// Statistics writes, so it takes the pool that is allowed to.
-func (d *DB) Statistics() Statistics { return Statistics{d.write} }
+// Maintenance writes, so it takes the pool that is allowed to.
+func (d *DB) Maintenance() DatabaseMaintenance { return DatabaseMaintenance{d.write} }
 
 // NoteQueries reads, so it takes the pool that does not wait for the writer.
 func (d *DB) NoteQueries() *note.Queries { return note.NewQueries(d.read) }
@@ -125,7 +123,7 @@ func (d *DB) ChunkQueries() *chunk.Queries { return chunk.NewQueries(d.read) }
 // Sources is the source and vector ports over the chunk tables. It writes and
 // reads both, through the pool each half belongs to.
 func (d *DB) Sources() sources {
-	return sources{known: known{read: d.ChunkQueries()}, write: d.Chunks()}
+	return sources{queries: queries{read: d.ChunkQueries()}, write: d.Chunks()}
 }
 
 func dsn(path string) string { return dsnOf(path, append(slices.Clone(pragmas), synchronous)) }

@@ -3,7 +3,7 @@ import type { StorybookConfig } from '@storybook/vue3-vite'
 
 /** Where a window's own screens are drawn, beside the components they use. */
 const APPS = [
-  '../../../apps/desktop/ui/src/**/*.stories.ts',
+  '../../../apps/desktop/editor/src/**/*.stories.ts',
   '../../../apps/desktop/flashcards/src/**/*.stories.ts',
 ]
 

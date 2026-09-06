@@ -1,6 +1,10 @@
 package recognition
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
+)
 
 // Preparing makes the runtime out of nothing but the library. A machine holding
 // every model and a machine holding none prepare alike, so the window is not
@@ -12,11 +16,11 @@ func TestPreparingMakesTheRuntimeWithoutAModel(t *testing.T) {
 	cfg.Detect.Name, cfg.Detect.Path = "", ""
 	cfg.Recognise.Name, cfg.Recognise.Path = "", ""
 
-	if _, _, err := library(t.Context(), cfg); err != nil {
+	if _, _, err := onnxruntime.Open(t.Context(), cfg.settings()); err != nil {
 		t.Skipf("no onnx runtime on this machine: %v", err)
 	}
-	standing.Store(false)
-	t.Cleanup(func() { standing.Store(false) })
+	prepared.Store(false)
+	t.Cleanup(func() { prepared.Store(false) })
 
 	if err := Prepare(t.Context(), cfg); err != nil {
 		t.Fatal(err)

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -17,7 +17,7 @@ import (
 // readable is a vault on disk and the read that works on it.
 func readable(t *testing.T, notes map[string]string) (note.Read, domain.Vault) {
 	t.Helper()
-	return note.Read{Readers: filesystem.Readers{}}, testsupport.NewVault(t, notes)
+	return note.Read{Readers: filesystem.VaultReaders{}}, testsupport.NewVault(t, notes)
 }
 
 func read(t *testing.T, u note.Read, v domain.Vault, path string) note.Contents {
@@ -41,8 +41,8 @@ func TestAReadGivesTheProseAndWhatTheFileWas(t *testing.T) {
 	if got.Body != "# Entropy\n\nA measure of disorder.\n" {
 		t.Errorf("the frontmatter came back as prose: %q", got.Body)
 	}
-	if got.Ref.Size != int64(len(raw)) || got.Ref.Path != "Entropy.md" {
-		t.Errorf("the file was not described: %+v", got.Ref)
+	if got.Fingerprint.Size != int64(len(raw)) || got.Fingerprint.Path != "Entropy.md" {
+		t.Errorf("the file was not described: %+v", got.Fingerprint)
 	}
 }
 
@@ -109,8 +109,8 @@ func TestANoteOverTheCeilingIsRefused(t *testing.T) {
 	if got.Body != "" {
 		t.Errorf("a note over the ceiling came back anyway: %d bytes", len(got.Body))
 	}
-	if got.Ref.Size <= note.MaxBytes {
-		t.Errorf("the size that was refused is not reported: %+v", got.Ref)
+	if got.Fingerprint.Size <= note.MaxBytes {
+		t.Errorf("the size that was refused is not reported: %+v", got.Fingerprint)
 	}
 }
 
@@ -155,7 +155,7 @@ func TestAReadNormalisesTheProseAndLeavesTheFileAlone(t *testing.T) {
 
 	// What the index is built from is the file, so every offset into the body
 	// it holds is an offset into those bytes.
-	indexed := markdown.Parse(got.Ref, onDisk)
+	indexed := markdown.Parse(got.Fingerprint, onDisk)
 	if !strings.Contains(indexed.Body, "\r\n") {
 		t.Errorf("the indexed body lost the file's line endings: %q", indexed.Body)
 	}

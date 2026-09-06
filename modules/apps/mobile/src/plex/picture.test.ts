@@ -4,15 +4,15 @@
  */
 import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
-import { NeighbourhoodResponseSchema, Seat } from '@numen/protocol'
+import { GetNeighbourhoodResponseSchema, Seat } from '@numen/protocol'
 import { asPlex } from './picture'
 
 /** A note and what sits around it: seat, label, the note it comes through, and
  *  whether the other note names the relationship too. */
-type Related = [string, Seat, string, string, boolean?]
+type Neighbour = [string, Seat, string, string, boolean?]
 
-const around = (focus: string, related: Related[]) =>
-  create(NeighbourhoodResponseSchema, {
+const around = (focus: string, related: Neighbour[]) =>
+  create(GetNeighbourhoodResponseSchema, {
     focus: { path: focus, title: focus, identifier: '' },
     related: related.map(([path, seat, label, through, mutual]) => ({
       note: { path, title: path, identifier: '' },

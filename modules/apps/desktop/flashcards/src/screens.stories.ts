@@ -6,28 +6,20 @@
  * taken from, so every piece is drawn in the state it settles in.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { Goal, Stopped } from '@numen/protocol'
-import type { HeatmapTally } from '@numen/ui'
+import { dayAfter, dayNamed, type HeatmapTally } from '@numen/ui'
 import { h, type VNode } from 'vue'
-import Decks from './Decks.vue'
-import Session from './Session.vue'
-import type { Closes, Preset, Settings } from './scheduling'
-import type { Asked, DeckOwing, Owing as Vault } from './core'
+import Decks from './decks/Decks.vue'
+import Session from './session/Session.vue'
+import type { BudgetKeys, Preset, Settings } from './decks/presets'
+import type { CardFace, DeckCardsDue, VaultCardsDue } from './core'
 
-/** A day as the grid of weeks writes one. */
-const dayOf = (at: Date): string =>
-  `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, '0')}-${String(at.getDate()).padStart(2, '0')}`
-
-const dayBefore = (day: string, back: number): string => {
-  const [year, month, at] = day.split('-').map(Number)
-  return dayOf(new Date(year ?? 2000, (month ?? 1) - 1, (at ?? 1) - back))
-}
+const dayBefore = (day: string, back: number): string => dayAfter(day, -back)
 
 /**
  * The day this window is read on. The grid of weeks runs up to the week it is
  * in, so the day the picture is taken is the day it is taken of.
  */
-const TODAY = dayOf(new Date())
+const TODAY = dayNamed(new Date())
 
 /** One day's answers, as the grid above the decks counts them. */
 const tally = (answered: number, recalled: number): HeatmapTally => ({
@@ -77,11 +69,11 @@ const DUE = new Map<string, number>(
 )
 
 /** The budget that closes a day, in the words a preset writes the key in. */
-const BY_MINUTES: Closes = { new: '', reviews: '', minutes: 'minutes_a_day' }
-const BY_CARDS: Closes = { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' }
+const BY_MINUTES: BudgetKeys = { new: '', reviews: '', minutes: 'minutes_a_day' }
+const BY_CARDS: BudgetKeys = { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' }
 
 const settings = (over: Partial<Settings> = {}): Settings => ({
-  goal: Goal.MINUTES_A_DAY,
+  goal: 'minutes',
   byDate: '',
   minutesADay: 25,
   newADay: 12,
@@ -135,7 +127,7 @@ const SANSKRIT = preset({
 const ANATOMY = preset({
   path: 'Anatomy.md',
   name: 'Anatomy',
-  settings: settings({ goal: Goal.BY_DATE, byDate: dayBefore(TODAY, -76) }),
+  settings: settings({ goal: 'date', byDate: dayBefore(TODAY, -76) }),
   decks: [
     'Anatomy/Bones.md',
     'Anatomy/Muscles.md',
@@ -157,7 +149,7 @@ const ANATOMY = preset({
 
 const PRESETS: readonly Preset[] = [SANSKRIT, ANATOMY]
 
-const deck = (path: string, over: Partial<DeckOwing> = {}): DeckOwing => ({
+const deck = (path: string, over: Partial<DeckCardsDue> = {}): DeckCardsDue => ({
   deck: path,
   faces: 400,
   due: 0,
@@ -167,7 +159,7 @@ const deck = (path: string, over: Partial<DeckOwing> = {}): DeckOwing => ({
   ...over,
 })
 
-const DECKS: readonly DeckOwing[] = [
+const DECKS: readonly DeckCardsDue[] = [
   deck('Sanskrit/Roots.md', { faces: 520, due: 34, new: 6, learned: 361 }),
   deck('Sanskrit/Declensions.md', { faces: 448, due: 21, new: 0, learned: 302 }),
   deck('Sanskrit/Sandhi.md', { faces: 272, due: 0, new: 0, learned: 249 }),
@@ -183,8 +175,8 @@ const DECKS: readonly DeckOwing[] = [
   deck('Anatomy/Organs.md', { faces: 196, due: 0, new: 5, learned: 88 }),
 ]
 
-const VAULT: Vault = {
-  vaultId: 'v1',
+const VAULT: VaultCardsDue = {
+  vault: 'v1',
   name: 'Studies',
   path: '/home/you/Studies',
   counted: true,
@@ -202,11 +194,11 @@ const BY_DECK = new Map<string, Preset>(
   PRESETS.flatMap((one) => one.decks.map((path) => [path, one] as const)),
 )
 
-/** One card face, as the sitting puts it. */
-const CARD: Asked = {
+/** One card face, as the session puts it. */
+const CARD: CardFace = {
   deck: 'Sanskrit/Roots.md',
   section: 'Verbs of going',
-  card: 'k7m2xq9fzp',
+  mark: 'k7m2xq9fzp',
   face: 'Recognise',
   heading: 'gam',
   front: '<p><strong>gam</strong> — गम्</p>\n<p>Which class does it take, and what is its present stem?</p>',
@@ -252,7 +244,7 @@ export default meta
 type Story = StoryObj
 
 /** What the vault owes today: the goals, the days answered on, and the decks. */
-export const Owing: Story = {
+export const CardsDue: Story = {
   render: () =>
     frame(
       h(Decks, {

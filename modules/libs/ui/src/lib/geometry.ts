@@ -1,6 +1,6 @@
 /** Where something is and how big it is, in whatever coordinates the caller measures in. */
 
-export interface Point {
+export interface Position {
   readonly x: number
   readonly y: number
 }

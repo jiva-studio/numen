@@ -6,7 +6,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import Notices from './Notices.vue'
-import type { Notice } from './model'
+import type { Notice } from './notice'
 import { hovered, lightness } from '@/fixtures/colour'
 import { LONG, RUSSIAN, UNBREAKABLE } from '@/fixtures/prose'
 import { DARK, drawnDark } from '@/fixtures/theme'
@@ -84,7 +84,7 @@ const over = (args: Knobs) => ({
   components: { Notices },
   setup: () => ({ args }),
   template: `
-    <div class="numen" style="height:100vh;background:var(--numen-surface);color:var(--numen-node-fg);font-family:var(--numen-font-sans);padding:24px">
+    <div class="numen" style="height:100vh;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans);padding:24px">
       The window, with what it has to say in the corner.
       <Notices
         :notices="args.notices"
@@ -101,7 +101,7 @@ const over = (args: Knobs) => ({
 })
 
 const meta = {
-  title: 'Generic/Notices',
+  title: 'Application/Notices',
   component: Notices,
   parameters: {
     layout: 'fullscreen',

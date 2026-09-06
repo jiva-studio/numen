@@ -4,16 +4,24 @@
 # npm. What is here is the list of things worth doing and where they are done,
 # so that neither has to be remembered.
 
+MODULES  := modules
 CORE     := modules/libs/core
 DESKTOP  := modules/apps/desktop
+MOBILE   := modules/apps/mobile
+DOCS     := modules/apps/docs
 LANDING  := modules/apps/landing
 ICON     := modules/tools/icon
+DEPGRAPH := modules/tools/depgraph
+LINTER   := modules/tools/lint
+STORIES  := modules/tools/stories
 UI       := modules/libs/ui
+WIRE     := modules/libs/wire
 PROTOCOL := modules/libs/protocol
 
 # What has to be on PATH, and who needs it:
 #
 #   go, node, npm                everything
+#   golangci-lint                the Go checks past go vet
 #   pkg-config, gtk4,            the window, which links against the system's
 #   webkitgtk-6.0                own browser through cgo
 #   buf, protoc-gen-go,          the schema, and only for somebody changing it:
@@ -30,15 +38,11 @@ help:
 # does not: `make install INSTALL="npm ci"`.
 INSTALL ?= npm install
 
-# The schema's compiler is on PATH and what it produces is committed, so the
-# copy of it npm offers is a download nothing here reads.
+# `modules/` is the workspace root, so one install fetches every package below
+# it and one copy of a package answers for all of them.
 .PHONY: install
 install: ## fetch every module's dependencies
-	cd $(PROTOCOL) && $(INSTALL) --omit=dev
-	cd $(UI) && $(INSTALL)
-	cd $(DESKTOP)/ui && $(INSTALL)
-	cd $(DESKTOP)/flashcards && $(INSTALL)
-	cd $(LANDING) && $(INSTALL)
+	cd $(MODULES) && $(INSTALL)
 
 .PHONY: generate
 generate: ## compile the schema into Go and TypeScript
@@ -57,7 +61,7 @@ build: interface ## build everything
 .PHONY: interface
 interface: ## build each window's page into the binary's assets
 	cd $(UI) && npm run build
-	cd $(DESKTOP)/ui && npm run build
+	cd $(DESKTOP)/editor && npm run build
 	cd $(DESKTOP)/flashcards && npm run build
 
 # On macOS the window is built into a bundle, ad-hoc signed. A bare executable
@@ -99,7 +103,7 @@ shoot: ## take the landing page's picture of the window from its story
 
 .PHONY: icons
 icons: ## cut every platform's icon from the one drawing
-	cd $(ICON) && npm install && npm run build
+	cd $(ICON) && npm run build
 
 # The window's tests reach the library through its build, so the library is
 # built before they run.
@@ -107,17 +111,82 @@ icons: ## cut every platform's icon from the one drawing
 test: ## run every test
 	cd $(CORE) && go test ./... -race
 	cd $(DESKTOP) && go test ./... -race
+	cd $(MOBILE) && go test ./... -race
 	cd $(UI) && npm test
 	cd $(UI) && npm run build
-	cd $(DESKTOP)/ui && npm test
+	cd $(WIRE) && npm test
+	cd $(DESKTOP)/editor && npm test
 	cd $(DESKTOP)/flashcards && npm test
+	cd $(MOBILE) && npm test
+
+# gofmt -l names the files it would change and exits 0 all the same, so the
+# list it prints is turned into a failure here. The CI workflows do the same
+# thing in their own words.
+define gofmt-check
+	unformatted=$$(gofmt -l $(1)); \
+	if [ -n "$$unformatted" ]; then echo "not gofmt-ed:"; echo "$$unformatted"; exit 1; fi
+endef
 
 .PHONY: lint
 lint: generate-check ## the checks CI runs, less the one needing a base branch
-	cd $(CORE) && gofmt -l . && go vet ./...
-	cd $(DESKTOP) && gofmt -l ./cmd ./internal && go vet ./...
+	$(CORE)/adapter/index/migration-forward-only.sh --self-test
+	cd $(CORE) && $(call gofmt-check,.)
+	cd $(CORE) && go vet ./...
+	cd $(DESKTOP) && $(call gofmt-check,./cmd ./internal)
+	cd $(DESKTOP) && go vet ./...
+	cd $(MOBILE) && $(call gofmt-check,./bind)
+	cd $(MOBILE) && go vet ./...
+	$(MAKE) lint-go
+	$(MAKE) vulncheck
 	cd $(PROTOCOL) && buf lint
+	cd $(UI) && npm run lint
 	cd $(UI) && npm run typecheck
-	cd $(DESKTOP)/ui && npm run typecheck
+	cd $(WIRE) && npm run typecheck
+	cd $(DESKTOP)/editor && npm run lint
+	cd $(DESKTOP)/editor && npm run typecheck
+	cd $(DESKTOP)/flashcards && npm run lint
 	cd $(DESKTOP)/flashcards && npm run typecheck
+	cd $(MOBILE) && npm run lint
+	cd $(MOBILE) && npm run typecheck
+	cd $(DOCS) && npm run lint
+	cd $(DOCS) && npm run manual:check
+	cd $(DOCS) && npm run typecheck
+	cd $(LANDING) && npm run lint
 	cd $(LANDING) && npm run typecheck
+	cd $(LANDING) && npm run stories:check
+	cd $(DEPGRAPH) && npm run check
+	cd $(LINTER) && npm run check
+	cd $(STORIES) && npm run check
+	$(MAKE) graph-check
+
+# The drawing, taken from the code as it stands.
+.PHONY: graph
+graph: ## draw what the interface modules depend on, into docs/dependencies.md
+	cd $(DEPGRAPH) && npm run graph
+
+.PHONY: graph-check
+graph-check: graph ## fail if the drawing that is committed is out of date
+	git diff --exit-code -- docs/dependencies.md
+
+# What .golangci.yml asks for, in all four Go modules. The phone binds the core
+# and is held to the same rules as what it binds.
+#
+# Every module fails on what it finds. A check nobody can go red on is a check
+# nobody reads.
+.PHONY: lint-go
+lint-go: ## what golangci-lint finds, in every Go module
+	cd $(CORE) && golangci-lint run ./...
+	cd $(DESKTOP) && golangci-lint run ./...
+	cd $(PROTOCOL) && golangci-lint run ./...
+	cd $(MOBILE) && golangci-lint run ./...
+
+# The only check whose answer changes with nothing in the repository changing:
+# it asks a database that is kept elsewhere, and it answers for the standard
+# library of whichever Go is running it as well as for what is required. It is
+# fetched at the version the run finds, and reads the list as it stands.
+.PHONY: vulncheck
+vulncheck: ## ask the Go vulnerability database about what the modules carry
+	cd $(CORE) && go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+	cd $(DESKTOP) && go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+	cd $(PROTOCOL) && go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+	cd $(MOBILE) && go run golang.org/x/vuln/cmd/govulncheck@latest ./...

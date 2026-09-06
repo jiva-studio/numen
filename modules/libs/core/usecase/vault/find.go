@@ -17,6 +17,12 @@ type Find struct {
 	Registry port.VaultRegistry
 }
 
+// NewFind is what a name, a path or an identity is resolved against: the list
+// this installation keeps.
+func NewFind(registry port.VaultRegistry) Find {
+	return Find{Registry: registry}
+}
+
 func (u Find) Execute(nameOrPath string) (domain.Vault, error) {
 	v, found, err := u.Registry.Find(nameOrPath)
 	if err != nil {

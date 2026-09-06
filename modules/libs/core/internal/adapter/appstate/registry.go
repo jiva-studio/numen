@@ -36,25 +36,25 @@ func At(path string) *VaultRegistry { return &VaultRegistry{path: path} }
 
 func (r *VaultRegistry) Path() string { return r.path }
 
-func (r *VaultRegistry) load() (file, error) {
+func (r *VaultRegistry) load() (registryFile, error) {
 	raw, err := os.ReadFile(r.path)
 	if errors.Is(err, fs.ErrNotExist) {
-		return file{V: 1}, nil
+		return registryFile{Version: 1}, nil
 	}
 	if err != nil {
-		return file{}, err
+		return registryFile{}, err
 	}
-	var f file
+	var f registryFile
 	if err := json.Unmarshal(raw, &f); err != nil {
-		return file{}, err
+		return registryFile{}, err
 	}
-	if f.V == 0 {
-		f.V = 1
+	if f.Version == 0 {
+		f.Version = 1
 	}
 	return f, nil
 }
 
-func (r *VaultRegistry) save(f file) error {
+func (r *VaultRegistry) save(f registryFile) error {
 	if err := os.MkdirAll(filepath.Dir(r.path), 0o755); err != nil {
 		return err
 	}
@@ -146,7 +146,7 @@ func (r *VaultRegistry) Save(v domain.Vault) error {
 
 // Remove takes a vault off the list. The folder and the identity inside it stay
 // as they are. An identity the list does not hold is already off it.
-func (r *VaultRegistry) Remove(id string) error {
+func (r *VaultRegistry) Remove(id domain.VaultID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	f, err := r.load()
@@ -158,15 +158,15 @@ func (r *VaultRegistry) Remove(id string) error {
 		return nil
 	}
 	f.Vaults = slices.Delete(f.Vaults, at, at+1)
-	if f.Last == id {
-		f.Last = ""
+	if f.LastID == id {
+		f.LastID = ""
 	}
 	return r.save(f)
 }
 
 // Opened records the vault a window is showing. Recording the vault already
 // recorded writes nothing.
-func (r *VaultRegistry) Opened(id string) error {
+func (r *VaultRegistry) Opened(id domain.VaultID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	f, err := r.load()
@@ -176,10 +176,10 @@ func (r *VaultRegistry) Opened(id string) error {
 	if !slices.ContainsFunc(f.Vaults, func(v domain.Vault) bool { return v.ID == id }) {
 		return fmt.Errorf("no vault on the list carries the identity %s", id)
 	}
-	if f.Last == id {
+	if f.LastID == id {
 		return nil
 	}
-	f.Last = id
+	f.LastID = id
 	return r.save(f)
 }
 
@@ -193,7 +193,7 @@ func (r *VaultRegistry) Last() (domain.Vault, bool, error) {
 		return domain.Vault{}, false, err
 	}
 	for _, v := range f.Vaults {
-		if v.ID == f.Last && f.Last != "" {
+		if v.ID == f.LastID && f.LastID != "" {
 			return v, true, nil
 		}
 	}
@@ -215,7 +215,7 @@ func (r *VaultRegistry) Find(nameOrPath string) (domain.Vault, bool, error) {
 	}
 	abs, _ := filepath.Abs(nameOrPath)
 	for _, v := range f.Vaults {
-		if v.ID == nameOrPath || domain.FoldName(v.Name) == domain.FoldName(nameOrPath) || v.Path == abs {
+		if string(v.ID) == nameOrPath || domain.FoldName(v.Name) == domain.FoldName(nameOrPath) || v.Path == abs {
 			return v, true, nil
 		}
 	}

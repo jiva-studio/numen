@@ -9,34 +9,49 @@ on:
   push:
     branches: [main]
 
+# One run at a time per branch, and on a pull request the newest is the one that
+# matters.
+concurrency:
+  group: commits-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
 defaults:
   run:
     working-directory: modules/tools/git-hooks
 
 jobs:
   commitlint:
+    name: "Check :: Commits"
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: modules/tools/git-hooks/package-lock.json
+          cache-dependency-path: modules/package-lock.json
 
+      # The install is the source root's; what it fetched is found from here.
       - run: npm ci
+        working-directory: modules
 
       # PR: validate every commit in the range. Push: validate the last one.
       - name: Validate commit messages
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            npx commitlint \
-              --from "${{ github.event.pull_request.base.sha }}" \
-              --to   "${{ github.event.pull_request.head.sha }}" \
-              --verbose
+          if [ "$EVENT" = "pull_request" ]; then
+            npx commitlint --from "$BASE" --to "$HEAD" --verbose
           else
             npx commitlint --last --verbose
           fi

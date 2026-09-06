@@ -7,7 +7,7 @@ import {
   threadOf,
   ARROWHEAD_PATH,
 } from './paths'
-import { ARROW_LENGTH, type EdgeCurve, type PlacedEdge } from '../model'
+import { ARROW_LENGTH, type EdgeCurve, type PlacedEdge } from '../edge'
 
 const CURVE: EdgeCurve = {
   fromPoint: { x: 0, y: 0 },

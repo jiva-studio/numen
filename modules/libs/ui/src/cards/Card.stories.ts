@@ -8,19 +8,19 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Card from './Card.vue'
-import { grid, type Drawn, type Tile } from './deck'
-import type { Cut } from './stencil'
+import { grid, type DeckCard, type Tile } from './deck'
+import type { Stencil } from './stencil'
 
 interface Corpus {
-  readonly card: Drawn
-  readonly cut: Cut | null
+  readonly card: DeckCard
+  readonly cut: Stencil | null
   /** What the vault reading the file found wrong with this card. */
   readonly wrong?: readonly string[]
   /** What it found wrong with one of its values, by the field it stands in. */
   readonly wrongUnder?: Readonly<Record<string, readonly string[]>>
 }
 
-const ANIMAL: Cut = { name: 'Animal', fields: ['Name', 'Height', 'Weight', 'Life span'] }
+const ANIMAL: Stencil = { name: 'Animal', fields: ['Name', 'Height', 'Weight', 'Life span'] }
 
 const UNBROKEN =
   'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
@@ -262,13 +262,13 @@ export const ACard: Story = {
   play: async ({ canvasElement }) => {
     const tile = found(canvasElement, '[data-card="k7m2xq9fzp"]')
     const value = found(canvasElement, '.card__value')
-    const rule = value.querySelector('.rule')
+    const rule = value.querySelector('.divider')
     const label = value.querySelector('label')
     if (!rule || !label) throw new Error('no rule and no name on it')
 
     // One name, and it stands on the rule, so the two share a middle.
     expect(value.querySelectorAll('label')).toHaveLength(1)
-    expect(label.closest('.rule')).toBe(rule)
+    expect(label.closest('.divider')).toBe(rule)
     const line = rule.getBoundingClientRect()
     const name = label.getBoundingClientRect()
     expect(Math.abs((name.top + name.bottom) / 2 - (line.top + line.bottom) / 2)).toBeLessThan(2)
@@ -281,7 +281,7 @@ export const ACard: Story = {
     const boxes = [...tile.querySelectorAll<HTMLTextAreaElement>('textarea')]
     expect(boxes).toHaveLength(4)
     for (const box of boxes) {
-      const under = box.closest('.card__value')?.querySelector('.rule')
+      const under = box.closest('.card__value')?.querySelector('.divider')
       if (!under) throw new Error('a box under no rule')
       expect(box.getBoundingClientRect().top).toBeCloseTo(under.getBoundingClientRect().bottom, 0)
       expect(box.closest('.card__value')?.querySelector('fieldset')).toBeNull()
@@ -292,17 +292,17 @@ export const ACard: Story = {
     expect(new Set(heights).size).toBe(1)
 
     // The card keeps the ground both the rules and the boxes stand on.
-    const grown = found(canvasElement, '.grown')
-    const ground = getComputedStyle(grown).backgroundColor
+    const cell = found(canvasElement, '.autosize')
+    const ground = getComputedStyle(cell).backgroundColor
     expect(ground === 'rgba(0, 0, 0, 0)' || ground === 'transparent').toBe(true)
-    expect(getComputedStyle(grown).borderTopWidth).toBe('0px')
+    expect(getComputedStyle(cell).borderTopWidth).toBe('0px')
     expect(getComputedStyle(tile).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
 
     // The strip says what cut the card, and holds the one way to remove it.
-    const bar = found(canvasElement, '.bar')
+    const header = found(canvasElement, '.card-header')
     expect(found(canvasElement, '[data-cut-of]').textContent?.trim()).toBe('Animal')
     expect(tile.querySelector('[aria-expanded]')).toBeNull()
-    expect(bar.querySelectorAll('button')).toHaveLength(1)
+    expect(header.querySelectorAll('button')).toHaveLength(1)
 
     // It stands in the middle of the strip, and is said more quietly than what
     // the card holds.
@@ -311,7 +311,7 @@ export const ACard: Story = {
       const box = each.getBoundingClientRect()
       return Math.round(box.left + box.width / 2)
     }
-    expect(middle(cut)).toBe(middle(bar))
+    expect(middle(cut)).toBe(middle(header))
 
     const said = Number.parseFloat(getComputedStyle(cut).fontSize)
     const written = Number.parseFloat(

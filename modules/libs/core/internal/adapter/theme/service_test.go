@@ -9,43 +9,48 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/modules/libs/core/appearance"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/theme"
 )
 
-// dressing is a service over a themes folder, with the settings behind it as
-// the two functions it is given.
+// dressing is a service over a themes folder, and the settings behind it, held
+// in memory.
 type dressing struct {
 	service *theme.Service
-	worn    theme.Dress
-	written []theme.Dress
+	worn    theme.Appearance
+	written []theme.Appearance
 	said    []string
 	refuses error
 }
 
-func dressed(t *testing.T, worn theme.Dress) *dressing {
+func (d *dressing) Read() (theme.Appearance, error) { return d.worn, nil }
+
+func (d *dressing) Write(one theme.Appearance) error {
+	if d.refuses != nil {
+		return d.refuses
+	}
+	d.written = append(d.written, one)
+	d.worn = one
+	return nil
+}
+
+func (d *dressing) Warn(said string) { d.said = append(d.said, said) }
+
+func dressed(t *testing.T, worn theme.Appearance) *dressing {
 	t.Helper()
 	kept := &dressing{worn: worn}
 	kept.service = &theme.Service{
 		Catalogue:            folder(t),
+		Settings:             kept,
 		InterfaceScaleBounds: theme.Bounds{Least: 0.8, Most: 2},
 		TextScaleBounds:      theme.Bounds{Least: 0.8, Most: 1.75},
-		Dressed:              func() (theme.Dress, error) { return kept.worn, nil },
-		Wear: func(one theme.Dress) error {
-			if kept.refuses != nil {
-				return kept.refuses
-			}
-			kept.written = append(kept.written, one)
-			kept.worn = one
-			return nil
-		},
-		Say: func(said string) { kept.said = append(kept.said, said) },
 	}
 	return kept
 }
 
-func (d *dressing) themes(t *testing.T) *v1.ThemesResponse {
+func (d *dressing) themes(t *testing.T) *v1.ListThemesResponse {
 	t.Helper()
-	answer, err := d.service.Themes(t.Context(), connect.NewRequest(&v1.ThemesRequest{}))
+	answer, err := d.service.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,8 +59,8 @@ func (d *dressing) themes(t *testing.T) *v1.ThemesResponse {
 
 func (d *dressing) choose(t *testing.T, name string, mode v1.Mode) string {
 	t.Helper()
-	answer, err := d.service.Choose(t.Context(),
-		connect.NewRequest(&v1.ChooseRequest{Name: name, Mode: mode}))
+	answer, err := d.service.WriteAppearance(t.Context(),
+		connect.NewRequest(&v1.WriteAppearanceRequest{Name: name, Mode: mode}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +68,7 @@ func (d *dressing) choose(t *testing.T, name string, mode v1.Mode) string {
 }
 
 func TestTheListSaysWhatIsWornAndWhichHalfItIsReadAs(t *testing.T) {
-	worn := dressed(t, theme.Dress{Theme: "preset:dracula", Mode: v1.Mode_MODE_DARK})
+	worn := dressed(t, theme.Appearance{ThemeName: "preset:dracula", Mode: appearance.Dark})
 	put(t, worn.service.Catalogue, "mine.css", ":root { --numen-surface: #000000 }")
 
 	answer := worn.themes(t)
@@ -89,7 +94,7 @@ func TestTheListSaysWhatIsWornAndWhichHalfItIsReadAs(t *testing.T) {
 }
 
 func TestAThemeIsAskedForByNameAndAnyOtherNameIsNothing(t *testing.T) {
-	worn := dressed(t, theme.Dress{Theme: theme.Default, Mode: v1.Mode_MODE_SYSTEM})
+	worn := dressed(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 	put(t, worn.service.Catalogue, "kept.css", ":root { --numen-surface: #123456 }")
 
 	for name, want := range map[string]string{
@@ -98,8 +103,8 @@ func TestAThemeIsAskedForByNameAndAnyOtherNameIsNothing(t *testing.T) {
 		"mine:../../../.ssh/id_rsa": "",
 		"mine:gone":                 "",
 	} {
-		answer, err := worn.service.Theme(t.Context(),
-			connect.NewRequest(&v1.ThemeRequest{Name: name}))
+		answer, err := worn.service.ReadTheme(t.Context(),
+			connect.NewRequest(&v1.ReadThemeRequest{Name: name}))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -113,8 +118,8 @@ func TestAThemeIsAskedForByNameAndAnyOtherNameIsNothing(t *testing.T) {
 
 	// This product's own palette names no token: what `tokens.css` holds is
 	// what it is. It answers with its file all the same.
-	answer, err := worn.service.Theme(t.Context(),
-		connect.NewRequest(&v1.ThemeRequest{Name: theme.Default}))
+	answer, err := worn.service.ReadTheme(t.Context(),
+		connect.NewRequest(&v1.ReadThemeRequest{Name: theme.Default}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,11 +129,11 @@ func TestAThemeIsAskedForByNameAndAnyOtherNameIsNothing(t *testing.T) {
 }
 
 func TestChoosingWritesTheThemeAndTheHalfItIsReadAs(t *testing.T) {
-	worn := dressed(t, theme.Dress{Theme: theme.Default, Mode: v1.Mode_MODE_SYSTEM})
+	worn := dressed(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 	if failed := worn.choose(t, "preset:nord", v1.Mode_MODE_DARK); failed != "" {
 		t.Fatalf("refused: %s", failed)
 	}
-	if len(worn.written) != 1 || worn.written[0] != (theme.Dress{Theme: "preset:nord", Mode: v1.Mode_MODE_DARK}) {
+	if len(worn.written) != 1 || worn.written[0] != (theme.Appearance{ThemeName: "preset:nord", Mode: appearance.Dark}) {
 		t.Fatalf("written: %+v", worn.written)
 	}
 	if answer := worn.themes(t); answer.GetApplied() != "preset:nord" {
@@ -138,9 +143,9 @@ func TestChoosingWritesTheThemeAndTheHalfItIsReadAs(t *testing.T) {
 
 // A client says how far a size goes before a person types a number into it.
 func TestTheListSaysTheTwoSizesAndHowFarEachGoes(t *testing.T) {
-	worn := dressed(t, theme.Dress{
-		Theme:          theme.Default,
-		Mode:           v1.Mode_MODE_SYSTEM,
+	worn := dressed(t, theme.Appearance{
+		ThemeName:      theme.Default,
+		Mode:           appearance.System,
 		InterfaceScale: 1.25,
 		TextScale:      1.5,
 	})
@@ -160,7 +165,7 @@ func TestTheListSaysTheTwoSizesAndHowFarEachGoes(t *testing.T) {
 // A window that has been dressed by nothing is drawn at the size it was
 // designed at.
 func TestASettingsFileNamingNoSizeIsDrawnAsDesigned(t *testing.T) {
-	worn := dressed(t, theme.Dress{Theme: theme.Default, Mode: v1.Mode_MODE_SYSTEM})
+	worn := dressed(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 
 	answer := worn.themes(t)
 	if answer.GetInterfaceScale() != theme.AsDesigned || answer.GetTextScale() != theme.AsDesigned {
@@ -170,15 +175,15 @@ func TestASettingsFileNamingNoSizeIsDrawnAsDesigned(t *testing.T) {
 
 // One size is one command, and choosing it says nothing about the other.
 func TestChoosingOneSizeLeavesTheOtherAsItStands(t *testing.T) {
-	worn := dressed(t, theme.Dress{
-		Theme:          theme.Default,
-		Mode:           v1.Mode_MODE_SYSTEM,
+	worn := dressed(t, theme.Appearance{
+		ThemeName:      theme.Default,
+		Mode:           appearance.System,
 		InterfaceScale: 1.25,
 		TextScale:      1.5,
 	})
 
 	drawn := 1.75
-	answer, err := worn.service.Choose(t.Context(), connect.NewRequest(&v1.ChooseRequest{
+	answer, err := worn.service.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
 		Name:           "preset:nord",
 		Mode:           v1.Mode_MODE_DARK,
 		InterfaceScale: &drawn,
@@ -197,7 +202,7 @@ func TestChoosingOneSizeLeavesTheOtherAsItStands(t *testing.T) {
 // The settings are left as they are, and the person is standing in front of the
 // list that was chosen from.
 func TestAChoiceThatCannotBeWornIsRefusedAndSaysWhy(t *testing.T) {
-	worn := dressed(t, theme.Dress{Theme: theme.Default, Mode: v1.Mode_MODE_SYSTEM})
+	worn := dressed(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 	for _, chosen := range []struct {
 		name string
 		mode v1.Mode
@@ -220,7 +225,7 @@ func TestAChoiceThatCannotBeWornIsRefusedAndSaysWhy(t *testing.T) {
 }
 
 func TestASettingsFileThatWouldNotTakeTheChoiceSaysSo(t *testing.T) {
-	worn := dressed(t, theme.Dress{Theme: theme.Default, Mode: v1.Mode_MODE_SYSTEM})
+	worn := dressed(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 	worn.refuses = errNotWritten
 	if failed := worn.choose(t, "preset:nord", v1.Mode_MODE_DARK); !strings.Contains(failed, "read-only") {
 		t.Errorf("refused with %q", failed)
@@ -230,7 +235,7 @@ func TestASettingsFileThatWouldNotTakeTheChoiceSaysSo(t *testing.T) {
 // A theme deleted out of the folder does not leave the window undressed, and the
 // name it was under is what the person is told.
 func TestAThemeTheSettingsNameThatIsGoneIsSaidAndTheDefaultWorn(t *testing.T) {
-	worn := dressed(t, theme.Dress{Theme: "mine:the-one-i-deleted", Mode: v1.Mode_MODE_LIGHT})
+	worn := dressed(t, theme.Appearance{ThemeName: "mine:the-one-i-deleted", Mode: appearance.Light})
 	answer := worn.themes(t)
 	if answer.GetApplied() != theme.Default {
 		t.Errorf("wears %q", answer.GetApplied())
@@ -246,7 +251,7 @@ func TestAThemeTheSettingsNameThatIsGoneIsSaidAndTheDefaultWorn(t *testing.T) {
 // A build with no settings behind it still lists what it ships.
 func TestAServiceGivenNoSettingsWearsThisProductsPalette(t *testing.T) {
 	service := &theme.Service{Catalogue: folder(t)}
-	answer, err := service.Themes(t.Context(), connect.NewRequest(&v1.ThemesRequest{}))
+	answer, err := service.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -254,8 +259,8 @@ func TestAServiceGivenNoSettingsWearsThisProductsPalette(t *testing.T) {
 		t.Errorf("wears %q, read as %v", answer.Msg.GetApplied(), answer.Msg.GetMode())
 	}
 
-	chosen, err := service.Choose(t.Context(),
-		connect.NewRequest(&v1.ChooseRequest{Name: theme.Default, Mode: v1.Mode_MODE_DARK}))
+	chosen, err := service.WriteAppearance(t.Context(),
+		connect.NewRequest(&v1.WriteAppearanceRequest{Name: theme.Default, Mode: v1.Mode_MODE_DARK}))
 	if err != nil {
 		t.Fatal(err)
 	}

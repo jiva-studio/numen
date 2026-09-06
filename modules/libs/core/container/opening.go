@@ -9,18 +9,18 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// Opening is how this installation opens a vault: the walk that brings the
+// VaultOpener is how this installation opens a vault: the walk that brings the
 // index level with it, the watch that keeps it level while it is open, and the
 // levelling a write asks for.
 //
 // Both windows open a vault through this, so a vault opened in one is a vault
 // opened in the other. What each says about it while it runs is its own.
-type Opening struct {
+type VaultOpener struct {
 	// Told, if set, is called each time the index and the vault are level again.
-	Told func(vault.Moved)
+	Told func(VaultChanges)
 	// Trouble, if set, is called with what went wrong, and with nil when a later
 	// attempt succeeds.
-	Trouble func(error)
+	Trouble port.Trouble
 	// Rebuild reads every note again, whatever its fingerprint says.
 	Rebuild bool
 
@@ -30,43 +30,55 @@ type Opening struct {
 	refresh vault.Refresh
 }
 
-// Opening is how this installation opens a vault, the way the settings say one
-// is read and watched.
-func (c Config) Opening(db *Index) *Opening {
-	return c.OpeningWith(db, c.VaultReaders(), c.VaultWatcher())
+// VaultChanges is what an opener tells its callers: the notes that are
+// different now, the files that changed and are not notes, or that the whole
+// vault has to be looked at again.
+//
+// It is the opener's own word and not the walk's. What opens a vault here is
+// the whole of what a caller is given, and a caller that had to name the
+// scenario behind it to read one of these would be assembling the core itself.
+type VaultChanges struct {
+	Paths  []string
+	Assets []string
+	Reload bool
 }
 
-// OpeningWith is the same, with the watcher, and the readers the walk reads the
-// vault through, in place of the installation's own. A note brought up to date
-// after the walk is read through the installation's.
-func (c Config) OpeningWith(
+// Reading says whether an asset owes a read: one changed, or the whole vault is
+// being looked at again and every asset with it.
+func (m VaultChanges) Reading() bool { return m.Reload || len(m.Assets) > 0 }
+
+// VaultOpener is how this installation opens a vault, the way the settings say
+// one is read and watched.
+func (c Config) VaultOpener(db *Index) *VaultOpener {
+	return c.VaultOpenerWith(db, c.VaultReaders(), c.VaultWatcher())
+}
+
+// VaultOpenerWith is the same, with the watcher, and the readers the walk reads
+// the vault through, in place of the installation's own. A note brought up to
+// date after the walk is read through the installation's.
+func (c Config) VaultOpenerWith(
 	db *Index, walking port.VaultReaders, watcher port.VaultWatcher,
-) *Opening {
+) *VaultOpener {
 	scan := c.Scan(db)
 	scan.Readers = walking
 
-	held := &holding{NoteRepository: db.NotesCutAt(c.Cutting())}
-	return &Opening{
+	held := &holding{NoteRepository: db.NotesCutAt(c.Chunking(), c.Legibility())}
+	return &VaultOpener{
 		watcher: watcher,
 		scan:    scan,
 		held:    held,
-		refresh: vault.Refresh{
-			Readers: c.VaultReaders(),
-			Notes:   held,
-			Known:   db.SourcesKnown(),
-			Sources: db.Sources(),
-		},
+		refresh: vault.NewRefresh(c.VaultReaders(), db.Vaults(), held, db.SourcesKnown(), db.Sources()),
 	}
 }
 
 // Refreshing brings named notes up to date, through whatever is following the
 // vault they are in. Whatever changes a note calls it, so what changed is
 // findable before the change is reported done.
-func (o *Opening) Refreshing() vault.Refresh { return o.refresh }
+func (o *VaultOpener) Refreshing() vault.Refresh { return o.refresh }
 
-// Scanning is the walk this opening makes, for a caller asked to read the vault
+// Scanning is the walk this opener makes, for a caller asked to read the vault
 // again.
-func (o *Opening) Scanning() vault.Scan {
+func (o *VaultOpener) Scanning() vault.Scan {
 	scan := o.scan
 	scan.RebuildIndex = o.Rebuild
 	return scan
@@ -74,7 +86,7 @@ func (o *Opening) Scanning() vault.Scan {
 
 // Level brings named notes up to date. A note a window writes is level before
 // the answer comes back, so it is drawn as soon as it exists.
-func (o *Opening) Level(ctx context.Context, v domain.Vault, paths []string) error {
+func (o *VaultOpener) Level(ctx context.Context, v domain.Vault, paths []string) error {
 	_, err := o.refresh.Execute(ctx, v, paths)
 	return err
 }
@@ -82,17 +94,17 @@ func (o *Opening) Level(ctx context.Context, v domain.Vault, paths []string) err
 // Begin opens the vault: the watch is started, and Read is the walk beside it.
 //
 // A vault that cannot be watched is opened all the same, and Unwatched says why.
-func (o *Opening) Begin(ctx context.Context, v domain.Vault) *Open {
+func (o *VaultOpener) Begin(ctx context.Context, v domain.Vault) *OpenVault {
 	scan := o.Scanning()
-	follow := vault.Follow{
-		Watcher: o.watcher,
-		Refresh: o.refresh,
-		Scan:    scan,
-		Changed: o.Told,
-		Trouble: o.Trouble,
+	follow := vault.NewFollow(o.watcher, o.refresh, scan)
+	if told := o.Told; told != nil {
+		follow.Changed = func(m vault.VaultChanges) {
+			told(VaultChanges{Paths: m.Paths, Assets: m.Assets, Reload: m.Reload})
+		}
 	}
+	follow.Trouble = o.Trouble
 	watching, err := follow.Begin(ctx, v)
-	return &Open{
+	return &OpenVault{
 		opening:   o,
 		vault:     v,
 		scan:      scan,
@@ -102,43 +114,45 @@ func (o *Opening) Begin(ctx context.Context, v domain.Vault) *Open {
 	}
 }
 
-// Open is one vault an application has opened.
-type Open struct {
-	opening   *Opening
+// OpenVault is one vault an application has opened.
+type OpenVault struct {
+	opening   *VaultOpener
 	vault     domain.Vault
 	scan      vault.Scan
 	follow    vault.Follow
-	watching  *vault.Following
+	watching  *vault.Watch
 	unwatched error
 }
 
 // Unwatched is why the vault is not being followed, and nothing while it is. A
 // vault nobody is following looks exactly like a vault nothing happens to.
-func (o *Open) Unwatched() error { return o.unwatched }
+func (o *OpenVault) Unwatched() error { return o.unwatched }
 
-// Read walks the vault into the index, handing back how far it has got as it
-// goes.
+// Read walks the vault into the index and answers how many notes it holds. got,
+// if set, is called as the walk goes with the number of notes written so far.
 //
 // The walk writes in groups from what it read, so its copy of a note lands last
 // however early the note was read. Every note brought up to date underneath it
 // is read once more, and the newest copy of each lands last.
-func (o *Open) Read(ctx context.Context, got func(vault.ScanResult)) (vault.ScanResult, error) {
+func (o *OpenVault) Read(ctx context.Context, got func(indexed int)) (notes int, err error) {
 	o.opening.held.begin()
 
 	walk := o.scan
-	walk.OnProgress = got
+	if got != nil {
+		walk.OnProgress = func(res vault.ScanResult) { got(res.Indexed) }
+	}
 	res, err := walk.Execute(ctx, o.vault)
 
 	under := o.opening.held.taken()
 	if err != nil {
-		return res, err
+		return res.Notes, err
 	}
 	if len(under) > 0 {
 		if _, err := o.opening.refresh.Execute(ctx, o.vault, under); err != nil {
 			o.trouble(err)
 		}
 	}
-	return res, nil
+	return res.Notes, nil
 }
 
 // Run acts on everything the watch collects, and goes on until ctx is done or
@@ -146,14 +160,14 @@ func (o *Open) Read(ctx context.Context, got func(vault.ScanResult)) (vault.Scan
 //
 // A change named by the watch is acted on while Read is still running; reading
 // the vault again waits its turn behind the walk.
-func (o *Open) Run(ctx context.Context) {
+func (o *OpenVault) Run(ctx context.Context) {
 	if o.watching == nil {
 		return
 	}
 	o.watching.Run(ctx)
 }
 
-func (o *Open) trouble(err error) {
+func (o *OpenVault) trouble(err error) {
 	if o.follow.Trouble != nil {
 		o.follow.Trouble(err)
 	}
@@ -163,21 +177,26 @@ func (o *Open) trouble(err error) {
 // the first walk is still reading the vault.
 type holding struct {
 	port.NoteRepository
+	writes
+}
 
+// writes is every path written through the index while a walk is reading the
+// vault: each path once, in the order it was first written.
+type writes struct {
 	mu    sync.Mutex
 	paths []string
 	kept  map[string]bool
 	over  bool
 }
 
-func (h *holding) Save(ctx context.Context, vaultID string, notes []domain.Note) error {
+func (h *holding) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.Note) error {
 	for _, n := range notes {
-		h.hold(n.Ref.Path)
+		h.hold(n.Fingerprint.Path)
 	}
 	return h.NoteRepository.Save(ctx, vaultID, notes)
 }
 
-func (h *holding) Remove(ctx context.Context, vaultID string, paths []string) error {
+func (h *holding) Remove(ctx context.Context, vaultID domain.VaultID, paths []string) error {
 	for _, path := range paths {
 		h.hold(path)
 	}
@@ -187,38 +206,38 @@ func (h *holding) Remove(ctx context.Context, vaultID string, paths []string) er
 // begin holds the paths written through this, for the length of one walk. Every
 // walk holds again: a vault read a second time is read with the same guard as
 // the first.
-func (h *holding) begin() {
-	h.mu.Lock()
-	defer h.mu.Unlock()
+func (w *writes) begin() {
+	w.mu.Lock()
+	defer w.mu.Unlock()
 
-	h.over = false
-	h.paths, h.kept = nil, nil
+	w.over = false
+	w.paths, w.kept = nil, nil
 }
 
 // hold takes the path before the write it belongs to, so a note whose write
 // lands while the walk is still running is one of the paths taken after it.
-func (h *holding) hold(path string) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
+func (w *writes) hold(path string) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
 
-	if h.over || h.kept[path] {
+	if w.over || w.kept[path] {
 		return
 	}
-	if h.kept == nil {
-		h.kept = map[string]bool{}
+	if w.kept == nil {
+		w.kept = map[string]bool{}
 	}
-	h.kept[path] = true
-	h.paths = append(h.paths, path)
+	w.kept[path] = true
+	w.paths = append(w.paths, path)
 }
 
 // taken is every path held, and the end of the holding: the walk is over, so a
 // write that lands from now on is already the last one.
-func (h *holding) taken() []string {
-	h.mu.Lock()
-	defer h.mu.Unlock()
+func (w *writes) taken() []string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
 
-	h.over = true
-	paths := h.paths
-	h.paths, h.kept = nil, nil
+	w.over = true
+	paths := w.paths
+	w.paths, w.kept = nil, nil
 	return paths
 }

@@ -4,14 +4,14 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 )
 
 // A change is one box put right: which box of the reading, the run of prose it
 // covers, and what that run should say.
 type change struct {
-	at     int
+	index  int
 	start  int
 	length int
 	text   string
@@ -32,14 +32,14 @@ type walk struct {
 // plan is the corrections a reading's boxes answer to, in reading order. A
 // number no box answers to is dropped, a line named twice keeps what came last,
 // and a box reaching back into the one before it is left as it was.
-func plan(boxes []lit.Box, lines []Line) walk {
+func plan(boxes []highlight.Box, lines []Line) walk {
 	w := walk{grown: []int{0}}
 	said := make(map[int]string, len(lines))
 	for _, line := range lines {
-		if line.At < 0 || line.At >= len(boxes) {
+		if line.Number < 0 || line.Number >= len(boxes) {
 			continue
 		}
-		said[line.At] = line.Text
+		said[line.Number] = line.Text
 	}
 	if len(said) == 0 {
 		return w
@@ -57,7 +57,7 @@ func plan(boxes []lit.Box, lines []Line) walk {
 		if box.Start < end || box.Length < 0 {
 			continue
 		}
-		one := change{at: i, start: box.Start, length: box.Length, text: said[i]}
+		one := change{index: i, start: box.Start, length: box.Length, text: said[i]}
 		w.changes = append(w.changes, one)
 		w.grown = append(w.grown, w.grown[len(w.grown)-1]+one.delta())
 		end = box.Start + box.Length
@@ -84,17 +84,17 @@ func (w walk) inside(start, length int) int {
 }
 
 // Boxes are where the runs of a reading sit once its corrections are in it.
-func Boxes(boxes []lit.Box, lines []Line) []lit.Box {
+func Boxes(boxes []highlight.Box, lines []Line) []highlight.Box {
 	w := plan(boxes, lines)
 	if len(w.changes) == 0 {
 		return boxes
 	}
-	out := make([]lit.Box, len(boxes))
+	out := make([]highlight.Box, len(boxes))
 	copy(out, boxes)
 	next := 0
 	for i := range out {
 		out[i].Start += w.grown[next]
-		if next < len(w.changes) && w.changes[next].at == i {
+		if next < len(w.changes) && w.changes[next].index == i {
 			out[i].Length = len(w.changes[next].text)
 			next++
 		}
@@ -104,7 +104,7 @@ func Boxes(boxes []lit.Box, lines []Line) []lit.Box {
 
 // Prose is a reading's text with its corrections in it, and the pages and the
 // parts where they now stand.
-func Prose(prose string, marks []ocr.Mark, boxes []lit.Box, parts []ocr.Part, lines []Line) (string, []ocr.Mark, []ocr.Part) {
+func Prose(prose string, marks []ocr.PageStart, boxes []highlight.Box, parts []ocr.Part, lines []Line) (string, []ocr.PageStart, []ocr.Part) {
 	w := plan(boxes, lines)
 	if len(w.changes) == 0 {
 		return prose, marks, parts
@@ -125,9 +125,9 @@ func Prose(prose string, marks []ocr.Mark, boxes []lit.Box, parts []ocr.Part, li
 
 	pages := marks
 	if len(marks) > 0 {
-		pages = make([]ocr.Mark, len(marks))
+		pages = make([]ocr.PageStart, len(marks))
 		for i, mark := range marks {
-			pages[i] = ocr.Mark{Offset: mark.Offset + w.before(mark.Offset)}
+			pages[i] = ocr.PageStart{Offset: mark.Offset + w.before(mark.Offset)}
 		}
 	}
 	named := parts

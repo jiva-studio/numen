@@ -6,7 +6,7 @@
  * are and what choosing one does are the caller's.
  */
 import { computed, ref, watch } from 'vue'
-import { openedTo, woundBy, type HungParts, type Mark } from '../inside'
+import { openedTo, woundBy, type Arrow, type HungParts } from '../inside'
 
 const props = defineProps<{
   /** The parts and the room they are given. */
@@ -68,9 +68,9 @@ const wind = (event: WheelEvent) => {
   wound.value = shown.first + by
 }
 
-/** The line a mark at an edge is drawn along. */
-const markLine = (mark: Mark) =>
-  mark.points.map((at, index) => `${index === 0 ? 'M' : 'L'} ${at.x} ${at.y}`).join(' ')
+/** The line an arrow at an edge is drawn along. */
+const arrowLine = (arrow: Arrow) =>
+  arrow.points.map((at, index) => `${index === 0 ? 'M' : 'L'} ${at.x} ${at.y}`).join(' ')
 </script>
 
 <template>
@@ -113,10 +113,10 @@ const markLine = (mark: Mark) =>
 
     <!-- More of them than the window holds, the way they are wound to. -->
     <path
-      v-for="mark in opened.marks"
-      :key="mark.at"
+      v-for="arrow in opened.arrows"
+      :key="arrow.at"
       class="plex__more"
-      :d="markLine(mark)"
+      :d="arrowLine(arrow)"
       :opacity="opened.opacity"
     />
   </g>
@@ -127,8 +127,8 @@ const markLine = (mark: Mark) =>
    enough to read the picture through. */
 .plex__ground {
   rx: 0.25rem;
-  fill: color-mix(in oklab, var(--numen-node-bg), transparent 25%);
-  stroke: color-mix(in oklab, var(--numen-node-border), transparent 55%);
+  fill: color-mix(in oklab, var(--numen-raised), transparent 25%);
+  stroke: color-mix(in oklab, var(--numen-rule), transparent 55%);
   stroke-width: var(--numen-stroke);
 }
 
@@ -141,7 +141,7 @@ const markLine = (mark: Mark) =>
   block-size: 100%;
   font-family: var(--numen-font-sans);
   font-size: var(--numen-edge-label-size);
-  color: var(--numen-node-fg);
+  color: var(--numen-ink);
   user-select: none;
   -webkit-user-select: none;
   display: flex;
@@ -155,7 +155,7 @@ const markLine = (mark: Mark) =>
 
 /* A ground under the one the hand is on, which is what says it can be pressed. */
 .plex__part:hover {
-  background: color-mix(in oklab, var(--numen-node-bg), var(--numen-node-fg) 12%);
+  background: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 12%);
 }
 
 /* One line, then an ellipsis, as a title is. */

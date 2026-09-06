@@ -1,14 +1,15 @@
 <script setup lang="ts">
 /**
- * The palette: a field, and everything the words in it turned up, in bands.
+ * The palette: a field, and everything the words in it turned up, in groups.
  *
- * It takes bands of items and says which item was chosen and what was asked of
- * it. The keyboard stays in the field the whole time, and what is lit is named
- * to a screen reader rather than focused.
+ * It takes groups of items and says which item was chosen and what was asked of
+ * it. The keyboard stays in the field the whole time, what is lit is named to a
+ * screen reader, and the window behind is out of reach for as long as the
+ * palette stands.
  *
- * `data-palette` names each part: `ground`, `panel`, `crumb`, `field`, `list`,
- * `title`, `icon`, `name`, `detail`, `hint`, `silence`, `nothing`, `key` and
- * `more`. A band is a group and an item is an option.
+ * `data-palette` names each part of the panel: `ground`, `panel`, `crumb`,
+ * `field`, `said`, `nothing`, `key` and `more`. The list under the field names
+ * its own.
  */
 import {
   computed,
@@ -20,9 +21,9 @@ import {
   useTemplateRef,
   watch,
 } from 'vue'
-import Waiting from '../waiting/Waiting.vue'
 import KeyCap from './KeyCap.vue'
 import PaletteActions from './PaletteActions.vue'
+import PaletteResults from './PaletteResults.vue'
 import {
   actionAt,
   choosable,
@@ -30,25 +31,27 @@ import {
   flatten,
   keptAt,
   keyed,
+  listId,
   opensActions,
+  optionId,
   ordered,
   placePalette,
   stepTo,
   ACTION_WORDS,
   type ActionWords,
-  type PaletteBand,
+  type PaletteGroup,
   type PaletteKeys,
   type PaletteLit,
-} from './model'
+} from './item'
 
 const props = withDefaults(
   defineProps<{
     /**
-     * The bands, in the order they are offered. A band holding nothing is
+     * The groups, in the order they are offered. A group holding nothing is
      * drawn at the foot, whatever order it was offered in, and only while it
      * is working or has something to say in place of items.
      */
-    bands?: readonly PaletteBand[]
+    groups?: readonly PaletteGroup[]
     /** Whether it is drawn at all. */
     open?: boolean
     /** The words standing in for what has not been typed. */
@@ -77,14 +80,11 @@ const props = withDefaults(
     name?: string
     /** The words the action panel is drawn with. */
     actionWords?: ActionWords
-    /**
-     * The keystroke that opens the action panel. The one this machine's browser
-     * reports by default; a test hands in its own.
-     */
+    /** The keystroke that opens the action panel, as this machine reports it. */
     actionKey?: PaletteKeys
   }>(),
   {
-    bands: () => [],
+    groups: () => [],
     open: false,
     placeholder: 'Search',
     crumb: '',
@@ -125,32 +125,39 @@ defineSlots<{
    * each of them draws anything.
    */
   icon(props: { id: string }): unknown
-  /** What is said while there is no band to draw. */
+  /** What is said while there is no group to draw. */
   silence(): unknown
 }>()
 
 const typed = defineModel<string>({ default: '' })
 
 const uid = useId()
-const optionName = (at: number): string => `${uid}-option-${at}`
 
 const field = useTemplateRef<HTMLInputElement>('field')
 
-/** The rows as they are drawn, each under the item it stands for. */
-const drawn = new Map<string, HTMLElement>()
+/** The list, for asking it to bring what is lit into sight. */
+const results = useTemplateRef<InstanceType<typeof PaletteResults>>('results')
 
-const holdItem = (item: string, row: unknown): void => {
-  if (row) drawn.set(item, row as HTMLElement)
-  else drawn.delete(item)
-}
-
-/** What is drawn, and in what order: a band holding nothing stands at the foot. */
-const shown = computed(() => ordered(props.bands))
+/** What is drawn, and in what order: a group holding nothing stands at the foot. */
+const shown = computed(() => ordered(props.groups))
 
 const places = computed(() => flatten(shown.value))
 const placed = computed(() => placePalette(shown.value))
 
-/** The item the keyboard is on, by its identity rather than by where it sits. */
+/**
+ * What is read out of a search. A group that answered with rows is read out by
+ * the row the keyboard lands on; a group that answered with none has no row to
+ * land on, so what it says in place of one is read out instead. A group still
+ * working has answered nothing yet and is left alone.
+ */
+const said = computed(() =>
+  shown.value
+    .filter((group) => !group.working && group.items.length === 0 && group.silence)
+    .map((group) => group.silence)
+    .join('. '),
+)
+
+/** The item the keyboard is on, by its identity. */
 const held = ref('')
 
 const here = computed(() => places.value.findIndex((place) => place.item.id === held.value))
@@ -167,10 +174,7 @@ const goTo = (at: number) => {
 }
 
 /** What is lit is brought into sight. Only a key does this. */
-const reveal = async () => {
-  await nextTick()
-  drawn.get(held.value)?.scrollIntoView?.({ block: 'nearest' })
-}
+const reveal = () => results.value?.reveal(held.value)
 
 /**
  * Answers arriving never move what is lit and never move the list. What they do
@@ -354,6 +358,7 @@ onBeforeUnmount(() => {
         class="palette__panel panel-numen relative flex min-h-0 flex-col"
         data-palette="panel"
         role="dialog"
+        aria-modal="true"
         :aria-label="name"
         @keydown="onKey"
         @pointerdown="onPress"
@@ -381,102 +386,30 @@ onBeforeUnmount(() => {
             :aria-label="name"
             :aria-describedby="crumb ? `${uid}-crumb` : undefined"
             :aria-expanded="placed.length !== 0"
-            :aria-controls="`${uid}-list`"
-            :aria-activedescendant="!panel && here >= 0 ? optionName(here) : undefined"
+            :aria-controls="listId(uid)"
+            :aria-activedescendant="!panel && here >= 0 ? optionId(uid, here) : undefined"
           />
         </div>
 
-        <div
+        <!-- What a search came back with, where it came back with nothing. It
+             stands here for as long as the palette does, so what lands in it
+             is read out. -->
+        <span class="sr-only" aria-live="polite" data-palette="said">{{ said }}</span>
+
+        <PaletteResults
           v-if="placed.length"
-          :id="`${uid}-list`"
-          ref="list"
-          class="palette__list min-h-0 flex-1"
-          data-palette="list"
-          role="listbox"
-          :aria-label="name"
+          ref="results"
+          :groups="placed"
+          :here="here"
+          :uid="uid"
+          :name="name"
+          @over="over"
+          @choose="choose"
         >
-          <section
-            v-for="one in placed"
-            :key="one.band.id"
-            class="palette__band"
-            role="group"
-            :aria-labelledby="`${uid}-band-${one.band.id}`"
-            :aria-busy="one.band.working || undefined"
-          >
-            <p
-              :id="`${uid}-band-${one.band.id}`"
-              class="palette__title caps-numen flex items-center gap-1.5 text-small text-hushed"
-              data-palette="title"
-            >
-              <span>{{ one.band.title }}</span>
-              <!-- More of this band is on its way. -->
-              <Waiting v-if="one.band.working" />
-            </p>
-            <div
-              v-for="row in one.items"
-              :id="optionName(row.at)"
-              :ref="(element) => holdItem(row.item.id, element)"
-              :key="row.item.id"
-              class="palette__item flex items-center gap-2 rounded-node px-2 py-1.5"
-              role="option"
-              :aria-selected="row.at === here"
-              :aria-disabled="row.item.disabled || undefined"
-              :data-here="row.at === here || undefined"
-              :data-off="row.item.disabled || undefined"
-              @pointermove="over(row.at, $event)"
-              @pointerdown.prevent
-              @click="choose(row.at, $event.shiftKey)"
-            >
-              <span
-                v-if="$slots.icon"
-                class="palette__icon flex shrink-0 items-center"
-                data-palette="icon"
-              >
-                <slot name="icon" :id="row.item.id" />
-              </span>
-
-              <span class="palette__lines flex min-w-0 flex-1 flex-col">
-                <span class="palette__name min-w-0" data-palette="name">
-                  <span
-                    v-for="(part, piece) in row.name"
-                    :key="piece"
-                    :data-hit="part.hit || undefined"
-                    >{{ part.text }}</span
-                  >
-                </span>
-
-                <span
-                  v-if="row.detail.length"
-                  class="palette__detail min-w-0 text-small text-hushed"
-                  data-palette="detail"
-                >
-                  <span
-                    v-for="(part, piece) in row.detail"
-                    :key="piece"
-                    :data-hit="part.hit || undefined"
-                    >{{ part.text }}</span
-                  >
-                </span>
-              </span>
-
-              <!-- What reaches this item away from the palette. -->
-              <KeyCap
-                v-if="row.item.keys"
-                class="palette__hint"
-                data-palette="hint"
-                :keys="row.item.keys"
-              />
-            </div>
-
-            <p
-              v-if="!one.items.length && one.band.silence"
-              class="palette__silence px-2 py-1.5 text-hushed"
-              data-palette="silence"
-            >
-              {{ one.band.silence }}
-            </p>
-          </section>
-        </div>
+          <template v-if="$slots.icon" #icon="{ id }">
+            <slot name="icon" :id="id" />
+          </template>
+        </PaletteResults>
 
         <p
           v-else-if="$slots.silence"
@@ -526,8 +459,6 @@ onBeforeUnmount(() => {
   --drop: 12vh;
   --widest: 640px;
   --tallest: 50vh;
-  /* How large an icon is drawn on a row. */
-  --icon: 1rem;
 
   position: fixed;
   inset: 0;
@@ -573,87 +504,9 @@ onBeforeUnmount(() => {
 }
 
 /* The line under the field belongs to what stands beneath it. */
-.palette__list,
 .palette__nothing {
+  margin: 0;
   border-block-start: var(--numen-stroke) solid var(--numen-panel-border);
-}
-
-.palette__list {
-  max-block-size: var(--tallest);
-  padding: var(--numen-field-padding);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-.palette__band + .palette__band {
-  margin-block-start: var(--numen-panel-gap);
-}
-
-/* The band's name is small print over what it names. */
-.palette__title {
-  margin: 0;
-  padding: 0.15rem 0.5rem;
-}
-
-.palette__item {
-  cursor: default;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.palette__lines {
-  gap: 0.1rem;
-}
-
-/* The room an icon takes, kept whether or not the row draws one, so the words
-   line up down the list. What is drawn in it is the caller's.
-
-   It stands on the name, centred against that one line, so the marks read down
-   the list beside the names on a row carrying a second line. */
-.palette__icon {
-  align-self: start;
-  margin-block-start: calc((1lh - var(--icon)) / 2);
-  inline-size: var(--icon);
-  block-size: var(--icon);
-}
-
-.palette__item[data-here] {
-  background: var(--numen-bubble-bg);
-}
-
-.palette__item[data-off] {
-  color: var(--numen-edge-label);
-}
-
-/* One line, then an ellipsis. A list is read down its leading edge. */
-.palette__name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Two lines of what stands under a name. A passage is drawn for the words its
-   hit sits among, and one line holds too few of them to read. */
-.palette__detail {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  overflow: hidden;
-}
-
-/* Why the item is here. It sits under words that are being read, so it is a
-   tint and not a colour. */
-.palette__name [data-hit],
-.palette__detail [data-hit] {
-  border-radius: 2px;
-  background: var(--numen-highlight);
-  font-weight: 600;
-}
-
-.palette__silence,
-.palette__nothing {
-  margin: 0;
 }
 
 .palette__keys {
@@ -668,10 +521,4 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 0.4em;
 }
-
-/* A key written on a row is the last thing on it, and is read after the name. */
-.palette__hint {
-  flex: none;
-}
-
 </style>

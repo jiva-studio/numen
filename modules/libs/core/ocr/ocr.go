@@ -34,9 +34,9 @@ type Line struct {
 	Score float32
 }
 
-// A Span is one box of a region, in what was written from it: the rectangle it
-// covers on the page, and the run of bytes it produced.
-type Span struct {
+// A Stretch is one box of a region, in what was written from it: the rectangle
+// it covers on the page, and the run of bytes it produced.
+type Stretch struct {
 	Box    image.Rectangle
 	Start  int
 	Length int
@@ -46,13 +46,13 @@ type Span struct {
 type Block struct {
 	Label string
 	Text  string
-	// Head says the region is a heading, and Depth is how far in the part it
+	// Heading says the region is a heading, and Depth is how far in the part it
 	// opens sits. A document title stands above the section titles within it.
-	Head  bool
-	Depth int
-	// Spans are where on the page each run of Text was read. A recogniser that
-	// reports no rectangles leaves them empty.
-	Spans []Span
+	Heading bool
+	Depth   int
+	// Stretches are where on the page each run of Text was read. A recogniser
+	// that reports no rectangles leaves them empty.
+	Stretches []Stretch
 }
 
 // A Page is one page of a document, read.
@@ -60,8 +60,8 @@ type Block struct {
 // It carries no name of its own. What a page is called is where it stands in
 // the document, and that is what a person is shown and what a viewer opens at.
 type Page struct {
-	// At is which page of the document this is, counted from zero.
-	At int
+	// Index is which page of the document this is, counted from zero.
+	Index int
 	// Size is the page as it was rendered, which the rectangles are addressed
 	// from. A zero size is a page nothing was measured on.
 	Size image.Point
@@ -124,9 +124,9 @@ func inside(a, b image.Rectangle) bool {
 
 // Assemble writes one region out as running prose, and says where on the page
 // each run of it was read.
-func Assemble(lines []Line) (string, []Span) {
+func Assemble(lines []Line) (string, []Stretch) {
 	var out strings.Builder
-	var spans []Span
+	var stretches []Stretch
 	for _, line := range group(lines) {
 		text, boxes := written(line)
 		if text == "" {
@@ -138,20 +138,20 @@ func Assemble(lines []Line) (string, []Span) {
 			out.WriteString(hyphen.ReplaceAllString(joined, "$1"))
 			// The hyphen is gone from the end of the box that carried it, so
 			// that box covers one byte fewer than it wrote.
-			if n := len(spans); n > 0 {
-				spans[n-1].Length -= len(joined) - out.Len()
+			if n := len(stretches); n > 0 {
+				stretches[n-1].Length -= len(joined) - out.Len()
 			}
 		} else if joined != "" {
 			out.WriteString(" ")
 		}
 		at := out.Len()
-		for _, span := range boxes {
-			span.Start += at
-			spans = append(spans, span)
+		for _, stretch := range boxes {
+			stretch.Start += at
+			stretches = append(stretches, stretch)
 		}
 		out.WriteString(text)
 	}
-	return out.String(), spans
+	return out.String(), stretches
 }
 
 // group divides a region's lines into the lines the page prints.
@@ -206,9 +206,9 @@ func shared(line []Line, box Line) float64 {
 // line are two words. The gap itself is not measurable here: a detector widens
 // every box it returns by a fixed number of pixels, and neighbours therefore
 // overlap however far apart the words were.
-func written(line []Line) (string, []Span) {
+func written(line []Line) (string, []Stretch) {
 	var out strings.Builder
-	var spans []Span
+	var stretches []Stretch
 	for _, box := range line {
 		// A box the recogniser read as nothing is not a word.
 		text := strings.TrimSpace(box.Text)
@@ -218,10 +218,10 @@ func written(line []Line) (string, []Span) {
 		if out.Len() > 0 {
 			out.WriteString(" ")
 		}
-		spans = append(spans, Span{Box: box.Box, Start: out.Len(), Length: len(text)})
+		stretches = append(stretches, Stretch{Box: box.Box, Start: out.Len(), Length: len(text)})
 		out.WriteString(text)
 	}
-	return out.String(), spans
+	return out.String(), stretches
 }
 
 // A line broken by a hyphen continues in the next one.

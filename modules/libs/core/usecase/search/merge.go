@@ -24,13 +24,13 @@ const rankConstant = 60
 // Equal scores are ordered by source and then by chunk, so one index gives one
 // answer.
 func merge(rankings ...[]domain.Passage) []domain.Passage {
-	score := map[int64]float64{}
-	seen := map[int64]domain.Passage{}
+	score := map[domain.ChunkID]float64{}
+	seen := map[domain.ChunkID]domain.Passage{}
 	for _, ranking := range rankings {
 		for i, p := range ranking {
-			score[p.Chunk] += 1 / float64(rankConstant+i+1)
-			if _, held := seen[p.Chunk]; !held {
-				seen[p.Chunk] = p
+			score[p.ChunkID] += 1 / float64(rankConstant+i+1)
+			if _, held := seen[p.ChunkID]; !held {
+				seen[p.ChunkID] = p
 			}
 		}
 	}
@@ -40,20 +40,20 @@ func merge(rankings ...[]domain.Passage) []domain.Passage {
 		fused = append(fused, p)
 	}
 	slices.SortFunc(fused, func(a, b domain.Passage) int {
-		if by := cmp.Compare(score[b.Chunk], score[a.Chunk]); by != 0 {
+		if by := cmp.Compare(score[b.ChunkID], score[a.ChunkID]); by != 0 {
 			return by
 		}
 		if by := cmp.Compare(a.Source, b.Source); by != 0 {
 			return by
 		}
-		return cmp.Compare(a.Chunk, b.Chunk)
+		return cmp.Compare(a.ChunkID, b.ChunkID)
 	})
 	return fused
 }
 
-// where is one place in one file. A hit and the chunk enclosing it are two
+// passageID is one place in one file. A hit and the chunk enclosing it are two
 // rows standing in the same place, and one place is one passage.
-type where struct {
+type passageID struct {
 	source        string
 	start, length int
 }
@@ -75,10 +75,10 @@ func collapse(fused, named []domain.Passage, each, limit int) []domain.Passage {
 	out := make([]domain.Passage, 0, min(limit, len(fused)))
 	taken := map[string]int{}
 	opened := map[string]bool{}
-	held := map[where]bool{}
+	held := map[passageID]bool{}
 
 	keep := func(p domain.Passage) bool {
-		at := where{p.Source, p.Start, p.Length}
+		at := passageID{p.Source, p.Start, p.Length}
 		if held[at] || taken[p.Source] >= each {
 			return true
 		}

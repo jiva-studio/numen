@@ -9,7 +9,7 @@
  */
 import { computed, watch, type HTMLAttributes } from 'vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
-import { cn } from '@/lib/utils'
+import { cn } from '@/classes'
 import { clamped, walked, walks, type Bounds } from './track'
 
 defineOptions({ inheritAttrs: false })
@@ -53,9 +53,9 @@ const hands = (said: number) => {
 const bounds = computed<Bounds>(() => ({ min: props.min, max: props.max, step: props.step }))
 
 /** Where the handle stands, which is inside the ends whatever it was given. */
-const standing = computed(() => clamped(model.value, bounds.value))
+const inForce = computed(() => clamped(model.value, bounds.value))
 
-watch(standing, hands, { immediate: true })
+watch(inForce, hands, { immediate: true })
 
 const moved = (value: number[] | undefined) => {
   const said = value?.[0]
@@ -80,7 +80,7 @@ const takes = (event: KeyboardEvent) => {
     walking = true
     began = handed
   }
-  const said = walked(event.key, standing.value, bounds.value, event.shiftKey)
+  const said = walked(event.key, inForce.value, bounds.value, event.shiftKey)
   if (said !== null) hands(said)
 }
 
@@ -108,7 +108,7 @@ const settled = (value: number[]) => {
   <SliderRoot
     data-slot="slider"
     orientation="horizontal"
-    :model-value="[standing]"
+    :model-value="[inForce]"
     :min="min"
     :max="max"
     :step="step"

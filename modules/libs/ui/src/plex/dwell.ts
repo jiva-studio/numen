@@ -6,8 +6,8 @@
  */
 import { onScopeDispose, ref, watch, type Ref } from 'vue'
 import { easeOut, lerp, type Size } from './arrange'
-import { browserEnvironment, type Environment } from './transition'
-import type { PlacedNode } from './model'
+import { browserClock, type Clock } from './transition'
+import type { PlacedNode } from './node'
 
 /** How long a hand stays on a box before it opens, in milliseconds. */
 export const DWELL = 500
@@ -20,7 +20,7 @@ export const DWELL = 500
 export const OPENING = 280
 
 /** A box drawn wider than it was placed. */
-export interface Widened {
+export interface WideBox {
   readonly width: number
   /** How far its middle stands from where the node is placed. */
   readonly offset: number
@@ -39,13 +39,26 @@ export function widenedFor(
   wanted: number,
   viewport: Size,
   margin: number,
-): Widened | null {
+): WideBox | null {
   const width = Math.min(wanted, viewport.width - 2 * margin)
   if (width <= node.width) return null
 
   const furthest = viewport.width / 2 - margin - width / 2
   const middle = Math.min(Math.max(node.x, -furthest), furthest)
   return { width, offset: middle - node.x }
+}
+
+/**
+ * The box as it is drawn: the one the node was placed with, carried towards the
+ * one it opens to as far as it has got. A node with nothing more of its title
+ * to show is drawn as it was placed, however long the attention rests on it.
+ */
+export function boxOf(node: PlacedNode, wide: WideBox | null, open: number): WideBox {
+  if (!wide || open <= 0) return { width: node.width, offset: 0 }
+  return {
+    width: lerp(node.width, wide.width, open),
+    offset: lerp(0, wide.offset, open),
+  }
 }
 
 /**
@@ -60,7 +73,7 @@ export function widenedFor(
 export function useDwell(
   on: () => string | null,
   delay: () => number,
-  environment: Environment = browserEnvironment,
+  clock: Clock = browserClock,
 ): Ref<number> {
   const open = ref(0)
   let waiting: ReturnType<typeof setTimeout> | undefined
@@ -72,7 +85,7 @@ export function useDwell(
   }
 
   const stopMoving = () => {
-    if (frame !== null) environment.cancel(frame)
+    if (frame !== null) clock.cancel(frame)
     frame = null
   }
 
@@ -91,10 +104,10 @@ export function useDwell(
       started ??= now
       const t = span <= 0 ? 1 : Math.min(1, (now - started) / span)
       open.value = lerp(from, to, easeOut(t))
-      frame = t < 1 ? environment.schedule(step) : null
+      frame = t < 1 ? clock.schedule(step) : null
     }
 
-    frame = environment.schedule(step)
+    frame = clock.schedule(step)
   }
 
   watch(

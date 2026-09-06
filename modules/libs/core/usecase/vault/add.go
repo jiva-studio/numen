@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
-	"strings"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -14,9 +12,6 @@ import (
 // ErrUnreadable is a path that is not a folder, or a folder this application
 // cannot read as the vault it was asked about.
 var ErrUnreadable = errors.New("this folder cannot be read as a vault")
-
-// ErrOverlaps is a folder that lies inside a vault on the list, or holds one.
-var ErrOverlaps = errors.New("a vault does not lie inside another")
 
 // ErrCopy is one identity carried by two folders that are both there. One index
 // cannot hold both.
@@ -33,7 +28,14 @@ var ErrCopy = errors.New("one vault cannot be in two places")
 type Add struct {
 	Identity port.VaultIdentity
 	Registry port.VaultRegistry
-	Now      func() time.Time
+	Now      port.Clock
+}
+
+// NewAdd is what turns a folder into a vault: what writes and reads the
+// identity the folder carries, the list this installation keeps, and when this
+// is happening, which the identity carries.
+func NewAdd(identity port.VaultIdentity, registry port.VaultRegistry, now port.Clock) Add {
+	return Add{Identity: identity, Registry: registry, Now: now}
 }
 
 // Execute takes a path that is already absolute: resolving one against the
@@ -43,19 +45,19 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 	if !filepath.IsAbs(root) {
 		return domain.Vault{}, fmt.Errorf("vault path must be absolute, got %q", root)
 	}
-	// One folder has one name here, whichever route reached it.
-	if resolved, err := filepath.EvalSymlinks(root); err == nil {
-		root = resolved
-	}
+	// One folder has one name here, whichever route reached it, and which
+	// routes lead to it is the machine's to say.
+	root = u.Identity.Named(root)
 	if err := u.Identity.Readable(root); err != nil {
 		return domain.Vault{}, fmt.Errorf("%w: %w", ErrUnreadable, err)
 	}
 
-	known, err := u.Registry.All()
+	held, err := u.Registry.All()
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	if err := roomFor(root, known); err != nil {
+	known := domain.Vaults(held)
+	if err := known.Room(root); err != nil {
 		return domain.Vault{}, err
 	}
 
@@ -71,7 +73,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 	//
 	// They are told apart by looking: if the old location still carries this
 	// identity, both exist and it is a copy.
-	existing, found, err := u.Registry.Find(id)
+	existing, found, err := u.Registry.Find(string(id))
 	if err != nil {
 		return domain.Vault{}, err
 	}
@@ -96,67 +98,9 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		// The folder name is what the user already calls this collection.
 		v.Name = filepath.Base(root)
 	}
-	v.Name = free(v.Name, known, id)
+	v.Name = known.FreeName(v.Name, v.ID)
 	if err := u.Registry.Save(v); err != nil {
 		return domain.Vault{}, err
 	}
 	return v, nil
-}
-
-// roomFor refuses a root that lies inside a vault already registered, and one
-// that holds such a vault.
-func roomFor(root string, known []domain.Vault) error {
-	for _, other := range known {
-		if other.Path == root {
-			continue
-		}
-		if within(root, other.Path) {
-			return fmt.Errorf("%w: %s is inside the vault %s at %s",
-				ErrOverlaps, root, other.Name, other.Path)
-		}
-		if within(other.Path, root) {
-			return fmt.Errorf("%w: %s holds the vault %s at %s",
-				ErrOverlaps, root, other.Name, other.Path)
-		}
-	}
-	return nil
-}
-
-// within reports whether path lies below root.
-func within(path, root string) bool {
-	rel, err := filepath.Rel(root, path)
-	if err != nil || rel == "." {
-		return false
-	}
-	return rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
-}
-
-// free answers with the name, or with the lowest free number appended to it.
-// The vault named self keeps the name it has: it is being added again, from
-// wherever it moved to.
-func free(name string, known []domain.Vault, self string) string {
-	taken := func(candidate string) bool {
-		for _, v := range known {
-			if v.ID != self && sameName(v.Name, candidate) {
-				return true
-			}
-		}
-		return false
-	}
-	if !taken(name) {
-		return name
-	}
-	for n := 2; ; n++ {
-		numbered := fmt.Sprintf("%s %d", name, n)
-		if !taken(numbered) {
-			return numbered
-		}
-	}
-}
-
-// sameName reports whether two names name one vault. A name from a file picker
-// and the same name typed at a command line are composed differently, and the
-// case is the person's to choose.
-func sameName(a, b string) bool {
-	return domain.FoldName(a) == domain.FoldName(b)
 }

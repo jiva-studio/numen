@@ -14,7 +14,24 @@ import (
 // are written nowhere: they are the other children of a shared parent.
 type ShowNeighbourhood struct {
 	Links port.LinkQueries
-	Notes port.NoteQueries
+	Notes RefQueries
+}
+
+// RefQueries is the one question a neighbourhood asks about the notes it has
+// found: what is needed to show each of them.
+type RefQueries interface {
+	// Notes returns what is needed to show a note, for the paths asked about.
+	// Paths that name nothing are absent from the answer: a link resolves as
+	// of now, and what it resolved to a moment ago may be gone.
+	Notes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error)
+}
+
+// NewShowNeighbourhood is what a picture of one note is drawn from: where its
+// links land, and what is needed to show each note they reach.
+//
+// The notes are asked for once, after every link has been followed.
+func NewShowNeighbourhood(links port.LinkQueries, notes RefQueries) ShowNeighbourhood {
+	return ShowNeighbourhood{Links: links, Notes: notes}
 }
 
 func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path string) (domain.Neighbourhood, error) {
@@ -41,11 +58,11 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 			if sibling.Seat != domain.SeatChild {
 				continue
 			}
-			around.take(domain.Seated{
+			around.take(domain.Neighbour{
 				NoteRef: domain.NoteRef{Path: sibling.Path},
 				Seat:    domain.SeatSibling,
 				Label:   sibling.Label,
-				Through: parent.Path,
+				Parent:  parent.Path,
 			})
 		}
 	}
@@ -80,8 +97,8 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 // Which end a link was written at says nothing about the shape of the graph:
 // `parent: B` in A and `child: A` in B are the same edge, so the answer has to
 // read the role together with the direction it was found in.
-func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path string) (*seating, error) {
-	seats := &seating{}
+func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path string) (*seats, error) {
+	seats := &seats{}
 
 	links, err := u.Links.Links(ctx, v.ID, path)
 	if err != nil {
@@ -98,7 +115,7 @@ func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path stri
 		}
 		if seat, navigable := seatFor(l.Role); navigable {
 			named[l.To] = true
-			seats.take(domain.Seated{
+			seats.take(domain.Neighbour{
 				NoteRef: domain.NoteRef{Path: l.To},
 				Seat:    seat,
 				Label:   l.Label,
@@ -117,7 +134,7 @@ func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path stri
 		if !navigable {
 			continue
 		}
-		seated := domain.Seated{
+		seated := domain.Neighbour{
 			NoteRef: domain.NoteRef{Path: l.From},
 			Seat:    seat,
 			Label:   l.Label,
@@ -131,7 +148,7 @@ func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path stri
 	return seats, nil
 }
 
-func seatFor(role domain.LinkRole) (domain.Seat, bool) {
+func seatFor(role domain.LinkRole) (domain.Relation, bool) {
 	switch role {
 	case domain.RoleParent:
 		return domain.SeatParent, true
@@ -139,10 +156,11 @@ func seatFor(role domain.LinkRole) (domain.Seat, bool) {
 		return domain.SeatChild, true
 	case domain.RoleJump:
 		return domain.SeatJump, true
+	default:
+		// A wikilink in prose and an attachment are links, and neither is a
+		// place in the hierarchy.
+		return "", false
 	}
-	// A wikilink in prose and an attachment are links, and neither is a place
-	// in the hierarchy.
-	return "", false
 }
 
 func mirror(role domain.LinkRole) domain.LinkRole {
@@ -151,24 +169,25 @@ func mirror(role domain.LinkRole) domain.LinkRole {
 		return domain.RoleChild
 	case domain.RoleChild:
 		return domain.RoleParent
+	default:
+		return role
 	}
-	return role
 }
 
-// seating collects notes in the order they were found: the links this note
+// seats collects notes in the order they were found: the links this note
 // wrote, in the order it wrote them; then the links that point at it, in the
 // order the query returns; then the siblings each parent brings. The order is
 // part of the answer, because it is what the picture is drawn in — and it is
 // total, so the same vault gives the same picture twice.
-type seating struct {
-	order []domain.Seated
+type seats struct {
+	order []domain.Neighbour
 	at    map[string]int
 }
 
 // take keeps the highest-ranked seat a note qualifies for, replacing a lesser
 // one it was given earlier: a pair who are each other's parent is drawn once,
 // and always the same way round.
-func (s *seating) take(seated domain.Seated) {
+func (s *seats) take(seated domain.Neighbour) {
 	if s.at == nil {
 		s.at = map[string]int{}
 	}
@@ -186,7 +205,7 @@ func (s *seating) take(seated domain.Seated) {
 // mutually seats a note that the one in focus names too. Both ends naming the
 // same seat is one relationship named twice, and the word for it is the
 // focus's own where it wrote one.
-func (s *seating) mutually(seated domain.Seated) {
+func (s *seats) mutually(seated domain.Neighbour) {
 	i, taken := s.at[seated.Path]
 	if !taken {
 		s.take(seated)
@@ -204,7 +223,7 @@ func (s *seating) mutually(seated domain.Seated) {
 	s.order[i] = held
 }
 
-func (s *seating) drop(path string) {
+func (s *seats) drop(path string) {
 	i, taken := s.at[path]
 	if !taken {
 		return
@@ -218,4 +237,4 @@ func (s *seating) drop(path string) {
 	}
 }
 
-func (s *seating) all() []domain.Seated { return s.order }
+func (s *seats) all() []domain.Neighbour { return s.order }

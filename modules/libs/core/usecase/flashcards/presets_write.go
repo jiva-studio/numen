@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
@@ -39,8 +39,9 @@ var ErrNotAPreset = errors.New("this note is not a preset")
 // the settings are weighed before the file is opened.
 var ErrOutOfBounds = errors.New("this setting is outside what a preset may hold")
 
-// ErrNoPresets is a build carrying no index. It reaches no preset by name, so
-// it points no deck at one, and nothing is written.
+// ErrNoPresets is a build that cannot say which notes of a vault are presets.
+// It reaches none of them by name, so it neither lists them nor points a deck
+// at one, and nothing is written.
 var ErrNoPresets = errors.New("this build cannot work the presets of a vault")
 
 // Point puts the deck at path on a preset, by writing the entry of its `links:`
@@ -51,33 +52,33 @@ var ErrNoPresets = errors.New("this build cannot work the presets of a vault")
 // and a path the vault holds no note at is refused note.ErrNoNote.
 //
 // Fingerprint, when it is given, is what the caller believes is on disk. A deck
-// that has changed since it was read is left alone and port.ErrChanged comes
-// back. What comes back otherwise is the fingerprint of the file this write
-// produced, which is what the caller presents at its next write. An index that
-// could not be brought level is note.ErrUnlevelled beside that fingerprint.
+// that has changed since it was read is left alone and port.ErrStale comes
+// back. A write that landed answers with the fingerprint of the file it
+// produced, which the caller presents at its next write. An index that could
+// not be brought level is note.ErrUnlevelled beside that fingerprint.
 func (u Presets) Point(
-	ctx context.Context, v domain.Vault, deck, preset string, fingerprint domain.FileRef,
-) (domain.FileRef, error) {
+	ctx context.Context, v domain.Vault, deck, preset string, fingerprint domain.Fingerprint,
+) (domain.Fingerprint, error) {
 	var to domain.Address
 	if preset != "" {
 		if u.Notes == nil {
-			return domain.FileRef{}, ErrNoPresets
+			return domain.Fingerprint{}, ErrNoPresets
 		}
 		at, err := u.Read(ctx, v, preset)
 		if err != nil {
-			return domain.FileRef{}, err
+			return domain.Fingerprint{}, err
 		}
 		switch {
 		case at.Outcome == note.Missing:
-			return domain.FileRef{}, fmt.Errorf("%w: %s", note.ErrNoNote, preset)
+			return domain.Fingerprint{}, fmt.Errorf("%w: %s", note.ErrNoNote, preset)
 		case at.Outcome != note.Ok || at.Type != domain.TypePreset:
-			return domain.FileRef{}, fmt.Errorf("%w: %s", ErrNotAPreset, preset)
+			return domain.Fingerprint{}, fmt.Errorf("%w: %s", ErrNotAPreset, preset)
 		}
 		if to, err = note.Addressed(ctx, u.Notes, v.ID, preset); err != nil {
-			return domain.FileRef{}, err
+			return domain.Fingerprint{}, err
 		}
 	}
-	linking := note.Linking{Readers: u.Readers, Writers: u.Writers, Index: u.Index}
+	linking := note.NewEditLinks(u.Readers, u.Writers, u.Index, u.Now)
 	return linking.PointAt(ctx, v, deck, LinkType, to, domain.RoleRef, fingerprint)
 }
 
@@ -88,78 +89,78 @@ func (u Presets) Point(
 // arrived.
 //
 // Fingerprint, when it is given, is what the caller believes is on disk. A note
-// that has changed since it was read is left alone and port.ErrChanged comes
-// back. What comes back otherwise is the fingerprint of the file this write
-// produced, which is what the caller presents at its next write. An index that
-// could not be brought level is note.ErrUnlevelled beside that fingerprint.
+// that has changed since it was read is left alone and port.ErrStale comes
+// back. A write that landed answers with the fingerprint of the file it
+// produced, which the caller presents at its next write. An index that could
+// not be brought level is note.ErrUnlevelled beside that fingerprint.
 func (u Presets) Save(
-	ctx context.Context, v domain.Vault, path string, settings history.Preset,
-	fingerprint domain.FileRef,
-) (domain.FileRef, error) {
+	ctx context.Context, v domain.Vault, path string, settings review.Preset,
+	fingerprint domain.Fingerprint,
+) (domain.Fingerprint, error) {
 	if err := bounded(settings); err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 	at, err := u.save(ctx, v, path, settings, fingerprint)
-	if err != nil || u.Index == nil {
+	if err != nil {
 		return at, err
 	}
-	return at, note.Levelled(path, u.Index(ctx, v, []string{path}))
+	return at, note.Levelled(u.Index(ctx, v, []string{path}), path)
 }
 
 // save is the read, the change and the write, under this vault's write lock
 // from before the read until after the file is replaced.
 func (u Presets) save(
-	ctx context.Context, v domain.Vault, path string, settings history.Preset,
-	fingerprint domain.FileRef,
-) (domain.FileRef, error) {
+	ctx context.Context, v domain.Vault, path string, settings review.Preset,
+	fingerprint domain.Fingerprint,
+) (domain.Fingerprint, error) {
 	release, err := u.Writers.Hold(ctx, v)
 	if err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 	defer release()
 
 	reader, err := u.Readers.Open(v)
 	if err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 	on, err := reader.Stat(ctx, path)
 	if err != nil {
-		return domain.FileRef{}, fmt.Errorf("look at %s: %w", path, missing(err))
+		return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", path, missing(err))
 	}
 	// The bound a note is written under is the bound it is read under.
 	if on.Size > note.MaxBytes {
-		return domain.FileRef{}, fmt.Errorf("%w: %s is %d bytes, and %d is the most",
+		return domain.Fingerprint{}, fmt.Errorf("%w: %s is %d bytes, and %d is the most",
 			note.ErrTooLarge, path, on.Size, note.MaxBytes)
 	}
 	// A caller that said what it believed the note was is held to that; one that
 	// said nothing is held to what stands there now.
 	against := fingerprint
-	if against == (domain.FileRef{}) {
+	if against.IsZero() {
 		against = on
 	}
 	raw, err := reader.Read(ctx, path)
 	if err != nil {
-		return domain.FileRef{}, fmt.Errorf("read %s: %w", path, missing(err))
+		return domain.Fingerprint{}, fmt.Errorf("read %s: %w", path, missing(err))
 	}
 	n := markdown.Parse(against, raw)
 	if n.Type != domain.TypePreset {
-		return domain.FileRef{}, fmt.Errorf("%w: %s is a %s", ErrNotAPreset, path, n.Type)
+		return domain.Fingerprint{}, fmt.Errorf("%w: %s is a %s", ErrNotAPreset, path, n.Type)
 	}
 	// What the note said before this write, so that a setting the read could not
 	// make out is one this write leaves standing.
-	was, _ := history.ReadPreset(n.Frontmatter)
+	was, _ := review.ReadPreset(n.Frontmatter)
 
 	doc, err := markdown.Open(raw)
 	if err != nil {
-		return domain.FileRef{}, fmt.Errorf("%s: %w", path, err)
+		return domain.Fingerprint{}, fmt.Errorf("%s: %w", path, err)
 	}
 	if err := settle(doc, settings, was); err != nil {
-		return domain.FileRef{}, fmt.Errorf("%s: %w", path, err)
+		return domain.Fingerprint{}, fmt.Errorf("%s: %w", path, err)
 	}
 
 	writer, err := u.Writers.Open(v)
 	if err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 	return writer.Write(ctx, path, doc.Bytes(), against)
 }
@@ -173,7 +174,7 @@ func (u Presets) save(
 // the person wrote and a save changing one control leaves the rest of the file
 // byte for byte. A key the read could not make out and the person has since
 // moved is a setting that differs, and is written.
-func settle(doc *markdown.Document, p, was history.Preset) error {
+func settle(doc *markdown.Document, p, was review.Preset) error {
 	if !p.By.Equal(was.By) {
 		if p.By.IsZero() {
 			if err := doc.SetScalar(byDateKey, ""); err != nil {
@@ -229,10 +230,10 @@ func shares(entries []string, load, read map[time.Weekday]int) []markdown.Entry 
 	taken := reading(entries, read)
 	written := make(map[time.Weekday]bool, len(load))
 	for _, name := range entries {
-		weekday, isDay := history.Weekday(name)
+		weekday, isDay := review.Weekday(name)
 		_, could := read[weekday]
 		if !isDay || !could {
-			out = append(out, markdown.Entry{Key: name, Standing: true})
+			out = append(out, markdown.Entry{Key: name, Verbatim: true})
 			continue
 		}
 		share, named := load[weekday]
@@ -244,7 +245,7 @@ func shares(entries []string, load, read map[time.Weekday]int) []markdown.Entry 
 	}
 	for _, weekday := range week {
 		if share, named := load[weekday]; named && !written[weekday] {
-			out = append(out, markdown.Entry{Key: history.DayName(weekday), Value: share})
+			out = append(out, markdown.Entry{Key: review.DayName(weekday), Value: share})
 		}
 	}
 	return out
@@ -256,11 +257,11 @@ func shares(entries []string, load, read map[time.Weekday]int) []markdown.Entry 
 func reading(entries []string, read map[time.Weekday]int) map[time.Weekday]string {
 	out := make(map[time.Weekday]string, len(entries))
 	for _, name := range entries {
-		weekday, isDay := history.Weekday(name)
+		weekday, isDay := review.Weekday(name)
 		if _, could := read[weekday]; !isDay || !could {
 			continue
 		}
-		if standing, held := out[weekday]; !held || name > standing {
+		if was, ok := out[weekday]; !ok || name > was {
 			out[weekday] = name
 		}
 	}
@@ -275,33 +276,33 @@ var week = []time.Weekday{
 
 // bounded is what in the settings may not be written, and is nil when all of
 // them may.
-func bounded(p history.Preset) error {
-	if !history.KnownGoal(p.Goal) {
+func bounded(p review.Preset) error {
+	if !review.KnownGoal(p.Goal) {
 		return fmt.Errorf("%w: goal %s is not %s, %s or %s",
-			ErrOutOfBounds, p.Goal, history.GoalMinutes, history.GoalRetention, history.GoalDate)
+			ErrOutOfBounds, p.Goal, review.GoalMinutes, review.GoalRetention, review.GoalDate)
 	}
-	if p.Goal == history.GoalDate && p.By.IsZero() {
+	if p.Goal == review.GoalDate && p.By.IsZero() {
 		return fmt.Errorf("%w: a preset aiming at a day says which day", ErrOutOfBounds)
 	}
-	if !history.KnownRule(p.Rule) {
+	if !review.KnownRule(p.Rule) {
 		return fmt.Errorf("%w: learned %s is not %s or %s",
-			ErrOutOfBounds, p.Rule, history.RuleInterval, history.RuleRetention)
+			ErrOutOfBounds, p.Rule, review.RuleInterval, review.RuleRetention)
 	}
-	if !history.KnownCounts(p.Counts) {
+	if !review.KnownBudgetUnit(p.Counts) {
 		return fmt.Errorf("%w: counts %s is not %s or %s",
-			ErrOutOfBounds, p.Counts, history.CountsCards, history.CountsShows)
+			ErrOutOfBounds, p.Counts, review.BudgetUnitCards, review.BudgetUnitShows)
 	}
 	for _, one := range []struct {
 		key    string
 		value  float64
-		bounds history.Bounds
+		bounds review.Bounds
 	}{
-		{minutesADayKey, float64(p.MinutesADay), history.MinutesADayBounds},
-		{newADayKey, float64(p.NewADay), history.NewADayBounds},
-		{reviewsADayKey, float64(p.ReviewsADay), history.ReviewsADayBounds},
-		{retentionKey, p.Retention, history.RetentionBounds},
-		{intervalKey, float64(p.Interval), history.IntervalBounds},
-		{backlogKey, float64(p.Backlog), history.BacklogBounds},
+		{minutesADayKey, float64(p.MinutesADay), review.MinutesADayBounds},
+		{newADayKey, float64(p.NewADay), review.NewADayBounds},
+		{reviewsADayKey, float64(p.ReviewsADay), review.ReviewsADayBounds},
+		{retentionKey, p.Retention, review.RetentionBounds},
+		{intervalKey, float64(p.Interval), review.IntervalBounds},
+		{backlogKey, float64(p.Backlog), review.BacklogBounds},
 	} {
 		if !one.bounds.Holds(one.value) {
 			return fmt.Errorf("%w: %s %g is outside %g to %g",
@@ -313,10 +314,10 @@ func bounded(p history.Preset) error {
 		if !named {
 			continue
 		}
-		if !history.LoadBounds.Holds(float64(share)) {
+		if !review.LoadBounds.Holds(float64(share)) {
 			return fmt.Errorf("%w: the load of %s, %d, is outside %g to %g",
-				ErrOutOfBounds, history.DayName(weekday), share,
-				history.LoadBounds.Least, history.LoadBounds.Most)
+				ErrOutOfBounds, review.DayName(weekday), share,
+				review.LoadBounds.Least, review.LoadBounds.Most)
 		}
 	}
 	for weekday := range p.Load {

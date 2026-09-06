@@ -4,13 +4,8 @@
  * A deck may come from another person and the window is a webview, so every
  * attempt below is one that has to be gone by the time it reaches a screen.
  */
-import MarkdownIt from 'markdown-it'
 import { describe, expect, it } from 'vitest'
 import { safe } from './safe'
-import { drawn } from './render'
-
-/** The marks alone, told to read tags as tags and told nothing else. */
-const unmeasured = new MarkdownIt({ html: true, linkify: true })
 
 /** What the text comes to, with the case of the tags settled. */
 const cleaned = (html: string): string => safe(html).toLowerCase()
@@ -113,6 +108,16 @@ describe('safe, what does not survive', () => {
     expect(safe(`<img src="${said}">`)).toBe(`<img src="${said}">`)
   })
 
+  // A deck may have come from another person. A picture fetched from their
+  // machine is a request the moment the card is drawn, and tells them the deck
+  // was read and from where.
+  it('drops an image that would be fetched from off the machine', () => {
+    expect(cleaned('<img src="https://tracker.example/pixel.png">')).toBe('<img>')
+    expect(cleaned('<img src="http://tracker.example/pixel.png">')).toBe('<img>')
+    expect(cleaned('<img src="//tracker.example/pixel.png">')).toBe('<img>')
+    expect(cleaned('<img src="\\\\tracker.example/pixel.png">')).toBe('<img>')
+  })
+
   it('drops a comment, which is read differently by every parser', () => {
     expect(cleaned('a<!--[if IE]><script>alert(1)</script><![endif]-->b')).toBe('ab')
   })
@@ -131,6 +136,16 @@ describe('safe, what does not survive', () => {
     const said = '<div><p onmouseover=alert(1)>a<svg/onload=alert(2)></p></div>'
     expect(attributes(said).filter((name) => name.startsWith('on'))).toEqual([])
     expect(tags(said)).not.toContain('svg')
+  })
+
+  /* Nothing reads the text before this does, so what a person wrote arrives
+     here exactly as they left it, tags unclosed and all. */
+  it('leaves no tag that would run in a tag name hiding another', () => {
+    expect(tags('<scr<script>ipt>alert(1)</scr</script>ipt>')).not.toContain('script')
+  })
+
+  it('leaves no tag that would run where nothing a person opened was closed', () => {
+    expect(tags('<div><p>a<script>alert(1)')).not.toContain('script')
   })
 
   it('drops an attribute a tag it keeps may not carry', () => {
@@ -160,41 +175,53 @@ describe('safe, the styles a card may carry', () => {
       '<span style="color: red">a</span>',
     )
   })
+
+  // A class names rules the window wrote and the deck's author never saw. The
+  // declarations above are the whole of what a card says about how it looks,
+  // and they are held to what a card may say.
+  it('drops a class, which names the window s own styles and not the card s', () => {
+    expect(cleaned('<div class="fixed inset-0 bg-black">a</div>')).toBe('<div>a</div>')
+  })
 })
 
-describe('drawn', () => {
-  it('reads the marks as marks', () => {
-    expect(drawn('**bold**')).toBe('<p><strong>bold</strong></p>\n')
+describe('safe, a card is not markdown', () => {
+  /* A card is HTML, so the characters a mark is written with are characters. */
+  it.each([
+    ['**bold**', '**bold**'],
+    ['_slanted_', '_slanted_'],
+    ['# a heading', '# a heading'],
+    ['- a list\n- and its second item', '- a list\n- and its second item'],
+    ['> quoted', '&gt; quoted'],
+    ['`code`', '`code`'],
+    ['[a link](https://example.org)', '[a link](https://example.org)'],
+    ['![[llama.jpg]]', '![[llama.jpg]]'],
+  ])('draws %s as the characters a person typed', (written, drawn) => {
+    expect(safe(written)).toBe(drawn)
   })
 
-  it('reads the tags among the marks as tags', () => {
-    expect(drawn('a <u>marked</u> word')).toBe('<p>a <u>marked</u> word</p>\n')
+  it('wraps a line of prose in nothing', () => {
+    expect(safe('A llama is a camelid.')).toBe('A llama is a camelid.')
   })
 
-  it('draws no script a person wrote among the marks', () => {
-    expect(drawn('before\n\n<script>alert(1)</script>\n\nafter')).not.toContain('alert')
+  /* Nothing is wrapped and nothing is joined: what keeps two bare lines apart
+     on the screen is the card's own container, which keeps the breaks. */
+  it('keeps the breaks between the lines a person wrote', () => {
+    expect(safe('about 45"\nabout 20 years')).toBe('about 45"\nabout 20 years')
   })
 
-  it('draws no handler a person wrote among the marks', () => {
-    expect(drawn('<img src="x" onerror="alert(1)">')).not.toContain('onerror')
+  it('draws an angle bracket that opens no tag as the character it is', () => {
+    expect(safe('a < b and c > d')).toBe('a &lt; b and c &gt; d')
+  })
+
+  it('draws a tag a person wrote as the tag it is', () => {
+    expect(safe('a <u>marked</u> word')).toBe('a <u>marked</u> word')
   })
 
   it('draws text that is not Latin as it was written', () => {
-    expect(drawn('बगीचे की खाद और हरी खाद')).toContain('बगीचे की खाद और हरी खाद')
+    expect(safe('बगीचे की खाद और हरी खाद')).toBe('बगीचे की खाद और हरी खाद')
   })
 
   it('draws nothing for text with nothing in it', () => {
-    expect(drawn('')).toBe('')
-  })
-
-  /* The marks alone would draw each of these, so what takes them out is the
-     measuring and nothing else. */
-  it.each([
-    '<script>alert(1)</script>',
-    '<img src="x" onerror="alert(1)">',
-    '<iframe src="https://example.org"></iframe>',
-  ])('is what takes %s out, which the marks alone would draw', (said) => {
-    expect(unmeasured.render(said)).toContain(said)
-    expect(drawn(said)).not.toContain(said)
+    expect(safe('')).toBe('')
   })
 })

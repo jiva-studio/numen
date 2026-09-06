@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import Thread from './Thread.vue'
-import type { Turn } from './model'
+import type { Turn } from './turn'
 
 const said = (id: string, text = 'said', state?: Turn['state']): Turn =>
   state === undefined ? { id, voice: 'asked', text } : { id, voice: 'asked', text, state }
@@ -199,7 +199,7 @@ describe('the step each part is set at', () => {
   })
 
   it('sets a line about work at that step as well', () => {
-    expect(thread([doing('1')]).find('.tool').classes()).toContain('text-base')
+    expect(thread([doing('1')]).find('.tool-call').classes()).toContain('text-base')
   })
 
   it('says a turn did not send in the quiet step', () => {

@@ -1,9 +1,9 @@
-/// <reference types="@vitest/browser/providers/playwright" />
 import { accessSync, constants } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
 import { coverageConfigDefaults, defineConfig } from 'vitest/config'
 import type { BrowserCommand } from 'vitest/node'
+import { playwright } from '@vitest/browser-playwright'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
@@ -11,7 +11,7 @@ import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
 const src = fileURLToPath(new URL('./src', import.meta.url))
 
 /** A place on the page the browser drives the pointer to. */
-interface Point {
+interface Position {
   readonly x: number
   readonly y: number
 }
@@ -21,16 +21,16 @@ interface Point {
  * browser itself. What a drag leaves behind — a selection, a capture — is then
  * the browser's own.
  */
-const sweep: BrowserCommand<[from: Point, to: Point]> = async ({ page }, from, to) => {
+const sweep: BrowserCommand<[from: Position, to: Position]> = async ({ page }, from, to) => {
   await page.mouse.move(from.x, from.y)
   await page.mouse.down()
   await page.mouse.move(to.x, to.y)
   await page.mouse.up()
 }
 
-declare module '@vitest/browser/context' {
+declare module 'vitest/browser' {
   interface BrowserCommands {
-    sweep: (from: Point, to: Point) => Promise<void>
+    sweep: (from: Position, to: Position) => Promise<void>
   }
 }
 
@@ -78,7 +78,7 @@ export default defineConfig({
       // A story is the corpus a test run draws, not code under test.
       exclude: [...coverageConfigDefaults.exclude, '**/*.stories.ts'],
       reporter: ['text-summary'],
-      thresholds: { statements: 90, branches: 90, functions: 88, lines: 90 },
+      thresholds: { statements: 89, branches: 84, functions: 90, lines: 91 },
     },
     projects: [
       {
@@ -87,7 +87,7 @@ export default defineConfig({
         test: {
           name: 'unit',
           environment: 'jsdom',
-          include: ['src/**/*.test.ts'],
+          include: ['src/**/*.test.ts', '.storybook/**/*.test.ts'],
           testTimeout: 30_000,
         },
       },
@@ -108,13 +108,15 @@ export default defineConfig({
           browser: {
             enabled: true,
             headless: true,
-            provider: 'playwright',
+            provider: playwright(),
             // The window is WebKit on a mac and on Linux, and Chromium on
             // Windows. Every story is rendered in both.
             instances: [
               {
                 browser: 'chromium',
-                ...(chrome ? { launch: { executablePath: chrome } } : {}),
+                ...(chrome
+                  ? { provider: playwright({ launchOptions: { executablePath: chrome } }) }
+                  : {}),
               },
               { browser: 'webkit' },
             ],

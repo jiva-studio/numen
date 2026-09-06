@@ -2,8 +2,7 @@
  * What a line of choices says, what it opens, and what it hands back.
  *
  * The choices are drawn at the end of the document, so they are read off the
- * document rather than off the wrapper. The keyboard matters most: a control a
- * hand can open and a keyboard cannot is not a control.
+ * document. A control a hand can open and a keyboard cannot is not a control.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -44,7 +43,7 @@ const line = (control: ReturnType<typeof mountSelect>) => control.get('button[da
 const rows = () => Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
 const words = () => rows().map((one) => one.querySelector('.menu__text')?.textContent?.trim())
 const shelves = () =>
-  Array.from(document.body.querySelectorAll<HTMLElement>('.menu__band')).map((one) =>
+  Array.from(document.body.querySelectorAll<HTMLElement>('.menu__group-name')).map((one) =>
     one.textContent?.trim(),
   )
 

@@ -1,9 +1,9 @@
-# ADR-0010: A source is text in one table
+# A source is text in one table
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/apps/desktop`
-- **Related:** ADR-0001, ADR-0002, ADR-0006, ADR-0011, ADR-0012, ADR-0013, ADR-0014, ADR-0015, ADR-0016, ADR-0018
+- **Applies to:** `modules/libs/core`
+- **Related:** [Files on disk are the source of truth](0001-files-are-the-source-of-truth.md), [One database for all vaults, outside them](0002-one-database-for-all-vaults.md), [What the index stores](0006-what-the-index-stores.md), [Text is cut twice](0011-text-is-cut-twice.md), [A chunk is identified by its text](0012-a-chunk-is-identified-by-its-text.md), [The vector index stays inside SQLite](0013-the-vector-index-stays-inside-sqlite.md), [One search, three rankings, merged by rank](0014-one-search-three-rankings.md), [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [A passage is a range of bytes](0016-a-passage-is-a-range-of-bytes.md), [The note file](0018-the-note-file.md)
 
 ## Context
 
@@ -19,7 +19,7 @@ What only a note has — its title, its identifier, its frontmatter and the base
 
 No ranking asks what kind a source is. A question may name the kinds it is about, and that is the only place on the search path the kind is read.
 
-Source, note, book and chunk are named in [the glossary](../glossary.md), and the columns they occupy are ADR-0006.
+Source, note, book and chunk are named in [the glossary](../glossary.md), and the columns they occupy are [What the index stores](0006-what-the-index-stores.md).
 
 ### Nothing stores the text
 
@@ -37,7 +37,7 @@ Structure is taken at the best level the file offers, and each level is judged b
 
 `sources.recipe` says what produced the text and is null while nothing has. It is the name of a procedure and carries no value that varies from one source to the next.
 
-It names the sizes the text is cut at as well as the reader that read it, so a source cut at the command line and a source cut in the window are one source cut once. The recipe a vector was made under is a separate name and is ADR-0013.
+It names the sizes the text is cut at as well as the reader that read it, so a source cut at the command line and a source cut in the window are one source cut once. The recipe a vector was made under is a separate name, kept with the vector.
 
 ## Consequences
 

@@ -18,19 +18,18 @@ func TestARefusalSaysWhatItFound(t *testing.T) {
 	at := filepath.Join(t.TempDir(), "index.db")
 	cfg := container.Config{IndexPath: at}
 
-	page, err := refusal{}.page(cfg, &index.Ahead{Held: 9, Known: 1})
+	page, err := refusal{}.page(cfg, settings.TextScaleBounds.Check("appearance.text_scale", 4))
 	if err != nil {
 		t.Fatal(err)
 	}
 	said := string(page)
 
 	for _, want := range []string{
-		openingTheIndex,          // what could not be opened
-		"later version of numen", // what happened
-		">9<",                    // the schema the index holds
-		">1<",                    // the schema this build knows
-		at,                       // which file
-		"Update numen",           // what to do
+		readingTheSettings,        // what could not be read
+		"appearance.text_scale",   // which field
+		">4<",                     // what was written there
+		"as far as the size goes", // what it may be
+		"Write a number",          // what to do
 	} {
 		if !strings.Contains(said, want) {
 			t.Errorf("the page does not say %q", want)
@@ -97,11 +96,6 @@ func stoppings(t *testing.T) []stopping {
 
 	return []stopping{
 		{
-			name: "an index a later build wrote",
-			cfg:  container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")},
-			why:  &index.Ahead{Held: 9, Known: 1},
-		},
-		{
 			name: "an index that is not a database",
 			cfg:  container.Config{IndexPath: corrupt},
 			why:  opened(t, corrupt),
@@ -164,20 +158,20 @@ func TestEveryRefusalSaysWhatToDoAboutIt(t *testing.T) {
 	for _, one := range stoppings(t) {
 		t.Run(one.name, func(t *testing.T) {
 			said := stopped(one.cfg, one.why)
-			if said.Head == "" {
+			if said.Heading == "" {
 				t.Error("the page is drawn under no heading")
 			}
-			if said.Says == "" {
+			if said.Sentence == "" {
 				t.Error("the page says nothing about what stopped it")
 			}
 			if len(said.Facts) == 0 {
 				t.Error("the page holds no facts about the state it found")
 			}
-			if said.Do == "" {
+			if said.Remedy == "" {
 				t.Error("the page offers nothing to do about it")
 			}
 			for _, held := range said.Facts {
-				if held.Value == "" {
+				if held.Content == "" {
 					t.Errorf("the page holds %q with nothing beside it", held.Name)
 				}
 			}
@@ -193,7 +187,6 @@ func TestARefusalNamesWhatCouldNotBeOpened(t *testing.T) {
 		t.Skip("root writes in a folder whatever its permissions say")
 	}
 	want := map[string]string{
-		"an index a later build wrote":           openingTheIndex,
 		"an index that is not a database":        openingTheIndex,
 		"an index path that is a folder":         openingTheIndex,
 		"an index folder nobody may write in":    openingTheIndex,
@@ -203,10 +196,10 @@ func TestARefusalNamesWhatCouldNotBeOpened(t *testing.T) {
 	}
 	for _, one := range stoppings(t) {
 		said := stopped(one.cfg, one.why)
-		if said.Head != want[one.name] {
-			t.Errorf("%s is drawn under %q, want %q", one.name, said.Head, want[one.name])
+		if said.Heading != want[one.name] {
+			t.Errorf("%s is drawn under %q, want %q", one.name, said.Heading, want[one.name])
 		}
-		if strings.Contains(said.Head, "vault") {
+		if strings.Contains(said.Heading, "vault") {
 			t.Errorf("%s is drawn under a heading naming a vault", one.name)
 		}
 	}
@@ -224,19 +217,19 @@ func TestAnIndexThatWillNotOpenIsSaidByWhatIsWrong(t *testing.T) {
 	}
 
 	folder, shut := by["an index path that is a folder"], by["an index folder nobody may write in"]
-	if folder.Says == shut.Says {
-		t.Errorf("two faults are said in one sentence: %q", folder.Says)
+	if folder.Sentence == shut.Sentence {
+		t.Errorf("two faults are said in one sentence: %q", folder.Sentence)
 	}
-	if !strings.Contains(folder.Do, "-index") {
-		t.Errorf("a path that is a folder is answered with %q", folder.Do)
+	if !strings.Contains(folder.Remedy, "-index") {
+		t.Errorf("a path that is a folder is answered with %q", folder.Remedy)
 	}
-	if !strings.Contains(shut.Do, "permission") {
-		t.Errorf("a folder nobody may write in is answered with %q", shut.Do)
+	if !strings.Contains(shut.Remedy, "permission") {
+		t.Errorf("a folder nobody may write in is answered with %q", shut.Remedy)
 	}
 
 	corrupt := by["an index that is not a database"]
-	if strings.Contains(corrupt.Says, "(26)") || strings.Contains(corrupt.Says, "not a database") {
-		t.Errorf("the page speaks sqlite's language: %q", corrupt.Says)
+	if strings.Contains(corrupt.Sentence, "(26)") || strings.Contains(corrupt.Sentence, "not a database") {
+		t.Errorf("the page speaks sqlite's language: %q", corrupt.Sentence)
 	}
 }
 
@@ -244,12 +237,12 @@ func TestAnIndexThatWillNotOpenIsSaidByWhatIsWrong(t *testing.T) {
 // the file, or the flag on the command line.
 func TestASizeIsAnsweredWhereItWasWritten(t *testing.T) {
 	file := stopped(container.Config{}, settings.TextScaleBounds.Check("appearance.text_scale", 4))
-	if !strings.Contains(file.Do, "appearance.text_scale") {
-		t.Errorf("a size in the file is answered with %q", file.Do)
+	if !strings.Contains(file.Remedy, "appearance.text_scale") {
+		t.Errorf("a size in the file is answered with %q", file.Remedy)
 	}
 
 	line := stopped(container.Config{}, settings.TextScaleBounds.Check("-text-scale", 4))
-	if !strings.Contains(line.Do, "-text-scale") {
-		t.Errorf("a size on the command line is answered with %q", line.Do)
+	if !strings.Contains(line.Remedy, "-text-scale") {
+		t.Errorf("a size on the command line is answered with %q", line.Remedy)
 	}
 }

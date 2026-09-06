@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Tree from './Tree.vue'
-import type { Landing, Row, RowId } from './model'
+import type { RowLanding, Row, RowId } from './row'
 
 /** A row taken out of wherever it stands. */
 const without = (rows: readonly Row[], id: RowId): readonly Row[] =>
@@ -26,8 +26,8 @@ const found = (rows: readonly Row[], id: RowId): Row | null => {
   return null
 }
 
-/** Rows put where a landing says, in the order they were carried. */
-const put = (rows: readonly Row[], at: Landing, held: readonly Row[]): readonly Row[] =>
+/** Rows put where a landing says, in the order they were dragged. */
+const put = (rows: readonly Row[], at: RowLanding, held: readonly Row[]): readonly Row[] =>
   rows.flatMap((row) => {
     const below = row.rows ? { ...row, rows: put(row.rows, at, held) } : row
     if ('before' in at && row.id === at.before) return [...held, below]
@@ -38,15 +38,15 @@ const put = (rows: readonly Row[], at: Landing, held: readonly Row[]): readonly 
   })
 
 /** The application's part: what a move comes to, in the rows it holds. */
-const moved = (rows: readonly Row[], carried: readonly RowId[], at: Landing): readonly Row[] => {
-  const held = carried.map((row) => found(rows, row)).filter((row): row is Row => row !== null)
-  const left = carried.reduce((rest, row) => without(rest, row), rows)
+const moved = (rows: readonly Row[], dragged: readonly RowId[], at: RowLanding): readonly Row[] => {
+  const held = dragged.map((row) => found(rows, row)).filter((row): row is Row => row !== null)
+  const left = dragged.reduce((rest, row) => without(rest, row), rows)
   return held.length ? put(left, at, held) : rows
 }
 
 /** The application's part again: rows taken out of the tree. */
-const removed = (rows: readonly Row[], carried: readonly RowId[]): readonly Row[] =>
-  carried.reduce((rest, row) => without(rest, row), rows)
+const removed = (rows: readonly Row[], dragged: readonly RowId[]): readonly Row[] =>
+  dragged.reduce((rest, row) => without(rest, row), rows)
 
 /** The application's part again: a row under a new name. */
 const renamed = (rows: readonly Row[], row: RowId, name: string): readonly Row[] =>
@@ -159,7 +159,7 @@ interface Knobs {
   rows?: never
   open?: never
   counted?: never
-  environment?: never
+  clock?: never
 }
 
 const meta: Meta<Knobs> = {
@@ -179,7 +179,7 @@ const meta: Meta<Knobs> = {
     rows: { table: { disable: true } },
     open: { table: { disable: true } },
     counted: { table: { disable: true } },
-    environment: { table: { disable: true } },
+    clock: { table: { disable: true } },
   },
   args: { corpus: 'a few', threshold: 4, name: 'Tree', renaming: null, selected: [] },
   render: (args) => ({
@@ -214,11 +214,11 @@ const meta: Meta<Knobs> = {
         onSelect: (picked: readonly RowId[]) => {
           selected.value = picked
         },
-        onMove: (carried: readonly RowId[], at: Landing) => {
-          rows.value = moved(rows.value, carried, at)
+        onMove: (dragged: readonly RowId[], at: RowLanding) => {
+          rows.value = moved(rows.value, dragged, at)
         },
-        onRemove: (carried: readonly RowId[]) => {
-          rows.value = removed(rows.value, carried)
+        onRemove: (dragged: readonly RowId[]) => {
+          rows.value = removed(rows.value, dragged)
           selected.value = []
         },
         onRename: (row: RowId, name: string) => {
@@ -400,8 +400,8 @@ export const ReachesToARow: Story = {
   },
 }
 
-/** Two rows carried at once, held part way to the folder they are going into. */
-export const CarryingSeveral: Story = {
+/** Two rows dragged at once, held part way to the folder they are going into. */
+export const DraggingSeveral: Story = {
   args: { selected: ['notes', 'loose'] },
   play: async ({ canvasElement }) => {
     const from = rowIn(canvasElement, 'loose')
@@ -414,7 +414,7 @@ export const CarryingSeveral: Story = {
       { coords: to },
     ])
 
-    await expect(canvasElement.querySelector('.tree__carried')?.textContent?.trim()).toBe('2 rows')
+    await expect(canvasElement.querySelector('.tree__dragged')?.textContent?.trim()).toBe('2 rows')
     await expect(rowIn(canvasElement, 'work').getAttribute('data-into')).toBe('true')
   },
 }
@@ -428,7 +428,7 @@ export const DragsSeveralIntoARow: Story = {
 
     await expect(drawn(canvasElement)).toStrictEqual(['work', 'plans', 'notes', 'loose', 'empty'])
     await expect(rowIn(canvasElement, 'loose').getAttribute('aria-level')).toBe('2')
-    await expect(canvasElement.querySelector('.tree__carried')).toBeNull()
+    await expect(canvasElement.querySelector('.tree__dragged')).toBeNull()
   },
 }
 

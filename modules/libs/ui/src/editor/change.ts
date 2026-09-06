@@ -14,7 +14,7 @@ import {
   ViewPlugin,
   type ViewUpdate,
 } from '@codemirror/view'
-import { browserEnvironment, type Environment } from '../plex/transition'
+import { browserClock, type Clock } from '../plex/transition'
 
 /** A change being made to this text by something other than the reader. */
 export interface EditorChange {
@@ -82,7 +82,7 @@ const arriving = Decoration.mark({ class: 'cm-arriving' })
 const covered = Decoration.replace({})
 
 /** What is drawn for a change, and where it stands. */
-interface Marked {
+interface Mark {
   readonly change: EditorChange | null
   readonly from: number
   readonly to: number
@@ -91,7 +91,7 @@ interface Marked {
   readonly decorations: DecorationSet
 }
 
-const NOTHING: Marked = {
+const NOTHING: Mark = {
   change: null,
   from: 0,
   to: 0,
@@ -124,7 +124,7 @@ const arrived = (state: EditorState, change: EditorChange, from: number) =>
   change.text.length > 0 &&
   state.doc.sliceString(from, from + change.text.length) === change.text
 
-const start = (state: EditorState): Marked => {
+const start = (state: EditorState): Mark => {
   const change = state.facet(changing)
   if (!change) return NOTHING
 
@@ -143,7 +143,7 @@ const start = (state: EditorState): Marked => {
  * Every range maps through the document's own changes, so typing beside a
  * change moves the overlay with the text under it.
  */
-export const marked = StateField.define<Marked>({
+export const marked = StateField.define<Mark>({
   create: start,
   update: (was, transaction) => {
     if (transaction.state.facet(changing) !== transaction.startState.facet(changing))
@@ -176,7 +176,7 @@ class Pace {
 
   constructor(
     private readonly view: EditorView,
-    private readonly environment: Environment,
+    private readonly clock: Clock,
   ) {
     this.take()
   }
@@ -195,11 +195,11 @@ class Pace {
     this.stop()
     const at = this.view.state.field(marked)
     if (!at.change || !at.reveal) return
-    this.handle = this.environment.schedule(this.step)
+    this.handle = this.clock.schedule(this.step)
   }
 
   private stop() {
-    if (this.handle !== null) this.environment.cancel(this.handle)
+    if (this.handle !== null) this.clock.cancel(this.handle)
     this.handle = null
     this.started = null
   }
@@ -216,9 +216,9 @@ class Pace {
     const reveal = revealOf(at.change.text, part)
     if (reveal.shown !== at.reveal.shown || reveal.fading !== at.reveal.fading)
       this.view.dispatch({ effects: stepped.of(reveal) })
-    if (part < 1) this.handle = this.environment.schedule(this.step)
+    if (part < 1) this.handle = this.clock.schedule(this.step)
   }
 }
 
-export const pacing = (environment: Environment = browserEnvironment) =>
-  ViewPlugin.define((view) => new Pace(view, environment))
+export const pacing = (clock: Clock = browserClock) =>
+  ViewPlugin.define((view) => new Pace(view, clock))

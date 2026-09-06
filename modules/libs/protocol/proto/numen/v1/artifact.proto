@@ -1,0 +1,226 @@
+syntax = "proto3";
+
+// What a client may ask about the artifacts made from a vault's files.
+//
+// An artifact is what a model wrote about one file: the text read out of a
+// scan, the words heard in a recording, and those words put right. The file
+// itself is the person's and is never touched; an artifact stands beside it,
+// under a name of the application's own.
+package numen.v1;
+
+import "numen/v1/shared.proto";
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// ArtifactService answers what has been made from a file of the vault, makes
+// one, and takes one away.
+service ArtifactService {
+  // ListArtifacts is every artifact a file can carry and what has become of
+  // each. A file whose kind carries none is answered with none.
+  //
+  // It is asked before anything is offered over a file: whether a book has been
+  // read is a question about the book, and the only other way to ask it is to
+  // ask for the book to be read again and be refused.
+  rpc ListArtifacts(ListArtifactsRequest) returns (ListArtifactsResponse);
+
+  // CreateArtifact asks for one to be made, and answers at once with what
+  // became of the ask. The work carries on behind the answer, and how far it
+  // gets is in the list of what is being done.
+  //
+  // A file already carrying the artifact is left alone and answered with what
+  // stands. A file a person named is never turned away for want of a turn: it
+  // waits in line and is taken up before anything the vault set itself.
+  rpc CreateArtifact(CreateArtifactRequest) returns (CreateArtifactResponse);
+
+  // DeleteArtifact takes one away, with everything cut from it. The file stands
+  // as it did before anything was made from it, and it is offered again.
+  rpc DeleteArtifact(DeleteArtifactRequest) returns (DeleteArtifactResponse);
+
+  // ReadTranscript is the words a recording was heard as, each stretch of
+  // speech against the milliseconds it was spoken in. A recording nothing has
+  // listened to holds no words, which is an answer.
+  //
+  // What comes back is the transcript as it now stands: the words a person put
+  // right, and what a model heard where nothing put them right.
+  rpc ReadTranscript(ReadTranscriptRequest) returns (ReadTranscriptResponse);
+
+  // WriteTranscript writes the words of a recording as a person left them.
+  //
+  // What the model heard stays under its own name and the words as they now
+  // stand go beside it, so a transcript edited into nonsense is corrections
+  // that can be taken away and what was heard comes back.
+  rpc WriteTranscript(WriteTranscriptRequest) returns (WriteTranscriptResponse);
+}
+
+// An Artifact is one thing a model wrote about one file of the vault.
+message Artifact {
+  // Name is where it stands: the vault, the file it was made from, and the
+  // name the store keeps it under.
+  //
+  //   vaults/{vault}/files/{path}/artifacts/asr.corrected
+  //
+  // It is answered and never asked with: a request names the file and the
+  // artifact of it, and the vault is the one the window is showing.
+  string name = 1;
+
+  // State is what has become of it.
+  State state = 2;
+
+  // Error is what stopped it, and is set when it failed.
+  string error = 3;
+
+  // Size is how many bytes stand under that name. A file being written is
+  // appended to as the work goes, so it keeps its name and grows: how long it
+  // now is is what tells a caller that what it already read has moved on.
+  int64 size = 4;
+
+  // Which of them this is. A client draws a row per kind and reads this rather
+  // than the last part of `name`: a name is where the artifact stands, and
+  // taking a client's meaning out of it makes every reader parse it.
+  ArtifactKind kind = 5;
+}
+
+// ArtifactKind is which thing made from a file is meant. The list is closed: a
+// client draws one row per kind, and a kind nobody decided on has no row.
+enum ArtifactKind {
+  ARTIFACT_KIND_UNSPECIFIED = 0;
+
+  // The text read out of a scan. It stands under the name `ocr`.
+  ARTIFACT_KIND_READING = 1;
+
+  // The words heard in a recording, under `asr`.
+  ARTIFACT_KIND_HEARD = 2;
+
+  // Those words put right, under `asr.corrected`.
+  ARTIFACT_KIND_CORRECTED = 3;
+}
+
+// State is what has become of one artifact.
+enum State {
+  STATE_UNSPECIFIED = 0;
+
+  // Nothing has been made. The file carries this artifact and none of it
+  // stands.
+  STATE_NONE = 1;
+
+  // A run over this file is waiting behind the one going now.
+  STATE_QUEUED = 2;
+
+  // A run is writing it now.
+  STATE_RUNNING = 3;
+
+  // A run wrote part of it and is not holding it: it stopped, and what it
+  // reached is on disk. Asking again begins afresh.
+  STATE_STOPPED = 4;
+
+  // The whole of it stands.
+  STATE_DONE = 5;
+
+  // A run read the file and found nothing to write down — a recording holding
+  // no speech. Asking again reads the same file and finds the same, so what it
+  // found is kept and answered instead.
+  STATE_EMPTY = 6;
+
+  // A run could not read the file at all, and error says what it said about it.
+  // Taking the artifact away is how a person asks for the file to be tried
+  // afresh.
+  STATE_FAILED = 7;
+}
+
+message ListArtifactsRequest {
+  // The file of the vault, as the vault holds it.
+  string path = 1;
+}
+
+message ListArtifactsResponse {
+  // Every artifact this file can carry, whether or not any of it stands. A row
+  // is how a client is told that nothing has been made, which is an answer and
+  // not an absence.
+  repeated Artifact artifacts = 1;
+}
+
+message CreateArtifactRequest {
+  reserved 2;
+  reserved "artifact_id";
+
+  // The file of the vault, as the vault holds it.
+  string path = 1;
+
+  // Which artifact of it to make. Which model does the work follows from the
+  // file, and is not asked for here.
+  ArtifactKind kind = 3;
+}
+
+message CreateArtifactResponse {
+  Artifact artifact = 1;
+}
+
+message DeleteArtifactRequest {
+  reserved 2;
+  reserved "artifact_id";
+
+  // The file of the vault, as the vault holds it. What is taken away is
+  // everything listening to a recording produced — the words a model heard and
+  // the words a person put right — so there is nothing to name: a field that
+  // takes one value of three and refuses the other two at run time is a rule
+  // the schema cannot state and a client cannot read.
+  string path = 1;
+}
+
+message DeleteArtifactResponse {
+  // The artifact as it now stands, which is nothing.
+  Artifact artifact = 1;
+}
+
+// A Cue is one stretch of speech in a recording: what was said, and the
+// milliseconds of the recording it spans.
+//
+// One cue stands on one line. A cue broken over two is two a client would offer
+// to edit and one the recording would play.
+message Cue {
+  string text = 1;
+  int32 from = 2;
+  int32 to = 3;
+}
+
+message ReadTranscriptRequest {
+  // The recording, as the vault holds it.
+  string path = 1;
+
+  // The run of the recording's text to answer about, and nothing at all for the
+  // whole of it. It is a start and a length in the words, which is how a
+  // passage is addressed everywhere else, and what comes back is the speech
+  // those bytes were said in.
+  Stretch at = 2;
+}
+
+message ReadTranscriptResponse {
+  // The words, in the order they were said.
+  repeated Cue cues = 1;
+
+  // Whether they may be put right now. A run listening to the recording holds
+  // it, and a client draws what it reads and leaves it alone.
+  bool editable = 2;
+}
+
+message WriteTranscriptRequest {
+  // The recording, as the vault holds it.
+  string path = 1;
+
+  // The words as the person left them, against the milliseconds they were said
+  // in. A client that merged and split lines does the arithmetic.
+  //
+  // Speech runs forward: a cue ends no earlier than it begins, and begins after
+  // the one before it ends. A cue whose words trim away is dropped, and its
+  // timings still bound the cue after it. Words carrying nothing at all are
+  // refused: what was heard comes back by taking the corrections away, and
+  // writing nothing over the words would leave the recording saying nothing
+  // with nothing to edit.
+  repeated Cue cues = 2;
+}
+
+message WriteTranscriptResponse {
+  // The words as they now stand.
+  repeated Cue cues = 1;
+  bool editable = 2;
+}

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
@@ -56,7 +56,7 @@ func (s countingStore) Read(ctx context.Context, name string) ([]byte, error) {
 	return s.inner.Read(ctx, name)
 }
 
-func (s countingStore) List(ctx context.Context, name string) ([]port.Stored, error) {
+func (s countingStore) List(ctx context.Context, name string) ([]port.Entry, error) {
 	s.on.Listed++
 	return s.inner.List(ctx, name)
 }
@@ -79,48 +79,48 @@ func (s countingStore) Claim(ctx context.Context, name string) (func() error, er
 
 // countingKept counts what a use case asks of the cache.
 type countingKept struct {
-	inner port.Schedules
+	inner port.ScheduleStore
 	on    *loadCounts
 }
 
-func (k countingKept) Read(ctx context.Context, vaultID string) ([]byte, error) {
+func (k countingKept) Read(ctx context.Context, vaultID domain.VaultID) ([]byte, error) {
 	k.on.Consulted++
 	return k.inner.Read(ctx, vaultID)
 }
 
-func (k countingKept) Write(ctx context.Context, vaultID string, content []byte) error {
+func (k countingKept) Write(ctx context.Context, vaultID domain.VaultID, content []byte) error {
 	k.on.Rewritten++
 	return k.inner.Write(ctx, vaultID, content)
 }
 
 // countingBy counts how often the scheduler is asked for a next date.
 type countingBy struct {
-	inner history.Scheduler
+	inner review.Scheduler
 	on    *loadCounts
 }
 
 func (b countingBy) Name() string { return b.inner.Name() }
 
-func (b countingBy) Next(s history.Schedule, at time.Time, r history.Rating) history.Schedule {
+func (b countingBy) Next(s review.Schedule, at time.Time, r review.Rating) review.Schedule {
 	b.on.Dated++
 	return b.inner.Next(s, at, r)
 }
 
-func (b countingBy) Endings(s history.Schedule, at time.Time) (history.Schedule, history.Schedule) {
+func (b countingBy) Endings(s review.Schedule, at time.Time) (review.Schedule, review.Schedule) {
 	b.on.Dated += 2
 	return b.inner.Endings(s, at)
 }
 
-func (b countingBy) Spaced(s history.Schedule) bool { return b.inner.Spaced(s) }
+func (b countingBy) Spaced(s review.Schedule) bool { return b.inner.Spaced(s) }
 
 // loaded is a vault of many cards and many run files, with everything a request
 // asks of the store, the cache and the scheduler counted.
 type loaded struct {
 	vaulted
 	on     *loadCounts
-	owed   flashcards.Owed
+	owed   flashcards.CountCardsDue
 	sat    flashcards.Session
-	review flashcards.Counted
+	review flashcards.CountReviews
 	faces  int
 }
 
@@ -134,27 +134,27 @@ func load(tb testing.TB, cards, days, perDay int) loaded {
 	logs := countingStores{inner: s.logs, on: on}
 	schedules := flashcards.Schedules{
 		Logs:      logs,
-		Kept:      countingKept{inner: appstate.SchedulesAt(filepath.Join(tb.TempDir(), "faces")), on: on},
-		By:        countingBy{inner: history.NewFSRS(), on: on},
+		Cache:     countingKept{inner: appstate.SchedulesAt(filepath.Join(tb.TempDir(), "faces")), on: on},
+		By:        countingBy{inner: review.NewFSRS(), on: on},
 		Day:       today,
-		Standings: s.standings,
+		CardFaces: s.standings,
 		Presets:   s.presets,
 	}
 	loadAnswers(tb, s, cards, days, perDay)
 	return loaded{
 		vaulted: s,
 		on:      on,
-		owed: flashcards.Owed{
-			Standings: s.standings, Schedules: schedules, Presets: s.presets,
+		owed: flashcards.CountCardsDue{
+			CardFaces: s.standings, Schedules: schedules, Presets: s.presets,
 			Day: today, Now: time.Now,
 		},
 		sat: flashcards.Session{
-			Marking: s.marking, Standings: s.standings, Schedules: schedules,
+			Marks: s.marking, CardFaces: s.standings, Schedules: schedules,
 			Presets: s.presets, Day: today, Now: time.Now,
 		},
-		review: flashcards.Counted{
+		review: flashcards.CountReviews{
 			Logs:      logs,
-			Kept:      countingKept{inner: appstate.SchedulesAt(filepath.Join(tb.TempDir(), "days")), on: on},
+			Cache:     countingKept{inner: appstate.SchedulesAt(filepath.Join(tb.TempDir(), "days")), on: on},
 			Schedules: schedules,
 			Day:       today,
 			Now:       time.Now,
@@ -164,7 +164,7 @@ func load(tb testing.TB, cards, days, perDay int) loaded {
 }
 
 // logRead is this vault's answers, read the way a request reads them.
-func (l loaded) logRead(tb testing.TB) (flashcards.Held, error) {
+func (l loaded) logRead(tb testing.TB) (flashcards.ReviewLog, error) {
 	tb.Helper()
 	return flashcards.Log{Stores: l.logs}.Read(tb.Context(), l.vault)
 }
@@ -232,11 +232,11 @@ func loadAnswers(tb testing.TB, s vaulted, cards, days, perDay int) {
 		}
 		var lines []byte
 		for one := range perDay {
-			raw, err := history.Write(history.Answer{
+			raw, err := review.Write(review.Answer{
 				ID:       fmt.Sprintf("%06d%010d", day, one),
-				CardFace: history.CardFace{Card: loadMark(card % cards), Face: "Say it"},
+				CardFace: review.CardFaceID{Card: loadMark(card % cards), Face: "Say it"},
 				At:       when.Add(time.Duration(one) * time.Minute),
-				Rating:   history.Rating(one%4 + 1),
+				Rating:   review.Rating(one%4 + 1),
 				Took:     4 * time.Second,
 			})
 			if err != nil {

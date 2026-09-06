@@ -9,9 +9,9 @@
 import { computed, inject, onBeforeUnmount, ref, useTemplateRef, watch, type Ref } from 'vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import WorkspacePane from './WorkspacePane.vue'
-import { WORKSPACING, type Workspacing } from './context'
-import { orientationAt, type Branch, type Orientation, type TabId } from '../model'
-import { atLeast, fit } from '../model/shares'
+import { WORKSPACE_CONTEXT, type WorkspaceContext } from './context'
+import { orientationAt, type Branch, type Orientation, type TabId } from '../node'
+import { atLeast, fit } from '../shares'
 
 defineOptions({ name: 'WorkspaceBranch' })
 
@@ -22,7 +22,7 @@ const props = defineProps<{
 }>()
 
 /** What every branch and pane of one workspace is told once, at the top. */
-const workspace = inject(WORKSPACING) as Ref<Workspacing>
+const workspace = inject(WORKSPACE_CONTEXT) as Ref<WorkspaceContext>
 
 const slots = defineSlots<{
   tab(props: { id: TabId }): unknown
@@ -157,6 +157,7 @@ function handling(now: boolean): void {
       <SplitterResizeHandle
         v-if="index > 0"
         class="branch__handle"
+        aria-label="Resize panes"
         :data-direction="direction"
         :hit-area-margins="reach"
         @dragging="handling"
@@ -214,7 +215,7 @@ function handling(now: boolean): void {
   position: relative;
   z-index: 1;
   flex: none;
-  background: var(--numen-node-border);
+  background: var(--numen-rule);
 }
 
 /* The splitter draws the pointer as a double arrow everywhere its reach is
@@ -227,6 +228,15 @@ function handling(now: boolean): void {
 .branch__handle[data-direction='vertical'] {
   block-size: var(--line);
   cursor: ns-resize;
+}
+
+/* A line one pixel thick has no room for a ring around it, so it becomes the
+   ring: the line itself is drawn in the keyboard's colour, and a pixel either
+   side of it carries the same. */
+.branch__handle:focus-visible {
+  outline: none;
+  background: var(--numen-ring);
+  box-shadow: 0 0 0 var(--numen-stroke) var(--numen-ring);
 }
 
 .branch__handle::after {

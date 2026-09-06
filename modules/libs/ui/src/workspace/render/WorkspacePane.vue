@@ -8,8 +8,8 @@
 import { inject, onMounted, watch } from 'vue'
 import WorkspaceTab from './WorkspaceTab.vue'
 import { stepTo } from './keys'
-import { WORKSPACING } from './context'
-import type { Pane, TabId } from '../model'
+import { WORKSPACE_CONTEXT } from './context'
+import type { Pane, TabId } from '../node'
 
 const props = withDefaults(
   defineProps<{
@@ -20,7 +20,7 @@ const props = withDefaults(
   { focused: false },
 )
 
-const workspace = inject(WORKSPACING)
+const workspace = inject(WORKSPACE_CONTEXT)
 
 /** What a tab is called. A tab with no title is shown by its identity. */
 const titleOf = (tab: TabId): string => workspace?.value.tabOf(tab)?.title ?? tab
@@ -185,7 +185,7 @@ function out(event: KeyboardEvent): void {
 
 /* Sits on the same surface as what it stands over, told apart by one line. */
 .pane__strip {
-  border-block-end: var(--numen-stroke) solid var(--numen-node-border);
+  border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }
 
 .pane__body {
@@ -205,6 +205,12 @@ function out(event: KeyboardEvent): void {
 
 .pane__held[data-showing] {
   display: block;
+}
+
+/* Drawn inside, because what a pane holds fills it to its edges. */
+.pane__held:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 var(--numen-ring-width) var(--numen-ring);
 }
 
 /* The whole of a pane holding no tabs. Its size is all it hands down. */

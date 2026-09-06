@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -18,7 +18,7 @@ import (
 // thrown away and worked out again, which costs a replay and nothing else.
 const keptVersion = 2
 
-type kept struct {
+type scheduleCache struct {
 	V int `json:"v"`
 	// By is the assignment this was worked out under: which card face stood
 	// under which target. A schedule worked out under one assignment is not read
@@ -27,16 +27,16 @@ type kept struct {
 	// Files are the log files this was worked out from, each with the length it
 	// had. A run is appended to under one name, so a name alone would call a
 	// cache current while the answers written after it were never counted.
-	Files []keptFile     `json:"files"`
-	Faces []keptSchedule `json:"faces"`
+	Files []cachedFile     `json:"files"`
+	Faces []cachedSchedule `json:"faces"`
 }
 
-type keptFile struct {
+type cachedFile struct {
 	Name string `json:"name"`
 	Size int    `json:"size"`
 }
 
-type keptSchedule struct {
+type cachedSchedule struct {
 	Card       string  `json:"card"`
 	Face       string  `json:"face"`
 	Due        string  `json:"due"`
@@ -58,24 +58,38 @@ type keptSchedule struct {
 // nothing can be added to what the later ones produced.
 type Schedules struct {
 	Logs port.DerivedStores
-	// Kept is where the working out is remembered. A build holding none works
+	// Cache is where the working out is remembered. A build holding none works
 	// it out at every launch.
-	Kept port.Schedules
-	By   history.Scheduler
+	Cache port.ScheduleStore
+	By    review.Scheduler
 	// Day is where one day of review gives way to the next, which is what says
 	// on which day a card placed by its preset lands.
-	Day history.Day
-	// Standings and Presets say which preset schedules each card face, so a
+	Day review.Day
+	// CardFaces and Presets say which preset schedules each card face, so a
 	// card is worked out at the share of the cards its own preset asks for. A
 	// build holding neither works every card out by By.
-	Standings Standings
+	CardFaces ListCardFaces
 	Presets   Presets
 	// At is the scheduler asking for a share of the cards to come back. A build
 	// holding none reads FSRS.
-	At func(retention float64) history.Scheduler
+	At func(retention float64) review.Scheduler
 }
 
-// scheduling is which scheduler each card face is worked out by, and what that
+// NewSchedules is what a vault's cards are placed through: where its answers
+// are kept, the scheduler that places a card, where one day of review gives way
+// to the next, and the card faces and presets that say which share of the cards
+// each card is worked out at.
+func NewSchedules(
+	logs port.DerivedStores,
+	by review.Scheduler,
+	day review.Day,
+	faces ListCardFaces,
+	presets Presets,
+) Schedules {
+	return Schedules{Logs: logs, By: by, Day: day, CardFaces: faces, Presets: presets}
+}
+
+// assignment is which scheduler each card face is worked out by, and what that
 // assignment comes to.
 //
 // The mark is what says a cache is out of date. A target moving, a deck
@@ -83,17 +97,17 @@ type Schedules struct {
 // differently all move it, and the whole cache is thrown away: a schedule
 // depends on every answer before it, so nothing worked out under the old
 // assignment can be kept.
-type scheduling struct {
-	under history.Under
+type assignment struct {
+	under review.Assignment
 	mark  string
 }
 
 // plain is every card face on the one scheduler, at the preset a deck naming
 // none is scheduled by.
-func (u Schedules) plain() scheduling {
-	return scheduling{
-		under: history.By(u.By),
-		mark:  marked([]string{u.By.Name(), u.opening(), history.Defaults().Placing()}),
+func (u Schedules) plain() assignment {
+	return assignment{
+		under: review.By(u.By),
+		mark:  marked([]string{u.By.Name(), u.opening(), review.Defaults().Placing()}),
 	}
 }
 
@@ -104,7 +118,7 @@ func (u Schedules) opening() string {
 	if u.Day.In != nil {
 		in = u.Day.In.String()
 	}
-	return "day\t" + history.Clock(u.Day.Starts) + "\t" + in
+	return "day\t" + review.Clock(u.Day.Starts) + "\t" + in
 }
 
 // asking is the scheduler each card face is worked out by, over a reading of
@@ -112,47 +126,47 @@ func (u Schedules) opening() string {
 //
 // A card face whose deck names no preset is worked out at the defaults, and so
 // is every card of a vault nothing has read yet.
-func (u Schedules) asking(ctx context.Context, v domain.Vault) (scheduling, error) {
-	if u.Presets.Links == nil || u.Standings.Notes == nil {
+func (u Schedules) asking(ctx context.Context, v domain.Vault) (assignment, error) {
+	if u.Presets.Links == nil || u.CardFaces.Notes == nil {
 		return u.plain(), nil
 	}
-	standing, err := u.Standings.Execute(ctx, v)
-	if errors.Is(err, ErrUnread) {
+	faces, err := u.CardFaces.Execute(ctx, v)
+	if errors.Is(err, ErrNotCarried) {
 		return u.plain(), nil
 	}
 	if err != nil {
-		return scheduling{}, err
+		return assignment{}, err
 	}
-	return u.under(ctx, v, u.Presets.Reading(), standing)
+	return u.under(ctx, v, u.Presets.Reading(), faces)
 }
 
 // under is the same, from the cards and the reading of the presets a caller
 // already holds.
 func (u Schedules) under(
-	ctx context.Context, v domain.Vault, reading *Reading, standing []Standing,
-) (scheduling, error) {
+	ctx context.Context, v domain.Vault, reading *PresetReads, faces []CardFace,
+) (assignment, error) {
 	out := u.plain()
 	if reading == nil || reading.Links == nil {
 		return out, nil
 	}
 
-	by := make(map[string]history.Scheduling)
-	under := make(map[history.CardFace]history.Scheduling, len(standing))
-	asked := make(map[string]string, len(standing))
-	for _, one := range standing {
+	by := make(map[string]review.SchedulingPolicy)
+	under := make(map[review.CardFaceID]review.SchedulingPolicy, len(faces))
+	asked := make(map[string]string, len(faces))
+	for _, one := range faces {
 		path, known := asked[one.Deck]
 		if !known {
 			p, err := reading.Of(ctx, v, one.Deck)
 			if err != nil {
-				return scheduling{}, err
+				return assignment{}, err
 			}
 			path = p.Path
 			asked[one.Deck] = path
 			if _, held := by[path]; !held {
-				by[path] = history.Scheduling{By: u.at(p.Preset.Retention), Preset: p.Preset}
+				by[path] = review.SchedulingPolicy{By: u.at(p.Settings.Retention), Preset: p.Settings}
 			}
 		}
-		under[one.CardFace] = by[path]
+		under[one.ID] = by[path]
 	}
 
 	marks := make([]string, 0, len(under)+2)
@@ -161,11 +175,11 @@ func (u Schedules) under(
 		marks = append(marks, face.Card+"\t"+face.Face+"\t"+one.By.Name()+"\t"+one.Preset.Placing())
 	}
 	out.mark = marked(marks)
-	out.under = func(face history.CardFace) history.Scheduling {
+	out.under = func(face review.CardFaceID) review.SchedulingPolicy {
 		if one, held := under[face]; held {
 			return one
 		}
-		return history.Scheduling{By: u.By, Preset: history.Defaults()}
+		return review.SchedulingPolicy{By: u.By, Preset: review.Defaults()}
 	}
 	return out, nil
 }
@@ -184,17 +198,17 @@ func marked(lines []string) string {
 }
 
 // at is the scheduler asking for a share of the cards to come back.
-func (u Schedules) at(retention float64) history.Scheduler {
+func (u Schedules) at(retention float64) review.Scheduler {
 	if u.At != nil {
 		return u.At(retention)
 	}
-	return history.NewFSRSAt(retention)
+	return review.NewFSRSAt(retention)
 }
 
 // Execute is every card face the vault's answers name, and where they leave it.
 func (u Schedules) Execute(
 	ctx context.Context, v domain.Vault,
-) (map[history.CardFace]history.Schedule, error) {
+) (map[review.CardFaceID]review.Schedule, error) {
 	log := Log{Stores: u.Logs}
 
 	// The listing comes first, and the files are read only when the cache does
@@ -222,8 +236,8 @@ func (u Schedules) Execute(
 // From is where a log that has already been read leaves every card face. A
 // caller holding the answers does not read them again to be told this.
 func (u Schedules) From(
-	ctx context.Context, v domain.Vault, held Held,
-) (map[history.CardFace]history.Schedule, error) {
+	ctx context.Context, v domain.Vault, held ReviewLog,
+) (map[review.CardFaceID]review.Schedule, error) {
 	asks, err := u.asking(ctx, v)
 	if err != nil {
 		return nil, err
@@ -238,18 +252,18 @@ func (u Schedules) From(
 // caller here holds the card faces of one preset. A cache is thrown away when
 // what it was worked out under changes, so the two are never one answer and the
 // cache takes no part: neither read nor written.
-func (u Schedules) worked(held Held, asks scheduling) map[history.CardFace]history.Schedule {
+func (u Schedules) worked(held ReviewLog, asks assignment) map[review.CardFaceID]review.Schedule {
 	return projected(u.Day, held, asks)
 }
 
 // replayed is the same, with what a replay came to kept for the next launch.
 //
-// Every path through this asks the cache first. A sitting and the front door
+// Every path through this asks the cache first. A session and the front door
 // stand on the same log and the same assignment, so the second of them to run
 // is told what the first worked out.
 func (u Schedules) replayed(
-	ctx context.Context, v domain.Vault, held Held, asks scheduling,
-) map[history.CardFace]history.Schedule {
+	ctx context.Context, v domain.Vault, held ReviewLog, asks assignment,
+) map[review.CardFaceID]review.Schedule {
 	if out, ok := u.remembered(ctx, v, held.Files, asks.mark); ok {
 		return out
 	}
@@ -259,8 +273,8 @@ func (u Schedules) replayed(
 // filled works the answers out and remembers what they came to. It is what a
 // caller that has already found the cache out of date asks for.
 func (u Schedules) filled(
-	ctx context.Context, v domain.Vault, held Held, asks scheduling,
-) map[history.CardFace]history.Schedule {
+	ctx context.Context, v domain.Vault, held ReviewLog, asks assignment,
+) map[review.CardFaceID]review.Schedule {
 	out := projected(u.Day, held, asks)
 	u.remember(ctx, v, held.Files, asks.mark, out)
 	return out
@@ -269,24 +283,24 @@ func (u Schedules) filled(
 // projected is where the answers leave every card face, and is what a caller
 // that only reads them asks for.
 func projected(
-	d history.Day, held Held, asks scheduling,
-) map[history.CardFace]history.Schedule {
-	return held.Given().Replay(d, asks.under)
+	d review.Day, held ReviewLog, asks assignment,
+) map[review.CardFaceID]review.Schedule {
+	return held.History().Replay(d, asks.under)
 }
 
 // remembered is what was worked out last time, when it was worked out from the
 // runs the vault now holds and under the targets now in force.
 func (u Schedules) remembered(
-	ctx context.Context, v domain.Vault, files []port.Stored, mark string,
-) (map[history.CardFace]history.Schedule, bool) {
-	if u.Kept == nil {
+	ctx context.Context, v domain.Vault, files []port.Entry, mark string,
+) (map[review.CardFaceID]review.Schedule, bool) {
+	if u.Cache == nil {
 		return nil, false
 	}
-	raw, err := u.Kept.Read(ctx, v.ID)
+	raw, err := u.Cache.Read(ctx, v.ID)
 	if err != nil {
 		return nil, false
 	}
-	var was kept
+	var was scheduleCache
 	if err := json.Unmarshal(raw, &was); err != nil {
 		return nil, false
 	}
@@ -294,17 +308,17 @@ func (u Schedules) remembered(
 		return nil, false
 	}
 
-	out := make(map[history.CardFace]history.Schedule, len(was.Faces))
+	out := make(map[review.CardFaceID]review.Schedule, len(was.Faces))
 	for _, s := range was.Faces {
-		due, err := history.Moment(s.Due)
+		due, err := review.Moment(s.Due)
 		if err != nil {
 			return nil, false
 		}
-		last, err := history.Moment(s.Last)
+		last, err := review.Moment(s.Last)
 		if err != nil {
 			return nil, false
 		}
-		out[history.CardFace{Card: s.Card, Face: s.Face}] = history.Schedule{
+		out[review.CardFaceID{Card: s.Card, Face: s.Face}] = review.Schedule{
 			Due: due, Last: last, Reps: s.Reps, Lapses: s.Lapses,
 			Stability: s.Stability, Difficulty: s.Difficulty, Phase: s.Phase,
 		}
@@ -314,7 +328,7 @@ func (u Schedules) remembered(
 
 // read reports whether a cache was worked out from exactly the log that now
 // stands: the same files, each the length it was read at.
-func read(was []keptFile, files []port.Stored) bool {
+func read(was []cachedFile, files []port.Entry) bool {
 	if len(was) != len(files) {
 		return false
 	}
@@ -330,26 +344,26 @@ func read(was []keptFile, files []port.Stored) bool {
 // that could not be written is a launch that works it out again, so nothing
 // here is reported.
 func (u Schedules) remember(
-	ctx context.Context, v domain.Vault, files []port.Stored, mark string,
-	out map[history.CardFace]history.Schedule,
+	ctx context.Context, v domain.Vault, files []port.Entry, mark string,
+	out map[review.CardFaceID]review.Schedule,
 ) {
-	if u.Kept == nil {
+	if u.Cache == nil {
 		return
 	}
-	now := kept{V: keptVersion, By: mark}
+	now := scheduleCache{V: keptVersion, By: mark}
 	for _, one := range files {
-		now.Files = append(now.Files, keptFile{Name: one.Name, Size: one.Size})
+		now.Files = append(now.Files, cachedFile{Name: one.Name, Size: one.Size})
 	}
 	for on, s := range out {
-		now.Faces = append(now.Faces, keptSchedule{
+		now.Faces = append(now.Faces, cachedSchedule{
 			Card: on.Card, Face: on.Face,
-			Due:  s.Due.UTC().Format(history.Stamp),
-			Last: s.Last.UTC().Format(history.Stamp),
+			Due:  s.Due.UTC().Format(review.Stamp),
+			Last: s.Last.UTC().Format(review.Stamp),
 			Reps: s.Reps, Lapses: s.Lapses,
 			Stability: s.Stability, Difficulty: s.Difficulty, Phase: s.Phase,
 		})
 	}
-	slices.SortFunc(now.Faces, func(a, b keptSchedule) int {
+	slices.SortFunc(now.Faces, func(a, b cachedSchedule) int {
 		if a.Card != b.Card {
 			return strings.Compare(a.Card, b.Card)
 		}
@@ -360,5 +374,5 @@ func (u Schedules) remember(
 	if err != nil {
 		return
 	}
-	_ = u.Kept.Write(ctx, v.ID, raw)
+	_ = u.Cache.Write(ctx, v.ID, raw)
 }

@@ -1,0 +1,151 @@
+syntax = "proto3";
+
+// What a client may ask about the file a person configures this installation
+// in.
+//
+// The settings belong to the installation and not to a vault: the same file
+// answers whichever vault a window is showing, and every window reads it.
+package numen.v1;
+
+import "numen/v1/shared.proto";
+import "numen/v1/theme.proto";
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// SettingsService answers about that file, one setting at a time and whole.
+service SettingsService {
+  // GetSettings is every setting of the file, and the models the settings that
+  // name one can be set to.
+  rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
+
+  // WriteSettings writes settings into that file. The file is patched as an
+  // object, so every key a person typed stays where it was, and a file the
+  // settings could not be read out of again is not written at all.
+  rpc WriteSettings(WriteSettingsRequest) returns (WriteSettingsResponse);
+
+  // ReadSettingsFile is that file as its person wrote it, byte for byte.
+  rpc ReadSettingsFile(ReadSettingsFileRequest) returns (ReadSettingsFileResponse);
+
+  // WriteSettingsFile replaces that file whole, with the bytes as they were
+  // typed. A file the settings cannot be read out of is refused and the file is
+  // left as it was; what is said names where in the file the trouble is. A file
+  // standing at anything other than what the caller presents is left alone and
+  // refused `stale`.
+  rpc WriteSettingsFile(WriteSettingsFileRequest) returns (WriteSettingsFileResponse);
+}
+
+message GetSettingsRequest {}
+
+message GetSettingsResponse {
+  // Every setting as it stands, as JSON: what the file says, and what an
+  // installation nobody has configured does under everything it does not.
+  string written = 1;
+
+  // The file itself, absolute on this machine.
+  string path = 2;
+
+  // The models the settings that name one can be set to.
+  repeated Model models = 3;
+
+  // How many parts a node may be asked to hang, at each end. A number outside
+  // it is refused. A client asking a person for one says these.
+  Bounds parts_under_a_node_bounds = 4;
+
+  // How late in the day a day of review may be made to begin, on the clock on
+  // the wall as `HH:MM`. An hour past it is refused. A client asking a person
+  // for one says this.
+  string latest_day_starts = 5;
+
+  // Day is the review day now standing, written as the year, the month and the
+  // day. A day of review begins at the hour the settings name, so an hour past
+  // midnight is still the day before.
+  string day = 6;
+}
+
+// Model is one model a setting that names a model can be set to.
+message Model {
+  // The setting the model is read from, as a path through the file. The model
+  // in force is the one whose name stands there.
+  repeated string named_at = 1;
+
+  // What stands there while this model is the one in force.
+  string name = 2;
+
+  // What is drawn on the row, and the shelf the rows around it stand under.
+  string title = 3;
+  string shelf = 4;
+
+  // Set on the model an installation nobody has configured runs on.
+  bool by_default = 5;
+
+  // What choosing it writes. One model is several keys where the model decides
+  // more than its own name.
+  repeated Setting writes = 6;
+
+  // What this model's files are on this machine.
+  Presence presence = 7;
+}
+
+// Presence is what a model's files are on this machine. It says where files
+// stand and nothing else: it is no reason to prefer one model to another.
+enum Presence {
+  // Nothing was said about this model's files.
+  PRESENCE_UNSPECIFIED = 0;
+
+  // The files stand where a fetch puts them.
+  PRESENCE_PRESENT = 1;
+
+  // The files are not on this machine. They are fetched when the model is next
+  // needed.
+  PRESENCE_NOT_FETCHED = 2;
+
+  // The model is reached over the network, and nothing of it is fetched.
+  PRESENCE_NOTHING_TO_FETCH = 3;
+}
+
+// Setting is one setting of the file and what to put there.
+message Setting {
+  // The setting, as a path through the file.
+  repeated string at = 1;
+
+  // What to write there, as JSON. A value the settings cannot be read out of
+  // again is refused, and the file is left as it was.
+  string value = 2;
+}
+
+message WriteSettingsRequest {
+  // The settings to write. They are written together, or none of them is.
+  repeated Setting settings = 1;
+}
+
+message WriteSettingsResponse {}
+
+message ReadSettingsFileRequest {}
+
+message ReadSettingsFileResponse {
+  // The file as its person wrote it. A file that is not there is an empty
+  // object, which is what an installation nobody has configured runs on.
+  string written = 1;
+
+  // The file itself, absolute on this machine.
+  string path = 2;
+}
+
+message WriteSettingsFileRequest {
+  // What is to stand in the file, written as it was typed.
+  string written = 1;
+
+  // The file as this caller last read it. Absent for a write that lands on
+  // whatever the file now holds.
+  optional string seen = 2;
+}
+
+message WriteSettingsFileResponse {
+  reserved 1;
+  reserved "changed";
+
+  // Set when nothing was written, and why. A file holding bytes this caller
+  // has not read is REFUSAL_STALE, and the person chooses what happens to
+  // their text.
+  optional Refusal refusal = 2;
+}

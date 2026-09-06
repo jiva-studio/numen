@@ -2,12 +2,12 @@
  * Where the pages of a document stand when they are laid in a row.
  *
  * Apart from the component the way `plex/arrange` is: where a page begins, which
- * pages are in the room and which one is in front are arithmetic, and a test
+ * pages are in the viewport and which one is in front are arithmetic, and a test
  * asks them without a browser.
  */
 
 /** Where something sits on a page, in fractions of it. */
-export interface Lit {
+export interface Rect {
   readonly minX: number
   readonly minY: number
   readonly maxX: number
@@ -21,6 +21,8 @@ export interface ReaderWords {
   readonly next: string
   /** What the field the page is typed in is called. */
   readonly page: string
+  /** What the row of pages is called, which the keyboard scrolls. */
+  readonly pages: string
   /** What drawing the page larger is called, and smaller. */
   readonly closer: string
   readonly further: string
@@ -30,6 +32,7 @@ export const READER_WORDS: ReaderWords = {
   back: 'Previous page',
   next: 'Next page',
   page: 'Page',
+  pages: 'Pages',
   closer: 'Closer',
   further: 'Further',
 }
@@ -40,8 +43,8 @@ export interface Sheet {
   readonly high: number
 }
 
-/** The room the pages are read in, in CSS pixels. */
-export interface Room {
+/** The area the pages are read in, in CSS pixels. */
+export interface Viewport {
   readonly wide: number
   readonly high: number
 }
@@ -56,7 +59,7 @@ export const GAP = 16
 export const UPRIGHT: Sheet = { wide: 612, high: 792 }
 
 /**
- * How much beyond the edge of the room is drawn, as a share of the room. A page
+ * How much beyond the edge of the viewport is drawn, as a share of it. A page
  * turned to is drawn before it is reached, and a page just left is kept in case
  * the hand comes back.
  */
@@ -81,19 +84,24 @@ export interface Row {
 }
 
 /**
- * The row a document makes in a room, drawn `zoom` times the size at which a
- * whole page stands in that room.
+ * The row a document makes in a viewport, drawn `zoom` times the size at which
+ * a whole page stands in that viewport.
  *
  * A page whose size is not known takes the first page's, and a document that
  * has said nothing takes an upright sheet. Laying the row out on nothing would
  * put every page at the same place, and the row would jump as the sizes came.
  *
- * A room with no height makes no row. Until something has been measured there is
- * no width to draw a page at, and a page drawn at a made-up one is a page drawn
- * and thrown away.
+ * A viewport with no height makes no row. Until something has been measured
+ * there is no width to draw a page at, and a page drawn at a made-up one is a
+ * page drawn and thrown away.
  */
-export function row(sheets: readonly Sheet[], pages: number, room: Room, zoom: number): Row {
-  const high = Math.round((room.high - 2 * GAP) * zoom)
+export function row(
+  sheets: readonly Sheet[],
+  pages: number,
+  viewport: Viewport,
+  zoom: number,
+): Row {
+  const high = Math.round((viewport.high - 2 * GAP) * zoom)
   if (high <= 0) return { high: 0, starts: [], widths: [], length: 0 }
   const starts: number[] = []
   const widths: number[] = []
@@ -117,14 +125,14 @@ function sheetOf(sheets: readonly Sheet[], page: number): Sheet {
 }
 
 /**
- * The pages to draw: those in the room, and a little either side of it.
+ * The pages to draw: those in the viewport, and a little either side of it.
  *
  * A book is five hundred pages and a page is half a megabyte. A row that drew
  * all of them would ask for a book's worth of pixels to show one page.
  */
-export function within(row: Row, room: Room, along: number): number[] {
-  const from = along - room.wide * BEYOND
-  const to = along + room.wide * (1 + BEYOND)
+export function within(row: Row, viewport: Viewport, along: number): number[] {
+  const from = along - viewport.wide * BEYOND
+  const to = along + viewport.wide * (1 + BEYOND)
   const out: number[] = []
   for (let page = 0; page < row.starts.length; page++) {
     const begins = row.starts[page]!
@@ -135,11 +143,11 @@ export function within(row: Row, room: Room, along: number): number[] {
 }
 
 /**
- * The page in front: the one under the middle of the room. A page scrolled
+ * The page in front: the one under the middle of the viewport. A page scrolled
  * halfway off is not the page a person is reading.
  */
-export function inFront(row: Row, room: Room, along: number): number {
-  const at = along + room.wide / 2
+export function inFront(row: Row, viewport: Viewport, along: number): number {
+  const at = along + viewport.wide / 2
   let page = 0
   for (let i = 0; i < row.starts.length; i++) {
     if (row.starts[i]! > at) break
@@ -155,9 +163,9 @@ export function standAt(row: Row, page: number): number | undefined {
 }
 
 /**
- * How close a page may be drawn. One is a whole page in the room it is read in,
- * which is the furthest there is: a page smaller than the room it stands in is
- * room going to waste.
+ * How close a page may be drawn. One is a whole page in the viewport it is read
+ * in, which is the furthest there is: a page smaller than the viewport it
+ * stands in is room going to waste.
  */
 export const FURTHEST = 1
 export const CLOSEST = 6
@@ -180,6 +188,6 @@ export const STAGE = 128
 export const SETTLED = 150
 
 /** How close a page is drawn, never past either end. */
-export function drawn(zoom: number): number {
+export function clamped(zoom: number): number {
   return Math.min(Math.max(zoom, FURTHEST), CLOSEST)
 }

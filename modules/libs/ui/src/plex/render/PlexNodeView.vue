@@ -2,7 +2,7 @@
 /**
  * One node: its box, its title, and the handle to reach out from. Every number
  * it draws with is already on the node it was handed, but for what it is to a
- * gesture, which arrives as its standing.
+ * gesture, which arrives as its role in one.
  *
  * The title goes through a `foreignObject`: SVG text cannot ellipsise and does
  * not reorder a right-to-left run.
@@ -21,36 +21,33 @@ import {
 import PlexNodeHandle from './PlexNodeHandle.vue'
 import PlexNodeParts from './PlexNodeParts.vue'
 import { isMenuKey, isPress, isShowKey } from './keys'
-import { DWELL, useDwell, type Widened } from '../dwell'
-import { byHandle, type Reaching } from '../reaching'
-import { byDoubleClick, joined, type Showing } from '../showing'
+import { boxOf, DWELL, useDwell, type WideBox } from '../dwell'
+import { byHandle, type ReachStrategy } from '../reaching'
+import { byDoubleClick, joined, showingOf, type PlexShowing, type ShowStrategy } from '../showing'
 import type { HungParts } from '../inside'
-import { lerp } from '../arrange'
-import { browserEnvironment, type Environment } from '../transition'
-import type { MenuOpening } from '../../menu/model'
+import { browserClock, type Clock } from '../transition'
+import type { MenuOpening } from '../../menu/item'
 import {
   handleIn,
   isReachable,
   isStop,
   nameOf,
-  showingOf,
-  type NodeStanding,
+  type GestureRole,
   type PlacedNode,
-  type PlexShowing,
-  type Point,
-} from '../model'
+  type Position,
+} from '../node'
 
 const props = withDefaults(
   defineProps<{
     node: PlacedNode
     /** What this node is to the gesture. The one thing it cannot work out. */
-    standing?: NodeStanding
+    gestureRole?: GestureRole
     /**
      * The box it widens to while the attention rests on it, and nothing where
      * it has no more of its title to show. How wide the whole title runs, and
      * how much window there is to grow into, are the picture's to work out.
      */
-    wide?: Widened | null
+    wide?: WideBox | null
     /**
      * The parts it hangs under its box while the attention rests, and nothing
      * for a node with none. What they are and what choosing one does are the
@@ -60,20 +57,20 @@ const props = withDefaults(
     /** How long the attention rests before it widens. Milliseconds. */
     dwell?: number
     /** How this node offers to be reached out of. The handle by default. */
-    reaching?: Reaching
+    reaching?: ReachStrategy
     /** How this node is asked for on its own. The second click by default. */
-    showing?: Showing
+    showing?: ShowStrategy
     /** The clock the opening is drawn on. Browser by default. */
-    environment?: Environment
+    clock?: Clock
   }>(),
   {
-    standing: 'open',
+    gestureRole: 'open',
     wide: null,
     hung: null,
     dwell: DWELL,
     reaching: () => byHandle,
     showing: () => byDoubleClick,
-    environment: () => browserEnvironment,
+    clock: () => browserClock,
   },
 )
 
@@ -94,7 +91,7 @@ const emit = defineEmits<{
    * it. A keypress carries no point of its own, so the middle of the box is
    * where it is asked.
    */
-  (event: 'menu', at: Point, opening: MenuOpening): void
+  (event: 'menu', at: Position, opening: MenuOpening): void
   /**
    * The attention has settled on this node, or has left it. A widened box is
    * drawn last of all, and which box that is only the whole picture knows.
@@ -102,6 +99,11 @@ const emit = defineEmits<{
   (event: 'rest', resting: boolean): void
   /** A part of this node was chosen. The identifier is the caller's. */
   (event: 'enter', part: string): void
+}>()
+
+defineSlots<{
+  /** What is drawn beside this node's title. */
+  icon?(props: { node: PlacedNode }): unknown
 }>()
 
 const group = useTemplateRef<SVGGElement>('group')
@@ -131,7 +133,7 @@ const anything = (drawn: readonly VNode[] | undefined): boolean =>
 const icon = computed(() => anything(slots.icon?.({ node: props.node })))
 
 /** Not a node yet, so nothing may be done to it and nothing is told about it. */
-const ghost = computed(() => props.standing === 'ghost')
+const ghost = computed(() => props.gestureRole === 'ghost')
 
 /** One predicate: the same rule decides the click and the name. */
 const reachable = computed(() => !ghost.value && isReachable(props.node))
@@ -162,7 +164,7 @@ const show = (modified: boolean) => {
  */
 const listening = joined(
   props.reaching.listeners({
-    ready: () => !ghost.value && props.standing === 'open',
+    ready: () => !ghost.value && props.gestureRole === 'open',
     reach: (event: PointerEvent) => emit('reach', event),
   }),
   props.showing.listeners({
@@ -172,7 +174,7 @@ const listening = joined(
 )
 
 /** The middle of the node, for a press, which carries no point of its own. */
-const middleOf = (element: SVGGElement): Point => {
+const middleOf = (element: SVGGElement): Position => {
   const box = element.getBoundingClientRect()
   return { x: box.left + box.width / 2, y: box.top + box.height / 2 }
 }
@@ -210,6 +212,8 @@ const keyboardOn = (element: Element) => {
   try {
     return element.matches(':focus-visible')
   } catch {
+    // A browser that does not know the selector cannot say the keyboard is on
+    // it, and no is the answer that draws nothing extra.
     return false
   }
 }
@@ -239,8 +243,8 @@ const offering = computed(
   () =>
     props.reaching.handle &&
     props.node.opacity >= 1 &&
-    (props.standing === 'source' ||
-      (props.standing === 'open' && (over.value || attended.value))),
+    (props.gestureRole === 'source' ||
+      (props.gestureRole === 'open' && (over.value || attended.value))),
 )
 
 /** Whether there is anything to open: more of the title, or parts to hang. */
@@ -250,29 +254,21 @@ const opens = computed(() => !!props.wide || !!props.hung)
  * What the attention is on, and where that stands. A box that moves under the
  * hand is somewhere else, and is settled on afresh.
  *
- * A gesture is under way at every standing but `open`, and nothing widens
+ * A gesture is under way at every role but `open`, and nothing widens
  * while one is.
  */
 const under = computed(() =>
   opens.value &&
   props.node.opacity >= 1 &&
-  props.standing === 'open' &&
+  props.gestureRole === 'open' &&
   (over.value || attended.value)
     ? `${props.node.x} ${props.node.y}`
     : null,
 )
 
-const open = useDwell(() => under.value, () => props.dwell, props.environment)
+const open = useDwell(() => under.value, () => props.dwell, props.clock)
 
-/** The box as it is drawn: the one it was placed with, opened towards the widened one. */
-const box = computed<Widened>(() => {
-  const wide = props.wide
-  if (!wide || open.value <= 0) return { width: props.node.width, offset: 0 }
-  return {
-    width: lerp(props.node.width, wide.width, open.value),
-    offset: lerp(0, wide.offset, open.value),
-  }
-})
+const box = computed(() => boxOf(props.node, props.wide, open.value))
 
 /** Where the box begins, which everything drawn in it is placed from. */
 const startsAt = computed(() => box.value.offset - box.value.width / 2)
@@ -311,7 +307,7 @@ const hue = computed(() => ({
     :tabindex="stop ? 0 : -1"
     :aria-hidden="announced ? undefined : 'true'"
     :role="ghost ? undefined : node.seat === 'focus' ? 'img' : 'button'"
-    :class="[`plex__node--${node.seat}`, `plex__node--${standing}`]"
+    :class="[`plex__node--${node.seat}`, `plex__node--${gestureRole}`]"
     :aria-label="ghost ? undefined : nameOf(node)"
     @click="activate"
     @dblclick="showing.doubleClick && show($event.altKey)"
@@ -381,11 +377,11 @@ const hue = computed(() => ({
    darkens a light node and lightens a dark one. The outline is left to the
    seat's hue, and the focused node is painted from the pair it wears. */
 .plex__node:hover .plex__box {
-  fill: color-mix(in oklab, var(--numen-node-bg), var(--numen-node-fg) 8%);
+  fill: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 8%);
 }
 
 .plex__node--focus:hover .plex__box {
-  fill: color-mix(in oklab, var(--numen-focus-bg), var(--numen-focus-fg) 8%);
+  fill: color-mix(in oklab, var(--numen-accent), var(--numen-accent-ink) 8%);
 }
 
 .plex__node--focus {
@@ -397,8 +393,8 @@ const hue = computed(() => ({
    the seat; the fill answers the pointer at the speed a pointer is answered. */
 .plex__box {
   rx: var(--radius);
-  fill: var(--numen-node-bg);
-  stroke: var(--numen-seat-hue, var(--numen-node-border));
+  fill: var(--numen-raised);
+  stroke: var(--numen-seat-hue, var(--numen-rule));
   stroke-width: var(--numen-stroke);
   transition:
     fill var(--numen-motion-hover) var(--numen-easing),
@@ -423,7 +419,7 @@ const hue = computed(() => ({
   gap: var(--numen-node-gap);
   padding-inline: var(--numen-node-padding);
   box-sizing: border-box;
-  color: var(--numen-node-fg);
+  color: var(--numen-ink);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-font-size);
   line-height: var(--numen-line-height);
@@ -437,7 +433,7 @@ const hue = computed(() => ({
   flex: none;
   display: flex;
   align-items: center;
-  color: var(--numen-seat-hue, var(--numen-node-fg));
+  color: var(--numen-seat-hue, var(--numen-ink));
 }
 
 /* One line, then an ellipsis. A box stands at the height the arrangement gave
@@ -486,12 +482,12 @@ const hue = computed(() => ({
 
 .plex__node--focus .plex__box {
   rx: var(--radius-focus);
-  fill: var(--numen-focus-bg);
-  stroke: var(--numen-focus-border);
+  fill: var(--numen-accent);
+  stroke: var(--numen-accent);
 }
 
 .plex__node--focus .plex__title {
-  color: var(--numen-focus-fg);
+  color: var(--numen-accent-ink);
 }
 
 /* The focused node is painted from its own pair, and its seat's hue is the

@@ -1,0 +1,16 @@
+{
+  "indexingModel": ["indexing", "embedding", "model", "name"],
+  "ocrModel": ["indexing", "recognition", "recognise", "name"],
+  "ocrProofread": ["indexing", "recognition", "proofread", "with"],
+  "ocrProofreadAlways": ["indexing", "recognition", "proofread", "automatically"],
+  "transcribing": ["indexing", "transcribe_recordings"],
+  "transcribeUnder": ["indexing", "transcribe_under_mb"],
+  "transcriptProofread": ["indexing", "transcription", "proofread", "with"],
+  "transcriptProofreadAlways": ["indexing", "transcription", "proofread", "automatically"],
+  "profiles": ["indexing", "proofreading", "profiles"],
+  "agent": ["agent", "use"],
+  "agentModel": ["agent", "claude", "model"],
+  "agentSteps": ["agent", "claude", "max_steps"],
+  "agentTools": ["agent", "serve_tools"],
+  "agentHooks": ["agent", "claude", "reads_hooks_and_skills"]
+}

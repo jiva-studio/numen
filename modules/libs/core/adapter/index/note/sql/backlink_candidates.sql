@@ -9,15 +9,15 @@
 -- "Could" is the word. Whether a name means this note depends on where the link
 -- was written and what else answers to it, so every candidate goes through the
 -- same resolution the forward direction uses.
-SELECT s.path, l.scheme, l.value, l.role,
-       COALESCE(l.type, ''), COALESCE(l.note, ''), COALESCE(l.label, ''), l.position
+SELECT s.path, l.scheme, l.target, l.role,
+       COALESCE(l.type, ''), COALESCE(l.why, ''), COALESCE(l.label, ''), l.position
 FROM links l
 JOIN sources s ON s.id = l.note_id
-WHERE l.scheme = 'note' AND l.value = ? AND s.vault_id = ?
+WHERE l.scheme = 'note' AND l.target = ? AND s.vault_id = ?
 UNION
-SELECT s.path, l.scheme, l.value, l.role,
-       COALESCE(l.type, ''), COALESCE(l.note, ''), COALESCE(l.label, ''), l.position
+SELECT s.path, l.scheme, l.target, l.role,
+       COALESCE(l.type, ''), COALESCE(l.why, ''), COALESCE(l.label, ''), l.position
 FROM links l
 JOIN sources s ON s.id = l.note_id
-WHERE l.scheme = 'name' AND l.value_base = ? AND s.vault_id = ?
+WHERE l.scheme = 'name' AND l.folded_name = ? AND s.vault_id = ?
 ORDER BY 1, 8;

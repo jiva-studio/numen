@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
@@ -31,34 +31,34 @@ func TestTheWindowsUnderTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 	at := time.Date(2026, 9, 5, 10, 0, 0, 0, time.UTC)
 	record := s.run(t, at.AddDate(0, 0, -200))
 	for _, card := range []string{"k7m2xq9fzp", "3f4g5h6j7k"} {
-		on := history.CardFace{Card: card, Face: "Say it"}
-		if _, err := record.Answer(t.Context(), on, history.Good, 0); err != nil {
+		on := review.CardFaceID{Card: card, Face: "Say it"}
+		if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	sitting := flashcards.Session{
-		Marking: s.marking, Standings: s.standings, Schedules: s.kept,
+	session := flashcards.Session{
+		Marks: s.marking, CardFaces: s.standings, Schedules: s.kept,
 		Presets: s.presets, Day: today, Now: func() time.Time { return at },
 	}
-	held, err := sitting.Execute(t.Context(), s.vault, flashcards.Over{})
+	held, err := session.Execute(t.Context(), s.vault, flashcards.Scope{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(held.Asked) != 2 {
-		t.Fatalf("%d cards were asked", len(held.Asked))
+	if len(held.Queue) != 2 {
+		t.Fatalf("%d cards were asked", len(held.Queue))
 	}
 
 	seen := map[float64]time.Duration{}
-	for _, one := range held.Asked {
+	for _, one := range held.Queue {
 		share, named := shares[one.Deck]
 		if !named {
 			t.Fatalf("a card of %s was asked", one.Deck)
 		}
-		want := history.NewFSRSAt(share).Next(one.Schedule, at, history.Good).Due.Sub(at)
-		if one.Ahead[history.Good] != want {
+		want := review.NewFSRSAt(share).Next(one.Schedule, at, review.Good).Due.Sub(at)
+		if one.Ahead[review.Good] != want {
 			t.Errorf("%s comes back in %v at a share of %g, and the window says %v",
-				one.Deck, want, share, one.Ahead[history.Good])
+				one.Deck, want, share, one.Ahead[review.Good])
 		}
 		seen[share] = want
 	}
@@ -101,17 +101,17 @@ func TestTheWindowsUnderTheFourNameTheDayTheCardComesBackOn(t *testing.T) {
 		asked, differ, worst := 0, 0, time.Duration(0)
 		for step := range 60 {
 			at := saturday.Add(time.Duration(step) * time.Second)
-			sat := s.sittingAt(t, today, at)
-			if len(sat.Asked) == 0 {
+			sat := s.sessionAt(t, today, at)
+			if len(sat.Queue) == 0 {
 				break
 			}
-			card := sat.Asked[0]
-			said, named := card.Ahead[history.Good]
+			card := sat.Queue[0]
+			said, named := card.Ahead[review.Good]
 			if !named {
 				t.Fatalf("under %s a card was asked with no window under its buttons", one.what)
 			}
 			if _, err := s.run(t, at).Answer(
-				t.Context(), card.CardFace, history.Good, 0,
+				t.Context(), card.ID, review.Good, 0,
 			); err != nil {
 				t.Fatal(err)
 			}
@@ -120,7 +120,7 @@ func TestTheWindowsUnderTheFourNameTheDayTheCardComesBackOn(t *testing.T) {
 				t.Fatal(err)
 			}
 			asked++
-			came, names := schedules[card.CardFace].Due, at.Add(said)
+			came, names := schedules[card.ID].Due, at.Add(said)
 			if today.Names(came) != today.Names(names) {
 				differ++
 				if off := came.Sub(names); off > worst || -off > worst {

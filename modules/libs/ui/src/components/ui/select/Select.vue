@@ -8,10 +8,10 @@
  */
 import { computed, ref, useTemplateRef, type HTMLAttributes } from 'vue'
 import { ChevronDown } from '@lucide/vue'
-import { cn } from '@/lib/utils'
+import { cn } from '@/classes'
 import Menu from '../../../menu/Menu.vue'
-import type { MenuItem } from '../../../menu/model'
-import type { Point } from '../../../plex/model'
+import type { MenuItem } from '../../../menu/item'
+import type { Position } from '../../../lib/geometry'
 import type { SelectChoice } from '.'
 
 const props = withDefaults(
@@ -38,7 +38,7 @@ const items = computed<readonly MenuItem[]>(() =>
     id: one.id,
     text: one.text,
     ...(one.detail ? { detail: one.detail } : {}),
-    ...(one.group ? { band: one.group } : {}),
+    ...(one.group ? { group: one.group } : {}),
   })),
 )
 
@@ -54,7 +54,7 @@ const element = useTemplateRef<HTMLButtonElement>('element')
  * Where the choices are drawn and how wide the line asking for them is, and
  * nothing while they are not drawn at all.
  */
-const asking = ref<{ at: Point; wide: number } | null>(null)
+const asking = ref<{ at: Position; wide: number } | null>(null)
 
 /**
  * The line opens the choices under itself, along its own leading edge and no
@@ -123,7 +123,7 @@ defineExpose({
     :from="element"
     :current="model"
     :name="name"
-    bands
+    groups
     open
     opening="keyboard"
     @choose="chose"

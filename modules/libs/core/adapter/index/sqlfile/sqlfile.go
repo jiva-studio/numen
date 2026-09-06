@@ -15,6 +15,10 @@ type Statements map[string]string
 
 // Load reads every .sql file in dir. It panics: the files are embedded in the
 // binary, so a failure here is a build that should not have been produced.
+//
+// A file ends in a newline and a statement does not: what follows the semicolon
+// is a second statement to the driver. The text is the file with the whitespace
+// around it taken off.
 func Load(fsys fs.FS, dir string) Statements {
 	out := Statements{}
 	err := fs.WalkDir(fsys, dir, func(p string, d fs.DirEntry, err error) error {
@@ -26,7 +30,7 @@ func Load(fsys fs.FS, dir string) Statements {
 			return readErr
 		}
 		name := strings.TrimSuffix(strings.TrimPrefix(p, dir+"/"), ".sql")
-		out[name] = string(raw)
+		out[name] = strings.TrimSpace(string(raw))
 		return nil
 	})
 	if err != nil {

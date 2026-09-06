@@ -5,7 +5,8 @@
 //
 // A book is read in the order it declares: the container names a package
 // document, the package's spine names its documents, and their text is
-// concatenated into one stream. Everything a book names — a navigation entry, a
+// concatenated into one stream as far as the bounds a book is read within reach.
+// Everything a book names — a navigation entry, a
 // heading, a printed page — is an offset into that stream.
 //
 // A book that names nothing is still read. An error here means the file is not a
@@ -26,22 +27,23 @@ type Book struct {
 	// Title is the name the package document gives the book.
 	Title string
 
-	// Text is every spine document, in reading order, as one stream.
+	// Text is the spine documents the bounds admit, in reading order, as one
+	// stream.
 	Text string
 
 	// Documents are the spine documents and where each begins in Text.
 	Documents []Document
 
-	// Parts are what the book names, ascending by offset. Structure says where
-	// they came from.
+	// Parts are what the book names, ascending by offset. Tier says where they
+	// came from.
 	Parts []Part
 
 	// Pages are the pages of the printed book this file was made from,
 	// ascending by offset. Most books carry none.
 	Pages []Page
 
-	// Structure names the tier that produced Parts.
-	Structure Structure
+	// Tier names the tier that produced Parts.
+	Tier Structure
 }
 
 // A Document is one document of the spine.
@@ -132,11 +134,11 @@ func Read(raw []byte) (*Book, error) {
 	named := navigationParts(files, pkg, text)
 	switch {
 	case len(named) >= minimumParts:
-		book.Parts, book.Structure = named, FromNavigation
+		book.Parts, book.Tier = named, FromNavigation
 	case len(text.headings) >= minimumParts:
-		book.Parts, book.Structure = text.headings, FromHeadings
+		book.Parts, book.Tier = text.headings, FromHeadings
 	default:
-		book.Structure = FromNothing
+		book.Tier = FromNothing
 	}
 	sort.SliceStable(book.Parts, func(i, j int) bool {
 		return book.Parts[i].Offset < book.Parts[j].Offset

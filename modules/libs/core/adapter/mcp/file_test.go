@@ -12,7 +12,7 @@ type run struct {
 	Text    string `json:"text"`
 	Start   int    `json:"start"`
 	Length  int    `json:"length"`
-	Whole   int    `json:"whole"`
+	Size    int    `json:"size"`
 	Refused string `json:"refused"`
 }
 
@@ -34,8 +34,8 @@ func TestFileReadReachesAFileTheVaultDoesNotHoldAsANote(t *testing.T) {
 	if got.Text != "The first law, as spoken.\n" {
 		t.Errorf("the file came back as %q, refused %q", got.Text, got.Refused)
 	}
-	if got.Whole != len(got.Text) {
-		t.Errorf("the file was said to be %d bytes", got.Whole)
+	if got.Size != len(got.Text) {
+		t.Errorf("the file was said to be %d bytes", got.Size)
 	}
 }
 

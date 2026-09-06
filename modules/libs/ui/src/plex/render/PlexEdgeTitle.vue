@@ -61,6 +61,6 @@ const LAYERS = ['halo', 'letters'] as const
 }
 
 .plex__edge-title--lifted .plex__edge-label--letters {
-  fill: var(--numen-node-fg);
+  fill: var(--numen-ink);
 }
 </style>

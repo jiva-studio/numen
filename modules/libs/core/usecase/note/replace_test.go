@@ -4,14 +4,17 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 func (c changing) replace() note.Replace {
 	return note.Replace{
-		Readers: filesystem.Readers{}, Writers: filesystem.Writers{}, Index: c.index,
+		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}, Index: c.index,
+		Now: time.Now,
 	}
 }
 
@@ -23,7 +26,7 @@ func TestOnlyTheStretchAskedForIsReplaced(t *testing.T) {
 	})
 
 	done, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
-		"A hedgehog", "An axe")
+		"A hedgehog", "An axe", domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,8 +38,8 @@ func TestOnlyTheStretchAskedForIsReplaced(t *testing.T) {
 	if !strings.Contains(body, "# The aggressor\n") || !strings.Contains(body, "And nothing else.\n") {
 		t.Errorf("what was not asked for changed:\n%s", body)
 	}
-	if done.Stood != "A hedgehog" {
-		t.Errorf("what stood there is reported as %q", done.Stood)
+	if done.Matched != "A hedgehog" {
+		t.Errorf("what stood there is reported as %q", done.Matched)
 	}
 	if done.Plainly {
 		t.Error("a stretch that stood exactly is reported as read plainly")
@@ -49,12 +52,12 @@ func TestAReplacementSaysWhereItLanded(t *testing.T) {
 	t.Parallel()
 	c := changeable(t, map[string]string{"Aggressor.md": "one two three\n"})
 
-	done, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "two", "four")
+	done, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "two", "four", domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if done.Stretch.From != 4 || done.Stretch.To != 8 {
-		t.Errorf("landed at %d..%d, wanted 4..8", done.Stretch.From, done.Stretch.To)
+	if done.Span.From != 4 || done.Span.To != 8 {
+		t.Errorf("landed at %d..%d, wanted 4..8", done.Span.From, done.Span.To)
 	}
 }
 
@@ -66,7 +69,7 @@ func TestTheFrontmatterSurvivesAReplacement(t *testing.T) {
 	c := changeable(t, map[string]string{"Aggressor.md": front + "\nA hedgehog.\n"})
 
 	if _, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
-		"A hedgehog", "An axe"); err != nil {
+		"A hedgehog", "An axe", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 	if body := c.read(t, "Aggressor.md"); !strings.HasPrefix(body, front) {
@@ -82,13 +85,13 @@ func TestAStretchStandingTwiceIsRefused(t *testing.T) {
 	c := changeable(t, map[string]string{"Aggressor.md": was})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
-		"foe advances", "foe retreats")
-	var twice note.Twice
-	if !errors.As(err, &twice) {
-		t.Fatalf("want Twice, got %v", err)
+		"foe advances", "foe retreats", domain.Fingerprint{})
+	var ambiguous note.AmbiguousStretch
+	if !errors.As(err, &ambiguous) {
+		t.Fatalf("want AmbiguousStretch, got %v", err)
 	}
-	if twice.Places != 2 {
-		t.Errorf("counted %d places", twice.Places)
+	if ambiguous.Places != 2 {
+		t.Errorf("counted %d places", ambiguous.Places)
 	}
 	if body := c.read(t, "Aggressor.md"); body != was {
 		t.Errorf("the refused replacement landed anyway:\n%s", body)
@@ -102,10 +105,10 @@ func TestAStretchThatIsNotThereSaysWhereItDiverged(t *testing.T) {
 	c := changeable(t, map[string]string{"Aggressor.md": "the wrath of the advancing foe\n"})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
-		"the wrath of the retreating foe", "nothing")
-	var nowhere note.Nowhere
+		"the wrath of the retreating foe", "nothing", domain.Fingerprint{})
+	var nowhere note.MissingStretch
 	if !errors.As(err, &nowhere) {
-		t.Fatalf("want Nowhere, got %v", err)
+		t.Fatalf("want MissingStretch, got %v", err)
 	}
 	if !strings.HasPrefix(nowhere.Matched, "the wrath of the ") {
 		t.Errorf("what matched is reported as %q", nowhere.Matched)
@@ -122,7 +125,7 @@ func TestAReplacementAlreadyInTheNoteIsSaidSo(t *testing.T) {
 	c := changeable(t, map[string]string{"Aggressor.md": "An axe is named.\n"})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
-		"A hedgehog", "An axe")
+		"A hedgehog", "An axe", domain.Fingerprint{})
 	if !errors.Is(err, note.ErrAlreadyWritten) {
 		t.Fatalf("want ErrAlreadyWritten, got %v", err)
 	}
@@ -137,15 +140,15 @@ func TestPunctuationThatDiffersIsFoundAndReported(t *testing.T) {
 	})
 
 	done, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
-		"сказал \"да\" - и ушёл", "промолчал")
+		"сказал \"да\" - и ушёл", "промолчал", domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !done.Plainly {
 		t.Error("the reading was not reported")
 	}
-	if done.Stood != "сказал «да» — и ушёл" {
-		t.Errorf("what stood there is reported as %q", done.Stood)
+	if done.Matched != "сказал «да» — и ушёл" {
+		t.Errorf("what stood there is reported as %q", done.Matched)
 	}
 	if body := c.read(t, "Aggressor.md"); !strings.HasSuffix(body, "Он промолчал.\n") {
 		t.Errorf("the note reads:\n%q", body)
@@ -160,7 +163,7 @@ func TestACRLFNoteKeepsItsBreaks(t *testing.T) {
 	})
 
 	if _, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
-		"A hedgehog", "An axe"); err != nil {
+		"A hedgehog", "An axe", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 	body := c.read(t, "Aggressor.md")
@@ -179,7 +182,7 @@ func TestAReplacedNoteTakesAnIdentifier(t *testing.T) {
 	c := changeable(t, map[string]string{"Aggressor.md": "A hedgehog.\n"})
 
 	if _, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
-		"A hedgehog", "An axe"); err != nil {
+		"A hedgehog", "An axe", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 	if body := c.read(t, "Aggressor.md"); !strings.HasPrefix(body, "---\nid: ") {
@@ -194,10 +197,12 @@ func TestAReplacementFollowsAReplacementWithNoReadBetween(t *testing.T) {
 	c := changeable(t, map[string]string{"Aggressor.md": "one two three\n"})
 	replacing := c.replace()
 
-	if _, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "one", "ONE"); err != nil {
+	first, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "one", "ONE", domain.Fingerprint{})
+	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "three", "THREE"); err != nil {
+	if _, err := replacing.Execute(
+		t.Context(), c.vault, "Aggressor.md", "three", "THREE", first.Fingerprint); err != nil {
 		t.Fatalf("the second replacement was refused: %v", err)
 	}
 	if body := c.read(t, "Aggressor.md"); !strings.Contains(body, "ONE two THREE") {

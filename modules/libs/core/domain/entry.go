@@ -7,8 +7,8 @@ type Entry struct {
 	Path string
 	// Name is the last segment of the path, which is what the person reads.
 	Name string
-	// Folder is whether a listing of this path has entries of its own.
-	Folder bool
+	// IsFolder is whether a listing of this path has entries of its own.
+	IsFolder bool
 	// Kind is what the file is, and is empty where the vault holds no source at
 	// the path: a folder, or a file nothing reads.
 	Kind SourceKind

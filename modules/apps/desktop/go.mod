@@ -1,6 +1,6 @@
 module github.com/jiva-studio/numen/modules/apps/desktop
 
-go 1.26.5
+go 1.26.8
 
 require (
 	connectrpc.com/connect v1.20.0 // indirect
@@ -71,6 +71,9 @@ require (
 
 replace github.com/jiva-studio/numen/modules/libs/protocol => ../../libs/protocol
 
-require github.com/jiva-studio/numen/modules/libs/core v0.0.0
+require (
+	github.com/jiva-studio/numen/modules/libs/core v0.0.0
+	github.com/quasilyte/go-ruleguard/dsl v0.3.23
+)
 
 replace github.com/jiva-studio/numen/modules/libs/core => ../../libs/core

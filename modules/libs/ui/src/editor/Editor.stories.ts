@@ -11,7 +11,7 @@ import { EditorView } from '@codemirror/view'
 import Editor from './Editor.vue'
 import type { EditorChange } from './change'
 import WorkspacePane from '@/workspace/render/WorkspacePane.vue'
-import { pane } from '@/workspace/model'
+import { pane } from '@/workspace/node'
 import { MARKED_UP, PICTURE, TABLE } from '@/fixtures/markdown'
 import { ARABIC, DEVANAGARI, LINK, LONG, RUSSIAN, UNBREAKABLE } from '@/fixtures/prose'
 
@@ -20,6 +20,9 @@ const meta = {
   component: Editor,
   parameters: {
     layout: 'fullscreen',
+    // Tab indents while the editor holds it, and Escape hands it back to the
+    // page. What a reader is told on arrival is that way out.
+    reach: { keeps: 'Escape hands Tab back to the page' },
     docs: {
       description: {
         component:
@@ -287,7 +290,7 @@ export const TableTypedInto: Story = {
 
     // What is typed is written back over that cell alone. The browser does the
     // typing: the cell takes plain text, and only a real keystroke reaches it.
-    const context = await import('@vitest/browser/context')
+    const context = await import('vitest/browser')
     await context.userEvent.fill(cells(canvasElement)[3] as HTMLElement, 'Enthalpy')
 
     await waitFor(() => expect(source(canvasElement)).toContain('| Enthalpy | parent | 1865 |'))
@@ -530,7 +533,7 @@ export const TenOpenTabs: Story = {
 }
 
 /** The two tabs of the pane below, and the one of them holding the note. */
-const HELD = 'note'
+const NOTE_TAB = 'note'
 const BESIDE = 'beside'
 
 /**
@@ -544,18 +547,18 @@ export const ShownAgain: Story = {
   render: () => ({
     components: { Editor, WorkspacePane },
     setup: () => {
-      const held = ref(pane('main', [HELD, BESIDE], HELD))
+      const held = ref(pane('main', [NOTE_TAB, BESIDE], NOTE_TAB))
       const editors = new Map<string, { measure: () => void }>()
       return {
         held,
-        HELD,
+        NOTE_TAB,
         text: BEFORE,
-        titles: { [HELD]: 'Note', [BESIDE]: 'Beside' },
+        titles: { [NOTE_TAB]: 'Note', [BESIDE]: 'Beside' },
         choose: (tab: string) => {
-          held.value = pane('main', [HELD, BESIDE], tab)
+          held.value = pane('main', [NOTE_TAB, BESIDE], tab)
         },
         drew: (editor: unknown) => {
-          if (editor) editors.set(HELD, editor as { measure: () => void })
+          if (editor) editors.set(NOTE_TAB, editor as { measure: () => void })
         },
         shown: (tab: string) => editors.get(tab)?.measure(),
       }
@@ -565,7 +568,7 @@ export const ShownAgain: Story = {
         <WorkspacePane :pane="held" :titles="titles" @choose="choose" @show="shown">
           <template #tab="{ id }">
             <Editor
-              v-if="id === HELD"
+              v-if="id === NOTE_TAB"
               :ref="drew"
               :model-value="text"
               class="h-full"
@@ -592,7 +595,7 @@ export const ShownAgain: Story = {
     await settled()
     await expect(view.scrollDOM.scrollTop).toBe(0)
 
-    await userEvent.click(tab(HELD))
+    await userEvent.click(tab(NOTE_TAB))
     await settled()
     await settled()
 
@@ -650,6 +653,67 @@ export const Kept: Story = {
     await expect(said('data-asked')).toBe('1')
     await expect(said('data-answered')).toBe('answered')
     await expect(view.state.doc.toString()).toBe(MARKED_UP)
+  },
+}
+
+const NESTED = '- a bullet\n'
+
+/**
+ * Tabbing in, and tabbing out again.
+ *
+ * Tab indents, which is what it does in every editor a list is written in, so
+ * a person who tabbed into a note would be kept in it. Escape hands Tab back
+ * to the page and the next Tab walks on; coming back arms it again, so every
+ * visit begins the same way. The way out is read out as the keyboard arrives.
+ */
+export const LeftByTheKeyboard: Story = {
+  render: () => ({
+    components: { Editor },
+    setup: () => ({ text: NESTED }),
+    template: `
+      <div class="numen flex h-screen flex-col bg-surface">
+        <button
+          data-before
+          class="shrink-0 border-b border-rule px-3 py-2 text-left font-sans text-small text-ink"
+        >
+          Before
+        </button>
+        <Editor :model-value="text" class="min-h-0 flex-1" />
+        <button
+          data-after
+          class="shrink-0 border-t border-rule px-3 py-2 text-left font-sans text-small text-ink"
+        >
+          After
+        </button>
+      </div>`,
+  }),
+  play: async ({ canvasElement }) => {
+    const view = viewOf(canvasElement)
+    const stop = (which: string) => canvasElement.querySelector(`[${which}]`) as HTMLElement
+
+    // What a reader is told on arrival is the way back out.
+    const told = document.getElementById(view.contentDOM.getAttribute('aria-describedby') ?? '')
+    await expect(told?.textContent).toContain('Escape')
+
+    stop('data-before').focus()
+    await userEvent.tab()
+    await expect(view.hasFocus).toBe(true)
+
+    // Tab is the editor's while a person is writing: it indents and stays.
+    await userEvent.tab()
+    await expect(view.hasFocus).toBe(true)
+    await expect(view.state.doc.toString()).not.toBe(NESTED)
+
+    // Escape hands it to the page, and the next Tab is the page's.
+    await userEvent.keyboard('{Escape}')
+    await userEvent.tab()
+    await expect(document.activeElement).toBe(stop('data-after'))
+
+    // Back in, and Tab is the editor's again.
+    await userEvent.tab({ shift: true })
+    await expect(view.hasFocus).toBe(true)
+    await userEvent.tab()
+    await expect(view.hasFocus).toBe(true)
   },
 }
 

@@ -15,13 +15,12 @@
  */
 :root {
   --numen-surface: light-dark(#d6d8df, #16161e);
-  --numen-node-bg: light-dark(#e6e7ed, #1a1b26);
-  --numen-node-fg: light-dark(#343b59, #a9b1d6);
-  --numen-node-border: light-dark(#c1c2c7, #101014);
+  --numen-raised: light-dark(#e6e7ed, #1a1b26);
+  --numen-ink: light-dark(#343b59, #a9b1d6);
+  --numen-rule: light-dark(#c1c2c7, #101014);
 
-  --numen-focus-bg: light-dark(#2959aa, #3d59a1);
-  --numen-focus-fg: light-dark(#ffffff, #ffffff);
-  --numen-focus-border: light-dark(#2959aa, #3d59a1);
+  --numen-accent: light-dark(#2959aa, #3d59a1);
+  --numen-accent-ink: light-dark(#ffffff, #ffffff);
 
   --numen-seat-parent: light-dark(#006c86, #0db9d7);
   --numen-seat-child: light-dark(#385f0d, #9ece6a);

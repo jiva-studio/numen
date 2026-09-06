@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
@@ -34,7 +34,7 @@ type Recognise struct {
 	By      port.Recogniser
 
 	// Documents draws the pages a model is given.
-	Documents port.Documents
+	Documents port.PageRenderer
 
 	// Area is the store the artifact is kept in. Empty means the default.
 	Area string
@@ -44,11 +44,28 @@ type Recognise struct {
 	// it had. Zero takes the default.
 	Batch int
 
-	// Cut makes a source's chunks. It is called as pages are written down, so
-	// what has been read is searchable before the rest of it is.
+	// Cut is optional. It makes a source's chunks, and is called as pages are
+	// written down, so what has been read is searchable before the rest of it
+	// is. Where nothing cuts, the source is recorded as owing its text and the
+	// next scan cuts it.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
 
 	OnProgress func(RecogniseResult)
+}
+
+// NewRecognise is what a scan is read through: the vault it is read out of,
+// where what the vault holds is recorded, the store the reading is written
+// into, what draws a page for the model, and the model itself.
+func NewRecognise(
+	readers port.VaultReaders,
+	sources port.SourceRepository,
+	derived port.DerivedStores,
+	documents port.PageRenderer,
+	by port.Recogniser,
+) Recognise {
+	return Recognise{
+		Readers: readers, Sources: sources, Derived: derived, Documents: documents, By: by,
+	}
 }
 
 // RecogniseResult reports what recognition did.
@@ -67,10 +84,6 @@ const DefaultBatch = 16
 // Execute reads one document.
 func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (RecogniseResult, error) {
 	res := RecogniseResult{Path: path}
-	if u.By == nil {
-		return res, errors.New("no recogniser: none is configured")
-	}
-
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return res, err
@@ -112,9 +125,6 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		return res, u.stand(ctx, v, ref, hash, area)
 	}
 
-	if u.Documents == nil {
-		return res, fmt.Errorf("%s: nothing to draw a page with", path)
-	}
 	scan, err := u.Documents.Draw(ctx, raw)
 	if err != nil {
 		return res, fmt.Errorf("%s: %w", path, err)
@@ -156,7 +166,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		for i := range named {
 			named[i].Start += prose
 		}
-		if err := store.Append(ctx, boxes, lit.Pack(found)); err != nil {
+		if err := store.Append(ctx, boxes, highlight.Pack(found)); err != nil {
 			return err
 		}
 		if len(named) > 0 {
@@ -183,12 +193,12 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		if err != nil {
 			return res, fmt.Errorf("draw page %d of %s: %w", index+1, path, err)
 		}
-		blocks, err := u.By.Read(ctx, drawn)
+		blocks, err := u.By.Recognise(ctx, drawn)
 		if err != nil {
 			return res, fmt.Errorf("read page %d of %s: %w", index+1, path, err)
 		}
 		pages = append(pages, ocr.Page{
-			At:     index,
+			Index:  index,
 			Size:   drawn.Bounds().Size(),
 			Blocks: blocks,
 		})
@@ -243,7 +253,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 // from it, in one statement, and the two are one fact. Where nothing cuts here
 // the source is recorded as owing its text, and the scan that cuts it writes
 // both.
-func (u Recognise) stand(ctx context.Context, v domain.Vault, ref domain.FileRef, hash, from string) error {
+func (u Recognise) stand(ctx context.Context, v domain.Vault, ref domain.Fingerprint, hash, from string) error {
 	if u.Cut != nil {
 		return u.Cut(ctx, v, ref.Path)
 	}
@@ -255,7 +265,7 @@ func (u Recognise) stand(ctx context.Context, v domain.Vault, ref domain.FileRef
 func (u Recognise) forget(
 	ctx context.Context,
 	v domain.Vault,
-	ref domain.FileRef,
+	ref domain.Fingerprint,
 	hash string,
 	store port.DerivedStore,
 	names ...string,
@@ -285,8 +295,8 @@ func trimmed(ctx context.Context, store port.DerivedStore, name string, done int
 	if err != nil {
 		return err
 	}
-	held := lit.Unpack(raw)
-	kept := make([]lit.Box, 0, len(held))
+	held := highlight.Unpack(raw)
+	kept := make([]highlight.Box, 0, len(held))
 	for _, box := range held {
 		if box.Page < done {
 			kept = append(kept, box)
@@ -295,7 +305,7 @@ func trimmed(ctx context.Context, store port.DerivedStore, name string, done int
 	// Written back whatever was dropped. An append that did not land whole
 	// leaves bytes that are not a record, and every record appended after them
 	// is read at a shifted offset.
-	return store.Write(ctx, name, lit.Pack(kept))
+	return store.Write(ctx, name, highlight.Pack(kept))
 }
 
 // shortened drops the parts no count claims: those opening past the prose the
@@ -322,8 +332,8 @@ func shortened(ctx context.Context, store port.DerivedStore, name string, prose 
 //
 // No recipe is written, so the source owes its text: what cuts it into chunks
 // is extraction, which knows the sizes and is the one place that does.
-func (u Recognise) claim(ctx context.Context, v domain.Vault, ref domain.FileRef, hash, from string) error {
-	return u.Sources.SaveSource(ctx, v.ID, port.Source{Ref: ref, Hash: hash, TextFrom: from})
+func (u Recognise) claim(ctx context.Context, v domain.Vault, ref domain.Fingerprint, hash, from string) error {
+	return u.Sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref, Hash: hash, Producer: from})
 }
 
 // record keeps what read the document beside what it read. Nothing on any path

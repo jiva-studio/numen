@@ -11,7 +11,7 @@ import (
 
 // Notes returns what is needed to show each of the paths asked about. A path
 // that names nothing is left out.
-func (q *Queries) Notes(ctx context.Context, vaultID string, paths []string) (map[string]domain.NoteRef, error) {
+func (q *Queries) Notes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error) {
 	out := map[string]domain.NoteRef{}
 	if len(paths) == 0 {
 		return out, nil
@@ -48,7 +48,7 @@ func (q *Queries) Notes(ctx context.Context, vaultID string, paths []string) (ma
 
 // Types is what each of the paths asked about is. A path the index holds no
 // note at is left out, and so a listing draws it as the file it is.
-func (q *Queries) Types(ctx context.Context, vaultID string, paths []string) (map[string]domain.NoteType, error) {
+func (q *Queries) Types(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteType, error) {
 	out := map[string]domain.NoteType{}
 	if len(paths) == 0 {
 		return out, nil
@@ -84,7 +84,7 @@ func (q *Queries) Types(ctx context.Context, vaultID string, paths []string) (ma
 }
 
 // OfType is every note of one type the vault holds, by path.
-func (q *Queries) OfType(ctx context.Context, vaultID string, of domain.NoteType) ([]string, error) {
+func (q *Queries) OfType(ctx context.Context, vaultID domain.VaultID, of domain.NoteType) ([]string, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -111,7 +111,7 @@ func (q *Queries) OfType(ctx context.Context, vaultID string, of domain.NoteType
 }
 
 // Headings answers NoteQueries.Headings.
-func (q *Queries) Headings(ctx context.Context, vaultID string, paths []string) (map[string][]domain.Heading, error) {
+func (q *Queries) Headings(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string][]domain.Heading, error) {
 	out := map[string][]domain.Heading{}
 	if len(paths) == 0 {
 		return out, nil
@@ -169,7 +169,7 @@ func headingsAt(
 }
 
 // Opening is the note a vault is shown at when nothing else has been chosen.
-func (q *Queries) Opening(ctx context.Context, vaultID string) (domain.NoteRef, bool, error) {
+func (q *Queries) Opening(ctx context.Context, vaultID domain.VaultID) (domain.NoteRef, bool, error) {
 	var ref domain.NoteRef
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {

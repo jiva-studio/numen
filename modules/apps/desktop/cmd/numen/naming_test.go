@@ -11,14 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // indexed waits until the vault holds the note at this path, which is what says
 // the walk that reads a file it has just been given is over.
-func indexed(t *testing.T, opened *webui.Opened, v domain.Vault, path string) {
+func indexed(t *testing.T, opened *editor.Installation, v domain.Vault, path string) {
 	t.Helper()
 	for range 200 {
 		shown, err := opened.Index.Queries().Notes(t.Context(), v.ID, []string{path})
@@ -37,7 +37,7 @@ func indexed(t *testing.T, opened *webui.Opened, v domain.Vault, path string) {
 // case the window does, and the tools carry the one setting to it.
 func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 	for name, c := range map[string]struct {
-		sync note.Sync
+		sync note.SyncTitleAndFilename
 		at   string
 	}{
 		"one name":   {sync: true, at: "Disorder.md"},
@@ -63,7 +63,7 @@ func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 			indexed(t, opened, v, "Entropy.md")
 
 			core := agentCore(cfg, opened, v.Path, io.Discard)
-			renamed, err := core.Rename.Execute(t.Context(), v, "Entropy.md", "Disorder")
+			renamed, err := core.Notes.Rename.Execute(t.Context(), v, "Entropy.md", "Disorder")
 			if err != nil {
 				t.Fatal(err)
 			}

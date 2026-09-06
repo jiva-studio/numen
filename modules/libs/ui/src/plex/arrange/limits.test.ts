@@ -5,7 +5,7 @@ import { limitsFor } from './limits'
 import { DEFAULT_OPTIONS } from './options'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
 import { build } from '../fixtures/build'
-import type { PlexFrame } from '../model'
+import type { PlexFrame } from '../frame'
 
 /**
  * Anything that reaches past what the window leaves it.

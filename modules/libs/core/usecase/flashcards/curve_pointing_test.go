@@ -9,8 +9,7 @@ import (
 	"testing"
 	"time"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
 
 // sanskrit is the identifier the preset of that name carries, so that a deck
@@ -111,19 +110,19 @@ func TestACurveIsDrawnFromTheDecksPointingAtThePreset(t *testing.T) {
 	}
 	goals := []struct {
 		name string
-		p    history.Preset
+		p    review.Preset
 	}{
-		{"minutes", history.Preset{
-			Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+		{"minutes", review.Preset{
+			Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 		}},
-		{"retention", history.Preset{
-			Goal: history.GoalRetention, Retention: 0.87,
+		{"retention", review.Preset{
+			Goal: review.GoalRetention, Retention: 0.87,
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 		}},
-		{"a date", history.Preset{
-			Goal: history.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
+		{"a date", review.Preset{
+			Goal: review.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
-			Rule: history.RuleInterval, Interval: 21, Retention: 0.9,
+			Rule: review.RuleInterval, Interval: 21, Retention: 0.9,
 		}},
 	}
 
@@ -157,7 +156,7 @@ func TestACurveIsDrawnFromTheDecksPointingAtThePreset(t *testing.T) {
 						t.Fatal(err)
 					}
 
-					for _, one := range []flashcards.Curve{got, want} {
+					for _, one := range []review.Curve{got, want} {
 						if one.Decks != len(decks) || one.Cards != faces {
 							t.Errorf("the curve carries %d decks and %d card faces, and %d decks "+
 								"point at %s with %d card faces in them",
@@ -175,8 +174,8 @@ func TestACurveIsDrawnFromTheDecksPointingAtThePreset(t *testing.T) {
 }
 
 // curveOf is a curve in one line of a failure.
-func curveOf(c flashcards.Curve) string {
+func curveOf(c review.Curve) string {
 	return fmt.Sprintf("%d decks, %d card faces, %d overdue, %d unbegun\ngrid %v\nnow %+v"+
 		"\nsuggested %+v\nat %+v", c.Decks, c.Cards, c.Overdue, c.Unbegun, c.Grid,
-		c.Now, c.Suggested, c.At)
+		c.Now, c.Suggested, c.Points)
 }

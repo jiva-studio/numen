@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -44,9 +44,9 @@ func TestACurveRefusesARequestThatIsGone(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 
 	curves := s.curves(noon)
-	curves.Standings.Readers = closing{inner: curves.Standings.Readers, at: cancel}
+	curves.CardFaces.Readers = closing{inner: curves.CardFaces.Readers, at: cancel}
 
-	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
+	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 	got, err := curves.Execute(ctx, s.vault, "Sanskrit.md", p)
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("a curve drawn after the request was cancelled gave %+v, %v", got, err)

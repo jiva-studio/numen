@@ -2,7 +2,7 @@
  * The splitter that composes panes, and what a handle reports back.
  *
  * The shares a handle settles on are what the workspace is told; the
- * arithmetic on them is `model/shares.test.ts`.
+ * arithmetic on them is `shares.test.ts`.
  */
 import { mount } from '@vue/test-utils'
 import { computed } from 'vue'
@@ -10,9 +10,9 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import WorkspaceBranch from './WorkspaceBranch.vue'
 import WorkspacePane from './WorkspacePane.vue'
-import { WORKSPACING, type Workspacing } from './context'
+import { WORKSPACE_CONTEXT, type WorkspaceContext } from './context'
 import { split, stack } from '../fixtures/build'
-import { type Branch, type Tab, type TabId } from '../model'
+import { type Branch, type Tab, type TabId } from '../node'
 
 const TITLES: Readonly<Record<string, string>> = { one: 'One', two: 'Two', three: 'Three' }
 
@@ -31,7 +31,7 @@ const mountBranch = (node: Branch, slots: Record<string, string> = {}) => {
   const resize = vi.fn<(branch: string, sizes: readonly number[]) => void>()
   const claim = vi.fn<(pane: string) => void>()
 
-  const workspacing: Workspacing = {
+  const workspacing: WorkspaceContext = {
     tabOf: (id: TabId): Tab | undefined =>
       TITLES[id] === undefined ? undefined : { id, title: TITLES[id] },
     focus: 'left',
@@ -46,7 +46,7 @@ const mountBranch = (node: Branch, slots: Record<string, string> = {}) => {
 
   const held = mount(WorkspaceBranch, {
     attachTo: document.body,
-    global: { provide: { [WORKSPACING as symbol]: computed(() => workspacing) } },
+    global: { provide: { [WORKSPACE_CONTEXT as symbol]: computed(() => workspacing) } },
     props: { node, axis: 'horizontal' as const, depth: 0 },
     slots: { tab: '<span class="held">held</span>', ...slots },
   })
@@ -79,16 +79,16 @@ const measuring = (): ((length: number) => void) => {
   }
 }
 
-type Mounted = ReturnType<typeof mountBranch>
+type BranchFixture = ReturnType<typeof mountBranch>
 
-const panes = ({ held }: Mounted) => held.findAllComponents(WorkspacePane)
+const panes = ({ held }: BranchFixture) => held.findAllComponents(WorkspacePane)
 
-const groups = ({ held }: Mounted) => held.findAllComponents(SplitterGroup)
+const groups = ({ held }: BranchFixture) => held.findAllComponents(SplitterGroup)
 
-const handles = ({ held }: Mounted) => held.findAllComponents(SplitterResizeHandle)
+const handles = ({ held }: BranchFixture) => held.findAllComponents(SplitterResizeHandle)
 
 /** The splitter reporting the shares it has settled on, in percent. */
-const layout = (one: Mounted, at: number, sizes: number[]) =>
+const layout = (one: BranchFixture, at: number, sizes: number[]) =>
   groups(one)[at]!.vm.$emit('layout', sizes)
 
 describe('what a branch draws', () => {
@@ -169,7 +169,7 @@ describe('what a branch draws', () => {
 })
 
 describe('a handle taken up and put down', () => {
-  const grab = (one: Mounted, now: boolean) => handles(one)[0]!.vm.$emit('dragging', now)
+  const grab = (one: BranchFixture, now: boolean) => handles(one)[0]!.vm.$emit('dragging', now)
 
   it('says nothing while it is still held', async () => {
     const one = mountBranch(twoPanes())

@@ -32,7 +32,7 @@ const choiceOf = (line: string, at: number) => {
 }
 
 const meta: Meta<Knobs> = {
-  title: 'Generic/Select',
+  title: 'Controls/Select',
   component: Select,
   parameters: { layout: 'centered' },
   argTypes: {
@@ -80,7 +80,7 @@ const words = (): readonly string[] =>
   rows().map((one) => one.querySelector('.menu__text')?.textContent?.trim() ?? '')
 
 const shelves = (): readonly string[] =>
-  Array.from(document.body.querySelectorAll<HTMLElement>('.menu__band')).map(
+  Array.from(document.body.querySelectorAll<HTMLElement>('.menu__group-name')).map(
     (one) => one.textContent?.trim() ?? '',
   )
 

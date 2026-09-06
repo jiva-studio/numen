@@ -15,14 +15,13 @@
  */
 :root {
   --numen-surface: light-dark(#f8f9fa, #0d1017);
-  --numen-node-bg: light-dark(#fcfcfc, #10141c);
-  --numen-node-fg: light-dark(#5c6166, #bfbdb6);
-  --numen-node-border: light-dark(#6b7d8f1f, #1b1f29);
+  --numen-raised: light-dark(#fcfcfc, #10141c);
+  --numen-ink: light-dark(#5c6166, #bfbdb6);
+  --numen-rule: light-dark(#6b7d8f1f, #1b1f29);
 
   /* The accent, with the tone ayu names for content standing on it. */
-  --numen-focus-bg: light-dark(#f29718, #e6b450);
-  --numen-focus-fg: light-dark(#804b00, #805600);
-  --numen-focus-border: light-dark(#f29718, #e6b450);
+  --numen-accent: light-dark(#f29718, #e6b450);
+  --numen-accent-ink: light-dark(#804b00, #805600);
 
   --numen-seat-parent: light-dark(#399ee6, #59c2ff);
   --numen-seat-child: light-dark(#86b300, #aad94c);

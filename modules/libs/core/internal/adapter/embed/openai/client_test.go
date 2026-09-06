@@ -1,7 +1,6 @@
 package openai_test
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,15 +23,29 @@ func server(t *testing.T, handler http.HandlerFunc) *httptest.Server {
 	return s
 }
 
+// served is the settings with the vault indexed at the service the changes
+// describe, and that service: the two a client is opened with.
+func served(t *testing.T, cfg embed.Config, change func(*embed.ServiceModel)) (embed.Config, embed.ServiceModel) {
+	t.Helper()
+	cfg.Indexing.Use = embed.UseService
+	service, ok := cfg.Indexing.Service()
+	if !ok {
+		t.Fatal("the vault is not indexed by a service")
+	}
+	change(&service)
+	cfg.Indexing = cfg.Indexing.Serving(service)
+	return cfg, service
+}
+
 func client(t *testing.T, baseURL string, dimensions int) *openai.Client {
 	t.Helper()
 	t.Setenv(embed.KeyEnvVar, "test-key")
 	cfg := embed.Defaults()
-	cfg.Indexing.Use = embed.UseService
 	cfg.Model.Dimensions = dimensions
-	cfg.Indexing.Service.BaseURL = baseURL
-	cfg.Indexing.Service.Name = "test-embed"
-	c, err := openai.New(cfg.Stored(), cfg.Indexing.Service)
+	cfg, service := served(t, cfg, func(at *embed.ServiceModel) {
+		at.BaseURL, at.Name = baseURL, "test-embed"
+	})
+	c, err := openai.New(cfg.Stored(), service)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +96,7 @@ func TestVectorsComeBackNormalisedAndInOrder(t *testing.T) {
 		}
 		answer(w, read(t, r), 4)
 	})
-	got, err := client(t, s.URL, 4).Embed(context.Background(), []string{"one", "two"})
+	got, err := client(t, s.URL, 4).Embed(t.Context(), []string{"one", "two"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,7 +125,7 @@ func TestVectorsOutOfOrderAreRestoredByIndex(t *testing.T) {
 			{"index":1,"embedding":[0,1]},
 			{"index":0,"embedding":[1,0]}]}`)
 	})
-	got, err := client(t, s.URL, 2).Embed(context.Background(), []string{"first", "second"})
+	got, err := client(t, s.URL, 2).Embed(t.Context(), []string{"first", "second"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,7 +149,7 @@ func TestOverloadIsWaitedOutAndRetried(t *testing.T) {
 			answer(w, read(t, r), 4)
 		}
 	})
-	if _, err := client(t, s.URL, 4).Embed(context.Background(), []string{"one"}); err != nil {
+	if _, err := client(t, s.URL, 4).Embed(t.Context(), []string{"one"}); err != nil {
 		t.Fatal(err)
 	}
 	if calls != 3 {
@@ -155,7 +168,7 @@ func TestRetryAfterIsHonoured(t *testing.T) {
 		}
 		answer(w, read(t, r), 4)
 	})
-	if _, err := client(t, s.URL, 4).Embed(context.Background(), []string{"one"}); err != nil {
+	if _, err := client(t, s.URL, 4).Embed(t.Context(), []string{"one"}); err != nil {
 		t.Fatal(err)
 	}
 	if calls != 2 {
@@ -171,7 +184,7 @@ func TestOverloadThatNeverClearsIsReported(t *testing.T) {
 	})
 	c := client(t, s.URL, 4)
 	c.Attempts = 3
-	_, err := c.Embed(context.Background(), []string{"one"})
+	_, err := c.Embed(t.Context(), []string{"one"})
 	if err == nil {
 		t.Fatal("want an error")
 	}
@@ -191,7 +204,7 @@ func TestARejectedRequestIsNotRetried(t *testing.T) {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"error":{"message":"too many tokens in the request"}}`)
 	})
-	_, err := client(t, s.URL, 4).Embed(context.Background(), []string{"one"})
+	_, err := client(t, s.URL, 4).Embed(t.Context(), []string{"one"})
 	if !errors.Is(err, openai.ErrRejected) {
 		t.Fatalf("got %v", err)
 	}
@@ -206,7 +219,7 @@ func TestAnUnauthorisedKeyIsNotRetried(t *testing.T) {
 		calls++
 		w.WriteHeader(http.StatusUnauthorized)
 	})
-	_, err := client(t, s.URL, 4).Embed(context.Background(), []string{"one"})
+	_, err := client(t, s.URL, 4).Embed(t.Context(), []string{"one"})
 	if !errors.Is(err, openai.ErrRejected) {
 		t.Fatalf("got %v", err)
 	}
@@ -219,7 +232,7 @@ func TestTheWrongWidthIsRefusedRatherThanStored(t *testing.T) {
 	s := server(t, func(w http.ResponseWriter, r *http.Request) {
 		answer(w, read(t, r), 3)
 	})
-	_, err := client(t, s.URL, 4).Embed(context.Background(), []string{"one"})
+	_, err := client(t, s.URL, 4).Embed(t.Context(), []string{"one"})
 	if err == nil || !strings.Contains(err.Error(), "3 dimensions") {
 		t.Fatalf("got %v", err)
 	}
@@ -234,20 +247,20 @@ func TestABatchIsCutByCharacters(t *testing.T) {
 	})
 	t.Setenv(embed.KeyEnvVar, "test-key")
 	cfg := embed.Defaults()
-	cfg.Indexing.Use = embed.UseService
 	cfg.Model.Dimensions = 4
-	cfg.Indexing.Service.BaseURL = s.URL
-	cfg.Indexing.Service.Name = "test-embed"
 	// A verse in Devanagari: the same number of texts, far more tokens.
 	verse := strings.Repeat("धर्मक्षेत्रे कुरुक्षेत्रे ", 10)
-	cfg.Indexing.Service.BatchCharacters = len([]rune(verse)) * 2
-	c, err := openai.New(cfg.Stored(), cfg.Indexing.Service)
+	cfg, service := served(t, cfg, func(at *embed.ServiceModel) {
+		at.BaseURL, at.Name = s.URL, "test-embed"
+		at.BatchCharacters = len([]rune(verse)) * 2
+	})
+	c, err := openai.New(cfg.Stored(), service)
 	if err != nil {
 		t.Fatal(err)
 	}
 	c.Delay = 0
 
-	got, err := c.Embed(context.Background(), []string{verse, verse, verse, verse, verse})
+	got, err := c.Embed(t.Context(), []string{verse, verse, verse, verse, verse})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -266,7 +279,7 @@ func TestNoTextsIsNoRequest(t *testing.T) {
 	s := server(t, func(w http.ResponseWriter, r *http.Request) {
 		t.Error("a request was sent for no texts")
 	})
-	got, err := client(t, s.URL, 4).Embed(context.Background(), nil)
+	got, err := client(t, s.URL, 4).Embed(t.Context(), nil)
 	if err != nil || got != nil {
 		t.Errorf("got %v, %v", got, err)
 	}
@@ -274,18 +287,48 @@ func TestNoTextsIsNoRequest(t *testing.T) {
 
 func TestAServiceWithoutAKeyIsRefusedBeforeAnyRequest(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "")
-	cfg := embed.Defaults()
-	cfg.Indexing.Use = embed.UseService
-	cfg.Indexing.Service.BaseURL = "http://127.0.0.1:1"
-	if _, err := openai.New(cfg.Stored(), cfg.Indexing.Service); !errors.Is(err, openai.ErrNoKey) {
+	cfg, service := served(t, embed.Defaults(), func(at *embed.ServiceModel) {
+		at.BaseURL = "http://127.0.0.1:1"
+	})
+	if _, err := openai.New(cfg.Stored(), service); !errors.Is(err, openai.ErrNoKey) {
 		t.Fatalf("got %v", err)
+	}
+}
+
+// A gateway that quotes the request back quotes the key back. The error a
+// person reads carries what the service said and not the key.
+func TestTheKeyIsNotInAnError(t *testing.T) {
+	for _, status := range []int{
+		http.StatusBadRequest,
+		http.StatusUnauthorized,
+		http.StatusInternalServerError,
+	} {
+		t.Run(http.StatusText(status), func(t *testing.T) {
+			s := server(t, func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(status)
+				fmt.Fprintf(w, `{"error":{"message":"rejected","headers":{"Authorization":%q}}}`,
+					r.Header.Get("Authorization"))
+			})
+			c := client(t, s.URL, 4)
+			c.Attempts = 1
+			_, err := c.Embed(t.Context(), []string{"one"})
+			if err == nil {
+				t.Fatal("the request was answered")
+			}
+			if strings.Contains(err.Error(), "test-key") {
+				t.Errorf("the key is in %q", err.Error())
+			}
+			if !strings.Contains(err.Error(), "rejected") {
+				t.Errorf("what the service said is not in %q", err.Error())
+			}
+		})
 	}
 }
 
 func TestTheKeyIsNotInWhatTheConfigurationPrints(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-secret")
-	cfg := embed.Defaults()
-	if printed := fmt.Sprintf("%v", cfg.Indexing.Service); strings.Contains(printed, "sk-secret") {
+	_, service := served(t, embed.Defaults(), func(*embed.ServiceModel) {})
+	if printed := fmt.Sprintf("%v", service); strings.Contains(printed, "sk-secret") {
 		t.Errorf("the key is in %q", printed)
 	}
 }

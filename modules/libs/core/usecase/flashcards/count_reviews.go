@@ -1,0 +1,278 @@
+package flashcards
+
+import (
+	"context"
+	"encoding/json"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+// countedVersion is the shape of the cache file. A cache of another shape is
+// thrown away and worked out again, which costs a reading of the answers.
+const countedVersion = 2
+
+type countCache struct {
+	V int `json:"v"`
+	// Runs are the log files this was worked out from, each with the length it
+	// had and what it came to. A run is appended to and never rewritten, so a
+	// file of the same name and length holds the same answers.
+	Runs []cachedRun `json:"runs"`
+}
+
+type cachedRun struct {
+	Name string `json:"name"`
+	Size int    `json:"size"`
+	// Days is what this run alone came to.
+	Days map[string]review.Tally `json:"days"`
+	// IDs are the identifiers its lines carry, which is what says an answer
+	// another run holds too is the one answer.
+	IDs []string `json:"ids"`
+}
+
+// ReviewCounts is how much of a vault was answered, and when.
+type ReviewCounts struct {
+	// Days is how many answers were given on each day, by the name of the day:
+	// the year, the month and the day it began on.
+	Days map[string]review.Tally
+	// Due is how many card faces fall on each day still to come, by the same
+	// names. A card owed today or owed and late is not in it: what is behind is
+	// what the front door counts, and this is what is ahead.
+	Due map[string]int
+	// Retained is how much of what came round in days came back on each day. A
+	// card face the scheduler is still putting into memory is not in it.
+	Retained map[string]review.RecallTally
+	// Streak is how many days up to now were reviewed without a gap.
+	Streak int
+	// Answered is how many answers the vault holds altogether.
+	Answered int
+}
+
+// CountReviews is how much of a vault was answered on each day it was reviewed.
+//
+// What a day came to is a sum, and a sum is worked out one file at a time: a
+// run arriving from another machine adds to the days it holds and disturbs
+// nothing that was counted before it. So the cache is kept by run — a file of
+// the name and length it was read at is not read again, and a session's own
+// file is the only one re-read all evening.
+//
+// This is what a schedule cannot do. Where an answer leaves a card depends on
+// the order of every answer before it, so a schedule arriving late is the whole
+// history read again.
+type CountReviews struct {
+	Logs port.DerivedStores
+	// Cache is where the counting is remembered. A build holding none counts the
+	// whole log at every launch.
+	Cache port.ScheduleStore
+	// Schedules is where the answers have left every card face, which is what
+	// says how much falls on each day still to come.
+	Schedules Schedules
+	Day       review.Day
+	Now       port.Clock
+}
+
+// NewCountReviews is what a vault's days are counted through: where its answers
+// are kept, where those answers have left each card face, where one day of
+// review gives way to the next, and what time it is.
+func NewCountReviews(
+	logs port.DerivedStores, schedules Schedules, day review.Day, now port.Clock,
+) CountReviews {
+	return CountReviews{Logs: logs, Schedules: schedules, Day: day, Now: now}
+}
+
+// Execute counts one vault.
+func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts, error) {
+	log := Log{Stores: u.Logs}
+	files, err := log.Files(ctx, v)
+	if err != nil {
+		return ReviewCounts{}, err
+	}
+
+	was := u.remembered(ctx, v)
+	now := countCache{V: countedVersion}
+	out := ReviewCounts{Days: make(map[string]review.Tally)}
+
+	store, err := u.Logs.Open(v)
+	if err != nil {
+		return ReviewCounts{}, err
+	}
+	// One identifier is one answer over the whole log, so a line another run
+	// was counted for is not counted again.
+	seen := make(map[string]bool)
+	// What is still to come is worked out from the whole history, so every run
+	// is read here and the reading is handed on.
+	coming := u.Schedules.By != nil
+	var held ReviewLog
+	for _, file := range files {
+		var ran LogFile
+		var opened bool
+		one, kept := was[file.Name]
+		stale := !kept || one.Size != file.Size
+		if stale || coming {
+			ran, err = log.ReadFile(ctx, store, file)
+			if err != nil {
+				return ReviewCounts{}, err
+			}
+			opened = true
+		}
+		if stale {
+			one = cachedRun{
+				Name: file.Name,
+				Size: ran.Size,
+				Days: review.Counted(u.Day, ran.Answers),
+				IDs:  identifiers(ran.Answers),
+			}
+		}
+		now.Runs = append(now.Runs, one)
+		if opened && !ran.Gone && !ran.Shut {
+			held.Answers = append(held.Answers, ran.Answers...)
+			held.Files = append(held.Files, port.Entry{Name: file.Name, Size: ran.Size})
+		}
+
+		// What a run came to on its own is what is kept, and what the run adds
+		// to the counting is what no other run has been counted for.
+		days := one.Days
+		if repeats(one.IDs, seen) {
+			if !opened {
+				ran, err = log.ReadFile(ctx, store, file)
+				if err != nil {
+					return ReviewCounts{}, err
+				}
+			}
+			days = review.Counted(u.Day, given(ran.Answers, seen))
+		}
+		for _, id := range one.IDs {
+			seen[id] = true
+		}
+		for day, count := range days {
+			out.Days[day] = added(out.Days[day], count)
+			out.Answered += count.Answered
+		}
+	}
+
+	held.order = ordered(held.Answers)
+	u.remember(ctx, v, now)
+	out.Streak = review.Streak(u.Day, out.Days, u.Now())
+
+	// What is still to come, and how much came back, are both worked out from
+	// the answers in the order they were given, so they are asked for together.
+	due, retained, err := u.ahead(ctx, v, held)
+	if err != nil {
+		return ReviewCounts{}, err
+	}
+	out.Due = due
+	out.Retained = retained
+	return out, nil
+}
+
+// added is two days' answers put together, which is how the runs of one day are
+// added up: a person may have answered in two sessions, and it is one day.
+func added(one, other review.Tally) review.Tally {
+	return review.Tally{
+		Answered: one.Answered + other.Answered,
+		Again:    one.Again + other.Again,
+		Hard:     one.Hard + other.Hard,
+		Good:     one.Good + other.Good,
+		Easy:     one.Easy + other.Easy,
+	}
+}
+
+// identifiers is what every line of a run is named by, the lines taking an
+// answer back among them.
+func identifiers(answers []review.Answer) []string {
+	out := make([]string, 0, len(answers))
+	for _, a := range answers {
+		out = append(out, a.ID)
+	}
+	return out
+}
+
+// repeats reports whether a run carries a line another run was counted for.
+func repeats(ids []string, seen map[string]bool) bool {
+	for _, id := range ids {
+		if seen[id] {
+			return true
+		}
+	}
+	return false
+}
+
+// given is the lines of a run no other run was counted for.
+func given(answers []review.Answer, seen map[string]bool) []review.Answer {
+	out := make([]review.Answer, 0, len(answers))
+	for _, a := range answers {
+		if !seen[a.ID] {
+			out = append(out, a)
+		}
+	}
+	return out
+}
+
+// ahead is how much falls on each day still to come, and how much of what came
+// round in days came back on each day behind.
+//
+// The answers are the reading the days were counted from, so the whole log is
+// opened once for the screen.
+//
+// A card owed today, or owed and late, is not in what is to come: what a person
+// owes now is what the front door counts, and this says what is coming after
+// it. Where a card falls is worked out from the answers like everything else,
+// so the day it shows is the day it would be asked on.
+func (u CountReviews) ahead(
+	ctx context.Context, v domain.Vault, held ReviewLog,
+) (map[string]int, map[string]review.RecallTally, error) {
+	falls := make(map[string]int)
+	if u.Schedules.By == nil {
+		return falls, nil, nil
+	}
+
+	schedules, err := u.Schedules.From(ctx, v, held)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	now := u.Now()
+	ends := u.Day.Ends(now)
+	for _, s := range schedules {
+		if !s.Seen() || s.Due.Before(ends) {
+			continue
+		}
+		falls[u.Day.Names(s.Due)]++
+	}
+	return falls, held.History().Retained(u.Schedules.By, u.Day), nil
+}
+
+// remembered is what was counted last time, by the name of the run it was
+// counted from. A cache of another shape is nothing remembered.
+func (u CountReviews) remembered(ctx context.Context, v domain.Vault) map[string]cachedRun {
+	if u.Cache == nil {
+		return nil
+	}
+	raw, err := u.Cache.Read(ctx, v.ID)
+	if err != nil {
+		return nil
+	}
+	var was countCache
+	if err := json.Unmarshal(raw, &was); err != nil || was.V != countedVersion {
+		return nil
+	}
+	out := make(map[string]cachedRun, len(was.Runs))
+	for _, one := range was.Runs {
+		out[one.Name] = one
+	}
+	return out
+}
+
+// remember puts the counting where the next launch will find it. A cache that
+// could not be written is a launch that counts again, so nothing is reported.
+func (u CountReviews) remember(ctx context.Context, v domain.Vault, now countCache) {
+	if u.Cache == nil {
+		return
+	}
+	raw, err := json.Marshal(now)
+	if err != nil {
+		return
+	}
+	_ = u.Cache.Write(ctx, v.ID, raw)
+}

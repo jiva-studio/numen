@@ -24,29 +24,31 @@ import {
   Waypoints,
 } from '@lucide/vue'
 import { ref } from 'vue'
-import Workspace from '@/workspace/Workspace.vue'
+import WorkspaceLayout from '@/workspace/WorkspaceLayout.vue'
 import Plex from '@/plex/Plex.vue'
 import Editor from '@/editor/Editor.vue'
 import Palette from '@/palette/Palette.vue'
 import Reader from '@/reader/Reader.vue'
 import Tree from '@/tree/Tree.vue'
 import Menu from '@/menu/Menu.vue'
-import type { MenuItem } from '@/menu/model'
+import type { MenuItem } from '@/menu/item'
 import Agent from './Agent.vue'
-import { branch, pane, type Tab, type Workspace as State } from '@/workspace/model'
-import { keyChord } from '@/palette/model'
+import { branch, pane, type Tab, type Workspace as State } from '@/workspace/node'
+import { keyChord } from '@/palette/item'
 import type {
   PaletteAction,
-  PaletteBand,
+  PaletteGroup,
   PaletteItem,
   PaletteKeys,
   PaletteSpan,
-} from '@/palette/model'
+} from '@/palette/item'
 import type { PlexPart } from '@/plex/inside'
-import { RELATED_SEATS } from '@/plex/model'
-import type { PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedSeat } from '@/plex/model'
-import type { Row } from '@/tree/model'
-import type { Turn } from '@/thread/model'
+import { RELATED_SEATS, type PlexRelatedSeat } from '@/plex/seat'
+import type { PlexEdge } from '@/plex/edge'
+import type { PlexNeighbourhood } from '@/plex/neighbourhood'
+import type { PlexNode } from '@/plex/node'
+import type { Row } from '@/tree/row'
+import type { Turn } from '@/thread/turn'
 import { hovered } from '@/fixtures/colour'
 
 const PLEX = 'plex'
@@ -330,7 +332,7 @@ const drawnPage = (page: number): string => {
 }
 
 /** Where a run of lines stands on the page, in fractions of it. */
-const litLines = (from: number, to: number, ends: number) => ({
+const overLines = (from: number, to: number, ends: number) => ({
   minX: (MARGIN - 4) / PAPER.wide,
   maxX: (MARGIN + ends) / PAPER.wide,
   minY: (FIRST + from * LEADING - 18) / PAPER.high,
@@ -338,7 +340,7 @@ const litLines = (from: number, to: number, ends: number) => ({
 })
 
 /** The passage a search found in it: the sentence the count is defined by. */
-const LIT = [litLines(8, 9, 420), litLines(10, 11, 360)]
+const HIGHLIGHTS = [overLines(8, 9, 420), overLines(10, 11, 360)]
 
 const said = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
 
@@ -425,10 +427,10 @@ const passage = (
 })
 
 /**
- * What one search turns up, in the three bands the window draws: the names it
+ * What one search turns up, in the three groups the window draws: the names it
  * matched, the text it was found in, and what means the same without saying it.
  */
-const BANDS: readonly PaletteBand[] = [
+const GROUPS: readonly PaletteGroup[] = [
   {
     id: 'names',
     title: 'Names',
@@ -481,21 +483,21 @@ const BANDS: readonly PaletteBand[] = [
 ]
 
 /**
- * What the menu on a node offers, in the bands the window draws it in: what
+ * What the menu on a node offers, in the groups the window draws it in: what
  * opens the note, what is done to its file, what is made off it in the plex,
  * what is asked of the agent, and what takes it out of the vault.
  */
 const MENU: readonly MenuItem[] = [
-  { id: 'read', text: 'Open the note', band: 'open' },
-  { id: 'travel', text: 'Show in plex', band: 'open' },
-  { id: 'copy', text: 'Copy path', band: 'file' },
-  { id: 'reveal', text: 'Show this note in the files', band: 'file' },
-  { id: 'child', text: 'New child note', band: 'plex' },
-  { id: 'parent', text: 'New parent note', band: 'plex' },
-  { id: 'jump', text: 'New jump note', band: 'plex' },
-  { id: 'title', text: 'Change title', band: 'plex' },
-  { id: 'ask', text: 'Ask the agent about this note', band: 'agent' },
-  { id: 'remove', text: 'Remove note', band: 'remove' },
+  { id: 'read', text: 'Open the note', group: 'open' },
+  { id: 'travel', text: 'Show in plex', group: 'open' },
+  { id: 'copy', text: 'Copy path', group: 'file' },
+  { id: 'reveal', text: 'Show this note in the files', group: 'file' },
+  { id: 'child', text: 'New child note', group: 'plex' },
+  { id: 'parent', text: 'New parent note', group: 'plex' },
+  { id: 'jump', text: 'New jump note', group: 'plex' },
+  { id: 'title', text: 'Change title', group: 'plex' },
+  { id: 'ask', text: 'Ask the agent about this note', group: 'agent' },
+  { id: 'remove', text: 'Remove note', group: 'remove' },
 ]
 
 const MENU_ICONS: Readonly<Record<string, typeof Waypoints>> = {
@@ -525,8 +527,8 @@ const command = (id: string, title: string, keys?: PaletteKeys): PaletteItem => 
   ...(keys ? { keys } : {}),
 })
 
-/** What the commands offer, in the three bands the window draws them in. */
-const COMMANDS: readonly PaletteBand[] = [
+/** What the commands offer, in the three groups the window draws them in. */
+const COMMANDS: readonly PaletteGroup[] = [
   {
     id: 'note',
     title: 'This note',
@@ -606,7 +608,7 @@ const screen = ({
   menu = null,
   selected = [],
 }: Screen) => ({
-  components: { Workspace, Plex, Editor, Agent, Palette, Reader, Tree, Menu },
+  components: { WorkspaceLayout, Plex, Editor, Agent, Palette, Reader, Tree, Menu },
   setup() {
     const held = ref<State>(workspace())
     const text = ref(markdown)
@@ -630,12 +632,12 @@ const screen = ({
       selected,
       MENU,
       menuIcon,
-      bands: panel === 'commands' ? COMMANDS : BANDS,
+      groups: panel === 'commands' ? COMMANDS : GROUPS,
       placeholder: panel === 'commands' ? 'Type a command' : 'Search',
       pages: BOOK_LEAVES,
       sheets: Array.from({ length: BOOK_LEAVES }, () => PAPER),
       picture: (page: number) => drawnPage(page),
-      litOn: (page: number) => (page === BOOK_FIRST ? LIT : []),
+      highlightsOn: (page: number) => (page === BOOK_FIRST ? HIGHLIGHTS : []),
       go: (page: number) => {
         at.value = Math.min(Math.max(page, 0), BOOK_LEAVES - 1)
       },
@@ -655,7 +657,7 @@ const screen = ({
   },
   template: `
     <div style="height: 100vh">
-      <Workspace v-model="held" :tabs="TABS">
+      <WorkspaceLayout v-model="held" :tabs="TABS">
         <!-- Lucide draws on a 24 grid, and the stroke is given in those units. -->
         <template #icon="{ id }">
           <component
@@ -688,7 +690,7 @@ const screen = ({
             :sheets="sheets"
             :at="at"
             :picture="picture"
-            :lit="litOn"
+            :highlights="highlightsOn"
             @go="go"
           />
           <Tree
@@ -703,11 +705,11 @@ const screen = ({
             </template>
           </Tree>
         </template>
-      </Workspace>
+      </WorkspaceLayout>
       <Palette
         v-if="panel"
         v-model="typed"
-        :bands="bands"
+        :groups="groups"
         open
         :placeholder="placeholder"
       />
@@ -732,6 +734,9 @@ const meta: Meta = {
 
 export default meta
 type Story = StoryObj
+
+/** A window holding a note: Tab indents in the editor until Escape hands it back. */
+const WRITING = { reach: { keeps: 'Escape hands Tab back to the page' } }
 
 /** One pane of the window, by the name it was divided under. */
 const paneOf = (canvas: HTMLElement, id: string): HTMLElement => {
@@ -854,6 +859,7 @@ export const Hanging: Story = {
 
 /** A note being written, with the map it stands in beside it. */
 export const Writing: Story = {
+  parameters: WRITING,
   render: () =>
     screen({
       workspace: () => ({
@@ -889,6 +895,7 @@ export const Writing: Story = {
 
 /** The palette, over everything the window holds. */
 export const Searching: Story = {
+  parameters: WRITING,
   render: () =>
     screen({
       workspace: () => ({
@@ -915,8 +922,9 @@ export const Searching: Story = {
   },
 }
 
-/** The commands, in the three bands they are drawn in. */
+/** The commands, in the three groups they are drawn in. */
 export const Commanding: Story = {
+  parameters: WRITING,
   render: () =>
     screen({
       workspace: () => ({
@@ -931,11 +939,11 @@ export const Commanding: Story = {
       panel: 'commands',
     }),
   play: async () => {
-    // Commanding means the commands are there to be run, in the three bands
+    // Commanding means the commands are there to be run, in the three groups
     // the window sorts them into.
     await waitFor(() => {
-      const bands = [...document.body.querySelectorAll('[data-palette="title"]')]
-      expect(bands.map((band) => band.textContent?.trim())).toEqual([
+      const groups = [...document.body.querySelectorAll('[data-palette="title"]')]
+      expect(groups.map((group) => group.textContent?.trim())).toEqual([
         'This note',
         'This window',
         'This vault',
@@ -946,6 +954,7 @@ export const Commanding: Story = {
 
 /** The agent beside the note it is being asked about. */
 export const Asking: Story = {
+  parameters: WRITING,
   render: () =>
     screen({
       workspace: () => ({
@@ -994,17 +1003,18 @@ export const Reading: Story = {
     }),
   play: async ({ canvasElement }) => {
     // Reading means the document is open at the page the search landed on,
-    // with the passage it found lit on it.
+    // with the passage it found highlighted on it.
     await waitFor(() => {
       const page = canvasElement.querySelector(`.reader__page[data-page="${BOOK_FIRST}"]`)
       expect(page).not.toBeNull()
-      expect(page?.querySelectorAll('.reader__lit').length).toBeGreaterThan(0)
+      expect(page?.querySelectorAll('.reader__highlight').length).toBeGreaterThan(0)
     })
   },
 }
 
 /** The folders of the vault, with rows chosen across two of them. */
 export const Filing: Story = {
+  parameters: WRITING,
   render: () =>
     screen({
       workspace: () => ({
@@ -1048,6 +1058,7 @@ export const Filing: Story = {
 
 /** A note holding a table, which is typed in as a table. */
 export const Tabling: Story = {
+  parameters: WRITING,
   render: () =>
     screen({
       workspace: () => ({

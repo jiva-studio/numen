@@ -1,28 +1,10 @@
 package recognition
 
-import "testing"
+import (
+	"testing"
 
-// The runtime is opened once for the life of the process: every tensor is made
-// through the memory it holds, whichever reading made it.
-func TestTheRuntimeIsOpenedOnceForTheProcess(t *testing.T) {
-	cfg := Defaults()
-	cfg.Download = false
-
-	first, at, err := library(t.Context(), cfg)
-	if err != nil {
-		t.Skipf("no onnx runtime on this machine: %v", err)
-	}
-	second, again, err := library(t.Context(), cfg)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if first != second {
-		t.Error("a second runtime was opened")
-	}
-	if at != again {
-		t.Errorf("opened from %s and then from %s", at, again)
-	}
-}
+	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
+)
 
 // A recogniser that could not be built leaves the runtime where every other one
 // finds it.
@@ -30,7 +12,7 @@ func TestLocatingLetsGoOfNoRuntime(t *testing.T) {
 	cfg := Defaults()
 	cfg.Download = false
 
-	held, _, err := library(t.Context(), cfg)
+	held, _, err := onnxruntime.Open(t.Context(), cfg.settings())
 	if err != nil {
 		t.Skipf("no onnx runtime on this machine: %v", err)
 	}
@@ -40,7 +22,7 @@ func TestLocatingLetsGoOfNoRuntime(t *testing.T) {
 		t.Fatal("a recogniser was built with no models named")
 	}
 
-	again, _, err := library(t.Context(), cfg)
+	again, _, err := onnxruntime.Open(t.Context(), cfg.settings())
 	if err != nil {
 		t.Fatal(err)
 	}

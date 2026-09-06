@@ -8,8 +8,8 @@ import { describe, expect, it } from 'vitest'
 import { EditorState, StateEffect } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { changing, marked, pacing, revealOf, stepped, type EditorChange } from './change'
-import type { Environment } from '@/plex/transition'
-import { parsed } from '@/fixtures/parsed'
+import type { Clock } from '@/plex/transition'
+import { parsed } from '@/fixtures/state'
 import { RUSSIAN } from '@/fixtures/prose'
 
 // Nothing here has a size, and the editor measures anyway.
@@ -155,7 +155,7 @@ describe('a change whose text has arrived', () => {
 /** A clock the test winds by hand. */
 const clocked = () => {
   let pending: ((now: number) => void) | null = null
-  const environment: Environment = {
+  const clock: Clock = {
     now: () => 0,
     schedule: (run) => {
       pending = run
@@ -166,7 +166,7 @@ const clocked = () => {
     },
   }
   return {
-    environment,
+    clock,
     /** Hand the frame that is waiting its timestamp. */
     tick: (now: number) => {
       const run = pending
@@ -181,58 +181,58 @@ describe('the showing, stepped by the clock', () => {
   const CHANGE: EditorChange = { id: 'a', from: 4, to: 7, text: 'dog and cat' }
 
   const wound = () => {
-    const clock = clocked()
+    const world = clocked()
     const view = new EditorView({
       parent: document.body,
       state: EditorState.create({
         doc: DOC,
-        extensions: [marked, changing.of(CHANGE), pacing(clock.environment)],
+        extensions: [marked, changing.of(CHANGE), pacing(world.clock)],
       }),
     })
-    return { clock, view }
+    return { world, view }
   }
 
   it('shows one word more at each turn of it', () => {
-    const { clock, view } = wound()
+    const { world, view } = wound()
 
-    clock.tick(0)
+    world.tick(0)
     expect(drawn(view.state)).toEqual([{ from: 4, to: 15, mark: null }])
 
-    clock.tick(220)
+    world.tick(220)
     expect(drawn(view.state)).toEqual([
       { from: 4, to: 8, mark: 'cm-arriving' },
       { from: 8, to: 15, mark: null },
     ])
 
-    clock.tick(440)
+    world.tick(440)
     expect(drawn(view.state)).toEqual([
       { from: 8, to: 12, mark: 'cm-arriving' },
       { from: 12, to: 15, mark: null },
     ])
 
-    clock.tick(660)
+    world.tick(660)
     expect(drawn(view.state)).toEqual([{ from: 12, to: 15, mark: 'cm-arriving' }])
 
-    clock.tick(880)
+    world.tick(880)
     expect(drawn(view.state)).toEqual([])
 
     view.destroy()
   })
 
   it('stops asking for frames once all of it is shown', () => {
-    const { clock, view } = wound()
-    for (const now of [0, 220, 440, 660, 880]) clock.tick(now)
+    const { world, view } = wound()
+    for (const now of [0, 220, 440, 660, 880]) world.tick(now)
 
     const settled = drawn(view.state)
-    clock.tick(1100)
+    world.tick(1100)
     expect(drawn(view.state)).toEqual(settled)
 
     view.destroy()
   })
 
   it('never writes the text', () => {
-    const { clock, view } = wound()
-    for (const now of [0, 220, 440, 660, 880]) clock.tick(now)
+    const { world, view } = wound()
+    for (const now of [0, 220, 440, 660, 880]) world.tick(now)
     expect(view.state.doc.toString()).toBe(DOC)
 
     view.destroy()

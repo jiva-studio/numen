@@ -9,7 +9,7 @@ import { expect } from 'storybook/test'
 import Activity from './Activity.vue'
 
 const meta = {
-  title: 'Generic/Activity',
+  title: 'Application/Activity',
   component: Activity,
 } satisfies Meta<typeof Activity>
 

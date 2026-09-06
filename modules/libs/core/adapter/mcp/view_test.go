@@ -15,8 +15,8 @@ import (
 // window is what an agent puts a place in front of.
 type window struct {
 	asked []domain.Place
-	drawn []domain.Editing
-	went  []domain.Went
+	drawn []domain.Edit
+	went  []domain.Move
 	fails error
 }
 
@@ -35,16 +35,16 @@ func watched(t *testing.T, notes map[string]string) (*sdk.ClientSession, *window
 	_, core := built(t, notes)
 	looking := &window{}
 	core.View = looking
-	tells := note.Telling(func(ctx context.Context, said domain.Editing) {
+	tells := note.TellEdit(func(ctx context.Context, said domain.Edit) {
 		_ = looking.Editing(ctx, said)
 	})
-	core.Write.Telling = tells
-	core.Replace.Telling = tells
-	moving := note.Moving(func(ctx context.Context, went domain.Went) {
+	core.Notes.Write.Drawing = tells
+	core.Notes.Replace.Drawing = tells
+	moving := note.TellMove(func(ctx context.Context, went domain.Move) {
 		_ = looking.Moved(ctx, went)
 	})
-	core.Move.Moving = moving
-	core.Rename.Moving = moving
+	core.Notes.Move.Drawing = moving
+	core.Notes.Rename.Drawing = moving
 	return connectedTo(t, core), looking
 }
 
@@ -113,7 +113,7 @@ func TestNoWindowMeansNoTool(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, tool := range listed.Tools {
-		if tool.Name == "note_focus" || tool.Name == "source_show" {
+		if tool.Name == "note_focus" || tool.Name == "source_focus" {
 			t.Fatalf("a headless vault serves %s, which needs somebody looking", tool.Name)
 		}
 	}
@@ -131,9 +131,9 @@ func TestShowPutsAPlaceInFrontOfThePerson(t *testing.T) {
 	session, looking := watched(t, library)
 
 	out := call[struct {
-		Shown bool   `json:"shown"`
-		Says  string `json:"says"`
-	}](t, session, "source_show", map[string]any{
+		Shown   bool   `json:"shown"`
+		Looking string `json:"looking"`
+	}](t, session, "source_focus", map[string]any{
 		"path": "library/A Book.epub", "start": 1200, "length": 80,
 	})
 
@@ -150,7 +150,7 @@ func TestShowRefusesAPathTheVaultDoesNotHold(t *testing.T) {
 	session, looking := watched(t, library)
 
 	res, err := session.CallTool(t.Context(), &sdk.CallToolParams{
-		Name:      "source_show",
+		Name:      "source_focus",
 		Arguments: map[string]any{"path": "library/Nowhere.epub", "start": 0, "length": 10},
 	})
 	if err != nil {
@@ -166,7 +166,7 @@ func TestShowRefusesAPathTheVaultDoesNotHold(t *testing.T) {
 
 // drawn is what the window was told about a change being made, in the order it
 // was told.
-func (w *window) Editing(_ context.Context, said domain.Editing) error {
+func (w *window) Editing(_ context.Context, said domain.Edit) error {
 	if w.fails != nil {
 		return w.fails
 	}
@@ -175,7 +175,7 @@ func (w *window) Editing(_ context.Context, said domain.Editing) error {
 }
 
 // went is where the window was told each note moved to.
-func (w *window) Moved(_ context.Context, went domain.Went) error {
+func (w *window) Moved(_ context.Context, went domain.Move) error {
 	if w.fails != nil {
 		return w.fails
 	}

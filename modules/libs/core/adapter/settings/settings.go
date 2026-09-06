@@ -19,12 +19,10 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
@@ -35,9 +33,10 @@ import (
 // about. A person looking for a setting looks for the part of the application it
 // belongs to.
 type Config struct {
-	// V is the shape of the file. Nothing reads it yet, and it is written so that
-	// the day a section changes shape there is something to tell the two apart.
-	V int `json:"v"`
+	// Version is the shape of the file. Nothing reads it yet, and it is written
+	// so that the day a section changes shape there is something to tell the
+	// two apart.
+	Version int `json:"v"`
 
 	// Appearance is how the window is drawn.
 	Appearance Appearance `json:"appearance"`
@@ -48,8 +47,8 @@ type Config struct {
 	// Agent is which agent answers in the panel, and what it may reach.
 	Agent agent.Config `json:"agent"`
 
-	// Naming is how a note's title and the name of its file are held together.
-	Naming Naming `json:"naming"`
+	// Titles is how a note's title and the name of its file are held together.
+	Titles Titles `json:"naming"`
 
 	// Review is what a day of review is, on this person's clock. How a deck is
 	// scheduled is in the vault, in the preset it points at.
@@ -62,213 +61,8 @@ type Config struct {
 	Said []string `json:"-"`
 }
 
-// Appearance is how the window is drawn.
-type Appearance struct {
-	// InterfaceScale is how large the window is drawn: its chrome, its controls,
-	// the spacing between them and the type in them. A number outside
-	// InterfaceScaleBounds is refused, and a file naming no size at all is drawn
-	// at what the desktop asks for.
-	InterfaceScale float64 `json:"interface_scale"`
-
-	// TextScale is how large the text a person reads is set: a note, a book, an
-	// answer, the editor. A number outside TextScaleBounds is refused.
-	TextScale float64 `json:"text_scale"`
-
-	// Mode is which half of a colour pair the window takes: ModeSystem,
-	// ModeLight or ModeDark. A theme that pins the two halves itself leaves
-	// this nothing to choose.
-	Mode string `json:"mode"`
-
-	// Theme is the stylesheet the window wears, named by the shelf it came off
-	// and its filename: `preset:dracula` ships here, `mine:dracula` is the
-	// person's file.
-	Theme string `json:"theme"`
-
-	// HangPartsUnderANode is whether a node in the plex hangs the headings of
-	// its note under the box. A file leaving it out hangs them, and a file
-	// naming false leaves the box alone.
-	HangPartsUnderANode *bool `json:"hang_parts_under_a_node"`
-
-	// PartsUnderANode is how many of those headings stand under a node at once,
-	// the rest being wound to. A number outside PartsUnderANodeBounds is
-	// refused, and a file naming none stands DefaultParts of them.
-	PartsUnderANode int `json:"parts_under_a_node"`
-}
-
-// Hangs is whether a node hangs the headings of its note under it. A section
-// naming nothing hangs them.
-func (a Appearance) Hangs() bool {
-	return a.HangPartsUnderANode == nil || *a.HangPartsUnderANode
-}
-
-// The modes a colour pair is read by.
-const (
-	ModeSystem = "system"
-	ModeLight  = "light"
-	ModeDark   = "dark"
-)
-
-// AsDesigned is the multiplier that draws everything the size it was drawn at.
-const AsDesigned = 1
-
-// DefaultParts is how many headings stand under a node where the file names no
-// number.
-const DefaultParts = 6
-
-// Bounds is how far a multiplier goes, at each end.
-type Bounds struct{ Least, Most float64 }
-
-// How far each of the two sizes goes, and how many headings a node may hang.
-//
-// The interface holds while the smallest control it draws is a target a
-// pointer finds, and while a window 1280 across still stands its panes side by
-// side. Text holds while the smallest of it is still read, and while a line of
-// typing still fits the row it is typed in. A node hangs at least one heading,
-// and twelve of them reach the foot of a window the plex is drawn in.
-var (
-	InterfaceScaleBounds  = Bounds{Least: 0.8, Most: 2}
-	TextScaleBounds       = Bounds{Least: 0.8, Most: 1.75}
-	PartsUnderANodeBounds = Bounds{Least: 1, Most: 12}
-)
-
-// Holds is whether a number is one the setting takes.
-func (b Bounds) Holds(value float64) bool {
-	return value >= b.Least && value <= b.Most
-}
-
-// Check hands back what is wrong with a number the setting does not take, and
-// nothing for one it does. at is where the number sits in the file.
-func (b Bounds) Check(at string, value float64) error {
-	if b.Holds(value) {
-		return nil
-	}
-	return &Outside{At: at, Value: value, Bounds: b}
-}
-
-// Outside is a number a setting does not take, and how far that setting goes.
-// The number is left as the person wrote it and nothing is drawn at it.
-type Outside struct {
-	// At is where the number sits in the file: `appearance.text_scale`.
-	At    string
-	Value float64
-	Bounds
-}
-
-func (o *Outside) Error() string {
-	return fmt.Sprintf("%s is %v, and goes from %v to %v", o.At, o.Value, o.Least, o.Most)
-}
-
-// Outsides is every number the section holds that its setting does not take,
-// in the order the section names them.
-func (a Appearance) Outsides() []*Outside {
-	var found []*Outside
-	for _, err := range []error{
-		InterfaceScaleBounds.Check("appearance.interface_scale", a.InterfaceScale),
-		TextScaleBounds.Check("appearance.text_scale", a.TextScale),
-		PartsUnderANodeBounds.Check("appearance.parts_under_a_node", float64(a.PartsUnderANode)),
-	} {
-		var outside *Outside
-		if errors.As(err, &outside) {
-			found = append(found, outside)
-		}
-	}
-	return found
-}
-
-// Check is what is wrong with the two sizes and the count, and nothing where
-// each is a number its setting takes.
-func (a Appearance) Check() error {
-	if found := a.Outsides(); len(found) > 0 {
-		return found[0]
-	}
-	return nil
-}
-
-// DefaultTheme is this product's own palette, which is what an installation
-// nobody has dressed wears.
-const DefaultTheme = "preset:numen"
-
-// Indexing is how a vault is made searchable.
-type Indexing struct {
-	// Embedding is which model turns text into vectors, and how it is reached.
-	Embedding embed.Config `json:"embedding"`
-
-	// Recognition is how a scanned document is read when a person asks for it.
-	// Nothing here runs on its own.
-	Recognition Recognition `json:"recognition"`
-
-	// Proofreading is what puts a reading right. Naming no profile here is
-	// naming no proofreader, and a reading is used as it was read.
-	Proofreading proofreading.Config `json:"proofreading"`
-
-	// Transcription is how a recording is listened to: which models hear it,
-	// where they came from, and how the speech in it is found.
-	Transcription Transcription `json:"transcription"`
-
-	// TranscribeRecordings is whether a recording the vault holds no transcript
-	// for is listened to without anybody asking. A file leaving it out listens
-	// to them, and a file naming false leaves it to the hand. A vault of a
-	// hundred hours is a day of a machine, and how much of it to spend is the
-	// person's.
-	TranscribeRecordings *bool `json:"transcribe_recordings"`
-
-	// TranscribeUnderMB is how large a recording may be and still be listened
-	// to without anybody asking, in megabytes. A larger one waits to be asked
-	// for by name, because a folder of albums is days of a machine and nobody
-	// put them there to be read.
-	//
-	// Zero takes the default. A negative number is no limit at all.
-	TranscribeUnderMB int `json:"transcribe_under_mb"`
-}
-
-// Recognition is how a scanned document is read, and which profile puts that
-// reading right afterwards.
-type Recognition struct {
-	recognition.Config
-
-	// Proofread names the profile a reading is put right at. Automatically
-	// there says whether a reading just made is put right without anybody
-	// asking.
-	Proofread proofreading.Proofread `json:"proofread"`
-}
-
-// Transcription is how a recording is listened to, and which profile puts what
-// was heard right afterwards.
-type Transcription struct {
-	transcription.Config
-
-	// Proofread names the profile a transcript is put right at. Automatically
-	// there says whether a transcript already written down is put right
-	// without anybody asking; whether a recording nobody asked about is
-	// listened to at all is TranscribeRecordings.
-	Proofread proofreading.Proofread `json:"proofread"`
-}
-
-// DefaultTranscribeUnderMB is how large a recording listened to unasked may be.
-// It is a talk of a few hours at the bitrates a recorder writes, and larger than
-// anything a person speaks into a phone.
-const DefaultTranscribeUnderMB = 300
-
-// Transcribes is whether a recording is listened to without being asked. A
-// section naming nothing listens to them.
-func (i Indexing) Transcribes() bool {
-	return i.TranscribeRecordings == nil || *i.TranscribeRecordings
-}
-
-// TranscribesUnder is how many bytes a recording may run to and still be
-// listened to unasked. A negative setting is no limit.
-func (i Indexing) TranscribesUnder() int64 {
-	switch {
-	case i.TranscribeUnderMB < 0:
-		return 0
-	case i.TranscribeUnderMB == 0:
-		return DefaultTranscribeUnderMB << 20
-	}
-	return int64(i.TranscribeUnderMB) << 20
-}
-
-// Naming is how a note's title and the name of its file are held together.
-type Naming struct {
+// Titles is how a note's title and the name of its file are held together.
+type Titles struct {
 	// SyncTitleAndFilename is whether renaming either of the two brings the
 	// other into line. A file leaving it out keeps them one name, and a file
 	// naming false is what tells them apart.
@@ -277,61 +71,12 @@ type Naming struct {
 
 // Sync is whether a note's title and its filename are kept as one name. A
 // section naming nothing keeps them one name.
-func (n Naming) Sync() bool {
+func (n Titles) Sync() bool {
 	return n.SyncTitleAndFilename == nil || *n.SyncTitleAndFilename
 }
 
-// Review is what a day of review is, on this person's clock.
-type Review struct {
-	// DayStarts is the hour a day of review begins at, on the clock on the
-	// wall, written as hours and minutes. An answer given before it is written
-	// into the day before.
-	DayStarts string `json:"day_starts"`
-}
-
-// LatestDayStarts is how far past midnight a day may be made to begin.
-const LatestDayStarts = 12 * time.Hour
-
-// ClockFormat is how an hour of the day is written.
-const ClockFormat = "15:04"
-
-// Starts is how long past midnight a day of review begins, and whether the file
-// said something that is not an hour of the day.
-func (r Review) Starts() (time.Duration, bool) {
-	written := strings.TrimSpace(r.DayStarts)
-	if written == "" {
-		return DefaultStarts(), true
-	}
-	at, err := time.Parse(ClockFormat, written)
-	if err != nil {
-		return DefaultStarts(), false
-	}
-	starts := time.Duration(at.Hour())*time.Hour + time.Duration(at.Minute())*time.Minute
-	if starts > LatestDayStarts {
-		return DefaultStarts(), false
-	}
-	return starts, true
-}
-
-// DefaultStarts is when a day of review begins where the file says nothing. An
-// answer given before it finishes the evening it belongs to.
-func DefaultStarts() time.Duration { return flashcards.DayStarts }
-
-// Starting is the hour a day of review is to begin at, as it goes into the
-// file. An hour past LatestDayStarts, anything that is not an hour of the
-// clock, and no hour at all, are flashcards.ErrNotAnHour. It reads and writes
-// no file.
-func Starting(written string) (string, error) {
-	starts, hour := Review{DayStarts: written}.Starts()
-	if !hour || strings.TrimSpace(written) == "" {
-		return "", fmt.Errorf("%w, 00:00 to %s: %q",
-			flashcards.ErrNotAnHour, flashcards.Clock(LatestDayStarts), written)
-	}
-	return flashcards.Clock(starts), nil
-}
-
 // Sync is whether a note's title and its filename are kept as one name.
-func (c Config) Sync() bool { return c.Naming.Sync() }
+func (c Config) Sync() bool { return c.Titles.Sync() }
 
 // DayStarts is how long past midnight a day of review begins.
 func (c Config) DayStarts() time.Duration {
@@ -354,7 +99,7 @@ func on() *bool {
 // Defaults are what an installation nobody has configured does.
 func Defaults() Config {
 	return Config{
-		V: 1,
+		Version: 1,
 		Appearance: Appearance{
 			InterfaceScale:      AsDesigned,
 			TextScale:           AsDesigned,
@@ -371,8 +116,8 @@ func Defaults() Config {
 			TranscribeRecordings: on(),
 		},
 		Agent:  agent.Defaults(),
-		Naming: Naming{SyncTitleAndFilename: on()},
-		Review: Review{DayStarts: flashcards.Clock(DefaultStarts())},
+		Titles: Titles{SyncTitleAndFilename: on()},
+		Review: Review{DayStarts: review.Clock(DefaultStarts())},
 	}
 }
 
@@ -412,18 +157,39 @@ func At(path string) (Config, error) {
 	if err := json.Unmarshal(raw, &cfg); err != nil {
 		return Config{}, err
 	}
-	if cfg.V == 0 {
-		cfg.V = 1
+	// The reading above takes a bare null and leaves the defaults standing, so
+	// the bytes are asked again whether they are one object.
+	if err := object(raw); err != nil {
+		return Config{}, err
+	}
+	// A file naming no version, and one naming a number that is no version at
+	// all, are both the shape the sections have always had.
+	if cfg.Version < 1 {
+		cfg.Version = 1
 	}
 	cfg.carrying(path, raw)
 	if err := cfg.Appearance.Check(); err != nil {
 		return Config{}, err
 	}
+	cfg.wearing()
 	if _, hour := cfg.Review.Starts(); !hour {
 		cfg.say("review.day_starts is an hour of the day, 00:00 to %s, and %s stands",
-			flashcards.Clock(LatestDayStarts), flashcards.Clock(DefaultStarts()))
+			review.Clock(LatestDayStarts), review.Clock(DefaultStarts()))
 	}
 	return cfg, nil
+}
+
+// wearing stands the machine's own choice where the file names a word that is
+// no half of a colour pair, and says so. The word is left in the file, where
+// the person wrote it and where they will read it again.
+func (c *Config) wearing() {
+	switch c.Appearance.Mode {
+	case ModeSystem, ModeLight, ModeDark:
+		return
+	}
+	c.say("appearance.mode is %s, %s or %s, and %s stands",
+		ModeSystem, ModeLight, ModeDark, ModeSystem)
+	c.Appearance.Mode = ModeSystem
 }
 
 // carrying reads `appearance.zoom` as the setting that replaced it, and gives
@@ -466,20 +232,6 @@ func (c *Config) carrying(path string, raw []byte) {
 		c.say("appearance.zoom is outside interface_scale, %v to %v",
 			InterfaceScaleBounds.Least, InterfaceScaleBounds.Most)
 	}
-}
-
-// fromDesktop is how large the interface is drawn where the file names no size.
-//
-// A screen says how many pixels it has and not how large they are, so the
-// desktop is asked: GDK_DPI_SCALE is what a person told their session text
-// should be scaled by, and the interface is drawn to match. A number outside
-// InterfaceScaleBounds is not one the setting is seeded with.
-func fromDesktop() float64 {
-	scale, err := strconv.ParseFloat(os.Getenv("GDK_DPI_SCALE"), 64)
-	if err != nil || !InterfaceScaleBounds.Holds(scale) {
-		return AsDesigned
-	}
-	return scale
 }
 
 func (c *Config) say(said string, about ...any) {

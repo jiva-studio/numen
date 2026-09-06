@@ -66,7 +66,7 @@ describe('a line of work', () => {
     const drawn = line({ says: 'Fetching models', about: 'inference.onnx', working: true })
 
     expect(drawn.find('.activity__percent').exists()).toBe(false)
-    expect(drawn.find('.activity__waiting').exists()).toBe(true)
+    expect(drawn.find('.activity__spinner').exists()).toBe(true)
   })
 
   it('follows what the work moved on to', async () => {

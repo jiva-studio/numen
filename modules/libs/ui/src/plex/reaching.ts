@@ -9,28 +9,28 @@
 import { useHold, HOLD } from './holding'
 
 /** The node a strategy is watching, in the only two terms it needs. */
-export interface ReachingSite {
+export interface ReachSite {
   /** Whether this node will take a gesture now. */
   readonly ready: () => boolean
   /** Begin one from this press, which the gesture then follows. */
   readonly reach: (event: PointerEvent) => void
 }
 
-export interface Reaching {
+export interface ReachStrategy {
   /** Whether the node draws a handle for a pointer to press. */
   readonly handle: boolean
   /** What the node listens for besides. Called once, inside the node's scope. */
-  readonly listeners: (site: ReachingSite) => Record<string, (event: PointerEvent) => void>
+  readonly listeners: (site: ReachSite) => Record<string, (event: PointerEvent) => void>
 }
 
 /** The handle, under the hand and under the keyboard. */
-export const byHandle: Reaching = {
+export const byHandle: ReachStrategy = {
   handle: true,
   listeners: () => ({}),
 }
 
 /** A finger left still on the node. Milliseconds, if the wait is to be another. */
-export const byHolding = (after: number = HOLD): Reaching => ({
+export const byHolding = (after: number = HOLD): ReachStrategy => ({
   handle: false,
   listeners: (site) => {
     const held = useHold(site.ready, site.reach, () => after)

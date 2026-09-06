@@ -44,9 +44,9 @@ func held(t *testing.T, dir, name string) string {
 	return string(raw)
 }
 
-var aBatch = proofread.Batch{At: 7, Lines: []proofread.Line{
-	{At: 0, Text: "the qulck brown fox"},
-	{At: 1, Text: "jumped ovcr the lazy dog"},
+var aBatch = proofread.Batch{Number: 7, Lines: []proofread.Line{
+	{Number: 0, Text: "the qulck brown fox"},
+	{Number: 1, Text: "jumped ovcr the lazy dog"},
 }}
 
 // The batch goes on the input and the flags on the command line: the tool list
@@ -56,7 +56,7 @@ func TestABatchGoesOnTheInputAndTheFlagsOnTheCommandLine(t *testing.T) {
 	command, wrote := recorder(t, "0|the quick brown fox")
 	by := &Proofreader{Command: command, Model: "haiku", Instruction: proofread.ScanInstruction}
 
-	out, err := by.Read(t.Context(), []proofread.Batch{aBatch})
+	out, err := by.Proofread(t.Context(), []proofread.Batch{aBatch})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +83,7 @@ func TestTheCommandLineIsStartedInAnEmptyFolder(t *testing.T) {
 	command, wrote := recorder(t, "")
 	by := &Proofreader{Command: command, Model: "haiku", Instruction: proofread.ScanInstruction}
 
-	if _, err := by.Read(t.Context(), []proofread.Batch{aBatch}); err != nil {
+	if _, err := by.Proofread(t.Context(), []proofread.Batch{aBatch}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -98,7 +98,7 @@ func TestTheInstructionIsTheCallersOwn(t *testing.T) {
 	command, wrote := recorder(t, "")
 	by := &Proofreader{Command: command, Instruction: proofread.SpeechInstruction}
 
-	if _, err := by.Read(t.Context(), []proofread.Batch{aBatch}); err != nil {
+	if _, err := by.Proofread(t.Context(), []proofread.Batch{aBatch}); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(held(t, wrote, "argv"), proofread.SpeechInstruction) {
@@ -126,7 +126,7 @@ func TestACommandLineThatFailedEndsTheRun(t *testing.T) {
 	}
 	by := &Proofreader{Command: []string{script}, Instruction: proofread.ScanInstruction}
 
-	out, err := by.Read(t.Context(), []proofread.Batch{aBatch})
+	out, err := by.Proofread(t.Context(), []proofread.Batch{aBatch})
 	if err == nil {
 		t.Fatal("no error")
 	}
@@ -157,7 +157,7 @@ func TestTheFolderTheRunWasStartedInGoesWithIt(t *testing.T) {
 			}
 			by := &Proofreader{Command: []string{script}, Instruction: proofread.ScanInstruction}
 
-			_, _ = by.Read(t.Context(), []proofread.Batch{aBatch})
+			_, _ = by.Proofread(t.Context(), []proofread.Batch{aBatch})
 
 			where := strings.TrimSpace(held(t, filepath.Dir(told), "where"))
 			if where == "" {
@@ -183,14 +183,14 @@ func TestARunTheContextKilledEndsWithIt(t *testing.T) {
 	}
 	by := &Proofreader{Command: []string{script}, Instruction: proofread.ScanInstruction}
 
-	ctx, stop := context.WithCancel(context.Background())
+	ctx, stop := context.WithCancel(t.Context())
 	go func() {
 		time.Sleep(150 * time.Millisecond)
 		stop()
 	}()
 
 	began := time.Now()
-	out, err := by.Read(ctx, []proofread.Batch{aBatch})
+	out, err := by.Proofread(ctx, []proofread.Batch{aBatch})
 	took := time.Since(began)
 
 	if err == nil {
@@ -214,7 +214,7 @@ func TestWhatAFailedRunWroteIsNotAnAnswer(t *testing.T) {
 	}
 	by := &Proofreader{Command: []string{script}, Instruction: proofread.ScanInstruction}
 
-	out, err := by.Read(t.Context(), []proofread.Batch{aBatch})
+	out, err := by.Proofread(t.Context(), []proofread.Batch{aBatch})
 	if err == nil {
 		t.Fatal("a run that failed came back with no reason")
 	}

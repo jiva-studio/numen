@@ -14,9 +14,10 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlfile"
-	"github.com/jiva-studio/numen/modules/libs/core/cards"
-	"github.com/jiva-studio/numen/modules/libs/core/cutting"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/writing"
+	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 )
 
 //go:embed sql/*.sql
@@ -34,23 +35,26 @@ const kind = "note"
 type Repository struct {
 	db *sql.DB
 
-	// sizes are what a note is cut at. A repository told none cuts at the sizes
-	// the cutting package names.
-	sizes cutting.Sizes
+	// sizes are what a note is cut at, and reads what a chunk of it has to read
+	// like to be kept. A repository told neither takes what the chunking
+	// package names.
+	sizes chunking.Sizes
+	reads chunking.Legibility
 }
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
-// Cut is the repository, cutting a note at the sizes given. The settings decide
-// them, and what has read the settings passes them in here.
-func (r *Repository) Cut(sizes cutting.Sizes) *Repository {
-	return &Repository{db: r.db, sizes: sizes}
+// Cut is the repository, cutting a note at the sizes given and keeping what
+// reads as text. The settings decide both, and what has read the settings
+// passes them in here.
+func (r *Repository) Cut(sizes chunking.Sizes, reads chunking.Legibility) *Repository {
+	return &Repository{db: r.db, sizes: sizes, reads: reads}
 }
 
 // exec runs a named statement and says which one failed. A bare driver error
 // from one of the many statements in a transaction is a schema mistake nobody
 // can locate.
-func exec(ctx context.Context, tx *sql.Tx, name string, args ...any) error {
+func exec(ctx context.Context, tx *writing.Transaction, name string, args ...any) error {
 	if _, err := tx.ExecContext(ctx, stmt.Get(name), args...); err != nil {
 		return fmt.Errorf("%s: %w", name, err)
 	}
@@ -61,11 +65,11 @@ func exec(ctx context.Context, tx *sql.Tx, name string, args ...any) error {
 //
 // A note and the size and date that call it up to date are stored together or
 // not at all, so an interrupted scan leaves files to be read again.
-func (r *Repository) Save(ctx context.Context, vaultID string, notes []domain.Note) error {
+func (r *Repository) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.Note) error {
 	if len(notes) == 0 {
 		return nil
 	}
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := writing.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
@@ -76,8 +80,8 @@ func (r *Repository) Save(ctx context.Context, vaultID string, notes []domain.No
 		return err
 	}
 	for _, n := range notes {
-		if err := saveNote(ctx, tx, vault, n, r.sizes); err != nil {
-			return fmt.Errorf("%s: %w", n.Ref.Path, err)
+		if err := saveNote(ctx, tx, vault, n, r.sizes, r.reads); err != nil {
+			return fmt.Errorf("%s: %w", n.Fingerprint.Path, err)
 		}
 	}
 	if err := tx.Commit(); err != nil {
@@ -86,7 +90,10 @@ func (r *Repository) Save(ctx context.Context, vaultID string, notes []domain.No
 	return nil
 }
 
-func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes cutting.Sizes) error {
+func saveNote(
+	ctx context.Context, tx *writing.Transaction, vault int64, n domain.Note,
+	sizes chunking.Sizes, reads chunking.Legibility,
+) error {
 	frontmatter, storeErr := encodeFrontmatter(n)
 	problem := n.FrontmatterErr
 	if storeErr != "" {
@@ -98,11 +105,11 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes
 	}
 
 	var row int64
-	if err := tx.QueryRowContext(ctx, stmt.Get("save"),
-		vault, n.Ref.Path, kind, n.Ref.Size, n.Ref.MTime).Scan(&row); err != nil {
-		return fmt.Errorf("save: %w", err)
+	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
+		vault, n.Fingerprint.Path, kind, n.Fingerprint.Size, chunk.Stamp(n.Fingerprint.ModTime)).Scan(&row); err != nil {
+		return fmt.Errorf("record the source this note is: %w", err)
 	}
-	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.Ref.Path)),
+	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.Fingerprint.Path)),
 		n.Title, string(noteType(n)), nullable(n.ID), frontmatter, nullable(problem)); err != nil {
 		return err
 	}
@@ -121,7 +128,7 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes
 	// The note goes in as its own large chunk, so the words in it are findable
 	// as soon as it is indexed. A chunk whose text is what it was keeps its
 	// row, and the vector made from it.
-	if err := chunk.Replace(ctx, tx, row, vault, cut(n, kept, sizes)); err != nil {
+	if err := chunk.Replace(ctx, tx, row, vault, cut(n, kept, sizes, reads)); err != nil {
 		return err
 	}
 	for _, h := range kept {
@@ -140,19 +147,12 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes
 	if err := exec(ctx, tx, "insert_heading_names", row); err != nil {
 		return err
 	}
-	if len(n.Links) > 0 {
-		insert, err := tx.PrepareContext(ctx, stmt.Get("insert_link"))
-		if err != nil {
-			return fmt.Errorf("insert_link: %w", err)
-		}
-		defer insert.Close()
-		for i, l := range n.Links {
-			if _, err := insert.ExecContext(ctx, row, i,
-				l.Target.Scheme, l.Target.Value, domain.FoldName(domain.LinkName(l.Target.Value)),
-				string(l.Role), nullable(l.Type), nullable(l.Note), nullable(l.Label),
-			); err != nil {
-				return fmt.Errorf("insert_link: %w", err)
-			}
+	for i, l := range n.Links {
+		if _, err := tx.ExecContext(ctx, stmt.Get("insert_link"), row, i,
+			l.Target.Scheme, l.Target.Value, domain.FoldName(domain.LinkName(l.Target.Value)),
+			string(l.Role), nullable(l.Type), nullable(l.Why), nullable(l.Label),
+		); err != nil {
+			return fmt.Errorf("store what this note points at: %w", err)
 		}
 	}
 	for _, detail := range n.Problems {
@@ -179,19 +179,21 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes
 // A deck and a stencil are cut into nothing. A card is found by its heading,
 // which is its question, and a stencil by its title, which is its file name.
 // The vectors hang off the chunks, so neither is embedded either.
-func cut(n domain.Note, headings []domain.Heading, sizes cutting.Sizes) []chunk.Chunk {
+func cut(
+	n domain.Note, headings []domain.Heading, sizes chunking.Sizes, reads chunking.Legibility,
+) []chunk.Chunk {
 	if n.Type == domain.TypeDeck || n.Type == domain.TypeStencil {
 		return nil
 	}
 
-	at := int(n.Ref.Size) - len(n.Body)
+	at := int(n.Fingerprint.Size) - len(n.Body)
 	if at < 0 {
 		at = 0
 	}
-	sizes.Large = cutting.Whole
+	sizes.Large = chunking.Whole
 
 	out := make([]chunk.Chunk, 0, 1)
-	for _, large := range cutting.Cut(n.Body, parts(headings), sizes) {
+	for _, large := range chunking.Cut(n.Body, parts(headings), sizes, reads) {
 		// The title is searched together with the body: a note is looked for by
 		// the name it was given.
 		c := chunk.Chunk{
@@ -223,13 +225,13 @@ func cut(n domain.Note, headings []domain.Heading, sizes cutting.Sizes) []chunk.
 //
 // They are the headings the index keeps, so a passage is announced under a name
 // somebody wrote.
-func parts(headings []domain.Heading) []cutting.Part {
+func parts(headings []domain.Heading) []chunking.PartStart {
 	if len(headings) == 0 {
 		return nil
 	}
-	out := make([]cutting.Part, 0, len(headings))
+	out := make([]chunking.PartStart, 0, len(headings))
 	for _, h := range headings {
-		out = append(out, cutting.Part{Title: h.Text, Offset: h.Offset})
+		out = append(out, chunking.PartStart{Title: h.Text, Offset: h.Offset})
 	}
 	return out
 }
@@ -238,8 +240,8 @@ func parts(headings []domain.Heading) []cutting.Part {
 // under it. Below them stand the stencil's field names, written out under every
 // card.
 //
-// TODO: which level a deck spends on what is the format's answer, and cards is
-// where the format is read. Take these from there once it names them.
+// TODO: which level a deck spends on what is the format package's answer, and
+// it is where the format is read. Take these from there once it names them.
 const (
 	sectionLevel = 1
 	cardLevel    = 2
@@ -262,7 +264,7 @@ func outline(n domain.Note) []domain.Heading {
 			case sectionLevel:
 				out = append(out, h)
 			case cardLevel:
-				h.Text, _ = cards.ReadHeading(h.Text)
+				h.Text, _ = format.ReadHeading(h.Text)
 				if h.Text == "" {
 					continue
 				}
@@ -275,11 +277,11 @@ func outline(n domain.Note) []domain.Heading {
 	}
 }
 
-func (r *Repository) Remove(ctx context.Context, vaultID string, paths []string) error {
+func (r *Repository) Remove(ctx context.Context, vaultID domain.VaultID, paths []string) error {
 	if len(paths) == 0 {
 		return nil
 	}
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := writing.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
@@ -308,7 +310,7 @@ func (r *Repository) Remove(ctx context.Context, vaultID string, paths []string)
 				return err
 			}
 		}
-		if err := exec(ctx, tx, "delete", row); err != nil {
+		if err := exec(ctx, tx, "delete_source", row); err != nil {
 			return err
 		}
 	}
@@ -336,7 +338,7 @@ func encodeFrontmatter(n domain.Note) (value any, problem string) {
 }
 
 // noteType is what the file said it is. A note whose file says nothing is a
-// note, and the column holds one of the three words either way.
+// note, and the column holds one of the four words either way.
 func noteType(n domain.Note) domain.NoteType {
 	if n.Type == "" {
 		return domain.TypeNote

@@ -15,11 +15,12 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
+	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // running is the one server this process holds. Starting again while it stands
@@ -32,7 +33,7 @@ var (
 type held struct {
 	port   int
 	stop   context.CancelFunc
-	opened *webui.Opened
+	opened *editor.Installation
 	server *http.Server
 }
 
@@ -61,12 +62,7 @@ func Start(dir string) (int, error) {
 		return 0, err
 	}
 
-	cfg := container.Config{
-		IndexPath:    filepath.Join(dir, "index.db"),
-		RegistryPath: filepath.Join(dir, "vaults.json"),
-		SettingsPath: filepath.Join(dir, "settings.yaml"),
-		ThemesPath:   filepath.Join(dir, "themes"),
-	}
+	cfg := configured(dir, os.Stderr)
 
 	if err := seed(root); err != nil {
 		return 0, err
@@ -79,24 +75,46 @@ func Start(dir string) (int, error) {
 	}
 
 	ctx, stop := context.WithCancel(context.Background())
-	opened, err := webui.Open(ctx, cfg, filed, io.Discard)
+	opened, err := editor.Open(ctx, cfg, filed, os.Stderr)
 	if err != nil {
 		stop()
 		return 0, err
 	}
-
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		stop()
 		_ = opened.Close()
 		return 0, err
 	}
+	// The port is the whole of what Start answers, so a listener holding no TCP
+	// address leaves the caller nothing to reach and this ends here.
+	addr, ok := listener.Addr().(*net.TCPAddr)
+	if !ok {
+		stop()
+		_ = listener.Close()
+		_ = opened.Close()
+		return 0, fmt.Errorf("listening on %s, which is no TCP address", listener.Addr())
+	}
 
-	server := &http.Server{Handler: allowing(opened.API.Serving(http.NotFoundHandler()))}
+	// The phone draws the vault it is showing, the notes in it and the tree they
+	// are filed in, and asks the core nothing else. What is served here is
+	// served on a socket every process on the phone reaches, so it mounts those three
+	// and no other service: not the settings file, which holds the keys this
+	// installation reaches models with, and not the files of the person's disk
+	// beside the notes, which is a book read off the disk and a model set
+	// running over one.
+	server := &http.Server{
+		Handler: allowing(opened.API.Serving(
+			http.NotFoundHandler(),
+			numenv1connect.VaultServiceName,
+			numenv1connect.NoteServiceName,
+			numenv1connect.FileServiceName,
+		)),
+	}
 	go func() { _ = server.Serve(listener) }()
 
 	running = &held{
-		port:   listener.Addr().(*net.TCPAddr).Port,
+		port:   addr.Port,
 		stop:   stop,
 		opened: opened,
 		server: server,
@@ -132,6 +150,18 @@ func Port() int {
 	return running.port
 }
 
+// configured is what this installation starts from: everything it keeps sits
+// under the folder the platform gave it, and what the core carried on past is
+// said on the stream the platform collects.
+func configured(dir string, out io.Writer) container.Config {
+	return container.Config{
+		IndexPath:    filepath.Join(dir, "index.db"),
+		RegistryPath: filepath.Join(dir, "vaults.json"),
+		ThemesPath:   filepath.Join(dir, "themes"),
+		Trouble:      func(err error) { fmt.Fprintln(out, "numen:", err) },
+	}
+}
+
 // known puts the vault on this installation's list, and answers with the path
 // the list files it under. A vault already on it stays where it is.
 func known(cfg container.Config, root string) (string, error) {
@@ -147,10 +177,10 @@ func known(cfg container.Config, root string) (string, error) {
 	} else if found {
 		return held.Path, nil
 	}
-	added, err := usecase.Add{
+	added, err := vaults.Add{
 		Identity: cfg.VaultIdentity(),
 		Registry: registry,
-		Now:      time.Now,
+		Now:      cfg.Clock(),
 	}.Execute(root, "numen")
 	if err != nil {
 		return "", err
@@ -199,12 +229,23 @@ func seed(root string) error {
 	return nil
 }
 
+// Page is the origin the platform serves this application's own page from:
+// `androidScheme` in capacitor.config.ts, and no port. The core listens on the
+// loopback, so the page is asking across origins and says so.
+const Page = "http://localhost"
+
 // allowing lets the page the platform serves ask this server, which sits on
 // another origin than the one the webview loaded.
+//
+// It names that one origin. The socket is on the loopback and every process on
+// the phone reaches it, so a page in the person's own browser could ask it as
+// well; naming the origin is what makes a browser refuse to send that ask and
+// refuse to hand back what came of it. Nothing here is authentication: a
+// program that speaks for itself sends no origin and is not held to one.
 func allowing(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		head := w.Header()
-		head.Set("Access-Control-Allow-Origin", "*")
+		head.Set("Access-Control-Allow-Origin", Page)
 		head.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
 		head.Set("Access-Control-Allow-Headers", strings.Join([]string{
 			"Content-Type", "Connect-Protocol-Version", "Connect-Timeout-Ms",

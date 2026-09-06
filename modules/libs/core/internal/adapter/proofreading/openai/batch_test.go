@@ -1,7 +1,6 @@
 package openai_test
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -94,7 +93,7 @@ func TestTheRunIsLeftWithItsFieldsInTheOrderTheServiceReadsThem(t *testing.T) {
 	var raw []byte
 	s := takes(t, "batch_1", &raw)
 
-	if _, err := queued(t, s.URL).Leave(context.Background(), []proofread.Batch{page(1, "a line")}); err != nil {
+	if _, err := queued(t, s.URL).Leave(t.Context(), []proofread.Batch{page(1, "a line")}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -117,7 +116,7 @@ func TestEveryPageOfTheRunIsAskedWhatOnePageIsAskedOnItsOwn(t *testing.T) {
 	var raw []byte
 	s := takes(t, "batch_1", &raw)
 
-	if _, err := queued(t, s.URL).Leave(context.Background(), pages); err != nil {
+	if _, err := queued(t, s.URL).Leave(t.Context(), pages); err != nil {
 		t.Fatal(err)
 	}
 
@@ -135,7 +134,7 @@ func TestEveryPageOfTheRunIsAskedWhatOnePageIsAskedOnItsOwn(t *testing.T) {
 		t.Fatalf("got %d requests, want %d", len(run.Requests), len(pages))
 	}
 	for i, one := range run.Requests {
-		if want := fmt.Sprint(pages[i].At); one.CustomID != want {
+		if want := fmt.Sprint(pages[i].Number); one.CustomID != want {
 			t.Errorf("request %d comes back under %q, want %q", i, one.CustomID, want)
 		}
 		if one.Body.Model != "test-model" {
@@ -162,7 +161,7 @@ func TestLeaveAnswersWithTheNameTheServiceGave(t *testing.T) {
 	var raw []byte
 	s := takes(t, "batch_1e9f", &raw)
 
-	name, err := queued(t, s.URL).Leave(context.Background(), []proofread.Batch{page(1, "a line")})
+	name, err := queued(t, s.URL).Leave(t.Context(), []proofread.Batch{page(1, "a line")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,7 +175,7 @@ func TestABatchStillWorkingIsNotThereYet(t *testing.T) {
 		t.Run(status, func(t *testing.T) {
 			s := holds(t, status, nil)
 
-			replies, ready, err := queued(t, s.URL).Collect(context.Background(), "batch_1")
+			replies, ready, err := queued(t, s.URL).Collect(t.Context(), "batch_1")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -196,7 +195,7 @@ func TestACompletedBatchAnswersAboutEveryPageUnderItsOwnNumber(t *testing.T) {
 		answered("8", "800|the second line"),
 	})
 
-	replies, ready, err := queued(t, s.URL).Collect(context.Background(), "batch_1")
+	replies, ready, err := queued(t, s.URL).Collect(t.Context(), "batch_1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -219,7 +218,7 @@ func TestABatchThatEndedNamesTheStatus(t *testing.T) {
 		t.Run(status, func(t *testing.T) {
 			s := holds(t, status, nil)
 
-			replies, ready, err := queued(t, s.URL).Collect(context.Background(), "batch_1")
+			replies, ready, err := queued(t, s.URL).Collect(t.Context(), "batch_1")
 			if err == nil {
 				t.Fatal("no error")
 			}
@@ -244,7 +243,7 @@ func TestAResultNotAboutAPageOrSayingNothingIsLeftOut(t *testing.T) {
 		{"custom_id": "10", "response": map[string]any{"body": map[string]any{}}},
 	})
 
-	replies, ready, err := queued(t, s.URL).Collect(context.Background(), "batch_1")
+	replies, ready, err := queued(t, s.URL).Collect(t.Context(), "batch_1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -262,7 +261,7 @@ func TestAResultNotAboutAPageOrSayingNothingIsLeftOut(t *testing.T) {
 func TestACompletedBatchWithNoResultsAnswersAboutNothing(t *testing.T) {
 	s := holds(t, "completed", nil)
 
-	replies, ready, err := queued(t, s.URL).Collect(context.Background(), "batch_1")
+	replies, ready, err := queued(t, s.URL).Collect(t.Context(), "batch_1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -281,7 +280,7 @@ func TestARefusedBatchNamesTheStatusAndNotTheKey(t *testing.T) {
 	})
 	c := queued(t, s.URL)
 
-	name, err := c.Leave(context.Background(), []proofread.Batch{page(1, "a line")})
+	name, err := c.Leave(t.Context(), []proofread.Batch{page(1, "a line")})
 	if err == nil {
 		t.Fatal("no error out of Leave")
 	}
@@ -295,7 +294,7 @@ func TestARefusedBatchNamesTheStatusAndNotTheKey(t *testing.T) {
 		t.Errorf("left under %q alongside the error", name)
 	}
 
-	if _, _, err := c.Collect(context.Background(), "batch_1"); err == nil {
+	if _, _, err := c.Collect(t.Context(), "batch_1"); err == nil {
 		t.Fatal("no error out of Collect")
 	} else if strings.Contains(err.Error(), theKey) {
 		t.Error("the error out of Collect carries the key")

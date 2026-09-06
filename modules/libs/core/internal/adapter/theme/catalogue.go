@@ -26,7 +26,7 @@ const shippedIn = "presets"
 const Extension = ".css"
 
 // MaxSize is the largest file read as a theme. Its text is spliced into the
-// page before the window draws, and the presets are under two kilobytes each.
+// page before the window draws, and the presets are a few kilobytes each.
 const MaxSize = 256 << 10
 
 // Default is this product's own palette, and what a name matching nothing

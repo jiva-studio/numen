@@ -9,20 +9,21 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
-	format "github.com/jiva-studio/numen/modules/libs/core/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/check"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // connected is the tools as an agent meets them: over a real session, through
@@ -73,45 +74,49 @@ func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 	}
 	t.Cleanup(func() { db.Close() })
 
-	readers, writers := filesystem.Readers{}, filesystem.Writers{}
-	scan := usecase.Scan{
+	readers, writers := filesystem.VaultReaders{}, filesystem.VaultWriters{}
+	scan := vaults.Scan{
 		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.Queries(), Maintenance: db.Maintenance(),
 	}
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	refresh := usecase.Refresh{Readers: readers, Notes: db.Notes()}
+	refresh := vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources())
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
 	}
 	queries := db.Queries()
 	cutting := cfg.Cards(queries, db.Links(), index)
+	moving := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index, time.Now)
 
 	core := mcp.Core{
-		Cards:       cutting.Read,
-		Stencils:    cutting.List,
-		Cuts:        cutting.Write,
-		Cutting:     cutting.Create,
-		FieldRename: cutting.Rename,
-		DeckBody:    format.DeckBody,
-		StencilBody: container.StencilBody,
-
-		Showing: mcp.One(v, v.Path), Readers: readers, Notes: queries,
-		Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
-		Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
-		Links:         note.ShowLinks{Links: db.Links()},
-		Problems:      check.Standard(db.Problems()),
-		Create: note.Create{
-			Writers: writers, Names: queries, Index: index,
+		Cards: mcp.Cards{
+			Read:        cutting.Read,
+			List:        cutting.List,
+			Write:       cutting.Write,
+			Create:      cutting.Create,
+			RenameField: cutting.Rename,
+			DeckEdit:    format.OpenDeckBody,
+			StencilBody: format.StencilBody,
 		},
-		Write:   note.Write{Readers: readers, Writers: writers, Index: index},
-		Replace: note.Replace{Readers: readers, Writers: writers, Index: index},
-		Move:    note.Move{Readers: readers, Writers: writers, Links: db.Links(), Sources: db.Sources(), Index: index},
-		Rename:  note.Rename{Move: note.Move{Readers: readers, Writers: writers, Links: db.Links(), Sources: db.Sources(), Index: index}},
-		Remove:  note.Remove{Writers: writers, Links: db.Links(), Known: db.SourcesKnown(), Index: index},
-		Linking: note.Linking{Readers: readers, Writers: writers, Index: index},
+
+		Showing: mcp.ShowingOne(v, v.Path), Readers: readers,
+		Notes: mcp.Notes{
+			Queries:       queries,
+			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
+			Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
+			Links:         note.ShowLinks{Links: db.Links()},
+			Problems:      check.Standard(db.Problems()),
+			Create:        note.NewCreate(writers, queries, index, time.Now),
+			Write:         note.NewWrite(readers, writers, index, time.Now),
+			Replace:       note.NewReplace(readers, writers, index, time.Now),
+			Move:          moving,
+			Rename:        note.NewRename(moving),
+			Remove:        note.NewRemove(writers, db.Links(), db.SourcesKnown(), index),
+			Linking:       note.NewEditLinks(readers, writers, index, time.Now),
+		},
 	}
 	return v, core
 }
@@ -135,6 +140,30 @@ func call[T any](t *testing.T, s *sdk.ClientSession, name string, args any) T {
 		t.Fatalf("%s: %v", name, err)
 	}
 	return out
+}
+
+// fingerprint is what a note is at this moment, as note_read gives it. Every
+// tool that writes a note takes one.
+func fingerprint(t *testing.T, s *sdk.ClientSession, path string) string {
+	t.Helper()
+	read := call[struct {
+		Notes []struct {
+			Fingerprint string `json:"fingerprint"`
+		} `json:"notes"`
+	}](t, s, "note_read", map[string]any{"paths": []string{path}})
+	if len(read.Notes) != 1 {
+		t.Fatalf("note_read answered with %d notes for %s", len(read.Notes), path)
+	}
+	return read.Notes[0].Fingerprint
+}
+
+// deckFingerprint is what a deck is at this moment, as card_read gives it.
+// Every tool that writes a deck takes one.
+func deckFingerprint(t *testing.T, s *sdk.ClientSession, path string) string {
+	t.Helper()
+	return call[struct {
+		Fingerprint string `json:"fingerprint"`
+	}](t, s, "card_read", map[string]any{"path": path}).Fingerprint
 }
 
 func failing(t *testing.T, s *sdk.ClientSession, name string, args any) string {
@@ -172,7 +201,7 @@ func TestTheVaultIsLocatedInTheInstructions(t *testing.T) {
 func TestHowABookIsAskedIsInTheInstructions(t *testing.T) {
 	session, _ := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	said := session.InitializeResult().Instructions
-	for _, rule := range []string{"source_show", "source_read", "own words", "numen:"} {
+	for _, rule := range []string{"source_focus", "source_read", "own words", "numen:"} {
 		if !strings.Contains(said, rule) {
 			t.Errorf("the instructions say nothing about %q:\n%s", rule, said)
 		}
@@ -194,15 +223,70 @@ func TestHowANoteIsNamedInAnAnswerIsInTheInstructions(t *testing.T) {
 func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 	session, _ := connected(t, nil)
 	exactly(t, serves(t, session), []string{
-		"note_search", "note_get", "note_read", "note_neighbourhood",
-		"note_create", "note_write", "note_edit", "note_rename", "note_move", "note_remove",
+		"note_search", "note_titles", "note_read", "note_resolve", "note_neighbourhood",
+		"note_create", "note_rewrite", "note_edit", "note_rename", "note_move", "note_remove",
 		"file_read",
 		"link_add", "link_update", "link_remove", "link_list",
-		"card_stencils", "card_read", "card_add", "card_edit", "card_remove",
-		"card_section_add", "card_deck_create", "card_stencil_create", "card_rename_field",
-		"vault_get", "vault_problems", "vault_named",
+		"card_stencil_list", "card_read", "card_add", "card_edit",
+		"card_value_remove", "card_remove",
+		"card_section_add", "card_section_rename", "card_section_remove",
+		"card_deck_create", "card_stencil_create", "card_field_rename",
+		"vault_get", "vault_problems",
 		"source_list", "source_read", "source_recognise", "source_transcribe",
 	})
+}
+
+// The editor window mounts this server with a list of vaults behind it and
+// somebody sitting in front of it, and eight tools are served that a build
+// holding neither does not reach. This is that window's whole surface.
+//
+// It is the vault's every tool because the editor window is where a person
+// asks for the vault to be changed: the surfaces that read and that review are
+// what the other two windows serve. The set is exact, so a tool added to the
+// server is a tool this window is knowingly given.
+func TestTheWindowAPersonWritesInServesEveryToolTheVaultHas(t *testing.T) {
+	_, core := built(t, nil)
+	core.Vaults = onTheList(t).core.Vaults
+	core.View = &window{}
+	core.Attending = func() domain.OpenTabs { return domain.OpenTabs{} }
+
+	exactly(t, serves(t, connectedTo(t, core)), []string{
+		"note_search", "note_titles", "note_read", "note_resolve", "note_neighbourhood",
+		"note_create", "note_rewrite", "note_edit", "note_rename", "note_move", "note_remove",
+		"note_focus",
+		"file_read",
+		"link_add", "link_update", "link_remove", "link_list",
+		"card_stencil_list", "card_read", "card_add", "card_edit",
+		"card_value_remove", "card_remove",
+		"card_section_add", "card_section_rename", "card_section_remove",
+		"card_deck_create", "card_stencil_create", "card_field_rename",
+		"vault_get", "vault_problems",
+		"vault_list", "vault_add", "vault_rename", "vault_forget", "vault_open",
+		"source_list", "source_read", "source_recognise", "source_transcribe",
+		"source_focus",
+		"window_tab_list",
+	})
+}
+
+// Both of these put megabytes of new text in the folder a person syncs, and an
+// agent weighing an hour's work on their behalf is told so before it calls.
+func TestReadingAndListeningSayWhatTheyWriteIntoTheVault(t *testing.T) {
+	session, _ := connected(t, nil)
+
+	for tool, area := range map[string]string{
+		"source_recognise":  filesystem.OCRDir,
+		"source_transcribe": filesystem.SpeechDir,
+	} {
+		said := describing(t, session, tool)
+		for _, rule := range []string{
+			"into the vault",
+			filesystem.DefaultServiceDir + "/" + area,
+		} {
+			if !strings.Contains(said, rule) {
+				t.Errorf("%s says nothing about %q:\n%s", tool, rule, said)
+			}
+		}
+	}
 }
 
 // serves is every tool a session is offered, and each of them says what it is
@@ -266,9 +350,7 @@ func TestANoteIsMadeAndFoundThroughTheTools(t *testing.T) {
 	}
 }
 
-// A note asks to be joined as it is made, so that it never exists unattached —
-// which is the whole reason links are accepted here rather than only by
-// link_add.
+// A note asks to be joined as it is made, so it never stands unattached.
 func TestANoteIsMadeAlreadyJoined(t *testing.T) {
 	session, _ := connected(t, map[string]string{"Momentum.md": "# Momentum\n"})
 
@@ -346,7 +428,7 @@ func TestGetSeparatesWhatIsThereFromWhatIsNot(t *testing.T) {
 	got := call[struct {
 		Notes   []mcp.Note `json:"notes"`
 		Missing []string   `json:"missing"`
-	}](t, session, "note_get", map[string]any{
+	}](t, session, "note_titles", map[string]any{
 		"paths": []string{"Entropy.md", "gone.md"},
 	})
 	if len(got.Notes) != 1 || got.Notes[0].Title != "Entropy" {
@@ -369,7 +451,7 @@ func TestReadingGivesBackWhatWritingWants(t *testing.T) {
 
 	// A write answers with what the note became, so an agent writing twice has
 	// what the second write needs.
-	first := call[wrote](t, session, "note_write", map[string]any{
+	first := call[wrote](t, session, "note_rewrite", map[string]any{
 		"path": "Entropy.md", "body": "# Entropy\n\nRewritten.\n",
 		"fingerprint": read.Notes[0].Fingerprint,
 	})
@@ -377,7 +459,7 @@ func TestReadingGivesBackWhatWritingWants(t *testing.T) {
 		t.Fatalf("the write did not answer with the file it made: %+v", first)
 	}
 
-	second := call[wrote](t, session, "note_write", map[string]any{
+	second := call[wrote](t, session, "note_rewrite", map[string]any{
 		"path": "Entropy.md", "body": "# Entropy\n\nAgain.\n",
 		"fingerprint": first.Fingerprint,
 	})
@@ -394,7 +476,7 @@ func TestReadingGivesBackWhatWritingWants(t *testing.T) {
 
 	// What the read gave is two writes behind, and a write presenting it is
 	// refused.
-	if got := failing(t, session, "note_write", map[string]any{
+	if got := failing(t, session, "note_rewrite", map[string]any{
 		"path": "Entropy.md", "body": "# Entropy\n\nOnce more.\n",
 		"fingerprint": read.Notes[0].Fingerprint,
 	}); !strings.Contains(got, "changed") {
@@ -402,7 +484,7 @@ func TestReadingGivesBackWhatWritingWants(t *testing.T) {
 	}
 }
 
-// wrote is what note_write answers with.
+// wrote is what note_rewrite answers with.
 type wrote struct {
 	Path        string `json:"path"`
 	Fingerprint string `json:"fingerprint"`
@@ -422,8 +504,8 @@ func TestLinkingTwoNotesShowsAtBothEnds(t *testing.T) {
 	}
 
 	around := call[struct {
-		Focus   mcp.Note     `json:"focus"`
-		Related []mcp.Seated `json:"related"`
+		Focus   mcp.Note        `json:"focus"`
+		Related []mcp.Neighbour `json:"related"`
 	}](t, session, "note_neighbourhood", map[string]any{"path": "Entropy.md"})
 	if len(around.Related) != 1 || around.Related[0].Seat != "child" {
 		t.Errorf("the other end does not see it: %+v", around.Related)
@@ -485,7 +567,7 @@ func TestLinksGoWhereTheyBelongAndABadOneCostsOnlyItself(t *testing.T) {
 // is refused the name it already holds.
 func TestANoteOnDiskComesBackWithItsPath(t *testing.T) {
 	v, core := built(t, nil)
-	core.Create.Index = func(context.Context, domain.Vault, []string) error {
+	core.Notes.Create.Index = func(context.Context, domain.Vault, []string) error {
 		return errors.New("the index is not level")
 	}
 	session := connectedTo(t, core)
@@ -519,8 +601,66 @@ func TestALinkTooLargeToWriteIsRefusedBeforeAnythingIsWritten(t *testing.T) {
 	}
 }
 
+// Each of the three link writers reads a note's frontmatter, changes one entry
+// and puts the whole block back, so a write that says nothing about which note
+// it read lands on whatever arrived in between — a synchroniser's copy, the
+// person's own save. Each names it, and each is refused where the note moved
+// under it.
+func TestALinkWrittenOverAnEditNobodySawIsRefused(t *testing.T) {
+	session, _ := connected(t, map[string]string{
+		"Entropy.md": "# Entropy\n",
+		"Heat.md":    "# Heat\n",
+		"Work.md":    "# Work\n",
+	})
+	added(t, session, map[string]any{
+		"from": "Heat.md", "to": "Entropy", "role": "parent", "label": "follows from",
+	})
+
+	// What the caller read, and then the note changing under it.
+	stale := fingerprint(t, session, "Heat.md")
+	call[wrote](t, session, "note_rewrite", map[string]any{
+		"path": "Heat.md", "body": "# Heat\n\nWhat somebody else wrote.\n",
+		"fingerprint": stale,
+	})
+
+	out := added(t, session, map[string]any{
+		"from": "Heat.md", "to": "Work", "role": "jump", "fingerprint": stale,
+	})
+	if len(out) != 1 || !strings.Contains(out[0].Refused, "no longer the one that was read") {
+		t.Errorf("link_add over an edit nobody saw: %+v", out)
+	}
+
+	for tool, args := range map[string]map[string]any{
+		"link_update": {
+			"from": "Heat.md", "to": "Entropy", "role": "jump", "fingerprint": stale,
+		},
+		"link_remove": {"from": "Heat.md", "to": "Entropy", "fingerprint": stale},
+	} {
+		if got := failing(t, session, tool, args); !strings.Contains(got, "changed") {
+			t.Errorf("%s over an edit nobody saw: %q", tool, got)
+		}
+	}
+
+	// Nothing landed: the link is the one it was, and no second one is there.
+	links := call[struct {
+		Links []mcp.Link `json:"links"`
+	}](t, session, "link_list", map[string]any{"path": "Heat.md"})
+	if len(links.Links) != 1 || links.Links[0].Role != "parent" ||
+		links.Links[0].Label != "follows from" {
+		t.Errorf("a refused write landed all the same: %+v", links.Links)
+	}
+}
+
+// added writes links through link_add. Every writer takes a fingerprint, so a
+// link a test wrote without naming one is written against the note as it
+// stands.
 func added(t *testing.T, session *sdk.ClientSession, links ...map[string]any) []mcp.AddOutcome {
 	t.Helper()
+	for _, link := range links {
+		if _, named := link["fingerprint"]; !named {
+			link["fingerprint"] = fingerprint(t, session, link["from"].(string))
+		}
+	}
 	return call[struct {
 		Added []mcp.AddOutcome `json:"added"`
 	}](t, session, "link_add", map[string]any{"links": links}).Added
@@ -530,7 +670,7 @@ func TestRemovingIsReversible(t *testing.T) {
 	session, _ := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	removed := call[struct {
-		Removed []note.Removed `json:"removed"`
+		Removed []note.RemoveResult `json:"removed"`
 	}](t, session, "note_remove", map[string]any{"paths": []string{"Entropy.md"}})
 	if len(removed.Removed) != 1 || removed.Removed[0].Trashed != ".trash/Entropy.md" {
 		t.Fatalf("want the note in the trash: %+v", removed.Removed)
@@ -539,11 +679,35 @@ func TestRemovingIsReversible(t *testing.T) {
 	back := call[struct {
 		Notes   []mcp.Note `json:"notes"`
 		Missing []string   `json:"missing"`
-	}](t, session, "note_get", map[string]any{"paths": []string{"Entropy.md"}})
+	}](t, session, "note_titles", map[string]any{"paths": []string{"Entropy.md"}})
 	if len(back.Missing) != 1 {
 		t.Errorf("a removed note is still in the index: %+v", back)
 	}
 
+}
+
+// note_remove takes notes. A folder holds as many notes as somebody filed
+// under it, and removing one by naming the folder is not what this tool does.
+func TestRemovingAFolderIsRefused(t *testing.T) {
+	session, v := connected(t, map[string]string{
+		"Reading/Entropy.md": "# Entropy\n",
+		"Reading/Order.md":   "# Order\n",
+	})
+
+	removed := call[struct {
+		Removed []mcp.RemoveOutcome `json:"removed"`
+	}](t, session, "note_remove", map[string]any{"paths": []string{"Reading"}})
+	if len(removed.Removed) != 1 || removed.Removed[0].Refused == "" {
+		t.Fatalf("a folder was not refused: %+v", removed.Removed)
+	}
+	if !strings.Contains(removed.Removed[0].Refused, "folder") {
+		t.Errorf("the refusal reads %q", removed.Removed[0].Refused)
+	}
+	for _, path := range []string{"Reading/Entropy.md", "Reading/Order.md"} {
+		if _, err := os.Stat(filepath.Join(v.Path, path)); err != nil {
+			t.Errorf("%s went with the folder: %v", path, err)
+		}
+	}
 }
 
 // A ceiling that truncated in silence would read as "that is all there is".
@@ -554,7 +718,7 @@ func TestAskingForTooMuchIsRefusedRatherThanTrimmed(t *testing.T) {
 	for i := range paths {
 		paths[i] = "note.md"
 	}
-	if got := failing(t, session, "note_get", map[string]any{"paths": paths}); !strings.Contains(got, "50") {
+	if got := failing(t, session, "note_titles", map[string]any{"paths": paths}); !strings.Contains(got, "50") {
 		t.Errorf("want a refusal naming the limit, got %q", got)
 	}
 }
@@ -564,8 +728,8 @@ func TestAskingForTooMuchIsRefusedRatherThanTrimmed(t *testing.T) {
 func TestAPathOutsideTheVaultIsRefused(t *testing.T) {
 	session, _ := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
-	got := failing(t, session, "note_write", map[string]any{
-		"path": "../../escaped.md", "body": "no\n",
+	got := failing(t, session, "note_rewrite", map[string]any{
+		"path": "../../escaped.md", "body": "no\n", "fingerprint": "0-0",
 	})
 	if !strings.Contains(got, "vault") {
 		t.Errorf("want a refusal about the vault, got %q", got)
@@ -580,7 +744,7 @@ func TestTwoNotesOfOneNameAreReported(t *testing.T) {
 
 	named := call[struct {
 		Paths []string `json:"paths"`
-	}](t, session, "vault_named", map[string]any{"name": "Entropy"})
+	}](t, session, "note_resolve", map[string]any{"name": "Entropy"})
 	if len(named.Paths) != 2 {
 		t.Errorf("want both notes, got %v", named.Paths)
 	}
@@ -595,7 +759,7 @@ func TestANoteWhoseNameCarriesDotsIsFoundByIt(t *testing.T) {
 
 	named := call[struct {
 		Paths []string `json:"paths"`
-	}](t, session, "vault_named", map[string]any{"name": lecture})
+	}](t, session, "note_resolve", map[string]any{"name": lecture})
 	if len(named.Paths) != 1 || named.Paths[0] != "notes/"+lecture+".md" {
 		t.Errorf("got %v", named.Paths)
 	}
@@ -669,7 +833,7 @@ func TestProblemsSayWhichCheckFoundThem(t *testing.T) {
 	}
 }
 
-// What note_read gives back is what note_write takes: an agent that reads,
+// What note_read gives back is what note_rewrite takes: an agent that reads,
 // edits and writes must not end up with the frontmatter inside the prose.
 func TestReadingGivesBackOnlyTheProse(t *testing.T) {
 	session, _ := connected(t, map[string]string{
@@ -685,9 +849,10 @@ func TestReadingGivesBackOnlyTheProse(t *testing.T) {
 
 	// And a caller that hands back a whole note is told, rather than quietly
 	// given a note with two frontmatter blocks in it.
-	got := failing(t, session, "note_write", map[string]any{
-		"path": "Entropy.md",
-		"body": "---\nid: 01J8F3K2M9QRSTVWXYZ012\n---\n# Entropy\n\nMore.\n",
+	got := failing(t, session, "note_rewrite", map[string]any{
+		"path":        "Entropy.md",
+		"body":        "---\nid: 01J8F3K2M9QRSTVWXYZ012\n---\n# Entropy\n\nMore.\n",
+		"fingerprint": fingerprint(t, session, "Entropy.md"),
 	})
 	if !strings.Contains(got, "frontmatter") {
 		t.Errorf("want a refusal naming the frontmatter, got %q", got)

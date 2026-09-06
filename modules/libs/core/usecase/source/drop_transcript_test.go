@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
@@ -23,7 +22,7 @@ func dropping(t *testing.T, words ...string) (Transcribe, DropTranscript, domain
 	kept := newShelf()
 	model := &voice{words: words}
 
-	cutting := Extract{Readers: vaults{first.ID: shelved}, Sources: index, Owing: index, Derived: kept}
+	cutting := Extract{Readers: vaults{first.ID: shelved}, Sources: index, Known: index, Derived: kept}
 	listen := Transcribe{
 		Readers: vaults{first.ID: shelved},
 		Sources: index,
@@ -38,7 +37,7 @@ func dropping(t *testing.T, words ...string) (Transcribe, DropTranscript, domain
 	drop := DropTranscript{
 		Readers: vaults{first.ID: shelved},
 		Sources: index,
-		Owing:   index,
+		Known:   index,
 		Derived: kept,
 	}
 	return listen, drop, first, index, kept, model, text.Fingerprint(raw)
@@ -63,7 +62,7 @@ func TestDroppingATranscriptLeavesTheRecordingAsItWas(t *testing.T) {
 	}
 	// A person put the words right, so the file beside the artifact stands too.
 	right := transcript.Marshal([]transcript.Cue{{Text: "first thing said", From: 0, To: 800}})
-	if err := kept.Write(t.Context(), text.Corrected(text.ASR, hash), right); err != nil {
+	if err := kept.Write(t.Context(), text.Corrections(text.ASR, hash), right); err != nil {
 		t.Fatal(err)
 	}
 	if len(cutFrom(index, v, recordingPath)) == 0 {
@@ -85,11 +84,11 @@ func TestDroppingATranscriptLeavesTheRecordingAsItWas(t *testing.T) {
 	}
 
 	src := index.sources[v.ID][recordingPath]
-	if src.TextFrom != "" || src.Hash != "" || src.Recipe != "" {
+	if src.Producer != "" || src.Hash != "" || src.Recipe != "" {
 		t.Errorf("the source still stands on a reading: %+v", src)
 	}
-	if src.Ref.Path != recordingPath || src.Ref.Kind != domain.KindRecording {
-		t.Errorf("the recording is no longer a source of the vault: %+v", src.Ref)
+	if src.Fingerprint.Path != recordingPath || src.Fingerprint.Kind != domain.KindRecording {
+		t.Errorf("the recording is no longer a source of the vault: %+v", src.Fingerprint)
 	}
 }
 
@@ -120,7 +119,7 @@ func TestARecordingIsHeardAgainAfterItsTranscriptIsDropped(t *testing.T) {
 	if said := spoken(t, raw); !slices.Equal(said, model.words) {
 		t.Errorf("the artifact says %q and the recording says %q", said, model.words)
 	}
-	if index.sources[v.ID][recordingPath].TextFrom != text.ASR {
+	if index.sources[v.ID][recordingPath].Producer != text.ASR {
 		t.Error("the source does not stand on the transcript the second run wrote")
 	}
 	chunks := cutFrom(index, v, recordingPath)
@@ -188,7 +187,7 @@ type watching struct {
 	saw func()
 }
 
-func (w watching) SaveExtraction(ctx context.Context, vaultID string, e port.Extraction) error {
+func (w watching) SaveExtraction(ctx context.Context, vaultID domain.VaultID, e domain.SourceChunks) error {
 	w.saw()
 	return w.store.SaveExtraction(ctx, vaultID, e)
 }
@@ -238,7 +237,7 @@ func TestARecordingWhoseStoreWasEmptiedIsDroppedFromTheIndex(t *testing.T) {
 	if res.None {
 		t.Error("a recording the index stands on came back as nothing to drop")
 	}
-	if src := index.sources[v.ID][recordingPath]; src.TextFrom != "" || src.Hash != "" {
+	if src := index.sources[v.ID][recordingPath]; src.Producer != "" || src.Hash != "" {
 		t.Errorf("the source still stands on a reading: %+v", src)
 	}
 	if chunks := cutFrom(index, v, recordingPath); len(chunks) != 0 {
@@ -283,7 +282,7 @@ func TestATranscriptBeingWrittenIsNotDropped(t *testing.T) {
 	if _, err := kept.Read(t.Context(), text.Artifact(text.ASR, hash)); err != nil {
 		t.Errorf("the transcript went out from under the run: %v", err)
 	}
-	if index.sources[v.ID][recordingPath].TextFrom != text.ASR {
+	if index.sources[v.ID][recordingPath].Producer != text.ASR {
 		t.Error("the source was taken off its transcript")
 	}
 }

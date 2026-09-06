@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { Stopped } from '@numen/protocol'
+import { StopReason } from '@numen/protocol'
 
 import { counting } from './counting'
-import type { Counted, Counts, Vaulted } from './counting'
+import type { CardsDueClient, DueCounts, VaultCounts } from './counting'
 
-const vault = (id: string, said: Partial<Vaulted> = {}): Vaulted => ({
-  vaultId: id,
+const vault = (id: string, said: Partial<VaultCounts> = {}): VaultCounts => ({
   name: id,
+  displayName: id,
   path: `/vaults/${id}`,
   faces: 3,
   due: 1,
@@ -30,7 +30,7 @@ const vault = (id: string, said: Partial<Vaulted> = {}): Vaulted => ({
       closesNew: '',
       closesReviews: '',
       closesMinutes: 'minutes_a_day',
-      stopsOn: Stopped.NOTHING,
+      stopsOn: StopReason.NOTHING,
     },
   ],
   unread: '',
@@ -39,27 +39,27 @@ const vault = (id: string, said: Partial<Vaulted> = {}): Vaulted => ({
 })
 
 /** The vaults as they stand before any of them is counted. */
-const listing = (...all: readonly Vaulted[]): Counted => ({
+const listing = (...all: readonly VaultCounts[]): DueCounts => ({
   day: '2026-09-05',
-  vaults: all.map((one) => ({ ...vault(one.vaultId), ...one, faces: 0, due: 0, new: 0, decks: [] })),
+  vaults: all.map((one) => ({ ...vault(one.name), ...one, faces: 0, due: 0, new: 0, decks: [] })),
 })
 
 /** One vault's count, as it arrives on its own. */
-const count = (one: Vaulted): Counted => ({ day: '', vaults: [], counted: one })
+const count = (one: VaultCounts): DueCounts => ({ day: '', vaults: [], counted: one })
 
 /** A count a test feeds by hand, message by message. */
 const feeding = () => {
-  const held: Counted[] = []
+  const held: DueCounts[] = []
   let wake: (() => void) | null = null
   let over = false
 
-  const owing = async function* (
+  const watchCardsDue = async function* (
     _said: Record<string, never>,
     how?: { signal?: AbortSignal },
-  ): AsyncGenerator<Counted> {
+  ): AsyncGenerator<DueCounts> {
     over = false
     for (;;) {
-      while (held.length) yield held.shift() as Counted
+      while (held.length) yield held.shift() as DueCounts
       if (over) return
       await new Promise<void>((then, stopped) => {
         wake = () => {
@@ -74,8 +74,8 @@ const feeding = () => {
   }
 
   return {
-    cards: { owing } satisfies Counts,
-    says(one: Counted) {
+    cards: { watchCardsDue } satisfies CardsDueClient,
+    says(one: DueCounts) {
       held.push(one)
       wake?.()
     },
@@ -99,7 +99,7 @@ describe('counting what every vault owes', () => {
     await settles()
 
     expect(one.day.value).toBe('2026-09-05')
-    expect(one.vaults.value.map((held) => held.vaultId)).toStrictEqual(['01A', '01B'])
+    expect(one.vaults.value.map((held) => held.vault)).toStrictEqual(['01A', '01B'])
     // Nothing is known about what any of them holds, and none of them reads as
     // a vault owing nothing.
     for (const held of one.vaults.value) {
@@ -118,12 +118,12 @@ describe('counting what every vault owes', () => {
     front.says(count(vault('01B', { due: 4, new: 1 })))
     await settles()
 
-    expect(one.vaults.value[0]).toMatchObject({ vaultId: '01A', counted: false, due: 0, new: 0 })
-    expect(one.vaults.value[1]).toMatchObject({ vaultId: '01B', counted: true, due: 4, new: 1 })
+    expect(one.vaults.value[0]).toMatchObject({ vault: '01A', counted: false, due: 0, new: 0 })
+    expect(one.vaults.value[1]).toMatchObject({ vault: '01B', counted: true, due: 4, new: 1 })
 
     front.says(count(vault('01A')))
     await settles()
-    expect(one.vaults.value[0]).toMatchObject({ vaultId: '01A', counted: true, due: 1, new: 2 })
+    expect(one.vaults.value[0]).toMatchObject({ vault: '01A', counted: true, due: 1, new: 2 })
     // What a day took arrives in milliseconds and is held in minutes.
     expect(one.vaults.value[0]?.presets[0]).toEqual({
       preset: 'Sanskrit.md',
@@ -140,7 +140,7 @@ describe('counting what every vault owes', () => {
       reviews: 45,
       minutes: 20,
       closes: { new: '', reviews: '', minutes: 'minutes_a_day' },
-      stopsOn: Stopped.NOTHING,
+      stopsOn: StopReason.NOTHING,
     })
   })
 
@@ -190,15 +190,15 @@ describe('counting what every vault owes', () => {
     expect(one.counting.value).toBe(false)
   })
 
-  // The window opening, a sitting ending and a vault moving underneath it all
+  // The window opening, a session ending and a vault moving underneath it all
   // ask, and they arrive together. One count answers all three.
   it('runs one count however many ask for it at once', async () => {
     let asked = 0
     const front = feeding()
-    const cards: Counts = {
-      owing(said, how) {
+    const cards: CardsDueClient = {
+      watchCardsDue(said, how) {
         asked += 1
-        return front.cards.owing(said, how)
+        return front.cards.watchCardsDue(said, how)
       },
     }
     const one = counting({ cards, failed: () => {} })
@@ -222,10 +222,10 @@ describe('counting what every vault owes', () => {
   it('counts again when asked after it has worked a row out', async () => {
     let asked = 0
     const front = feeding()
-    const cards: Counts = {
-      owing(said, how) {
+    const cards: CardsDueClient = {
+      watchCardsDue(said, how) {
         asked += 1
-        return front.cards.owing(said, how)
+        return front.cards.watchCardsDue(said, how)
       },
     }
     const one = counting({ cards, failed: () => {} })
@@ -268,8 +268,8 @@ describe('counting what every vault owes', () => {
 
   it('says what went wrong and stops counting', async () => {
     const trouble: unknown[] = []
-    const cards: Counts = {
-      owing: async function* (): AsyncGenerator<Counted> {
+    const cards: CardsDueClient = {
+      watchCardsDue: async function* (): AsyncGenerator<DueCounts> {
         throw new Error('no registry')
       },
     }
