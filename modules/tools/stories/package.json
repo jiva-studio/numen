@@ -4,7 +4,6 @@
   "private": true,
   "type": "module",
   "description": "Every story the tree declares, and which of a page's shots name none. Depends on nothing, so any machine with node runs it.",
-  "exports": "./stories.mjs",
   "scripts": {
     "check": "node --test ./*.test.mjs"
   }

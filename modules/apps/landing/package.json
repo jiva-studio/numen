@@ -23,7 +23,6 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
     "@eslint/js": "^10.0.1",
-    "@numen/stories": "*",
     "eslint": "^10.10.0",
     "eslint-plugin-astro": "^3.1.0",
     "globals": "^17.12.0",

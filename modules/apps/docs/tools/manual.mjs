@@ -12,7 +12,9 @@
  */
 import { readFile, readdir, writeFile } from 'node:fs/promises'
 
-import { faults, proves, stories } from '@numen/stories'
+// By path and not by name: this file is run by `node` with nothing installed,
+// and a package name is a link `npm ci` makes.
+import { faults, proves, stories } from '../../../tools/stories/stories.mjs'
 
 const UI = new URL('../../desktop/editor/src/', import.meta.url)
 const GO = new URL('../../../libs/core/', import.meta.url)
