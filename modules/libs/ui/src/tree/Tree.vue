@@ -34,6 +34,7 @@ import type { Position } from '../lib/geometry'
 import { browserClock, type Clock } from '../lib/clock'
 import DragPreview from '../press/DragPreview.vue'
 import { usePressDrag } from '../press/press'
+import TreeField from './TreeField.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -110,7 +111,7 @@ const list = useTemplateRef<HTMLElement>('list')
 const box = useTemplateRef<HTMLElement>('box')
 
 /** The field a name is typed in. One row is renamed at a time. */
-const field = useTemplateRef<HTMLInputElement[]>('field')
+const field = useTemplateRef<InstanceType<typeof TreeField>[]>('field')
 
 const shown = computed(() => flatten(props.rows, new Set(props.open)))
 
@@ -318,35 +319,23 @@ function landingAt(rows: readonly RowId[], at: Position): RowLanding | null {
   return refuses(props.rows, rows, holderOf(shown.value, found)) ? null : found
 }
 
-/** The field, once it is drawn, with the name in it ready to be replaced. */
+/** The keyboard into the field once it is drawn. */
 watch(renaming, (row) => {
   if (row === null) return
-  void nextTick(() => {
-    const typing = field.value?.[0]
-    typing?.focus()
-    typing?.select()
-  })
+  void nextTick(() => field.value?.[0]?.focus())
 })
 
-function onFieldKey(event: KeyboardEvent): void {
-  const field = event.currentTarget as HTMLInputElement
-  const row = renaming.value
+/** A name taken, and the keyboard back on the row it belongs to. */
+const rename = (row: RowId, name: string): void => {
+  renaming.value = null
+  emit('rename', row, name)
+  void goTo(row)
+}
 
-  if (event.key === 'Enter') {
-    event.preventDefault()
-    renaming.value = null
-    if (row !== null) {
-      emit('rename', row, field.value)
-      void goTo(row)
-    }
-    return
-  }
-
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    renaming.value = null
-    void goTo(row)
-  }
+/** A name left as it was, and the keyboard back on the row. */
+const abandon = (row: RowId): void => {
+  renaming.value = null
+  void goTo(row)
 }
 </script>
 
@@ -394,17 +383,13 @@ function onFieldKey(event: KeyboardEvent): void {
           <slot name="icon" :id="row.id" :holds="row.holds" :open="row.open" />
         </span>
 
-        <input
+        <TreeField
           v-if="renaming === row.id"
           ref="field"
-          class="tree__field min-w-0 grow rounded-node"
-          type="text"
           :value="row.name"
-          :aria-label="name"
-          @pointerdown.stop
-          @click.stop
-          @dblclick.stop
-          @keydown.stop="onFieldKey"
+          :name="name"
+          @rename="rename(row.id, $event)"
+          @abandon="abandon(row.id)"
           @blur="renaming = null"
         />
         <!-- The whole name is on the element, for one too long to be drawn. -->
@@ -469,9 +454,8 @@ function onFieldKey(event: KeyboardEvent): void {
   opacity: var(--dragged-fade);
 }
 
-/* Where the keyboard stands, in a row and in the field a name is typed in. */
-.tree__row:focus-visible,
-.tree__field:focus-visible {
+/* Where the keyboard stands. */
+.tree__row:focus-visible {
   outline: var(--numen-ring-width) solid var(--numen-ring);
   outline-offset: calc(-1 * var(--numen-ring-width));
 }
@@ -499,13 +483,6 @@ function onFieldKey(event: KeyboardEvent): void {
 /* A name stands clear of the mark beside it. */
 .tree__icon {
   margin-inline-end: var(--gap);
-}
-
-.tree__field {
-  border: var(--numen-stroke) solid var(--numen-field-border);
-  background: var(--numen-field-bg);
-  color: var(--numen-ink);
-  font: inherit;
 }
 
 /* What is said in place of the rows stands in the middle of the tree. */
