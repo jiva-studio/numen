@@ -69,10 +69,14 @@ const emit = defineEmits<{
 /** How fast each count is moving. This is the clock the rate is read against. */
 const moving = shallowRef<ReadonlyMap<string, Movement>>(new Map())
 
+/** The ones a person has put away, and when each of the rest arrived. */
+const away = shallowRef<ReadonlySet<string>>(new Set())
+const arrived = shallowRef<ReadonlyMap<string, number>>(new Map())
+
 const stack = useTemplateRef<HTMLElement>('stack')
 
-/** What a person has put away, and how long the corner has been held for. */
-const { away, arrived, now, read, beat, enters, leaves, holds, lets } = useNoticeStack(
+/** How long the corner has been held for, and the moment a card is read against. */
+const { now, read, beat, enters, leaves, holds, lets } = useNoticeStack(
   stack,
   () => props.clock(),
   () => props.hidden(),

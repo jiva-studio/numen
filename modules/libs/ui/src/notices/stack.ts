@@ -6,14 +6,10 @@
  * from the window entirely, is not time spent reading it. What that comes to is
  * kept here; nothing here draws anything.
  */
-import { computed, ref, shallowRef, type ComputedRef, type Ref, type ShallowRef } from 'vue'
+import { computed, ref, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 
 /** What the corner keeps of a person's attention. */
 export interface NoticeStackState {
-  /** The ones a person has put away. */
-  readonly away: Ref<ReadonlySet<string>>
-  /** When each of the rest arrived. */
-  readonly arrived: Ref<ReadonlyMap<string, number>>
   /** The moment itself. */
   readonly now: Ref<number>
   /** The moment a card is read against. */
@@ -33,8 +29,6 @@ export function useNoticeStack(
   clock: () => number,
   hidden: () => boolean,
 ): NoticeStackState {
-  const away = shallowRef<ReadonlySet<string>>(new Set())
-  const arrived = shallowRef<ReadonlyMap<string, number>>(new Map())
   const now = ref(clock())
 
   /** Whether a pointer is on the stack, and whether the keyboard is in it. */
@@ -89,5 +83,5 @@ export function useNoticeStack(
     focused.value = false
   }
 
-  return { away, arrived, now, read, beat, enters, leaves, holds, lets }
+  return { now, read, beat, enters, leaves, holds, lets }
 }
