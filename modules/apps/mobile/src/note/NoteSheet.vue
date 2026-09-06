@@ -16,6 +16,7 @@ import {
   IonToolbar,
 } from '@ionic/vue'
 import { Editor } from '@numen/ui'
+import { refusalWords } from '@numen/wire'
 import type { ReadNoteResponse } from '@numen/protocol'
 import type { Core } from '../core'
 
@@ -34,7 +35,7 @@ onMounted(async () => {
   try {
     const said = await props.core.notes.readNote({ path: props.path })
     if (said.refusal) {
-      emit('trouble', `the note was not read: ${JSON.stringify(said.refusal)}`)
+      emit('trouble', refusalWords(said.refusal))
       emit('close')
       return
     }
@@ -53,7 +54,7 @@ async function keep() {
     seen: seen.value ?? undefined,
   })
   if (said.refusal) {
-    emit('trouble', `nothing was written: ${JSON.stringify(said.refusal)}`)
+    emit('trouble', refusalWords(said.refusal))
     return
   }
   emit('close')

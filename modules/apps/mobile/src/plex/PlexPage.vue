@@ -15,6 +15,7 @@ import {
   type PlexNeighbourhood,
   type PlexRelatedSeat,
 } from '@numen/ui'
+import { refusalWords, troubleWords } from '@numen/wire'
 import NoteSheet from '../note/NoteSheet.vue'
 import { reach, type Core } from '../core'
 import { follow } from './following'
@@ -48,7 +49,7 @@ async function made(from: string, seat: PlexRelatedSeat) {
   if (!title?.trim()) return
   const created = await core.value.notes.createNote({ title: title.trim(), folder: '' })
   if (!created.path) {
-    trouble.value = `nothing was made: ${JSON.stringify(created.refusal)}`
+    trouble.value = refusalWords(created.refusal)
     return
   }
   await joined(from, created.path, seat)
@@ -60,7 +61,7 @@ async function joined(from: string, to: string, seat: PlexRelatedSeat) {
   if (role === undefined) return
   const said = await core.value.notes.writeLink({ path: from, link: { to, role } })
   if (said.refusal) {
-    trouble.value = `nothing was written: ${JSON.stringify(said.refusal)}`
+    trouble.value = refusalWords(said.refusal)
     return
   }
   await draw(at.value)
@@ -73,7 +74,7 @@ onMounted(async () => {
     // The vault is still being read; the picture is drawn again as it lands.
     follow(core.value, () => void draw(at.value))
   } catch (why) {
-    trouble.value = String(why)
+    trouble.value = troubleWords(why)
   }
 })
 </script>
