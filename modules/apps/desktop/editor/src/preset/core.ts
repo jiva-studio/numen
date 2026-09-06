@@ -8,7 +8,7 @@
 import { createClient } from '@connectrpc/connect'
 import {
   BudgetName,
-  Counts as Countings,
+  Counts as BudgetUnits,
   Rule as Rules,
   PresetsService,
 } from '@numen/protocol'
@@ -497,11 +497,11 @@ const RULING = namesOf<Rule, Rules>(LEARNED)
  * The unit a budget is spent in, in the window's own words. A preset naming
  * nothing takes the default. Keyed by the schema, the same way.
  */
-const COUNTED: Record<Countings, BudgetUnit | null> = {
-  [Countings.UNSPECIFIED]: null,
-  [Countings.CARDS]: 'cards',
-  [Countings.SHOWS]: 'shows',
+const COUNTED: Record<BudgetUnits, BudgetUnit | null> = {
+  [BudgetUnits.UNSPECIFIED]: null,
+  [BudgetUnits.CARDS]: 'cards',
+  [BudgetUnits.SHOWS]: 'shows',
 }
 
 /** The unit a budget is spent in, as the schema names it. */
-const COUNTING = namesOf<BudgetUnit, Countings>(COUNTED)
+const COUNTING = namesOf<BudgetUnit, BudgetUnits>(COUNTED)
