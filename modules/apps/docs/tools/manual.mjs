@@ -12,6 +12,8 @@
  */
 import { readFile, readdir, writeFile } from 'node:fs/promises'
 
+import { faults, proves, stories } from '@numen/stories'
+
 const UI = new URL('../../desktop/editor/src/', import.meta.url)
 const GO = new URL('../../../libs/core/', import.meta.url)
 const CMD = new URL('../../desktop/cmd/numen/', import.meta.url)
@@ -605,52 +607,24 @@ const cli = async () => {
 
 /* --------------------------------------------------------------- pictures */
 
-/** Everywhere a story is written, which is the same list Storybook is given. */
-const ROOTS = [
-  new URL('../../../libs/ui/src/', import.meta.url),
-  new URL('../../desktop/editor/src/', import.meta.url),
-  new URL('../../desktop/flashcards/src/', import.meta.url),
-]
-
-/** Every story id the tree declares, under the same name Storybook gives it. */
-const stories = async () => {
-  const told = new Set()
-  for (const root of ROOTS) {
-    const files = (await readdir(root, { recursive: true })).filter((name) =>
-      name.endsWith('.stories.ts'),
-    )
-    for (const file of files) {
-      const source = await read(root, file)
-      const meta = source.match(/const meta[^=]*=\s*\{[\s\S]{0,200}?title:\s*'([^']+)'/)
-      if (!meta) continue
-      const under = meta[1].toLowerCase().replace(/[^a-z0-9]+/g, '-')
-      for (const [, name] of source.matchAll(/^export const ([A-Z][A-Za-z0-9]*)\s*:/gm)) {
-        told.add(`${under}--${name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`)
-      }
-    }
-  }
-  return told
-}
-
 /**
  * Every picture in the manual is a story drawn in a palette, and a story or a
  * palette renamed is a picture that cannot be taken again. Both are held
  * against the tree here, so the renaming is caught where it happens rather
  * than the next time somebody runs the camera.
+ *
+ * What a story is called and what is wrong with a shot are `@numen/stories`,
+ * which the landing page holds its own pictures to as well.
  */
 const pictured = async () => {
   const { SHOTS } = await import('./shots.mjs')
   const { access } = await import('node:fs/promises')
 
-  const told = await stories()
-  // Nothing to hold the names against is nothing checked.
-  if (told.size === 0) die('no stories are written anywhere the camera is pointed')
-  if (SHOTS.length === 0) die('shoot.mjs asks for no pictures')
+  const unproved = proves()
+  if (unproved) die(unproved)
 
-  const gone = SHOTS.filter((shot) => !told.has(shot.story))
-  if (gone.length > 0) {
-    die(`no story called ${gone.map((shot) => shot.story).join(', ')} — the pictures cannot be taken again`)
-  }
+  const missing = faults(SHOTS, await stories())
+  if (missing.length > 0) die(missing.join('; '))
 
   const presets = new URL('../../../libs/core/internal/adapter/theme/presets/', import.meta.url)
   for (const shot of SHOTS) {
