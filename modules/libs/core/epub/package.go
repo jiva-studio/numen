@@ -15,6 +15,7 @@ const (
 	containerPath = "META-INF/container.xml"
 	mediaPackage  = "application/oebps-package+xml"
 	mediaNCX      = "application/x-dtbncx+xml"
+	mediaSVG      = "image/svg+xml"
 )
 
 // A prefix is the writer's choice, so a name that carries one is matched by its
@@ -32,12 +33,23 @@ type packageDoc struct {
 	// base is the directory the package document sits in. Every href in it is
 	// relative to that.
 	base string
-	// spine is the archive path of each spine document, in reading order.
-	spine []string
+	// spine is the documents of the spine, in reading order.
+	spine []spineItem
 	// ncx and nav are the archive paths of the two kinds of navigation
 	// document, empty when the book has neither.
 	ncx string
 	nav string
+
+	layout    Layout
+	direction Direction
+}
+
+// A spineItem is one itemref of the spine and the manifest item it names.
+type spineItem struct {
+	path      string
+	mediaType string
+	linear    bool
+	layout    Layout
 }
 
 // archiveIndex maps each archive entry to its cleaned name.
@@ -139,8 +151,10 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 	var document struct {
 		Metadata struct {
 			Entries []struct {
-				XMLName xml.Name
-				Value   string `xml:",chardata"`
+				XMLName  xml.Name
+				Property string `xml:"property,attr"`
+				Refines  string `xml:"refines,attr"`
+				Value    string `xml:",chardata"`
 			} `xml:",any"`
 		} `xml:"metadata"`
 		Items []struct {
@@ -150,9 +164,12 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 			Properties string `xml:"properties,attr"`
 		} `xml:"manifest>item"`
 		Spine struct {
-			TOC      string `xml:"toc,attr"`
-			ItemRefs []struct {
-				IDRef string `xml:"idref,attr"`
+			TOC       string `xml:"toc,attr"`
+			Direction string `xml:"page-progression-direction,attr"`
+			ItemRefs  []struct {
+				IDRef      string `xml:"idref,attr"`
+				Linear     string `xml:"linear,attr"`
+				Properties string `xml:"properties,attr"`
 			} `xml:"itemref"`
 		} `xml:"spine"`
 	}
@@ -160,13 +177,20 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 		return packageDoc{}, fmt.Errorf("%w: %w", ErrNoPackage, err)
 	}
 
-	read := packageDoc{base: path.Dir(opfPath)}
+	read := packageDoc{
+		base:      path.Dir(opfPath),
+		layout:    Reflowable,
+		direction: direction(document.Spine.Direction),
+	}
 	for _, entry := range document.Metadata.Entries {
-		if entry.XMLName.Local == "title" && titleNamespaces[entry.XMLName.Space] {
-			if title := tidy(entry.Value); title != "" {
-				read.title = title
-				break
-			}
+		if entry.XMLName.Local == "title" && titleNamespaces[entry.XMLName.Space] &&
+			read.title == "" {
+			read.title = tidy(entry.Value)
+		}
+		// A meta refining another element speaks for that element alone.
+		if entry.XMLName.Local == "meta" && entry.Refines == "" &&
+			entry.Property == "rendition:layout" {
+			read.layout = layout(entry.Value, read.layout)
 		}
 	}
 
@@ -199,9 +223,47 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 			// A spine may name an item the manifest does not describe.
 			continue
 		}
-		read.spine = append(read.spine, named.path)
+		read.spine = append(read.spine, spineItem{
+			path:      named.path,
+			mediaType: named.mediaType,
+			linear:    !strings.EqualFold(strings.TrimSpace(ref.Linear), "no"),
+			layout:    itemLayout(ref.Properties, read.layout),
+		})
 	}
 	return read, nil
+}
+
+// layout is the layout a rendition:layout value names, and the one already in
+// force for a value that names neither.
+func layout(said string, inForce Layout) Layout {
+	switch Layout(strings.ToLower(strings.TrimSpace(said))) {
+	case PrePaginated:
+		return PrePaginated
+	case Reflowable:
+		return Reflowable
+	}
+	return inForce
+}
+
+// itemLayout is the layout one spine document is laid out under: the book's,
+// unless the itemref overrides it.
+func itemLayout(properties string, book Layout) Layout {
+	switch {
+	case hasToken(properties, "rendition:layout-pre-paginated"):
+		return PrePaginated
+	case hasToken(properties, "rendition:layout-reflowable"):
+		return Reflowable
+	}
+	return book
+}
+
+// direction is the direction a page-progression-direction attribute names.
+func direction(said string) Direction {
+	named := Direction(strings.ToLower(strings.TrimSpace(said)))
+	if named == LeftToRight || named == RightToLeft {
+		return named
+	}
+	return DefaultDirection
 }
 
 // decodeXML reads one of the documents that are XML: the container, the package

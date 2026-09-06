@@ -9,6 +9,9 @@
 // Everything a book names — a navigation entry, a
 // heading, a printed page — is an offset into that stream.
 //
+// One document is read a second time as the elements it is drawn from, carrying
+// the offsets its text already stands at.
+//
 // A book that names nothing is still read. An error here means the file is not a
 // book at all.
 package epub
@@ -44,6 +47,18 @@ type Book struct {
 
 	// Tier names the tier that produced Parts.
 	Tier Structure
+
+	// Layout is whether the book's documents can be reflowed.
+	Layout Layout
+
+	// Direction is the direction the book's pages progress in, and empty for a
+	// book that says nothing.
+	Direction Direction
+
+	// files is the archive the book was read out of, which Markup reads one
+	// document out of again, and held is the document of each name.
+	files map[string]*zip.File
+	held  map[string]Document
 }
 
 // A Document is one document of the spine.
@@ -54,7 +69,36 @@ type Document struct {
 	Offset int
 	// Length is how many bytes of Text the document contributed.
 	Length int
+	// Linear is false for a document the spine sets apart from the reading
+	// order: a note, an appendix, the back of a plate. Its text is in Text all
+	// the same.
+	Linear bool
+	// Layout is whether this document can be reflowed.
+	Layout Layout
+
+	// mediaType is what the manifest calls the document.
+	mediaType string
 }
+
+// A Layout is whether a document can be reflowed or is a page laid out once and
+// drawn as it stands.
+type Layout string
+
+const (
+	Reflowable   Layout = "reflowable"
+	PrePaginated Layout = "pre-paginated"
+)
+
+// A Direction is the direction a book's pages progress in.
+type Direction string
+
+const (
+	// DefaultDirection: the book says nothing, and a reader lays it out the way
+	// its language is written.
+	DefaultDirection Direction = ""
+	LeftToRight      Direction = "ltr"
+	RightToLeft      Direction = "rtl"
+)
 
 // A Part is a named division of the book.
 type Part struct {
@@ -89,11 +133,17 @@ const (
 // at two.
 const minimumParts = 2
 
-// The three ways a file can fail to be a book.
+// The four ways a file can fail to be a book, and the one way a document of one
+// can fail to be asked for.
 var (
 	ErrNotArchive  = errors.New("epub: not a zip archive")
 	ErrNoContainer = errors.New("epub: no META-INF/container.xml")
 	ErrNoPackage   = errors.New("epub: no package document")
+	// ErrEncrypted: a document of the spine is ciphertext, and what would be
+	// read out of it is not the book.
+	ErrEncrypted = errors.New("epub: a spine document is encrypted")
+	// ErrNoDocument: the book was not read from a document of this name.
+	ErrNoDocument = errors.New("epub: no such spine document")
 )
 
 // Read extracts one book from the bytes of an EPUB file.
@@ -112,22 +162,41 @@ func Read(raw []byte) (*Book, error) {
 	if err != nil {
 		return nil, err
 	}
+	locked := encrypted(files)
+	for _, item := range pkg.spine {
+		if locked[item.path] {
+			return nil, fmt.Errorf("%w: %s", ErrEncrypted, item.path)
+		}
+	}
 
 	text := newExtractor()
-	book := &Book{Title: pkg.title}
+	book := &Book{
+		Title:     pkg.title,
+		Layout:    pkg.layout,
+		Direction: pkg.direction,
+		files:     files,
+		held:      map[string]Document{},
+	}
 	left := int64(mostPerBook)
-	for _, docPath := range pkg.spine {
+	for _, item := range pkg.spine {
 		if left <= 0 {
 			break
 		}
-		markup, ok := within(files[docPath], min(int64(mostPerDocument), left))
+		markup, ok := within(files[item.path], min(int64(mostPerDocument), left))
 		if !ok {
 			// A manifest may name a file the archive does not hold, and one it
 			// holds may be larger than a chapter can be.
 			continue
 		}
 		left -= int64(len(markup))
-		book.Documents = append(book.Documents, text.document(docPath, markup))
+		doc := text.document(item.path, markup)
+		doc.Linear, doc.Layout, doc.mediaType = item.linear, item.layout, item.mediaType
+		book.Documents = append(book.Documents, doc)
+		if _, twice := book.held[doc.Path]; !twice {
+			// A spine may read one document twice, and the first standing is the
+			// one a name is answered with.
+			book.held[doc.Path] = doc
+		}
 	}
 	book.Text = string(text.out)
 

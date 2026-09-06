@@ -486,3 +486,137 @@ func packed(t *testing.T, parts map[string][]byte) []byte {
 	}
 	return out.Bytes()
 }
+
+func TestHowABookIsLaidOut(t *testing.T) {
+	t.Run("a book that says nothing", func(t *testing.T) {
+		book := read(t, tinyBook(t, nil))
+
+		if book.Layout != epub.Reflowable {
+			t.Errorf("layout = %q, want a book that reflows", book.Layout)
+		}
+		if book.Direction != epub.DefaultDirection {
+			t.Errorf("direction = %q, want none", book.Direction)
+		}
+		for _, doc := range book.Documents {
+			if !doc.Linear || doc.Layout != epub.Reflowable {
+				t.Errorf("%s is linear=%v layout=%q", doc.Path, doc.Linear, doc.Layout)
+			}
+		}
+	})
+
+	t.Run("a book laid out once and read right to left", func(t *testing.T) {
+		book := read(t, spined(t, laidOutOpf, map[string]string{
+			"OEBPS/one.xhtml": `<html><body><p>Iota.</p></body></html>`,
+			"OEBPS/two.xhtml": `<html><body><p>Kappa is the note at the back.</p></body></html>`,
+		}))
+
+		if book.Layout != epub.PrePaginated {
+			t.Errorf("layout = %q, want the pages the book was laid out as", book.Layout)
+		}
+		if book.Direction != epub.RightToLeft {
+			t.Errorf("direction = %q, want right to left", book.Direction)
+		}
+		if len(book.Documents) != 2 {
+			t.Fatalf("documents = %d, want the two the spine names", len(book.Documents))
+		}
+		if got := book.Documents[0]; !got.Linear || got.Layout != epub.PrePaginated {
+			t.Errorf("the first document is linear=%v layout=%q", got.Linear, got.Layout)
+		}
+		// The itemref overrides the book, and says this document is not read in
+		// its turn.
+		if got := book.Documents[1]; got.Linear || got.Layout != epub.Reflowable {
+			t.Errorf("the second document is linear=%v layout=%q", got.Linear, got.Layout)
+		}
+		// A document set apart from the reading order is text of the book all
+		// the same: a chunk of it keeps its offset, and where it is drawn is the
+		// reader's to decide.
+		if !strings.Contains(book.Text, "Kappa") {
+			t.Errorf("the text of the non-linear document is missing:\n%s", book.Text)
+		}
+	})
+}
+
+const laidOutOpf = `<?xml version="1.0"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>Laid Out</dc:title>
+    <meta property="rendition:layout">pre-paginated</meta>
+  </metadata>
+  <manifest>
+    <item id="a" href="one.xhtml" media-type="application/xhtml+xml"/>
+    <item id="b" href="two.xhtml" media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine page-progression-direction="rtl">
+    <itemref idref="a"/>
+    <itemref idref="b" linear="no" properties="rendition:layout-reflowable"/>
+  </spine>
+</package>`
+
+// META-INF/encryption.xml names the entries of the archive that are ciphertext,
+// and what it names is what decides. A book whose fonts were scrambled by the
+// shop that sold it reads; a book whose chapters were is not read at all,
+// because what comes out of a locked chapter is not the book and would be
+// indexed and searched as though it were.
+func TestAnEncryptedBook(t *testing.T) {
+	for _, c := range []struct {
+		name    string
+		locked  string
+		want    error
+		reading string
+	}{{
+		name:    "only the fonts are scrambled",
+		locked:  "OEBPS/fonts/serif.otf",
+		reading: "Lambda",
+	}, {
+		name:   "a document of the spine is ciphertext",
+		locked: "OEBPS/one.xhtml",
+		want:   epub.ErrEncrypted,
+	}} {
+		t.Run(c.name, func(t *testing.T) {
+			raw := spined(t, laidOutOpf, map[string]string{
+				"OEBPS/one.xhtml": `<html><body><p>Lambda.</p></body></html>`,
+				"OEBPS/two.xhtml": `<html><body><p>Mu.</p></body></html>`,
+				"META-INF/encryption.xml": `<?xml version="1.0"?>
+					<encryption xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+					  <EncryptedData xmlns="http://www.w3.org/2001/04/xmlenc#">
+					    <EncryptionMethod Algorithm="http://www.idpf.org/2008/embedding"/>
+					    <CipherData><CipherReference URI="` + c.locked + `"/></CipherData>
+					  </EncryptedData>
+					</encryption>`,
+			})
+
+			book, err := epub.Read(raw)
+			if c.want != nil {
+				if !errors.Is(err, c.want) {
+					t.Fatalf("err = %v, want %v", err, c.want)
+				}
+				if book != nil {
+					t.Error("a book was returned with an error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("read: %v", err)
+			}
+			if !strings.Contains(book.Text, c.reading) {
+				t.Errorf("the book was not read:\n%s", book.Text)
+			}
+		})
+	}
+}
+
+// spined is an archive of one package document and the files it names.
+func spined(t *testing.T, opf string, files map[string]string) []byte {
+	t.Helper()
+	parts := map[string][]byte{
+		"mimetype": []byte("application/epub+zip"),
+		"META-INF/container.xml": []byte(`<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+			<rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles>
+		</container>`),
+		"OEBPS/content.opf": []byte(opf),
+	}
+	for at, raw := range files {
+		parts[at] = []byte(raw)
+	}
+	return packed(t, parts)
+}
