@@ -53,7 +53,7 @@ export const addressAt = (state: EditorState, at: number): string | null => {
 }
 
 /** A drawn link is followed with the platform's modifier held down. */
-export const following = EditorView.domEventHandlers({
+export const follow = EditorView.domEventHandlers({
   mousedown(event, view) {
     if (!event.metaKey && !event.ctrlKey) return false
     const at = view.posAtCoords({ x: event.clientX, y: event.clientY })

@@ -23,7 +23,7 @@ import {
   placeholder,
   rectangularSelection,
 } from '@codemirror/view'
-import { following } from './address'
+import { follow } from './address'
 import { changing, marked, pacing, type EditorChange } from './change'
 import { highlighting } from './highlight'
 import { LANGUAGES } from './languages'
@@ -57,7 +57,7 @@ export interface Settings {
   readonly extensions?: Extension
 }
 
-export const preview = (on: boolean): Extension => (on ? [wholeLines, live, following] : [])
+export const preview = (on: boolean): Extension => (on ? [wholeLines, live, follow] : [])
 
 export const shown = (change: EditorChange | null): Extension => changing.of(change)
 

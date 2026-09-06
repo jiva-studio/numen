@@ -131,7 +131,7 @@ export const Marked: Story = {
 /** One tab left in the workspace. */
 export const Alone: Story = { args: { arrangement: 'alone' } }
 
-const boxOf = (element: Element) => element.getBoundingClientRect()
+const rectOf = (element: Element) => element.getBoundingClientRect()
 
 const tabIn = (canvas: HTMLElement, tab: string) => {
   const found = canvas.querySelector(`[data-workspace-tab="${tab}"]`)
@@ -142,7 +142,7 @@ const tabIn = (canvas: HTMLElement, tab: string) => {
 const paneBox = (canvas: HTMLElement, pane: string) => {
   const found = canvas.querySelector(`[data-workspace-pane="${pane}"]`)
   if (!found) throw new Error(`no pane called ${pane}`)
-  return boxOf(found)
+  return rectOf(found)
 }
 
 interface Position {
@@ -218,7 +218,7 @@ const AWAY = [-10, -6, -3, 0, 3, 6, 10]
  * handle, clear of the handles a branch further in lays across this one.
  */
 async function caughtAcross(handle: HTMLElement, along: 'x' | 'y'): Promise<readonly Caught[]> {
-  const box = boxOf(handle)
+  const box = rectOf(handle)
   const found: Caught[] = []
 
   for (const away of AWAY) {
@@ -246,7 +246,7 @@ function furthest(caught: readonly Caught[]): Position {
 
 /** A tab picked up and let go somewhere, in as many steps as a hand takes. */
 async function dragTo(from: Element, to: { x: number; y: number }): Promise<void> {
-  const start = boxOf(from)
+  const start = rectOf(from)
   const at = { clientX: start.x + start.width / 2, clientY: start.y + start.height / 2 }
 
   await userEvent.pointer([
@@ -279,7 +279,7 @@ export const DividesOnAnEdge: Story = {
     await expect(named).not.toContain('aside')
 
     // The two share the room the two before them had, and evenly.
-    const boxes = now.map(boxOf)
+    const boxes = now.map(rectOf)
     expect(boxes.reduce((wide, box) => wide + box.width, 0)).toBeCloseTo(
       main.width + before.width,
       0,
@@ -311,7 +311,7 @@ export const StaysPut: Story = {
   play: async ({ canvasElement }) => {
     const before = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map((pane) => [
       pane.getAttribute('data-workspace-pane'),
-      boxOf(pane).width,
+      rectOf(pane).width,
     ])
 
     const aside = paneBox(canvasElement, 'aside')
@@ -322,7 +322,7 @@ export const StaysPut: Story = {
 
     const after = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map((pane) => [
       pane.getAttribute('data-workspace-pane'),
-      boxOf(pane).width,
+      rectOf(pane).width,
     ])
     await expect(after).toStrictEqual(before)
   },
@@ -333,14 +333,14 @@ export const DividesTheWorkspace: Story = {
   tags: ['!dev'],
   args: { arrangement: 'crowded' },
   play: async ({ canvasElement }) => {
-    const frame = boxOf(canvasElement.querySelector('.workspace') as Element)
+    const frame = rectOf(canvasElement.querySelector('.workspace') as Element)
 
     await dragTo(tabIn(canvasElement, 'two'), {
       x: frame.x + frame.width / 2,
       y: frame.bottom - 6,
     })
 
-    const panes = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map(boxOf)
+    const panes = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map(rectOf)
     await expect(panes).toHaveLength(3)
 
     // One of them runs the whole width along the foot.
@@ -354,7 +354,7 @@ export const ReordersInAStrip: Story = {
   tags: ['!dev'],
   args: { arrangement: 'crowded' },
   play: async ({ canvasElement }) => {
-    const first = boxOf(tabIn(canvasElement, 'one'))
+    const first = rectOf(tabIn(canvasElement, 'one'))
 
     await dragTo(tabIn(canvasElement, 'three'), { x: first.x + 2, y: first.y + first.height / 2 })
 
@@ -377,7 +377,7 @@ export const ClosesAPane: Story = {
 
     const panes = [...canvasElement.querySelectorAll('[data-workspace-pane]')]
     await expect(panes).toHaveLength(1)
-    await expect(boxOf(panes[0] as Element).width).toBeGreaterThan(main.width)
+    await expect(rectOf(panes[0] as Element).width).toBeGreaterThan(main.width)
   },
 }
 
@@ -459,7 +459,7 @@ export const LeavesAPanel: Story = {
 export const FollowsTheModel: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    const drawn = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map(boxOf)
+    const drawn = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map(rectOf)
     const total = drawn.reduce((wide, box) => wide + box.width, 0)
     await expect((drawn[0]?.width ?? 0) / total).toBeCloseTo(0.72, 1)
   },
@@ -476,7 +476,7 @@ export const SelectsNothingWhileResizing: Story = {
   play: async ({ canvasElement }) => {
     const handle = canvasElement.querySelector('.branch__handle')
     if (!handle) throw new Error('no handle')
-    const at = boxOf(handle)
+    const at = rectOf(handle)
     const from = { clientX: at.x + at.width / 2, clientY: at.y + at.height / 2 }
 
     /** The branch being resized, while the pointer is on its way. */
@@ -519,7 +519,7 @@ export const CatchesAPressOnEitherSideOfTheLine: Story = {
   play: async ({ canvasElement }) => {
     const handle = canvasElement.querySelector('.branch__handle')
     if (!handle) throw new Error('no handle')
-    const at = boxOf(handle)
+    const at = rectOf(handle)
     const middle = at.y + at.height / 2
 
     for (const away of [-4, 4]) {

@@ -23,7 +23,7 @@ import {
   resizeBranch,
   type NodeIdFactory,
 } from './edit'
-import { boxOf, caretAt, edgeOf, overlayFor, sideAt, slotAt, type TabLanding } from './drop'
+import { rectOf, caretAt, edgeOf, overlayFor, sideAt, slotAt, type TabLanding } from './drop'
 import { type NodeId, type Tab, type TabId, type Workspace } from './node'
 import type { Rect } from './rect'
 
@@ -210,17 +210,17 @@ function landingAt(x: number, y: number): TabLanding | null {
 
   if (strip && id) {
     // A strip holds tabs and nothing else, in the order they are drawn.
-    const tabs = [...strip.children].map((tab) => boxOf(tab))
+    const tabs = [...strip.children].map((tab) => rectOf(tab))
     const slot = slotAt(x, tabs)
-    return { kind: 'strip', pane: id, slot, box: local(caretAt(slot, tabs, boxOf(strip))) }
+    return { kind: 'strip', pane: id, slot, box: local(caretAt(slot, tabs, rectOf(strip))) }
   }
 
-  const side = edgeOf({ x, y }, boxOf(held), props.edge)
-  if (side) return { kind: 'edge', side, box: local(overlayFor(side, boxOf(held))) }
+  const side = edgeOf({ x, y }, rectOf(held), props.edge)
+  if (side) return { kind: 'edge', side, box: local(overlayFor(side, rectOf(held))) }
 
   if (!pane || !id) return null
 
-  const box = boxOf(pane)
+  const box = rectOf(pane)
   const asked = sideAt({ x, y }, box)
   return { kind: 'pane', pane: id, side: asked, box: local(overlayFor(asked, box)) }
 }

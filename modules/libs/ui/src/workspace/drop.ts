@@ -2,7 +2,7 @@
  * What letting go of a dragged tab comes to, as geometry alone.
  *
  * A point and a box in, a side out. Which pane that box belongs to and what
- * the side then does to the tree are settled elsewhere; `boxOf` is the one
+ * the side then does to the tree are settled elsewhere; `rectOf` is the one
  * thing here that measures anything.
  */
 import type { NodeId, Side } from './node'
@@ -127,7 +127,7 @@ export function edgeOf(at: Position, box: Rect, reach: number): Side | null {
 }
 
 /** What an element takes up on screen, in the window's own coordinates. */
-export const boxOf = (element: Element): Rect => {
+export const rectOf = (element: Element): Rect => {
   const box = element.getBoundingClientRect()
   return { x: box.left, y: box.top, width: box.width, height: box.height }
 }

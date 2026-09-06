@@ -8,7 +8,7 @@
 import type { MenuItem } from './item'
 
 /** How long a run of letters stays one word, in milliseconds. */
-export const TYPING = 1000
+const TYPING = 1000
 
 /** The word typed so far, and when its last letter arrived. */
 export interface Typeahead {

@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { MenuItem } from './item'
-import { isLetter, jumpTo, NOTHING_TYPED, TYPING, type Typeahead } from './typeahead'
+import { isLetter, jumpTo, NOTHING_TYPED, type Typeahead } from './typeahead'
 
 const ITEMS: MenuItem[] = [
   { id: 'open', text: 'Open' },
@@ -69,15 +69,16 @@ describe('what a run of letters lands on', () => {
   })
 })
 
+/** A run of letters stays one word for a second. */
 describe('how long a run of letters stays one word', () => {
   it('carries the word on while the letters keep coming', () => {
     const first = jumpTo(ITEMS, NOTHING_TYPED, 'c', -1, 1000)
-    expect(jumpTo(ITEMS, first.typed, 'u', first.at!, 1000 + TYPING).typed.word).toBe('cu')
+    expect(jumpTo(ITEMS, first.typed, 'u', first.at!, 2000).typed.word).toBe('cu')
   })
 
   it('begins a word again once the run has gone quiet', () => {
     const first = jumpTo(ITEMS, NOTHING_TYPED, 'c', -1, 1000)
-    const later = jumpTo(ITEMS, first.typed, 'o', first.at!, 1000 + TYPING + 1)
+    const later = jumpTo(ITEMS, first.typed, 'o', first.at!, 2001)
     expect(later.typed.word).toBe('o')
     expect(later.at).toBe(0)
   })
