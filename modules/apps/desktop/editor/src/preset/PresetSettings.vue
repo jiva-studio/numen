@@ -11,8 +11,8 @@ import { computed } from 'vue'
 import { NumberField, SegmentedControl, Select, Slider, Switch, WeekdayChips, WEEK } from '@numen/ui'
 import type { Day } from '@numen/ui'
 import type { PresetTabState, SettingValue } from './kind'
-import { COUNTS, LOADS, RULES, WHOLE_LOAD, loadOn, loaded } from './core'
-import type { Bounds, Counts } from './core'
+import { BUDGET_UNITS, LOADS, RULES, WHOLE_LOAD, loadOn, loaded } from './core'
+import type { Bounds, BudgetUnit } from './core'
 import { fieldsUnder, round, type Field } from './curve'
 import { WORDS as words } from './words'
 
@@ -23,8 +23,8 @@ const { bounds, settings } = props.state
 /** The rows the chosen goal schedules by, which are the ones drawn. */
 const fields = computed(() => fieldsUnder(settings.value.goal, settings.value.learned))
 
-/** The two things a budget is spent on, as the row offers them. */
-const counts = COUNTS.map((one) => ({ id: one, text: words.countsName(one) }))
+/** The two units a budget is spent in, as the row offers them. */
+const budgetUnits = BUDGET_UNITS.map((one) => ({ id: one, text: words.budgetUnitName(one) }))
 
 /** The two rules for what is learned, as the row offers them. */
 const rules = RULES.map((one) => ({ id: one, text: words.ruleName(one) }))
@@ -142,9 +142,9 @@ const dated = (said: Event) => {
         <SegmentedControl
           v-else-if="field === 'counts'"
           :model-value="settings.counts"
-          :choices="counts"
+          :choices="budgetUnits"
           :aria-labelledby="`preset-${field}`"
-          @update:model-value="(one: string) => chose(field, one as Counts)"
+          @update:model-value="(one: string) => chose(field, one as BudgetUnit)"
         />
         <!-- A share is moved along its whole range and read out beside
              the track, which draws no figure of its own. -->

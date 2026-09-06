@@ -36,7 +36,7 @@ describe('the settings under the control', () => {
 
     const shows = tab
       .findAll('button')
-      .find((one) => one.text() === words.countsName('shows'))
+      .find((one) => one.text() === words.budgetUnitName('shows'))
     await shows?.trigger('click')
     expect(done).toStrictEqual(['types counts shows', 'settles'])
   })

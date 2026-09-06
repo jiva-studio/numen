@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { DEFAULTS, loadOn, loaded, LOADS, WHOLE_LOAD } from './core'
-import type { Counts, Goal, Rule } from './core'
+import type { BudgetUnit, Goal, Rule } from './core'
 
 /**
  * The defaults are read here and again in the core, which schedules a deck
@@ -26,7 +26,7 @@ const GOAL_KEYS: Record<Goal, string> = {
   date: 'by_date',
 }
 
-const COUNTS_KEYS: Record<Counts, string> = { cards: 'cards', shows: 'shows' }
+const BUDGET_UNIT_KEYS: Record<BudgetUnit, string> = { cards: 'cards', shows: 'shows' }
 
 const RULE_KEYS: Record<Rule, string> = { interval: 'interval', retention: 'retention' }
 
@@ -35,7 +35,7 @@ describe('a preset naming nothing', () => {
     expect({
       ...DEFAULTS,
       goal: GOAL_KEYS[DEFAULTS.goal],
-      counts: COUNTS_KEYS[DEFAULTS.counts],
+      counts: BUDGET_UNIT_KEYS[DEFAULTS.counts],
       learned: RULE_KEYS[DEFAULTS.learned],
     }).toStrictEqual(corpus.defaults)
   })

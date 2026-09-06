@@ -33,14 +33,14 @@ export type { Goal }
 export const GOALS: readonly Goal[] = ['minutes', 'retention', 'date']
 
 /**
- * What a day's budget is spent on. Under `cards` a card face is charged the
+ * The unit a day's budget is spent in. Under `cards` a card face is charged the
  * first time it is answered in a review day and comes round again in that day
  * for nothing; under `shows` every showing is charged.
  */
-export type Counts = 'cards' | 'shows'
+export type BudgetUnit = 'cards' | 'shows'
 
 /** The two, in the order they are offered. */
-export const COUNTS: readonly Counts[] = ['cards', 'shows']
+export const BUDGET_UNITS: readonly BudgetUnit[] = ['cards', 'shows']
 
 /**
  * What a preset counts as learned. It is the person's rule for when the
@@ -67,8 +67,8 @@ export interface Settings {
   readonly newADay: number
   readonly reviewsADay: number
   readonly retention: number
-  /** What a day's budget is spent on. */
-  readonly counts: Counts
+  /** The unit a day's budget is spent in. */
+  readonly counts: BudgetUnit
   /**
    * What share of a day's cards goes to what is overdue before any new
    * material is offered, as a percentage. It moves what fills a day and never
@@ -494,14 +494,14 @@ const LEARNED: Record<Rules, Rule | null> = {
 const RULING = namesOf<Rule, Rules>(LEARNED)
 
 /**
- * What a budget counts, in the window's own words. A preset naming nothing
- * takes the default. Keyed by the schema, the same way.
+ * The unit a budget is spent in, in the window's own words. A preset naming
+ * nothing takes the default. Keyed by the schema, the same way.
  */
-const COUNTED: Record<Countings, Counts | null> = {
+const COUNTED: Record<Countings, BudgetUnit | null> = {
   [Countings.UNSPECIFIED]: null,
   [Countings.CARDS]: 'cards',
   [Countings.SHOWS]: 'shows',
 }
 
-/** What a budget counts, as the schema names it. */
-const COUNTING = namesOf<Counts, Countings>(COUNTED)
+/** The unit a budget is spent in, as the schema names it. */
+const COUNTING = namesOf<BudgetUnit, Countings>(COUNTED)

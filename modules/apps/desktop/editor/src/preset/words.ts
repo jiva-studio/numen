@@ -2,7 +2,7 @@
 import { StopReason } from '@numen/protocol'
 import { many, percent } from '@numen/ui'
 import type { RefusalReason } from '../core'
-import type { Counts, Goal, Rule } from './core'
+import type { BudgetUnit, Goal, Rule } from './core'
 import type { Field } from './curve'
 
 /** What each of the three goals is offered as: the value it steers. */
@@ -21,8 +21,8 @@ const RULES: Record<Rule, string> = {
   retention: 'By remembering',
 }
 
-/** What each of the two things a budget is spent on is offered as. */
-const COUNTS: Record<Counts, string> = {
+/** What each of the two units a budget is spent in is offered as. */
+const BUDGET_UNITS: Record<BudgetUnit, string> = {
   cards: 'Cards',
   shows: 'Showings',
 }
@@ -161,7 +161,7 @@ export const WORDS = {
   /** What the three segments are, said over them. */
   goal: 'Goal',
   goalName: (goal: Goal) => GOALS[goal],
-  countsName: (counts: Counts) => COUNTS[counts],
+  budgetUnitName: (unit: BudgetUnit) => BUDGET_UNITS[unit],
   ruleName: (rule: Rule) => RULES[rule],
   /** What each axis measures, said along the axis it names. */
   axisY: (goal: Goal) => (goal === 'minutes' ? 'Cards in a session' : 'Minutes a day'),
