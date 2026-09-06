@@ -33,7 +33,7 @@ import {
   sheetIn,
   sheetOf,
   type Sheet,
-} from './body'
+} from './sheet'
 import { marksOf, sameMarks, type Marks } from './marks'
 import { WORDS as words } from './words'
 

@@ -1,16 +1,13 @@
 /**
- * What a deck and a stencil are while the window holds them, and what each
- * gesture makes of them.
+ * What a deck is while the window holds it, and what each gesture makes of it.
  *
  * The components take names and text and hand them back under identities they
  * were given. Minting those identities, and turning what a person did into the
- * cards and the fields a file is written from, is here.
+ * cards and the sections a file is written from, is here.
  */
 import {
   CARD_HEAD,
   cardEnded,
-  ordered,
-  reordered,
   type DeckSection,
   type InsertionPoint,
   type Stencil,
@@ -19,9 +16,7 @@ import {
 import type {
   VaultCard,
   VaultDeck,
-  VaultFace,
   VaultSection,
-  VaultStencil,
   StencilSummary,
   Value,
 } from './vault'
@@ -57,24 +52,8 @@ export interface Deck {
   readonly tail: string
 }
 
-/** One face as the window holds it: what the file says, under an identity of its own. */
-export interface Face extends VaultFace {
-  readonly id: string
-}
-
-/** A stencil as the window holds it: its fields, and its faces under identities. */
-export interface Sheet {
-  readonly fields: readonly string[]
-  readonly preamble: string
-  readonly faces: readonly Face[]
-  readonly tail: string
-}
-
 /** A deck of no cards, which is what a file nothing has been written to holds. */
 export const NO_DECK: Deck = { preamble: '', cards: [], sections: [], tail: '' }
-
-/** A stencil that names nothing and shows nothing. */
-export const NO_SHEET: Sheet = { fields: [], preamble: '', faces: [], tail: '' }
 
 /**
  * A deck as the vault read it.
@@ -104,14 +83,6 @@ export const deckOf = (read: VaultDeck, mint: IdMaker = minting): Deck => {
   }
 }
 
-/** A stencil as the vault read it, each face under an identity this window mints. */
-export const sheetOf = (read: VaultStencil, mint: IdMaker = minting): Sheet => ({
-  fields: read.fields,
-  preamble: read.preamble,
-  faces: read.faces.map((face) => ({ id: mint(), ...face })),
-  tail: read.tail,
-})
-
 /**
  * A deck as one string, which is what the tab holding it is dirty against. The
  * parts are written in a settled order, so a deck that came back unchanged
@@ -138,26 +109,8 @@ export const bodyOf = (deck: Deck): string =>
     })),
   })
 
-/** A stencil as one string, the same way. */
-export const sheetBodyOf = (sheet: Sheet): string =>
-  JSON.stringify({
-    fields: sheet.fields,
-    preamble: sheet.preamble,
-    tail: sheet.tail,
-    faces: sheet.faces.map((face) => ({
-      id: face.id,
-      name: face.name,
-      lead: face.lead,
-      front: face.front,
-      back: face.back,
-    })),
-  })
-
 /** The deck a string stands for. A string holding nothing is a deck of no cards. */
 export const deckIn = (body: string): Deck => (body ? (JSON.parse(body) as Deck) : NO_DECK)
-
-/** The stencil a string stands for, the same way. */
-export const sheetIn = (body: string): Sheet => (body ? (JSON.parse(body) as Sheet) : NO_SHEET)
 
 /**
  * The cards of a deck, in the shape the vault takes them. A card says where the
@@ -184,10 +137,6 @@ export const sectionsOf = (deck: Deck): readonly VaultSection[] =>
 /** The sections as the grid draws them, each under the identity it was read at. */
 export const drawnSectionsOf = (deck: Deck): readonly DeckSection[] =>
   deck.sections.map(({ id, name }) => ({ id, name }))
-
-/** The faces of a stencil, in the shape the vault takes them. */
-export const facesOf = (sheet: Sheet): readonly VaultFace[] =>
-  sheet.faces.map(({ name, lead, front, back }) => ({ name, lead, front, back }))
 
 /**
  * The cards as the grid draws them, each under the stencil its wikilink
@@ -299,13 +248,6 @@ export const named = (held: Deck, read: Deck): Deck => {
 
   return { ...read, sections, cards }
 }
-
-/** Whether two stencils read the same, the identities left out the same way. */
-export const sameSheet = (one: Sheet, other: Sheet): boolean =>
-  one.preamble === other.preamble &&
-  one.tail === other.tail &&
-  JSON.stringify(one.fields) === JSON.stringify(other.fields) &&
-  JSON.stringify(facesOf(one)) === JSON.stringify(facesOf(other))
 
 /**
  * Whether two listings name the same stencils, in the same order and with the
@@ -534,69 +476,4 @@ export const filled = (
     if (found) return { ...card, values }
     return text === '' ? card : { ...card, values: [...card.values, { field, text }] }
   }),
-})
-
-/** A field named at the end of the order. */
-export const fieldAdded = (sheet: Sheet, name: string): Sheet => ({
-  ...sheet,
-  fields: [...sheet.fields, name],
-})
-
-/** A field the stencil no longer names. What the faces stand in its braces stays. */
-export const fieldGone = (sheet: Sheet, field: string): Sheet => ({
-  ...sheet,
-  fields: sheet.fields.filter((one) => one !== field),
-})
-
-/**
- * A field let go somewhere in the order. The first field names every card the
- * stencil cuts, so it stays first and nothing lands above it.
- */
-export const fieldDropped = (sheet: Sheet, field: string, at: InsertionPoint): Sheet => ({
-  ...sheet,
-  fields: reordered(sheet.fields, field, at),
-})
-
-/**
- * A face let go somewhere in the order: before another, or at the end. The
- * order of the faces is the order a card's repetitions are taken from it, and
- * nothing among them is fixed.
- */
-export const faceDropped = (sheet: Sheet, id: string, at: InsertionPoint): Sheet => {
-  const order = ordered(
-    sheet.faces.map((face) => face.id),
-    id,
-    at,
-  )
-  const held = new Map(sheet.faces.map((face) => [face.id, face]))
-  return { ...sheet, faces: order.flatMap((one) => held.get(one) ?? []) }
-}
-
-/** A face added at the end, with both its halves empty. */
-export const faceAdded = (sheet: Sheet, name: string, mint: IdMaker = minting): Sheet => ({
-  ...sheet,
-  faces: [...sheet.faces, { id: mint(), name, lead: '', front: '', back: '' }],
-})
-
-/** A face under another name. */
-export const faceNamed = (sheet: Sheet, id: string, name: string): Sheet => ({
-  ...sheet,
-  faces: sheet.faces.map((face) => (face.id === id ? { ...face, name } : face)),
-})
-
-/** A face taken out of the stencil. */
-export const faceGone = (sheet: Sheet, id: string): Sheet => ({
-  ...sheet,
-  faces: sheet.faces.filter((face) => face.id !== id),
-})
-
-/** One half of one face as it now reads. */
-export const faceWritten = (
-  sheet: Sheet,
-  id: string,
-  half: 'front' | 'back',
-  text: string,
-): Sheet => ({
-  ...sheet,
-  faces: sheet.faces.map((face) => (face.id === id ? { ...face, [half]: text } : face)),
 })

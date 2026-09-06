@@ -1,10 +1,7 @@
-/**
- * What a gesture in a deck or a stencil makes of the file, asked without a
- * screen.
- */
+/** What a gesture in a deck makes of the file, asked without a screen. */
 import { describe, expect, it } from 'vitest'
 import { CARD_HEAD, cardEndOf } from '@numen/ui'
-import type { VaultDeck, VaultStencil } from './vault'
+import type { VaultDeck } from './vault'
 import {
   added,
   bodyOf,
@@ -14,29 +11,16 @@ import {
   deckIn,
   deckOf,
   drawnOf,
-  faceAdded,
-  faceGone,
-  faceNamed,
-  faceWritten,
-  facesOf,
-  fieldAdded,
-  fieldDropped,
-  fieldGone,
   filled,
   linkTo,
   pathOfCut,
   removed,
   sameDeck,
-  sameSheet,
   sectionAdded,
   sectionGone,
   sectionNamed,
   sectionsOf,
-  sheetBodyOf,
-  sheetIn,
-  sheetOf,
   type Deck,
-  type Sheet,
 } from './body'
 
 /** Identities counted out, so a test names the card it means. */
@@ -84,22 +68,6 @@ const LLAMA = 'k7m2xq9fzp'
 const ALPACA = '3n8vr4tqch'
 
 const deck = (over: Partial<VaultDeck> = {}): Deck => deckOf(read(over), minting())
-
-const cut = (over: Partial<VaultStencil> = {}): VaultStencil => ({
-  path: 'Animal.md',
-  title: 'Animal',
-  fields: ['Height', 'Life span'],
-  preamble: '',
-  faces: [
-    { name: 'Recognise', lead: '', front: '{{Height}}', back: '**Height:** {{Height}}' },
-    { name: 'Name it', lead: '', front: 'Which lives {{Life span}}?', back: '{{Height}}' },
-  ],
-  tail: '',
-  problems: [],
-  ...over,
-})
-
-const sheet = (over: Partial<VaultStencil> = {}): Sheet => sheetOf(cut(over), minting())
 
 describe('a deck as the window holds it', () => {
   it('knows every card by the mark the file carries for it', () => {
@@ -621,88 +589,9 @@ describe('a value written into a card', () => {
   })
 })
 
-describe('a stencil as the window holds it', () => {
-  it('gives every face an identity of its own', () => {
-    expect(sheet().faces.map((face) => face.id)).toStrictEqual(['c1', 'c2'])
-  })
-
-  it('is the same string read out and written back', () => {
-    const held = sheet()
-    expect(sheetIn(sheetBodyOf(held))).toStrictEqual(held)
-  })
-
-  it('is a stencil of no fields where nothing has been read', () => {
-    expect(sheetIn('')).toStrictEqual({ fields: [], preamble: '', faces: [], tail: '' })
-  })
-
-  it('hands the vault the faces without the identities it minted', () => {
-    expect(facesOf(sheet())[0]).toStrictEqual({
-      name: 'Recognise',
-      lead: '',
-      front: '{{Height}}',
-      back: '**Height:** {{Height}}',
-    })
-  })
-})
-
-describe('a field of a stencil', () => {
-  it('is added at the end of the order', () => {
-    expect(fieldAdded(sheet(), 'Weight').fields).toStrictEqual([
-      'Height',
-      'Life span',
-      'Weight',
-    ])
-  })
-
-  it('leaves the braces standing when the stencil no longer names it', () => {
-    const held = fieldGone(sheet(), 'Height')
-    expect(held.fields).toStrictEqual(['Life span'])
-    expect(held.faces[0]?.back).toBe('**Height:** {{Height}}')
-  })
-
-  it('lands before the field it was let go on', () => {
-    expect(fieldDropped(sheet({ fields: ['Name', 'Height', 'Life span'] }), 'Life span', 'Height')
-      .fields).toStrictEqual(['Name', 'Life span', 'Height'])
-  })
-
-  it('leaves the first field first, wherever the move came from', () => {
-    const held = sheet({ fields: ['Name', 'Height', 'Life span'] })
-    expect(fieldDropped(held, 'Height', 'Name').fields).toStrictEqual(held.fields)
-    expect(fieldDropped(held, 'Name', null).fields).toStrictEqual(held.fields)
-  })
-})
-
-describe('a face of a stencil', () => {
-  it('is added at the end, with both its halves empty', () => {
-    const held = faceAdded(sheet(), 'Spell it', () => 'c9')
-    expect(held.faces[2]).toStrictEqual({
-      id: 'c9',
-      name: 'Spell it',
-      lead: '',
-      front: '',
-      back: '',
-    })
-  })
-
-  it('takes the name it was given', () => {
-    expect(faceNamed(sheet(), 'c1', 'Spot it').faces[0]?.name).toBe('Spot it')
-  })
-
-  it('goes, and the rest stay in the order they were in', () => {
-    expect(faceGone(sheet(), 'c1').faces.map((face) => face.name)).toStrictEqual(['Name it'])
-  })
-
-  it('takes what was written into one half, and the other stands', () => {
-    const held = faceWritten(sheet(), 'c1', 'front', '{{Height}}')
-    expect(held.faces[0]?.front).toBe('{{Height}}')
-    expect(held.faces[0]?.back).toBe('**Height:** {{Height}}')
-  })
-})
-
 describe('whether two readings of a file read the same', () => {
   it('is so for one file read twice, whatever identities each reading minted', () => {
     expect(sameDeck(deck(), deck())).toBe(true)
-    expect(sameSheet(sheet(), sheet())).toBe(true)
   })
 
   it('is not so for a card whose text was written elsewhere', () => {
@@ -736,10 +625,5 @@ describe('whether two readings of a file read the same', () => {
 
   it('is not so for a card taken out, the ones left over reading the same', () => {
     expect(sameDeck(deck(), deck({ cards: read().cards.slice(0, 1) }))).toBe(false)
-  })
-
-  it('is not so for a field or a face written elsewhere', () => {
-    expect(sameSheet(sheet(), sheet({ fields: ['Height'] }))).toBe(false)
-    expect(sameSheet(sheet(), sheet({ faces: cut().faces.slice(0, 1) }))).toBe(false)
   })
 })
