@@ -318,6 +318,12 @@ export const placePalette = (groups: readonly PaletteGroup[]): readonly PlacedGr
   }))
 }
 
+/** What the list of answers is addressed by, so the field can point at it. */
+export const listId = (uid: string): string => `${uid}-list`
+
+/** What one row is addressed by, so the field can name the row that is lit. */
+export const optionId = (uid: string, at: number): string => `${uid}-option-${at}`
+
 /** The words the action panel is drawn with. */
 export interface ActionWords {
   /** What the panel is announced as, and what the key to it is called. */
