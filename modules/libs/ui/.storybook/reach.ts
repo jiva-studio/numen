@@ -35,8 +35,9 @@ export interface Walk {
  *
  * What answers Tab by keeping it is not judged here. Three things in this
  * library do it — a palette a person leaves with Escape, a native time field
- * walking its own hours and minutes, and the editor, which indents. Only the
- * third is a fault, and a rule that cannot tell them apart would need a list.
+ * walking its own hours and minutes, and the editor, which indents until
+ * Escape hands Tab back. Each is left with the keyboard alone, and a rule that
+ * could tell a way out from none would need a list.
  */
 export function faults({ stops }: Walk): string[] {
   const wrong: string[] = []

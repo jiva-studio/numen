@@ -5,10 +5,16 @@
  * without the editor being built again; with it off what is left is markdown
  * with its syntax coloured.
  */
-import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands'
+import { history, historyKeymap, defaultKeymap, indentLess, indentMore } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { bracketMatching, syntaxHighlighting } from '@codemirror/language'
-import { type Extension, Compartment, EditorState } from '@codemirror/state'
+import {
+  type Extension,
+  Compartment,
+  EditorState,
+  StateEffect,
+  StateField,
+} from '@codemirror/state'
 import {
   type KeyBinding,
   EditorView,
@@ -42,6 +48,8 @@ export interface Settings {
    * been typed in it, so the placeholder is no name and this is the only one.
    */
   readonly name?: string
+  /** What the editor is described by: where the words are written is the caller's. */
+  readonly describedBy?: string
   /** A change being made to the text by something other than the reader. */
   readonly change?: EditorChange | null
   /** What whoever put the editor on the screen draws into it. */
@@ -70,6 +78,45 @@ export const keeping: KeyBinding = {
   },
 }
 
+/**
+ * Whether Tab belongs to the editor or to the page. It begins with the editor,
+ * Escape hands it to the page, and the keyboard arriving takes it back, so
+ * every visit begins the same way.
+ */
+const releasing = StateEffect.define<boolean>()
+
+const holding = StateField.define<boolean>({
+  create: () => true,
+  update: (held, change) =>
+    change.effects.reduce((now, effect) => (effect.is(releasing) ? effect.value : now), held),
+})
+
+const rearming = EditorView.domEventHandlers({
+  focus: (_press, view) => {
+    if (!view.state.field(holding)) view.dispatch({ effects: releasing.of(true) })
+    return false
+  },
+})
+
+/** Tab indents while the editor holds it, and walks on once it does not. */
+export const indenting: KeyBinding = {
+  key: 'Tab',
+  run: (view) => view.state.field(holding) && indentMore(view),
+  shift: (view) => view.state.field(holding) && indentLess(view),
+}
+
+/**
+ * Escape hands Tab to the page. It is passed on rather than answered, so what
+ * else answers Escape around the editor still answers it.
+ */
+export const leaving: KeyBinding = {
+  key: 'Escape',
+  run: (view) => {
+    if (view.state.field(holding)) view.dispatch({ effects: releasing.of(false) })
+    return false
+  },
+}
+
 /** Markdown, which is what a document naming no language is written in. */
 export const prose = (): Extension => markdown({ extensions: GFM, codeLanguages: LANGUAGES })
 
@@ -82,12 +129,17 @@ export const setup = (settings: Settings = {}): Extension => [
   rectangularSelection(),
   bracketMatching(),
   EditorView.lineWrapping,
-  keymap.of([keeping, ...defaultKeymap, ...historyKeymap, indentWithTab]),
+  holding,
+  rearming,
+  keymap.of([keeping, leaving, ...defaultKeymap, ...historyKeymap, indenting]),
   written.of(prose()),
   syntaxHighlighting(highlighting),
   theme,
   placeholder(settings.placeholder ?? ''),
-  EditorView.contentAttributes.of({ 'aria-label': settings.name ?? 'Editor' }),
+  EditorView.contentAttributes.of({
+    'aria-label': settings.name ?? 'Editor',
+    ...(settings.describedBy ? { 'aria-describedby': settings.describedBy } : {}),
+  }),
   marked,
   pacing(),
   drawing.of(preview(settings.live ?? true)),

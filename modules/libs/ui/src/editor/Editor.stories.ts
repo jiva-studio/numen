@@ -653,6 +653,67 @@ export const Kept: Story = {
   },
 }
 
+const NESTED = '- a bullet\n'
+
+/**
+ * Tabbing in, and tabbing out again.
+ *
+ * Tab indents, which is what it does in every editor a list is written in, so
+ * a person who tabbed into a note would be kept in it. Escape hands Tab back
+ * to the page and the next Tab walks on; coming back arms it again, so every
+ * visit begins the same way. The way out is read out as the keyboard arrives.
+ */
+export const LeftByTheKeyboard: Story = {
+  render: () => ({
+    components: { Editor },
+    setup: () => ({ text: NESTED }),
+    template: `
+      <div class="numen flex h-screen flex-col bg-surface">
+        <button
+          data-before
+          class="shrink-0 border-b border-rule px-3 py-2 text-left font-sans text-small text-ink"
+        >
+          Before
+        </button>
+        <Editor :model-value="text" class="min-h-0 flex-1" />
+        <button
+          data-after
+          class="shrink-0 border-t border-rule px-3 py-2 text-left font-sans text-small text-ink"
+        >
+          After
+        </button>
+      </div>`,
+  }),
+  play: async ({ canvasElement }) => {
+    const view = viewOf(canvasElement)
+    const stop = (which: string) => canvasElement.querySelector(`[${which}]`) as HTMLElement
+
+    // What a reader is told on arrival is the way back out.
+    const told = document.getElementById(view.contentDOM.getAttribute('aria-describedby') ?? '')
+    await expect(told?.textContent).toContain('Escape')
+
+    stop('data-before').focus()
+    await userEvent.tab()
+    await expect(view.hasFocus).toBe(true)
+
+    // Tab is the editor's while a person is writing: it indents and stays.
+    await userEvent.tab()
+    await expect(view.hasFocus).toBe(true)
+    await expect(view.state.doc.toString()).not.toBe(NESTED)
+
+    // Escape hands it to the page, and the next Tab is the page's.
+    await userEvent.keyboard('{Escape}')
+    await userEvent.tab()
+    await expect(document.activeElement).toBe(stop('data-after'))
+
+    // Back in, and Tab is the editor's again.
+    await userEvent.tab({ shift: true })
+    await expect(view.hasFocus).toBe(true)
+    await userEvent.tab()
+    await expect(view.hasFocus).toBe(true)
+  },
+}
+
 /* A change something other than the reader is making. The editor draws it and
    never writes it: the button is what puts the text in, and until it is
    pressed the stretch about to be replaced is only marked. */

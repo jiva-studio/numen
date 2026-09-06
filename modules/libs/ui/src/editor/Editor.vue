@@ -7,7 +7,7 @@
  * from the caret it is drawn as it reads, and where the caret stands the
  * marks come back.
  */
-import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
+import { onBeforeUnmount, onMounted, useId, useTemplateRef, watch } from 'vue'
 import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { EditorChange } from './change'
@@ -42,6 +42,11 @@ const props = withDefaults(
     placeholder?: string
     /** What it is announced as. What has been typed here is no name for it. */
     name?: string
+    /**
+     * How to leave, read out on arrival. Tab is the editor's while a person is
+     * writing, so the way back out has to be said or nobody finds it.
+     */
+    keys?: string
     /** A change being made to this text by something other than the reader. */
     change?: EditorChange | null
     /** What an address in the text becomes before the window loads it. */
@@ -55,6 +60,7 @@ const props = withDefaults(
     readonly: false,
     placeholder: 'Write',
     name: 'Editor',
+    keys: 'Tab indents. Press Escape, then Tab, to leave the editor.',
     change: null,
     extensions: () => [],
   },
@@ -72,6 +78,9 @@ const text = defineModel<string>({ default: '' })
 const host = useTemplateRef<HTMLElement>('host')
 let view: EditorView | null = null
 
+/** What the words about the keyboard are addressed by, this editor's alone. */
+const keysId = `${useId()}-keys`
+
 onMounted(() => {
   if (!host.value) return
   view = new EditorView({
@@ -84,6 +93,7 @@ onMounted(() => {
           readonly: props.readonly,
           placeholder: props.placeholder,
           name: props.name,
+          describedBy: keysId,
           change: props.change,
           extensions: props.extensions,
         }),
@@ -181,7 +191,11 @@ defineExpose({
 </script>
 
 <template>
-  <div ref="host" class="editor numen h-full min-h-0 overflow-auto font-sans text-base text-ink" />
+  <div ref="host" class="editor numen h-full min-h-0 overflow-auto font-sans text-base text-ink">
+    <!-- Read out as the keyboard arrives, which is the one moment a person
+         needs to know how to get away again. -->
+    <span :id="keysId" class="sr-only">{{ keys }}</span>
+  </div>
 </template>
 
 <style scoped>
