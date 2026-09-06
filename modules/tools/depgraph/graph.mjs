@@ -10,6 +10,31 @@ import { writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { COLLAPSE, config, depcruise, modules, root } from './modules.mjs'
 
+/**
+ * The edges put in one order, whatever order they were found in.
+ *
+ * The cruiser emits them in the order it walked the disk, so two runs over one
+ * tree draw the same graph with two spellings and the committed drawing reads
+ * as drift. Every other line — the flowchart, the boxes, the nodes — keeps the
+ * place it stands in, which is what makes the drawing readable.
+ */
+const ordered = (mermaid) => {
+  const lines = mermaid.split('\n')
+  const edge = /^\s*[A-Za-z0-9]+-->[A-Za-z0-9]+\s*$/
+  const out = []
+  for (let at = 0; at < lines.length; at += 1) {
+    if (!edge.test(lines[at])) {
+      out.push(lines[at])
+      continue
+    }
+    const from = at
+    while (at < lines.length && edge.test(lines[at])) at += 1
+    out.push(...lines.slice(from, at).sort())
+    at -= 1
+  }
+  return out.join('\n')
+}
+
 const drawn = ({ name, at, sources, says }) => {
   const mermaid = execFileSync(
     depcruise,
@@ -28,7 +53,7 @@ const drawn = ({ name, at, sources, says }) => {
     ],
     { cwd: join(root, at), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
   ).trim()
-  return `## ${name}\n\n${says}\n\n\`${at}\`\n\n\`\`\`mermaid\n${mermaid}\n\`\`\`\n`
+  return `## ${name}\n\n${says}\n\n\`${at}\`\n\n\`\`\`mermaid\n${ordered(mermaid)}\n\`\`\`\n`
 }
 
 const page = [
