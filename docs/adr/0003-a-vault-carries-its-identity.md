@@ -31,7 +31,7 @@ Adding a folder whose identity is already registered at another path is settled 
 
 Everything the application writes into a vault that is not a note goes into one folder, in subfolders. Its name is a setting and the default is `.numen`. It is excluded from indexing whole, by name, whichever name it has.
 
-It holds what the application made and cannot make again: the identity above, and under `ocr/` the text a reading took out of a document that carries none.
+It holds what the application made and cannot make again: the identity above, and one area to each thing that made one — under `ocr/` the text a reading took out of a document that carries none, under `asr/` what a model heard in a recording, and under `flashcards/` the answers a person gave their cards.
 
 ### Application state lives with the application, as JSON
 
