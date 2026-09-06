@@ -159,8 +159,7 @@ lint: generate-check ## the checks CI runs, less the one needing a base branch
 	cd $(STORIES) && npm run check
 	$(MAKE) graph-check
 
-# The drawing, taken from the code rather than from memory. A map made this way
-# is the cheapest instrument there is against not knowing what depends on what.
+# The drawing, taken from the code as it stands.
 .PHONY: graph
 graph: ## draw what the interface modules depend on, into docs/dependencies.md
 	cd $(DEPGRAPH) && npm run graph
@@ -183,9 +182,8 @@ lint-go: ## what golangci-lint finds, in every Go module
 
 # The only check whose answer changes with nothing in the repository changing:
 # it asks a database that is kept elsewhere, and it answers for the standard
-# library of whichever Go is running it as well as for what is required. So it
-# is fetched rather than installed and rather than pinned — a held version of a
-# tool that reads a live list is a held version of nothing.
+# library of whichever Go is running it as well as for what is required. It is
+# fetched at the version the run finds, and reads the list as it stands.
 .PHONY: vulncheck
 vulncheck: ## ask the Go vulnerability database about what the modules carry
 	cd $(CORE) && go run golang.org/x/vuln/cmd/govulncheck@latest ./...

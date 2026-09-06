@@ -45,8 +45,7 @@ const read = (base, path) => readFile(new URL(path, base), 'utf8')
  * The entries are counted by walking the brackets, which is a reading that
  * knows nothing of what an entry says. What a regex then reads out of the same
  * text is held against this count, so a list read in part — the shape of one
- * entry changed, the rest still matching — stops the build instead of writing
- * a shorter page.
+ * entry changed, the rest still matching — stops the build.
  */
 const listed = (source, from) => {
   const opens = source.slice(from).match(/=>?\s*\[/)
@@ -179,7 +178,7 @@ const listing = (source) =>
  * row grown longer than that number is a row that stops matching.
  *
  * Every command the list holds is a command read here. One written in a shape
- * this cannot find an id in stops the build rather than dropping off the page.
+ * this cannot find an id in stops the build.
  */
 const rowsOf = ({ text, entries }) => {
   const found = [...text.matchAll(/\bid:\s*'([A-Za-z]+)'/g)]
@@ -211,7 +210,7 @@ const commands = async () => {
   if (declared.length === 0) die('no commands are declared in commands.ts')
 
   // Every command declared is a command the page carries. One the words or the
-  // groups say nothing about stops the build rather than dropping off the page.
+  // groups say nothing about stops the build.
   const rows = declared.map(({ id, said }) => {
     const word = said.match(/text:\s*words\.([A-Za-z]+)/)
     const group = said.match(/group:\s*'(note|file|window|vault)'/)
@@ -288,9 +287,8 @@ const fieldsOf = (source, name) => {
  * A type keeping its settings unexported writes the keys down on a mirror
  * struct beside it, so a type declaring none is read from its mirror: what a
  * person writes in the settings file is what the mirror says, whatever the
- * fields behind it come to be called. A type with neither hands back nothing
- * rather than an empty list, so that whoever asked says so out loud instead of
- * quietly losing a page of settings that still work.
+ * fields behind it come to be called. A type with neither hands back nothing,
+ * which the caller answers for.
  */
 const structOf = (source, name) => {
   const own = fieldsOf(source, name)
@@ -366,7 +364,7 @@ const meaning = (doc, name, keys) => {
 /**
  * Where each package's settings are declared, so the walk crosses from one to
  * the next by itself. The walk runs from `settings.Config` down, and a package
- * nobody listed here stops the build rather than the walk.
+ * nobody listed here stops the build.
  */
 const PACKAGES = {
   settings: 'adapter/settings',
@@ -382,10 +380,8 @@ const held = new Map()
 /**
  * One package's Go, every file of it read as one.
  *
- * A section stands in whichever file of its package a reader put it in, and
- * what the manual is about is what the settings are rather than where they are
- * written down. Reading one named file instead makes a page of the manual
- * disappear the day a type is moved next door.
+ * A section stands in whichever file of its package a reader put it in, so the
+ * package is read whole and a type moved next door keeps its page.
  */
 const sourceOf = async (pkg) => {
   if (!held.has(pkg)) {
@@ -411,10 +407,8 @@ const named = (source) => {
 
 /**
  * Where a field's type is declared: in this file, or in another package's.
- * Nothing for a type a person writes a value of rather than a section under.
- *
- * A package nobody listed above is where the walk would stop, and stopping
- * there costs every key beneath it, so it stops the build instead.
+ * Nothing for a type a person writes a value of. A package nobody listed above
+ * stops the build.
  */
 const declaredIn = (pkg, type) => {
   const bare = type.replace(/^\*/, '')

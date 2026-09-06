@@ -88,11 +88,8 @@ module.exports = {
     // package and stops there. Followed to what it points at, the components
     // stop being a package and their build is walked file by file.
     preserveSymlinks: true,
-    // Which imports a type alone is read off the compiler rather than off the
-    // text, so `import type` is one edge everywhere. Without this a `.vue` is
-    // not put through TypeScript at all and every type it names reads as a
-    // value, which is the difference between judging a component's ring and
-    // leaving components out of the rule.
+    // Which imports a type alone is read off the compiler, so `import type` is
+    // one edge everywhere and a `.vue` is put through TypeScript.
     tsPreCompilationDeps: true,
     // A package is one node and is not walked into, and it is still a node: an
     // import of something the manifest never named is an edge, and a graph with

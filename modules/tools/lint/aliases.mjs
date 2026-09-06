@@ -5,7 +5,7 @@
  * `{ X as Y }` against one of ours is saying that our word for the thing and
  * its own word collide. That is the same collision a `View` suffix is, seen
  * from the other side of the boundary, and it is fixed by renaming one of the
- * two declarations rather than by papering over it at the call site.
+ * two declarations.
  *
  * An alias against a package we did not write is ordinary disambiguation, and
  * so is one against the generated schema: those names are not ours to choose.

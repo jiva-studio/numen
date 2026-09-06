@@ -148,7 +148,7 @@ jobs:
       # The vulnerability list is kept elsewhere and read at the time of the
       # run, so this step can find something on a branch that changed nothing.
       # It answers for the standard library of the Go above as well as for what
-      # is required, which is why nothing here is pinned.
+      # is required.
       - name: Vulnerabilities
         run: |
           go run golang.org/x/vuln/cmd/govulncheck@latest ./...

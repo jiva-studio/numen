@@ -11,7 +11,7 @@ name: Stories
 # and the run costs seconds.
 #
 # A shot names the theme it is taken in, and the manual holds that name against
-# the presets folder, which is why the core's themes start a run.
+# the presets folder, so the core's themes start a run.
 on:
   pull_request:
     paths:

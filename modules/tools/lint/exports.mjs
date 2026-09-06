@@ -1,25 +1,15 @@
 /**
  * An export its own module never uses and nothing but a test draws.
  *
- * `limiting` stood in the notes window's `preset/curve.ts` for six days after
- * the commit that deleted its only caller kept it, and was blind-refactored
- * twice in that time, once onto a new schema enum. Its test still imported it
- * and still passed, so every tool in the repository read it as live: the
- * compiler sees an export used, and `no-unused-vars` does not look past the
- * file it is in.
+ * Something other than a test draws every export, or the module it stands in
+ * uses it where it stands. A test is a second copy of the code's own
+ * assumptions, and it holds a function up long after the window stopped asking
+ * for one.
  *
- * A test is not a use. It is a second copy of the code's own assumptions, and
- * it holds a function up long after the window stopped asking for one.
- *
- * So the invariant: something other than a test draws every export, or the
- * module it stands in uses it where it stands. Two things stand outside it. A
- * name a package hands out is drawn by whoever installed the package, and the
- * barrel is where that is said. And a module nothing but a test draws is a
- * fixture, written to be drawn that way — read off the drawing and not off a
- * directory name, so there is no convention to keep in step and no list.
- *
- * A story is ordinary source. Storybook is built and looked at, and a name a
- * story draws is drawn by something a person sees.
+ * Two things stand outside this. A name a package hands out is drawn by
+ * whoever installed the package, and the barrel is where that is said; a
+ * module nothing but a test draws is a fixture, read off the drawing. A story
+ * is ordinary source: Storybook is built and looked at.
  */
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, normalize } from 'node:path'
@@ -60,7 +50,7 @@ function declares(at, code) {
 }
 
 /**
- * Every name a module passes on rather than declares, as the name it hands out,
+ * Every name a module passes on without declaring it, as the name it hands out,
  * the name it asks its neighbour for, and where that neighbour stands. A star
  * asks for everything, and is written down as `*`.
  */
@@ -261,7 +251,7 @@ function fixtures(readers) {
   return found.sort()
 }
 
-/** The same, over files as they stand rather than over the graph read off them. */
+/** The same, over files as they stand. */
 export const fixturesOf = (files, surface = barrels()) =>
   fixtures(drawing(held(files, surface)).readers)
 

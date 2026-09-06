@@ -1,5 +1,5 @@
 /**
- * The drawing, taken from the code rather than from memory.
+ * The drawing, taken from the code as it stands.
  *
  * One diagram per interface module, each collapsed to the folder a component
  * lives in. Nothing here decides anything: the rules are in rules.cjs and the

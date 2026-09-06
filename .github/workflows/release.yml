@@ -1196,7 +1196,7 @@ jobs:
 
       # What a machine installing this by nix fetches. It reads the shelf, so it
       # runs after the shelf is written, and it carries the hash the shelf
-      # published rather than fetching the build to weigh it.
+      # published.
       #
       # A beta moves nothing: the pin is what an ordinary installation follows,
       # and somebody wanting a beta runs `nix/update.sh beta` themselves.

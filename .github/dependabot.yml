@@ -53,7 +53,7 @@ updates:
         patterns: ["*"]
         update-types: ["major"]
 
-  # The two sites, which ship to a reader rather than into a binary.
+  # The two sites, which ship to a reader.
   - package-ecosystem: npm
     directories:
       - /modules/apps/docs
@@ -72,8 +72,7 @@ updates:
 
   # What nothing ships but everything is checked by: the thing that gates every
   # commit, the drawing of what depends on what, and the icon cutter. A broken
-  # version of any of them should surface as a pull request rather than as a
-  # mystery on somebody's machine.
+  # version of any of them surfaces here as a pull request.
   - package-ecosystem: npm
     directories:
       - /modules/tools/git-hooks

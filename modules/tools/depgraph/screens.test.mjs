@@ -69,7 +69,7 @@ test('what the screen rule refuses, and what it lets through', () => {
 
   // A cruise that read nothing refuses nothing and says so in the same words as
   // a clean one. Every file of the fixture is named, so a walk that lost one of
-  // them fails here rather than passing quietly.
+  // them fails here.
   for (const file of [
     'src/words.ts',
     'src/notices/telling.ts',
@@ -103,8 +103,8 @@ test('what the screen rule refuses, and what it lets through', () => {
 
 /**
  * A ring that runs through the folder boundary and through no file. The
- * file-level rule cannot see it — neither `putting.ts` nor `telling.ts` is in a
- * cycle — which is why the folder-level one is written at all.
+ * file-level rule cannot see it: neither `putting.ts` nor `telling.ts` is in a
+ * cycle, and the folder-level one is what refuses it.
  */
 test('two folders that each reach the other', () => {
   const { refused, rings, read } = cruised(ring)

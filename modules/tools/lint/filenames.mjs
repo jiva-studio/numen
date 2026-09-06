@@ -1,46 +1,16 @@
 /**
- * A file named by a gerund or a participle names something it holds.
+ * A file named by a gerund or a participle says that word in its own code.
  *
- * `owing_test.go` held the counting of vaults and said "owing" nowhere in
- * itself; `attending.go` said "attending" nowhere. A verb form on a file is
- * where a word with nothing behind it hides: no compiler reads a file name,
- * and no reader can tell from one that the word means nothing.
- *
- * So the ending is what draws the rule, and the code is what answers it. A
- * file answers with a declaration of its own — a type, a function, a constant,
- * a package. A test answers with any name its code calls, because a test is
- * named after what it tests and declares little of its own. Neither answers
- * with a comment or a string: a word only a comment says is a word the code
- * does not use.
- *
- * A single-file component declares itself by its file name, which is the name
- * every template addresses it by, so `RecordingTab.vue` says "recording" by
- * standing there. Where Go has a package clause a module of TypeScript has its
- * path, so the name a test imports its neighbour by counts among the names
- * that neighbour hands it.
- *
- * What a file took from its own title answers for nothing. A `Deps` is named
- * after the module it serves and a factory after the module it is the whole
- * of, so `finding.ts` declaring `FindingDeps` and `finding` says the word
- * twice and stands on neither: a name that would be chosen anyway is the only
- * one that vouches.
- *
- * What this cannot see is whether the word a file answered with should have
- * been its name. `transcribing.go` answered with `Transcription`, and that noun
- * was the name it wanted. No suffix reaches it: `transcrib` and `transcript`
- * are two stems, so are `recognis` and `recognit`, and `Counts` and `Places`
- * are one spelling for a plural and a verb. A machine here reads letters, and
- * that question is a person's — the head word of what a file declares is the
- * file's name.
+ * A file answers with a declaration of its own; a test answers with any name
+ * its code calls; a single-file component answers with its own file name. A
+ * comment and a string answer for nothing, and neither does a name the file
+ * took from its own title.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { basename, dirname, extname, join, relative } from 'node:path'
 import { blocks, code, root, sources } from './source.mjs'
 
-/**
- * The one Go module whose files nobody wrote. Named rather than left off: the
- * list below is read off the disk, so a module is here or it is held.
- */
+/** The one Go module whose files nobody wrote. */
 const generated = new Set(['modules/libs/protocol'])
 
 /**
@@ -54,11 +24,7 @@ export const owed = [
   'modules/apps/desktop/editor/src/showing.ts',
 ]
 
-/**
- * Every Go module of the repository, found by its go.mod rather than written
- * down. A list written down goes stale silently, and a module left off it is a
- * rule that stops at that module's border.
- */
+/** Every Go module of the repository, found by its go.mod. */
 export function modules() {
   const found = []
   for (const under of ['modules/libs', 'modules/apps']) {
@@ -102,10 +68,9 @@ export const words = (name) =>
   )
 
 /**
- * Whether a word reads as a verb form at all, rather than merely ending in
- * those letters. Two letters is the shortest an English verb runs to — owing,
- * doing, being — so one letter in front of the ending is a word that ends there
- * by accident: a ring is a thing and nobody rings it here.
+ * Whether a word reads as a verb form. Two letters is the shortest an English
+ * verb runs to — owing, doing, being — so one letter in front of the ending is
+ * a word that ends there by accident: a ring is a thing.
  */
 export const verbal = (word) => /^.{2,}(ing|ed)$/.test(word)
 

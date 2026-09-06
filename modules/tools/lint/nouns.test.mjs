@@ -12,9 +12,9 @@ const declared = () => {
 }
 
 /**
- * A gerund or a participle says what is happening to a thing rather than what
- * the thing is. `Plexing` could not have been introduced without somebody
- * writing the word into the dictionary below and being asked what it means.
+ * A gerund or a participle says what is happening to a thing, and a type is
+ * named for what the thing is. A word let through is a word written into the
+ * dictionary with what it means.
  */
 test('no type of the interface modules is named by a gerund or a participle', () => {
   const found = declared()
@@ -71,8 +71,7 @@ test('what the noun rule refuses', () => {
     { says: 'a plain noun', allowed: true, name: 'Vault' },
     { says: 'a noun whose stem is a verb', allowed: true, name: 'Editor' },
     // Drawn is the participle the rule names and this walk cannot see: an
-    // irregular one has no ending to test for, and a machine that tried would
-    // be reading English rather than a suffix. A person catches those.
+    // irregular one has no ending to test for. A person catches those.
     { says: 'an irregular participle, which has no ending', allowed: true, name: 'Drawn' },
   ]
 

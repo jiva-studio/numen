@@ -58,9 +58,8 @@ export const owed = new Map([
       // A deck and a stencil are edited as a note is, and a deck is scheduled
       // by a preset. The coupling is the domain's, not the folders': what the
       // cards screen takes is the note's editing and its tab state, and the
-      // preset's core. Design rather than debt — worth recording so that a
-      // fourth screen appearing here is read as a change and not as more of
-      // the same.
+      // preset's core. These three edges are the design; a fourth screen
+      // appearing here is a change.
       'no-screen-reaches-a-screen: src/cards/deck.ts → src/note/notes.ts',
       'no-screen-reaches-a-screen: src/cards/deck.ts → src/note/tab.ts',
       'no-screen-reaches-a-screen: src/cards/deck.ts → src/preset/core.ts',

@@ -183,8 +183,8 @@ test('what a Go file is told by the names it did not choose', () => {
 
 /**
  * A single-file component is addressed by its file name and declares itself by
- * standing there, which is why `RecordingTab.vue` and `SettingRow.vue` are no
- * business of this rule. Nothing else is read that way.
+ * standing there, so `RecordingTab.vue` answers for its own name. Nothing else
+ * is read that way.
  */
 test('what a component declares', () => {
   const component = [

@@ -165,10 +165,9 @@ export default tseslint.config(
   // A test and a story are code that ships to nobody, and both reach for the
   // browser on purpose.
   //
-  // The promise rules are off here rather than obeyed: a play function is
-  // written as a run of interactions and does not await what it starts. That is
-  // a backlog — it is worth an afternoon and then this block gets shorter. In
-  // the tabs the same rules are on and the tree is clean.
+  // The promise rules are off: a play function is written as a run of
+  // interactions and does not await what it starts. In the tabs the same rules
+  // are on and the tree is clean.
   {
     files: ['**/*.test.ts', '**/*.stories.ts', 'src/testing/**', '.storybook/**'],
     rules: {

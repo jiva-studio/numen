@@ -42,8 +42,8 @@ const REACHING = /::?v-(?:deep|global|slotted)\b|:(?:deep|global|slotted)\b/
 /**
  * `css` with every reaching selector taken out, argument and all.
  *
- * A nested bracket is followed rather than stopped at, and the bare-combinator
- * spelling — `.a ::v-deep .x` — takes the rest of its selector with it.
+ * A nested bracket is followed to its close, and the bare-combinator spelling
+ * — `.a ::v-deep .x` — takes the rest of its selector with it.
  */
 const reaching = (css) => {
   let out = ''
@@ -87,9 +87,8 @@ export function declares(style) {
  * written out in a string, and the stem of one built by putting a value after
  * a prefix.
  *
- * A module specifier is not a string the template can reach: a component in
- * `welcome/` importing from `'./welcome'` would otherwise look able to set
- * `.welcome`, which is most components and the fault this file exists for.
+ * A module specifier is not a string the template can reach, so a component in
+ * `welcome/` importing from `'./welcome'` sets no `.welcome`.
  *
  * The kebab-case of a component the template mounts is a class it can set. A
  * child's root element carries the scope of the parent that mounted it, so

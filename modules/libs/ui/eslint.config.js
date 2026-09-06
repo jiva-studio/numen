@@ -200,10 +200,8 @@ export default tseslint.config(
   // A test and a story are code that ships to nobody, and both reach for the
   // browser on purpose.
   //
-  // The promise rules are off here rather than obeyed: a play function is
-  // written as a run of interactions and four hundred of them do not await
-  // what they start. That is a backlog, not a licence — it is worth an
-  // afternoon and then this block gets shorter. In the components the same
+  // The promise rules are off: a play function is written as a run of
+  // interactions and does not await what it starts. In the components the same
   // rules are on and the tree is clean.
   {
     files: ['**/*.test.ts', '**/*.stories.ts', 'vitest.setup.ts', '.storybook/**'],
