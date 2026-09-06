@@ -50,7 +50,6 @@ const generated = new Set(['modules/libs/protocol'])
  * same, which is the dialect this rule was written to find.
  */
 export const owed = [
-  'modules/libs/core/internal/adapter/filesystem/imported_files.go',
   'modules/apps/desktop/editor/src/note/drawing.ts',
   'modules/apps/desktop/editor/src/showing.ts',
 ]
