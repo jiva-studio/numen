@@ -9,6 +9,9 @@ name: Stories
 # So the two lists are held against the tree here, started by a change to
 # either side. Both checks read files and nothing else, so nothing is installed
 # and the run costs seconds.
+#
+# A shot names the theme it is taken in, and the manual holds that name against
+# the presets folder, which is why the core's themes start a run.
 on:
   pull_request:
     paths:
@@ -17,8 +20,6 @@ on:
       - "modules/apps/desktop/flashcards/src/**"
       - "modules/apps/docs/tools/**"
       - "modules/apps/landing/tools/**"
-      # A picture of a palette is taken in one of these, and the manual's
-      # check holds the names against the folder.
       - "modules/libs/core/internal/adapter/theme/presets/**"
       - ".github/workflows/stories.yml"
   push:
@@ -29,8 +30,6 @@ on:
       - "modules/apps/desktop/flashcards/src/**"
       - "modules/apps/docs/tools/**"
       - "modules/apps/landing/tools/**"
-      # A picture of a palette is taken in one of these, and the manual's
-      # check holds the names against the folder.
       - "modules/libs/core/internal/adapter/theme/presets/**"
       - ".github/workflows/stories.yml"
 
