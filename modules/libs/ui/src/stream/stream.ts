@@ -22,7 +22,7 @@ export const AGAIN = 1000
 export const LOST = 'lost touch with numen — the window keeps trying'
 
 /** What following a stream reads of the window it is following for. */
-export interface FollowingDeps {
+export interface StreamDeps {
   /** Whether the window is still open. Nothing is followed once it is not. */
   open(): boolean
   /** What the window lost touch with, said until it has it back. */
@@ -35,7 +35,7 @@ export interface FollowingDeps {
   reset?(): void
 }
 
-export function following(deps: FollowingDeps) {
+export function following(deps: StreamDeps) {
   /**
    * One stream, read for as long as the window is open. What arrives is
    * answered before the next of it is read, and what the answer throws ends

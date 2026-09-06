@@ -124,8 +124,8 @@ export { COMPOSER_STATES, composerState, keyIntent } from './composer/state'
 export type { ComposerState, KeyIntent } from './composer/state'
 
 /** A stream taken up again for as long as a window is open. */
-export { following } from './following/following'
-export type { FollowingDeps } from './following/following'
+export { following } from './stream/stream'
+export type { StreamDeps } from './stream/stream'
 
 export { default as TypingIndicator } from './dots/TypingIndicator.vue'
 export { default as Spinner } from './waiting/Spinner.vue'

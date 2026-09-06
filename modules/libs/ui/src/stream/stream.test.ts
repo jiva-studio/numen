@@ -5,7 +5,7 @@
  * shows what the vault held a moment ago, with no error and no way back.
  */
 import { describe, expect, it } from 'vitest'
-import { following, AGAIN, LOST } from './following'
+import { following, AGAIN, LOST } from './stream'
 
 /** A window that is open for as many streams as the test allows it. */
 const window = (streams = 3) => {
