@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULTS, NOWHERE, type Curve, type Point, type Settings } from './core'
-import { BOUNDS } from './drawn'
+import { BOUNDS, curve as drawnCurve } from './drawn'
 import {
   approximate,
   costOf,
@@ -19,6 +19,7 @@ import {
   shapeOf,
   round,
   goalValue,
+  valueAt,
   RETENTION,
 } from './curve'
 
@@ -106,6 +107,26 @@ describe('where the preset itself stands', () => {
     expect(goalValue(settings({ minutesADay: 25 }), today)).toBe(25)
     expect(goalValue(settings({ goal: 'retention', retention: 0.85 }), today)).toBe(0.85)
     expect(goalValue(settings({ goal: 'date', byDate: '2026-09-29' }), today)).toBe(30)
+  })
+})
+
+// The knob's own readout and the bubble over it say one number, and it is this
+// one: the preset's own value is not a place of the grid, and rounding it onto
+// one would read out a value nobody set.
+describe('the value the knob stands at', () => {
+  const riding = drawnCurve({ now: { at: 2, value: 21, day: '' } })
+
+  it('is the preset’s own where the knob has not been moved off it', () => {
+    expect(valueAt(riding, 2)).toBe(21)
+  })
+
+  it('is the place itself anywhere else, and where the preset falls outside the grid', () => {
+    expect(valueAt(riding, 3)).toBe(30)
+    expect(valueAt(drawnCurve({ now: NOWHERE }), 2)).toBe(20)
+  })
+
+  it('is nothing at all where the grid has no such place', () => {
+    expect(valueAt(riding, 9)).toBe(0)
   })
 })
 

@@ -19,7 +19,7 @@
 import { computed, shallowRef, watch, useTemplateRef } from 'vue'
 import { Spinner } from '@numen/ui'
 import type { Curve, PresetCounts } from './core'
-import { clearing } from './curve'
+import { clearing, valueAt } from './curve'
 import BacklogPlot from './BacklogPlot.vue'
 import {
   calloutOf,
@@ -97,17 +97,8 @@ const places = computed(() => props.curve.grid.length)
 const knob = computed(() => positions.value[props.place] ?? null)
 const suggested = computed(() => positions.value[props.curve.suggested.at] ?? null)
 
-/**
- * The value the knob stands at. A preset's own value need not sit on the grid,
- * and the place it opens at is the one nearest it, so while the knob has not
- * been moved off that place the preset's own value is what is said. A knob
- * walked anywhere else stands on a place, and the place is exact.
- */
-const held = computed(() =>
-  props.curve.now.at >= 0 && props.place === props.curve.now.at
-    ? props.curve.now.value
-    : (props.curve.grid[props.place] ?? 0),
-)
+/** The value the knob stands at, which the readout beside it says. */
+const held = computed(() => valueAt(props.curve, props.place))
 
 /** A goal of a date stands the mark of the day it names full height, and dashed. */
 const dated = computed(() => props.curve.goal === 'date')
