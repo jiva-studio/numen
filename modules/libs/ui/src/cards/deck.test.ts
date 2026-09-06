@@ -1,7 +1,4 @@
-/**
- * What a deck comes to, as plain values. No DOM, no measurement: every number
- * and every flag a deck draws is worked out here.
- */
+/** What a deck comes to, as plain values. No DOM, no measurement. */
 import { describe, expect, it } from 'vitest'
 import {
   blanks,

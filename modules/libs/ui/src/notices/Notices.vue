@@ -250,7 +250,7 @@ const { told, cried } = useAnnouncer(() => drawn.value)
   gap: var(--gap);
 }
 
-/* As wide as it needs, and never wider than a narrow window. */
+/* One width whatever it says, and never wider than a narrow window. */
 .notice {
   --room: 24rem;
 

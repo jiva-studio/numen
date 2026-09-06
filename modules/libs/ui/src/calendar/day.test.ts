@@ -1,9 +1,9 @@
 /**
  * A day of the calendar, counted on the calendar.
  *
- * The machine's clock is moved under each of these on purpose: an hour put into
- * a clock or taken out of one is not a day, and neither is a zone that is not
- * Greenwich.
+ * Where a zone or a clock change would tell, the machine's clock is moved under
+ * the test: an hour put into a clock or taken out of one is not a day, and
+ * neither is a zone that is not Greenwich.
  */
 import { describe, expect, it } from 'vitest'
 import { dayAfter, dayNamed, dayOf, daysBetween, isDay } from './day'
@@ -33,8 +33,12 @@ describe('a day as it is written down', () => {
   // London for part of every day, and the calendar a person is looking at is
   // their own.
   it('is the day on the person’s own calendar, not the day at Greenwich', () => {
-    expect(dayNamed(new Date(2026, 8, 5, 23, 30))).toBe('2026-09-05')
-    expect(dayNamed(new Date(2026, 8, 5, 0, 30))).toBe('2026-09-05')
+    inZone('America/New_York', () => {
+      expect(dayNamed(new Date(2026, 8, 5, 23, 30))).toBe('2026-09-05')
+    })
+    inZone('Pacific/Auckland', () => {
+      expect(dayNamed(new Date(2026, 8, 5, 0, 30))).toBe('2026-09-05')
+    })
   })
 })
 
@@ -50,7 +54,7 @@ describe('the instant a written day is read at', () => {
 })
 
 describe('whether a value is a day', () => {
-  it('is true of a day and false of everything else', () => {
+  it('is true of a day and false of a field that holds no date', () => {
     expect(isDay('2026-09-05')).toBe(true)
     expect(isDay('')).toBe(false)
     expect(isDay('soon')).toBe(false)

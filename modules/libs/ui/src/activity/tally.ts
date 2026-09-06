@@ -96,8 +96,10 @@ export const activity = (input: {
  * A size in the units it is read in, in the thousands a machine reports its own
  * disk in.
  *
- * Whole units above a kilobyte: a figure with decimals in it changes every time
- * it is drawn, and a number that never settles reads as noise.
+ * Whole units below a gigabyte: a figure with decimals in it changes every time
+ * it is drawn, and a number that never settles reads as noise. A gigabyte is
+ * coarse enough that a whole one of it settles for minutes, so it keeps a
+ * figure after the point.
  */
 export const sizeWord = (bytes: number): string => {
   const size = bytes < 0 ? 0 : bytes
@@ -150,7 +152,7 @@ export const rateWord = (perSecond: number, counting: TallyUnit = 'things'): str
  * A share as a percentage, for reading beside the count.
  *
  * Rounded down, so that nothing says a hundred per cent until it is finished.
- * A share of exactly one is the only way to read a hundred.
+ * Nothing short of a whole share reads as a hundred.
  */
 export const percentWord = (share: number): string => {
   if (share >= 1) return '100%'

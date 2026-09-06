@@ -1,6 +1,6 @@
 /**
- * Every control that draws a box on a row is one row tall, and takes that
- * height from the one place the height is named.
+ * The fields and choosers a row of settings is made of stand at the one height
+ * the row names.
  *
  * The height is a class, so it is read off the class and not off a measurement:
  * nothing here lays anything out.

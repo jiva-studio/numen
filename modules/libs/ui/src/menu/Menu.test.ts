@@ -393,14 +393,14 @@ describe('typing to jump', () => {
   })
 })
 
-describe('how wide it is drawn', () => {
-  it('is never narrower than what asked for it', async () => {
+describe('the width it is told to keep to', () => {
+  it('carries the width of what asked for it into its own rule', async () => {
     mountMenu({ asking: 420 })
     await settle()
     expect(drawn()?.style.getPropertyValue('--asking')).toBe('420px')
   })
 
-  it('is bounded by its own two widths where nothing said how wide it asked', async () => {
+  it('asks for nothing where nothing said how wide it asked', async () => {
     mountMenu()
     await settle()
     expect(drawn()?.style.getPropertyValue('--asking')).toBe('0px')
