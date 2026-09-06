@@ -29,11 +29,11 @@ func assembled(pkg string) bool {
 		strings.HasPrefix(pkg, "adapter/")
 }
 
-// owed are the edges the applications still have. Each is a binary doing a
+// baseline are the edges the applications still have. Each is a binary doing a
 // piece of the core's work where it should be handed the whole, and the list
 // only shrinks: an edge missing from the tree is not an error here, so the
 // composition root taking one back needs no line changed.
-var owed = map[string][]string{
+var baseline = map[string][]string{
 	// The window builds the agent's tool surface itself, so it reads a note,
 	// a card and the rules over both in place.
 	"desktop/cmd/numen": {
@@ -299,9 +299,9 @@ func application(pkg string) string {
 	return held
 }
 
-// allowed says whether a package is owed the edge it has.
+// allowed says whether the baseline holds the edge a package has.
 func allowed(from, to string) bool {
-	for _, held := range owed[from] {
+	for _, held := range baseline[from] {
 		if to == held || strings.HasPrefix(to, held+"/") {
 			return true
 		}
