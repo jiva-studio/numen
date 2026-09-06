@@ -3,12 +3,8 @@
  * a cap is one object: every icon is centred on the line the letter is set on,
  * and every icon is stroked as thick as every other.
  *
- * Those measurements are why these are stories rather than tests in jsdom. An
- * icon's ink is where a browser paints it, and nothing else can say where.
- *
- * Both are held against the cap's own boxes, which come from the tokens. How
- * thick a face draws its stems and where it puts ink in its em box are that
- * face's own, and differ wherever the installed fonts differ.
+ * Both are measured in the browser that paints the ink, against the cap's own
+ * boxes, which come from the tokens.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'

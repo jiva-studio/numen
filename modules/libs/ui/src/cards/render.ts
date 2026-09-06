@@ -7,8 +7,7 @@
  *
  * Nothing wraps a line written with no tag around it, so the card keeps the
  * breaks it was written with and each such line reads as the line it is. A
- * break standing between two tags is the whitespace of HTML rather than a line,
- * and is taken out, or the card would be drawn a line deeper than it says.
+ * break standing between two tags is whitespace of the markup, and is taken out.
  */
 import { safe } from './safe'
 

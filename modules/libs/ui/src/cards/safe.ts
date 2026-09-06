@@ -52,10 +52,7 @@ const OWN: Readonly<Record<string, readonly string[]>> = {
 
 /**
  * The schemes a link may point at. An address naming none is the caller's to
- * resolve.
- *
- * A link is followed when a person presses it, and one leading outward opens in
- * their own browser rather than in this window.
+ * resolve, and one leading outward opens in the person's own browser.
  */
 const SCHEMES = new Set(['http:', 'https:', 'mailto:', 'tel:'])
 

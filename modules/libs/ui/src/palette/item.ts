@@ -25,10 +25,7 @@ export interface PaletteAction {
   readonly text: string
 }
 
-/**
- * A key that is held rather than typed. A cap draws each of these as an icon
- * and the letter as type.
- */
+/** A key that is held down. A cap draws each of these as an icon. */
 export type PaletteIcon = 'control' | 'shift' | 'command' | 'option' | 'return'
 
 /**

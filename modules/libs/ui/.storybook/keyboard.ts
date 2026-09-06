@@ -162,14 +162,9 @@ const modal = (element: Element): boolean => element.closest('[aria-modal="true"
 const STILL = '*, *::before, *::after { transition: none !important; animation: none !important }'
 
 /**
- * How long the page may go on moving before it is called restless.
- *
- * It bounds the moving and not the waiting. A frame arrives when the machine
- * has one to give, and on a machine drawing two engines at once they arrive
- * far apart; a budget spent waiting for them calls a page restless for being
- * looked at on a busy afternoon. So the still frames are taken however slowly
- * they come, and only a page that is *still moving* when the budget is out has
- * failed to arrive.
+ * How long the page may go on moving before it is called restless. It bounds
+ * the moving and not the waiting: still frames are taken however slowly the
+ * machine draws them.
  */
 const SETTLING = 500
 
@@ -200,23 +195,9 @@ const moving = (): boolean =>
 const STILLNESS = 3
 
 /**
- * The page as it comes to rest. Something still arriving is drawn at the
- * opacity it is arriving from, and held still there it reads as something a
- * person cannot see. What never comes to rest — a spinner — is waited on only
- * so long.
- *
- * A swap runs its two halves one after the other, and between them the page
- * holds nothing moving at all, so one quiet frame proves nothing and several
- * running are asked for.
- *
- * Whether it came to rest is answered rather than assumed: a walk that ran out
- * of time reads a half-drawn page as a page a person cannot see, and a fault
- * found on the way there is worth less than one found at rest.
- *
- * So the answer says something about the page and nothing about the machine.
- * A page that has stopped moving is given its still frames however long the
- * machine takes to draw them; only one still moving when the budget is out is
- * a page that never arrives.
+ * The page as it comes to rest, and whether it got there. A swap runs its two
+ * halves one after the other and holds nothing moving between them, so several
+ * still frames running are asked for and one proves nothing.
  */
 const settles = async (): Promise<boolean> => {
   const until = performance.now() + SETTLING
@@ -239,10 +220,6 @@ const settles = async (): Promise<boolean> => {
  * twice, with the keyboard away from it and with the keyboard on it. The walk
  * itself is what puts the browser in its keyboard temper, so a ring drawn only
  * for `:focus-visible` is a difference these two readings can see.
- *
- * A stop that spends Tab on parts of its own is waited on rather than counted
- * twice, so what stands under it is walked as a person walking it would reach
- * it.
  */
 export async function walk(): Promise<Walk> {
   const settled = await settles()

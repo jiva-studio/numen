@@ -1,8 +1,6 @@
 /**
- * Numbers as they are read out.
- *
- * Here rather than in a component because a count of text reaches six figures on
- * an ordinary vault, and the grouping is the same wherever it is drawn.
+ * Numbers as they are read out. A count of text reaches six figures on an
+ * ordinary vault, and the grouping is the same wherever it is drawn.
  */
 
 /**
@@ -15,14 +13,9 @@
 export const percent = (share: number): string => `${Math.round(share * 100)}%`
 
 /**
- * The thing a count counts, in the singular where there is one of it.
- *
- * Apart from `many` because a layout that puts the figure and the noun in
- * fields of their own still has the noun to make plural.
- *
- * `other` is the whole plural where an `s` on the end does not give it: an
- * irregular noun, or a phrase whose plural falls inside it. `one` and `other`
- * are the two forms English has, in the words `Intl.PluralRules` gives them.
+ * The thing a count counts, in the singular where there is one of it. `other`
+ * is the whole plural where an `s` on the end does not give it, and the two
+ * arguments are the two forms English has, in `Intl.PluralRules`' words.
  */
 export const plural = (count: number, one: string, other = `${one}s`): string =>
   Math.round(count) === 1 ? one : other

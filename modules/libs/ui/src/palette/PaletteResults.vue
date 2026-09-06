@@ -5,7 +5,7 @@
  *
  * A group still filling says so beside its name, and one that came back with
  * nothing says what it has instead. Where the keyboard stands and what a press
- * means are the caller's; this draws, and brings a row into sight when asked.
+ * means are the caller's.
  *
  * `data-palette` names each part: `list`, `title`, `icon`, `name`, `detail`,
  * `hint` and `silence`. A group is drawn as a group and a row as an option.

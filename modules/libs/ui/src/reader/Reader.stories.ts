@@ -1,7 +1,6 @@
 /**
  * A document read, in one piece: its pages side by side, what is highlighted
- * over them, and the controls floating over the page rather than taking a row
- * from it.
+ * over them, and the controls floating over the page.
  *
  * Where the drawing is judged: whether a whole page stands in the room, whether
  * the width asked for is the width of the screen and not of the layout, whether

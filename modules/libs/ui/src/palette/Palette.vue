@@ -3,9 +3,9 @@
  * The palette: a field, and everything the words in it turned up, in groups.
  *
  * It takes groups of items and says which item was chosen and what was asked of
- * it. The keyboard stays in the field the whole time, and what is lit is named
- * to a screen reader rather than focused. The window behind is out of reach
- * for as long as it stands, which is what it says of itself.
+ * it. The keyboard stays in the field the whole time, what is lit is named to a
+ * screen reader, and the window behind is out of reach for as long as the
+ * palette stands.
  *
  * `data-palette` names each part of the panel: `ground`, `panel`, `crumb`,
  * `field`, `said`, `nothing`, `key` and `more`. The list under the field names
@@ -157,7 +157,7 @@ const said = computed(() =>
     .join('. '),
 )
 
-/** The item the keyboard is on, by its identity rather than by where it sits. */
+/** The item the keyboard is on, by its identity. */
 const held = ref('')
 
 const here = computed(() => places.value.findIndex((place) => place.item.id === held.value))

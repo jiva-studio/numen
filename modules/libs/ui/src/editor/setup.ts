@@ -107,8 +107,8 @@ export const indenting: KeyBinding = {
 }
 
 /**
- * Escape hands Tab to the page. It is passed on rather than answered, so what
- * else answers Escape around the editor still answers it.
+ * Escape hands Tab to the page and is passed on, so what else answers Escape
+ * around the editor still answers it.
  */
 export const leaving: KeyBinding = {
   key: 'Escape',

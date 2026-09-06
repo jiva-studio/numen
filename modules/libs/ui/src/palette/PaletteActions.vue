@@ -41,7 +41,7 @@ const hunt = useTemplateRef<HTMLInputElement>('hunt')
 /** What is typed here, which narrows the actions and nothing else. */
 const hunted = ref('')
 
-/** The action the panel is on, by its identity rather than by where it sits. */
+/** The action the panel is on, by its identity. */
 const held = ref('')
 
 const actions = computed(() => placeActions(props.offered, hunted.value))

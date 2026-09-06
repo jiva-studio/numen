@@ -1,19 +1,12 @@
 /**
- * What a card's HTML comes to, measured over thousands of arrangements of it
- * and in the engine that draws the card.
+ * What a card's HTML comes to, measured over thousands of arrangements of it in
+ * Chromium and in WebKit, which are the engines a card is drawn in. The
+ * measuring is a `DOMParser` reading and writing markup twice, and each engine
+ * makes its own of `<svg/onload=` or of a title attribute holding `</noscript>`.
  *
- * A story is run in a real browser by `@storybook/addon-vitest`, in Chromium
- * and in WebKit, which is what this has to be: the measuring is a `DOMParser`
- * reading and writing markup twice, and what one parser makes of `<svg/onload=`
- * or of a title attribute holding `</noscript>` is not what the next one makes
- * of it. A parser written in JavaScript agreeing with itself proves nothing
- * about the two engines a card is ever drawn in.
- *
- * The corpus is generated: a seed the run does not change, a grammar of the
- * pieces an attempt is assembled out of, and the arrangements a person could
- * not have thought to write down. The seeds of it are the arrangements that are
- * already known — a handler however the tag is closed, a scheme behind control
- * characters, markup that comes back as different markup when it is read twice.
+ * The corpus is generated from a seed the run does not change and a grammar of
+ * the pieces an attempt is assembled out of, seeded with the arrangements that
+ * are already known.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
@@ -28,10 +21,7 @@ const SEED = 0x9e3779b9
 /**
  * The tags that carry a card nowhere: each either runs something, fetches
  * something, collects something, or is read by one parser as markup and by the
- * next as text.
- *
- * They are written out here rather than read out of the measuring, because a
- * test that takes its answer from the thing it measures measures nothing.
+ * next as text. They are written out here, and never read out of the measuring.
  */
 const RUNS = [
   'script', 'style', 'iframe', 'object', 'embed', 'noscript', 'template',
@@ -213,7 +203,7 @@ const wrong = (element: Element): string | null => {
 /** What a run measured, as the story draws it. */
 interface Tally {
   arrangements: number
-  /** How many came to markup a browser reads as elements, rather than to text. */
+  /** How many came to markup a browser reads as elements. */
   drawn: number
   elements: number
 }
@@ -289,12 +279,9 @@ export const Arrangements: Story = {
 }
 
 /**
- * Nothing runs when what a card comes to is put on a live page.
- *
- * A handler that survived is measured by the reading above; a handler this
- * window would fire is a second question, and the page is the only place it is
- * answered. An image whose address is no address fires as soon as it is
- * attached, so the frames are waited for rather than assumed.
+ * Nothing runs when what a card comes to is put on a live page. An image whose
+ * address is no address fires as soon as it is attached, so the frames it would
+ * fire in are waited for.
  */
 export const NothingRuns: Story = {
   play: async ({ canvasElement }) => {
