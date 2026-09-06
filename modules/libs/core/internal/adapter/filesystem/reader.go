@@ -316,6 +316,16 @@ func (s *VaultReader) skipped(path, name string) bool {
 	return s.opts.isService(name) || s.ignored.MatchesPath(path+"/")
 }
 
+// relative names a path the way the vault does. Anything outside it is not the
+// vault's to answer for.
+func (s *VaultReader) relative(absolute string) (path string, inside bool) {
+	rel, err := filepath.Rel(s.root, absolute)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", false
+	}
+	return filepath.ToSlash(rel), true
+}
+
 // holds reports which kind of source a path inside this vault is, and whether a
 // walk would report it at all. The walk and the watcher both ask it, so the two
 // agree about what the vault holds.
