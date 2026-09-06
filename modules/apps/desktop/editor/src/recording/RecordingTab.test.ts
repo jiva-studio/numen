@@ -256,9 +256,9 @@ describe('the menu at the end of the player strip', () => {
     await drawn.vm.$nextTick()
     await settled()
 
-    const deeds = drawn.get('.recording__deeds')
-    expect(deeds.find('.recording__follow').exists()).toBe(true)
-    expect(deeds.find('.recording__more').exists()).toBe(true)
+    const actions = drawn.get('.recording__actions')
+    expect(actions.find('.recording__follow').exists()).toBe(true)
+    expect(actions.find('.recording__more').exists()).toBe(true)
 
     drawn.unmount()
   })

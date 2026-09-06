@@ -128,7 +128,7 @@ const share = (deck: DeckCardsDue): string => {
 
     <!-- What a person came here to do stands where the hand is, under the list
          they read: sit down to the whole vault, or go and pick another. -->
-    <footer class="decks__deeds">
+    <footer class="decks__actions">
       <Button variant="ghost" @click="$emit('back')">
         <KeyCap :keys="{ icons: [], letter: 'esc' }" />
         Another vault
@@ -159,7 +159,7 @@ const share = (deck: DeckCardsDue): string => {
 }
 
 /* What is done stands at the foot of the screen, whatever is above it. */
-.decks__deeds {
+.decks__actions {
   display: flex;
   flex: none;
   margin-block-start: auto;

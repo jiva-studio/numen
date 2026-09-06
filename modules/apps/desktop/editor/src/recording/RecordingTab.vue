@@ -101,7 +101,7 @@ const chose = (id: string) => {
 
       <!-- The controls over the words, standing together at the end of the
            strip. -->
-      <div v-if="!empty" class="recording__deeds">
+      <div v-if="!empty" class="recording__actions">
         <button
           type="button"
           class="recording__follow"
@@ -260,7 +260,7 @@ const chose = (id: string) => {
 
 /* The controls at the end of the strip are one group, and stand at the group's
    own spacing. */
-.recording__deeds {
+.recording__actions {
   display: flex;
   align-items: center;
   flex: none;
