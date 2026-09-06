@@ -29,7 +29,7 @@ Every write to it rewrites it whole and nothing locks it between processes, so f
 
 ### It opens the index for writing
 
-Both pools, the schema put in place, and the same connection settings the editor opens with. The window mints marks, its agent writes cards, and cards are edited during a sitting; every one of those writes would otherwise leave the index behind, and the window would draw from an index it could not bring up to date. Which preset schedules a deck is among what the index answers, so the staleness would reach how a day is planned and not only what a heading says.
+Both pools, the schema put in place, and the same connection settings the editor opens with. The window mints marks, its agent writes cards, and cards are edited during a session; every one of those writes would otherwise leave the index behind, and the window would draw from an index it could not bring up to date. Which preset schedules a deck is among what the index answers, so the staleness would reach how a day is planned and not only what a heading says.
 
 Every write brings the paths it touched up to date before it returns, through the same refresh the editor uses and over the same cutting sizes, so neither application re-cuts what the other wrote. A vault is opened and walked through one path, and both windows go through it.
 
@@ -49,7 +49,7 @@ The vault's write lock lives in the process, and two processes on one vault hold
 
 ### It reviews, and it corrects the card in front of the person
 
-A person who finds mid-sitting that a card is wrong is holding the one piece of knowledge that fixes it, at the one moment they will never have again. So a card can be added, edited, have a value taken off it, and be removed; and a section can be made, renamed and removed — and nothing else. A deck and a stencil are what a vault is arranged into, and nothing here makes one; no note, link or document is written from this window either.
+A person who finds mid-session that a card is wrong is holding the one piece of knowledge that fixes it, at the one moment they will never have again. So a card can be added, edited, have a value taken off it, and be removed; and a section can be made, renamed and removed — and nothing else. A deck and a stencil are what a vault is arranged into, and nothing here makes one; no note, link or document is written from this window either.
 
 ### The tools are halved by what they do
 
@@ -63,7 +63,7 @@ The address and token an agent a person configured reads name one vault and one 
 
 ### The agent follows the vault the person sat down to
 
-The front door counts every vault; a sitting is on one. The agent is told which vault it works when it is started, and it is stopped when a sitting opens on another vault or the window closes. A conversation belongs to one card, and answering the card ends it: a thread carried across cards would answer the card in front of the person out of the one behind it.
+The front door counts every vault; a session is on one. The agent is told which vault it works when it is started, and it is stopped when a session opens on another vault or the window closes. A conversation belongs to one card, and answering the card ends it: a thread carried across cards would answer the card in front of the person out of the one behind it.
 
 ### Nothing embeds behind this window
 
@@ -82,7 +82,7 @@ The links belong to the deck and not to one card, so the same notes stand behind
 - **Two processes write to one vault.** The write lock does not reach across them. The loss it admits is a mark, never an answer, and a lost mark is minted again at the next session.
 - **Two windows are open on one vault when a person moves between them**, and each holds its own lock and its own read of the same files.
 - **What this window writes, it can see.** A mark it minted and a card its agent corrected answer the next question it asks.
-- **A sitting can change the vault.** It changes cards, which is what the sitting is about, and every other kind of file is as safe here as it was.
+- **A session can change the vault.** It changes cards, which is what the session is about, and every other kind of file is as safe here as it was.
 - **Every tool surface has a list that must be edited when a tool is added**, and a build that forgets fails.
 - **This window finds less than the editor would on the same question**, and says nothing about it.
 - **Two agents can be running on one machine**, one to a window. Both read the whole vault; only the editor's writes notes.
@@ -112,7 +112,7 @@ The links belong to the deck and not to one card, so the same notes stand behind
 
 **Serving the tools on the editor's port and letting the reviewer borrow them.** Rejected: the reviewer would then need the editor running, which is the arrangement this decision exists to avoid.
 
-**Keeping the conversation across the cards of a sitting.** Rejected: the context grows through a sitting and the card behind starts answering for the card in front.
+**Keeping the conversation across the cards of a session.** Rejected: the context grows through a session and the card behind starts answering for the card in front.
 
 **Narrowing the panel's list to the card in front of the person.** Rejected: it re-resolves what the index resolved, to shorten a list a person opened on purpose.
 

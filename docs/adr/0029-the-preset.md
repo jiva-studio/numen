@@ -54,17 +54,17 @@ Everything about how a deck is scheduled is the preset's: how many new cards and
 
 ### The scope of a budget is the preset, and it is divided before it is spent
 
-A preset's budget is spent on the cards of the decks pointing at it, and a sitting over the whole vault is the union of them. Ten minutes on one preset and twenty on another is thirty minutes.
+A preset's budget is spent on the cards of the decks pointing at it, and a session over the whole vault is the union of them. Ten minutes on one preset and twenty on another is thirty minutes.
 
 **Inside one preset, one budget closes the day**, and the preset's `goal` names which. A day is one day whatever presets fall on it, so how loaded each day is, is one table.
 
-**A preset's day is divided over the decks it schedules, once, before any of it is spent.** A sitting over one deck is that deck's slice of the one division, and the deck's row on the front door is the same slice: they are one number because they are one arithmetic. The shares are proportional to what each deck owes, what the proportions leave over goes by the largest fraction, and where the fractions stand equal the deck owing more takes it, so a vault divides the same day however its files are named or walked. Decks owing the same are alike in everything the division knows of them, and take what is left over in the order their paths stand. What no deck can use is offered round again, to the deck still holding most, and where two hold the same number to the one the day has given least.
+**A preset's day is divided over the decks it schedules, once, before any of it is spent.** A session over one deck is that deck's slice of the one division, and the deck's row on the front door is the same slice: they are one number because they are one arithmetic. The shares are proportional to what each deck owes, what the proportions leave over goes by the largest fraction, and where the fractions stand equal the deck owing more takes it, so a vault divides the same day however its files are named or walked. Decks owing the same are alike in everything the division knows of them, and take what is left over in the order their paths stand. What no deck can use is offered round again, to the deck still holding most, and where two hold the same number to the one the day has given least.
 
 ### One function places a card's day, and everything that asks goes through it
 
 A scheduler works out an interval and leaves a tolerance around it: several days would do. Which of them a card is asked for on is chosen in one function, by weight, where a day's weight is the share of the load its day of the week carries over what already falls on it.
 
-**The sitting that hands the cards out and the picture drawn beside a control both go through that function.** A day chosen once for the picture and again for the sitting is two arithmetics kept in step by tests, and they drift the moment one is touched: the control draws an even load the scheduler never delivers.
+**The session that hands the cards out and the picture drawn beside a control both go through that function.** A day chosen once for the picture and again for the session is two arithmetics kept in step by tests, and they drift the moment one is touched: the control draws an even load the scheduler never delivers.
 
 It is pressure and not a promise. No day is forbidden to carry more than its share, nothing is solved over the collection, and a card with nowhere to go stands where it fell.
 
@@ -76,15 +76,15 @@ It is pressure and not a promise. No day is forbidden to carry more than its sha
 - **The application writes to a note it did not create.** Settings written into the vault go down the application's one write path, and a preset is the first note the application edits key by key rather than whole.
 - **A card is scheduled at its own preset's target.** The answers are replayed under the scheduler of the preset the card's deck points at, and the schedule cache carries a mark of which cards stood under which target. A mark that does not match is a cache thrown away whole.
 - **The settings a person can change stand in two files.** `numen.json` is the installation's and is written down in [Settings](../settings.md); a preset is the vault's and is written down in [Cards](../cards.md), beside the deck it schedules.
-- **A curve a person reads is a promise the sitting keeps.** Both are the same arithmetic over the same day.
+- **A curve a person reads is a promise the session keeps.** Both are the same arithmetic over the same day.
 - **A day is a whole number**, counted from the day the clock is counted from, so the same answers name the same days in every process.
-- **A deck's row is a promise the sitting keeps**, by construction and not by two arithmetics agreeing.
+- **A deck's row is a promise the session keeps**, by construction and not by two arithmetics agreeing.
 
 ## Alternatives considered
 
 **Every budget binding at once.** Rejected: a day would end at whichever number ran out first, and which one that was is not what a person is changing.
 
-**A day chosen once for the picture and again for the sitting.** Rejected: the two are kept in step by tests, and drift the moment one of them is touched.
+**A day chosen once for the picture and again for the session.** Rejected: the two are kept in step by tests, and drift the moment one of them is touched.
 
 **Equal shares over the decks.** Rejected: a deck of five cards beside one of five hundred would hold half the day and spend a tenth of it.
 

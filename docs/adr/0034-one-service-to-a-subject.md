@@ -20,7 +20,7 @@ A window asks about the vault it shows, the vaults the installation holds, the c
 - `VaultsService` — the vaults the installation holds, and putting another one in front of the person.
 - `CardsService` — the stencils and decks a vault is arranged into.
 - `PresetsService` — the presets that schedule them, and the curve of one.
-- `FlashcardsService` — a sitting: what is owed, what is asked, what was answered.
+- `FlashcardsService` — a session: what is owed, what is asked, what was answered.
 - `AssetService` — what a file of the vault is, for whatever opens it: a document's pages, a recording's length and where its bytes are played from, and where a run of a source's text sits on the page.
 - `ArtifactService` — what has been made from a file: listing it, making one, taking one away, and reading and writing the words a recording was heard as.
 - `SettingsService` — the file a person configures the installation in.

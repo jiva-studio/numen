@@ -21,7 +21,7 @@ The watch is started before the walk, and the notes written underneath the walk 
 
 **What each window says about an opening is its own.** How far the walk has got, whether the vault is ready to draw, and what a person is told when it fails belong to the window that has the vault open.
 
-**What is not the same is not shared.** The editor keeps its documents, its recognitions, its transcriptions, its embedding passes and its tabs. The review window keeps its counts, its sittings and the watch it holds on the index file, which it needs because the other window writes that file.
+**What is not the same is not shared.** The editor keeps its documents, its recognitions, its transcriptions, its embedding passes and its tabs. The review window keeps its counts, its sessions and the watch it holds on the index file, which it needs because the other window writes that file.
 
 ### The vault is read when the window opens it
 
@@ -43,7 +43,7 @@ A vault the index does not carry has nothing to draw until the walk is done and 
 
 ### A vault is unread only while nothing has read it
 
-`ErrNotCarried` is the index's answer that it does not carry a vault. It reaches a person only where nothing reads one: a build that names no walk, and a sitting opened on a vault whose walk has not finished.
+`ErrNotCarried` is the index's answer that it does not carry a vault. It reaches a person only where nothing reads one: a build that names no walk, and a session opened on a vault whose walk has not finished.
 
 ## Consequences
 
