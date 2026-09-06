@@ -282,8 +282,6 @@ func (StopReason) EnumDescriptor() ([]byte, []int) {
 type BudgetName int32
 
 const (
-	// The day was closed by no budget at all: it asked for every card there was,
-	// and the material ran out.
 	BudgetName_BUDGET_NAME_UNSPECIFIED BudgetName = 0
 	// How long the day runs, under `minutes_a_day`.
 	BudgetName_BUDGET_NAME_MINUTES_A_DAY BudgetName = 1

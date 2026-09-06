@@ -1124,9 +1124,6 @@ export const StopReasonSchema: GenEnum<StopReason> = /*@__PURE__*/
  */
 export enum BudgetName {
   /**
-   * The day was closed by no budget at all: it asked for every card there was,
-   * and the material ran out.
-   *
    * @generated from enum value: BUDGET_NAME_UNSPECIFIED = 0;
    */
   UNSPECIFIED = 0,

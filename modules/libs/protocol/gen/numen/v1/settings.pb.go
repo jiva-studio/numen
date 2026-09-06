@@ -138,8 +138,12 @@ type GetSettingsResponse struct {
 	// the wall as `HH:MM`. An hour past it is refused. A client asking a person
 	// for one says this.
 	LatestDayStarts string `protobuf:"bytes,5,opt,name=latest_day_starts,json=latestDayStarts,proto3" json:"latest_day_starts,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// Day is the review day now standing, written as the year, the month and the
+	// day. A day of review begins at the hour the settings name, so an hour past
+	// midnight is still the day before.
+	Day           string `protobuf:"bytes,6,opt,name=day,proto3" json:"day,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetSettingsResponse) Reset() {
@@ -203,6 +207,13 @@ func (x *GetSettingsResponse) GetPartsUnderANodeBounds() *Bounds {
 func (x *GetSettingsResponse) GetLatestDayStarts() string {
 	if x != nil {
 		return x.LatestDayStarts
+	}
+	return ""
+}
+
+func (x *GetSettingsResponse) GetDay() string {
+	if x != nil {
+		return x.Day
 	}
 	return ""
 }
@@ -643,13 +654,14 @@ var File_numen_v1_settings_proto protoreflect.FileDescriptor
 const file_numen_v1_settings_proto_rawDesc = "" +
 	"\n" +
 	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\x1a\x14numen/v1/theme.proto\"\x14\n" +
-	"\x12GetSettingsRequest\"\xe4\x01\n" +
+	"\x12GetSettingsRequest\"\xf6\x01\n" +
 	"\x13GetSettingsResponse\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12'\n" +
 	"\x06models\x18\x03 \x03(\v2\x0f.numen.v1.ModelR\x06models\x12J\n" +
 	"\x19parts_under_a_node_bounds\x18\x04 \x01(\v2\x10.numen.v1.BoundsR\x15partsUnderANodeBounds\x12*\n" +
-	"\x11latest_day_starts\x18\x05 \x01(\tR\x0flatestDayStarts\"\xdc\x01\n" +
+	"\x11latest_day_starts\x18\x05 \x01(\tR\x0flatestDayStarts\x12\x10\n" +
+	"\x03day\x18\x06 \x01(\tR\x03day\"\xdc\x01\n" +
 	"\x05Model\x12\x19\n" +
 	"\bnamed_at\x18\x01 \x03(\tR\anamedAt\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +

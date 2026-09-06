@@ -55,6 +55,11 @@ message GetSettingsResponse {
   // the wall as `HH:MM`. An hour past it is refused. A client asking a person
   // for one says this.
   string latest_day_starts = 5;
+
+  // Day is the review day now standing, written as the year, the month and the
+  // day. A day of review begins at the hour the settings name, so an hour past
+  // midnight is still the day before.
+  string day = 6;
 }
 
 // Model is one model a setting that names a model can be set to.

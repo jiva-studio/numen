@@ -201,8 +201,6 @@ enum StopReason {
 // A day of review is closed by the budgets it ran out of. Two of these close no
 // day and stand here because a goal either reads them or leaves them idle.
 enum BudgetName {
-  // The day was closed by no budget at all: it asked for every card there was,
-  // and the material ran out.
   BUDGET_NAME_UNSPECIFIED = 0;
 
   // How long the day runs, under `minutes_a_day`.
