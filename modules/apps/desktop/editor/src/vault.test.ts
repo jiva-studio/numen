@@ -11,7 +11,6 @@ import type { Role as WindowRole } from './core'
 
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
-vi.mock('@connectrpc/connect-web', () => ({ createConnectTransport: () => ({}) }))
 // Only the client is stood in for. The rest of the module is what `@numen/wire`
 // reads its codes off, and a mock naming one export hides the others from it.
 vi.mock('@connectrpc/connect', async (actual) => ({
