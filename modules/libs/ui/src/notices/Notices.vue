@@ -220,7 +220,7 @@ const { told, cried } = useAnnouncer(() => drawn.value)
           <button
             :ref="(way) => holdWay(one.id, way)"
             type="button"
-            class="notice__away ring-numen"
+            class="notice__away outline-none ring-numen"
             :aria-label="`${putAway}: ${one.says}`"
             @click="put(one.id)"
           >

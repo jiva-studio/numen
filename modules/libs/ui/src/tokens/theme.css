@@ -139,10 +139,17 @@
   background-color: var(--numen-selection);
 }
 
-/* Where the keyboard stands is said in the window's own ink, by whatever is
-   drawing it, and nowhere else. Left to itself the webview rings the element in
-   the machine's accent colour, which belongs to no theme numen wears.
-   Specificity is nil, so anything that draws its own ring keeps it. */
-:where(.numen, .numen *):where(:focus, :focus-visible) {
+/* Where the keyboard stands is said in the window's own ink. Left to itself the
+   webview rings the element in the machine's accent colour, which belongs to no
+   theme numen wears, so the ring is drawn here in the ring token instead.
+   Specificity is nil, so anything that draws its own ring keeps it, and a
+   component that means to draw none says `outline-none` and is believed. */
+:where(.numen, .numen *):where(:focus-visible) {
+  outline: var(--numen-ring-width) solid var(--numen-ring);
+  outline-offset: 1px;
+}
+
+/* A pointer press takes the keyboard with it and draws no ring. */
+:where(.numen, .numen *):where(:focus:not(:focus-visible)) {
   outline: none;
 }
