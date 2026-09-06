@@ -30,7 +30,7 @@ export const depcruise = installed('.bin/depcruise')
  */
 export const screened = new Map([
   ['@numen/editor', 'src/cards/deck.ts'],
-  ['@numen/flashcards', 'src/decks/scheduling.ts'],
+  ['@numen/flashcards', 'src/decks/presets.ts'],
 ])
 
 /**

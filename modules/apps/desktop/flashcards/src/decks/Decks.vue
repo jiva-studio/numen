@@ -12,9 +12,9 @@ import Progress from './Progress.vue'
 import Presets from './Presets.vue'
 import { deckName } from '../core'
 import { letterOf } from '../keying'
-import { beginsNothing, learned, opens, spent, LEARNED, STOPPED } from './scheduling'
+import { beginsNothing, learned, opens, spent, LEARNED, STOPPED } from './presets'
 import type { DeckCardsDue, VaultCardsDue } from '../core'
-import type { Preset } from './scheduling'
+import type { Preset } from './presets'
 
 const props = defineProps<{
   vault: VaultCardsDue

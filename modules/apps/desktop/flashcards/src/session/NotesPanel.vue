@@ -8,9 +8,9 @@
 import { nextTick, useTemplateRef, watch } from 'vue'
 import { Prose } from '@numen/ui'
 
-import { WORDS as words } from './reading/words'
-import type { Neighbour } from './reading/core'
-import type { NotesPanelState } from './reading'
+import { WORDS as words } from './notes/words'
+import type { Neighbour } from './notes/core'
+import type { NotesPanelState } from './notes'
 
 const props = defineProps<{ held: NotesPanelState }>()
 

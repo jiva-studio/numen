@@ -36,7 +36,7 @@ test('nothing but a test draws this export', () => {
     'modules/libs/ui/src/index.ts',
     'modules/libs/wire/index.ts',
     'modules/apps/desktop/editor/src/preset/curve.ts',
-    'modules/apps/desktop/flashcards/src/decks/scheduling.ts',
+    'modules/apps/desktop/flashcards/src/decks/presets.ts',
     'modules/apps/mobile/src/core.ts',
   ]) {
     assert.ok(

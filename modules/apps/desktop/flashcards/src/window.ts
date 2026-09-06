@@ -17,12 +17,12 @@ import { counting } from './counting'
 import { asks, picks, swallows } from './keying'
 import { raising } from './notices'
 import { reviewed } from './decks/reviewed'
-import { opens, scheduling } from './decks/scheduling'
+import { opens, vaultPresets } from './decks/presets'
 import { session } from './session/session'
 import { agentPanel as panel } from './session/panel'
-import { reading } from './session/reading'
+import { notesPanel as notes } from './session/notes'
 import { screens } from './screens'
-import { around } from './session/reading/core'
+import { around } from './session/notes/core'
 import { core as agent } from './session/agent/core'
 import { WORDS } from './session/agent/words'
 import type { Grade, VaultCardsDue } from './core'
@@ -37,7 +37,7 @@ export const useWindow = () => {
   const { vaults, counting: busy, day: today, count, stop } = counting({ cards, failed })
   const state = session({ cards, failed })
   const done = reviewed({ cards, failed })
-  const schedules = scheduling({ presets: cards })
+  const schedules = vaultPresets({ presets: cards })
 
   /** Why nothing can be asked here, empty while something can. */
   const unreachable = ref('')
@@ -79,7 +79,7 @@ export const useWindow = () => {
     says: (said) => says(said, 'caution'),
   })
 
-  const notesPanel = reading({
+  const notesPanel = notes({
     open: () => showing.value === 'reading',
     shows: (open) => {
       if (open) showing.value = 'reading'

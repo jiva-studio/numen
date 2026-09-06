@@ -3,9 +3,9 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
 import Decks from './Decks.vue'
-import { learned } from './scheduling'
+import { learned } from './presets'
 import type { DeckCardsDue, VaultCardsDue } from '../core'
-import type { BudgetKeys, Preset, Settings } from './scheduling'
+import type { BudgetKeys, Preset, Settings } from './presets'
 
 const settings: Settings = {
   goal: 'minutes',

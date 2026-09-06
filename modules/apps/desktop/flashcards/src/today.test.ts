@@ -10,8 +10,8 @@ import { Goal, StopReason } from '@numen/protocol'
 import { counting } from './counting'
 import type { CardsDueClient } from './counting'
 import { dayNamed } from '@numen/ui'
-import { scheduling } from './decks/scheduling'
-import type { PresetsClient, SettingsMessage } from './decks/scheduling'
+import { vaultPresets } from './decks/presets'
+import type { PresetsClient, SettingsMessage } from './decks/presets'
 import type { VaultCardsDue } from './core'
 
 const dated = (day: string): SettingsMessage => ({
@@ -86,7 +86,7 @@ describe('the day a goal is weighed against', () => {
     const held = counting({ cards, failed: () => {} })
     await held.count()
 
-    const one = scheduling({ presets: answering(dated('2026-09-04')) })
+    const one = vaultPresets({ presets: answering(dated('2026-09-04')) })
     await one.read(vault, held.day.value)
 
     expect(one.presets.value[0]?.paused).toBe('')

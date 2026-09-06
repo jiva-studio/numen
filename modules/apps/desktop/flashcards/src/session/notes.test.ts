@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 
-import { reading } from './reading'
-import type { DeckNeighbourhood, Neighbour } from './reading/core'
+import { notesPanel } from './notes'
+import type { DeckNeighbourhood, Neighbour } from './notes/core'
 
 /** One note as the window hands it over. */
 const joined = (more: Partial<Neighbour> = {}): Neighbour => ({
@@ -23,7 +23,7 @@ const panel = (more: { deck?: string; refuses?: boolean } = {}) => {
   const open = ref(false)
   const deck = ref(more.deck === undefined ? 'decks/Words.md' : more.deck)
   const said: string[] = []
-  const held = reading({
+  const held = notesPanel({
     open: () => open.value,
     shows: (up) => {
       open.value = up
@@ -101,7 +101,7 @@ describe('what is read belongs to the deck', () => {
     const waiting: (() => void)[] = []
     const open = ref(false)
     const deck = ref('decks/Words.md')
-    const held = reading({
+    const held = notesPanel({
       open: () => open.value,
       shows: (up) => {
         open.value = up
@@ -131,7 +131,7 @@ describe('what is read belongs to the deck', () => {
     const waiting: (() => void)[] = []
     const open = ref(false)
     const deck = ref('decks/Words.md')
-    const held = reading({
+    const held = notesPanel({
       open: () => open.value,
       shows: (up) => {
         open.value = up

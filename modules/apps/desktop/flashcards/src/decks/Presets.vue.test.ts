@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 
 import Presets from './Presets.vue'
-import type { BudgetKeys, Preset, Settings } from './scheduling'
+import type { BudgetKeys, Preset, Settings } from './presets'
 
 const settings = (said: Partial<Settings> = {}): Settings => ({
   goal: 'minutes',

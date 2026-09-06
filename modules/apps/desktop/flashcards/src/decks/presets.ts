@@ -110,11 +110,11 @@ export interface Preset {
   readonly wrong: string
 }
 
-export interface SchedulingDeps {
+export interface VaultPresetsDeps {
   presets: PresetsClient
 }
 
-export function scheduling(deps: SchedulingDeps) {
+export function vaultPresets(deps: VaultPresetsDeps) {
   const presets = shallowRef<readonly Preset[]>([])
 
   /** Which vault the presets on hand belong to. */

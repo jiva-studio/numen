@@ -48,8 +48,6 @@ export const owed = [
   'modules/apps/desktop/editor/src/note/drawing.ts',
   'modules/apps/desktop/editor/src/settings/wearing.ts',
   'modules/apps/desktop/editor/src/showing.ts',
-  'modules/apps/desktop/flashcards/src/decks/scheduling.ts',
-  'modules/apps/desktop/flashcards/src/session/reading.ts',
 ]
 
 /**

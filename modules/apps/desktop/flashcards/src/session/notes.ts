@@ -12,8 +12,8 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 
-import { WORDS as words } from './reading/words'
-import type { DeckNeighbourhood, Neighbour } from './reading/core'
+import { WORDS as words } from './notes/words'
+import type { DeckNeighbourhood, Neighbour } from './notes/core'
 
 /** What the panel asks of the window it is drawn in. */
 export interface NotesPanelDeps {
@@ -34,7 +34,7 @@ export interface NotesPanelDeps {
   readonly says: (said: string) => void
 }
 
-export function reading(deps: NotesPanelDeps) {
+export function notesPanel(deps: NotesPanelDeps) {
   /** Whether the panel is what the window is showing. */
   const open = computed(() => deps.open())
 
@@ -133,4 +133,4 @@ export function reading(deps: NotesPanelDeps) {
 }
 
 /** What one panel holds. */
-export type NotesPanelState = ReturnType<typeof reading>
+export type NotesPanelState = ReturnType<typeof notesPanel>

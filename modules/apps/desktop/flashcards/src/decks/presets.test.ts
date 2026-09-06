@@ -6,12 +6,12 @@ import {
   goalWords,
   leftWords,
   opens,
-  scheduling,
   spent,
   STOPPED,
   stoppedWords,
   through,
-} from './scheduling'
+  vaultPresets,
+} from './presets'
 import type {
   Budget,
   BudgetKeys,
@@ -19,7 +19,7 @@ import type {
   PresetsClient,
   Settings,
   SettingsMessage,
-} from './scheduling'
+} from './presets'
 import type { Goal, PresetCardsDue, VaultCardsDue } from '../core'
 
 const settings = (said: Partial<Settings> = {}): Settings => ({
@@ -347,7 +347,7 @@ describe('why a preset or a deck is asking nothing', () => {
 
 describe('which preset schedules each deck', () => {
   it('gathers the decks of one preset and counts them together', async () => {
-    const one = scheduling({
+    const one = vaultPresets({
       presets: answering({
         'decks/Words.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
         'decks/Roots.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
@@ -376,7 +376,7 @@ describe('which preset schedules each deck', () => {
   // What the day holds under a preset, and what it has already come to, are the
   // count of the vault's own.
   it('takes today from the count of the vault, budget and all', async () => {
-    const one = scheduling({
+    const one = vaultPresets({
       presets: answering({
         'decks/Words.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
       }),
@@ -413,7 +413,7 @@ describe('which preset schedules each deck', () => {
   // The tile prints what pressing it will ask, so the count it is given is the
   // count it shows.
   it('asks for exactly what its decks owe, over all of them', async () => {
-    const one = scheduling({
+    const one = vaultPresets({
       presets: answering({
         'decks/Words.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
         'decks/Roots.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
@@ -432,7 +432,7 @@ describe('which preset schedules each deck', () => {
   })
 
   it('calls a deck naming no preset scheduled by the defaults', async () => {
-    const one = scheduling({
+    const one = vaultPresets({
       presets: answering({
         'decks/Words.md': { path: '', title: '', settings: settings() },
       }),
@@ -444,7 +444,7 @@ describe('which preset schedules each deck', () => {
   })
 
   it('holds nothing of the day for a preset that schedules nothing, and says why', async () => {
-    const one = scheduling({
+    const one = vaultPresets({
       presets: answering({
         'decks/Words.md': {
           path: 'Stopped.md',
@@ -468,7 +468,7 @@ describe('which preset schedules each deck', () => {
   // A build that cannot work the presets of a vault shows none, and the decks
   // stand as they did.
   it('shows no preset where none could be read', async () => {
-    const one = scheduling({
+    const one = vaultPresets({
       presets: {
         getVaultDeckPreset: () => Promise.reject(new Error('unimplemented')),
       },
@@ -483,7 +483,7 @@ describe('which preset schedules each deck', () => {
   // No deck answers for a preset nothing points at, so the count is the only
   // place it can come from.
   it('gives a preset no deck points at a row of its own', async () => {
-    const one = scheduling({
+    const one = vaultPresets({
       presets: answering({
         'decks/Words.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
       }),
@@ -527,7 +527,7 @@ describe('which preset schedules each deck', () => {
   // A preset no deck answers for has no settings on hand, so the count's own
   // verdict is the only thing that can say it schedules nothing.
   it('says why a preset no deck points at schedules nothing', async () => {
-    const one = scheduling({ presets: answering({}) })
+    const one = vaultPresets({ presets: answering({}) })
 
     await one.read(
       vault(
@@ -556,7 +556,7 @@ describe('which preset schedules each deck', () => {
   // An empty deck owes nothing, so no deck answers for the preset it names and
   // the count is the only place that row can come from.
   it('gives a preset whose only deck is empty a row of its own', async () => {
-    const one = scheduling({ presets: answering({}) })
+    const one = vaultPresets({ presets: answering({}) })
 
     await one.read(
       vault(
@@ -581,7 +581,7 @@ describe('which preset schedules each deck', () => {
   })
 
   it('names a preset the count could not name after its file', async () => {
-    const one = scheduling({ presets: answering({}) })
+    const one = vaultPresets({ presets: answering({}) })
 
     await one.read(
       vault(
@@ -608,7 +608,7 @@ describe('which preset schedules each deck', () => {
   // The count answered for the preset with its own figures, and a tile built
   // at nothing beside them is a day drawn as unbegun.
   it('draws a preset it could not read from the figures the count gave', async () => {
-    const one = scheduling({
+    const one = vaultPresets({
       presets: { getVaultDeckPreset: async () => ({ refusal: Refusal.MISSING }) },
     })
 
@@ -630,7 +630,7 @@ describe('which preset schedules each deck', () => {
   })
 
   it('says why a preset it could not read has no settings', async () => {
-    const one = scheduling({
+    const one = vaultPresets({
       presets: { getVaultDeckPreset: async () => ({ refusal: Refusal.MISSING }) },
     })
 
@@ -640,7 +640,7 @@ describe('which preset schedules each deck', () => {
   })
 
   it('says nothing is wrong with a preset no deck of this vault answered for', async () => {
-    const one = scheduling({ presets: answering({}) })
+    const one = vaultPresets({ presets: answering({}) })
 
     await one.read(vault([], [presetDue()]), '2026-09-05')
 
@@ -650,7 +650,7 @@ describe('which preset schedules each deck', () => {
   // What was wrong in the file is the person's to settle in the editor, and
   // this window is where they find out there is anything to settle.
   it('carries what was wrong in a preset it did read, once for all its decks', async () => {
-    const one = scheduling({
+    const one = vaultPresets({
       presets: {
         async getVaultDeckPreset() {
           return {
@@ -680,7 +680,7 @@ describe('which preset schedules each deck', () => {
   // A build whose count answers no preset leaves what the day holds to the
   // settings the preset itself was read with.
   it('falls back to the settings for what the day holds', async () => {
-    const one = scheduling({
+    const one = vaultPresets({
       presets: answering({
         'decks/Words.md': {
           path: 'Sanskrit.md',
@@ -702,7 +702,7 @@ describe('which preset schedules each deck', () => {
     const asked = new Promise<void>((then) => {
       answer = then
     })
-    const one = scheduling({
+    const one = vaultPresets({
       presets: {
         async getVaultDeckPreset() {
           await asked
@@ -728,7 +728,7 @@ describe('which preset schedules each deck', () => {
   })
 
   it('holds no preset for a vault a person has left', async () => {
-    const one = scheduling({ presets: answering({}) })
+    const one = vaultPresets({ presets: answering({}) })
 
     await one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
     one.forget()
@@ -744,7 +744,7 @@ describe('every question about a preset', () => {
     const answers = answering({
       'decks/Words.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
     })
-    const one = scheduling({
+    const one = vaultPresets({
       presets: {
         ...answers,
         async getVaultDeckPreset(say) {

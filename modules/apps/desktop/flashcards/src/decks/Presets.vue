@@ -15,8 +15,8 @@
 import { computed } from 'vue'
 import { Button, percent } from '@numen/ui'
 
-import { goalWords, leftWords, through } from './scheduling'
-import type { Preset } from './scheduling'
+import { goalWords, leftWords, through } from './presets'
+import type { Preset } from './presets'
 
 const props = defineProps<{
   presets: readonly Preset[]

@@ -10,7 +10,7 @@ import { dayAfter, dayNamed, type HeatmapTally } from '@numen/ui'
 import { h, type VNode } from 'vue'
 import Decks from './decks/Decks.vue'
 import Session from './session/Session.vue'
-import type { BudgetKeys, Preset, Settings } from './decks/scheduling'
+import type { BudgetKeys, Preset, Settings } from './decks/presets'
 import type { CardFace, DeckCardsDue, VaultCardsDue } from './core'
 
 const dayBefore = (day: string, back: number): string => dayAfter(day, -back)
