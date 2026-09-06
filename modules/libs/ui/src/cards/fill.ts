@@ -36,17 +36,6 @@ export function slotsIn(template: string): readonly Slot[] {
 /** The braces a field is written as. */
 export const braced = (field: string): string => `{{${field}}}`
 
-/**
- * A face with every slot standing what fills it. The name between the braces
- * is a field's name written exactly, so a slot nothing was handed for — a name
- * with space around it among them — stands empty.
- */
-export function fill(template: string, values: readonly FieldValue[]): string {
-  return template.replace(SLOT, (_, inside: string) =>
-    values.find((each) => each.field === inside)?.text ?? '',
-  )
-}
-
 /** Text standing as text where the marks around it are read as marks. */
 const escaped = (text: string): string =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')

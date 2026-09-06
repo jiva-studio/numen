@@ -5,7 +5,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   braced,
-  fill,
   insert,
   previewed,
   renamedIn,
@@ -63,7 +62,6 @@ describe('a card face', () => {
       if (want !== face) changed += 1
 
       const said = { name, construct, laid: want }
-      expect({ name, construct, laid: fill(face, values) }).toStrictEqual(said)
       expect({ name, construct, laid: previewed(face, values, fields) }).toStrictEqual(said)
     }
 
@@ -93,51 +91,50 @@ describe('slotsIn', () => {
   })
 })
 
-describe('fill', () => {
-  it('stands a value in every slot that names a field', () => {
-    expect(fill('**Height:** {{Height}}', VALUES)).toBe('**Height:** about 45"')
+describe('previewed', () => {
+  it('stands a value in every slot the fields name', () => {
+    expect(previewed('{{Height}}', VALUES, ['Height'])).toBe('about 45"')
   })
 
   it('stands the naming field like any other', () => {
-    expect(fill('{{Name}} is tall', [{ field: 'Name', text: 'Llama' }])).toBe('Llama is tall')
-  })
-
-  it('fills no slot whose name is written with space around it', () => {
-    expect(fill('{{ Height }}', VALUES)).toBe('')
+    const values = [{ field: 'Name', text: 'Llama' }]
+    expect(previewed('{{Name}} is tall', values, ['Name'])).toBe('Llama is tall')
   })
 
   it('leaves a slot nothing was handed for empty', () => {
-    expect(fill('[{{Weight}}]', VALUES)).toBe('[]')
+    expect(previewed('[{{Weight}}]', VALUES, ['Weight'])).toBe('[]')
   })
 
   it('keeps the markup around the slots', () => {
-    expect(fill('<li>{{Height}}</li>\n<li>{{Life span}}</li>\n', VALUES)).toBe(
+    const fields = ['Height', 'Life span']
+    expect(previewed('<li>{{Height}}</li>\n<li>{{Life span}}</li>\n', VALUES, fields)).toBe(
       '<li>about 45"</li>\n<li>about 20 years</li>\n',
     )
   })
 
   it('stands a value that is itself markup', () => {
     const values = [{ field: 'Picture', text: '<img src="llama.jpg" alt="a llama">' }]
-    expect(fill('{{Picture}}', values)).toBe('<img src="llama.jpg" alt="a llama">')
+    expect(previewed('{{Picture}}', values, ['Picture'])).toBe(
+      '<img src="llama.jpg" alt="a llama">',
+    )
   })
 
   it('does not read the braces a value stands in the text', () => {
-    const values = [{ field: 'One', text: '{{Two}}' }]
-    expect(fill('{{One}}', [...values, { field: 'Two', text: 'caught' }])).toBe('{{Two}}')
+    const values = [
+      { field: 'One', text: '{{Two}}' },
+      { field: 'Two', text: 'caught' },
+    ]
+    expect(previewed('{{One}}', values, ['One', 'Two'])).toBe('{{Two}}')
   })
 
-  it('fills text that is not Latin', () => {
+  it('stands text that is not Latin', () => {
     const values = [
       { field: 'Перевод', text: 'compost' },
       { field: 'Слово', text: 'Компост' },
     ]
-    expect(fill('{{Перевод}} — {{Слово}}', values)).toBe('compost — Компост')
-  })
-})
-
-describe('previewed', () => {
-  it('stands a value in every slot the fields name', () => {
-    expect(previewed('{{Height}}', VALUES, ['Height'])).toBe('about 45"')
+    expect(previewed('{{Перевод}} — {{Слово}}', values, ['Перевод', 'Слово'])).toBe(
+      'compost — Компост',
+    )
   })
 
   it('leaves a slot the fields do not name in its braces, marked where it stands', () => {

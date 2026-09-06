@@ -1,8 +1,9 @@
 /**
- * Shares of a branch's length: one per child, summing to one.
+ * Shares of a branch's length: one per child, summing to one, and none at all
+ * where there are no children.
  *
- * Every function here returns shares in that form, so a caller may hand in
- * whatever it has and use what comes back directly.
+ * Every list here comes back in that form, so a caller may hand in whatever it
+ * has and use what comes back directly.
  */
 
 /** Equal shares for a branch of this many children. */
@@ -49,13 +50,6 @@ export function insert(
   return fit(fitted, fitted.length)
 }
 
-/** The shares left once the one at `index` is gone, its length shared out. */
-export function remove(sizes: readonly number[], index: number): readonly number[] {
-  const fitted = [...fit(sizes, sizes.length)]
-  fitted.splice(index, 1)
-  return fit(fitted, fitted.length)
-}
-
 /**
  * The smallest share a child may be squeezed to, given how long the branch is
  * and how little of it a child is worth drawing in.
@@ -66,17 +60,4 @@ export function remove(sizes: readonly number[], index: number): readonly number
 export function atLeast(minimum: number, length: number, count: number): number {
   if (count <= 0 || !(length > 0) || !(minimum > 0)) return 0
   return Math.min(1 / count, minimum / length)
-}
-
-/** The share at `index` divided among `inner`, in proportion to them. */
-export function spread(
-  sizes: readonly number[],
-  index: number,
-  inner: readonly number[],
-): readonly number[] {
-  const fitted = [...fit(sizes, sizes.length)]
-  const share = fitted[index] ?? 0
-  const parts = fit(inner, inner.length).map((part) => part * share)
-  fitted.splice(index, 1, ...parts)
-  return fit(fitted, fitted.length)
 }

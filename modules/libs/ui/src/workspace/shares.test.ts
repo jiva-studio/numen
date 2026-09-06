@@ -1,6 +1,6 @@
-/** Shares always come back summing to one, whatever went in. */
+/** Shares come back summing to one, whatever went in, and no children take none. */
 import { describe, expect, it } from 'vitest'
-import { atLeast, even, fit, insert, remove, spread } from './shares'
+import { atLeast, even, fit, insert } from './shares'
 
 const sums = (sizes: readonly number[]) => sizes.reduce((total, size) => total + size, 0)
 
@@ -45,17 +45,6 @@ describe('insert', () => {
   })
 })
 
-describe('remove', () => {
-  it('shares the length out in proportion', () => {
-    const after = remove([0.5, 0.25, 0.25], 0)
-    expect(after).toStrictEqual([0.5, 0.5])
-  })
-
-  it('leaves nothing to divide when the last one goes', () => {
-    expect(remove([1], 0)).toStrictEqual([])
-  })
-})
-
 describe('atLeast', () => {
   it('is the minimum as a share of the length', () => {
     expect(atLeast(200, 1000, 2)).toBeCloseTo(0.2)
@@ -73,15 +62,5 @@ describe('atLeast', () => {
 
   it('has nothing to ask of no children', () => {
     expect(atLeast(200, 1000, 0)).toBe(0)
-  })
-})
-
-describe('spread', () => {
-  it('divides one share among several, in proportion to them', () => {
-    const after = spread([0.5, 0.5], 1, [0.25, 0.75])
-    expect(after[0]).toBeCloseTo(0.5)
-    expect(after[1]).toBeCloseTo(0.125)
-    expect(after[2]).toBeCloseTo(0.375)
-    expect(sums(after)).toBeCloseTo(1)
   })
 })
