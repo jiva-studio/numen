@@ -217,6 +217,11 @@ export interface ReviewSettings {
   readonly starts: string
   /** The latest hour the vault takes. One past it is refused. */
   readonly latest: string
+  /**
+   * The review day now standing, as the vault counts it. A day of review begins
+   * at the hour above, so an hour past midnight is still the day before.
+   */
+  readonly day: string
 }
 
 /** One setting of the file, and what to put there. */

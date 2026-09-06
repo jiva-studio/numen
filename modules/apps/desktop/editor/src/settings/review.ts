@@ -6,19 +6,12 @@
  * installation is doing and choosing another hour writes it.
  */
 import { ref } from 'vue'
-import { dayAfter, dayNamed } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
 import type { ReviewSettings } from '../core'
 import type { MessageWriter } from '../notices/messages'
 
 /** The hour an installation nobody has configured begins the day at. */
 export const DEFAULT_STARTS = '04:00'
-
-/** How long past midnight an hour of the clock stands, in minutes. */
-const past = (hour: string): number => {
-  const [at, minute] = hour.split(':').map(Number)
-  return (at ?? 0) * 60 + (minute ?? 0)
-}
 
 /** Everything this says in the window's voice. */
 export interface Words {
@@ -28,7 +21,10 @@ export interface Words {
 
 /** What this asks of the vault. */
 export interface ReviewDeps {
-  /** The hour as the settings file holds it, and the latest the vault takes. */
+  /**
+   * The hour as the settings file holds it, the latest the vault takes, and the
+   * review day now standing.
+   */
   reviewing(): Promise<ReviewSettings>
   /** The hour written. What could not be written, and nothing where it was. */
   choosesReviewing(starts: string): Promise<string | null>
@@ -46,16 +42,11 @@ export function reviewSetting(core: ReviewDeps, words: Words, said: MessageWrite
   const latest = ref(DEFAULT_STARTS)
 
   /**
-   * The review day now standing, which is the day everything counting in days
-   * counts from. An answer given before the hour in force belongs to the day
-   * before, so the calendar and the review day differ until that hour comes
-   * round.
+   * The review day now standing, as the vault counts it, and nothing until the
+   * vault has been asked. It is the day everything counting in days counts
+   * from.
    */
-  const day = (at: Date = new Date()): string => {
-    const named = dayNamed(at)
-    const clock = at.getHours() * 60 + at.getMinutes()
-    return clock < past(starts.value) ? dayAfter(named, -1) : named
-  }
+  const day = ref('')
 
   /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {
@@ -63,8 +54,18 @@ export function reviewSetting(core: ReviewDeps, words: Words, said: MessageWrite
       const held = await core.reviewing()
       starts.value = held.starts
       latest.value = held.latest
+      day.value = held.day
     } catch {
       // A vault that cannot be asked leaves the hour where it stands.
+    }
+  }
+
+  /** The day the vault now counts from, asked again once an hour is written. */
+  const counted = async (): Promise<void> => {
+    try {
+      day.value = (await core.reviewing()).day
+    } catch {
+      // A vault that cannot be asked leaves the day where it stands.
     }
   }
 
@@ -84,7 +85,11 @@ export function reviewSetting(core: ReviewDeps, words: Words, said: MessageWrite
     } catch (thrown) {
       failed = troubleWords(thrown)
     }
-    if (!failed) return
+    if (!failed) {
+      // The hour moved the boundary, and the day standing is the vault's to say.
+      await counted()
+      return
+    }
     said(`${words.unturned} ${failed}`, 'refusal')
     starts.value = was
   }

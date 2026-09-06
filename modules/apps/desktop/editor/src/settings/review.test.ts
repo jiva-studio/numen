@@ -10,13 +10,31 @@ import { reviewSetting, DEFAULT_STARTS, type ReviewDeps } from './review'
 
 const words = { unturned: 'That setting could not be written:' }
 
-/** A vault holding that hour, and refusing what it is told to refuse. */
+/**
+ * The day a vault counts from at one in the morning of the fifth, for each hour
+ * a day of review may begin at. An hour the clock has not reached leaves the
+ * fourth standing, and an hour it has passed opens the fifth.
+ */
+const DAYS: Record<string, string> = {
+  '00:30': '2026-09-05',
+  '01:00': '2026-09-05',
+  '03:59': '2026-09-04',
+  '04:00': '2026-09-04',
+  '06:30': '2026-09-04',
+}
+
+/**
+ * A vault holding that hour and counting from the day it names, and refusing
+ * what it is told to refuse. An hour it takes is the hour it holds from then on.
+ */
 const vault = (held: string, refuses: string | null = null, latest = '12:00') => {
   const written: string[] = []
+  let hour = held
   const core: ReviewDeps = {
-    reviewing: () => Promise.resolve({ starts: held, latest }),
+    reviewing: () => Promise.resolve({ starts: hour, latest, day: DAYS[hour] ?? '' }),
     choosesReviewing: (starts) => {
       written.push(starts)
+      if (!refuses) hour = starts
       return Promise.resolve(refuses)
     },
   }
@@ -53,23 +71,38 @@ describe('the hour the window stands at', () => {
 })
 
 describe('the review day now standing', () => {
-  it('is the day before while the hour in force has not come round', () => {
-    const { hours } = vault('04:00')
-    expect(hours.day(new Date(2026, 8, 5, 1, 0))).toBe('2026-09-04')
-    expect(hours.day(new Date(2026, 8, 5, 3, 59))).toBe('2026-09-04')
+  it('is nothing until the vault has been asked', () => {
+    expect(vault('04:00').hours.day.value).toBe('')
   })
 
-  it('is the day the calendar names from that hour on', () => {
+  it('is the day before while the hour in force has not come round', async () => {
     const { hours } = vault('04:00')
-    expect(hours.day(new Date(2026, 8, 5, 4, 0))).toBe('2026-09-05')
-    expect(hours.day(new Date(2026, 8, 5, 23, 59))).toBe('2026-09-05')
-  })
-
-  it('moves with the hour the settings hold', async () => {
-    const { hours } = vault('06:30')
     await hours.start()
-    expect(hours.day(new Date(2026, 8, 5, 6, 29))).toBe('2026-09-04')
-    expect(hours.day(new Date(2026, 8, 5, 6, 30))).toBe('2026-09-05')
+    expect(hours.day.value).toBe('2026-09-04')
+  })
+
+  it('is the day the calendar names where that hour has passed', async () => {
+    const { hours } = vault('00:30')
+    await hours.start()
+    expect(hours.day.value).toBe('2026-09-05')
+  })
+
+  it('is asked again once an hour is written', async () => {
+    const { hours } = vault('00:30')
+    await hours.start()
+
+    await hours.chooses('03:59')
+
+    expect(hours.day.value).toBe('2026-09-04')
+  })
+
+  it('is left where it stands where the hour was refused', async () => {
+    const { hours } = vault('00:30', 'the file could not be written')
+    await hours.start()
+
+    await hours.chooses('06:30')
+
+    expect(hours.day.value).toBe('2026-09-05')
   })
 })
 
@@ -101,7 +134,7 @@ describe('an hour chosen', () => {
     const said = vi.fn()
     const hours = reviewSetting(
       {
-        reviewing: () => Promise.resolve({ starts: '04:00', latest: '12:00' }),
+        reviewing: () => Promise.resolve({ starts: '04:00', latest: '12:00', day: '2026-09-04' }),
         choosesReviewing: () => Promise.reject(new Error('not an hour of the day')),
       },
       words,

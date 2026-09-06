@@ -165,7 +165,13 @@ export const useWindow = () => {
    * day a preset counts a date from is the review day, which the tabs are told
    * and do not work out.
    */
-  const schedules = presetting(presets, held.handle, puts, log.under('preset'), dayBegins.day)
+  const schedules = presetting(
+    presets,
+    held.handle,
+    puts,
+    log.under('preset'),
+    () => dayBegins.day.value,
+  )
 
   going.holds(decks.flush)
   going.holds(stencils.flush)
@@ -650,13 +656,15 @@ export const useWindow = () => {
     // The layout turns on which vault the list names, and stands before anything
     // the vault says can open a tab of its own.
     await listing()
+    // A tab counting in days is told the day before it opens, so nothing is
+    // drawn from a day this installation does not count from.
+    await dayBegins.start()
     await starts()
     void window.start()
     void going.start()
     void dressed.start()
     void oneName.start()
     void hungParts.start()
-    void dayBegins.start()
     void rest.start()
   })
   onUnmounted(() => {

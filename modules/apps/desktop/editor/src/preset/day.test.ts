@@ -6,7 +6,7 @@
  * counting from the calendar says one number and the answer that lands says
  * another, and a date typed or written out is a day off the day the core reads.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
 import { dayAfter } from '@numen/ui'
 
@@ -97,19 +97,10 @@ const opened = async (settings: Partial<Settings>, answer?: Curve) => {
   return { state, written }
 }
 
-afterEach(() => {
-  vi.useRealTimers()
-})
-
+// One in the morning: the calendar says the fifth, and the review day that
+// began at four on the fourth is the day the window was told. The core counts
+// eight days to the twelfth from that day, and the calendar would count seven.
 describe('a goal of a date', () => {
-  // One in the morning: the calendar says the fifth, and the review day that
-  // began at four on the fourth is still running. The core counts eight days to
-  // the twelfth from that day, and the calendar would count seven.
-  beforeEach(() => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date(2026, 8, 5, 1, 0, 0))
-  })
-
   it('counts the days to it from the review day', async () => {
     const { state } = await opened({ goal: 'date', byDate: BY })
 

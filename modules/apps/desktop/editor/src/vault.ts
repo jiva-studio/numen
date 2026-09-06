@@ -276,6 +276,7 @@ export const core: Core & SearchDeps & CommandsDeps = {
     return {
       starts: typeof hour === 'string' ? hour : DEFAULT_STARTS,
       latest: answer.latestDayStarts,
+      day: answer.day,
     } satisfies ReviewSettings
   },
   choosesReviewing: (starts) => puts([{ at: STARTS, value: starts }]),
