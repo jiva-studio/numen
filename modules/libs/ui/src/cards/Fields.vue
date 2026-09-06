@@ -21,6 +21,7 @@ import {
   numbered,
   objection,
   directionOf,
+  STEP_KEYS,
   type Problems,
   type InsertionPoint,
   type Objection,
@@ -139,6 +140,7 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
             :data-disabled="row.names || undefined"
             :aria-disabled="row.names || undefined"
             :aria-label="row.names ? words.pinned : `${words.drag}: ${row.field}`"
+            :aria-keyshortcuts="row.names ? undefined : STEP_KEYS"
             :title="row.names ? words.pinned : `${words.drag}: ${row.field}`"
             @dragstart="lift(row.field, $event)"
             @dragend="release"

@@ -305,6 +305,7 @@ describe('Stencil, the fields', () => {
       expect(grip.attributes('aria-label')).toBe('Reorder: Height')
       expect(grip.attributes('tabindex')).toBe('0')
       expect(grip.attributes('role')).toBe('button')
+      expect(grip.attributes('aria-keyshortcuts')).toBe('ArrowUp ArrowDown')
     })
 
     it('names the first field’s handle by what it is, and takes it out of the order', () => {
@@ -314,6 +315,8 @@ describe('Stencil, the fields', () => {
       )
       expect(grip.attributes('tabindex')).toBe('-1')
       expect(grip.attributes('aria-disabled')).toBe('true')
+      // A handle that goes nowhere along the order says no keys it answers.
+      expect(grip.attributes('aria-keyshortcuts')).toBeUndefined()
     })
 
     it('emits a field dragged one place down the order', () => {
