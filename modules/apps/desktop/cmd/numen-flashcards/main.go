@@ -99,7 +99,7 @@ func run(cfg container.Config, noAgent bool) error {
 	// Every vault this window shows is opened the way the editor opens the one
 	// it shows: watched from the moment it is opened, walked into the index, and
 	// levelled by the paths a write touches.
-	vaults := &openVaults{cfg: cfg, db: db, ctx: ctx, out: os.Stderr}
+	vaults := &openVaults{cfg: cfg, db: db, under: ctx, out: os.Stderr}
 
 	notes, cutting := composed(cfg, db, vaults)
 

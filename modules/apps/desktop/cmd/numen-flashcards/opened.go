@@ -22,9 +22,9 @@ var errGoing = errors.New("the window is closing")
 type openVaults struct {
 	cfg container.Config
 	db  *container.Index
-	// ctx is the life a vault stays open for. It outlives the question that
+	// under is the life a vault stays open for. It outlives the question that
 	// first asked after the vault.
-	ctx context.Context
+	under context.Context
 	// record is called with the vault the index has just been brought level with.
 	record func(domain.Vault)
 	out    io.Writer
@@ -97,7 +97,7 @@ func (o *openVaults) opens(v domain.Vault, one *vaultOpening) {
 		}
 	}
 
-	open := opening.Begin(o.ctx, v)
+	open := opening.Begin(o.under, v)
 	if why := open.Unwatched(); why != nil {
 		fmt.Fprintf(o.out, "numen-flashcards: %s is not being followed: %v\n", v.Name, why)
 	}
@@ -106,7 +106,7 @@ func (o *openVaults) opens(v domain.Vault, one *vaultOpening) {
 	if o.starts() {
 		go func() {
 			defer o.running.Done()
-			open.Run(o.ctx)
+			open.Run(o.under)
 		}()
 	}
 }

@@ -49,7 +49,7 @@ func built(
 		{ID: "one", Name: "One", Path: vaultOf(t, cfg)},
 		{ID: "two", Name: "Two", Path: vaultOf(t, cfg)},
 	}
-	vaults := &openVaults{cfg: cfg, db: db, ctx: t.Context(), record: func(domain.Vault) {}, out: io.Discard}
+	vaults := &openVaults{cfg: cfg, db: db, under: t.Context(), record: func(domain.Vault) {}, out: io.Discard}
 	t.Cleanup(vaults.wait)
 	return cfg, db, vaults, &window.API{}, held
 }
