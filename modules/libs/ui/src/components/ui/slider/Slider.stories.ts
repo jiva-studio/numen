@@ -82,7 +82,7 @@ const handle = (canvas: HTMLElement): HTMLElement => {
 const standsAt = (canvas: HTMLElement): string | null =>
   handle(canvas).getAttribute('aria-valuenow')
 
-/** A share of a sitting, part of the way along its track. */
+/** A share of a session, part of the way along its track. */
 export const ASlider: Story = {}
 
 /** The handle at the near end, where the track is empty behind it. */
@@ -142,7 +142,7 @@ export const OtherScripts: Story = { args: { said: 'Доля просрочен�
 
 /** A name far longer than anything a setting is called. */
 export const FarTooLong: Story = {
-  args: { said: 'What part of a sitting goes to the overdue pile before new material '.repeat(2) },
+  args: { said: 'What part of a session goes to the overdue pile before new material '.repeat(2) },
 }
 
 /** A slider nobody may move. */
