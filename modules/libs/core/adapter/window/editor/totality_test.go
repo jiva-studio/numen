@@ -131,8 +131,9 @@ func TestEveryArtifactTheSchemaNamesStandsSomewhere(t *testing.T) {
 		return named && id != ""
 	})
 	testsupport.Handled(t, func(of v1.ArtifactKind) bool {
-		return slices.Contains(carried(domain.KindBook), of) ||
-			slices.Contains(carried(domain.KindRecording), of)
+		return slices.Contains(carried(domain.KindBook, false), of) ||
+			slices.Contains(carried(domain.KindRecording, false), of) ||
+			slices.Contains(carried(domain.KindNote, true), of)
 	})
 }
 

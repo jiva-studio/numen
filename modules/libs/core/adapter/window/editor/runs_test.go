@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	derived "github.com/jiva-studio/numen/modules/libs/core/text"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
@@ -26,6 +27,13 @@ const (
 // A note stands in the vault beside the scan and the recording, as a file
 // neither run is for.
 const idea = "notes/idea.md"
+
+// A link note stands there too, pointing at a video. What is at an address is
+// made from the note the way a reading is made from a scan.
+const (
+	pointed  = "notes/talk.md"
+	pointsAt = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+)
 
 // asking is a run a test hands the window: what it makes of a source it is
 // given, and what it was given.
@@ -71,18 +79,25 @@ func running(
 ) (*API, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{
-		book: "the bytes of a scan",
-		talk: sound,
-		idea: "# an idea\n",
+		book:    "the bytes of a scan",
+		talk:    sound,
+		idea:    "# an idea\n",
+		pointed: "---\ntype: link\nurl: " + pointsAt + "\n---\n\nMine.\n",
 	})
 	api := &API{
 		Readers:   filesystem.VaultReaders{},
 		Highlight: &source.Highlight{Sources: read, Derived: held},
 	}
+	// A note is read to find out where it points, which is what says whether
+	// anything is made from it.
+	api.Notes.Read = &noteRead
 	api.show(vault)
 	runningBehind(api, func(on *passes) { on.recognises, on.transcribes = scans, hears })
 	return api, api.Serving(http.NotFoundHandler())
 }
+
+// noteRead is how a note is read, which is where a link note says it points.
+var noteRead = note.NewRead(filesystem.VaultReaders{})
 
 // willRun is a run that begins what it is given now, and willQueue one that
 // puts it in line behind the work already going.
@@ -97,6 +112,7 @@ const (
 	readingOf   = v1.ArtifactKind_ARTIFACT_KIND_READING
 	heardOf     = v1.ArtifactKind_ARTIFACT_KIND_HEARD
 	correctedOf = v1.ArtifactKind_ARTIFACT_KIND_CORRECTED
+	fetchedOf   = v1.ArtifactKind_ARTIFACT_KIND_FETCHED
 )
 
 // makes asks for an artifact of a file to be made, and answers with what came

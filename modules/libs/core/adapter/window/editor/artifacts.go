@@ -31,6 +31,8 @@ const (
 	// words put right.
 	heardID     = derived.ASR
 	correctedID = derived.ASR + ".corrected"
+	// fetchedID is what is at the address a link note points at.
+	fetchedID = "link"
 )
 
 // errNoArtifact is a kind no file of the vault carries, and errNotCarried one
@@ -40,17 +42,22 @@ var (
 	errNotCarried = errors.New("this file carries no artifact of that name")
 )
 
-// carried is every artifact a file of this kind can carry, in the order they
-// are made. A kind carrying none is a file nothing is made from.
-func carried(kind domain.SourceKind) []v1.ArtifactKind {
-	switch kind {
-	case domain.KindBook:
+// carried is every artifact a file can carry, in the order they are made. A
+// file carrying none is one nothing is made from.
+//
+// A note carries one where it points somewhere, and every other note carries
+// none: what is made from a file follows from what the file is.
+func carried(kind domain.SourceKind, points bool) []v1.ArtifactKind {
+	switch {
+	case kind == domain.KindBook:
 		return []v1.ArtifactKind{v1.ArtifactKind_ARTIFACT_KIND_READING}
-	case domain.KindRecording:
+	case kind == domain.KindRecording:
 		return []v1.ArtifactKind{
 			v1.ArtifactKind_ARTIFACT_KIND_HEARD,
 			v1.ArtifactKind_ARTIFACT_KIND_CORRECTED,
 		}
+	case kind == domain.KindNote && points:
+		return []v1.ArtifactKind{v1.ArtifactKind_ARTIFACT_KIND_FETCHED}
 	default:
 		return nil
 	}
@@ -66,9 +73,57 @@ func standing(of v1.ArtifactKind) (string, bool) {
 		return heardID, true
 	case v1.ArtifactKind_ARTIFACT_KIND_CORRECTED:
 		return correctedID, true
+	case v1.ArtifactKind_ARTIFACT_KIND_FETCHED:
+		return fetchedID, true
 	default:
 		return "", false
 	}
+}
+
+// points is where the note at a path points, and nothing for every other file.
+// What is made from a note follows from that: a note pointing nowhere has
+// nothing at an address to fetch.
+func (a *API) points(ctx context.Context, v domain.Vault, ref domain.Fingerprint) domain.WebAddress {
+	if ref.Kind != domain.KindNote || a.Notes.Read == nil {
+		return domain.WebAddress{}
+	}
+	found, err := a.Notes.Read.Execute(ctx, v, ref.Path)
+	if err != nil {
+		return domain.WebAddress{}
+	}
+	return found.Address
+}
+
+// fetched is what fetching one address has come to. Which producer brought the
+// words back is the store's to say: a video's are published words or a model's,
+// and a page's are its prose.
+func (a *API) fetched(
+	ctx context.Context, v domain.Vault, path string, at domain.WebAddress,
+) (*v1.Artifact, error) {
+	out := &v1.Artifact{
+		Name:  named(v, path, fetchedID),
+		Kind:  v1.ArtifactKind_ARTIFACT_KIND_FETCHED,
+		State: v1.State_STATE_NONE,
+	}
+	_, stores, held := a.hearing()
+	if !held || at.URL == "" {
+		return out, nil
+	}
+	store, err := stores.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	hash := derived.Fingerprint([]byte(at.URL))
+	for _, from := range derived.Producers() {
+		got, err := farUnder(ctx, store, from, hash)
+		if err != nil {
+			return nil, err
+		}
+		if got.stands != untouched {
+			return stood(v, path, v1.ArtifactKind_ARTIFACT_KIND_FETCHED, got), nil
+		}
+	}
+	return out, nil
 }
 
 // ListArtifacts is every artifact the file at a path can carry and what has
@@ -86,9 +141,10 @@ func (a *API) ListArtifacts(
 	if err != nil {
 		return nil, connect.NewError(reaching(err), err)
 	}
+	at := a.points(ctx, showing, ref)
 	out := &v1.ListArtifactsResponse{}
-	for _, of := range carried(ref.Kind) {
-		one, err := a.artifact(ctx, showing, ref, of)
+	for _, of := range carried(ref.Kind, at.URL != "") {
+		one, err := a.artifact(ctx, showing, ref, at, of)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -117,14 +173,18 @@ func (a *API) CreateArtifact(
 	}
 	// The kind of the file decides what is made from it, so an artifact the file
 	// does not carry is a client asking for a run over the wrong thing.
-	if !slices.Contains(carried(ref.Kind), of) {
+	at := a.points(ctx, showing, ref)
+	if !slices.Contains(carried(ref.Kind, at.URL != ""), of) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNotCarried)
 	}
 
 	var made *v1.Artifact
-	if of == v1.ArtifactKind_ARTIFACT_KIND_CORRECTED {
+	switch of {
+	case v1.ArtifactKind_ARTIFACT_KIND_CORRECTED:
 		made, err = a.proofreadTranscript(ctx, showing, ref)
-	} else {
+	case v1.ArtifactKind_ARTIFACT_KIND_FETCHED:
+		made, err = a.fetch(ctx, showing, ref, at)
+	default:
 		made, err = a.run(ctx, showing, ref, of)
 	}
 	if err != nil {
@@ -228,6 +288,31 @@ func (a *API) runner(of v1.ArtifactKind) Runner {
 // asks again.
 var errComingUp = errors.New("the vault is still coming up")
 
+// errNoFetcher is a build on a machine holding neither of the tools an address
+// is reached with. The settings name where each of them is.
+var errNoFetcher = errors.New("this build cannot fetch what an address holds")
+
+// fetch reaches the address a link note points at and answers with what stands
+// once it has.
+//
+// It is waited for rather than queued: a video's words are one request and a
+// page is one page, and both are over in the time a person waits for a window
+// to answer.
+func (a *API) fetch(
+	ctx context.Context,
+	v domain.Vault,
+	ref domain.Fingerprint,
+	at domain.WebAddress,
+) (*v1.Artifact, error) {
+	if a.Imports == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoFetcher)
+	}
+	if _, err := a.Imports.Execute(ctx, v, ref.Path); err != nil {
+		return nil, connect.NewError(reaching(err), err)
+	}
+	return a.fetched(ctx, v, ref.Path, at)
+}
+
 // proofreadTranscript begins putting the transcript of a recording right, and
 // answers with what the corrections now are.
 func (a *API) proofreadTranscript(
@@ -287,10 +372,14 @@ func (a *API) artifact(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
+	at domain.WebAddress,
 	of v1.ArtifactKind,
 ) (*v1.Artifact, error) {
 	if of == v1.ArtifactKind_ARTIFACT_KIND_CORRECTED {
 		return a.corrections(ctx, v, ref)
+	}
+	if of == v1.ArtifactKind_ARTIFACT_KIND_FETCHED {
+		return a.fetched(ctx, v, ref.Path, at)
 	}
 	got, err := a.far(ctx, v, ref.Path, ref.Kind)
 	if err != nil {

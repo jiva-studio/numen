@@ -249,6 +249,13 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Derived: cfg.DerivedStores(),
 	}
 
+	// A machine holding neither of the tools an address is reached with binds
+	// no fetcher, and the window is answered that this build cannot fetch.
+	if by := cfg.Fetcher(ctx); by != nil {
+		fetching := cfg.ImportURL(ctx, db, by)
+		api.Imports = &fetching
+	}
+
 	// Reading every file again is what this launch was asked for, and is not
 	// carried to a vault opened later.
 	//nolint:contextcheck // the passes behind a vault run under o.under, for as long as the window stands

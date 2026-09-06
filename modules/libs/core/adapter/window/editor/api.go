@@ -92,6 +92,11 @@ type API struct {
 	// file.
 	Drops *source.DropTranscript
 
+	// Imports fetches what is at the address a link note points at. A build on
+	// a machine holding neither of the tools that reach one binds none, and
+	// asking for a fetch is answered that this build cannot do it.
+	Imports *source.ImportURL
+
 	// Presets is the preset a deck is scheduled by, and how one is read,
 	// written and made. Curves is what the one control of a preset comes to
 	// over the whole range of its goal. They are bound by every build that

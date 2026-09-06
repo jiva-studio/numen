@@ -154,3 +154,57 @@ func TestAWindowStandingOnNothingCarriesNothing(t *testing.T) {
 		t.Errorf("a window with no vault was refused %v", err)
 	}
 }
+
+// A note that points nowhere carries nothing: what is made from a file follows
+// from what the file is.
+func TestANoteThatPointsNowhereCarriesNothing(t *testing.T) {
+	api, _ := running(t, stored{}, nothingRead(), willRun(), willRun())
+
+	if held := carrying(t, api, idea); len(held) != 0 {
+		t.Errorf("an ordinary note carries %v", held)
+	}
+	if code := refusedMaking(t, api, idea, fetchedOf); code != connect.CodeInvalidArgument {
+		t.Errorf("fetching for an ordinary note was refused with %s", code)
+	}
+}
+
+// A link note carries what is at its address, and it is nothing until something
+// has been fetched.
+func TestALinkNoteCarriesWhatIsAtItsAddress(t *testing.T) {
+	api, _ := running(t, stored{}, nothingRead(), willRun(), willRun())
+
+	held := carrying(t, api, pointed)
+	if len(held) != 1 {
+		t.Fatalf("a link note carries %v", held)
+	}
+	if held[fetchedOf] != v1.State_STATE_NONE {
+		t.Errorf("a link note nothing has fetched for carries %s", held[fetchedOf])
+	}
+}
+
+// Once the words are fetched, the note carries them, however the note was
+// edited since: what came back is kept under the address and not under the
+// note's bytes.
+func TestALinkNoteCarriesTheWordsFetchedForIt(t *testing.T) {
+	const words = "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nwhat was said\n"
+	hash := derived.Fingerprint([]byte(pointsAt))
+	api, _ := running(t,
+		stored{derived.Artifact(derived.Captions, hash): []byte(words)},
+		nothingRead(), willRun(), willRun(),
+	)
+
+	held := carrying(t, api, pointed)
+	if held[fetchedOf] != v1.State_STATE_DONE {
+		t.Errorf("a link note the words were fetched for carries %s", held[fetchedOf])
+	}
+}
+
+// A build on a machine holding neither tool says so, and the window offers the
+// fetch nowhere from then on.
+func TestABuildThatCannotFetch(t *testing.T) {
+	api, _ := running(t, stored{}, nothingRead(), willRun(), willRun())
+
+	if code := refusedMaking(t, api, pointed, fetchedOf); code != connect.CodeUnimplemented {
+		t.Errorf("a build with no fetcher refused with %s", code)
+	}
+}
