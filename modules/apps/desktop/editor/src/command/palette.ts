@@ -38,6 +38,20 @@ const EXACT = 'exactly'
 /** The one thing every item of a list the window holds can be asked. */
 const CHOSEN = 'chosen'
 
+/**
+ * Whether these words are somewhere a browser would go, which is what decides
+ * that the step offers a row at all. The vault reads the address again and is
+ * what refuses one nothing can be fetched from.
+ */
+const fetchable = (typed: string): boolean => {
+  try {
+    const address = new URL(typed.trim())
+    return (address.protocol === 'http:' || address.protocol === 'https:') && address.hostname !== ''
+  } catch {
+    return false
+  }
+}
+
 /** The two answers of the step that confirms. */
 const NO = 'no'
 const YES = 'yes'
@@ -130,6 +144,8 @@ export function commandPalette(
     switch (step?.step) {
       case 'naming':
         return words.typeName
+      case 'pointing':
+        return words.typeAddress
       case 'picking':
         return words.typeNote
       case 'choosing':
@@ -293,6 +309,29 @@ export function commandPalette(
   }
 
   /**
+   * An address to point at, as the one thing the words typed can be. What is
+   * offered is what a browser would go to; the vault reads it again and is what
+   * refuses one it cannot fetch.
+   */
+  const pointing = (text: string): PaletteGroup => {
+    const address = text.trim()
+    return {
+      id: 'pointing',
+      title: words.pointing,
+      items: fetchable(address)
+        ? [
+            {
+              id: NAME,
+              title: `${words.importIt} “${address}”`,
+              actions: [{ id: NAME, text: words.importIt }],
+            },
+          ]
+        : [],
+      silence: address ? words.notAnAddress : words.typeAddress,
+    }
+  }
+
+  /**
    * The notes the vault turned up. A note found by a heading is that note, and
    * a note found twice is one row.
    */
@@ -443,6 +482,7 @@ export function commandPalette(
     const step = here.value
     if (!step) return listed(on.value, typed.value)
     if (step.step === 'naming') return [naming(typed.value)]
+    if (step.step === 'pointing') return [pointing(typed.value)]
     if (step.step === 'picking') return [picking(typed.value)]
     if (step.step === 'choosing') return choosing(step, typed.value)
     if (step.step === 'vaults') return [listing(typed.value, step)]
@@ -539,6 +579,10 @@ export function commandPalette(
     }
     if (step.step === 'naming') {
       if (!name) return null
+      return invocation(step.command.id, step.on, name)
+    }
+    if (step.step === 'pointing') {
+      if (!fetchable(name)) return null
       return invocation(step.command.id, step.on, name)
     }
     if (step.step === 'choosing') {

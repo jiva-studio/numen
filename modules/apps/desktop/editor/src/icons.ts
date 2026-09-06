@@ -91,6 +91,7 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['newDeck', Layers],
   ['newStencil', LayoutTemplate],
   ['newPreset', Gauge],
+  ['importUrl', Globe],
   ['newFolder', FolderPlus],
   ['rename', PenLine],
   // Over the window.

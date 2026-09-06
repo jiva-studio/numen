@@ -131,13 +131,16 @@ export function noting(
   /** A note given the keyboard on a line, in whichever tab holds it. */
   const entersAt = (path: string, line?: number) => keyboard.owes(opened(path), line)
 
-  // The editor of an ordinary note, which is where its prose is read and
-  // written. A line is one of the lines of that prose, and the keyboard stands
-  // on it.
-  puts.holds('note', (path, title, showing, line) => {
-    shows(path, title, showing)
-    if (line !== undefined) entersAt(path, line)
-  })
+  // The editor of a note, which is where its prose is read and written. A line
+  // is one of the lines of that prose, and the keyboard stands on it. A link
+  // note is a note: what it points at is drawn above the prose, in the tab the
+  // prose is in.
+  for (const kind of ['note', 'link'] as const) {
+    puts.holds(kind, (path, title, showing, line) => {
+      shows(path, title, showing)
+      if (line !== undefined) entersAt(path, line)
+    })
+  }
 
   /** The tab holding a note lets go of it, wherever the window draws it. */
   const shuts = (id: string) => {

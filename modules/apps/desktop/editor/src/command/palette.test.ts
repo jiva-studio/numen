@@ -157,6 +157,7 @@ describe('the commands as they open', () => {
         'deck',
         'stencil',
         'newPreset',
+        'importUrl',
         'plex',
         'files',
         'agent',
@@ -385,6 +386,48 @@ describe('a command that asks for a name', () => {
     commands.asks('title', front())
 
     expect(commands.typed.value).toBe('Ontology')
+  })
+})
+
+describe('a command that asks for an address', () => {
+  it('stands on a step of its own', () => {
+    const { commands } = asking()
+
+    expect(commands.asks('importUrl', front())).toBeNull()
+    expect(commands.crumb.value).toBe(words.importUrl)
+    expect(commands.groups.value.map((group) => group.id)).toStrictEqual(['pointing'])
+  })
+
+  it('offers what was typed where a browser would go there', () => {
+    const { commands } = asking()
+    commands.asks('importUrl', front())
+
+    expect(commands.groups.value[0]?.items).toStrictEqual([])
+
+    void commands.typing('  https://youtu.be/dQw4w9WgXcQ  ')
+
+    expect(commands.groups.value[0]?.items[0]?.title).toBe('Import “https://youtu.be/dQw4w9WgXcQ”')
+  })
+
+  it('offers nothing for words no browser would go to, and says so', () => {
+    const { commands } = asking()
+    commands.asks('importUrl', front())
+
+    for (const typed of ['Entropy', 'file:///etc/passwd', 'example.com/a', 'https://']) {
+      void commands.typing(typed)
+
+      expect(commands.groups.value[0]?.items, typed).toStrictEqual([])
+      expect(commands.groups.value[0]?.silence, typed).toBe(words.notAnAddress)
+      expect(commands.chose('name', 'name'), typed).toBeNull()
+    }
+  })
+
+  it('carries the address to whatever makes the note', () => {
+    const { commands } = asking()
+    commands.asks('importUrl', front())
+    void commands.typing('https://example.com/a')
+
+    expect(commands.chose('name', 'name')?.name).toBe('https://example.com/a')
   })
 })
 

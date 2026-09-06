@@ -260,15 +260,18 @@ export const useWindow = () => {
   }
 
   /**
-   * A deck, a stencil or a preset made under the name it is given. A preset names
-   * none of its settings, so the decks pointed at it are scheduled by the
-   * defaults until the person moves one.
+   * A deck, a stencil, a preset or a link made under the name it is given. A
+   * preset names none of its settings, so the decks pointed at it are scheduled
+   * by the defaults until the person moves one. A link is named by the address
+   * it points at.
    */
   const made = fileMakers(
     {
       makeDeck: (title, folder) => cards.makeDeck(title, folder),
       makeStencil: (title, folder, fields) => cards.makeStencil(title, folder, fields),
       makesPreset: (title, folder) => presets.makes(title, folder),
+      makesLink: (address, folder) =>
+        core.create({ title: address, folder, links: [], url: address }),
     },
     puts,
     { refused: words.refused, field: cardWords.newField },
@@ -577,7 +580,7 @@ export const useWindow = () => {
         return able
       },
     },
-    cards: made,
+    makers: made,
     vaults: {
       ...vaults,
       calls: (vault) => (shown.value = vault),

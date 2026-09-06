@@ -262,10 +262,14 @@ const maker = (
       asked.push(`preset ${folder || '—'} ${title}`)
       return answer(`${folder}/${title}.md`)
     },
+    makesLink: (address, folder) => {
+      asked.push(`link ${folder || '—'} ${address}`)
+      return answer(`${folder}/${address}.md`)
+    },
   }
 }
 
-/** Everything making one of the three says, and the field a stencil carries. */
+/** Everything making one of the four says, and the field a stencil carries. */
 const MAKING = { refused: REFUSED, field: 'Front' }
 
 describe('a deck, a stencil or a preset made', () => {

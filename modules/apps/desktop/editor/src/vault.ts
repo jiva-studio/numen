@@ -187,6 +187,7 @@ export const core: Core & SearchDeps & CommandsDeps = {
       title: note.title,
       folder: note.folder,
       links: note.links.map(written),
+      ...(note.url ? { url: note.url } : {}),
     })
     return { path: answer.path, refusal: refusalIn(answer) } satisfies MakeResult
   },

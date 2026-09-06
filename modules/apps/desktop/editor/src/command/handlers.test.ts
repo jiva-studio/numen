@@ -152,7 +152,7 @@ const window = (
         return answers.undroppable !== true
       },
     },
-    cards: {
+    makers: {
       decks: async (folder, name) => {
         done.push(`decks ${folder || '—'} ${name}`)
         return folder ? `${folder}/${name}` : name
@@ -164,6 +164,10 @@ const window = (
       presets: async (folder, name) => {
         done.push(`presets ${folder || '—'} ${name}`)
         return folder ? `${folder}/${name}` : name
+      },
+      imports: async (folder, address) => {
+        done.push(`imports ${folder || '—'} ${address}`)
+        return folder ? `${folder}/note.md` : 'note.md'
       },
     },
     notes: {

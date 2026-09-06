@@ -131,8 +131,8 @@ export function fileOpeners(vault: FileOpenerDeps) {
 /** What the window puts files in front of the person with. */
 export type FileOpeners = ReturnType<typeof fileOpeners>
 
-/** Which of the three a file is made as. */
-export type MakeKind = 'deck' | 'stencil' | 'preset'
+/** Which of the four a file is made as. */
+export type MakeKind = 'deck' | 'stencil' | 'preset' | 'link'
 
 /** What the window asks the vault to make from nothing. */
 export interface VaultMaker {
@@ -145,6 +145,11 @@ export interface VaultMaker {
   makeStencil(title: string, folder: string, fields: readonly string[]): Promise<MakeResult>
   /** A preset naming none of its settings, the same way. */
   makesPreset(title: string, folder: string): Promise<MakeResult>
+  /**
+   * A note pointing at an address, named by the address. What is at it is
+   * fetched afterwards, and says what the note is called from then on.
+   */
+  makesLink(address: string, folder: string): Promise<MakeResult>
 }
 
 /** Everything making one of the three says in the window's voice. */
@@ -169,7 +174,9 @@ export function fileMakers(vault: VaultMaker, puts: FileOpeners, words: MakeWord
           ? await vault.makeDeck(name, folder)
           : what === 'stencil'
             ? await vault.makeStencil(name, folder, [words.field])
-            : await vault.makesPreset(name, folder)
+            : what === 'link'
+              ? await vault.makesLink(name, folder)
+              : await vault.makesPreset(name, folder)
       if (answer.refusal) {
         said(words.refused[answer.refusal], 'refusal')
         return ''
@@ -194,5 +201,6 @@ export function fileMakers(vault: VaultMaker, puts: FileOpeners, words: MakeWord
     decks: (folder: string, name: string) => opens('deck', folder, name),
     stencils: (folder: string, name: string) => opens('stencil', folder, name),
     presets: (folder: string, name: string) => opens('preset', folder, name),
+    imports: (folder: string, address: string) => opens('link', folder, address),
   }
 }

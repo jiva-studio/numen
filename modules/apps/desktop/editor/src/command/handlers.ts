@@ -132,6 +132,12 @@ export interface FileMakers {
   stencils(folder: string, name: string): Promise<string>
   /** A preset made the same way, naming none of its settings. */
   presets(folder: string, name: string): Promise<string>
+  /**
+   * A note pointing at an address, named by the address until what is at it
+   * says what it is called. The path it landed at, and nothing where none was
+   * made.
+   */
+  imports(folder: string, address: string): Promise<string>
 }
 
 /** The vaults this installation holds, as a command changes which one shows. */
@@ -190,7 +196,7 @@ export interface SettingsWriter {
 export interface CommandDeps {
   readonly files: VaultWriter
   readonly runs: ArtifactRunner
-  readonly cards: FileMakers
+  readonly makers: FileMakers
   readonly vaults: VaultSwitcher
   readonly goes: WindowNavigator
   readonly settings: SettingsWriter
@@ -248,13 +254,16 @@ const carried: Record<string, CommandHandler> = {
   jump: (invocation, on, words) => makes(invocation, 'jump', on, words),
   note: (invocation, on, words) => makes(invocation, null, on, words),
   deck: async (invocation, on) => {
-    if (invocation.name) await on.cards.decks('', invocation.name)
+    if (invocation.name) await on.makers.decks('', invocation.name)
   },
   stencil: async (invocation, on) => {
-    if (invocation.name) await on.cards.stencils('', invocation.name)
+    if (invocation.name) await on.makers.stencils('', invocation.name)
   },
   newPreset: async (invocation, on) => {
-    if (invocation.name) await on.cards.presets('', invocation.name)
+    if (invocation.name) await on.makers.presets('', invocation.name)
+  },
+  importUrl: async (invocation, on) => {
+    if (invocation.name) await on.makers.imports('', invocation.name)
   },
   title: (invocation, on, words) => renames(invocation, on, words),
   remove: (invocation, on, words) => removes(invocation, false, on, words),

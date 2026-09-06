@@ -134,6 +134,8 @@ export const WORDS = {
   newStencil: cards.newStencil,
   /** The note that says how the decks pointing at it are scheduled. */
   newPreset: preset.made,
+  /** The note that points at a web address. */
+  importUrl: 'Import an address',
   newPlex: plex.newPlex,
   newAgent: agent.newAgent,
   files: 'Show the files of the vault',
@@ -167,6 +169,10 @@ export const WORDS = {
   naming: 'Name',
   typeName: 'What is it called',
   callIt: 'Call it',
+  pointing: 'Address',
+  typeAddress: 'Paste a link',
+  importIt: 'Import',
+  notAnAddress: 'That is not a link a browser would open',
   typeNote: 'Look for a note',
   /** One of a list the window holds: the field, and what Enter does. */
   typeChoice: 'Choose one',

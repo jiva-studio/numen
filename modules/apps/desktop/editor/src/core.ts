@@ -511,6 +511,11 @@ export interface NewNote {
   /** Where in the vault it goes, relative to the root. Empty is the root. */
   folder: string
   links: readonly NewLink[]
+  /**
+   * Where the note points. Given, it is made a link, and the vault refuses an
+   * address nothing can be fetched from.
+   */
+  url?: string
 }
 
 /**

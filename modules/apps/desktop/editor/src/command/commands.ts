@@ -36,6 +36,7 @@ export type CommandGroup = 'note' | 'file' | 'window' | 'vault'
 export type Step =
   | 'commands'
   | 'naming'
+  | 'pointing'
   | 'picking'
   | 'vaults'
   | 'choosing'
@@ -188,6 +189,8 @@ export interface Words extends EmptyWords {
   readonly newStencil: string
   /** The note that says how the decks pointing at it are scheduled. */
   readonly newPreset: string
+  /** The note that points at a web address, made from the address. */
+  readonly importUrl: string
   readonly newPlex: string
   /** The folders and files of the vault, put in front of the person. */
   readonly files: string
@@ -235,6 +238,14 @@ export interface Words extends EmptyWords {
   readonly naming: string
   readonly typeName: string
   readonly callIt: string
+  /**
+   * An address asked for: the field, what stands in it, what Enter does, and
+   * what is said of words that are no address.
+   */
+  readonly pointing: string
+  readonly typeAddress: string
+  readonly importIt: string
+  readonly notAnAddress: string
   /** A note asked for, over the names in the vault. */
   readonly names: string
   readonly typeNote: string
@@ -446,6 +457,13 @@ export const commandsOf = (
     text: words.newPreset,
     group: 'window',
     needs: 'naming',
+    where: (at) => at.ready,
+  },
+  {
+    id: 'importUrl',
+    text: words.importUrl,
+    group: 'window',
+    needs: 'pointing',
     where: (at) => at.ready,
   },
   { id: 'plex', text: words.newPlex, ...keysOf('plex', agent), group: 'window', where: always },
