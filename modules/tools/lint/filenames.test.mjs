@@ -1,6 +1,18 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { calls, carries, goDeclares, holds, named, refused, stemOf, tsDeclares } from './filenames.mjs'
+import {
+  calls,
+  carries,
+  echoes,
+  given,
+  goDeclares,
+  holds,
+  named,
+  owed,
+  refused,
+  stemOf,
+  tsDeclares,
+} from './filenames.mjs'
 
 /**
  * A name is answered for by the code under it or it is a word standing on
@@ -12,9 +24,12 @@ import { calls, carries, goDeclares, holds, named, refused, stemOf, tsDeclares }
 test('every file named by a verb form says that word in its own code', () => {
   const found = named()
   const wrong = found
-    .filter(({ wrong }) => wrong.length > 0)
+    .filter(({ at, wrong }) => wrong.length > 0 && !owed.includes(at))
     .map(({ at, wrong }) => `${at}: nothing here is called ${wrong.join(' or ')}`)
   assert.deepEqual(wrong, [])
+
+  const paid = owed.filter((at) => !found.some((one) => one.at === at && one.wrong.length > 0))
+  assert.deepEqual(paid, [], 'a debt paid leaves the list; these are answered for now')
 
   // A walk that read no file is a rule checked against nothing, and it passes.
   // A count cannot say which files it read, so one file of each kind it reads
@@ -50,17 +65,21 @@ test('what the file-name rule refuses', () => {
     { says: 'a gerund answered only by a participle', allowed: false, stem: 'attending', names: ['Attended'] },
     { says: 'a gerund behind another word', allowed: false, stem: 'serving_reading', names: ['Read'] },
     { says: 'a gerund behind a component', allowed: false, stem: 'App.opening', names: ['App'] },
-    { says: 'a gerund the file declares', allowed: true, stem: 'reading', names: ['Reading'] },
+    { says: 'a gerund a factory is named after', allowed: false, stem: 'reading', names: ['Reading'] },
+    { says: 'a gerund a Deps is named after', allowed: false, stem: 'finding', names: ['FindingDeps'] },
     { says: 'a gerund whose verb the file declares', allowed: true, stem: 'naming', names: ['NameSource'] },
     { says: 'a participle whose verb the file declares', allowed: true, stem: 'placed', names: ['place'] },
-    { says: 'a gerund the package is named after', allowed: true, stem: 'chunking', names: ['chunking'] },
+    { says: 'a gerund a Deps and a verb of its own answer', allowed: true, stem: 'finding', names: ['FindingDeps', 'find'] },
+    { says: 'a gerund the package is named after', allowed: true, stem: 'chunking', names: [], given: ['chunking'] },
     { says: 'a gerund a composable is named after', allowed: true, stem: 'placing', names: ['usePlace'] },
     { says: 'a plural of what the file declares', allowed: true, stem: 'weighed', names: ['weighs'] },
     { says: 'a name that is no verb form', allowed: true, stem: 'vault', names: ['Nothing'] },
     { says: 'a build tag the file is not named for', allowed: true, stem: 'rename_windows', names: ['Rename'] },
   ]
 
-  const wrong = cases.filter((one) => refused(one.stem, one.names).length > 0).map((one) => one.says)
+  const wrong = cases
+    .filter((one) => refused(one.stem, one.names, one.given ?? []).length > 0)
+    .map((one) => one.says)
   const wanted = cases.filter((one) => !one.allowed).map((one) => one.says)
   assert.deepEqual(wrong, wanted)
 })
@@ -107,8 +126,10 @@ test('what a component declares', () => {
     '</script>',
     '<template><p>{{ props.at }}</p></template>',
   ].join('\n')
-  assert.deepEqual(holds({ at: 'a/b/RecordingTab.vue', text: component }), ['RecordingTab', 'props'])
-  assert.deepEqual(refused('RecordingTab', holds({ at: 'a/b/RecordingTab.vue', text: component })), [])
+  const at = 'a/b/RecordingTab.vue'
+  assert.deepEqual(holds({ at, text: component }), ['RecordingTab', 'props'])
+  assert.deepEqual(given({ at, text: component }), ['RecordingTab'])
+  assert.deepEqual(refused('RecordingTab', holds({ at, text: component }), given({ at, text: component })), [])
   assert.deepEqual(holds({ at: 'a/b/counting.ts', text: 'export const grouped = (n) => n' }), ['grouped'])
 })
 
@@ -123,4 +144,9 @@ test('the stem of a file name', () => {
   assert.deepEqual(stemOf('a/b/Reader.vue'), { stem: 'Reader', test: false })
   assert.ok(carries('naming', 'names'))
   assert.ok(!carries('naming', 'named'))
+  assert.ok(echoes('finding', 'FindingDeps'))
+  assert.ok(echoes('finding', 'finding'))
+  assert.ok(!echoes('finding', 'find'))
+  assert.ok(!echoes('commanding', 'commandsOf'))
+  assert.ok(!echoes('placing', 'usePlace'))
 })

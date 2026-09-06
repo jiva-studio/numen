@@ -18,6 +18,12 @@
  * standing there. Where Go has a package clause a module of TypeScript has its
  * path, so the name a test imports its neighbour by counts among the names
  * that neighbour hands it.
+ *
+ * What a file took from its own title answers for nothing. A `Deps` is named
+ * after the module it serves and a factory after the module it is the whole
+ * of, so `finding.ts` declaring `FindingDeps` and `finding` says the word
+ * twice and stands on neither: a name that would be chosen anyway is the only
+ * one that vouches.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { basename, dirname, extname, join, relative } from 'node:path'
@@ -28,6 +34,42 @@ import { blocks, root, sources } from './source.mjs'
  * list below is read off the disk, so a module is here or it is held.
  */
 const generated = new Set(['modules/libs/protocol'])
+
+/**
+ * owed are the files whose name is answered only by a word taken from that
+ * name, and the list only shrinks: a rename takes its line out. Every one is a
+ * module called after the doing of a thing and holding a factory called the
+ * same, which is the dialect this rule was written to find.
+ *
+ * `ring.ts` is here for the three letters alone: no verb is in it, and a walk
+ * reading an ending cannot see that.
+ */
+export const owed = [
+  'modules/libs/core/container/chunking.go',
+  'modules/libs/core/flashcards/review/counted.go',
+  'modules/libs/core/flashcards/review/divided.go',
+  'modules/libs/core/internal/adapter/filesystem/imported_files.go',
+  'modules/libs/core/usecase/flashcards/locked_other.go',
+  'modules/libs/core/usecase/flashcards/locked_windows.go',
+  'modules/libs/ui/src/editor/replacing.ts',
+  'modules/libs/ui/src/following/following.ts',
+  'modules/libs/ui/src/plex/fixtures/ring.ts',
+  'modules/apps/desktop/editor/src/asking.ts',
+  'modules/apps/desktop/editor/src/document/reading.ts',
+  'modules/apps/desktop/editor/src/note/creating.ts',
+  'modules/apps/desktop/editor/src/note/drawing.ts',
+  'modules/apps/desktop/editor/src/note/editing.ts',
+  'modules/apps/desktop/editor/src/note/entering.ts',
+  'modules/apps/desktop/editor/src/note/naming.ts',
+  'modules/apps/desktop/editor/src/saving/raising.ts',
+  'modules/apps/desktop/editor/src/settings/reviewing.ts',
+  'modules/apps/desktop/editor/src/settings/syncing.ts',
+  'modules/apps/desktop/editor/src/settings/wearing.ts',
+  'modules/apps/desktop/editor/src/showing.ts',
+  'modules/apps/desktop/editor/src/tabs/putting.ts',
+  'modules/apps/desktop/flashcards/src/decks/scheduling.ts',
+  'modules/apps/desktop/flashcards/src/session/reading.ts',
+]
 
 /**
  * Every Go module of the repository, found by its go.mod rather than written
@@ -105,6 +147,26 @@ function nounStem(word) {
 export const carries = (said, declared) =>
   said === declared || verbStem(said) === nounStem(declared)
 
+/** The shapes a type takes its suffix from, each named after what it belongs to. */
+const ROLES = new Set(['deps', 'props', 'options', 'state', 'ref', 'handle', 'event'])
+
+/**
+ * Whether a declared name is the file's own name handed back. `FindingDeps` is
+ * a `Deps` named after the module it serves and `finding` a factory named after
+ * the module it is the whole of, so each is called that because the file is,
+ * and a word chosen from the file name cannot then answer for it.
+ *
+ * A name saying anything of its own is not this: `commandsOf` says commands
+ * whatever the file is called.
+ */
+export function echoes(stem, name) {
+  const own = new Set(words(stem))
+  const said = words(name)
+  return said.every(
+    (one, at) => own.has(one) || (at === said.length - 1 && at > 0 && ROLES.has(one)),
+  )
+}
+
 /** What a test is called after what it tests, in each language. */
 const BESIDE = { '.go': ['_test'], '.ts': ['.test', '.stories'], '.vue': [] }
 
@@ -172,14 +234,29 @@ export function holds({ at, text }) {
 }
 
 /**
+ * What answers for a file without being a name the file chose: a Go package
+ * clause, which is the folder's word and the same in every file of it, and a
+ * component's own name, which is what every template addresses it by.
+ */
+export function given({ at, text }) {
+  if (at.endsWith('.vue')) return [stemOf(at).stem]
+  const clause = at.endsWith('.go') ? /^package\s+([A-Za-z_]\w*)/m.exec(text) : null
+  return clause ? [clause[1]] : []
+}
+
+/**
  * The words of a file's name that read as a verb and that none of the names
  * the file says carries. A name the rule has nothing to say about answers with
  * an empty list.
+ *
+ * Only what a file chose for itself can be an echo of what the file is called,
+ * so what stands for it from outside is read whole.
  */
-export function refused(stem, names) {
+export function refused(stem, names, given = []) {
   const verbs = words(stem).filter((one) => /(ing|ed)$/.test(one))
   if (verbs.length === 0) return []
-  const said = new Set(names.flatMap(words))
+  const chosen = names.filter((one) => !echoes(stem, one))
+  const said = new Set([...chosen, ...given].flatMap(words))
   return verbs.filter((verb) => ![...said].some((one) => carries(verb, one)))
 }
 
@@ -197,8 +274,8 @@ const told = (one) => (one.at.endsWith('.go') ? holds(one) : [one.stem, ...holds
  * Every file against the words of its name that nothing in it answers for.
  *
  * A test is read with the file it stands beside as well as itself:
- * `editing_bench_test.go` is named after `edit.go` and `App.opening.test.ts`
- * after `App.vue`, so a test's stem begins with the stem of what it tests.
+ * `editing_bench_test.go` is named after `edit.go` and `ordering.test.ts`
+ * after `order.ts`, so a test's stem begins with the stem of what it tests.
  */
 export function named() {
   const found = allSources()
@@ -207,11 +284,15 @@ export function named() {
     .map(({ at, text }) => ({ at, in: dirname(at), stem: stemOf(at).stem, text }))
   return found.map(({ at, text }) => {
     const { stem, test } = stemOf(at)
-    if (!test) return { at, wrong: refused(stem, holds({ at, text })) }
+    if (!test) {
+      return { at, wrong: refused(stem, holds({ at, text }), given({ at, text })) }
+    }
+    // A test declares little of its own and is named after what it tests, which
+    // stands in another file, so nothing it says is an echo of its own name.
     const said = calls(text)
     for (const one of beside) {
       if (one.in === dirname(at) && stem.startsWith(one.stem)) said.push(...told(one))
     }
-    return { at, wrong: refused(stem, said) }
+    return { at, wrong: refused(stem, [], said) }
   })
 }
