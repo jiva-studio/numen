@@ -1,4 +1,6 @@
 /** What a deck tab and a stencil tab say: what they are called, and what is wrong. */
+import { many } from '@numen/ui'
+
 export const WORDS = {
   deck: 'Deck',
   stencil: 'Stencil',
@@ -42,8 +44,7 @@ export const WORDS = {
   wrong: 'Wrong here',
   /** How far a field's new name reached, said once it has. */
   renamed: (cards: number, decks: number) =>
-    `The field was renamed in ${cards} ${cards === 1 ? 'card' : 'cards'},` +
-    ` over ${decks} ${decks === 1 ? 'deck' : 'decks'}.`,
+    `The field was renamed in ${many(cards, 'card')}, over ${many(decks, 'deck')}.`,
   /** A rename asked against a stencil the file has since moved past. */
   notRenamed: 'This file changed on disk, so the field was not renamed.',
   /** The decks the new name did not reach, each keeping the heading it had. */
