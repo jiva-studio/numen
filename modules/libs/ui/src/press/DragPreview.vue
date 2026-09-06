@@ -3,11 +3,11 @@
  * What is being dragged, said beside the pointer and catching nothing. One
  * line, then an ellipsis.
  */
-import type { Point } from '../lib/geometry'
+import type { Position } from '../lib/geometry'
 
 defineProps<{
   /** Where the pointer is, in pixels from the top left of the window. */
-  at: Point
+  at: Position
   /** What is being dragged, in the caller's own words. */
   says: string
 }>()

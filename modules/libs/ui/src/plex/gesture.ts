@@ -6,14 +6,14 @@ import { computed, onScopeDispose, ref, type Ref } from 'vue'
 import { resolveDrop, seatWithoutDirection, type Drop } from './arrange'
 import type { PlexOptions } from './arrange'
 import type { PlexFrame } from './frame'
-import type { Point } from './node'
+import type { Position } from './node'
 import type { PlexRelatedSeat } from './seat'
 
 export interface Gesture {
   /** The node it started from, while one is under way. */
   readonly from: Ref<string | null>
   /** Where the pointer is, in the plex's own coordinates. */
-  readonly at: Ref<Point | null>
+  readonly at: Ref<Position | null>
   /** What letting go here would come to, so it can be shown before it does. */
   readonly outcome: Ref<Drop | null>
 }
@@ -36,7 +36,7 @@ export interface GestureHandlers {
  * happens to be drawn at one unit to the pixel today, and arithmetic that
  * assumed so would break silently the first time that changed.
  */
-export function pointIn(svg: SVGSVGElement, event: PointerEvent): Point | null {
+export function positionIn(svg: SVGSVGElement, event: PointerEvent): Position | null {
   const screen = svg.getScreenCTM?.()
   if (!screen) return null
   const m = screen.inverse()
@@ -64,24 +64,24 @@ export function usePlexGesture(
   const svg = () => surface.value
 
   const from = ref<string | null>(null)
-  const at = ref<Point | null>(null)
-  const start = ref<Point | null>(null)
+  const at = ref<Position | null>(null)
+  const start = ref<Position | null>(null)
   const pointer = ref<number | null>(null)
 
   /** Far enough from where it started to be a drag rather than a click. */
-  const travelled = (now: Point) => {
+  const travelled = (now: Position) => {
     const began = start.value
     return !!began && Math.hypot(now.x - began.x, now.y - began.y) >= threshold()
   }
 
   const outcome = computed<Drop | null>(() => {
     const source = from.value
-    const point = at.value
-    if (!source || !point) return null
+    const now = at.value
+    if (!source || !now) return null
 
     // A gesture that has not travelled is a press, and a press has a rule
     // rather than a direction.
-    if (!travelled(point)) {
+    if (!travelled(now)) {
       const seat = seatWithoutDirection(allowed())
       return seat ? { kind: 'create', from: source, seat } : null
     }
@@ -90,7 +90,7 @@ export function usePlexGesture(
       frame: frame(),
       options: options(),
       from: source,
-      at: point,
+      at: now,
       allowed: allowed(),
     })
   })
@@ -120,7 +120,7 @@ export function usePlexGesture(
   const move = (event: PointerEvent) => {
     const element = svg()
     if (!element) return
-    at.value = pointIn(element, event)
+    at.value = positionIn(element, event)
   }
 
   const finish = () => {
@@ -144,12 +144,12 @@ export function usePlexGesture(
     if (!element) return
     surface.value = element
 
-    const point = pointIn(element, event)
-    if (!point) return
+    const began = positionIn(element, event)
+    if (!began) return
 
     from.value = source
-    start.value = point
-    at.value = point
+    start.value = began
+    at.value = began
     pointer.value = event.pointerId
 
     // Capture keeps the gesture attached to the drawing once the pointer has

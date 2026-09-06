@@ -1,20 +1,20 @@
 /**
  * Something dragged over the plex from outside it. Everything that knows about
- * events and screen pixels is here; which seat a point comes to is worked out
+ * events and screen pixels is here; which seat a place comes to is worked out
  * in `arrange/drop.ts`, as a value.
  */
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
 import { seatDropped, type PlexOptions, type Size } from './arrange'
-import { pointIn } from './gesture'
+import { positionIn } from './gesture'
 import type { PlexFrame } from './frame'
-import type { Point } from './node'
+import type { Position } from './node'
 import type { PlexRelatedSeat } from './seat'
 
 const CAPTURE = { capture: true } as const
 
 export interface PlexDragState {
   /** Where the pointer is, in the plex's own coordinates. */
-  readonly at: Ref<Point | null>
+  readonly at: Ref<Position | null>
   /** The seat letting go here comes to, so it can be shown before it does. */
   readonly seat: Ref<PlexRelatedSeat | null>
 }
@@ -45,16 +45,16 @@ export interface PlexDragDeps {
  */
 export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
   /** Where the pointer is, and nothing at all while nothing is being dragged. */
-  const at = ref<Point | null>(null)
+  const at = ref<Position | null>(null)
 
   const seat = computed<PlexRelatedSeat | null>(() => {
-    const point = at.value
-    if (!point) return null
+    const now = at.value
+    if (!now) return null
     return seatDropped({
       frame: drag.frame(),
       options: drag.options(),
       viewport: drag.viewport(),
-      at: point,
+      at: now,
       allowed: drag.allowed(),
       threshold: drag.threshold(),
     })
@@ -78,7 +78,7 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
 
   const move = (event: PointerEvent) => {
     const element = drag.surface()
-    at.value = element ? pointIn(element, event) : null
+    at.value = element ? positionIn(element, event) : null
   }
 
   const finish = (event: PointerEvent) => {

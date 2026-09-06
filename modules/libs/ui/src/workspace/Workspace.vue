@@ -100,7 +100,7 @@ interface Drag {
 const {
   dragging,
   at: landing,
-  point,
+  position,
   lift,
 } = usePressDrag<Drag, TabLanding>({
   threshold: () => props.threshold,
@@ -268,9 +268,9 @@ function landingAt(x: number, y: number): TabLanding | null {
     />
 
     <DragPreview
-      v-if="label && point"
+      v-if="label && position"
       class="workspace__dragged"
-      :at="point"
+      :at="position"
       :says="label"
     />
   </div>

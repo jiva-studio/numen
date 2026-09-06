@@ -6,7 +6,7 @@ import {
   type PlacedEdge,
   type PlexEdge,
 } from '../edge'
-import type { PlacedNode, Point } from '../node'
+import type { PlacedNode, Position } from '../node'
 import type { PlexSeat } from '../seat'
 import { isVertical, type PlexOptions, type RoutingOptions } from './options'
 
@@ -83,8 +83,8 @@ export function cutToFit(
   return ended(fits)
 }
 
-/** A fixed point on a border, so a row of edges reads as a fan. */
-function gate(node: PlacedNode, side: 'top' | 'bottom' | 'left' | 'right'): Point {
+/** A fixed place on a border, so a row of edges reads as a fan. */
+function gate(node: PlacedNode, side: 'top' | 'bottom' | 'left' | 'right'): Position {
   switch (side) {
     case 'top':
       return { x: node.x, y: node.y - node.height / 2 }
@@ -139,10 +139,10 @@ export function routeEdge(
   const span = vertical ? secondGate.y - firstGate.y : secondGate.x - firstGate.x
   const reach = Math.max(routing.minReach, Math.abs(span) * routing.curvature)
 
-  const firstControl: Point = vertical
+  const firstControl: Position = vertical
     ? { x: firstGate.x, y: firstGate.y + reach }
     : { x: firstGate.x + reach, y: firstGate.y }
-  const secondControl: Point = vertical
+  const secondControl: Position = vertical
     ? { x: secondGate.x, y: secondGate.y - reach }
     : { x: secondGate.x - reach, y: secondGate.y }
 

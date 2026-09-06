@@ -136,13 +136,13 @@ export const OwnTurn: Story = {
   }),
 }
 
-interface Point {
+interface Position {
   readonly x: number
   readonly y: number
 }
 
 /** The middle of a word, in the coordinates of the page it is drawn on. */
-const wordAt = (root: Element, word: string): Point => {
+const wordAt = (root: Element, word: string): Position => {
   const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
   for (let node = walk.nextNode(); node; node = walk.nextNode()) {
     const at = (node.nodeValue ?? '').indexOf(word)
@@ -157,24 +157,24 @@ const wordAt = (root: Element, word: string): Point => {
   throw new Error(`“${word}” is nowhere in the thread`)
 }
 
-/** The same point told to the window the story is framed in. */
-const framedIn = (point: Point): Point => {
+/** The same place told to the window the story is framed in. */
+const framedIn = (at: Position): Position => {
   const frame = window.frameElement as HTMLElement | null
-  if (!frame) return point
+  if (!frame) return at
 
   const box = frame.getBoundingClientRect()
   return {
-    x: box.x + point.x * (box.width / window.innerWidth),
-    y: box.y + point.y * (box.height / window.innerHeight),
+    x: box.x + at.x * (box.width / window.innerWidth),
+    y: box.y + at.y * (box.height / window.innerHeight),
   }
 }
 
 /**
  * A drag the browser makes itself, so the selection it leaves is the browser's
- * own. The points are told to the window the story is framed in, which is where
+ * own. The places are told to the window the story is framed in, which is where
  * the pointer is driven.
  */
-const dragged = async (from: Point, to: Point): Promise<string | null> => {
+const dragged = async (from: Position, to: Position): Promise<string | null> => {
   const context = await import('vitest/browser').catch(() => null)
   if (!context) return null
 

@@ -2,7 +2,7 @@
  * What a menu is, as plain values. No DOM, no measurement, no clock.
  */
 import { beside } from '../placing/place'
-import type { Point, Size } from '../lib/geometry'
+import type { Position, Size } from '../lib/geometry'
 
 /**
  * One thing that can be chosen. The identifier is opaque: the menu has no way
@@ -40,7 +40,7 @@ export const grouped = (items: readonly MenuItem[]): readonly GroupedItem[] =>
 /** What placing a menu needs to know. */
 export interface MenuPlacement {
   /** Where it was asked for. */
-  readonly at: Point
+  readonly at: Position
   /** How big it turned out to be. */
   readonly size: Size
   /** The area it is placed in. */
@@ -57,7 +57,7 @@ export interface MenuPlacement {
  * and folds back over it at an edge. Wider than the area it is placed in, it
  * sits at the near edge and scrolls.
  */
-export const placeMenu = ({ at, size, viewport, margin }: MenuPlacement): Point => ({
+export const placeMenu = ({ at, size, viewport, margin }: MenuPlacement): Position => ({
   x: beside({
     from: at.x,
     to: at.x,

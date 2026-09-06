@@ -1,4 +1,4 @@
-import type { Point } from './node'
+import type { Position } from './node'
 
 /** The end of a line an arrowhead is drawn at, pointing out of the line there. */
 export type EdgeArrow = 'from' | 'to'
@@ -18,10 +18,10 @@ export interface PlexEdge {
  * covers, and one control point cannot fix both.
  */
 export interface EdgeCurve {
-  readonly fromPoint: Point
-  readonly toPoint: Point
-  readonly control1: Point
-  readonly control2: Point
+  readonly fromPoint: Position
+  readonly toPoint: Position
+  readonly control1: Position
+  readonly control2: Position
 }
 
 /**
@@ -36,7 +36,7 @@ export type EdgeHeading = 'along' | 'against'
  * that aims it along the line there, in degrees clockwise from the x axis.
  */
 export interface PlacedArrow {
-  readonly at: Point
+  readonly at: Position
   readonly angle: number
 }
 
@@ -72,7 +72,7 @@ export const edgeKey = (edge: PlexEdge): string =>
   edge.from < edge.to ? `${edge.from} ${edge.to}` : `${edge.to} ${edge.from}`
 
 /** Where the curve has got to at `t`. */
-const pointAt = (edge: EdgeCurve, t: number): Point => {
+const pointAt = (edge: EdgeCurve, t: number): Position => {
   const back = 1 - t
   const leaving = back * back * back
   const first = 3 * back * back * t
@@ -138,13 +138,13 @@ function parameterAt(along: readonly number[], fraction: number): number {
  * length. The curve is measured once and read many times, since a title is
  * tried at several places on the same line.
  */
-export function rulerOf(edge: EdgeCurve): (fraction: number) => Point {
+export function rulerOf(edge: EdgeCurve): (fraction: number) => Position {
   const along = measureAlong(edge)
   return (fraction) => pointAt(edge, parameterAt(along, fraction))
 }
 
 /** Which way the curve is travelling at `t`, as a direction of any length. */
-const tangentAt = (edge: EdgeCurve, t: number): Point => {
+const tangentAt = (edge: EdgeCurve, t: number): Position => {
   const back = 1 - t
   const leaving = 3 * back * back
   const middle = 6 * back * t

@@ -6,7 +6,7 @@
  * at.
  */
 
-import type { Point } from '../lib/geometry'
+import type { Position } from '../lib/geometry'
 
 /** A row's identity. What it stands for is the caller's to decide. */
 export type RowId = string
@@ -174,7 +174,7 @@ export interface DragLabel {
   /** The name of the one row dragged, or how many there are. */
   readonly says: string
   /** Where the pointer is, which is where it is drawn. */
-  readonly at: Point
+  readonly at: Position
 }
 
 /**
@@ -184,7 +184,7 @@ export interface DragLabel {
 export function dragLabel(
   shown: readonly ShownRow[],
   rows: readonly RowId[],
-  at: Point,
+  at: Position,
   counted: (rows: number) => string,
 ): DragLabel | null {
   const first = rows[0]

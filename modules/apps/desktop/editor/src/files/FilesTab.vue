@@ -9,7 +9,7 @@
  */
 import { computed, onMounted, onUnmounted } from 'vue'
 import { Menu, Tree } from '@numen/ui'
-import type { Point, Row, RowMarker } from '@numen/ui'
+import type { Position, Row, RowMarker } from '@numen/ui'
 import { Book, File, Folder, FolderOpen, type LucideIcon } from '@lucide/vue'
 import type { NoteType, Source } from '../core'
 import { iconFor, iconOfNote } from '../icons'
@@ -112,7 +112,7 @@ onUnmounted(() => globalThis.removeEventListener('focus', again))
       @drag="(rows: readonly string[]) => props.held.drag(rows)"
       @drop="props.held.drop()"
       @remove="(rows: readonly string[]) => props.held.remove(rows)"
-      @menu="(row: string | null, at: Point) => props.held.asks({ path: row, at })"
+      @menu="(row: string | null, at: Position) => props.held.asks({ path: row, at })"
     >
       <template #icon="{ id, open }">
         <component :is="entryIcon(id, open)" class="files__icon" aria-hidden="true" />

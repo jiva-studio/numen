@@ -294,6 +294,6 @@ export type {
 } from './plex/edge'
 export type { Extent, PlexFrame } from './plex/frame'
 export type { PlexNeighbourhood } from './plex/neighbourhood'
-export type { PlacedNode, PlexNode, Point } from './plex/node'
+export type { PlacedNode, PlexNode, Position } from './plex/node'
 export type { PlexRelatedSeat, PlexSeat } from './plex/seat'
 export type { PlexShowing, ShowingDescriptor } from './plex/showing'

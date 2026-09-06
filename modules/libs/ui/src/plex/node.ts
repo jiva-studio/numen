@@ -1,7 +1,7 @@
 import type { PlexSeat } from './seat'
-import type { Point, Size } from '../lib/geometry'
+import type { Position, Size } from '../lib/geometry'
 
-export type { Point }
+export type { Position }
 
 /**
  * A node as the caller describes it. The id is opaque: the plex has no way to
@@ -35,7 +35,7 @@ export const ghostNode = (
   id: string,
   title: string,
   seat: PlexSeat,
-  at: Point,
+  at: Position,
   size: Size,
 ): PlacedNode => ({
   id,
@@ -92,4 +92,4 @@ export const nameOf = (node: PlexNode): string =>
  * Here rather than in either drawing because both need the same answer — the
  * node draws the handle there, and the plex starts the gesture's thread there.
  */
-export const handleIn = (node: PlacedNode): Point => ({ x: node.width / 2, y: 0 })
+export const handleIn = (node: PlacedNode): Position => ({ x: node.width / 2, y: 0 })

@@ -12,7 +12,7 @@ import {
   against,
   BACKLOG_HIGH,
   BACKLOG_PLOT,
-  backlogPointsOf,
+  backlogPositionsOf,
   clearAt,
   extentOfBacklog,
   LEFT,
@@ -47,8 +47,8 @@ const extent = computed<Extent>(() =>
   extentOfBacklog(props.curve.at.flatMap((_, place) => [...runAt(props.curve, place)])),
 )
 
-const points = computed(() => backlogPointsOf(backlog.value, extent.value))
-const line = computed(() => lineOf(points.value))
+const positions = computed(() => backlogPositionsOf(backlog.value, extent.value))
+const line = computed(() => lineOf(positions.value))
 
 /** Whether there is a backlog to draw at all. */
 const drawn = computed(() => props.honest && backlog.value.length > 1)
@@ -62,7 +62,7 @@ const heights = computed(() => {
   const { least, most } = extent.value
   const said = (value: number) => words.backlogHeightAt(value)
   const fits = (y: number, lift: string, value: number) =>
-    clearAt(y, points.value, [])
+    clearAt(y, positions.value, [])
       ? [{ at: against(y, lift, BACKLOG_PLOT.high), text: said(value) }]
       : []
   if (most === least) {

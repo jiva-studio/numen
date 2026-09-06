@@ -7,7 +7,7 @@
  */
 import { clamp01, easeOut, lerp } from './arrange'
 import type { PlexOptions, Size } from './arrange'
-import type { PlacedNode, Point } from './node'
+import type { PlacedNode, Position } from './node'
 
 /**
  * How far behind the one above it each part sets off, as a fraction of the
@@ -113,7 +113,7 @@ export interface OpenParts {
 export interface Arrow {
   readonly at: 'above' | 'below'
   /** The three corners it is drawn through, from the middle of the node. */
-  readonly points: readonly Point[]
+  readonly points: readonly Position[]
 }
 
 /**

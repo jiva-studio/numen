@@ -10,7 +10,7 @@ import { computed, ref, type HTMLAttributes } from 'vue'
 import { RovingFocusGroup, RovingFocusItem } from 'reka-ui'
 import { cn } from '@/classes'
 import Menu from '@/menu/Menu.vue'
-import type { Point } from '@/lib/geometry'
+import type { Position } from '@/lib/geometry'
 import { filled, offering, percent, type Day } from './week'
 
 // The row and the levels it offers are two things drawn, so what a caller
@@ -35,7 +35,7 @@ const raises = defineEmits<{
 }>()
 
 /** Which day is being given a level, what it stands at, and where its chip is. */
-const asking = ref<{ day: string; level: number; at: Point; from: HTMLElement } | null>(null)
+const asking = ref<{ day: string; level: number; at: Position; from: HTMLElement } | null>(null)
 
 const offered = computed(() =>
   offering(props.levels, asking.value?.level ?? null).map((level) => ({

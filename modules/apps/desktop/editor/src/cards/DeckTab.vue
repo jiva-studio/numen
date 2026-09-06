@@ -9,7 +9,7 @@
  */
 import { computed, ref } from 'vue'
 import { cardBlanks, cardFields, DeckEditor, Menu } from '@numen/ui'
-import type { InsertionPoint, Point } from '@numen/ui'
+import type { InsertionPoint, Position } from '@numen/ui'
 import { ChevronDown } from '@lucide/vue'
 import FileConflictPrompt from '../saving/FileConflictPrompt.vue'
 import { conflictIn } from '../saving/flushing'
@@ -44,7 +44,7 @@ const offered = computed(() =>
 )
 
 /** Where the presets were asked for, and nothing while they are not. */
-const asking = ref<{ at: Point; from: HTMLElement } | null>(null)
+const asking = ref<{ at: Position; from: HTMLElement } | null>(null)
 
 /** The line saying which preset schedules this deck opens the presets under it. */
 const asks = (event: Event) => {

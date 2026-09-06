@@ -1,7 +1,7 @@
-/** Boxes and points, in whatever coordinates the caller measures in. */
-import type { Point } from '../lib/geometry'
+/** Boxes and places, in whatever coordinates the caller measures in. */
+import type { Position } from '../lib/geometry'
 
-export type { Point }
+export type { Position }
 
 export interface Rect {
   readonly x: number
@@ -10,8 +10,8 @@ export interface Rect {
   readonly height: number
 }
 
-/** Where a point sits inside a box, with the box's corner as the origin. */
-export const within = (point: Point, box: Rect): Point => ({
-  x: point.x - box.x,
-  y: point.y - box.y,
+/** Where a place sits inside a box, with the box's corner as the origin. */
+export const within = (at: Position, box: Rect): Position => ({
+  x: at.x - box.x,
+  y: at.y - box.y,
 })

@@ -6,7 +6,7 @@
  * thing here that measures anything.
  */
 import type { NodeId, Side } from './node'
-import { within, type Point, type Rect } from './rect'
+import { within, type Position, type Rect } from './rect'
 
 /**
  * Where a tab would go if it were let go now, and the part of the screen that
@@ -28,19 +28,19 @@ export interface DropOptions {
 export const DEFAULT_DROP: DropOptions = { share: 0.2, limit: 96 }
 
 /**
- * The side a point asks for.
+ * The side a place asks for.
  *
- * An edge wins by how far into its own zone the point has come, so a corner
- * goes to whichever edge it is deeper inside. A point in no zone lands in the
+ * An edge wins by how far into its own zone the place has come, so a corner
+ * goes to whichever edge it is deeper inside. A place in no zone lands in the
  * middle, and the tab joins the stack.
  */
 export function sideAt(
-  point: Point,
+  at: Position,
   box: Rect,
   options: Partial<DropOptions> = {},
 ): Side {
   const { share, limit } = { ...DEFAULT_DROP, ...options }
-  const { x, y } = within(point, box)
+  const { x, y } = within(at, box)
 
   const acrossZone = Math.min(box.width * share, limit)
   const downZone = Math.min(box.height * share, limit)
@@ -106,13 +106,13 @@ export function caretAt(slot: number, tabs: readonly Rect[], strip: Rect): Rect 
   return { x: at, y: beside.y, width: 0, height: beside.height }
 }
 
-/** The outer edge a point is within reach of, and nothing away from every edge. */
-export function edgeOf(point: Point, box: Rect, reach: number): Side | null {
+/** The outer edge a place is within reach of, and nothing away from every edge. */
+export function edgeOf(at: Position, box: Rect, reach: number): Side | null {
   const near: readonly (readonly [Side, number])[] = [
-    ['left', point.x - box.x],
-    ['right', box.x + box.width - point.x],
-    ['top', point.y - box.y],
-    ['bottom', box.y + box.height - point.y],
+    ['left', at.x - box.x],
+    ['right', box.x + box.width - at.x],
+    ['top', at.y - box.y],
+    ['bottom', box.y + box.height - at.y],
   ]
 
   let side: Side | null = null

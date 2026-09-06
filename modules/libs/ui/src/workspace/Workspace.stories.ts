@@ -145,20 +145,20 @@ const paneBox = (canvas: HTMLElement, pane: string) => {
   return boxOf(found)
 }
 
-interface Point {
+interface Position {
   readonly x: number
   readonly y: number
 }
 
 /**
- * A point of the story told to the window that drives the pointer, and where
+ * A place of the story told to the window that drives the pointer, and where
  * that whole pixel of the window falls back in the story. The story is drawn
  * at a scale, and the pointer goes to whole pixels of the window.
  */
-const framedIn = (point: Point): { window: Point; story: Point } => {
+const framedIn = (at: Position): { window: Position; story: Position } => {
   const frame = window.frameElement as HTMLElement | null
   if (!frame) {
-    const whole = { x: Math.round(point.x), y: Math.round(point.y) }
+    const whole = { x: Math.round(at.x), y: Math.round(at.y) }
     return { window: whole, story: whole }
   }
 
@@ -166,8 +166,8 @@ const framedIn = (point: Point): { window: Point; story: Point } => {
   const across = box.width / window.innerWidth
   const down = box.height / window.innerHeight
   const driven = {
-    x: Math.round(box.x + point.x * across),
-    y: Math.round(box.y + point.y * down),
+    x: Math.round(box.x + at.x * across),
+    y: Math.round(box.y + at.y * down),
   }
   return {
     window: driven,
@@ -176,10 +176,10 @@ const framedIn = (point: Point): { window: Point; story: Point } => {
 }
 
 /**
- * A drag the browser makes itself, from one point to another. The splitter
+ * A drag the browser makes itself, from one place to another. The splitter
  * catches the pointer by where it is, which is something only a browser says.
  */
-const swept = async (from: Point, to: Point): Promise<void> => {
+const swept = async (from: Position, to: Position): Promise<void> => {
   const context = await import('vitest/browser')
   await context.commands.sweep(framedIn(from).window, framedIn(to).window)
   await new Promise((done) => setTimeout(done, 16))
@@ -199,7 +199,7 @@ function heldCursor(): string | null {
 /** A place the pointer was at, and the cursor the splitter drew there. */
 interface Caught {
   readonly away: number
-  readonly at: Point
+  readonly at: Position
   readonly cursor: string | null
 }
 
@@ -237,7 +237,7 @@ async function caughtAcross(handle: HTMLElement, along: 'x' | 'y'): Promise<read
 const reaching = (cursor: string) => AWAY.map((away) => [away, Math.abs(away) <= 6 ? cursor : null])
 
 /** The furthest out along that line the splitter still had the pointer. */
-function furthest(caught: readonly Caught[]): Point {
+function furthest(caught: readonly Caught[]): Position {
   const held = caught.filter((place) => place.cursor)
   const edge = held[held.length - 1]?.at
   if (!edge) throw new Error('the handle caught nothing')

@@ -20,7 +20,7 @@ import { nameNow } from './fixtures/names'
 import { ring } from './fixtures/ring'
 import type { PlexEdge } from './edge'
 import type { PlexNeighbourhood } from './neighbourhood'
-import type { PlexNode, Point } from './node'
+import type { PlexNode, Position } from './node'
 import type { PlexRelatedSeat } from './seat'
 import type { PlexShowing } from './showing'
 import type { Clock } from './transition'
@@ -37,7 +37,7 @@ interface Knobs {
   onCreate: (from: string, seat: PlexRelatedSeat) => void
   onLink: (from: string, to: string, seat: PlexRelatedSeat) => void
   onBring: (dragged: readonly string[], seat: PlexRelatedSeat) => void
-  onMenu: (id: string, at: Point, opening: MenuOpening) => void
+  onMenu: (id: string, at: Position, opening: MenuOpening) => void
   onDismiss: () => void
   parts: (id: string) => readonly PlexPart[]
   onEnter: (id: string, part: string) => void

@@ -8,7 +8,7 @@
  * words stand nowhere, and dropped where that stretch holds less than half.
  */
 import { headingOf, lengthOf, rulerOf, type PlacedEdge } from '../edge'
-import type { PlacedNode, Point } from '../node'
+import type { PlacedNode, Position } from '../node'
 import { cutToFit, MIDDLE, type Routing } from './routing'
 
 /** An upright box in the plex's own coordinates. */
@@ -245,7 +245,7 @@ function runBoxes(edge: PlacedEdge, depth: number): (from: number, to: number) =
   const deep = depth / 2
 
   return (from, to) => {
-    const run: Point[] = []
+    const run: Position[] = []
     for (let sample = 0; sample <= RUN_SAMPLES; sample += 1) {
       run.push(along(from + ((to - from) * sample) / RUN_SAMPLES))
     }

@@ -35,7 +35,7 @@ import {
   nameOf,
   type GestureRole,
   type PlacedNode,
-  type Point,
+  type Position,
 } from '../node'
 
 const props = withDefaults(
@@ -92,7 +92,7 @@ const emit = defineEmits<{
    * it. A keypress carries no point of its own, so the middle of the box is
    * where it is asked.
    */
-  (event: 'menu', at: Point, opening: MenuOpening): void
+  (event: 'menu', at: Position, opening: MenuOpening): void
   /**
    * The attention has settled on this node, or has left it. A widened box is
    * drawn last of all, and which box that is only the whole picture knows.
@@ -175,7 +175,7 @@ const listening = joined(
 )
 
 /** The middle of the node, for a press, which carries no point of its own. */
-const middleOf = (element: SVGGElement): Point => {
+const middleOf = (element: SVGGElement): Position => {
   const box = element.getBoundingClientRect()
   return { x: box.left + box.width / 2, y: box.top + box.height / 2 }
 }

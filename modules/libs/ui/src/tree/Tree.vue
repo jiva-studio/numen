@@ -30,7 +30,7 @@ import {
   type RowId,
   type ShownRow,
 } from './row'
-import type { Point } from '../lib/geometry'
+import type { Position } from '../lib/geometry'
 import { browserClock, type Clock } from '../lib/clock'
 import DragPreview from '../press/DragPreview.vue'
 import { usePressDrag } from '../press/press'
@@ -94,7 +94,7 @@ const emit = defineEmits<{
   /** The selection asked to go. */
   (event: 'remove', rows: readonly RowId[]): void
   /** A menu asked for, and where the pointer was. Nothing for a press off every row. */
-  (event: 'menu', row: RowId | null, at: Point): void
+  (event: 'menu', row: RowId | null, at: Position): void
 }>()
 
 defineSlots<{
@@ -136,7 +136,7 @@ const tabbed = computed<RowId | null>(() => {
 /** Whether the press being made has said what the selection is already. */
 const said = shallowRef(false)
 
-const { dragging, at, point, lift } = usePressDrag<readonly RowId[], RowLanding>({
+const { dragging, at, position, lift } = usePressDrag<readonly RowId[], RowLanding>({
   threshold: () => props.threshold,
   clock: () => props.clock,
   landingAt,
@@ -153,12 +153,12 @@ const into = computed(() => (at.value && 'into' in at.value ? at.value.into : nu
 const before = computed(() => (at.value && 'before' in at.value ? at.value.before : null))
 
 /** The rows a live drag holds, for asking one row at a time. */
-const lifted = computed(() => new Set(point.value ? (dragging.value?.held ?? []) : []))
+const lifted = computed(() => new Set(position.value ? (dragging.value?.held ?? []) : []))
 
 /** What follows the pointer, and nothing until a press has become a drag. */
 const label = computed<DragLabel | null>(() => {
   const held = dragging.value
-  const where = point.value
+  const where = position.value
   if (!held?.moved || !where) return null
   return dragLabel(shown.value, held.held, where, props.counted)
 })
@@ -213,11 +213,11 @@ const act = (row: ShownRow): void => {
 }
 
 /** A menu asked for on a row, which the selection takes in first, or off every row. */
-const askMenu = (row: ShownRow | null, point: Point): void => {
+const askMenu = (row: ShownRow | null, at: Position): void => {
   if (row && !picked.value.has(row.id)) {
     takes(selects(shown.value, props.selected, anchor.value, row.id, PLAIN))
   }
-  emit('menu', row?.id ?? null, point)
+  emit('menu', row?.id ?? null, at)
 }
 
 const onKey = (event: KeyboardEvent): void => {
@@ -299,7 +299,7 @@ function press(row: RowId, event: PointerEvent): void {
  * Where the pointer is, asked of the drawing: the rows are one height each,
  * and the height is whatever they are drawn at.
  */
-function landingAt(rows: readonly RowId[], at: Point): RowLanding | null {
+function landingAt(rows: readonly RowId[], at: Position): RowLanding | null {
   const drawn = list.value
   const over = box.value?.getBoundingClientRect()
   if (!drawn || !over) return null

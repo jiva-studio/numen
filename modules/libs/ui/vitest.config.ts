@@ -11,7 +11,7 @@ import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
 const src = fileURLToPath(new URL('./src', import.meta.url))
 
 /** A place on the page the browser drives the pointer to. */
-interface Point {
+interface Position {
   readonly x: number
   readonly y: number
 }
@@ -21,7 +21,7 @@ interface Point {
  * browser itself. What a drag leaves behind — a selection, a capture — is then
  * the browser's own.
  */
-const sweep: BrowserCommand<[from: Point, to: Point]> = async ({ page }, from, to) => {
+const sweep: BrowserCommand<[from: Position, to: Position]> = async ({ page }, from, to) => {
   await page.mouse.move(from.x, from.y)
   await page.mouse.down()
   await page.mouse.move(to.x, to.y)
@@ -30,7 +30,7 @@ const sweep: BrowserCommand<[from: Point, to: Point]> = async ({ page }, from, t
 
 declare module 'vitest/browser' {
   interface BrowserCommands {
-    sweep: (from: Point, to: Point) => Promise<void>
+    sweep: (from: Position, to: Position) => Promise<void>
   }
 }
 

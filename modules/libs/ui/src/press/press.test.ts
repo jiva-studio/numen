@@ -5,7 +5,7 @@
 import { effectScope } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import { usePressDrag } from './press'
-import type { Point } from '../lib/geometry'
+import type { Position } from '../lib/geometry'
 import type { Clock } from '../lib/clock'
 
 const pointer = (type: string, x: number, y: number) =>
@@ -13,7 +13,7 @@ const pointer = (type: string, x: number, y: number) =>
 
 /** A press under way, with the frame held until the test lets it come. */
 function following(threshold = 4) {
-  const settle = vi.fn<(held: string, at: Point | null) => void>()
+  const settle = vi.fn<(held: string, at: Position | null) => void>()
   const began = vi.fn<(held: string) => void>()
   let next: ((now: number) => void) | null = null
 
@@ -31,7 +31,7 @@ function following(threshold = 4) {
 
   const scope = effectScope()
   const press = scope.run(() =>
-    usePressDrag<string, Point>({
+    usePressDrag<string, Position>({
       threshold: () => threshold,
       clock: () => clock,
       landingAt: (_held, at) => (at.x < 500 ? at : null),
@@ -59,7 +59,7 @@ describe('usePressDrag', () => {
     press.lift('a row', pointer('pointerdown', 10, 10))
 
     expect(press.dragging.value).toEqual({ held: 'a row', moved: false })
-    expect(press.point.value).toBeNull()
+    expect(press.position.value).toBeNull()
     expect(press.began).not.toHaveBeenCalled()
     press.scope.stop()
   })
@@ -74,7 +74,7 @@ describe('usePressDrag', () => {
 
     window.dispatchEvent(pointer('pointermove', 20, 10))
     expect(press.dragging.value?.moved).toBe(true)
-    expect(press.point.value).toEqual({ x: 20, y: 10 })
+    expect(press.position.value).toEqual({ x: 20, y: 10 })
     expect(press.at.value).toEqual({ x: 20, y: 10 })
     press.scope.stop()
   })
@@ -98,7 +98,7 @@ describe('usePressDrag', () => {
 
     expect(press.settle).toHaveBeenCalledExactlyOnceWith('a row', { x: 40, y: 60 })
     expect(press.at.value).toBeNull()
-    expect(press.point.value).toBeNull()
+    expect(press.position.value).toBeNull()
     press.scope.stop()
   })
 

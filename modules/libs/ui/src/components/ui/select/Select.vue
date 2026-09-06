@@ -11,7 +11,7 @@ import { ChevronDown } from '@lucide/vue'
 import { cn } from '@/classes'
 import Menu from '../../../menu/Menu.vue'
 import type { MenuItem } from '../../../menu/item'
-import type { Point } from '../../../lib/geometry'
+import type { Position } from '../../../lib/geometry'
 import type { SelectChoice } from '.'
 
 const props = withDefaults(
@@ -54,7 +54,7 @@ const element = useTemplateRef<HTMLButtonElement>('element')
  * Where the choices are drawn and how wide the line asking for them is, and
  * nothing while they are not drawn at all.
  */
-const asking = ref<{ at: Point; wide: number } | null>(null)
+const asking = ref<{ at: Position; wide: number } | null>(null)
 
 /**
  * The line opens the choices under itself, along its own leading edge and no

@@ -26,7 +26,7 @@ import { hangParts, type PlexPart } from './inside'
 import { usePlexTransition, browserClock, type Clock } from './transition'
 import type { Placement, PlexOptionsInput } from './arrange'
 import type { PlexNeighbourhood } from './neighbourhood'
-import type { PlacedNode, Point } from './node'
+import type { PlacedNode, Position } from './node'
 import { countOf, seatWord, type PlexRelatedSeat } from './seat'
 import type { PlexShowing } from './showing'
 import { resolveOptions } from './arrange'
@@ -127,7 +127,7 @@ const emit = defineEmits<{
    * Every node answers this, the focus included. What the menu holds and what
    * choosing an item does are the caller's.
    */
-  (event: 'menu', id: string, at: Point, opening: MenuOpening): void
+  (event: 'menu', id: string, at: Position, opening: MenuOpening): void
   /** A menu asked for on a node has nothing left to stand on. */
   (event: 'dismiss'): void
   /**

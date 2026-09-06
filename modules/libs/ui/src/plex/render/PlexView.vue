@@ -13,7 +13,7 @@ import PlexNodeView from './PlexNodeView.vue'
 import type { EdgeLine } from './lines'
 import { edgeKey } from '../edge'
 import type { PlexFrame } from '../frame'
-import { ghostNode, handleIn, type GestureRole, type PlacedNode, type Point } from '../node'
+import { ghostNode, handleIn, type GestureRole, type PlacedNode, type Position } from '../node'
 import { seatWord, type PlexRelatedSeat } from '../seat'
 import { DWELL, type WideBox } from '../dwell'
 import { byHandle, type ReachStrategy } from '../reaching'
@@ -68,14 +68,14 @@ const props = withDefaults(
     clock?: Clock
     /** A gesture in progress: where it started, where it is, what it means. */
     gestureFrom?: string | null
-    gestureAt?: Point | null
+    gestureAt?: Position | null
     gestureOutcome?: Drop | null
     /**
      * Something dragged over the picture from outside it: where the pointer
      * is, and the seat letting go there comes to. Both, or the picture draws
      * none of it.
      */
-    draggedAt?: Point | null
+    draggedAt?: Position | null
     dropSeat?: PlexRelatedSeat | null
     /**
      * What to call what letting go with something dragged in would do, for the
@@ -110,7 +110,7 @@ const emit = defineEmits<{
   /** A handle was pressed from the keyboard, where there is nowhere to drag. */
   (event: 'ask', id: string): void
   /** A menu was asked for on a node: which, where, and by what. */
-  (event: 'menu', id: string, at: Point, opening: MenuOpening): void
+  (event: 'menu', id: string, at: Position, opening: MenuOpening): void
   /** A part of a node was chosen. Both identifiers are the caller's. */
   (event: 'enter', id: string, part: string): void
 }>()

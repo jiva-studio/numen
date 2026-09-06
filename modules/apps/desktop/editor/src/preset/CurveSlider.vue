@@ -32,11 +32,11 @@ import {
   LEFT,
   lineOf,
   placeUnder,
+  positionsOf,
   readingAt,
   RIGHT,
   runAt,
   shortOf,
-  pointsOf,
   TOP,
   walked,
   WIDE,
@@ -88,14 +88,14 @@ watch(
 
 const extent = computed<Extent>(() => scale.value?.extent ?? extentOf(props.curve))
 
-const points = computed(() => pointsOf(props.curve, extent.value))
-const line = computed(() => lineOf(points.value))
+const positions = computed(() => positionsOf(props.curve, extent.value))
+const line = computed(() => lineOf(positions.value))
 /** The stretch the budget does not get through, which is drawn quieter. */
-const short = computed(() => shortOf(props.curve, points.value))
+const short = computed(() => shortOf(props.curve, positions.value))
 
 const places = computed(() => props.curve.grid.length)
-const knob = computed(() => points.value[props.place] ?? null)
-const suggested = computed(() => points.value[props.curve.suggested.at] ?? null)
+const knob = computed(() => positions.value[props.place] ?? null)
+const suggested = computed(() => positions.value[props.curve.suggested.at] ?? null)
 
 /**
  * The value the knob stands at. A preset's own value need not sit on the grid,
@@ -122,18 +122,18 @@ const honest = computed(() => props.curve.honest)
 const marks = computed(() => {
   if (!honest.value) return []
   const out: Mark[] = []
-  if (knob.value) out.push({ key: 'knob', point: knob.value, text: '' })
+  if (knob.value) out.push({ key: 'knob', at: knob.value, text: '' })
   if (suggested.value) {
-    out.push({ key: 'suggested', point: suggested.value, text: words.markName(props.curve.goal) })
+    out.push({ key: 'suggested', at: suggested.value, text: words.markName(props.curve.goal) })
   }
   return out
 })
 
 /** What this place of the curve buys, said in a bubble over the knob. */
 const callout = computed(() => {
-  const point = knob.value
+  const at = knob.value
   const one = props.curve.at[props.place]
-  if (!honest.value || !point || !one) return null
+  if (!honest.value || !at || !one) return null
   const backlog = runAt(props.curve, props.place)
   const lines = words.buys(props.curve.goal, {
     value: held.value,
@@ -144,7 +144,7 @@ const callout = computed(() => {
     short: one.short,
     cards: props.curve.cards,
   })
-  return { lines, ...calloutOf(point) }
+  return { lines, ...calloutOf(at) }
 })
 
 /** The names of the marks that fit around the bubble and around each other. */
@@ -154,8 +154,8 @@ const named = computed(() => labelsOf(marks.value, callout.value?.box ?? null))
 const heights = computed(() =>
   heightsOf(
     extent.value,
-    points.value,
-    marks.value.map((one) => one.point),
+    positions.value,
+    marks.value.map((one) => one.at),
     callout.value?.box ?? null,
     (value) => words.heightAt(props.curve.goal, value),
   ),

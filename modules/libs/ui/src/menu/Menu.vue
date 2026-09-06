@@ -10,14 +10,14 @@
 import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import { grouped, landsOn, placeMenu, stepTo, type MenuItem, type MenuOpening } from './item'
 import { isLetter, jumpTo, NOTHING_TYPED, type Typeahead } from './typeahead'
-import type { Point, Size } from '../lib/geometry'
+import type { Position, Size } from '../lib/geometry'
 
 const props = withDefaults(
   defineProps<{
     /** What can be chosen, in the order it is drawn. */
     items: readonly MenuItem[]
     /** Where it was asked for, in the coordinates of the area it is drawn into. */
-    at: Point
+    at: Position
     /** Whether it is drawn at all. */
     open?: boolean
     /** What opened it. Opened by hand it appears with nothing chosen. */

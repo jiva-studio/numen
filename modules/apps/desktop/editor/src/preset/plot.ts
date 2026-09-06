@@ -3,10 +3,10 @@
  *
  * Everything is worked out in the picture's own units and scaled to whatever
  * room the tab has. The curve is the control, so the same arithmetic that puts
- * a point on the line reads a place off a pointer.
+ * a place on the line reads a place off a pointer.
  */
 import type { CSSProperties } from 'vue'
-import type { Point } from '@numen/ui'
+import type { Position } from '@numen/ui'
 import { costOf } from './curve'
 import type { Curve } from './core'
 
@@ -42,7 +42,7 @@ export const LIFT = 9
 export const LABEL = 34
 
 /** One place of the curve, where the picture draws it. */
-export type { Point }
+export type { Position }
 
 /** Where one place of a grid stands across the picture. */
 export const xOf = (place: number, places: number): number =>
@@ -83,7 +83,10 @@ export const extentOfBacklog = (backlog: readonly number[]): Extent => ({
  * run holding nothing at all lies along the floor and a run holding anything
  * is measured up from it.
  */
-export const backlogPointsOf = (values: readonly number[], extent: Extent): readonly Point[] =>
+export const backlogPositionsOf = (
+  values: readonly number[],
+  extent: Extent,
+): readonly Position[] =>
   seriesOf(values, extent, BACKLOG_PLOT)
 
 /**
@@ -91,7 +94,7 @@ export const backlogPointsOf = (values: readonly number[], extent: Extent): read
  * to. The extent is the goal's and not this answer's, so a curve that is flat
  * within it is drawn flat, and an extent of no width lies along the foot.
  */
-export const pointsOf = (curve: Curve, extent: Extent): readonly Point[] =>
+export const positionsOf = (curve: Curve, extent: Extent): readonly Position[] =>
   seriesOf(
     curve.at.map((one) => costOf(curve.goal, one)),
     extent,
@@ -107,7 +110,7 @@ export const seriesOf = (
   values: readonly number[],
   extent: Extent,
   plot: Plot = CURVE_PLOT,
-): readonly Point[] => {
+): readonly Position[] => {
   const span = extent.most - extent.least
   // An extent of no width has no height to read: every value in it is the foot
   // of the plot, and the foot is where it is drawn.
@@ -124,8 +127,8 @@ export const seriesOf = (
 const held = (y: number, plot: Plot): number => Math.min(Math.max(y, plot.top), plot.foot)
 
 /** The line through those places. */
-export const lineOf = (points: readonly Point[]): string =>
-  points.map((point, at) => `${at === 0 ? 'M' : 'L'}${round(point.x)} ${round(point.y)}`).join(' ')
+export const lineOf = (places: readonly Position[]): string =>
+  places.map((at, place) => `${place === 0 ? 'M' : 'L'}${round(at.x)} ${round(at.y)}`).join(' ')
 
 /** The room a number set against a line takes, in the picture's own units. */
 export const AXIS_WIDE = 64
@@ -164,31 +167,30 @@ export const apart = (one: Box, two: Box): boolean =>
  */
 export const clearAt = (
   y: number,
-  points: readonly Point[],
-  marks: readonly (Point | null)[],
+  places: readonly Position[],
+  marks: readonly (Position | null)[],
 ): boolean => {
-  const near = (point: Point): boolean =>
-    point.x <= LEFT + AXIS_WIDE && Math.abs(point.y - y) <= AXIS_HIGH
-  if (marks.some((point) => point !== null && near(point))) return false
-  return !points.some(near)
+  const near = (at: Position): boolean => at.x <= LEFT + AXIS_WIDE && Math.abs(at.y - y) <= AXIS_HIGH
+  if (marks.some((at) => at !== null && near(at))) return false
+  return !places.some(near)
 }
 
 /**
  * The stretch the budget the preset keeps does not get through, drawn as a
  * line of its own. A goal that keeps no such account leaves it empty.
  */
-export const shortOf = (curve: Curve, points: readonly Point[]): string => {
+export const shortOf = (curve: Curve, places: readonly Position[]): string => {
   const runs: string[] = []
-  let run: Point[] = []
+  let run: Position[] = []
   curve.at.forEach((one, place) => {
-    const point = points[place]
-    if (!point) return
+    const at = places[place]
+    if (!at) return
     if (one.enough) {
       if (run.length > 1) runs.push(lineOf(run))
       run = []
       return
     }
-    run.push(point)
+    run.push(at)
   })
   if (run.length > 1) runs.push(lineOf(run))
   return runs.join(' ')
@@ -213,21 +215,21 @@ export const runAt = (curve: Curve, place: number): readonly number[] => {
  * Where a name over a mark is set: above it, pulled back inside the picture at
  * either end so the whole word stands over it.
  */
-export const naming = (point: Point): CSSProperties => {
-  const back = point.x < LEFT + LABEL ? '0' : point.x > RIGHT - LABEL ? '-100%' : '-50%'
+export const naming = (at: Position): CSSProperties => {
+  const back = at.x < LEFT + LABEL ? '0' : at.x > RIGHT - LABEL ? '-100%' : '-50%'
   return {
-    insetInlineStart: `${(point.x / WIDE) * 100}%`,
-    insetBlockStart: `${(Math.max(point.y - LIFT, TOP) / HIGH) * 100}%`,
+    insetInlineStart: `${(at.x / WIDE) * 100}%`,
+    insetBlockStart: `${(Math.max(at.y - LIFT, TOP) / HIGH) * 100}%`,
     translate: `${back} -100%`,
   }
 }
 
 /** The room that name takes, which the knob's own figures stand clear of. */
-export const namingBox = (point: Point): Box => {
-  const back = point.x < LEFT + LABEL ? 0 : point.x > RIGHT - LABEL ? LABEL * 2 : LABEL
+export const namingBox = (at: Position): Box => {
+  const back = at.x < LEFT + LABEL ? 0 : at.x > RIGHT - LABEL ? LABEL * 2 : LABEL
   return {
-    x: point.x - back,
-    y: Math.max(point.y - LIFT, TOP) - AXIS_HIGH,
+    x: at.x - back,
+    y: Math.max(at.y - LIFT, TOP) - AXIS_HIGH,
     wide: LABEL * 2,
     high: AXIS_HIGH,
   }
@@ -262,26 +264,26 @@ export interface Callout {
  * is riding. The tail is anchored on the knob itself and turns over with the
  * bubble, so what the numbers belong to is never in doubt.
  */
-export const calloutOf = (point: Point): Callout => {
-  const under = point.y - CALLOUT_GAP - CALLOUT_HIGH < TOP
+export const calloutOf = (knob: Position): Callout => {
+  const under = knob.y - CALLOUT_GAP - CALLOUT_HIGH < TOP
   const half = CALLOUT_WIDE / 2
-  const back = point.x < LEFT + half ? 0 : point.x > RIGHT - half ? CALLOUT_WIDE : half
-  const edge = under ? point.y + CALLOUT_GAP : point.y - CALLOUT_GAP
+  const back = knob.x < LEFT + half ? 0 : knob.x > RIGHT - half ? CALLOUT_WIDE : half
+  const edge = under ? knob.y + CALLOUT_GAP : knob.y - CALLOUT_GAP
   return {
     under,
     box: {
-      x: point.x - back,
+      x: knob.x - back,
       y: under ? edge : edge - CALLOUT_HIGH,
       wide: CALLOUT_WIDE,
       high: CALLOUT_HIGH,
     },
     at: {
-      insetInlineStart: `${(point.x / WIDE) * 100}%`,
+      insetInlineStart: `${(knob.x / WIDE) * 100}%`,
       insetBlockStart: `${(edge / HIGH) * 100}%`,
       translate: `${(-back / CALLOUT_WIDE) * 100}% ${under ? '0' : '-100%'}`,
     },
     tail: {
-      insetInlineStart: `${(point.x / WIDE) * 100}%`,
+      insetInlineStart: `${(knob.x / WIDE) * 100}%`,
       insetBlockStart: `${(edge / HIGH) * 100}%`,
     },
   }
@@ -290,7 +292,7 @@ export const calloutOf = (point: Point): Callout => {
 /** A mark the picture carries, and the name it wants over it where it wants one. */
 export interface Mark {
   readonly key: string
-  readonly point: Point
+  readonly at: Position
   readonly text: string
 }
 
@@ -312,10 +314,10 @@ export const labelsOf = (marks: readonly Mark[], over: Box | null): readonly Lab
   const out: Label[] = []
   for (const mark of marks) {
     if (!mark.text) continue
-    const box = namingBox(mark.point)
+    const box = namingBox(mark.at)
     if (!placed.every((one) => apart(box, one))) continue
     placed.push(box)
-    out.push({ key: mark.key, text: mark.text, at: naming(mark.point), box })
+    out.push({ key: mark.key, text: mark.text, at: naming(mark.at), box })
   }
   return out
 }
@@ -336,15 +338,15 @@ export interface Height {
  */
 export const heightsOf = (
   extent: Extent,
-  points: readonly Point[],
-  marks: readonly Point[],
+  places: readonly Position[],
+  marks: readonly Position[],
   over: Box | null,
   said: (value: number) => string,
 ): readonly Height[] => {
   const { least, most } = extent
   const fits = (y: number, lift: string, value: number): readonly Height[] => {
     const box = againstBox(y, lift)
-    if (!clearAt(y, points, marks)) return []
+    if (!clearAt(y, places, marks)) return []
     if (over && !apart(box, over)) return []
     return [{ at: against(y, lift), box, text: said(value) }]
   }
@@ -361,10 +363,10 @@ export const heightsOf = (
  * Where the knob's own value is set. It rides a line of its own under the
  * picture, so it never prints over a number read off the picture's edges.
  */
-export const readingAt = (point: Point | null): CSSProperties => {
-  if (!point) return {}
-  const back = point.x < LEFT + LABEL ? '0' : point.x > RIGHT - LABEL ? '-100%' : '-50%'
-  return { insetInlineStart: `${(point.x / WIDE) * 100}%`, translate: `${back} 0` }
+export const readingAt = (knob: Position | null): CSSProperties => {
+  if (!knob) return {}
+  const back = knob.x < LEFT + LABEL ? '0' : knob.x > RIGHT - LABEL ? '-100%' : '-50%'
+  return { insetInlineStart: `${(knob.x / WIDE) * 100}%`, translate: `${back} 0` }
 }
 
 /** Where a keystroke takes the knob, and nothing for a keystroke of somebody else's. */

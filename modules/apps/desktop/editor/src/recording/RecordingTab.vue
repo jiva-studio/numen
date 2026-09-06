@@ -10,7 +10,7 @@
 import { computed, ref, watchPostEffect } from 'vue'
 import { Ellipsis, LocateFixed } from '@lucide/vue'
 import { Editor, Menu, Player, timing } from '@numen/ui'
-import type { Point } from '@numen/ui'
+import type { Position } from '@numen/ui'
 import { iconFor } from '../icons'
 import { DROP, PROOFREAD, WORDS as words } from './words'
 import type { RecordingTabState } from './kind'
@@ -67,7 +67,7 @@ const offered = computed(() => [
 ])
 
 /** Where the menu was asked for, and nothing while it is not open. */
-const asking = ref<{ at: Point; from: HTMLElement } | null>(null)
+const asking = ref<{ at: Position; from: HTMLElement } | null>(null)
 
 const asks = (event: Event) => {
   const button = event.currentTarget
