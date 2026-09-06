@@ -29,8 +29,8 @@ func TestAVaultIsWalkedOnceHoweverManyAsk(t *testing.T) {
 	}
 }
 
-// Nothing begins writing once the window has begun closing: the index is
-// waited for, and a walk asked for after that is refused.
+// A walk asked for once the window has begun closing is refused, so none begins
+// after the index has been waited for.
 func TestAWindowThatIsGoingWalksNothing(t *testing.T) {
 	_, _, vaults, _, held := built(t)
 
@@ -41,8 +41,8 @@ func TestAWindowThatIsGoingWalksNothing(t *testing.T) {
 	}
 }
 
-// A vault is levelled through the opening it was opened with, so a card written
-// while its walk is running is read again after the walk.
+// A vault is levelled through the opening it was walked with, and neither opens
+// the vault a second time.
 func TestLevellingGoesThroughTheVaultsOwnOpening(t *testing.T) {
 	_, _, vaults, _, held := built(t)
 	v := held[0]

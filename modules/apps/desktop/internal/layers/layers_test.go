@@ -1,7 +1,6 @@
 // Package layers holds nothing. What is here is the rule the applications are
-// read against, which had been read for the core alone: the core's own guard
-// walks the core's tree, so an application standing one folder outside it was
-// held to nothing at all.
+// read against: the core's own guard walks the core's tree, and an application
+// stands one folder outside it.
 package layers
 
 import (
@@ -57,9 +56,9 @@ type standing struct {
 	file *ast.File
 }
 
-// named are files every walk below has to have reached, one from each
-// application. A count says how much was read and never what: the phone is a
-// module of its own, and a walk that stopped at the desktop's border would
+// named are files every walk below has to have reached: the desktop's entry
+// point, the deepest file it holds, and the phone. A count says how much was
+// read and never what, and a walk that stopped at the desktop's border would
 // clear any floor the desktop's own files fill.
 var named = []string{
 	"desktop/cmd/numen/main.go",
@@ -102,8 +101,8 @@ func walked(t *testing.T) []standing {
 	}
 
 	// A walk that read nothing is a rule checked against nothing, and it
-	// passes. The floor is well under what the applications hold, and each
-	// application names a file besides.
+	// passes. The floor is under what the applications hold, and the files
+	// above are named besides.
 	if len(found) < 20 {
 		t.Fatalf("%d files read: the walk is not reading the applications", len(found))
 	}

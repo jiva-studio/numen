@@ -45,7 +45,8 @@ type vaultOpening struct {
 	open    *container.OpenVault
 }
 
-// wait lets go of every vault and holds until nothing is still writing.
+// wait lets go of every vault and holds until the walks and the watches are
+// done. A levelling is not one of them and is not waited for.
 func (o *openVaults) wait() {
 	o.mu.Lock()
 	o.going = true
@@ -54,8 +55,8 @@ func (o *openVaults) wait() {
 	o.running.Wait()
 }
 
-// starts takes a piece of work on and says whether it may run. A window that is
-// going takes none, so nothing begins writing after the index is waited for.
+// starts takes a walk or a watch on and says whether it may run. A window that
+// is going takes neither, so no walk begins after the index is waited for.
 func (o *openVaults) starts() bool {
 	o.mu.Lock()
 	defer o.mu.Unlock()
