@@ -1,5 +1,6 @@
 /** What a preset tab says: the one control, the settings under it, and what went wrong. */
 import { StopReason } from '@numen/protocol'
+import { many, percent } from '@numen/ui'
 import type { RefusalReason } from '../core'
 import type { Counts, Goal, Rule } from './core'
 import type { Field } from './curve'
@@ -148,15 +149,8 @@ const STOPPED: Record<StopReason, string> = {
     'nothing on any of them, and every deck pointing at it stops.',
 }
 
-/** A share as a person reads one, which is a percentage and not a fraction. */
-const share = (value: number): string => `${Math.round(value * 100)}%`
-
 /** A count as a person reads one. */
 const count = (value: number): string => `${Math.round(value)}`
-
-/** A count and the thing it counts, in the singular where there is one of it. */
-const many = (value: number, one: string, more = `${one}s`): string =>
-  `${count(value)} ${Math.round(value) === 1 ? one : more}`
 
 export const WORDS = {
   preset: 'Preset',
@@ -210,7 +204,7 @@ export const WORDS = {
       return said
     }
     const held =
-      goal === 'minutes' ? `${many(at.value, 'minute')} a day` : `${share(at.value)} remembered`
+      goal === 'minutes' ? `${many(at.value, 'minute')} a day` : `${percent(at.value)} remembered`
     const buys =
       goal === 'minutes'
         ? `${many(at.reviews, 'card')} a sitting`
@@ -227,7 +221,7 @@ export const WORDS = {
     goal === 'minutes' ? many(value, 'card') : `${count(value)} min`,
   /** One place along the picture, in the units of the goal's grid. */
   widthAt: (goal: Goal, value: number) => {
-    if (goal === 'retention') return share(value)
+    if (goal === 'retention') return percent(value)
     return goal === 'date' ? `${count(value)} d` : `${count(value)} min`
   },
   /**
@@ -281,7 +275,7 @@ export const WORDS = {
   },
   /** The value the control stands at, in the units of its goal. */
   value: (goal: Goal, value: number, day: string) => {
-    if (goal === 'retention') return `${share(value)} remembered`
+    if (goal === 'retention') return `${percent(value)} remembered`
     if (goal === 'date') return `${many(value, 'day')} to ${day}`
     return `${many(value, 'minute')} a day`
   },

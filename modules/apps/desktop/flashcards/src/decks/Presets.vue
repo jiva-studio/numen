@@ -13,7 +13,7 @@
  * where they are read.
  */
 import { computed } from 'vue'
-import { Button } from '@numen/ui'
+import { Button, percent } from '@numen/ui'
 
 import { goalWords, leftWords, through } from './scheduling'
 import type { Preset } from './scheduling'
@@ -74,9 +74,6 @@ const tiles = computed<Tile[]>(() =>
     }
   }),
 )
-
-/** How far through the day a tile stands, as a person reads it. */
-const percent = (done: number): string => `${Math.round(done * 100)}%`
 </script>
 
 <template>

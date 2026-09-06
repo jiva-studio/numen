@@ -154,6 +154,9 @@ export type { Address, Wikilink } from './linking/address'
 export { holdsTheWindow, pointsOutward } from './linking/outward'
 export type { LinkOpener } from './linking/outward'
 
+/** Numbers as they are read out, which both windows read the same way. */
+export { many, percent } from './digits'
+
 export { default as Prose } from './prose/Prose.vue'
 export { default as ToolCall } from './tool/ToolCall.vue'
 

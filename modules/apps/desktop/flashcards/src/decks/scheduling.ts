@@ -12,7 +12,7 @@ import type { Goal as Goals, Refusal } from '@numen/protocol'
 import { deckName, goalOf } from '../core'
 import type { DeckCardsDue, Goal } from '../core'
 import { refusalWords } from '@numen/wire'
-import { dayOf, daysBetween } from '@numen/ui'
+import { dayOf, daysBetween, many, percent } from '@numen/ui'
 import type { BudgetKeys, VaultCardsDue } from '../core'
 
 export type { BudgetKeys }
@@ -350,9 +350,6 @@ export const opens = (deck: DeckCardsDue, by: ReadonlyMap<string, Preset>): bool
 export const beginsNothing = (deck: DeckCardsDue, by: Preset | undefined): boolean =>
   deck.faces > 0 && deck.unbegun === deck.faces && by?.budget.new === 0
 
-/** How many cards the day holds at most. */
-export const holds = (budget: Budget): number => budget.new + budget.reviews
-
 /**
  * How far through its day a preset stands: what has been answered against the
  * cards the day holds, and what it has taken against the minutes the day runs,
@@ -408,7 +405,7 @@ export const STOPPED = {
  * The word stands with the figure.
  */
 export const LEARNED = {
-  share: (of: number) => `${Math.round(of * 100)}% learned`,
+  share: (of: number) => `${percent(of)} learned`,
   /** The preset scheduling the deck could not be read, and the rule is its. */
   unruled: 'no rule to count by',
 } as const
@@ -477,10 +474,6 @@ export const goalWords = (settings: Settings, today: string): string => {
       return `${many(settings.minutesADay, 'minute')} a day`
   }
 }
-
-/** A count and the thing it counts, in the singular where there is one of it. */
-const many = (value: number, one: string): string =>
-  `${value} ${value === 1 ? one : `${one}s`}`
 
 /** A day as a person reads one, without the year they are already in. */
 const short = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'long' })

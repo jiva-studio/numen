@@ -13,7 +13,7 @@
 import { computed, ref, shallowRef, watch } from 'vue'
 import { asking } from '../asking'
 import type { StepGroup, StepRow } from '../command/commanding'
-import { following } from '@numen/ui'
+import { following, percent } from '@numen/ui'
 import type { Voice } from '../notices/telling'
 import type { Bounds, Catalogue, Mode, Ranges, Scales, Sizes, Theme, Themes } from './theme'
 
@@ -191,9 +191,6 @@ const typedSize = (typed: string): number | null => {
   const said = TYPED.exec(typed.trim())
   return said ? Number(said[1]) / 100 : null
 }
-
-/** A multiplier as a person reads it. */
-const percent = (size: number): string => `${Math.round(size * 100)}%`
 
 /**
  * The rows one to a title. A size the list already holds is not held twice, and
