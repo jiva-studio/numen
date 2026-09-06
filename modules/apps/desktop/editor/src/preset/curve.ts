@@ -6,7 +6,7 @@
  * the control computes nothing. The line drawn while that answer is on its way
  * is arithmetic over the settings alone, and is shown as an approximation.
  */
-import { dayAfter, dayNamed, daysBetween } from '@numen/ui'
+import { dayAfter, daysBetween } from '@numen/ui'
 import { DEFAULTS, NOWHERE } from './core'
 import type {
   Bounds,
@@ -234,12 +234,16 @@ const asksNothing = (curve: Curve): boolean =>
 /**
  * The line the window draws while the application is still working the honest
  * one out. It is arithmetic over the settings alone, and it says so.
+ *
+ * `today` is the review day the window was told, which is the day the core
+ * counts from. It is not read off a clock here: a day of review begins hours
+ * past midnight, and a calendar day would count a date one day nearer for as
+ * long as the two disagree.
  */
-export const approximate = (settings: Settings, today: Date): Curve => {
+export const approximate = (settings: Settings, today: string): Curve => {
   const grid = gridFor(settings, today)
   const at = grid.map((value) => guessed(settings, value, grid))
-  const days =
-    settings.goal === 'date' ? grid.map((value) => dayAfter(dayNamed(today), value)) : []
+  const days = settings.goal === 'date' ? grid.map((value) => dayAfter(today, value)) : []
   const value = goalValue(settings, today)
   const place = nearest(grid, value)
   const now: Place = { at: place, value, day: days[place] ?? '' }
@@ -259,19 +263,19 @@ export const approximate = (settings: Settings, today: Date): Curve => {
 }
 
 /** The goal's own value in the preset, in the units of its grid. */
-export const goalValue = (settings: Settings, today: Date): number => {
+export const goalValue = (settings: Settings, today: string): number => {
   if (settings.goal === 'retention') return settings.retention
-  if (settings.goal === 'date') return daysBetween(dayNamed(today), settings.byDate)
+  if (settings.goal === 'date') return daysBetween(today, settings.byDate)
   return settings.minutesADay
 }
 
 /** The whole range of a goal, at the places the line is drawn at. */
-const gridFor = (settings: Settings, today: Date): readonly number[] => {
+const gridFor = (settings: Settings, today: string): readonly number[] => {
   if (settings.goal === 'retention') {
     return ladder(RETENTION.least, RETENTION.most, (one) => Math.round(one * 1000) / 1000)
   }
   if (settings.goal === 'date') {
-    const most = Math.max(daysBetween(dayNamed(today), settings.byDate), 30)
+    const most = Math.max(daysBetween(today, settings.byDate), 30)
     return ladder(1, most, Math.round)
   }
   return ladder(0, Math.max(settings.minutesADay, LEAST_CEILING), Math.round)
@@ -321,7 +325,7 @@ export const producing = (
   was: Settings,
   place: number,
   curve: Curve,
-  today: Date,
+  today: string,
   within: SettingsBounds,
 ): Settings => {
   const value = curve.grid[place] ?? goalValue(was, today)
@@ -329,7 +333,7 @@ export const producing = (
     return { ...was, retention: held(round(value, 2), within.retention) }
   }
   if (curve.goal === 'date') {
-    return { ...was, byDate: curve.days[place] ?? dayAfter(dayNamed(today), value) }
+    return { ...was, byDate: curve.days[place] ?? dayAfter(today, value) }
   }
   return { ...was, minutesADay: held(Math.round(value), within.minutesADay) }
 }

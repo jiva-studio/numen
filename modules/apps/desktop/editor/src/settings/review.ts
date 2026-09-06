@@ -6,12 +6,19 @@
  * installation is doing and choosing another hour writes it.
  */
 import { ref } from 'vue'
+import { dayAfter, dayNamed } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
 import type { ReviewSettings } from '../core'
 import type { MessageWriter } from '../notices/messages'
 
 /** The hour an installation nobody has configured begins the day at. */
 export const DEFAULT_STARTS = '04:00'
+
+/** How long past midnight an hour of the clock stands, in minutes. */
+const past = (hour: string): number => {
+  const [at, minute] = hour.split(':').map(Number)
+  return (at ?? 0) * 60 + (minute ?? 0)
+}
 
 /** Everything this says in the window's voice. */
 export interface Words {
@@ -37,6 +44,18 @@ export function reviewSetting(core: ReviewDeps, words: Words, said: MessageWrite
    * force, so none is offered that is refused.
    */
   const latest = ref(DEFAULT_STARTS)
+
+  /**
+   * The review day now standing, which is the day everything counting in days
+   * counts from. An answer given before the hour in force belongs to the day
+   * before, so the calendar and the review day differ until that hour comes
+   * round.
+   */
+  const day = (at: Date = new Date()): string => {
+    const named = dayNamed(at)
+    const clock = at.getHours() * 60 + at.getMinutes()
+    return clock < past(starts.value) ? dayAfter(named, -1) : named
+  }
 
   /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {
@@ -70,5 +89,5 @@ export function reviewSetting(core: ReviewDeps, words: Words, said: MessageWrite
     starts.value = was
   }
 
-  return { starts, latest, start, chooses }
+  return { starts, latest, day, start, chooses }
 }

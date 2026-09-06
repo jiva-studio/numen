@@ -52,6 +52,27 @@ describe('the hour the window stands at', () => {
   })
 })
 
+describe('the review day now standing', () => {
+  it('is the day before while the hour in force has not come round', () => {
+    const { hours } = vault('04:00')
+    expect(hours.day(new Date(2026, 8, 5, 1, 0))).toBe('2026-09-04')
+    expect(hours.day(new Date(2026, 8, 5, 3, 59))).toBe('2026-09-04')
+  })
+
+  it('is the day the calendar names from that hour on', () => {
+    const { hours } = vault('04:00')
+    expect(hours.day(new Date(2026, 8, 5, 4, 0))).toBe('2026-09-05')
+    expect(hours.day(new Date(2026, 8, 5, 23, 59))).toBe('2026-09-05')
+  })
+
+  it('moves with the hour the settings hold', async () => {
+    const { hours } = vault('06:30')
+    await hours.start()
+    expect(hours.day(new Date(2026, 8, 5, 6, 29))).toBe('2026-09-04')
+    expect(hours.day(new Date(2026, 8, 5, 6, 30))).toBe('2026-09-05')
+  })
+})
+
 describe('an hour chosen', () => {
   it('is written into the settings', async () => {
     const { hours, written } = vault('04:00')

@@ -61,8 +61,8 @@ const curve: Curve = {
   honest: true,
 }
 
-/** The day every test here runs on, so a goal of a date counts from one place. */
-const NOW = new Date('2026-08-30T00:00:00Z')
+/** The review day every test here is told, so a goal of a date counts from one place. */
+const NOW = '2026-08-30'
 
 /** The same range read as days, which is the goal a date steers. */
 const dated: Curve = {

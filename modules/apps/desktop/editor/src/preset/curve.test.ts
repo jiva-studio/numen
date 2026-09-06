@@ -29,9 +29,8 @@ import {
  */
 import corpus from '../../../../../libs/protocol/testdata/presets.json'
 
-// The instant is read on the calendar the machine stands in, so the day is
-// written out here rather than fixed at Greenwich.
-const today = new Date(2026, 7, 30, 12)
+/** The review day the window is told, which is what a date is counted from. */
+const today = '2026-08-30'
 
 const settings = (over: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...over })
 

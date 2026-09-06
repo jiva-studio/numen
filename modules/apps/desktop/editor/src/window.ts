@@ -157,8 +157,15 @@ export const useWindow = () => {
   const decks = decking(cards, presets, held.handle, puts)
   const stencils = stencilling(cards, held.handle, puts, log.under('stencil'))
 
-  /** The presets the window has open, each written as one group of settings. */
-  const schedules = presetting(presets, held.handle, puts, log.under('preset'))
+  /** The hour a day of review begins at, on the clock on the wall. */
+  const dayBegins = reviewSetting(core, words, log.under('reviewed'))
+
+  /**
+   * The presets the window has open, each written as one group of settings. The
+   * day a preset counts a date from is the review day, which the tabs are told
+   * and do not work out.
+   */
+  const schedules = presetting(presets, held.handle, puts, log.under('preset'), dayBegins.day)
 
   going.holds(decks.flush)
   going.holds(stencils.flush)
@@ -458,9 +465,6 @@ export const useWindow = () => {
 
   /** Whether a note's title and the name of its file are kept as one name. */
   const oneName = syncSetting(core, words, log.under('named'))
-
-  /** The hour a day of review begins at, on the clock on the wall. */
-  const dayBegins = reviewSetting(core, words, log.under('reviewed'))
 
   /** The rest of the settings file, which no command of the window turns. */
   const rest = settingsStore(core, words, log.under('configured'))
