@@ -71,6 +71,8 @@ export function notesPanel(deps: NotesPanelDeps) {
       unread.value = around.unread
       held.value = deck
     } catch {
+      // The deck could not be reached, and the window says so: the panel holds
+      // nothing until it is asked again.
       if (asked !== deck) return
       notes.value = []
       unread.value = 0
