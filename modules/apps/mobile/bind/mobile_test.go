@@ -110,9 +110,7 @@ func TestStartAnswers(t *testing.T) {
 // origin it answers is the page the platform serves: a page in the person's own
 // browser asks the same address and is refused by the browser before the ask
 // leaves it.
-// page is the one origin, spelled out. Reading it from the code under test
-// would make this hold for whatever that code says — "*" included, which is the
-// answer this test exists to refuse.
+// page is the one origin, spelled out here and read from nothing under test.
 const page = "http://localhost"
 
 // The origin is settled in the platform's own configuration and named here in

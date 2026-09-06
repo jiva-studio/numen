@@ -352,10 +352,9 @@ func TestTheAgentBringsOnlyTheToolsItIsNamed(t *testing.T) {
 	}
 }
 
-// The run asks nobody, so a tool outside the allowance is refused rather than
-// put to a person. Offering the search on --tools is not allowing it: left out
-// of the allowance it is refused like anything else, and the panel loses the
-// one thing the agent was given to look something up with.
+// The run asks nobody, so a tool outside the allowance is refused. The search
+// is offered on --tools and allowed by name here, and both are what let it be
+// called.
 func TestTheAllowanceNamesTheSearchAndThisVaultsTools(t *testing.T) {
 	argv := recordedWith(t, func(a *claudecode.Agent) {
 		a.Allowed = []string{claudecode.Tool("note_read"), claudecode.Tool("note_edit")}

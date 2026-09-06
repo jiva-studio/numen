@@ -32,10 +32,8 @@ func linking(deps []string, pkg string) bool {
 }
 
 // An agent reaches the vault through tools, and the tools are an endpoint a
-// window listens on. The command line reaches the same use cases directly, so
-// nothing of the tool surface is linked into it: the terminal binary would
-// otherwise carry an endpoint nobody starts, and the day one is started by
-// accident it answers with a person's whole vault.
+// window listens on. The command line reaches the same use cases directly, and
+// nothing of the tool surface is linked into it.
 //
 // What the build resolved is what is read, so the tools reached through another
 // package count the same as the tools named outright.

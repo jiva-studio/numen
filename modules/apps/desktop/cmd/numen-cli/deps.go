@@ -60,8 +60,8 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 				if err != nil {
 					return cli.Scan{}, err
 				}
-				// A terminal waits for the model rather than making the vectors
-				// later, and a vault is read whether or not one arrives.
+				// A terminal waits for the model, and a vault is read whether
+				// or not one arrives.
 				embedder, closeEmbedder, why := reading.Embedder(ctx)
 				read, err := reading.ReadWholeVault(ctx, db, embedder, v)
 				if err != nil {
