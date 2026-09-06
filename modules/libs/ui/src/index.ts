@@ -105,6 +105,10 @@ export { default as BookReader } from './book/BookReader.vue'
 /** Where a person is reading, and what a book runs between: bytes of its text. */
 export type { Span as BookSpan } from './book/spread'
 
+/** What a book divides into, as a list to reach any of it by. */
+export { default as BookContents } from './book/BookContents.vue'
+export type { ContentsEntry, ContentsWords } from './book/contents'
+
 export { default as WorkspaceLayout } from './workspace/WorkspaceLayout.vue'
 export { closeTab, openTab, openTabBeside } from './workspace/edit'
 

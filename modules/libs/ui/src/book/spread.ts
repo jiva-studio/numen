@@ -16,7 +16,7 @@ export interface Span {
 
 /** Where one run of the text stands, once the document is laid out. */
 export interface Mark {
-  /** The byte offset the run begins at, read off `data-at`. */
+  /** The byte offset the run begins at, read off `data-offset`. */
   readonly at: number
   /** Where it stands along the columns, in CSS pixels from the first of them. */
   readonly x: number

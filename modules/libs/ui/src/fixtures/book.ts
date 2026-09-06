@@ -39,7 +39,7 @@ export function chapterOf(runs: readonly Run[], begins = 0): Chapter {
   for (const run of runs) {
     const text = run.text ?? ''
     written.push(
-      `<${run.tag} data-at="${at}">${escaped(text)}${run.inside ?? ''}</${run.tag}>`,
+      `<${run.tag} data-offset="${at}">${escaped(text)}${run.inside ?? ''}</${run.tag}>`,
     )
     at += bytesIn(text)
   }

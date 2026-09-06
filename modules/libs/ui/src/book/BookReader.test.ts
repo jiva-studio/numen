@@ -91,7 +91,7 @@ describe('a document with no text at all', () => {
     await held.vm.$nextTick()
 
     expect(held.find('.book__paper').exists()).toBe(true)
-    expect(held.findAll('[data-at]')).toHaveLength(0)
+    expect(held.findAll('[data-offset]')).toHaveLength(0)
     expect(asked(held)).toHaveLength(0)
   })
 })

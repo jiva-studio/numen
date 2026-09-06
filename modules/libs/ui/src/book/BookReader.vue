@@ -12,7 +12,7 @@ import { computed, onBeforeUnmount, ref, shallowRef, useTemplateRef, watch } fro
 import ReaderToolbar from '@/reader/ReaderToolbar.vue'
 import { useViewport } from '@/reader/viewport'
 import { onNextFrame } from '@/lib/clock'
-import { highlight, unhighlight } from './highlight'
+import { ALSO, HIGHLIGHT, highlight, unhighlight } from './highlight'
 import {
   BOOK_WORDS,
   GAP,
@@ -41,7 +41,7 @@ const props = withDefaults(
   defineProps<{
     /**
      * One document of the book, as it is drawn. Every run of text in it carries
-     * `data-at`, the byte offset at which that run begins in the book's text.
+     * `data-offset`, the byte offset at which that run begins in the book's text.
      * It reaches this component already measured against what may be drawn.
      */
     markup?: string
@@ -53,6 +53,8 @@ const props = withDefaults(
     at?: number
     /** The runs marked where they stand, in bytes of the book's text. */
     marked?: readonly Span[]
+    /** The other runs asked about, each of them somewhere else to look. */
+    also?: readonly Span[]
     /** The words it is read with. */
     words?: ReaderWords
   }>(),
@@ -62,6 +64,7 @@ const props = withDefaults(
     book: () => ({ begins: 0, ends: 0 }),
     at: 0,
     marked: () => [],
+    also: () => [],
     words: () => BOOK_WORDS,
   },
 )
@@ -130,7 +133,7 @@ const gather = () => {
   const origin = box.getBoundingClientRect().left - box.scrollLeft
   const found: { at: number; element: HTMLElement }[] = []
   const placed: Mark[] = []
-  for (const element of text.querySelectorAll<HTMLElement>('[data-at]')) {
+  for (const element of text.querySelectorAll<HTMLElement>('[data-offset]')) {
     const said = Number(element.dataset['at'])
     if (!Number.isFinite(said)) continue
     found.push({ at: said, element })
@@ -269,13 +272,18 @@ const rangeOver = (span: Span): Range | undefined => {
   return range
 }
 
-const marking = () => {
+const rangesOver = (spans: readonly Span[]): Range[] => {
   const drawn: Range[] = []
-  for (const span of props.marked) {
+  for (const span of spans) {
     const range = rangeOver(span)
     if (range) drawn.push(range)
   }
-  highlight(props, drawn)
+  return drawn
+}
+
+const marking = () => {
+  highlight(HIGHLIGHT, props, rangesOver(props.marked))
+  highlight(ALSO, props, rangesOver(props.also))
 }
 
 // A reading area of another size, or a text of another size, is another set of
@@ -294,7 +302,7 @@ watch(
   },
 )
 
-watch(() => props.marked, marking)
+watch([() => props.marked, () => props.also], marking)
 
 // An offset asked for from outside is turned to. One reached by the hand is
 // already in front.
@@ -422,5 +430,11 @@ defineExpose({
 /* A marked run is drawn where it stands, over however many columns it runs. */
 :global(::highlight(numen-book)) {
   background-color: var(--numen-highlight);
+}
+
+/* A place the person was not sent to is drawn faintly: it says there is
+   something here, and the place they were sent to is the one drawn full. */
+:global(::highlight(numen-book-also)) {
+  background-color: color-mix(in srgb, var(--numen-highlight) 35%, transparent);
 }
 </style>

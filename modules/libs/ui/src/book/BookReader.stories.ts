@@ -108,7 +108,7 @@ const paperOf = (canvasElement: HTMLElement) =>
 
 /** Every run of the text, in the order the document sets them. */
 const runsOf = (canvasElement: HTMLElement) => [
-  ...paperOf(canvasElement).querySelectorAll<HTMLElement>('[data-at]'),
+  ...paperOf(canvasElement).querySelectorAll<HTMLElement>('[data-offset]'),
 ]
 
 /** The offset the reader says is in front. */
