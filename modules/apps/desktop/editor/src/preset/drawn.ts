@@ -31,6 +31,7 @@ export const BOUNDS = {
   retention: { least: 0.7, most: 0.99 },
   backlog: { least: 0, most: 100 },
   interval: { least: 1, most: 365 },
+  load: { least: 0, most: 100 },
 } satisfies SettingsBounds
 
 // The track of a share is measured as it is drawn, and a document with no

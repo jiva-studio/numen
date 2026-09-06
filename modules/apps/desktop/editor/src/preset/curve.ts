@@ -25,9 +25,6 @@ const PLACES = 25
 /** The shortest day a curve of minutes runs to. */
 const LEAST_CEILING = 60
 
-/** The span of retention the sketch is drawn across, as the two ends of it. */
-export const RETENTION: Bounds = { least: 0.7, most: 0.99 }
-
 /** How long one answer takes where nothing has been answered yet, in seconds. */
 const ANSWER = 8
 
@@ -239,9 +236,13 @@ const asksNothing = (curve: Curve): boolean =>
  * counts from. It is not read off a clock here: a day of review begins hours
  * past midnight, and a calendar day would count a date one day nearer for as
  * long as the two disagree.
+ *
+ * `within` is how far each setting goes, as the application answered it. A
+ * sketch of a target is drawn across the span it says, so the guess and the
+ * answer stand over one range.
  */
-export const approximate = (settings: Settings, today: string): Curve => {
-  const grid = gridFor(settings, today)
+export const approximate = (settings: Settings, today: string, within: SettingsBounds): Curve => {
+  const grid = gridFor(settings, today, within)
   const at = grid.map((value) => guessed(settings, value, grid))
   const days = settings.goal === 'date' ? grid.map((value) => dayAfter(today, value)) : []
   const value = goalValue(settings, today)
@@ -269,10 +270,17 @@ export const goalValue = (settings: Settings, today: string): number => {
   return settings.minutesADay
 }
 
-/** The whole range of a goal, at the places the line is drawn at. */
-const gridFor = (settings: Settings, today: string): readonly number[] => {
+/**
+ * The whole range of a goal, at the places the line is drawn at. A target is
+ * held to the span the application answered with, and a span it has said
+ * nothing about is no range at all: the sketch draws no places, and the answer
+ * brings the honest ones.
+ */
+const gridFor = (settings: Settings, today: string, within: SettingsBounds): readonly number[] => {
   if (settings.goal === 'retention') {
-    return ladder(RETENTION.least, RETENTION.most, (one) => Math.round(one * 1000) / 1000)
+    const span = within.retention
+    if (span === undefined) return []
+    return ladder(span.least, span.most, (one) => Math.round(one * 1000) / 1000)
   }
   if (settings.goal === 'date') {
     const most = Math.max(daysBetween(today, settings.byDate), 30)

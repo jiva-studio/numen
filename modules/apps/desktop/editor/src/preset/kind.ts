@@ -19,6 +19,7 @@ import PresetTab from './PresetTab.vue'
 import {
   DEFAULTS,
   NO_BOUNDS,
+  type Bounds,
   type Curve,
   type Goal,
   type Load,
@@ -49,6 +50,18 @@ export type SettingValue = number | string | boolean | Load
 /** Whether what was said is a share for each day of the week that carries one. */
 const isLoad = (value: SettingValue): value is Load =>
   typeof value === 'object' && Object.values(value).every((share) => typeof share === 'number')
+
+/**
+ * Every day of the week held inside the share one may carry, as the application
+ * answered it. A share it has said no bound for is held to none, as every other
+ * setting is.
+ */
+const shares = (load: Load, within: Bounds | undefined): Load => {
+  if (within === undefined) return load
+  const out: Record<string, number> = {}
+  for (const [day, share] of Object.entries(load)) out[day] = held(Math.round(share), within)
+  return out
+}
 
 /** The settings as a tab holds them while a person is moving them. */
 type MutableSettings = { -readonly [field in keyof Settings]: Settings[field] }
@@ -189,7 +202,7 @@ export function presetting(
   const keeps = (path: string): OpenPreset => ({
     path: ref(path),
     settings: shallowRef<Settings>(DEFAULTS),
-    curve: shallowRef<Curve>(approximate(DEFAULTS, today())),
+    curve: shallowRef<Curve>(approximate(DEFAULTS, today(), bounds.value)),
     material: shallowRef<PresetCounts | null>(null),
     place: ref(0),
     problems: shallowRef<readonly string[]>([]),
@@ -306,7 +319,7 @@ export function presetting(
       // What stands until the answer lands carries the goal and its range, so
       // the readout has units to speak in. It is nobody's answer, so the
       // picture draws no line: the honest one appears once and nothing jumps.
-      const meanwhile = approximate(one.settings.value, today())
+      const meanwhile = approximate(one.settings.value, today(), bounds.value)
       one.curve.value = meanwhile
       one.place.value = Math.max(meanwhile.now.at, 0)
     }
@@ -460,7 +473,9 @@ export function presetting(
     if (field === 'learned' && (value === 'interval' || value === 'retention')) {
       return { ...settings, learned: value }
     }
-    if (field === 'load' && isLoad(value)) return { ...settings, load: value }
+    if (field === 'load' && isLoad(value)) {
+      return { ...settings, load: shares(value, bounds.value.load) }
+    }
     if (field === 'evenLoad' && typeof value === 'boolean') return { ...settings, evenLoad: value }
     if (typeof value !== 'number') return settings
     const within = bounds.value

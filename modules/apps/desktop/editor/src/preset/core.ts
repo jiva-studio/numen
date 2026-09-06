@@ -148,6 +148,8 @@ export interface SettingsBounds {
   readonly retention?: Bounds
   readonly backlog?: Bounds
   readonly interval?: Bounds
+  /** How much of a day's load one day of the week may carry, in per cent. */
+  readonly load?: Bounds
 }
 
 /** How far each setting goes until the application has said. */
@@ -394,6 +396,7 @@ const bounded = (said: SettingsBoundsMessage | undefined): SettingsBounds => {
   if (said.retention) out.retention = ranged(said.retention)
   if (said.backlog) out.backlog = ranged(said.backlog)
   if (said.interval) out.interval = ranged(said.interval)
+  if (said.load) out.load = ranged(said.load)
   return out
 }
 

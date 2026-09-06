@@ -828,6 +828,16 @@ describe('how far each setting goes', () => {
     held.types('newADay', -4)
     expect(held.settings.value.newADay).toBe(BOUNDS.newADay.least)
   })
+
+  it('holds each day of the week inside the share the read answered', async () => {
+    const { held } = await opened()
+    held.types('load', { sat: 250, sun: -10, mon: 50 })
+    expect(held.settings.value.load).toStrictEqual({
+      sat: BOUNDS.load.most,
+      sun: BOUNDS.load.least,
+      mon: 50,
+    })
+  })
 })
 
 
