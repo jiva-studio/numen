@@ -15,9 +15,12 @@ configure({ asyncUtilTimeout: 5_000 })
 
 /**
  * The story this window's walk is proved against: the whole window with its
- * tabs open, which is the busiest tab order the editor has.
+ * tabs open, which is the busiest tab order the editor has. The number is the
+ * whole of that order, counted in both engines, so a walk stopping at the hour
+ * the review day starts at — and leaving every row under it unreached — is
+ * short here.
  */
-const PROOF: Proof = { story: 'desktop-window--settings', stops: 6 }
+const PROOF: Proof = { story: 'desktop-window--settings', stops: 25 }
 
 const preview: Preview = {
   parameters: {

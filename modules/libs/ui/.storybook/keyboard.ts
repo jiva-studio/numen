@@ -7,13 +7,27 @@ import { userEvent } from 'vitest/browser'
 import type { Stop, Walk } from './reach'
 
 /**
- * How far the walk goes before it stops.
+ * How many stops the walk visits before it stops.
  *
  * Every Tab is a real key struck by the browser, and the four crowded stories
  * that reach this number draw the same row over and over: whatever is wrong
  * with the fortieth of them is wrong with the first.
  */
 const FURTHEST = 40
+
+/**
+ * How many times one stop may answer Tab by keeping it before the walk calls
+ * it a trap.
+ *
+ * A native date or time field spends Tab on its own parts and hands it on
+ * after the last of them: an hour, a minute, a second, a fraction of a second,
+ * a morning or afternoon, and the picker the browser draws in it. Nine is that
+ * list at its longest, which is `datetime-local` at fractional-second
+ * precision — a year, a month and a day before the rest of it. It is the
+ * length of a list the HTML time state fixes, not a patience that can be
+ * turned up: a stop still holding the keyboard a tenth time is holding it.
+ */
+const PARTS = 9
 
 /** What is compared before the keyboard arrives and once it is there. */
 const PAINTED = [
@@ -188,6 +202,10 @@ const settles = async (): Promise<boolean> => {
  * twice, with the keyboard away from it and with the keyboard on it. The walk
  * itself is what puts the browser in its keyboard temper, so a ring drawn only
  * for `:focus-visible` is a difference these two readings can see.
+ *
+ * A stop that spends Tab on parts of its own is waited on rather than counted
+ * twice, so what stands under it is walked as a person walking it would reach
+ * it.
  */
 export async function walk(): Promise<Walk> {
   const settled = await settles()
@@ -208,24 +226,31 @@ export async function walk(): Promise<Walk> {
   const reached: { stop: Omit<Stop, 'rings'>; drawn: [Element, string][] }[] = []
   const seen = new Set<Element>()
   let trapped: string | null = null
-  let last: Element | null = null
-  let stuck = 0
 
-  for (let step = 0; step < FURTHEST; step += 1) {
-    await userEvent.tab()
-    const here = document.activeElement
-    if (!here || here === document.body || here === document.documentElement) break
-
-    if (here === last) {
-      stuck += 1
-      if (stuck >= 2) {
-        trapped = whereOf(here)
-        break
-      }
-      continue
+  /**
+   * Tab struck until the keyboard moves: the element it moved to, null once it
+   * has left the page, and the element it started on where that one kept it
+   * through every part it could have had.
+   */
+  const onward = async (from: Element): Promise<Element | null> => {
+    for (let held = 0; held <= PARTS; held += 1) {
+      await userEvent.tab()
+      const here = document.activeElement
+      if (!here || here === document.body || here === document.documentElement) return null
+      if (here !== from) return here
     }
-    stuck = 0
-    last = here
+    return from
+  }
+
+  let at: Element = document.body
+  for (let step = 0; step < FURTHEST; step += 1) {
+    const here = await onward(at)
+    if (!here) break
+    if (here === at) {
+      trapped = whereOf(here)
+      break
+    }
+    at = here
 
     if (seen.has(here)) break
     seen.add(here)

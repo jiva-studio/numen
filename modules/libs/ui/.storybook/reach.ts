@@ -35,11 +35,14 @@ export interface Walk {
  * is, and a second mark around a field a person is typing in is noise. Nothing
  * else is excused.
  *
- * What answers Tab by keeping it is not judged here. Three things in this
- * library do it — a palette a person leaves with Escape, a native time field
- * walking its own hours and minutes, and the editor, which indents until
- * Escape hands Tab back. Each is left with the keyboard alone, and a rule that
- * could tell a way out from none would need a list.
+ * What answers Tab by keeping it is not judged here. Two things in this
+ * library do it — a palette a person leaves with Escape, and the editor, which
+ * indents until Escape hands Tab back. Each is left with the keyboard alone,
+ * and a rule that could tell a way out from none would need a list.
+ *
+ * A native time field is not one of them. It spends Tab on its own hours and
+ * minutes and hands it on after the last of them, in both engines, so the walk
+ * waits it out instead.
  */
 export function faults({ stops }: Walk): string[] {
   const wrong: string[] = []

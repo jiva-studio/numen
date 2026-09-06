@@ -15,9 +15,11 @@ configure({ asyncUtilTimeout: 5_000 })
 
 /**
  * The story this window's walk is proved against: the decks a vault owes,
- * where every deck and every control above them is a stop.
+ * where every deck and every control above them is a stop. The number is the
+ * whole of that tab order, counted in both engines, so a walk that loses its
+ * way anywhere in it is short.
  */
-const PROOF: Proof = { story: 'flash-cards-window--cards-due', stops: 5 }
+const PROOF: Proof = { story: 'flash-cards-window--cards-due', stops: 15 }
 
 const preview: Preview = {
   parameters: {
