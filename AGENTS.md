@@ -1,6 +1,8 @@
 # Constraints
 
-The layering and port rules of this repository, as a list to check code against before it is written. Each is a decision already recorded in [`docs/adr/`](docs/adr/README.md), and where a machine refuses a violation the line names it. Where a line and an ADR disagree, the ADR is right and this file is wrong.
+The layering and port rules of this repository, as a list to check code against before it is written. Where a machine refuses a violation the line names it.
+
+Rules 1–23 are decisions recorded in [`docs/adr/`](docs/adr/README.md), and where a line and an ADR disagree, the ADR is right and this file is wrong. Rules 24–32 name things rather than layer them: their source is the preamble of [`docs/glossary.md`](docs/glossary.md) — a concept takes the name its field already gives it — and the checks named beside them, and this file is where they are written for the code.
 
 This is not the whole of the architecture. It is the part a generator gets wrong. Commit format, labels and platform runs are in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
@@ -14,7 +16,7 @@ Paths below are relative to `modules/libs/core/` unless they say otherwise. The 
 4. `container` may not name the generated schema. It is the one package answering for what it names rather than for everything it is built from. → `answering`
 5. `domain`, `flashcards`, `markdown`, `internal/cardid` and `internal/ulid` import only each other. A pure package reaching a sibling of the core takes on its goroutines, its channels and its schema. → `pure` in `layers_test.go`
 6. A test of a pure package reaches what the package itself reaches, and builds the rest in the test. → `TestNoPurePackageIsTestedThroughAnAdapter`
-7. The core is told the time, the stream it writes to, and what to do when something goes wrong. `time.Now` and `time.Since` stand in `adapter/`, `container/` and an application's `cmd/`; the core takes a clock port. `fmt.Print*` stands in `adapter/cli/` and `cmd/`. `panic` stands in a test. → `.golangci.yml`, `forbidigo` — `make lint-go` fails on what it finds
+7. The core is told the time, the stream it writes to, and what to do when something goes wrong. `time.Now` and `time.Since` stand in `adapter/`, `container/`, an application's `cmd/`, and `internal/onnxruntime/`, which fetches a runtime over the network; the core takes a clock port. `fmt.Print*` stands in `adapter/cli/` and `cmd/`. `panic` stands in a test, and in `adapter/index/sqlfile/sqlfile.go` and `adapter/settings/models.go`, over what the build already decided. → `.golangci.yml`, `forbidigo` — `make lint-go` fails on what it finds
 8. The core is handed the stream it writes to. What went wrong in work it carries on past is said through `port.Trouble`; what a call could not answer is that call's error. **A person is told in the window they are looking at**, which is why no module here imports a logging package. → `TestNothingOfTheCoreLogs`, and `TestNoApplicationLogs` in `modules/apps/desktop/internal/layers/`
 
 ## Adapters
@@ -41,7 +43,7 @@ Paths below are relative to `modules/libs/core/` unless they say otherwise. The 
 
 ## The interface library
 
-22. `modules/libs/ui` is compiled from Vue, its own source and what its manifest names — in a component, in a story and in a fixture alike. The dependency runs `modules/apps/*` → `modules/libs/ui`, and a window's own words (`@numen/protocol`, `@numen/editor`, anything under `modules/apps/**`) reach it as arguments. → the package names fail to resolve because `modules/libs/ui/package.json` declares neither; a relative path into `apps/` would typecheck, and nothing refuses it
+22. `modules/libs/ui` is compiled from Vue, its own source and what its manifest names — in a component, in a story and in a fixture alike. The dependency runs `modules/apps/*` → `modules/libs/ui`, and a window's own words (`@numen/protocol`, `@numen/editor`, anything under `modules/apps/**`) reach it as arguments. → three things refuse the three ways in: the bare package names fail to resolve, because `modules/libs/ui/package.json` declares none of them; `no-restricted-imports` in `modules/libs/ui/eslint.config.js` refuses `@numen/protocol`, `@numen/editor`, `@numen/wire` and `**/apps/**` over every `.ts` and `.vue` the module holds; and `no-reach-out-of-the-module`, in `modules/tools/depgraph/rules.cjs`, refuses a relative path out of the module, `node_modules` included
 23. A component's pure core takes the clock, the animation frame and the viewport as parameters. `Date.now`, `new Date()`, `Math.random`, `requestAnimationFrame`, `matchMedia` and `getBoundingClientRect` belong in `lib/clock.ts` and in `.vue` views, not in a pure `.ts`. → nothing refuses this today
 
 ## Names in TypeScript
