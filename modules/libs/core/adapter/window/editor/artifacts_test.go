@@ -208,3 +208,29 @@ func TestABuildThatCannotFetch(t *testing.T) {
 		t.Errorf("a build with no fetcher refused with %s", code)
 	}
 }
+
+// The words fetched for a link note are read back the way a recording's are:
+// they are words with times in them, and one tab draws both.
+func TestTheWordsOfALinkNoteAreReadBack(t *testing.T) {
+	const words = "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nwhat was said\n"
+	hash := derived.Fingerprint([]byte(pointsAt))
+	api, _ := running(t,
+		stored{derived.Artifact(derived.Captions, hash): []byte(words)},
+		indexed{pointed: {
+			Fingerprint: domain.Fingerprint{Path: pointed},
+			Producer:    derived.Captions,
+			Hash:        hash,
+		}},
+		willRun(), willRun(),
+	)
+
+	out, err := api.ReadTranscript(t.Context(),
+		connect.NewRequest(&v1.ReadTranscriptRequest{Path: pointed}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cues := out.Msg.GetCues()
+	if len(cues) != 1 || cues[0].GetText() != "what was said" || cues[0].GetFrom() != 1000 {
+		t.Errorf("the words read %+v", cues)
+	}
+}

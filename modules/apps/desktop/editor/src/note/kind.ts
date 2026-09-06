@@ -12,6 +12,7 @@ import type { Store } from '../command/handlers'
 import type { Kind, WindowHandle } from '../tabs/windowing'
 import { NOTE } from '../tabs/workspace'
 import type { Pointed } from '../core'
+import type { Cue } from '../recording/transcript'
 import type { Change } from './drawing'
 import type { noteChanges } from './changes'
 import type { OpenNote, openNotes } from './notes'
@@ -49,6 +50,11 @@ export interface NoteTabState {
    * is drawn over the prose.
    */
   readonly points: ComputedRef<Pointed | null>
+  /**
+   * The words fetched for that address, in the order they were said. A note
+   * nothing has been fetched for has none.
+   */
+  readonly cues: ComputedRef<readonly Cue[]>
   /** What could not be read or written, in words a person reads. */
   readonly saying: ComputedRef<string>
   /** What arrived from elsewhere, for the editor to take into what is typed. */
@@ -162,6 +168,7 @@ export function noting(
     id,
     shown: computed(() => notes.shown(id)),
     points: computed(() => notes.points(id)),
+    cues: computed(() => notes.cues(id)),
     saying: computed(() => notes.saying(id)),
     change: computed(() => changes.shown(notes.where(id))),
     typed: (body: string) => notes.typed(id, body),

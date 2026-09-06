@@ -28,7 +28,12 @@ watch(
 
 <template>
   <div class="note">
-    <Pointing v-if="props.state.points.value" :points="props.state.points.value" :words="words" />
+    <Pointing
+      v-if="props.state.points.value"
+      :points="props.state.points.value"
+      :cues="props.state.cues.value"
+      :words="words"
+    />
 
     <FileConflictPrompt
       :saying="props.state.saying.value"

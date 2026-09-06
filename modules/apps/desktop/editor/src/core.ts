@@ -143,7 +143,7 @@ export interface Task {
  * What a model makes from one file of the vault: the text read out of a scan,
  * the words heard in a recording, and those words put right.
  */
-export type Artifact = 'reading' | 'transcript' | 'corrections'
+export type Artifact = 'reading' | 'transcript' | 'corrections' | 'fetched'
 
 /**
  * What has become of one artifact: nothing has been made, a run over it waits

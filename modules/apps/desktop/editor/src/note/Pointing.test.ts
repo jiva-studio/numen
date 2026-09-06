@@ -16,7 +16,7 @@ const VIDEO = {
 
 describe('an address something plays', () => {
   it('is played in a frame, from the host the window may frame', () => {
-    const drawn = mount(Pointing, { props: { points: VIDEO, words } })
+    const drawn = mount(Pointing, { props: { points: VIDEO, cues: [], words } })
     const frame = drawn.get('iframe')
 
     expect(frame.attributes('src')).toBe(
@@ -26,13 +26,13 @@ describe('an address something plays', () => {
   })
 
   it('tells the frame which page holds it, so nothing else can drive it', () => {
-    const drawn = mount(Pointing, { props: { points: VIDEO, words } })
+    const drawn = mount(Pointing, { props: { points: VIDEO, cues: [], words } })
 
     expect(drawn.get('iframe').attributes('src')).toContain('origin=')
   })
 
   it('is sandboxed, and sends nothing about where the person came from', () => {
-    const frame = mount(Pointing, { props: { points: VIDEO, words } }).get('iframe')
+    const frame = mount(Pointing, { props: { points: VIDEO, cues: [], words } }).get('iframe')
 
     expect(frame.attributes('sandbox')).toBe('allow-scripts allow-same-origin allow-presentation')
     expect(frame.attributes('referrerpolicy')).toBe('no-referrer')
@@ -43,9 +43,53 @@ describe('an address nothing plays', () => {
   const page = { url: 'https://example.com/a', embed: '' }
 
   it('is the address itself, and no frame at all', () => {
-    const drawn = mount(Pointing, { props: { points: page, words } })
+    const drawn = mount(Pointing, { props: { points: page, cues: [], words } })
 
     expect(drawn.find('iframe').exists()).toBe(false)
     expect(drawn.text()).toContain('https://example.com/a')
+  })
+})
+
+describe('the words fetched for an address', () => {
+  const CUES = [
+    { text: 'what was said', from: 1_500, to: 4_200 },
+    { text: 'what was said next', from: 83_000, to: 85_000 },
+  ]
+
+  it('stand under the player, each at the moment it was said', () => {
+    const drawn = mount(Pointing, { props: { points: VIDEO, cues: CUES, words } })
+
+    const said = drawn.findAll('.pointing__said')
+    expect(said).toHaveLength(2)
+    expect(said[1]?.text()).toContain('what was said next')
+    expect(said[1]?.text()).toContain('1:23')
+  })
+
+  it('plays the frame from that moment, and tells nobody else', async () => {
+    const drawn = mount(Pointing, {
+      props: { points: VIDEO, cues: CUES, words },
+      attachTo: document.body,
+    })
+    const said: [string, string][] = []
+    const frame = drawn.get('iframe').element as HTMLIFrameElement
+    Object.defineProperty(frame, 'contentWindow', {
+      value: { postMessage: (message: string, origin: string) => said.push([message, origin]) },
+    })
+
+    await drawn.findAll('.pointing__said')[1]?.trigger('click')
+
+    expect(said).toHaveLength(1)
+    expect(JSON.parse(said[0]![0])).toEqual({
+      event: 'command',
+      func: 'seekTo',
+      args: [83, true],
+    })
+    expect(said[0]![1]).toBe('https://www.youtube-nocookie.com')
+  })
+
+  it('are nothing where nothing has been fetched', () => {
+    const drawn = mount(Pointing, { props: { points: VIDEO, cues: [], words } })
+
+    expect(drawn.find('.pointing__words').exists()).toBe(false)
   })
 })

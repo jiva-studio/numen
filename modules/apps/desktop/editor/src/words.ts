@@ -65,6 +65,15 @@ export const MADE: Record<Artifact, Record<ArtifactState, string>> = {
     empty: 'There were no words in this transcript to put right.',
     failed: 'This transcript could not be put right:',
   },
+  fetched: {
+    none: 'Nothing has been fetched from this address.',
+    queued: 'This address is in line, behind the one being fetched now.',
+    running: 'This address is being fetched now.',
+    stopped: 'Fetching this address stopped part way.',
+    done: 'What is at this address has already been fetched.',
+    empty: 'This address publishes none of what was asked for.',
+    failed: 'This address could not be reached:',
+  },
 }
 
 /** What the list of vaults refused a command, in words a person reads. */

@@ -10,6 +10,7 @@ import { conversation } from '@numen/ui'
 import type { Notice } from '@numen/ui'
 import { core, vaults } from './vault'
 import { documents, recordings } from './assets'
+import { troubleWords } from '@numen/wire'
 import { running } from './artifacts'
 import { cards } from './cards/vault'
 import type { Attention, ArtifactStates, VaultList } from './core'
@@ -76,7 +77,12 @@ import { AGENT, CONVERSATION, FILES, PLEX, named, opening } from './tabs/workspa
 /** Everything the window is made of, made once and handed to what draws it. */
 export const useWindow = () => {
   const changes = noteChanges()
-  const notes = openNotes(core, { replaced: changes.arrived })
+  // The words fetched for a link note are read where a recording's are: they
+  // are words with times in them, and one call answers about both.
+  const notes = openNotes(
+    { ...core, cues: async (path) => (await recordings.cues(path)).cues },
+    { replaced: changes.arrived },
+  )
   /** Every message the window holds, each part of it under a name of its own. */
   const log = messageLog()
   const making = noteMaker(core, log.under('made'))
@@ -260,6 +266,21 @@ export const useWindow = () => {
   }
 
   /**
+   * What is at the address a link note points at, fetched, and the note read
+   * again with it. A build that cannot fetch leaves the note pointing at the
+   * address and nothing else.
+   */
+  const fetches = async (path: string): Promise<void> => {
+    try {
+      await running.makes(path, 'fetched')
+    } catch (error) {
+      told(troubleWords(error), 'refusal')
+      return
+    }
+    notes.changed([path])
+  }
+
+  /**
    * A deck, a stencil, a preset or a link made under the name it is given. A
    * preset names none of its settings, so the decks pointed at it are scheduled
    * by the defaults until the person moves one. A link is named by the address
@@ -270,8 +291,14 @@ export const useWindow = () => {
       makeDeck: (title, folder) => cards.makeDeck(title, folder),
       makeStencil: (title, folder, fields) => cards.makeStencil(title, folder, fields),
       makesPreset: (title, folder) => presets.makes(title, folder),
-      makesLink: (address, folder) =>
-        core.create({ title: address, folder, links: [], url: address }),
+      makesLink: async (address, folder) => {
+        const made = await core.create({ title: address, folder, links: [], url: address })
+        // What is at the address is fetched as the note is made: the person
+        // pasted it to have what is there, and the note is called what the
+        // address calls itself once that is known.
+        if (made.path) void fetches(made.path)
+        return made
+      },
     },
     puts,
     { refused: words.refused, field: cardWords.newField },

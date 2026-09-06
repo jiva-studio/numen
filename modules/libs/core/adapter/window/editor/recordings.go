@@ -170,6 +170,11 @@ func (a *API) recording(
 	if err != nil {
 		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(reaching(err), err)
 	}
+	// A link note pointing at a video has words with times in them, as a
+	// recording does, and they are read back the same way.
+	if ref.Kind == domain.KindNote && a.points(ctx, showing, ref).IsVideo() {
+		return showing, ref, nil
+	}
 	if ref.Kind != domain.KindRecording {
 		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(
 			connect.CodeInvalidArgument, errNotARecording)
