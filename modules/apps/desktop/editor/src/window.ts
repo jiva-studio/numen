@@ -9,13 +9,15 @@ import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { conversation } from '@numen/ui'
 import type { Notice } from '@numen/ui'
 import { core, vaults } from './vault'
-import { documents, recordings } from './assets'
+import { books, documents, recordings } from './assets'
 import { running } from './artifacts'
 import { cards } from './cards/vault'
 import type { Attention, ArtifactStates, VaultList } from './core'
 import { showing } from './showing'
 import { view } from './plex/view'
 import { openDocument } from './document/open'
+import { openBook } from './book/open'
+import { WORDS as bookWords } from './book/words'
 import { cornerOf } from './notices/corner'
 import type { IndexCoverage } from './notices/coverage'
 import { openNotes } from './note/notes'
@@ -60,6 +62,7 @@ import { settingsStore } from './settings/store'
 import { settling } from './settings/controls/kind'
 import { editingSettingsFile } from './settings/file/kind'
 import { documentKind, documenting } from './document/kind'
+import { bookKind, booking } from './book/kind'
 import { recordingKind } from './recording/kind'
 import { transcript } from './recording/transcript'
 import { playable } from './recording/player'
@@ -226,6 +229,13 @@ export const useWindow = () => {
   /** The document tabs, each reading the document it is filed at. */
   const read = documentKind(held.handle, (path) => documenting(openDocument(documents, path)), puts)
 
+  /** The book tabs, each turning the book it is filed at a spread at a time. */
+  const turned = bookKind(
+    held.handle,
+    (path) => booking(openBook(books, path, bookWords)),
+    puts,
+  )
+
   /** What this window can play, asked once for each kind of sound. */
   const plays = playable()
 
@@ -309,6 +319,7 @@ export const useWindow = () => {
     plexes.kind,
     agents.kind,
     read.kind,
+    turned.kind,
     heard.kind,
     files.kind,
     decks.kind,

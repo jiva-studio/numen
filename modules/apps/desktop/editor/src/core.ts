@@ -92,10 +92,18 @@ export type Source = 'note' | 'book' | 'recording' | 'other'
  */
 export type NoteType = 'note' | 'deck' | 'stencil' | 'preset'
 
+/**
+ * Which sort of book stands at a path: one drawn as pictures a page at a time,
+ * or one that reflows to the room it is read in.
+ */
+export type BookFormat = 'pdf' | 'epub'
+
 /** What stands at a path: which source it is, and which of three a note is. */
 export interface FileKind {
   readonly kind: Source
   readonly type: NoteType
+  /** Which sort of book it is. It says nothing about a path holding no book. */
+  readonly format?: BookFormat
 }
 
 /** One file or folder, as a listing of the folder it sits in reports it. */

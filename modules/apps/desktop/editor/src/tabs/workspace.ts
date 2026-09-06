@@ -12,6 +12,8 @@ export const AGENT = 'agent'
 export const NOTE = 'note'
 /** A document read in the window, under the path the vault files it at. */
 export const DOCUMENT = 'document'
+/** A book that reflows, read in the window, under the path the vault files it at. */
+export const BOOK = 'book'
 /** A recording played in the window, under the path the vault files it at. */
 export const RECORDING = 'recording'
 /** The folders and files of the vault, one tab of them to a window. */

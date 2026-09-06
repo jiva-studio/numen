@@ -57,9 +57,17 @@ export function fileOpeners(vault: FileOpenerDeps) {
     editors.set(type, opens)
   }
 
+  /** The reader a book that reflows opens in, which draws no pages. */
+  let turning: SourceReader | null = null
+
   /** The kind of tab that reads documents hands its own over. */
   const reads = (opens: SourceReader) => {
     sources.set('book', opens)
+  }
+
+  /** The kind of tab that turns a book that reflows hands its own over. */
+  const turns = (opens: SourceReader) => {
+    turning = opens
   }
 
   /** The kind of tab that plays recordings hands its own over. */
@@ -80,6 +88,15 @@ export function fileOpeners(vault: FileOpenerDeps) {
       return ORDINARY
     }
   }
+
+  /**
+   * The reader a source opens in. A book that reflows is turned a spread at a
+   * time, and every other book is the row of pages it is drawn as.
+   */
+  const readerOf = (stands: FileKind): SourceReader | undefined =>
+    stands.kind === 'book' && stands.format === 'epub'
+      ? (turning ?? sources.get('book'))
+      : sources.get(stands.kind)
 
   /**
    * A file just made here, put in front of the person as what it was made as.
@@ -109,7 +126,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
     const stands = await fileKindAt(path)
     if (!stands) return
     if (stands.kind === 'note') return void made(path, title, stands.type, showing, line)
-    sources.get(stands.kind)?.(path, [])
+    readerOf(stands)?.(path, [])
   }
 
   /**
@@ -122,10 +139,10 @@ export function fileOpeners(vault: FileOpenerDeps) {
     const stands = await fileKindAt(path)
     if (!stands) return
     if (stands.kind === 'note') return void made(path, '', stands.type)
-    sources.get(stands.kind)?.(path, stretches)
+    readerOf(stands)?.(path, stretches)
   }
 
-  return { holds, reads, hears, opens, opensAt, made }
+  return { holds, reads, turns, hears, opens, opensAt, made }
 }
 
 /** What the window puts files in front of the person with. */

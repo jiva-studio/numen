@@ -10,6 +10,7 @@ import {
   ArrowRightLeft,
   AudioLines,
   BookOpen,
+  BookText,
   Bot,
   Braces,
   Captions,
@@ -51,6 +52,7 @@ import {
 import type { NoteType, Source } from './core'
 import {
   AGENT,
+  BOOK,
   DECK,
   DOCUMENT,
   FILES,
@@ -130,6 +132,7 @@ const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
   [FILES, FolderTree],
   [NOTE, FileText],
   [DOCUMENT, BookOpen],
+  [BOOK, BookText],
   [RECORDING, AudioLines],
   [DECK, Layers],
   [STENCIL, LayoutTemplate],

@@ -9,9 +9,14 @@
 import { Code, createClient } from '@connectrpc/connect'
 import type { ConnectError } from '@connectrpc/connect'
 import { ArtifactService, AssetService } from '@numen/protocol'
-import type { Cue as CueMessage, Page as PageMessage } from '@numen/protocol'
+import type {
+  Cue as CueMessage,
+  Page as PageMessage,
+  SpineDocument as SpineDocumentMessage,
+} from '@numen/protocol'
 import { transport } from '@numen/wire'
 import { fingerprint, stamp } from './answers'
+import type { Books, SpineDocument } from './book/open'
 import type { Documents, Page } from './document/open'
 import type { Cue, Recordings } from './recording/transcript'
 
@@ -41,6 +46,49 @@ export const documents: Documents = {
     const answer = await waiting(() => assets.listHighlights({ path, at: [...stretches] }))
     return stretches.map((_, i) => answer.runs[i]?.pages.map(highlighted) ?? [])
   },
+}
+
+/**
+ * The books that reflow, over the same addresses. What a book is comes over the
+ * schema; one document of it and one picture it carries are bytes, and bytes
+ * are answered at an address.
+ */
+export const books: Books = {
+  shape: async (path) => {
+    const answer = await waiting(() => assets.getBook({ path }))
+    const documents = answer.documents.map(spined)
+    return {
+      title: answer.title,
+      // The book's text runs as far as the documents crossing to the window do.
+      span: { begins: 0, ends: documents.at(-1)?.span.ends ?? 0 },
+      documents,
+      parts: answer.parts.map((one) => ({
+        title: one.title,
+        at: one.offset,
+        level: one.level,
+      })),
+      printed: answer.printed.map((one) => ({ label: one.label, at: one.offset })),
+      pages: answer.pages,
+      at: stamp(answer.fingerprint) ?? '',
+    }
+  },
+  markup: async (path, document, seen) =>
+    await fetched(`${asset(path)}/markup/${encodeURIComponent(document)}?${named(seen)}`),
+  entry: (path, name, seen) =>
+    `${asset(path)}/entries/${encodeURIComponent(name)}?${named(seen)}`,
+}
+
+/** One document of the spine, as the window carries it. */
+const spined = (one: SpineDocumentMessage): SpineDocument => ({
+  path: one.path,
+  span: { begins: one.offset, ends: one.offset + one.length },
+})
+
+/** What one address answered with, or what it refused with. */
+const fetched = async (at: string): Promise<string> => {
+  const answer = await fetch(at)
+  if (!answer.ok) throw new Error(`${at}: ${answer.status}`)
+  return await answer.text()
 }
 
 /** One page of a highlight, as the window carries it. */

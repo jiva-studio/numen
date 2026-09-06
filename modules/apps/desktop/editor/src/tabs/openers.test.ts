@@ -32,7 +32,9 @@ const vault = (stands: Record<string, FileKind> = {}) => {
 const note = (type: FileKind['type']): FileKind => ({ kind: 'note', type })
 
 /** A book, a recording, and a file the vault holds no source for. */
-const BOOK: FileKind = { kind: 'book', type: 'note' }
+const BOOK: FileKind = { kind: 'book', type: 'note', format: 'pdf' }
+/** A book made for a screen, which reflows to the room it is read in. */
+const REFLOWS: FileKind = { kind: 'book', type: 'note', format: 'epub' }
 const TALK: FileKind = { kind: 'recording', type: 'note' }
 const OTHER: FileKind = { kind: 'other', type: 'note' }
 
@@ -55,6 +57,9 @@ const editors = (puts: ReturnType<typeof fileOpeners>) => {
     opened.push(
       `document ${path} [${runs.map((one) => `${one.start}+${one.length}`).join(', ')}]`,
     ),
+  )
+  puts.turns((path, runs) =>
+    opened.push(`book ${path} [${runs.map((one) => `${one.start}+${one.length}`).join(', ')}]`),
   )
   puts.hears((path, runs) =>
     opened.push(
@@ -222,6 +227,40 @@ describe('a source opened at a stretch of its own text', () => {
     await puts.opensAt('Gone.epub', [{ start: 10, length: 4 }])
 
     expect(opened).toStrictEqual([])
+  })
+})
+
+describe('which reader a book opens in', () => {
+  it('turns a book that reflows a spread at a time', async () => {
+    const one = vault({ 'Gita.epub': REFLOWS })
+    const puts = fileOpeners(one.core)
+    const opened = editors(puts)
+
+    await puts.opensAt('Gita.epub', [{ start: 10, length: 4 }])
+
+    expect(opened).toStrictEqual(['book Gita.epub [10+4]'])
+  })
+
+  it('reads a book of pages as the row of pages it is', async () => {
+    const one = vault({ 'Physics.pdf': BOOK })
+    const puts = fileOpeners(one.core)
+    const opened = editors(puts)
+
+    await puts.opens('Physics.pdf')
+
+    expect(opened).toStrictEqual(['document Physics.pdf []'])
+  })
+
+  it('reads a book that reflows as pages where the window turns none', async () => {
+    // A window told about no book tab still opens the file.
+    const one = vault({ 'Gita.epub': REFLOWS })
+    const puts = fileOpeners(one.core)
+    const opened: string[] = []
+    puts.reads((path) => opened.push(`document ${path}`))
+
+    await puts.opens('Gita.epub')
+
+    expect(opened).toStrictEqual(['document Gita.epub'])
   })
 })
 

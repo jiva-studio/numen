@@ -6,6 +6,7 @@
  */
 import { createClient } from '@connectrpc/connect'
 import {
+  BookFormat as BookFormats,
   FileService,
   FlushResult,
   NamedBy,
@@ -41,6 +42,7 @@ import { write } from './settings/write'
 import type { CommandsDeps } from './command/commands'
 import type { SearchDeps, SearchMode } from './command/search'
 import type {
+  BookFormat,
   Core,
   Entry,
   Configuration,
@@ -303,7 +305,13 @@ export const core: Core & SearchDeps & CommandsDeps = {
   fileKinds: async (paths) => {
     const answer = await files.listFileKinds({ paths: [...paths] })
     return new Map(
-      answer.kinds.map((one) => [one.path, { kind: sourceKind(one.kind), type: noteType(one.type) }]),
+      answer.kinds.map((one) => {
+        const format = bookFormat(one.format)
+        return [
+          one.path,
+          { kind: sourceKind(one.kind), type: noteType(one.type), ...(format ? { format } : {}) },
+        ]
+      }),
     )
   },
   /**
@@ -452,6 +460,16 @@ const holding: Record<SourceKind, Source> = {
 
 /** A source this window has no word for is a file it holds no source for. */
 const sourceKind = (of: SourceKind): Source => holding[of] ?? 'other'
+
+/** Which sort of book stands at a path, in the words the window uses. */
+const formatted: Record<BookFormats, BookFormat | undefined> = {
+  [BookFormats.UNSPECIFIED]: undefined,
+  [BookFormats.PDF]: 'pdf',
+  [BookFormats.EPUB]: 'epub',
+}
+
+/** A format this window has no word for is a book it draws as pages. */
+const bookFormat = (of: BookFormats): BookFormat | undefined => formatted[of]
 
 /** What a model's files are on this machine, in the words the window uses. */
 const fetched: Record<Presences, Presence> = {
