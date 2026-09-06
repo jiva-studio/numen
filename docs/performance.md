@@ -764,17 +764,21 @@ A held arrow key crosses a row of the size list every 40 ms, and a size is worn 
 
 Recorded 2026-09-01 and re-measured 2026-09-06 on the same AMD Ryzen 7 6800U, from `BenchmarkDerived` in `internal/adapter/filesystem`. Every name the store takes is answered where the vault still is, and the check that it is asks the folder what identity it carries.
 
-| | Before | After | 2026-09-06 |
-| --- | --- | --- | --- |
-| One name read | 92.2 µs · 5504 B · 57 allocs | 67.0 µs · 4584 B · 48 allocs | 64.9 µs · 6496 B · **76 allocs** |
-| One folder listed | 79.6 µs · 4895 B · 60 allocs | 66.9 µs · 3989 B · 51 allocs | 51.9 µs · 5672 B · **71 allocs** |
-| One line appended | 2.43 ms · 5334 B · 58 allocs | 2.24 ms · 4413 B · 49 allocs | 2.29 ms · 6400 B · **80 allocs** |
+| | Before | After | 2026-09-06 | 2026-09-06, resolved once |
+| --- | --- | --- | --- | --- |
+| One name read | 92.2 µs · 5504 B · 57 allocs | 67.0 µs · 4584 B · 48 allocs | 64.9 µs · 6496 B · **76 allocs** | 36.4 µs · 3584 B · **41 allocs** |
+| One folder listed | 79.6 µs · 4895 B · 60 allocs | 66.9 µs · 3989 B · 51 allocs | 51.9 µs · 5672 B · **71 allocs** | 20.8 µs · 2745 B · **36 allocs** |
+| One line appended | 2.43 ms · 5334 B · 58 allocs | 2.24 ms · 4413 B · 49 allocs | 2.29 ms · 6400 B · **80 allocs** | 1.80 ms · 3355 B · **45 allocs** |
 
-Each column is the median of three runs; the third names the best of three on the clock, and the same allocations on all three. The allocation columns are the ones these are read on: a run of the read row spread by 10 % on the clock and not at all on the allocations.
+Each column is the median of three runs; the last two name the best of three on the clock, and the same allocations on all three. The allocation columns are the ones these are read on: a run of the read row spread by 10 % on the clock and not at all on the allocations. The last two columns were measured one after the other on a machine carrying a load average of 6.
 
 **The allocations have gone past where the change above started, and the reason is a containment fix.** On 2026-09-04 a name was held to the area it says it is in, because a link written into an area — by a sync client, by another tool — pointed back at the vault's identity and a transcript appended down it landed on `config.json`. The check is right and the hole was real.
 
-**What is not owed is doing it three times.** `DerivedStore.at` resolves symlinks on the target, then on the store's area, then on the store's own root. The last two are paths fixed for the life of the store, and `deepest` is a `filepath.EvalSymlinks` walk — one `lstat` per segment of an absolute path, every time. By allocation profile **60.5 % of one `Read` is inside `EvalSymlinks`**, which is the whole of the difference between 48 allocations and 76. Resolving the root and the areas once when the store is opened, and again where `still()` already notices the file has moved, would put the row back where the second column has it.
+**What was not owed was doing it three times.** `DerivedStore.at` resolved symlinks on the target, then on the store's area, then on the store's own root. The last two are paths fixed for the life of the store, and `deepest` is a `filepath.EvalSymlinks` walk — one `lstat` per segment of an absolute path, every time. By allocation profile **60.5 % of one `Read` was inside `EvalSymlinks`**, which was the whole of the difference between 48 allocations and 76.
+
+**The store's own folders are resolved when it is opened**, and the last column is what that is worth: a read is 41 allocations against 76 and 36.4 µs against 64.9, and a listing 36 against 71 and 20.8 µs against 51.9 — both below the row the containment fix started from. The check itself is unchanged, and a name still lands inside its area or is refused.
+
+**A folder that moved is resolved again.** A name the resolved folders refuse is judged a second time against where those folders are now, so a service folder put there after the store was opened — a sync client keeping the application's files on another disk — is written into as it always was; and `still()`, where it reads the identity again, asks where the folders are with it. The refusal is what costs the second resolution, so nothing a person does twice pays for it.
 
 This is a name a person pays per card answered and per run file read. A history screen over 180 run files pays it 180 times, twice over each.
 

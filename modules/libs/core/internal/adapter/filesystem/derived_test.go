@@ -498,6 +498,37 @@ func TestAStoreAnswersForEveryAreaItWasOpenedOn(t *testing.T) {
 	}
 }
 
+// The store's own folder is a place on this machine, and where it is is asked
+// once. A folder put there afterwards — a sync client keeping the application's
+// files on another disk, a person moving them — is where the store writes from
+// then on, so the answer is the folder as it is and not as it was.
+func TestAStoreFollowsItsFolderWhereItIsPutAfterwards(t *testing.T) {
+	held := t.TempDir()
+	root := filepath.Join(t.TempDir(), "vault")
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	derived, err := filesystem.OpenDerived(root, filesystem.Options{}, filesystem.OCRDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(held, filepath.Join(root, filesystem.DefaultServiceDir)); err != nil {
+		t.Skipf("this filesystem has no links: %v", err)
+	}
+
+	ctx := t.Context()
+	if err := derived.Write(ctx, "ocr/abc.txt", []byte("read")); err != nil {
+		t.Fatalf("writing into the folder the store now has: %v", err)
+	}
+	got, err := derived.Read(ctx, "ocr/abc.txt")
+	if err != nil || string(got) != "read" {
+		t.Errorf("read %q, %v", got, err)
+	}
+	if _, err := os.Stat(filepath.Join(held, filesystem.OCRDir, "abc.txt")); err != nil {
+		t.Errorf("the file did not land where the folder is: %v", err)
+	}
+}
+
 // The areas of a store are each one folder, and one that is not is refused with
 // the rest of it.
 func TestEveryAreaOfAStoreIsOneFolder(t *testing.T) {
