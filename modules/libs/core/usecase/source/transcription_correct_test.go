@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
@@ -139,12 +137,16 @@ func stopped(
 		By: func(string) (port.Proofreader, error) { return by, nil },
 	}
 
-	raw, err := os.ReadFile(filepath.Join(v.Path, filepath.FromSlash(recording)))
+	reader, err := held.with.Readers.Open(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, err := reader.Read(t.Context(), recording)
 	if err != nil {
 		t.Fatal(err)
 	}
 	hash := text.Fingerprint(raw)
-	store, err := derivedStores.Open(v)
+	store, err := held.with.Derived.Open(v)
 	if err != nil {
 		t.Fatal(err)
 	}

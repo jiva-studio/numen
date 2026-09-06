@@ -63,7 +63,7 @@ func (c *corrector) Proofread(ctx context.Context, pages []proofread.Batch) (map
 // ProofreadReading over it.
 func proofreading(t *testing.T, says map[int]string) (ProofreadReading, domain.Vault, *shelf, *corrector) {
 	t.Helper()
-	read, v, _, shelved, _ := reading(t, "the words", "outline.pdf")
+	read, v, _, shelved, _ := reading(t, "the words", outline)
 	if _, err := read.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}

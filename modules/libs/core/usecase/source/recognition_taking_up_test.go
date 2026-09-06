@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"image"
-	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -50,18 +48,13 @@ func halted(
 	lines ...string,
 ) (*watched, domain.Vault, port.DerivedStore, string) {
 	t.Helper()
-	root := t.TempDir()
-	at := filepath.Join(root, filepath.FromSlash(scan))
-	if err := os.MkdirAll(filepath.Dir(at), 0o755); err != nil {
-		t.Fatal(err)
-	}
 	raw := []byte("not a document: " + scan)
-	if err := os.WriteFile(at, raw, 0o644); err != nil {
-		t.Fatal(err)
-	}
-	v := domain.Vault{ID: "v", Path: root}
+	shelved := newLibrary()
+	shelved.hold(scan, domain.KindBook, raw, 1)
+	v := domain.Vault{ID: "v", Path: "/vault"}
 
 	w := recognising(t, nil)
+	w.RecognitionWorker.with.Readers = vaults{v.ID: shelved}
 	w.RecognitionWorker.with.Proofreading = ProofreadingConfig{
 		Named: true, Automatically: true, Batch: 1,
 		By:    func(string) (port.Proofreader, error) { return by, nil },
@@ -69,7 +62,7 @@ func halted(
 	}
 
 	hash := text.Fingerprint(raw)
-	store, err := derivedStores.Open(v)
+	store, err := w.RecognitionWorker.with.Derived.Open(v)
 	if err != nil {
 		t.Fatal(err)
 	}

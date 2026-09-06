@@ -286,16 +286,6 @@ func TestTheSettingsAdapterRunsNoOtherAdaptersWork(t *testing.T) {
 	}
 }
 
-// owedInside are the packages of the core whose own tests build an adapter
-// from inside the package they exercise, and the list only shrinks.
-//
-// usecase/source is one because its test files share one set of fakes and two
-// of them exercise a type the package does not export, so the three that build
-// an adapter — internal/adapter/pdf in highlight_test.go and recognise_test.go,
-// internal/adapter/filesystem in transcription_test.go — do not stand outside on
-// their own.
-var owedInside = []string{"usecase/source"}
-
 // A test that builds an adapter stands outside the package it exercises. That
 // is what the rules above are left out of a test file for: an adapter built
 // from within is in the package's own compilation unit when the tests build,
@@ -319,7 +309,7 @@ func TestATestOfTheCoreBuildingAnAdapterStandsOutsideIt(t *testing.T) {
 			return err
 		}
 		read++
-		if strings.HasSuffix(file.Name.Name, "_test") || holds(owedInside, pkg) {
+		if strings.HasSuffix(file.Name.Name, "_test") {
 			return nil
 		}
 		for _, one := range file.Imports {

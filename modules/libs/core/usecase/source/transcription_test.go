@@ -3,27 +3,13 @@ package source
 import (
 	"context"
 	"errors"
-	"os"
-	"path/filepath"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
-)
-
-// The vault a queue reads and writes through in these tests, on the disk a test
-// was given.
-var (
-	vaultReaders  = filesystem.VaultReaders{Options: filesystem.Options{ServiceDir: ".numen"}}
-	derivedStores = filesystem.DerivedStores{
-		Options: filesystem.Options{ServiceDir: ".numen"},
-		Area:    filesystem.OCRDir,
-		Areas:   []string{filesystem.SpeechDir},
-	}
 )
 
 // deaf is a transcriber that hears whatever it was told to hear: a file it
@@ -73,21 +59,16 @@ func (quiet) Close() error { return nil }
 // the recordings named.
 func listens(t *testing.T, by *deaf, recordings ...string) (*TranscriptionWorker, domain.Vault) {
 	t.Helper()
-	root := t.TempDir()
+	shelved := newLibrary()
 	for _, path := range recordings {
-		at := filepath.Join(root, filepath.FromSlash(path))
-		if err := os.MkdirAll(filepath.Dir(at), 0o755); err != nil {
-			t.Fatal(err)
-		}
 		// Bytes of its own: a recording is kept under the hash of what it
 		// holds, and two files holding the same thing are one recording.
-		if err := os.WriteFile(at, []byte("not a recording: "+path), 0o644); err != nil {
-			t.Fatal(err)
-		}
+		shelved.hold(path, domain.KindRecording, []byte("not a recording: "+path), 1)
 	}
+	v := domain.Vault{ID: "v", Path: "/vault"}
 	held := NewTranscriptionWorker(t.Context(), Transcriptions{
-		Readers: vaultReaders,
-		Derived: derivedStores,
+		Readers: vaults{v.ID: shelved},
+		Derived: newShelf(),
 		Tasks:   task.New(),
 		Runtime: TranscriptionRuntime{
 			Ready: func() bool { return true },
@@ -97,7 +78,7 @@ func listens(t *testing.T, by *deaf, recordings ...string) (*TranscriptionWorker
 		},
 	})
 	held.Cut = func(context.Context, domain.Vault, string) error { return nil }
-	return held, domain.Vault{ID: "v", Path: root}
+	return held, v
 }
 
 // unheard is an index holding recordings, none of which stands on a text.

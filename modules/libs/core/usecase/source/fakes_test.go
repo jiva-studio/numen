@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"hash/fnv"
+	"image"
 	"io/fs"
 	"maps"
 	"math/rand/v2"
@@ -19,6 +20,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -344,6 +346,109 @@ func (s *store) small(vaultID domain.VaultID) []storedChunk {
 	}
 	return out
 }
+
+// The documents these tests are written against: what each page says, in the
+// order the pages are printed. No word is printed twice in a document, so a
+// test names a word and says which page it stands on.
+var (
+	tiny    = [][]string{{"Alpha", "beta", "gamma"}, {"Delta", "epsilon", "zeta"}}
+	outline = [][]string{
+		{"Opening", "lines", "here"},
+		{"Middle", "matter", "follows"},
+		{"A", "closer", "look"},
+		{"Afterword", "and", "ending"},
+	}
+)
+
+// printedAs is the bytes of a document printed as these pages, a page to a line.
+func printedAs(pages [][]string) []byte {
+	var out strings.Builder
+	for _, words := range pages {
+		out.WriteString(strings.Join(words, " ") + "\n")
+	}
+	return []byte(out.String())
+}
+
+// A document is one of those read back: the whole of what it says, where each
+// page begins in that text, and the words each page is printed with.
+type document struct {
+	Text  string
+	Pages []int
+	pages [][]string
+}
+
+// documentOf is the document those bytes are.
+func documentOf(raw []byte) document {
+	var read document
+	for _, line := range strings.Split(strings.TrimRight(string(raw), "\n"), "\n") {
+		words := strings.Fields(line)
+		said := strings.Join(words, " ") + "\n"
+		read.pages = append(read.pages, words)
+		read.Pages = append(read.Pages, len(read.Text))
+		read.Text += said
+	}
+	return read
+}
+
+// boxes is where the words of the pages named sit, one box a word, printed one
+// line under another. They ascend, which is how a run of the text is found.
+func (d document) boxes(pages []int) []highlight.Box {
+	var out []highlight.Box
+	for _, index := range slices.Sorted(slices.Values(pages)) {
+		if index < 0 || index >= len(d.pages) {
+			continue
+		}
+		at := d.Pages[index]
+		for i, word := range d.pages[index] {
+			down := 0.05 + 0.1*float32(i)
+			out = append(out, highlight.Box{
+				Page:    index,
+				Stretch: highlight.Stretch{Start: at, Length: len(word)},
+				Rect:    highlight.Rect{MinX: 0.1, MinY: down, MaxX: 0.9, MaxY: down + 0.05},
+			})
+			at += len(word) + 1
+		}
+	}
+	return out
+}
+
+// documents reads and draws the documents a test prints.
+type documents struct{}
+
+func (documents) Read(_ context.Context, raw []byte) (port.TextLayer, error) {
+	read := documentOf(raw)
+	return port.TextLayer{Text: read.Text, Pages: read.Pages}, nil
+}
+
+func (documents) Highlights(
+	_ context.Context, raw []byte, _ []int, pages []int,
+) ([]highlight.Box, error) {
+	return documentOf(raw).boxes(pages), nil
+}
+
+func (documents) Draw(_ context.Context, raw []byte) (port.OpenDocument, error) {
+	return scanned{read: documentOf(raw)}, nil
+}
+
+// scanned is a document held open. Its pages are blank: what a model reads on
+// one is the model's to say.
+type scanned struct{ read document }
+
+func (s scanned) Pages() int { return len(s.read.pages) }
+
+func (scanned) Size(int) (wide, high float64, err error) { return pageWide, pageHigh, nil }
+
+func (scanned) Image(int, int) (image.Image, error) {
+	return image.NewGray(image.Rect(0, 0, pageWide, pageHigh)), nil
+}
+
+func (scanned) Close() {}
+
+// The size of a drawn page, which every coordinate a model reads is a place in.
+const (
+	pageWide = 612
+	pageHigh = 792
+)
 
 // library is one vault as a set of files. It counts what was read, so a test can
 // say that an unchanged file was not opened.
