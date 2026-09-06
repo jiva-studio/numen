@@ -18,7 +18,7 @@ import {
 } from '@codemirror/view'
 import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common'
 import { wikilinkAt } from '../linking/address'
-import { gridOf } from './table'
+import { gridOf } from './grid'
 import { Box, Bullet, Picture, Rule } from './widgets'
 import { opening } from './outside'
 
