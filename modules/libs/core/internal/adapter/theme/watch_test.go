@@ -14,7 +14,7 @@ import (
 // is a bound on a machine under load and not a measurement.
 const waited = 5 * time.Second
 
-// heard is the names reported next, folded into one batch by the watcher.
+// heard is the names reported next, debounced into one batch by the watcher.
 func heard(t *testing.T, changed <-chan []string) []string {
 	t.Helper()
 	select {

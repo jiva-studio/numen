@@ -57,7 +57,7 @@ func feed(t *testing.T, raw chan notify.EventInfo, root string, from, notes int)
 }
 
 // settles waits for the queue to be what the burst made it, so that what the
-// folder is started on is decided by the burst and not by when it started.
+// debouncing is started on is decided by the burst and not by when it started.
 func settles(t *testing.T, q *queue, is func() bool) {
 	t.Helper()
 	deadline := time.Now().Add(5 * time.Second)
@@ -76,7 +76,7 @@ func settles(t *testing.T, q *queue, is func() bool) {
 }
 
 // TestABurstPastTheBacklogMeansTheVaultIsReadAgain. The burst is over before
-// the folder looks at anything, so the answer does not depend on how fast the
+// the debouncing looks at anything, so the answer does not depend on how fast the
 // next event arrives — or on whether one arrives at all.
 func TestABurstPastTheBacklogMeansTheVaultIsReadAgain(t *testing.T) {
 	root, reader := watched(t, 5)
@@ -92,7 +92,7 @@ func TestABurstPastTheBacklogMeansTheVaultIsReadAgain(t *testing.T) {
 
 	changes := make(chan []string)
 	lost := make(chan struct{}, 1)
-	go fold(ctx, shapeOf(t, reader), Options{Hold: 10 * time.Millisecond}, waiting, changes, lost)
+	go debounce(ctx, shapeOf(t, reader), Options{Hold: 10 * time.Millisecond}, waiting, changes, lost)
 
 	select {
 	case <-lost:
@@ -118,7 +118,7 @@ func TestABurstInsideTheBacklogIsNotALoss(t *testing.T) {
 
 	changes := make(chan []string)
 	lost := make(chan struct{}, 1)
-	go fold(ctx, shapeOf(t, reader), Options{Hold: 10 * time.Millisecond}, waiting, changes, lost)
+	go debounce(ctx, shapeOf(t, reader), Options{Hold: 10 * time.Millisecond}, waiting, changes, lost)
 
 	select {
 	case <-lost:
@@ -136,8 +136,8 @@ func TestABurstInsideTheBacklogIsNotALoss(t *testing.T) {
 
 // TestAListenerThatDoesNotTakeDoesNotStopTheReading. Whoever listens takes as
 // long as a reindex takes, and the operating system does not wait for it. What
-// arrives while a batch stands undelivered is read, folded and reported after
-// it.
+// arrives while a batch stands undelivered is read, debounced and reported
+// after it.
 func TestAListenerThatDoesNotTakeDoesNotStopTheReading(t *testing.T) {
 	root, reader := watched(t, 9)
 	ctx, stop := context.WithCancel(t.Context())
@@ -149,9 +149,9 @@ func TestAListenerThatDoesNotTakeDoesNotStopTheReading(t *testing.T) {
 
 	changes := make(chan []string)
 	lost := make(chan struct{}, 1)
-	go fold(ctx, shapeOf(t, reader), Options{Hold: 10 * time.Millisecond}, waiting, changes, lost)
+	go debounce(ctx, shapeOf(t, reader), Options{Hold: 10 * time.Millisecond}, waiting, changes, lost)
 
-	// One note, folded and held, leaves the folder with a batch nobody is
+	// One note, debounced and held, leaves the goroutine with a batch nobody is
 	// taking.
 	feed(t, raw, root, 0, 1)
 	time.Sleep(200 * time.Millisecond)

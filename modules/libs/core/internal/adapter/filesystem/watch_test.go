@@ -162,10 +162,10 @@ func TestAFolderWithADotInItsNameIsStillAFolder(t *testing.T) {
 	}
 }
 
-// TestFoldingGoesOnWhileNobodyIsListening. Whoever listens takes as long as a
-// reindex takes; the operating system does not wait for it, and a fold that
+// TestDebouncingGoesOnWhileNobodyIsListening. Whoever listens takes as long as
+// a reindex takes; the operating system does not wait for it, and a debounce that
 // waited would stop emptying the backlog and lose what came after.
-func TestFoldingGoesOnWhileNobodyIsListening(t *testing.T) {
+func TestDebouncingGoesOnWhileNobodyIsListening(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
 	changes, _, err := filesystem.Watcher{Options: filesystem.Options{Hold: 50 * time.Millisecond}}.Watch(t.Context(), domain.Vault{Path: root})
 	if err != nil {
@@ -186,7 +186,7 @@ func TestFoldingGoesOnWhileNobodyIsListening(t *testing.T) {
 		// be told from a file that has just arrived.
 		for _, want := range []string{"First.md", "Second.md"} {
 			if !slices.Contains(paths, want) {
-				t.Fatalf("the first batch was %v — %s was not folded into it", paths, want)
+				t.Fatalf("the first batch was %v — %s was not debounced into it", paths, want)
 			}
 		}
 		sorted := slices.Clone(paths)

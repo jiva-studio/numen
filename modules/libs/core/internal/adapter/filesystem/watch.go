@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// Backlog is how many events are held while they are being folded. Past it the
+// Backlog is how many events are held while they are being debounced. Past it the
 // vault is read from scratch, which is cheaper than working out what was
 // missed. A checkout of a large repository fits inside it; an archive unpacked
 // over a whole vault does not, and that is the case the bound is for.
@@ -61,7 +61,7 @@ func (w Watcher) Watch(
 		return nil, nil, fmt.Errorf("watch %s: %w", v.Path, err)
 	}
 
-	folded := make(chan []string)
+	debounced := make(chan []string)
 	gone := make(chan struct{}, 1)
 
 	// A shape short of a folder the walk could not enter cannot tell a folder
@@ -72,13 +72,13 @@ func (w Watcher) Watch(
 
 	go func() {
 		defer notify.Stop(raw)
-		defer close(folded)
+		defer close(debounced)
 		waiting := newQueue(Backlog)
 		go drain(ctx, raw, waiting)
-		fold(ctx, shape, opts, waiting, folded, gone)
+		debounce(ctx, shape, opts, waiting, debounced, gone)
 	}()
 
-	return folded, gone, nil
+	return debounced, gone, nil
 }
 
 // File follows one file and reports each time it changes.
@@ -128,7 +128,7 @@ func (w Watcher) File(ctx context.Context, path string) (<-chan struct{}, error)
 }
 
 // queue holds the events between the goroutine that reads them from the
-// watcher and the goroutine that folds them. It is bounded at `bound` events:
+// watcher and the goroutine that debounces them. It is bounded at `bound` events:
 // at that many waiting, what is held is dropped and the overflow is
 // remembered, and a caller of take is told of it exactly.
 //
@@ -203,12 +203,12 @@ func drain(ctx context.Context, raw <-chan notify.EventInfo, into *queue) {
 	}
 }
 
-// fold collects events for a hold and reports each path once.
+// debounce collects events for a hold and reports each path once.
 //
 // Reading the events and delivering them are kept apart. Whoever listens takes
 // as long as it takes to refresh what it was told about, and the operating
 // system goes on producing events meanwhile.
-func fold(
+func debounce(
 	ctx context.Context,
 	shape *folders,
 	opts Options,
@@ -345,7 +345,7 @@ type found struct {
 }
 
 // walks walks the folders handed to it, one after another, and answers with
-// what each holds. It stands beside the fold rather than inside it, so a folder
+// what each holds. It stands beside the debounce rather than inside it, so a folder
 // that arrives with a thousand files in it is walked while the backlog goes on
 // emptying.
 func walks(

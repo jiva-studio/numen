@@ -89,9 +89,9 @@ func TestAWalkStopsWhenTheWatchDoes(t *testing.T) {
 	}
 }
 
-// TestAFolderThatArrivesIsReportedThroughTheFold. The walk stands beside the
-// fold, so what it finds has to come back to it.
-func TestAFolderThatArrivesIsReportedThroughTheFold(t *testing.T) {
+// TestAFolderThatArrivesIsReportedThroughTheDebounce. The walk stands beside
+// the debounce, so what it finds has to come back to it.
+func TestAFolderThatArrivesIsReportedThroughTheDebounce(t *testing.T) {
 	root, shape := shaped(t)
 	at := filled(t, root, "library", 2)
 
@@ -102,7 +102,7 @@ func TestAFolderThatArrivesIsReportedThroughTheFold(t *testing.T) {
 	defer stop()
 	waiting := newQueue(64)
 	go drain(ctx, raw, waiting)
-	go fold(ctx, shape, Options{Hold: 10 * time.Millisecond}, waiting, changes, lost)
+	go debounce(ctx, shape, Options{Hold: 10 * time.Millisecond}, waiting, changes, lost)
 
 	raw <- event{path: at}
 
