@@ -75,7 +75,7 @@ func Start(dir string) (int, error) {
 	}
 
 	ctx, stop := context.WithCancel(context.Background())
-	opened, err := editor.Open(ctx, cfg, filed, io.Discard)
+	opened, err := editor.Open(ctx, cfg, filed, os.Stderr)
 	if err != nil {
 		stop()
 		return 0, err
@@ -151,9 +151,8 @@ func Port() int {
 }
 
 // configured is what this installation starts from: everything it keeps sits
-// under the folder the platform gave it, and what the core went wrong at and
-// carried on past goes where this process's own errors go, which is the log the
-// platform collects.
+// under the folder the platform gave it, and what the core carried on past is
+// said on the stream the platform collects.
 func configured(dir string, out io.Writer) container.Config {
 	return container.Config{
 		IndexPath:    filepath.Join(dir, "index.db"),
