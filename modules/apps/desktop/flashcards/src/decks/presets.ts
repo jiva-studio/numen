@@ -462,7 +462,7 @@ export const stoppedWords = (why: StopReason, settings: Settings | null, today: 
 export const goalWords = (settings: Settings, today: string): string => {
   switch (settings.goal) {
     case 'retention':
-      return `${Math.round(settings.retention * 100)}% remembered`
+      return `${percent(settings.retention)} remembered`
     case 'date': {
       if (!settings.byDate) return 'by no day'
       const left = daysBetween(today, settings.byDate)
