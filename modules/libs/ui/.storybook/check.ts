@@ -26,11 +26,18 @@ export interface Proof {
 /** What the page not coming to rest is said with, where it may be the cause. */
 const RESTLESS = 'and the page had not come to rest, so these may be what it was drawn as on the way'
 
+/**
+ * What a story says of the walk: `false` to leave it unwalked, or the way out
+ * of something that answers Tab by keeping it.
+ */
+export type Reach = false | { readonly keeps: string }
+
 /** The check, wired to a corpus by the story it is proved against. */
 export const reachCheck =
   (proof: Proof): NonNullable<Preview['afterEach']> =>
   async (context) => {
-    if (context.parameters['reach'] === false) return
+    const said = context.parameters['reach'] as Reach | undefined
+    if (said === false) return
 
     const found = await walk()
 
@@ -39,7 +46,7 @@ export const reachCheck =
         `the keyboard walk found ${found.stops.length} stops in ${proof.story}, where it must find ${proof.stops}`,
       )
 
-    const wrong = faults(found)
+    const wrong = faults(found, Boolean(said && said.keeps))
     if (wrong.length)
       throw new Error(`${context.id}: ${wrong.join('; ')}${found.settled ? '' : ` — ${RESTLESS}`}`)
   }

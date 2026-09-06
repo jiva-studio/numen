@@ -16,18 +16,15 @@ import type { Stop, Walk } from './reach'
 const FURTHEST = 40
 
 /**
- * How many times one stop may answer Tab by keeping it before the walk calls
- * it a trap.
- *
- * A native date or time field spends Tab on its own parts and hands it on
- * after the last of them: an hour, a minute, a second, a fraction of a second,
- * a morning or afternoon, and the picker the browser draws in it. Nine is that
- * list at its longest, which is `datetime-local` at fractional-second
- * precision — a year, a month and a day before the rest of it. It is the
- * length of a list the HTML time state fixes, not a patience that can be
- * turned up: a stop still holding the keyboard a tenth time is holding it.
+ * How many parts of its own a native date or time field spends Tab on before
+ * it hands it on: a year, a month, a day, an hour, a minute, a second, a
+ * fraction of one, a morning or afternoon, and the picker the browser draws in
+ * it. It is the length of a list the HTML date and time states fix.
  */
 const PARTS = 9
+
+/** The fields the browser walks Tab through part by part. */
+const PARTED = 'input[type="time"], input[type="date"], input[type="datetime-local"], input[type="month"], input[type="week"]'
 
 /** What is compared before the keyboard arrives and once it is there. */
 const PAINTED = [
@@ -136,6 +133,27 @@ const shown = (element: Element): boolean => {
 
 /** What is typed into, and shows where the keyboard is with its own caret. */
 const TYPED = 'input, textarea, [contenteditable], [role="textbox"], [role="combobox"]'
+
+/** What the browser may put the keyboard on. */
+const REACHABLE = 'a[href], area[href], button, input, select, textarea, [tabindex], [contenteditable]'
+
+/**
+ * Whether the page holds somewhere else for the keyboard to go. A story with
+ * one control is one the browser walks in a circle, and a control it comes back
+ * to is where the walk ends and not something keeping it.
+ */
+const elsewhere = (from: Element): boolean =>
+  [...document.querySelectorAll(REACHABLE)].some(
+    (one) =>
+      !from.contains(one) &&
+      !one.contains(from) &&
+      (one as HTMLElement).tabIndex >= 0 &&
+      !one.matches(':disabled') &&
+      shown(one),
+  )
+
+/** A dialog holds the keyboard for as long as it stands, which is what modal means. */
+const modal = (element: Element): boolean => element.closest('[aria-modal="true"]') !== null
 
 /**
  * Nothing moves while the census is taken, so a colour read off an element is
@@ -248,11 +266,12 @@ export async function walk(): Promise<Walk> {
 
   /**
    * Tab struck until the keyboard moves: the element it moved to, null once it
-   * has left the page, and the element it started on where that one kept it
-   * through every part it could have had.
+   * has left the page, and the element it started on where that one kept it.
+   * A field with parts of its own is struck once for each of them.
    */
   const onward = async (from: Element): Promise<Element | null> => {
-    for (let held = 0; held <= PARTS; held += 1) {
+    const strikes = from.matches?.(PARTED) ? PARTS + 1 : 1
+    for (let held = 0; held < strikes; held += 1) {
       await userEvent.tab()
       const here = document.activeElement
       if (!here || here === document.body || here === document.documentElement) return null
@@ -266,7 +285,7 @@ export async function walk(): Promise<Walk> {
     const here = await onward(at)
     if (!here) break
     if (here === at) {
-      trapped = whereOf(here)
+      if (!modal(here) && elsewhere(here)) trapped = whereOf(here)
       break
     }
     at = here

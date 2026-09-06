@@ -72,3 +72,15 @@ describe('what the keyboard rule refuses', () => {
     expect(faults(walkOf([]))).toEqual([])
   })
 })
+
+describe('a stop that answers Tab by keeping it', () => {
+  const held: Walk = { stops: [SOUND], trapped: 'div.editor__text', settled: true }
+
+  it('is a fault wherever the walk ends on one', () => {
+    expect(faults(held)).toEqual(['div.editor__text answers Tab by keeping it'])
+  })
+
+  it('is what a story says it is, where the story says how a person leaves', () => {
+    expect(faults(held, true)).toEqual([])
+  })
+})

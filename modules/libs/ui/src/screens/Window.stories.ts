@@ -735,6 +735,9 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
+/** A window holding a note: Tab indents in the editor until Escape hands it back. */
+const WRITING = { reach: { keeps: 'Escape hands Tab back to the page' } }
+
 /** One pane of the window, by the name it was divided under. */
 const paneOf = (canvas: HTMLElement, id: string): HTMLElement => {
   const held = canvas.querySelector<HTMLElement>(`[data-workspace-pane="${id}"]`)
@@ -856,6 +859,7 @@ export const Hanging: Story = {
 
 /** A note being written, with the map it stands in beside it. */
 export const Writing: Story = {
+  parameters: WRITING,
   render: () =>
     screen({
       workspace: () => ({
@@ -891,6 +895,7 @@ export const Writing: Story = {
 
 /** The palette, over everything the window holds. */
 export const Searching: Story = {
+  parameters: WRITING,
   render: () =>
     screen({
       workspace: () => ({
@@ -919,6 +924,7 @@ export const Searching: Story = {
 
 /** The commands, in the three groups they are drawn in. */
 export const Commanding: Story = {
+  parameters: WRITING,
   render: () =>
     screen({
       workspace: () => ({
@@ -948,6 +954,7 @@ export const Commanding: Story = {
 
 /** The agent beside the note it is being asked about. */
 export const Asking: Story = {
+  parameters: WRITING,
   render: () =>
     screen({
       workspace: () => ({
@@ -1007,6 +1014,7 @@ export const Reading: Story = {
 
 /** The folders of the vault, with rows chosen across two of them. */
 export const Filing: Story = {
+  parameters: WRITING,
   render: () =>
     screen({
       workspace: () => ({
@@ -1050,6 +1058,7 @@ export const Filing: Story = {
 
 /** A note holding a table, which is typed in as a table. */
 export const Tabling: Story = {
+  parameters: WRITING,
   render: () =>
     screen({
       workspace: () => ({

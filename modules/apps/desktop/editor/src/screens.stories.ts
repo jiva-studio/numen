@@ -98,6 +98,9 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
+/** A window holding a note or a transcript: Tab indents until Escape hands it back. */
+const WRITING = { reach: { keeps: 'Escape hands Tab back to the page' } }
+
 /* The settings. ------------------------------------------------------------ */
 
 const INSTALLATION: Installation = {
@@ -491,6 +494,7 @@ const heard = (cues: readonly Cue[]): Recordings => ({
 
 /** The words heard in a recording, against the moment each was said. */
 export const Recording: Story = {
+  parameters: WRITING,
   render: () =>
     window(
       `${RECORDING}:lecture`,
@@ -755,6 +759,7 @@ const asking = (
 
 /** The run a recording can be put through, offered on the row it stands at. */
 export const Transcribed: Story = {
+  parameters: WRITING,
   render: () =>
     asking('Lectures/Lecture 4.mp3', ['Lectures', 'Physics', 'Reading', 'Sanskrit'], {
       tab: `${RECORDING}:lecture`,

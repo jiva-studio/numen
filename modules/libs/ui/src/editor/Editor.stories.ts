@@ -20,6 +20,9 @@ const meta = {
   component: Editor,
   parameters: {
     layout: 'fullscreen',
+    // Tab indents while the editor holds it, and Escape hands it back to the
+    // page. What a reader is told on arrival is that way out.
+    reach: { keeps: 'Escape hands Tab back to the page' },
     docs: {
       description: {
         component:

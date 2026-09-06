@@ -23,7 +23,7 @@ export interface Stop {
 /** What a story turned out to be, walked from the top of its tab order. */
 export interface Walk {
   readonly stops: readonly Stop[]
-  /** Where Tab went and stayed, having refused to move twice running. */
+  /** Where Tab went and stayed, having kept it through every strike it was given. */
   readonly trapped: string | null
   /** Whether the page had come to rest before the census was taken. */
   readonly settled: boolean
@@ -31,29 +31,15 @@ export interface Walk {
 
 /**
  * Every place the keyboard stops is drawn where a person can see it, says what
- * it is, and shows that the keyboard is there.
+ * it is, shows that the keyboard is there, and hands Tab on. A thing typed into
+ * draws its own caret, and a stop the page says is still arriving is held at
+ * the opacity it was passing through and so is not asked whether it can be seen.
  *
- * A thing typed into is not asked for a ring: its caret is where the keyboard
- * is, and a second mark around a field a person is typing in is noise.
- *
- * A stop the page says is still on its way is not asked whether it can be
- * seen. The walk holds the page still to read a colour off it, and something
- * held still halfway in is held at the opacity it was passing through: what
- * that reading answers is the holding, not the page. It is asked everything
- * else, and a stop standing at rest and drawn nowhere is a fault as it was.
- * Nothing else is excused.
- *
- * What answers Tab by keeping it is not judged here. Two things in this
- * library do it — a palette a person leaves with Escape, and the editor, which
- * indents until Escape hands Tab back. Each is left with the keyboard alone,
- * and a rule that could tell a way out from none would need a list.
- *
- * A native time field is not one of them. It spends Tab on its own hours and
- * minutes and hands it on after the last of them, in both engines, so the walk
- * waits it out instead.
+ * `keeps` is a story saying Tab stays where it is, and how a person leaves.
  */
-export function faults({ stops }: Walk): string[] {
+export function faults({ stops, trapped }: Walk, keeps = false): string[] {
   const wrong: string[] = []
+  if (trapped && !keeps) wrong.push(`${trapped} answers Tab by keeping it`)
   for (const stop of stops) {
     const at = `${stop.where}${stop.name ? ` (${stop.name})` : ''}`
     if (!stop.shown && !stop.moving) wrong.push(`${at} is a stop a person cannot see`)

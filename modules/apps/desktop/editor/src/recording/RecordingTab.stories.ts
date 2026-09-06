@@ -94,8 +94,11 @@ const meta: Meta<Knobs> = {
 export default meta
 type Story = StoryObj<Knobs>
 
+/** A transcript is written in the editor, which holds Tab until Escape. */
+const WRITING = { reach: { keeps: 'Escape hands Tab back to the page' } }
+
 /** One recording with its transcript under the controls. */
-export const ATranscript: Story = {}
+export const ATranscript: Story = { parameters: WRITING }
 
 /** The editor the transcript is written in, by the name the tab gives it. */
 const transcriptIn = (canvas: HTMLElement): HTMLElement => {
@@ -123,6 +126,7 @@ const wordsIn = async (canvas: HTMLElement): Promise<HTMLElement> =>
  * a question about two boxes a browser placed.
  */
 export const TheWordsClearThePlayer: Story = {
+  parameters: WRITING,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const written = await wordsIn(canvasElement)
@@ -151,6 +155,7 @@ export const TheWordsClearThePlayer: Story = {
  * layout engine can say what it came to, or whether a line ever runs past it.
  */
 export const TheWordsKeepTheirMeasure: Story = {
+  parameters: WRITING,
   args: { cues: LONG, width: '1600px' },
   play: async ({ canvasElement }) => {
     const written = await wordsIn(canvasElement)
