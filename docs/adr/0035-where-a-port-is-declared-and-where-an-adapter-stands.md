@@ -32,7 +32,7 @@ The four whose only callers are adapters are decided by the same sentence. `Wind
 
 ### A port is named in the core's own language, whatever that costs the caller
 
-A conversation is held in the words of what it is about. `Documents` speaks of a highlight's box and a part's start, `Recogniser` of a block of a page, `Proofreader` of a batch — and each of those words belongs to a package of the core. A caller that wants only `VaultWatcher` is compiled from all of them, and that is the price.
+A conversation is held in the words of what it is about. `TextExtractor` speaks of a highlight's box and a part's start, `Recogniser` of a block of a page, `Proofreader` of a batch — and each of those words belongs to a package of the core. A caller that wants only `VaultWatcher` is compiled from all of them, and that is the price.
 
 The alternative is a second vocabulary declared at the boundary and translated on both sides of it, which buys a smaller build graph with a duplicate domain. The words stay where the domain keeps them.
 
