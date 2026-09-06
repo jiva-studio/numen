@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/modules/libs/core/epub"
 )
@@ -136,7 +137,27 @@ func checkBook(t *testing.T, book *epub.Book) {
 		t.Errorf("a book that names nothing came back with %d parts", len(book.Parts))
 	}
 
+	checkPages(t, book)
 	checkMarkup(t, book)
+}
+
+// checkPages holds every page of a book to beginning at a letter and on the page
+// it says. Half this corpus is written in Devanagari or Cyrillic, where a letter
+// is two or three bytes, so a page counted in bytes alone opens in the middle of
+// one.
+func checkPages(t *testing.T, book *epub.Book) {
+	t.Helper()
+
+	for page := 1; page <= book.PageCount(); page++ {
+		at := book.PageStart(page)
+		if r, _ := utf8.DecodeRuneInString(book.Text[at:]); r == utf8.RuneError {
+			t.Fatalf("page %d of %d begins at %d, in the middle of a letter",
+				page, book.PageCount(), at)
+		}
+		if got := book.PageOf(at); got != page {
+			t.Fatalf("page %d begins at %d, which is on page %d", page, at, got)
+		}
+	}
 }
 
 // checkMarkup holds every document to the one property a reader is built on: the

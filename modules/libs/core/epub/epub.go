@@ -59,6 +59,9 @@ type Book struct {
 	// document out of again, and held is the document of each name.
 	files map[string]*zip.File
 	held  map[string]Document
+
+	// pageBytes is how many bytes of this book's text stand on one page.
+	pageBytes int
 }
 
 // A Document is one document of the spine.
@@ -199,6 +202,7 @@ func Read(raw []byte) (*Book, error) {
 		}
 	}
 	book.Text = string(text.out)
+	book.pageBytes = pageBytes(book.Text)
 
 	named := navigationParts(files, pkg, text)
 	switch {
