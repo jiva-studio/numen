@@ -20,16 +20,17 @@ var outward = []string{
 	module + "adapter", module + "internal/adapter", module + "container", wire,
 }
 
-// owedWire are the edges to the schema the core still has. Each is a package
-// naming the wire in the core's own language, and the list only shrinks.
-var owedWire = map[string][]string{
+// wireBaseline are the edges to the schema the core still has. Each is a
+// package naming the wire in the core's own language, and the list only
+// shrinks.
+var wireBaseline = map[string][]string{
 	// What two adapters both put on the schema is built here.
 	"internal/wire": {wire},
 }
 
-// owing says whether a package is allowed the edge it has.
-func owing(from, dep string) bool {
-	for _, held := range owedWire[from] {
+// baselined says whether a package is allowed the edge it has.
+func baselined(from, dep string) bool {
+	for _, held := range wireBaseline[from] {
 		if strings.HasPrefix(dep, held) {
 			return true
 		}
@@ -58,10 +59,10 @@ func answering(path string) (refuses []string, named bool) {
 }
 
 // reaching says whether a package would be failed for the edge it has, which is
-// what inward does with what answering and owing say.
+// what inward does with what answering and baselined say.
 func reaching(pkg, dep string) bool {
 	refuses, _ := answering(module + pkg)
-	if owing(pkg, dep) {
+	if baselined(pkg, dep) {
 		return false
 	}
 	for _, refused := range refuses {
@@ -72,10 +73,10 @@ func reaching(pkg, dep string) bool {
 	return false
 }
 
-// What answering and owing say between them is the whole of the rule, so they
-// are asked directly. A walk that reads the tree and refuses nothing passes,
-// and an entry admitting one edge that quietly admitted every edge would pass
-// with it: these are the edges that have to come back refused.
+// What answering and baselined say between them is the whole of the rule, so
+// they are asked directly. A walk that reads the tree and refuses nothing
+// passes, and an entry admitting one edge that quietly admitted every edge
+// would pass with it: these are the edges that have to come back refused.
 func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 	for _, one := range []struct {
 		pkg, dep string
@@ -193,7 +194,7 @@ func inward(t *testing.T, goos, goarch string) {
 		}
 		held := strings.TrimPrefix(pkg.ImportPath, module)
 		for _, dep := range reaching {
-			if owing(held, dep) {
+			if baselined(held, dep) {
 				continue
 			}
 			for _, refused := range refuses {

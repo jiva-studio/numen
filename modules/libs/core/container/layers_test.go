@@ -17,14 +17,14 @@ import (
 // module is what every package of the core is named under.
 const module = "github.com/jiva-studio/numen/modules/libs/core/"
 
-// owed are the edges this installation still has. Each is a package reaching a
-// sibling it should be given instead, and the list only shrinks.
+// baseline are the edges this installation still has. Each is a package
+// reaching a sibling it should be given instead, and the list only shrinks.
 //
 // A package is named by the path it sits at. An adapter the compiler holds sits
-// under internal/, and a name here is not a name there: what is owed to
-// adapter/window/editor is not owed to internal/adapter/window/editor, which is
-// not the same package and would not be the same window.
-var owed = map[string][]string{
+// under internal/, and a name here is not a name there: an entry for
+// adapter/window/editor is not an entry for internal/adapter/window/editor,
+// which is not the same package and would not be the same window.
+var baseline = map[string][]string{
 	// The window assembles what it serves.
 	"adapter/window/editor": {"container"},
 	// One settings file is the union of every adapter's section.
@@ -228,10 +228,10 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 }
 
 // The settings file is the union of every adapter's section, which is what the
-// edges out of adapter/settings are owed for. A section is another adapter's
-// shape and the defaults it starts at, and never its work: an adapter that
-// stats a folder on another's behalf is doing the work that other one is bound
-// for, in a package the composition root binds nothing of.
+// edges out of adapter/settings stand in the baseline for. A section is another
+// adapter's shape and the defaults it starts at, and never its work: an adapter
+// that stats a folder on another's behalf is doing the work that other one is
+// bound for, in a package the composition root binds nothing of.
 func TestTheSettingsAdapterRunsNoOtherAdaptersWork(t *testing.T) {
 	at := filepath.Join("..", "adapter", "settings")
 	held, err := os.ReadDir(at)
@@ -1172,7 +1172,7 @@ func adapting(pkg string) bool {
 
 // refused says why one package may not reach another, and nothing where it may.
 func refused(from, to string) string {
-	for _, held := range owed[from] {
+	for _, held := range baseline[from] {
 		if to == held || strings.HasPrefix(to, held+"/") {
 			return ""
 		}
@@ -1334,8 +1334,9 @@ func TestTheCoresHeldAdaptersAreTheseAndNoOthers(t *testing.T) {
 
 // What refused answers is the whole of the rule, so it is asked directly. Each
 // refusal here is an edge that was walked around once: an adapter the compiler
-// holds took the name of one it does not and was given what that name is owed,
-// and a package holding what is true of a note reached one that holds work.
+// holds took the name of one it does not and was given that name's baseline
+// entry, and a package holding what is true of a note reached one that holds
+// work.
 func TestWhatTheRulesRefuse(t *testing.T) {
 	for _, one := range []struct {
 		from, to string
