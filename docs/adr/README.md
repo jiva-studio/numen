@@ -52,6 +52,7 @@ The numbers run without gaps, and the whole corpus is renumbered when one closes
 
 - [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md)
 - [A passage is a range of bytes](0016-a-passage-is-a-range-of-bytes.md)
+- [An EPUB is reflowed in the window, and addressed by byte offset](0038-an-epub-is-reflowed-in-the-window.md)
 
 ### Recordings
 
