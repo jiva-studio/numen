@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { recordingKind, type RecordingTabState } from './kind'
 import type { TranscriptState } from './transcript'
-import { putting } from '../tabs/putting'
+import { fileOpeners } from '../tabs/openers'
 import { windowing } from '../tabs/windowing'
 
 /** A recording open in a tab, as far as the window reads one. */
@@ -22,7 +22,7 @@ const kind = (held: RecordingTabState) => {
     window.host,
     () => held as unknown as TranscriptState,
     { runs: () => {} },
-    putting({ fileKinds: async () => new Map() }),
+    fileOpeners({ fileKinds: async () => new Map() }),
   ).kind
 }
 

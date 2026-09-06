@@ -13,7 +13,7 @@ import type {
   PlexRelatedSeat,
   PlexShowing,
 } from '@numen/ui'
-import { asking } from '../asking'
+import { answerGuard } from '../questions'
 import { NEW_NOTE, OFFERED } from './menu'
 import { asParts, asPlex, typesIn } from './picture'
 import type { View } from './view'
@@ -245,7 +245,7 @@ export function plexing(view: View, deps: PlexTabDeps) {
   })
 
   /** Two answers can be in flight — a change followed while a travel is still out. */
-  const reading = asking()
+  const reading = answerGuard()
 
   /**
    * What the notes on the picture are divided into, asked for all of them at

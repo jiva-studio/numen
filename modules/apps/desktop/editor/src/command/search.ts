@@ -8,7 +8,7 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteItem, PaletteGroup } from '@numen/ui'
-import { asking, type Question } from '../asking'
+import { answerGuard, type Question } from '../questions'
 import type { NoteType, Source } from '../core'
 import { wordsOnly, type IndexCoverage } from '../notices/coverage'
 
@@ -179,7 +179,7 @@ export function search(core: SearchDeps, words: Words, how: SearchOptions = {}) 
   const said = ref<Record<SearchGroup, string>>({ names: '', text: '', meaning: '' })
 
   /** Three questions are in the air at once, and only the newest is drawn. */
-  const asks = asking()
+  const asks = answerGuard()
 
   /** Nothing is being asked, and nothing already asked for will be drawn. */
   const drop = () => {

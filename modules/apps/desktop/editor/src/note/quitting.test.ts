@@ -9,7 +9,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { editing } from './editing'
+import { openNotes } from './notes'
 import { flushing, type Conflict, type FlushDeps, type FlushResult } from '../saving/flushing'
 import type { NoteResult, Core } from '../core'
 
@@ -171,7 +171,7 @@ describe('a page asked to write what it owes', () => {
   it('writes an unsaved tab and only then says it has', async () => {
     const said = stream()
     const at = fake(said.read)
-    const notes = editing(at.core)
+    const notes = openNotes(at.core)
     const going = flushing(at.core)
     going.holds(notes.flush)
     void going.start()
@@ -193,7 +193,7 @@ describe('a page asked to write what it owes', () => {
   it('does not answer while the write it owes is still in the air', async () => {
     const said = stream()
     const at = fake(said.read)
-    const notes = editing(at.core)
+    const notes = openNotes(at.core)
     const going = flushing(at.core)
     going.holds(notes.flush)
     void going.start()
@@ -218,7 +218,7 @@ describe('a page asked to write what it owes', () => {
   it('says nothing until the application asks', async () => {
     const said = stream()
     const at = fake(said.read)
-    const notes = editing(at.core)
+    const notes = openNotes(at.core)
     const going = flushing(at.core)
     going.holds(notes.flush)
     void going.start()
@@ -239,7 +239,7 @@ describe('a page asked to write what it owes', () => {
     const said = stream()
     const at = fake(said.read)
     const going = flushing(at.core)
-    going.holds(editing(at.core).flush)
+    going.holds(openNotes(at.core).flush)
     void going.start()
 
     said.say({ token: '0', flush: true })
@@ -268,7 +268,7 @@ describe('a page holding text the file changed under', () => {
   it('says so before the writes it owes have landed', async () => {
     const said = stream()
     const at = fake(said.read)
-    const notes = editing(at.core)
+    const notes = openNotes(at.core)
     const going = flushing(at.core)
     going.holds(notes.flush)
     const note = conflicted('Held.md')

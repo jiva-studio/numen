@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { FileKind, RefusalReason } from '../core'
-import { fileMakers, putting, type VaultMaker, type FileOpenerDeps } from './putting'
+import { fileMakers, fileOpeners, type VaultMaker, type FileOpenerDeps } from './openers'
 import { writer } from '../testing/writer'
 import { REFUSED } from '../words'
 
@@ -44,7 +44,7 @@ const unreachable: FileOpenerDeps = {
 }
 
 /** The three editors, the reader and the player, each writing down what it was given. */
-const editors = (puts: ReturnType<typeof putting>) => {
+const editors = (puts: ReturnType<typeof fileOpeners>) => {
   const opened: string[] = []
   for (const type of ['note', 'deck', 'stencil'] as const) {
     puts.holds(type, (path, title, showing, line) =>
@@ -67,7 +67,7 @@ const editors = (puts: ReturnType<typeof putting>) => {
 describe('a path opened', () => {
   it('opens a deck in the editor of its cards', async () => {
     const one = vault({ 'Animals.md': note('deck') })
-    const puts = putting(one.core)
+    const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
     await puts.opens('Animals.md', 'Animals')
@@ -77,7 +77,7 @@ describe('a path opened', () => {
 
   it('opens a stencil in the editor of its fields and faces', async () => {
     const one = vault({ 'Animal.md': note('stencil') })
-    const puts = putting(one.core)
+    const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
     await puts.opens('Animal.md', 'Animal')
@@ -87,7 +87,7 @@ describe('a path opened', () => {
 
   it('opens an ordinary note in the editor of its prose', async () => {
     const one = vault({ 'Entropy.md': note('note') })
-    const puts = putting(one.core)
+    const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
     await puts.opens('Entropy.md', 'Entropy')
@@ -97,7 +97,7 @@ describe('a path opened', () => {
 
   it('opens a book in the reader, and in no editor of a note', async () => {
     const one = vault({ 'Physics.epub': BOOK })
-    const puts = putting(one.core)
+    const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
     await puts.opens('Physics.epub', 'Physics')
@@ -107,7 +107,7 @@ describe('a path opened', () => {
 
   it('opens a recording in the player, and in no reader', async () => {
     const one = vault({ 'talks/Ants.mp3': TALK })
-    const puts = putting(one.core)
+    const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
     await puts.opens('talks/Ants.mp3', 'Ants')
@@ -117,7 +117,7 @@ describe('a path opened', () => {
 
   it('opens a file the vault holds no source for in nothing at all', async () => {
     const one = vault({ 'Cover.png': OTHER })
-    const puts = putting(one.core)
+    const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
     await puts.opens('Cover.png', 'Cover')
@@ -127,7 +127,7 @@ describe('a path opened', () => {
 
   it('opens nothing where the vault says nothing stands there', async () => {
     const one = vault()
-    const puts = putting(one.core)
+    const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
     await puts.opens('Gone.md')
@@ -136,7 +136,7 @@ describe('a path opened', () => {
   })
 
   it('opens as a note where the vault could not be asked at all', async () => {
-    const puts = putting(unreachable)
+    const puts = fileOpeners(unreachable)
     const opened = editors(puts)
 
     await puts.opens('Entropy.md', 'Entropy')
@@ -146,7 +146,7 @@ describe('a path opened', () => {
 
   it('asks the vault what stands there, the caller having said nothing', async () => {
     const one = vault({ 'Animals.md': note('deck') })
-    const puts = putting(one.core)
+    const puts = fileOpeners(one.core)
     editors(puts)
 
     await puts.opens('Animals.md')
@@ -156,7 +156,7 @@ describe('a path opened', () => {
 
   it('opens beside where that is where it was asked for', async () => {
     const one = vault({ 'Animals.md': note('deck') })
-    const puts = putting(one.core)
+    const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
     await puts.opens('Animals.md', 'Animals', 'beside')
@@ -166,7 +166,7 @@ describe('a path opened', () => {
 
   it('carries the line it was asked at, which each editor answers for itself', async () => {
     const one = vault({ 'Entropy.md': note('note'), 'Animals.md': note('deck') })
-    const puts = putting(one.core)
+    const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
     await puts.opens('Entropy.md', 'Entropy', 'here', 12)
@@ -182,7 +182,7 @@ describe('a path opened', () => {
 describe('a source opened at a stretch of its own text', () => {
   it('reads a book at the stretches it was asked at', async () => {
     const one = vault({ 'Physics.epub': BOOK })
-    const puts = putting(one.core)
+    const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
     await puts.opensAt('Physics.epub', [
@@ -195,7 +195,7 @@ describe('a source opened at a stretch of its own text', () => {
 
   it('plays a recording at the stretch of the words it was asked at', async () => {
     const one = vault({ 'talks/Ants.mp3': TALK })
-    const puts = putting(one.core)
+    const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
     await puts.opensAt('talks/Ants.mp3', [{ start: 22, length: 6 }])
@@ -205,7 +205,7 @@ describe('a source opened at a stretch of its own text', () => {
 
   it('opens a note in the editor made for what it is, and not in the reader', async () => {
     const one = vault({ 'Animals.md': note('deck'), 'Entropy.md': note('note') })
-    const puts = putting(one.core)
+    const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
     await puts.opensAt('Animals.md', [{ start: 10, length: 4 }])
@@ -216,7 +216,7 @@ describe('a source opened at a stretch of its own text', () => {
 
   it('opens nothing where the vault says nothing stands there', async () => {
     const one = vault()
-    const puts = putting(one.core)
+    const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
     await puts.opensAt('Gone.epub', [{ start: 10, length: 4 }])
@@ -228,7 +228,7 @@ describe('a source opened at a stretch of its own text', () => {
 describe('a file just made here', () => {
   it('opens as what it was made as, the vault not being asked', async () => {
     const one = vault()
-    const puts = putting(one.core)
+    const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
     puts.made('Animals.md', 'Animals', 'deck')
@@ -271,7 +271,7 @@ const MAKING = { refused: REFUSED, field: 'Front' }
 describe('a deck, a stencil or a preset made', () => {
   it('is asked of the vault under the name and the folder it was given', async () => {
     const vault = maker()
-    const made = fileMakers(vault, putting(unreachable), MAKING, () => {})
+    const made = fileMakers(vault, fileOpeners(unreachable), MAKING, () => {})
 
     await made.makes('deck', 'zoology', 'Animals')
     await made.makes('stencil', 'zoology', 'Words')
@@ -285,13 +285,13 @@ describe('a deck, a stencil or a preset made', () => {
   })
 
   it('answers where the vault filed it', async () => {
-    const made = fileMakers(maker(), putting(unreachable), MAKING, () => {})
+    const made = fileMakers(maker(), fileOpeners(unreachable), MAKING, () => {})
 
     expect(await made.makes('deck', 'zoology', 'Animals')).toBe('zoology/Animals.md')
   })
 
   it('is put in front of the person as what it was made as', async () => {
-    const puts = putting(unreachable)
+    const puts = fileOpeners(unreachable)
     const opened = editors(puts)
     puts.holds('preset', (path) => opened.push(`preset ${path}`))
     const made = fileMakers(maker(), puts, MAKING, () => {})
@@ -308,7 +308,7 @@ describe('a deck, a stencil or a preset made', () => {
   })
 
   it('says what the vault refused, and nothing opens', async () => {
-    const puts = putting(unreachable)
+    const puts = fileOpeners(unreachable)
     const opened = editors(puts)
     const told = writer()
     const made = fileMakers(maker('occupied'), puts, MAKING, told.says)
@@ -320,7 +320,7 @@ describe('a deck, a stencil or a preset made', () => {
 
   it('says a vault that could not be asked at all', async () => {
     const told = writer()
-    const made = fileMakers(maker(null, true), putting(unreachable), MAKING, told.says)
+    const made = fileMakers(maker(null, true), fileOpeners(unreachable), MAKING, told.says)
 
     expect(await made.decks('zoology', 'Animals')).toBe('')
     expect(told.said.join(' ')).not.toContain('the vault is not there')

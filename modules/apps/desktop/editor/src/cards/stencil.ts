@@ -10,12 +10,12 @@ import type { Half, PlexShowing } from '@numen/ui'
 import type { Move, RefusalReason } from '../core'
 import type { Cards, Problem } from './vault'
 import type { Store } from '../command/handlers'
-import { editing, type OpenNote } from '../note/editing'
+import { openNotes, type OpenNote } from '../note/notes'
 import { markOf } from '../note/tab'
 import type { MessageWriter } from '../notices/messages'
 import type { Host, Kind } from '../tabs/windowing'
 import { REFUSED } from '../words'
-import type { FileOpeners } from '../tabs/putting'
+import type { FileOpeners } from '../tabs/openers'
 import { STENCIL } from '../tabs/workspace'
 import StencilTab from './StencilTab.vue'
 import {
@@ -95,7 +95,7 @@ export function stencilling(
   /** What each file is called, as the vault last read it. */
   const titles = new Map<string, string>()
 
-  const store = editing({
+  const store = openNotes({
     read: async (path) => {
       const answer = await cards.readStencil(path)
       const sheet = answer.stencil ? sheetOf(answer.stencil) : null

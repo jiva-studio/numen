@@ -17,9 +17,9 @@ export interface Question {
   lands(): boolean
 }
 
-export type AnswerGuard = ReturnType<typeof asking>
+export type AnswerGuard = ReturnType<typeof answerGuard>
 
-export function asking() {
+export function answerGuard() {
   let asked = 0
   let landed = 0
   let listening = true

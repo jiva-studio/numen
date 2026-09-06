@@ -4,7 +4,7 @@
  * A name is a thing and travels in the plex the person is looking at; a
  * heading and a passage are places in a source, and open it where they stand.
  * Which editor the source opens in is not decided here: a destination names the
- * file and the place in it, and `putting.ts` opens it.
+ * file and the place in it, and `openers.ts` opens it.
  */
 import type { SearchDestination } from './search'
 

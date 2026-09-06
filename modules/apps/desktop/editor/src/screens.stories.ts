@@ -36,7 +36,7 @@ import type { Player } from './recording/player'
 import { transcribed } from './recording/kind'
 import DocumentTab from './document/DocumentTab.vue'
 import { documenting } from './document/kind'
-import { reading as readingOf, type Documents } from './document/reading'
+import { openDocument, type Documents } from './document/open'
 import FilesTab from './files/FilesTab.vue'
 import { filing } from './files/kind'
 import { listing, ROOT } from './files/listing'
@@ -767,7 +767,7 @@ export const Transcribed: Story = {
 /** The run a scanned document can be put through, on the row it stands at. */
 export const Recognised: Story = {
   render: () => {
-    const held = documenting(readingOf(BOOK, 'Reading/Boltzmann 1877.pdf'))
+    const held = documenting(openDocument(BOOK, 'Reading/Boltzmann 1877.pdf'))
     return asking(
       'Reading/Boltzmann 1877.pdf',
       ['Lectures', 'Physics', 'Reading', 'Sanskrit'],

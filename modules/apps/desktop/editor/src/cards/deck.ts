@@ -12,10 +12,10 @@ import type { Move, RefusalReason } from '../core'
 import type { Cards, Problem, StencilSummary } from './vault'
 import type { Store } from '../command/handlers'
 import type { PresetChoice, Presets, ReadResult } from '../preset/core'
-import { editing, type OpenNote } from '../note/editing'
+import { openNotes, type OpenNote } from '../note/notes'
 import { markOf } from '../note/tab'
 import type { Host, Kind } from '../tabs/windowing'
-import type { FileOpeners } from '../tabs/putting'
+import type { FileOpeners } from '../tabs/openers'
 import { DECK } from '../tabs/workspace'
 import DeckTab from './DeckTab.vue'
 import {
@@ -154,7 +154,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: FileOp
   /** Whether the last listing of the stencils answered. */
   let listedOk = true
 
-  const store = editing({
+  const store = openNotes({
     read: async (path) => {
       const answer = await cards.readDeck(path)
       const deck = answer.deck ? deckOf(answer.deck) : null

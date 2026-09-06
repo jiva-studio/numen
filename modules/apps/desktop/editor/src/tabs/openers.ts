@@ -42,7 +42,7 @@ export interface FileOpenerDeps {
 /** What a file the vault could not be asked about at all is opened as. */
 const ORDINARY: FileKind = { kind: 'note', type: 'note' }
 
-export function putting(vault: FileOpenerDeps) {
+export function fileOpeners(vault: FileOpenerDeps) {
   /** The editor each kind of note opens in, as its kind handed it over. */
   const editors = new Map<EditorKind, FileOpener>()
 
@@ -129,7 +129,7 @@ export function putting(vault: FileOpenerDeps) {
 }
 
 /** What the window puts files in front of the person with. */
-export type FileOpeners = ReturnType<typeof putting>
+export type FileOpeners = ReturnType<typeof fileOpeners>
 
 /** Which of the three a file is made as. */
 export type MakeKind = 'deck' | 'stencil' | 'preset'

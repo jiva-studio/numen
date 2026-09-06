@@ -7,8 +7,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { documenting, documentKind, type DocumentTabState, type PageHandle } from './kind'
 import { DOCUMENT } from '../tabs/workspace'
-import type { OpenDocumentState } from './reading'
-import type { FileOpeners, SourceReader } from '../tabs/putting'
+import type { OpenDocumentState } from './open'
+import type { FileOpeners, SourceReader } from '../tabs/openers'
 import type { Stretch } from '../core'
 import type { Host } from '../tabs/windowing'
 
@@ -29,7 +29,7 @@ const window_ = (held: DocumentTabState | null = null) => {
 }
 
 /** What puts documents in front, keeping the reader it is handed. */
-const putting = () => {
+const openers = () => {
   let reader: SourceReader | null = null
   const puts = { reads: (opens: SourceReader) => void (reader = opens) } as unknown as FileOpeners
   return { puts, opens: () => reader }
@@ -43,7 +43,7 @@ const openedAt = (path: string, page: number, pages: number) =>
   ({ path, at: ref(page), pages: ref(pages) }) as unknown as DocumentTabState
 
 /** The kind, over a window holding the document it is handed. */
-const kindOver = (held: DocumentTabState) => documentKind(window_(held).host, () => held, putting().puts).kind
+const kindOver = (held: DocumentTabState) => documentKind(window_(held).host, () => held, openers().puts).kind
 
 describe('what a document tab holds', () => {
   it('measures the page again once there is a page to measure', () => {
@@ -79,7 +79,7 @@ describe('what a document tab holds', () => {
 describe('a document tab', () => {
   const kindOf = () => {
     const { host } = window_()
-    const { puts } = putting()
+    const { puts } = openers()
     return documentKind(host, (path) => documenting(read(path)), puts)
   }
 
@@ -124,7 +124,7 @@ describe('a search that landed in a document', () => {
     const reached = vi.fn()
     const held = { reach: reached } as unknown as DocumentTabState
     const { host, opened } = window_(held)
-    const { puts, opens } = putting()
+    const { puts, opens } = openers()
     documentKind(host, (path) => documenting(read(path)), puts)
 
     const stretches: readonly Stretch[] = [

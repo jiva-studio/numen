@@ -24,7 +24,7 @@ import {
 import { BOUNDS } from './drawn'
 import type { RefusalReason } from '../core'
 import type { Host } from '../tabs/windowing'
-import type { FileOpeners } from '../tabs/putting'
+import type { FileOpeners } from '../tabs/openers'
 import { WORDS as words } from './words'
 
 const point = (over: Partial<Point> = {}): Point => ({

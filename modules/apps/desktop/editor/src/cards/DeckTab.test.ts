@@ -11,7 +11,7 @@ import { StopReason } from '@numen/protocol'
 import type { RefusalReason } from '../core'
 import type { Cards, VaultCard, Problem } from './vault'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '../preset/core'
-import { putting } from '../tabs/putting'
+import { fileOpeners } from '../tabs/openers'
 import { windowing } from '../tabs/windowing'
 import { DECK } from '../tabs/workspace'
 import DeckTab from './DeckTab.vue'
@@ -22,7 +22,7 @@ import { WORDS as words } from './words'
 const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING }
 
 /** The one place a file is opened from. Nothing here opens one. */
-const puts = () => putting({ fileKinds: async () => new Map() })
+const puts = () => fileOpeners({ fileKinds: async () => new Map() })
 
 /** A moment for whatever the tab asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))

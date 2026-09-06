@@ -9,7 +9,7 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteGroup, PaletteItem } from '@numen/ui'
-import { asking as latest } from '../asking'
+import { answerGuard as latest } from '../questions'
 import { movedTo, type Move, type NoteType, type Vault } from '../core'
 import {
   commandsOf,

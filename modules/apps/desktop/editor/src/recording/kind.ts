@@ -8,7 +8,7 @@
 import { computed } from 'vue'
 import type { TranscriptState } from './transcript'
 import type { Stretch, Task } from '../core'
-import type { FileOpeners } from '../tabs/putting'
+import type { FileOpeners } from '../tabs/openers'
 import type { Host, Kind } from '../tabs/windowing'
 import { RECORDING } from '../tabs/workspace'
 import { DROP, PROOFREAD, TRANSCRIBE } from './words'

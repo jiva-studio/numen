@@ -6,7 +6,7 @@
  */
 import { ref } from 'vue'
 import { troubleWords } from '@numen/wire'
-import { asking } from '../asking'
+import { answerGuard } from '../questions'
 import { movedTo, type Neighbourhood, type Move } from '../core'
 import { alike } from './picture'
 
@@ -30,7 +30,7 @@ export function view(core: Neighbours) {
   const trouble = ref('')
 
   /** Two answers can be in flight — a click while a change is being followed. */
-  const asks = asking()
+  const asks = answerGuard()
 
   async function go(path: string) {
     if (!asks.open()) return

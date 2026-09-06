@@ -10,10 +10,10 @@ import { flushPromises } from '@vue/test-utils'
 import { nextTick, ref } from 'vue'
 import type { PlexShowing } from '@numen/ui'
 import { noting, type NoteTabDeps, type NoteTabState } from './kind'
-import { putting } from '../tabs/putting'
+import { fileOpeners } from '../tabs/openers'
 import type { EditorHandle } from './keyboard'
 import type { noteChanges } from './changes'
-import type { editing } from './editing'
+import type { openNotes } from './notes'
 import type { State } from './tab'
 import { windowing } from '../tabs/windowing'
 import { NOTE } from '../tabs/workspace'
@@ -72,7 +72,7 @@ const notes = (states: Record<string, State> = {}) => {
     take: () => said.push('take'),
   }
   return {
-    store: store as unknown as ReturnType<typeof editing>,
+    store: store as unknown as ReturnType<typeof openNotes>,
     shut,
     said,
     /** The identity of the note standing at a file, for a test that has its name. */
@@ -121,7 +121,7 @@ const window = (
   const store = notes(states)
   const drawing = drawings()
   const held = windowing()
-  const puts = putting({
+  const puts = fileOpeners({
     fileKinds: async (paths) =>
       new Map(paths.map((path) => [path, { kind: 'note' as const, type: 'note' as const }])),
   })

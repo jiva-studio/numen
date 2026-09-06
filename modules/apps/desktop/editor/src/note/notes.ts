@@ -66,7 +66,7 @@ const overtaken: ConflictWords = {
 }
 
 /** What the window hands the store of open notes, beside the vault itself. */
-export interface EditingOptions {
+export interface OpenNotesOptions {
   /** How long the typing settles for, and how long a note may go unwritten. */
   limits?: typeof waiting
   /** What hears that a note on screen was replaced by what its file holds. */
@@ -75,7 +75,7 @@ export interface EditingOptions {
   now?(): number
 }
 
-export function editing(core: Notes, how: EditingOptions = {}) {
+export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
   const limits = how.limits ?? waiting
   const replaced = how.replaced ?? (() => {})
   const now = how.now ?? (() => Date.now())

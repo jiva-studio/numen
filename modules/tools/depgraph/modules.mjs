@@ -61,12 +61,12 @@ export const owed = new Map([
       // preset's core. Design rather than debt — worth recording so that a
       // fourth screen appearing here is read as a change and not as more of
       // the same.
-      'no-screen-reaches-a-screen: src/cards/deck.ts → src/note/editing.ts',
+      'no-screen-reaches-a-screen: src/cards/deck.ts → src/note/notes.ts',
       'no-screen-reaches-a-screen: src/cards/deck.ts → src/note/tab.ts',
       'no-screen-reaches-a-screen: src/cards/deck.ts → src/preset/core.ts',
       'no-screen-reaches-a-screen: src/cards/deck.test.ts → src/preset/core.ts',
       'no-screen-reaches-a-screen: src/cards/DeckTab.test.ts → src/preset/core.ts',
-      'no-screen-reaches-a-screen: src/cards/stencil.ts → src/note/editing.ts',
+      'no-screen-reaches-a-screen: src/cards/stencil.ts → src/note/notes.ts',
       'no-screen-reaches-a-screen: src/cards/stencil.ts → src/note/tab.ts',
     ],
   ],

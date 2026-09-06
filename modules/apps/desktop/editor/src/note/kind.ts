@@ -13,22 +13,22 @@ import type { Host, Kind } from '../tabs/windowing'
 import { NOTE } from '../tabs/workspace'
 import type { Change } from './drawing'
 import type { noteChanges } from './changes'
-import type { OpenNote, editing } from './editing'
+import type { OpenNote, openNotes } from './notes'
 import { noteKeyboard, ITSELF } from './keyboard'
-import { naming, type NamingDeps } from './naming'
+import { noteTitles, type NoteTitlesDeps } from './titles'
 import NoteTab from './NoteTab.vue'
 import { markOf } from './tab'
-import type { FileOpeners } from '../tabs/putting'
+import type { FileOpeners } from '../tabs/openers'
 
 /** The notes of the whole window, read and written by one store. */
-type Notes = ReturnType<typeof editing>
+type Notes = ReturnType<typeof openNotes>
 /** What is being typed into each note now, as the editor draws it. */
 type NoteChanges = ReturnType<typeof noteChanges>
 
-export type { NamingDeps }
+export type { NoteTitlesDeps }
 
 /** What the notes of a window ask of the vault, beside what names them. */
-export interface NoteTabDeps extends NamingDeps {
+export interface NoteTabDeps extends NoteTitlesDeps {
   /**
    * Where each of those addresses lands, by the address it was asked about.
    * They are written in the note at `from`, and one that reaches nothing is
@@ -72,7 +72,7 @@ export function noting(
   host: Host,
   puts: FileOpeners,
 ) {
-  const names = naming(vault, notes)
+  const names = noteTitles(vault, notes)
   const keyboard = noteKeyboard()
 
   /**

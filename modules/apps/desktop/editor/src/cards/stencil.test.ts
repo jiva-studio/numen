@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import type { RefusalReason } from '../core'
 import type { Cards, VaultFace, Problem, FieldRenameResult } from './vault'
-import { putting } from '../tabs/putting'
+import { fileOpeners } from '../tabs/openers'
 import { windowing } from '../tabs/windowing'
 import { STENCIL } from '../tabs/workspace'
 import { REFUSED } from '../words'
@@ -13,7 +13,7 @@ import { stencilling, type StencilTabState } from './stencil'
 import { WORDS as words } from './words'
 
 /** The one place a file is opened from. Nothing here opens one. */
-const puts = () => putting({ fileKinds: async () => new Map() })
+const puts = () => fileOpeners({ fileKinds: async () => new Map() })
 
 /** A moment for whatever the tab asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))

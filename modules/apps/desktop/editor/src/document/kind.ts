@@ -5,9 +5,9 @@
  * out of sight, where there is none. What is drawn says so when it appears, and
  * measures again then.
  */
-import type { OpenDocumentState } from './reading'
+import type { OpenDocumentState } from './open'
 import type { Stretch } from '../core'
-import type { FileOpeners } from '../tabs/putting'
+import type { FileOpeners } from '../tabs/openers'
 import type { Host, Kind } from '../tabs/windowing'
 import { DOCUMENT } from '../tabs/workspace'
 import DocumentTab from './DocumentTab.vue'

@@ -11,7 +11,7 @@
  * name is put back the moment the keyboard leaves the list.
  */
 import { computed, ref, shallowRef, watch } from 'vue'
-import { asking } from '../asking'
+import { answerGuard } from '../questions'
 import type { StepGroup, StepRow } from '../command/commands'
 import { following, percent } from '@numen/ui'
 import type { MessageWriter } from '../notices/messages'
@@ -283,7 +283,7 @@ export function wearing(
   )
 
   /** A file arriving for a row the keyboard has already left is dropped. */
-  const asks = asking()
+  const asks = answerGuard()
 
   let open = true
   /** Let go of the stream the window is listening to. */

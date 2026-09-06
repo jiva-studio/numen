@@ -6,13 +6,13 @@
  * was typed into it has landed.
  */
 import { shallowRef, watch } from 'vue'
-import type { editing } from './editing'
+import type { openNotes } from './notes'
 
 /** The notes of the whole window, as far as this reads them. */
-type Notes = ReturnType<typeof editing>
+type Notes = ReturnType<typeof openNotes>
 
 /** What a note is asked to be called, as the vault last said it. */
-export interface NamingDeps {
+export interface NoteTitlesDeps {
   neighbourhood(path: string): Promise<{ focus?: { title?: string } | undefined }>
 }
 
@@ -22,7 +22,7 @@ interface SettledNote {
   readonly at: string
 }
 
-export function naming(vault: NamingDeps, notes: Notes) {
+export function noteTitles(vault: NoteTitlesDeps, notes: Notes) {
   /**
    * What each note is called, as the vault last said it, under the identity its
    * tab opened under. A note keeps what it is called wherever its file goes.

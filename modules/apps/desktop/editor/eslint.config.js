@@ -100,7 +100,7 @@ export default tseslint.config(
       'src/testing/**',
       // The ports' own defaults, which is where the browser is allowed in.
       'src/preset/kind.ts',
-      'src/note/editing.ts',
+      'src/note/notes.ts',
     ],
     rules: {
       'no-restricted-globals': [

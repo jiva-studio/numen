@@ -12,10 +12,10 @@ import { cards, core, documents, recordings, running, vaults } from './vault'
 import type { Attention, ArtifactStates, VaultList } from './core'
 import { showing } from './showing'
 import { view } from './plex/view'
-import { reading } from './document/reading'
+import { openDocument } from './document/open'
 import { cornerOf } from './notices/corner'
 import type { IndexCoverage } from './notices/coverage'
-import { editing } from './note/editing'
+import { openNotes } from './note/notes'
 import { noteChanges } from './note/changes'
 import { CREATABLE, noteMaker } from './note/maker'
 import {
@@ -38,13 +38,13 @@ import {
   TEXT_SCALE,
   wearing,
 } from './settings/wearing'
-import { reviewing } from './settings/reviewing'
+import { reviewSetting } from './settings/review'
 import { OFF, ON, SYNCING, syncSetting } from './settings/sync'
 import { HANGING, PARTS, hanging } from './settings/hanging'
 import { does, reaching, type CommandDeps, type Store } from './command/handlers'
 import { search } from './command/search'
 import { lands, type DestinationDeps } from './command/destination'
-import { fileMakers, putting } from './tabs/putting'
+import { fileMakers, fileOpeners } from './tabs/openers'
 import { flushing } from './saving/flushing'
 import { raisesConflicts } from './saving/conflicts'
 import { windowing } from './tabs/windowing'
@@ -74,7 +74,7 @@ import { AGENT, CONVERSATION, FILES, PLEX, named, opening } from './tabs/workspa
 /** Everything the window is made of, made once and handed to what draws it. */
 export const useWindow = () => {
   const changes = noteChanges()
-  const notes = editing(core, { replaced: changes.arrived })
+  const notes = openNotes(core, { replaced: changes.arrived })
   /** Every message the window holds, each part of it under a name of its own. */
   const log = messageLog()
   const making = noteMaker(core, log.under('made'))
@@ -139,7 +139,7 @@ export const useWindow = () => {
    * file comes through here, and the editors and the reader hand over their own
    * door as they are made: nothing else in the window holds one.
    */
-  const puts = putting(core)
+  const puts = fileOpeners(core)
 
   /**
    * The runs this build cannot do at all, as this window has been told them. The
@@ -209,7 +209,7 @@ export const useWindow = () => {
   )
 
   /** The document tabs, each reading the document it is filed at. */
-  const read = documentKind(held.host, (path) => documenting(reading(documents, path)), puts)
+  const read = documentKind(held.host, (path) => documenting(openDocument(documents, path)), puts)
 
   /** What this window can play, asked once for each kind of sound. */
   const plays = playable()
@@ -458,7 +458,7 @@ export const useWindow = () => {
   const oneName = syncSetting(core, words, log.under('named'))
 
   /** The hour a day of review begins at, on the clock on the wall. */
-  const dayBegins = reviewing(core, words, log.under('reviewed'))
+  const dayBegins = reviewSetting(core, words, log.under('reviewed'))
 
   /** The rest of the settings file, which no command of the window turns. */
   const rest = settingsStore(core, words, log.under('configured'))
