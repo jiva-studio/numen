@@ -185,7 +185,7 @@ func begin(
 	reading := func() {
 		asked := cfg
 		asked.RebuildIndex, rebuild = rebuild, false
-		readSources(ctx, asked, db, api, v, readers, embedder, out)
+		readSources(ctx, asked, db, api, v, readers, embedder, wake.read, out)
 	}
 
 	running.Add(1)
@@ -219,7 +219,7 @@ func begin(
 					for path, of := range held {
 						cutSource(ctx, cfg, db, api, embedder, of, path)
 					}
-					embedSources(ctx, cfg, db, api, v, readers, embedder)
+					embedSources(ctx, cfg, db, api, v, readers, embedder, wake.read)
 				}
 			case <-wake.notes:
 				// Every write puts the pass off again: what was typed is
@@ -227,7 +227,7 @@ func begin(
 				quiet = time.After(wake.still)
 			case <-quiet:
 				quiet = nil
-				embedSources(ctx, cfg, db, api, v, readers, embedder)
+				embedSources(ctx, cfg, db, api, v, readers, embedder, wake.read)
 			}
 		}
 	}()
@@ -249,6 +249,7 @@ func readSources(
 	v domain.Vault,
 	readers port.VaultReaders,
 	embedder port.Embedder,
+	nudge chan struct{},
 	out io.Writer,
 ) {
 	making, err := cfg.ReadWholeVault(ctx, db, embedder, v)
@@ -283,7 +284,7 @@ func readSources(
 		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Failed: read.Error()})
 	}
 
-	embedSources(ctx, cfg, db, api, v, readers, embedder)
+	embedSources(ctx, cfg, db, api, v, readers, embedder, nudge)
 }
 
 // cutSource cuts one source again from whatever its text now says.
@@ -324,6 +325,9 @@ func cutSource(
 //
 // It is the whole of what a note that was written owes: the chunks are cut
 // where the note is stored, and what has no vector is a question for the index.
+//
+// A recognition's batch of pages stops the pass where it stands. The vectors it
+// made are kept, and taken up again it asks the index what still owes one.
 func embedSources(
 	ctx context.Context,
 	cfg container.Config,
@@ -332,6 +336,7 @@ func embedSources(
 	v domain.Vault,
 	readers port.VaultReaders,
 	embedder port.Embedder,
+	nudge chan struct{},
 ) {
 	if embedder == nil {
 		return
@@ -355,11 +360,30 @@ func embedSources(
 		}
 	}
 
+	// The nudge is put back where it was found, so the loop that reads it next
+	// still has it. Nothing else takes from it while this pass runs: the loop is
+	// inside this call.
+	under, aside := context.WithCancel(ctx)
+	nudged := make(chan struct{})
+	go func() {
+		defer close(nudged)
+		select {
+		case <-under.Done():
+		case <-nudge:
+			raise(nudge)
+			aside()
+		}
+	}()
+	defer func() {
+		aside()
+		<-nudged
+	}()
+
 	// Fetching the model and preparing it is a step of its own, and it stands in
 	// the list under its own name. Nothing is indexed until it is over, and a
 	// model that never arrived is said under that name.
 	if arrival, ok := embedder.(embedding.WaitingEmbedder); ok {
-		if err := arrival.Wait(ctx); err != nil {
+		if err := arrival.Wait(under); err != nil {
 			return
 		}
 	}
@@ -385,7 +409,7 @@ func embedSources(
 		api.say(at)
 	}
 
-	switch _, err := making.MakeVectors(ctx, v); {
+	switch _, err := making.MakeVectors(under, v); {
 	case err == nil, errors.Is(err, context.Canceled):
 		api.finished(makingVectors)
 	default:
