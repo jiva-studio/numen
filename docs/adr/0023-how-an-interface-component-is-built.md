@@ -23,7 +23,7 @@ The shell is a webview, and Vue's reactivity fits a view whose job is to re-deri
 
 No component imports a domain type or a wire type, and nothing in the module imports anything that knows what a vault is. Not in the components, not in the stories, not in the fixtures — a fixture taken from the domain is how the dependency comes back in through the door marked "tests".
 
-A component takes props it defines itself, in a vocabulary about drawing, and emits events carrying **opaque identifiers**. Whoever renders it translates the domain into that shape and translates the identifier back. The plex speaks of *a node with a role*; it has no way to ask what any of them mean.
+A component takes props it defines itself, in a vocabulary about drawing, and emits events carrying **opaque identifiers**. Whoever renders it translates the domain into that shape and translates the identifier back. The plex speaks of *a node in a seat*; it has no way to ask what any of them mean.
 
 The dependency runs `modules/apps/*` → `modules/libs/ui`. Never back, never sideways.
 

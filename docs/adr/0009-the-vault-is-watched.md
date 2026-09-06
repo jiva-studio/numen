@@ -21,9 +21,9 @@ macOS and Windows watch a tree in one call; Linux and BSD take one directory eac
 
 What counts as a note, what the service folder is called, and what the vault says to leave alone are asked of the same reader by the walk and by the watcher. What is configured, and in what syntax, is in [settings](../settings.md) and [the note format](../note-format.md).
 
-### Events fold by path over a hold
+### Events are debounced by path over a hold
 
-One save is several events and a path arrives many times in a moment. Events are read into a buffer, held briefly, and folded so a path is reported once however often it was named. The hold is measured from the first event of a batch.
+One save is several events and a path arrives many times in a moment. Events are read into a buffer, held briefly, and debounced so a path is reported once however often it was named. The hold is measured from the first event of a batch.
 
 Reading events and delivering them are kept apart. A listener takes as long as it takes to refresh what it was told about, and the system goes on producing events meanwhile.
 
@@ -51,7 +51,7 @@ stateDiagram-v2
     watching --> scanning: the watch is placed
     watching --> unwatched: no watch could be placed
     scanning --> following: the walk is done, held events acted on
-    following --> following: paths folded, notes refreshed
+    following --> following: paths debounced, notes refreshed
     following --> rescanning: the buffer overflowed
     following --> rescanning: a watched folder is gone
     rescanning --> following: the vault is read again, listeners told to ask again

@@ -40,7 +40,7 @@ The files of the vault are the other. The phone serves the vault's notes to a ne
 
 Every call of `WindowService` names the window it is about, and one that names another window than the one answering is not answered. Two windows are open on one installation at once, and which vault each has in front of the person, what each is doing behind itself, and what it is owed before it can go, are the window's and not the installation's. That is why the list of vaults no longer says which one is being shown: the list is the same for both windows and the answer is not.
 
-The review window is open on the installation rather than on any one vault — it says what is owed across all of them and names a vault in every call — so it answers `Showing` with none. That is the answer, not a stub: a window standing on nothing gives the same one.
+The review window is open on the installation rather than on any one vault — it says what is owed across all of them and names a vault in every call — so it answers `GetShownVault` with none. That is the answer, not a stub: a window standing on nothing gives the same one.
 
 ### A service is a file, and the types three services hold are `shared.proto`
 

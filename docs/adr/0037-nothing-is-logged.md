@@ -43,7 +43,7 @@ Anything a person can act on goes to one of these three. A message that exists o
 
 `adapter/cli` writes its answers to the writers it was handed, because a command line's output is the command line. An entry point writes one line to standard error for what stopped it, for a terminal and for whatever collects a process that failed to start; the refusal window says the same thing, drawn.
 
-An application's `cmd/` is the only place naming `os.Stdout` or `os.Stderr`. Everything above it is handed an `io.Writer`, which is what makes any of it testable.
+An application's entry point — a `cmd/` on the desktop, `bind/` on the phone — is the only place naming `os.Stdout` or `os.Stderr`. Everything above it is handed an `io.Writer`, which is what makes any of it testable.
 
 ### The core makes no message of its own
 

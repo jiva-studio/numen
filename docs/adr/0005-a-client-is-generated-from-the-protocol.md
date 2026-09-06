@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/libs/protocol`, `modules/apps/desktop`, `modules/libs/ui`
+- **Applies to:** `modules/libs/protocol`, `modules/apps/desktop`, `modules/libs/wire`
 - **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [The vault is watched](0009-the-vault-is-watched.md), [How an interface component is built](0023-how-an-interface-component-is-built.md), [One service to a subject](0034-one-service-to-a-subject.md)
 
 ## Context
@@ -87,7 +87,7 @@ A field carries the name it has in the core across the wire. A stretch and a spa
 - Moving a client out of the binary is a transport change.
 - The toolchain grows two generators, and a build that skips them is a build against yesterday's contract.
 - Every call carries two messages of its own, and a read that answers one thing answers it inside a wrapper.
-- `modules/libs/protocol` has three consumers, and a change to it is built against all of them.
+- `modules/libs/protocol` has seven consumers — three Go modules and four npm packages — and a change to it is built against all of them.
 
 ## Alternatives considered
 
