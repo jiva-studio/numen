@@ -25,7 +25,7 @@ const held = () =>
       ],
       edges: [{ from: 'Root.md', to: 'Child.md' }],
     }),
-    carried: ref([]),
+    dragged: ref([]),
     empty: ref(false),
     menu: ref(null),
     creatable: ['child'],

@@ -130,7 +130,7 @@ export function resolveDrop({
     : { kind: 'create', from, seat }
 }
 
-export interface CarriedInput {
+export interface DroppedInput {
   readonly frame: PlexFrame
   readonly options: PlexOptions
   /** The window the plex is drawn in, centred on the focus. */
@@ -144,20 +144,20 @@ export interface CarriedInput {
 }
 
 /**
- * The seat something carried in from outside comes to.
+ * The seat something dragged in from outside comes to.
  *
  * Measured from the focus, which is what the arrangement is built around. A
  * node the pointer crosses is not a landing: the seat is read off the
  * direction, and letting go anywhere in the window is answered the same way.
  */
-export function seatCarried({
+export function seatDropped({
   frame,
   options,
   viewport,
   at,
   allowed,
   threshold,
-}: CarriedInput): PlexRelatedSeat | null {
+}: DroppedInput): PlexRelatedSeat | null {
   const focus = frame.nodes.find((node) => node.seat === 'focus')
   if (!focus) return null
 

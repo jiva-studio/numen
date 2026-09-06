@@ -20,7 +20,7 @@ const props = defineProps<{ held: PlexTabState }>()
 
 // The tab's state outlives this component, so what it holds is bound once here
 // and the template unwraps it.
-const { carried, empty, menu, mostParts, picture: neighbourhood } = props.held
+const { dragged, empty, menu, mostParts, picture: neighbourhood } = props.held
 
 /**
  * How large the picture is drawn, and how many parts a node hangs at once. A
@@ -84,8 +84,8 @@ const closed = (chose?: string) => {
       :neighbourhood="neighbourhood!"
       :options="options"
       :creatable="props.held.creatable"
-      :carried="carried"
-      :carried-name="words.carried"
+      :dragged="dragged"
+      :drop-name="words.dropName"
       :parts="props.held.partsOf"
       @activate="(node: string) => props.held.activate(node)"
       @create="(from: string, seat: PlexRelatedSeat) => void props.held.made(from, seat)"
@@ -93,8 +93,8 @@ const closed = (chose?: string) => {
         (from: string, to: string, seat: PlexRelatedSeat) => void props.held.joined(from, to, seat)
       "
       @bring="
-        (carried: readonly string[], seat: PlexRelatedSeat) =>
-          void props.held.brought(carried, seat)
+        (dragged: readonly string[], seat: PlexRelatedSeat) =>
+          void props.held.brought(dragged, seat)
       "
       @menu="
         (node: string, at: { x: number; y: number }, opening: MenuOpening) =>

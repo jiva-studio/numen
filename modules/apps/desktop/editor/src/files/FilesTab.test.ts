@@ -41,7 +41,7 @@ const drawn = async (open: readonly string[] = []) => {
     lands: (landing) => void done.push(`lands ${landing ? `${landing.at} ${landing.path}` : '—'}`),
     runs: (id, paths, name) => void done.push(`runs ${id} ${paths.join(' ')} ${name}`),
     moves: async (from, to) => void done.push(`moves ${from} ${to}`),
-    carries: (paths) => void done.push(`carries ${paths.join(' ') || '—'}`),
+    drags: (paths) => void done.push(`drags ${paths.join(' ') || '—'}`),
     makes: async (path) => void done.push(`makes ${path}`),
     writes: async (folder) => `${folder}Untitled note.md`,
     decks: async (folder, name) => `${folder}${name}`,
@@ -93,7 +93,7 @@ describe('the tree the tab draws', () => {
     expect(window.findAll('.files__icon')).toHaveLength(3)
   })
 
-  it('names the folder a file carried in from outside is filed in', async () => {
+  it('names the folder a file dragged in from outside is filed in', async () => {
     const { window } = await drawn(['physics'])
     const marking = window.findComponent(Tree).props('marking') as {
       attribute: string
@@ -291,7 +291,7 @@ describe('a folder that could not be read', () => {
       lands: () => {},
       runs: () => {},
       moves: async () => {},
-      carries: () => {},
+      drags: () => {},
       makes: async () => {},
       writes: async () => '',
       decks: async () => '',

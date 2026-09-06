@@ -586,7 +586,7 @@ const files = (open: readonly string[]) => {
     lands: () => {},
     runs: () => {},
     moves: async () => {},
-    carries: () => {},
+    drags: () => {},
     makes: async () => {},
     writes: async () => '',
     decks: async () => '',

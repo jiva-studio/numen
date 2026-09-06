@@ -113,7 +113,7 @@ const {
 
 const overlay = computed(() => (dragging.value?.moved ? (landing.value?.box ?? null) : null))
 
-const carried = computed(() => {
+const label = computed(() => {
   const held = dragging.value
   if (!held?.moved) return null
   return tabOf(held.held.tab)?.title ?? held.held.tab
@@ -268,10 +268,10 @@ function landingAt(x: number, y: number): TabLanding | null {
     />
 
     <DragPreview
-      v-if="carried && point"
-      class="workspace__carried"
+      v-if="label && point"
+      class="workspace__dragged"
       :at="point"
-      :says="carried"
+      :says="label"
     />
   </div>
 </template>
@@ -310,8 +310,8 @@ function landingAt(x: number, y: number): TabLanding | null {
   background: var(--numen-ring);
 }
 
-/* The tab being carried stands over the panes and the overlay both. */
-.workspace__carried {
+/* The tab being dragged stands over the panes and the overlay both. */
+.workspace__dragged {
   z-index: var(--numen-lift-tooltip);
 }
 </style>

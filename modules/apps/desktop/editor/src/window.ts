@@ -165,11 +165,11 @@ export const useWindow = () => {
   raising(stencils, going)
 
   /**
-   * The notes being carried from one pane of the window to another: the tree
+   * The notes being dragged from one pane of the window to another: the tree
    * says what it has lifted, and a plex draws a line to them. Neither knows the
    * other is there.
    */
-  const carried = shallowRef<readonly string[]>([])
+  const dragged = shallowRef<readonly string[]>([])
 
   /** Whether a node hangs the parts of its note under the box, and how many. */
   const hungParts = hanging(core, words, log.under('hanging'))
@@ -186,7 +186,7 @@ export const useWindow = () => {
     runs: (id, path, title) => carries(id, { ...where(), path, title }),
     opening: window.opening,
     first: () => window.first(),
-    carried,
+    dragged,
     says: (text) => told(text, 'refusal'),
     writes: async () => (await making.named('', []))?.path ?? '',
     creatable: CREATABLE,
@@ -276,8 +276,8 @@ export const useWindow = () => {
       })
     },
     moves: (from, to) => does(deedOf('move', { ...where(), path: from }, to), doing, words),
-    carries: (paths) => {
-      carried.value = paths
+    drags: (paths) => {
+      dragged.value = paths
     },
     makes: (path) => does(deedOf('makeFolder', where(), path), doing, words),
     writes: async (folder) => (await making.named(folder, []))?.path ?? '',

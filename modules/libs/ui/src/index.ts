@@ -218,8 +218,8 @@ export { default as Tree } from './tree/Tree.vue'
 /** For arranging rows without drawing them, or reading a gesture without this renderer. */
 export {
   between,
-  carried,
-  carries,
+  dragged,
+  dragLabel,
   everyRow,
   flatten,
   holderOf,

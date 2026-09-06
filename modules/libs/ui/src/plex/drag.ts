@@ -1,10 +1,10 @@
 /**
- * Something carried over the plex from outside it. Everything that knows about
+ * Something dragged over the plex from outside it. Everything that knows about
  * events and screen pixels is here; which seat a point comes to is worked out
  * in `arrange/drop.ts`, as a value.
  */
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
-import { seatCarried, type PlexOptions, type Size } from './arrange'
+import { seatDropped, type PlexOptions, type Size } from './arrange'
 import { pointIn } from './gesture'
 import type { PlexFrame } from './frame'
 import type { Point } from './node'
@@ -12,19 +12,19 @@ import type { PlexRelatedSeat } from './seat'
 
 const CAPTURE = { capture: true } as const
 
-export interface PlexCarryState {
+export interface PlexDragState {
   /** Where the pointer is, in the plex's own coordinates. */
   readonly at: Ref<Point | null>
   /** The seat letting go here comes to, so it can be shown before it does. */
   readonly seat: Ref<PlexRelatedSeat | null>
 }
 
-/** What following a carry takes: the drawing, the picture, and the rules. */
-export interface PlexCarryDeps {
+/** What following a drag takes: the drawing, the picture, and the rules. */
+export interface PlexDragDeps {
   /** The drawing, which turns screen pixels into the plex's own coordinates. */
   readonly surface: () => SVGSVGElement | null
-  /** What is being carried, each of them opaque. Empty while nothing is. */
-  readonly carried: () => readonly string[]
+  /** What is being dragged, each of them opaque. Empty while nothing is. */
+  readonly dragged: () => readonly string[]
   readonly frame: () => PlexFrame
   readonly options: () => PlexOptions
   readonly viewport: () => Size
@@ -32,40 +32,40 @@ export interface PlexCarryDeps {
   readonly allowed: () => readonly PlexRelatedSeat[]
   /** How far from the focus the pointer stands before it names a direction. */
   readonly threshold: () => number
-  readonly settle: (carried: readonly string[], seat: PlexRelatedSeat) => void
+  readonly settle: (dragged: readonly string[], seat: PlexRelatedSeat) => void
 }
 
 /**
- * Follow a pointer carrying something across the plex until it is let go or
+ * Follow a pointer dragging something across the plex until it is let go or
  * given up on.
  *
  * The gesture began somewhere the plex cannot see, so it is followed on the
- * window for as long as there is something to carry, and it is over the
+ * window for as long as there is something to drag, and it is over the
  * instant the pointer comes up wherever that is.
  */
-export function usePlexCarry(carry: PlexCarryDeps): PlexCarryState {
-  /** Where the pointer is, and nothing at all while nothing is being carried. */
+export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
+  /** Where the pointer is, and nothing at all while nothing is being dragged. */
   const at = ref<Point | null>(null)
 
   const seat = computed<PlexRelatedSeat | null>(() => {
     const point = at.value
     if (!point) return null
-    return seatCarried({
-      frame: carry.frame(),
-      options: carry.options(),
-      viewport: carry.viewport(),
+    return seatDropped({
+      frame: drag.frame(),
+      options: drag.options(),
+      viewport: drag.viewport(),
       at: point,
-      allowed: carry.allowed(),
-      threshold: carry.threshold(),
+      allowed: drag.allowed(),
+      threshold: drag.threshold(),
     })
   })
 
-  /** What the carry under way installed on the window, if anything. */
+  /** What the drag under way installed on the window, if anything. */
   let detach: (() => void) | null = null
 
   /**
-   * What the carry was handed, held for the life of the gesture. Whoever is
-   * carrying them may put them down on the same release this settles on.
+   * What the drag was handed, held for the life of the gesture. Whoever is
+   * dragging them may put them down on the same release this settles on.
    */
   let holding: readonly string[] = []
 
@@ -77,21 +77,21 @@ export function usePlexCarry(carry: PlexCarryDeps): PlexCarryState {
   }
 
   const move = (event: PointerEvent) => {
-    const element = carry.surface()
+    const element = drag.surface()
     at.value = element ? pointIn(element, event) : null
   }
 
   const finish = (event: PointerEvent) => {
     move(event)
-    const carried = holding
+    const dragged = holding
     const settled = seat.value
     stop()
-    if (carried.length > 0 && settled) carry.settle(carried, settled)
+    if (dragged.length > 0 && settled) drag.settle(dragged, settled)
   }
 
   const follow = () => {
     if (detach) return
-    holding = carry.carried()
+    holding = drag.dragged()
 
     const onMove = (moved: PointerEvent) => move(moved)
     const onUp = (up: PointerEvent) => finish(up)
@@ -110,19 +110,19 @@ export function usePlexCarry(carry: PlexCarryDeps): PlexCarryState {
 
     window.addEventListener('pointermove', onMove)
     // The release is answered on its way down the page, ahead of whoever is
-    // carrying them and puts them down on the way back up.
+    // dragging them and puts them down on the way back up.
     window.addEventListener('pointerup', onUp, CAPTURE)
     window.addEventListener('pointercancel', onLost)
     window.addEventListener('keydown', onKey)
   }
 
   watch(
-    () => carry.carried().length > 0,
-    (carrying) => (carrying ? follow() : stop()),
+    () => drag.dragged().length > 0,
+    (dragging) => (dragging ? follow() : stop()),
     { immediate: true },
   )
 
-  // A plex can go while something is still being carried over it.
+  // A plex can go while something is still being dragged over it.
   onScopeDispose(stop)
 
   return { at, seat }

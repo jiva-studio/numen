@@ -9,8 +9,8 @@
  */
 import { computed, nextTick, shallowRef, useTemplateRef, watch } from 'vue'
 import {
-  carried,
-  carries,
+  dragged,
+  dragLabel,
   everyRow,
   flatten,
   holderOf,
@@ -47,7 +47,7 @@ const props = withDefaults(
     threshold?: number
     /** What the tree is announced as. */
     name?: string
-    /** How many rows are being carried, said at the pointer. */
+    /** How many rows are being dragged, said at the pointer. */
     counted?: (rows: number) => string
     /**
      * An attribute written onto the rows and onto the tree, for something
@@ -88,7 +88,7 @@ const emit = defineEmits<{
    * The rows lifted clear of the tree, on their way across whatever is drawn
    * beside it. Where they end up there is not the tree's to say.
    */
-  (event: 'carry', rows: readonly RowId[]): void
+  (event: 'drag', rows: readonly RowId[]): void
   /** The rows let go of, wherever the pointer had got to. */
   (event: 'drop'): void
   /** The selection asked to go. */
@@ -146,21 +146,21 @@ const { dragging, at, point, lift } = usePressDrag<readonly RowId[], RowLanding>
   },
   // The rows are clear of the tree the moment the press turns into a drag,
   // and said once for the whole of it.
-  began: (rows) => emit('carry', rows),
+  began: (rows) => emit('drag', rows),
 })
 
 const into = computed(() => (at.value && 'into' in at.value ? at.value.into : null))
 const before = computed(() => (at.value && 'before' in at.value ? at.value.before : null))
 
-/** The rows a live drag is carrying, for asking one row at a time. */
+/** The rows a live drag holds, for asking one row at a time. */
 const lifted = computed(() => new Set(point.value ? (dragging.value?.held ?? []) : []))
 
 /** What follows the pointer, and nothing until a press has become a drag. */
-const carrying = computed<DragLabel | null>(() => {
+const label = computed<DragLabel | null>(() => {
   const held = dragging.value
   const where = point.value
   if (!held?.moved || !where) return null
-  return carried(shown.value, held.held, where, props.counted)
+  return dragLabel(shown.value, held.held, where, props.counted)
 })
 
 /** What a row is marked with, and nothing where it is marked with nothing. */
@@ -277,7 +277,7 @@ const onKey = (event: KeyboardEvent): void => {
  * selects no text as it travels, and takes the keyboard itself.
  *
  * A row standing outside the selection is what the press selects, and it is
- * carried alone; a row standing in the selection carries the whole of it, and
+ * dragged alone; a row standing in the selection drags the whole of it, and
  * a plain press collapses the selection onto it once the pointer has let go
  * without travelling.
  */
@@ -292,7 +292,7 @@ function press(row: RowId, event: PointerEvent): void {
     ? takes(selects(shown.value, props.selected, anchor.value, row, how))
     : props.selected
 
-  lift(carries(taken, row), event)
+  lift(dragged(taken, row), event)
 }
 
 /**
@@ -304,7 +304,7 @@ function landingAt(rows: readonly RowId[], at: Point): RowLanding | null {
   const over = box.value?.getBoundingClientRect()
   if (!drawn || !over) return null
 
-  // A pointer that has left the tree is carrying what it holds somewhere else.
+  // A pointer that has left the tree is taking what it holds somewhere else.
   const inside =
     at.x >= over.left && at.x <= over.right && at.y >= over.top && at.y <= over.bottom
   if (!inside) return null
@@ -378,7 +378,7 @@ function onFieldKey(event: KeyboardEvent): void {
         :tabindex="row.id === tabbed ? 0 : -1"
         :data-tree-row="row.id"
         :data-selected="picked.has(row.id) || undefined"
-        :data-carried="lifted.has(row.id) || undefined"
+        :data-dragged="lifted.has(row.id) || undefined"
         :data-last="row.last || undefined"
         :data-into="row.id === into || undefined"
         :data-before="row.id === before || undefined"
@@ -417,10 +417,10 @@ function onFieldKey(event: KeyboardEvent): void {
     </p>
 
     <DragPreview
-      v-if="carrying"
-      class="tree__carried"
-      :at="carrying.at"
-      :says="carrying.says"
+      v-if="label"
+      class="tree__dragged"
+      :at="label.at"
+      :says="label.says"
     />
   </div>
 </template>
@@ -434,7 +434,7 @@ function onFieldKey(event: KeyboardEvent): void {
   --pad: 0.25rem;
   --gap: 0.25rem;
   /* How plainly a row on its way somewhere is drawn. */
-  --carried-fade: 0.5;
+  --dragged-fade: 0.5;
 
   display: flex;
   flex-direction: column;
@@ -465,8 +465,8 @@ function onFieldKey(event: KeyboardEvent): void {
 }
 
 /* A row on its way somewhere, drawn plainly where it stands. */
-.tree__row[data-carried] {
-  opacity: var(--carried-fade);
+.tree__row[data-dragged] {
+  opacity: var(--dragged-fade);
 }
 
 /* Where the keyboard stands, in a row and in the field a name is typed in. */
@@ -518,8 +518,8 @@ function onFieldKey(event: KeyboardEvent): void {
   text-align: center;
 }
 
-/* The rows being carried stand over the tree. */
-.tree__carried {
+/* The rows being dragged stand over the tree. */
+.tree__dragged {
   z-index: 3;
 }
 </style>

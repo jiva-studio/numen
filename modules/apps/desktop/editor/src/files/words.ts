@@ -18,8 +18,8 @@ export const WORDS = {
   remove: 'Remove',
   /** The name a folder is made under, which renaming it is what changes. */
   folder: 'New folder',
-  /** How many rows are being carried, said at the pointer while they are. */
-  carrying: (files: number) => `${files} files`,
+  /** How many rows are being dragged, said at the pointer while they are. */
+  dragging: (files: number) => `${files} files`,
   /** The rows that stayed where they were, because the folder holds those names. */
   taken: 'These are filed there already:',
 }

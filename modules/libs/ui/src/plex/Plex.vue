@@ -30,7 +30,7 @@ import type { PlacedNode, Point } from './node'
 import { countOf, seatWord, type PlexRelatedSeat } from './seat'
 import type { PlexShowing } from './showing'
 import { resolveOptions } from './arrange'
-import { usePlexCarry } from './carry'
+import { usePlexDrag } from './drag'
 import { usePlexGesture } from './gesture'
 import type { MenuOpening } from '../menu/item'
 
@@ -74,16 +74,16 @@ const props = withDefaults(
      */
     seatName?: (seat: PlexRelatedSeat) => string
     /**
-     * What is being carried over the picture from somewhere else. Each
+     * What is being dragged over the picture from somewhere else. Each
      * identifier is opaque and all of them are handed back untouched; an empty
-     * list is nothing carried, and the picture then draws none of it.
+     * list is nothing dragged, and the picture then draws none of it.
      */
-    carried?: readonly string[]
+    dragged?: readonly string[]
     /**
-     * What to call what letting go with something carried in would do. English
+     * What to call what letting go with something dragged in would do. English
      * by default.
      */
-    carriedName?: (seat: PlexRelatedSeat) => string
+    dropName?: (seat: PlexRelatedSeat) => string
   }>(),
   {
     showEdgeLabels: true,
@@ -95,8 +95,8 @@ const props = withDefaults(
     reaching: () => byHandle,
     showing: () => byDoubleClick,
     seatName: seatWord,
-    carried: () => [],
-    carriedName: seatWord,
+    dragged: () => [],
+    dropName: seatWord,
   },
 )
 
@@ -114,11 +114,11 @@ const emit = defineEmits<{
   /** Reached out onto another node: relate the two in this seat. */
   (event: 'link', from: string, to: string, seat: PlexRelatedSeat): void
   /**
-   * What was carried in from outside was let go over the picture: relate each
+   * What was dragged in from outside was let go over the picture: relate each
    * of them to the focus in this seat. The identifiers are the ones they were
    * handed in as.
    */
-  (event: 'bring', carried: readonly string[], seat: PlexRelatedSeat): void
+  (event: 'bring', dragged: readonly string[], seat: PlexRelatedSeat): void
   /**
    * A menu was asked for on a node: which node, where on the screen, and what
    * asked for it. A keypress carries no point, so the middle of the box is
@@ -148,7 +148,7 @@ defineSlots<{
 const FALLBACK = { width: 1200, height: 800 }
 
 const frameElement = useTemplateRef<HTMLElement>('frame')
-/** The drawing, which a carry crossing the plex is measured against. */
+/** The drawing, which a drag crossing the plex is measured against. */
 const view = useTemplateRef<InstanceType<typeof PlexView>>('view')
 const viewport = ref(FALLBACK)
 
@@ -253,20 +253,20 @@ const gesture = usePlexGesture(
 )
 
 /**
- * Something carried across the picture from outside it.
+ * Something dragged across the picture from outside it.
  *
  * The plex works out which seat letting go comes to, measured from the focus,
- * and says so. What is being carried it never looks at.
+ * and says so. What is being dragged it never looks at.
  */
-const carrying = usePlexCarry({
+const dragging = usePlexDrag({
   surface: () => view.value?.svg ?? null,
-  carried: () => props.carried,
+  dragged: () => props.dragged,
   frame: () => frame.value,
   options: () => options.value,
   viewport: () => viewport.value,
   allowed: () => props.creatable,
   threshold: () => props.dragThreshold,
-  settle: (carried, seat) => emit('bring', carried, seat),
+  settle: (dragged, seat) => emit('bring', dragged, seat),
 })
 
 /**
@@ -321,9 +321,9 @@ defineExpose({
       :gesture-from="gesture.from.value"
       :gesture-at="gesture.at.value"
       :gesture-outcome="gesture.outcome.value"
-      :carried-at="carrying.at.value"
-      :carried-seat="carrying.seat.value"
-      :carried-name="carriedName"
+      :dragged-at="dragging.at.value"
+      :drop-seat="dragging.seat.value"
+      :drop-name="dropName"
       @activate="emit('activate', $event)"
       @show="(id, showing) => emit('show', id, showing)"
       @reach="gesture.begin"

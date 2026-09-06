@@ -36,7 +36,7 @@ interface Knobs {
   onShow: (id: string, showing: PlexShowing) => void
   onCreate: (from: string, seat: PlexRelatedSeat) => void
   onLink: (from: string, to: string, seat: PlexRelatedSeat) => void
-  onBring: (carried: readonly string[], seat: PlexRelatedSeat) => void
+  onBring: (dragged: readonly string[], seat: PlexRelatedSeat) => void
   onMenu: (id: string, at: Point, opening: MenuOpening) => void
   onDismiss: () => void
   parts: (id: string) => readonly PlexPart[]
@@ -79,14 +79,14 @@ interface Knobs {
   naming: () => string
 
   /**
-   * What is being carried over the picture from somewhere else, each of them
+   * What is being dragged over the picture from somewhere else, each of them
    * opaque, and empty while nothing is. The story plays the part of whoever is
-   * carrying them, since a plex has no way to pick anything up.
+   * dragging them, since a plex has no way to pick anything up.
    */
-  carried: readonly string[]
+  dragged: readonly string[]
 
-  /** What the shape under the pointer says while something is carried in. */
-  carriedName: (seat: PlexRelatedSeat) => string
+  /** What the shape under the pointer says while something is dragged in. */
+  dropName: (seat: PlexRelatedSeat) => string
 
   /** Component props the panel has no business showing. */
   options?: PlexOptionsInput
@@ -200,15 +200,15 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
     }
 
     /**
-     * What was carried in from outside, each seated beside the focus in the
-     * one seat and called by the identifier it was carried in as. What those
+     * What was dragged in from outside, each seated beside the focus in the
+     * one seat and called by the identifier it was dragged in as. What those
      * identifiers address is the story's to know, and the plex handed them
      * back untouched.
      */
-    const bring = (carried: readonly string[], seat: PlexRelatedSeat) => {
+    const bring = (dragged: readonly string[], seat: PlexRelatedSeat) => {
       const here = neighbourhood.value.nodes.find((node) => node.seat === 'focus')
       if (!here) return
-      for (const one of carried) seats(here.id, one, seat)
+      for (const one of dragged) seats(here.id, one, seat)
     }
 
     const link = (from: string, to: string, seat: PlexRelatedSeat) => {
@@ -237,15 +237,15 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
         :show-edge-labels="args.showEdgeLabels"
         :duration="args.duration"
         :dwell="args.dwell"
-        :carried="args.carried"
-        :carried-name="args.carriedName"
+        :dragged="args.dragged"
+        :drop-name="args.dropName"
         :parts="args.parts"
         @enter="(id, part) => args.onEnter(id, part)"
         @activate="chose($event); args.onActivate($event)"
         @show="(id, showing) => args.onShow(id, showing)"
         @create="(from, seat) => { create(from, seat); args.onCreate(from, seat) }"
         @link="(from, to, seat) => { link(from, to, seat); args.onLink(from, to, seat) }"
-        @bring="(carried, seat) => { bring(carried, seat); args.onBring(carried, seat) }"
+        @bring="(dragged, seat) => { bring(dragged, seat); args.onBring(dragged, seat) }"
         @menu="args.onMenu"
         @dismiss="args.onDismiss"
       />
@@ -358,8 +358,8 @@ const meta = {
     options: { table: { disable: true } },
     clock: { table: { disable: true } },
     naming: { table: { disable: true } },
-    carried: { table: { disable: true } },
-    carriedName: { table: { disable: true } },
+    dragged: { table: { disable: true } },
+    dropName: { table: { disable: true } },
     onActivate: { table: { disable: true } },
     onShow: { table: { disable: true } },
     onCreate: { table: { disable: true } },
@@ -386,8 +386,8 @@ const meta = {
     parts: () => [],
     onEnter: fn(),
     naming: nameNow,
-    carried: [],
-    carriedName: (seat: PlexRelatedSeat) => `as ${seat}`,
+    dragged: [],
+    dropName: (seat: PlexRelatedSeat) => `as ${seat}`,
 
     focusWidth: 176,
     focusHeight: 44,
@@ -506,16 +506,16 @@ export const MakingOne: Story = {
 }
 
 /**
- * Something carried over the picture from outside it.
+ * Something dragged over the picture from outside it.
  *
  * The gesture starts where the plex cannot see it, so all the plex is handed
  * is a list of identifiers and all it answers is a seat, measured from the
- * focus. Several are one line and one seat, and whoever is carrying them says
+ * focus. Several are one line and one seat, and whoever is dragging them says
  * how many, at the pointer, in its own words.
  *
  * The line and the words are drawn while the pointer travels, so what letting
  * go would do is plain before it happens — which is what this is here to be
- * looked at for, and it is left mid-carry.
+ * looked at for, and it is left mid-drag.
  *
  * Only a browser can answer any of it: a real matrix, a pointer the plex never
  * took hold of, and a drawing that follows it across.
@@ -523,7 +523,7 @@ export const MakingOne: Story = {
 export const CarryingThemIn: Story = {
   args: {
     ...invented.args,
-    carried: ['physics/Entropy.md', 'physics/Kelvin.md', 'Heat.md'],
+    dragged: ['physics/Entropy.md', 'physics/Kelvin.md', 'Heat.md'],
   },
   render: invented.render,
   play: async ({ canvasElement }) => {
@@ -532,35 +532,35 @@ export const CarryingThemIn: Story = {
     const box = focus.getBoundingClientRect()
     const middle = box.x + box.width / 2
 
-    const carryTo = (clientX: number, clientY: number) =>
+    const dragTo = (clientX: number, clientY: number) =>
       window.dispatchEvent(
         new PointerEvent('pointermove', { clientX, clientY, pointerId: 1, bubbles: true }),
       )
     const says = async (words: string | null) => {
       await waitFor(async () => {
         await expect(
-          canvasElement.querySelector('.plex__carried .plex__title-text')?.textContent ?? null,
+          canvasElement.querySelector('.plex__dragged .plex__title-text')?.textContent ?? null,
         ).toBe(words)
       })
     }
 
     // Above the focus, where the parents are, and in the words the story gave.
-    carryTo(middle, box.y - 220)
+    dragTo(middle, box.y - 220)
     await says('as parent')
-    await expect(canvasElement.querySelector('.plex__carried .plex__thread')).not.toBeNull()
+    await expect(canvasElement.querySelector('.plex__dragged .plex__thread')).not.toBeNull()
 
     // Below it, where the children are: the words follow the pointer.
-    carryTo(middle, box.bottom + 220)
+    dragTo(middle, box.bottom + 220)
     await says('as child')
 
     // Off the edge of the plex, where letting go would join nothing: nothing
     // is promised, and the line goes with the promise.
-    carryTo(middle, -400)
+    dragTo(middle, -400)
     await says(null)
-    await expect(canvasElement.querySelector('.plex__carried')).toBeNull()
+    await expect(canvasElement.querySelector('.plex__dragged')).toBeNull()
 
     // Back over the picture, and left there to be looked at.
-    carryTo(middle, box.y - 220)
+    dragTo(middle, box.y - 220)
     await says('as parent')
   },
 }

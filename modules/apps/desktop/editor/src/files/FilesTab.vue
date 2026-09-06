@@ -101,7 +101,7 @@ onUnmounted(() => globalThis.removeEventListener('focus', again))
       :open="props.held.list.openRows.value"
       :selected="props.held.list.chosen.value"
       :name="words.tree"
-      :counted="words.carrying"
+      :counted="words.dragging"
       :marking="dropTarget"
       @open="(row: string) => props.held.open(row)"
       @close="(row: string) => props.held.close(row)"
@@ -109,7 +109,7 @@ onUnmounted(() => globalThis.removeEventListener('focus', again))
       @activate="(row: string) => props.held.activate(row)"
       @rename="(row: string, name: string) => void props.held.rename(row, name)"
       @move="(rows: readonly string[], at: DropPosition) => void props.held.move(rows, at)"
-      @carry="(rows: readonly string[]) => props.held.carry(rows)"
+      @drag="(rows: readonly string[]) => props.held.drag(rows)"
       @drop="props.held.drop()"
       @remove="(rows: readonly string[]) => props.held.remove(rows)"
       @menu="(row: string | null, at: Point) => props.held.asks({ path: row, at })"
@@ -149,7 +149,7 @@ onUnmounted(() => globalThis.removeEventListener('focus', again))
   min-block-size: 0;
 }
 
-/* Where a file carried in from outside would land. The window puts this class
+/* Where a file dragged in from outside would land. The window puts this class
    on the element under the pointer for as long as the drag is over it. */
 .files__tree :deep(.file-drop-target-active),
 .files__tree.file-drop-target-active {

@@ -98,8 +98,8 @@ const tab = (at: string, related: readonly string[] = [], takes = true, types: T
   const said: string[] = []
   /** Every note the vault was asked to make on its own. */
   const wrote: string[] = []
-  /** The notes the window is carrying over this picture, which a test sets. */
-  const carrying = ref<readonly string[]>([])
+  /** The notes the window is dragging over this picture, which a test sets. */
+  const dragging = ref<readonly string[]>([])
   /** Where a note made on its own lands, which a test empties for a vault refusing. */
   const writes = ref('Untitled note.md')
   /** Every note put in front of the person on a line of its own prose. */
@@ -128,7 +128,7 @@ const tab = (at: string, related: readonly string[] = [], takes = true, types: T
     runs: (id, path, title) => ran.push([id, path, title]),
     opening: ref('Opening.md'),
     first: async () => 'Opening.md',
-    carried: carrying,
+    dragged: dragging,
     says: (text) => said.push(text),
     writes: async () => {
       wrote.push(writes.value)
@@ -142,7 +142,7 @@ const tab = (at: string, related: readonly string[] = [], takes = true, types: T
   return {
     held,
     node,
-    carrying,
+    dragging,
     writes,
     wrote,
     went: plex.went,
@@ -283,7 +283,7 @@ describe('a plex drawing nothing', () => {
       runs: () => {},
       opening: ref(''),
       first: async () => '',
-      carried: ref([]),
+      dragged: ref([]),
       says: () => {},
       writes: async () => '',
       creatable: ['parent', 'child', 'jump'],
@@ -374,20 +374,20 @@ describe('the picture', () => {
       runs: () => {},
       opening: ref(''),
       first: async () => '',
-      carried: ref(['Entropy.md']),
+      dragged: ref(['Entropy.md']),
       says: () => {},
       writes: async () => '',
       creatable: ['parent', 'child', 'jump'],
     })
 
     expect(held.picture.value).toBeNull()
-    // Nothing is drawn, so nothing can be carried onto it.
-    expect(held.carried.value).toStrictEqual([])
+    // Nothing is drawn, so nothing can be dragged onto it.
+    expect(held.dragged.value).toStrictEqual([])
   })
 })
 
-describe('notes carried in and let go over the picture', () => {
-  it('writes the link into the note the plex stands on, naming the carried one second', async () => {
+describe('notes dragged in and let go over the picture', () => {
+  it('writes the link into the note the plex stands on, naming the dragged one second', async () => {
     const one = tab('Root.md', ['Child.md'])
 
     await one.held.brought(['physics/Entropy.md'], 'child')
@@ -409,7 +409,7 @@ describe('notes carried in and let go over the picture', () => {
     expect(one.went).toEqual(['Root.md'])
   })
 
-  it('takes the seat the carry named, whichever it was', async () => {
+  it('takes the seat the drag named, whichever it was', async () => {
     const one = tab('Root.md')
 
     await one.held.brought(['Entropy.md'], 'parent')
@@ -465,25 +465,25 @@ describe('notes carried in and let go over the picture', () => {
 })
 
 describe('what the picture draws a line to', () => {
-  it('is what the window says it is carrying', () => {
+  it('is what the window says it is dragging', () => {
     const one = tab('Root.md')
-    one.carrying.value = ['physics/Entropy.md', 'physics/Kelvin.md']
+    one.dragging.value = ['physics/Entropy.md', 'physics/Kelvin.md']
 
-    expect(one.held.carried.value).toStrictEqual([
+    expect(one.held.dragged.value).toStrictEqual([
       'physics/Entropy.md',
       'physics/Kelvin.md',
     ])
   })
 
-  it('is nothing while the window is carrying none', () => {
-    expect(tab('Root.md').held.carried.value).toStrictEqual([])
+  it('is nothing while the window is dragging none', () => {
+    expect(tab('Root.md').held.dragged.value).toStrictEqual([])
   })
 
   it('leaves out the note the plex stands on, and keeps the rest', () => {
     const one = tab('Root.md')
-    one.carrying.value = ['Root.md', 'Entropy.md']
+    one.dragging.value = ['Root.md', 'Entropy.md']
 
-    expect(one.held.carried.value).toStrictEqual(['Entropy.md'])
+    expect(one.held.dragged.value).toStrictEqual(['Entropy.md'])
   })
 })
 
@@ -549,7 +549,7 @@ describe('the parts a node hangs', () => {
       runs: () => {},
       opening: ref('Root.md'),
       first: async () => 'Root.md',
-      carried: ref([]),
+      dragged: ref([]),
       says: () => {},
       writes: async () => '',
       creatable: ['parent', 'child', 'jump'],
@@ -744,7 +744,7 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
     runs: (id, path, title) => ran.push([id, path, title]),
     opening: ref(''),
     first: async () => '',
-    carried: ref([]),
+    dragged: ref([]),
     says: () => {},
     writes: async () => '',
     creatable: ['parent', 'child', 'jump'],
@@ -984,7 +984,7 @@ describe('a plex that travelled', () => {
     const arrived = one.picture()?.nodes.map((node) => node.id) ?? []
     expect(arrived).toHaveLength(2)
     expect(arrived.filter((id) => left.includes(id))).toStrictEqual([])
-    // A node of the picture it left stands for nothing, so a gesture carrying
+    // A node of the picture it left stands for nothing, so a gesture dragging
     // one asks the vault about nothing.
     for (const node of left) one.held.activate(node)
     expect(one.asked.at(-1)).toBe('Cold.md')
@@ -1070,7 +1070,7 @@ const window = (opening = 'Opening.md') => {
       asked.push(first.value)
       return first.value
     },
-    carried: ref([]),
+    dragged: ref([]),
     says: () => {},
     writes: async () => '',
     creatable: ['parent', 'child', 'jump'],

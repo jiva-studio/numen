@@ -71,10 +71,10 @@ export interface PlexTabDeps {
   /** The note the vault opens with, as it was last answered. */
   readonly opening: Readonly<Ref<string>>
   /**
-   * The notes the window is carrying over the picture, and none while it
-   * carries nothing.
+   * The notes the window is dragging over the picture, and none while it
+   * drags nothing.
    */
-  readonly carried: Readonly<Ref<readonly string[]>>
+  readonly dragged: Readonly<Ref<readonly string[]>>
   /** What could not be done, in words a person reads. */
   says(text: string): void
   /**
@@ -209,15 +209,15 @@ export function plexing(view: View, deps: PlexTabDeps) {
   )
 
   /**
-   * The notes carried over this picture from elsewhere in the window.
+   * The notes dragged over this picture from elsewhere in the window.
    *
-   * A plex with nothing true to draw carries nothing, and the note the plex
-   * stands on is left out of what is carried over it.
+   * A plex with nothing true to draw drags nothing, and the note the plex
+   * stands on is left out of what is dragged over it.
    */
-  const carried = computed<readonly string[]>(() => {
+  const dragged = computed<readonly string[]>(() => {
     const here = view.here.value
     if (!deps.ready.value || !view.neighbourhood.value || !here) return []
-    return deps.carried.value.filter((path) => path !== here)
+    return deps.dragged.value.filter((path) => path !== here)
   })
 
   /** The menu on a node, for as long as it stands. */
@@ -314,21 +314,21 @@ export function plexing(view: View, deps: PlexTabDeps) {
   }
 
   /**
-   * Notes carried in from the vault and let go over the picture. They are
+   * Notes dragged in from the vault and let go over the picture. They are
    * paths already, having never been drawn as nodes of this picture.
    *
    * Each takes the one seat in the note the plex stands on, which is the one
    * every link is written in. A note the vault refused stays unjoined and is
    * said; the picture is asked for again once any of them was written.
    */
-  const brought = async (carried: readonly string[], seat: PlexRelatedSeat) => {
+  const brought = async (dragged: readonly string[], seat: PlexRelatedSeat) => {
     const here = view.here.value
     if (!here) return
 
     const refused: string[] = []
     let written = false
 
-    for (const path of carried) {
+    for (const path of dragged) {
       if (path === here) continue
       if (await deps.makes.join(here, path, seat)) written = true
       else refused.push(nameOf(path))
@@ -415,7 +415,7 @@ export function plexing(view: View, deps: PlexTabDeps) {
     view,
     picture,
     empty,
-    carried,
+    dragged,
     menu,
     creatable: deps.creatable,
     typeOf,

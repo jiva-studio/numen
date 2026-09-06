@@ -159,29 +159,29 @@ export const everyRow = (shown: readonly ShownRow[], anchor: RowId | null): RowS
 })
 
 /**
- * The rows a press on a row carries: the selection, where the row stands in it,
+ * The rows a press on a row drags: the selection, where the row stands in it,
  * and the row alone where it stands outside.
  */
-export const carries = (selected: readonly RowId[], row: RowId): readonly RowId[] =>
+export const dragged = (selected: readonly RowId[], row: RowId): readonly RowId[] =>
   selected.includes(row) ? selected : [row]
 
 /** Whether two selections hold the same rows in the same order. */
 export const sameRows = (rows: readonly RowId[], others: readonly RowId[]): boolean =>
   rows.length === others.length && rows.every((row, at) => row === others[at])
 
-/** What is drawn at the pointer while rows are carried. */
+/** What is drawn at the pointer while rows are dragged. */
 export interface DragLabel {
-  /** The name of the one row carried, or how many there are. */
+  /** The name of the one row dragged, or how many there are. */
   readonly says: string
   /** Where the pointer is, which is where it is drawn. */
   readonly at: Point
 }
 
 /**
- * What follows the pointer while rows are carried, and nothing while none are.
+ * What follows the pointer while rows are dragged, and nothing while none are.
  * One row is said by its name; several are said by how many.
  */
-export function carried(
+export function dragLabel(
   shown: readonly ShownRow[],
   rows: readonly RowId[],
   at: Point,
@@ -310,12 +310,12 @@ export function refuses(
 ): boolean {
   if (into === null) return false
 
-  const carried = new Set(dragging)
-  if (carried.has(into)) return true
+  const lifted = new Set(dragging)
+  if (lifted.has(into)) return true
 
   const below = (held: readonly Row[], within: boolean): boolean =>
     held.some(
-      (row) => (within && row.id === into) || below(row.rows ?? [], within || carried.has(row.id)),
+      (row) => (within && row.id === into) || below(row.rows ?? [], within || lifted.has(row.id)),
     )
 
   return below(rows, false)

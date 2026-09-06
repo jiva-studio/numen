@@ -7,8 +7,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   between,
-  carried,
-  carries,
+  dragged,
+  dragLabel,
   everyRow,
   flatten,
   holderOf,
@@ -397,14 +397,14 @@ describe('every row drawn, selected at once', () => {
   })
 })
 
-describe('the rows a press carries', () => {
+describe('the rows a press drags', () => {
   it('are the selection, where the row stands in it', () => {
-    expect(carries(['work', 'notes'], 'notes')).toStrictEqual(['work', 'notes'])
+    expect(dragged(['work', 'notes'], 'notes')).toStrictEqual(['work', 'notes'])
   })
 
   it('are the row alone, where it stands outside', () => {
-    expect(carries(['work', 'notes'], 'loose')).toStrictEqual(['loose'])
-    expect(carries([], 'loose')).toStrictEqual(['loose'])
+    expect(dragged(['work', 'notes'], 'loose')).toStrictEqual(['loose'])
+    expect(dragged([], 'loose')).toStrictEqual(['loose'])
   })
 })
 
@@ -425,19 +425,19 @@ describe('what follows the pointer', () => {
   const at = { x: 40, y: 60 }
   const counted = (rows: number) => `${rows} rows`
 
-  it('is the name of the one row carried', () => {
-    expect(carried(shown, ['notes'], at, counted)).toStrictEqual({ says: 'Notes', at })
+  it('is the name of the one row dragged', () => {
+    expect(dragLabel(shown, ['notes'], at, counted)).toStrictEqual({ says: 'Notes', at })
   })
 
-  it('is how many are carried, where there are several', () => {
-    expect(carried(shown, ['work', 'notes'], at, counted)?.says).toBe('2 rows')
+  it('is how many are dragged, where there are several', () => {
+    expect(dragLabel(shown, ['work', 'notes'], at, counted)?.says).toBe('2 rows')
   })
 
-  it('is the identity of a row carried that is not drawn', () => {
-    expect(carried(shown, ['friday'], at, counted)?.says).toBe('friday')
+  it('is the identity of a row dragged that is not drawn', () => {
+    expect(dragLabel(shown, ['friday'], at, counted)?.says).toBe('friday')
   })
 
-  it('is nothing at all while nothing is carried', () => {
-    expect(carried(shown, [], at, counted)).toBeNull()
+  it('is nothing at all while nothing is dragged', () => {
+    expect(dragLabel(shown, [], at, counted)).toBeNull()
   })
 })

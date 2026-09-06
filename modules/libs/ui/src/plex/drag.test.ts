@@ -1,9 +1,9 @@
 /**
- * Something carried over the plex from outside it, driven by hand.
+ * Something dragged over the plex from outside it, driven by hand.
  *
  * jsdom lays nothing out and has no pointer, so the element's matrix is stubbed
  * and the events are made here. What is being checked is the plumbing — that
- * the plex picks a carry up, follows it, draws it and settles it — not the
+ * the plex picks a drag up, follows it, draws it and settles it — not the
  * arithmetic, which is `arrange/drop.test.ts` and needs none of this.
  */
 import { mount } from '@vue/test-utils'
@@ -14,8 +14,8 @@ import type { PlexRelatedSeat } from './seat'
 
 const NEIGHBOURHOOD = build('A node', { parent: 1, child: 2, jump: 1 })
 
-/** What is being carried, which the plex never looks inside. */
-const CARRIED = ['physics/Entropy.md']
+/** What is being dragged, which the plex never looks inside. */
+const DRAGGED = ['physics/Entropy.md']
 
 /** Several at once, which the plex draws one line and one shape for. */
 const SEVERAL = ['physics/Entropy.md', 'physics/Kelvin.md', 'Heat.md']
@@ -44,7 +44,7 @@ type PlexProps = InstanceType<typeof Plex>['$props']
 
 const mountPlex = (props: Partial<PlexProps> = {}) => {
   const plex = mount(Plex, {
-    props: { neighbourhood: NEIGHBOURHOOD, duration: 0, carried: CARRIED, ...props },
+    props: { neighbourhood: NEIGHBOURHOOD, duration: 0, dragged: DRAGGED, ...props },
     attachTo: document.body,
   })
   stubMatrix(plex.find('svg').element as SVGSVGElement)
@@ -54,7 +54,7 @@ const mountPlex = (props: Partial<PlexProps> = {}) => {
 const pointer = (type: string, x: number, y: number) =>
   new PointerEvent(type, { clientX: x, clientY: y, pointerId: 1, bubbles: true })
 
-/** The pointer carried to a place on the page, and let go there. */
+/** The pointer dragged to a place on the page, and let go there. */
 async function letGo(plex: ReturnType<typeof mountPlex>, x: number, y: number) {
   window.dispatchEvent(pointer('pointermove', x, y))
   window.dispatchEvent(pointer('pointerup', x, y))
@@ -71,14 +71,14 @@ const nodeAt = (plex: ReturnType<typeof mountPlex>, seat: string) => {
   return { x: 600 + at[0]!, y: 400 + at[1]! }
 }
 
-const carriedIn = (plex: ReturnType<typeof mountPlex>) => plex.find('.plex__carried')
+const draggedIn = (plex: ReturnType<typeof mountPlex>) => plex.find('.plex__dragged')
 
-describe('letting go of something carried in', () => {
-  it('joins it to the focus in the seat the carry went towards', async () => {
+describe('letting go of something dragged in', () => {
+  it('joins it to the focus in the seat the drag went towards', async () => {
     const plex = mountPlex()
     await letGo(plex, 600, 40)
 
-    expect(plex.emitted('bring')).toStrictEqual([[CARRIED, 'parent']])
+    expect(plex.emitted('bring')).toStrictEqual([[DRAGGED, 'parent']])
     expect(plex.emitted('create')).toBeUndefined()
     expect(plex.emitted('link')).toBeUndefined()
   })
@@ -86,11 +86,11 @@ describe('letting go of something carried in', () => {
   it('answers below with a child, and either side with a jump', async () => {
     const below = mountPlex()
     await letGo(below, 600, 760)
-    expect(below.emitted('bring')).toStrictEqual([[CARRIED, 'child']])
+    expect(below.emitted('bring')).toStrictEqual([[DRAGGED, 'child']])
 
     const beside = mountPlex()
     await letGo(beside, 100, 400)
-    expect(beside.emitted('bring')).toStrictEqual([[CARRIED, 'jump']])
+    expect(beside.emitted('bring')).toStrictEqual([[DRAGGED, 'jump']])
   })
 
   it('reads which way a seat lies off the arrangement', async () => {
@@ -99,7 +99,7 @@ describe('letting go of something carried in', () => {
     })
     await letGo(plex, 600, 40)
 
-    expect(plex.emitted('bring')).toStrictEqual([[CARRIED, 'child']])
+    expect(plex.emitted('bring')).toStrictEqual([[DRAGGED, 'child']])
   })
 
   it('joins to the focus though the pointer is squarely over another node', async () => {
@@ -115,7 +115,7 @@ describe('letting go of something carried in', () => {
     window.dispatchEvent(pointer('pointerup', jump.x, jump.y))
     await plex.vm.$nextTick()
 
-    expect(plex.emitted('bring')).toStrictEqual([[CARRIED, 'jump']])
+    expect(plex.emitted('bring')).toStrictEqual([[DRAGGED, 'jump']])
     expect(plex.emitted('link')).toBeUndefined()
   })
 
@@ -133,7 +133,7 @@ describe('letting go of something carried in', () => {
 
     const further = mountPlex()
     await letGo(further, 600, 410)
-    expect(further.emitted('bring')).toStrictEqual([[CARRIED, 'child']])
+    expect(further.emitted('bring')).toStrictEqual([[DRAGGED, 'child']])
   })
 
   it('joins nothing towards a seat the caller left out', async () => {
@@ -145,56 +145,56 @@ describe('letting go of something carried in', () => {
   })
 
   it('hands every one of them back, in the one seat', async () => {
-    const plex = mountPlex({ carried: SEVERAL })
+    const plex = mountPlex({ dragged: SEVERAL })
     await letGo(plex, 600, 760)
 
     expect(plex.emitted('bring')).toStrictEqual([[SEVERAL, 'child']])
   })
 
-  it('joins nothing while nothing at all is being carried', async () => {
-    const plex = mountPlex({ carried: [] })
+  it('joins nothing while nothing at all is being dragged', async () => {
+    const plex = mountPlex({ dragged: [] })
     await letGo(plex, 600, 40)
 
     expect(plex.emitted('bring')).toBeUndefined()
-    expect(carriedIn(plex).exists()).toBe(false)
+    expect(draggedIn(plex).exists()).toBe(false)
   })
 
-  it('joins them before whoever is carrying them hears the same release', async () => {
-    // Whoever is carrying them is listening for the release too, and put them
+  it('joins them before whoever is dragging them hears the same release', async () => {
+    // Whoever is dragging them is listening for the release too, and put them
     // down as soon as it hears one. This has to have answered by then.
-    const plex = mountPlex({ carried: [] })
+    const plex = mountPlex({ dragged: [] })
 
     let answered: boolean | null = null
-    const carrier = () => {
+    const dragger = () => {
       answered = plex.emitted('bring') !== undefined
     }
-    // Listening from before the plex was given anything, as anyone carrying
+    // Listening from before the plex was given anything, as anyone dragging
     // something here has been.
-    window.addEventListener('pointerup', carrier)
+    window.addEventListener('pointerup', dragger)
 
-    await plex.setProps({ carried: CARRIED })
+    await plex.setProps({ dragged: DRAGGED })
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
 
     plex.find('svg').element.dispatchEvent(pointer('pointerup', 600, 40))
-    window.removeEventListener('pointerup', carrier)
+    window.removeEventListener('pointerup', dragger)
     await plex.vm.$nextTick()
 
-    expect(plex.emitted('bring')).toStrictEqual([[CARRIED, 'parent']])
+    expect(plex.emitted('bring')).toStrictEqual([[DRAGGED, 'parent']])
     expect(answered).toBe(true)
   })
 
-  it('joins what it was handed, whatever the caller says it is carrying by then', async () => {
+  it('joins what it was handed, whatever the caller says it is dragging by then', async () => {
     const plex = mountPlex()
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
 
-    // A carry holds what it was handed for as long as it runs.
-    await plex.setProps({ carried: SEVERAL })
+    // A drag holds what it was handed for as long as it runs.
+    await plex.setProps({ dragged: SEVERAL })
     window.dispatchEvent(pointer('pointerup', 600, 40))
     await plex.vm.$nextTick()
 
-    expect(plex.emitted('bring')).toStrictEqual([[CARRIED, 'parent']])
+    expect(plex.emitted('bring')).toStrictEqual([[DRAGGED, 'parent']])
   })
 
   it('joins nothing after Escape, and nothing after the pointer is taken away', async () => {
@@ -214,60 +214,60 @@ describe('letting go of something carried in', () => {
   })
 })
 
-describe('while something is being carried over the plex', () => {
+describe('while something is being dragged over the plex', () => {
   it('draws the line under the hand and says which seat', async () => {
     const plex = mountPlex()
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
 
-    expect(carriedIn(plex).find('.plex__thread').exists()).toBe(true)
-    expect(carriedIn(plex).get('.plex__title-text').text()).toBe('parent')
+    expect(draggedIn(plex).find('.plex__thread').exists()).toBe(true)
+    expect(draggedIn(plex).get('.plex__title-text').text()).toBe('parent')
   })
 
   it('says it in the words it was given, not in its own', async () => {
-    const plex = mountPlex({ carriedName: (seat: PlexRelatedSeat) => `as ${seat}` })
+    const plex = mountPlex({ dropName: (seat: PlexRelatedSeat) => `as ${seat}` })
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
 
-    expect(carriedIn(plex).get('.plex__title-text').text()).toBe('as parent')
+    expect(draggedIn(plex).get('.plex__title-text').text()).toBe('as parent')
   })
 
   it('draws nothing where letting go would come to nothing', async () => {
     const plex = mountPlex()
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
-    expect(carriedIn(plex).exists()).toBe(true)
+    expect(draggedIn(plex).exists()).toBe(true)
 
     // Past the edge, and towards a seat the caller left out: the picture
     // promises only what letting go would actually do.
     window.dispatchEvent(pointer('pointermove', 600, 1400))
     await plex.vm.$nextTick()
-    expect(carriedIn(plex).exists()).toBe(false)
+    expect(draggedIn(plex).exists()).toBe(false)
 
     window.dispatchEvent(pointer('pointermove', 1100, 400))
     await plex.vm.$nextTick()
-    expect(carriedIn(plex).exists()).toBe(false)
+    expect(draggedIn(plex).exists()).toBe(false)
   })
 
-  it('draws nothing the moment the window says it is carrying nothing', async () => {
+  it('draws nothing the moment the window says it is dragging nothing', async () => {
     const plex = mountPlex()
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
-    expect(carriedIn(plex).exists()).toBe(true)
+    expect(draggedIn(plex).exists()).toBe(true)
 
-    await plex.setProps({ carried: [] })
-    expect(carriedIn(plex).exists()).toBe(false)
+    await plex.setProps({ dragged: [] })
+    expect(draggedIn(plex).exists()).toBe(false)
   })
 
   it('draws nothing once it has been let go of', async () => {
     const plex = mountPlex()
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
-    expect(carriedIn(plex).exists()).toBe(true)
+    expect(draggedIn(plex).exists()).toBe(true)
 
     window.dispatchEvent(pointer('pointerup', 600, 40))
     await plex.vm.$nextTick()
-    expect(carriedIn(plex).exists()).toBe(false)
+    expect(draggedIn(plex).exists()).toBe(false)
   })
 
   it('draws a shape nobody can reach: it is not a node of the picture yet', async () => {
@@ -275,7 +275,7 @@ describe('while something is being carried over the plex', () => {
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
 
-    const shape = carriedIn(plex).get('.plex__node')
+    const shape = draggedIn(plex).get('.plex__node')
     expect(shape.attributes('role')).toBeUndefined()
     expect(shape.attributes('aria-label')).toBeUndefined()
     expect(shape.attributes('tabindex')).toBe('-1')

@@ -45,10 +45,10 @@ export interface FilesTabDeps {
   /** A file or a folder filed somewhere else, under the name the path ends in. */
   moves(from: string, to: string): Promise<void>
   /**
-   * The notes the tree is carrying over the rest of the window, and none once
+   * The notes the tree is dragging over the rest of the window, and none once
    * it has let go.
    */
-  carries(paths: readonly string[]): void
+  drags(paths: readonly string[]): void
   /** An empty folder. The folders above it are made with it. */
   makes(path: string): Promise<void>
   /**
@@ -221,7 +221,7 @@ export function filing(list: FileTree, deps: FilesTabDeps) {
    * Rows let go of somewhere, each filed in the folder the drop landed in
    * under the name it carries. The tree refuses a drop into one of the rows or
    * into anything under one, so what arrives here is somewhere else. A folder
-   * is carried whole, with everything filed inside it.
+   * is dragged whole, with everything filed inside it.
    *
    * A row whose name is taken in that folder stays where it is and is said;
    * the rest go. The folders are read again once, when all of them are done.
@@ -251,14 +251,14 @@ export function filing(list: FileTree, deps: FilesTabDeps) {
   }
 
   /**
-   * Rows lifted clear of the tree and carried over the rest of the window.
+   * Rows lifted clear of the tree and dragged over the rest of the window.
    *
    * The vault's links are between notes, so the notes among the rows are what
-   * is carried and the rest stay where they are. Rows holding no note at all
-   * carry nothing.
+   * is dragged and the rest stay where they are. Rows holding no note at all
+   * drag nothing.
    */
-  const carry = (paths: readonly string[]) => {
-    deps.carries(
+  const drag = (paths: readonly string[]) => {
+    deps.drags(
       paths.filter((path) => {
         const entry = list.entryAt(path)
         return !!entry && !entry.folder && entry.kind === 'note'
@@ -267,7 +267,7 @@ export function filing(list: FileTree, deps: FilesTabDeps) {
   }
 
   /** The rows let go of, wherever that was. */
-  const drop = () => deps.carries([])
+  const drop = () => deps.drags([])
 
   /** The rows asked to go, handed to the window as one command over all of them. */
   const remove = (paths: readonly string[]) => {
@@ -373,7 +373,7 @@ export function filing(list: FileTree, deps: FilesTabDeps) {
     select,
     rename,
     move,
-    carry,
+    drag,
     drop,
     remove,
     makes,
