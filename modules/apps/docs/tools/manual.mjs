@@ -536,6 +536,9 @@ const cli = async () => {
   const usage = source.match(/const usage = `([\s\S]*?)`/)
   if (!usage) die('cli.go no longer prints a usage string')
 
+  /** Where a command stands. Anything further in is a line, not an entry. */
+  const LEFT = 2
+
   const blocks = { usage: [], options: [] }
   let holding = null
   for (const line of usage[1].split('\n')) {
@@ -549,11 +552,20 @@ const cli = async () => {
       continue
     }
     if (!holding) continue
-    // Two spaces are what holds a line apart from what it says. A line inside
-    // a block that has none is a line this cannot read, and dropping it is
+    // Two spaces are what holds a line apart from what it says. A line with
+    // none of them that stands in under what is said carries the line above
+    // on; anywhere else it is a line this cannot read, and dropping it is
     // dropping a command off the page.
     const said = line.trim().match(/^(.*?)\s{2,}(.*)$/)
-    if (!said) die(`cli.go says nothing about what it lists under ${holding}: ${line.trim()}`)
+    if (!said) {
+      const above = blocks[holding].at(-1)
+      const indent = line.length - line.trimStart().length
+      if (!above || indent <= LEFT) {
+        die(`cli.go says nothing about what it lists under ${holding}: ${line.trim()}`)
+      }
+      above[1] += ` ${line.trim()}`
+      continue
+    }
     blocks[holding].push([said[1], said[2]])
   }
   if (blocks.usage.length === 0) die('cli.go lists no commands')
