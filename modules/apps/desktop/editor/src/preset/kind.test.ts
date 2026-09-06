@@ -21,7 +21,7 @@ import {
   type Settings,
   type WriteResult,
 } from './core'
-import { BOUNDS } from '../testing/preset'
+import { BOUNDS } from './drawn'
 import type { RefusalReason } from '../core'
 import type { Host } from '../tabs/windowing'
 import type { FileOpeners } from '../tabs/putting'

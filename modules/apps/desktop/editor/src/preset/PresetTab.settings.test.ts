@@ -14,7 +14,7 @@ import sliderSource from './CurveSlider.vue?raw'
 import { NO_BOUNDS } from './core'
 import type { Field } from './curve'
 import type { PresetTabState, SettingValue } from './kind'
-import { BOUNDS, drawn, rows, tabAt } from '../testing/preset'
+import { BOUNDS, drawn, rows, tabAt } from './drawn'
 import { WORDS as words } from './words'
 
 describe('the settings under the control', () => {

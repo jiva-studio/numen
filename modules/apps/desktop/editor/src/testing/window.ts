@@ -10,7 +10,6 @@ import { defineComponent, h } from 'vue'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { panesOf, Workspace, type WorkspaceLayout } from '@numen/ui'
 import type { Tab } from '../core'
-import PlexTab from '../plex/PlexTab.vue'
 
 
 const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoisted(() => ({
@@ -540,9 +539,12 @@ const cards = (window: VueWrapper): readonly string[] =>
 /**
  * What the plex calls the note it is standing on, which is what every gesture
  * it reports carries. The vault is asked about a path, and this is not one.
+ *
+ * The tab is found by the name the window addresses it by, so this harness
+ * holds no screen's file.
  */
 const nodeInPlex = (window: VueWrapper): string => {
-  const held = window.findComponent(PlexTab).props('held') as {
+  const held = window.findComponent({ name: 'PlexTab' }).props('held') as {
     picture: { value: { nodes: readonly { id: string }[] } | null }
   }
   return held.picture.value?.nodes[0]?.id ?? ''

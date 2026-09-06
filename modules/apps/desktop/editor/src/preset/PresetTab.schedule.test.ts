@@ -10,7 +10,7 @@ import { mount } from '@vue/test-utils'
 import { StopReason } from '@numen/protocol'
 import PresetTab from './PresetTab.vue'
 import { NOWHERE, type Curve } from './core'
-import { drawn, point, rows, tabAt } from '../testing/preset'
+import { drawn, point, rows, tabAt } from './drawn'
 import { WORDS as words } from './words'
 
 describe('a preset that schedules nothing', () => {
