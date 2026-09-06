@@ -19,7 +19,7 @@ export interface Wheel {
 }
 
 /** How far the hand travels before it is dragging and not pressing. */
-export const HELD = 3
+export const DRAG_THRESHOLD = 3
 
 /**
  * How far a wheel moves the row.
@@ -73,7 +73,7 @@ export class Hand {
   to(at: Offset): Offset | undefined {
     if (!this.from) return undefined
     const by = { x: at.x - this.from.x, y: at.y - this.from.y }
-    if (!this.moved && Math.hypot(by.x, by.y) < HELD) return undefined
+    if (!this.moved && Math.hypot(by.x, by.y) < DRAG_THRESHOLD) return undefined
     this.moved = true
     return { x: this.stood.x - by.x, y: this.stood.y - by.y }
   }

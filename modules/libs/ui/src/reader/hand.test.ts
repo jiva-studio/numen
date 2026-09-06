@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { HELD, Hand, wheeled } from './hand'
+import { DRAG_THRESHOLD, Hand, wheeled } from './hand'
 
 describe('a wheel turned over the row', () => {
   it('moves the row sideways where there is nothing below', () => {
@@ -37,7 +37,7 @@ describe('a hand on the row', () => {
     const hand = new Hand()
     hand.take(at(200), at(500))
 
-    expect(hand.to(at(200 + HELD - 1))).toBeUndefined()
+    expect(hand.to(at(200 + DRAG_THRESHOLD - 1))).toBeUndefined()
     expect(hand.dragging).toBe(false)
   })
 
