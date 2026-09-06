@@ -13,9 +13,9 @@ import "strings"
 //
 // Inline style is allowed because a page positions what it draws through the
 // style attribute.
-func Policy(from Sources) string {
-	return "default-src 'self'; img-src " + named(from.Images) +
-		"; media-src " + named(from.Media) +
+func (s Sources) Policy() string {
+	return "default-src 'self'; img-src " + named(s.Images) +
+		"; media-src " + named(s.Media) +
 		"; style-src 'self' 'unsafe-inline'; " +
 		"font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; " +
 		"form-action 'none'; frame-ancestors 'none'"

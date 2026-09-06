@@ -100,7 +100,7 @@ func (a *API) Serving(files http.Handler, named ...string) http.Handler {
 
 	// Where a recording is played from is known once the socket it is served
 	// over is open, which is before a page is ever asked for.
-	policy := appearance.Policy(appearance.Sources{Media: a.Playing.named()})
+	policy := appearance.Sources{Media: a.Playing.named()}.Policy()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", policy)
 		// A window being taken away answers nothing.

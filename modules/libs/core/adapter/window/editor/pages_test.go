@@ -94,7 +94,7 @@ func handed(handler http.Handler, path string) *httptest.ResponseRecorder {
 // refused by `img-src` and `font-src`, and the element the theme is spliced
 // into is permitted by `style-src`.
 func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
-	held := appearance.Policy(appearance.Sources{})
+	held := appearance.Sources{}.Policy()
 
 	handler := (&API{}).Serving(http.NotFoundHandler())
 	for _, path := range []string{"", "/", "/index.html", "/built/index.css", assetOf("a.pdf")} {
