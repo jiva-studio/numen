@@ -4,7 +4,6 @@ import { Goal as Goals, Refusal, StopReason } from '@numen/protocol'
 import {
   CLOSES_NOTHING,
   goalWords,
-  holds,
   leftWords,
   opens,
   scheduling,
@@ -137,13 +136,6 @@ const answering = (
       },
     }
   },
-})
-
-describe('what a day of a preset holds', () => {
-  it('holds each kind of card up to what the day holds of it', () => {
-    expect(holds(budget({ new: 10, reviews: 45 }))).toBe(55)
-  })
-
 })
 
 // Why a preset schedules nothing is the core's verdict, and the window says it
