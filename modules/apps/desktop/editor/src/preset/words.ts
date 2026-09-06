@@ -253,7 +253,10 @@ export const WORDS = {
         ? { figure: 'not yet', name: 'in the days ahead' }
         : learns === 0
           ? { figure: 'today', name: 'all of it learned' }
-          : { figure: count(learns), name: learns === 1 ? 'day to learn it' : 'days to learn it' }
+          : {
+              figure: count(learns),
+              name: plural(learns, 'day to learn it', 'days to learn it'),
+            }
     return [when, now]
   },
   fieldName: (field: Field) => FIELDS[field][0],

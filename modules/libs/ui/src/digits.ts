@@ -19,9 +19,13 @@ export const percent = (share: number): string => `${Math.round(share * 100)}%`
  *
  * Apart from `many` because a layout that puts the figure and the noun in
  * fields of their own still has the noun to make plural.
+ *
+ * `other` is the whole plural where an `s` on the end does not give it: an
+ * irregular noun, or a phrase whose plural falls inside it. `one` and `other`
+ * are the two forms English has, in the words `Intl.PluralRules` gives them.
  */
-export const plural = (count: number, one: string): string =>
-  Math.round(count) === 1 ? one : `${one}s`
+export const plural = (count: number, one: string, other = `${one}s`): string =>
+  Math.round(count) === 1 ? one : other
 
 /**
  * A count and the thing it counts, in the singular where there is one of it.

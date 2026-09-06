@@ -33,6 +33,14 @@ describe('the thing a count counts', () => {
     expect(plural(1.4, 'card')).toBe('card')
     expect(plural(1.5, 'card')).toBe('cards')
   })
+
+  // An `s` on the end reaches neither an irregular noun nor a phrase whose
+  // plural falls inside it, so the whole plural can be handed in.
+  it('takes the whole plural where an s does not give it', () => {
+    expect(plural(1, 'child', 'children')).toBe('child')
+    expect(plural(2, 'child', 'children')).toBe('children')
+    expect(plural(3, 'day to learn it', 'days to learn it')).toBe('days to learn it')
+  })
 })
 
 describe('a count and the thing it counts', () => {
