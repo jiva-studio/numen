@@ -287,7 +287,7 @@ describe('what is in front', () => {
 })
 
 describe('a command that needs nothing', () => {
-  it('is a deed the moment it is chosen, over the note in front', () => {
+  it('is carried out the moment it is chosen, over the note in front', () => {
     const { commands } = asking()
 
     expect(commands.chose('read', 'read')).toStrictEqual({
@@ -396,23 +396,23 @@ describe('a command that asks for a name', () => {
 
 /** The note goes to the vault's .trash folder, so nothing is asked over it. */
 describe('removing a note', () => {
-  it('is a deed the moment it is asked for, over the note in front', () => {
+  it('is carried out the moment it is asked for, over the note in front', () => {
     const { commands } = asking()
 
-    const deed = commands.asks('remove', front())
+    const invocation = commands.asks('remove', front())
 
-    expect(deed?.id).toBe('remove')
-    expect(deed?.path).toBe('physics/Ontology.md')
+    expect(invocation?.id).toBe('remove')
+    expect(invocation?.path).toBe('physics/Ontology.md')
   })
 
-  it('carries every file it was over into the deed', () => {
+  it('carries every file it was over into the invocation', () => {
     const { commands } = asking()
     const others = ['physics/Heat.pdf']
 
     expect(commands.asks('remove', front({ others }))?.others).toStrictEqual(others)
   })
 
-  it('carries the tab holding it, so the deed reaches it wherever it went', () => {
+  it('carries the tab holding it, so the invocation reaches it wherever it went', () => {
     const { commands, opens } = asking()
     opens('physics/Ontology.md', 'held')
 
@@ -484,7 +484,7 @@ describe('a note that moves under an open step', () => {
     expect(commands.chose('exactly', 'exactly')?.path).toBe('physics/Being.md')
   })
 
-  it('carries the tab holding it, so the deed reaches it wherever it went', () => {
+  it('carries the tab holding it, so the invocation reaches it wherever it went', () => {
     const { commands, opens } = asking()
     opens('physics/Ontology.md', 'held')
     commands.asks('title', front())
@@ -1107,7 +1107,7 @@ describe('a vault taken off the list', () => {
     expect(commands.groups.value[0]?.items[1]?.detail).toBe(words.stays)
   })
 
-  it('is a deed over that vault once the question is answered', async () => {
+  it('is carried out over that vault once the question is answered', async () => {
     const commands = await chose('forgetVault')
 
     expect(commands.chose('yes', 'yes')).toMatchObject({

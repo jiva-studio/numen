@@ -7,7 +7,7 @@
  */
 import type { PlexRelatedSeat } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
-import type { Deed, RunSupport, VaultRef } from './commands'
+import type { CommandInvocation, RunSupport, VaultRef } from './commands'
 import type { EditorKind } from '../tabs/putting'
 import type {
   Artifact,
@@ -232,87 +232,91 @@ export interface Words {
 }
 
 /** One command, carried out. */
-type CommandHandler =(deed: Deed, on: CommandDeps, words: Words) => Promise<void> | void
+type CommandHandler = (
+  invocation: CommandInvocation,
+  on: CommandDeps,
+  words: Words,
+) => Promise<void> | void
 
 /** What each command comes to. A command with no entry here does nothing. */
 const carried: Record<string, CommandHandler> = {
-  read: (deed, on) => on.notes.opens(deed.path, deed.title, 'here'),
-  beside: (deed, on) => on.notes.opens(deed.path, deed.title, 'beside'),
-  travel: (deed, on) => on.goes.travel(deed.path),
-  child: (deed, on, words) => makes(deed, 'child', on, words),
-  parent: (deed, on, words) => makes(deed, 'parent', on, words),
-  jump: (deed, on, words) => makes(deed, 'jump', on, words),
-  note: (deed, on, words) => makes(deed, null, on, words),
-  deck: async (deed, on) => {
-    if (deed.name) await on.cards.decks('', deed.name)
+  read: (invocation, on) => on.notes.opens(invocation.path, invocation.title, 'here'),
+  beside: (invocation, on) => on.notes.opens(invocation.path, invocation.title, 'beside'),
+  travel: (invocation, on) => on.goes.travel(invocation.path),
+  child: (invocation, on, words) => makes(invocation, 'child', on, words),
+  parent: (invocation, on, words) => makes(invocation, 'parent', on, words),
+  jump: (invocation, on, words) => makes(invocation, 'jump', on, words),
+  note: (invocation, on, words) => makes(invocation, null, on, words),
+  deck: async (invocation, on) => {
+    if (invocation.name) await on.cards.decks('', invocation.name)
   },
-  stencil: async (deed, on) => {
-    if (deed.name) await on.cards.stencils('', deed.name)
+  stencil: async (invocation, on) => {
+    if (invocation.name) await on.cards.stencils('', invocation.name)
   },
-  newPreset: async (deed, on) => {
-    if (deed.name) await on.cards.presets('', deed.name)
+  newPreset: async (invocation, on) => {
+    if (invocation.name) await on.cards.presets('', invocation.name)
   },
-  title: (deed, on, words) => renames(deed, on, words),
-  remove: (deed, on, words) => removes(deed, false, on, words),
-  destroy: (deed, on, words) => removes(deed, true, on, words),
-  transcribe: async (deed, on, words) =>
-    began(deed, await on.runs.makes(deed.file, 'transcript'), on, words),
-  recognise: async (deed, on, words) =>
-    began(deed, await on.runs.makes(deed.file, 'reading'), on, words),
-  proofread: async (deed, on, words) =>
-    began(deed, await on.runs.makes(deed.file, 'corrections'), on, words),
-  dropTranscript: async (deed, on, words) => {
-    if (await on.runs.drops(deed.file)) return
-    on.runSupport.cannotRun(deed.id)
+  title: (invocation, on, words) => renames(invocation, on, words),
+  remove: (invocation, on, words) => removes(invocation, false, on, words),
+  destroy: (invocation, on, words) => removes(invocation, true, on, words),
+  transcribe: async (invocation, on, words) =>
+    began(invocation, await on.runs.makes(invocation.file, 'transcript'), on, words),
+  recognise: async (invocation, on, words) =>
+    began(invocation, await on.runs.makes(invocation.file, 'reading'), on, words),
+  proofread: async (invocation, on, words) =>
+    began(invocation, await on.runs.makes(invocation.file, 'corrections'), on, words),
+  dropTranscript: async (invocation, on, words) => {
+    if (await on.runs.drops(invocation.file)) return
+    on.runSupport.cannotRun(invocation.id)
     on.says(words.unrunnable, 'refusal')
   },
-  ask: (deed, on) => on.goes.asks(`${deed.path} — `),
-  copy: (deed, on) => on.copies(deed.path),
-  reveal: (deed, on) => on.goes.reveals(deed.path),
-  preset: (deed, on) => on.goes.preset(deed.path),
+  ask: (invocation, on) => on.goes.asks(`${invocation.path} — `),
+  copy: (invocation, on) => on.copies(invocation.path),
+  reveal: (invocation, on) => on.goes.reveals(invocation.path),
+  preset: (invocation, on) => on.goes.preset(invocation.path),
   settings: (_, on) => on.goes.opens(SETTINGS),
-  move: (deed, on, words) => moves(deed, on, words),
-  makeFolder: (deed, on, words) => makesFolder(deed, on, words),
+  move: (invocation, on, words) => moves(invocation, on, words),
+  makeFolder: (invocation, on, words) => makesFolder(invocation, on, words),
   plex: (_, on) => on.goes.opens(PLEX),
   files: (_, on) => on.goes.opens(FILES),
   agent: (_, on) => on.goes.opens(AGENT),
-  close: (deed, on) => on.goes.closes(deed.tab),
+  close: (invocation, on) => on.goes.closes(invocation.tab),
   find: (_, on) => on.goes.searches(),
-  appearance: (deed, on) => on.settings.appearance(deed.name),
-  mode: (deed, on) => on.settings.appearance(deed.name),
-  interfaceScale: (deed, on) => on.settings.appearance(deed.name),
-  textScale: (deed, on) => on.settings.appearance(deed.name),
-  syncing: (deed, on) => on.settings.syncing(deed.name),
-  hanging: (deed, on) => on.settings.hanging(deed.name),
-  parts: (deed, on) => on.settings.parts(deed.name),
+  appearance: (invocation, on) => on.settings.appearance(invocation.name),
+  mode: (invocation, on) => on.settings.appearance(invocation.name),
+  interfaceScale: (invocation, on) => on.settings.appearance(invocation.name),
+  textScale: (invocation, on) => on.settings.appearance(invocation.name),
+  syncing: (invocation, on) => on.settings.syncing(invocation.name),
+  hanging: (invocation, on) => on.settings.hanging(invocation.name),
+  parts: (invocation, on) => on.settings.parts(invocation.name),
   first: (_, on, words) => travels(on.goes.opening(), on, words),
-  goto: (deed, on, words) => travels(deed.path, on, words),
-  openVault: (deed, on, words) => shows(deed.vault.id, on, words),
+  goto: (invocation, on, words) => travels(invocation.path, on, words),
+  openVault: (invocation, on, words) => shows(invocation.vault.id, on, words),
   newVault: (_, on, words) => adds(on, words),
-  renameVault: (deed, on, words) => calls(deed, on, words),
-  forgetVault: (deed, on, words) => forgets(deed, false, on, words),
-  eraseVault: (deed, on, words) => forgets(deed, true, on, words),
+  renameVault: (invocation, on, words) => calls(invocation, on, words),
+  forgetVault: (invocation, on, words) => forgets(invocation, false, on, words),
+  eraseVault: (invocation, on, words) => forgets(invocation, true, on, words),
 }
 
 /** A command carried out. Nothing chosen does nothing at all. */
-export async function does(deed: Deed | null, on: CommandDeps, words: Words): Promise<void> {
-  if (!deed) return
-  const carry = carried[deed.id]
+export async function does(invocation: CommandInvocation | null, on: CommandDeps, words: Words): Promise<void> {
+  if (!invocation) return
+  const carry = carried[invocation.id]
   if (!carry) return
   on.says('')
   try {
-    await carry(atItsFile(deed, on), on, words)
+    await carry(atItsFile(invocation, on), on, words)
   } catch (error) {
     on.says(troubleWords(error), 'refusal')
   }
 }
 
 /**
- * The deed at the file its note stands at now. One over a note no tab of the
+ * The invocation at the file its note stands at now. One over a note no tab of the
  * window holds is at the name it was made over.
  */
-const atItsFile = (deed: Deed, on: CommandDeps): Deed =>
-  deed.note ? { ...deed, path: on.notes.where(deed.note) } : deed
+const atItsFile = (invocation: CommandInvocation, on: CommandDeps): CommandInvocation =>
+  invocation.note ? { ...invocation, path: on.notes.where(invocation.note) } : invocation
 
 /** A tab asked to settle: which one it was, and whether it is still waiting. */
 interface SettleResult {
@@ -337,15 +341,15 @@ const settles = async (path: string, on: CommandDeps): Promise<SettleResult> => 
  * beside; anywhere else the plex the person is looking at travels to it.
  */
 const makes = async (
-  deed: Deed,
+  invocation: CommandInvocation,
   seat: PlexRelatedSeat | null,
   on: CommandDeps,
   words: Words,
 ): Promise<void> => {
-  if (!deed.name) return
-  const made = await on.files.makes(deed.name, seat ? deed.path : '', seat)
+  if (!invocation.name) return
+  const made = await on.files.makes(invocation.name, seat ? invocation.path : '', seat)
   if (!made) return
-  if (deed.kind === NOTE) return on.notes.made(made.path, made.title, 'note', 'beside')
+  if (invocation.kind === NOTE) return on.notes.made(made.path, made.title, 'note', 'beside')
   await travels(made.path, on, words)
 }
 
@@ -353,11 +357,11 @@ const makes = async (
  * A note given a different name, and its file renamed with it where the two are
  * one name. Prose on disk that nobody here has seen leaves the note as it is.
  */
-const renames = async (deed: Deed, on: CommandDeps, words: Words): Promise<void> => {
-  if (!deed.name || deed.name === deed.title) return
-  const tab = await settles(deed.path, on)
+const renames = async (invocation: CommandInvocation, on: CommandDeps, words: Words): Promise<void> => {
+  if (!invocation.name || invocation.name === invocation.title) return
+  const tab = await settles(invocation.path, on)
   if (tab.waiting) return on.says(words.unanswered, 'caution')
-  const answer = await on.files.renames(deed.path, deed.name)
+  const answer = await on.files.renames(invocation.path, invocation.name)
   if (answer.changed) return on.says(words.overtaken, 'caution')
   if (answer.refusal) on.says(words.refused[answer.refusal], 'refusal')
 }
@@ -366,11 +370,11 @@ const renames = async (deed: Deed, on: CommandDeps, words: Words): Promise<void>
  * A file or a folder filed somewhere else, carrying the name the path ends in.
  * A destination that is taken leaves it where it was.
  */
-const moves = async (deed: Deed, on: CommandDeps, words: Words): Promise<void> => {
-  if (!deed.name || deed.name === deed.path) return
-  const tab = await settles(deed.path, on)
+const moves = async (invocation: CommandInvocation, on: CommandDeps, words: Words): Promise<void> => {
+  if (!invocation.name || invocation.name === invocation.path) return
+  const tab = await settles(invocation.path, on)
   if (tab.waiting) return on.says(words.unanswered, 'caution')
-  const answer = await on.files.moves(deed.path, deed.name)
+  const answer = await on.files.moves(invocation.path, invocation.name)
   if (answer.refusal === 'occupied') return on.says(words.occupied, 'refusal')
   if (answer.refusal) on.says(words.refused[answer.refusal], 'refusal')
 }
@@ -384,9 +388,9 @@ const UNDER_WAY: readonly ArtifactState[] = ['queued', 'running']
  * the work behind the window. A build that cannot make it at all is told once
  * and offers it nowhere after that.
  */
-const began = (deed: Deed, outcome: Outcome, on: CommandDeps, words: Words): void => {
+const began = (invocation: CommandInvocation, outcome: Outcome, on: CommandDeps, words: Words): void => {
   if (!outcome.able) {
-    on.runSupport.cannotRun(deed.id)
+    on.runSupport.cannotRun(invocation.id)
     return on.says(words.unrunnable, 'refusal')
   }
   // A file nothing here could read carries what the run said about it, and that
@@ -397,18 +401,18 @@ const began = (deed: Deed, outcome: Outcome, on: CommandDeps, words: Words): voi
 }
 
 /** An empty folder, made under the path that was typed. */
-const makesFolder = async (deed: Deed, on: CommandDeps, words: Words): Promise<void> => {
-  if (!deed.name) return
-  const refusal = await on.files.makesFolder(deed.name)
+const makesFolder = async (invocation: CommandInvocation, on: CommandDeps, words: Words): Promise<void> => {
+  if (!invocation.name) return
+  const refusal = await on.files.makesFolder(invocation.name)
   if (refusal === 'occupied') return on.says(words.occupied, 'refusal')
   if (refusal) on.says(words.refused[refusal], 'refusal')
 }
 
 /**
- * The files a deed is over: the one it names, and the rest of the selection it
+ * The files one invocation is over: the one it names, and the rest of the selection it
  * was asked over.
  */
-const over = (deed: Deed): readonly string[] => [deed.path, ...deed.others]
+const over = (invocation: CommandInvocation): readonly string[] => [invocation.path, ...invocation.others]
 
 /**
  * Files taken out of the vault. A file that has gone is gone from the tree, so
@@ -416,13 +420,13 @@ const over = (deed: Deed): readonly string[] => [deed.path, ...deed.others]
  * vault refuses leaves the rest to go, and what was refused is what the person
  * is told.
  */
-const removes = async (deed: Deed, destroy: boolean, on: CommandDeps, words: Words): Promise<void> => {
+const removes = async (invocation: CommandInvocation, destroy: boolean, on: CommandDeps, words: Words): Promise<void> => {
   const dangling: string[] = []
   const refused: string[] = []
   let waiting = false
   const opening = on.goes.opening()
 
-  for (const path of over(deed)) {
+  for (const path of over(invocation)) {
     const tab = await settles(path, on)
     if (tab.waiting) {
       waiting = true
@@ -468,9 +472,9 @@ const adds = async (on: CommandDeps, words: Words): Promise<void> => {
 }
 
 /** A vault called something else. Its folder keeps the name it has on disk. */
-const calls = async (deed: Deed, on: CommandDeps, words: Words): Promise<void> => {
-  if (!deed.name || deed.name === deed.vault.name) return
-  const answer = await on.vaults.rename(deed.vault.id, deed.name)
+const calls = async (invocation: CommandInvocation, on: CommandDeps, words: Words): Promise<void> => {
+  if (!invocation.name || invocation.name === invocation.vault.name) return
+  const answer = await on.vaults.rename(invocation.vault.id, invocation.name)
   if (answer.refusal) return on.says(words.unvaulted[answer.refusal], 'refusal')
   if (answer.vault) on.vaults.calls({ id: answer.vault.name, name: answer.vault.displayName })
 }
@@ -479,8 +483,8 @@ const calls = async (deed: Deed, on: CommandDeps, words: Words): Promise<void> =
  * A vault taken off the list. Erasing it puts the folder in the trash this
  * machine keeps; forgetting it leaves the folder where it is.
  */
-const forgets = async (deed: Deed, erase: boolean, on: CommandDeps, words: Words): Promise<void> => {
-  const id = deed.vault.id
+const forgets = async (invocation: CommandInvocation, erase: boolean, on: CommandDeps, words: Words): Promise<void> => {
+  const id = invocation.vault.id
   const refusal = await on.vaults.remove(id, erase)
   if (refusal) on.says(words.unvaulted[refusal], 'refusal')
 }

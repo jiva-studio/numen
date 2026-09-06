@@ -19,7 +19,7 @@ import { editing } from './note/editing'
 import { noteChanges } from './note/changes'
 import { CREATABLE, noteMaker } from './note/maker'
 import {
-  deedOf,
+  invocationOf,
   runSupport,
   type PaletteLists,
   type NoteLookup,
@@ -275,11 +275,11 @@ export const useWindow = () => {
         others: paths.slice(1),
       })
     },
-    moves: (from, to) => does(deedOf('move', { ...where(), path: from }, to), doing, words),
+    moves: (from, to) => does(invocationOf('move', { ...where(), path: from }, to), doing, words),
     drags: (paths) => {
       dragged.value = paths
     },
-    makes: (path) => does(deedOf('makeFolder', where(), path), doing, words),
+    makes: (path) => does(invocationOf('makeFolder', where(), path), doing, words),
     writes: async (folder) => (await making.named(folder, []))?.path ?? '',
     decks: (folder, name) => made.makes('deck', folder, name),
     stencils: (folder, name) => made.makes('stencil', folder, name),
@@ -602,8 +602,8 @@ export const useWindow = () => {
    * is not offered over what it was asked over says why.
    */
   const carries = (id: string, at: CommandTarget) => {
-    const deed = commands.asks(id, at)
-    if (deed) return void does(deed, doing, words)
+    const invocation = commands.asks(id, at)
+    if (invocation) return void does(invocation, doing, words)
     if (commands.open.value) return palette.shows(false)
     told(commands.refused(id, at), 'refusal')
   }

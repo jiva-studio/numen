@@ -16,7 +16,6 @@
 /** The words of ours ending in -ing or -ed that are ordinary English nouns. */
 export const nouns = {
   binding: 'a key bound to a command, which is CodeMirror\'s own word',
-  deed: 'a thing done — not a participle, and no verb ends this way',
   deferred: "an answer handed over later; the field's name for this object",
   drawing: 'a picture',
   heading: 'a line a section of a note stands under',

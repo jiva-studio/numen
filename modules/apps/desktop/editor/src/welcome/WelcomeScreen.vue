@@ -10,7 +10,7 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { opensVault, WelcomePage } from '@numen/ui'
 import type { Tab } from '@numen/ui'
-import { deedOf, type CommandTarget, type VaultRef } from '../command/commands'
+import { invocationOf, type CommandTarget, type VaultRef } from '../command/commands'
 import type { Commands } from '../command/palette'
 import type { VaultList } from '../core'
 import { does, type CommandDeps } from '../command/handlers'
@@ -75,7 +75,7 @@ const opens = (id: string) => {
   const one = props.listed.vaults.find((vault) => vault.name === id)
   if (!one) return
   const vault: VaultRef = { id: one.name, name: one.displayName }
-  void does(deedOf('openVault', { ...props.where(), vault }), props.doing, words)
+  void does(invocationOf('openVault', { ...props.where(), vault }), props.doing, words)
 }
 
 /** A letter alone, which opens the vault drawn on the row carrying it. */

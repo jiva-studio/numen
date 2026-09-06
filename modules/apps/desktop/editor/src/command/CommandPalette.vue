@@ -88,10 +88,10 @@ const typing = (text: string) => {
 /** Something chosen, and the window taken there or the command carried out. */
 const went = async (item: string, action: string) => {
   if (props.commands.open.value) {
-    const deed = props.commands.chose(item, action)
-    if (!deed) return
+    const invocation = props.commands.chose(item, action)
+    if (!invocation) return
     props.commands.shows(false)
-    await does(deed, props.doing, words)
+    await does(invocation, props.doing, words)
     return
   }
   if (item === MAKING) {

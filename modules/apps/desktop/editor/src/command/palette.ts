@@ -1,8 +1,8 @@
 /**
  * The palette a person types into: which step it stands on, what it draws
- * there, and the deed an answer makes.
+ * there, and the invocation an answer makes.
  *
- * A command that needs nothing is a deed the moment it is chosen. One that
+ * A command that needs nothing is carried out the moment it is chosen. One that
  * needs a name, a note, a vault or an answer opens a step of its own, and the
  * step it stands on is what the field means. What a step draws is read again
  * on every keystroke, so a vault moving under an open step is drawn as it is.
@@ -13,14 +13,14 @@ import { asking as latest } from '../asking'
 import { movedTo, type Move, type NoteType, type Vault } from '../core'
 import {
   commandsOf,
-  deedOf,
+  invocationOf,
   inGroup,
   type Command,
   type CommandGroup,
   type CommandsDeps,
   type CommandTarget,
   type ConfirmWords,
-  type Deed,
+  type CommandInvocation,
   type NoteLookup,
   type PaletteLists,
   type PromptStep,
@@ -98,8 +98,8 @@ export function commandPalette(
   const on = computed<CommandTarget>(() => at())
 
   /** One command as it is carried out, over the note the window holds it by. */
-  const deed = (id: string, over: CommandTarget, name = ''): Deed =>
-    deedOf(id, over, name, over.path ? knows.holding(over.path) : null)
+  const invocation = (id: string, over: CommandTarget, name = ''): CommandInvocation =>
+    invocationOf(id, over, name, over.path ? knows.holding(over.path) : null)
 
   /**
    * What the thing a step is over is called now. A command over the vault is
@@ -488,10 +488,10 @@ export function commandPalette(
    * something opens the step that asks for it; one that needs nothing is handed
    * straight back to be carried out.
    */
-  const asks = (id: string, over: CommandTarget): Deed | null => {
+  const asks = (id: string, over: CommandTarget): CommandInvocation | null => {
     const command = byId.get(id)
     if (!command || !command.where(over, runs)) return null
-    if (!command.needs) return deed(command.id, over)
+    if (!command.needs) return invocation(command.id, over)
     if (!open.value) {
       steps.value = []
       open.value = true
@@ -520,34 +520,34 @@ export function commandPalette(
   }
 
   /** An item chosen, and what was asked of it. */
-  const chose = (item: string, action: string): Deed | null => {
+  const chose = (item: string, action: string): CommandInvocation | null => {
     const step = here.value
     if (!step) return asks(action, on.value)
     const name = typed.value.trim()
     if (step.step === 'picking') {
       const one = found.value.find((found) => found.path === item)
       if (!one) return null
-      return deed(step.command.id, { ...step.on, path: one.path, title: one.title || one.path })
+      return invocation(step.command.id, { ...step.on, path: one.path, title: one.title || one.path })
     }
     if (step.step === 'vaults') {
       const one = known.value.find((vault) => vault.name === item)
       // The two the list draws and does not take are the ones it says so on.
       if (!one || aside(one)) return null
       const on = { ...step.on, vault: { id: one.name, name: one.displayName } }
-      if (!step.command.next) return deed(step.command.id, on)
+      if (!step.command.next) return invocation(step.command.id, on)
       // The vault chosen is what the step after this one is over.
       puts({ step: step.command.next, command: step.command, on })
       return null
     }
     if (step.step === 'naming') {
       if (!name) return null
-      return deed(step.command.id, step.on, name)
+      return invocation(step.command.id, step.on, name)
     }
     if (step.step === 'choosing') {
       const rows = holds.offers(step.command.id, typed.value).flatMap((group) => group.items)
       const one = rows.find((row) => row.id === item)
       if (!one || one.disabled) return null
-      return deed(step.command.id, step.on, one.id)
+      return invocation(step.command.id, step.on, one.id)
     }
     if (step.step === 'asking') {
       // The answer that changes nothing puts the step away.
@@ -556,12 +556,12 @@ export function commandPalette(
         return null
       }
       if (action !== YES) return null
-      return deed(step.command.id, step.on)
+      return invocation(step.command.id, step.on)
     }
     // The name typed back is what reaches destroying, measured against the name
     // the note carries now.
     if (action !== EXACT || name !== calling(step)) return null
-    return deed(step.command.id, step.on, name)
+    return invocation(step.command.id, step.on, name)
   }
 
   /** The commands are opened, or put away and every step let go of. */

@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import { commandsOf, deedOf, runSupport, type Deed, type CommandTarget } from './commands'
+import { commandsOf, invocationOf, runSupport, type CommandInvocation, type CommandTarget } from './commands'
 import { does, reaching, type CommandDeps, type Store } from './handlers'
 import type {
   Artifact,
@@ -23,7 +23,7 @@ import type {
 } from '../core'
 import { WORDS as words } from '../words'
 
-/** What is in front, which every deed is carried out over. */
+/** What is in front, which every invocation is carried out over. */
 const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: 'tab',
   kind: 'plex',
@@ -73,7 +73,7 @@ const removed = (over: Partial<RemoveResult> = {}): RemoveResult => ({
 /**
  * A window that writes down everything a command asked of it, in order.
  *
- * The note the window holds stands at a file the test can move, so a deed made
+ * The note the window holds stands at a file the test can move, so an invocation made
  * before it moved can be carried out after.
  */
 const window = (
@@ -230,13 +230,13 @@ const window = (
 }
 
 /** One command carried out over the note in front. */
-const carry = async (deed: Deed, on: CommandDeps) => does(deed, on, words)
+const carry = async (invocation: CommandInvocation, on: CommandDeps) => does(invocation, on, words)
 
 describe('every command that is offered', () => {
   it('is carried out by something', async () => {
     for (const command of commandsOf(words)) {
       const one = window()
-      await carry(deedOf(command.id, front(), 'Entropy'), one.on)
+      await carry(invocationOf(command.id, front(), 'Entropy'), one.on)
 
       expect(one.done, command.id).not.toStrictEqual([])
     }
@@ -247,8 +247,8 @@ describe('a note put in front of the person', () => {
   it('opens in a tab of its own, and beside it where the second key reached it', async () => {
     const one = window()
 
-    await carry(deedOf('read', front()), one.on)
-    await carry(deedOf('beside', front()), one.on)
+    await carry(invocationOf('read', front()), one.on)
+    await carry(invocationOf('beside', front()), one.on)
 
     expect(one.done).toStrictEqual([
       'opens physics/Ontology.md Ontology here',
@@ -259,7 +259,7 @@ describe('a note put in front of the person', () => {
   it('is travelled to in the plex, where that is what was asked', async () => {
     const one = window()
 
-    await carry(deedOf('travel', front()), one.on)
+    await carry(invocationOf('travel', front()), one.on)
 
     expect(one.done).toStrictEqual(['travel physics/Ontology.md'])
   })
@@ -269,7 +269,7 @@ describe('a deck, a stencil or a preset made', () => {
   it('is made at the top of the vault, under the name as it was typed', async () => {
     const one = window()
 
-    await carry(deedOf('deck', front(), 'Animals'), one.on)
+    await carry(invocationOf('deck', front(), 'Animals'), one.on)
 
     // The vault names the file, so nothing here puts an ending on the name.
     expect(one.done).toStrictEqual(['decks — Animals'])
@@ -278,7 +278,7 @@ describe('a deck, a stencil or a preset made', () => {
   it('hands a name that carries an ending over unchanged', async () => {
     const one = window()
 
-    await carry(deedOf('deck', front(), 'Animals.md'), one.on)
+    await carry(invocationOf('deck', front(), 'Animals.md'), one.on)
 
     expect(one.done).toStrictEqual(['decks — Animals.md'])
   })
@@ -286,7 +286,7 @@ describe('a deck, a stencil or a preset made', () => {
   it('is a stencil where that is what was asked for', async () => {
     const one = window()
 
-    await carry(deedOf('stencil', front(), 'Animal'), one.on)
+    await carry(invocationOf('stencil', front(), 'Animal'), one.on)
 
     expect(one.done).toStrictEqual(['stencils — Animal'])
   })
@@ -294,7 +294,7 @@ describe('a deck, a stencil or a preset made', () => {
   it('is a preset where that is what was asked for', async () => {
     const one = window()
 
-    await carry(deedOf('newPreset', front(), 'Sanskrit'), one.on)
+    await carry(invocationOf('newPreset', front(), 'Sanskrit'), one.on)
 
     expect(one.done).toStrictEqual(['presets — Sanskrit'])
   })
@@ -302,8 +302,8 @@ describe('a deck, a stencil or a preset made', () => {
   it('is nothing at all where nothing was typed', async () => {
     const one = window()
 
-    await carry(deedOf('deck', front(), ''), one.on)
-    await carry(deedOf('newPreset', front(), ''), one.on)
+    await carry(invocationOf('deck', front(), ''), one.on)
+    await carry(invocationOf('newPreset', front(), ''), one.on)
 
     expect(one.done).toStrictEqual([])
   })
@@ -313,7 +313,7 @@ describe('a note made', () => {
   it('writes the note it was made from into it, in the seat that was asked for', async () => {
     const one = window()
 
-    await carry(deedOf('child', front(), 'Entropy'), one.on)
+    await carry(invocationOf('child', front(), 'Entropy'), one.on)
 
     expect(one.done[0]).toBe('makes Entropy physics/Ontology.md child')
   })
@@ -321,7 +321,7 @@ describe('a note made', () => {
   it('stands on its own where no seat was asked for', async () => {
     const one = window()
 
-    await carry(deedOf('note', front(), 'Entropy'), one.on)
+    await carry(invocationOf('note', front(), 'Entropy'), one.on)
 
     expect(one.done[0]).toBe('makes Entropy — —')
   })
@@ -329,7 +329,7 @@ describe('a note made', () => {
   it('is travelled to in the plex the person is looking at', async () => {
     const one = window()
 
-    await carry(deedOf('child', front(), 'Entropy'), one.on)
+    await carry(invocationOf('child', front(), 'Entropy'), one.on)
 
     expect(one.done.at(-1)).toBe('travel Entropy.md')
   })
@@ -337,7 +337,7 @@ describe('a note made', () => {
   it('opens in a tab beside the note the person is in', async () => {
     const one = window()
 
-    await carry(deedOf('child', front({ kind: 'note' }), 'Entropy'), one.on)
+    await carry(invocationOf('child', front({ kind: 'note' }), 'Entropy'), one.on)
 
     expect(one.done.at(-1)).toBe('made note Entropy.md Entropy beside')
   })
@@ -345,7 +345,7 @@ describe('a note made', () => {
   it('takes the person nowhere where the vault would not make it', async () => {
     const one = window({ made: false })
 
-    await carry(deedOf('child', front(), 'Entropy'), one.on)
+    await carry(invocationOf('child', front(), 'Entropy'), one.on)
 
     expect(one.done).toStrictEqual(['makes Entropy physics/Ontology.md child'])
   })
@@ -353,7 +353,7 @@ describe('a note made', () => {
   it('is nothing at all where nothing was typed', async () => {
     const one = window()
 
-    await carry(deedOf('child', front(), ''), one.on)
+    await carry(invocationOf('child', front(), ''), one.on)
 
     expect(one.done).toStrictEqual([])
   })
@@ -376,14 +376,14 @@ const REACHED: readonly ArtifactState[] = [
 /** An artifact of the recording in front asked for, as it came out. */
 const asked = (made: ArtifactState, error = '') => {
   const one = window({ outcome: outcome('transcript', made, error) })
-  return { one, deed: deedOf('transcribe', front({ file: 'talks/Ants.mp3' })) }
+  return { one, invocation: invocationOf('transcribe', front({ file: 'talks/Ants.mp3' })) }
 }
 
 describe('an artifact asked for over a file', () => {
   it('asks the application over that file', async () => {
-    const { one, deed } = asked('running')
+    const { one, invocation } = asked('running')
 
-    await carry(deed, one.on)
+    await carry(invocation, one.on)
 
     expect(one.done).toStrictEqual(['makes transcript talks/Ants.mp3'])
   })
@@ -392,9 +392,9 @@ describe('an artifact asked for over a file', () => {
   // happened.
   it('says what it now stands at, in the window’s own words', async () => {
     for (const made of REACHED) {
-      const { one, deed } = asked(made)
+      const { one, invocation } = asked(made)
 
-      await carry(deed, one.on)
+      await carry(invocation, one.on)
 
       expect(one.said, made).toStrictEqual([words.made.transcript[made]])
     }
@@ -404,9 +404,9 @@ describe('an artifact asked for over a file', () => {
   // asked for work, and none is being done.
   it('says a run under way as a report and the rest as refusals', async () => {
     for (const made of REACHED) {
-      const { one, deed } = asked(made)
+      const { one, invocation } = asked(made)
 
-      await carry(deed, one.on)
+      await carry(invocation, one.on)
 
       expect(one.tones, made).toStrictEqual([REPORTED.includes(made) ? 'report' : 'refusal'])
     }
@@ -415,9 +415,9 @@ describe('an artifact asked for over a file', () => {
   // The person asked for this one by name, and a recording already transcribed
   // would otherwise look like a command that did nothing.
   it('says a recording already transcribed has been transcribed', async () => {
-    const { one, deed } = asked('done')
+    const { one, invocation } = asked('done')
 
-    await carry(deed, one.on)
+    await carry(invocation, one.on)
 
     expect(one.said).toStrictEqual([words.made.transcript.done])
   })
@@ -426,9 +426,9 @@ describe('an artifact asked for over a file', () => {
   // gets the same until that record is taken away.
   it('says what a run said about a recording it could not open', async () => {
     const said = 'mp3: MPEG version 2.5 is not supported'
-    const { one, deed } = asked('failed', said)
+    const { one, invocation } = asked('failed', said)
 
-    await carry(deed, one.on)
+    await carry(invocation, one.on)
 
     expect(one.done).toStrictEqual(['makes transcript talks/Ants.mp3'])
     expect(one.said).toStrictEqual([`${words.made.transcript.failed} ${said}`])
@@ -437,7 +437,7 @@ describe('an artifact asked for over a file', () => {
   it('says the same of a scan already recognised', async () => {
     const one = window({ outcome: outcome('reading', 'done') })
 
-    await carry(deedOf('recognise', front({ file: 'books/Ants.pdf' })), one.on)
+    await carry(invocationOf('recognise', front({ file: 'books/Ants.pdf' })), one.on)
 
     expect(one.done).toStrictEqual(['makes reading books/Ants.pdf'])
     expect(one.said).toStrictEqual([words.made.reading.done])
@@ -455,7 +455,7 @@ describe('an artifact asked for over a file', () => {
   it('says this build cannot do it, and offers it nowhere after that', async () => {
     const one = window({ outcome: { able: false } })
 
-    await carry(deedOf('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(invocationOf('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
 
     expect(one.said).toStrictEqual([words.unrunnable])
     expect(one.runs.canRun('transcribe')).toBe(false)
@@ -465,7 +465,7 @@ describe('an artifact asked for over a file', () => {
   it('is said only in the window it was asked in', async () => {
     const one = window({ outcome: { able: false } })
 
-    await carry(deedOf('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(invocationOf('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
 
     expect(window().runs.canRun('transcribe')).toBe(true)
   })
@@ -475,7 +475,7 @@ describe('the transcript of a recording dropped', () => {
   it('asks the application over the file the tab in front holds', async () => {
     const one = window()
 
-    await carry(deedOf('dropTranscript', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(invocationOf('dropTranscript', front({ file: 'talks/Ants.mp3' })), one.on)
 
     expect(one.done).toStrictEqual(['drops talks/Ants.mp3'])
     expect(one.said).toStrictEqual([])
@@ -485,7 +485,7 @@ describe('the transcript of a recording dropped', () => {
     const why = 'this recording is being listened to'
     const one = window({ dropRefused: why })
 
-    await carry(deedOf('dropTranscript', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(invocationOf('dropTranscript', front({ file: 'talks/Ants.mp3' })), one.on)
 
     expect(one.said).toStrictEqual([why])
     expect(one.tones).toStrictEqual(['refusal'])
@@ -494,7 +494,7 @@ describe('the transcript of a recording dropped', () => {
   it('says this build cannot do it, and offers it nowhere after that', async () => {
     const one = window({ undroppable: true })
 
-    await carry(deedOf('dropTranscript', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(invocationOf('dropTranscript', front({ file: 'talks/Ants.mp3' })), one.on)
 
     expect(one.said).toStrictEqual([words.unrunnable])
     expect(one.runs.canRun('dropTranscript')).toBe(false)
@@ -505,7 +505,7 @@ describe('a note renamed', () => {
   it('has nothing on its way to its file before the file moves', async () => {
     const one = window()
 
-    await carry(deedOf('title', front(), 'Entropy'), one.on)
+    await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
     expect(one.done).toStrictEqual(['settles held', 'renames physics/Ontology.md Entropy'])
   })
@@ -513,7 +513,7 @@ describe('a note renamed', () => {
   it('is refused while the note is waiting on the person', async () => {
     const one = window({ asking: true })
 
-    await carry(deedOf('title', front(), 'Entropy'), one.on)
+    await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
     expect(one.done).toStrictEqual([])
     expect(one.said).toStrictEqual([words.unanswered])
@@ -522,7 +522,7 @@ describe('a note renamed', () => {
   it('says the note was written elsewhere while this was asked', async () => {
     const one = window({ renamed: renamed({ changed: true }) })
 
-    await carry(deedOf('title', front(), 'Entropy'), one.on)
+    await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
     expect(one.said).toStrictEqual([words.overtaken])
   })
@@ -530,7 +530,7 @@ describe('a note renamed', () => {
   it('is renamed where no tab of the window holds it', async () => {
     const one = window()
 
-    await carry(deedOf('title', front({ path: 'Elsewhere.md' }), 'Entropy'), one.on)
+    await carry(invocationOf('title', front({ path: 'Elsewhere.md' }), 'Entropy'), one.on)
 
     expect(one.done).toStrictEqual(['renames Elsewhere.md Entropy'])
   })
@@ -538,7 +538,7 @@ describe('a note renamed', () => {
   it('is left alone where the name it was given is the name it has', async () => {
     const one = window()
 
-    await carry(deedOf('title', front(), 'Ontology'), one.on)
+    await carry(invocationOf('title', front(), 'Ontology'), one.on)
 
     expect(one.done).toStrictEqual([])
   })
@@ -554,7 +554,7 @@ describe('a note renamed', () => {
       }),
     })
 
-    await carry(deedOf('title', front(), 'Entropy'), one.on)
+    await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
     expect(one.said).toStrictEqual([])
   })
@@ -562,7 +562,7 @@ describe('a note renamed', () => {
   it('says nothing of the title it wrote into the frontmatter', async () => {
     const one = window({ renamed: renamed({ frontmatter: true }) })
 
-    await carry(deedOf('title', front(), 'Entropy'), one.on)
+    await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
     expect(one.said).toStrictEqual([])
   })
@@ -570,7 +570,7 @@ describe('a note renamed', () => {
   it('says the name was taken, and that the note carries the new one', async () => {
     const one = window({ renamed: renamed({ refusal: 'occupied' }) })
 
-    await carry(deedOf('title', front(), 'Entropy'), one.on)
+    await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
     expect(one.said).toStrictEqual([words.refused.occupied])
   })
@@ -578,7 +578,7 @@ describe('a note renamed', () => {
   it('says a note whose frontmatter cannot be read cannot be renamed', async () => {
     const one = window({ renamed: renamed({ refusal: 'unreadable' }) })
 
-    await carry(deedOf('title', front(), 'Entropy'), one.on)
+    await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
     expect(one.said).toStrictEqual([words.refused.unreadable])
   })
@@ -586,7 +586,7 @@ describe('a note renamed', () => {
   it('says a name no file can be named', async () => {
     const one = window({ renamed: renamed({ refusal: 'unnameable' }) })
 
-    await carry(deedOf('title', front(), '...'), one.on)
+    await carry(invocationOf('title', front(), '...'), one.on)
 
     expect(one.said).toStrictEqual([words.refused.unnameable])
   })
@@ -596,7 +596,7 @@ describe('a note removed', () => {
   it('has nothing on its way to its file before the file goes', async () => {
     const one = window()
 
-    await carry(deedOf('remove', front()), one.on)
+    await carry(invocationOf('remove', front()), one.on)
 
     expect(one.done.slice(0, 2)).toStrictEqual(['settles held', 'removes physics/Ontology.md false'])
   })
@@ -604,7 +604,7 @@ describe('a note removed', () => {
   it('goes off the disk where destroying was what was asked', async () => {
     const one = window()
 
-    await carry(deedOf('destroy', front(), 'Ontology'), one.on)
+    await carry(invocationOf('destroy', front(), 'Ontology'), one.on)
 
     expect(one.done[1]).toBe('removes physics/Ontology.md true')
   })
@@ -613,7 +613,7 @@ describe('a note removed', () => {
   it('says nothing about a note that went where it was asked to go', async () => {
     const one = window()
 
-    await carry(deedOf('remove', front()), one.on)
+    await carry(invocationOf('remove', front()), one.on)
 
     expect(one.said).toStrictEqual([])
   })
@@ -621,7 +621,7 @@ describe('a note removed', () => {
   it('says the notes that link to nothing now', async () => {
     const one = window({ removed: removed({ dangling: ['Order.md', 'Notes.md'] }) })
 
-    await carry(deedOf('remove', front()), one.on)
+    await carry(invocationOf('remove', front()), one.on)
 
     expect(one.said).toStrictEqual([`${words.dangling} Order.md, Notes.md`])
   })
@@ -629,7 +629,7 @@ describe('a note removed', () => {
   it('leaves every plex standing on it at the note the vault opens with', async () => {
     const one = window()
 
-    await carry(deedOf('remove', front()), one.on)
+    await carry(invocationOf('remove', front()), one.on)
 
     expect(one.done.at(-1)).toBe('leaves physics/Ontology.md Root.md')
   })
@@ -638,7 +638,7 @@ describe('a note removed', () => {
     const one = window()
     const nowhere: CommandDeps = { ...one.on, goes: { ...one.on.goes, opening: () => '' } }
 
-    await carry(deedOf('remove', front()), nowhere)
+    await carry(invocationOf('remove', front()), nowhere)
 
     expect(one.done.some((step) => step.startsWith('leaves'))).toBe(false)
   })
@@ -646,7 +646,7 @@ describe('a note removed', () => {
   it('lets go of the tab that was reading it', async () => {
     const one = window()
 
-    await carry(deedOf('remove', front(), '', 'held'), one.on)
+    await carry(invocationOf('remove', front(), '', 'held'), one.on)
 
     expect(one.done).toContain('shuts held')
   })
@@ -654,7 +654,7 @@ describe('a note removed', () => {
   it('keeps the tab of a note the vault would not remove', async () => {
     const one = window({ removed: removed({ refusal: 'missing' }) })
 
-    await carry(deedOf('remove', front(), '', 'held'), one.on)
+    await carry(invocationOf('remove', front(), '', 'held'), one.on)
 
     expect(one.done).not.toContain('shuts held')
   })
@@ -662,7 +662,7 @@ describe('a note removed', () => {
   it('says a note that is not in the vault, and takes the plex nowhere', async () => {
     const one = window({ removed: removed({ refusal: 'missing' }) })
 
-    await carry(deedOf('remove', front()), one.on)
+    await carry(invocationOf('remove', front()), one.on)
 
     expect(one.said).toStrictEqual([words.refused.missing])
     expect(one.done.at(-1)).toBe('removes physics/Ontology.md false')
@@ -671,7 +671,7 @@ describe('a note removed', () => {
   it('is refused while the note is waiting on the person', async () => {
     const one = window({ asking: true })
 
-    await carry(deedOf('remove', front()), one.on)
+    await carry(invocationOf('remove', front()), one.on)
 
     expect(one.done).toStrictEqual([])
     expect(one.said).toStrictEqual([words.unanswered])
@@ -684,7 +684,7 @@ describe('several files removed at once', () => {
   it('takes each of them out of the vault, in the order they were given', async () => {
     const one = window()
 
-    await carry(deedOf('remove', both), one.on)
+    await carry(invocationOf('remove', both), one.on)
 
     expect(one.done.filter((step) => step.startsWith('removes'))).toStrictEqual([
       'removes physics/Ontology.md false',
@@ -695,7 +695,7 @@ describe('several files removed at once', () => {
   it('takes every plex standing on one of them to the note the vault opens with', async () => {
     const one = window()
 
-    await carry(deedOf('remove', both), one.on)
+    await carry(invocationOf('remove', both), one.on)
 
     expect(one.done.filter((step) => step.startsWith('leaves'))).toStrictEqual([
       'leaves physics/Ontology.md Root.md',
@@ -706,7 +706,7 @@ describe('several files removed at once', () => {
   it('says the notes that link to nothing now, each of them once', async () => {
     const one = window({ removed: removed({ trashed: '', dangling: ['Order.md'] }) })
 
-    await carry(deedOf('remove', both), one.on)
+    await carry(invocationOf('remove', both), one.on)
 
     expect(one.said).toStrictEqual([`${words.dangling} Order.md`])
   })
@@ -724,7 +724,7 @@ describe('several files removed at once', () => {
       },
     }
 
-    await carry(deedOf('remove', both), picky)
+    await carry(invocationOf('remove', both), picky)
 
     expect(one.done.filter((step) => step.startsWith('removes'))).toStrictEqual([
       'removes physics/Ontology.md false',
@@ -736,7 +736,7 @@ describe('several files removed at once', () => {
 
 describe('a file filed somewhere else', () => {
   /** The destination is the whole path, so a name changed in one folder is a move. */
-  const moved = (to: string) => deedOf('move', front(), to)
+  const moved = (to: string) => invocationOf('move', front(), to)
 
   it('is asked of the vault under the path it is filed at from now on', async () => {
     const one = window()
@@ -794,7 +794,7 @@ describe('a folder made', () => {
   it('is asked of the vault under the path it goes at', async () => {
     const one = window()
 
-    await carry(deedOf('makeFolder', front(), 'physics/heat'), one.on)
+    await carry(invocationOf('makeFolder', front(), 'physics/heat'), one.on)
 
     expect(one.done).toStrictEqual(['makes folder physics/heat'])
   })
@@ -802,7 +802,7 @@ describe('a folder made', () => {
   it('is not made where something of that name is filed there', async () => {
     const one = window({ folderRefused: 'occupied' })
 
-    await carry(deedOf('makeFolder', front(), 'physics/heat'), one.on)
+    await carry(invocationOf('makeFolder', front(), 'physics/heat'), one.on)
 
     expect(one.said).toStrictEqual([words.occupied])
   })
@@ -810,21 +810,21 @@ describe('a folder made', () => {
   it('asks the vault for nothing where no path was given', async () => {
     const one = window()
 
-    await carry(deedOf('makeFolder', front()), one.on)
+    await carry(invocationOf('makeFolder', front()), one.on)
 
     expect(one.done).toStrictEqual([])
   })
 })
 
 /**
- * A deed is made when a person answers and carried out a moment later, and the
+ * An invocation is made when a person answers and carried out a moment later, and the
  * vault moves in between. The tab holding the note is what says where it is.
  */
-describe('a note that moved between the answer and the deed', () => {
-  it('is renamed where it stands now, not at the name the deed was made over', async () => {
+describe('a note that moved between the answer and the invocation', () => {
+  it('is renamed where it stands now, not at the name the invocation was made over', async () => {
     const one = window({ at: 'physics/Being.md' })
 
-    await carry(deedOf('title', front(), 'Substance', 'held'), one.on)
+    await carry(invocationOf('title', front(), 'Substance', 'held'), one.on)
 
     expect(one.done).toStrictEqual(['settles held', 'renames physics/Being.md Substance'])
   })
@@ -832,7 +832,7 @@ describe('a note that moved between the answer and the deed', () => {
   it('is removed where it stands now', async () => {
     const one = window({ at: 'physics/Being.md' })
 
-    await carry(deedOf('remove', front(), '', 'held'), one.on)
+    await carry(invocationOf('remove', front(), '', 'held'), one.on)
 
     expect(one.done.slice(0, 2)).toStrictEqual(['settles held', 'removes physics/Being.md false'])
   })
@@ -840,7 +840,7 @@ describe('a note that moved between the answer and the deed', () => {
   it('is left at the name it was made over where no tab holds it', async () => {
     const one = window({ at: 'physics/Being.md' })
 
-    await carry(deedOf('remove', front()), one.on)
+    await carry(invocationOf('remove', front()), one.on)
 
     expect(one.done[0]).toBe('removes physics/Ontology.md false')
   })
@@ -850,9 +850,9 @@ describe('a command over the window', () => {
   it('opens a tab of the kind asked for, and closes the one in front', async () => {
     const one = window()
 
-    await carry(deedOf('plex', front()), one.on)
-    await carry(deedOf('agent', front()), one.on)
-    await carry(deedOf('close', front()), one.on)
+    await carry(invocationOf('plex', front()), one.on)
+    await carry(invocationOf('agent', front()), one.on)
+    await carry(invocationOf('close', front()), one.on)
 
     expect(one.done).toStrictEqual(['opens plex', 'opens agent', 'closes tab'])
   })
@@ -860,7 +860,7 @@ describe('a command over the window', () => {
   it('hands the field back to the search', async () => {
     const one = window()
 
-    await carry(deedOf('find', front()), one.on)
+    await carry(invocationOf('find', front()), one.on)
 
     expect(one.done).toStrictEqual(['searches'])
   })
@@ -868,8 +868,8 @@ describe('a command over the window', () => {
   it('hands over the row that was chosen, and nothing about the note in front', async () => {
     const one = window()
 
-    await carry(deedOf('appearance', front(), 'mine:sea'), one.on)
-    await carry(deedOf('appearance', front(), 'mode:dark'), one.on)
+    await carry(invocationOf('appearance', front(), 'mine:sea'), one.on)
+    await carry(invocationOf('appearance', front(), 'mode:dark'), one.on)
 
     expect(one.done).toStrictEqual(['appearance mine:sea', 'appearance mode:dark'])
   })
@@ -879,7 +879,7 @@ describe('a command over the vault', () => {
   it('travels to the note the vault opens with', async () => {
     const one = window()
 
-    await carry(deedOf('first', front()), one.on)
+    await carry(invocationOf('first', front()), one.on)
 
     expect(one.done).toStrictEqual(['travel Root.md'])
   })
@@ -888,7 +888,7 @@ describe('a command over the vault', () => {
     const one = window()
     const empty: CommandDeps = { ...one.on, goes: { ...one.on.goes, opening: () => '' } }
 
-    await does(deedOf('first', front()), empty, words)
+    await does(invocationOf('first', front()), empty, words)
 
     expect(one.said).toStrictEqual([words.nowhere])
   })
@@ -898,8 +898,8 @@ describe('what the window is asked about a note', () => {
   it('is put to the agent, and its path put on the clipboard', async () => {
     const one = window()
 
-    await carry(deedOf('ask', front()), one.on)
-    await carry(deedOf('copy', front()), one.on)
+    await carry(invocationOf('ask', front()), one.on)
+    await carry(invocationOf('copy', front()), one.on)
 
     expect(one.done).toStrictEqual(['asks physics/Ontology.md — ', 'copies physics/Ontology.md'])
   })
@@ -911,7 +911,7 @@ describe('another vault under this window', () => {
   it('is opened, and the page drawn again on it', async () => {
     const one = window()
 
-    await carry(deedOf('openVault', heat()), one.on)
+    await carry(invocationOf('openVault', heat()), one.on)
 
     expect(one.done).toStrictEqual(['opens vault heat', 'reloads'])
   })
@@ -919,7 +919,7 @@ describe('another vault under this window', () => {
   it('leaves the page where it stands where the vault would not open', async () => {
     const one = window({ turnedDown: 'showing' })
 
-    await carry(deedOf('openVault', heat()), one.on)
+    await carry(invocationOf('openVault', heat()), one.on)
 
     expect(one.done).toStrictEqual(['opens vault heat'])
     expect(one.said).toStrictEqual([words.unvaulted.showing])
@@ -930,7 +930,7 @@ describe('a vault made', () => {
   it('is the folder chosen in the machine’s own picker, and is opened', async () => {
     const one = window()
 
-    await carry(deedOf('newVault', front()), one.on)
+    await carry(invocationOf('newVault', front()), one.on)
 
     expect(one.done).toStrictEqual([
       `choose ${words.folder}`,
@@ -943,7 +943,7 @@ describe('a vault made', () => {
   it('is nothing at all where the person closed the picker', async () => {
     const one = window({ chose: '' })
 
-    await carry(deedOf('newVault', front()), one.on)
+    await carry(invocationOf('newVault', front()), one.on)
 
     expect(one.done).toStrictEqual([`choose ${words.folder}`])
     expect(one.said).toStrictEqual([])
@@ -952,7 +952,7 @@ describe('a vault made', () => {
   it('says a folder that lies inside a vault already added', async () => {
     const one = window({ added: { vault: null, refusal: 'overlaps' } })
 
-    await carry(deedOf('newVault', front()), one.on)
+    await carry(invocationOf('newVault', front()), one.on)
 
     expect(one.said).toStrictEqual([words.unvaulted.overlaps])
   })
@@ -962,7 +962,7 @@ describe('a vault renamed', () => {
   it('is called what was typed, and the window calls it that from now on', async () => {
     const one = window()
 
-    await carry(deedOf('renameVault', front(), 'Heat'), one.on)
+    await carry(invocationOf('renameVault', front(), 'Heat'), one.on)
 
     expect(one.done).toStrictEqual(['renames vault physics Heat', 'calls physics Heat'])
   })
@@ -970,7 +970,7 @@ describe('a vault renamed', () => {
   it('is left alone where the name it was given is the name it has', async () => {
     const one = window()
 
-    await carry(deedOf('renameVault', front(), 'Physics'), one.on)
+    await carry(invocationOf('renameVault', front(), 'Physics'), one.on)
 
     expect(one.done).toStrictEqual([])
   })
@@ -978,7 +978,7 @@ describe('a vault renamed', () => {
   it('says a name another vault is already called', async () => {
     const one = window({ added: { vault: null, refusal: 'nameTaken' } })
 
-    await carry(deedOf('renameVault', front(), 'Heat'), one.on)
+    await carry(invocationOf('renameVault', front(), 'Heat'), one.on)
 
     expect(one.said).toStrictEqual([words.unvaulted.nameTaken])
   })
@@ -991,7 +991,7 @@ describe('a vault taken off the list', () => {
   it('is forgotten, and its folder left where it is', async () => {
     const one = window()
 
-    await carry(deedOf('forgetVault', heat()), one.on)
+    await carry(invocationOf('forgetVault', heat()), one.on)
 
     expect(one.done).toStrictEqual(['forgets heat'])
   })
@@ -999,7 +999,7 @@ describe('a vault taken off the list', () => {
   it('says the only vault this installation has stays on it', async () => {
     const one = window({ turnedDown: 'lastVault' })
 
-    await carry(deedOf('forgetVault', heat()), one.on)
+    await carry(invocationOf('forgetVault', heat()), one.on)
 
     expect(one.said).toStrictEqual([words.unvaulted.lastVault])
   })
@@ -1007,7 +1007,7 @@ describe('a vault taken off the list', () => {
   it('is erased where erasing was what was asked', async () => {
     const one = window()
 
-    await carry(deedOf('eraseVault', heat(), 'Heat'), one.on)
+    await carry(invocationOf('eraseVault', heat(), 'Heat'), one.on)
 
     expect(one.done).toStrictEqual(['erases heat'])
   })
@@ -1015,7 +1015,7 @@ describe('a vault taken off the list', () => {
   it('says a machine with nowhere to put what is deleted', async () => {
     const one = window({ turnedDown: 'noTrash' })
 
-    await carry(deedOf('eraseVault', heat(), 'Heat'), one.on)
+    await carry(invocationOf('eraseVault', heat(), 'Heat'), one.on)
 
     expect(one.said).toStrictEqual([words.unvaulted.noTrash])
   })
@@ -1023,7 +1023,7 @@ describe('a vault taken off the list', () => {
   it('says the vault in front of the person, which the window stands on', async () => {
     const one = window({ turnedDown: 'showing' })
 
-    await carry(deedOf('forgetVault', front()), one.on)
+    await carry(invocationOf('forgetVault', front()), one.on)
 
     expect(one.said).toStrictEqual([words.unvaulted.showing])
   })
@@ -1034,7 +1034,7 @@ describe('what the list of vaults refused', () => {
     for (const refusal of Object.keys(words.unvaulted) as VaultRefusalReason[]) {
       const one = window({ turnedDown: refusal })
 
-      await carry(deedOf('openVault', front()), one.on)
+      await carry(invocationOf('openVault', front()), one.on)
 
       expect(words.unvaulted[refusal], refusal).not.toBe('')
       expect(one.said, refusal).toStrictEqual([words.unvaulted[refusal]])
@@ -1047,8 +1047,8 @@ describe('nothing to carry out', () => {
     const one = window()
 
     await does(null, one.on, words)
-    await carry(deedOf('constructor', front()), one.on)
-    await carry(deedOf('', front()), one.on)
+    await carry(invocationOf('constructor', front()), one.on)
+    await carry(invocationOf('', front()), one.on)
 
     expect(one.done).toStrictEqual([])
   })
@@ -1060,7 +1060,7 @@ describe('nothing to carry out', () => {
       files: { ...one.on.files, removes: async () => Promise.reject(new Error('gone')) },
     }
 
-    await does(deedOf('remove', front()), broken, words)
+    await does(invocationOf('remove', front()), broken, words)
 
     expect(one.said).toStrictEqual([
       'numen did not answer, so nothing was done — it may have stopped, and the window keeps trying',

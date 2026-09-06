@@ -1,6 +1,6 @@
 /**
  * Every command a person can ask for: what each is called, where it is
- * offered, what it asks for before it happens, and the deed carrying it out.
+ * offered, what it asks for before it happens, and the invocation carrying it out.
  *
  * A command is offered over what is in front of the person, and the table
  * below is the whole of that: one entry a command, in the order they are
@@ -64,7 +64,7 @@ export interface PaletteLists {
 /**
  * What the window knows about a note by the name it is filed under. A step
  * stands open while the vault moves under it, and this is read again each time
- * the step is drawn and once more as the deed is made.
+ * the step is drawn and once more as the invocation is made.
  */
 export interface NoteLookup {
   /** What it is called now, and nothing where the window names it nothing. */
@@ -175,7 +175,7 @@ export interface Command {
 }
 
 /** One command as it is carried out: what it is over, and what was typed for it. */
-export interface Deed {
+export interface CommandInvocation {
   readonly id: string
   /** The note it is over. Empty for a command over the window or the vault. */
   readonly path: string
@@ -183,7 +183,7 @@ export interface Deed {
   readonly vault: VaultRef
   /**
    * The identity of the tab holding that note, and nothing where none holds it.
-   * A note that moves is at another name by the time the deed is carried out.
+   * A note that moves is at another name by the time the invocation is carried out.
    */
   readonly note: string | null
   readonly title: string
@@ -607,7 +607,12 @@ export const overNote = (commands: readonly Command[]): readonly Command[] =>
 export const asksCommands = (was: string, now: string): boolean => was === '' && now === '>'
 
 /** One command as it is carried out, over what it was asked over. */
-export const deedOf = (id: string, at: CommandTarget, name = '', note: string | null = null): Deed => ({
+export const invocationOf = (
+  id: string,
+  at: CommandTarget,
+  name = '',
+  note: string | null = null,
+): CommandInvocation => ({
   id,
   path: at.path,
   vault: at.vault,
@@ -624,10 +629,10 @@ export const deedOf = (id: string, at: CommandTarget, name = '', note: string | 
  * The note a search did not find, made under the words that were looked for.
  * A seat hangs it off the note in front; anything else stands it on its own.
  */
-export const creates = (seat: string, name: string, at: CommandTarget): Deed =>
+export const creates = (seat: string, name: string, at: CommandTarget): CommandInvocation =>
   SEATED.includes(seat) && at.path
-    ? deedOf(seat, at, name)
-    : deedOf('note', { ...at, path: '', title: '' }, name)
+    ? invocationOf(seat, at, name)
+    : invocationOf('note', { ...at, path: '', title: '' }, name)
 
 /** The seats a note the search did not find can be made in. */
 const SEATED: readonly string[] = ['child', 'parent', 'jump']

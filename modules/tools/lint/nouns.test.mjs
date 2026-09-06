@@ -68,7 +68,6 @@ test('what the noun rule refuses', () => {
     { says: 'a gerund with a qualifier in front', allowed: false, name: 'PlexFiling' },
     { says: 'a noun in the dictionary', allowed: true, name: 'Heading' },
     { says: 'a compound of one', allowed: true, name: 'OpenRecording' },
-    { says: 'a word merely ending in those letters', allowed: true, name: 'Deed' },
     { says: 'a plain noun', allowed: true, name: 'Vault' },
     { says: 'a noun whose stem is a verb', allowed: true, name: 'Editor' },
     // Drawn is the participle the rule names and this walk cannot see: an
