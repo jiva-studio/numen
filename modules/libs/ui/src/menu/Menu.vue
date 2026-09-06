@@ -9,6 +9,7 @@
  */
 import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import { grouped, landsOn, placeMenu, stepTo, type MenuItem, type MenuOpening } from './item'
+import { isLetter, jumpTo, NOTHING_TYPED, type Typeahead } from './typeahead'
 import type { Point, Size } from '../lib/geometry'
 
 const props = withDefaults(
@@ -151,42 +152,15 @@ const onWindowKey = (event: KeyboardEvent) => {
   emit('dismiss')
 }
 
-/** What has been typed to jump by, and when the last letter of it arrived. */
-let typed = ''
-let struck = 0
+/** The word being typed to jump by, which the next letter carries on. */
+let typed: Typeahead = NOTHING_TYPED
 
-/** How long a run of letters stays one word. */
-const TYPING = 1000
-
-/**
- * The keyboard onto the next item beginning with what has been typed. A run of
- * letters is one word, and stands where it is while the word grows. One letter
- * struck again and again walks the items beginning with it.
- */
-const jumpTo = (letter: string) => {
-  const now = Date.now()
-  typed = now - struck > TYPING ? letter : typed + letter
-  struck = now
-  const one = typed[0]!
-  const drumming = [...typed].every((each) => each === one)
-  const word = drumming ? one : typed
-  const total = props.items.length
-  const from = here.value < 0 ? 0 : here.value + (typed.length > 1 && !drumming ? 0 : 1)
-  const said = word.toLowerCase()
-  for (let step = 0; step < total; step += 1) {
-    const at = (from + step) % total
-    const item = props.items[at]
-    if (!item || item.disabled) continue
-    if (item.text.toLowerCase().startsWith(said)) {
-      goTo(at)
-      return
-    }
-  }
+/** The keyboard onto the item a letter names, and nowhere where it names none. */
+const jump = (letter: string) => {
+  const jumped = jumpTo(props.items, typed, letter, here.value, Date.now())
+  typed = jumped.typed
+  if (jumped.at !== null) goTo(jumped.at)
 }
-
-/** A key that stands for a letter a person meant to type. */
-const letters = (event: KeyboardEvent): boolean =>
-  event.key.length === 1 && event.key !== ' ' && !event.ctrlKey && !event.metaKey && !event.altKey
 
 /**
  * The keyboard, while the menu is open. Tab moves within the items and wraps,
@@ -203,9 +177,9 @@ const onKey = (event: KeyboardEvent) => {
   else if (event.key === 'Home') step(1, -1)
   else if (event.key === 'End') step(-1, 0)
   else if (event.key === 'Tab') step(event.shiftKey ? -1 : 1)
-  else if (letters(event)) {
+  else if (isLetter(event)) {
     event.preventDefault()
-    jumpTo(event.key)
+    jump(event.key)
   }
 }
 
