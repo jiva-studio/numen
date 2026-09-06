@@ -4,7 +4,8 @@
  *
  * It takes groups of items and says which item was chosen and what was asked of
  * it. The keyboard stays in the field the whole time, and what is lit is named
- * to a screen reader rather than focused.
+ * to a screen reader rather than focused. The window behind is out of reach
+ * for as long as it stands, which is what it says of itself.
  *
  * `data-palette` names each part of the panel: `ground`, `panel`, `crumb`,
  * `field`, `nothing`, `key` and `more`. The list under the field names its own.
@@ -343,6 +344,7 @@ onBeforeUnmount(() => {
         class="palette__panel panel-numen relative flex min-h-0 flex-col"
         data-palette="panel"
         role="dialog"
+        aria-modal="true"
         :aria-label="name"
         @keydown="onKey"
         @pointerdown="onPress"

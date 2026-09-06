@@ -135,6 +135,7 @@ const onKey = (event: KeyboardEvent) => {
     class="actions panel-numen flex flex-col"
     data-actions="panel"
     role="dialog"
+    aria-modal="true"
     :aria-label="words.name"
     @keydown.stop="onKey"
     @pointerdown.stop

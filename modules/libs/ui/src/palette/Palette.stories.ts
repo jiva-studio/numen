@@ -262,6 +262,33 @@ export const Choosing: Story = {
 }
 
 /**
+ * Nothing behind it is reachable while it stands, which is what a palette is.
+ * Tab is answered here and moves nowhere, and the panel over the palette says
+ * the same of the palette under it.
+ */
+export const NothingBehindIt: Story = {
+  play: async () => {
+    await waitFor(() => expect(document.activeElement).toBe(field()))
+    await expect(palette()?.querySelector('[data-palette="panel"]')).toHaveAttribute(
+      'aria-modal',
+      'true',
+    )
+
+    await userEvent.tab()
+    await expect(document.activeElement).toBe(field())
+    await userEvent.tab({ shift: true })
+    await expect(document.activeElement).toBe(field())
+
+    await userEvent.keyboard('{Control>}k{/Control}')
+    await waitFor(() => expect(document.activeElement).toBe(hunt()))
+    await expect(sheet()).toHaveAttribute('aria-modal', 'true')
+
+    await userEvent.tab()
+    await expect(document.activeElement).toBe(hunt())
+  },
+}
+
+/**
  * Where the keyboard is standing, said as it moves. A caller showing what is
  * lit — a theme worn while it is walked past — draws from this alone.
  */
