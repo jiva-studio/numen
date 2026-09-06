@@ -22,10 +22,9 @@ import type {
   Settings as SettingsMessage,
   SettingsBounds as SettingsBoundsMessage,
 } from '@numen/protocol'
-import { namesOf } from '@numen/wire'
+import { namesOf, transport } from '@numen/wire'
 import { fingerprint, refusalIn, staleIn, stamp } from '../answers'
 import type { RefusalReason } from '../core'
-import { transport } from '../transport'
 
 /** Which value the one control steers. */
 export type Goal = 'minutes' | 'retention' | 'date'

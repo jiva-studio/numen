@@ -45,7 +45,7 @@ import type {
   Vault as VaultMessage,
 } from '@numen/protocol'
 import type { TallyUnit } from '@numen/ui'
-import { namesOf, troubleWords } from '@numen/wire'
+import { namesOf, transport, troubleWords } from '@numen/wire'
 import { fingerprint, refusalIn, staleIn, stamp } from './answers'
 import { DEFAULT_PARTS } from './settings/hanging'
 import { DEFAULT_STARTS } from './settings/reviewing'
@@ -92,7 +92,6 @@ import type {
   VaultFace,
   VaultStencil,
 } from './cards/vault'
-import { transport } from './transport'
 
 export const vault = createClient(VaultService, transport)
 

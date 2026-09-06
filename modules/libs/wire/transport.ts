@@ -1,5 +1,5 @@
 /**
- * The wire every client in the window talks over.
+ * The wire every client in a window talks over.
  *
  * The application serves the page and answers it, so it is asked at the origin
  * the page came from.

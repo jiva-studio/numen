@@ -7,4 +7,5 @@
 export { agentPort } from './agent'
 export type { AgentClient } from './agent'
 export { namesOf } from './naming'
+export { transport } from './transport'
 export { refusalWords, troubleWords } from './trouble'

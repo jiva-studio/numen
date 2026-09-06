@@ -8,8 +8,7 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { Mode as Modes, Shelf, ThemeService } from '@numen/protocol'
-import { namesOf } from '@numen/wire'
-import { transport } from '../transport'
+import { namesOf, transport } from '@numen/wire'
 
 const theme = createClient(ThemeService, transport)
 

@@ -6,9 +6,7 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { AgentService } from '@numen/protocol'
-import { agentPort } from '@numen/wire'
-
-import { transport } from '../../transport'
+import { agentPort, transport } from '@numen/wire'
 import type { CardFace } from '../../core'
 
 const service = createClient(AgentService, transport)

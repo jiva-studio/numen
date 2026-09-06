@@ -6,8 +6,7 @@
 import { createClient } from '@connectrpc/connect'
 import { Goal as Goals, Rating, FlashcardsService, WindowService } from '@numen/protocol'
 import type { StopReason } from '@numen/protocol'
-import { namesOf } from '@numen/wire'
-import { transport } from './transport'
+import { namesOf, transport } from '@numen/wire'
 
 /**
  * What this window asks, presets among it. Every question names the vault it is

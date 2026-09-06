@@ -6,7 +6,6 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { AgentService } from '@numen/protocol'
-import { agentPort } from '@numen/wire'
-import { transport } from '../transport'
+import { agentPort, transport } from '@numen/wire'
 
 export const core = agentPort(createClient(AgentService, transport))
