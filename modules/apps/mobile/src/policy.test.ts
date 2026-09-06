@@ -5,8 +5,9 @@
  * is served. Nothing here runs on a phone: what a WebView makes of the policy is
  * answered by a device and by nothing else.
  */
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { readFileSync, readdirSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import NoteSheet from './note/NoteSheet.vue'
@@ -68,20 +69,11 @@ const STYLESHEETS = [
   '@ionic/vue/css/normalize.css',
   '@ionic/vue/css/structure.css',
   '@ionic/vue/css/typography.css',
-  '@numen/ui/dist/numen-ui.css',
+  '@numen/ui/styles.css',
 ]
 
-/**
- * Where a file of a dependency stands. The install hoists to the source root,
- * so the first `node_modules` up the tree that holds it is the one answering.
- */
-function installed(path: string): string {
-  for (let at = here; ; at = dirname(at)) {
-    const found = join(at, 'node_modules', path)
-    if (existsSync(found)) return found
-    if (dirname(at) === at) throw new Error(`nothing installed answers for ${path}`)
-  }
-}
+/** Resolves a name this package imports the way the build resolves it: by the manifest. */
+const from = createRequire(join(here, 'package.json'))
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -139,7 +131,7 @@ describe('what the page asks for', () => {
 
   it('asks for nothing from a stylesheet', () => {
     for (const sheet of STYLESHEETS) {
-      const css = readFileSync(installed(sheet), 'utf8')
+      const css = readFileSync(from.resolve(sheet), 'utf8')
       expect([sheet, [...css.matchAll(/url\(\s*['"]?([^'")]*)/g)].map((at) => at[1])]).toStrictEqual(
         [sheet, []],
       )
