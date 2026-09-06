@@ -116,25 +116,38 @@ test('what a file says its own names are', () => {
 })
 
 /**
- * A package's word is the package's, not the file's, so a file saying
- * `chunking.Sizes` says chunking however it is called. A package brought in and
- * never qualified says nothing, and neither does one only a comment names.
+ * A method is named after the type it hangs on, so `Config.Chunking` is a
+ * config's chunking however the file is called, where a package-level
+ * `Chunking` would be the file's own name handed back.
+ *
+ * A package the file merely imports answers for nothing. A file declaring
+ * `fetch` and `Thing` and calling `reading.X` would stand its whole name on
+ * somebody else's declaration, which is the fault this rule is for.
  */
-test('what a Go file is told by the packages it names', () => {
+test('what a Go file is told by the names it did not choose', () => {
   const source = [
     'package container',
-    'import (',
-    '\t"github.com/x/chunking"',
-    '\tsaid "github.com/x/trouble"',
-    '\t"github.com/x/embedding"',
-    ')',
-    '// embedding is named only here',
-    'func (c Config) Chunking() chunking.Sizes { return chunking.Sizes{said.None} }',
+    'import "github.com/x/chunking"',
+    'func (c Config) Chunking() chunking.Sizes { return chunking.Sizes{} }',
   ].join('\n')
   const at = 'a/b/chunking.go'
-  assert.deepEqual(given({ at, text: source }), ['container', 'chunking', 'said'])
-  assert.deepEqual(refused('chunking', ['Chunking'], given({ at, text: source })), [])
-  assert.deepEqual(refused('chunking', ['Chunking'], ['container']), ['chunking'])
+  const held = holds({ at, text: source })
+  assert.deepEqual(given({ at, text: source }), ['container', 'Chunking'])
+  assert.deepEqual(refused('chunking', held, given({ at, text: source })), [])
+  assert.deepEqual(refused('chunking', held, ['container']), ['chunking'])
+
+  const borrowed = [
+    'package note',
+    'import "github.com/x/reading"',
+    'type Thing struct{}',
+    'func fetch() reading.X { return reading.X{} }',
+  ].join('\n')
+  const there = 'a/b/reading.go'
+  assert.deepEqual(given({ at: there, text: borrowed }), ['note'])
+  assert.deepEqual(
+    refused('reading', holds({ at: there, text: borrowed }), given({ at: there, text: borrowed })),
+    ['reading'],
+  )
 })
 
 /**

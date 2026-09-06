@@ -24,6 +24,14 @@
  * of, so `finding.ts` declaring `FindingDeps` and `finding` says the word
  * twice and stands on neither: a name that would be chosen anyway is the only
  * one that vouches.
+ *
+ * What this cannot see is whether the word a file answered with should have
+ * been its name. `transcribing.go` answered with `Transcription`, and that noun
+ * was the name it wanted. No suffix reaches it: `transcrib` and `transcript`
+ * are two stems, so are `recognis` and `recognit`, and `Counts` and `Places`
+ * are one spelling for a plural and a verb. A machine here reads letters, and
+ * that question is a person's — the head word of what a file declares is the
+ * file's name.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { basename, dirname, extname, join, relative } from 'node:path'
@@ -217,38 +225,30 @@ export function holds({ at, text }) {
   return tsDeclares(text)
 }
 
-const IMPORTED = /^import\s+\(([\s\S]*?)^\)/m
-const IMPORT = /^import\s+([^\n]*)$/m
-const BROUGHT = /^[ \t]*(?:([A-Za-z_]\w*)\s+)?"([^"]+)"/gm
+const CLAUSE = /^package\s+([A-Za-z_]\w*)/m
+const METHOD = /^func\s+\([^)]*\)\s*([A-Za-z_]\w*)/gm
 
-/**
- * The packages a Go file brings in and then says. `chunking.Sizes` says
- * chunking, and the word is the imported package's rather than anything this
- * file chose, so it is read whole the way a package clause is. A package
- * brought in and never qualified says nothing.
- */
-export function imported(text) {
-  const block = IMPORTED.exec(text) ?? IMPORT.exec(text)
-  if (!block) return []
-  const found = []
-  for (const one of block[1].matchAll(BROUGHT)) {
-    const name = one[1] ?? one[2].split('/').at(-1)
-    if (new RegExp(`\\b${name}\\.`).test(text)) found.push(name)
-  }
-  return found
+/** Every method one Go file declares, which is every func with a receiver. */
+export function goMethods(source) {
+  return [...source.matchAll(METHOD)].map((one) => one[1])
 }
 
 /**
  * What answers for a file without being a name the file chose: a Go package
- * clause, which is the folder's word and the same in every file of it, the
- * packages that file names, and a component's own name, which is what every
- * template addresses it by.
+ * clause, which is the folder's word and the same in every file of it; a
+ * method, which is named after the type it hangs on; and a component's own
+ * name, which is what every template addresses it by.
+ *
+ * `Config.Chunking` is a config's chunking however the file is called, where a
+ * package-level `Chunking` would be the file's own name handed back. What a
+ * file merely imports says nothing for it: a word standing on somebody else's
+ * declaration is the fault this whole rule is for.
  */
 export function given({ at, text }) {
   if (at.endsWith('.vue')) return [stemOf(at).stem]
   if (!at.endsWith('.go')) return []
-  const clause = /^package\s+([A-Za-z_]\w*)/m.exec(text)
-  return [...(clause ? [clause[1]] : []), ...imported(text)]
+  const clause = CLAUSE.exec(text)
+  return [...(clause ? [clause[1]] : []), ...goMethods(text)]
 }
 
 /**
