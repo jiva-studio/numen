@@ -6,14 +6,13 @@
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULTS, NOWHERE, type Curve, type Point, type Settings } from './core'
-import { BOUNDS } from '../testing/preset'
+import { BOUNDS } from './drawn'
 import {
   approximate,
   costOf,
   FIELDS,
   held,
   nearest,
-  placeAt,
   fieldsUnder,
   idle,
   producing,
@@ -59,13 +58,6 @@ describe('where a value stands on a grid', () => {
 
   it('is nowhere at all on a grid with no places', () => {
     expect(nearest([], 3)).toBe(-1)
-    expect(placeAt([], 0.5)).toBe(-1)
-  })
-
-  it('is held inside the grid wherever a share of the way along falls', () => {
-    expect(placeAt([0, 1, 2, 3, 4], 0.5)).toBe(2)
-    expect(placeAt([0, 1, 2, 3, 4], -1)).toBe(0)
-    expect(placeAt([0, 1, 2, 3, 4], 2)).toBe(4)
   })
 })
 

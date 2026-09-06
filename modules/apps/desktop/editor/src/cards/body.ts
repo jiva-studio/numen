@@ -642,14 +642,6 @@ export const faceWritten = (
   faces: sheet.faces.map((face) => (face.id === id ? { ...face, [half]: text } : face)),
 })
 
-/**
- * Where a mark is drawn: the one element carrying that value in that
- * attribute. A field is named by whatever a person typed, so the quote and the
- * backslash are written out.
- */
-export const selectorFor = (attribute: string, value: string): string =>
-  `[${attribute}="${value.replace(/[\\"]/gu, (char) => `\\${char}`)}"]`
-
 /** Where each problem is drawn. */
 export interface Marks {
   /**

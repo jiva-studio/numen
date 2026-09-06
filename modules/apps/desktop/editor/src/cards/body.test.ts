@@ -33,7 +33,6 @@ import {
   sectionGone,
   sectionNamed,
   sectionsOf,
-  selectorFor,
   sheetBodyOf,
   sheetIn,
   sheetOf,
@@ -821,16 +820,5 @@ describe('whether two readings of a file read the same', () => {
   it('is not so for a field or a face written elsewhere', () => {
     expect(sameSheet(sheet(), sheet({ fields: ['Height'] }))).toBe(false)
     expect(sameSheet(sheet(), sheet({ faces: cut().faces.slice(0, 1) }))).toBe(false)
-  })
-})
-
-describe('where a mark is drawn', () => {
-  it('is the one element carrying that value', () => {
-    expect(selectorFor('data-card', 'c1')).toBe('[data-card="c1"]')
-  })
-
-  it('writes out a quote and a backslash, which a name may carry', () => {
-    expect(selectorFor('data-field', 'a "wide" one')).toBe('[data-field="a \\"wide\\" one"]')
-    expect(selectorFor('data-field', 'a\\b')).toBe('[data-field="a\\\\b"]')
   })
 })

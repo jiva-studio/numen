@@ -9,7 +9,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
 import { Agent, Editor, Palette, Plex, Reader, Tree, Workspace, type WorkspaceLayout } from '@numen/ui'
-import { linkOf } from './agent/places'
 import DocumentTab from './document/DocumentTab.vue'
 import NoteTab from './note/NoteTab.vue'
 import RecordingTab from './recording/RecordingTab.vue'
@@ -82,7 +81,7 @@ describe('every road to a file', () => {
     // window altogether.
     'a link in an answer': async (window, path) => {
       const turn = { id: 'a', voice: 'answered' as const, text: '' }
-      const link = linkOf({ path, start: 0, length: 4 })
+      const link = `numen:${encodeURIComponent(path)}?start=0&length=4`
       window
         .findComponent(Agent)
         .vm.$emit('follow', turn, link, new MouseEvent('click', { cancelable: true }))

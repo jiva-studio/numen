@@ -16,10 +16,6 @@ export interface LinkTarget {
   readonly length: number
 }
 
-/** One place, as a link. */
-export const linkOf = (spot: LinkTarget): string =>
-  `${SCHEME}${encodeURIComponent(spot.path)}?start=${spot.start}&length=${spot.length}`
-
 /**
  * The place a link names, and nothing for a link that names none.
  *

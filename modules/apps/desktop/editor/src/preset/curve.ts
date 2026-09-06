@@ -189,13 +189,6 @@ export const nearest = (grid: readonly number[], value: number): number => {
   return at
 }
 
-/** The place a fraction of the way along a grid, held inside it. */
-export const placeAt = (grid: readonly number[], share: number): number => {
-  if (grid.length === 0) return -1
-  const last = grid.length - 1
-  return Math.min(Math.max(Math.round(share * last), 0), last)
-}
-
 /** Why a preset's goal has nothing to work on, and empty where it has. */
 export type IdleReason = 'unpointed' | 'noCards' | 'beginsNothing' | ''
 

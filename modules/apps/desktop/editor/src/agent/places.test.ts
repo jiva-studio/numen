@@ -5,17 +5,16 @@
  * read back is a place nobody can reach and nothing on the screen says so.
  */
 import { describe, expect, it } from 'vitest'
-import { linkOf, spotOf, spotsIn } from './places'
+import { spotOf, spotsIn } from './places'
 
 const remuna = { path: 'library/A Book.pdf', start: 62690, length: 1246 }
 
-describe('a link to a place', () => {
-  it('reads back as the place it was written from', () => {
-    expect(spotOf(linkOf(remuna))).toStrictEqual(remuna)
-  })
+/** The link an answer names that place with, written the way the agent writes it. */
+const REMUNA = 'numen:library%2FA%20Book.pdf?start=62690&length=1246'
 
-  it('carries a path with a folder and a space in it', () => {
-    expect(linkOf(remuna)).toBe('numen:library%2FA%20Book.pdf?start=62690&length=1246')
+describe('a link to a place', () => {
+  it('reads back as the place the agent wrote it from', () => {
+    expect(spotOf(REMUNA)).toStrictEqual(remuna)
   })
 
   it('is nothing where the link is not one of ours', () => {
