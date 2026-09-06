@@ -7,7 +7,6 @@
  */
 // The editor measures the text it drew on a frame of its own, after the test
 // that mounted it is over.
-import '../testing/no-layout'
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { ref } from 'vue'
