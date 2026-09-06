@@ -287,17 +287,6 @@ type block struct {
 	Input json.RawMessage `json:"input"`
 }
 
-// notePath is the argument a tool of this vault names one note by. A call read
-// by it is about a path, and that path is where the call is working.
-const notePath = "path"
-
-// spanStart and spanLength are the arguments a tool of this vault names a
-// stretch of a source's text by.
-const (
-	spanStart  = "start"
-	spanLength = "length"
-)
-
 // calls is a tool as the person is told about it: what the tool calls itself,
 // what this call was about, what it does to the vault, and what the agent named
 // the call.
