@@ -7,7 +7,6 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 )
 
@@ -30,19 +29,6 @@ func (a *API) GetVaultDeckPreset(
 		out.Refusal = &reason
 		return connect.NewResponse(out), nil
 	}
-	out.Preset = wire.PresetOf(found, a.titled(ctx, v, found.Path))
+	out.Preset = wire.PresetOf(found, wire.Titled(ctx, a.Notes, v.ID, found.Path))
 	return connect.NewResponse(out), nil
-}
-
-// titled is what the vault calls the note at a path. A build with no index, and
-// a path the index holds no note at, are answered with no name.
-func (a *API) titled(ctx context.Context, v domain.Vault, path string) string {
-	if a.Notes == nil || path == "" {
-		return ""
-	}
-	found, err := a.Notes.Notes(ctx, v.ID, []string{path})
-	if err != nil {
-		return ""
-	}
-	return found[path].Title
 }

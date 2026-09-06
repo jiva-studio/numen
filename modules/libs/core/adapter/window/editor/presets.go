@@ -33,7 +33,7 @@ func (a *API) GetDeckPreset(
 		out.Refusal = &reason
 		return connect.NewResponse(out), nil
 	}
-	out.Preset = wire.PresetOf(found, a.titled(ctx, showing, found.Path))
+	out.Preset = wire.PresetOf(found, wire.Titled(ctx, a.Notes.Queries, showing.ID, found.Path))
 	// What the file was when this came out of it, for the client to present
 	// when it writes the settings back.
 	out.At = fingerprintOf(found.Fingerprint)
@@ -136,7 +136,7 @@ func (a *API) ReadPreset(
 		out.Refusal = &reason
 		return connect.NewResponse(out), nil
 	}
-	out.Preset = wire.PresetOf(found, a.titled(ctx, showing, found.Path))
+	out.Preset = wire.PresetOf(found, wire.Titled(ctx, a.Notes.Queries, showing.ID, found.Path))
 	out.At = fingerprintOf(found.Fingerprint)
 	return connect.NewResponse(out), nil
 }

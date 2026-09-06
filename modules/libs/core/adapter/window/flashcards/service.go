@@ -167,7 +167,7 @@ func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultCardsDue {
 	for _, preset := range owing.Presets {
 		one.Presets = append(one.Presets, &v1.PresetCardsDue{
 			Preset:          preset.Preset,
-			Title:           a.titled(ctx, v, preset.Preset),
+			Title:           wire.Titled(ctx, a.Notes, v.ID, preset.Preset),
 			Decks:           int32(preset.Decks),
 			Cards:           int32(preset.Cards),
 			OwedDue:         int32(preset.Due),

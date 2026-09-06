@@ -171,7 +171,8 @@ func (a *API) ReadStencil(
 		out.Refusal = &refusal
 		return connect.NewResponse(out), nil
 	}
-	out.Stencil = stencilOf(found.Path, a.titled(ctx, showing, found.Path), found.Body)
+	title := wire.Titled(ctx, a.Notes.Queries, showing.ID, found.Path)
+	out.Stencil = stencilOf(found.Path, title, found.Body)
 	// What the file was when this came out of it, for the client to present
 	// when it writes the stencil back.
 	out.At = fingerprintOf(found.Fingerprint)
@@ -201,7 +202,8 @@ func (a *API) ReadDeck(
 		}
 		return connect.NewResponse(out), nil
 	}
-	out.Deck = deckOf(found.Path, a.titled(ctx, showing, found.Path), found.Body, found.Stencils)
+	title := wire.Titled(ctx, a.Notes.Queries, showing.ID, found.Path)
+	out.Deck = deckOf(found.Path, title, found.Body, found.Stencils)
 	out.At = fingerprintOf(found.Fingerprint)
 	return connect.NewResponse(out), nil
 }
@@ -290,19 +292,6 @@ func (a *API) WriteStencil(
 		return nil, connect.NewError(wire.Coded(err), err)
 	}
 	return connect.NewResponse(&v1.WriteStencilResponse{Refusal: &reason}), nil
-}
-
-// titled is what the vault calls the note at a path. A build with no index, and
-// a path the index holds no note at, are answered with no name.
-func (a *API) titled(ctx context.Context, showing domain.Vault, path string) string {
-	if a.Notes.Queries == nil {
-		return ""
-	}
-	found, err := a.Notes.Queries.Notes(ctx, showing.ID, []string{path})
-	if err != nil {
-		return ""
-	}
-	return found[path].Title
 }
 
 // refusedDeck is why a deck was not read. What holds for a note holds here, and
