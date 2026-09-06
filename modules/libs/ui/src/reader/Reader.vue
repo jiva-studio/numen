@@ -9,7 +9,7 @@
 import { computed, useTemplateRef, ref, watch } from 'vue'
 import ReaderToolbar from './ReaderToolbar.vue'
 import Sheet from './Sheet.vue'
-import { useAsking } from './asking'
+import { usePageWidth } from './width'
 import { useRoom } from './room'
 import { useHandScroll } from './scroll'
 import {
@@ -79,7 +79,7 @@ const shown = computed(() => within(laid.value, room.value, along.value))
 const middle = computed(() => inFront(laid.value, room.value, along.value))
 
 /** What each page is asked for at. */
-const { drawnAt } = useAsking(
+const { drawnAt } = usePageWidth(
   () => laid.value,
   (pixels) => emit('wide', pixels),
 )
