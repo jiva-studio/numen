@@ -25,7 +25,7 @@ import type {
   VaultStencil,
   StencilSummary,
   Value,
-} from '../core'
+} from './vault'
 
 /** An identity something is drawn under, which no file carries. */
 export type IdMaker = () => string

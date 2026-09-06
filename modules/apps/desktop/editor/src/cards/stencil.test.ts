@@ -3,7 +3,8 @@
  * writes back, and where what is wrong with it stands.
  */
 import { describe, expect, it } from 'vitest'
-import type { Cards, VaultFace, Problem, RefusalReason, FieldRenameResult } from '../core'
+import type { RefusalReason } from '../core'
+import type { Cards, VaultFace, Problem, FieldRenameResult } from './vault'
 import { putting } from '../tabs/putting'
 import { windowing } from '../tabs/windowing'
 import { STENCIL } from '../tabs/workspace'

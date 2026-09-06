@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { CARD_HEAD, cardEndOf } from '@numen/ui'
-import type { VaultDeck, Problem, VaultStencil } from '../core'
+import type { VaultDeck, Problem, VaultStencil } from './vault'
 import {
   added,
   bodyOf,

@@ -4,7 +4,8 @@
  */
 import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
-import type { Cards, VaultCard, Problem, RefusalReason } from '../core'
+import type { RefusalReason } from '../core'
+import type { Cards, VaultCard, Problem } from './vault'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '../preset/core'
 import { putting } from '../tabs/putting'
 import { windowing } from '../tabs/windowing'

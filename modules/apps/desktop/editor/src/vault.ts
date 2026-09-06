@@ -57,13 +57,8 @@ import type { Documents, Page } from './document/reading'
 import type { Cue, Recordings } from './recording/transcript'
 import type {
   Artifact as ArtifactOf,
-  Cards,
-  VaultCard,
   Core,
-  VaultDeck,
   Entry,
-  VaultFace,
-  Fault,
   Configuration,
   HangingSettings,
   ReviewSettings,
@@ -75,7 +70,6 @@ import type {
   NoteResult,
   NoteType,
   Presence,
-  Problem,
   ArtifactState,
   RemoveResult,
   RenameResult,
@@ -83,13 +77,21 @@ import type {
   ArtifactRunner,
   Seat,
   Source,
-  VaultStencil,
-  StencilSummary,
   Vault,
   VaultRefusalReason,
   VaultResult,
   Vaults,
 } from './core'
+import type {
+  Cards,
+  Fault,
+  Problem,
+  StencilSummary,
+  VaultCard,
+  VaultDeck,
+  VaultFace,
+  VaultStencil,
+} from './cards/vault'
 import { transport } from './transport'
 
 export const vault = createClient(VaultService, transport)
