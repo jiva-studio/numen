@@ -121,9 +121,9 @@ export function holding(core: SettingsFileTabDeps, reads: () => void) {
 }
 
 /** What the tab carries beside its name, and nothing where there is nothing to say. */
-const mark = (held: SettingsFileTabState): string | undefined => {
-  if (held.overtaken.value) return 'overtaken'
-  return held.changed.value ? '•' : undefined
+const mark = (state: SettingsFileTabState): string | undefined => {
+  if (state.overtaken.value) return 'overtaken'
+  return state.changed.value ? '•' : undefined
 }
 
 /**
@@ -134,9 +134,9 @@ export function editingSettingsFile(handle: WindowHandle, core: SettingsFileTabD
   const kind: Kind<SettingsFileTabState> = {
     kind: SETTINGS_FILE,
     opens: () => {
-      const held = holding(core, reads)
-      void held.again()
-      return held
+      const state = holding(core, reads)
+      void state.again()
+      return state
     },
     called: () => words.called,
     marked: mark,

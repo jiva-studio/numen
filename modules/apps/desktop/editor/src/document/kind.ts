@@ -28,18 +28,18 @@ export function documentKind(handle: WindowHandle, opens: (path: string) => Docu
   const kind: Kind<DocumentTabState> = {
     kind: DOCUMENT,
     opens,
-    called: (held) => held.path.split('/').pop() ?? held.path,
+    called: (state) => state.path.split('/').pop() ?? state.path,
     draws: DocumentTab,
     identity: (path) => path,
-    shown: (held) => held.measure(),
-    shuts: (held) => {
-      held.close()
+    shown: (state) => state.measure(),
+    shuts: (state) => {
+      state.close()
       return true
     },
-    at: (held) => ({ file: held.path, source: 'book' }),
-    attends: (held) => ({
-      path: held.path,
-      document: { page: held.at.value + 1, pages: held.pages.value },
+    at: (state) => ({ file: state.path, source: 'book' }),
+    attends: (state) => ({
+      path: state.path,
+      document: { page: state.at.value + 1, pages: state.pages.value },
     }),
   }
 

@@ -544,10 +544,10 @@ const cards = (window: VueWrapper): readonly string[] =>
  * holds no screen's file.
  */
 const nodeInPlex = (window: VueWrapper): string => {
-  const held = window.findComponent({ name: 'PlexTab' }).props('held') as {
+  const state = window.findComponent({ name: 'PlexTab' }).props('state') as {
     picture: { value: { nodes: readonly { id: string }[] } | null }
   }
-  return held.picture.value?.nodes[0]?.id ?? ''
+  return state.picture.value?.nodes[0]?.id ?? ''
 }
 
 /**

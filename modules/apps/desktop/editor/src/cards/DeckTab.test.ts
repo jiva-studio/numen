@@ -174,7 +174,7 @@ const drawn = async (
   const tab = held.handle.holds<DeckTabState>(DECK, id) as DeckTabState
   // A mark is teleported into the tile it is about, so the grid has to stand in
   // the document for the tile to be found.
-  const window = mount(DeckTab, { props: { held: tab }, attachTo: document.body })
+  const window = mount(DeckTab, { props: { state: tab }, attachTo: document.body })
   await settles()
   return { window, tab, decks, put }
 }

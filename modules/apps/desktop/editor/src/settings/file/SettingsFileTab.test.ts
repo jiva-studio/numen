@@ -23,9 +23,9 @@ const drawn = async (answers: Partial<SettingsFileTabDeps> = {}) => {
     },
     ...answers,
   }
-  const held = holding(core, () => {})
-  await held.again()
-  return { wrote, held, tab: mount(SettingsFileTab, { props: { held } }) }
+  const state = holding(core, () => {})
+  await state.again()
+  return { wrote, state, tab: mount(SettingsFileTab, { props: { state } }) }
 }
 
 describe('the file drawn', () => {
@@ -57,14 +57,14 @@ describe('the file drawn', () => {
   })
 
   it('says what is wrong where the settings could not be read out of it', async () => {
-    const { tab, held } = await drawn({
+    const { tab, state } = await drawn({
       writesSettingsFile: () =>
         Promise.reject(
           new ConnectError('not a setting: it does not read as JSON, at byte 12', Code.InvalidArgument),
         ),
     })
-    held.types('{ "agent": ')
-    await held.keeps()
+    state.types('{ "agent": ')
+    await state.keeps()
     await tab.vm.$nextTick()
 
     const said = tab.get('[role="alert"]').text()
@@ -74,15 +74,15 @@ describe('the file drawn', () => {
 
   it('puts the two answers where the file moved past what was read', async () => {
     const wrote: string[] = []
-    const { tab, held } = await drawn({
+    const { tab, state } = await drawn({
       writesSettingsFile: (written, seen) => {
         if (seen !== null) return Promise.resolve({ changed: true })
         wrote.push(written)
         return Promise.resolve({ changed: false })
       },
     })
-    held.types('{}\n')
-    await held.keeps()
+    state.types('{}\n')
+    await state.keeps()
     await tab.vm.$nextTick()
 
     expect(tab.get('[role="status"]').text()).toContain(words.overtaken)

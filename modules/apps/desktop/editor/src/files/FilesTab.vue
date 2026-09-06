@@ -18,7 +18,7 @@ import type { ListingRow } from './listing'
 import { itemsFor } from './menu'
 import { WORDS as words } from './words'
 
-const props = defineProps<{ held: FilesTabState }>()
+const props = defineProps<{ state: FilesTabState }>()
 
 /**
  * The mark the window's drag and drop reads: the attribute it looks a target
@@ -27,7 +27,7 @@ const props = defineProps<{ held: FilesTabState }>()
  */
 const dropTarget = computed<RowMarker>(() => ({
   attribute: 'data-file-drop-target',
-  valueFor: (row: string | null) => props.held.folderFor(row),
+  valueFor: (row: string | null) => props.state.folderFor(row),
 }))
 
 /** The tree as the component takes it, a path standing for each row. */
@@ -39,17 +39,17 @@ const drawn = (rows: readonly ListingRow[]): Row[] =>
     rows: drawn(one.rows),
   }))
 
-const rows = computed(() => drawn(props.held.list.rows.value))
+const rows = computed(() => drawn(props.state.list.rows.value))
 
 /** The row whose name is in a field, which the tree opens and closes itself. */
 const renaming = computed({
-  get: () => props.held.renaming.value,
-  set: (row: string | null) => props.held.renames(row),
+  get: () => props.state.renaming.value,
+  set: (row: string | null) => props.state.renames(row),
 })
 
 /** What the vault holds at a row: a folder, a note of one of three kinds, or a file. */
 const kindOf = (id: string): Source | NoteType | 'folder' => {
-  const entry = props.held.list.entryAt(id)
+  const entry = props.state.list.entryAt(id)
   if (!entry) return 'other'
   if (entry.folder) return 'folder'
   return entry.kind === 'note' ? entry.type : entry.kind
@@ -71,48 +71,48 @@ const entryIcon = (id: string, open: boolean): LucideIcon => {
 
 /** What the menu offers: on the row it was asked for on, or off every row. */
 const items = computed(() => {
-  const asked = props.held.menu.value
-  if (!asked || asked.path === null) return itemsFor(null, false, props.held.canRun)
+  const asked = props.state.menu.value
+  if (!asked || asked.path === null) return itemsFor(null, false, props.state.canRun)
 
-  const entry = props.held.list.entryAt(asked.path)
+  const entry = props.state.list.entryAt(asked.path)
   const on = { source: entry?.kind ?? 'other', folder: entry?.folder ?? false }
-  return itemsFor(on, props.held.over(asked.path).length > 1, props.held.canRun)
+  return itemsFor(on, props.state.over(asked.path).length > 1, props.state.canRun)
 })
 
 /**
  * A file the vault holds no source for is not reported by the watcher, so the
  * tree is read again whenever the window comes back to the front.
  */
-const again = () => void props.held.list.again()
+const again = () => void props.state.list.again()
 onMounted(() => globalThis.addEventListener('focus', again))
 onUnmounted(() => globalThis.removeEventListener('focus', again))
 </script>
 
 <template>
   <div class="files">
-    <p v-if="props.held.list.trouble.value" class="caution">
-      {{ props.held.list.trouble.value }}
+    <p v-if="props.state.list.trouble.value" class="caution">
+      {{ props.state.list.trouble.value }}
     </p>
 
     <Tree
       v-model:renaming="renaming"
       class="files__tree"
       :rows="rows"
-      :open="props.held.list.openRows.value"
-      :selected="props.held.list.chosen.value"
+      :open="props.state.list.openRows.value"
+      :selected="props.state.list.chosen.value"
       :name="words.tree"
       :counted="words.dragging"
       :marking="dropTarget"
-      @open="(row: string) => props.held.open(row)"
-      @close="(row: string) => props.held.close(row)"
-      @select="(rows: readonly string[]) => props.held.select(rows)"
-      @activate="(row: string) => props.held.activate(row)"
-      @rename="(row: string, name: string) => void props.held.rename(row, name)"
-      @move="(rows: readonly string[], at: DropPosition) => void props.held.move(rows, at)"
-      @drag="(rows: readonly string[]) => props.held.drag(rows)"
-      @drop="props.held.drop()"
-      @remove="(rows: readonly string[]) => props.held.remove(rows)"
-      @menu="(row: string | null, at: Position) => props.held.asks({ path: row, at })"
+      @open="(row: string) => props.state.open(row)"
+      @close="(row: string) => props.state.close(row)"
+      @select="(rows: readonly string[]) => props.state.select(rows)"
+      @activate="(row: string) => props.state.activate(row)"
+      @rename="(row: string, name: string) => void props.state.rename(row, name)"
+      @move="(rows: readonly string[], at: DropPosition) => void props.state.move(rows, at)"
+      @drag="(rows: readonly string[]) => props.state.drag(rows)"
+      @drop="props.state.drop()"
+      @remove="(rows: readonly string[]) => props.state.remove(rows)"
+      @menu="(row: string | null, at: Position) => props.state.asks({ path: row, at })"
     >
       <template #icon="{ id, open }">
         <component :is="entryIcon(id, open)" class="files__icon" aria-hidden="true" />
@@ -122,12 +122,12 @@ onUnmounted(() => globalThis.removeEventListener('focus', again))
     </Tree>
 
     <Menu
-      v-if="props.held.menu.value"
+      v-if="props.state.menu.value"
       :items="items"
-      :at="props.held.menu.value!.at"
+      :at="props.state.menu.value!.at"
       open
-      @choose="(id: string) => props.held.chose(id)"
-      @dismiss="props.held.dismiss()"
+      @choose="(id: string) => props.state.chose(id)"
+      @dismiss="props.state.dismiss()"
     >
       <template #icon="{ id }">
         <component :is="iconFor(id)" v-if="iconFor(id)" class="files__icon" aria-hidden="true" />

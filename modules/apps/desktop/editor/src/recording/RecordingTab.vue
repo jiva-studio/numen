@@ -15,7 +15,7 @@ import { iconFor } from '../icons'
 import { DROP, PROOFREAD, WORDS as words } from './words'
 import type { RecordingTabState } from './kind'
 
-const props = defineProps<{ held: RecordingTabState }>()
+const props = defineProps<{ state: RecordingTabState }>()
 
 // The tab's state outlives this component, so what it holds is bound once here
 // and the template unwraps it.
@@ -36,10 +36,10 @@ const {
   transcribable,
   trouble,
   typing,
-} = props.held
+} = props.state
 
 /** The times in the editor's gutter, and the line being said. */
-const times = timing((line) => props.held.goes(line))
+const times = timing((line) => props.state.goes(line))
 
 // The words move under the recording as it plays: the line being said is drawn
 // in the accent, and following is what brings it back into view.
@@ -78,8 +78,8 @@ const asks = (event: Event) => {
 
 const chose = (id: string) => {
   asking.value = null
-  if (id === PROOFREAD) props.held.proofreads()
-  if (id === DROP) props.held.drops()
+  if (id === PROOFREAD) props.state.proofreads()
+  if (id === DROP) props.state.drops()
 }
 </script>
 
@@ -93,9 +93,9 @@ const chose = (id: string) => {
         :length="runs"
         :playing="playing"
         :label="words.player"
-        @play="props.held.play()"
-        @pause="props.held.pause()"
-        @seek="props.held.go($event)"
+        @play="props.state.play()"
+        @pause="props.state.pause()"
+        @seek="props.state.go($event)"
       />
       <p v-else class="recording__note">{{ words.unplayable }}</p>
 
@@ -108,7 +108,7 @@ const chose = (id: string) => {
           :aria-label="words.follow"
           :title="words.follow"
           :aria-pressed="follows ? 'true' : 'false'"
-          @click="props.held.follows(!follows)"
+          @click="props.state.follows(!follows)"
         >
           <LocateFixed class="recording__icon" />
         </button>
@@ -146,7 +146,7 @@ const chose = (id: string) => {
           v-else
           type="button"
           class="recording__ask"
-          @click="props.held.transcribes()"
+          @click="props.state.transcribes()"
         >
           {{ words.transcribe }}
         </button>
@@ -160,8 +160,8 @@ const chose = (id: string) => {
         :live="false"
         :extensions="times.extension"
         :aria-label="words.transcript"
-        @update:model-value="(said: string) => props.held.typed(said)"
-        @save="props.held.keep()"
+        @update:model-value="(said: string) => props.state.typed(said)"
+        @save="props.state.keep()"
       />
     </div>
 

@@ -59,7 +59,7 @@ const TABS: readonly Tab[] = [
 const iconOfTab = (id: string) => iconOfKind(id.split(':')[0] ?? id)
 
 /** One tab filling the window, drawn in the chrome the window draws it in. */
-const window = (tab: string, draws: Component, held: unknown) => ({
+const window = (tab: string, draws: Component, state: unknown) => ({
   components: { Workspace },
   setup() {
     const layout = ref<WorkspaceLayout>({
@@ -67,7 +67,7 @@ const window = (tab: string, draws: Component, held: unknown) => ({
       axis: 'horizontal',
       focus: 'main',
     })
-    return { layout, TABS, tab, draws, held, iconOfTab }
+    return { layout, TABS, tab, draws, state, iconOfTab }
   },
   template: `
     <div style="height: 100vh">
@@ -82,7 +82,7 @@ const window = (tab: string, draws: Component, held: unknown) => ({
         </template>
 
         <template #tab="{ id }">
-          <component :is="draws" v-if="id === tab" :held="held" />
+          <component :is="draws" v-if="id === tab" :state="state" />
           <div v-else />
         </template>
       </Workspace>
@@ -206,7 +206,7 @@ const BOUNDS: SettingsBounds = {
   interval: { least: 1, most: 365 },
 }
 
-const PRESET_HELD: PresetTabState = {
+const PRESET_STATE: PresetTabState = {
   id: 'Sanskrit.md',
   settings: shallowRef(SETTINGS_OF_PRESET),
   curve: shallowRef(CURVE),
@@ -228,7 +228,7 @@ const PRESET_HELD: PresetTabState = {
 
 /** The one control a preset is steered by, and the settings under it. */
 export const Preset: Story = {
-  render: () => window(`${PRESET}:sanskrit`, PresetTab, PRESET_HELD),
+  render: () => window(`${PRESET}:sanskrit`, PresetTab, PRESET_STATE),
 }
 
 /* A deck and the stencil that cuts it. ------------------------------------- */
@@ -307,7 +307,7 @@ const SECTIONS = [
   { id: 'nouns', name: 'Nouns off them' },
 ]
 
-const DECK_HELD: DeckTabState = {
+const DECK_STATE: DeckTabState = {
   id: 'Sanskrit/Roots.md',
   shown: computed(() => ({ path: 'Sanskrit/Roots.md', body: '', state: 'clean', refusal: null })),
   deck: computed(() => ({ preamble: '', cards: [], sections: [], tail: '' })),
@@ -337,10 +337,10 @@ const DECK_HELD: DeckTabState = {
 
 /** The cards of a deck, under the sections they stand in. */
 export const Deck: Story = {
-  render: () => window(`${DECK}:roots`, DeckTab, DECK_HELD),
+  render: () => window(`${DECK}:roots`, DeckTab, DECK_STATE),
 }
 
-const STENCIL_HELD: StencilTabState = {
+const STENCIL_STATE: StencilTabState = {
   id: 'Sanskrit/Word.md',
   shown: computed(() => ({ path: 'Sanskrit/Word.md', body: '', state: 'clean', refusal: null })),
   sheet: computed(() => ({
@@ -389,7 +389,7 @@ const STENCIL_HELD: StencilTabState = {
 
 /** The fields a stencil names, and the faces that show them. */
 export const Stencil: Story = {
-  render: () => window(`${STENCIL}:animal`, StencilTab, STENCIL_HELD),
+  render: () => window(`${STENCIL}:animal`, StencilTab, STENCIL_STATE),
 }
 
 /* A recording, and the words heard in it. ---------------------------------- */
@@ -514,11 +514,11 @@ export const NoTranscript: Story = {
  */
 export const Transcribing: Story = {
   render: () => {
-    const held = transcribed(transcript(heard([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
+    const state = transcribed(transcript(heard([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
       runs: () => {},
     })
-    held.ticks(true)
-    return window(`${RECORDING}:lecture`, RecordingTab, held)
+    state.ticks(true)
+    return window(`${RECORDING}:lecture`, RecordingTab, state)
   },
 }
 
@@ -582,7 +582,7 @@ const VAULT: Record<string, readonly Entry[]> = {
 /** A files tab over that vault, and the reading of the folders named in it. */
 const files = (open: readonly string[]) => {
   const list = listing({ list: async (at: string) => VAULT[at] ?? [] })
-  const held = filing(list, {
+  const state = filing(list, {
     lands: () => {},
     runs: () => {},
     moves: async () => {},
@@ -598,7 +598,7 @@ const files = (open: readonly string[]) => {
     await list.opens(ROOT)
     for (const at of open) await list.opens(at)
   })()
-  return { held, read }
+  return { state, read }
 }
 
 /** A frame drawn, and the layout it has settled into. */
@@ -706,11 +706,11 @@ const BOOK: Documents = {
 const asking = (
   path: string,
   open: readonly string[],
-  file: { tab: string; draws: Component; held: unknown; opens?: () => Promise<void> },
+  file: { tab: string; draws: Component; state: unknown; opens?: () => Promise<void> },
 ) => ({
   components: { Workspace, FilesTab },
   setup() {
-    const { held, read } = files(open)
+    const { state, read } = files(open)
     const layout = ref<WorkspaceLayout>({
       root: branch('root', [pane('files', [FILES]), pane('main', [file.tab])], [0.3, 0.7]),
       axis: 'horizontal',
@@ -728,9 +728,9 @@ const asking = (
       await drawn()
       const row = document.querySelector(`[data-tree-row="${CSS.escape(path)}"]`)
       const box = row?.getBoundingClientRect()
-      held.asks({ path, at: { x: (box?.left ?? 0) + 24, y: box?.bottom ?? 0 } })
+      state.asks({ path, at: { x: (box?.left ?? 0) + 24, y: box?.bottom ?? 0 } })
     })
-    return { layout, TABS, held, file, FILES, iconOfTab }
+    return { layout, TABS, state, file, FILES, iconOfTab }
   },
   template: `
     <div style="height: 100vh">
@@ -744,8 +744,8 @@ const asking = (
         </template>
 
         <template #tab="{ id }">
-          <FilesTab v-if="id === FILES" :held="held" />
-          <component :is="file.draws" v-else :held="file.held" />
+          <FilesTab v-if="id === FILES" :state="state" />
+          <component :is="file.draws" v-else :state="file.state" />
         </template>
       </Workspace>
     </div>
@@ -758,7 +758,7 @@ export const Transcribed: Story = {
     asking('Lectures/Lecture 4.mp3', ['Lectures', 'Physics', 'Reading', 'Sanskrit'], {
       tab: `${RECORDING}:lecture`,
       draws: RecordingTab,
-      held: transcribed(transcript(heard(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
+      state: transcribed(transcript(heard(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
         runs: () => {},
       }),
     }),
@@ -767,17 +767,17 @@ export const Transcribed: Story = {
 /** The run a scanned document can be put through, on the row it stands at. */
 export const Recognised: Story = {
   render: () => {
-    const held = documenting(openDocument(BOOK, 'Reading/Boltzmann 1877.pdf'))
+    const state = documenting(openDocument(BOOK, 'Reading/Boltzmann 1877.pdf'))
     return asking(
       'Reading/Boltzmann 1877.pdf',
       ['Lectures', 'Physics', 'Reading', 'Sanskrit'],
       {
         tab: `${DOCUMENT}:boltzmann`,
         draws: DocumentTab,
-        held,
+        state,
         // The reading a search sent a person into: the book turns to the page
         // the passage stands on, and the passage is highlighted where it stands.
-        opens: () => held.reach({ start: 0, length: 1 }),
+        opens: () => state.reach({ start: 0, length: 1 }),
       },
     )
   },

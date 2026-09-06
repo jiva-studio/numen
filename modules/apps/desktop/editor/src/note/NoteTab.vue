@@ -13,14 +13,14 @@ import { conflictIn } from '../saving/flushing'
 import { WORDS as words } from './words'
 import type { NoteTabState } from './kind'
 
-const props = defineProps<{ held: NoteTabState }>()
+const props = defineProps<{ state: NoteTabState }>()
 
 // The prose of a note arrives after the tab it is drawn in. The editor takes
 // the keyboard it is owed once there are lines for a caret to stand on.
 watch(
-  () => props.held.shown.value.body,
+  () => props.state.shown.value.body,
   (body, was) => {
-    if (!was && body) props.held.measure()
+    if (!was && body) props.state.measure()
   },
 )
 </script>
@@ -28,21 +28,21 @@ watch(
 <template>
   <div class="note">
     <FileConflictPrompt
-      :saying="props.held.saying.value"
-      :conflict="conflictIn(props.held.shown.value.state)"
+      :saying="props.state.saying.value"
+      :conflict="conflictIn(props.state.shown.value.state)"
       :words="words"
-      @keep="props.held.keep()"
-      @take="props.held.take()"
+      @keep="props.state.keep()"
+      @take="props.state.take()"
     />
 
     <Editor
-      :ref="(editor: unknown) => props.held.drew(editor)"
-      :model-value="props.held.shown.value.body"
-      :change="props.held.change.value"
+      :ref="(editor: unknown) => props.state.drew(editor)"
+      :model-value="props.state.shown.value.body"
+      :change="props.state.change.value"
       class="note__text"
-      @update:model-value="(body: string) => props.held.typed(body)"
-      @save="props.held.save()"
-      @open="(address: string) => props.held.follows(address)"
+      @update:model-value="(body: string) => props.state.typed(body)"
+      @save="props.state.save()"
+      @open="(address: string) => props.state.follows(address)"
     />
   </div>
 </template>

@@ -112,7 +112,7 @@ const tabAt = (
 ) => {
   const done: string[] = []
   const place = ref(2)
-  const held: PresetTabState = {
+  const state: PresetTabState = {
     id: 'Sanskrit.md',
     settings: shallowRef({ ...DEFAULTS, ...settings }),
     curve: shallowRef(curve(over)),
@@ -134,7 +134,7 @@ const tabAt = (
     types: (field, value) => void done.push(`types ${field} ${value}`),
     shuts: () => {},
   }
-  return { held, done }
+  return { state, done }
 }
 
 const drawn = (
@@ -144,7 +144,7 @@ const drawn = (
   told?: PresetCounts | null,
 ) => {
   const one = tabAt(over, settings, waiting, told)
-  return { ...one, tab: mount(PresetTab, { props: { held: one.held } }) }
+  return { ...one, tab: mount(PresetTab, { props: { state: one.state } }) }
 }
 
 

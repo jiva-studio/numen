@@ -128,8 +128,8 @@ describe('the settings under the control', () => {
   // itself with, rather than at ends the window made up.
   it('leaves a field the application has said nothing about at its own ends', () => {
     const one = tabAt({}, { learned: 'interval', interval: 21 })
-    const held: PresetTabState = { ...one.held, bounds: shallowRef(NO_BOUNDS) }
-    const tab = mount(PresetTab, { props: { held } })
+    const state: PresetTabState = { ...one.state, bounds: shallowRef(NO_BOUNDS) }
+    const tab = mount(PresetTab, { props: { state } })
     const field = tab.get('[data-preset-row="interval"]').get<HTMLInputElement>('input')
     expect(field.element.value).toBe('21')
     expect(field.attributes('aria-valuemax')).not.toBe(`${BOUNDS.interval.most}`)
@@ -141,8 +141,8 @@ describe('the settings under the control', () => {
 describe('what the tab says went wrong', () => {
   const saying = (words: string) => {
     const one = tabAt()
-    const held: PresetTabState = { ...one.held, saying: ref(words) }
-    return { tab: mount(PresetTab, { props: { held } }), done: one.done }
+    const state: PresetTabState = { ...one.state, saying: ref(words) }
+    return { tab: mount(PresetTab, { props: { state } }), done: one.done }
   }
 
   it('offers reading the file again beside what it says', async () => {
@@ -171,8 +171,8 @@ describe('what the tab says went wrong', () => {
 describe('a file that changed under the tab', () => {
   it('says so, and offers reading the file again', async () => {
     const one = tabAt()
-    const held: PresetTabState = { ...one.held, changed: ref(true) }
-    const tab = mount(PresetTab, { props: { held } })
+    const state: PresetTabState = { ...one.state, changed: ref(true) }
+    const tab = mount(PresetTab, { props: { state } })
     const said = tab.get('[role="status"].preset__answering')
     expect(said.text()).toContain(words.changed)
     await said.get('button').trigger('click')
@@ -194,14 +194,14 @@ describe('the load of the week', () => {
   const watching = (load: Record<string, number>) => {
     const one = tabAt({}, { load })
     const put: [Field, SettingValue][] = []
-    const held: PresetTabState = {
-      ...one.held,
+    const state: PresetTabState = {
+      ...one.state,
       types: (field, value) => {
         put.push([field, value])
         one.done.push('types')
       },
     }
-    return { tab: mount(PresetTab, { props: { held } }), put, done: one.done }
+    return { tab: mount(PresetTab, { props: { state } }), put, done: one.done }
   }
 
   /** The chips of the row that draws the week. */
@@ -333,7 +333,7 @@ describe('the rules under the learned row', () => {
   it('marks the rule in force and returns the focus to the line that asked', async () => {
     // Attached to the page, because taking the focus back is what is measured.
     const one = tabAt({}, { learned: 'interval' })
-    const tab = mount(PresetTab, { props: { held: one.held }, attachTo: document.body })
+    const tab = mount(PresetTab, { props: { state: one.state }, attachTo: document.body })
     const line = tab.get('[data-preset="choice"]')
     await line.trigger('click')
 

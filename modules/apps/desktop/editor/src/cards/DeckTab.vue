@@ -16,11 +16,11 @@ import { conflictIn } from '../saving/flushing'
 import type { DeckTabState } from './deck'
 import { WORDS as words } from './words'
 
-const props = defineProps<{ held: DeckTabState }>()
+const props = defineProps<{ state: DeckTabState }>()
 
 // The tab's state outlives this component, so what it holds is bound once here
 // and the template unwraps it.
-const { choices, drawn, marks, saying, scheduled, sections, shown, stencils } = props.held
+const { choices, drawn, marks, saying, scheduled, sections, shown, stencils } = props.state
 
 /** What the grid draws against the cards it was handed. */
 const wrong = computed(() => ({ at: marks.value.at, under: marks.value.under }))
@@ -56,7 +56,7 @@ const asks = (event: Event) => {
 
 const chose = (path: string) => {
   asking.value = null
-  props.held.schedules(path)
+  props.state.schedules(path)
 }
 </script>
 
@@ -66,8 +66,8 @@ const chose = (path: string) => {
       :saying="saying"
       :conflict="conflictIn(shown.state)"
       :words="words"
-      @keep="props.held.keep()"
-      @take="props.held.take()"
+      @keep="props.state.keep()"
+      @take="props.state.take()"
     />
 
     <ul v-if="marks.whole.length" class="caution wrong" :aria-label="words.problems">
@@ -100,16 +100,16 @@ const chose = (path: string) => {
       :stencils="stencils"
       :name="words.deck"
       :wrong="wrong"
-      @add="(stencil: string, section: string | null) => props.held.adds(stencil, empty(stencil), section)"
-      @remove="(id: string) => props.held.removes(id)"
-      @move="(id: string, at: InsertionPoint) => props.held.moves(id, at)"
+      @add="(stencil: string, section: string | null) => props.state.adds(stencil, empty(stencil), section)"
+      @remove="(id: string) => props.state.removes(id)"
+      @move="(id: string, at: InsertionPoint) => props.state.moves(id, at)"
       @write="
         (id: string, field: string, nth: number, text: string) =>
-          props.held.writes(id, field, nth, text)
+          props.state.writes(id, field, nth, text)
       "
-      @add-section="(name: string) => props.held.addsSection(name)"
-      @rename-section="(id: string, name: string) => props.held.namesSection(id, name)"
-      @remove-section="(id: string) => props.held.removesSection(id)"
+      @add-section="(name: string) => props.state.addsSection(name)"
+      @rename-section="(id: string, name: string) => props.state.namesSection(id, name)"
+      @remove-section="(id: string) => props.state.removesSection(id)"
     />
 
     <Menu

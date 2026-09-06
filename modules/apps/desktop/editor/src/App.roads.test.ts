@@ -273,15 +273,15 @@ describe('a recording put in front', () => {
   it('is played from where the application answers, on the words written down', async () => {
     const window = await playing()
 
-    const held = window.findComponent(RecordingTab).props('held') as {
+    const state = window.findComponent(RecordingTab).props('state') as {
       address: { value: string }
       prose: { value: string }
       editable: { value: boolean }
     }
     expect(asked.listened).toStrictEqual([HEARD])
-    expect(held.address.value).toBe(said.heard.media)
-    expect(held.prose.value).toBe(said.heard.cues[0]?.text)
-    expect(held.editable.value).toBe(true)
+    expect(state.address.value).toBe(said.heard.media)
+    expect(state.prose.value).toBe(said.heard.cues[0]?.text)
+    expect(state.editable.value).toBe(true)
     // How long it runs and how far the words reach are the application's
     // answer, and what the window says the person has open carries them.
     expect(asked.attending.at(-1)?.tabs.at(-1)).toMatchObject({

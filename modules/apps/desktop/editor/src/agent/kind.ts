@@ -141,11 +141,11 @@ export function agentKind(handle: WindowHandle, opens: () => AgentTabState, abou
   const kind: Kind<AgentTabState> = {
     kind: AGENT,
     opens,
-    called: (held) =>
-      shortened(held.turns.value.find((turn) => turn.voice === 'asked')?.text ?? '') || words.agent,
+    called: (state) =>
+      shortened(state.turns.value.find((turn) => turn.voice === 'asked')?.text ?? '') || words.agent,
     draws: AgentTab,
-    shuts: (held) => {
-      held.finish()
+    shuts: (state) => {
+      state.finish()
       return true
     },
     at: () => about(),

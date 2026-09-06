@@ -52,9 +52,9 @@ export interface Kind<TabState> {
    */
   opens(at: string): TabState
   /** What the tab is called, as what it holds now stands. */
-  called(held: TabState): string
+  called(state: TabState): string
   /** The one word the tab carries beside its title, or nothing. */
-  marked?(held: TabState): string | undefined
+  marked?(state: TabState): string | undefined
   /** What is drawn in the pane, given what the tab holds. */
   readonly draws: Component
   /**
@@ -64,21 +64,21 @@ export interface Kind<TabState> {
    */
   identity?(at: string): string
   /** The tab came on screen, where what it holds has room to measure. */
-  shown?(held: TabState, id: string): void
+  shown?(state: TabState, id: string): void
   /** What a command asked over one of its tabs is over. */
-  at?(held: TabState): TabTarget
+  at?(state: TabState): TabTarget
   /** What one of its tabs holds, as whoever answers for the person is told it. */
-  attends?(held: TabState): OpenTab
+  attends?(state: TabState): OpenTab
   /**
    * The tab lets go of what it held. False keeps it on screen: what it holds
    * has something to finish, and closes the tab itself once it has.
    */
-  shuts?(held: TabState, id: string): boolean
+  shuts?(state: TabState, id: string): boolean
   /**
    * The window is going, and nothing this tab holds outlives it. A kind that
    * says nothing here lets go the way a tab of it closes.
    */
-  gone?(held: TabState, id: string): void
+  gone?(state: TabState, id: string): void
 }
 
 /**
@@ -90,13 +90,13 @@ export type AnyKind = Kind<unknown>
 /** What one tab is: its kind, and what that kind gave it to hold. */
 export interface WindowTab {
   readonly kind: AnyKind
-  readonly held: unknown
+  readonly state: unknown
 }
 
 /** One tab of a kind, as that kind is given it back. */
 export interface KindTab<TabState> {
   readonly id: string
-  readonly held: TabState
+  readonly state: TabState
 }
 
 /** The tab the person is looking at, whichever kind it turns out to be. */
@@ -105,7 +105,7 @@ export interface ActiveTab {
   /** The word its kind is filed under, and nothing where the window holds no such tab. */
   readonly kind: string | null
   /** What its kind gave it to hold, and nothing where the window holds no such tab. */
-  readonly held: unknown
+  readonly state: unknown
 }
 
 /** What a kind may ask of the window its tabs are drawn in. */
@@ -192,8 +192,8 @@ export function windowing() {
   /** What each tab of the window is called, and the word it carries. */
   const tabs = computed<readonly Tab[]>(() =>
     [...open.value].map(([id, one]): Tab => {
-      const mark = one.kind.marked?.(one.held)
-      return { id, title: one.kind.called(one.held), ...(mark ? { mark } : {}) }
+      const mark = one.kind.marked?.(one.state)
+      return { id, title: one.kind.called(one.state), ...(mark ? { mark } : {}) }
     }),
   )
 
@@ -206,7 +206,7 @@ export function windowing() {
    */
   const holdsIn = <T,>(id: string, kind: string): T | null => {
     const one = open.value.get(id)
-    return one && one.kind.kind === kind ? (one.held as T) : null
+    return one && one.kind.kind === kind ? (one.state as T) : null
   }
 
   /**
@@ -218,14 +218,14 @@ export function windowing() {
     const id = paneById(layout.value.root, layout.value.focus)?.active
     if (!id) return null
     const one = open.value.get(id)
-    return one ? { id, kind: one.kind.kind, held: one.held } : { id, kind: null, held: null }
+    return one ? { id, kind: one.kind.kind, state: one.state } : { id, kind: null, state: null }
   }
 
   /** Every tab of a kind, the one the person was last in last. */
   const each = <T,>(kind: string): readonly KindTab<T>[] =>
     [...open.value]
       .filter(([, one]) => one.kind.kind === kind)
-      .map(([id, one]) => ({ id, held: one.held as T }))
+      .map(([id, one]) => ({ id, state: one.state as T }))
 
   /**
    * A tab of a kind, on what it was given. A kind that takes its identity from
@@ -240,9 +240,9 @@ export function windowing() {
     const id = one.identity ? `${kind}:${one.identity(at)}` : named(kind)
     if (open.value.has(id)) return id
     const scope = effectScope(true)
-    const held = scope.run(() => one.opens(at))
+    const state = scope.run(() => one.opens(at))
     scopes.set(id, scope)
-    open.value = new Map(open.value).set(id, { kind: one, held })
+    open.value = new Map(open.value).set(id, { kind: one, state })
     return id
   }
 
@@ -280,7 +280,7 @@ export function windowing() {
     const one = open.value.get(id)
     if (!one) return
     open.value = new Map([...without(open.value, id), [id, one]])
-    one.kind.shown?.(one.held, id)
+    one.kind.shown?.(one.state, id)
   }
 
   /**
@@ -290,7 +290,7 @@ export function windowing() {
   const shut = (id: string): boolean => {
     const one = open.value.get(id)
     if (!one) return true
-    if (one.kind.shuts && !one.kind.shuts(one.held, id)) return false
+    if (one.kind.shuts && !one.kind.shuts(one.state, id)) return false
     open.value = without(open.value, id)
     drop(id)
     return true
@@ -307,8 +307,8 @@ export function windowing() {
   /** The window is going, and nothing a tab holds outlives it. */
   const close = () => {
     for (const [id, one] of open.value) {
-      if (one.kind.gone) one.kind.gone(one.held, id)
-      else one.kind.shuts?.(one.held, id)
+      if (one.kind.gone) one.kind.gone(one.state, id)
+      else one.kind.shuts?.(one.state, id)
       drop(id)
     }
   }

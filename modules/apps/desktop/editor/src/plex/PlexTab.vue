@@ -16,11 +16,11 @@ import { iconFor, iconOfNote } from '../icons'
 import type { PlexTabState } from './kind'
 import { WORDS as words } from './words'
 
-const props = defineProps<{ held: PlexTabState }>()
+const props = defineProps<{ state: PlexTabState }>()
 
 // The tab's state outlives this component, so what it holds is bound once here
 // and the template unwraps it.
-const { dragged, empty, menu, mostParts, picture: neighbourhood } = props.held
+const { dragged, empty, menu, mostParts, picture: neighbourhood } = props.state
 
 /**
  * How large the picture is drawn, and how many parts a node hangs at once. A
@@ -38,7 +38,7 @@ const options = computed(() => ({
  * deck, a stencil and a preset carry the icon the tree draws them under.
  */
 const nodeIcon = (node: string): LucideIcon | null => {
-  const type = props.held.typeOf(node)
+  const type = props.state.typeOf(node)
   return type === 'note' ? null : iconOfNote(type)
 }
 
@@ -53,7 +53,7 @@ const items = computed(() => (menu.value?.node === null ? NONE : ITEMS))
 const asks = (event: MouseEvent) => {
   if (!empty.value) return
   event.preventDefault()
-  props.held.asks({
+  props.state.asks({
     node: null,
     at: { x: event.clientX, y: event.clientY },
     opening: 'pointer',
@@ -65,16 +65,16 @@ const picture = useTemplateRef<{ focusNode: (id: string) => void }>('picture')
 /** A menu put away, and the keyboard back on the node it was asked from. */
 const closed = (chose?: string) => {
   const node = menu.value?.node ?? null
-  if (chose === undefined) props.held.dismiss()
-  else props.held.chose(chose)
+  if (chose === undefined) props.state.dismiss()
+  else props.state.chose(chose)
   if (node !== null) picture.value?.focusNode(node)
 }
 </script>
 
 <template>
   <div class="plex" @contextmenu="asks">
-    <p v-if="props.held.view.trouble.value" class="caution">
-      {{ props.held.view.trouble.value }}
+    <p v-if="props.state.view.trouble.value" class="caution">
+      {{ props.state.view.trouble.value }}
     </p>
 
     <Plex
@@ -83,26 +83,26 @@ const closed = (chose?: string) => {
       class="plex__picture"
       :neighbourhood="neighbourhood!"
       :options="options"
-      :creatable="props.held.creatable"
+      :creatable="props.state.creatable"
       :dragged="dragged"
       :drop-name="words.dropName"
-      :parts="props.held.partsOf"
-      @activate="(node: string) => props.held.activate(node)"
-      @create="(from: string, seat: PlexRelatedSeat) => void props.held.made(from, seat)"
+      :parts="props.state.partsOf"
+      @activate="(node: string) => props.state.activate(node)"
+      @create="(from: string, seat: PlexRelatedSeat) => void props.state.made(from, seat)"
       @link="
-        (from: string, to: string, seat: PlexRelatedSeat) => void props.held.joined(from, to, seat)
+        (from: string, to: string, seat: PlexRelatedSeat) => void props.state.joined(from, to, seat)
       "
       @bring="
         (dragged: readonly string[], seat: PlexRelatedSeat) =>
-          void props.held.brought(dragged, seat)
+          void props.state.brought(dragged, seat)
       "
       @menu="
         (node: string, at: { x: number; y: number }, opening: MenuOpening) =>
-          props.held.asks({ node, at, opening })
+          props.state.asks({ node, at, opening })
       "
-      @show="(node: string, how: PlexShowing) => props.held.opens(node, how)"
-      @enter="(node: string, part: string) => props.held.entered(node, part)"
-      @dismiss="props.held.dismiss()"
+      @show="(node: string, how: PlexShowing) => props.state.opens(node, how)"
+      @enter="(node: string, part: string) => props.state.entered(node, part)"
+      @dismiss="props.state.dismiss()"
     >
       <!-- A deck, a stencil and a preset are drawn as the tree draws them. An
            ordinary note is drawn its title and nothing before it. -->

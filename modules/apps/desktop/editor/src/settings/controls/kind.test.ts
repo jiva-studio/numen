@@ -50,13 +50,13 @@ describe('the settings tab', () => {
   it('holds the installation the window already keeps', () => {
     const held = installation()
     const settings = settling(window_().handle, held)
-    expect(settings.held.installation).toBe(held)
-    expect(settings.kind.opens('')).toBe(settings.held)
+    expect(settings.state.installation).toBe(held)
+    expect(settings.kind.opens('')).toBe(settings.state)
   })
 
   it('is called what the settings are called', () => {
     const settings = settling(window_().handle, installation())
-    expect(settings.kind.called(settings.held)).toBe(words.settings)
+    expect(settings.kind.called(settings.state)).toBe(words.settings)
   })
 
   // The settings are the installation's and not a file's, so every way to them

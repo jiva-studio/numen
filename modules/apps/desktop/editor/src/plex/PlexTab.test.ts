@@ -73,21 +73,21 @@ afterEach(() => {
 describe('the box a node is drawn in', () => {
   it('is the size it was designed at when nothing multiplies the type', () => {
     drawing(13)
-    const view = mount(PlexTab, { props: { held: held() } })
+    const view = mount(PlexTab, { props: { state: held() } })
     expect(widthOf(view, 'Root')).toBe(176)
     expect(widthOf(view, 'Child')).toBe(144)
   })
 
   it('is half again as large where the label is', () => {
     drawing(19.5)
-    const view = mount(PlexTab, { props: { held: held() } })
+    const view = mount(PlexTab, { props: { state: held() } })
     expect(widthOf(view, 'Root')).toBe(264)
     expect(widthOf(view, 'Child')).toBe(216)
   })
 
   it('is smaller where the label is', () => {
     drawing(9.75)
-    const view = mount(PlexTab, { props: { held: held() } })
+    const view = mount(PlexTab, { props: { state: held() } })
     expect(widthOf(view, 'Root')).toBe(132)
     expect(widthOf(view, 'Child')).toBe(108)
   })
@@ -109,7 +109,7 @@ describe('a menu asked for over a tab drawing no picture', () => {
   it('is asked for off every node, where the pointer was', async () => {
     drawing(13)
     const { tab, asked } = empty()
-    const view = mount(PlexTab, { props: { held: tab } })
+    const view = mount(PlexTab, { props: { state: tab } })
 
     await view.get('.plex').trigger('contextmenu', { clientX: 12, clientY: 34 })
 
@@ -122,7 +122,7 @@ describe('a menu asked for over a tab drawing no picture', () => {
     drawing(13)
     const { tab } = empty()
     tab.menu.value = { node: null, at: { x: 0, y: 0 }, opening: 'pointer' }
-    const view = mount(PlexTab, { props: { held: tab }, attachTo: document.body })
+    const view = mount(PlexTab, { props: { state: tab }, attachTo: document.body })
 
     const items = document.body.querySelectorAll('[role="menuitem"]')
 
@@ -134,7 +134,7 @@ describe('a menu asked for over a tab drawing no picture', () => {
     drawing(13)
     const asked: MenuRequest[] = []
     const tab = { ...held(), asks: (one: MenuRequest) => void asked.push(one) } as PlexTabState
-    const view = mount(PlexTab, { props: { held: tab } })
+    const view = mount(PlexTab, { props: { state: tab } })
 
     await view.get('.plex').trigger('contextmenu', { clientX: 12, clientY: 34 })
 
@@ -149,28 +149,28 @@ describe('what a node is drawn before its title', () => {
 
   it('is the icon the tree draws a deck under', () => {
     drawing(13)
-    const view = mount(PlexTab, { props: { held: typed({ 'Root.md': 'deck' }) } })
+    const view = mount(PlexTab, { props: { state: typed({ 'Root.md': 'deck' }) } })
 
     expect(view.findComponent(iconFor('deck')!).exists()).toBe(true)
   })
 
   it('is the icon the tree draws a stencil under', () => {
     drawing(13)
-    const view = mount(PlexTab, { props: { held: typed({ 'Root.md': 'stencil' }) } })
+    const view = mount(PlexTab, { props: { state: typed({ 'Root.md': 'stencil' }) } })
 
     expect(view.findComponent(iconFor('stencil')!).exists()).toBe(true)
   })
 
   it('is nothing at all for an ordinary note, which keeps no room for one', () => {
     drawing(13)
-    const view = mount(PlexTab, { props: { held: typed({}) } })
+    const view = mount(PlexTab, { props: { state: typed({}) } })
 
     expect(view.find('.plex__icon').exists()).toBe(false)
   })
 
   it('stands on the node it is about, and on no other', () => {
     drawing(13)
-    const view = mount(PlexTab, { props: { held: typed({ 'Child.md': 'deck' }) } })
+    const view = mount(PlexTab, { props: { state: typed({ 'Child.md': 'deck' }) } })
 
     expect(view.get('[aria-label^="Child"]').find('.plex__icon').exists()).toBe(true)
     expect(view.get('[aria-label^="Root"]').find('.plex__icon').exists()).toBe(false)

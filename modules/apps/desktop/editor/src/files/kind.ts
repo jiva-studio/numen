@@ -138,21 +138,21 @@ export function filesKind(handle: WindowHandle, makes: () => FileTree, deps: Fil
   const kind: Kind<FilesTabState> = {
     kind: FILES,
     opens: () => {
-      const held = filing(makes(), deps)
-      void held.list.opens(ROOT)
-      return held
+      const state = filing(makes(), deps)
+      void state.list.opens(ROOT)
+      return state
     },
     called: () => words.files,
     draws: FilesTab,
     identity: () => FILES,
-    shuts: (held) => {
-      held.list.close()
+    shuts: (state) => {
+      state.list.close()
       return true
     },
   }
 
   /** The tree of this window, and nothing while it holds none. */
-  const front = (): FilesTabState | null => handle.last<FilesTabState>(FILES)?.held ?? null
+  const front = (): FilesTabState | null => handle.last<FilesTabState>(FILES)?.state ?? null
 
   /**
    * The tree put in front of the person, walked down to a path. The window that

@@ -350,7 +350,7 @@ describe('a command reached by its own keystroke', () => {
     await press('Enter')
     await settles()
 
-    const deck = window.findComponent(DeckTab).props('held') as {
+    const deck = window.findComponent(DeckTab).props('state') as {
       shown: { value: { path: string } }
     }
     expect(deck.shown.value.path).toBe('Animals.note')
@@ -427,7 +427,7 @@ describe('a command reached by its own keystroke', () => {
     await press('Enter')
     await settles()
 
-    const plex = window.findComponent(PlexTab).props('held') as {
+    const plex = window.findComponent(PlexTab).props('state') as {
       view: { here: { value: string } }
     }
     expect(plex.view.here.value).toBe('physics/Entropy.md')
@@ -541,7 +541,7 @@ describe('a command reached by a keystroke holding Shift', () => {
     await settles()
 
     expect(event.defaultPrevented).toBe(true)
-    const plex = window.findComponent(PlexTab).props('held') as {
+    const plex = window.findComponent(PlexTab).props('state') as {
       view: { here: { value: string } }
     }
     expect(plex.view.here.value).toBe('Root.md')
@@ -567,7 +567,7 @@ describe('a command reached by a keystroke holding Shift', () => {
 describe('a command asked for on a node of the plex', () => {
   /** The menu on a node, and an item of it chosen. */
   const chose = async (window: Awaited<ReturnType<typeof drawn>>, id: string) => {
-    const plex = window.findComponent(PlexTab).props('held') as {
+    const plex = window.findComponent(PlexTab).props('state') as {
       asks: (one: unknown) => void
       chose: (id: string) => void
     }
@@ -579,9 +579,9 @@ describe('a command asked for on a node of the plex', () => {
   it('says in the tab what that tab could not show', async () => {
     const window = await drawn()
     const tab = window.findComponent(PlexTab)
-    const held = tab.props('held') as { view: { trouble: { value: string } } }
+    const state = tab.props('state') as { view: { trouble: { value: string } } }
 
-    held.view.trouble.value = 'Gone.md is not in the vault'
+    state.view.trouble.value = 'Gone.md is not in the vault'
     await settles()
 
     expect(tab.find('.caution').text()).toBe('Gone.md is not in the vault')
@@ -737,7 +737,7 @@ describe('a file the window has open in an editor of cards, removed from the tre
 
   it('writes the card nobody had saved before the file goes', async () => {
     const window = await holding('New deck', 'Animals')
-    const held = window.findComponent(DeckTab).props('held') as {
+    const state = window.findComponent(DeckTab).props('state') as {
       adds(
         stencil: string,
         values: readonly { field: string; text: string }[],
@@ -745,7 +745,7 @@ describe('a file the window has open in an editor of cards, removed from the tre
       ): void
     }
 
-    held.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
+    state.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await removes(window, 'Animals.note')
 
     // Making the deck is no write, so the only one is what the person added.
@@ -758,7 +758,7 @@ describe('a deck or a stencil the file tree asked the vault for', () => {
   /** What a row of the tree asks for, on the row the menu was opened on. */
   const asksFor = async (stencil: boolean) => {
     const window = await drawn()
-    const tree = window.findComponent(FilesTab).props('held') as {
+    const tree = window.findComponent(FilesTab).props('state') as {
       asks(asked: { path: string | null; at: { x: number; y: number } }): void
       chose(id: string): void
     }

@@ -141,8 +141,8 @@ export function noting(
 
   /** The tab holding a note lets go of it, wherever the window draws it. */
   const shuts = (id: string) => {
-    const tab = handle.each<NoteTabState>(NOTE).find((one) => one.held.id === id)
-    tab?.held.shuts(tab.id)
+    const tab = handle.each<NoteTabState>(NOTE).find((one) => one.state.id === id)
+    tab?.state.shuts(tab.id)
   }
 
   /**
@@ -185,23 +185,24 @@ export function noting(
    * identity it opened under.
    */
   /** The file this note stands at now, and nothing while the store has let it go. */
-  const standsAt = (held: NoteTabState): string => (notes.has(held.id) ? notes.where(held.id) : '')
+  const standsAt = (state: NoteTabState): string =>
+    notes.has(state.id) ? notes.where(state.id) : ''
 
   const kind: Kind<NoteTabState> = {
     kind: NOTE,
     opens: (id) => opens(id),
-    called: (held) => names.called(held.id),
-    marked: (held) => markOf(held.shown.value.state),
+    called: (state) => names.called(state.id),
+    marked: (state) => markOf(state.shown.value.state),
     draws: NoteTab,
     identity: (id) => id,
-    shown: (held) => held.measure(),
-    at: (held) => {
-      const path = standsAt(held)
-      return { path, title: path ? names.called(held.id) : '' }
+    shown: (state) => state.measure(),
+    at: (state) => {
+      const path = standsAt(state)
+      return { path, title: path ? names.called(state.id) : '' }
     },
-    attends: (held) => ({ path: standsAt(held) }),
-    shuts: (held, id) => {
-      held.shuts(id)
+    attends: (state) => ({ path: standsAt(state) }),
+    shuts: (state, id) => {
+      state.shuts(id)
       return false
     },
     // What an open note owes at the quit is written by the quit, which the

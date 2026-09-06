@@ -334,7 +334,7 @@ export const useWindow = () => {
   const where = (): CommandTarget => {
     const front = held.handle.front()
     const tab = front?.id ?? ''
-    const on = front && held.heldIn(tab)?.kind.at?.(front.held)
+    const on = front && held.heldIn(tab)?.kind.at?.(front.state)
     const file = on?.file ?? ''
     return {
       tab,
@@ -401,7 +401,7 @@ export const useWindow = () => {
     front: looked(),
     tabs: held.tabs.value.map(({ id, title }) => {
       const one = held.heldIn(id)
-      const said = one?.kind.attends?.(one.held)
+      const said = one?.kind.attends?.(one.state)
       return {
         id,
         kind: one?.kind.kind ?? '',

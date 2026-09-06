@@ -126,8 +126,8 @@ const bothWays = (args: Knobs) => ({
   }),
   template: `
     <div class="numen" style="height:100vh;overflow:auto;background:var(--numen-surface)">
-      <div data-tab="answered" style="inline-size:40rem"><PresetTab :held="answered" /></div>
-      <div data-tab="waiting" style="inline-size:40rem"><PresetTab :held="waiting" /></div>
+      <div data-tab="answered" style="inline-size:40rem"><PresetTab :state="answered" /></div>
+      <div data-tab="waiting" style="inline-size:40rem"><PresetTab :state="waiting" /></div>
     </div>
   `,
 })
@@ -143,10 +143,10 @@ const roomsIn = (tab: HTMLElement): readonly HTMLElement[] =>
 /** The tab in the room a window gives it. */
 const room = (args: Knobs) => ({
   components: { PresetTab },
-  setup: () => ({ held: holding(args) }),
+  setup: () => ({ state: holding(args) }),
   template: `
     <div class="numen" style="height:100vh;overflow:auto;background:var(--numen-surface)">
-      <PresetTab :held="held" />
+      <PresetTab :state="state" />
     </div>
   `,
 })

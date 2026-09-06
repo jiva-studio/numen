@@ -70,7 +70,7 @@ const drawn = async (problems: readonly Problem[] = []) => {
   const tab = held.handle.holds<StencilTabState>(STENCIL, id) as StencilTabState
   // A mark is teleported into the face or the row it is about, so the editor
   // has to stand in the document for those to be found.
-  const window = mount(StencilTab, { props: { held: tab }, attachTo: document.body })
+  const window = mount(StencilTab, { props: { state: tab }, attachTo: document.body })
   await settles()
   return { window, tab, renamed }
 }

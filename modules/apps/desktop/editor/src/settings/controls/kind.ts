@@ -60,12 +60,12 @@ export interface SettingsTabState {
 }
 
 export function settling(handle: WindowHandle, installation: Installation) {
-  const held: SettingsTabState = { installation }
+  const state: SettingsTabState = { installation }
 
   /** One settings tab to a window: the settings are the installation's, not a file's. */
   const kind: Kind<SettingsTabState> = {
     kind: SETTINGS,
-    opens: () => held,
+    opens: () => state,
     called: () => words.settings,
     draws: SettingsTab,
     identity: () => SETTINGS,
@@ -74,5 +74,5 @@ export function settling(handle: WindowHandle, installation: Installation) {
   /** The settings put in front of the person. */
   const shows = (): void => void handle.opens(SETTINGS)
 
-  return { kind, held, shows }
+  return { kind, state, shows }
 }

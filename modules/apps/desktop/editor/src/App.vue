@@ -63,7 +63,7 @@ const {
         <component
           :is="held.heldIn(id)!.kind.draws"
           v-if="held.heldIn(id)"
-          :held="held.heldIn(id)!.held"
+          :state="held.heldIn(id)!.state"
         />
 
         <div v-else />

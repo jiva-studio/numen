@@ -10,26 +10,26 @@ import type { Turn } from '@numen/ui'
 import { WORDS as words } from './words'
 import type { AgentTabState } from './kind'
 
-const props = defineProps<{ held: AgentTabState }>()
+const props = defineProps<{ state: AgentTabState }>()
 </script>
 
 <template>
   <Agent
-    :model-value="props.held.asked.value"
-    :turns="props.held.turns.value"
-    :working="props.held.working.value"
+    :model-value="props.state.asked.value"
+    :turns="props.state.turns.value"
+    :working="props.state.working.value"
     :placeholder="words.ask"
     :sends="words.send"
     :stops="words.stop"
-    @update:model-value="(text: string) => props.held.writing(text)"
-    @submit="(text: string) => props.held.send(text)"
-    @stop="props.held.stop()"
-    @open="(turn: Turn) => props.held.opensTurn(turn)"
+    @update:model-value="(text: string) => props.state.writing(text)"
+    @submit="(text: string) => props.state.send(text)"
+    @stop="props.state.stop()"
+    @open="(turn: Turn) => props.state.opensTurn(turn)"
     @follow="
-      (turn: Turn, href: string, press: MouseEvent) => props.held.followed(turn, href, press)
+      (turn: Turn, href: string, press: MouseEvent) => props.state.followed(turn, href, press)
     "
   >
-    <template #silence>{{ props.held.unreachable() || words.nothingSaid }}</template>
+    <template #silence>{{ props.state.unreachable() || words.nothingSaid }}</template>
     <template #failure="{ turn }">
       {{ turn.voice === 'asked' ? words.unsent : words.stopped }}
     </template>

@@ -27,12 +27,12 @@ import { choicesFor } from './models'
 import { write } from '../json5'
 import { WORDS as words } from './words'
 
-const props = defineProps<{ held: SettingsTabState }>()
+const props = defineProps<{ state: SettingsTabState }>()
 
-const held = computed(() => props.held.installation)
+const installation = computed(() => props.state.installation)
 
 /** How large the interface may be drawn, and how large the text may be set. */
-const bounds = computed(() => held.value.bounds.value)
+const bounds = computed(() => installation.value.bounds.value)
 
 /** The three halves of a colour pair, as the switch offers them. */
 const modes = [
@@ -43,7 +43,7 @@ const modes = [
 
 /** The themes, in the two shelves they come off. */
 const themes = computed<readonly SelectChoice[]>(() =>
-  [...held.value.themes.value]
+  [...installation.value.themes.value]
     .sort((one, other) => Number(other.shipped) - Number(one.shipped))
     .map((one) => ({
       id: one.name,
@@ -74,36 +74,36 @@ const STEPS = { least: 1, most: WHOLE }
 
 /** What stands at a setting, read as the kind the row draws it as. */
 const said = (at: readonly string[]): string => {
-  const value = held.value.setting(at)
+  const value = installation.value.setting(at)
   return typeof value === 'string' ? value : ''
 }
-const on = (at: readonly string[]): boolean => held.value.setting(at) === true
+const on = (at: readonly string[]): boolean => installation.value.setting(at) === true
 const counted = (at: readonly string[]): number | null => {
-  const value = held.value.setting(at)
+  const value = installation.value.setting(at)
   return typeof value === 'number' ? value : null
 }
 
 /** The models a setting can be set to: what the file holds, then the presets. */
 const models = (at: readonly string[]): readonly SelectChoice[] =>
-  choicesFor(held.value.models(at), said(at), words)
+  choicesFor(installation.value.models(at), said(at), words)
 
 /**
  * A model chosen. A preset writes everything that preset decides; a value the
  * presets do not name is written where it stands.
  */
 const picks = (at: readonly string[], name: string): void => {
-  const model = held.value.models(at).find((one) => one.name === name)
-  if (model) held.value.writes(model.writes)
+  const model = installation.value.models(at).find((one) => one.name === name)
+  if (model) installation.value.writes(model.writes)
   else puts(at, name)
 }
 
 /** One setting written, by what is to stand there. */
 const puts = (at: readonly string[], value: unknown): void =>
-  held.value.writes([{ at, value: write(value) }])
+  installation.value.writes([{ at, value: write(value) }])
 
 /** The profiles a reading may be put right at, and naming none. */
 const profiles = computed<readonly SelectChoice[]>(() => {
-  const kept = held.value.setting(AT.profiles)
+  const kept = installation.value.setting(AT.profiles)
   const names = kept && typeof kept === 'object' ? Object.keys(kept) : []
   return [{ id: '', text: words.proofreadingNone }, ...names.map((one) => ({ id: one, text: one }))]
 })
@@ -115,8 +115,10 @@ const profiles = computed<readonly SelectChoice[]>(() => {
       <!-- Where the settings stand, and the one way to the file itself. Every
            setting with a control is turned by its control. -->
       <div class="settings__where">
-        <p class="settings__file">{{ held.file.value || words.file }}</p>
-        <Button variant="outline" size="small" @click="held.opensFile()">{{ words.opens }}</Button>
+        <p class="settings__file">{{ installation.file.value || words.file }}</p>
+        <Button variant="outline" size="small" @click="installation.opensFile()">
+          {{ words.opens }}
+        </Button>
       </div>
 
       <section class="settings__group" :aria-label="words.window">
@@ -129,12 +131,12 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           :detail="words.themeDetail"
         >
           <Select
-            :model-value="held.applied.value"
+            :model-value="installation.applied.value"
             :choices="themes"
             :name="words.theme"
             :aria-labelledby="labelledBy"
             class="settings__choice"
-            @update:model-value="(name: string) => held.chooses(name)"
+            @update:model-value="(name: string) => installation.chooses(name)"
           />
         </SettingRow>
 
@@ -142,14 +144,14 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           v-slot="{ labelledBy }"
           at="mode"
           :name="words.mode"
-          :detail="held.pinned.value ? words.pinned : words.modeDetail"
+          :detail="installation.pinned.value ? words.pinned : words.modeDetail"
         >
           <SegmentedControl
-            :model-value="held.mode.value"
+            :model-value="installation.mode.value"
             :choices="modes"
-            :disabled="held.pinned.value"
+            :disabled="installation.pinned.value"
             :aria-labelledby="labelledBy"
-            @update:model-value="(one: string) => held.chooses(`${MODE}:${one as Mode}`)"
+            @update:model-value="(one: string) => installation.chooses(`${MODE}:${one as Mode}`)"
           />
         </SettingRow>
 
@@ -160,14 +162,15 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           :detail="words.interfaceScaleDetail"
         >
           <NumberField
-            :model-value="held.sizes.value.interfaceScale"
+            :model-value="installation.sizes.value.interfaceScale"
             :min="bounds.interfaceScale.least"
             :max="bounds.interfaceScale.most"
             :step="STEP"
             :aria-labelledby="labelledBy"
             class="settings__number"
             @update:model-value="
-              (size: number | null) => size !== null && held.chooses(`${INTERFACE_SCALE}:${size}`)
+              (size: number | null) =>
+                size !== null && installation.chooses(`${INTERFACE_SCALE}:${size}`)
             "
           />
         </SettingRow>
@@ -179,14 +182,15 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           :detail="words.textScaleDetail"
         >
           <NumberField
-            :model-value="held.sizes.value.textScale"
+            :model-value="installation.sizes.value.textScale"
             :min="bounds.textScale.least"
             :max="bounds.textScale.most"
             :step="STEP"
             :aria-labelledby="labelledBy"
             class="settings__number"
             @update:model-value="
-              (size: number | null) => size !== null && held.chooses(`${TEXT_SCALE}:${size}`)
+              (size: number | null) =>
+                size !== null && installation.chooses(`${TEXT_SCALE}:${size}`)
             "
           />
         </SettingRow>
@@ -197,7 +201,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           :name="words.hanging"
           :detail="words.hangingDetail"
         >
-          <Switch v-model="held.hangs.value" :aria-labelledby="labelledBy" />
+          <Switch v-model="installation.hangs.value" :aria-labelledby="labelledBy" />
         </SettingRow>
 
         <SettingRow
@@ -207,14 +211,14 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           :detail="words.partsDetail"
         >
           <NumberField
-            :model-value="held.parts.value"
+            :model-value="installation.parts.value"
             :min="1"
             :max="12"
             :step="1"
             :aria-labelledby="labelledBy"
             class="settings__number"
             @update:model-value="
-              (count: number | null) => count !== null && held.choosesParts(count)
+              (count: number | null) => count !== null && installation.choosesParts(count)
             "
           />
         </SettingRow>
@@ -229,7 +233,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           :name="words.syncing"
           :detail="words.syncingDetail"
         >
-          <Switch v-model="held.syncing.value" :aria-labelledby="labelledBy" />
+          <Switch v-model="installation.syncing.value" :aria-labelledby="labelledBy" />
         </SettingRow>
       </section>
 
@@ -243,12 +247,12 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           :detail="words.dayStartsDetail"
         >
           <TimeField
-            :model-value="held.dayStarts.value"
+            :model-value="installation.dayStarts.value"
             :min="EARLIEST"
-            :max="held.latestDayStarts.value"
+            :max="installation.latestDayStarts.value"
             :aria-labelledby="labelledBy"
             class="settings__number"
-            @settles="(hour: string) => held.choosesDayStarts(hour)"
+            @settles="(hour: string) => installation.choosesDayStarts(hour)"
           />
         </SettingRow>
       </section>

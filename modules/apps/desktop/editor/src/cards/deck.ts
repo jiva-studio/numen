@@ -450,8 +450,8 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
 
   /** The tab holding a deck lets go of it, wherever the window draws it. */
   const shuts = (id: string): void => {
-    const tab = handle.each<DeckTabState>(DECK).find((one) => one.held.id === id)
-    tab?.held.shuts(tab.id)
+    const tab = handle.each<DeckTabState>(DECK).find((one) => one.state.id === id)
+    tab?.state.shuts(tab.id)
   }
 
   /** The decks, as a command reaches the ones the window has open. */

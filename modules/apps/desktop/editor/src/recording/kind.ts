@@ -78,17 +78,17 @@ export function recordingKind(
   const kind: Kind<RecordingTabState> = {
     kind: RECORDING,
     opens: (path) => transcribed(opens(path), asks),
-    called: (held) => held.called,
+    called: (state) => state.called,
     draws: RecordingTab,
     identity: (path) => path,
-    shuts: (held) => {
-      held.close()
+    shuts: (state) => {
+      state.close()
       return true
     },
-    at: (held) => ({ file: held.path, source: 'recording' }),
-    attends: (held) => ({
-      path: held.path,
-      recording: { heard: held.heard.value, length: held.length.value },
+    at: (state) => ({ file: state.path, source: 'recording' }),
+    attends: (state) => ({
+      path: state.path,
+      recording: { heard: state.heard.value, length: state.length.value },
     }),
   }
 
@@ -106,7 +106,7 @@ export function recordingKind(
    */
   const ticked = (tasks: readonly Task[]) => {
     for (const one of handle.each<RecordingTabState>(RECORDING)) {
-      one.held.ticks(tasks.some((task) => task.about === one.held.path))
+      one.state.ticks(tasks.some((task) => task.about === one.state.path))
     }
   }
 
@@ -116,7 +116,7 @@ export function recordingKind(
    */
   const dropped = (path: string) => {
     for (const one of handle.each<RecordingTabState>(RECORDING)) {
-      if (one.held.path === path) one.held.again()
+      if (one.state.path === path) one.state.again()
     }
   }
 

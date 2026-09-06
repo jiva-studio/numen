@@ -11,11 +11,11 @@ import { Editor } from '@numen/ui'
 import type { SettingsFileTabState } from './kind'
 import { WORDS as words } from './words'
 
-const props = defineProps<{ held: SettingsFileTabState }>()
+const props = defineProps<{ state: SettingsFileTabState }>()
 
 // The tab's state outlives this component, so what it holds is bound once here
 // and the template unwraps it.
-const { saying, overtaken, read, text } = props.held
+const { saying, overtaken, read, text } = props.state
 </script>
 
 <template>
@@ -26,8 +26,8 @@ const { saying, overtaken, read, text } = props.held
 
     <p v-if="overtaken" class="caution caution--conflict" role="status">
       {{ words.overtaken }}
-      <button type="button" class="answer" @click="props.held.keep()">{{ words.keep }}</button>
-      <button type="button" class="answer" @click="props.held.take()">{{ words.take }}</button>
+      <button type="button" class="answer" @click="props.state.keep()">{{ words.keep }}</button>
+      <button type="button" class="answer" @click="props.state.take()">{{ words.take }}</button>
     </p>
 
     <Editor
@@ -37,8 +37,8 @@ const { saying, overtaken, read, text } = props.held
       language="json"
       class="settings-file__editor"
       :aria-label="words.called"
-      @update:model-value="(said: string) => props.held.types(said)"
-      @save="props.held.keeps()"
+      @update:model-value="(said: string) => props.state.types(said)"
+      @save="props.state.keeps()"
     />
     <p v-else class="settings-file__waiting">{{ words.reading }}</p>
   </div>

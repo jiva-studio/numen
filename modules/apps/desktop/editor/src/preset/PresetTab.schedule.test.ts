@@ -26,8 +26,8 @@ describe('a preset that schedules nothing', () => {
 
   /** The tab drawn for a preset stopped for that reason. */
   const stopped = (why: StopReason) => {
-    const { held } = tabAt()
-    return mount(PresetTab, { props: { held: { ...held, stopped: ref(why) } } })
+    const { state } = tabAt()
+    return mount(PresetTab, { props: { state: { ...state, stopped: ref(why) } } })
   }
 
   it('has a sentence of its own for each verdict there is', () => {

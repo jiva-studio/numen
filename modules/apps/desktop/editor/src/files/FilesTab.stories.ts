@@ -37,7 +37,7 @@ const VAULT: Record<string, readonly Entry[]> = {
 /** A tab of that vault, reading the folders named as it is drawn. */
 const opened = (open: readonly string[]): FilesTabState => {
   const list = listing({ list: async (at: string) => VAULT[at] ?? [] })
-  const held: FilesTabState = filing(list, {
+  const state: FilesTabState = filing(list, {
     lands: () => {},
     runs: () => {},
     moves: async () => {},
@@ -55,7 +55,7 @@ const opened = (open: readonly string[]): FilesTabState => {
     for (const at of open) await list.opens(at)
   })()
 
-  return held
+  return state
 }
 
 const meta: Meta = {
@@ -69,8 +69,8 @@ type Story = StoryObj
 /** The tab, drawn in the column a window gives it. */
 const room = (open: readonly string[] = []) => () => ({
   components: { FilesTab },
-  setup: () => ({ held: opened(open) }),
-  template: `<div class="numen h-screen w-80 bg-surface"><FilesTab :held="held" /></div>`,
+  setup: () => ({ state: opened(open) }),
+  template: `<div class="numen h-screen w-80 bg-surface"><FilesTab :state="state" /></div>`,
 })
 
 const rows = (canvas: HTMLElement) => [...canvas.querySelectorAll<HTMLElement>('[role="treeitem"]')]

@@ -18,7 +18,7 @@ import type { Bounds, Counts, Goal } from './core'
 import { fieldsUnder, idle, round, type Field } from './curve'
 import { WORDS as words } from './words'
 
-const props = defineProps<{ held: PresetTabState }>()
+const props = defineProps<{ state: PresetTabState }>()
 
 // The tab's state outlives this component, so what it holds is bound once here
 // and the template unwraps it.
@@ -33,7 +33,7 @@ const {
   settings,
   stopped: stoppedAt,
   waiting,
-} = props.held
+} = props.state
 
 /** Why the goal has nothing to work on, and empty where it has. */
 const nothing = computed(() => idle(curve.value))
@@ -128,7 +128,7 @@ const counted = (field: Field): number | null => {
 /** A number typed into a row. An empty field leaves the setting as it stands. */
 const typed = (field: Field, said: number | null) => {
   if (said === null) return
-  props.held.types(field, field === 'retention' ? round(said / 100, 2) : said)
+  props.state.types(field, field === 'retention' ? round(said / 100, 2) : said)
 }
 
 /**
@@ -137,8 +137,8 @@ const typed = (field: Field, said: number | null) => {
  * gesture is done the moment it turns.
  */
 const chose = (field: Field, value: SettingValue) => {
-  props.held.types(field, value)
-  props.held.settles()
+  props.state.types(field, value)
+  props.state.settles()
 }
 
 /** A day typed into the row that holds one. */
@@ -156,14 +156,14 @@ const stopped = computed(() => words.stopped(stoppedAt.value))
          and it waits on nothing in the vault. -->
     <p v-if="saying" role="alert" class="preset__warning preset__answering">
       {{ saying }}
-      <button type="button" class="answer" @click="props.held.again()">
+      <button type="button" class="answer" @click="props.state.again()">
         {{ words.reads }}
       </button>
     </p>
 
     <p v-if="changed" role="status" class="preset__warning preset__answering">
       {{ words.changed }}
-      <button type="button" class="answer" @click="props.held.again()">
+      <button type="button" class="answer" @click="props.state.again()">
         {{ words.reads }}
       </button>
     </p>
@@ -184,7 +184,7 @@ const stopped = computed(() => words.stopped(stoppedAt.value))
           <SegmentedControl
             :model-value="settings.goal"
             :choices="goals"
-            @update:model-value="(one: string) => props.held.chooses(one as Goal)"
+            @update:model-value="(one: string) => props.state.chooses(one as Goal)"
           />
 
           <p v-if="nothing" class="preset__unpointed" data-preset="unpointed">{{ saidInstead }}</p>
@@ -196,8 +196,8 @@ const stopped = computed(() => words.stopped(stoppedAt.value))
               :place="place"
               :value-text="reading"
               :waiting="waiting"
-              @moves="(at: number) => props.held.moves(at)"
-              @settles="props.held.settles()"
+              @moves="(at: number) => props.state.moves(at)"
+              @settles="props.state.settles()"
             />
           </template>
 
@@ -251,8 +251,8 @@ const stopped = computed(() => words.stopped(stoppedAt.value))
                   :step="1"
                   :aria-labelledby="`preset-${field}`"
                   class="preset__slider"
-                  @update:model-value="(share: number) => props.held.types(field, share)"
-                  @settles="props.held.settles()"
+                  @update:model-value="(share: number) => props.state.types(field, share)"
+                  @settles="props.state.settles()"
                 />
                 <span class="preset__percent" data-preset="percent">{{
                   words.percent(settings.backlog)
@@ -279,7 +279,7 @@ const stopped = computed(() => words.stopped(stoppedAt.value))
                 :aria-labelledby="`preset-${field}`"
                 class="preset__number"
                 @update:model-value="(said: number | null) => typed(field, said)"
-                @settles="props.held.settles()"
+                @settles="props.state.settles()"
               />
             </span>
           </div>

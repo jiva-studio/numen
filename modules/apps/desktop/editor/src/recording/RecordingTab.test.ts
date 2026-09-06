@@ -65,11 +65,11 @@ function tab(
   canRun: (run: string) => boolean = () => true,
 ) {
   const asked: string[] = []
-  const held = transcribed(
+  const state = transcribed(
     transcript(talk(cues), 'talks/Ants.mp3', { through: played(), plays }),
     { runs: (id, path, called) => void asked.push(`${id} ${path} ${called}`), canRun },
   )
-  return { held, asked }
+  return { state, asked }
 }
 
 /** A window this build has told it can do no run at all. */
@@ -83,8 +83,8 @@ const settled = async () => {
 
 describe('a recording tab', () => {
   it('stands the moment each line was said in the editor gutter', async () => {
-    const { held } = tab()
-    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    const { state } = tab()
+    const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
     await settled()
     await drawn.vm.$nextTick()
@@ -101,8 +101,8 @@ describe('a recording tab', () => {
 describe('a recording with no transcript', () => {
   // The button says there is no transcript, so nothing says it twice.
   it('draws no editor at all, and offers the run in place of the words', async () => {
-    const { held } = tab([])
-    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    const { state } = tab([])
+    const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
     await settled()
     await drawn.vm.$nextTick()
@@ -117,8 +117,8 @@ describe('a recording with no transcript', () => {
 
   // Where the run cannot be asked for, what there is to say is said.
   it('says there is no transcript where the run cannot be asked for', async () => {
-    const { held } = tab([], undefined, nothing)
-    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    const { state } = tab([], undefined, nothing)
+    const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
     await settled()
     await drawn.vm.$nextTick()
@@ -131,8 +131,8 @@ describe('a recording with no transcript', () => {
   })
 
   it('offers the run under the player', async () => {
-    const { held } = tab([])
-    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    const { state } = tab([])
+    const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
     await settled()
     await drawn.vm.$nextTick()
@@ -144,8 +144,8 @@ describe('a recording with no transcript', () => {
   })
 
   it('asks the window for that run when it is pressed', async () => {
-    const { held, asked } = tab([])
-    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    const { state, asked } = tab([])
+    const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
     await settled()
     await drawn.vm.$nextTick()
     await settled()
@@ -158,8 +158,8 @@ describe('a recording with no transcript', () => {
   })
 
   it('offers nothing where this build cannot do the run at all', async () => {
-    const { held } = tab([], undefined, nothing)
-    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    const { state } = tab([], undefined, nothing)
+    const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
     await settled()
     await drawn.vm.$nextTick()
@@ -172,11 +172,11 @@ describe('a recording with no transcript', () => {
   })
 
   it('says a run is going while one is, and offers none beside it', async () => {
-    const { held } = tab([])
-    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    const { state } = tab([])
+    const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
     await settled()
 
-    held.ticks(true)
+    state.ticks(true)
     await settled()
     await drawn.vm.$nextTick()
 
@@ -189,15 +189,15 @@ describe('a recording with no transcript', () => {
 
   // The player heads the pane, and a run going changes only what is below it.
   it('draws the player the same while a run goes as before it began', async () => {
-    const { held } = tab([])
-    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    const { state } = tab([])
+    const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
     await settled()
     await drawn.vm.$nextTick()
     await settled()
 
     const head = drawn.find('.recording__head').html()
 
-    held.ticks(true)
+    state.ticks(true)
     await settled()
     await drawn.vm.$nextTick()
 
@@ -210,8 +210,8 @@ describe('a recording with no transcript', () => {
   // The player is what a recording is for, and a build with nothing to play it
   // with says so where the controls would stand.
   it('says a recording it cannot play at all is one', async () => {
-    const { held } = tab([], () => false)
-    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    const { state } = tab([], () => false)
+    const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
     await settled()
     await drawn.vm.$nextTick()
@@ -226,13 +226,13 @@ describe('a recording with no transcript', () => {
 
 describe('a transcript still growing', () => {
   it('draws the words and says nothing under them', async () => {
-    const { held } = tab()
-    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    const { state } = tab()
+    const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
     await settled()
     await drawn.vm.$nextTick()
     await settled()
 
-    held.ticks(true)
+    state.ticks(true)
     await settled()
     await drawn.vm.$nextTick()
 
@@ -250,8 +250,8 @@ describe('the menu at the end of the player strip', () => {
 
   // The two controls over the words stand together, at their own spacing.
   it('stands beside the follow control, in one group at the end of the strip', async () => {
-    const { held } = tab()
-    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    const { state } = tab()
+    const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
     await settled()
     await drawn.vm.$nextTick()
@@ -267,8 +267,8 @@ describe('the menu at the end of the player strip', () => {
   // Putting the words right stands above taking them away, so the one that
   // cannot be undone is last.
   it('offers the words put right and taken away where they already stand', async () => {
-    const { held } = tab()
-    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    const { state } = tab()
+    const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
     await settled()
     await drawn.vm.$nextTick()
@@ -286,8 +286,8 @@ describe('the menu at the end of the player strip', () => {
   })
 
   it('asks the window for the run behind whichever item is chosen', async () => {
-    const { held, asked } = tab()
-    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    const { state, asked } = tab()
+    const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
     await settled()
     await drawn.vm.$nextTick()
     await settled()
@@ -316,13 +316,13 @@ describe('the menu at the end of the player strip', () => {
   // A run appends to the words, and what is being appended to is not taken
   // away underneath it.
   it('is not drawn while a run is writing the words down', async () => {
-    const { held } = tab()
-    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    const { state } = tab()
+    const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
     await settled()
     await drawn.vm.$nextTick()
     await settled()
 
-    held.ticks(true)
+    state.ticks(true)
     await settled()
     await drawn.vm.$nextTick()
 
@@ -336,8 +336,8 @@ describe('the menu at the end of the player strip', () => {
   it('drops an item this build cannot do at all, and goes where none is left', async () => {
     const runs = runSupport()
     runs.cannotRun('dropTranscript')
-    const { held } = tab(CUES, undefined, (run) => runs.canRun(run))
-    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    const { state } = tab(CUES, undefined, (run) => runs.canRun(run))
+    const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
     await settled()
     await drawn.vm.$nextTick()
@@ -356,8 +356,8 @@ describe('the menu at the end of the player strip', () => {
 
   // Nothing can be asked over words that are not there.
   it('is not drawn where the recording has no transcript', async () => {
-    const { held } = tab([])
-    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    const { state } = tab([])
+    const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
     await settled()
     await drawn.vm.$nextTick()
@@ -371,8 +371,8 @@ describe('the menu at the end of the player strip', () => {
 
 describe('a recording with a transcript', () => {
   it('draws nothing above the words but the player strip', async () => {
-    const { held } = tab()
-    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    const { state } = tab()
+    const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
     await settled()
     await drawn.vm.$nextTick()
@@ -386,8 +386,8 @@ describe('a recording with a transcript', () => {
 
 describe('a recording tab drawn again', () => {
   it('still stands the times in its gutter', async () => {
-    const { held } = tab()
-    const first = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    const { state } = tab()
+    const first = mount(RecordingTab, { props: { state }, attachTo: document.body })
     await settled()
     await first.vm.$nextTick()
     await settled()
@@ -396,7 +396,7 @@ describe('a recording tab drawn again', () => {
     // A tab moved between panes is unmounted and drawn again, holding the
     // same recording. Nothing about the words changes as it moves.
     first.unmount()
-    const again = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    const again = mount(RecordingTab, { props: { state }, attachTo: document.body })
     await settled()
     await again.vm.$nextTick()
     await settled()

@@ -265,8 +265,8 @@ export function stencilling(
 
   /** The tab holding a stencil lets go of it, wherever the window draws it. */
   const shuts = (id: string): void => {
-    const tab = handle.each<StencilTabState>(STENCIL).find((one) => one.held.id === id)
-    tab?.held.shuts(tab.id)
+    const tab = handle.each<StencilTabState>(STENCIL).find((one) => one.state.id === id)
+    tab?.state.shuts(tab.id)
   }
 
   /** The stencils, as a command reaches the ones the window has open. */

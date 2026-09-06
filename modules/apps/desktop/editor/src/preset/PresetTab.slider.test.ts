@@ -251,7 +251,7 @@ describe('the one slider', () => {
   // drawn as on it is a browser's answer, and is asked in the stories.
   it('is what the keyboard reaches, and it takes the focus', () => {
     const one = tabAt()
-    const tab = mount(PresetTab, { props: { held: one.held }, attachTo: document.body })
+    const tab = mount(PresetTab, { props: { state: one.state }, attachTo: document.body })
     const picture = tab.get('[data-control="picture"][role="slider"]')
 
     expect(picture.attributes('tabindex')).toBe('0')

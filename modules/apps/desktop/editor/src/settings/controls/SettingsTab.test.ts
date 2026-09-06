@@ -110,7 +110,7 @@ const configured = (pinned = false, file: Record<string, unknown> = {}) => {
     choosesDayStarts: (hour) => void done.push(`day starts ${hour}`),
   }
   const tab = mount(SettingsTab, {
-    props: { held: { installation } },
+    props: { state: { installation } },
     attachTo: document.body,
   })
   drawn.push(tab)

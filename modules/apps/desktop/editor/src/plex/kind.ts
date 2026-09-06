@@ -101,27 +101,27 @@ export type PlexTabState = ReturnType<typeof plexing>
 export function plexKind(handle: WindowHandle, makes: () => View, deps: PlexTabDeps) {
   /** Every plex the window holds, and the one the person was last in. */
   const all = () => handle.each<PlexTabState>(PLEX)
-  const front = (): PlexTabState | null => handle.last<PlexTabState>(PLEX)?.held ?? null
+  const front = (): PlexTabState | null => handle.last<PlexTabState>(PLEX)?.state ?? null
 
   const kind: Kind<PlexTabState> = {
     kind: PLEX,
     opens: (at) => {
-      const held = plexing(makes(), deps)
+      const state = plexing(makes(), deps)
       const from = at || looking() || deps.opening.value
-      if (from) void held.view.go(from)
-      return held
+      if (from) void state.view.go(from)
+      return state
     },
-    called: (held) => plexCalled(words.plex, held.view.neighbourhood.value?.focus.title ?? ''),
+    called: (state) => plexCalled(words.plex, state.view.neighbourhood.value?.focus.title ?? ''),
     draws: PlexTab,
-    shuts: (held) => {
-      held.view.close()
+    shuts: (state) => {
+      state.view.close()
       return true
     },
-    at: (held) => {
-      const path = held.view.here.value
-      return { path, title: (path && held.nameOf(path)) || path }
+    at: (state) => {
+      const path = state.view.here.value
+      return { path, title: (path && state.nameOf(path)) || path }
     },
-    attends: (held) => ({ path: held.view.here.value }),
+    attends: (state) => ({ path: state.view.here.value }),
   }
 
   /** The note the person is looking at, which is what a question is about. */
@@ -142,7 +142,7 @@ export function plexKind(handle: WindowHandle, makes: () => View, deps: PlexTabD
       return
     }
     handle.shows(one.id)
-    await one.held.view.go(path)
+    await one.state.view.go(path)
   }
 
   /**
@@ -152,8 +152,8 @@ export function plexKind(handle: WindowHandle, makes: () => View, deps: PlexTabD
   const leaves = async (from: string, to: string) => {
     await Promise.all(
       all()
-        .filter(({ held }) => held.view.here.value === from)
-        .map(({ held }) => held.view.go(to)),
+        .filter(({ state }) => state.view.here.value === from)
+        .map(({ state }) => state.view.go(to)),
     )
   }
 
@@ -164,8 +164,8 @@ export function plexKind(handle: WindowHandle, makes: () => View, deps: PlexTabD
    * all of them and only while one of them has nowhere to stand.
    */
   const again = async (renamed: readonly Move[] = []) => {
-    if (renamed.length) for (const { held } of all()) held.follows(renamed)
-    if (all().some(({ held }) => !held.view.here.value)) {
+    if (renamed.length) for (const { state } of all()) state.follows(renamed)
+    if (all().some(({ state }) => !state.view.here.value)) {
       try {
         await deps.first()
       } catch {
@@ -176,10 +176,10 @@ export function plexKind(handle: WindowHandle, makes: () => View, deps: PlexTabD
     // divided into: a note whose headings were edited is drawn in the picture
     // it was already drawn in, and nothing else would ask.
     await Promise.all(
-      all().map(async ({ held }) => {
-        const path = held.view.here.value || deps.opening.value
-        if (path) await held.view.go(path)
-        await held.reads()
+      all().map(async ({ state }) => {
+        const path = state.view.here.value || deps.opening.value
+        if (path) await state.view.go(path)
+        await state.reads()
       }),
     )
   }

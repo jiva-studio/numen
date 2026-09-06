@@ -74,10 +74,10 @@ interface Knobs {
 
 const room = (args: Knobs) => ({
   components: { RecordingTab },
-  setup: () => ({ args, held: holding(args.cues) }),
+  setup: () => ({ args, state: holding(args.cues) }),
   template: `
     <div class="numen" :style="{ height: '100vh', width: args.width, background: 'var(--numen-surface)' }">
-      <RecordingTab :held="held" />
+      <RecordingTab :state="state" />
     </div>
   `,
 })

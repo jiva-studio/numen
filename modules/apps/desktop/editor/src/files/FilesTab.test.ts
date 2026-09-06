@@ -51,7 +51,7 @@ const drawn = async (open: readonly string[] = []) => {
   })
   await list.opens(ROOT)
   for (const at of open) await list.opens(at)
-  const window = mount(FilesTab, { props: { held: tab } })
+  const window = mount(FilesTab, { props: { state: tab } })
   await settles()
   return { done, list, tab, window }
 }
@@ -301,7 +301,7 @@ describe('a folder that could not be read', () => {
     })
     await list.opens(ROOT)
 
-    const window = mount(FilesTab, { props: { held: tab } })
+    const window = mount(FilesTab, { props: { state: tab } })
     await settles()
 
     expect(window.find('.caution').text()).toContain('numen did not answer')
