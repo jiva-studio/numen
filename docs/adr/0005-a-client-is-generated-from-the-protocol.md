@@ -76,9 +76,13 @@ Lint on every change, a breaking-change check against the branch being merged in
 
 Buf's standard rules want a request and a response message of its own for every call, named after the call. Google's API guidance wants a read to answer with the resource itself and no wrapper around it. The two cannot both be followed, and this schema follows the lint: a rule a machine checks on every change is worth more here than one a reader has to remember, and the wrapper is what lets a call answer a refusal beside the thing that was asked for.
 
-### No name changes at this boundary
+### No field changes name at this boundary
 
 A field carries the name it has in the core across the wire. A stretch and a span are not an exception to that: they are two things, they keep their own names on both sides, and the wire carries each under the name it has.
+
+A type's own name is another matter, because a proto package is one flat namespace where the core has packages. Only one enum in `numen.v1` may be called `Mode`; the theme's holds it, so the search's is `SearchMode`, while the core says `search.Mode` and `appearance.ColorScheme` under packages that already qualify them. Those two enums are where this bites, and the field is `mode` on both sides of both.
+
+The values of `SearchMode` are the one place a name is chosen twice over: the wire spells the question as a person asks it — `WORDS`, `MEANING`, `NAMES` — and the core spells the retrieval technique — `Lexical`, `Dense`, `ByName`. Every name that changes on the way across is written down where a reader meets it: beside the enum in the schema, and in [the glossary](../glossary.md).
 
 ## Consequences
 
