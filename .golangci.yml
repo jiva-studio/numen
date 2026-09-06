@@ -27,6 +27,7 @@ linters:
     - contextcheck
     - noctx
     - exhaustive
+    - exhaustruct
     - usetesting
 
   settings:
@@ -53,6 +54,23 @@ linters:
       # generates. A borrowed set of a few hundred HTML element names is not an
       # enum anybody switches over whole.
       ignore-enum-types: ^(golang\.org/x/net/html/atom\.Atom|gopkg\.in/yaml\.v3\.Kind|time\.Weekday)$
+
+    exhaustruct:
+      # The types below are identities: a value written beside derived work and
+      # read back to decide whether that work is still good. Every field of one
+      # is part of the name, and the doc comment on each says so. A field added
+      # and left unset at one construction site makes two different readings
+      # compare equal — or makes every source look stale and be read again
+      # forever. Nothing else is included: a struct whose zero fields take
+      # defaults is filled by its own resolver, and listing it here would ask
+      # every caller to fill the blanks a second way.
+      include:
+        - .*/core/port\.(EmbeddingModel|RecognitionModel|TranscriptionModel|Vector)$
+        - .*/core/domain\.Address$
+      # A zero value handed back with an error, or declared and filled after, is
+      # the absence of an identity and not a half-written one.
+      allow-empty-returns: true
+      allow-empty-declarations: true
 
     forbidigo:
       # Match against the resolved type, so a local named `time` or a variable
@@ -88,9 +106,11 @@ linters:
     rules:
       # A test builds the world it needs, names its own clock, and fails by
       # panicking as readily as by returning. What it opens is closed when the
-      # process it opened for ends, and it switches over the cases it is about.
+      # process it opened for ends, it switches over the cases it is about, and
+      # it names the fields it is about: a model given a name and no width is a
+      # test of what a name does, and the width would say nothing in it.
       - path: (_test\.go|(^|/)internal/testsupport/)
-        linters: [forbidigo, errcheck, noctx, contextcheck, bodyclose, exhaustive]
+        linters: [forbidigo, errcheck, noctx, contextcheck, bodyclose, exhaustive, exhaustruct]
 
       # What was taken is let go, and the kernel drops a lock and a model's
       # memory however the process ends. What letting go could not do is nobody's
