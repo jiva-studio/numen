@@ -115,6 +115,37 @@ test('what a file says its own names are', () => {
   assert.deepEqual(calls(test), ['func', 'TestKappa', 't', 'testing', 'T', 'lambda', 'mu', '_'])
 })
 
+/** A declaration a comment or a string says at the margin is no declaration. */
+test('what only a comment or a string says is not a name the file declares', () => {
+  const cases = [
+    {
+      says: 'a Go type in a block comment',
+      at: 'a/b/naming.go',
+      text: ['package b', '/*', 'type NameSource struct{}', '*/', 'type Other struct{}'].join('\n'),
+    },
+    {
+      says: 'a Go type in a raw string',
+      at: 'a/b/naming.go',
+      text: ['package b', 'const other = `', 'type NameSource struct{}', '`'].join('\n'),
+    },
+    {
+      says: 'a TypeScript type in a block comment',
+      at: 'a/b/naming.ts',
+      text: ['/*', 'export type NameSource = string', '*/', 'export const other = 1'].join('\n'),
+    },
+    {
+      says: 'a TypeScript type in a template literal',
+      at: 'a/b/naming.ts',
+      text: ['export const other = `', 'export type NameSource = string', '`'].join('\n'),
+    },
+  ]
+  for (const one of cases) {
+    const held = holds(one)
+    assert.ok(!held.includes('NameSource'), `${one.says} was read as a declaration: ${held}`)
+    assert.deepEqual(refused('naming', held, given(one)), ['naming'], one.says)
+  }
+})
+
 /**
  * A method is named after the type it hangs on, so `Config.Chunking` is a
  * config's chunking however the file is called, where a package-level

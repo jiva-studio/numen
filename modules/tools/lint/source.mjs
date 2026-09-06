@@ -35,6 +35,84 @@ export function sources(kinds) {
   return found
 }
 
+/** Where the string opened at `at` closes, or the end of its line. */
+function quoted(text, at) {
+  for (let i = at + 1; i < text.length; i += 1) {
+    if (text[i] === '\\') i += 1
+    else if (text[i] === text[at] || text[i] === '\n') return i + 1
+  }
+  return text.length
+}
+
+/**
+ * The code of `text` with every comment and every string blanked out, each
+ * line kept where it stands. A `${}` in a template literal is code, and is kept.
+ */
+export function code(text) {
+  const out = []
+  const blank = (from, to) => out.push(text.slice(from, to).replace(/[^\n]/g, ' '))
+  const through = (from, closing) => {
+    let depth = 0
+    let i = from
+    while (i < text.length) {
+      const one = text[i]
+      const two = text.slice(i, i + 2)
+      if (two === '/*') {
+        const end = text.indexOf('*/', i + 2)
+        const to = end < 0 ? text.length : end + 2
+        blank(i, to)
+        i = to
+      } else if (two === '//') {
+        const end = text.indexOf('\n', i)
+        const to = end < 0 ? text.length : end
+        blank(i, to)
+        i = to
+      } else if (one === '"' || one === "'") {
+        const to = quoted(text, i)
+        blank(i, to)
+        i = to
+      } else if (one === '`') {
+        i = template(i)
+      } else {
+        if (closing && one === '{') depth += 1
+        if (closing && one === '}') {
+          if (depth === 0) {
+            out.push(one)
+            return i + 1
+          }
+          depth -= 1
+        }
+        out.push(one)
+        i += 1
+      }
+    }
+    return i
+  }
+  const template = (from) => {
+    out.push(' ')
+    let i = from + 1
+    while (i < text.length) {
+      const one = text[i]
+      if (one === '\\') {
+        out.push('  ')
+        i += 2
+      } else if (one === '`') {
+        out.push(' ')
+        return i + 1
+      } else if (text.slice(i, i + 2) === '${') {
+        out.push('${')
+        i = through(i + 2, '}')
+      } else {
+        out.push(one === '\n' ? '\n' : ' ')
+        i += 1
+      }
+    }
+    return i
+  }
+  through(0)
+  return out.join('')
+}
+
 /** The bodies of one kind of block in a single-file component. */
 export function blocks(source, tag) {
   const found = []

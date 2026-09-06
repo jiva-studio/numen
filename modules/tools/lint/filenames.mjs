@@ -35,7 +35,7 @@
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { basename, dirname, extname, join, relative } from 'node:path'
-import { blocks, root, sources } from './source.mjs'
+import { blocks, code, root, sources } from './source.mjs'
 
 /**
  * The one Go module whose files nobody wrote. Named rather than left off: the
@@ -181,12 +181,13 @@ const IN_GROUP = /^\t([A-Za-z_]\w*)/gm
  * methods, its constants and variables, one to a line and in a block. gofmt
  * puts a declaration of the file's own at the left margin and nothing else, so
  * a margin is all this has to read. It sees no name declared inside a function
- * body, and none a comment says.
+ * body, and none a comment or a string says.
  */
 export function goDeclares(source) {
   const found = []
-  for (const one of source.matchAll(TOP)) found.push(one[1] ?? one[2] ?? one[3] ?? one[4])
-  for (const block of source.matchAll(GROUPED)) {
+  const read = code(source)
+  for (const one of read.matchAll(TOP)) found.push(one[1] ?? one[2] ?? one[3] ?? one[4])
+  for (const block of read.matchAll(GROUPED)) {
     for (const one of block[1].matchAll(IN_GROUP)) found.push(one[1])
   }
   return found
@@ -201,18 +202,12 @@ const EXPORTED =
  * brought in by an import is another module's.
  */
 export function tsDeclares(source) {
-  return [...source.matchAll(EXPORTED)].map((one) => one[1])
+  return [...code(source).matchAll(EXPORTED)].map((one) => one[1])
 }
 
 /** Every name a file's code says, with what a comment and a string say cut out. */
 export function calls(source) {
-  const code = source
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/\/\/[^\n]*/g, ' ')
-    .replace(/`[^`]*`/g, ' ')
-    .replace(/"(?:\\.|[^"\\])*"/g, ' ')
-    .replace(/'(?:\\.|[^'\\])*'/g, ' ')
-  return [...code.matchAll(/[A-Za-z_$][\w$]*/g)].map((one) => one[0])
+  return [...code(source).matchAll(/[A-Za-z_$][\w$]*/g)].map((one) => one[0])
 }
 
 /** The names one file declares, in whatever it is written in. */
@@ -229,7 +224,7 @@ const METHOD = /^func\s+\([^)]*\)\s*([A-Za-z_]\w*)/gm
 
 /** Every method one Go file declares, which is every func with a receiver. */
 export function goMethods(source) {
-  return [...source.matchAll(METHOD)].map((one) => one[1])
+  return [...code(source).matchAll(METHOD)].map((one) => one[1])
 }
 
 /**
@@ -246,7 +241,7 @@ export function goMethods(source) {
 export function given({ at, text }) {
   if (at.endsWith('.vue')) return [stemOf(at).stem]
   if (!at.endsWith('.go')) return []
-  const clause = CLAUSE.exec(text)
+  const clause = CLAUSE.exec(code(text))
   return [...(clause ? [clause[1]] : []), ...goMethods(text)]
 }
 

@@ -3,7 +3,7 @@ import { existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import test from 'node:test'
 import { elsewhere, modules, root } from '../modules.mjs'
-import { sources } from './source.mjs'
+import { code, sources } from './source.mjs'
 
 /** Every package standing under `modules/libs` and `modules/apps`. */
 const packages = () => {
@@ -49,4 +49,19 @@ test('every module the list names is walked, and has source under it', () => {
       `${one.name}: ${one.reads} is named as what a cruise must read and is not there`,
     )
   }
+})
+
+/** What a comment or a string says is blanked, and the lines stay where they are. */
+test('what is code, and what only a comment or a string says', () => {
+  const text = [
+    'type A = 1 /* type B = 2',
+    'type C = 3 */ type D = "type E = 4" // type F = 5',
+    "type G = 'type H = 6'",
+    'const i = `type J = 7 ${k.value} type L = 8`',
+    'type M = "a \\" b" + \'c\' // "',
+  ].join('\n')
+  const kept = code(text)
+  assert.equal(kept.split('\n').length, text.split('\n').length)
+  for (const one of ['A', 'D', 'G', 'M', 'k.value']) assert.ok(kept.includes(one), one)
+  for (const one of ['B', 'C', 'E', 'F', 'H', 'J', 'L', 'a "', "'c'"]) assert.ok(!kept.includes(one), one)
 })
