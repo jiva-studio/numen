@@ -28,6 +28,7 @@ func (c Config) Fetcher(ctx context.Context) port.Fetcher {
 // tool has none.
 func (c Config) ImportURL(ctx context.Context, db *Index, by port.Fetcher) source.ImportURL {
 	level := c.Level(db)
+	notes := c.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), level)
 	return source.ImportURL{
 		Readers:   c.VaultReaders(),
 		Derived:   c.DerivedStores(),
@@ -36,6 +37,10 @@ func (c Config) ImportURL(ctx context.Context, db *Index, by port.Fetcher) sourc
 		Automatic: c.Fetching.Automatic(),
 		Cut: func(ctx context.Context, v domain.Vault, path string) error {
 			return level(ctx, v, []string{path})
+		},
+		Names: func(ctx context.Context, v domain.Vault, path, title string) (string, error) {
+			named, err := notes.Rename.Execute(ctx, v, path, title)
+			return named.Path, err
 		},
 	}
 }

@@ -42,6 +42,11 @@ type ImportURL struct {
 	// with the note as soon as it is written.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
 
+	// Names gives a note the name what is at its address calls itself, and
+	// answers where the note is filed afterwards. A run given none leaves the
+	// note called what it was called.
+	Names func(ctx context.Context, v domain.Vault, path, title string) (string, error)
+
 	// Again throws away what a run before this one fetched and asks the address
 	// afresh. It is how a person asks for a site's words again, and nothing
 	// sets it on its own.
@@ -138,9 +143,45 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 	res.Title, res.Length = meta.Title, meta.Length
 
 	if at.IsVideo() {
-		return u.video(ctx, v, ref, at, meta, hash, store, res)
+		res, err = u.video(ctx, v, ref, at, meta, hash, store, res)
+	} else {
+		res, err = u.page(ctx, v, ref, at, hash, store, res)
 	}
-	return u.page(ctx, v, ref, at, hash, store, res)
+	if err != nil {
+		return res, err
+	}
+	return u.named(ctx, v, n, at, res)
+}
+
+// named gives the note the name what is at the address calls itself.
+//
+// A note still called by the address it points at was named by the paste and by
+// nobody: the person had no name for it yet, and what is there has one. A note
+// called anything else was named by the person, and that stands.
+func (u ImportURL) named(
+	ctx context.Context,
+	v domain.Vault,
+	n domain.Note,
+	at domain.WebAddress,
+	res ImportURLResult,
+) (ImportURLResult, error) {
+	if u.Names == nil || res.Title == "" {
+		return res, nil
+	}
+	// A title that is no address at all is a name a person gave the note, and a
+	// title naming another address is too.
+	called, _ := domain.ParseWebAddress(n.Title)
+	if called.URL != at.URL {
+		return res, nil
+	}
+	path, err := u.Names(ctx, v, n.Fingerprint.Path, res.Title)
+	if err != nil {
+		return res, err
+	}
+	if path != "" {
+		res.Path = path
+	}
+	return res, nil
 }
 
 // video writes down the words published with a video, and hands the video to a

@@ -83,6 +83,11 @@ func fetching(t *testing.T, written string, from *site) (ImportURL, *shelf, stri
 	}, kept, "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 }
 
+// A note the palette made carries the address as its title: an address is no
+// filename, so what the person pasted is written into the note.
+const aPastedAddress = "---\ntype: link\ntitle: https://youtu.be/dQw4w9WgXcQ\n" +
+	"url: https://youtu.be/dQw4w9WgXcQ\n---\n\nMine.\n"
+
 const pointsAtAVideo = "---\ntype: link\nurl: https://youtu.be/dQw4w9WgXcQ\n---\n\nMine.\n"
 
 // The words published with a video are written down as the format a player
@@ -122,7 +127,7 @@ func TestTheWordsPublishedWithAVideo(t *testing.T) {
 // what stands until they ask for it afresh.
 func TestAnAddressAlreadyFetched(t *testing.T) {
 	from := &site{title: "Entropy explained", cues: []transcript.Cue{{Text: "said", To: 1000}}}
-	u, _, _ := fetching(t, pointsAtAVideo, from)
+	u, _, _ := fetching(t, aPastedAddress, from)
 
 	if _, err := u.Execute(t.Context(), first, videoNote); err != nil {
 		t.Fatal(err)
@@ -233,5 +238,47 @@ func TestAVideoTranslatedIntoManyLanguages(t *testing.T) {
 	}
 	if got := language(meta, []string{"de"}, true); got != "de" {
 		t.Errorf("asked for %q, want the language this installation named", got)
+	}
+}
+
+// A note still called by the address it points at was named by the paste and by
+// nobody. What is there has a name, and the note takes it.
+func TestANoteStillCalledByItsAddressTakesTheTitle(t *testing.T) {
+	from := &site{title: "Entropy explained", cues: []transcript.Cue{{Text: "said", To: 1000}}}
+	u, _, _ := fetching(t, aPastedAddress, from)
+	named := []string{}
+	u.Names = func(_ context.Context, _ domain.Vault, path, title string) (string, error) {
+		named = append(named, path+" → "+title)
+		return "notes/Entropy explained.md", nil
+	}
+
+	res, err := u.Execute(t.Context(), first, videoNote)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(named) != 1 || named[0] != videoNote+" → Entropy explained" {
+		t.Errorf("the note was named %v", named)
+	}
+	if res.Path != "notes/Entropy explained.md" {
+		t.Errorf("the note is filed at %q", res.Path)
+	}
+}
+
+// A note the person named themselves keeps the name they gave it.
+func TestANotePersonNamedKeepsItsName(t *testing.T) {
+	from := &site{title: "Entropy explained", cues: []transcript.Cue{{Text: "said", To: 1000}}}
+	u, _, _ := fetching(t,
+		"---\ntype: link\ntitle: Mine\nurl: https://youtu.be/dQw4w9WgXcQ\n---\n", from)
+	named := 0
+	u.Names = func(context.Context, domain.Vault, string, string) (string, error) {
+		named++
+		return "", nil
+	}
+
+	if _, err := u.Execute(t.Context(), first, videoNote); err != nil {
+		t.Fatal(err)
+	}
+	if named != 0 {
+		t.Errorf("a note the person named was renamed %d times", named)
 	}
 }
