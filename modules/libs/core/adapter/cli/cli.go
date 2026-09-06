@@ -21,6 +21,9 @@ usage:
   numen-cli vault erase <vault> [--yes]        forget it, and put its folder in the trash
   numen-cli vault open <vault>                 the vault the next window opens
   numen-cli scan <vault> [--rebuild-index]      bring the index up to date with a vault
+                                               --rebuild-index reads every file again, forgets
+                                               the vectors of every model but the one in use,
+                                               and gives their space back
   numen-cli recognise <vault> <file>          read a scanned document with a model
   numen-cli proofread <vault> <file>          put a document's reading right with a model
   numen-cli transcribe <vault> <file> [--again]  write down what a model hears in a recording

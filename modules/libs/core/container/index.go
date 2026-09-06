@@ -75,6 +75,15 @@ func (i *Index) FitVectors(ctx context.Context, dims int, recipe string) error {
 	return i.db.FitVectors(ctx, dims, recipe)
 }
 
+// ForgetOtherRecipes takes out the vectors kept under any recipe but the one in
+// use, and says how many went.
+func (i *Index) ForgetOtherRecipes(ctx context.Context, recipe string) (int64, error) {
+	return i.db.ForgetOtherRecipes(ctx, recipe)
+}
+
+// Compact hands back the space the index no longer holds.
+func (i *Index) Compact(ctx context.Context) error { return i.db.Compact(ctx) }
+
 func (i *Index) Vaults() port.VaultRepository { return i.db.Vaults() }
 func (i *Index) Notes() port.NoteRepository   { return i.db.Notes() }
 func (i *Index) Queries() port.NoteQueries    { return i.db.NoteQueries() }

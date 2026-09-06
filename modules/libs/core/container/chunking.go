@@ -67,6 +67,19 @@ func (c Config) ReadWholeVault(
 		if err := db.FitVectors(ctx, model.Dimensions, model.Recipe()); err != nil {
 			return vault.ReadWholeVault{}, err
 		}
+		// Building the index again is where the vectors of a recipe nobody asks
+		// for any more go. Every other run keeps them, so a model set back is a
+		// model whose vectors are all still here.
+		if c.RebuildIndex {
+			if _, err := db.ForgetOtherRecipes(ctx, model.Recipe()); err != nil {
+				return vault.ReadWholeVault{}, err
+			}
+			// The rows are gone whether or not the file gives its pages back,
+			// so a vacuum that could not run is said and not waited for.
+			if err := db.Compact(ctx); err != nil {
+				c.trouble(err)
+			}
+		}
 	}
 	books, err := c.Extract(db.Sources(), db.SourcesKnown(), v)
 	if err != nil {
