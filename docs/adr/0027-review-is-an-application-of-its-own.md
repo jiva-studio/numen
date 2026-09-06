@@ -49,11 +49,11 @@ The vault's write lock lives in the process, and two processes on one vault hold
 
 ### It reviews, and it corrects the card in front of the person
 
-A person who finds mid-sitting that a card is wrong is holding the one piece of knowledge that fixes it, at the one moment they will never have again. So a card can be added, edited, removed, and a section made — and nothing else. A deck and a stencil are what a vault is arranged into, and nothing here makes one; no note, link or document is written from this window either.
+A person who finds mid-sitting that a card is wrong is holding the one piece of knowledge that fixes it, at the one moment they will never have again. So a card can be added, edited, have a value taken off it, and be removed; and a section can be made, renamed and removed — and nothing else. A deck and a stencil are what a vault is arranged into, and nothing here makes one; no note, link or document is written from this window either.
 
 ### The tools are halved by what they do
 
-Every tool family registers its reading half and its writing half separately, and a surface is a set of those halves: a reading surface with no writer on it at all, and the reviewing surface, which is that one and the four card writers. So a tool gains a behaviour once and every surface has it.
+Every tool family registers its reading half and its writing half separately, and a surface is a set of those halves: a reading surface with no writer on it at all, and the reviewing surface, which is that one and the seven card writers. So a tool gains a behaviour once and every surface has it.
 
 **A surface is a claim about what is absent**, and a test that lists what is present passes with anything extra on it. Every surface is asserted as an exact set. Which tools stand on each is [`../agents.md`](../agents.md).
 
