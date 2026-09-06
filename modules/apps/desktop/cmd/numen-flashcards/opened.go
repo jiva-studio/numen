@@ -29,8 +29,9 @@ type openVaults struct {
 	record func(domain.Vault)
 	out    io.Writer
 
-	// running is every walk and every watch this window has over a vault. They
-	// write to the index, so they are waited for before it closes.
+	// running is every walk, every watch and every levelling this window has
+	// over a vault. They write to the index, so they are waited for before it
+	// closes.
 	running sync.WaitGroup
 
 	mu       sync.Mutex
@@ -45,8 +46,8 @@ type vaultOpening struct {
 	open    *container.OpenVault
 }
 
-// wait lets go of every vault and holds until the walks and the watches are
-// done. A levelling is not one of them and is not waited for.
+// wait lets go of every vault and holds until nothing is still writing to the
+// index.
 func (o *openVaults) wait() {
 	o.mu.Lock()
 	o.going = true
@@ -55,8 +56,8 @@ func (o *openVaults) wait() {
 	o.running.Wait()
 }
 
-// starts takes a walk or a watch on and says whether it may run. A window that
-// is going takes neither, so no walk begins after the index is waited for.
+// starts takes a piece of work on and says whether it may run. A window that is
+// going takes none, so nothing begins writing after the index is waited for.
 func (o *openVaults) starts() bool {
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -124,6 +125,15 @@ func (o *openVaults) reads(ctx context.Context, v domain.Vault, progress func(in
 
 // level brings the paths a write touched up to date, through the opening of the
 // vault they are in.
+//
+// A levelling writes to the index, so a window that is closing refuses one: the
+// prose is on disk either way, and a write into a database being closed is
+// worse than a search that has to be caught up on next time.
 func (o *openVaults) level(ctx context.Context, v domain.Vault, paths []string) error {
+	if !o.starts() {
+		return errGoing
+	}
+	defer o.running.Done()
+
 	return o.of(v).opening.Level(ctx, v, paths)
 }

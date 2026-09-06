@@ -41,6 +41,20 @@ func TestAWindowThatIsGoingWalksNothing(t *testing.T) {
 	}
 }
 
+// A levelling asked for once the window has begun closing is refused, so none
+// begins writing to the index after it has been waited for. The prose is on
+// disk either way, and the window says the note is written and unlevelled.
+func TestAWindowThatIsGoingLevelsNothing(t *testing.T) {
+	_, _, vaults, _, held := built(t)
+
+	vaults.wait()
+
+	err := vaults.level(t.Context(), held[0], []string{"decks/Words.md"})
+	if !errors.Is(err, errGoing) {
+		t.Errorf("a levelling asked for while closing came back with %v", err)
+	}
+}
+
 // A vault is levelled through the opening it was walked with, and neither opens
 // the vault a second time.
 func TestLevellingGoesThroughTheVaultsOwnOpening(t *testing.T) {
