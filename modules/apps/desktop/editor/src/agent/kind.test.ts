@@ -43,14 +43,14 @@ const tab = (
   const talk = talked(passages)
   const opened: [string, readonly Stretch[]][] = []
   const beside: string[] = []
-  const held = talking(talk.talk, {
+  const state = talking(talk.talk, {
     opens: (path, ...stretches) => opened.push([path, stretches]),
     beside: (path) => beside.push(path),
     resolve: async (written) =>
       new Map(written.filter((one) => notes[one]).map((one) => [one, notes[one]!])),
     unreachable: () => '',
   })
-  return { held, opened, beside, ...talk }
+  return { state, opened, beside, ...talk }
 }
 
 /** A window of agent tabs, with a talk of its own for each. */
@@ -62,7 +62,7 @@ const tabs = (about = { path: '', title: '' }) => {
     () => {
       const one = tab()
       talks.push(one)
-      return one.held
+      return one.state
     },
     () => about,
   )
@@ -71,7 +71,7 @@ const tabs = (about = { path: '', title: '' }) => {
   /** An agent tab of this window, and what it holds. */
   const holds = async () => {
     const id = await held.opens(AGENT)
-    return { id, held: held.holdsIn<AgentTabState>(id, AGENT)! }
+    return { id, state: held.holdsIn<AgentTabState>(id, AGENT)! }
   }
   /** The person is in this tab now. */
   const enters = (id: string) => held.shown(id)
@@ -89,18 +89,18 @@ describe('a question sent', () => {
   it('names nothing the person has open, which the window reports itself', () => {
     const one = tab()
 
-    one.held.send('what is this about')
+    one.state.send('what is this about')
 
     expect(one.asked).toEqual([['what is this about', '']])
   })
 
   it('empties the composer, so the question is not sent twice', () => {
     const one = tab()
-    one.held.writing('half a question')
+    one.state.writing('half a question')
 
-    one.held.send('half a question')
+    one.state.send('half a question')
 
-    expect(one.held.asked.value).toBe('')
+    expect(one.state.asked.value).toBe('')
   })
 })
 
@@ -108,7 +108,7 @@ describe('a line about work pressed', () => {
   it('opens the place that call was on', () => {
     const one = tab({ call: { path: 'Source.pdf', start: 10, length: 4 } })
 
-    one.held.opensTurn(turn('call', 'read Source.pdf'))
+    one.state.opensTurn(turn('call', 'read Source.pdf'))
 
     expect(one.opened).toEqual([['Source.pdf', [{ start: 10, length: 4 }]]])
   })
@@ -116,7 +116,7 @@ describe('a line about work pressed', () => {
   it('opens nothing for a line that names no place', () => {
     const one = tab()
 
-    one.held.opensTurn(turn('said', 'a sentence'))
+    one.state.opensTurn(turn('said', 'a sentence'))
 
     expect(one.opened).toEqual([])
   })
@@ -135,7 +135,7 @@ describe('a link inside an answer', () => {
       'see [here](numen:Source.pdf?start=10&length=4) and [there](numen:Source.pdf?start=90&length=2)'
     const press = pressed()
 
-    one.held.followed(turn('said', text), 'numen:Source.pdf?start=10&length=4', press.press)
+    one.state.followed(turn('said', text), 'numen:Source.pdf?start=10&length=4', press.press)
 
     expect(press.was()).toBe(true)
     expect(one.opened).toEqual([
@@ -153,7 +153,7 @@ describe('a link inside an answer', () => {
     const one = tab()
     const press = pressed()
 
-    one.held.followed(turn('said', 'read https://example.com'), 'https://example.com', press.press)
+    one.state.followed(turn('said', 'read https://example.com'), 'https://example.com', press.press)
 
     expect(press.was()).toBe(false)
     expect(one.opened).toEqual([])
@@ -165,7 +165,7 @@ describe('a link inside an answer', () => {
     await nextTick()
     const press = pressed()
 
-    one.held.followed(one.said.value[0]!, 'name://Thermodynamics', press.press)
+    one.state.followed(one.said.value[0]!, 'name://Thermodynamics', press.press)
 
     expect(one.beside).toEqual(['physics/Thermodynamics.md'])
   })
@@ -176,7 +176,7 @@ describe('a link inside an answer', () => {
     await nextTick()
     const press = pressed()
 
-    one.held.followed(one.said.value[0]!, 'name://Nowhere', press.press)
+    one.state.followed(one.said.value[0]!, 'name://Nowhere', press.press)
 
     expect(one.beside).toEqual([])
   })
@@ -190,7 +190,7 @@ describe('a turn of an answer', () => {
     await nextTick()
     await nextTick()
 
-    expect(one.held.turns.value[0]?.unresolved).toEqual(['name://Nowhere'])
+    expect(one.state.turns.value[0]?.unresolved).toEqual(['name://Nowhere'])
   })
 })
 
@@ -201,7 +201,7 @@ describe('something to ask about a note', () => {
     await window.asks('Note.md — ')
 
     expect(window.open()).toHaveLength(1)
-    expect(window.talks[0]?.held.asked.value).toBe('Note.md — ')
+    expect(window.talks[0]?.state.asked.value).toBe('Note.md — ')
   })
 
   it('goes to the agent the person was last in, and puts it in front', async () => {
@@ -214,8 +214,8 @@ describe('something to ask about a note', () => {
     await window.asks('Note.md — ')
 
     expect(window.open()).toHaveLength(2)
-    expect(second.held.asked.value).toBe('Note.md — ')
-    expect(first.held.asked.value).toBe('')
+    expect(second.state.asked.value).toBe('Note.md — ')
+    expect(first.state.asked.value).toBe('')
   })
 
   it('opens another once the one the person was last in has closed', async () => {
@@ -227,7 +227,7 @@ describe('something to ask about a note', () => {
     await window.asks('Note.md — ')
 
     expect(window.open()).toHaveLength(1)
-    expect(window.talks[1]?.held.asked.value).toBe('Note.md — ')
+    expect(window.talks[1]?.state.asked.value).toBe('Note.md — ')
   })
 })
 
@@ -250,14 +250,14 @@ describe('what an agent tab is called', () => {
       { id: 'a', voice: 'asked', text: 'what is this whole vault about', state: 'done' },
     ] as unknown as Turn[]
 
-    expect(window.kind.called(one.held)).toBe('what is this whole…')
+    expect(window.kind.called(one.state)).toBe('what is this whole…')
   })
 
   it('is the word for an agent while nothing has been asked of it', async () => {
     const window = tabs()
     const one = await window.holds()
 
-    expect(window.kind.called(one.held)).toBe('Agent')
+    expect(window.kind.called(one.state)).toBe('Agent')
   })
 })
 
@@ -266,7 +266,7 @@ describe('what a command asked over an agent tab is over', () => {
     const window = tabs({ path: 'physics/Ontology.md', title: 'Ontology' })
     const one = await window.holds()
 
-    expect(window.kind.at!(one.held)).toStrictEqual({
+    expect(window.kind.at!(one.state)).toStrictEqual({
       path: 'physics/Ontology.md',
       title: 'Ontology',
     })

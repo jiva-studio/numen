@@ -144,13 +144,13 @@ describe('a link in the prose followed', () => {
     const one = window({}, {}, reaches)
     one.shows('Note.md')
     await flushPromises()
-    return { ...one, held: one.noted.opens(one.noted.kept.holding('Note.md') ?? 'Note.md') }
+    return { ...one, state: one.noted.opens(one.noted.kept.holding('Note.md') ?? 'Note.md') }
   }
 
   it('opens the note it names, in a tab beside the one it was written in', async () => {
     const one = await written({ 'name://Entropy': 'physics/Entropy.md' })
 
-    one.held.follows('name://Entropy')
+    one.state.follows('name://Entropy')
     await flushPromises()
 
     expect(one.open()).toHaveLength(2)
@@ -160,7 +160,7 @@ describe('a link in the prose followed', () => {
   it('opens nothing where no note answers to it', async () => {
     const one = await written()
 
-    one.held.follows('name://Nowhere')
+    one.state.follows('name://Nowhere')
     await flushPromises()
 
     expect(one.open()).toHaveLength(1)
@@ -169,7 +169,7 @@ describe('a link in the prose followed', () => {
   it('opens nothing for an address that names no note at all', async () => {
     const one = await written({ 'https://example.com': 'physics/Entropy.md' })
 
-    one.held.follows('https://example.com')
+    one.state.follows('https://example.com')
     await flushPromises()
 
     expect(one.open()).toHaveLength(1)
@@ -179,11 +179,11 @@ describe('a link in the prose followed', () => {
 describe('a note opened', () => {
   it('is owed the keyboard until there is an editor to take it', async () => {
     const one = window()
-    const held = one.noted.opens('Note.md')
+    const state = one.noted.opens('Note.md')
     await nextTick()
 
     const drew = editor()
-    held.drew(drew.drawn)
+    state.drew(drew.drawn)
     await nextTick()
 
     expect(drew.focused).toEqual([-1])
@@ -191,10 +191,10 @@ describe('a note opened', () => {
 
   it('is revealed at the line it was asked for', async () => {
     const one = window()
-    const held = one.noted.opens('Note.md', 12)
+    const state = one.noted.opens('Note.md', 12)
     const drew = editor()
 
-    held.drew(drew.drawn)
+    state.drew(drew.drawn)
     await nextTick()
 
     expect(drew.focused).toEqual([12])
@@ -202,13 +202,13 @@ describe('a note opened', () => {
 
   it('stays owed while the editor could not take it, and is given it again', async () => {
     const one = window()
-    const held = one.noted.opens('Note.md')
+    const state = one.noted.opens('Note.md')
     const early = editor(false)
-    held.drew(early.drawn)
+    state.drew(early.drawn)
     await nextTick()
 
     const drew = editor()
-    held.drew(drew.drawn)
+    state.drew(drew.drawn)
     await nextTick()
 
     expect(early.focused).toContain(-1)
@@ -217,21 +217,21 @@ describe('a note opened', () => {
 
   it('is owed nothing once an editor has taken it', async () => {
     const one = window()
-    const held = one.noted.opens('Note.md')
+    const state = one.noted.opens('Note.md')
     const drew = editor()
-    held.drew(drew.drawn)
+    state.drew(drew.drawn)
     await nextTick()
 
-    held.measure()
+    state.measure()
 
     expect(drew.focused).toEqual([-1])
   })
 
   it('takes the keyboard again when it is asked for while it is already open', async () => {
     const one = window()
-    const held = one.noted.opens('Note.md')
+    const state = one.noted.opens('Note.md')
     const drew = editor()
-    held.drew(drew.drawn)
+    state.drew(drew.drawn)
     await nextTick()
 
     one.noted.entersAt('Note.md')
@@ -328,9 +328,9 @@ describe('a note that was renamed', () => {
 
   it('takes the keyboard in the tab holding it, under the name it now has', async () => {
     const one = window()
-    const held = one.noted.opens('Note.md')
+    const state = one.noted.opens('Note.md')
     const drew = editor()
-    held.drew(drew.drawn)
+    state.drew(drew.drawn)
     await nextTick()
     one.moves('Note.md', 'Renamed.md')
     await nextTick()
@@ -391,9 +391,9 @@ describe('the word a note tab carries', () => {
 describe('the window going', () => {
   it('leaves an open note alone, since the quit is what writes what it owes', () => {
     const one = window()
-    const held = one.noted.opens('Note.md')
+    const state = one.noted.opens('Note.md')
 
-    one.noted.kind.gone?.(held, 'Note.md')
+    one.noted.kind.gone?.(state, 'Note.md')
 
     expect(one.shut).toEqual([])
     expect(one.drawings.shut).toEqual([])
