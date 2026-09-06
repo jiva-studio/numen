@@ -1208,3 +1208,23 @@ jobs:
             --notes-file "$RUNNER_TEMP/notes.md" \
             $prerelease \
             "${files[@]}"
+
+      # What a machine installing this by nix fetches. It reads the shelf, so it
+      # runs after the shelf is written, and it carries the hash the shelf
+      # published rather than fetching the build to weigh it.
+      #
+      # A beta moves nothing: the pin is what an ordinary installation follows,
+      # and somebody wanting a beta runs `nix/update.sh beta` themselves.
+      - name: The pin
+        if: ${{ needs.naming.outputs.channel == 'stable' }}
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          set -euo pipefail
+          nix/update.sh
+          git diff --quiet -- nix/release.json && exit 0
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add nix/release.json
+          git commit -m "chore(repo): point nix at $VERSION"
+          git push origin "HEAD:$GITHUB_REF_NAME"
