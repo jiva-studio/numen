@@ -76,9 +76,12 @@ const onPointerDown = (event: PointerEvent) => {
       <span class="tab__mark shrink-0" role="img" :aria-label="mark" :title="mark" />
     </slot>
 
+    <!-- Reached from the tab it stands on, and only from that one: a strip
+         walked with the arrows is one stop, not two for every tab in it. -->
     <button
       class="tab__close shrink-0 rounded-pill"
       type="button"
+      :tabindex="showing ? 0 : -1"
       :aria-label="`Close ${title}`"
       @pointerdown.stop
       @click.stop="emit('close')"
@@ -129,6 +132,13 @@ const onPointerDown = (event: PointerEvent) => {
   background: currentColor;
 }
 
+/* The keyboard is drawn where it stands, inside the strip, which is clipped. */
+.tab:focus-visible,
+.tab__close:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 var(--numen-ring-width) var(--numen-ring);
+}
+
 .tab__close {
   inline-size: 1.1em;
   block-size: 1.1em;
@@ -137,11 +147,13 @@ const onPointerDown = (event: PointerEvent) => {
 }
 
 .tab:hover .tab__close,
-.tab[data-showing] .tab__close {
+.tab[data-showing] .tab__close,
+.tab__close:focus-visible {
   opacity: 0.55;
 }
 
-.tab__close:hover {
+.tab__close:hover,
+.tab__close:focus-visible {
   opacity: 1;
 }
 </style>

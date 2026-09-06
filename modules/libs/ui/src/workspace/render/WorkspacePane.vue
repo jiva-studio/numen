@@ -207,6 +207,12 @@ function out(event: KeyboardEvent): void {
   display: block;
 }
 
+/* Drawn inside, because what a pane holds fills it to its edges. */
+.pane__held:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 var(--numen-ring-width) var(--numen-ring);
+}
+
 /* The whole of a pane holding no tabs. Its size is all it hands down. */
 .pane__silence {
   block-size: 100%;

@@ -157,6 +157,7 @@ function handling(now: boolean): void {
       <SplitterResizeHandle
         v-if="index > 0"
         class="branch__handle"
+        aria-label="Resize panes"
         :data-direction="direction"
         :hit-area-margins="reach"
         @dragging="handling"
@@ -227,6 +228,15 @@ function handling(now: boolean): void {
 .branch__handle[data-direction='vertical'] {
   block-size: var(--line);
   cursor: ns-resize;
+}
+
+/* A line one pixel thick has no room for a ring around it, so it becomes the
+   ring: the line itself is drawn in the keyboard's colour, and a pixel either
+   side of it carries the same. */
+.branch__handle:focus-visible {
+  outline: none;
+  background: var(--numen-ring);
+  box-shadow: 0 0 0 var(--numen-stroke) var(--numen-ring);
 }
 
 .branch__handle::after {
