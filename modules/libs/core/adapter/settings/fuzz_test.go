@@ -18,10 +18,8 @@ import (
 // is a word the window draws, and how large a recording may be is a size at
 // least as large as the megabytes the person named.
 //
-// Where the file names a setting this build cannot use and the defaults stand
-// instead, the reader says so: a person whose file has a typo in it is told
-// about the typo, and does not spend an afternoon wondering why the setting
-// they wrote does nothing.
+// Where the file names a setting this build cannot use and the defaults stand,
+// the reader says so.
 //
 // The values are what a person types between the braces, so each is that
 // person's and none of them is this application's.
@@ -119,13 +117,11 @@ type review struct {
 	DayStarts string `json:"day_starts"`
 }
 
-// byteSeeds are the shapes a settings file arrives in when nothing about it is
-// assumed: what the application writes, a file naming one setting, one a person
-// indented their own way, the size under the name it used to be written at, a
+// byteSeeds are the shapes a settings file arrives in: what the application
+// writes, one setting indented another way, a name this build does not know, a
 // name written twice, a value of the wrong kind, a file somebody was still
-// typing, a bare null, the file as something other than an object, what a
-// person who has configured nothing is handed, and bytes that are no settings
-// at all.
+// typing, a bare null, the file as something other than an object, an empty
+// object, an empty file, and bytes that are no settings at all.
 var byteSeeds = []string{
 	`{"v":1,"appearance":{"interface_scale":1,"text_scale":1,"mode":"dark",` +
 		`"theme":"preset:numen","hang_parts_under_a_node":true,"parts_under_a_node":6},` +

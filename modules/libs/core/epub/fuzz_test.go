@@ -21,18 +21,12 @@ const mostPerBook = 256 << 20
 // carries a name on one line. The tier the book says its parts came from is the
 // tier that produced them.
 //
-// However small the file, the text it yields is bounded: an archive says how
-// large its entries are and is believed about nothing, and a few hundred
-// kilobytes that expand to everything the format allows is how opening a book
-// ends the process.
+// However small the file, the text it yields is bounded: what an archive says
+// about the size of its entries is believed about nothing.
 //
 // A file that could not be read is refused as one that is no archive, one that
-// holds no container, or one that holds no package document — never as a book
-// with nothing in it, because a book that names nothing is read and is a
-// different answer.
-//
-// An EPUB comes off a shop, a converter or somebody's mail, so the bytes are a
-// stranger's.
+// holds no container, or one that holds no package document. A book that names
+// nothing is read, and is a different answer.
 func FuzzRead(f *testing.F) {
 	whole := tinyBook(f, nil)
 	f.Add(whole)

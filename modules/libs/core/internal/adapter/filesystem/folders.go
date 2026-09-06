@@ -17,11 +17,9 @@ const Entries = 4096
 // folders remembers which paths in the vault are folders, so that a path which
 // has gone can still be told apart from a file that has.
 //
-// A name cannot answer it: `2026.archive` is a folder and `notes.txt` is not,
-// and every atomic save leaves a gone temporary file behind. The disk cannot
-// answer it either — the thing that would say is the thing that no longer
-// exists. So it is remembered while it is there, which is the one moment the
-// question is answerable.
+// A name cannot answer it — `2026.archive` is a folder and `notes.txt` is not —
+// and neither can a path that is gone, so it is remembered while it is there.
+//
 // The shape is read by the goroutine that drains the events and written by the
 // one that walks a folder new to the watch, so what is remembered is held under
 // a lock.
@@ -108,20 +106,16 @@ func (f *folders) forget(path string) {
 // watcher and the walk answer alike.
 //
 // A file is itself, when the vault holds it. A folder new to the watch is
-// everything under it: such a folder arrives with its contents already in place
-// — copied, restored, checked out — and where the system has no recursion of
-// its own the watch on it is established after the fact. A folder already known
-// names nothing: it is named because something inside it changed, and that
-// something arrives as its own event. A folder the walk stops at names nothing,
-// and neither does anything under it.
+// everything under it, since such a folder arrives with its contents already in
+// place. A folder already known names nothing, and so does one the walk stops
+// at and everything under it.
 //
-// `whole` is set when the answer cannot be worked out from the disk: a folder
+// `whole` is set where the answer cannot be worked out from the disk: a folder
 // that has gone took sources with it, and their paths are known only to the
-// index. A path outside the vault is that case too, and is what arrives when a
-// watched folder is renamed away.
+// index. A path outside the vault is that case too.
 //
-// `walk` is a folder new to the watch, handed back rather than walked: the
-// walking is what takes the time, and this runs where nothing may take any.
+// `walk` is a folder new to the watch, handed back as a name. This runs where
+// nothing may take time.
 func (f *folders) concerns(absolute string) (paths []string, whole bool, walk string) {
 	path, inside := f.reader.relative(absolute)
 	if !inside {

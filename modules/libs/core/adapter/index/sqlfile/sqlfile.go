@@ -17,9 +17,8 @@ type Statements map[string]string
 // binary, so a failure here is a build that should not have been produced.
 //
 // A file ends in a newline and a statement does not: what follows the semicolon
-// is a second statement to the driver, and a statement text carrying one is
-// compiled again on every call rather than kept compiled. The text is the file
-// with the whitespace around it taken off.
+// is a second statement to the driver. The text is the file with the whitespace
+// around it taken off.
 func Load(fsys fs.FS, dir string) Statements {
 	out := Statements{}
 	err := fs.WalkDir(fsys, dir, func(p string, d fs.DirEntry, err error) error {

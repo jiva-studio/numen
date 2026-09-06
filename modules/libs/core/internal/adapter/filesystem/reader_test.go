@@ -512,9 +512,8 @@ func TestWhichExtensionsAreBooksIsASetting(t *testing.T) {
 }
 
 func TestTheConfiguredServiceFolderIsSkippedEvenWithoutALeadingDot(t *testing.T) {
-	// The name is a setting because a leading dot is not free — some sync tools
-	// skip hidden directories — so a service folder called _numen must be
-	// skipped by its name rather than by its shape.
+	// The name is a setting, so a service folder is skipped by the name it was
+	// configured under and not by a leading dot.
 	dir := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(dir, "_numen"), 0o755); err != nil {
 		t.Fatal(err)
@@ -577,9 +576,7 @@ func walked(t *testing.T, root string, opts filesystem.Options) []string {
 	return got
 }
 
-// A path that leaves the vault is refused rather than resolved. `filepath.Join`
-// would clean the dot-dots away and read whatever it landed on, and a caller
-// from outside the application is exactly who would try.
+// A path that leaves the vault is refused, dot-dots and all.
 func TestAPathThatLeavesTheVaultIsRefused(t *testing.T) {
 	outside := t.TempDir()
 	if err := os.WriteFile(filepath.Join(outside, "secret.md"), []byte("not yours"), 0o600); err != nil {

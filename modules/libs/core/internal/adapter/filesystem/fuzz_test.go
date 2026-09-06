@@ -157,17 +157,11 @@ var configSeeds = []string{
 }
 
 // A folder carries an identity or it does not, and ReadConfig says which. An
-// identity it hands back is one that could have been made here, because every
-// row of the index points at it and a row pointing at nothing belongs to no
-// vault.
+// identity it hands back is one that could have been made here.
 //
-// Bytes nobody can read out are refused as unreadable and not as a folder that
-// was never added, and Initialize leaves them exactly where they are: a vault
-// whose file a sync truncated does not get a second identity, which would part
-// it from everything already indexed under the first.
-//
-// The file is in a folder a person keeps in their own sync, so the bytes are a
-// stranger's.
+// Bytes nobody can read out are refused as unreadable, and Initialize leaves
+// them where they are. The file sits in a folder a person keeps in their own
+// sync, so the bytes are a stranger's.
 func FuzzReadConfig(f *testing.F) {
 	for _, seed := range configSeeds {
 		f.Add(seed)

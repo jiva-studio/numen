@@ -73,9 +73,8 @@ func stands(path string, seen *string) error {
 // object says what is wrong with bytes that are not the one object the
 // settings are the fields of, and nothing where they are it.
 //
-// A bare `null` unmarshals into anything and leaves it alone, so bytes that
-// came back nought are refused by name rather than read as an installation
-// nobody has configured.
+// A bare `null` unmarshals into anything and leaves it alone, so it is refused
+// by name.
 func object(raw []byte) error {
 	var whole map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &whole); err != nil {

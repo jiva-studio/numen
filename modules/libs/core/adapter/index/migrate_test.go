@@ -167,8 +167,8 @@ func TestAnIndexAtAnUnknownSchemaIsBuiltAgain(t *testing.T) {
 	}
 	defer again.Close()
 
-	// It was built again from the first migration, so it stands at what this
-	// build carries rather than at what it held.
+	// It was built again from the first migration, so it stands at the schema
+	// this build carries.
 	var version int
 	if err := again.write.QueryRowContext(ctx, "PRAGMA user_version").Scan(&version); err != nil {
 		t.Fatal(err)

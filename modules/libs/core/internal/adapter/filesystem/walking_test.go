@@ -48,10 +48,8 @@ func filled(t *testing.T, root, name string, notes int) string {
 }
 
 // TestAFolderNewToTheWatchIsHandedOverRatherThanWalked. The one goroutine that
-// empties the backlog walks nothing: a folder unpacked into the vault would
-// hold it for the length of the walk, the operating system would overflow the
-// backlog meanwhile, and the answer to an overflow is reading the whole vault
-// again — which is the rescan this watch exists to avoid.
+// empties the backlog walks nothing: a folder new to the watch is handed back
+// as a name, and it is walked beside the backlog that goes on emptying.
 func TestAFolderNewToTheWatchIsHandedOverRatherThanWalked(t *testing.T) {
 	root, shape := shaped(t)
 	at := filled(t, root, "library", 3)

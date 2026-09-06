@@ -1,15 +1,9 @@
 // Package writing is how a write on the index waits out a writer in another
 // process.
 //
-// SQLite has one write lock for the whole file. Inside this process the writers
-// queue on the single write connection, where waiting is cheap and ordered; but
-// several processes open the one index, and there the lock is the driver's to
-// wait for. It waits the busy timeout and then answers that the database is
-// locked.
-//
-// That answer is transient: the other writer commits and the lock is free. So a
-// write that meets it asks again, rather than handing a person a scan that
-// stopped or a note that was never indexed.
+// SQLite has one write lock for the whole file, and several processes open the
+// one index. A driver that has waited out its busy timeout answers that the
+// database is locked, and a write that meets that answer asks again.
 package writing
 
 import (

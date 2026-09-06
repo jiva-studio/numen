@@ -53,7 +53,7 @@ var pragmas = []string{
 	"foreign_keys(1)",
 	// Wait for a writer, up to five seconds, before SQLITE_BUSY. The writer
 	// waited for may be in another process, and a write that waited it out asks
-	// again rather than failing.
+	// again.
 	"busy_timeout(5000)",
 	"cache_size(-65536)",
 }

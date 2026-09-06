@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
 
-// maxMatches is how many passages one call may ask for. Going over is refused
-// and says so, rather than trimmed in silence.
+// maxMatches is how many passages one call may ask for. A call asking for more
+// is refused and told so.
 const maxMatches = 100
 
 // passagesEach is how many places in one file a search answers with. A book
@@ -86,8 +86,7 @@ func addNoteSearch(server *sdk.Server, core Core) {
 }
 
 // sorts is the kinds of source a question names. A search reaches notes and
-// books, so a kind outside those two is a mistake in the asking and is said so,
-// rather than quietly answering about everything.
+// books, and a kind outside those two is refused and said so.
 func sorts(named []string) ([]domain.SourceKind, error) {
 	out := make([]domain.SourceKind, 0, len(named))
 	for _, one := range named {

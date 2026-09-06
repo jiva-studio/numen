@@ -54,7 +54,7 @@ type Source struct {
 
 // Instant and Stamp are the source row's modification time either way round.
 // The column is an INTEGER of nanoseconds since the epoch, and zero is a row
-// that names no time rather than the epoch itself.
+// that names no time.
 
 func Instant(nanos int64) time.Time {
 	if nanos == 0 {

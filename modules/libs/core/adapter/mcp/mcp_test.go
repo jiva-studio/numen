@@ -350,9 +350,7 @@ func TestANoteIsMadeAndFoundThroughTheTools(t *testing.T) {
 	}
 }
 
-// A note asks to be joined as it is made, so that it never exists unattached —
-// which is the whole reason links are accepted here rather than only by
-// link_add.
+// A note asks to be joined as it is made, so it never stands unattached.
 func TestANoteIsMadeAlreadyJoined(t *testing.T) {
 	session, _ := connected(t, map[string]string{"Momentum.md": "# Momentum\n"})
 

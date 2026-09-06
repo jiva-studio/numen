@@ -12,17 +12,15 @@ import (
 // A document read without complaint is one the rest of the application can
 // hold: every page and every named part stands at an offset in the text that
 // was read, in the order they are paginated, and each part carries a name on
-// one line. Where the outline named nothing, the document says so rather than
-// standing an empty list beside a structure that claims one.
+// one line. A document whose outline named nothing says so.
 //
 // Locating an offset lands on a page that begins at or before it and on the
-// part that begins at or before it, so a passage found in the text can be said
-// to be on a page and under a heading — which is the whole of what a reader is
-// shown about where it came from.
+// part that begins at or before it, so a passage found in the text is said to
+// be on a page and under a heading.
 //
 // A file that could not be read is refused as one that is no PDF or as one
-// nobody here has the password to, and never as a document with nothing in it:
-// a scan carries no text either, and the two are not the same answer.
+// nobody here has the password to. A scan carries no text, and is a document
+// read.
 //
 // The bytes are a file in a person's vault, put there by a scanner, a browser
 // or a sync, and half-written by any of them.

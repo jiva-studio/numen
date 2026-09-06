@@ -59,8 +59,8 @@ type Window struct {
 	Tasking *task.Tasks
 
 	// Vault is the identity of the vault this window has in front of the
-	// person. Nil is a window open on the installation rather than on any one
-	// vault, which answers with none.
+	// person. Nil is a window open on the installation, which answers with
+	// none.
 	Vault func() string
 
 	clients leaving
@@ -91,9 +91,8 @@ func (w *Window) WatchTasks(
 		return err
 	}
 	if w.Tasking == nil {
-		// A window that does nothing behind itself still answers, so that it has
-		// one thing to listen to rather than two ways of finding out whether it
-		// should.
+		// A window that does nothing behind itself still answers, so a client
+		// has one thing to listen to.
 		return out.Send(&v1.WatchTasksResponse{})
 	}
 

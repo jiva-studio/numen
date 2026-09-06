@@ -22,10 +22,9 @@ import (
 // again. The library carries its own before it is left in the cache, and a
 // library already there carrying another sum is written over.
 //
-// The library is looked for by name at any depth, because the folder inside the
-// archive is named after the release. The plain name inside is a link to the
-// file carrying the version, so what is taken out is the file: a link copied out
-// of an archive points at nothing.
+// The library is looked for by name at any depth: the folder inside the archive
+// is named after the release. The plain name inside is a link to the file
+// carrying the version, and what is taken out is that file.
 func unpack(archive, name string, found release) (string, error) {
 	at := filepath.Join(filepath.Dir(archive), name)
 	if verify(at, found.library) == nil {

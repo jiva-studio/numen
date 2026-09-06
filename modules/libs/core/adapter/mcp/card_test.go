@@ -434,7 +434,7 @@ func TestACardIsEditedAndTheCardsBesideItAreLeftAlone(t *testing.T) {
 }
 
 // A person asks an agent to take a field off a card. card_edit only ever writes
-// a value, and an empty value is a field standing empty rather than one gone.
+// a value, and an empty value is a field standing empty.
 func TestAFieldIsTakenOffACardAndTheOthersStay(t *testing.T) {
 	session, v := connected(t, vault())
 
@@ -608,9 +608,8 @@ func TestRenamingAFieldReachesTheCardsCutByThatStencil(t *testing.T) {
 }
 
 // A rename reads and writes every deck the vault holds, so what bounds it is
-// how many there are. Stopping partway leaves values under a heading nothing
-// declares, which is the fault the rename exists to prevent, so a vault past
-// the bound is refused before the stencil is touched.
+// how many there are. A vault past the bound is refused before the stencil is
+// touched.
 func TestRenamingAFieldIsRefusedWhereTheVaultHoldsTooManyDecks(t *testing.T) {
 	notes := vault()
 	for i := range 200 {

@@ -23,11 +23,9 @@ type Locations struct {
 // Deps is what one run of the terminal works through: one opener for each
 // command, and nothing opened until the command that needs it asks.
 //
-// They are openers rather than the things themselves because a command pays
-// only for its own machinery. Listing vaults opens no index, a search opens no
-// provider that fills one, and reading a scan opens no transcriber — and some
-// of what stands behind these fetches a model over a network, which is minutes
-// a person who typed `vault list` does not wait.
+// A command pays only for its own machinery: listing vaults opens no index, a
+// search opens no provider that fills one, and reading a scan opens no
+// transcriber.
 type Deps struct {
 	// Vaults is the list of vaults this installation keeps and what the vault
 	// commands work on. Every command opens it: what a person typed is a name,

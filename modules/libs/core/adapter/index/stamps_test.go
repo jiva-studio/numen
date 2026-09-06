@@ -9,7 +9,7 @@ import (
 )
 
 // The column is an INTEGER of nanoseconds since the epoch, and it holds that
-// number and no other: an index written before this change is read after it.
+// number and no other.
 func TestTheSourceRowHoldsNanosecondsSinceTheEpoch(t *testing.T) {
 	at := time.Date(2026, 9, 3, 11, 4, 5, 123456789, time.UTC)
 	const nanos = 1788433445123456789

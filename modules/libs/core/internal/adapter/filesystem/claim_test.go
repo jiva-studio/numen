@@ -7,9 +7,7 @@ import (
 )
 
 // A name taken out of the store leaves nothing behind it, the file its claim
-// was held on included. A window that only looked at a recording claims its
-// name to ask whether it may be edited, and a vault would otherwise fill with
-// claims for every recording anybody opened.
+// was held on included.
 func TestANameRemovedLeavesNoClaimBehindIt(t *testing.T) {
 	derived, root := store(t)
 	const name = "ocr/abc.txt"

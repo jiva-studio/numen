@@ -79,8 +79,7 @@ func opened(t *testing.T, path string) windows.Handle {
 	return handle
 }
 
-// A file nothing lets go of is refused, and the save says so rather than
-// waiting for as long as the program runs.
+// A file nothing lets go of is refused, and the save says so.
 func TestASaveOverAHandleNothingLetsGoIsRefused(t *testing.T) {
 	dir := t.TempDir()
 	target := filepath.Join(dir, "Entropy.md")

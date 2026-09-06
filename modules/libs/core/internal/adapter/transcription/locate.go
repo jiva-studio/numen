@@ -36,7 +36,7 @@ type paths struct {
 //
 // Three places are tried in order and each is a setting: a path written down,
 // the folder the application was installed into, and what was downloaded. A
-// A path that is written down is used as given, and its absence is an error.
+// path that is written down is used as given, and its absence is an error.
 func locate(ctx context.Context, cfg Config) (through, paths, error) {
 	var opened through
 	var err error
@@ -84,9 +84,8 @@ func wanted(cfg Config, into *paths) []wantedFile {
 
 // model is where one model's file is.
 //
-// A path written down is used as given, and its absence is an error rather than
-// a reason to look elsewhere: a person who said where a model is meant it. A
-// name is looked for beside the application and then fetched.
+// A path written down is used as given, and its absence is an error. A name is
+// looked for beside the application and then fetched.
 func model(ctx context.Context, cfg Config, path, name, kind string) (string, error) {
 	if path != "" {
 		if _, err := os.Stat(path); err != nil {

@@ -148,9 +148,8 @@ type found struct {
 }
 
 // walks walks the folders handed to it, one after another, and answers with
-// what each holds. It stands beside the debounce rather than inside it, so a folder
-// that arrives with a thousand files in it is walked while the backlog goes on
-// emptying.
+// what each holds. It stands beside the debounce, so a folder that arrives with
+// a thousand files in it is walked while the backlog goes on emptying.
 func walks(
 	ctx context.Context,
 	shape *folders,

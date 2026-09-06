@@ -82,14 +82,12 @@ func migrate(ctx context.Context, db *sql.DB) error {
 // can run again from the first.
 //
 // What is dropped is read back each time round: a virtual table takes its
-// shadow tables down with it, and those are rows in this list too. The loop
-// ends when a pass drops nothing, which is either an empty schema or one this
-// cannot empty, and the second is a failure worth reporting rather than
-// spinning on.
+// shadow tables down with it. The loop ends when a pass drops nothing, which is
+// an empty schema or one this cannot empty, and the second is reported.
 //
-// It runs on one connection with foreign keys off, because the tables go in
-// whatever order the schema lists them and a child outliving its parent for
-// the rest of the pass is the ordinary way through.
+// It runs on one connection with foreign keys off: the tables go in whatever
+// order the schema lists them, and a child outlives its parent for the rest of
+// the pass.
 func discard(ctx context.Context, db *sql.DB) error {
 	conn, err := db.Conn(ctx)
 	if err != nil {

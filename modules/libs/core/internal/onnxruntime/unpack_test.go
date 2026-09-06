@@ -110,10 +110,9 @@ func TestAnArchiveThatIsNotTheOnePublishedIsRefused(t *testing.T) {
 	}
 }
 
-// A cached archive that is not the one published is taken away, so that the
-// next run fetches it again rather than being handed the same bad file for
-// ever. What stands in for that run here is a second unpack, of the archive as
-// it is published.
+// A cached archive that is not the one published is taken away, so the next run
+// fetches it again. What stands in for that run here is a second unpack, of the
+// archive as it is published.
 func TestACachedArchiveThatIsNotTheOnePublishedIsFetchedAgain(t *testing.T) {
 	dir := t.TempDir()
 	found := packed(t, dir)

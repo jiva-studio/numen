@@ -27,11 +27,8 @@ const (
 //
 // A field's name is a heading in every card of every deck its stencil cuts, so
 // the rename reads and writes every deck the vault holds, one behind the other
-// under the write lock. Stopping partway is worse than not starting: values
-// left under a heading nothing declares is the fault the rename exists to
-// prevent. So a vault past this is refused before the stencil is written, and
-// the person renames the field in the window, where it is the one thing they
-// asked for rather than a step inside somebody's turn.
+// under the write lock. A vault past this is refused before the stencil is
+// written, and the person renames the field in the window.
 const maxDecks = 200
 
 // Stencil is a stencil as the list of them names it.

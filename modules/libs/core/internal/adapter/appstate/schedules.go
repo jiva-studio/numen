@@ -86,9 +86,8 @@ func (s *Schedules) Write(_ context.Context, vaultID domain.VaultID, content []b
 
 // at is the file one vault's schedules stand in.
 //
-// The identity is written into the name, so it is refused a separator and a
-// dot: a name arriving from anywhere else could otherwise reach a file this
-// folder does not hold.
+// The identity is written into the name, and an identity carrying a separator
+// or a dot is refused.
 func (s *Schedules) at(vaultID domain.VaultID) (string, error) {
 	name := string(vaultID)
 	if name == "" || strings.ContainsAny(name, `/\.`) {

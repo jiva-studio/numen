@@ -66,18 +66,13 @@ func temporary(root *os.Root, dir, pattern string) (*os.File, string, error) {
 
 // replace writes content beside the target and renames it over the top.
 //
-// The temporary file is named with a leading dot so that the watcher never
-// reports it: a name beginning with a dot is not a note, which is
-// the same rule that keeps an editor's own temporary files out of the index.
+// The temporary file is named with a leading dot, and a name beginning with a
+// dot is not a note. The contents are flushed before the rename, so a machine
+// that loses power comes back to the old file or the new one.
 //
-// The contents are flushed before the rename. Without that, a machine that
-// loses power between the two can leave the rename recorded and the bytes not,
-// which is the one outcome this whole arrangement exists to prevent.
-//
-// The fingerprint that comes back is taken from the temporary file's own
-// descriptor. The rename carries the file across whole, so its size and its
-// modification time are the ones at the target from the moment the rename
-// lands, and a caller holding them is holding the file it just wrote.
+// The fingerprint comes from the temporary file's own descriptor. The rename
+// carries the file across whole, so its size and its modification time are the
+// ones at the target from the moment the rename lands.
 func replace(root *os.Root, target string, content []byte, mode fs.FileMode) (domain.Fingerprint, error) {
 	dir := filepath.Dir(target)
 	tmp, at, err := temporary(root, dir, beside(filepath.Base(target)))
@@ -118,13 +113,10 @@ func replace(root *os.Root, target string, content []byte, mode fs.FileMode) (do
 // settle flushes the folder the rename was recorded in.
 //
 // Flushing the file is what keeps its contents whole; flushing the folder is
-// what keeps the rename itself. Without this a machine that loses power can
-// come back with the old note and the temporary one beside it, having durably
-// written neither the swap nor anything worse.
+// what keeps the rename itself.
 //
-// Not every filesystem lets a directory be opened for this, and the ones that
-// refuse are the ones that did not need it. A refusal is not an error to hand
-// back: the note is written either way.
+// Not every filesystem lets a directory be opened for this, and a refusal is
+// not an error to hand back: the note is written either way.
 func settle(root *os.Root, dir string) error {
 	folder, err := root.Open(dir)
 	if err != nil {

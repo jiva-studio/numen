@@ -75,8 +75,7 @@ func TestOneSaveIsOneReport(t *testing.T) {
 }
 
 // TestAFolderThatGoesAwayCannotBeAnsweredFromDisk. What it held is known to the
-// index, so the watcher asks for the vault to be read again rather than
-// reporting paths it cannot name.
+// index, so the watcher asks for the vault to be read again.
 func TestAFolderThatGoesAwayCannotBeAnsweredFromDisk(t *testing.T) {
 	root := vaultOf(t, map[string]string{
 		"Note.md":            "# Note\n",
