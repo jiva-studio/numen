@@ -5,13 +5,13 @@
  * stops, so the window waits on exactly what is still to be settled.
  */
 import { watch } from 'vue'
-import type { Conflict } from './flushing'
-import type { State } from '../note/tab'
+import { conflictIn, type Conflict } from './flushing'
 
 /** The notes of a window, each under the identity its tab opened under. */
 export interface Notes {
   all(): readonly string[]
-  shown(id: string): { state: State }
+  /** The word the screen holding that note tells its state by. */
+  shown(id: string): { state: string }
   keep(id: string): void
   take(id: string): void
 }
@@ -25,7 +25,7 @@ export function raising(notes: Notes, going: ConflictRaiser) {
   const raised = new Map<string, () => void>()
 
   watch(
-    () => notes.all().filter((id) => notes.shown(id).state === 'overtaken'),
+    () => notes.all().filter((id) => conflictIn(notes.shown(id).state) === 'overtaken'),
     (overtaken) => {
       for (const id of overtaken) {
         if (raised.has(id)) continue

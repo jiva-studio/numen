@@ -14,6 +14,15 @@ import CommandPalette from './command/CommandPalette.vue'
 import WelcomeScreen from './welcome/WelcomeScreen.vue'
 import { useWindow } from './window'
 import { WORDS as words } from './words'
+import { WORDS as note } from './note/words'
+
+/** What the notes still unwritten are put in: the window's words and a note's. */
+const unsaved = {
+  going: words.going,
+  keep: note.keep,
+  take: note.take,
+  later: words.later,
+}
 
 const {
   carries,
@@ -81,7 +90,11 @@ const {
       @gone="tell.forget"
     />
 
-    <UnsavedChangesPrompt :conflicts="going.conflicts.value" :called="titled" />
+    <UnsavedChangesPrompt
+      :conflicts="going.conflicts.value"
+      :called="titled"
+      :words="unsaved"
+    />
 
     <CommandPalette
       :commands="commands"

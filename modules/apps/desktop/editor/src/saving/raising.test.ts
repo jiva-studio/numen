@@ -9,11 +9,13 @@ import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { raising, type Notes } from './raising'
 import type { Conflict } from './flushing'
-import type { State } from '../note/tab'
+
+/** The words this test puts its notes in. A screen has more; these are enough. */
+type Word = 'clean' | 'unsaved' | 'overtaken' | 'gone'
 
 /** Notes in the states the test puts them in, each under its own identity. */
 const notes = () => {
-  const states = ref<Record<string, State>>({})
+  const states = ref<Record<string, Word>>({})
   const said: string[] = []
   const store: Notes = {
     all: () => Object.keys(states.value),
@@ -24,7 +26,7 @@ const notes = () => {
   return {
     store,
     said,
-    stands: (id: string, state: State) => {
+    stands: (id: string, state: Word) => {
       states.value = { ...states.value, [id]: state }
     },
   }

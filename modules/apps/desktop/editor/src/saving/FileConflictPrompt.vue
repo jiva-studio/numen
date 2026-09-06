@@ -6,7 +6,7 @@
  * two is theirs. A file that is gone keeps what is on screen and offers to make
  * it again. What either is said in is the tab's own.
  */
-import type { State } from '../note/tab'
+import type { FileConflict } from './flushing'
 
 /** The words the two conflicts are put in. */
 export interface FileConflictWords {
@@ -20,8 +20,8 @@ export interface FileConflictWords {
 defineProps<{
   /** What could not be read or written, in words a person reads. */
   saying: string
-  /** The state the file the tab holds is in. */
-  state: State
+  /** Which conflict the file the tab holds stands in, if it stands in one. */
+  conflict: FileConflict
   words: FileConflictWords
 }>()
 
@@ -36,12 +36,12 @@ defineEmits<{
 <template>
   <p v-if="saying" class="caution" role="alert">{{ saying }}</p>
 
-  <p v-if="state === 'gone'" class="caution caution--conflict" role="status">
+  <p v-if="conflict === 'gone'" class="caution caution--conflict" role="status">
     {{ words.gone }}
     <button type="button" class="answer" @click="$emit('keep')">{{ words.makeAgain }}</button>
   </p>
 
-  <p v-if="state === 'overtaken'" class="caution caution--conflict" role="status">
+  <p v-if="conflict === 'overtaken'" class="caution caution--conflict" role="status">
     {{ words.overtaken }}
     <button type="button" class="answer" @click="$emit('keep')">{{ words.keep }}</button>
     <button type="button" class="answer" @click="$emit('take')">{{ words.take }}</button>

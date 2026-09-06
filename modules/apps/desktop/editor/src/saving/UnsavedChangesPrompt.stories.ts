@@ -9,7 +9,15 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import UnsavedChangesPrompt from './UnsavedChangesPrompt.vue'
 import type { ConflictPrompt } from './flushing'
-import { WORDS as note } from '../note/words'
+import type { UnsavedChangesWords } from './UnsavedChangesPrompt.vue'
+
+/** The words a window hands the prompt. The component knows none of its own. */
+const WORDS: UnsavedChangesWords = {
+  going: 'These notes stopped saving because their files changed. The window waits.',
+  keep: 'Keep mine',
+  take: "Take the file's",
+  later: 'Not yet',
+}
 
 const UNBROKEN = `${'A note whose name nobody shortened and which runs on past '.repeat(8)}.md`
 
@@ -25,7 +33,7 @@ const meta = {
   title: 'Window/Unsaved Changes',
   component: UnsavedChangesPrompt,
   parameters: { layout: 'fullscreen' },
-  args: { called: (path: string) => path.split('/').pop() ?? path },
+  args: { called: (path: string) => path.split('/').pop() ?? path, words: WORDS },
 } satisfies Meta<typeof UnsavedChangesPrompt>
 
 export default meta
@@ -70,7 +78,7 @@ export const AnsweredForOneNote: Story = {
 
     // The answer given is the answer for the note it stands beside, and the
     // other note is left standing.
-    const keep = answers(canvasElement).find((one) => one.textContent?.trim() === note.keep)
+    const keep = answers(canvasElement).find((one) => one.textContent?.trim() === WORDS.keep)
     await userEvent.click(keep as HTMLElement)
     await waitFor(() => expect(first?.keep).toHaveBeenCalledTimes(1))
     await expect(first?.take).not.toHaveBeenCalled()

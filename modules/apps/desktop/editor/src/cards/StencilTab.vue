@@ -11,6 +11,7 @@ import { computed } from 'vue'
 import { StencilEditor } from '@numen/ui'
 import type { InsertionPoint, Half } from '@numen/ui'
 import FileConflictPrompt from '../saving/FileConflictPrompt.vue'
+import { conflictIn } from '../saving/flushing'
 import type { StencilTabState } from './stencil'
 import { WORDS as words } from './words'
 
@@ -24,7 +25,7 @@ const marks = computed(() => props.held.marks.value)
   <div class="stencil-tab">
     <FileConflictPrompt
       :saying="props.held.saying.value"
-      :state="props.held.shown.value.state"
+      :conflict="conflictIn(props.held.shown.value.state)"
       :words="words"
       @keep="props.held.keep()"
       @take="props.held.take()"

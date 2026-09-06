@@ -12,6 +12,7 @@ import { cardBlanks, cardFields, DeckEditor, Menu } from '@numen/ui'
 import type { InsertionPoint, Point } from '@numen/ui'
 import { ChevronDown } from '@lucide/vue'
 import FileConflictPrompt from '../saving/FileConflictPrompt.vue'
+import { conflictIn } from '../saving/flushing'
 import type { DeckTabState } from './deck'
 import { WORDS as words } from './words'
 
@@ -63,7 +64,7 @@ const chose = (path: string) => {
   <div class="deck-tab">
     <FileConflictPrompt
       :saying="saying"
-      :state="shown.state"
+      :conflict="conflictIn(shown.state)"
       :words="words"
       @keep="props.held.keep()"
       @take="props.held.take()"

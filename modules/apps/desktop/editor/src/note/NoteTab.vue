@@ -9,6 +9,7 @@
 import { watch } from 'vue'
 import { Editor } from '@numen/ui'
 import FileConflictPrompt from '../saving/FileConflictPrompt.vue'
+import { conflictIn } from '../saving/flushing'
 import { WORDS as words } from './words'
 import type { NoteTabState } from './kind'
 
@@ -28,7 +29,7 @@ watch(
   <div class="note">
     <FileConflictPrompt
       :saying="props.held.saying.value"
-      :state="props.held.shown.value.state"
+      :conflict="conflictIn(props.held.shown.value.state)"
       :words="words"
       @keep="props.held.keep()"
       @take="props.held.take()"

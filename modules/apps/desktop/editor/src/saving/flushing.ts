@@ -43,6 +43,17 @@ export interface ConflictPrompt {
 }
 
 /**
+ * The conflict a file a tab holds stands in, and nothing while it stands in
+ * neither. A screen tells its files apart in its own words; these are the two
+ * this folder has something to do about.
+ */
+export type FileConflict = 'gone' | 'overtaken' | null
+
+/** Which conflict a screen's word names, and nothing for every other word. */
+export const conflictIn = (state: string): FileConflict =>
+  state === 'gone' || state === 'overtaken' ? state : null
+
+/**
  * Answering the application when it asks the window to write out what it holds.
  *
  * Whatever holds unwritten work adds itself, and every one of them is written

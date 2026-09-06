@@ -3,11 +3,14 @@
  *
  * The failure this guards against is silent: the window goes, the application
  * answers that everything landed, and the last seconds of typing are gone.
+ *
+ * It stands here rather than beside the flush because the buffer it drives is
+ * a note's, and a screen may reach the shared folders.
  */
 import { describe, expect, it } from 'vitest'
 
-import { editing } from '../note/editing'
-import { flushing, type Conflict, type FlushDeps, type FlushResult } from './flushing'
+import { editing } from './editing'
+import { flushing, type Conflict, type FlushDeps, type FlushResult } from '../saving/flushing'
 import type { NoteResult, Core } from '../core'
 
 /** A vault that has been read and is doing nothing. */

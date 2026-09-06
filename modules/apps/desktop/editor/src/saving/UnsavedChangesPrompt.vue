@@ -6,30 +6,37 @@
  * one of them has been settled or put off.
  */
 import type { ConflictPrompt } from './flushing'
-import { WORDS as note } from '../note/words'
-import { WORDS as words } from '../words'
+
+/** The words the notes still unwritten are put to a person in. */
+export interface UnsavedChangesWords {
+  readonly going: string
+  readonly keep: string
+  readonly take: string
+  readonly later: string
+}
 
 const props = defineProps<{
   conflicts: readonly ConflictPrompt[]
   /** What each note is called, for a person to tell them apart by. */
   called: (note: string) => string
+  words: UnsavedChangesWords
 }>()
 </script>
 
 <template>
   <section v-if="props.conflicts.length" role="alertdialog" class="unsaved">
-    <p class="unsaved__says">{{ words.going }}</p>
+    <p class="unsaved__says">{{ props.words.going }}</p>
     <ul class="unsaved__notes">
       <li v-for="one in props.conflicts" :key="one.note" class="unsaved__note">
         <span class="unsaved__title">{{ props.called(one.note) }}</span>
         <button type="button" class="answer" @click="void one.keep()">
-          {{ note.keep }}
+          {{ props.words.keep }}
         </button>
         <button type="button" class="answer" @click="void one.take()">
-          {{ note.take }}
+          {{ props.words.take }}
         </button>
         <button type="button" class="answer" @click="one.later()">
-          {{ words.later }}
+          {{ props.words.later }}
         </button>
       </li>
     </ul>
