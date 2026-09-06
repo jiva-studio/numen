@@ -99,16 +99,16 @@ enum Rule {
   RULE_RETENTION = 2;
 }
 
-// Counts is what a day's budget is spent on, and stands under `counts`.
-enum Counts {
-  COUNTS_UNSPECIFIED = 0;
+// BudgetUnit is what a day's budget is counted in, and stands under `counts`.
+enum BudgetUnit {
+  BUDGET_UNIT_UNSPECIFIED = 0;
 
   // A card face is charged the first time it is answered in a review day, and
   // comes round again in that day for nothing.
-  COUNTS_CARDS = 1;
+  BUDGET_UNIT_CARDS = 1;
 
   // Every showing is charged.
-  COUNTS_SHOWS = 2;
+  BUDGET_UNIT_SHOWS = 2;
 }
 
 // Settings are how the decks pointing at one preset are scheduled. A preset
@@ -138,9 +138,9 @@ message Settings {
   // Whether days are made to resemble each other.
   bool even_load = 8;
 
-  // What a day's budget is spent on. Unspecified is the default, which charges
-  // a card face once a review day.
-  Counts counts = 9;
+  // What a day's budget is counted in. Unspecified is the default, which
+  // charges a card face once a review day.
+  BudgetUnit counts = 9;
 
   // How much of a day goes to what is overdue before anything unbegun is
   // offered, as a share in hundredths. A hundred pays the debt first and begins

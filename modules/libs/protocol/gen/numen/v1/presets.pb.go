@@ -145,56 +145,56 @@ func (Rule) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{1}
 }
 
-// Counts is what a day's budget is spent on, and stands under `counts`.
-type Counts int32
+// BudgetUnit is what a day's budget is counted in, and stands under `counts`.
+type BudgetUnit int32
 
 const (
-	Counts_COUNTS_UNSPECIFIED Counts = 0
+	BudgetUnit_BUDGET_UNIT_UNSPECIFIED BudgetUnit = 0
 	// A card face is charged the first time it is answered in a review day, and
 	// comes round again in that day for nothing.
-	Counts_COUNTS_CARDS Counts = 1
+	BudgetUnit_BUDGET_UNIT_CARDS BudgetUnit = 1
 	// Every showing is charged.
-	Counts_COUNTS_SHOWS Counts = 2
+	BudgetUnit_BUDGET_UNIT_SHOWS BudgetUnit = 2
 )
 
-// Enum value maps for Counts.
+// Enum value maps for BudgetUnit.
 var (
-	Counts_name = map[int32]string{
-		0: "COUNTS_UNSPECIFIED",
-		1: "COUNTS_CARDS",
-		2: "COUNTS_SHOWS",
+	BudgetUnit_name = map[int32]string{
+		0: "BUDGET_UNIT_UNSPECIFIED",
+		1: "BUDGET_UNIT_CARDS",
+		2: "BUDGET_UNIT_SHOWS",
 	}
-	Counts_value = map[string]int32{
-		"COUNTS_UNSPECIFIED": 0,
-		"COUNTS_CARDS":       1,
-		"COUNTS_SHOWS":       2,
+	BudgetUnit_value = map[string]int32{
+		"BUDGET_UNIT_UNSPECIFIED": 0,
+		"BUDGET_UNIT_CARDS":       1,
+		"BUDGET_UNIT_SHOWS":       2,
 	}
 )
 
-func (x Counts) Enum() *Counts {
-	p := new(Counts)
+func (x BudgetUnit) Enum() *BudgetUnit {
+	p := new(BudgetUnit)
 	*p = x
 	return p
 }
 
-func (x Counts) String() string {
+func (x BudgetUnit) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (Counts) Descriptor() protoreflect.EnumDescriptor {
+func (BudgetUnit) Descriptor() protoreflect.EnumDescriptor {
 	return file_numen_v1_presets_proto_enumTypes[2].Descriptor()
 }
 
-func (Counts) Type() protoreflect.EnumType {
+func (BudgetUnit) Type() protoreflect.EnumType {
 	return &file_numen_v1_presets_proto_enumTypes[2]
 }
 
-func (x Counts) Number() protoreflect.EnumNumber {
+func (x BudgetUnit) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use Counts.Descriptor instead.
-func (Counts) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use BudgetUnit.Descriptor instead.
+func (BudgetUnit) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{2}
 }
 
@@ -368,9 +368,9 @@ type Settings struct {
 	Retention float64 `protobuf:"fixed64,6,opt,name=retention,proto3" json:"retention,omitempty"`
 	// Whether days are made to resemble each other.
 	EvenLoad bool `protobuf:"varint,8,opt,name=even_load,json=evenLoad,proto3" json:"even_load,omitempty"`
-	// What a day's budget is spent on. Unspecified is the default, which charges
-	// a card face once a review day.
-	Counts Counts `protobuf:"varint,9,opt,name=counts,proto3,enum=numen.v1.Counts" json:"counts,omitempty"`
+	// What a day's budget is counted in. Unspecified is the default, which
+	// charges a card face once a review day.
+	Counts BudgetUnit `protobuf:"varint,9,opt,name=counts,proto3,enum=numen.v1.BudgetUnit" json:"counts,omitempty"`
 	// How much of a day goes to what is overdue before anything unbegun is
 	// offered, as a share in hundredths. A hundred pays the debt first and begins
 	// new cards on what is left, nothing puts the new material first, and between
@@ -472,11 +472,11 @@ func (x *Settings) GetEvenLoad() bool {
 	return false
 }
 
-func (x *Settings) GetCounts() Counts {
+func (x *Settings) GetCounts() BudgetUnit {
 	if x != nil {
 		return x.Counts
 	}
-	return Counts_COUNTS_UNSPECIFIED
+	return BudgetUnit_BUDGET_UNIT_UNSPECIFIED
 }
 
 func (x *Settings) GetBacklog() int32 {
@@ -1940,7 +1940,7 @@ var File_numen_v1_presets_proto protoreflect.FileDescriptor
 
 const file_numen_v1_presets_proto_rawDesc = "" +
 	"\n" +
-	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\x1a\x14numen/v1/theme.proto\"\xed\x03\n" +
+	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\x1a\x14numen/v1/theme.proto\"\xf1\x03\n" +
 	"\bSettings\x12\"\n" +
 	"\x04goal\x18\x01 \x01(\x0e2\x0e.numen.v1.GoalR\x04goal\x12\x17\n" +
 	"\aby_date\x18\x02 \x01(\tR\x06byDate\x12\"\n" +
@@ -1948,8 +1948,8 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\tnew_a_day\x18\x04 \x01(\x05R\anewADay\x12\"\n" +
 	"\rreviews_a_day\x18\x05 \x01(\x05R\vreviewsADay\x12\x1c\n" +
 	"\tretention\x18\x06 \x01(\x01R\tretention\x12\x1b\n" +
-	"\teven_load\x18\b \x01(\bR\bevenLoad\x12(\n" +
-	"\x06counts\x18\t \x01(\x0e2\x10.numen.v1.CountsR\x06counts\x12\x18\n" +
+	"\teven_load\x18\b \x01(\bR\bevenLoad\x12,\n" +
+	"\x06counts\x18\t \x01(\x0e2\x14.numen.v1.BudgetUnitR\x06counts\x12\x18\n" +
 	"\abacklog\x18\n" +
 	" \x01(\x05R\abacklog\x120\n" +
 	"\x04load\x18\v \x03(\v2\x1c.numen.v1.Settings.LoadEntryR\x04load\x12(\n" +
@@ -2085,11 +2085,12 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x04Rule\x12\x14\n" +
 	"\x10RULE_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rRULE_INTERVAL\x10\x01\x12\x12\n" +
-	"\x0eRULE_RETENTION\x10\x02*D\n" +
-	"\x06Counts\x12\x16\n" +
-	"\x12COUNTS_UNSPECIFIED\x10\x00\x12\x10\n" +
-	"\fCOUNTS_CARDS\x10\x01\x12\x10\n" +
-	"\fCOUNTS_SHOWS\x10\x02*\xdc\x01\n" +
+	"\x0eRULE_RETENTION\x10\x02*W\n" +
+	"\n" +
+	"BudgetUnit\x12\x1b\n" +
+	"\x17BUDGET_UNIT_UNSPECIFIED\x10\x00\x12\x15\n" +
+	"\x11BUDGET_UNIT_CARDS\x10\x01\x12\x15\n" +
+	"\x11BUDGET_UNIT_SHOWS\x10\x02*\xdc\x01\n" +
 	"\n" +
 	"StopReason\x12\x1b\n" +
 	"\x17STOP_REASON_UNSPECIFIED\x10\x00\x12\x17\n" +
@@ -2136,7 +2137,7 @@ var file_numen_v1_presets_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_numen_v1_presets_proto_goTypes = []any{
 	(Goal)(0),                     // 0: numen.v1.Goal
 	(Rule)(0),                     // 1: numen.v1.Rule
-	(Counts)(0),                   // 2: numen.v1.Counts
+	(BudgetUnit)(0),               // 2: numen.v1.BudgetUnit
 	(StopReason)(0),               // 3: numen.v1.StopReason
 	(BudgetName)(0),               // 4: numen.v1.BudgetName
 	(*Settings)(nil),              // 5: numen.v1.Settings
@@ -2167,7 +2168,7 @@ var file_numen_v1_presets_proto_goTypes = []any{
 }
 var file_numen_v1_presets_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.Settings.goal:type_name -> numen.v1.Goal
-	2,  // 1: numen.v1.Settings.counts:type_name -> numen.v1.Counts
+	2,  // 1: numen.v1.Settings.counts:type_name -> numen.v1.BudgetUnit
 	26, // 2: numen.v1.Settings.load:type_name -> numen.v1.Settings.LoadEntry
 	1,  // 3: numen.v1.Settings.learned:type_name -> numen.v1.Rule
 	5,  // 4: numen.v1.Preset.settings:type_name -> numen.v1.Settings
