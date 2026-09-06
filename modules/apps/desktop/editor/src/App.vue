@@ -5,7 +5,7 @@
  * What the window is made of is `window.ts`. What is here is what a person
  * sees of it, and the binding between the two.
  */
-import { Notices, Workspace } from '@numen/ui'
+import { Notices, WorkspaceLayout } from '@numen/ui'
 import '@numen/ui/styles.css'
 import './app.css'
 import UnsavedChangesPrompt from './saving/UnsavedChangesPrompt.vue'
@@ -48,7 +48,7 @@ const {
   <main>
     <CoreFailureNotice :failure="failure" />
 
-    <Workspace
+    <WorkspaceLayout
       v-model="layout"
       class="below"
       :tabs="held.tabs.value"
@@ -80,7 +80,7 @@ const {
           :carries="carries"
         />
       </template>
-    </Workspace>
+    </WorkspaceLayout>
 
     <Notices
       :notices="notices"

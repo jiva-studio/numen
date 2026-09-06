@@ -45,7 +45,10 @@ test('there are stories for the keyboard walk to run after', () => {
   const wanted = {
     '@numen/ui': [
       30,
-      ['modules/libs/ui/src/workspace/Workspace.stories.ts', 'modules/libs/ui/src/reader/Reader.stories.ts'],
+      [
+        'modules/libs/ui/src/workspace/WorkspaceLayout.stories.ts',
+        'modules/libs/ui/src/reader/Reader.stories.ts',
+      ],
     ],
     '@numen/editor': [
       5,

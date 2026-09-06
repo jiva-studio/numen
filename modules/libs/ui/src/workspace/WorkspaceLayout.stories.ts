@@ -8,7 +8,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { ref, watch } from 'vue'
-import Workspace from './Workspace.vue'
+import WorkspaceLayout from './WorkspaceLayout.vue'
 import TabStub from './fixtures/TabStub.vue'
 import type { Tab, Workspace as State } from './node'
 import { panesOf } from './tree'
@@ -59,7 +59,7 @@ interface Knobs {
 
 const meta: Meta<Knobs> = {
   title: 'Workspace',
-  component: Workspace,
+  component: WorkspaceLayout,
   parameters: { layout: 'fullscreen' },
   argTypes: {
     arrangement: {
@@ -76,7 +76,7 @@ const meta: Meta<Knobs> = {
   },
   args: { arrangement: 'side by side', edge: 22, threshold: 4, marks: {} },
   render: (args) => ({
-    components: { Workspace, TabStub },
+    components: { WorkspaceLayout, TabStub },
     setup() {
       const held = ref<State>(ARRANGEMENTS[args.arrangement]())
       watch(
@@ -91,7 +91,7 @@ const meta: Meta<Knobs> = {
     },
     template: `
       <div style="height: 100vh; padding: 0">
-        <Workspace
+        <WorkspaceLayout
           v-model="held"
           :tabs="tabs()"
           :edge="args.edge"
@@ -99,7 +99,7 @@ const meta: Meta<Knobs> = {
           :naming="() => 'made-' + Math.random().toString(36).slice(2, 8)"
         >
           <template #tab="{ id }"><TabStub :name="id" /></template>
-        </Workspace>
+        </WorkspaceLayout>
       </div>
     `,
   }),

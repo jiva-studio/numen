@@ -13,7 +13,7 @@ import {
   pane,
   Palette,
   Tree,
-  Workspace,
+  WorkspaceLayout,
   type PaletteGroup,
 } from '@numen/ui'
 import AgentTab from './agent/AgentTab.vue'
@@ -215,7 +215,7 @@ describe('the palette', () => {
 
   /** The tab of the plex standing on that note, as the window calls it. */
   const plexTab = (window: Awaited<ReturnType<typeof drawn>>, note: string): string =>
-    (window.findComponent(Workspace).props('tabs') as readonly { id: string; title: string }[])
+    (window.findComponent(WorkspaceLayout).props('tabs') as readonly { id: string; title: string }[])
       .find((one) => one.title === plexCalled(plexWords.plex, note))
       ?.id ?? ''
 
@@ -237,7 +237,7 @@ describe('the palette', () => {
 
     // Each of the two dragged into a pane of its own. The pane the person is in
     // is the one holding the plex on the note the vault opens with.
-    window.findComponent(Workspace).vm.$emit('update:modelValue', {
+    window.findComponent(WorkspaceLayout).vm.$emit('update:modelValue', {
       root: branch(
         'root',
         [
@@ -469,7 +469,7 @@ describe('a command reached by a keystroke holding Shift', () => {
   }
 
   const tabs = (window: Awaited<ReturnType<typeof drawn>>) =>
-    (window.findComponent(Workspace).props('tabs') as readonly { id: string }[]) ?? []
+    (window.findComponent(WorkspaceLayout).props('tabs') as readonly { id: string }[]) ?? []
 
   it('no longer puts the palette up on the letter that puts it up alone', async () => {
     const window = await drawn()

@@ -9,8 +9,8 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { StopReason } from '@numen/protocol'
-import { Workspace, branch, pane } from '@numen/ui'
-import type { Tab, WorkspaceLayout } from '@numen/ui'
+import { WorkspaceLayout, branch, pane } from '@numen/ui'
+import type { Tab, Workspace } from '@numen/ui'
 import { computed, nextTick, onMounted, ref, shallowRef, type Component } from 'vue'
 
 import SettingsTab from './settings/controls/SettingsTab.vue'
@@ -60,9 +60,9 @@ const iconOfTab = (id: string) => iconOfKind(id.split(':')[0] ?? id)
 
 /** One tab filling the window, drawn in the chrome the window draws it in. */
 const window = (tab: string, draws: Component, state: unknown) => ({
-  components: { Workspace },
+  components: { WorkspaceLayout },
   setup() {
-    const layout = ref<WorkspaceLayout>({
+    const layout = ref<Workspace>({
       root: pane('main', TABS.map((one) => one.id), tab),
       axis: 'horizontal',
       focus: 'main',
@@ -71,7 +71,7 @@ const window = (tab: string, draws: Component, state: unknown) => ({
   },
   template: `
     <div style="height: 100vh">
-      <Workspace v-model="layout" :tabs="TABS">
+      <WorkspaceLayout v-model="layout" :tabs="TABS">
         <!-- Lucide draws on a 24 grid, and the stroke is given in those units. -->
         <template #icon="{ id }">
           <component
@@ -85,7 +85,7 @@ const window = (tab: string, draws: Component, state: unknown) => ({
           <component :is="draws" v-if="id === tab" :state="state" />
           <div v-else />
         </template>
-      </Workspace>
+      </WorkspaceLayout>
     </div>
   `,
 })
@@ -713,10 +713,10 @@ const asking = (
   open: readonly string[],
   file: { tab: string; draws: Component; state: unknown; opens?: () => Promise<void> },
 ) => ({
-  components: { Workspace, FilesTab },
+  components: { WorkspaceLayout, FilesTab },
   setup() {
     const { state, read } = files(open)
-    const layout = ref<WorkspaceLayout>({
+    const layout = ref<Workspace>({
       root: branch('root', [pane('files', [FILES]), pane('main', [file.tab])], [0.3, 0.7]),
       axis: 'horizontal',
       focus: 'files',
@@ -739,7 +739,7 @@ const asking = (
   },
   template: `
     <div style="height: 100vh">
-      <Workspace v-model="layout" :tabs="TABS">
+      <WorkspaceLayout v-model="layout" :tabs="TABS">
         <template #icon="{ id }">
           <component
             :is="iconOfTab(id)"
@@ -752,7 +752,7 @@ const asking = (
           <FilesTab v-if="id === FILES" :state="state" />
           <component :is="file.draws" v-else :state="file.state" />
         </template>
-      </Workspace>
+      </WorkspaceLayout>
     </div>
   `,
 })

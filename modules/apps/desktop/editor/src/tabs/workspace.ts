@@ -4,7 +4,7 @@
  * The workspace takes identities and gives them back; which component each one
  * stands for is settled in `App.vue`.
  */
-import { branch, pane, type WorkspaceLayout } from '@numen/ui'
+import { branch, pane, type Workspace } from '@numen/ui'
 
 /** The kinds of tab the window can open a second of. */
 export const PLEX = 'plex'
@@ -60,7 +60,7 @@ export const shortened = (question: string, most = 24): string => {
  * The plex with the room, and one pane along the trailing edge holding the
  * agent in front of the files. The person begins in the plex.
  */
-export const opening = (plex: string, agent: string, files: string): WorkspaceLayout => ({
+export const opening = (plex: string, agent: string, files: string): Workspace => ({
   root: branch('root', [pane('main', [plex]), pane('aside', [agent, files])], [0.72, 0.28]),
   axis: 'horizontal',
   focus: 'main',

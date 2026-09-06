@@ -8,7 +8,7 @@
 import { afterEach, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount, type VueWrapper } from '@vue/test-utils'
-import { panesOf, Workspace, type WorkspaceLayout } from '@numen/ui'
+import { panesOf, WorkspaceLayout, type Workspace } from '@numen/ui'
 import type { Tab } from '../core'
 
 
@@ -576,8 +576,8 @@ async function drawnWithPalette() {
 }
 
 /** How the window is split, as the workspace it draws has it. */
-const layoutOf = (window: VueWrapper): WorkspaceLayout =>
-  window.findComponent(Workspace).props('modelValue') as WorkspaceLayout
+const layoutOf = (window: VueWrapper): Workspace =>
+  window.findComponent(WorkspaceLayout).props('modelValue') as Workspace
 
 /** What each pane holds, by the kind each of its tabs is filed under. */
 const paneKinds = (window: VueWrapper): readonly (readonly string[])[] =>
@@ -585,7 +585,8 @@ const paneKinds = (window: VueWrapper): readonly (readonly string[])[] =>
 
 /** What each tab of the window is called, in the order the strip has them. */
 const tabsOf = (window: VueWrapper): readonly { id: string; title: string }[] =>
-  (window.findComponent(Workspace).props('tabs') as readonly { id: string; title: string }[]) ?? []
+  (window.findComponent(WorkspaceLayout).props('tabs') as readonly { id: string; title: string }[]) ??
+  []
 
 export {
   asked,

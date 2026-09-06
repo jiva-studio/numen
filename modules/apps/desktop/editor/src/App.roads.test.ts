@@ -8,7 +8,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
-import { Agent, Editor, Palette, Plex, Reader, Tree, Workspace, type WorkspaceLayout } from '@numen/ui'
+import { Agent, Editor, Palette, Plex, Reader, Tree, WorkspaceLayout, type Workspace } from '@numen/ui'
 import DocumentTab from './document/DocumentTab.vue'
 import NoteTab from './note/NoteTab.vue'
 import RecordingTab from './recording/RecordingTab.vue'
@@ -189,11 +189,11 @@ describe('what the person has open, as whoever answers for them is told it', () 
 
   it('names the tab beside the agent, where the person is writing in one', async () => {
     const window = await drawn()
-    const workspace = window.findComponent(Workspace)
+    const workspace = window.findComponent(WorkspaceLayout)
 
     // The person is in the agent, which is where a question is written.
     workspace.vm.$emit('update:modelValue', {
-      ...(workspace.props('modelValue') as WorkspaceLayout),
+      ...(workspace.props('modelValue') as Workspace),
       focus: 'aside',
     })
     await settles()

@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { panesOf } from '@numen/ui'
-import type { WorkspaceLayout } from '@numen/ui'
+import type { Workspace } from '@numen/ui'
 import { windowing, type AnyKind, type WindowHandle } from './windowing'
 
 /**
@@ -45,7 +45,7 @@ const told = (declared: readonly ((handle: WindowHandle) => AnyKind)[]) => {
 }
 
 /** Every tab on the screen, whichever pane it is in. */
-const onScreen = (layout: WorkspaceLayout) => panesOf(layout.root).flatMap((pane) => pane.tabs)
+const onScreen = (layout: Workspace) => panesOf(layout.root).flatMap((pane) => pane.tabs)
 
 describe('a tab of a kind', () => {
   it('is opened by the kind, drawn, and called what the kind calls it', async () => {

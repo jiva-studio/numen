@@ -6,7 +6,7 @@
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
-import Workspace from './Workspace.vue'
+import WorkspaceLayout from './WorkspaceLayout.vue'
 import WorkspacePane from './render/WorkspacePane.vue'
 import { type Tab, type Workspace as State } from './node'
 import { oneStack, sideBySide, stack, workspaceOf } from './fixtures/build'
@@ -21,7 +21,7 @@ const mountWorkspace = (
   props: Record<string, unknown> = {},
   slots: Record<string, string> = {},
 ) =>
-  mount(Workspace, {
+  mount(WorkspaceLayout, {
     attachTo: document.body,
     props: { modelValue: state, tabs: TABS, ...props },
     slots,

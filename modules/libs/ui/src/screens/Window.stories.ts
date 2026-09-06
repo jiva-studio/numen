@@ -24,7 +24,7 @@ import {
   Waypoints,
 } from '@lucide/vue'
 import { ref } from 'vue'
-import Workspace from '@/workspace/Workspace.vue'
+import WorkspaceLayout from '@/workspace/WorkspaceLayout.vue'
 import Plex from '@/plex/Plex.vue'
 import Editor from '@/editor/Editor.vue'
 import Palette from '@/palette/Palette.vue'
@@ -608,7 +608,7 @@ const screen = ({
   menu = null,
   selected = [],
 }: Screen) => ({
-  components: { Workspace, Plex, Editor, Agent, Palette, Reader, Tree, Menu },
+  components: { WorkspaceLayout, Plex, Editor, Agent, Palette, Reader, Tree, Menu },
   setup() {
     const held = ref<State>(workspace())
     const text = ref(markdown)
@@ -657,7 +657,7 @@ const screen = ({
   },
   template: `
     <div style="height: 100vh">
-      <Workspace v-model="held" :tabs="TABS">
+      <WorkspaceLayout v-model="held" :tabs="TABS">
         <!-- Lucide draws on a 24 grid, and the stroke is given in those units. -->
         <template #icon="{ id }">
           <component
@@ -705,7 +705,7 @@ const screen = ({
             </template>
           </Tree>
         </template>
-      </Workspace>
+      </WorkspaceLayout>
       <Palette
         v-if="panel"
         v-model="typed"

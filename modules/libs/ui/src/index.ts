@@ -100,13 +100,13 @@ export type { Notice, Stay, Task } from './notices/notice'
 export { default as Agent } from './screens/Agent.vue'
 export { default as Reader } from './reader/Reader.vue'
 
-export { default as Workspace } from './workspace/Workspace.vue'
+export { default as WorkspaceLayout } from './workspace/WorkspaceLayout.vue'
 export { closeTab, openTab, openTabBeside } from './workspace/edit'
 
 /** For arranging without drawing, or reading a gesture without this renderer. */
 export { branch, pane } from './workspace/node'
 export { paneById, panesOf } from './workspace/tree'
-export type { Tab, Workspace as WorkspaceLayout } from './workspace/node'
+export type { Tab, Workspace } from './workspace/node'
 
 export { default as Tree } from './tree/Tree.vue'
 export type { Row, RowMarker } from './tree/row'

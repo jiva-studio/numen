@@ -16,7 +16,7 @@ import {
   type Ref,
 } from 'vue'
 import { closeTab, openTab, openTabBeside, pane, paneById } from '@numen/ui'
-import type { Tab, WorkspaceLayout } from '@numen/ui'
+import type { Tab, Workspace } from '@numen/ui'
 import type { OpenDocument, OpenRecording, Source } from '../core'
 import { named } from './workspace'
 
@@ -182,7 +182,7 @@ export function windowing() {
     scopes.delete(id)
   }
 
-  const layout: Ref<WorkspaceLayout> = ref({
+  const layout: Ref<Workspace> = ref({
     root: pane('main', []),
     axis: 'horizontal',
     focus: 'main',
