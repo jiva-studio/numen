@@ -19,8 +19,8 @@ import PresetTab from './preset/PresetTab.vue'
 import {
   DEFAULTS,
   type Curve,
-  type Material,
   type Point,
+  type PresetCounts,
   type Settings as Scheduling,
   type SettingsBounds,
 } from './preset/core'
@@ -210,7 +210,7 @@ const PRESET_HELD: PresetTabState = {
   id: 'Sanskrit.md',
   settings: shallowRef(SETTINGS_OF_PRESET),
   curve: shallowRef(CURVE),
-  material: shallowRef({ decks: 3, cards: 1_240, overdue: 96, unbegun: 410 } as Material),
+  material: shallowRef({ decks: 3, cards: 1_240, overdue: 96, unbegun: 410 } as PresetCounts),
   place: ref(4),
   waiting: ref(false),
   bounds: shallowRef(BOUNDS),

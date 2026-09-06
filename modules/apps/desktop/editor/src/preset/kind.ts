@@ -8,12 +8,12 @@
  */
 import { ref, shallowRef, type Ref } from 'vue'
 import { StopReason } from '@numen/protocol'
-import { asking, type AnswerGuard } from '../asking'
+import { answerGuard, type AnswerGuard } from '../questions'
 import type { PlexShowing } from '@numen/ui'
 import type { Move, RefusalReason } from '../core'
 import type { MessageWriter } from '../notices/messages'
 import type { Host, Kind } from '../tabs/windowing'
-import type { FileOpeners } from '../tabs/putting'
+import type { FileOpeners } from '../tabs/openers'
 import { PRESET } from '../tabs/workspace'
 import PresetTab from './PresetTab.vue'
 import {
@@ -22,7 +22,7 @@ import {
   type Curve,
   type Goal,
   type Load,
-  type Material,
+  type PresetCounts,
   type Presets,
   type Settings,
   type SettingsBounds,
@@ -82,7 +82,7 @@ export interface PresetTabState {
    * one has. No setting moves these figures, so they stand while a curve asked
    * under other settings is on its way.
    */
-  readonly material: Readonly<Ref<Material | null>>
+  readonly material: Readonly<Ref<PresetCounts | null>>
   /** Where the knob stands on that curve. */
   readonly place: Readonly<Ref<number>>
   /** An answer to the picture is on its way. */
@@ -143,7 +143,7 @@ export function presetting(
     readonly settings: Ref<Settings>
     readonly curve: Ref<Curve>
     /** What the last answer counted the material at, and nothing until one has. */
-    readonly material: Ref<Material | null>
+    readonly material: Ref<PresetCounts | null>
     readonly place: Ref<number>
     readonly problems: Ref<readonly string[]>
     /** Why it schedules nothing on the day the last read was answered in. */
@@ -185,7 +185,7 @@ export function presetting(
     path: ref(path),
     settings: shallowRef<Settings>(DEFAULTS),
     curve: shallowRef<Curve>(approximate(DEFAULTS, today())),
-    material: shallowRef<Material | null>(null),
+    material: shallowRef<PresetCounts | null>(null),
     place: ref(0),
     problems: shallowRef<readonly string[]>([]),
     stopped: ref(StopReason.NOTHING),
@@ -198,7 +198,7 @@ export function presetting(
     wanted: false,
     flight: null,
     told: false,
-    asks: asking(),
+    asks: answerGuard(),
     drawing: false,
     drawAgain: false,
     shape: '',

@@ -13,8 +13,8 @@ import PresetTab from './PresetTab.vue'
 import {
   DEFAULTS,
   type Curve,
-  type Material,
   type Point,
+  type PresetCounts,
   type Settings,
   type SettingsBounds,
 } from './core'
@@ -100,7 +100,7 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
 })
 
 /** What an answer counted the material at, and nothing where none has landed. */
-const counted = (one: Curve): Material | null =>
+const counted = (one: Curve): PresetCounts | null =>
   one.honest ? { decks: one.decks, cards: one.cards, overdue: one.overdue, unbegun: one.unbegun } : null
 
 /** A tab standing at those settings, and everything it was asked to do. */
@@ -108,7 +108,7 @@ const tabAt = (
   over: Partial<Curve> = {},
   settings: Partial<Settings> = {},
   waiting = true,
-  told?: Material | null,
+  told?: PresetCounts | null,
 ) => {
   const done: string[] = []
   const place = ref(2)
@@ -141,7 +141,7 @@ const drawn = (
   over: Partial<Curve> = {},
   settings: Partial<Settings> = {},
   waiting = true,
-  told?: Material | null,
+  told?: PresetCounts | null,
 ) => {
   const one = tabAt(over, settings, waiting, told)
   return { ...one, tab: mount(PresetTab, { props: { held: one.held } }) }

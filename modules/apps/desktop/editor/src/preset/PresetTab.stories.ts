@@ -16,8 +16,8 @@ import PresetTab from './PresetTab.vue'
 import {
   DEFAULTS,
   type Curve,
-  type Material,
   type Point,
+  type PresetCounts,
   type Settings,
   type SettingsBounds,
 } from './core'
@@ -64,7 +64,7 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
   ...over,
 })
 
-const MATERIAL: Material = { decks: 3, cards: 400, overdue: 120, unbegun: 40 }
+const MATERIAL: PresetCounts = { decks: 3, cards: 400, overdue: 120, unbegun: 40 }
 
 interface Knobs {
   /** Where the knob starts, as a place of the grid. */

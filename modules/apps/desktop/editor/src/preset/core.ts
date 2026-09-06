@@ -262,7 +262,7 @@ export const NOWHERE: Place = { at: -1, value: 0, day: '' }
  * What a preset schedules, as the figures over the picture count it. No setting
  * moves one of them.
  */
-export interface Material {
+export interface PresetCounts {
   /** How many decks are scheduled by this preset. */
   readonly decks: number
   /** How many card faces stand in those decks. */
@@ -279,7 +279,7 @@ export interface Material {
   readonly unbegun: number
 }
 
-export interface Curve extends Material {
+export interface Curve extends PresetCounts {
   readonly goal: Goal
   /** The goal's value at each place: minutes, a share of cards, or days from today. */
   readonly grid: readonly number[]

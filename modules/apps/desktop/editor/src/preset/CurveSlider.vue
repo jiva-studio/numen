@@ -18,7 +18,7 @@
  */
 import { computed, shallowRef, watch, useTemplateRef } from 'vue'
 import { Spinner } from '@numen/ui'
-import type { Curve, Material } from './core'
+import type { Curve, PresetCounts } from './core'
 import { clearing } from './curve'
 import BacklogPlot from './BacklogPlot.vue'
 import {
@@ -54,7 +54,7 @@ const props = defineProps<{
    * These figures are facts about the material and stand under every answer, so
    * they are handed in beside the curve and not read off it.
    */
-  material: Material | null
+  material: PresetCounts | null
   /** Where the knob stands, as a place of the curve's grid. */
   place: number
   /** What the knob is announced as standing at. */
