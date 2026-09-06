@@ -2,9 +2,8 @@
  * Every situation the plex has to survive. Also the test corpus: each story
  * is run in a browser by `@storybook/addon-vitest`.
  *
- * The knobs are flat rather than one `options` object, because a JSON editor
- * is not a control. Everything a reader might want to turn is a slider, a
- * toggle or a select; the object is assembled here.
+ * The knobs are flat, so everything a reader might want to turn is a slider, a
+ * toggle or a select; the object they build is assembled here.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
@@ -139,9 +138,8 @@ const countsFrom = (a: Knobs) => ({
  * around it. The first picture is whatever the story starts from; after that
  * the counts invent one, which is the application's part being played.
  *
- * The neighbourhood is computed rather than built in the template: a fresh
- * object on every render tells the plex it has somewhere new to go, and it
- * re-aims once a frame instead of arriving.
+ * The neighbourhood is computed: a fresh object on every render tells the plex
+ * it has somewhere new to go, and it re-aims once a frame.
  */
 const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) => ({
   components: { Plex },
@@ -258,9 +256,8 @@ const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) =
 /**
  * Choosing a node moves the focus, which is what the story is for.
  *
- * The neighbourhood is computed rather than called in the template: a fresh
- * object on every render tells the plex it has somewhere new to go, and it
- * re-aims once a frame instead of arriving.
+ * The neighbourhood is computed: a fresh object on every render tells the plex
+ * it has somewhere new to go, and it re-aims once a frame.
  */
 const walking = (args: Knobs) => ({
   components: { Plex },

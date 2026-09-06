@@ -412,10 +412,8 @@ func (a *Agent) arguments(task port.Task, configuration string) []string {
 	// telling this machine what to run. Naming the sources read is what refuses
 	// them: none by default, and only the person's own when they ask. A vault's
 	// are refused either way.
-	//
-	// Named rather than turned off wholesale, because turning every
-	// customisation off takes this vault's own tools with it — they arrive on a
-	// command line and are read as a customisation like any other.
+	// The sources are named one by one because this vault's own tools arrive on
+	// a command line and are read as a customisation like any other.
 	sources := ""
 	if a.ReadsHooksAndSkills {
 		sources = "user"
