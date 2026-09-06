@@ -7,7 +7,7 @@
  */
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
-import { config, depcruise, modules, root } from './modules.mjs'
+import { config, depcruise, modules, owed, root, screened, screens } from './modules.mjs'
 
 let broke = false
 
@@ -17,7 +17,11 @@ const wrong = (said) => {
 }
 
 for (const { name, at, sources, reads } of modules) {
-  const run = spawnSync(depcruise, ['--config', config, '--output-type', 'json', ...sources], {
+  // A window is read against the screen rule as well; every other module
+  // against the rules every module answers to.
+  const screen = screened.get(name)
+  const rules = screen ? screens : config
+  const run = spawnSync(depcruise, ['--config', rules, '--output-type', 'json', ...sources], {
     cwd: join(root, at),
     encoding: 'utf8',
     maxBuffer: 256 * 1024 * 1024,
@@ -32,11 +36,28 @@ for (const { name, at, sources, reads } of modules) {
   const { violations, totalCruised, totalDependenciesCruised } = cruised.summary
   console.log(`${name} (${at}): ${totalCruised} modules, ${totalDependenciesCruised} dependencies`)
 
-  for (const one of violations) {
-    wrong(`${one.rule.severity} ${one.rule.name}: ${one.from} → ${one.to}`)
+  const debts = owed.get(name) ?? []
+  const standing = violations.map((one) => `${one.rule.name}: ${one.from} → ${one.to}`)
+  for (const [at, one] of standing.entries()) {
+    if (debts.includes(one)) continue
+    wrong(`${violations[at].rule.severity} ${one}`)
   }
-  if (!cruised.modules.some((one) => one.source === reads)) {
+
+  // An entry naming an edge nobody draws any more is a rule kept alive by a
+  // line nobody reads. The list only shrinks.
+  for (const one of debts) {
+    if (!standing.includes(one)) wrong(`owed, and nobody draws it: ${one}`)
+  }
+
+  const read = new Set(cruised.modules.map((one) => one.source))
+  if (!read.has(reads)) {
     wrong(`the cruise did not read ${reads}, so it walked a tree that is not this module's`)
+  }
+  // The screen rule judges what stands under a screen folder. A cruise that
+  // reached a module's root and no further would find nothing to judge and
+  // pass, which reads exactly like a window whose screens are apart.
+  if (screen && !read.has(screen)) {
+    wrong(`the cruise did not read ${screen}, so the screen rule judged no screen`)
   }
 }
 
