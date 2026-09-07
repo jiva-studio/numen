@@ -389,6 +389,11 @@ defineExpose({
 </template>
 
 <style scoped>
+.book {
+  /* The margin over the text, which the running head stands in the middle of. */
+  --book-head: 4rem;
+}
+
 /* One line under the text: the count in the middle of it and what is left of
    the chapter at the end, as a book has them. Nothing on it is pressed, so it
    lets a press through to the page behind. */
@@ -419,15 +424,19 @@ defineExpose({
   /* The gutter a book keeps beside its text, which is wide: a column runs to
      the measure it is set at and the room left over is margin. */
   padding-inline: clamp(1rem, 3%, 2.5rem);
-  padding-block-start: 4rem;
+  padding-block-start: var(--book-head);
   padding-block-end: 3rem;
 }
 
-/* What the book calls the place in front, over the text it names. */
+/* What the book calls the place in front, standing in the margin over the text
+   it names, midway between the top of the window and the top of that text. */
 .book__head {
   position: absolute;
-  inset-block-start: var(--numen-inset);
+  inset-block-start: 0;
+  block-size: var(--book-head);
   inset-inline: clamp(1rem, 3%, 2.5rem);
+  display: grid;
+  place-items: center;
   overflow: hidden;
   white-space: nowrap;
   text-align: center;
