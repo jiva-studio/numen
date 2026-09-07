@@ -275,7 +275,7 @@ func TestReadingAndListeningSayWhatTheyWriteIntoTheVault(t *testing.T) {
 
 	for tool, area := range map[string]string{
 		"source_recognise":  filesystem.OCRDir,
-		"source_transcribe": filesystem.SpeechDir,
+		"source_transcribe": filesystem.TranscriptDir,
 	} {
 		said := describing(t, session, tool)
 		for _, rule := range []string{

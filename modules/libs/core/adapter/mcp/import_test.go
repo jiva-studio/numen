@@ -62,7 +62,7 @@ func importing(t *testing.T, from *site) (domain.Vault, mcp.Core) {
 	core.Notes.Import = &source.ImportURL{
 		Readers: filesystem.VaultReaders{},
 		Derived: filesystem.DerivedStores{
-			Area: derived.Captions, Areas: []string{derived.Article, derived.ASR},
+			Area: derived.Transcript, Areas: []string{derived.Article, derived.Copies},
 		},
 		By: from,
 	}
@@ -139,4 +139,65 @@ func TestABuildThatReachesNoAddressServesNoImport(t *testing.T) {
 			t.Error("note_import is served by a build that reaches no address")
 		}
 	}
+}
+
+// A note is prose the person wrote; what was fetched for the address it points
+// at stands beside it and is asked for by kind. An agent handed only the prose
+// is handed a note about a video with the video missing.
+func TestAnAgentReadsWhatWasFetchedForANote(t *testing.T) {
+	from := &site{title: "Entropy explained", cues: []transcript.Cue{
+		{Text: "what was said", From: 1500, To: 4200},
+	}}
+	v, core := importing(t, from)
+	core.Sources.Derived = filesystem.DerivedStores{
+		Area: derived.Transcript, Areas: []string{derived.Article, derived.Copies},
+	}
+	said := &sourced{said: map[string]port.SourceText{}}
+	core.Sources.Queries = said
+	session := sessionOf(t, mcp.New(core))
+	_ = v
+
+	made := call[mcp.ImportOutcome](t, session, "note_import", map[string]any{"url": aVideo})
+	if made.Refused != "" {
+		t.Fatalf("the address was refused: %s", made.Refused)
+	}
+	// The index is what says which producer stands for a path, and a scan is
+	// what writes it. This is that row.
+	said.said[made.Path] = port.SourceText{
+		Fingerprint: domain.Fingerprint{Path: made.Path},
+		Producer:    derived.Captions,
+		Hash:        derived.Fingerprint([]byte(aVideo)),
+	}
+
+	listed := call[struct {
+		Artifacts []mcp.Artifact `json:"artifacts"`
+	}](t, session, "artifact_list", map[string]any{"path": made.Path})
+	if len(listed.Artifacts) == 0 {
+		t.Fatal("the note carries nothing an agent can reach")
+	}
+	// Words with the times they were said at are a transcript, whoever made
+	// them: a site publishing them is another producer and not another kind.
+	if listed.Artifacts[0].Kind != "transcript" {
+		t.Errorf("it carries %q", listed.Artifacts[0].Kind)
+	}
+
+	read := call[struct {
+		Words string `json:"words"`
+	}](t, session, "artifact_read", map[string]any{"path": made.Path, "kind": "transcript"})
+	if !strings.Contains(read.Words, "what was said") {
+		t.Errorf("the words read %q", read.Words)
+	}
+}
+
+// sourced is what the index says was made from each path.
+type sourced struct {
+	port.SourceQueries
+	said map[string]port.SourceText
+}
+
+func (s *sourced) Reading(
+	_ context.Context, _ domain.VaultID, path string,
+) (port.SourceText, bool, error) {
+	one, held := s.said[path]
+	return one, held, nil
 }

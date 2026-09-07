@@ -181,6 +181,7 @@ func New(core Core) *sdk.Server {
 	addViewTools(server, core)
 	addWindowTools(server, core)
 	addSourceTools(server, core)
+	addArtifactTools(server, core)
 	return server
 }
 

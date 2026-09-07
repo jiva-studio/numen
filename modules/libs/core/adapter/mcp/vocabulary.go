@@ -79,6 +79,8 @@ var doing = map[string]Tool{
 	"vault_open":        {Kind: port.StepRead},
 	"source_list":       {Kind: port.StepRead},
 	"source_read":       {Kind: port.StepRead},
+	"artifact_list":     {Kind: port.StepRead},
+	"artifact_read":     {Kind: port.StepRead},
 	"source_focus":      {Kind: port.StepRead},
 	// Reading a document changes what the vault holds — it writes down what a
 	// model saw — so it is shown as a change and not as a look. Listening to a

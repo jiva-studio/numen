@@ -182,7 +182,7 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 		Name:  "source_transcribe",
 		Title: "Write down what a recording says",
 		Description: "Have a model listen to one recording and write the words it carries " +
-			"into the vault. They land as files under `.numen/asr/`, beside the person's " +
+			"into the vault. They land as files under `.numen/transcript/`, beside the person's " +
 			"notes and inside the folder they sync — an hour of talk is megabytes of " +
 			"them. What has been heard is searchable as it goes, so a search finds " +
 			"the first minutes of a talk long before the last of them are heard. This " +

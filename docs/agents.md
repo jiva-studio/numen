@@ -54,7 +54,7 @@ The window a person runs their cards in opens neither: an answer there says wher
 
 ## The tools
 
-Five families and a reader of files, served over the vault's own endpoint.
+Six families and a reader of files, served over the vault's own endpoint.
 
 | Family | What it is for |
 | --- | --- |
@@ -63,6 +63,7 @@ Five families and a reader of files, served over the vault's own endpoint.
 | `link_*` | add, change, remove and list the links a note carries |
 | `card_*` | list the stencils a vault holds, read a deck and the cards in it, and make, change and remove one card at a time |
 | `source_*` | list the documents a vault holds, read a run of one's text, ask for a scanned one to be read, and show the person a passage |
+| `artifact_*` | what this application made from one file and keeps beside it — a transcript, an article, a reading, a copy — and the text of one, asked for by which of them it is |
 | `vault_*` | show the vault and what a scan could not act on, and list, add, rename, forget and open vaults |
 
 A call that carries names takes as many as are wanted — at most fifty for a lookup, at most ten for reading prose. A call that carries the text of a document takes one: creating a note, writing one and editing one are each a call of their own, and each is filed as it is finished.
