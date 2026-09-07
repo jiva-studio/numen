@@ -6,13 +6,13 @@
  * reaches all of them at once. What one tab of one note holds is made here from
  * that store.
  */
-import { computed, type ComputedRef } from 'vue'
+import { computed, shallowRef, watch, type ComputedRef, type ShallowRef } from 'vue'
 import { pointsAtNote, type PlexShowing } from '@numen/ui'
 import type { Store } from '../command/handlers'
 import type { Kind, WindowHandle } from '../tabs/windowing'
 import { NOTE } from '../tabs/workspace'
 import type { Address } from '../core'
-import type { Cue } from '../recording/transcript'
+import type { TranscriptState } from '../recording/transcript'
 import type { Change } from './drawing'
 import type { noteChanges } from './changes'
 import type { OpenNote, openNotes } from './notes'
@@ -39,6 +39,18 @@ export interface NoteTabDeps extends NoteTitlesDeps {
   resolve(from: string, written: readonly string[]): Promise<ReadonlyMap<string, string>>
 }
 
+/** What a note tab asks of the window over the address a note points at. */
+export interface NoteRunDeps {
+  /**
+   * A run asked for over the note the tab holds, carried out where the commands
+   * are. `called` is what the tab calls the note, which is what a step asking
+   * for an answer names.
+   */
+  runs(id: string, path: string, called: string): void
+  /** Whether this build can do a run at all, which decides whether it is offered. */
+  canRun?(run: string): boolean
+}
+
 /** What one note tab holds: its text, and the answers a person gives it. */
 export interface NoteTabState {
   /** The identity this note opened under, which its tab keeps wherever it goes. */
@@ -51,15 +63,15 @@ export interface NoteTabState {
    */
   readonly address: ComputedRef<Address | null>
   /**
-   * The words fetched for that address, in the order they were said. A note
-   * nothing has been fetched for has none.
+   * The words fetched for that address, read as a recording's are: the same
+   * calls, the same editing, the same times in the gutter. A note pointing
+   * nowhere has none.
    */
-  readonly cues: ComputedRef<readonly Cue[]>
-  /**
-   * Where the copy fetched for that address plays from, and nothing where no
-   * copy stands on this disk.
-   */
-  readonly copy: ComputedRef<string>
+  readonly transcript: ShallowRef<TranscriptState | null>
+  /** A run asked for over the address this note points at. */
+  asks(run: string): void
+  /** Whether this build can do a run at all. */
+  can(run: string): boolean
   /** What could not be read or written, in words a person reads. */
   readonly saying: ComputedRef<string>
   /** What arrived from elsewhere, for the editor to take into what is typed. */
@@ -88,6 +100,8 @@ export function noting(
   changes: NoteChanges,
   handle: WindowHandle,
   puts: FileOpeners,
+  transcripts?: (path: string) => TranscriptState,
+  asks?: NoteRunDeps,
 ) {
   const names = noteTitles(vault, notes)
   const keyboard = noteKeyboard()
@@ -169,39 +183,64 @@ export function noting(
    * What one tab of a note holds. What is being drawn over a note is filed by
    * the file it is being drawn on, which is where the note stands now.
    */
-  const held = (id: string): NoteTabState => ({
-    id,
-    shown: computed(() => notes.shown(id)),
-    address: computed(() => notes.address(id)),
-    cues: computed(() => notes.cues(id)),
-    copy: computed(() => notes.copy(id)),
-    saying: computed(() => notes.saying(id)),
-    change: computed(() => changes.shown(notes.where(id))),
-    typed: (body: string) => notes.typed(id, body),
-    save: () => notes.save(id),
-    keep: () => notes.keep(id),
-    take: () => notes.take(id),
-    drew: (editor: unknown) => keyboard.drew(id, editor),
-    measure: () => keyboard.measure(id),
-    follows: (address: string) => {
-      if (!pointsAtNote(address)) return
-      const from = notes.where(id)
-      void vault.resolve(from, [address]).then((landed) => {
-        const path = landed.get(address)
-        if (path) void puts.opens(path, '', 'beside')
-      })
-    },
-    /** The tab stands until the note says the write is done, and goes then. */
-    shuts: (tab: string) => {
-      keyboard.drops(id)
-      changes.shut(notes.where(id))
-      void notes.shut(id).then((gone) => {
-        if (!gone) return
-        names.forgets(id)
-        handle.closes(tab)
-      })
-    },
-  })
+  const held = (id: string): NoteTabState => {
+    // The words are asked for from the moment the note turns out to point
+    // somewhere, so an ordinary note asks the vault nothing.
+    const transcript = shallowRef<TranscriptState | null>(null)
+    // The words are read at the file the note stands at now, and a note is
+    // renamed by what is at its address as soon as that is known — so the file
+    // moves under this and the words are asked for at the name it moved to.
+    const watching = watch(
+      () => [notes.address(id) !== null, notes.where(id)] as const,
+      ([points, path]) => {
+        if (transcript.value?.path === path) return
+        transcript.value?.close()
+        transcript.value = points && transcripts ? transcripts(path) : null
+      },
+      { immediate: true },
+    )
+    const lets = () => {
+      watching()
+      transcript.value?.close()
+      transcript.value = null
+    }
+
+    return {
+      id,
+      transcript,
+      asks: (run: string) => asks?.runs(run, notes.where(id), names.called(id)),
+      can: (run: string) => asks?.canRun?.(run) ?? asks !== undefined,
+      shown: computed(() => notes.shown(id)),
+      address: computed(() => notes.address(id)),
+      saying: computed(() => notes.saying(id)),
+      change: computed(() => changes.shown(notes.where(id))),
+      typed: (body: string) => notes.typed(id, body),
+      save: () => notes.save(id),
+      keep: () => notes.keep(id),
+      take: () => notes.take(id),
+      drew: (editor: unknown) => keyboard.drew(id, editor),
+      measure: () => keyboard.measure(id),
+      follows: (address: string) => {
+        if (!pointsAtNote(address)) return
+        const from = notes.where(id)
+        void vault.resolve(from, [address]).then((landed) => {
+          const path = landed.get(address)
+          if (path) void puts.opens(path, '', 'beside')
+        })
+      },
+      /** The tab stands until the note says the write is done, and goes then. */
+      shuts: (tab: string) => {
+        keyboard.drops(id)
+        changes.shut(notes.where(id))
+        lets()
+        void notes.shut(id).then((gone) => {
+          if (!gone) return
+          names.forgets(id)
+          handle.closes(tab)
+        })
+      },
+    }
+  }
 
   /**
    * A note tab as the window keeps it. A note is its own tab, filed under the
@@ -256,5 +295,15 @@ export function noting(
     called: (path: string) => names.called(opened(path)),
     entersAt,
     shuts,
+    /**
+     * What the application is doing, as it last said. A tab whose note is named
+     * there is being fetched for, and asks for its transcript again — which is
+     * how a copy that has just landed becomes what plays.
+     */
+    ticked: (running: readonly string[]) => {
+      for (const one of handle.each<NoteTabState>(NOTE)) {
+        one.state.transcript.value?.ticks(running.includes(notes.where(one.state.id)))
+      }
+    },
   }
 }

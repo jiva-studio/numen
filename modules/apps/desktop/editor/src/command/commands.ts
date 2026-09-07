@@ -174,6 +174,8 @@ export interface Words extends EmptyWords {
   readonly recognise: string
   /** The transcript of the recording in front, put right by a proofreader. */
   readonly proofread: string
+  /** What is at the address a link note points at, fetched again. */
+  readonly fetch: string
   /** A copy of the video a link note points at, fetched onto this disk. */
   readonly download: string
   /** The transcript of the recording in front, taken away, and the two answers. */
@@ -400,6 +402,18 @@ export const commandsOf = (
     where: onEvidence('transcribe', 'recording', (made) => owed(made.transcript)),
   },
   {
+    id: 'fetch',
+    text: words.fetch,
+    group: 'file',
+    // Only a note pointing at an address carries the text at one, so the row
+    // being there is what says this file points anywhere at all.
+    where: onEvidence(
+      'fetch',
+      'note',
+      (made) => made.transcript !== undefined || made.article !== undefined,
+    ),
+  },
+  {
     id: 'download',
     text: words.download,
     group: 'file',
@@ -418,7 +432,7 @@ export const commandsOf = (
     where: onEvidence(
       'proofread',
       'recording',
-      (made) => made.transcript === 'done' && owed(made.corrections),
+      (made) => made.transcript === 'done' && owed(made['transcript.corrected']),
     ),
   },
   {
@@ -440,7 +454,7 @@ export const commandsOf = (
     id: 'recognise',
     text: words.recognise,
     group: 'file',
-    where: onEvidence('recognise', 'book', (made) => owed(made.reading)),
+    where: onEvidence('recognise', 'book', (made) => owed(made.ocr)),
   },
   {
     id: 'note',

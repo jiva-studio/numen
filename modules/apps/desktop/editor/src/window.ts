@@ -77,16 +77,7 @@ import { AGENT, CONVERSATION, FILES, PLEX, named, opening } from './tabs/workspa
 /** Everything the window is made of, made once and handed to what draws it. */
 export const useWindow = () => {
   const changes = noteChanges()
-  // The words fetched for a link note are read where a recording's are: they
-  // are words with times in them, and one call answers about both.
-  const notes = openNotes(
-    {
-      ...core,
-      cues: async (path) => (await recordings.cues(path)).cues,
-      copy: async (path) => ({ media: (await recordings.listened(path)).media }),
-    },
-    { replaced: changes.arrived },
-  )
+  const notes = openNotes(core, { replaced: changes.arrived })
   /** Every message the window holds, each part of it under a name of its own. */
   const log = messageLog()
   const making = noteMaker(core, log.under('made'))
@@ -161,7 +152,31 @@ export const useWindow = () => {
   const runs = runSupport()
 
   /** The notes the window has open: what each is called, and what each tab of one holds. */
-  const noted = noting(core, notes, changes, held.handle, puts)
+  /** Whether this window can play a kind of sound, asked of it once. */
+  const plays = playable()
+
+  // A link note is read where a recording is: what is at its address plays, and
+  // the words fetched for it are the text of its tab.
+  const noted = noting(
+    core,
+    notes,
+    changes,
+    held.handle,
+    puts,
+    (path) => transcript(recordings, path, { plays }),
+    {
+      runs: (id, path, called) =>
+        carries(id, {
+          ...where(),
+          path: '',
+          title: called,
+          file: path,
+          source: 'note',
+          made: makes.value.get(path) ?? {},
+        }),
+      canRun: (run) => runs.canRun(run),
+    },
+  )
 
   /** The decks and the stencils the window has open, each saved the way a note is. */
   const decks = decking(cards, presets, held.handle, puts)
@@ -237,8 +252,6 @@ export const useWindow = () => {
   const read = documentKind(held.handle, (path) => documenting(openDocument(documents, path)), puts)
 
   /** What this window can play, asked once for each kind of sound. */
-  const plays = playable()
-
   /** The recording tabs, each playing the recording it is filed at. */
   const heard = recordingKind(
     held.handle,
@@ -260,7 +273,10 @@ export const useWindow = () => {
 
   // A transcript grows while a run goes, and the list of work is the only word of
   // it the window gets.
-  watch(tasks, () => heard.ticked(tasks.value))
+  watch(tasks, () => {
+    heard.ticked(tasks.value)
+    noted.ticked(tasks.value.map((task) => task.about))
+  })
 
   /** Where the window is taken when something is chosen, wherever it was chosen. */
   const places: DestinationDeps = {
@@ -276,7 +292,7 @@ export const useWindow = () => {
    */
   const fetches = async (path: string): Promise<void> => {
     try {
-      await running.makes(path, 'fetched')
+      await running.fetches(path)
     } catch (error) {
       told(troubleWords(error), 'refusal')
       return
@@ -601,6 +617,16 @@ export const useWindow = () => {
       makes: async (path, of) => {
         const outcome = await running.makes(path, of)
         // What the file carries has moved, and what is offered over it follows.
+        void carrying(path)
+        return outcome
+      },
+      fetches: async (path) => {
+        const outcome = await running.fetches(path)
+        void carrying(path)
+        return outcome
+      },
+      corrects: async (path) => {
+        const outcome = await running.corrects(path)
         void carrying(path)
         return outcome
       },

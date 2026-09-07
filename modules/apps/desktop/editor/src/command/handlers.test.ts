@@ -141,6 +141,14 @@ const window = (
         done.push(`carries ${path}`)
         return answers.carries ?? {}
       },
+      corrects: async (path) => {
+        done.push(`corrects ${path}`)
+        return answers.outcome ?? outcome('transcript.corrected', 'running')
+      },
+      fetches: async (path) => {
+        done.push(`fetches ${path}`)
+        return answers.outcome ?? outcome('transcript', 'running')
+      },
       makes: async (path, of) => {
         done.push(`makes ${of} ${path}`)
         return answers.outcome ?? outcome(of, 'running')
@@ -439,12 +447,12 @@ describe('an artifact asked for over a file', () => {
   })
 
   it('says the same of a scan already recognised', async () => {
-    const one = window({ outcome: outcome('reading', 'done') })
+    const one = window({ outcome: outcome('ocr', 'done') })
 
     await carry(invocationOf('recognise', front({ file: 'books/Ants.pdf' })), one.on)
 
-    expect(one.done).toStrictEqual(['makes reading books/Ants.pdf'])
-    expect(one.said).toStrictEqual([words.made.reading.done])
+    expect(one.done).toStrictEqual(['makes ocr books/Ants.pdf'])
+    expect(one.said).toStrictEqual([words.made.ocr.done])
   })
 
   // No two of them may say the same thing: a person reads the sentence and not

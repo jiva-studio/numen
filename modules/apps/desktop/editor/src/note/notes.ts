@@ -19,7 +19,6 @@ import {
   type Tab,
 } from './tab'
 import type { Address, NoteResult, RefusalReason } from '../core'
-import type { Cue } from '../recording/transcript'
 
 /** One open note as the window draws it. */
 export interface OpenNote {
@@ -36,16 +35,6 @@ export interface OpenNote {
  */
 export interface Notes {
   read(path: string): Promise<NoteResult & { at?: string }>
-  /**
-   * The words fetched for the address a link note points at, in the order they
-   * were said. A note pointing nowhere has none, and nothing asks.
-   */
-  cues?(path: string): Promise<readonly Cue[]>
-  /**
-   * Where the copy fetched for a link note is played from. A note with no copy
-   * on this disk plays from nowhere.
-   */
-  copy?(path: string): Promise<{ media: string }>
   write(
     path: string,
     body: string,
@@ -102,10 +91,6 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
    * tab writes, so it moves only when the file is read again.
    */
   const addresses = ref(new Map<string, Address>())
-  /** The words fetched for each of them, for the notes anything was fetched for. */
-  const cues = ref(new Map<string, readonly Cue[]>())
-  /** Where the copy fetched for each of them plays from, for those a copy stands for. */
-  const copies = ref(new Map<string, string>())
 
   /** A note opened under an identity, on the file it opens at. */
   const open = (id: string, path: string = id): void => {
@@ -288,15 +273,8 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
       turn(id, { kind: 'read', generation, answer: { kind: 'refused', refusal: 'unreachable' } })
       return
     }
-    if (answered.address) {
-      addresses.value.set(id, answered.address)
-      void fetched(id, path)
-      void copied(id, path)
-    } else {
-      addresses.value.delete(id)
-      cues.value.delete(id)
-      copies.value.delete(id)
-    }
+    if (answered.address) addresses.value.set(id, answered.address)
+    else addresses.value.delete(id)
     turn(id, {
       kind: 'read',
       generation,
@@ -307,35 +285,6 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
             ? { kind: 'missing' }
             : { kind: 'refused', refusal: refusalOf(answered.refusal) },
     })
-  }
-
-  /**
-   * Where the copy fetched for a link note plays from, read after the note. A
-   * note with none plays from nowhere, and the tab frames the address.
-   */
-  async function copied(id: string, path: string): Promise<void> {
-    if (!core.copy) return
-    try {
-      const played = await core.copy(path)
-      if (played.media) copies.value.set(id, played.media)
-      else copies.value.delete(id)
-    } catch {
-      copies.value.delete(id)
-    }
-  }
-
-  /**
-   * The words fetched for a link note, read after the note itself. A note
-   * nothing has been fetched for has none, and a vault that could not be
-   * reached leaves the prose standing.
-   */
-  async function fetched(id: string, path: string): Promise<void> {
-    if (!core.cues) return
-    try {
-      cues.value.set(id, await core.cues(path))
-    } catch {
-      cues.value.delete(id)
-    }
   }
 
   async function write(
@@ -373,8 +322,6 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     tabs.value.delete(id)
     bodies.value.delete(id)
     addresses.value.delete(id)
-    copies.value.delete(id)
-    cues.value.delete(id)
     closing.get(id)?.(true)
     closing.delete(id)
     settled(id)
@@ -400,8 +347,6 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     take,
     shown,
     address: (id: string): Address | null => addresses.value.get(id) ?? null,
-    cues: (id: string): readonly Cue[] => cues.value.get(id) ?? [],
-    copy: (id: string): string => copies.value.get(id) ?? '',
     all,
     saying: sayingOf,
     overtaken: overtakenOf,

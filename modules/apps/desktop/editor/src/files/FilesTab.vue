@@ -75,7 +75,11 @@ const items = computed(() => {
   if (!asked || asked.path === null) return itemsFor(null, false, props.state.canRun)
 
   const entry = props.state.list.entryAt(asked.path)
-  const on = { source: entry?.kind ?? 'other', folder: entry?.folder ?? false }
+  const on = {
+    source: entry?.kind ?? 'other',
+    folder: entry?.folder ?? false,
+    link: entry?.type === 'link',
+  }
   return itemsFor(on, props.state.over(asked.path).length > 1, props.state.canRun)
 })
 

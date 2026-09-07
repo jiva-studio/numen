@@ -5,11 +5,15 @@
  * A note whose file moved past what was read stops saving and asks which of
  * the two is theirs. A note whose file is gone keeps what is on screen and
  * offers to make it again.
+ *
+ * A note pointing at an address is a tab of its own: what is at the address is
+ * played and what was fetched for it is written, and none of that is what an
+ * ordinary note is.
  */
 import { watch } from 'vue'
 import { Editor } from '@numen/ui'
 import FileConflictPrompt from '../saving/FileConflictPrompt.vue'
-import LinkEmbed from './LinkEmbed.vue'
+import LinkTab from './LinkTab.vue'
 import { conflictIn } from '../saving/flushing'
 import { WORDS as words } from './words'
 import type { NoteTabState } from './kind'
@@ -28,14 +32,6 @@ watch(
 
 <template>
   <div class="note">
-    <LinkEmbed
-      v-if="props.state.address.value"
-      :address="props.state.address.value"
-      :cues="props.state.cues.value"
-      :copy="props.state.copy.value"
-      :words="words"
-    />
-
     <FileConflictPrompt
       :saying="props.state.saying.value"
       :conflict="conflictIn(props.state.shown.value.state)"
@@ -44,7 +40,10 @@ watch(
       @take="props.state.take()"
     />
 
+    <LinkTab v-if="props.state.address.value" :state="props.state" />
+
     <Editor
+      v-else
       :ref="(editor: unknown) => props.state.drew(editor)"
       :model-value="props.state.shown.value.body"
       :change="props.state.change.value"

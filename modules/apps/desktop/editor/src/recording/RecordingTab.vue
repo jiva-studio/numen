@@ -305,8 +305,7 @@ const chose = (id: string) => {
 /* The words are read in one column, clear of the rule the player stands on, and
    the editor scrolls so the bar stands at the edge of the pane. */
 .recording .recording__transcript {
-  --editor-measure: var(--recording-measure);
-  --editor-lead: var(--numen-gutter);
+  --editor-lead: var(--numen-inset);
   --editor-margin: var(--numen-gutter);
 
   flex: 1;

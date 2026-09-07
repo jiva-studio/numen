@@ -271,11 +271,13 @@ const carried: Record<string, CommandHandler> = {
   transcribe: async (invocation, on, words) =>
     began(invocation, await on.runs.makes(invocation.file, 'transcript'), on, words),
   recognise: async (invocation, on, words) =>
-    began(invocation, await on.runs.makes(invocation.file, 'reading'), on, words),
+    began(invocation, await on.runs.makes(invocation.file, 'ocr'), on, words),
+  fetch: async (invocation, on, words) =>
+    began(invocation, await on.runs.fetches(invocation.file), on, words),
   download: async (invocation, on, words) =>
     began(invocation, await on.runs.makes(invocation.file, 'copy'), on, words),
   proofread: async (invocation, on, words) =>
-    began(invocation, await on.runs.makes(invocation.file, 'corrections'), on, words),
+    began(invocation, await on.runs.corrects(invocation.file), on, words),
   dropTranscript: async (invocation, on, words) => {
     if (await on.runs.drops(invocation.file)) return
     on.runSupport.cannotRun(invocation.id)

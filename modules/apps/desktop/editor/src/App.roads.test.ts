@@ -259,12 +259,12 @@ describe('a place an answer names', () => {
 // loaded from one, and what the file carries is asked of the other. Neither is
 // reached by any other kind of tab.
 describe('a recording put in front', () => {
-  const HEARD = '730709BG.LON.mp3'
+  const RECORDING = '730709BG.LON.mp3'
 
   /** The window with that recording open, asked for from outside it. */
   const playing = async () => {
     const window = await drawn()
-    outside.asks({ path: HEARD, start: 0, length: 4 })
+    outside.asks({ path: RECORDING, start: 0, length: 4 })
     await settles()
     await settles()
     return window
@@ -278,14 +278,14 @@ describe('a recording put in front', () => {
       prose: { value: string }
       editable: { value: boolean }
     }
-    expect(asked.listened).toStrictEqual([HEARD])
+    expect(asked.listened).toStrictEqual([RECORDING])
     expect(state.address.value).toBe(said.heard.media)
     expect(state.prose.value).toBe(said.heard.cues[0]?.text)
     expect(state.editable.value).toBe(true)
     // How long it runs and how far the words reach are the application's
     // answer, and what the window says the person has open carries them.
     expect(asked.attending.at(-1)?.tabs.at(-1)).toMatchObject({
-      path: HEARD,
+      path: RECORDING,
       recording: { heard: said.heard.cues[0]?.to, length: said.heard.length },
     })
   })
@@ -294,20 +294,20 @@ describe('a recording put in front', () => {
   // not its kind alone: one already written down is not offered to be written
   // down again.
   it('is offered being written down while it carries no transcript', async () => {
-    said.carries = { [HEARD]: { transcript: 'none' } }
+    said.carries = { [RECORDING]: { transcript: 'none' } }
 
     const window = await playing()
 
-    expect(asked.carried).toStrictEqual([HEARD])
+    expect(asked.carried).toStrictEqual([RECORDING])
     expect(await runsOffered(window)).toStrictEqual(['transcribe'])
   })
 
   it('is offered putting the words right once a run has written them', async () => {
-    said.carries = { [HEARD]: { transcript: 'done' } }
+    said.carries = { [RECORDING]: { transcript: 'done' } }
 
     const window = await playing()
 
-    expect(asked.carried).toStrictEqual([HEARD])
+    expect(asked.carried).toStrictEqual([RECORDING])
     expect(await runsOffered(window)).toStrictEqual(['proofread', 'dropTranscript'])
   })
 })

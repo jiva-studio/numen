@@ -87,6 +87,7 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['proofread', SpellCheck],
   ['dropTranscript', CaptionsOff],
   ['recognise', ScanText],
+  ['fetch', RefreshCw],
   ['download', HardDriveDownload],
   // What a tab of the tree does itself.
   ['newNote', FilePlus],

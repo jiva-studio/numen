@@ -623,7 +623,7 @@ describe('the runs over the file in front', () => {
       ['empty', false],
       ['failed', false],
     ] as const) {
-      const { commands } = asking({ ...scanned, made: { reading: made } })
+      const { commands } = asking({ ...scanned, made: { ocr: made } })
 
       expect(drawn(commands.groups).file, made).toStrictEqual(offered ? ['recognise'] : undefined)
     }
@@ -643,7 +643,7 @@ describe('the runs over the file in front', () => {
     expect(drawn(asking({ ...heard, made: { transcript: 'done' } }).commands.groups).file)
       .toStrictEqual(['proofread', 'dropTranscript'])
     expect(
-      drawn(asking({ ...heard, made: { transcript: 'done', corrections: 'done' } }).commands.groups)
+      drawn(asking({ ...heard, made: { transcript: 'done', 'transcript.corrected': 'done' } }).commands.groups)
         .file,
     ).toStrictEqual(['dropTranscript'])
   })

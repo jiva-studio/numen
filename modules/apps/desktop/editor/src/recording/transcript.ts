@@ -369,6 +369,7 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
     address,
     playable,
     times,
+    spans,
     note,
     cues,
     prose,
