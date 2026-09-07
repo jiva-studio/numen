@@ -311,8 +311,7 @@ const put = async (field: string): Promise<void> => {
 /* The ring is drawn inside the chip, so the row it scrolls in cannot clip it. */
 .face__slot:focus-visible {
   box-shadow: none;
-  outline: var(--numen-ring-width) solid var(--numen-ring);
-  outline-offset: calc(-1 * var(--numen-ring-width));
+  outline: none;
 }
 
 /* A part is a pane of the window: it carries a ground and no line of its own.

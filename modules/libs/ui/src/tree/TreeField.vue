@@ -73,7 +73,6 @@ function onKey(event: KeyboardEvent): void {
 
 /* Where the keyboard stands. */
 .tree__field:focus-visible {
-  outline: var(--numen-ring-width) solid var(--numen-ring);
-  outline-offset: calc(-1 * var(--numen-ring-width));
+  outline: none;
 }
 </style>

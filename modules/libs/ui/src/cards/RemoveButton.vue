@@ -48,7 +48,7 @@ const emit = defineEmits<{ (event: 'press'): void }>()
 }
 
 .remove-button:focus-visible {
-  outline: var(--numen-ring-width) solid var(--numen-ring);
+  outline: none;
   outline-offset: 1px;
 }
 

@@ -136,7 +136,6 @@ const onPointerDown = (event: PointerEvent) => {
 .tab:focus-visible,
 .tab__close:focus-visible {
   outline: none;
-  box-shadow: inset 0 0 0 var(--numen-ring-width) var(--numen-ring);
 }
 
 .tab__close {

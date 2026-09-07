@@ -101,7 +101,7 @@ defineExpose({
         'font-sans text-base leading-none text-ink text-left',
         'cursor-pointer outline-none transition-colors duration-100 ease-numen',
         'hover:border-rule',
-        'focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
+        'focus-visible:outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',
         props.class,
       )

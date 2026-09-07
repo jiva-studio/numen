@@ -251,7 +251,7 @@ defineSlots<{
 }
 
 .welcome-page__row:focus-visible {
-  outline: var(--numen-ring-width) solid var(--numen-ring);
+  outline: none;
   outline-offset: 1px;
 }
 

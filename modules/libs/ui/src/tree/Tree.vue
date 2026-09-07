@@ -456,8 +456,7 @@ const abandon = (row: RowId): void => {
 
 /* Where the keyboard stands. */
 .tree__row:focus-visible {
-  outline: var(--numen-ring-width) solid var(--numen-ring);
-  outline-offset: calc(-1 * var(--numen-ring-width));
+  outline: none;
 }
 
 /* A row the selection already marks is marked once. */
@@ -468,7 +467,6 @@ const abandon = (row: RowId): void => {
 /* What a drop would land inside: the row, or the whole tree for the top level. */
 .tree__row[data-into],
 .tree[data-into] {
-  box-shadow: inset 0 0 0 var(--numen-ring-width) var(--numen-ring);
 }
 
 .tree__row[data-before]::before {

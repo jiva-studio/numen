@@ -197,7 +197,6 @@ defineExpose({
    Inside, because the row fills the reader to its edges. */
 .reader__viewport:focus-visible {
   outline: none;
-  box-shadow: inset 0 0 0 var(--numen-ring-width) var(--numen-ring);
 }
 
 /* The row is taken hold of and pulled, so the hand says so before it is put

@@ -173,7 +173,7 @@ const chose = (path: string) => {
 }
 
 .deck-tab__choice:focus-visible {
-  outline: var(--numen-ring-width) solid var(--numen-ring);
+  outline: none;
   outline-offset: var(--numen-stroke);
 }
 

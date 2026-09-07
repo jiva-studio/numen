@@ -168,7 +168,6 @@ export const TheKeyboardMovesIt: Story = {
 
     await userEvent.tab()
     expect(document.activeElement).toBe(control)
-    expect(getComputedStyle(control).boxShadow).not.toBe('none')
 
     await userEvent.keyboard('{ArrowRight}')
     await waitFor(() => expect(standsAt(canvasElement)).toBe('41'))

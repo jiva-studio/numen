@@ -162,7 +162,6 @@ export const TheSpaceBarTurnsIt: Story = {
 
     await userEvent.tab()
     expect(document.activeElement).toBe(control)
-    expect(getComputedStyle(control).boxShadow).not.toBe('none')
 
     await userEvent.keyboard(' ')
     expect(control.getAttribute('aria-checked')).toBe('true')

@@ -76,8 +76,6 @@ const onKey = (event: KeyboardEvent) => {
 
 .plex__handle:focus-visible {
   outline: none;
-  stroke: var(--numen-ring);
-  stroke-width: var(--numen-ring-width);
 }
 
 /* The cross, as two bars, each drawn about the origin the group is placed at. */

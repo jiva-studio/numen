@@ -63,7 +63,7 @@ defineExpose({
         // One row tall, which every control standing on a row is drawn at.
         'h-action px-2',
         'font-sans text-base leading-none text-ink tabular-nums',
-        'outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
+        'outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',
         props.class,
       )

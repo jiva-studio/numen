@@ -153,7 +153,6 @@ onUnmounted(() => globalThis.removeEventListener('focus', again))
    on the element under the pointer for as long as the drag is over it. */
 .files__tree :deep(.file-drop-target-active),
 .files__tree.file-drop-target-active {
-  box-shadow: inset 0 0 0 var(--numen-ring-width) var(--numen-ring);
 }
 
 /* Lucide draws on a 24 grid, and the stroke is given in those units. */

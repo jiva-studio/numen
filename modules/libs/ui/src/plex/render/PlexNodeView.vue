@@ -476,8 +476,7 @@ const hue = computed(() => ({
 }
 
 .plex__node:focus-visible .plex__box {
-  stroke: var(--numen-ring);
-  stroke-width: var(--numen-ring-width);
+  outline: none;
 }
 
 .plex__node--focus .plex__box {

@@ -231,7 +231,7 @@ export const TakenAwayUnderARefusedLine: Story = {
   },
 }
 
-/** The keyboard reaches it, and what it wears while it is there is the ring. */
+/** The keyboard reaches it, and what it is stands where a reader can hear it. */
 export const TheKeyboardReachesIt: Story = {
   play: async ({ canvasElement }) => {
     const input = field(canvasElement)
@@ -239,8 +239,6 @@ export const TheKeyboardReachesIt: Story = {
     await userEvent.tab()
     expect(document.activeElement).toBe(input)
 
-    const ring = getComputedStyle(input).boxShadow
-    expect(ring).not.toBe('none')
     expect(input.getAttribute('aria-valuemin')).toBe('0')
     expect(input.getAttribute('aria-valuemax')).toBe('240')
     expect(input.getAttribute('aria-valuenow')).toBe('20')

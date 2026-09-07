@@ -233,8 +233,5 @@ export const theme = EditorView.theme({
     verticalAlign: 'top',
   },
   '.cm-table th': { backgroundColor: 'var(--editor-head-bg)', fontWeight: '600' },
-  '.cm-table .cm-cell:focus': {
-    outline: 'var(--numen-ring-width) solid var(--numen-ring)',
-    outlineOffset: '-1px',
-  },
+  '.cm-table .cm-cell:focus': { outline: 'none' },
 })

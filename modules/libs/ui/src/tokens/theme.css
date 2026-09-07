@@ -66,9 +66,9 @@
   transition-duration: var(--numen-motion-hover);
 }
 
-/* Where the keyboard stands, drawn the one way it is drawn. */
+/* Nothing is drawn around what the keyboard stands on. */
 @utility ring-numen {
-  @apply focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring;
+  @apply focus-visible:outline-none;
 }
 
 /* The surface a panel is: a tinted, blurred box lifted off the window. */

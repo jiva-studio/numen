@@ -297,7 +297,7 @@ const dated = (said: Event) => {
 }
 
 .preset-settings__day:focus-visible {
-  outline: var(--numen-ring-width) solid var(--numen-ring);
+  outline: none;
   outline-offset: var(--numen-stroke);
 }
 </style>
