@@ -510,8 +510,10 @@ type Preset struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Path is the note the settings were read from, and is empty for a deck
 	// naming no preset.
-	Path     string    `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	Title    string    `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	// Title is what the preset is called.
+	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	// The settings themselves, as the preset names them.
 	Settings *Settings `protobuf:"bytes,3,opt,name=settings,proto3" json:"settings,omitempty"`
 	// What was wrong in the file and was not guessed at, in the words to show.
 	// The settings stand at the defaults for each of them, and the editor is

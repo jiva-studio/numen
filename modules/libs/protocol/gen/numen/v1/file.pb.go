@@ -186,8 +186,10 @@ type Entry struct {
 	// slashes.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// The last segment of the path, which is what the row shows.
-	Name   string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Folder bool   `protobuf:"varint,3,opt,name=folder,proto3" json:"folder,omitempty"`
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// Whether the entry holds other entries. A folder carries no source and
+	// nothing is made from it.
+	Folder bool `protobuf:"varint,3,opt,name=folder,proto3" json:"folder,omitempty"`
 	// What the vault holds here.
 	Kind SourceKind `protobuf:"varint,4,opt,name=kind,proto3,enum=numen.v1.SourceKind" json:"kind,omitempty"`
 	// Which of three the note is. It says nothing about an entry that is not a

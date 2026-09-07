@@ -83,6 +83,9 @@ export type Entry = Message<"numen.v1.Entry"> & {
   name: string;
 
   /**
+   * Whether the entry holds other entries. A folder carries no source and
+   * nothing is made from it.
+   *
    * @generated from field: bool folder = 3;
    */
   folder: boolean;

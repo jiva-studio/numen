@@ -65,6 +65,8 @@ message Entry {
   // The last segment of the path, which is what the row shows.
   string name = 2;
 
+  // Whether the entry holds other entries. A folder carries no source and
+  // nothing is made from it.
   bool folder = 3;
 
   // What the vault holds here.

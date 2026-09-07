@@ -112,6 +112,7 @@ message Passage {
   // A window that opens notes offers to open these and no others.
   optional Note note = 2;
 
+  // The stretch of the source that matched, as it reads.
   string text = 3;
 
   // Where in that text the words typed stand, counted the way a client counts

@@ -152,11 +152,15 @@ export type Preset = Message<"numen.v1.Preset"> & {
   path: string;
 
   /**
+   * Title is what the preset is called.
+   *
    * @generated from field: string title = 2;
    */
   title: string;
 
   /**
+   * The settings themselves, as the preset names them.
+   *
    * @generated from field: numen.v1.Settings settings = 3;
    */
   settings?: Settings | undefined;

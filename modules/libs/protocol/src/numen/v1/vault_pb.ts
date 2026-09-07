@@ -52,6 +52,8 @@ export type GetVaultStateResponse = Message<"numen.v1.GetVaultStateResponse"> & 
   displayName: string;
 
   /**
+   * Where the vault stands on this disk.
+   *
    * @generated from field: string path = 2;
    */
   path: string;

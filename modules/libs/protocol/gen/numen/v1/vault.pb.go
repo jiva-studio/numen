@@ -70,7 +70,8 @@ type GetVaultStateResponse struct {
 	// titles itself with. The list says both of a vault the same way.
 	Name        string `protobuf:"bytes,18,opt,name=name,proto3" json:"name,omitempty"`
 	DisplayName string `protobuf:"bytes,1,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
-	Path        string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	// Where the vault stands on this disk.
+	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// Ready is set when the scan has finished.
 	Ready bool `protobuf:"varint,4,opt,name=ready,proto3" json:"ready,omitempty"`
 	// Why the scan stopped, when it stopped for a reason. A vault that could

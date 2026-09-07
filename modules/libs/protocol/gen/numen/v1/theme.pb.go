@@ -90,8 +90,9 @@ const (
 	Mode_MODE_UNSPECIFIED Mode = 0
 	// What the operating system says.
 	Mode_MODE_SYSTEM Mode = 1
-	Mode_MODE_LIGHT  Mode = 2
-	Mode_MODE_DARK   Mode = 3
+	// Light and dark, whatever the operating system says.
+	Mode_MODE_LIGHT Mode = 2
+	Mode_MODE_DARK  Mode = 3
 )
 
 // Enum value maps for Mode.
@@ -146,7 +147,9 @@ type Theme struct {
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Title is what the file is called, without the shelf.
 	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	Shelf Shelf  `protobuf:"varint,3,opt,name=shelf,proto3,enum=numen.v1.Shelf" json:"shelf,omitempty"`
+	// Which shelf it stands on: what this installation ships, and what a person
+	// put in their own folder.
+	Shelf Shelf `protobuf:"varint,3,opt,name=shelf,proto3,enum=numen.v1.Shelf" json:"shelf,omitempty"`
 	// Set for a theme that declares `color-scheme` itself. Light and dark are
 	// the theme's own, and the mode has nothing left to choose.
 	Pinned        bool `protobuf:"varint,4,opt,name=pinned,proto3" json:"pinned,omitempty"`

@@ -189,6 +189,8 @@ export type Passage = Message<"numen.v1.Passage"> & {
   note?: Note | undefined;
 
   /**
+   * The stretch of the source that matched, as it reads.
+   *
    * @generated from field: string text = 3;
    */
   text: string;

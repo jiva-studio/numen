@@ -386,7 +386,8 @@ type Passage struct {
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// The note the text was read out of, absent for a source that is not one.
 	// A window that opens notes offers to open these and no others.
-	Note *Note  `protobuf:"bytes,2,opt,name=note,proto3,oneof" json:"note,omitempty"`
+	Note *Note `protobuf:"bytes,2,opt,name=note,proto3,oneof" json:"note,omitempty"`
+	// The stretch of the source that matched, as it reads.
 	Text string `protobuf:"bytes,3,opt,name=text,proto3" json:"text,omitempty"`
 	// Where in that text the words typed stand, counted the way a client counts
 	// text: in UTF-16 code units. Empty for a hit by meaning, which stands on no

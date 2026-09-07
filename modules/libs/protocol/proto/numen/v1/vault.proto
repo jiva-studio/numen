@@ -48,6 +48,7 @@ message GetVaultStateResponse {
   string name = 18;
   string display_name = 1;
 
+  // Where the vault stands on this disk.
   string path = 2;
   // Ready is set when the scan has finished.
   bool ready = 4;

@@ -227,8 +227,11 @@ message Preset {
   // Path is the note the settings were read from, and is empty for a deck
   // naming no preset.
   string path = 1;
+
+  // Title is what the preset is called.
   string title = 2;
 
+  // The settings themselves, as the preset names them.
   Settings settings = 3;
 
   // What was wrong in the file and was not guessed at, in the words to show.
