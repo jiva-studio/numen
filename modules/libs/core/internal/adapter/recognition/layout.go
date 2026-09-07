@@ -26,8 +26,8 @@ const (
 )
 
 // A row of the answer is a class, a score, a rectangle and the place the region
-// takes in the order the page is read. Sorting on that last number is the whole
-// of what would otherwise be a cut of the page into columns.
+// takes in the order the page is read. Sorting on that last number puts the
+// page in reading order.
 const columns = 7
 
 // A Layout divides a page into its parts.
@@ -84,9 +84,7 @@ func (l *Layout) Regions(page image.Image) ([]ocr.Region, error) {
 	}
 	defer scale.Destroy()
 	// The library keeps a pointer into this and nothing else does, so it is held
-	// in a variable until the run is over. A slice a tensor alone refers to is a
-	// slice the collector may take back, and what the model then reads is
-	// whatever is there instead.
+	// in a variable until the run is over.
 	flat := planes(page)
 	pixels, err := ort.NewTensor([]int64{1, 3, layoutSide, layoutSide}, flat)
 	if err != nil {
