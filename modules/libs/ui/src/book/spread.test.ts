@@ -12,6 +12,7 @@ import {
   holding,
   inFront,
   keyTurn,
+  handTurn,
   pressTurn,
   spreadAt,
   spreads,
@@ -269,5 +270,25 @@ describe('what turns the page', () => {
   it('turns nothing on a press in the text itself', () => {
     expect(pressTurn(WIDE / 2, WIDE)).toBeUndefined()
     expect(pressTurn(10, 0)).toBeUndefined()
+  })
+})
+
+describe('a hand put down and lifted', () => {
+  it('turns the way it was drawn', () => {
+    expect(handTurn(500, 500 - SWIPE, WIDE, false)).toBe('next')
+    expect(handTurn(500, 500 + SWIPE, WIDE, false)).toBe('back')
+  })
+
+  it('turns on a press near either edge, having gone nowhere', () => {
+    expect(handTurn(10, 10, WIDE, false)).toBe('back')
+    expect(handTurn(WIDE - 10, WIDE - 10, WIDE, false)).toBe('next')
+  })
+
+  it('turns nothing where words were taken up', () => {
+    // A run worth quoting is wider than a swipe, and taking one up ends over
+    // the edge as often as not.
+    expect(handTurn(500, 500 - SWIPE, WIDE, true)).toBeUndefined()
+    expect(handTurn(WIDE - 10, WIDE - 10, WIDE, true)).toBeUndefined()
+    expect(handTurn(10, 10, WIDE, true)).toBeUndefined()
   })
 })

@@ -10,7 +10,7 @@
  */
 import type { Decorator, Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import BookReader from './BookReader.vue'
 import { GAP, bytesIn, type Span } from './spread'
 import { PROSE, VERSE, VERSES, chapterOf, type Chapter } from '@/fixtures/book'
@@ -30,6 +30,7 @@ type Render = NonNullable<Story['render']>
  */
 const ITS_OWN_PACE = 10_000
 
+
 /** A room of a fixed width, so a story is read at the measure it is judged at. */
 const room =
   (wide: number): Decorator =>
@@ -45,8 +46,15 @@ const room =
   })
 
 /** Narrow enough for one column, and wide enough for two. */
-const NARROW = room(460)
-const WIDE = room(1000)
+const NARROW = room(700)
+const WIDE = room(1200)
+
+/**
+ * How many bytes of a book's text stand on one page. The application measures
+ * it in the book's own script; a story is written in one where a letter is a
+ * byte.
+ */
+const PAGE_BYTES = 1024
 
 /** A picture taller than any column it could stand in. */
 const TALL = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
@@ -75,8 +83,14 @@ const reading =
     components: { BookReader },
     setup() {
       const at = ref(chapter.span.begins)
+      const pages = Math.max(Math.ceil((chapter.span.ends - chapter.span.begins) / PAGE_BYTES), 1)
       return {
         at,
+        pages,
+        pageBytes: PAGE_BYTES,
+        page: computed(() =>
+          Math.min(Math.floor((at.value - chapter.span.begins) / PAGE_BYTES) + 1, pages),
+        ),
         markup: chapter.markup,
         span: chapter.span,
         marked,
@@ -93,6 +107,9 @@ const reading =
           :span="span"
           :book="span"
           :at="at"
+          :page="page"
+          :pages="pages"
+          :page-bytes="pageBytes"
           :marked="marked"
           @go="go"
         />

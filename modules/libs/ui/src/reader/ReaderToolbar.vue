@@ -32,6 +32,16 @@ const props = withDefaults(
 /** Which page is in front, counted from the first. */
 const at = defineModel<number>('at', { default: 0 })
 
+const emit = defineEmits<{
+  /**
+   * The arrows were pressed. What one turns is the reader's: a document of
+   * pages turns a page, and a book set in columns turns a spread, which is not
+   * the same as the number standing between them.
+   */
+  (event: 'back'): void
+  (event: 'next'): void
+}>()
+
 /**
  * What the size buttons set: how close a page is drawn, or how large the text
  * is. It is never past either end.
@@ -83,7 +93,7 @@ const turn = () => {
         class="rounded-pill"
         :aria-label="words.back"
         :disabled="at <= 0"
-        @click="at -= 1"
+        @click="emit('back')"
       >
         <svg
           viewBox="0 0 16 16"
@@ -103,7 +113,7 @@ const turn = () => {
         class="rounded-pill"
         :aria-label="words.next"
         :disabled="at >= pages - 1"
-        @click="at += 1"
+        @click="emit('next')"
       >
         <svg
           viewBox="0 0 16 16"

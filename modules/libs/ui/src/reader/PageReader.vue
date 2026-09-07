@@ -188,6 +188,8 @@ defineExpose({
       :at="at"
       :words="words"
       @update:at="emit('go', $event)"
+      @back="emit('go', at - 1)"
+      @next="emit('go', at + 1)"
     />
   </div>
 </template>

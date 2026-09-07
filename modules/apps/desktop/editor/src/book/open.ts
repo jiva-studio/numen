@@ -294,6 +294,7 @@ export function openBook(books: Books, path: string, words: BookWords) {
     contents,
     pages,
     page,
+    pageBytes,
     at,
     reading,
     drawn,

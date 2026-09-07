@@ -119,3 +119,26 @@ describe('how close the page is drawn', () => {
     expect(inward.button(READER_WORDS.further).attributes('disabled')).toBeUndefined()
   })
 })
+
+describe('the arrows', () => {
+  it('say which way they were pressed and move the number themselves not at all', async () => {
+    const controls = drawn(200, 5)
+
+    await controls.get(`button[aria-label="${READER_WORDS.next}"]`).trigger('click')
+    await controls.get(`button[aria-label="${READER_WORDS.back}"]`).trigger('click')
+
+    expect(controls.emitted('next')).toHaveLength(1)
+    expect(controls.emitted('back')).toHaveLength(1)
+    // What one turns is the reader's: a page of a scan and a spread of a book
+    // are not the number standing between the arrows.
+    expect(controls.emitted('update:at')).toBeUndefined()
+  })
+
+  it('offers no press at the end it already stands at', () => {
+    const first = drawn(200, 0)
+    expect(first.get(`button[aria-label="${READER_WORDS.back}"]`).attributes('disabled')).toBeDefined()
+
+    const last = drawn(200, 199)
+    expect(last.get(`button[aria-label="${READER_WORDS.next}"]`).attributes('disabled')).toBeDefined()
+  })
+})

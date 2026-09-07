@@ -25,12 +25,11 @@ import {
   bytesIn,
   columnWide,
   columnsIn,
+  handTurn,
   holding,
   inFront,
   keyTurn,
-  pressTurn,
   spreads,
-  swipeTurn,
   unitsIn,
   type Flow,
   type Mark,
@@ -59,6 +58,15 @@ const props = withDefaults(
     marked?: readonly Span[]
     /** The other runs asked about, each of them somewhere else to look. */
     also?: readonly Span[]
+    /**
+     * The page of the book the offset in front falls on, counted from one, and
+     * how many the book is read in. They are the book's own, counted over its
+     * text, and not the spreads this area happens to have come to.
+     */
+    page?: number
+    pages?: number
+    /** How many bytes of the book's text stand on one of those pages. */
+    pageBytes?: number
     /** The words it is read with. */
     words?: ReaderWords
   }>(),
@@ -70,6 +78,9 @@ const props = withDefaults(
     at: 0,
     marked: () => [],
     also: () => [],
+    page: 0,
+    pages: 0,
+    pageBytes: 0,
     words: () => BOOK_WORDS,
   },
 )
@@ -177,6 +188,15 @@ const said = () => {
   if (now !== undefined && now !== props.at) emit('go', now)
 }
 
+/**
+ * The page of the book the field asks for, counted from the first. A page is
+ * that many bytes of the text apiece, so where it begins is arithmetic.
+ */
+const goToPage = (page: number) => {
+  if (props.pageBytes <= 0) return
+  emit('go', props.book.begins + page * props.pageBytes)
+}
+
 const goTo = (spread: number) => {
   stand(spread, 'smooth')
   said()
@@ -266,6 +286,14 @@ const took = (event: PointerEvent) => {
   hand = event.button === 0 ? event.clientX : undefined
 }
 
+/** Whether words of the text stand taken up. */
+const selecting = (): boolean => {
+  const taken = window.getSelection()
+  if (!taken || taken.isCollapsed || taken.toString().trim() === '') return false
+  const text = paper.value
+  return !!text && !!taken.anchorNode && text.contains(taken.anchorNode)
+}
+
 /**
  * The hand lifted: the page follows a swipe, and a press near either edge turns
  * it that way. A link is followed and turns nothing.
@@ -277,11 +305,9 @@ const letGo = (event: PointerEvent) => {
   if (from === undefined || !box) return
   if ((event.target as HTMLElement | null)?.closest?.('a')) return
 
-  const swipe = swipeTurn(event.clientX - from)
-  if (swipe) return turn(swipe)
-
-  const press = pressTurn(event.clientX - box.getBoundingClientRect().left, box.clientWidth)
-  if (press) turn(press)
+  const edge = box.getBoundingClientRect().left
+  const way = handTurn(from - edge, event.clientX - edge, box.clientWidth, selecting())
+  if (way) turn(way)
 }
 
 /** Where a link led, held until the document holding that place is drawn. */
@@ -459,13 +485,15 @@ defineExpose({
     <ReaderToolbar
       v-if="count > 0"
       v-model:zoom="size"
-      :at="standing"
-      :pages="count"
+      :at="props.page - 1"
+      :pages="props.pages"
       :words="words"
       :least="SMALLEST"
       :most="LARGEST"
       :step="LARGER"
-      @update:at="goTo"
+      @update:at="goToPage"
+      @back="turn('back')"
+      @next="turn('next')"
     />
   </div>
 </template>

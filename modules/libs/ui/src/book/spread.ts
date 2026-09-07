@@ -39,10 +39,10 @@ export const GAP = 32
 
 /**
  * The narrowest a column is set, in CSS pixels at the size the text is read at.
- * Around fifty characters, which is the short end of a line a person can read
- * without losing their place in it.
+ * A line of about sixty-six characters, which is the measure prose is set at;
+ * a second column is opened only where both can be read at it.
  */
-export const NARROWEST = 336
+export const NARROWEST = 528
 
 /**
  * How many columns a reading area holds. Two once each of them can be set at
@@ -193,6 +193,22 @@ export function swipeTurn(by: number): PageTurn | undefined {
 
 /** How much of either edge of the reading area is a press that turns, as a share of it. */
 export const EDGE = 0.15
+
+/**
+ * What a hand put down and lifted again does: a swipe turns the way it went, a
+ * press near either edge turns that way, and a hand that took words up did
+ * neither. Taking words up and swiping are one gesture until the hand lifts,
+ * and a run worth quoting is wider than a swipe.
+ */
+export function handTurn(
+  from: number,
+  to: number,
+  wide: number,
+  taken: boolean,
+): PageTurn | undefined {
+  if (taken) return undefined
+  return swipeTurn(to - from) ?? pressTurn(to, wide)
+}
 
 /** Which way a press across the reading area turns the page. */
 export function pressTurn(x: number, wide: number): PageTurn | undefined {
