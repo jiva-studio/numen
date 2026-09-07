@@ -35,7 +35,7 @@ export interface Flow {
 }
 
 /** What stands between two columns, in CSS pixels. */
-export const GAP = 32
+export const GAP = 72
 
 /**
  * The narrowest a column is set, in CSS pixels at the size the text is read at.

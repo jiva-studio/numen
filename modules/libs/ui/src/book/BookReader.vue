@@ -521,7 +521,7 @@ defineExpose({
   box-sizing: border-box;
   /* The gutter a book keeps beside its text, which is wide: a column runs to
      the measure it is set at and the room left over is margin. */
-  padding-inline: clamp(2rem, 10%, 7rem);
+  padding-inline: clamp(1rem, 3%, 2.5rem);
   padding-block-start: 4rem;
   padding-block-end: 3rem;
 }
@@ -530,9 +530,10 @@ defineExpose({
 .book__head {
   position: absolute;
   inset-block-start: var(--numen-inset);
-  inset-inline: clamp(2rem, 10%, 7rem);
+  inset-inline: clamp(1rem, 3%, 2.5rem);
   overflow: hidden;
   white-space: nowrap;
+  text-align: center;
   text-overflow: ellipsis;
   pointer-events: none;
 }
