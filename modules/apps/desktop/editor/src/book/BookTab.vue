@@ -3,7 +3,7 @@
  * A book tab: the document of the book the person is standing in, and the list
  * of what the book divides into, which comes over it.
  *
- * What the book could not be read as is said where the text would be.
+ * What the book could not be read as is said in the window's own notices.
  */
 import { onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import { BookContents, BookReader } from '@numen/ui'
@@ -76,11 +76,7 @@ const chose = (at: number) => {
         </aside>
       </Transition>
 
-      <p v-if="props.state.trouble.value" class="book-tab__silence">
-        {{ props.state.trouble.value }}
-      </p>
       <BookReader
-        v-else
         :ref="(reader: unknown) => props.state.drew(reader)"
         :markup="props.state.markup.value"
         :path="props.state.drawn.value"
@@ -168,9 +164,4 @@ const chose = (at: number) => {
   opacity: 0;
 }
 
-.book-tab__silence {
-  padding: var(--numen-inset);
-  font-size: var(--numen-text-1);
-  color: var(--numen-hushed);
-}
 </style>

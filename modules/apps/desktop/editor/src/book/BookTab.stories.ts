@@ -153,7 +153,7 @@ interface Knobs {
 
 const room = (args: Knobs) => ({
   components: { BookTab },
-  setup: () => ({ args, state: booking(openBook(shelf(args.book), 'library/mbh.epub', words)) }),
+  setup: () => ({ args, state: booking(openBook(shelf(args.book), 'library/mbh.epub', words, () => {})) }),
   template: `
     <div class="numen" :style="{ height: '100vh', width: args.width, background: 'var(--numen-surface)' }">
       <BookTab :state="state" />
@@ -307,7 +307,7 @@ export const DrawnOutOfSight: Story = {
   render: (args: Knobs) => ({
     components: { BookTab },
     setup() {
-      const state = booking(openBook(shelf(args.book), 'library/mbh.epub', words))
+      const state = booking(openBook(shelf(args.book), 'library/mbh.epub', words, () => {}))
       const room = ref(false)
       onMounted(() => {
         setTimeout(() => {
@@ -335,7 +335,7 @@ export const DrawnOutOfSight: Story = {
 /** The book whose text points about inside itself and once out of itself. */
 const pointing = () => ({
   components: { BookTab },
-  setup: () => ({ state: booking(openBook(crossed, 'library/mbh.epub', words)) }),
+  setup: () => ({ state: booking(openBook(crossed, 'library/mbh.epub', words, () => {})) }),
   template: `
     <div class="numen" style="height: 100vh; background: var(--numen-surface)">
       <BookTab :state="state" />

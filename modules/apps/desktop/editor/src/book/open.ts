@@ -16,6 +16,7 @@ import type { Stretch } from '../core'
 import { computed, ref, shallowRef } from 'vue'
 import { troubleWords } from '@numen/wire'
 import { pointedAt } from './markup'
+import type { MessageWriter } from '../notices/messages'
 
 /** One document of a book's spine, and where it stands in the book's text. */
 export interface SpineDocument {
@@ -151,7 +152,12 @@ export function contentsOf(book: Book, words: BookWords): readonly ContentsEntry
 /** What one open book holds: where the person is, and what stands there. */
 export type OpenBookState = ReturnType<typeof openBook>
 
-export function openBook(books: Books, path: string, words: BookWords) {
+export function openBook(
+  books: Books,
+  path: string,
+  words: BookWords,
+  said: MessageWriter,
+) {
   /** What the book calls itself. */
   const title = ref('')
   /** Where the book's text runs between, in bytes of it. */
@@ -178,8 +184,6 @@ export function openBook(books: Books, path: string, words: BookWords) {
    * the person was taken.
    */
   const also = shallowRef<readonly BookSpan[]>([])
-  /** What this book could not do, in words the window puts up for it. */
-  const trouble = ref('')
 
   /** The page the person is on, counted from one. */
   const page = computed(() => pageAt(pageBytes.value, pages.value, at.value))
@@ -223,7 +227,7 @@ export function openBook(books: Books, path: string, words: BookWords) {
       markup.value = pointedAt(drawn, (name) => books.entry(path, name, seen.value))
     } catch (error) {
       if (!open || asked !== wanted) return
-      trouble.value = troubleWords(error)
+      said(troubleWords(error), 'refusal')
     }
   }
 
@@ -246,7 +250,7 @@ export function openBook(books: Books, path: string, words: BookWords) {
       await draw(documentAt(said.documents, said.span.begins))
     } catch (error) {
       if (!open) return
-      trouble.value = troubleWords(error)
+      said(troubleWords(error), 'refusal')
     }
   })()
 
@@ -315,7 +319,6 @@ export function openBook(books: Books, path: string, words: BookWords) {
     markup,
     marked,
     also,
-    trouble,
     go,
     follow,
     reach,

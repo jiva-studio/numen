@@ -232,7 +232,7 @@ export const useWindow = () => {
   /** The book tabs, each turning the book it is filed at a spread at a time. */
   const turned = bookKind(
     held.handle,
-    (path) => booking(openBook(books, path, bookWords)),
+    (path) => booking(openBook(books, path, bookWords, log.under('book'))),
     puts,
   )
 
