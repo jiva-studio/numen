@@ -11,7 +11,7 @@ import type { FileKind, MakeResult, NoteType, RefusalReason, Stretch } from '../
 import type { MessageWriter } from '../notices/messages'
 
 /**
- * What a file the window opens is opened as: which of three a note is, or the
+ * What a file the window opens is opened as: which kind of note it is, or the
  * preset a fourth kind of note holds.
  */
 export type EditorKind = NoteType | 'preset' | 'url'

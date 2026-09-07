@@ -157,19 +157,19 @@ func (a *API) GetDocument(
 	defer doc.release()
 
 	out := &v1.GetDocumentResponse{
-		Pages:       int32(doc.scan.Pages()),
+		PageCount:   int32(doc.scan.Pages()),
 		Fingerprint: &v1.Fingerprint{Path: print.path, Size: print.size, Mtime: print.mtime},
 	}
-	out.Sheets = make([]*v1.Sheet, out.Pages)
-	for i := range out.Sheets {
-		wide, high, err := doc.scan.Size(i)
+	out.Pages = make([]*v1.PageSize, out.PageCount)
+	for i := range out.Pages {
+		width, height, err := doc.scan.Size(i)
 		if err != nil {
 			// A page whose size could not be read stands at nothing, and the
 			// pages after it are still where they were.
-			out.Sheets[i] = &v1.Sheet{}
+			out.Pages[i] = &v1.PageSize{}
 			continue
 		}
-		out.Sheets[i] = &v1.Sheet{Wide: wide, High: high}
+		out.Pages[i] = &v1.PageSize{Width: width, Height: height}
 	}
 	return connect.NewResponse(out), nil
 }

@@ -9,7 +9,11 @@
 import { Code, createClient } from '@connectrpc/connect'
 import type { ConnectError } from '@connectrpc/connect'
 import { ArtifactService, AssetService } from '@numen/protocol'
-import type { Cue as CueMessage, Page as PageMessage } from '@numen/protocol'
+import type {
+  Cue as CueMessage,
+  Page as PageMessage,
+  ReadTranscriptResponse,
+} from '@numen/protocol'
 import { transport } from '@numen/wire'
 import { fingerprint, stamp } from './answers'
 import type { Documents, Page } from './document/open'
@@ -30,8 +34,8 @@ export const documents: Documents = {
   shape: async (path) => {
     const answer = await waiting(() => assets.getDocument({ path }))
     return {
-      pages: answer.pages,
-      sheets: answer.sheets.map((one) => ({ wide: one.wide, high: one.high })),
+      pageCount: answer.pageCount,
+      pages: answer.pages.map((one) => ({ width: one.width, height: one.height })),
       at: stamp(answer.fingerprint) ?? '',
     }
   },
@@ -64,28 +68,42 @@ export const recordings: Recordings = {
     const answer = await waiting(() => assets.getRecording({ path }))
     return {
       length: answer.length,
-      heard: answer.heard,
       media: answer.media,
       type: answer.type,
-      embed: answer.embed,
-      address: answer.address,
+      url: answer.url,
     }
   },
   cues: async (path) => {
     const answer = await waiting(() => artifacts.readTranscript({ path }))
-    return { cues: answer.cues.map(spoken), prose: answer.prose, editable: answer.editable }
+    return { ...said(answer), editable: answer.editable }
   },
   writes: async (path, cues) => {
     await waiting(() => artifacts.writeTranscript({ path, cues: [...cues] }))
   },
   plays: async (path, stretch) => {
     const answer = await waiting(() => artifacts.readTranscript({ path, at: stretch }))
-    return answer.cues[0]?.from ?? null
+    return said(answer).cues[0]?.from ?? null
   },
 }
 
 /** One stretch of speech, kept as the plain value the window carries it as. */
 const spoken = (one: CueMessage): Cue => ({ text: one.text, from: one.from, to: one.to })
+
+/**
+ * The text of a file in whichever of the two shapes it came in: words against
+ * the clock, or prose nothing timed. A file nothing has been read or heard for
+ * came in neither.
+ */
+const said = (answer: ReadTranscriptResponse): { cues: readonly Cue[]; prose: string } => {
+  switch (answer.text.case) {
+    case 'spoken':
+      return { cues: answer.text.value.cues.map(spoken), prose: '' }
+    case 'prose':
+      return { cues: [], prose: answer.text.value }
+    default:
+      return { cues: [], prose: '' }
+  }
+}
 
 /**
  * Where a file of the vault is asked about. The path is written out whole, so a

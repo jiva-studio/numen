@@ -284,7 +284,7 @@ vi.mock('../vault', () => ({
 
 vi.mock('../assets', () => ({
   documents: {
-    shape: async () => ({ pages: 1, sheets: [{ wide: 100, high: 100 }] }),
+    shape: async () => ({ pages: 1, pageSizes: [{ wide: 100, high: 100 }] }),
     page: () => '',
     places: async () => [],
   },
@@ -292,11 +292,9 @@ vi.mock('../assets', () => ({
     listened: async (path: string) => {
       asked.listened.push(path)
       const { length, media, type } = said.heard
-      // How far the words reach is the last thing written down, which is what
-      // the application counts it as.
-      return { length, media, type, heard: said.heard.cues.at(-1)?.to ?? 0 }
+      return { length, media, type, url: "" }
     },
-    cues: async () => ({ cues: said.heard.cues, editable: said.heard.editable }),
+    cues: async () => ({ cues: said.heard.cues, prose: '', editable: said.heard.editable }),
     writes: async (path: string, cues: readonly { text: string }[]) => {
       asked.transcribed.push(`${path} ${cues.map((one) => one.text).join(' / ')}`)
     },
@@ -412,7 +410,7 @@ const settles = () => new Promise((done) => setTimeout(done, 0))
 /** Longer than the palette debounces a keystroke before it asks the vault. */
 const DEBOUNCE = 200
 
-/** One name the vault answers a search with, of a note of one of three kinds. */
+/** One name the vault answers a search with, of a note of some kind. */
 const nameSaid = (path: string, title: string, type: 'note' | 'deck' | 'stencil' = 'note') => ({
   path,
   title,
@@ -422,7 +420,7 @@ const nameSaid = (path: string, title: string, type: 'note' | 'deck' | 'stencil'
   type,
 })
 
-/** One passage the search answers with, read out of a note of one of three kinds. */
+/** One passage the search answers with, read out of a note of some kind. */
 const passageSaid = (path: string, title: string, type: 'note' | 'deck' | 'stencil' = 'note') => ({
   path,
   title,

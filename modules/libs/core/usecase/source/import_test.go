@@ -25,7 +25,11 @@ type site struct {
 }
 
 func (s *site) Fetching(_ domain.WebAddress) port.FetchModel {
-	return port.FetchModel{Tool: "a test", Version: "1"}
+	producer := text.Captions
+	if len(s.cues) == 0 && s.prose != "" {
+		producer = text.Article
+	}
+	return port.FetchModel{Tool: "a test", Version: "1", Producer: producer}
 }
 
 func (s *site) Metadata(_ context.Context, at domain.WebAddress) (port.Metadata, error) {
@@ -36,14 +40,19 @@ func (s *site) Metadata(_ context.Context, at domain.WebAddress) (port.Metadata,
 	return port.Metadata{Title: s.title, Length: s.length}, nil
 }
 
-func (s *site) Subtitles(
-	_ context.Context, at domain.WebAddress, _ string,
-) ([]transcript.Cue, error) {
-	s.asked = append(s.asked, "subtitles "+at.URL)
-	if len(s.cues) == 0 {
-		return nil, port.ErrNothingFetched
+func (s *site) Text(
+	_ context.Context, at domain.WebAddress, _ port.PreferredCaptions,
+) (port.Text, error) {
+	s.asked = append(s.asked, "text "+at.URL)
+	if len(s.cues) > 0 {
+		return port.Text{
+			Producer: text.Captions, Cues: s.cues, Title: s.title, Length: s.length,
+		}, nil
 	}
-	return s.cues, nil
+	if s.prose != "" {
+		return port.Text{Producer: text.Article, Prose: s.prose, Title: s.title}, nil
+	}
+	return port.Text{}, port.ErrNothingFetched
 }
 
 func (s *site) Audio(context.Context, domain.WebAddress, io.Writer) error {
@@ -59,14 +68,6 @@ func (s *site) Download(_ context.Context, at domain.WebAddress, into io.Writer)
 		return port.Download{}, err
 	}
 	return port.Download{MediaType: text.CopyType, Extension: text.CopyExtension}, nil
-}
-
-func (s *site) Article(_ context.Context, at domain.WebAddress) (port.Article, error) {
-	s.asked = append(s.asked, "article "+at.URL)
-	if s.prose == "" {
-		return port.Article{}, port.ErrNothingFetched
-	}
-	return port.Article{Title: s.title, Prose: s.prose}, nil
 }
 
 const videoNote = "notes/https---www.youtube.com-watch-v=dQw4w9WgXcQ.url"
@@ -112,8 +113,8 @@ func TestTheWordsPublishedWithAVideo(t *testing.T) {
 	if res.Producer != text.Captions {
 		t.Errorf("the words were fetched by %q", res.Producer)
 	}
-	if res.Title != "Entropy explained" || res.Length != 83_500 {
-		t.Errorf("it is called %q and runs %d ms", res.Title, res.Length)
+	if res.Bytes == 0 {
+		t.Error("no words came back")
 	}
 
 	hash := text.Fingerprint([]byte(address))
@@ -187,8 +188,8 @@ func TestThePagePointedAt(t *testing.T) {
 	if string(raw) != "A measure of disorder." {
 		t.Errorf("the prose reads %q", raw)
 	}
-	if strings.Contains(strings.Join(from.asked, " "), "subtitles ") {
-		t.Errorf("a page was asked for the words of a video: %v", from.asked)
+	if asked := strings.Count(strings.Join(from.asked, " "), "text "); asked != 1 {
+		t.Errorf("the address was asked for its text %d times: %v", asked, from.asked)
 	}
 }
 
@@ -203,46 +204,6 @@ func TestANoteThatPointsNowhere(t *testing.T) {
 		if _, err := u.Execute(t.Context(), first, videoNote); err == nil {
 			t.Errorf("%q was fetched for: %v", written, err)
 		}
-	}
-}
-
-// One language is asked for and not a list. A site that publishes a machine
-// translation into every language it knows answers a request for the lot by
-// refusing it.
-func TestWhichLanguageTheWordsAreAskedFor(t *testing.T) {
-	for _, one := range []struct {
-		found     port.Metadata
-		languages []string
-		automatic bool
-		want      string
-	}{
-		{port.Metadata{Captions: []string{"de", "en", "ru"}}, []string{"ru", "en"}, true, "ru"},
-		{port.Metadata{Captions: []string{"de", "en"}}, []string{"ru"}, true, "de"},
-		{port.Metadata{Automatic: []string{"ab", "en-orig", "zu"}}, nil, true, "en-orig"},
-		{port.Metadata{Automatic: []string{"ab", "en-orig"}}, []string{"en"}, true, "en-orig"},
-		{port.Metadata{Automatic: []string{"ab", "en-orig"}}, nil, false, ""},
-		{port.Metadata{Captions: []string{"en"}, Automatic: []string{"ru-orig"}}, nil, true, "en"},
-		{port.Metadata{}, []string{"en"}, true, ""},
-	} {
-		if got := language(one.found, one.languages, one.automatic); got != one.want {
-			t.Errorf("%+v with %v: asked for %q, want %q",
-				one.found, one.languages, got, one.want)
-		}
-	}
-}
-
-// A video somebody translated into thirty languages publishes words in all
-// thirty, and what was said in it is one of them.
-func TestAVideoTranslatedIntoManyLanguages(t *testing.T) {
-	meta := port.Metadata{
-		Language: "en",
-		Captions: []string{"ar", "de", "en", "es", "zh"},
-	}
-	if got := language(meta, nil, true); got != "en" {
-		t.Errorf("asked for %q, want the language it was spoken in", got)
-	}
-	if got := language(meta, []string{"de"}, true); got != "de" {
-		t.Errorf("asked for %q, want the language this installation named", got)
 	}
 }
 

@@ -33,9 +33,8 @@ var errNotHeard = errors.New("nothing has listened to this recording")
 // to the transcript, and what is being appended to is not edited underneath.
 var errBeingHeard = errors.New("this recording is being listened to")
 
-// GetRecording answers what the recording at a path is: how far the words
-// reach, how much of it a run has written down, and where its bytes are played
-// from.
+// GetRecording answers what the file at a path is: how long it runs and where
+// its bytes are played from. What has been made from it is ListArtifacts.
 //
 // A recording nothing has listened to reaches nowhere, and the player it is
 // loaded into is what then says how long it runs.
@@ -58,18 +57,18 @@ func (a *API) GetRecording(
 	// recording is this application's to say.
 	out := &v1.GetRecordingResponse{
 		Length: int32(heard),
-		Heard:  int32(heard),
 		Media:  a.Playing.Address(showing, ref),
 		Type:   domain.MediaType(ref.Path),
 	}
 	// A url plays the copy fetched for it, where one stands. One with none is
-	// framed at the address instead, from the socket this run opened.
+	// framed at the address instead, from the socket this run opened, and the
+	// frame is a page whatever is inside it.
 	if ref.Kind == domain.KindURL {
 		at := a.points(ctx, showing, ref)
 		out.Media, out.Type = a.copied(ctx, showing, ref)
-		out.Address = at.URL
+		out.Url = at.URL
 		if out.Media == "" {
-			out.Embed = a.Playing.Embed(at)
+			out.Media, out.Type = a.Playing.Embed(at), asAPage
 		}
 	}
 	if len(cues) > 0 {
@@ -77,6 +76,10 @@ func (a *API) GetRecording(
 	}
 	return connect.NewResponse(out), nil
 }
+
+// asAPage is what a url with no copy is played as: a page, in a frame, whatever
+// the site puts inside it.
+const asAPage = "text/html"
 
 // copied is where the copy fetched for a url is played from, and what a
 // player is told it is. One nothing has been fetched a copy for plays from
@@ -130,7 +133,7 @@ func (a *API) ReadTranscript(
 	// A page is written around prose and nothing timed it, so the text itself is
 	// the answer and there is nothing to cut a stretch out of.
 	if len(cues) == 0 {
-		out.Prose = prose
+		out.Text = &v1.ReadTranscriptResponse_Prose{Prose: prose}
 		return connect.NewResponse(out), nil
 	}
 	if at := r.Msg.GetAt(); at != nil {
@@ -139,7 +142,7 @@ func (a *API) ReadTranscript(
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 	}
-	out.Cues = spoken(cues)
+	out.Text = &v1.ReadTranscriptResponse_Spoken{Spoken: &v1.Spoken{Cues: spoken(cues)}}
 	return connect.NewResponse(out), nil
 }
 

@@ -135,7 +135,7 @@ func (Refusal) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_shared_proto_rawDescGZIP(), []int{0}
 }
 
-// NoteType is which of five a note is: the `type` key of its frontmatter. It
+// NoteType is what a note is: the `type` key of its frontmatter. It
 // says what the note is; whether the application reads text out of the file is
 // SourceKind.
 type NoteType int32

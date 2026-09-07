@@ -11,7 +11,7 @@ type NameMatch struct {
 	Path  string
 	Title string
 
-	// Type is which of four the note is. A heading carries the type of the note
+	// Type is what the note is. A heading carries the type of the note
 	// it stands in.
 	Type NoteType
 

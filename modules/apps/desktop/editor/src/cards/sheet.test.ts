@@ -14,7 +14,7 @@ import {
   sheetBodyOf,
   sheetIn,
   sheetOf,
-  type Sheet,
+  type PageSize,
 } from './sheet'
 
 /** Identities counted out, so a test names the face it means. */
@@ -37,7 +37,7 @@ const cut = (over: Partial<VaultStencil> = {}): VaultStencil => ({
   ...over,
 })
 
-const sheet = (over: Partial<VaultStencil> = {}): Sheet => sheetOf(cut(over), minting())
+const sheet = (over: Partial<VaultStencil> = {}): PageSize => sheetOf(cut(over), minting())
 
 describe('a stencil as the window holds it', () => {
   it('gives every face an identity of its own', () => {

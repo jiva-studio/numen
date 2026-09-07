@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import Reader from './Reader.vue'
 
-const SHEETS = Array.from({ length: 8 }, () => ({ wide: 612, high: 792 }))
+const PAGES = Array.from({ length: 8 }, () => ({ width: 612, height: 792 }))
 
 /**
  * A reader in a room of a given size. Nothing in a test has a layout, so the
@@ -10,7 +10,7 @@ const SHEETS = Array.from({ length: 8 }, () => ({ wide: 612, high: 792 }))
  */
 const reader = async (wide: number, high: number) => {
   const held = mount(Reader, {
-    props: { pages: SHEETS.length, sheets: SHEETS, picture: (page: number) => `/p/${page}` },
+    props: { pageCount: PAGES.length, pages: PAGES, picture: (page: number) => `/p/${page}` },
     attachTo: document.body,
   })
   await room(held, wide, high)
@@ -86,11 +86,11 @@ describe('the pages drawn', () => {
 
     const drawn = held.findAll('.reader__page')
     expect(drawn.length).toBeGreaterThan(0)
-    expect(drawn.length).toBeLessThan(SHEETS.length)
+    expect(drawn.length).toBeLessThan(PAGES.length)
   })
 
   it('draws nothing at all for a document with no pages', async () => {
-    const held = mount(Reader, { props: { pages: 0, sheets: [] }, attachTo: document.body })
+    const held = mount(Reader, { props: { pageCount: 0, pages: [] }, attachTo: document.body })
 
     expect(held.findAll('.reader__page')).toHaveLength(0)
     expect(held.find('.reader__row').exists()).toBe(false)

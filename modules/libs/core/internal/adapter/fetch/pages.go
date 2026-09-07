@@ -14,7 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
 // mostBytes is the most of a page that is read. A page is an article somebody
@@ -60,14 +60,7 @@ func newPages() *pages {
 func (p *pages) Supports(at domain.WebAddress) bool { return !at.IsVideo() }
 
 func (p *pages) Fetching(domain.WebAddress) port.FetchModel {
-	return port.FetchModel{Tool: readerName}
-}
-
-// Subtitles are words with times in them, which a page has none of.
-func (p *pages) Subtitles(
-	context.Context, domain.WebAddress, string,
-) ([]transcript.Cue, error) {
-	return nil, port.ErrNothingFetched
+	return port.FetchModel{Tool: readerName, Producer: text.Article}
 }
 
 // Audio is a recording, which a page is not.
@@ -85,22 +78,23 @@ func (p *pages) Download(
 // Metadata is what a page calls itself, which is the whole of what is known
 // about one before it is read. It is the same fetch the prose comes out of.
 func (p *pages) Metadata(ctx context.Context, at domain.WebAddress) (port.Metadata, error) {
-	article, err := p.Article(ctx, at)
+	article, err := p.Text(ctx, at, port.PreferredCaptions{})
 	if err != nil {
 		return port.Metadata{}, err
 	}
 	return port.Metadata{Title: article.Title}, nil
 }
 
-// Article is the prose a page is written around.
-func (p *pages) Article(ctx context.Context, at domain.WebAddress) (port.Article, error) {
+// Text is the prose a page is written around. A page is read once: what it
+// calls itself and the prose come out of the same read.
+func (p *pages) Text(ctx context.Context, at domain.WebAddress, _ port.PreferredCaptions) (port.Text, error) {
 	address, err := url.Parse(at.URL)
 	if err != nil {
-		return port.Article{}, err
+		return port.Text{}, err
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, at.URL, nil)
 	if err != nil {
-		return port.Article{}, err
+		return port.Text{}, err
 	}
 	// A page is asked for the way the browser this person pasted the address
 	// out of would ask for it. A site that refuses everything else refuses this
@@ -109,24 +103,24 @@ func (p *pages) Article(ctx context.Context, at domain.WebAddress) (port.Article
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 	answer, err := p.through.Do(req)
 	if err != nil {
-		return port.Article{}, err
+		return port.Text{}, err
 	}
 	defer func() { _ = answer.Body.Close() }()
 	if answer.StatusCode != http.StatusOK {
-		return port.Article{}, fmt.Errorf("%s answered %s", at.URL, answer.Status)
+		return port.Text{}, fmt.Errorf("%s answered %s", at.URL, answer.Status)
 	}
 
 	raw, err := io.ReadAll(io.LimitReader(answer.Body, mostBytes))
 	if err != nil {
-		return port.Article{}, err
+		return port.Text{}, err
 	}
 	read, err := readability.FromReader(strings.NewReader(string(raw)), address)
 	if err != nil {
-		return port.Article{}, port.ErrNothingFetched
+		return port.Text{}, port.ErrNothingFetched
 	}
 	prose := strings.TrimSpace(read.TextContent)
 	if prose == "" {
-		return port.Article{}, port.ErrNothingFetched
+		return port.Text{}, port.ErrNothingFetched
 	}
-	return port.Article{Title: strings.TrimSpace(read.Title), Prose: prose}, nil
+	return port.Text{Producer: text.Article, Title: strings.TrimSpace(read.Title), Prose: prose}, nil
 }

@@ -30,7 +30,7 @@ func (a *API) WriteOpenTabs(
 			tab.Document = &domain.OpenDocument{Page: int(doc.GetPage()), Pages: int(doc.GetPages())}
 		}
 		if rec := one.GetRecording(); rec != nil {
-			tab.Recording = &domain.OpenRecording{Heard: int(rec.GetHeard()), Length: int(rec.GetLength())}
+			tab.Recording = &domain.OpenRecording{TranscribedTo: int(rec.GetTranscribedTo()), Length: int(rec.GetLength())}
 		}
 		open.Tabs = append(open.Tabs, tab)
 	}

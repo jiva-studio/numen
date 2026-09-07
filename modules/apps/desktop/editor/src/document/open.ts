@@ -25,9 +25,9 @@ export interface Page {
 }
 
 /** One page's size, in the page's own units. */
-export interface Sheet {
-  readonly wide: number
-  readonly high: number
+export interface PageSize {
+  readonly width: number
+  readonly height: number
 }
 
 /**
@@ -42,8 +42,8 @@ export interface Sheet {
  * ones arrived.
  */
 export interface Shape {
-  readonly pages: number
-  readonly sheets: readonly Sheet[]
+  readonly pageCount: number
+  readonly pages: readonly PageSize[]
   /** The file these pages were read from, as the one string the window carries. */
   readonly at: string
 }
@@ -78,9 +78,9 @@ const WIDEST = 4096
 export type OpenDocumentState = ReturnType<typeof openDocument>
 
 export function openDocument(documents: Documents, path: string) {
-  const pages = ref(0)
+  const pageCount = ref(0)
   /** How big each page is, in its own units. */
-  const sheets = shallowRef<readonly Sheet[]>([])
+  const pages = shallowRef<readonly PageSize[]>([])
   /** Which page is in front, counted from the first. */
   const at = ref(0)
   /** How wide the page is drawn, in device pixels. */
@@ -119,7 +119,7 @@ export function openDocument(documents: Documents, path: string) {
    * the document has been read and the room it is read in has been measured.
    */
   const pictureOf = (page: number): string =>
-    pages.value > 0 && wide.value > 0 ? documents.page(path, page, wide.value, seen.value) : ''
+    pageCount.value > 0 && wide.value > 0 ? documents.page(path, page, wide.value, seen.value) : ''
 
   /** Where the page in front is drawn. */
   const picture = computed(() => pictureOf(at.value))
@@ -135,8 +135,8 @@ export function openDocument(documents: Documents, path: string) {
     try {
       const said = await documents.shape(path)
       if (!open) return
+      pageCount.value = said.pageCount
       pages.value = said.pages
-      sheets.value = said.sheets
       seen.value = said.at
     } catch (error) {
       if (!open) return
@@ -147,8 +147,8 @@ export function openDocument(documents: Documents, path: string) {
   /** The page the person turned to. Past either end is the end. */
   const go = async (page: number) => {
     await shape
-    if (!open || pages.value === 0) return
-    at.value = Math.min(Math.max(Math.trunc(page), 0), pages.value - 1)
+    if (!open || pageCount.value === 0) return
+    at.value = Math.min(Math.max(Math.trunc(page), 0), pageCount.value - 1)
   }
 
   const next = () => go(at.value + 1)
@@ -195,14 +195,14 @@ export function openDocument(documents: Documents, path: string) {
   /** The tab has closed: nothing is asked for again and nothing is drawn. */
   const close = () => {
     open = false
-    pages.value = 0
-    sheets.value = []
+    pageCount.value = 0
+    pages.value = []
   }
 
   return {
     path,
+    pageCount,
     pages,
-    sheets,
     at,
     picture,
     pictureOf,

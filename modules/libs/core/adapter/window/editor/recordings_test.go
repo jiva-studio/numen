@@ -196,10 +196,10 @@ func TestTheWordsHeardComeBackAgainstTheRecording(t *testing.T) {
 			api, _ := listeningTo(t, one.held)
 
 			told := heard(t, api)
-			if len(told.GetCues()) != 2 {
+			if len(told.GetSpoken().GetCues()) != 2 {
 				t.Fatalf("what was heard came back as %+v", told)
 			}
-			if first := told.GetCues()[0]; first.GetText() != "what was said" ||
+			if first := told.GetSpoken().GetCues()[0]; first.GetText() != "what was said" ||
 				first.GetFrom() != 1500 || first.GetTo() != 4200 {
 				t.Errorf("the first thing said came back as %+v", first)
 			}
@@ -212,8 +212,8 @@ func TestTheWordsHeardComeBackAgainstTheRecording(t *testing.T) {
 func TestARecordingNobodyHasListenedToHoldsNoWords(t *testing.T) {
 	api, _ := listeningTo(t, nil)
 
-	if told := heard(t, api); len(told.GetCues()) != 0 {
-		t.Errorf("a recording nobody heard says %+v", told.GetCues())
+	if told := heard(t, api); len(told.GetSpoken().GetCues()) != 0 {
+		t.Errorf("a recording nobody heard says %+v", told.GetSpoken().GetCues())
 	}
 	back, playing := played(t, api)
 	if out := ask(playing, back.Address(api.Showing(), statOf(t, api, api.Showing(), talk))); out.Code != http.StatusOK {
@@ -244,9 +244,8 @@ func TestWhatARecordingIsIsHowLongItRuns(t *testing.T) {
 				t.Fatalf("asked what the recording is and was refused: %v", err)
 			}
 			told := out.Msg
-			if told.GetLength() != one.length || told.GetHeard() != one.heard {
-				t.Errorf("the recording came back as %+v, want %d long and %d heard",
-					told, one.length, one.heard)
+			if told.GetLength() != one.length {
+				t.Errorf("the recording came back as %+v, want %d long", told, one.length)
 			}
 		})
 	}
@@ -313,8 +312,8 @@ func TestCuesNarrowToARunOfTheWords(t *testing.T) {
 func TestAQuestionNamingNoRunIsAboutTheWholeTranscript(t *testing.T) {
 	api, _ := listeningTo(t, whole(spoke()))
 
-	if told := heard(t, api); len(told.GetCues()) != 2 {
-		t.Errorf("the whole transcript came back as %+v", told.GetCues())
+	if told := heard(t, api); len(told.GetSpoken().GetCues()) != 2 {
+		t.Errorf("the whole transcript came back as %+v", told.GetSpoken().GetCues())
 	}
 }
 
@@ -435,13 +434,13 @@ func TestATranscriptPutRightIsWhatTheWindowIsToldNext(t *testing.T) {
 	); err != nil {
 		t.Fatalf("put the transcript right and was refused: %v", err)
 	}
-	if told := heard(t, api); told.GetCues()[1].GetText() != "what Rupa said next" {
-		t.Errorf("the window is told %+v", told.GetCues())
+	if told := heard(t, api); told.GetSpoken().GetCues()[1].GetText() != "what Rupa said next" {
+		t.Errorf("the window is told %+v", told.GetSpoken().GetCues())
 	}
 
 	delete(held, derived.Corrections(asr, hashed))
-	if told := heard(t, api); told.GetCues()[1].GetText() != "what was said next" {
-		t.Errorf("what was heard did not come back: %+v", told.GetCues())
+	if told := heard(t, api); told.GetSpoken().GetCues()[1].GetText() != "what was said next" {
+		t.Errorf("what was heard did not come back: %+v", told.GetSpoken().GetCues())
 	}
 }
 
@@ -577,8 +576,8 @@ func TestATranscriptOfNoWordsIsRefused(t *testing.T) {
 			if _, kept := held[derived.Corrections(asr, hashed)]; kept {
 				t.Error("a transcript of no words was written over the recording")
 			}
-			if told := heard(t, api); len(told.GetCues()) != 2 {
-				t.Errorf("the recording now says %+v", told.GetCues())
+			if told := heard(t, api); len(told.GetSpoken().GetCues()) != 2 {
+				t.Errorf("the recording now says %+v", told.GetSpoken().GetCues())
 			}
 		})
 	}
@@ -673,7 +672,7 @@ func TestATranscriptThatCouldNotBeWrittenIsRefused(t *testing.T) {
 	if len(asked) != 0 {
 		t.Errorf("the source was cut again from words nothing holds: %v", asked)
 	}
-	if told := heard(t, api); told.GetCues()[1].GetText() != "what was said next" {
-		t.Errorf("the recording now says %+v", told.GetCues())
+	if told := heard(t, api); told.GetSpoken().GetCues()[1].GetText() != "what was said next" {
+		t.Errorf("the recording now says %+v", told.GetSpoken().GetCues())
 	}
 }

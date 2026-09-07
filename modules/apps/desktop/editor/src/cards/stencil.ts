@@ -32,7 +32,7 @@ import {
   sheetBodyOf,
   sheetIn,
   sheetOf,
-  type Sheet,
+  type PageSize,
 } from './sheet'
 import { marksOf, sameMarks, type Marks } from './marks'
 import { WORDS as words } from './words'
@@ -62,7 +62,7 @@ export interface StencilTabState {
   /** The stencil as the window draws it: the state it is in, and what it stands at. */
   readonly shown: ComputedRef<OpenNote>
   /** The fields and the faces, as the editor draws them. */
-  readonly sheet: ComputedRef<Sheet>
+  readonly sheet: ComputedRef<PageSize>
   /** What is wrong with the file, against the face or the field it stands on. */
   readonly marks: ComputedRef<Marks>
   /** What the whole file was refused for, in words a person reads. */
@@ -131,9 +131,9 @@ export function stencilling(
   })
 
   /** The last string a stencil was read out of, and what it came to. */
-  const parsed = new Map<string, { body: string; sheet: Sheet }>()
+  const parsed = new Map<string, { body: string; sheet: PageSize }>()
 
-  const sheetAt = (id: string): Sheet => {
+  const sheetAt = (id: string): PageSize => {
     const body = store.shown(id).body
     const held = parsed.get(id)
     if (held && held.body === body) return held.sheet
@@ -173,7 +173,7 @@ export function stencilling(
   }
 
   /** A stencil as it now stands, written back into the store. */
-  const turns = (id: string, sheet: Sheet): void => {
+  const turns = (id: string, sheet: PageSize): void => {
     const body = sheetBodyOf(sheet)
     parsed.set(id, { body, sheet })
     store.typed(id, body)

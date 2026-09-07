@@ -7,7 +7,6 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
@@ -50,26 +49,23 @@ func importCommand(ctx context.Context, out io.Writer, deps Deps, args []string)
 	fmt.Fprintf(out, "fetching what %s points at\n", args[1])
 
 	res, err := fetch.Execute(ctx, v, args[1])
+	if errors.Is(err, source.ErrBeingFetched) {
+		fmt.Fprintf(out, "%s is already being fetched, and nothing was done\n", args[1])
+		return nil
+	}
 	if err != nil {
 		return err
 	}
-	switch {
-	case res.Busy:
-		fmt.Fprintf(out, "%s is already being fetched, and nothing was done\n", res.Path)
-	case res.Nothing:
+	if res.Nothing {
 		fmt.Fprintf(out, "%s publishes none of what was asked for, and that is what was written\n",
-			res.Title)
-	default:
-		fmt.Fprintf(out, "%s: %d bytes of %s", res.Title, res.Words, res.Producer)
-		if res.Length > 0 {
-			fmt.Fprintf(out, ", %s long", transcript.Stamp(res.Length))
-		}
-		fmt.Fprintln(out)
+			res.Path)
+		return nil
 	}
+	fmt.Fprintf(out, "%s: %d bytes of %s\n", res.Path, res.Bytes, res.Producer)
 	return nil
 }
 
-// copied fetches a copy of the video an address names, onto this disk.
+// copied fetches a copy of what an address points at, onto this disk.
 func copied(
 	ctx context.Context,
 	out io.Writer,
@@ -79,12 +75,14 @@ func copied(
 ) error {
 	fmt.Fprintf(out, "fetching a copy of what %s points at\n", path)
 	res, err := fetch.Copy(ctx, v, path)
+	if errors.Is(err, source.ErrBeingFetched) {
+		fmt.Fprintf(out, "%s is already being fetched, and nothing was done\n", path)
+		return nil
+	}
 	if err != nil {
 		return err
 	}
 	switch {
-	case res.Busy:
-		fmt.Fprintf(out, "%s is already being fetched, and nothing was done\n", res.Path)
 	case res.TooLarge():
 		fmt.Fprintf(out, "%s would take %s, over the %s a copy may be\n",
 			res.Path, sized(res.Bytes), sized(res.Limit))

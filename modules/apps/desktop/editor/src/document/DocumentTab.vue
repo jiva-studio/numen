@@ -14,8 +14,8 @@ const props = defineProps<{ state: DocumentTabState }>()
 <template>
   <Reader
     :ref="(reader: unknown) => props.state.drew(reader)"
+    :pageCount="props.state.pageCount.value"
     :pages="props.state.pages.value"
-    :sheets="props.state.sheets.value"
     :at="props.state.at.value"
     :picture="props.state.pictureOf"
     :highlights="props.state.highlightedOn"

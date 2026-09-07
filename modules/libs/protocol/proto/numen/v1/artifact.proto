@@ -220,16 +220,28 @@ message ReadTranscriptRequest {
 }
 
 message ReadTranscriptResponse {
-  // The words, in the order they were said.
-  repeated Cue cues = 1;
+  // The text, in one of the two shapes it comes in. A file nothing has been
+  // read or heard for carries neither, and sets none of them.
+  oneof text {
+    // Words with the times each stretch of them was said at.
+    Spoken spoken = 1;
 
-  // Whether they may be put right now. A run listening to the recording holds
-  // it, and a client draws what it reads and leaves it alone.
+    // The prose a page is written around. It carries no times, so a client
+    // draws it as it stands, with no gutter and nothing to seek.
+    string prose = 3;
+  }
+
+  // Whether the text may be put right now. A run listening to the recording
+  // holds it, and a client draws what it reads and leaves it alone.
   bool editable = 2;
+}
 
-  // The text where it carries no times: the prose a page is written around.
-  // A client draws it as it stands, with no gutter and nothing to seek.
-  string prose = 3;
+// Spoken is words against the clock they were said on. It is a message of its
+// own because a field that holds many of a thing cannot stand in a `oneof`,
+// and which of the two shapes a text is in is a rule worth stating in the
+// schema rather than in a comment.
+message Spoken {
+  repeated Cue cues = 1;
 }
 
 message WriteTranscriptRequest {

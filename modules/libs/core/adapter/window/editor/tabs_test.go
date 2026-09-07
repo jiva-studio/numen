@@ -26,7 +26,7 @@ func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 		Tabs: []*v1.Tab{
 			{Id: "one", Kind: "plex", Path: "Entropy.md", Title: "Entropy"},
 			{Id: "two", Kind: "recording", Path: "Talk.mp3", Title: "Talk.mp3",
-				Recording: &v1.OpenRecording{Heard: 1000, Length: 4000}},
+				Recording: &v1.OpenRecording{TranscribedTo: 1000, Length: 4000}},
 		},
 	}))
 	if err != nil {
@@ -38,7 +38,7 @@ func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 		Tabs: []domain.Tab{
 			{ID: "one", Kind: "plex", Path: "Entropy.md", Title: "Entropy"},
 			{ID: "two", Kind: "recording", Path: "Talk.mp3", Title: "Talk.mp3",
-				Recording: &domain.OpenRecording{Heard: 1000, Length: 4000}},
+				Recording: &domain.OpenRecording{TranscribedTo: 1000, Length: 4000}},
 		},
 	}
 	if got := api.Attended(); !reflect.DeepEqual(got, want) {

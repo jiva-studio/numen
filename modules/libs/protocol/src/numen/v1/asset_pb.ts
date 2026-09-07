@@ -24,7 +24,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/asset.proto.
  */
 export const file_numen_v1_asset: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9hc3NldC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkicQoTR2V0RG9jdW1lbnRSZXNwb25zZRINCgVwYWdlcxgBIAEoBRIfCgZzaGVldHMYAiADKAsyDy5udW1lbi52MS5TaGVldBIqCgtmaW5nZXJwcmludBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50IiMKBVNoZWV0EgwKBHdpZGUYASABKAESDAoEaGlnaBgCIAEoASIjChNHZXRSZWNvcmRpbmdSZXF1ZXN0EgwKBHBhdGgYASABKAkicgoUR2V0UmVjb3JkaW5nUmVzcG9uc2USDgoGbGVuZ3RoGAEgASgFEg0KBWhlYXJkGAIgASgFEg0KBW1lZGlhGAMgASgJEgwKBHR5cGUYBCABKAkSDQoFZW1iZWQYBSABKAkSDwoHYWRkcmVzcxgGIAEoCSJEChVMaXN0SGlnaGxpZ2h0c1JlcXVlc3QSDAoEcGF0aBgBIAEoCRIdCgJhdBgCIAMoCzIRLm51bWVuLnYxLlN0cmV0Y2giOwoWTGlzdEhpZ2hsaWdodHNSZXNwb25zZRIhCgRydW5zGAEgAygLMhMubnVtZW4udjEuSGlnaGxpZ2h0IioKCUhpZ2hsaWdodBIdCgVwYWdlcxgBIAMoCzIOLm51bWVuLnYxLlBhZ2UiNAoEUGFnZRINCgVpbmRleBgBIAEoBRIdCgVyZWN0cxgCIAMoCzIOLm51bWVuLnYxLlJlY3QiQgoEUmVjdBINCgVtaW5feBgBIAEoAhINCgVtaW5feRgCIAEoAhINCgVtYXhfeBgDIAEoAhINCgVtYXhfeRgEIAEoAjL+AQoMQXNzZXRTZXJ2aWNlEkoKC0dldERvY3VtZW50EhwubnVtZW4udjEuR2V0RG9jdW1lbnRSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0RG9jdW1lbnRSZXNwb25zZRJNCgxHZXRSZWNvcmRpbmcSHS5udW1lbi52MS5HZXRSZWNvcmRpbmdSZXF1ZXN0Gh4ubnVtZW4udjEuR2V0UmVjb3JkaW5nUmVzcG9uc2USUwoOTGlzdEhpZ2hsaWdodHMSHy5udW1lbi52MS5MaXN0SGlnaGxpZ2h0c1JlcXVlc3QaIC5udW1lbi52MS5MaXN0SGlnaGxpZ2h0c1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS9hc3NldC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkieAoTR2V0RG9jdW1lbnRSZXNwb25zZRISCgpwYWdlX2NvdW50GAEgASgFEiEKBXBhZ2VzGAIgAygLMhIubnVtZW4udjEuUGFnZVNpemUSKgoLZmluZ2VycHJpbnQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludCIpCghQYWdlU2l6ZRINCgV3aWR0aBgBIAEoARIOCgZoZWlnaHQYAiABKAEiIwoTR2V0UmVjb3JkaW5nUmVxdWVzdBIMCgRwYXRoGAEgASgJIlAKFEdldFJlY29yZGluZ1Jlc3BvbnNlEg4KBmxlbmd0aBgBIAEoBRINCgVtZWRpYRgCIAEoCRIMCgR0eXBlGAMgASgJEgsKA3VybBgEIAEoCSJEChVMaXN0SGlnaGxpZ2h0c1JlcXVlc3QSDAoEcGF0aBgBIAEoCRIdCgJhdBgCIAMoCzIRLm51bWVuLnYxLlN0cmV0Y2giOwoWTGlzdEhpZ2hsaWdodHNSZXNwb25zZRIhCgRydW5zGAEgAygLMhMubnVtZW4udjEuSGlnaGxpZ2h0IioKCUhpZ2hsaWdodBIdCgVwYWdlcxgBIAMoCzIOLm51bWVuLnYxLlBhZ2UiNAoEUGFnZRINCgVpbmRleBgBIAEoBRIdCgVyZWN0cxgCIAMoCzIOLm51bWVuLnYxLlJlY3QiQgoEUmVjdBINCgVtaW5feBgBIAEoAhINCgVtaW5feRgCIAEoAhINCgVtYXhfeBgDIAEoAhINCgVtYXhfeRgEIAEoAjL+AQoMQXNzZXRTZXJ2aWNlEkoKC0dldERvY3VtZW50EhwubnVtZW4udjEuR2V0RG9jdW1lbnRSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0RG9jdW1lbnRSZXNwb25zZRJNCgxHZXRSZWNvcmRpbmcSHS5udW1lbi52MS5HZXRSZWNvcmRpbmdSZXF1ZXN0Gh4ubnVtZW4udjEuR2V0UmVjb3JkaW5nUmVzcG9uc2USUwoOTGlzdEhpZ2hsaWdodHMSHy5udW1lbi52MS5MaXN0SGlnaGxpZ2h0c1JlcXVlc3QaIC5udW1lbi52MS5MaXN0SGlnaGxpZ2h0c1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetDocumentRequest
@@ -52,17 +52,17 @@ export type GetDocumentResponse = Message<"numen.v1.GetDocumentResponse"> & {
   /**
    * How many pages it has.
    *
-   * @generated from field: int32 pages = 1;
+   * @generated from field: int32 page_count = 1;
    */
-  pages: number;
+  pageCount: number;
 
   /**
    * How large each page is, in page order. A page whose size could not be read
    * stands at nothing, and the page after it is still where it was.
    *
-   * @generated from field: repeated numen.v1.Sheet sheets = 2;
+   * @generated from field: repeated numen.v1.PageSize pages = 2;
    */
-  sheets: Sheet[];
+  pages: PageSize[];
 
   /**
    * Which bytes these pages were read from. It stands in the address a page is
@@ -82,28 +82,28 @@ export const GetDocumentResponseSchema: GenMessage<GetDocumentResponse> = /*@__P
   messageDesc(file_numen_v1_asset, 1);
 
 /**
- * A Sheet is one page's size in the document's own units. A client draws a page
- * at whatever width it likes and keeps the shape by this.
+ * A PageSize is one page in the document's own units. A client draws a page at
+ * whatever width it likes and keeps the shape by this.
  *
- * @generated from message numen.v1.Sheet
+ * @generated from message numen.v1.PageSize
  */
-export type Sheet = Message<"numen.v1.Sheet"> & {
+export type PageSize = Message<"numen.v1.PageSize"> & {
   /**
-   * @generated from field: double wide = 1;
+   * @generated from field: double width = 1;
    */
-  wide: number;
+  width: number;
 
   /**
-   * @generated from field: double high = 2;
+   * @generated from field: double height = 2;
    */
-  high: number;
+  height: number;
 };
 
 /**
- * Describes the message numen.v1.Sheet.
- * Use `create(SheetSchema)` to create a new message.
+ * Describes the message numen.v1.PageSize.
+ * Use `create(PageSizeSchema)` to create a new message.
  */
-export const SheetSchema: GenMessage<Sheet> = /*@__PURE__*/
+export const PageSizeSchema: GenMessage<PageSize> = /*@__PURE__*/
   messageDesc(file_numen_v1_asset, 2);
 
 /**
@@ -130,49 +130,35 @@ export const GetRecordingRequestSchema: GenMessage<GetRecordingRequest> = /*@__P
  */
 export type GetRecordingResponse = Message<"numen.v1.GetRecordingResponse"> & {
   /**
-   * How far the words reach, and how much of it a run has written down, both in
-   * milliseconds. A recording nothing has listened to reaches nowhere, and the
-   * player it is loaded into is what then says how long it runs.
+   * How long it runs, in milliseconds. A recording nothing has listened to
+   * runs nowhere, and the player it is loaded into is what then says.
    *
    * @generated from field: int32 length = 1;
    */
   length: number;
 
   /**
-   * @generated from field: int32 heard = 2;
-   */
-  heard: number;
-
-  /**
-   * Where the recording is played from, and what it is played as. A media
-   * element speaks the protocols of the world and not the scheme a window is
-   * served under, so the bytes are answered at an address of their own. Empty
-   * where this build serves them nowhere.
+   * Where it is played from, and what it is played as. A media element speaks
+   * the protocols of the world and not the scheme a window is served under, so
+   * the bytes are answered at an address of their own; a url with no copy on
+   * this disk is answered with the page that frames it, typed `text/html`.
+   * Empty where this build serves nothing.
    *
-   * @generated from field: string media = 3;
+   * @generated from field: string media = 2;
    */
   media: string;
 
   /**
-   * @generated from field: string type = 4;
+   * @generated from field: string type = 3;
    */
   type: string;
 
   /**
-   * Where a frame plays what is at the address a url holds, empty where nothing
-   * frames it and on every other source. The address a frame is given and the
-   * hosts the window may frame are one decision, and it is made here.
+   * The web address a url points at. Empty on every other source.
    *
-   * @generated from field: string embed = 5;
+   * @generated from field: string url = 4;
    */
-  embed: string;
-
-  /**
-   * The address itself, for a url nothing plays. Empty on every other source.
-   *
-   * @generated from field: string address = 6;
-   */
-  address: string;
+  url: string;
 };
 
 /**
@@ -332,8 +318,8 @@ export const AssetService: GenService<{
     output: typeof GetDocumentResponseSchema;
   },
   /**
-   * GetRecording is what a recording is: how long it runs, how much of it has
-   * been listened to, and where its bytes are played from.
+   * GetRecording is what a recording is: how long it runs and where its bytes
+   * are played from. What has been made from it is ListArtifacts.
    *
    * @generated from rpc numen.v1.AssetService.GetRecording
    */

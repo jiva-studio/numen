@@ -711,8 +711,8 @@ func (x *OpenDocument) GetPages() int32 {
 // down.
 type OpenRecording struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Heard is how much of it has been written down, in milliseconds.
-	Heard int32 `protobuf:"varint,1,opt,name=heard,proto3" json:"heard,omitempty"`
+	// TranscribedTo is the millisecond the words written down reach.
+	TranscribedTo int32 `protobuf:"varint,1,opt,name=transcribed_to,json=transcribedTo,proto3" json:"transcribed_to,omitempty"`
 	// Length is how long the recording is, in milliseconds.
 	Length        int32 `protobuf:"varint,2,opt,name=length,proto3" json:"length,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -749,9 +749,9 @@ func (*OpenRecording) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *OpenRecording) GetHeard() int32 {
+func (x *OpenRecording) GetTranscribedTo() int32 {
 	if x != nil {
-		return x.Heard
+		return x.TranscribedTo
 	}
 	return 0
 }
@@ -810,9 +810,9 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\trecording\x18\b \x01(\v2\x17.numen.v1.OpenRecordingR\trecordingJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\x02atR\x02of\"8\n" +
 	"\fOpenDocument\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x14\n" +
-	"\x05pages\x18\x02 \x01(\x05R\x05pages\"=\n" +
-	"\rOpenRecording\x12\x14\n" +
-	"\x05heard\x18\x01 \x01(\x05R\x05heard\x12\x16\n" +
+	"\x05pages\x18\x02 \x01(\x05R\x05pages\"N\n" +
+	"\rOpenRecording\x12%\n" +
+	"\x0etranscribed_to\x18\x01 \x01(\x05R\rtranscribedTo\x12\x16\n" +
 	"\x06length\x18\x02 \x01(\x05R\x06length2\xdd\x02\n" +
 	"\fVaultService\x12P\n" +
 	"\rGetVaultState\x12\x1e.numen.v1.GetVaultStateRequest\x1a\x1f.numen.v1.GetVaultStateResponse\x12^\n" +

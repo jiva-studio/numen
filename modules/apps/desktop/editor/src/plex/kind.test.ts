@@ -1350,7 +1350,7 @@ describe('a plex tab the person has closed', () => {
   })
 })
 
-describe('which of three a node stands for', () => {
+describe('what a node stands for', () => {
   it('is what the vault says of the note the node draws', () => {
     const one = tab('Root.md', ['Deck.md', 'Stencil.md'], true, {
       'Deck.md': 'deck',

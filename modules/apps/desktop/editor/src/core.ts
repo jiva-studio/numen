@@ -92,7 +92,7 @@ export type Source = 'note' | 'book' | 'recording' | 'url' | 'other'
  */
 export type NoteType = 'note' | 'deck' | 'stencil' | 'preset'
 
-/** What stands at a path: which source it is, and which of three a note is. */
+/** What stands at a path: which source it is, and which kind of note it is. */
 export interface FileKind {
   readonly kind: Source
   readonly type: NoteType
@@ -313,13 +313,13 @@ export interface OpenDocument {
   /** The page in front of them, counted from one. */
   readonly page: number
   /** How many pages the document has. */
-  readonly pages: number
+  readonly pageCount: number
 }
 
 /** The recording a tab holds, as far as it has been written down. */
 export interface OpenRecording {
-  /** How much of it has been written down, in milliseconds. */
-  readonly heard: number
+  /** The millisecond the words written down reach. */
+  readonly transcribedTo: number
   /** How long the recording is, in milliseconds. */
   readonly length: number
 }

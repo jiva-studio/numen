@@ -22,6 +22,10 @@ type FetchModel struct {
 	// is.
 	Tool    string
 	Version string
+	// Producer is what this provider's texts are kept under, which is asked
+	// before anything is fetched: an address that publishes nothing still has
+	// that answer written down under a name.
+	Producer string
 }
 
 // Recipe is everything about this fetch that decides what a text is, as one
@@ -62,14 +66,12 @@ type Fetcher interface {
 	// Metadata is what the site says about the address, taking none of it.
 	Metadata(ctx context.Context, at domain.WebAddress) (Metadata, error)
 
-	// Subtitles are the words published with a video in one language, as the site
-	// names that language. A video that publishes none in it is
-	// ErrNothingFetched.
-	//
-	// One language is asked for and not a list: a site that publishes a machine
-	// translation into every language it knows is asked for one of them, and
-	// asking for the lot is hundreds of requests it answers by refusing.
-	Subtitles(ctx context.Context, at domain.WebAddress, language string) ([]transcript.Cue, error)
+	// Text is what the address publishes as words. Which words those are is the
+	// provider's to say and the caller's to keep: a site that publishes them
+	// against a clock answers with cues, one that publishes prose answers with
+	// prose, and the provider names what made them. An address publishing none
+	// of what was asked for is ErrNothingFetched.
+	Text(ctx context.Context, at domain.WebAddress, want PreferredCaptions) (Text, error)
 
 	// Audio is a video's sound, written as the container a transcriber opens.
 	// It is what a machine listens to, and is not what a person plays.
@@ -78,11 +80,38 @@ type Fetcher interface {
 	// Download is what is at the address as a person plays it, written as it was
 	// published. How large it may be is the caller's to hold to.
 	Download(ctx context.Context, at domain.WebAddress, into io.Writer) (Download, error)
+}
 
-	// Article is what an address that plays nothing says: the prose a page is
-	// written around, without the furniture around it. A page carrying none is
-	// ErrNothingFetched.
-	Article(ctx context.Context, at domain.WebAddress) (Article, error)
+// PreferredCaptions is which of the words a site published the caller will
+// take: the languages, best first, and whether words a machine wrote count
+// where a person published none.
+//
+// A site that publishes a machine translation into every language it knows is
+// asked for one of them, and asking for the lot is hundreds of requests it
+// answers by refusing. Which one that is, the provider picks by these. A site
+// publishing prose has one text and ignores them.
+type PreferredCaptions struct {
+	Languages []string
+	Automatic bool
+}
+
+// Text is what an address publishes as words.
+//
+// Cues and Prose are the two shapes it comes in and one of them is set: words
+// against the clock they were said on, or prose nothing timed.
+type Text struct {
+	// Producer names what made these words, and is kept beside them: what a
+	// site publishes and what a tool takes out of it both change, and a text
+	// kept beyond the run that made it is claimed again by what made it.
+	Producer string
+
+	Cues  []transcript.Cue
+	Prose string
+
+	// Title is what it calls itself, and Length how long it runs in
+	// milliseconds where anything runs.
+	Title  string
+	Length int
 }
 
 // A Download is what a copy came to: what a player is told it is, and the
@@ -90,10 +119,4 @@ type Fetcher interface {
 type Download struct {
 	MediaType string
 	Extension string
-}
-
-// Article is a page as it reads without the furniture around it.
-type Article struct {
-	Title string
-	Prose string
 }

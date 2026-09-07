@@ -66,7 +66,7 @@ func TestAMachineWithNeitherToolFetchesAPage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	article, err := fetcher.Article(t.Context(), address(t, site.URL+"/entropy"))
+	article, err := fetcher.Text(t.Context(), address(t, site.URL+"/entropy"), port.PreferredCaptions{})
 	if err != nil {
 		t.Fatalf("a page went unfetched on a machine holding no tool: %v", err)
 	}
@@ -164,7 +164,7 @@ func TestThePageWithoutTheFurnitureAroundIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	article, err := fetcher.Article(t.Context(), address(t, site.URL+"/entropy"))
+	article, err := fetcher.Text(t.Context(), address(t, site.URL+"/entropy"), port.PreferredCaptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,7 +192,7 @@ func TestAPageWithNoArticleInIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := fetcher.Article(t.Context(), address(t, site.URL)); !errors.Is(err, port.ErrNothingFetched) {
+	if _, err := fetcher.Text(t.Context(), address(t, site.URL), port.PreferredCaptions{}); !errors.Is(err, port.ErrNothingFetched) {
 		t.Errorf("a page with nothing in it answered %v", err)
 	}
 }
@@ -205,10 +205,6 @@ func TestAVideoIsNotAPage(t *testing.T) {
 		t.Fatal(err)
 	}
 	at := address(t, "https://youtu.be/dQw4w9WgXcQ")
-	if _, err := fetcher.Subtitles(t.Context(), domain.WebAddress{URL: "https://example.com/a"},
-		"en"); !errors.Is(err, port.ErrNothingFetched) {
-		t.Errorf("a page was asked for the words of a video: %v", err)
-	}
 	if _, err := fetcher.Download(t.Context(), domain.WebAddress{URL: at.URL}, nil); !errors.Is(
 		err, port.ErrNothingFetched) {
 		t.Errorf("an address with no video at it was copied: %v", err)

@@ -97,8 +97,8 @@ func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 		t.Errorf("the source was left with %d chunks of the words", len(wrote.Chunks))
 	}
 
-	if told := heard(t, api); len(told.GetCues()) != 0 {
-		t.Errorf("the recording still says %+v", told.GetCues())
+	if told := heard(t, api); len(told.GetSpoken().GetCues()) != 0 {
+		t.Errorf("the recording still says %+v", told.GetSpoken().GetCues())
 	}
 }
 

@@ -23,20 +23,22 @@ type site struct {
 }
 
 func (s *site) Fetching(domain.WebAddress) port.FetchModel {
-	return port.FetchModel{Tool: "a test", Version: "1"}
+	return port.FetchModel{Tool: "a test", Version: "1", Producer: derived.Captions}
 }
 
 func (s *site) Metadata(context.Context, domain.WebAddress) (port.Metadata, error) {
 	return port.Metadata{Title: s.title, Length: 83_500, Captions: []string{"en"}}, nil
 }
 
-func (s *site) Subtitles(
-	context.Context, domain.WebAddress, string,
-) ([]transcript.Cue, error) {
+func (s *site) Text(
+	context.Context, domain.WebAddress, port.PreferredCaptions,
+) (port.Text, error) {
 	if len(s.cues) == 0 {
-		return nil, port.ErrNothingFetched
+		return port.Text{}, port.ErrNothingFetched
 	}
-	return s.cues, nil
+	return port.Text{
+		Producer: derived.Captions, Cues: s.cues, Title: s.title, Length: 83_500,
+	}, nil
 }
 
 func (s *site) Audio(context.Context, domain.WebAddress, io.Writer) error {
@@ -49,10 +51,6 @@ func (s *site) Download(_ context.Context, _ domain.WebAddress, into io.Writer) 
 	}
 	_, err := into.Write(s.bytes)
 	return port.Download{MediaType: derived.CopyType, Extension: derived.CopyExtension}, err
-}
-
-func (s *site) Article(context.Context, domain.WebAddress) (port.Article, error) {
-	return port.Article{}, port.ErrNothingFetched
 }
 
 // importing is the core with one address it can reach.
@@ -92,10 +90,6 @@ func TestAnAgentImportsAnAddress(t *testing.T) {
 	}
 	if out.Words == 0 {
 		t.Error("nothing came back from the address")
-	}
-	// The file is called what is at the address, and nobody had to name it.
-	if out.Title != "Entropy explained" {
-		t.Errorf("it is called %q", out.Title)
 	}
 	if !strings.HasSuffix(out.Path, ".url") {
 		t.Errorf("it stands at %q", out.Path)

@@ -392,7 +392,7 @@ describe('a passage from something that is not a note', () => {
 })
 
 describe('what a row is drawn as', () => {
-  it('says which of four each name found is', async () => {
+  it('says what kind each name found is', async () => {
     const vault = asking()
     const palette = search(vault.core, WORDS, { wait: now })
     void palette.typing('ent')

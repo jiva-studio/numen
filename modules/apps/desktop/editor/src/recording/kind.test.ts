@@ -12,8 +12,8 @@ import { fileOpeners } from '../tabs/openers'
 import { windowing } from '../tabs/windowing'
 
 /** A recording open in a tab, as far as the window reads one. */
-const recording = (path: string, heard: number, length: number) =>
-  ({ path, heard: ref(heard), length: ref(length) }) as unknown as MediaTabState
+const recording = (path: string, transcribedTo: number, length: number) =>
+  ({ path, transcribedTo: ref(transcribedTo), length: ref(length) }) as unknown as MediaTabState
 
 /** The kind, made with a window that opens recordings this test hands it. */
 const kind = (held: MediaTabState) => {
@@ -43,7 +43,7 @@ describe('what a recording tab holds, as whoever answers for the person is told 
 
     expect(kind(held).attends!(held)).toStrictEqual({
       path: 'talks/Ants.mp3',
-      recording: { heard: 4000, length: 9000 },
+      recording: { transcribedTo: 4000, length: 9000 },
     })
   })
 })

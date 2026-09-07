@@ -22,7 +22,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
 // ErrNoTool is an address no provider on this machine supports, which is a
@@ -85,15 +84,16 @@ func (f *Fetcher) Metadata(ctx context.Context, at domain.WebAddress) (port.Meta
 	return by.Metadata(ctx, at)
 }
 
-// Subtitles are the words published with what is at the address.
-func (f *Fetcher) Subtitles(
-	ctx context.Context, at domain.WebAddress, language string,
-) ([]transcript.Cue, error) {
+// Text is what the address publishes as words, as whichever provider answers
+// for it produces them.
+func (f *Fetcher) Text(
+	ctx context.Context, at domain.WebAddress, want port.PreferredCaptions,
+) (port.Text, error) {
 	by, err := f.providerFor(at)
 	if err != nil {
-		return nil, err
+		return port.Text{}, err
 	}
-	return by.Subtitles(ctx, at, language)
+	return by.Text(ctx, at, want)
 }
 
 // Audio is the sound of what is at the address, as the container a transcriber
@@ -115,15 +115,6 @@ func (f *Fetcher) Download(
 		return port.Download{}, err
 	}
 	return by.Download(ctx, at, into)
-}
-
-// Article is the prose an address is written around.
-func (f *Fetcher) Article(ctx context.Context, at domain.WebAddress) (port.Article, error) {
-	by, err := f.providerFor(at)
-	if err != nil {
-		return port.Article{}, err
-	}
-	return by.Article(ctx, at)
 }
 
 // A program is a tool as it is started: the command, and the environment the

@@ -16,10 +16,7 @@ import type { MediaTabState } from '../recording/kind'
 
 const props = defineProps<{ state: MediaTabState }>()
 
-const { address, deletable, embed, playable, points } = props.state
-
-/** Where the frame stands: the copy on this disk, or the address itself. */
-const shown = computed(() => (playable.value ? '' : embed.value || points.value))
+const { address, deletable, framing, playable } = props.state
 
 // What is at the address plays where it is drawn, so a moment chosen in the
 // words is seeked there and the line being said follows it.
@@ -40,7 +37,7 @@ const chose = (id: string) => {
     <template #player>
       <Embed
         ref="player"
-        :embed="shown"
+        :embed="framing ? address : ''"
         :copy="playable ? address : ''"
         :words="words"
         @time-update="(ms: number) => props.state.reached(ms)"

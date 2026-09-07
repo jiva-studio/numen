@@ -45,7 +45,7 @@ func TestWindowTabsAnswersWithEveryTabAndMarksTheOneInFront(t *testing.T) {
 			{ID: "one", Kind: domain.TabPlex, Path: "Main 222.md", Title: "Main 222"},
 			{ID: "two", Kind: domain.TabRecording, Path: "730707BG.LON.mp3",
 				Title:     "730707BG.LON.mp3",
-				Recording: &domain.OpenRecording{Heard: 754000, Length: 3494000}},
+				Recording: &domain.OpenRecording{TranscribedTo: 754000, Length: 3494000}},
 		},
 	})
 

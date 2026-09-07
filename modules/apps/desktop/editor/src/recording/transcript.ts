@@ -37,27 +37,23 @@ export interface Transcript {
 }
 
 /**
- * What a recording is: how long it runs, and how far the words written down
- * reach, both in milliseconds.
+ * What a file is, for whatever plays it: how long it runs, in milliseconds,
+ * and where its bytes come from.
  *
  * A recording nothing has listened to reaches nowhere, and the player it is
  * loaded into is what then says how long it runs.
  */
 export interface RecordingSummary {
   readonly length: number
-  readonly heard: number
-  /** Where the recording is played from, as the application answers it. */
+  /** Where it is played from, as the application answers it. */
   readonly media: string
-  /** What it is played as. The application says: what counts as a recording is
-   * its to decide. */
-  readonly type: string
   /**
-   * Where a frame plays what is at the address a url holds, and nothing where
-   * a copy is played instead or the source is a recording.
+   * What it is played as. The application says: what counts as a recording is
+   * its to decide, and a url with no copy on this disk is a page to frame.
    */
-  readonly embed: string
-  /** The address a url holds, and nothing on every other source. */
-  readonly address: string
+  readonly type: string
+  /** The web address a url points at, and nothing on every other source. */
+  readonly url: string
 }
 
 /** Everything a recording tab asks of the application. */
@@ -101,6 +97,9 @@ export interface TranscriptOptions {
   plays?: MediaTypeProbe
 }
 
+/** What a url with no copy on this disk is played as: a page, read in a frame. */
+const PAGE = 'text/html'
+
 export function transcript(recordings: Recordings, path: string, how: TranscriptOptions = {}) {
   const through = how.through ?? player
   const quiet = how.quiet ?? QUIET
@@ -119,13 +118,9 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
   const typing = ref(false)
   /** How long the recording runs, as the application last said. */
   const length = ref(0)
-  /** How much of it has been written down, in milliseconds. */
-  const heard = ref(0)
   /** What the recording is played as, as the application answers it. */
   const type = ref('')
-  /** Where a frame plays what is at the address, and nothing where a copy is. */
-  const embed = ref('')
-  /** The address itself, for a url nothing plays at all. */
+  /** The web address a url points at, and nothing on every other source. */
   const points = ref('')
   /** Whether the recording the player holds is this one. */
   const held = computed(() => address.value !== '' && through.address.value === address.value)
@@ -235,11 +230,9 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
       const said = await recordings.listened(path)
       if (!mine.lands()) return
       length.value = said.length
-      heard.value = said.heard
       address.value = said.media
       type.value = said.type
-      embed.value = said.embed
-      points.value = said.address
+      points.value = said.url
       // A moment asked for before the recording knew where its bytes are.
       if (wanted >= 0 && address.value) {
         const at = wanted
@@ -415,6 +408,15 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
   /** Whether this window can play a recording of this kind at all. */
   const playable = computed(() => address.value !== '' && plays(type.value))
 
+  /**
+   * Whether what is at the address is a page, which is read in a frame rather
+   * than played. A url with no copy on this disk is one.
+   */
+  const framing = computed(() => address.value !== '' && type.value === PAGE)
+
+  /** How far the words written down reach, in milliseconds. */
+  const transcribedTo = computed(() => cues.value.at(-1)?.to ?? 0)
+
   /** What the tab says where the words would stand, and nothing where they do. */
   const note = computed(() => {
     if (times.value.length) return ''
@@ -425,8 +427,8 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
   return {
     path,
     address,
-    embed,
     points,
+    framing,
     playable,
     times,
     spans,
@@ -438,7 +440,7 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
     typing,
     length,
     runs,
-    heard,
+    transcribedTo,
     now,
     current,
     timed,

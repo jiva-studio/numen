@@ -231,7 +231,7 @@ func TestTheWordsOfALinkNoteAreReadBack(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cues := out.Msg.GetCues()
+	cues := out.Msg.GetSpoken().GetCues()
 	if len(cues) != 1 || cues[0].GetText() != "what was said" || cues[0].GetFrom() != 1000 {
 		t.Errorf("the words read %+v", cues)
 	}

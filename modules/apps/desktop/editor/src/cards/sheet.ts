@@ -18,7 +18,7 @@ export interface Face extends VaultFace {
 }
 
 /** A stencil as the window holds it: its fields, and its faces under identities. */
-export interface Sheet {
+export interface PageSize {
   readonly fields: readonly string[]
   readonly preamble: string
   readonly faces: readonly Face[]
@@ -26,10 +26,10 @@ export interface Sheet {
 }
 
 /** A stencil that names nothing and shows nothing. */
-export const NO_SHEET: Sheet = { fields: [], preamble: '', faces: [], tail: '' }
+export const NO_SHEET: PageSize = { fields: [], preamble: '', faces: [], tail: '' }
 
 /** A stencil as the vault read it, each face under an identity this window mints. */
-export const sheetOf = (read: VaultStencil, mint: IdMaker = minting): Sheet => ({
+export const sheetOf = (read: VaultStencil, mint: IdMaker = minting): PageSize => ({
   fields: read.fields,
   preamble: read.preamble,
   faces: read.faces.map((face) => ({ id: mint(), ...face })),
@@ -41,7 +41,7 @@ export const sheetOf = (read: VaultStencil, mint: IdMaker = minting): Sheet => (
  * The parts are written in a settled order, so a stencil that came back
  * unchanged reads as the string it went in as.
  */
-export const sheetBodyOf = (sheet: Sheet): string =>
+export const sheetBodyOf = (sheet: PageSize): string =>
   JSON.stringify({
     fields: sheet.fields,
     preamble: sheet.preamble,
@@ -56,27 +56,27 @@ export const sheetBodyOf = (sheet: Sheet): string =>
   })
 
 /** The stencil a string stands for. A string holding nothing names no field. */
-export const sheetIn = (body: string): Sheet => (body ? (JSON.parse(body) as Sheet) : NO_SHEET)
+export const sheetIn = (body: string): PageSize => (body ? (JSON.parse(body) as PageSize) : NO_SHEET)
 
 /** The faces of a stencil, in the shape the vault takes them. */
-export const facesOf = (sheet: Sheet): readonly VaultFace[] =>
+export const facesOf = (sheet: PageSize): readonly VaultFace[] =>
   sheet.faces.map(({ name, lead, front, back }) => ({ name, lead, front, back }))
 
 /** Whether two stencils read the same, the identities left out the same way. */
-export const sameSheet = (one: Sheet, other: Sheet): boolean =>
+export const sameSheet = (one: PageSize, other: PageSize): boolean =>
   one.preamble === other.preamble &&
   one.tail === other.tail &&
   JSON.stringify(one.fields) === JSON.stringify(other.fields) &&
   JSON.stringify(facesOf(one)) === JSON.stringify(facesOf(other))
 
 /** A field named at the end of the order. */
-export const fieldAdded = (sheet: Sheet, name: string): Sheet => ({
+export const fieldAdded = (sheet: PageSize, name: string): PageSize => ({
   ...sheet,
   fields: [...sheet.fields, name],
 })
 
 /** A field the stencil no longer names. What the faces stand in its braces stays. */
-export const fieldGone = (sheet: Sheet, field: string): Sheet => ({
+export const fieldGone = (sheet: PageSize, field: string): PageSize => ({
   ...sheet,
   fields: sheet.fields.filter((one) => one !== field),
 })
@@ -85,7 +85,7 @@ export const fieldGone = (sheet: Sheet, field: string): Sheet => ({
  * A field let go somewhere in the order. The first field names every card the
  * stencil cuts, so it stays first and nothing lands above it.
  */
-export const fieldDropped = (sheet: Sheet, field: string, at: InsertionPoint): Sheet => ({
+export const fieldDropped = (sheet: PageSize, field: string, at: InsertionPoint): PageSize => ({
   ...sheet,
   fields: reordered(sheet.fields, field, at),
 })
@@ -95,7 +95,7 @@ export const fieldDropped = (sheet: Sheet, field: string, at: InsertionPoint): S
  * order of the faces is the order a card's repetitions are taken from it, and
  * nothing among them is fixed.
  */
-export const faceDropped = (sheet: Sheet, id: string, at: InsertionPoint): Sheet => {
+export const faceDropped = (sheet: PageSize, id: string, at: InsertionPoint): PageSize => {
   const order = ordered(
     sheet.faces.map((face) => face.id),
     id,
@@ -106,30 +106,30 @@ export const faceDropped = (sheet: Sheet, id: string, at: InsertionPoint): Sheet
 }
 
 /** A face added at the end, with both its halves empty. */
-export const faceAdded = (sheet: Sheet, name: string, mint: IdMaker = minting): Sheet => ({
+export const faceAdded = (sheet: PageSize, name: string, mint: IdMaker = minting): PageSize => ({
   ...sheet,
   faces: [...sheet.faces, { id: mint(), name, lead: '', front: '', back: '' }],
 })
 
 /** A face under another name. */
-export const faceNamed = (sheet: Sheet, id: string, name: string): Sheet => ({
+export const faceNamed = (sheet: PageSize, id: string, name: string): PageSize => ({
   ...sheet,
   faces: sheet.faces.map((face) => (face.id === id ? { ...face, name } : face)),
 })
 
 /** A face taken out of the stencil. */
-export const faceGone = (sheet: Sheet, id: string): Sheet => ({
+export const faceGone = (sheet: PageSize, id: string): PageSize => ({
   ...sheet,
   faces: sheet.faces.filter((face) => face.id !== id),
 })
 
 /** One half of one face as it now reads. */
 export const faceWritten = (
-  sheet: Sheet,
+  sheet: PageSize,
   id: string,
   half: 'front' | 'back',
   text: string,
-): Sheet => ({
+): PageSize => ({
   ...sheet,
   faces: sheet.faces.map((face) => (face.id === id ? { ...face, [half]: text } : face)),
 })

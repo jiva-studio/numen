@@ -163,7 +163,7 @@ export const iconOfNote = (type: NoteType): LucideIcon => NOTES.get(type) ?? Fil
 /**
  * What each kind of source that is not a note is drawn as: the mark of the tab
  * it opens in, so a recording is the same thing in a list that it is once it is
- * open. A note is drawn by which of four it is.
+ * open. A note is drawn by which kind of note it is.
  */
 const SOURCES: ReadonlyMap<Source, LucideIcon> = new Map([
   ['book', BookOpen],

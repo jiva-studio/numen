@@ -65,8 +65,8 @@ type AssetServiceClient interface {
 	// could not have one inside the wait is answered unavailable and asks again;
 	// a held request is not an answer.
 	GetDocument(context.Context, *connect.Request[v1.GetDocumentRequest]) (*connect.Response[v1.GetDocumentResponse], error)
-	// GetRecording is what a recording is: how long it runs, how much of it has
-	// been listened to, and where its bytes are played from.
+	// GetRecording is what a recording is: how long it runs and where its bytes
+	// are played from. What has been made from it is ListArtifacts.
 	GetRecording(context.Context, *connect.Request[v1.GetRecordingRequest]) (*connect.Response[v1.GetRecordingResponse], error)
 	// ListHighlights is where runs of a source's text sit on the pages it was
 	// read from. A source with no pages has nowhere to put them, and is answered
@@ -138,8 +138,8 @@ type AssetServiceHandler interface {
 	// could not have one inside the wait is answered unavailable and asks again;
 	// a held request is not an answer.
 	GetDocument(context.Context, *connect.Request[v1.GetDocumentRequest]) (*connect.Response[v1.GetDocumentResponse], error)
-	// GetRecording is what a recording is: how long it runs, how much of it has
-	// been listened to, and where its bytes are played from.
+	// GetRecording is what a recording is: how long it runs and where its bytes
+	// are played from. What has been made from it is ListArtifacts.
 	GetRecording(context.Context, *connect.Request[v1.GetRecordingRequest]) (*connect.Response[v1.GetRecordingResponse], error)
 	// ListHighlights is where runs of a source's text sit on the pages it was
 	// read from. A source with no pages has nowhere to put them, and is answered

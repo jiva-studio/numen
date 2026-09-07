@@ -9,7 +9,7 @@ import {
   row,
   standAt,
   within,
-  type Sheet,
+  type PageSize,
   type Viewport,
 } from './strip'
 
@@ -17,8 +17,8 @@ import {
 const VIEWPORT: Viewport = { wide: 900, high: 800 }
 
 /** Every page the same shape, the way a book is. */
-const book = (pages: number): Sheet[] =>
-  Array.from({ length: pages }, () => ({ wide: 612, high: 792 }))
+const book = (pages: number): PageSize[] =>
+  Array.from({ length: pages }, () => ({ width: 612, height: 792 }))
 
 describe('the row a document makes', () => {
   it('draws a whole page in the viewport', () => {
@@ -41,12 +41,12 @@ describe('the row a document makes', () => {
   it('keeps each page its own shape', () => {
     // A book with a fold-out in it: one page twice the width of the rest, and
     // all of them the same height.
-    const sheets: Sheet[] = [
-      { wide: 612, high: 792 },
-      { wide: 1224, high: 792 },
-      { wide: 612, high: 792 },
+    const pages: PageSize[] = [
+      { width: 612, height: 792 },
+      { width: 1224, height: 792 },
+      { width: 612, height: 792 },
     ]
-    const laid = row(sheets, 3, VIEWPORT, 1)
+    const laid = row(pages, 3, VIEWPORT, 1)
 
     // Within a pixel: each width is rounded on its own.
     expect(laid.widths[1]).toBeCloseTo(laid.widths[0]! * 2, -0.5)

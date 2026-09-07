@@ -173,8 +173,8 @@ message OpenDocument {
 // An OpenRecording is the recording a tab holds, as far as it has been written
 // down.
 message OpenRecording {
-  // Heard is how much of it has been written down, in milliseconds.
-  int32 heard = 1;
+  // TranscribedTo is the millisecond the words written down reach.
+  int32 transcribed_to = 1;
 
   // Length is how long the recording is, in milliseconds.
   int32 length = 2;

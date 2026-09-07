@@ -237,7 +237,7 @@ func listing(err error) connect.Code {
 	}
 }
 
-// typeOf is which of five a note is, as the schema carries it. A note carrying
+// typeOf is what a note is, as the schema carries it. A note carrying
 // no type of its own is an ordinary note.
 func typeOf(noteType domain.NoteType) v1.NoteType {
 	switch noteType {

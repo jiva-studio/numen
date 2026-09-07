@@ -25,11 +25,9 @@ const CUES: readonly Cue[] = [
 
 const SUMMARY: RecordingSummary = {
   length: 9_000,
-  heard: 9_000,
   media: 'http://127.0.0.1:1/files/w/v/talk.mp3',
   type: 'audio/mpeg',
-  embed: '',
-  address: '',
+  url: '',
 }
 
 /**
@@ -142,7 +140,7 @@ describe('a recording opened', () => {
 
 describe('a recording nothing has listened to', () => {
   it('holds no words and says nothing went wrong', async () => {
-    const { recordings } = talk([], { length: 0, heard: 0, media: '', type: '', embed: '', address: '' })
+    const { recordings } = talk([], { length: 0, media: '', type: '', url: '' })
     const heard = transcript(recordings, 'talks/Ants.mp3')
 
     await settled()
@@ -485,7 +483,7 @@ describe('how long the recording runs, as the controls read it', () => {
   })
 
   it('is what the recording itself says, where nothing has listened to it', async () => {
-    const { recordings } = talk([], { ...SUMMARY, length: 0, heard: 0 })
+    const { recordings } = talk([], { ...SUMMARY, length: 0 })
     const { player, length } = played()
     const heard = transcript(recordings, 'talks/Ants.mp3', { through: player })
     await settled()

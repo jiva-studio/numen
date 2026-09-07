@@ -39,7 +39,7 @@ const talk = (cues: readonly Cue[]): Recordings => ({
     media: 'http://127.0.0.1:1/w/v/talk.mp3',
     type: 'audio/mpeg',
     embed: '',
-    address: '',
+    url: '',
   }),
   cues: async () => ({ cues, editable: true, prose: '' }),
   writes: async () => {},

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"slices"
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -66,22 +65,22 @@ type ImportURL struct {
 	Progress func(done, total int64)
 }
 
+// ErrBeingFetched is another run holding this address. Nothing was done, and
+// asking again once that run is over is the whole of what is left to do.
+var ErrBeingFetched = errors.New("another run is fetching this address")
+
 // ImportURLResult reports what fetching did.
 type ImportURLResult struct {
+	// Path is where the url is filed now: what was fetched says what the file
+	// is called, so a run may leave it somewhere else than it found it.
 	Path string
-	// Title is what the address calls itself, and Length how long it runs in
-	// milliseconds.
-	Title  string
-	Length int
-	// Producer is what fetched the words, and is empty where nothing did.
+	// Producer is what fetched the text, and is empty where nothing did.
 	Producer string
-	// Words is how much text came back, in bytes.
-	Words int
+	// Bytes is how much text came back.
+	Bytes int
 	// Nothing is the address publishing none of what was asked for, which is an
 	// answer and not a failure.
 	Nothing bool
-	// Busy is another run holding this address.
-	Busy bool
 }
 
 // Execute fetches what is at one url's address.
@@ -92,17 +91,12 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 		return res, err
 	}
 	hash := text.Fingerprint([]byte(at.URL))
-	from := text.Captions
-	if !at.IsVideo() {
-		from = text.Article
-	}
 
 	// One run to an address. The name is held for as long as the fetch takes,
 	// so two urls on one address do not fetch it twice.
-	release, err := store.Claim(ctx, text.Partial(from, hash))
+	release, err := store.Claim(ctx, text.Partial(u.By.Fetching(at).Producer, hash))
 	if errors.Is(err, port.ErrClaimed) {
-		res.Busy = true
-		return res, nil
+		return res, ErrBeingFetched
 	}
 	if err != nil {
 		return res, err
@@ -110,12 +104,8 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 	defer release()
 
 	if u.Again {
-		for _, producer := range text.Producers() {
-			for _, name := range text.Names(producer, hash) {
-				if err := store.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
-					return res, err
-				}
-			}
+		if err := forgotten(ctx, store, hash); err != nil {
+			return res, err
 		}
 	}
 
@@ -124,47 +114,85 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 	if words, producer, err := text.Fetched(ctx, store, hash); err != nil {
 		return res, err
 	} else if producer != "" {
-		res.Producer, res.Words = producer, len(words)
+		res.Producer, res.Bytes = producer, len(words)
 		return res, nil
 	}
 
-	// A page is one fetch: what it calls itself and the prose it is written
-	// around come out of the same read, and a stranger's site is asked once.
-	if !at.IsVideo() {
-		res, err := u.page(ctx, v, ref, at, hash, store, res)
-		if err != nil {
-			return res, err
-		}
-		return u.named(ctx, v, ref, at, res)
+	said, err := u.By.Text(ctx, at, port.PreferredCaptions{
+		Languages: u.Languages, Automatic: u.Automatic,
+	})
+	switch {
+	case errors.Is(err, port.ErrNothingFetched):
+		// The address publishes none of what was asked for. That is an answer,
+		// and it is written down so the address is not asked again every time
+		// the vault is scanned.
+		res.Nothing = true
+		return res, u.silent(ctx, at, store, hash)
+	case err != nil:
+		return res, err
 	}
 
-	meta, err := u.By.Metadata(ctx, at)
+	res.Producer, res.Bytes, err = u.keeps(ctx, store, hash, at, said)
 	if err != nil {
 		return res, err
 	}
-	res.Title, res.Length = meta.Title, meta.Length
-
-	res, err = u.video(ctx, v, ref, at, meta, hash, store, res)
-	if err != nil {
+	if err := u.cut(ctx, v, ref.Path); err != nil {
 		return res, err
 	}
-	return u.named(ctx, v, ref, at, res)
+	return u.named(ctx, v, ref, at, said.Title, res)
 }
 
-// Forget throws away the text fetched from a url's address. The url stands as
-// it was, pointing where it points, and the copy fetched for it is untouched.
-func (u ImportURL) Forget(ctx context.Context, v domain.Vault, path string) error {
-	at, _, store, err := u.pointed(ctx, v, path)
-	if err != nil {
-		return err
+// keeps writes down what was fetched, under the name of whatever fetched it,
+// and answers how much of it there was.
+func (u ImportURL) keeps(
+	ctx context.Context,
+	store port.DerivedStore,
+	hash string,
+	at domain.WebAddress,
+	said port.Text,
+) (producer string, bytes int, err error) {
+	written := []byte(said.Prose)
+	if len(said.Cues) > 0 {
+		written = transcript.Marshal(said.Cues)
 	}
-	hash := text.Fingerprint([]byte(at.URL))
+	if err := store.Write(ctx, text.Artifact(said.Producer, hash), written); err != nil {
+		return "", 0, err
+	}
+	if err := u.record(ctx, store, said.Producer, hash, at, said); err != nil {
+		return "", 0, err
+	}
+	return said.Producer, len(written), nil
+}
+
+// silent writes down that the address published none of what was asked for, so
+// the address is not asked again every time the vault is scanned.
+func (u ImportURL) silent(
+	ctx context.Context, at domain.WebAddress, store port.DerivedStore, hash string,
+) error {
+	return store.Write(ctx, text.Answer(u.By.Fetching(at).Producer, hash), []byte(text.Silent+"\n"))
+}
+
+// forgotten takes away everything ever fetched for an address.
+func forgotten(ctx context.Context, store port.DerivedStore, hash string) error {
 	for _, producer := range text.Producers() {
 		for _, name := range text.Names(producer, hash) {
 			if err := store.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 				return err
 			}
 		}
+	}
+	return nil
+}
+
+// DeleteText throws away the text fetched from a url's address. The url stands as
+// it was, pointing where it points, and the copy fetched for it is untouched.
+func (u ImportURL) DeleteText(ctx context.Context, v domain.Vault, path string) error {
+	at, _, store, err := u.pointed(ctx, v, path)
+	if err != nil {
+		return err
+	}
+	if err := forgotten(ctx, store, text.Fingerprint([]byte(at.URL))); err != nil {
+		return err
 	}
 	return u.cut(ctx, v, path)
 }
@@ -178,7 +206,6 @@ type CopyResult struct {
 	Limit int64
 	// Existed is a copy that already stood, so nothing was fetched.
 	Existed bool
-	Busy    bool
 	// At is where in the vault the copy landed, and nothing where it landed in
 	// the application's own folder.
 	At string
@@ -211,8 +238,7 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 	// is being fetched, and two urls on one address are one fetch.
 	release, err := store.Claim(ctx, text.Copy(hash))
 	if errors.Is(err, port.ErrClaimed) {
-		res.Busy = true
-		return res, nil
+		return res, ErrBeingFetched
 	}
 	if err != nil {
 		return res, err
@@ -447,9 +473,10 @@ func (u ImportURL) named(
 	v domain.Vault,
 	ref domain.Fingerprint,
 	at domain.WebAddress,
+	title string,
 	res ImportURLResult,
 ) (ImportURLResult, error) {
-	if u.Names == nil || res.Title == "" {
+	if u.Names == nil || title == "" {
 		return res, nil
 	}
 	// A file still called what the paste called it is one nobody has named. Any
@@ -458,7 +485,7 @@ func (u ImportURL) named(
 	if err != nil || domain.Basename(ref.Path) != pasted {
 		return res, nil
 	}
-	path, err := u.Names(ctx, v, ref.Path, res.Title)
+	path, err := u.Names(ctx, v, ref.Path, title)
 	if err != nil {
 		return res, err
 	}
@@ -466,106 +493,6 @@ func (u ImportURL) named(
 		res.Path = path
 	}
 	return res, nil
-}
-
-// video writes down the words published with it, and hands it to a model where
-// nobody published any.
-func (u ImportURL) video(
-	ctx context.Context,
-	v domain.Vault,
-	ref domain.Fingerprint,
-	at domain.WebAddress,
-	meta port.Metadata,
-	hash string,
-	store port.DerivedStore,
-	res ImportURLResult,
-) (ImportURLResult, error) {
-	cues, err := u.By.Subtitles(ctx, at, language(meta, u.Languages, u.Automatic))
-	switch {
-	case errors.Is(err, port.ErrNothingFetched):
-		// Nobody published words for it. That is an answer, and it is written
-		// down so the address is not asked again every time the vault is
-		// scanned. A copy in the vault is a recording, and what a recording
-		// says is heard by the run that hears every other one.
-		res.Nothing = true
-		return res, store.Write(ctx, text.Answer(text.Captions, hash), []byte(text.Silent+"\n"))
-	case err != nil:
-		return res, err
-	}
-	written := transcript.Marshal(cues)
-	if err := store.Write(ctx, text.Artifact(text.Captions, hash), written); err != nil {
-		return res, err
-	}
-	if err := u.record(ctx, store, text.Captions, hash, at, res); err != nil {
-		return res, err
-	}
-	res.Producer, res.Words = text.Captions, len(written)
-	return res, u.cut(ctx, v, ref.Path)
-}
-
-// language is the one the words are asked for in.
-//
-// What a person published is preferred over what a machine wrote; among those,
-// the languages this installation named, and then the language it was spoken
-// in. Something translated into thirty languages publishes words in all thirty,
-// and what was said in it is one of them.
-func language(meta port.Metadata, languages []string, automatic bool) string {
-	tracks := meta.Captions
-	if len(tracks) == 0 && automatic {
-		tracks = meta.Automatic
-	}
-	if len(tracks) == 0 {
-		return ""
-	}
-	for _, wanted := range append(append([]string(nil), languages...), meta.Language) {
-		if one := slices.IndexFunc(tracks, in(wanted)); one >= 0 {
-			return tracks[one]
-		}
-	}
-	if one := slices.IndexFunc(tracks, original); one >= 0 {
-		return tracks[one]
-	}
-	return tracks[0]
-}
-
-// in says whether a track is in one language. A machine's own is that language
-// with a word after it, and its translations of that one are other languages.
-func in(language string) func(string) bool {
-	return func(track string) bool { return track == language || track == language+"-orig" }
-}
-
-// original says whether a track is the language it was spoken in.
-func original(track string) bool { return strings.HasSuffix(track, "-orig") }
-
-// page writes down the prose of a page.
-func (u ImportURL) page(
-	ctx context.Context,
-	v domain.Vault,
-	ref domain.Fingerprint,
-	at domain.WebAddress,
-	hash string,
-	store port.DerivedStore,
-	res ImportURLResult,
-) (ImportURLResult, error) {
-	article, err := u.By.Article(ctx, at)
-	switch {
-	case errors.Is(err, port.ErrNothingFetched):
-		res.Nothing = true
-		return res, nil
-	case err != nil:
-		return res, err
-	}
-	if article.Title != "" {
-		res.Title = article.Title
-	}
-	if err := store.Write(ctx, text.Artifact(text.Article, hash), []byte(article.Prose)); err != nil {
-		return res, err
-	}
-	if err := u.record(ctx, store, text.Article, hash, at, res); err != nil {
-		return res, err
-	}
-	res.Producer, res.Words = text.Article, len(article.Prose)
-	return res, u.cut(ctx, v, ref.Path)
 }
 
 // record keeps what fetched an address beside what it brought back. Nothing on
@@ -577,7 +504,7 @@ func (u ImportURL) record(
 	store port.DerivedStore,
 	producer, hash string,
 	at domain.WebAddress,
-	res ImportURLResult,
+	said port.Text,
 ) error {
 	written, err := json.Marshal(struct {
 		Address  string `json:"address"`
@@ -587,8 +514,8 @@ func (u ImportURL) record(
 		Fetcher  string `json:"fetcher"`
 	}{
 		Address:  at.URL,
-		Title:    res.Title,
-		Length:   res.Length,
+		Title:    said.Title,
+		Length:   said.Length,
 		Producer: producer,
 		Fetcher:  u.By.Fetching(at).Recipe(),
 	})

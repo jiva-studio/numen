@@ -7,7 +7,7 @@ type Note struct {
 	Fingerprint Fingerprint
 	Title       string
 
-	// Type is which of five the note is. A note carrying no `type` is a note,
+	// Type is what the note is. A note carrying no `type` is a note,
 	// which is nearly every file in a vault.
 	Type NoteType
 
@@ -33,7 +33,7 @@ type Note struct {
 	FrontmatterErr string
 }
 
-// NoteType is which of four a note is. The list is closed: a value outside it
+// NoteType is what a note is. The list is closed: a value outside it
 // is shown as a problem and the file is read as an ordinary note.
 type NoteType string
 

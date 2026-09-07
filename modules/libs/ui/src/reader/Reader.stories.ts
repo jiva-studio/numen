@@ -50,8 +50,8 @@ const HIGHLIGHTS: readonly Rect[] = [
 ]
 
 /** Every page the same shape, the way a book is. */
-const sheets = (pages: number) =>
-  Array.from({ length: pages }, () => ({ wide: 612, high: 792 }))
+const sized = (pageCount: number) =>
+  Array.from({ length: pageCount }, () => ({ width: 612, height: 792 }))
 
 /**
  * A page, drawn to the width it was asked for. What a document does for real;
@@ -71,7 +71,7 @@ const drawn = (label: string, wide: number): string => {
  * drawn to, and it is written on the frame so a test can read it.
  */
 const book =
-  (highlights: readonly Rect[] = [], pages = PAGES): Render =>
+  (highlights: readonly Rect[] = [], pageCount = PAGES): Render =>
   () => ({
     components: { Reader },
     setup() {
@@ -83,10 +83,10 @@ const book =
       const highlightsOn = (page: number) => (page === 0 ? highlights : [])
 
       const go = (page: number) => {
-        at.value = Math.min(Math.max(page, 0), pages - 1)
+        at.value = Math.min(Math.max(page, 0), pageCount - 1)
       }
 
-      return { at, wide, picture, highlightsOn, pages, sheets: sheets(pages), go }
+      return { at, wide, picture, highlightsOn, pageCount, pages: sized(pageCount), go }
     },
     template: TEMPLATE,
   })
@@ -96,7 +96,7 @@ const TEMPLATE = `
     <Reader
       class="h-full"
       :pages="pages"
-      :sheets="sheets"
+      :pages="pages"
       :at="at"
       :picture="picture"
       :highlights="highlightsOn"
@@ -293,13 +293,13 @@ export const Undrawn: Story = {
       return {
         at,
         picture,
-        pages: 4,
-        sheets: sheets(4),
+        pageCount: 4,
+        pages: sized(4),
         go: (page: number) => (at.value = page),
       }
     },
     template: `
-      <Reader class="h-full" :pages="pages" :sheets="sheets" :at="at" :picture="picture" @go="go">
+      <Reader class="h-full" :pages="pages" :pages="pages" :at="at" :picture="picture" @go="go">
         <template #silence>Nothing yet</template>
       </Reader>
     `,

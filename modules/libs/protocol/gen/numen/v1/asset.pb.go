@@ -81,10 +81,10 @@ func (x *GetDocumentRequest) GetPath() string {
 type GetDocumentResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// How many pages it has.
-	Pages int32 `protobuf:"varint,1,opt,name=pages,proto3" json:"pages,omitempty"`
+	PageCount int32 `protobuf:"varint,1,opt,name=page_count,json=pageCount,proto3" json:"page_count,omitempty"`
 	// How large each page is, in page order. A page whose size could not be read
 	// stands at nothing, and the page after it is still where it was.
-	Sheets []*Sheet `protobuf:"bytes,2,rep,name=sheets,proto3" json:"sheets,omitempty"`
+	Pages []*PageSize `protobuf:"bytes,2,rep,name=pages,proto3" json:"pages,omitempty"`
 	// Which bytes these pages were read from. It stands in the address a page is
 	// drawn at, so an address names one drawing of one document and answers the
 	// same picture for as long as it answers at all.
@@ -123,16 +123,16 @@ func (*GetDocumentResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_asset_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *GetDocumentResponse) GetPages() int32 {
+func (x *GetDocumentResponse) GetPageCount() int32 {
 	if x != nil {
-		return x.Pages
+		return x.PageCount
 	}
 	return 0
 }
 
-func (x *GetDocumentResponse) GetSheets() []*Sheet {
+func (x *GetDocumentResponse) GetPages() []*PageSize {
 	if x != nil {
-		return x.Sheets
+		return x.Pages
 	}
 	return nil
 }
@@ -144,30 +144,30 @@ func (x *GetDocumentResponse) GetFingerprint() *Fingerprint {
 	return nil
 }
 
-// A Sheet is one page's size in the document's own units. A client draws a page
-// at whatever width it likes and keeps the shape by this.
-type Sheet struct {
+// A PageSize is one page in the document's own units. A client draws a page at
+// whatever width it likes and keeps the shape by this.
+type PageSize struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Wide          float64                `protobuf:"fixed64,1,opt,name=wide,proto3" json:"wide,omitempty"`
-	High          float64                `protobuf:"fixed64,2,opt,name=high,proto3" json:"high,omitempty"`
+	Width         float64                `protobuf:"fixed64,1,opt,name=width,proto3" json:"width,omitempty"`
+	Height        float64                `protobuf:"fixed64,2,opt,name=height,proto3" json:"height,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Sheet) Reset() {
-	*x = Sheet{}
+func (x *PageSize) Reset() {
+	*x = PageSize{}
 	mi := &file_numen_v1_asset_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Sheet) String() string {
+func (x *PageSize) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Sheet) ProtoMessage() {}
+func (*PageSize) ProtoMessage() {}
 
-func (x *Sheet) ProtoReflect() protoreflect.Message {
+func (x *PageSize) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_asset_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -179,21 +179,21 @@ func (x *Sheet) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Sheet.ProtoReflect.Descriptor instead.
-func (*Sheet) Descriptor() ([]byte, []int) {
+// Deprecated: Use PageSize.ProtoReflect.Descriptor instead.
+func (*PageSize) Descriptor() ([]byte, []int) {
 	return file_numen_v1_asset_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *Sheet) GetWide() float64 {
+func (x *PageSize) GetWidth() float64 {
 	if x != nil {
-		return x.Wide
+		return x.Width
 	}
 	return 0
 }
 
-func (x *Sheet) GetHigh() float64 {
+func (x *PageSize) GetHeight() float64 {
 	if x != nil {
-		return x.High
+		return x.Height
 	}
 	return 0
 }
@@ -245,23 +245,18 @@ func (x *GetRecordingRequest) GetPath() string {
 
 type GetRecordingResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// How far the words reach, and how much of it a run has written down, both in
-	// milliseconds. A recording nothing has listened to reaches nowhere, and the
-	// player it is loaded into is what then says how long it runs.
+	// How long it runs, in milliseconds. A recording nothing has listened to
+	// runs nowhere, and the player it is loaded into is what then says.
 	Length int32 `protobuf:"varint,1,opt,name=length,proto3" json:"length,omitempty"`
-	Heard  int32 `protobuf:"varint,2,opt,name=heard,proto3" json:"heard,omitempty"`
-	// Where the recording is played from, and what it is played as. A media
-	// element speaks the protocols of the world and not the scheme a window is
-	// served under, so the bytes are answered at an address of their own. Empty
-	// where this build serves them nowhere.
-	Media string `protobuf:"bytes,3,opt,name=media,proto3" json:"media,omitempty"`
-	Type  string `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
-	// Where a frame plays what is at the address a url holds, empty where nothing
-	// frames it and on every other source. The address a frame is given and the
-	// hosts the window may frame are one decision, and it is made here.
-	Embed string `protobuf:"bytes,5,opt,name=embed,proto3" json:"embed,omitempty"`
-	// The address itself, for a url nothing plays. Empty on every other source.
-	Address       string `protobuf:"bytes,6,opt,name=address,proto3" json:"address,omitempty"`
+	// Where it is played from, and what it is played as. A media element speaks
+	// the protocols of the world and not the scheme a window is served under, so
+	// the bytes are answered at an address of their own; a url with no copy on
+	// this disk is answered with the page that frames it, typed `text/html`.
+	// Empty where this build serves nothing.
+	Media string `protobuf:"bytes,2,opt,name=media,proto3" json:"media,omitempty"`
+	Type  string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	// The web address a url points at. Empty on every other source.
+	Url           string `protobuf:"bytes,4,opt,name=url,proto3" json:"url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -303,13 +298,6 @@ func (x *GetRecordingResponse) GetLength() int32 {
 	return 0
 }
 
-func (x *GetRecordingResponse) GetHeard() int32 {
-	if x != nil {
-		return x.Heard
-	}
-	return 0
-}
-
 func (x *GetRecordingResponse) GetMedia() string {
 	if x != nil {
 		return x.Media
@@ -324,16 +312,9 @@ func (x *GetRecordingResponse) GetType() string {
 	return ""
 }
 
-func (x *GetRecordingResponse) GetEmbed() string {
+func (x *GetRecordingResponse) GetUrl() string {
 	if x != nil {
-		return x.Embed
-	}
-	return ""
-}
-
-func (x *GetRecordingResponse) GetAddress() string {
-	if x != nil {
-		return x.Address
+		return x.Url
 	}
 	return ""
 }
@@ -614,23 +595,22 @@ const file_numen_v1_asset_proto_rawDesc = "" +
 	"\n" +
 	"\x14numen/v1/asset.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"(\n" +
 	"\x12GetDocumentRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\x8d\x01\n" +
-	"\x13GetDocumentResponse\x12\x14\n" +
-	"\x05pages\x18\x01 \x01(\x05R\x05pages\x12'\n" +
-	"\x06sheets\x18\x02 \x03(\v2\x0f.numen.v1.SheetR\x06sheets\x127\n" +
-	"\vfingerprint\x18\x03 \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\"/\n" +
-	"\x05Sheet\x12\x12\n" +
-	"\x04wide\x18\x01 \x01(\x01R\x04wide\x12\x12\n" +
-	"\x04high\x18\x02 \x01(\x01R\x04high\")\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x97\x01\n" +
+	"\x13GetDocumentResponse\x12\x1d\n" +
+	"\n" +
+	"page_count\x18\x01 \x01(\x05R\tpageCount\x12(\n" +
+	"\x05pages\x18\x02 \x03(\v2\x12.numen.v1.PageSizeR\x05pages\x127\n" +
+	"\vfingerprint\x18\x03 \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\"8\n" +
+	"\bPageSize\x12\x14\n" +
+	"\x05width\x18\x01 \x01(\x01R\x05width\x12\x16\n" +
+	"\x06height\x18\x02 \x01(\x01R\x06height\")\n" +
 	"\x13GetRecordingRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\x9e\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"j\n" +
 	"\x14GetRecordingResponse\x12\x16\n" +
 	"\x06length\x18\x01 \x01(\x05R\x06length\x12\x14\n" +
-	"\x05heard\x18\x02 \x01(\x05R\x05heard\x12\x14\n" +
-	"\x05media\x18\x03 \x01(\tR\x05media\x12\x12\n" +
-	"\x04type\x18\x04 \x01(\tR\x04type\x12\x14\n" +
-	"\x05embed\x18\x05 \x01(\tR\x05embed\x12\x18\n" +
-	"\aaddress\x18\x06 \x01(\tR\aaddress\"N\n" +
+	"\x05media\x18\x02 \x01(\tR\x05media\x12\x12\n" +
+	"\x04type\x18\x03 \x01(\tR\x04type\x12\x10\n" +
+	"\x03url\x18\x04 \x01(\tR\x03url\"N\n" +
 	"\x15ListHighlightsRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12!\n" +
 	"\x02at\x18\x02 \x03(\v2\x11.numen.v1.StretchR\x02at\"A\n" +
@@ -667,7 +647,7 @@ var file_numen_v1_asset_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_numen_v1_asset_proto_goTypes = []any{
 	(*GetDocumentRequest)(nil),     // 0: numen.v1.GetDocumentRequest
 	(*GetDocumentResponse)(nil),    // 1: numen.v1.GetDocumentResponse
-	(*Sheet)(nil),                  // 2: numen.v1.Sheet
+	(*PageSize)(nil),               // 2: numen.v1.PageSize
 	(*GetRecordingRequest)(nil),    // 3: numen.v1.GetRecordingRequest
 	(*GetRecordingResponse)(nil),   // 4: numen.v1.GetRecordingResponse
 	(*ListHighlightsRequest)(nil),  // 5: numen.v1.ListHighlightsRequest
@@ -679,7 +659,7 @@ var file_numen_v1_asset_proto_goTypes = []any{
 	(*Stretch)(nil),                // 11: numen.v1.Stretch
 }
 var file_numen_v1_asset_proto_depIdxs = []int32{
-	2,  // 0: numen.v1.GetDocumentResponse.sheets:type_name -> numen.v1.Sheet
+	2,  // 0: numen.v1.GetDocumentResponse.pages:type_name -> numen.v1.PageSize
 	10, // 1: numen.v1.GetDocumentResponse.fingerprint:type_name -> numen.v1.Fingerprint
 	11, // 2: numen.v1.ListHighlightsRequest.at:type_name -> numen.v1.Stretch
 	7,  // 3: numen.v1.ListHighlightsResponse.runs:type_name -> numen.v1.Highlight

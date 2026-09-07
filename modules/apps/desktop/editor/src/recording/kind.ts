@@ -123,7 +123,7 @@ export function recordingKind(
     at: (state) => ({ file: state.path, source: as.source }),
     attends: (state) => ({
       path: state.path,
-      recording: { heard: state.heard.value, length: state.length.value },
+      recording: { transcribedTo: state.transcribedTo.value, length: state.length.value },
     }),
   }
 

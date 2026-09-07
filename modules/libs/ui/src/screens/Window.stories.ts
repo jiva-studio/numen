@@ -634,8 +634,8 @@ const screen = ({
       menuIcon,
       groups: panel === 'commands' ? COMMANDS : GROUPS,
       placeholder: panel === 'commands' ? 'Type a command' : 'Search',
-      pages: BOOK_LEAVES,
-      sheets: Array.from({ length: BOOK_LEAVES }, () => PAPER),
+      pageCount: BOOK_LEAVES,
+      pages: Array.from({ length: BOOK_LEAVES }, () => PAPER),
       picture: (page: number) => drawnPage(page),
       highlightsOn: (page: number) => (page === BOOK_FIRST ? HIGHLIGHTS : []),
       go: (page: number) => {
@@ -687,7 +687,7 @@ const screen = ({
             v-else-if="id === BOOK"
             class="h-full"
             :pages="pages"
-            :sheets="sheets"
+            :pages="pages"
             :at="at"
             :picture="picture"
             :highlights="highlightsOn"

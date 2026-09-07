@@ -21,8 +21,7 @@ type NewURL struct {
 
 // ImportOutcome is the file that now exists and what was fetched for it.
 type ImportOutcome struct {
-	Path  string `json:"path" jsonschema:"where the file stands in the vault"`
-	Title string `json:"title" jsonschema:"what it is called, which is what is at the address once that is known"`
+	Path string `json:"path" jsonschema:"where the file stands in the vault; what it is called is what is at the address, once that is known"`
 	// Producer is what brought the text back, and Words how much of it there
 	// is. Both are empty where the address published none of what was asked for.
 	Producer string `json:"producer,omitempty" jsonschema:"what fetched the text: captions for a video's words, article for a page's prose"`
@@ -66,20 +65,17 @@ func addImportTool(server *sdk.Server, core Core) {
 			Address: at, Folder: in.Folder,
 		})
 		if err != nil {
-			return nil, ImportOutcome{Path: made.Path, Title: at.URL, Refused: refusing(err)}, nil
+			return nil, ImportOutcome{Path: made.Path, Refused: refusing(err)}, nil
 		}
 
-		out := ImportOutcome{Path: made.Path, Title: made.Title}
+		out := ImportOutcome{Path: made.Path}
 		fetched, err := core.Sources.Import.Execute(ctx, v, made.Path)
 		if err != nil {
 			out.Refused = refusing(err)
 			return nil, out, nil
 		}
 		out.Path, out.Producer = fetched.Path, fetched.Producer
-		out.Words, out.Nothing = fetched.Words, fetched.Nothing
-		if fetched.Title != "" {
-			out.Title = fetched.Title
-		}
+		out.Words, out.Nothing = fetched.Bytes, fetched.Nothing
 		if in.Copy {
 			out.CopiedBytes, out.CopyRefused = copies(ctx, core, v, out.Path)
 		}
@@ -94,15 +90,15 @@ func copies(
 	got, err := core.Sources.Import.Copy(ctx, v, path)
 	switch {
 	case errors.Is(err, source.ErrNotAURL):
-		return 0, "there is no video at that address"
+		return 0, "there is nothing to copy at that address"
+	case errors.Is(err, source.ErrBeingFetched):
+		return 0, "another run is fetching this address"
 	case err != nil:
 		return 0, refusing(err)
 	case got.TooLarge():
 		return 0, fmt.Sprintf(
-			"the video is %d MB, over the %d MB importing.copy_max_size_mb allows",
+			"it is %d MB, over the %d MB importing.copy_max_size_mb allows",
 			got.Bytes>>20, got.Limit>>20)
-	case got.Busy:
-		return 0, "another run is fetching this video"
 	}
 	return got.Bytes, ""
 }

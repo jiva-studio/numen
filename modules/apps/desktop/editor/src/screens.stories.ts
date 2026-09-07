@@ -487,7 +487,7 @@ const heard = (cues: readonly Cue[]): Recordings => ({
     media: MEDIA,
     type: 'audio/mpeg',
     embed: '',
-    address: '',
+    url: '',
   }),
   cues: async () => ({ cues, editable: true, prose: '' }),
   writes: async () => {},
@@ -619,7 +619,7 @@ const drawn = () => new Promise((then) => requestAnimationFrame(() => then(null)
  * break one.
  */
 
-const PAGE = { wide: 612, high: 792 }
+const PAGE = { width: 612, height: 792 }
 const MARGIN = 72
 const FIRST = 132
 const LEADING = 36
@@ -676,8 +676,8 @@ const pageAt = (page: number): string => {
       return `<text x="${MARGIN}" y="${y}" font-family="Georgia, serif" font-size="${SET}"${weight} fill="#1b1b1b">${escaped(line)}</text>`
     })
     .join('')
-  const number = `<text x="${PAGE.wide / 2}" y="${PAGE.high - 54}" text-anchor="middle" font-family="Georgia, serif" font-size="16" fill="#5a5a5a">${page + 1}</text>`
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PAGE.wide}" height="${PAGE.high}"><rect width="100%" height="100%" fill="#fbfaf7"/>${set}${number}</svg>`
+  const number = `<text x="${PAGE.width / 2}" y="${PAGE.height - 54}" text-anchor="middle" font-family="Georgia, serif" font-size="16" fill="#5a5a5a">${page + 1}</text>`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PAGE.width}" height="${PAGE.height}"><rect width="100%" height="100%" fill="#fbfaf7"/>${set}${number}</svg>`
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
 
@@ -687,10 +687,10 @@ const pageAt = (page: number): string => {
  * rectangle a line at a time and not a block.
  */
 const overLine = (at: number, ends: number) => ({
-  minX: (MARGIN - 4) / PAGE.wide,
-  maxX: (MARGIN + ends) / PAGE.wide,
-  minY: (FIRST + at * LEADING - 22) / PAGE.high,
-  maxY: (FIRST + at * LEADING + 7) / PAGE.high,
+  minX: (MARGIN - 4) / PAGE.width,
+  maxX: (MARGIN + ends) / PAGE.width,
+  minY: (FIRST + at * LEADING - 22) / PAGE.height,
+  maxY: (FIRST + at * LEADING + 7) / PAGE.height,
 })
 
 /** The passage a search found: the sentence the count is defined by. */
@@ -698,8 +698,8 @@ const HIGHLIGHTS = [overLine(10, 396), overLine(11, 412), overLine(12, 372)]
 
 const BOOK: Documents = {
   shape: async () => ({
-    pages: LEAVES,
-    sheets: Array.from({ length: LEAVES }, () => PAGE),
+    pageCount: LEAVES,
+    pages: Array.from({ length: LEAVES }, () => PAGE),
     at: '1024 1700000000000000000 book.pdf',
   }),
   page: (_path, at) => pageAt(at),

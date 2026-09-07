@@ -9,11 +9,11 @@ import { describe, expect, it } from 'vitest'
 import { openDocument, type Documents, type Page, type Shape } from './open'
 
 const SHAPE: Shape = {
-  pages: 3,
-  sheets: [
-    { wide: 612, high: 792 },
-    { wide: 612, high: 792 },
-    { wide: 612, high: 792 },
+  pageCount: 3,
+  pages: [
+    { width: 612, height: 792 },
+    { width: 612, height: 792 },
+    { width: 612, height: 792 },
   ],
   at: '1024 1700000000000000000 book.pdf',
 }
@@ -62,7 +62,7 @@ describe('a document opened', () => {
 
     await read.go(0)
 
-    expect(read.pages.value).toBe(3)
+    expect(read.pageCount.value).toBe(3)
     expect(read.at.value).toBe(0)
   })
 
@@ -251,7 +251,7 @@ describe('a document that will not open', () => {
 
     expect(read.trouble.value).toContain('numen did not answer')
     expect(read.trouble.value).not.toContain('no such document')
-    expect(read.pages.value).toBe(0)
+    expect(read.pageCount.value).toBe(0)
     expect(read.picture.value).toBe('')
   })
 })

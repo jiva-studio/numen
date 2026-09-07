@@ -8,11 +8,13 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/text"
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
@@ -41,7 +43,7 @@ func newYtDLP(ctx context.Context, c Config) *ytDLP {
 func (v *ytDLP) Supports(at domain.WebAddress) bool { return at.IsVideo() && v.command.held() }
 
 func (v *ytDLP) Fetching(domain.WebAddress) port.FetchModel {
-	return port.FetchModel{Tool: "yt-dlp", Version: v.version}
+	return port.FetchModel{Tool: "yt-dlp", Version: v.version, Producer: text.Captions}
 }
 
 // version is what the tool answers when asked which it is. A tool that will not
@@ -96,12 +98,34 @@ func languages(tracks map[string][]struct{}) []string {
 	return out
 }
 
-// Subtitles are the words published with a video.
+// Text is the words published with a video, against the times they were said
+// at, beside what it calls itself and how long it runs.
 //
 // They are asked for as the format that carries one stretch of speech to a cue.
 // What a site draws as two lines scrolling is one stretch said once, and asking
 // for the format a player is fed would put every line into the index twice.
-func (v *ytDLP) Subtitles(
+func (v *ytDLP) Text(
+	ctx context.Context, at domain.WebAddress, want port.PreferredCaptions,
+) (port.Text, error) {
+	meta, err := v.Metadata(ctx, at)
+	if err != nil {
+		return port.Text{}, err
+	}
+	cues, err := v.subtitles(ctx, at, language(meta, want.Languages, want.Automatic))
+	if err != nil {
+		return port.Text{}, err
+	}
+	return port.Text{
+		Producer: text.Captions,
+		Cues:     cues,
+		Title:    meta.Title,
+		Length:   meta.Length,
+	}, nil
+}
+
+// subtitles are the words published in one language, as the site names that
+// language.
+func (v *ytDLP) subtitles(
 	ctx context.Context, at domain.WebAddress, language string,
 ) ([]transcript.Cue, error) {
 	if language == "" {
@@ -240,7 +264,36 @@ func (v *ytDLP) Download(
 const copyFormat = "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/" +
 	"best[vcodec!=none][acodec!=none]/bestvideo*+bestaudio/best"
 
-// Article is a page's prose, which a video is not.
-func (v *ytDLP) Article(context.Context, domain.WebAddress) (port.Article, error) {
-	return port.Article{}, port.ErrNothingFetched
+// language is the one the words are asked for in.
+//
+// What a person published is preferred over what a machine wrote; among those,
+// the languages this installation named, and then the language it was spoken
+// in. Something translated into thirty languages publishes words in all thirty,
+// and what was said in it is one of them.
+func language(meta port.Metadata, languages []string, automatic bool) string {
+	tracks := meta.Captions
+	if len(tracks) == 0 && automatic {
+		tracks = meta.Automatic
+	}
+	if len(tracks) == 0 {
+		return ""
+	}
+	for _, wanted := range append(append([]string(nil), languages...), meta.Language) {
+		if one := slices.IndexFunc(tracks, in(wanted)); one >= 0 {
+			return tracks[one]
+		}
+	}
+	if one := slices.IndexFunc(tracks, original); one >= 0 {
+		return tracks[one]
+	}
+	return tracks[0]
 }
+
+// in says whether a track is in one language. A machine's own is that language
+// with a word after it, and its translations of that one are other languages.
+func in(language string) func(string) bool {
+	return func(track string) bool { return track == language || track == language+"-orig" }
+}
+
+// original says whether a track is the language it was spoken in.
+func original(track string) bool { return strings.HasSuffix(track, "-orig") }

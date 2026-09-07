@@ -28,8 +28,8 @@ service AssetService {
   // a held request is not an answer.
   rpc GetDocument(GetDocumentRequest) returns (GetDocumentResponse);
 
-  // GetRecording is what a recording is: how long it runs, how much of it has
-  // been listened to, and where its bytes are played from.
+  // GetRecording is what a recording is: how long it runs and where its bytes
+  // are played from. What has been made from it is ListArtifacts.
   rpc GetRecording(GetRecordingRequest) returns (GetRecordingResponse);
 
   // ListHighlights is where runs of a source's text sit on the pages it was
@@ -45,11 +45,11 @@ message GetDocumentRequest {
 
 message GetDocumentResponse {
   // How many pages it has.
-  int32 pages = 1;
+  int32 page_count = 1;
 
   // How large each page is, in page order. A page whose size could not be read
   // stands at nothing, and the page after it is still where it was.
-  repeated Sheet sheets = 2;
+  repeated PageSize pages = 2;
 
   // Which bytes these pages were read from. It stands in the address a page is
   // drawn at, so an address names one drawing of one document and answers the
@@ -57,11 +57,11 @@ message GetDocumentResponse {
   Fingerprint fingerprint = 3;
 }
 
-// A Sheet is one page's size in the document's own units. A client draws a page
-// at whatever width it likes and keeps the shape by this.
-message Sheet {
-  double wide = 1;
-  double high = 2;
+// A PageSize is one page in the document's own units. A client draws a page at
+// whatever width it likes and keeps the shape by this.
+message PageSize {
+  double width = 1;
+  double height = 2;
 }
 
 message GetRecordingRequest {
@@ -70,26 +70,20 @@ message GetRecordingRequest {
 }
 
 message GetRecordingResponse {
-  // How far the words reach, and how much of it a run has written down, both in
-  // milliseconds. A recording nothing has listened to reaches nowhere, and the
-  // player it is loaded into is what then says how long it runs.
+  // How long it runs, in milliseconds. A recording nothing has listened to
+  // runs nowhere, and the player it is loaded into is what then says.
   int32 length = 1;
-  int32 heard = 2;
 
-  // Where the recording is played from, and what it is played as. A media
-  // element speaks the protocols of the world and not the scheme a window is
-  // served under, so the bytes are answered at an address of their own. Empty
-  // where this build serves them nowhere.
-  string media = 3;
-  string type = 4;
+  // Where it is played from, and what it is played as. A media element speaks
+  // the protocols of the world and not the scheme a window is served under, so
+  // the bytes are answered at an address of their own; a url with no copy on
+  // this disk is answered with the page that frames it, typed `text/html`.
+  // Empty where this build serves nothing.
+  string media = 2;
+  string type = 3;
 
-  // Where a frame plays what is at the address a url holds, empty where nothing
-  // frames it and on every other source. The address a frame is given and the
-  // hosts the window may frame are one decision, and it is made here.
-  string embed = 5;
-
-  // The address itself, for a url nothing plays. Empty on every other source.
-  string address = 6;
+  // The web address a url points at. Empty on every other source.
+  string url = 4;
 }
 
 message ListHighlightsRequest {

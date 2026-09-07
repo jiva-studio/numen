@@ -212,13 +212,15 @@ func (a *API) copies(
 	}
 	got, err := asked.Copy(ctx, v, ref.Path)
 	a.finished(copying + ref.Path)
+	out := a.copyOf(ctx, v, ref.Path, at)
+	if errors.Is(err, source.ErrBeingFetched) {
+		out.State = v1.State_STATE_RUNNING
+		return out, nil
+	}
 	if err != nil {
 		return nil, connect.NewError(fetched(err), err)
 	}
-	out := a.copyOf(ctx, v, ref.Path, at)
 	switch {
-	case got.Busy:
-		out.State = v1.State_STATE_RUNNING
 	case got.TooLarge():
 		out.State, out.Size = v1.State_STATE_FAILED, got.Bytes
 		out.Error = fmt.Sprintf(
@@ -340,7 +342,7 @@ func (a *API) DeleteArtifact(
 		if a.Imports == nil {
 			return nil, connect.NewError(connect.CodeUnimplemented, errNoFetcher)
 		}
-		if err := a.Imports.Forget(ctx, showing, ref.Path); err != nil {
+		if err := a.Imports.DeleteText(ctx, showing, ref.Path); err != nil {
 			return nil, connect.NewError(reaching(err), err)
 		}
 		return connect.NewResponse(&v1.DeleteArtifactResponse{

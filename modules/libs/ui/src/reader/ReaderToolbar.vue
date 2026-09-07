@@ -12,12 +12,12 @@ import { clamped, CLOSEST, FURTHEST, NEARER, READER_WORDS, type ReaderWords } fr
 withDefaults(
   defineProps<{
     /** How many pages the document has. */
-    pages?: number
+    pageCount?: number
     /** The words they are drawn with. */
     words?: ReaderWords
   }>(),
   {
-    pages: 0,
+    pageCount: 0,
     words: () => READER_WORDS,
   },
 )
@@ -89,7 +89,7 @@ const turn = () => {
         size="icon-small"
         class="rounded-pill"
         :aria-label="words.next"
-        :disabled="at >= pages - 1"
+        :disabled="at >= pageCount - 1"
         @click="at += 1"
       >
         <svg
@@ -110,12 +110,12 @@ const turn = () => {
         class="reader__at w-10 rounded-node border border-field-rule bg-field px-1 text-center text-small text-ink outline-none ring-numen"
         type="number"
         min="1"
-        :max="pages"
+        :max="pageCount"
         :aria-label="words.page"
         @change="turn"
         @keydown.enter="turn"
       />
-      <span class="pe-1 text-small text-hushed">/ {{ pages }}</span>
+      <span class="pe-1 text-small text-hushed">/ {{ pageCount }}</span>
 
       <Button
         variant="ghost"

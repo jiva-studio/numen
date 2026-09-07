@@ -260,7 +260,7 @@ func readSources(
 	making.Books.OnProgress = func(res source.ExtractResult) {
 		api.say(task.Task{
 			ID: readingBooks, Doing: "Reading books", About: res.Reading,
-			// Every book the walk found leaves this pass one of four ways, and
+			// Every book the walk found leaves this pass one of several ways, and
 			// all four count as done.
 			Count: int64(res.Extracted + res.Unchanged + res.Unreadable + res.Vanished),
 			Total: int64(res.Seen),

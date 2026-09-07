@@ -197,7 +197,7 @@ export const RefusalSchema: GenEnum<Refusal> = /*@__PURE__*/
   enumDesc(file_numen_v1_shared, 0);
 
 /**
- * NoteType is which of five a note is: the `type` key of its frontmatter. It
+ * NoteType is what a note is: the `type` key of its frontmatter. It
  * says what the note is; whether the application reads text out of the file is
  * SourceKind.
  *

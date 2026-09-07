@@ -38,9 +38,9 @@ export const READER_WORDS: ReaderWords = {
 }
 
 /** One page's size, in the page's own units. */
-export interface Sheet {
-  readonly wide: number
-  readonly high: number
+export interface PageSize {
+  readonly width: number
+  readonly height: number
 }
 
 /** The area the pages are read in, in CSS pixels. */
@@ -56,7 +56,7 @@ export const GAP = 16
  * The shape of a page nothing said the size of. A document answers with its
  * pages' sizes, and one that has not answered yet still has to be laid out.
  */
-export const UPRIGHT: Sheet = { wide: 612, high: 792 }
+export const UPRIGHT: PageSize = { width: 612, height: 792 }
 
 /**
  * How much beyond the edge of the viewport is drawn, as a share of it. A page
@@ -88,7 +88,7 @@ export interface Row {
  * a whole page stands in that viewport.
  *
  * A page whose size is not known takes the first page's, and a document that
- * has said nothing takes an upright sheet. Laying the row out on nothing would
+ * has said nothing takes an upright page. Laying the row out on nothing would
  * put every page at the same place, and the row would jump as the sizes came.
  *
  * A viewport with no height makes no row. Until something has been measured
@@ -96,8 +96,8 @@ export interface Row {
  * page drawn and thrown away.
  */
 export function row(
-  sheets: readonly Sheet[],
-  pages: number,
+  pages: readonly PageSize[],
+  pageCount: number,
   viewport: Viewport,
   zoom: number,
 ): Row {
@@ -106,9 +106,9 @@ export function row(
   const starts: number[] = []
   const widths: number[] = []
   let along = GAP
-  for (let page = 0; page < pages; page++) {
-    const sheet = sheetOf(sheets, page)
-    const wide = Math.max(Math.round((high * sheet.wide) / sheet.high), 1)
+  for (let page = 0; page < pageCount; page++) {
+    const size = sizeOf(pages, page)
+    const wide = Math.max(Math.round((high * size.width) / size.height), 1)
     starts.push(along)
     widths.push(wide)
     along += wide + GAP
@@ -117,11 +117,11 @@ export function row(
 }
 
 /** The size of one page, and the nearest thing to it that is known. */
-function sheetOf(sheets: readonly Sheet[], page: number): Sheet {
-  const said = sheets[page]
-  if (said && said.wide > 0 && said.high > 0) return said
-  const first = sheets[0]
-  return first && first.wide > 0 && first.high > 0 ? first : UPRIGHT
+function sizeOf(pages: readonly PageSize[], page: number): PageSize {
+  const said = pages[page]
+  if (said && said.width > 0 && said.height > 0) return said
+  const first = pages[0]
+  return first && first.width > 0 && first.height > 0 ? first : UPRIGHT
 }
 
 /**
