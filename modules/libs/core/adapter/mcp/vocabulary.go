@@ -42,6 +42,7 @@ var doing = map[string]Tool{
 	"note_resolve":        {Kind: port.StepRead},
 	"note_neighbourhood":  {Kind: port.StepRead},
 	"note_create":         {Kind: port.StepEdit},
+	"note_import":         {Kind: port.StepEdit},
 	"note_rewrite":        {Kind: port.StepEdit},
 	"note_edit":           {Kind: port.StepEdit, Match: "match", Text: "text"},
 	"note_rename":         {Kind: port.StepMove},

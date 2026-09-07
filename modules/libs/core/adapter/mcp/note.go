@@ -199,6 +199,8 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 }
 
 func addNoteWritingTools(server *sdk.Server, core Core) {
+	addImportTool(server, core)
+
 	// One note per call.
 	//
 	// A call is written out in full before it is made, and this one carries the

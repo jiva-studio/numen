@@ -169,6 +169,7 @@ func agentCore(cfg container.Config, opened *editor.Installation, root string, o
 			Rename:  notes.Rename,
 			Remove:  notes.Remove,
 			Linking: notes.Linking,
+			Import:  opened.API.Imports,
 		},
 	}
 }

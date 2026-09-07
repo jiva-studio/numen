@@ -15,19 +15,25 @@ Reaching an address means speaking to a site that changes what it publishes and 
 
 *What is at this address, and what of it can be had*: what it is called, how long it runs, the words published with it, its sound, a copy of it, and the prose of a page. One port, in the core's own words.
 
+### Each way of reaching an address is a strategy behind that one port
+
+A strategy says which addresses it reaches and answers for those; the adapter asks each in turn and the first that says so is the one that answers. A site with an API of its own is written as the whole of that site's answer, added to the list, and nothing elsewhere is taught about it.
+
+They stand narrowest first. A page is what an address is when nothing knows the site better, so the page reader stands last.
+
 ### The tools are run as programs, and named by a setting
 
-`yt-dlp` reaches a video and `ffmpeg` brings sound to what a transcriber opens. Each is named by a setting holding a command and what it is started through, and an empty one asks the path.
+`yt-dlp` reaches what a site publishes as a video, on the sites it knows, and `ffmpeg` brings its sound to what a transcriber opens. Each is named by a setting holding a command and what it is started through, and an empty one asks the path.
 
 **It is a command and not a filename.** A machine that writes the path of a program afresh at every build names whatever does know where it is, and one that keeps several names the one it means.
 
 **Every run is handed the arguments the setting names, before its own.** A site that refuses an unattended request is answered by a flag — cookies from a browser, a token, a runtime that mints one — and which of those a person uses is theirs. What the tool said when it refused is what they are shown: it knows why, and nothing here says it better.
 
-### A machine without `yt-dlp` has no fetcher
+### A missing tool costs the addresses that need it, and no others
 
-`yt-dlp` is what reaches an address. `ffmpeg` only brings what it took to the container a transcriber opens, so a machine holding ffmpeg alone can fetch nothing and is a machine with no fetcher.
+A page needs no tool, so every machine has a fetcher. A machine without `yt-dlp` reaches no video, and asking for one is answered by saying which tool would have reached it — the address is what is refused, not importing.
 
-Nothing is bound, the ask is answered that this build cannot do it, and the window offers it nowhere from then on. That is what a build without an interface, without a recogniser and without a proofreader already does. Nothing is said at startup: an absent tool is a build that does less, and every other optional adapter is silent about it.
+Nothing is said at startup: an absent tool is a build that does less, and every other optional adapter is silent about it.
 
 ### Neither tool is linked, and neither is shipped
 
@@ -35,7 +41,9 @@ A separate program run over a pipe is neither linking nor distribution, so the s
 
 ## Consequences
 
-- The feature is absent on a machine that has neither tool, and says so.
+- A machine without a tool loses the addresses that tool reaches, and says which
+one would have reached them.
+- Reaching another site is a strategy added to a list, and one diff.
 - What a site does to keep programs out is answered by the person's own
 settings, without a release.
 - Nothing here is tested against a network: what a run of the real tool says is

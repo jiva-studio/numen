@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -73,6 +74,7 @@ type Notes struct {
 	Rename  note.Rename
 	Remove  note.Remove
 	Linking note.EditLinks
+	Import  *source.ImportURL
 }
 
 // Vaults is the list of vaults this installation holds, and what a person does

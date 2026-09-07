@@ -58,7 +58,7 @@ Five families and a reader of files, served over the vault's own endpoint.
 
 | Family | What it is for |
 | --- | --- |
-| `note_*` | search the vault, look notes up by path and by the name a link writes, read and rewrite their prose, edit a stretch, rename, move, remove, and put one in front of the person |
+| `note_*` | search the vault, look notes up by path and by the name a link writes, read and rewrite their prose, edit a stretch, rename, move, remove, import a web address, and put one in front of the person |
 | `file_read` | read a run of any file the vault holds, by its path from the vault folder |
 | `link_*` | add, change, remove and list the links a note carries |
 | `card_*` | list the stencils a vault holds, read a deck and the cards in it, and make, change and remove one card at a time |

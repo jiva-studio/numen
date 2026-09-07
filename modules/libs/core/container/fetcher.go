@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"errors"
 	"sync"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -11,16 +10,13 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
-// Fetcher is what reaches an address on this machine, and nothing where the
-// machine holds neither of the tools that reach one.
+// Fetcher is what reaches an address on this machine.
 //
-// A build with no fetcher is a build that cannot import: the run is answered
-// that it cannot be done here, and the window offers it nowhere from then on.
+// A page needs no tool, so every build has one. Which addresses it reaches is
+// the machine's: a video is asked of yt-dlp, and a machine without it says so
+// when one is asked for.
 func (c Config) Fetcher(ctx context.Context) port.Fetcher {
 	fetcher, err := fetch.New(ctx, c.Fetching)
-	if errors.Is(err, fetch.ErrNoTool) {
-		return nil
-	}
 	if err != nil {
 		c.trouble(err)
 		return nil

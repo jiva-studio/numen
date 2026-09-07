@@ -12,6 +12,8 @@ What it makes is a note carrying `type: link` and `url`. What is at the address 
 
 At the command line the same run is `numen-cli import <vault> <note>`, and `--again` asks a site for its words afresh.
 
+An agent asks for one with `note_import`, which makes the note and fetches what is at the address in one call, and takes `copy` for the video itself. A build that reaches no address serves the tool nowhere — see [Agents](agents.md).
+
 ## What is fetched
 
 | At the address | What is kept | Under |
@@ -59,7 +61,11 @@ Deleting a link note deletes what was fetched for it: the words, the prose, the 
 
 ## The tools
 
-`yt-dlp` reaches a video, and `ffmpeg` brings sound to what a transcriber opens. Neither is shipped: each is a program the machine already has, named by a setting holding a command and what it is started through. A machine with neither cannot import, says so, and offers it nowhere afterwards.
+Each way of reaching an address is a strategy of its own, and which one answers is which one says it reaches that address.
+
+A page is fetched in this process — an ordinary request, and the prose found by a library — so every machine reaches one. `yt-dlp` reaches what a site publishes as a video, on the sites that tool knows, and `ffmpeg` brings its sound to what a transcriber opens. Neither is shipped: each is a program the machine already has, named by a setting holding a command and what it is started through. A machine without `yt-dlp` imports pages and says what is missing when a video is asked for.
+
+A site with an API of its own is another strategy and nothing more: it says which addresses it reaches, and it is written as the whole of that site's answer.
 
 A site that refuses an unattended request says so in its own words, and those are what the person is shown. What answers such a refusal — cookies from a browser, a token — is handed to every run through `importing.yt_dlp.arguments`.
 

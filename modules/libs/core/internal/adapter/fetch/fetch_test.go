@@ -2,6 +2,7 @@ package fetch_test
 
 import (
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -49,13 +50,46 @@ func address(t *testing.T, written string) domain.WebAddress {
 	return domain.WebAddress{URL: written}
 }
 
-// A machine with neither tool has no fetcher at all, which is what says this
-// build cannot fetch and takes the run off the palette.
-func TestAMachineWithNeitherTool(t *testing.T) {
+// A machine with neither tool still fetches a page: an address that is not a
+// video is an ordinary request, and the prose is found in this process.
+func TestAMachineWithNeitherToolFetchesAPage(t *testing.T) {
+	t.Setenv("PATH", t.TempDir())
+	site := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write([]byte(`<!doctype html><html><head><title>Entropy</title></head><body>
+			<article><h1>Entropy</h1><p>A measure of how many ways the parts of a thing
+			can be arranged, and it grows.</p></article></body></html>`))
+	}))
+	defer site.Close()
+
+	fetcher, err := fetch.New(t.Context(), fetch.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	article, err := fetcher.Article(t.Context(), address(t, site.URL+"/entropy"))
+	if err != nil {
+		t.Fatalf("a page went unfetched on a machine holding no tool: %v", err)
+	}
+	if !strings.Contains(article.Prose, "arranged") {
+		t.Errorf("the prose reads %q", article.Prose)
+	}
+}
+
+// A video on such a machine says what is missing. yt-dlp is what reaches one,
+// on the sites it knows, and nothing here reaches one without it.
+func TestAVideoOnAMachineWithNeitherTool(t *testing.T) {
 	t.Setenv("PATH", t.TempDir())
 
-	if _, err := fetch.New(t.Context(), fetch.Config{}); !errors.Is(err, fetch.ErrNoTool) {
-		t.Errorf("a machine holding no tool answered %v", err)
+	fetcher, err := fetch.New(t.Context(), fetch.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	at := address(t, "https://youtu.be/dQw4w9WgXcQ")
+	if _, err := fetcher.Metadata(t.Context(), at); !errors.Is(err, fetch.ErrNoTool) {
+		t.Errorf("a video was looked at without the tool that reaches one: %v", err)
+	}
+	if _, err := fetcher.Download(t.Context(), at, io.Discard); !errors.Is(err, fetch.ErrNoTool) {
+		t.Errorf("a video was copied without the tool that reaches one: %v", err)
 	}
 }
 
@@ -181,13 +215,39 @@ func TestAVideoIsNotAPage(t *testing.T) {
 	}
 }
 
-// ffmpeg reaches no address. It brings what yt-dlp took to the container a
-// transcriber opens, and a machine holding it alone can fetch nothing.
-func TestAMachineWithFfmpegAndNoDownloader(t *testing.T) {
+// ffmpeg reaches no address of its own. It brings what another tool took to the
+// container a transcriber opens, so a machine holding it alone reaches a video
+// no better than a machine holding nothing.
+func TestAMachineWithFfmpegAndNothingThatReachesAVideo(t *testing.T) {
 	t.Setenv("PATH", t.TempDir())
 
-	_, err := fetch.New(t.Context(), fetch.Config{Sound: fetch.Tool{Command: tool(t, "")}})
-	if !errors.Is(err, fetch.ErrNoTool) {
-		t.Errorf("a machine holding only ffmpeg answered %v", err)
+	fetcher, err := fetch.New(t.Context(), fetch.Config{Sound: fetch.Tool{Command: tool(t, "")}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	at := address(t, "https://youtu.be/dQw4w9WgXcQ")
+	if _, err := fetcher.Metadata(t.Context(), at); !errors.Is(err, fetch.ErrNoTool) {
+		t.Errorf("a machine holding only ffmpeg looked at a video: %v", err)
+	}
+}
+
+// Which strategy answers is which one says it reaches the address, and the
+// first that does is the one asked. What a fetch is claimed by says which of
+// them it was, so a text kept beyond the run is claimed again by what made it.
+func TestWhichStrategyReachesAnAddress(t *testing.T) {
+	fetcher, err := fetch.New(t.Context(), fetch.Config{Video: fetch.Tool{Command: tool(t, aVideo)}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range []struct {
+		written string
+		want    string
+	}{
+		{"https://youtu.be/dQw4w9WgXcQ", "yt-dlp"},
+		{"https://example.com/entropy", "go-readability"},
+	} {
+		if got := fetcher.Fetching(address(t, one.written)).Tool; got != one.want {
+			t.Errorf("%s is reached by %q, want %q", one.written, got, one.want)
+		}
 	}
 }
