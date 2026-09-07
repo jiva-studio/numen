@@ -15,8 +15,7 @@ const alphabetKey = "character"
 
 // The fields of an ONNX file that this reads. A model is a protobuf message,
 // and only the one field is wanted, so the rest are stepped over by their
-// length rather than parsed. That is why there is no dependency here on the
-// schema of everything else in the file.
+// length.
 const (
 	metadataField = 14 // ModelProto.metadata_props
 	keyField      = 1  // StringStringEntryProto.key

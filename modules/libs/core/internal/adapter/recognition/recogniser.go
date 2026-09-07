@@ -3,12 +3,9 @@
 //
 // A page goes through two of them: one divides it into its parts and says in
 // what order they are read, and one reads the lines inside each part. They are
-// run through ONNX Runtime, reached by name at run time, so this builds with
-// CGO_ENABLED=0 and cross-compiles from any machine to any other.
+// run through ONNX Runtime, reached by name at run time.
 //
-// Every part is read on its own image. Reading a whole page at once costs one
-// detection instead of ten, and a line found that way reaches across the gutter
-// of a two-column page and carries the other column's words with it.
+// Every part is read on its own image.
 package recognition
 
 import (
