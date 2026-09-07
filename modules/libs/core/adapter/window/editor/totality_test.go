@@ -131,15 +131,20 @@ func TestEveryArtifactTheSchemaNamesStandsSomewhere(t *testing.T) {
 		return named && id != ""
 	})
 	testsupport.Handled(t, func(of v1.ArtifactKind) bool {
-		return slices.Contains(carried(domain.KindBook, false), of) ||
-			slices.Contains(carried(domain.KindRecording, false), of) ||
-			slices.Contains(carried(domain.KindNote, true), of)
+		// A note carries what is at the address it points at, and what that is
+		// follows from the address: the two are asked about separately.
+		video := domain.WebAddress{URL: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", Video: "dQw4w9WgXcQ"}
+		page := domain.WebAddress{URL: "https://example.com/entropy"}
+		return slices.Contains(carried(domain.KindBook, domain.WebAddress{}), of) ||
+			slices.Contains(carried(domain.KindRecording, domain.WebAddress{}), of) ||
+			slices.Contains(carried(domain.KindNote, video), of) ||
+			slices.Contains(carried(domain.KindNote, page), of)
 	})
 }
 
 // standingAt is what an artifact over a source standing here is answered with.
 func standingAt(got reached) func() v1.State {
 	return func() v1.State {
-		return stood(domain.Vault{}, "Heard.md", v1.ArtifactKind_ARTIFACT_KIND_HEARD, got).GetState()
+		return stood(domain.Vault{}, "Talk.md", v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT, got).GetState()
 	}
 }

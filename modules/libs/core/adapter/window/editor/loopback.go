@@ -112,6 +112,12 @@ func (l *Loopback) serving() http.Handler {
 			http.Error(w, "not a file of a vault", http.StatusBadRequest)
 			return
 		}
+		// The page holding a video's player is served here and names no vault:
+		// it is a page of this application's own, and what it frames is a host.
+		if id == embedRoute {
+			l.framing(w, r, rest)
+			return
+		}
 		path, err := url.PathUnescape(rest)
 		if err != nil {
 			http.Error(w, "not a file of a vault", http.StatusBadRequest)

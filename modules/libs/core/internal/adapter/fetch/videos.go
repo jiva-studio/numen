@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -24,8 +23,8 @@ import (
 // ffmpeg is beside it because a video's sound arrives in whatever container the
 // site had and a transcriber opens one.
 type videos struct {
-	command []string
-	sound   []string
+	command program
+	sound   program
 	version string
 }
 
@@ -39,7 +38,7 @@ func newVideos(ctx context.Context, c Config) *videos {
 }
 
 // Supports is a video, on a machine holding the tool that gets at one.
-func (v *videos) Supports(at domain.WebAddress) bool { return at.IsVideo() && v.command != nil }
+func (v *videos) Supports(at domain.WebAddress) bool { return at.IsVideo() && v.command.held() }
 
 func (v *videos) Fetching(domain.WebAddress) port.FetchModel {
 	return port.FetchModel{Tool: "yt-dlp", Version: v.version}
@@ -47,11 +46,11 @@ func (v *videos) Fetching(domain.WebAddress) port.FetchModel {
 
 // version is what the tool answers when asked which it is. A tool that will not
 // say is still a tool, and what it produced is claimed by its name alone.
-func version(ctx context.Context, command []string) string {
-	if command == nil {
+func version(ctx context.Context, tool program) string {
+	if !tool.held() {
 		return ""
 	}
-	said, err := run(ctx, command, nil, "--version")
+	said, err := run(ctx, tool, nil, "--version")
 	if err != nil {
 		return ""
 	}
@@ -142,16 +141,13 @@ func (v *videos) Subtitles(
 // Audio is a video's sound as the container a transcriber opens: one channel at
 // 16 kHz, which is what a model takes.
 func (v *videos) Audio(ctx context.Context, at domain.WebAddress, into io.Writer) error {
-	if v.sound == nil {
+	if !v.sound.held() {
 		return ErrNoTool
 	}
-	taking := exec.CommandContext(ctx, v.command[0],
-		append(append([]string(nil), v.command[1:]...),
-			"-f", "bestaudio", "--no-playlist", "-o", "-", at.URL)...)
-	bringing := exec.CommandContext(ctx, v.sound[0],
-		append(append([]string(nil), v.sound[1:]...),
-			"-hide_banner", "-loglevel", "error", "-i", "pipe:0",
-			"-vn", "-ac", "1", "-ar", "16000", "-f", "wav", "pipe:1")...)
+	taking := v.command.started(ctx, "-f", "bestaudio", "--no-playlist", "-o", "-", at.URL)
+	bringing := v.sound.started(ctx,
+		"-hide_banner", "-loglevel", "error", "-i", "pipe:0",
+		"-vn", "-ac", "1", "-ar", "16000", "-f", "wav", "pipe:1")
 
 	sound, err := taking.StdoutPipe()
 	if err != nil {
@@ -188,9 +184,7 @@ func (v *videos) Download(
 ) (port.Download, error) {
 	// The one container is asked for by name. A site with nothing in it says so,
 	// and what arrives is what the copy is served as.
-	taking := exec.CommandContext(ctx, v.command[0],
-		append(append([]string(nil), v.command[1:]...),
-			"-f", "best[ext=mp4]/mp4", "--no-playlist", "-o", "-", at.URL)...)
+	taking := v.command.started(ctx, "-f", "best[ext=mp4]/mp4", "--no-playlist", "-o", "-", at.URL)
 	var said bytes.Buffer
 	taking.Stdout, taking.Stderr = into, &said
 	if err := taking.Run(); err != nil {

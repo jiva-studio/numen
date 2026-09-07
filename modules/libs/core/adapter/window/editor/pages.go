@@ -11,7 +11,6 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/appearance"
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
@@ -102,9 +101,12 @@ func (a *API) Serving(files http.Handler, named ...string) http.Handler {
 	// Where a recording is played from is known once the socket it is served
 	// over is open, which is before a page is ever asked for. What a link note
 	// points at is played in a frame, from the hosts named here and no other.
+	// A player is framed from this run's own socket and never from the host
+	// directly: a host is told which address holds its player, and a window
+	// drawn from a scheme of its own has none to give.
 	policy := appearance.Sources{
 		Media:  a.Playing.named(),
-		Frames: domain.EmbedHosts(),
+		Frames: a.Playing.named(),
 	}.Policy()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", policy)

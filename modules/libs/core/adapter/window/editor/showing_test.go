@@ -583,9 +583,9 @@ func TestARunReachesTheVaultTheWindowIsShowing(t *testing.T) {
 	asking, stop := context.WithCancel(t.Context())
 	var asked sync.WaitGroup
 	for _, of := range []v1.ArtifactKind{
-		v1.ArtifactKind_ARTIFACT_KIND_CORRECTED,
-		v1.ArtifactKind_ARTIFACT_KIND_READING,
-		v1.ArtifactKind_ARTIFACT_KIND_HEARD,
+		v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED,
+		v1.ArtifactKind_ARTIFACT_KIND_OCR,
+		v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
 	} {
 		asked.Add(1)
 		go func() {

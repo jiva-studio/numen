@@ -1,5 +1,11 @@
 package fetch
 
+import (
+	"maps"
+	"os"
+	"slices"
+)
+
 // Config is what an installation says about reaching an address.
 //
 // Every key here is a machine's answer: where a tool is, what it may be handed,
@@ -43,9 +49,28 @@ type Config struct {
 // are handed to every run before its own: what answers for a person at a site
 // that refuses an unattended fetch — the cookies of a browser, a token, a proxy
 // — is that machine's and is passed through as it stands.
+//
+// Environment is set on every run, over what this process was started with. A
+// tool that finds a machine's certificates, its cache or its proxy by an
+// environment variable is told which, and a machine that keeps none of those
+// where the tool looks says so here.
 type Tool struct {
-	Command   []string `json:"command"`
-	Arguments []string `json:"arguments"`
+	Command     []string          `json:"command"`
+	Arguments   []string          `json:"arguments"`
+	Environment map[string]string `json:"environment"`
+}
+
+// env is what a run of this tool is started with: this process's own, and what
+// the settings name over it. Naming none is this process's own.
+func (t Tool) env() []string {
+	if len(t.Environment) == 0 {
+		return nil
+	}
+	out := os.Environ()
+	for _, name := range slices.Sorted(maps.Keys(t.Environment)) {
+		out = append(out, name+"="+t.Environment[name])
+	}
+	return out
 }
 
 // Defaults fetch nothing unasked, prefer the words a person published, and keep

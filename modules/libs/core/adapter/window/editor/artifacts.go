@@ -19,22 +19,20 @@ import (
 // What a model wrote about a file of the vault is asked for as a resource: it
 // is listed, made and taken away, and what has become of it is a state.
 //
-// Which model does the work follows from the file. A scan is read and a
-// recording is heard, so the caller names the artifact and never the producer.
+// Which model does the work follows from the file, so the caller names the
+// artifact and never the producer.
 
 // The artifacts a file of the vault can carry, by the name each stands under.
 // A name is the last part of an artifact's resource name.
 const (
-	// readingID is the text a model read out of a scan.
-	readingID = "ocr"
-	// heardID is the words a model heard in a recording, and correctedID those
-	// words put right.
-	heardID     = derived.ASR
-	correctedID = derived.ASR + ".corrected"
-	// fetchedID is what is at the address a link note points at.
-	fetchedID = "link"
-	// copiedID is the copy of a video played from this disk.
-	copiedID = "link.copy"
+	// An artifact is named by what it is. What made it is the store's to say,
+	// and a caller asking for one asks for a kind and not for a producer.
+	readingID             = derived.Reading
+	readingCorrectedID    = derived.Reading + ".corrected"
+	transcriptID          = derived.Transcript
+	transcriptCorrectedID = derived.Transcript + ".corrected"
+	articleID             = derived.Article
+	copiedID              = derived.Copies
 )
 
 // errNoArtifact is a kind no file of the vault carries, and errNotCarried one
@@ -47,22 +45,28 @@ var (
 // carried is every artifact a file can carry, in the order they are made. A
 // file carrying none is one nothing is made from.
 //
-// A note carries one where it points somewhere, and every other note carries
-// none: what is made from a file follows from what the file is.
-func carried(kind domain.SourceKind, points bool) []v1.ArtifactKind {
+// A note carries what is at the address it points at, and what that is follows
+// from the address: a video is words with the times they were said at, and
+// every other page is the prose it is written around.
+func carried(kind domain.SourceKind, at domain.WebAddress) []v1.ArtifactKind {
 	switch {
 	case kind == domain.KindBook:
-		return []v1.ArtifactKind{v1.ArtifactKind_ARTIFACT_KIND_READING}
+		return []v1.ArtifactKind{
+			v1.ArtifactKind_ARTIFACT_KIND_OCR,
+			v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED,
+		}
 	case kind == domain.KindRecording:
 		return []v1.ArtifactKind{
-			v1.ArtifactKind_ARTIFACT_KIND_HEARD,
-			v1.ArtifactKind_ARTIFACT_KIND_CORRECTED,
+			v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
+			v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED,
 		}
-	case kind == domain.KindNote && points:
+	case kind == domain.KindNote && at.IsVideo():
 		return []v1.ArtifactKind{
-			v1.ArtifactKind_ARTIFACT_KIND_FETCHED,
+			v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
 			v1.ArtifactKind_ARTIFACT_KIND_COPY,
 		}
+	case kind == domain.KindNote && at.URL != "":
+		return []v1.ArtifactKind{v1.ArtifactKind_ARTIFACT_KIND_ARTICLE}
 	default:
 		return nil
 	}
@@ -72,14 +76,16 @@ func carried(kind domain.SourceKind, points bool) []v1.ArtifactKind {
 // schema names that artifact at all.
 func standing(of v1.ArtifactKind) (string, bool) {
 	switch of {
-	case v1.ArtifactKind_ARTIFACT_KIND_READING:
+	case v1.ArtifactKind_ARTIFACT_KIND_OCR:
 		return readingID, true
-	case v1.ArtifactKind_ARTIFACT_KIND_HEARD:
-		return heardID, true
-	case v1.ArtifactKind_ARTIFACT_KIND_CORRECTED:
-		return correctedID, true
-	case v1.ArtifactKind_ARTIFACT_KIND_FETCHED:
-		return fetchedID, true
+	case v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT:
+		return transcriptID, true
+	case v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED:
+		return transcriptCorrectedID, true
+	case v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED:
+		return readingCorrectedID, true
+	case v1.ArtifactKind_ARTIFACT_KIND_ARTICLE:
+		return articleID, true
 	case v1.ArtifactKind_ARTIFACT_KIND_COPY:
 		return copiedID, true
 	default:
@@ -101,15 +107,15 @@ func (a *API) points(ctx context.Context, v domain.Vault, ref domain.Fingerprint
 	return found.Address
 }
 
-// fetched is what fetching one address has come to. Which producer brought the
-// words back is the store's to say: a video's are published words or a model's,
-// and a page's are its prose.
-func (a *API) fetched(
+// linked is the text of what a note points at, as it now stands. What kind of
+// text that is follows from the address: a video is a transcript, and every
+// other page is an article.
+func (a *API) linked(
 	ctx context.Context, v domain.Vault, path string, at domain.WebAddress,
 ) (*v1.Artifact, error) {
 	out := &v1.Artifact{
-		Name:  named(v, path, fetchedID),
-		Kind:  v1.ArtifactKind_ARTIFACT_KIND_FETCHED,
+		Name:  named(v, path, articleID),
+		Kind:  textOf(at),
 		State: v1.State_STATE_NONE,
 	}
 	_, stores, held := a.hearing()
@@ -127,7 +133,7 @@ func (a *API) fetched(
 			return nil, err
 		}
 		if got.stands != untouched {
-			return stood(v, path, v1.ArtifactKind_ARTIFACT_KIND_FETCHED, got), nil
+			return stood(v, path, textOf(at), got), nil
 		}
 	}
 	return out, nil
@@ -234,7 +240,7 @@ func (a *API) ListArtifacts(
 	}
 	at := a.points(ctx, showing, ref)
 	out := &v1.ListArtifactsResponse{}
-	for _, of := range carried(ref.Kind, at.URL != "") {
+	for _, of := range carried(ref.Kind, at) {
 		one, err := a.artifact(ctx, showing, ref, at, of)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
@@ -265,16 +271,22 @@ func (a *API) CreateArtifact(
 	// The kind of the file decides what is made from it, so an artifact the file
 	// does not carry is a client asking for a run over the wrong thing.
 	at := a.points(ctx, showing, ref)
-	if !slices.Contains(carried(ref.Kind, at.URL != ""), of) {
+	if !slices.Contains(carried(ref.Kind, at), of) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNotCarried)
 	}
 
 	var made *v1.Artifact
 	switch of {
-	case v1.ArtifactKind_ARTIFACT_KIND_CORRECTED:
+	case v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED:
 		made, err = a.proofreadTranscript(ctx, showing, ref)
-	case v1.ArtifactKind_ARTIFACT_KIND_FETCHED:
-		made, err = a.fetch(ctx, showing, ref, at)
+	case v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT, v1.ArtifactKind_ARTIFACT_KIND_ARTICLE:
+		// A recording's transcript is heard by a model here; a note's is
+		// fetched from the address it points at.
+		if ref.Kind == domain.KindNote {
+			made, err = a.fetch(ctx, showing, ref, at)
+			break
+		}
+		made, err = a.run(ctx, showing, ref, of)
 	case v1.ArtifactKind_ARTIFACT_KIND_COPY:
 		made, err = a.copies(ctx, showing, ref, at)
 	default:
@@ -322,8 +334,8 @@ func (a *API) DeleteArtifact(
 	}
 	return connect.NewResponse(&v1.DeleteArtifactResponse{
 		Artifact: &v1.Artifact{
-			Name:  named(showing, ref.Path, heardID),
-			Kind:  v1.ArtifactKind_ARTIFACT_KIND_HEARD,
+			Name:  named(showing, ref.Path, transcriptID),
+			Kind:  v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
 			State: v1.State_STATE_NONE,
 		},
 	}), nil
@@ -375,7 +387,7 @@ func beginning(started port.StartOutcome) v1.State {
 // runner is what reads a scan or hears a recording. Nothing while the passes
 // behind the vault the window is showing are still coming up.
 func (a *API) runner(of v1.ArtifactKind) Runner {
-	if of == v1.ArtifactKind_ARTIFACT_KIND_READING {
+	if of == v1.ArtifactKind_ARTIFACT_KIND_OCR {
 		return a.recognises()
 	}
 	return a.transcribes()
@@ -407,7 +419,7 @@ func (a *API) fetch(
 	if _, err := a.Imports.Execute(ctx, v, ref.Path); err != nil {
 		return nil, connect.NewError(reaching(err), err)
 	}
-	return a.fetched(ctx, v, ref.Path, at)
+	return a.linked(ctx, v, ref.Path, at)
 }
 
 // proofreadTranscript begins putting the transcript of a recording right, and
@@ -428,7 +440,7 @@ func (a *API) proofreadTranscript(
 	if !puts.ProofreaderReady() {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoProofreading)
 	}
-	_, _, listened, err := a.heard(ctx, v, ref.Path)
+	_, _, listened, err := a.made(ctx, v, ref.Path)
 	if err != nil {
 		return nil, connect.NewError(reaching(err), err)
 	}
@@ -443,7 +455,7 @@ func (a *API) proofreadTranscript(
 	if err != nil {
 		return nil, connect.NewError(reaching(err), err)
 	}
-	return &v1.Artifact{Name: named(v, ref.Path, correctedID), State: came(res)}, nil
+	return &v1.Artifact{Name: named(v, ref.Path, transcriptCorrectedID), State: came(res)}, nil
 }
 
 // came is what asking for a transcript to be put right came to.
@@ -472,11 +484,15 @@ func (a *API) artifact(
 	at domain.WebAddress,
 	of v1.ArtifactKind,
 ) (*v1.Artifact, error) {
-	if of == v1.ArtifactKind_ARTIFACT_KIND_CORRECTED {
+	if of == v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED {
 		return a.corrections(ctx, v, ref)
 	}
-	if of == v1.ArtifactKind_ARTIFACT_KIND_FETCHED {
-		return a.fetched(ctx, v, ref.Path, at)
+	// A note's transcript is the text at the address it points at, and a
+	// recording's is what a model heard: the same kind, made two ways.
+	if ref.Kind == domain.KindNote &&
+		(of == v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT ||
+			of == v1.ArtifactKind_ARTIFACT_KIND_ARTICLE) {
+		return a.linked(ctx, v, ref.Path, at)
 	}
 	if of == v1.ArtifactKind_ARTIFACT_KIND_COPY {
 		return a.copyOf(ctx, v, ref.Path, at), nil
@@ -499,11 +515,11 @@ func (a *API) corrections(
 	ref domain.Fingerprint,
 ) (*v1.Artifact, error) {
 	out := &v1.Artifact{
-		Name:  named(v, ref.Path, correctedID),
-		Kind:  v1.ArtifactKind_ARTIFACT_KIND_CORRECTED,
+		Name:  named(v, ref.Path, transcriptCorrectedID),
+		Kind:  v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED,
 		State: v1.State_STATE_NONE,
 	}
-	said, store, listened, err := a.heard(ctx, v, ref.Path)
+	said, store, listened, err := a.made(ctx, v, ref.Path)
 	if err != nil || !listened {
 		return out, err
 	}
@@ -592,4 +608,13 @@ func (a *API) standing(
 	}
 	_ = file.Close()
 	return "", size, true
+}
+
+// textOf is what the text at an address is: a video is words with the times
+// they were said at, and every other page is the prose it is written around.
+func textOf(at domain.WebAddress) v1.ArtifactKind {
+	if at.IsVideo() {
+		return v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT
+	}
+	return v1.ArtifactKind_ARTIFACT_KIND_ARTICLE
 }

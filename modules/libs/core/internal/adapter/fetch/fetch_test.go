@@ -251,3 +251,63 @@ func TestWhichProviderSupportsAnAddress(t *testing.T) {
 		}
 	}
 }
+
+// A tool that finds this machine's certificates by an environment variable is
+// told which. A machine that keeps them where the tool does not look — which is
+// every machine whose store is built afresh — has nowhere else to say so, and
+// what comes back is a refusal about certificates and not about the video.
+func TestAToolIsStartedWithTheEnvironmentTheSettingsName(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the tool is a shell script")
+	}
+	at := filepath.Join(t.TempDir(), "yt-dlp")
+	// The tool answers with what it was started with, so what reached it is
+	// what comes back.
+	written := "#!/bin/sh\nprintf '{\"title\":\"%s\"}\\n' \"$SSL_CERT_FILE\"\n"
+	if err := os.WriteFile(at, []byte(written), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	fetcher, err := fetch.New(t.Context(), fetch.Config{Video: fetch.Tool{
+		Command:     []string{at},
+		Environment: map[string]string{"SSL_CERT_FILE": "/etc/ssl/certs/ca-certificates.crt"},
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	meta, err := fetcher.Metadata(t.Context(), address(t, "https://youtu.be/dQw4w9WgXcQ"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if meta.Title != "/etc/ssl/certs/ca-certificates.crt" {
+		t.Errorf("the tool was started with SSL_CERT_FILE=%q", meta.Title)
+	}
+}
+
+// A tool the settings name no environment for is started with this process's
+// own: a machine that needs nothing said keeps what it already had.
+func TestAToolNamedNoEnvironmentKeepsThisProcessesOwn(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the tool is a shell script")
+	}
+	t.Setenv("NUMEN_TEST_MARK", "what this process was started with")
+	at := filepath.Join(t.TempDir(), "yt-dlp")
+	written := "#!/bin/sh\nprintf '{\"title\":\"%s\"}\\n' \"$NUMEN_TEST_MARK\"\n"
+	if err := os.WriteFile(at, []byte(written), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	fetcher, err := fetch.New(t.Context(), fetch.Config{
+		Video: fetch.Tool{Command: []string{at}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	meta, err := fetcher.Metadata(t.Context(), address(t, "https://youtu.be/dQw4w9WgXcQ"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if meta.Title != "what this process was started with" {
+		t.Errorf("the tool was started with NUMEN_TEST_MARK=%q", meta.Title)
+	}
+}

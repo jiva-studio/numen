@@ -126,26 +126,47 @@ func (f *Fetcher) Article(ctx context.Context, at domain.WebAddress) (port.Artic
 	return by.Article(ctx, at)
 }
 
-// resolved is the command to run, and nothing where this machine has no such
+// A program is a tool as it is started: the command, and the environment the
+// settings name for it. Every run goes through started, so what a setting says
+// about the environment cannot be forgotten at one of them.
+type program struct {
+	command []string
+	env     []string
+}
+
+// held says this machine has the tool.
+func (p program) held() bool { return len(p.command) > 0 }
+
+// started is one run of it, with the arguments of that run after its own.
+func (p program) started(ctx context.Context, arguments ...string) *exec.Cmd {
+	running := exec.CommandContext(ctx, p.command[0],
+		append(append([]string(nil), p.command[1:]...), arguments...)...)
+	running.Env = p.env
+	return running
+}
+
+// resolved is the program to run, and nothing where this machine has no such
 // tool. A named command is taken as it stands: a machine that writes the path
 // afresh at every build names whatever does know where the tool is.
-func resolved(named Tool, tool string) []string {
+func resolved(named Tool, tool string) program {
 	if len(named.Command) > 0 {
-		return append(append([]string(nil), named.Command...), named.Arguments...)
+		return program{
+			command: append(append([]string(nil), named.Command...), named.Arguments...),
+			env:     named.env(),
+		}
 	}
 	found, err := exec.LookPath(tool)
 	if err != nil {
-		return nil
+		return program{}
 	}
-	return append([]string{found}, named.Arguments...)
+	return program{command: append([]string{found}, named.Arguments...), env: named.env()}
 }
 
 // run is one tool, waited for. What it wrote to its error stream is what a
 // person is shown when it failed: the tool knows why, and nothing here is going
 // to say it better.
-func run(ctx context.Context, command []string, into io.Writer, arguments ...string) ([]byte, error) {
-	running := exec.CommandContext(ctx, command[0],
-		append(append([]string(nil), command[1:]...), arguments...)...)
+func run(ctx context.Context, tool program, into io.Writer, arguments ...string) ([]byte, error) {
+	running := tool.started(ctx, arguments...)
 	var out, said bytes.Buffer
 	running.Stdout, running.Stderr = &out, &said
 	if into != nil {

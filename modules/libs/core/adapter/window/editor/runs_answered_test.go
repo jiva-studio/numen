@@ -30,7 +30,7 @@ func TestASourceAlreadyAnsweredSaysWhatCameOfIt(t *testing.T) {
 		willRun(), talks,
 	)
 
-	made := making(t, api, talk, heardOf)
+	made := making(t, api, talk, transcriptOf)
 	if made.GetState() != v1.State_STATE_FAILED {
 		t.Fatalf("it was answered %s", made.GetState())
 	}
@@ -63,7 +63,7 @@ func TestARecordingAnsweredIsFoundWhereTheIndexNamesNoProducer(t *testing.T) {
 				willRun(), talks,
 			)
 
-			made := making(t, api, talk, heardOf)
+			made := making(t, api, talk, transcriptOf)
 			if made.GetState() != one.state {
 				t.Fatalf("it was answered %s", made.GetState())
 			}
@@ -87,7 +87,7 @@ func TestARecordingAnsweredIsFoundWhereTheIndexHoldsNothing(t *testing.T) {
 		willRun(), talks,
 	)
 
-	if made := making(t, api, talk, heardOf); made.GetState() != v1.State_STATE_EMPTY {
+	if made := making(t, api, talk, transcriptOf); made.GetState() != v1.State_STATE_EMPTY {
 		t.Fatalf("it was answered %s", made.GetState())
 	}
 	if talks.times != 0 {
@@ -107,7 +107,7 @@ func TestASourceDoneIsDoneEvenWhereAnAnswerStands(t *testing.T) {
 		willRun(), talks,
 	)
 
-	if made := making(t, api, talk, heardOf); made.GetState() != v1.State_STATE_DONE {
+	if made := making(t, api, talk, transcriptOf); made.GetState() != v1.State_STATE_DONE {
 		t.Errorf("it was answered %s", made.GetState())
 	}
 }
@@ -126,7 +126,7 @@ func TestARecordingDoneIsDoneWhereTheIndexNamesNoProducer(t *testing.T) {
 		willRun(), talks,
 	)
 
-	made := making(t, api, talk, heardOf)
+	made := making(t, api, talk, transcriptOf)
 	if made.GetState() != v1.State_STATE_DONE {
 		t.Fatalf("it was answered %s", made.GetState())
 	}
@@ -167,7 +167,7 @@ func (unrecorded) MoveSources(context.Context, domain.VaultID, string, string) e
 // the bytes.
 func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
-	stores := filesystem.DerivedStores{Area: filesystem.SpeechDir}
+	stores := filesystem.DerivedStores{Area: filesystem.TranscriptDir}
 
 	run := source.Transcribe{
 		Readers: filesystem.VaultReaders{},
@@ -191,7 +191,7 @@ func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 	api.show(vault)
 	runningBehind(api, func(on *passes) { on.transcribes = talks })
 
-	made := making(t, api, talk, heardOf)
+	made := making(t, api, talk, transcriptOf)
 	if made.GetState() != v1.State_STATE_FAILED {
 		t.Fatalf("it was answered %s", made.GetState())
 	}
@@ -208,7 +208,7 @@ func TestARecordingNothingAnsweredIsRun(t *testing.T) {
 	talks := willRun()
 	api, _ := running(t, stored{}, nothingRead(), willRun(), talks)
 
-	if made := making(t, api, talk, heardOf); made.GetState() != v1.State_STATE_RUNNING {
+	if made := making(t, api, talk, transcriptOf); made.GetState() != v1.State_STATE_RUNNING {
 		t.Fatalf("it was answered %s", made.GetState())
 	}
 	if talks.times != 1 {

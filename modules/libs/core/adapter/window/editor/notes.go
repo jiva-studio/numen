@@ -35,7 +35,9 @@ func (a *API) ReadNote(
 		out.At = fingerprintOf(found.Fingerprint)
 		if at := found.Address; at.URL != "" {
 			out.Url = &at.URL
-			if embed := at.Embed(); embed != "" {
+			// The player is framed from this run's own socket, which is the
+			// address the host is told is holding it.
+			if embed := a.Playing.Embed(at); embed != "" {
 				out.Embed = &embed
 			}
 		}

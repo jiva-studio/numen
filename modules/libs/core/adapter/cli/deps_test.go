@@ -28,7 +28,7 @@ func derived(options filesystem.Options) filesystem.DerivedStores {
 	return filesystem.DerivedStores{
 		Options: options,
 		Area:    filesystem.OCRDir,
-		Areas:   []string{filesystem.SpeechDir},
+		Areas:   []string{filesystem.TranscriptDir},
 	}
 }
 

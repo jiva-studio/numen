@@ -65,7 +65,7 @@ func (a *API) far(
 	path string,
 	kind domain.SourceKind,
 ) (reached, error) {
-	said, store, produced, err := a.heard(ctx, v, path)
+	said, store, produced, err := a.made(ctx, v, path)
 	if err != nil {
 		return reached{}, err
 	}

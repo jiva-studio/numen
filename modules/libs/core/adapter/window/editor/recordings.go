@@ -106,7 +106,7 @@ func (a *API) ReadTranscript(
 	if err != nil {
 		return nil, err
 	}
-	said, store, listened, err := a.heard(ctx, showing, ref.Path)
+	said, store, listened, err := a.made(ctx, showing, ref.Path)
 	if err != nil {
 		return nil, connect.NewError(reaching(err), err)
 	}
@@ -149,7 +149,7 @@ func (a *API) WriteTranscript(
 	if err != nil {
 		return nil, err
 	}
-	said, store, listened, err := a.heard(ctx, showing, ref.Path)
+	said, store, listened, err := a.made(ctx, showing, ref.Path)
 	if err != nil {
 		return nil, connect.NewError(reaching(err), err)
 	}
@@ -306,9 +306,9 @@ func (a *API) hearing() (port.SourceQueries, port.DerivedStores, bool) {
 	return a.Highlight.Sources, a.Highlight.Derived, true
 }
 
-// heard is what listened to the recording at a path and the store holding what
-// it wrote. It answers false for a recording nothing has listened to.
-func (a *API) heard(
+// made is what the index says was made from the file at a path, and the store
+// holding it. It answers false for a file nothing has been made from.
+func (a *API) made(
 	ctx context.Context,
 	v domain.Vault,
 	path string,
@@ -332,7 +332,7 @@ func (a *API) heard(
 // where nothing has listened to it. A run still going is read as far as it has
 // got.
 func (a *API) transcript(ctx context.Context, v domain.Vault, path string) ([]byte, error) {
-	said, store, listened, err := a.heard(ctx, v, path)
+	said, store, listened, err := a.made(ctx, v, path)
 	if err != nil || !listened {
 		return nil, err
 	}

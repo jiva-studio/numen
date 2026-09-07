@@ -64,7 +64,7 @@ func TestATranscriptIsProofreadWhenTheWindowAsksForIt(t *testing.T) {
 	if made.GetState() != v1.State_STATE_RUNNING {
 		t.Fatalf("the transcript was answered %s", made.GetState())
 	}
-	if made.GetName() != named(api.Showing(), talk, correctedID) {
+	if made.GetName() != named(api.Showing(), talk, transcriptCorrectedID) {
 		t.Errorf("the answer is about %q", made.GetName())
 	}
 	if by.times != 1 || by.path != talk || by.vault != string(api.Showing().ID) {
@@ -169,7 +169,7 @@ func TestTheCorrectionsARecordingCarriesAreWhatStands(t *testing.T) {
 	}
 	var corrections *v1.Artifact
 	for _, one := range out.Msg.GetArtifacts() {
-		if one.GetName() == named(api.Showing(), talk, correctedID) {
+		if one.GetName() == named(api.Showing(), talk, transcriptCorrectedID) {
 			corrections = one
 		}
 	}

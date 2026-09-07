@@ -21,8 +21,10 @@ import (
 func TestABookNothingHasReadCarriesAReadingThatIsNothing(t *testing.T) {
 	api, _ := running(t, stored{}, nothingRead(), willRun(), willRun())
 
+	// A scan carries its reading and that reading put right: what a proofreader
+	// writes is another thing to ask about, and is asked about here.
 	held := carrying(t, api, book)
-	if len(held) != 1 {
+	if len(held) != 2 {
 		t.Fatalf("a book carries %v", held)
 	}
 	if held[readingOf] != v1.State_STATE_NONE {
@@ -44,7 +46,7 @@ func TestABookAModelHasReadCarriesTheReading(t *testing.T) {
 		t.Fatalf("asked what the book carries and was refused: %v", err)
 	}
 	held := out.Msg.GetArtifacts()
-	if len(held) != 1 {
+	if len(held) != 2 {
 		t.Fatalf("a book carries %v", held)
 	}
 	if held[0].GetState() != v1.State_STATE_DONE {
@@ -68,8 +70,8 @@ func TestARecordingCarriesWhatWasHeardAndWhatWasPutRight(t *testing.T) {
 		t.Fatalf("asked what the recording carries and was refused: %v", err)
 	}
 	want := []string{
-		named(api.Showing(), talk, heardID),
-		named(api.Showing(), talk, correctedID),
+		named(api.Showing(), talk, transcriptID),
+		named(api.Showing(), talk, transcriptCorrectedID),
 	}
 	held := out.Msg.GetArtifacts()
 	if len(held) != len(want) {
@@ -163,7 +165,7 @@ func TestANoteThatPointsNowhereCarriesNothing(t *testing.T) {
 	if held := carrying(t, api, idea); len(held) != 0 {
 		t.Errorf("an ordinary note carries %v", held)
 	}
-	if code := refusedMaking(t, api, idea, fetchedOf); code != connect.CodeInvalidArgument {
+	if code := refusedMaking(t, api, idea, transcriptOf); code != connect.CodeInvalidArgument {
 		t.Errorf("fetching for an ordinary note was refused with %s", code)
 	}
 }
@@ -177,8 +179,8 @@ func TestALinkNoteCarriesWhatIsAtItsAddress(t *testing.T) {
 	if len(held) != 2 {
 		t.Fatalf("a link note carries %v", held)
 	}
-	if held[fetchedOf] != v1.State_STATE_NONE {
-		t.Errorf("a link note nothing has fetched for carries %s", held[fetchedOf])
+	if held[transcriptOf] != v1.State_STATE_NONE {
+		t.Errorf("a link note nothing has fetched for carries %s", held[transcriptOf])
 	}
 }
 
@@ -194,8 +196,8 @@ func TestALinkNoteCarriesTheWordsFetchedForIt(t *testing.T) {
 	)
 
 	held := carrying(t, api, pointed)
-	if held[fetchedOf] != v1.State_STATE_DONE {
-		t.Errorf("a link note the words were fetched for carries %s", held[fetchedOf])
+	if held[transcriptOf] != v1.State_STATE_DONE {
+		t.Errorf("a link note the words were fetched for carries %s", held[transcriptOf])
 	}
 }
 
@@ -204,7 +206,7 @@ func TestALinkNoteCarriesTheWordsFetchedForIt(t *testing.T) {
 func TestABuildThatCannotFetch(t *testing.T) {
 	api, _ := running(t, stored{}, nothingRead(), willRun(), willRun())
 
-	if code := refusedMaking(t, api, pointed, fetchedOf); code != connect.CodeUnimplemented {
+	if code := refusedMaking(t, api, pointed, transcriptOf); code != connect.CodeUnimplemented {
 		t.Errorf("a build with no fetcher refused with %s", code)
 	}
 }
@@ -255,5 +257,31 @@ func TestACopyIsFetchedAndTakenAway(t *testing.T) {
 	}
 	if _, held := held[derived.Copy(hash)]; held {
 		t.Error("the bytes are still in the store")
+	}
+}
+
+// A link note is asked what it is before its words are read, the way a
+// recording is. A note pointing at a video answers, and one asked where no copy
+// stands answers all the same: the frame plays it, and the words stand under it.
+func TestALinkNoteIsAskedWhatItIsBeforeItsWords(t *testing.T) {
+	const words = "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nwhat was said\n"
+	hash := derived.Fingerprint([]byte(pointsAt))
+	api, _ := running(t,
+		stored{derived.Artifact(derived.Captions, hash): []byte(words)},
+		indexed{pointed: {
+			Fingerprint: domain.Fingerprint{Path: pointed},
+			Producer:    derived.Captions,
+			Hash:        hash,
+		}},
+		willRun(), willRun(),
+	)
+
+	out, err := api.GetRecording(t.Context(),
+		connect.NewRequest(&v1.GetRecordingRequest{Path: pointed}))
+	if err != nil {
+		t.Fatalf("a link note was refused before its words were read: %v", err)
+	}
+	if out.Msg.GetLength() == 0 {
+		t.Errorf("it runs %d ms, and the words reach further", out.Msg.GetLength())
 	}
 }
