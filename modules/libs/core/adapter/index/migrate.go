@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"errors"
 	"fmt"
 	"io/fs"
 	"path"
@@ -20,6 +21,11 @@ import (
 //
 //go:embed migration/*.sql
 var files embed.FS
+
+// ErrIndexAhead is an index at a schema this build does not carry. A version
+// only ever goes up, so this is an index some newer build migrated, and what is
+// in it is that build.s to read.
+var ErrIndexAhead = errors.New("this index was made by a newer version of numen")
 
 // A migration is one numbered file, applied once, in order.
 //
@@ -42,10 +48,10 @@ type migration struct {
 // a failure leaves the database at the last version that fully applied rather
 // than half-way through one.
 //
-// An index at a version this build does not carry is emptied and built again
-// from the first migration. The index is a cache: what it holds is a reading of
-// the vault, and the next scan reads the vault again. Refusing it instead would
-// stop the application on a database it is free to throw away.
+// An index at a version this build does not carry is refused, and nothing in it
+// is touched. What it holds took hours to read, and a build that cannot read its
+// schema cannot say what emptying it would cost — so it says which schema it
+// found and which it carries, and the person decides.
 func migrate(ctx context.Context, db *sql.DB) error {
 	available, err := loadMigrations()
 	if err != nil {
@@ -61,10 +67,8 @@ func migrate(ctx context.Context, db *sql.DB) error {
 		newest = available[len(available)-1].version
 	}
 	if current > newest {
-		if err := discard(ctx, db); err != nil {
-			return fmt.Errorf("emptying an index at schema %d: %w", current, err)
-		}
-		current = 0
+		return fmt.Errorf("%w: it is at schema %d and this build carries %d",
+			ErrIndexAhead, current, newest)
 	}
 
 	for _, m := range available {
@@ -74,76 +78,6 @@ func migrate(ctx context.Context, db *sql.DB) error {
 		if err := apply(ctx, db, m); err != nil {
 			return fmt.Errorf("migration %s: %w", m.name, err)
 		}
-	}
-	return nil
-}
-
-// discard empties an index of everything a migration made, so the migrations
-// can run again from the first.
-//
-// What is dropped is read back each time round: a virtual table takes its
-// shadow tables down with it. The loop ends when a pass drops nothing, which is
-// an empty schema or one this cannot empty, and the second is reported.
-//
-// It runs on one connection with foreign keys off: the tables go in whatever
-// order the schema lists them, and a child outlives its parent for the rest of
-// the pass.
-func discard(ctx context.Context, db *sql.DB) error {
-	conn, err := db.Conn(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-	if _, err := conn.ExecContext(ctx, "PRAGMA foreign_keys = OFF"); err != nil {
-		return fmt.Errorf("setting the keys aside: %w", err)
-	}
-
-	for {
-		rows, err := conn.QueryContext(ctx,
-			`SELECT type, name FROM sqlite_master
-			  WHERE type IN ('table', 'view', 'trigger', 'index')
-			    AND name NOT LIKE 'sqlite_%'`)
-		if err != nil {
-			return fmt.Errorf("what this index holds: %w", err)
-		}
-		var kinds, names []string
-		for rows.Next() {
-			var kind, name string
-			if err := rows.Scan(&kind, &name); err != nil {
-				_ = rows.Close()
-				return err
-			}
-			kinds, names = append(kinds, kind), append(names, name)
-		}
-		if err := rows.Err(); err != nil {
-			_ = rows.Close()
-			return err
-		}
-		if err := rows.Close(); err != nil {
-			return err
-		}
-		if len(names) == 0 {
-			break
-		}
-
-		dropped := false
-		var why error
-		for i, name := range names {
-			// An object already taken down by the one before it is gone, not a
-			// failure: the next pass is what decides whether anything is left.
-			if _, err := conn.ExecContext(ctx,
-				fmt.Sprintf("DROP %s IF EXISTS %q", strings.ToUpper(kinds[i]), name)); err != nil {
-				why = fmt.Errorf("%s %s: %w", kinds[i], name, err)
-			} else {
-				dropped = true
-			}
-		}
-		if !dropped {
-			return fmt.Errorf("%d objects stand and none could be dropped: %w", len(names), why)
-		}
-	}
-	if _, err := conn.ExecContext(ctx, "PRAGMA user_version = 0"); err != nil {
-		return fmt.Errorf("putting the version back: %w", err)
 	}
 	return nil
 }
