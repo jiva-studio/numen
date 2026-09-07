@@ -112,7 +112,7 @@ func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 // The window frames this run's own socket and no host at all. The page that
 // socket serves is what frames the host, and it is held to a policy of its own.
 func TestTheHostsAWindowMayFrame(t *testing.T) {
-	if got := domain.EmbedHosts(); !slices.Equal(got, []string{"https://www.youtube-nocookie.com"}) {
+	if got := embedHosts; !slices.Equal(got, []string{"https://www.youtube-nocookie.com"}) {
 		t.Errorf("the window may frame %q", got)
 	}
 

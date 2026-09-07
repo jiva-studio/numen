@@ -19,7 +19,7 @@ func noted(t *testing.T, db *DB, vault domain.Vault, path, title string, heading
 	for at, heading := range headings {
 		n.Headings = append(n.Headings, domain.Heading{Level: 2, Text: heading, Line: at * 2})
 	}
-	if err := db.Notes().Save(t.Context(), vault.ID, domain.Indexed(n)); err != nil {
+	if err := db.Notes().Save(t.Context(), vault.ID, []domain.Note{n}); err != nil {
 		t.Fatal(err)
 	}
 }

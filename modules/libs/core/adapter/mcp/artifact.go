@@ -36,10 +36,28 @@ const (
 // application's own folder, which nothing outside reaches.
 type Artifact struct {
 	Path     string `json:"path" jsonschema:"the file it was made from, by the path the vault files it under"`
-	Kind     string `json:"kind" jsonschema:"what it is: transcript for words with times, article for a page.s prose, ocr for the text off a scan, copy for the bytes of a video"`
+	Kind     string `json:"kind" jsonschema:"what it is: transcript for words with times, article for a page.s prose, ocr for the text off a scan, copy for the bytes of what is at an address"`
 	Producer string `json:"producer" jsonschema:"what made it: ocr, asr, captions, article"`
 	Bytes    int64  `json:"bytes" jsonschema:"how large it is"`
-	Text     bool   `json:"text" jsonschema:"whether artifact_read gives it back as text; a copy is bytes and is played, not read"`
+	Format   string `json:"format" jsonschema:"what artifact_read gives back, as a media type: text/vtt for a transcript, application/json for a reading off a scan, text/plain for a page.s prose. A copy is not read, and says what it is played as"`
+}
+
+// Readable says whether artifact_read hands this back. A copy is bytes to play
+// and not words to read.
+func (a Artifact) Readable() bool { return a.Kind != kindCopy }
+
+// formatOf is what a producer's artifact is written as, which is what a caller
+// reading it parses. A transcript is a subtitle file, a reading off a scan is
+// the boxes each word stood in, and prose is prose.
+func formatOf(producer string) string {
+	switch producer {
+	case text.ASR, text.Captions:
+		return "text/vtt"
+	case text.Reading:
+		return "application/json"
+	default:
+		return "text/plain"
+	}
 }
 
 // kindOf is which of them a producer.s text is.
@@ -120,7 +138,7 @@ func addArtifactTools(server *sdk.Server, core Core) {
 			return nil, out{}, err
 		}
 		for _, one := range held {
-			if one.Kind != in.Kind || !one.Text {
+			if one.Kind != in.Kind || !one.Readable() {
 				continue
 			}
 			words, err := wordsOf(ctx, core, in.Path, one.Producer)
@@ -168,13 +186,15 @@ func artifactsOf(ctx context.Context, core Core, path string) ([]Artifact, error
 			Kind:     kindOf(producer),
 			Producer: producer,
 			Bytes:    size,
-			Text:     true,
+			Format:   formatOf(producer),
 		})
 	}
 	// A copy of a video is bytes and no producer's text, so it is asked for by
 	// name rather than found by what wrote it.
 	if _, size, err := store.Open(ctx, text.Copy(hash)); err == nil {
-		out = append(out, Artifact{Path: path, Kind: kindCopy, Bytes: size})
+		out = append(out, Artifact{
+			Path: path, Kind: kindCopy, Bytes: size, Format: text.CopyType,
+		})
 	} else if !errors.Is(err, fs.ErrNotExist) {
 		return nil, err
 	}

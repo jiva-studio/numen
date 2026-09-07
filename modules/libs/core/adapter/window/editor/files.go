@@ -200,7 +200,7 @@ func (a *API) CreateURL(
 	if err != nil {
 		return nil, err
 	}
-	at, err := domain.ParseWebAddress(r.Msg.GetUrl())
+	at, err := domain.ParseURL(r.Msg.GetUrl())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}

@@ -36,24 +36,24 @@ func TestThePlayerIsFramedFromThisRunsOwnSocket(t *testing.T) {
 	if !strings.Contains(page, "origin="+url.QueryEscape(back.address)) {
 		t.Errorf("the host is told nothing about who frames it: %s", page)
 	}
-	if !strings.Contains(page, at.Embed()) {
-		t.Errorf("the page frames %q, want the player of %q", page, at.URL)
+	if !strings.Contains(page, playing(at)) {
+		t.Errorf("the page frames %q, want the player of %q", page, string(at))
 	}
 }
 
-// The route carries the address the note points at, and what plays it is the
-// domain's to say. A host learned about later is played here without this route
-// learning anything about it.
+// The route carries the address the file points at, and what plays it is this
+// adapter's to say. A host learned about later is played here without this
+// route learning anything about it.
 func TestTheRouteCarriesTheAddressAndNotOneHostsIdentifier(t *testing.T) {
 	back, _ := played(t, &API{})
 	at := pointing(t, pointsAtAVideo)
 
 	address := back.Embed(at)
 
-	if !strings.Contains(address, url.PathEscape(at.URL)) {
+	if !strings.Contains(address, url.PathEscape(string(at))) {
 		t.Errorf("the route reads %q, want the address it points at", address)
 	}
-	if strings.Contains(address, "/"+at.Video) {
+	if strings.Contains(address, "/dQw4w9WgXcQ") {
 		t.Errorf("the route names one host's identifier: %q", address)
 	}
 }
@@ -72,7 +72,7 @@ func TestThePageHoldingAPlayerIsHeldToItsOwnPolicy(t *testing.T) {
 	if !strings.Contains(said, "default-src 'none'") {
 		t.Errorf("the page may reach anywhere: %q", said)
 	}
-	if !strings.Contains(said, "frame-src "+domain.EmbedHosts()[0]) {
+	if !strings.Contains(said, "frame-src "+embedHosts[0]) {
 		t.Errorf("the page frames %q", said)
 	}
 }
@@ -98,9 +98,9 @@ func TestAnEmbedAddressNothingPlays(t *testing.T) {
 }
 
 // pointing is one address a note points at.
-func pointing(t *testing.T, written string) domain.WebAddress {
+func pointing(t *testing.T, written string) domain.URL {
 	t.Helper()
-	at, err := domain.ParseWebAddress(written)
+	at, err := domain.ParseURL(written)
 	if err != nil {
 		t.Fatal(err)
 	}

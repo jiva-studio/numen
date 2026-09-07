@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
@@ -40,9 +41,9 @@ func newYtDLP(ctx context.Context, c Config) *ytDLP {
 }
 
 // Supports is a video, on a machine holding the tool that gets at one.
-func (v *ytDLP) Supports(at domain.WebAddress) bool { return at.IsVideo() && v.command.held() }
+func (v *ytDLP) Supports(at domain.URL) bool { return carries(at) && v.command.held() }
 
-func (v *ytDLP) Fetching(domain.WebAddress) port.FetchModel {
+func (v *ytDLP) Fetching(domain.URL) port.FetchModel {
 	return port.FetchModel{Tool: "yt-dlp", Version: v.version, Producer: text.Captions}
 }
 
@@ -60,8 +61,8 @@ func version(ctx context.Context, tool program) string {
 }
 
 // Metadata is what the site says about the video, taking none of it.
-func (v *ytDLP) Metadata(ctx context.Context, at domain.WebAddress) (port.Metadata, error) {
-	said, err := run(ctx, v.command, nil, "--dump-single-json", "--no-playlist", at.URL)
+func (v *ytDLP) Metadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
+	said, err := run(ctx, v.command, nil, "--dump-single-json", "--no-playlist", string(at))
 	if err != nil {
 		return port.Metadata{}, err
 	}
@@ -75,7 +76,7 @@ func (v *ytDLP) Metadata(ctx context.Context, at domain.WebAddress) (port.Metada
 		AutomaticCaptions map[string][]struct{} `json:"automatic_captions"`
 	}
 	if err := json.Unmarshal(said, &held); err != nil {
-		return port.Metadata{}, fmt.Errorf("what yt-dlp said about %s: %w", at.URL, err)
+		return port.Metadata{}, fmt.Errorf("what yt-dlp said about %s: %w", string(at), err)
 	}
 	return port.Metadata{
 		Title:     strings.TrimSpace(held.Title),
@@ -105,7 +106,7 @@ func languages(tracks map[string][]struct{}) []string {
 // What a site draws as two lines scrolling is one stretch said once, and asking
 // for the format a player is fed would put every line into the index twice.
 func (v *ytDLP) Text(
-	ctx context.Context, at domain.WebAddress, want port.PreferredCaptions,
+	ctx context.Context, at domain.URL, want port.PreferredCaptions,
 ) (port.Text, error) {
 	meta, err := v.Metadata(ctx, at)
 	if err != nil {
@@ -126,7 +127,7 @@ func (v *ytDLP) Text(
 // subtitles are the words published in one language, as the site names that
 // language.
 func (v *ytDLP) subtitles(
-	ctx context.Context, at domain.WebAddress, language string,
+	ctx context.Context, at domain.URL, language string,
 ) ([]transcript.Cue, error) {
 	if language == "" {
 		return nil, port.ErrNothingFetched
@@ -140,7 +141,7 @@ func (v *ytDLP) subtitles(
 	if _, err := run(ctx, v.command, nil,
 		"--skip-download", "--write-subs", "--write-auto-subs",
 		"--sub-langs", language, "--sub-format", "json3",
-		"--no-playlist", "-o", filepath.Join(into, "words"), at.URL,
+		"--no-playlist", "-o", filepath.Join(into, "words"), string(at),
 	); err != nil {
 		return nil, err
 	}
@@ -164,11 +165,11 @@ func (v *ytDLP) subtitles(
 
 // Audio is a video's sound as the container a transcriber opens: one channel at
 // 16 kHz, which is what a model takes.
-func (v *ytDLP) Audio(ctx context.Context, at domain.WebAddress, into io.Writer) error {
+func (v *ytDLP) Audio(ctx context.Context, at domain.URL, into io.Writer) error {
 	if !v.sound.held() {
 		return ErrNoTool
 	}
-	taking := v.command.started(ctx, "-f", "bestaudio", "--no-playlist", "-o", "-", at.URL)
+	taking := v.command.started(ctx, "-f", "bestaudio", "--no-playlist", "-o", "-", string(at))
 	bringing := v.sound.started(ctx,
 		"-hide_banner", "-loglevel", "error", "-i", "pipe:0",
 		"-vn", "-ac", "1", "-ar", "16000", "-f", "wav", "pipe:1")
@@ -209,7 +210,7 @@ func (v *ytDLP) Audio(ctx context.Context, at domain.WebAddress, into io.Writer)
 // together is taken as it stands. Joining them is a file's work, so the copy
 // lands beside this run before it is handed on.
 func (v *ytDLP) Download(
-	ctx context.Context, at domain.WebAddress, into io.Writer,
+	ctx context.Context, at domain.URL, into io.Writer,
 ) (port.Download, error) {
 	folder, err := os.MkdirTemp("", "numen-copy-")
 	if err != nil {
@@ -219,7 +220,7 @@ func (v *ytDLP) Download(
 
 	arguments := []string{
 		"-f", copyFormat, "--merge-output-format", "mp4", "--no-playlist",
-		"-o", filepath.Join(folder, "copy.%(ext)s"), at.URL,
+		"-o", filepath.Join(folder, "copy.%(ext)s"), string(at),
 	}
 	if where := v.sound.at(); where != "" {
 		arguments = append([]string{"--ffmpeg-location", where}, arguments...)
@@ -297,3 +298,26 @@ func in(language string) func(string) bool {
 
 // original says whether a track is the language it was spoken in.
 func original(track string) bool { return strings.HasSuffix(track, "-orig") }
+
+// videoSites are the hosts this provider answers for. yt-dlp knows far more
+// than these; what is listed is what this application hands it rather than
+// reading as a page, and adding a site is adding a line.
+//
+// A host is written without `www.`, which is trimmed before the lookup.
+var videoSites = map[string]bool{
+	"youtube.com":          true,
+	"m.youtube.com":        true,
+	"music.youtube.com":    true,
+	"youtube-nocookie.com": true,
+	"youtu.be":             true,
+}
+
+// carries says whether this provider answers for an address, which is whether
+// the site is one of its own and the address names something there.
+func carries(at domain.URL) bool {
+	address, err := url.Parse(string(at))
+	if err != nil {
+		return false
+	}
+	return videoSites[strings.TrimPrefix(address.Hostname(), "www.")]
+}

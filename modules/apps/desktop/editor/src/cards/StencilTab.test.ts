@@ -13,7 +13,7 @@ import { fileOpeners } from '../tabs/openers'
 import { windowing } from '../tabs/windowing'
 import { STENCIL } from '../tabs/workspace'
 import StencilTab from './StencilTab.vue'
-import { stencilling, type StencilTabState } from './stencil'
+import { stencilling, type StencilTabState } from './stencils'
 import { WORDS as words } from './words'
 
 /** The one place a file is opened from. Nothing here opens one. */
@@ -103,7 +103,7 @@ describe('a stencil drawn', () => {
 describe('a mark on a face', () => {
   it('is drawn inside the face it was read against', async () => {
     const { window, tab } = await drawn([missing])
-    const second = tab.sheet.value.faces[1]?.id ?? ''
+    const second = tab.stencil.value.faces[1]?.id ?? ''
 
     expect(window.find(`[data-face="${second}"]`).find('[data-wrong]').text()).toBe(
       'this face has no back',
@@ -112,7 +112,7 @@ describe('a mark on a face', () => {
 
   it('is drawn under the name of that face, where the editor draws it', async () => {
     const { window, tab } = await drawn([missing])
-    const second = tab.sheet.value.faces[1]?.id ?? ''
+    const second = tab.stencil.value.faces[1]?.id ?? ''
 
     expect(window.find(`[data-face="${second}"] header [data-wrong]`).text()).toBe(
       'this face has no back',
@@ -121,15 +121,15 @@ describe('a mark on a face', () => {
 
   it('is drawn on no other face', async () => {
     const { window, tab } = await drawn([missing])
-    const first = tab.sheet.value.faces[0]?.id ?? ''
+    const first = tab.stencil.value.faces[0]?.id ?? ''
 
     expect(window.find(`[data-face="${first}"]`).find('[data-wrong]').exists()).toBe(false)
   })
 
   it('follows the face when another is taken out beside it', async () => {
     const { window, tab } = await drawn([missing])
-    const first = tab.sheet.value.faces[0]?.id ?? ''
-    const second = tab.sheet.value.faces[1]?.id ?? ''
+    const first = tab.stencil.value.faces[0]?.id ?? ''
+    const second = tab.stencil.value.faces[1]?.id ?? ''
 
     tab.removesFace(first)
     await settles()
@@ -189,8 +189,8 @@ describe('a gesture in the editor', () => {
     await settles()
     await settles()
 
-    expect(tab.sheet.value.fields).toStrictEqual(['Shoulder', 'Life span'])
-    expect(tab.sheet.value.faces[0]?.back).toBe('{{Shoulder}}')
+    expect(tab.stencil.value.fields).toStrictEqual(['Shoulder', 'Life span'])
+    expect(tab.stencil.value.faces[0]?.back).toBe('{{Shoulder}}')
   })
 
   it('leaves the braces of every other field where they are', async () => {
@@ -202,6 +202,6 @@ describe('a gesture in the editor', () => {
     await settles()
     await settles()
 
-    expect(tab.sheet.value.faces[1]?.front).toBe('{{Life span}}')
+    expect(tab.stencil.value.faces[1]?.front).toBe('{{Life span}}')
   })
 })

@@ -45,7 +45,7 @@ func FuzzParseWebAddress(f *testing.F) {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, raw string) {
-		address, err := domain.ParseWebAddress(raw)
+		address, err := domain.ParseURL(raw)
 		if err != nil {
 			return
 		}
@@ -53,27 +53,27 @@ func FuzzParseWebAddress(f *testing.F) {
 		// Nothing here reaches this machine, and nothing carries a name and a
 		// password into a run's arguments.
 		switch {
-		case !strings.HasPrefix(address.URL, "http://") &&
-			!strings.HasPrefix(address.URL, "https://"):
-			t.Fatalf("%q was read as %q", raw, address.URL)
-		case strings.ContainsAny(address.URL, "#\x00\n\r \t"):
-			t.Fatalf("%q was read as %q", raw, address.URL)
-		case strings.Contains(authority(address.URL), "@"):
-			t.Fatalf("%q was read as %q, which carries a name", raw, address.URL)
+		case !strings.HasPrefix(string(address), "http://") &&
+			!strings.HasPrefix(string(address), "https://"):
+			t.Fatalf("%q was read as %q", raw, string(address))
+		case strings.ContainsAny(string(address), "#\x00\n\r \t"):
+			t.Fatalf("%q was read as %q", raw, string(address))
+		case strings.Contains(authority(string(address)), "@"):
+			t.Fatalf("%q was read as %q, which carries a name", raw, string(address))
 		}
 
 		// The one form is the form the name of every artifact is made from, so
 		// reading it again has to reach it again.
-		again, err := domain.ParseWebAddress(address.URL)
+		again, err := domain.ParseURL(string(address))
 		if err != nil {
-			t.Fatalf("%q was read as %q, which is no address", raw, address.URL)
+			t.Fatalf("%q was read as %q, which is no address", raw, string(address))
 		}
 		if again != address {
 			t.Fatalf("%q was read as %+v, and that as %+v", raw, address, again)
 		}
 
 		// The space around an address is whoever wrote it down's.
-		if spaced, err := domain.ParseWebAddress(" \t" + raw + "\n "); err != nil || spaced != address {
+		if spaced, err := domain.ParseURL(" \t" + raw + "\n "); err != nil || spaced != address {
 			t.Fatalf("%q is %+v, and the same with space around it is %+v (%v)",
 				raw, address, spaced, err)
 		}

@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
+	"github.com/jiva-studio/numen/modules/libs/core/urlfile"
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
@@ -90,7 +91,7 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 	if err != nil {
 		return res, err
 	}
-	hash := text.Fingerprint([]byte(at.URL))
+	hash := text.Fingerprint([]byte(string(at)))
 
 	// One run to an address. The name is held for as long as the fetch takes,
 	// so two urls on one address do not fetch it twice.
@@ -148,7 +149,7 @@ func (u ImportURL) keeps(
 	ctx context.Context,
 	store port.DerivedStore,
 	hash string,
-	at domain.WebAddress,
+	at domain.URL,
 	said port.Text,
 ) (producer string, bytes int, err error) {
 	written := []byte(said.Prose)
@@ -167,7 +168,7 @@ func (u ImportURL) keeps(
 // silent writes down that the address published none of what was asked for, so
 // the address is not asked again every time the vault is scanned.
 func (u ImportURL) silent(
-	ctx context.Context, at domain.WebAddress, store port.DerivedStore, hash string,
+	ctx context.Context, at domain.URL, store port.DerivedStore, hash string,
 ) error {
 	return store.Write(ctx, text.Answer(u.By.Fetching(at).Producer, hash), []byte(text.Silent+"\n"))
 }
@@ -191,7 +192,7 @@ func (u ImportURL) DeleteText(ctx context.Context, v domain.Vault, path string) 
 	if err != nil {
 		return err
 	}
-	if err := forgotten(ctx, store, text.Fingerprint([]byte(at.URL))); err != nil {
+	if err := forgotten(ctx, store, text.Fingerprint([]byte(string(at)))); err != nil {
 		return err
 	}
 	return u.cut(ctx, v, path)
@@ -227,10 +228,7 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 	if err != nil {
 		return res, err
 	}
-	if !at.IsVideo() {
-		return res, fmt.Errorf("%s: %w", path, ErrNotAURL)
-	}
-	hash := text.Fingerprint([]byte(at.URL))
+	hash := text.Fingerprint([]byte(string(at)))
 	beside := CopyBeside(path)
 
 	// One run to a copy, held for as long as the fetch takes. The claim is on
@@ -435,8 +433,8 @@ func (l *limited) Read(into []byte) (int, error) {
 // fetched for it is kept in.
 func (u ImportURL) pointed(
 	ctx context.Context, v domain.Vault, path string,
-) (domain.WebAddress, domain.Fingerprint, port.DerivedStore, error) {
-	none := domain.WebAddress{}
+) (domain.URL, domain.Fingerprint, port.DerivedStore, error) {
+	none := domain.URL("")
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return none, domain.Fingerprint{}, nil, err
@@ -452,7 +450,7 @@ func (u ImportURL) pointed(
 	if err != nil {
 		return none, domain.Fingerprint{}, nil, fmt.Errorf("read %s: %w", path, err)
 	}
-	at, err := domain.ReadURL(raw)
+	at, err := urlfile.Read(raw)
 	if err != nil {
 		return none, domain.Fingerprint{}, nil, fmt.Errorf("%s: %w", path, err)
 	}
@@ -472,7 +470,7 @@ func (u ImportURL) named(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
-	at domain.WebAddress,
+	at domain.URL,
 	title string,
 	res ImportURLResult,
 ) (ImportURLResult, error) {
@@ -481,7 +479,7 @@ func (u ImportURL) named(
 	}
 	// A file still called what the paste called it is one nobody has named. Any
 	// other name is the person's, and it stands.
-	pasted, _, err := domain.Filename(at.URL)
+	pasted, _, err := domain.Filename(string(at))
 	if err != nil || domain.Basename(ref.Path) != pasted {
 		return res, nil
 	}
@@ -503,7 +501,7 @@ func (u ImportURL) record(
 	ctx context.Context,
 	store port.DerivedStore,
 	producer, hash string,
-	at domain.WebAddress,
+	at domain.URL,
 	said port.Text,
 ) error {
 	written, err := json.Marshal(struct {
@@ -513,7 +511,7 @@ func (u ImportURL) record(
 		Producer string `json:"producer"`
 		Fetcher  string `json:"fetcher"`
 	}{
-		Address:  at.URL,
+		Address:  string(at),
 		Title:    said.Title,
 		Length:   said.Length,
 		Producer: producer,

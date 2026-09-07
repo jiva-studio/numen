@@ -50,7 +50,7 @@ var (
 // A note carries what is at the address it points at, and what that is follows
 // from the address: a video is words with the times they were said at, and
 // every other page is the prose it is written around.
-func carried(kind domain.SourceKind, at domain.WebAddress) []v1.ArtifactKind {
+func carried(kind domain.SourceKind, produces string) []v1.ArtifactKind {
 	switch {
 	case kind == domain.KindBook:
 		return []v1.ArtifactKind{
@@ -62,16 +62,28 @@ func carried(kind domain.SourceKind, at domain.WebAddress) []v1.ArtifactKind {
 			v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
 			v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED,
 		}
-	case kind == domain.KindURL && at.IsVideo():
+	case kind != domain.KindURL || produces == "":
+		return nil
+	case produces == derived.Captions:
+		// A site that publishes words against a clock is one a copy can be
+		// taken from: the same tool answers for both.
 		return []v1.ArtifactKind{
 			v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
 			v1.ArtifactKind_ARTIFACT_KIND_COPY,
 		}
-	case kind == domain.KindURL && at.URL != "":
-		return []v1.ArtifactKind{v1.ArtifactKind_ARTIFACT_KIND_ARTICLE}
 	default:
-		return nil
+		return []v1.ArtifactKind{v1.ArtifactKind_ARTIFACT_KIND_ARTICLE}
 	}
+}
+
+// producing is what fetching an address would keep its text under, and nothing
+// where this build reaches no address at all. What is at an address is the
+// fetcher's to say, so nothing here reads the address itself.
+func (a *API) producing(at domain.URL) string {
+	if a.Imports == nil || a.Imports.By == nil || at == "" {
+		return ""
+	}
+	return a.Imports.By.Fetching(at).Producer
 }
 
 // standing is the name one artifact stands under in the store, and whether the
@@ -97,9 +109,9 @@ func standing(of v1.ArtifactKind) (string, bool) {
 
 // points is the address the file at a path holds, and nothing for every other
 // file. What is made from it follows from that.
-func (a *API) points(ctx context.Context, v domain.Vault, ref domain.Fingerprint) domain.WebAddress {
+func (a *API) points(ctx context.Context, v domain.Vault, ref domain.Fingerprint) domain.URL {
 	if ref.Kind != domain.KindURL {
-		return domain.WebAddress{}
+		return domain.URL("")
 	}
 	return a.pointing(ctx, v, ref.Path)
 }
@@ -108,29 +120,29 @@ func (a *API) points(ctx context.Context, v domain.Vault, ref domain.Fingerprint
 // text that is follows from the address: a video is a transcript, and every
 // other page is an article.
 func (a *API) linked(
-	ctx context.Context, v domain.Vault, path string, at domain.WebAddress,
+	ctx context.Context, v domain.Vault, path string, at domain.URL,
 ) (*v1.Artifact, error) {
 	out := &v1.Artifact{
 		Name:  named(v, path, articleID),
-		Kind:  textOf(at),
+		Kind:  textOf(a.producing(at)),
 		State: v1.State_STATE_NONE,
 	}
 	_, stores, held := a.hearing()
-	if !held || at.URL == "" {
+	if !held || string(at) == "" {
 		return out, nil
 	}
 	store, err := stores.Open(v)
 	if err != nil {
 		return nil, err
 	}
-	hash := derived.Fingerprint([]byte(at.URL))
+	hash := derived.Fingerprint([]byte(string(at)))
 	for _, from := range derived.Producers() {
 		got, err := farUnder(ctx, store, from, hash)
 		if err != nil {
 			return nil, err
 		}
 		if got.stands != untouched {
-			return stood(v, path, textOf(at), got), nil
+			return stood(v, path, textOf(a.producing(at)), got), nil
 		}
 	}
 	return out, nil
@@ -139,7 +151,7 @@ func (a *API) linked(
 // drops takes the copy of a video off this disk. The note stands as it did,
 // pointing at the address, and the tab frames it again.
 func (a *API) drops(
-	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.WebAddress,
+	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.URL,
 ) (*connect.Response[v1.DeleteArtifactResponse], error) {
 	_, stores, held := a.hearing()
 	if !held {
@@ -161,7 +173,7 @@ func (a *API) drops(
 	if err != nil {
 		return nil, connect.NewError(reaching(err), err)
 	}
-	name := derived.Copy(derived.Fingerprint([]byte(at.URL)))
+	name := derived.Copy(derived.Fingerprint([]byte(string(at))))
 	if err := store.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return nil, connect.NewError(reaching(err), err)
 	}
@@ -177,7 +189,7 @@ func (a *API) drops(
 // copyOf is whether a copy of the video at an address stands on this disk, and
 // how large it is.
 func (a *API) copyOf(
-	ctx context.Context, v domain.Vault, path string, at domain.WebAddress,
+	ctx context.Context, v domain.Vault, path string, at domain.URL,
 ) *v1.Artifact {
 	out := &v1.Artifact{
 		Name:  named(v, path, copiedID),
@@ -196,7 +208,7 @@ func (a *API) copyOf(
 // once it has. A copy over the size the settings name is not fetched, and the
 // size it was refused at is said.
 func (a *API) copies(
-	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.WebAddress,
+	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.URL,
 ) (*v1.Artifact, error) {
 	if a.Imports == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoFetcher)
@@ -264,7 +276,7 @@ func (a *API) ListArtifacts(
 	}
 	at := a.points(ctx, showing, ref)
 	out := &v1.ListArtifactsResponse{}
-	for _, of := range carried(ref.Kind, at) {
+	for _, of := range carried(ref.Kind, a.producing(at)) {
 		one, err := a.artifact(ctx, showing, ref, at, of)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
@@ -292,10 +304,15 @@ func (a *API) CreateArtifact(
 	if err != nil {
 		return nil, connect.NewError(reaching(err), err)
 	}
+	// What a url carries is what fetches it, so a build that reaches no address
+	// says it cannot rather than that the file carries nothing.
+	at := a.points(ctx, showing, ref)
+	if ref.Kind == domain.KindURL && a.producing(at) == "" {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoFetcher)
+	}
 	// The kind of the file decides what is made from it, so an artifact the file
 	// does not carry is a client asking for a run over the wrong thing.
-	at := a.points(ctx, showing, ref)
-	if !slices.Contains(carried(ref.Kind, at), of) {
+	if !slices.Contains(carried(ref.Kind, a.producing(at)), of) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNotCarried)
 	}
 
@@ -450,7 +467,7 @@ func (a *API) fetch(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
-	at domain.WebAddress,
+	at domain.URL,
 ) (*v1.Artifact, error) {
 	if a.Imports == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoFetcher)
@@ -527,7 +544,7 @@ func (a *API) artifact(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
-	at domain.WebAddress,
+	at domain.URL,
 	of v1.ArtifactKind,
 ) (*v1.Artifact, error) {
 	if of == v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED {
@@ -640,9 +657,9 @@ func reaching(err error) connect.Code {
 // and a setting turned afterwards does not move what is already here. Both
 // places are looked in, and the vault's own file is the one a person can see.
 func (a *API) standing(
-	ctx context.Context, v domain.Vault, path string, at domain.WebAddress,
+	ctx context.Context, v domain.Vault, path string, at domain.URL,
 ) (beside string, size int64, held bool) {
-	if !at.IsVideo() {
+	if at == "" {
 		return "", 0, false
 	}
 	if reader, err := a.Readers.Open(v); err == nil {
@@ -658,7 +675,7 @@ func (a *API) standing(
 	if err != nil {
 		return "", 0, false
 	}
-	file, size, err := store.Open(ctx, derived.Copy(derived.Fingerprint([]byte(at.URL))))
+	file, size, err := store.Open(ctx, derived.Copy(derived.Fingerprint([]byte(string(at)))))
 	if err != nil {
 		return "", 0, false
 	}
@@ -668,8 +685,8 @@ func (a *API) standing(
 
 // textOf is what the text at an address is: a video is words with the times
 // they were said at, and every other page is the prose it is written around.
-func textOf(at domain.WebAddress) v1.ArtifactKind {
-	if at.IsVideo() {
+func textOf(produces string) v1.ArtifactKind {
+	if produces == derived.Captions {
 		return v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT
 	}
 	return v1.ArtifactKind_ARTIFACT_KIND_ARTICLE

@@ -85,7 +85,7 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	// The same bounds a scan writes in. One event can name a whole folder — a
 	// checkout, a restore, a sync client unpacking an archive — so the number of
 	// paths handed here is not small because they were named individually.
-	group := grouping{write: func(ctx context.Context, notes []domain.IndexedNote) error {
+	group := grouping{write: func(ctx context.Context, notes []domain.Note) error {
 		return u.Notes.Save(ctx, v.ID, notes)
 	}}
 
@@ -133,7 +133,7 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 			res.Unreadable = append(res.Unreadable, path)
 			continue
 		}
-		if err := group.add(ctx, domain.IndexedNote{Note: markdown.Parse(ref, raw)}, len(raw)); err != nil {
+		if err := group.add(ctx, markdown.Parse(ref, raw), len(raw)); err != nil {
 			return res, fmt.Errorf("index: %w", err)
 		}
 		res.Indexed = append(res.Indexed, path)

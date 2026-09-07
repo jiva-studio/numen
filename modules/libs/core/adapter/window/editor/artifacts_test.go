@@ -205,6 +205,7 @@ func TestALinkNoteCarriesTheWordsFetchedForIt(t *testing.T) {
 // fetch nowhere from then on.
 func TestABuildThatCannotFetch(t *testing.T) {
 	api, _ := running(t, stored{}, nothingRead(), willRun(), willRun())
+	api.Imports = nil
 
 	if code := refusedMaking(t, api, pointed, transcriptOf); code != connect.CodeUnimplemented {
 		t.Errorf("a build with no fetcher refused with %s", code)

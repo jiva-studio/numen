@@ -197,9 +197,9 @@ type writes struct {
 	over  bool
 }
 
-func (h *holding) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.IndexedNote) error {
+func (h *holding) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.Note) error {
 	for _, one := range notes {
-		h.hold(one.Note.Fingerprint.Path)
+		h.hold(one.Fingerprint.Path)
 	}
 	return h.NoteRepository.Save(ctx, vaultID, notes)
 }

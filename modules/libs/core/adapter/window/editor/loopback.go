@@ -225,14 +225,14 @@ func (a *API) served(
 		return false
 	}
 	points := a.points(r.Context(), held, domain.Fingerprint{Path: at, Kind: domain.KindURL})
-	if !points.IsVideo() {
+	if playing(points) == "" {
 		return false
 	}
 	store, err := stores.Open(held)
 	if err != nil {
 		return false
 	}
-	name := derived.Copy(derived.Fingerprint([]byte(points.URL)))
+	name := derived.Copy(derived.Fingerprint([]byte(string(points))))
 	file, size, err := store.Open(r.Context(), name)
 	if err != nil {
 		return false

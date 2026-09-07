@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
+	"github.com/jiva-studio/numen/modules/libs/core/urlfile"
 )
 
 // sourcesPerQuery bounds one answer about what owes its text, so that a library
@@ -424,13 +425,13 @@ func (u Extract) source(
 	// file points at and not by the file.
 	hash := text.Fingerprint(raw)
 	if ref.Kind == domain.KindURL {
-		at, err := domain.ReadURL(raw)
+		at, err := urlfile.Read(raw)
 		if err != nil {
 			res.Unreadable++
 			//nolint:nilerr // one file naming no address is one more on the batch's count
 			return nil
 		}
-		hash = text.Fingerprint([]byte(at.URL))
+		hash = text.Fingerprint([]byte(string(at)))
 	}
 
 	// A document read by a recogniser has a text of its own, and the chunks are

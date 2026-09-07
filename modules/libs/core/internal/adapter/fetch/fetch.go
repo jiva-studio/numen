@@ -38,7 +38,7 @@ type provider interface {
 
 	// Supports says whether this provider answers for an address. Each is asked
 	// in turn, and the first that says so is the one that answers.
-	Supports(at domain.WebAddress) bool
+	Supports(at domain.URL) bool
 }
 
 // A Fetcher is the providers this machine holds, asked in order.
@@ -56,18 +56,18 @@ func New(ctx context.Context, c Config) (*Fetcher, error) {
 
 // providerFor is the provider that answers for an address, and ErrNoTool where
 // this machine holds none.
-func (f *Fetcher) providerFor(at domain.WebAddress) (provider, error) {
+func (f *Fetcher) providerFor(at domain.URL) (provider, error) {
 	for _, one := range f.providers {
 		if one.Supports(at) {
 			return one, nil
 		}
 	}
-	return nil, fmt.Errorf("%s: %w", at.URL, ErrNoTool)
+	return nil, fmt.Errorf("%s: %w", string(at), ErrNoTool)
 }
 
 // Fetching is what this address is fetched by, and nothing where nothing
 // reaches it.
-func (f *Fetcher) Fetching(at domain.WebAddress) port.FetchModel {
+func (f *Fetcher) Fetching(at domain.URL) port.FetchModel {
 	by, err := f.providerFor(at)
 	if err != nil {
 		return port.FetchModel{}
@@ -76,7 +76,7 @@ func (f *Fetcher) Fetching(at domain.WebAddress) port.FetchModel {
 }
 
 // Metadata is what stands at the address, taking none of it.
-func (f *Fetcher) Metadata(ctx context.Context, at domain.WebAddress) (port.Metadata, error) {
+func (f *Fetcher) Metadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
 	by, err := f.providerFor(at)
 	if err != nil {
 		return port.Metadata{}, err
@@ -87,7 +87,7 @@ func (f *Fetcher) Metadata(ctx context.Context, at domain.WebAddress) (port.Meta
 // Text is what the address publishes as words, as whichever provider answers
 // for it produces them.
 func (f *Fetcher) Text(
-	ctx context.Context, at domain.WebAddress, want port.PreferredCaptions,
+	ctx context.Context, at domain.URL, want port.PreferredCaptions,
 ) (port.Text, error) {
 	by, err := f.providerFor(at)
 	if err != nil {
@@ -98,7 +98,7 @@ func (f *Fetcher) Text(
 
 // Audio is the sound of what is at the address, as the container a transcriber
 // opens.
-func (f *Fetcher) Audio(ctx context.Context, at domain.WebAddress, into io.Writer) error {
+func (f *Fetcher) Audio(ctx context.Context, at domain.URL, into io.Writer) error {
 	by, err := f.providerFor(at)
 	if err != nil {
 		return err
@@ -108,7 +108,7 @@ func (f *Fetcher) Audio(ctx context.Context, at domain.WebAddress, into io.Write
 
 // Download is what is at the address as a person plays it.
 func (f *Fetcher) Download(
-	ctx context.Context, at domain.WebAddress, into io.Writer,
+	ctx context.Context, at domain.URL, into io.Writer,
 ) (port.Download, error) {
 	by, err := f.providerFor(at)
 	if err != nil {

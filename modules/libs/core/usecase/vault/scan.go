@@ -128,11 +128,11 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	}
 	slices.SortFunc(found, func(a, b domain.Fingerprint) int { return b.ModTime.Compare(a.ModTime) })
 
-	group := grouping{write: func(ctx context.Context, notes []domain.IndexedNote) error {
+	group := grouping{write: func(ctx context.Context, notes []domain.Note) error {
 		if err := u.Notes.Save(ctx, v.ID, notes); err != nil {
 			// The failure is somewhere in a group, so say which one.
 			return fmt.Errorf("index %d notes of %s, %s to %s: %w",
-				len(notes), v.Name, notes[0].Note.Fingerprint.Path, notes[len(notes)-1].Note.Fingerprint.Path, err)
+				len(notes), v.Name, notes[0].Fingerprint.Path, notes[len(notes)-1].Fingerprint.Path, err)
 		}
 		res.Indexed += len(notes)
 		if u.OnProgress != nil {
@@ -180,7 +180,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 			res.Unreadable++
 			continue
 		}
-		if err := group.add(ctx, domain.IndexedNote{Note: markdown.Parse(ref, raw)}, len(raw)); err != nil {
+		if err := group.add(ctx, markdown.Parse(ref, raw), len(raw)); err != nil {
 			return res, err
 		}
 	}

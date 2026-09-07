@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	derived "github.com/jiva-studio/numen/modules/libs/core/text"
+	"github.com/jiva-studio/numen/modules/libs/core/urlfile"
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
@@ -66,7 +67,7 @@ func (a *API) GetRecording(
 	if ref.Kind == domain.KindURL {
 		at := a.points(ctx, showing, ref)
 		out.Media, out.Type = a.copied(ctx, showing, ref)
-		out.Url = at.URL
+		out.Url = string(at)
 		if out.Media == "" {
 			out.Media, out.Type = a.Playing.Embed(at), asAPage
 		}
@@ -336,7 +337,7 @@ func (a *API) made(
 	if !ok {
 		return port.SourceText{}, nil, false, nil
 	}
-	if at := a.pointing(ctx, v, path); at.URL != "" {
+	if at := a.pointing(ctx, v, path); string(at) != "" {
 		return a.fetchedUnder(ctx, v, at)
 	}
 	said, held, err := sources.Reading(ctx, v.ID, path)
@@ -352,18 +353,18 @@ func (a *API) made(
 
 // pointing is the address the note at a path carries, and nothing where the
 // file is not a note or points nowhere.
-func (a *API) pointing(ctx context.Context, v domain.Vault, path string) domain.WebAddress {
+func (a *API) pointing(ctx context.Context, v domain.Vault, path string) domain.URL {
 	reader, err := a.Readers.Open(v)
 	if err != nil {
-		return domain.WebAddress{}
+		return domain.URL("")
 	}
 	raw, err := reader.Read(ctx, path)
 	if err != nil {
-		return domain.WebAddress{}
+		return domain.URL("")
 	}
-	at, err := domain.ReadURL(raw)
+	at, err := urlfile.Read(raw)
 	if err != nil {
-		return domain.WebAddress{}
+		return domain.URL("")
 	}
 	return at
 }
@@ -372,7 +373,7 @@ func (a *API) pointing(ctx context.Context, v domain.Vault, path string) domain.
 // wrote it. Nothing fetched is an address nothing has been fetched for, which is
 // a link note's ordinary state until something is.
 func (a *API) fetchedUnder(
-	ctx context.Context, v domain.Vault, at domain.WebAddress,
+	ctx context.Context, v domain.Vault, at domain.URL,
 ) (port.SourceText, port.DerivedStore, bool, error) {
 	_, stores, ok := a.hearing()
 	if !ok {
@@ -382,7 +383,7 @@ func (a *API) fetchedUnder(
 	if err != nil {
 		return port.SourceText{}, nil, false, err
 	}
-	hash := derived.Fingerprint([]byte(at.URL))
+	hash := derived.Fingerprint([]byte(string(at)))
 	for _, from := range derived.Producers() {
 		got, err := farUnder(ctx, store, from, hash)
 		if err != nil {

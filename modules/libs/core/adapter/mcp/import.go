@@ -54,7 +54,7 @@ func addImportTool(server *sdk.Server, core Core) {
 			"the site. An address nothing here reaches, and one that refuses an " +
 			"unattended request, say so and leave the file standing.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in NewURL) (*sdk.CallToolResult, ImportOutcome, error) {
-		at, err := domain.ParseWebAddress(in.URL)
+		at, err := domain.ParseURL(in.URL)
 		if err != nil {
 			return nil, ImportOutcome{}, err
 		}

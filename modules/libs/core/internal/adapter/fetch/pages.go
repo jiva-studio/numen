@@ -46,7 +46,7 @@ func newPages() *pages {
 			if len(via) >= 10 {
 				return errors.New("this address sends the fetch on and on")
 			}
-			if _, err := domain.ParseWebAddress(req.URL.String()); err != nil {
+			if _, err := domain.ParseURL(req.URL.String()); err != nil {
 				return fmt.Errorf("this address sends the fetch to %s: %w", req.URL.Host, err)
 			}
 			return nil
@@ -57,27 +57,27 @@ func newPages() *pages {
 // Supports anything published as a page, which is every address a site does not
 // publish as a video. It stands last, and it takes whatever the providers
 // before it did not.
-func (p *pages) Supports(at domain.WebAddress) bool { return !at.IsVideo() }
+func (p *pages) Supports(at domain.URL) bool { return !carries(at) }
 
-func (p *pages) Fetching(domain.WebAddress) port.FetchModel {
+func (p *pages) Fetching(domain.URL) port.FetchModel {
 	return port.FetchModel{Tool: readerName, Producer: text.Article}
 }
 
 // Audio is a recording, which a page is not.
-func (p *pages) Audio(context.Context, domain.WebAddress, io.Writer) error {
+func (p *pages) Audio(context.Context, domain.URL, io.Writer) error {
 	return port.ErrNothingFetched
 }
 
 // Download is a copy a person plays, and a page is read and not played.
 func (p *pages) Download(
-	context.Context, domain.WebAddress, io.Writer,
+	context.Context, domain.URL, io.Writer,
 ) (port.Download, error) {
 	return port.Download{}, port.ErrNothingFetched
 }
 
 // Metadata is what a page calls itself, which is the whole of what is known
 // about one before it is read. It is the same fetch the prose comes out of.
-func (p *pages) Metadata(ctx context.Context, at domain.WebAddress) (port.Metadata, error) {
+func (p *pages) Metadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
 	article, err := p.Text(ctx, at, port.PreferredCaptions{})
 	if err != nil {
 		return port.Metadata{}, err
@@ -87,12 +87,12 @@ func (p *pages) Metadata(ctx context.Context, at domain.WebAddress) (port.Metada
 
 // Text is the prose a page is written around. A page is read once: what it
 // calls itself and the prose come out of the same read.
-func (p *pages) Text(ctx context.Context, at domain.WebAddress, _ port.PreferredCaptions) (port.Text, error) {
-	address, err := url.Parse(at.URL)
+func (p *pages) Text(ctx context.Context, at domain.URL, _ port.PreferredCaptions) (port.Text, error) {
+	address, err := url.Parse(string(at))
 	if err != nil {
 		return port.Text{}, err
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, at.URL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, string(at), nil)
 	if err != nil {
 		return port.Text{}, err
 	}
@@ -107,7 +107,7 @@ func (p *pages) Text(ctx context.Context, at domain.WebAddress, _ port.Preferred
 	}
 	defer func() { _ = answer.Body.Close() }()
 	if answer.StatusCode != http.StatusOK {
-		return port.Text{}, fmt.Errorf("%s answered %s", at.URL, answer.Status)
+		return port.Text{}, fmt.Errorf("%s answered %s", string(at), answer.Status)
 	}
 
 	raw, err := io.ReadAll(io.LimitReader(answer.Body, mostBytes))

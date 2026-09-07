@@ -35,9 +35,9 @@ func tool(t *testing.T, says string) []string {
 const aVideo = `{"title":"Entropy explained","duration":83.5,` +
 	`"subtitles":{"en":[{}]},"automatic_captions":{"ru":[{}]}}`
 
-func address(t *testing.T, written string) domain.WebAddress {
+func address(t *testing.T, written string) domain.URL {
 	t.Helper()
-	at, err := domain.ParseWebAddress(written)
+	at, err := domain.ParseURL(written)
 	if err == nil {
 		return at
 	}
@@ -47,7 +47,7 @@ func address(t *testing.T, written string) domain.WebAddress {
 	if !strings.HasPrefix(written, "http://127.0.0.1:") {
 		t.Fatal(err)
 	}
-	return domain.WebAddress{URL: written}
+	return domain.URL(written)
 }
 
 // A machine with neither tool still fetches a page: an address that is not a
@@ -205,7 +205,7 @@ func TestAVideoIsNotAPage(t *testing.T) {
 		t.Fatal(err)
 	}
 	at := address(t, "https://youtu.be/dQw4w9WgXcQ")
-	if _, err := fetcher.Download(t.Context(), domain.WebAddress{URL: at.URL}, nil); !errors.Is(
+	if _, err := fetcher.Download(t.Context(), at, nil); !errors.Is(
 		err, port.ErrNothingFetched) {
 		t.Errorf("an address with no video at it was copied: %v", err)
 	}

@@ -22,16 +22,16 @@ type site struct {
 	bytes []byte
 }
 
-func (s *site) Fetching(domain.WebAddress) port.FetchModel {
+func (s *site) Fetching(domain.URL) port.FetchModel {
 	return port.FetchModel{Tool: "a test", Version: "1", Producer: derived.Captions}
 }
 
-func (s *site) Metadata(context.Context, domain.WebAddress) (port.Metadata, error) {
+func (s *site) Metadata(context.Context, domain.URL) (port.Metadata, error) {
 	return port.Metadata{Title: s.title, Length: 83_500, Captions: []string{"en"}}, nil
 }
 
 func (s *site) Text(
-	context.Context, domain.WebAddress, port.PreferredCaptions,
+	context.Context, domain.URL, port.PreferredCaptions,
 ) (port.Text, error) {
 	if len(s.cues) == 0 {
 		return port.Text{}, port.ErrNothingFetched
@@ -41,11 +41,11 @@ func (s *site) Text(
 	}, nil
 }
 
-func (s *site) Audio(context.Context, domain.WebAddress, io.Writer) error {
+func (s *site) Audio(context.Context, domain.URL, io.Writer) error {
 	return port.ErrNothingFetched
 }
 
-func (s *site) Download(_ context.Context, _ domain.WebAddress, into io.Writer) (port.Download, error) {
+func (s *site) Download(_ context.Context, _ domain.URL, into io.Writer) (port.Download, error) {
 	if len(s.bytes) == 0 {
 		return port.Download{}, port.ErrNothingFetched
 	}

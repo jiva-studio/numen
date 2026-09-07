@@ -26,9 +26,9 @@ import {
 } from './preset/core'
 import type { PresetTabState } from './preset/kind'
 import DeckTab from './cards/DeckTab.vue'
-import type { DeckTabState } from './cards/deck'
+import type { DeckTabState } from './cards/decks'
 import StencilTab from './cards/StencilTab.vue'
-import type { StencilTabState } from './cards/stencil'
+import type { StencilTabState } from './cards/stencils'
 import type { Marks } from './cards/marks'
 import RecordingTab from './recording/RecordingTab.vue'
 import { transcript, type Cue, type Recordings } from './recording/transcript'
@@ -347,7 +347,7 @@ export const Deck: Story = {
 const STENCIL_STATE: StencilTabState = {
   id: 'Sanskrit/Word.md',
   shown: computed(() => ({ path: 'Sanskrit/Word.md', body: '', state: 'clean', refusal: null })),
-  sheet: computed(() => ({
+  stencil: computed(() => ({
     fields: WORD.fields,
     preamble: '',
     faces: [

@@ -66,7 +66,7 @@ func exec(ctx context.Context, tx *writing.Transaction, name string, args ...any
 // A note and the size and date that call it up to date are stored together or
 // not at all, so an interrupted scan leaves files to be read again.
 func (r *Repository) Save(
-	ctx context.Context, vaultID domain.VaultID, notes []domain.IndexedNote,
+	ctx context.Context, vaultID domain.VaultID, notes []domain.Note,
 ) error {
 	if len(notes) == 0 {
 		return nil
@@ -83,7 +83,7 @@ func (r *Repository) Save(
 	}
 	for _, one := range notes {
 		if err := saveNote(ctx, tx, vault, one, r.sizes, r.reads); err != nil {
-			return fmt.Errorf("%s: %w", one.Note.Fingerprint.Path, err)
+			return fmt.Errorf("%s: %w", one.Fingerprint.Path, err)
 		}
 	}
 	if err := tx.Commit(); err != nil {
@@ -93,10 +93,10 @@ func (r *Repository) Save(
 }
 
 func saveNote(
-	ctx context.Context, tx *writing.Transaction, vault int64, indexed domain.IndexedNote,
+	ctx context.Context, tx *writing.Transaction, vault int64, indexed domain.Note,
 	sizes chunking.Sizes, reads chunking.Legibility,
 ) error {
-	n := indexed.Note
+	n := indexed
 	frontmatter, storeErr := encodeFrontmatter(n)
 	problem := n.FrontmatterErr
 	if storeErr != "" {

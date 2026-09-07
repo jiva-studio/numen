@@ -12,12 +12,12 @@ import { StencilEditor } from '@numen/ui'
 import type { InsertionPoint, Half } from '@numen/ui'
 import FileConflictPrompt from '../saving/FileConflictPrompt.vue'
 import { conflictIn } from '../saving/flushing'
-import type { StencilTabState } from './stencil'
+import type { StencilTabState } from './stencils'
 import { WORDS as words } from './words'
 
 const props = defineProps<{ state: StencilTabState }>()
 
-const sheet = computed(() => props.state.sheet.value)
+const stencil = computed(() => props.state.stencil.value)
 const marks = computed(() => props.state.marks.value)
 </script>
 
@@ -36,9 +36,9 @@ const marks = computed(() => props.state.marks.value)
     </ul>
 
     <StencilEditor
-      class="stencil-tab__sheet"
-      :fields="sheet.fields"
-      :faces="sheet.faces"
+      class="stencil-tab__body"
+      :fields="stencil.fields"
+      :faces="stencil.faces"
       :wrong="marks"
       :name="words.stencil"
       @add-field="(name: string) => props.state.addsField(name)"
@@ -63,7 +63,7 @@ const marks = computed(() => props.state.marks.value)
   min-block-size: 0;
 }
 
-.stencil-tab__sheet {
+.stencil-tab__body {
   flex: 1;
   min-block-size: 0;
 }

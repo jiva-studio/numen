@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/urlfile"
 )
 
 // CreateURL makes the file a web address is kept in.
@@ -22,7 +23,7 @@ type CreateURL struct {
 
 // NewURL is one address a caller wants a file made for.
 type NewURL struct {
-	Address domain.WebAddress
+	Address domain.URL
 	// Title is what the file is called. Empty is the address itself, which is
 	// the name a fetch replaces once it knows what is there.
 	Title string
@@ -42,7 +43,7 @@ func (u CreateURL) Execute(
 ) (CreateURLResult, error) {
 	title := in.Title
 	if title == "" {
-		title = in.Address.URL
+		title = string(in.Address)
 	}
 	name, _, err := domain.Filename(title)
 	if err != nil {
@@ -56,7 +57,7 @@ func (u CreateURL) Execute(
 	}
 	// Whether the path was free is the filesystem's to answer, at the moment
 	// the file is made.
-	if err := writer.Create(ctx, path, domain.WriteURL(in.Address)); err != nil {
+	if err := writer.Create(ctx, path, urlfile.Write(in.Address)); err != nil {
 		return CreateURLResult{}, err
 	}
 

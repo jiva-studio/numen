@@ -1,24 +1,25 @@
-package domain_test
+package urlfile_test
 
 import (
 	"errors"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/urlfile"
 )
 
 // A `.url` file is what every system writes, and what one wrote is read back.
 func TestAnAddressIsReadBackFromWhatWasWritten(t *testing.T) {
-	at, err := domain.ParseWebAddress("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+	at, err := domain.ParseURL("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
 	if err != nil {
 		t.Fatal(err)
 	}
-	read, err := domain.ReadURL(domain.WriteURL(at))
+	read, err := urlfile.Read(urlfile.Write(at))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if read.URL != at.URL {
-		t.Errorf("read %q, wrote %q", read.URL, at.URL)
+	if string(read) != string(at) {
+		t.Errorf("read %q, wrote %q", string(read), string(at))
 	}
 }
 
@@ -27,19 +28,19 @@ func TestAnAddressIsReadBackFromWhatWasWritten(t *testing.T) {
 // them.
 func TestWhatAnotherProgramWroteIsRead(t *testing.T) {
 	raw := "[InternetShortcut]\r\nIDList=\r\nurl=https://example.com/a\r\nIconIndex=0\r\n"
-	at, err := domain.ReadURL([]byte(raw))
+	at, err := urlfile.Read([]byte(raw))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if at.URL != "https://example.com/a" {
-		t.Errorf("read %q", at.URL)
+	if string(at) != "https://example.com/a" {
+		t.Errorf("read %q", string(at))
 	}
 }
 
 // A file naming no address is one the vault says so about, and not one that
 // silently points nowhere.
 func TestAFileWithNoAddressSaysSo(t *testing.T) {
-	if _, err := domain.ReadURL([]byte("[InternetShortcut]\nIconIndex=0\n")); !errors.Is(err, domain.ErrNoAddress) {
+	if _, err := urlfile.Read([]byte("[InternetShortcut]\nIconIndex=0\n")); !errors.Is(err, urlfile.ErrNoAddress) {
 		t.Errorf("a file with no URL gave %v", err)
 	}
 }

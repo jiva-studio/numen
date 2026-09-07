@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
@@ -24,11 +25,11 @@ const embedRoute = "embed"
 // It carries the address the note points at. Which player that address is
 // played by is the domain's to say, and a host learned about later is played
 // here without this route learning anything.
-func (l *Loopback) Embed(at domain.WebAddress) string {
-	if l == nil || l.stopped.Load() || at.Embed() == "" {
+func (l *Loopback) Embed(at domain.URL) string {
+	if l == nil || l.stopped.Load() || playing(at) == "" {
 		return ""
 	}
-	return l.address + "/" + l.token + "/" + embedRoute + "/" + url.PathEscape(at.URL)
+	return l.address + "/" + l.token + "/" + embedRoute + "/" + url.PathEscape(string(at))
 }
 
 // player is the page that holds one player.
@@ -59,12 +60,12 @@ func (l *Loopback) framing(w http.ResponseWriter, r *http.Request, raw string) {
 		http.Error(w, "not an address", http.StatusBadRequest)
 		return
 	}
-	at, err := domain.ParseWebAddress(written)
+	at, err := domain.ParseURL(written)
 	if err != nil {
 		http.Error(w, "not an address", http.StatusBadRequest)
 		return
 	}
-	played := at.Embed()
+	played := playing(at)
 	if played == "" {
 		http.Error(w, "nothing plays what is at that address", http.StatusBadRequest)
 		return
@@ -89,7 +90,7 @@ func (l *Loopback) framing(w http.ResponseWriter, r *http.Request, raw string) {
 		Player template.URL
 		Host   template.JSStr
 	}{
-		Title:  at.URL,
+		Title:  string(at),
 		Player: template.URL(played + "&origin=" + url.QueryEscape(l.address)),
 		Host:   template.JSStr(host),
 	})
@@ -105,5 +106,74 @@ func framed(played string) (string, bool) {
 		return "", false
 	}
 	host := address.Scheme + "://" + address.Host
-	return host, slices.Contains(domain.EmbedHosts(), host)
+	return host, slices.Contains(embedHosts, host)
+}
+
+// embedded is where a frame plays a video from. The host serves no cookies of
+// its own, and `enablejsapi` is what makes the frame answer the page holding
+// it, so a passage is played from the second it was said without that host's
+// script running inside the window.
+const embedded = "https://www.youtube-nocookie.com/embed/"
+
+// embedHosts are the origins this window may frame. Every one of them runs its
+// own scripts inside its own frame and reaches its own machines.
+var embedHosts = []string{"https://www.youtube-nocookie.com"}
+
+// videoSites are the hosts whose players this window knows how to frame. A host
+// is written without `www.`, which is trimmed before the lookup.
+var videoSites = map[string]bool{
+	"youtube.com":          true,
+	"m.youtube.com":        true,
+	"music.youtube.com":    true,
+	"youtube-nocookie.com": true,
+	"youtu.be":             true,
+}
+
+// playing is where a frame plays what is at an address, and nothing where this
+// window knows no player for it.
+func playing(at domain.URL) string {
+	address, err := url.Parse(string(at))
+	if err != nil || !videoSites[strings.TrimPrefix(address.Hostname(), "www.")] {
+		return ""
+	}
+	video := videoAt(address)
+	if video == "" {
+		return ""
+	}
+	return embedded + video + "?enablejsapi=1"
+}
+
+// videoAt is the video an address names, and nothing where it names none.
+func videoAt(address *url.URL) string {
+	if strings.TrimPrefix(address.Hostname(), "www.") == "youtu.be" {
+		return videoID(strings.TrimPrefix(address.Path, "/"))
+	}
+	if address.Path == "/watch" {
+		return videoID(address.Query().Get("v"))
+	}
+	for _, page := range []string{"/embed/", "/shorts/", "/live/", "/v/"} {
+		if rest, found := strings.CutPrefix(address.Path, page); found {
+			return videoID(rest)
+		}
+	}
+	return ""
+}
+
+// videoID is the identifier where the segment is one, and nothing otherwise. It
+// is eleven characters of the alphabet a URL carries unescaped, and a segment
+// carrying anything else is a page of the site.
+func videoID(segment string) string {
+	segment, _, _ = strings.Cut(segment, "/")
+	if len(segment) != 11 {
+		return ""
+	}
+	for _, r := range segment {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9':
+		case r == '-', r == '_':
+		default:
+			return ""
+		}
+	}
+	return segment
 }

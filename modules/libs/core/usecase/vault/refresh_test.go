@@ -329,7 +329,7 @@ type countingNotes struct {
 	sizes  []int
 }
 
-func (c *countingNotes) Save(_ context.Context, _ domain.VaultID, notes []domain.IndexedNote) error {
+func (c *countingNotes) Save(_ context.Context, _ domain.VaultID, notes []domain.Note) error {
 	c.groups++
 	c.notes += len(notes)
 	c.sizes = append(c.sizes, len(notes))

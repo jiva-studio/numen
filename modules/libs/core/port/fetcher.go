@@ -61,25 +61,25 @@ type Fetcher interface {
 	// Fetching is what this address is fetched by. A video and a page are
 	// reached by different tools, and what is kept names the one that brought
 	// it.
-	Fetching(at domain.WebAddress) FetchModel
+	Fetching(at domain.URL) FetchModel
 
 	// Metadata is what the site says about the address, taking none of it.
-	Metadata(ctx context.Context, at domain.WebAddress) (Metadata, error)
+	Metadata(ctx context.Context, at domain.URL) (Metadata, error)
 
 	// Text is what the address publishes as words. Which words those are is the
 	// provider's to say and the caller's to keep: a site that publishes them
 	// against a clock answers with cues, one that publishes prose answers with
 	// prose, and the provider names what made them. An address publishing none
 	// of what was asked for is ErrNothingFetched.
-	Text(ctx context.Context, at domain.WebAddress, want PreferredCaptions) (Text, error)
+	Text(ctx context.Context, at domain.URL, want PreferredCaptions) (Text, error)
 
 	// Audio is a video's sound, written as the container a transcriber opens.
 	// It is what a machine listens to, and is not what a person plays.
-	Audio(ctx context.Context, at domain.WebAddress, into io.Writer) error
+	Audio(ctx context.Context, at domain.URL, into io.Writer) error
 
 	// Download is what is at the address as a person plays it, written as it was
 	// published. How large it may be is the caller's to hold to.
-	Download(ctx context.Context, at domain.WebAddress, into io.Writer) (Download, error)
+	Download(ctx context.Context, at domain.URL, into io.Writer) (Download, error)
 }
 
 // PreferredCaptions is which of the words a site published the caller will

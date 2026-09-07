@@ -24,7 +24,7 @@ type site struct {
 	refusing error
 }
 
-func (s *site) Fetching(_ domain.WebAddress) port.FetchModel {
+func (s *site) Fetching(_ domain.URL) port.FetchModel {
 	producer := text.Captions
 	if len(s.cues) == 0 && s.prose != "" {
 		producer = text.Article
@@ -32,8 +32,8 @@ func (s *site) Fetching(_ domain.WebAddress) port.FetchModel {
 	return port.FetchModel{Tool: "a test", Version: "1", Producer: producer}
 }
 
-func (s *site) Metadata(_ context.Context, at domain.WebAddress) (port.Metadata, error) {
-	s.asked = append(s.asked, "metadata "+at.URL)
+func (s *site) Metadata(_ context.Context, at domain.URL) (port.Metadata, error) {
+	s.asked = append(s.asked, "metadata "+string(at))
 	if s.refusing != nil {
 		return port.Metadata{}, s.refusing
 	}
@@ -41,9 +41,9 @@ func (s *site) Metadata(_ context.Context, at domain.WebAddress) (port.Metadata,
 }
 
 func (s *site) Text(
-	_ context.Context, at domain.WebAddress, _ port.PreferredCaptions,
+	_ context.Context, at domain.URL, _ port.PreferredCaptions,
 ) (port.Text, error) {
-	s.asked = append(s.asked, "text "+at.URL)
+	s.asked = append(s.asked, "text "+string(at))
 	if len(s.cues) > 0 {
 		return port.Text{
 			Producer: text.Captions, Cues: s.cues, Title: s.title, Length: s.length,
@@ -55,12 +55,12 @@ func (s *site) Text(
 	return port.Text{}, port.ErrNothingFetched
 }
 
-func (s *site) Audio(context.Context, domain.WebAddress, io.Writer) error {
+func (s *site) Audio(context.Context, domain.URL, io.Writer) error {
 	return port.ErrNothingFetched
 }
 
-func (s *site) Download(_ context.Context, at domain.WebAddress, into io.Writer) (port.Download, error) {
-	s.asked = append(s.asked, "download "+at.URL)
+func (s *site) Download(_ context.Context, at domain.URL, into io.Writer) (port.Download, error) {
+	s.asked = append(s.asked, "download "+string(at))
 	if len(s.bytes) == 0 {
 		return port.Download{}, port.ErrNothingFetched
 	}
@@ -70,7 +70,7 @@ func (s *site) Download(_ context.Context, at domain.WebAddress, into io.Writer)
 	return port.Download{MediaType: text.CopyType, Extension: text.CopyExtension}, nil
 }
 
-const videoNote = "notes/https---www.youtube.com-watch-v=dQw4w9WgXcQ.url"
+const videoNote = "notes/https---youtu.be-dQw4w9WgXcQ.url"
 
 // fetching is a vault holding one link note, and the store what is fetched for
 // it is kept in.
@@ -88,12 +88,15 @@ func fetching(t *testing.T, written string, from *site) (ImportURL, *shelf, stri
 			cut = append(cut, path)
 			return nil
 		},
-	}, kept, "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+	}, kept, pasted
 }
 
 // A file the palette made is named by the address: an address is no filename,
 // so the name is what a fetch replaces once it knows what is there.
-const aPastedAddress = "[InternetShortcut]\nURL=https://youtu.be/dQw4w9WgXcQ\n"
+const (
+	pasted         = "https://youtu.be/dQw4w9WgXcQ"
+	aPastedAddress = "[InternetShortcut]\nURL=" + pasted + "\n"
+)
 
 const pointsAtAVideo = aPastedAddress
 

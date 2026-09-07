@@ -13,7 +13,7 @@ import type { InsertionPoint, Position } from '@numen/ui'
 import { ChevronDown } from '@lucide/vue'
 import FileConflictPrompt from '../saving/FileConflictPrompt.vue'
 import { conflictIn } from '../saving/flushing'
-import type { DeckTabState } from './deck'
+import type { DeckTabState } from './decks'
 import { WORDS as words } from './words'
 
 const props = defineProps<{ state: DeckTabState }>()

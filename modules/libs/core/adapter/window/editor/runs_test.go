@@ -89,6 +89,9 @@ func running(
 	// A note is read to find out where it points, which is what says whether
 	// anything is made from it.
 	api.Notes.Read = &noteRead
+	// What a url carries follows from what fetches it, so a window that reaches
+	// no address at all says a url carries nothing.
+	api.Imports = &source.ImportURL{By: reachingASite{}}
 	api.show(vault)
 	runningBehind(api, func(on *passes) { on.recognises, on.transcribes = scans, hears })
 	return api, api.Serving(http.NotFoundHandler())
@@ -445,4 +448,12 @@ func TestListingWhatAFileCarriesBeginsNoRun(t *testing.T) {
 	if scans.times+hears.times != 0 {
 		t.Error("a run was given a source by a question that only asked")
 	}
+}
+
+// reachingASite is a fetcher that reaches a video and nothing else: what a url
+// carries follows from what fetches it, and a test says which that is.
+type reachingASite struct{ port.Fetcher }
+
+func (reachingASite) Fetching(domain.URL) port.FetchModel {
+	return port.FetchModel{Tool: "a test", Producer: derived.Captions}
 }
