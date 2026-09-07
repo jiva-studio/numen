@@ -104,7 +104,7 @@ func preceding(namedPlaces []namedPlace, offset int) int {
 // recipe and changes when the text or the offsets it produces do.
 const (
 	ReaderNote      = "note-1"
-	ReaderEPUB      = "epub-2"
+	ReaderEPUB      = "epub-1"
 	ReaderPDF       = "pdf-1"
 	ReaderRecording = "recording-1"
 )
