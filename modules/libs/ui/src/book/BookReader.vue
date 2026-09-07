@@ -546,10 +546,9 @@ defineExpose({
   pointer-events: auto;
 }
 
-/* The area is moved by script alone: a book is turned a page at a time. */
+/* The page a person is reading carries nothing drawn around it. */
 .book__area:focus-visible {
   outline: none;
-  box-shadow: inset 0 0 0 var(--numen-ring-width) var(--numen-ring);
 }
 
 /* The columns run sideways out of the area, and how far they run is read off

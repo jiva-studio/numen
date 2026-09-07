@@ -127,7 +127,6 @@ watch(standing, (one) => {
 
 .contents__field:focus-visible {
   outline: none;
-  box-shadow: inset 0 0 0 var(--numen-ring-width) var(--numen-ring);
 }
 
 .contents__list {
@@ -159,8 +158,7 @@ watch(standing, (one) => {
 }
 
 .contents__line:focus-visible {
-  outline: var(--numen-ring-width) solid var(--numen-ring);
-  outline-offset: calc(-1 * var(--numen-ring-width));
+  outline: none;
 }
 
 .contents__silence {

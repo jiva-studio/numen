@@ -133,7 +133,7 @@ const chose = (at: number) => {
 }
 
 .book-tab__list:focus-visible {
-  outline: var(--numen-ring-width) solid var(--numen-ring);
+  outline: none;
 }
 
 /* The list comes down over the text and takes no room from it, so the columns
