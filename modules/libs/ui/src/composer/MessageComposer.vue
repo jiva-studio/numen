@@ -84,7 +84,7 @@ defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
         ref="field"
         v-model="text"
         rows="1"
-        class="composer__field resize-none overflow-y-auto rounded-none border-0 bg-transparent p-0 placeholder:text-transparent focus-visible:ring-0"
+        class="composer__field resize-none overflow-y-auto rounded-none border-0 bg-transparent p-0 placeholder:text-transparent"
         :placeholder="placeholder"
         :disabled="disabled"
         @keydown="onKeydown"
@@ -178,6 +178,11 @@ defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
 
 .composer__field {
   scrollbar-width: none;
+}
+
+/* The ring belongs to the pill around the field. */
+.composer__field:focus-visible {
+  box-shadow: none;
 }
 
 .composer__field::-webkit-scrollbar {
