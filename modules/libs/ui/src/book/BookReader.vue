@@ -61,6 +61,8 @@ const props = withDefaults(
     also?: readonly Span[]
     /** How large the text is set, as a multiple of the size prose is read at. */
     size?: number
+    /** What the book calls the place in front, drawn over the text it names. */
+    chapter?: string
     /** The words it is read with. */
     words?: BookWords
   }>(),
@@ -73,6 +75,7 @@ const props = withDefaults(
     marked: () => [],
     also: () => [],
     size: 1,
+    chapter: '',
     words: () => BOOK_WORDS,
   },
 )
@@ -445,6 +448,10 @@ defineExpose({
 
 <template>
   <div class="book numen relative h-full min-h-0 font-sans text-base text-ink">
+    <!-- The line over the text: the way into what the book divides into, and
+         what it calls the place in front. -->
+    <header class="book__head text-small text-hushed">{{ chapter }}</header>
+
     <div class="book__margin h-full">
       <div
         ref="area"
@@ -474,9 +481,12 @@ defineExpose({
     <!-- One line under the text, and nothing to press on it: a book is turned
          by the hand and the keyboard. The count is carried over the book and
          what is left of the chapter is measured on the page in front. -->
-    <footer v-if="count > 0" class="book__foot text-small text-hushed">
-      <span class="book__count">{{ words.of(paged.page, paged.pages) }}</span>
-      <span class="book__left">{{ words.left(left) }}</span>
+    <footer class="book__foot text-small text-hushed">
+      <span class="book__way"><slot name="way" /></span>
+      <template v-if="count > 0">
+        <span class="book__count">{{ words.of(paged.page, paged.pages) }}</span>
+        <span class="book__left">{{ words.left(left) }}</span>
+      </template>
     </footer>
   </div>
 </template>
@@ -509,8 +519,30 @@ defineExpose({
    the width of a spread. */
 .book__margin {
   box-sizing: border-box;
-  padding-inline: var(--numen-inset-wide);
+  /* The gutter a book keeps beside its text, which is wide: a column runs to
+     the measure it is set at and the room left over is margin. */
+  padding-inline: clamp(2rem, 10%, 7rem);
+  padding-block-start: 4rem;
   padding-block-end: 3rem;
+}
+
+/* What the book calls the place in front, over the text it names. */
+.book__head {
+  position: absolute;
+  inset-block-start: var(--numen-inset);
+  inset-inline: clamp(2rem, 10%, 7rem);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* The way into the contents stands on the line under the text and carries
+   nothing drawn around it. */
+.book__way {
+  grid-column: 1;
+  justify-self: start;
+  pointer-events: auto;
 }
 
 /* The area is moved by script alone: a book is turned a page at a time. */
@@ -528,9 +560,11 @@ defineExpose({
   column-gap: var(--book-gap);
   column-fill: auto;
   font-size: var(--book-size);
+  /* Set to the measure, broken at the syllable, as a book is. */
+  text-align: justify;
+  hyphens: auto;
   /* A word longer than the column is broken inside itself. */
   overflow-wrap: anywhere;
-  hyphens: auto;
   /* The window takes selection away from everything and gives it back to what
      is there to be read. A book is there to be read. */
   user-select: text;

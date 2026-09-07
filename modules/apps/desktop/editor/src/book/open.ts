@@ -184,6 +184,19 @@ export function openBook(books: Books, path: string, words: BookWords) {
   /** The page the person is on, counted from one. */
   const page = computed(() => pageAt(pageBytes.value, pages.value, at.value))
 
+  /**
+   * What the book calls the place in front: the last thing it names at or
+   * before the offset, and nothing before the first of them.
+   */
+  const chapter = computed(() => {
+    let found = ''
+    for (const entry of contents.value) {
+      if (entry.at > at.value) break
+      found = entry.title
+    }
+    return found
+  })
+
   /** Where the document being read stands in the book's text. */
   const reading = computed<BookSpan>(() => standing.value?.span ?? { begins: 0, ends: 0 })
 
@@ -294,6 +307,7 @@ export function openBook(books: Books, path: string, words: BookWords) {
     contents,
     pages,
     page,
+    chapter,
     pageBytes,
     at,
     reading,

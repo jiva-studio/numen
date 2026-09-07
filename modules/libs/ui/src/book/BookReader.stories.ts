@@ -172,14 +172,14 @@ const inFrontOf = (canvasElement: HTMLElement) =>
   Number(canvasElement.querySelector('[data-front]')?.getAttribute('data-front'))
 
 /**
- * The text set in columns, once the browser has laid it out. The controls are
- * drawn from the spreads the text came to, so they stand there when it has.
+ * The text set in columns, once the browser has laid it out. The count is drawn
+ * from the spreads the text came to, so it stands there when it has.
  */
 const laid = async (canvasElement: HTMLElement) =>
   await waitFor(
     async () => {
       await expect(runsOf(canvasElement)[0]?.getClientRects().length).toBeGreaterThan(0)
-      await expect(canvasElement.querySelector('.book__foot')).toBeInTheDocument()
+      await expect(canvasElement.querySelector('.book__count')).toBeInTheDocument()
     },
     { timeout: ITS_OWN_PACE },
   )
@@ -373,9 +373,13 @@ export const OneLine: Story = {
 }
 
 /**
- * A document with no text at all is drawn and says nothing. A book carries a
+ * A document with no text at all is drawn and counts nothing. A book carries a
  * document of navigation with no prose in it, and a reader that throws over one
  * is a book that will not open.
+ *
+ * The line under the text stands there, because the way into the contents
+ * stands on it; what a document of no pages puts on it is neither a count nor a
+ * chapter to finish.
  */
 export const NoTextAtAll: Story = {
   decorators: [WIDE],
@@ -383,7 +387,9 @@ export const NoTextAtAll: Story = {
   play: async ({ canvasElement }) => {
     await expect(paperOf(canvasElement)).toBeInTheDocument()
     await expect(runsOf(canvasElement)).toHaveLength(0)
-    await expect(canvasElement.querySelector('.book__foot')).not.toBeInTheDocument()
+    await expect(canvasElement.querySelector('.book__foot')).toBeInTheDocument()
+    await expect(canvasElement.querySelector('.book__count')).not.toBeInTheDocument()
+    await expect(canvasElement.querySelector('.book__left')).not.toBeInTheDocument()
   },
 }
 

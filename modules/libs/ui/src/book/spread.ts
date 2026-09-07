@@ -39,10 +39,11 @@ export const GAP = 32
 
 /**
  * The narrowest a column is set, in CSS pixels at the size the text is read at.
- * A line of about sixty-six characters, which is the measure prose is set at;
+ * A line of about fifty-six characters, which is within the measure prose is
+ * set at;
  * a second column is opened only where both can be read at it.
  */
-export const NARROWEST = 528
+export const NARROWEST = 448
 
 /**
  * How many columns a reading area holds. Two once each of them can be set at

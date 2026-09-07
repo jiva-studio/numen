@@ -65,20 +65,6 @@ const chose = (at: number) => {
 <template>
   <div class="book-tab">
     <div class="book-tab__reading">
-      <button
-        ref="way"
-        type="button"
-        class="book-tab__list"
-        :aria-label="listing ? words.hides : words.shows"
-        :aria-pressed="listing"
-        :aria-expanded="listing"
-        @click="listing = !listing"
-      >
-        <!-- The name is read out and not drawn: what a book is read in keeps
-             its room for the book. -->
-        <ListTree class="size-4" aria-hidden="true" />
-      </button>
-
       <Transition name="book-tab__over">
         <aside v-if="listing" ref="panel" class="book-tab__contents">
           <BookContents
@@ -103,10 +89,25 @@ const chose = (at: number) => {
         :at="props.state.at.value"
         :marked="props.state.marked.value"
         :also="props.state.also.value"
+        :chapter="props.state.chapter.value"
         :words="words"
         @go="(at: number) => void props.state.go(at)"
         @follow="(path: string) => void props.state.follow(path)"
-      />
+      >
+        <template #way>
+          <button
+            ref="way"
+            type="button"
+            class="book-tab__list"
+            :aria-label="listing ? words.hides : words.shows"
+            :aria-pressed="listing"
+            :aria-expanded="listing"
+            @click="listing = !listing"
+          >
+            <ListTree class="size-4" aria-hidden="true" />
+          </button>
+        </template>
+      </BookReader>
     </div>
   </div>
 </template>
@@ -123,22 +124,12 @@ const chose = (at: number) => {
   min-inline-size: 0;
 }
 
-/* Standing over the text, so it carries a panel's own ground and lets what is
-   behind it through. */
+/* It stands on the line under the text and is drawn as what it is: a mark to
+   press, in the colour the line is set in. */
 .book-tab__list {
-  position: absolute;
-  inset-block-start: 0.25rem;
-  inset-inline-start: 0.25rem;
-  z-index: 2;
   display: grid;
   place-items: center;
-  inline-size: 1.75rem;
-  block-size: 1.75rem;
-  border: var(--numen-stroke) solid var(--numen-panel-border);
-  border-radius: var(--numen-radius-tight);
-  background: var(--numen-panel-bg);
-  backdrop-filter: blur(var(--numen-panel-blur));
-  font-size: var(--numen-text-1);
+  color: inherit;
 }
 
 .book-tab__list:focus-visible {
@@ -149,8 +140,8 @@ const chose = (at: number) => {
    behind it stand where they stood. */
 .book-tab__contents {
   position: absolute;
-  inset-block-start: 2.25rem;
-  inset-inline-start: 0.25rem;
+  inset-block-end: 2.5rem;
+  inset-inline-start: 0.5rem;
   z-index: 1;
   inline-size: 15rem;
   max-inline-size: calc(100% - 0.5rem);

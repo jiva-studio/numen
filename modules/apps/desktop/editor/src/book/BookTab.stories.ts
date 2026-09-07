@@ -186,14 +186,14 @@ const spreadsIn = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('.book__count')?.textContent
 
 /**
- * The text laid out in columns, once the browser has laid it out. The controls
- * are drawn from the spreads the text came to, so they stand there when it has.
+ * The text laid out in columns, once the browser has laid it out. The count is
+ * drawn from the spreads the text came to, so it stands there when it has.
  */
 const laid = async (canvasElement: HTMLElement) =>
   await waitFor(
     async () => {
       await expect(runsOf(canvasElement)[0]?.getClientRects().length).toBeGreaterThan(0)
-      await expect(canvasElement.querySelector('.book__foot')).toBeInTheDocument()
+      await expect(canvasElement.querySelector('.book__count')).toBeInTheDocument()
     },
     { timeout: ITS_OWN_PACE },
   )
@@ -290,8 +290,11 @@ export const ABookThatNamesNothing: Story = {
 
     await userEvent.click(canvas.getByLabelText(words.shows))
 
-    await expect(await canvas.findByText('part0001')).toBeInTheDocument()
-    await expect(canvas.queryByText(words.nothing)).not.toBeInTheDocument()
+    // The document names the place in front as well, so what is asked of the
+    // list is asked inside it.
+    const list = within(await canvas.findByRole('navigation'))
+    await expect(list.getByText('part0001')).toBeInTheDocument()
+    await expect(list.queryByText(words.nothing)).not.toBeInTheDocument()
   },
 }
 
