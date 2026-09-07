@@ -17,9 +17,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
-// videos reaches what a site publishes as a video, by running yt-dlp. The sites
-// it answers for are the sites that tool knows, and a machine without it
-// answers for none.
+// videos is the provider for what a site publishes as a video, which it fetches
+// by running yt-dlp. The sites it supports are the sites that tool knows, and a
+// machine without it supports none.
 //
 // ffmpeg is beside it because a video's sound arrives in whatever container the
 // site had and a transcriber opens one.
@@ -38,8 +38,8 @@ func newVideos(ctx context.Context, c Config) *videos {
 	}
 }
 
-// Reaches is a video, on a machine holding the tool that gets at one.
-func (v *videos) Reaches(at domain.WebAddress) bool { return at.IsVideo() && v.command != nil }
+// Supports is a video, on a machine holding the tool that gets at one.
+func (v *videos) Supports(at domain.WebAddress) bool { return at.IsVideo() && v.command != nil }
 
 func (v *videos) Fetching(domain.WebAddress) port.FetchModel {
 	return port.FetchModel{Tool: "yt-dlp", Version: v.version}

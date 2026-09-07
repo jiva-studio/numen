@@ -15,11 +15,11 @@ Reaching an address means speaking to a site that changes what it publishes and 
 
 *What is at this address, and what of it can be had*: what it is called, how long it runs, the words published with it, its sound, a copy of it, and the prose of a page. One port, in the core's own words.
 
-### Each way of reaching an address is a strategy behind that one port
+### Behind that one port stands a provider for each source
 
-A strategy says which addresses it reaches and answers for those; the adapter asks each in turn and the first that says so is the one that answers. A site with an API of its own is written as the whole of that site's answer, added to the list, and nothing elsewhere is taught about it.
+A provider says which addresses it supports and answers for those; the adapter asks each in turn and the first that says so is the one that answers. A site with an API of its own is written as the whole of that site's answer, added to the list, and nothing elsewhere is taught about it.
 
-They stand narrowest first. A page is what an address is when nothing knows the site better, so the page reader stands last.
+They stand narrowest first. A page is what an address is when nothing knows the site better, so the provider that fetches pages stands last.
 
 ### The tools are run as programs, and named by a setting
 
@@ -43,7 +43,7 @@ A separate program run over a pipe is neither linking nor distribution, so the s
 
 - A machine without a tool loses the addresses that tool reaches, and says which
 one would have reached them.
-- Reaching another site is a strategy added to a list, and one diff.
+- Fetching from another site is a provider added to a list, and one diff.
 - What a site does to keep programs out is answered by the person's own
 settings, without a release.
 - Nothing here is tested against a network: what a run of the real tool says is

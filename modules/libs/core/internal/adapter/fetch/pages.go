@@ -30,10 +30,9 @@ const browser = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
 // found it.
 const readerName = "go-readability"
 
-// pages reaches an address nothing else does, which is every address a browser
-// would go to and no tool here knows better. It is fetched as a person's
-// browser would fetch it, and what it says is bytes from a stranger: the parse
-// is somebody else's library, fed a bounded read.
+// pages is the provider for an address no tool here knows better. It fetches
+// the page as a person's browser would, and what it says is bytes from a
+// stranger: the parse is somebody else's library, fed a bounded read.
 //
 // It runs in this process, so every machine has it.
 type pages struct{ through *http.Client }
@@ -55,10 +54,10 @@ func newPages() *pages {
 	}}
 }
 
-// Reaches is anything published as a page, which is every address a site does
-// not publish as a video. It stands last, and it is what takes whatever the
-// strategies before it did not.
-func (p *pages) Reaches(at domain.WebAddress) bool { return !at.IsVideo() }
+// Supports anything published as a page, which is every address a site does not
+// publish as a video. It stands last, and it takes whatever the providers
+// before it did not.
+func (p *pages) Supports(at domain.WebAddress) bool { return !at.IsVideo() }
 
 func (p *pages) Fetching(domain.WebAddress) port.FetchModel {
 	return port.FetchModel{Tool: readerName}

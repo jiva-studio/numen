@@ -231,10 +231,10 @@ func TestAMachineWithFfmpegAndNothingThatReachesAVideo(t *testing.T) {
 	}
 }
 
-// Which strategy answers is which one says it reaches the address, and the
-// first that does is the one asked. What a fetch is claimed by says which of
-// them it was, so a text kept beyond the run is claimed again by what made it.
-func TestWhichStrategyReachesAnAddress(t *testing.T) {
+// Which provider answers is which one supports the address, and the first that
+// does is the one asked. What a fetch is claimed by says which of them it was,
+// so a text kept beyond the run is claimed again by what made it.
+func TestWhichProviderSupportsAnAddress(t *testing.T) {
 	fetcher, err := fetch.New(t.Context(), fetch.Config{Video: fetch.Tool{Command: tool(t, aVideo)}})
 	if err != nil {
 		t.Fatal(err)
@@ -247,7 +247,7 @@ func TestWhichStrategyReachesAnAddress(t *testing.T) {
 		{"https://example.com/entropy", "go-readability"},
 	} {
 		if got := fetcher.Fetching(address(t, one.written)).Tool; got != one.want {
-			t.Errorf("%s is reached by %q, want %q", one.written, got, one.want)
+			t.Errorf("%s is fetched by %q, want %q", one.written, got, one.want)
 		}
 	}
 }
