@@ -52,7 +52,7 @@ jobs:
           go-version-file: modules/apps/mobile/go.mod
           cache: false
 
-      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/go/pkg/mod
           key: go-mod-modules/apps/mobile-${{ hashFiles('modules/apps/mobile/go.sum') }}
@@ -61,7 +61,7 @@ jobs:
       # What the last compile and test run left behind: a run compiles what
       # changed and re-runs the tests that changed. The key carries the commit,
       # so the newest cache the branch can see is the one restored.
-      - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/go-build
           key: go-build-modules/apps/mobile-${{ github.sha }}
@@ -100,7 +100,7 @@ jobs:
 
       # Every run writes what it built. A branch reads its own back on the next
       # push to it and main's before that.
-      - uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/go-build
           key: go-build-modules/apps/mobile-${{ github.sha }}
