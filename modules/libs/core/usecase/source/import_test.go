@@ -55,10 +55,6 @@ func (s *site) Text(
 	return port.Text{}, port.ErrNothingFetched
 }
 
-func (s *site) Audio(context.Context, domain.URL, io.Writer) error {
-	return port.ErrNothingFetched
-}
-
 func (s *site) Download(_ context.Context, at domain.URL, into io.Writer) (port.Download, error) {
 	s.asked = append(s.asked, "download "+string(at))
 	if len(s.bytes) == 0 {

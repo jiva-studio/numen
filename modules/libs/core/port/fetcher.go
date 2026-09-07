@@ -73,10 +73,6 @@ type Fetcher interface {
 	// of what was asked for is ErrNothingFetched.
 	Text(ctx context.Context, at domain.URL, want PreferredCaptions) (Text, error)
 
-	// Audio is a video's sound, written as the container a transcriber opens.
-	// It is what a machine listens to, and is not what a person plays.
-	Audio(ctx context.Context, at domain.URL, into io.Writer) error
-
 	// Download is what is at the address as a person plays it, written as it was
 	// published. How large it may be is the caller's to hold to.
 	Download(ctx context.Context, at domain.URL, into io.Writer) (Download, error)

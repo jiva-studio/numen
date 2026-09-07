@@ -163,45 +163,6 @@ func (v *ytDLP) subtitles(
 	return cues, nil
 }
 
-// Audio is a video's sound as the container a transcriber opens: one channel at
-// 16 kHz, which is what a model takes.
-func (v *ytDLP) Audio(ctx context.Context, at domain.URL, into io.Writer) error {
-	if !v.sound.held() {
-		return ErrNoTool
-	}
-	taking := v.command.started(ctx, "-f", "bestaudio", "--no-playlist", "-o", "-", string(at))
-	bringing := v.sound.started(ctx,
-		"-hide_banner", "-loglevel", "error", "-i", "pipe:0",
-		"-vn", "-ac", "1", "-ar", "16000", "-f", "wav", "pipe:1")
-
-	sound, err := taking.StdoutPipe()
-	if err != nil {
-		return err
-	}
-	bringing.Stdin = sound
-	bringing.Stdout = into
-	var said, saidToo bytes.Buffer
-	taking.Stderr, bringing.Stderr = &said, &saidToo
-
-	if err := taking.Start(); err != nil {
-		return err
-	}
-	if err := bringing.Start(); err != nil {
-		_ = taking.Process.Kill()
-		_ = taking.Wait()
-		return err
-	}
-	if err := bringing.Wait(); err != nil {
-		_ = taking.Process.Kill()
-		_ = taking.Wait()
-		return fmt.Errorf("%w: %s", err, lastLine(saidToo.String()))
-	}
-	if err := taking.Wait(); err != nil {
-		return fmt.Errorf("%w: %s", err, lastLine(said.String()))
-	}
-	return nil
-}
-
 // Download is what is at the address as a person plays it, in the one container
 // every player this window is drawn in opens.
 //

@@ -41,10 +41,6 @@ func (s *site) Text(
 	}, nil
 }
 
-func (s *site) Audio(context.Context, domain.URL, io.Writer) error {
-	return port.ErrNothingFetched
-}
-
 func (s *site) Download(_ context.Context, _ domain.URL, into io.Writer) (port.Download, error) {
 	if len(s.bytes) == 0 {
 		return port.Download{}, port.ErrNothingFetched

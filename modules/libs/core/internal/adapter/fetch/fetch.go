@@ -50,7 +50,6 @@ type provider interface {
 // publishing prose is not one, and says so by not being one rather than by
 // answering that it has nothing.
 type player interface {
-	Audio(ctx context.Context, at domain.URL, into io.Writer) error
 	Download(ctx context.Context, at domain.URL, into io.Writer) (port.Download, error)
 }
 
@@ -107,16 +106,6 @@ func (f *Fetcher) Text(
 		return port.Text{}, err
 	}
 	return by.Text(ctx, at, want)
-}
-
-// Audio is the sound of what is at the address, as the container a transcriber
-// opens.
-func (f *Fetcher) Audio(ctx context.Context, at domain.URL, into io.Writer) error {
-	plays, err := f.playerFor(at)
-	if err != nil {
-		return err
-	}
-	return plays.Audio(ctx, at, into)
 }
 
 // Download is what is at the address as a person plays it.
