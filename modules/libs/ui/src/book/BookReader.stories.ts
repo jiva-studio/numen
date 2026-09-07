@@ -13,7 +13,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { onMounted, ref } from 'vue'
 import BookReader from './BookReader.vue'
 import { GAP, bytesIn, type Span } from './spread'
-import { PROSE, VERSES, chapterOf, type Chapter } from '@/fixtures/book'
+import { PROSE, VERSE, VERSES, chapterOf, type Chapter } from '@/fixtures/book'
 
 const meta = {
   title: 'Reading/BookReader',
@@ -299,6 +299,28 @@ export const ATableThatWillNotBreak: Story = {
     const box = table.getBoundingClientRect()
     await expect(box.width).toBeLessThanOrEqual(columnOf(canvasElement) + 1)
     await expect(box.height).toBeLessThanOrEqual(areaOf(canvasElement).clientHeight + 1)
+  },
+}
+
+/**
+ * Verse a book sets in a pre element. Books converted from plain text put their
+ * title pages and their poetry there, and one of the books this was built
+ * against is almost nothing else, so such a document is read across the columns
+ * like any other and never inside a scroller of its own.
+ */
+export const VerseSetInAPreElement: Story = {
+  decorators: [WIDE],
+  render: reading(chapterOf([{ tag: 'pre', text: VERSE }])),
+  play: async ({ canvasElement }) => {
+    await laid(canvasElement)
+
+    const set = paperOf(canvasElement).querySelector('pre')!
+    await expect(set.scrollHeight).toBeLessThanOrEqual(set.clientHeight + 1)
+    await expect(set.scrollWidth).toBeLessThanOrEqual(set.clientWidth + 1)
+
+    // It ran on into columns of its own rather than stopping at the first.
+    const area = areaOf(canvasElement)
+    await expect(area.scrollWidth).toBeGreaterThan(area.clientWidth)
   },
 }
 

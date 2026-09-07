@@ -513,13 +513,24 @@ defineExpose({
 
 /* A table is set to the column and carries its own scrollbars where it will not
    break. */
-.book__paper :deep(table),
-.book__paper :deep(pre) {
+.book__paper :deep(table) {
   display: block;
   box-sizing: border-box;
   max-inline-size: var(--book-column);
   max-block-size: var(--book-high);
   overflow: auto;
+}
+
+/* Verse, a title page and whatever else a book sets in a pre element keep the
+   lines they were written on and are read across the columns as the rest of the
+   text is. A line too long for the column is wrapped. */
+.book__paper :deep(pre) {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-inline-size: var(--book-column);
+  /* A box that clips its own overflow cannot be cut between two columns, and
+     the typography this paper carries gives one to every pre. */
+  overflow: visible;
 }
 
 /* A heading stands in the column its text does. */
