@@ -20,6 +20,7 @@ import { noteKeyboard, ITSELF } from './keyboard'
 import { noteTitles, type NoteTitlesDeps } from './titles'
 import NoteTab from './NoteTab.vue'
 import { markOf } from './tab'
+import { held as players } from './players'
 import type { FileOpeners } from '../tabs/openers'
 
 /** The notes of the whole window, read and written by one store. */
@@ -203,6 +204,7 @@ export function noting(
       watching()
       transcript.value?.close()
       transcript.value = null
+      players.drops(id)
     }
 
     return {

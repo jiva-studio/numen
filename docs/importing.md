@@ -45,7 +45,9 @@ A link note is cut over its prose and what was fetched, as one text. A search ab
 
 ## The tab
 
-The video plays in a frame, from the hosts the window may frame and no others. The words stand under it, and choosing one plays the video from the moment it was said.
+The video plays in a frame, from the hosts the window may frame and no others. The words stand under it, and choosing one plays the video from the moment it was said. What can be asked over the address stands in the menu at the end of the strip under the player.
+
+The player belongs to the window and not to the tab that draws it: a frame put into the page again loads the site again, so the element stands in a layer of its own and the tab says where to draw it. A tab dragged into another pane, put behind another or brought back plays on from where it stood. There is one player to a tab, so two panes side by side each play what their own tab points at.
 
 An address nothing plays is the address itself over the prose, and what was fetched from it is searched like any other.
 

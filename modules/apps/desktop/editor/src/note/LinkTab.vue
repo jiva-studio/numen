@@ -5,8 +5,8 @@
  * text this tab writes.
  *
  * A time in the gutter is a moment in what is playing, so choosing one plays
- * from there. What can be asked over the address stands in the menu on the
- * player, each item only where it applies.
+ * from there. What can be asked over the address stands in the menu at the end
+ * of the strip under the player, each item only where it applies.
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import { Editor, Menu, timing } from '@numen/ui'
@@ -87,22 +87,25 @@ const chose = (id: string) => {
     <div class="link__head">
       <LinkEmbed
         ref="embed"
+        :id="props.state.id"
         :address="props.state.address.value!"
         :copy="transcript?.address.value ?? ''"
         :words="words"
-      />
-
-      <button
-        v-if="offered.length"
-        type="button"
-        class="link__more"
-        :aria-label="words.more"
-        :title="words.more"
-        aria-haspopup="menu"
-        @click="opens"
       >
-        <Ellipsis class="link__icon" />
-      </button>
+        <template #end>
+          <button
+            v-if="offered.length"
+            type="button"
+            class="link__more"
+            :aria-label="words.more"
+            :title="words.more"
+            aria-haspopup="menu"
+            @click="opens"
+          >
+            <Ellipsis class="link__icon" />
+          </button>
+        </template>
+      </LinkEmbed>
     </div>
 
     <Editor
@@ -141,26 +144,28 @@ const chose = (id: string) => {
   min-block-size: 0;
 }
 
-/* The player, with what can be asked over the address standing on it. The
-   player is as wide as the tab and no wider, so nothing here scrolls across. */
+/* The player and the strip under it. The player is as wide as the tab and no
+   wider, so nothing here scrolls across. */
 .link__head {
-  position: relative;
   flex: none;
   min-inline-size: 0;
   overflow-x: hidden;
 }
 
+/* At the end of the strip under the player, where the recording tab keeps the
+   same menu. */
 .link__more {
-  position: absolute;
-  inset-block-start: var(--numen-inset);
-  inset-inline-end: var(--numen-inset);
   display: flex;
+  align-items: center;
   padding: calc(var(--numen-inset) / 2);
   border: 0;
-  border-radius: var(--numen-radius);
-  background: var(--numen-veil);
-  color: var(--numen-text);
+  background: none;
+  color: var(--numen-hushed);
   cursor: pointer;
+}
+
+.link__more:hover {
+  color: var(--numen-text);
 }
 
 .link__icon {

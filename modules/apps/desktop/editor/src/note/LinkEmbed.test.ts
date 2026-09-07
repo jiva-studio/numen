@@ -1,13 +1,17 @@
 /**
  * What a link note points at, played.
  *
- * The window frames the socket this run opened and no host at all: what it is
- * given is an address on this machine, and the page there is what frames a
- * host. What this window hands that page is worth holding to.
+ * The tab reports the box; the window's layer draws the player in it. The
+ * window frames the socket this run opened and no host at all: what it is given
+ * is an address on this machine, and the page there is what frames a host. What
+ * this window hands that page is worth holding to.
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import LinkEmbed from './LinkEmbed.vue'
+import PlayerLayer from './PlayerLayer.vue'
+import { held as players } from './players'
 import { WORDS as words } from './words'
 
 // The player is framed from the socket this run opened, which is the address a
@@ -17,13 +21,27 @@ const VIDEO = {
   embed: 'http://127.0.0.1:9/token/embed/https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DdQw4w9WgXcQ',
 }
 
+const TAB = 'tab-1'
+
+/** The tab and the layer that draws for it, as the window puts them together. */
+const drawn = (address: { url: string; embed: string }, copy = '') => {
+  const tab = mount(LinkEmbed, {
+    props: { id: TAB, address, copy, words },
+    attachTo: document.body,
+  })
+  const layer = mount(PlayerLayer, { props: { words }, attachTo: document.body })
+  return { tab, layer }
+}
+
+afterEach(() => players.drops(TAB))
+
 describe('an address something plays', () => {
   // The address is composed where the socket that serves the player is open,
   // and this frames what it was given. A window that composed one of its own
   // would be a second place the answer is decided.
   it('is played in a frame, at the address it was given', () => {
-    const drawn = mount(LinkEmbed, { props: { address: VIDEO, copy: '', words } })
-    const frame = drawn.get('iframe')
+    const { layer } = drawn(VIDEO)
+    const frame = layer.get('iframe')
 
     expect(frame.attributes('src')).toBe(VIDEO.embed)
     expect(frame.attributes('title')).toBe(words.playing)
@@ -34,11 +52,37 @@ describe('an address something plays', () => {
   // about who is framing it plays nothing. What this window frames is its own
   // socket, so there is nothing here to keep from anybody.
   it('is sandboxed, and tells the page it holds nothing about referrers', () => {
-    const drawn = mount(LinkEmbed, { props: { address: VIDEO, copy: '', words } })
-    const frame = drawn.get('iframe')
+    const { layer } = drawn(VIDEO)
+    const frame = layer.get('iframe')
 
     expect(frame.attributes('sandbox')).toBe('allow-scripts allow-same-origin allow-popups')
     expect(frame.attributes('referrerpolicy')).toBeUndefined()
+  })
+
+  // The tab is drawn again wherever it is moved to, and the frame it reports to
+  // is the one already loaded: a video played half through is played half
+  // through still.
+  it('is the one element, through a tab drawn again', () => {
+    const { tab, layer } = drawn(VIDEO)
+    const first = layer.get('iframe').element
+
+    tab.unmount()
+    mount(LinkEmbed, {
+      props: { id: TAB, address: VIDEO, copy: '', words },
+      attachTo: document.body,
+    })
+
+    expect(layer.get('iframe').element).toBe(first)
+  })
+
+  it('goes when the tab that opened it goes', async () => {
+    const { layer } = drawn(VIDEO)
+    expect(layer.find('iframe').exists()).toBe(true)
+
+    players.drops(TAB)
+    await nextTick()
+
+    expect(layer.find('iframe').exists()).toBe(false)
   })
 })
 
@@ -46,26 +90,23 @@ describe('an address nothing plays', () => {
   const page = { url: 'https://example.com/a', embed: '' }
 
   it('is the address itself, and no frame at all', () => {
-    const drawn = mount(LinkEmbed, { props: { address: page, copy: '', words } })
+    const { tab, layer } = drawn(page)
 
-    expect(drawn.find('iframe').exists()).toBe(false)
-    expect(drawn.text()).toContain('https://example.com/a')
+    expect(layer.find('iframe').exists()).toBe(false)
+    expect(tab.text()).toContain('https://example.com/a')
   })
 })
 
 describe('a moment chosen in the transcript', () => {
   it('is where the frame is told to play from, and nobody else is told', () => {
-    const drawn = mount(LinkEmbed, {
-      props: { address: VIDEO, copy: '', words },
-      attachTo: document.body,
-    })
+    const { tab, layer } = drawn(VIDEO)
     const said: [string, string][] = []
-    const frame = drawn.get('iframe').element as HTMLIFrameElement
+    const frame = layer.get('iframe').element as HTMLIFrameElement
     Object.defineProperty(frame, 'contentWindow', {
       value: { postMessage: (message: string, origin: string) => said.push([message, origin]) },
     })
 
-    drawn.vm.seeks(83_000)
+    tab.vm.seeks(83_000)
 
     expect(said).toHaveLength(1)
     expect(JSON.parse(said[0]![0])).toEqual({
@@ -80,14 +121,11 @@ describe('a moment chosen in the transcript', () => {
 
   it('is where the copy is played from, where a copy stands', () => {
     const COPY = 'http://127.0.0.1:9/token/vault/notes%2Ftalk.md?size=12&mtime=0'
-    const drawn = mount(LinkEmbed, {
-      props: { address: VIDEO, copy: COPY, words },
-      attachTo: document.body,
-    })
-    const player = drawn.get('video').element as HTMLVideoElement
+    const { tab, layer } = drawn(VIDEO, COPY)
+    const player = layer.get('video').element as HTMLVideoElement
     player.play = () => Promise.resolve()
 
-    drawn.vm.seeks(1_500)
+    tab.vm.seeks(1_500)
 
     expect(player.currentTime).toBe(1.5)
   })
@@ -97,9 +135,9 @@ describe('a copy of the video on this disk', () => {
   const COPY = 'http://127.0.0.1:9/token/vault/notes%2Ftalk.md?size=12&mtime=0'
 
   it('is played in place of the frame, and nothing of the site is loaded', () => {
-    const drawn = mount(LinkEmbed, { props: { address: VIDEO, copy: COPY, words } })
+    const { layer } = drawn(VIDEO, COPY)
 
-    expect(drawn.find('iframe').exists()).toBe(false)
-    expect(drawn.get('video').attributes('src')).toBe(COPY)
+    expect(layer.find('iframe').exists()).toBe(false)
+    expect(layer.get('video').attributes('src')).toBe(COPY)
   })
 })
