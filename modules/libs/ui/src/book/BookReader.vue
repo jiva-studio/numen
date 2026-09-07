@@ -12,16 +12,15 @@ import { computed, onBeforeUnmount, onMounted, ref, shallowRef, useTemplateRef, 
 import { clamped } from '@/reader/strip'
 import { useViewport } from '@/reader/viewport'
 import { onNextFrame } from '@/lib/clock'
-import { pointsOutward } from '@/linking/outward'
 import { ALSO, HIGHLIGHT, highlight, unhighlight } from './highlight'
-import { placeIn, type BookLink } from './link'
+import { placeIn, pointsAway, type BookLink } from './link'
+import { marksIn, offsetAt, rangesOver, runsIn, type Run } from './runs'
 import {
   BOOK_WORDS,
   GAP,
   LARGEST,
   SMALLEST,
   beginsAt,
-  bytesIn,
   columnWide,
   columnsIn,
   handTurn,
@@ -31,7 +30,6 @@ import {
   leftInDocument,
   pagesOf,
   spreads,
-  unitsIn,
   type BookWords,
   type Flow,
   type Mark,
@@ -108,8 +106,8 @@ const standing = ref(0)
 /** Where each run of the text stands. */
 const marks = shallowRef<readonly Mark[]>([])
 
-/** Each run of the text, and the element it is set in, in the order the text is. */
-let runs: readonly { readonly at: number; readonly element: HTMLElement }[] = []
+/** Each run of the text, in the order the document sets them. */
+let runs: readonly Run[] = []
 
 /**
  * Whether the reading area has been measured. A book is turned and never
@@ -147,32 +145,14 @@ const setting = computed(() => ({
   '--book-size': `calc(var(--numen-prose-size) * ${size.value})`,
 }))
 
-/**
- * Where each run of the text stands, taken off the runs themselves. The first
- * of a run's rectangles is the one that counts: a run broken over a column edge
- * has one in each column, and it begins in the first.
- *
- * The markup writes the runs in the order of their offsets, and they are kept
- * in it.
- */
+/** The runs of the drawn document, and where the columns put each of them. */
 const gather = () => {
   const box = area.value
   const text = paper.value
   if (!box || !text) return
 
-  // The runs arrive as markup, so the element holding it is what finds them.
-  const origin = box.getBoundingClientRect().left - box.scrollLeft
-  const found: { at: number; element: HTMLElement }[] = []
-  const placed: Mark[] = []
-  for (const element of text.querySelectorAll<HTMLElement>('[data-offset]')) {
-    const said = Number(element.dataset['offset'])
-    if (!Number.isFinite(said)) continue
-    found.push({ at: said, element })
-    const first = element.getClientRects()[0]
-    if (first) placed.push({ at: said, x: first.left - origin })
-  }
-  runs = found
-  marks.value = placed
+  runs = runsIn(text)
+  marks.value = marksIn(runs, box.getBoundingClientRect().left - box.scrollLeft)
 }
 
 /** The spread put against the near edge of the reading area. */
@@ -197,35 +177,10 @@ const goTo = (spread: number) => {
 /** What the person is reading now, to be kept in front while the text is set again. */
 const keeping = () => inFront(marks.value, flow.value, standing.value) ?? props.at
 
-/**
- * The offset a place named inside the book stands at: the run the named element
- * falls in, or the first run after a name standing between runs.
- */
-const offsetAt = (fragment: string): number | undefined => {
+/** The offset a place named inside the drawn document stands at. */
+const placeAt = (fragment: string): number | undefined => {
   const text = paper.value
-  if (!text || fragment === '') return undefined
-
-  let named: HTMLElement | undefined
-  for (const element of text.querySelectorAll<HTMLElement>('[id]')) {
-    if (element.id === fragment) {
-      named = element
-      break
-    }
-  }
-  if (!named) return undefined
-
-  const run =
-    named.closest<HTMLElement>('[data-offset]') ?? named.querySelector<HTMLElement>('[data-offset]')
-  if (run) {
-    const said = Number(run.dataset['offset'])
-    return Number.isFinite(said) ? said : undefined
-  }
-  for (const after of runs) {
-    if (named.compareDocumentPosition(after.element) & Node.DOCUMENT_POSITION_FOLLOWING) {
-      return after.at
-    }
-  }
-  return undefined
+  return text ? offsetAt(text, runs, fragment) : undefined
 }
 
 /**
@@ -244,7 +199,7 @@ const settle = (keep: number, led?: BookLink) => {
     along.value = box.scrollWidth
     gather()
     const landed =
-      led && (led.path === '' || led.path === props.path) ? offsetAt(led.fragment) : undefined
+      led && (led.path === '' || led.path === props.path) ? placeAt(led.fragment) : undefined
     stand(holding(marks.value, flow.value, landed ?? keep), 'auto')
     if (landed !== undefined) emit('go', landed)
     marking()
@@ -309,18 +264,6 @@ const letGo = (event: PointerEvent) => {
 /** Where a link led, held until the document holding that place is drawn. */
 let led: BookLink | undefined
 
-/** Whether an address names somewhere the window is not served from. */
-const outward = (href: string): boolean => {
-  const here = new URL(window.location.href)
-  try {
-    return pointsOutward(new URL(href, here), here)
-  } catch {
-    // An href that is no address names nowhere outward, and the book is asked
-    // for the place it names instead.
-    return false
-  }
-}
-
 /**
  * A link pressed in the text. Nothing a book contains navigates the window: a
  * link inside the book is a move within the book, and one leading out of it is
@@ -332,7 +275,7 @@ const follow = (press: MouseEvent) => {
   if (href === null || href === undefined) return
 
   press.preventDefault()
-  if (outward(href)) return
+  if (pointsAway(href)) return
 
   const place = placeIn(href)
   if (place.path !== '' && place.path !== props.path) {
@@ -340,63 +283,13 @@ const follow = (press: MouseEvent) => {
     emit('follow', place.path)
     return
   }
-  emit('go', offsetAt(place.fragment) ?? props.span.begins)
+  emit('go', placeAt(place.fragment) ?? props.span.begins)
 }
 
-/**
- * Where an offset stands inside a run: the text node it falls in, and how far
- * into that node it reaches. The distance from the run's own offset is a number
- * of bytes, and only `unitsIn` turns one of those into a place in a string.
- */
-const inside = (run: HTMLElement, into: number): { node: Text; offset: number } | undefined => {
-  const walk = document.createTreeWalker(run, NodeFilter.SHOW_TEXT)
-  let counted = 0
-  let node = walk.nextNode() as Text | null
-  while (node) {
-    const bytes = bytesIn(node.data)
-    if (counted + bytes >= into) return { node, offset: unitsIn(node.data, into - counted) }
-    counted += bytes
-    node = walk.nextNode() as Text | null
-  }
-  return undefined
-}
-
-/** The run an offset falls in: the last one beginning at or before it. */
-const runAt = (at: number) => {
-  let found: (typeof runs)[number] | undefined
-  for (const run of runs) {
-    if (run.at > at) break
-    found = run
-  }
-  return found
-}
-
-/** One marked run, as a range over the nodes the markup carries. */
-const rangeOver = (span: Span): Range | undefined => {
-  const opens = runAt(span.begins)
-  const closes = runAt(span.ends)
-  if (!opens || !closes) return undefined
-  const from = inside(opens.element, span.begins - opens.at)
-  const to = inside(closes.element, span.ends - closes.at)
-  if (!from || !to) return undefined
-  const range = document.createRange()
-  range.setStart(from.node, from.offset)
-  range.setEnd(to.node, to.offset)
-  return range
-}
-
-const rangesOver = (spans: readonly Span[]): Range[] => {
-  const drawn: Range[] = []
-  for (const span of spans) {
-    const range = rangeOver(span)
-    if (range) drawn.push(range)
-  }
-  return drawn
-}
-
+/** The runs asked about marked where they stand, and the rest more faintly. */
 const marking = () => {
-  highlight(HIGHLIGHT, props, rangesOver(props.marked))
-  highlight(ALSO, props, rangesOver(props.also))
+  highlight(HIGHLIGHT, props, rangesOver(runs, props.marked))
+  highlight(ALSO, props, rangesOver(runs, props.also))
 }
 
 // A reading area of another size, or a text of another size, is another set of
