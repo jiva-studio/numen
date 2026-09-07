@@ -14,6 +14,8 @@ export const NOTE = 'note'
 export const DOCUMENT = 'document'
 /** A recording played in the window, under the path the vault files it at. */
 export const RECORDING = 'recording'
+/** A url opened in the window, under the path the vault files it at. */
+export const URL = 'url'
 /** The folders and files of the vault, one tab of them to a window. */
 export const FILES = 'files'
 /** A deck edited in the window, under the path the vault files it at. */

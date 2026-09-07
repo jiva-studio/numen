@@ -27,11 +27,6 @@ type NoteQueries interface {
 
 	Summary(ctx context.Context, vaultID domain.VaultID) (domain.VaultSummary, error)
 
-	// Addresses is every address the notes of a vault point at, each once. It
-	// is what says whether anything was fetched for an address is still
-	// somebody's.
-	Addresses(ctx context.Context, vaultID domain.VaultID) ([]string, error)
-
 	// Notes returns what is needed to show a note, for the paths asked about.
 	// Paths that name nothing are absent from the answer: a link resolves as
 	// of now, and what it resolved to a moment ago may be gone.

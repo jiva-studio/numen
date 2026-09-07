@@ -23,7 +23,7 @@ func addViewTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "note_focus",
-		Title: "Put a note in front of the person",
+		Title: "Focus a note",
 		Description: "Make a note the one the person is looking at, so that the " +
 			"neighbourhood they see is drawn around it. Use it only where the person " +
 			"asked to be taken to a note. Talking about one is not asking, and neither " +
@@ -57,7 +57,7 @@ func addViewTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_focus",
-		Title: "Put a passage in front of the person",
+		Title: "Focus a passage",
 		Description: "Open one of the vault's documents in front of the person at one " +
 			"passage: the page it stands on is drawn, and the words of it are lit. " +
 			"`note_search` gives the range of every passage it answers with, and this " +

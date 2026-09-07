@@ -486,8 +486,10 @@ const heard = (cues: readonly Cue[]): Recordings => ({
     heard: cues.length ? (cues[cues.length - 1]?.to ?? 0) : 0,
     media: MEDIA,
     type: 'audio/mpeg',
+    embed: '',
+    address: '',
   }),
-  cues: async () => ({ cues, editable: true }),
+  cues: async () => ({ cues, editable: true, prose: '' }),
   writes: async () => {},
   plays: async () => null,
 })
@@ -597,6 +599,7 @@ const files = (open: readonly string[]) => {
     decks: async () => '',
     stencils: async () => '',
     presets: async () => '',
+    imports: async () => '',
     says: () => {},
   })
   const read = (async () => {

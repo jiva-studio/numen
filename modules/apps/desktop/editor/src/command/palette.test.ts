@@ -568,7 +568,7 @@ describe('the runs over the file in front', () => {
     expect(drawn(commands.groups).file).toStrictEqual([
       'transcribe',
       'proofread',
-      'dropTranscript',
+      'deleteText',
     ])
   })
 
@@ -602,7 +602,7 @@ describe('the runs over the file in front', () => {
     const runs = runSupport()
     runs.cannotRun('transcribe')
     runs.cannotRun('proofread')
-    runs.cannotRun('dropTranscript')
+    runs.cannotRun('deleteText')
 
     expect(drawn(asking(heard, [], {}, undefined, runs).commands.groups).file).toBeUndefined()
     expect(drawn(asking(scanned, [], {}, undefined, runs).commands.groups).file).toStrictEqual([
@@ -641,11 +641,11 @@ describe('the runs over the file in front', () => {
     expect(drawn(asking({ ...heard, made: { transcript: 'none' } }).commands.groups).file)
       .toStrictEqual(['transcribe'])
     expect(drawn(asking({ ...heard, made: { transcript: 'done' } }).commands.groups).file)
-      .toStrictEqual(['proofread', 'dropTranscript'])
+      .toStrictEqual(['proofread', 'deleteText'])
     expect(
       drawn(asking({ ...heard, made: { transcript: 'done', 'transcript.corrected': 'done' } }).commands.groups)
         .file,
-    ).toStrictEqual(['dropTranscript'])
+    ).toStrictEqual(['deleteText'])
   })
 
   // Nothing has been asked yet, and the file is offered what its kind offers.
@@ -657,7 +657,7 @@ describe('the runs over the file in front', () => {
     expect(drawn(commands.groups).file).toStrictEqual([
       'transcribe',
       'proofread',
-      'dropTranscript',
+      'deleteText',
     ])
   })
 
@@ -665,13 +665,13 @@ describe('the runs over the file in front', () => {
     const runs = runSupport()
     runs.cannotRun('transcribe')
     runs.cannotRun('proofread')
-    runs.cannotRun('dropTranscript')
+    runs.cannotRun('deleteText')
 
     expect(drawn(asking(heard, [], {}, undefined, runs).commands.groups).file).toBeUndefined()
     expect(drawn(asking(heard).commands.groups).file).toStrictEqual([
       'transcribe',
       'proofread',
-      'dropTranscript',
+      'deleteText',
     ])
   })
 })
@@ -680,7 +680,7 @@ describe('dropping the transcript of a recording', () => {
   it('asks before the words go, and is nothing until the answer is given', () => {
     const { commands } = asking(heard)
 
-    expect(commands.asks('dropTranscript', front(heard))).toBeNull()
+    expect(commands.asks('deleteText', front(heard))).toBeNull()
     expect(commands.groups.value[0]?.id).toBe('asking')
     expect(commands.groups.value[0]?.items.map((one) => one.id)).toStrictEqual(['no', 'yes'])
   })
@@ -688,23 +688,23 @@ describe('dropping the transcript of a recording', () => {
   // The answer that changes nothing is the one the keyboard opens on.
   it('names the recording in the answer that takes the words away', () => {
     const { commands } = asking(heard)
-    commands.asks('dropTranscript', front(heard))
+    commands.asks('deleteText', front(heard))
 
     expect(commands.groups.value[0]?.items[0]?.title).toBe(words.keepsTranscript)
-    expect(commands.groups.value[0]?.items[1]?.title).toBe(`${words.drops} “${heard.title}”`)
-    expect(commands.groups.value[0]?.items[1]?.detail).toBe(words.dropped)
+    expect(commands.groups.value[0]?.items[1]?.title).toBe(`${words.deletes} “${heard.title}”`)
+    expect(commands.groups.value[0]?.items[1]?.detail).toBe(words.deleted)
   })
 
   it('carries the recording the tab in front holds once the answer is given', () => {
     const { commands } = asking(heard)
-    commands.asks('dropTranscript', front(heard))
+    commands.asks('deleteText', front(heard))
 
     expect(commands.chose('yes', 'yes')?.file).toBe('talks/Ants.mp3')
   })
 
   it('does nothing and puts the step away where the answer keeps the words', () => {
     const { commands } = asking(heard)
-    commands.asks('dropTranscript', front(heard))
+    commands.asks('deleteText', front(heard))
 
     expect(commands.chose('no', 'no')).toBeNull()
     expect(commands.groups.value[0]?.id).not.toBe('asking')

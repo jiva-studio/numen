@@ -107,13 +107,14 @@ const (
 	ReaderEPUB      = "epub-1"
 	ReaderPDF       = "pdf-1"
 	ReaderRecording = "recording-1"
+	ReaderURL       = "url-1"
 )
 
 // Readers is every one of them, and is what a list of the recipes in use is
 // read from. A reader left out of such a list is a reader whose sources owe
 // their text on every run.
 func Readers() []string {
-	return []string{ReaderNote, ReaderEPUB, ReaderPDF, ReaderRecording}
+	return []string{ReaderNote, ReaderEPUB, ReaderPDF, ReaderRecording, ReaderURL}
 }
 
 // ReaderName names what would read this file. A file nothing reads has no name,
@@ -124,6 +125,9 @@ func ReaderName(ref domain.Fingerprint) (string, bool) {
 	}
 	if ref.Kind == domain.KindRecording {
 		return ReaderRecording, true
+	}
+	if ref.Kind == domain.KindURL {
+		return ReaderURL, true
 	}
 	if domain.MediaType(ref.Path) != "" {
 		return ReaderRecording, true

@@ -329,7 +329,7 @@ func (w *VaultWriter) reachable(path string) bool {
 // files it reports, and by the same rules.
 func (w *VaultWriter) holds(path string) bool {
 	clean := pathpkg.Clean(filepath.ToSlash(path))
-	if !w.opts.isNote(pathpkg.Base(clean)) {
+	if !w.opts.writable(pathpkg.Base(clean)) {
 		return false
 	}
 	if w.ignored.MatchesPath(clean) {

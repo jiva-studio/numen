@@ -12,7 +12,6 @@ import UnsavedChangesPrompt from './saving/UnsavedChangesPrompt.vue'
 import CoreFailureNotice from './notices/CoreFailureNotice.vue'
 import CommandPalette from './command/CommandPalette.vue'
 import WelcomeScreen from './welcome/WelcomeScreen.vue'
-import PlayerLayer from './note/PlayerLayer.vue'
 import { useWindow } from './window'
 import { WORDS as words } from './words'
 import { WORDS as note } from './note/words'
@@ -82,10 +81,6 @@ const {
         />
       </template>
     </WorkspaceLayout>
-
-    <!-- What a link note plays stands here and not in the tab that draws it, so
-         a tab moved between panes keeps its place in what is playing. -->
-    <PlayerLayer :words="note" />
 
     <Notices
       :notices="notices"

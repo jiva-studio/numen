@@ -37,6 +37,22 @@ export const REFUSED: Record<RefusalReason, string> = {
  * report and everything else as a refusal, so no two of them may say the same
  * thing.
  */
+/**
+ * What a run over the address a note points at came to.
+ *
+ * A person who chose Fetch again asked for the address to be read afresh, and
+ * it was: nothing here says the words were already there.
+ */
+export const FETCHED: Record<ArtifactState, string> = {
+  none: 'The address published none of what was asked for.',
+  queued: 'This address is in line, behind the one being fetched now.',
+  running: 'This address is being fetched now.',
+  stopped: 'Fetching this address stopped part way.',
+  done: 'Fetched what is at this address.',
+  empty: 'The address published none of what was asked for.',
+  failed: 'This address could not be fetched:',
+}
+
 export const MADE: Record<Artifact, Record<ArtifactState, string>> = {
   ocr: {
     none: 'This scan has not been recognised.',
@@ -75,13 +91,13 @@ export const MADE: Record<Artifact, Record<ArtifactState, string>> = {
     failed: 'This reading could not be put right:',
   },
   copy: {
-    none: 'No copy of this video is on this disk.',
-    queued: 'This video is in line, behind the one being fetched now.',
-    running: 'This video is being fetched now.',
-    stopped: 'Fetching this video stopped part way.',
-    done: 'A copy of this video is on this disk.',
-    empty: 'There is no video at this address to copy.',
-    failed: 'This video was not copied:',
+    none: 'No copy of this is on this disk.',
+    queued: 'This is in line, behind the one being fetched now.',
+    running: 'This is being fetched now.',
+    stopped: 'Fetching this stopped part way.',
+    done: 'A copy of this is on this disk.',
+    empty: 'There is nothing at this address to copy.',
+    failed: 'This was not copied:',
   },
   article: {
     none: 'Nothing has been fetched from this address.',
@@ -139,22 +155,26 @@ export const WORDS = {
   title: 'Change title',
   remove: 'Remove note',
   destroy: 'Destroy note',
-  ask: 'Ask the agent about this note',
+  ask: 'Ask the agent',
   copy: 'Copy path',
   /** The two runs over the file in front: a recording transcribed, a scan recognised. */
   transcribe: 'Transcribe this recording',
   recognise: 'Recognise the text of this document',
   /** The transcript of the recording in front, put right by a proofreader. */
   proofread: 'Proofread the transcript of this recording',
-  /** What is at the address a link note points at, fetched again. */
-  fetch: 'Fetch what is at this address',
-  /** A copy of the video a link note points at, fetched onto this disk. */
-  download: 'Download a copy of this video',
+  /** The text at the address a url points at, fetched again. */
+  downloadText: 'Download the text again',
+  /** What a url points at, fetched onto this disk. */
+  downloadCopy: 'Download a copy',
   /** The transcript of the recording in front, taken away, and the two answers. */
-  dropTranscript: 'Delete the transcript of this recording',
+  deleteText: 'Delete the transcript of this recording',
   keepsTranscript: 'Keep the transcript',
-  drops: 'Delete',
-  dropped: 'The words go, and the recording can be transcribed again',
+  deletes: 'Delete',
+  deleted: 'The words go, and the recording can be transcribed again',
+  /** The copy fetched for the url in front, taken off this disk, and its answers. */
+  deleteCopy: 'Delete the copy on this disk',
+  keepsCopy: 'Keep the copy',
+  deletedCopy: 'The copy goes, and it can be fetched from the address again',
   reveal: 'Show this note in the files',
   /** The preset this note is: the note itself, or the one a deck is scheduled by. */
   preset: 'Open the preset',
@@ -279,6 +299,8 @@ export const WORDS = {
   unrunnable: 'this installation of numen cannot do that at all',
   /** What an artifact of a file now stands at. */
   made: MADE,
+  /** What a run over the address a note points at came to. */
+  fetched: FETCHED,
   /** What the action panel of the palette is called. */
   actions: 'Actions',
   findAction: 'Search actions',

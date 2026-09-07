@@ -28,6 +28,8 @@ const SUMMARY: RecordingSummary = {
   heard: 9_000,
   media: 'http://127.0.0.1:1/files/w/v/talk.mp3',
   type: 'audio/mpeg',
+  embed: '',
+  address: '',
 }
 
 /**
@@ -54,7 +56,7 @@ function talk(
     cues: async (path) => {
       asked.push(`cues ${path}`)
       if (cues instanceof Error) throw cues
-      return { cues, editable: true }
+      return { cues, editable: true, prose: '' }
     },
     writes: async (path, kept) => {
       asked.push(`writes ${path}`)
@@ -140,7 +142,7 @@ describe('a recording opened', () => {
 
 describe('a recording nothing has listened to', () => {
   it('holds no words and says nothing went wrong', async () => {
-    const { recordings } = talk([], { length: 0, heard: 0, media: '', type: '' })
+    const { recordings } = talk([], { length: 0, heard: 0, media: '', type: '', embed: '', address: '' })
     const heard = transcript(recordings, 'talks/Ants.mp3')
 
     await settled()
@@ -370,7 +372,7 @@ describe('two questions about the words in flight at once', () => {
       writes: async () => {},
       plays: async () => null,
     }
-    return { recordings, letGo: () => letGo({ cues: CUES, editable: true }) }
+    return { recordings, letGo: () => letGo({ cues: CUES, editable: true, prose: '' }) }
   }
 
   // The older answer carries less than the newer, so it is drawn only while
@@ -535,7 +537,7 @@ describe('what this window can play', () => {
 describe('a transcript asked for twice at once', () => {
   it('keeps the answer to the later asking, however they arrive', async () => {
     // The earlier asking is answered with fewer words, and answered last.
-    const early: Transcript = { cues: [CUES[0]!], editable: true }
+    const early: Transcript = { cues: [CUES[0]!], editable: true, prose: '' }
     const answers: ((said: Transcript) => void)[] = []
 
     const recordings: Recordings = {
@@ -551,7 +553,7 @@ describe('a transcript asked for twice at once', () => {
     await settled()
 
     // The later asking lands first, then the earlier one answers.
-    answers[1]?.({ cues: CUES, editable: true })
+    answers[1]?.({ cues: CUES, editable: true, prose: '' })
     await settled()
     answers[0]?.(early)
     await settled()
@@ -797,7 +799,7 @@ describe('a transcript a run still holds', () => {
   it('is not edited', async () => {
     const recordings: Recordings = {
       listened: async () => SUMMARY,
-      cues: async () => ({ cues: CUES, editable: false }),
+      cues: async () => ({ cues: CUES, editable: false, prose: '' }),
       writes: async () => {},
       plays: async () => null,
     }

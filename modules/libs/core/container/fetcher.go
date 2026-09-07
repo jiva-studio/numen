@@ -31,14 +31,14 @@ func (c Config) ImportURL(ctx context.Context, db *Index, by port.Fetcher) sourc
 	level := c.Level(db)
 	notes := c.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), level)
 	return source.ImportURL{
-		Readers:   c.VaultReaders(),
-		Derived:   c.DerivedStores(),
-		By:        by,
-		CopyUnder: c.Fetching.CopyBytes(),
-		ToVault:   c.Fetching.ToVault(),
-		Writers:   c.VaultWriters(),
-		Languages: c.Fetching.Captions,
-		Automatic: c.Fetching.Automatic(),
+		Readers:     c.VaultReaders(),
+		Derived:     c.DerivedStores(),
+		By:          by,
+		CopyMaxSize: c.Fetching.CopyBytes(),
+		ToVault:     c.Fetching.ToVault(),
+		Writers:     c.VaultWriters(),
+		Languages:   c.Fetching.Captions,
+		Automatic:   c.Fetching.Automatic(),
 		Cut: func(ctx context.Context, v domain.Vault, path string) error {
 			return level(ctx, v, []string{path})
 		},

@@ -74,7 +74,6 @@ type Notes struct {
 	Rename  note.Rename
 	Remove  note.Remove
 	Linking note.EditLinks
-	Import  *source.ImportURL
 }
 
 // Vaults is the list of vaults this installation holds, and what a person does
@@ -127,6 +126,13 @@ type Sources struct {
 	// Documents reads a format that needs a library, for a document standing on
 	// its own bytes.
 	Documents port.TextExtractor
+	// URLs makes the file a web address is kept in, and Import fetches what is
+	// at that address. Without both, the tool that imports one is not added.
+	URLs   *source.CreateURL
+	Import *source.ImportURL
+	// Changed says an artifact of a file was written, so that whatever draws
+	// that file reads what now stands. Without it a window is told nothing.
+	Changed func(path string)
 }
 
 // AskedCard is the card in front of the person, as an agent is told about it.
@@ -182,6 +188,7 @@ func New(core Core) *sdk.Server {
 	addWindowTools(server, core)
 	addSourceTools(server, core)
 	addArtifactTools(server, core)
+	addArtifactWriteTool(server, core)
 	return server
 }
 

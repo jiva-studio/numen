@@ -67,11 +67,13 @@ export const recordings: Recordings = {
       heard: answer.heard,
       media: answer.media,
       type: answer.type,
+      embed: answer.embed,
+      address: answer.address,
     }
   },
   cues: async (path) => {
     const answer = await waiting(() => artifacts.readTranscript({ path }))
-    return { cues: answer.cues.map(spoken), editable: answer.editable }
+    return { cues: answer.cues.map(spoken), prose: answer.prose, editable: answer.editable }
   },
   writes: async (path, cues) => {
     await waiting(() => artifacts.writeTranscript({ path, cues: [...cues] }))

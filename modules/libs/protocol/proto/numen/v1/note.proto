@@ -212,16 +212,6 @@ message ReadNoteResponse {
 
   // The file this prose came out of. Absent when the note was refused.
   optional Fingerprint at = 3;
-
-  // Where a link note points, in the one form every spelling of it reaches.
-  // Absent on every other note, and on a link note whose address cannot be
-  // read.
-  optional string url = 4;
-
-  // Where a frame plays what is at that address, absent where nothing plays.
-  // The address a frame is given and the hosts the window may frame are one
-  // decision, and it is made here.
-  optional string embed = 5;
 }
 
 // LastRead is what a caller last saw of a note: the prose a read gave it, and
@@ -295,11 +285,6 @@ message CreateNoteRequest {
 
   // What the note is joined to, written into it as it is made.
   repeated NewLink links = 3;
-
-  // Where the note points. Set, it is made a link: it carries `type: link` and
-  // this address, read into the one form every spelling of it reaches. An
-  // address nothing can be fetched from is refused and no note is made.
-  optional string url = 4;
 }
 
 message CreateNoteResponse {

@@ -59,13 +59,14 @@ func (s *site) Article(context.Context, domain.WebAddress) (port.Article, error)
 func importing(t *testing.T, from *site) (domain.Vault, mcp.Core) {
 	t.Helper()
 	v, core := served(t)
-	core.Notes.Import = &source.ImportURL{
+	core.Sources.Import = &source.ImportURL{
 		Readers: filesystem.VaultReaders{},
 		Derived: filesystem.DerivedStores{
 			Area: derived.Transcript, Areas: []string{derived.Article, derived.Copies},
 		},
 		By: from,
 	}
+	core.Sources.URLs = &source.CreateURL{Writers: filesystem.VaultWriters{}}
 	return v, core
 }
 
@@ -81,7 +82,7 @@ func TestAnAgentImportsAnAddress(t *testing.T) {
 	_, core := importing(t, from)
 	session := sessionOf(t, mcp.New(core))
 
-	out := call[mcp.ImportOutcome](t, session, "note_import", map[string]any{"url": aVideo})
+	out := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{"url": aVideo})
 
 	if out.Refused != "" {
 		t.Fatalf("the address was refused: %s", out.Refused)
@@ -92,12 +93,12 @@ func TestAnAgentImportsAnAddress(t *testing.T) {
 	if out.Words == 0 {
 		t.Error("nothing came back from the address")
 	}
-	// The note is called what is at the address, and nobody had to name it.
+	// The file is called what is at the address, and nobody had to name it.
 	if out.Title != "Entropy explained" {
-		t.Errorf("the note is called %q", out.Title)
+		t.Errorf("it is called %q", out.Title)
 	}
-	if !strings.HasSuffix(out.Path, ".md") {
-		t.Errorf("the note stands at %q", out.Path)
+	if !strings.HasSuffix(out.Path, ".url") {
+		t.Errorf("it stands at %q", out.Path)
 	}
 }
 
@@ -108,12 +109,12 @@ func TestAnAgentAsksForACopy(t *testing.T) {
 	_, core := importing(t, from)
 	session := sessionOf(t, mcp.New(core))
 
-	without := call[mcp.ImportOutcome](t, session, "note_import", map[string]any{"url": aVideo})
+	without := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{"url": aVideo})
 	if without.CopiedBytes != 0 {
 		t.Errorf("a copy of %d bytes was fetched unasked", without.CopiedBytes)
 	}
 
-	with := call[mcp.ImportOutcome](t, session, "note_import", map[string]any{
+	with := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{
 		"url": "https://youtu.be/oHg5SJYRHA0", "copy": true,
 	})
 	if with.CopyRefused != "" {
@@ -135,8 +136,8 @@ func TestABuildThatReachesNoAddressServesNoImport(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, one := range found.Tools {
-		if one.Name == "note_import" {
-			t.Error("note_import is served by a build that reaches no address")
+		if one.Name == "url_import" {
+			t.Error("url_import is served by a build that reaches no address")
 		}
 	}
 }
@@ -157,7 +158,7 @@ func TestAnAgentReadsWhatWasFetchedForANote(t *testing.T) {
 	session := sessionOf(t, mcp.New(core))
 	_ = v
 
-	made := call[mcp.ImportOutcome](t, session, "note_import", map[string]any{"url": aVideo})
+	made := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{"url": aVideo})
 	if made.Refused != "" {
 		t.Fatalf("the address was refused: %s", made.Refused)
 	}

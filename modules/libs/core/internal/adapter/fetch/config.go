@@ -25,9 +25,9 @@ type Config struct {
 	// published none. On.
 	AutomaticCaptions *bool `json:"automatic_captions"`
 
-	// CopyUnderMB is how large a copy may be. Above it, a copy asked for says
+	// CopyMaxSizeMB is how large a copy may be. Above it, a copy asked for says
 	// the size it was refused at and nothing is fetched.
-	CopyUnderMB int `json:"copy_under_mb"`
+	CopyMaxSizeMB int `json:"copy_max_size_mb"`
 
 	// CopiesToVault is whether a copy is kept beside the note as a file of the
 	// person's own. Off: a copy is fetchable again from the address the note
@@ -81,14 +81,14 @@ func Defaults() Config {
 	return Config{
 		FetchUnasked:      &off,
 		AutomaticCaptions: &automatic,
-		CopyUnderMB:       DefaultCopyUnderMB,
+		CopyMaxSizeMB:     DefaultCopyMaxSizeMB,
 		CopiesToVault:     &off,
 	}
 }
 
-// DefaultCopyUnderMB is how large a copy may be by default. An hour of video is
+// DefaultCopyMaxSizeMB is how large a copy may be by default. An hour of video is
 // under it, and a film is not.
-const DefaultCopyUnderMB = 500
+const DefaultCopyMaxSizeMB = 500
 
 // Unasked is whether a link note nothing has been fetched for is fetched on its
 // own.
@@ -102,8 +102,8 @@ func (c Config) ToVault() bool { return c.CopiesToVault != nil && *c.CopiesToVau
 
 // CopyBytes is how large a copy may be, in bytes. Nothing is no limit.
 func (c Config) CopyBytes() int64 {
-	if c.CopyUnderMB <= 0 {
+	if c.CopyMaxSizeMB <= 0 {
 		return 0
 	}
-	return int64(c.CopyUnderMB) << 20
+	return int64(c.CopyMaxSizeMB) << 20
 }

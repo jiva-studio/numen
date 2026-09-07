@@ -47,31 +47,6 @@ func (a WebAddress) Embed() string {
 // scripts inside its own frame and reaches its own machines.
 func EmbedHosts() []string { return []string{"https://www.youtube-nocookie.com"} }
 
-// addressKey is what a link note writes where it points.
-const addressKey = "url"
-
-// ReadAddress is where a note carrying this frontmatter points, and what is
-// wrong with what it wrote. It is read on a link note and nowhere else: an
-// address on any other note is a key of the person's own.
-//
-// A link note with nowhere to point is missing its whole subject, so a missing
-// address is a problem returned, and the note is read as every other note is.
-func ReadAddress(front map[string]any) (WebAddress, []string) {
-	raw, present := front[addressKey]
-	if !present || raw == nil {
-		return WebAddress{}, []string{"a link carries no " + addressKey}
-	}
-	written, isText := raw.(string)
-	if !isText {
-		return WebAddress{}, []string{addressKey + " is not text"}
-	}
-	at, err := ParseWebAddress(written)
-	if err != nil {
-		return WebAddress{}, []string{addressKey + " " + written + " is not a web address"}
-	}
-	return at, nil
-}
-
 // ParseWebAddress reads what a person pasted.
 //
 // The scheme and the host are lowercased, a default port and a fragment are

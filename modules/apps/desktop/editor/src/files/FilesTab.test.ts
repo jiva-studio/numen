@@ -47,6 +47,7 @@ const drawn = async (open: readonly string[] = []) => {
     decks: async (folder, name) => `${folder}${name}`,
     stencils: async (folder, name) => `${folder}${name}`,
     presets: async (folder, name) => `${folder}${name}`,
+    imports: async () => '',
     says: (text) => void done.push(`says ${text}`),
   })
   await list.opens(ROOT)
@@ -297,6 +298,7 @@ describe('a folder that could not be read', () => {
       decks: async () => '',
       stencils: async () => '',
       presets: async () => '',
+      imports: async () => '',
       says: () => {},
     })
     await list.opens(ROOT)

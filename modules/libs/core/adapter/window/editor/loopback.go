@@ -176,11 +176,11 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 		refuse(w, errNoVault)
 		return
 	}
-	// A copy of what a link note points at is kept in the vault's own folder,
+	// A copy of what a url points at is kept in the vault's own folder,
 	// which the vault's reader is refused, so it is served from the store it
-	// was written to. Every other file of the vault, this note included, is
+	// was written to. Every other file of the vault is
 	// served as the file it is.
-	if strings.HasSuffix(at, domain.NoteExtension) && a.served(w, r, held, at, named) {
+	if strings.HasSuffix(at, domain.URLExtension) && a.served(w, r, held, at, named) {
 		return
 	}
 	reader, err := a.Readers.Open(held)
@@ -211,8 +211,8 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 	http.ServeContent(w, r, ref.Path, ref.ModTime, file)
 }
 
-// served answers with the copy fetched for a link note, and says whether it
-// answered at all. A note with no copy on this disk is a file like any other,
+// served answers with the copy fetched for a url, and says whether it
+// answered at all. One with no copy on this disk is a file like any other,
 // and is served as one.
 //
 // The size the address carries is the copy's own: a copy fetched again under
@@ -224,7 +224,7 @@ func (a *API) served(
 	if !ready {
 		return false
 	}
-	points := a.points(r.Context(), held, domain.Fingerprint{Path: at, Kind: domain.KindNote})
+	points := a.points(r.Context(), held, domain.Fingerprint{Path: at, Kind: domain.KindURL})
 	if !points.IsVideo() {
 		return false
 	}

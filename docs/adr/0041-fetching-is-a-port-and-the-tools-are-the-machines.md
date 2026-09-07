@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-09-06
 - **Applies to:** `modules/libs/core`
-- **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [Where a port is declared and where an adapter stands](0035-where-a-port-is-declared-and-where-an-adapter-stands.md), [A link is a note that carries an address](0038-a-link-is-a-note-that-carries-an-address.md)
+- **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [Where a port is declared and where an adapter stands](0035-where-a-port-is-declared-and-where-an-adapter-stands.md), [A url is a source of its own](0038-a-url-is-a-source-of-its-own.md)
 
 ## Context
 

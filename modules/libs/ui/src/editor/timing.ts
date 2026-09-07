@@ -98,9 +98,13 @@ const painted = EditorView.theme({
     fontVariantNumeric: 'tabular-nums',
     fontSize: '0.85em',
   },
+  /* A line taller than one line of words is a heading, and its time stands
+     against the words rather than against the room above them. */
   '.cm-times .cm-gutterElement': {
+    display: 'flex',
+    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
     padding: '0 0.5rem 0 0',
-    textAlign: 'end',
   },
   '.cm-time': {
     padding: '0',

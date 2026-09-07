@@ -11,32 +11,31 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
-// ErrNotALink is a path holding something other than a note that points
-// somewhere. Nothing is fetched for it.
-var ErrNotALink = errors.New("this note points nowhere")
+// ErrNotAURL is a path holding something other than a file naming an address.
+// Nothing is fetched for it.
+var ErrNotAURL = errors.New("this file holds no web address")
 
-// ImportURL fetches what is at the address a link note points at and writes it
-// into the vault's own folder.
+// ImportURL fetches what is at the address a url points at and writes it into
+// the vault's own folder.
 //
 // A person asks for it, once, by pasting the address. What comes back is an
 // artifact: no machine here makes it again, and a site may stop publishing it.
-// It is named by the address, so typing in the note leaves it where it is and
-// two notes pointing at one video share it.
+// It is named by the address, so renaming the file leaves it where it is and
+// two urls on one address share it.
 type ImportURL struct {
 	Readers port.VaultReaders
 	Derived port.DerivedStores
 	By      port.Fetcher
 
-	// CopyUnder is how many bytes a copy may run to. Zero is no limit.
-	CopyUnder int64
+	// CopyMaxSize is how many bytes a copy may run to. Zero is no limit.
+	CopyMaxSize int64
 
-	// ToVault keeps a copy beside the note as a file of the person's own, and
+	// ToVault keeps a copy beside the url as a file of the person's own, and
 	// Writers is what puts it there. It is `importing.copies_to_vault`, and a
 	// run without a writer keeps every copy in the application's own folder.
 	ToVault bool
@@ -48,26 +47,30 @@ type ImportURL struct {
 	Languages []string
 	Automatic bool
 
-	// Cut brings the note level in the index, so what was fetched is searched
-	// with the note as soon as it is written.
+	// Cut brings the url level in the index, so what was fetched is searched
+	// with it as soon as it is written.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
 
-	// Names gives a note the name what is at its address calls itself, and
-	// answers where the note is filed afterwards. A run given none leaves the
-	// note called what it was called.
+	// Names gives a url the name what is at its address calls itself, and
+	// answers where it is filed afterwards. A run given none leaves it called
+	// what it was called.
 	Names func(ctx context.Context, v domain.Vault, path, title string) (string, error)
 
 	// Again throws away what a run before this one fetched and asks the address
 	// afresh. It is how a person asks for a site's words again, and nothing
 	// sets it on its own.
 	Again bool
+
+	// Progress is told how much of a copy has arrived out of how much the site
+	// declared. A run given none is not followed.
+	Progress func(done, total int64)
 }
 
 // ImportURLResult reports what fetching did.
 type ImportURLResult struct {
 	Path string
-	// Title is what the address calls itself, and Length how long a video runs
-	// in milliseconds.
+	// Title is what the address calls itself, and Length how long it runs in
+	// milliseconds.
 	Title  string
 	Length int
 	// Producer is what fetched the words, and is empty where nothing did.
@@ -81,10 +84,10 @@ type ImportURLResult struct {
 	Busy bool
 }
 
-// Execute fetches what is at one link note's address.
+// Execute fetches what is at one url's address.
 func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (ImportURLResult, error) {
 	res := ImportURLResult{Path: path}
-	at, n, store, err := u.pointed(ctx, v, path)
+	at, ref, store, err := u.pointed(ctx, v, path)
 	if err != nil {
 		return res, err
 	}
@@ -95,7 +98,7 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 	}
 
 	// One run to an address. The name is held for as long as the fetch takes,
-	// so two notes pointing at one video do not fetch it twice.
+	// so two urls on one address do not fetch it twice.
 	release, err := store.Claim(ctx, text.Partial(from, hash))
 	if errors.Is(err, port.ErrClaimed) {
 		res.Busy = true
@@ -128,11 +131,11 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 	// A page is one fetch: what it calls itself and the prose it is written
 	// around come out of the same read, and a stranger's site is asked once.
 	if !at.IsVideo() {
-		res, err := u.page(ctx, v, n.Fingerprint, at, hash, store, res)
+		res, err := u.page(ctx, v, ref, at, hash, store, res)
 		if err != nil {
 			return res, err
 		}
-		return u.named(ctx, v, n, at, res)
+		return u.named(ctx, v, ref, at, res)
 	}
 
 	meta, err := u.By.Metadata(ctx, at)
@@ -141,49 +144,71 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 	}
 	res.Title, res.Length = meta.Title, meta.Length
 
-	res, err = u.video(ctx, v, n.Fingerprint, at, meta, hash, store, res)
+	res, err = u.video(ctx, v, ref, at, meta, hash, store, res)
 	if err != nil {
 		return res, err
 	}
-	return u.named(ctx, v, n, at, res)
+	return u.named(ctx, v, ref, at, res)
+}
+
+// Forget throws away the text fetched from a url's address. The url stands as
+// it was, pointing where it points, and the copy fetched for it is untouched.
+func (u ImportURL) Forget(ctx context.Context, v domain.Vault, path string) error {
+	at, _, store, err := u.pointed(ctx, v, path)
+	if err != nil {
+		return err
+	}
+	hash := text.Fingerprint([]byte(at.URL))
+	for _, producer := range text.Producers() {
+		for _, name := range text.Names(producer, hash) {
+			if err := store.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+				return err
+			}
+		}
+	}
+	return u.cut(ctx, v, path)
 }
 
 // CopyResult reports what downloading a copy did.
 type CopyResult struct {
 	Path string
-	// Bytes is how large the copy is, and Held whether one already stood.
+	// Bytes is how large what is at the address is, and Limit the size a copy
+	// may be. Over the limit nothing is fetched.
 	Bytes int64
-	Held  bool
-	// TooLarge is a video over the size the settings name. Nothing was fetched,
-	// and Bytes is the size it was refused at.
-	TooLarge bool
-	Busy     bool
+	Limit int64
+	// Existed is a copy that already stood, so nothing was fetched.
+	Existed bool
+	Busy    bool
 	// At is where in the vault the copy landed, and nothing where it landed in
 	// the application's own folder.
 	At string
 }
 
-// Copy fetches what is at a link note's address as a person plays it.
+// TooLarge is a copy the limit refused. Nothing was fetched.
+func (r CopyResult) TooLarge() bool { return r.Limit > 0 && r.Bytes > r.Limit }
+
+// Copy fetches what is at a url's address so a person plays it from this disk.
 //
-// It is asked for by hand: a copy is an hour of video on somebody's disk, and
-// pasting an address is not asking for one. Where it lands is
-// `importing.copies_to_vault`: the application's own folder, where losing it
-// costs another fetch, or beside the note as a file of the person's own.
+// It is asked for by hand: a copy takes as much of somebody's disk as what is
+// at the address takes, and pasting an address is not asking for one. Where it
+// lands is `importing.copies_to_vault`: the application's own folder, where
+// losing it costs another fetch, or beside the url as a file of the person's
+// own.
 func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyResult, error) {
-	res := CopyResult{Path: path}
+	res := CopyResult{Path: path, Limit: u.CopyMaxSize}
 	at, _, store, err := u.pointed(ctx, v, path)
 	if err != nil {
 		return res, err
 	}
 	if !at.IsVideo() {
-		return res, fmt.Errorf("%s: %w", path, ErrNotALink)
+		return res, fmt.Errorf("%s: %w", path, ErrNotAURL)
 	}
 	hash := text.Fingerprint([]byte(at.URL))
 	beside := CopyBeside(path)
 
 	// One run to a copy, held for as long as the fetch takes. The claim is on
 	// the store's name whichever disk the copy lands on: it is the address that
-	// is being fetched, and two notes on one video are one fetch.
+	// is being fetched, and two urls on one address are one fetch.
 	release, err := store.Claim(ctx, text.Copy(hash))
 	if errors.Is(err, port.ErrClaimed) {
 		res.Busy = true
@@ -197,7 +222,7 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 	if size, held, err := u.stands(ctx, v, store, hash, beside); err != nil {
 		return res, err
 	} else if held {
-		res.Held, res.Bytes, res.At = true, size, u.landing(beside)
+		res.Existed, res.Bytes, res.At = true, size, u.landing(beside)
 		return res, nil
 	}
 
@@ -205,8 +230,8 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 	if err != nil {
 		return res, err
 	}
-	if u.CopyUnder > 0 && meta.Bytes > u.CopyUnder {
-		res.TooLarge, res.Bytes = true, meta.Bytes
+	res.Bytes = meta.Bytes
+	if u.CopyMaxSize > 0 && meta.Bytes > u.CopyMaxSize {
 		return res, nil
 	}
 
@@ -219,13 +244,20 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 		_ = write.CloseWithError(err)
 		going <- err
 	}()
-	size, err := u.takes(ctx, v, store, text.Copy(hash), beside, capped(read, u.CopyUnder))
+	arriving := capped(read, u.CopyMaxSize)
+	if u.Progress != nil {
+		u.Progress(0, meta.Bytes)
+		arriving = &progressReader{from: arriving, total: meta.Bytes, report: u.Progress}
+	}
+	size, err := u.takes(ctx, v, store, text.Copy(hash), beside, arriving)
 	// The read end is closed before the fetch is waited for: whoever stopped
 	// reading unblocks whoever is writing into it.
 	_ = read.CloseWithError(err)
 	fetching := <-going
+	// A site that declared a size it then ran past is known only to be over the
+	// limit, which is the size reported.
 	if errors.Is(err, errTooLarge) {
-		res.TooLarge, res.Bytes = true, u.CopyUnder
+		res.Bytes = u.CopyMaxSize + 1
 		return res, nil
 	}
 	if fetching != nil {
@@ -238,11 +270,11 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 	return res, nil
 }
 
-// CopyBeside is where a copy kept in the vault stands: beside the note, under
-// the note's own name. A person looking at the folder sees the video and the
-// note about it together.
+// CopyBeside is where a copy kept in the vault stands: beside the url, under
+// its own name. A person looking at the folder sees the copy and the url
+// together.
 func CopyBeside(path string) string {
-	return strings.TrimSuffix(path, ".md") + text.CopyExtension
+	return strings.TrimSuffix(path, domain.URLExtension) + text.CopyExtension
 }
 
 // landing is where the copy is, as the vault names it, and nothing where it is
@@ -317,8 +349,31 @@ func (c *counting) Read(into []byte) (int, error) {
 	return read, err
 }
 
+// progressReader reports how much has arrived as it is read. It reports every
+// megabyte: finer than that is past what a bar shows, and every report crosses
+// to the window.
+type progressReader struct {
+	from     io.Reader
+	total    int64
+	report   func(done, total int64)
+	done     int64
+	reported int64
+}
+
+const progressStep = 1 << 20
+
+func (p *progressReader) Read(into []byte) (int, error) {
+	read, err := p.from.Read(into)
+	p.done += int64(read)
+	if p.done-p.reported >= progressStep {
+		p.reported = p.done
+		p.report(p.done, p.total)
+	}
+	return read, err
+}
+
 // errTooLarge is a copy that ran past the size the settings name.
-var errTooLarge = errors.New("this video is larger than a copy may be")
+var errTooLarge = errors.New("over the size a copy may be")
 
 // capped is what is fetched, stopped at the size the settings name. A site that
 // declares no size is held to it all the same, and a limit of nothing lets
@@ -350,61 +405,60 @@ func (l *limited) Read(into []byte) (int, error) {
 	return read, err
 }
 
-// pointed is one link note: where it points, the note itself, and the store
-// what is fetched for it is kept in.
+// pointed is one url: where it points, the file itself, and the store what is
+// fetched for it is kept in.
 func (u ImportURL) pointed(
 	ctx context.Context, v domain.Vault, path string,
-) (domain.WebAddress, domain.Note, port.DerivedStore, error) {
+) (domain.WebAddress, domain.Fingerprint, port.DerivedStore, error) {
+	none := domain.WebAddress{}
 	reader, err := u.Readers.Open(v)
 	if err != nil {
-		return domain.WebAddress{}, domain.Note{}, nil, err
+		return none, domain.Fingerprint{}, nil, err
 	}
 	ref, err := reader.Stat(ctx, path)
 	if err != nil {
-		return domain.WebAddress{}, domain.Note{}, nil, fmt.Errorf("stat %s: %w", path, err)
+		return none, domain.Fingerprint{}, nil, fmt.Errorf("stat %s: %w", path, err)
+	}
+	if ref.Kind != domain.KindURL {
+		return none, domain.Fingerprint{}, nil, fmt.Errorf("%s: %w", path, ErrNotAURL)
 	}
 	raw, err := reader.Read(ctx, path)
 	if err != nil {
-		return domain.WebAddress{}, domain.Note{}, nil, fmt.Errorf("read %s: %w", path, err)
+		return none, domain.Fingerprint{}, nil, fmt.Errorf("read %s: %w", path, err)
 	}
-	n := markdown.Parse(ref, raw)
-	if n.Type != domain.TypeLink {
-		return domain.WebAddress{}, domain.Note{}, nil, fmt.Errorf("%s: %w", path, ErrNotALink)
-	}
-	at, wrong := domain.ReadAddress(n.Frontmatter)
-	if len(wrong) > 0 {
-		return domain.WebAddress{}, domain.Note{}, nil,
-			fmt.Errorf("%s: %w: %s", path, ErrNotALink, strings.Join(wrong, "; "))
+	at, err := domain.ReadURL(raw)
+	if err != nil {
+		return none, domain.Fingerprint{}, nil, fmt.Errorf("%s: %w", path, err)
 	}
 	store, err := u.Derived.Open(v)
 	if err != nil {
-		return domain.WebAddress{}, domain.Note{}, nil, err
+		return none, domain.Fingerprint{}, nil, err
 	}
-	return at, n, store, nil
+	return at, ref, store, nil
 }
 
-// named gives the note the name what is at the address calls itself.
+// named gives the url the name what is at the address calls itself.
 //
-// A note still called by the address it points at was named by the paste and by
-// nobody: the person had no name for it yet, and what is there has one. A note
+// A url still called by the address it points at was named by the paste and by
+// nobody: the person had no name for it yet, and what is there has one. One
 // called anything else was named by the person, and that stands.
 func (u ImportURL) named(
 	ctx context.Context,
 	v domain.Vault,
-	n domain.Note,
+	ref domain.Fingerprint,
 	at domain.WebAddress,
 	res ImportURLResult,
 ) (ImportURLResult, error) {
 	if u.Names == nil || res.Title == "" {
 		return res, nil
 	}
-	// A title that is no address at all is a name a person gave the note, and a
-	// title naming another address is too.
-	called, _ := domain.ParseWebAddress(n.Title)
-	if called.URL != at.URL {
+	// A file still called what the paste called it is one nobody has named. Any
+	// other name is the person's, and it stands.
+	pasted, _, err := domain.Filename(at.URL)
+	if err != nil || domain.Basename(ref.Path) != pasted {
 		return res, nil
 	}
-	path, err := u.Names(ctx, v, n.Fingerprint.Path, res.Title)
+	path, err := u.Names(ctx, v, ref.Path, res.Title)
 	if err != nil {
 		return res, err
 	}
@@ -414,8 +468,8 @@ func (u ImportURL) named(
 	return res, nil
 }
 
-// video writes down the words published with a video, and hands the video to a
-// model where nobody published any.
+// video writes down the words published with it, and hands it to a model where
+// nobody published any.
 func (u ImportURL) video(
 	ctx context.Context,
 	v domain.Vault,
@@ -431,8 +485,8 @@ func (u ImportURL) video(
 	case errors.Is(err, port.ErrNothingFetched):
 		// Nobody published words for it. That is an answer, and it is written
 		// down so the address is not asked again every time the vault is
-		// scanned. A copy of the video in the vault is a recording, and what a
-		// recording says is heard by the run that hears every other one.
+		// scanned. A copy in the vault is a recording, and what a recording
+		// says is heard by the run that hears every other one.
 		res.Nothing = true
 		return res, store.Write(ctx, text.Answer(text.Captions, hash), []byte(text.Silent+"\n"))
 	case err != nil:
@@ -449,12 +503,12 @@ func (u ImportURL) video(
 	return res, u.cut(ctx, v, ref.Path)
 }
 
-// language is the one a video's words are asked for in.
+// language is the one the words are asked for in.
 //
 // What a person published is preferred over what a machine wrote; among those,
-// the languages this installation named, and then the language the video was
-// spoken in. A video somebody has translated into thirty languages publishes
-// words in all thirty, and what was said in it is one of them.
+// the languages this installation named, and then the language it was spoken
+// in. Something translated into thirty languages publishes words in all thirty,
+// and what was said in it is one of them.
 func language(meta port.Metadata, languages []string, automatic bool) string {
 	tracks := meta.Captions
 	if len(tracks) == 0 && automatic {
@@ -480,7 +534,7 @@ func in(language string) func(string) bool {
 	return func(track string) bool { return track == language || track == language+"-orig" }
 }
 
-// original says whether a track is the language the video was spoken in.
+// original says whether a track is the language it was spoken in.
 func original(track string) bool { return strings.HasSuffix(track, "-orig") }
 
 // page writes down the prose of a page.
@@ -544,7 +598,7 @@ func (u ImportURL) record(
 	return store.Write(ctx, text.Beside(producer, hash), written)
 }
 
-// cut brings the note level in the index, so the words are searched with it.
+// cut brings the url level in the index, so the words are searched with it.
 func (u ImportURL) cut(ctx context.Context, v domain.Vault, path string) error {
 	if u.Cut == nil {
 		return nil

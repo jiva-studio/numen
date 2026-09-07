@@ -31,7 +31,7 @@ const idea = "notes/idea.md"
 // A link note stands there too, pointing at a video. What is at an address is
 // made from the note the way a reading is made from a scan.
 const (
-	pointed  = "notes/talk.md"
+	pointed  = "notes/talk.url"
 	pointsAt = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 )
 
@@ -80,7 +80,7 @@ func running(
 		book:    "the bytes of a scan",
 		talk:    sound,
 		idea:    "# an idea\n",
-		pointed: "---\ntype: link\nurl: " + pointsAt + "\n---\n\nMine.\n",
+		pointed: "[InternetShortcut]\nURL=" + pointsAt + "\n",
 	})
 	api := &API{
 		Readers:   filesystem.VaultReaders{},

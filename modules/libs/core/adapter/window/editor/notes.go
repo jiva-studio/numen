@@ -33,14 +33,6 @@ func (a *API) ReadNote(
 		// What the file was when this prose came out of it, for the client to
 		// present when it puts prose back.
 		out.At = fingerprintOf(found.Fingerprint)
-		if at := found.Address; at.URL != "" {
-			out.Url = &at.URL
-			// The player is framed from this run's own socket, which is the
-			// address the host is told is holding it.
-			if embed := a.Playing.Embed(at); embed != "" {
-				out.Embed = &embed
-			}
-		}
 	}
 	return connect.NewResponse(out), nil
 }
@@ -100,22 +92,15 @@ func (a *API) CreateNote(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	var address domain.WebAddress
-	if written := r.Msg.GetUrl(); written != "" {
-		if address, err = domain.ParseWebAddress(written); err != nil {
-			return nil, connect.NewError(connect.CodeInvalidArgument, err)
-		}
-	}
 	if !a.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
 	defer a.Writing.done()
 
 	made, err := a.Notes.Create.Execute(ctx, showing, note.NewNote{
-		Title:   r.Msg.GetTitle(),
-		Folder:  r.Msg.GetFolder(),
-		Links:   links,
-		Address: address,
+		Title:  r.Msg.GetTitle(),
+		Folder: r.Msg.GetFolder(),
+		Links:  links,
 	})
 	behind := a.unlevelled(err)
 	if made.Path != "" {

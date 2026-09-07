@@ -44,7 +44,7 @@ func TestAFileTheVaultDoesNotHoldAsANoteIsRead(t *testing.T) {
 		t.Errorf("the file came back as %q", got.Text)
 	}
 	if got.Whole != len(got.Text) || got.Start != 0 || got.Length != len(got.Text) {
-		t.Errorf("the run was described as %+v", got)
+		t.Errorf("the range was described as %+v", got)
 	}
 }
 
@@ -59,15 +59,15 @@ func TestANoteIsReadAsTheFileItIs(t *testing.T) {
 	}
 }
 
-// A transcript is long, and an agent reads it a run at a time: what the answer
-// says about the run is what the next call is asked with.
-func TestALongFileIsReadARunAtATime(t *testing.T) {
+// A transcript is long, and an agent reads it a range at a time: what the answer
+// says about the range is what the next call is asked with.
+func TestALongFileIsReadARangeAtATime(t *testing.T) {
 	whole := strings.Repeat("one line of what was said\n", 400)
 	u, v := readable(t, map[string]string{"lecture.txt": whole})
 
 	first := read(t, u, v, "lecture.txt", 0, 100)
 	if first.Text != whole[:100] || first.Start != 0 || first.Length != 100 {
-		t.Fatalf("the first run was %+v", first)
+		t.Fatalf("the first range was %+v", first)
 	}
 	if first.Whole != len(whole) {
 		t.Errorf("the file is %d bytes and was said to be %d", len(whole), first.Whole)
@@ -94,23 +94,23 @@ func TestAFileLongerThanOneCallCarriesComesBackCut(t *testing.T) {
 	}
 }
 
-// A run is held within the file, so an offset past the end is an empty run and
+// A range is held within the file, so an offset past the end is an empty range and
 // not an error.
-func TestARunPastTheEndOfTheFileIsEmpty(t *testing.T) {
+func TestARangePastTheEndOfTheFileIsEmpty(t *testing.T) {
 	u, v := readable(t, map[string]string{"lecture.txt": "short"})
 
 	got := read(t, u, v, "lecture.txt", 900, 100)
 	if got.Outcome != file.Ok || got.Text != "" || got.Length != 0 {
-		t.Errorf("a run past the end gave %+v", got)
+		t.Errorf("a range past the end gave %+v", got)
 	}
 	if got.Whole != 5 {
 		t.Errorf("the file was said to be %d bytes", got.Whole)
 	}
 }
 
-// A run is asked for in bytes and comes back as text, so a character the cut
-// falls inside belongs to neither run.
-func TestARunIsCutAtWholeCharacters(t *testing.T) {
+// A range is asked for in bytes and comes back as text, so a character the cut
+// falls inside belongs to neither range.
+func TestARangeIsCutAtWholeCharacters(t *testing.T) {
 	// "śāstra" is two two-byte characters and four one-byte ones, and the
 	// emoji that follows is four bytes.
 	whole := "śāstra 🪔 and śloka"
@@ -119,13 +119,13 @@ func TestARunIsCutAtWholeCharacters(t *testing.T) {
 	// Opening one byte into the first character.
 	opened := read(t, u, v, "lecture.txt", 1, 3)
 	if opened.Text != "ā" || opened.Start != 2 || opened.Length != 2 {
-		t.Errorf("a run opening inside a character came back as %+v", opened)
+		t.Errorf("a range opening inside a character came back as %+v", opened)
 	}
 
 	// Closing one byte into the second.
 	closed := read(t, u, v, "lecture.txt", 0, 3)
 	if closed.Text != "ś" || closed.Start != 0 || closed.Length != 2 {
-		t.Errorf("a run closing inside a character came back as %+v", closed)
+		t.Errorf("a range closing inside a character came back as %+v", closed)
 	}
 
 	// The four-byte character stands at byte 9, and is closed inside at each of
@@ -133,17 +133,17 @@ func TestARunIsCutAtWholeCharacters(t *testing.T) {
 	for _, length := range []int{10, 11, 12} {
 		got := read(t, u, v, "lecture.txt", 0, length)
 		if got.Text != "śāstra " {
-			t.Errorf("a run of %d bytes came back as %q", length, got.Text)
+			t.Errorf("a range of %d bytes came back as %q", length, got.Text)
 		}
 	}
 	if got := read(t, u, v, "lecture.txt", 0, 13); got.Text != "śāstra 🪔" {
-		t.Errorf("a run holding the whole character came back as %q", got.Text)
+		t.Errorf("a range holding the whole character came back as %q", got.Text)
 	}
 }
 
-// A run reaching the end of the file is not cut, so a file whose last character
+// A range reaching the end of the file is not cut, so a file whose last character
 // is cut short is named for what it is.
-func TestARunReachingTheEndOfTheFileIsNotCut(t *testing.T) {
+func TestARangeReachingTheEndOfTheFileIsNotCut(t *testing.T) {
 	u, v := readable(t, map[string]string{"lecture.txt": "said \xc5"})
 
 	got := read(t, u, v, "lecture.txt", 0, 0)
@@ -152,7 +152,7 @@ func TestARunReachingTheEndOfTheFileIsNotCut(t *testing.T) {
 	}
 }
 
-// A run goes out in a string field, so bytes that are not text are named as
+// A range goes out in a string field, so bytes that are not text are named as
 // such and not carried.
 func TestAFileThatIsNotTextIsSaidToBeNotText(t *testing.T) {
 	u, v := readable(t, map[string]string{"scan.txt": "words \xff\xfe more"})
@@ -273,18 +273,18 @@ func TestTheApplicationsOwnFolderIsNotRead(t *testing.T) {
 	}
 }
 
-// A run beginning before the file, or longer than one call carries, is a
+// A range beginning before the file, or longer than one call carries, is a
 // mistake in the asking.
-func TestARunNamedOutsideWhatOneCallCarriesIsRefused(t *testing.T) {
+func TestARangeNamedOutsideWhatOneCallCarriesIsRefused(t *testing.T) {
 	u, v := readable(t, map[string]string{"lecture.txt": "said"})
 
-	for _, run := range []struct{ start, length int }{
+	for _, asked := range []struct{ start, length int }{
 		{-1, 10},
 		{0, -1},
 		{0, file.MostRead + 1},
 	} {
-		if _, err := u.Execute(t.Context(), v, "lecture.txt", run.start, run.length); err == nil {
-			t.Errorf("a run beginning at %d for %d bytes was not refused", run.start, run.length)
+		if _, err := u.Execute(t.Context(), v, "lecture.txt", asked.start, asked.length); err == nil {
+			t.Errorf("a range beginning at %d for %d bytes was not refused", asked.start, asked.length)
 		}
 	}
 }

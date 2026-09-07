@@ -52,7 +52,7 @@ type Fetcher struct{ providers []provider }
 // when nothing knows it better, which is why pages stand last and why every
 // machine fetches one.
 func New(ctx context.Context, c Config) (*Fetcher, error) {
-	return &Fetcher{providers: []provider{newVideos(ctx, c), newPages()}}, nil
+	return &Fetcher{providers: []provider{newYtDLP(ctx, c), newPages()}}, nil
 }
 
 // providerFor is the provider that answers for an address, and ErrNoTool where
@@ -136,6 +136,15 @@ type program struct {
 
 // held says this machine has the tool.
 func (p program) held() bool { return len(p.command) > 0 }
+
+// at is where the tool itself is, for another tool that runs it. A tool started
+// through something else is not somewhere one path names.
+func (p program) at() string {
+	if len(p.command) != 1 {
+		return ""
+	}
+	return p.command[0]
+}
 
 // started is one run of it, with the arguments of that run after its own.
 func (p program) started(ctx context.Context, arguments ...string) *exec.Cmd {

@@ -18,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
-	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
 //go:embed sql/*.sql
@@ -97,15 +96,7 @@ func saveNote(
 	ctx context.Context, tx *writing.Transaction, vault int64, indexed domain.IndexedNote,
 	sizes chunking.Sizes, reads chunking.Legibility,
 ) error {
-	n, artifact := indexed.Note, indexed.Artifact
-	// Where a link note points is stored so that a sweep can ask what still
-	// names an artifact. Every other note points nowhere.
-	var address string
-	if n.Type == domain.TypeLink {
-		if at, wrong := domain.ReadAddress(n.Frontmatter); len(wrong) == 0 {
-			address = at.URL
-		}
-	}
+	n := indexed.Note
 	frontmatter, storeErr := encodeFrontmatter(n)
 	problem := n.FrontmatterErr
 	if storeErr != "" {
@@ -119,13 +110,12 @@ func saveNote(
 	var row int64
 	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
 		vault, n.Fingerprint.Path, kind, n.Fingerprint.Size, chunk.Stamp(n.Fingerprint.ModTime),
-		nullable(addressHash(address, artifact)), nullable(recipeOf(artifact, sizes)), nullable(artifact.Producer),
+		nil, nil, nil,
 	).Scan(&row); err != nil {
 		return fmt.Errorf("record the source this note is: %w", err)
 	}
 	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.Fingerprint.Path)),
-		n.Title, string(noteType(n)), nullable(n.ID), frontmatter, nullable(problem),
-		nullable(address)); err != nil {
+		n.Title, string(noteType(n)), nullable(n.ID), frontmatter, nullable(problem)); err != nil {
 		return err
 	}
 
@@ -143,7 +133,7 @@ func saveNote(
 	// The note goes in as its own large chunk, so the words in it are findable
 	// as soon as it is indexed. A chunk whose text is what it was keeps its
 	// row, and the vector made from it.
-	if err := chunk.Replace(ctx, tx, row, vault, cut(n, artifact, kept, sizes, reads)); err != nil {
+	if err := chunk.Replace(ctx, tx, row, vault, cut(n, kept, sizes, reads)); err != nil {
 		return err
 	}
 	for _, h := range kept {
@@ -189,15 +179,13 @@ func saveNote(
 // tiled inside that section and no chunk runs across a heading.
 //
 // Offsets are into the file. The body begins after the frontmatter, and every
-// chunk is moved out by as much. A link note is the exception: its offsets are
-// into its prose and what was fetched taken together, which is the text
-// whatever reads a passage back out of one composes.
+// chunk is moved out by as much.
 //
 // A deck and a stencil are cut into nothing. A card is found by its heading,
 // which is its question, and a stencil by its title, which is its file name.
 // The vectors hang off the chunks, so neither is embedded either.
 func cut(
-	n domain.Note, artifact domain.Artifact, headings []domain.Heading,
+	n domain.Note, headings []domain.Heading,
 	sizes chunking.Sizes, reads chunking.Legibility,
 ) []chunk.Chunk {
 	if n.Type == domain.TypeDeck || n.Type == domain.TypeStencil {
@@ -210,15 +198,6 @@ func cut(
 	}
 	sizes.Large = chunking.Whole
 	body, divisions := n.Body, parts(headings)
-
-	// A link note is cut over what its person wrote and what was fetched from
-	// the address, as one text: an offset is into the two together, and the
-	// join is a part so that no chunk runs out of one into the other.
-	if !artifact.IsZero() {
-		at = 0
-		divisions = append(divisions, chunking.PartStart{Offset: len(body) + len(text.Separator)})
-		body += text.Separator + artifact.Text
-	}
 
 	out := make([]chunk.Chunk, 0, 1)
 	for _, large := range chunking.Cut(body, divisions, sizes, reads) {
@@ -245,28 +224,6 @@ func cut(
 		out = append(out, chunk.Chunk{Start: at, Length: len(body), Text: n.Title})
 	}
 	return out
-}
-
-// addressHash is the hash a link note's text is kept under, which is the address it
-// points at and not the bytes of the file. A person typing in the note changes
-// the file and not what is at the address, and what was fetched is theirs to
-// keep. Every other note is made from itself and names nothing.
-func addressHash(address string, artifact domain.Artifact) string {
-	if artifact.IsZero() {
-		return ""
-	}
-	return text.Fingerprint([]byte(address))
-}
-
-// recipeOf names what produced a link note's text and the sizes it was cut into.
-// A note carrying another one owes its text again.
-func recipeOf(artifact domain.Artifact, sizes chunking.Sizes) string {
-	if artifact.IsZero() {
-		return ""
-	}
-	return fmt.Sprintf("%s+%s/large=%d+%d/small=%d+%d/limit=%d",
-		text.ReaderNote, artifact.Producer,
-		sizes.Large, sizes.LargeOverlap, sizes.Small, sizes.SmallOverlap, sizes.Limit)
 }
 
 // parts is where a note names the section that follows. A heading carries the

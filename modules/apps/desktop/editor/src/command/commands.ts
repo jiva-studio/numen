@@ -175,14 +175,18 @@ export interface Words extends EmptyWords {
   /** The transcript of the recording in front, put right by a proofreader. */
   readonly proofread: string
   /** What is at the address a link note points at, fetched again. */
-  readonly fetch: string
-  /** A copy of the video a link note points at, fetched onto this disk. */
-  readonly download: string
+  readonly downloadText: string
+  /** What a url points at, fetched onto this disk. */
+  readonly downloadCopy: string
   /** The transcript of the recording in front, taken away, and the two answers. */
-  readonly dropTranscript: string
+  readonly deleteText: string
   readonly keepsTranscript: string
-  readonly drops: string
-  readonly dropped: string
+  readonly deletes: string
+  readonly deleted: string
+  /** The copy fetched for the url in front, taken off this disk, and its answers. */
+  readonly deleteCopy: string
+  readonly keepsCopy: string
+  readonly deletedCopy: string
   /** The note in front, shown where the vault files it. */
   readonly reveal: string
   /** The preset the note in front is, or the one the deck in front is scheduled by. */
@@ -402,26 +406,24 @@ export const commandsOf = (
     where: onEvidence('transcribe', 'recording', (made) => owed(made.transcript)),
   },
   {
-    id: 'fetch',
-    text: words.fetch,
+    id: 'downloadText',
+    text: words.downloadText,
     group: 'file',
-    // Only a note pointing at an address carries the text at one, so the row
-    // being there is what says this file points anywhere at all.
     where: onEvidence(
-      'fetch',
-      'note',
+      'downloadText',
+      'url',
       (made) => made.transcript !== undefined || made.article !== undefined,
     ),
   },
   {
-    id: 'download',
-    text: words.download,
+    id: 'downloadCopy',
+    text: words.downloadCopy,
     group: 'file',
     // Only a note pointing at a video carries a copy at all, so the row being
     // there is what says this file is one. An hour of video on somebody's disk
     // is asked for by hand, and one already here is not asked for again.
     where: (at, runs) =>
-      at.ready && runs.canRun('download') && at.made.copy !== undefined && owed(at.made.copy),
+      at.ready && runs.canRun('downloadCopy') && at.made.copy !== undefined && owed(at.made.copy),
   },
   {
     id: 'proofread',
@@ -436,18 +438,35 @@ export const commandsOf = (
     ),
   },
   {
-    id: 'dropTranscript',
-    text: words.dropTranscript,
+    id: 'deleteText',
+    text: words.deleteText,
     group: 'file',
     needs: 'asking',
     // Everything one run of listening left goes, so a run that stopped part way
-    // and a recording that gave no words are both taken away here.
-    where: onEvidence('dropTranscript', 'recording', (made) => made.transcript !== 'none'),
+    // and a recording that gave no words are both taken away here. A url
+    // carries a transcript the same way, and deletes it here.
+    where: (at, runs) =>
+      onEvidence('deleteText', 'recording', (made) => made.transcript !== 'none')(at, runs) ||
+      onEvidence('deleteText', 'url', (made) => made.transcript !== 'none')(at, runs),
     answers: {
       keeps: words.keepsTranscript,
       kept: words.kept,
-      does: words.drops,
-      then: words.dropped,
+      does: words.deletes,
+      then: words.deleted,
+    },
+  },
+  {
+    id: 'deleteCopy',
+    text: words.deleteCopy,
+    group: 'file',
+    needs: 'asking',
+    // Only a url carries a copy, and only one that stands has anything to take.
+    where: onEvidence('deleteCopy', 'url', (made) => made.copy === 'done'),
+    answers: {
+      keeps: words.keepsCopy,
+      kept: words.kept,
+      does: words.deletes,
+      then: words.deletedCopy,
     },
   },
   {

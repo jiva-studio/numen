@@ -61,11 +61,10 @@ The numbers run without gaps, and the whole corpus is renumbered when one closes
 
 ### Addresses
 
-- [A link is a note that carries an address](0038-a-link-is-a-note-that-carries-an-address.md)
+- [A url is a source of its own](0038-a-url-is-a-source-of-its-own.md)
 - [What comes back from an address is named by the address](0039-what-comes-back-from-an-address-is-named-by-it.md)
-- [A link note's text is its prose and what was fetched](0040-a-link-notes-text-is-its-prose-and-what-was-fetched.md)
-- [The window may frame the hosts a video plays from](0041-the-window-may-frame-the-hosts-a-video-plays-from.md)
-- [Fetching is a port, and the tools are the machine's](0042-fetching-is-a-port-and-the-tools-are-the-machines.md)
+- [The window may frame the hosts a video plays from](0040-the-window-may-frame-the-hosts-a-video-plays-from.md)
+- [Fetching is a port, and the tools are the machine's](0041-fetching-is-a-port-and-the-tools-are-the-machines.md)
 
 ### The vault, written
 
@@ -106,7 +105,7 @@ What the product does, and what its words mean.
 - [vaults.md](../vaults.md) — several vaults, one window
 - [reading.md](../reading.md) — how a book is read
 - [transcribing.md](../transcribing.md) — how a recording is heard
-- [importing.md](../importing.md) — how what a link note points at is fetched
+- [importing.md](../importing.md) — how what a url points at is fetched
 - [proofreading.md](../proofreading.md) — how a reading and a transcript are put right
 - [agents.md](../agents.md) — what the panel's agent can reach
 - [publishing.md](../publishing.md) — how a build reaches a person

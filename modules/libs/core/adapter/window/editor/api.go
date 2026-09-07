@@ -187,6 +187,8 @@ type Files struct {
 	Writers port.VaultWriters
 	Move    *vaults.Move
 	Import  *vaults.Import
+	// URLs makes the file a web address is kept in.
+	URLs *source.CreateURL
 }
 
 // Vaults is the list of vaults this installation holds, the one the window is

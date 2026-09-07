@@ -254,8 +254,14 @@ type GetRecordingResponse struct {
 	// element speaks the protocols of the world and not the scheme a window is
 	// served under, so the bytes are answered at an address of their own. Empty
 	// where this build serves them nowhere.
-	Media         string `protobuf:"bytes,3,opt,name=media,proto3" json:"media,omitempty"`
-	Type          string `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	Media string `protobuf:"bytes,3,opt,name=media,proto3" json:"media,omitempty"`
+	Type  string `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	// Where a frame plays what is at the address a url holds, empty where nothing
+	// frames it and on every other source. The address a frame is given and the
+	// hosts the window may frame are one decision, and it is made here.
+	Embed string `protobuf:"bytes,5,opt,name=embed,proto3" json:"embed,omitempty"`
+	// The address itself, for a url nothing plays. Empty on every other source.
+	Address       string `protobuf:"bytes,6,opt,name=address,proto3" json:"address,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -314,6 +320,20 @@ func (x *GetRecordingResponse) GetMedia() string {
 func (x *GetRecordingResponse) GetType() string {
 	if x != nil {
 		return x.Type
+	}
+	return ""
+}
+
+func (x *GetRecordingResponse) GetEmbed() string {
+	if x != nil {
+		return x.Embed
+	}
+	return ""
+}
+
+func (x *GetRecordingResponse) GetAddress() string {
+	if x != nil {
+		return x.Address
 	}
 	return ""
 }
@@ -603,12 +623,14 @@ const file_numen_v1_asset_proto_rawDesc = "" +
 	"\x04wide\x18\x01 \x01(\x01R\x04wide\x12\x12\n" +
 	"\x04high\x18\x02 \x01(\x01R\x04high\")\n" +
 	"\x13GetRecordingRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"n\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x9e\x01\n" +
 	"\x14GetRecordingResponse\x12\x16\n" +
 	"\x06length\x18\x01 \x01(\x05R\x06length\x12\x14\n" +
 	"\x05heard\x18\x02 \x01(\x05R\x05heard\x12\x14\n" +
 	"\x05media\x18\x03 \x01(\tR\x05media\x12\x12\n" +
-	"\x04type\x18\x04 \x01(\tR\x04type\"N\n" +
+	"\x04type\x18\x04 \x01(\tR\x04type\x12\x14\n" +
+	"\x05embed\x18\x05 \x01(\tR\x05embed\x12\x18\n" +
+	"\aaddress\x18\x06 \x01(\tR\aaddress\"N\n" +
 	"\x15ListHighlightsRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12!\n" +
 	"\x02at\x18\x02 \x03(\v2\x11.numen.v1.StretchR\x02at\"A\n" +

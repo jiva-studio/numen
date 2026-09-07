@@ -64,7 +64,6 @@ func TestEveryNoteTypeIsWrittenFromOne(t *testing.T) {
 		v1.NoteType_NOTE_TYPE_DECK:    domain.TypeDeck,
 		v1.NoteType_NOTE_TYPE_STENCIL: domain.TypeStencil,
 		v1.NoteType_NOTE_TYPE_PRESET:  domain.TypePreset,
-		v1.NoteType_NOTE_TYPE_LINK:    domain.TypeLink,
 	}, typeOf)
 }
 
@@ -73,6 +72,7 @@ func TestEverySourceKindIsWrittenFromOne(t *testing.T) {
 		v1.SourceKind_SOURCE_KIND_NOTE:      domain.KindNote,
 		v1.SourceKind_SOURCE_KIND_BOOK:      domain.KindBook,
 		v1.SourceKind_SOURCE_KIND_RECORDING: domain.KindRecording,
+		v1.SourceKind_SOURCE_KIND_URL:       domain.KindURL,
 	}, kindOf)
 }
 
@@ -131,14 +131,14 @@ func TestEveryArtifactTheSchemaNamesStandsSomewhere(t *testing.T) {
 		return named && id != ""
 	})
 	testsupport.Handled(t, func(of v1.ArtifactKind) bool {
-		// A note carries what is at the address it points at, and what that is
+		// A url carries what is at the address it holds, and what that is
 		// follows from the address: the two are asked about separately.
 		video := domain.WebAddress{URL: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", Video: "dQw4w9WgXcQ"}
 		page := domain.WebAddress{URL: "https://example.com/entropy"}
 		return slices.Contains(carried(domain.KindBook, domain.WebAddress{}), of) ||
 			slices.Contains(carried(domain.KindRecording, domain.WebAddress{}), of) ||
-			slices.Contains(carried(domain.KindNote, video), of) ||
-			slices.Contains(carried(domain.KindNote, page), of)
+			slices.Contains(carried(domain.KindURL, video), of) ||
+			slices.Contains(carried(domain.KindURL, page), of)
 	})
 }
 

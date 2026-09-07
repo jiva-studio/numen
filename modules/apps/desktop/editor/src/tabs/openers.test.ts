@@ -262,7 +262,7 @@ const maker = (
       asked.push(`preset ${folder || '—'} ${title}`)
       return answer(`${folder}/${title}.md`)
     },
-    makesLink: (address, folder) => {
+    makesURL: (address, folder) => {
       asked.push(`link ${folder || '—'} ${address}`)
       return answer(`${folder}/${address}.md`)
     },

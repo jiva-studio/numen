@@ -65,6 +65,11 @@ export interface FilesTabDeps {
   stencils(folder: string, name: string): Promise<string>
   /** A preset made the same way, naming none of its settings. */
   presets(folder: string, name: string): Promise<string>
+  /**
+   * The file a web address is kept in, made in a folder, and what is at that
+   * address fetched into the store beside it.
+   */
+  imports(folder: string, address: string): Promise<string>
   /** What could not be done, in words a person reads. */
   says(text: string): void
   /**
@@ -303,6 +308,10 @@ export function filing(list: FileTree, deps: FilesTabDeps) {
     renaming.value = made
   }
 
+  /** An address dropped on the tree, made into the file it is kept in. */
+  const imports = (address: string) =>
+    deps.imports(folderFor(list.chosen.value[0] ?? null), address)
+
   /**
    * A deck, a stencil or a preset made where the row stands, and its name put
    * in a field for the person to type over. The vault names the file and
@@ -379,6 +388,7 @@ export function filing(list: FileTree, deps: FilesTabDeps) {
     makes,
     writes,
     makesOne,
+    imports,
     asks,
     dismiss,
     chose,

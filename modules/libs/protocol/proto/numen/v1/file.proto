@@ -37,6 +37,11 @@ service FileService {
 
   // CreateFolder makes an empty folder. The folders above it are made with it.
   rpc CreateFolder(CreateFolderRequest) returns (CreateFolderResponse);
+
+  // CreateURL makes the file a web address is kept in. It holds the address and
+  // nothing else, and what is at that address is fetched into the store beside
+  // it.
+  rpc CreateURL(CreateURLRequest) returns (CreateURLResponse);
 }
 
 message ListFilesRequest {
@@ -80,6 +85,10 @@ enum SourceKind {
   SOURCE_KIND_NOTE = 1;
   SOURCE_KIND_BOOK = 2;
   SOURCE_KIND_RECORDING = 3;
+
+  // A file holding a web address and nothing else. Its text is what was
+  // fetched from that address.
+  SOURCE_KIND_URL = 4;
 }
 
 message ListFileKindsRequest {
@@ -181,4 +190,22 @@ message CreateFolderRequest {
 message CreateFolderResponse {
   // Set when nothing was made, and why.
   optional Refusal refusal = 1;
+}
+
+message CreateURLRequest {
+  // The address, as a browser would go to it. It is read into the one form
+  // every spelling of it reaches, and one nothing can be fetched from is
+  // refused and no file is made.
+  string url = 1;
+
+  // Where the file goes, relative to the root. Empty is the root itself.
+  string folder = 2;
+}
+
+message CreateURLResponse {
+  // Where the file is filed. Empty when nothing was made.
+  string path = 1;
+
+  // Set when nothing was made, and why.
+  optional Refusal refusal = 2;
 }

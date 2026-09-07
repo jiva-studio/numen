@@ -82,6 +82,14 @@ message GetRecordingResponse {
   // where this build serves them nowhere.
   string media = 3;
   string type = 4;
+
+  // Where a frame plays what is at the address a url holds, empty where nothing
+  // frames it and on every other source. The address a frame is given and the
+  // hosts the window may frame are one decision, and it is made here.
+  string embed = 5;
+
+  // The address itself, for a url nothing plays. Empty on every other source.
+  string address = 6;
 }
 
 message ListHighlightsRequest {

@@ -82,8 +82,6 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	if err := u.Vaults.Register(ctx, v.ID); err != nil {
 		return res, fmt.Errorf("register vault: %w", err)
 	}
-	fetches := store(u.Derived, v)
-
 	// The same bounds a scan writes in. One event can name a whole folder — a
 	// checkout, a restore, a sync client unpacking an archive — so the number of
 	// paths handed here is not small because they were named individually.
@@ -135,7 +133,7 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 			res.Unreadable = append(res.Unreadable, path)
 			continue
 		}
-		if err := group.add(ctx, indexed(ctx, fetches, markdown.Parse(ref, raw)), len(raw)); err != nil {
+		if err := group.add(ctx, domain.IndexedNote{Note: markdown.Parse(ref, raw)}, len(raw)); err != nil {
 			return res, fmt.Errorf("index: %w", err)
 		}
 		res.Indexed = append(res.Indexed, path)

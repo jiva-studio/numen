@@ -157,6 +157,7 @@ const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoiste
     removed: [] as string[],
     moved: [] as string[],
     folders: [] as string[],
+    urls: [] as string[],
     /** The decks and the stencils the window asked for, in the order it asked. */
     cards: [] as string[],
     /** Each field rename the window asked the vault for. */
@@ -259,6 +260,10 @@ vi.mock('../vault', () => ({
     makeFolder: async (path: string) => {
       asked.folders.push(path)
       return null
+    },
+    makeURL: async (url: string, folder: string) => {
+      asked.urls.push(`${url} ${folder}`)
+      return { path: folder ? `${folder}/made.url` : 'made.url', refusal: null }
     },
     changes: held,
     editing: held,

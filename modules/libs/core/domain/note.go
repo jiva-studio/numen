@@ -33,7 +33,7 @@ type Note struct {
 	FrontmatterErr string
 }
 
-// NoteType is which of five a note is. The list is closed: a value outside it
+// NoteType is which of four a note is. The list is closed: a value outside it
 // is shown as a problem and the file is read as an ordinary note.
 type NoteType string
 
@@ -43,16 +43,12 @@ const (
 	TypeStencil NoteType = "stencil"
 	// TypePreset is a note saying how the decks pointing at it are scheduled.
 	TypePreset NoteType = "preset"
-	// TypeLink is a note pointing at a web address, which it carries in `url`.
-	// What is at that address is fetched into the vault's own folder, and the
-	// note is cut from its own body and that together.
-	TypeLink NoteType = "link"
 )
 
-// KnownNoteType reports whether a type is one of the five.
+// KnownNoteType reports whether a type is one of the four.
 func KnownNoteType(t NoteType) bool {
 	switch t {
-	case TypeNote, TypeDeck, TypeStencil, TypePreset, TypeLink:
+	case TypeNote, TypeDeck, TypeStencil, TypePreset:
 		return true
 	}
 	return false

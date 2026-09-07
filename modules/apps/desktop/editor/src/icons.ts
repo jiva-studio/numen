@@ -22,6 +22,8 @@ import {
   CornerLeftUp,
   FilePlus,
   FileText,
+  File,
+  Folder,
   FolderOpen,
   FolderPlus,
   FolderRoot,
@@ -50,7 +52,7 @@ import {
   X,
   type LucideIcon,
 } from '@lucide/vue'
-import type { NoteType, Source } from './core'
+import type { Entry, NoteType, Source } from './core'
 import {
   AGENT,
   DECK,
@@ -63,11 +65,11 @@ import {
   SETTINGS,
   SETTINGS_FILE,
   STENCIL,
+  URL,
 } from './tabs/workspace'
 
 /** What each command is drawn as. A map, so an identity answers for itself. */
 const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
-  // Over the note in front.
   ['read', FileText],
   ['beside', FileText],
   ['travel', Waypoints],
@@ -81,15 +83,13 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['preset', Gauge],
   ['remove', Trash2],
   ['destroy', Trash2],
-  // Over the file in front: the transcript of a recording, the same put right,
-  // the same taken away, and the text recognised off a scan.
   ['transcribe', Captions],
   ['proofread', SpellCheck],
-  ['dropTranscript', CaptionsOff],
   ['recognise', ScanText],
-  ['fetch', RefreshCw],
-  ['download', HardDriveDownload],
-  // What a tab of the tree does itself.
+  ['downloadText', RefreshCw],
+  ['downloadCopy', HardDriveDownload],
+  ['deleteText', CaptionsOff],
+  ['deleteCopy', Trash2],
   ['newNote', FilePlus],
   ['newDeck', Layers],
   ['newStencil', LayoutTemplate],
@@ -97,7 +97,6 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['importUrl', Globe],
   ['newFolder', FolderPlus],
   ['rename', PenLine],
-  // Over the window.
   ['note', FilePlus],
   ['deck', Layers],
   ['stencil', LayoutTemplate],
@@ -115,7 +114,6 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['hanging', ListTree],
   ['parts', Rows3],
   ['settings', SlidersHorizontal],
-  // Over the vault.
   ['first', Compass],
   ['goto', Navigation],
   ['openVault', FolderRoot],
@@ -136,6 +134,7 @@ const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
   [NOTE, FileText],
   [DOCUMENT, BookOpen],
   [RECORDING, AudioLines],
+  [URL, Globe],
   [DECK, Layers],
   [STENCIL, LayoutTemplate],
   [PRESET, Gauge],
@@ -156,7 +155,6 @@ const NOTES: ReadonlyMap<NoteType, LucideIcon> = new Map([
   ['deck', Layers],
   ['stencil', LayoutTemplate],
   ['preset', Gauge],
-  ['link', Globe],
 ])
 
 /** The icon for a kind of note. Every kind has one. */
@@ -170,7 +168,20 @@ export const iconOfNote = (type: NoteType): LucideIcon => NOTES.get(type) ?? Fil
 const SOURCES: ReadonlyMap<Source, LucideIcon> = new Map([
   ['book', BookOpen],
   ['recording', AudioLines],
+  ['url', Globe],
 ])
 
 /** The icon for a source, and nothing for a file the vault holds no source for. */
 export const iconOfSource = (kind: Source): LucideIcon | null => SOURCES.get(kind) ?? null
+
+/**
+ * The icon one entry of the files tree is drawn as. A folder says whether what
+ * it holds is drawn; a note is drawn by which kind of note it is, and every
+ * other file by the source the vault holds it as.
+ */
+export const iconOfEntry = (entry: Entry | null | undefined, open: boolean): LucideIcon => {
+  if (!entry) return File
+  if (entry.folder) return open ? FolderOpen : Folder
+  if (entry.kind === 'note') return iconOfNote(entry.type)
+  return iconOfSource(entry.kind) ?? File
+}

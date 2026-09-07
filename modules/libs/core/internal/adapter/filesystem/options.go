@@ -95,6 +95,10 @@ var DefaultBookExtensions = []string{".epub", ".pdf"}
 // written down yet.
 var DefaultRecordingExtensions = domain.RecordingExtensions()
 
+// URLExtensions is what counts as a web address. It is not a setting: the file
+// is what every system calls it.
+var URLExtensions = []string{domain.URLExtension}
+
 // DefaultIgnore is what no vault has to ask to be left out. A name beginning
 // with a dot belongs to a tool — an editor's lock, a sync client's
 // bookkeeping.
@@ -131,6 +135,8 @@ func (o Options) kind(name string) (domain.SourceKind, bool) {
 		return domain.KindBook, true
 	case named(name, o.recordingExtensions()):
 		return domain.KindRecording, true
+	case named(name, URLExtensions):
+		return domain.KindURL, true
 	}
 	return "", false
 }
@@ -145,6 +151,14 @@ func (o Options) recordingExtensions() []string {
 func (o Options) isNote(name string) bool {
 	kind, ok := o.kind(name)
 	return ok && kind == domain.KindNote
+}
+
+// writable says whether the application writes a file of this name into the
+// person's folder. It writes notes and it writes the file an address is kept
+// in; every other file there is somebody else's.
+func (o Options) writable(name string) bool {
+	kind, ok := o.kind(name)
+	return ok && (kind == domain.KindNote || kind == domain.KindURL)
 }
 
 func named(name string, extensions []string) bool {

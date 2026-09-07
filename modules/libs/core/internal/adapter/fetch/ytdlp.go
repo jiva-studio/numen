@@ -16,21 +16,21 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
-// videos is the provider for what a site publishes as a video, which it fetches
-// by running yt-dlp. The sites it supports are the sites that tool knows, and a
-// machine without it supports none.
+// ytDLP is the provider that fetches by running yt-dlp. The sites it supports
+// are the sites that tool knows, and a machine without it supports none.
 //
-// ffmpeg is beside it because a video's sound arrives in whatever container the
-// site had and a transcriber opens one.
-type videos struct {
+// ffmpeg is beside it because sound arrives in whatever container the site had
+// and a transcriber opens one, and because picture and sound served apart are
+// one file only once they are joined.
+type ytDLP struct {
 	command program
 	sound   program
 	version string
 }
 
-func newVideos(ctx context.Context, c Config) *videos {
+func newYtDLP(ctx context.Context, c Config) *ytDLP {
 	command := resolved(c.Video, "yt-dlp")
-	return &videos{
+	return &ytDLP{
 		command: command,
 		sound:   resolved(c.Sound, "ffmpeg"),
 		version: version(ctx, command),
@@ -38,9 +38,9 @@ func newVideos(ctx context.Context, c Config) *videos {
 }
 
 // Supports is a video, on a machine holding the tool that gets at one.
-func (v *videos) Supports(at domain.WebAddress) bool { return at.IsVideo() && v.command.held() }
+func (v *ytDLP) Supports(at domain.WebAddress) bool { return at.IsVideo() && v.command.held() }
 
-func (v *videos) Fetching(domain.WebAddress) port.FetchModel {
+func (v *ytDLP) Fetching(domain.WebAddress) port.FetchModel {
 	return port.FetchModel{Tool: "yt-dlp", Version: v.version}
 }
 
@@ -58,7 +58,7 @@ func version(ctx context.Context, tool program) string {
 }
 
 // Metadata is what the site says about the video, taking none of it.
-func (v *videos) Metadata(ctx context.Context, at domain.WebAddress) (port.Metadata, error) {
+func (v *ytDLP) Metadata(ctx context.Context, at domain.WebAddress) (port.Metadata, error) {
 	said, err := run(ctx, v.command, nil, "--dump-single-json", "--no-playlist", at.URL)
 	if err != nil {
 		return port.Metadata{}, err
@@ -101,7 +101,7 @@ func languages(tracks map[string][]struct{}) []string {
 // They are asked for as the format that carries one stretch of speech to a cue.
 // What a site draws as two lines scrolling is one stretch said once, and asking
 // for the format a player is fed would put every line into the index twice.
-func (v *videos) Subtitles(
+func (v *ytDLP) Subtitles(
 	ctx context.Context, at domain.WebAddress, language string,
 ) ([]transcript.Cue, error) {
 	if language == "" {
@@ -140,7 +140,7 @@ func (v *videos) Subtitles(
 
 // Audio is a video's sound as the container a transcriber opens: one channel at
 // 16 kHz, which is what a model takes.
-func (v *videos) Audio(ctx context.Context, at domain.WebAddress, into io.Writer) error {
+func (v *ytDLP) Audio(ctx context.Context, at domain.WebAddress, into io.Writer) error {
 	if !v.sound.held() {
 		return ErrNoTool
 	}
@@ -177,26 +177,70 @@ func (v *videos) Audio(ctx context.Context, at domain.WebAddress, into io.Writer
 	return nil
 }
 
-// Download is the video as a person plays it, in the one container every player
-// this window is drawn in opens.
-func (v *videos) Download(
+// Download is what is at the address as a person plays it, in the one container
+// every player this window is drawn in opens.
+//
+// Picture and sound are asked for separately and put in one file: a site that
+// serves them apart has no single stream to take, and one that serves them
+// together is taken as it stands. Joining them is a file's work, so the copy
+// lands beside this run before it is handed on.
+func (v *ytDLP) Download(
 	ctx context.Context, at domain.WebAddress, into io.Writer,
 ) (port.Download, error) {
-	// The one container is asked for by name. A site with nothing in it says so,
-	// and what arrives is what the copy is served as.
-	taking := v.command.started(ctx, "-f", "best[ext=mp4]/mp4", "--no-playlist", "-o", "-", at.URL)
+	folder, err := os.MkdirTemp("", "numen-copy-")
+	if err != nil {
+		return port.Download{}, err
+	}
+	defer os.RemoveAll(folder)
+
+	arguments := []string{
+		"-f", copyFormat, "--merge-output-format", "mp4", "--no-playlist",
+		"-o", filepath.Join(folder, "copy.%(ext)s"), at.URL,
+	}
+	if where := v.sound.at(); where != "" {
+		arguments = append([]string{"--ffmpeg-location", where}, arguments...)
+	}
+	taking := v.command.started(ctx, arguments...)
 	var said bytes.Buffer
-	taking.Stdout, taking.Stderr = into, &said
+	taking.Stdout, taking.Stderr = &said, &said
 	if err := taking.Run(); err != nil {
 		if stopped := ctx.Err(); stopped != nil {
 			return port.Download{}, stopped
 		}
 		return port.Download{}, fmt.Errorf("%w: %s", err, lastLine(said.String()))
 	}
-	return port.Download{MediaType: "video/mp4", Extension: ".mp4"}, nil
+
+	// What the container ended up being is read off the folder: codecs that mp4
+	// cannot hold are written to a container that can, and the name says which.
+	written, err := os.ReadDir(folder)
+	if err != nil {
+		return port.Download{}, err
+	}
+	if len(written) != 1 {
+		return port.Download{}, fmt.Errorf("%w: %s", port.ErrNothingFetched, lastLine(said.String()))
+	}
+	name := filepath.Join(folder, written[0].Name())
+
+	copied, err := os.Open(name)
+	if err != nil {
+		return port.Download{}, err
+	}
+	defer copied.Close()
+	if _, err := io.Copy(into, copied); err != nil {
+		return port.Download{}, err
+	}
+	extension := filepath.Ext(name)
+	return port.Download{MediaType: domain.MediaType(name), Extension: extension}, nil
 }
 
+// copyFormat is what a copy is asked for: picture and sound in one file, in the
+// codecs a player opens where the site has them, and in whatever it has where
+// it does not. A stream carrying both is taken whole; one carrying picture
+// alone is never the answer, because a copy nobody can hear is not a copy.
+const copyFormat = "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/" +
+	"best[vcodec!=none][acodec!=none]/bestvideo*+bestaudio/best"
+
 // Article is a page's prose, which a video is not.
-func (v *videos) Article(context.Context, domain.WebAddress) (port.Article, error) {
+func (v *ytDLP) Article(context.Context, domain.WebAddress) (port.Article, error) {
 	return port.Article{}, port.ErrNothingFetched
 }

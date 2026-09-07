@@ -47,6 +47,7 @@ const opened = (open: readonly string[]): FilesTabState => {
     decks: async (at, name) => `${at}${name}`,
     stencils: async (at, name) => `${at}${name}`,
     presets: async (at, name) => `${at}${name}`,
+    imports: async () => '',
     says: () => {},
   })
 

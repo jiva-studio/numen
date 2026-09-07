@@ -248,8 +248,9 @@ func TestACopyIsFetchedAndTakenAway(t *testing.T) {
 		t.Fatalf("a note with a copy carries %v", carrying(t, api, pointed))
 	}
 
-	if _, err := api.DeleteArtifact(t.Context(),
-		connect.NewRequest(&v1.DeleteArtifactRequest{Path: pointed})); err != nil {
+	if _, err := api.DeleteArtifact(t.Context(), connect.NewRequest(&v1.DeleteArtifactRequest{
+		Path: pointed, Kind: v1.ArtifactKind_ARTIFACT_KIND_COPY,
+	})); err != nil {
 		t.Fatal(err)
 	}
 	if carrying(t, api, pointed)[copyOf] != v1.State_STATE_NONE {

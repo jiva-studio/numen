@@ -13,7 +13,7 @@ import { documents, recordings } from './assets'
 import { troubleWords } from '@numen/wire'
 import { running } from './artifacts'
 import { cards } from './cards/vault'
-import type { Attention, ArtifactStates, VaultList } from './core'
+import type { Attention, ArtifactStates, Source, VaultList } from './core'
 import { showing } from './showing'
 import { view } from './plex/view'
 import { openDocument } from './document/open'
@@ -61,7 +61,7 @@ import { settingsStore } from './settings/store'
 import { settling } from './settings/controls/kind'
 import { editingSettingsFile } from './settings/file/kind'
 import { documentKind, documenting } from './document/kind'
-import { recordingKind } from './recording/kind'
+import { RECORDINGS, recordingKind, URLS, type MediaTabDeps } from './recording/kind'
 import { transcript } from './recording/transcript'
 import { playable } from './recording/player'
 import { filesKind } from './files/kind'
@@ -155,28 +155,7 @@ export const useWindow = () => {
   /** Whether this window can play a kind of sound, asked of it once. */
   const plays = playable()
 
-  // A link note is read where a recording is: what is at its address plays, and
-  // the words fetched for it are the text of its tab.
-  const noted = noting(
-    core,
-    notes,
-    changes,
-    held.handle,
-    puts,
-    (path) => transcript(recordings, path, { plays }),
-    {
-      runs: (id, path, called) =>
-        carries(id, {
-          ...where(),
-          path: '',
-          title: called,
-          file: path,
-          source: 'note',
-          made: makes.value.get(path) ?? {},
-        }),
-      canRun: (run) => runs.canRun(run),
-    },
-  )
+  const noted = noting(core, notes, changes, held.handle, puts)
 
   /** The decks and the stencils the window has open, each saved the way a note is. */
   const decks = decking(cards, presets, held.handle, puts)
@@ -251,31 +230,43 @@ export const useWindow = () => {
   /** The document tabs, each reading the document it is filed at. */
   const read = documentKind(held.handle, (path) => documenting(openDocument(documents, path)), puts)
 
-  /** What this window can play, asked once for each kind of sound. */
+  /** What a command asked for in one of these tabs is over: the file it holds. */
+  const over = (source: Source): MediaTabDeps => ({
+    runs: (id, path, called) =>
+      carries(id, {
+        ...where(),
+        path: '',
+        title: called,
+        file: path,
+        source,
+        made: makes.value.get(path) ?? {},
+      }),
+    canRun: (run) => runs.canRun(run),
+  })
+
   /** The recording tabs, each playing the recording it is filed at. */
   const heard = recordingKind(
     held.handle,
     (path) => transcript(recordings, path, { plays }),
-    {
-      runs: (id, path, called) =>
-        carries(id, {
-          ...where(),
-          path: '',
-          title: called,
-          file: path,
-          source: 'recording',
-          made: makes.value.get(path) ?? {},
-        }),
-      canRun: (run) => runs.canRun(run),
-    },
+    over('recording'),
     puts,
+    RECORDINGS,
+  )
+
+  /** The url tabs, each holding what was fetched from the address it points at. */
+  const pointed = recordingKind(
+    held.handle,
+    (path) => transcript(recordings, path, { plays }),
+    over('url'),
+    puts,
+    URLS,
   )
 
   // A transcript grows while a run goes, and the list of work is the only word of
   // it the window gets.
   watch(tasks, () => {
     heard.ticked(tasks.value)
-    noted.ticked(tasks.value.map((task) => task.about))
+    pointed.ticked(tasks.value)
   })
 
   /** Where the window is taken when something is chosen, wherever it was chosen. */
@@ -311,10 +302,10 @@ export const useWindow = () => {
       makeDeck: (title, folder) => cards.makeDeck(title, folder),
       makeStencil: (title, folder, fields) => cards.makeStencil(title, folder, fields),
       makesPreset: (title, folder) => presets.makes(title, folder),
-      makesLink: async (address, folder) => {
-        const made = await core.create({ title: address, folder, links: [], url: address })
-        // What is at the address is fetched as the note is made: the person
-        // pasted it to have what is there, and the note is called what the
+      makesURL: async (address, folder) => {
+        const made = await core.makeURL(address, folder)
+        // What is at the address is fetched as the file is made: the person
+        // pasted it to have what is there, and the file is called what the
         // address calls itself once that is known.
         if (made.path) void fetches(made.path)
         return made
@@ -349,6 +340,7 @@ export const useWindow = () => {
     decks: (folder, name) => made.makes('deck', folder, name),
     stencils: (folder, name) => made.makes('stencil', folder, name),
     presets: (folder, name) => made.makes('preset', folder, name),
+    imports: (folder, address) => made.imports(folder, address),
     says: (text) => told(text, 'refusal'),
     canRun: (run) => runs.canRun(run),
   })
@@ -360,6 +352,7 @@ export const useWindow = () => {
     agents.kind,
     read.kind,
     heard.kind,
+    pointed.kind,
     files.kind,
     decks.kind,
     stencils.kind,
@@ -630,9 +623,17 @@ export const useWindow = () => {
         void carrying(path)
         return outcome
       },
-      drops: async (path) => {
-        const able = await running.drops(path)
-        if (able) heard.dropped(path)
+      deletesTranscript: async (path) => {
+        const able = await running.deletesTranscript(path)
+        if (able) {
+          heard.deleted(path)
+          pointed.deleted(path)
+        }
+        void carrying(path)
+        return able
+      },
+      deletesCopy: async (path) => {
+        const able = await running.deletesCopy(path)
         void carrying(path)
         return able
       },

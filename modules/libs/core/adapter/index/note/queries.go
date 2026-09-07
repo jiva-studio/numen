@@ -104,35 +104,6 @@ func (q *Queries) Named(ctx context.Context, vaultID domain.VaultID, name string
 	return out, rows.Err()
 }
 
-// Addresses is every address the notes of one vault point at, each once. A
-// sweep asks it before and after taking notes out, and what has gone from the
-// answer is what nothing names any more.
-func (q *Queries) Addresses(ctx context.Context, vaultID domain.VaultID) ([]string, error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
-	if errors.Is(err, errNoVault) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := q.db.QueryContext(ctx, stmt.Get("addresses"), vault)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var out []string
-	for rows.Next() {
-		var address string
-		if err := rows.Scan(&address); err != nil {
-			return nil, err
-		}
-		out = append(out, address)
-	}
-	return out, rows.Err()
-}
-
 // Stencils is every stencil one vault holds, by path.
 func (q *Queries) Stencils(ctx context.Context, vaultID domain.VaultID) ([]domain.Stencil, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)

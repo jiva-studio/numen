@@ -63,15 +63,19 @@ export const running: ArtifactRunner = {
     const of: ArtifactOf = held.transcript === undefined ? 'article' : 'transcript'
     return running.makes(path, of)
   },
-  drops: async (path) => {
-    try {
-      await artifacts.deleteArtifact({ path })
-      return true
-    } catch (error) {
-      if (Code.Unimplemented === (error as ConnectError).code) return false
-      throw error
-    }
-  },
+  deletesTranscript: (path) => taken(path, Kinds.UNSPECIFIED),
+  deletesCopy: (path) => taken(path, Kinds.COPY),
+}
+
+/** One of what a file carries, taken away, and whether this build can do it. */
+const taken = async (path: string, kind: Kinds): Promise<boolean> => {
+  try {
+    await artifacts.deleteArtifact({ path, kind })
+    return true
+  } catch (error) {
+    if (Code.Unimplemented === (error as ConnectError).code) return false
+    throw error
+  }
 }
 
 /**

@@ -234,6 +234,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	held := &opened.vaults
 	api.Files.Move = &held.Move
 	api.Files.Import = &held.Import
+	api.Files.URLs = &source.CreateURL{Writers: cfg.VaultWriters(), Index: opened.level}
 	api.Vaults = Vaults{
 		Registry: held.Registry,
 		Add:      &held.Add,

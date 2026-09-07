@@ -3,27 +3,26 @@ package mcp
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
-// NewLinkNote is one note a caller wants made out of an address: where it goes,
-// and whether the video at that address is wanted on this disk.
-type NewLinkNote struct {
+// NewURL is one address a caller wants a file made for: where it goes, and
+// whether the video at that address is wanted on this disk.
+type NewURL struct {
 	URL    string `json:"url" jsonschema:"the address to import, as a browser would go to it"`
-	Folder string `json:"folder,omitempty" jsonschema:"where to file the note, relative to the vault folder; the root by default"`
-	Body   string `json:"body,omitempty" jsonschema:"the markdown to start the note with, above what is fetched"`
+	Folder string `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
 	Copy   bool   `json:"copy,omitempty" jsonschema:"fetch the video itself onto this disk as well; a copy is large, so ask only when it is wanted"`
 }
 
-// ImportOutcome is the note that now exists and what was fetched into it.
+// ImportOutcome is the file that now exists and what was fetched for it.
 type ImportOutcome struct {
-	Path  string `json:"path" jsonschema:"where the note stands in the vault"`
-	Title string `json:"title" jsonschema:"what the note is called, which is what is at the address once that is known"`
+	Path  string `json:"path" jsonschema:"where the file stands in the vault"`
+	Title string `json:"title" jsonschema:"what it is called, which is what is at the address once that is known"`
 	// Producer is what brought the text back, and Words how much of it there
 	// is. Both are empty where the address published none of what was asked for.
 	Producer string `json:"producer,omitempty" jsonschema:"what fetched the text: captions for a video's words, article for a page's prose"`
@@ -33,44 +32,45 @@ type ImportOutcome struct {
 	// for or the video was over the size the settings allow.
 	CopiedBytes int64  `json:"copied_bytes,omitempty" jsonschema:"how large the copy on this disk is"`
 	CopyRefused string `json:"copy_refused,omitempty" jsonschema:"why no copy was made, empty when one was or none was asked for"`
-	Refused     string `json:"refused,omitempty" jsonschema:"why the address was not fetched; the note stands either way"`
+	Refused     string `json:"refused,omitempty" jsonschema:"why the address was not fetched; the file stands either way"`
 }
 
-// addImportTool serves the one tool that makes a note out of an address.
+// addImportTool serves the one tool that makes a file out of an address.
 func addImportTool(server *sdk.Server, core Core) {
-	if core.Notes.Import == nil {
+	if core.Sources.Import == nil || core.Sources.URLs == nil {
 		return
 	}
 	sdk.AddTool(server, &sdk.Tool{
-		Name:  "note_import",
-		Title: "Import an address",
-		Description: "Make a note pointing at a web address and fetch what is there. " +
+		Name:  "url_import",
+		Title: "Import a url",
+		Description: "Make a file holding a web address and fetch what is there. " +
 			"A video's published words come back as words with the times they were " +
 			"said at, and any other page comes back as the prose it is written " +
-			"around; either is searched with the note from then on and read by " +
-			"`note_read`. The note is named after what is at the address, so no " +
-			"title is asked for. `copy` also fetches the video itself onto this " +
-			"disk, which is a large file and is worth asking for only when somebody " +
-			"wants to watch it without the site. An address nothing here reaches, " +
-			"and one that refuses an unattended request, say so and leave the note " +
-			"pointing where it points.",
-	}, func(ctx context.Context, _ *sdk.CallToolRequest, in NewLinkNote) (*sdk.CallToolResult, ImportOutcome, error) {
+			"around; either is searched from then on and read by `artifact_read`. " +
+			"The file is named after what is at the address, so no title is asked " +
+			"for.\n\nIt holds the address and nothing else: what you write about " +
+			"what is there is a note of your own, pointing at this file. `copy` " +
+			"also fetches the video itself onto this disk, which is a large file " +
+			"and is worth asking for only when somebody wants to watch it without " +
+			"the site. An address nothing here reaches, and one that refuses an " +
+			"unattended request, say so and leave the file standing.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in NewURL) (*sdk.CallToolResult, ImportOutcome, error) {
 		at, err := domain.ParseWebAddress(in.URL)
 		if err != nil {
 			return nil, ImportOutcome{}, err
 		}
 		v := core.shown().Vault
-		// The note is named by the address until what is there says what it is
+		// It is named by the address until what is there says what it is
 		// called, which is what the import does next.
-		made, err := core.Notes.Create.Execute(ctx, v, note.NewNote{
-			Title: at.URL, Body: in.Body, Folder: in.Folder, Address: at,
+		made, err := core.Sources.URLs.Execute(ctx, v, source.NewURL{
+			Address: at, Folder: in.Folder,
 		})
 		if err != nil {
 			return nil, ImportOutcome{Path: made.Path, Title: at.URL, Refused: refusing(err)}, nil
 		}
 
 		out := ImportOutcome{Path: made.Path, Title: made.Title}
-		fetched, err := core.Notes.Import.Execute(ctx, v, made.Path)
+		fetched, err := core.Sources.Import.Execute(ctx, v, made.Path)
 		if err != nil {
 			out.Refused = refusing(err)
 			return nil, out, nil
@@ -81,26 +81,28 @@ func addImportTool(server *sdk.Server, core Core) {
 			out.Title = fetched.Title
 		}
 		if in.Copy {
-			out.CopiedBytes, out.CopyRefused = copying(ctx, core, v, out.Path)
+			out.CopiedBytes, out.CopyRefused = copies(ctx, core, v, out.Path)
 		}
 		return nil, out, nil
 	})
 }
 
-// copying fetches the video at a note's address, and says why where it did not.
-func copying(
+// copies fetches the video at an address, and says why where it did not.
+func copies(
 	ctx context.Context, core Core, v domain.Vault, path string,
 ) (int64, string) {
-	got, err := core.Notes.Import.Copy(ctx, v, path)
+	got, err := core.Sources.Import.Copy(ctx, v, path)
 	switch {
-	case errors.Is(err, source.ErrNotALink):
+	case errors.Is(err, source.ErrNotAURL):
 		return 0, "there is no video at that address"
 	case err != nil:
 		return 0, refusing(err)
-	case got.TooLarge:
-		return 0, "the video is larger than importing.copy_under_mb"
+	case got.TooLarge():
+		return 0, fmt.Sprintf(
+			"the video is %d MB, over the %d MB importing.copy_max_size_mb allows",
+			got.Bytes>>20, got.Limit>>20)
 	case got.Busy:
-		return 0, "another run is fetching this video now"
+		return 0, "another run is fetching this video"
 	}
 	return got.Bytes, ""
 }

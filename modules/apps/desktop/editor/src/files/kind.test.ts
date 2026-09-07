@@ -88,6 +88,10 @@ const tab = (refuses = false) => {
       vault[folder] = [...(vault[folder] ?? []), file(made, { type: 'preset' })]
       return made
     },
+    imports: async (folder, address) => {
+      done.push(`imports ${folder === ROOT ? '/' : folder} ${address}`)
+      return refuses ? '' : 'made.url'
+    },
     says: (text) => void done.push(`says ${text}`),
   })
   return { done, list, one: gestures }
@@ -384,6 +388,7 @@ describe('rows let go of', () => {
       decks: async () => '',
       stencils: async () => '',
       presets: async () => '',
+      imports: async () => '',
       says: () => {},
     })
     await list.opens(ROOT)

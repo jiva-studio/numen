@@ -131,7 +131,7 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "link_update",
-		Title: "Change links",
+		Title: "Update links",
 		Description: "Change what an existing link says about itself — its role, its " +
 			"type, its label, why it exists — without changing where it goes. Fields " +
 			"left out are cleared; role left out is kept. Because a field left out is " +

@@ -1,4 +1,6 @@
-<script setup lang="ts">
+/** The icon drawn beside a name, for whatever the vault holds at that row. */
+const entryIcon = (id: string, open: boolean): LucideIcon =>
+  iconOfEntry(props.state.list.entryAt(id), open)<script setup lang="ts">
 /**
  * A files tab: the tree of the vault, the menu on a row of it, and what this
  * tab could not read.
@@ -10,11 +12,12 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { Menu, Tree } from '@numen/ui'
 import type { Position, Row, RowMarker } from '@numen/ui'
-import { Book, File, Folder, FolderOpen, type LucideIcon } from '@lucide/vue'
-import type { NoteType, Source } from '../core'
-import { iconFor, iconOfNote } from '../icons'
+import type { LucideIcon } from '@lucide/vue'
+
+import { iconFor, iconOfEntry } from '../icons'
 import type { DropPosition, FilesTabState } from './kind'
 import type { ListingRow } from './listing'
+import { addressIn, carriesAddress } from './dropping'
 import { itemsFor } from './menu'
 import { WORDS as words } from './words'
 
@@ -29,6 +32,19 @@ const dropTarget = computed<RowMarker>(() => ({
   attribute: 'data-file-drop-target',
   valueFor: (row: string | null) => props.state.folderFor(row),
 }))
+
+/** An address dragged out of a browser, made into the file it is kept in. */
+const dropped = (event: DragEvent) => {
+  const address = addressIn(event.dataTransfer?.getData('text/uri-list') ?? '')
+  if (!address) return
+  event.preventDefault()
+  void props.state.imports(address)
+}
+
+/** A drag carrying an address is one this tab takes. */
+const over = (event: DragEvent) => {
+  if (carriesAddress(event.dataTransfer?.types)) event.preventDefault()
+}
 
 /** The tree as the component takes it, a path standing for each row. */
 const drawn = (rows: readonly ListingRow[]): Row[] =>
@@ -47,27 +63,9 @@ const renaming = computed({
   set: (row: string | null) => props.state.renames(row),
 })
 
-/** What the vault holds at a row: a folder, a note of one of three kinds, or a file. */
-const kindOf = (id: string): Source | NoteType | 'folder' => {
-  const entry = props.state.list.entryAt(id)
-  if (!entry) return 'other'
-  if (entry.folder) return 'folder'
-  return entry.kind === 'note' ? entry.type : entry.kind
-}
-
-/**
- * The icon drawn beside a name. A folder says whether what it holds is drawn:
- * the tree draws nothing else for it.
- */
-const entryIcon = (id: string, open: boolean): LucideIcon => {
-  const kind = kindOf(id)
-  if (kind === 'folder') return open ? FolderOpen : Folder
-  if (kind === 'book') return Book
-  if (kind === 'note' || kind === 'deck' || kind === 'stencil' || kind === 'preset') {
-    return iconOfNote(kind)
-  }
-  return File
-}
+/** The icon drawn beside a name, for whatever the vault holds at that row. */
+const entryIcon = (id: string, open: boolean): LucideIcon =>
+  iconOfEntry(props.state.list.entryAt(id), open)
 
 /** What the menu offers: on the row it was asked for on, or off every row. */
 const items = computed(() => {
@@ -78,7 +76,6 @@ const items = computed(() => {
   const on = {
     source: entry?.kind ?? 'other',
     folder: entry?.folder ?? false,
-    link: entry?.type === 'link',
   }
   return itemsFor(on, props.state.over(asked.path).length > 1, props.state.canRun)
 })
@@ -93,7 +90,7 @@ onUnmounted(() => globalThis.removeEventListener('focus', again))
 </script>
 
 <template>
-  <div class="files">
+  <div class="files" @dragover="over" @drop="dropped">
     <p v-if="props.state.list.trouble.value" class="caution">
       {{ props.state.list.trouble.value }}
     </p>

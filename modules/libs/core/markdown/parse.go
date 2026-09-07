@@ -69,14 +69,8 @@ func Parse(ref domain.Fingerprint, raw []byte) domain.Note {
 			n.Type = domain.NoteType(name)
 		default:
 			problems = append(problems,
-				"type "+name+" is not a note, a deck, a stencil, a preset or a link")
+				"type "+name+" is not a note, a deck, a stencil or a preset")
 		}
-	}
-	// Where a link note points is read where every kind of note's own keys are
-	// read, and what is wrong with it is said against the note that wrote it.
-	if n.Type == domain.TypeLink {
-		_, wrong := domain.ReadAddress(n.Frontmatter)
-		problems = append(problems, wrong...)
 	}
 
 	n.Problems = problems

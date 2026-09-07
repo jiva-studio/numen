@@ -235,6 +235,8 @@ export interface Words {
   readonly unrunnable: string
   /** What an artifact of a file now stands at, in words a person reads. */
   readonly made: Record<Artifact, Record<ArtifactState, string>>
+  /** What a run over the address a note points at came to. */
+  readonly fetched: Record<ArtifactState, string>
 }
 
 /** One command, carried out. */
@@ -272,14 +274,19 @@ const carried: Record<string, CommandHandler> = {
     began(invocation, await on.runs.makes(invocation.file, 'transcript'), on, words),
   recognise: async (invocation, on, words) =>
     began(invocation, await on.runs.makes(invocation.file, 'ocr'), on, words),
-  fetch: async (invocation, on, words) =>
+  downloadText: async (invocation, on, words) =>
     began(invocation, await on.runs.fetches(invocation.file), on, words),
-  download: async (invocation, on, words) =>
+  downloadCopy: async (invocation, on, words) =>
     began(invocation, await on.runs.makes(invocation.file, 'copy'), on, words),
   proofread: async (invocation, on, words) =>
     began(invocation, await on.runs.corrects(invocation.file), on, words),
-  dropTranscript: async (invocation, on, words) => {
-    if (await on.runs.drops(invocation.file)) return
+  deleteText: async (invocation, on, words) => {
+    if (await on.runs.deletesTranscript(invocation.file)) return
+    on.runSupport.cannotRun(invocation.id)
+    on.says(words.unrunnable, 'refusal')
+  },
+  deleteCopy: async (invocation, on, words) => {
+    if (await on.runs.deletesCopy(invocation.file)) return
     on.runSupport.cannotRun(invocation.id)
     on.says(words.unrunnable, 'refusal')
   },
@@ -392,8 +399,8 @@ const moves = async (invocation: CommandInvocation, on: CommandDeps, words: Word
   if (answer.refusal) on.says(words.refused[answer.refusal], 'refusal')
 }
 
-/** What an artifact stands at while a run is under way, which is said as a report. */
-const UNDER_WAY: readonly ArtifactState[] = ['queued', 'running']
+/** What an artifact stands at when the ask did not come off, which is said as a refusal. */
+const WENT_WRONG: readonly ArtifactState[] = ['none', 'stopped', 'empty', 'failed']
 
 /**
  * An artifact asked for over a file. What it now stands at is one troubleWords,
@@ -408,9 +415,13 @@ const began = (invocation: CommandInvocation, outcome: Outcome, on: CommandDeps,
   }
   // A file nothing here could read carries what the run said about it, and that
   // stands after the troubleWords.
-  const why = words.made[outcome.of][outcome.made]
+  //
+  // A run over an address is its own answer: it fetches whenever it is asked,
+  // and what it fetched is not what a model heard in a recording.
+  const why =
+    invocation.id === 'downloadText' ? words.fetched[outcome.made] : words.made[outcome.of][outcome.made]
   const said = outcome.error ? `${why} ${outcome.error}` : why
-  on.says(said, UNDER_WAY.includes(outcome.made) ? 'report' : 'refusal')
+  on.says(said, WENT_WRONG.includes(outcome.made) ? 'refusal' : 'report')
 }
 
 /** An empty folder, made under the path that was typed. */

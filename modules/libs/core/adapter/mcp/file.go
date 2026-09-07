@@ -13,32 +13,32 @@ import (
 func addFileReadingTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "file_read",
-		Title: "Read a run of a file",
+		Title: "Read a range of a file",
 		Description: "Read a stretch of any file the vault holds, by its path from the " +
 			"vault folder. Reach for this when a path is named and the file behind it is " +
 			"neither a note nor a document the vault has read — a transcript somebody " +
 			"typed, an export, whatever they put in the folder — and when a file is long " +
-			"enough that reading it whole would take the answer: ask for the run " +
-			"beginning at the previous run's start plus its length to read on. The answer " +
+			"enough that reading it whole would take the answer: ask for the range " +
+			"beginning at the previous range's start plus its length to read on. The answer " +
 			"says how long the whole file is. A note's prose, without its frontmatter, is " +
 			"note_read; the text of a book or a recording is source_read.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path   string `json:"path" jsonschema:"the file's path relative to the vault folder, with forward slashes"`
-		Start  int    `json:"start,omitempty" jsonschema:"where the run begins in the file, in bytes; the beginning of the file by default"`
+		Start  int    `json:"start,omitempty" jsonschema:"where the range begins in the file, in bytes; the beginning of the file by default"`
 		Length int    `json:"length,omitempty" jsonschema:"how much to read, in bytes; as much as one call carries by default"`
 	}) (*sdk.CallToolResult, struct {
 		Text    string `json:"text,omitempty"`
-		Start   int    `json:"start" jsonschema:"where the run begins, which is what was asked for held within the file"`
-		Length  int    `json:"length" jsonschema:"how long the run is"`
+		Start   int    `json:"start" jsonschema:"where the range begins, which is what was asked for held within the file"`
+		Length  int    `json:"length" jsonschema:"how long the range is"`
 		Size    int    `json:"size" jsonschema:"how long the whole file is, in bytes"`
-		Refused string `json:"refused,omitempty" jsonschema:"why nothing came back, empty when the run did"`
+		Refused string `json:"refused,omitempty" jsonschema:"why nothing came back, empty when the range did"`
 	}, error) {
 		type out = struct {
 			Text    string `json:"text,omitempty"`
-			Start   int    `json:"start" jsonschema:"where the run begins, which is what was asked for held within the file"`
-			Length  int    `json:"length" jsonschema:"how long the run is"`
+			Start   int    `json:"start" jsonschema:"where the range begins, which is what was asked for held within the file"`
+			Length  int    `json:"length" jsonschema:"how long the range is"`
 			Size    int    `json:"size" jsonschema:"how long the whole file is, in bytes"`
-			Refused string `json:"refused,omitempty" jsonschema:"why nothing came back, empty when the run did"`
+			Refused string `json:"refused,omitempty" jsonschema:"why nothing came back, empty when the range did"`
 		}
 		contents, err := file.Read{Readers: core.Readers}.Execute(
 			ctx, core.shown().Vault, in.Path, in.Start, in.Length)
@@ -67,7 +67,7 @@ func unread(outcome file.ReadOutcome) string {
 	case file.AFolder:
 		return "this path holds a folder"
 	case file.NotText:
-		return "this run of the file is not text: some of it is not valid UTF-8"
+		return "this range of the file is not text: some of it is not valid UTF-8"
 	default:
 		return string(outcome)
 	}

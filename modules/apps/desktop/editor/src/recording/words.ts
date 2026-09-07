@@ -4,7 +4,7 @@
  */
 export const TRANSCRIBE = 'transcribe'
 export const PROOFREAD = 'proofread'
-export const DROP = 'dropTranscript'
+export const DELETE_TEXT = 'deleteText'
 
 /** What a recording tab says: the player, and the transcript of the recording. */
 export const WORDS = {
@@ -16,12 +16,14 @@ export const WORDS = {
   more: 'More',
   /** Nothing has transcribed this recording. */
   silence: 'No transcript yet.',
+  /** Nothing has been fetched for a url, which is where its words come from. */
+  unfetched: 'Nothing has been fetched from this address yet.',
   /** The run that writes the words of the recording down, asked for here. */
   transcribe: 'Transcribe',
   /** The words written down, put right by a proofreader, asked for here. */
   proofread: 'Proofread transcript',
   /** The words written down, taken away, asked for here where they stand. */
-  drop: 'Delete transcript',
+  deleteText: 'Delete transcript',
   /** A run is going, and more words arrive as they are written down. */
   transcribing: 'Still transcribing…',
   /**
@@ -29,6 +31,9 @@ export const WORDS = {
    * words of the recording are the transcript's to say.
    */
   unplayable: 'This system cannot play sound here.',
+  /** The frame what a url points at plays in, and the bar that resizes it. */
+  playing: 'What this url points at',
+  taller: 'Drag to resize the player',
   /** The player stopped and said nothing a code names. */
   unreadable: 'The recording could not be played.',
   /** The person, or the window, stopped the loading. */

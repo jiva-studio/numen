@@ -54,16 +54,17 @@ The window a person runs their cards in opens neither: an answer there says wher
 
 ## The tools
 
-Six families and a reader of files, served over the vault's own endpoint.
+Seven families and a reader of files, served over the vault's own endpoint.
 
 | Family | What it is for |
 | --- | --- |
-| `note_*` | search the vault, look notes up by path and by the name a link writes, read and rewrite their prose, edit a stretch, rename, move, remove, import a web address, and put one in front of the person |
-| `file_read` | read a run of any file the vault holds, by its path from the vault folder |
+| `note_*` | search the vault, look notes up by path and by the name a link writes, read and rewrite their prose, edit a stretch, rename, move, remove, and put one in front of the person |
+| `file_read` | read a range of any file the vault holds, by its path from the vault folder |
 | `link_*` | add, change, remove and list the links a note carries |
 | `card_*` | list the stencils a vault holds, read a deck and the cards in it, and make, change and remove one card at a time |
-| `source_*` | list the documents a vault holds, read a run of one's text, ask for a scanned one to be read, and show the person a passage |
-| `artifact_*` | what this application made from one file and keeps beside it — a transcript, an article, a reading, a copy — and the text of one, asked for by which of them it is |
+| `source_*` | list the documents a vault holds, read a range of one's text, ask for a scanned one to be read, and show the person a passage |
+| `artifact_*` | what this application made from one file and keeps beside it — a transcript, an article, an ocr, a copy — a range of one as it stands on disk, and a stretch of a transcript put right |
+| `url_import` | make a file holding a web address and fetch what is there, in one call |
 | `vault_*` | show the vault and what a scan could not act on, and list, add, rename, forget and open vaults |
 
 A call that carries names takes as many as are wanted — at most fifty for a lookup, at most ten for reading prose. A call that carries the text of a document takes one: creating a note, writing one and editing one are each a call of their own, and each is filed as it is finished.
@@ -72,7 +73,7 @@ A deck is as long as somebody made it, so `card_read` answers with at most fifty
 
 A tool that writes returns only once the index is level again. An agent that creates a note and searches for it in the next breath finds it.
 
-`file_read` is the path a person names when the file behind it is neither a note nor a document the vault has read — a transcript somebody typed, an export, whatever they put in the folder — and it is how a file too long to answer with is read a run at a time. It takes a path from the vault root and refuses every other, including one that reaches outside through a link. What the vault passes over it passes over too: the application's own folder, and every name the vault's ignore rules match. The tools write notes, so a file of another kind is read here and not written.
+`file_read` is the path a person names when the file behind it is neither a note nor a document the vault has read — a transcript somebody typed, an export, whatever they put in the folder — and it is how a file too long to answer with is read a range at a time. It takes a path from the vault root and refuses every other, including one that reaches outside through a link. What the vault passes over it passes over too: the application's own folder, and every name the vault's ignore rules match. The tools write notes, so a file of another kind is read here and not written.
 
 ## The reviewer's surface
 

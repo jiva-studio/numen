@@ -11,9 +11,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
-// importCommand fetches what is at the address a link note points at.
+// importCommand fetches what is at the address a url file holds.
 //
-// The window asks for it as the note is made; this is the hand asking for one,
+// The window asks for it as the file is made; this is the hand asking for one,
 // and `--again` is how a person asks a site for its words afresh.
 func importCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	again, copying := false, false
@@ -30,7 +30,7 @@ func importCommand(ctx context.Context, out io.Writer, deps Deps, args []string)
 	}
 	args = rest
 	if len(args) != 2 {
-		return errors.New("usage: numen-cli import <vault> <note> [--again] [--copy]")
+		return errors.New("usage: numen-cli import <vault> <url> [--again] [--copy]")
 	}
 	v, err := findVault(deps, args[0])
 	if err != nil {
@@ -85,10 +85,10 @@ func copied(
 	switch {
 	case res.Busy:
 		fmt.Fprintf(out, "%s is already being fetched, and nothing was done\n", res.Path)
-	case res.TooLarge:
-		fmt.Fprintf(out, "%s would take %s, over importing.copy_under_mb\n",
-			res.Path, sized(res.Bytes))
-	case res.Held:
+	case res.TooLarge():
+		fmt.Fprintf(out, "%s would take %s, over the %s a copy may be\n",
+			res.Path, sized(res.Bytes), sized(res.Limit))
+	case res.Existed:
 		fmt.Fprintf(out, "a copy of %s is already here\n", sized(res.Bytes))
 	default:
 		fmt.Fprintf(out, "a copy of %s is here\n", sized(res.Bytes))

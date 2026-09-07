@@ -15,9 +15,11 @@ export const WORDS = {
   /** The runs a row can be put through: a recording transcribed, a scan recognised. */
   transcribe: 'Transcribe',
   recognise: 'Recognise',
-  /** The runs over what is at the address a note points at. */
-  fetch: 'Fetch what is at this address',
-  download: 'Download a copy of this video',
+  /** The runs over a url: the text at its address, and a copy of what is there. */
+  downloadText: 'Download the text again',
+  downloadCopy: 'Download a copy',
+  deleteText: 'Delete the text',
+  deleteCopy: 'Delete the copy',
   remove: 'Remove',
   /** The name a folder is made under, which renaming it is what changes. */
   folder: 'New folder',

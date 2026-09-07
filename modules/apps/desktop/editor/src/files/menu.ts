@@ -84,24 +84,32 @@ const FILED = filed()
 const TRANSCRIBE: MenuItem = { id: 'transcribe', text: own.transcribe, group: GROUP.run }
 const RECOGNISE: MenuItem = { id: 'recognise', text: own.recognise, group: GROUP.run }
 
-/** The runs a note pointing at an address can be put through. */
-const FETCH: MenuItem = { id: 'fetch', text: own.fetch, group: GROUP.run }
-const DOWNLOAD: MenuItem = { id: 'download', text: own.download, group: GROUP.run }
+/**
+ * The runs a url can be put through. It carries two things — the text at its
+ * address and a copy of what is there — and each is downloaded and deleted on its
+ * own.
+ */
+const DOWNLOAD_TEXT: MenuItem = { id: 'downloadText', text: own.downloadText, group: GROUP.run }
+const DOWNLOAD_COPY: MenuItem = { id: 'downloadCopy', text: own.downloadCopy, group: GROUP.run }
+const DELETE_TEXT: MenuItem = { id: 'deleteText', text: own.deleteText, group: GROUP.run }
+const DELETE_COPY: MenuItem = { id: 'deleteCopy', text: own.deleteCopy, group: GROUP.run }
 
 /** The run offered where this build can do it, and the file's own items alone where it cannot. */
 const runnable = (run: MenuItem, canRun: RunGuard): readonly MenuItem[] =>
   canRun(run.id) ? filed(run) : FILED
 
 /**
- * What a note pointing at an address offers: everything a note offers, and the
- * runs over what is at the address. A build that cannot reach one offers
- * neither, which is how a person is told this build does not do it.
+ * What a url offers: everything a file offers, and the runs over what is at the
+ * address. A build that cannot reach one offers none of them, which is how a
+ * person is told this build does not do it.
  */
-const linked = (canRun: RunGuard): readonly MenuItem[] => [
-  ...NOTE,
-  ...(canRun(FETCH.id) ? [FETCH] : []),
-  ...(canRun(DOWNLOAD.id) ? [DOWNLOAD] : []),
-]
+const urls = (canRun: RunGuard): readonly MenuItem[] =>
+  filed(
+    ...(canRun(DOWNLOAD_TEXT.id) ? [DOWNLOAD_TEXT] : []),
+    ...(canRun(DOWNLOAD_COPY.id) ? [DOWNLOAD_COPY] : []),
+    ...(canRun(DELETE_TEXT.id) ? [DELETE_TEXT] : []),
+    ...(canRun(DELETE_COPY.id) ? [DELETE_COPY] : []),
+  )
 
 /** What a selection of several offers, which is what means something for all of them. */
 const SEVERAL: readonly MenuItem[] = [{ id: 'remove', text: own.remove, group: GROUP.remove }]
@@ -110,8 +118,6 @@ const SEVERAL: readonly MenuItem[] = [{ id: 'remove', text: own.remove, group: G
 export interface MenuRow {
   readonly source: Source
   readonly folder: boolean
-  /** Whether the note there points at an address, which is what is run over. */
-  readonly link?: boolean
 }
 
 /** Whether the window the menu is drawn in can do a run at all. */
@@ -130,12 +136,15 @@ export const itemsFor = (
   if (!on) return MADE
   if (several) return SEVERAL
   if (on.folder) return FILED
-  if (on.source === 'note') return on.link ? linked(canRun) : NOTE
+  if (on.source === 'note') return NOTE
+  if (on.source === 'url') return urls(canRun)
   if (on.source === 'recording') return runnable(TRANSCRIBE, canRun)
   return on.source === 'book' ? runnable(RECOGNISE, canRun) : FILED
 }
 
 /** What the menu offers anywhere. A choice outside this is not the menu's. */
 export const OFFERED: ReadonlySet<string> = new Set(
-  [...NOTE, ...filed(TRANSCRIBE, RECOGNISE), ...MADE, FETCH, DOWNLOAD].map((one) => one.id),
+  [...NOTE, ...filed(TRANSCRIBE, RECOGNISE), ...MADE, DOWNLOAD_TEXT, DOWNLOAD_COPY, DELETE_TEXT, DELETE_COPY].map(
+    (one) => one.id,
+  ),
 )

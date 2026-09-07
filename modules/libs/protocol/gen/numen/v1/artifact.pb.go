@@ -473,12 +473,14 @@ func (x *CreateArtifactResponse) GetArtifact() *Artifact {
 
 type DeleteArtifactRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The file of the vault, as the vault holds it. What is taken away is
-	// everything listening to a recording produced — the words a model heard and
-	// the words a person put right — so there is nothing to name: a field that
-	// takes one value of three and refuses the other two at run time is a rule
-	// the schema cannot state and a client cannot read.
-	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	// The file of the vault, as the vault holds it.
+	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	// Which of what the file carries to take away. A url carries the text
+	// fetched from its address and a copy of what is there, and they are taken
+	// away one without the other. Unspecified takes the text, which is what a
+	// recording carries and all it carries: the words a model heard and the
+	// words a person put right go together.
+	Kind          ArtifactKind `protobuf:"varint,3,opt,name=kind,proto3,enum=numen.v1.ArtifactKind" json:"kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -518,6 +520,13 @@ func (x *DeleteArtifactRequest) GetPath() string {
 		return x.Path
 	}
 	return ""
+}
+
+func (x *DeleteArtifactRequest) GetKind() ArtifactKind {
+	if x != nil {
+		return x.Kind
+	}
+	return ArtifactKind_ARTIFACT_KIND_UNSPECIFIED
 }
 
 type DeleteArtifactResponse struct {
@@ -693,7 +702,10 @@ type ReadTranscriptResponse struct {
 	Cues []*Cue `protobuf:"bytes,1,rep,name=cues,proto3" json:"cues,omitempty"`
 	// Whether they may be put right now. A run listening to the recording holds
 	// it, and a client draws what it reads and leaves it alone.
-	Editable      bool `protobuf:"varint,2,opt,name=editable,proto3" json:"editable,omitempty"`
+	Editable bool `protobuf:"varint,2,opt,name=editable,proto3" json:"editable,omitempty"`
+	// The text where it carries no times: the prose a page is written around.
+	// A client draws it as it stands, with no gutter and nothing to seek.
+	Prose         string `protobuf:"bytes,3,opt,name=prose,proto3" json:"prose,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -740,6 +752,13 @@ func (x *ReadTranscriptResponse) GetEditable() bool {
 		return x.Editable
 	}
 	return false
+}
+
+func (x *ReadTranscriptResponse) GetProse() string {
+	if x != nil {
+		return x.Prose
+	}
+	return ""
 }
 
 type WriteTranscriptRequest struct {
@@ -876,9 +895,10 @@ const file_numen_v1_artifact_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12*\n" +
 	"\x04kind\x18\x03 \x01(\x0e2\x16.numen.v1.ArtifactKindR\x04kindJ\x04\b\x02\x10\x03R\vartifact_id\"H\n" +
 	"\x16CreateArtifactResponse\x12.\n" +
-	"\bartifact\x18\x01 \x01(\v2\x12.numen.v1.ArtifactR\bartifact\">\n" +
+	"\bartifact\x18\x01 \x01(\v2\x12.numen.v1.ArtifactR\bartifact\"j\n" +
 	"\x15DeleteArtifactRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04pathJ\x04\b\x02\x10\x03R\vartifact_id\"H\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12*\n" +
+	"\x04kind\x18\x03 \x01(\x0e2\x16.numen.v1.ArtifactKindR\x04kindJ\x04\b\x02\x10\x03R\vartifact_id\"H\n" +
 	"\x16DeleteArtifactResponse\x12.\n" +
 	"\bartifact\x18\x01 \x01(\v2\x12.numen.v1.ArtifactR\bartifact\"=\n" +
 	"\x03Cue\x12\x12\n" +
@@ -887,10 +907,11 @@ const file_numen_v1_artifact_proto_rawDesc = "" +
 	"\x02to\x18\x03 \x01(\x05R\x02to\"N\n" +
 	"\x15ReadTranscriptRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12!\n" +
-	"\x02at\x18\x02 \x01(\v2\x11.numen.v1.StretchR\x02at\"W\n" +
+	"\x02at\x18\x02 \x01(\v2\x11.numen.v1.StretchR\x02at\"m\n" +
 	"\x16ReadTranscriptResponse\x12!\n" +
 	"\x04cues\x18\x01 \x03(\v2\r.numen.v1.CueR\x04cues\x12\x1a\n" +
-	"\beditable\x18\x02 \x01(\bR\beditable\"O\n" +
+	"\beditable\x18\x02 \x01(\bR\beditable\x12\x14\n" +
+	"\x05prose\x18\x03 \x01(\tR\x05prose\"O\n" +
 	"\x16WriteTranscriptRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12!\n" +
 	"\x04cues\x18\x02 \x03(\v2\r.numen.v1.CueR\x04cues\"X\n" +
@@ -960,26 +981,27 @@ var file_numen_v1_artifact_proto_depIdxs = []int32{
 	2,  // 2: numen.v1.ListArtifactsResponse.artifacts:type_name -> numen.v1.Artifact
 	0,  // 3: numen.v1.CreateArtifactRequest.kind:type_name -> numen.v1.ArtifactKind
 	2,  // 4: numen.v1.CreateArtifactResponse.artifact:type_name -> numen.v1.Artifact
-	2,  // 5: numen.v1.DeleteArtifactResponse.artifact:type_name -> numen.v1.Artifact
-	14, // 6: numen.v1.ReadTranscriptRequest.at:type_name -> numen.v1.Stretch
-	9,  // 7: numen.v1.ReadTranscriptResponse.cues:type_name -> numen.v1.Cue
-	9,  // 8: numen.v1.WriteTranscriptRequest.cues:type_name -> numen.v1.Cue
-	9,  // 9: numen.v1.WriteTranscriptResponse.cues:type_name -> numen.v1.Cue
-	3,  // 10: numen.v1.ArtifactService.ListArtifacts:input_type -> numen.v1.ListArtifactsRequest
-	5,  // 11: numen.v1.ArtifactService.CreateArtifact:input_type -> numen.v1.CreateArtifactRequest
-	7,  // 12: numen.v1.ArtifactService.DeleteArtifact:input_type -> numen.v1.DeleteArtifactRequest
-	10, // 13: numen.v1.ArtifactService.ReadTranscript:input_type -> numen.v1.ReadTranscriptRequest
-	12, // 14: numen.v1.ArtifactService.WriteTranscript:input_type -> numen.v1.WriteTranscriptRequest
-	4,  // 15: numen.v1.ArtifactService.ListArtifacts:output_type -> numen.v1.ListArtifactsResponse
-	6,  // 16: numen.v1.ArtifactService.CreateArtifact:output_type -> numen.v1.CreateArtifactResponse
-	8,  // 17: numen.v1.ArtifactService.DeleteArtifact:output_type -> numen.v1.DeleteArtifactResponse
-	11, // 18: numen.v1.ArtifactService.ReadTranscript:output_type -> numen.v1.ReadTranscriptResponse
-	13, // 19: numen.v1.ArtifactService.WriteTranscript:output_type -> numen.v1.WriteTranscriptResponse
-	15, // [15:20] is the sub-list for method output_type
-	10, // [10:15] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	0,  // 5: numen.v1.DeleteArtifactRequest.kind:type_name -> numen.v1.ArtifactKind
+	2,  // 6: numen.v1.DeleteArtifactResponse.artifact:type_name -> numen.v1.Artifact
+	14, // 7: numen.v1.ReadTranscriptRequest.at:type_name -> numen.v1.Stretch
+	9,  // 8: numen.v1.ReadTranscriptResponse.cues:type_name -> numen.v1.Cue
+	9,  // 9: numen.v1.WriteTranscriptRequest.cues:type_name -> numen.v1.Cue
+	9,  // 10: numen.v1.WriteTranscriptResponse.cues:type_name -> numen.v1.Cue
+	3,  // 11: numen.v1.ArtifactService.ListArtifacts:input_type -> numen.v1.ListArtifactsRequest
+	5,  // 12: numen.v1.ArtifactService.CreateArtifact:input_type -> numen.v1.CreateArtifactRequest
+	7,  // 13: numen.v1.ArtifactService.DeleteArtifact:input_type -> numen.v1.DeleteArtifactRequest
+	10, // 14: numen.v1.ArtifactService.ReadTranscript:input_type -> numen.v1.ReadTranscriptRequest
+	12, // 15: numen.v1.ArtifactService.WriteTranscript:input_type -> numen.v1.WriteTranscriptRequest
+	4,  // 16: numen.v1.ArtifactService.ListArtifacts:output_type -> numen.v1.ListArtifactsResponse
+	6,  // 17: numen.v1.ArtifactService.CreateArtifact:output_type -> numen.v1.CreateArtifactResponse
+	8,  // 18: numen.v1.ArtifactService.DeleteArtifact:output_type -> numen.v1.DeleteArtifactResponse
+	11, // 19: numen.v1.ArtifactService.ReadTranscript:output_type -> numen.v1.ReadTranscriptResponse
+	13, // 20: numen.v1.ArtifactService.WriteTranscript:output_type -> numen.v1.WriteTranscriptResponse
+	16, // [16:21] is the sub-list for method output_type
+	11, // [11:16] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_artifact_proto_init() }

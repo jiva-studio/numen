@@ -50,7 +50,7 @@ func addNoteTools(server *sdk.Server, core Core) {
 func addNoteResolve(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "note_resolve",
-		Title: "Find the notes a name reaches",
+		Title: "Resolve a name",
 		Description: "Every note filed under one name, which is what a link written by " +
 			"that name resolves to. More than one path back means the link is ambiguous " +
 			"and reaches the nearest of them, which can change when either note is " +
@@ -76,7 +76,7 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "note_titles",
-		Title: "Look up what notes are called",
+		Title: "Look up note titles",
 		Description: "What notes at these paths are called, and the identifier each " +
 			"carries. Nothing of their prose comes back — `note_read` gives that. Use " +
 			"this to name a note in an answer, or to see whether the vault still holds " +
@@ -167,7 +167,7 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "note_neighbourhood",
-		Title: "Show what a note is joined to",
+		Title: "Show a note's neighbourhood",
 		Description: "One note and everything joined to it — its parents, children, " +
 			"siblings and jumps. This is the picture the person is looking at.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {

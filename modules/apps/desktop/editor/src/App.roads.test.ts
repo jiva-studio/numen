@@ -308,7 +308,7 @@ describe('a recording put in front', () => {
     const window = await playing()
 
     expect(asked.carried).toStrictEqual([RECORDING])
-    expect(await runsOffered(window)).toStrictEqual(['proofread', 'dropTranscript'])
+    expect(await runsOffered(window)).toStrictEqual(['proofread', 'deleteText'])
   })
 })
 

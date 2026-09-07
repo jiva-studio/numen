@@ -68,6 +68,7 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     list: async () => [],
     move: async () => ({ moved: null, refusal: null }),
     makeFolder: async () => null,
+    makeURL: async () => ({ path: '', refusal: null }),
     syncing: async () => true,
     hanging: async () => ({ hangs: true, parts: 6, least: 1, most: 12 }),
     choosesSyncing: async () => null,

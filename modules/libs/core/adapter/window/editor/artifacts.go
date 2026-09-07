@@ -3,6 +3,7 @@ package editor
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 	"slices"
 
@@ -12,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/task"
 	derived "github.com/jiva-studio/numen/modules/libs/core/text"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
@@ -60,12 +62,12 @@ func carried(kind domain.SourceKind, at domain.WebAddress) []v1.ArtifactKind {
 			v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
 			v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED,
 		}
-	case kind == domain.KindNote && at.IsVideo():
+	case kind == domain.KindURL && at.IsVideo():
 		return []v1.ArtifactKind{
 			v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
 			v1.ArtifactKind_ARTIFACT_KIND_COPY,
 		}
-	case kind == domain.KindNote && at.URL != "":
+	case kind == domain.KindURL && at.URL != "":
 		return []v1.ArtifactKind{v1.ArtifactKind_ARTIFACT_KIND_ARTICLE}
 	default:
 		return nil
@@ -93,18 +95,13 @@ func standing(of v1.ArtifactKind) (string, bool) {
 	}
 }
 
-// points is where the note at a path points, and nothing for every other file.
-// What is made from a note follows from that: a note pointing nowhere has
-// nothing at an address to fetch.
+// points is the address the file at a path holds, and nothing for every other
+// file. What is made from it follows from that.
 func (a *API) points(ctx context.Context, v domain.Vault, ref domain.Fingerprint) domain.WebAddress {
-	if ref.Kind != domain.KindNote || a.Notes.Read == nil {
+	if ref.Kind != domain.KindURL {
 		return domain.WebAddress{}
 	}
-	found, err := a.Notes.Read.Execute(ctx, v, ref.Path)
-	if err != nil {
-		return domain.WebAddress{}
-	}
-	return found.Address
+	return a.pointing(ctx, v, ref.Path)
 }
 
 // linked is the text of what a note points at, as it now stands. What kind of
@@ -195,7 +192,7 @@ func (a *API) copyOf(
 	return out
 }
 
-// copies fetches a copy of the video at an address and answers with what stands
+// copies fetches a copy of what is at an address and answers with what stands
 // once it has. A copy over the size the settings name is not fetched, and the
 // size it was refused at is said.
 func (a *API) copies(
@@ -204,24 +201,49 @@ func (a *API) copies(
 	if a.Imports == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoFetcher)
 	}
-	got, err := a.Imports.Copy(ctx, v, ref.Path)
+	// A copy is minutes of fetching, so how far it has got is reported as it
+	// arrives.
+	asked := *a.Imports
+	asked.Progress = func(done, total int64) {
+		a.say(task.Task{
+			ID: copying + ref.Path, Doing: "Downloading a copy", About: ref.Path,
+			Count: done, Total: total, Unit: task.Bytes, Asked: true,
+		})
+	}
+	got, err := asked.Copy(ctx, v, ref.Path)
+	a.finished(copying + ref.Path)
 	if err != nil {
-		return nil, connect.NewError(reaching(err), err)
+		return nil, connect.NewError(fetched(err), err)
 	}
 	out := a.copyOf(ctx, v, ref.Path, at)
 	switch {
 	case got.Busy:
 		out.State = v1.State_STATE_RUNNING
-	case got.TooLarge:
+	case got.TooLarge():
 		out.State, out.Size = v1.State_STATE_FAILED, got.Bytes
-		out.Error = errTooLarge.Error()
+		out.Error = fmt.Sprintf(
+			"This video is %d MB, and a copy may be up to %d MB. "+
+				"Raise importing.copy_max_size_mb to keep it.",
+			got.Bytes>>20, got.Limit>>20)
 	}
 	return out, nil
 }
 
-// errTooLarge is a copy over the size the settings name. Nothing was fetched,
-// and the size it was refused at is on the answer.
-var errTooLarge = errors.New("this video is larger than importing.copy_under_mb")
+// fetching opens the name a run over an address is reported under, so a tab
+// drawing that url reads what was fetched as soon as the run is done. copying
+// is the same for the copy fetched from it.
+const (
+	fetching = "fetching:"
+	copying  = "copying:"
+)
+
+// Changed says an artifact of the file at a path was written from outside the
+// window, so a tab drawing it reads what now stands. It is the same channel a
+// run reports itself through, and a tab follows both the same way.
+func (a *API) Changed(path string) {
+	a.say(task.Task{ID: fetching + path, Doing: "Correcting a transcript", About: path})
+	a.finished(fetching + path)
+}
 
 // ListArtifacts is every artifact the file at a path can carry and what has
 // become of each.
@@ -282,7 +304,7 @@ func (a *API) CreateArtifact(
 	case v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT, v1.ArtifactKind_ARTIFACT_KIND_ARTICLE:
 		// A recording's transcript is heard by a model here; a note's is
 		// fetched from the address it points at.
-		if ref.Kind == domain.KindNote {
+		if ref.Kind == domain.KindURL {
 			made, err = a.fetch(ctx, showing, ref, at)
 			break
 		}
@@ -309,10 +331,25 @@ func (a *API) DeleteArtifact(
 	if err != nil {
 		return nil, connect.NewError(reaching(err), err)
 	}
-	// A copy of a video is bytes and no words: taking it away leaves the note
-	// as it was, pointing at the address it points at.
-	if at := a.points(ctx, showing, ref); at.IsVideo() {
-		return a.drops(ctx, showing, ref, at)
+	// A copy is bytes and no words: taking it away leaves the url as it was,
+	// pointing at the address it points at.
+	if r.Msg.GetKind() == v1.ArtifactKind_ARTIFACT_KIND_COPY {
+		return a.drops(ctx, showing, ref, a.points(ctx, showing, ref))
+	}
+	if ref.Kind == domain.KindURL {
+		if a.Imports == nil {
+			return nil, connect.NewError(connect.CodeUnimplemented, errNoFetcher)
+		}
+		if err := a.Imports.Forget(ctx, showing, ref.Path); err != nil {
+			return nil, connect.NewError(reaching(err), err)
+		}
+		return connect.NewResponse(&v1.DeleteArtifactResponse{
+			Artifact: &v1.Artifact{
+				Name:  named(showing, ref.Path, transcriptID),
+				Kind:  v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
+				State: v1.State_STATE_NONE,
+			},
+		}), nil
 	}
 	if ref.Kind != domain.KindRecording {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNotCarried)
@@ -416,8 +453,15 @@ func (a *API) fetch(
 	if a.Imports == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoFetcher)
 	}
-	if _, err := a.Imports.Execute(ctx, v, ref.Path); err != nil {
-		return nil, connect.NewError(reaching(err), err)
+	// A person who asks for this asks for the address afresh: what was fetched
+	// before goes, and the site is read again.
+	asked := *a.Imports
+	asked.Again = true
+	a.say(task.Task{ID: fetching + ref.Path, Doing: "Fetching an address", About: ref.Path})
+	_, err := asked.Execute(ctx, v, ref.Path)
+	a.finished(fetching + ref.Path)
+	if err != nil {
+		return nil, connect.NewError(fetched(err), err)
 	}
 	return a.linked(ctx, v, ref.Path, at)
 }
@@ -487,9 +531,9 @@ func (a *API) artifact(
 	if of == v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED {
 		return a.corrections(ctx, v, ref)
 	}
-	// A note's transcript is the text at the address it points at, and a
+	// A url's transcript is the text at the address it holds, and a
 	// recording's is what a model heard: the same kind, made two ways.
-	if ref.Kind == domain.KindNote &&
+	if ref.Kind == domain.KindURL &&
 		(of == v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT ||
 			of == v1.ArtifactKind_ARTIFACT_KIND_ARTICLE) {
 		return a.linked(ctx, v, ref.Path, at)
@@ -564,6 +608,16 @@ func named(v domain.Vault, path, id string) string {
 }
 
 // reaching is the code a file that could not be reached is answered with.
+// fetched is what a run over an address answers with. What a tool said about an
+// address is what the person is owed, and it reaches them only under a code
+// that carries its own words.
+func fetched(err error) connect.Code {
+	if code := reaching(err); code != connect.CodeInternal {
+		return code
+	}
+	return connect.CodeFailedPrecondition
+}
+
 func reaching(err error) connect.Code {
 	switch {
 	case errors.Is(err, port.ErrOutside):

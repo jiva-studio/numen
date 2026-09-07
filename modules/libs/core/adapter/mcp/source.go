@@ -36,7 +36,7 @@ func addSourceTools(server *sdk.Server, core Core) {
 func addSourceReadingTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_list",
-		Title: "List the documents a vault holds",
+		Title: "List documents",
 		Description: "List the books, papers and scans filed in the vault beside its notes, " +
 			"and say of each whether a model has read it. A scanned document carries no " +
 			"text of its own until it is read, and nothing in the words of a document " +
@@ -84,7 +84,7 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_read",
-		Title: "Read a run of a document's text",
+		Title: "Read a range of a document",
 		Description: "Read a stretch of one document's own text, in the offsets a search's " +
 			"passage carries. A passage is a window cut to a size and it ends where it " +
 			"was cut, so what answers the question often stands just past it: ask for " +
@@ -135,7 +135,7 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 func addSourceWritingTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_recognise",
-		Title: "Read a scanned document",
+		Title: "Recognise a scanned document",
 		Description: "Have a model read one scanned document and write what it says into " +
 			"the vault. The words land as files under `.numen/ocr/`, beside the person's " +
 			"notes and inside the folder they sync — a book is megabytes of them. The " +
@@ -180,7 +180,7 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_transcribe",
-		Title: "Write down what a recording says",
+		Title: "Transcribe a recording",
 		Description: "Have a model listen to one recording and write the words it carries " +
 			"into the vault. They land as files under `.numen/transcript/`, beside the person's " +
 			"notes and inside the folder they sync — an hour of talk is megabytes of " +

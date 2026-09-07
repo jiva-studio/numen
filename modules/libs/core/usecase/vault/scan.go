@@ -21,23 +21,6 @@ type Scan struct {
 	Known       FingerprintQueries
 	Maintenance port.IndexMaintenance
 
-	// Derived is where what was fetched for a link note is kept. A scan given
-	// none indexes every note as the prose in its file.
-	Derived port.DerivedStores
-
-	// Fetches reaches the address of one link note nothing has been fetched
-	// for, and is what `importing.fetch_unasked` turns on. A scan given none
-	// reaches off the machine nowhere, which is what a scan does by default.
-	//
-	// An address that would not answer is one note's trouble and not the
-	// scan's: what came of each is the caller's to say, and the walk stands
-	// whatever they were.
-	Fetches func(ctx context.Context, v domain.Vault, path string) error
-
-	// Types is what says which notes point at an address. It is asked only
-	// where Fetches is set.
-	Types port.NoteQueries
-
 	// Walks is the turns the vaults being walked take. A scan given none takes
 	// its turn from nobody and waits for nobody.
 	Walks *Walks
@@ -98,9 +81,6 @@ type FingerprintQueries interface {
 	// Fingerprints is what the index believes about each file, keyed by path,
 	// so a scan can decide what to reparse without reading anything.
 	Fingerprints(ctx context.Context, vaultID domain.VaultID) (map[string]domain.Fingerprint, error)
-
-	// Addresses is every address the notes of the vault point at, each once.
-	Addresses(ctx context.Context, vaultID domain.VaultID) ([]string, error)
 }
 
 // Execute walks the vault once.
@@ -135,8 +115,6 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	if err != nil {
 		return res, fmt.Errorf("read index: %w", err)
 	}
-	fetches := store(u.Derived, v)
-
 	// The walk is collected before anything is read, so that the order can be
 	// chosen. A vault has a working set and an archive, and they are not the
 	// same size: notes touched recently are what the person is looking for while
@@ -202,7 +180,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 			res.Unreadable++
 			continue
 		}
-		if err := group.add(ctx, indexed(ctx, fetches, markdown.Parse(ref, raw)), len(raw)); err != nil {
+		if err := group.add(ctx, domain.IndexedNote{Note: markdown.Parse(ref, raw)}, len(raw)); err != nil {
 			return res, err
 		}
 	}
@@ -216,18 +194,10 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 			gone = append(gone, path)
 		}
 	}
-	stood, err := u.addresses(ctx, v, gone)
-	if err != nil {
-		return res, err
-	}
 	if err := u.Notes.Remove(ctx, v.ID, gone); err != nil {
 		return res, fmt.Errorf("remove deleted notes: %w", err)
 	}
 	res.Removed = len(gone)
-	if err := u.sweep(ctx, v, fetches, stood); err != nil {
-		return res, err
-	}
-	res.Fetched = u.unasked(ctx, v, fetches)
 
 	// A scan that stored nothing changed nothing, and a scan of an unchanged
 	// vault has to stay cheap enough to run at startup.

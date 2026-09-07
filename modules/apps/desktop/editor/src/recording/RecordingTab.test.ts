@@ -30,8 +30,10 @@ function talk(cues: readonly Cue[] = CUES): Recordings {
       heard: 85_000,
       media: 'http://127.0.0.1:1/w/v/talk.mp3',
       type: 'audio/mpeg',
+      embed: '',
+      address: '',
     }),
-    cues: async () => ({ cues, editable: true }),
+    cues: async () => ({ cues, editable: true, prose: '' }),
     writes: async () => {},
     plays: async () => null,
   }
@@ -107,9 +109,9 @@ describe('a recording with no transcript', () => {
     await drawn.vm.$nextTick()
     await settled()
 
-    expect(drawn.find('.recording__transcript').exists()).toBe(false)
-    expect(drawn.find('.recording__ask').text()).toBe(WORDS.transcribe)
-    expect(drawn.find('.recording__note').exists()).toBe(false)
+    expect(drawn.find('.transcript__text').exists()).toBe(false)
+    expect(drawn.find('.transcript__ask').text()).toBe(WORDS.transcribe)
+    expect(drawn.find('.transcript__note').exists()).toBe(false)
 
     drawn.unmount()
   })
@@ -123,8 +125,8 @@ describe('a recording with no transcript', () => {
     await drawn.vm.$nextTick()
     await settled()
 
-    expect(drawn.find('.recording__ask').exists()).toBe(false)
-    expect(drawn.find('.recording__note').text()).toBe(WORDS.silence)
+    expect(drawn.find('.transcript__ask').exists()).toBe(false)
+    expect(drawn.find('.transcript__note').text()).toBe(WORDS.silence)
 
     drawn.unmount()
   })
@@ -137,7 +139,7 @@ describe('a recording with no transcript', () => {
     await drawn.vm.$nextTick()
     await settled()
 
-    expect(drawn.find('.recording__ask').text()).toBe(WORDS.transcribe)
+    expect(drawn.find('.transcript__ask').text()).toBe(WORDS.transcribe)
 
     drawn.unmount()
   })
@@ -149,7 +151,7 @@ describe('a recording with no transcript', () => {
     await drawn.vm.$nextTick()
     await settled()
 
-    await drawn.find('.recording__ask').trigger('click')
+    await drawn.find('.transcript__ask').trigger('click')
 
     expect(asked).toStrictEqual(['transcribe talks/Ants.mp3 Ants.mp3'])
 
@@ -164,8 +166,8 @@ describe('a recording with no transcript', () => {
     await drawn.vm.$nextTick()
     await settled()
 
-    expect(drawn.find('.recording__ask').exists()).toBe(false)
-    expect(drawn.find('.recording__note').text()).toBe(WORDS.silence)
+    expect(drawn.find('.transcript__ask').exists()).toBe(false)
+    expect(drawn.find('.transcript__note').text()).toBe(WORDS.silence)
 
     drawn.unmount()
   })
@@ -179,9 +181,9 @@ describe('a recording with no transcript', () => {
     await settled()
     await drawn.vm.$nextTick()
 
-    expect(drawn.find('.recording__transcript').exists()).toBe(false)
-    expect(drawn.find('.recording__note').text()).toBe(WORDS.transcribing)
-    expect(drawn.find('.recording__ask').exists()).toBe(false)
+    expect(drawn.find('.transcript__text').exists()).toBe(false)
+    expect(drawn.find('.transcript__note').text()).toBe(WORDS.transcribing)
+    expect(drawn.find('.transcript__ask').exists()).toBe(false)
 
     drawn.unmount()
   })
@@ -194,14 +196,14 @@ describe('a recording with no transcript', () => {
     await drawn.vm.$nextTick()
     await settled()
 
-    const head = drawn.find('.recording__head').html()
+    const head = drawn.find('.media__head').html()
 
     state.ticks(true)
     await settled()
     await drawn.vm.$nextTick()
 
-    expect(drawn.find('.recording__head').html()).toBe(head)
-    expect(drawn.find('.recording__below').text()).toBe(WORDS.transcribing)
+    expect(drawn.find('.media__head').html()).toBe(head)
+    expect(drawn.find('.transcript').text()).toBe(WORDS.transcribing)
 
     drawn.unmount()
   })
@@ -217,7 +219,7 @@ describe('a recording with no transcript', () => {
     await settled()
 
     expect(drawn.text()).toContain(WORDS.unplayable)
-    expect(drawn.find('.recording__ask').text()).toBe(WORDS.transcribe)
+    expect(drawn.find('.transcript__ask').text()).toBe(WORDS.transcribe)
 
     drawn.unmount()
   })
@@ -235,8 +237,8 @@ describe('a transcript still growing', () => {
     await settled()
     await drawn.vm.$nextTick()
 
-    expect(drawn.find('.recording__transcript').exists()).toBe(true)
-    expect(drawn.find('.recording__note').exists()).toBe(false)
+    expect(drawn.find('.transcript__text').exists()).toBe(true)
+    expect(drawn.find('.transcript__note').exists()).toBe(false)
 
     drawn.unmount()
   })
@@ -256,9 +258,9 @@ describe('the menu at the end of the player strip', () => {
     await drawn.vm.$nextTick()
     await settled()
 
-    const actions = drawn.get('.recording__actions')
-    expect(actions.find('.recording__follow').exists()).toBe(true)
-    expect(actions.find('.recording__more').exists()).toBe(true)
+    const actions = drawn.get('.media__actions')
+    expect(actions.find('.media__follow').exists()).toBe(true)
+    expect(actions.find('.media__more').exists()).toBe(true)
 
     drawn.unmount()
   })
@@ -273,13 +275,13 @@ describe('the menu at the end of the player strip', () => {
     await drawn.vm.$nextTick()
     await settled()
 
-    const more = drawn.get('.recording__more')
+    const more = drawn.get('.media__more')
     expect(more.attributes('aria-haspopup')).toBe('menu')
     expect(offered()).toStrictEqual([])
 
     await more.trigger('click')
 
-    expect(offered()).toStrictEqual([WORDS.proofread, WORDS.drop])
+    expect(offered()).toStrictEqual([WORDS.proofread, WORDS.deleteText])
 
     drawn.unmount()
   })
@@ -292,7 +294,7 @@ describe('the menu at the end of the player strip', () => {
     await settled()
 
     const chooses = async (text: string) => {
-      await drawn.get('.recording__more').trigger('click')
+      await drawn.get('.media__more').trigger('click')
       const chosen = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
         (one) => one.textContent?.trim() === text,
       )
@@ -301,11 +303,11 @@ describe('the menu at the end of the player strip', () => {
     }
 
     await chooses(WORDS.proofread)
-    await chooses(WORDS.drop)
+    await chooses(WORDS.deleteText)
 
     expect(asked).toStrictEqual([
       'proofread talks/Ants.mp3 Ants.mp3',
-      'dropTranscript talks/Ants.mp3 Ants.mp3',
+      'deleteText talks/Ants.mp3 Ants.mp3',
     ])
     expect(offered()).toStrictEqual([])
 
@@ -325,7 +327,7 @@ describe('the menu at the end of the player strip', () => {
     await settled()
     await drawn.vm.$nextTick()
 
-    expect(drawn.find('.recording__more').exists()).toBe(false)
+    expect(drawn.find('.media__more').exists()).toBe(false)
 
     drawn.unmount()
   })
@@ -334,7 +336,7 @@ describe('the menu at the end of the player strip', () => {
   // menu itself only where an item stands.
   it('drops an item this build cannot do at all, and goes where none is left', async () => {
     const runs = runSupport()
-    runs.cannotRun('dropTranscript')
+    runs.cannotRun('deleteText')
     const { state } = tab(CUES, undefined, (run) => runs.canRun(run))
     const drawn = mount(RecordingTab, { props: { state }, attachTo: document.body })
 
@@ -342,13 +344,13 @@ describe('the menu at the end of the player strip', () => {
     await drawn.vm.$nextTick()
     await settled()
 
-    await drawn.get('.recording__more').trigger('click')
+    await drawn.get('.media__more').trigger('click')
     expect(offered()).toStrictEqual([WORDS.proofread])
 
     runs.cannotRun('proofread')
     await drawn.vm.$nextTick()
 
-    expect(drawn.find('.recording__more').exists()).toBe(false)
+    expect(drawn.find('.media__more').exists()).toBe(false)
 
     drawn.unmount()
   })
@@ -362,7 +364,7 @@ describe('the menu at the end of the player strip', () => {
     await drawn.vm.$nextTick()
     await settled()
 
-    expect(drawn.find('.recording__more').exists()).toBe(false)
+    expect(drawn.find('.media__more').exists()).toBe(false)
 
     drawn.unmount()
   })
@@ -377,7 +379,7 @@ describe('a recording with a transcript', () => {
     await drawn.vm.$nextTick()
     await settled()
 
-    expect(drawn.find('.recording__ask').exists()).toBe(false)
+    expect(drawn.find('.transcript__ask').exists()).toBe(false)
 
     drawn.unmount()
   })

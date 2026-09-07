@@ -478,7 +478,7 @@ A `with` naming a profile `profiles` does not carry is an error at startup. An i
 
 ## Reaching an address
 
-`importing` is how what a link note points at is fetched, and where the tools that fetch it are. What is kept, and where, is [Importing an address](importing.md).
+`importing` is how what a url points at is fetched, and where the tools that fetch it are. What is kept, and where, is [Importing an address](importing.md).
 
 ```json
 {
@@ -486,7 +486,7 @@ A `with` naming a profile `profiles` does not carry is an error at startup. An i
     "fetch_unasked": false,
     "captions": ["en"],
     "automatic_captions": true,
-    "copy_under_mb": 500,
+    "copy_max_size_mb": 500,
     "copies_to_vault": false,
     "yt_dlp": { "command": [], "arguments": [] },
     "ffmpeg": { "command": [], "arguments": [] }
@@ -496,11 +496,11 @@ A `with` naming a profile `profiles` does not carry is an error at startup. An i
 
 | | |
 | --- | --- |
-| `fetch_unasked` | whether a link note nothing has been fetched for is fetched as a walk of the vault finds it. Off. Reaching off the machine is a gesture, and a note written by hand in another editor is not one. |
+| `fetch_unasked` | whether a url nothing has been fetched for is fetched as a walk of the vault finds it. Off. Reaching off the machine is a gesture, and a file dropped in from a browser is not one. |
 | `captions` | which languages published words are preferred in, best first. Empty takes the language the video was spoken in. |
 | `automatic_captions` | whether words a machine wrote count where a person published none. On. |
-| `copy_under_mb` | how large a copy of a video may be. A copy that runs past it stops there and nothing is kept. |
-| `copies_to_vault` | whether a copy is kept beside the note, under the note's own name, as a file of the person's own. Off, which keeps it in the application's folder, where losing it costs another fetch. |
+| `copy_max_size_mb` | how large a copy of a video may be. A copy that runs past it stops there and nothing is kept. |
+| `copies_to_vault` | whether a copy is kept beside the url, under that file's own name, as a file of the person's own. Off, which keeps it in the application's folder, where losing it costs another fetch. |
 | `yt_dlp.command`, `ffmpeg.command` | what starts it: the tool's path, and anything it is started through. Empty asks the `PATH`. |
 | `yt_dlp.arguments`, `ffmpeg.arguments` | what every run is handed before its own arguments. |
 

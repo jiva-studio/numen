@@ -99,10 +99,10 @@ const window = (
     carries?: ArtifactStates
     /** How asking for an artifact of a file came out. */
     outcome?: Outcome
-    /** What dropping a transcript was refused with. */
-    dropRefused?: string
-    /** Whether this build cannot drop a transcript at all. */
-    undroppable?: boolean
+    /** What deleting the text was refused with. */
+    deleteRefused?: string
+    /** Whether this build cannot delete the text at all. */
+    undeletable?: boolean
   } = {},
 ) => {
   const done: string[] = []
@@ -153,11 +153,15 @@ const window = (
         done.push(`makes ${of} ${path}`)
         return answers.outcome ?? outcome(of, 'running')
       },
-      drops: async (path) => {
-        done.push(`drops ${path}`)
-        if (answers.dropRefused)
-          throw new ConnectError(answers.dropRefused, Code.FailedPrecondition)
-        return answers.undroppable !== true
+      deletesTranscript: async (path: string) => {
+        done.push(`deletes the text of ${path}`)
+        if (answers.deleteRefused)
+          throw new ConnectError(answers.deleteRefused, Code.FailedPrecondition)
+        return answers.undeletable !== true
+      },
+      deletesCopy: async (path: string) => {
+        done.push(`deletes the copy of ${path}`)
+        return answers.undeletable !== true
       },
     },
     makers: {
@@ -371,8 +375,11 @@ describe('a note made', () => {
   })
 })
 
-/** What the window says an artifact of a file now stands at, as a report. */
-const REPORTED: readonly ArtifactState[] = ['queued', 'running']
+/**
+ * What the window says an artifact of a file now stands at, as a report. Work
+ * that came off is one of these: only what did not is a refusal.
+ */
+const REPORTED: readonly ArtifactState[] = ['queued', 'running', 'done']
 
 /** Everything an artifact can stand at, which the window has a sentence for. */
 const REACHED: readonly ArtifactState[] = [
@@ -483,33 +490,33 @@ describe('an artifact asked for over a file', () => {
   })
 })
 
-describe('the transcript of a recording dropped', () => {
+describe('the transcript of a recording deleted', () => {
   it('asks the application over the file the tab in front holds', async () => {
     const one = window()
 
-    await carry(invocationOf('dropTranscript', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(invocationOf('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
 
-    expect(one.done).toStrictEqual(['drops talks/Ants.mp3'])
+    expect(one.done).toStrictEqual(['deletes the text of talks/Ants.mp3'])
     expect(one.said).toStrictEqual([])
   })
 
   it('says what the application refused, in the words it sent', async () => {
     const why = 'this recording is being listened to'
-    const one = window({ dropRefused: why })
+    const one = window({ deleteRefused: why })
 
-    await carry(invocationOf('dropTranscript', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(invocationOf('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
 
     expect(one.said).toStrictEqual([why])
     expect(one.tones).toStrictEqual(['refusal'])
   })
 
   it('says this build cannot do it, and offers it nowhere after that', async () => {
-    const one = window({ undroppable: true })
+    const one = window({ undeletable: true })
 
-    await carry(invocationOf('dropTranscript', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(invocationOf('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
 
     expect(one.said).toStrictEqual([words.unrunnable])
-    expect(one.runs.canRun('dropTranscript')).toBe(false)
+    expect(one.runs.canRun('deleteText')).toBe(false)
   })
 })
 

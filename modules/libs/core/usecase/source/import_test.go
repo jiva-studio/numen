@@ -2,7 +2,6 @@ package source
 
 import (
 	"context"
-	"errors"
 	"io"
 	"strings"
 	"testing"
@@ -70,14 +69,14 @@ func (s *site) Article(_ context.Context, at domain.WebAddress) (port.Article, e
 	return port.Article{Title: s.title, Prose: s.prose}, nil
 }
 
-const videoNote = "notes/Entropy.md"
+const videoNote = "notes/https---www.youtube.com-watch-v=dQw4w9WgXcQ.url"
 
 // fetching is a vault holding one link note, and the store what is fetched for
 // it is kept in.
 func fetching(t *testing.T, written string, from *site) (ImportURL, *shelf, string) {
 	t.Helper()
 	shelved := newLibrary()
-	shelved.hold(videoNote, domain.KindNote, []byte(written), 1)
+	shelved.hold(videoNote, domain.KindURL, []byte(written), 1)
 	kept := newShelf()
 	cut := []string{}
 	return ImportURL{
@@ -91,12 +90,11 @@ func fetching(t *testing.T, written string, from *site) (ImportURL, *shelf, stri
 	}, kept, "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 }
 
-// A note the palette made carries the address as its title: an address is no
-// filename, so what the person pasted is written into the note.
-const aPastedAddress = "---\ntype: link\ntitle: https://youtu.be/dQw4w9WgXcQ\n" +
-	"url: https://youtu.be/dQw4w9WgXcQ\n---\n\nMine.\n"
+// A file the palette made is named by the address: an address is no filename,
+// so the name is what a fetch replaces once it knows what is there.
+const aPastedAddress = "[InternetShortcut]\nURL=https://youtu.be/dQw4w9WgXcQ\n"
 
-const pointsAtAVideo = "---\ntype: link\nurl: https://youtu.be/dQw4w9WgXcQ\n---\n\nMine.\n"
+const pointsAtAVideo = aPastedAddress
 
 // The words published with a video are written down as the format a player
 // opens, under the address they were published at.
@@ -172,7 +170,7 @@ func TestAVideoNobodyPublishedWordsFor(t *testing.T) {
 func TestThePagePointedAt(t *testing.T) {
 	from := &site{title: "Entropy — a page", prose: "A measure of disorder."}
 	u, kept, _ := fetching(t,
-		"---\ntype: link\nurl: https://example.com/entropy\n---\n\nMine.\n", from)
+		"[InternetShortcut]\nURL=https://example.com/entropy\n", from)
 
 	res, err := u.Execute(t.Context(), first, videoNote)
 	if err != nil {
@@ -198,11 +196,11 @@ func TestThePagePointedAt(t *testing.T) {
 func TestANoteThatPointsNowhere(t *testing.T) {
 	for _, written := range []string{
 		"# Entropy\n",
-		"---\ntype: link\n---\n",
-		"---\ntype: link\nurl: file:///etc/passwd\n---\n",
+		"[InternetShortcut]\n",
+		"[InternetShortcut]\nURL=file:///etc/passwd\n",
 	} {
 		u, _, _ := fetching(t, written, &site{})
-		if _, err := u.Execute(t.Context(), first, videoNote); !errors.Is(err, ErrNotALink) {
+		if _, err := u.Execute(t.Context(), first, videoNote); err == nil {
 			t.Errorf("%q was fetched for: %v", written, err)
 		}
 	}
@@ -256,7 +254,7 @@ func TestANoteStillCalledByItsAddressTakesTheTitle(t *testing.T) {
 	named := []string{}
 	u.Names = func(_ context.Context, _ domain.Vault, path, title string) (string, error) {
 		named = append(named, path+" → "+title)
-		return "notes/Entropy explained.md", nil
+		return "notes/Entropy explained.url", nil
 	}
 
 	res, err := u.Execute(t.Context(), first, videoNote)
@@ -266,27 +264,29 @@ func TestANoteStillCalledByItsAddressTakesTheTitle(t *testing.T) {
 	if len(named) != 1 || named[0] != videoNote+" → Entropy explained" {
 		t.Errorf("the note was named %v", named)
 	}
-	if res.Path != "notes/Entropy explained.md" {
+	if res.Path != "notes/Entropy explained.url" {
 		t.Errorf("the note is filed at %q", res.Path)
 	}
 }
 
-// A note the person named themselves keeps the name they gave it.
-func TestANotePersonNamedKeepsItsName(t *testing.T) {
+// A file the person named themselves keeps the name they gave it.
+func TestAFilePersonNamedKeepsItsName(t *testing.T) {
+	const theirs = "notes/Entropy.url"
 	from := &site{title: "Entropy explained", cues: []transcript.Cue{{Text: "said", To: 1000}}}
 	u, _, _ := fetching(t,
-		"---\ntype: link\ntitle: Mine\nurl: https://youtu.be/dQw4w9WgXcQ\n---\n", from)
+		"[InternetShortcut]\nURL=https://youtu.be/dQw4w9WgXcQ\n", from)
+	u.Readers.(vaults)[first.ID].hold(theirs, domain.KindURL, []byte(pointsAtAVideo), 1)
 	named := 0
 	u.Names = func(context.Context, domain.Vault, string, string) (string, error) {
 		named++
 		return "", nil
 	}
 
-	if _, err := u.Execute(t.Context(), first, videoNote); err != nil {
+	if _, err := u.Execute(t.Context(), first, theirs); err != nil {
 		t.Fatal(err)
 	}
 	if named != 0 {
-		t.Errorf("a note the person named was renamed %d times", named)
+		t.Errorf("a file the person named was renamed %d times", named)
 	}
 }
 
@@ -318,7 +318,7 @@ func TestACopyKeptBesideTheNote(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
 	u, kept, address := fetching(t, pointsAtAVideo, from)
 	held := newLibrary()
-	held.hold(videoNote, domain.KindNote, []byte(pointsAtAVideo), 1)
+	held.hold(videoNote, domain.KindURL, []byte(pointsAtAVideo), 1)
 	u.Readers = vaults{first.ID: held}
 	u.ToVault, u.Writers = true, writers{first.ID: held}
 
@@ -326,7 +326,7 @@ func TestACopyKeptBesideTheNote(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	beside := "notes/Entropy.mp4"
+	beside := CopyBeside(videoNote)
 	if got.At != beside {
 		t.Errorf("the copy landed at %q, want it beside the note", got.At)
 	}
@@ -349,7 +349,7 @@ func TestACopyAlreadyBesideTheNote(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
 	u, _, _ := fetching(t, pointsAtAVideo, from)
 	held := newLibrary()
-	held.hold(videoNote, domain.KindNote, []byte(pointsAtAVideo), 1)
+	held.hold(videoNote, domain.KindURL, []byte(pointsAtAVideo), 1)
 	u.Readers = vaults{first.ID: held}
 	u.ToVault, u.Writers = true, writers{first.ID: held}
 
@@ -360,7 +360,7 @@ func TestACopyAlreadyBesideTheNote(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !got.Held {
+	if !got.Existed {
 		t.Error("the video was fetched again over a copy already standing")
 	}
 	if strings.Count(strings.Join(from.asked, "\n"), "download") != 1 {

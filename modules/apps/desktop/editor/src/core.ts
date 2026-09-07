@@ -84,13 +84,13 @@ export interface NoteHeading {
  * What the vault holds at a path. A file it holds no source for — a picture,
  * an archive — is none of the three.
  */
-export type Source = 'note' | 'book' | 'recording' | 'other'
+export type Source = 'note' | 'book' | 'recording' | 'url' | 'other'
 
 /**
  * Which of five a note is, as the `type` key of its frontmatter says. It says
  * nothing about a file that is not a note.
  */
-export type NoteType = 'note' | 'deck' | 'stencil' | 'preset' | 'link'
+export type NoteType = 'note' | 'deck' | 'stencil' | 'preset'
 
 /** What stands at a path: which source it is, and which of three a note is. */
 export interface FileKind {
@@ -222,7 +222,13 @@ export interface ArtifactRunner {
    * whether this build can do it at all. The recording is left saying nothing,
    * and it is offered to be heard again.
    */
-  drops(path: string): Promise<boolean>
+  deletesTranscript(path: string): Promise<boolean>
+  /**
+   * The copy fetched for a url taken off this disk, and whether this build can
+   * do it at all. The url stands as it was, pointing where it points, and what
+   * is there is framed again.
+   */
+  deletesCopy(path: string): Promise<boolean>
 }
 
 /** Whether a node hangs the parts of its note, and how many stand at once. */
@@ -495,6 +501,11 @@ export interface Core {
   ): Promise<{ readonly changed: boolean }>
   /** An empty folder. The folders above it are made with it. */
   makeFolder(path: string): Promise<RefusalReason | null>
+  /**
+   * The file a web address is kept in, named by the address until a fetch says
+   * what is there.
+   */
+  makeURL(url: string, folder: string): Promise<MakeResult>
   /**
    * The window going, for as long as the client listens. The stream opens with
    * the token this client answers under.

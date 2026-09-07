@@ -12,6 +12,11 @@ import { cued, same, spanning, spoken } from './cues'
 import { playable as canPlay, player, type MediaTypeProbe, type Player } from './player'
 import { WORDS } from './words'
 
+/** The player a tab drew for itself, which a moment chosen in the words seeks. */
+export interface TabPlayer {
+  seeks(ms: number): void
+}
+
 /** One stretch of speech: what was said, and the milliseconds it spans. */
 export interface Cue {
   readonly text: string
@@ -19,9 +24,14 @@ export interface Cue {
   readonly to: number
 }
 
-/** The transcript of a recording, and whether it may be written over. */
+/** The text fetched or heard, and whether it may be written over. */
 export interface Transcript {
   readonly cues: readonly Cue[]
+  /**
+   * The text where nothing timed it: the prose a page is written around. It
+   * comes instead of the cues, never beside them.
+   */
+  readonly prose: string
   /** False while a run writing the transcript holds it. */
   readonly editable: boolean
 }
@@ -41,6 +51,13 @@ export interface RecordingSummary {
   /** What it is played as. The application says: what counts as a recording is
    * its to decide. */
   readonly type: string
+  /**
+   * Where a frame plays what is at the address a url holds, and nothing where
+   * a copy is played instead or the source is a recording.
+   */
+  readonly embed: string
+  /** The address a url holds, and nothing on every other source. */
+  readonly address: string
 }
 
 /** Everything a recording tab asks of the application. */
@@ -106,6 +123,10 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
   const heard = ref(0)
   /** What the recording is played as, as the application answers it. */
   const type = ref('')
+  /** Where a frame plays what is at the address, and nothing where a copy is. */
+  const embed = ref('')
+  /** The address itself, for a url nothing plays at all. */
+  const points = ref('')
   /** Whether the recording the player holds is this one. */
   const held = computed(() => address.value !== '' && through.address.value === address.value)
 
@@ -121,7 +142,28 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
    * The window plays one recording at a time, so one the player is not holding
    * stands at its beginning until somebody plays it.
    */
-  const now = computed(() => (held.value ? through.at.value : 0))
+  const now = computed(() => {
+    if (frame.value) return Math.max(0, framed.value)
+    return held.value ? through.at.value : 0
+  })
+
+  /**
+   * The player drawn in the tab, which a url has and a recording does not: what
+   * a url points at plays where it is drawn, not through the one the window
+   * plays sound with.
+   */
+  const frame = shallowRef<TabPlayer | null>(null)
+  /** Where that player stands, and nothing before it has said. */
+  const framed = ref(-1)
+
+  /** The tab hands over the player it drew, and says where it stands. */
+  const playsIn = (player: TabPlayer | null) => {
+    frame.value = player
+    framed.value = -1
+  }
+  const reached = (ms: number) => {
+    framed.value = ms
+  }
 
   /** Whether this recording is the one playing. */
   const playing = computed(() => held.value && through.playing.value)
@@ -143,8 +185,19 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
     cues.value.length === 0 && prose.value === '' ? [] : spanning(cues.value, prose.value),
   )
 
+  /**
+   * Whether the text carries the times each stretch of it was said at. A page
+   * is prose and carries none: there is nothing to seek and no line being said.
+   */
+  const timed = computed(() => cues.value.length > 0)
+
+  /** Whether anything at all has been fetched or heard here. */
+  const written = computed(() => timed.value || prose.value !== '')
+
   /** Which line is being said now, and nothing where none has begun. */
-  const current = computed(() => holding(spans.value, now.value))
+  const current = computed(() =>
+    frame.value && framed.value < 0 ? -1 : holding(spans.value, now.value),
+  )
 
   /** Whether the tab this recording stands in is still open. */
   let open = true
@@ -185,6 +238,8 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
       heard.value = said.heard
       address.value = said.media
       type.value = said.type
+      embed.value = said.embed
+      points.value = said.address
       // A moment asked for before the recording knew where its bytes are.
       if (wanted >= 0 && address.value) {
         const at = wanted
@@ -193,15 +248,17 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
       }
       // The player holding nothing takes this recording, so the controls read
       // how long it runs before anybody presses play. One already in the
-      // player is left where it is.
-      if (address.value && through.address.value === '') through.load(address.value)
+      // player is left where it is, and a url plays where it is drawn.
+      if (!points.value && address.value && through.address.value === '') {
+        through.load(address.value)
+      }
 
       const spoke = await recordings.cues(path)
       if (!mine.lands()) return
       cues.value = spoke.cues
       editable.value = spoke.editable
       // Words the person has typed and not yet had written stay on screen.
-      if (!owed) prose.value = spoken(spoke.cues)
+      if (!owed) prose.value = spoke.cues.length ? spoken(spoke.cues) : spoke.prose
       trouble.value = ''
     } catch (error) {
       if (!mine.lands()) return
@@ -216,6 +273,7 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
   const go = (ms: number) => {
     if (!open) return
     const at = Math.max(0, Math.round(ms))
+    if (frame.value) return frame.value.seeks(at)
     if (!address.value) return void (wanted = at)
     through.seek(address.value, at)
   }
@@ -361,12 +419,14 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
   const note = computed(() => {
     if (times.value.length) return ''
     if (working.value) return WORDS.transcribing
-    return WORDS.silence
+    return points.value ? WORDS.unfetched : WORDS.silence
   })
 
   return {
     path,
     address,
+    embed,
+    points,
     playable,
     times,
     spans,
@@ -381,6 +441,10 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
     heard,
     now,
     current,
+    timed,
+    written,
+    playsIn,
+    reached,
     working,
     trouble,
     broken,

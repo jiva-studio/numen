@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-09-06
 - **Applies to:** `modules/libs/core`, `modules/apps/desktop`
-- **Related:** [How an interface component is built](0023-how-an-interface-component-is-built.md), [A link is a note that carries an address](0038-a-link-is-a-note-that-carries-an-address.md)
+- **Related:** [How an interface component is built](0023-how-an-interface-component-is-built.md), [A url is a source of its own](0038-a-url-is-a-source-of-its-own.md)
 
 ## Context
 

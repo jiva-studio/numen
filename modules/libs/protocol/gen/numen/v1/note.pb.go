@@ -993,15 +993,7 @@ type ReadNoteResponse struct {
 	// Set when the note was not read, and why.
 	Refusal *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
 	// The file this prose came out of. Absent when the note was refused.
-	At *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
-	// Where a link note points, in the one form every spelling of it reaches.
-	// Absent on every other note, and on a link note whose address cannot be
-	// read.
-	Url *string `protobuf:"bytes,4,opt,name=url,proto3,oneof" json:"url,omitempty"`
-	// Where a frame plays what is at that address, absent where nothing plays.
-	// The address a frame is given and the hosts the window may frame are one
-	// decision, and it is made here.
-	Embed         *string `protobuf:"bytes,5,opt,name=embed,proto3,oneof" json:"embed,omitempty"`
+	At            *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1055,20 +1047,6 @@ func (x *ReadNoteResponse) GetAt() *Fingerprint {
 		return x.At
 	}
 	return nil
-}
-
-func (x *ReadNoteResponse) GetUrl() string {
-	if x != nil && x.Url != nil {
-		return *x.Url
-	}
-	return ""
-}
-
-func (x *ReadNoteResponse) GetEmbed() string {
-	if x != nil && x.Embed != nil {
-		return *x.Embed
-	}
-	return ""
 }
 
 // LastRead is what a caller last saw of a note: the prose a read gave it, and
@@ -1329,11 +1307,7 @@ type CreateNoteRequest struct {
 	// Where in the vault it goes, relative to the root. Empty is the root.
 	Folder string `protobuf:"bytes,2,opt,name=folder,proto3" json:"folder,omitempty"`
 	// What the note is joined to, written into it as it is made.
-	Links []*NewLink `protobuf:"bytes,3,rep,name=links,proto3" json:"links,omitempty"`
-	// Where the note points. Set, it is made a link: it carries `type: link` and
-	// this address, read into the one form every spelling of it reaches. An
-	// address nothing can be fetched from is refused and no note is made.
-	Url           *string `protobuf:"bytes,4,opt,name=url,proto3,oneof" json:"url,omitempty"`
+	Links         []*NewLink `protobuf:"bytes,3,rep,name=links,proto3" json:"links,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1387,13 +1361,6 @@ func (x *CreateNoteRequest) GetLinks() []*NewLink {
 		return x.Links
 	}
 	return nil
-}
-
-func (x *CreateNoteRequest) GetUrl() string {
-	if x != nil && x.Url != nil {
-		return *x.Url
-	}
-	return ""
 }
 
 type CreateNoteResponse struct {
@@ -1892,18 +1859,14 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04line\x18\x02 \x01(\x05R\x04line\x12\x14\n" +
 	"\x05level\x18\x03 \x01(\x05R\x05level\"%\n" +
 	"\x0fReadNoteRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xdb\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x97\x01\n" +
 	"\x10ReadNoteResponse\x12\x12\n" +
 	"\x04body\x18\x01 \x01(\tR\x04body\x120\n" +
 	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x15\n" +
-	"\x03url\x18\x04 \x01(\tH\x02R\x03url\x88\x01\x01\x12\x19\n" +
-	"\x05embed\x18\x05 \x01(\tH\x03R\x05embed\x88\x01\x01B\n" +
+	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01B\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_atB\x06\n" +
-	"\x04_urlB\b\n" +
-	"\x06_embed\"G\n" +
+	"\x03_at\"G\n" +
 	"\bLastRead\x12\x14\n" +
 	"\x05prose\x18\x01 \x01(\tR\x05prose\x12%\n" +
 	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintR\x02at\"p\n" +
@@ -1924,13 +1887,11 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\aNewLink\x12\x0e\n" +
 	"\x02to\x18\x01 \x01(\tR\x02to\x12\"\n" +
 	"\x04role\x18\x02 \x01(\x0e2\x0e.numen.v1.RoleR\x04role\x12\x14\n" +
-	"\x05label\x18\x03 \x01(\tR\x05label\"\x89\x01\n" +
+	"\x05label\x18\x03 \x01(\tR\x05label\"j\n" +
 	"\x11CreateNoteRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x16\n" +
 	"\x06folder\x18\x02 \x01(\tR\x06folder\x12'\n" +
-	"\x05links\x18\x03 \x03(\v2\x11.numen.v1.NewLinkR\x05links\x12\x15\n" +
-	"\x03url\x18\x04 \x01(\tH\x00R\x03url\x88\x01\x01B\x06\n" +
-	"\x04_url\"\x86\x01\n" +
+	"\x05links\x18\x03 \x03(\v2\x11.numen.v1.NewLinkR\x05links\"\x86\x01\n" +
 	"\x12CreateNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x120\n" +
 	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x1e\n" +
@@ -2116,7 +2077,6 @@ func file_numen_v1_note_proto_init() {
 	file_numen_v1_note_proto_msgTypes[14].OneofWrappers = []any{}
 	file_numen_v1_note_proto_msgTypes[16].OneofWrappers = []any{}
 	file_numen_v1_note_proto_msgTypes[17].OneofWrappers = []any{}
-	file_numen_v1_note_proto_msgTypes[19].OneofWrappers = []any{}
 	file_numen_v1_note_proto_msgTypes[20].OneofWrappers = []any{}
 	file_numen_v1_note_proto_msgTypes[22].OneofWrappers = []any{}
 	file_numen_v1_note_proto_msgTypes[24].OneofWrappers = []any{}

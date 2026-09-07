@@ -13,7 +13,6 @@
 import { watch } from 'vue'
 import { Editor } from '@numen/ui'
 import FileConflictPrompt from '../saving/FileConflictPrompt.vue'
-import LinkTab from './LinkTab.vue'
 import { conflictIn } from '../saving/flushing'
 import { WORDS as words } from './words'
 import type { NoteTabState } from './kind'
@@ -40,10 +39,7 @@ watch(
       @take="props.state.take()"
     />
 
-    <LinkTab v-if="props.state.address.value" :state="props.state" />
-
     <Editor
-      v-else
       :ref="(editor: unknown) => props.state.drew(editor)"
       :model-value="props.state.shown.value.body"
       :change="props.state.change.value"

@@ -181,12 +181,15 @@ message DeleteArtifactRequest {
   reserved 2;
   reserved "artifact_id";
 
-  // The file of the vault, as the vault holds it. What is taken away is
-  // everything listening to a recording produced — the words a model heard and
-  // the words a person put right — so there is nothing to name: a field that
-  // takes one value of three and refuses the other two at run time is a rule
-  // the schema cannot state and a client cannot read.
+  // The file of the vault, as the vault holds it.
   string path = 1;
+
+  // Which of what the file carries to take away. A url carries the text
+  // fetched from its address and a copy of what is there, and they are taken
+  // away one without the other. Unspecified takes the text, which is what a
+  // recording carries and all it carries: the words a model heard and the
+  // words a person put right go together.
+  ArtifactKind kind = 3;
 }
 
 message DeleteArtifactResponse {
@@ -223,6 +226,10 @@ message ReadTranscriptResponse {
   // Whether they may be put right now. A run listening to the recording holds
   // it, and a client draws what it reads and leaves it alone.
   bool editable = 2;
+
+  // The text where it carries no times: the prose a page is written around.
+  // A client draws it as it stands, with no gutter and nothing to seek.
+  string prose = 3;
 }
 
 message WriteTranscriptRequest {

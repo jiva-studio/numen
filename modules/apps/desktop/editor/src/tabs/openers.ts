@@ -14,7 +14,7 @@ import type { MessageWriter } from '../notices/messages'
  * What a file the window opens is opened as: which of three a note is, or the
  * preset a fourth kind of note holds.
  */
-export type EditorKind = NoteType | 'preset'
+export type EditorKind = NoteType | 'preset' | 'url'
 
 /**
  * A file put in front of the person in one editor. A line is somewhere inside
@@ -65,6 +65,16 @@ export function fileOpeners(vault: FileOpenerDeps) {
   /** The kind of tab that plays recordings hands its own over. */
   const hears = (opens: SourceReader) => {
     sources.set('recording', opens)
+  }
+
+  /**
+   * The kind of tab that opens urls hands its own over. A url is reached both
+   * ways: by what the vault says stands at a path, and by having just been made
+   * here.
+   */
+  const points = (opens: SourceReader) => {
+    sources.set('url', opens)
+    editors.set('url', (path) => opens(path, []))
   }
 
   /**
@@ -125,14 +135,14 @@ export function fileOpeners(vault: FileOpenerDeps) {
     sources.get(stands.kind)?.(path, stretches)
   }
 
-  return { holds, reads, hears, opens, opensAt, made }
+  return { holds, reads, hears, points, opens, opensAt, made }
 }
 
 /** What the window puts files in front of the person with. */
 export type FileOpeners = ReturnType<typeof fileOpeners>
 
 /** Which of the four a file is made as. */
-export type MakeKind = 'deck' | 'stencil' | 'preset' | 'link'
+export type MakeKind = 'deck' | 'stencil' | 'preset' | 'url'
 
 /** What the window asks the vault to make from nothing. */
 export interface VaultMaker {
@@ -149,7 +159,7 @@ export interface VaultMaker {
    * A note pointing at an address, named by the address. What is at it is
    * fetched afterwards, and says what the note is called from then on.
    */
-  makesLink(address: string, folder: string): Promise<MakeResult>
+  makesURL(address: string, folder: string): Promise<MakeResult>
 }
 
 /** Everything making one of the four says in the window's voice. */
@@ -174,8 +184,8 @@ export function fileMakers(vault: VaultMaker, puts: FileOpeners, words: MakeWord
           ? await vault.makeDeck(name, folder)
           : what === 'stencil'
             ? await vault.makeStencil(name, folder, [words.field])
-            : what === 'link'
-              ? await vault.makesLink(name, folder)
+            : what === 'url'
+              ? await vault.makesURL(name, folder)
               : await vault.makesPreset(name, folder)
       if (answer.refusal) {
         said(words.refused[answer.refusal], 'refusal')
@@ -201,6 +211,6 @@ export function fileMakers(vault: VaultMaker, puts: FileOpeners, words: MakeWord
     decks: (folder: string, name: string) => opens('deck', folder, name),
     stencils: (folder: string, name: string) => opens('stencil', folder, name),
     presets: (folder: string, name: string) => opens('preset', folder, name),
-    imports: (folder: string, address: string) => opens('link', folder, address),
+    imports: (folder: string, address: string) => opens('url', folder, address),
   }
 }

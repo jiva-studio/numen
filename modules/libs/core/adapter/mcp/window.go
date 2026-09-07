@@ -30,7 +30,7 @@ func addWindowTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "window_tab_list",
-		Title: "What the person has open",
+		Title: "List open tabs",
 		Description: "Every tab of the person's window, and which of them they are looking " +
 			"at. Ask it before saying anything about what is open or in front of them: a " +
 			"person moves between tabs while you work, so what they are looking at now is " +

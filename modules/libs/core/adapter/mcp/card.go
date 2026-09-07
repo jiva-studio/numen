@@ -78,7 +78,7 @@ func addCardShowing(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "card_showing",
-		Title: "What card the person is looking at",
+		Title: "Show the card in front",
 		Description: "The card in front of the person: the deck it stands in, the mark " +
 			"`card_read` addresses it by, and the face it is being shown through. Ask it " +
 			"before saying anything about the card they are on — a person answers one " +
@@ -95,7 +95,7 @@ func addCardShowing(server *sdk.Server, core Core) {
 func addCardReadingTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "card_stencil_list",
-		Title: "List the stencils a vault holds",
+		Title: "List stencils",
 		Description: "The stencils of the vault: where each is filed, the name a card's " +
 			"wikilink writes, what it is called, and what a card cut by it is asked for. " +
 			"Call this before writing a card, because a card names its stencil and asks " +
@@ -134,7 +134,7 @@ func addCardReadingTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "card_read",
-		Title: "Read the cards of a deck",
+		Title: "Read cards",
 		Description: "The cards of one deck, in the order they stand in the file, each " +
 			"under the mark every other tool here addresses it by. A deck holds as many " +
 			"cards as a person writes, so this answers a run of them at a time: `total` " +
@@ -217,7 +217,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 	// this one carries what a person wrote, so each is filed as it is finished.
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "card_add",
-		Title: "Add a card to a deck",
+		Title: "Add a card",
 		Description: "Write one card at the end of a deck, or at the end of one of its " +
 			"sections. Name the stencil it is cut by, as `card_stencil_list` gives that " +
 			"name under `name`, and give a value for every field that stencil declares, " +
@@ -264,7 +264,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "card_edit",
-		Title: "Change what a card holds",
+		Title: "Edit a card",
 		Description: "Write values into one card of a deck. A field the card already " +
 			"carries is replaced, one it does not is added at the end of it, and a field " +
 			"left out of the call is left as it stands. Send the fields you are changing " +
@@ -311,7 +311,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "card_value_remove",
-		Title: "Take a field off a card",
+		Title: "Remove a card's field",
 		Description: "Remove one field from one card: its heading, and what the person " +
 			"wrote under it. `card_edit` writes a value and never takes one away, and an " +
 			"empty value is a field standing empty, not a field gone. The fields around " +
@@ -336,7 +336,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "card_remove",
-		Title: "Take a card out of a deck",
+		Title: "Remove a card",
 		Description: "Remove one card from a deck: its heading, the stencil it named and " +
 			"every value under it. The rest of the file is left the bytes it was, down to " +
 			"the blank lines and the whitespace at the ends of the lines; what every " +
@@ -359,7 +359,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "card_section_add",
-		Title: "Divide a deck with a section",
+		Title: "Add a section",
 		Description: "Write a section at the end of a deck. A section is a name a person " +
 			"gives one run of a deck, and it is a name and nothing else: it carries no " +
 			"field, no stencil and no schedule. `card_add` writes a card at the end of " +
@@ -380,7 +380,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "card_section_rename",
-		Title: "Rename a section of a deck",
+		Title: "Rename a section",
 		Description: "Give one of a deck's sections a different name. Only the heading " +
 			"line is written: the cards standing under it stay where they are, keep their " +
 			"marks and keep what they hold, and what a person wrote beneath the heading is " +
@@ -403,7 +403,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "card_section_remove",
-		Title: "Take a section out of a deck",
+		Title: "Remove a section",
 		Description: "Remove the heading of one of a deck's sections. A section is a name " +
 			"and nothing else, so this takes away the name alone: no card is removed, and " +
 			"the cards that stood under the heading stay in the file, in the order they " +
@@ -479,7 +479,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "card_field_rename",
-		Title: "Rename a stencil's field",
+		Title: "Rename a field",
 		Description: "Give one of a stencil's fields a different name, everywhere it is " +
 			"written. A field's name stands in the stencil that declares it and as a " +
 			"heading in every card of every deck that stencil cuts, so renaming it in " +

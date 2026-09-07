@@ -301,7 +301,9 @@ onBeforeUnmount(leave)
   --widest: 20rem;
   /* What asked for it, which it is never narrower than. */
   --asking: 0px;
-  --tallest: 60vh;
+  /* A menu is as long as what it offers, and it scrolls only where the screen
+     itself cannot hold it. */
+  --tallest: calc(100vh - 1rem);
   --lift: var(--numen-lift-menu);
   /* The room a rule keeps on each side of itself. */
   --parting: 0.25rem;

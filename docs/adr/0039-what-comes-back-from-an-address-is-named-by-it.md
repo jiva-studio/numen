@@ -3,13 +3,13 @@
 - **Status:** Accepted
 - **Date:** 2026-09-06
 - **Applies to:** `modules/libs/core`
-- **Related:** [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [A transcript is WebVTT](0031-a-transcript-is-webvtt.md), [A link is a note that carries an address](0038-a-link-is-a-note-that-carries-an-address.md)
+- **Related:** [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md), [A transcript is WebVTT](0031-a-transcript-is-webvtt.md), [A url is a source of its own](0038-a-url-is-a-source-of-its-own.md)
 
 ## Context
 
 A reading is named by the hash of the bytes it was made from, so a document renamed or moved keeps it and two copies of one document share it.
 
-A link note's bytes are prose somebody is typing. What was fetched has nothing to do with them: it came from an address the note carries, and a sentence added under it changes the file and not the video.
+A url's bytes are the address itself. What was fetched has nothing to do with them: it came from that address, and renaming the file changes the file and not the video.
 
 ## Decision
 
@@ -27,17 +27,17 @@ The scheme and the host are lowercased, a default port and a fragment go, and th
 
 Only `http` and `https` are read, and only away from this machine. A scheme reaching a file, and a host that is this machine, are refused where the address is read, so nothing further along has to remember to; a site that redirects onto this machine is refused as it lands. An index, a window's own socket and whatever else is listening here answer nobody's paste.
 
-### The sweep asks which notes name an address
+### The sweep asks which sources name it
 
-`notes.address` holds it, so what still points at a file in the store is a question the index answers. A reading is swept by asking whether any source still names it, and this is the same question asked of the same column.
+The fingerprint of the address is the url source's `hash`, as the fingerprint of a document's bytes is a book's. So what still stands on a file in the store is the question a reading is swept by, asked of the same column: whether any source still names it.
 
-The walk that finds a note's file gone asks it: the addresses the vault named before those notes were taken out, and the addresses it names after. What has gone from the answer is what nothing points at, and everything kept for it is taken out — the words, the prose, the copy. Two notes on one video hold it between them while either stands.
+The walk that finds a file gone asks it, and everything kept for a hash nothing names is taken out — the words, the prose, the copy. Two urls on one video hold it between them while either stands.
 
 ## Consequences
 
-- Editing a link note costs nothing and loses nothing.
+- Renaming a url costs nothing and loses nothing.
 - A vault holding one video twice fetches it once.
-- The index grows a column and an index over it, which is one migration.
+- Nothing is added to the index: a url stands under its address where a book stands under its bytes.
 - What was fetched survives the note being renamed, moved, or deleted and
 written again.
 

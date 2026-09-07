@@ -62,10 +62,15 @@ func (a *API) GetRecording(
 		Media:  a.Playing.Address(showing, ref),
 		Type:   domain.MediaType(ref.Path),
 	}
-	// A link note plays the copy fetched for it, where one stands. A note with
-	// none plays nothing here, and the tab frames the address instead.
-	if ref.Kind == domain.KindNote {
+	// A url plays the copy fetched for it, where one stands. One with none is
+	// framed at the address instead, from the socket this run opened.
+	if ref.Kind == domain.KindURL {
+		at := a.points(ctx, showing, ref)
 		out.Media, out.Type = a.copied(ctx, showing, ref)
+		out.Address = at.URL
+		if out.Media == "" {
+			out.Embed = a.Playing.Embed(at)
+		}
 	}
 	if len(cues) > 0 {
 		out.Length = max(out.Length, int32(cues[len(cues)-1].To))
@@ -73,8 +78,8 @@ func (a *API) GetRecording(
 	return connect.NewResponse(out), nil
 }
 
-// copied is where the copy fetched for a link note is played from, and what a
-// player is told it is. A note nothing has been fetched a copy for plays from
+// copied is where the copy fetched for a url is played from, and what a
+// player is told it is. One nothing has been fetched a copy for plays from
 // nowhere, which is what leaves the tab framing the address.
 func (a *API) copied(
 	ctx context.Context, v domain.Vault, ref domain.Fingerprint,
@@ -121,7 +126,13 @@ func (a *API) ReadTranscript(
 		// is one the caller is told about.
 		out.Editable = free(ctx, store, derived.Partial(said.Producer, said.Hash))
 	}
-	_, cues := transcript.Parse(raw)
+	prose, cues := transcript.Parse(raw)
+	// A page is written around prose and nothing timed it, so the text itself is
+	// the answer and there is nothing to cut a stretch out of.
+	if len(cues) == 0 {
+		out.Prose = prose
+		return connect.NewResponse(out), nil
+	}
 	if at := r.Msg.GetAt(); at != nil {
 		cues, err = within(at)(cues)
 		if err != nil {
@@ -197,9 +208,9 @@ func (a *API) recording(
 	if err != nil {
 		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(reaching(err), err)
 	}
-	// A link note pointing at a video has words with times in them, as a
+	// A url pointing at a video has words with times in them, as a
 	// recording does, and they are read back the same way.
-	if ref.Kind == domain.KindNote && a.points(ctx, showing, ref).IsVideo() {
+	if ref.Kind == domain.KindURL {
 		return showing, ref, nil
 	}
 	if ref.Kind != domain.KindRecording {
@@ -306,8 +317,13 @@ func (a *API) hearing() (port.SourceQueries, port.DerivedStores, bool) {
 	return a.Highlight.Sources, a.Highlight.Derived, true
 }
 
-// made is what the index says was made from the file at a path, and the store
-// holding it. It answers false for a file nothing has been made from.
+// made is what was made from the file at a path, and the store holding it. It
+// answers false for a file nothing has been made from.
+//
+// A document's reading is named by the bytes that were read, which the index
+// holds. What a link note points at was never in the note's bytes: it is named
+// by the address, so it is looked for under that name and a walk that has not
+// reached the note yet takes nothing away from it.
 func (a *API) made(
 	ctx context.Context,
 	v domain.Vault,
@@ -316,6 +332,9 @@ func (a *API) made(
 	sources, stores, ok := a.hearing()
 	if !ok {
 		return port.SourceText{}, nil, false, nil
+	}
+	if at := a.pointing(ctx, v, path); at.URL != "" {
+		return a.fetchedUnder(ctx, v, at)
 	}
 	said, held, err := sources.Reading(ctx, v.ID, path)
 	if err != nil || !held || said.Producer == "" {
@@ -326,6 +345,51 @@ func (a *API) made(
 		return port.SourceText{}, nil, false, err
 	}
 	return said, store, true, nil
+}
+
+// pointing is the address the note at a path carries, and nothing where the
+// file is not a note or points nowhere.
+func (a *API) pointing(ctx context.Context, v domain.Vault, path string) domain.WebAddress {
+	reader, err := a.Readers.Open(v)
+	if err != nil {
+		return domain.WebAddress{}
+	}
+	raw, err := reader.Read(ctx, path)
+	if err != nil {
+		return domain.WebAddress{}
+	}
+	at, err := domain.ReadURL(raw)
+	if err != nil {
+		return domain.WebAddress{}
+	}
+	return at
+}
+
+// fetchedUnder is what stands in the store under an address, and which producer
+// wrote it. Nothing fetched is an address nothing has been fetched for, which is
+// a link note's ordinary state until something is.
+func (a *API) fetchedUnder(
+	ctx context.Context, v domain.Vault, at domain.WebAddress,
+) (port.SourceText, port.DerivedStore, bool, error) {
+	_, stores, ok := a.hearing()
+	if !ok {
+		return port.SourceText{}, nil, false, nil
+	}
+	store, err := stores.Open(v)
+	if err != nil {
+		return port.SourceText{}, nil, false, err
+	}
+	hash := derived.Fingerprint([]byte(at.URL))
+	for _, from := range derived.Producers() {
+		got, err := farUnder(ctx, store, from, hash)
+		if err != nil {
+			return port.SourceText{}, nil, false, err
+		}
+		if got.stands != untouched {
+			return port.SourceText{Producer: from, Hash: hash}, store, true, nil
+		}
+	}
+	return port.SourceText{}, store, false, nil
 }
 
 // transcript is what a model wrote down of the recording at a path, and nothing

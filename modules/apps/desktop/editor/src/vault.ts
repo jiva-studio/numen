@@ -187,7 +187,6 @@ export const core: Core & SearchDeps & CommandsDeps = {
       title: note.title,
       folder: note.folder,
       links: note.links.map(written),
-      ...(note.url ? { url: note.url } : {}),
     })
     return { path: answer.path, refusal: refusalIn(answer) } satisfies MakeResult
   },
@@ -282,6 +281,10 @@ export const core: Core & SearchDeps & CommandsDeps = {
   },
   choosesReviewing: (starts) => puts([{ at: STARTS, value: starts }]),
   makeFolder: async (path) => refusalIn(await files.createFolder({ path })),
+  makeURL: async (url, folder) => {
+    const answer = await files.createURL({ url, folder })
+    return { path: answer.path, refusal: refusalIn(answer) } satisfies MakeResult
+  },
   quitting: (signal) => windowService.watchQuit({ window: WINDOW }, { signal }),
   flushed: async (token, owed) => {
     await windowService.reportFlush({ window: WINDOW, token, result: owing[owed ?? 'nothing'] })
@@ -452,6 +455,7 @@ const holding: Record<SourceKind, Source> = {
   [SourceKind.NOTE]: 'note',
   [SourceKind.BOOK]: 'book',
   [SourceKind.RECORDING]: 'recording',
+  [SourceKind.URL]: 'url',
 }
 
 /** A source this window has no word for is a file it holds no source for. */
@@ -498,13 +502,12 @@ const around = (said: NeighbourhoodMessage): Neighbourhood => ({
   }),
 })
 
-/** Which of five a note is, in the words the window uses. */
+/** Which of four a note is, in the words the window uses. */
 const typed: Record<NoteTypes, NoteType> = {
   [NoteTypes.UNSPECIFIED]: 'note',
   [NoteTypes.DECK]: 'deck',
   [NoteTypes.STENCIL]: 'stencil',
   [NoteTypes.PRESET]: 'preset',
-  [NoteTypes.LINK]: 'link',
 }
 
 /** A kind this window has no word for is an ordinary note. */
