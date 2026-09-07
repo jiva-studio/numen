@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/fixes"
 	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -79,11 +79,11 @@ func halted(
 
 	// The shelf as a run that ended among the batches left it: the corrections
 	// it wrote, and the count standing after them.
-	put := make([]fixes.Line, 0, through)
+	put := make([]correction.Line, 0, through)
 	for at := range through {
-		put = append(put, fixes.Line{Number: at, Text: corrected(lines[at])})
+		put = append(put, correction.Line{Number: at, Text: corrected(lines[at])})
 	}
-	if err := store.Append(t.Context(), text.Corrections("ocr", hash), fixes.Pack(put)); err != nil {
+	if err := store.Append(t.Context(), text.Corrections("ocr", hash), correction.Pack(put)); err != nil {
 		t.Fatal(err)
 	}
 	stood, err := json.Marshal(checkpoint{By: by.Name(), Pages: through})
@@ -123,7 +123,7 @@ func corrections(t *testing.T, store port.DerivedStore, name string) []int {
 		t.Fatal(err)
 	}
 	out := []int{}
-	for _, line := range fixes.Unpack(raw) {
+	for _, line := range correction.Unpack(raw) {
 		out = append(out, line.Number)
 	}
 	return out

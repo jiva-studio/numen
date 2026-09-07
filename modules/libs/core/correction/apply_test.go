@@ -1,11 +1,11 @@
-package fixes_test
+package correction_test
 
 import (
 	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/fixes"
+	"github.com/jiva-studio/numen/modules/libs/core/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 )
@@ -64,7 +64,7 @@ var right = []string{
 }
 
 // put is the corrections as a proofreading run wrote them down.
-var put = []fixes.Line{
+var put = []correction.Line{
 	{Number: 1, Text: right[1]},
 	{Number: 3, Text: right[3]},
 	{Number: 4, Text: right[4]},
@@ -74,8 +74,8 @@ var put = []fixes.Line{
 func TestEveryBoxStillNamesItsWords(t *testing.T) {
 	prose, marks, boxes, parts := reading(read)
 
-	moved := fixes.Boxes(boxes, put)
-	said, _, _ := fixes.Prose(prose, marks, boxes, parts, put)
+	moved := correction.Boxes(boxes, put)
+	said, _, _ := correction.Prose(prose, marks, boxes, parts, put)
 
 	if len(moved) != len(read) {
 		t.Fatalf("%d boxes, want %d", len(moved), len(read))
@@ -94,10 +94,10 @@ func TestACorrectedReadingIsTheReadingItShouldHaveBeen(t *testing.T) {
 	prose, marks, boxes, parts := reading(read)
 	wantProse, wantMarks, wantBoxes, wantParts := reading(right)
 
-	if got := fixes.Boxes(boxes, put); !reflect.DeepEqual(got, wantBoxes) {
+	if got := correction.Boxes(boxes, put); !reflect.DeepEqual(got, wantBoxes) {
 		t.Errorf("boxes %+v, want %+v", got, wantBoxes)
 	}
-	said, pages, named := fixes.Prose(prose, marks, boxes, parts, put)
+	said, pages, named := correction.Prose(prose, marks, boxes, parts, put)
 	if said != wantProse {
 		t.Errorf("prose %q, want %q", said, wantProse)
 	}
@@ -113,7 +113,7 @@ func TestAHeadingPutRightKeepsItsOwnLength(t *testing.T) {
 	prose, marks, boxes, parts := reading(read)
 
 	// Only the second heading, which the reading had a letter short.
-	_, _, named := fixes.Prose(prose, marks, boxes, parts, []fixes.Line{{Number: 3, Text: right[3]}})
+	_, _, named := correction.Prose(prose, marks, boxes, parts, []correction.Line{{Number: 3, Text: right[3]}})
 
 	if named[0].Length != parts[0].Length {
 		t.Errorf("the first heading is %d bytes, want the %d it was", named[0].Length, parts[0].Length)
@@ -128,12 +128,12 @@ func TestAHeadingPutRightKeepsItsOwnLength(t *testing.T) {
 
 func TestALineNoBoxAnswersToIsIgnored(t *testing.T) {
 	prose, marks, boxes, parts := reading(read)
-	stray := []fixes.Line{{Number: -1, Text: "before the book"}, {Number: 99, Text: "after it"}}
+	stray := []correction.Line{{Number: -1, Text: "before the book"}, {Number: 99, Text: "after it"}}
 
-	if got := fixes.Boxes(boxes, stray); !reflect.DeepEqual(got, boxes) {
+	if got := correction.Boxes(boxes, stray); !reflect.DeepEqual(got, boxes) {
 		t.Errorf("boxes %+v, want them untouched", got)
 	}
-	said, pages, named := fixes.Prose(prose, marks, boxes, parts, stray)
+	said, pages, named := correction.Prose(prose, marks, boxes, parts, stray)
 	if said != prose {
 		t.Errorf("prose %q, want it untouched", said)
 	}
@@ -144,10 +144,10 @@ func TestALineNoBoxAnswersToIsIgnored(t *testing.T) {
 
 func TestTheLastWordOnALineWins(t *testing.T) {
 	prose, marks, boxes, parts := reading(read)
-	twice := []fixes.Line{{Number: 1, Text: "a first thought"}, {Number: 1, Text: right[1]}}
+	twice := []correction.Line{{Number: 1, Text: "a first thought"}, {Number: 1, Text: right[1]}}
 
-	said, _, _ := fixes.Prose(prose, marks, boxes, parts, twice)
-	moved := fixes.Boxes(boxes, twice)
+	said, _, _ := correction.Prose(prose, marks, boxes, parts, twice)
+	moved := correction.Boxes(boxes, twice)
 
 	if got := said[moved[1].Start : moved[1].Start+moved[1].Length]; got != right[1] {
 		t.Errorf("the line says %q, want %q", got, right[1])
@@ -160,11 +160,11 @@ func TestTheLastWordOnALineWins(t *testing.T) {
 func TestNoCorrectionsChangesNothing(t *testing.T) {
 	prose, marks, boxes, parts := reading(read)
 
-	for _, lines := range [][]fixes.Line{nil, {}} {
-		if got := fixes.Boxes(boxes, lines); !reflect.DeepEqual(got, boxes) {
+	for _, lines := range [][]correction.Line{nil, {}} {
+		if got := correction.Boxes(boxes, lines); !reflect.DeepEqual(got, boxes) {
 			t.Errorf("boxes %+v, want them untouched", got)
 		}
-		said, pages, named := fixes.Prose(prose, marks, boxes, parts, lines)
+		said, pages, named := correction.Prose(prose, marks, boxes, parts, lines)
 		if said != prose {
 			t.Errorf("prose %q, want it untouched", said)
 		}
@@ -175,19 +175,19 @@ func TestNoCorrectionsChangesNothing(t *testing.T) {
 }
 
 func TestCorrectionsWrittenForOtherBytesSliceNothing(t *testing.T) {
-	// A .fixes file kept beside a reading it was not made from: the boxes reach
+	// A .corrected file kept beside a reading it was not made from: the boxes reach
 	// past the prose, and one of them reaches backwards.
 	prose, marks, boxes, parts := reading(read)
 	boxes[2].Start, boxes[2].Length = len(prose)+100, 40
 	boxes[4].Start = 0
 
-	lines := []fixes.Line{{Number: 2, Text: "far past the end"}, {Number: 4, Text: "back at the start"}}
+	lines := []correction.Line{{Number: 2, Text: "far past the end"}, {Number: 4, Text: "back at the start"}}
 
-	said, pages, named := fixes.Prose(prose, marks, boxes, parts, lines)
+	said, pages, named := correction.Prose(prose, marks, boxes, parts, lines)
 	if said == "" {
 		t.Errorf("prose came back empty")
 	}
-	moved := fixes.Boxes(boxes, lines)
+	moved := correction.Boxes(boxes, lines)
 	if len(moved) != len(boxes) {
 		t.Errorf("%d boxes, want %d", len(moved), len(boxes))
 	}

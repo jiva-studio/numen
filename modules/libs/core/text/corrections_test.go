@@ -115,7 +115,7 @@ func TestATranscriptNothingPutRightReadsAsWhatWasHeard(t *testing.T) {
 // put right to goes with the recording it belongs to.
 func TestWhatATranscriptWasPutRightToIsSweptWithIt(t *testing.T) {
 	name := text.Corrections(text.ASR, "abc123")
-	if name != "asr/abc123.corrected.vtt" {
+	if name != "transcript/abc123.asr.corrected.vtt" {
 		t.Errorf("a transcript put right is kept under %q", name)
 	}
 

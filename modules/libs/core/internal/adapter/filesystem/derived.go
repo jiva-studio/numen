@@ -18,22 +18,22 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
-// OCRDir is where the text of a source that has none of its own is kept.
+// The folders a vault's own store keeps what was made from its files in. Each
+// is a kind: what the files in it are.
 //
-// The area is named for what made the files, because that is what is true of
-// them: their shape, the fields recorded beside them and what a place in them
-// is called all belong to the thing that wrote them, and another producer's
-// would not be the same.
-const OCRDir = "ocr"
-
-// SpeechDir is where the words a model heard in a recording are kept.
-const SpeechDir = text.ASR
-
-// CaptionsDir is where the words published with a video are kept, and
-// ArticleDir the prose of a page. Both are what a link note points at, fetched.
+// What made them is another question, and it stands in the file's own name
+// where a kind has more than one producer. A transcript is a transcript whether
+// a model here heard it or a site published it with a video, and one folder
+// holds both.
 const (
-	CaptionsDir = text.Captions
-	ArticleDir  = text.Article
+	// OCRDir is text with the place on the page each word stands at.
+	OCRDir = text.Reading
+	// TranscriptDir is text with the times each stretch of it was said at.
+	TranscriptDir = text.Transcript
+	// ArticleDir is the prose a page is written around.
+	ArticleDir = text.Article
+	// CopyDir is the bytes of a video, kept to be played from this disk.
+	CopyDir = text.Copies
 )
 
 // FlashcardsDir is where the answers a person gave their cards are kept. They

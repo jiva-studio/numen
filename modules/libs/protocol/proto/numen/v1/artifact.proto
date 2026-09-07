@@ -80,28 +80,40 @@ message Artifact {
   ArtifactKind kind = 5;
 }
 
-// ArtifactKind is which thing made from a file is meant. The list is closed: a
+// ArtifactKind is what a thing made from a file is. The list is closed: a
 // client draws one row per kind, and a kind nobody decided on has no row.
+//
+// A kind says what a thing is; what made it is its producer, and the two are
+// not the same question. Words with times are a transcript whether a model
+// heard them or a site published them.
 enum ArtifactKind {
   ARTIFACT_KIND_UNSPECIFIED = 0;
 
-  // The text read out of a scan. It stands under the name `ocr`.
-  ARTIFACT_KIND_READING = 1;
+  // Text with the place on the page each word stands at, read off a scan and
+  // kept under `ocr`.
+  ARTIFACT_KIND_OCR = 1;
 
-  // The words heard in a recording, under `asr`.
-  ARTIFACT_KIND_HEARD = 2;
+  // That reading put right by a person, under `.corrected` beside it.
+  ARTIFACT_KIND_OCR_CORRECTED = 6;
 
-  // Those words put right, under `asr.corrected`.
-  ARTIFACT_KIND_CORRECTED = 3;
+  // Text with the times each stretch of it was said at, under the name of what
+  // made it: `asr` where a model heard it, `captions` where a site published
+  // it with a video.
+  ARTIFACT_KIND_TRANSCRIPT = 2;
 
-  // What is at the address a link note points at: a video's words, a page's
-  // prose. It stands under `link`, and which producer brought it is the
-  // store's business and not a client's.
-  ARTIFACT_KIND_FETCHED = 4;
+  // A transcript put right by a person, under `.corrected` beside the one it
+  // corrects. It says which it is: a reading put right is another kind, and a
+  // caller editing one has to know which of them it holds.
+  ARTIFACT_KIND_TRANSCRIPT_CORRECTED = 3;
 
-  // A copy of the video at that address, played from this disk. It stands
-  // under `link.copy`, and it is asked for by hand: an hour of video is not
-  // what pasting an address asks for.
+  // The prose a page is written around, under `article`. It carries no times
+  // and no places on pages: it is what the page says, and nothing about where
+  // it stood.
+  ARTIFACT_KIND_ARTICLE = 4;
+
+  // The bytes of a video, kept under `copy` and played from this disk. It is
+  // asked for by hand: an hour of video is not what pasting an address asks
+  // for.
   ARTIFACT_KIND_COPY = 5;
 }
 

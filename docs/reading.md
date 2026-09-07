@@ -1,4 +1,4 @@
-# How a book is read
+| `<hash>.corrected` | one record a corrected line |# How a book is read
 
 What a machine reads off the pages of a scanned document, where it is kept, and what is done to it afterwards. A reading is written into the vault's own folder, under `.numen/ocr/`, and the source is cut from it (see [A book's text is a cache or an artifact](adr/0015-a-books-text-is-a-cache-or-an-artifact.md)).
 
@@ -12,7 +12,7 @@ A reading is named by the hash of the bytes it was made from. A document renamed
 | `<hash>.partial` | the prose of a run still going, and how far it has got |
 | `<hash>.boxes` | one record a printed line: its page, its run of bytes in the prose, and its rectangle as a fraction of that page |
 | `<hash>.parts` | one record a heading: where it begins in the prose, how far it runs, and how deep it sits |
-| `<hash>.fixes` | one record a corrected line |
+| `<hash>.corrected` | one record a corrected line |
 | `<hash>.proofread` | who proofread the reading, how far they got, and the batch that is out |
 | `<hash>.json` | which models read the document, at what resolution, and under which recipe |
 
@@ -25,7 +25,7 @@ graph TD
     TXT[".txt<br/>the prose, pages marked"]
     PARTIAL[".partial<br/>the prose of a run still going"]
     PARTS[".parts<br/>one record a heading"]
-    FIXES[".fixes<br/>one record a corrected line"]
+    FIXES[".corrected<br/>one record a corrected line"]
     BOXES[".boxes<br/>one rectangle a printed line"]
     STANDING[".proofread<br/>who, and how far"]
     BESIDE[".json<br/>which models read this"]
@@ -35,7 +35,7 @@ graph TD
     PARTIAL -->|"where no .txt is finished"| TEXT
     PARTS --> TEXT
     FIXES --> TEXT
-    BOXES -->|"where .fixes holds something"| TEXT
+    BOXES -->|"where .corrected holds something"| TEXT
     STANDING -.-> FIXES
     BESIDE -.-> TXT
 ```
@@ -76,7 +76,7 @@ How a proofreader is asked, what its reply must look like, what refuses one and 
 
 The unit of correction is one printed line. A record in `.boxes` is one run of words the recogniser read in one go, and it carries a rectangle; putting a line's letters right leaves its words within that line, so the rectangles hold unchanged. A line is known by where its box stands in the reading, so the number a correction is keyed by counts through the whole book.
 
-The recogniser's artifact is never rewritten. It stays on disk under its own name, the corrections go beside it in `.fixes`, and `.proofread` says who put the reading right, how far they got, and which batch is out.
+The recogniser's artifact is never rewritten. It stays on disk under its own name, the corrections go beside it in `.corrected`, and `.proofread` says who put the reading right, how far they got, and which batch is out.
 
 ## Applying corrections
 

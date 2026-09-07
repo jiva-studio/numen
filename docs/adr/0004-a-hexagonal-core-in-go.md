@@ -99,7 +99,7 @@ modules/libs/core/
   epub/  ocr/  highlight/  a book's text, and where it falls on a page
   transcript/  proofread/  a recording's words, and putting them right
   text/  task/  check/     read a source, follow a run, report a vault's faults
-  fixes/                   a correction kept
+  correction/              a correction kept
   appearance/              the window's own surface
 
   adapter/

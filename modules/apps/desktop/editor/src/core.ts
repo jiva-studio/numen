@@ -140,11 +140,21 @@ export interface Task {
 }
 
 /**
- * What is made from one file of the vault: the text read out of a scan, the
- * words heard in a recording, those words put right, what is at the address a
- * link note points at, and a copy of the video there.
+ * What is made from one file of the vault, by what it is: text with the place
+ * on the page each word stands at, text with the times it was said at, either
+ * of those put right, the prose a page is written around, and the bytes of a
+ * video kept to be played.
+ *
+ * What made it is another question. A transcript is a transcript whether a
+ * model here heard it or a site published it with a video.
  */
-export type Artifact = 'reading' | 'transcript' | 'corrections' | 'fetched' | 'copy'
+export type Artifact =
+  | 'ocr'
+  | 'ocr.corrected'
+  | 'transcript'
+  | 'transcript.corrected'
+  | 'article'
+  | 'copy'
 
 /**
  * What has become of one artifact: nothing has been made, a run over it waits
@@ -196,6 +206,17 @@ export interface ArtifactRunner {
   carries(path: string): Promise<ArtifactStates>
   /** One artifact asked for, and what came of asking. */
   makes(path: string, of: Artifact): Promise<Outcome>
+  /**
+   * The text of a file put right by a proofreader, asked for by which text
+   * that is: a recording carries a transcript and a scan carries a reading.
+   */
+  corrects(path: string): Promise<Outcome>
+  /**
+   * The text at the address a note points at, asked for by what that text is:
+   * a video is a transcript and every other page is an article, and which of
+   * them this note carries is what the vault answers.
+   */
+  fetches(path: string): Promise<Outcome>
   /**
    * The transcript of a recording taken away, with everything cut from it, and
    * whether this build can do it at all. The recording is left saying nothing,

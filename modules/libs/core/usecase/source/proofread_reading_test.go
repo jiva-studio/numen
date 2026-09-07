@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/fixes"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
@@ -117,7 +117,7 @@ func TestTheCorrectionsGoBesideTheReadingAndTheReadingIsNotTouched(t *testing.T)
 	if string(kept(t, shelved, names.artifact)) != string(was) {
 		t.Error("the reading was rewritten")
 	}
-	if put := fixes.Unpack(kept(t, shelved, names.fixes)); len(put) != 2 {
+	if put := correction.Unpack(kept(t, shelved, names.corrections)); len(put) != 2 {
 		t.Errorf("what is kept beside the reading is %+v", put)
 	}
 	var stood checkpoint
@@ -225,7 +225,7 @@ func TestCorrectionsAnotherProofreaderMadeAreNotTakenUp(t *testing.T) {
 	if err := shelved.Write(t.Context(), names.far, stood); err != nil {
 		t.Fatal(err)
 	}
-	if err := shelved.Write(t.Context(), names.fixes, []byte("what another one said")); err != nil {
+	if err := shelved.Write(t.Context(), names.corrections, []byte("what another one said")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -247,7 +247,7 @@ func TestCorrectionsAnotherProofreaderMadeAreNotTakenUp(t *testing.T) {
 
 func TestOneRunToAReading(t *testing.T) {
 	put, v, shelved, by := proofreading(t, nil)
-	shelved.hold(textNames(t, shelved).fixes)
+	shelved.hold(textNames(t, shelved).corrections)
 
 	res, err := put.Execute(t.Context(), v, documentPath)
 	if err != nil {
@@ -327,10 +327,10 @@ func TestABatchThatWasNotCutIsAskedAboutAgain(t *testing.T) {
 
 // names are what one reading of the fixture is kept under.
 type names struct {
-	hash     string
-	artifact string
-	fixes    string
-	far      string
+	hash        string
+	artifact    string
+	corrections string
+	far         string
 }
 
 // textNames finds the one reading on the shelf and says what its files are
@@ -343,10 +343,10 @@ func textNames(t *testing.T, shelved *shelf) names {
 		}
 		hash := strings.TrimSuffix(strings.TrimPrefix(name, "ocr/"), ".txt")
 		return names{
-			hash:     hash,
-			artifact: text.Artifact("ocr", hash),
-			fixes:    text.Corrections("ocr", hash),
-			far:      text.Proofread("ocr", hash),
+			hash:        hash,
+			artifact:    text.Artifact("ocr", hash),
+			corrections: text.Corrections("ocr", hash),
+			far:         text.Proofread("ocr", hash),
 		}
 	}
 	t.Fatal("nothing was read")

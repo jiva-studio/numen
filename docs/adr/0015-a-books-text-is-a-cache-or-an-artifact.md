@@ -19,7 +19,7 @@ graph TD
     TL["its own text layer<br/>deterministic, kept nowhere"]
     R["a model reads the pages<br/>asked for by a person"]
     A["the service folder<br/>producer/hash.txt"]
-    S["beside it: .boxes, .parts,<br/>.fixes, .proofread"]
+    S["beside it: .boxes, .parts,<br/>.corrected, .proofread"]
     CH["chunks<br/>start and length in that text"]
     P["a passage<br/>path, start, length"]
     VW["the viewer<br/>pages drawn here, highlights lit"]
@@ -77,7 +77,9 @@ A recognition goes under the application's own folder inside the vault. The walk
 
 One run makes the prose, the coordinates it was read from, the parts it divides into, the corrections a proofreader made, how far that proofreader got, and the record of which models produced it. None of them means anything without the others, and a sweep takes them together.
 
-The area is named for what made the files. Their format, the fields recorded beside them and what a place in one is called all belong to the thing that wrote them, and no shared shape is defined for a producer that does not exist. What one reading holds, page by page, is [`../reading.md`](../reading.md).
+The area is named for what the files are. Their format, the fields recorded beside them and what a place in one is called all follow from that: a transcript carries times wherever it came from, and a reading carries places on pages.
+
+What made them is another question, and it stands in a file's own name where a kind has more than one producer: `transcript/<hash>.asr.vtt` for words a model here heard, `transcript/<hash>.captions.vtt` for words a site published with a video. A kind one producer writes needs no such name — there is nothing to tell its files apart from. What one reading holds, page by page, is [`../reading.md`](../reading.md).
 
 ### A run batches, writes its count last, resumes, and cuts after each batch
 

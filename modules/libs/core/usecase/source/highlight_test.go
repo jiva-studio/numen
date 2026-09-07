@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/fixes"
 	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -337,8 +337,8 @@ func TestAProofreadReadingIsLitWhereItsWordsNowStand(t *testing.T) {
 	}
 	// The first line is put right and grows by three bytes, so the third line
 	// begins at 14 and runs to 19.
-	put := []fixes.Line{{Number: 0, Text: "eighteen"}}
-	if err := store.Write(t.Context(), text.Corrections("ocr", "abc123"), fixes.Pack(put)); err != nil {
+	put := []correction.Line{{Number: 0, Text: "eighteen"}}
+	if err := store.Write(t.Context(), text.Corrections("ocr", "abc123"), correction.Pack(put)); err != nil {
 		t.Fatal(err)
 	}
 

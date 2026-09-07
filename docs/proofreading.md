@@ -8,8 +8,8 @@ A machine that read a page and a machine that heard an hour both produce text no
 
 | Proofread | The unit | Where the corrections go |
 | --- | --- | --- |
-| a reading | one printed line | `ocr/<hash>.fixes` |
-| a transcript | one cue | `asr/<hash>.corrected.vtt` |
+| a reading | one printed line | `ocr/<hash>.corrected` |
+| a transcript | one cue | `transcript/<hash>.asr.corrected.vtt` |
 
 What a reading is and how its files hold together is [Reading](reading.md). What a transcript is and how a moment in it is named is [Transcribing](transcribing.md).
 
@@ -29,7 +29,7 @@ graph TD
     MODEL["the proofreader"]
     REPLY["the reply<br/>only the lines that changed"]
     GATES["the gates"]
-    FIX["the corrections<br/>.fixes, or .corrected.vtt"]
+    FIX["the corrections<br/>.corrected, or .corrected.vtt"]
     OUT["the text a chunk is a place in"]
 
     ART --> ASK

@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/artifact.proto.
  */
 export const file_numen_v1_artifact: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9hcnRpZmFjdC5wcm90bxIIbnVtZW4udjEiewoIQXJ0aWZhY3QSDAoEbmFtZRgBIAEoCRIeCgVzdGF0ZRgCIAEoDjIPLm51bWVuLnYxLlN0YXRlEg0KBWVycm9yGAMgASgJEgwKBHNpemUYBCABKAMSJAoEa2luZBgFIAEoDjIWLm51bWVuLnYxLkFydGlmYWN0S2luZCIkChRMaXN0QXJ0aWZhY3RzUmVxdWVzdBIMCgRwYXRoGAEgASgJIj4KFUxpc3RBcnRpZmFjdHNSZXNwb25zZRIlCglhcnRpZmFjdHMYASADKAsyEi5udW1lbi52MS5BcnRpZmFjdCJeChVDcmVhdGVBcnRpZmFjdFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIkCgRraW5kGAMgASgOMhYubnVtZW4udjEuQXJ0aWZhY3RLaW5kSgQIAhADUgthcnRpZmFjdF9pZCI+ChZDcmVhdGVBcnRpZmFjdFJlc3BvbnNlEiQKCGFydGlmYWN0GAEgASgLMhIubnVtZW4udjEuQXJ0aWZhY3QiOAoVRGVsZXRlQXJ0aWZhY3RSZXF1ZXN0EgwKBHBhdGgYASABKAlKBAgCEANSC2FydGlmYWN0X2lkIj4KFkRlbGV0ZUFydGlmYWN0UmVzcG9uc2USJAoIYXJ0aWZhY3QYASABKAsyEi5udW1lbi52MS5BcnRpZmFjdCItCgNDdWUSDAoEdGV4dBgBIAEoCRIMCgRmcm9tGAIgASgFEgoKAnRvGAMgASgFIkQKFVJlYWRUcmFuc2NyaXB0UmVxdWVzdBIMCgRwYXRoGAEgASgJEh0KAmF0GAIgASgLMhEubnVtZW4udjEuU3RyZXRjaCJHChZSZWFkVHJhbnNjcmlwdFJlc3BvbnNlEhsKBGN1ZXMYASADKAsyDS5udW1lbi52MS5DdWUSEAoIZWRpdGFibGUYAiABKAgiQwoWV3JpdGVUcmFuc2NyaXB0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhsKBGN1ZXMYAiADKAsyDS5udW1lbi52MS5DdWUiSAoXV3JpdGVUcmFuc2NyaXB0UmVzcG9uc2USGwoEY3VlcxgBIAMoCzINLm51bWVuLnYxLkN1ZRIQCghlZGl0YWJsZRgCIAEoCCqxAQoMQXJ0aWZhY3RLaW5kEh0KGUFSVElGQUNUX0tJTkRfVU5TUEVDSUZJRUQQABIZChVBUlRJRkFDVF9LSU5EX1JFQURJTkcQARIXChNBUlRJRkFDVF9LSU5EX0hFQVJEEAISGwoXQVJUSUZBQ1RfS0lORF9DT1JSRUNURUQQAxIZChVBUlRJRkFDVF9LSU5EX0ZFVENIRUQQBBIWChJBUlRJRkFDVF9LSU5EX0NPUFkQBSqZAQoFU3RhdGUSFQoRU1RBVEVfVU5TUEVDSUZJRUQQABIOCgpTVEFURV9OT05FEAESEAoMU1RBVEVfUVVFVUVEEAISEQoNU1RBVEVfUlVOTklORxADEhEKDVNUQVRFX1NUT1BQRUQQBBIOCgpTVEFURV9ET05FEAUSDwoLU1RBVEVfRU1QVFkQBhIQCgxTVEFURV9GQUlMRUQQBzK6AwoPQXJ0aWZhY3RTZXJ2aWNlElAKDUxpc3RBcnRpZmFjdHMSHi5udW1lbi52MS5MaXN0QXJ0aWZhY3RzUmVxdWVzdBofLm51bWVuLnYxLkxpc3RBcnRpZmFjdHNSZXNwb25zZRJTCg5DcmVhdGVBcnRpZmFjdBIfLm51bWVuLnYxLkNyZWF0ZUFydGlmYWN0UmVxdWVzdBogLm51bWVuLnYxLkNyZWF0ZUFydGlmYWN0UmVzcG9uc2USUwoORGVsZXRlQXJ0aWZhY3QSHy5udW1lbi52MS5EZWxldGVBcnRpZmFjdFJlcXVlc3QaIC5udW1lbi52MS5EZWxldGVBcnRpZmFjdFJlc3BvbnNlElMKDlJlYWRUcmFuc2NyaXB0Eh8ubnVtZW4udjEuUmVhZFRyYW5zY3JpcHRSZXF1ZXN0GiAubnVtZW4udjEuUmVhZFRyYW5zY3JpcHRSZXNwb25zZRJWCg9Xcml0ZVRyYW5zY3JpcHQSIC5udW1lbi52MS5Xcml0ZVRyYW5zY3JpcHRSZXF1ZXN0GiEubnVtZW4udjEuV3JpdGVUcmFuc2NyaXB0UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9hcnRpZmFjdC5wcm90bxIIbnVtZW4udjEiewoIQXJ0aWZhY3QSDAoEbmFtZRgBIAEoCRIeCgVzdGF0ZRgCIAEoDjIPLm51bWVuLnYxLlN0YXRlEg0KBWVycm9yGAMgASgJEgwKBHNpemUYBCABKAMSJAoEa2luZBgFIAEoDjIWLm51bWVuLnYxLkFydGlmYWN0S2luZCIkChRMaXN0QXJ0aWZhY3RzUmVxdWVzdBIMCgRwYXRoGAEgASgJIj4KFUxpc3RBcnRpZmFjdHNSZXNwb25zZRIlCglhcnRpZmFjdHMYASADKAsyEi5udW1lbi52MS5BcnRpZmFjdCJeChVDcmVhdGVBcnRpZmFjdFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIkCgRraW5kGAMgASgOMhYubnVtZW4udjEuQXJ0aWZhY3RLaW5kSgQIAhADUgthcnRpZmFjdF9pZCI+ChZDcmVhdGVBcnRpZmFjdFJlc3BvbnNlEiQKCGFydGlmYWN0GAEgASgLMhIubnVtZW4udjEuQXJ0aWZhY3QiOAoVRGVsZXRlQXJ0aWZhY3RSZXF1ZXN0EgwKBHBhdGgYASABKAlKBAgCEANSC2FydGlmYWN0X2lkIj4KFkRlbGV0ZUFydGlmYWN0UmVzcG9uc2USJAoIYXJ0aWZhY3QYASABKAsyEi5udW1lbi52MS5BcnRpZmFjdCItCgNDdWUSDAoEdGV4dBgBIAEoCRIMCgRmcm9tGAIgASgFEgoKAnRvGAMgASgFIkQKFVJlYWRUcmFuc2NyaXB0UmVxdWVzdBIMCgRwYXRoGAEgASgJEh0KAmF0GAIgASgLMhEubnVtZW4udjEuU3RyZXRjaCJHChZSZWFkVHJhbnNjcmlwdFJlc3BvbnNlEhsKBGN1ZXMYASADKAsyDS5udW1lbi52MS5DdWUSEAoIZWRpdGFibGUYAiABKAgiQwoWV3JpdGVUcmFuc2NyaXB0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhsKBGN1ZXMYAiADKAsyDS5udW1lbi52MS5DdWUiSAoXV3JpdGVUcmFuc2NyaXB0UmVzcG9uc2USGwoEY3VlcxgBIAMoCzINLm51bWVuLnYxLkN1ZRIQCghlZGl0YWJsZRgCIAEoCCreAQoMQXJ0aWZhY3RLaW5kEh0KGUFSVElGQUNUX0tJTkRfVU5TUEVDSUZJRUQQABIVChFBUlRJRkFDVF9LSU5EX09DUhABEh8KG0FSVElGQUNUX0tJTkRfT0NSX0NPUlJFQ1RFRBAGEhwKGEFSVElGQUNUX0tJTkRfVFJBTlNDUklQVBACEiYKIkFSVElGQUNUX0tJTkRfVFJBTlNDUklQVF9DT1JSRUNURUQQAxIZChVBUlRJRkFDVF9LSU5EX0FSVElDTEUQBBIWChJBUlRJRkFDVF9LSU5EX0NPUFkQBSqZAQoFU3RhdGUSFQoRU1RBVEVfVU5TUEVDSUZJRUQQABIOCgpTVEFURV9OT05FEAESEAoMU1RBVEVfUVVFVUVEEAISEQoNU1RBVEVfUlVOTklORxADEhEKDVNUQVRFX1NUT1BQRUQQBBIOCgpTVEFURV9ET05FEAUSDwoLU1RBVEVfRU1QVFkQBhIQCgxTVEFURV9GQUlMRUQQBzK6AwoPQXJ0aWZhY3RTZXJ2aWNlElAKDUxpc3RBcnRpZmFjdHMSHi5udW1lbi52MS5MaXN0QXJ0aWZhY3RzUmVxdWVzdBofLm51bWVuLnYxLkxpc3RBcnRpZmFjdHNSZXNwb25zZRJTCg5DcmVhdGVBcnRpZmFjdBIfLm51bWVuLnYxLkNyZWF0ZUFydGlmYWN0UmVxdWVzdBogLm51bWVuLnYxLkNyZWF0ZUFydGlmYWN0UmVzcG9uc2USUwoORGVsZXRlQXJ0aWZhY3QSHy5udW1lbi52MS5EZWxldGVBcnRpZmFjdFJlcXVlc3QaIC5udW1lbi52MS5EZWxldGVBcnRpZmFjdFJlc3BvbnNlElMKDlJlYWRUcmFuc2NyaXB0Eh8ubnVtZW4udjEuUmVhZFRyYW5zY3JpcHRSZXF1ZXN0GiAubnVtZW4udjEuUmVhZFRyYW5zY3JpcHRSZXNwb25zZRJWCg9Xcml0ZVRyYW5zY3JpcHQSIC5udW1lbi52MS5Xcml0ZVRyYW5zY3JpcHRSZXF1ZXN0GiEubnVtZW4udjEuV3JpdGVUcmFuc2NyaXB0UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * An Artifact is one thing a model wrote about one file of the vault.
@@ -354,8 +354,12 @@ export const WriteTranscriptResponseSchema: GenMessage<WriteTranscriptResponse> 
   messageDesc(file_numen_v1_artifact, 11);
 
 /**
- * ArtifactKind is which thing made from a file is meant. The list is closed: a
+ * ArtifactKind is what a thing made from a file is. The list is closed: a
  * client draws one row per kind, and a kind nobody decided on has no row.
+ *
+ * A kind says what a thing is; what made it is its producer, and the two are
+ * not the same question. Words with times are a transcript whether a model
+ * heard them or a site published them.
  *
  * @generated from enum numen.v1.ArtifactKind
  */
@@ -366,39 +370,51 @@ export enum ArtifactKind {
   UNSPECIFIED = 0,
 
   /**
-   * The text read out of a scan. It stands under the name `ocr`.
+   * Text with the place on the page each word stands at, read off a scan and
+   * kept under `ocr`.
    *
-   * @generated from enum value: ARTIFACT_KIND_READING = 1;
+   * @generated from enum value: ARTIFACT_KIND_OCR = 1;
    */
-  READING = 1,
+  OCR = 1,
 
   /**
-   * The words heard in a recording, under `asr`.
+   * That reading put right by a person, under `.corrected` beside it.
    *
-   * @generated from enum value: ARTIFACT_KIND_HEARD = 2;
+   * @generated from enum value: ARTIFACT_KIND_OCR_CORRECTED = 6;
    */
-  HEARD = 2,
+  OCR_CORRECTED = 6,
 
   /**
-   * Those words put right, under `asr.corrected`.
+   * Text with the times each stretch of it was said at, under the name of what
+   * made it: `asr` where a model heard it, `captions` where a site published
+   * it with a video.
    *
-   * @generated from enum value: ARTIFACT_KIND_CORRECTED = 3;
+   * @generated from enum value: ARTIFACT_KIND_TRANSCRIPT = 2;
    */
-  CORRECTED = 3,
+  TRANSCRIPT = 2,
 
   /**
-   * What is at the address a link note points at: a video's words, a page's
-   * prose. It stands under `link`, and which producer brought it is the
-   * store's business and not a client's.
+   * A transcript put right by a person, under `.corrected` beside the one it
+   * corrects. It says which it is: a reading put right is another kind, and a
+   * caller editing one has to know which of them it holds.
    *
-   * @generated from enum value: ARTIFACT_KIND_FETCHED = 4;
+   * @generated from enum value: ARTIFACT_KIND_TRANSCRIPT_CORRECTED = 3;
    */
-  FETCHED = 4,
+  TRANSCRIPT_CORRECTED = 3,
 
   /**
-   * A copy of the video at that address, played from this disk. It stands
-   * under `link.copy`, and it is asked for by hand: an hour of video is not
-   * what pasting an address asks for.
+   * The prose a page is written around, under `article`. It carries no times
+   * and no places on pages: it is what the page says, and nothing about where
+   * it stood.
+   *
+   * @generated from enum value: ARTIFACT_KIND_ARTICLE = 4;
+   */
+  ARTICLE = 4,
+
+  /**
+   * The bytes of a video, kept under `copy` and played from this disk. It is
+   * asked for by hand: an hour of video is not what pasting an address asks
+   * for.
    *
    * @generated from enum value: ARTIFACT_KIND_COPY = 5;
    */

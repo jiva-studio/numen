@@ -49,6 +49,20 @@ export const running: ArtifactRunner = {
       throw error
     }
   },
+  corrects: async (path) => {
+    // Which text is put right follows from the file: a recording carries a
+    // transcript and a scan carries a reading.
+    const held = await running.carries(path)
+    const of: ArtifactOf = held.transcript === undefined ? 'ocr.corrected' : 'transcript.corrected'
+    return running.makes(path, of)
+  },
+  fetches: async (path) => {
+    // Which of the two the text at an address is, is the vault's to say: it
+    // knows the address, and this asks for the one it says the note carries.
+    const held = await running.carries(path)
+    const of: ArtifactOf = held.transcript === undefined ? 'article' : 'transcript'
+    return running.makes(path, of)
+  },
   drops: async (path) => {
     try {
       await artifacts.deleteArtifact({ path })
@@ -67,10 +81,11 @@ export const running: ArtifactRunner = {
  */
 const drawn: Readonly<Record<Kinds, ArtifactOf | null>> = {
   [Kinds.UNSPECIFIED]: null,
-  [Kinds.READING]: 'reading',
-  [Kinds.HEARD]: 'transcript',
-  [Kinds.CORRECTED]: 'corrections',
-  [Kinds.FETCHED]: 'fetched',
+  [Kinds.OCR]: 'ocr',
+  [Kinds.OCR_CORRECTED]: 'ocr.corrected',
+  [Kinds.TRANSCRIPT]: 'transcript',
+  [Kinds.TRANSCRIPT_CORRECTED]: 'transcript.corrected',
+  [Kinds.ARTICLE]: 'article',
   [Kinds.COPY]: 'copy',
 }
 

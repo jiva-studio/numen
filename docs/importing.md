@@ -16,20 +16,26 @@ An agent asks for one with `note_import`, which makes the note and fetches what 
 
 ## What is fetched
 
-| At the address | What is kept | Under |
+| At the address | What is kept | Which it is |
 | --- | --- | --- |
-| a video somebody published words for | those words, as WebVTT | `captions` |
-| a video nobody published words for | that answer, so the address is not asked again | `captions` |
-| anything else | the article the page is written around | `article` |
+| a video somebody published words for | those words, as WebVTT | a transcript |
+| a video nobody published words for | that answer, so the address is not asked again | |
+| anything else | the prose the page is written around | an article |
+
+A transcript is a transcript whoever wrote it down: the words a site published with a video and the words a model here heard in a recording are one kind, read and put right by one editor, and what separates them is only the producer. An article is neither — it carries no times, and no places on pages either, which is what separates it from a reading off a scan.
 
 Every file is named by the hash of the address, in the one form every spelling of it reaches, so two notes pointing at one video share what was fetched and typing in either of them keeps it.
 
+A folder is a kind, and the producer stands in the file's name where a kind has more than one:
+
 | File | What it holds |
 | --- | --- |
-| `<hash>.vtt` | the words published with a video |
-| `<hash>.txt` | the prose of a page |
-| `<hash>.answer` | why there are no words |
-| `<hash>.json` | what fetched it: the address, the title, the tool |
+| `transcript/<hash>.captions.vtt` | the words a site published with a video |
+| `transcript/<hash>.asr.vtt` | the words a model here heard in it |
+| `transcript/<hash>.captions.answer` | why there are no words |
+| `transcript/<hash>.captions.json` | what fetched it: the address, the title, the tool |
+| `article/<hash>.txt` | the prose of a page |
+| `copy/<hash>.mp4` | the video itself, where a copy was asked for |
 
 One language is asked for and not a list: a site that publishes a machine translation into every language it knows answers a request for the lot by refusing it. What a person published is preferred over what a machine wrote; among those, the languages `importing.captions` names, and then the language the video was spoken in.
 

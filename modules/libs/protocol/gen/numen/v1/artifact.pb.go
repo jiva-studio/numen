@@ -28,25 +28,36 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// ArtifactKind is which thing made from a file is meant. The list is closed: a
+// ArtifactKind is what a thing made from a file is. The list is closed: a
 // client draws one row per kind, and a kind nobody decided on has no row.
+//
+// A kind says what a thing is; what made it is its producer, and the two are
+// not the same question. Words with times are a transcript whether a model
+// heard them or a site published them.
 type ArtifactKind int32
 
 const (
 	ArtifactKind_ARTIFACT_KIND_UNSPECIFIED ArtifactKind = 0
-	// The text read out of a scan. It stands under the name `ocr`.
-	ArtifactKind_ARTIFACT_KIND_READING ArtifactKind = 1
-	// The words heard in a recording, under `asr`.
-	ArtifactKind_ARTIFACT_KIND_HEARD ArtifactKind = 2
-	// Those words put right, under `asr.corrected`.
-	ArtifactKind_ARTIFACT_KIND_CORRECTED ArtifactKind = 3
-	// What is at the address a link note points at: a video's words, a page's
-	// prose. It stands under `link`, and which producer brought it is the
-	// store's business and not a client's.
-	ArtifactKind_ARTIFACT_KIND_FETCHED ArtifactKind = 4
-	// A copy of the video at that address, played from this disk. It stands
-	// under `link.copy`, and it is asked for by hand: an hour of video is not
-	// what pasting an address asks for.
+	// Text with the place on the page each word stands at, read off a scan and
+	// kept under `ocr`.
+	ArtifactKind_ARTIFACT_KIND_OCR ArtifactKind = 1
+	// That reading put right by a person, under `.corrected` beside it.
+	ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED ArtifactKind = 6
+	// Text with the times each stretch of it was said at, under the name of what
+	// made it: `asr` where a model heard it, `captions` where a site published
+	// it with a video.
+	ArtifactKind_ARTIFACT_KIND_TRANSCRIPT ArtifactKind = 2
+	// A transcript put right by a person, under `.corrected` beside the one it
+	// corrects. It says which it is: a reading put right is another kind, and a
+	// caller editing one has to know which of them it holds.
+	ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED ArtifactKind = 3
+	// The prose a page is written around, under `article`. It carries no times
+	// and no places on pages: it is what the page says, and nothing about where
+	// it stood.
+	ArtifactKind_ARTIFACT_KIND_ARTICLE ArtifactKind = 4
+	// The bytes of a video, kept under `copy` and played from this disk. It is
+	// asked for by hand: an hour of video is not what pasting an address asks
+	// for.
 	ArtifactKind_ARTIFACT_KIND_COPY ArtifactKind = 5
 )
 
@@ -54,19 +65,21 @@ const (
 var (
 	ArtifactKind_name = map[int32]string{
 		0: "ARTIFACT_KIND_UNSPECIFIED",
-		1: "ARTIFACT_KIND_READING",
-		2: "ARTIFACT_KIND_HEARD",
-		3: "ARTIFACT_KIND_CORRECTED",
-		4: "ARTIFACT_KIND_FETCHED",
+		1: "ARTIFACT_KIND_OCR",
+		6: "ARTIFACT_KIND_OCR_CORRECTED",
+		2: "ARTIFACT_KIND_TRANSCRIPT",
+		3: "ARTIFACT_KIND_TRANSCRIPT_CORRECTED",
+		4: "ARTIFACT_KIND_ARTICLE",
 		5: "ARTIFACT_KIND_COPY",
 	}
 	ArtifactKind_value = map[string]int32{
-		"ARTIFACT_KIND_UNSPECIFIED": 0,
-		"ARTIFACT_KIND_READING":     1,
-		"ARTIFACT_KIND_HEARD":       2,
-		"ARTIFACT_KIND_CORRECTED":   3,
-		"ARTIFACT_KIND_FETCHED":     4,
-		"ARTIFACT_KIND_COPY":        5,
+		"ARTIFACT_KIND_UNSPECIFIED":          0,
+		"ARTIFACT_KIND_OCR":                  1,
+		"ARTIFACT_KIND_OCR_CORRECTED":        6,
+		"ARTIFACT_KIND_TRANSCRIPT":           2,
+		"ARTIFACT_KIND_TRANSCRIPT_CORRECTED": 3,
+		"ARTIFACT_KIND_ARTICLE":              4,
+		"ARTIFACT_KIND_COPY":                 5,
 	}
 )
 
@@ -883,13 +896,14 @@ const file_numen_v1_artifact_proto_rawDesc = "" +
 	"\x04cues\x18\x02 \x03(\v2\r.numen.v1.CueR\x04cues\"X\n" +
 	"\x17WriteTranscriptResponse\x12!\n" +
 	"\x04cues\x18\x01 \x03(\v2\r.numen.v1.CueR\x04cues\x12\x1a\n" +
-	"\beditable\x18\x02 \x01(\bR\beditable*\xb1\x01\n" +
+	"\beditable\x18\x02 \x01(\bR\beditable*\xde\x01\n" +
 	"\fArtifactKind\x12\x1d\n" +
-	"\x19ARTIFACT_KIND_UNSPECIFIED\x10\x00\x12\x19\n" +
-	"\x15ARTIFACT_KIND_READING\x10\x01\x12\x17\n" +
-	"\x13ARTIFACT_KIND_HEARD\x10\x02\x12\x1b\n" +
-	"\x17ARTIFACT_KIND_CORRECTED\x10\x03\x12\x19\n" +
-	"\x15ARTIFACT_KIND_FETCHED\x10\x04\x12\x16\n" +
+	"\x19ARTIFACT_KIND_UNSPECIFIED\x10\x00\x12\x15\n" +
+	"\x11ARTIFACT_KIND_OCR\x10\x01\x12\x1f\n" +
+	"\x1bARTIFACT_KIND_OCR_CORRECTED\x10\x06\x12\x1c\n" +
+	"\x18ARTIFACT_KIND_TRANSCRIPT\x10\x02\x12&\n" +
+	"\"ARTIFACT_KIND_TRANSCRIPT_CORRECTED\x10\x03\x12\x19\n" +
+	"\x15ARTIFACT_KIND_ARTICLE\x10\x04\x12\x16\n" +
 	"\x12ARTIFACT_KIND_COPY\x10\x05*\x99\x01\n" +
 	"\x05State\x12\x15\n" +
 	"\x11STATE_UNSPECIFIED\x10\x00\x12\x0e\n" +

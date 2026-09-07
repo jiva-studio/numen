@@ -23,7 +23,7 @@ func TestDeletingALinkNoteTakesWhatWasFetchedForIt(t *testing.T) {
 		"talk.md": "---\ntype: link\nurl: " + video + "\n---\n\nWhat I made of it.\n",
 	})
 	db := openIndex(t)
-	stores := filesystem.DerivedStores{Area: text.Captions, Areas: []string{text.Article, text.ASR}}
+	stores := filesystem.DerivedStores{Area: text.Transcript, Areas: []string{text.Article, text.Copies}}
 	held, err := stores.Open(v)
 	if err != nil {
 		t.Fatal(err)
@@ -68,7 +68,7 @@ func TestOneOfTwoNotesOnOneVideoGoing(t *testing.T) {
 		"theirs.md": front + "What they made of it.\n",
 	})
 	db := openIndex(t)
-	stores := filesystem.DerivedStores{Area: text.Captions, Areas: []string{text.Article, text.ASR}}
+	stores := filesystem.DerivedStores{Area: text.Transcript, Areas: []string{text.Article, text.Copies}}
 	held, err := stores.Open(v)
 	if err != nil {
 		t.Fatal(err)
@@ -105,7 +105,7 @@ func TestALinkNoteIsFetchedUnaskedWhereTheSettingsSaySo(t *testing.T) {
 		"ordinary.md": "# Entropy\n\nIt grows.\n",
 	})
 	db := openIndex(t)
-	stores := filesystem.DerivedStores{Area: text.Captions, Areas: []string{text.Article, text.ASR}}
+	stores := filesystem.DerivedStores{Area: text.Transcript, Areas: []string{text.Article, text.Copies}}
 
 	var asked []string
 	scan := scanner(filesystem.VaultReaders{}, db)
@@ -137,7 +137,7 @@ func TestAWalkReachesNoAddressByItself(t *testing.T) {
 	})
 	db := openIndex(t)
 	scan := scanner(filesystem.VaultReaders{}, db)
-	scan.Derived = filesystem.DerivedStores{Area: text.Captions, Areas: []string{text.Article, text.ASR}}
+	scan.Derived = filesystem.DerivedStores{Area: text.Transcript, Areas: []string{text.Article, text.Copies}}
 
 	res, err := scan.Execute(ctx, v)
 	if err != nil {
