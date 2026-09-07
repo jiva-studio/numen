@@ -107,9 +107,6 @@ const reading =
           :span="span"
           :book="span"
           :at="at"
-          :page="page"
-          :pages="pages"
-          :page-bytes="pageBytes"
           :marked="marked"
           @go="go"
         />

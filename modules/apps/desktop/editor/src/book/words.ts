@@ -6,6 +6,8 @@ export const WORDS = {
   pages: 'Pages',
   closer: 'Larger',
   further: 'Smaller',
+  /** How much of the chapter in front is still to come. */
+  left: (pages: number) => `${pages} ${pages === 1 ? 'page' : 'pages'} left in chapter`,
   contents: 'Contents',
   find: 'Find in contents',
   nothing: 'This book names nothing.',

@@ -29,14 +29,17 @@ import {
   holding,
   inFront,
   keyTurn,
+  leftInDocument,
+  offsetOfPage,
+  pagesOf,
   spreads,
   unitsIn,
+  type BookWords,
   type Flow,
   type Mark,
   type PageTurn,
   type Span,
 } from './spread'
-import type { ReaderWords } from '@/reader/strip'
 
 const props = withDefaults(
   defineProps<{
@@ -58,17 +61,8 @@ const props = withDefaults(
     marked?: readonly Span[]
     /** The other runs asked about, each of them somewhere else to look. */
     also?: readonly Span[]
-    /**
-     * The page of the book the offset in front falls on, counted from one, and
-     * how many the book is read in. They are the book's own, counted over its
-     * text, and not the spreads this area happens to have come to.
-     */
-    page?: number
-    pages?: number
-    /** How many bytes of the book's text stand on one of those pages. */
-    pageBytes?: number
     /** The words it is read with. */
-    words?: ReaderWords
+    words?: BookWords
   }>(),
   {
     markup: '',
@@ -78,9 +72,6 @@ const props = withDefaults(
     at: 0,
     marked: () => [],
     also: () => [],
-    page: 0,
-    pages: 0,
-    pageBytes: 0,
     words: () => BOOK_WORDS,
   },
 )
@@ -132,6 +123,12 @@ const flow = computed<Flow>(() => ({
 }))
 
 const count = computed(() => spreads(flow.value))
+
+/** The page in front and how many there are, counted in columns on the screen. */
+const paged = computed(() => pagesOf(props.book, props.span, flow.value, standing.value, marks.value))
+
+/** How much of the chapter in front is still to come, which is measured exactly. */
+const left = computed(() => leftInDocument(flow.value, standing.value, marks.value))
 
 /**
  * What the columns are set with. A column's own width and height are among
@@ -188,13 +185,9 @@ const said = () => {
   if (now !== undefined && now !== props.at) emit('go', now)
 }
 
-/**
- * The page of the book the field asks for, counted from the first. A page is
- * that many bytes of the text apiece, so where it begins is arithmetic.
- */
+/** The page of the book the field asks for, which the field counts from one. */
 const goToPage = (page: number) => {
-  if (props.pageBytes <= 0) return
-  emit('go', props.book.begins + page * props.pageBytes)
+  emit('go', offsetOfPage(props.book, props.span, flow.value, page + 1, marks.value))
 }
 
 const goTo = (spread: number) => {
@@ -482,11 +475,15 @@ defineExpose({
       </div>
     </div>
 
+    <!-- What is left of the chapter is measured on the page in front, where the
+         number beside it is carried over the book. -->
+    <p v-if="count > 0" class="book__left text-small text-hushed">{{ words.left(left) }}</p>
+
     <ReaderToolbar
       v-if="count > 0"
       v-model:zoom="size"
-      :at="props.page - 1"
-      :pages="props.pages"
+      :at="paged.page - 1"
+      :pages="paged.pages"
       :words="words"
       :least="SMALLEST"
       :most="LARGEST"
@@ -499,6 +496,14 @@ defineExpose({
 </template>
 
 <style scoped>
+/* It stands in the corner the controls leave, on the line they stand on. */
+.book__left {
+  position: absolute;
+  inset-block-end: var(--numen-inset);
+  inset-inline-end: var(--numen-inset-wide);
+  pointer-events: none;
+}
+
 /* The clearance the text keeps from the pane, and the room the controls stand
    in below it. The area itself carries none of it: what it measures across is
    the width of a spread. */

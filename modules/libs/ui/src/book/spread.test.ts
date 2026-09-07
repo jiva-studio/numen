@@ -8,11 +8,14 @@ import {
   bytesIn,
   columnWide,
   columnsIn,
+  columnsFilled,
   columnsInAll,
   holding,
   inFront,
   keyTurn,
   handTurn,
+  offsetOfPage,
+  pagesOf,
   pressTurn,
   spreadAt,
   spreads,
@@ -290,5 +293,58 @@ describe('a hand put down and lifted', () => {
     expect(handTurn(500, 500 - SWIPE, WIDE, true)).toBeUndefined()
     expect(handTurn(WIDE - 10, WIDE - 10, WIDE, true)).toBeUndefined()
     expect(handTurn(10, 10, WIDE, true)).toBeUndefined()
+  })
+})
+
+
+
+describe('the page a person is looking at', () => {
+  const flow = { along: 10 * WIDE, wide: WIDE, gap: GAP, columns: 2 }
+  const document = { begins: 2000, ends: 3000 }
+  const book = { begins: 0, ends: 10_000 }
+
+  /** A run standing in each column the text was laid into. */
+  const filling = (columns: number): Mark[] =>
+    Array.from({ length: columns }, (_, column) => ({
+      at: document.begins + column,
+      x: column * (columnWide(flow) + GAP),
+    }))
+
+  const marks = filling(columnsInAll(flow))
+  const here = marks.length
+  const perColumn = (document.ends - document.begins) / here
+  const before = Math.round((document.begins - book.begins) / perColumn)
+
+  it('counts the columns on the screen, so a spread of two turns two pages', () => {
+    const first = pagesOf(book, document, flow, 0, marks)
+    const next = pagesOf(book, document, flow, 1, marks)
+    expect(next.page - first.page).toBe(2)
+  })
+
+  it('counts the columns before this document at what a column of it holds', () => {
+    expect(pagesOf(book, document, flow, 0, marks).page).toBe(before + 1)
+    expect(pagesOf(book, document, flow, 0, marks).pages).toBe(
+      Math.round((book.ends - book.begins) / perColumn),
+    )
+  })
+
+  it('counts the columns the text fills and not the boxes drawn beside them', () => {
+    // A document of one line stands in one column of a spread of two.
+    const one = filling(1)
+    expect(columnsFilled(one, flow)).toBe(1)
+    expect(pagesOf({ ...document }, document, flow, 0, one)).toEqual({ page: 1, pages: 1 })
+  })
+
+  it('says one page for a document nothing has been laid out for', () => {
+    expect(pagesOf(book, document, flow, 0, [])).toEqual({ page: 1, pages: 1 })
+  })
+
+  it('reaches the page it counted, by the measure it counted at', () => {
+    expect(offsetOfPage(book, document, flow, before + 1, marks)).toBe(document.begins)
+  })
+
+  it('holds a page asked for outside the book to the book', () => {
+    expect(offsetOfPage(book, document, flow, -5, marks)).toBe(book.begins)
+    expect(offsetOfPage(book, document, flow, 100_000, marks)).toBe(book.ends - 1)
   })
 })

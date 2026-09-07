@@ -69,6 +69,86 @@ export function columnsInAll(flow: Flow): number {
   return Math.max(1, Math.round((flow.along + flow.gap) / (one + flow.gap)))
 }
 
+/**
+ * How many columns the text of this document actually fills. The layout draws
+ * as many column boxes as a spread has, so a document of one line stands in one
+ * column and beside an empty one, and only the runs say which.
+ */
+export function columnsFilled(marks: readonly Mark[], flow: Flow): number {
+  const one = columnWide(flow)
+  if (one <= 0 || marks.length === 0) return 0
+  let last = 0
+  for (const mark of marks) last = Math.max(last, Math.floor(mark.x / (one + flow.gap)))
+  return last + 1
+}
+
+/** Where a person stands in a book: the column in front, and how many there are. */
+export interface Pages {
+  readonly page: number
+  readonly pages: number
+}
+
+/**
+ * How many columns of this document stand after the spread in front. It is the
+ * one number here that is measured rather than carried over: the document is
+ * laid out, so what is left of it is known exactly.
+ */
+export function leftInDocument(flow: Flow, standing: number, marks: readonly Mark[]): number {
+  const here = columnsFilled(marks, flow)
+  return Math.max(here - (standing + 1) * flow.columns, 0)
+}
+
+/**
+ * The page in front and how many the book is read in, counted in the columns a
+ * person is looking at: a spread of two turns two pages.
+ *
+ * Only the document being read is laid out, so only its columns are counted.
+ * What the rest of the book comes to is that document's own bytes to the column
+ * carried over it — an estimate, and the only one that costs nothing. It moves
+ * when the reading area does, which is what a page measured on the screen does.
+ */
+export function pagesOf(
+  book: Span,
+  document: Span,
+  flow: Flow,
+  standing: number,
+  marks: readonly Mark[],
+): Pages {
+  const here = columnsFilled(marks, flow)
+  const first = standing * flow.columns + 1
+  const bytes = document.ends - document.begins
+  if (here <= 0 || bytes <= 0) return { page: Math.max(first, 1), pages: Math.max(here, 1) }
+
+  const perColumn = bytes / here
+  const before = Math.round((document.begins - book.begins) / perColumn)
+  const all = Math.round((book.ends - book.begins) / perColumn)
+  return {
+    page: Math.max(before + first, 1),
+    pages: Math.max(all, before + here, 1),
+  }
+}
+
+/**
+ * Where a page asked for by its number begins, in bytes of the book's text.
+ * The columns are measured on the document being read and carried over the
+ * book, so a page far from it is reached about right and read exactly once the
+ * document it lands in has been laid out.
+ */
+export function offsetOfPage(
+  book: Span,
+  document: Span,
+  flow: Flow,
+  page: number,
+  marks: readonly Mark[],
+): number {
+  const here = columnsFilled(marks, flow)
+  const bytes = document.ends - document.begins
+  if (here <= 0 || bytes <= 0) return book.begins
+  const perColumn = bytes / here
+  const at = book.begins + Math.round((page - 1) * perColumn)
+  return Math.min(Math.max(at, book.begins), Math.max(book.ends - 1, book.begins))
+}
+
 /** How many spreads the text comes to. */
 export function spreads(flow: Flow): number {
   const all = columnsInAll(flow)
@@ -151,10 +231,17 @@ export const LARGEST = 2
 export const LARGER = 1.125
 
 /** The words a book is read with. */
-export const BOOK_WORDS: ReaderWords = {
+/** The words a book is read with, which are a document's and one of its own. */
+export interface BookWords extends ReaderWords {
+  /** How much of the chapter in front is still to come. */
+  readonly left: (pages: number) => string
+}
+
+export const BOOK_WORDS: BookWords = {
   ...READER_WORDS,
   closer: 'Larger',
   further: 'Smaller',
+  left: (pages) => `${pages} ${pages === 1 ? 'page' : 'pages'} left in chapter`,
 }
 
 /** A turn of the page, and the two ends of the document. */
