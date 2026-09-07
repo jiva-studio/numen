@@ -639,7 +639,11 @@ export const useWindow = () => {
    */
   const asked = (event: KeyboardEvent) => {
     // A pane that has answered this keystroke keeps it.
-    if (event.defaultPrevented || !chorded(event)) return
+    if (event.defaultPrevented) return
+    // The tab the person is in is asked before the commands are, and a key it
+    // takes is its own.
+    if (held.presses(event)) return event.preventDefault()
+    if (!chorded(event)) return
     const command = commandFor(event.key.toLowerCase(), event.shiftKey)
     if (!command) return
     event.preventDefault()

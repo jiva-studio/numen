@@ -6,6 +6,7 @@ import {
   SWIPE,
   beginsAt,
   bytesIn,
+  columnHigh,
   columnWide,
   columnsIn,
   columnsFilled,
@@ -59,6 +60,27 @@ describe('how many columns a reading area takes', () => {
   it('sets each column to its share of what is left after the gap', () => {
     expect(columnWide({ along: 0, wide: WIDE, gap: GAP, columns: 2 })).toBe((WIDE - GAP) / 2)
     expect(columnWide({ along: 0, wide: NARROW, gap: GAP, columns: 1 })).toBe(NARROW)
+  })
+})
+
+describe('how tall a column is set', () => {
+  it('is the lines that fit whole in the area, and no part of another', () => {
+    expect(columnHigh(1000, 24)).toBe(984)
+    expect(columnHigh(984, 24)).toBe(984)
+  })
+
+  it('is one line in an area too short to hold one', () => {
+    // The line runs past the foot of the area either way, and a column of no
+    // height at all holds nothing and never ends.
+    expect(columnHigh(20, 24)).toBe(24)
+  })
+
+  it('is the whole of the area where the lines are of no known height', () => {
+    expect(columnHigh(1000, 0)).toBe(1000)
+  })
+
+  it('is nothing in an area nothing has been measured in', () => {
+    expect(columnHigh(0, 24)).toBe(0)
   })
 })
 

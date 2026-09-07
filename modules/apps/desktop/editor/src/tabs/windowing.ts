@@ -66,6 +66,12 @@ export interface Kind<TabState> {
   identity?(at: string): string
   /** The tab came on screen, where what it holds has room to measure. */
   shown?(state: TabState, id: string): void
+  /**
+   * A key struck while one of its tabs is the one the person is in, answered
+   * with whether the tab took it. Several panes are drawn at once, so the tab
+   * asked is the one showing in the pane the layout is focused on.
+   */
+  presses?(state: TabState, event: KeyboardEvent): boolean
   /** What a command asked over one of its tabs is over. */
   at?(state: TabState): TabTarget
   /** What one of its tabs holds, as whoever answers for the person is told it. */
@@ -283,6 +289,14 @@ export function windowing() {
     one.kind.shown?.(one.state, id)
   }
 
+  /** A key struck, handed to the tab in the pane the person is in. */
+  const presses = (event: KeyboardEvent): boolean => {
+    const id = paneById(layout.value.root, layout.value.focus)?.active
+    if (!id) return false
+    const one = open.value.get(id)
+    return one?.kind.presses?.(one.state, event) ?? false
+  }
+
   /**
    * A tab lets go of what it held, and says whether it went. A kind that has
    * something to finish keeps the tab and closes it itself.
@@ -325,6 +339,7 @@ export function windowing() {
     shows,
     closes,
     shown,
+    presses,
     shut,
     drops,
     close,

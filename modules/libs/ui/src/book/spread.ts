@@ -53,6 +53,16 @@ export function columnsIn(wide: number, size: number): number {
   return wide >= 2 * NARROWEST * size + GAP ? 2 : 1
 }
 
+/**
+ * How tall a column is set: a whole number of lines, and never fewer than one.
+ * A column set to the height of the area it stands in ends part of the way
+ * through a line, and the half of it below the edge is cut off.
+ */
+export function columnHigh(high: number, line: number): number {
+  if (line <= 0 || high <= 0) return Math.max(high, 0)
+  return Math.max(Math.floor(high / line), 1) * line
+}
+
 /** How wide one column is set. */
 export function columnWide(flow: Flow): number {
   if (flow.columns <= 0) return 0

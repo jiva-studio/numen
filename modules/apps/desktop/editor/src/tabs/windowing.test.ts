@@ -260,6 +260,73 @@ describe('the tab the person is looking at', () => {
   })
 })
 
+describe('a key struck on the window', () => {
+  /** A kind whose tabs take the arrows and record what they were struck with. */
+  const reading = () => {
+    const took: string[] = []
+    return {
+      took,
+      one: kind({
+        presses: (state: { at: string }, event: KeyboardEvent) => {
+          if (!event.key.startsWith('Arrow')) return false
+          took.push(`${state.at} ${event.key}`)
+          return true
+        },
+      }),
+    }
+  }
+
+  const struck = (key: string) => new KeyboardEvent('keydown', { key })
+
+  it('goes to the tab of the pane the person is in, and to no other', async () => {
+    // Two panes are drawn at once, so a tab that listened for itself would have
+    // both of them answering the one key.
+    const read = reading()
+    const window = told([read.one.declared])
+    const one = await window.opens('thing', 'One.epub')
+    await window.handle.beside('thing', 'Two.epub')
+    window.shows(one)
+
+    expect(window.presses(struck('ArrowRight'))).toBe(true)
+
+    expect(read.took).toStrictEqual(['One.epub ArrowRight'])
+  })
+
+  it('goes to the other pane once the person is in it', async () => {
+    const read = reading()
+    const window = told([read.one.declared])
+    await window.opens('thing', 'One.epub')
+    const two = await window.handle.beside('thing', 'Two.epub')
+    window.shows(two)
+
+    window.presses(struck('ArrowLeft'))
+
+    expect(read.took).toStrictEqual(['Two.epub ArrowLeft'])
+  })
+
+  it('is left alone where the tab in front does not read it', async () => {
+    const read = reading()
+    const window = told([read.one.declared])
+    await window.opens('thing', 'One.epub')
+
+    expect(window.presses(struck('k'))).toBe(false)
+    expect(read.took).toStrictEqual([])
+  })
+
+  it('is left alone where the kind in front reads no key at all', async () => {
+    const window = told([kind().declared])
+    await window.opens('thing', 'One.md')
+
+    expect(window.presses(struck('ArrowRight'))).toBe(false)
+  })
+
+  it('is left alone while the pane in front holds no tab', () => {
+    const window = told([reading().one.declared])
+
+    expect(window.presses(struck('ArrowRight'))).toBe(false)
+  })
+})
+
 describe('the window going', () => {
   it('says so to every tab, and waits for none of them', async () => {
     const thing = kind({ keeps: true })

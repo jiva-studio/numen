@@ -39,6 +39,9 @@ export function bookKind(
     draws: BookTab,
     identity: (path) => path,
     shown: (state) => state.measure(),
+    // Several panes are drawn at once, so the book asked is the one in the pane
+    // the person is in.
+    presses: (state, event) => state.pressed(event),
     shuts: (state) => {
       state.close()
       return true

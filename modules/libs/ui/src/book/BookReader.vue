@@ -21,6 +21,7 @@ import {
   LARGEST,
   SMALLEST,
   beginsAt,
+  columnHigh,
   columnWide,
   columnsIn,
   handTurn,
@@ -145,6 +146,16 @@ const setting = computed(() => ({
   '--book-size': `calc(var(--numen-prose-size) * ${size.value})`,
 }))
 
+/**
+ * How tall one line of the text is set. A line height the browser works out for
+ * itself is read back as a number of pixels, and one it will not put a number
+ * to leaves the column at the height of the area.
+ */
+const lineOf = (text: HTMLElement): number => {
+  const said = Number.parseFloat(getComputedStyle(text).lineHeight)
+  return Number.isFinite(said) ? said : 0
+}
+
 /** The runs of the drawn document, and where the columns put each of them. */
 const gather = () => {
   const box = area.value
@@ -195,7 +206,9 @@ const settle = (keep: number, led?: BookLink) => {
   if (!measured.value) return
   onNextFrame(() => {
     const box = area.value
-    if (!box) return
+    const text = paper.value
+    if (!box || !text) return
+    text.style.setProperty('--book-paper', `${columnHigh(box.clientHeight, lineOf(text))}px`)
     along.value = box.scrollWidth
     gather()
     const landed =
@@ -460,7 +473,11 @@ defineExpose({
 /* The columns run sideways out of the area, and how far they run is read off
    it. */
 .book__paper {
-  block-size: 100%;
+  /* How tall a column is set: a whole number of lines, which the reader works
+     out once the text is laid out, and the whole of the area until it has. */
+  --book-paper: var(--book-high);
+
+  block-size: var(--book-paper);
   inline-size: 100%;
   column-count: var(--book-columns);
   column-gap: var(--book-gap);
@@ -484,7 +501,7 @@ defineExpose({
   box-sizing: border-box;
   display: block;
   max-inline-size: var(--book-column);
-  max-block-size: var(--book-high);
+  max-block-size: var(--book-paper);
   object-fit: contain;
 }
 
@@ -494,7 +511,7 @@ defineExpose({
   display: block;
   box-sizing: border-box;
   max-inline-size: var(--book-column);
-  max-block-size: var(--book-high);
+  max-block-size: var(--book-paper);
   overflow: auto;
 }
 

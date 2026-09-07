@@ -222,6 +222,52 @@ export const OneColumn: Story = {
 }
 
 /**
+ * The column is set to a whole number of lines, so the line at the foot of it
+ * stands whole. A column set to the height of the area ends part of the way
+ * through a line, and the half of it below the edge is cut away.
+ */
+export const NoLineCutInHalf: Story = {
+  decorators: [WIDE],
+  render: reading(chapterOf(PROSE)),
+  play: async ({ canvasElement }) => {
+    await laid(canvasElement)
+
+    const paper = paperOf(canvasElement)
+    const line = Number.parseFloat(getComputedStyle(paper).lineHeight)
+    await expect(line).toBeGreaterThan(0)
+    await expect(paper.getBoundingClientRect().height % line).toBeCloseTo(0, 1)
+    await expect(paper.getBoundingClientRect().height).toBeLessThanOrEqual(
+      areaOf(canvasElement).clientHeight + 1,
+    )
+  },
+}
+
+/**
+ * A document longer than one column comes to several, in a pane holding one
+ * column as in a pane holding two. A document that comes to one spread has
+ * nowhere to turn inside it, and the reader hands the turn to the next document
+ * of the book: a chapter read a chapter at a time, with most of it never drawn.
+ */
+export const OneColumnTurns: Story = {
+  decorators: [NARROW],
+  render: reading(chapterOf(PROSE)),
+  play: async ({ canvasElement }) => {
+    await laid(canvasElement)
+
+    const area = areaOf(canvasElement)
+    await expect(area.scrollWidth).toBeGreaterThan(area.clientWidth + 1)
+    await expect(canvasElement.querySelector('.book__left')?.textContent).not.toBe(
+      '0 pages left in chapter',
+    )
+
+    await userEvent.keyboard('{ArrowRight}')
+    await waitFor(async () => await expect(inFrontOf(canvasElement)).toBeGreaterThan(0), {
+      timeout: ITS_OWN_PACE,
+    })
+  },
+}
+
+/**
  * A wide area takes two columns, and the two turn together. A spread turned one
  * column at a time is a person reading the right-hand page twice.
  */
