@@ -5,7 +5,7 @@
  *
  * What the book could not be read as is said in the window's own notices.
  */
-import { onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { BookContents, BookReader } from '@numen/ui'
 import { ListTree } from '@lucide/vue'
 import { WORDS as words } from './words'
@@ -18,6 +18,7 @@ const listing = ref(false)
 
 const panel = useTemplateRef<HTMLElement>('panel')
 const way = useTemplateRef<HTMLElement>('way')
+const tab = useTemplateRef<HTMLElement>('tab')
 
 /** A press that landed neither in the list nor on the way into it. */
 const outside = (event: Event) => {
@@ -32,6 +33,17 @@ const onWindowKey = (event: KeyboardEvent) => {
   event.preventDefault()
   listing.value = false
   way.value?.focus()
+}
+
+/**
+ * A key pressed while this book is the one in front. The tab listens and the
+ * book answers: a page is turned by the arrows wherever the keyboard stands,
+ * and a tab standing behind another hears nothing.
+ */
+const turns = (event: KeyboardEvent) => {
+  if (event.defaultPrevented) return
+  if (!tab.value?.offsetParent) return
+  if (props.state.pressed(event)) event.preventDefault()
 }
 
 /** What the open list installed on the window, if anything. */
@@ -53,6 +65,9 @@ watch(listing, (open) => {
   }
 })
 
+onMounted(() => window.addEventListener('keydown', turns))
+onBeforeUnmount(() => window.removeEventListener('keydown', turns))
+
 onBeforeUnmount(leave)
 
 /** A place chosen in the list: the book is turned to it and the list goes. */
@@ -63,7 +78,7 @@ const chose = (at: number) => {
 </script>
 
 <template>
-  <div class="book-tab">
+  <div ref="tab" class="book-tab">
     <div class="book-tab__reading">
       <Transition name="book-tab__over">
         <aside v-if="listing" ref="panel" class="book-tab__contents">

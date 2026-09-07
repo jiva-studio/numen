@@ -55,7 +55,7 @@ const kindOver = (held: BookTabState) => bookKind(window_(held).handle, () => he
 
 describe('what a book tab holds', () => {
   it('lays the columns out again once there is room to lay them out in', () => {
-    const drawn: BookHandle = { measure: vi.fn() }
+    const drawn: BookHandle = { measure: vi.fn(), pressed: vi.fn(() => false) }
     const held = booking(read('library/Mahabharata.epub'))
 
     // Drawn nowhere yet, and asked to measure all the same.

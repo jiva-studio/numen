@@ -31,6 +31,15 @@ const reader = async (book = BOOK) => {
 const asked = (held: Awaited<ReturnType<typeof reader>>) =>
   (held.emitted('go') ?? []).map((one) => (one as [number])[0])
 
+/**
+ * A key the tab caught and handed down, answered with whether it turned the
+ * page. The tab listens; the reader is asked.
+ */
+const keyed = (held: Awaited<ReturnType<typeof reader>>, key: string): boolean =>
+  (held.vm as unknown as { pressed(event: KeyboardEvent): boolean }).pressed(
+    new KeyboardEvent('keydown', { key }),
+  )
+
 describe('a document nothing has laid out', () => {
   it('draws no controls, because it has come to no spreads', async () => {
     const held = await reader()
@@ -59,7 +68,7 @@ describe('turning past the end of a document', () => {
   it('asks for the offset the next document begins at', async () => {
     const held = await reader()
 
-    await held.find('.book__area').trigger('keydown', { key: 'ArrowRight' })
+    expect(keyed(held, 'ArrowRight')).toBe(true)
 
     expect(asked(held)).toEqual([CHAPTER.span.ends])
   })
@@ -67,7 +76,7 @@ describe('turning past the end of a document', () => {
   it('asks for the offset before this document, turning back', async () => {
     const held = await reader()
 
-    await held.find('.book__area').trigger('keydown', { key: 'ArrowLeft' })
+    expect(keyed(held, 'ArrowLeft')).toBe(true)
 
     expect(asked(held)).toEqual([CHAPTER.span.begins - 1])
   })
@@ -75,17 +84,19 @@ describe('turning past the end of a document', () => {
   it('asks for nothing past either end of the book itself', async () => {
     const held = await reader(CHAPTER.span)
 
-    await held.find('.book__area').trigger('keydown', { key: 'ArrowRight' })
-    await held.find('.book__area').trigger('keydown', { key: 'ArrowLeft' })
+    keyed(held, 'ArrowRight')
+    keyed(held, 'ArrowLeft')
 
     expect(asked(held)).toHaveLength(0)
   })
 
-  it('turns nothing on a key a book is not read with', async () => {
+  it('turns nothing on a key a book is not read with, and says so', async () => {
+    // The tab hands every key down and stops only the ones the book took, so a
+    // key the book does not read is left to whatever else is listening.
     const held = await reader()
 
-    await held.find('.book__area').trigger('keydown', { key: 'Enter' })
-    await held.find('.book__area').trigger('keydown', { key: 'a' })
+    expect(keyed(held, 'Enter')).toBe(false)
+    expect(keyed(held, 'a')).toBe(false)
 
     expect(asked(held)).toHaveLength(0)
   })

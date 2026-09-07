@@ -16,6 +16,8 @@ import BookTab from './BookTab.vue'
 /** What the window asks of a book once it is drawn. */
 export interface BookHandle {
   measure(): void
+  /** A key the tab caught: true where it turned the page. */
+  pressed(event: KeyboardEvent): boolean
 }
 
 /** What one book tab holds. */
@@ -77,5 +79,8 @@ export function booking(read: OpenBookState) {
 
   const measure = () => reader?.measure()
 
-  return { ...read, drew, measure }
+  /** A key the tab caught, answered by the book it is drawn in. */
+  const pressed = (event: KeyboardEvent) => reader?.pressed(event) ?? false
+
+  return { ...read, drew, measure, pressed }
 }

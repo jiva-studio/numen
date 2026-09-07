@@ -264,11 +264,15 @@ const turn = (way: PageTurn) => {
   if (asked >= props.book.begins && asked < props.book.ends) emit('go', asked)
 }
 
-const pressed = (event: KeyboardEvent) => {
+/**
+ * A key the tab caught. Turning belongs to whatever holds the book, so the
+ * page it turns is answered for and the key is not listened for here.
+ */
+const pressed = (event: KeyboardEvent): boolean => {
   const way = keyTurn(event.key)
-  if (!way) return
-  event.preventDefault()
+  if (!way) return false
   turn(way)
+  return true
 }
 
 /** Where the hand went down, while it is down. */
@@ -443,6 +447,8 @@ defineExpose({
    * the caller says when it is on screen.
    */
   measure: () => settle(keeping()),
+  /** A key the tab caught: true where it turned the page. */
+  pressed,
 })
 </script>
 
@@ -456,10 +462,8 @@ defineExpose({
       <div
         ref="area"
         class="book__area h-full overflow-hidden"
-        tabindex="0"
         role="region"
         :aria-label="words.pages"
-        @keydown="pressed"
         @pointerdown="took"
         @pointerup="letGo"
       >

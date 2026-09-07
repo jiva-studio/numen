@@ -10,7 +10,7 @@
  */
 import type { Decorator, Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import BookReader from './BookReader.vue'
 import { GAP, bytesIn, type Span } from './spread'
 import { PROSE, VERSE, VERSES, chapterOf, type Chapter } from '@/fixtures/book'
@@ -79,9 +79,20 @@ const reading =
       // How large the text is set belongs to whatever holds the reader, so the
       // story holds it, and presses its own way of setting it.
       const size = ref(1)
+
+      // Keys belong to whatever holds the reader too. The story listens where
+      // the tab listens, and the book answers whether it took the key.
+      const book = ref<{ pressed(event: KeyboardEvent): boolean } | null>(null)
+      const turns = (event: KeyboardEvent) => {
+        if (book.value?.pressed(event)) event.preventDefault()
+      }
+      onMounted(() => window.addEventListener('keydown', turns))
+      onBeforeUnmount(() => window.removeEventListener('keydown', turns))
+
       return {
         at,
         size,
+        book,
         markup: chapter.markup,
         span: chapter.span,
         marked,
@@ -97,6 +108,7 @@ const reading =
       <div class="h-full" :data-front="at">
         <button type="button" aria-label="Larger" class="sr-only" @click="larger">Larger</button>
         <BookReader
+          ref="book"
           class="h-full"
           :markup="markup"
           :span="span"
@@ -226,7 +238,6 @@ export const TwoColumns: Story = {
     // The run that stands in the second column of the first spread stands in
     // the first column of nothing after one turn: the whole spread has gone.
     const before = runsOf(canvasElement).map((run) => run.getClientRects()[0]?.left ?? 0)
-    areaOf(canvasElement).focus()
     await userEvent.keyboard('{ArrowRight}')
 
     await waitFor(
@@ -366,7 +377,6 @@ export const OneLine: Story = {
     )
 
     const was = areaOf(canvasElement).scrollLeft
-    areaOf(canvasElement).focus()
     await userEvent.keyboard('{ArrowRight}')
     await expect(areaOf(canvasElement).scrollLeft).toBe(was)
   },
@@ -404,7 +414,6 @@ export const SetLarger: Story = {
     const canvas = within(canvasElement)
     await laid(canvasElement)
 
-    areaOf(canvasElement).focus()
     await userEvent.keyboard('{ArrowRight}')
     await waitFor(async () => await expect(inFrontOf(canvasElement)).toBeGreaterThan(0), {
       timeout: ITS_OWN_PACE,
@@ -457,7 +466,6 @@ export const TurnedByHand: Story = {
     await laid(canvasElement)
     const area = areaOf(canvasElement)
 
-    area.focus()
     await userEvent.keyboard('{ArrowRight}')
     await waitFor(async () => await expect(inFrontOf(canvasElement)).toBeGreaterThan(0), {
       timeout: ITS_OWN_PACE,
