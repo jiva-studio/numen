@@ -96,7 +96,7 @@ export const tallyOf = (notice: Notice): { done: number; total: number } | undef
     ? undefined
     : { done: notice.done, total: notice.total }
 
-/** What one count was doing when it was last read. */
+/** What one count stood at when it last moved, and when that was. */
 export interface Movement {
   readonly done: number
   readonly rate: number
@@ -104,7 +104,10 @@ export interface Movement {
 }
 
 /**
- * How fast each count is moving, from what it was doing when it was last read.
+ * How fast each count is moving, from where it last moved to where it is now.
+ *
+ * A reading that saw no movement leaves the mark where it is, so the stretch a
+ * count stood still over is time the work took and is measured as such.
  *
  * A count that has gone is forgotten, and one that has just arrived is read once
  * before it has a rate.
@@ -119,7 +122,15 @@ export const measured = (
     const tally = tallyOf(notice)
     if (tally === undefined) continue
     const before = was.get(notice.id)
-    const rate = before ? rateOf(before, tally.done, (at - before.at) / 1000) : 0
+    if (before === undefined) {
+      moving.set(notice.id, { done: tally.done, rate: 0, at })
+      continue
+    }
+    if (tally.done === before.done) {
+      moving.set(notice.id, before)
+      continue
+    }
+    const rate = rateOf(before, tally.done, (at - before.at) / 1000)
     moving.set(notice.id, { done: tally.done, rate, at })
   }
   return moving
