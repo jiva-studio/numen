@@ -92,7 +92,7 @@ How a vault is made searchable.
 | `recognition.recognise.classes` | a number | how many characters the model knows and two more. |
 | `recognition.recognise.dpi` | a number | what a page is rendered at. |
 | `recognition.recognise.height` | a number | what a line is scaled to before it is read. |
-| `recognition.recognise.sessions` | a number | how many lines are read at once. |
+| `recognition.recognise.jobs` | a number | how many jobs the recogniser runs at once. |
 | `recognition.recognise.threads` | a number | how many threads one model may use. |
 | `recognition.regions` |  | says what the parts of a page are for. A part the model names that `body` does not carry is not read. |
 | `recognition.regions.body` | a list of words | carry what the document says. |

@@ -75,7 +75,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		HeatmapThreshold:    cfg.Detect.minimum(),
 		RecHeight:           cfg.Recognise.height(),
 		NumThreads:          cfg.Recognise.threads(),
-		ThreadCount:         cfg.Recognise.sessions(),
+		ThreadCount:         cfg.Recognise.jobs(),
 	})
 	if err != nil {
 		layout.Close()

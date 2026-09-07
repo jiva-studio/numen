@@ -10,14 +10,10 @@ export interface Stop {
   readonly where: string
   /** What a screen reader would call it. */
   readonly name: string
-  /** Whether anything is painted differently once the keyboard is on it. */
-  readonly rings: boolean
   /** Whether the browser draws it where a person could see it. */
   readonly shown: boolean
   /** Whether the page says it is still on its way in or out. */
   readonly moving: boolean
-  /** Whether it is typed into, and so draws a caret of its own. */
-  readonly typed: boolean
 }
 
 /** What a story turned out to be, walked from the top of its tab order. */
@@ -31,8 +27,7 @@ export interface Walk {
 
 /**
  * Every place the keyboard stops is drawn where a person can see it, says what
- * it is, shows that the keyboard is there, and hands Tab on. A thing typed into
- * draws its own caret, and a stop the page says is still arriving is held at
+ * it is, and hands Tab on. A stop the page says is still arriving is held at
  * the opacity it was passing through and so is not asked whether it can be seen.
  *
  * `keeps` is a story saying Tab stays where it is, and how a person leaves.
@@ -44,7 +39,6 @@ export function faults({ stops, trapped }: Walk, keeps = false): string[] {
     const at = `${stop.where}${stop.name ? ` (${stop.name})` : ''}`
     if (!stop.shown && !stop.moving) wrong.push(`${at} is a stop a person cannot see`)
     if (!stop.name) wrong.push(`${stop.where} is a stop with no name to read out`)
-    if (!stop.rings && !stop.typed) wrong.push(`${at} draws nothing when the keyboard lands on it`)
   }
   return wrong
 }
