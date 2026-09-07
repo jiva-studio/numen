@@ -38,7 +38,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	api.Indexing.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
-	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, model)
+	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, model, nil)
 
 	at := listed(t, api, makingVectors)
 	if at == nil {
@@ -65,7 +65,7 @@ func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
 	api.Indexing.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
-	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, model)
+	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, model, nil)
 
 	if at := listed(t, api, makingVectors); at != nil {
 		t.Errorf("a pass that embedded what was owed is still being done: %+v", *at)
@@ -90,7 +90,7 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	cut(t, db, api)
 	watching.tasks = api.Window.Tasking
 
-	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, watching)
+	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, watching, nil)
 
 	at, held := watching.opening(makingVectors)
 	if !held {
@@ -123,7 +123,7 @@ func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
 	over := make(chan struct{})
 	go func() {
 		defer close(over)
-		embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, arriving.Filling())
+		embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, arriving.Filling(), nil)
 	}()
 
 	select {
@@ -154,7 +154,7 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	over := make(chan struct{})
 	go func() {
 		defer close(over)
-		embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, arriving.Filling())
+		embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, arriving.Filling(), nil)
 	}()
 
 	for range 20 {
@@ -220,7 +220,7 @@ func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	readSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, nil, io.Discard)
+	readSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, nil, nil, io.Discard)
 
 	at := listed(t, api, readingBooks)
 	if at == nil {
@@ -299,7 +299,7 @@ func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
 	held := embedding.Arriving(model.Model())
 	held.Landed(over, nil)
 
-	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, held.Filling())
+	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, held.Filling(), nil)
 
 	for _, list := range over.lists() {
 		for _, at := range list {
@@ -348,4 +348,81 @@ func (o *overheard) lists() [][]task.Task {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	return o.seen
+}
+
+// TestARecognitionStopsTheVectorPass. A recognition writes a batch of pages
+// every few minutes, and the pages it wrote are cut on the goroutine the vector
+// pass runs on. A vault owing a hundred thousand vectors owes them for hours.
+func TestARecognitionStopsTheVectorPass(t *testing.T) {
+	nudge := make(chan struct{}, 1)
+	model := &nudging{asked: &asked{dims: 64}, nudge: nudge}
+	cfg, db := reading(t)
+	if err := db.FitVectors(t.Context(), model.Model().Dimensions, model.Model().Recipe()); err != nil {
+		t.Fatal(err)
+	}
+
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
+	api.Indexing.Progress = db.Progress()
+	api.show(v)
+	api.Indexing.Recipe.Store(model.Model().Recipe())
+	cut(t, db, api)
+
+	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, model, nudge)
+
+	held, embedded, err := db.Progress().Progress(t.Context(), v.ID, model.Model().Recipe())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if held == 0 {
+		t.Fatal("the vault owed no vector, and the pass had nothing to stand aside from")
+	}
+	if embedded == held {
+		t.Error("the pass embedded the whole vault while a recognition waited to be cut")
+	}
+
+	// The nudge is left where it was found: the loop reads it next and cuts what
+	// the recognition wrote.
+	select {
+	case <-nudge:
+	default:
+		t.Error("the nudge a recognition raised was taken and not put back")
+	}
+
+	if at := listed(t, api, makingVectors); at != nil && at.Failed != "" {
+		t.Errorf("standing aside is shown as a failure: %q", at.Failed)
+	}
+
+	// Taken up again, the pass asks the index what still owes a vector.
+	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, model.asked, nil)
+
+	held, embedded, err = db.Progress().Progress(t.Context(), v.ID, model.Model().Recipe())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if embedded != held {
+		t.Errorf("the pass taken up again left %d of %d chunks without a vector", held-embedded, held)
+	}
+}
+
+// nudging is a model that has a recognition write a batch of pages while the
+// vector pass is running, and holds the pass until the nudge has stopped it.
+type nudging struct {
+	*asked
+	nudge chan struct{}
+
+	once sync.Once
+}
+
+func (n *nudging) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+	stopped := false
+	n.once.Do(func() {
+		raise(n.nudge)
+		<-ctx.Done()
+		stopped = true
+	})
+	if stopped {
+		return nil, ctx.Err()
+	}
+	return n.asked.Embed(ctx, texts)
 }
