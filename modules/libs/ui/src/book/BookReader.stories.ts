@@ -37,7 +37,7 @@ const room =
   (story) => ({
     components: { story },
     template: `
-      <div class="numen h-screen bg-surface p-6 font-sans text-base text-ink">
+      <div class="numen h-screen bg-surface p-6 font-sans text-base text-ink" style="user-select: none; -webkit-user-select: none">
         <div class="mx-auto flex h-full flex-col" style="inline-size: ${wide}px; max-inline-size: 100%">
           <story />
         </div>
@@ -338,6 +338,25 @@ export const VerseSetInAPreElement: Story = {
     // It ran on into columns of its own rather than stopping at the first.
     const area = areaOf(canvasElement)
     await expect(area.scrollWidth).toBeGreaterThan(area.clientWidth)
+  },
+}
+
+/**
+ * The words are there to be taken up. The window takes selection away from
+ * everything it draws, so a book that did not ask for it back is a book nobody
+ * can quote a line of.
+ */
+export const WordsCanBeTakenUp: Story = {
+  decorators: [WIDE],
+  render: reading(chapterOf([...PROSE])),
+  play: async ({ canvasElement }) => {
+    await laid(canvasElement)
+
+    // The room this story stands in forbids it, as the window does.
+    await expect(getComputedStyle(canvasElement.firstElementChild!).userSelect).toBe('none')
+
+    await expect(getComputedStyle(paperOf(canvasElement)).userSelect).not.toBe('none')
+    await expect(getComputedStyle(runsOf(canvasElement)[0]!).userSelect).not.toBe('none')
   },
 }
 

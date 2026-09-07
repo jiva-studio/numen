@@ -526,6 +526,10 @@ defineExpose({
   /* A word longer than the column is broken inside itself. */
   overflow-wrap: anywhere;
   hyphens: auto;
+  /* The window takes selection away from everything and gives it back to what
+     is there to be read. A book is there to be read. */
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* A picture is set to its column's width and no taller than the column. */
