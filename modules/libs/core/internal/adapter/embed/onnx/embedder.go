@@ -1,6 +1,5 @@
 // Package onnx embeds text with a model running on this machine: an ONNX
-// sentence encoder through ONNX Runtime, reached by name at run time, so this
-// builds with CGO_ENABLED=0 and cross-compiles from any machine to any other.
+// sentence encoder through ONNX Runtime, reached by name at run time.
 //
 // The runtime is the process's, opened once and shared with everything else
 // here that runs a model.
@@ -201,8 +200,7 @@ func (e *Embedder) encode(text string) []int {
 // forward is one pass of the model over one batch.
 //
 // A batch is laid out at the length of its longest text. The runtime takes a
-// shape as it comes, so a short batch is not carried at the length of a long
-// one.
+// shape as it comes.
 func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 	rows, seq, ids, mask, types := padded(batch, e.pad)
 
@@ -213,9 +211,7 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 	}
 
 	// The library keeps a pointer into each of these and nothing else does, so
-	// they are held until the run is over. A slice a tensor alone refers to is a
-	// slice the collector may take back, and what the model then reads is
-	// whatever is there instead.
+	// they are held until the run is over.
 	shape := []int64{int64(rows), int64(seq)}
 	in := map[string]*ort.Value{}
 	for _, one := range []struct {

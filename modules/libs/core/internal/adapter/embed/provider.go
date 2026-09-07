@@ -110,8 +110,7 @@ type LocalModel struct {
 }
 
 // Threading is how much of this machine one forward pass may use. A recognition
-// runs beside this one and is told the same, and between them they leave the
-// machine something.
+// runs beside this one and is told the same.
 func (m LocalModel) Threading() int {
 	if m.Threads <= 0 {
 		return defaultThreads
