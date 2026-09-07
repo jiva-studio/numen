@@ -7,17 +7,13 @@ import "github.com/jiva-studio/numen/modules/libs/core/embedding"
 //
 // Padding is excluded, so a text's vector is the same however long the other
 // texts in its batch are.
-func meanPool(flat []float32, mask [][]int64, dimensions int) [][]float32 {
-	out := make([][]float32, len(mask))
-	seq := 0
-	if len(mask) > 0 {
-		seq = len(mask[0])
-	}
-	for row := range mask {
+func meanPool(flat []float32, mask []int64, rows, seq, dimensions int) [][]float32 {
+	out := make([][]float32, rows)
+	for row := range rows {
 		vector := make([]float32, dimensions)
 		kept := 0
 		for token := 0; token < seq; token++ {
-			if mask[row][token] == 0 {
+			if mask[row*seq+token] == 0 {
 				continue
 			}
 			kept++
@@ -52,47 +48,36 @@ func headPool(flat []float32, rows, seq, dimensions int) [][]float32 {
 	return out
 }
 
-// padded lays a batch out as the model takes it: one row per text, each row the
-// same length, and the rows a full batch would carry.
+// padded lays a batch out as the model takes it: one row per text, every row as
+// long as the longest of them, the rest of a row the padding token.
 //
-// A pass is one shape, and a shape is compiled the first time it appears. The
-// rows a batch does not fill carry the padding token, and each is marked at one
-// token so that what pools a row divides by something.
-func padded(batch [][]int, rows, seq, pad int) (ids, mask, types [][]int64) {
-	ids = make([][]int64, rows)
-	mask = make([][]int64, rows)
-	types = make([][]int64, rows)
-	for row := range rows {
-		ids[row] = make([]int64, seq)
-		mask[row] = make([]int64, seq)
-		types[row] = make([]int64, seq)
-		for i := range ids[row] {
-			ids[row][i] = int64(pad)
-		}
-		if row >= len(batch) {
-			mask[row][0] = 1
-			continue
-		}
-		for i, id := range batch[row][:min(len(batch[row]), seq)] {
-			ids[row][i] = int64(id)
-			mask[row][i] = 1
-		}
+// The three come back as the model reads them, row after row.
+func padded(batch [][]int, pad int) (rows, seq int, ids, mask, types []int64) {
+	rows = len(batch)
+	for _, one := range batch {
+		seq = max(seq, len(one))
 	}
-	return ids, mask, types
-}
+	// A batch of empty texts is still a batch, and a model takes no sequence of
+	// no tokens.
+	seq = max(seq, 1)
 
-// bucket rounds a sequence length up to the next step. Every distinct shape
-// costs a compilation, so the lengths are held to a few.
-func bucket(tokens, step, limit int) int {
-	if tokens > limit {
-		tokens = limit
+	ids = make([]int64, rows*seq)
+	mask = make([]int64, rows*seq)
+	types = make([]int64, rows*seq)
+	for row, one := range batch {
+		at := row * seq
+		for i := range seq {
+			ids[at+i] = int64(pad)
+		}
+		for i, id := range one {
+			ids[at+i] = int64(id)
+			mask[at+i] = 1
+		}
+		// A row the mask keeps nothing of is a row whose average divides by
+		// nothing, and the padding is what the text amounts to.
+		if len(one) == 0 {
+			mask[at] = 1
+		}
 	}
-	rounded := (tokens + step - 1) / step * step
-	if rounded < step {
-		rounded = step
-	}
-	if rounded > limit {
-		rounded = limit
-	}
-	return rounded
+	return rows, seq, ids, mask, types
 }

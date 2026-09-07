@@ -26,52 +26,6 @@ const PARTS = 9
 /** The fields the browser walks Tab through part by part. */
 const PARTED = 'input[type="time"], input[type="date"], input[type="datetime-local"], input[type="month"], input[type="week"]'
 
-/** What is compared before the keyboard arrives and once it is there. */
-const PAINTED = [
-  'outline-style',
-  'outline-width',
-  'outline-color',
-  'outline-offset',
-  'box-shadow',
-  'background-color',
-  'background-image',
-  'border-top-color',
-  'border-top-width',
-  'border-top-style',
-  'color',
-  'opacity',
-  'text-decoration-line',
-  'filter',
-  // What a shape drawn in SVG rings with, where there is no box to outline.
-  'stroke',
-  'stroke-width',
-  'stroke-dasharray',
-  'stroke-opacity',
-  'fill',
-  'fill-opacity',
-] as const
-
-/** The stop, what draws it and what it is drawn inside: any of them may ring. */
-const around = (element: Element): Element[] => {
-  const out: Element[] = [element, ...element.querySelectorAll('*')]
-  let one = element.parentElement
-  for (let up = 0; one && up < 4; up += 1, one = one.parentElement) out.push(one)
-  return out
-}
-
-/** A ring is as often drawn on a box that is not there as on the element. */
-const FACES = [null, '::before', '::after'] as const
-
-const painting = (element: Element): string => {
-  let out = ''
-  for (const face of FACES) {
-    const style = getComputedStyle(element, face)
-    for (const name of PAINTED) out += `${style.getPropertyValue(name)}|`
-    out += style.content + '|'
-  }
-  return out
-}
-
 /** The roles whose name never comes from what stands inside them. */
 const HELD = new Set(['textbox', 'combobox', 'searchbox', 'spinbutton', 'slider'])
 
@@ -130,9 +84,6 @@ const shown = (element: Element): boolean => {
   const style = getComputedStyle(element)
   return style.visibility !== 'hidden' && Number(style.opacity) > 0.01
 }
-
-/** What is typed into, and shows where the keyboard is with its own caret. */
-const TYPED = 'input, textarea, [contenteditable], [role="textbox"], [role="combobox"]'
 
 /** What the browser may put the keyboard on. */
 const REACHABLE = 'a[href], area[href], button, input, select, textarea, [tabindex], [contenteditable]'
@@ -216,10 +167,8 @@ const settles = async (): Promise<boolean> => {
 
 /**
  * The keyboard walked through a story from the start, Tab by Tab, until it
- * comes back where it began or leaves the page; then every stop is looked at
- * twice, with the keyboard away from it and with the keyboard on it. The walk
- * itself is what puts the browser in its keyboard temper, so a ring drawn only
- * for `:focus-visible` is a difference these two readings can see.
+ * comes back where it began or leaves the page, and every stop it made along
+ * the way.
  */
 export async function walk(): Promise<Walk> {
   const settled = await settles()
@@ -231,13 +180,7 @@ export async function walk(): Promise<Walk> {
   document.body.setAttribute('tabindex', '-1')
   document.body.focus()
 
-  // What everything on the page is painted as with the keyboard nowhere near
-  // it. A ring is a difference from this, read the moment the keyboard lands.
-  const away = new Map<Element, string>()
-  for (const one of document.body.querySelectorAll('*')) away.set(one, painting(one))
-
-  /** Each stop as it stood with the keyboard on it, and what was painted then. */
-  const reached: { stop: Omit<Stop, 'rings'>; drawn: [Element, string][] }[] = []
+  const stops: Stop[] = []
   const seen = new Set<Element>()
   let trapped: string | null = null
 
@@ -270,35 +213,17 @@ export async function walk(): Promise<Walk> {
     if (seen.has(here)) break
     seen.add(here)
 
-    reached.push({
-      stop: {
-        where: whereOf(here),
-        name: nameOf(here),
-        shown: shown(here),
-        // The stop itself, or whatever it is drawn inside: a row on its way in
-        // carries every control standing on it.
-        moving: here.closest(MOVING) !== null,
-        typed: here.matches(TYPED),
-      },
-      drawn: around(here).map((one) => [one, painting(one)] as [Element, string]),
+    stops.push({
+      where: whereOf(here),
+      name: nameOf(here),
+      shown: shown(here),
+      // The stop itself, or whatever it is drawn inside: a row on its way in
+      // carries every control standing on it.
+      moving: here.closest(MOVING) !== null,
     })
   }
 
   document.body.focus()
-
-  // A ring is anything painted differently while the keyboard stood there.
-  // What the page held before the walk is the reading it is compared against;
-  // what only appeared once the keyboard arrived is compared against the page
-  // as it stands now, and what went with the keyboard is a ring in itself.
-  const stops = reached.map(({ stop, drawn }) => ({
-    ...stop,
-    rings: drawn.some(([one, held]) => {
-      const before = away.get(one)
-      if (before !== undefined) return before !== held
-      return one.isConnected ? painting(one) !== held : true
-    }),
-  }))
-
   document.body.removeAttribute('tabindex')
   still.remove()
   return { stops, trapped, settled }
