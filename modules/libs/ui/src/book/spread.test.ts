@@ -14,7 +14,6 @@ import {
   inFront,
   keyTurn,
   handTurn,
-  offsetOfPage,
   pagesOf,
   pressTurn,
   spreadAt,
@@ -337,14 +336,5 @@ describe('the page a person is looking at', () => {
 
   it('says one page for a document nothing has been laid out for', () => {
     expect(pagesOf(book, document, flow, 0, [])).toEqual({ page: 1, pages: 1 })
-  })
-
-  it('reaches the page it counted, by the measure it counted at', () => {
-    expect(offsetOfPage(book, document, flow, before + 1, marks)).toBe(document.begins)
-  })
-
-  it('holds a page asked for outside the book to the book', () => {
-    expect(offsetOfPage(book, document, flow, -5, marks)).toBe(book.begins)
-    expect(offsetOfPage(book, document, flow, 100_000, marks)).toBe(book.ends - 1)
   })
 })

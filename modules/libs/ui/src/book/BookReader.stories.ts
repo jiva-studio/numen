@@ -10,7 +10,7 @@
  */
 import type { Decorator, Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import BookReader from './BookReader.vue'
 import { GAP, bytesIn, type Span } from './spread'
 import { PROSE, VERSE, VERSES, chapterOf, type Chapter } from '@/fixtures/book'
@@ -49,13 +49,6 @@ const room =
 const NARROW = room(700)
 const WIDE = room(1200)
 
-/**
- * How many bytes of a book's text stand on one page. The application measures
- * it in the book's own script; a story is written in one where a letter is a
- * byte.
- */
-const PAGE_BYTES = 1024
-
 /** A picture taller than any column it could stand in. */
 const TALL = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="2400">
@@ -83,30 +76,33 @@ const reading =
     components: { BookReader },
     setup() {
       const at = ref(chapter.span.begins)
-      const pages = Math.max(Math.ceil((chapter.span.ends - chapter.span.begins) / PAGE_BYTES), 1)
+      // How large the text is set belongs to whatever holds the reader, so the
+      // story holds it, and presses its own way of setting it.
+      const size = ref(1)
       return {
         at,
-        pages,
-        pageBytes: PAGE_BYTES,
-        page: computed(() =>
-          Math.min(Math.floor((at.value - chapter.span.begins) / PAGE_BYTES) + 1, pages),
-        ),
+        size,
         markup: chapter.markup,
         span: chapter.span,
         marked,
         go: (to: number) => {
           at.value = to
         },
+        larger: () => {
+          size.value *= 1.25
+        },
       }
     },
     template: `
       <div class="h-full" :data-front="at">
+        <button type="button" aria-label="Larger" class="sr-only" @click="larger">Larger</button>
         <BookReader
           class="h-full"
           :markup="markup"
           :span="span"
           :book="span"
           :at="at"
+          :size="size"
           :marked="marked"
           @go="go"
         />
@@ -183,7 +179,7 @@ const laid = async (canvasElement: HTMLElement) =>
   await waitFor(
     async () => {
       await expect(runsOf(canvasElement)[0]?.getClientRects().length).toBeGreaterThan(0)
-      await expect(within(canvasElement).getByLabelText('Page')).toBeInTheDocument()
+      await expect(canvasElement.querySelector('.book__foot')).toBeInTheDocument()
     },
     { timeout: ITS_OWN_PACE },
   )
@@ -221,7 +217,6 @@ export const TwoColumns: Story = {
   decorators: [WIDE],
   render: reading(chapterOf(PROSE)),
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
     await laid(canvasElement)
 
     const area = areaOf(canvasElement).getBoundingClientRect()
@@ -231,7 +226,8 @@ export const TwoColumns: Story = {
     // The run that stands in the second column of the first spread stands in
     // the first column of nothing after one turn: the whole spread has gone.
     const before = runsOf(canvasElement).map((run) => run.getClientRects()[0]?.left ?? 0)
-    await userEvent.click(canvas.getByLabelText('Next page'))
+    areaOf(canvasElement).focus()
+    await userEvent.keyboard('{ArrowRight}')
 
     await waitFor(
       async () => {
@@ -362,12 +358,17 @@ export const OneLine: Story = {
   decorators: [WIDE],
   render: reading(chapterOf([{ tag: 'p', text: 'One line, and the book is over.' }])),
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
     await laid(canvasElement)
 
-    await waitFor(async () => await expect(canvas.getByLabelText('Page')).toHaveValue(1))
-    await expect(canvas.getByLabelText('Previous page')).toBeDisabled()
-    await expect(canvas.getByLabelText('Next page')).toBeDisabled()
+    await expect(canvasElement.querySelector('.book__count')?.textContent).toBe('1 of 1')
+    await expect(canvasElement.querySelector('.book__left')?.textContent).toBe(
+      '0 pages left in chapter',
+    )
+
+    const was = areaOf(canvasElement).scrollLeft
+    areaOf(canvasElement).focus()
+    await userEvent.keyboard('{ArrowRight}')
+    await expect(areaOf(canvasElement).scrollLeft).toBe(was)
   },
 }
 
@@ -380,11 +381,9 @@ export const NoTextAtAll: Story = {
   decorators: [WIDE],
   render: reading({ markup: '', span: { begins: 0, ends: 0 } }),
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-
     await expect(paperOf(canvasElement)).toBeInTheDocument()
     await expect(runsOf(canvasElement)).toHaveLength(0)
-    await expect(canvas.queryByLabelText('Page')).not.toBeInTheDocument()
+    await expect(canvasElement.querySelector('.book__foot')).not.toBeInTheDocument()
   },
 }
 
@@ -399,8 +398,8 @@ export const SetLarger: Story = {
     const canvas = within(canvasElement)
     await laid(canvasElement)
 
-    await expect(canvas.getByLabelText('Next page')).not.toBeDisabled()
-    await userEvent.click(canvas.getByLabelText('Next page'))
+    areaOf(canvasElement).focus()
+    await userEvent.keyboard('{ArrowRight}')
     await waitFor(async () => await expect(inFrontOf(canvasElement)).toBeGreaterThan(0), {
       timeout: ITS_OWN_PACE,
     })

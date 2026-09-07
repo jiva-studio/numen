@@ -128,27 +128,6 @@ export function pagesOf(
   }
 }
 
-/**
- * Where a page asked for by its number begins, in bytes of the book's text.
- * The columns are measured on the document being read and carried over the
- * book, so a page far from it is reached about right and read exactly once the
- * document it lands in has been laid out.
- */
-export function offsetOfPage(
-  book: Span,
-  document: Span,
-  flow: Flow,
-  page: number,
-  marks: readonly Mark[],
-): number {
-  const here = columnsFilled(marks, flow)
-  const bytes = document.ends - document.begins
-  if (here <= 0 || bytes <= 0) return book.begins
-  const perColumn = bytes / here
-  const at = book.begins + Math.round((page - 1) * perColumn)
-  return Math.min(Math.max(at, book.begins), Math.max(book.ends - 1, book.begins))
-}
-
 /** How many spreads the text comes to. */
 export function spreads(flow: Flow): number {
   const all = columnsInAll(flow)
@@ -225,14 +204,14 @@ export function unitsIn(text: string, bytes: number): number {
   return units
 }
 
-/** How large the text may be set, and how much larger one press sets it. */
+/** How large the text may be set. */
 export const SMALLEST = 0.8
 export const LARGEST = 2
-export const LARGER = 1.125
 
-/** The words a book is read with. */
-/** The words a book is read with, which are a document's and one of its own. */
+/** The words a book is read with, which are a document's and two of its own. */
 export interface BookWords extends ReaderWords {
+  /** Where in the book the page in front stands. */
+  readonly of: (page: number, pages: number) => string
   /** How much of the chapter in front is still to come. */
   readonly left: (pages: number) => string
 }
@@ -241,6 +220,7 @@ export const BOOK_WORDS: BookWords = {
   ...READER_WORDS,
   closer: 'Larger',
   further: 'Smaller',
+  of: (page, pages) => `${page} of ${pages}`,
   left: (pages) => `${pages} ${pages === 1 ? 'page' : 'pages'} left in chapter`,
 }
 

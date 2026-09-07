@@ -9,7 +9,7 @@
  * offset stays where it was.
  */
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, useTemplateRef, watch } from 'vue'
-import ReaderToolbar from '@/reader/ReaderToolbar.vue'
+import { clamped } from '@/reader/strip'
 import { useViewport } from '@/reader/viewport'
 import { onNextFrame } from '@/lib/clock'
 import { pointsOutward } from '@/linking/outward'
@@ -18,7 +18,6 @@ import { placeIn, type BookLink } from './link'
 import {
   BOOK_WORDS,
   GAP,
-  LARGER,
   LARGEST,
   SMALLEST,
   beginsAt,
@@ -30,7 +29,6 @@ import {
   inFront,
   keyTurn,
   leftInDocument,
-  offsetOfPage,
   pagesOf,
   spreads,
   unitsIn,
@@ -61,6 +59,8 @@ const props = withDefaults(
     marked?: readonly Span[]
     /** The other runs asked about, each of them somewhere else to look. */
     also?: readonly Span[]
+    /** How large the text is set, as a multiple of the size prose is read at. */
+    size?: number
     /** The words it is read with. */
     words?: BookWords
   }>(),
@@ -72,6 +72,7 @@ const props = withDefaults(
     at: 0,
     marked: () => [],
     also: () => [],
+    size: 1,
     words: () => BOOK_WORDS,
   },
 )
@@ -86,8 +87,8 @@ const emit = defineEmits<{
   (event: 'follow', path: string): void
 }>()
 
-/** How large the text is set. What that may be is `spread.ts`. */
-const size = ref(1)
+/** How large the text is set, held inside what a book may be read at. */
+const size = computed(() => clamped(props.size, SMALLEST, LARGEST))
 
 const area = useTemplateRef<HTMLElement>('area')
 const paper = useTemplateRef<HTMLElement>('paper')
@@ -183,11 +184,6 @@ const stand = (spread: number, how: ScrollBehavior) => {
 const said = () => {
   const now = inFront(marks.value, flow.value, standing.value)
   if (now !== undefined && now !== props.at) emit('go', now)
-}
-
-/** The page of the book the field asks for, which the field counts from one. */
-const goToPage = (page: number) => {
-  emit('go', offsetOfPage(props.book, props.span, flow.value, page + 1, marks.value))
 }
 
 const goTo = (spread: number) => {
@@ -475,33 +471,37 @@ defineExpose({
       </div>
     </div>
 
-    <!-- What is left of the chapter is measured on the page in front, where the
-         number beside it is carried over the book. -->
-    <p v-if="count > 0" class="book__left text-small text-hushed">{{ words.left(left) }}</p>
-
-    <ReaderToolbar
-      v-if="count > 0"
-      v-model:zoom="size"
-      :at="paged.page - 1"
-      :pages="paged.pages"
-      :words="words"
-      :least="SMALLEST"
-      :most="LARGEST"
-      :step="LARGER"
-      @update:at="goToPage"
-      @back="turn('back')"
-      @next="turn('next')"
-    />
+    <!-- One line under the text, and nothing to press on it: a book is turned
+         by the hand and the keyboard. The count is carried over the book and
+         what is left of the chapter is measured on the page in front. -->
+    <footer v-if="count > 0" class="book__foot text-small text-hushed">
+      <span class="book__count">{{ words.of(paged.page, paged.pages) }}</span>
+      <span class="book__left">{{ words.left(left) }}</span>
+    </footer>
   </div>
 </template>
 
 <style scoped>
-/* It stands in the corner the controls leave, on the line they stand on. */
-.book__left {
+/* One line under the text: the count in the middle of it and what is left of
+   the chapter at the end, as a book has them. Nothing on it is pressed, so it
+   lets a press through to the page behind. */
+.book__foot {
   position: absolute;
-  inset-block-end: var(--numen-inset);
-  inset-inline-end: var(--numen-inset-wide);
+  inset-block-end: var(--numen-inset-wide);
+  inset-inline: var(--numen-inset-wide);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: baseline;
   pointer-events: none;
+}
+
+.book__count {
+  grid-column: 2;
+}
+
+.book__left {
+  grid-column: 3;
+  justify-self: end;
 }
 
 /* The clearance the text keeps from the pane, and the room the controls stand

@@ -181,9 +181,9 @@ const runsOf = (canvasElement: HTMLElement) => [
   ...canvasElement.querySelectorAll<HTMLElement>('.book__paper [data-offset]'),
 ]
 
-/** How many spreads the text came to, as the controls count them. */
+/** How many pages the text came to, as the line under it counts them. */
 const spreadsIn = (canvasElement: HTMLElement) =>
-  within(canvasElement).getByLabelText(words.page).getAttribute('max')
+  canvasElement.querySelector('.book__count')?.textContent
 
 /**
  * The text laid out in columns, once the browser has laid it out. The controls
@@ -193,7 +193,7 @@ const laid = async (canvasElement: HTMLElement) =>
   await waitFor(
     async () => {
       await expect(runsOf(canvasElement)[0]?.getClientRects().length).toBeGreaterThan(0)
-      await expect(within(canvasElement).getByLabelText(words.page)).toBeInTheDocument()
+      await expect(canvasElement.querySelector('.book__foot')).toBeInTheDocument()
     },
     { timeout: ITS_OWN_PACE },
   )

@@ -7,6 +7,7 @@
  */
 import { onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import { BookContents, BookReader } from '@numen/ui'
+import { ListTree } from '@lucide/vue'
 import { WORDS as words } from './words'
 import type { BookTabState } from './kind'
 
@@ -73,7 +74,9 @@ const chose = (at: number) => {
         :aria-expanded="listing"
         @click="listing = !listing"
       >
-        {{ words.contents }}
+        <!-- The name is read out and not drawn: what a book is read in keeps
+             its room for the book. -->
+        <ListTree class="size-4" aria-hidden="true" />
       </button>
 
       <Transition name="book-tab__over">
@@ -127,7 +130,10 @@ const chose = (at: number) => {
   inset-block-start: 0.25rem;
   inset-inline-start: 0.25rem;
   z-index: 2;
-  padding: 0.25rem 0.5rem;
+  display: grid;
+  place-items: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
   border: var(--numen-stroke) solid var(--numen-panel-border);
   border-radius: var(--numen-radius-tight);
   background: var(--numen-panel-bg);
