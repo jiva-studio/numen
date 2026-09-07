@@ -84,6 +84,34 @@ describe('how tall a column is set', () => {
   })
 })
 
+describe('how many columns the text of a document fills', () => {
+  /** One column of a narrow area, and the place the second one begins. */
+  const flow = { along: 2 * NARROW + GAP, wide: NARROW, gap: GAP, columns: 1 }
+  const second = NARROW + GAP
+
+  it('is counted off the run standing furthest along them', () => {
+    expect(columnsFilled([{ at: 0, x: 0 }], flow)).toBe(1)
+    expect(columnsFilled([{ at: 0, x: 0 }, { at: 40, x: second }], flow)).toBe(2)
+  })
+
+  it('counts a run measured a fraction of a pixel short of its column into it', () => {
+    // The browser lays the columns out in whole device pixels, so the run at
+    // the head of the second column was measured at 654.8125 where the column
+    // was reckoned to begin at 655, and the whole of it went uncounted.
+    expect(columnsFilled([{ at: 0, x: 0 }, { at: 40, x: second - 0.1875 }], flow)).toBe(2)
+    expect(columnsFilled([{ at: 0, x: 0 }, { at: 40, x: second + 0.1875 }], flow)).toBe(2)
+  })
+
+  it('counts a run standing at the foot of a column into that column', () => {
+    expect(columnsFilled([{ at: 0, x: NARROW - 1 }], flow)).toBe(1)
+  })
+
+  it('is no column at all where nothing was laid out', () => {
+    expect(columnsFilled([], flow)).toBe(0)
+    expect(columnsFilled([{ at: 0, x: 0 }], { ...flow, wide: 0 })).toBe(0)
+  })
+})
+
 describe('how many spreads a document comes to', () => {
   it('counts the columns off the whole run', () => {
     expect(columnsInAll(laid(WIDE, 2, 10))).toBe(10)

@@ -12,12 +12,17 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { onMounted, ref } from 'vue'
 import BookTab from './BookTab.vue'
+import { WorkspaceLayout, pane } from '@numen/ui'
+import type { Workspace } from '@numen/ui'
 import { booking } from './kind'
 import { openBook, type Book, type Books } from './open'
 import { WORDS as words } from './words'
 
 /** How long a wait goes on where the browser sets the pace: a turn it animates. */
 const ITS_OWN_PACE = 10_000
+
+/** The one tab the pane holds, named as the window names a book tab. */
+const BOOK_TAB = 'book:library/mbh.epub'
 
 /** How many bytes a text comes to, which is what an offset in a book counts. */
 const bytesIn = (text: string): number => new TextEncoder().encode(text).length
@@ -428,5 +433,50 @@ export const ALinkOutOfTheBook: Story = {
     const press = await pressing(canvas.getByText(ELSEWHERE))
 
     await expect(press?.defaultPrevented).toBe(true)
+  },
+}
+
+/**
+ * The book drawn in a pane of the window, as the window draws it, and in a pane
+ * narrow enough to hold one column.
+ *
+ * A pane hands its tab a height, and the columns are set against it. Handed
+ * none, the text runs down the page instead of across the columns: the reader
+ * counts one column, says nothing is left of the chapter, and turns the whole
+ * of it at once, with everything below the foot of the pane never drawn.
+ */
+export const InAPaneOfTheWindow: Story = {
+  render: (args: Knobs) => ({
+    components: { WorkspaceLayout, BookTab },
+    setup() {
+      const layout = ref<Workspace>({
+        root: pane('main', [BOOK_TAB], BOOK_TAB),
+        axis: 'horizontal',
+        focus: 'main',
+      })
+      const state = booking(openBook(shelf(args.book), 'library/mbh.epub', words, () => {}))
+      return { layout, state, tabs: [{ id: BOOK_TAB, title: 'Mahābhārata' }] }
+    },
+    template: `
+      <div class="numen" style="height: 100vh; width: 620px; background: var(--numen-surface)">
+        <WorkspaceLayout v-model="layout" :tabs="tabs">
+          <template #tab="{ id }"><BookTab v-if="id" :state="state" /></template>
+        </WorkspaceLayout>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await laid(canvasElement)
+
+    const area = canvasElement.querySelector('.book__area') as HTMLElement
+    const paper = canvasElement.querySelector('.book__paper') as HTMLElement
+
+    // The columns run past the pane, which is what a document of several pages
+    // does, and no line of the text is left below the foot of the column.
+    await expect(area.scrollWidth).toBeGreaterThan(area.clientWidth + 1)
+    await expect(paper.getBoundingClientRect().height).toBeLessThanOrEqual(area.clientHeight + 1)
+    await expect(canvasElement.querySelector('.book__left')?.textContent).not.toBe(
+      '0 pages left in chapter',
+    )
   },
 }

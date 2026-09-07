@@ -81,15 +81,27 @@ export function columnsInAll(flow: Flow): number {
 }
 
 /**
+ * Which column a place along them falls in, counted from the first. The browser
+ * lays the columns out in whole device pixels, so a run standing at the head of
+ * a column is measured a fraction of a pixel to either side of where the column
+ * is reckoned to begin, and the gap between two columns is what that fraction
+ * is read against.
+ */
+export function columnAt(flow: Flow, x: number): number {
+  const one = columnWide(flow)
+  if (one <= 0) return 0
+  return Math.max(Math.floor((x + flow.gap / 2) / (one + flow.gap)), 0)
+}
+
+/**
  * How many columns the text of this document actually fills. The layout draws
  * as many column boxes as a spread has, so a document of one line stands in one
  * column and beside an empty one, and only the runs say which.
  */
 export function columnsFilled(marks: readonly Mark[], flow: Flow): number {
-  const one = columnWide(flow)
-  if (one <= 0 || marks.length === 0) return 0
+  if (columnWide(flow) <= 0 || marks.length === 0) return 0
   let last = 0
-  for (const mark of marks) last = Math.max(last, Math.floor(mark.x / (one + flow.gap)))
+  for (const mark of marks) last = Math.max(last, columnAt(flow, mark.x))
   return last + 1
 }
 
@@ -156,11 +168,9 @@ export function beginsAt(flow: Flow, spread: number): number {
 
 /** Which spread a place along the columns falls in. */
 export function spreadAt(flow: Flow, x: number): number {
-  const one = columnWide(flow)
-  if (one <= 0) return 0
-  const column = Math.floor((x + flow.gap / 2) / (one + flow.gap))
+  if (columnWide(flow) <= 0) return 0
   const last = Math.max(spreads(flow) - 1, 0)
-  return Math.min(Math.max(Math.floor(column / flow.columns), 0), last)
+  return Math.min(Math.floor(columnAt(flow, x) / flow.columns), last)
 }
 
 /**
