@@ -23,9 +23,11 @@ Reaching an address means speaking to a site that changes what it publishes and 
 
 **Every run is handed the arguments the setting names, before its own.** A site that refuses an unattended request is answered by a flag — cookies from a browser, a token, a runtime that mints one — and which of those a person uses is theirs. What the tool said when it refused is what they are shown: it knows why, and nothing here says it better.
 
-### A machine holding neither tool has no fetcher
+### A machine without `yt-dlp` has no fetcher
 
-Nothing is bound, the ask is answered that this build cannot do it, and the window offers it nowhere from then on. That is what a build without an interface, without a recogniser and without a proofreader already does.
+`yt-dlp` is what reaches an address. `ffmpeg` only brings what it took to the container a transcriber opens, so a machine holding ffmpeg alone can fetch nothing and is a machine with no fetcher.
+
+Nothing is bound, the ask is answered that this build cannot do it, and the window offers it nowhere from then on. That is what a build without an interface, without a recogniser and without a proofreader already does. Nothing is said at startup: an absent tool is a build that does less, and every other optional adapter is silent about it.
 
 ### Neither tool is linked, and neither is shipped
 

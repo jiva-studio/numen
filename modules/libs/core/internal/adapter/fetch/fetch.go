@@ -26,9 +26,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
-// ErrNoTool is a machine holding neither tool, and is what says a build cannot
-// fetch at all.
-var ErrNoTool = errors.New("neither yt-dlp nor ffmpeg is on this machine")
+// ErrNoTool is a machine without the tool that reaches an address, and is what
+// says a build cannot fetch at all.
+var ErrNoTool = errors.New("yt-dlp is not on this machine")
 
 // A Fetcher reaches addresses with the two commands, resolved once.
 type Fetcher struct {
@@ -38,14 +38,17 @@ type Fetcher struct {
 	pages   *pages
 }
 
-// New is a fetcher for this machine, and ErrNoTool where it has neither tool.
-// A machine with one of them fetches what that one reaches.
+// New is a fetcher for this machine, and ErrNoTool where it holds no yt-dlp.
+//
+// yt-dlp is what reaches an address; ffmpeg only brings what it took to the
+// container a transcriber opens. A machine with ffmpeg alone can fetch nothing,
+// and a fetcher that can fetch nothing is one nobody wants offered.
 func New(ctx context.Context, c Config) (*Fetcher, error) {
 	video := resolved(c.Video, "yt-dlp")
-	sound := resolved(c.Sound, "ffmpeg")
-	if video == nil && sound == nil {
+	if video == nil {
 		return nil, ErrNoTool
 	}
+	sound := resolved(c.Sound, "ffmpeg")
 	return &Fetcher{video: video, sound: sound, version: version(ctx, video), pages: newPages()}, nil
 }
 

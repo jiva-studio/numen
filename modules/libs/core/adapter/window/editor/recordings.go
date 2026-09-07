@@ -79,27 +79,20 @@ func (a *API) GetRecording(
 func (a *API) copied(
 	ctx context.Context, v domain.Vault, ref domain.Fingerprint,
 ) (media, kind string) {
-	_, stores, ready := a.hearing()
-	if !ready {
-		return "", ""
-	}
 	at := a.points(ctx, v, ref)
-	if !at.IsVideo() {
+	beside, size, held := a.standing(ctx, v, ref.Path, at)
+	if !held {
 		return "", ""
 	}
-	store, err := stores.Open(v)
-	if err != nil {
-		return "", ""
-	}
-	file, size, err := store.Open(ctx, derived.Copy(derived.Fingerprint([]byte(at.URL))))
-	if err != nil {
-		return "", ""
-	}
-	_ = file.Close()
 	// The address names how large the copy was when it was given out, as a
 	// recording's names the bytes it was: a copy fetched again is another
-	// address.
-	return a.Playing.Address(v, domain.Fingerprint{Path: ref.Path, Size: size}), derived.CopyType
+	// address. A copy kept in the vault is a file of the vault, played the way
+	// every file of it is played.
+	played := ref.Path
+	if beside != "" {
+		played = beside
+	}
+	return a.Playing.Address(v, domain.Fingerprint{Path: played, Size: size}), derived.CopyType
 }
 
 // ReadTranscript answers with the transcript of a recording, each stretch of

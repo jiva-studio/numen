@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"errors"
+	"sync"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/fetch"
@@ -38,6 +39,8 @@ func (c Config) ImportURL(ctx context.Context, db *Index, by port.Fetcher) sourc
 		Derived:   c.DerivedStores(),
 		By:        by,
 		CopyUnder: c.Fetching.CopyBytes(),
+		ToVault:   c.Fetching.ToVault(),
+		Writers:   c.VaultWriters(),
 		Languages: c.Fetching.Captions,
 		Automatic: c.Fetching.Automatic(),
 		Cut: func(ctx context.Context, v domain.Vault, path string) error {
@@ -47,5 +50,34 @@ func (c Config) ImportURL(ctx context.Context, db *Index, by port.Fetcher) sourc
 			named, err := notes.Rename.Execute(ctx, v, path, title)
 			return named.Path, err
 		},
+	}
+}
+
+// FetchesUnasked reaches the address of a link note the vault holds nothing
+// fetched for, as a walk finds it. It is nothing where the settings do not ask
+// for it, which is where the settings say nothing.
+//
+// The fetcher and what imports through it are made on the first note that needs
+// them: a walk of a vault holding no link note asks this machine for nothing.
+func (c Config) FetchesUnasked(db *Index) func(context.Context, domain.Vault, string) error {
+	if !c.Fetching.Unasked() {
+		return nil
+	}
+	var once sync.Once
+	var importing source.ImportURL
+	var able bool
+	return func(ctx context.Context, v domain.Vault, path string) error {
+		once.Do(func() {
+			by := c.Fetcher(ctx)
+			if by == nil {
+				return
+			}
+			importing, able = c.ImportURL(ctx, db, by), true
+		})
+		if !able {
+			return nil
+		}
+		_, err := importing.Execute(ctx, v, path)
+		return err
 	}
 }

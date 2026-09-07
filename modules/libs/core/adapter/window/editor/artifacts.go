@@ -142,6 +142,18 @@ func (a *API) drops(
 	if !held {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
+	// A copy kept in the vault is the person's own file, and taking it away is
+	// taking a file out of their folder.
+	if beside, _, stands := a.standing(ctx, v, ref.Path, at); stands && beside != "" &&
+		a.Files.Writers != nil {
+		writer, err := a.Files.Writers.Open(v)
+		if err != nil {
+			return nil, connect.NewError(reaching(err), err)
+		}
+		if err := writer.Remove(ctx, beside); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return nil, connect.NewError(reaching(err), err)
+		}
+	}
 	store, err := stores.Open(v)
 	if err != nil {
 		return nil, connect.NewError(reaching(err), err)
@@ -169,19 +181,10 @@ func (a *API) copyOf(
 		Kind:  v1.ArtifactKind_ARTIFACT_KIND_COPY,
 		State: v1.State_STATE_NONE,
 	}
-	_, stores, held := a.hearing()
-	if !held || !at.IsVideo() {
+	_, size, held := a.standing(ctx, v, path, at)
+	if !held {
 		return out
 	}
-	store, err := stores.Open(v)
-	if err != nil {
-		return out
-	}
-	file, size, err := store.Open(ctx, derived.Copy(derived.Fingerprint([]byte(at.URL))))
-	if err != nil {
-		return out
-	}
-	_ = file.Close()
 	out.State, out.Size = v1.State_STATE_DONE, size
 	return out
 }
@@ -556,4 +559,37 @@ func reaching(err error) connect.Code {
 	default:
 		return connect.CodeInternal
 	}
+}
+
+// standing is where the copy of a video is: beside the note as a file of the
+// vault, or in the application's own folder. Nothing where no copy stands.
+//
+// A copy lands wherever `importing.copies_to_vault` said when it was fetched,
+// and a setting turned afterwards does not move what is already here. Both
+// places are looked in, and the vault's own file is the one a person can see.
+func (a *API) standing(
+	ctx context.Context, v domain.Vault, path string, at domain.WebAddress,
+) (beside string, size int64, held bool) {
+	if !at.IsVideo() {
+		return "", 0, false
+	}
+	if reader, err := a.Readers.Open(v); err == nil {
+		if ref, err := reader.Stat(ctx, source.CopyBeside(path)); err == nil {
+			return ref.Path, ref.Size, true
+		}
+	}
+	_, stores, ready := a.hearing()
+	if !ready {
+		return "", 0, false
+	}
+	store, err := stores.Open(v)
+	if err != nil {
+		return "", 0, false
+	}
+	file, size, err := store.Open(ctx, derived.Copy(derived.Fingerprint([]byte(at.URL))))
+	if err != nil {
+		return "", 0, false
+	}
+	_ = file.Close()
+	return "", size, true
 }

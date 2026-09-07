@@ -23,11 +23,13 @@ Two notes pointing at one video share what was fetched, and a person typing in e
 
 The scheme and the host are lowercased, a default port and a fragment go, and the parameters a site adds to say where a visitor came from go with them. A video is reduced to its identifier, so the share link, the watch page and the embed are one address.
 
-Only `http` and `https` are read. A scheme reaching a file or a socket on this machine is refused where the address is read, so nothing further along has to remember to.
+Only `http` and `https` are read, and only away from this machine. A scheme reaching a file, and a host that is this machine, are refused where the address is read, so nothing further along has to remember to; a site that redirects onto this machine is refused as it lands. An index, a window's own socket and whatever else is listening here answer nobody's paste.
 
 ### The sweep asks which notes name an address
 
 `notes.address` holds it, so what still points at a file in the store is a question the index answers. A reading is swept by asking whether any source still names it, and this is the same question asked of the same column.
+
+The walk that finds a note's file gone asks it: the addresses the vault named before those notes were taken out, and the addresses it names after. What has gone from the answer is what nothing points at, and everything kept for it is taken out — the words, the prose, the copy. Two notes on one video hold it between them while either stands.
 
 ## Consequences
 

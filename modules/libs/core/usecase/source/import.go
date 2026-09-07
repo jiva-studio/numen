@@ -36,6 +36,12 @@ type ImportURL struct {
 	// CopyUnder is how many bytes a copy may run to. Zero is no limit.
 	CopyUnder int64
 
+	// ToVault keeps a copy beside the note as a file of the person's own, and
+	// Writers is what puts it there. It is `importing.copies_to_vault`, and a
+	// run without a writer keeps every copy in the application's own folder.
+	ToVault bool
+	Writers port.VaultWriters
+
 	// Languages are the languages published words are preferred in, best
 	// first, and Automatic is whether words a machine wrote count where a
 	// person published none.
@@ -152,13 +158,17 @@ type CopyResult struct {
 	// and Bytes is the size it was refused at.
 	TooLarge bool
 	Busy     bool
+	// At is where in the vault the copy landed, and nothing where it landed in
+	// the application's own folder.
+	At string
 }
 
 // Copy fetches what is at a link note's address as a person plays it.
 //
 // It is asked for by hand: a copy is an hour of video on somebody's disk, and
-// pasting an address is not asking for one. What is fetched is played from the
-// vault's own folder, where losing it costs another fetch.
+// pasting an address is not asking for one. Where it lands is
+// `importing.copies_to_vault`: the application's own folder, where losing it
+// costs another fetch, or beside the note as a file of the person's own.
 func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyResult, error) {
 	res := CopyResult{Path: path}
 	at, _, store, err := u.pointed(ctx, v, path)
@@ -169,8 +179,11 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 		return res, fmt.Errorf("%s: %w", path, ErrNotALink)
 	}
 	hash := text.Fingerprint([]byte(at.URL))
+	beside := CopyBeside(path)
 
-	// One run to a copy, held for as long as the fetch takes.
+	// One run to a copy, held for as long as the fetch takes. The claim is on
+	// the store's name whichever disk the copy lands on: it is the address that
+	// is being fetched, and two notes on one video are one fetch.
 	release, err := store.Claim(ctx, text.Copy(hash))
 	if errors.Is(err, port.ErrClaimed) {
 		res.Busy = true
@@ -181,11 +194,11 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 	}
 	defer release()
 
-	if _, size, err := store.Open(ctx, text.Copy(hash)); err == nil {
-		res.Held, res.Bytes = true, size
-		return res, nil
-	} else if !errors.Is(err, fs.ErrNotExist) {
+	if size, held, err := u.stands(ctx, v, store, hash, beside); err != nil {
 		return res, err
+	} else if held {
+		res.Held, res.Bytes, res.At = true, size, u.landing(beside)
+		return res, nil
 	}
 
 	meta, err := u.By.Metadata(ctx, at)
@@ -206,9 +219,9 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 		_ = write.CloseWithError(err)
 		going <- err
 	}()
-	size, err := store.Take(ctx, text.Copy(hash), capped(read, u.CopyUnder))
-	// The read end is closed before the fetch is waited for: a store that
-	// stopped reading unblocks whoever is writing into it.
+	size, err := u.takes(ctx, v, store, text.Copy(hash), beside, capped(read, u.CopyUnder))
+	// The read end is closed before the fetch is waited for: whoever stopped
+	// reading unblocks whoever is writing into it.
 	_ = read.CloseWithError(err)
 	fetching := <-going
 	if errors.Is(err, errTooLarge) {
@@ -221,8 +234,87 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 	if err != nil {
 		return res, err
 	}
-	res.Bytes = size
+	res.Bytes, res.At = size, u.landing(beside)
 	return res, nil
+}
+
+// CopyBeside is where a copy kept in the vault stands: beside the note, under
+// the note's own name. A person looking at the folder sees the video and the
+// note about it together.
+func CopyBeside(path string) string {
+	return strings.TrimSuffix(path, ".md") + text.CopyExtension
+}
+
+// landing is where the copy is, as the vault names it, and nothing where it is
+// in the application's own folder.
+func (u ImportURL) landing(beside string) string {
+	if !u.ToVault {
+		return ""
+	}
+	return beside
+}
+
+// stands says whether a copy is already here, and how large.
+func (u ImportURL) stands(
+	ctx context.Context, v domain.Vault, store port.DerivedStore, hash, beside string,
+) (int64, bool, error) {
+	if u.ToVault {
+		reader, err := u.Readers.Open(v)
+		if err != nil {
+			return 0, false, err
+		}
+		ref, err := reader.Stat(ctx, beside)
+		if errors.Is(err, fs.ErrNotExist) {
+			return 0, false, nil
+		}
+		if err != nil {
+			return 0, false, err
+		}
+		return ref.Size, true, nil
+	}
+	_, size, err := store.Open(ctx, text.Copy(hash))
+	if errors.Is(err, fs.ErrNotExist) {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, err
+	}
+	return size, true, nil
+}
+
+// takes writes the copy where the settings say it lands, and answers how large
+// it came to.
+//
+// A copy in the vault is the person's file: the application does not replace
+// one that is there, and putting the folders above it right is the writer's.
+func (u ImportURL) takes(
+	ctx context.Context, v domain.Vault, store port.DerivedStore, name, beside string, from io.Reader,
+) (int64, error) {
+	if !u.ToVault {
+		return store.Take(ctx, name, from)
+	}
+	writer, err := u.Writers.Open(v)
+	if err != nil {
+		return 0, err
+	}
+	counted := &counting{from: from}
+	if err := writer.Bring(ctx, beside, counted); err != nil {
+		return 0, err
+	}
+	return counted.read, nil
+}
+
+// counting is what went past, so a copy the vault wrote says how large it is
+// without being asked for again.
+type counting struct {
+	from io.Reader
+	read int64
+}
+
+func (c *counting) Read(into []byte) (int, error) {
+	read, err := c.from.Read(into)
+	c.read += int64(read)
+	return read, err
 }
 
 // errTooLarge is a copy that ran past the size the settings name.

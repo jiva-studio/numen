@@ -47,7 +47,15 @@ An address nothing plays is the address itself over the prose, and what was fetc
 
 It is asked for by hand. An hour of video on somebody's disk is not what pasting an address asks for, and `importing.copy_under_mb` is what a copy may run to at all.
 
-The copy is kept in the vault's own folder, named by the address like everything else fetched for it, and it is played from there — the vault's own reader is refused that folder, so what serves it is the same socket, reading the store. Taking the copy away leaves the note pointing where it pointed, and the tab frames the address again.
+The copy is kept in the vault's own folder, named by the address like everything else fetched for it, and it is played from there — the vault's own reader is refused that folder, so what serves it is the same socket, reading the store. `importing.copies_to_vault` keeps it beside the note instead, under the note's own name, where the person sees it in their folder and every other program on the machine can play it. Taking the copy away leaves the note pointing where it pointed, and the tab frames the address again.
+
+## What goes when the note goes
+
+Deleting a link note deletes what was fetched for it: the words, the prose, the copy. It is named by the address and shared by every note carrying it, so it goes when the last of them does, and two notes on one video keep it while either stands. The walk that notices the file is gone is what notices this.
+
+## Without being asked
+
+`importing.fetch_unasked` reaches the address of every link note nothing has been fetched for, as a walk of the vault finds it. It is off: reaching off the machine is a gesture, and a note somebody wrote in another editor is not one. Turned on, a note written elsewhere has what is at its address by the time it is opened, and an address that will not answer is that note's trouble and leaves the walk standing.
 
 ## The tools
 

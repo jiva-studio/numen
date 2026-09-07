@@ -20,6 +20,7 @@ type site struct {
 	length   int
 	cues     []transcript.Cue
 	prose    string
+	bytes    []byte
 	asked    []string
 	refusing error
 }
@@ -50,8 +51,15 @@ func (s *site) Audio(context.Context, domain.WebAddress, io.Writer) error {
 	return port.ErrNothingFetched
 }
 
-func (s *site) Download(context.Context, domain.WebAddress, io.Writer) (port.Download, error) {
-	return port.Download{}, port.ErrNothingFetched
+func (s *site) Download(_ context.Context, at domain.WebAddress, into io.Writer) (port.Download, error) {
+	s.asked = append(s.asked, "download "+at.URL)
+	if len(s.bytes) == 0 {
+		return port.Download{}, port.ErrNothingFetched
+	}
+	if _, err := into.Write(s.bytes); err != nil {
+		return port.Download{}, err
+	}
+	return port.Download{MediaType: text.CopyType, Extension: text.CopyExtension}, nil
 }
 
 func (s *site) Article(_ context.Context, at domain.WebAddress) (port.Article, error) {
@@ -279,5 +287,83 @@ func TestANotePersonNamedKeepsItsName(t *testing.T) {
 	}
 	if named != 0 {
 		t.Errorf("a note the person named was renamed %d times", named)
+	}
+}
+
+// A copy is kept in the application's own folder, where losing it costs another
+// fetch and the vault stays the person's own writing.
+func TestACopyKeptInTheApplicationsFolder(t *testing.T) {
+	from := &site{bytes: []byte("the bytes of a video")}
+	u, kept, address := fetching(t, pointsAtAVideo, from)
+
+	got, err := u.Copy(t.Context(), first, videoNote)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.At != "" {
+		t.Errorf("the copy landed at %q in the vault, and nothing asked for that", got.At)
+	}
+	if got.Bytes != int64(len(from.bytes)) {
+		t.Errorf("the copy is %d bytes", got.Bytes)
+	}
+	name := text.Copy(text.Fingerprint([]byte(address)))
+	if _, _, err := kept.Open(t.Context(), name); err != nil {
+		t.Errorf("nothing in the folder the copy was kept in: %v", err)
+	}
+}
+
+// `importing.copies_to_vault` keeps a copy beside the note, as a file the
+// person sees in their own folder and plays from where it lies.
+func TestACopyKeptBesideTheNote(t *testing.T) {
+	from := &site{bytes: []byte("the bytes of a video")}
+	u, kept, address := fetching(t, pointsAtAVideo, from)
+	held := newLibrary()
+	held.hold(videoNote, domain.KindNote, []byte(pointsAtAVideo), 1)
+	u.Readers = vaults{first.ID: held}
+	u.ToVault, u.Writers = true, writers{first.ID: held}
+
+	got, err := u.Copy(t.Context(), first, videoNote)
+	if err != nil {
+		t.Fatal(err)
+	}
+	beside := "notes/Entropy.mp4"
+	if got.At != beside {
+		t.Errorf("the copy landed at %q, want it beside the note", got.At)
+	}
+	if got.Bytes != int64(len(from.bytes)) {
+		t.Errorf("the copy is %d bytes", got.Bytes)
+	}
+	if held.files[beside] == nil {
+		t.Fatal("nothing stands beside the note")
+	}
+	if string(held.files[beside].raw) != string(from.bytes) {
+		t.Errorf("the copy reads %q", held.files[beside].raw)
+	}
+	if _, _, err := kept.Open(t.Context(), text.Copy(text.Fingerprint([]byte(address)))); err == nil {
+		t.Error("the copy is in the application's folder too, and the vault is where it was asked for")
+	}
+}
+
+// A copy already beside the note is not fetched a second time.
+func TestACopyAlreadyBesideTheNote(t *testing.T) {
+	from := &site{bytes: []byte("the bytes of a video")}
+	u, _, _ := fetching(t, pointsAtAVideo, from)
+	held := newLibrary()
+	held.hold(videoNote, domain.KindNote, []byte(pointsAtAVideo), 1)
+	u.Readers = vaults{first.ID: held}
+	u.ToVault, u.Writers = true, writers{first.ID: held}
+
+	if _, err := u.Copy(t.Context(), first, videoNote); err != nil {
+		t.Fatal(err)
+	}
+	got, err := u.Copy(t.Context(), first, videoNote)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !got.Held {
+		t.Error("the video was fetched again over a copy already standing")
+	}
+	if strings.Count(strings.Join(from.asked, "\n"), "download") != 1 {
+		t.Errorf("the site was asked %v", from.asked)
 	}
 }

@@ -2,6 +2,10 @@ package vault
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"io/fs"
+	"slices"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -43,4 +47,77 @@ func indexed(ctx context.Context, held port.DerivedStore, n domain.Note) domain.
 		return domain.IndexedNote{Note: n}
 	}
 	return domain.IndexedNote{Note: n, Artifact: domain.Artifact{Producer: producer, Text: words}}
+}
+
+// addresses is what the notes of this vault point at, taken before any of them
+// are removed. Nothing is asked where the walk found every note still there.
+func (u Scan) addresses(
+	ctx context.Context, v domain.Vault, gone []string,
+) ([]string, error) {
+	if len(gone) == 0 || u.Derived == nil {
+		return nil, nil
+	}
+	held, err := u.Known.Addresses(ctx, v.ID)
+	if err != nil {
+		return nil, fmt.Errorf("read index: %w", err)
+	}
+	return held, nil
+}
+
+// sweep takes out what was fetched for an address no note points at any more.
+//
+// What was fetched is named by the address and shared by every note carrying
+// it, so the question is asked of the vault and not of the note that went: two
+// notes on one video keep it while either of them stands.
+func (u Scan) sweep(
+	ctx context.Context, v domain.Vault, held port.DerivedStore, was []string,
+) error {
+	if held == nil || len(was) == 0 {
+		return nil
+	}
+	stands, err := u.Known.Addresses(ctx, v.ID)
+	if err != nil {
+		return fmt.Errorf("read index: %w", err)
+	}
+	for _, address := range was {
+		if slices.Contains(stands, address) {
+			continue
+		}
+		for _, name := range text.AddressNames(text.Fingerprint([]byte(address))) {
+			if err := held.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+				return fmt.Errorf("remove %s: %w", name, err)
+			}
+		}
+	}
+	return nil
+}
+
+// unasked reaches the address of every link note nothing has been fetched for,
+// and answers how many were reached.
+//
+// It is `importing.fetch_unasked`, which is off: reaching off the machine is a
+// gesture, and a note somebody wrote in another editor is not one. Turned on,
+// a walk finds a link note the way it finds any other and what is at its
+// address is there when the person opens it.
+//
+// An address that would not answer is that note's trouble. The walk found every
+// file it found, and one site refusing does not unsay it.
+func (u Scan) unasked(ctx context.Context, v domain.Vault, held port.DerivedStore) int {
+	if u.Fetches == nil || u.Types == nil || held == nil {
+		return 0
+	}
+	pointing, err := u.Types.OfType(ctx, v.ID, domain.TypeLink)
+	if err != nil {
+		return 0
+	}
+	fetched := 0
+	for _, path := range pointing {
+		if ctx.Err() != nil {
+			return fetched
+		}
+		if err := u.Fetches(ctx, v, path); err == nil {
+			fetched++
+		}
+	}
+	return fetched
 }

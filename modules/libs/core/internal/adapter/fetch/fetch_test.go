@@ -180,3 +180,14 @@ func TestAVideoIsNotAPage(t *testing.T) {
 		t.Errorf("an address with no video at it was copied: %v", err)
 	}
 }
+
+// ffmpeg reaches no address. It brings what yt-dlp took to the container a
+// transcriber opens, and a machine holding it alone can fetch nothing.
+func TestAMachineWithFfmpegAndNoDownloader(t *testing.T) {
+	t.Setenv("PATH", t.TempDir())
+
+	_, err := fetch.New(t.Context(), fetch.Config{Sound: fetch.Tool{Command: tool(t, "")}})
+	if !errors.Is(err, fetch.ErrNoTool) {
+		t.Errorf("a machine holding only ffmpeg answered %v", err)
+	}
+}

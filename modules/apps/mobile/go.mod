@@ -17,16 +17,12 @@ require (
 	github.com/ebitengine/purego v0.9.0 // indirect
 	github.com/getcharzp/go-ocr v0.0.0-20260818071741-a892e438f08d // indirect
 	github.com/getcharzp/onnxruntime_purego v1.24.0 // indirect
-	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-shiori/dom v0.0.0-20230515143342-73569d674e1c // indirect
 	github.com/go-shiori/go-readability v0.0.0-20251205110129-5db1dc9836f0 // indirect
 	github.com/gofrs/flock v0.13.0 // indirect
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f // indirect
 	github.com/gomlx/compute v0.1.3 // indirect
-	github.com/gomlx/exceptions v0.0.3 // indirect
 	github.com/gomlx/go-huggingface v0.4.1 // indirect
-	github.com/gomlx/gomlx v0.28.4 // indirect
-	github.com/gomlx/onnx-gomlx v0.5.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
 	github.com/icza/bitio v1.1.0 // indirect
@@ -44,7 +40,6 @@ require (
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06 // indirect
 	github.com/tetratelabs/wazero v1.12.0 // indirect
 	github.com/up-zero/gotool v0.0.0-20260120011100-d685b2532b5a // indirect
-	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect
 	golang.org/x/image v0.45.0 // indirect
 	golang.org/x/mod v0.39.0 // indirect
 	golang.org/x/net v0.58.0 // indirect
@@ -54,7 +49,6 @@ require (
 	golang.org/x/tools v0.49.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/klog/v2 v2.140.0 // indirect
 	modernc.org/libc v1.74.4 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
