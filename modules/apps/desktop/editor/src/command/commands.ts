@@ -36,7 +36,7 @@ export type CommandGroup = 'note' | 'file' | 'window' | 'vault'
 export type Step =
   | 'commands'
   | 'naming'
-  | 'pointing'
+  | 'address'
   | 'picking'
   | 'vaults'
   | 'choosing'
@@ -244,7 +244,7 @@ export interface Words extends EmptyWords {
    * An address asked for: the field, what stands in it, what Enter does, and
    * what is said of words that are no address.
    */
-  readonly pointing: string
+  readonly address: string
   readonly typeAddress: string
   readonly importIt: string
   readonly notAnAddress: string
@@ -475,7 +475,7 @@ export const commandsOf = (
     id: 'importUrl',
     text: words.importUrl,
     group: 'window',
-    needs: 'pointing',
+    needs: 'address',
     where: (at) => at.ready,
   },
   { id: 'plex', text: words.newPlex, ...keysOf('plex', agent), group: 'window', where: always },

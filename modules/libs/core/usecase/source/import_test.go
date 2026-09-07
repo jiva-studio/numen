@@ -24,7 +24,7 @@ type site struct {
 	refusing error
 }
 
-func (s *site) Fetching() port.FetchModel {
+func (s *site) Fetching(_ domain.WebAddress) port.FetchModel {
 	return port.FetchModel{Tool: "a test", Version: "1"}
 }
 
@@ -160,8 +160,7 @@ func TestAVideoNobodyPublishedWordsFor(t *testing.T) {
 	}
 }
 
-// A page is its prose, without the furniture around it, and it is kept as prose
-// rather than as words with times.
+// A page is its prose, without the furniture around it, and it is kept as prose.
 func TestThePagePointedAt(t *testing.T) {
 	from := &site{title: "Entropy — a page", prose: "A measure of disorder."}
 	u, kept, _ := fetching(t,

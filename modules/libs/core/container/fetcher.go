@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/fetch"
@@ -16,6 +17,9 @@ import (
 // that it cannot be done here, and the window offers it nowhere from then on.
 func (c Config) Fetcher(ctx context.Context) port.Fetcher {
 	fetcher, err := fetch.New(ctx, c.Fetching)
+	if errors.Is(err, fetch.ErrNoTool) {
+		return nil
+	}
 	if err != nil {
 		c.trouble(err)
 		return nil

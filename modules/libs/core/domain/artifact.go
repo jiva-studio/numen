@@ -5,8 +5,8 @@ package domain
 // recording. Producer is what made it, and is the word the index files it
 // under.
 //
-// It is kept in the vault's own folder, beside the file rather than in it, so a
-// file and what was made from it are never one thing.
+// It is kept in the vault's own folder, beside the file, so a file and what was
+// made from it are never one thing.
 type Artifact struct {
 	Producer string
 	Text     string
@@ -19,9 +19,8 @@ func (a Artifact) IsZero() bool { return a.Producer == "" }
 // An IndexedNote is a note on its way into the index: the note as its file
 // reads, and the artifact searched together with it.
 //
-// Only a link note has the second. It is cut with the note rather than beside
-// it, because what a person wrote about an address and what is at that address
-// answer one question.
+// Only a link note has the second. It is cut with the note: what a person wrote
+// about an address and what is at that address answer one question.
 type IndexedNote struct {
 	Note     Note
 	Artifact Artifact

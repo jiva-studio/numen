@@ -76,12 +76,16 @@ func version(ctx context.Context, video []string) string {
 	return strings.TrimSpace(string(said))
 }
 
-// Fetching is what every address this fetcher reaches is fetched by.
-func (f *Fetcher) Fetching() port.FetchModel {
+// Fetching is what this address is fetched by: a video by the tool this machine
+// holds, a page by the reader in this process.
+func (f *Fetcher) Fetching(at domain.WebAddress) port.FetchModel {
+	if !at.IsVideo() {
+		return port.FetchModel{Tool: readerName}
+	}
 	return port.FetchModel{Tool: "yt-dlp", Version: f.version}
 }
 
-// Look is what stands at the address, taking none of it.
+// Metadata is what stands at the address, taking none of it.
 func (f *Fetcher) Metadata(ctx context.Context, at domain.WebAddress) (port.Metadata, error) {
 	if !at.IsVideo() {
 		return f.pages.metadata(ctx, at)
@@ -117,7 +121,7 @@ func (f *Fetcher) Metadata(ctx context.Context, at domain.WebAddress) (port.Meta
 	return found, nil
 }
 
-// named are the languages of one set of tracks, in one order however the tool
+// languages are the languages of one set of tracks, in one order however the tool
 // listed them.
 func languages(tracks map[string][]struct{}) []string {
 	out := make([]string, 0, len(tracks))
@@ -128,7 +132,7 @@ func languages(tracks map[string][]struct{}) []string {
 	return out
 }
 
-// Words are the words published with a video.
+// Subtitles are the words published with a video.
 //
 // They are asked for as the format that carries one stretch of speech to a
 // cue. What a site draws as two lines scrolling is one stretch said once, and
@@ -174,7 +178,7 @@ func (f *Fetcher) Subtitles(
 	return cues, nil
 }
 
-// Sound is a video's sound as the container a transcriber opens: one channel at
+// Audio is a video's sound as the container a transcriber opens: one channel at
 // 16 kHz, which is what a model takes.
 func (f *Fetcher) Audio(ctx context.Context, at domain.WebAddress, into io.Writer) error {
 	if f.video == nil || f.sound == nil {
@@ -216,7 +220,7 @@ func (f *Fetcher) Audio(ctx context.Context, at domain.WebAddress, into io.Write
 	return nil
 }
 
-// Copy is the video as a person plays it, in the one container every player
+// Download is the video as a person plays it, in the one container every player
 // this window is drawn in opens.
 func (f *Fetcher) Download(
 	ctx context.Context, at domain.WebAddress, into io.Writer,
@@ -227,18 +231,23 @@ func (f *Fetcher) Download(
 	if f.video == nil {
 		return port.Download{}, ErrNoTool
 	}
+	// The one container is asked for by name. A site with nothing in it says so,
+	// and what arrives is what the copy is served as.
 	taking := exec.CommandContext(ctx, f.video[0],
 		append(append([]string(nil), f.video[1:]...),
-			"-f", "best[ext=mp4]/mp4/best", "--no-playlist", "-o", "-", at.URL)...)
+			"-f", "best[ext=mp4]/mp4", "--no-playlist", "-o", "-", at.URL)...)
 	var said bytes.Buffer
 	taking.Stdout, taking.Stderr = into, &said
 	if err := taking.Run(); err != nil {
+		if stopped := ctx.Err(); stopped != nil {
+			return port.Download{}, stopped
+		}
 		return port.Download{}, fmt.Errorf("%w: %s", err, lastLine(said.String()))
 	}
 	return port.Download{MediaType: "video/mp4", Extension: ".mp4"}, nil
 }
 
-// Prose is what an address that plays nothing says.
+// Article is what an address that plays nothing says.
 func (f *Fetcher) Article(ctx context.Context, at domain.WebAddress) (port.Article, error) {
 	return f.pages.article(ctx, at)
 }
@@ -255,6 +264,11 @@ func run(ctx context.Context, command []string, into io.Writer, arguments ...str
 		running.Stdout = into
 	}
 	if err := running.Run(); err != nil {
+		// A run this machine stopped is that, and the tool's last words are
+		// about being killed.
+		if stopped := ctx.Err(); stopped != nil {
+			return nil, stopped
+		}
 		return nil, fmt.Errorf("%w: %s", err, lastLine(said.String()))
 	}
 	return out.Bytes(), nil

@@ -447,8 +447,7 @@ export type ReadNoteResponse = Message<"numen.v1.ReadNoteResponse"> & {
   /**
    * Where a frame plays what is at that address, absent where nothing plays.
    * The address a frame is given and the hosts the window may frame are one
-   * decision, so both are answered here rather than composed again by whoever
-   * draws it.
+   * decision, and it is made here.
    *
    * @generated from field: optional string embed = 5;
    */

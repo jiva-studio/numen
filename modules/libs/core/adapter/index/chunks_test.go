@@ -1455,3 +1455,91 @@ func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
 		t.Errorf("the section came back at %d, and it begins at 0", named[0].Start)
 	}
 }
+
+// A link note is cut over its prose and what was fetched from its address, as
+// one text. What this holds to is that no chunk runs out of one half into the
+// other: a hit shown from a chunk that straddles the join reads as words the
+// video said and the person wrote in one sentence, and neither said it.
+func TestNoChunkOfALinkNoteRunsOutOfItsProseIntoWhatWasFetched(t *testing.T) {
+	ctx := t.Context()
+	db := opened(t)
+
+	prose := strings.Repeat("What I made of it. ", 40)
+	fetched := strings.Repeat("What the video said. ", 40)
+	note := domain.Note{
+		Fingerprint: domain.Fingerprint{Path: "notes/talk.md", Size: int64(len(prose)), ModTime: walked},
+		Type:        domain.TypeLink,
+		Title:       "A talk",
+		Body:        prose,
+	}
+	if err := db.Notes().Save(ctx, first.ID, []domain.IndexedNote{{
+		Note:     note,
+		Artifact: domain.Artifact{Producer: "captions", Text: fetched},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+
+	join := len(prose) + len("\n\n")
+	rows, err := db.read.QueryContext(ctx,
+		`SELECT start, length FROM chunks WHERE parent_id IS NOT NULL ORDER BY start`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+
+	crossed, seen := 0, 0
+	for rows.Next() {
+		var start, length int
+		if err := rows.Scan(&start, &length); err != nil {
+			t.Fatal(err)
+		}
+		seen++
+		if start < join && start+length > join {
+			crossed++
+		}
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if seen < 2 {
+		t.Fatalf("%d small chunks, so this test would pass over a note cut into one", seen)
+	}
+	if crossed != 0 {
+		t.Errorf("%d chunks run from the prose into what was fetched", crossed)
+	}
+}
+
+// The offsets a link note is cut at are into the two halves together, so a
+// passage read back at one lands on the words it was cut from.
+func TestALinkNotesChunksAreCutOverTheProseAndWhatWasFetched(t *testing.T) {
+	ctx := t.Context()
+	db := opened(t)
+
+	prose := "What I made of it."
+	fetched := "What the video said."
+	note := domain.Note{
+		Fingerprint: domain.Fingerprint{Path: "notes/talk.md", Size: int64(len(prose)), ModTime: walked},
+		Type:        domain.TypeLink,
+		Title:       "A talk",
+		Body:        prose,
+	}
+	if err := db.Notes().Save(ctx, first.ID, []domain.IndexedNote{{
+		Note:     note,
+		Artifact: domain.Artifact{Producer: "captions", Text: fetched},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+
+	whole := prose + "\n\n" + fetched
+	var start, length int
+	if err := db.read.QueryRowContext(ctx,
+		`SELECT start, length FROM chunks WHERE parent_id IS NULL`).Scan(&start, &length); err != nil {
+		t.Fatal(err)
+	}
+	if start != 0 {
+		t.Errorf("the note is cut from %d, and the two halves begin at 0", start)
+	}
+	if length != len(whole) {
+		t.Errorf("the note is cut over %d bytes, want the %d of both halves", length, len(whole))
+	}
+}

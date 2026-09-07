@@ -10,11 +10,11 @@
  */
 import { computed, useTemplateRef } from 'vue'
 import { clock } from '@numen/ui'
-import type { Pointed } from '../core'
+import type { Address } from '../core'
 import type { Cue } from '../recording/transcript'
 
 const props = defineProps<{
-  points: Pointed
+  address: Address
   cues: readonly Cue[]
   /**
    * Where a copy of it on this disk is played from, and nothing where there is
@@ -32,7 +32,7 @@ const player = useTemplateRef<HTMLVideoElement>('player')
 // The frame is told which page holds it, so nothing else reaching this machine
 // can drive the player.
 const framed = computed(
-  () => `${props.points.embed}&origin=${encodeURIComponent(window.location.origin)}`,
+  () => `${props.address.embed}&origin=${encodeURIComponent(window.location.origin)}`,
 )
 
 /**
@@ -47,17 +47,17 @@ const plays = (cue: Cue): void => {
   }
   frame.value?.contentWindow?.postMessage(
     JSON.stringify({ event: 'command', func: 'seekTo', args: [cue.from / 1000, true] }),
-    new URL(props.points.embed).origin,
+    new URL(props.address.embed).origin,
   )
 }
 </script>
 
 <template>
-  <div class="pointing">
+  <div class="embed">
     <video
       v-if="props.copy"
       ref="player"
-      class="pointing__frame"
+      class="embed__frame"
       :src="props.copy"
       :title="props.words.playing"
       controls
@@ -65,9 +65,9 @@ const plays = (cue: Cue): void => {
     ></video>
 
     <iframe
-      v-else-if="props.points.embed"
+      v-else-if="props.address.embed"
       ref="frame"
-      class="pointing__frame"
+      class="embed__frame"
       :src="framed"
       :title="props.words.playing"
       sandbox="allow-scripts allow-same-origin allow-presentation"
@@ -75,12 +75,12 @@ const plays = (cue: Cue): void => {
       referrerpolicy="no-referrer"
     ></iframe>
 
-    <p v-else-if="!props.points.embed" class="pointing__address">{{ props.points.url }}</p>
+    <p v-else class="embed__address">{{ props.address.url }}</p>
 
-    <ol v-if="props.cues.length > 0" class="pointing__words">
+    <ol v-if="props.cues.length > 0" class="embed__words">
       <li v-for="(cue, at) in props.cues" :key="at">
-        <button type="button" class="pointing__said" @click="plays(cue)">
-          <span class="pointing__at">{{ clock(cue.from) }}</span>
+        <button type="button" class="embed__said" @click="plays(cue)">
+          <span class="embed__at">{{ clock(cue.from) }}</span>
           {{ cue.text }}
         </button>
       </li>
@@ -89,9 +89,9 @@ const plays = (cue: Cue): void => {
 </template>
 
 <style scoped>
-/* What is pointed at sits at the top of the tab and keeps its height: the prose
-   below it is what scrolls. */
-.pointing {
+/* What is at the address sits at the top of the tab and keeps its height: the
+   prose below it is what scrolls. */
+.embed {
   display: flex;
   flex-direction: column;
   flex: none;
@@ -101,7 +101,7 @@ const plays = (cue: Cue): void => {
 }
 
 /* Sixteen by nine, which is what the player inside it is drawn to. */
-.pointing__frame {
+.embed__frame {
   flex: none;
   display: block;
   inline-size: 100%;
@@ -112,7 +112,7 @@ const plays = (cue: Cue): void => {
   background: #000;
 }
 
-.pointing__address {
+.embed__address {
   margin: 0;
   padding: var(--numen-inset) var(--numen-gutter);
   color: var(--numen-hushed);
@@ -121,7 +121,7 @@ const plays = (cue: Cue): void => {
 }
 
 /* The words scroll under the player, and the tab's prose scrolls under them. */
-.pointing__words {
+.embed__words {
   margin: 0;
   padding: var(--numen-inset) 0;
   overflow-y: auto;
@@ -129,7 +129,7 @@ const plays = (cue: Cue): void => {
   min-block-size: 0;
 }
 
-.pointing__said {
+.embed__said {
   display: block;
   inline-size: 100%;
   padding: calc(var(--numen-inset) / 2) var(--numen-gutter);
@@ -141,11 +141,11 @@ const plays = (cue: Cue): void => {
   cursor: pointer;
 }
 
-.pointing__said:hover {
+.embed__said:hover {
   background: var(--numen-field-border);
 }
 
-.pointing__at {
+.embed__at {
   margin-inline-end: var(--numen-inset);
   color: var(--numen-hushed);
   font-variant-numeric: tabular-nums;

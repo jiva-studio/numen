@@ -2,13 +2,15 @@ package domain
 
 import (
 	"errors"
+	"net/netip"
 	"net/url"
 	"strings"
 )
 
 // ErrNotAWebAddress is anything a link note cannot point at. Only `http` and
-// `https` are fetched: no scheme reaching a file or a socket on this machine is
-// an address a note may carry.
+// `https` are fetched, and only away from this machine: neither a scheme
+// reaching a file nor a host that is this machine is an address a note may
+// carry.
 var ErrNotAWebAddress = errors.New("not a web address")
 
 // A WebAddress is where a link note points, in the one form two spellings of
@@ -52,8 +54,8 @@ const addressKey = "url"
 // wrong with what it wrote. It is read on a link note and nowhere else: an
 // address on any other note is a key of the person's own.
 //
-// A link note with nowhere to point is missing its whole subject, so it is said
-// rather than guessed at, and the note is read as every other note is.
+// A link note with nowhere to point is missing its whole subject, so a missing
+// address is a problem returned, and the note is read as every other note is.
 func ReadAddress(front map[string]any) (WebAddress, []string) {
 	raw, present := front[addressKey]
 	if !present || raw == nil {
@@ -87,7 +89,7 @@ func ParseWebAddress(raw string) (WebAddress, error) {
 		return WebAddress{}, ErrNotAWebAddress
 	}
 	address.Host = strings.ToLower(address.Host)
-	if address.Hostname() == "" {
+	if address.Hostname() == "" || thisMachine(address.Hostname()) {
 		return WebAddress{}, ErrNotAWebAddress
 	}
 	if port := address.Port(); port == "80" && address.Scheme == "http" ||
@@ -102,6 +104,20 @@ func ParseWebAddress(raw string) (WebAddress, error) {
 	}
 	address.RawQuery = kept(address.Query()).Encode()
 	return WebAddress{URL: address.String()}, nil
+}
+
+// thisMachine says whether a host is this machine. A note points somewhere a
+// browser would go, and what listens on this machine is not that: an index, a
+// window's own socket and whatever else is running answer nobody's paste.
+func thisMachine(host string) bool {
+	if host == "localhost" || strings.HasSuffix(host, ".localhost") {
+		return true
+	}
+	address, err := netip.ParseAddr(strings.Trim(host, "[]"))
+	if err != nil {
+		return false
+	}
+	return address.IsLoopback() || address.IsUnspecified()
 }
 
 // youtube are the hosts one video is published under. A host is written without
@@ -136,7 +152,7 @@ func videoAt(address *url.URL) string {
 
 // videoID is the identifier where the segment is one, and nothing otherwise. It
 // is eleven characters of the alphabet a URL carries unescaped, and a segment
-// carrying anything else is a page of the site rather than a video on it.
+// carrying anything else is a page of the site.
 func videoID(segment string) string {
 	segment, _, _ = strings.Cut(segment, "/")
 	if len(segment) != 11 {

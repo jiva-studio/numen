@@ -189,7 +189,7 @@ export const WORDS = {
   naming: 'Name',
   typeName: 'What is it called',
   callIt: 'Call it',
-  pointing: 'Address',
+  address: 'Address',
   typeAddress: 'Paste a link',
   importIt: 'Import',
   notAnAddress: 'That is not a link a browser would open',

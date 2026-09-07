@@ -83,10 +83,7 @@ export const useWindow = () => {
     {
       ...core,
       cues: async (path) => (await recordings.cues(path)).cues,
-      copy: async (path) => {
-        const played = await recordings.listened(path)
-        return { media: played.media, type: played.type }
-      },
+      copy: async (path) => ({ media: (await recordings.listened(path)).media }),
     },
     { replaced: changes.arrived },
   )

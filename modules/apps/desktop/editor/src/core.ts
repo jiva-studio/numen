@@ -140,8 +140,9 @@ export interface Task {
 }
 
 /**
- * What a model makes from one file of the vault: the text read out of a scan,
- * the words heard in a recording, and those words put right.
+ * What is made from one file of the vault: the text read out of a scan, the
+ * words heard in a recording, those words put right, what is at the address a
+ * link note points at, and a copy of the video there.
  */
 export type Artifact = 'reading' | 'transcript' | 'corrections' | 'fetched' | 'copy'
 
@@ -490,14 +491,14 @@ export interface NoteResult {
   body: string
   refusal: RefusalReason | null
   /** Where a link note points, and nothing on every other note. */
-  points?: Pointed
+  address?: Address
 }
 
 /**
  * Where a link note points: the address itself, and where a frame plays what is
  * at it. A frame plays nothing for an address nothing plays.
  */
-export interface Pointed {
+export interface Address {
   readonly url: string
   readonly embed: string
 }

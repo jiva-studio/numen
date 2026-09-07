@@ -2,6 +2,7 @@ package fetch
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -27,14 +28,31 @@ const browser = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
 // A page is fetched as a person's browser would fetch it, and what it says is
 // bytes from a stranger: the parse is somebody else's library, fed a bounded
 // read.
+// readerName is what a page's prose is claimed by, which is the library that
+// found it.
+const readerName = "go-readability"
+
 type pages struct{ through *http.Client }
 
 func newPages() *pages {
-	return &pages{through: &http.Client{Timeout: 30 * time.Second}}
+	return &pages{through: &http.Client{
+		Timeout: 30 * time.Second,
+		// A site may send the fetch on, and where it lands is judged as the
+		// address was: a redirect onto this machine is refused.
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= 10 {
+				return errors.New("this address sends the fetch on and on")
+			}
+			if _, err := domain.ParseWebAddress(req.URL.String()); err != nil {
+				return fmt.Errorf("this address sends the fetch to %s: %w", req.URL.Host, err)
+			}
+			return nil
+		},
+	}}
 }
 
-// look is what a page calls itself, which is the whole of what a look at one
-// needs. It is the same fetch the prose comes out of, and a page is small.
+// metadata is what a page calls itself, which is the whole of what is known
+// about one before it is read. It is the same fetch the prose comes out of.
 func (p *pages) metadata(ctx context.Context, at domain.WebAddress) (port.Metadata, error) {
 	article, err := p.article(ctx, at)
 	if err != nil {
@@ -43,7 +61,7 @@ func (p *pages) metadata(ctx context.Context, at domain.WebAddress) (port.Metada
 	return port.Metadata{Title: article.Title}, nil
 }
 
-// prose is the article a page is written around.
+// article is the prose a page is written around.
 func (p *pages) article(ctx context.Context, at domain.WebAddress) (port.Article, error) {
 	address, err := url.Parse(at.URL)
 	if err != nil {

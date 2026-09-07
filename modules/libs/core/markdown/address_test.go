@@ -35,8 +35,8 @@ func TestALinkNoteCarriesWhereItPoints(t *testing.T) {
 	}
 }
 
-// A link note with nowhere to point is missing its whole subject, and that is
-// said rather than guessed at. The note is read as every other note is.
+// A link note with nowhere to point is missing its whole subject, and that is a
+// problem the note carries. The note is read as every other note is.
 func TestALinkNoteWithNowhereToPoint(t *testing.T) {
 	for _, written := range []string{
 		"---\ntype: link\n---\n\nWhat I made of it.\n",

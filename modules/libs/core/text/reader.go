@@ -320,7 +320,7 @@ func Fingerprint(raw []byte) string {
 //
 // It is the hash of what was read and not the path it was read from, so a
 // document renamed or moved keeps its recognition, and two copies of one
-// document in a vault share the one file rather than being read twice.
+// document in a vault share the one file.
 //
 // The extension is the producer's: a transcript is WebVTT and opens in a player
 // under the name a player knows it by.

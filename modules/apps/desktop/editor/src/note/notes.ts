@@ -18,7 +18,7 @@ import {
   type State,
   type Tab,
 } from './tab'
-import type { NoteResult, Pointed, RefusalReason } from '../core'
+import type { Address, NoteResult, RefusalReason } from '../core'
 import type { Cue } from '../recording/transcript'
 
 /** One open note as the window draws it. */
@@ -42,10 +42,10 @@ export interface Notes {
    */
   cues?(path: string): Promise<readonly Cue[]>
   /**
-   * Where the copy fetched for a link note is played from, and what a player is
-   * told it is. A note with no copy on this disk plays from nowhere.
+   * Where the copy fetched for a link note is played from. A note with no copy
+   * on this disk plays from nowhere.
    */
-  copy?(path: string): Promise<{ media: string; type: string }>
+  copy?(path: string): Promise<{ media: string }>
   write(
     path: string,
     body: string,
@@ -97,11 +97,11 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
   /** The bodies the editors are showing, which Vue writes into as a person types. */
   const bodies = ref(new Map<string, string>())
   /**
-   * Where each open note points, for the notes that point anywhere. It is what
+   * The address each open note points at, for the notes that point at one. It is what
    * the last read said: the key is in the frontmatter, which is not the prose a
    * tab writes, so it moves only when the file is read again.
    */
-  const points = ref(new Map<string, Pointed>())
+  const addresses = ref(new Map<string, Address>())
   /** The words fetched for each of them, for the notes anything was fetched for. */
   const cues = ref(new Map<string, readonly Cue[]>())
   /** Where the copy fetched for each of them plays from, for those a copy stands for. */
@@ -288,12 +288,12 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
       turn(id, { kind: 'read', generation, answer: { kind: 'refused', refusal: 'unreachable' } })
       return
     }
-    if (answered.points) {
-      points.value.set(id, answered.points)
+    if (answered.address) {
+      addresses.value.set(id, answered.address)
       void fetched(id, path)
       void copied(id, path)
     } else {
-      points.value.delete(id)
+      addresses.value.delete(id)
       cues.value.delete(id)
       copies.value.delete(id)
     }
@@ -310,13 +310,8 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
   }
 
   /**
-   * The words fetched for a link note, read after the note itself. A note
-   * nothing has been fetched for has none, and that is the answer rather than a
-   * failure: a vault that could not be reached leaves the prose standing.
-   */
-  /**
    * Where the copy fetched for a link note plays from, read after the note. A
-   * note with none plays from nowhere, and the tab frames the address instead.
+   * note with none plays from nowhere, and the tab frames the address.
    */
   async function copied(id: string, path: string): Promise<void> {
     if (!core.copy) return
@@ -329,6 +324,11 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     }
   }
 
+  /**
+   * The words fetched for a link note, read after the note itself. A note
+   * nothing has been fetched for has none, and a vault that could not be
+   * reached leaves the prose standing.
+   */
   async function fetched(id: string, path: string): Promise<void> {
     if (!core.cues) return
     try {
@@ -372,7 +372,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     timers.delete(id)
     tabs.value.delete(id)
     bodies.value.delete(id)
-    points.value.delete(id)
+    addresses.value.delete(id)
     copies.value.delete(id)
     cues.value.delete(id)
     closing.get(id)?.(true)
@@ -399,7 +399,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     keep,
     take,
     shown,
-    points: (id: string): Pointed | null => points.value.get(id) ?? null,
+    address: (id: string): Address | null => addresses.value.get(id) ?? null,
     cues: (id: string): readonly Cue[] => cues.value.get(id) ?? [],
     copy: (id: string): string => copies.value.get(id) ?? '',
     all,

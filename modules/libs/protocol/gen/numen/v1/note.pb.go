@@ -1000,8 +1000,7 @@ type ReadNoteResponse struct {
 	Url *string `protobuf:"bytes,4,opt,name=url,proto3,oneof" json:"url,omitempty"`
 	// Where a frame plays what is at that address, absent where nothing plays.
 	// The address a frame is given and the hosts the window may frame are one
-	// decision, so both are answered here rather than composed again by whoever
-	// draws it.
+	// decision, and it is made here.
 	Embed         *string `protobuf:"bytes,5,opt,name=embed,proto3,oneof" json:"embed,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

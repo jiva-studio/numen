@@ -26,8 +26,8 @@ var ErrNotALink = errors.New("this note points nowhere")
 //
 // A person asks for it, once, by pasting the address. What comes back is an
 // artifact: no machine here makes it again, and a site may stop publishing it.
-// It is named by the address rather than by the note's bytes, so typing in the
-// note leaves it where it is and two notes pointing at one video share it.
+// It is named by the address, so typing in the note leaves it where it is and
+// two notes pointing at one video share it.
 type ImportURL struct {
 	Readers port.VaultReaders
 	Derived port.DerivedStores
@@ -119,17 +119,23 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 		return res, nil
 	}
 
+	// A page is one fetch: what it calls itself and the prose it is written
+	// around come out of the same read, and a stranger's site is asked once.
+	if !at.IsVideo() {
+		res, err := u.page(ctx, v, n.Fingerprint, at, hash, store, res)
+		if err != nil {
+			return res, err
+		}
+		return u.named(ctx, v, n, at, res)
+	}
+
 	meta, err := u.By.Metadata(ctx, at)
 	if err != nil {
 		return res, err
 	}
 	res.Title, res.Length = meta.Title, meta.Length
 
-	if at.IsVideo() {
-		res, err = u.video(ctx, v, n.Fingerprint, at, meta, hash, store, res)
-	} else {
-		res, err = u.page(ctx, v, n.Fingerprint, at, hash, store, res)
-	}
+	res, err = u.video(ctx, v, n.Fingerprint, at, meta, hash, store, res)
 	if err != nil {
 		return res, err
 	}
@@ -143,7 +149,7 @@ type CopyResult struct {
 	Bytes int64
 	Held  bool
 	// TooLarge is a video over the size the settings name. Nothing was fetched,
-	// and Bytes is what it would have taken.
+	// and Bytes is the size it was refused at.
 	TooLarge bool
 	Busy     bool
 }
@@ -165,7 +171,7 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 	hash := text.Fingerprint([]byte(at.URL))
 
 	// One run to a copy, held for as long as the fetch takes.
-	release, err := store.Claim(ctx, text.Copy(hash)+".claiming")
+	release, err := store.Claim(ctx, text.Copy(hash))
 	if errors.Is(err, port.ErrClaimed) {
 		res.Busy = true
 		return res, nil
@@ -197,11 +203,19 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 	going := make(chan error, 1)
 	go func() {
 		_, err := u.By.Download(ctx, at, write)
-		going <- err
 		_ = write.CloseWithError(err)
+		going <- err
 	}()
-	size, err := store.Take(ctx, text.Copy(hash), read)
-	if fetching := <-going; fetching != nil {
+	size, err := store.Take(ctx, text.Copy(hash), capped(read, u.CopyUnder))
+	// The read end is closed before the fetch is waited for: a store that
+	// stopped reading unblocks whoever is writing into it.
+	_ = read.CloseWithError(err)
+	fetching := <-going
+	if errors.Is(err, errTooLarge) {
+		res.TooLarge, res.Bytes = true, u.CopyUnder
+		return res, nil
+	}
+	if fetching != nil {
 		return res, fetching
 	}
 	if err != nil {
@@ -209,6 +223,39 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 	}
 	res.Bytes = size
 	return res, nil
+}
+
+// errTooLarge is a copy that ran past the size the settings name.
+var errTooLarge = errors.New("this video is larger than a copy may be")
+
+// capped is what is fetched, stopped at the size the settings name. A site that
+// declares no size is held to it all the same, and a limit of nothing lets
+// everything through.
+func capped(from io.Reader, under int64) io.Reader {
+	if under <= 0 {
+		return from
+	}
+	return &limited{from: from, left: under + 1}
+}
+
+type limited struct {
+	from io.Reader
+	left int64
+}
+
+func (l *limited) Read(into []byte) (int, error) {
+	if l.left <= 0 {
+		return 0, errTooLarge
+	}
+	if int64(len(into)) > l.left {
+		into = into[:l.left]
+	}
+	read, err := l.from.Read(into)
+	l.left -= int64(read)
+	if l.left <= 0 {
+		return read, errTooLarge
+	}
+	return read, err
 }
 
 // pointed is one link note: where it points, the note itself, and the store
@@ -341,8 +388,7 @@ func in(language string) func(string) bool {
 	return func(track string) bool { return track == language || track == language+"-orig" }
 }
 
-// original says whether a track is what was said rather than a translation of
-// it.
+// original says whether a track is the language the video was spoken in.
 func original(track string) bool { return strings.HasSuffix(track, "-orig") }
 
 // page writes down the prose of a page.
@@ -398,7 +444,7 @@ func (u ImportURL) record(
 		Title:    res.Title,
 		Length:   res.Length,
 		Producer: producer,
-		Fetcher:  u.By.Fetching().Recipe(),
+		Fetcher:  u.By.Fetching(at).Recipe(),
 	})
 	if err != nil {
 		return err

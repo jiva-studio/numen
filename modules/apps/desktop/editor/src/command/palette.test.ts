@@ -395,7 +395,7 @@ describe('a command that asks for an address', () => {
 
     expect(commands.asks('importUrl', front())).toBeNull()
     expect(commands.crumb.value).toBe(words.importUrl)
-    expect(commands.groups.value.map((group) => group.id)).toStrictEqual(['pointing'])
+    expect(commands.groups.value.map((group) => group.id)).toStrictEqual(['address'])
   })
 
   it('offers what was typed where a browser would go there', () => {

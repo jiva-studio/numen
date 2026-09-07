@@ -168,3 +168,22 @@ func TestATranscriptTornMidCueIsReadAsFarAsItGoes(t *testing.T) {
 		t.Errorf("the torn block was read as speech:\n%s", doc.Text)
 	}
 }
+
+// A link note is its prose and what was fetched for it, as one text. What this
+// holds to is that a place in the fetched half is still the place it was: a
+// passage found there is located by when it was said, and the prose standing
+// before it moves every offset by exactly its own length.
+func TestALinkNoteIsItsProseAndThenWhatWasFetched(t *testing.T) {
+	prose := strings.Repeat("What I made of it. ", 20)
+	doc := text.Joined(prose, text.Transcribed(heard()))
+
+	if !strings.HasPrefix(doc.Text, prose+text.Separator) {
+		t.Errorf("the note reads %q, want its prose first", doc.Text)
+	}
+	if at := strings.Index(doc.Text, opening); at != len(prose)+len(text.Separator) {
+		t.Errorf("what was fetched begins at %d, want %d", at, len(prose)+len(text.Separator))
+	}
+	located(t, doc, opening, "0:01")
+	located(t, doc, middle, "1:23:45")
+	located(t, doc, closing, "1:30:00")
+}

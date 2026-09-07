@@ -54,8 +54,10 @@ type Metadata struct {
 // had. Nothing here reaches the vault — what comes back is bytes, and where
 // they are kept is the caller's.
 type Fetcher interface {
-	// Fetching is what every address this fetcher reaches is fetched by.
-	Fetching() FetchModel
+	// Fetching is what this address is fetched by. A video and a page are
+	// reached by different tools, and what is kept names the one that brought
+	// it.
+	Fetching(at domain.WebAddress) FetchModel
 
 	// Metadata is what the site says about the address, taking none of it.
 	Metadata(ctx context.Context, at domain.WebAddress) (Metadata, error)

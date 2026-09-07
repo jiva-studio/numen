@@ -134,3 +134,20 @@ func TestReadingWhatWasReadReachesTheSame(t *testing.T) {
 		}
 	}
 }
+
+// A note points somewhere a browser would go, and this machine is not that.
+// What listens here — an index, the window's own socket — answers nobody's
+// paste, and an address reaching one is refused where every address is read.
+func TestAnAddressOnThisMachineIsNoAddressToPointAt(t *testing.T) {
+	for _, raw := range []string{
+		"http://localhost:9200/_all/_search",
+		"http://127.0.0.1:8080/",
+		"https://[::1]/admin",
+		"http://0.0.0.0:5432/",
+		"http://numen.localhost/",
+	} {
+		if _, err := domain.ParseWebAddress(raw); !errors.Is(err, domain.ErrNotAWebAddress) {
+			t.Errorf("%s is read as an address to point at", raw)
+		}
+	}
+}

@@ -152,7 +152,7 @@ export interface VaultMaker {
   makesLink(address: string, folder: string): Promise<MakeResult>
 }
 
-/** Everything making one of the three says in the window's voice. */
+/** Everything making one of the four says in the window's voice. */
 export interface MakeWords {
   /** What the vault refused, in words a person reads. */
   readonly refused: Record<RefusalReason, string>

@@ -11,7 +11,7 @@ import { pointsAtNote, type PlexShowing } from '@numen/ui'
 import type { Store } from '../command/handlers'
 import type { Kind, WindowHandle } from '../tabs/windowing'
 import { NOTE } from '../tabs/workspace'
-import type { Pointed } from '../core'
+import type { Address } from '../core'
 import type { Cue } from '../recording/transcript'
 import type { Change } from './drawing'
 import type { noteChanges } from './changes'
@@ -46,10 +46,10 @@ export interface NoteTabState {
   /** The note as the window draws it: the body, and the state it is in. */
   readonly shown: ComputedRef<OpenNote>
   /**
-   * Where this note points, and nothing where it points nowhere. What is at it
-   * is drawn over the prose.
+   * The address this note points at, and nothing where it points nowhere. What
+   * is at it is drawn over the prose.
    */
-  readonly points: ComputedRef<Pointed | null>
+  readonly address: ComputedRef<Address | null>
   /**
    * The words fetched for that address, in the order they were said. A note
    * nothing has been fetched for has none.
@@ -172,7 +172,7 @@ export function noting(
   const held = (id: string): NoteTabState => ({
     id,
     shown: computed(() => notes.shown(id)),
-    points: computed(() => notes.points(id)),
+    address: computed(() => notes.address(id)),
     cues: computed(() => notes.cues(id)),
     copy: computed(() => notes.copy(id)),
     saying: computed(() => notes.saying(id)),

@@ -144,7 +144,7 @@ export function commandPalette(
     switch (step?.step) {
       case 'naming':
         return words.typeName
-      case 'pointing':
+      case 'address':
         return words.typeAddress
       case 'picking':
         return words.typeNote
@@ -313,21 +313,21 @@ export function commandPalette(
    * offered is what a browser would go to; the vault reads it again and is what
    * refuses one it cannot fetch.
    */
-  const pointing = (text: string): PaletteGroup => {
-    const address = text.trim()
+  const address = (text: string): PaletteGroup => {
+    const raw = text.trim()
     return {
-      id: 'pointing',
-      title: words.pointing,
-      items: fetchable(address)
+      id: 'address',
+      title: words.address,
+      items: fetchable(raw)
         ? [
             {
               id: NAME,
-              title: `${words.importIt} “${address}”`,
+              title: `${words.importIt} “${raw}”`,
               actions: [{ id: NAME, text: words.importIt }],
             },
           ]
         : [],
-      silence: address ? words.notAnAddress : words.typeAddress,
+      silence: raw ? words.notAnAddress : words.typeAddress,
     }
   }
 
@@ -482,7 +482,7 @@ export function commandPalette(
     const step = here.value
     if (!step) return listed(on.value, typed.value)
     if (step.step === 'naming') return [naming(typed.value)]
-    if (step.step === 'pointing') return [pointing(typed.value)]
+    if (step.step === 'address') return [address(typed.value)]
     if (step.step === 'picking') return [picking(typed.value)]
     if (step.step === 'choosing') return choosing(step, typed.value)
     if (step.step === 'vaults') return [listing(typed.value, step)]
@@ -581,7 +581,7 @@ export function commandPalette(
       if (!name) return null
       return invocation(step.command.id, step.on, name)
     }
-    if (step.step === 'pointing') {
+    if (step.step === 'address') {
       if (!fetchable(name)) return null
       return invocation(step.command.id, step.on, name)
     }

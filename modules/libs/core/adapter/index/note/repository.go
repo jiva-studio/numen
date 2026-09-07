@@ -247,7 +247,7 @@ func cut(
 	return out
 }
 
-// address is the hash a link note's text is kept under, which is the address it
+// addressHash is the hash a link note's text is kept under, which is the address it
 // points at and not the bytes of the file. A person typing in the note changes
 // the file and not what is at the address, and what was fetched is theirs to
 // keep. Every other note is made from itself and names nothing.

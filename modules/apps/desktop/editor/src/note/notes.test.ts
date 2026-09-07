@@ -607,43 +607,48 @@ describe('closing a note that could not be written', () => {
 })
 
 describe('a note that points somewhere', () => {
-  const pointed = {
+  const linked = {
     body: 'What I made of it.',
     refusal: null,
     at: marked('What I made of it.'),
-    points: {
+    address: {
       url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
       embed: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1',
     },
   }
 
-  it('carries where it points, beside the prose it was read with', async () => {
-    const { core } = fake({ read: async () => pointed })
+  it('carries the address, beside the prose it was read with', async () => {
+    const { core } = fake({ read: async () => linked })
     const notes = openNotes(core, { limits: quick })
 
     notes.open('Entropy.md')
     await settle()
 
-    expect(notes.points('Entropy.md')).toStrictEqual(pointed.points)
+    expect(notes.address('Entropy.md')).toStrictEqual(linked.address)
     expect(notes.shown('Entropy.md').body).toBe('What I made of it.')
   })
 
   it('points nowhere once a read says it points nowhere', async () => {
-    let points: (typeof pointed)['points'] | undefined = pointed.points
+    let address: (typeof linked)['address'] | undefined = linked.address
     const { core } = fake({
-      read: async () => ({ body: '', refusal: null, at: marked(''), ...(points ? { points } : {}) }),
+      read: async () => ({
+        body: '',
+        refusal: null,
+        at: marked(''),
+        ...(address ? { address } : {}),
+      }),
     })
     const notes = openNotes(core, { limits: quick })
 
     notes.open('Entropy.md')
     await settle()
-    expect(notes.points('Entropy.md')).not.toBeNull()
+    expect(notes.address('Entropy.md')).not.toBeNull()
 
-    points = undefined
+    address = undefined
     notes.changed(['Entropy.md'])
     await settle()
 
-    expect(notes.points('Entropy.md')).toBeNull()
+    expect(notes.address('Entropy.md')).toBeNull()
   })
 })
 
@@ -656,6 +661,6 @@ describe('a note that points nowhere', () => {
     notes.open('Heat.md')
     await settle()
 
-    expect(notes.points('Heat.md')).toBeNull()
+    expect(notes.address('Heat.md')).toBeNull()
   })
 })

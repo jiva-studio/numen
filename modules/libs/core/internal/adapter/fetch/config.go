@@ -2,9 +2,9 @@ package fetch
 
 // Config is what an installation says about reaching an address.
 //
-// Every key here is a machine's answer rather than a person's taste: where a
-// tool is, what it may be handed, and how much of what is at an address is kept
-// on this disk. None of it is turned in the window.
+// Every key here is a machine's answer: where a tool is, what it may be handed,
+// and how much of what is at an address is kept on this disk. None of it is
+// turned in the window.
 type Config struct {
 	// FetchUnasked is whether a link note the vault holds nothing fetched for
 	// is fetched on its own. Off: reaching off the machine is a gesture, and a
@@ -20,7 +20,7 @@ type Config struct {
 	AutomaticCaptions *bool `json:"automatic_captions"`
 
 	// CopyUnderMB is how large a copy may be. Above it, a copy asked for says
-	// what it would have taken and nothing is fetched.
+	// the size it was refused at and nothing is fetched.
 	CopyUnderMB int `json:"copy_under_mb"`
 
 	// CopiesToVault is whether a copy is kept beside the note as a file of the
@@ -38,8 +38,8 @@ type Config struct {
 
 // A Tool is a program this machine holds.
 //
-// It is a command rather than a filename, so a machine that writes the path
-// afresh at every build names whatever does know where the tool is. Arguments
+// It is a command, so a machine that writes the path afresh at every build
+// names whatever does know where the tool is. Arguments
 // are handed to every run before its own: what answers for a person at a site
 // that refuses an unattended fetch — the cookies of a browser, a token, a proxy
 // — is that machine's and is passed through as it stands.

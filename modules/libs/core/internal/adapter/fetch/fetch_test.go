@@ -37,10 +37,16 @@ const aVideo = `{"title":"Entropy explained","duration":83.5,` +
 func address(t *testing.T, written string) domain.WebAddress {
 	t.Helper()
 	at, err := domain.ParseWebAddress(written)
-	if err != nil {
+	if err == nil {
+		return at
+	}
+	// A site standing on this machine is one no note may point at, and it is
+	// where a test puts one. The fetcher is handed the address, and reading one
+	// is the vault's own step.
+	if !strings.HasPrefix(written, "http://127.0.0.1:") {
 		t.Fatal(err)
 	}
-	return at
+	return domain.WebAddress{URL: written}
 }
 
 // A machine with neither tool has no fetcher at all, which is what says this

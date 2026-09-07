@@ -187,8 +187,8 @@ func (a *API) copyOf(
 }
 
 // copies fetches a copy of the video at an address and answers with what stands
-// once it has. A copy over the size the settings name is not fetched, and what
-// it would have taken is said.
+// once it has. A copy over the size the settings name is not fetched, and the
+// size it was refused at is said.
 func (a *API) copies(
 	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.WebAddress,
 ) (*v1.Artifact, error) {
@@ -211,7 +211,7 @@ func (a *API) copies(
 }
 
 // errTooLarge is a copy over the size the settings name. Nothing was fetched,
-// and how large it would have been is on the answer.
+// and the size it was refused at is on the answer.
 var errTooLarge = errors.New("this video is larger than importing.copy_under_mb")
 
 // ListArtifacts is every artifact the file at a path can carry and what has
@@ -390,9 +390,8 @@ var errNoFetcher = errors.New("this build cannot fetch what an address holds")
 // fetch reaches the address a link note points at and answers with what stands
 // once it has.
 //
-// It is waited for rather than queued: a video's words are one request and a
-// page is one page, and both are over in the time a person waits for a window
-// to answer.
+// It is waited for: a video's words are one request and a page is one page, and
+// both are over in the time a person waits for a window to answer.
 func (a *API) fetch(
 	ctx context.Context,
 	v domain.Vault,

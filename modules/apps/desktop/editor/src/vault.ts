@@ -433,7 +433,7 @@ const answered = (from: {
     refusal: refusalIn(from),
     changed: staleIn(from),
     ...(at === undefined ? {} : { at }),
-    ...(from.url === undefined ? {} : { points: { url: from.url, embed: from.embed ?? '' } }),
+    ...(from.url === undefined ? {} : { address: { url: from.url, embed: from.embed ?? '' } }),
   }
 }
 
