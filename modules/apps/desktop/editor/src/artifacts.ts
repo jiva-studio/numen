@@ -63,7 +63,7 @@ export const running: ArtifactRunner = {
     const of: ArtifactOf = held.transcript === undefined ? 'article' : 'transcript'
     return running.makes(path, of)
   },
-  deletesTranscript: (path) => taken(path, Kinds.UNSPECIFIED),
+  deletesTranscript: (path) => taken(path, Kinds.TRANSCRIPT),
   deletesCopy: (path) => taken(path, Kinds.COPY),
 }
 

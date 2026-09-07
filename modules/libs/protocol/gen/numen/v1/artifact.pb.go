@@ -475,11 +475,11 @@ type DeleteArtifactRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The file of the vault, as the vault holds it.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// Which of what the file carries to take away. A url carries the text
-	// fetched from its address and a copy of what is there, and they are taken
-	// away one without the other. Unspecified takes the text, which is what a
-	// recording carries and all it carries: the words a model heard and the
-	// words a person put right go together.
+	// Which of what the file carries to take away, which a caller names: a url
+	// carries the text fetched from its address and a copy of what is there, and
+	// they go one without the other. Naming a text takes everything one run
+	// produced — the words a model heard and the words a person put right go
+	// together — and naming none is not a request.
 	Kind          ArtifactKind `protobuf:"varint,3,opt,name=kind,proto3,enum=numen.v1.ArtifactKind" json:"kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

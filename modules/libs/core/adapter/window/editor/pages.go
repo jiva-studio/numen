@@ -10,7 +10,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/appearance"
+	"github.com/jiva-studio/numen/modules/libs/core/csp"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
@@ -104,7 +104,7 @@ func (a *API) Serving(files http.Handler, named ...string) http.Handler {
 	// A player is framed from this run's own socket and never from the host
 	// directly: a host is told which address holds its player, and a window
 	// drawn from a scheme of its own has none to give.
-	policy := appearance.Sources{
+	policy := csp.Sources{
 		Media:  a.Playing.named(),
 		Frames: a.Playing.named(),
 	}.Policy()

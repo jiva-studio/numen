@@ -1,4 +1,10 @@
-package appearance
+// Package csp is the Content-Security-Policy a window is served under: what it
+// may load, and from where.
+//
+// It is not how a window looks. A policy is what a browser refuses on a page's
+// behalf, and widening it is a decision about what may run in front of a
+// person's vault.
+package csp
 
 import "strings"
 

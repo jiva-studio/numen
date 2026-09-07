@@ -176,11 +176,11 @@ export type DeleteArtifactRequest = Message<"numen.v1.DeleteArtifactRequest"> & 
   path: string;
 
   /**
-   * Which of what the file carries to take away. A url carries the text
-   * fetched from its address and a copy of what is there, and they are taken
-   * away one without the other. Unspecified takes the text, which is what a
-   * recording carries and all it carries: the words a model heard and the
-   * words a person put right go together.
+   * Which of what the file carries to take away, which a caller names: a url
+   * carries the text fetched from its address and a copy of what is there, and
+   * they go one without the other. Naming a text takes everything one run
+   * produced — the words a model heard and the words a person put right go
+   * together — and naming none is not a request.
    *
    * @generated from field: numen.v1.ArtifactKind kind = 3;
    */

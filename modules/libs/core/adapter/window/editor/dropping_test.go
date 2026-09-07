@@ -57,7 +57,7 @@ func heardBy() indexed {
 // dropping asks for what a recording was heard as to be taken away.
 func dropping(api *API) (*v1.Artifact, error) {
 	out, err := api.DeleteArtifact(context.Background(), connect.NewRequest(&v1.DeleteArtifactRequest{
-		Path: talk,
+		Path: talk, Kind: v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
 	}))
 	if err != nil {
 		return nil, err

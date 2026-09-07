@@ -350,9 +350,13 @@ func (a *API) DeleteArtifact(
 	if err != nil {
 		return nil, connect.NewError(reaching(err), err)
 	}
+	of := r.Msg.GetKind()
+	if _, named := standing(of); !named {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errNoArtifact)
+	}
 	// A copy is bytes and no words: taking it away leaves the url as it was,
 	// pointing at the address it points at.
-	if r.Msg.GetKind() == v1.ArtifactKind_ARTIFACT_KIND_COPY {
+	if of == v1.ArtifactKind_ARTIFACT_KIND_COPY {
 		return a.drops(ctx, showing, ref, a.points(ctx, showing, ref))
 	}
 	if ref.Kind == domain.KindURL {

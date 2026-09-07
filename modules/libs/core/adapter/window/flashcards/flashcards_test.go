@@ -15,7 +15,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/appearance"
+	"github.com/jiva-studio/numen/modules/libs/core/csp"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
@@ -531,7 +531,7 @@ func TestACardIsAskedWithWhatEachAnswerWouldDoToIt(t *testing.T) {
 // `data:` URI is no request, and it is the whole of what this window widens:
 // no script, no form submitted anywhere, and nothing fetched off the machine.
 func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
-	held := appearance.Sources{Images: []string{"data:"}}.Policy()
+	held := csp.Sources{Images: []string{"data:"}}.Policy()
 	if policy != held {
 		t.Errorf("the policy reads %q", policy)
 	}
