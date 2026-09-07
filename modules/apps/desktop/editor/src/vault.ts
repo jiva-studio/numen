@@ -185,7 +185,7 @@ export const core: Core & SearchDeps & CommandsDeps = {
   create: async (note) => {
     const answer = await notes.createNote({
       title: note.title,
-      folder: note.folder,
+      path: note.folder,
       links: note.links.map(written),
     })
     return { path: answer.path, refusal: refusalIn(answer) } satisfies MakeResult
@@ -210,7 +210,7 @@ export const core: Core & SearchDeps & CommandsDeps = {
       refusal: refusalIn(answer),
     } satisfies RemoveResult
   },
-  list: async (folder) => (await files.listFiles({ folder })).entries.map(listed),
+  list: async (folder) => (await files.listFiles({ path: folder })).entries.map(listed),
   move: async (from, to) => {
     const answer = await files.moveFile({ from, to })
     return {
@@ -282,7 +282,7 @@ export const core: Core & SearchDeps & CommandsDeps = {
   choosesReviewing: (starts) => puts([{ at: STARTS, value: starts }]),
   makeFolder: async (path) => refusalIn(await files.createFolder({ path })),
   makeURL: async (url, folder) => {
-    const answer = await files.createURL({ url, folder })
+    const answer = await files.createURL({ url, path: folder })
     return { path: answer.path, refusal: refusalIn(answer) } satisfies MakeResult
   },
   quitting: (signal) => windowService.watchQuit({ window: WINDOW }, { signal }),

@@ -99,7 +99,7 @@ func (a *API) CreateNote(
 
 	made, err := a.Notes.Create.Execute(ctx, showing, note.NewNote{
 		Title:  r.Msg.GetTitle(),
-		Folder: r.Msg.GetFolder(),
+		Folder: r.Msg.GetPath(),
 		Links:  links,
 	})
 	behind := a.unlevelled(err)

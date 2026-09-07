@@ -45,8 +45,8 @@ service FileService {
 }
 
 message ListFilesRequest {
-  // The folder to list, relative to the root. Empty is the root.
-  string folder = 1;
+  // The folder to list, as a path relative to the root. Empty is the root.
+  string path = 1;
 }
 
 message ListFilesResponse {
@@ -198,8 +198,8 @@ message CreateURLRequest {
   // refused and no file is made.
   string url = 1;
 
-  // Where the file goes, relative to the root. Empty is the root itself.
-  string folder = 2;
+  // The folder it goes in, as a path relative to the root. Empty is the root.
+  string path = 2;
 }
 
 message CreateURLResponse {

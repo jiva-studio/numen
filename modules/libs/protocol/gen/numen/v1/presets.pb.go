@@ -1238,8 +1238,8 @@ type CreatePresetRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// What the preset is called. The file is named after it.
 	Title string `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
-	// Where in the vault it goes, relative to the root. Empty is the root.
-	Folder        string `protobuf:"bytes,2,opt,name=folder,proto3" json:"folder,omitempty"`
+	// The folder it goes in, as a path relative to the root. Empty is the root.
+	Path          string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1281,9 +1281,9 @@ func (x *CreatePresetRequest) GetTitle() string {
 	return ""
 }
 
-func (x *CreatePresetRequest) GetFolder() string {
+func (x *CreatePresetRequest) GetPath() string {
 	if x != nil {
-		return x.Folder
+		return x.Path
 	}
 	return ""
 }
@@ -2011,10 +2011,10 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\apresets\x18\x01 \x03(\v2\x17.numen.v1.PresetSummaryR\apresets\"9\n" +
 	"\rPresetSummary\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"C\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"?\n" +
 	"\x13CreatePresetRequest\x12\x14\n" +
-	"\x05title\x18\x01 \x01(\tR\x05title\x12\x16\n" +
-	"\x06folder\x18\x02 \x01(\tR\x06folder\"\x88\x01\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\"\x88\x01\n" +
 	"\x14CreatePresetResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x120\n" +
 	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x1e\n" +

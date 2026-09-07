@@ -55,7 +55,7 @@ func (a *API) CreateStencil(
 	made, refusal, unlevelled, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		in.Fields = r.Msg.GetFields()
 		return a.Cards.Create.Stencil(ctx, showing, in)
-	}, r.Msg.GetTitle(), r.Msg.GetFolder())
+	}, r.Msg.GetTitle(), r.Msg.GetPath())
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (a *API) CreateDeck(
 ) (*connect.Response[v1.CreateDeckResponse], error) {
 	made, refusal, unlevelled, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		return a.Cards.Create.Deck(ctx, showing, in)
-	}, r.Msg.GetTitle(), r.Msg.GetFolder())
+	}, r.Msg.GetTitle(), r.Msg.GetPath())
 	if err != nil {
 		return nil, err
 	}

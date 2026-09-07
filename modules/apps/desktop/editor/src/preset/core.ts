@@ -348,7 +348,7 @@ export const presets: Presets = {
     (one) => ({ path: one.path, title: one.title }),
   ),
   makes: async (title, folder) => {
-    const answer = await asking.createPreset({ title, folder })
+    const answer = await asking.createPreset({ title, path: folder })
     return { path: answer.path, refusal: refusalIn(answer) }
   },
   schedules: async (deck, preset, seen) => {

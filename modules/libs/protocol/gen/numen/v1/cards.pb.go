@@ -890,8 +890,8 @@ type CreateStencilRequest struct {
 	// What the stencil is called. The file is named after it, and that name is
 	// what a card's wikilink writes.
 	Title string `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
-	// Where in the vault it goes, relative to the root. Empty is the root.
-	Folder string `protobuf:"bytes,2,opt,name=folder,proto3" json:"folder,omitempty"`
+	// The folder it goes in, as a path relative to the root. Empty is the root.
+	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// The names of the fields, in the order a person is asked for them. A card's
 	// heading is read from the first, and a stencil is made with at least one.
 	Fields        []string `protobuf:"bytes,3,rep,name=fields,proto3" json:"fields,omitempty"`
@@ -936,9 +936,9 @@ func (x *CreateStencilRequest) GetTitle() string {
 	return ""
 }
 
-func (x *CreateStencilRequest) GetFolder() string {
+func (x *CreateStencilRequest) GetPath() string {
 	if x != nil {
-		return x.Folder
+		return x.Path
 	}
 	return ""
 }
@@ -1509,8 +1509,8 @@ type CreateDeckRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// What the deck is called. The file is named after it.
 	Title string `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
-	// Where in the vault it goes, relative to the root. Empty is the root.
-	Folder        string `protobuf:"bytes,2,opt,name=folder,proto3" json:"folder,omitempty"`
+	// The folder it goes in, as a path relative to the root. Empty is the root.
+	Path          string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1552,9 +1552,9 @@ func (x *CreateDeckRequest) GetTitle() string {
 	return ""
 }
 
-func (x *CreateDeckRequest) GetFolder() string {
+func (x *CreateDeckRequest) GetPath() string {
 	if x != nil {
-		return x.Folder
+		return x.Path
 	}
 	return ""
 }
@@ -1973,10 +1973,10 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x05limit\x18\x01 \x01(\x05R\x05limit\"b\n" +
 	"\x14ListStencilsResponse\x124\n" +
 	"\bstencils\x18\x01 \x03(\v2\x18.numen.v1.StencilSummaryR\bstencils\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x05R\x05total\"\\\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"X\n" +
 	"\x14CreateStencilRequest\x12\x14\n" +
-	"\x05title\x18\x01 \x01(\tR\x05title\x12\x16\n" +
-	"\x06folder\x18\x02 \x01(\tR\x06folder\x12\x16\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12\x16\n" +
 	"\x06fields\x18\x03 \x03(\tR\x06fields\"\x89\x01\n" +
 	"\x15CreateStencilResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x120\n" +
@@ -2035,10 +2035,10 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x03_atJ\x04\b\x05\x10\x06R\achanged\"P\n" +
 	"\rUnwrittenDeck\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12+\n" +
-	"\aproblem\x18\x02 \x01(\v2\x11.numen.v1.ProblemR\aproblem\"A\n" +
+	"\aproblem\x18\x02 \x01(\v2\x11.numen.v1.ProblemR\aproblem\"=\n" +
 	"\x11CreateDeckRequest\x12\x14\n" +
-	"\x05title\x18\x01 \x01(\tR\x05title\x12\x16\n" +
-	"\x06folder\x18\x02 \x01(\tR\x06folder\"\x86\x01\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\"\x86\x01\n" +
 	"\x12CreateDeckResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x120\n" +
 	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x1e\n" +

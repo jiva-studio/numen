@@ -33,12 +33,25 @@ var ErrNoTool = errors.New("nothing on this machine fetches that address")
 // It answers for the addresses it supports and is asked for nothing else, so a
 // provider that knows one site is written as the whole of that site's answer
 // and nothing has to be taught about it elsewhere.
+//
+// What every provider does is here: say which addresses are its own, say what
+// it fetches by, and hand back what the address publishes as words.
 type provider interface {
-	port.Fetcher
-
 	// Supports says whether this provider answers for an address. Each is asked
 	// in turn, and the first that says so is the one that answers.
 	Supports(at domain.URL) bool
+
+	Fetching(at domain.URL) port.FetchModel
+	Metadata(ctx context.Context, at domain.URL) (port.Metadata, error)
+	Text(ctx context.Context, at domain.URL, want port.PreferredCaptions) (port.Text, error)
+}
+
+// A player is a provider that also reaches the bytes a person plays. A site
+// publishing prose is not one, and says so by not being one rather than by
+// answering that it has nothing.
+type player interface {
+	Audio(ctx context.Context, at domain.URL, into io.Writer) error
+	Download(ctx context.Context, at domain.URL, into io.Writer) (port.Download, error)
 }
 
 // A Fetcher is the providers this machine holds, asked in order.
@@ -99,22 +112,36 @@ func (f *Fetcher) Text(
 // Audio is the sound of what is at the address, as the container a transcriber
 // opens.
 func (f *Fetcher) Audio(ctx context.Context, at domain.URL, into io.Writer) error {
-	by, err := f.providerFor(at)
+	plays, err := f.playerFor(at)
 	if err != nil {
 		return err
 	}
-	return by.Audio(ctx, at, into)
+	return plays.Audio(ctx, at, into)
 }
 
 // Download is what is at the address as a person plays it.
 func (f *Fetcher) Download(
 	ctx context.Context, at domain.URL, into io.Writer,
 ) (port.Download, error) {
-	by, err := f.providerFor(at)
+	plays, err := f.playerFor(at)
 	if err != nil {
 		return port.Download{}, err
 	}
-	return by.Download(ctx, at, into)
+	return plays.Download(ctx, at, into)
+}
+
+// playerFor is the provider that reaches the bytes at an address, and
+// ErrNothingFetched where whatever answers for it reaches only words.
+func (f *Fetcher) playerFor(at domain.URL) (player, error) {
+	by, err := f.providerFor(at)
+	if err != nil {
+		return nil, err
+	}
+	plays, is := by.(player)
+	if !is {
+		return nil, port.ErrNothingFetched
+	}
+	return plays, nil
 }
 
 // A program is a tool as it is started: the command, and the environment the

@@ -69,7 +69,7 @@ func (a *API) CreatePreset(
 ) (*connect.Response[v1.CreatePresetResponse], error) {
 	made, refused, unlevelled, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		return a.Cards.Create.Preset(ctx, showing, in)
-	}, r.Msg.GetTitle(), r.Msg.GetFolder())
+	}, r.Msg.GetTitle(), r.Msg.GetPath())
 	if err != nil {
 		return nil, err
 	}

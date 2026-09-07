@@ -1304,8 +1304,8 @@ type CreateNoteRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// What the note is called. The file is named after it.
 	Title string `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
-	// Where in the vault it goes, relative to the root. Empty is the root.
-	Folder string `protobuf:"bytes,2,opt,name=folder,proto3" json:"folder,omitempty"`
+	// The folder it goes in, as a path relative to the root. Empty is the root.
+	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// What the note is joined to, written into it as it is made.
 	Links         []*NewLink `protobuf:"bytes,3,rep,name=links,proto3" json:"links,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1349,9 +1349,9 @@ func (x *CreateNoteRequest) GetTitle() string {
 	return ""
 }
 
-func (x *CreateNoteRequest) GetFolder() string {
+func (x *CreateNoteRequest) GetPath() string {
 	if x != nil {
-		return x.Folder
+		return x.Path
 	}
 	return ""
 }
@@ -1887,10 +1887,10 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\aNewLink\x12\x0e\n" +
 	"\x02to\x18\x01 \x01(\tR\x02to\x12\"\n" +
 	"\x04role\x18\x02 \x01(\x0e2\x0e.numen.v1.RoleR\x04role\x12\x14\n" +
-	"\x05label\x18\x03 \x01(\tR\x05label\"j\n" +
+	"\x05label\x18\x03 \x01(\tR\x05label\"f\n" +
 	"\x11CreateNoteRequest\x12\x14\n" +
-	"\x05title\x18\x01 \x01(\tR\x05title\x12\x16\n" +
-	"\x06folder\x18\x02 \x01(\tR\x06folder\x12'\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12'\n" +
 	"\x05links\x18\x03 \x03(\v2\x11.numen.v1.NewLinkR\x05links\"\x86\x01\n" +
 	"\x12CreateNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x120\n" +

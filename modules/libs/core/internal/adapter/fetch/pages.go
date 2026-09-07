@@ -63,18 +63,6 @@ func (p *pages) Fetching(domain.URL) port.FetchModel {
 	return port.FetchModel{Tool: readerName, Producer: text.Article}
 }
 
-// Audio is a recording, which a page is not.
-func (p *pages) Audio(context.Context, domain.URL, io.Writer) error {
-	return port.ErrNothingFetched
-}
-
-// Download is a copy a person plays, and a page is read and not played.
-func (p *pages) Download(
-	context.Context, domain.URL, io.Writer,
-) (port.Download, error) {
-	return port.Download{}, port.ErrNothingFetched
-}
-
 // Metadata is what a page calls itself, which is the whole of what is known
 // about one before it is read. It is the same fetch the prose comes out of.
 func (p *pages) Metadata(ctx context.Context, at domain.URL) (port.Metadata, error) {

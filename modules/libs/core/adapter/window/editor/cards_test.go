@@ -397,7 +397,7 @@ func TestADeckMadeIsADeckToRead(t *testing.T) {
 	f := dealing(t, map[string]string{"Animal.md": animal})
 
 	answer, err := f.client.CreateDeck(t.Context(), connect.NewRequest(&v1.CreateDeckRequest{
-		Title: "Camelids", Folder: "decks",
+		Title: "Camelids", Path: "decks",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -427,7 +427,7 @@ func TestAStencilMadeDeclaresTheFieldsItWasGiven(t *testing.T) {
 	f := dealing(t, nil)
 
 	answer, err := f.client.CreateStencil(t.Context(), connect.NewRequest(&v1.CreateStencilRequest{
-		Title: "Bird", Folder: "cards", Fields: []string{"Species", "Wingspan"},
+		Title: "Bird", Path: "cards", Fields: []string{"Species", "Wingspan"},
 	}))
 	if err != nil {
 		t.Fatal(err)

@@ -28,7 +28,7 @@ func (a *API) ListFiles(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	held, err := reader.List(ctx, r.Msg.GetFolder())
+	held, err := reader.List(ctx, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(listing(err), err)
 	}
@@ -210,7 +210,7 @@ func (a *API) CreateURL(
 	defer a.Writing.done()
 
 	made, err := a.Files.URLs.Execute(ctx, showing, source.NewURL{
-		Address: at, Folder: r.Msg.GetFolder(),
+		Address: at, Folder: r.Msg.GetPath(),
 	})
 	if made.Path != "" {
 		return connect.NewResponse(&v1.CreateURLResponse{Path: made.Path}), nil

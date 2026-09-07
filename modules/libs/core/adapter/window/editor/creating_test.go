@@ -91,7 +91,7 @@ func TestANoteIsMadeInTheFolderItWasAskedFor(t *testing.T) {
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 		Title:  "Entropy",
-		Folder: "physics",
+		Path: "physics",
 		Links:  []*v1.NewLink{{To: "physics/Ontology.md", Role: v1.Role_ROLE_PARENT}},
 	}))
 	if err != nil {
@@ -217,7 +217,7 @@ func TestANoteIsMadeUnderTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
 	// the vault is scanned at startup, and a test is not started.
 	for _, folder := range []string{"", "physics"} {
 		if _, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
-			Title: "Ontology", Folder: folder,
+			Title: "Ontology", Path: folder,
 		})); err != nil {
 			t.Fatal(err)
 		}
@@ -225,7 +225,7 @@ func TestANoteIsMadeUnderTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 		Title:  "Entropy",
-		Folder: "physics",
+		Path: "physics",
 		Links:  []*v1.NewLink{{To: "physics/Ontology.md", Role: v1.Role_ROLE_PARENT}},
 	}))
 	if err != nil {

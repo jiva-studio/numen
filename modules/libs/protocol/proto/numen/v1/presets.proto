@@ -414,8 +414,8 @@ message CreatePresetRequest {
   // What the preset is called. The file is named after it.
   string title = 1;
 
-  // Where in the vault it goes, relative to the root. Empty is the root.
-  string folder = 2;
+  // The folder it goes in, as a path relative to the root. Empty is the root.
+  string path = 2;
 }
 
 message CreatePresetResponse {

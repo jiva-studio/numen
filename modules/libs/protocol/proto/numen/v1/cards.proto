@@ -313,8 +313,8 @@ message CreateStencilRequest {
   // what a card's wikilink writes.
   string title = 1;
 
-  // Where in the vault it goes, relative to the root. Empty is the root.
-  string folder = 2;
+  // The folder it goes in, as a path relative to the root. Empty is the root.
+  string path = 2;
 
   // The names of the fields, in the order a person is asked for them. A card's
   // heading is read from the first, and a stencil is made with at least one.
@@ -445,8 +445,8 @@ message CreateDeckRequest {
   // What the deck is called. The file is named after it.
   string title = 1;
 
-  // Where in the vault it goes, relative to the root. Empty is the root.
-  string folder = 2;
+  // The folder it goes in, as a path relative to the root. Empty is the root.
+  string path = 2;
 }
 
 message CreateDeckResponse {

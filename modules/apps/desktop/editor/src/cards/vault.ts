@@ -262,11 +262,11 @@ export const cards: Cards = {
     return { stencils: answer.stencils.map(offered), held: answer.total }
   },
   makeDeck: async (title, folder) => {
-    const answer = await cardsService.createDeck({ title, folder })
+    const answer = await cardsService.createDeck({ title, path: folder })
     return { path: answer.path, refusal: refusalIn(answer) }
   },
   makeStencil: async (title, folder, fields) => {
-    const answer = await cardsService.createStencil({ title, folder, fields: [...fields] })
+    const answer = await cardsService.createStencil({ title, path: folder, fields: [...fields] })
     return { path: answer.path, refusal: refusalIn(answer) }
   },
   renameField: async (path, from, to, seen) => {
