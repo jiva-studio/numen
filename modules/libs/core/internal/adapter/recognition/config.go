@@ -101,8 +101,8 @@ type RecogniserModel struct {
 	// Height is what a line is scaled to before it is read.
 	Height int `json:"height"`
 
-	// Sessions is how many lines are read at once.
-	Sessions int `json:"sessions"`
+	// Jobs is how many jobs the recogniser runs at once.
+	Jobs int `json:"jobs"`
 	// Threads is how many threads one model may use.
 	Threads int `json:"threads"`
 }
@@ -217,11 +217,11 @@ func (r RecogniserModel) height() int {
 	return r.Height
 }
 
-func (r RecogniserModel) sessions() int {
-	if r.Sessions <= 0 {
+func (r RecogniserModel) jobs() int {
+	if r.Jobs <= 0 {
 		return 4
 	}
-	return r.Sessions
+	return r.Jobs
 }
 
 func (r RecogniserModel) threads() int {
