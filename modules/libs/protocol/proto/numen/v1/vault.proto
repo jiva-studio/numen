@@ -159,7 +159,7 @@ message Tab {
   // recording sets recording, and a tab of any other kind sets none of them.
   OpenDocument document = 7;
   OpenRecording recording = 8;
-  OpenBook book = 9;
+  PlaceInBook book = 9;
 }
 
 // An OpenDocument is the document a tab holds, as the person is reading it.
@@ -171,10 +171,10 @@ message OpenDocument {
   int32 pages = 2;
 }
 
-// An OpenBook is the book that reflows a tab holds, as the person is reading
-// it. Such a book has no pages of its own, so where the person is is an offset
-// into its text.
-message OpenBook {
+// A PlaceInBook is where the person stands in the book that reflows a tab
+// holds. Such a book has no pages of its own, so the place is an offset into
+// its text.
+message PlaceInBook {
   // Offset is where they are reading, in bytes of the book's text.
   int32 offset = 1;
 

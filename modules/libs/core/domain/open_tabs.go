@@ -39,9 +39,9 @@ type Tab struct {
 	// Recording is the recording the tab holds, and nothing in a tab holding
 	// none.
 	Recording *OpenRecording
-	// Book is the book that reflows the tab holds, and nothing in a tab holding
-	// none.
-	Book *OpenBook
+	// Book is where they stand in the book that reflows the tab holds, and
+	// nothing in a tab holding none.
+	Book *PlaceInBook
 }
 
 // An OpenDocument is the document a tab holds, as the person is reading it.
@@ -52,10 +52,10 @@ type OpenDocument struct {
 	Pages int
 }
 
-// An OpenBook is the book that reflows a tab holds, as the person is reading
-// it. Such a book has no pages of its own, so where the person is is an offset
-// into its text.
-type OpenBook struct {
+// A PlaceInBook is where the person stands in the book that reflows a tab
+// holds. Such a book has no pages of its own, so the place is an offset into
+// its text.
+type PlaceInBook struct {
 	// Offset is where they are reading, in bytes of the book's text.
 	Offset int
 	// Page is the page the offset falls on, counted from one, and Pages how many

@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QimQIKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIMCgRuYW1lGBIgASgJEhQKDGRpc3BsYXlfbmFtZRgBIAEoCRIMCgRwYXRoGAIgASgJEg0KBXJlYWR5GAQgASgIEg4KBmZhaWxlZBgFIAEoCRIRCgl1bndhdGNoZWQYBiABKAkSEwoLdW5yZWFjaGFibGUYESABKAkSDgoGY2h1bmtzGAcgASgDEhAKCGVtYmVkZGVkGAggASgDEhEKCWVtYmVkZGluZxgKIAEoCEoECAMQBEoECAkQCkoECAsQEVIFYm9va3NSCmJvb2tzX3JlYWRSBGJ1c3lSB2luZGV4ZWRSCGxlYXJuaW5nUgRtYWRlUgVvd2luZ1IHcmVhZGluZyIaChhXYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QiWwoZV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZRINCgVwYXRocxgBIAMoCRIOCgZyZWxvYWQYAiABKAgSHwoHcmVuYW1lZBgDIAMoCzIOLm51bWVuLnYxLk1vdmUiIAoETW92ZRIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIhMKEVdhdGNoRm9jdXNSZXF1ZXN0ImIKEldhdGNoRm9jdXNSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBXN0YXJ0GAIgASgFEg4KBmxlbmd0aBgDIAEoBRIfCgRhbHNvGAQgAygLMhEubnVtZW4udjEuU3RyZXRjaCJCChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIhcKFVdyaXRlT3BlblRhYnNSZXNwb25zZSLIAQoDVGFiEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDAoEcGF0aBgDIAEoCRINCgV0aXRsZRgEIAEoCRIoCghkb2N1bWVudBgHIAEoCzIWLm51bWVuLnYxLk9wZW5Eb2N1bWVudBIqCglyZWNvcmRpbmcYCCABKAsyFy5udW1lbi52MS5PcGVuUmVjb3JkaW5nEiAKBGJvb2sYCSABKAsyEi5udW1lbi52MS5PcGVuQm9va0oECAUQBkoECAYQB1ICYXRSAm9mIisKDE9wZW5Eb2N1bWVudBIMCgRwYWdlGAEgASgFEg0KBXBhZ2VzGAIgASgFIjcKCE9wZW5Cb29rEg4KBm9mZnNldBgBIAEoBRIMCgRwYWdlGAIgASgFEg0KBXBhZ2VzGAMgASgFIi4KDU9wZW5SZWNvcmRpbmcSDQoFaGVhcmQYASABKAUSDgoGbGVuZ3RoGAIgASgFMt0CCgxWYXVsdFNlcnZpY2USUAoNR2V0VmF1bHRTdGF0ZRIeLm51bWVuLnYxLkdldFZhdWx0U3RhdGVSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlc3BvbnNlEl4KEVdhdGNoVmF1bHRDaGFuZ2VzEiIubnVtZW4udjEuV2F0Y2hWYXVsdENoYW5nZXNSZXF1ZXN0GiMubnVtZW4udjEuV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZTABEkkKCldhdGNoRm9jdXMSGy5udW1lbi52MS5XYXRjaEZvY3VzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoRm9jdXNSZXNwb25zZTABElAKDVdyaXRlT3BlblRhYnMSHi5udW1lbi52MS5Xcml0ZU9wZW5UYWJzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QimQIKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIMCgRuYW1lGBIgASgJEhQKDGRpc3BsYXlfbmFtZRgBIAEoCRIMCgRwYXRoGAIgASgJEg0KBXJlYWR5GAQgASgIEg4KBmZhaWxlZBgFIAEoCRIRCgl1bndhdGNoZWQYBiABKAkSEwoLdW5yZWFjaGFibGUYESABKAkSDgoGY2h1bmtzGAcgASgDEhAKCGVtYmVkZGVkGAggASgDEhEKCWVtYmVkZGluZxgKIAEoCEoECAMQBEoECAkQCkoECAsQEVIFYm9va3NSCmJvb2tzX3JlYWRSBGJ1c3lSB2luZGV4ZWRSCGxlYXJuaW5nUgRtYWRlUgVvd2luZ1IHcmVhZGluZyIaChhXYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QiWwoZV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZRINCgVwYXRocxgBIAMoCRIOCgZyZWxvYWQYAiABKAgSHwoHcmVuYW1lZBgDIAMoCzIOLm51bWVuLnYxLk1vdmUiIAoETW92ZRIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIhMKEVdhdGNoRm9jdXNSZXF1ZXN0ImIKEldhdGNoRm9jdXNSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBXN0YXJ0GAIgASgFEg4KBmxlbmd0aBgDIAEoBRIfCgRhbHNvGAQgAygLMhEubnVtZW4udjEuU3RyZXRjaCJCChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIhcKFVdyaXRlT3BlblRhYnNSZXNwb25zZSLLAQoDVGFiEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDAoEcGF0aBgDIAEoCRINCgV0aXRsZRgEIAEoCRIoCghkb2N1bWVudBgHIAEoCzIWLm51bWVuLnYxLk9wZW5Eb2N1bWVudBIqCglyZWNvcmRpbmcYCCABKAsyFy5udW1lbi52MS5PcGVuUmVjb3JkaW5nEiMKBGJvb2sYCSABKAsyFS5udW1lbi52MS5QbGFjZUluQm9va0oECAUQBkoECAYQB1ICYXRSAm9mIisKDE9wZW5Eb2N1bWVudBIMCgRwYWdlGAEgASgFEg0KBXBhZ2VzGAIgASgFIjoKC1BsYWNlSW5Cb29rEg4KBm9mZnNldBgBIAEoBRIMCgRwYWdlGAIgASgFEg0KBXBhZ2VzGAMgASgFIi4KDU9wZW5SZWNvcmRpbmcSDQoFaGVhcmQYASABKAUSDgoGbGVuZ3RoGAIgASgFMt0CCgxWYXVsdFNlcnZpY2USUAoNR2V0VmF1bHRTdGF0ZRIeLm51bWVuLnYxLkdldFZhdWx0U3RhdGVSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlc3BvbnNlEl4KEVdhdGNoVmF1bHRDaGFuZ2VzEiIubnVtZW4udjEuV2F0Y2hWYXVsdENoYW5nZXNSZXF1ZXN0GiMubnVtZW4udjEuV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZTABEkkKCldhdGNoRm9jdXMSGy5udW1lbi52MS5XYXRjaEZvY3VzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoRm9jdXNSZXNwb25zZTABElAKDVdyaXRlT3BlblRhYnMSHi5udW1lbi52MS5Xcml0ZU9wZW5UYWJzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetVaultStateRequest
@@ -345,9 +345,9 @@ export type Tab = Message<"numen.v1.Tab"> & {
   recording?: OpenRecording | undefined;
 
   /**
-   * @generated from field: numen.v1.OpenBook book = 9;
+   * @generated from field: numen.v1.PlaceInBook book = 9;
    */
-  book?: OpenBook | undefined;
+  book?: PlaceInBook | undefined;
 };
 
 /**
@@ -386,13 +386,13 @@ export const OpenDocumentSchema: GenMessage<OpenDocument> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 10);
 
 /**
- * An OpenBook is the book that reflows a tab holds, as the person is reading
- * it. Such a book has no pages of its own, so where the person is is an offset
- * into its text.
+ * A PlaceInBook is where the person stands in the book that reflows a tab
+ * holds. Such a book has no pages of its own, so the place is an offset into
+ * its text.
  *
- * @generated from message numen.v1.OpenBook
+ * @generated from message numen.v1.PlaceInBook
  */
-export type OpenBook = Message<"numen.v1.OpenBook"> & {
+export type PlaceInBook = Message<"numen.v1.PlaceInBook"> & {
   /**
    * Offset is where they are reading, in bytes of the book's text.
    *
@@ -416,10 +416,10 @@ export type OpenBook = Message<"numen.v1.OpenBook"> & {
 };
 
 /**
- * Describes the message numen.v1.OpenBook.
- * Use `create(OpenBookSchema)` to create a new message.
+ * Describes the message numen.v1.PlaceInBook.
+ * Use `create(PlaceInBookSchema)` to create a new message.
  */
-export const OpenBookSchema: GenMessage<OpenBook> = /*@__PURE__*/
+export const PlaceInBookSchema: GenMessage<PlaceInBook> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 11);
 
 /**

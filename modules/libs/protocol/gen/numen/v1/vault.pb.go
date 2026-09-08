@@ -576,7 +576,7 @@ type Tab struct {
 	// recording sets recording, and a tab of any other kind sets none of them.
 	Document      *OpenDocument  `protobuf:"bytes,7,opt,name=document,proto3" json:"document,omitempty"`
 	Recording     *OpenRecording `protobuf:"bytes,8,opt,name=recording,proto3" json:"recording,omitempty"`
-	Book          *OpenBook      `protobuf:"bytes,9,opt,name=book,proto3" json:"book,omitempty"`
+	Book          *PlaceInBook   `protobuf:"bytes,9,opt,name=book,proto3" json:"book,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -653,7 +653,7 @@ func (x *Tab) GetRecording() *OpenRecording {
 	return nil
 }
 
-func (x *Tab) GetBook() *OpenBook {
+func (x *Tab) GetBook() *PlaceInBook {
 	if x != nil {
 		return x.Book
 	}
@@ -715,10 +715,10 @@ func (x *OpenDocument) GetPages() int32 {
 	return 0
 }
 
-// An OpenBook is the book that reflows a tab holds, as the person is reading
-// it. Such a book has no pages of its own, so where the person is is an offset
-// into its text.
-type OpenBook struct {
+// A PlaceInBook is where the person stands in the book that reflows a tab
+// holds. Such a book has no pages of its own, so the place is an offset into
+// its text.
+type PlaceInBook struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Offset is where they are reading, in bytes of the book's text.
 	Offset int32 `protobuf:"varint,1,opt,name=offset,proto3" json:"offset,omitempty"`
@@ -731,20 +731,20 @@ type OpenBook struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *OpenBook) Reset() {
-	*x = OpenBook{}
+func (x *PlaceInBook) Reset() {
+	*x = PlaceInBook{}
 	mi := &file_numen_v1_vault_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *OpenBook) String() string {
+func (x *PlaceInBook) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*OpenBook) ProtoMessage() {}
+func (*PlaceInBook) ProtoMessage() {}
 
-func (x *OpenBook) ProtoReflect() protoreflect.Message {
+func (x *PlaceInBook) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vault_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -756,26 +756,26 @@ func (x *OpenBook) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OpenBook.ProtoReflect.Descriptor instead.
-func (*OpenBook) Descriptor() ([]byte, []int) {
+// Deprecated: Use PlaceInBook.ProtoReflect.Descriptor instead.
+func (*PlaceInBook) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *OpenBook) GetOffset() int32 {
+func (x *PlaceInBook) GetOffset() int32 {
 	if x != nil {
 		return x.Offset
 	}
 	return 0
 }
 
-func (x *OpenBook) GetPage() int32 {
+func (x *PlaceInBook) GetPage() int32 {
 	if x != nil {
 		return x.Page
 	}
 	return 0
 }
 
-func (x *OpenBook) GetPages() int32 {
+func (x *PlaceInBook) GetPages() int32 {
 	if x != nil {
 		return x.Pages
 	}
@@ -875,19 +875,19 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x14WriteOpenTabsRequest\x12!\n" +
 	"\x04tabs\x18\x01 \x03(\v2\r.numen.v1.TabR\x04tabs\x12\x14\n" +
 	"\x05front\x18\x02 \x01(\tR\x05front\"\x17\n" +
-	"\x15WriteOpenTabsResponse\"\xfa\x01\n" +
+	"\x15WriteOpenTabsResponse\"\xfd\x01\n" +
 	"\x03Tab\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x04 \x01(\tR\x05title\x122\n" +
 	"\bdocument\x18\a \x01(\v2\x16.numen.v1.OpenDocumentR\bdocument\x125\n" +
-	"\trecording\x18\b \x01(\v2\x17.numen.v1.OpenRecordingR\trecording\x12&\n" +
-	"\x04book\x18\t \x01(\v2\x12.numen.v1.OpenBookR\x04bookJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\x02atR\x02of\"8\n" +
+	"\trecording\x18\b \x01(\v2\x17.numen.v1.OpenRecordingR\trecording\x12)\n" +
+	"\x04book\x18\t \x01(\v2\x15.numen.v1.PlaceInBookR\x04bookJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\x02atR\x02of\"8\n" +
 	"\fOpenDocument\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x14\n" +
-	"\x05pages\x18\x02 \x01(\x05R\x05pages\"L\n" +
-	"\bOpenBook\x12\x16\n" +
+	"\x05pages\x18\x02 \x01(\x05R\x05pages\"O\n" +
+	"\vPlaceInBook\x12\x16\n" +
 	"\x06offset\x18\x01 \x01(\x05R\x06offset\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x14\n" +
 	"\x05pages\x18\x03 \x01(\x05R\x05pages\"=\n" +
@@ -926,7 +926,7 @@ var file_numen_v1_vault_proto_goTypes = []any{
 	(*WriteOpenTabsResponse)(nil),     // 8: numen.v1.WriteOpenTabsResponse
 	(*Tab)(nil),                       // 9: numen.v1.Tab
 	(*OpenDocument)(nil),              // 10: numen.v1.OpenDocument
-	(*OpenBook)(nil),                  // 11: numen.v1.OpenBook
+	(*PlaceInBook)(nil),               // 11: numen.v1.PlaceInBook
 	(*OpenRecording)(nil),             // 12: numen.v1.OpenRecording
 	(*Stretch)(nil),                   // 13: numen.v1.Stretch
 }
@@ -936,7 +936,7 @@ var file_numen_v1_vault_proto_depIdxs = []int32{
 	9,  // 2: numen.v1.WriteOpenTabsRequest.tabs:type_name -> numen.v1.Tab
 	10, // 3: numen.v1.Tab.document:type_name -> numen.v1.OpenDocument
 	12, // 4: numen.v1.Tab.recording:type_name -> numen.v1.OpenRecording
-	11, // 5: numen.v1.Tab.book:type_name -> numen.v1.OpenBook
+	11, // 5: numen.v1.Tab.book:type_name -> numen.v1.PlaceInBook
 	0,  // 6: numen.v1.VaultService.GetVaultState:input_type -> numen.v1.GetVaultStateRequest
 	2,  // 7: numen.v1.VaultService.WatchVaultChanges:input_type -> numen.v1.WatchVaultChangesRequest
 	5,  // 8: numen.v1.VaultService.WatchFocus:input_type -> numen.v1.WatchFocusRequest

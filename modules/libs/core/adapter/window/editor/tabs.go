@@ -30,7 +30,7 @@ func (a *API) WriteOpenTabs(
 			tab.Document = &domain.OpenDocument{Page: int(doc.GetPage()), Pages: int(doc.GetPages())}
 		}
 		if book := one.GetBook(); book != nil {
-			tab.Book = &domain.OpenBook{
+			tab.Book = &domain.PlaceInBook{
 				Offset: int(book.GetOffset()),
 				Page:   int(book.GetPage()),
 				Pages:  int(book.GetPages()),
