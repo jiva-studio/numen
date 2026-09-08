@@ -32,10 +32,10 @@ WEBVTT
 NOTE heard 9100
 
 00:00:01.500 --> 00:00:04.200
-Вещий стон гласит печаль.
+The first thing to say about heat is that it moves.
 
 00:00:04.200 --> 00:00:09.100
-Кони торопливы, чутко смотрят в темную даль.
+It moves one way, and that is the whole of the second law.
 ```
 
 A cue is one stretch of speech between two times. The words of the transcript are the cues' text, one to a line; the timings are not part of them, so a chunk cut from the transcript holds what was said and none of the bookkeeping around it.

@@ -64,7 +64,7 @@ The numbers run without gaps, and the whole corpus is renumbered when one closes
 - [A url is a source of its own](0038-a-url-is-a-source-of-its-own.md)
 - [What comes back from an address is named by the address](0039-what-comes-back-from-an-address-is-named-by-it.md)
 - [The window may frame the hosts a video plays from](0040-the-window-may-frame-the-hosts-a-video-plays-from.md)
-- [Fetching is a port, and the tools are the machine's](0041-fetching-is-a-port-and-the-tools-are-the-machines.md)
+- [Downloading what is at an address](0041-downloading-what-is-at-an-address.md)
 
 ### The vault, written
 

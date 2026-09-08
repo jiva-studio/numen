@@ -16,12 +16,12 @@ A vault holds files. An address is not one, and what is at it is somebody else's
 ### An address is a file of its own, and it holds nothing else
 
 ```
-02 лекция. Бхагавад-Гита. Введение.url
+Lecture 02. Thermodynamics. An introduction.url
 ```
 
 ```ini
 [InternetShortcut]
-URL=https://www.youtube.com/watch?v=A4OZ4L9TCpM
+URL=https://example.com/watch?v=aQ8kP2sYtR4
 ```
 
 `.url` is what this file is called everywhere and `[InternetShortcut]` is what it holds, so a file manager and a browser open it too.
