@@ -84,7 +84,7 @@ func TestAnAgentImportsAnAddress(t *testing.T) {
 	if out.Producer != derived.Captions {
 		t.Errorf("the words were fetched by %q", out.Producer)
 	}
-	if out.Words == 0 {
+	if out.Bytes == 0 {
 		t.Error("nothing came back from the address")
 	}
 	if !strings.HasSuffix(out.Path, ".url") {

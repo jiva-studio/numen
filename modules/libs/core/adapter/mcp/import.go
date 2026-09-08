@@ -22,10 +22,10 @@ type NewURL struct {
 // ImportOutcome is the file that now exists and what was fetched for it.
 type ImportOutcome struct {
 	Path string `json:"path" jsonschema:"where the file stands in the vault; what it is called is what is at the address, once that is known"`
-	// Producer is what brought the text back, and Words how much of it there
+	// Producer is what brought the text back, and Bytes how much of it there
 	// is. Both are empty where the address published none of what was asked for.
 	Producer string `json:"producer,omitempty" jsonschema:"what fetched the text: captions for a video's words, article for a page's prose"`
-	Words    int    `json:"words,omitempty" jsonschema:"how much text came back, in bytes"`
+	Bytes    int    `json:"bytes,omitempty" jsonschema:"how much text came back, in bytes"`
 	Nothing  bool   `json:"nothing,omitempty" jsonschema:"the address publishes none of what was asked for, which is an answer and not a failure"`
 	// CopiedBytes is how large the copy is, and is nothing where none was asked
 	// for or the video was over the size the settings allow.
@@ -75,7 +75,7 @@ func addImportTool(server *sdk.Server, core Core) {
 			return nil, out, nil
 		}
 		out.Path, out.Producer = fetched.Path, fetched.Producer
-		out.Words, out.Nothing = fetched.Bytes, fetched.Nothing
+		out.Bytes, out.Nothing = fetched.Bytes, fetched.Nothing
 		if in.Copy {
 			out.CopiedBytes, out.CopyRefused = copies(ctx, core, v, out.Path)
 		}
