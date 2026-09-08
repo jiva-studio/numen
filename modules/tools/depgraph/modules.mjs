@@ -8,6 +8,7 @@ export { modules, root } from '../modules.mjs'
 export const here = dirname(fileURLToPath(import.meta.url))
 export const config = join(here, 'rules.cjs')
 export const screens = join(here, 'screens.cjs')
+export const layers = join(here, 'layers.cjs')
 
 /**
  * The cruiser's own command. The install hoists to the source root, so the
@@ -34,13 +35,19 @@ export const screened = new Map([
 ])
 
 /**
- * The modules the screen rule does not read, each with the reason. A module is
- * here or it is above, and `check.mjs` refuses one that is in neither: a module
- * quietly outside a check is the same fault as a screen quietly reaching a
- * screen, one level up.
+ * The modules whose folders are read as layers, each with one file under a
+ * feature the cruise has to have reached. What each layer may reach is
+ * `layers.cjs`.
+ */
+export const layered = new Map([['@numen/ui', 'src/features/cards/deck.ts']])
+
+/**
+ * The modules no boundary rule reads, each with the reason. A module is here or
+ * it is above, and `check.mjs` refuses one that is in neither: a module quietly
+ * outside a check is the same fault as a screen quietly reaching a screen, one
+ * level up.
  */
 export const unscreened = {
-  '@numen/ui': 'a library of components, where one drawing another is the whole point of it',
   '@numen/wire': 'one file, with no folders to divide',
   '@numen/mobile':
     'one screen — App.vue mounts PlexPage alone, and note/ is the sheet that page draws over itself',
@@ -68,6 +75,17 @@ export const baseline = new Map([
       'no-screen-reaches-a-screen: src/features/cards/deck-tab/DeckTab.test.ts → src/features/preset/core.ts',
       'no-screen-reaches-a-screen: src/features/cards/stencil-tab/stencilTabs.ts → src/features/note/notes.ts',
       'no-screen-reaches-a-screen: src/features/cards/stencil-tab/stencilTabs.ts → src/features/note/tab.ts',
+    ],
+  ],
+  [
+    '@numen/ui',
+    [
+      // An editor is drawn in a pane of the workspace, and a tab switched away
+      // from and come back to measures its text again. That is the contract
+      // between the two features, and the story is where it is held. The
+      // editor itself reaches nothing of the workspace.
+      'no-feature-reaches-a-feature: src/features/editor/Editor.stories.ts → src/features/workspace/node.ts',
+      'no-feature-reaches-a-feature: src/features/editor/Editor.stories.ts → src/features/workspace/pane/index.ts',
     ],
   ],
 ])

@@ -51,7 +51,7 @@ test('nothing but a test draws this export', () => {
   // an edge has to have been followed on either side of a package border.
   const held = fixturesOf(files)
   for (const one of [
-    'modules/libs/ui/src/fixtures/clock.ts',
+    'modules/libs/ui/src/shared/fixtures/clock.ts',
     'modules/apps/desktop/editor/src/shared/testing/window.ts',
   ]) {
     assert.ok(held.includes(one), `${one} is drawn by tests alone and the walk did not see it`)
