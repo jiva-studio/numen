@@ -19,7 +19,7 @@ import type {
   VaultSection,
   StencilSummary,
   Value,
-} from '../../vault/cards'
+} from '../vault/cards'
 import { nameOf } from '../../../shared/paths'
 
 /** An identity something is drawn under, which no file carries. */

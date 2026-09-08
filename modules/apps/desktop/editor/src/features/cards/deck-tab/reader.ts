@@ -6,7 +6,7 @@
  * screen leaves that one standing, so the card a person is typing into is not
  * drawn again under a fresh identity.
  */
-import type { Problem } from '../../vault/cards'
+import type { Problem } from '../vault/cards'
 import { deckIn, headed, named, sameDeck, type Deck } from './deck'
 import { marksOf, sameMarks, type Marks } from '../marks'
 

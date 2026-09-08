@@ -16,7 +16,7 @@ import {
   type PaletteGroup,
 } from '@numen/ui'
 import AgentTab from './features/agent/AgentTab.vue'
-import DeckTab from './cards/window/deck/DeckTab.vue'
+import DeckTab from './features/cards/deck-tab/DeckTab.vue'
 import FilesTab from './features/files/FilesTab.vue'
 import { NEW_DECK, NEW_STENCIL } from './features/files/menu'
 import NoteTab from './features/note/NoteTab.vue'

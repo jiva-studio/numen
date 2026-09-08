@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { RefusalReason } from '../../../shared/core'
-import type { Cards, VaultFace, Problem, FieldRenameResult } from '../../vault/cards'
+import type { Cards, VaultFace, Problem, FieldRenameResult } from '../vault/cards'
 import { fileOpeners } from '../../../shared/tabs/openers'
 import { windowing } from '../../../shared/tabs/windowing'
 import { STENCIL } from '../../../shared/tabs/workspace'

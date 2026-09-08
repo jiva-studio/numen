@@ -8,7 +8,7 @@
 // @vitest-environment jsdom
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
-import type { Cards, VaultFace, Problem } from '../../vault/cards'
+import type { Cards, VaultFace, Problem } from '../vault/cards'
 import { fileOpeners } from '../../../shared/tabs/openers'
 import { windowing } from '../../../shared/tabs/windowing'
 import { STENCIL } from '../../../shared/tabs/workspace'

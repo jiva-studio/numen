@@ -7,8 +7,8 @@
  * fields and the faces a file is written from, is here.
  */
 import { ordered, reordered, type InsertionPoint } from '@numen/ui'
-import type { VaultFace, VaultStencil } from '../../vault/cards'
-import type { IdMaker } from '../deck/deck'
+import type { VaultFace, VaultStencil } from '../vault/cards'
+import type { IdMaker } from '../deck-tab/deck'
 
 const minting: IdMaker = () => crypto.randomUUID()
 

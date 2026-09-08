@@ -1,6 +1,6 @@
 /** What a gesture in a stencil makes of the file, asked without a screen. */
 import { describe, expect, it } from 'vitest'
-import type { VaultStencil } from '../../vault/cards'
+import type { VaultStencil } from '../vault/cards'
 import {
   faceAdded,
   faceGone,

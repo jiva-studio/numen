@@ -6,7 +6,7 @@
  * standing there. Two readings wrong in the same way leave what is drawn where
  * it is, so a mark a person is reading does not blink on every read.
  */
-import type { Problem } from '../vault/cards'
+import type { Problem } from './vault/cards'
 
 /** Where each problem is drawn. */
 export interface Marks {
