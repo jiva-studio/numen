@@ -41,6 +41,7 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     resolve: async () => new Map(),
     opening: async () => ({ path: 'Opening.md' }),
     state: async () => settled,
+    agentUnreachable: async () => '',
     changes: async function* () {},
     focus: async function* () {},
     attending: async () => {},

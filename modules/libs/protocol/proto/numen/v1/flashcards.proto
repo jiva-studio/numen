@@ -62,10 +62,6 @@ service FlashcardsService {
   // reviewed, and how many days up to now were reviewed without a gap.
   rpc ListReviewDays(ListReviewDaysRequest) returns (ListReviewDaysResponse);
 
-  // GetAgentState is whether a card can be asked about here at all. The way in
-  // stands on every card, so nothing else has to be said about which.
-  rpc GetAgentState(GetAgentStateRequest) returns (GetAgentStateResponse);
-
   // GetDeckNeighbourhood is what the deck of a person's session is joined to:
   // the notes it points at and the notes that point at it, with the text of
   // each. A card is a line out of something longer, and what it was cut from is
@@ -367,14 +363,6 @@ message ReviewDay {
   // minutes, which says nothing about memory.
   int32 asked = 7;
   int32 recalled = 8;
-}
-
-message GetAgentStateRequest {}
-
-message GetAgentStateResponse {
-  // Set when no agent can be reached, and then nothing can be asked here. It
-  // says why, in the person's own words.
-  string unreachable = 1;
 }
 
 message GetDeckNeighbourhoodRequest {

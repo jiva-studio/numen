@@ -12,8 +12,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// errNoAgent is a vault with none. Whether one can be reached is a fact about
-// this vault at this moment, and the window is told it in the vault's state.
+// errNoAgent is an installation with none. Whether one can be reached is asked
+// of GetAgentState.
 var errNoAgent = errors.New("no agent is set up for this vault")
 
 // AskAgent hands the person's task to the agent and reports what it does for as
@@ -49,4 +49,12 @@ func (a *API) FinishConversation(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.FinishConversationResponse{}), nil
+}
+
+// GetAgentState is whether an agent can be reached at all. Which agent answers
+// is the installation's, so every window asks it here.
+func (a *API) GetAgentState(
+	_ context.Context, _ *connect.Request[v1.GetAgentStateRequest],
+) (*connect.Response[v1.GetAgentStateResponse], error) {
+	return connect.NewResponse(&v1.GetAgentStateResponse{Unreachable: a.Unreachable.Why()}), nil
 }

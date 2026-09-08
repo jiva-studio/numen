@@ -18,6 +18,19 @@ service AgentService {
   // FinishConversation says a conversation is over. What the agent kept of it
   // is let go of, and whatever is still being answered in it stops.
   rpc FinishConversation(FinishConversationRequest) returns (FinishConversationResponse);
+
+  // GetAgentState is whether an agent can be reached at all. Which agent
+  // answers is the installation's, not the vault's, so every window asks the
+  // same question here and none of them carries the answer in its own state.
+  rpc GetAgentState(GetAgentStateRequest) returns (GetAgentStateResponse);
+}
+
+message GetAgentStateRequest {}
+
+message GetAgentStateResponse {
+  // Set when no agent can be reached, and then nothing can be asked of one. It
+  // says why, in the person's own words.
+  string unreachable = 1;
 }
 
 message AskAgentRequest {

@@ -77,13 +77,9 @@ type GetVaultStateResponse struct {
 	// How far reading the vault has got.
 	Scan *Scan `protobuf:"bytes,4,opt,name=scan,proto3" json:"scan,omitempty"`
 	// How far searching it by meaning has got.
-	Coverage *IndexCoverage `protobuf:"bytes,5,opt,name=coverage,proto3" json:"coverage,omitempty"`
-	// Why an agent cannot be reached, when one cannot. The window works and the
-	// panel says this instead of answering. It is the agent's and not the
-	// vault's, and rides here because this is what a window already asks.
-	AgentUnreachable string `protobuf:"bytes,6,opt,name=agent_unreachable,json=agentUnreachable,proto3" json:"agent_unreachable,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	Coverage      *IndexCoverage `protobuf:"bytes,5,opt,name=coverage,proto3" json:"coverage,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetVaultStateResponse) Reset() {
@@ -149,13 +145,6 @@ func (x *GetVaultStateResponse) GetCoverage() *IndexCoverage {
 		return x.Coverage
 	}
 	return nil
-}
-
-func (x *GetVaultStateResponse) GetAgentUnreachable() string {
-	if x != nil {
-		return x.AgentUnreachable
-	}
-	return ""
 }
 
 // Scan is how far reading a vault has got, and what stopped it.
@@ -869,14 +858,13 @@ var File_numen_v1_vault_proto protoreflect.FileDescriptor
 const file_numen_v1_vault_proto_rawDesc = "" +
 	"\n" +
 	"\x14numen/v1/vault.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x16\n" +
-	"\x14GetVaultStateRequest\"\xd5\x01\n" +
+	"\x14GetVaultStateRequest\"\xa8\x01\n" +
 	"\x15GetVaultStateResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\"\n" +
 	"\x04scan\x18\x04 \x01(\v2\x0e.numen.v1.ScanR\x04scan\x123\n" +
-	"\bcoverage\x18\x05 \x01(\v2\x17.numen.v1.IndexCoverageR\bcoverage\x12+\n" +
-	"\x11agent_unreachable\x18\x06 \x01(\tR\x10agentUnreachable\"R\n" +
+	"\bcoverage\x18\x05 \x01(\v2\x17.numen.v1.IndexCoverageR\bcoverage\"R\n" +
 	"\x04Scan\x12\x14\n" +
 	"\x05ready\x18\x01 \x01(\bR\x05ready\x12\x16\n" +
 	"\x06failed\x18\x02 \x01(\tR\x06failed\x12\x1c\n" +

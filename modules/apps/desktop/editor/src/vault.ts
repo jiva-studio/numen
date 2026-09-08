@@ -6,6 +6,7 @@
  */
 import { createClient } from '@connectrpc/connect'
 import {
+  AgentService,
   FileService,
   FlushResult,
   NamedBy,
@@ -66,6 +67,9 @@ import type {
 } from './core'
 
 export const vault = createClient(VaultService, transport)
+
+/** Whether an agent can be reached, which is the installation's and not a vault's. */
+const agentService = createClient(AgentService, transport)
 
 /** The tree the vault is filed in: what stands where, and moving it about. */
 const files = createClient(FileService, transport)
@@ -165,9 +169,11 @@ export const core: Core & SearchDeps & CommandsDeps = {
         embeddedCount: said.coverage?.embeddedCount ?? 0n,
         embedding: said.coverage?.embedding ?? false,
       },
-      agentUnreachable: said.agentUnreachable,
     }
   },
+  // Which agent answers is the installation's, not the vault's, so it is asked
+  // of the agent and not carried in what the vault says about itself.
+  agentUnreachable: async () => (await agentService.getAgentState({})).unreachable,
   changes: async function* (signal) {
     for await (const change of vault.watchVaultChanges({}, { signal })) {
       yield {

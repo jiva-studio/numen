@@ -53,11 +53,6 @@ message GetVaultStateResponse {
 
   // How far searching it by meaning has got.
   IndexCoverage coverage = 5;
-
-  // Why an agent cannot be reached, when one cannot. The window works and the
-  // panel says this instead of answering. It is the agent's and not the
-  // vault's, and rides here because this is what a window already asks.
-  string agent_unreachable = 6;
 }
 
 // Scan is how far reading a vault has got, and what stopped it.

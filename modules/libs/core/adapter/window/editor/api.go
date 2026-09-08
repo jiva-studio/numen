@@ -417,8 +417,7 @@ func (a *API) GetVaultState(
 			Failed:    a.Failed.Why(),
 			Unwatched: a.Unwatched.Why(),
 		},
-		Coverage:         &v1.IndexCoverage{Embedding: text(&a.Indexing.Model) != ""},
-		AgentUnreachable: a.Unreachable.Why(),
+		Coverage: &v1.IndexCoverage{Embedding: text(&a.Indexing.Model) != ""},
 	}
 	// A count that cannot be taken leaves the pair at nothing, and the rest of
 	// the state is answered as it stands. A window standing on nothing holds no

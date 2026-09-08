@@ -227,8 +227,8 @@ vi.mock('../vault', () => ({
       path: '/vaults/Physics',
       scan: { ready: said.ready, failed: said.failed, unwatched: '' },
       coverage: { chunkCount: 0n, embeddedCount: BigInt(said.embedded), embedding: false },
-      agentUnreachable: '',
     }),
+    agentUnreachable: async () => '',
     opening: async () => (said.opening ? { path: said.opening } : null),
     neighbourhood: async (path: string) => ({
       focus: { path, title: path.replace(/\.md$/, '') },

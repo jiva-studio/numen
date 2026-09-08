@@ -104,15 +104,19 @@ export function showing(core: Core, how: ShowingOptions = {}) {
     return opening.value
   }
 
-  /** What the vault says about itself, which is not only its name. */
+  /**
+   * What the vault says about itself, which is not only its name. Whether an
+   * agent can be reached is asked beside it: that answer is the installation's
+   * and does not change when another vault opens here.
+   */
   async function ask() {
-    const state = await core.state()
+    const [state, agent] = await Promise.all([core.state(), core.agentUnreachable()])
+    unreachable.value = agent
     name.value = state.name
     // Read once: this is the folder the page was drawn on.
     if (at.value === '') at.value = state.path
     trouble.value = state.scan.failed
     unwatched.value = state.scan.unwatched
-    unreachable.value = state.agentUnreachable
     chunks.value = Number(state.coverage.chunkCount)
     embedded.value = Number(state.coverage.embeddedCount)
     embedding.value = state.coverage.embedding

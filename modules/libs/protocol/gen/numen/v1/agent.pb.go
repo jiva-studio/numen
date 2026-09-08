@@ -27,6 +27,88 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type GetAgentStateRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAgentStateRequest) Reset() {
+	*x = GetAgentStateRequest{}
+	mi := &file_numen_v1_agent_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAgentStateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAgentStateRequest) ProtoMessage() {}
+
+func (x *GetAgentStateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_agent_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAgentStateRequest.ProtoReflect.Descriptor instead.
+func (*GetAgentStateRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{0}
+}
+
+type GetAgentStateResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Set when no agent can be reached, and then nothing can be asked of one. It
+	// says why, in the person's own words.
+	Unreachable   string `protobuf:"bytes,1,opt,name=unreachable,proto3" json:"unreachable,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAgentStateResponse) Reset() {
+	*x = GetAgentStateResponse{}
+	mi := &file_numen_v1_agent_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAgentStateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAgentStateResponse) ProtoMessage() {}
+
+func (x *GetAgentStateResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_agent_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAgentStateResponse.ProtoReflect.Descriptor instead.
+func (*GetAgentStateResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *GetAgentStateResponse) GetUnreachable() string {
+	if x != nil {
+		return x.Unreachable
+	}
+	return ""
+}
+
 type AskAgentRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// What the person wrote.
@@ -51,7 +133,7 @@ type AskAgentRequest struct {
 
 func (x *AskAgentRequest) Reset() {
 	*x = AskAgentRequest{}
-	mi := &file_numen_v1_agent_proto_msgTypes[0]
+	mi := &file_numen_v1_agent_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -63,7 +145,7 @@ func (x *AskAgentRequest) String() string {
 func (*AskAgentRequest) ProtoMessage() {}
 
 func (x *AskAgentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[0]
+	mi := &file_numen_v1_agent_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -76,7 +158,7 @@ func (x *AskAgentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AskAgentRequest.ProtoReflect.Descriptor instead.
 func (*AskAgentRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{0}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *AskAgentRequest) GetAsked() string {
@@ -125,7 +207,7 @@ type FinishConversationRequest struct {
 
 func (x *FinishConversationRequest) Reset() {
 	*x = FinishConversationRequest{}
-	mi := &file_numen_v1_agent_proto_msgTypes[1]
+	mi := &file_numen_v1_agent_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -137,7 +219,7 @@ func (x *FinishConversationRequest) String() string {
 func (*FinishConversationRequest) ProtoMessage() {}
 
 func (x *FinishConversationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[1]
+	mi := &file_numen_v1_agent_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -150,7 +232,7 @@ func (x *FinishConversationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FinishConversationRequest.ProtoReflect.Descriptor instead.
 func (*FinishConversationRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{1}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *FinishConversationRequest) GetConversation() string {
@@ -168,7 +250,7 @@ type FinishConversationResponse struct {
 
 func (x *FinishConversationResponse) Reset() {
 	*x = FinishConversationResponse{}
-	mi := &file_numen_v1_agent_proto_msgTypes[2]
+	mi := &file_numen_v1_agent_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -180,7 +262,7 @@ func (x *FinishConversationResponse) String() string {
 func (*FinishConversationResponse) ProtoMessage() {}
 
 func (x *FinishConversationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[2]
+	mi := &file_numen_v1_agent_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -193,7 +275,7 @@ func (x *FinishConversationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FinishConversationResponse.ProtoReflect.Descriptor instead.
 func (*FinishConversationResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{2}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{4}
 }
 
 // AskAgentResponse is one step of the work: one thing the agent said, did, or
@@ -214,7 +296,7 @@ type AskAgentResponse struct {
 
 func (x *AskAgentResponse) Reset() {
 	*x = AskAgentResponse{}
-	mi := &file_numen_v1_agent_proto_msgTypes[3]
+	mi := &file_numen_v1_agent_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -226,7 +308,7 @@ func (x *AskAgentResponse) String() string {
 func (*AskAgentResponse) ProtoMessage() {}
 
 func (x *AskAgentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[3]
+	mi := &file_numen_v1_agent_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -239,7 +321,7 @@ func (x *AskAgentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AskAgentResponse.ProtoReflect.Descriptor instead.
 func (*AskAgentResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *AskAgentResponse) GetStep() isAskAgentResponse_Step {
@@ -346,7 +428,7 @@ type Answered struct {
 
 func (x *Answered) Reset() {
 	*x = Answered{}
-	mi := &file_numen_v1_agent_proto_msgTypes[4]
+	mi := &file_numen_v1_agent_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -358,7 +440,7 @@ func (x *Answered) String() string {
 func (*Answered) ProtoMessage() {}
 
 func (x *Answered) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[4]
+	mi := &file_numen_v1_agent_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -371,7 +453,7 @@ func (x *Answered) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Answered.ProtoReflect.Descriptor instead.
 func (*Answered) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{6}
 }
 
 type Thinking struct {
@@ -382,7 +464,7 @@ type Thinking struct {
 
 func (x *Thinking) Reset() {
 	*x = Thinking{}
-	mi := &file_numen_v1_agent_proto_msgTypes[5]
+	mi := &file_numen_v1_agent_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -394,7 +476,7 @@ func (x *Thinking) String() string {
 func (*Thinking) ProtoMessage() {}
 
 func (x *Thinking) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[5]
+	mi := &file_numen_v1_agent_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -407,7 +489,7 @@ func (x *Thinking) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Thinking.ProtoReflect.Descriptor instead.
 func (*Thinking) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{7}
 }
 
 // ToolCall is a tool in the agent's hands.
@@ -438,7 +520,7 @@ type ToolCall struct {
 
 func (x *ToolCall) Reset() {
 	*x = ToolCall{}
-	mi := &file_numen_v1_agent_proto_msgTypes[6]
+	mi := &file_numen_v1_agent_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -450,7 +532,7 @@ func (x *ToolCall) String() string {
 func (*ToolCall) ProtoMessage() {}
 
 func (x *ToolCall) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_agent_proto_msgTypes[6]
+	mi := &file_numen_v1_agent_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -463,7 +545,7 @@ func (x *ToolCall) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolCall.ProtoReflect.Descriptor instead.
 func (*ToolCall) Descriptor() ([]byte, []int) {
-	return file_numen_v1_agent_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_agent_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ToolCall) GetTool() string {
@@ -512,7 +594,10 @@ var File_numen_v1_agent_proto protoreflect.FileDescriptor
 
 const file_numen_v1_agent_proto_rawDesc = "" +
 	"\n" +
-	"\x14numen/v1/agent.proto\x12\bnumen.v1\"\x89\x01\n" +
+	"\x14numen/v1/agent.proto\x12\bnumen.v1\"\x16\n" +
+	"\x14GetAgentStateRequest\"9\n" +
+	"\x15GetAgentStateResponse\x12 \n" +
+	"\vunreachable\x18\x01 \x01(\tR\vunreachable\"\x89\x01\n" +
 	"\x0fAskAgentRequest\x12\x14\n" +
 	"\x05asked\x18\x01 \x01(\tR\x05asked\x12\x14\n" +
 	"\x05focus\x18\x02 \x01(\tR\x05focus\x12\"\n" +
@@ -539,10 +624,11 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\awritten\x18\x03 \x01(\x05R\awritten\x12\x12\n" +
 	"\x04path\x18\x04 \x01(\tR\x04path\x12\x14\n" +
 	"\x05start\x18\x05 \x01(\x05R\x05start\x12\x16\n" +
-	"\x06length\x18\x06 \x01(\x05R\x06length2\xb4\x01\n" +
+	"\x06length\x18\x06 \x01(\x05R\x06length2\x86\x02\n" +
 	"\fAgentService\x12C\n" +
 	"\bAskAgent\x12\x19.numen.v1.AskAgentRequest\x1a\x1a.numen.v1.AskAgentResponse0\x01\x12_\n" +
-	"\x12FinishConversation\x12#.numen.v1.FinishConversationRequest\x1a$.numen.v1.FinishConversationResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x12FinishConversation\x12#.numen.v1.FinishConversationRequest\x1a$.numen.v1.FinishConversationResponse\x12P\n" +
+	"\rGetAgentState\x12\x1e.numen.v1.GetAgentStateRequest\x1a\x1f.numen.v1.GetAgentStateResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_agent_proto_rawDescOnce sync.Once
@@ -556,26 +642,30 @@ func file_numen_v1_agent_proto_rawDescGZIP() []byte {
 	return file_numen_v1_agent_proto_rawDescData
 }
 
-var file_numen_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_numen_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_numen_v1_agent_proto_goTypes = []any{
-	(*AskAgentRequest)(nil),            // 0: numen.v1.AskAgentRequest
-	(*FinishConversationRequest)(nil),  // 1: numen.v1.FinishConversationRequest
-	(*FinishConversationResponse)(nil), // 2: numen.v1.FinishConversationResponse
-	(*AskAgentResponse)(nil),           // 3: numen.v1.AskAgentResponse
-	(*Answered)(nil),                   // 4: numen.v1.Answered
-	(*Thinking)(nil),                   // 5: numen.v1.Thinking
-	(*ToolCall)(nil),                   // 6: numen.v1.ToolCall
+	(*GetAgentStateRequest)(nil),       // 0: numen.v1.GetAgentStateRequest
+	(*GetAgentStateResponse)(nil),      // 1: numen.v1.GetAgentStateResponse
+	(*AskAgentRequest)(nil),            // 2: numen.v1.AskAgentRequest
+	(*FinishConversationRequest)(nil),  // 3: numen.v1.FinishConversationRequest
+	(*FinishConversationResponse)(nil), // 4: numen.v1.FinishConversationResponse
+	(*AskAgentResponse)(nil),           // 5: numen.v1.AskAgentResponse
+	(*Answered)(nil),                   // 6: numen.v1.Answered
+	(*Thinking)(nil),                   // 7: numen.v1.Thinking
+	(*ToolCall)(nil),                   // 8: numen.v1.ToolCall
 }
 var file_numen_v1_agent_proto_depIdxs = []int32{
-	6, // 0: numen.v1.AskAgentResponse.tool_call:type_name -> numen.v1.ToolCall
-	4, // 1: numen.v1.AskAgentResponse.answered:type_name -> numen.v1.Answered
-	5, // 2: numen.v1.AskAgentResponse.thinking:type_name -> numen.v1.Thinking
-	0, // 3: numen.v1.AgentService.AskAgent:input_type -> numen.v1.AskAgentRequest
-	1, // 4: numen.v1.AgentService.FinishConversation:input_type -> numen.v1.FinishConversationRequest
-	3, // 5: numen.v1.AgentService.AskAgent:output_type -> numen.v1.AskAgentResponse
-	2, // 6: numen.v1.AgentService.FinishConversation:output_type -> numen.v1.FinishConversationResponse
-	5, // [5:7] is the sub-list for method output_type
-	3, // [3:5] is the sub-list for method input_type
+	8, // 0: numen.v1.AskAgentResponse.tool_call:type_name -> numen.v1.ToolCall
+	6, // 1: numen.v1.AskAgentResponse.answered:type_name -> numen.v1.Answered
+	7, // 2: numen.v1.AskAgentResponse.thinking:type_name -> numen.v1.Thinking
+	2, // 3: numen.v1.AgentService.AskAgent:input_type -> numen.v1.AskAgentRequest
+	3, // 4: numen.v1.AgentService.FinishConversation:input_type -> numen.v1.FinishConversationRequest
+	0, // 5: numen.v1.AgentService.GetAgentState:input_type -> numen.v1.GetAgentStateRequest
+	5, // 6: numen.v1.AgentService.AskAgent:output_type -> numen.v1.AskAgentResponse
+	4, // 7: numen.v1.AgentService.FinishConversation:output_type -> numen.v1.FinishConversationResponse
+	1, // 8: numen.v1.AgentService.GetAgentState:output_type -> numen.v1.GetAgentStateResponse
+	6, // [6:9] is the sub-list for method output_type
+	3, // [3:6] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
 	3, // [3:3] is the sub-list for extension extendee
 	0, // [0:3] is the sub-list for field type_name
@@ -586,7 +676,7 @@ func file_numen_v1_agent_proto_init() {
 	if File_numen_v1_agent_proto != nil {
 		return
 	}
-	file_numen_v1_agent_proto_msgTypes[3].OneofWrappers = []any{
+	file_numen_v1_agent_proto_msgTypes[5].OneofWrappers = []any{
 		(*AskAgentResponse_Said)(nil),
 		(*AskAgentResponse_ToolCall)(nil),
 		(*AskAgentResponse_Stopped)(nil),
@@ -599,7 +689,7 @@ func file_numen_v1_agent_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_agent_proto_rawDesc), len(file_numen_v1_agent_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

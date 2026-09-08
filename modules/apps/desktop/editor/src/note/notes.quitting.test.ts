@@ -65,6 +65,7 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
     resolve: async () => new Map(),
     opening: async () => null,
     state: async () => idle,
+    agentUnreachable: async () => '',
     changes: async function* () {},
     focus: async function* () {},
     attending: async () => {},

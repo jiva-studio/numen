@@ -30,6 +30,7 @@ function fake(over: Partial<FakeCore> = {}) {
     resolve: async () => new Map(),
     opening: async () => null,
     state: async () => idle,
+    agentUnreachable: async () => '',
     changes: async function* () {},
     focus: async function* () {},
     attending: async () => {},

@@ -364,9 +364,13 @@ export interface Core {
     scan: { ready: boolean; failed: string; unwatched: string }
     /** How far searching it by meaning has got. */
     coverage: { chunkCount: bigint; embeddedCount: bigint; embedding: boolean }
-    /** Why an agent cannot be reached, when one cannot. */
-    agentUnreachable: string
   }>
+  /**
+   * Why an agent cannot be reached, and nothing where one can. Which agent
+   * answers is the installation's, so it is asked of the agent and not of the
+   * vault the window is showing.
+   */
+  agentUnreachable(): Promise<string>
   changes(signal: AbortSignal): AsyncIterable<{
     paths: string[]
     reload: boolean
