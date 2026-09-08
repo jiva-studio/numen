@@ -1,12 +1,12 @@
-# How a recording is heard
+# How a recording is transcribed
 
-What a model hears in a recording, where it is kept, and how a search lands on the second it was said. A transcript is written into the vault's own folder, under `.numen/transcript/`, and the source is cut from it (see [A transcript is WebVTT](adr/0031-a-transcript-is-webvtt.md)).
+What a model writes down from a recording, where it is kept, and how a search lands on the second it was said. A transcript is written into the vault's own folder, under `.numen/transcript/`, and the source is cut from it (see [A transcript is WebVTT](adr/0031-a-transcript-is-webvtt.md)).
 
 The recording itself is never moved, copied or renamed. It plays where it lies.
 
 ## The files of one transcription
 
-Every file is named by the hash of the recording's bytes, so a file renamed or moved keeps what was heard in it, and two copies of one recording share the one transcript.
+Every file is named by the hash of the recording's bytes, so a file renamed or moved keeps its transcript, and two copies of one recording share the one transcript.
 
 | File | What it holds |
 | --- | --- |
@@ -18,9 +18,9 @@ Every file is named by the hash of the recording's bytes, so a file renamed or m
 
 `asr` is the producer: a transcript is a transcript whoever wrote it down, and this folder also holds the words a site published with a video, under `.captions` — see [Importing an address](importing.md).
 
-Only one of `.asr.vtt`, `.asr.partial.vtt` and `.asr.answer` exists at a time. A recording with none of them has not been heard yet.
+Only one of `.asr.vtt`, `.asr.partial.vtt` and `.asr.answer` exists at a time. A recording with none of them has not been transcribed yet.
 
-`.asr.corrected.vtt` is a transcript that has been put right — by a proofreader, by a person editing it in the recording tab, or by both. It is WebVTT, under that format's own extension, so whatever opens the artifact opens it too, and the artifact is not rewritten: it stays what the model heard. A recording the vault holds a corrected transcript for is cut from that file, and deleting it gives back what was heard. What a proofreader is shown and what it may change is [Proofreading](proofreading.md).
+`.asr.corrected.vtt` is a transcript that has been put right — by a proofreader, by a person editing it in the recording tab, or by both. It is WebVTT, under that format's own extension, so whatever opens the artifact opens it too, and the artifact is not rewritten: it stays what the model wrote down. A recording the vault holds a corrected transcript for is cut from that file, and deleting it gives back what the model wrote. What a proofreader is shown and what it may change is [Proofreading](proofreading.md).
 
 ## What the artifact holds
 
@@ -46,9 +46,9 @@ Where a chunk is, is the time on the player: `01:23:45`. A search result about a
 
 ## A run
 
-The speech is found first, and the model is given one stretch at a time. Cues are appended as they are heard, and after them a note saying how many milliseconds have been written down. **The note is what makes the cues in front of it count**: a batch that did not land whole is one no note claims, and the next run cuts back to the last note and does that batch again.
+The speech is found first, and the model is given one stretch at a time. Cues are appended as they are written down, and after them a note saying how many milliseconds have been reached. **The note is what makes the cues in front of it count**: a batch that did not land whole is one no note claims, and the next run cuts back to the last note and does that batch again.
 
-The source is cut after every batch, so a recording answers a search about what has been heard while the rest of it is still playing to the model. A tab open on the recording shows the words appearing.
+The source is cut after every batch, so a recording answers a search about what has been transcribed while the rest of it is still playing to the model. A tab open on the recording shows the words appearing.
 
 A note is a comment in this format, so a partial file is still a file every other reader understands.
 
@@ -76,4 +76,4 @@ The queue takes what it can carry: a recording larger than `indexing.transcribe_
 
 ## Settings
 
-Under `indexing.transcription`. The models are fetched when a recording is first heard and kept in the platform's cache folder; nothing is downloaded until then. See [settings](settings.md).
+Under `indexing.transcription`. The models are fetched when a recording is first transcribed and kept in the platform's cache folder; nothing is downloaded until then. See [settings](settings.md).

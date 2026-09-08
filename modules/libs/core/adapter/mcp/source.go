@@ -184,14 +184,14 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 		Description: "Have a model listen to one recording and write the words it carries " +
 			"into the vault. They land as files under `.numen/transcript/`, beside the person's " +
 			"notes and inside the folder they sync — an hour of talk is megabytes of " +
-			"them. What has been heard is searchable as it goes, so a search finds " +
-			"the first minutes of a talk long before the last of them are heard. This " +
-			"is slow — about as long as the recording itself. A vault's recordings are " +
-			"listened to on their own where the installation is set to; ask for this " +
-			"when one is wanted now, or when the installation leaves it to the hand. A " +
-			"recording asked for by name is heard whatever the installation listens to " +
-			"on its own, and waits behind nothing but the recordings asked for before " +
-			"it, so this is asked once and no more.",
+			"them. What has been transcribed is searchable as it goes, so a search " +
+			"finds the first minutes of a talk long before the last of them are " +
+			"reached. This is slow — about as long as the recording itself. A vault's " +
+			"recordings are transcribed on their own where the installation is set to; " +
+			"ask for this when one is wanted now, or when the installation leaves it to " +
+			"the hand. A recording asked for by name is transcribed whatever the " +
+			"installation does on its own, and waits behind nothing but the recordings " +
+			"asked for before it, so this is asked once and no more.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path string `json:"path" jsonschema:"the recording, as a path inside the vault"`
 	}) (*sdk.CallToolResult, struct {

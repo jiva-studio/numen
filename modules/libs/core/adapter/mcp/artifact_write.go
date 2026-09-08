@@ -28,7 +28,7 @@ func addArtifactWriteTool(server *sdk.Server, core Core) {
 		Title: "Write an artifact",
 		Description: "Write a stretch of a transcript as it should read. What the site " +
 			"or the model produced is never rewritten: the corrections go beside it, " +
-			"and taking them away brings back what was heard.\n\nThe cues you send " +
+			"and taking them away brings back what was transcribed.\n\nThe cues you send " +
 			"stand in place of every cue that begins inside the stretch they cover, so a " +
 			"transcript is corrected a stretch at a time the way `artifact_read` reads " +
 			"one. Name `start` and `length`, in milliseconds, only to replace a stretch " +

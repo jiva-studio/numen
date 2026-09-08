@@ -42,23 +42,23 @@ const (
 	// kept under `ocr`.
 	ArtifactKind_ARTIFACT_KIND_OCR ArtifactKind = 1
 	// That reading put right by a person, under `.corrected` beside it.
-	ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED ArtifactKind = 6
+	ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED ArtifactKind = 2
 	// Text with the times each stretch of it was said at, under the name of what
 	// made it: `asr` where a model heard it, `captions` where a site published
 	// it with a video.
-	ArtifactKind_ARTIFACT_KIND_TRANSCRIPT ArtifactKind = 2
+	ArtifactKind_ARTIFACT_KIND_TRANSCRIPT ArtifactKind = 3
 	// A transcript put right by a person, under `.corrected` beside the one it
 	// corrects. It says which it is: a reading put right is another kind, and a
 	// caller editing one has to know which of them it holds.
-	ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED ArtifactKind = 3
+	ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED ArtifactKind = 4
 	// The prose a page is written around, under `article`. It carries no times
 	// and no places on pages: it is what the page says, and nothing about where
 	// it stood.
-	ArtifactKind_ARTIFACT_KIND_ARTICLE ArtifactKind = 4
+	ArtifactKind_ARTIFACT_KIND_ARTICLE ArtifactKind = 5
 	// The bytes of a video, kept under `copy` and played from this disk. It is
 	// asked for by hand: an hour of video is not what pasting an address asks
 	// for.
-	ArtifactKind_ARTIFACT_KIND_COPY ArtifactKind = 5
+	ArtifactKind_ARTIFACT_KIND_COPY ArtifactKind = 6
 )
 
 // Enum value maps for ArtifactKind.
@@ -66,20 +66,20 @@ var (
 	ArtifactKind_name = map[int32]string{
 		0: "ARTIFACT_KIND_UNSPECIFIED",
 		1: "ARTIFACT_KIND_OCR",
-		6: "ARTIFACT_KIND_OCR_CORRECTED",
-		2: "ARTIFACT_KIND_TRANSCRIPT",
-		3: "ARTIFACT_KIND_TRANSCRIPT_CORRECTED",
-		4: "ARTIFACT_KIND_ARTICLE",
-		5: "ARTIFACT_KIND_COPY",
+		2: "ARTIFACT_KIND_OCR_CORRECTED",
+		3: "ARTIFACT_KIND_TRANSCRIPT",
+		4: "ARTIFACT_KIND_TRANSCRIPT_CORRECTED",
+		5: "ARTIFACT_KIND_ARTICLE",
+		6: "ARTIFACT_KIND_COPY",
 	}
 	ArtifactKind_value = map[string]int32{
 		"ARTIFACT_KIND_UNSPECIFIED":          0,
 		"ARTIFACT_KIND_OCR":                  1,
-		"ARTIFACT_KIND_OCR_CORRECTED":        6,
-		"ARTIFACT_KIND_TRANSCRIPT":           2,
-		"ARTIFACT_KIND_TRANSCRIPT_CORRECTED": 3,
-		"ARTIFACT_KIND_ARTICLE":              4,
-		"ARTIFACT_KIND_COPY":                 5,
+		"ARTIFACT_KIND_OCR_CORRECTED":        2,
+		"ARTIFACT_KIND_TRANSCRIPT":           3,
+		"ARTIFACT_KIND_TRANSCRIPT_CORRECTED": 4,
+		"ARTIFACT_KIND_ARTICLE":              5,
+		"ARTIFACT_KIND_COPY":                 6,
 	}
 )
 
@@ -189,28 +189,18 @@ func (State) EnumDescriptor() ([]byte, []int) {
 }
 
 // An Artifact is one thing a model wrote about one file of the vault.
+//
+// Where it stands on disk is the application's own and is never said: a request
+// names the file and the kind of it, and the vault is the one the window is
+// showing.
 type Artifact struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Name is where it stands: the vault, the file it was made from, and the
-	// name the store keeps it under.
-	//
-	//	vaults/{vault}/files/{path}/artifacts/asr.corrected
-	//
-	// It is answered and never asked with: a request names the file and the
-	// artifact of it, and the vault is the one the window is showing.
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Which of them this is.
+	Kind ArtifactKind `protobuf:"varint,1,opt,name=kind,proto3,enum=numen.v1.ArtifactKind" json:"kind,omitempty"`
 	// State is what has become of it.
 	State State `protobuf:"varint,2,opt,name=state,proto3,enum=numen.v1.State" json:"state,omitempty"`
 	// Error is what stopped it, and is set when it failed.
-	Error string `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
-	// Size is how many bytes stand under that name. A file being written is
-	// appended to as the work goes, so it keeps its name and grows: how long it
-	// now is is what tells a caller that what it already read has moved on.
-	Size int64 `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
-	// Which of them this is. A client draws a row per kind and reads this rather
-	// than the last part of `name`: a name is where the artifact stands, and
-	// taking a client's meaning out of it makes every reader parse it.
-	Kind          ArtifactKind `protobuf:"varint,5,opt,name=kind,proto3,enum=numen.v1.ArtifactKind" json:"kind,omitempty"`
+	Error         string `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -245,11 +235,11 @@ func (*Artifact) Descriptor() ([]byte, []int) {
 	return file_numen_v1_artifact_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Artifact) GetName() string {
+func (x *Artifact) GetKind() ArtifactKind {
 	if x != nil {
-		return x.Name
+		return x.Kind
 	}
-	return ""
+	return ArtifactKind_ARTIFACT_KIND_UNSPECIFIED
 }
 
 func (x *Artifact) GetState() State {
@@ -264,20 +254,6 @@ func (x *Artifact) GetError() string {
 		return x.Error
 	}
 	return ""
-}
-
-func (x *Artifact) GetSize() int64 {
-	if x != nil {
-		return x.Size
-	}
-	return 0
-}
-
-func (x *Artifact) GetKind() ArtifactKind {
-	if x != nil {
-		return x.Kind
-	}
-	return ArtifactKind_ARTIFACT_KIND_UNSPECIFIED
 }
 
 type ListArtifactsRequest struct {
@@ -961,13 +937,11 @@ var File_numen_v1_artifact_proto protoreflect.FileDescriptor
 
 const file_numen_v1_artifact_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/artifact.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x9b\x01\n" +
-	"\bArtifact\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12%\n" +
+	"\x17numen/v1/artifact.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"s\n" +
+	"\bArtifact\x12*\n" +
+	"\x04kind\x18\x01 \x01(\x0e2\x16.numen.v1.ArtifactKindR\x04kind\x12%\n" +
 	"\x05state\x18\x02 \x01(\x0e2\x0f.numen.v1.StateR\x05state\x12\x14\n" +
-	"\x05error\x18\x03 \x01(\tR\x05error\x12\x12\n" +
-	"\x04size\x18\x04 \x01(\x03R\x04size\x12*\n" +
-	"\x04kind\x18\x05 \x01(\x0e2\x16.numen.v1.ArtifactKindR\x04kind\"*\n" +
+	"\x05error\x18\x03 \x01(\tR\x05error\"*\n" +
 	"\x14ListArtifactsRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"I\n" +
 	"\x15ListArtifactsResponse\x120\n" +
@@ -1005,11 +979,11 @@ const file_numen_v1_artifact_proto_rawDesc = "" +
 	"\fArtifactKind\x12\x1d\n" +
 	"\x19ARTIFACT_KIND_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11ARTIFACT_KIND_OCR\x10\x01\x12\x1f\n" +
-	"\x1bARTIFACT_KIND_OCR_CORRECTED\x10\x06\x12\x1c\n" +
-	"\x18ARTIFACT_KIND_TRANSCRIPT\x10\x02\x12&\n" +
-	"\"ARTIFACT_KIND_TRANSCRIPT_CORRECTED\x10\x03\x12\x19\n" +
-	"\x15ARTIFACT_KIND_ARTICLE\x10\x04\x12\x16\n" +
-	"\x12ARTIFACT_KIND_COPY\x10\x05*\x99\x01\n" +
+	"\x1bARTIFACT_KIND_OCR_CORRECTED\x10\x02\x12\x1c\n" +
+	"\x18ARTIFACT_KIND_TRANSCRIPT\x10\x03\x12&\n" +
+	"\"ARTIFACT_KIND_TRANSCRIPT_CORRECTED\x10\x04\x12\x19\n" +
+	"\x15ARTIFACT_KIND_ARTICLE\x10\x05\x12\x16\n" +
+	"\x12ARTIFACT_KIND_COPY\x10\x06*\x99\x01\n" +
 	"\x05State\x12\x15\n" +
 	"\x11STATE_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -1061,8 +1035,8 @@ var file_numen_v1_artifact_proto_goTypes = []any{
 	(*Stretch)(nil),                 // 15: numen.v1.Stretch
 }
 var file_numen_v1_artifact_proto_depIdxs = []int32{
-	1,  // 0: numen.v1.Artifact.state:type_name -> numen.v1.State
-	0,  // 1: numen.v1.Artifact.kind:type_name -> numen.v1.ArtifactKind
+	0,  // 0: numen.v1.Artifact.kind:type_name -> numen.v1.ArtifactKind
+	1,  // 1: numen.v1.Artifact.state:type_name -> numen.v1.State
 	2,  // 2: numen.v1.ListArtifactsResponse.artifacts:type_name -> numen.v1.Artifact
 	0,  // 3: numen.v1.CreateArtifactRequest.kind:type_name -> numen.v1.ArtifactKind
 	2,  // 4: numen.v1.CreateArtifactResponse.artifact:type_name -> numen.v1.Artifact

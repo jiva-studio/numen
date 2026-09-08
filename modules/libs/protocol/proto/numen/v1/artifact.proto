@@ -53,31 +53,19 @@ service ArtifactService {
 }
 
 // An Artifact is one thing a model wrote about one file of the vault.
+//
+// Where it stands on disk is the application's own and is never said: a request
+// names the file and the kind of it, and the vault is the one the window is
+// showing.
 message Artifact {
-  // Name is where it stands: the vault, the file it was made from, and the
-  // name the store keeps it under.
-  //
-  //   vaults/{vault}/files/{path}/artifacts/asr.corrected
-  //
-  // It is answered and never asked with: a request names the file and the
-  // artifact of it, and the vault is the one the window is showing.
-  string name = 1;
+  // Which of them this is.
+  ArtifactKind kind = 1;
 
   // State is what has become of it.
   State state = 2;
 
   // Error is what stopped it, and is set when it failed.
   string error = 3;
-
-  // Size is how many bytes stand under that name. A file being written is
-  // appended to as the work goes, so it keeps its name and grows: how long it
-  // now is is what tells a caller that what it already read has moved on.
-  int64 size = 4;
-
-  // Which of them this is. A client draws a row per kind and reads this rather
-  // than the last part of `name`: a name is where the artifact stands, and
-  // taking a client's meaning out of it makes every reader parse it.
-  ArtifactKind kind = 5;
 }
 
 // ArtifactKind is what a thing made from a file is. The list is closed: a
@@ -94,27 +82,27 @@ enum ArtifactKind {
   ARTIFACT_KIND_OCR = 1;
 
   // That reading put right by a person, under `.corrected` beside it.
-  ARTIFACT_KIND_OCR_CORRECTED = 6;
+  ARTIFACT_KIND_OCR_CORRECTED = 2;
 
   // Text with the times each stretch of it was said at, under the name of what
   // made it: `asr` where a model heard it, `captions` where a site published
   // it with a video.
-  ARTIFACT_KIND_TRANSCRIPT = 2;
+  ARTIFACT_KIND_TRANSCRIPT = 3;
 
   // A transcript put right by a person, under `.corrected` beside the one it
   // corrects. It says which it is: a reading put right is another kind, and a
   // caller editing one has to know which of them it holds.
-  ARTIFACT_KIND_TRANSCRIPT_CORRECTED = 3;
+  ARTIFACT_KIND_TRANSCRIPT_CORRECTED = 4;
 
   // The prose a page is written around, under `article`. It carries no times
   // and no places on pages: it is what the page says, and nothing about where
   // it stood.
-  ARTIFACT_KIND_ARTICLE = 4;
+  ARTIFACT_KIND_ARTICLE = 5;
 
   // The bytes of a video, kept under `copy` and played from this disk. It is
   // asked for by hand: an hour of video is not what pasting an address asks
   // for.
-  ARTIFACT_KIND_COPY = 5;
+  ARTIFACT_KIND_COPY = 6;
 }
 
 // State is what has become of one artifact.

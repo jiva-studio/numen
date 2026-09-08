@@ -52,11 +52,8 @@ func TestABookAModelHasReadCarriesTheReading(t *testing.T) {
 	if held[0].GetState() != v1.State_STATE_DONE {
 		t.Errorf("a book a model read is %s", held[0].GetState())
 	}
-	if held[0].GetSize() != int64(len(wrote)) {
-		t.Errorf("the reading is %d bytes long", held[0].GetSize())
-	}
-	if held[0].GetName() != named(api.Showing(), book, readingID) {
-		t.Errorf("the reading stands at %q", held[0].GetName())
+	if held[0].GetKind() != v1.ArtifactKind_ARTIFACT_KIND_OCR {
+		t.Errorf("the reading is a %s", held[0].GetKind())
 	}
 }
 
@@ -69,20 +66,20 @@ func TestARecordingCarriesWhatWasHeardAndWhatWasPutRight(t *testing.T) {
 	if err != nil {
 		t.Fatalf("asked what the recording carries and was refused: %v", err)
 	}
-	want := []string{
-		named(api.Showing(), talk, transcriptID),
-		named(api.Showing(), talk, transcriptCorrectedID),
+	want := []v1.ArtifactKind{
+		v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
+		v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED,
 	}
 	held := out.Msg.GetArtifacts()
 	if len(held) != len(want) {
 		t.Fatalf("a recording carries %v", held)
 	}
 	for at, one := range held {
-		if one.GetName() != want[at] {
-			t.Errorf("the artifact at %d stands at %q, want %q", at, one.GetName(), want[at])
+		if one.GetKind() != want[at] {
+			t.Errorf("the artifact at %d is a %s, want %s", at, one.GetKind(), want[at])
 		}
 		if one.GetState() != v1.State_STATE_NONE {
-			t.Errorf("%s of a recording nothing heard is %s", one.GetName(), one.GetState())
+			t.Errorf("%s of a recording nothing heard is %s", one.GetKind(), one.GetState())
 		}
 	}
 }

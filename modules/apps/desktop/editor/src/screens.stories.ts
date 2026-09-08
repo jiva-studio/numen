@@ -483,8 +483,8 @@ const PLAYER: Player = {
 const heard = (cues: readonly Cue[]): Recordings => ({
   listened: async () => ({
     duration: RUNS,
-    media: MEDIA,
-    type: 'audio/mpeg',
+    mediaUrl: MEDIA,
+    mediaType: 'audio/mpeg',
     url: '',
   }),
   cues: async () => ({ cues, editable: true, prose: '' }),

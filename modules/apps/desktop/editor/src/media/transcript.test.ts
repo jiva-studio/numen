@@ -25,8 +25,8 @@ const CUES: readonly Cue[] = [
 
 const SUMMARY: RecordingSummary = {
   duration: 9_000,
-  media: 'http://127.0.0.1:1/files/w/v/talk.mp3',
-  type: 'audio/mpeg',
+  mediaUrl: 'http://127.0.0.1:1/files/w/v/talk.mp3',
+  mediaType: 'audio/mpeg',
   url: '',
 }
 
@@ -102,7 +102,7 @@ function played() {
 
   /** The recording plays on: the player moves of itself. */
   const moves = (ms: number) => {
-    address.value = SUMMARY.media
+    address.value = SUMMARY.mediaUrl
     at.value = ms
   }
 
@@ -123,7 +123,7 @@ describe('a recording opened', () => {
 
     await settled()
 
-    expect(heard.address.value).toBe(SUMMARY.media)
+    expect(heard.address.value).toBe(SUMMARY.mediaUrl)
   })
 
   it('asks what it is and what was heard in it, once each', async () => {
@@ -140,7 +140,7 @@ describe('a recording opened', () => {
 
 describe('a recording nothing has listened to', () => {
   it('holds no words and says nothing went wrong', async () => {
-    const { recordings } = talk([], { duration: 0, media: '', type: '', url: '' })
+    const { recordings } = talk([], { duration: 0, mediaUrl: '', mediaType: '', url: '' })
     const heard = transcript(recordings, 'talks/Ants.mp3')
 
     await settled()
@@ -158,7 +158,7 @@ describe('a build that cannot read a transcript', () => {
     await settled()
 
     expect(heard.trouble.value).toContain('numen did not answer')
-    expect(heard.address.value).toBe(SUMMARY.media)
+    expect(heard.address.value).toBe(SUMMARY.mediaUrl)
   })
 })
 
@@ -259,7 +259,7 @@ describe('the one player the window has', () => {
 
     heard.play()
 
-    expect(player.address.value).toBe(SUMMARY.media)
+    expect(player.address.value).toBe(SUMMARY.mediaUrl)
     expect(heard.playing.value).toBe(true)
   })
 
@@ -442,7 +442,7 @@ describe('a recording tab that closes', () => {
     const again = transcript(recordings, 'talks/Ants.mp3', { through: player })
     await settled()
 
-    expect(player.address.value).toBe(SUMMARY.media)
+    expect(player.address.value).toBe(SUMMARY.mediaUrl)
     expect(again.now.value).toBe(6_200)
   })
 })
@@ -455,7 +455,7 @@ describe('a recording tab as it opens', () => {
     const heard = transcript(recordings, 'talks/Ants.mp3', { through: player })
     await settled()
 
-    expect(player.address.value).toBe(SUMMARY.media)
+    expect(player.address.value).toBe(SUMMARY.mediaUrl)
     expect(player.playing.value).toBe(false)
     expect(heard.playing.value).toBe(false)
   })
@@ -567,7 +567,7 @@ describe('a player that could not load the recording', () => {
     const heard = transcript(recordings, 'talks/Ants.mp3', { through: player })
     await settled()
 
-    address.value = SUMMARY.media
+    address.value = SUMMARY.mediaUrl
     failed.value = 'the recording could not be read from the vault'
 
     expect(heard.broken.value).toContain('read from the vault')

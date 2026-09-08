@@ -326,7 +326,7 @@ The boundary the detector answers with is the text's own outline drawn inside th
 
 ## Listening to a recording
 
-`indexing.transcription` is how a recording is listened to. A recording carries no text of its own, so what a model heard is the only text there is: a recording the vault holds no transcript for is listened to without anybody asking, and `indexing.transcribe_recordings` is what stops that. What a transcript is and where it is kept is in [Transcribing](transcribing.md).
+`indexing.transcription` is how a recording is transcribed. A recording carries no text of its own, so its transcript is the only text there is: a recording the vault holds none for is transcribed without anybody asking, and `indexing.transcribe_recordings` is what stops that. What a transcript is and where it is kept is in [Transcribing](transcribing.md).
 
 ```json
 {
@@ -346,8 +346,8 @@ The boundary the detector answers with is the text's own outline drawn inside th
 
 | | |
 | --- | --- |
-| `transcribe_recordings` | whether a recording the vault holds no transcript for is listened to on its own. On. A vault of a hundred hours is a day of a machine, and turning this off leaves it to the hand — the command line's `transcribe`, and the tool an agent asks through. |
-| `transcribe_under_mb` | how large a recording may be and still be listened to unasked, in megabytes. 300, which is a talk of a few hours. A larger one waits to be asked for by name, because a folder of albums is days of a machine. A negative number is no limit. |
+| `transcribe_recordings` | whether a recording the vault holds no transcript for is transcribed on its own. On. A vault of a hundred hours is a day of a machine, and turning this off leaves it to the hand — the command line's `transcribe`, and the tool an agent asks through. |
+| `transcribe_under_mb` | how large a recording may be and still be transcribed unasked, in megabytes. 300, which is a talk of a few hours. A larger one waits to be asked for by name, because a folder of albums is days of a machine. A negative number is no limit. |
 | `runtime` | the ONNX Runtime shared library. Empty takes the one beside the application, then the one the platform holds, and then the published one, fetched and checked against the sum this build carries. One process opens one, and both a recognition and a transcription run their models through it. |
 | `dir` | a folder holding the models. Empty takes the folder beside the application, and then the download cache. |
 | `download` | whether what is not on this machine may be fetched. A model is fetched from the address named here and checked against no sum: the runtime's address is this build's and carries one, and a model's is the person's own setting, which nobody but them could publish a sum for. A model named here is a model trusted. |
@@ -355,20 +355,20 @@ The boundary the detector answers with is the text's own outline drawn inside th
 | `model.name` | what the transducer is called in the record kept beside a transcript. |
 | `model.from` | the folder its four files are fetched from. The encoder, the decoder, the joiner and the tokens are one model: three graphs from two exports write nothing anybody can read. |
 | `model.encoder`, `model.decoder`, `model.joiner`, `model.tokens` | the files on this machine. A path is used as given; an empty one is the file of that name under `model.from`. |
-| `speech.name` | what the segmenter is called in that same record. Where a stretch of speech is cut is part of what the words are, so it is named beside the model that heard them. |
+| `speech.name` | what the segmenter is called in that same record. Where a stretch of speech is cut is part of what the words are, so it is named beside the model that transcribed them. |
 | `speech.from`, `speech.path` | where the segmenter is fetched from, and a file on this machine. A path is used as given; `from` is looked for in `dir` first. |
 | `speech.threshold` | how sure the model has to be that a window carries speech. 0.5. |
 | `speech.silence` | how much quiet, in milliseconds, closes a stretch of speech. 500. |
 | `speech.pad` | how many milliseconds are kept on each side of a stretch. 200, because the model answers on the window a sound begins in, and the sound before that window is what the first letter of the word is made of. |
 | `speech.longest` | how many milliseconds one stretch may run to. 30000. One stretch is one run of the encoder, and its cost grows with its length; speech going on longer is cut at the quietest window this side of the limit. |
 | `speech.shortest` | how many milliseconds a stretch carries to be a stretch at all. 100. |
-| `speech.least` | how many milliseconds a stretch runs to before it stands as a line of its own. 2500. A shorter one is put together with the stretch after it, up to `longest`. A line of a transcript is read, so it holds a phrase; and the model hears a sentence better than it hears a word out of one. |
-| `proofread.with` | which profile under `indexing.proofreading.profiles` puts a transcript right. Empty proofreads nothing, and a transcript is used exactly as it was heard. A name no profile carries is an error at startup. |
+| `speech.least` | how many milliseconds a stretch runs to before it stands as a line of its own. 2500. A shorter one is put together with the stretch after it, up to `longest`. A line of a transcript is read, so it holds a phrase; and the model transcribes a sentence better than it transcribes a word out of one. |
+| `proofread.with` | which profile under `indexing.proofreading.profiles` puts a transcript right. Empty proofreads nothing, and a transcript is used exactly as it was transcribed. A name no profile carries is an error at startup. |
 | `proofread.automatically` | whether a transcript is proofread as soon as it is finished. Off leaves it to the hand: a person asks for it on the recording in front of them. |
 
 `transcribe_recordings` and `transcription.proofread.automatically` are two flags about two things. The first decides whether a recording nobody asked about is listened to at all. The second decides whether a transcript that already exists is put right by itself. An installation can hear every recording unasked and proofread none of them, and it can proofread every transcript it has while listening to nothing new.
 
-Reading a scan and listening to a recording each hold the models and the processor, so they take turns: a person who asked for a scan to be read waits for it before a recording is heard, and the one waiting says so in the list of what is being done.
+Reading a scan and transcribing a recording each hold the models and the processor, so they take turns: a person who asked for a scan to be read waits for it before a recording is transcribed, and the one waiting says so in the list of what is being done.
 
 Every recording handed over ends in an answer, and only one of them is "later". Words are an answer, a recording carrying no speech is an answer, and a file nothing here can open is an answer; all three are written down and the recording is not listened to again. Bytes another run holds are the one ending that means come back later. Asking for a recording to be tried again is taking its answer away.
 
@@ -436,7 +436,7 @@ An `agent` profile is the command line the person already has installed, run as 
 
 ## Worked example, proofreading
 
-Scans through OpenRouter, transcripts through the `claude` command line on this machine. Both run on their own: a book read is a book proofread, and a recording heard is a recording proofread, with nobody asked.
+Scans through OpenRouter, transcripts through the `claude` command line on this machine. Both run on their own: a book read is a book proofread, and a recording transcribed is a recording proofread, with nobody asked.
 
 The key is in the environment, under the name `key_env` gives. Nothing in this file carries it.
 

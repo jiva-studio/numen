@@ -26,7 +26,7 @@ usage:
                                                and gives their space back
   numen-cli recognise <vault> <file>          read a scanned document with a model
   numen-cli proofread <vault> <file>          put a document's reading right with a model
-  numen-cli transcribe <vault> <file> [--again]  write down what a model hears in a recording
+  numen-cli transcribe <vault> <file> [--again]  transcribe a recording with a model
   numen-cli import <vault> <note> [--again] [--copy]  fetch what an address holds,
                                                and --copy the video itself
   numen-cli search <vault> <query>             full-text search within one vault

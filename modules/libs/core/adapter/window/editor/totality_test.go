@@ -144,6 +144,6 @@ func TestEveryArtifactTheSchemaNamesStandsSomewhere(t *testing.T) {
 // standingAt is what an artifact over a source standing here is answered with.
 func standingAt(got reached) func() v1.State {
 	return func() v1.State {
-		return stood(domain.Vault{}, "Talk.md", v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT, got).GetState()
+		return stood(v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT, got).GetState()
 	}
 }

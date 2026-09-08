@@ -19,26 +19,24 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/artifact.proto.
  */
 export const file_numen_v1_artifact: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9hcnRpZmFjdC5wcm90bxIIbnVtZW4udjEiewoIQXJ0aWZhY3QSDAoEbmFtZRgBIAEoCRIeCgVzdGF0ZRgCIAEoDjIPLm51bWVuLnYxLlN0YXRlEg0KBWVycm9yGAMgASgJEgwKBHNpemUYBCABKAMSJAoEa2luZBgFIAEoDjIWLm51bWVuLnYxLkFydGlmYWN0S2luZCIkChRMaXN0QXJ0aWZhY3RzUmVxdWVzdBIMCgRwYXRoGAEgASgJIj4KFUxpc3RBcnRpZmFjdHNSZXNwb25zZRIlCglhcnRpZmFjdHMYASADKAsyEi5udW1lbi52MS5BcnRpZmFjdCJLChVDcmVhdGVBcnRpZmFjdFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIkCgRraW5kGAIgASgOMhYubnVtZW4udjEuQXJ0aWZhY3RLaW5kIj4KFkNyZWF0ZUFydGlmYWN0UmVzcG9uc2USJAoIYXJ0aWZhY3QYASABKAsyEi5udW1lbi52MS5BcnRpZmFjdCJLChVEZWxldGVBcnRpZmFjdFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIkCgRraW5kGAIgASgOMhYubnVtZW4udjEuQXJ0aWZhY3RLaW5kIj4KFkRlbGV0ZUFydGlmYWN0UmVzcG9uc2USJAoIYXJ0aWZhY3QYASABKAsyEi5udW1lbi52MS5BcnRpZmFjdCItCgNDdWUSDAoEdGV4dBgBIAEoCRIMCgRmcm9tGAIgASgFEgoKAnRvGAMgASgFIkQKFVJlYWRUcmFuc2NyaXB0UmVxdWVzdBIMCgRwYXRoGAEgASgJEh0KAmF0GAIgASgLMhEubnVtZW4udjEuU3RyZXRjaCJnChZSZWFkVHJhbnNjcmlwdFJlc3BvbnNlEiIKBnNwb2tlbhgBIAEoCzIQLm51bWVuLnYxLlNwb2tlbkgAEg8KBXByb3NlGAIgASgJSAASEAoIZWRpdGFibGUYAyABKAhCBgoEdGV4dCIlCgZTcG9rZW4SGwoEY3VlcxgBIAMoCzINLm51bWVuLnYxLkN1ZSJDChZXcml0ZVRyYW5zY3JpcHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSGwoEY3VlcxgCIAMoCzINLm51bWVuLnYxLkN1ZSJIChdXcml0ZVRyYW5zY3JpcHRSZXNwb25zZRIbCgRjdWVzGAEgAygLMg0ubnVtZW4udjEuQ3VlEhAKCGVkaXRhYmxlGAMgASgIKt4BCgxBcnRpZmFjdEtpbmQSHQoZQVJUSUZBQ1RfS0lORF9VTlNQRUNJRklFRBAAEhUKEUFSVElGQUNUX0tJTkRfT0NSEAESHwobQVJUSUZBQ1RfS0lORF9PQ1JfQ09SUkVDVEVEEAYSHAoYQVJUSUZBQ1RfS0lORF9UUkFOU0NSSVBUEAISJgoiQVJUSUZBQ1RfS0lORF9UUkFOU0NSSVBUX0NPUlJFQ1RFRBADEhkKFUFSVElGQUNUX0tJTkRfQVJUSUNMRRAEEhYKEkFSVElGQUNUX0tJTkRfQ09QWRAFKpkBCgVTdGF0ZRIVChFTVEFURV9VTlNQRUNJRklFRBAAEg4KClNUQVRFX05PTkUQARIQCgxTVEFURV9RVUVVRUQQAhIRCg1TVEFURV9SVU5OSU5HEAMSEQoNU1RBVEVfU1RPUFBFRBAEEg4KClNUQVRFX0RPTkUQBRIPCgtTVEFURV9FTVBUWRAGEhAKDFNUQVRFX0ZBSUxFRBAHMroDCg9BcnRpZmFjdFNlcnZpY2USUAoNTGlzdEFydGlmYWN0cxIeLm51bWVuLnYxLkxpc3RBcnRpZmFjdHNSZXF1ZXN0Gh8ubnVtZW4udjEuTGlzdEFydGlmYWN0c1Jlc3BvbnNlElMKDkNyZWF0ZUFydGlmYWN0Eh8ubnVtZW4udjEuQ3JlYXRlQXJ0aWZhY3RSZXF1ZXN0GiAubnVtZW4udjEuQ3JlYXRlQXJ0aWZhY3RSZXNwb25zZRJTCg5EZWxldGVBcnRpZmFjdBIfLm51bWVuLnYxLkRlbGV0ZUFydGlmYWN0UmVxdWVzdBogLm51bWVuLnYxLkRlbGV0ZUFydGlmYWN0UmVzcG9uc2USUwoOUmVhZFRyYW5zY3JpcHQSHy5udW1lbi52MS5SZWFkVHJhbnNjcmlwdFJlcXVlc3QaIC5udW1lbi52MS5SZWFkVHJhbnNjcmlwdFJlc3BvbnNlElYKD1dyaXRlVHJhbnNjcmlwdBIgLm51bWVuLnYxLldyaXRlVHJhbnNjcmlwdFJlcXVlc3QaIS5udW1lbi52MS5Xcml0ZVRyYW5zY3JpcHRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9hcnRpZmFjdC5wcm90bxIIbnVtZW4udjEiXwoIQXJ0aWZhY3QSJAoEa2luZBgBIAEoDjIWLm51bWVuLnYxLkFydGlmYWN0S2luZBIeCgVzdGF0ZRgCIAEoDjIPLm51bWVuLnYxLlN0YXRlEg0KBWVycm9yGAMgASgJIiQKFExpc3RBcnRpZmFjdHNSZXF1ZXN0EgwKBHBhdGgYASABKAkiPgoVTGlzdEFydGlmYWN0c1Jlc3BvbnNlEiUKCWFydGlmYWN0cxgBIAMoCzISLm51bWVuLnYxLkFydGlmYWN0IksKFUNyZWF0ZUFydGlmYWN0UmVxdWVzdBIMCgRwYXRoGAEgASgJEiQKBGtpbmQYAiABKA4yFi5udW1lbi52MS5BcnRpZmFjdEtpbmQiPgoWQ3JlYXRlQXJ0aWZhY3RSZXNwb25zZRIkCghhcnRpZmFjdBgBIAEoCzISLm51bWVuLnYxLkFydGlmYWN0IksKFURlbGV0ZUFydGlmYWN0UmVxdWVzdBIMCgRwYXRoGAEgASgJEiQKBGtpbmQYAiABKA4yFi5udW1lbi52MS5BcnRpZmFjdEtpbmQiPgoWRGVsZXRlQXJ0aWZhY3RSZXNwb25zZRIkCghhcnRpZmFjdBgBIAEoCzISLm51bWVuLnYxLkFydGlmYWN0Ii0KA0N1ZRIMCgR0ZXh0GAEgASgJEgwKBGZyb20YAiABKAUSCgoCdG8YAyABKAUiRAoVUmVhZFRyYW5zY3JpcHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSHQoCYXQYAiABKAsyES5udW1lbi52MS5TdHJldGNoImcKFlJlYWRUcmFuc2NyaXB0UmVzcG9uc2USIgoGc3Bva2VuGAEgASgLMhAubnVtZW4udjEuU3Bva2VuSAASDwoFcHJvc2UYAiABKAlIABIQCghlZGl0YWJsZRgDIAEoCEIGCgR0ZXh0IiUKBlNwb2tlbhIbCgRjdWVzGAEgAygLMg0ubnVtZW4udjEuQ3VlIkMKFldyaXRlVHJhbnNjcmlwdFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIbCgRjdWVzGAIgAygLMg0ubnVtZW4udjEuQ3VlIkgKF1dyaXRlVHJhbnNjcmlwdFJlc3BvbnNlEhsKBGN1ZXMYASADKAsyDS5udW1lbi52MS5DdWUSEAoIZWRpdGFibGUYAyABKAgq3gEKDEFydGlmYWN0S2luZBIdChlBUlRJRkFDVF9LSU5EX1VOU1BFQ0lGSUVEEAASFQoRQVJUSUZBQ1RfS0lORF9PQ1IQARIfChtBUlRJRkFDVF9LSU5EX09DUl9DT1JSRUNURUQQAhIcChhBUlRJRkFDVF9LSU5EX1RSQU5TQ1JJUFQQAxImCiJBUlRJRkFDVF9LSU5EX1RSQU5TQ1JJUFRfQ09SUkVDVEVEEAQSGQoVQVJUSUZBQ1RfS0lORF9BUlRJQ0xFEAUSFgoSQVJUSUZBQ1RfS0lORF9DT1BZEAYqmQEKBVN0YXRlEhUKEVNUQVRFX1VOU1BFQ0lGSUVEEAASDgoKU1RBVEVfTk9ORRABEhAKDFNUQVRFX1FVRVVFRBACEhEKDVNUQVRFX1JVTk5JTkcQAxIRCg1TVEFURV9TVE9QUEVEEAQSDgoKU1RBVEVfRE9ORRAFEg8KC1NUQVRFX0VNUFRZEAYSEAoMU1RBVEVfRkFJTEVEEAcyugMKD0FydGlmYWN0U2VydmljZRJQCg1MaXN0QXJ0aWZhY3RzEh4ubnVtZW4udjEuTGlzdEFydGlmYWN0c1JlcXVlc3QaHy5udW1lbi52MS5MaXN0QXJ0aWZhY3RzUmVzcG9uc2USUwoOQ3JlYXRlQXJ0aWZhY3QSHy5udW1lbi52MS5DcmVhdGVBcnRpZmFjdFJlcXVlc3QaIC5udW1lbi52MS5DcmVhdGVBcnRpZmFjdFJlc3BvbnNlElMKDkRlbGV0ZUFydGlmYWN0Eh8ubnVtZW4udjEuRGVsZXRlQXJ0aWZhY3RSZXF1ZXN0GiAubnVtZW4udjEuRGVsZXRlQXJ0aWZhY3RSZXNwb25zZRJTCg5SZWFkVHJhbnNjcmlwdBIfLm51bWVuLnYxLlJlYWRUcmFuc2NyaXB0UmVxdWVzdBogLm51bWVuLnYxLlJlYWRUcmFuc2NyaXB0UmVzcG9uc2USVgoPV3JpdGVUcmFuc2NyaXB0EiAubnVtZW4udjEuV3JpdGVUcmFuc2NyaXB0UmVxdWVzdBohLm51bWVuLnYxLldyaXRlVHJhbnNjcmlwdFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * An Artifact is one thing a model wrote about one file of the vault.
+ *
+ * Where it stands on disk is the application's own and is never said: a request
+ * names the file and the kind of it, and the vault is the one the window is
+ * showing.
  *
  * @generated from message numen.v1.Artifact
  */
 export type Artifact = Message<"numen.v1.Artifact"> & {
   /**
-   * Name is where it stands: the vault, the file it was made from, and the
-   * name the store keeps it under.
+   * Which of them this is.
    *
-   *   vaults/{vault}/files/{path}/artifacts/asr.corrected
-   *
-   * It is answered and never asked with: a request names the file and the
-   * artifact of it, and the vault is the one the window is showing.
-   *
-   * @generated from field: string name = 1;
+   * @generated from field: numen.v1.ArtifactKind kind = 1;
    */
-  name: string;
+  kind: ArtifactKind;
 
   /**
    * State is what has become of it.
@@ -53,24 +51,6 @@ export type Artifact = Message<"numen.v1.Artifact"> & {
    * @generated from field: string error = 3;
    */
   error: string;
-
-  /**
-   * Size is how many bytes stand under that name. A file being written is
-   * appended to as the work goes, so it keeps its name and grows: how long it
-   * now is is what tells a caller that what it already read has moved on.
-   *
-   * @generated from field: int64 size = 4;
-   */
-  size: bigint;
-
-  /**
-   * Which of them this is. A client draws a row per kind and reads this rather
-   * than the last part of `name`: a name is where the artifact stands, and
-   * taking a client's meaning out of it makes every reader parse it.
-   *
-   * @generated from field: numen.v1.ArtifactKind kind = 5;
-   */
-  kind: ArtifactKind;
 };
 
 /**
@@ -427,45 +407,45 @@ export enum ArtifactKind {
   /**
    * That reading put right by a person, under `.corrected` beside it.
    *
-   * @generated from enum value: ARTIFACT_KIND_OCR_CORRECTED = 6;
+   * @generated from enum value: ARTIFACT_KIND_OCR_CORRECTED = 2;
    */
-  OCR_CORRECTED = 6,
+  OCR_CORRECTED = 2,
 
   /**
    * Text with the times each stretch of it was said at, under the name of what
    * made it: `asr` where a model heard it, `captions` where a site published
    * it with a video.
    *
-   * @generated from enum value: ARTIFACT_KIND_TRANSCRIPT = 2;
+   * @generated from enum value: ARTIFACT_KIND_TRANSCRIPT = 3;
    */
-  TRANSCRIPT = 2,
+  TRANSCRIPT = 3,
 
   /**
    * A transcript put right by a person, under `.corrected` beside the one it
    * corrects. It says which it is: a reading put right is another kind, and a
    * caller editing one has to know which of them it holds.
    *
-   * @generated from enum value: ARTIFACT_KIND_TRANSCRIPT_CORRECTED = 3;
+   * @generated from enum value: ARTIFACT_KIND_TRANSCRIPT_CORRECTED = 4;
    */
-  TRANSCRIPT_CORRECTED = 3,
+  TRANSCRIPT_CORRECTED = 4,
 
   /**
    * The prose a page is written around, under `article`. It carries no times
    * and no places on pages: it is what the page says, and nothing about where
    * it stood.
    *
-   * @generated from enum value: ARTIFACT_KIND_ARTICLE = 4;
+   * @generated from enum value: ARTIFACT_KIND_ARTICLE = 5;
    */
-  ARTICLE = 4,
+  ARTICLE = 5,
 
   /**
    * The bytes of a video, kept under `copy` and played from this disk. It is
    * asked for by hand: an hour of video is not what pasting an address asks
    * for.
    *
-   * @generated from enum value: ARTIFACT_KIND_COPY = 5;
+   * @generated from enum value: ARTIFACT_KIND_COPY = 6;
    */
-  COPY = 5,
+  COPY = 6,
 }
 
 /**

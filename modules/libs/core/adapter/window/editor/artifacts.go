@@ -123,11 +123,10 @@ func (a *API) linked(
 	ctx context.Context, v domain.Vault, path string, at domain.URL,
 ) (*v1.Artifact, error) {
 	out := &v1.Artifact{
-		Name:  named(v, path, articleID),
 		Kind:  textOf(a.producing(at)),
 		State: v1.State_STATE_NONE,
 	}
-	_, stores, held := a.hearing()
+	_, stores, held := a.transcribing()
 	if !held || string(at) == "" {
 		return out, nil
 	}
@@ -142,7 +141,7 @@ func (a *API) linked(
 			return nil, err
 		}
 		if got.stands != untouched {
-			return stood(v, path, textOf(a.producing(at)), got), nil
+			return stood(textOf(a.producing(at)), got), nil
 		}
 	}
 	return out, nil
@@ -153,7 +152,7 @@ func (a *API) linked(
 func (a *API) drops(
 	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.URL,
 ) (*connect.Response[v1.DeleteArtifactResponse], error) {
-	_, stores, held := a.hearing()
+	_, stores, held := a.transcribing()
 	if !held {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
@@ -179,7 +178,6 @@ func (a *API) drops(
 	}
 	return connect.NewResponse(&v1.DeleteArtifactResponse{
 		Artifact: &v1.Artifact{
-			Name:  named(v, ref.Path, copiedID),
 			Kind:  v1.ArtifactKind_ARTIFACT_KIND_COPY,
 			State: v1.State_STATE_NONE,
 		},
@@ -192,15 +190,13 @@ func (a *API) copyOf(
 	ctx context.Context, v domain.Vault, path string, at domain.URL,
 ) *v1.Artifact {
 	out := &v1.Artifact{
-		Name:  named(v, path, copiedID),
 		Kind:  v1.ArtifactKind_ARTIFACT_KIND_COPY,
 		State: v1.State_STATE_NONE,
 	}
-	_, size, held := a.standing(ctx, v, path, at)
-	if !held {
+	if _, _, held := a.standing(ctx, v, path, at); !held {
 		return out
 	}
-	out.State, out.Size = v1.State_STATE_DONE, size
+	out.State = v1.State_STATE_DONE
 	return out
 }
 
@@ -233,7 +229,7 @@ func (a *API) copies(
 		return nil, connect.NewError(fetched(err), err)
 	}
 	if got.TooLarge() {
-		out.State, out.Size = v1.State_STATE_FAILED, got.Bytes
+		out.State = v1.State_STATE_FAILED
 		out.Error = fmt.Sprintf(
 			"This is %d MB, and a copy may be up to %d MB. "+
 				"Raise importing.copy_max_size_mb to keep it.",
@@ -367,7 +363,6 @@ func (a *API) DeleteArtifact(
 		}
 		return connect.NewResponse(&v1.DeleteArtifactResponse{
 			Artifact: &v1.Artifact{
-				Name:  named(showing, ref.Path, transcriptID),
 				Kind:  v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
 				State: v1.State_STATE_NONE,
 			},
@@ -393,7 +388,6 @@ func (a *API) DeleteArtifact(
 	}
 	return connect.NewResponse(&v1.DeleteArtifactResponse{
 		Artifact: &v1.Artifact{
-			Name:  named(showing, ref.Path, transcriptID),
 			Kind:  v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
 			State: v1.State_STATE_NONE,
 		},
@@ -419,7 +413,7 @@ func (a *API) run(
 	// What stands is what the ask comes to. A source a run already answered
 	// about is answered the same until that record is taken away.
 	if got.stands == done || got.stands == under || got.stands == silent || got.stands == unopened {
-		return stood(v, ref.Path, of, got), nil
+		return stood(of, got), nil
 	}
 
 	// What this machine has fetched is not asked about. A run comes up in its
@@ -427,9 +421,7 @@ func (a *API) run(
 	//
 	// The list of what is being done draws the run from the moment it begins,
 	// under the work and the file it is over.
-	id, _ := standing(of)
 	return &v1.Artifact{
-		Name:  named(v, ref.Path, id),
 		Kind:  of,
 		State: beginning(by.Start(v, ref.Path)),
 	}, nil
@@ -521,7 +513,10 @@ func (a *API) proofreadTranscript(
 	if err != nil {
 		return nil, connect.NewError(reaching(err), err)
 	}
-	return &v1.Artifact{Name: named(v, ref.Path, transcriptCorrectedID), State: came(res)}, nil
+	return &v1.Artifact{
+		Kind:  v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED,
+		State: came(res),
+	}, nil
 }
 
 // came is what asking for a transcript to be put right came to.
@@ -567,7 +562,7 @@ func (a *API) artifact(
 	if err != nil {
 		return nil, err
 	}
-	return stood(v, ref.Path, of, got), nil
+	return stood(of, got), nil
 }
 
 // corrections is what putting a recording's transcript right has come to.
@@ -581,7 +576,6 @@ func (a *API) corrections(
 	ref domain.Fingerprint,
 ) (*v1.Artifact, error) {
 	out := &v1.Artifact{
-		Name:  named(v, ref.Path, transcriptCorrectedID),
 		Kind:  v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED,
 		State: v1.State_STATE_NONE,
 	}
@@ -589,9 +583,9 @@ func (a *API) corrections(
 	if err != nil || !listened {
 		return out, err
 	}
-	switch put, err := store.Read(ctx, derived.Corrections(said.Producer, said.Hash)); {
+	switch _, err := store.Read(ctx, derived.Corrections(said.Producer, said.Hash)); {
 	case err == nil:
-		out.State, out.Size = v1.State_STATE_DONE, int64(len(put))
+		out.State = v1.State_STATE_DONE
 		return out, nil
 	case !errors.Is(err, fs.ErrNotExist):
 		return nil, err
@@ -603,9 +597,8 @@ func (a *API) corrections(
 }
 
 // stood is how far a run got, as the artifact a client reads.
-func stood(v domain.Vault, path string, of v1.ArtifactKind, got reached) *v1.Artifact {
-	id, _ := standing(of)
-	out := &v1.Artifact{Name: named(v, path, id), Kind: of, Size: int64(got.size)}
+func stood(of v1.ArtifactKind, got reached) *v1.Artifact {
+	out := &v1.Artifact{Kind: of}
 	switch got.stands {
 	case done:
 		out.State = v1.State_STATE_DONE
@@ -621,12 +614,6 @@ func stood(v domain.Vault, path string, of v1.ArtifactKind, got reached) *v1.Art
 		out.State = v1.State_STATE_NONE
 	}
 	return out
-}
-
-// named is where an artifact stands: the vault, the file it was made from, and
-// the name the store keeps it under.
-func named(v domain.Vault, path, id string) string {
-	return "vaults/" + string(v.ID) + "/files/" + path + "/artifacts/" + id
 }
 
 // reaching is the code a file that could not be reached is answered with.
@@ -670,7 +657,7 @@ func (a *API) standing(
 			return ref.Path, ref.Size, true
 		}
 	}
-	_, stores, ready := a.hearing()
+	_, stores, ready := a.transcribing()
 	if !ready {
 		return "", 0, false
 	}

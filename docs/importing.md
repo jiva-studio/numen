@@ -31,7 +31,7 @@ An agent asks for one with `url_import`, which makes the file and fetches what i
 | a video nobody published words for | that answer, so the address is not asked again | |
 | anything else | the prose the page is written around | an article |
 
-A transcript is a transcript whoever wrote it down: the words a site published with a video and the words a model here heard in a recording are one kind, read and put right by one editor, and what separates them is only the producer. An article is neither — it carries no times, and no places on pages either, which is what separates it from a reading off a scan.
+A transcript is a transcript whoever wrote it down: the words a site published with a video and the words a model here wrote down from a recording are one kind, read and put right by one editor, and what separates them is only the producer. An article is neither — it carries no times, and no places on pages either, which is what separates it from a reading off a scan.
 
 Every file is named by the hash of the address, in the one form every spelling of it reaches, so two urls pointing at one video share what was fetched and renaming either keeps it.
 
@@ -40,7 +40,7 @@ A folder is a kind, and the producer stands in the file's name where a kind has 
 | File | What it holds |
 | --- | --- |
 | `transcript/<hash>.captions.vtt` | the words a site published with a video |
-| `transcript/<hash>.asr.vtt` | the words a model here heard in it |
+| `transcript/<hash>.asr.vtt` | the words a model here wrote down from it |
 | `transcript/<hash>.captions.answer` | why there are no words |
 | `transcript/<hash>.captions.json` | what fetched it: the address, the title, the tool |
 | `article/<hash>.txt` | the prose of a page |

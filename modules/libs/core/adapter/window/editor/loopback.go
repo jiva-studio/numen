@@ -220,7 +220,7 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 func (a *API) served(
 	w http.ResponseWriter, r *http.Request, held domain.Vault, at string, named fingerprint,
 ) bool {
-	_, stores, ready := a.hearing()
+	_, stores, ready := a.transcribing()
 	if !ready {
 		return false
 	}

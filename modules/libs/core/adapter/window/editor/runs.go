@@ -135,7 +135,7 @@ func farUnder(ctx context.Context, store port.DerivedStore, from, hash string) (
 // The file is read and fingerprinted here, which is what a run does before
 // anything else.
 func (a *API) byBytes(ctx context.Context, v domain.Vault, path, from string) (reached, error) {
-	_, stores, ok := a.hearing()
+	_, stores, ok := a.transcribing()
 	if !ok || from == "" {
 		return reached{}, nil
 	}

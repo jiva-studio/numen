@@ -170,8 +170,8 @@ func TestAScanIsReadWhenTheWindowAsksForIt(t *testing.T) {
 	if made.GetState() != v1.State_STATE_RUNNING {
 		t.Fatalf("the scan was answered %s", made.GetState())
 	}
-	if made.GetName() != named(api.Showing(), book, readingID) {
-		t.Errorf("the answer is about %q", made.GetName())
+	if made.GetKind() != v1.ArtifactKind_ARTIFACT_KIND_OCR {
+		t.Errorf("the answer is about a %s", made.GetKind())
 	}
 	if scans.times != 1 || scans.path != book || scans.vault != string(api.Showing().ID) {
 		t.Errorf("the run was asked for %q of %q, %d times", scans.path, scans.vault, scans.times)
@@ -187,8 +187,8 @@ func TestARecordingIsHeardWhenTheWindowAsksForIt(t *testing.T) {
 	if made.GetState() != v1.State_STATE_RUNNING {
 		t.Fatalf("the recording was answered %s", made.GetState())
 	}
-	if made.GetName() != named(api.Showing(), talk, transcriptID) {
-		t.Errorf("the answer is about %q", made.GetName())
+	if made.GetKind() != v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT {
+		t.Errorf("the answer is about a %s", made.GetKind())
 	}
 	if hears.times != 1 || hears.path != talk || hears.vault != string(api.Showing().ID) {
 		t.Errorf("the run was asked for %q of %q, %d times", hears.path, hears.vault, hears.times)
@@ -288,9 +288,6 @@ func TestASourceAlreadyDoneIsNotRunAgain(t *testing.T) {
 			if made.GetState() != v1.State_STATE_DONE {
 				t.Fatalf("a source already done was answered %s", made.GetState())
 			}
-			if made.GetSize() != int64(len(wrote)) {
-				t.Errorf("what stands is %d bytes long", made.GetSize())
-			}
 			if scans.times+hears.times != 0 {
 				t.Error("a run was given a source already done")
 			}
@@ -327,9 +324,6 @@ func TestASourceARunHoldsIsSaidToBeUnderWay(t *testing.T) {
 			made := making(t, api, one.path, one.of)
 			if made.GetState() != v1.State_STATE_RUNNING {
 				t.Fatalf("a source a run holds was answered %s", made.GetState())
-			}
-			if made.GetSize() != int64(len(far)) {
-				t.Errorf("what the run has written is %d bytes long", made.GetSize())
 			}
 			if scans.times+hears.times != 0 {
 				t.Error("a run was given a source already being worked on")

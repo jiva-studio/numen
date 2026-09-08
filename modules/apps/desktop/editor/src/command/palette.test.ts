@@ -544,7 +544,7 @@ describe('a note that moves under an open step', () => {
 })
 
 /** A recording in front of the window, and a scanned document. */
-const heard: Partial<CommandTarget> = {
+const recording: Partial<CommandTarget> = {
   kind: 'recording',
   path: '',
   // A recording tab is filed at no note, and what it is called is the name of
@@ -563,7 +563,7 @@ const scanned: Partial<CommandTarget> = {
 
 describe('the runs over the file in front', () => {
   it('offers a recording to be transcribed, put right and dropped, and nothing to recognise', () => {
-    const { commands } = asking(heard)
+    const { commands } = asking(recording)
 
     expect(drawn(commands.groups).file).toStrictEqual([
       'transcribe',
@@ -587,13 +587,13 @@ describe('the runs over the file in front', () => {
   })
 
   it('offers neither while the vault is still being read', () => {
-    const { commands } = asking({ ...heard, ready: false })
+    const { commands } = asking({ ...recording, ready: false })
 
     expect(drawn(commands.groups).file).toBeUndefined()
   })
 
   it('carries the file the tab in front holds', () => {
-    const { commands } = asking(heard)
+    const { commands } = asking(recording)
 
     expect(commands.chose('transcribe', 'transcribe')?.file).toBe('talks/Ants.mp3')
   })
@@ -604,7 +604,7 @@ describe('the runs over the file in front', () => {
     runs.cannotRun('proofread')
     runs.cannotRun('deleteText')
 
-    expect(drawn(asking(heard, [], {}, undefined, runs).commands.groups).file).toBeUndefined()
+    expect(drawn(asking(recording, [], {}, undefined, runs).commands.groups).file).toBeUndefined()
     expect(drawn(asking(scanned, [], {}, undefined, runs).commands.groups).file).toStrictEqual([
       'recognise',
     ])
@@ -629,21 +629,21 @@ describe('the runs over the file in front', () => {
     }
   })
 
-  it('offers a recording to be transcribed only where nothing has heard it', () => {
-    const { commands } = asking({ ...heard, made: { transcript: 'done' } })
+  it('offers a recording to be transcribed only where nothing has transcribed it', () => {
+    const { commands } = asking({ ...recording, made: { transcript: 'done' } })
 
     expect(drawn(commands.groups).file).not.toContain('transcribe')
   })
 
-  // There is nothing to put right until a model has heard something, and
+  // There is nothing to put right until a model has transcribed something, and
   // nothing to take away until it has.
   it('offers a transcript to be put right once one stands, and not before', () => {
-    expect(drawn(asking({ ...heard, made: { transcript: 'none' } }).commands.groups).file)
+    expect(drawn(asking({ ...recording, made: { transcript: 'none' } }).commands.groups).file)
       .toStrictEqual(['transcribe'])
-    expect(drawn(asking({ ...heard, made: { transcript: 'done' } }).commands.groups).file)
+    expect(drawn(asking({ ...recording, made: { transcript: 'done' } }).commands.groups).file)
       .toStrictEqual(['proofread', 'deleteText'])
     expect(
-      drawn(asking({ ...heard, made: { transcript: 'done', 'transcript.corrected': 'done' } }).commands.groups)
+      drawn(asking({ ...recording, made: { transcript: 'done', 'transcript.corrected': 'done' } }).commands.groups)
         .file,
     ).toStrictEqual(['deleteText'])
   })
@@ -652,7 +652,7 @@ describe('the runs over the file in front', () => {
   // A window that hid the runs until the answer came would flicker every one of
   // them into place.
   it('offers what the kind offers while nothing is known of the file', () => {
-    const { commands } = asking(heard)
+    const { commands } = asking(recording)
 
     expect(drawn(commands.groups).file).toStrictEqual([
       'transcribe',
@@ -667,8 +667,8 @@ describe('the runs over the file in front', () => {
     runs.cannotRun('proofread')
     runs.cannotRun('deleteText')
 
-    expect(drawn(asking(heard, [], {}, undefined, runs).commands.groups).file).toBeUndefined()
-    expect(drawn(asking(heard).commands.groups).file).toStrictEqual([
+    expect(drawn(asking(recording, [], {}, undefined, runs).commands.groups).file).toBeUndefined()
+    expect(drawn(asking(recording).commands.groups).file).toStrictEqual([
       'transcribe',
       'proofread',
       'deleteText',
@@ -678,33 +678,33 @@ describe('the runs over the file in front', () => {
 
 describe('dropping the transcript of a recording', () => {
   it('asks before the words go, and is nothing until the answer is given', () => {
-    const { commands } = asking(heard)
+    const { commands } = asking(recording)
 
-    expect(commands.asks('deleteText', front(heard))).toBeNull()
+    expect(commands.asks('deleteText', front(recording))).toBeNull()
     expect(commands.groups.value[0]?.id).toBe('asking')
     expect(commands.groups.value[0]?.items.map((one) => one.id)).toStrictEqual(['no', 'yes'])
   })
 
   // The answer that changes nothing is the one the keyboard opens on.
   it('names the recording in the answer that takes the words away', () => {
-    const { commands } = asking(heard)
-    commands.asks('deleteText', front(heard))
+    const { commands } = asking(recording)
+    commands.asks('deleteText', front(recording))
 
     expect(commands.groups.value[0]?.items[0]?.title).toBe(words.keepsTranscript)
-    expect(commands.groups.value[0]?.items[1]?.title).toBe(`${words.deletes} “${heard.title}”`)
+    expect(commands.groups.value[0]?.items[1]?.title).toBe(`${words.deletes} “${recording.title}”`)
     expect(commands.groups.value[0]?.items[1]?.detail).toBe(words.deleted)
   })
 
   it('carries the recording the tab in front holds once the answer is given', () => {
-    const { commands } = asking(heard)
-    commands.asks('deleteText', front(heard))
+    const { commands } = asking(recording)
+    commands.asks('deleteText', front(recording))
 
     expect(commands.chose('yes', 'yes')?.file).toBe('talks/Ants.mp3')
   })
 
   it('does nothing and puts the step away where the answer keeps the words', () => {
-    const { commands } = asking(heard)
-    commands.asks('deleteText', front(heard))
+    const { commands } = asking(recording)
+    commands.asks('deleteText', front(recording))
 
     expect(commands.chose('no', 'no')).toBeNull()
     expect(commands.groups.value[0]?.id).not.toBe('asking')

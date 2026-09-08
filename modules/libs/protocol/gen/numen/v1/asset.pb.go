@@ -245,8 +245,8 @@ type GetRecordingResponse struct {
 	// the bytes are answered at an address of their own; a url with no copy on
 	// this disk is answered with the page that frames it, typed `text/html`.
 	// Empty where this build serves nothing.
-	Media string `protobuf:"bytes,2,opt,name=media,proto3" json:"media,omitempty"`
-	Type  string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	MediaUrl  string `protobuf:"bytes,2,opt,name=media_url,json=mediaUrl,proto3" json:"media_url,omitempty"`
+	MediaType string `protobuf:"bytes,3,opt,name=media_type,json=mediaType,proto3" json:"media_type,omitempty"`
 	// The web address a url points at. Empty on every other source.
 	Url           string `protobuf:"bytes,4,opt,name=url,proto3" json:"url,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -290,16 +290,16 @@ func (x *GetRecordingResponse) GetDuration() int32 {
 	return 0
 }
 
-func (x *GetRecordingResponse) GetMedia() string {
+func (x *GetRecordingResponse) GetMediaUrl() string {
 	if x != nil {
-		return x.Media
+		return x.MediaUrl
 	}
 	return ""
 }
 
-func (x *GetRecordingResponse) GetType() string {
+func (x *GetRecordingResponse) GetMediaType() string {
 	if x != nil {
-		return x.Type
+		return x.MediaType
 	}
 	return ""
 }
@@ -595,11 +595,12 @@ const file_numen_v1_asset_proto_rawDesc = "" +
 	"\x05width\x18\x01 \x01(\x01R\x05width\x12\x16\n" +
 	"\x06height\x18\x02 \x01(\x01R\x06height\")\n" +
 	"\x13GetRecordingRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"n\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x80\x01\n" +
 	"\x14GetRecordingResponse\x12\x1a\n" +
-	"\bduration\x18\x01 \x01(\x05R\bduration\x12\x14\n" +
-	"\x05media\x18\x02 \x01(\tR\x05media\x12\x12\n" +
-	"\x04type\x18\x03 \x01(\tR\x04type\x12\x10\n" +
+	"\bduration\x18\x01 \x01(\x05R\bduration\x12\x1b\n" +
+	"\tmedia_url\x18\x02 \x01(\tR\bmediaUrl\x12\x1d\n" +
+	"\n" +
+	"media_type\x18\x03 \x01(\tR\tmediaType\x12\x10\n" +
 	"\x03url\x18\x04 \x01(\tR\x03url\"N\n" +
 	"\x15ListHighlightsRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12!\n" +

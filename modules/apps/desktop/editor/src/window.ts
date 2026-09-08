@@ -109,7 +109,7 @@ export const useWindow = () => {
   const told = log.under('command')
   const { chunks, embedded, embedding, tasks } = window
 
-  /** How far this vault has been read for meaning, as the window last heard. */
+  /** How far this vault has been read for meaning, as the window was last told. */
   const coverage = (): IndexCoverage => ({
     chunks: chunks.value,
     embedded: embedded.value,
@@ -245,7 +245,7 @@ export const useWindow = () => {
   })
 
   /** The recording tabs, each playing the recording it is filed at. */
-  const heard = recordingKind(
+  const recorded = recordingKind(
     held.handle,
     (path) => transcript(recordings, path, { plays }),
     over('recording'),
@@ -265,7 +265,7 @@ export const useWindow = () => {
   // A transcript grows while a run goes, and the list of work is the only word of
   // it the window gets.
   watch(tasks, () => {
-    heard.ticked(tasks.value)
+    recorded.ticked(tasks.value)
     pointed.ticked(tasks.value)
   })
 
@@ -351,7 +351,7 @@ export const useWindow = () => {
     plexes.kind,
     agents.kind,
     read.kind,
-    heard.kind,
+    recorded.kind,
     pointed.kind,
     files.kind,
     decks.kind,
@@ -626,7 +626,7 @@ export const useWindow = () => {
       deletesTranscript: async (path) => {
         const able = await running.deletesTranscript(path)
         if (able) {
-          heard.deleted(path)
+          recorded.deleted(path)
           pointed.deleted(path)
         }
         void carrying(path)

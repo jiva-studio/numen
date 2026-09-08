@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QiuwEKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFcmVhZHkYBCABKAgSDgoGZmFpbGVkGAUgASgJEhEKCXVud2F0Y2hlZBgGIAEoCRITCgt1bnJlYWNoYWJsZRgHIAEoCRIOCgZjaHVua3MYCCABKAMSEAoIZW1iZWRkZWQYCSABKAMSEQoJZW1iZWRkaW5nGAogASgIIhoKGFdhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdCJbChlXYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlEg0KBXBhdGhzGAEgAygJEg4KBnJlbG9hZBgCIAEoCBIfCgdyZW5hbWVkGAMgAygLMg4ubnVtZW4udjEuTW92ZSIgCgRNb3ZlEgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkiEwoRV2F0Y2hGb2N1c1JlcXVlc3QiYgoSV2F0Y2hGb2N1c1Jlc3BvbnNlEgwKBHBhdGgYASABKAkSDQoFc3RhcnQYAiABKAUSDgoGbGVuZ3RoGAMgASgFEh8KBGFsc28YBCADKAsyES5udW1lbi52MS5TdHJldGNoIkIKFFdyaXRlT3BlblRhYnNSZXF1ZXN0EhsKBHRhYnMYASADKAsyDS5udW1lbi52MS5UYWISDQoFZnJvbnQYAiABKAkiFwoVV3JpdGVPcGVuVGFic1Jlc3BvbnNlIpIBCgNUYWISCgoCaWQYASABKAkSDAoEa2luZBgCIAEoCRIMCgRwYXRoGAMgASgJEg0KBXRpdGxlGAQgASgJEigKCGRvY3VtZW50GAUgASgLMhYubnVtZW4udjEuT3BlbkRvY3VtZW50EioKCXJlY29yZGluZxgGIAEoCzIXLm51bWVuLnYxLk9wZW5SZWNvcmRpbmciKwoMT3BlbkRvY3VtZW50EgwKBHBhZ2UYASABKAUSDQoFcGFnZXMYAiABKAUiPwoNT3BlblJlY29yZGluZxIcChR0cmFuc2NyaWJlZF9kdXJhdGlvbhgBIAEoBRIQCghkdXJhdGlvbhgCIAEoBTLdAgoMVmF1bHRTZXJ2aWNlElAKDUdldFZhdWx0U3RhdGUSHi5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVxdWVzdBofLm51bWVuLnYxLkdldFZhdWx0U3RhdGVSZXNwb25zZRJeChFXYXRjaFZhdWx0Q2hhbmdlcxIiLm51bWVuLnYxLldhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdBojLm51bWVuLnYxLldhdGNoVmF1bHRDaGFuZ2VzUmVzcG9uc2UwARJJCgpXYXRjaEZvY3VzEhsubnVtZW4udjEuV2F0Y2hGb2N1c1JlcXVlc3QaHC5udW1lbi52MS5XYXRjaEZvY3VzUmVzcG9uc2UwARJQCg1Xcml0ZU9wZW5UYWJzEh4ubnVtZW4udjEuV3JpdGVPcGVuVGFic1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZU9wZW5UYWJzUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QiuwEKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFcmVhZHkYBCABKAgSDgoGZmFpbGVkGAUgASgJEhEKCXVud2F0Y2hlZBgGIAEoCRITCgt1bnJlYWNoYWJsZRgHIAEoCRIOCgZjaHVua3MYCCABKAMSEAoIZW1iZWRkZWQYCSABKAMSEQoJZW1iZWRkaW5nGAogASgIIhoKGFdhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdCJbChlXYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlEg0KBXBhdGhzGAEgAygJEg4KBnJlbG9hZBgCIAEoCBIfCgdyZW5hbWVkGAMgAygLMg4ubnVtZW4udjEuTW92ZSIgCgRNb3ZlEgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkiEwoRV2F0Y2hGb2N1c1JlcXVlc3QiYgoSV2F0Y2hGb2N1c1Jlc3BvbnNlEgwKBHBhdGgYASABKAkSDQoFc3RhcnQYAiABKAUSDgoGbGVuZ3RoGAMgASgFEh8KBGFsc28YBCADKAsyES5udW1lbi52MS5TdHJldGNoIkIKFFdyaXRlT3BlblRhYnNSZXF1ZXN0EhsKBHRhYnMYASADKAsyDS5udW1lbi52MS5UYWISDQoFZnJvbnQYAiABKAkiFwoVV3JpdGVPcGVuVGFic1Jlc3BvbnNlIpoBCgNUYWISCgoCaWQYASABKAkSDAoEa2luZBgCIAEoCRIMCgRwYXRoGAMgASgJEg0KBXRpdGxlGAQgASgJEiwKCGRvY3VtZW50GAUgASgLMhoubnVtZW4udjEuRG9jdW1lbnRQcm9ncmVzcxIuCglyZWNvcmRpbmcYBiABKAsyGy5udW1lbi52MS5SZWNvcmRpbmdQcm9ncmVzcyIvChBEb2N1bWVudFByb2dyZXNzEgwKBHBhZ2UYASABKAUSDQoFcGFnZXMYAiABKAUiQwoRUmVjb3JkaW5nUHJvZ3Jlc3MSHAoUdHJhbnNjcmliZWRfZHVyYXRpb24YASABKAUSEAoIZHVyYXRpb24YAiABKAUy3QIKDFZhdWx0U2VydmljZRJQCg1HZXRWYXVsdFN0YXRlEh4ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVzcG9uc2USXgoRV2F0Y2hWYXVsdENoYW5nZXMSIi5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QaIy5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlMAESSQoKV2F0Y2hGb2N1cxIbLm51bWVuLnYxLldhdGNoRm9jdXNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hGb2N1c1Jlc3BvbnNlMAESUAoNV3JpdGVPcGVuVGFicxIeLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVPcGVuVGFic1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetVaultStateRequest
@@ -336,18 +336,18 @@ export type Tab = Message<"numen.v1.Tab"> & {
   title: string;
 
   /**
-   * Where the person stands in what the tab holds. A tab holding a document
-   * sets document, a tab holding a recording sets recording, and a tab of any
-   * other kind sets neither.
+   * How far the person has got through what the tab holds. A tab holding a
+   * document sets document, a tab holding a recording sets recording, and a tab
+   * of any other kind sets neither.
    *
-   * @generated from field: numen.v1.OpenDocument document = 5;
+   * @generated from field: numen.v1.DocumentProgress document = 5;
    */
-  document?: OpenDocument | undefined;
+  document?: DocumentProgress | undefined;
 
   /**
-   * @generated from field: numen.v1.OpenRecording recording = 6;
+   * @generated from field: numen.v1.RecordingProgress recording = 6;
    */
-  recording?: OpenRecording | undefined;
+  recording?: RecordingProgress | undefined;
 };
 
 /**
@@ -358,11 +358,11 @@ export const TabSchema: GenMessage<Tab> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 9);
 
 /**
- * An OpenDocument is the document a tab holds, as the person is reading it.
+ * A DocumentProgress is how far through a document the person reading it is.
  *
- * @generated from message numen.v1.OpenDocument
+ * @generated from message numen.v1.DocumentProgress
  */
-export type OpenDocument = Message<"numen.v1.OpenDocument"> & {
+export type DocumentProgress = Message<"numen.v1.DocumentProgress"> & {
   /**
    * Page is the page in front of them, counted from one.
    *
@@ -379,19 +379,18 @@ export type OpenDocument = Message<"numen.v1.OpenDocument"> & {
 };
 
 /**
- * Describes the message numen.v1.OpenDocument.
- * Use `create(OpenDocumentSchema)` to create a new message.
+ * Describes the message numen.v1.DocumentProgress.
+ * Use `create(DocumentProgressSchema)` to create a new message.
  */
-export const OpenDocumentSchema: GenMessage<OpenDocument> = /*@__PURE__*/
+export const DocumentProgressSchema: GenMessage<DocumentProgress> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 10);
 
 /**
- * An OpenRecording is the recording a tab holds, as far as it has been written
- * down.
+ * A RecordingProgress is how far into a recording the words written down reach.
  *
- * @generated from message numen.v1.OpenRecording
+ * @generated from message numen.v1.RecordingProgress
  */
-export type OpenRecording = Message<"numen.v1.OpenRecording"> & {
+export type RecordingProgress = Message<"numen.v1.RecordingProgress"> & {
   /**
    * TranscribedDuration is how far into the recording the words written down
    * reach, in milliseconds. It is short of the duration while a run is still
@@ -410,10 +409,10 @@ export type OpenRecording = Message<"numen.v1.OpenRecording"> & {
 };
 
 /**
- * Describes the message numen.v1.OpenRecording.
- * Use `create(OpenRecordingSchema)` to create a new message.
+ * Describes the message numen.v1.RecordingProgress.
+ * Use `create(RecordingProgressSchema)` to create a new message.
  */
-export const OpenRecordingSchema: GenMessage<OpenRecording> = /*@__PURE__*/
+export const RecordingProgressSchema: GenMessage<RecordingProgress> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 11);
 
 /**

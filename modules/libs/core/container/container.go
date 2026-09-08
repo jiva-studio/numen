@@ -59,10 +59,10 @@ type Config struct {
 	// Transcription is how a recording is listened to.
 	Transcription transcription.Config
 
-	// Fetching is how an address a link note points at is reached, and where
+	// Importing is how an address a link note points at is reached, and where
 	// the tools that reach it are. A machine holding neither tool builds no
 	// fetcher, and what asks for one is told this build cannot do it.
-	Fetching fetch.Config
+	Importing fetch.Config
 
 	// Transcribes is whether a recording the vault holds no transcript for is
 	// listened to without anybody asking. A configuration naming nothing leaves

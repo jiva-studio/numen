@@ -69,7 +69,7 @@ export const MADE: Record<Artifact, Record<ArtifactState, string>> = {
     running: 'This recording is being transcribed now.',
     stopped: 'Transcribing this recording stopped part way.',
     done: 'This recording has already been transcribed.',
-    empty: 'No speech was heard in this recording.',
+    empty: 'There is no speech in this recording.',
     failed: 'This recording could not be opened:',
   },
   'transcript.corrected': {

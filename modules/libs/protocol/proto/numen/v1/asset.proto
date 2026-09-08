@@ -78,8 +78,8 @@ message GetRecordingResponse {
   // the bytes are answered at an address of their own; a url with no copy on
   // this disk is answered with the page that frames it, typed `text/html`.
   // Empty where this build serves nothing.
-  string media = 2;
-  string type = 3;
+  string media_url = 2;
+  string media_type = 3;
 
   // The web address a url points at. Empty on every other source.
   string url = 4;

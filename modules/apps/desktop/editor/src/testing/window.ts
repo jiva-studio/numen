@@ -117,10 +117,10 @@ const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoiste
     mode: 'system' as 'system' | 'light' | 'dark',
     sizes: { interfaceScale: 1, textScale: 1 },
     /** The recording the vault answers with, and the words written down in it. */
-    heard: {
+    transcribed: {
       duration: 60_000,
-      media: 'numen://recording/heard',
-      type: 'audio/mpeg',
+      mediaUrl: 'numen://recording/talk.mp3',
+      mediaType: 'audio/mpeg',
       cues: [{ text: 'the first thing said', from: 0, to: 4000 }] as {
         text: string
         from: number
@@ -291,15 +291,15 @@ vi.mock('../assets', () => ({
   recordings: {
     listened: async (path: string) => {
       asked.listened.push(path)
-      const { duration, media, type } = said.heard
-      return { duration, media, type, url: '' }
+      const { duration, mediaUrl, mediaType } = said.transcribed
+      return { duration, mediaUrl, mediaType, url: '' }
     },
-    cues: async () => ({ cues: said.heard.cues, prose: '', editable: said.heard.editable }),
+    cues: async () => ({ cues: said.transcribed.cues, prose: '', editable: said.transcribed.editable }),
     writes: async (path: string, cues: readonly { text: string }[]) => {
       asked.transcribed.push(`${path} ${cues.map((one) => one.text).join(' / ')}`)
     },
     plays: async (path: string, stretch: { start: number }) =>
-      said.heard.cues.find((one) => one.from >= stretch.start)?.from ?? null,
+      said.transcribed.cues.find((one) => one.from >= stretch.start)?.from ?? null,
   },
 }))
 
@@ -478,10 +478,10 @@ afterEach(() => {
   said.applied = 'preset:numen'
   said.mode = 'system'
   said.sizes = { interfaceScale: 1, textScale: 1 }
-  said.heard = {
+  said.transcribed = {
     duration: 60_000,
-    media: 'numen://recording/heard',
-    type: 'audio/mpeg',
+    mediaUrl: 'numen://recording/talk.mp3',
+    mediaType: 'audio/mpeg',
     cues: [{ text: 'the first thing said', from: 0, to: 4000 }],
     editable: true,
   }

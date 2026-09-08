@@ -22,7 +22,7 @@ A window asks about the vault it shows, the vaults the installation holds, the c
 - `PresetsService` — the presets that schedule them, and the curve of one.
 - `FlashcardsService` — a session: what is owed, what is asked, what was answered.
 - `AssetService` — what a file of the vault is, for whatever opens it: a document's pages, a recording's length and where its bytes are played from, and where a run of a source's text sits on the page.
-- `ArtifactService` — what has been made from a file: listing it, making one, taking one away, and reading and writing the words a recording was heard as.
+- `ArtifactService` — what has been made from a file: listing it, making one, taking one away, and reading and writing a recording's transcript.
 - `SettingsService` — the file a person configures the installation in.
 - `ThemeService` — what the window is dressed in.
 - `WindowService` — one window: which vault it has in front of the person, what is being done behind it, and what has to land before it goes.

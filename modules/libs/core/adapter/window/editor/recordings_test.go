@@ -128,7 +128,7 @@ func whole(cues []transcript.Cue) stored {
 
 func partly(cues []transcript.Cue, reached int) stored {
 	return stored{
-		derived.Partial(asr, hashed): append(transcript.Marshal(cues), transcript.Heard(reached)...),
+		derived.Partial(asr, hashed): append(transcript.Marshal(cues), transcript.Reaches(reached)...),
 	}
 }
 

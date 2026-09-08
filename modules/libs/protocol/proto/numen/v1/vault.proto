@@ -151,15 +151,15 @@ message Tab {
   string title = 4;
 
 
-  // Where the person stands in what the tab holds. A tab holding a document
-  // sets document, a tab holding a recording sets recording, and a tab of any
-  // other kind sets neither.
-  OpenDocument document = 5;
-  OpenRecording recording = 6;
+  // How far the person has got through what the tab holds. A tab holding a
+  // document sets document, a tab holding a recording sets recording, and a tab
+  // of any other kind sets neither.
+  DocumentProgress document = 5;
+  RecordingProgress recording = 6;
 }
 
-// An OpenDocument is the document a tab holds, as the person is reading it.
-message OpenDocument {
+// A DocumentProgress is how far through a document the person reading it is.
+message DocumentProgress {
   // Page is the page in front of them, counted from one.
   int32 page = 1;
 
@@ -167,9 +167,8 @@ message OpenDocument {
   int32 pages = 2;
 }
 
-// An OpenRecording is the recording a tab holds, as far as it has been written
-// down.
-message OpenRecording {
+// A RecordingProgress is how far into a recording the words written down reach.
+message RecordingProgress {
   // TranscribedDuration is how far into the recording the words written down
   // reach, in milliseconds. It is short of the duration while a run is still
   // listening, and the two are equal once one has finished.

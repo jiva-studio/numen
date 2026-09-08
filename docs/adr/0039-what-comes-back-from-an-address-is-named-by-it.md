@@ -17,7 +17,7 @@ A url's bytes are the address itself. What was fetched has nothing to do with th
 
 The one form every spelling of an address reaches, hashed. Everything one fetch produced stands under it, in the store's own folder for what the files are: `transcript` for words with the times they were said at, `article` for the prose of a page, `copy` for the video itself.
 
-Words are a transcript whoever wrote them down, and the producer stands in the file's name: `transcript/<hash>.captions.vtt` for words a site published with a video, `transcript/<hash>.asr.vtt` for words a model here heard. Both are read, cut and put right by the same code. The prose of a page is an article: it carries no times, and no places on pages either, which is what separates it from a reading.
+Words are a transcript whoever wrote them down, and the producer stands in the file's name: `transcript/<hash>.captions.vtt` for words a site published with a video, `transcript/<hash>.asr.vtt` for words a model here wrote down. Both are read, cut and put right by the same code. The prose of a page is an article: it carries no times, and no places on pages either, which is what separates it from a reading.
 
 Two notes pointing at one video share what was fetched, and a person typing in either of them keeps it.
 

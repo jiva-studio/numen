@@ -81,14 +81,14 @@ func addArtifactTools(server *sdk.Server, core Core) {
 		Name:  "artifact_list",
 		Title: "List artifacts",
 		Description: "What this application made from one file of the vault and keeps " +
-			"beside it: the text read out of a scan, the words heard in a recording, " +
+			"beside it: the text read out of a scan, a recording transcribed, " +
 			"the words a site published with a video, the prose a page is written " +
 			"around, and a copy of a video on this disk. None of it is in the file, and " +
 			"none of it comes back from `note_read` — a note pointing at a video is " +
 			"prose the person wrote, and the words said in the video stand here. Read " +
 			"one with `artifact_read`.\n\nA kind says what a thing is and a producer " +
 			"says what made it: words with the times they were said at are a " +
-			"`transcript` whether a model heard them or a site published them, and the " +
+			"`transcript` whether a model wrote them down or a site published them, and the " +
 			"prose of a page is an `article` where the text of a scan is an `ocr`: " +
 			"an ocr carries where on which page each word stands.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {

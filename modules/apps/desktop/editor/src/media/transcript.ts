@@ -46,12 +46,12 @@ export interface Transcript {
 export interface RecordingSummary {
   readonly duration: number
   /** Where it is played from, as the application answers it. */
-  readonly media: string
+  readonly mediaUrl: string
   /**
    * What it is played as. The application says: what counts as a recording is
    * its to decide, and a url with no copy on this disk is a page to frame.
    */
-  readonly type: string
+  readonly mediaType: string
   /** The web address a url points at, and nothing on every other source. */
   readonly url: string
 }
@@ -230,8 +230,8 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
       const said = await recordings.listened(path)
       if (!mine.lands()) return
       duration.value = said.duration
-      address.value = said.media
-      type.value = said.type
+      address.value = said.mediaUrl
+      type.value = said.mediaType
       points.value = said.url
       // A moment asked for before the recording knew where its bytes are.
       if (wanted >= 0 && address.value) {

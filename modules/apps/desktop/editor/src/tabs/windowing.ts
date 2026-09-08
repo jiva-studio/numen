@@ -17,7 +17,7 @@ import {
 } from 'vue'
 import { closeTab, openTab, openTabBeside, pane, paneById } from '@numen/ui'
 import type { Tab, Workspace } from '@numen/ui'
-import type { OpenDocument, OpenRecording, Source } from '../core'
+import type { DocumentProgress, RecordingProgress, Source } from '../core'
 import { named } from './workspace'
 
 /**
@@ -37,8 +37,8 @@ export interface TabTarget {
  */
 export interface OpenTab {
   readonly path: string
-  readonly document?: OpenDocument
-  readonly recording?: OpenRecording
+  readonly document?: DocumentProgress
+  readonly recording?: RecordingProgress
 }
 
 /** A kind of tab: what it holds, what it is called, and what it lets go of. */

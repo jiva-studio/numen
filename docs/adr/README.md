@@ -104,7 +104,7 @@ What the product does, and what its words mean.
 - [editing.md](../editing.md) — a note in a tab: saving, renaming, removing
 - [vaults.md](../vaults.md) — several vaults, one window
 - [reading.md](../reading.md) — how a book is read
-- [transcribing.md](../transcribing.md) — how a recording is heard
+- [transcribing.md](../transcribing.md) — how a recording is transcribed
 - [importing.md](../importing.md) — how what a url points at is fetched
 - [proofreading.md](../proofreading.md) — how a reading and a transcript are put right
 - [agents.md](../agents.md) — what the panel's agent can reach

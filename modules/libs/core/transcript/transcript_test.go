@@ -53,7 +53,7 @@ func TestSilenceIsNotWritten(t *testing.T) {
 // A note says how far a run got, and is not part of what was said.
 func TestANoteIsNotSpeech(t *testing.T) {
 	written := transcript.Marshal([]transcript.Cue{{Text: "said", From: 0, To: 2000}})
-	written = append(written, transcript.Heard(2000)...)
+	written = append(written, transcript.Reaches(2000)...)
 
 	said, cues := transcript.Parse(written)
 	if said != "said" || len(cues) != 1 {
@@ -68,7 +68,7 @@ func TestANoteIsNotSpeech(t *testing.T) {
 // is what the next run takes up.
 func TestABatchNoNoteClaims(t *testing.T) {
 	whole := transcript.Marshal([]transcript.Cue{{Text: "said", From: 0, To: 2000}})
-	whole = append(whole, transcript.Heard(2000)...)
+	whole = append(whole, transcript.Reaches(2000)...)
 	torn := slices.Concat(whole, []byte("\n00:00:02.000 --> 00:00:0"))
 
 	ms, end := transcript.Reached(torn)
@@ -152,7 +152,7 @@ func TestTheMarkOfAPersonsWordsIsANoteAndNotSpeech(t *testing.T) {
 // speech, and nothing is cut away behind it.
 func TestHowFarARunGotIsANoteAndNotSpeech(t *testing.T) {
 	claimed := transcript.Marshal([]transcript.Cue{{Text: "said", From: 0, To: 2000}})
-	claimed = append(claimed, transcript.Heard(2000)...)
+	claimed = append(claimed, transcript.Reaches(2000)...)
 
 	// A batch that did not land whole, speaking the words a note is written in.
 	spoken := transcript.Marshal([]transcript.Cue{{Text: "NOTE heard 9999", From: 2000, To: 4000}})
@@ -190,7 +190,7 @@ func TestANoteInsideALineIsNotANote(t *testing.T) {
 	whole := transcript.Marshal([]transcript.Cue{
 		{Text: "he said NOTE heard 999 and sat down", From: 0, To: 2000},
 	})
-	whole = append(whole, transcript.Heard(2000)...)
+	whole = append(whole, transcript.Reaches(2000)...)
 
 	if ms, end := transcript.Reached(whole); ms != 2000 || end != len(whole) {
 		t.Errorf("the note says %d ms and ends at %d of %d", ms, end, len(whole))

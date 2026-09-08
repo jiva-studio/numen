@@ -153,7 +153,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	defer recording.Close()
 	res.Length = recording.Length()
 
-	from, size, err := listened(ctx, store, partial)
+	from, size, err := leftOff(ctx, store, partial)
 	if err != nil {
 		return res, err
 	}
@@ -164,12 +164,12 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	// recording has said so far.
 	//
 	// The note stands after the cues it claims, so a batch that did not land
-	// whole is one no note claims, and the next run hears those stretches
+	// whole is one no note claims, and the next run transcribes those stretches
 	// again.
 	opened := size > 0
-	write := func(cues []transcript.Cue, heard int) error {
+	write := func(cues []transcript.Cue, transcribed int) error {
 		body := appended(transcript.Marshal(cues), opened)
-		if err := store.Append(ctx, partial, append(body, transcript.Heard(heard)...)); err != nil {
+		if err := store.Append(ctx, partial, append(body, transcript.Reaches(transcribed)...)); err != nil {
 			return err
 		}
 		opened = true
@@ -317,12 +317,14 @@ func appended(raw []byte, opened bool) []byte {
 	return bytes.TrimPrefix(raw, []byte(transcript.Head+"\n"))
 }
 
-// listened is how far a run before this one got and how long what it left is,
+// leftOff is how far a run before this one got and how long what it left is,
 // with anything past the last note cut away.
 //
 // A note stands after the cues it claims, so what follows the last one is a
 // batch that did not land whole.
-func listened(ctx context.Context, store port.DerivedStore, partial string) (heard, size int, err error) {
+func leftOff(
+	ctx context.Context, store port.DerivedStore, partial string,
+) (transcribed, size int, err error) {
 	raw, err := store.Read(ctx, partial)
 	if errors.Is(err, fs.ErrNotExist) {
 		return 0, 0, nil

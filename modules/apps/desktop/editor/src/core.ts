@@ -146,7 +146,7 @@ export interface Task {
  * video kept to be played.
  *
  * What made it is another question. A transcript is a transcript whether a
- * model here heard it or a site published it with a video.
+ * model here wrote it down or a site published it with a video.
  */
 export type Artifact =
   | 'ocr'
@@ -176,8 +176,8 @@ export type ArtifactState =
 
 /**
  * What a file carries, and what has become of each. Partial because which
- * artifacts a file carries follows from the file: a scan carries no words
- * heard, and a recording carries no text read.
+ * artifacts a file carries follows from the file: a scan carries no
+ * transcript, and a recording carries no text read.
  */
 export type ArtifactStates = Partial<Record<Artifact, ArtifactState>>
 
@@ -220,7 +220,7 @@ export interface ArtifactRunner {
   /**
    * The transcript of a recording taken away, with everything cut from it, and
    * whether this build can do it at all. The recording is left saying nothing,
-   * and it is offered to be heard again.
+   * and it is offered to be transcribed again.
    */
   deletesTranscript(path: string): Promise<boolean>
   /**
@@ -303,13 +303,13 @@ export interface Tab {
   /** What the tab is called, as the person reads it. */
   readonly title: string
   /** The document it holds, absent in a tab holding none. */
-  readonly document?: OpenDocument
+  readonly document?: DocumentProgress
   /** The recording it holds, absent in a tab holding none. */
-  readonly recording?: OpenRecording
+  readonly recording?: RecordingProgress
 }
 
 /** The document a tab holds, as the person is reading it. */
-export interface OpenDocument {
+export interface DocumentProgress {
   /** The page in front of them, counted from one. */
   readonly page: number
   /** How many pages the document has. */
@@ -317,7 +317,7 @@ export interface OpenDocument {
 }
 
 /** The recording a tab holds, as far as it has been written down. */
-export interface OpenRecording {
+export interface RecordingProgress {
   /**
    * How far into the recording the words written down reach, in milliseconds.
    * It is short of the duration while a run is still listening.

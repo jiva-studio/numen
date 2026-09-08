@@ -130,9 +130,6 @@ func TestARecordingDoneIsDoneWhereTheIndexNamesNoProducer(t *testing.T) {
 	if made.GetState() != v1.State_STATE_DONE {
 		t.Fatalf("it was answered %s", made.GetState())
 	}
-	if made.GetSize() != int64(len(heard)) {
-		t.Errorf("what stands is %d bytes long", made.GetSize())
-	}
 }
 
 // deaf is a transcriber that opens nothing, which is a recording in a form

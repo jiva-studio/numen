@@ -56,7 +56,7 @@ func Spoken(cues []transcript.Cue, size, overlap int) []Batch {
 	if size <= 0 {
 		return nil
 	}
-	lines := heard(cues)
+	lines := spoken(cues)
 	step := size - shared(size, overlap)
 	var out []Batch
 	for start := 0; start < len(lines); start += step {
@@ -86,7 +86,7 @@ func Seams(cues []transcript.Cue, size, overlap int, cuts []int) []Batch {
 		return nil
 	}
 
-	lines := heard(cues)
+	lines := spoken(cues)
 	step := size - shared(size, overlap)
 	var out []Batch
 	reach := -1
@@ -111,9 +111,9 @@ func Seams(cues []transcript.Cue, size, overlap int, cuts []int) []Batch {
 	return out
 }
 
-// heard is every cue that says something, as a line known by the index of its
+// spoken is every cue that says something, as a line known by the index of its
 // cue in the transcript.
-func heard(cues []transcript.Cue) []Line {
+func spoken(cues []transcript.Cue) []Line {
 	var out []Line
 	for at, cue := range cues {
 		if cue.Text == "" {

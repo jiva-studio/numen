@@ -35,8 +35,8 @@ const LONG: readonly Cue[] = [
 const talk = (cues: readonly Cue[]): Recordings => ({
   listened: async () => ({
     duration: 85_000,
-    media: 'http://127.0.0.1:1/w/v/talk.mp3',
-    type: 'audio/mpeg',
+    mediaUrl: 'http://127.0.0.1:1/w/v/talk.mp3',
+    mediaType: 'audio/mpeg',
     url: '',
   }),
   cues: async () => ({ cues, editable: true, prose: '' }),

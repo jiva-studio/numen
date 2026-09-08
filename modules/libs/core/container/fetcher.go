@@ -15,7 +15,7 @@ import (
 // the machine's: a video is asked of yt-dlp, and a machine without it says so
 // when one is asked for.
 func (c Config) Fetcher(ctx context.Context) port.Fetcher {
-	fetcher, err := fetch.New(ctx, c.Fetching)
+	fetcher, err := fetch.New(ctx, c.Importing)
 	if err != nil {
 		c.trouble(err)
 		return nil
@@ -33,11 +33,11 @@ func (c Config) ImportURL(ctx context.Context, db *Index, by port.Fetcher) sourc
 		Readers:     c.VaultReaders(),
 		Derived:     c.DerivedStores(),
 		By:          by,
-		CopyMaxSize: c.Fetching.CopyBytes(),
-		ToVault:     c.Fetching.KeepsCopiesInVault(),
+		CopyMaxSize: c.Importing.CopyBytes(),
+		ToVault:     c.Importing.KeepsCopiesInVault(),
 		Writers:     c.VaultWriters(),
-		Languages:   c.Fetching.Captions,
-		Automatic:   c.Fetching.AllowsAutomaticCaptions(),
+		Languages:   c.Importing.Captions,
+		Automatic:   c.Importing.AllowsAutomaticCaptions(),
 		Cut: func(ctx context.Context, v domain.Vault, path string) error {
 			return level(ctx, v, []string{path})
 		},

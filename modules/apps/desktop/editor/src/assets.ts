@@ -1,7 +1,7 @@
 /**
  * What a file of the vault is, for whatever opens it: a document's pages, a
- * recording's length and where its sound is played from, and the words it was
- * heard as.
+ * recording's duration and where its sound is played from, and its
+ * transcript.
  *
  * The application serves both over addresses of its own, because the window is
  * drawn from a scheme a browser loads neither pictures nor sound through.
@@ -67,8 +67,8 @@ export const recordings: Recordings = {
     const answer = await waiting(() => assets.getRecording({ path }))
     return {
       duration: answer.duration,
-      media: answer.media,
-      type: answer.type,
+      mediaUrl: answer.mediaUrl,
+      mediaType: answer.mediaType,
       url: answer.url,
     }
   },
@@ -90,8 +90,8 @@ const spoken = (one: CueMessage): Cue => ({ text: one.text, from: one.from, to: 
 
 /**
  * The text of a file in whichever of the two shapes it came in: words against
- * the clock, or prose nothing timed. A file nothing has been read or heard for
- * came in neither.
+ * the clock, or prose nothing timed. A file nothing has been read or
+ * transcribed for came in neither.
  */
 const said = (answer: ReadTranscriptResponse): { cues: readonly Cue[]; prose: string } => {
   switch (answer.text.case) {

@@ -279,14 +279,14 @@ describe('a recording put in front', () => {
       editable: { value: boolean }
     }
     expect(asked.listened).toStrictEqual([RECORDING])
-    expect(state.address.value).toBe(said.heard.media)
-    expect(state.prose.value).toBe(said.heard.cues[0]?.text)
+    expect(state.address.value).toBe(said.transcribed.mediaUrl)
+    expect(state.prose.value).toBe(said.transcribed.cues[0]?.text)
     expect(state.editable.value).toBe(true)
     // How long it runs and how far the words reach are the application's
     // answer, and what the window says the person has open carries them.
     expect(asked.attending.at(-1)?.tabs.at(-1)).toMatchObject({
       path: RECORDING,
-      recording: { transcribedDuration: said.heard.cues[0]?.to, duration: said.heard.duration },
+      recording: { transcribedDuration: said.transcribed.cues[0]?.to, duration: said.transcribed.duration },
     })
   })
 

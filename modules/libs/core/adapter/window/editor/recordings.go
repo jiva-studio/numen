@@ -51,25 +51,25 @@ func (a *API) GetRecording(
 	if err != nil {
 		return nil, connect.NewError(reaching(err), err)
 	}
-	heard, _ := transcript.Reached(raw)
+	transcribed, _ := transcript.Reached(raw)
 	_, cues := transcript.Parse(raw)
 	// Where a recording is played from and what it is played as are answered
 	// here: the socket is opened afresh for every run, and what counts as a
 	// recording is this application's to say.
 	out := &v1.GetRecordingResponse{
-		Duration: int32(heard),
-		Media:    a.Playing.Address(showing, ref),
-		Type:     domain.MediaType(ref.Path),
+		Duration:  int32(transcribed),
+		MediaUrl:  a.Playing.Address(showing, ref),
+		MediaType: domain.MediaType(ref.Path),
 	}
 	// A url plays the copy fetched for it, where one stands. One with none is
 	// framed at the address instead, from the socket this run opened, and the
 	// frame is a page whatever is inside it.
 	if ref.Kind == domain.KindURL {
 		at := a.points(ctx, showing, ref)
-		out.Media, out.Type = a.copied(ctx, showing, ref)
+		out.MediaUrl, out.MediaType = a.copied(ctx, showing, ref)
 		out.Url = string(at)
-		if out.Media == "" {
-			out.Media, out.Type = a.Playing.Embed(at), asAPage
+		if out.MediaUrl == "" {
+			out.MediaUrl, out.MediaType = a.Playing.Embed(at), asAPage
 		}
 	}
 	if len(cues) > 0 {
@@ -311,10 +311,10 @@ func (a *API) held(ctx context.Context, path string) (domain.Vault, domain.Finge
 	return showing, ref, nil
 }
 
-// hearing is what says which model listened to a recording and where what it
-// wrote is kept. They are the index and the store a passage is placed from,
+// transcribing is what says which model transcribed a recording and where what
+// it wrote is kept. They are the index and the store a passage is placed from,
 // which read the same artifacts.
-func (a *API) hearing() (port.SourceQueries, port.DerivedStores, bool) {
+func (a *API) transcribing() (port.SourceQueries, port.DerivedStores, bool) {
 	if a.Highlight == nil || a.Highlight.Sources == nil || a.Highlight.Derived == nil {
 		return nil, nil, false
 	}
@@ -333,7 +333,7 @@ func (a *API) made(
 	v domain.Vault,
 	path string,
 ) (port.SourceText, port.DerivedStore, bool, error) {
-	sources, stores, ok := a.hearing()
+	sources, stores, ok := a.transcribing()
 	if !ok {
 		return port.SourceText{}, nil, false, nil
 	}
@@ -375,7 +375,7 @@ func (a *API) pointing(ctx context.Context, v domain.Vault, path string) domain.
 func (a *API) fetchedUnder(
 	ctx context.Context, v domain.Vault, at domain.URL,
 ) (port.SourceText, port.DerivedStore, bool, error) {
-	_, stores, ok := a.hearing()
+	_, stores, ok := a.transcribing()
 	if !ok {
 		return port.SourceText{}, nil, false, nil
 	}
