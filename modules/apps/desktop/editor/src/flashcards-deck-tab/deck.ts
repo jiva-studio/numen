@@ -21,6 +21,7 @@ import type {
   Value,
 } from '../shared/flashcards/cards'
 import { minting, type IdMaker } from '../shared/flashcards/identity'
+import type { Surrounds } from '../shared/flashcards/surrounds'
 import { nameOf } from '../shared/paths'
 
 /**
@@ -71,13 +72,9 @@ export interface BufferSection {
 }
 
 /** A deck as the window holds it. */
-export interface BufferDeck {
-  /** The prose below the frontmatter and above the first card or section. */
-  readonly preamble: string
+export interface BufferDeck extends Surrounds {
   readonly cards: readonly BufferCard[]
   readonly sections: readonly BufferSection[]
-  /** What the file ends with once the last card has been read. */
-  readonly tail: string
 }
 
 /** A deck of no cards, which is what a file nothing has been written to holds. */

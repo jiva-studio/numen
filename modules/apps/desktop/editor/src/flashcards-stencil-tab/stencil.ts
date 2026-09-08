@@ -9,6 +9,7 @@
 import { ordered, reordered, type InsertionPoint } from '@numen/ui'
 import type { VaultFace, VaultStencil } from '../shared/flashcards/cards'
 import { minting, type IdMaker } from '../shared/flashcards/identity'
+import type { Surrounds } from '../shared/flashcards/surrounds'
 
 /** One face as the window holds it: what the file says, under an identity of its own. */
 export interface BufferFace {
@@ -22,13 +23,9 @@ export interface BufferFace {
 }
 
 /** A stencil as the window holds it: its fields, and its faces under identities. */
-export interface BufferStencil {
+export interface BufferStencil extends Surrounds {
   readonly fields: readonly string[]
-  /** The prose below the frontmatter and above the first face. */
-  readonly preamble: string
   readonly faces: readonly BufferFace[]
-  /** What the file ends with once the last face has been read. */
-  readonly tail: string
 }
 
 /** A stencil that names nothing and shows nothing. */
