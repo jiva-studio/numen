@@ -16,7 +16,7 @@ func TestAVaultIsWalkedOnceHoweverManyAsk(t *testing.T) {
 		walks.Add(1)
 		go func() {
 			defer walks.Done()
-			if err := vaults.reads(t.Context(), v, func(int64) {}); err != nil {
+			if err := vaults.reads(t.Context(), v); err != nil {
 				t.Error(err)
 			}
 		}()
@@ -36,7 +36,7 @@ func TestAWindowThatIsGoingWalksNothing(t *testing.T) {
 
 	vaults.wait()
 
-	if err := vaults.reads(t.Context(), held[0], func(int64) {}); !errors.Is(err, errGoing) {
+	if err := vaults.reads(t.Context(), held[0]); !errors.Is(err, errGoing) {
 		t.Errorf("a walk asked for while closing came back with %v", err)
 	}
 }
@@ -61,7 +61,7 @@ func TestLevellingGoesThroughTheVaultsOwnOpening(t *testing.T) {
 	_, _, vaults, _, held := built(t)
 	v := held[0]
 
-	if err := vaults.reads(t.Context(), v, func(int64) {}); err != nil {
+	if err := vaults.reads(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 	if err := vaults.level(t.Context(), v, []string{"decks/Words.md"}); err != nil {

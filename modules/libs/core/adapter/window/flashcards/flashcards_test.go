@@ -133,10 +133,8 @@ func windowed(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
 	}
 
 	// The window reads a vault the index does not carry, over the same scan.
-	api.Reading(ctx, func(ctx context.Context, v domain.Vault, got func(int64)) error {
-		walk := scan
-		walk.OnProgress = func(res vaults.ScanResult) { got(int64(res.Indexed)) }
-		_, err := walk.Execute(ctx, v)
+	api.Reading(ctx, func(ctx context.Context, v domain.Vault) error {
+		_, err := scan.Execute(ctx, v)
 		return err
 	})
 	return api, held
@@ -444,7 +442,7 @@ func TestAVaultTheIndexCarriesIsReadAgainOnOpening(t *testing.T) {
 	v := held[0]
 
 	var read atomic.Int64
-	api.Reading(t.Context(), func(context.Context, domain.Vault, func(int64)) error {
+	api.Reading(t.Context(), func(context.Context, domain.Vault) error {
 		read.Add(1)
 		return nil
 	})

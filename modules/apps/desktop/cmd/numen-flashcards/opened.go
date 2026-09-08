@@ -111,15 +111,14 @@ func (o *openVaults) opens(v domain.Vault, one *vaultOpening) {
 	}
 }
 
-// reads walks a vault into the index, saying how far it has got in the notes
-// written.
-func (o *openVaults) reads(ctx context.Context, v domain.Vault, progress func(int64)) error {
+// reads walks a vault into the index.
+func (o *openVaults) reads(ctx context.Context, v domain.Vault) error {
 	if !o.starts() {
 		return errGoing
 	}
 	defer o.running.Done()
 
-	_, err := o.of(v).open.Read(ctx, func(indexed int) { progress(int64(indexed)) })
+	_, err := o.of(v).open.Read(ctx, nil)
 	return err
 }
 
