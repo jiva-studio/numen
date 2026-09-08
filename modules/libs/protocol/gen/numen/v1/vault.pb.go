@@ -63,6 +63,8 @@ func (*GetVaultStateRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{0}
 }
 
+// GetVaultStateResponse is what the vault the window is showing IS. What is
+// being done behind that window is Tasks.
 type GetVaultStateResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Id is the identity the folder carries, and how this vault is asked for
@@ -90,8 +92,8 @@ type GetVaultStateResponse struct {
 	ChunkCount    int64 `protobuf:"varint,8,opt,name=chunk_count,json=chunkCount,proto3" json:"chunk_count,omitempty"`
 	EmbeddedCount int64 `protobuf:"varint,9,opt,name=embedded_count,json=embeddedCount,proto3" json:"embedded_count,omitempty"`
 	// Embedding says whether anything is going to turn the chunks into vectors.
-	// False for an installation with no model, where `embedded` stays where it is
-	// and the vault is searched by its words.
+	// False for an installation with no model, where `embedded_count` stays where
+	// it is and the vault is searched by its words.
 	Embedding     bool `protobuf:"varint,10,opt,name=embedding,proto3" json:"embedding,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

@@ -34,8 +34,8 @@ export const GetVaultStateRequestSchema: GenMessage<GetVaultStateRequest> = /*@_
   messageDesc(file_numen_v1_vault, 0);
 
 /**
- * What is being done behind the window is Tasks. What is here is what the
- * vault is.
+ * GetVaultStateResponse is what the vault the window is showing IS. What is
+ * being done behind that window is Tasks.
  *
  * @generated from message numen.v1.GetVaultStateResponse
  */
@@ -109,8 +109,8 @@ export type GetVaultStateResponse = Message<"numen.v1.GetVaultStateResponse"> & 
 
   /**
    * Embedding says whether anything is going to turn the chunks into vectors.
-   * False for an installation with no model, where `embedded` stays where it is
-   * and the vault is searched by its words.
+   * False for an installation with no model, where `embedded_count` stays where
+   * it is and the vault is searched by its words.
    *
    * @generated from field: bool embedding = 10;
    */

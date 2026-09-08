@@ -36,10 +36,9 @@ service VaultService {
 
 message GetVaultStateRequest {}
 
+// GetVaultStateResponse is what the vault the window is showing IS. What is
+// being done behind that window is Tasks.
 message GetVaultStateResponse {
-  // What is being done behind the window is Tasks. What is here is what the
-  // vault is.
-
   // Id is the identity the folder carries, and how this vault is asked for
   // again. Name is what the person calls it, which is what a window titles
   // itself with. The list says both of a vault the same way.
@@ -71,8 +70,8 @@ message GetVaultStateResponse {
   int64 embedded_count = 9;
 
   // Embedding says whether anything is going to turn the chunks into vectors.
-  // False for an installation with no model, where `embedded` stays where it is
-  // and the vault is searched by its words.
+  // False for an installation with no model, where `embedded_count` stays where
+  // it is and the vault is searched by its words.
   bool embedding = 10;
 }
 
