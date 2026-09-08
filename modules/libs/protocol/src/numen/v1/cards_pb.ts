@@ -1179,7 +1179,7 @@ export const CardsService: GenService<{
    * and a stencil that no longer holds what the caller read is left alone and
    * refused `stale`.
    *
-   * The preamble, the tail and each face's lead are written back as they
+   * The preamble, the tail and each face's own preamble are written back as they
    * arrive, so the parts of the file a client did not touch come out as the
    * bytes they went in as.
    *
@@ -1244,7 +1244,7 @@ export const CardsService: GenService<{
    * A card carrying no section stands before the first one, and a section no
    * card stands under is written where the cards around it put it.
    *
-   * The preamble, the tail and each card's lead are written back as they
+   * The preamble, the tail and each card's own preamble are written back as they
    * arrive, so the parts of the file a client did not touch come out as the
    * bytes they went in as.
    *
