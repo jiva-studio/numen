@@ -6,7 +6,7 @@
  * wide it is drawn, and what is highlighted over it are decisions, and a test
  * asks them without a browser.
  */
-import type { Stretch } from '../../shared/core'
+import type { Span } from '../../shared/core'
 import { computed, ref, shallowRef } from 'vue'
 import { troubleWords } from '@numen/wire'
 
@@ -60,13 +60,13 @@ export interface Documents {
    */
   page(path: string, at: number, wide: number, seen: string): string
   /**
-   * Where stretches of the document's own text stand on its pages, one answer
-   * per stretch and in the order they were asked about. A stretch nothing was
+   * Where spans of the document's own text stand on its pages, one answer
+   * per span and in the order they were asked about. A span nothing was
    * recorded for stands nowhere.
    */
   highlights(
     path: string,
-    stretches: readonly Stretch[],
+    spans: readonly Span[],
   ): Promise<readonly (readonly HighlightedPage[])[]>
 }
 
@@ -158,7 +158,7 @@ export function openDocument(documents: Documents, path: string) {
   }
 
   /**
-   * Where the stretches of the document's text sit. The first of them is the
+   * Where the spans of the document's text sit. The first of them is the
    * place the person was sent to: the tab turns to its first page, and the rest
    * are highlighted where they fall.
    */
@@ -171,16 +171,16 @@ export function openDocument(documents: Documents, path: string) {
   }
 
   /**
-   * Stretches of the document's text reached: where they stand is asked for and
+   * Spanes of the document's text reached: where they stand is asked for and
    * highlighted, and the tab turns to the first page of the first of them. A
-   * stretch standing nowhere leaves the document on the page it is on with
+   * span standing nowhere leaves the document on the page it is on with
    * nothing highlighted.
    */
-  const reach = async (...stretches: readonly Stretch[]) => {
+  const reach = async (...spans: readonly Span[]) => {
     await shape
-    if (!open || stretches.length === 0) return
+    if (!open || spans.length === 0) return
     try {
-      const where = await documents.highlights(path, stretches)
+      const where = await documents.highlights(path, spans)
       if (!open) return
       await highlight(where)
     } catch (error) {

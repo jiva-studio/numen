@@ -89,7 +89,6 @@ func addViewTools(server *sdk.Server, core Core) {
 			return nil, out{}, errors.New(
 				"a passage begins at or after the start of the text, and its length is zero or more")
 		}
-
 		if 1+len(in.Also) > domain.MostHighlights {
 			return nil, out{}, fmt.Errorf("light at most %d places of one document", domain.MostHighlights)
 		}
@@ -98,13 +97,16 @@ func addViewTools(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, out{}, err
 		}
-		at := domain.Place{Path: in.Path, Start: in.Start, Length: in.Length}
+		at := domain.Place{Path: in.Path}
+		if in.Length > 0 {
+			at.Spans = append(at.Spans, domain.Span{From: in.Start, To: in.Start + in.Length})
+		}
 		for _, one := range in.Also {
 			if one.Start < 0 || one.Length <= 0 {
 				return nil, out{}, errors.New(
 					"a passage begins at or after the start of the text, and is longer than nothing")
 			}
-			at.Stretches = append(at.Stretches, domain.Stretch{Start: one.Start, Length: one.Length})
+			at.Spans = append(at.Spans, domain.Span{From: one.Start, To: one.Start + one.Length})
 		}
 		if err := core.View.Focus(ctx, at); err != nil {
 			return nil, out{}, err

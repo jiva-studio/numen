@@ -93,9 +93,9 @@ message Fingerprint {
   int64 mtime = 3;
 }
 
-// A Stretch is a run of a source's text, counted in bytes over the text the
-// source is read as.
-message Stretch {
-  int32 start = 1;
-  int32 length = 2;
+// A Span is a run of text, by where it begins and where it ends. What it counts
+// in is the field carrying it.
+message Span {
+  int32 from = 1;
+  int32 to = 2;
 }

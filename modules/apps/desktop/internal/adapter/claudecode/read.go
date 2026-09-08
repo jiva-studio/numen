@@ -326,7 +326,9 @@ func placed(path, arguments string) domain.Place {
 	}
 	start, _ := made[spanStart].(float64)
 	length, _ := made[spanLength].(float64)
-	at.Start, at.Length = int(start), int(length)
+	if length > 0 {
+		at.Spans = []domain.Span{{From: int(start), To: int(start + length)}}
+	}
 	return at
 }
 

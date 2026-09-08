@@ -47,8 +47,8 @@ export function drawing(limits: HoldLimits = holding) {
     if (!said.done) {
       changes.set(said.path, {
         id: said.change,
-        from: said.from,
-        to: said.to,
+        from: said.span.from,
+        to: said.span.to,
         text: said.text,
       })
       ending.delete(said.path)

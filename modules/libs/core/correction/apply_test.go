@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/correction"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 )
@@ -26,8 +27,8 @@ func reading(lines []string) (string, []ocr.PageStart, []highlight.Box, []ocr.Pa
 			marks = append(marks, ocr.PageStart{Offset: at})
 		}
 		boxes = append(boxes, highlight.Box{
-			Page:    i / perPage,
-			Stretch: highlight.Stretch{Start: at, Length: len(line)},
+			Page: i / perPage,
+			Span: domain.Span{From: at, To: at + len(line)},
 			Rect: highlight.Rect{
 				MinX: 0.1, MinY: float32(i) / 100, MaxX: 0.9, MaxY: float32(i+1) / 100,
 			},
@@ -35,8 +36,8 @@ func reading(lines []string) (string, []ocr.PageStart, []highlight.Box, []ocr.Pa
 		at += len(line) + len("\n")
 	}
 	parts := []ocr.Part{
-		{Start: boxes[0].Start, Length: boxes[0].Length, Depth: 0},
-		{Start: boxes[3].Start, Length: boxes[3].Length, Depth: 1},
+		{Start: boxes[0].From, Length: boxes[0].Len(), Depth: 0},
+		{Start: boxes[3].From, Length: boxes[3].Len(), Depth: 1},
 	}
 	return strings.Join(lines, "\n"), marks, boxes, parts
 }
@@ -81,10 +82,10 @@ func TestEveryBoxStillNamesItsWords(t *testing.T) {
 		t.Fatalf("%d boxes, want %d", len(moved), len(read))
 	}
 	for i, box := range moved {
-		if box.Start < 0 || box.Start+box.Length > len(said) {
-			t.Fatalf("box %d covers %d..%d of %d bytes", i, box.Start, box.Start+box.Length, len(said))
+		if box.From < 0 || box.To > len(said) {
+			t.Fatalf("box %d covers %d..%d of %d bytes", i, box.From, box.To, len(said))
 		}
-		if got := said[box.Start : box.Start+box.Length]; got != right[i] {
+		if got := said[box.From:box.To]; got != right[i] {
 			t.Errorf("box %d says %q, want %q", i, got, right[i])
 		}
 	}
@@ -149,7 +150,7 @@ func TestTheLastWordOnALineWins(t *testing.T) {
 	said, _, _ := correction.Prose(prose, marks, boxes, parts, twice)
 	moved := correction.Boxes(boxes, twice)
 
-	if got := said[moved[1].Start : moved[1].Start+moved[1].Length]; got != right[1] {
+	if got := said[moved[1].From:moved[1].To]; got != right[1] {
 		t.Errorf("the line says %q, want %q", got, right[1])
 	}
 	if strings.Contains(said, "a first thought") {
@@ -178,8 +179,8 @@ func TestCorrectionsWrittenForOtherBytesSliceNothing(t *testing.T) {
 	// A .corrected file kept beside a reading it was not made from: the boxes reach
 	// past the prose, and one of them reaches backwards.
 	prose, marks, boxes, parts := reading(read)
-	boxes[2].Start, boxes[2].Length = len(prose)+100, 40
-	boxes[4].Start = 0
+	boxes[2].Span = domain.Span{From: len(prose) + 100, To: len(prose) + 140}
+	boxes[4].From = 0
 
 	lines := []correction.Line{{Number: 2, Text: "far past the end"}, {Number: 4, Text: "back at the start"}}
 

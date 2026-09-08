@@ -78,19 +78,19 @@ func placing(t *testing.T) (*API, http.Handler, *pdf.Book) {
 }
 
 // where is where a word of the document is, as the window would ask about it.
-func where(t *testing.T, doc *pdf.Book, word string) *v1.Stretch {
+func where(t *testing.T, doc *pdf.Book, word string) *v1.Span {
 	t.Helper()
 	at := strings.Index(doc.Text, word)
 	if at < 0 {
 		t.Fatalf("the document does not say %q", word)
 	}
-	return &v1.Stretch{Start: int32(at), Length: int32(len(word))}
+	return &v1.Span{From: int32(at), To: int32(at + len(word))}
 }
 
 // highlights is where the runs of a source's text sit, as the window is told it.
-func highlights(api *API, path string, at ...*v1.Stretch) ([]*v1.Highlight, error) {
+func highlights(api *API, path string, at ...*v1.Span) ([]*v1.Highlight, error) {
 	out, err := api.ListHighlights(context.Background(), connect.NewRequest(&v1.ListHighlightsRequest{
-		Path: path, At: at,
+		Path: path, Spans: at,
 	}))
 	if err != nil {
 		return nil, err
@@ -151,7 +151,7 @@ func TestAPathTheVaultDoesNotHoldIsNotLit(t *testing.T) {
 		t.Run(path, func(t *testing.T) {
 			api, _, _ := placing(t)
 
-			_, err := highlights(api, path, &v1.Stretch{Start: 0, Length: 5})
+			_, err := highlights(api, path, &v1.Span{From: 0, To: 5})
 			if code := connect.CodeOf(err); code != connect.CodeNotFound &&
 				code != connect.CodeInvalidArgument {
 				t.Errorf("%s was refused %v", path, err)
@@ -164,12 +164,12 @@ func TestAPathTheVaultDoesNotHoldIsNotLit(t *testing.T) {
 func TestARunThatIsNotOneIsRefused(t *testing.T) {
 	for _, one := range []struct {
 		what string
-		at   []*v1.Stretch
+		at   []*v1.Span
 	}{
 		{"no run at all", nil},
-		{"a place before the text", []*v1.Stretch{{Start: -1, Length: 5}}},
-		{"a run of nothing", []*v1.Stretch{{Start: 0, Length: 0}}},
-		{"a run longer than a book", []*v1.Stretch{{Start: 0, Length: longestRun + 1}}},
+		{"a place before the text", []*v1.Span{{From: -1, To: 4}}},
+		{"a run of nothing", []*v1.Span{{From: 0, To: 0}}},
+		{"a run longer than a book", []*v1.Span{{From: 0, To: longestRun + 1}}},
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			api, _, _ := placing(t)

@@ -16,10 +16,13 @@ export interface Move {
 export const movedTo = (renamed: readonly Move[], path: string): string =>
   renamed.find((one) => one.from === path)?.to ?? ''
 
-/** A stretch of a source's own text, counted in bytes. */
-export interface Stretch {
-  readonly start: number
-  readonly length: number
+/**
+ * A run of text, by where it begins and where it ends. What it counts in is the
+ * field carrying it.
+ */
+export interface Span {
+  readonly from: number
+  readonly to: number
 }
 
 /**
@@ -29,8 +32,7 @@ export interface Stretch {
 export interface NoteEdit {
   readonly change: string
   readonly path: string
-  readonly from: number
-  readonly to: number
+  readonly span: Span
   readonly text: string
   readonly done: boolean
 }
@@ -395,9 +397,7 @@ export interface Core {
    */
   focus(signal: AbortSignal): AsyncIterable<{
     path: string
-    start?: number
-    length?: number
-    also?: readonly { start?: number; length?: number }[]
+    spans: readonly { from: number; to: number }[]
   }>
   /**
    * What the person has open, said again whenever any of it changes. It is the

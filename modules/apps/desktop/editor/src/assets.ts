@@ -41,9 +41,9 @@ export const documents: Documents = {
   },
   page: (path, at, wide, seen) =>
     `${asset(path)}/pages/${at}?wide=${wide}&${named(seen)}`,
-  highlights: async (path, stretches) => {
-    const answer = await waiting(() => assets.listHighlights({ path, at: [...stretches] }))
-    return stretches.map((_, i) => answer.runs[i]?.pages.map(highlighted) ?? [])
+  highlights: async (path, spans) => {
+    const answer = await waiting(() => assets.listHighlights({ path, spans: [...spans] }))
+    return spans.map((_, i) => answer.runs[i]?.pages.map(highlighted) ?? [])
   },
 }
 
@@ -80,8 +80,8 @@ export const recordings: Recordings = {
   writes: async (path, cues) => {
     await waiting(() => artifacts.writeTranscript({ path, cues: [...cues] }))
   },
-  plays: async (path, stretch) => {
-    const answer = await waiting(() => artifacts.readText({ path, at: stretch }))
+  plays: async (path, span) => {
+    const answer = await waiting(() => artifacts.readText({ path, span }))
     return said(answer).cues[0]?.from ?? null
   },
 }

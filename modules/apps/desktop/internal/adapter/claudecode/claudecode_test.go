@@ -651,7 +651,7 @@ func TestSaysWhichNoteACallIsWorkingIn(t *testing.T) {
 		t.Errorf("the call is working in %+v", steps[0].Place)
 	}
 	// A query names no note, and nothing is opened for it.
-	if at := steps[1].Place; at.Path != "" || at.Start != 0 || at.Length != 0 {
+	if at := steps[1].Place; at.Path != "" || len(at.Spans) != 0 {
 		t.Errorf("a search is working in %+v", at)
 	}
 }

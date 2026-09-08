@@ -510,10 +510,9 @@ type ToolCall struct {
 	// Where the call is working: the source it names, by the path the vault
 	// files it under. Empty for a call that is working on no one file.
 	Path string `protobuf:"bytes,4,opt,name=path,proto3" json:"path,omitempty"`
-	// The stretch of that source's text the call names, counted in bytes. A
-	// length of zero is a call that named the source and no place inside it.
-	Start         int32 `protobuf:"varint,5,opt,name=start,proto3" json:"start,omitempty"`
-	Length        int32 `protobuf:"varint,6,opt,name=length,proto3" json:"length,omitempty"`
+	// The run of that source's text the call names, counted in bytes. An empty
+	// span is a call that named the source and no place inside it.
+	Span          *Span `protobuf:"bytes,5,opt,name=span,proto3" json:"span,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -576,25 +575,18 @@ func (x *ToolCall) GetPath() string {
 	return ""
 }
 
-func (x *ToolCall) GetStart() int32 {
+func (x *ToolCall) GetSpan() *Span {
 	if x != nil {
-		return x.Start
+		return x.Span
 	}
-	return 0
-}
-
-func (x *ToolCall) GetLength() int32 {
-	if x != nil {
-		return x.Length
-	}
-	return 0
+	return nil
 }
 
 var File_numen_v1_agent_proto protoreflect.FileDescriptor
 
 const file_numen_v1_agent_proto_rawDesc = "" +
 	"\n" +
-	"\x14numen/v1/agent.proto\x12\bnumen.v1\"\x16\n" +
+	"\x14numen/v1/agent.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x16\n" +
 	"\x14GetAgentStateRequest\"9\n" +
 	"\x15GetAgentStateResponse\x12 \n" +
 	"\vunreachable\x18\x01 \x01(\tR\vunreachable\"\x89\x01\n" +
@@ -617,14 +609,13 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\n" +
 	"\bAnswered\"\n" +
 	"\n" +
-	"\bThinking\"\x90\x01\n" +
+	"\bThinking\"\x86\x01\n" +
 	"\bToolCall\x12\x12\n" +
 	"\x04tool\x18\x01 \x01(\tR\x04tool\x12\x14\n" +
 	"\x05about\x18\x02 \x01(\tR\x05about\x12\x18\n" +
 	"\awritten\x18\x03 \x01(\x05R\awritten\x12\x12\n" +
-	"\x04path\x18\x04 \x01(\tR\x04path\x12\x14\n" +
-	"\x05start\x18\x05 \x01(\x05R\x05start\x12\x16\n" +
-	"\x06length\x18\x06 \x01(\x05R\x06length2\x86\x02\n" +
+	"\x04path\x18\x04 \x01(\tR\x04path\x12\"\n" +
+	"\x04span\x18\x05 \x01(\v2\x0e.numen.v1.SpanR\x04span2\x86\x02\n" +
 	"\fAgentService\x12C\n" +
 	"\bAskAgent\x12\x19.numen.v1.AskAgentRequest\x1a\x1a.numen.v1.AskAgentResponse0\x01\x12_\n" +
 	"\x12FinishConversation\x12#.numen.v1.FinishConversationRequest\x1a$.numen.v1.FinishConversationResponse\x12P\n" +
@@ -653,22 +644,24 @@ var file_numen_v1_agent_proto_goTypes = []any{
 	(*Answered)(nil),                   // 6: numen.v1.Answered
 	(*Thinking)(nil),                   // 7: numen.v1.Thinking
 	(*ToolCall)(nil),                   // 8: numen.v1.ToolCall
+	(*Span)(nil),                       // 9: numen.v1.Span
 }
 var file_numen_v1_agent_proto_depIdxs = []int32{
 	8, // 0: numen.v1.AskAgentResponse.tool_call:type_name -> numen.v1.ToolCall
 	6, // 1: numen.v1.AskAgentResponse.answered:type_name -> numen.v1.Answered
 	7, // 2: numen.v1.AskAgentResponse.thinking:type_name -> numen.v1.Thinking
-	2, // 3: numen.v1.AgentService.AskAgent:input_type -> numen.v1.AskAgentRequest
-	3, // 4: numen.v1.AgentService.FinishConversation:input_type -> numen.v1.FinishConversationRequest
-	0, // 5: numen.v1.AgentService.GetAgentState:input_type -> numen.v1.GetAgentStateRequest
-	5, // 6: numen.v1.AgentService.AskAgent:output_type -> numen.v1.AskAgentResponse
-	4, // 7: numen.v1.AgentService.FinishConversation:output_type -> numen.v1.FinishConversationResponse
-	1, // 8: numen.v1.AgentService.GetAgentState:output_type -> numen.v1.GetAgentStateResponse
-	6, // [6:9] is the sub-list for method output_type
-	3, // [3:6] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	9, // 3: numen.v1.ToolCall.span:type_name -> numen.v1.Span
+	2, // 4: numen.v1.AgentService.AskAgent:input_type -> numen.v1.AskAgentRequest
+	3, // 5: numen.v1.AgentService.FinishConversation:input_type -> numen.v1.FinishConversationRequest
+	0, // 6: numen.v1.AgentService.GetAgentState:input_type -> numen.v1.GetAgentStateRequest
+	5, // 7: numen.v1.AgentService.AskAgent:output_type -> numen.v1.AskAgentResponse
+	4, // 8: numen.v1.AgentService.FinishConversation:output_type -> numen.v1.FinishConversationResponse
+	1, // 9: numen.v1.AgentService.GetAgentState:output_type -> numen.v1.GetAgentStateResponse
+	7, // [7:10] is the sub-list for method output_type
+	4, // [4:7] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_agent_proto_init() }
@@ -676,6 +669,7 @@ func file_numen_v1_agent_proto_init() {
 	if File_numen_v1_agent_proto != nil {
 		return
 	}
+	file_numen_v1_shared_proto_init()
 	file_numen_v1_agent_proto_msgTypes[5].OneofWrappers = []any{
 		(*AskAgentResponse_Said)(nil),
 		(*AskAgentResponse_ToolCall)(nil),

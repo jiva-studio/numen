@@ -9,7 +9,7 @@
 import { computed, ref, shallowRef, watch } from 'vue'
 import { pointsAtNote, wikilinksIn, type Conversation, type Turn } from '@numen/ui'
 import { same, spotOf, spotsIn } from './places'
-import type { Stretch } from '../../shared/core'
+import type { Span } from '../../shared/core'
 import type { Kind, WindowHandle } from '../../shared/tabs/windowing'
 import { AGENT, shortened } from '../../shared/tabs/workspace'
 import AgentTab from './AgentTab.vue'
@@ -18,7 +18,7 @@ import { WORDS as words } from './words'
 /** What an agent tab asks of the window it is drawn in. */
 export interface AgentTabDeps {
   /** A source opened at stretches of its own text, the first of them in front. */
-  opens(path: string, ...stretches: readonly Stretch[]): void
+  opens(path: string, ...spans: readonly Span[]): void
   /** A note opened in a tab beside the pane the person is in. */
   beside(path: string): void
   /**
@@ -53,10 +53,10 @@ export function talking(talk: Conversation, deps: AgentTabDeps) {
     void talk.ask(text, '')
   }
 
-  /** A line about work pressed: the passage that call was on is put in front. */
+  /** A line about work pressed: the place that call was on is put in front. */
   const opensTurn = (turn: Turn) => {
-    const passage = talk.passage(turn.id)
-    if (passage) deps.opens(passage.path, { start: passage.start, length: passage.length })
+    const at = talk.place(turn.id)
+    if (at) deps.opens(at.path, at.span)
   }
 
   /**
@@ -108,7 +108,10 @@ export function talking(talk: Conversation, deps: AgentTabDeps) {
     if (here) {
       press.preventDefault()
       const named = spotsIn(turn.text).filter((spot) => spot.path === here.path && !same(spot, here))
-      deps.opens(here.path, ...[here, ...named].map(({ start, length }) => ({ start, length })))
+      deps.opens(
+        here.path,
+        ...[here, ...named].map(({ start, length }) => ({ from: start, to: start + length })),
+      )
       return
     }
     if (!pointsAtNote(href)) return

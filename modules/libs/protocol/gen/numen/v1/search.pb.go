@@ -205,7 +205,7 @@ type NameMatch struct {
 	// Where in that name the words stand, counted the way a client counts text:
 	// in UTF-16 code units.
 	// A word reached by its prefix is marked whole.
-	At []*Span `protobuf:"bytes,3,rep,name=at,proto3" json:"at,omitempty"`
+	Spans []*Span `protobuf:"bytes,3,rep,name=spans,proto3" json:"spans,omitempty"`
 	// Which of three the note is, so a client draws a deck and a stencil as what
 	// they are. A heading carries the type of the note it stands in.
 	Type          NoteType `protobuf:"varint,4,opt,name=type,proto3,enum=numen.v1.NoteType" json:"type,omitempty"`
@@ -257,9 +257,9 @@ func (x *NameMatch) GetHeading() *Heading {
 	return nil
 }
 
-func (x *NameMatch) GetAt() []*Span {
+func (x *NameMatch) GetSpans() []*Span {
 	if x != nil {
-		return x.At
+		return x.Spans
 	}
 	return nil
 }
@@ -392,24 +392,23 @@ type Passage struct {
 	// Where in that text the words typed stand, counted the way a client counts
 	// text: in UTF-16 code units. Empty for a hit by meaning, which stands on no
 	// word in particular.
-	At []*Span `protobuf:"bytes,4,rep,name=at,proto3" json:"at,omitempty"`
+	Spans []*Span `protobuf:"bytes,4,rep,name=spans,proto3" json:"spans,omitempty"`
 	// What the source's own numbering calls the place, empty when the format
 	// offered none.
 	Location string `protobuf:"bytes,5,opt,name=location,proto3" json:"location,omitempty"`
 	// Where the passage stands in the text of the source it was read out of,
-	// counted in bytes. It is what opens that source here, and a hit in a note
-	// carries it as every other hit does.
-	Start  int32 `protobuf:"varint,6,opt,name=start,proto3" json:"start,omitempty"`
-	Length int32 `protobuf:"varint,7,opt,name=length,proto3" json:"length,omitempty"`
+	// counted in bytes. With the path above it is the place this opens, and a hit
+	// in a note carries it as every other hit does.
+	Span *Span `protobuf:"bytes,6,opt,name=span,proto3" json:"span,omitempty"`
 	// Where the chunk that matched stands, counted from the first line of the
 	// source's prose. It is the line a note opens on, and the caret stands there.
-	Line int32 `protobuf:"varint,8,opt,name=line,proto3" json:"line,omitempty"`
+	Line int32 `protobuf:"varint,7,opt,name=line,proto3" json:"line,omitempty"`
 	// Which of three the note is, so a client draws a deck and a stencil as what
 	// they are. It says nothing about a source that is not a note.
-	Type NoteType `protobuf:"varint,9,opt,name=type,proto3,enum=numen.v1.NoteType" json:"type,omitempty"`
+	Type NoteType `protobuf:"varint,8,opt,name=type,proto3,enum=numen.v1.NoteType" json:"type,omitempty"`
 	// What the vault holds at that path, so a client draws a book and a
 	// recording as what they are.
-	Kind          SourceKind `protobuf:"varint,10,opt,name=kind,proto3,enum=numen.v1.SourceKind" json:"kind,omitempty"`
+	Kind          SourceKind `protobuf:"varint,9,opt,name=kind,proto3,enum=numen.v1.SourceKind" json:"kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -465,9 +464,9 @@ func (x *Passage) GetText() string {
 	return ""
 }
 
-func (x *Passage) GetAt() []*Span {
+func (x *Passage) GetSpans() []*Span {
 	if x != nil {
-		return x.At
+		return x.Spans
 	}
 	return nil
 }
@@ -479,18 +478,11 @@ func (x *Passage) GetLocation() string {
 	return ""
 }
 
-func (x *Passage) GetStart() int32 {
+func (x *Passage) GetSpan() *Span {
 	if x != nil {
-		return x.Start
+		return x.Span
 	}
-	return 0
-}
-
-func (x *Passage) GetLength() int32 {
-	if x != nil {
-		return x.Length
-	}
-	return 0
+	return nil
 }
 
 func (x *Passage) GetLine() int32 {
@@ -514,59 +506,6 @@ func (x *Passage) GetKind() SourceKind {
 	return SourceKind_SOURCE_KIND_UNSPECIFIED
 }
 
-// Span is a run of text, by where it begins and where it ends.
-type Span struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	From          int32                  `protobuf:"varint,1,opt,name=from,proto3" json:"from,omitempty"`
-	To            int32                  `protobuf:"varint,2,opt,name=to,proto3" json:"to,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Span) Reset() {
-	*x = Span{}
-	mi := &file_numen_v1_search_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Span) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Span) ProtoMessage() {}
-
-func (x *Span) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_search_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Span.ProtoReflect.Descriptor instead.
-func (*Span) Descriptor() ([]byte, []int) {
-	return file_numen_v1_search_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *Span) GetFrom() int32 {
-	if x != nil {
-		return x.From
-	}
-	return 0
-}
-
-func (x *Span) GetTo() int32 {
-	if x != nil {
-		return x.To
-	}
-	return 0
-}
-
 var File_numen_v1_search_proto protoreflect.FileDescriptor
 
 const file_numen_v1_search_proto_rawDesc = "" +
@@ -576,11 +515,11 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\"@\n" +
 	"\x13SearchNamesResponse\x12)\n" +
-	"\x05found\x18\x01 \x03(\v2\x13.numen.v1.NameMatchR\x05found\"\xb5\x01\n" +
+	"\x05found\x18\x01 \x03(\v2\x13.numen.v1.NameMatchR\x05found\"\xbb\x01\n" +
 	"\tNameMatch\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x120\n" +
-	"\aheading\x18\x02 \x01(\v2\x11.numen.v1.HeadingH\x00R\aheading\x88\x01\x01\x12\x1e\n" +
-	"\x02at\x18\x03 \x03(\v2\x0e.numen.v1.SpanR\x02at\x12&\n" +
+	"\aheading\x18\x02 \x01(\v2\x11.numen.v1.HeadingH\x00R\aheading\x88\x01\x01\x12$\n" +
+	"\x05spans\x18\x03 \x03(\v2\x0e.numen.v1.SpanR\x05spans\x12&\n" +
 	"\x04type\x18\x04 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04typeB\n" +
 	"\n" +
 	"\b_heading\"m\n" +
@@ -589,23 +528,18 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12(\n" +
 	"\x04mode\x18\x03 \x01(\x0e2\x14.numen.v1.SearchModeR\x04mode\"A\n" +
 	"\x16SearchPassagesResponse\x12'\n" +
-	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\xb3\x02\n" +
+	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\xaf\x02\n" +
 	"\aPassage\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
 	"\x04note\x18\x02 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01\x12\x12\n" +
-	"\x04text\x18\x03 \x01(\tR\x04text\x12\x1e\n" +
-	"\x02at\x18\x04 \x03(\v2\x0e.numen.v1.SpanR\x02at\x12\x1a\n" +
-	"\blocation\x18\x05 \x01(\tR\blocation\x12\x14\n" +
-	"\x05start\x18\x06 \x01(\x05R\x05start\x12\x16\n" +
-	"\x06length\x18\a \x01(\x05R\x06length\x12\x12\n" +
-	"\x04line\x18\b \x01(\x05R\x04line\x12&\n" +
-	"\x04type\x18\t \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\x12(\n" +
-	"\x04kind\x18\n" +
-	" \x01(\x0e2\x14.numen.v1.SourceKindR\x04kindB\a\n" +
-	"\x05_note\"*\n" +
-	"\x04Span\x12\x12\n" +
-	"\x04from\x18\x01 \x01(\x05R\x04from\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\x05R\x02to*\x88\x01\n" +
+	"\x04text\x18\x03 \x01(\tR\x04text\x12$\n" +
+	"\x05spans\x18\x04 \x03(\v2\x0e.numen.v1.SpanR\x05spans\x12\x1a\n" +
+	"\blocation\x18\x05 \x01(\tR\blocation\x12\"\n" +
+	"\x04span\x18\x06 \x01(\v2\x0e.numen.v1.SpanR\x04span\x12\x12\n" +
+	"\x04line\x18\a \x01(\x05R\x04line\x12&\n" +
+	"\x04type\x18\b \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\x12(\n" +
+	"\x04kind\x18\t \x01(\x0e2\x14.numen.v1.SourceKindR\x04kindB\a\n" +
+	"\x05_note*\x88\x01\n" +
 	"\n" +
 	"SearchMode\x12\x1b\n" +
 	"\x17SEARCH_MODE_UNSPECIFIED\x10\x00\x12\x15\n" +
@@ -630,7 +564,7 @@ func file_numen_v1_search_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_search_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_search_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_numen_v1_search_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_numen_v1_search_proto_goTypes = []any{
 	(SearchMode)(0),                // 0: numen.v1.SearchMode
 	(*SearchNamesRequest)(nil),     // 1: numen.v1.SearchNamesRequest
@@ -639,33 +573,34 @@ var file_numen_v1_search_proto_goTypes = []any{
 	(*SearchPassagesRequest)(nil),  // 4: numen.v1.SearchPassagesRequest
 	(*SearchPassagesResponse)(nil), // 5: numen.v1.SearchPassagesResponse
 	(*Passage)(nil),                // 6: numen.v1.Passage
-	(*Span)(nil),                   // 7: numen.v1.Span
-	(*Note)(nil),                   // 8: numen.v1.Note
-	(*Heading)(nil),                // 9: numen.v1.Heading
+	(*Note)(nil),                   // 7: numen.v1.Note
+	(*Heading)(nil),                // 8: numen.v1.Heading
+	(*Span)(nil),                   // 9: numen.v1.Span
 	(NoteType)(0),                  // 10: numen.v1.NoteType
 	(SourceKind)(0),                // 11: numen.v1.SourceKind
 }
 var file_numen_v1_search_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.SearchNamesResponse.found:type_name -> numen.v1.NameMatch
-	8,  // 1: numen.v1.NameMatch.note:type_name -> numen.v1.Note
-	9,  // 2: numen.v1.NameMatch.heading:type_name -> numen.v1.Heading
-	7,  // 3: numen.v1.NameMatch.at:type_name -> numen.v1.Span
+	7,  // 1: numen.v1.NameMatch.note:type_name -> numen.v1.Note
+	8,  // 2: numen.v1.NameMatch.heading:type_name -> numen.v1.Heading
+	9,  // 3: numen.v1.NameMatch.spans:type_name -> numen.v1.Span
 	10, // 4: numen.v1.NameMatch.type:type_name -> numen.v1.NoteType
 	0,  // 5: numen.v1.SearchPassagesRequest.mode:type_name -> numen.v1.SearchMode
 	6,  // 6: numen.v1.SearchPassagesResponse.found:type_name -> numen.v1.Passage
-	8,  // 7: numen.v1.Passage.note:type_name -> numen.v1.Note
-	7,  // 8: numen.v1.Passage.at:type_name -> numen.v1.Span
-	10, // 9: numen.v1.Passage.type:type_name -> numen.v1.NoteType
-	11, // 10: numen.v1.Passage.kind:type_name -> numen.v1.SourceKind
-	1,  // 11: numen.v1.SearchService.SearchNames:input_type -> numen.v1.SearchNamesRequest
-	4,  // 12: numen.v1.SearchService.SearchPassages:input_type -> numen.v1.SearchPassagesRequest
-	2,  // 13: numen.v1.SearchService.SearchNames:output_type -> numen.v1.SearchNamesResponse
-	5,  // 14: numen.v1.SearchService.SearchPassages:output_type -> numen.v1.SearchPassagesResponse
-	13, // [13:15] is the sub-list for method output_type
-	11, // [11:13] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	7,  // 7: numen.v1.Passage.note:type_name -> numen.v1.Note
+	9,  // 8: numen.v1.Passage.spans:type_name -> numen.v1.Span
+	9,  // 9: numen.v1.Passage.span:type_name -> numen.v1.Span
+	10, // 10: numen.v1.Passage.type:type_name -> numen.v1.NoteType
+	11, // 11: numen.v1.Passage.kind:type_name -> numen.v1.SourceKind
+	1,  // 12: numen.v1.SearchService.SearchNames:input_type -> numen.v1.SearchNamesRequest
+	4,  // 13: numen.v1.SearchService.SearchPassages:input_type -> numen.v1.SearchPassagesRequest
+	2,  // 14: numen.v1.SearchService.SearchNames:output_type -> numen.v1.SearchNamesResponse
+	5,  // 15: numen.v1.SearchService.SearchPassages:output_type -> numen.v1.SearchPassagesResponse
+	14, // [14:16] is the sub-list for method output_type
+	12, // [12:14] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_search_proto_init() }
@@ -684,7 +619,7 @@ func file_numen_v1_search_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_search_proto_rawDesc), len(file_numen_v1_search_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   7,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

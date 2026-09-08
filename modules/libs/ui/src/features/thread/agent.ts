@@ -5,15 +5,16 @@
  * does it. What answers sits behind this port.
  */
 
+import type { Span } from '@/shared/lib/span'
+
 /**
- * Where a call was working: a source, and the stretch of that source's text it
- * named, counted in bytes. A length of zero names the source and no place
- * inside it.
+ * Where a call was working: a source, and the run of that source's text it
+ * named, counted in bytes. An empty span names the source and no place inside
+ * it.
  */
-export interface Passage {
+export interface Place {
   readonly path: string
-  readonly start: number
-  readonly length: number
+  readonly span: Span
 }
 
 /** One thing the agent said, did, or stopped for. */
@@ -26,7 +27,7 @@ export type AgentStep =
       /** How much of the call has been written. It arrives more than once. */
       readonly written: number
       /** Where it was working, for a call working on a source. */
-      readonly passage?: Passage
+      readonly place?: Place
     }
   /** The tool answered. Nothing of the application's is running from here. */
   | { readonly kind: 'answered' }

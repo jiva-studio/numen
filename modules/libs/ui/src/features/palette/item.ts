@@ -1,13 +1,8 @@
 /**
  * What a palette is, as plain values. No DOM, no measurement, no clock.
  */
+import type { Span } from '@/shared/lib/span'
 import type { PaletteIcon, PaletteKeys } from '@/shared/ui/key-cap'
-
-/** A run of a line, by where it begins and where it ends. */
-export interface PaletteSpan {
-  readonly from: number
-  readonly to: number
-}
 
 /** One run of a line, and whether it is why the item is here. */
 export interface PalettePart {
@@ -35,11 +30,11 @@ export interface PaletteItem {
   /** What it is called. */
   readonly title: string
   /** Where in the title the words stand. */
-  readonly at?: readonly PaletteSpan[]
+  readonly at?: readonly Span[]
   /** A second line: where the item stands, or the words it was found among. */
   readonly detail?: string
   /** Where the words stand in that line. */
-  readonly detailAt?: readonly PaletteSpan[]
+  readonly detailAt?: readonly Span[]
   /** What can be done to it. An item offering none is drawn and not chosen. */
   readonly actions?: readonly PaletteAction[]
   /**
@@ -209,7 +204,7 @@ export const commandKeyChord = (agent: string): PaletteKeys => keyChord('k', age
  * how a string is sliced. A boundary landing inside a character is moved off it,
  * outwards, so no run ends on half of one.
  */
-export const partsOf = (text: string, at: readonly PaletteSpan[] = []): readonly PalettePart[] => {
+export const partsOf = (text: string, at: readonly Span[] = []): readonly PalettePart[] => {
   const runs = merged(text, at)
   if (runs.length === 0) return text === '' ? [] : [{ text, hit: false }]
 
@@ -228,7 +223,7 @@ export const partsOf = (text: string, at: readonly PaletteSpan[] = []): readonly
  * The spans as runs of this text: inside it, in order, none of them empty, and
  * no two of them touching.
  */
-const merged = (text: string, at: readonly PaletteSpan[]): PaletteSpan[] => {
+const merged = (text: string, at: readonly Span[]): Span[] => {
   const kept = at
     .map((span) => ({
       from: whole(text, bounded(text, Math.min(span.from, span.to)), -1),
@@ -237,7 +232,7 @@ const merged = (text: string, at: readonly PaletteSpan[]): PaletteSpan[] => {
     .filter((span) => span.from < span.to)
     .sort((one, other) => one.from - other.from)
 
-  const out: PaletteSpan[] = []
+  const out: Span[] = []
   for (const span of kept) {
     const last = out[out.length - 1]
     if (last && span.from <= last.to) {

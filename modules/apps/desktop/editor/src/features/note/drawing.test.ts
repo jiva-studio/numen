@@ -11,8 +11,7 @@ import { drawing, holding } from './drawing'
 const said = (over: Partial<NoteEdit> = {}): NoteEdit => ({
   change: 'one',
   path: 'Note.md',
-  from: 2,
-  to: 12,
+  span: { from: 2, to: 12 },
   text: 'An axe',
   done: false,
   ...over,

@@ -295,7 +295,7 @@ func TestCuesNarrowToARunOfTheWords(t *testing.T) {
 	_, cues := transcript.Parse(transcript.Marshal(spoke))
 
 	// "second" begins after "first\n".
-	got, err := within(&v1.Stretch{Start: 6, Length: 6})(cues)
+	got, err := within(&v1.Span{From: 6, To: 12})(cues)
 	if err != nil {
 		t.Fatalf("a run of the words was refused: %v", err)
 	}
@@ -303,7 +303,7 @@ func TestCuesNarrowToARunOfTheWords(t *testing.T) {
 		t.Errorf("the run was placed at %v", got)
 	}
 
-	if _, err := within(&v1.Stretch{Start: -1, Length: 6})(cues); err == nil {
+	if _, err := within(&v1.Span{From: -1, To: 5})(cues); err == nil {
 		t.Errorf("a place before the words was taken")
 	}
 }

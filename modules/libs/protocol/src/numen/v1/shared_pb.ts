@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/shared.proto.
  */
 export const file_numen_v1_shared: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjgKC0ZpbmdlcnByaW50EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIoCgdTdHJldGNoEg0KBXN0YXJ0GAEgASgFEg4KBmxlbmd0aBgCIAEoBSrYAgoHUmVmdXNhbBIXChNSRUZVU0FMX1VOU1BFQ0lGSUVEEAASEwoPUkVGVVNBTF9NSVNTSU5HEAESFgoSUkVGVVNBTF9OT1RfQV9OT1RFEAISFAoQUkVGVVNBTF9OT1RfVEVYVBADEhUKEVJFRlVTQUxfVE9PX0xBUkdFEAQSGAoUUkVGVVNBTF9CT0RZX1JFRlVTRUQQBRIWChJSRUZVU0FMX1VOUkVBREFCTEUQBhIUChBSRUZVU0FMX09DQ1VQSUVEEAcSFgoSUkVGVVNBTF9VTk5BTUVBQkxFEAgSGQoVUkVGVVNBTF9OT1RfQV9TVEVOQ0lMEAkSFgoSUkVGVVNBTF9OT1RfQV9ERUNLEAoSGgoWUkVGVVNBTF9ERUNLX1RPT19MQVJHRRALEhgKFFJFRlVTQUxfTk9UX0FfUFJFU0VUEAwSEQoNUkVGVVNBTF9TVEFMRRANKmYKCE5vdGVUeXBlEhkKFU5PVEVfVFlQRV9VTlNQRUNJRklFRBAAEhIKDk5PVEVfVFlQRV9ERUNLEAESFQoRTk9URV9UWVBFX1NURU5DSUwQAhIUChBOT1RFX1RZUEVfUFJFU0VUEANCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjgKC0ZpbmdlcnByaW50EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIgCgRTcGFuEgwKBGZyb20YASABKAUSCgoCdG8YAiABKAUq2AIKB1JlZnVzYWwSFwoTUkVGVVNBTF9VTlNQRUNJRklFRBAAEhMKD1JFRlVTQUxfTUlTU0lORxABEhYKElJFRlVTQUxfTk9UX0FfTk9URRACEhQKEFJFRlVTQUxfTk9UX1RFWFQQAxIVChFSRUZVU0FMX1RPT19MQVJHRRAEEhgKFFJFRlVTQUxfQk9EWV9SRUZVU0VEEAUSFgoSUkVGVVNBTF9VTlJFQURBQkxFEAYSFAoQUkVGVVNBTF9PQ0NVUElFRBAHEhYKElJFRlVTQUxfVU5OQU1FQUJMRRAIEhkKFVJFRlVTQUxfTk9UX0FfU1RFTkNJTBAJEhYKElJFRlVTQUxfTk9UX0FfREVDSxAKEhoKFlJFRlVTQUxfREVDS19UT09fTEFSR0UQCxIYChRSRUZVU0FMX05PVF9BX1BSRVNFVBAMEhEKDVJFRlVTQUxfU1RBTEUQDSpmCghOb3RlVHlwZRIZChVOT1RFX1RZUEVfVU5TUEVDSUZJRUQQABISCg5OT1RFX1RZUEVfREVDSxABEhUKEU5PVEVfVFlQRV9TVEVOQ0lMEAISFAoQTk9URV9UWVBFX1BSRVNFVBADQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * Fingerprint is which file this is: where it is filed, how big it is, and when
@@ -56,28 +56,28 @@ export const FingerprintSchema: GenMessage<Fingerprint> = /*@__PURE__*/
   messageDesc(file_numen_v1_shared, 0);
 
 /**
- * A Stretch is a run of a source's text, counted in bytes over the text the
- * source is read as.
+ * A Span is a run of text, by where it begins and where it ends. What it counts
+ * in is the field carrying it.
  *
- * @generated from message numen.v1.Stretch
+ * @generated from message numen.v1.Span
  */
-export type Stretch = Message<"numen.v1.Stretch"> & {
+export type Span = Message<"numen.v1.Span"> & {
   /**
-   * @generated from field: int32 start = 1;
+   * @generated from field: int32 from = 1;
    */
-  start: number;
+  from: number;
 
   /**
-   * @generated from field: int32 length = 2;
+   * @generated from field: int32 to = 2;
    */
-  length: number;
+  to: number;
 };
 
 /**
- * Describes the message numen.v1.Stretch.
- * Use `create(StretchSchema)` to create a new message.
+ * Describes the message numen.v1.Span.
+ * Use `create(SpanSchema)` to create a new message.
  */
-export const StretchSchema: GenMessage<Stretch> = /*@__PURE__*/
+export const SpanSchema: GenMessage<Span> = /*@__PURE__*/
   messageDesc(file_numen_v1_shared, 1);
 
 /**

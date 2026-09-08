@@ -69,14 +69,10 @@ type WatchFocusResponse struct {
 	// The source to put in front of the person: a note to see the neighbourhood
 	// from, or a document to open.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// Where in the text of that source to open, counted in bytes. A length of
-	// zero names the source and no place inside it, which is what a note arrives
-	// with.
-	Start  int32 `protobuf:"varint,2,opt,name=start,proto3" json:"start,omitempty"`
-	Length int32 `protobuf:"varint,3,opt,name=length,proto3" json:"length,omitempty"`
-	// The other stretches of the same source worth seeing. The person is taken to
-	// the stretch above, and these are shown where they fall.
-	Also          []*Stretch `protobuf:"bytes,4,rep,name=also,proto3" json:"also,omitempty"`
+	// The runs of that source's text to open on, counted in bytes. The person is
+	// taken to the first and the rest are shown where they fall. None at all
+	// names the source and no place inside it, which is what a note arrives with.
+	Spans         []*Span `protobuf:"bytes,2,rep,name=spans,proto3" json:"spans,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -118,23 +114,9 @@ func (x *WatchFocusResponse) GetPath() string {
 	return ""
 }
 
-func (x *WatchFocusResponse) GetStart() int32 {
+func (x *WatchFocusResponse) GetSpans() []*Span {
 	if x != nil {
-		return x.Start
-	}
-	return 0
-}
-
-func (x *WatchFocusResponse) GetLength() int32 {
-	if x != nil {
-		return x.Length
-	}
-	return 0
-}
-
-func (x *WatchFocusResponse) GetAlso() []*Stretch {
-	if x != nil {
-		return x.Also
+		return x.Spans
 	}
 	return nil
 }
@@ -443,12 +425,10 @@ var File_numen_v1_workspace_proto protoreflect.FileDescriptor
 const file_numen_v1_workspace_proto_rawDesc = "" +
 	"\n" +
 	"\x18numen/v1/workspace.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x13\n" +
-	"\x11WatchFocusRequest\"}\n" +
+	"\x11WatchFocusRequest\"N\n" +
 	"\x12WatchFocusResponse\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05start\x18\x02 \x01(\x05R\x05start\x12\x16\n" +
-	"\x06length\x18\x03 \x01(\x05R\x06length\x12%\n" +
-	"\x04also\x18\x04 \x03(\v2\x11.numen.v1.StretchR\x04also\"O\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12$\n" +
+	"\x05spans\x18\x02 \x03(\v2\x0e.numen.v1.SpanR\x05spans\"O\n" +
 	"\x14WriteOpenTabsRequest\x12!\n" +
 	"\x04tabs\x18\x01 \x03(\v2\r.numen.v1.TabR\x04tabs\x12\x14\n" +
 	"\x05front\x18\x02 \x01(\tR\x05front\"\x17\n" +
@@ -494,10 +474,10 @@ var file_numen_v1_workspace_proto_goTypes = []any{
 	(*Tab)(nil),                   // 4: numen.v1.Tab
 	(*DocumentProgress)(nil),      // 5: numen.v1.DocumentProgress
 	(*RecordingProgress)(nil),     // 6: numen.v1.RecordingProgress
-	(*Stretch)(nil),               // 7: numen.v1.Stretch
+	(*Span)(nil),                  // 7: numen.v1.Span
 }
 var file_numen_v1_workspace_proto_depIdxs = []int32{
-	7, // 0: numen.v1.WatchFocusResponse.also:type_name -> numen.v1.Stretch
+	7, // 0: numen.v1.WatchFocusResponse.spans:type_name -> numen.v1.Span
 	4, // 1: numen.v1.WriteOpenTabsRequest.tabs:type_name -> numen.v1.Tab
 	5, // 2: numen.v1.Tab.document:type_name -> numen.v1.DocumentProgress
 	6, // 3: numen.v1.Tab.recording:type_name -> numen.v1.RecordingProgress

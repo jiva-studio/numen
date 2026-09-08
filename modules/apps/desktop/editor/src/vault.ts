@@ -191,7 +191,17 @@ export const core: Core & SearchDeps & CommandsDeps = {
   attending: async (open) => {
     await workspace.writeOpenTabs({ tabs: open.tabs.map((one) => ({ ...one })), front: open.front })
   },
-  editing: (signal) => notes.watchEdits({}, { signal }),
+  async *editing(signal) {
+    for await (const said of notes.watchEdits({}, { signal })) {
+      yield {
+        change: said.change,
+        path: said.path,
+        span: run(said.span ?? { from: 0, to: 0 }),
+        text: said.text,
+        done: said.done,
+      }
+    }
+  },
   async *tasks(signal) {
     for await (const said of windowService.watchTasks({ window: WINDOW }, { signal })) {
       yield said.tasks.map((at) => ({
@@ -357,7 +367,7 @@ export const core: Core & SearchDeps & CommandsDeps = {
       heading: one.heading?.text ?? '',
       // A name with no heading stands on no line of the prose.
       line: one.heading?.line ?? -1,
-      at: one.at.map(run),
+      at: one.spans.map(run),
       type: noteType(one.type),
     }))
   },
@@ -373,10 +383,10 @@ export const core: Core & SearchDeps & CommandsDeps = {
       type: noteType(one.type),
       kind: sourceKind(one.kind),
       text: one.text,
-      start: one.start,
-      length: one.length,
+      start: one.span?.from ?? 0,
+      length: (one.span?.to ?? 0) - (one.span?.from ?? 0),
       line: one.line,
-      at: one.at.map(run),
+      at: one.spans.map(run),
     }))
   },
 }

@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/responses"
@@ -172,8 +173,8 @@ func (p sheet) box(page, start, length int, word responses.CharPosition) highlig
 	x0, y0 := p.drawn(word.Left, word.Top)
 	x1, y1 := p.drawn(word.Right, word.Bottom)
 	return highlight.Box{
-		Page:    page,
-		Stretch: highlight.Stretch{Start: start, Length: length},
+		Page: page,
+		Span: domain.Span{From: start, To: start + length},
 		Rect: highlight.Rect{
 			MinX: onPage(min(x0, x1)),
 			MinY: onPage(min(y0, y1)),

@@ -1,31 +1,31 @@
 package domain
 
 // Place is somewhere in the vault: a source, by the path the vault files it
-// under, and the stretch of that source's text meant.
+// under, and the runs of its text meant.
 //
-// A note is a place with no stretch, and so is a document asked for at its
+// The person is taken to the first span and the rest are shown where they fall.
+// A note is a place with no spans, and so is a document asked for at its
 // beginning.
 type Place struct {
 	Path string
-	// Start and Length are the stretch, counted in bytes over the text the
-	// source is read as. A length of zero names the source and no place inside
-	// it.
-	Start  int
-	Length int
-	// Stretches are the other stretches of the same source worth seeing. The
-	// person is taken to the first stretch, and these are shown where they fall.
-	Stretches []Stretch
+	// Spans are the runs, counted in bytes over the text the source is read as.
+	Spans []Span
 }
 
-// A Stretch is a run of a source's text, counted in bytes over the text the
-// source is read as.
-type Stretch struct {
-	Start  int
-	Length int
+// A Span is a run of text, by where it begins and where it ends. What it counts
+// in is the field carrying it.
+type Span struct {
+	From int
+	To   int
 }
 
-// MostHighlights is how many places of one source are highlighted at once, the
-// place the person was taken to among them.
+// Empty is a span naming no run at all.
+func (s Span) Empty() bool { return s.To <= s.From }
+
+// Len is how many bytes the span covers.
+func (s Span) Len() int { return s.To - s.From }
+
+// MostHighlights is how many spans of one source are highlighted at once.
 //
 // A page with everything on it highlighted says nothing about where to look,
 // and whoever is choosing the places chooses which of them matter.

@@ -35,12 +35,8 @@ import type { MenuItem } from '@/shared/ui/menu'
 import Agent from './Agent.vue'
 import { branch, pane, type Tab, type Workspace as State } from '@/features/workspace/node'
 import { keyChord } from '@/features/palette/item'
-import type {
-  PaletteAction,
-  PaletteGroup,
-  PaletteItem,
-  PaletteSpan,
-} from '@/features/palette/item'
+import type { PaletteAction, PaletteGroup, PaletteItem } from '@/features/palette/item'
+import type { Span } from '@/shared/lib/span'
 import type { PaletteKeys } from '@/shared/ui/key-cap'
 import type { PlexPart } from '@/features/plex/inside'
 import { RELATED_SEATS, type PlexRelatedSeat } from '@/features/plex/seat'
@@ -381,8 +377,8 @@ const TURNS: readonly Turn[] = [
 ]
 
 /** Where a run of a title stands, every time it stands there. */
-const marks = (title: string, word: string): PaletteSpan[] => {
-  const spans: PaletteSpan[] = []
+const marks = (title: string, word: string): Span[] => {
+  const spans: Span[] = []
   const lower = title.toLowerCase()
   for (let at = lower.indexOf(word); at >= 0; at = lower.indexOf(word, at + 1)) {
     spans.push({ from: at, to: at + word.length })

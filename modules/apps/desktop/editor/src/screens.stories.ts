@@ -784,7 +784,7 @@ export const Recognised: Story = {
         state,
         // The reading a search sent a person into: the book turns to the page
         // the passage stands on, and the passage is highlighted where it stands.
-        opens: () => state.reach({ start: 0, length: 1 }),
+        opens: () => state.reach({ from: 0, to: 1 }),
       },
     )
   },

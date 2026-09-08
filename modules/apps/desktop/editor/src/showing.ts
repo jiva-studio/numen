@@ -6,7 +6,7 @@
  * is only exercised by looking at the screen.
  */
 import { ref, shallowRef } from 'vue'
-import type { Core, Move, NoteEdit, Stretch, Task } from './shared/core'
+import type { Core, Move, NoteEdit, Span, Task } from './shared/core'
 import { following } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
 
@@ -32,10 +32,10 @@ export interface ShowingOptions {
   /** What puts a note in front of the person, asked for from outside the window. */
   wanted?(path: string): void | Promise<void>
   /**
-   * What opens a document at stretches of its own text, in the tab it is read
+   * What opens a document at spans of its own text, in the tab it is read
    * in. The person is taken to the first of them.
    */
-  reads?(path: string, stretches: readonly Stretch[]): void
+  reads?(path: string, spans: readonly Span[]): void
   /** What draws the page again, once another vault is under this window. */
   reloads?(): void
 }
@@ -183,18 +183,18 @@ export function showing(core: Core, how: ShowingOptions = {}) {
   /**
    * Travels to whatever is asked for while the window is open — an agent
    * working the vault beside the person naming the note it is talking about. A
-   * focus naming a stretch of a source's text opens that source at it.
+   * focus naming a span of a source's text opens that source at it.
    */
   const watch = () =>
     follows(
       () => core.focus(listening.signal),
       async (asked) => {
         if (!asked.path) return
-        if (!asked.length) return void (await wanted(asked.path))
-        const also = (asked.also ?? [])
-          .filter((one) => (one.length ?? 0) > 0)
-          .map((one) => ({ start: one.start ?? 0, length: one.length ?? 0 }))
-        reads(asked.path, [{ start: asked.start ?? 0, length: asked.length }, ...also])
+        const spans = asked.spans
+          .map((one) => ({ from: one.from, to: one.to }))
+          .filter((one) => one.to > one.from)
+        if (!spans.length) return void (await wanted(asked.path))
+        reads(asked.path, spans)
       },
     )
 

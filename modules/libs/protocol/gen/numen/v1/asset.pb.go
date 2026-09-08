@@ -317,7 +317,7 @@ type ListHighlightsRequest struct {
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// The runs of its text to answer about, counted in bytes over the text the
 	// source is read as. A request naming none is not one.
-	At            []*Stretch `protobuf:"bytes,2,rep,name=at,proto3" json:"at,omitempty"`
+	Spans         []*Span `protobuf:"bytes,2,rep,name=spans,proto3" json:"spans,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -359,9 +359,9 @@ func (x *ListHighlightsRequest) GetPath() string {
 	return ""
 }
 
-func (x *ListHighlightsRequest) GetAt() []*Stretch {
+func (x *ListHighlightsRequest) GetSpans() []*Span {
 	if x != nil {
-		return x.At
+		return x.Spans
 	}
 	return nil
 }
@@ -602,10 +602,10 @@ const file_numen_v1_asset_proto_rawDesc = "" +
 	"\tmedia_url\x18\x02 \x01(\tR\bmediaUrl\x12\x1d\n" +
 	"\n" +
 	"media_type\x18\x03 \x01(\tR\tmediaType\x12\x10\n" +
-	"\x03url\x18\x04 \x01(\tR\x03url\"N\n" +
+	"\x03url\x18\x04 \x01(\tR\x03url\"Q\n" +
 	"\x15ListHighlightsRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12!\n" +
-	"\x02at\x18\x02 \x03(\v2\x11.numen.v1.StretchR\x02at\"A\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12$\n" +
+	"\x05spans\x18\x02 \x03(\v2\x0e.numen.v1.SpanR\x05spans\"A\n" +
 	"\x16ListHighlightsResponse\x12'\n" +
 	"\x04runs\x18\x01 \x03(\v2\x13.numen.v1.HighlightR\x04runs\"<\n" +
 	"\tHighlight\x12/\n" +
@@ -648,12 +648,12 @@ var file_numen_v1_asset_proto_goTypes = []any{
 	(*HighlightedPage)(nil),        // 8: numen.v1.HighlightedPage
 	(*Rect)(nil),                   // 9: numen.v1.Rect
 	(*Fingerprint)(nil),            // 10: numen.v1.Fingerprint
-	(*Stretch)(nil),                // 11: numen.v1.Stretch
+	(*Span)(nil),                   // 11: numen.v1.Span
 }
 var file_numen_v1_asset_proto_depIdxs = []int32{
 	2,  // 0: numen.v1.GetDocumentResponse.pages:type_name -> numen.v1.Page
 	10, // 1: numen.v1.GetDocumentResponse.fingerprint:type_name -> numen.v1.Fingerprint
-	11, // 2: numen.v1.ListHighlightsRequest.at:type_name -> numen.v1.Stretch
+	11, // 2: numen.v1.ListHighlightsRequest.spans:type_name -> numen.v1.Span
 	7,  // 3: numen.v1.ListHighlightsResponse.runs:type_name -> numen.v1.Highlight
 	8,  // 4: numen.v1.Highlight.pages:type_name -> numen.v1.HighlightedPage
 	9,  // 5: numen.v1.HighlightedPage.rects:type_name -> numen.v1.Rect

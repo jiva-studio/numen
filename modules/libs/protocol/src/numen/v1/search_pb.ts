@@ -14,7 +14,7 @@ import type { SourceKind } from "./file_pb.js";
 import { file_numen_v1_file } from "./file_pb.js";
 import type { Heading, Note } from "./note_pb.js";
 import { file_numen_v1_note } from "./note_pb.js";
-import type { NoteType } from "./shared_pb.js";
+import type { NoteType, Span } from "./shared_pb.js";
 import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -22,7 +22,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/search.proto.
  */
 export const file_numen_v1_search: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIjIKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSI5ChNTZWFyY2hOYW1lc1Jlc3BvbnNlEiIKBWZvdW5kGAEgAygLMhMubnVtZW4udjEuTmFtZU1hdGNoIpwBCglOYW1lTWF0Y2gSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJwoHaGVhZGluZxgCIAEoCzIRLm51bWVuLnYxLkhlYWRpbmdIAIgBARIaCgJhdBgDIAMoCzIOLm51bWVuLnYxLlNwYW4SIAoEdHlwZRgEIAEoDjISLm51bWVuLnYxLk5vdGVUeXBlQgoKCF9oZWFkaW5nIlkKFVNlYXJjaFBhc3NhZ2VzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIiCgRtb2RlGAMgASgOMhQubnVtZW4udjEuU2VhcmNoTW9kZSI6ChZTZWFyY2hQYXNzYWdlc1Jlc3BvbnNlEiAKBWZvdW5kGAEgAygLMhEubnVtZW4udjEuUGFzc2FnZSLyAQoHUGFzc2FnZRIMCgRwYXRoGAEgASgJEiEKBG5vdGUYAiABKAsyDi5udW1lbi52MS5Ob3RlSACIAQESDAoEdGV4dBgDIAEoCRIaCgJhdBgEIAMoCzIOLm51bWVuLnYxLlNwYW4SEAoIbG9jYXRpb24YBSABKAkSDQoFc3RhcnQYBiABKAUSDgoGbGVuZ3RoGAcgASgFEgwKBGxpbmUYCCABKAUSIAoEdHlwZRgJIAEoDjISLm51bWVuLnYxLk5vdGVUeXBlEiIKBGtpbmQYCiABKA4yFC5udW1lbi52MS5Tb3VyY2VLaW5kQgcKBV9ub3RlIiAKBFNwYW4SDAoEZnJvbRgBIAEoBRIKCgJ0bxgCIAEoBSqIAQoKU2VhcmNoTW9kZRIbChdTRUFSQ0hfTU9ERV9VTlNQRUNJRklFRBAAEhUKEVNFQVJDSF9NT0RFX1dPUkRTEAESFwoTU0VBUkNIX01PREVfTUVBTklORxACEhUKEVNFQVJDSF9NT0RFX05BTUVTEAMSFgoSU0VBUkNIX01PREVfSFlCUklEEAQysAEKDVNlYXJjaFNlcnZpY2USSgoLU2VhcmNoTmFtZXMSHC5udW1lbi52MS5TZWFyY2hOYW1lc1JlcXVlc3QaHS5udW1lbi52MS5TZWFyY2hOYW1lc1Jlc3BvbnNlElMKDlNlYXJjaFBhc3NhZ2VzEh8ubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXF1ZXN0GiAubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_file, file_numen_v1_note, file_numen_v1_shared]);
+  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIjIKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSI5ChNTZWFyY2hOYW1lc1Jlc3BvbnNlEiIKBWZvdW5kGAEgAygLMhMubnVtZW4udjEuTmFtZU1hdGNoIp8BCglOYW1lTWF0Y2gSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJwoHaGVhZGluZxgCIAEoCzIRLm51bWVuLnYxLkhlYWRpbmdIAIgBARIdCgVzcGFucxgDIAMoCzIOLm51bWVuLnYxLlNwYW4SIAoEdHlwZRgEIAEoDjISLm51bWVuLnYxLk5vdGVUeXBlQgoKCF9oZWFkaW5nIlkKFVNlYXJjaFBhc3NhZ2VzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIiCgRtb2RlGAMgASgOMhQubnVtZW4udjEuU2VhcmNoTW9kZSI6ChZTZWFyY2hQYXNzYWdlc1Jlc3BvbnNlEiAKBWZvdW5kGAEgAygLMhEubnVtZW4udjEuUGFzc2FnZSL0AQoHUGFzc2FnZRIMCgRwYXRoGAEgASgJEiEKBG5vdGUYAiABKAsyDi5udW1lbi52MS5Ob3RlSACIAQESDAoEdGV4dBgDIAEoCRIdCgVzcGFucxgEIAMoCzIOLm51bWVuLnYxLlNwYW4SEAoIbG9jYXRpb24YBSABKAkSHAoEc3BhbhgGIAEoCzIOLm51bWVuLnYxLlNwYW4SDAoEbGluZRgHIAEoBRIgCgR0eXBlGAggASgOMhIubnVtZW4udjEuTm90ZVR5cGUSIgoEa2luZBgJIAEoDjIULm51bWVuLnYxLlNvdXJjZUtpbmRCBwoFX25vdGUqiAEKClNlYXJjaE1vZGUSGwoXU0VBUkNIX01PREVfVU5TUEVDSUZJRUQQABIVChFTRUFSQ0hfTU9ERV9XT1JEUxABEhcKE1NFQVJDSF9NT0RFX01FQU5JTkcQAhIVChFTRUFSQ0hfTU9ERV9OQU1FUxADEhYKElNFQVJDSF9NT0RFX0hZQlJJRBAEMrABCg1TZWFyY2hTZXJ2aWNlEkoKC1NlYXJjaE5hbWVzEhwubnVtZW4udjEuU2VhcmNoTmFtZXNSZXF1ZXN0Gh0ubnVtZW4udjEuU2VhcmNoTmFtZXNSZXNwb25zZRJTCg5TZWFyY2hQYXNzYWdlcxIfLm51bWVuLnYxLlNlYXJjaFBhc3NhZ2VzUmVxdWVzdBogLm51bWVuLnYxLlNlYXJjaFBhc3NhZ2VzUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_file, file_numen_v1_note, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.SearchNamesRequest
@@ -96,9 +96,9 @@ export type NameMatch = Message<"numen.v1.NameMatch"> & {
    * in UTF-16 code units.
    * A word reached by its prefix is marked whole.
    *
-   * @generated from field: repeated numen.v1.Span at = 3;
+   * @generated from field: repeated numen.v1.Span spans = 3;
    */
-  at: Span[];
+  spans: Span[];
 
   /**
    * Which of three the note is, so a client draws a deck and a stencil as what
@@ -200,9 +200,9 @@ export type Passage = Message<"numen.v1.Passage"> & {
    * text: in UTF-16 code units. Empty for a hit by meaning, which stands on no
    * word in particular.
    *
-   * @generated from field: repeated numen.v1.Span at = 4;
+   * @generated from field: repeated numen.v1.Span spans = 4;
    */
-  at: Span[];
+  spans: Span[];
 
   /**
    * What the source's own numbering calls the place, empty when the format
@@ -214,23 +214,18 @@ export type Passage = Message<"numen.v1.Passage"> & {
 
   /**
    * Where the passage stands in the text of the source it was read out of,
-   * counted in bytes. It is what opens that source here, and a hit in a note
-   * carries it as every other hit does.
+   * counted in bytes. With the path above it is the place this opens, and a hit
+   * in a note carries it as every other hit does.
    *
-   * @generated from field: int32 start = 6;
+   * @generated from field: numen.v1.Span span = 6;
    */
-  start: number;
-
-  /**
-   * @generated from field: int32 length = 7;
-   */
-  length: number;
+  span?: Span | undefined;
 
   /**
    * Where the chunk that matched stands, counted from the first line of the
    * source's prose. It is the line a note opens on, and the caret stands there.
    *
-   * @generated from field: int32 line = 8;
+   * @generated from field: int32 line = 7;
    */
   line: number;
 
@@ -238,7 +233,7 @@ export type Passage = Message<"numen.v1.Passage"> & {
    * Which of three the note is, so a client draws a deck and a stencil as what
    * they are. It says nothing about a source that is not a note.
    *
-   * @generated from field: numen.v1.NoteType type = 9;
+   * @generated from field: numen.v1.NoteType type = 8;
    */
   type: NoteType;
 
@@ -246,7 +241,7 @@ export type Passage = Message<"numen.v1.Passage"> & {
    * What the vault holds at that path, so a client draws a book and a
    * recording as what they are.
    *
-   * @generated from field: numen.v1.SourceKind kind = 10;
+   * @generated from field: numen.v1.SourceKind kind = 9;
    */
   kind: SourceKind;
 };
@@ -257,30 +252,6 @@ export type Passage = Message<"numen.v1.Passage"> & {
  */
 export const PassageSchema: GenMessage<Passage> = /*@__PURE__*/
   messageDesc(file_numen_v1_search, 5);
-
-/**
- * Span is a run of text, by where it begins and where it ends.
- *
- * @generated from message numen.v1.Span
- */
-export type Span = Message<"numen.v1.Span"> & {
-  /**
-   * @generated from field: int32 from = 1;
-   */
-  from: number;
-
-  /**
-   * @generated from field: int32 to = 2;
-   */
-  to: number;
-};
-
-/**
- * Describes the message numen.v1.Span.
- * Use `create(SpanSchema)` to create a new message.
- */
-export const SpanSchema: GenMessage<Span> = /*@__PURE__*/
-  messageDesc(file_numen_v1_search, 6);
 
 /**
  * SearchMode is how a search is asked. Each mode is an order of its own, and a

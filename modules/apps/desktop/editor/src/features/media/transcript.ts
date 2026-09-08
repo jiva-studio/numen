@@ -3,7 +3,7 @@
  * transcript, which cue is being said now, and the words as a person edits
  * them.
  */
-import type { Stretch } from '../../shared/core'
+import type { Span } from '../../shared/core'
 import { computed, ref, shallowRef } from 'vue'
 import { clock } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
@@ -58,10 +58,10 @@ export interface Recordings {
   /** The words as a person has edited them, kept against the recording. */
   writes(path: string, cues: readonly Cue[]): Promise<void>
   /**
-   * The millisecond a stretch of the words written down is played from, and
+   * The millisecond a span of the words written down is played from, and
    * nothing where no cue holds it.
    */
-  plays(path: string, stretch: Stretch): Promise<number | null>
+  plays(path: string, span: Span): Promise<number | null>
 }
 
 /**
@@ -174,7 +174,7 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
   )
 
   /**
-   * Whether the text carries the times each stretch of it was said at. A page
+   * Whether the text carries the times each span of it was said at. A page
    * is prose and carries none: there is nothing to seek and no line being said.
    */
   const timed = computed(() => cues.value.length > 0)
@@ -358,15 +358,15 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
   }
 
   /**
-   * Stretches of the words written down reached: the player is sent to the
-   * moment the first of them was spoken at. A stretch no cue holds leaves the
+   * Spanes of the words written down reached: the player is sent to the
+   * moment the first of them was spoken at. A span no cue holds leaves the
    * player where it stands.
    */
-  const reach = async (...stretches: readonly Stretch[]) => {
+  const reach = async (...spans: readonly Span[]) => {
     await opened
-    if (!open || stretches.length === 0) return
+    if (!open || spans.length === 0) return
     try {
-      const ms = await recordings.plays(path, stretches[0]!)
+      const ms = await recordings.plays(path, spans[0]!)
       if (!open || ms === null) return
       go(ms)
     } catch (error) {

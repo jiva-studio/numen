@@ -25,7 +25,7 @@ const SHAPE: Shape = {
 function book(shape: Shape | Error = SHAPE, where: readonly (readonly HighlightedPage[])[] = []) {
   const asked: string[] = []
   /** Every stretch of the document's text it was asked what stands on. */
-  const stretches: string[] = []
+  const spans: string[] = []
 
   const documents: Documents = {
     shape: async (path) => {
@@ -35,12 +35,12 @@ function book(shape: Shape | Error = SHAPE, where: readonly (readonly Highlighte
     },
     page: (path, at, wide) => `${path} ${at} ${wide}`,
     highlights: async (path, asking) => {
-      for (const one of asking) stretches.push(`${path} ${one.start} ${one.length}`)
+      for (const one of asking) spans.push(`${path} ${one.from} ${one.to}`)
       return asking.map((_, i) => where[i] ?? [])
     },
   }
 
-  return { documents, asked, stretches }
+  return { documents, asked, spans }
 }
 
 describe('a document opened', () => {
@@ -158,13 +158,13 @@ describe('what is highlighted', () => {
 describe('a document opened at a place in its text', () => {
   it('highlights what stands there, on the first page it falls on', async () => {
     const rect = { minX: 0.1, minY: 0.2, maxX: 0.4, maxY: 0.23 }
-    const { documents, stretches } = book(SHAPE, [[{ page: 1, rects: [rect] }]])
+    const { documents, spans } = book(SHAPE, [[{ page: 1, rects: [rect] }]])
     const read = openDocument(documents, 'Book.pdf')
     read.widen(800)
 
-    await read.reach({ start: 40_512, length: 31 })
+    await read.reach({ from: 40_512, to: 40_543 })
 
-    expect(stretches).toStrictEqual(['Book.pdf 40512 31'])
+    expect(spans).toStrictEqual(['Book.pdf 40512 40543'])
     expect(read.at.value).toBe(1)
     expect(read.highlighted.value).toStrictEqual([rect])
   })
@@ -173,7 +173,7 @@ describe('a document opened at a place in its text', () => {
     const here = { minX: 0.1, minY: 0.2, maxX: 0.4, maxY: 0.23 }
     const there = { minX: 0.1, minY: 0.5, maxX: 0.4, maxY: 0.53 }
     const alsoThere = { minX: 0.1, minY: 0.8, maxX: 0.4, maxY: 0.83 }
-    const { documents, stretches } = book(SHAPE, [
+    const { documents, spans } = book(SHAPE, [
       [{ page: 1, rects: [here] }],
       [{ page: 1, rects: [there] }],
       [{ page: 2, rects: [alsoThere] }],
@@ -182,12 +182,16 @@ describe('a document opened at a place in its text', () => {
     read.widen(800)
 
     await read.reach(
-      { start: 40_512, length: 31 },
-      { start: 41_000, length: 20 },
-      { start: 90_000, length: 12 },
+      { from: 40_512, to: 40_543 },
+      { from: 41_000, to: 41_020 },
+      { from: 90_000, to: 90_012 },
     )
 
-    expect(stretches).toStrictEqual(['Book.pdf 40512 31', 'Book.pdf 41000 20', 'Book.pdf 90000 12'])
+    expect(spans).toStrictEqual([
+      'Book.pdf 40512 40543',
+      'Book.pdf 41000 41020',
+      'Book.pdf 90000 90012',
+    ])
     // The tab stands at the first place, which is the one highlighted.
     expect(read.at.value).toBe(1)
     expect(read.highlighted.value).toStrictEqual([here])
@@ -202,7 +206,7 @@ describe('a document opened at a place in its text', () => {
     const read = openDocument(documents, 'Book.pdf')
     read.widen(800)
 
-    await read.reach({ start: 40_512, length: 31 })
+    await read.reach({ from: 40_512, to: 40_543 })
 
     expect(read.at.value).toBe(0)
     expect(read.highlighted.value).toStrictEqual([])
@@ -217,7 +221,7 @@ describe('a document opened at a place in its text', () => {
     const read = openDocument(documents, 'Book.pdf')
     read.widen(800)
 
-    await read.reach({ start: 40_512, length: 31 })
+    await read.reach({ from: 40_512, to: 40_543 })
 
     expect(read.trouble.value).toContain('numen did not answer')
     expect(read.trouble.value).not.toContain('the layer is being written')

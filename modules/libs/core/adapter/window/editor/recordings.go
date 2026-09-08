@@ -138,7 +138,7 @@ func (a *API) ReadText(
 		out.Text = &v1.ReadTextResponse_Prose{Prose: prose}
 		return connect.NewResponse(out), nil
 	}
-	if at := r.Msg.GetAt(); at != nil {
+	if at := r.Msg.GetSpan(); at != nil {
 		cues, err = within(at)(cues)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
@@ -274,19 +274,19 @@ func ordered(cues []*v1.Cue) ([]transcript.Cue, error) {
 
 // within cuts the cues down to the run of the words a request named.
 //
-// The run is a start and a length in the words, which is how a passage is
-// addressed everywhere else, and what comes back is the speech those bytes were
-// said in. A search hit is played from the first of them.
-func within(at *v1.Stretch) func([]transcript.Cue) ([]transcript.Cue, error) {
+// The run is a span of the words, which is how a passage is addressed
+// everywhere else, and what comes back is the speech those bytes were said in.
+// A search hit is played from the first of them.
+func within(at *v1.Span) func([]transcript.Cue) ([]transcript.Cue, error) {
 	return func(cues []transcript.Cue) ([]transcript.Cue, error) {
-		start, length := int(at.GetStart()), int(at.GetLength())
-		if start < 0 {
-			return nil, fmt.Errorf("start: %d is not a place in the words", start)
+		span := domain.Span{From: int(at.GetFrom()), To: int(at.GetTo())}
+		if span.From < 0 {
+			return nil, fmt.Errorf("from: %d is not a place in the words", span.From)
 		}
-		if length <= 0 {
-			return nil, fmt.Errorf("length: %d is not a run of words", length)
+		if span.Empty() {
+			return nil, fmt.Errorf("to: %d is not the end of a run of words", span.To)
 		}
-		return transcript.At(cues, start, length), nil
+		return transcript.At(cues, span.From, span.Len()), nil
 	}
 }
 

@@ -8,14 +8,12 @@ import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import type { Conversation, Turn } from '@numen/ui'
 import { agentKind, talking, type AgentTabState } from './kind'
-import type { Stretch } from '../../shared/core'
+import type { Span } from '../../shared/core'
 import { windowing } from '../../shared/tabs/windowing'
 import { AGENT } from '../../shared/tabs/workspace'
 
-/** A talk that records what it was asked, and the passages its lines name. */
-const talked = (
-  passages: Record<string, { path: string; start: number; length: number }> = {},
-) => {
+/** A talk that records what it was asked, and the places its lines name. */
+const talked = (places: Record<string, { path: string; span: Span }> = {}) => {
   const asked: [string, string][] = []
   const stopped: string[] = []
   const said = ref<Turn[]>([])
@@ -25,7 +23,7 @@ const talked = (
     ask: async (text, focus) => {
       asked.push([text, focus])
     },
-    passage: (turn) => passages[turn] ?? null,
+    place: (turn) => places[turn] ?? null,
     stop: () => stopped.push('stop'),
     finish: () => stopped.push('finish'),
   }
@@ -37,14 +35,14 @@ const talked = (
  * with the notes it was handed, and reaches nothing for every other address.
  */
 const tab = (
-  passages: Record<string, { path: string; start: number; length: number }> = {},
+  places: Record<string, { path: string; span: Span }> = {},
   notes: Record<string, string> = {},
 ) => {
-  const talk = talked(passages)
-  const opened: [string, readonly Stretch[]][] = []
+  const talk = talked(places)
+  const opened: [string, readonly Span[]][] = []
   const beside: string[] = []
   const state = talking(talk.talk, {
-    opens: (path, ...stretches) => opened.push([path, stretches]),
+    opens: (path, ...spans) => opened.push([path, spans]),
     beside: (path) => beside.push(path),
     resolve: async (written) =>
       new Map(written.filter((one) => notes[one]).map((one) => [one, notes[one]!])),
@@ -106,11 +104,11 @@ describe('a question sent', () => {
 
 describe('a line about work pressed', () => {
   it('opens the place that call was on', () => {
-    const one = tab({ call: { path: 'Source.pdf', start: 10, length: 4 } })
+    const one = tab({ call: { path: 'Source.pdf', span: { from: 10, to: 14 } } })
 
     one.state.opensTurn(turn('call', 'read Source.pdf'))
 
-    expect(one.opened).toEqual([['Source.pdf', [{ start: 10, length: 4 }]]])
+    expect(one.opened).toEqual([['Source.pdf', [{ from: 10, to: 14 }]]])
   })
 
   it('opens nothing for a line that names no place', () => {
@@ -142,8 +140,8 @@ describe('a link inside an answer', () => {
       [
         'Source.pdf',
         [
-          { start: 10, length: 4 },
-          { start: 90, length: 2 },
+          { from: 10, to: 14 },
+          { from: 90, to: 92 },
         ],
       ],
     ])

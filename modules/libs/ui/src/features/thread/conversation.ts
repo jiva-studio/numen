@@ -10,7 +10,7 @@
 import { ref, type Ref } from 'vue'
 import { onNextFrame } from '@/shared/lib/clock'
 import { charsWord, type Turn } from './turn'
-import type { AgentPort, Passage } from './agent'
+import type { AgentPort, Place } from './agent'
 
 /** The words the panel puts up itself. */
 export interface ConversationStrings {
@@ -27,8 +27,8 @@ export interface Conversation {
   /** An answer is being written; the composer shows it. */
   readonly working: Ref<boolean>
   readonly ask: (asked: string, focus: string) => Promise<void>
-  /** The stretch of a source one line names, for a line that says it opens one. */
-  readonly passage: (turn: string) => Passage | null
+  /** The place of a source one line names, for a line that says it opens one. */
+  readonly place: (turn: string) => Place | null
   /** The answer on its way is let go of, and the conversation keeps what arrived. */
   readonly stop: () => void
   /**
@@ -63,8 +63,8 @@ export function conversation(
   const turns = ref<Turn[]>([])
   const working = ref(false)
 
-  /** The stretch of a source each line about work names, under the line's name. */
-  const passages = new Map<string, Passage>()
+  /** The place of a source each line about work names, under the line's name. */
+  const places = new Map<string, Place>()
 
   let next = 0
   let inFlight: AbortController | null = null
@@ -115,7 +115,7 @@ export function conversation(
 
     const takeDown = () => {
       drop(doing)
-      passages.delete(doing)
+      places.delete(doing)
       up = false
     }
 
@@ -127,7 +127,7 @@ export function conversation(
         about,
         aside: charsWord(written),
         state,
-        ...(passages.has(doing) ? { opens: true } : {}),
+        ...(places.has(doing) ? { opens: true } : {}),
       })
       up = true
     }
@@ -204,10 +204,11 @@ export function conversation(
             calls.add(`${step.tool}\u0000${step.about}`)
             says = spoken(step.tool)
             about = step.about
-            // A call naming a stretch of a source's text names somewhere the
-            // line can be pressed to open.
-            if (step.passage?.length) passages.set(doing, step.passage)
-            else passages.delete(doing)
+            // A call naming a run of a source's text names somewhere the line
+            // can be pressed to open.
+            if (step.place && step.place.span.to > step.place.span.from) {
+              places.set(doing, step.place)
+            } else places.delete(doing)
             nowDoing('arriving', step.written)
             break
 
@@ -293,7 +294,7 @@ export function conversation(
     turns,
     working,
     ask,
-    passage: (turn: string) => passages.get(turn) ?? null,
+    place: (turn: string) => places.get(turn) ?? null,
     stop,
     finish,
   }

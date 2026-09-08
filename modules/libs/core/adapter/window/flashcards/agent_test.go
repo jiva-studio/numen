@@ -136,7 +136,7 @@ func TestEveryStepReachesThePageAsItself(t *testing.T) {
 	agent := &asking{took: make(chan port.Task, 1), takes: []port.Step{
 		{Kind: port.StepThinking},
 		{Kind: port.StepSearch, Tool: "note_search", About: "leaf mould", Count: 11,
-			Place: domain.Place{Path: "decks/Words.md", Start: 4, Length: 9}},
+			Place: domain.Place{Path: "decks/Words.md", Spans: []domain.Span{{From: 4, To: 13}}}},
 		{Kind: port.StepAnswered},
 		{Kind: port.StepSaying, Text: "Because the leaves make it."},
 		{Kind: port.StepStopped, Detail: "the agent went away"},

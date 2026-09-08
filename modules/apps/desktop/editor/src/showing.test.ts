@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { showing } from './showing'
-import type { Core, Stretch, Task } from './shared/core'
+import type { Core, Span, Task } from './shared/core'
 import type { Neighbourhood } from './shared/core'
 
 const answer = (path: string): Neighbourhood => ({
@@ -89,7 +89,7 @@ const nap = () => new Promise((wake) => setTimeout(wake, 0))
  * note is wanted in front of the person. What each tab does about either is
  * asked where that tab is.
  */
-const heard = (core: Core, reads?: (path: string, stretches: readonly Stretch[]) => void) => {
+const heard = (core: Core, reads?: (path: string, spans: readonly Span[]) => void) => {
   const changed: string[] = []
   const wanted: string[] = []
   const showed = showing(core, {
@@ -317,7 +317,7 @@ describe('a note asked for from outside the window', () => {
   it('is put in front of the person, wherever the window draws it', async () => {
     const core = fake({
       focus: async function* () {
-        yield { path: 'Wanted.md' }
+        yield { path: 'Wanted.md', spans: [] }
       },
     })
     const one = heard(core)
@@ -332,8 +332,8 @@ describe('a place inside a source asked for from outside the window', () => {
   /** A window that records the documents it was asked to open, and where. */
   const watching = (core: Core) => {
     const opened: string[] = []
-    const one = heard(core, (path, stretches) =>
-      opened.push(`${path} ${stretches.map((one) => `${one.start} ${one.length}`).join(' ')}`),
+    const one = heard(core, (path, spans) =>
+      opened.push(`${path} ${spans.map((one) => `${one.from} ${one.to}`).join(' ')}`),
     )
     return { window: one.window, opened, wanted: one.wanted }
   }
@@ -341,14 +341,14 @@ describe('a place inside a source asked for from outside the window', () => {
   it('opens the document it stands in, and asks for no note at all', async () => {
     const core = fake({
       focus: async function* () {
-        yield { path: 'library/mahabharata.epub', start: 40_512, length: 31 }
+        yield { path: 'library/mahabharata.epub', spans: [{ from: 40_512, to: 40_543 }] }
       },
     })
     const { window, opened, wanted } = watching(core)
 
     await window.watch()
 
-    expect(opened).toStrictEqual(['library/mahabharata.epub 40512 31'])
+    expect(opened).toStrictEqual(['library/mahabharata.epub 40512 40543'])
     expect(wanted).toStrictEqual([])
   })
 
@@ -357,12 +357,11 @@ describe('a place inside a source asked for from outside the window', () => {
       focus: async function* () {
         yield {
           path: 'library/mahabharata.epub',
-          start: 40_512,
-          length: 31,
-          also: [
-            { start: 41_000, length: 20 },
-            // A place of no length is no place, and is not lit.
-            { start: 42_000, length: 0 },
+          spans: [
+            { from: 40_512, to: 40_543 },
+            { from: 41_000, to: 41_020 },
+            // A span reaching nowhere is no place, and is not lit.
+            { from: 42_000, to: 42_000 },
           ],
         }
       },
@@ -371,13 +370,13 @@ describe('a place inside a source asked for from outside the window', () => {
 
     await window.watch()
 
-    expect(opened).toStrictEqual(['library/mahabharata.epub 40512 31 41000 20'])
+    expect(opened).toStrictEqual(['library/mahabharata.epub 40512 40543 41000 41020'])
   })
 
   it('asks for the note itself where the focus names no run of a source', async () => {
     const core = fake({
       focus: async function* () {
-        yield { path: 'Wanted.md', start: 0, length: 0 }
+        yield { path: 'Wanted.md', spans: [{ from: 0, to: 0 }] }
       },
     })
     const { window, opened, wanted } = watching(core)

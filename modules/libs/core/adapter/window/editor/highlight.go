@@ -9,7 +9,6 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 )
 
 // ListHighlights answers where runs of a source's text sit: the pages each
@@ -22,7 +21,7 @@ func (a *API) ListHighlights(
 	if showing.ID == "" {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
 	}
-	runs, err := places(r.Msg.GetAt())
+	runs, err := places(r.Msg.GetSpans())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
@@ -65,20 +64,20 @@ const longestRun = 100_000
 
 // places is which parts of the source's text a caller is asking about, in the
 // order they were asked about.
-func places(at []*v1.Stretch) ([]highlight.Stretch, error) {
+func places(at []*v1.Span) ([]domain.Span, error) {
 	if len(at) == 0 || len(at) > domain.MostHighlights {
 		return nil, fmt.Errorf("ask about between one and %d places, not %d", domain.MostHighlights, len(at))
 	}
-	runs := make([]highlight.Stretch, 0, len(at))
+	runs := make([]domain.Span, 0, len(at))
 	for _, one := range at {
-		start, length := int(one.GetStart()), int(one.GetLength())
-		if start < 0 {
-			return nil, fmt.Errorf("start: %d is not a place in the text", start)
+		span := domain.Span{From: int(one.GetFrom()), To: int(one.GetTo())}
+		if span.From < 0 {
+			return nil, fmt.Errorf("from: %d is not a place in the text", span.From)
 		}
-		if length < 1 || length > longestRun {
-			return nil, fmt.Errorf("length: %d is not a run of the text", length)
+		if span.Len() < 1 || span.Len() > longestRun {
+			return nil, fmt.Errorf("to: %d is not the end of a run of the text", span.To)
 		}
-		runs = append(runs, highlight.Stretch{Start: start, Length: length})
+		runs = append(runs, span)
 	}
 	return runs, nil
 }

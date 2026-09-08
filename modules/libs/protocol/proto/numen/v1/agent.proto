@@ -7,6 +7,8 @@ syntax = "proto3";
 // business and is said nowhere here.
 package numen.v1;
 
+import "numen/v1/shared.proto";
+
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
 
 // AgentService gives a task to the agent working this vault.
@@ -106,8 +108,7 @@ message ToolCall {
   // files it under. Empty for a call that is working on no one file.
   string path = 4;
 
-  // The stretch of that source's text the call names, counted in bytes. A
-  // length of zero is a call that named the source and no place inside it.
-  int32 start = 5;
-  int32 length = 6;
+  // The run of that source's text the call names, counted in bytes. An empty
+  // span is a call that named the source and no place inside it.
+  Span span = 5;
 }

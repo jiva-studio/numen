@@ -54,13 +54,13 @@ func plan(boxes []highlight.Box, lines []Line) walk {
 	end := 0
 	for _, i := range at {
 		box := boxes[i]
-		if box.Start < end || box.Length < 0 {
+		if box.From < end || box.To < box.From {
 			continue
 		}
-		one := change{index: i, start: box.Start, length: box.Length, text: said[i]}
+		one := change{index: i, start: box.From, length: box.Len(), text: said[i]}
 		w.changes = append(w.changes, one)
 		w.grown = append(w.grown, w.grown[len(w.grown)-1]+one.delta())
-		end = box.Start + box.Length
+		end = box.To
 	}
 	return w
 }
@@ -93,11 +93,13 @@ func Boxes(boxes []highlight.Box, lines []Line) []highlight.Box {
 	copy(out, boxes)
 	next := 0
 	for i := range out {
-		out[i].Start += w.grown[next]
+		covers := out[i].Len()
+		out[i].From += w.grown[next]
 		if next < len(w.changes) && w.changes[next].index == i {
-			out[i].Length = len(w.changes[next].text)
+			covers = len(w.changes[next].text)
 			next++
 		}
+		out[i].To = out[i].From + covers
 	}
 	return out
 }

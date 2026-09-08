@@ -10,7 +10,8 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { onMounted, onUnmounted, ref, type Component } from 'vue'
 import { AudioLines, BookOpen, FileText, Gauge, Layers, LayoutTemplate } from '@lucide/vue'
 import Palette from './Palette.vue'
-import { keyChord, type PaletteGroup, type PaletteSpan } from './item'
+import { keyChord, type PaletteGroup } from './item'
+import type { Span } from '@/shared/lib/span'
 import {
   ARABIC,
   DEVANAGARI,
@@ -60,9 +61,9 @@ const EVERYTHING = [
  * Where a word stands in a line, every time it stands there. This is the
  * fixture's own arithmetic: the palette is told where the runs are.
  */
-const marks = (text: string, word: string): PaletteSpan[] => {
+const marks = (text: string, word: string): Span[] => {
   if (!word) return []
-  const out: PaletteSpan[] = []
+  const out: Span[] = []
   const haystack = text.toLowerCase()
   const needle = word.toLowerCase()
   for (let at = haystack.indexOf(needle); at >= 0; at = haystack.indexOf(needle, at + 1)) {

@@ -34,15 +34,10 @@ message WatchFocusResponse {
   // from, or a document to open.
   string path = 1;
 
-  // Where in the text of that source to open, counted in bytes. A length of
-  // zero names the source and no place inside it, which is what a note arrives
-  // with.
-  int32 start = 2;
-  int32 length = 3;
-
-  // The other stretches of the same source worth seeing. The person is taken to
-  // the stretch above, and these are shown where they fall.
-  repeated Stretch also = 4;
+  // The runs of that source's text to open on, counted in bytes. The person is
+  // taken to the first and the rest are shown where they fall. None at all
+  // names the source and no place inside it, which is what a note arrives with.
+  repeated Span spans = 2;
 }
 
 message WriteOpenTabsRequest {

@@ -13,10 +13,10 @@ export interface DestinationDeps {
   /** A note put in front of the person, in the plex they are looking at. */
   travel(path: string): Promise<void>
   /**
-   * A source put in front of the person at a stretch of its own text, in the
+   * A source put in front of the person at a span of its own text, in the
    * editor made for what it is.
    */
-  opensAt(path: string, run: { start: number; length: number }): Promise<void>
+  opensAt(path: string, run: { from: number; to: number }): Promise<void>
   /**
    * A file put in front of the person, in the editor made for what it is, at
    * the line it was chosen at.
@@ -32,10 +32,8 @@ export async function lands(
   if (!going) return
   if (going.at === 'plex') return void places.travel(going.path)
   if (going.at === 'document') {
-    await places.opensAt(going.path, {
-      start: going.start ?? 0,
-      length: going.length ?? 0,
-    })
+    const from = going.start ?? 0
+    await places.opensAt(going.path, { from, to: from + (going.length ?? 0) })
     return
   }
   places.opens(going.path, going.title || going.path, going.line)

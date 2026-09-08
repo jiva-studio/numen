@@ -8,6 +8,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -73,8 +74,7 @@ func stepsOf(step port.Step) []*v1.AskAgentResponse {
 				About:   step.About,
 				Written: int32(step.Count),
 				Path:    step.Place.Path,
-				Start:   int32(step.Place.Start),
-				Length:  int32(step.Place.Length),
+				Span:    spanOf(step.Place.Spans),
 			},
 		}}}
 	case port.StepAnswered:
@@ -86,4 +86,13 @@ func stepsOf(step port.Step) []*v1.AskAgentResponse {
 	default:
 		return []*v1.AskAgentResponse{{Step: &v1.AskAgentResponse_Said{Said: step.Text}}}
 	}
+}
+
+// spanOf is the one span a call names, and nothing where it named the source
+// and no place inside it.
+func spanOf(spans []domain.Span) *v1.Span {
+	if len(spans) == 0 {
+		return nil
+	}
+	return &v1.Span{From: int32(spans[0].From), To: int32(spans[0].To)}
 }

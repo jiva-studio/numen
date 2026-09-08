@@ -10,13 +10,15 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Span } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/agent.proto.
  */
 export const file_numen_v1_agent: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiFgoUR2V0QWdlbnRTdGF0ZVJlcXVlc3QiLAoVR2V0QWdlbnRTdGF0ZVJlc3BvbnNlEhMKC3VucmVhY2hhYmxlGAEgASgJImEKD0Fza0FnZW50UmVxdWVzdBINCgVhc2tlZBgBIAEoCRINCgVmb2N1cxgCIAEoCRIUCgxjb252ZXJzYXRpb24YAyABKAkSDAoEbWFyaxgEIAEoCRIMCgRmYWNlGAUgASgJIjEKGUZpbmlzaENvbnZlcnNhdGlvblJlcXVlc3QSFAoMY29udmVyc2F0aW9uGAEgASgJIhwKGkZpbmlzaENvbnZlcnNhdGlvblJlc3BvbnNlIrYBChBBc2tBZ2VudFJlc3BvbnNlEg4KBHNhaWQYASABKAlIABInCgl0b29sX2NhbGwYAiABKAsyEi5udW1lbi52MS5Ub29sQ2FsbEgAEhEKB3N0b3BwZWQYAyABKAlIABImCghhbnN3ZXJlZBgEIAEoCzISLm51bWVuLnYxLkFuc3dlcmVkSAASJgoIdGhpbmtpbmcYBSABKAsyEi5udW1lbi52MS5UaGlua2luZ0gAQgYKBHN0ZXAiCgoIQW5zd2VyZWQiCgoIVGhpbmtpbmciZQoIVG9vbENhbGwSDAoEdG9vbBgBIAEoCRINCgVhYm91dBgCIAEoCRIPCgd3cml0dGVuGAMgASgFEgwKBHBhdGgYBCABKAkSDQoFc3RhcnQYBSABKAUSDgoGbGVuZ3RoGAYgASgFMoYCCgxBZ2VudFNlcnZpY2USQwoIQXNrQWdlbnQSGS5udW1lbi52MS5Bc2tBZ2VudFJlcXVlc3QaGi5udW1lbi52MS5Bc2tBZ2VudFJlc3BvbnNlMAESXwoSRmluaXNoQ29udmVyc2F0aW9uEiMubnVtZW4udjEuRmluaXNoQ29udmVyc2F0aW9uUmVxdWVzdBokLm51bWVuLnYxLkZpbmlzaENvbnZlcnNhdGlvblJlc3BvbnNlElAKDUdldEFnZW50U3RhdGUSHi5udW1lbi52MS5HZXRBZ2VudFN0YXRlUmVxdWVzdBofLm51bWVuLnYxLkdldEFnZW50U3RhdGVSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiFgoUR2V0QWdlbnRTdGF0ZVJlcXVlc3QiLAoVR2V0QWdlbnRTdGF0ZVJlc3BvbnNlEhMKC3VucmVhY2hhYmxlGAEgASgJImEKD0Fza0FnZW50UmVxdWVzdBINCgVhc2tlZBgBIAEoCRINCgVmb2N1cxgCIAEoCRIUCgxjb252ZXJzYXRpb24YAyABKAkSDAoEbWFyaxgEIAEoCRIMCgRmYWNlGAUgASgJIjEKGUZpbmlzaENvbnZlcnNhdGlvblJlcXVlc3QSFAoMY29udmVyc2F0aW9uGAEgASgJIhwKGkZpbmlzaENvbnZlcnNhdGlvblJlc3BvbnNlIrYBChBBc2tBZ2VudFJlc3BvbnNlEg4KBHNhaWQYASABKAlIABInCgl0b29sX2NhbGwYAiABKAsyEi5udW1lbi52MS5Ub29sQ2FsbEgAEhEKB3N0b3BwZWQYAyABKAlIABImCghhbnN3ZXJlZBgEIAEoCzISLm51bWVuLnYxLkFuc3dlcmVkSAASJgoIdGhpbmtpbmcYBSABKAsyEi5udW1lbi52MS5UaGlua2luZ0gAQgYKBHN0ZXAiCgoIQW5zd2VyZWQiCgoIVGhpbmtpbmciZAoIVG9vbENhbGwSDAoEdG9vbBgBIAEoCRINCgVhYm91dBgCIAEoCRIPCgd3cml0dGVuGAMgASgFEgwKBHBhdGgYBCABKAkSHAoEc3BhbhgFIAEoCzIOLm51bWVuLnYxLlNwYW4yhgIKDEFnZW50U2VydmljZRJDCghBc2tBZ2VudBIZLm51bWVuLnYxLkFza0FnZW50UmVxdWVzdBoaLm51bWVuLnYxLkFza0FnZW50UmVzcG9uc2UwARJfChJGaW5pc2hDb252ZXJzYXRpb24SIy5udW1lbi52MS5GaW5pc2hDb252ZXJzYXRpb25SZXF1ZXN0GiQubnVtZW4udjEuRmluaXNoQ29udmVyc2F0aW9uUmVzcG9uc2USUAoNR2V0QWdlbnRTdGF0ZRIeLm51bWVuLnYxLkdldEFnZW50U3RhdGVSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0QWdlbnRTdGF0ZVJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetAgentStateRequest
@@ -270,17 +272,12 @@ export type ToolCall = Message<"numen.v1.ToolCall"> & {
   path: string;
 
   /**
-   * The stretch of that source's text the call names, counted in bytes. A
-   * length of zero is a call that named the source and no place inside it.
+   * The run of that source's text the call names, counted in bytes. An empty
+   * span is a call that named the source and no place inside it.
    *
-   * @generated from field: int32 start = 5;
+   * @generated from field: numen.v1.Span span = 5;
    */
-  start: number;
-
-  /**
-   * @generated from field: int32 length = 6;
-   */
-  length: number;
+  span?: Span | undefined;
 };
 
 /**

@@ -20,14 +20,13 @@ import (
 func Scanned(prose string, boxes []highlight.Box) []Batch {
 	var out []Batch
 	for at, box := range boxes {
-		if box.Length <= 0 {
+		if box.Empty() {
 			continue
 		}
-		end := box.Start + box.Length
-		if box.Start < 0 || end > len(prose) {
+		if box.From < 0 || box.To > len(prose) {
 			return nil
 		}
-		line := Line{Number: at, Text: prose[box.Start:end]}
+		line := Line{Number: at, Text: prose[box.From:box.To]}
 		if n := len(out); n > 0 {
 			switch {
 			case box.Page == out[n-1].Number:

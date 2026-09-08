@@ -186,7 +186,7 @@ func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]ocr.Block, er
 	return append(out, ocr.Block{
 		Label:     "text",
 		Text:      said,
-		Stretches: []ocr.Stretch{{Box: image.Rect(10, 20, 30, 40), Length: len(said)}},
+		Boxes: []ocr.Box{{Rect: image.Rect(10, 20, 30, 40), Span: domain.Span{To: len(said)}}},
 	}), nil
 }
 
@@ -414,15 +414,15 @@ func reads(t *testing.T, prose string, boxes []highlight.Box, says string) {
 	t.Helper()
 	at := -1
 	for i, box := range boxes {
-		if box.Start < 0 || box.Start+box.Length > len(prose) {
-			t.Errorf("box %d reaches %d of %d bytes", i, box.Start+box.Length, len(prose))
+		if box.From < 0 || box.To > len(prose) {
+			t.Errorf("box %d reaches %d of %d bytes", i, box.To, len(prose))
 			continue
 		}
-		if box.Start <= at {
-			t.Errorf("box %d begins at %d, and the one before it at %d", i, box.Start, at)
+		if box.From <= at {
+			t.Errorf("box %d begins at %d, and the one before it at %d", i, box.From, at)
 		}
-		at = box.Start
-		if got := prose[box.Start : box.Start+box.Length]; !strings.HasPrefix(got, says) {
+		at = box.From
+		if got := prose[box.From:box.To]; !strings.HasPrefix(got, says) {
 			t.Errorf("box %d reads %q, and no page says that", i, got)
 		}
 	}
@@ -500,7 +500,7 @@ func TestCoordinatesAheadOfTheCountAreDropped(t *testing.T) {
 	if _, err := u.Execute(ctx, v, documentPath); !errors.Is(err, context.Canceled) {
 		t.Fatalf("stopping gave %v", err)
 	}
-	stray := highlight.Pack([]highlight.Box{{Page: 2, Stretch: highlight.Stretch{Start: 9000, Length: 7}}})
+	stray := highlight.Pack([]highlight.Box{{Page: 2, Span: domain.Span{From: 9000, To: 9007}}})
 	if err := shelf.Append(t.Context(), text.Boxes("ocr", documentHash()), stray); err != nil {
 		t.Fatal(err)
 	}

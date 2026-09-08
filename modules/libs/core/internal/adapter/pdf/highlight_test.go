@@ -79,7 +79,7 @@ func TestABoxCoversTheWordsItNames(t *testing.T) {
 		t.Fatalf("%d boxes, want the %d words the document says", len(boxes), len(words))
 	}
 	for i, box := range boxes {
-		if got := book.Text[box.Start : box.Start+box.Length]; got != words[i] {
+		if got := book.Text[box.From:box.To]; got != words[i] {
 			t.Errorf("box %d covers %q, want %q", i, got, words[i])
 		}
 		if box.Page != pages[i] {
@@ -98,15 +98,15 @@ func TestEveryBoxCoversOneWord(t *testing.T) {
 				t.Fatal("a document with a text layer lit nothing")
 			}
 			for _, box := range boxes {
-				if box.Start < 0 || box.Start+box.Length > len(book.Text) {
+				if box.From < 0 || box.To > len(book.Text) {
 					t.Fatalf("a box covers %d..%d of a text %d long",
-						box.Start, box.Start+box.Length, len(book.Text))
+						box.From, box.To, len(book.Text))
 				}
-				word := book.Text[box.Start : box.Start+box.Length]
+				word := book.Text[box.From:box.To]
 				if word == "" || strings.ContainsFunc(word, isSpace) {
 					t.Errorf("a box covers %q, which is not one word", word)
 				}
-				if at := book.Pages[box.Page].Offset; box.Start < at {
+				if at := book.Pages[box.Page].Offset; box.From < at {
 					t.Errorf("a box on page %d covers %q, which is before that page", box.Page, word)
 				}
 			}
@@ -164,9 +164,9 @@ func TestBoxesRiseInOrder(t *testing.T) {
 		t.Fatalf("%d boxes over %d pages", len(boxes), len(book.Pages))
 	}
 	for i := 1; i < len(boxes); i++ {
-		if boxes[i].Start < boxes[i-1].Start {
+		if boxes[i].From < boxes[i-1].From {
 			t.Fatalf("box %d begins at %d, after one beginning at %d",
-				i, boxes[i].Start, boxes[i-1].Start)
+				i, boxes[i].From, boxes[i-1].From)
 		}
 	}
 }
@@ -184,8 +184,8 @@ func TestOnePageIsLitAndTheRestAreNot(t *testing.T) {
 		if box.Page != 2 {
 			t.Errorf("page %d was lit and nobody asked about it", box.Page)
 		}
-		if box.Start < from || box.Start >= to {
-			t.Errorf("a box begins at %d, outside the page's %d..%d", box.Start, from, to)
+		if box.From < from || box.From >= to {
+			t.Errorf("a box begins at %d, outside the page's %d..%d", box.From, from, to)
 		}
 	}
 }
@@ -207,7 +207,7 @@ func TestATurnedPageIsLitTheWayItIsDrawn(t *testing.T) {
 		t.Fatalf("%d boxes, want the three words the page says", len(boxes))
 	}
 	for _, box := range boxes {
-		word := book.Text[box.Start : box.Start+box.Length]
+		word := book.Text[box.From:box.To]
 		if box.MaxY-box.MinY <= box.MaxX-box.MinX {
 			t.Errorf("%q covers %v, which lies across the page", word, box)
 		}

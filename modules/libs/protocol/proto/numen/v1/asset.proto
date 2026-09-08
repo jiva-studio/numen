@@ -90,7 +90,7 @@ message ListHighlightsRequest {
 
   // The runs of its text to answer about, counted in bytes over the text the
   // source is read as. A request naming none is not one.
-  repeated Stretch at = 2;
+  repeated Span spans = 2;
 }
 
 message ListHighlightsResponse {

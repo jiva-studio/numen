@@ -161,7 +161,8 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	write := func(pages []ocr.Page) error {
 		written, found, named := ocr.Write(pages)
 		for i := range found {
-			found[i].Start += prose
+			found[i].From += prose
+			found[i].To += prose
 		}
 		for i := range named {
 			named[i].Start += prose

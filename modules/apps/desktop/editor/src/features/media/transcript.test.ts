@@ -61,7 +61,7 @@ function talk(
       written.push(kept)
     },
     plays: async (path, run) => {
-      asked.push(`plays ${path} ${run.start} ${run.length}`)
+      asked.push(`plays ${path} ${run.from} ${run.to}`)
       return at
     },
   }
@@ -294,9 +294,9 @@ describe('a recording opened at a place in its words', () => {
     const { player, sought } = played()
     const heard = transcript(recordings, 'talks/Ants.mp3', { through: player })
 
-    await heard.reach({ start: 22, length: 6 })
+    await heard.reach({ from: 22, to: 28 })
 
-    expect(asked).toContain('plays talks/Ants.mp3 22 6')
+    expect(asked).toContain('plays talks/Ants.mp3 22 28')
     expect(sought).toStrictEqual([2_500])
     expect(heard.current.value).toBe(1)
   })
@@ -306,7 +306,7 @@ describe('a recording opened at a place in its words', () => {
     const { player, sought } = played()
     const heard = transcript(recordings, 'talks/Ants.mp3', { through: player })
 
-    await heard.reach({ start: 900_000, length: 6 })
+    await heard.reach({ from: 900_000, to: 900_006 })
 
     expect(sought).toStrictEqual([])
     expect(heard.trouble.value).toBe('')
@@ -319,7 +319,7 @@ describe('a recording opened at a place in its words', () => {
     }
     const heard = transcript(recordings, 'talks/Ants.mp3')
 
-    await heard.reach({ start: 22, length: 6 })
+    await heard.reach({ from: 22, to: 28 })
 
     expect(heard.trouble.value).toContain('numen did not answer')
     expect(heard.trouble.value).not.toContain('the words are being written')

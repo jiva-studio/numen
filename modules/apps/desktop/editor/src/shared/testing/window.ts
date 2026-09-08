@@ -29,11 +29,11 @@ const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoiste
    * person, and the stream the window hears them on.
    */
   outside: (() => {
-    const queue: { path: string; start: number; length: number }[] = []
+    const queue: { path: string; spans: { from: number; to: number }[] }[] = []
     let wake: (() => void) | null = null
     return {
       asks: (at: { path: string; start: number; length: number }) => {
-        queue.push(at)
+        queue.push({ path: at.path, spans: [{ from: at.start, to: at.start + at.length }] })
         wake?.()
         wake = null
       },

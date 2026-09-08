@@ -9,7 +9,7 @@ import { documenting, documentKind, type DocumentTabState, type PageHandle } fro
 import { DOCUMENT } from '../../shared/tabs/workspace'
 import type { OpenDocumentState } from './open'
 import type { FileOpeners, SourceReader } from '../../shared/tabs/openers'
-import type { Stretch } from '../../shared/core'
+import type { Span } from '../../shared/core'
 import type { WindowHandle } from '../../shared/tabs/windowing'
 
 /** A document being read, with only the parts a tab of it reaches for. */
@@ -127,15 +127,15 @@ describe('a search that landed in a document', () => {
     const { puts, opens } = openers()
     documentKind(handle, (path) => documenting(read(path)), puts)
 
-    const stretches: readonly Stretch[] = [
-      { start: 0, length: 12 },
-      { start: 400, length: 20 },
+    const spans: readonly Span[] = [
+      { from: 0, to: 12 },
+      { from: 400, to: 420 },
     ]
-    opens()?.('physics/Boltzmann.pdf', stretches)
+    opens()?.('physics/Boltzmann.pdf', spans)
     await settles()
 
     expect(opened).toEqual(['document physics/Boltzmann.pdf'])
-    expect(reached).toHaveBeenCalledWith(...stretches)
+    expect(reached).toHaveBeenCalledWith(...spans)
   })
 })
 

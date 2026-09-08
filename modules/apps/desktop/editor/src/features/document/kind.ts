@@ -6,7 +6,7 @@
  * measures again then.
  */
 import type { OpenDocumentState } from './open'
-import type { Stretch } from '../../shared/core'
+import type { Span } from '../../shared/core'
 import type { FileOpeners } from '../../shared/tabs/openers'
 import type { Kind, WindowHandle } from '../../shared/tabs/windowing'
 import { DOCUMENT } from '../../shared/tabs/workspace'
@@ -44,14 +44,14 @@ export function documentKind(handle: WindowHandle, opens: (path: string) => Docu
     }),
   }
 
-  // The reader of documents. What stands at the stretches asked for is
+  // The reader of documents. What stands at the spans asked for is
   // highlighted, and the tab turns to the first page of them; the rest are
   // highlighted where they fall, each of them somewhere else to look.
-  const reads = async (path: string, stretches: readonly Stretch[]) => {
+  const reads = async (path: string, spans: readonly Span[]) => {
     const id = await handle.opens(DOCUMENT, path)
-    void handle.holds<DocumentTabState>(DOCUMENT, id)?.reach(...stretches)
+    void handle.holds<DocumentTabState>(DOCUMENT, id)?.reach(...spans)
   }
-  puts.reads((path, stretches) => void reads(path, stretches))
+  puts.reads((path, spans) => void reads(path, spans))
 
   return { kind }
 }

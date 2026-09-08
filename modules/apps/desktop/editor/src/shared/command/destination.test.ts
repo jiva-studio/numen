@@ -16,7 +16,7 @@ const window = () => {
   const shown: string[] = []
   const places: DestinationDeps = {
     travel: async (path) => void travelled.push(path),
-    opensAt: async (path, run) => void opened.push(`${path} ${run.start} ${run.length}`),
+    opensAt: async (path, run) => void opened.push(`${path} ${run.from} ${run.to}`),
     opens: (path, title, line) =>
       void shown.push(`${path} ${title}${line === undefined ? '' : ` ${line}`}`),
   }
@@ -84,7 +84,7 @@ describe('a passage chosen', () => {
       one.places,
     )
 
-    expect(one.opened).toStrictEqual(['library/mahabharata.epub 40512 31'])
+    expect(one.opened).toStrictEqual(['library/mahabharata.epub 40512 40543'])
     expect(one.shown).toStrictEqual([])
   })
 

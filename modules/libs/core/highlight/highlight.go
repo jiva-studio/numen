@@ -10,13 +10,17 @@
 // by multiplying and nothing is recomputed.
 package highlight
 
-import "sort"
+import (
+	"sort"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+)
 
 // A Box is one run of prose and where it was read: the page it is on, the run
 // of bytes in the text, and the rectangle it covers.
 type Box struct {
 	Page int
-	Stretch
+	domain.Span
 	Rect
 }
 
@@ -31,31 +35,24 @@ type Page struct {
 	Rects []Rect
 }
 
-// A Stretch is a run of a source's text, in bytes.
-type Stretch struct {
-	Start  int
-	Length int
-}
-
 // Pages is where a run of the prose sits: the pages it falls on and, on each,
 // the rectangles covering it.
 //
 // The boxes are in the order they were read, so the run is found by halving and
 // then walked to its end. A run crossing a page is on both of them.
-func Pages(boxes []Box, start, length int) []Page {
-	if length <= 0 || len(boxes) == 0 {
+func Pages(boxes []Box, span domain.Span) []Page {
+	if span.Empty() || len(boxes) == 0 {
 		return nil
 	}
-	end := start + length
 
 	// The first box that reaches into the run. A box before it ends before the
 	// run begins.
 	at := sort.Search(len(boxes), func(i int) bool {
-		return boxes[i].Start+boxes[i].Length > start
+		return boxes[i].To > span.From
 	})
 
 	var out []Page
-	for ; at < len(boxes) && boxes[at].Start < end; at++ {
+	for ; at < len(boxes) && boxes[at].From < span.To; at++ {
 		box := boxes[at]
 		if n := len(out); n > 0 && out[n-1].Index == box.Page {
 			out[n-1].Rects = append(out[n-1].Rects, box.Rect)

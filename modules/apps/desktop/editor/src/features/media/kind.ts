@@ -7,7 +7,7 @@
  */
 import { computed, type Component } from 'vue'
 import type { TranscriptState } from './transcript'
-import type { Source, Stretch, Task } from '../../shared/core'
+import type { Source, Span, Task } from '../../shared/core'
 import type { FileOpeners, SourceReader } from '../../shared/tabs/openers'
 import type { Kind, WindowHandle } from '../../shared/tabs/windowing'
 import { RECORDING, URL } from '../../shared/tabs/workspace'
@@ -131,13 +131,13 @@ export function recordingKind(
     }),
   }
 
-  // The person is taken to the moment the first of the stretches asked for was
+  // The person is taken to the moment the first of the spans asked for was
   // spoken at.
-  const hears = async (path: string, stretches: readonly Stretch[]) => {
+  const hears = async (path: string, spans: readonly Span[]) => {
     const id = await handle.opens(as.tab, path)
-    void handle.holds<MediaTabState>(as.tab, id)?.reach(...stretches)
+    void handle.holds<MediaTabState>(as.tab, id)?.reach(...spans)
   }
-  as.hands(puts, (path, stretches) => void hears(path, stretches))
+  as.hands(puts, (path, spans) => void hears(path, spans))
 
   /**
    * What the application is doing, as it last said. A tab whose recording is

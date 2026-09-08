@@ -31,7 +31,7 @@ func printed(lines []string) ([]byte, []byte) {
 			Size:  image.Point{X: 100, Y: 100},
 			Blocks: []ocr.Block{{
 				Text:      said,
-				Stretches: []ocr.Stretch{{Box: image.Rect(0, 0, 100, 10), Length: len(said)}},
+				Boxes: []ocr.Box{{Rect: image.Rect(0, 0, 100, 10), Span: domain.Span{To: len(said)}}},
 			}},
 		})
 	}

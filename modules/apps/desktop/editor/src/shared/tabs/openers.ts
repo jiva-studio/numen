@@ -7,7 +7,7 @@
  */
 import type { PlexShowing } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
-import type { FileKind, MakeResult, NoteType, RefusalReason, Stretch } from '../core'
+import type { FileKind, MakeResult, NoteType, RefusalReason, Span } from '../core'
 import type { MessageWriter } from '../notices/messages'
 
 /**
@@ -29,10 +29,10 @@ export type FileOpener = (
 
 /**
  * A source put in front of the person in the reader or in the player. The
- * stretches are of the source's own text, and the person is taken to the first
+ * spans are of the source's own text, and the person is taken to the first
  * of them.
  */
-export type SourceReader = (path: string, stretches: readonly Stretch[]) => void
+export type SourceReader = (path: string, spans: readonly Span[]) => void
 
 /** What the window asks the vault about the file it is opening. */
 export interface FileOpenerDeps {
@@ -123,16 +123,16 @@ export function fileOpeners(vault: FileOpenerDeps) {
   }
 
   /**
-   * A source put in front of the person at stretches of its own text: a book in
+   * A source put in front of the person at spans of its own text: a book in
    * the reader and a recording in the player, at the first of them. A stretch
    * of a note's bytes names no line for the keyboard to stand on, so a note
    * opens whole.
    */
-  const opensAt = async (path: string, stretches: readonly Stretch[]): Promise<void> => {
+  const opensAt = async (path: string, spans: readonly Span[]): Promise<void> => {
     const stands = await fileKindAt(path)
     if (!stands) return
     if (stands.kind === 'note') return void made(path, '', stands.type)
-    sources.get(stands.kind)?.(path, stretches)
+    sources.get(stands.kind)?.(path, spans)
   }
 
   return { holds, reads, hears, points, opens, opensAt, made }

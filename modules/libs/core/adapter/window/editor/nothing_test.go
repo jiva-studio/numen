@@ -368,8 +368,8 @@ func TestNoDocumentIsDrawnForAWindowStandingOnNothing(t *testing.T) {
 		},
 		"where a run of the text sits": func() error {
 			_, err := files.ListHighlights(t.Context(), connect.NewRequest(&v1.ListHighlightsRequest{
-				Path: file,
-				At:   []*v1.Stretch{{Start: 0, Length: 1}},
+				Path:  file,
+				Spans: []*v1.Span{{From: 0, To: 1}},
 			}))
 			return err
 		},

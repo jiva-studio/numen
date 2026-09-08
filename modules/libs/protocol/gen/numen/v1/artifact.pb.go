@@ -623,7 +623,7 @@ type ReadTextRequest struct {
 	// whole of it. It is a start and a length in the words, which is how a
 	// passage is addressed everywhere else, and what comes back is the speech
 	// those bytes were said in.
-	At            *Stretch `protobuf:"bytes,2,opt,name=at,proto3" json:"at,omitempty"`
+	Span          *Span `protobuf:"bytes,2,opt,name=span,proto3" json:"span,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -665,9 +665,9 @@ func (x *ReadTextRequest) GetPath() string {
 	return ""
 }
 
-func (x *ReadTextRequest) GetAt() *Stretch {
+func (x *ReadTextRequest) GetSpan() *Span {
 	if x != nil {
-		return x.At
+		return x.Span
 	}
 	return nil
 }
@@ -956,10 +956,10 @@ const file_numen_v1_artifact_proto_rawDesc = "" +
 	"\x03Cue\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x12\n" +
 	"\x04from\x18\x02 \x01(\x05R\x04from\x12\x0e\n" +
-	"\x02to\x18\x03 \x01(\x05R\x02to\"H\n" +
+	"\x02to\x18\x03 \x01(\x05R\x02to\"I\n" +
 	"\x0fReadTextRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12!\n" +
-	"\x02at\x18\x02 \x01(\v2\x11.numen.v1.StretchR\x02at\"z\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\"\n" +
+	"\x04span\x18\x02 \x01(\v2\x0e.numen.v1.SpanR\x04span\"z\n" +
 	"\x10ReadTextResponse\x12*\n" +
 	"\x06spoken\x18\x01 \x01(\v2\x10.numen.v1.SpokenH\x00R\x06spoken\x12\x16\n" +
 	"\x05prose\x18\x02 \x01(\tH\x00R\x05prose\x12\x1a\n" +
@@ -1029,7 +1029,7 @@ var file_numen_v1_artifact_proto_goTypes = []any{
 	(*Spoken)(nil),                  // 12: numen.v1.Spoken
 	(*WriteTranscriptRequest)(nil),  // 13: numen.v1.WriteTranscriptRequest
 	(*WriteTranscriptResponse)(nil), // 14: numen.v1.WriteTranscriptResponse
-	(*Stretch)(nil),                 // 15: numen.v1.Stretch
+	(*Span)(nil),                    // 15: numen.v1.Span
 }
 var file_numen_v1_artifact_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.Artifact.kind:type_name -> numen.v1.ArtifactKind
@@ -1039,7 +1039,7 @@ var file_numen_v1_artifact_proto_depIdxs = []int32{
 	2,  // 4: numen.v1.CreateArtifactResponse.artifact:type_name -> numen.v1.Artifact
 	0,  // 5: numen.v1.DeleteArtifactRequest.kind:type_name -> numen.v1.ArtifactKind
 	2,  // 6: numen.v1.DeleteArtifactResponse.artifact:type_name -> numen.v1.Artifact
-	15, // 7: numen.v1.ReadTextRequest.at:type_name -> numen.v1.Stretch
+	15, // 7: numen.v1.ReadTextRequest.span:type_name -> numen.v1.Span
 	12, // 8: numen.v1.ReadTextResponse.spoken:type_name -> numen.v1.Spoken
 	9,  // 9: numen.v1.Spoken.cues:type_name -> numen.v1.Cue
 	9,  // 10: numen.v1.WriteTranscriptRequest.cues:type_name -> numen.v1.Cue

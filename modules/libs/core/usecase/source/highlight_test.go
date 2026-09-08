@@ -77,7 +77,7 @@ func run(t *testing.T, book document, word string) (start, length int) {
 // source with no reading and no layer is lit nowhere.
 func litOn(t *testing.T, u Highlight, path string, start, length int) []highlight.Page {
 	t.Helper()
-	found, err := u.Execute(t.Context(), first, path, []highlight.Stretch{{Start: start, Length: length}})
+	found, err := u.Execute(t.Context(), first, path, []domain.Span{{From: start, To: start + length}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,8 +102,8 @@ func TestARecognisedSourceIsLitFromWhatWasReadInIt(t *testing.T) {
 	// pages wrote them down.
 	written := []highlight.Box{
 		testsupport.Box(4, 0, 5, highlight.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}),
-		testsupport.Box(4, 6, 4, highlight.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
-		testsupport.Box(5, 11, 5, highlight.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
+		testsupport.Box(4, 6, 10, highlight.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
+		testsupport.Box(5, 11, 16, highlight.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
 	}
 	if err := store.Write(t.Context(), text.Boxes("ocr", "abc123"), highlight.Pack(written)); err != nil {
 		t.Fatal(err)
@@ -134,7 +134,7 @@ func TestASourceWithNoReadingIsLitFromItsOwnLayer(t *testing.T) {
 	// The rectangle is the one the document puts that word in.
 	var want highlight.Rect
 	for _, box := range book.boxes([]int{0}) {
-		if box.Start == start {
+		if box.From == start {
 			want = highlight.Rect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}
 		}
 	}
@@ -215,9 +215,9 @@ func TestSeveralPlacesAreAskedAboutAtOnce(t *testing.T) {
 
 	after, afterLength := run(t, book, "Afterword")
 	closer, closerLength := run(t, book, "closer")
-	found, err := u.Execute(t.Context(), first, documentPath, []highlight.Stretch{
-		{Start: after, Length: afterLength},
-		{Start: closer, Length: closerLength},
+	found, err := u.Execute(t.Context(), first, documentPath, []domain.Span{
+		{From: after, To: after + afterLength},
+		{From: closer, To: closer + closerLength},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -244,7 +244,7 @@ func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 
 	for _, path := range []string{"library/nothing.pdf", "../outside.pdf"} {
 		t.Run(path, func(t *testing.T) {
-			found, err := u.Execute(t.Context(), first, path, []highlight.Stretch{{Start: 0, Length: 5}})
+			found, err := u.Execute(t.Context(), first, path, []domain.Span{{From: 0, To: 5}})
 			if err == nil {
 				t.Errorf("%s was answered with %+v", path, found)
 			}
@@ -329,8 +329,8 @@ func TestAProofreadReadingIsLitWhereItsWordsNowStand(t *testing.T) {
 
 	written := []highlight.Box{
 		testsupport.Box(4, 0, 5, highlight.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}),
-		testsupport.Box(4, 6, 4, highlight.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
-		testsupport.Box(5, 11, 5, highlight.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
+		testsupport.Box(4, 6, 10, highlight.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
+		testsupport.Box(5, 11, 16, highlight.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
 	}
 	if err := store.Write(t.Context(), text.Boxes("ocr", "abc123"), highlight.Pack(written)); err != nil {
 		t.Fatal(err)

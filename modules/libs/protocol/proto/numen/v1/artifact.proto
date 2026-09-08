@@ -199,7 +199,7 @@ message ReadTextRequest {
   // whole of it. It is a start and a length in the words, which is how a
   // passage is addressed everywhere else, and what comes back is the speech
   // those bytes were said in.
-  Stretch at = 2;
+  Span span = 2;
 }
 
 message ReadTextResponse {

@@ -53,12 +53,12 @@ const editors = (puts: ReturnType<typeof fileOpeners>) => {
   }
   puts.reads((path, runs) =>
     opened.push(
-      `document ${path} [${runs.map((one) => `${one.start}+${one.length}`).join(', ')}]`,
+      `document ${path} [${runs.map((one) => `${one.from}+${one.to}`).join(', ')}]`,
     ),
   )
   puts.hears((path, runs) =>
     opened.push(
-      `recording ${path} [${runs.map((one) => `${one.start}+${one.length}`).join(', ')}]`,
+      `recording ${path} [${runs.map((one) => `${one.from}+${one.to}`).join(', ')}]`,
     ),
   )
   return opened
@@ -186,11 +186,11 @@ describe('a source opened at a stretch of its own text', () => {
     const opened = editors(puts)
 
     await puts.opensAt('Physics.epub', [
-      { start: 10, length: 4 },
-      { start: 30, length: 2 },
+      { from: 10, to: 14 },
+      { from: 30, to: 32 },
     ])
 
-    expect(opened).toStrictEqual(['document Physics.epub [10+4, 30+2]'])
+    expect(opened).toStrictEqual(['document Physics.epub [10+14, 30+32]'])
   })
 
   it('plays a recording at the stretch of the words it was asked at', async () => {
@@ -198,9 +198,9 @@ describe('a source opened at a stretch of its own text', () => {
     const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
-    await puts.opensAt('talks/Ants.mp3', [{ start: 22, length: 6 }])
+    await puts.opensAt('talks/Ants.mp3', [{ from: 22, to: 28 }])
 
-    expect(opened).toStrictEqual(['recording talks/Ants.mp3 [22+6]'])
+    expect(opened).toStrictEqual(['recording talks/Ants.mp3 [22+28]'])
   })
 
   it('opens a note in the editor made for what it is, and not in the reader', async () => {
@@ -208,8 +208,8 @@ describe('a source opened at a stretch of its own text', () => {
     const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
-    await puts.opensAt('Animals.md', [{ start: 10, length: 4 }])
-    await puts.opensAt('Entropy.md', [{ start: 10, length: 4 }])
+    await puts.opensAt('Animals.md', [{ from: 10, to: 14 }])
+    await puts.opensAt('Entropy.md', [{ from: 10, to: 14 }])
 
     expect(opened).toStrictEqual(['deck Animals.md — here —', 'note Entropy.md — here —'])
   })
@@ -219,7 +219,7 @@ describe('a source opened at a stretch of its own text', () => {
     const puts = fileOpeners(one.core)
     const opened = editors(puts)
 
-    await puts.opensAt('Gone.epub', [{ start: 10, length: 4 }])
+    await puts.opensAt('Gone.epub', [{ from: 10, to: 14 }])
 
     expect(opened).toStrictEqual([])
   })
