@@ -11,10 +11,10 @@ import './app.css'
 import UnsavedChangesPrompt from './shared/saving/UnsavedChangesPrompt.vue'
 import CoreFailureNotice from './shared/notices/CoreFailureNotice.vue'
 import CommandPalette from './shared/command/CommandPalette.vue'
-import WelcomeScreen from './welcome/WelcomeScreen.vue'
+import WelcomeScreen from './features/welcome/WelcomeScreen.vue'
 import { useWindow } from './window'
 import { WORDS as words } from './shared/words'
-import { WORDS as note } from './note/words'
+import { WORDS as note } from './features/note/words'
 
 /** What the notes still unwritten are put in: the window's words and a note's. */
 const unsaved = {

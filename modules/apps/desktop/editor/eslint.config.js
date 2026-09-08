@@ -99,8 +99,8 @@ export default tseslint.config(
       'src/**/*.stories.ts',
       'src/shared/testing/**',
       // The ports' own defaults, which is where the browser is allowed in.
-      'src/settings/review.ts',
-      'src/note/notes.ts',
+      'src/features/settings/review.ts',
+      'src/features/note/notes.ts',
     ],
     rules: {
       'no-restricted-globals': [

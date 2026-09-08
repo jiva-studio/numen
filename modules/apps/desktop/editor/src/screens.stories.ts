@@ -13,9 +13,9 @@ import { WorkspaceLayout, branch, pane } from '@numen/ui'
 import type { Tab, Workspace } from '@numen/ui'
 import { computed, nextTick, onMounted, ref, shallowRef, type Component } from 'vue'
 
-import SettingsTab from './settings/controls/SettingsTab.vue'
-import type { Installation } from './settings/controls/kind'
-import PresetTab from './preset/PresetTab.vue'
+import SettingsTab from './features/settings/controls/SettingsTab.vue'
+import type { Installation } from './features/settings/controls/kind'
+import PresetTab from './features/preset/PresetTab.vue'
 import {
   DEFAULTS,
   type Curve,
@@ -23,8 +23,8 @@ import {
   type PresetCounts,
   type Settings as Scheduling,
   type SettingsBounds,
-} from './preset/core'
-import type { PresetTabState } from './preset/kind'
+} from './features/preset/core'
+import type { PresetTabState } from './features/preset/kind'
 import DeckTab from './cards/window/deck/DeckTab.vue'
 import type { DeckTabState } from './cards/window/deck/deckTabs'
 import StencilTab from './cards/window/stencil/StencilTab.vue'
@@ -35,12 +35,12 @@ import { transcript, type Recordings } from './media/transcript'
 import type { Cue } from './media/cues'
 import type { Player } from './media/player'
 import { transcribed } from './media/kind'
-import DocumentTab from './document/DocumentTab.vue'
-import { documenting } from './document/kind'
-import { openDocument, type Documents } from './document/open'
-import FilesTab from './files/FilesTab.vue'
-import { filing } from './files/kind'
-import { listing, ROOT } from './files/listing'
+import DocumentTab from './features/document/DocumentTab.vue'
+import { documenting } from './features/document/kind'
+import { openDocument, type Documents } from './features/document/open'
+import FilesTab from './features/files/FilesTab.vue'
+import { filing } from './features/files/kind'
+import { listing, ROOT } from './features/files/listing'
 import type { Entry } from './shared/core'
 import { iconOfKind } from './shared/icons'
 import { DECK, DOCUMENT, FILES, PRESET, RECORDING, SETTINGS, STENCIL } from './shared/tabs/workspace'

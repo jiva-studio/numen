@@ -9,8 +9,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
 import { Agent, Editor, Palette, Plex, Reader, Tree, WorkspaceLayout, type Workspace } from '@numen/ui'
-import DocumentTab from './document/DocumentTab.vue'
-import NoteTab from './note/NoteTab.vue'
+import DocumentTab from './features/document/DocumentTab.vue'
+import NoteTab from './features/note/NoteTab.vue'
 import RecordingTab from './media/RecordingTab.vue'
 import {
   asked,

@@ -16,7 +16,7 @@ import type {
 } from '@numen/protocol'
 import { transport } from '@numen/wire'
 import { fingerprint, stamp } from './shared/answers'
-import type { Documents, HighlightedPage } from './document/open'
+import type { Documents, HighlightedPage } from './features/document/open'
 import type { Recordings } from './media/transcript'
 import type { Cue } from './media/cues'
 
