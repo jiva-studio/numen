@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+// The text a model read off the pages of a document, and where on those pages
+// each run of it stands.
+//
+// The text is what the index counts in and what a person reads; the boxes are
+// an overlay on it, and a reader draws them over the page it is showing.
+package numen.v1;
+
+import "numen/v1/shared.proto";
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// OcrService reads what was read off a document's pages.
+//
+// Whether a file carries a reading at all is ListArtifacts.
+service OcrService {
+  // ReadOcr is the runs of the text asked about, each as it reads and with the
+  // boxes covering it. The answers stand in the order the runs were asked
+  // about, so a caller that asked about a passage and the places around it
+  // knows which is which.
+  rpc ReadOcr(ReadOcrRequest) returns (ReadOcrResponse);
+}
+
+message ReadOcrRequest {
+  // The file, as the vault holds it.
+  string path = 1;
+
+  // The runs of its text to answer about, counted in bytes over the text the
+  // document was read as. A request naming none is not one.
+  repeated Span spans = 2;
+}
+
+message ReadOcrResponse {
+  // One answer per run asked about, in that order.
+  repeated Run runs = 1;
+}
+
+// A Run is one run of the text: what it says, and where it stands on the pages
+// it was read from. A run standing nowhere carries no boxes.
+message Run {
+  string text = 1;
+  repeated Box boxes = 2;
+}
+
+// A Box is a part of a run and where it was read: the page it is on, the piece
+// of the text it covers, and the rectangle it fills.
+message Box {
+  // Which bytes of the document's text this covers.
+  Span span = 1;
+
+  // Where the page stands in the document, counted from the first.
+  int32 page = 2;
+
+  Rect rect = 3;
+}
+
+// A Rect is a place on a page, in fractions of it, so a page drawn at any size
+// lines up by multiplying.
+message Rect {
+  float min_x = 1;
+  float min_y = 2;
+  float max_x = 3;
+  float max_y = 4;
+}
