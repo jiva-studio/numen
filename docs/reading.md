@@ -25,7 +25,7 @@ graph TD
     TXT[".txt<br/>the prose, pages marked"]
     PARTIAL[".partial<br/>the prose of a run still going"]
     PARTS[".parts<br/>one record a heading"]
-    FIXES[".corrected<br/>one record a corrected line"]
+    CORRECTED[".corrected<br/>one record a corrected line"]
     BOXES[".boxes<br/>one rectangle a printed line"]
     STANDING[".proofread<br/>who, and how far"]
     BESIDE[".json<br/>which models read this"]
@@ -34,9 +34,9 @@ graph TD
     TXT --> TEXT
     PARTIAL -->|"where no .txt is finished"| TEXT
     PARTS --> TEXT
-    FIXES --> TEXT
+    CORRECTED --> TEXT
     BOXES -->|"where .corrected holds something"| TEXT
-    STANDING -.-> FIXES
+    STANDING -.-> CORRECTED
     BESIDE -.-> TXT
 ```
 

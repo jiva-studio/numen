@@ -58,8 +58,8 @@ A recording is transcribed without anybody asking ([A recording is transcribed w
 
 | Ending | What is written | Offered again |
 | --- | --- | --- |
-| heard | `<hash>.asr.vtt` | no |
-| nothing to hear | `<hash>.asr.answer` — silence, or music | no |
+| transcribed | `<hash>.asr.vtt` | no |
+| nothing said | `<hash>.asr.answer` — silence, or music | no |
 | will not open | `<hash>.asr.answer`, with the reason | no |
 | somebody else holds it | nothing | yes |
 | stopped part way | `<hash>.asr.partial.vtt` | yes, from the note |

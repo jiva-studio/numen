@@ -483,7 +483,6 @@ A `with` naming a profile `profiles` does not carry is an error at startup. An i
 ```json
 {
   "importing": {
-    "fetch_unasked": false,
     "captions": ["en"],
     "automatic_captions": true,
     "copy_max_size_mb": 500,
@@ -496,7 +495,6 @@ A `with` naming a profile `profiles` does not carry is an error at startup. An i
 
 | | |
 | --- | --- |
-| `fetch_unasked` | whether a url nothing has been fetched for is fetched as a walk of the vault finds it. Off. Reaching off the machine is a gesture, and a file dropped in from a browser is not one. |
 | `captions` | which languages published words are preferred in, best first. Empty takes the language the video was spoken in. |
 | `automatic_captions` | whether words a machine wrote count where a person published none. On. |
 | `copy_max_size_mb` | how large a copy of a video may be. A copy that runs past it stops there and nothing is kept. |

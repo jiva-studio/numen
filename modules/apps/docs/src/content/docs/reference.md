@@ -48,6 +48,8 @@ How a vault is made searchable.
 | `embedding.indexing.local.dir` | text | holds the model and tokenizer.json. Empty means the download cache. |
 | `embedding.indexing.local.file` | text | the model inside the repository or the directory. |
 | `embedding.indexing.local.batch_texts` | a number | how many texts one forward pass carries. |
+| `embedding.indexing.local.runtime` | text | the ONNX shared library. Empty means the one beside the application, and then the one the platform holds. |
+| `embedding.indexing.local.threads` | a number | how many of this machine one forward pass may use. |
 | `embedding.indexing.local.download` | yes or no | allows fetching the model when it is not on this machine. |
 | `embedding.indexing.service` |  | how a hosted model is reached over HTTP. |
 | `embedding.indexing.service.base_url` | text | points at anything speaking the /v1/embeddings request shape. |
@@ -61,6 +63,8 @@ How a vault is made searchable.
 | `embedding.query.local.dir` | text | holds the model and tokenizer.json. Empty means the download cache. |
 | `embedding.query.local.file` | text | the model inside the repository or the directory. |
 | `embedding.query.local.batch_texts` | a number | how many texts one forward pass carries. |
+| `embedding.query.local.runtime` | text | the ONNX shared library. Empty means the one beside the application, and then the one the platform holds. |
+| `embedding.query.local.threads` | a number | how many of this machine one forward pass may use. |
 | `embedding.query.local.download` | yes or no | allows fetching the model when it is not on this machine. |
 | `embedding.query.service` |  | how a hosted model is reached over HTTP. |
 | `embedding.query.service.base_url` | text | points at anything speaking the /v1/embeddings request shape. |
@@ -144,6 +148,25 @@ Which agent answers in the panel, and what it may reach.
 | `claude.model` | text | which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. |
 | `claude.max_steps` | a number | how many times it may go to the model before it is stopped. |
 | `claude.reads_hooks_and_skills` | yes or no | lets it read what is configured for it on this machine: hooks, skills, standing instructions in CLAUDE. |
+
+### `importing`
+
+How an address a link note points at is reached, and where the tools that reach it are.
+
+| | | |
+| --- | --- | --- |
+| `captions` | a list of words | the languages published words are preferred in, best first. |
+| `automatic_captions` | yes or no | whether words a machine wrote count where a person published none. |
+| `copy_max_size_mb` | a number | how large a copy may be. Above it, a copy asked for says the size it was refused at and nothing is fetched. |
+| `copies_to_vault` | yes or no | whether a copy is kept beside the note as a file of the person's own. |
+| `yt_dlp` |  | what is run to reach a video. Empty asks the path. |
+| `yt_dlp.command` | a list of words | what is run, so a machine that writes the path afresh at every build names whatever does know where the tool is. |
+| `yt_dlp.arguments` | a list of words | handed to every run before its own: what answers for a person at a site that refuses an unattended fetch — the cookies of a browser, a token, a proxy — is that machine's and is passed through as it stands. |
+| `yt_dlp.environment` |  | set on every run, over what this process was started with. |
+| `ffmpeg` |  | what brings a container to what a transcriber opens. |
+| `ffmpeg.command` | a list of words | what is run, so a machine that writes the path afresh at every build names whatever does know where the tool is. |
+| `ffmpeg.arguments` | a list of words | handed to every run before its own: what answers for a person at a site that refuses an unattended fetch — the cookies of a browser, a token, a proxy — is that machine's and is passed through as it stands. |
+| `ffmpeg.environment` |  | set on every run, over what this process was started with. |
 
 ### `naming`
 

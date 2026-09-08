@@ -70,10 +70,6 @@ The copy is kept in the vault's own folder, named by the address like everything
 
 Deleting a url deletes what was fetched for it: the words, the prose, the copy. It is named by the address and shared by every url carrying it, so it goes when the last of them does, and two urls on one video keep it while either stands. It is the same sweep that takes away the reading of a document that left the vault.
 
-## Without being asked
-
-`importing.fetch_unasked` reaches the address of every url nothing has been fetched for, as a walk of the vault finds it. It is off: reaching off the machine is a gesture, and a file dropped in from a browser is not one. Turned on, a url that arrived elsewhere has what is at its address by the time it is opened, and an address that will not answer is that file's trouble and leaves the walk standing.
-
 ## The tools
 
 Each source of what is published at an address is a provider of its own, and which one answers is which one supports that address.
