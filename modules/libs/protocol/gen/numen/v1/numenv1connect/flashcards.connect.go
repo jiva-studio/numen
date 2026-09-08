@@ -61,9 +61,6 @@ const (
 	// FlashcardsServiceListReviewDaysProcedure is the fully-qualified name of the FlashcardsService's
 	// ListReviewDays RPC.
 	FlashcardsServiceListReviewDaysProcedure = "/numen.v1.FlashcardsService/ListReviewDays"
-	// FlashcardsServiceGetAgentStateProcedure is the fully-qualified name of the FlashcardsService's
-	// GetAgentState RPC.
-	FlashcardsServiceGetAgentStateProcedure = "/numen.v1.FlashcardsService/GetAgentState"
 	// FlashcardsServiceGetDeckNeighbourhoodProcedure is the fully-qualified name of the
 	// FlashcardsService's GetDeckNeighbourhood RPC.
 	FlashcardsServiceGetDeckNeighbourhoodProcedure = "/numen.v1.FlashcardsService/GetDeckNeighbourhood"
@@ -111,9 +108,6 @@ type FlashcardsServiceClient interface {
 	// ListReviewDays is how much of a vault was answered on each day it was
 	// reviewed, and how many days up to now were reviewed without a gap.
 	ListReviewDays(context.Context, *connect.Request[v1.ListReviewDaysRequest]) (*connect.Response[v1.ListReviewDaysResponse], error)
-	// GetAgentState is whether a card can be asked about here at all. The way in
-	// stands on every card, so nothing else has to be said about which.
-	GetAgentState(context.Context, *connect.Request[v1.GetAgentStateRequest]) (*connect.Response[v1.GetAgentStateResponse], error)
 	// GetDeckNeighbourhood is what the deck of a person's session is joined to:
 	// the notes it points at and the notes that point at it, with the text of
 	// each. A card is a line out of something longer, and what it was cut from is
@@ -173,12 +167,6 @@ func NewFlashcardsServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(flashcardsServiceMethods.ByName("ListReviewDays")),
 			connect.WithClientOptions(opts...),
 		),
-		getAgentState: connect.NewClient[v1.GetAgentStateRequest, v1.GetAgentStateResponse](
-			httpClient,
-			baseURL+FlashcardsServiceGetAgentStateProcedure,
-			connect.WithSchema(flashcardsServiceMethods.ByName("GetAgentState")),
-			connect.WithClientOptions(opts...),
-		),
 		getDeckNeighbourhood: connect.NewClient[v1.GetDeckNeighbourhoodRequest, v1.GetDeckNeighbourhoodResponse](
 			httpClient,
 			baseURL+FlashcardsServiceGetDeckNeighbourhoodProcedure,
@@ -202,7 +190,6 @@ type flashcardsServiceClient struct {
 	takeBackAnswer       *connect.Client[v1.TakeBackAnswerRequest, v1.TakeBackAnswerResponse]
 	watchReloads         *connect.Client[v1.WatchReloadsRequest, v1.WatchReloadsResponse]
 	listReviewDays       *connect.Client[v1.ListReviewDaysRequest, v1.ListReviewDaysResponse]
-	getAgentState        *connect.Client[v1.GetAgentStateRequest, v1.GetAgentStateResponse]
 	getDeckNeighbourhood *connect.Client[v1.GetDeckNeighbourhoodRequest, v1.GetDeckNeighbourhoodResponse]
 	getVaultDeckPreset   *connect.Client[v1.GetVaultDeckPresetRequest, v1.GetVaultDeckPresetResponse]
 }
@@ -235,11 +222,6 @@ func (c *flashcardsServiceClient) WatchReloads(ctx context.Context, req *connect
 // ListReviewDays calls numen.v1.FlashcardsService.ListReviewDays.
 func (c *flashcardsServiceClient) ListReviewDays(ctx context.Context, req *connect.Request[v1.ListReviewDaysRequest]) (*connect.Response[v1.ListReviewDaysResponse], error) {
 	return c.listReviewDays.CallUnary(ctx, req)
-}
-
-// GetAgentState calls numen.v1.FlashcardsService.GetAgentState.
-func (c *flashcardsServiceClient) GetAgentState(ctx context.Context, req *connect.Request[v1.GetAgentStateRequest]) (*connect.Response[v1.GetAgentStateResponse], error) {
-	return c.getAgentState.CallUnary(ctx, req)
 }
 
 // GetDeckNeighbourhood calls numen.v1.FlashcardsService.GetDeckNeighbourhood.
@@ -291,9 +273,6 @@ type FlashcardsServiceHandler interface {
 	// ListReviewDays is how much of a vault was answered on each day it was
 	// reviewed, and how many days up to now were reviewed without a gap.
 	ListReviewDays(context.Context, *connect.Request[v1.ListReviewDaysRequest]) (*connect.Response[v1.ListReviewDaysResponse], error)
-	// GetAgentState is whether a card can be asked about here at all. The way in
-	// stands on every card, so nothing else has to be said about which.
-	GetAgentState(context.Context, *connect.Request[v1.GetAgentStateRequest]) (*connect.Response[v1.GetAgentStateResponse], error)
 	// GetDeckNeighbourhood is what the deck of a person's session is joined to:
 	// the notes it points at and the notes that point at it, with the text of
 	// each. A card is a line out of something longer, and what it was cut from is
@@ -349,12 +328,6 @@ func NewFlashcardsServiceHandler(svc FlashcardsServiceHandler, opts ...connect.H
 		connect.WithSchema(flashcardsServiceMethods.ByName("ListReviewDays")),
 		connect.WithHandlerOptions(opts...),
 	)
-	flashcardsServiceGetAgentStateHandler := connect.NewUnaryHandler(
-		FlashcardsServiceGetAgentStateProcedure,
-		svc.GetAgentState,
-		connect.WithSchema(flashcardsServiceMethods.ByName("GetAgentState")),
-		connect.WithHandlerOptions(opts...),
-	)
 	flashcardsServiceGetDeckNeighbourhoodHandler := connect.NewUnaryHandler(
 		FlashcardsServiceGetDeckNeighbourhoodProcedure,
 		svc.GetDeckNeighbourhood,
@@ -381,8 +354,6 @@ func NewFlashcardsServiceHandler(svc FlashcardsServiceHandler, opts ...connect.H
 			flashcardsServiceWatchReloadsHandler.ServeHTTP(w, r)
 		case FlashcardsServiceListReviewDaysProcedure:
 			flashcardsServiceListReviewDaysHandler.ServeHTTP(w, r)
-		case FlashcardsServiceGetAgentStateProcedure:
-			flashcardsServiceGetAgentStateHandler.ServeHTTP(w, r)
 		case FlashcardsServiceGetDeckNeighbourhoodProcedure:
 			flashcardsServiceGetDeckNeighbourhoodHandler.ServeHTTP(w, r)
 		case FlashcardsServiceGetVaultDeckPresetProcedure:
@@ -418,10 +389,6 @@ func (UnimplementedFlashcardsServiceHandler) WatchReloads(context.Context, *conn
 
 func (UnimplementedFlashcardsServiceHandler) ListReviewDays(context.Context, *connect.Request[v1.ListReviewDaysRequest]) (*connect.Response[v1.ListReviewDaysResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.ListReviewDays is not implemented"))
-}
-
-func (UnimplementedFlashcardsServiceHandler) GetAgentState(context.Context, *connect.Request[v1.GetAgentStateRequest]) (*connect.Response[v1.GetAgentStateResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.GetAgentState is not implemented"))
 }
 
 func (UnimplementedFlashcardsServiceHandler) GetDeckNeighbourhood(context.Context, *connect.Request[v1.GetDeckNeighbourhoodRequest]) (*connect.Response[v1.GetDeckNeighbourhoodResponse], error) {

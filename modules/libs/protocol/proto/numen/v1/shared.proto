@@ -65,7 +65,7 @@ enum Refusal {
   REFUSAL_STALE = 13;
 }
 
-// NoteType is which of four a note is: the `type` key of its frontmatter. It
+// NoteType is what a note is: the `type` key of its frontmatter. It
 // says what the note is; whether the application reads text out of the file is
 // SourceKind.
 enum NoteType {
@@ -93,9 +93,9 @@ message Fingerprint {
   int64 mtime = 3;
 }
 
-// A Stretch is a run of a source's text, counted in bytes over the text the
-// source is read as.
-message Stretch {
-  int32 start = 1;
-  int32 length = 2;
+// A Span is a run of text, by where it begins and where it ends. What it counts
+// in is the field carrying it.
+message Span {
+  int32 from = 1;
+  int32 to = 2;
 }

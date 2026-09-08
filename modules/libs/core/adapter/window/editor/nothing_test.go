@@ -119,18 +119,18 @@ func TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the window cannot say what it is showing: %v", err)
 	}
-	if got := state.Msg; got.GetDisplayName() != "" || got.GetPath() != "" {
-		t.Errorf("the window says it is showing %q at %q", got.GetDisplayName(), got.GetPath())
+	if got := state.Msg; got.GetName() != "" || got.GetPath() != "" {
+		t.Errorf("the window says it is showing %q at %q", got.GetName(), got.GetPath())
 	}
-	if !state.Msg.GetReady() {
+	if !state.Msg.GetScan().GetReady() {
 		t.Error("the window says it is still being read, and nothing is reading")
 	}
-	if reason := state.Msg.GetFailed(); reason != "" {
+	if reason := state.Msg.GetScan().GetFailed(); reason != "" {
 		t.Errorf("the window says it could not be read: %s", reason)
 	}
-	if state.Msg.GetChunks() != 0 || state.Msg.GetEmbedded() != 0 {
+	if state.Msg.GetCoverage().GetChunkCount() != 0 || state.Msg.GetCoverage().GetEmbeddedCount() != 0 {
 		t.Errorf("the window counted %d chunks and %d of them embedded",
-			state.Msg.GetChunks(), state.Msg.GetEmbedded())
+			state.Msg.GetCoverage().GetChunkCount(), state.Msg.GetCoverage().GetEmbeddedCount())
 	}
 
 	opening, err := f.vault.GetOpeningNote(t.Context(), connect.NewRequest(&v1.GetOpeningNoteRequest{}))
@@ -259,7 +259,7 @@ func TestAWindowStandingOnNothingRefusesEveryQuestionAboutAVault(t *testing.T) {
 		"join a note to another": func() error {
 			_, err := f.vault.WriteLink(t.Context(), connect.NewRequest(&v1.WriteLinkRequest{
 				Path: "One.md",
-				Link: &v1.NewLink{To: "Two.md", Role: v1.Role_ROLE_JUMP},
+				Link: &v1.Link{To: "Two.md", Role: v1.Role_ROLE_JUMP},
 			}))
 			return err
 		},
@@ -352,24 +352,26 @@ func TestNoDocumentIsDrawnForAWindowStandingOnNothing(t *testing.T) {
 		t.Errorf("a page was answered %s, and the window has no vault", answer.Status)
 	}
 
-	files := numenv1connect.NewAssetServiceClient(f.server.Client(), f.server.URL)
+	documents := numenv1connect.NewDocumentServiceClient(f.server.Client(), f.server.URL)
+	recordings := numenv1connect.NewRecordingServiceClient(f.server.Client(), f.server.URL)
+	readings := numenv1connect.NewOcrServiceClient(f.server.Client(), f.server.URL)
 	asked := map[string]func() error{
 		"what a document is": func() error {
-			_, err := files.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{
+			_, err := documents.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{
 				Path: file,
 			}))
 			return err
 		},
 		"what a recording is": func() error {
-			_, err := files.GetRecording(t.Context(), connect.NewRequest(&v1.GetRecordingRequest{
+			_, err := recordings.GetRecording(t.Context(), connect.NewRequest(&v1.GetRecordingRequest{
 				Path: file,
 			}))
 			return err
 		},
-		"where a run of the text sits": func() error {
-			_, err := files.ListHighlights(t.Context(), connect.NewRequest(&v1.ListHighlightsRequest{
-				Path: file,
-				At:   []*v1.Stretch{{Start: 0, Length: 1}},
+		"what a run of the text says": func() error {
+			_, err := readings.ReadOcr(t.Context(), connect.NewRequest(&v1.ReadOcrRequest{
+				Path:  file,
+				Spans: []*v1.Span{{From: 0, To: 1}},
 			}))
 			return err
 		},
@@ -397,7 +399,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 	}
 
 	added, err := f.holds.AddVault(t.Context(), connect.NewRequest(&v1.AddVaultRequest{
-		Path: root, DisplayName: "the first one",
+		Path: root, Name: "the first one",
 	}))
 	if err != nil {
 		t.Fatalf("a folder could not be added: %v", err)
@@ -407,12 +409,12 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 	}
 
 	if _, err := f.holds.OpenVault(t.Context(), connect.NewRequest(&v1.OpenVaultRequest{
-		Name: added.Msg.GetVault().GetName(),
+		Id: added.Msg.GetVault().GetId(),
 	})); err != nil {
 		t.Fatalf("the vault just added would not open: %v", err)
 	}
 
-	if got := string(f.opened.Showing().ID); got != added.Msg.GetVault().GetName() {
+	if got := string(f.opened.Showing().ID); got != added.Msg.GetVault().GetId() {
 		t.Fatalf("the window is showing %q, want the vault just added", got)
 	}
 
@@ -422,11 +424,11 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if reason := state.Msg.GetFailed(); reason != "" {
+		if reason := state.Msg.GetScan().GetFailed(); reason != "" {
 			t.Fatalf("the vault could not be read: %s", reason)
 		}
-		if state.Msg.GetReady() {
-			if got := state.Msg.GetDisplayName(); got != "the first one" {
+		if state.Msg.GetScan().GetReady() {
+			if got := state.Msg.GetName(); got != "the first one" {
 				t.Errorf("the window says it is showing %q", got)
 			}
 			break
@@ -450,7 +452,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 	switch last, found, err := registry.Last(); {
 	case err != nil:
 		t.Fatal(err)
-	case !found || string(last.ID) != added.Msg.GetVault().GetName():
+	case !found || string(last.ID) != added.Msg.GetVault().GetId():
 		t.Errorf("the list says the vault opened last is %+v", last)
 	}
 }

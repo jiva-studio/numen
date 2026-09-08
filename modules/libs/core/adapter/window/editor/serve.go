@@ -234,6 +234,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	held := &opened.vaults
 	api.Files.Move = &held.Move
 	api.Files.Import = &held.Import
+	api.Files.URLs = &source.CreateURL{Writers: cfg.VaultWriters(), Index: opened.level}
 	api.Vaults = Vaults{
 		Registry: held.Registry,
 		Add:      &held.Add,
@@ -245,8 +246,15 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	api.Drops = &source.DropTranscript{
 		Readers: cfg.VaultReaders(),
 		Sources: db.Sources(),
-		Known:   db.SourcesKnown(),
+		Queries: db.SourcesKnown(),
 		Derived: cfg.DerivedStores(),
+	}
+
+	// A machine holding neither of the tools an address is reached with binds
+	// no downloader, and the window is answered that this build cannot do it.
+	if by := cfg.Downloader(ctx); by != nil {
+		fetching := cfg.ImportURL(ctx, db, by)
+		api.Imports = &fetching
 	}
 
 	// Reading every file again is what this launch was asked for, and is not
@@ -312,13 +320,15 @@ func (o *Installation) Refresh() vaults.Refresh {
 	if on := o.API.showing.Load(); on != nil {
 		return on.opening.Refreshing()
 	}
-	return vaults.NewRefresh(
+	refresh := vaults.NewRefresh(
 		o.cfg.VaultReaders(),
 		o.Index.Vaults(),
 		o.Index.NotesCutAt(o.cfg.Chunking(), o.cfg.Legibility()),
 		o.Index.SourcesKnown(),
 		o.Index.Sources(),
 	)
+	refresh.Derived = o.cfg.DerivedStores()
+	return refresh
 }
 
 // Recognising reads a scanned document for whoever asks. It is one job for the

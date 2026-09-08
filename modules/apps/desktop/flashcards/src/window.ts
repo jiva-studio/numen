@@ -12,7 +12,7 @@ import { following, opensVault } from '@numen/ui'
 
 import type NotesPanel from './session/NotesPanel.vue'
 import type { PanelPlace } from './session/PanelCarousel.vue'
-import { WINDOW, cards, deckName, itself } from './core'
+import { WINDOW, agent as agentState, cards, deckName, itself } from './core'
 import { counting } from './counting'
 import { asks, picks, swallows } from './keying'
 import { raising } from './notices'
@@ -289,7 +289,7 @@ export const useWindow = () => {
     void count()
     // Whether a card can be asked about is the window's to know before a person
     // reaches for it, so it is asked once and the way in is drawn from it.
-    void cards
+    void agentState
       .getAgentState({})
       .then((said) => {
         unreachable.value = said.unreachable

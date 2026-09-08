@@ -464,11 +464,11 @@ Recorded 2026-09-05 on the same AMD Ryzen 7 6800U, from `BenchmarkUnembedded`, `
 
 The two pages are measured at a fixed number of iterations because a laptop with other work on it moves them by fivefold between runs, and a conversion two orders of magnitude smaller than the page cannot be read out of a difference of pages. It is measured on its own instead, and the row it is measured on is nine digits — longer than anything a vault of this size hands out.
 
-### Hearing a recording
+### Transcribing a recording
 
-Recorded 2026-09-01 on the same AMD Ryzen 7 6800U — 8 threads of it — with the models quantised to int8 where the column says so. The figure is wall time over audio time, so 0.10 is ten minutes of speech heard in one.
+Recorded 2026-09-01 on the same AMD Ryzen 7 6800U — 8 threads of it — with the models quantised to int8 where the column says so. The figure is wall time over audio time, so 0.10 is ten minutes of speech transcribed in one.
 
-**The target: a recording is heard faster than it plays.** Anything slower and a vault of lectures never catches up with itself.
+**The target: a recording is transcribed faster than it plays.** Anything slower and a vault of lectures never catches up with itself.
 
 | | ru | en | Peak RSS |
 | --- | --- | --- | --- |
@@ -495,7 +495,7 @@ What settles it is the pair. Parakeet is better than `small` on Russian and five
 
 One more thing decides it on real recordings, and no table above shows it. Whisper's encoder always reads a window of exactly 30 seconds, whatever is in it, so speech cut at the silences — which is how a recording is fed to a model — costs three times what its length says. Parakeet pays by the second.
 
-The weights are 641 MB, fetched when the first recording is heard.
+The weights are 641 MB, fetched when the first recording is transcribed.
 
 ### Why the markup is not parsed as XML
 

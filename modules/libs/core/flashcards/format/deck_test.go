@@ -91,8 +91,8 @@ about 20 years
 	}
 
 	llama := deck.Cards[0]
-	if llama.Stencil != "Animal" {
-		t.Errorf("stencil = %q", llama.Stencil)
+	if llama.StencilLink != "Animal" {
+		t.Errorf("stencil = %q", llama.StencilLink)
 	}
 	if got := fieldsOf(llama); !slices.Equal(got, []string{"Height", "Life span"}) {
 		t.Errorf("fields = %v", got)
@@ -104,8 +104,8 @@ about 20 years
 	if got, _ := deck.Cards[1].Value("Значение"); got != "перегной из листьев и травы" {
 		t.Errorf("Значение = %q", got)
 	}
-	if deck.Cards[1].Stencil != "Термин" {
-		t.Errorf("stencil = %q", deck.Cards[1].Stencil)
+	if deck.Cards[1].StencilLink != "Термин" {
+		t.Errorf("stencil = %q", deck.Cards[1].StencilLink)
 	}
 }
 
@@ -279,8 +279,8 @@ func TestACardNamesNoStencil(t *testing.T) {
 			deck := format.ReadDeck(note(t, "---\ntype: deck\n---\n\n## Llama\n\n"+head+"\n\n### Height\n\nabout 45\"\n"))
 
 			card := deck.Cards[0]
-			if card.Stencil != "" {
-				t.Errorf("stencil = %q, want none", card.Stencil)
+			if card.StencilLink != "" {
+				t.Errorf("stencil = %q, want none", card.StencilLink)
 			}
 			if got := filed(t, deck.Problems, format.FaultNoStencil).Card; got != 0 {
 				t.Errorf("card = %d", got)
@@ -288,8 +288,8 @@ func TestACardNamesNoStencil(t *testing.T) {
 			if got, ok := card.Value("Height"); !ok || got != `about 45"` {
 				t.Errorf("the value was not read: %q", got)
 			}
-			if head != "" && !strings.Contains(card.Lead, strings.SplitN(head, "\n", 2)[0]) {
-				t.Errorf("lead = %q, want what stands under the heading", card.Lead)
+			if head != "" && !strings.Contains(card.Preamble, strings.SplitN(head, "\n", 2)[0]) {
+				t.Errorf("lead = %q, want what stands under the heading", card.Preamble)
 			}
 		})
 	}
@@ -312,11 +312,11 @@ about 45"
 `))
 
 	card := deck.Cards[0]
-	if card.Stencil != "Animal" {
-		t.Errorf("stencil = %q", card.Stencil)
+	if card.StencilLink != "Animal" {
+		t.Errorf("stencil = %q", card.StencilLink)
 	}
-	if card.Lead != "Written on the seed packet." {
-		t.Errorf("lead = %q", card.Lead)
+	if card.Preamble != "Written on the seed packet." {
+		t.Errorf("lead = %q", card.Preamble)
 	}
 }
 
@@ -393,10 +393,10 @@ The ones I began with.
 		t.Fatalf("sections = %v", held)
 	}
 	// Text between a section's heading and its first card is the section's.
-	if deck.Sections[0].Lead != "The ones I began with." {
-		t.Errorf("lead = %q", deck.Sections[0].Lead)
+	if deck.Sections[0].Preamble != "The ones I began with." {
+		t.Errorf("lead = %q", deck.Sections[0].Preamble)
 	}
-	if deck.Sections[1].Lead != "" || deck.Sections[2].Lead != "" {
+	if deck.Sections[1].Preamble != "" || deck.Sections[2].Preamble != "" {
 		t.Errorf("sections = %+v, want no text under either", deck.Sections[1:])
 	}
 
@@ -428,8 +428,8 @@ func TestADeckOfSectionsAndNoCards(t *testing.T) {
 		t.Fatalf("sections = %+v", deck.Sections)
 	}
 	// A heading nothing reads is text under the section it falls in.
-	if deck.Sections[0].Lead != "### Not a card\n\nprose." {
-		t.Errorf("lead = %q", deck.Sections[0].Lead)
+	if deck.Sections[0].Preamble != "### Not a card\n\nprose." {
+		t.Errorf("lead = %q", deck.Sections[0].Preamble)
 	}
 }
 
@@ -575,8 +575,8 @@ func TestADeckOfCRLFReadsAsOneKindOfBreak(t *testing.T) {
 	raw := "---\r\ntype: deck\r\n---\r\n\r\n## Llama\r\n\r\n[[Animal]]\r\n\r\n### Height\r\n\r\nabout 45\"\r\nat the shoulder\r\n"
 	deck := format.ReadDeck(note(t, raw))
 
-	if deck.Cards[0].Stencil != "Animal" {
-		t.Errorf("stencil = %q", deck.Cards[0].Stencil)
+	if deck.Cards[0].StencilLink != "Animal" {
+		t.Errorf("stencil = %q", deck.Cards[0].StencilLink)
 	}
 	if got, _ := deck.Cards[0].Value("Height"); got != "about 45\"\nat the shoulder" {
 		t.Errorf("Height = %q, want no carriage returns", got)

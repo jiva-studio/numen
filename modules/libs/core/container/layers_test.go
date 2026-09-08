@@ -29,8 +29,9 @@ var baseline = map[string][]string{
 	"adapter/window/editor": {"container"},
 	// One settings file is the union of every adapter's section.
 	"adapter/settings": {
-		"adapter/agent", "internal/adapter/embed", "internal/adapter/proofreading",
-		"internal/adapter/recognition", "internal/adapter/transcription",
+		"adapter/agent", "internal/adapter/download", "internal/adapter/embed",
+		"internal/adapter/proofreading", "internal/adapter/recognition",
+		"internal/adapter/transcription",
 	},
 	// The queues and the schedule are assembled here, so the words for a piece
 	// of work, a schedule and a cut are read in place.
@@ -1308,7 +1309,7 @@ func TestTheCoresPublicAdaptersAreTheseAndNoOthers(t *testing.T) {
 // held are the adapters the compiler keeps to this module. Naming them is what
 // makes a new one arrive as a decision.
 var held = []string{
-	"appstate", "embed", "filesystem", "pdf", "proofreading",
+	"appstate", "download", "embed", "filesystem", "pdf", "proofreading",
 	"recognition", "theme", "transcription", "trash",
 }
 

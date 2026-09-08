@@ -32,7 +32,7 @@ func About(cues []transcript.Cue) string {
 	var out strings.Builder
 	out.WriteString("The speech opens: " + first(said, quoted) + "\n")
 	if recurring := names(said); len(recurring) > 0 {
-		out.WriteString("\nWords recurring through it, as the machine heard them: " +
+		out.WriteString("\nWords recurring through it, as the machine transcribed them: " +
 			strings.Join(recurring, ", ") + "\n")
 	}
 	return out.String()

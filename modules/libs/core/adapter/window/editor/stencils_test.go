@@ -158,7 +158,7 @@ func TestAStencilMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	f := dealing(t, map[string]string{"cards/Animal.md": animal})
 
 	answer, err := f.client.CreateStencil(t.Context(), connect.NewRequest(&v1.CreateStencilRequest{
-		Title: "Animal", Folder: "cards", Fields: []string{"Species"},
+		Title: "Animal", Path: "cards", Fields: []string{"Species"},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -177,7 +177,7 @@ func TestADeckMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	f := dealing(t, map[string]string{"cards/Animal.md": animal})
 
 	answer, err := f.client.CreateDeck(t.Context(), connect.NewRequest(&v1.CreateDeckRequest{
-		Title: "Animal", Folder: "cards",
+		Title: "Animal", Path: "cards",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -211,7 +211,7 @@ func TestAPathThatLeavesTheVaultIsTheClientsToCorrect(t *testing.T) {
 	}
 
 	_, err = f.client.CreateDeck(t.Context(), connect.NewRequest(&v1.CreateDeckRequest{
-		Title: "Elsewhere", Folder: "../elsewhere",
+		Title: "Elsewhere", Path: "../elsewhere",
 	}))
 	if got := connect.CodeOf(err); got != connect.CodeInvalidArgument {
 		t.Errorf("making a deck outside the vault answered %v (%v)", got, err)
@@ -243,7 +243,7 @@ func TestAFolderThatIsAFileIsAnAnswerAPersonCanActOn(t *testing.T) {
 	f := dealing(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	answer, err := f.client.CreateDeck(t.Context(), connect.NewRequest(&v1.CreateDeckRequest{
-		Title: "Camelids", Folder: "Entropy.md",
+		Title: "Camelids", Path: "Entropy.md",
 	}))
 	if err != nil {
 		t.Fatal(err)

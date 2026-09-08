@@ -7,9 +7,9 @@
  * sent. It fills whatever it is put in, and says nothing about where that is.
  */
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
-import Thread from '../thread/Thread.vue'
-import MessageComposer from '../composer/MessageComposer.vue'
-import type { Turn } from '../thread/turn'
+import Thread from '@/features/thread/Thread.vue'
+import { MessageComposer } from './message-composer'
+import type { Turn } from '@/features/thread/turn'
 
 withDefaults(
   defineProps<{

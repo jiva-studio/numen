@@ -35,42 +35,43 @@ type Tab struct {
 	Title string
 	// Document is the document the tab holds, and nothing in a tab holding
 	// none.
-	Document *OpenDocument
+	Document *DocumentProgress
 	// Recording is the recording the tab holds, and nothing in a tab holding
 	// none.
-	Recording *OpenRecording
-	// Book is where they stand in the book that reflows the tab holds, and
+	Recording *RecordingProgress
+	// Book is how far through the book that reflows the tab holds they are, and
 	// nothing in a tab holding none.
-	Book *PlaceInBook
+	Book *BookProgress
 }
 
-// An OpenDocument is the document a tab holds, as the person is reading it.
-type OpenDocument struct {
+// A DocumentProgress is how far through a document the person reading it is.
+type DocumentProgress struct {
 	// Page is the page in front of them, counted from one.
 	Page int
-	// Pages is how many pages the document has.
-	Pages int
+	// PageCount is how many pages the document has.
+	PageCount int
 }
 
-// A PlaceInBook is where the person stands in the book that reflows a tab
-// holds. Such a book has no pages of its own, so the place is an offset into
-// its text.
-type PlaceInBook struct {
+// A BookProgress is how far through a book that reflows the person reading it
+// is. Such a book has no pages of its own, so where they stand is an offset
+// into its text and the page is counted from that.
+type BookProgress struct {
 	// Offset is where they are reading, in bytes of the book's text.
 	Offset int
-	// Page is the page the offset falls on, counted from one, and Pages how many
-	// the book is read in.
-	Page  int
-	Pages int
+	// Page is the page the offset falls on, counted from one, and PageCount how
+	// many the book is read in.
+	Page      int
+	PageCount int
 }
 
-// An OpenRecording is the recording a tab holds, as far as it has been written
-// down. Both are milliseconds.
-type OpenRecording struct {
-	// Heard is how much of it has been written down.
-	Heard int
-	// Length is how long the recording is.
-	Length int
+// A RecordingProgress is how far into a recording the words written down reach.
+// Both are milliseconds.
+type RecordingProgress struct {
+	// TranscribedDuration is how far into the recording the words written down
+	// reach. It is short of the duration while a run is still listening.
+	TranscribedDuration int
+	// Duration is how long the recording is.
+	Duration int
 }
 
 // The kinds of tab this application has words for. A tab of any other kind is

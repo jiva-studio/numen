@@ -181,6 +181,26 @@ func (d *Document) SetMapping(key string, entries []Entry) error {
 	return d.put(key, mapping)
 }
 
+// Scalar is what one top-level frontmatter key holds, and whether it holds
+// anything. A key holding a list or a mapping holds no scalar.
+func (d *Document) Scalar(key string) (string, bool) {
+	node, err := d.mapping()
+	if err != nil || node == nil {
+		return "", false
+	}
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		if node.Content[i].Value != key {
+			continue
+		}
+		if node.Content[i+1].Kind != yaml.ScalarNode {
+			return "", false
+		}
+		held := strings.TrimSpace(node.Content[i+1].Value)
+		return held, held != ""
+	}
+	return "", false
+}
+
 // SetScalar writes what one top-level frontmatter key holds from now on. An
 // empty value removes the key.
 func (d *Document) SetScalar(key, value string) error {

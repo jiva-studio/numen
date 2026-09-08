@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 )
 
@@ -216,17 +217,17 @@ func TestALineWrittenForTheWriterIsNotProse(t *testing.T) {
 func TestEveryBoxSaysWhereItsWordsAreInTheProse(t *testing.T) {
 	// Two pages, and the first of them two regions. The offsets are in the
 	// prose, so the second page's boxes are past everything the first says.
-	first, firstStretches := ocr.Assemble([]ocr.Line{
+	first, firstBoxes := ocr.Assemble([]ocr.Line{
 		line(0, 0, 50, 20, "Alpha"),
 		line(60, 0, 100, 20, "beta"),
 		line(0, 40, 60, 60, "gamma"),
 	})
-	last, lastStretches := ocr.Assemble([]ocr.Line{
+	last, lastBoxes := ocr.Assemble([]ocr.Line{
 		line(0, 0, 70, 20, "Epsilon"),
 		line(80, 0, 120, 20, "zeta"),
 	})
 	opening := []ocr.Block{
-		{Label: "text", Text: first, Stretches: firstStretches},
+		{Label: "text", Text: first, Boxes: firstBoxes},
 		// A region read by something that reports no rectangles. It says
 		// what it says and the prose after it moves along by that much.
 		{Label: "text", Text: "Delta."},
@@ -234,7 +235,7 @@ func TestEveryBoxSaysWhereItsWordsAreInTheProse(t *testing.T) {
 	pages := []ocr.Page{
 		{Index: 0, Size: image.Pt(600, 800), Blocks: opening},
 		{Index: 1, Size: image.Pt(600, 800), Blocks: []ocr.Block{
-			{Label: "text", Text: last, Stretches: lastStretches},
+			{Label: "text", Text: last, Boxes: lastBoxes},
 		}},
 	}
 	raw, boxes, _ := ocr.Write(pages)
@@ -245,10 +246,10 @@ func TestEveryBoxSaysWhereItsWordsAreInTheProse(t *testing.T) {
 		t.Fatalf("wrote %d boxes, want %d", len(boxes), len(want))
 	}
 	for i, box := range boxes {
-		if box.Start < 0 || box.Start+box.Length > len(text) {
-			t.Fatalf("box %d covers %d..%d, and the prose is %d long", i, box.Start, box.Start+box.Length, len(text))
+		if box.From < 0 || box.To > len(text) {
+			t.Fatalf("box %d covers %d..%d, and the prose is %d long", i, box.From, box.To, len(text))
 		}
-		if got := text[box.Start : box.Start+box.Length]; got != want[i] {
+		if got := text[box.From:box.To]; got != want[i] {
 			t.Errorf("box %d reads %q, want %q", i, got, want[i])
 		}
 	}
@@ -282,10 +283,10 @@ func TestAJoinedWordLeavesTheHyphenBoxOneByteShorter(t *testing.T) {
 	if len(spans) != 2 {
 		t.Fatalf("wrote %d spans, want 2", len(spans))
 	}
-	if got := text[spans[0].Start : spans[0].Start+spans[0].Length]; got != "under" {
+	if got := text[spans[0].Span.From:spans[0].Span.To]; got != "under" {
 		t.Errorf("the first box reads %q, want %q", got, "under")
 	}
-	if got := text[spans[1].Start : spans[1].Start+spans[1].Length]; got != "standing follows" {
+	if got := text[spans[1].Span.From:spans[1].Span.To]; got != "standing follows" {
 		t.Errorf("the second box reads %q, want %q", got, "standing follows")
 	}
 }
@@ -294,9 +295,9 @@ func TestAPageNothingWasMeasuredOnHasNoBoxes(t *testing.T) {
 	// A page with no size gives no fraction of itself to divide a rectangle by.
 	raw, boxes, _ := ocr.Write([]ocr.Page{
 		{Index: 0, Blocks: []ocr.Block{{
-			Label:     "text",
-			Text:      "Alpha beta",
-			Stretches: []ocr.Stretch{{Box: image.Rect(0, 0, 50, 20), Start: 0, Length: 5}},
+			Label: "text",
+			Text:  "Alpha beta",
+			Boxes: []ocr.Box{{Rect: image.Rect(0, 0, 50, 20), Span: domain.Span{From: 0, To: 5}}},
 		}}},
 	})
 
@@ -324,10 +325,10 @@ func TestAJoinedWordLeavesTheHyphenBoxShorterByTheHyphen(t *testing.T) {
 			if len(spans) != 2 {
 				t.Fatalf("wrote %d spans, want 2", len(spans))
 			}
-			if got := text[spans[0].Start : spans[0].Start+spans[0].Length]; got != "Viśvakoṣa" {
+			if got := text[spans[0].Span.From:spans[0].Span.To]; got != "Viśvakoṣa" {
 				t.Errorf("the first box reads %q", got)
 			}
-			if got := text[spans[1].Start : spans[1].Start+spans[1].Length]; got != "ṭīkā follows" {
+			if got := text[spans[1].Span.From:spans[1].Span.To]; got != "ṭīkā follows" {
 				t.Errorf("the second box reads %q", got)
 			}
 		})

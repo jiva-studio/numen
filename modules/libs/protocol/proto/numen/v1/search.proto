@@ -57,7 +57,7 @@ message NameMatch {
   // Where in that name the words stand, counted the way a client counts text:
   // in UTF-16 code units.
   // A word reached by its prefix is marked whole.
-  repeated Span at = 3;
+  repeated Span spans = 3;
 
   // Which of three the note is, so a client draws a deck and a stencil as what
   // they are. A heading carries the type of the note it stands in.
@@ -112,38 +112,32 @@ message Passage {
   // A window that opens notes offers to open these and no others.
   optional Note note = 2;
 
+  // The stretch of the source that matched, as it reads.
   string text = 3;
 
   // Where in that text the words typed stand, counted the way a client counts
   // text: in UTF-16 code units. Empty for a hit by meaning, which stands on no
   // word in particular.
-  repeated Span at = 4;
+  repeated Span spans = 4;
 
   // What the source's own numbering calls the place, empty when the format
   // offered none.
   string location = 5;
 
   // Where the passage stands in the text of the source it was read out of,
-  // counted in bytes. It is what opens that source here, and a hit in a note
-  // carries it as every other hit does.
-  int32 start = 6;
-  int32 length = 7;
+  // counted in bytes. With the path above it is the place this opens, and a hit
+  // in a note carries it as every other hit does.
+  Span span = 6;
 
   // Where the chunk that matched stands, counted from the first line of the
   // source's prose. It is the line a note opens on, and the caret stands there.
-  int32 line = 8;
+  int32 line = 7;
 
   // Which of three the note is, so a client draws a deck and a stencil as what
   // they are. It says nothing about a source that is not a note.
-  NoteType type = 9;
+  NoteType type = 8;
 
   // What the vault holds at that path, so a client draws a book and a
   // recording as what they are.
-  SourceKind kind = 10;
-}
-
-// Span is a run of text, by where it begins and where it ends.
-message Span {
-  int32 from = 1;
-  int32 to = 2;
+  SourceKind kind = 9;
 }

@@ -24,12 +24,12 @@ type through struct {
 // paths are the files this run listens through, and where they were found.
 // Nothing here is open: they are names until something reads them.
 type paths struct {
-	encoder string
-	decoder string
-	joiner  string
-	tokens  string
-	speech  string
-	from    string
+	encoder   string
+	decoder   string
+	joiner    string
+	tokens    string
+	segmenter string
+	from      string
 }
 
 // locate opens the runtime and finds the models.
@@ -78,7 +78,7 @@ func wanted(cfg Config, into *paths) []wantedFile {
 		{&into.decoder, cfg.Model.Decoder, under(decoderFile), "decoder"},
 		{&into.joiner, cfg.Model.Joiner, under(joinerFile), "joiner"},
 		{&into.tokens, cfg.Model.Tokens, under(tokensFile), "tokens"},
-		{&into.speech, cfg.Speech.Path, cfg.Speech.Repo, "speech model"},
+		{&into.segmenter, cfg.Segmenter.Path, cfg.Segmenter.Repo, "segmenter model"},
 	}
 }
 

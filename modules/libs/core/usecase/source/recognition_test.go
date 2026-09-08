@@ -46,7 +46,7 @@ func recognising(t *testing.T, why error) *watched {
 	w := &watched{tasks: tasks, held: &blank{}}
 	w.RecognitionWorker = NewRecognitionWorker(t.Context(), Recognitions{
 		Readers: vaults{},
-		Derived: newShelf(),
+		Derived: shelves{newShelf()},
 		Tasks:   tasks,
 		Proofreading: ProofreadingConfig{
 			Queue: func(string) (port.ProofreadQueue, error) { return nil, nil },

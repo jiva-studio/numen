@@ -23,7 +23,7 @@ func TestReadingAVaultIsReportedAsWork(t *testing.T) {
 	api.Registry = registry{held: []domain.Vault{unread}}
 
 	holding := make(chan struct{})
-	api.Reading(t.Context(), func(context.Context, domain.Vault, func(int64)) error {
+	api.Reading(t.Context(), func(context.Context, domain.Vault) error {
 		<-holding
 		return nil
 	})
@@ -51,7 +51,7 @@ func TestReadingAVaultTheIndexCarriesIsNotWorkAPersonAskedFor(t *testing.T) {
 	api, held := windowed(t, deck)
 
 	holding := make(chan struct{})
-	api.Reading(t.Context(), func(context.Context, domain.Vault, func(int64)) error {
+	api.Reading(t.Context(), func(context.Context, domain.Vault) error {
 		<-holding
 		return nil
 	})
@@ -73,7 +73,7 @@ func TestAVaultThatCouldNotBeReadSaysWhyAndIsLetAlone(t *testing.T) {
 	api.Registry = registry{held: []domain.Vault{unread}}
 
 	var tried atomic.Int64
-	api.Reading(t.Context(), func(context.Context, domain.Vault, func(int64)) error {
+	api.Reading(t.Context(), func(context.Context, domain.Vault) error {
 		tried.Add(1)
 		return errors.New("the folder is not there")
 	})

@@ -31,7 +31,7 @@ func refreshing(t *testing.T, notes map[string]string) (vaults.Refresh, *contain
 		Readers: filesystem.VaultReaders{},
 		Vaults:  db.Vaults(),
 		Notes:   db.Notes(),
-		Known:   db.SourcesKnown(),
+		Queries: db.SourcesKnown(),
 		Sources: db.Sources(),
 	}, db, v
 }

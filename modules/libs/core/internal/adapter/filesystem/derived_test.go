@@ -479,13 +479,13 @@ func TestAStoreAnswersForEveryAreaItWasOpenedOn(t *testing.T) {
 	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
 		t.Fatal(err)
 	}
-	derived, err := filesystem.OpenDerived(root, filesystem.Options{}, filesystem.OCRDir, filesystem.SpeechDir)
+	derived, err := filesystem.OpenDerived(root, filesystem.Options{}, filesystem.OCRDir, filesystem.TranscriptDir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	ctx := t.Context()
 
-	for _, name := range []string{"ocr/abc.txt", "asr/abc.vtt"} {
+	for _, name := range []string{"ocr/abc.txt", "transcript/abc.asr.vtt"} {
 		if err := derived.Write(ctx, name, []byte("said")); err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}

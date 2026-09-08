@@ -97,10 +97,10 @@ export default tseslint.config(
     ignores: [
       'src/**/*.test.ts',
       'src/**/*.stories.ts',
-      'src/testing/**',
+      'src/shared/testing/**',
       // The ports' own defaults, which is where the browser is allowed in.
-      'src/settings/review.ts',
-      'src/note/notes.ts',
+      'src/shared/settings/review.ts',
+      'src/note-tab/notes.ts',
     ],
     rules: {
       'no-restricted-globals': [
@@ -169,7 +169,7 @@ export default tseslint.config(
   // interactions and does not await what it starts. In the tabs the same rules
   // are on and the tree is clean.
   {
-    files: ['**/*.test.ts', '**/*.stories.ts', 'src/testing/**', '.storybook/**'],
+    files: ['**/*.test.ts', '**/*.stories.ts', 'src/shared/testing/**', '.storybook/**'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',

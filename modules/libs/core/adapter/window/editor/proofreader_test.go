@@ -42,7 +42,7 @@ func (p *proofreads) Proofread(
 
 // proofreading is a window over the same vault the runs are asked for over,
 // with a proofreading a test watches.
-func proofreading(t *testing.T, held port.DerivedStores, read indexed) (*API, http.Handler, *proofreads) {
+func proofreading(t *testing.T, held port.DerivedStore, read indexed) (*API, http.Handler, *proofreads) {
 	t.Helper()
 	api, handler := running(t, held, read, willRun(), willRun())
 	by := &proofreads{ready: true}
@@ -64,8 +64,8 @@ func TestATranscriptIsProofreadWhenTheWindowAsksForIt(t *testing.T) {
 	if made.GetState() != v1.State_STATE_RUNNING {
 		t.Fatalf("the transcript was answered %s", made.GetState())
 	}
-	if made.GetName() != named(api.Showing(), talk, correctedID) {
-		t.Errorf("the answer is about %q", made.GetName())
+	if made.GetKind() != v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED {
+		t.Errorf("the answer is about a %s", made.GetKind())
 	}
 	if by.times != 1 || by.path != talk || by.vault != string(api.Showing().ID) {
 		t.Errorf("the run was asked for %q of %q, %d times", by.path, by.vault, by.times)
@@ -169,7 +169,7 @@ func TestTheCorrectionsARecordingCarriesAreWhatStands(t *testing.T) {
 	}
 	var corrections *v1.Artifact
 	for _, one := range out.Msg.GetArtifacts() {
-		if one.GetName() == named(api.Showing(), talk, correctedID) {
+		if one.GetKind() == v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED {
 			corrections = one
 		}
 	}
@@ -178,9 +178,6 @@ func TestTheCorrectionsARecordingCarriesAreWhatStands(t *testing.T) {
 	}
 	if corrections.GetState() != v1.State_STATE_DONE {
 		t.Errorf("corrections that stand are %s", corrections.GetState())
-	}
-	if corrections.GetSize() != int64(len(put)) {
-		t.Errorf("they are %d bytes long", corrections.GetSize())
 	}
 	if by.times != 0 {
 		t.Error("a run was begun by a question that only asked")

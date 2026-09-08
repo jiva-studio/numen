@@ -8,13 +8,13 @@
 import { Notices, WorkspaceLayout } from '@numen/ui'
 import '@numen/ui/styles.css'
 import './app.css'
-import UnsavedChangesPrompt from './saving/UnsavedChangesPrompt.vue'
-import CoreFailureNotice from './notices/CoreFailureNotice.vue'
-import CommandPalette from './command/CommandPalette.vue'
+import UnsavedChangesPrompt from './shared/saving/UnsavedChangesPrompt.vue'
+import CoreFailureNotice from './shared/notices/CoreFailureNotice.vue'
+import CommandPalette from './shared/command/CommandPalette.vue'
 import WelcomeScreen from './welcome/WelcomeScreen.vue'
-import { useWindow } from './window'
-import { WORDS as words } from './words'
-import { WORDS as note } from './note/words'
+import { useWindow } from './window/window'
+import { WORDS as words } from './shared/words'
+import { WORDS as note } from './note-tab/words'
 
 /** What the notes still unwritten are put in: the window's words and a note's. */
 const unsaved = {

@@ -3,6 +3,7 @@ package ocr
 import (
 	"strings"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 )
 
@@ -67,7 +68,7 @@ func Write(pages []Page) ([]byte, []highlight.Box, []Part) {
 	return []byte(out.String()), boxes, parts
 }
 
-// within is where each stretch of a block sits: at its offset from base in the
+// within is where each box of a block sits: at its offset from base in the
 // prose, and over the fraction of the page its rectangle covers. A page nothing
 // was measured on gives no boxes, having no size to take a fraction of.
 func within(page Page, block Block, base int) []highlight.Box {
@@ -75,16 +76,16 @@ func within(page Page, block Block, base int) []highlight.Box {
 		return nil
 	}
 	wide, high := float32(page.Size.X), float32(page.Size.Y)
-	boxes := make([]highlight.Box, 0, len(block.Stretches))
-	for _, stretch := range block.Stretches {
+	boxes := make([]highlight.Box, 0, len(block.Boxes))
+	for _, one := range block.Boxes {
 		boxes = append(boxes, highlight.Box{
-			Page:    page.Index,
-			Stretch: highlight.Stretch{Start: base + stretch.Start, Length: stretch.Length},
+			Page: page.Index,
+			Span: domain.Span{From: base + one.Span.From, To: base + one.Span.To},
 			Rect: highlight.Rect{
-				MinX: float32(stretch.Box.Min.X) / wide,
-				MinY: float32(stretch.Box.Min.Y) / high,
-				MaxX: float32(stretch.Box.Max.X) / wide,
-				MaxY: float32(stretch.Box.Max.Y) / high,
+				MinX: float32(one.Rect.Min.X) / wide,
+				MinY: float32(one.Rect.Min.Y) / high,
+				MaxX: float32(one.Rect.Max.X) / wide,
+				MaxY: float32(one.Rect.Max.Y) / high,
 			},
 		})
 	}

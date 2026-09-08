@@ -52,13 +52,20 @@ The numbers run without gaps, and the whole corpus is renumbered when one closes
 
 - [A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md)
 - [A passage is a range of bytes](0016-a-passage-is-a-range-of-bytes.md)
-- [An EPUB is reflowed in the window, and addressed by byte offset](0038-an-epub-is-reflowed-in-the-window.md)
+- [An EPUB is reflowed in the window, and addressed by byte offset](0042-an-epub-is-reflowed-in-the-window.md)
 
 ### Recordings
 
 - [A recording is a source of its own](0030-a-recording-is-a-source-of-its-own.md)
 - [A transcript is WebVTT](0031-a-transcript-is-webvtt.md)
 - [A recording is transcribed without being asked](0032-a-recording-is-transcribed-without-being-asked.md)
+
+### Addresses
+
+- [A url is a source of its own](0038-a-url-is-a-source-of-its-own.md)
+- [What comes back from an address is named by the address](0039-what-comes-back-from-an-address-is-named-by-it.md)
+- [The window may frame the hosts a video plays from](0040-the-window-may-frame-the-hosts-a-video-plays-from.md)
+- [Downloading what is at an address](0041-downloading-what-is-at-an-address.md)
 
 ### The vault, written
 
@@ -97,8 +104,9 @@ What the product does, and what its words mean.
 - [flashcards.md](../flashcards.md) — running the cards: what is due, and what an answer is
 - [editing.md](../editing.md) — a note in a tab: saving, renaming, removing
 - [vaults.md](../vaults.md) — several vaults, one window
-- [reading.md](../reading.md) — how a book is read
-- [transcribing.md](../transcribing.md) — how a recording is heard
+- [recognising.md](../recognising.md) — how a document's pages are read
+- [transcribing.md](../transcribing.md) — how a recording is transcribed
+- [importing.md](../importing.md) — how what a url points at is fetched
 - [proofreading.md](../proofreading.md) — how a reading and a transcript are put right
 - [agents.md](../agents.md) — what the panel's agent can reach
 - [publishing.md](../publishing.md) — how a build reaches a person

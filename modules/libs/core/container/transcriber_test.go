@@ -21,7 +21,7 @@ func TestATranscriptIsPutRightWithTheProfileNamedForSpeech(t *testing.T) {
 		"speech": {Use: proofreading.UseAgent, Model: "one model", BatchSize: 1, InFlight: 1},
 		"scans":  {Use: proofreading.UseAgent, Model: "another model", BatchSize: 1, InFlight: 1},
 	}
-	cfg.SpeechProofreading = proofreading.Proofread{Profile: "speech"}
+	cfg.TranscriptProofreading = proofreading.Proofread{Profile: "speech"}
 	cfg.ScanProofreading = proofreading.Proofread{Profile: "scans", Automatically: true}
 
 	var opened ProofreaderSpec
@@ -50,7 +50,7 @@ func TestAProofreadingIsOfferedWhereAProfileIsNamed(t *testing.T) {
 		t.Error("an installation naming no profile offers the run")
 	}
 
-	cfg.SpeechProofreading = proofreading.Proofread{Profile: "by hand"}
+	cfg.TranscriptProofreading = proofreading.Proofread{Profile: "by hand"}
 	if !cfg.Transcribing(t.Context(), nil, nil, nil).ProofreaderReady() {
 		t.Error("an installation naming a profile does not offer the run")
 	}

@@ -23,6 +23,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
@@ -46,6 +47,10 @@ type Config struct {
 
 	// Agent is which agent answers in the panel, and what it may reach.
 	Agent agent.Config `json:"agent"`
+
+	// Importing is how an address a link note points at is reached, and where
+	// the tools that reach it are.
+	Importing download.Config `json:"importing"`
 
 	// Titles is how a note's title and the name of its file are held together.
 	Titles Titles `json:"naming"`
@@ -115,9 +120,10 @@ func Defaults() Config {
 			Transcription:        Transcription{Config: transcription.Defaults()},
 			TranscribeRecordings: on(),
 		},
-		Agent:  agent.Defaults(),
-		Titles: Titles{SyncTitleAndFilename: on()},
-		Review: Review{DayStarts: review.Clock(DefaultStarts())},
+		Agent:     agent.Defaults(),
+		Importing: download.Defaults(),
+		Titles:    Titles{SyncTitleAndFilename: on()},
+		Review:    Review{DayStarts: review.Clock(DefaultStarts())},
 	}
 }
 

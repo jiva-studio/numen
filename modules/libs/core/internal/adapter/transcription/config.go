@@ -27,8 +27,8 @@ type Config struct {
 	// Threads is how many threads one model may use.
 	Threads int `json:"threads"`
 
-	Model  ParakeetModel  `json:"model"`
-	Speech SegmenterModel `json:"speech"`
+	Model     ParakeetModel  `json:"model"`
+	Segmenter SegmenterModel `json:"segmenter"`
 
 	// Progress is told how far a download has got, when anything is listening.
 	// It is not a setting and is not written down: it is how the wait reaches
@@ -77,19 +77,19 @@ type SegmenterModel struct {
 
 	// Threshold is how sure the model has to be that a window carries speech.
 	Threshold float32 `json:"threshold"`
-	// Silence is how much quiet, in milliseconds, closes a stretch of speech.
+	// Silence is how much quiet, in milliseconds, closes a segment.
 	Silence int `json:"silence"`
-	// Pad is how many milliseconds are kept on each side of a stretch, so that
+	// Pad is how many milliseconds are kept on each side of a segment, so that
 	// the first and last sound of a word are inside it.
 	Pad int `json:"pad"`
-	// Longest is how many milliseconds one stretch may run to. Speech that goes
+	// Longest is how many milliseconds one segment may run to. Speech that goes
 	// on longer is cut at the quietest window this side of the limit.
 	Longest int `json:"longest"`
-	// Shortest is how many milliseconds a stretch carries to be a stretch at
+	// Shortest is how many milliseconds a segment carries to be a segment at
 	// all.
 	Shortest int `json:"shortest"`
-	// Least is how many milliseconds a stretch runs to before it stands as a
-	// line of its own. A shorter one is put together with the stretch after it.
+	// Least is how many milliseconds a segment runs to before it stands as a
+	// line of its own. A shorter one is put together with the segment after it.
 	Least int `json:"least"`
 }
 
@@ -109,7 +109,7 @@ func Defaults() Config {
 			Name: "parakeet-tdt-0.6b-v3-int8",
 			Repo: "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/resolve/main/",
 		},
-		Speech: SegmenterModel{
+		Segmenter: SegmenterModel{
 			Name: "silero-vad",
 			Repo: "https://huggingface.co/onnx-community/silero-vad/resolve/main/onnx/model.onnx",
 		},
@@ -151,7 +151,7 @@ func (s SegmenterModel) pad() int {
 	return s.Pad
 }
 
-// One stretch is one run of the encoder, and its cost grows with its length.
+// One segment is one run of the encoder, and its cost grows with its length.
 func (s SegmenterModel) longest() int {
 	if s.Longest <= 0 {
 		return 30000
@@ -175,8 +175,8 @@ func (s SegmenterModel) least() int {
 	return s.Least
 }
 
-// cutting is every setting a stretch of speech is cut by, as one value. Each of
-// them moves where a stretch ends, and a stretch that ends elsewhere is heard
+// cutting is every setting a segment is cut by, as one value. Each of them
+// moves where a segment ends, and a segment that ends elsewhere is transcribed
 // as other words.
 func (s SegmenterModel) cutting() string {
 	return fmt.Sprintf("%.2f/%d/%d/%d/%d/%d",

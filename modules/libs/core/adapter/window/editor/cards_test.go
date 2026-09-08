@@ -163,19 +163,19 @@ func TestACardSaysWhichSectionItStandsUnder(t *testing.T) {
 	if len(sections) != 2 || sections[0].GetName() != "Camelids" || sections[1].GetName() != "Others" {
 		t.Fatalf("the deck came back with the sections %+v", sections)
 	}
-	if lead := sections[1].GetLead(); lead != "what a person wrote about this run of it" {
+	if lead := sections[1].GetPreamble(); lead != "what a person wrote about this run of it" {
 		t.Errorf("what a person wrote under the second section came back as %q", lead)
 	}
 	held := read.GetCards()
 	if len(held) != 2 {
 		t.Fatalf("the deck came back with %d cards", len(held))
 	}
-	if held[0].Section != nil {
+	if held[0].SectionIndex != nil {
 		t.Errorf("the card standing above the first section came back under section %d",
-			held[0].GetSection())
+			held[0].GetSectionIndex())
 	}
-	if held[1].Section == nil || held[1].GetSection() != 0 {
-		t.Errorf("the card under the first section came back as %+v", held[1].Section)
+	if held[1].SectionIndex == nil || held[1].GetSectionIndex() != 0 {
+		t.Errorf("the card under the first section came back as %+v", held[1].SectionIndex)
 	}
 }
 
@@ -313,7 +313,7 @@ func TestACardUnderASectionTheDeckDoesNotHoldIsRefused(t *testing.T) {
 	before := onDisk(t, f.root, "Animals.md")
 	cards := read.GetDeck().GetCards()
 	nowhere := int32(99)
-	cards[0].Section = &nowhere
+	cards[0].SectionIndex = &nowhere
 
 	_, err := f.client.WriteDeck(t.Context(), connect.NewRequest(&v1.WriteDeckRequest{
 		Path:     "Animals.md",
@@ -397,7 +397,7 @@ func TestADeckMadeIsADeckToRead(t *testing.T) {
 	f := dealing(t, map[string]string{"Animal.md": animal})
 
 	answer, err := f.client.CreateDeck(t.Context(), connect.NewRequest(&v1.CreateDeckRequest{
-		Title: "Camelids", Folder: "decks",
+		Title: "Camelids", Path: "decks",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -427,7 +427,7 @@ func TestAStencilMadeDeclaresTheFieldsItWasGiven(t *testing.T) {
 	f := dealing(t, nil)
 
 	answer, err := f.client.CreateStencil(t.Context(), connect.NewRequest(&v1.CreateStencilRequest{
-		Title: "Bird", Folder: "cards", Fields: []string{"Species", "Wingspan"},
+		Title: "Bird", Path: "cards", Fields: []string{"Species", "Wingspan"},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -608,11 +608,11 @@ func TestACardNamesItsStencilTheWayALinkNamesANote(t *testing.T) {
 	filed := map[string]string{"Llama": "cards/Animal.md", "Alpaca": "cards/Animal.md", "Vicuña": ""}
 	for _, card := range held {
 		name := valued(card, "Name")
-		if at := card.GetStencilAt(); at != filed[name] {
+		if at := card.GetStencilPath(); at != filed[name] {
 			t.Errorf("the stencil of %s is filed at %q, want %q", name, at, filed[name])
 		}
 	}
-	if written := held[0].GetStencil(); written != "cards/Animal" {
+	if written := held[0].GetStencilLink(); written != "cards/Animal" {
 		t.Errorf("the wikilink of the first card came back as %q", written)
 	}
 }

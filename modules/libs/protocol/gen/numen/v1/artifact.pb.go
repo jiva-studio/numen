@@ -28,33 +28,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// ArtifactKind is which thing made from a file is meant. The list is closed: a
+// ArtifactKind is what a thing made from a file is. The list is closed: a
 // client draws one row per kind, and a kind nobody decided on has no row.
+//
+// A kind says what a thing is; what made it is its producer, and the two are
+// not the same question. Words with times are a transcript whether a model
+// heard them or a site published them.
 type ArtifactKind int32
 
 const (
 	ArtifactKind_ARTIFACT_KIND_UNSPECIFIED ArtifactKind = 0
-	// The text read out of a scan. It stands under the name `ocr`.
-	ArtifactKind_ARTIFACT_KIND_READING ArtifactKind = 1
-	// The words heard in a recording, under `asr`.
-	ArtifactKind_ARTIFACT_KIND_HEARD ArtifactKind = 2
-	// Those words put right, under `asr.corrected`.
-	ArtifactKind_ARTIFACT_KIND_CORRECTED ArtifactKind = 3
+	// Text with the place on the page each word stands at, read off a scan and
+	// kept under `ocr`.
+	ArtifactKind_ARTIFACT_KIND_OCR ArtifactKind = 1
+	// That reading put right by a person, under `.corrected` beside it.
+	ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED ArtifactKind = 2
+	// Text with the times each stretch of it was said at, under the name of what
+	// made it: `asr` where a model heard it, `captions` where a site published
+	// it with a video.
+	ArtifactKind_ARTIFACT_KIND_TRANSCRIPT ArtifactKind = 3
+	// A transcript put right by a person, under `.corrected` beside the one it
+	// corrects. It says which it is: a reading put right is another kind, and a
+	// caller editing one has to know which of them it holds.
+	ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED ArtifactKind = 4
+	// The prose a page is written around, under `article`. It carries no times
+	// and no places on pages: it is what the page says, and nothing about where
+	// it stood.
+	ArtifactKind_ARTIFACT_KIND_ARTICLE ArtifactKind = 5
+	// The bytes of a video, kept under `copy` and played from this disk. It is
+	// asked for by hand: an hour of video is not what pasting an address asks
+	// for.
+	ArtifactKind_ARTIFACT_KIND_COPY ArtifactKind = 6
 )
 
 // Enum value maps for ArtifactKind.
 var (
 	ArtifactKind_name = map[int32]string{
 		0: "ARTIFACT_KIND_UNSPECIFIED",
-		1: "ARTIFACT_KIND_READING",
-		2: "ARTIFACT_KIND_HEARD",
-		3: "ARTIFACT_KIND_CORRECTED",
+		1: "ARTIFACT_KIND_OCR",
+		2: "ARTIFACT_KIND_OCR_CORRECTED",
+		3: "ARTIFACT_KIND_TRANSCRIPT",
+		4: "ARTIFACT_KIND_TRANSCRIPT_CORRECTED",
+		5: "ARTIFACT_KIND_ARTICLE",
+		6: "ARTIFACT_KIND_COPY",
 	}
 	ArtifactKind_value = map[string]int32{
-		"ARTIFACT_KIND_UNSPECIFIED": 0,
-		"ARTIFACT_KIND_READING":     1,
-		"ARTIFACT_KIND_HEARD":       2,
-		"ARTIFACT_KIND_CORRECTED":   3,
+		"ARTIFACT_KIND_UNSPECIFIED":          0,
+		"ARTIFACT_KIND_OCR":                  1,
+		"ARTIFACT_KIND_OCR_CORRECTED":        2,
+		"ARTIFACT_KIND_TRANSCRIPT":           3,
+		"ARTIFACT_KIND_TRANSCRIPT_CORRECTED": 4,
+		"ARTIFACT_KIND_ARTICLE":              5,
+		"ARTIFACT_KIND_COPY":                 6,
 	}
 )
 
@@ -164,28 +189,21 @@ func (State) EnumDescriptor() ([]byte, []int) {
 }
 
 // An Artifact is one thing a model wrote about one file of the vault.
+//
+// Where it stands on disk is the application's own and is never said: a request
+// names the file and the kind of it, and the vault is the one the window is
+// showing.
 type Artifact struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Name is where it stands: the vault, the file it was made from, and the
-	// name the store keeps it under.
-	//
-	//	vaults/{vault}/files/{path}/artifacts/asr.corrected
-	//
-	// It is answered and never asked with: a request names the file and the
-	// artifact of it, and the vault is the one the window is showing.
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Which of them this is.
+	Kind ArtifactKind `protobuf:"varint,1,opt,name=kind,proto3,enum=numen.v1.ArtifactKind" json:"kind,omitempty"`
 	// State is what has become of it.
 	State State `protobuf:"varint,2,opt,name=state,proto3,enum=numen.v1.State" json:"state,omitempty"`
 	// Error is what stopped it, and is set when it failed.
 	Error string `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
-	// Size is how many bytes stand under that name. A file being written is
-	// appended to as the work goes, so it keeps its name and grows: how long it
-	// now is is what tells a caller that what it already read has moved on.
-	Size int64 `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
-	// Which of them this is. A client draws a row per kind and reads this rather
-	// than the last part of `name`: a name is where the artifact stands, and
-	// taking a client's meaning out of it makes every reader parse it.
-	Kind          ArtifactKind `protobuf:"varint,5,opt,name=kind,proto3,enum=numen.v1.ArtifactKind" json:"kind,omitempty"`
+	// How many bytes stand under it. A caller reading a long text in windows
+	// knows from this where the end is.
+	Bytes         int64 `protobuf:"varint,4,opt,name=bytes,proto3" json:"bytes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -220,11 +238,11 @@ func (*Artifact) Descriptor() ([]byte, []int) {
 	return file_numen_v1_artifact_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Artifact) GetName() string {
+func (x *Artifact) GetKind() ArtifactKind {
 	if x != nil {
-		return x.Name
+		return x.Kind
 	}
-	return ""
+	return ArtifactKind_ARTIFACT_KIND_UNSPECIFIED
 }
 
 func (x *Artifact) GetState() State {
@@ -241,18 +259,11 @@ func (x *Artifact) GetError() string {
 	return ""
 }
 
-func (x *Artifact) GetSize() int64 {
+func (x *Artifact) GetBytes() int64 {
 	if x != nil {
-		return x.Size
+		return x.Bytes
 	}
 	return 0
-}
-
-func (x *Artifact) GetKind() ArtifactKind {
-	if x != nil {
-		return x.Kind
-	}
-	return ArtifactKind_ARTIFACT_KIND_UNSPECIFIED
 }
 
 type ListArtifactsRequest struct {
@@ -353,7 +364,7 @@ type CreateArtifactRequest struct {
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Which artifact of it to make. Which model does the work follows from the
 	// file, and is not asked for here.
-	Kind          ArtifactKind `protobuf:"varint,3,opt,name=kind,proto3,enum=numen.v1.ArtifactKind" json:"kind,omitempty"`
+	Kind          ArtifactKind `protobuf:"varint,2,opt,name=kind,proto3,enum=numen.v1.ArtifactKind" json:"kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -448,12 +459,14 @@ func (x *CreateArtifactResponse) GetArtifact() *Artifact {
 
 type DeleteArtifactRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The file of the vault, as the vault holds it. What is taken away is
-	// everything listening to a recording produced — the words a model heard and
-	// the words a person put right — so there is nothing to name: a field that
-	// takes one value of three and refuses the other two at run time is a rule
-	// the schema cannot state and a client cannot read.
-	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	// The file of the vault, as the vault holds it.
+	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	// Which of what the file carries to take away, which a caller names: a url
+	// carries the text fetched from its address and a copy of what is there, and
+	// they go one without the other. Naming a text takes everything one run
+	// produced — the words a model heard and the words a person put right go
+	// together — and naming none is not a request.
+	Kind          ArtifactKind `protobuf:"varint,2,opt,name=kind,proto3,enum=numen.v1.ArtifactKind" json:"kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -495,10 +508,15 @@ func (x *DeleteArtifactRequest) GetPath() string {
 	return ""
 }
 
+func (x *DeleteArtifactRequest) GetKind() ArtifactKind {
+	if x != nil {
+		return x.Kind
+	}
+	return ArtifactKind_ARTIFACT_KIND_UNSPECIFIED
+}
+
 type DeleteArtifactResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The artifact as it now stands, which is nothing.
-	Artifact      *Artifact `protobuf:"bytes,1,opt,name=artifact,proto3" json:"artifact,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -533,350 +551,37 @@ func (*DeleteArtifactResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_artifact_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *DeleteArtifactResponse) GetArtifact() *Artifact {
-	if x != nil {
-		return x.Artifact
-	}
-	return nil
-}
-
-// A Cue is one stretch of speech in a recording: what was said, and the
-// milliseconds of the recording it spans.
-//
-// One cue stands on one line. A cue broken over two is two a client would offer
-// to edit and one the recording would play.
-type Cue struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
-	From          int32                  `protobuf:"varint,2,opt,name=from,proto3" json:"from,omitempty"`
-	To            int32                  `protobuf:"varint,3,opt,name=to,proto3" json:"to,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Cue) Reset() {
-	*x = Cue{}
-	mi := &file_numen_v1_artifact_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Cue) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Cue) ProtoMessage() {}
-
-func (x *Cue) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_artifact_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Cue.ProtoReflect.Descriptor instead.
-func (*Cue) Descriptor() ([]byte, []int) {
-	return file_numen_v1_artifact_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *Cue) GetText() string {
-	if x != nil {
-		return x.Text
-	}
-	return ""
-}
-
-func (x *Cue) GetFrom() int32 {
-	if x != nil {
-		return x.From
-	}
-	return 0
-}
-
-func (x *Cue) GetTo() int32 {
-	if x != nil {
-		return x.To
-	}
-	return 0
-}
-
-type ReadTranscriptRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The recording, as the vault holds it.
-	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// The run of the recording's text to answer about, and nothing at all for the
-	// whole of it. It is a start and a length in the words, which is how a
-	// passage is addressed everywhere else, and what comes back is the speech
-	// those bytes were said in.
-	At            *Stretch `protobuf:"bytes,2,opt,name=at,proto3" json:"at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ReadTranscriptRequest) Reset() {
-	*x = ReadTranscriptRequest{}
-	mi := &file_numen_v1_artifact_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ReadTranscriptRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReadTranscriptRequest) ProtoMessage() {}
-
-func (x *ReadTranscriptRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_artifact_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReadTranscriptRequest.ProtoReflect.Descriptor instead.
-func (*ReadTranscriptRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_artifact_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *ReadTranscriptRequest) GetPath() string {
-	if x != nil {
-		return x.Path
-	}
-	return ""
-}
-
-func (x *ReadTranscriptRequest) GetAt() *Stretch {
-	if x != nil {
-		return x.At
-	}
-	return nil
-}
-
-type ReadTranscriptResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The words, in the order they were said.
-	Cues []*Cue `protobuf:"bytes,1,rep,name=cues,proto3" json:"cues,omitempty"`
-	// Whether they may be put right now. A run listening to the recording holds
-	// it, and a client draws what it reads and leaves it alone.
-	Editable      bool `protobuf:"varint,2,opt,name=editable,proto3" json:"editable,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ReadTranscriptResponse) Reset() {
-	*x = ReadTranscriptResponse{}
-	mi := &file_numen_v1_artifact_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ReadTranscriptResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReadTranscriptResponse) ProtoMessage() {}
-
-func (x *ReadTranscriptResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_artifact_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReadTranscriptResponse.ProtoReflect.Descriptor instead.
-func (*ReadTranscriptResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_artifact_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *ReadTranscriptResponse) GetCues() []*Cue {
-	if x != nil {
-		return x.Cues
-	}
-	return nil
-}
-
-func (x *ReadTranscriptResponse) GetEditable() bool {
-	if x != nil {
-		return x.Editable
-	}
-	return false
-}
-
-type WriteTranscriptRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The recording, as the vault holds it.
-	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// The words as the person left them, against the milliseconds they were said
-	// in. A client that merged and split lines does the arithmetic.
-	//
-	// Speech runs forward: a cue ends no earlier than it begins, and begins after
-	// the one before it ends. A cue whose words trim away is dropped, and its
-	// timings still bound the cue after it. Words carrying nothing at all are
-	// refused: what was heard comes back by taking the corrections away, and
-	// writing nothing over the words would leave the recording saying nothing
-	// with nothing to edit.
-	Cues          []*Cue `protobuf:"bytes,2,rep,name=cues,proto3" json:"cues,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *WriteTranscriptRequest) Reset() {
-	*x = WriteTranscriptRequest{}
-	mi := &file_numen_v1_artifact_proto_msgTypes[10]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *WriteTranscriptRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*WriteTranscriptRequest) ProtoMessage() {}
-
-func (x *WriteTranscriptRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_artifact_proto_msgTypes[10]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use WriteTranscriptRequest.ProtoReflect.Descriptor instead.
-func (*WriteTranscriptRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_artifact_proto_rawDescGZIP(), []int{10}
-}
-
-func (x *WriteTranscriptRequest) GetPath() string {
-	if x != nil {
-		return x.Path
-	}
-	return ""
-}
-
-func (x *WriteTranscriptRequest) GetCues() []*Cue {
-	if x != nil {
-		return x.Cues
-	}
-	return nil
-}
-
-type WriteTranscriptResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The words as they now stand.
-	Cues          []*Cue `protobuf:"bytes,1,rep,name=cues,proto3" json:"cues,omitempty"`
-	Editable      bool   `protobuf:"varint,2,opt,name=editable,proto3" json:"editable,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *WriteTranscriptResponse) Reset() {
-	*x = WriteTranscriptResponse{}
-	mi := &file_numen_v1_artifact_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *WriteTranscriptResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*WriteTranscriptResponse) ProtoMessage() {}
-
-func (x *WriteTranscriptResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_artifact_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use WriteTranscriptResponse.ProtoReflect.Descriptor instead.
-func (*WriteTranscriptResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_artifact_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *WriteTranscriptResponse) GetCues() []*Cue {
-	if x != nil {
-		return x.Cues
-	}
-	return nil
-}
-
-func (x *WriteTranscriptResponse) GetEditable() bool {
-	if x != nil {
-		return x.Editable
-	}
-	return false
-}
-
 var File_numen_v1_artifact_proto protoreflect.FileDescriptor
 
 const file_numen_v1_artifact_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/artifact.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x9b\x01\n" +
-	"\bArtifact\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12%\n" +
+	"\x17numen/v1/artifact.proto\x12\bnumen.v1\"\x89\x01\n" +
+	"\bArtifact\x12*\n" +
+	"\x04kind\x18\x01 \x01(\x0e2\x16.numen.v1.ArtifactKindR\x04kind\x12%\n" +
 	"\x05state\x18\x02 \x01(\x0e2\x0f.numen.v1.StateR\x05state\x12\x14\n" +
-	"\x05error\x18\x03 \x01(\tR\x05error\x12\x12\n" +
-	"\x04size\x18\x04 \x01(\x03R\x04size\x12*\n" +
-	"\x04kind\x18\x05 \x01(\x0e2\x16.numen.v1.ArtifactKindR\x04kind\"*\n" +
+	"\x05error\x18\x03 \x01(\tR\x05error\x12\x14\n" +
+	"\x05bytes\x18\x04 \x01(\x03R\x05bytes\"*\n" +
 	"\x14ListArtifactsRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"I\n" +
 	"\x15ListArtifactsResponse\x120\n" +
-	"\tartifacts\x18\x01 \x03(\v2\x12.numen.v1.ArtifactR\tartifacts\"j\n" +
+	"\tartifacts\x18\x01 \x03(\v2\x12.numen.v1.ArtifactR\tartifacts\"W\n" +
 	"\x15CreateArtifactRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12*\n" +
-	"\x04kind\x18\x03 \x01(\x0e2\x16.numen.v1.ArtifactKindR\x04kindJ\x04\b\x02\x10\x03R\vartifact_id\"H\n" +
+	"\x04kind\x18\x02 \x01(\x0e2\x16.numen.v1.ArtifactKindR\x04kind\"H\n" +
 	"\x16CreateArtifactResponse\x12.\n" +
-	"\bartifact\x18\x01 \x01(\v2\x12.numen.v1.ArtifactR\bartifact\">\n" +
+	"\bartifact\x18\x01 \x01(\v2\x12.numen.v1.ArtifactR\bartifact\"W\n" +
 	"\x15DeleteArtifactRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04pathJ\x04\b\x02\x10\x03R\vartifact_id\"H\n" +
-	"\x16DeleteArtifactResponse\x12.\n" +
-	"\bartifact\x18\x01 \x01(\v2\x12.numen.v1.ArtifactR\bartifact\"=\n" +
-	"\x03Cue\x12\x12\n" +
-	"\x04text\x18\x01 \x01(\tR\x04text\x12\x12\n" +
-	"\x04from\x18\x02 \x01(\x05R\x04from\x12\x0e\n" +
-	"\x02to\x18\x03 \x01(\x05R\x02to\"N\n" +
-	"\x15ReadTranscriptRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12!\n" +
-	"\x02at\x18\x02 \x01(\v2\x11.numen.v1.StretchR\x02at\"W\n" +
-	"\x16ReadTranscriptResponse\x12!\n" +
-	"\x04cues\x18\x01 \x03(\v2\r.numen.v1.CueR\x04cues\x12\x1a\n" +
-	"\beditable\x18\x02 \x01(\bR\beditable\"O\n" +
-	"\x16WriteTranscriptRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12!\n" +
-	"\x04cues\x18\x02 \x03(\v2\r.numen.v1.CueR\x04cues\"X\n" +
-	"\x17WriteTranscriptResponse\x12!\n" +
-	"\x04cues\x18\x01 \x03(\v2\r.numen.v1.CueR\x04cues\x12\x1a\n" +
-	"\beditable\x18\x02 \x01(\bR\beditable*~\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12*\n" +
+	"\x04kind\x18\x02 \x01(\x0e2\x16.numen.v1.ArtifactKindR\x04kind\"\x18\n" +
+	"\x16DeleteArtifactResponse*\xde\x01\n" +
 	"\fArtifactKind\x12\x1d\n" +
-	"\x19ARTIFACT_KIND_UNSPECIFIED\x10\x00\x12\x19\n" +
-	"\x15ARTIFACT_KIND_READING\x10\x01\x12\x17\n" +
-	"\x13ARTIFACT_KIND_HEARD\x10\x02\x12\x1b\n" +
-	"\x17ARTIFACT_KIND_CORRECTED\x10\x03*\x99\x01\n" +
+	"\x19ARTIFACT_KIND_UNSPECIFIED\x10\x00\x12\x15\n" +
+	"\x11ARTIFACT_KIND_OCR\x10\x01\x12\x1f\n" +
+	"\x1bARTIFACT_KIND_OCR_CORRECTED\x10\x02\x12\x1c\n" +
+	"\x18ARTIFACT_KIND_TRANSCRIPT\x10\x03\x12&\n" +
+	"\"ARTIFACT_KIND_TRANSCRIPT_CORRECTED\x10\x04\x12\x19\n" +
+	"\x15ARTIFACT_KIND_ARTICLE\x10\x05\x12\x16\n" +
+	"\x12ARTIFACT_KIND_COPY\x10\x06*\x99\x01\n" +
 	"\x05State\x12\x15\n" +
 	"\x11STATE_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -887,13 +592,11 @@ const file_numen_v1_artifact_proto_rawDesc = "" +
 	"\n" +
 	"STATE_DONE\x10\x05\x12\x0f\n" +
 	"\vSTATE_EMPTY\x10\x06\x12\x10\n" +
-	"\fSTATE_FAILED\x10\a2\xba\x03\n" +
+	"\fSTATE_FAILED\x10\a2\x8d\x02\n" +
 	"\x0fArtifactService\x12P\n" +
 	"\rListArtifacts\x12\x1e.numen.v1.ListArtifactsRequest\x1a\x1f.numen.v1.ListArtifactsResponse\x12S\n" +
 	"\x0eCreateArtifact\x12\x1f.numen.v1.CreateArtifactRequest\x1a .numen.v1.CreateArtifactResponse\x12S\n" +
-	"\x0eDeleteArtifact\x12\x1f.numen.v1.DeleteArtifactRequest\x1a .numen.v1.DeleteArtifactResponse\x12S\n" +
-	"\x0eReadTranscript\x12\x1f.numen.v1.ReadTranscriptRequest\x1a .numen.v1.ReadTranscriptResponse\x12V\n" +
-	"\x0fWriteTranscript\x12 .numen.v1.WriteTranscriptRequest\x1a!.numen.v1.WriteTranscriptResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x0eDeleteArtifact\x12\x1f.numen.v1.DeleteArtifactRequest\x1a .numen.v1.DeleteArtifactResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_artifact_proto_rawDescOnce sync.Once
@@ -908,50 +611,36 @@ func file_numen_v1_artifact_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_artifact_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_numen_v1_artifact_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_numen_v1_artifact_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_numen_v1_artifact_proto_goTypes = []any{
-	(ArtifactKind)(0),               // 0: numen.v1.ArtifactKind
-	(State)(0),                      // 1: numen.v1.State
-	(*Artifact)(nil),                // 2: numen.v1.Artifact
-	(*ListArtifactsRequest)(nil),    // 3: numen.v1.ListArtifactsRequest
-	(*ListArtifactsResponse)(nil),   // 4: numen.v1.ListArtifactsResponse
-	(*CreateArtifactRequest)(nil),   // 5: numen.v1.CreateArtifactRequest
-	(*CreateArtifactResponse)(nil),  // 6: numen.v1.CreateArtifactResponse
-	(*DeleteArtifactRequest)(nil),   // 7: numen.v1.DeleteArtifactRequest
-	(*DeleteArtifactResponse)(nil),  // 8: numen.v1.DeleteArtifactResponse
-	(*Cue)(nil),                     // 9: numen.v1.Cue
-	(*ReadTranscriptRequest)(nil),   // 10: numen.v1.ReadTranscriptRequest
-	(*ReadTranscriptResponse)(nil),  // 11: numen.v1.ReadTranscriptResponse
-	(*WriteTranscriptRequest)(nil),  // 12: numen.v1.WriteTranscriptRequest
-	(*WriteTranscriptResponse)(nil), // 13: numen.v1.WriteTranscriptResponse
-	(*Stretch)(nil),                 // 14: numen.v1.Stretch
+	(ArtifactKind)(0),              // 0: numen.v1.ArtifactKind
+	(State)(0),                     // 1: numen.v1.State
+	(*Artifact)(nil),               // 2: numen.v1.Artifact
+	(*ListArtifactsRequest)(nil),   // 3: numen.v1.ListArtifactsRequest
+	(*ListArtifactsResponse)(nil),  // 4: numen.v1.ListArtifactsResponse
+	(*CreateArtifactRequest)(nil),  // 5: numen.v1.CreateArtifactRequest
+	(*CreateArtifactResponse)(nil), // 6: numen.v1.CreateArtifactResponse
+	(*DeleteArtifactRequest)(nil),  // 7: numen.v1.DeleteArtifactRequest
+	(*DeleteArtifactResponse)(nil), // 8: numen.v1.DeleteArtifactResponse
 }
 var file_numen_v1_artifact_proto_depIdxs = []int32{
-	1,  // 0: numen.v1.Artifact.state:type_name -> numen.v1.State
-	0,  // 1: numen.v1.Artifact.kind:type_name -> numen.v1.ArtifactKind
-	2,  // 2: numen.v1.ListArtifactsResponse.artifacts:type_name -> numen.v1.Artifact
-	0,  // 3: numen.v1.CreateArtifactRequest.kind:type_name -> numen.v1.ArtifactKind
-	2,  // 4: numen.v1.CreateArtifactResponse.artifact:type_name -> numen.v1.Artifact
-	2,  // 5: numen.v1.DeleteArtifactResponse.artifact:type_name -> numen.v1.Artifact
-	14, // 6: numen.v1.ReadTranscriptRequest.at:type_name -> numen.v1.Stretch
-	9,  // 7: numen.v1.ReadTranscriptResponse.cues:type_name -> numen.v1.Cue
-	9,  // 8: numen.v1.WriteTranscriptRequest.cues:type_name -> numen.v1.Cue
-	9,  // 9: numen.v1.WriteTranscriptResponse.cues:type_name -> numen.v1.Cue
-	3,  // 10: numen.v1.ArtifactService.ListArtifacts:input_type -> numen.v1.ListArtifactsRequest
-	5,  // 11: numen.v1.ArtifactService.CreateArtifact:input_type -> numen.v1.CreateArtifactRequest
-	7,  // 12: numen.v1.ArtifactService.DeleteArtifact:input_type -> numen.v1.DeleteArtifactRequest
-	10, // 13: numen.v1.ArtifactService.ReadTranscript:input_type -> numen.v1.ReadTranscriptRequest
-	12, // 14: numen.v1.ArtifactService.WriteTranscript:input_type -> numen.v1.WriteTranscriptRequest
-	4,  // 15: numen.v1.ArtifactService.ListArtifacts:output_type -> numen.v1.ListArtifactsResponse
-	6,  // 16: numen.v1.ArtifactService.CreateArtifact:output_type -> numen.v1.CreateArtifactResponse
-	8,  // 17: numen.v1.ArtifactService.DeleteArtifact:output_type -> numen.v1.DeleteArtifactResponse
-	11, // 18: numen.v1.ArtifactService.ReadTranscript:output_type -> numen.v1.ReadTranscriptResponse
-	13, // 19: numen.v1.ArtifactService.WriteTranscript:output_type -> numen.v1.WriteTranscriptResponse
-	15, // [15:20] is the sub-list for method output_type
-	10, // [10:15] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	0, // 0: numen.v1.Artifact.kind:type_name -> numen.v1.ArtifactKind
+	1, // 1: numen.v1.Artifact.state:type_name -> numen.v1.State
+	2, // 2: numen.v1.ListArtifactsResponse.artifacts:type_name -> numen.v1.Artifact
+	0, // 3: numen.v1.CreateArtifactRequest.kind:type_name -> numen.v1.ArtifactKind
+	2, // 4: numen.v1.CreateArtifactResponse.artifact:type_name -> numen.v1.Artifact
+	0, // 5: numen.v1.DeleteArtifactRequest.kind:type_name -> numen.v1.ArtifactKind
+	3, // 6: numen.v1.ArtifactService.ListArtifacts:input_type -> numen.v1.ListArtifactsRequest
+	5, // 7: numen.v1.ArtifactService.CreateArtifact:input_type -> numen.v1.CreateArtifactRequest
+	7, // 8: numen.v1.ArtifactService.DeleteArtifact:input_type -> numen.v1.DeleteArtifactRequest
+	4, // 9: numen.v1.ArtifactService.ListArtifacts:output_type -> numen.v1.ListArtifactsResponse
+	6, // 10: numen.v1.ArtifactService.CreateArtifact:output_type -> numen.v1.CreateArtifactResponse
+	8, // 11: numen.v1.ArtifactService.DeleteArtifact:output_type -> numen.v1.DeleteArtifactResponse
+	9, // [9:12] is the sub-list for method output_type
+	6, // [6:9] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_artifact_proto_init() }
@@ -959,14 +648,13 @@ func file_numen_v1_artifact_proto_init() {
 	if File_numen_v1_artifact_proto != nil {
 		return
 	}
-	file_numen_v1_shared_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_artifact_proto_rawDesc), len(file_numen_v1_artifact_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   12,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

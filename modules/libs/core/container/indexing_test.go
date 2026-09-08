@@ -30,7 +30,7 @@ func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
 	if !reflect.DeepEqual(cfg.ScanProofreading, said.Recognition.Proofread) {
 		t.Error("what puts a reading right did not arrive")
 	}
-	if !reflect.DeepEqual(cfg.SpeechProofreading, said.Transcription.Proofread) {
+	if !reflect.DeepEqual(cfg.TranscriptProofreading, said.Transcription.Proofread) {
 		t.Error("what puts a transcript right did not arrive")
 	}
 	if cfg.Transcribes != said.Transcribes() {

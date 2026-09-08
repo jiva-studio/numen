@@ -11,12 +11,24 @@ import {
   baseline,
   config,
   depcruise,
+  layered,
+  layers,
   modules,
   root,
   screened,
   screens,
   unscreened,
 } from './modules.mjs'
+
+/**
+ * The rules a module's own folders answer to, and one file under them the
+ * cruise has to have reached. A module answering to none reads as null.
+ */
+const boundary = (name) => {
+  if (screened.has(name)) return { rules: screens, reads: screened.get(name) }
+  if (layered.has(name)) return { rules: layers, reads: layered.get(name) }
+  return null
+}
 
 let broke = false
 
@@ -25,27 +37,27 @@ const wrong = (said) => {
   broke = true
 }
 
-// A module the screen rule neither reads nor is told to leave alone is a rule
+// A module no boundary rule reads and that is not told to leave alone is a rule
 // stopping at a border with nobody told, which is what the rule itself refuses
 // one level down. Silence is the failure; a stated reason is not.
 for (const { name } of modules) {
-  const read = screened.has(name)
+  const read = boundary(name) !== null
   const excused = Object.hasOwn(unscreened, name)
   if (read === excused) {
     console.log(name)
     wrong(
       read
-        ? 'the screen rule reads it and `unscreened` says why it does not'
-        : 'the screen rule does not read it and `unscreened` gives no reason',
+        ? 'a boundary rule reads its folders and `unscreened` says why none does'
+        : 'no boundary rule reads its folders and `unscreened` gives no reason',
     )
   }
 }
 
 for (const { name, at, sources, reads } of modules) {
-  // A window is read against the screen rule as well; every other module
-  // against the rules every module answers to.
-  const screen = screened.get(name)
-  const rules = screen ? screens : config
+  // A module whose own folders answer to a rule is read against that as well;
+  // every other module against the rules every module answers to.
+  const held = boundary(name)
+  const rules = held ? held.rules : config
   const run = spawnSync(depcruise, ['--config', rules, '--output-type', 'json', ...sources], {
     cwd: join(root, at),
     encoding: 'utf8',
@@ -81,11 +93,11 @@ for (const { name, at, sources, reads } of modules) {
   if (!read.has(reads)) {
     wrong(`the cruise did not read ${reads}, so it walked a tree that is not this module's`)
   }
-  // The screen rule judges what stands under a screen folder. A cruise that
-  // reached a module's root and no further would find nothing to judge and
-  // pass, which reads exactly like a window whose screens are apart.
-  if (screen && !read.has(screen)) {
-    wrong(`the cruise did not read ${screen}, so the screen rule judged no screen`)
+  // A boundary rule judges what stands under a folder. A cruise that reached a
+  // module's root and no further would find nothing to judge and pass, which
+  // reads exactly like a module whose folders are apart.
+  if (held && !read.has(held.reads)) {
+    wrong(`the cruise did not read ${held.reads}, so the boundary rule judged nothing`)
   }
 }
 

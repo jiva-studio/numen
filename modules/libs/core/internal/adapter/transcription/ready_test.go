@@ -22,7 +22,7 @@ func filed(t *testing.T, dir, name string) string {
 func TestReadyIsAnsweredByTheModelsOnThisMachine(t *testing.T) {
 	dir := t.TempDir()
 	runtime := filed(t, dir, "libonnxruntime.so")
-	speech := filed(t, dir, "silero.onnx")
+	segmenter := filed(t, dir, "silero.onnx")
 	for _, name := range []string{encoderFile, decoderFile, joinerFile, tokensFile} {
 		filed(t, dir, name)
 	}
@@ -36,7 +36,7 @@ func TestReadyIsAnsweredByTheModelsOnThisMachine(t *testing.T) {
 			func(_ *testing.T, cfg *Config) { cfg.Download = true }, true,
 		},
 		"a path written down names nothing": {
-			func(_ *testing.T, cfg *Config) { cfg.Speech.Path = filepath.Join(dir, "gone.onnx") }, false,
+			func(_ *testing.T, cfg *Config) { cfg.Segmenter.Path = filepath.Join(dir, "gone.onnx") }, false,
 		},
 		"one of the four is written down and gone": {
 			func(_ *testing.T, cfg *Config) { cfg.Model.Joiner = filepath.Join(dir, "gone.onnx") }, false,
@@ -50,18 +50,18 @@ func TestReadyIsAnsweredByTheModelsOnThisMachine(t *testing.T) {
 			}, false,
 		},
 		"a name is nowhere to fetch from": {
-			func(_ *testing.T, cfg *Config) { cfg.Speech.Path, cfg.Speech.Repo = "", "elsewhere.onnx" }, false,
+			func(_ *testing.T, cfg *Config) { cfg.Segmenter.Path, cfg.Segmenter.Repo = "", "elsewhere.onnx" }, false,
 		},
 		"a model is not named at all": {
-			func(_ *testing.T, cfg *Config) { cfg.Speech.Path = "" }, false,
+			func(_ *testing.T, cfg *Config) { cfg.Segmenter.Path = "" }, false,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			cfg := Config{
-				Runtime: runtime,
-				Dir:     dir,
-				Model:   ParakeetModel{Repo: "https://example.invalid/parakeet/"},
-				Speech:  SegmenterModel{Path: speech},
+				Runtime:   runtime,
+				Dir:       dir,
+				Model:     ParakeetModel{Repo: "https://example.invalid/parakeet/"},
+				Segmenter: SegmenterModel{Path: segmenter},
 			}
 			c.change(t, &cfg)
 			if got := Ready(cfg); got != c.ready {

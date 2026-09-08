@@ -161,7 +161,7 @@ func TestACallSaysWhereItIsWorking(t *testing.T) {
 		{
 			Kind: port.StepRead, Tool: "Show the person a passage of a document",
 			About: "library/A Book.epub",
-			Place: domain.Place{Path: "library/A Book.epub", Start: 1200, Length: 80},
+			Place: domain.Place{Path: "library/A Book.epub", Spans: []domain.Span{{From: 1200, To: 1280}}},
 		},
 		{Kind: port.StepStopped},
 	}}
@@ -169,7 +169,8 @@ func TestACallSaysWhereItIsWorking(t *testing.T) {
 
 	steps := heard(t, client, &v1.AskAgentRequest{Asked: "show me where that is"})
 	doing := steps[0].GetToolCall()
-	if doing.GetPath() != "library/A Book.epub" || doing.GetStart() != 1200 || doing.GetLength() != 80 {
+	if doing.GetPath() != "library/A Book.epub" ||
+		doing.GetSpan().GetFrom() != 1200 || doing.GetSpan().GetTo() != 1280 {
 		t.Errorf("the call is working at %+v", doing)
 	}
 }

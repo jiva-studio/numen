@@ -30,7 +30,7 @@ func addWindowTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "window_tab_list",
-		Title: "What the person has open",
+		Title: "List open tabs",
 		Description: "Every tab of the person's window, and which of them they are looking " +
 			"at. Ask it before saying anything about what is open or in front of them: a " +
 			"person moves between tabs while you work, so what they are looking at now is " +
@@ -110,29 +110,29 @@ func called(t domain.Tab) string {
 func stands(t domain.Tab) string {
 	switch t.Kind {
 	case domain.TabDocument:
-		if t.Document == nil || t.Document.Pages <= 0 {
+		if t.Document == nil || t.Document.PageCount <= 0 {
 			return ""
 		}
-		return fmt.Sprintf("page %d of %d", t.Document.Page, t.Document.Pages)
+		return fmt.Sprintf("page %d of %d", t.Document.Page, t.Document.PageCount)
 	case domain.TabBook:
 		// A place in a book that reflows is an offset, and the page is how far
 		// through that offset stands.
-		if t.Book == nil || t.Book.Pages <= 0 {
+		if t.Book == nil || t.Book.PageCount <= 0 {
 			return ""
 		}
-		return fmt.Sprintf("page %d of %d, at byte %d", t.Book.Page, t.Book.Pages, t.Book.Offset)
+		return fmt.Sprintf("page %d of %d, at byte %d", t.Book.Page, t.Book.PageCount, t.Book.Offset)
 	case domain.TabRecording:
-		var heard, length int
+		var writtenTo, length int
 		if t.Recording != nil {
-			heard, length = t.Recording.Heard, t.Recording.Length
+			writtenTo, length = t.Recording.TranscribedDuration, t.Recording.Duration
 		}
 		switch {
-		case heard <= 0:
+		case writtenTo <= 0:
 			return "none of it written down yet"
 		case length <= 0:
-			return fmt.Sprintf("%s of it written down", transcript.Clock(heard))
+			return fmt.Sprintf("%s of it written down", transcript.Clock(writtenTo))
 		}
-		return fmt.Sprintf("%s of its %s written down", transcript.Clock(heard), transcript.Clock(length))
+		return fmt.Sprintf("%s of its %s written down", transcript.Clock(writtenTo), transcript.Clock(length))
 	}
 	return ""
 }

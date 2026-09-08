@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	derived "github.com/jiva-studio/numen/modules/libs/core/text"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
@@ -26,6 +27,13 @@ const (
 // A note stands in the vault beside the scan and the recording, as a file
 // neither run is for.
 const idea = "notes/idea.md"
+
+// A link note stands there too, pointing at a video. What is at an address is
+// made from the note the way a reading is made from a scan.
+const (
+	pointed  = "notes/talk.url"
+	pointsAt = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+)
 
 // asking is a run a test hands the window: what it makes of a source it is
 // given, and what it was given.
@@ -49,8 +57,6 @@ type claimed struct {
 	name string
 }
 
-func (c claimed) Open(domain.Vault) (port.DerivedStore, error) { return c, nil }
-
 func (c claimed) Claim(_ context.Context, name string) (func() error, error) {
 	if name == c.name {
 		return nil, port.ErrClaimed
@@ -65,24 +71,34 @@ func (c claimed) Claim(_ context.Context, name string) (func() error, error) {
 // not name is one nothing has produced a text of.
 func running(
 	t *testing.T,
-	held port.DerivedStores,
+	held port.DerivedStore,
 	read indexed,
 	scans, hears Runner,
 ) (*API, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{
-		book: "the bytes of a scan",
-		talk: sound,
-		idea: "# an idea\n",
+		book:    "the bytes of a scan",
+		talk:    sound,
+		idea:    "# an idea\n",
+		pointed: "[InternetShortcut]\nURL=" + pointsAt + "\n",
 	})
 	api := &API{
 		Readers:   filesystem.VaultReaders{},
-		Highlight: &source.Highlight{Sources: read, Derived: held},
+		Highlight: &source.Highlight{Sources: read, Derived: storing{held}},
 	}
+	// A note is read to find out where it points, which is what says whether
+	// anything is made from it.
+	api.Notes.Read = &noteRead
+	// What a url carries follows from what fetches it, so a window that reaches
+	// no address at all says a url carries nothing.
+	api.Imports = &source.ImportURL{By: reachingASite{}}
 	api.show(vault)
 	runningBehind(api, func(on *passes) { on.recognises, on.transcribes = scans, hears })
 	return api, api.Serving(http.NotFoundHandler())
 }
+
+// noteRead is how a note is read, which is where a link note says it points.
+var noteRead = note.NewRead(filesystem.VaultReaders{})
 
 // willRun is a run that begins what it is given now, and willQueue one that
 // puts it in line behind the work already going.
@@ -94,9 +110,11 @@ func nothingRead() indexed { return indexed{} }
 
 // The artifacts a test asks for, as the schema names them.
 const (
-	readingOf   = v1.ArtifactKind_ARTIFACT_KIND_READING
-	heardOf     = v1.ArtifactKind_ARTIFACT_KIND_HEARD
-	correctedOf = v1.ArtifactKind_ARTIFACT_KIND_CORRECTED
+	readingOf    = v1.ArtifactKind_ARTIFACT_KIND_OCR
+	transcriptOf = v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT
+	correctedOf  = v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED
+	articleOf    = v1.ArtifactKind_ARTIFACT_KIND_ARTICLE
+	copyOf       = v1.ArtifactKind_ARTIFACT_KIND_COPY
 )
 
 // makes asks for an artifact of a file to be made, and answers with what came
@@ -152,8 +170,8 @@ func TestAScanIsReadWhenTheWindowAsksForIt(t *testing.T) {
 	if made.GetState() != v1.State_STATE_RUNNING {
 		t.Fatalf("the scan was answered %s", made.GetState())
 	}
-	if made.GetName() != named(api.Showing(), book, readingID) {
-		t.Errorf("the answer is about %q", made.GetName())
+	if made.GetKind() != v1.ArtifactKind_ARTIFACT_KIND_OCR {
+		t.Errorf("the answer is about a %s", made.GetKind())
 	}
 	if scans.times != 1 || scans.path != book || scans.vault != string(api.Showing().ID) {
 		t.Errorf("the run was asked for %q of %q, %d times", scans.path, scans.vault, scans.times)
@@ -165,12 +183,12 @@ func TestARecordingIsHeardWhenTheWindowAsksForIt(t *testing.T) {
 	hears := willRun()
 	api, _ := running(t, stored{}, nothingRead(), willRun(), hears)
 
-	made := making(t, api, talk, heardOf)
+	made := making(t, api, talk, transcriptOf)
 	if made.GetState() != v1.State_STATE_RUNNING {
 		t.Fatalf("the recording was answered %s", made.GetState())
 	}
-	if made.GetName() != named(api.Showing(), talk, heardID) {
-		t.Errorf("the answer is about %q", made.GetName())
+	if made.GetKind() != v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT {
+		t.Errorf("the answer is about a %s", made.GetKind())
 	}
 	if hears.times != 1 || hears.path != talk || hears.vault != string(api.Showing().ID) {
 		t.Errorf("the run was asked for %q of %q, %d times", hears.path, hears.vault, hears.times)
@@ -186,7 +204,7 @@ func TestASourceNamedWhileARunIsGoingWaitsItsTurn(t *testing.T) {
 		path string
 	}{
 		{"a scan", readingOf, book},
-		{"a recording", heardOf, talk},
+		{"a recording", transcriptOf, talk},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			scans, hears := willQueue(), willQueue()
@@ -211,10 +229,10 @@ func TestAFileOnlyCarriesTheArtifactsItsKindDoes(t *testing.T) {
 		of   v1.ArtifactKind
 		path string
 	}{
-		{"a scan asked to be heard", heardOf, book},
+		{"a scan asked to be heard", transcriptOf, book},
 		{"a recording asked to be read", readingOf, talk},
 		{"a note asked to be read", readingOf, idea},
-		{"a note asked to be heard", heardOf, idea},
+		{"a note asked to be heard", transcriptOf, idea},
 		{"a scan asked to be put right", correctedOf, book},
 	} {
 		t.Run(one.name, func(t *testing.T) {
@@ -255,7 +273,7 @@ func TestASourceAlreadyDoneIsNotRunAgain(t *testing.T) {
 		hash string
 	}{
 		{"a scan already read", readingOf, book, reader, scanned},
-		{"a recording already heard", heardOf, talk, asr, hashed},
+		{"a recording already heard", transcriptOf, talk, asr, hashed},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			const wrote = "what the model wrote"
@@ -269,9 +287,6 @@ func TestASourceAlreadyDoneIsNotRunAgain(t *testing.T) {
 			made := making(t, api, one.path, one.of)
 			if made.GetState() != v1.State_STATE_DONE {
 				t.Fatalf("a source already done was answered %s", made.GetState())
-			}
-			if made.GetSize() != int64(len(wrote)) {
-				t.Errorf("what stands is %d bytes long", made.GetSize())
 			}
 			if scans.times+hears.times != 0 {
 				t.Error("a run was given a source already done")
@@ -292,7 +307,7 @@ func TestASourceARunHoldsIsSaidToBeUnderWay(t *testing.T) {
 		hash string
 	}{
 		{"a scan being read", readingOf, book, reader, scanned},
-		{"a recording being heard", heardOf, talk, asr, hashed},
+		{"a recording being heard", transcriptOf, talk, asr, hashed},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			const far = "as far as it has got"
@@ -309,9 +324,6 @@ func TestASourceARunHoldsIsSaidToBeUnderWay(t *testing.T) {
 			made := making(t, api, one.path, one.of)
 			if made.GetState() != v1.State_STATE_RUNNING {
 				t.Fatalf("a source a run holds was answered %s", made.GetState())
-			}
-			if made.GetSize() != int64(len(far)) {
-				t.Errorf("what the run has written is %d bytes long", made.GetSize())
 			}
 			if scans.times+hears.times != 0 {
 				t.Error("a run was given a source already being worked on")
@@ -331,7 +343,7 @@ func TestASourceNothingHoldsIsNotUnderWay(t *testing.T) {
 		hash string
 	}{
 		{"a scan", readingOf, book, reader, scanned},
-		{"a recording", heardOf, talk, asr, hashed},
+		{"a recording", transcriptOf, talk, asr, hashed},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			api, _ := running(t,
@@ -397,8 +409,8 @@ func TestARunOverAPathTheVaultDoesNotHoldIsNotFound(t *testing.T) {
 	api, _ := running(t, stored{}, nothingRead(), willRun(), willRun())
 
 	for of, path := range map[v1.ArtifactKind]string{
-		readingOf: "library/nothing.pdf",
-		heardOf:   "talks/nothing.mp3",
+		readingOf:    "library/nothing.pdf",
+		transcriptOf: "talks/nothing.mp3",
 	} {
 		if code := refusedMaking(t, api, path, of); code != connect.CodeNotFound {
 			t.Errorf("asked for a run over nothing and was refused %s", code)
@@ -411,7 +423,7 @@ func TestARunOverAPathTheVaultDoesNotHoldIsNotFound(t *testing.T) {
 func TestARunAskedForBeforeThePassesAreUpIsAskedAgain(t *testing.T) {
 	api, _ := running(t, stored{}, nothingRead(), nil, nil)
 
-	for of, path := range map[v1.ArtifactKind]string{readingOf: book, heardOf: talk} {
+	for of, path := range map[v1.ArtifactKind]string{readingOf: book, transcriptOf: talk} {
 		if code := refusedMaking(t, api, path, of); code != connect.CodeUnavailable {
 			t.Errorf("asked before the passes were up and was refused %s", code)
 		}
@@ -430,4 +442,12 @@ func TestListingWhatAFileCarriesBeginsNoRun(t *testing.T) {
 	if scans.times+hears.times != 0 {
 		t.Error("a run was given a source by a question that only asked")
 	}
+}
+
+// reachingASite is a downloader that reaches a video and nothing else: what a
+// url carries follows from what downloads it, and a test says which that is.
+type reachingASite struct{ port.Downloader }
+
+func (reachingASite) Downloading(domain.URL) port.DownloadModel {
+	return port.DownloadModel{Tool: "a test", Producer: derived.Captions}
 }

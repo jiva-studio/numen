@@ -46,15 +46,16 @@ test('there are stories for the keyboard walk to run after', () => {
     '@numen/ui': [
       30,
       [
-        'modules/libs/ui/src/workspace/WorkspaceLayout.stories.ts',
-        'modules/libs/ui/src/reader/PageReader.stories.ts',
+        'modules/libs/ui/src/features/workspace/WorkspaceLayout.stories.ts',
+        'modules/libs/ui/src/features/reader/Reader.stories.ts',
+        'modules/libs/ui/src/features/book/Book.stories.ts',
       ],
     ],
     '@numen/editor': [
       5,
       [
-        'modules/apps/desktop/editor/src/screens.stories.ts',
-        'modules/apps/desktop/editor/src/settings/controls/SettingRow.stories.ts',
+        'modules/apps/desktop/editor/src/window/screens.stories.ts',
+        'modules/apps/desktop/editor/src/settings-tab/setting-row/SettingRow.stories.ts',
       ],
     ],
     '@numen/flashcards': [1, ['modules/apps/desktop/flashcards/src/screens.stories.ts']],

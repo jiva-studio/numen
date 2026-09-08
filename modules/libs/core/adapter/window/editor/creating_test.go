@@ -33,7 +33,7 @@ func TestANoteIsMadeCarryingTheLinkThatSeatsIt(t *testing.T) {
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 		Title: "Entropy",
-		Links: []*v1.NewLink{{To: "Ontology.md", Role: v1.Role_ROLE_PARENT}},
+		Links: []*v1.Link{{To: "Ontology.md", Role: v1.Role_ROLE_PARENT}},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -67,7 +67,7 @@ func TestANoteMadeInTheChildSeatIsTheParentsChild(t *testing.T) {
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 		Title: "Entropy",
-		Links: []*v1.NewLink{{To: "Ontology.md", Role: v1.Role_ROLE_CHILD, Label: "follows from"}},
+		Links: []*v1.Link{{To: "Ontology.md", Role: v1.Role_ROLE_CHILD, Label: "follows from"}},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -90,9 +90,9 @@ func TestANoteIsMadeInTheFolderItWasAskedFor(t *testing.T) {
 	})
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
-		Title:  "Entropy",
-		Folder: "physics",
-		Links:  []*v1.NewLink{{To: "physics/Ontology.md", Role: v1.Role_ROLE_PARENT}},
+		Title: "Entropy",
+		Path:  "physics",
+		Links: []*v1.Link{{To: "physics/Ontology.md", Role: v1.Role_ROLE_PARENT}},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -116,7 +116,7 @@ func TestANoteMadeIsInTheIndexBeforeTheAnswerComesBack(t *testing.T) {
 
 	if _, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 		Title: "Entropy",
-		Links: []*v1.NewLink{{To: "Ontology.md", Role: v1.Role_ROLE_PARENT}},
+		Links: []*v1.Link{{To: "Ontology.md", Role: v1.Role_ROLE_PARENT}},
 	})); err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +163,7 @@ func TestALinkNamingNoRoleLeavesNoNote(t *testing.T) {
 
 	_, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 		Title: "Entropy",
-		Links: []*v1.NewLink{{To: "Ontology.md", Role: v1.Role_ROLE_UNSPECIFIED}},
+		Links: []*v1.Link{{To: "Ontology.md", Role: v1.Role_ROLE_UNSPECIFIED}},
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Fatalf("a link with no role was answered with %v", err)
@@ -184,7 +184,7 @@ func TestTwoNotesAreJoinedFromTheOneTheLinkIsWrittenIn(t *testing.T) {
 
 	answer, err := f.client.WriteLink(t.Context(), connect.NewRequest(&v1.WriteLinkRequest{
 		Path: "Ontology.md",
-		Link: &v1.NewLink{To: "Entropy.md", Role: v1.Role_ROLE_CHILD},
+		Link: &v1.Link{To: "Entropy.md", Role: v1.Role_ROLE_CHILD},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -217,16 +217,16 @@ func TestANoteIsMadeUnderTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
 	// the vault is scanned at startup, and a test is not started.
 	for _, folder := range []string{"", "physics"} {
 		if _, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
-			Title: "Ontology", Folder: folder,
+			Title: "Ontology", Path: folder,
 		})); err != nil {
 			t.Fatal(err)
 		}
 	}
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
-		Title:  "Entropy",
-		Folder: "physics",
-		Links:  []*v1.NewLink{{To: "physics/Ontology.md", Role: v1.Role_ROLE_PARENT}},
+		Title: "Entropy",
+		Path:  "physics",
+		Links: []*v1.Link{{To: "physics/Ontology.md", Role: v1.Role_ROLE_PARENT}},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -273,7 +273,7 @@ func TestEveryRoleTheSchemaNamesIsWrittenUnderThatWord(t *testing.T) {
 
 			answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 				Title: "Entropy",
-				Links: []*v1.NewLink{{To: "Ontology.md", Role: one.role}},
+				Links: []*v1.Link{{To: "Ontology.md", Role: one.role}},
 			}))
 			if err != nil {
 				t.Fatal(err)

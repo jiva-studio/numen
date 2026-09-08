@@ -65,7 +65,9 @@ func exec(ctx context.Context, tx *writing.Transaction, name string, args ...any
 //
 // A note and the size and date that call it up to date are stored together or
 // not at all, so an interrupted scan leaves files to be read again.
-func (r *Repository) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.Note) error {
+func (r *Repository) Save(
+	ctx context.Context, vaultID domain.VaultID, notes []domain.Note,
+) error {
 	if len(notes) == 0 {
 		return nil
 	}
@@ -79,9 +81,9 @@ func (r *Repository) Save(ctx context.Context, vaultID domain.VaultID, notes []d
 	if err != nil {
 		return err
 	}
-	for _, n := range notes {
-		if err := saveNote(ctx, tx, vault, n, r.sizes, r.reads); err != nil {
-			return fmt.Errorf("%s: %w", n.Fingerprint.Path, err)
+	for _, one := range notes {
+		if err := saveNote(ctx, tx, vault, one, r.sizes, r.reads); err != nil {
+			return fmt.Errorf("%s: %w", one.Fingerprint.Path, err)
 		}
 	}
 	if err := tx.Commit(); err != nil {
@@ -91,9 +93,10 @@ func (r *Repository) Save(ctx context.Context, vaultID domain.VaultID, notes []d
 }
 
 func saveNote(
-	ctx context.Context, tx *writing.Transaction, vault int64, n domain.Note,
+	ctx context.Context, tx *writing.Transaction, vault int64, indexed domain.Note,
 	sizes chunking.Sizes, reads chunking.Legibility,
 ) error {
+	n := indexed
 	frontmatter, storeErr := encodeFrontmatter(n)
 	problem := n.FrontmatterErr
 	if storeErr != "" {
@@ -106,7 +109,9 @@ func saveNote(
 
 	var row int64
 	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
-		vault, n.Fingerprint.Path, kind, n.Fingerprint.Size, chunk.Stamp(n.Fingerprint.ModTime)).Scan(&row); err != nil {
+		vault, n.Fingerprint.Path, kind, n.Fingerprint.Size, chunk.Stamp(n.Fingerprint.ModTime),
+		nil, nil, nil,
+	).Scan(&row); err != nil {
 		return fmt.Errorf("record the source this note is: %w", err)
 	}
 	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.Fingerprint.Path)),
@@ -180,7 +185,8 @@ func saveNote(
 // which is its question, and a stencil by its title, which is its file name.
 // The vectors hang off the chunks, so neither is embedded either.
 func cut(
-	n domain.Note, headings []domain.Heading, sizes chunking.Sizes, reads chunking.Legibility,
+	n domain.Note, headings []domain.Heading,
+	sizes chunking.Sizes, reads chunking.Legibility,
 ) []chunk.Chunk {
 	if n.Type == domain.TypeDeck || n.Type == domain.TypeStencil {
 		return nil
@@ -191,30 +197,31 @@ func cut(
 		at = 0
 	}
 	sizes.Large = chunking.Whole
+	body, divisions := n.Body, parts(headings)
 
 	out := make([]chunk.Chunk, 0, 1)
-	for _, large := range chunking.Cut(n.Body, parts(headings), sizes, reads) {
+	for _, large := range chunking.Cut(body, divisions, sizes, reads) {
 		// The title is searched together with the body: a note is looked for by
 		// the name it was given.
 		c := chunk.Chunk{
 			Start:    at + large.Start,
 			Length:   large.Length,
 			Location: large.Location,
-			Text:     n.Title + "\n" + large.Slice(n.Body),
+			Text:     n.Title + "\n" + large.Slice(body),
 		}
 		for _, small := range large.Small {
 			c.Small = append(c.Small, chunk.Chunk{
 				Start:    at + small.Start,
 				Length:   small.Length,
 				Location: small.Location,
-				Text:     small.Slice(n.Body),
+				Text:     small.Slice(body),
 			})
 		}
 		out = append(out, c)
 	}
 	if len(out) == 0 {
 		// A note of a title and no words is answered by its title.
-		out = append(out, chunk.Chunk{Start: at, Length: len(n.Body), Text: n.Title})
+		out = append(out, chunk.Chunk{Start: at, Length: len(body), Text: n.Title})
 	}
 	return out
 }

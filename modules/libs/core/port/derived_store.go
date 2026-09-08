@@ -3,6 +3,7 @@ package port
 import (
 	"context"
 	"errors"
+	"io"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
@@ -28,10 +29,22 @@ type DerivedStore interface {
 	// empty it, which is an answer and not a failure.
 	Read(ctx context.Context, name string) ([]byte, error)
 
+	// Open is one file to read a part of, and how many bytes it holds. A copy of
+	// a video is played from the middle and is an hour long, and holding all of
+	// it to answer for a second of it is the whole file in memory for every
+	// listener.
+	//
+	// The same errors as Read. Whoever opens it closes it.
+	Open(ctx context.Context, name string) (io.ReadSeekCloser, int64, error)
+
 	// Write puts content under a name, atomically, replacing whatever was
 	// there. Replacing is ordinary: one recognition run twice writes the same
 	// bytes under the same name.
 	Write(ctx context.Context, name string, content []byte) error
+
+	// Take puts what a reader gives under a name, atomically. A copy of a video
+	// arrives over a network and is not held in memory to be written.
+	Take(ctx context.Context, name string, from io.Reader) (int64, error)
 
 	// Append adds to what is under a name, creating it when there is nothing.
 	// A reading is written as it is read, over an hour, and reading a

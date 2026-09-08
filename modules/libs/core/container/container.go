@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
@@ -58,6 +59,11 @@ type Config struct {
 	// Transcription is how a recording is listened to.
 	Transcription transcription.Config
 
+	// Importing is how an address a link note points at is reached, and where
+	// the tools that reach it are. A machine holding neither tool builds no
+	// downloader, and what asks for one is told this build cannot do it.
+	Importing download.Config
+
 	// Transcribes is whether a recording the vault holds no transcript for is
 	// listened to without anybody asking. A configuration naming nothing leaves
 	// it to the hand.
@@ -78,11 +84,11 @@ type Config struct {
 	// does, and naming no profile here is naming no proofreader.
 	Proofreading proofreading.Config
 
-	// ScanProofreading and SpeechProofreading name the profile each kind of
-	// reading is put right at, and say whether that happens without anybody
+	// ScanProofreading and TranscriptProofreading name the profile each kind of
+	// text is put right at, and say whether that happens without anybody
 	// asking.
-	ScanProofreading   proofreading.Proofread
-	SpeechProofreading proofreading.Proofread
+	ScanProofreading       proofreading.Proofread
+	TranscriptProofreading proofreading.Proofread
 
 	// AgentProofreader opens a profile that reaches the command line a person
 	// already has. The platform supplies it, since core starts no process; an
@@ -136,7 +142,7 @@ func (c Config) Indexing(said settings.Indexing) Config {
 	c.Recognition = said.Recognition.Config
 	c.Proofreading = said.Proofreading
 	c.ScanProofreading = said.Recognition.Proofread
-	c.SpeechProofreading = said.Transcription.Proofread
+	c.TranscriptProofreading = said.Transcription.Proofread
 	c.Transcription = said.Transcription.Config
 	c.Transcribes = said.Transcribes()
 	c.TranscribesUnder = said.TranscribesUnder()
@@ -360,7 +366,9 @@ func (c Config) DerivedStores() port.DerivedStores {
 	return filesystem.DerivedStores{
 		Options: c.vaultOptions(),
 		Area:    filesystem.OCRDir,
-		Areas:   []string{filesystem.SpeechDir},
+		Areas: []string{
+			filesystem.TranscriptDir, filesystem.ArticleDir, filesystem.CopyDir,
+		},
 	}
 }
 

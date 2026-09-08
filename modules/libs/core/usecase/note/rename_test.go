@@ -478,7 +478,7 @@ func TestRemovingSaysWhenThereIsNoSuchNote(t *testing.T) {
 	c := changeable(t, map[string]string{"Old.md": "# Old\n"})
 	remove := note.Remove{
 		Writers: filesystem.VaultWriters{},
-		Links:   c.db.Links(), Known: c.db.SourcesKnown(), Index: c.index,
+		Links:   c.db.Links(), Queries: c.db.SourcesKnown(), Index: c.index,
 	}
 
 	if _, err := remove.Execute(t.Context(), c.vault, "Missing.md"); !errors.Is(err, note.ErrNoNote) {

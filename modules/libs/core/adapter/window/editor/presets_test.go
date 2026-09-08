@@ -341,7 +341,7 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 	f := steering(t, pointed)
 
 	made, err := f.client.CreatePreset(t.Context(), connect.NewRequest(&v1.CreatePresetRequest{
-		Title: "Prosody", Folder: "presets",
+		Title: "Prosody", Path: "presets",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -404,7 +404,7 @@ func TestAPresetMadeIsOneTheVaultLists(t *testing.T) {
 	f := steering(t, pointed)
 
 	if _, err := f.client.CreatePreset(t.Context(), connect.NewRequest(&v1.CreatePresetRequest{
-		Title: "Prosody", Folder: "presets",
+		Title: "Prosody", Path: "presets",
 	})); err != nil {
 		t.Fatal(err)
 	}

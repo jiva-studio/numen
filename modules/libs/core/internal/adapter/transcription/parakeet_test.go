@@ -46,7 +46,7 @@ func TestHearingARecording(t *testing.T) {
 	defer sound.Close()
 	t.Logf("%s is %d ms", recorded, sound.Length())
 
-	found, err := sound.Speech(t.Context(), 0, 0)
+	found, err := sound.Segments(t.Context(), 0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}

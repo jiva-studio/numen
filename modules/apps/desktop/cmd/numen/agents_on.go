@@ -141,6 +141,9 @@ func agentCore(cfg container.Config, opened *editor.Installation, root string, o
 			Transcribe: opened.Transcribing(),
 			Derived:    cfg.DerivedStores(),
 			Documents:  cfg.TextExtractor(),
+			URLs:       opened.API.Files.URLs,
+			Import:     opened.API.Imports,
+			Changed:    opened.API.Changed,
 		},
 
 		Cards: mcp.Cards{

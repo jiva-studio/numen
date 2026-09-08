@@ -37,6 +37,9 @@ const (
 	SourceKind_SOURCE_KIND_NOTE        SourceKind = 1
 	SourceKind_SOURCE_KIND_BOOK        SourceKind = 2
 	SourceKind_SOURCE_KIND_RECORDING   SourceKind = 3
+	// A file holding a web address and nothing else. Its text is what was
+	// fetched from that address.
+	SourceKind_SOURCE_KIND_URL SourceKind = 4
 )
 
 // Enum value maps for SourceKind.
@@ -46,12 +49,14 @@ var (
 		1: "SOURCE_KIND_NOTE",
 		2: "SOURCE_KIND_BOOK",
 		3: "SOURCE_KIND_RECORDING",
+		4: "SOURCE_KIND_URL",
 	}
 	SourceKind_value = map[string]int32{
 		"SOURCE_KIND_UNSPECIFIED": 0,
 		"SOURCE_KIND_NOTE":        1,
 		"SOURCE_KIND_BOOK":        2,
 		"SOURCE_KIND_RECORDING":   3,
+		"SOURCE_KIND_URL":         4,
 	}
 )
 
@@ -137,8 +142,8 @@ func (BookFormat) EnumDescriptor() ([]byte, []int) {
 
 type ListFilesRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The folder to list, relative to the root. Empty is the root.
-	Folder        string `protobuf:"bytes,1,opt,name=folder,proto3" json:"folder,omitempty"`
+	// The folder to list, as a path relative to the root. Empty is the root.
+	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -173,9 +178,9 @@ func (*ListFilesRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_file_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *ListFilesRequest) GetFolder() string {
+func (x *ListFilesRequest) GetPath() string {
 	if x != nil {
-		return x.Folder
+		return x.Path
 	}
 	return ""
 }
@@ -234,13 +239,15 @@ type Entry struct {
 	// slashes.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// The last segment of the path, which is what the row shows.
-	Name   string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Folder bool   `protobuf:"varint,3,opt,name=folder,proto3" json:"folder,omitempty"`
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// Whether the entry holds other entries. A folder carries no source and
+	// nothing is made from it.
+	Folder bool `protobuf:"varint,3,opt,name=folder,proto3" json:"folder,omitempty"`
 	// What the vault holds here.
 	Kind SourceKind `protobuf:"varint,4,opt,name=kind,proto3,enum=numen.v1.SourceKind" json:"kind,omitempty"`
 	// Which of three the note is. It says nothing about an entry that is not a
 	// note.
-	Type          NoteType `protobuf:"varint,6,opt,name=type,proto3,enum=numen.v1.NoteType" json:"type,omitempty"`
+	Type          NoteType `protobuf:"varint,5,opt,name=type,proto3,enum=numen.v1.NoteType" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -606,7 +613,7 @@ type MoveResult struct {
 	// name. Each of them still points at the name the file left, and nothing
 	// comes back to it: a move that reports only what it repaired reports a
 	// vault it did not leave behind.
-	Dangling      []string `protobuf:"bytes,5,rep,name=dangling,proto3" json:"dangling,omitempty"`
+	Dangling      []string `protobuf:"bytes,4,rep,name=dangling,proto3" json:"dangling,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -889,21 +896,131 @@ func (x *CreateFolderResponse) GetRefusal() Refusal {
 	return Refusal_REFUSAL_UNSPECIFIED
 }
 
+type CreateURLRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The address, as a browser would go to it. It is read into the one form
+	// every spelling of it reaches, and one nothing can be fetched from is
+	// refused and no file is made.
+	Url string `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	// The folder it goes in, as a path relative to the root. Empty is the root.
+	Path          string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateURLRequest) Reset() {
+	*x = CreateURLRequest{}
+	mi := &file_numen_v1_file_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateURLRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateURLRequest) ProtoMessage() {}
+
+func (x *CreateURLRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_file_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateURLRequest.ProtoReflect.Descriptor instead.
+func (*CreateURLRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_file_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *CreateURLRequest) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+func (x *CreateURLRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+type CreateURLResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Where the file is filed. Empty when nothing was made.
+	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	// Set when nothing was made, and why.
+	Refusal       *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateURLResponse) Reset() {
+	*x = CreateURLResponse{}
+	mi := &file_numen_v1_file_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateURLResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateURLResponse) ProtoMessage() {}
+
+func (x *CreateURLResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_file_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateURLResponse.ProtoReflect.Descriptor instead.
+func (*CreateURLResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_file_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *CreateURLResponse) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *CreateURLResponse) GetRefusal() Refusal {
+	if x != nil && x.Refusal != nil {
+		return *x.Refusal
+	}
+	return Refusal_REFUSAL_UNSPECIFIED
+}
+
 var File_numen_v1_file_proto protoreflect.FileDescriptor
 
 const file_numen_v1_file_proto_rawDesc = "" +
 	"\n" +
-	"\x13numen/v1/file.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"*\n" +
-	"\x10ListFilesRequest\x12\x16\n" +
-	"\x06folder\x18\x01 \x01(\tR\x06folder\">\n" +
+	"\x13numen/v1/file.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"&\n" +
+	"\x10ListFilesRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\">\n" +
 	"\x11ListFilesResponse\x12)\n" +
-	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"\xa5\x01\n" +
+	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"\x99\x01\n" +
 	"\x05Entry\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
 	"\x06folder\x18\x03 \x01(\bR\x06folder\x12(\n" +
 	"\x04kind\x18\x04 \x01(\x0e2\x14.numen.v1.SourceKindR\x04kind\x12&\n" +
-	"\x04type\x18\x06 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04typeJ\x04\b\x05\x10\x06R\x04size\",\n" +
+	"\x04type\x18\x05 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\",\n" +
 	"\x14ListFileKindsRequest\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\"A\n" +
 	"\x15ListFileKindsResponse\x12(\n" +
@@ -924,14 +1041,13 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"unlevelledB\b\n" +
 	"\x06_movedB\n" +
 	"\n" +
-	"\b_refusal\"z\n" +
+	"\b_refusal\"h\n" +
 	"\n" +
 	"MoveResult\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\x12\x1a\n" +
 	"\brepaired\x18\x03 \x03(\tR\brepaired\x12\x1a\n" +
-	"\bdangling\x18\x05 \x03(\tR\bdanglingJ\x04\b\x04\x10\x05R\n" +
-	"retargeted\"A\n" +
+	"\bdangling\x18\x04 \x03(\tR\bdangling\"A\n" +
 	"\x11RemoveFileRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
 	"\adestroy\x18\x02 \x01(\bR\adestroy\"\xa8\x01\n" +
@@ -949,25 +1065,35 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\x14CreateFolderResponse\x120\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
 	"\n" +
-	"\b_refusal*p\n" +
+	"\b_refusal\"8\n" +
+	"\x10CreateURLRequest\x12\x10\n" +
+	"\x03url\x18\x01 \x01(\tR\x03url\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\"e\n" +
+	"\x11CreateURLResponse\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x120\n" +
+	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
+	"\n" +
+	"\b_refusal*\x85\x01\n" +
 	"\n" +
 	"SourceKind\x12\x1b\n" +
 	"\x17SOURCE_KIND_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10SOURCE_KIND_NOTE\x10\x01\x12\x14\n" +
 	"\x10SOURCE_KIND_BOOK\x10\x02\x12\x19\n" +
-	"\x15SOURCE_KIND_RECORDING\x10\x03*T\n" +
+	"\x15SOURCE_KIND_RECORDING\x10\x03\x12\x13\n" +
+	"\x0fSOURCE_KIND_URL\x10\x04*T\n" +
 	"\n" +
 	"BookFormat\x12\x1b\n" +
 	"\x17BOOK_FORMAT_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fBOOK_FORMAT_PDF\x10\x01\x12\x14\n" +
-	"\x10BOOK_FORMAT_EPUB\x10\x022\x80\x03\n" +
+	"\x10BOOK_FORMAT_EPUB\x10\x022\xc6\x03\n" +
 	"\vFileService\x12D\n" +
 	"\tListFiles\x12\x1a.numen.v1.ListFilesRequest\x1a\x1b.numen.v1.ListFilesResponse\x12P\n" +
 	"\rListFileKinds\x12\x1e.numen.v1.ListFileKindsRequest\x1a\x1f.numen.v1.ListFileKindsResponse\x12A\n" +
 	"\bMoveFile\x12\x19.numen.v1.MoveFileRequest\x1a\x1a.numen.v1.MoveFileResponse\x12G\n" +
 	"\n" +
 	"RemoveFile\x12\x1b.numen.v1.RemoveFileRequest\x1a\x1c.numen.v1.RemoveFileResponse\x12M\n" +
-	"\fCreateFolder\x12\x1d.numen.v1.CreateFolderRequest\x1a\x1e.numen.v1.CreateFolderResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\fCreateFolder\x12\x1d.numen.v1.CreateFolderRequest\x1a\x1e.numen.v1.CreateFolderResponse\x12D\n" +
+	"\tCreateURL\x12\x1a.numen.v1.CreateURLRequest\x1a\x1b.numen.v1.CreateURLResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_file_proto_rawDescOnce sync.Once
@@ -982,7 +1108,7 @@ func file_numen_v1_file_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_file_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_numen_v1_file_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_numen_v1_file_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_numen_v1_file_proto_goTypes = []any{
 	(SourceKind)(0),               // 0: numen.v1.SourceKind
 	(BookFormat)(0),               // 1: numen.v1.BookFormat
@@ -999,36 +1125,41 @@ var file_numen_v1_file_proto_goTypes = []any{
 	(*RemoveFileResponse)(nil),    // 12: numen.v1.RemoveFileResponse
 	(*CreateFolderRequest)(nil),   // 13: numen.v1.CreateFolderRequest
 	(*CreateFolderResponse)(nil),  // 14: numen.v1.CreateFolderResponse
-	(NoteType)(0),                 // 15: numen.v1.NoteType
-	(Refusal)(0),                  // 16: numen.v1.Refusal
+	(*CreateURLRequest)(nil),      // 15: numen.v1.CreateURLRequest
+	(*CreateURLResponse)(nil),     // 16: numen.v1.CreateURLResponse
+	(NoteType)(0),                 // 17: numen.v1.NoteType
+	(Refusal)(0),                  // 18: numen.v1.Refusal
 }
 var file_numen_v1_file_proto_depIdxs = []int32{
 	4,  // 0: numen.v1.ListFilesResponse.entries:type_name -> numen.v1.Entry
 	0,  // 1: numen.v1.Entry.kind:type_name -> numen.v1.SourceKind
-	15, // 2: numen.v1.Entry.type:type_name -> numen.v1.NoteType
+	17, // 2: numen.v1.Entry.type:type_name -> numen.v1.NoteType
 	7,  // 3: numen.v1.ListFileKindsResponse.kinds:type_name -> numen.v1.FileKind
 	0,  // 4: numen.v1.FileKind.kind:type_name -> numen.v1.SourceKind
-	15, // 5: numen.v1.FileKind.type:type_name -> numen.v1.NoteType
+	17, // 5: numen.v1.FileKind.type:type_name -> numen.v1.NoteType
 	1,  // 6: numen.v1.FileKind.format:type_name -> numen.v1.BookFormat
 	10, // 7: numen.v1.MoveFileResponse.moved:type_name -> numen.v1.MoveResult
-	16, // 8: numen.v1.MoveFileResponse.refusal:type_name -> numen.v1.Refusal
-	16, // 9: numen.v1.RemoveFileResponse.refusal:type_name -> numen.v1.Refusal
-	16, // 10: numen.v1.CreateFolderResponse.refusal:type_name -> numen.v1.Refusal
-	2,  // 11: numen.v1.FileService.ListFiles:input_type -> numen.v1.ListFilesRequest
-	5,  // 12: numen.v1.FileService.ListFileKinds:input_type -> numen.v1.ListFileKindsRequest
-	8,  // 13: numen.v1.FileService.MoveFile:input_type -> numen.v1.MoveFileRequest
-	11, // 14: numen.v1.FileService.RemoveFile:input_type -> numen.v1.RemoveFileRequest
-	13, // 15: numen.v1.FileService.CreateFolder:input_type -> numen.v1.CreateFolderRequest
-	3,  // 16: numen.v1.FileService.ListFiles:output_type -> numen.v1.ListFilesResponse
-	6,  // 17: numen.v1.FileService.ListFileKinds:output_type -> numen.v1.ListFileKindsResponse
-	9,  // 18: numen.v1.FileService.MoveFile:output_type -> numen.v1.MoveFileResponse
-	12, // 19: numen.v1.FileService.RemoveFile:output_type -> numen.v1.RemoveFileResponse
-	14, // 20: numen.v1.FileService.CreateFolder:output_type -> numen.v1.CreateFolderResponse
-	16, // [16:21] is the sub-list for method output_type
-	11, // [11:16] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	18, // 8: numen.v1.MoveFileResponse.refusal:type_name -> numen.v1.Refusal
+	18, // 9: numen.v1.RemoveFileResponse.refusal:type_name -> numen.v1.Refusal
+	18, // 10: numen.v1.CreateFolderResponse.refusal:type_name -> numen.v1.Refusal
+	18, // 11: numen.v1.CreateURLResponse.refusal:type_name -> numen.v1.Refusal
+	2,  // 12: numen.v1.FileService.ListFiles:input_type -> numen.v1.ListFilesRequest
+	5,  // 13: numen.v1.FileService.ListFileKinds:input_type -> numen.v1.ListFileKindsRequest
+	8,  // 14: numen.v1.FileService.MoveFile:input_type -> numen.v1.MoveFileRequest
+	11, // 15: numen.v1.FileService.RemoveFile:input_type -> numen.v1.RemoveFileRequest
+	13, // 16: numen.v1.FileService.CreateFolder:input_type -> numen.v1.CreateFolderRequest
+	15, // 17: numen.v1.FileService.CreateURL:input_type -> numen.v1.CreateURLRequest
+	3,  // 18: numen.v1.FileService.ListFiles:output_type -> numen.v1.ListFilesResponse
+	6,  // 19: numen.v1.FileService.ListFileKinds:output_type -> numen.v1.ListFileKindsResponse
+	9,  // 20: numen.v1.FileService.MoveFile:output_type -> numen.v1.MoveFileResponse
+	12, // 21: numen.v1.FileService.RemoveFile:output_type -> numen.v1.RemoveFileResponse
+	14, // 22: numen.v1.FileService.CreateFolder:output_type -> numen.v1.CreateFolderResponse
+	16, // 23: numen.v1.FileService.CreateURL:output_type -> numen.v1.CreateURLResponse
+	18, // [18:24] is the sub-list for method output_type
+	12, // [12:18] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_file_proto_init() }
@@ -1040,13 +1171,14 @@ func file_numen_v1_file_proto_init() {
 	file_numen_v1_file_proto_msgTypes[7].OneofWrappers = []any{}
 	file_numen_v1_file_proto_msgTypes[10].OneofWrappers = []any{}
 	file_numen_v1_file_proto_msgTypes[12].OneofWrappers = []any{}
+	file_numen_v1_file_proto_msgTypes[14].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_file_proto_rawDesc), len(file_numen_v1_file_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   13,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

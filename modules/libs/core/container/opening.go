@@ -67,8 +67,16 @@ func (c Config) VaultOpenerWith(
 		watcher: watcher,
 		scan:    scan,
 		held:    held,
-		refresh: vault.NewRefresh(c.VaultReaders(), db.Vaults(), held, db.SourcesKnown(), db.Sources()),
+		refresh: refreshing(c, db, held),
 	}
+}
+
+// refreshing brings named notes up to date, cut at this installation's sizes
+// and carrying what was fetched for a link note.
+func refreshing(c Config, db *Index, notes port.NoteRepository) vault.Refresh {
+	refresh := vault.NewRefresh(c.VaultReaders(), db.Vaults(), notes, db.SourcesKnown(), db.Sources())
+	refresh.Derived = c.DerivedStores()
+	return refresh
 }
 
 // Refreshing brings named notes up to date, through whatever is following the
@@ -128,18 +136,18 @@ type OpenVault struct {
 // vault nobody is following looks exactly like a vault nothing happens to.
 func (o *OpenVault) Unwatched() error { return o.unwatched }
 
-// Read walks the vault into the index and answers how many notes it holds. got,
-// if set, is called as the walk goes with the number of notes written so far.
+// Read walks the vault into the index and answers how many notes it holds.
+// during, if set, is called while the walk is still running.
 //
 // The walk writes in groups from what it read, so its copy of a note lands last
 // however early the note was read. Every note brought up to date underneath it
 // is read once more, and the newest copy of each lands last.
-func (o *OpenVault) Read(ctx context.Context, got func(indexed int)) (notes int, err error) {
+func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err error) {
 	o.opening.held.begin()
 
 	walk := o.scan
-	if got != nil {
-		walk.OnProgress = func(res vault.ScanResult) { got(res.Indexed) }
+	if during != nil {
+		walk.OnProgress = func(vault.ScanResult) { during() }
 	}
 	res, err := walk.Execute(ctx, o.vault)
 
@@ -190,8 +198,8 @@ type writes struct {
 }
 
 func (h *holding) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.Note) error {
-	for _, n := range notes {
-		h.hold(n.Fingerprint.Path)
+	for _, one := range notes {
+		h.hold(one.Fingerprint.Path)
 	}
 	return h.NoteRepository.Save(ctx, vaultID, notes)
 }

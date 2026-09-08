@@ -2,12 +2,17 @@ package main
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/cli"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
+
+// errNoTools is a machine holding neither of the programs an address is
+// downloaded with. The settings name where each of them is.
+var errNoTools = errors.New("neither yt-dlp nor ffmpeg is on this machine")
 
 // deps is what the terminal works through, built for the places one run was
 // pointed at. An installation is assembled by the application, so the openers
@@ -148,6 +153,18 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 						return db.Close()
 					},
 				}, nil
+			},
+
+			ImportURL: func(ctx context.Context, _ domain.Vault) (cli.ImportURL, error) {
+				by := cfg.Downloader(ctx)
+				if by == nil {
+					return cli.ImportURL{}, errNoTools
+				}
+				db, err := cfg.OpenIndex(ctx)
+				if err != nil {
+					return cli.ImportURL{}, err
+				}
+				return cli.ImportURL{ImportURL: cfg.ImportURL(ctx, db, by), Close: db.Close}, nil
 			},
 
 			ProofreadReading: func(

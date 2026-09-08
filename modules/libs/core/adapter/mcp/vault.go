@@ -53,7 +53,7 @@ func addVaultGet(server *sdk.Server, core Core) {
 func addVaultProblems(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "vault_problems",
-		Title: "List what a scan could not act on",
+		Title: "List scan problems",
 		Description: "What the vault contains that could not be acted on and was not " +
 			"guessed at. Each problem names the note somebody would open to settle it, " +
 			"and the check that noticed it: `parse` for what one file got wrong, " +

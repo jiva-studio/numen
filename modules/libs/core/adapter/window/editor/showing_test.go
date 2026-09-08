@@ -131,9 +131,9 @@ func (f *showing) read(t *testing.T) {
 	t.Helper()
 
 	for range 400 {
-		if state := f.state(t); state.GetReady() {
+		if state := f.state(t); state.GetScan().GetReady() {
 			return
-		} else if reason := state.GetFailed(); reason != "" {
+		} else if reason := state.GetScan().GetFailed(); reason != "" {
 			t.Fatalf("the vault could not be read: %s", reason)
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -239,7 +239,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 	}
 	f.read(t)
 
-	if name := f.state(t).GetDisplayName(); name != "two" {
+	if name := f.state(t).GetName(); name != "two" {
 		t.Errorf("the window says it is showing %q", name)
 	}
 	if got := f.named(t, "Enthalpy"); len(got) == 0 {
@@ -368,7 +368,7 @@ func TestTheVaultAlreadyShownIsNotOpenedAgain(t *testing.T) {
 	if err := f.opened.Show(t.Context(), f.first); err != nil {
 		t.Fatalf("the vault already shown was refused: %v", err)
 	}
-	if state := f.state(t); !state.GetReady() {
+	if state := f.state(t); !state.GetScan().GetReady() {
 		t.Error("the vault already shown is being read again")
 	}
 	if got := f.named(t, "Entropy"); len(got) == 0 {
@@ -402,7 +402,7 @@ func TestAVaultThatCannotBeShownIsRefusedAndTheWindowStays(t *testing.T) {
 				t.Fatal("the window opened a vault it cannot read")
 			}
 			state := f.state(t)
-			if state.GetDisplayName() != "one" || !state.GetReady() {
+			if state.GetName() != "one" || !state.GetScan().GetReady() {
 				t.Errorf("the window is on %+v", state)
 			}
 			if got := f.named(t, "Entropy"); len(got) == 0 {
@@ -499,7 +499,7 @@ func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the page was never asked for what it holds")
 	}
-	if name := f.state(t).GetDisplayName(); name != "one" {
+	if name := f.state(t).GetName(); name != "one" {
 		t.Errorf("the window is showing %q", name)
 	}
 	if got := f.named(t, "Entropy"); len(got) == 0 {
@@ -583,9 +583,9 @@ func TestARunReachesTheVaultTheWindowIsShowing(t *testing.T) {
 	asking, stop := context.WithCancel(t.Context())
 	var asked sync.WaitGroup
 	for _, of := range []v1.ArtifactKind{
-		v1.ArtifactKind_ARTIFACT_KIND_CORRECTED,
-		v1.ArtifactKind_ARTIFACT_KIND_READING,
-		v1.ArtifactKind_ARTIFACT_KIND_HEARD,
+		v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED,
+		v1.ArtifactKind_ARTIFACT_KIND_OCR,
+		v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
 	} {
 		asked.Add(1)
 		go func() {

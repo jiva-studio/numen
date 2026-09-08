@@ -39,11 +39,11 @@ GET /assets/<id>/pages/<n>?wide=W&size=S&mtime=T   one page drawn, where the ass
 
 `size` and `mtime` are the document's fingerprint, so one address names one drawing of one document and answers the same picture for as long as it answers at all.
 
-**Nothing else of a file is addressed here.** What a document is, how long a recording runs, and where a run of a source's text sits are `AssetService`; a reading, a transcript and a transcript put right are `ArtifactService`, where one is listed, asked for, read, written and taken away. Only bytes stay on these routes, because only bytes are what a browser's own elements speak.
+**Nothing else of a file is addressed here.** What a document is is `DocumentService` and how long a recording runs is `RecordingService`; what has been made from either is listed, asked for and taken away on `ArtifactService`, and each kind of it is read on the service named for that kind. Only bytes stay on these routes, because only bytes are what a browser's own elements speak.
 
-`AssetService` is a service of its own for the reason a service is carved at all: the phone serves the vault's notes to a network and must not serve what is in its files, and a service is the unit of what a binary answers.
+Each of those is a service of its own for the reason a service is carved at all: the phone serves the vault's notes to a network and must not serve what is in its files, and a service is the unit of what a binary answers.
 
-A recording's bytes are not here either. They are served ranged, from a loopback port, at the address `AssetService.GetRecording` answers with under `media`: a media element speaks the protocols of the world and not the scheme one application serves its window under.
+A recording's bytes are not here either. They are served ranged, from a loopback port, at the address `RecordingService.GetRecording` answers with under `media`: a media element speaks the protocols of the world and not the scheme one application serves its window under.
 
 `<id>` is the vault path, percent-encoded, because a file has no other name the window holds. **The handler routes on the escaped path**: Go decodes before a handler sees it, and a decoded separator runs the member and what hangs off it together. This route is served by the same adapter that serves the generated handler.
 
@@ -53,7 +53,7 @@ A recording's bytes are not here either. They are served ranged, from a loopback
 
 **A drawn page** is kept in this machine's cache folder, keyed by the document's fingerprint, the page and the width it was drawn for, and what is held is swept oldest first. It is not in the vault and not beside the document; losing it costs the drawing again.
 
-What a page is called, and what a location says to a person, is [`../reading.md`](../reading.md).
+What a page is called, and what a location says to a person, is [`../recognising.md`](../recognising.md).
 
 ## Consequences
 

@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
+	"github.com/jiva-studio/numen/modules/libs/core/urlfile"
 )
 
 // sourcesPerQuery bounds one answer about what owes its text, so that a library
@@ -25,7 +26,7 @@ const sourcesPerQuery = 100
 type Extract struct {
 	Readers port.VaultReaders
 	Sources port.SourceRepository
-	Known   port.SourceQueries
+	Queries port.SourceQueries
 
 	// Derived is optional. It holds what a recogniser wrote; without one, a
 	// source is read from its own bytes and a reading is not looked for.
@@ -67,9 +68,9 @@ type Extract struct {
 // they are read out of, where a source and its chunks are written, and what
 // says which sources the index already holds.
 func NewExtract(
-	readers port.VaultReaders, sources port.SourceRepository, known port.SourceQueries,
+	readers port.VaultReaders, sources port.SourceRepository, queries port.SourceQueries,
 ) Extract {
-	return Extract{Readers: readers, Sources: sources, Known: known}
+	return Extract{Readers: readers, Sources: sources, Queries: queries}
 }
 
 // ExtractResult reports what extraction did.
@@ -124,7 +125,7 @@ func (u Extract) discover(
 ) error {
 	known := make(map[domain.SourceKind]map[string]domain.Fingerprint, len(u.kinds()))
 	for _, kind := range u.kinds() {
-		held, err := u.Known.Fingerprints(ctx, v.ID, kind)
+		held, err := u.Queries.Fingerprints(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
@@ -194,7 +195,7 @@ func (u Extract) recognised(
 	if u.Derived == nil {
 		return nil, nil
 	}
-	held, err := u.Known.Recognised(ctx, v.ID, kind)
+	held, err := u.Queries.Recognised(ctx, v.ID, kind)
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
@@ -225,20 +226,28 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceTe
 		return nil
 	}
 	stood := make(map[port.SourceText]bool)
+	named := make(map[string]bool)
 	for _, kind := range u.kinds() {
-		held, err := u.Known.Recognised(ctx, v.ID, kind)
+		held, err := u.Queries.Recognised(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
 		for _, r := range held {
 			stood[port.SourceText{Producer: r.Producer, Hash: r.Hash}] = true
+			named[r.Hash] = true
 		}
 	}
 	for _, r := range went {
 		if stood[port.SourceText{Producer: r.Producer, Hash: r.Hash}] {
 			continue
 		}
-		for _, name := range text.Names(r.Producer, r.Hash) {
+		gone := text.Names(r.Producer, r.Hash)
+		// A copy of a video is named by the address alone, so it goes when
+		// nothing names that address any more, whoever downloaded the words.
+		if !named[r.Hash] {
+			gone = append(gone, text.Copy(r.Hash))
+		}
+		for _, name := range gone {
 			if err := u.Derived.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 				return fmt.Errorf("remove %s: %w", name, err)
 			}
@@ -259,7 +268,7 @@ func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.Vaul
 		return nil
 	}
 	for _, kind := range u.kinds() {
-		recognised, err := u.Known.Recognised(ctx, v.ID, kind)
+		recognised, err := u.Queries.Recognised(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
@@ -313,10 +322,10 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 	for _, kind := range u.kinds() {
 		questions = append(questions,
 			func(ctx context.Context) ([]string, error) {
-				return u.Known.Unchunked(ctx, v.ID, kind, sourcesPerQuery)
+				return u.Queries.Unchunked(ctx, v.ID, kind, sourcesPerQuery)
 			},
 			func(ctx context.Context) ([]string, error) {
-				return u.Known.ByOtherRecipe(ctx, v.ID, kind, known, sourcesPerQuery)
+				return u.Queries.ByOtherRecipe(ctx, v.ID, kind, known, sourcesPerQuery)
 			},
 		)
 	}
@@ -412,7 +421,18 @@ func (u Extract) source(
 		res.Unreadable++
 		return nil
 	}
+	// A url's text was never in its bytes, so it is named by the address the
+	// file points at and not by the file.
 	hash := text.Fingerprint(raw)
+	if ref.Kind == domain.KindURL {
+		at, err := urlfile.Read(raw)
+		if err != nil {
+			res.Unreadable++
+			//nolint:nilerr // one file naming no address is one more on the batch's count
+			return nil
+		}
+		hash = text.Fingerprint([]byte(string(at)))
+	}
 
 	// A document read by a recogniser has a text of its own, and the chunks are
 	// places in that. It is found by the hash of the bytes it was read from, so a
@@ -518,6 +538,18 @@ func (u Extract) progress(res ExtractResult) {
 // asked. A reading still being written is the text of the pages read so far.
 // Where there is none, the file speaks for itself and no producer is named.
 func (u Extract) text(ctx context.Context, ref domain.Fingerprint, raw []byte, hash string) (*text.Document, string, error) {
+	// A url is its address and nothing else, so whatever was fetched for that
+	// address is its text. Which producer fetched it is what the store says.
+	if ref.Kind == domain.KindURL {
+		if u.Derived == nil {
+			return &text.Document{}, "", nil
+		}
+		words, from, err := text.Downloaded(ctx, u.Derived, hash)
+		if err != nil {
+			return nil, "", err
+		}
+		return &text.Document{Text: words}, from, nil
+	}
 	if u.Derived != nil {
 		from := u.producer(ref)
 		for _, name := range []string{text.Artifact(from, hash), text.Partial(from, hash)} {
@@ -560,7 +592,7 @@ func (u Extract) producer(ref domain.Fingerprint) string {
 // kinds are the sorts of source this run works through.
 func (u Extract) kinds() []domain.SourceKind {
 	if len(u.Kinds) == 0 {
-		return []domain.SourceKind{domain.KindBook, domain.KindRecording}
+		return []domain.SourceKind{domain.KindBook, domain.KindRecording, domain.KindURL}
 	}
 	return u.Kinds
 }

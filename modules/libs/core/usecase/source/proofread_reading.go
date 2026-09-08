@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"io/fs"
 
+	"github.com/jiva-studio/numen/modules/libs/core/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/fixes"
 	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -177,7 +177,7 @@ func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path stri
 		// after both: a batch no count claims is one the next run asks about
 		// again, and it trims the corrections back to the count first.
 		if len(put) > 0 {
-			if err := store.Append(ctx, corrections, fixes.Pack(put)); err != nil {
+			if err := store.Append(ctx, corrections, correction.Pack(put)); err != nil {
 				return res, err
 			}
 			res.Fixed += len(put)
@@ -228,7 +228,7 @@ func (u ProofreadReading) lines(
 func (u ProofreadReading) gathered(
 	asked []proofread.Batch,
 	replies map[int]string,
-) (put []fixes.Line, refused int) {
+) (put []correction.Line, refused int) {
 	for _, page := range asked {
 		reply, answered := replies[page.Number]
 		if !answered {
@@ -240,7 +240,7 @@ func (u ProofreadReading) gathered(
 			continue
 		}
 		for _, line := range lines {
-			put = append(put, fixes.Line{Number: line.Number, Text: line.Text})
+			put = append(put, correction.Line{Number: line.Number, Text: line.Text})
 		}
 	}
 	return put, refused
@@ -306,7 +306,7 @@ func (u ProofreadReading) await(
 		put, refused := u.gathered(pages[stood.Pages:end], replies)
 		res.Refused += refused
 		if len(put) > 0 {
-			if err := store.Append(ctx, corrections, fixes.Pack(put)); err != nil {
+			if err := store.Append(ctx, corrections, correction.Pack(put)); err != nil {
 				return res, err
 			}
 			res.Fixed += len(put)
@@ -355,8 +355,8 @@ func cropped(
 	if err != nil {
 		return err
 	}
-	held := fixes.Unpack(raw)
-	kept := make([]fixes.Line, 0, len(held))
+	held := correction.Unpack(raw)
+	kept := make([]correction.Line, 0, len(held))
 	for _, line := range held {
 		if line.Number < beyond {
 			kept = append(kept, line)
@@ -368,7 +368,7 @@ func cropped(
 	// Written back whatever was dropped. An append that did not land whole leaves
 	// bytes that are not a record, and every record appended after them is read
 	// at a shifted offset.
-	return store.Write(ctx, corrections, fixes.Pack(kept))
+	return store.Write(ctx, corrections, correction.Pack(kept))
 }
 
 // opening is the number of the first line no count claims.

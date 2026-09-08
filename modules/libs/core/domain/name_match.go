@@ -11,7 +11,7 @@ type NameMatch struct {
 	Path  string
 	Title string
 
-	// Type is which of four the note is. A heading carries the type of the note
+	// Type is what the note is. A heading carries the type of the note
 	// it stands in.
 	Type NoteType
 
@@ -22,13 +22,7 @@ type NameMatch struct {
 	// prose. Zero for a title, which stands on no line of the prose at all.
 	Line int
 
-	// Spans are where in the name that matched the words typed stand.
+	// Spans are where in the name that matched the words typed stand, counted
+	// the way a client counts text: in UTF-16 code units.
 	Spans []Span
-}
-
-// Span is a run of text, by where it begins and where it ends, counted the way
-// a client counts text: in UTF-16 code units.
-type Span struct {
-	From int
-	To   int
 }

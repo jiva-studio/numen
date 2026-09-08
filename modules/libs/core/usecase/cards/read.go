@@ -137,8 +137,8 @@ func cutting(
 	}
 	written := make([]string, 0, len(d.Cards))
 	for _, card := range d.Cards {
-		if card.Stencil != "" {
-			written = append(written, card.Stencil)
+		if card.StencilLink != "" {
+			written = append(written, card.StencilLink)
 		}
 	}
 	if len(written) == 0 {
@@ -197,11 +197,11 @@ func notStencils(d format.Deck, ordinary map[string]bool) []format.Problem {
 	}
 	var out []format.Problem
 	for at, card := range d.Cards {
-		if !ordinary[card.Stencil] {
+		if !ordinary[card.StencilLink] {
 			continue
 		}
 		out = append(out, format.OnCard(at, format.FaultNotAStencil,
-			card.Stencil+" is a note and not a stencil, so this card is shown by no face"))
+			card.StencilLink+" is a note and not a stencil, so this card is shown by no face"))
 	}
 	return out
 }

@@ -8,9 +8,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 )
 
-// ReadVault is a vault walked into the index. It is handed how far it has got
-// as it goes, counted in the notes written.
-type ReadVault func(ctx context.Context, v domain.Vault, progress func(notes int64)) error
+// ReadVault is a vault walked into the index.
+type ReadVault func(ctx context.Context, v domain.Vault) error
 
 // readings is which vaults this window has read into the index: the ones read
 // since it opened, the ones being read now, and why the last reading of one
@@ -137,10 +136,7 @@ func (a *API) walk(ctx context.Context, read ReadVault, v domain.Vault, held boo
 	}
 	a.say(at)
 
-	err := read(ctx, v, func(notes int64) {
-		at.Count = notes
-		a.say(at)
-	})
+	err := read(ctx, v)
 
 	a.readings.ended(v, err)
 

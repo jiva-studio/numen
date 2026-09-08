@@ -607,7 +607,7 @@ type WriteSettingsFileResponse struct {
 	// Set when nothing was written, and why. A file holding bytes this caller
 	// has not read is REFUSAL_STALE, and the person chooses what happens to
 	// their text.
-	Refusal       *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	Refusal       *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -684,11 +684,11 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\x18WriteSettingsFileRequest\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x17\n" +
 	"\x04seen\x18\x02 \x01(\tH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"h\n" +
+	"\x05_seen\"Y\n" +
 	"\x19WriteSettingsFileResponse\x120\n" +
-	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
+	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
 	"\n" +
-	"\b_refusalJ\x04\b\x01\x10\x02R\achanged*s\n" +
+	"\b_refusal*s\n" +
 	"\bPresence\x12\x18\n" +
 	"\x14PRESENCE_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10PRESENCE_PRESENT\x10\x01\x12\x18\n" +

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"image"
+	"io"
 	"io/fs"
 	"maps"
 	"math/rand/v2"
@@ -402,9 +403,9 @@ func (d document) boxes(pages []int) []highlight.Box {
 		for i, word := range d.pages[index] {
 			down := 0.05 + 0.1*float32(i)
 			out = append(out, highlight.Box{
-				Page:    index,
-				Stretch: highlight.Stretch{Start: at, Length: len(word)},
-				Rect:    highlight.Rect{MinX: 0.1, MinY: down, MaxX: 0.9, MaxY: down + 0.05},
+				Page: index,
+				Span: domain.Span{From: at, To: at + len(word)},
+				Rect: highlight.Rect{MinX: 0.1, MinY: down, MaxX: 0.9, MaxY: down + 0.05},
 			})
 			at += len(word) + 1
 		}
@@ -653,4 +654,39 @@ func (s *store) Recognised(_ context.Context, vaultID domain.VaultID, kind domai
 	}
 	slices.SortFunc(out, func(a, b port.SourceText) int { return cmp.Compare(a.Path, b.Path) })
 	return out, nil
+}
+
+// writing is the vault a copy kept beside the note is written into. Only what a
+// copy asks of a writer is answered: everything else a use case might write is
+// another scenario's.
+type writing struct {
+	port.VaultWriter
+	to *library
+}
+
+func (w writing) Bring(_ context.Context, path string, from io.Reader) error {
+	if _, held := w.to.files[path]; held {
+		return port.ErrOccupied
+	}
+	raw, err := io.ReadAll(from)
+	if err != nil {
+		return err
+	}
+	w.to.hold(path, domain.KindRecording, raw, 1)
+	return nil
+}
+
+// writers opens the writer of each vault a test set up.
+type writers map[domain.VaultID]*library
+
+func (w writers) Open(vault domain.Vault) (port.VaultWriter, error) {
+	held, ok := w[vault.ID]
+	if !ok {
+		return nil, fmt.Errorf("no vault %s", vault.ID)
+	}
+	return writing{to: held}, nil
+}
+
+func (w writers) Hold(context.Context, domain.Vault) (func(), error) {
+	return func() {}, nil
 }

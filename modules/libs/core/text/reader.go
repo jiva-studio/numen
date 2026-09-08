@@ -9,16 +9,86 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/chunking"
-	"github.com/jiva-studio/numen/modules/libs/core/fixes"
+	"github.com/jiva-studio/numen/modules/libs/core/correction"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/highlight"
+	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
-// ASR is the producer that writes down what a model heard in a recording. What
-// it writes is WebVTT, and the names it keeps its files under say so.
-const ASR = "asr"
+// The producers: what made a text, which is not the same question as what the
+// text is. A kind with one producer is named by it, and a kind with two names
+// both in the files.
+const (
+	// ASR is a model here, listening to a recording.
+	ASR = "asr"
+	// Reading is a model here, reading the pages of a scan.
+	Reading = "ocr"
+)
+
+// The producers that bring back what is at an address a link note points at.
+const (
+	// Captions is a site, publishing words with a video.
+	Captions = "captions"
+	// Article is the reader that finds the prose a page is written around.
+	Article = "article"
+)
+
+// timed says whether a producer writes words with the times they were said at.
+// Those are WebVTT and open in a player; everything else is prose.
+func timed(producer string) bool { return producer == ASR || producer == Captions }
+
+// Transcript is where text with the times it was said at is kept, and Copies
+// where the bytes of a video are.
+//
+// A folder is a kind: what the files in it are. A producer is what made them,
+// which is another question — a transcript is a transcript whether a model here
+// heard it or a site published it with the video, so both stand here under
+// names of their own.
+const (
+	Transcript = "transcript"
+	Copies     = "copy"
+)
+
+// kind is the folder a producer's files stand in, which is what they are. A
+// kind one producer writes is that producer's own name: there is nothing to
+// tell its files apart from.
+func kind(producer string) string {
+	if timed(producer) {
+		return Transcript
+	}
+	return producer
+}
+
+// under is the name one of a producer's files stands under inside its kind: the
+// hash, then the producer where the kind has more than one, then what the file
+// is.
+func under(producer, hash, what string) string {
+	if timed(producer) {
+		return Transcript + "/" + hash + "." + producer + what
+	}
+	return producer + "/" + hash + what
+}
+
+// The container a copy of a video is fetched and kept in, and what a player is
+// told it is. One is asked for and one is kept, so what a player is handed is
+// what every player this window is drawn in opens.
+const (
+	CopyExtension = ".mp4"
+	CopyType      = "video/mp4"
+)
+
+// Copy is the name a copy of what is at an address is kept under. It is not
+// text and nothing reads it as any: it is the bytes a person plays, kept where
+// they can be fetched again from the address the note carries.
+func Copy(hash string) string { return Copies + "/" + hash + CopyExtension }
+
+// Separator is what stands between a link note's own prose and what was fetched
+// for it. The two are one text, and a chunk is cut across neither into the
+// other.
+const Separator = "\n\n"
 
 // A Reader is where a source's text comes from: the file itself, or the file a
 // recognition wrote.
@@ -41,6 +111,12 @@ type Reader struct {
 // which is a wrong answer given confidently and is worse than no answer.
 func (r Reader) Of(ctx context.Context, path, producer, hash string) (*Document, error) {
 	if producer != "" {
+		// A note naming a producer is a link: what a person wrote and what was
+		// fetched for the address they wrote it about are one text, and an
+		// offset in it falls in whichever of the two it lands in.
+		if strings.HasSuffix(path, domain.NoteExtension) {
+			return r.pointed(ctx, path, producer, hash)
+		}
 		return r.recognised(ctx, producer, hash)
 	}
 	ref, err := r.Vault.Stat(ctx, path)
@@ -75,6 +151,84 @@ func (r Reader) recognised(ctx context.Context, from, hash string) (*Document, e
 	return nil, ErrUnreadable
 }
 
+// pointed is a link note: the prose its person wrote, and what was fetched from
+// the address it points at, as one text.
+//
+// The prose comes first because it is what the person opened the note to write.
+// A note whose fetch brought back nothing is its prose alone, and one nothing
+// has fetched for yet is the same.
+func (r Reader) pointed(ctx context.Context, path, producer, hash string) (*Document, error) {
+	raw, err := r.Vault.Read(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+	doc := &Document{Text: markdown.Body(raw)}
+	fetched, err := r.recognised(ctx, producer, hash)
+	if errors.Is(err, ErrUnreadable) {
+		return doc, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return Joined(doc.Text, fetched), nil
+}
+
+// Joined is a link note's prose and what was fetched for it, as one text.
+//
+// What the fetch named — the moment a stretch of speech was said, the parts of
+// an article — is moved out by as much as the prose and what stands between
+// them, so a place in the fetched half is the place it was.
+func Joined(prose string, fetched *Document) *Document {
+	at := len(prose) + len(Separator)
+	doc := &Document{Text: prose + Separator + fetched.Text}
+	for _, part := range fetched.Parts {
+		part.Offset += at
+		doc.Parts = append(doc.Parts, part)
+	}
+	for _, one := range fetched.named {
+		doc.named = append(doc.named, namedPlace{Offset: one.Offset + at, Name: one.Name})
+	}
+	for _, one := range fetched.paged {
+		doc.paged = append(doc.paged, namedPlace{Offset: one.Offset + at, Name: one.Name})
+	}
+	return doc
+}
+
+// Producers are the ones that bring back what is at an address, in the order
+// one of them is read: what a model here heard stands over what a site
+// published, because listening is asked for and publishing is not.
+func Producers() []string { return []string{ASR, Captions, Article} }
+
+// Downloaded is what was brought back for an address, as the text a link note is
+// cut with, and which producer brought it.
+//
+// Nothing downloaded is no text and no producer, which is a link note nothing
+// has been downloaded for and is its ordinary state until something is.
+func Downloaded(
+	ctx context.Context, store port.DerivedStore, hash string,
+) (words, producer string, err error) {
+	if store == nil {
+		return "", "", nil
+	}
+	for _, from := range Producers() {
+		for _, name := range []string{Artifact(from, hash), Partial(from, hash)} {
+			raw, err := store.Read(ctx, name)
+			if errors.Is(err, fs.ErrNotExist) {
+				continue
+			}
+			if err != nil {
+				return "", "", err
+			}
+			doc, err := Composed(ctx, store, from, hash, raw)
+			if err != nil {
+				return "", "", err
+			}
+			return doc.Text, from, nil
+		}
+	}
+	return "", "", nil
+}
+
 // Composed is a reading and everything kept beside it, as the text a source's
 // chunks are places in.
 //
@@ -87,7 +241,7 @@ func Composed(
 	producer, hash string,
 	raw []byte,
 ) (*Document, error) {
-	if producer == ASR {
+	if timed(producer) {
 		put, err := beside(ctx, store, Corrections(producer, hash))
 		if err != nil {
 			return nil, err
@@ -141,8 +295,8 @@ func beside(ctx context.Context, store port.DerivedStore, name string) ([]byte, 
 func Recognised(raw, parts, boxes, corrections []byte) *Document {
 	prose, marks := ocr.Read(raw)
 	named := ocr.Unpack(parts)
-	if put := fixes.Unpack(corrections); len(put) > 0 {
-		prose, marks, named = fixes.Prose(prose, marks, highlight.Unpack(boxes), named, put)
+	if put := correction.Unpack(corrections); len(put) > 0 {
+		prose, marks, named = correction.Prose(prose, marks, highlight.Unpack(boxes), named, put)
 	}
 	doc := &Document{Text: prose}
 	for _, p := range divided(prose, named) {
@@ -203,24 +357,24 @@ func Fingerprint(raw []byte) string {
 //
 // It is the hash of what was read and not the path it was read from, so a
 // document renamed or moved keeps its recognition, and two copies of one
-// document in a vault share the one file rather than being read twice.
+// document in a vault share the one file.
 //
 // The extension is the producer's: a transcript is WebVTT and opens in a player
 // under the name a player knows it by.
 func Artifact(from, hash string) string {
-	if from == ASR {
-		return from + "/" + hash + ".vtt"
+	if timed(from) {
+		return under(from, hash, ".vtt")
 	}
-	return from + "/" + hash + ".txt"
+	return under(from, hash, ".txt")
 }
 
 // Partial is the name a producer's recognition still running is kept under. It
 // is not an artifact until it is complete, and nothing reads it back as one.
 func Partial(from, hash string) string {
-	if from == ASR {
-		return from + "/" + hash + ".partial.vtt"
+	if timed(from) {
+		return under(from, hash, ".partial.vtt")
 	}
-	return from + "/" + hash + ".partial"
+	return under(from, hash, ".partial")
 }
 
 // Corrections is the name what put a producer's text right is kept under. A
@@ -231,37 +385,29 @@ func Partial(from, hash string) string {
 // under the extension that format is opened by; a reading's are one record to
 // a line put right, keyed by the box the line was read from.
 func Corrections(from, hash string) string {
-	if from == ASR {
-		return from + "/" + hash + ".corrected.vtt"
+	if timed(from) {
+		return under(from, hash, ".corrected.vtt")
 	}
-	return from + "/" + hash + ".fixes"
+	return under(from, hash, ".corrected")
 }
 
 // Parts is the name the parts of a reading are kept under. A reading whose
 // layout model named none has no such file.
-func Parts(from, hash string) string {
-	return from + "/" + hash + ".parts"
-}
+func Parts(from, hash string) string { return under(from, hash, ".parts") }
 
 // Boxes is the name the coordinates a model produced are kept under. They are
 // kept because no machine here remakes them cheaply.
-func Boxes(from, hash string) string {
-	return from + "/" + hash + ".boxes"
-}
+func Boxes(from, hash string) string { return under(from, hash, ".boxes") }
 
 // Proofread is the name of what says who put a reading right and how far they
 // got. A run stopped part way is taken up again at the page it names.
-func Proofread(from, hash string) string {
-	return from + "/" + hash + ".proofread"
-}
+func Proofread(from, hash string) string { return under(from, hash, ".proofread") }
 
 // Answer is the name of what a recording gave where it gave no words: silence,
 // or bytes nothing here can open. It is not a transcript and nothing reads it as
 // one; it is there so that a recording nothing can be heard in is not listened
 // to again every time the vault is scanned.
-func Answer(from, hash string) string {
-	return from + "/" + hash + ".answer"
-}
+func Answer(from, hash string) string { return under(from, hash, ".answer") }
 
 // The two answers a recording gives that carry no words: it holds no speech, or
 // nothing here opens it. What is kept under Answer opens with one of them.
@@ -290,9 +436,7 @@ func Answered(raw []byte) (gave, said string) {
 // any hot path reads it; it is there so a person can ask what read a text they
 // are looking at, and so a sweep can find everything a recogniser now known to
 // be bad produced.
-func Beside(from, hash string) string {
-	return from + "/" + hash + ".json"
-}
+func Beside(from, hash string) string { return under(from, hash, ".json") }
 
 // Names is every file one recognition of these bytes is kept under. One run
 // made them and none of them means anything without the others.
@@ -300,7 +444,7 @@ func Beside(from, hash string) string {
 // Each producer's own files are named: a sweep works through this list, and a
 // transcription writes no coordinates or parts.
 func Names(from, hash string) []string {
-	if from == ASR {
+	if timed(from) {
 		return []string{
 			Artifact(from, hash),
 			Partial(from, hash),
@@ -319,4 +463,24 @@ func Names(from, hash string) []string {
 		Proofread(from, hash),
 		Beside(from, hash),
 	}
+}
+
+// AddressNames is every file kept for one address: what each producer that
+// reaches one writes, and the copy of the video where a person asked for one.
+//
+// A sweep works through this list, and it is the one place the copy is named
+// beside the rest — it is the bytes of a video and no producer's text, so
+// Names, which is a producer's own files, does not carry it.
+func AddressNames(hash string) []string {
+	return append([]string{Copy(hash)}, AddressTexts(hash)...)
+}
+
+// AddressTexts is every file a producer wrote for one address, without the
+// copy.
+func AddressTexts(hash string) []string {
+	var out []string
+	for _, producer := range Producers() {
+		out = append(out, Names(producer, hash)...)
+	}
+	return out
 }

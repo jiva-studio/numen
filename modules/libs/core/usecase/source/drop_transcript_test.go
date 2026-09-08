@@ -22,11 +22,11 @@ func dropping(t *testing.T, words ...string) (Transcribe, DropTranscript, domain
 	kept := newShelf()
 	model := &voice{words: words}
 
-	cutting := Extract{Readers: vaults{first.ID: shelved}, Sources: index, Known: index, Derived: kept}
+	cutting := Extract{Readers: vaults{first.ID: shelved}, Sources: index, Queries: index, Derived: kept}
 	listen := Transcribe{
 		Readers: vaults{first.ID: shelved},
 		Sources: index,
-		Derived: kept,
+		Derived: shelves{kept},
 		By:      model,
 		Batch:   1,
 		Cut: func(ctx context.Context, v domain.Vault, path string) error {
@@ -37,8 +37,8 @@ func dropping(t *testing.T, words ...string) (Transcribe, DropTranscript, domain
 	drop := DropTranscript{
 		Readers: vaults{first.ID: shelved},
 		Sources: index,
-		Known:   index,
-		Derived: kept,
+		Queries: index,
+		Derived: shelves{kept},
 	}
 	return listen, drop, first, index, kept, model, text.Fingerprint(raw)
 }

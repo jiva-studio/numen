@@ -36,12 +36,12 @@ func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 		t.Fatalf("the front door opens on %d of %d vaults", len(first.GetVaults()), len(held))
 	}
 	for at, one := range first.GetVaults() {
-		if one.GetName() != string(held[at].ID) || one.GetDisplayName() == "" || one.GetPath() == "" {
+		if one.GetId() != string(held[at].ID) || one.GetName() == "" || one.GetPath() == "" {
 			t.Errorf("the vault stands as %+v", one)
 		}
 		if one.GetFaces() != 0 || one.GetDue() != 0 || one.GetNew() != 0 ||
 			len(one.GetDecks()) != 0 || len(one.GetPresets()) != 0 || one.GetUnread() != "" {
-			t.Errorf("%s arrived counted: %+v", one.GetDisplayName(), one)
+			t.Errorf("%s arrived counted: %+v", one.GetName(), one)
 		}
 	}
 }
@@ -72,9 +72,9 @@ func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
 		}
 		one := said.GetCounted()
 		if one.GetFaces() != 1 || one.GetNew() != 1 {
-			t.Errorf("%s comes to %+v", one.GetDisplayName(), one)
+			t.Errorf("%s comes to %+v", one.GetName(), one)
 		}
-		counts[one.GetName()]++
+		counts[one.GetId()]++
 	}
 	if err := stream.Err(); err != nil {
 		t.Fatal(err)

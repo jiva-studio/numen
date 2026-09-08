@@ -3,6 +3,7 @@ package flashcards_test
 import (
 	"context"
 	"fmt"
+	"io"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -59,6 +60,15 @@ func (s countingStore) Read(ctx context.Context, name string) ([]byte, error) {
 func (s countingStore) List(ctx context.Context, name string) ([]port.Entry, error) {
 	s.on.Listed++
 	return s.inner.List(ctx, name)
+}
+
+func (s countingStore) Open(ctx context.Context, name string) (io.ReadSeekCloser, int64, error) {
+	s.on.Opened++
+	return s.inner.Open(ctx, name)
+}
+
+func (s countingStore) Take(ctx context.Context, name string, from io.Reader) (int64, error) {
+	return s.inner.Take(ctx, name, from)
 }
 
 func (s countingStore) Write(ctx context.Context, name string, content []byte) error {

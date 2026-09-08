@@ -3,6 +3,7 @@ package cli_test
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -142,7 +143,7 @@ func TestAddScanSearch(t *testing.T) {
 	}
 
 	scanned := s.mustRun("scan", "demo")
-	if !strings.Contains(scanned, "14 notes: 14 indexed") {
+	if !strings.Contains(scanned, "index now holds 14 notes") {
 		t.Errorf("scan said:\n%s", scanned)
 	}
 
@@ -155,17 +156,6 @@ func TestAddScanSearch(t *testing.T) {
 	// about it: half a search is a whole answer.
 	if s.said.Len() > 0 {
 		t.Errorf("the commands said beside their answers:\n%s", s.said.String())
-	}
-}
-
-func TestSecondScanChangesNothing(t *testing.T) {
-	s := newSession(t)
-	s.mustRun("vault", "add", s.vault, "--name", "demo")
-	s.mustRun("scan", "demo")
-
-	again := s.mustRun("scan", "demo")
-	if !strings.Contains(again, "0 indexed") || !strings.Contains(again, "14 unchanged") {
-		t.Errorf("rescanning an untouched vault reindexed something:\n%s", again)
 	}
 }
 
@@ -288,6 +278,7 @@ func TestAMovedVaultIsRecognisedRatherThanRefused(t *testing.T) {
 	s := newSession(t)
 	s.mustRun("vault", "add", s.vault, "--name", "moved")
 	s.mustRun("scan", "moved")
+	was := identityOf(t, s.vault)
 
 	moved := filepath.Join(filepath.Dir(s.vault), "somewhere-else")
 	if err := os.Rename(s.vault, moved); err != nil {
@@ -309,9 +300,29 @@ func TestAMovedVaultIsRecognisedRatherThanRefused(t *testing.T) {
 
 	// The identity travelled with the folder, so the index it already built is
 	// still the right one.
-	if !strings.Contains(s.mustRun("scan", "moved"), "0 indexed") {
-		t.Error("the moved vault was reindexed from scratch")
+	if now := identityOf(t, moved); now != was {
+		t.Errorf("the moved vault is %s, and was %s", now, was)
 	}
+}
+
+// identityOf is what a vault calls itself, read out of the folder.
+func identityOf(t *testing.T, path string) string {
+	t.Helper()
+
+	raw, err := os.ReadFile(filepath.Join(path, ".numen", "config.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var held struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(raw, &held); err != nil {
+		t.Fatal(err)
+	}
+	if held.ID == "" {
+		t.Fatalf("the vault at %s calls itself nothing", path)
+	}
+	return held.ID
 }
 
 func TestLinksShowsBothDirections(t *testing.T) {

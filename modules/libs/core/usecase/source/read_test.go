@@ -12,7 +12,7 @@ func reader(t *testing.T) (Read, *shelf) {
 	if _, err := read.Execute(t.Context(), first, documentPath); err != nil {
 		t.Fatal(err)
 	}
-	return Read{Readers: read.Readers, Sources: index, Derived: shelved}, shelved
+	return Read{Readers: read.Readers, Sources: index, Derived: shelves{shelved}}, shelved
 }
 
 func TestWhatStandsAfterAChunkIsRead(t *testing.T) {

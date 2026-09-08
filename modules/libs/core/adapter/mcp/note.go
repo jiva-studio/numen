@@ -50,7 +50,7 @@ func addNoteTools(server *sdk.Server, core Core) {
 func addNoteResolve(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "note_resolve",
-		Title: "Find the notes a name reaches",
+		Title: "Resolve a name",
 		Description: "Every note filed under one name, which is what a link written by " +
 			"that name resolves to. More than one path back means the link is ambiguous " +
 			"and reaches the nearest of them, which can change when either note is " +
@@ -76,7 +76,7 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "note_titles",
-		Title: "Look up what notes are called",
+		Title: "Look up note titles",
 		Description: "What notes at these paths are called, and the identifier each " +
 			"carries. Nothing of their prose comes back — `note_read` gives that. Use " +
 			"this to name a note in an answer, or to see whether the vault still holds " +
@@ -167,7 +167,7 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "note_neighbourhood",
-		Title: "Show what a note is joined to",
+		Title: "Show a note's neighbourhood",
 		Description: "One note and everything joined to it — its parents, children, " +
 			"siblings and jumps. This is the picture the person is looking at.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
@@ -199,6 +199,8 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 }
 
 func addNoteWritingTools(server *sdk.Server, core Core) {
+	addImportTool(server, core)
+
 	// One note per call.
 	//
 	// A call is written out in full before it is made, and this one carries the
@@ -227,7 +229,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		}
 
 		created, err := core.Notes.Create.Execute(ctx, core.shown().Vault, note.NewNote{
-			Title: in.Title, Body: in.Body, Folder: in.Folder,
+			Title: in.Title, Body: in.Body, Path: in.Folder,
 			Links: written(in.Links),
 		})
 		// A path alongside a refusal means the file was written and something
@@ -480,10 +482,10 @@ type MoveOutcome struct {
 
 // NewNote is one note a caller wants made, and what it should be joined to.
 type NewNote struct {
-	Title  string    `json:"title" jsonschema:"what the note is called"`
-	Body   string    `json:"body,omitempty" jsonschema:"the markdown to start it with"`
-	Folder string    `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
-	Links  []NewLink `json:"links,omitempty" jsonschema:"the relationships to write into it, so it arrives already joined"`
+	Title  string `json:"title" jsonschema:"what the note is called"`
+	Body   string `json:"body,omitempty" jsonschema:"the markdown to start it with"`
+	Folder string `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
+	Links  []Link `json:"links,omitempty" jsonschema:"the relationships to write into it, so it arrives already joined"`
 }
 
 // CreateOutcome is what happened to one note in a batch.

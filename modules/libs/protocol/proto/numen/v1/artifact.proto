@@ -8,8 +8,6 @@ syntax = "proto3";
 // under a name of the application's own.
 package numen.v1;
 
-import "numen/v1/shared.proto";
-
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
 
 // ArtifactService answers what has been made from a file of the vault, makes
@@ -35,33 +33,16 @@ service ArtifactService {
   // DeleteArtifact takes one away, with everything cut from it. The file stands
   // as it did before anything was made from it, and it is offered again.
   rpc DeleteArtifact(DeleteArtifactRequest) returns (DeleteArtifactResponse);
-
-  // ReadTranscript is the words a recording was heard as, each stretch of
-  // speech against the milliseconds it was spoken in. A recording nothing has
-  // listened to holds no words, which is an answer.
-  //
-  // What comes back is the transcript as it now stands: the words a person put
-  // right, and what a model heard where nothing put them right.
-  rpc ReadTranscript(ReadTranscriptRequest) returns (ReadTranscriptResponse);
-
-  // WriteTranscript writes the words of a recording as a person left them.
-  //
-  // What the model heard stays under its own name and the words as they now
-  // stand go beside it, so a transcript edited into nonsense is corrections
-  // that can be taken away and what was heard comes back.
-  rpc WriteTranscript(WriteTranscriptRequest) returns (WriteTranscriptResponse);
 }
 
 // An Artifact is one thing a model wrote about one file of the vault.
+//
+// Where it stands on disk is the application's own and is never said: a request
+// names the file and the kind of it, and the vault is the one the window is
+// showing.
 message Artifact {
-  // Name is where it stands: the vault, the file it was made from, and the
-  // name the store keeps it under.
-  //
-  //   vaults/{vault}/files/{path}/artifacts/asr.corrected
-  //
-  // It is answered and never asked with: a request names the file and the
-  // artifact of it, and the vault is the one the window is showing.
-  string name = 1;
+  // Which of them this is.
+  ArtifactKind kind = 1;
 
   // State is what has become of it.
   State state = 2;
@@ -69,30 +50,46 @@ message Artifact {
   // Error is what stopped it, and is set when it failed.
   string error = 3;
 
-  // Size is how many bytes stand under that name. A file being written is
-  // appended to as the work goes, so it keeps its name and grows: how long it
-  // now is is what tells a caller that what it already read has moved on.
-  int64 size = 4;
-
-  // Which of them this is. A client draws a row per kind and reads this rather
-  // than the last part of `name`: a name is where the artifact stands, and
-  // taking a client's meaning out of it makes every reader parse it.
-  ArtifactKind kind = 5;
+  // How many bytes stand under it. A caller reading a long text in windows
+  // knows from this where the end is.
+  int64 bytes = 4;
 }
 
-// ArtifactKind is which thing made from a file is meant. The list is closed: a
+// ArtifactKind is what a thing made from a file is. The list is closed: a
 // client draws one row per kind, and a kind nobody decided on has no row.
+//
+// A kind says what a thing is; what made it is its producer, and the two are
+// not the same question. Words with times are a transcript whether a model
+// heard them or a site published them.
 enum ArtifactKind {
   ARTIFACT_KIND_UNSPECIFIED = 0;
 
-  // The text read out of a scan. It stands under the name `ocr`.
-  ARTIFACT_KIND_READING = 1;
+  // Text with the place on the page each word stands at, read off a scan and
+  // kept under `ocr`.
+  ARTIFACT_KIND_OCR = 1;
 
-  // The words heard in a recording, under `asr`.
-  ARTIFACT_KIND_HEARD = 2;
+  // That reading put right by a person, under `.corrected` beside it.
+  ARTIFACT_KIND_OCR_CORRECTED = 2;
 
-  // Those words put right, under `asr.corrected`.
-  ARTIFACT_KIND_CORRECTED = 3;
+  // Text with the times each stretch of it was said at, under the name of what
+  // made it: `asr` where a model heard it, `captions` where a site published
+  // it with a video.
+  ARTIFACT_KIND_TRANSCRIPT = 3;
+
+  // A transcript put right by a person, under `.corrected` beside the one it
+  // corrects. It says which it is: a reading put right is another kind, and a
+  // caller editing one has to know which of them it holds.
+  ARTIFACT_KIND_TRANSCRIPT_CORRECTED = 4;
+
+  // The prose a page is written around, under `article`. It carries no times
+  // and no places on pages: it is what the page says, and nothing about where
+  // it stood.
+  ARTIFACT_KIND_ARTICLE = 5;
+
+  // The bytes of a video, kept under `copy` and played from this disk. It is
+  // asked for by hand: an hour of video is not what pasting an address asks
+  // for.
+  ARTIFACT_KIND_COPY = 6;
 }
 
 // State is what has become of one artifact.
@@ -140,15 +137,12 @@ message ListArtifactsResponse {
 }
 
 message CreateArtifactRequest {
-  reserved 2;
-  reserved "artifact_id";
-
   // The file of the vault, as the vault holds it.
   string path = 1;
 
   // Which artifact of it to make. Which model does the work follows from the
   // file, and is not asked for here.
-  ArtifactKind kind = 3;
+  ArtifactKind kind = 2;
 }
 
 message CreateArtifactResponse {
@@ -156,71 +150,15 @@ message CreateArtifactResponse {
 }
 
 message DeleteArtifactRequest {
-  reserved 2;
-  reserved "artifact_id";
-
-  // The file of the vault, as the vault holds it. What is taken away is
-  // everything listening to a recording produced — the words a model heard and
-  // the words a person put right — so there is nothing to name: a field that
-  // takes one value of three and refuses the other two at run time is a rule
-  // the schema cannot state and a client cannot read.
-  string path = 1;
-}
-
-message DeleteArtifactResponse {
-  // The artifact as it now stands, which is nothing.
-  Artifact artifact = 1;
-}
-
-// A Cue is one stretch of speech in a recording: what was said, and the
-// milliseconds of the recording it spans.
-//
-// One cue stands on one line. A cue broken over two is two a client would offer
-// to edit and one the recording would play.
-message Cue {
-  string text = 1;
-  int32 from = 2;
-  int32 to = 3;
-}
-
-message ReadTranscriptRequest {
-  // The recording, as the vault holds it.
+  // The file of the vault, as the vault holds it.
   string path = 1;
 
-  // The run of the recording's text to answer about, and nothing at all for the
-  // whole of it. It is a start and a length in the words, which is how a
-  // passage is addressed everywhere else, and what comes back is the speech
-  // those bytes were said in.
-  Stretch at = 2;
+  // Which of what the file carries to take away, which a caller names: a url
+  // carries the text fetched from its address and a copy of what is there, and
+  // they go one without the other. Naming a text takes everything one run
+  // produced — the words a model heard and the words a person put right go
+  // together — and naming none is not a request.
+  ArtifactKind kind = 2;
 }
 
-message ReadTranscriptResponse {
-  // The words, in the order they were said.
-  repeated Cue cues = 1;
-
-  // Whether they may be put right now. A run listening to the recording holds
-  // it, and a client draws what it reads and leaves it alone.
-  bool editable = 2;
-}
-
-message WriteTranscriptRequest {
-  // The recording, as the vault holds it.
-  string path = 1;
-
-  // The words as the person left them, against the milliseconds they were said
-  // in. A client that merged and split lines does the arithmetic.
-  //
-  // Speech runs forward: a cue ends no earlier than it begins, and begins after
-  // the one before it ends. A cue whose words trim away is dropped, and its
-  // timings still bound the cue after it. Words carrying nothing at all are
-  // refused: what was heard comes back by taking the corrections away, and
-  // writing nothing over the words would leave the recording saying nothing
-  // with nothing to edit.
-  repeated Cue cues = 2;
-}
-
-message WriteTranscriptResponse {
-  // The words as they now stand.
-  repeated Cue cues = 1;
-  bool editable = 2;
-}
+message DeleteArtifactResponse {}

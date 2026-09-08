@@ -42,6 +42,9 @@ export type Theme = Message<"numen.v1.Theme"> & {
   title: string;
 
   /**
+   * Which shelf it stands on: what this installation ships, and what a person
+   * put in their own folder.
+   *
    * @generated from field: numen.v1.Shelf shelf = 3;
    */
   shelf: Shelf;
@@ -345,6 +348,8 @@ export enum Mode {
   SYSTEM = 1,
 
   /**
+   * Light and dark, whatever the operating system says.
+   *
    * @generated from enum value: MODE_LIGHT = 2;
    */
   LIGHT = 2,

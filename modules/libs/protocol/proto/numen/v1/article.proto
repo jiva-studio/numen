@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+// The prose a page is written around, found by the reader that fetches an
+// address. Nothing timed it, so it carries no places in a recording and no
+// places on a page.
+package numen.v1;
+
+import "numen/v1/shared.proto";
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// ArticleService reads the prose of a file that carries one.
+//
+// Whether a file carries one is ListArtifacts.
+service ArticleService {
+  // ReadArticle is the prose as it now stands.
+  rpc ReadArticle(ReadArticleRequest) returns (ReadArticleResponse);
+}
+
+message ReadArticleRequest {
+  // The file, as the vault holds it.
+  string path = 1;
+
+  // The run of the prose to answer with, counted in bytes, and nothing at all
+  // for the whole of it.
+  Span span = 2;
+}
+
+message ReadArticleResponse {
+  // The prose, as it reads. A client draws it as it stands, with no gutter and
+  // nothing to seek. A file nothing has been fetched for carries none.
+  string text = 1;
+}

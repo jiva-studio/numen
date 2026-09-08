@@ -23,11 +23,12 @@ type recording struct {
 	raw    []byte
 	length int
 
-	// speech is where the speech is, and cut says the recording has been through
-	// the segmenter. A recording carrying no speech is cut and holds none.
-	speech []port.Audio
-	cut    bool
-	mu     sync.Mutex
+	// segments is where the speech is, and cut says the recording has been
+	// through the segmenter. A recording carrying no speech is cut and holds
+	// none.
+	segments []port.Audio
+	cut      bool
+	mu       sync.Mutex
 }
 
 // Open is a recording, ready to be listened to.
@@ -42,13 +43,13 @@ func (t *Transcriber) Open(ctx context.Context, raw []byte) (port.Recording, err
 // Length is how long the recording is, in milliseconds.
 func (r *recording) Length() int { return r.length }
 
-// Speech is the stretches of speech from a millisecond onward, at most count of
-// them. A count of none is all of them.
+// Segments is what the segmenter cut the recording into, from a millisecond
+// onward, at most count of them. A count of none is all of them.
 //
 // The whole file is cut at once, when the first stretch is asked for. The
 // segmenter reads it from end to end, and where one stretch ends is decided by
 // the silence after it.
-func (r *recording) Speech(ctx context.Context, from, count int) ([]port.Audio, error) {
+func (r *recording) Segments(ctx context.Context, from, count int) ([]port.Audio, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -61,14 +62,14 @@ func (r *recording) Speech(ctx context.Context, from, count int) ([]port.Audio, 
 		if err != nil {
 			return nil, err
 		}
-		if r.speech, err = r.owner.stretches(ctx, at); err != nil {
+		if r.segments, err = r.owner.segments(ctx, at); err != nil {
 			return nil, err
 		}
 		r.raw, r.cut = nil, true
 	}
 
 	var out []port.Audio
-	for _, one := range r.speech {
+	for _, one := range r.segments {
 		if one.From < from {
 			continue
 		}
@@ -83,7 +84,7 @@ func (r *recording) Speech(ctx context.Context, from, count int) ([]port.Audio, 
 func (r *recording) Close() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.raw, r.speech = nil, nil
+	r.raw, r.segments = nil, nil
 	return nil
 }
 

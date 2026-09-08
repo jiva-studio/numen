@@ -64,7 +64,7 @@ func (a *API) GetBook(
 
 	out := &v1.GetBookResponse{
 		Title:       read.Title,
-		Pages:       int32(read.PageCount()),
+		PageCount:   int32(read.PageCount()),
 		TextBytes:   int32(len(read.Text)),
 		PageBytes:   int32(read.PageBytes()),
 		Fingerprint: &v1.Fingerprint{Path: print.path, Size: print.size, Mtime: print.mtime},

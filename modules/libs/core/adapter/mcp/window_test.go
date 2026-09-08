@@ -45,7 +45,7 @@ func TestWindowTabsAnswersWithEveryTabAndMarksTheOneInFront(t *testing.T) {
 			{ID: "one", Kind: domain.TabPlex, Path: "Main 222.md", Title: "Main 222"},
 			{ID: "two", Kind: domain.TabRecording, Path: "730707BG.LON.mp3",
 				Title:     "730707BG.LON.mp3",
-				Recording: &domain.OpenRecording{Heard: 754000, Length: 3494000}},
+				Recording: &domain.RecordingProgress{TranscribedDuration: 754000, Duration: 3494000}},
 		},
 	})
 
@@ -69,7 +69,7 @@ func TestWindowTabsSaysWhereInADocumentThePersonIs(t *testing.T) {
 		FrontID: "one",
 		Tabs: []domain.Tab{
 			{ID: "one", Kind: domain.TabDocument, Path: "library/A Book.pdf",
-				Title: "A Book.pdf", Document: &domain.OpenDocument{Page: 3, Pages: 40}},
+				Title: "A Book.pdf", Document: &domain.DocumentProgress{Page: 3, PageCount: 40}},
 		},
 	})
 
@@ -90,7 +90,7 @@ func TestWindowTabsSaysWhereInABookThePersonIs(t *testing.T) {
 		FrontID: "one",
 		Tabs: []domain.Tab{
 			{ID: "one", Kind: domain.TabBook, Path: "library/Adi.epub", Title: "The Adi Parva",
-				Book: &domain.PlaceInBook{Offset: 145203, Page: 142, Pages: 960}},
+				Book: &domain.BookProgress{Offset: 145203, Page: 142, PageCount: 960}},
 		},
 	})
 

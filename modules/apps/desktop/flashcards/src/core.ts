@@ -4,7 +4,7 @@
  * Nothing here draws: it is the client, and the words the answers arrive in.
  */
 import { createClient } from '@connectrpc/connect'
-import { Rating, FlashcardsService, WindowService } from '@numen/protocol'
+import { AgentService, Rating, FlashcardsService, WindowService } from '@numen/protocol'
 import type { StopReason } from '@numen/protocol'
 import { namesOf, transport } from '@numen/wire'
 
@@ -16,6 +16,9 @@ export const cards = createClient(FlashcardsService, transport)
 
 /** This window itself, which is the one cards are run in and not the editor. */
 export const itself = createClient(WindowService, transport)
+
+/** Whether an agent can be reached, which is the installation's and not a vault's. */
+export const agent = createClient(AgentService, transport)
 
 /** The window every question about a window names. */
 export const WINDOW = 'review'

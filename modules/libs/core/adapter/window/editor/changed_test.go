@@ -188,7 +188,7 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 
 	out, err := api.WriteLink(t.Context(), connect.NewRequest(&v1.WriteLinkRequest{
 		Path: "Heat.md",
-		Link: &v1.NewLink{To: "Entropy.md", Role: v1.Role_ROLE_PARENT},
+		Link: &v1.Link{To: "Entropy.md", Role: v1.Role_ROLE_PARENT},
 	}))
 	if err != nil {
 		t.Fatalf("a note that changed came back as an error: %v", err)

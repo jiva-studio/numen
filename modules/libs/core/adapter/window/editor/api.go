@@ -92,6 +92,11 @@ type API struct {
 	// file.
 	Drops *source.DropTranscript
 
+	// Imports fetches what is at the address a link note points at. A build on
+	// a machine holding neither of the tools that reach one binds none, and
+	// asking for a fetch is answered that this build cannot do it.
+	Imports *source.ImportURL
+
 	// Presets is the preset a deck is scheduled by, and how one is read,
 	// written and made. Curves is what the one control of a preset comes to
 	// over the whole range of its goal. They are bound by every build that
@@ -182,6 +187,8 @@ type Files struct {
 	Writers port.VaultWriters
 	Move    *vaults.Move
 	Import  *vaults.Import
+	// URLs makes the file a web address is kept in.
+	URLs *source.CreateURL
 }
 
 // Vaults is the list of vaults this installation holds, the one the window is
@@ -402,21 +409,22 @@ func (a *API) GetVaultState(
 ) (*connect.Response[v1.GetVaultStateResponse], error) {
 	showing := a.Showing()
 	out := &v1.GetVaultStateResponse{
-		Name:        string(showing.ID),
-		DisplayName: showing.Name,
-		Path:        showing.Path,
-		Ready:       a.Ready.Load(),
-		Failed:      a.Failed.Why(),
-		Unwatched:   a.Unwatched.Why(),
-		Unreachable: a.Unreachable.Why(),
-		Embedding:   text(&a.Indexing.Model) != "",
+		Id:   string(showing.ID),
+		Name: showing.Name,
+		Path: showing.Path,
+		Scan: &v1.Scan{
+			Ready:     a.Ready.Load(),
+			Failed:    a.Failed.Why(),
+			Unwatched: a.Unwatched.Why(),
+		},
+		Coverage: &v1.IndexCoverage{Embedding: text(&a.Indexing.Model) != ""},
 	}
 	// A count that cannot be taken leaves the pair at nothing, and the rest of
 	// the state is answered as it stands. A window standing on nothing holds no
 	// chunks and counts none.
 	if a.Indexing.Progress != nil && showing.ID != "" {
 		if held, embedded, err := a.Indexing.Progress.Progress(ctx, showing.ID, text(&a.Indexing.Recipe)); err == nil {
-			out.Chunks, out.Embedded = held, embedded
+			out.Coverage.ChunkCount, out.Coverage.EmbeddedCount = held, embedded
 		}
 	}
 	return connect.NewResponse(out), nil

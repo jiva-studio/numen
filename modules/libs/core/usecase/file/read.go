@@ -31,25 +31,25 @@ const (
 	LeftAlone ReadOutcome = "left alone"
 	// AFolder is a path holding a folder.
 	AFolder ReadOutcome = "a folder"
-	// NotText is a run of bytes that is not valid UTF-8.
+	// NotText is a range of bytes that is not valid UTF-8.
 	NotText ReadOutcome = "not text"
 )
 
-// ReadResult is one run of a file as a read hands it over.
+// ReadResult is one range of a file as a read hands it over.
 type ReadResult struct {
 	Outcome ReadOutcome
-	// Text is the run that was read. It is empty for every outcome but Ok.
+	// Text is the range that was read. It is empty for every outcome but Ok.
 	Text string
-	// Start and Length are the run that came back: what was asked for, held
+	// Start and Length are the range that came back: what was asked for, held
 	// within the file and cut at the characters around it.
 	Start  int
 	Length int
 	// Whole is how long the file is, in bytes, so a caller knows what stands on
-	// either side of the run.
+	// either side of the range.
 	Whole int
 }
 
-// Read hands over a run of one file's bytes, addressed by its path from the
+// Read hands over a range of one file's bytes, addressed by its path from the
 // vault root.
 //
 // What the vault passes over is passed over here: the folder belonging to the
@@ -68,7 +68,7 @@ func (u Read) Execute(
 ) (ReadResult, error) {
 	out := ReadResult{Start: start}
 	if start < 0 {
-		return out, fmt.Errorf("a run of %s begins at %d", path, start)
+		return out, fmt.Errorf("a range of %s begins at %d", path, start)
 	}
 	if length < 0 || length > MostRead {
 		return out, fmt.Errorf("read between 1 and %d bytes of a file at a time", MostRead)
@@ -119,7 +119,7 @@ func (u Read) Execute(
 	}
 	raw = raw[:read]
 
-	start, raw = wholeCharacters(start, raw, out.Whole)
+	start, raw = WholeCharacters(start, raw, out.Whole)
 	out.Start = start
 	if !utf8.Valid(raw) {
 		out.Outcome = NotText
@@ -159,12 +159,12 @@ func reported(ctx context.Context, reader port.VaultReader, path string) (ReadOu
 	return LeftAlone, nil
 }
 
-// wholeCharacters is the run with the character it opened inside and the one it
+// WholeCharacters is the range with the character it opened inside and the one it
 // closed inside left off.
 //
-// A run reaching the end of the file closes inside nothing: an incomplete
+// A range reaching the end of the file closes inside nothing: an incomplete
 // character there is what the file holds.
-func wholeCharacters(start int, raw []byte, whole int) (int, []byte) {
+func WholeCharacters(start int, raw []byte, whole int) (int, []byte) {
 	for start > 0 && len(raw) > 0 && !utf8.RuneStart(raw[0]) {
 		raw = raw[1:]
 		start++

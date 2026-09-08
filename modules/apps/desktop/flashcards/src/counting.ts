@@ -21,8 +21,8 @@ export interface CardsDueClient {
 
 /** One vault, as the count answers about it. */
 export interface VaultCounts {
+  id: string
   name: string
-  displayName: string
   path: string
   faces: number
   due: number
@@ -135,8 +135,8 @@ export function counting(deps: CountingDeps) {
 
   /** A vault on the list before its count has arrived. */
   const listed = (one: VaultCounts): VaultCardsDue => ({
-    vault: one.name,
-    name: one.displayName,
+    vault: one.id,
+    name: one.name,
     path: one.path,
     counted: false,
     faces: 0,
@@ -150,8 +150,8 @@ export function counting(deps: CountingDeps) {
 
   /** A vault as its own count leaves it. */
   const counted = (one: VaultCounts): VaultCardsDue => ({
-    vault: one.name,
-    name: one.displayName,
+    vault: one.id,
+    name: one.name,
     path: one.path,
     counted: true,
     faces: one.faces,
@@ -197,8 +197,8 @@ export function counting(deps: CountingDeps) {
   const stands = (all: readonly VaultCounts[]) => {
     const held = new Map(vaults.value.map((one) => [one.vault, one]))
     vaults.value = all.map((one) => {
-      const was = held.get(one.name)
-      return was?.counted ? { ...was, name: one.displayName, path: one.path } : listed(one)
+      const was = held.get(one.id)
+      return was?.counted ? { ...was, name: one.name, path: one.path } : listed(one)
     })
   }
 
@@ -208,7 +208,7 @@ export function counting(deps: CountingDeps) {
    */
   const fills = (one: VaultCounts) => {
     const now = one.reading ? listed(one) : counted(one)
-    vaults.value = vaults.value.map((row) => (row.vault === one.name ? now : row))
+    vaults.value = vaults.value.map((row) => (row.vault === one.id ? now : row))
   }
 
   /** One count, answering whether it ran to the end. */

@@ -26,9 +26,9 @@ func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 		Tabs: []*v1.Tab{
 			{Id: "one", Kind: "plex", Path: "Entropy.md", Title: "Entropy"},
 			{Id: "two", Kind: "recording", Path: "Talk.mp3", Title: "Talk.mp3",
-				Recording: &v1.OpenRecording{Heard: 1000, Length: 4000}},
+				Recording: &v1.RecordingProgress{TranscribedDurationMs: 1000, DurationMs: 4000}},
 			{Id: "three", Kind: "book", Path: "Adi.epub", Title: "The Adi Parva",
-				Book: &v1.PlaceInBook{Offset: 145203, Page: 142, Pages: 960}},
+				Book: &v1.BookProgress{Offset: 145203, Page: 142, PageCount: 960}},
 		},
 	}))
 	if err != nil {
@@ -40,9 +40,9 @@ func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 		Tabs: []domain.Tab{
 			{ID: "one", Kind: "plex", Path: "Entropy.md", Title: "Entropy"},
 			{ID: "two", Kind: "recording", Path: "Talk.mp3", Title: "Talk.mp3",
-				Recording: &domain.OpenRecording{Heard: 1000, Length: 4000}},
+				Recording: &domain.RecordingProgress{TranscribedDuration: 1000, Duration: 4000}},
 			{ID: "three", Kind: domain.TabBook, Path: "Adi.epub", Title: "The Adi Parva",
-				Book: &domain.PlaceInBook{Offset: 145203, Page: 142, Pages: 960}},
+				Book: &domain.BookProgress{Offset: 145203, Page: 142, PageCount: 960}},
 		},
 	}
 	if got := api.Attended(); !reflect.DeepEqual(got, want) {

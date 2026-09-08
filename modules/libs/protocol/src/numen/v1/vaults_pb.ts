@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vaults.proto.
  */
 export const file_numen_v1_vaults: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS92YXVsdHMucHJvdG8SCG51bWVuLnYxIkoKBVZhdWx0EgwKBG5hbWUYASABKAkSFAoMZGlzcGxheV9uYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSDwoHbWlzc2luZxgEIAEoCCITChFMaXN0VmF1bHRzUmVxdWVzdCJEChJMaXN0VmF1bHRzUmVzcG9uc2USHwoGdmF1bHRzGAEgAygLMg8ubnVtZW4udjEuVmF1bHRKBAgCEANSB3Nob3dpbmciOQoTQ2hvb3NlRm9sZGVyUmVxdWVzdBINCgV0aXRsZRgBIAEoCRITCgtzdGFydGluZ19hdBgCIAEoCSIzChRDaG9vc2VGb2xkZXJSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBWNob3NlGAIgASgIIjUKD0FkZFZhdWx0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhQKDGRpc3BsYXlfbmFtZRgCIAEoCSJ8ChBBZGRWYXVsdFJlc3BvbnNlEiMKBXZhdWx0GAEgASgLMg8ubnVtZW4udjEuVmF1bHRIAIgBARItCgdyZWZ1c2FsGAIgASgOMhcubnVtZW4udjEuVmF1bHRzUmVmdXNhbEgBiAEBQggKBl92YXVsdEIKCghfcmVmdXNhbCI4ChJSZW5hbWVWYXVsdFJlcXVlc3QSDAoEbmFtZRgBIAEoCRIUCgxkaXNwbGF5X25hbWUYAiABKAkifwoTUmVuYW1lVmF1bHRSZXNwb25zZRIjCgV2YXVsdBgBIAEoCzIPLm51bWVuLnYxLlZhdWx0SACIAQESLQoHcmVmdXNhbBgCIAEoDjIXLm51bWVuLnYxLlZhdWx0c1JlZnVzYWxIAYgBAUIICgZfdmF1bHRCCgoIX3JlZnVzYWwiMQoSUmVtb3ZlVmF1bHRSZXF1ZXN0EgwKBG5hbWUYASABKAkSDQoFdHJhc2gYAiABKAgiUAoTUmVtb3ZlVmF1bHRSZXNwb25zZRItCgdyZWZ1c2FsGAEgASgOMhcubnVtZW4udjEuVmF1bHRzUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsIiAKEE9wZW5WYXVsdFJlcXVlc3QSDAoEbmFtZRgBIAEoCSJOChFPcGVuVmF1bHRSZXNwb25zZRItCgdyZWZ1c2FsGAEgASgOMhcubnVtZW4udjEuVmF1bHRzUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsKrICCg1WYXVsdHNSZWZ1c2FsEh4KGlZBVUxUU19SRUZVU0FMX1VOU1BFQ0lGSUVEEAASHQoZVkFVTFRTX1JFRlVTQUxfVU5SRUFEQUJMRRABEhcKE1ZBVUxUU19SRUZVU0FMX0NPUFkQAhIbChdWQVVMVFNfUkVGVVNBTF9PVkVSTEFQUxADEh0KGVZBVUxUU19SRUZVU0FMX05BTUVfVEFLRU4QBBIdChlWQVVMVFNfUkVGVVNBTF9MQVNUX1ZBVUxUEAUSGgoWVkFVTFRTX1JFRlVTQUxfU0hPV0lORxAGEhoKFlZBVUxUU19SRUZVU0FMX1VOS05PV04QBxIbChdWQVVMVFNfUkVGVVNBTF9OT19UUkFTSBAIEhkKFVZBVUxUU19SRUZVU0FMX0FTS0lORxAJMsgDCg1WYXVsdHNTZXJ2aWNlEkcKCkxpc3RWYXVsdHMSGy5udW1lbi52MS5MaXN0VmF1bHRzUmVxdWVzdBocLm51bWVuLnYxLkxpc3RWYXVsdHNSZXNwb25zZRJNCgxDaG9vc2VGb2xkZXISHS5udW1lbi52MS5DaG9vc2VGb2xkZXJSZXF1ZXN0Gh4ubnVtZW4udjEuQ2hvb3NlRm9sZGVyUmVzcG9uc2USQQoIQWRkVmF1bHQSGS5udW1lbi52MS5BZGRWYXVsdFJlcXVlc3QaGi5udW1lbi52MS5BZGRWYXVsdFJlc3BvbnNlEkoKC1JlbmFtZVZhdWx0EhwubnVtZW4udjEuUmVuYW1lVmF1bHRSZXF1ZXN0Gh0ubnVtZW4udjEuUmVuYW1lVmF1bHRSZXNwb25zZRJKCgtSZW1vdmVWYXVsdBIcLm51bWVuLnYxLlJlbW92ZVZhdWx0UmVxdWVzdBodLm51bWVuLnYxLlJlbW92ZVZhdWx0UmVzcG9uc2USRAoJT3BlblZhdWx0EhoubnVtZW4udjEuT3BlblZhdWx0UmVxdWVzdBobLm51bWVuLnYxLk9wZW5WYXVsdFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChVudW1lbi92MS92YXVsdHMucHJvdG8SCG51bWVuLnYxIkAKBVZhdWx0EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRIPCgdtaXNzaW5nGAQgASgIIhMKEUxpc3RWYXVsdHNSZXF1ZXN0IjUKEkxpc3RWYXVsdHNSZXNwb25zZRIfCgZ2YXVsdHMYASADKAsyDy5udW1lbi52MS5WYXVsdCI5ChNDaG9vc2VGb2xkZXJSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEhMKC3N0YXJ0aW5nX2F0GAIgASgJIjMKFENob29zZUZvbGRlclJlc3BvbnNlEgwKBHBhdGgYASABKAkSDQoFY2hvc2UYAiABKAgiLQoPQWRkVmF1bHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCSJ8ChBBZGRWYXVsdFJlc3BvbnNlEiMKBXZhdWx0GAEgASgLMg8ubnVtZW4udjEuVmF1bHRIAIgBARItCgdyZWZ1c2FsGAIgASgOMhcubnVtZW4udjEuVmF1bHRzUmVmdXNhbEgBiAEBQggKBl92YXVsdEIKCghfcmVmdXNhbCIuChJSZW5hbWVWYXVsdFJlcXVlc3QSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCSJ/ChNSZW5hbWVWYXVsdFJlc3BvbnNlEiMKBXZhdWx0GAEgASgLMg8ubnVtZW4udjEuVmF1bHRIAIgBARItCgdyZWZ1c2FsGAIgASgOMhcubnVtZW4udjEuVmF1bHRzUmVmdXNhbEgBiAEBQggKBl92YXVsdEIKCghfcmVmdXNhbCIvChJSZW1vdmVWYXVsdFJlcXVlc3QSCgoCaWQYASABKAkSDQoFdHJhc2gYAiABKAgiUAoTUmVtb3ZlVmF1bHRSZXNwb25zZRItCgdyZWZ1c2FsGAEgASgOMhcubnVtZW4udjEuVmF1bHRzUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsIh4KEE9wZW5WYXVsdFJlcXVlc3QSCgoCaWQYASABKAkiTgoRT3BlblZhdWx0UmVzcG9uc2USLQoHcmVmdXNhbBgBIAEoDjIXLm51bWVuLnYxLlZhdWx0c1JlZnVzYWxIAIgBAUIKCghfcmVmdXNhbCqyAgoNVmF1bHRzUmVmdXNhbBIeChpWQVVMVFNfUkVGVVNBTF9VTlNQRUNJRklFRBAAEh0KGVZBVUxUU19SRUZVU0FMX1VOUkVBREFCTEUQARIXChNWQVVMVFNfUkVGVVNBTF9DT1BZEAISGwoXVkFVTFRTX1JFRlVTQUxfT1ZFUkxBUFMQAxIdChlWQVVMVFNfUkVGVVNBTF9OQU1FX1RBS0VOEAQSHQoZVkFVTFRTX1JFRlVTQUxfTEFTVF9WQVVMVBAFEhoKFlZBVUxUU19SRUZVU0FMX1NIT1dJTkcQBhIaChZWQVVMVFNfUkVGVVNBTF9VTktOT1dOEAcSGwoXVkFVTFRTX1JFRlVTQUxfTk9fVFJBU0gQCBIZChVWQVVMVFNfUkVGVVNBTF9BU0tJTkcQCTLIAwoNVmF1bHRzU2VydmljZRJHCgpMaXN0VmF1bHRzEhsubnVtZW4udjEuTGlzdFZhdWx0c1JlcXVlc3QaHC5udW1lbi52MS5MaXN0VmF1bHRzUmVzcG9uc2USTQoMQ2hvb3NlRm9sZGVyEh0ubnVtZW4udjEuQ2hvb3NlRm9sZGVyUmVxdWVzdBoeLm51bWVuLnYxLkNob29zZUZvbGRlclJlc3BvbnNlEkEKCEFkZFZhdWx0EhkubnVtZW4udjEuQWRkVmF1bHRSZXF1ZXN0GhoubnVtZW4udjEuQWRkVmF1bHRSZXNwb25zZRJKCgtSZW5hbWVWYXVsdBIcLm51bWVuLnYxLlJlbmFtZVZhdWx0UmVxdWVzdBodLm51bWVuLnYxLlJlbmFtZVZhdWx0UmVzcG9uc2USSgoLUmVtb3ZlVmF1bHQSHC5udW1lbi52MS5SZW1vdmVWYXVsdFJlcXVlc3QaHS5udW1lbi52MS5SZW1vdmVWYXVsdFJlc3BvbnNlEkQKCU9wZW5WYXVsdBIaLm51bWVuLnYxLk9wZW5WYXVsdFJlcXVlc3QaGy5udW1lbi52MS5PcGVuVmF1bHRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * Vault is one vault the installation holds, as the list has it.
@@ -25,20 +25,20 @@ export const file_numen_v1_vaults: GenFile = /*@__PURE__*/
  */
 export type Vault = Message<"numen.v1.Vault"> & {
   /**
-   * Name is the identity the folder carries, and how this vault is asked for
+   * Id is the identity the folder carries, and how this vault is asked for
    * again. It survives the folder moving and the vault being renamed.
    *
-   * @generated from field: string name = 1;
+   * @generated from field: string id = 1;
    */
-  name: string;
+  id: string;
 
   /**
-   * DisplayName is what the person calls the collection. It lives on the list
-   * and not in the folder.
+   * Name is what the person calls the collection. It lives on the list and not
+   * in the folder.
    *
-   * @generated from field: string display_name = 2;
+   * @generated from field: string name = 2;
    */
-  displayName: string;
+  name: string;
 
   /**
    * Path is the folder, absolute on this machine.
@@ -77,6 +77,9 @@ export const ListVaultsRequestSchema: GenMessage<ListVaultsRequest> = /*@__PURE_
   messageDesc(file_numen_v1_vaults, 1);
 
 /**
+ * ListVaultsResponse is the list itself, which is the same for every window.
+ * Which vault a window is showing is asked of that window.
+ *
  * @generated from message numen.v1.ListVaultsResponse
  */
 export type ListVaultsResponse = Message<"numen.v1.ListVaultsResponse"> & {
@@ -164,9 +167,9 @@ export type AddVaultRequest = Message<"numen.v1.AddVaultRequest"> & {
    * What to call the vault. Empty takes the folder's own name, and a name
    * another vault has gets a number appended.
    *
-   * @generated from field: string display_name = 2;
+   * @generated from field: string name = 2;
    */
-  displayName: string;
+  name: string;
 };
 
 /**
@@ -209,16 +212,16 @@ export type RenameVaultRequest = Message<"numen.v1.RenameVaultRequest"> & {
   /**
    * The vault to rename, by its identity.
    *
-   * @generated from field: string name = 1;
+   * @generated from field: string id = 1;
    */
-  name: string;
+  id: string;
 
   /**
    * What the vault is called from now on.
    *
-   * @generated from field: string display_name = 2;
+   * @generated from field: string name = 2;
    */
-  displayName: string;
+  name: string;
 };
 
 /**
@@ -262,9 +265,9 @@ export type RemoveVaultRequest = Message<"numen.v1.RemoveVaultRequest"> & {
   /**
    * The vault to remove, by its identity.
    *
-   * @generated from field: string name = 1;
+   * @generated from field: string id = 1;
    */
-  name: string;
+  id: string;
 
   /**
    * Trash sends the folder to the place this machine keeps what a person
@@ -310,9 +313,9 @@ export type OpenVaultRequest = Message<"numen.v1.OpenVaultRequest"> & {
   /**
    * The vault to show, by its identity.
    *
-   * @generated from field: string name = 1;
+   * @generated from field: string id = 1;
    */
-  name: string;
+  id: string;
 };
 
 /**
