@@ -68,7 +68,7 @@ Deleting an answer is how a person asks for a recording to be tried again, and `
 
 In the window, **Delete transcript** stands where the words of the recording do. It takes away the transcript, what a person put right, the record of what listened, the answer and the chunks cut from any of them, leaving a recording nothing has listened to. A recording a run is listening to is refused, and is asked for again once that run ends.
 
-The queue takes what it can carry: a recording larger than `indexing.transcribe_under_mb` is left alone until somebody asks for it by name. A folder of albums is days of a machine, and nobody put them in a vault to be read.
+The queue takes what it can carry: a recording larger than `indexing.transcribe_max_mb` is left alone until somebody asks for it by name. A folder of albums is days of a machine, and nobody put them in a vault to be read.
 
 ## Which recordings
 
