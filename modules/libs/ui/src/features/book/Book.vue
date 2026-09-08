@@ -140,7 +140,7 @@ const left = computed(() => leftInDocument(flow.value, standing.value, marks.val
  * settled.
  */
 const setting = computed(() => ({
-  '--book-columns': String(columns.value),
+  '--book-run': columns.value === 1 ? `calc(200% + ${GAP}px)` : '100%',
   '--book-gap': `${GAP}px`,
   '--book-column': `${columnWide(flow.value)}px`,
   '--book-high': `${viewport.value.high}px`,
@@ -148,12 +148,14 @@ const setting = computed(() => ({
 }))
 
 /**
- * How tall one line of the text is set. A line height the browser works out for
- * itself is read back as a number of pixels, and one it will not put a number
- * to leaves the column at the height of the area.
+ * How tall one line of the text is set, taken off a run of the text itself. The
+ * lines the column has to end between are the ones the prose is set in, and the
+ * box holding it is set in another. A line height the browser will put no
+ * number to leaves the column at the height of the area.
  */
 const lineOf = (text: HTMLElement): number => {
-  const said = Number.parseFloat(getComputedStyle(text).lineHeight)
+  const run = text.querySelector<HTMLElement>('p') ?? text
+  const said = Number.parseFloat(getComputedStyle(run).lineHeight)
   return Number.isFinite(said) ? said : 0
 }
 
@@ -210,7 +212,10 @@ const settle = (keep: number, led?: BookLink) => {
     const text = paper.value
     if (!box || !text) return
     text.style.setProperty('--book-paper', `${columnHigh(box.clientHeight, lineOf(text))}px`)
-    along.value = box.scrollWidth
+    // How far the columns run is asked of the box they are set in. The area
+    // around it clips what overflows, and a box that clips is not asked how far
+    // what it clipped reaches.
+    along.value = text.scrollWidth
     gather()
     const landed =
       led && (led.path === '' || led.path === props.path) ? placeAt(led.fragment) : undefined
@@ -479,8 +484,12 @@ defineExpose({
   --book-paper: var(--book-high);
 
   block-size: var(--book-paper);
-  inline-size: 100%;
-  column-count: var(--book-columns);
+  /* Two columns, always. A single-column box is not broken into columns at all
+     by WebKit: the text past the first column is cut off and never reached. A
+     spread of one column is two set across a box twice as wide, and the area
+     around it shows one of them. */
+  inline-size: var(--book-run);
+  column-count: 2;
   column-gap: var(--book-gap);
   column-fill: auto;
   font-size: var(--book-size);

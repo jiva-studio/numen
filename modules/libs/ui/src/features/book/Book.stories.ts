@@ -255,7 +255,16 @@ export const OneColumnTurns: Story = {
     await laid(canvasElement)
 
     const area = areaOf(canvasElement)
-    await expect(area.scrollWidth).toBeGreaterThan(area.clientWidth + 1)
+    const paper = paperOf(canvasElement)
+
+    // The box is set in two columns whatever the spread shows, and a spread of
+    // one is two columns across a box twice as wide. WebKit breaks no
+    // single-column box into columns at all: the text past the first is cut off
+    // and never reached.
+    await expect(getComputedStyle(paper).columnCount).toBe('2')
+    await expect(paper.getBoundingClientRect().width).toBeCloseTo(2 * area.clientWidth + GAP, -1)
+
+    await expect(paper.scrollWidth).toBeGreaterThan(area.clientWidth + 1)
     await expect(canvasElement.querySelector('.book__left')?.textContent).not.toBe(
       '0 pages left in chapter',
     )
