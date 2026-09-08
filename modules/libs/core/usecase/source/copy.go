@@ -18,25 +18,25 @@ import (
 type CopyResult struct {
 	Path string
 	// Bytes is how large what is at the address is, and Limit the size a copy
-	// may be. Over the limit nothing is fetched.
+	// may be. Over the limit nothing is downloaded.
 	Bytes int64
 	Limit int64
-	// Existed is a copy that already stood, so nothing was fetched.
+	// Existed is a copy that already stood, and nothing was downloaded.
 	Existed bool
 	// At is where in the vault the copy landed, and nothing where it landed in
 	// the application's own folder.
 	At string
 }
 
-// TooLarge is a copy the limit refused. Nothing was fetched.
+// TooLarge is a copy the limit refused. Nothing was downloaded.
 func (r CopyResult) TooLarge() bool { return r.Limit > 0 && r.Bytes > r.Limit }
 
-// Copy fetches what is at a url's address so a person plays it from this disk.
+// Copy downloads what is at a url's address so a person plays it from this disk.
 //
 // It is asked for by hand: a copy takes as much of somebody's disk as what is
 // at the address takes, and pasting an address is not asking for one. Where it
 // lands is `importing.copies_to_vault`: the application's own folder, where
-// losing it costs another fetch, or beside the url as a file of the person's
+// losing it costs another download, or beside the url as a file of the person's
 // own.
 func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyResult, error) {
 	res := CopyResult{Path: path, Limit: u.CopyMaxSize}
@@ -47,12 +47,12 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 	hash := text.Fingerprint([]byte(string(at)))
 	beside := CopyBeside(path)
 
-	// One run to a copy, held for as long as the fetch takes. The claim is on
+	// One run to a copy, held for as long as the download takes. The claim is on
 	// the store's name whichever disk the copy lands on: it is the address that
-	// is being fetched, and two urls on one address are one fetch.
+	// is being downloaded, and two urls on one address are one download.
 	release, err := store.Claim(ctx, text.Copy(hash))
 	if errors.Is(err, port.ErrClaimed) {
-		return res, ErrBeingFetched
+		return res, ErrBeingDownloaded
 	}
 	if err != nil {
 		return res, err
@@ -75,7 +75,7 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 		return res, nil
 	}
 
-	// The copy is written through the store's own rename, so a fetch that
+	// The copy is written through the store's own rename, so a download that
 	// stopped leaves nothing anything plays.
 	read, write := io.Pipe()
 	going := make(chan error, 1)
@@ -90,18 +90,18 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 		arriving = &passing{from: arriving, total: meta.Bytes, report: u.Progress}
 	}
 	size, err := u.takes(ctx, v, store, text.Copy(hash), beside, arriving)
-	// The read end is closed before the fetch is waited for: whoever stopped
+	// The read end is closed before the download is waited for: whoever stopped
 	// reading unblocks whoever is writing into it.
 	_ = read.CloseWithError(err)
-	fetching := <-going
+	downloading := <-going
 	// A site that declared a size it then ran past is known only to be over the
 	// limit, which is the size reported.
 	if errors.Is(err, errTooLarge) {
 		res.Bytes = u.CopyMaxSize + 1
 		return res, nil
 	}
-	if fetching != nil {
-		return res, fetching
+	if downloading != nil {
+		return res, downloading
 	}
 	if err != nil {
 		return res, err

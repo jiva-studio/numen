@@ -156,7 +156,7 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 			},
 
 			ImportURL: func(ctx context.Context, _ domain.Vault) (cli.ImportURL, error) {
-				by := cfg.Fetcher(ctx)
+				by := cfg.Downloader(ctx)
 				if by == nil {
 					return cli.ImportURL{}, errNoTools
 				}

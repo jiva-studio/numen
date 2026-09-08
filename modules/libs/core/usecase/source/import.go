@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -15,10 +14,10 @@ import (
 )
 
 // ErrNotAURL is a path holding something other than a file naming an address.
-// Nothing is fetched for it.
+// Nothing is downloaded for it.
 var ErrNotAURL = errors.New("this file holds no web address")
 
-// ImportURL fetches what is at the address a url points at and writes it into
+// ImportURL downloads what is at the address a url points at and writes it into
 // the vault's own folder.
 //
 // A person asks for it, once, by pasting the address. What comes back is an
@@ -28,7 +27,7 @@ var ErrNotAURL = errors.New("this file holds no web address")
 type ImportURL struct {
 	Readers port.VaultReaders
 	Derived port.DerivedStores
-	By      port.Fetcher
+	By      port.Downloader
 
 	// CopyMaxSize is how many bytes a copy may run to. Zero is no limit.
 	CopyMaxSize int64
@@ -45,7 +44,7 @@ type ImportURL struct {
 	Languages []string
 	Automatic bool
 
-	// Cut brings the url level in the index, so what was fetched is searched
+	// Cut brings the url level in the index, so what was downloaded is searched
 	// with it as soon as it is written.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
 
@@ -54,7 +53,7 @@ type ImportURL struct {
 	// what it was called.
 	Names func(ctx context.Context, v domain.Vault, path, title string) (string, error)
 
-	// Again throws away what a run before this one fetched and asks the address
+	// Again throws away what a run before this one downloaded and asks the address
 	// afresh. It is how a person asks for a site's words again, and nothing
 	// sets it on its own.
 	Again bool
@@ -64,16 +63,16 @@ type ImportURL struct {
 	Progress func(done, total int64)
 }
 
-// ErrBeingFetched is another run holding this address. Nothing was done, and
+// ErrBeingDownloaded is another run holding this address. Nothing was done, and
 // asking again once that run is over is the whole of what is left to do.
-var ErrBeingFetched = errors.New("another run is fetching this address")
+var ErrBeingDownloaded = errors.New("another run is downloading this address")
 
-// ImportURLResult reports what fetching did.
+// ImportURLResult reports what the download did.
 type ImportURLResult struct {
-	// Path is where the url is filed now: what was fetched says what the file
-	// is called, so a run may leave it somewhere else than it found it.
+	// Path is where the url is filed now: what came back says what the file is
+	// called, so a run may leave it somewhere else than it found it.
 	Path string
-	// Producer is what fetched the text, and is empty where nothing did.
+	// Producer is what downloaded the text, and is empty where nothing did.
 	Producer string
 	// Bytes is how much text came back.
 	Bytes int
@@ -82,7 +81,7 @@ type ImportURLResult struct {
 	Nothing bool
 }
 
-// Execute fetches what is at one url's address.
+// Execute downloads what is at one url's address.
 func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (ImportURLResult, error) {
 	res := ImportURLResult{Path: path}
 	at, ref, store, err := u.pointed(ctx, v, path)
@@ -91,11 +90,11 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 	}
 	hash := text.Fingerprint([]byte(string(at)))
 
-	// One run to an address. The name is held for as long as the fetch takes,
-	// so two urls on one address do not fetch it twice.
-	release, err := store.Claim(ctx, text.Partial(u.By.Fetching(at).Producer, hash))
+	// One run to an address. The name is held for as long as the download takes,
+	// and two urls on one address are one download.
+	release, err := store.Claim(ctx, text.Partial(u.By.Downloading(at).Producer, hash))
 	if errors.Is(err, port.ErrClaimed) {
-		return res, ErrBeingFetched
+		return res, ErrBeingDownloaded
 	}
 	if err != nil {
 		return res, err
@@ -108,9 +107,9 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 		}
 	}
 
-	// An address already fetched is not fetched again. What a person asked for
-	// is what stands, until they ask for it afresh.
-	if words, producer, err := text.Fetched(ctx, store, hash); err != nil {
+	// An address already downloaded is not downloaded again. What a person asked
+	// for is what stands, until they ask for it afresh.
+	if words, producer, err := text.Downloaded(ctx, store, hash); err != nil {
 		return res, err
 	} else if producer != "" {
 		res.Producer, res.Bytes = producer, len(words)
@@ -121,7 +120,7 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 		Languages: u.Languages, Automatic: u.Automatic,
 	})
 	switch {
-	case errors.Is(err, port.ErrNothingFetched):
+	case errors.Is(err, port.ErrNothingDownloaded):
 		// The address publishes none of what was asked for. That is an answer,
 		// and it is written down so the address is not asked again every time
 		// the vault is scanned.
@@ -141,7 +140,7 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 	return u.named(ctx, v, ref, at, said.Title, res)
 }
 
-// keeps writes down what was fetched, under the name of whatever fetched it,
+// keeps writes down what came back, under the name of whatever downloaded it,
 // and answers how much of it there was.
 func (u ImportURL) keeps(
 	ctx context.Context,
@@ -168,36 +167,11 @@ func (u ImportURL) keeps(
 func (u ImportURL) silent(
 	ctx context.Context, at domain.URL, store port.DerivedStore, hash string,
 ) error {
-	return store.Write(ctx, text.Answer(u.By.Fetching(at).Producer, hash), []byte(text.Silent+"\n"))
-}
-
-// forgotten takes away everything ever fetched for an address.
-func forgotten(ctx context.Context, store port.DerivedStore, hash string) error {
-	for _, producer := range text.Producers() {
-		for _, name := range text.Names(producer, hash) {
-			if err := store.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-// DeleteText throws away the text fetched from a url's address. The url stands as
-// it was, pointing where it points, and the copy fetched for it is untouched.
-func (u ImportURL) DeleteText(ctx context.Context, v domain.Vault, path string) error {
-	at, _, store, err := u.pointed(ctx, v, path)
-	if err != nil {
-		return err
-	}
-	if err := forgotten(ctx, store, text.Fingerprint([]byte(string(at)))); err != nil {
-		return err
-	}
-	return u.cut(ctx, v, path)
+	return store.Write(ctx, text.Answer(u.By.Downloading(at).Producer, hash), []byte(text.Silent+"\n"))
 }
 
 // pointed is one url: where it points, the file itself, and the store what is
-// fetched for it is kept in.
+// downloaded for it is kept in.
 func (u ImportURL) pointed(
 	ctx context.Context, v domain.Vault, path string,
 ) (domain.URL, domain.Fingerprint, port.DerivedStore, error) {
@@ -261,7 +235,7 @@ func (u ImportURL) named(
 	return res, nil
 }
 
-// record keeps what fetched an address beside what it brought back. Nothing on
+// record keeps what downloaded an address beside what it brought back. Nothing on
 // any path that answers a question reads it: it is there so a person can ask
 // what produced a text they are reading, and so everything one tool produced
 // can be found again.
@@ -273,17 +247,17 @@ func (u ImportURL) record(
 	said port.Text,
 ) error {
 	written, err := json.Marshal(struct {
-		Address  string `json:"address"`
-		Title    string `json:"title,omitempty"`
-		Length   int    `json:"length,omitempty"`
-		Producer string `json:"producer"`
-		Fetcher  string `json:"fetcher"`
+		Address    string `json:"address"`
+		Title      string `json:"title,omitempty"`
+		Length     int    `json:"length,omitempty"`
+		Producer   string `json:"producer"`
+		Downloader string `json:"downloader"`
 	}{
-		Address:  string(at),
-		Title:    said.Title,
-		Length:   said.Length,
-		Producer: producer,
-		Fetcher:  u.By.Fetching(at).Recipe(),
+		Address:    string(at),
+		Title:      said.Title,
+		Length:     said.Length,
+		Producer:   producer,
+		Downloader: u.By.Downloading(at).Recipe(),
 	})
 	if err != nil {
 		return err

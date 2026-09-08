@@ -229,7 +229,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		}
 
 		created, err := core.Notes.Create.Execute(ctx, core.shown().Vault, note.NewNote{
-			Title: in.Title, Body: in.Body, Folder: in.Folder,
+			Title: in.Title, Body: in.Body, Path: in.Folder,
 			Links: written(in.Links),
 		})
 		// A path alongside a refusal means the file was written and something

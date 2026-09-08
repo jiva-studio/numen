@@ -82,7 +82,7 @@ func TestACreatedNoteIsNamedAfterItsTitleAndFoundByIt(t *testing.T) {
 	c := changeable(t, map[string]string{"other.md": "# Other\n"})
 
 	created, err := c.create().Execute(t.Context(), c.vault, note.NewNote{
-		Title: "Entropy", Body: "A measure of disorder.\n", Folder: "physics",
+		Title: "Entropy", Body: "A measure of disorder.\n", Path: "physics",
 	})
 	if err != nil {
 		t.Fatal(err)

@@ -26,7 +26,7 @@ const sourcesPerQuery = 100
 type Extract struct {
 	Readers port.VaultReaders
 	Sources port.SourceRepository
-	Known   port.SourceQueries
+	Queries port.SourceQueries
 
 	// Derived is optional. It holds what a recogniser wrote; without one, a
 	// source is read from its own bytes and a reading is not looked for.
@@ -68,9 +68,9 @@ type Extract struct {
 // they are read out of, where a source and its chunks are written, and what
 // says which sources the index already holds.
 func NewExtract(
-	readers port.VaultReaders, sources port.SourceRepository, known port.SourceQueries,
+	readers port.VaultReaders, sources port.SourceRepository, queries port.SourceQueries,
 ) Extract {
-	return Extract{Readers: readers, Sources: sources, Known: known}
+	return Extract{Readers: readers, Sources: sources, Queries: queries}
 }
 
 // ExtractResult reports what extraction did.
@@ -125,7 +125,7 @@ func (u Extract) discover(
 ) error {
 	known := make(map[domain.SourceKind]map[string]domain.Fingerprint, len(u.kinds()))
 	for _, kind := range u.kinds() {
-		held, err := u.Known.Fingerprints(ctx, v.ID, kind)
+		held, err := u.Queries.Fingerprints(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
@@ -195,7 +195,7 @@ func (u Extract) recognised(
 	if u.Derived == nil {
 		return nil, nil
 	}
-	held, err := u.Known.Recognised(ctx, v.ID, kind)
+	held, err := u.Queries.Recognised(ctx, v.ID, kind)
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
@@ -228,7 +228,7 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceTe
 	stood := make(map[port.SourceText]bool)
 	named := make(map[string]bool)
 	for _, kind := range u.kinds() {
-		held, err := u.Known.Recognised(ctx, v.ID, kind)
+		held, err := u.Queries.Recognised(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
@@ -243,7 +243,7 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceTe
 		}
 		gone := text.Names(r.Producer, r.Hash)
 		// A copy of a video is named by the address alone, so it goes when
-		// nothing names that address any more, whoever fetched the words.
+		// nothing names that address any more, whoever downloaded the words.
 		if !named[r.Hash] {
 			gone = append(gone, text.Copy(r.Hash))
 		}
@@ -268,7 +268,7 @@ func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.Vaul
 		return nil
 	}
 	for _, kind := range u.kinds() {
-		recognised, err := u.Known.Recognised(ctx, v.ID, kind)
+		recognised, err := u.Queries.Recognised(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
@@ -322,10 +322,10 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 	for _, kind := range u.kinds() {
 		questions = append(questions,
 			func(ctx context.Context) ([]string, error) {
-				return u.Known.Unchunked(ctx, v.ID, kind, sourcesPerQuery)
+				return u.Queries.Unchunked(ctx, v.ID, kind, sourcesPerQuery)
 			},
 			func(ctx context.Context) ([]string, error) {
-				return u.Known.ByOtherRecipe(ctx, v.ID, kind, known, sourcesPerQuery)
+				return u.Queries.ByOtherRecipe(ctx, v.ID, kind, known, sourcesPerQuery)
 			},
 		)
 	}
@@ -544,7 +544,7 @@ func (u Extract) text(ctx context.Context, ref domain.Fingerprint, raw []byte, h
 		if u.Derived == nil {
 			return &text.Document{}, "", nil
 		}
-		words, from, err := text.Fetched(ctx, u.Derived, hash)
+		words, from, err := text.Downloaded(ctx, u.Derived, hash)
 		if err != nil {
 			return nil, "", err
 		}

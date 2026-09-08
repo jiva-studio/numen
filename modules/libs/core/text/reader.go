@@ -199,12 +199,12 @@ func Joined(prose string, fetched *Document) *Document {
 // published, because listening is asked for and publishing is not.
 func Producers() []string { return []string{ASR, Captions, Article} }
 
-// Fetched is what was brought back for an address, as the text a link note is
+// Downloaded is what was brought back for an address, as the text a link note is
 // cut with, and which producer brought it.
 //
-// Nothing fetched is no text and no producer, which is a link note nothing has
-// been fetched for and is its ordinary state until something is.
-func Fetched(
+// Nothing downloaded is no text and no producer, which is a link note nothing
+// has been downloaded for and is its ordinary state until something is.
+func Downloaded(
 	ctx context.Context, store port.DerivedStore, hash string,
 ) (words, producer string, err error) {
 	if store == nil {
@@ -472,7 +472,13 @@ func Names(from, hash string) []string {
 // beside the rest — it is the bytes of a video and no producer's text, so
 // Names, which is a producer's own files, does not carry it.
 func AddressNames(hash string) []string {
-	out := []string{Copy(hash)}
+	return append([]string{Copy(hash)}, AddressTexts(hash)...)
+}
+
+// AddressTexts is every file a producer wrote for one address, without the
+// copy.
+func AddressTexts(hash string) []string {
+	var out []string
 	for _, producer := range Producers() {
 		out = append(out, Names(producer, hash)...)
 	}

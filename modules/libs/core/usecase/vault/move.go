@@ -22,9 +22,9 @@ import (
 type Move struct {
 	Writers port.VaultWriters
 	Links   port.LinkQueries
-	// Known is what the index holds about each file, and is what says which
+	// Queries is what the index holds about each file, and is what says which
 	// sources sit under the path being moved.
-	Known port.SourceQueries
+	Queries port.SourceQueries
 	// Sources is where the index files each file. A folder and everything under
 	// it are filed at their new paths in one write.
 	Sources port.SourceRepository
@@ -40,11 +40,11 @@ type Move struct {
 func NewMove(
 	writers port.VaultWriters,
 	links port.LinkQueries,
-	known port.SourceQueries,
+	queries port.SourceQueries,
 	sources port.SourceRepository,
 	notes note.Move,
 ) Move {
-	return Move{Writers: writers, Links: links, Known: known, Sources: sources, Notes: notes}
+	return Move{Writers: writers, Links: links, Queries: queries, Sources: sources, Notes: notes}
 }
 
 // Execute moves the path and repairs what pointed at the notes under it.
@@ -58,7 +58,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 		return res, nil
 	}
 
-	travelling, err := u.Known.Under(ctx, v.ID, from)
+	travelling, err := u.Queries.Under(ctx, v.ID, from)
 	if err != nil {
 		return res, err
 	}

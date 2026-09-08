@@ -295,8 +295,8 @@ func TestAPageNothingWasMeasuredOnHasNoBoxes(t *testing.T) {
 	// A page with no size gives no fraction of itself to divide a rectangle by.
 	raw, boxes, _ := ocr.Write([]ocr.Page{
 		{Index: 0, Blocks: []ocr.Block{{
-			Label:     "text",
-			Text:      "Alpha beta",
+			Label: "text",
+			Text:  "Alpha beta",
 			Boxes: []ocr.Box{{Rect: image.Rect(0, 0, 50, 20), Span: domain.Span{From: 0, To: 5}}},
 		}}},
 	})

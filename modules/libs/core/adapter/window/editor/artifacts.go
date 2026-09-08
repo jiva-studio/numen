@@ -103,7 +103,7 @@ func (a *API) producing(at domain.URL) string {
 	if a.Imports == nil || a.Imports.By == nil || at == "" {
 		return ""
 	}
-	return a.Imports.By.Fetching(at).Producer
+	return a.Imports.By.Downloading(at).Producer
 }
 
 // standing is the name one artifact stands under in the store, and whether the
@@ -223,7 +223,7 @@ func (a *API) copies(
 	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.URL,
 ) (*v1.Artifact, error) {
 	if a.Imports == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoFetcher)
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoDownloader)
 	}
 	// A copy is minutes of fetching, so how far it has got is reported as it
 	// arrives.
@@ -237,12 +237,12 @@ func (a *API) copies(
 	got, err := asked.Copy(ctx, v, ref.Path)
 	a.finished(copying + ref.Path)
 	out := a.copyOf(ctx, v, ref.Path, at)
-	if errors.Is(err, source.ErrBeingFetched) {
+	if errors.Is(err, source.ErrBeingDownloaded) {
 		out.State = v1.State_STATE_RUNNING
 		return out, nil
 	}
 	if err != nil {
-		return nil, connect.NewError(fetched(err), err)
+		return nil, connect.NewError(downloaded(err), err)
 	}
 	if got.TooLarge() {
 		out.State = v1.State_STATE_FAILED
@@ -319,7 +319,7 @@ func (a *API) CreateArtifact(
 	// says it cannot rather than that the file carries nothing.
 	at := a.points(ctx, showing, ref)
 	if ref.Kind == domain.KindURL && a.producing(at) == "" {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoFetcher)
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoDownloader)
 	}
 	// The kind of the file decides what is made from it, so an artifact the file
 	// does not carry is a client asking for a run over the wrong thing.
@@ -335,7 +335,7 @@ func (a *API) CreateArtifact(
 		// A recording's transcript is heard by a model here; a note's is
 		// fetched from the address it points at.
 		if ref.Kind == domain.KindURL {
-			made, err = a.fetch(ctx, showing, ref, at)
+			made, err = a.downloads(ctx, showing, ref, at)
 			break
 		}
 		made, err = a.run(ctx, showing, ref, of)
@@ -372,7 +372,7 @@ func (a *API) DeleteArtifact(
 	}
 	if ref.Kind == domain.KindURL {
 		if a.Imports == nil {
-			return nil, connect.NewError(connect.CodeUnimplemented, errNoFetcher)
+			return nil, connect.NewError(connect.CodeUnimplemented, errNoDownloader)
 		}
 		if err := a.Imports.DeleteText(ctx, showing, ref.Path); err != nil {
 			return nil, connect.NewError(reaching(err), err)
@@ -455,33 +455,33 @@ func (a *API) runner(of v1.ArtifactKind) Runner {
 // asks again.
 var errComingUp = errors.New("the vault is still coming up")
 
-// errNoFetcher is a build on a machine holding neither of the tools an address
-// is reached with. The settings name where each of them is.
-var errNoFetcher = errors.New("this build cannot fetch what an address holds")
+// errNoDownloader is a build on a machine holding neither of the tools an
+// address is reached with. The settings name where each of them is.
+var errNoDownloader = errors.New("this build cannot download what an address holds")
 
-// fetch reaches the address a link note points at and answers with what stands
-// once it has.
+// downloads reaches the address a link note points at and answers with what
+// stands once it has.
 //
 // It is waited for: a video's words are one request and a page is one page, and
 // both are over in the time a person waits for a window to answer.
-func (a *API) fetch(
+func (a *API) downloads(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
 	at domain.URL,
 ) (*v1.Artifact, error) {
 	if a.Imports == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoFetcher)
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoDownloader)
 	}
 	// A person who asks for this asks for the address afresh: what was fetched
 	// before goes, and the site is read again.
 	asked := *a.Imports
 	asked.Again = true
-	a.say(task.Task{ID: fetching + ref.Path, Doing: "Fetching an address", About: ref.Path})
+	a.say(task.Task{ID: fetching + ref.Path, Doing: "Downloading an address", About: ref.Path})
 	_, err := asked.Execute(ctx, v, ref.Path)
 	a.finished(fetching + ref.Path)
 	if err != nil {
-		return nil, connect.NewError(fetched(err), err)
+		return nil, connect.NewError(downloaded(err), err)
 	}
 	return a.linked(ctx, v, ref.Path, at)
 }
@@ -623,10 +623,10 @@ func stood(of v1.ArtifactKind, got reached) *v1.Artifact {
 }
 
 // reaching is the code a file that could not be reached is answered with.
-// fetched is what a run over an address answers with. What a tool said about an
-// address is what the person is owed, and it reaches them only under a code
+// downloaded is what a run over an address answers with. What a tool said about
+// an address is what the person is owed, and it reaches them only under a code
 // that carries its own words.
-func fetched(err error) connect.Code {
+func downloaded(err error) connect.Code {
 	if code := reaching(err); code != connect.CodeInternal {
 		return code
 	}

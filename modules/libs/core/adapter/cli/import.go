@@ -41,16 +41,16 @@ func importCommand(ctx context.Context, out io.Writer, deps Deps, args []string)
 	}
 	defer closing(open.Close)
 
-	fetch := open.ImportURL
-	fetch.Again = again
+	importing := open.ImportURL
+	importing.Again = again
 	if copying {
-		return copied(ctx, out, fetch, v, args[1])
+		return copied(ctx, out, importing, v, args[1])
 	}
-	fmt.Fprintf(out, "fetching what %s points at\n", args[1])
+	fmt.Fprintf(out, "downloading what %s points at\n", args[1])
 
-	res, err := fetch.Execute(ctx, v, args[1])
-	if errors.Is(err, source.ErrBeingFetched) {
-		fmt.Fprintf(out, "%s is already being fetched, and nothing was done\n", args[1])
+	res, err := importing.Execute(ctx, v, args[1])
+	if errors.Is(err, source.ErrBeingDownloaded) {
+		fmt.Fprintf(out, "%s is already being downloaded, and nothing was done\n", args[1])
 		return nil
 	}
 	if err != nil {
@@ -69,14 +69,14 @@ func importCommand(ctx context.Context, out io.Writer, deps Deps, args []string)
 func copied(
 	ctx context.Context,
 	out io.Writer,
-	fetch source.ImportURL,
+	importing source.ImportURL,
 	v domain.Vault,
 	path string,
 ) error {
-	fmt.Fprintf(out, "fetching a copy of what %s points at\n", path)
-	res, err := fetch.Copy(ctx, v, path)
-	if errors.Is(err, source.ErrBeingFetched) {
-		fmt.Fprintf(out, "%s is already being fetched, and nothing was done\n", path)
+	fmt.Fprintf(out, "downloading a copy of what %s points at\n", path)
+	res, err := importing.Copy(ctx, v, path)
+	if errors.Is(err, source.ErrBeingDownloaded) {
+		fmt.Fprintf(out, "%s is already being downloaded, and nothing was done\n", path)
 		return nil
 	}
 	if err != nil {

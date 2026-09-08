@@ -1,4 +1,4 @@
-package fetch_test
+package download_test
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/fetch"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -42,7 +42,7 @@ func address(t *testing.T, written string) domain.URL {
 		return at
 	}
 	// A site standing on this machine is one no note may point at, and it is
-	// where a test puts one. The fetcher is handed the address, and reading one
+	// where a test puts one. The downloader is handed the address, and reading one
 	// is the vault's own step.
 	if !strings.HasPrefix(written, "http://127.0.0.1:") {
 		t.Fatal(err)
@@ -62,11 +62,11 @@ func TestAMachineWithNeitherToolFetchesAPage(t *testing.T) {
 	}))
 	defer site.Close()
 
-	fetcher, err := fetch.New(t.Context(), fetch.Config{})
+	downloader, err := download.New(t.Context(), download.Config{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	article, err := fetcher.Text(t.Context(), address(t, site.URL+"/entropy"), port.PreferredCaptions{})
+	article, err := downloader.Text(t.Context(), address(t, site.URL+"/entropy"), port.PreferredCaptions{})
 	if err != nil {
 		t.Fatalf("a page went unfetched on a machine holding no tool: %v", err)
 	}
@@ -80,15 +80,15 @@ func TestAMachineWithNeitherToolFetchesAPage(t *testing.T) {
 func TestAVideoOnAMachineWithNeitherTool(t *testing.T) {
 	t.Setenv("PATH", t.TempDir())
 
-	fetcher, err := fetch.New(t.Context(), fetch.Config{})
+	downloader, err := download.New(t.Context(), download.Config{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	at := address(t, "https://youtu.be/dQw4w9WgXcQ")
-	if _, err := fetcher.Metadata(t.Context(), at); !errors.Is(err, fetch.ErrNoTool) {
+	if _, err := downloader.Metadata(t.Context(), at); !errors.Is(err, download.ErrNoTool) {
 		t.Errorf("a video was looked at without the tool that reaches one: %v", err)
 	}
-	if _, err := fetcher.Download(t.Context(), at, io.Discard); !errors.Is(err, fetch.ErrNoTool) {
+	if _, err := downloader.Download(t.Context(), at, io.Discard); !errors.Is(err, download.ErrNoTool) {
 		t.Errorf("a video was copied without the tool that reaches one: %v", err)
 	}
 }
@@ -97,12 +97,12 @@ func TestAVideoOnAMachineWithNeitherTool(t *testing.T) {
 // whatever does know where they are, as a command and what it is started
 // through.
 func TestAToolNamedAsACommand(t *testing.T) {
-	fetcher, err := fetch.New(t.Context(), fetch.Config{Video: fetch.Tool{Command: tool(t, aVideo)}})
+	downloader, err := download.New(t.Context(), download.Config{Video: download.Tool{Command: tool(t, aVideo)}})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	meta, err := fetcher.Metadata(t.Context(), address(t, "https://youtu.be/dQw4w9WgXcQ"))
+	meta, err := downloader.Metadata(t.Context(), address(t, "https://youtu.be/dQw4w9WgXcQ"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,12 +134,12 @@ func TestWhatTheToolSaidWhenItRefused(t *testing.T) {
 	if err := os.WriteFile(at, []byte(written), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	fetcher, err := fetch.New(t.Context(), fetch.Config{Video: fetch.Tool{Command: []string{at}}})
+	downloader, err := download.New(t.Context(), download.Config{Video: download.Tool{Command: []string{at}}})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = fetcher.Metadata(t.Context(), address(t, "https://youtu.be/dQw4w9WgXcQ"))
+	_, err = downloader.Metadata(t.Context(), address(t, "https://youtu.be/dQw4w9WgXcQ"))
 	if err == nil || !strings.Contains(err.Error(), "not a bot") {
 		t.Errorf("the refusal reads %v", err)
 	}
@@ -160,11 +160,11 @@ func TestThePageWithoutTheFurnitureAroundIt(t *testing.T) {
 	}))
 	defer site.Close()
 
-	fetcher, err := fetch.New(t.Context(), fetch.Config{Video: fetch.Tool{Command: tool(t, aVideo)}})
+	downloader, err := download.New(t.Context(), download.Config{Video: download.Tool{Command: tool(t, aVideo)}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	article, err := fetcher.Text(t.Context(), address(t, site.URL+"/entropy"), port.PreferredCaptions{})
+	article, err := downloader.Text(t.Context(), address(t, site.URL+"/entropy"), port.PreferredCaptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,11 +188,11 @@ func TestAPageWithNoArticleInIt(t *testing.T) {
 	}))
 	defer site.Close()
 
-	fetcher, err := fetch.New(t.Context(), fetch.Config{Video: fetch.Tool{Command: tool(t, aVideo)}})
+	downloader, err := download.New(t.Context(), download.Config{Video: download.Tool{Command: tool(t, aVideo)}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := fetcher.Text(t.Context(), address(t, site.URL), port.PreferredCaptions{}); !errors.Is(err, port.ErrNothingFetched) {
+	if _, err := downloader.Text(t.Context(), address(t, site.URL), port.PreferredCaptions{}); !errors.Is(err, port.ErrNothingDownloaded) {
 		t.Errorf("a page with nothing in it answered %v", err)
 	}
 }
@@ -200,13 +200,13 @@ func TestAPageWithNoArticleInIt(t *testing.T) {
 // A video is not a page: nothing asks a site for the article of something it
 // publishes as a video.
 func TestAVideoIsNotAPage(t *testing.T) {
-	fetcher, err := fetch.New(t.Context(), fetch.Config{Video: fetch.Tool{Command: tool(t, aVideo)}})
+	downloader, err := download.New(t.Context(), download.Config{Video: download.Tool{Command: tool(t, aVideo)}})
 	if err != nil {
 		t.Fatal(err)
 	}
 	at := address(t, "https://youtu.be/dQw4w9WgXcQ")
-	if _, err := fetcher.Download(t.Context(), at, nil); !errors.Is(
-		err, port.ErrNothingFetched) {
+	if _, err := downloader.Download(t.Context(), at, nil); !errors.Is(
+		err, port.ErrNothingDownloaded) {
 		t.Errorf("an address with no video at it was copied: %v", err)
 	}
 }
@@ -217,12 +217,12 @@ func TestAVideoIsNotAPage(t *testing.T) {
 func TestAMachineWithFfmpegAndNothingThatReachesAVideo(t *testing.T) {
 	t.Setenv("PATH", t.TempDir())
 
-	fetcher, err := fetch.New(t.Context(), fetch.Config{Sound: fetch.Tool{Command: tool(t, "")}})
+	downloader, err := download.New(t.Context(), download.Config{Sound: download.Tool{Command: tool(t, "")}})
 	if err != nil {
 		t.Fatal(err)
 	}
 	at := address(t, "https://youtu.be/dQw4w9WgXcQ")
-	if _, err := fetcher.Metadata(t.Context(), at); !errors.Is(err, fetch.ErrNoTool) {
+	if _, err := downloader.Metadata(t.Context(), at); !errors.Is(err, download.ErrNoTool) {
 		t.Errorf("a machine holding only ffmpeg looked at a video: %v", err)
 	}
 }
@@ -231,7 +231,7 @@ func TestAMachineWithFfmpegAndNothingThatReachesAVideo(t *testing.T) {
 // does is the one asked. What a fetch is claimed by says which of them it was,
 // so a text kept beyond the run is claimed again by what made it.
 func TestWhichProviderSupportsAnAddress(t *testing.T) {
-	fetcher, err := fetch.New(t.Context(), fetch.Config{Video: fetch.Tool{Command: tool(t, aVideo)}})
+	downloader, err := download.New(t.Context(), download.Config{Video: download.Tool{Command: tool(t, aVideo)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -242,7 +242,7 @@ func TestWhichProviderSupportsAnAddress(t *testing.T) {
 		{"https://youtu.be/dQw4w9WgXcQ", "yt-dlp"},
 		{"https://example.com/entropy", "go-readability"},
 	} {
-		if got := fetcher.Fetching(address(t, one.written)).Tool; got != one.want {
+		if got := downloader.Downloading(address(t, one.written)).Tool; got != one.want {
 			t.Errorf("%s is fetched by %q, want %q", one.written, got, one.want)
 		}
 	}
@@ -263,7 +263,7 @@ func TestAToolIsStartedWithTheEnvironmentTheSettingsName(t *testing.T) {
 	if err := os.WriteFile(at, []byte(written), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	fetcher, err := fetch.New(t.Context(), fetch.Config{Video: fetch.Tool{
+	downloader, err := download.New(t.Context(), download.Config{Video: download.Tool{
 		Command:     []string{at},
 		Environment: map[string]string{"SSL_CERT_FILE": "/etc/ssl/certs/ca-certificates.crt"},
 	}})
@@ -271,7 +271,7 @@ func TestAToolIsStartedWithTheEnvironmentTheSettingsName(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	meta, err := fetcher.Metadata(t.Context(), address(t, "https://youtu.be/dQw4w9WgXcQ"))
+	meta, err := downloader.Metadata(t.Context(), address(t, "https://youtu.be/dQw4w9WgXcQ"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -292,14 +292,14 @@ func TestAToolNamedNoEnvironmentKeepsThisProcessesOwn(t *testing.T) {
 	if err := os.WriteFile(at, []byte(written), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	fetcher, err := fetch.New(t.Context(), fetch.Config{
-		Video: fetch.Tool{Command: []string{at}},
+	downloader, err := download.New(t.Context(), download.Config{
+		Video: download.Tool{Command: []string{at}},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	meta, err := fetcher.Metadata(t.Context(), address(t, "https://youtu.be/dQw4w9WgXcQ"))
+	meta, err := downloader.Metadata(t.Context(), address(t, "https://youtu.be/dQw4w9WgXcQ"))
 	if err != nil {
 		t.Fatal(err)
 	}

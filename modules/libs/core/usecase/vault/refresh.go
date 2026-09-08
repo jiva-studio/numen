@@ -24,12 +24,12 @@ type Refresh struct {
 	// Vaults is where the vault gets the row every note of it points at.
 	Vaults port.VaultRepository
 	Notes  port.NoteRepository
-	// Known says which kind of source the index holds at a path, and Sources
+	// Queries says which kind of source the index holds at a path, and Sources
 	// takes those rows out.
-	Known   port.SourceQueries
+	Queries port.SourceQueries
 	Sources port.SourceRepository
 
-	// Derived is where what was fetched for a link note is kept. A run given
+	// Derived is where what was downloaded for a link note is kept. A run given
 	// none indexes every note as the prose in its file.
 	Derived port.DerivedStores
 }
@@ -41,10 +41,10 @@ func NewRefresh(
 	readers port.VaultReaders,
 	vaults port.VaultRepository,
 	notes port.NoteRepository,
-	known port.SourceQueries,
+	queries port.SourceQueries,
 	sources port.SourceRepository,
 ) Refresh {
-	return Refresh{Readers: readers, Vaults: vaults, Notes: notes, Known: known, Sources: sources}
+	return Refresh{Readers: readers, Vaults: vaults, Notes: notes, Queries: queries, Sources: sources}
 }
 
 // RefreshResult is what happened, in the terms a caller acts on: the notes that
@@ -164,7 +164,7 @@ func (u Refresh) swept(ctx context.Context, v domain.Vault, paths []string) erro
 	// A path names one file, and a folder names everything under it.
 	held := make(map[domain.SourceKind][]string)
 	for _, path := range paths {
-		under, err := u.Known.Under(ctx, v.ID, path)
+		under, err := u.Queries.Under(ctx, v.ID, path)
 		if err != nil {
 			return err
 		}

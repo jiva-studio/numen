@@ -246,13 +246,13 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	api.Drops = &source.DropTranscript{
 		Readers: cfg.VaultReaders(),
 		Sources: db.Sources(),
-		Known:   db.SourcesKnown(),
+		Queries: db.SourcesKnown(),
 		Derived: cfg.DerivedStores(),
 	}
 
 	// A machine holding neither of the tools an address is reached with binds
-	// no fetcher, and the window is answered that this build cannot fetch.
-	if by := cfg.Fetcher(ctx); by != nil {
+	// no downloader, and the window is answered that this build cannot do it.
+	if by := cfg.Downloader(ctx); by != nil {
 		fetching := cfg.ImportURL(ctx, db, by)
 		api.Imports = &fetching
 	}

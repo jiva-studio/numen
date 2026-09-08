@@ -1,4 +1,4 @@
-package fetch
+package download
 
 import (
 	"context"
@@ -59,12 +59,12 @@ func newPages() *pages {
 // before it did not.
 func (p *pages) Supports(at domain.URL) bool { return !carries(at) }
 
-func (p *pages) Fetching(domain.URL) port.FetchModel {
-	return port.FetchModel{Tool: readerName, Producer: text.Article}
+func (p *pages) Downloading(domain.URL) port.DownloadModel {
+	return port.DownloadModel{Tool: readerName, Producer: text.Article}
 }
 
 // Metadata is what a page calls itself, which is the whole of what is known
-// about one before it is read. It is the same fetch the prose comes out of.
+// about one before it is read. It is the same read the prose comes out of.
 func (p *pages) Metadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
 	article, err := p.Text(ctx, at, port.PreferredCaptions{})
 	if err != nil {
@@ -104,11 +104,11 @@ func (p *pages) Text(ctx context.Context, at domain.URL, _ port.PreferredCaption
 	}
 	read, err := readability.FromReader(strings.NewReader(string(raw)), address)
 	if err != nil {
-		return port.Text{}, port.ErrNothingFetched
+		return port.Text{}, port.ErrNothingDownloaded
 	}
 	prose := strings.TrimSpace(read.TextContent)
 	if prose == "" {
-		return port.Text{}, port.ErrNothingFetched
+		return port.Text{}, port.ErrNothingDownloaded
 	}
 	return port.Text{Producer: text.Article, Title: strings.TrimSpace(read.Title), Prose: prose}, nil
 }

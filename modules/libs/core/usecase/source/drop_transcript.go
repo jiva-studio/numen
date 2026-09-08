@@ -20,7 +20,7 @@ import (
 type DropTranscript struct {
 	Readers port.VaultReaders
 	Sources port.SourceRepository
-	Known   port.SourceQueries
+	Queries port.SourceQueries
 	Derived port.DerivedStores
 
 	// Forgets takes a recording out of what a queue has already had an answer
@@ -121,7 +121,7 @@ func (u DropTranscript) produced(
 	reader port.VaultReader,
 	path string,
 ) (from, hash string, stood bool, err error) {
-	said, held, err := u.Known.Reading(ctx, v.ID, path)
+	said, held, err := u.Queries.Reading(ctx, v.ID, path)
 	if err != nil {
 		return "", "", false, fmt.Errorf("read index: %w", err)
 	}

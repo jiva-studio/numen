@@ -441,7 +441,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 		Folder string `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
 	}) (*sdk.CallToolResult, cards.CreateNoteResult, error) {
 		made, err := core.Cards.Create.Deck(ctx, core.shown().Vault, cards.New{
-			Title: in.Title, Folder: in.Folder,
+			Title: in.Title, Path: in.Folder,
 		})
 		return nil, made, err
 	})
@@ -472,7 +472,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 				"a stencil of %d bytes is more than this writes at once, which is %d", len(body), maxBytes)
 		}
 		made, err := core.Cards.Create.Stencil(ctx, core.shown().Vault, cards.New{
-			Title: in.Title, Body: body, Folder: in.Folder, Fields: in.Fields,
+			Title: in.Title, Body: body, Path: in.Folder, Fields: in.Fields,
 		})
 		return nil, made, err
 	})

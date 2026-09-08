@@ -184,8 +184,8 @@ func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]ocr.Block, er
 		out = append(out, ocr.Block{Label: "doc_title", Text: fmt.Sprintf("%s %d", s.heads, s.pages), Heading: true, Depth: 1})
 	}
 	return append(out, ocr.Block{
-		Label:     "text",
-		Text:      said,
+		Label: "text",
+		Text:  said,
 		Boxes: []ocr.Box{{Rect: image.Rect(10, 20, 30, 40), Span: domain.Span{To: len(said)}}},
 	}), nil
 }
@@ -379,7 +379,7 @@ func TestAReadingDeletedByHandIsNoticed(t *testing.T) {
 	}
 
 	// Cut it once, so it is a source that owes nothing.
-	extract := Extract{Readers: u.Readers, Sources: index, Known: index, Derived: shelf}
+	extract := Extract{Readers: u.Readers, Sources: index, Queries: index, Derived: shelf}
 	if _, err := extract.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}

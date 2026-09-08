@@ -24,12 +24,12 @@ type site struct {
 	refusing error
 }
 
-func (s *site) Fetching(_ domain.URL) port.FetchModel {
+func (s *site) Downloading(_ domain.URL) port.DownloadModel {
 	producer := text.Captions
 	if len(s.cues) == 0 && s.prose != "" {
 		producer = text.Article
 	}
-	return port.FetchModel{Tool: "a test", Version: "1", Producer: producer}
+	return port.DownloadModel{Tool: "a test", Version: "1", Producer: producer}
 }
 
 func (s *site) Metadata(_ context.Context, at domain.URL) (port.Metadata, error) {
@@ -52,25 +52,25 @@ func (s *site) Text(
 	if s.prose != "" {
 		return port.Text{Producer: text.Article, Prose: s.prose, Title: s.title}, nil
 	}
-	return port.Text{}, port.ErrNothingFetched
+	return port.Text{}, port.ErrNothingDownloaded
 }
 
-func (s *site) Download(_ context.Context, at domain.URL, into io.Writer) (port.Download, error) {
+func (s *site) Download(_ context.Context, at domain.URL, into io.Writer) (port.Copy, error) {
 	s.asked = append(s.asked, "download "+string(at))
 	if len(s.bytes) == 0 {
-		return port.Download{}, port.ErrNothingFetched
+		return port.Copy{}, port.ErrNothingDownloaded
 	}
 	if _, err := into.Write(s.bytes); err != nil {
-		return port.Download{}, err
+		return port.Copy{}, err
 	}
-	return port.Download{MediaType: text.CopyType, Extension: text.CopyExtension}, nil
+	return port.Copy{MediaType: text.CopyType, Extension: text.CopyExtension}, nil
 }
 
 const videoNote = "notes/https---youtu.be-dQw4w9WgXcQ.url"
 
-// fetching is a vault holding one link note, and the store what is fetched for
-// it is kept in.
-func fetching(t *testing.T, written string, from *site) (ImportURL, *shelf, string) {
+// downloading is a vault holding one link note, and the store what is
+// downloaded for it is kept in.
+func downloading(t *testing.T, written string, from *site) (ImportURL, *shelf, string) {
 	t.Helper()
 	shelved := newLibrary()
 	shelved.hold(videoNote, domain.KindURL, []byte(written), 1)
@@ -88,7 +88,7 @@ func fetching(t *testing.T, written string, from *site) (ImportURL, *shelf, stri
 }
 
 // A file the palette made is named by the address: an address is no filename,
-// so the name is what a fetch replaces once it knows what is there.
+// so the name is what a download replaces once it knows what is there.
 const (
 	pasted         = "https://youtu.be/dQw4w9WgXcQ"
 	aPastedAddress = "[InternetShortcut]\nURL=" + pasted + "\n"
@@ -103,14 +103,14 @@ func TestTheWordsPublishedWithAVideo(t *testing.T) {
 		{Text: "what was said", From: 1500, To: 4200},
 		{Text: "what was said next", From: 4200, To: 9100},
 	}}
-	u, kept, address := fetching(t, pointsAtAVideo, from)
+	u, kept, address := downloading(t, pointsAtAVideo, from)
 
 	res, err := u.Execute(t.Context(), first, videoNote)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if res.Producer != text.Captions {
-		t.Errorf("the words were fetched by %q", res.Producer)
+		t.Errorf("the words were downloaded by %q", res.Producer)
 	}
 	if res.Bytes == 0 {
 		t.Error("no words came back")
@@ -125,15 +125,15 @@ func TestTheWordsPublishedWithAVideo(t *testing.T) {
 		t.Errorf("the words read %v", got)
 	}
 	if _, err := kept.Read(t.Context(), text.Beside(text.Captions, hash)); err != nil {
-		t.Errorf("what fetched the words is not recorded: %v", err)
+		t.Errorf("what downloaded the words is not recorded: %v", err)
 	}
 }
 
-// An address already fetched is not fetched again: what a person asked for is
-// what stands until they ask for it afresh.
-func TestAnAddressAlreadyFetched(t *testing.T) {
+// An address already downloaded is not downloaded again: what a person asked
+// for is what stands until they ask for it afresh.
+func TestAnAddressAlreadyDownloaded(t *testing.T) {
 	from := &site{title: "Entropy explained", cues: []transcript.Cue{{Text: "said", To: 1000}}}
-	u, _, _ := fetching(t, aPastedAddress, from)
+	u, _, _ := downloading(t, aPastedAddress, from)
 
 	if _, err := u.Execute(t.Context(), first, videoNote); err != nil {
 		t.Fatal(err)
@@ -151,7 +151,7 @@ func TestAnAddressAlreadyFetched(t *testing.T) {
 // again every time the vault is scanned.
 func TestAVideoNobodyPublishedWordsFor(t *testing.T) {
 	from := &site{title: "Entropy explained"}
-	u, kept, address := fetching(t, pointsAtAVideo, from)
+	u, kept, address := downloading(t, pointsAtAVideo, from)
 
 	res, err := u.Execute(t.Context(), first, videoNote)
 	if err != nil {
@@ -169,7 +169,7 @@ func TestAVideoNobodyPublishedWordsFor(t *testing.T) {
 // A page is its prose, without the furniture around it, and it is kept as prose.
 func TestThePagePointedAt(t *testing.T) {
 	from := &site{title: "Entropy — a page", prose: "A measure of disorder."}
-	u, kept, _ := fetching(t,
+	u, kept, _ := downloading(t,
 		"[InternetShortcut]\nURL=https://example.com/entropy\n", from)
 
 	res, err := u.Execute(t.Context(), first, videoNote)
@@ -177,7 +177,7 @@ func TestThePagePointedAt(t *testing.T) {
 		t.Fatal(err)
 	}
 	if res.Producer != text.Article {
-		t.Errorf("the prose was fetched by %q", res.Producer)
+		t.Errorf("the prose was downloaded by %q", res.Producer)
 	}
 	hash := text.Fingerprint([]byte("https://example.com/entropy"))
 	raw, err := kept.Read(t.Context(), text.Artifact(text.Article, hash))
@@ -192,16 +192,16 @@ func TestThePagePointedAt(t *testing.T) {
 	}
 }
 
-// Nothing is fetched for a note that points nowhere.
+// Nothing is downloaded for a note that points nowhere.
 func TestANoteThatPointsNowhere(t *testing.T) {
 	for _, written := range []string{
 		"# Entropy\n",
 		"[InternetShortcut]\n",
 		"[InternetShortcut]\nURL=file:///etc/passwd\n",
 	} {
-		u, _, _ := fetching(t, written, &site{})
+		u, _, _ := downloading(t, written, &site{})
 		if _, err := u.Execute(t.Context(), first, videoNote); err == nil {
-			t.Errorf("%q was fetched for: %v", written, err)
+			t.Errorf("%q was downloaded for: %v", written, err)
 		}
 	}
 }
@@ -210,7 +210,7 @@ func TestANoteThatPointsNowhere(t *testing.T) {
 // nobody. What is there has a name, and the note takes it.
 func TestANoteStillCalledByItsAddressTakesTheTitle(t *testing.T) {
 	from := &site{title: "Entropy explained", cues: []transcript.Cue{{Text: "said", To: 1000}}}
-	u, _, _ := fetching(t, aPastedAddress, from)
+	u, _, _ := downloading(t, aPastedAddress, from)
 	named := []string{}
 	u.Names = func(_ context.Context, _ domain.Vault, path, title string) (string, error) {
 		named = append(named, path+" → "+title)
@@ -233,7 +233,7 @@ func TestANoteStillCalledByItsAddressTakesTheTitle(t *testing.T) {
 func TestAFilePersonNamedKeepsItsName(t *testing.T) {
 	const theirs = "notes/Entropy.url"
 	from := &site{title: "Entropy explained", cues: []transcript.Cue{{Text: "said", To: 1000}}}
-	u, _, _ := fetching(t,
+	u, _, _ := downloading(t,
 		"[InternetShortcut]\nURL=https://youtu.be/dQw4w9WgXcQ\n", from)
 	u.Readers.(vaults)[first.ID].hold(theirs, domain.KindURL, []byte(pointsAtAVideo), 1)
 	named := 0
@@ -251,10 +251,10 @@ func TestAFilePersonNamedKeepsItsName(t *testing.T) {
 }
 
 // A copy is kept in the application's own folder, where losing it costs another
-// fetch and the vault stays the person's own writing.
+// download and the vault stays the person's own writing.
 func TestACopyKeptInTheApplicationsFolder(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
-	u, kept, address := fetching(t, pointsAtAVideo, from)
+	u, kept, address := downloading(t, pointsAtAVideo, from)
 
 	got, err := u.Copy(t.Context(), first, videoNote)
 	if err != nil {
@@ -276,7 +276,7 @@ func TestACopyKeptInTheApplicationsFolder(t *testing.T) {
 // person sees in their own folder and plays from where it lies.
 func TestACopyKeptBesideTheNote(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
-	u, kept, address := fetching(t, pointsAtAVideo, from)
+	u, kept, address := downloading(t, pointsAtAVideo, from)
 	held := newLibrary()
 	held.hold(videoNote, domain.KindURL, []byte(pointsAtAVideo), 1)
 	u.Readers = vaults{first.ID: held}
@@ -304,10 +304,10 @@ func TestACopyKeptBesideTheNote(t *testing.T) {
 	}
 }
 
-// A copy already beside the note is not fetched a second time.
+// A copy already beside the note is not downloaded a second time.
 func TestACopyAlreadyBesideTheNote(t *testing.T) {
 	from := &site{bytes: []byte("the bytes of a video")}
-	u, _, _ := fetching(t, pointsAtAVideo, from)
+	u, _, _ := downloading(t, pointsAtAVideo, from)
 	held := newLibrary()
 	held.hold(videoNote, domain.KindURL, []byte(pointsAtAVideo), 1)
 	u.Readers = vaults{first.ID: held}
@@ -321,7 +321,7 @@ func TestACopyAlreadyBesideTheNote(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !got.Existed {
-		t.Error("the video was fetched again over a copy already standing")
+		t.Error("the video was downloaded again over a copy already standing")
 	}
 	if strings.Count(strings.Join(from.asked, "\n"), "download") != 1 {
 		t.Errorf("the site was asked %v", from.asked)

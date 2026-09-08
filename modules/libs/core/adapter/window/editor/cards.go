@@ -94,7 +94,7 @@ func (a *API) makes(
 	}
 	defer a.Writing.done()
 
-	made, err := cut(showing, cards.New{Title: title, Folder: folder})
+	made, err := cut(showing, cards.New{Title: title, Path: folder})
 	if err == nil || errors.Is(err, note.ErrUnlevelled) {
 		if a.Wrote != nil {
 			a.Wrote()

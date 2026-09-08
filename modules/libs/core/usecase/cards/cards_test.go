@@ -348,7 +348,7 @@ func TestWhatIsMadeSaysWhatItIs(t *testing.T) {
 	vs := indexed(t)
 	u := cards.NewCreate(filesystem.VaultWriters{}, vs.index(t), time.Now)
 
-	deck, err := u.Deck(t.Context(), vs.first, cards.New{Title: "Birds of prey", Folder: "decks"})
+	deck, err := u.Deck(t.Context(), vs.first, cards.New{Title: "Birds of prey", Path: "decks"})
 	if err != nil {
 		t.Fatalf("make a deck: %v", err)
 	}
@@ -385,7 +385,7 @@ func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
 	vs := indexed(t)
 	u := cards.NewCreate(filesystem.VaultWriters{}, vs.index(t), time.Now)
 
-	made, err := u.Preset(t.Context(), vs.first, cards.New{Title: "Prosody", Folder: "presets"})
+	made, err := u.Preset(t.Context(), vs.first, cards.New{Title: "Prosody", Path: "presets"})
 	if err != nil {
 		t.Fatalf("make a preset: %v", err)
 	}
@@ -427,7 +427,7 @@ func TestAStencilIsMadeWithAFirstField(t *testing.T) {
 	}
 
 	// A deck declares none, and is made all the same.
-	if _, err := u.Deck(t.Context(), vs.first, cards.New{Title: "Buntings", Folder: "decks"}); err != nil {
+	if _, err := u.Deck(t.Context(), vs.first, cards.New{Title: "Buntings", Path: "decks"}); err != nil {
 		t.Errorf("make a deck: %v", err)
 	}
 }
