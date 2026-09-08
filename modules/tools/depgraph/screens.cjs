@@ -1,18 +1,22 @@
 // A screen reaches the shared folders, and never another screen.
 //
-// The five shared folders are below; every other folder under `src/` draws one
-// screen, and a screen that reaches another is two screens that cannot be read,
-// moved or deleted apart. A sheet a screen draws over itself is that screen's
-// own component, however deep the folder holding it.
+// The shared folders are below; every other folder under `src/`, and every
+// folder under `src/features/`, draws one screen. A screen that reaches another
+// is two screens that cannot be read, moved or deleted apart. A sheet a screen
+// draws over itself is that screen's own component, however deep the folder
+// holding it.
 //
 // This holds for the windows alone, which are the modules `screened` names.
 // `modules/libs/ui` is a library of components, where one drawing another is
 // the whole point.
 
-const shared = ['command', 'notices', 'saving', 'tabs', 'testing']
+const shared = ['shared', 'command', 'notices', 'saving', 'tabs', 'testing']
 
-/** Any folder under `src/` that is not one of the shared ones, captured. */
-const SCREEN = `^src/(?!(?:${shared.join('|')})/)([^/]+)/`
+/** A screen's own folder, captured: one under `features/`, or one under `src/`. */
+const SCREEN = `^src/(?:features/)?(?!(?:${shared.join('|')})/)([^/]+)/`
+
+/** The same screen, wherever the window files it. */
+const ITSELF = '^src/(?:features/)?$1/'
 
 module.exports = {
   extends: './rules.cjs',
@@ -26,7 +30,7 @@ module.exports = {
         `The shared folders are ${shared.join(', ')}.`,
       severity: 'error',
       from: { path: SCREEN },
-      to: { path: SCREEN, pathNot: '^src/$1/' },
+      to: { path: SCREEN, pathNot: ITSELF },
     },
     {
       name: 'no-folder-going-round',

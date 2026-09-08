@@ -29,7 +29,7 @@ export const depcruise = installed('.bin/depcruise')
  * only a module's root would find no screen to judge and pass.
  */
 export const screened = new Map([
-  ['@numen/editor', 'src/cards/window/deck/deck.ts'],
+  ['@numen/editor', 'src/features/cards/deck-tab/deck.ts'],
   ['@numen/flashcards', 'src/decks/presets.ts'],
 ])
 
@@ -60,14 +60,14 @@ export const baseline = new Map([
       // cards screen takes is the note's editing and its tab state, and the
       // preset's core. These three edges are the design; a fourth screen
       // appearing here is a change.
-      'no-screen-reaches-a-screen: src/cards/window/deck/deckTabs.ts → src/note/notes.ts',
-      'no-screen-reaches-a-screen: src/cards/window/deck/deckTabs.ts → src/note/tab.ts',
-      'no-screen-reaches-a-screen: src/cards/window/deck/deckTabs.ts → src/preset/core.ts',
-      'no-screen-reaches-a-screen: src/cards/window/deck/scheduling.ts → src/preset/core.ts',
-      'no-screen-reaches-a-screen: src/cards/window/deck/deckTabs.test.ts → src/preset/core.ts',
-      'no-screen-reaches-a-screen: src/cards/window/deck/DeckTab.test.ts → src/preset/core.ts',
-      'no-screen-reaches-a-screen: src/cards/window/stencil/stencilTabs.ts → src/note/notes.ts',
-      'no-screen-reaches-a-screen: src/cards/window/stencil/stencilTabs.ts → src/note/tab.ts',
+      'no-screen-reaches-a-screen: src/features/cards/deck-tab/deckTabs.ts → src/features/note/notes.ts',
+      'no-screen-reaches-a-screen: src/features/cards/deck-tab/deckTabs.ts → src/features/note/tab.ts',
+      'no-screen-reaches-a-screen: src/features/cards/deck-tab/deckTabs.ts → src/features/preset/core.ts',
+      'no-screen-reaches-a-screen: src/features/cards/deck-tab/scheduler.ts → src/features/preset/core.ts',
+      'no-screen-reaches-a-screen: src/features/cards/deck-tab/deckTabs.test.ts → src/features/preset/core.ts',
+      'no-screen-reaches-a-screen: src/features/cards/deck-tab/DeckTab.test.ts → src/features/preset/core.ts',
+      'no-screen-reaches-a-screen: src/features/cards/stencil-tab/stencilTabs.ts → src/features/note/notes.ts',
+      'no-screen-reaches-a-screen: src/features/cards/stencil-tab/stencilTabs.ts → src/features/note/tab.ts',
     ],
   ],
 ])

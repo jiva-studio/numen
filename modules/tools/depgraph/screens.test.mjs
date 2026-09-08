@@ -13,7 +13,7 @@ import { join } from 'node:path'
 import test from 'node:test'
 import { depcruise, here, screens } from './modules.mjs'
 
-/** The fixture window: five folders, eight edges, two of them wrong. */
+/** The fixture window, which is filed both ways a window of ours is filed. */
 const at = join(here, 'testdata/screens')
 
 /** Two folders that each reach the other, where no one file is in a cycle. */
@@ -43,6 +43,36 @@ const edges = [
     says: 'a shared folder reaching the window\'s root',
     refused: false,
     edge: 'src/notices/telling.ts → src/words.ts',
+  },
+  {
+    says: 'a screen under features reaching another screen under features',
+    refused: true,
+    edge: 'src/features/media/kind.ts → src/features/plex/view.ts',
+  },
+  {
+    says: 'a screen under features reaching a screen the window kept at its root',
+    refused: true,
+    edge: 'src/features/media/kind.ts → src/note/tab.ts',
+  },
+  {
+    says: 'a screen under features reaching the shared folder',
+    refused: false,
+    edge: 'src/features/media/kind.ts → src/shared/core.ts',
+  },
+  {
+    says: 'a screen under features reaching a folder of its own',
+    refused: false,
+    edge: 'src/features/media/kind.ts → src/features/media/url-tab/frame.ts',
+  },
+  {
+    says: 'a folder under a screen under features reaching that screen\'s own top',
+    refused: false,
+    edge: 'src/features/media/url-tab/frame.ts → src/features/media/words.ts',
+  },
+  {
+    says: 'a second screen under features reaching the shared folder',
+    refused: false,
+    edge: 'src/features/plex/view.ts → src/shared/core.ts',
   },
 ]
 
@@ -78,6 +108,11 @@ test('what the screen rule refuses, and what it lets through', () => {
     'src/note/inner/deep.ts',
     'src/cards/deck.ts',
     'src/ledger/entries.ts',
+    'src/shared/core.ts',
+    'src/features/plex/view.ts',
+    'src/features/media/kind.ts',
+    'src/features/media/words.ts',
+    'src/features/media/url-tab/frame.ts',
   ]) {
     assert.ok(read.includes(file), `the fixture cruise did not read ${file}`)
   }

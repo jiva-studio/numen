@@ -6,14 +6,14 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { iconFor, iconOfKind, iconOfNote } from './icons'
-import { PRESET } from './tabs/workspace'
-import { commandsOf } from './command/commands'
-import { itemsFor } from '../features/files/menu'
-import { ITEMS, NONE } from '../features/plex/menu'
-import { waysIn } from '../features/welcome/screen'
-import { WORDS as words } from './words'
-import type { NoteType, Source } from './core'
+import { iconFor, iconOfKind, iconOfNote } from './shared/icons'
+import { PRESET } from './shared/tabs/workspace'
+import { commandsOf } from './shared/command/commands'
+import { itemsFor } from './features/files/menu'
+import { ITEMS, NONE } from './features/plex/menu'
+import { waysIn } from './features/welcome/screen'
+import { WORDS as words } from './shared/words'
+import type { NoteType, Source } from './shared/core'
 
 /** A window that has been told nothing, which can do every run. */
 const anything = () => true
