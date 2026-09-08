@@ -9,8 +9,8 @@
  */
 import { watchPostEffect } from 'vue'
 import { Editor, timing } from '@numen/ui'
-import { WORDS as words } from '../recording/words'
-import type { MediaTabState } from '../recording/kind'
+import { WORDS as words } from './words'
+import type { MediaTabState } from './kind'
 
 const props = defineProps<{ state: MediaTabState }>()
 

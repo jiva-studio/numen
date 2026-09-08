@@ -10,7 +10,7 @@ import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '.
 import { fileOpeners } from '../tabs/openers'
 import { windowing } from '../tabs/windowing'
 import { DECK } from '../tabs/workspace'
-import { decking, type DeckTabState } from './decks'
+import { decking, type DeckTabState } from './deckTabs'
 import { WORDS as words } from './words'
 
 /** A preset that schedules, which is what every preset here is. */

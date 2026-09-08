@@ -11,8 +11,8 @@
 import { computed, useTemplateRef, watchPostEffect } from 'vue'
 import MediaTab from './MediaTab.vue'
 import Embed from './Embed.vue'
-import { DELETE_TEXT, WORDS as words } from '../recording/words'
-import type { MediaTabState } from '../recording/kind'
+import { DELETE_TEXT, WORDS as words } from './words'
+import type { MediaTabState } from './kind'
 
 const props = defineProps<{ state: MediaTabState }>()
 

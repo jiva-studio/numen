@@ -13,7 +13,7 @@ import type { Kind, WindowHandle } from '../tabs/windowing'
 import { RECORDING, URL } from '../tabs/workspace'
 import { DELETE_TEXT, PROOFREAD, TRANSCRIBE } from './words'
 import RecordingTab from './RecordingTab.vue'
-import UrlTab from '../media/UrlTab.vue'
+import UrlTab from './UrlTab.vue'
 
 /** What a recording tab asks of the window it is drawn in. */
 export interface MediaTabDeps {

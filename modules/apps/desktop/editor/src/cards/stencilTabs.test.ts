@@ -9,7 +9,7 @@ import { fileOpeners } from '../tabs/openers'
 import { windowing } from '../tabs/windowing'
 import { STENCIL } from '../tabs/workspace'
 import { REFUSED } from '../words'
-import { stencilling, type StencilTabState } from './stencils'
+import { stencilling, type StencilTabState } from './stencilTabs'
 import { WORDS as words } from './words'
 
 /** The one place a file is opened from. Nothing here opens one. */

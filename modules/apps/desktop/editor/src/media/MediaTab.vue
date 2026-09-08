@@ -13,8 +13,8 @@ import { Menu } from '@numen/ui'
 import type { MenuItem, Position } from '@numen/ui'
 import { iconFor } from '../icons'
 import Transcript from './Transcript.vue'
-import { WORDS as words } from '../recording/words'
-import type { MediaTabState } from '../recording/kind'
+import { WORDS as words } from './words'
+import type { MediaTabState } from './kind'
 
 const props = defineProps<{
   state: MediaTabState

@@ -60,13 +60,13 @@ export const baseline = new Map([
       // cards screen takes is the note's editing and its tab state, and the
       // preset's core. These three edges are the design; a fourth screen
       // appearing here is a change.
-      'no-screen-reaches-a-screen: src/cards/deck.ts → src/note/notes.ts',
-      'no-screen-reaches-a-screen: src/cards/deck.ts → src/note/tab.ts',
-      'no-screen-reaches-a-screen: src/cards/deck.ts → src/preset/core.ts',
-      'no-screen-reaches-a-screen: src/cards/deck.test.ts → src/preset/core.ts',
+      'no-screen-reaches-a-screen: src/cards/deckTabs.ts → src/note/notes.ts',
+      'no-screen-reaches-a-screen: src/cards/deckTabs.ts → src/note/tab.ts',
+      'no-screen-reaches-a-screen: src/cards/deckTabs.ts → src/preset/core.ts',
+      'no-screen-reaches-a-screen: src/cards/deckTabs.test.ts → src/preset/core.ts',
       'no-screen-reaches-a-screen: src/cards/DeckTab.test.ts → src/preset/core.ts',
-      'no-screen-reaches-a-screen: src/cards/stencil.ts → src/note/notes.ts',
-      'no-screen-reaches-a-screen: src/cards/stencil.ts → src/note/tab.ts',
+      'no-screen-reaches-a-screen: src/cards/stencilTabs.ts → src/note/notes.ts',
+      'no-screen-reaches-a-screen: src/cards/stencilTabs.ts → src/note/tab.ts',
     ],
   ],
 ])
