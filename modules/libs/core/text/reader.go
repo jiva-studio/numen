@@ -472,7 +472,13 @@ func Names(from, hash string) []string {
 // beside the rest — it is the bytes of a video and no producer's text, so
 // Names, which is a producer's own files, does not carry it.
 func AddressNames(hash string) []string {
-	out := []string{Copy(hash)}
+	return append([]string{Copy(hash)}, AddressTexts(hash)...)
+}
+
+// AddressTexts is every file a producer wrote for one address. The copy is the
+// bytes of a video and no producer's text, so it is not among them.
+func AddressTexts(hash string) []string {
+	var out []string
 	for _, producer := range Producers() {
 		out = append(out, Names(producer, hash)...)
 	}
