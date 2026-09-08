@@ -80,15 +80,14 @@ func (x *GetDocumentRequest) GetPath() string {
 
 type GetDocumentResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// How many pages it has.
-	PageCount int32 `protobuf:"varint,1,opt,name=page_count,json=pageCount,proto3" json:"page_count,omitempty"`
-	// How large each page is, in page order. A page whose size could not be read
-	// stands at nothing, and the page after it is still where it was.
-	Pages []*PageSize `protobuf:"bytes,2,rep,name=pages,proto3" json:"pages,omitempty"`
+	// Every page of the document in order, each as its size. How many there are
+	// is how many stand here. A page whose size could not be read stands at
+	// nothing, and the page after it is still where it was.
+	Pages []*PageSize `protobuf:"bytes,1,rep,name=pages,proto3" json:"pages,omitempty"`
 	// Which bytes these pages were read from. It stands in the address a page is
 	// drawn at, so an address names one drawing of one document and answers the
 	// same picture for as long as it answers at all.
-	Fingerprint   *Fingerprint `protobuf:"bytes,3,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	Fingerprint   *Fingerprint `protobuf:"bytes,2,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -121,13 +120,6 @@ func (x *GetDocumentResponse) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GetDocumentResponse.ProtoReflect.Descriptor instead.
 func (*GetDocumentResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_asset_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *GetDocumentResponse) GetPageCount() int32 {
-	if x != nil {
-		return x.PageCount
-	}
-	return 0
 }
 
 func (x *GetDocumentResponse) GetPages() []*PageSize {
@@ -595,12 +587,10 @@ const file_numen_v1_asset_proto_rawDesc = "" +
 	"\n" +
 	"\x14numen/v1/asset.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"(\n" +
 	"\x12GetDocumentRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\x97\x01\n" +
-	"\x13GetDocumentResponse\x12\x1d\n" +
-	"\n" +
-	"page_count\x18\x01 \x01(\x05R\tpageCount\x12(\n" +
-	"\x05pages\x18\x02 \x03(\v2\x12.numen.v1.PageSizeR\x05pages\x127\n" +
-	"\vfingerprint\x18\x03 \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\"8\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"x\n" +
+	"\x13GetDocumentResponse\x12(\n" +
+	"\x05pages\x18\x01 \x03(\v2\x12.numen.v1.PageSizeR\x05pages\x127\n" +
+	"\vfingerprint\x18\x02 \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\"8\n" +
 	"\bPageSize\x12\x14\n" +
 	"\x05width\x18\x01 \x01(\x01R\x05width\x12\x16\n" +
 	"\x06height\x18\x02 \x01(\x01R\x06height\")\n" +

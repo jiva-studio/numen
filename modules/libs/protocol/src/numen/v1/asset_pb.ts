@@ -24,7 +24,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/asset.proto.
  */
 export const file_numen_v1_asset: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9hc3NldC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkieAoTR2V0RG9jdW1lbnRSZXNwb25zZRISCgpwYWdlX2NvdW50GAEgASgFEiEKBXBhZ2VzGAIgAygLMhIubnVtZW4udjEuUGFnZVNpemUSKgoLZmluZ2VycHJpbnQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludCIpCghQYWdlU2l6ZRINCgV3aWR0aBgBIAEoARIOCgZoZWlnaHQYAiABKAEiIwoTR2V0UmVjb3JkaW5nUmVxdWVzdBIMCgRwYXRoGAEgASgJIlAKFEdldFJlY29yZGluZ1Jlc3BvbnNlEg4KBmxlbmd0aBgBIAEoBRINCgVtZWRpYRgCIAEoCRIMCgR0eXBlGAMgASgJEgsKA3VybBgEIAEoCSJEChVMaXN0SGlnaGxpZ2h0c1JlcXVlc3QSDAoEcGF0aBgBIAEoCRIdCgJhdBgCIAMoCzIRLm51bWVuLnYxLlN0cmV0Y2giOwoWTGlzdEhpZ2hsaWdodHNSZXNwb25zZRIhCgRydW5zGAEgAygLMhMubnVtZW4udjEuSGlnaGxpZ2h0IioKCUhpZ2hsaWdodBIdCgVwYWdlcxgBIAMoCzIOLm51bWVuLnYxLlBhZ2UiNAoEUGFnZRINCgVpbmRleBgBIAEoBRIdCgVyZWN0cxgCIAMoCzIOLm51bWVuLnYxLlJlY3QiQgoEUmVjdBINCgVtaW5feBgBIAEoAhINCgVtaW5feRgCIAEoAhINCgVtYXhfeBgDIAEoAhINCgVtYXhfeRgEIAEoAjL+AQoMQXNzZXRTZXJ2aWNlEkoKC0dldERvY3VtZW50EhwubnVtZW4udjEuR2V0RG9jdW1lbnRSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0RG9jdW1lbnRSZXNwb25zZRJNCgxHZXRSZWNvcmRpbmcSHS5udW1lbi52MS5HZXRSZWNvcmRpbmdSZXF1ZXN0Gh4ubnVtZW4udjEuR2V0UmVjb3JkaW5nUmVzcG9uc2USUwoOTGlzdEhpZ2hsaWdodHMSHy5udW1lbi52MS5MaXN0SGlnaGxpZ2h0c1JlcXVlc3QaIC5udW1lbi52MS5MaXN0SGlnaGxpZ2h0c1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS9hc3NldC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkiZAoTR2V0RG9jdW1lbnRSZXNwb25zZRIhCgVwYWdlcxgBIAMoCzISLm51bWVuLnYxLlBhZ2VTaXplEioKC2ZpbmdlcnByaW50GAIgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnQiKQoIUGFnZVNpemUSDQoFd2lkdGgYASABKAESDgoGaGVpZ2h0GAIgASgBIiMKE0dldFJlY29yZGluZ1JlcXVlc3QSDAoEcGF0aBgBIAEoCSJQChRHZXRSZWNvcmRpbmdSZXNwb25zZRIOCgZsZW5ndGgYASABKAUSDQoFbWVkaWEYAiABKAkSDAoEdHlwZRgDIAEoCRILCgN1cmwYBCABKAkiRAoVTGlzdEhpZ2hsaWdodHNSZXF1ZXN0EgwKBHBhdGgYASABKAkSHQoCYXQYAiADKAsyES5udW1lbi52MS5TdHJldGNoIjsKFkxpc3RIaWdobGlnaHRzUmVzcG9uc2USIQoEcnVucxgBIAMoCzITLm51bWVuLnYxLkhpZ2hsaWdodCIqCglIaWdobGlnaHQSHQoFcGFnZXMYASADKAsyDi5udW1lbi52MS5QYWdlIjQKBFBhZ2USDQoFaW5kZXgYASABKAUSHQoFcmVjdHMYAiADKAsyDi5udW1lbi52MS5SZWN0IkIKBFJlY3QSDQoFbWluX3gYASABKAISDQoFbWluX3kYAiABKAISDQoFbWF4X3gYAyABKAISDQoFbWF4X3kYBCABKAIy/gEKDEFzc2V0U2VydmljZRJKCgtHZXREb2N1bWVudBIcLm51bWVuLnYxLkdldERvY3VtZW50UmVxdWVzdBodLm51bWVuLnYxLkdldERvY3VtZW50UmVzcG9uc2USTQoMR2V0UmVjb3JkaW5nEh0ubnVtZW4udjEuR2V0UmVjb3JkaW5nUmVxdWVzdBoeLm51bWVuLnYxLkdldFJlY29yZGluZ1Jlc3BvbnNlElMKDkxpc3RIaWdobGlnaHRzEh8ubnVtZW4udjEuTGlzdEhpZ2hsaWdodHNSZXF1ZXN0GiAubnVtZW4udjEuTGlzdEhpZ2hsaWdodHNSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetDocumentRequest
@@ -50,17 +50,11 @@ export const GetDocumentRequestSchema: GenMessage<GetDocumentRequest> = /*@__PUR
  */
 export type GetDocumentResponse = Message<"numen.v1.GetDocumentResponse"> & {
   /**
-   * How many pages it has.
+   * Every page of the document in order, each as its size. How many there are
+   * is how many stand here. A page whose size could not be read stands at
+   * nothing, and the page after it is still where it was.
    *
-   * @generated from field: int32 page_count = 1;
-   */
-  pageCount: number;
-
-  /**
-   * How large each page is, in page order. A page whose size could not be read
-   * stands at nothing, and the page after it is still where it was.
-   *
-   * @generated from field: repeated numen.v1.PageSize pages = 2;
+   * @generated from field: repeated numen.v1.PageSize pages = 1;
    */
   pages: PageSize[];
 
@@ -69,7 +63,7 @@ export type GetDocumentResponse = Message<"numen.v1.GetDocumentResponse"> & {
    * drawn at, so an address names one drawing of one document and answers the
    * same picture for as long as it answers at all.
    *
-   * @generated from field: numen.v1.Fingerprint fingerprint = 3;
+   * @generated from field: numen.v1.Fingerprint fingerprint = 2;
    */
   fingerprint?: Fingerprint | undefined;
 };

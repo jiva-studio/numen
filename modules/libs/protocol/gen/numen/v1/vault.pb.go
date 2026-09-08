@@ -68,10 +68,10 @@ type GetVaultStateResponse struct {
 	// Name is the identity the folder carries, and how this vault is asked for
 	// again. DisplayName is what the person calls it, which is what a window
 	// titles itself with. The list says both of a vault the same way.
-	Name        string `protobuf:"bytes,18,opt,name=name,proto3" json:"name,omitempty"`
-	DisplayName string `protobuf:"bytes,1,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	Name        string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	DisplayName string `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
 	// Where the vault stands on this disk.
-	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	// Ready is set when the scan has finished.
 	Ready bool `protobuf:"varint,4,opt,name=ready,proto3" json:"ready,omitempty"`
 	// Why the scan stopped, when it stopped for a reason. A vault that could
@@ -82,13 +82,13 @@ type GetVaultStateResponse struct {
 	Unwatched string `protobuf:"bytes,6,opt,name=unwatched,proto3" json:"unwatched,omitempty"`
 	// Why an agent cannot be reached, when one cannot. The window works and the
 	// panel says this instead of answering.
-	Unreachable string `protobuf:"bytes,17,opt,name=unreachable,proto3" json:"unreachable,omitempty"`
+	Unreachable string `protobuf:"bytes,7,opt,name=unreachable,proto3" json:"unreachable,omitempty"`
 	// Chunks is how many spans of text the index holds, and embedded is how many
 	// of those carry a vector. Cutting finishes long before embedding does, so
 	// the pair is what says how far searching by meaning has got. Both are zero
 	// for a vault nothing has cut yet.
-	Chunks   int64 `protobuf:"varint,7,opt,name=chunks,proto3" json:"chunks,omitempty"`
-	Embedded int64 `protobuf:"varint,8,opt,name=embedded,proto3" json:"embedded,omitempty"`
+	Chunks   int64 `protobuf:"varint,8,opt,name=chunks,proto3" json:"chunks,omitempty"`
+	Embedded int64 `protobuf:"varint,9,opt,name=embedded,proto3" json:"embedded,omitempty"`
 	// Embedding says whether anything is going to turn the chunks into vectors.
 	// False for an installation with no model, where `embedded` stays where it is
 	// and the vault is searched by its words.
@@ -575,8 +575,8 @@ type Tab struct {
 	// Where the person stands in what the tab holds. A tab holding a document
 	// sets document, a tab holding a recording sets recording, and a tab of any
 	// other kind sets neither.
-	Document      *OpenDocument  `protobuf:"bytes,7,opt,name=document,proto3" json:"document,omitempty"`
-	Recording     *OpenRecording `protobuf:"bytes,8,opt,name=recording,proto3" json:"recording,omitempty"`
+	Document      *OpenDocument  `protobuf:"bytes,5,opt,name=document,proto3" json:"document,omitempty"`
+	Recording     *OpenRecording `protobuf:"bytes,6,opt,name=recording,proto3" json:"recording,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -769,21 +769,19 @@ var File_numen_v1_vault_proto protoreflect.FileDescriptor
 const file_numen_v1_vault_proto_rawDesc = "" +
 	"\n" +
 	"\x14numen/v1/vault.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x16\n" +
-	"\x14GetVaultStateRequest\"\xf6\x02\n" +
+	"\x14GetVaultStateRequest\"\xa2\x02\n" +
 	"\x15GetVaultStateResponse\x12\x12\n" +
-	"\x04name\x18\x12 \x01(\tR\x04name\x12!\n" +
-	"\fdisplay_name\x18\x01 \x01(\tR\vdisplayName\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
+	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x12\n" +
+	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
 	"\x05ready\x18\x04 \x01(\bR\x05ready\x12\x16\n" +
 	"\x06failed\x18\x05 \x01(\tR\x06failed\x12\x1c\n" +
 	"\tunwatched\x18\x06 \x01(\tR\tunwatched\x12 \n" +
-	"\vunreachable\x18\x11 \x01(\tR\vunreachable\x12\x16\n" +
-	"\x06chunks\x18\a \x01(\x03R\x06chunks\x12\x1a\n" +
-	"\bembedded\x18\b \x01(\x03R\bembedded\x12\x1c\n" +
+	"\vunreachable\x18\a \x01(\tR\vunreachable\x12\x16\n" +
+	"\x06chunks\x18\b \x01(\x03R\x06chunks\x12\x1a\n" +
+	"\bembedded\x18\t \x01(\x03R\bembedded\x12\x1c\n" +
 	"\tembedding\x18\n" +
-	" \x01(\bR\tembeddingJ\x04\b\x03\x10\x04J\x04\b\t\x10\n" +
-	"J\x04\b\v\x10\x11R\x05booksR\n" +
-	"books_readR\x04busyR\aindexedR\blearningR\x04madeR\x05owingR\areading\"\x1a\n" +
+	" \x01(\bR\tembedding\"\x1a\n" +
 	"\x18WatchVaultChangesRequest\"s\n" +
 	"\x19WatchVaultChangesResponse\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\x12\x16\n" +
@@ -801,14 +799,14 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x14WriteOpenTabsRequest\x12!\n" +
 	"\x04tabs\x18\x01 \x03(\v2\r.numen.v1.TabR\x04tabs\x12\x14\n" +
 	"\x05front\x18\x02 \x01(\tR\x05front\"\x17\n" +
-	"\x15WriteOpenTabsResponse\"\xd2\x01\n" +
+	"\x15WriteOpenTabsResponse\"\xbe\x01\n" +
 	"\x03Tab\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x04 \x01(\tR\x05title\x122\n" +
-	"\bdocument\x18\a \x01(\v2\x16.numen.v1.OpenDocumentR\bdocument\x125\n" +
-	"\trecording\x18\b \x01(\v2\x17.numen.v1.OpenRecordingR\trecordingJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\x02atR\x02of\"8\n" +
+	"\bdocument\x18\x05 \x01(\v2\x16.numen.v1.OpenDocumentR\bdocument\x125\n" +
+	"\trecording\x18\x06 \x01(\v2\x17.numen.v1.OpenRecordingR\trecording\"8\n" +
 	"\fOpenDocument\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x14\n" +
 	"\x05pages\x18\x02 \x01(\x05R\x05pages\"N\n" +

@@ -209,7 +209,7 @@ func TestWhatADocumentIsIsHowManyPagesAndWhatEachIsCalled(t *testing.T) {
 	alone(api)
 
 	told := shaped(t, api)
-	if told.GetPageCount() != 4 || len(told.GetPages()) != 4 {
+	if len(told.GetPages()) != 4 || len(told.GetPages()) != 4 {
 		t.Errorf("the document came back as %+v", told)
 	}
 }
@@ -544,7 +544,7 @@ func TestAPageOfARealDocumentComesBack(t *testing.T) {
 	}
 	api, handler := fromTheLibrary(t, string(raw))
 
-	if told := shaped(t, api); told.GetPageCount() < 1 {
+	if told := shaped(t, api); len(told.GetPages()) < 1 {
 		t.Fatalf("the document came back as %+v", told)
 	}
 

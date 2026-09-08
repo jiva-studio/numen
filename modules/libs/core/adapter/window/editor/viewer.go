@@ -157,10 +157,9 @@ func (a *API) GetDocument(
 	defer doc.release()
 
 	out := &v1.GetDocumentResponse{
-		PageCount:   int32(doc.scan.Pages()),
 		Fingerprint: &v1.Fingerprint{Path: print.path, Size: print.size, Mtime: print.mtime},
 	}
-	out.Pages = make([]*v1.PageSize, out.PageCount)
+	out.Pages = make([]*v1.PageSize, doc.scan.Pages())
 	for i := range out.Pages {
 		width, height, err := doc.scan.Size(i)
 		if err != nil {

@@ -154,15 +154,15 @@ message Deck {
 
   // The sections, in the order they stand in the note. A card says which of
   // them it stands under.
-  repeated Section sections = 7;
+  repeated Section sections = 5;
 
   // What was wrong with the note and was not guessed at, in the order it was
   // found. The deck is read either way, and every card a person wrote is here.
-  repeated Problem problems = 5;
+  repeated Problem problems = 6;
 
   // What the file ends with once the last value has been read, with line
   // endings as LF. It is no card's, and it is written back as it arrives.
-  string tail = 6;
+  string tail = 7;
 }
 
 // Section is a run of a deck a person has given a name. It is a name and
@@ -253,7 +253,7 @@ message Card {
   //
   // A write naming a section the deck does not hold is refused. Nothing is
   // written, and the card is not quietly stood somewhere else.
-  optional int32 section = 6;
+  optional int32 section = 2;
 
   // The line the card's heading says, with the mark taken off. It is not what
   // the card is called: it holds nothing of its own, and a write throws it away
@@ -264,24 +264,24 @@ message Card {
   // is first. That heading is left exactly as it stands, so a write hands back
   // what it was given. A write carrying nothing here leaves such a card headed
   // by its mark alone.
-  string heading = 7;
+  string heading = 3;
 
   // The stencil this card is cut by, as the wikilink beneath its heading names
   // it, without the brackets. Empty for a card written under no wikilink.
-  string stencil = 2;
+  string stencil = 4;
 
   // The prose between that wikilink and the first field, with line endings as
   // LF. It is written back as it arrives.
-  string lead = 3;
+  string lead = 5;
 
   // The values, in the order they stand under the card. A field the stencil
   // declares and the card leaves out is absent here.
-  repeated Value values = 4;
+  repeated Value values = 6;
 
   // Where the stencil that wikilink names is filed, resolved the way any link
   // is. Empty for a card naming none and for a name that reaches no note, and a
   // write carries nothing here.
-  string stencil_at = 5;
+  string stencil_at = 7;
 }
 
 // Value is what a person wrote under one of a card's fields.
@@ -372,8 +372,6 @@ message WriteStencilRequest {
 }
 
 message WriteStencilResponse {
-  reserved 2;
-  reserved "changed";
 
   // Set when nothing was written, and why. A file that is no longer the one
   // this caller read is REFUSAL_STALE, and the person chooses what happens to
@@ -382,12 +380,12 @@ message WriteStencilResponse {
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
-  optional Fingerprint at = 3;
+  optional Fingerprint at = 2;
 
   // Set when the stencil is on disk and the index would not come level with it.
   // The write happened and `at` stands; search answers about this file as it
   // read it last, until a walk goes past.
-  bool unlevelled = 4;
+  bool unlevelled = 3;
 }
 
 message RenameStencilFieldRequest {
@@ -404,8 +402,6 @@ message RenameStencilFieldRequest {
 }
 
 message RenameStencilFieldResponse {
-  reserved 5;
-  reserved "changed";
 
   // The decks a heading was rewritten in, by path.
   repeated string decks = 1;
@@ -424,12 +420,12 @@ message RenameStencilFieldResponse {
 
   // The stencil the rename produced, for the caller to present at its next
   // write. Absent when nothing was renamed.
-  optional Fingerprint at = 6;
+  optional Fingerprint at = 5;
 
   // Set when the rename reached the vault and the index would not come level
   // with it. Search answers about these files as it read them last, until a
   // walk goes past.
-  bool unlevelled = 7;
+  bool unlevelled = 6;
 }
 
 // UnwrittenDeck is one deck a rename did not reach.
@@ -494,20 +490,18 @@ message WriteDeckRequest {
 
   // The sections, in the order they are to stand in the note. A card says
   // which of them it stands under.
-  repeated Section sections = 6;
+  repeated Section sections = 4;
 
   // The file this caller last read. Absent for a write that lands on whatever
   // the deck now holds.
-  optional Fingerprint seen = 4;
+  optional Fingerprint seen = 5;
 
   // What the file is to end with, below the last value, with line endings as
   // LF.
-  string tail = 5;
+  string tail = 6;
 }
 
 message WriteDeckResponse {
-  reserved 2;
-  reserved "changed";
 
   // Set when nothing was written, and why. A file that is no longer the one
   // this caller read is REFUSAL_STALE, and the person chooses what happens to
@@ -516,15 +510,15 @@ message WriteDeckResponse {
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
-  optional Fingerprint at = 3;
+  optional Fingerprint at = 2;
 
   // The size a deck is written up to, in bytes. Set with
   // REFUSAL_DECK_TOO_LARGE, so the interface names the bound without holding a
   // number of its own.
-  int64 bound = 4;
+  int64 bound = 3;
 
   // Set when the deck is on disk and the index would not come level with it.
   // The write happened and `at` stands; search answers about this file as it
   // read it last, until a walk goes past.
-  bool unlevelled = 5;
+  bool unlevelled = 4;
 }

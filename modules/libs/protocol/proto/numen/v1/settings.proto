@@ -141,11 +141,9 @@ message WriteSettingsFileRequest {
 }
 
 message WriteSettingsFileResponse {
-  reserved 1;
-  reserved "changed";
 
   // Set when nothing was written, and why. A file holding bytes this caller
   // has not read is REFUSAL_STALE, and the person chooses what happens to
   // their text.
-  optional Refusal refusal = 2;
+  optional Refusal refusal = 1;
 }

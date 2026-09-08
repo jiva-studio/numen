@@ -800,9 +800,9 @@ const file_numen_v1_vaults_proto_rawDesc = "" +
 	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x18\n" +
 	"\amissing\x18\x04 \x01(\bR\amissing\"\x13\n" +
-	"\x11ListVaultsRequest\"L\n" +
+	"\x11ListVaultsRequest\"=\n" +
 	"\x12ListVaultsResponse\x12'\n" +
-	"\x06vaults\x18\x01 \x03(\v2\x0f.numen.v1.VaultR\x06vaultsJ\x04\b\x02\x10\x03R\ashowing\"L\n" +
+	"\x06vaults\x18\x01 \x03(\v2\x0f.numen.v1.VaultR\x06vaults\"L\n" +
 	"\x13ChooseFolderRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x1f\n" +
 	"\vstarting_at\x18\x02 \x01(\tR\n" +

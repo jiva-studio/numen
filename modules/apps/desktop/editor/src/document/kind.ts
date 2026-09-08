@@ -39,7 +39,7 @@ export function documentKind(handle: WindowHandle, opens: (path: string) => Docu
     at: (state) => ({ file: state.path, source: 'book' }),
     attends: (state) => ({
       path: state.path,
-      document: { page: state.at.value + 1, pageCount: state.pageCount.value },
+      document: { page: state.at.value + 1, pageCount: state.pages.value.length },
     }),
   }
 

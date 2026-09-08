@@ -72,12 +72,10 @@ message Entry {
   // What the vault holds here.
   SourceKind kind = 4;
 
-  reserved 5;
-  reserved "size";
 
   // Which of three the note is. It says nothing about an entry that is not a
   // note.
-  NoteType type = 6;
+  NoteType type = 5;
 }
 
 // SourceKind is what the vault holds at a path. A file the index holds no text
@@ -152,10 +150,8 @@ message MoveResult {
   // name. Each of them still points at the name the file left, and nothing
   // comes back to it: a move that reports only what it repaired reports a
   // vault it did not leave behind.
-  repeated string dangling = 5;
+  repeated string dangling = 4;
 
-  reserved 4;
-  reserved "retargeted";
 }
 
 message RemoveFileRequest {

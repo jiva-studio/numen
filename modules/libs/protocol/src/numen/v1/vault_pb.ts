@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QimQIKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIMCgRuYW1lGBIgASgJEhQKDGRpc3BsYXlfbmFtZRgBIAEoCRIMCgRwYXRoGAIgASgJEg0KBXJlYWR5GAQgASgIEg4KBmZhaWxlZBgFIAEoCRIRCgl1bndhdGNoZWQYBiABKAkSEwoLdW5yZWFjaGFibGUYESABKAkSDgoGY2h1bmtzGAcgASgDEhAKCGVtYmVkZGVkGAggASgDEhEKCWVtYmVkZGluZxgKIAEoCEoECAMQBEoECAkQCkoECAsQEVIFYm9va3NSCmJvb2tzX3JlYWRSBGJ1c3lSB2luZGV4ZWRSCGxlYXJuaW5nUgRtYWRlUgVvd2luZ1IHcmVhZGluZyIaChhXYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QiWwoZV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZRINCgVwYXRocxgBIAMoCRIOCgZyZWxvYWQYAiABKAgSHwoHcmVuYW1lZBgDIAMoCzIOLm51bWVuLnYxLk1vdmUiIAoETW92ZRIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIhMKEVdhdGNoRm9jdXNSZXF1ZXN0ImIKEldhdGNoRm9jdXNSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBXN0YXJ0GAIgASgFEg4KBmxlbmd0aBgDIAEoBRIfCgRhbHNvGAQgAygLMhEubnVtZW4udjEuU3RyZXRjaCJCChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIhcKFVdyaXRlT3BlblRhYnNSZXNwb25zZSKmAQoDVGFiEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDAoEcGF0aBgDIAEoCRINCgV0aXRsZRgEIAEoCRIoCghkb2N1bWVudBgHIAEoCzIWLm51bWVuLnYxLk9wZW5Eb2N1bWVudBIqCglyZWNvcmRpbmcYCCABKAsyFy5udW1lbi52MS5PcGVuUmVjb3JkaW5nSgQIBRAGSgQIBhAHUgJhdFICb2YiKwoMT3BlbkRvY3VtZW50EgwKBHBhZ2UYASABKAUSDQoFcGFnZXMYAiABKAUiNwoNT3BlblJlY29yZGluZxIWCg50cmFuc2NyaWJlZF90bxgBIAEoBRIOCgZsZW5ndGgYAiABKAUy3QIKDFZhdWx0U2VydmljZRJQCg1HZXRWYXVsdFN0YXRlEh4ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVzcG9uc2USXgoRV2F0Y2hWYXVsdENoYW5nZXMSIi5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QaIy5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlMAESSQoKV2F0Y2hGb2N1cxIbLm51bWVuLnYxLldhdGNoRm9jdXNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hGb2N1c1Jlc3BvbnNlMAESUAoNV3JpdGVPcGVuVGFicxIeLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVPcGVuVGFic1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QixQEKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIMCgRuYW1lGAEgASgJEhQKDGRpc3BsYXlfbmFtZRgCIAEoCRIMCgRwYXRoGAMgASgJEg0KBXJlYWR5GAQgASgIEg4KBmZhaWxlZBgFIAEoCRIRCgl1bndhdGNoZWQYBiABKAkSEwoLdW5yZWFjaGFibGUYByABKAkSDgoGY2h1bmtzGAggASgDEhAKCGVtYmVkZGVkGAkgASgDEhEKCWVtYmVkZGluZxgKIAEoCCIaChhXYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QiWwoZV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZRINCgVwYXRocxgBIAMoCRIOCgZyZWxvYWQYAiABKAgSHwoHcmVuYW1lZBgDIAMoCzIOLm51bWVuLnYxLk1vdmUiIAoETW92ZRIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIhMKEVdhdGNoRm9jdXNSZXF1ZXN0ImIKEldhdGNoRm9jdXNSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBXN0YXJ0GAIgASgFEg4KBmxlbmd0aBgDIAEoBRIfCgRhbHNvGAQgAygLMhEubnVtZW4udjEuU3RyZXRjaCJCChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIhcKFVdyaXRlT3BlblRhYnNSZXNwb25zZSKSAQoDVGFiEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDAoEcGF0aBgDIAEoCRINCgV0aXRsZRgEIAEoCRIoCghkb2N1bWVudBgFIAEoCzIWLm51bWVuLnYxLk9wZW5Eb2N1bWVudBIqCglyZWNvcmRpbmcYBiABKAsyFy5udW1lbi52MS5PcGVuUmVjb3JkaW5nIisKDE9wZW5Eb2N1bWVudBIMCgRwYWdlGAEgASgFEg0KBXBhZ2VzGAIgASgFIjcKDU9wZW5SZWNvcmRpbmcSFgoOdHJhbnNjcmliZWRfdG8YASABKAUSDgoGbGVuZ3RoGAIgASgFMt0CCgxWYXVsdFNlcnZpY2USUAoNR2V0VmF1bHRTdGF0ZRIeLm51bWVuLnYxLkdldFZhdWx0U3RhdGVSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlc3BvbnNlEl4KEVdhdGNoVmF1bHRDaGFuZ2VzEiIubnVtZW4udjEuV2F0Y2hWYXVsdENoYW5nZXNSZXF1ZXN0GiMubnVtZW4udjEuV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZTABEkkKCldhdGNoRm9jdXMSGy5udW1lbi52MS5XYXRjaEZvY3VzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoRm9jdXNSZXNwb25zZTABElAKDVdyaXRlT3BlblRhYnMSHi5udW1lbi52MS5Xcml0ZU9wZW5UYWJzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetVaultStateRequest
@@ -34,6 +34,9 @@ export const GetVaultStateRequestSchema: GenMessage<GetVaultStateRequest> = /*@_
   messageDesc(file_numen_v1_vault, 0);
 
 /**
+ * What is being done behind the window is Tasks. What is here is what the
+ * vault is.
+ *
  * @generated from message numen.v1.GetVaultStateResponse
  */
 export type GetVaultStateResponse = Message<"numen.v1.GetVaultStateResponse"> & {
@@ -42,19 +45,19 @@ export type GetVaultStateResponse = Message<"numen.v1.GetVaultStateResponse"> & 
    * again. DisplayName is what the person calls it, which is what a window
    * titles itself with. The list says both of a vault the same way.
    *
-   * @generated from field: string name = 18;
+   * @generated from field: string name = 1;
    */
   name: string;
 
   /**
-   * @generated from field: string display_name = 1;
+   * @generated from field: string display_name = 2;
    */
   displayName: string;
 
   /**
    * Where the vault stands on this disk.
    *
-   * @generated from field: string path = 2;
+   * @generated from field: string path = 3;
    */
   path: string;
 
@@ -85,7 +88,7 @@ export type GetVaultStateResponse = Message<"numen.v1.GetVaultStateResponse"> & 
    * Why an agent cannot be reached, when one cannot. The window works and the
    * panel says this instead of answering.
    *
-   * @generated from field: string unreachable = 17;
+   * @generated from field: string unreachable = 7;
    */
   unreachable: string;
 
@@ -95,12 +98,12 @@ export type GetVaultStateResponse = Message<"numen.v1.GetVaultStateResponse"> & 
    * the pair is what says how far searching by meaning has got. Both are zero
    * for a vault nothing has cut yet.
    *
-   * @generated from field: int64 chunks = 7;
+   * @generated from field: int64 chunks = 8;
    */
   chunks: bigint;
 
   /**
-   * @generated from field: int64 embedded = 8;
+   * @generated from field: int64 embedded = 9;
    */
   embedded: bigint;
 
@@ -337,12 +340,12 @@ export type Tab = Message<"numen.v1.Tab"> & {
    * sets document, a tab holding a recording sets recording, and a tab of any
    * other kind sets neither.
    *
-   * @generated from field: numen.v1.OpenDocument document = 7;
+   * @generated from field: numen.v1.OpenDocument document = 5;
    */
   document?: OpenDocument | undefined;
 
   /**
-   * @generated from field: numen.v1.OpenRecording recording = 8;
+   * @generated from field: numen.v1.OpenRecording recording = 6;
    */
   recording?: OpenRecording | undefined;
 };

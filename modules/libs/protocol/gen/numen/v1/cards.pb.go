@@ -375,13 +375,13 @@ type Deck struct {
 	Cards []*Card `protobuf:"bytes,4,rep,name=cards,proto3" json:"cards,omitempty"`
 	// The sections, in the order they stand in the note. A card says which of
 	// them it stands under.
-	Sections []*Section `protobuf:"bytes,7,rep,name=sections,proto3" json:"sections,omitempty"`
+	Sections []*Section `protobuf:"bytes,5,rep,name=sections,proto3" json:"sections,omitempty"`
 	// What was wrong with the note and was not guessed at, in the order it was
 	// found. The deck is read either way, and every card a person wrote is here.
-	Problems []*Problem `protobuf:"bytes,5,rep,name=problems,proto3" json:"problems,omitempty"`
+	Problems []*Problem `protobuf:"bytes,6,rep,name=problems,proto3" json:"problems,omitempty"`
 	// What the file ends with once the last value has been read, with line
 	// endings as LF. It is no card's, and it is written back as it arrives.
-	Tail          string `protobuf:"bytes,6,opt,name=tail,proto3" json:"tail,omitempty"`
+	Tail          string `protobuf:"bytes,7,opt,name=tail,proto3" json:"tail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -622,7 +622,7 @@ type Card struct {
 	//
 	// A write naming a section the deck does not hold is refused. Nothing is
 	// written, and the card is not quietly stood somewhere else.
-	Section *int32 `protobuf:"varint,6,opt,name=section,proto3,oneof" json:"section,omitempty"`
+	Section *int32 `protobuf:"varint,2,opt,name=section,proto3,oneof" json:"section,omitempty"`
 	// The line the card's heading says, with the mark taken off. It is not what
 	// the card is called: it holds nothing of its own, and a write throws it away
 	// and reads it again from the first field.
@@ -632,20 +632,20 @@ type Card struct {
 	// is first. That heading is left exactly as it stands, so a write hands back
 	// what it was given. A write carrying nothing here leaves such a card headed
 	// by its mark alone.
-	Heading string `protobuf:"bytes,7,opt,name=heading,proto3" json:"heading,omitempty"`
+	Heading string `protobuf:"bytes,3,opt,name=heading,proto3" json:"heading,omitempty"`
 	// The stencil this card is cut by, as the wikilink beneath its heading names
 	// it, without the brackets. Empty for a card written under no wikilink.
-	Stencil string `protobuf:"bytes,2,opt,name=stencil,proto3" json:"stencil,omitempty"`
+	Stencil string `protobuf:"bytes,4,opt,name=stencil,proto3" json:"stencil,omitempty"`
 	// The prose between that wikilink and the first field, with line endings as
 	// LF. It is written back as it arrives.
-	Lead string `protobuf:"bytes,3,opt,name=lead,proto3" json:"lead,omitempty"`
+	Lead string `protobuf:"bytes,5,opt,name=lead,proto3" json:"lead,omitempty"`
 	// The values, in the order they stand under the card. A field the stencil
 	// declares and the card leaves out is absent here.
-	Values []*Value `protobuf:"bytes,4,rep,name=values,proto3" json:"values,omitempty"`
+	Values []*Value `protobuf:"bytes,6,rep,name=values,proto3" json:"values,omitempty"`
 	// Where the stencil that wikilink names is filed, resolved the way any link
 	// is. Empty for a card naming none and for a name that reaches no note, and a
 	// write carries nothing here.
-	StencilAt     string `protobuf:"bytes,5,opt,name=stencil_at,json=stencilAt,proto3" json:"stencil_at,omitempty"`
+	StencilAt     string `protobuf:"bytes,7,opt,name=stencil_at,json=stencilAt,proto3" json:"stencil_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1222,11 +1222,11 @@ type WriteStencilResponse struct {
 	Refusal *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
-	At *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *Fingerprint `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	// Set when the stencil is on disk and the index would not come level with it.
 	// The write happened and `at` stands; search answers about this file as it
 	// read it last, until a walk goes past.
-	Unlevelled    bool `protobuf:"varint,4,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1369,11 +1369,11 @@ type RenameStencilFieldResponse struct {
 	Refusal *Refusal `protobuf:"varint,4,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
 	// The stencil the rename produced, for the caller to present at its next
 	// write. Absent when nothing was renamed.
-	At *Fingerprint `protobuf:"bytes,6,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *Fingerprint `protobuf:"bytes,5,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	// Set when the rename reached the vault and the index would not come level
 	// with it. Search answers about these files as it read them last, until a
 	// walk goes past.
-	Unlevelled    bool `protobuf:"varint,7,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	Unlevelled    bool `protobuf:"varint,6,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1752,13 +1752,13 @@ type WriteDeckRequest struct {
 	Cards []*Card `protobuf:"bytes,3,rep,name=cards,proto3" json:"cards,omitempty"`
 	// The sections, in the order they are to stand in the note. A card says
 	// which of them it stands under.
-	Sections []*Section `protobuf:"bytes,6,rep,name=sections,proto3" json:"sections,omitempty"`
+	Sections []*Section `protobuf:"bytes,4,rep,name=sections,proto3" json:"sections,omitempty"`
 	// The file this caller last read. Absent for a write that lands on whatever
 	// the deck now holds.
-	Seen *Fingerprint `protobuf:"bytes,4,opt,name=seen,proto3,oneof" json:"seen,omitempty"`
+	Seen *Fingerprint `protobuf:"bytes,5,opt,name=seen,proto3,oneof" json:"seen,omitempty"`
 	// What the file is to end with, below the last value, with line endings as
 	// LF.
-	Tail          string `protobuf:"bytes,5,opt,name=tail,proto3" json:"tail,omitempty"`
+	Tail          string `protobuf:"bytes,6,opt,name=tail,proto3" json:"tail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1843,15 +1843,15 @@ type WriteDeckResponse struct {
 	Refusal *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
-	At *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *Fingerprint `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	// The size a deck is written up to, in bytes. Set with
 	// REFUSAL_DECK_TOO_LARGE, so the interface names the bound without holding a
 	// number of its own.
-	Bound int64 `protobuf:"varint,4,opt,name=bound,proto3" json:"bound,omitempty"`
+	Bound int64 `protobuf:"varint,3,opt,name=bound,proto3" json:"bound,omitempty"`
 	// Set when the deck is on disk and the index would not come level with it.
 	// The write happened and `at` stands; search answers about this file as it
 	// read it last, until a walk goes past.
-	Unlevelled    bool `protobuf:"varint,5,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	Unlevelled    bool `protobuf:"varint,4,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1941,9 +1941,9 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1a\n" +
 	"\bpreamble\x18\x03 \x01(\tR\bpreamble\x12$\n" +
 	"\x05cards\x18\x04 \x03(\v2\x0e.numen.v1.CardR\x05cards\x12-\n" +
-	"\bsections\x18\a \x03(\v2\x11.numen.v1.SectionR\bsections\x12-\n" +
-	"\bproblems\x18\x05 \x03(\v2\x11.numen.v1.ProblemR\bproblems\x12\x12\n" +
-	"\x04tail\x18\x06 \x01(\tR\x04tail\"1\n" +
+	"\bsections\x18\x05 \x03(\v2\x11.numen.v1.SectionR\bsections\x12-\n" +
+	"\bproblems\x18\x06 \x03(\v2\x11.numen.v1.ProblemR\bproblems\x12\x12\n" +
+	"\x04tail\x18\a \x01(\tR\x04tail\"1\n" +
 	"\aSection\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04lead\x18\x02 \x01(\tR\x04lead\"\x9e\x01\n" +
@@ -1957,13 +1957,13 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x05_face\"\xd5\x01\n" +
 	"\x04Card\x12\x12\n" +
 	"\x04mark\x18\x01 \x01(\tR\x04mark\x12\x1d\n" +
-	"\asection\x18\x06 \x01(\x05H\x00R\asection\x88\x01\x01\x12\x18\n" +
-	"\aheading\x18\a \x01(\tR\aheading\x12\x18\n" +
-	"\astencil\x18\x02 \x01(\tR\astencil\x12\x12\n" +
-	"\x04lead\x18\x03 \x01(\tR\x04lead\x12'\n" +
-	"\x06values\x18\x04 \x03(\v2\x0f.numen.v1.ValueR\x06values\x12\x1d\n" +
+	"\asection\x18\x02 \x01(\x05H\x00R\asection\x88\x01\x01\x12\x18\n" +
+	"\aheading\x18\x03 \x01(\tR\aheading\x12\x18\n" +
+	"\astencil\x18\x04 \x01(\tR\astencil\x12\x12\n" +
+	"\x04lead\x18\x05 \x01(\tR\x04lead\x12'\n" +
+	"\x06values\x18\x06 \x03(\v2\x0f.numen.v1.ValueR\x06values\x12\x1d\n" +
 	"\n" +
-	"stencil_at\x18\x05 \x01(\tR\tstencilAtB\n" +
+	"stencil_at\x18\a \x01(\tR\tstencilAtB\n" +
 	"\n" +
 	"\b_section\"1\n" +
 	"\x05Value\x12\x14\n" +
@@ -2004,35 +2004,35 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x04seen\x18\x04 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01\x12\x1a\n" +
 	"\bpreamble\x18\x05 \x01(\tR\bpreamble\x12\x12\n" +
 	"\x04tail\x18\x06 \x01(\tR\x04tailB\a\n" +
-	"\x05_seen\"\xb6\x01\n" +
+	"\x05_seen\"\xa7\x01\n" +
 	"\x14WriteStencilResponse\x120\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
+	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
 	"\n" +
-	"unlevelled\x18\x04 \x01(\bR\n" +
+	"unlevelled\x18\x03 \x01(\bR\n" +
 	"unlevelledB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_atJ\x04\b\x02\x10\x03R\achanged\"\x8c\x01\n" +
+	"\x03_at\"\x8c\x01\n" +
 	"\x19RenameStencilFieldRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04from\x18\x02 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x03 \x01(\tR\x02to\x12.\n" +
 	"\x04seen\x18\x04 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xa2\x02\n" +
+	"\x05_seen\"\x93\x02\n" +
 	"\x1aRenameStencilFieldResponse\x12\x14\n" +
 	"\x05decks\x18\x01 \x03(\tR\x05decks\x12\x14\n" +
 	"\x05cards\x18\x02 \x01(\x05R\x05cards\x128\n" +
 	"\vnot_written\x18\x03 \x03(\v2\x17.numen.v1.UnwrittenDeckR\n" +
 	"notWritten\x120\n" +
 	"\arefusal\x18\x04 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x06 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
+	"\x02at\x18\x05 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
 	"\n" +
-	"unlevelled\x18\a \x01(\bR\n" +
+	"unlevelled\x18\x06 \x01(\bR\n" +
 	"unlevelledB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_atJ\x04\b\x05\x10\x06R\achanged\"P\n" +
+	"\x03_at\"P\n" +
 	"\rUnwrittenDeck\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12+\n" +
 	"\aproblem\x18\x02 \x01(\v2\x11.numen.v1.ProblemR\aproblem\"=\n" +
@@ -2062,20 +2062,20 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1a\n" +
 	"\bpreamble\x18\x02 \x01(\tR\bpreamble\x12$\n" +
 	"\x05cards\x18\x03 \x03(\v2\x0e.numen.v1.CardR\x05cards\x12-\n" +
-	"\bsections\x18\x06 \x03(\v2\x11.numen.v1.SectionR\bsections\x12.\n" +
-	"\x04seen\x18\x04 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01\x12\x12\n" +
-	"\x04tail\x18\x05 \x01(\tR\x04tailB\a\n" +
-	"\x05_seen\"\xc9\x01\n" +
+	"\bsections\x18\x04 \x03(\v2\x11.numen.v1.SectionR\bsections\x12.\n" +
+	"\x04seen\x18\x05 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01\x12\x12\n" +
+	"\x04tail\x18\x06 \x01(\tR\x04tailB\a\n" +
+	"\x05_seen\"\xba\x01\n" +
 	"\x11WriteDeckResponse\x120\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x14\n" +
-	"\x05bound\x18\x04 \x01(\x03R\x05bound\x12\x1e\n" +
+	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x14\n" +
+	"\x05bound\x18\x03 \x01(\x03R\x05bound\x12\x1e\n" +
 	"\n" +
-	"unlevelled\x18\x05 \x01(\bR\n" +
+	"unlevelled\x18\x04 \x01(\bR\n" +
 	"unlevelledB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_atJ\x04\b\x02\x10\x03R\achanged*\xbb\x02\n" +
+	"\x03_at*\xbb\x02\n" +
 	"\x05Fault\x12\x15\n" +
 	"\x11FAULT_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aFAULT_FIELD_DECLARED_TWICE\x10\x01\x12 \n" +

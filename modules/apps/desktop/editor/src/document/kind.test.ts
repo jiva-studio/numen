@@ -40,7 +40,7 @@ const settles = () => new Promise((done) => setTimeout(done, 0))
 
 /** A document open at a page of a file, as far as the window reads one. */
 const openedAt = (path: string, page: number, pageCount: number) =>
-  ({ path, at: ref(page), pageCount: ref(pageCount) }) as unknown as DocumentTabState
+  ({ path, at: ref(page), pages: ref(Array.from({ length: pageCount })) }) as unknown as DocumentTabState
 
 /** The kind, over a window holding the document it is handed. */
 const kindOver = (held: DocumentTabState) => documentKind(window_(held).handle, () => held, openers().puts).kind

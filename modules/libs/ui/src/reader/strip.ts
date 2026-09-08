@@ -38,7 +38,7 @@ export const READER_WORDS: ReaderWords = {
 }
 
 /** One page's size, in the page's own units. */
-export interface PageSize {
+export interface Page {
   readonly width: number
   readonly height: number
 }
@@ -56,7 +56,7 @@ export const GAP = 16
  * The shape of a page nothing said the size of. A document answers with its
  * pages' sizes, and one that has not answered yet still has to be laid out.
  */
-export const UPRIGHT: PageSize = { width: 612, height: 792 }
+export const UPRIGHT: Page = { width: 612, height: 792 }
 
 /**
  * How much beyond the edge of the viewport is drawn, as a share of it. A page
@@ -95,18 +95,13 @@ export interface Row {
  * there is no width to draw a page at, and a page drawn at a made-up one is a
  * page drawn and thrown away.
  */
-export function row(
-  pages: readonly PageSize[],
-  pageCount: number,
-  viewport: Viewport,
-  zoom: number,
-): Row {
+export function row(pages: readonly Page[], viewport: Viewport, zoom: number): Row {
   const high = Math.round((viewport.high - 2 * GAP) * zoom)
   if (high <= 0) return { high: 0, starts: [], widths: [], length: 0 }
   const starts: number[] = []
   const widths: number[] = []
   let along = GAP
-  for (let page = 0; page < pageCount; page++) {
+  for (let page = 0; page < pages.length; page++) {
     const size = sizeOf(pages, page)
     const wide = Math.max(Math.round((high * size.width) / size.height), 1)
     starts.push(along)
@@ -117,7 +112,7 @@ export function row(
 }
 
 /** The size of one page, and the nearest thing to it that is known. */
-function sizeOf(pages: readonly PageSize[], page: number): PageSize {
+function sizeOf(pages: readonly Page[], page: number): Page {
   const said = pages[page]
   if (said && said.width > 0 && said.height > 0) return said
   const first = pages[0]

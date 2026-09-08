@@ -39,17 +39,15 @@ message GetVaultStateRequest {}
 message GetVaultStateResponse {
   // What is being done behind the window is Tasks. What is here is what the
   // vault is.
-  reserved 3, 9, 11 to 16;
-  reserved "books", "books_read", "busy", "indexed", "learning", "made", "owing", "reading";
 
   // Name is the identity the folder carries, and how this vault is asked for
   // again. DisplayName is what the person calls it, which is what a window
   // titles itself with. The list says both of a vault the same way.
-  string name = 18;
-  string display_name = 1;
+  string name = 1;
+  string display_name = 2;
 
   // Where the vault stands on this disk.
-  string path = 2;
+  string path = 3;
   // Ready is set when the scan has finished.
   bool ready = 4;
 
@@ -63,14 +61,14 @@ message GetVaultStateResponse {
 
   // Why an agent cannot be reached, when one cannot. The window works and the
   // panel says this instead of answering.
-  string unreachable = 17;
+  string unreachable = 7;
 
   // Chunks is how many spans of text the index holds, and embedded is how many
   // of those carry a vector. Cutting finishes long before embedding does, so
   // the pair is what says how far searching by meaning has got. Both are zero
   // for a vault nothing has cut yet.
-  int64 chunks = 7;
-  int64 embedded = 8;
+  int64 chunks = 8;
+  int64 embedded = 9;
 
   // Embedding says whether anything is going to turn the chunks into vectors.
   // False for an installation with no model, where `embedded` stays where it is
@@ -152,14 +150,12 @@ message Tab {
   // Title is what the tab is called, as the person reads it.
   string title = 4;
 
-  reserved 5, 6;
-  reserved "at", "of";
 
   // Where the person stands in what the tab holds. A tab holding a document
   // sets document, a tab holding a recording sets recording, and a tab of any
   // other kind sets neither.
-  OpenDocument document = 7;
-  OpenRecording recording = 8;
+  OpenDocument document = 5;
+  OpenRecording recording = 6;
 }
 
 // An OpenDocument is the document a tab holds, as the person is reading it.

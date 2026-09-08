@@ -22,7 +22,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/cards.proto.
  */
 export const file_numen_v1_cards: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9jYXJkcy5wcm90bxIIbnVtZW4udjEimgEKB1N0ZW5jaWwSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIOCgZmaWVsZHMYAyADKAkSHQoFZmFjZXMYBCADKAsyDi5udW1lbi52MS5GYWNlEiMKCHByb2JsZW1zGAUgAygLMhEubnVtZW4udjEuUHJvYmxlbRIQCghwcmVhbWJsZRgGIAEoCRIMCgR0YWlsGAcgASgJIj0KDlN0ZW5jaWxTdW1tYXJ5EgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkSDgoGZmllbGRzGAMgAygJIj8KBEZhY2USDAoEbmFtZRgBIAEoCRINCgVmcm9udBgCIAEoCRIMCgRiYWNrGAMgASgJEgwKBGxlYWQYBCABKAkirAEKBERlY2sSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIQCghwcmVhbWJsZRgDIAEoCRIdCgVjYXJkcxgEIAMoCzIOLm51bWVuLnYxLkNhcmQSIwoIc2VjdGlvbnMYByADKAsyES5udW1lbi52MS5TZWN0aW9uEiMKCHByb2JsZW1zGAUgAygLMhEubnVtZW4udjEuUHJvYmxlbRIMCgR0YWlsGAYgASgJIiUKB1NlY3Rpb24SDAoEbmFtZRgBIAEoCRIMCgRsZWFkGAIgASgJIn4KB1Byb2JsZW0SHgoFZmF1bHQYASABKA4yDy5udW1lbi52MS5GYXVsdBIRCgRjYXJkGAIgASgFSACIAQESEQoEZmFjZRgDIAEoBUgBiAEBEg0KBWZpZWxkGAQgASgJEgwKBHRleHQYBSABKAlCBwoFX2NhcmRCBwoFX2ZhY2UimwEKBENhcmQSDAoEbWFyaxgBIAEoCRIUCgdzZWN0aW9uGAYgASgFSACIAQESDwoHaGVhZGluZxgHIAEoCRIPCgdzdGVuY2lsGAIgASgJEgwKBGxlYWQYAyABKAkSHwoGdmFsdWVzGAQgAygLMg8ubnVtZW4udjEuVmFsdWUSEgoKc3RlbmNpbF9hdBgFIAEoCUIKCghfc2VjdGlvbiIkCgVWYWx1ZRINCgVmaWVsZBgBIAEoCRIMCgR0ZXh0GAIgASgJIiQKE0xpc3RTdGVuY2lsc1JlcXVlc3QSDQoFbGltaXQYASABKAUiUQoUTGlzdFN0ZW5jaWxzUmVzcG9uc2USKgoIc3RlbmNpbHMYASADKAsyGC5udW1lbi52MS5TdGVuY2lsU3VtbWFyeRINCgV0b3RhbBgCIAEoBSJDChRDcmVhdGVTdGVuY2lsUmVxdWVzdBINCgV0aXRsZRgBIAEoCRIMCgRwYXRoGAIgASgJEg4KBmZpZWxkcxgDIAMoCSJuChVDcmVhdGVTdGVuY2lsUmVzcG9uc2USDAoEcGF0aBgBIAEoCRInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBEhIKCnVubGV2ZWxsZWQYAyABKAhCCgoIX3JlZnVzYWwiIgoSUmVhZFN0ZW5jaWxSZXF1ZXN0EgwKBHBhdGgYASABKAkirgEKE1JlYWRTdGVuY2lsUmVzcG9uc2USJwoHc3RlbmNpbBgBIAEoCzIRLm51bWVuLnYxLlN0ZW5jaWxIAIgBARInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgBiAEBEiYKAmF0GAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAogBAUIKCghfc3RlbmNpbEIKCghfcmVmdXNhbEIFCgNfYXQipQEKE1dyaXRlU3RlbmNpbFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIOCgZmaWVsZHMYAiADKAkSHQoFZmFjZXMYAyADKAsyDi5udW1lbi52MS5GYWNlEigKBHNlZW4YBCABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgAiAEBEhAKCHByZWFtYmxlGAUgASgJEgwKBHRhaWwYBiABKAlCBwoFX3NlZW4inQEKFFdyaXRlU3RlbmNpbFJlc3BvbnNlEicKB3JlZnVzYWwYASABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgBiAEBEhIKCnVubGV2ZWxsZWQYBCABKAhCCgoIX3JlZnVzYWxCBQoDX2F0SgQIAhADUgdjaGFuZ2VkInYKGVJlbmFtZVN0ZW5jaWxGaWVsZFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIMCgRmcm9tGAIgASgJEgoKAnRvGAMgASgJEigKBHNlZW4YBCABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgAiAEBQgcKBV9zZWVuIu8BChpSZW5hbWVTdGVuY2lsRmllbGRSZXNwb25zZRINCgVkZWNrcxgBIAMoCRINCgVjYXJkcxgCIAEoBRIsCgtub3Rfd3JpdHRlbhgDIAMoCzIXLm51bWVuLnYxLlVud3JpdHRlbkRlY2sSJwoHcmVmdXNhbBgEIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARImCgJhdBgGIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAGIAQESEgoKdW5sZXZlbGxlZBgHIAEoCEIKCghfcmVmdXNhbEIFCgNfYXRKBAgFEAZSB2NoYW5nZWQiQQoNVW53cml0dGVuRGVjaxIMCgRwYXRoGAEgASgJEiIKB3Byb2JsZW0YAiABKAsyES5udW1lbi52MS5Qcm9ibGVtIjAKEUNyZWF0ZURlY2tSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEgwKBHBhdGgYAiABKAkiawoSQ3JlYXRlRGVja1Jlc3BvbnNlEgwKBHBhdGgYASABKAkSJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARISCgp1bmxldmVsbGVkGAMgASgIQgoKCF9yZWZ1c2FsIh8KD1JlYWREZWNrUmVxdWVzdBIMCgRwYXRoGAEgASgJIrEBChBSZWFkRGVja1Jlc3BvbnNlEiEKBGRlY2sYASABKAsyDi5udW1lbi52MS5EZWNrSACIAQESJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAYgBARImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAKIAQESDQoFYm91bmQYBCABKANCBwoFX2RlY2tCCgoIX3JlZnVzYWxCBQoDX2F0IrcBChBXcml0ZURlY2tSZXF1ZXN0EgwKBHBhdGgYASABKAkSEAoIcHJlYW1ibGUYAiABKAkSHQoFY2FyZHMYAyADKAsyDi5udW1lbi52MS5DYXJkEiMKCHNlY3Rpb25zGAYgAygLMhEubnVtZW4udjEuU2VjdGlvbhIoCgRzZWVuGAQgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAIgBARIMCgR0YWlsGAUgASgJQgcKBV9zZWVuIqkBChFXcml0ZURlY2tSZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBEiYKAmF0GAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAYgBARINCgVib3VuZBgEIAEoAxISCgp1bmxldmVsbGVkGAUgASgIQgoKCF9yZWZ1c2FsQgUKA19hdEoECAIQA1IHY2hhbmdlZCq7AgoFRmF1bHQSFQoRRkFVTFRfVU5TUEVDSUZJRUQQABIeChpGQVVMVF9GSUVMRF9ERUNMQVJFRF9UV0lDRRABEiAKHEZBVUxUX1NURU5DSUxfV0lUSE9VVF9GSUVMRFMQAhIdChlGQVVMVF9GQUNFX01JU1NJTkdfQV9TSURFEAMSIAocRkFVTFRfUExBQ0VIT0xERVJfVU5ERUNMQVJFRBAEEiAKHEZBVUxUX0NBUkRfV0lUSE9VVF9BX1NURU5DSUwQBRIcChhGQVVMVF9TVEVOQ0lMX0lTX05PVF9PTkUQBhIdChlGQVVMVF9GSUVMRF9XUklUVEVOX1RXSUNFEAcSGwoXRkFVTFRfRklFTERfTk9UX1JFTkFNRUQQCBIcChhGQVVMVF9NQVJLX0NBUlJJRURfVFdJQ0UQCTL9BAoMQ2FyZHNTZXJ2aWNlEk0KDExpc3RTdGVuY2lscxIdLm51bWVuLnYxLkxpc3RTdGVuY2lsc1JlcXVlc3QaHi5udW1lbi52MS5MaXN0U3RlbmNpbHNSZXNwb25zZRJQCg1DcmVhdGVTdGVuY2lsEh4ubnVtZW4udjEuQ3JlYXRlU3RlbmNpbFJlcXVlc3QaHy5udW1lbi52MS5DcmVhdGVTdGVuY2lsUmVzcG9uc2USSgoLUmVhZFN0ZW5jaWwSHC5udW1lbi52MS5SZWFkU3RlbmNpbFJlcXVlc3QaHS5udW1lbi52MS5SZWFkU3RlbmNpbFJlc3BvbnNlEk0KDFdyaXRlU3RlbmNpbBIdLm51bWVuLnYxLldyaXRlU3RlbmNpbFJlcXVlc3QaHi5udW1lbi52MS5Xcml0ZVN0ZW5jaWxSZXNwb25zZRJfChJSZW5hbWVTdGVuY2lsRmllbGQSIy5udW1lbi52MS5SZW5hbWVTdGVuY2lsRmllbGRSZXF1ZXN0GiQubnVtZW4udjEuUmVuYW1lU3RlbmNpbEZpZWxkUmVzcG9uc2USRwoKQ3JlYXRlRGVjaxIbLm51bWVuLnYxLkNyZWF0ZURlY2tSZXF1ZXN0GhwubnVtZW4udjEuQ3JlYXRlRGVja1Jlc3BvbnNlEkEKCFJlYWREZWNrEhkubnVtZW4udjEuUmVhZERlY2tSZXF1ZXN0GhoubnVtZW4udjEuUmVhZERlY2tSZXNwb25zZRJECglXcml0ZURlY2sSGi5udW1lbi52MS5Xcml0ZURlY2tSZXF1ZXN0GhsubnVtZW4udjEuV3JpdGVEZWNrUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS9jYXJkcy5wcm90bxIIbnVtZW4udjEimgEKB1N0ZW5jaWwSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIOCgZmaWVsZHMYAyADKAkSHQoFZmFjZXMYBCADKAsyDi5udW1lbi52MS5GYWNlEiMKCHByb2JsZW1zGAUgAygLMhEubnVtZW4udjEuUHJvYmxlbRIQCghwcmVhbWJsZRgGIAEoCRIMCgR0YWlsGAcgASgJIj0KDlN0ZW5jaWxTdW1tYXJ5EgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkSDgoGZmllbGRzGAMgAygJIj8KBEZhY2USDAoEbmFtZRgBIAEoCRINCgVmcm9udBgCIAEoCRIMCgRiYWNrGAMgASgJEgwKBGxlYWQYBCABKAkirAEKBERlY2sSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIQCghwcmVhbWJsZRgDIAEoCRIdCgVjYXJkcxgEIAMoCzIOLm51bWVuLnYxLkNhcmQSIwoIc2VjdGlvbnMYBSADKAsyES5udW1lbi52MS5TZWN0aW9uEiMKCHByb2JsZW1zGAYgAygLMhEubnVtZW4udjEuUHJvYmxlbRIMCgR0YWlsGAcgASgJIiUKB1NlY3Rpb24SDAoEbmFtZRgBIAEoCRIMCgRsZWFkGAIgASgJIn4KB1Byb2JsZW0SHgoFZmF1bHQYASABKA4yDy5udW1lbi52MS5GYXVsdBIRCgRjYXJkGAIgASgFSACIAQESEQoEZmFjZRgDIAEoBUgBiAEBEg0KBWZpZWxkGAQgASgJEgwKBHRleHQYBSABKAlCBwoFX2NhcmRCBwoFX2ZhY2UimwEKBENhcmQSDAoEbWFyaxgBIAEoCRIUCgdzZWN0aW9uGAIgASgFSACIAQESDwoHaGVhZGluZxgDIAEoCRIPCgdzdGVuY2lsGAQgASgJEgwKBGxlYWQYBSABKAkSHwoGdmFsdWVzGAYgAygLMg8ubnVtZW4udjEuVmFsdWUSEgoKc3RlbmNpbF9hdBgHIAEoCUIKCghfc2VjdGlvbiIkCgVWYWx1ZRINCgVmaWVsZBgBIAEoCRIMCgR0ZXh0GAIgASgJIiQKE0xpc3RTdGVuY2lsc1JlcXVlc3QSDQoFbGltaXQYASABKAUiUQoUTGlzdFN0ZW5jaWxzUmVzcG9uc2USKgoIc3RlbmNpbHMYASADKAsyGC5udW1lbi52MS5TdGVuY2lsU3VtbWFyeRINCgV0b3RhbBgCIAEoBSJDChRDcmVhdGVTdGVuY2lsUmVxdWVzdBINCgV0aXRsZRgBIAEoCRIMCgRwYXRoGAIgASgJEg4KBmZpZWxkcxgDIAMoCSJuChVDcmVhdGVTdGVuY2lsUmVzcG9uc2USDAoEcGF0aBgBIAEoCRInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBEhIKCnVubGV2ZWxsZWQYAyABKAhCCgoIX3JlZnVzYWwiIgoSUmVhZFN0ZW5jaWxSZXF1ZXN0EgwKBHBhdGgYASABKAkirgEKE1JlYWRTdGVuY2lsUmVzcG9uc2USJwoHc3RlbmNpbBgBIAEoCzIRLm51bWVuLnYxLlN0ZW5jaWxIAIgBARInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgBiAEBEiYKAmF0GAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAogBAUIKCghfc3RlbmNpbEIKCghfcmVmdXNhbEIFCgNfYXQipQEKE1dyaXRlU3RlbmNpbFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIOCgZmaWVsZHMYAiADKAkSHQoFZmFjZXMYAyADKAsyDi5udW1lbi52MS5GYWNlEigKBHNlZW4YBCABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgAiAEBEhAKCHByZWFtYmxlGAUgASgJEgwKBHRhaWwYBiABKAlCBwoFX3NlZW4ijgEKFFdyaXRlU3RlbmNpbFJlc3BvbnNlEicKB3JlZnVzYWwYASABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQESJgoCYXQYAiABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgBiAEBEhIKCnVubGV2ZWxsZWQYAyABKAhCCgoIX3JlZnVzYWxCBQoDX2F0InYKGVJlbmFtZVN0ZW5jaWxGaWVsZFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIMCgRmcm9tGAIgASgJEgoKAnRvGAMgASgJEigKBHNlZW4YBCABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgAiAEBQgcKBV9zZWVuIuABChpSZW5hbWVTdGVuY2lsRmllbGRSZXNwb25zZRINCgVkZWNrcxgBIAMoCRINCgVjYXJkcxgCIAEoBRIsCgtub3Rfd3JpdHRlbhgDIAMoCzIXLm51bWVuLnYxLlVud3JpdHRlbkRlY2sSJwoHcmVmdXNhbBgEIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARImCgJhdBgFIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAGIAQESEgoKdW5sZXZlbGxlZBgGIAEoCEIKCghfcmVmdXNhbEIFCgNfYXQiQQoNVW53cml0dGVuRGVjaxIMCgRwYXRoGAEgASgJEiIKB3Byb2JsZW0YAiABKAsyES5udW1lbi52MS5Qcm9ibGVtIjAKEUNyZWF0ZURlY2tSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEgwKBHBhdGgYAiABKAkiawoSQ3JlYXRlRGVja1Jlc3BvbnNlEgwKBHBhdGgYASABKAkSJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARISCgp1bmxldmVsbGVkGAMgASgIQgoKCF9yZWZ1c2FsIh8KD1JlYWREZWNrUmVxdWVzdBIMCgRwYXRoGAEgASgJIrEBChBSZWFkRGVja1Jlc3BvbnNlEiEKBGRlY2sYASABKAsyDi5udW1lbi52MS5EZWNrSACIAQESJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAYgBARImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAKIAQESDQoFYm91bmQYBCABKANCBwoFX2RlY2tCCgoIX3JlZnVzYWxCBQoDX2F0IrcBChBXcml0ZURlY2tSZXF1ZXN0EgwKBHBhdGgYASABKAkSEAoIcHJlYW1ibGUYAiABKAkSHQoFY2FyZHMYAyADKAsyDi5udW1lbi52MS5DYXJkEiMKCHNlY3Rpb25zGAQgAygLMhEubnVtZW4udjEuU2VjdGlvbhIoCgRzZWVuGAUgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAIgBARIMCgR0YWlsGAYgASgJQgcKBV9zZWVuIpoBChFXcml0ZURlY2tSZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBEiYKAmF0GAIgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAYgBARINCgVib3VuZBgDIAEoAxISCgp1bmxldmVsbGVkGAQgASgIQgoKCF9yZWZ1c2FsQgUKA19hdCq7AgoFRmF1bHQSFQoRRkFVTFRfVU5TUEVDSUZJRUQQABIeChpGQVVMVF9GSUVMRF9ERUNMQVJFRF9UV0lDRRABEiAKHEZBVUxUX1NURU5DSUxfV0lUSE9VVF9GSUVMRFMQAhIdChlGQVVMVF9GQUNFX01JU1NJTkdfQV9TSURFEAMSIAocRkFVTFRfUExBQ0VIT0xERVJfVU5ERUNMQVJFRBAEEiAKHEZBVUxUX0NBUkRfV0lUSE9VVF9BX1NURU5DSUwQBRIcChhGQVVMVF9TVEVOQ0lMX0lTX05PVF9PTkUQBhIdChlGQVVMVF9GSUVMRF9XUklUVEVOX1RXSUNFEAcSGwoXRkFVTFRfRklFTERfTk9UX1JFTkFNRUQQCBIcChhGQVVMVF9NQVJLX0NBUlJJRURfVFdJQ0UQCTL9BAoMQ2FyZHNTZXJ2aWNlEk0KDExpc3RTdGVuY2lscxIdLm51bWVuLnYxLkxpc3RTdGVuY2lsc1JlcXVlc3QaHi5udW1lbi52MS5MaXN0U3RlbmNpbHNSZXNwb25zZRJQCg1DcmVhdGVTdGVuY2lsEh4ubnVtZW4udjEuQ3JlYXRlU3RlbmNpbFJlcXVlc3QaHy5udW1lbi52MS5DcmVhdGVTdGVuY2lsUmVzcG9uc2USSgoLUmVhZFN0ZW5jaWwSHC5udW1lbi52MS5SZWFkU3RlbmNpbFJlcXVlc3QaHS5udW1lbi52MS5SZWFkU3RlbmNpbFJlc3BvbnNlEk0KDFdyaXRlU3RlbmNpbBIdLm51bWVuLnYxLldyaXRlU3RlbmNpbFJlcXVlc3QaHi5udW1lbi52MS5Xcml0ZVN0ZW5jaWxSZXNwb25zZRJfChJSZW5hbWVTdGVuY2lsRmllbGQSIy5udW1lbi52MS5SZW5hbWVTdGVuY2lsRmllbGRSZXF1ZXN0GiQubnVtZW4udjEuUmVuYW1lU3RlbmNpbEZpZWxkUmVzcG9uc2USRwoKQ3JlYXRlRGVjaxIbLm51bWVuLnYxLkNyZWF0ZURlY2tSZXF1ZXN0GhwubnVtZW4udjEuQ3JlYXRlRGVja1Jlc3BvbnNlEkEKCFJlYWREZWNrEhkubnVtZW4udjEuUmVhZERlY2tSZXF1ZXN0GhoubnVtZW4udjEuUmVhZERlY2tSZXNwb25zZRJECglXcml0ZURlY2sSGi5udW1lbi52MS5Xcml0ZURlY2tSZXF1ZXN0GhsubnVtZW4udjEuV3JpdGVEZWNrUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * Stencil is what a card is cut by: the fields it is asked for, and the faces
@@ -202,7 +202,7 @@ export type Deck = Message<"numen.v1.Deck"> & {
    * The sections, in the order they stand in the note. A card says which of
    * them it stands under.
    *
-   * @generated from field: repeated numen.v1.Section sections = 7;
+   * @generated from field: repeated numen.v1.Section sections = 5;
    */
   sections: Section[];
 
@@ -210,7 +210,7 @@ export type Deck = Message<"numen.v1.Deck"> & {
    * What was wrong with the note and was not guessed at, in the order it was
    * found. The deck is read either way, and every card a person wrote is here.
    *
-   * @generated from field: repeated numen.v1.Problem problems = 5;
+   * @generated from field: repeated numen.v1.Problem problems = 6;
    */
   problems: Problem[];
 
@@ -218,7 +218,7 @@ export type Deck = Message<"numen.v1.Deck"> & {
    * What the file ends with once the last value has been read, with line
    * endings as LF. It is no card's, and it is written back as it arrives.
    *
-   * @generated from field: string tail = 6;
+   * @generated from field: string tail = 7;
    */
   tail: string;
 };
@@ -336,7 +336,7 @@ export type Card = Message<"numen.v1.Card"> & {
    * A write naming a section the deck does not hold is refused. Nothing is
    * written, and the card is not quietly stood somewhere else.
    *
-   * @generated from field: optional int32 section = 6;
+   * @generated from field: optional int32 section = 2;
    */
   section?: number | undefined;
 
@@ -351,7 +351,7 @@ export type Card = Message<"numen.v1.Card"> & {
    * what it was given. A write carrying nothing here leaves such a card headed
    * by its mark alone.
    *
-   * @generated from field: string heading = 7;
+   * @generated from field: string heading = 3;
    */
   heading: string;
 
@@ -359,7 +359,7 @@ export type Card = Message<"numen.v1.Card"> & {
    * The stencil this card is cut by, as the wikilink beneath its heading names
    * it, without the brackets. Empty for a card written under no wikilink.
    *
-   * @generated from field: string stencil = 2;
+   * @generated from field: string stencil = 4;
    */
   stencil: string;
 
@@ -367,7 +367,7 @@ export type Card = Message<"numen.v1.Card"> & {
    * The prose between that wikilink and the first field, with line endings as
    * LF. It is written back as it arrives.
    *
-   * @generated from field: string lead = 3;
+   * @generated from field: string lead = 5;
    */
   lead: string;
 
@@ -375,7 +375,7 @@ export type Card = Message<"numen.v1.Card"> & {
    * The values, in the order they stand under the card. A field the stencil
    * declares and the card leaves out is absent here.
    *
-   * @generated from field: repeated numen.v1.Value values = 4;
+   * @generated from field: repeated numen.v1.Value values = 6;
    */
   values: Value[];
 
@@ -384,7 +384,7 @@ export type Card = Message<"numen.v1.Card"> & {
    * is. Empty for a card naming none and for a name that reaches no note, and a
    * write carries nothing here.
    *
-   * @generated from field: string stencil_at = 5;
+   * @generated from field: string stencil_at = 7;
    */
   stencilAt: string;
 };
@@ -663,7 +663,7 @@ export type WriteStencilResponse = Message<"numen.v1.WriteStencilResponse"> & {
    * The file the write produced, for the caller to present at its next write.
    * Absent when nothing was written.
    *
-   * @generated from field: optional numen.v1.Fingerprint at = 3;
+   * @generated from field: optional numen.v1.Fingerprint at = 2;
    */
   at?: Fingerprint | undefined;
 
@@ -672,7 +672,7 @@ export type WriteStencilResponse = Message<"numen.v1.WriteStencilResponse"> & {
    * The write happened and `at` stands; search answers about this file as it
    * read it last, until a walk goes past.
    *
-   * @generated from field: bool unlevelled = 4;
+   * @generated from field: bool unlevelled = 3;
    */
   unlevelled: boolean;
 };
@@ -762,7 +762,7 @@ export type RenameStencilFieldResponse = Message<"numen.v1.RenameStencilFieldRes
    * The stencil the rename produced, for the caller to present at its next
    * write. Absent when nothing was renamed.
    *
-   * @generated from field: optional numen.v1.Fingerprint at = 6;
+   * @generated from field: optional numen.v1.Fingerprint at = 5;
    */
   at?: Fingerprint | undefined;
 
@@ -771,7 +771,7 @@ export type RenameStencilFieldResponse = Message<"numen.v1.RenameStencilFieldRes
    * with it. Search answers about these files as it read them last, until a
    * walk goes past.
    *
-   * @generated from field: bool unlevelled = 7;
+   * @generated from field: bool unlevelled = 6;
    */
   unlevelled: boolean;
 };
@@ -958,7 +958,7 @@ export type WriteDeckRequest = Message<"numen.v1.WriteDeckRequest"> & {
    * The sections, in the order they are to stand in the note. A card says
    * which of them it stands under.
    *
-   * @generated from field: repeated numen.v1.Section sections = 6;
+   * @generated from field: repeated numen.v1.Section sections = 4;
    */
   sections: Section[];
 
@@ -966,7 +966,7 @@ export type WriteDeckRequest = Message<"numen.v1.WriteDeckRequest"> & {
    * The file this caller last read. Absent for a write that lands on whatever
    * the deck now holds.
    *
-   * @generated from field: optional numen.v1.Fingerprint seen = 4;
+   * @generated from field: optional numen.v1.Fingerprint seen = 5;
    */
   seen?: Fingerprint | undefined;
 
@@ -974,7 +974,7 @@ export type WriteDeckRequest = Message<"numen.v1.WriteDeckRequest"> & {
    * What the file is to end with, below the last value, with line endings as
    * LF.
    *
-   * @generated from field: string tail = 5;
+   * @generated from field: string tail = 6;
    */
   tail: string;
 };
@@ -1003,7 +1003,7 @@ export type WriteDeckResponse = Message<"numen.v1.WriteDeckResponse"> & {
    * The file the write produced, for the caller to present at its next write.
    * Absent when nothing was written.
    *
-   * @generated from field: optional numen.v1.Fingerprint at = 3;
+   * @generated from field: optional numen.v1.Fingerprint at = 2;
    */
   at?: Fingerprint | undefined;
 
@@ -1012,7 +1012,7 @@ export type WriteDeckResponse = Message<"numen.v1.WriteDeckResponse"> & {
    * REFUSAL_DECK_TOO_LARGE, so the interface names the bound without holding a
    * number of its own.
    *
-   * @generated from field: int64 bound = 4;
+   * @generated from field: int64 bound = 3;
    */
   bound: bigint;
 
@@ -1021,7 +1021,7 @@ export type WriteDeckResponse = Message<"numen.v1.WriteDeckResponse"> & {
    * The write happened and `at` stands; search answers about this file as it
    * read it last, until a walk goes past.
    *
-   * @generated from field: bool unlevelled = 5;
+   * @generated from field: bool unlevelled = 4;
    */
   unlevelled: boolean;
 };

@@ -478,10 +478,11 @@ func (u ImportURL) named(
 		return res, nil
 	}
 	// A file still called what the paste called it is one nobody has named. Any
-	// other name is the person's, and it stands.
+	// other name is the person's, and it stands; so does one whose address no
+	// filename can be made from, which nothing could have named it by.
 	pasted, _, err := domain.Filename(string(at))
 	if err != nil || domain.Basename(ref.Path) != pasted {
-		return res, nil
+		return res, nil //nolint:nilerr // an unnameable address is a name that stands
 	}
 	path, err := u.Names(ctx, v, ref.Path, title)
 	if err != nil {

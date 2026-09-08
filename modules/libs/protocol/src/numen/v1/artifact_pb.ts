@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/artifact.proto.
  */
 export const file_numen_v1_artifact: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9hcnRpZmFjdC5wcm90bxIIbnVtZW4udjEiewoIQXJ0aWZhY3QSDAoEbmFtZRgBIAEoCRIeCgVzdGF0ZRgCIAEoDjIPLm51bWVuLnYxLlN0YXRlEg0KBWVycm9yGAMgASgJEgwKBHNpemUYBCABKAMSJAoEa2luZBgFIAEoDjIWLm51bWVuLnYxLkFydGlmYWN0S2luZCIkChRMaXN0QXJ0aWZhY3RzUmVxdWVzdBIMCgRwYXRoGAEgASgJIj4KFUxpc3RBcnRpZmFjdHNSZXNwb25zZRIlCglhcnRpZmFjdHMYASADKAsyEi5udW1lbi52MS5BcnRpZmFjdCJeChVDcmVhdGVBcnRpZmFjdFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIkCgRraW5kGAMgASgOMhYubnVtZW4udjEuQXJ0aWZhY3RLaW5kSgQIAhADUgthcnRpZmFjdF9pZCI+ChZDcmVhdGVBcnRpZmFjdFJlc3BvbnNlEiQKCGFydGlmYWN0GAEgASgLMhIubnVtZW4udjEuQXJ0aWZhY3QiXgoVRGVsZXRlQXJ0aWZhY3RSZXF1ZXN0EgwKBHBhdGgYASABKAkSJAoEa2luZBgDIAEoDjIWLm51bWVuLnYxLkFydGlmYWN0S2luZEoECAIQA1ILYXJ0aWZhY3RfaWQiPgoWRGVsZXRlQXJ0aWZhY3RSZXNwb25zZRIkCghhcnRpZmFjdBgBIAEoCzISLm51bWVuLnYxLkFydGlmYWN0Ii0KA0N1ZRIMCgR0ZXh0GAEgASgJEgwKBGZyb20YAiABKAUSCgoCdG8YAyABKAUiRAoVUmVhZFRyYW5zY3JpcHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSHQoCYXQYAiABKAsyES5udW1lbi52MS5TdHJldGNoImcKFlJlYWRUcmFuc2NyaXB0UmVzcG9uc2USIgoGc3Bva2VuGAEgASgLMhAubnVtZW4udjEuU3Bva2VuSAASDwoFcHJvc2UYAyABKAlIABIQCghlZGl0YWJsZRgCIAEoCEIGCgR0ZXh0IiUKBlNwb2tlbhIbCgRjdWVzGAEgAygLMg0ubnVtZW4udjEuQ3VlIkMKFldyaXRlVHJhbnNjcmlwdFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIbCgRjdWVzGAIgAygLMg0ubnVtZW4udjEuQ3VlIkgKF1dyaXRlVHJhbnNjcmlwdFJlc3BvbnNlEhsKBGN1ZXMYASADKAsyDS5udW1lbi52MS5DdWUSEAoIZWRpdGFibGUYAiABKAgq3gEKDEFydGlmYWN0S2luZBIdChlBUlRJRkFDVF9LSU5EX1VOU1BFQ0lGSUVEEAASFQoRQVJUSUZBQ1RfS0lORF9PQ1IQARIfChtBUlRJRkFDVF9LSU5EX09DUl9DT1JSRUNURUQQBhIcChhBUlRJRkFDVF9LSU5EX1RSQU5TQ1JJUFQQAhImCiJBUlRJRkFDVF9LSU5EX1RSQU5TQ1JJUFRfQ09SUkVDVEVEEAMSGQoVQVJUSUZBQ1RfS0lORF9BUlRJQ0xFEAQSFgoSQVJUSUZBQ1RfS0lORF9DT1BZEAUqmQEKBVN0YXRlEhUKEVNUQVRFX1VOU1BFQ0lGSUVEEAASDgoKU1RBVEVfTk9ORRABEhAKDFNUQVRFX1FVRVVFRBACEhEKDVNUQVRFX1JVTk5JTkcQAxIRCg1TVEFURV9TVE9QUEVEEAQSDgoKU1RBVEVfRE9ORRAFEg8KC1NUQVRFX0VNUFRZEAYSEAoMU1RBVEVfRkFJTEVEEAcyugMKD0FydGlmYWN0U2VydmljZRJQCg1MaXN0QXJ0aWZhY3RzEh4ubnVtZW4udjEuTGlzdEFydGlmYWN0c1JlcXVlc3QaHy5udW1lbi52MS5MaXN0QXJ0aWZhY3RzUmVzcG9uc2USUwoOQ3JlYXRlQXJ0aWZhY3QSHy5udW1lbi52MS5DcmVhdGVBcnRpZmFjdFJlcXVlc3QaIC5udW1lbi52MS5DcmVhdGVBcnRpZmFjdFJlc3BvbnNlElMKDkRlbGV0ZUFydGlmYWN0Eh8ubnVtZW4udjEuRGVsZXRlQXJ0aWZhY3RSZXF1ZXN0GiAubnVtZW4udjEuRGVsZXRlQXJ0aWZhY3RSZXNwb25zZRJTCg5SZWFkVHJhbnNjcmlwdBIfLm51bWVuLnYxLlJlYWRUcmFuc2NyaXB0UmVxdWVzdBogLm51bWVuLnYxLlJlYWRUcmFuc2NyaXB0UmVzcG9uc2USVgoPV3JpdGVUcmFuc2NyaXB0EiAubnVtZW4udjEuV3JpdGVUcmFuc2NyaXB0UmVxdWVzdBohLm51bWVuLnYxLldyaXRlVHJhbnNjcmlwdFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9hcnRpZmFjdC5wcm90bxIIbnVtZW4udjEiewoIQXJ0aWZhY3QSDAoEbmFtZRgBIAEoCRIeCgVzdGF0ZRgCIAEoDjIPLm51bWVuLnYxLlN0YXRlEg0KBWVycm9yGAMgASgJEgwKBHNpemUYBCABKAMSJAoEa2luZBgFIAEoDjIWLm51bWVuLnYxLkFydGlmYWN0S2luZCIkChRMaXN0QXJ0aWZhY3RzUmVxdWVzdBIMCgRwYXRoGAEgASgJIj4KFUxpc3RBcnRpZmFjdHNSZXNwb25zZRIlCglhcnRpZmFjdHMYASADKAsyEi5udW1lbi52MS5BcnRpZmFjdCJLChVDcmVhdGVBcnRpZmFjdFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIkCgRraW5kGAIgASgOMhYubnVtZW4udjEuQXJ0aWZhY3RLaW5kIj4KFkNyZWF0ZUFydGlmYWN0UmVzcG9uc2USJAoIYXJ0aWZhY3QYASABKAsyEi5udW1lbi52MS5BcnRpZmFjdCJLChVEZWxldGVBcnRpZmFjdFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIkCgRraW5kGAIgASgOMhYubnVtZW4udjEuQXJ0aWZhY3RLaW5kIj4KFkRlbGV0ZUFydGlmYWN0UmVzcG9uc2USJAoIYXJ0aWZhY3QYASABKAsyEi5udW1lbi52MS5BcnRpZmFjdCItCgNDdWUSDAoEdGV4dBgBIAEoCRIMCgRmcm9tGAIgASgFEgoKAnRvGAMgASgFIkQKFVJlYWRUcmFuc2NyaXB0UmVxdWVzdBIMCgRwYXRoGAEgASgJEh0KAmF0GAIgASgLMhEubnVtZW4udjEuU3RyZXRjaCJnChZSZWFkVHJhbnNjcmlwdFJlc3BvbnNlEiIKBnNwb2tlbhgBIAEoCzIQLm51bWVuLnYxLlNwb2tlbkgAEg8KBXByb3NlGAIgASgJSAASEAoIZWRpdGFibGUYAyABKAhCBgoEdGV4dCIlCgZTcG9rZW4SGwoEY3VlcxgBIAMoCzINLm51bWVuLnYxLkN1ZSJDChZXcml0ZVRyYW5zY3JpcHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSGwoEY3VlcxgCIAMoCzINLm51bWVuLnYxLkN1ZSJIChdXcml0ZVRyYW5zY3JpcHRSZXNwb25zZRIbCgRjdWVzGAEgAygLMg0ubnVtZW4udjEuQ3VlEhAKCGVkaXRhYmxlGAMgASgIKt4BCgxBcnRpZmFjdEtpbmQSHQoZQVJUSUZBQ1RfS0lORF9VTlNQRUNJRklFRBAAEhUKEUFSVElGQUNUX0tJTkRfT0NSEAESHwobQVJUSUZBQ1RfS0lORF9PQ1JfQ09SUkVDVEVEEAYSHAoYQVJUSUZBQ1RfS0lORF9UUkFOU0NSSVBUEAISJgoiQVJUSUZBQ1RfS0lORF9UUkFOU0NSSVBUX0NPUlJFQ1RFRBADEhkKFUFSVElGQUNUX0tJTkRfQVJUSUNMRRAEEhYKEkFSVElGQUNUX0tJTkRfQ09QWRAFKpkBCgVTdGF0ZRIVChFTVEFURV9VTlNQRUNJRklFRBAAEg4KClNUQVRFX05PTkUQARIQCgxTVEFURV9RVUVVRUQQAhIRCg1TVEFURV9SVU5OSU5HEAMSEQoNU1RBVEVfU1RPUFBFRBAEEg4KClNUQVRFX0RPTkUQBRIPCgtTVEFURV9FTVBUWRAGEhAKDFNUQVRFX0ZBSUxFRBAHMroDCg9BcnRpZmFjdFNlcnZpY2USUAoNTGlzdEFydGlmYWN0cxIeLm51bWVuLnYxLkxpc3RBcnRpZmFjdHNSZXF1ZXN0Gh8ubnVtZW4udjEuTGlzdEFydGlmYWN0c1Jlc3BvbnNlElMKDkNyZWF0ZUFydGlmYWN0Eh8ubnVtZW4udjEuQ3JlYXRlQXJ0aWZhY3RSZXF1ZXN0GiAubnVtZW4udjEuQ3JlYXRlQXJ0aWZhY3RSZXNwb25zZRJTCg5EZWxldGVBcnRpZmFjdBIfLm51bWVuLnYxLkRlbGV0ZUFydGlmYWN0UmVxdWVzdBogLm51bWVuLnYxLkRlbGV0ZUFydGlmYWN0UmVzcG9uc2USUwoOUmVhZFRyYW5zY3JpcHQSHy5udW1lbi52MS5SZWFkVHJhbnNjcmlwdFJlcXVlc3QaIC5udW1lbi52MS5SZWFkVHJhbnNjcmlwdFJlc3BvbnNlElYKD1dyaXRlVHJhbnNjcmlwdBIgLm51bWVuLnYxLldyaXRlVHJhbnNjcmlwdFJlcXVlc3QaIS5udW1lbi52MS5Xcml0ZVRyYW5zY3JpcHRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * An Artifact is one thing a model wrote about one file of the vault.
@@ -135,7 +135,7 @@ export type CreateArtifactRequest = Message<"numen.v1.CreateArtifactRequest"> & 
    * Which artifact of it to make. Which model does the work follows from the
    * file, and is not asked for here.
    *
-   * @generated from field: numen.v1.ArtifactKind kind = 3;
+   * @generated from field: numen.v1.ArtifactKind kind = 2;
    */
   kind: ArtifactKind;
 };
@@ -182,7 +182,7 @@ export type DeleteArtifactRequest = Message<"numen.v1.DeleteArtifactRequest"> & 
    * produced — the words a model heard and the words a person put right go
    * together — and naming none is not a request.
    *
-   * @generated from field: numen.v1.ArtifactKind kind = 3;
+   * @generated from field: numen.v1.ArtifactKind kind = 2;
    */
   kind: ArtifactKind;
 };
@@ -298,7 +298,7 @@ export type ReadTranscriptResponse = Message<"numen.v1.ReadTranscriptResponse"> 
      * The prose a page is written around. It carries no times, so a client
      * draws it as it stands, with no gutter and nothing to seek.
      *
-     * @generated from field: string prose = 3;
+     * @generated from field: string prose = 2;
      */
     value: string;
     case: "prose";
@@ -308,7 +308,7 @@ export type ReadTranscriptResponse = Message<"numen.v1.ReadTranscriptResponse"> 
    * Whether the text may be put right now. A run listening to the recording
    * holds it, and a client draws what it reads and leaves it alone.
    *
-   * @generated from field: bool editable = 2;
+   * @generated from field: bool editable = 3;
    */
   editable: boolean;
 };
@@ -388,7 +388,7 @@ export type WriteTranscriptResponse = Message<"numen.v1.WriteTranscriptResponse"
   cues: Cue[];
 
   /**
-   * @generated from field: bool editable = 2;
+   * @generated from field: bool editable = 3;
    */
   editable: boolean;
 };

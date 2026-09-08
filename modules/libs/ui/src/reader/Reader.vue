@@ -21,15 +21,13 @@ import {
   within,
   type Rect,
   type ReaderWords,
-  type PageSize,
+  type Page,
 } from './strip'
 
 const props = withDefaults(
   defineProps<{
-    /** How many pages the document has. */
-    pageCount?: number
     /** How big each page is, in its own units. */
-    pages?: readonly PageSize[]
+    pages?: readonly Page[]
     /** Which page is in front, counted from the first. */
     at?: number
     /** Where one page is drawn, as an address to point a picture at. */
@@ -44,7 +42,6 @@ const props = withDefaults(
     undrawn?: string
   }>(),
   {
-    pageCount: 0,
     pages: () => [],
     at: 0,
     picture: () => '',
@@ -74,7 +71,7 @@ const { viewport, measure } = useViewport(area)
 const { along, dragging, whereabouts, send, stands, took, pulled, letGo, turned } =
   useHandScroll(area)
 
-const laid = computed(() => row(props.pages, props.pageCount, viewport.value, zoom.value))
+const laid = computed(() => row(props.pages, viewport.value, zoom.value))
 const shown = computed(() => within(laid.value, viewport.value, along.value))
 const middle = computed(() => inFront(laid.value, viewport.value, along.value))
 
@@ -160,7 +157,7 @@ defineExpose({
       @wheel="turned"
     >
       <div
-        v-if="pageCount > 0"
+        v-if="pages.length > 0"
         class="reader__row relative"
         :style="{ inlineSize: `${laid.length}px`, blockSize: `${laid.high + 2 * GAP}px` }"
       >
@@ -182,9 +179,9 @@ defineExpose({
     </div>
 
     <ReaderToolbar
-      v-if="pageCount > 0"
+      v-if="pages.length > 0"
       v-model:zoom="zoom"
-      :pageCount="pageCount"
+      :pageCount="pages.length"
       :at="at"
       :words="words"
       @update:at="emit('go', $event)"

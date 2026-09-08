@@ -1176,11 +1176,11 @@ type WriteNoteResponse struct {
 	Refusal *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
-	At *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *Fingerprint `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	// Set when the prose is on disk and the index would not come level with it.
 	// The write happened and `at` stands; search answers about this note as it
 	// read it last, until a walk goes past.
-	Unlevelled    bool `protobuf:"varint,4,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1602,7 +1602,7 @@ type RenameNoteResponse struct {
 	// Set when the rename reached the vault and the index would not come level
 	// with it. Search answers about these files as it read them last, until a
 	// walk goes past.
-	Unlevelled    bool `protobuf:"varint,7,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	Unlevelled    bool `protobuf:"varint,6,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1828,14 +1828,14 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x05focus\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x05focus\x12-\n" +
 	"\arelated\x18\x02 \x03(\v2\x13.numen.v1.NeighbourR\arelated\x121\n" +
 	"\n" +
-	"focus_type\x18\x03 \x01(\x0e2\x12.numen.v1.NoteTypeR\tfocusType\"\xe3\x01\n" +
+	"focus_type\x18\x03 \x01(\x0e2\x12.numen.v1.NoteTypeR\tfocusType\"\xc3\x01\n" +
 	"\tNeighbour\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x12\"\n" +
 	"\x04seat\x18\x02 \x01(\x0e2\x0e.numen.v1.SeatR\x04seat\x12\x14\n" +
 	"\x05label\x18\x03 \x01(\tR\x05label\x12\x18\n" +
 	"\athrough\x18\x04 \x01(\tR\athrough\x12\x16\n" +
 	"\x06mutual\x18\x05 \x01(\bR\x06mutual\x12&\n" +
-	"\x04type\x18\x06 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04typeJ\x04\b\a\x10\bJ\x04\b\b\x10\tR\tambiguousR\arefusal\"G\n" +
+	"\x04type\x18\x06 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\"G\n" +
 	"\x17ResolveAddressesRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x18\n" +
 	"\awritten\x18\x02 \x03(\tR\awritten\"Q\n" +
@@ -1874,16 +1874,16 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04body\x18\x02 \x01(\tR\x04body\x12+\n" +
 	"\x04seen\x18\x03 \x01(\v2\x12.numen.v1.LastReadH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xb3\x01\n" +
+	"\x05_seen\"\xa4\x01\n" +
 	"\x11WriteNoteResponse\x120\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
+	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
 	"\n" +
-	"unlevelled\x18\x04 \x01(\bR\n" +
+	"unlevelled\x18\x03 \x01(\bR\n" +
 	"unlevelledB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_atJ\x04\b\x02\x10\x03R\achanged\"S\n" +
+	"\x03_at\"S\n" +
 	"\aNewLink\x12\x0e\n" +
 	"\x02to\x18\x01 \x01(\tR\x02to\x12\"\n" +
 	"\x04role\x18\x02 \x01(\x0e2\x0e.numen.v1.RoleR\x04role\x12\x14\n" +
@@ -1902,14 +1902,14 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\b_refusal\"M\n" +
 	"\x10WriteLinkRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12%\n" +
-	"\x04link\x18\x02 \x01(\v2\x11.numen.v1.NewLinkR\x04link\"`\n" +
+	"\x04link\x18\x02 \x01(\v2\x11.numen.v1.NewLinkR\x04link\"Q\n" +
 	"\x11WriteLinkResponse\x120\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
 	"\n" +
-	"\b_refusalJ\x04\b\x02\x10\x03R\achanged\"=\n" +
+	"\b_refusal\"=\n" +
 	"\x11RenameNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"\x89\x02\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"\xfa\x01\n" +
 	"\x12RenameNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12!\n" +
@@ -1917,11 +1917,11 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x05moved\x18\x04 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x120\n" +
 	"\arefusal\x18\x05 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01\x12\x1e\n" +
 	"\n" +
-	"unlevelled\x18\a \x01(\bR\n" +
+	"unlevelled\x18\x06 \x01(\bR\n" +
 	"unlevelledB\b\n" +
 	"\x06_movedB\n" +
 	"\n" +
-	"\b_refusalJ\x04\b\x06\x10\aR\achanged\"\x13\n" +
+	"\b_refusal\"\x13\n" +
 	"\x11WatchEditsRequest\"\x8c\x01\n" +
 	"\x12WatchEditsResponse\x12\x16\n" +
 	"\x06change\x18\x01 \x01(\tR\x06change\x12\x12\n" +

@@ -162,15 +162,13 @@ message ListArtifactsResponse {
 }
 
 message CreateArtifactRequest {
-  reserved 2;
-  reserved "artifact_id";
 
   // The file of the vault, as the vault holds it.
   string path = 1;
 
   // Which artifact of it to make. Which model does the work follows from the
   // file, and is not asked for here.
-  ArtifactKind kind = 3;
+  ArtifactKind kind = 2;
 }
 
 message CreateArtifactResponse {
@@ -178,8 +176,6 @@ message CreateArtifactResponse {
 }
 
 message DeleteArtifactRequest {
-  reserved 2;
-  reserved "artifact_id";
 
   // The file of the vault, as the vault holds it.
   string path = 1;
@@ -189,7 +185,7 @@ message DeleteArtifactRequest {
   // they go one without the other. Naming a text takes everything one run
   // produced — the words a model heard and the words a person put right go
   // together — and naming none is not a request.
-  ArtifactKind kind = 3;
+  ArtifactKind kind = 2;
 }
 
 message DeleteArtifactResponse {
@@ -228,12 +224,12 @@ message ReadTranscriptResponse {
 
     // The prose a page is written around. It carries no times, so a client
     // draws it as it stands, with no gutter and nothing to seek.
-    string prose = 3;
+    string prose = 2;
   }
 
   // Whether the text may be put right now. A run listening to the recording
   // holds it, and a client draws what it reads and leaves it alone.
-  bool editable = 2;
+  bool editable = 3;
 }
 
 // Spoken is words against the clock they were said on. It is a message of its
@@ -263,5 +259,5 @@ message WriteTranscriptRequest {
 message WriteTranscriptResponse {
   // The words as they now stand.
   repeated Cue cues = 1;
-  bool editable = 2;
+  bool editable = 3;
 }

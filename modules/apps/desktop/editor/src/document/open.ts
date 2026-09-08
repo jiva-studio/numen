@@ -42,7 +42,6 @@ export interface PageSize {
  * ones arrived.
  */
 export interface Shape {
-  readonly pageCount: number
   readonly pages: readonly PageSize[]
   /** The file these pages were read from, as the one string the window carries. */
   readonly at: string
@@ -78,7 +77,6 @@ const WIDEST = 4096
 export type OpenDocumentState = ReturnType<typeof openDocument>
 
 export function openDocument(documents: Documents, path: string) {
-  const pageCount = ref(0)
   /** How big each page is, in its own units. */
   const pages = shallowRef<readonly PageSize[]>([])
   /** Which page is in front, counted from the first. */
@@ -119,7 +117,7 @@ export function openDocument(documents: Documents, path: string) {
    * the document has been read and the room it is read in has been measured.
    */
   const pictureOf = (page: number): string =>
-    pageCount.value > 0 && wide.value > 0 ? documents.page(path, page, wide.value, seen.value) : ''
+    pages.value.length > 0 && wide.value > 0 ? documents.page(path, page, wide.value, seen.value) : ''
 
   /** Where the page in front is drawn. */
   const picture = computed(() => pictureOf(at.value))
@@ -135,7 +133,6 @@ export function openDocument(documents: Documents, path: string) {
     try {
       const said = await documents.shape(path)
       if (!open) return
-      pageCount.value = said.pageCount
       pages.value = said.pages
       seen.value = said.at
     } catch (error) {
@@ -147,8 +144,8 @@ export function openDocument(documents: Documents, path: string) {
   /** The page the person turned to. Past either end is the end. */
   const go = async (page: number) => {
     await shape
-    if (!open || pageCount.value === 0) return
-    at.value = Math.min(Math.max(Math.trunc(page), 0), pageCount.value - 1)
+    if (!open || pages.value.length === 0) return
+    at.value = Math.min(Math.max(Math.trunc(page), 0), pages.value.length - 1)
   }
 
   const next = () => go(at.value + 1)
@@ -195,13 +192,11 @@ export function openDocument(documents: Documents, path: string) {
   /** The tab has closed: nothing is asked for again and nothing is drawn. */
   const close = () => {
     open = false
-    pageCount.value = 0
     pages.value = []
   }
 
   return {
     path,
-    pageCount,
     pages,
     at,
     picture,

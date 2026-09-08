@@ -126,8 +126,6 @@ message Neighbour {
   // they are.
   NoteType type = 6;
 
-  reserved 7, 8;
-  reserved "ambiguous", "refusal";
 }
 
 message ResolveAddressesRequest {
@@ -238,20 +236,18 @@ message WriteNoteRequest {
 }
 
 message WriteNoteResponse {
-  reserved 2;
-  reserved "changed";
 
   // Set when nothing was written, and why.
   optional Refusal refusal = 1;
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
-  optional Fingerprint at = 3;
+  optional Fingerprint at = 2;
 
   // Set when the prose is on disk and the index would not come level with it.
   // The write happened and `at` stands; search answers about this note as it
   // read it last, until a walk goes past.
-  bool unlevelled = 4;
+  bool unlevelled = 3;
 }
 
 // Role is what kind of relationship a link is. The list is closed: navigation
@@ -307,8 +303,6 @@ message WriteLinkRequest {
 }
 
 message WriteLinkResponse {
-  reserved 2;
-  reserved "changed";
 
   // Set when nothing was written, and why. A note that moved between being
   // read and being written is REFUSAL_STALE, and the caller reads it again
@@ -338,8 +332,6 @@ message RenameNoteRequest {
 }
 
 message RenameNoteResponse {
-  reserved 6;
-  reserved "changed";
 
   // Where the note is filed. Empty when the note was never opened. The note is
   // brought into line before the file is, so a refused move answers with the
@@ -364,7 +356,7 @@ message RenameNoteResponse {
   // Set when the rename reached the vault and the index would not come level
   // with it. Search answers about these files as it read them last, until a
   // walk goes past.
-  bool unlevelled = 7;
+  bool unlevelled = 6;
 }
 
 message WatchEditsRequest {}

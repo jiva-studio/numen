@@ -111,11 +111,11 @@ type VaultCardsDue struct {
 	Decks []*DeckCardsDue `protobuf:"bytes,7,rep,name=decks,proto3" json:"decks,omitempty"`
 	// Presets is what the day comes to under each preset the vault's decks are
 	// scheduled by.
-	Presets []*PresetCardsDue `protobuf:"bytes,9,rep,name=presets,proto3" json:"presets,omitempty"`
+	Presets []*PresetCardsDue `protobuf:"bytes,8,rep,name=presets,proto3" json:"presets,omitempty"`
 	// Set when the vault could not be counted: its files could not be reached, or
 	// reading it into the index failed. The three numbers are then zero and this
 	// says why, in the person's own words.
-	Unread string `protobuf:"bytes,8,opt,name=unread,proto3" json:"unread,omitempty"`
+	Unread string `protobuf:"bytes,9,opt,name=unread,proto3" json:"unread,omitempty"`
 	// Set while the vault is being read into the index. The three numbers are not
 	// in yet, and a further count follows when the reading is done.
 	Reading       bool `protobuf:"varint,10,opt,name=reading,proto3" json:"reading,omitempty"`
@@ -331,26 +331,26 @@ type PresetCardsDue struct {
 	// preset.
 	Preset string `protobuf:"bytes,1,opt,name=preset,proto3" json:"preset,omitempty"`
 	// What the preset is called. Empty where nothing names the note.
-	Title string `protobuf:"bytes,7,opt,name=title,proto3" json:"title,omitempty"`
+	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	// How many decks point at it. Nothing points at a preset of no decks, and
 	// the day stands at nothing under it.
-	Decks int32 `protobuf:"varint,8,opt,name=decks,proto3" json:"decks,omitempty"`
+	Decks int32 `protobuf:"varint,3,opt,name=decks,proto3" json:"decks,omitempty"`
 	// How many card faces stand in those decks. A deck holding none points at
 	// its preset all the same, so a preset of decks and no cards is its own
 	// state.
-	Cards int32 `protobuf:"varint,9,opt,name=cards,proto3" json:"cards,omitempty"`
+	Cards int32 `protobuf:"varint,4,opt,name=cards,proto3" json:"cards,omitempty"`
 	// What the day leaves under it: the card faces owed and the ones nobody has
 	// answered, held to its budget. Their sum is what a session over this preset
 	// asks, because a preset is the whole scope of its own budget.
-	OwedDue int32 `protobuf:"varint,10,opt,name=owed_due,json=owedDue,proto3" json:"owed_due,omitempty"`
-	OwedNew int32 `protobuf:"varint,11,opt,name=owed_new,json=owedNew,proto3" json:"owed_new,omitempty"`
+	OwedDue int32 `protobuf:"varint,5,opt,name=owed_due,json=owedDue,proto3" json:"owed_due,omitempty"`
+	OwedNew int32 `protobuf:"varint,6,opt,name=owed_new,json=owedNew,proto3" json:"owed_new,omitempty"`
 	// How many of its cards were answered since the day opened, and how long
 	// those answers took. The two beside the total divide it the way a budget
 	// does, so each is weighed against the budget of its own kind.
-	Answered        int32 `protobuf:"varint,2,opt,name=answered,proto3" json:"answered,omitempty"`
-	TookMs          int64 `protobuf:"varint,3,opt,name=took_ms,json=tookMs,proto3" json:"took_ms,omitempty"`
-	AnsweredNew     int32 `protobuf:"varint,17,opt,name=answered_new,json=answeredNew,proto3" json:"answered_new,omitempty"`
-	AnsweredReviews int32 `protobuf:"varint,18,opt,name=answered_reviews,json=answeredReviews,proto3" json:"answered_reviews,omitempty"`
+	Answered        int32 `protobuf:"varint,7,opt,name=answered,proto3" json:"answered,omitempty"`
+	TookMs          int64 `protobuf:"varint,8,opt,name=took_ms,json=tookMs,proto3" json:"took_ms,omitempty"`
+	AnsweredNew     int32 `protobuf:"varint,9,opt,name=answered_new,json=answeredNew,proto3" json:"answered_new,omitempty"`
+	AnsweredReviews int32 `protobuf:"varint,10,opt,name=answered_reviews,json=answeredReviews,proto3" json:"answered_reviews,omitempty"`
 	// What the preset keeps for this day of the week: how many cards of each
 	// kind, and how long the day runs, at the share of the load that day of the
 	// week carries.
@@ -358,20 +358,20 @@ type PresetCardsDue struct {
 	// A budget the preset's goal does not name stands here as the person left it
 	// and closes nothing. `owed_due` and `owed_new` are already held to the ones
 	// that do, so holding them to these again is capping a number twice.
-	New     int32   `protobuf:"varint,4,opt,name=new,proto3" json:"new,omitempty"`
-	Reviews int32   `protobuf:"varint,5,opt,name=reviews,proto3" json:"reviews,omitempty"`
-	Minutes float64 `protobuf:"fixed64,6,opt,name=minutes,proto3" json:"minutes,omitempty"`
+	New     int32   `protobuf:"varint,11,opt,name=new,proto3" json:"new,omitempty"`
+	Reviews int32   `protobuf:"varint,12,opt,name=reviews,proto3" json:"reviews,omitempty"`
+	Minutes float64 `protobuf:"fixed64,13,opt,name=minutes,proto3" json:"minutes,omitempty"`
 	// Which of the three closes the day, each written as the preset writes the
 	// key — minutes_a_day, new_a_day, reviews_a_day, by_date — and empty where
 	// that budget takes no part.
-	ClosesNew     string `protobuf:"bytes,12,opt,name=closes_new,json=closesNew,proto3" json:"closes_new,omitempty"`
-	ClosesReviews string `protobuf:"bytes,13,opt,name=closes_reviews,json=closesReviews,proto3" json:"closes_reviews,omitempty"`
-	ClosesMinutes string `protobuf:"bytes,14,opt,name=closes_minutes,json=closesMinutes,proto3" json:"closes_minutes,omitempty"`
-	ClosesBacklog string `protobuf:"bytes,15,opt,name=closes_backlog,json=closesBacklog,proto3" json:"closes_backlog,omitempty"`
+	ClosesNew     string `protobuf:"bytes,14,opt,name=closes_new,json=closesNew,proto3" json:"closes_new,omitempty"`
+	ClosesReviews string `protobuf:"bytes,15,opt,name=closes_reviews,json=closesReviews,proto3" json:"closes_reviews,omitempty"`
+	ClosesMinutes string `protobuf:"bytes,16,opt,name=closes_minutes,json=closesMinutes,proto3" json:"closes_minutes,omitempty"`
+	ClosesBacklog string `protobuf:"bytes,17,opt,name=closes_backlog,json=closesBacklog,proto3" json:"closes_backlog,omitempty"`
 	// Why the preset schedules nothing on this day: whatever stops it at all, and
 	// a day of the week carrying none of the load. It is the core's own verdict,
 	// so a window says of a preset what the session hands its cards out by.
-	StopsOn       StopReason `protobuf:"varint,16,opt,name=stops_on,json=stopsOn,proto3,enum=numen.v1.StopReason" json:"stops_on,omitempty"`
+	StopsOn       StopReason `protobuf:"varint,18,opt,name=stops_on,json=stopsOn,proto3,enum=numen.v1.StopReason" json:"stops_on,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1263,12 +1263,12 @@ type ListReviewDaysResponse struct {
 	// Due is how many card faces fall on each day still to come. A card owed
 	// today, or owed and late, is not in it: what a person owes now is what the
 	// front door counts, and this is what is after it.
-	Due []*ReviewDay `protobuf:"bytes,4,rep,name=due,proto3" json:"due,omitempty"`
+	Due []*ReviewDay `protobuf:"bytes,2,rep,name=due,proto3" json:"due,omitempty"`
 	// Streak is how many days up to now were reviewed without a gap. A day
 	// nobody has answered on yet does not end one.
-	Streak int32 `protobuf:"varint,2,opt,name=streak,proto3" json:"streak,omitempty"`
+	Streak int32 `protobuf:"varint,3,opt,name=streak,proto3" json:"streak,omitempty"`
 	// Answered is how many answers the vault holds altogether.
-	Answered      int32 `protobuf:"varint,3,opt,name=answered,proto3" json:"answered,omitempty"`
+	Answered      int32 `protobuf:"varint,4,opt,name=answered,proto3" json:"answered,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1951,8 +1951,8 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x03due\x18\x05 \x01(\x05R\x03due\x12\x10\n" +
 	"\x03new\x18\x06 \x01(\x05R\x03new\x12,\n" +
 	"\x05decks\x18\a \x03(\v2\x16.numen.v1.DeckCardsDueR\x05decks\x122\n" +
-	"\apresets\x18\t \x03(\v2\x18.numen.v1.PresetCardsDueR\apresets\x12\x16\n" +
-	"\x06unread\x18\b \x01(\tR\x06unread\x12\x18\n" +
+	"\apresets\x18\b \x03(\v2\x18.numen.v1.PresetCardsDueR\apresets\x12\x16\n" +
+	"\x06unread\x18\t \x01(\tR\x06unread\x12\x18\n" +
 	"\areading\x18\n" +
 	" \x01(\bR\areading\"\xac\x01\n" +
 	"\fDeckCardsDue\x12\x12\n" +
@@ -1965,25 +1965,25 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\aunbegun\x18\a \x01(\x05R\aunbegun\"\xae\x04\n" +
 	"\x0ePresetCardsDue\x12\x16\n" +
 	"\x06preset\x18\x01 \x01(\tR\x06preset\x12\x14\n" +
-	"\x05title\x18\a \x01(\tR\x05title\x12\x14\n" +
-	"\x05decks\x18\b \x01(\x05R\x05decks\x12\x14\n" +
-	"\x05cards\x18\t \x01(\x05R\x05cards\x12\x19\n" +
-	"\bowed_due\x18\n" +
-	" \x01(\x05R\aowedDue\x12\x19\n" +
-	"\bowed_new\x18\v \x01(\x05R\aowedNew\x12\x1a\n" +
-	"\banswered\x18\x02 \x01(\x05R\banswered\x12\x17\n" +
-	"\atook_ms\x18\x03 \x01(\x03R\x06tookMs\x12!\n" +
-	"\fanswered_new\x18\x11 \x01(\x05R\vansweredNew\x12)\n" +
-	"\x10answered_reviews\x18\x12 \x01(\x05R\x0fansweredReviews\x12\x10\n" +
-	"\x03new\x18\x04 \x01(\x05R\x03new\x12\x18\n" +
-	"\areviews\x18\x05 \x01(\x05R\areviews\x12\x18\n" +
-	"\aminutes\x18\x06 \x01(\x01R\aminutes\x12\x1d\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
+	"\x05decks\x18\x03 \x01(\x05R\x05decks\x12\x14\n" +
+	"\x05cards\x18\x04 \x01(\x05R\x05cards\x12\x19\n" +
+	"\bowed_due\x18\x05 \x01(\x05R\aowedDue\x12\x19\n" +
+	"\bowed_new\x18\x06 \x01(\x05R\aowedNew\x12\x1a\n" +
+	"\banswered\x18\a \x01(\x05R\banswered\x12\x17\n" +
+	"\atook_ms\x18\b \x01(\x03R\x06tookMs\x12!\n" +
+	"\fanswered_new\x18\t \x01(\x05R\vansweredNew\x12)\n" +
+	"\x10answered_reviews\x18\n" +
+	" \x01(\x05R\x0fansweredReviews\x12\x10\n" +
+	"\x03new\x18\v \x01(\x05R\x03new\x12\x18\n" +
+	"\areviews\x18\f \x01(\x05R\areviews\x12\x18\n" +
+	"\aminutes\x18\r \x01(\x01R\aminutes\x12\x1d\n" +
 	"\n" +
-	"closes_new\x18\f \x01(\tR\tclosesNew\x12%\n" +
-	"\x0ecloses_reviews\x18\r \x01(\tR\rclosesReviews\x12%\n" +
-	"\x0ecloses_minutes\x18\x0e \x01(\tR\rclosesMinutes\x12%\n" +
-	"\x0ecloses_backlog\x18\x0f \x01(\tR\rclosesBacklog\x12/\n" +
-	"\bstops_on\x18\x10 \x01(\x0e2\x14.numen.v1.StopReasonR\astopsOn\"Y\n" +
+	"closes_new\x18\x0e \x01(\tR\tclosesNew\x12%\n" +
+	"\x0ecloses_reviews\x18\x0f \x01(\tR\rclosesReviews\x12%\n" +
+	"\x0ecloses_minutes\x18\x10 \x01(\tR\rclosesMinutes\x12%\n" +
+	"\x0ecloses_backlog\x18\x11 \x01(\tR\rclosesBacklog\x12/\n" +
+	"\bstops_on\x18\x12 \x01(\x0e2\x14.numen.v1.StopReasonR\astopsOn\"Y\n" +
 	"\x05Ahead\x12\x14\n" +
 	"\x05again\x18\x01 \x01(\x03R\x05again\x12\x12\n" +
 	"\x04hard\x18\x02 \x01(\x03R\x04hard\x12\x12\n" +
@@ -2034,9 +2034,9 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x05vault\x18\x01 \x01(\tR\x05vault\"\x9c\x01\n" +
 	"\x16ListReviewDaysResponse\x12'\n" +
 	"\x04days\x18\x01 \x03(\v2\x13.numen.v1.ReviewDayR\x04days\x12%\n" +
-	"\x03due\x18\x04 \x03(\v2\x13.numen.v1.ReviewDayR\x03due\x12\x16\n" +
-	"\x06streak\x18\x02 \x01(\x05R\x06streak\x12\x1a\n" +
-	"\banswered\x18\x03 \x01(\x05R\banswered\"\xbd\x01\n" +
+	"\x03due\x18\x02 \x03(\v2\x13.numen.v1.ReviewDayR\x03due\x12\x16\n" +
+	"\x06streak\x18\x03 \x01(\x05R\x06streak\x12\x1a\n" +
+	"\banswered\x18\x04 \x01(\x05R\banswered\"\xbd\x01\n" +
 	"\tReviewDay\x12\x10\n" +
 	"\x03day\x18\x01 \x01(\tR\x03day\x12\x1a\n" +
 	"\banswered\x18\x02 \x01(\x05R\banswered\x12\x14\n" +

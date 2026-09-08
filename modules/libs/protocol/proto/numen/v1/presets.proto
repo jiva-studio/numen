@@ -114,8 +114,6 @@ enum BudgetUnit {
 // Settings are how the decks pointing at one preset are scheduled. A preset
 // carrying none of these keys is the defaults, and no cards a day is a pause.
 message Settings {
-  reserved 7;
-  reserved "light_days";
 
   Goal goal = 1;
 
@@ -136,11 +134,11 @@ message Settings {
   double retention = 6;
 
   // Whether days are made to resemble each other.
-  bool even_load = 8;
+  bool even_load = 7;
 
   // What a day's budget is counted in. Unspecified is the default, which
   // charges a card face once a review day.
-  BudgetUnit counts = 9;
+  BudgetUnit counts = 8;
 
   // How much of a day goes to what is overdue before anything unbegun is
   // offered, as a share in hundredths. A hundred pays the debt first and begins
@@ -149,20 +147,20 @@ message Settings {
   //
   // It says what a day is spent on and closes nothing. A goal of a date carries
   // the whole material by its own reckoning, so it takes no part there.
-  int32 backlog = 10;
+  int32 backlog = 9;
 
   // How much of a day's load each day of the week carries, in per cent, under
   // the first three letters of the day's name in lower case. A day not named
   // carries the whole of it, and a day at nothing schedules nothing.
-  map<string, int32> load = 11;
+  map<string, int32> load = 10;
 
   // What counts as a card face the person has learned. The value the rule reads
   // stands in the field it names: `interval` for RULE_INTERVAL, `retention` for
   // RULE_RETENTION.
-  Rule learned = 12;
+  Rule learned = 11;
 
   // How long a card face is sent away for before it is learned, in days.
-  int32 interval = 13;
+  int32 interval = 12;
 }
 
 // StopReason is why a preset schedules nothing. The list is closed, and a
@@ -290,8 +288,6 @@ message Curve {
 
 // Point is what a preset comes to at one place of the grid.
 message Point {
-  reserved 7;
-  reserved "met";
 
   // `reviews` is counted in card faces and `minutes` in the showings they take,
   // so a face the day comes back to costs its minutes and is the one card.
@@ -327,20 +323,20 @@ message Point {
   // A goal of retention holds a day to both card counts, and a day that ran out
   // of new cards and of reviews names both: a person raising one of them and
   // finding nothing changed is reading a day the other closed too.
-  repeated BudgetName closed = 8;
+  repeated BudgetName closed = 7;
 
   // How many days of review at this place it takes before nothing is overdue.
   // Zero is a curve standing over nothing overdue, and -1 is a pace that never
   // gets there, which a person reads as not at this one.
-  int32 clears = 9;
+  int32 clears = 8;
 
   // How many card faces stand overdue at the end of each day projected at this
   // place, one entry a day over the whole horizon. It runs over days, which is
   // a different axis from the grid.
-  repeated int32 backlog = 10;
+  repeated int32 backlog = 9;
 
   // How many card faces stand learned today under the rule the settings name.
-  int32 learned = 11;
+  int32 learned = 10;
 
   // How many days of review at this place it takes before every card face the
   // preset schedules is learned. Zero is a place standing over a material
@@ -355,12 +351,12 @@ message Point {
   // curve of retention moves the scheduler at every place, so the day steps
   // wherever one more review is wanted to pass the interval and falls away
   // between the steps; what a target buys there is `through` beside it.
-  optional int32 learns = 12;
+  optional int32 learns = 11;
 
   // How many card faces cannot be learned by this day whatever the pace: the
   // rule wants more days than the day leaves them, so no pace reaches them and
   // the pace beside this is the one that reaches every other.
-  int32 short = 13;
+  int32 short = 12;
 }
 
 // Place is one place on the curve worth pointing at.
@@ -448,8 +444,6 @@ message ScheduleDeckRequest {
 }
 
 message ScheduleDeckResponse {
-  reserved 2;
-  reserved "changed";
 
   // Set when nothing was written, and why. A deck that is no longer the one
   // this caller read is REFUSAL_STALE, and the person chooses what happens
@@ -458,12 +452,12 @@ message ScheduleDeckResponse {
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
-  optional Fingerprint at = 3;
+  optional Fingerprint at = 2;
 
   // Set when the deck is on disk and the index would not come level with it.
   // The write happened and `at` stands; search answers about this file as it
   // read it last, until a walk goes past.
-  bool unlevelled = 4;
+  bool unlevelled = 3;
 }
 
 message ReadPresetRequest {
@@ -516,8 +510,6 @@ message WritePresetRequest {
 }
 
 message WritePresetResponse {
-  reserved 2;
-  reserved "changed";
 
   // Set when nothing was written, and why. A file that is no longer the one
   // this caller read is REFUSAL_STALE, and the person chooses what happens to
@@ -526,12 +518,12 @@ message WritePresetResponse {
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
-  optional Fingerprint at = 3;
+  optional Fingerprint at = 2;
 
   // Set when the preset is on disk and the index would not come level with it.
   // The write happened and `at` stands; search answers about this file as it
   // read it last, until a walk goes past.
-  bool unlevelled = 4;
+  bool unlevelled = 3;
 }
 
 message ComputeCurveRequest {

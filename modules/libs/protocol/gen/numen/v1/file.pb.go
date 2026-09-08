@@ -194,7 +194,7 @@ type Entry struct {
 	Kind SourceKind `protobuf:"varint,4,opt,name=kind,proto3,enum=numen.v1.SourceKind" json:"kind,omitempty"`
 	// Which of three the note is. It says nothing about an entry that is not a
 	// note.
-	Type          NoteType `protobuf:"varint,6,opt,name=type,proto3,enum=numen.v1.NoteType" json:"type,omitempty"`
+	Type          NoteType `protobuf:"varint,5,opt,name=type,proto3,enum=numen.v1.NoteType" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -551,7 +551,7 @@ type MoveResult struct {
 	// name. Each of them still points at the name the file left, and nothing
 	// comes back to it: a move that reports only what it repaired reports a
 	// vault it did not leave behind.
-	Dangling      []string `protobuf:"bytes,5,rep,name=dangling,proto3" json:"dangling,omitempty"`
+	Dangling      []string `protobuf:"bytes,4,rep,name=dangling,proto3" json:"dangling,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -952,13 +952,13 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\x10ListFilesRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\">\n" +
 	"\x11ListFilesResponse\x12)\n" +
-	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"\xa5\x01\n" +
+	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"\x99\x01\n" +
 	"\x05Entry\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
 	"\x06folder\x18\x03 \x01(\bR\x06folder\x12(\n" +
 	"\x04kind\x18\x04 \x01(\x0e2\x14.numen.v1.SourceKindR\x04kind\x12&\n" +
-	"\x04type\x18\x06 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04typeJ\x04\b\x05\x10\x06R\x04size\",\n" +
+	"\x04type\x18\x05 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\",\n" +
 	"\x14ListFileKindsRequest\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\"A\n" +
 	"\x15ListFileKindsResponse\x12(\n" +
@@ -978,14 +978,13 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"unlevelledB\b\n" +
 	"\x06_movedB\n" +
 	"\n" +
-	"\b_refusal\"z\n" +
+	"\b_refusal\"h\n" +
 	"\n" +
 	"MoveResult\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\x12\x1a\n" +
 	"\brepaired\x18\x03 \x03(\tR\brepaired\x12\x1a\n" +
-	"\bdangling\x18\x05 \x03(\tR\bdanglingJ\x04\b\x04\x10\x05R\n" +
-	"retargeted\"A\n" +
+	"\bdangling\x18\x04 \x03(\tR\bdangling\"A\n" +
 	"\x11RemoveFileRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
 	"\adestroy\x18\x02 \x01(\bR\adestroy\"\xa8\x01\n" +

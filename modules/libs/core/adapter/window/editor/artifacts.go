@@ -232,11 +232,10 @@ func (a *API) copies(
 	if err != nil {
 		return nil, connect.NewError(fetched(err), err)
 	}
-	switch {
-	case got.TooLarge():
+	if got.TooLarge() {
 		out.State, out.Size = v1.State_STATE_FAILED, got.Bytes
 		out.Error = fmt.Sprintf(
-			"This video is %d MB, and a copy may be up to %d MB. "+
+			"This is %d MB, and a copy may be up to %d MB. "+
 				"Raise importing.copy_max_size_mb to keep it.",
 			got.Bytes>>20, got.Limit>>20)
 	}

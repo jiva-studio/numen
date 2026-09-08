@@ -113,12 +113,12 @@ message VaultCardsDue {
 
   // Presets is what the day comes to under each preset the vault's decks are
   // scheduled by.
-  repeated PresetCardsDue presets = 9;
+  repeated PresetCardsDue presets = 8;
 
   // Set when the vault could not be counted: its files could not be reached, or
   // reading it into the index failed. The three numbers are then zero and this
   // says why, in the person's own words.
-  string unread = 8;
+  string unread = 9;
 
   // Set while the vault is being read into the index. The three numbers are not
   // in yet, and a further count follows when the reading is done.
@@ -154,30 +154,30 @@ message PresetCardsDue {
   string preset = 1;
 
   // What the preset is called. Empty where nothing names the note.
-  string title = 7;
+  string title = 2;
 
   // How many decks point at it. Nothing points at a preset of no decks, and
   // the day stands at nothing under it.
-  int32 decks = 8;
+  int32 decks = 3;
 
   // How many card faces stand in those decks. A deck holding none points at
   // its preset all the same, so a preset of decks and no cards is its own
   // state.
-  int32 cards = 9;
+  int32 cards = 4;
 
   // What the day leaves under it: the card faces owed and the ones nobody has
   // answered, held to its budget. Their sum is what a session over this preset
   // asks, because a preset is the whole scope of its own budget.
-  int32 owed_due = 10;
-  int32 owed_new = 11;
+  int32 owed_due = 5;
+  int32 owed_new = 6;
 
   // How many of its cards were answered since the day opened, and how long
   // those answers took. The two beside the total divide it the way a budget
   // does, so each is weighed against the budget of its own kind.
-  int32 answered = 2;
-  int64 took_ms = 3;
-  int32 answered_new = 17;
-  int32 answered_reviews = 18;
+  int32 answered = 7;
+  int64 took_ms = 8;
+  int32 answered_new = 9;
+  int32 answered_reviews = 10;
 
   // What the preset keeps for this day of the week: how many cards of each
   // kind, and how long the day runs, at the share of the load that day of the
@@ -186,22 +186,22 @@ message PresetCardsDue {
   // A budget the preset's goal does not name stands here as the person left it
   // and closes nothing. `owed_due` and `owed_new` are already held to the ones
   // that do, so holding them to these again is capping a number twice.
-  int32 new = 4;
-  int32 reviews = 5;
-  double minutes = 6;
+  int32 new = 11;
+  int32 reviews = 12;
+  double minutes = 13;
 
   // Which of the three closes the day, each written as the preset writes the
   // key — minutes_a_day, new_a_day, reviews_a_day, by_date — and empty where
   // that budget takes no part.
-  string closes_new = 12;
-  string closes_reviews = 13;
-  string closes_minutes = 14;
-  string closes_backlog = 15;
+  string closes_new = 14;
+  string closes_reviews = 15;
+  string closes_minutes = 16;
+  string closes_backlog = 17;
 
   // Why the preset schedules nothing on this day: whatever stops it at all, and
   // a day of the week carrying none of the load. It is the core's own verdict,
   // so a window says of a preset what the session hands its cards out by.
-  StopReason stops_on = 16;
+  StopReason stops_on = 18;
 }
 
 // Ahead is how long each of the four answers would leave this card, in seconds
@@ -335,14 +335,14 @@ message ListReviewDaysResponse {
   // Due is how many card faces fall on each day still to come. A card owed
   // today, or owed and late, is not in it: what a person owes now is what the
   // front door counts, and this is what is after it.
-  repeated ReviewDay due = 4;
+  repeated ReviewDay due = 2;
 
   // Streak is how many days up to now were reviewed without a gap. A day
   // nobody has answered on yet does not end one.
-  int32 streak = 2;
+  int32 streak = 3;
 
   // Answered is how many answers the vault holds altogether.
-  int32 answered = 3;
+  int32 answered = 4;
 }
 
 // ReviewDay is one day, and what was answered on it.

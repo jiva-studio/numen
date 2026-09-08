@@ -698,7 +698,6 @@ const HIGHLIGHTS = [overLine(10, 396), overLine(11, 412), overLine(12, 372)]
 
 const BOOK: Documents = {
   shape: async () => ({
-    pageCount: LEAVES,
     pages: Array.from({ length: LEAVES }, () => PAGE),
     at: '1024 1700000000000000000 book.pdf',
   }),

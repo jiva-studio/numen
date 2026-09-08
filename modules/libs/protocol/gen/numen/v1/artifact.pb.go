@@ -378,7 +378,7 @@ type CreateArtifactRequest struct {
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Which artifact of it to make. Which model does the work follows from the
 	// file, and is not asked for here.
-	Kind          ArtifactKind `protobuf:"varint,3,opt,name=kind,proto3,enum=numen.v1.ArtifactKind" json:"kind,omitempty"`
+	Kind          ArtifactKind `protobuf:"varint,2,opt,name=kind,proto3,enum=numen.v1.ArtifactKind" json:"kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -480,7 +480,7 @@ type DeleteArtifactRequest struct {
 	// they go one without the other. Naming a text takes everything one run
 	// produced — the words a model heard and the words a person put right go
 	// together — and naming none is not a request.
-	Kind          ArtifactKind `protobuf:"varint,3,opt,name=kind,proto3,enum=numen.v1.ArtifactKind" json:"kind,omitempty"`
+	Kind          ArtifactKind `protobuf:"varint,2,opt,name=kind,proto3,enum=numen.v1.ArtifactKind" json:"kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -708,7 +708,7 @@ type ReadTranscriptResponse struct {
 	Text isReadTranscriptResponse_Text `protobuf_oneof:"text"`
 	// Whether the text may be put right now. A run listening to the recording
 	// holds it, and a client draws what it reads and leaves it alone.
-	Editable      bool `protobuf:"varint,2,opt,name=editable,proto3" json:"editable,omitempty"`
+	Editable      bool `protobuf:"varint,3,opt,name=editable,proto3" json:"editable,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -787,7 +787,7 @@ type ReadTranscriptResponse_Spoken struct {
 type ReadTranscriptResponse_Prose struct {
 	// The prose a page is written around. It carries no times, so a client
 	// draws it as it stands, with no gutter and nothing to seek.
-	Prose string `protobuf:"bytes,3,opt,name=prose,proto3,oneof"`
+	Prose string `protobuf:"bytes,2,opt,name=prose,proto3,oneof"`
 }
 
 func (*ReadTranscriptResponse_Spoken) isReadTranscriptResponse_Text() {}
@@ -908,7 +908,7 @@ type WriteTranscriptResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The words as they now stand.
 	Cues          []*Cue `protobuf:"bytes,1,rep,name=cues,proto3" json:"cues,omitempty"`
-	Editable      bool   `protobuf:"varint,2,opt,name=editable,proto3" json:"editable,omitempty"`
+	Editable      bool   `protobuf:"varint,3,opt,name=editable,proto3" json:"editable,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -971,15 +971,15 @@ const file_numen_v1_artifact_proto_rawDesc = "" +
 	"\x14ListArtifactsRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"I\n" +
 	"\x15ListArtifactsResponse\x120\n" +
-	"\tartifacts\x18\x01 \x03(\v2\x12.numen.v1.ArtifactR\tartifacts\"j\n" +
+	"\tartifacts\x18\x01 \x03(\v2\x12.numen.v1.ArtifactR\tartifacts\"W\n" +
 	"\x15CreateArtifactRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12*\n" +
-	"\x04kind\x18\x03 \x01(\x0e2\x16.numen.v1.ArtifactKindR\x04kindJ\x04\b\x02\x10\x03R\vartifact_id\"H\n" +
+	"\x04kind\x18\x02 \x01(\x0e2\x16.numen.v1.ArtifactKindR\x04kind\"H\n" +
 	"\x16CreateArtifactResponse\x12.\n" +
-	"\bartifact\x18\x01 \x01(\v2\x12.numen.v1.ArtifactR\bartifact\"j\n" +
+	"\bartifact\x18\x01 \x01(\v2\x12.numen.v1.ArtifactR\bartifact\"W\n" +
 	"\x15DeleteArtifactRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12*\n" +
-	"\x04kind\x18\x03 \x01(\x0e2\x16.numen.v1.ArtifactKindR\x04kindJ\x04\b\x02\x10\x03R\vartifact_id\"H\n" +
+	"\x04kind\x18\x02 \x01(\x0e2\x16.numen.v1.ArtifactKindR\x04kind\"H\n" +
 	"\x16DeleteArtifactResponse\x12.\n" +
 	"\bartifact\x18\x01 \x01(\v2\x12.numen.v1.ArtifactR\bartifact\"=\n" +
 	"\x03Cue\x12\x12\n" +
@@ -991,8 +991,8 @@ const file_numen_v1_artifact_proto_rawDesc = "" +
 	"\x02at\x18\x02 \x01(\v2\x11.numen.v1.StretchR\x02at\"\x80\x01\n" +
 	"\x16ReadTranscriptResponse\x12*\n" +
 	"\x06spoken\x18\x01 \x01(\v2\x10.numen.v1.SpokenH\x00R\x06spoken\x12\x16\n" +
-	"\x05prose\x18\x03 \x01(\tH\x00R\x05prose\x12\x1a\n" +
-	"\beditable\x18\x02 \x01(\bR\beditableB\x06\n" +
+	"\x05prose\x18\x02 \x01(\tH\x00R\x05prose\x12\x1a\n" +
+	"\beditable\x18\x03 \x01(\bR\beditableB\x06\n" +
 	"\x04text\"+\n" +
 	"\x06Spoken\x12!\n" +
 	"\x04cues\x18\x01 \x03(\v2\r.numen.v1.CueR\x04cues\"O\n" +
@@ -1001,7 +1001,7 @@ const file_numen_v1_artifact_proto_rawDesc = "" +
 	"\x04cues\x18\x02 \x03(\v2\r.numen.v1.CueR\x04cues\"X\n" +
 	"\x17WriteTranscriptResponse\x12!\n" +
 	"\x04cues\x18\x01 \x03(\v2\r.numen.v1.CueR\x04cues\x12\x1a\n" +
-	"\beditable\x18\x02 \x01(\bR\beditable*\xde\x01\n" +
+	"\beditable\x18\x03 \x01(\bR\beditable*\xde\x01\n" +
 	"\fArtifactKind\x12\x1d\n" +
 	"\x19ARTIFACT_KIND_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11ARTIFACT_KIND_OCR\x10\x01\x12\x1f\n" +

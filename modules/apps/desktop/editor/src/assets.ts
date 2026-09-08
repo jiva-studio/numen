@@ -34,7 +34,6 @@ export const documents: Documents = {
   shape: async (path) => {
     const answer = await waiting(() => assets.getDocument({ path }))
     return {
-      pageCount: answer.pageCount,
       pages: answer.pages.map((one) => ({ width: one.width, height: one.height })),
       at: stamp(answer.fingerprint) ?? '',
     }

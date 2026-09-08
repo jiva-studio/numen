@@ -25,7 +25,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/flashcards.proto.
  */
 export const file_numen_v1_flashcards: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9mbGFzaGNhcmRzLnByb3RvEghudW1lbi52MSLdAQoNVmF1bHRDYXJkc0R1ZRIMCgRuYW1lGAEgASgJEhQKDGRpc3BsYXlfbmFtZRgCIAEoCRIMCgRwYXRoGAMgASgJEg0KBWZhY2VzGAQgASgFEgsKA2R1ZRgFIAEoBRILCgNuZXcYBiABKAUSJQoFZGVja3MYByADKAsyFi5udW1lbi52MS5EZWNrQ2FyZHNEdWUSKQoHcHJlc2V0cxgJIAMoCzIYLm51bWVuLnYxLlByZXNldENhcmRzRHVlEg4KBnVucmVhZBgIIAEoCRIPCgdyZWFkaW5nGAogASgIInkKDERlY2tDYXJkc0R1ZRIMCgRkZWNrGAEgASgJEg0KBWZhY2VzGAIgASgFEgsKA2R1ZRgDIAEoBRILCgNuZXcYBCABKAUSEAoIYW5zd2VyZWQYBSABKAUSDwoHbGVhcm5lZBgGIAEoBRIPCgd1bmJlZ3VuGAcgASgFIvcCCg5QcmVzZXRDYXJkc0R1ZRIOCgZwcmVzZXQYASABKAkSDQoFdGl0bGUYByABKAkSDQoFZGVja3MYCCABKAUSDQoFY2FyZHMYCSABKAUSEAoIb3dlZF9kdWUYCiABKAUSEAoIb3dlZF9uZXcYCyABKAUSEAoIYW5zd2VyZWQYAiABKAUSDwoHdG9va19tcxgDIAEoAxIUCgxhbnN3ZXJlZF9uZXcYESABKAUSGAoQYW5zd2VyZWRfcmV2aWV3cxgSIAEoBRILCgNuZXcYBCABKAUSDwoHcmV2aWV3cxgFIAEoBRIPCgdtaW51dGVzGAYgASgBEhIKCmNsb3Nlc19uZXcYDCABKAkSFgoOY2xvc2VzX3Jldmlld3MYDSABKAkSFgoOY2xvc2VzX21pbnV0ZXMYDiABKAkSFgoOY2xvc2VzX2JhY2tsb2cYDyABKAkSJgoIc3RvcHNfb24YECABKA4yFC5udW1lbi52MS5TdG9wUmVhc29uIkAKBUFoZWFkEg0KBWFnYWluGAEgASgDEgwKBGhhcmQYAiABKAMSDAoEZ29vZBgDIAEoAxIMCgRlYXN5GAQgASgDIqsBCgVBc2tlZBIMCgRkZWNrGAEgASgJEg8KB3NlY3Rpb24YAiABKAkSDAoEbWFyaxgDIAEoCRIMCgRmYWNlGAQgASgJEg8KB2hlYWRpbmcYBSABKAkSDQoFZnJvbnQYBiABKAkSDAoEYmFjaxgHIAEoCRIMCgRzZWVuGAggASgIEgsKA2R1ZRgJIAEoCRIeCgVhaGVhZBgKIAEoCzIPLm51bWVuLnYxLkFoZWFkIhYKFFdhdGNoQ2FyZHNEdWVSZXF1ZXN0IncKFVdhdGNoQ2FyZHNEdWVSZXNwb25zZRInCgZ2YXVsdHMYASADKAsyFy5udW1lbi52MS5WYXVsdENhcmRzRHVlEgsKA2RheRgCIAEoCRIoCgdjb3VudGVkGAMgASgLMhcubnVtZW4udjEuVmF1bHRDYXJkc0R1ZSJSChNTdGFydFNlc3Npb25SZXF1ZXN0Eg0KBXZhdWx0GAEgASgJEgwKBGRlY2sYAiABKAkSEwoGcHJlc2V0GAMgASgJSACIAQFCCQoHX3ByZXNldCJnChRTdGFydFNlc3Npb25SZXNwb25zZRILCgNydW4YASABKAkSHgoFYXNrZWQYAiADKAsyDy5udW1lbi52MS5Bc2tlZBIRCgl1bndyaXR0ZW4YAyADKAkSDwoHc2tpcHBlZBgEIAEoBSJ+ChFBbnN3ZXJDYXJkUmVxdWVzdBINCgV2YXVsdBgBIAEoCRILCgNydW4YAiABKAkSDAoEbWFyaxgDIAEoCRIMCgRmYWNlGAQgASgJEiAKBnJhdGluZxgFIAEoDjIQLm51bWVuLnYxLlJhdGluZxIPCgd0b29rX21zGAYgASgDIiQKEkFuc3dlckNhcmRSZXNwb25zZRIOCgZhbnN3ZXIYASABKAkiQwoVVGFrZUJhY2tBbnN3ZXJSZXF1ZXN0Eg0KBXZhdWx0GAEgASgJEgsKA3J1bhgCIAEoCRIOCgZhbnN3ZXIYAyABKAkiGAoWVGFrZUJhY2tBbnN3ZXJSZXNwb25zZSImChVMaXN0UmV2aWV3RGF5c1JlcXVlc3QSDQoFdmF1bHQYASABKAkifwoWTGlzdFJldmlld0RheXNSZXNwb25zZRIhCgRkYXlzGAEgAygLMhMubnVtZW4udjEuUmV2aWV3RGF5EiAKA2R1ZRgEIAMoCzITLm51bWVuLnYxLlJldmlld0RheRIOCgZzdHJlYWsYAiABKAUSEAoIYW5zd2VyZWQYAyABKAUihAEKCVJldmlld0RheRILCgNkYXkYASABKAkSEAoIYW5zd2VyZWQYAiABKAUSDQoFYWdhaW4YAyABKAUSDAoEaGFyZBgEIAEoBRIMCgRnb29kGAUgASgFEgwKBGVhc3kYBiABKAUSDQoFYXNrZWQYByABKAUSEAoIcmVjYWxsZWQYCCABKAUiFgoUR2V0QWdlbnRTdGF0ZVJlcXVlc3QiLAoVR2V0QWdlbnRTdGF0ZVJlc3BvbnNlEhMKC3VucmVhY2hhYmxlGAEgASgJIjoKG0dldERlY2tOZWlnaGJvdXJob29kUmVxdWVzdBINCgV2YXVsdBgBIAEoCRIMCgRkZWNrGAIgASgJIlYKHEdldERlY2tOZWlnaGJvdXJob29kUmVzcG9uc2USJgoFbm90ZXMYASADKAsyFy5udW1lbi52MS5EZWNrTmVpZ2hib3VyEg4KBnVucmVhZBgCIAEoBSKyAQoNRGVja05laWdoYm91chIPCgd3cml0dGVuGAEgASgJEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkSDAoEYm9keRgEIAEoCRINCgVsYWJlbBgFIAEoCRIOCgZwb2ludHMYBiABKAgSEQoJYW1iaWd1b3VzGAcgASgIEicKB3JlZnVzYWwYCCABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWwiFQoTV2F0Y2hSZWxvYWRzUmVxdWVzdCImChRXYXRjaFJlbG9hZHNSZXNwb25zZRIOCgZyZWxvYWQYASABKAgiOAoZR2V0VmF1bHREZWNrUHJlc2V0UmVxdWVzdBINCgV2YXVsdBgBIAEoCRIMCgRkZWNrGAIgASgJIoMBChpHZXRWYXVsdERlY2tQcmVzZXRSZXNwb25zZRIlCgZwcmVzZXQYASABKAsyEC5udW1lbi52MS5QcmVzZXRIAIgBARInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgBiAEBQgkKB19wcmVzZXRCCgoIX3JlZnVzYWwqZQoGUmF0aW5nEhYKElJBVElOR19VTlNQRUNJRklFRBAAEhAKDFJBVElOR19BR0FJThABEg8KC1JBVElOR19IQVJEEAISDwoLUkFUSU5HX0dPT0QQAxIPCgtSQVRJTkdfRUFTWRAEMpQGChFGbGFzaGNhcmRzU2VydmljZRJSCg1XYXRjaENhcmRzRHVlEh4ubnVtZW4udjEuV2F0Y2hDYXJkc0R1ZVJlcXVlc3QaHy5udW1lbi52MS5XYXRjaENhcmRzRHVlUmVzcG9uc2UwARJNCgxTdGFydFNlc3Npb24SHS5udW1lbi52MS5TdGFydFNlc3Npb25SZXF1ZXN0Gh4ubnVtZW4udjEuU3RhcnRTZXNzaW9uUmVzcG9uc2USRwoKQW5zd2VyQ2FyZBIbLm51bWVuLnYxLkFuc3dlckNhcmRSZXF1ZXN0GhwubnVtZW4udjEuQW5zd2VyQ2FyZFJlc3BvbnNlElMKDlRha2VCYWNrQW5zd2VyEh8ubnVtZW4udjEuVGFrZUJhY2tBbnN3ZXJSZXF1ZXN0GiAubnVtZW4udjEuVGFrZUJhY2tBbnN3ZXJSZXNwb25zZRJPCgxXYXRjaFJlbG9hZHMSHS5udW1lbi52MS5XYXRjaFJlbG9hZHNSZXF1ZXN0Gh4ubnVtZW4udjEuV2F0Y2hSZWxvYWRzUmVzcG9uc2UwARJTCg5MaXN0UmV2aWV3RGF5cxIfLm51bWVuLnYxLkxpc3RSZXZpZXdEYXlzUmVxdWVzdBogLm51bWVuLnYxLkxpc3RSZXZpZXdEYXlzUmVzcG9uc2USUAoNR2V0QWdlbnRTdGF0ZRIeLm51bWVuLnYxLkdldEFnZW50U3RhdGVSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0QWdlbnRTdGF0ZVJlc3BvbnNlEmUKFEdldERlY2tOZWlnaGJvdXJob29kEiUubnVtZW4udjEuR2V0RGVja05laWdoYm91cmhvb2RSZXF1ZXN0GiYubnVtZW4udjEuR2V0RGVja05laWdoYm91cmhvb2RSZXNwb25zZRJfChJHZXRWYXVsdERlY2tQcmVzZXQSIy5udW1lbi52MS5HZXRWYXVsdERlY2tQcmVzZXRSZXF1ZXN0GiQubnVtZW4udjEuR2V0VmF1bHREZWNrUHJlc2V0UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_presets, file_numen_v1_shared]);
+  fileDesc("ChludW1lbi92MS9mbGFzaGNhcmRzLnByb3RvEghudW1lbi52MSLdAQoNVmF1bHRDYXJkc0R1ZRIMCgRuYW1lGAEgASgJEhQKDGRpc3BsYXlfbmFtZRgCIAEoCRIMCgRwYXRoGAMgASgJEg0KBWZhY2VzGAQgASgFEgsKA2R1ZRgFIAEoBRILCgNuZXcYBiABKAUSJQoFZGVja3MYByADKAsyFi5udW1lbi52MS5EZWNrQ2FyZHNEdWUSKQoHcHJlc2V0cxgIIAMoCzIYLm51bWVuLnYxLlByZXNldENhcmRzRHVlEg4KBnVucmVhZBgJIAEoCRIPCgdyZWFkaW5nGAogASgIInkKDERlY2tDYXJkc0R1ZRIMCgRkZWNrGAEgASgJEg0KBWZhY2VzGAIgASgFEgsKA2R1ZRgDIAEoBRILCgNuZXcYBCABKAUSEAoIYW5zd2VyZWQYBSABKAUSDwoHbGVhcm5lZBgGIAEoBRIPCgd1bmJlZ3VuGAcgASgFIvcCCg5QcmVzZXRDYXJkc0R1ZRIOCgZwcmVzZXQYASABKAkSDQoFdGl0bGUYAiABKAkSDQoFZGVja3MYAyABKAUSDQoFY2FyZHMYBCABKAUSEAoIb3dlZF9kdWUYBSABKAUSEAoIb3dlZF9uZXcYBiABKAUSEAoIYW5zd2VyZWQYByABKAUSDwoHdG9va19tcxgIIAEoAxIUCgxhbnN3ZXJlZF9uZXcYCSABKAUSGAoQYW5zd2VyZWRfcmV2aWV3cxgKIAEoBRILCgNuZXcYCyABKAUSDwoHcmV2aWV3cxgMIAEoBRIPCgdtaW51dGVzGA0gASgBEhIKCmNsb3Nlc19uZXcYDiABKAkSFgoOY2xvc2VzX3Jldmlld3MYDyABKAkSFgoOY2xvc2VzX21pbnV0ZXMYECABKAkSFgoOY2xvc2VzX2JhY2tsb2cYESABKAkSJgoIc3RvcHNfb24YEiABKA4yFC5udW1lbi52MS5TdG9wUmVhc29uIkAKBUFoZWFkEg0KBWFnYWluGAEgASgDEgwKBGhhcmQYAiABKAMSDAoEZ29vZBgDIAEoAxIMCgRlYXN5GAQgASgDIqsBCgVBc2tlZBIMCgRkZWNrGAEgASgJEg8KB3NlY3Rpb24YAiABKAkSDAoEbWFyaxgDIAEoCRIMCgRmYWNlGAQgASgJEg8KB2hlYWRpbmcYBSABKAkSDQoFZnJvbnQYBiABKAkSDAoEYmFjaxgHIAEoCRIMCgRzZWVuGAggASgIEgsKA2R1ZRgJIAEoCRIeCgVhaGVhZBgKIAEoCzIPLm51bWVuLnYxLkFoZWFkIhYKFFdhdGNoQ2FyZHNEdWVSZXF1ZXN0IncKFVdhdGNoQ2FyZHNEdWVSZXNwb25zZRInCgZ2YXVsdHMYASADKAsyFy5udW1lbi52MS5WYXVsdENhcmRzRHVlEgsKA2RheRgCIAEoCRIoCgdjb3VudGVkGAMgASgLMhcubnVtZW4udjEuVmF1bHRDYXJkc0R1ZSJSChNTdGFydFNlc3Npb25SZXF1ZXN0Eg0KBXZhdWx0GAEgASgJEgwKBGRlY2sYAiABKAkSEwoGcHJlc2V0GAMgASgJSACIAQFCCQoHX3ByZXNldCJnChRTdGFydFNlc3Npb25SZXNwb25zZRILCgNydW4YASABKAkSHgoFYXNrZWQYAiADKAsyDy5udW1lbi52MS5Bc2tlZBIRCgl1bndyaXR0ZW4YAyADKAkSDwoHc2tpcHBlZBgEIAEoBSJ+ChFBbnN3ZXJDYXJkUmVxdWVzdBINCgV2YXVsdBgBIAEoCRILCgNydW4YAiABKAkSDAoEbWFyaxgDIAEoCRIMCgRmYWNlGAQgASgJEiAKBnJhdGluZxgFIAEoDjIQLm51bWVuLnYxLlJhdGluZxIPCgd0b29rX21zGAYgASgDIiQKEkFuc3dlckNhcmRSZXNwb25zZRIOCgZhbnN3ZXIYASABKAkiQwoVVGFrZUJhY2tBbnN3ZXJSZXF1ZXN0Eg0KBXZhdWx0GAEgASgJEgsKA3J1bhgCIAEoCRIOCgZhbnN3ZXIYAyABKAkiGAoWVGFrZUJhY2tBbnN3ZXJSZXNwb25zZSImChVMaXN0UmV2aWV3RGF5c1JlcXVlc3QSDQoFdmF1bHQYASABKAkifwoWTGlzdFJldmlld0RheXNSZXNwb25zZRIhCgRkYXlzGAEgAygLMhMubnVtZW4udjEuUmV2aWV3RGF5EiAKA2R1ZRgCIAMoCzITLm51bWVuLnYxLlJldmlld0RheRIOCgZzdHJlYWsYAyABKAUSEAoIYW5zd2VyZWQYBCABKAUihAEKCVJldmlld0RheRILCgNkYXkYASABKAkSEAoIYW5zd2VyZWQYAiABKAUSDQoFYWdhaW4YAyABKAUSDAoEaGFyZBgEIAEoBRIMCgRnb29kGAUgASgFEgwKBGVhc3kYBiABKAUSDQoFYXNrZWQYByABKAUSEAoIcmVjYWxsZWQYCCABKAUiFgoUR2V0QWdlbnRTdGF0ZVJlcXVlc3QiLAoVR2V0QWdlbnRTdGF0ZVJlc3BvbnNlEhMKC3VucmVhY2hhYmxlGAEgASgJIjoKG0dldERlY2tOZWlnaGJvdXJob29kUmVxdWVzdBINCgV2YXVsdBgBIAEoCRIMCgRkZWNrGAIgASgJIlYKHEdldERlY2tOZWlnaGJvdXJob29kUmVzcG9uc2USJgoFbm90ZXMYASADKAsyFy5udW1lbi52MS5EZWNrTmVpZ2hib3VyEg4KBnVucmVhZBgCIAEoBSKyAQoNRGVja05laWdoYm91chIPCgd3cml0dGVuGAEgASgJEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkSDAoEYm9keRgEIAEoCRINCgVsYWJlbBgFIAEoCRIOCgZwb2ludHMYBiABKAgSEQoJYW1iaWd1b3VzGAcgASgIEicKB3JlZnVzYWwYCCABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWwiFQoTV2F0Y2hSZWxvYWRzUmVxdWVzdCImChRXYXRjaFJlbG9hZHNSZXNwb25zZRIOCgZyZWxvYWQYASABKAgiOAoZR2V0VmF1bHREZWNrUHJlc2V0UmVxdWVzdBINCgV2YXVsdBgBIAEoCRIMCgRkZWNrGAIgASgJIoMBChpHZXRWYXVsdERlY2tQcmVzZXRSZXNwb25zZRIlCgZwcmVzZXQYASABKAsyEC5udW1lbi52MS5QcmVzZXRIAIgBARInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgBiAEBQgkKB19wcmVzZXRCCgoIX3JlZnVzYWwqZQoGUmF0aW5nEhYKElJBVElOR19VTlNQRUNJRklFRBAAEhAKDFJBVElOR19BR0FJThABEg8KC1JBVElOR19IQVJEEAISDwoLUkFUSU5HX0dPT0QQAxIPCgtSQVRJTkdfRUFTWRAEMpQGChFGbGFzaGNhcmRzU2VydmljZRJSCg1XYXRjaENhcmRzRHVlEh4ubnVtZW4udjEuV2F0Y2hDYXJkc0R1ZVJlcXVlc3QaHy5udW1lbi52MS5XYXRjaENhcmRzRHVlUmVzcG9uc2UwARJNCgxTdGFydFNlc3Npb24SHS5udW1lbi52MS5TdGFydFNlc3Npb25SZXF1ZXN0Gh4ubnVtZW4udjEuU3RhcnRTZXNzaW9uUmVzcG9uc2USRwoKQW5zd2VyQ2FyZBIbLm51bWVuLnYxLkFuc3dlckNhcmRSZXF1ZXN0GhwubnVtZW4udjEuQW5zd2VyQ2FyZFJlc3BvbnNlElMKDlRha2VCYWNrQW5zd2VyEh8ubnVtZW4udjEuVGFrZUJhY2tBbnN3ZXJSZXF1ZXN0GiAubnVtZW4udjEuVGFrZUJhY2tBbnN3ZXJSZXNwb25zZRJPCgxXYXRjaFJlbG9hZHMSHS5udW1lbi52MS5XYXRjaFJlbG9hZHNSZXF1ZXN0Gh4ubnVtZW4udjEuV2F0Y2hSZWxvYWRzUmVzcG9uc2UwARJTCg5MaXN0UmV2aWV3RGF5cxIfLm51bWVuLnYxLkxpc3RSZXZpZXdEYXlzUmVxdWVzdBogLm51bWVuLnYxLkxpc3RSZXZpZXdEYXlzUmVzcG9uc2USUAoNR2V0QWdlbnRTdGF0ZRIeLm51bWVuLnYxLkdldEFnZW50U3RhdGVSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0QWdlbnRTdGF0ZVJlc3BvbnNlEmUKFEdldERlY2tOZWlnaGJvdXJob29kEiUubnVtZW4udjEuR2V0RGVja05laWdoYm91cmhvb2RSZXF1ZXN0GiYubnVtZW4udjEuR2V0RGVja05laWdoYm91cmhvb2RSZXNwb25zZRJfChJHZXRWYXVsdERlY2tQcmVzZXQSIy5udW1lbi52MS5HZXRWYXVsdERlY2tQcmVzZXRSZXF1ZXN0GiQubnVtZW4udjEuR2V0VmF1bHREZWNrUHJlc2V0UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_presets, file_numen_v1_shared]);
 
 /**
  * VaultCardsDue is one vault, and what its cards come to today.
@@ -81,7 +81,7 @@ export type VaultCardsDue = Message<"numen.v1.VaultCardsDue"> & {
    * Presets is what the day comes to under each preset the vault's decks are
    * scheduled by.
    *
-   * @generated from field: repeated numen.v1.PresetCardsDue presets = 9;
+   * @generated from field: repeated numen.v1.PresetCardsDue presets = 8;
    */
   presets: PresetCardsDue[];
 
@@ -90,7 +90,7 @@ export type VaultCardsDue = Message<"numen.v1.VaultCardsDue"> & {
    * reading it into the index failed. The three numbers are then zero and this
    * says why, in the person's own words.
    *
-   * @generated from field: string unread = 8;
+   * @generated from field: string unread = 9;
    */
   unread: string;
 
@@ -186,7 +186,7 @@ export type PresetCardsDue = Message<"numen.v1.PresetCardsDue"> & {
   /**
    * What the preset is called. Empty where nothing names the note.
    *
-   * @generated from field: string title = 7;
+   * @generated from field: string title = 2;
    */
   title: string;
 
@@ -194,7 +194,7 @@ export type PresetCardsDue = Message<"numen.v1.PresetCardsDue"> & {
    * How many decks point at it. Nothing points at a preset of no decks, and
    * the day stands at nothing under it.
    *
-   * @generated from field: int32 decks = 8;
+   * @generated from field: int32 decks = 3;
    */
   decks: number;
 
@@ -203,7 +203,7 @@ export type PresetCardsDue = Message<"numen.v1.PresetCardsDue"> & {
    * its preset all the same, so a preset of decks and no cards is its own
    * state.
    *
-   * @generated from field: int32 cards = 9;
+   * @generated from field: int32 cards = 4;
    */
   cards: number;
 
@@ -212,12 +212,12 @@ export type PresetCardsDue = Message<"numen.v1.PresetCardsDue"> & {
    * answered, held to its budget. Their sum is what a session over this preset
    * asks, because a preset is the whole scope of its own budget.
    *
-   * @generated from field: int32 owed_due = 10;
+   * @generated from field: int32 owed_due = 5;
    */
   owedDue: number;
 
   /**
-   * @generated from field: int32 owed_new = 11;
+   * @generated from field: int32 owed_new = 6;
    */
   owedNew: number;
 
@@ -226,22 +226,22 @@ export type PresetCardsDue = Message<"numen.v1.PresetCardsDue"> & {
    * those answers took. The two beside the total divide it the way a budget
    * does, so each is weighed against the budget of its own kind.
    *
-   * @generated from field: int32 answered = 2;
+   * @generated from field: int32 answered = 7;
    */
   answered: number;
 
   /**
-   * @generated from field: int64 took_ms = 3;
+   * @generated from field: int64 took_ms = 8;
    */
   tookMs: bigint;
 
   /**
-   * @generated from field: int32 answered_new = 17;
+   * @generated from field: int32 answered_new = 9;
    */
   answeredNew: number;
 
   /**
-   * @generated from field: int32 answered_reviews = 18;
+   * @generated from field: int32 answered_reviews = 10;
    */
   answeredReviews: number;
 
@@ -254,17 +254,17 @@ export type PresetCardsDue = Message<"numen.v1.PresetCardsDue"> & {
    * and closes nothing. `owed_due` and `owed_new` are already held to the ones
    * that do, so holding them to these again is capping a number twice.
    *
-   * @generated from field: int32 new = 4;
+   * @generated from field: int32 new = 11;
    */
   new: number;
 
   /**
-   * @generated from field: int32 reviews = 5;
+   * @generated from field: int32 reviews = 12;
    */
   reviews: number;
 
   /**
-   * @generated from field: double minutes = 6;
+   * @generated from field: double minutes = 13;
    */
   minutes: number;
 
@@ -273,22 +273,22 @@ export type PresetCardsDue = Message<"numen.v1.PresetCardsDue"> & {
    * key — minutes_a_day, new_a_day, reviews_a_day, by_date — and empty where
    * that budget takes no part.
    *
-   * @generated from field: string closes_new = 12;
+   * @generated from field: string closes_new = 14;
    */
   closesNew: string;
 
   /**
-   * @generated from field: string closes_reviews = 13;
+   * @generated from field: string closes_reviews = 15;
    */
   closesReviews: string;
 
   /**
-   * @generated from field: string closes_minutes = 14;
+   * @generated from field: string closes_minutes = 16;
    */
   closesMinutes: string;
 
   /**
-   * @generated from field: string closes_backlog = 15;
+   * @generated from field: string closes_backlog = 17;
    */
   closesBacklog: string;
 
@@ -297,7 +297,7 @@ export type PresetCardsDue = Message<"numen.v1.PresetCardsDue"> & {
    * a day of the week carrying none of the load. It is the core's own verdict,
    * so a window says of a preset what the session hands its cards out by.
    *
-   * @generated from field: numen.v1.StopReason stops_on = 16;
+   * @generated from field: numen.v1.StopReason stops_on = 18;
    */
   stopsOn: StopReason;
 };
@@ -702,7 +702,7 @@ export type ListReviewDaysResponse = Message<"numen.v1.ListReviewDaysResponse"> 
    * today, or owed and late, is not in it: what a person owes now is what the
    * front door counts, and this is what is after it.
    *
-   * @generated from field: repeated numen.v1.ReviewDay due = 4;
+   * @generated from field: repeated numen.v1.ReviewDay due = 2;
    */
   due: ReviewDay[];
 
@@ -710,14 +710,14 @@ export type ListReviewDaysResponse = Message<"numen.v1.ListReviewDaysResponse"> 
    * Streak is how many days up to now were reviewed without a gap. A day
    * nobody has answered on yet does not end one.
    *
-   * @generated from field: int32 streak = 2;
+   * @generated from field: int32 streak = 3;
    */
   streak: number;
 
   /**
    * Answered is how many answers the vault holds altogether.
    *
-   * @generated from field: int32 answered = 3;
+   * @generated from field: int32 answered = 4;
    */
   answered: number;
 };

@@ -9,7 +9,6 @@ import { describe, expect, it } from 'vitest'
 import { openDocument, type Documents, type Page, type Shape } from './open'
 
 const SHAPE: Shape = {
-  pageCount: 3,
   pages: [
     { width: 612, height: 792 },
     { width: 612, height: 792 },
@@ -62,7 +61,7 @@ describe('a document opened', () => {
 
     await read.go(0)
 
-    expect(read.pageCount.value).toBe(3)
+    expect(read.pages.value.length).toBe(3)
     expect(read.at.value).toBe(0)
   })
 
@@ -251,7 +250,7 @@ describe('a document that will not open', () => {
 
     expect(read.trouble.value).toContain('numen did not answer')
     expect(read.trouble.value).not.toContain('no such document')
-    expect(read.pageCount.value).toBe(0)
+    expect(read.pages.value.length).toBe(0)
     expect(read.picture.value).toBe('')
   })
 })
