@@ -9,11 +9,11 @@ import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import {
   transcript,
-  type Cue,
   type Recordings,
   type RecordingSummary,
   type Transcript,
 } from './transcript'
+import type { Cue } from './cues'
 import { playable, type Player } from './player'
 import { WORDS } from './words'
 

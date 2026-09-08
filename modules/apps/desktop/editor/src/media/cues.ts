@@ -6,7 +6,13 @@
  * take the first one's start and the last one's end; a line split shares its
  * span out where the split fell in its characters.
  */
-import type { Cue } from './transcript'
+
+/** One stretch of speech: what was said, and the milliseconds it spans. */
+export interface Cue {
+  readonly text: string
+  readonly from: number
+  readonly to: number
+}
 
 /** The prose of a transcript: one cue to a line. */
 export const spoken = (cues: readonly Cue[]): string => cues.map((cue) => cue.text).join('\n')

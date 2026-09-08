@@ -8,20 +8,13 @@ import { computed, ref, shallowRef } from 'vue'
 import { clock } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
 import { answerGuard as latest } from '../questions'
-import { cued, same, spanning, spoken } from './cues'
+import { cued, same, spanning, spoken, type Cue } from './cues'
 import { playable as canPlay, player, type MediaTypeProbe, type Player } from './player'
 import { WORDS } from './words'
 
 /** The player a tab drew for itself, which a moment chosen in the words seeks. */
 export interface TabPlayer {
   seeks(ms: number): void
-}
-
-/** One stretch of speech: what was said, and the milliseconds it spans. */
-export interface Cue {
-  readonly text: string
-  readonly from: number
-  readonly to: number
 }
 
 /** The text fetched or heard, and whether it may be written over. */

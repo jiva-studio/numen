@@ -6,8 +6,7 @@
  * the times it works out.
  */
 import { describe, expect, it } from 'vitest'
-import { cued, same, spanning, spoken } from './cues'
-import type { Cue } from './transcript'
+import { cued, same, spanning, spoken, type Cue } from './cues'
 
 const CUES: readonly Cue[] = [
   { text: 'A bell over the door.', from: 1_000, to: 3_000 },
