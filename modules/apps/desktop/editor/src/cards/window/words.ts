@@ -5,9 +5,6 @@ import { fileOf } from '../../paths'
 export const WORDS = {
   deck: 'Deck',
   stencil: 'Stencil',
-  /** What a file is called before a name has been typed over it. */
-  newDeck: 'New deck',
-  newStencil: 'New stencil',
   /**
    * The field a stencil is made carrying, which is the one every card's heading
    * is read from. A stencil declaring no field is unsound by the format.

@@ -5,5 +5,4 @@ export const WORDS = {
   makeAgain: 'make it again',
   keep: 'Keep mine',
   take: "Take the file's",
-  newNote: 'New note',
 }

@@ -7,11 +7,6 @@
  */
 import { commandKeyChord, keyChord } from '@numen/ui'
 import type { Artifact, ArtifactState, RefusalReason, VaultRefusalReason } from './core'
-import { WORDS as agent } from './agent/words'
-import { WORDS as cards } from './cards/window/words'
-import { WORDS as note } from './note/words'
-import { WORDS as plex } from './plex/words'
-import { WORDS as preset } from './preset/words'
 
 /** What the vault refused a command, in words a person reads. */
 export const REFUSED: Record<RefusalReason, string> = {
@@ -180,15 +175,15 @@ export const WORDS = {
   preset: 'Open the preset',
   /** The deck in front names no preset, so the defaults schedule it. */
   noPreset: 'This deck names no preset, so it is scheduled by the defaults.',
-  newNote: note.newNote,
-  newDeck: cards.newDeck,
-  newStencil: cards.newStencil,
+  newNote: 'New note',
+  newDeck: 'New deck',
+  newStencil: 'New stencil',
   /** The note that says how the decks pointing at it are scheduled. */
-  newPreset: preset.made,
+  newPreset: 'New preset',
   /** The note that points at a web address. */
   importUrl: 'Import an address',
-  newPlex: plex.newPlex,
-  newAgent: agent.newAgent,
+  newPlex: 'New plex',
+  newAgent: 'New agent',
   files: 'Show the files of the vault',
   close: 'Close this tab',
   appearance: 'Change the theme',

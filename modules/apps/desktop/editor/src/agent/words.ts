@@ -10,5 +10,4 @@ export const WORDS = {
   stopped: 'The agent stopped here',
   nothingSaid: 'Nothing said yet',
   agent: 'Agent',
-  newAgent: 'New agent',
 }
