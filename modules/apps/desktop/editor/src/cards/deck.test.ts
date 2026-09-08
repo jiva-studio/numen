@@ -35,7 +35,7 @@ const read = (over: Partial<VaultDeck> = {}): VaultDeck => ({
   cards: [
     {
       mark: 'k7m2xq9fzp',
-      section: null,
+      sectionIndex: null,
       heading: 'Llama',
       stencil: 'Animal',
       stencilAt: 'stencils/Animal.md',
@@ -48,7 +48,7 @@ const read = (over: Partial<VaultDeck> = {}): VaultDeck => ({
     },
     {
       mark: '3n8vr4tqch',
-      section: null,
+      sectionIndex: null,
       heading: 'Alpaca',
       stencil: 'Animal',
       stencilAt: 'stencils/Animal.md',
@@ -96,7 +96,7 @@ describe('a deck as the window holds it', () => {
     const bare = read()
     const held = deck({
       sections: [{ name: 'Roots', lead: '' }],
-      cards: [{ ...bare.cards[0]!, section: 0 }, bare.cards[1]!],
+      cards: [{ ...bare.cards[0]!, sectionIndex:0 }, bare.cards[1]!],
     })
     expect(held.cards.map((card) => card.section)).toStrictEqual([held.sections[0]?.id, null])
   })
@@ -107,10 +107,10 @@ describe('a deck as the window holds it', () => {
     const bare = read()
     const held = deck({
       sections: [{ name: 'Roots', lead: '' }],
-      cards: [{ ...bare.cards[0]!, section: 7 }, bare.cards[1]!],
+      cards: [{ ...bare.cards[0]!, sectionIndex:7 }, bare.cards[1]!],
     })
     expect(held.cards.map((card) => card.section)).toStrictEqual([null, null])
-    expect(cardsOf(held).map((card) => card.section)).toStrictEqual([null, null])
+    expect(cardsOf(held).map((card) => card.sectionIndex)).toStrictEqual([null, null])
   })
 
   it('keeps the preamble, the tail and each card’s lead as the file had them', () => {
@@ -132,7 +132,7 @@ describe('a deck as the window holds it', () => {
   it('hands the vault the cards without the identities it minted', () => {
     expect(cardsOf(deck())[0]).toStrictEqual({
       mark: LLAMA,
-      section: null,
+      sectionIndex: null,
       heading: 'Llama',
       stencil: 'Animal',
       stencilAt: 'stencils/Animal.md',
@@ -149,9 +149,9 @@ describe('a deck as the window holds it', () => {
     const bare = read()
     const held = deck({
       sections: [{ name: 'Roots', lead: '' }, { name: 'Leaves', lead: '' }],
-      cards: [{ ...bare.cards[0]!, section: 1 }, bare.cards[1]!],
+      cards: [{ ...bare.cards[0]!, sectionIndex:1 }, bare.cards[1]!],
     })
-    expect(cardsOf(held).map((card) => card.section)).toStrictEqual([1, null])
+    expect(cardsOf(held).map((card) => card.sectionIndex)).toStrictEqual([1, null])
   })
 
   it('hands the vault the sections without the identities it minted', () => {
@@ -171,7 +171,7 @@ describe('the cards as the grid draws them', () => {
       cards: [
         {
           mark: LLAMA,
-          section: null,
+          sectionIndex: null,
           heading: 'Llama',
           stencil,
           stencilAt,
@@ -335,7 +335,7 @@ describe('a card dragged among the sections', () => {
     const bare = read()
     return deck({
       sections: [{ name: 'Roots', lead: '' }, { name: 'Leaves', lead: '' }],
-      cards: [bare.cards[0]!, { ...bare.cards[1]!, section: 0 }],
+      cards: [bare.cards[0]!, { ...bare.cards[1]!, sectionIndex:0 }],
     })
   }
 
@@ -464,7 +464,7 @@ describe('a section of a deck', () => {
     const bare = read()
     const held = deck({
       sections: [{ name: 'Roots', lead: '' }, { name: 'Leaves', lead: '' }],
-      cards: [{ ...bare.cards[0]!, section: 0 }, { ...bare.cards[1]!, section: 1 }],
+      cards: [{ ...bare.cards[0]!, sectionIndex:0 }, { ...bare.cards[1]!, sectionIndex:1 }],
     })
     const gone = sectionGone(held, held.sections[1]?.id ?? '')
     expect(gone.sections.map((section) => section.name)).toStrictEqual(['Roots'])
@@ -507,7 +507,7 @@ describe('a section of a deck', () => {
     const bare = read()
     const held = deck({
       sections: [{ name: 'Roots', lead: '' }],
-      cards: [{ ...bare.cards[0]!, section: 0 }, bare.cards[1]!],
+      cards: [{ ...bare.cards[0]!, sectionIndex:0 }, bare.cards[1]!],
     })
     const gone = sectionGone(held, held.sections[0]?.id ?? '')
     expect(gone.sections).toStrictEqual([])

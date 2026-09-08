@@ -32,7 +32,7 @@ const minting: IdMaker = () => crypto.randomUUID()
  * One card as the window holds it: what the file says, under the identity it is
  * addressed by.
  */
-export interface Card extends Omit<VaultCard, 'section'> {
+export interface Card extends Omit<VaultCard, 'sectionIndex'> {
   readonly id: string
   /**
    * The section it stands under, by the identity this window knows that section
@@ -73,10 +73,12 @@ export const deckOf = (read: VaultDeck, mint: IdMaker = minting): Deck => {
   const sections = read.sections.map((section) => ({ ...section, id: mint() }))
   return {
     preamble: read.preamble,
-    cards: read.cards.map((card) => ({
+    cards: read.cards.map(({ sectionIndex, ...card }) => ({
       ...card,
       id: card.mark && held.get(card.mark) === 1 ? card.mark : mint(),
-      section: card.section === null ? null : (sections[card.section]?.id ?? null),
+      // The window addresses a section by the identity it minted for it, and
+      // the place the file gave it goes no further than here.
+      section: sectionIndex === null ? null : (sections[sectionIndex]?.id ?? null),
     })),
     sections,
     tail: read.tail,
@@ -121,7 +123,7 @@ export const cardsOf = (deck: Deck): readonly VaultCard[] => {
   const at = new Map(deck.sections.map((section, index) => [section.id, index]))
   return deck.cards.map(({ mark, section, heading, stencil, stencilAt, lead, values }) => ({
     mark,
-    section: section === null ? null : (at.get(section) ?? null),
+    sectionIndex: section === null ? null : (at.get(section) ?? null),
     heading,
     stencil,
     stencilAt,

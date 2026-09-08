@@ -79,13 +79,13 @@ func deckOf(path, title string, d format.Deck, cutting map[string]string) *v1.De
 
 func cardOf(c format.Card, at string) *v1.Card {
 	out := &v1.Card{
-		Heading:   c.Heading,
-		Mark:      string(c.Mark),
-		Section:   section(c.Section),
-		Stencil:   c.Stencil,
-		StencilAt: at,
-		Lead:      c.Lead,
-		Values:    make([]*v1.Value, 0, len(c.Values)),
+		Heading:      c.Heading,
+		Mark:         string(c.Mark),
+		SectionIndex: section(c.Section),
+		Stencil:      c.Stencil,
+		StencilAt:    at,
+		Lead:         c.Lead,
+		Values:       make([]*v1.Value, 0, len(c.Values)),
 	}
 	for _, v := range c.Values {
 		out.Values = append(out.Values, &v1.Value{Field: v.Field, Text: v.Text})
@@ -206,7 +206,7 @@ func cardsOf(cs []*v1.Card) []format.Card {
 		card := format.Card{
 			Heading: c.GetHeading(),
 			Mark:    domain.CardID(c.GetMark()),
-			Section: sectionOf(c.Section),
+			Section: sectionOf(c.SectionIndex),
 			Stencil: c.GetStencil(),
 			Lead:    c.GetLead(),
 		}

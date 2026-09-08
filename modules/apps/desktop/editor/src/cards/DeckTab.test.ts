@@ -40,7 +40,7 @@ afterEach(() => {
 const CARDS: readonly VaultCard[] = [
   {
     mark: 'k7m2xq9fzp',
-    section: 0,
+    sectionIndex: 0,
     heading: 'Llama',
     stencil: 'Animal',
     stencilAt: 'Animal.md',
@@ -52,7 +52,7 @@ const CARDS: readonly VaultCard[] = [
   },
   {
     mark: '3n8vr4tqch',
-    section: 0,
+    sectionIndex: 0,
     heading: '',
     stencil: 'Animal',
     stencilAt: 'Animal.md',

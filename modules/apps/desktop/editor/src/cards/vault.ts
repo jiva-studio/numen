@@ -75,8 +75,12 @@ export interface VaultCard {
   /**
    * Where the section it stands under stands among the deck's, counting from
    * the first. Nothing for a card standing before the first section.
+   *
+   * The window addresses a section by the identity it minted for it instead:
+   * a card dragged elsewhere or a section removed renumbers every card after
+   * it, and a card renumbered under a person's hands is a card drawn again.
    */
-  readonly section: number | null
+  readonly sectionIndex: number | null
   /**
    * The line its heading says, with the mark taken off. It is not what the card
    * is called: a write throws it away and reads it again from the first field,
@@ -389,7 +393,7 @@ const stencilled = (one: StencilMessage): VaultStencil => ({
 
 const carded = (one: CardMessage): VaultCard => ({
   mark: one.mark,
-  section: one.section ?? null,
+  sectionIndex: one.sectionIndex ?? null,
   heading: one.heading,
   stencil: one.stencil,
   stencilAt: one.stencilAt,
@@ -404,7 +408,7 @@ const carded = (one: CardMessage): VaultCard => ({
  */
 const carding = (one: VaultCard) => ({
   mark: one.mark,
-  ...(one.section === null ? {} : { section: one.section }),
+  ...(one.sectionIndex === null ? {} : { sectionIndex: one.sectionIndex }),
   heading: one.heading,
   stencil: one.stencil,
   lead: one.lead,

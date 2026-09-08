@@ -253,7 +253,7 @@ message Card {
   //
   // A write naming a section the deck does not hold is refused. Nothing is
   // written, and the card is not quietly stood somewhere else.
-  optional int32 section = 2;
+  optional int32 section_index = 2;
 
   // The line the card's heading says, with the mark taken off. It is not what
   // the card is called: it holds nothing of its own, and a write throws it away

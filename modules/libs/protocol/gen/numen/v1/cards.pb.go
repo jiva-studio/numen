@@ -622,7 +622,7 @@ type Card struct {
 	//
 	// A write naming a section the deck does not hold is refused. Nothing is
 	// written, and the card is not quietly stood somewhere else.
-	Section *int32 `protobuf:"varint,2,opt,name=section,proto3,oneof" json:"section,omitempty"`
+	SectionIndex *int32 `protobuf:"varint,2,opt,name=section_index,json=sectionIndex,proto3,oneof" json:"section_index,omitempty"`
 	// The line the card's heading says, with the mark taken off. It is not what
 	// the card is called: it holds nothing of its own, and a write throws it away
 	// and reads it again from the first field.
@@ -687,9 +687,9 @@ func (x *Card) GetMark() string {
 	return ""
 }
 
-func (x *Card) GetSection() int32 {
-	if x != nil && x.Section != nil {
-		return *x.Section
+func (x *Card) GetSectionIndex() int32 {
+	if x != nil && x.SectionIndex != nil {
+		return *x.SectionIndex
 	}
 	return 0
 }
@@ -1954,18 +1954,17 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x05field\x18\x04 \x01(\tR\x05field\x12\x12\n" +
 	"\x04text\x18\x05 \x01(\tR\x04textB\a\n" +
 	"\x05_cardB\a\n" +
-	"\x05_face\"\xd5\x01\n" +
+	"\x05_face\"\xe6\x01\n" +
 	"\x04Card\x12\x12\n" +
-	"\x04mark\x18\x01 \x01(\tR\x04mark\x12\x1d\n" +
-	"\asection\x18\x02 \x01(\x05H\x00R\asection\x88\x01\x01\x12\x18\n" +
+	"\x04mark\x18\x01 \x01(\tR\x04mark\x12(\n" +
+	"\rsection_index\x18\x02 \x01(\x05H\x00R\fsectionIndex\x88\x01\x01\x12\x18\n" +
 	"\aheading\x18\x03 \x01(\tR\aheading\x12\x18\n" +
 	"\astencil\x18\x04 \x01(\tR\astencil\x12\x12\n" +
 	"\x04lead\x18\x05 \x01(\tR\x04lead\x12'\n" +
 	"\x06values\x18\x06 \x03(\v2\x0f.numen.v1.ValueR\x06values\x12\x1d\n" +
 	"\n" +
-	"stencil_at\x18\a \x01(\tR\tstencilAtB\n" +
-	"\n" +
-	"\b_section\"1\n" +
+	"stencil_at\x18\a \x01(\tR\tstencilAtB\x10\n" +
+	"\x0e_section_index\"1\n" +
 	"\x05Value\x12\x14\n" +
 	"\x05field\x18\x01 \x01(\tR\x05field\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\"+\n" +

@@ -27,7 +27,7 @@ const settles = () => new Promise((done) => setTimeout(done, 0))
 const CARDS: readonly VaultCard[] = [
   {
     mark: 'k7m2xq9fzp',
-    section: null,
+    sectionIndex: null,
     heading: 'Llama',
     stencil: 'cards/Animal',
     stencilAt: 'Animal.md',
@@ -39,7 +39,7 @@ const CARDS: readonly VaultCard[] = [
   },
   {
     mark: '3n8vr4tqch',
-    section: null,
+    sectionIndex: null,
     heading: 'Alpaca',
     stencil: 'Animal|животное',
     stencilAt: 'Animal.md',
@@ -446,7 +446,7 @@ describe('a value written over', () => {
   const only = (stencil: string, stencilAt = 'Animal.md'): readonly VaultCard[] => [
     {
       mark: 'k7m2xq9fzp',
-      section: null,
+      sectionIndex: null,
       heading: 'Llama',
       stencil,
       stencilAt,
@@ -459,7 +459,7 @@ describe('a value written over', () => {
   const twice: readonly VaultCard[] = [
     {
       mark: 'k7m2xq9fzp',
-      section: null,
+      sectionIndex: null,
       heading: 'Llama',
       stencil: 'Animal',
       stencilAt: 'Animal.md',
@@ -637,7 +637,7 @@ describe('a deck read again under the window', () => {
       ...CARDS,
       {
         mark: 'w9s5jd2b1k',
-        section: null,
+        sectionIndex: null,
         heading: 'Vicuña',
         stencil: 'Animal',
         stencilAt: 'Animal.md',
@@ -666,7 +666,7 @@ describe('a deck read again under the window', () => {
       ...CARDS,
       {
         mark: 'w9s5jd2b1k',
-        section: null,
+        sectionIndex: null,
         heading: 'Vicuña',
         stencil: 'Animal',
         stencilAt: 'Animal.md',
@@ -708,7 +708,7 @@ describe('a deck read again under the window', () => {
       ...CARDS,
       {
         mark: 'w9s5jd2b1k',
-        section: null,
+        sectionIndex: null,
         heading: 'Vicuña',
         stencil: 'Animal',
         stencilAt: 'Animal.md',
@@ -738,7 +738,7 @@ describe('a deck read again under the window', () => {
       ...CARDS,
       {
         mark: 'w9s5jd2b1k',
-        section: null,
+        sectionIndex: null,
         heading: 'Vic',
         stencil: 'Animal',
         stencilAt: 'Animal.md',
@@ -759,7 +759,7 @@ describe('a deck read again under the window', () => {
     one.holds([
       {
         mark: 'w9s5jd2b1k',
-        section: null,
+        sectionIndex: null,
         heading: 'Vicuña',
         stencil: 'Animal',
         stencilAt: 'Animal.md',

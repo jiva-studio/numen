@@ -170,12 +170,12 @@ func TestACardSaysWhichSectionItStandsUnder(t *testing.T) {
 	if len(held) != 2 {
 		t.Fatalf("the deck came back with %d cards", len(held))
 	}
-	if held[0].Section != nil {
+	if held[0].SectionIndex != nil {
 		t.Errorf("the card standing above the first section came back under section %d",
-			held[0].GetSection())
+			held[0].GetSectionIndex())
 	}
-	if held[1].Section == nil || held[1].GetSection() != 0 {
-		t.Errorf("the card under the first section came back as %+v", held[1].Section)
+	if held[1].SectionIndex == nil || held[1].GetSectionIndex() != 0 {
+		t.Errorf("the card under the first section came back as %+v", held[1].SectionIndex)
 	}
 }
 
@@ -313,7 +313,7 @@ func TestACardUnderASectionTheDeckDoesNotHoldIsRefused(t *testing.T) {
 	before := onDisk(t, f.root, "Animals.md")
 	cards := read.GetDeck().GetCards()
 	nowhere := int32(99)
-	cards[0].Section = &nowhere
+	cards[0].SectionIndex = &nowhere
 
 	_, err := f.client.WriteDeck(t.Context(), connect.NewRequest(&v1.WriteDeckRequest{
 		Path:     "Animals.md",
