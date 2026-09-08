@@ -6,12 +6,12 @@ What a second model corrects in a text the first one produced, what it is shown,
 
 A machine that read a page and a machine that transcribed an hour both produce text nobody typed, and both get things wrong. What they got wrong is different — a scan carries letters a machine misread, speech carries words it took for others — and everything around that is the same, so one mechanism serves both.
 
-| Proofread | The unit | Where the corrections go |
-| --- | --- | --- |
-| a reading | one printed line | `ocr/<hash>.corrected` |
-| a transcript | one cue | `transcript/<hash>.asr.corrected.vtt` |
+| Proofread | What it came out of | The unit | Where the corrections go |
+| --- | --- | --- | --- |
+| a reading | a document's pages, read by a model | one printed line | `ocr/<hash>.corrected` |
+| a transcript | a recording, heard by a model | one cue | `transcript/<hash>.asr.corrected.vtt` |
 
-What a reading is and how its files hold together is [Reading](reading.md). What a transcript is and how a moment in it is named is [Transcribing](transcribing.md).
+What a reading is and how its files hold together is [Recognising a document](recognising.md). What a transcript is and how a moment in it is named is [Transcribing](transcribing.md).
 
 ## The model is never shown a coordinate
 
@@ -151,7 +151,7 @@ What takes a run up is a vault opening. Where `automatically` is on, every readi
 
 One model proofreads, and no chain of them. A chunk whose text did not change keeps the vector already made for it.
 
-Neither artifact is rewritten: what the model read or transcribed stays on disk under its own name, and the corrections go beside it. What a reading's corrections are kept in and how a corrected reading is composed is [Reading](reading.md); what a transcript's are kept in is [Transcribing](transcribing.md).
+Neither artifact is rewritten: what the model read or transcribed stays on disk under its own name, and the corrections go beside it. What a reading's corrections are kept in and how a corrected reading is composed is [Recognising a document](recognising.md); what a transcript's are kept in is [Transcribing](transcribing.md).
 
 ## What a person sees
 

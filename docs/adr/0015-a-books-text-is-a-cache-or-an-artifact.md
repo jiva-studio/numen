@@ -79,7 +79,7 @@ One run makes the prose, the coordinates it was read from, the parts it divides 
 
 The area is named for what the files are. Their format, the fields recorded beside them and what a place in one is called all follow from that: a reading carries places on pages, wherever the reading came from.
 
-What made them is another question, and it stands in a file's own name where a kind has more than one producer: `ocr/<hash>.<producer>.txt`. A kind one producer writes needs no such name — there is nothing to tell its files apart from. What one reading holds, page by page, is [`../reading.md`](../reading.md).
+What made them is another question, and it stands in a file's own name where a kind has more than one producer: `ocr/<hash>.<producer>.txt`. A kind one producer writes needs no such name — there is nothing to tell its files apart from. What one reading holds, page by page, is [`../recognising.md`](../recognising.md).
 
 ### A run batches, writes its count last, resumes, and cuts after each batch
 
