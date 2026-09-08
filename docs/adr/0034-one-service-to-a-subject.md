@@ -13,21 +13,13 @@ A window asks about the vault it shows, the vaults the installation holds, the c
 
 ### A service is one subject, and every question about that subject is on it
 
-- `VaultService` — the vault a window is showing, taken whole: what it is, and what has changed in it.
-- `WorkspaceService` — where in that vault the person stands: the tabs the window has open, and the places something else asks to be put in front of them.
-- `FileService` — the tree that vault is filed in: what a folder holds, what stands at a path, and moving one, removing one, making one.
-- `NoteService` — a note of that vault: its prose, its headings, its neighbourhood, the addresses written in it, and every way of writing one.
-- `SearchService` — what that vault holds that answers what a person typed: its names, and the passages of its text.
-- `VaultsService` — the vaults the installation holds, and putting another one in front of the person.
-- `CardsService` — the stencils and decks a vault is arranged into.
-- `PresetsService` — the presets that schedule them, and the curve of one.
-- `FlashcardsService` — a session: what is owed, what is asked, what was answered.
-- `AssetService` — what a file of the vault is, for whatever opens it: a document's pages, a recording's length and where its bytes are played from, and where a run of a source's text sits on the page.
-- `ArtifactService` — what has been made from a file: listing it, making one, taking one away, and reading and writing a recording's transcript.
-- `SettingsService` — the file a person configures the installation in.
-- `ThemeService` — what the window is dressed in.
-- `WindowService` — one window: which vault it has in front of the person, what is being done behind it, and what has to land before it goes.
-- `AgentService` — the conversation in the panel.
+A subject is what a client asks about, named in one word: the vault a window shows, where in it the person stands, the tree it is filed in, a note, what answers what a person typed, the vaults the installation holds, the cards, the presets that schedule them, a session of review, the settings file, the theme, the window, the agent's conversation. A service is named for its subject, and a question about that subject is asked of no other service.
+
+### A kind is a subject, and a file is not
+
+Two things that stand beside one file are two subjects. What a document is, what a recording is, what has been made from either, and each kind of text a model made from one — the words heard with their times, the prose of a page, what was read off the pages of a scan — are asked of a service each.
+
+A file is a place, not a subject. A service gathering every question that happens to name one file grows a call with every kind of thing that can be made from a file.
 
 ### A binary mounts a service whole
 
@@ -35,7 +27,7 @@ A window answers every call of a service it serves. A question one binary cannot
 
 The two calls that read a deck's preset are the case. The editor builds the use case that writes a preset and the review window does not, so folding the review window's call into `PresetsService` would put `CreatePreset` in front of a binary that cannot answer it — or answer it unimplemented, which is the thing this split exists to take out. The two stay, and the whole of the duplication is one pair of messages.
 
-The files of the vault are the other. The phone serves the vault's notes to a network, over a socket answering any origin at all, and must serve none of what is on the person's disk beside them: a book's pages, where a recording is played from, a model set running over either. That is why what a file *is* is `AssetService`, and why the phone declines it and `ArtifactService` whole. `FileService` is the tree and not the bytes — what a folder holds and where a file is filed — and the phone draws its own tree out of it, so it mounts that one.
+The files of the vault are the other. The phone serves the vault's notes to a network, over a socket answering any origin at all, and must serve none of what is on the person's disk beside them: a book's pages, where a recording is played from, a model set running over either. Those are services of their own, and the phone declines every one of them. `FileService` is the tree and not the bytes — what a folder holds and where a file is filed — and the phone draws its own tree out of it, so it mounts that one.
 
 ### A window is a scope
 
