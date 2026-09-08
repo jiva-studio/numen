@@ -41,7 +41,6 @@ vi.mock('./core', async (original) => ({
       yield { day: '', vaults: [], counted: VAULT }
     },
     watchReloads: () => waits(),
-    getAgentState: async () => ({ unreachable: '' }),
     listReviewDays: async () => ({
       days: [{ day: '2026-04-01', answered: 3, again: 1, hard: 0, good: 2, easy: 0, asked: 3, recalled: 2 }],
       due: [{ day: '2026-04-03', answered: 1 }],
@@ -72,6 +71,9 @@ vi.mock('./core', async (original) => ({
       skipped: 0,
     }),
   },
+  // Whether a card can be asked about is the agent's to answer, and the window
+  // asks it as it opens.
+  agent: { getAgentState: async () => ({ unreachable: '' }) },
   itself: { watchTasks: () => waits() },
 }))
 
