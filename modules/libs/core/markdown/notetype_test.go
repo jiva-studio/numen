@@ -8,13 +8,14 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 )
 
-// One key says what a note is, out of a closed list of four.
+// One key says what a note is, out of a closed list of five.
 func TestOneKeySaysWhatANoteIs(t *testing.T) {
 	for written, want := range map[string]domain.NoteType{
-		"---\ntype: note\n---\n":     domain.TypeNote,
-		"---\ntype: deck\n---\n":     domain.TypeDeck,
-		"---\ntype: stencil\n---\n":  domain.TypeStencil,
-		"---\ntype: preset\n---\n":   domain.TypePreset,
+		"---\ntype: note\n---\n":    domain.TypeNote,
+		"---\ntype: deck\n---\n":    domain.TypeDeck,
+		"---\ntype: stencil\n---\n": domain.TypeStencil,
+		"---\ntype: preset\n---\n":  domain.TypePreset,
+
 		"---\ntitle: Entropy\n---\n": domain.TypeNote,
 		"---\ntype:\n---\n":          domain.TypeNote,
 		"---\ntype: \"\"\n---\n":     domain.TypeNote,

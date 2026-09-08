@@ -35,7 +35,7 @@ func hearing(
 	by := &corrector{says: says}
 	return ProofreadTranscript{
 		Readers:   vaults{first.ID: shelved},
-		Derived:   kept,
+		Derived:   shelves{kept},
 		By:        by,
 		BatchSize: 1,
 		InFlight:  1,

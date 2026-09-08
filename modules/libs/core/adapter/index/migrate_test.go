@@ -2,8 +2,10 @@ package index
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -138,10 +140,11 @@ func TestMigrationsRunInOneTransactionEach(t *testing.T) {
 
 // An index a later build wrote is reported and left where it stands.
 //
-// Its schema holds what this build cannot read. Nothing is repaired, nothing is
-// emptied: what this build owes the person is the two numbers and their own
-// copy of their index, untouched.
-func TestAnIndexAtAnUnknownSchemaIsBuiltAgain(t *testing.T) {
+// Its schema holds what this build cannot read. A version only goes up, so this
+// is an index some newer build migrated, and what is in it is that build's to
+// read. Nothing is repaired and nothing is emptied: what this build owes the
+// person is the two numbers and their own index, untouched.
+func TestAnIndexAtAnUnknownSchemaIsRefused(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")
 
@@ -162,23 +165,22 @@ func TestAnIndexAtAnUnknownSchemaIsBuiltAgain(t *testing.T) {
 	}
 
 	again, err := Open(ctx, path)
-	if err != nil {
-		t.Fatalf("an index at a schema this build does not carry was not opened: %v", err)
+	if err == nil {
+		again.Close()
+		t.Fatal("an index at a schema this build does not carry was opened")
 	}
-	defer again.Close()
+	if !errors.Is(err, ErrIndexAhead) {
+		t.Errorf("it was refused with %v", err)
+	}
+	// Both numbers are in what the person is shown: what they do next is
+	// decided by them, and by which build wrote it.
+	said := err.Error()
+	if !strings.Contains(said, fmt.Sprint(newest(t)+3)) || !strings.Contains(said, fmt.Sprint(newest(t))) {
+		t.Errorf("the refusal reads %q", said)
+	}
 
-	// It was built again from the first migration, so it stands at the schema
-	// this build carries.
-	var version int
-	if err := again.write.QueryRowContext(ctx, "PRAGMA user_version").Scan(&version); err != nil {
-		t.Fatal(err)
-	}
-	if version != newest(t) {
-		t.Errorf("the index is at schema %d, want %d", version, newest(t))
-	}
-
-	// Nothing it held survived: what it holds is a reading of the vault, and
-	// the next scan reads the vault again.
+	// The index stands as it was. What it holds took hours to read, and a build
+	// that cannot read its schema cannot say what emptying it would cost.
 	raw, err := sql.Open("sqlite", dsn(path))
 	if err != nil {
 		t.Fatal(err)
@@ -188,8 +190,8 @@ func TestAnIndexAtAnUnknownSchemaIsBuiltAgain(t *testing.T) {
 	if err := raw.QueryRowContext(ctx, `SELECT count(*) FROM vaults`).Scan(&vaults); err != nil {
 		t.Fatal(err)
 	}
-	if vaults != 0 {
-		t.Errorf("the index holds %d vaults, want none: it was built again", vaults)
+	if vaults != 1 {
+		t.Errorf("the index holds %d vaults, want the one it held", vaults)
 	}
 }
 

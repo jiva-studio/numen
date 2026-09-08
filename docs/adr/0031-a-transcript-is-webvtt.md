@@ -7,7 +7,7 @@
 
 ## Context
 
-What a model heard in a recording is an artifact: no machine here makes it again, so it is written into the service folder and the source is cut from it afterwards.
+What a model wrote down from a recording is an artifact: no machine here makes it again, so it is written into the service folder and the source is cut from it afterwards.
 
 It is words with times attached. A chunk is a range of bytes in the words, and a search hit has to be played from the moment those words were said.
 

@@ -23,5 +23,6 @@ func main() {
 		os.Exit(1)
 	}
 	cfg := platform.Config().Indexing(chosen.Indexing)
+	cfg.Importing = chosen.Importing
 	os.Exit(cli.Main(context.Background(), os.Stdout, os.Stderr, os.Args[1:], deps(cfg)))
 }

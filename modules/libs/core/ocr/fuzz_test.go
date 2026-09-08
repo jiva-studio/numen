@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 )
 
@@ -80,8 +81,9 @@ func FuzzWriteArtifact(f *testing.F) {
 			Index: 0,
 			Size:  image.Point{X: 100, Y: 200},
 			Blocks: []ocr.Block{
-				{Text: first, Stretches: []ocr.Stretch{{
-					Box: image.Rect(0, 0, 10, 10), Start: 0, Length: len(first),
+				{Text: first, Boxes: []ocr.Box{{
+					Rect: image.Rect(0, 0, 10, 10),
+					Span: domain.Span{From: 0, To: len(first)},
 				}}},
 				{Text: heading, Heading: marked, Depth: depth},
 			},
@@ -108,12 +110,11 @@ func FuzzWriteArtifact(f *testing.F) {
 			}
 		}
 		for _, box := range boxes {
-			run := box.Stretch
-			if run.Start < 0 || run.Start+run.Length > len(text) {
-				t.Fatalf("a box runs from %d for %d in %d bytes of prose",
-					run.Start, run.Length, len(text))
+			if box.From < 0 || box.To > len(text) {
+				t.Fatalf("a box runs from %d to %d in %d bytes of prose",
+					box.From, box.To, len(text))
 			}
-			if got := text[run.Start : run.Start+run.Length]; got != first {
+			if got := text[box.From:box.To]; got != first {
 				t.Fatalf("a box over %q stands at %q", first, got)
 			}
 		}

@@ -4,9 +4,10 @@
 
 // What a client may ask about the vault a window is showing, taken whole.
 //
-// What the vault is, what has changed in it, and where in it the person stands:
-// the questions that are about the vault itself and not about anything filed in
-// it. Its files are file.proto, its notes note.proto and its text search.proto.
+// What the vault is and what has changed in it: the questions that are about
+// the vault itself and not about anything filed in it. Its files are
+// file.proto, its notes note.proto and its text search.proto, and where the
+// person stands in it is workspace.proto.
 package numenv1connect
 
 import (
@@ -44,11 +45,6 @@ const (
 	// VaultServiceWatchVaultChangesProcedure is the fully-qualified name of the VaultService's
 	// WatchVaultChanges RPC.
 	VaultServiceWatchVaultChangesProcedure = "/numen.v1.VaultService/WatchVaultChanges"
-	// VaultServiceWatchFocusProcedure is the fully-qualified name of the VaultService's WatchFocus RPC.
-	VaultServiceWatchFocusProcedure = "/numen.v1.VaultService/WatchFocus"
-	// VaultServiceWriteOpenTabsProcedure is the fully-qualified name of the VaultService's
-	// WriteOpenTabs RPC.
-	VaultServiceWriteOpenTabsProcedure = "/numen.v1.VaultService/WriteOpenTabs"
 )
 
 // VaultServiceClient is a client for the numen.v1.VaultService service.
@@ -59,15 +55,6 @@ type VaultServiceClient interface {
 	// the caller listens. It says which notes, and nothing about them: the caller
 	// knows what it is showing and asks for what it needs.
 	WatchVaultChanges(context.Context, *connect.Request[v1.WatchVaultChangesRequest]) (*connect.ServerStreamForClient[v1.WatchVaultChangesResponse], error)
-	// WatchFocus reports the places something else asked to be put in front of
-	// the person — an agent working the vault beside them — for as long as the
-	// caller listens. What travelling there looks like is the client's.
-	WatchFocus(context.Context, *connect.Request[v1.WatchFocusRequest]) (*connect.ServerStreamForClient[v1.WatchFocusResponse], error)
-	// WriteOpenTabs says what the person has open — every tab of the window, and
-	// which of them is in front. The client says so again whenever any of it
-	// changes, and an agent working the vault beside them reads what it last
-	// said.
-	WriteOpenTabs(context.Context, *connect.Request[v1.WriteOpenTabsRequest]) (*connect.Response[v1.WriteOpenTabsResponse], error)
 }
 
 // NewVaultServiceClient constructs a client for the numen.v1.VaultService service. By default, it
@@ -93,18 +80,6 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("WatchVaultChanges")),
 			connect.WithClientOptions(opts...),
 		),
-		watchFocus: connect.NewClient[v1.WatchFocusRequest, v1.WatchFocusResponse](
-			httpClient,
-			baseURL+VaultServiceWatchFocusProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("WatchFocus")),
-			connect.WithClientOptions(opts...),
-		),
-		writeOpenTabs: connect.NewClient[v1.WriteOpenTabsRequest, v1.WriteOpenTabsResponse](
-			httpClient,
-			baseURL+VaultServiceWriteOpenTabsProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("WriteOpenTabs")),
-			connect.WithClientOptions(opts...),
-		),
 	}
 }
 
@@ -112,8 +87,6 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 type vaultServiceClient struct {
 	getVaultState     *connect.Client[v1.GetVaultStateRequest, v1.GetVaultStateResponse]
 	watchVaultChanges *connect.Client[v1.WatchVaultChangesRequest, v1.WatchVaultChangesResponse]
-	watchFocus        *connect.Client[v1.WatchFocusRequest, v1.WatchFocusResponse]
-	writeOpenTabs     *connect.Client[v1.WriteOpenTabsRequest, v1.WriteOpenTabsResponse]
 }
 
 // GetVaultState calls numen.v1.VaultService.GetVaultState.
@@ -126,16 +99,6 @@ func (c *vaultServiceClient) WatchVaultChanges(ctx context.Context, req *connect
 	return c.watchVaultChanges.CallServerStream(ctx, req)
 }
 
-// WatchFocus calls numen.v1.VaultService.WatchFocus.
-func (c *vaultServiceClient) WatchFocus(ctx context.Context, req *connect.Request[v1.WatchFocusRequest]) (*connect.ServerStreamForClient[v1.WatchFocusResponse], error) {
-	return c.watchFocus.CallServerStream(ctx, req)
-}
-
-// WriteOpenTabs calls numen.v1.VaultService.WriteOpenTabs.
-func (c *vaultServiceClient) WriteOpenTabs(ctx context.Context, req *connect.Request[v1.WriteOpenTabsRequest]) (*connect.Response[v1.WriteOpenTabsResponse], error) {
-	return c.writeOpenTabs.CallUnary(ctx, req)
-}
-
 // VaultServiceHandler is an implementation of the numen.v1.VaultService service.
 type VaultServiceHandler interface {
 	// GetVaultState is what the vault is and how far reading it has got.
@@ -144,15 +107,6 @@ type VaultServiceHandler interface {
 	// the caller listens. It says which notes, and nothing about them: the caller
 	// knows what it is showing and asks for what it needs.
 	WatchVaultChanges(context.Context, *connect.Request[v1.WatchVaultChangesRequest], *connect.ServerStream[v1.WatchVaultChangesResponse]) error
-	// WatchFocus reports the places something else asked to be put in front of
-	// the person — an agent working the vault beside them — for as long as the
-	// caller listens. What travelling there looks like is the client's.
-	WatchFocus(context.Context, *connect.Request[v1.WatchFocusRequest], *connect.ServerStream[v1.WatchFocusResponse]) error
-	// WriteOpenTabs says what the person has open — every tab of the window, and
-	// which of them is in front. The client says so again whenever any of it
-	// changes, and an agent working the vault beside them reads what it last
-	// said.
-	WriteOpenTabs(context.Context, *connect.Request[v1.WriteOpenTabsRequest]) (*connect.Response[v1.WriteOpenTabsResponse], error)
 }
 
 // NewVaultServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -174,28 +128,12 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(vaultServiceMethods.ByName("WatchVaultChanges")),
 		connect.WithHandlerOptions(opts...),
 	)
-	vaultServiceWatchFocusHandler := connect.NewServerStreamHandler(
-		VaultServiceWatchFocusProcedure,
-		svc.WatchFocus,
-		connect.WithSchema(vaultServiceMethods.ByName("WatchFocus")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceWriteOpenTabsHandler := connect.NewUnaryHandler(
-		VaultServiceWriteOpenTabsProcedure,
-		svc.WriteOpenTabs,
-		connect.WithSchema(vaultServiceMethods.ByName("WriteOpenTabs")),
-		connect.WithHandlerOptions(opts...),
-	)
 	return "/numen.v1.VaultService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case VaultServiceGetVaultStateProcedure:
 			vaultServiceGetVaultStateHandler.ServeHTTP(w, r)
 		case VaultServiceWatchVaultChangesProcedure:
 			vaultServiceWatchVaultChangesHandler.ServeHTTP(w, r)
-		case VaultServiceWatchFocusProcedure:
-			vaultServiceWatchFocusHandler.ServeHTTP(w, r)
-		case VaultServiceWriteOpenTabsProcedure:
-			vaultServiceWriteOpenTabsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -211,12 +149,4 @@ func (UnimplementedVaultServiceHandler) GetVaultState(context.Context, *connect.
 
 func (UnimplementedVaultServiceHandler) WatchVaultChanges(context.Context, *connect.Request[v1.WatchVaultChangesRequest], *connect.ServerStream[v1.WatchVaultChangesResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.WatchVaultChanges is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) WatchFocus(context.Context, *connect.Request[v1.WatchFocusRequest], *connect.ServerStream[v1.WatchFocusResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.WatchFocus is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) WriteOpenTabs(context.Context, *connect.Request[v1.WriteOpenTabsRequest]) (*connect.Response[v1.WriteOpenTabsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.WriteOpenTabs is not implemented"))
 }

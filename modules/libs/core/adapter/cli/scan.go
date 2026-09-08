@@ -67,14 +67,14 @@ func scanCommand(ctx context.Context, out io.Writer, deps Deps, args []string) e
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(out, "%s in %s\n", describe(made.Notes), time.Since(started).Round(time.Millisecond))
 	if made.Books.Seen > 0 {
 		fmt.Fprintln(out, describeSources(made.Books))
 	}
 	if made.Vectors.Embedded > 0 {
 		fmt.Fprintf(out, "%d vectors made\n", made.Vectors.Embedded)
 	}
-	fmt.Fprintf(out, "index now holds %d notes and %d headings\n", summary.Notes, summary.Headings)
+	fmt.Fprintf(out, "index now holds %d notes and %d headings, in %s\n",
+		summary.Notes, summary.Headings, time.Since(started).Round(time.Millisecond))
 	return nil
 }
 
@@ -87,18 +87,6 @@ func describeSources(r source.ExtractResult) string {
 	if r.Unreadable > 0 {
 		s += fmt.Sprintf(", %d could not be read", r.Unreadable)
 	}
-	if r.Vanished > 0 {
-		s += fmt.Sprintf(", %d gone before they could be read", r.Vanished)
-	}
-	return s
-}
-
-// describe puts a scan into words. The use case counts; how that is said to a
-// person belongs to this adapter, and a graphical shell will say it differently
-// or not at all.
-func describe(r vaults.ScanResult) string {
-	s := fmt.Sprintf("%d notes: %d indexed, %d unchanged, %d removed",
-		r.Notes, r.Indexed, r.Unchanged, r.Removed)
 	if r.Vanished > 0 {
 		s += fmt.Sprintf(", %d gone before they could be read", r.Vanished)
 	}

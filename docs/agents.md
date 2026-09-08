@@ -54,15 +54,17 @@ The window a person runs their cards in opens neither: an answer there says wher
 
 ## The tools
 
-Five families and a reader of files, served over the vault's own endpoint.
+Seven families and a reader of files, served over the vault's own endpoint.
 
 | Family | What it is for |
 | --- | --- |
 | `note_*` | search the vault, look notes up by path and by the name a link writes, read and rewrite their prose, edit a stretch, rename, move, remove, and put one in front of the person |
-| `file_read` | read a run of any file the vault holds, by its path from the vault folder |
+| `file_read` | read a range of a file the person put in the vault, by its path from the vault folder. What the application made is not one of those, and is read by `artifact_read` |
 | `link_*` | add, change, remove and list the links a note carries |
 | `card_*` | list the stencils a vault holds, read a deck and the cards in it, and make, change and remove one card at a time |
-| `source_*` | list the documents a vault holds, read a run of one's text, ask for a scanned one to be read, and show the person a passage |
+| `source_*` | list the documents a vault holds, read a range of one's text, ask for a scanned one to be read, and show the person a passage |
+| `artifact_*` | what this application made from one file and keeps beside it — a transcript, an article, an ocr, a copy — a range of one as it stands on disk, and a stretch of a transcript put right |
+| `url_import` | make a file holding a web address and fetch what is there, in one call |
 | `vault_*` | show the vault and what a scan could not act on, and list, add, rename, forget and open vaults |
 
 A call that carries names takes as many as are wanted — at most fifty for a lookup, at most ten for reading prose. A call that carries the text of a document takes one: creating a note, writing one and editing one are each a call of their own, and each is filed as it is finished.
@@ -71,7 +73,29 @@ A deck is as long as somebody made it, so `card_read` answers with at most fifty
 
 A tool that writes returns only once the index is level again. An agent that creates a note and searches for it in the next breath finds it.
 
-`file_read` is the path a person names when the file behind it is neither a note nor a document the vault has read — a transcript somebody typed, an export, whatever they put in the folder — and it is how a file too long to answer with is read a run at a time. It takes a path from the vault root and refuses every other, including one that reaches outside through a link. What the vault passes over it passes over too: the application's own folder, and every name the vault's ignore rules match. The tools write notes, so a file of another kind is read here and not written.
+`file_read` is the path a person names when the file behind it is neither a note nor a document the vault has read — a transcript somebody typed, an export, whatever they put in the folder — and it is how a file too long to answer with is read a range at a time. It takes a path from the vault root and refuses every other, including one that reaches outside through a link. What the vault passes over it passes over too: the application's own folder, and every name the vault's ignore rules match. The tools write notes, so a file of another kind is read here and not written.
+
+### How a tool is named
+
+A tool is named for the service that owns its subject, then what the tool does: `note_read`, `card_add`, `vault_list`. One word for one subject, so a tool and the call behind it are found under the same word — the services are [One service to a subject](adr/0034-one-service-to-a-subject.md).
+
+A format is not a subject. A PDF and an EPUB are both documents, so `document_` covers both and neither has a prefix of its own.
+
+These stand under a word other than the service that owns them:
+
+| Tool | The subject |
+| --- | --- |
+| `note_search`, `note_titles` | what answers what a person typed |
+| `note_focus`, `source_focus`, `window_tab_list` | where in the vault the person stands |
+| `link_*` | the addresses written in a note |
+| `card_*` | the cards, in the plural the service is named in |
+| `card_showing` | a session of review |
+| `source_list`, `source_read` | a document |
+| `source_recognise`, `source_transcribe` | an artifact being made |
+| `artifact_read`, `artifact_write` | a transcript, an article or a reading, by which of them is asked for |
+| `vault_list`, `vault_add`, `vault_rename`, `vault_forget`, `vault_open` | the vaults the installation holds |
+
+`file_read` and `url_import` stand under no service at all: nothing owns the bytes of a file that is neither a note nor a document, and nothing owns a url.
 
 ## The reviewer's surface
 

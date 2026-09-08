@@ -54,15 +54,9 @@ func (a *API) WatchFocus(
 			if !open {
 				return nil
 			}
-			also := make([]*v1.Stretch, 0, len(at.Stretches))
-			for _, one := range at.Stretches {
-				also = append(also, &v1.Stretch{Start: int32(one.Start), Length: int32(one.Length)})
-			}
 			if err := out.Send(&v1.WatchFocusResponse{
-				Path:   at.Path,
-				Start:  int32(at.Start),
-				Length: int32(at.Length),
-				Also:   also,
+				Path:  at.Path,
+				Spans: spansOf(at.Spans),
 			}); err != nil {
 				return err
 			}
@@ -114,8 +108,7 @@ func (a *API) WatchEdits(
 			if err := out.Send(&v1.WatchEditsResponse{
 				Change: said.Change,
 				Path:   said.Path,
-				From:   int32(said.From),
-				To:     int32(said.To),
+				Span:   &v1.Span{From: int32(said.From), To: int32(said.To)},
 				Text:   said.Text,
 				Done:   said.Done,
 			}); err != nil {

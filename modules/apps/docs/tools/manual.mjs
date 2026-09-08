@@ -16,7 +16,8 @@ import { readFile, readdir, writeFile } from 'node:fs/promises'
 // and a package name is a link `npm ci` makes.
 import { faults, proves, stories } from '../../../tools/stories/stories.mjs'
 
-const UI = new URL('../../desktop/editor/src/', import.meta.url)
+// The window's shared layer, which is where the commands and the words stand.
+const UI = new URL('../../desktop/editor/src/shared/', import.meta.url)
 const GO = new URL('../../../libs/core/', import.meta.url)
 const CMD = new URL('../../desktop/cmd/numen/', import.meta.url)
 const PAGES = new URL('../src/content/docs/', import.meta.url)
@@ -127,11 +128,11 @@ const chordOf = ({ letter, shift }) => {
  * What one entry of the words says. An entry standing for another module's is
  * followed there, which is where the four tab kinds keep their own names.
  */
-const said = async (whole, name, seen = new Set()) => {
+const said = async (whole, name, at = UI, seen = new Set()) => {
   // The words a person reads are one object. What is above it says what a
   // refusal is called, under names a command has too.
-  const at = whole.indexOf('export const WORDS')
-  const words = at < 0 ? whole : whole.slice(at)
+  const from = whole.indexOf('export const WORDS')
+  const words = from < 0 ? whole : whole.slice(from)
 
   const literal = words.match(new RegExp(`^\\s*${name}:\\s*'([^']+)',`, 'm'))
   if (literal) return literal[1]
@@ -140,7 +141,13 @@ const said = async (whole, name, seen = new Set()) => {
   if (!elsewhere) die(`the words say nothing under '${name}'`)
   const [, module, key] = elsewhere
   if (seen.has(module)) die(`the words under '${name}' point at themselves`)
-  return said(await read(UI, `${module}/words.ts`), key, new Set([...seen, module]))
+
+  // The file names where it took the module from, so a part that moved is
+  // followed without this knowing where any part stands.
+  const imported = whole.match(new RegExp(`^import \\{ WORDS as ${module} \\} from '([^']+)'`, 'm'))
+  if (!imported) die(`the words take nothing in as '${module}'`)
+  const path = new URL(`${imported[1]}.ts`, at)
+  return said(await readFile(path, 'utf8'), key, path, new Set([...seen, module]))
 }
 
 const keyboard = async () => {
@@ -368,6 +375,7 @@ const meaning = (doc, name, keys) => {
  */
 const PACKAGES = {
   settings: 'adapter/settings',
+  download: 'internal/adapter/download',
   embed: 'internal/adapter/embed',
   recognition: 'internal/adapter/recognition',
   transcription: 'internal/adapter/transcription',

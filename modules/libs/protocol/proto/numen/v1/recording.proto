@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+// What a client has to know before it can play something the vault holds: how
+// long it runs and where its bytes come from.
+//
+// A recording of the vault and a video copied from an address are both played,
+// so both are answered here. The words heard in one are TranscriptService.
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// RecordingService answers what a recording is, for whatever plays one.
+//
+// It is a service apart from the vault's notes for one reason: a window that
+// serves the notes to a network need not serve the files, and a service is the
+// unit of what a binary answers.
+service RecordingService {
+  // GetRecording is what a recording is: how long it runs and where its bytes
+  // are played from. What has been made from it is ListArtifacts.
+  rpc GetRecording(GetRecordingRequest) returns (GetRecordingResponse);
+}
+
+message GetRecordingRequest {
+  // The file, as the vault holds it.
+  string path = 1;
+}
+
+message GetRecordingResponse {
+  // How long it runs. A recording nothing has transcribed runs nowhere, and the
+  // player it is loaded into is what then says.
+  int32 duration_ms = 1;
+
+  // Where it is played from, and what it is played as. A media element speaks
+  // the protocols of the world and not the scheme a window is served under, so
+  // the bytes are answered at an address of their own; a url with no copy on
+  // this disk is answered with the page that frames it, typed `text/html`.
+  // Empty where this build serves nothing.
+  string media_url = 2;
+  string media_type = 3;
+
+  // The web address a url points at. Empty on every other source.
+  string url = 4;
+}

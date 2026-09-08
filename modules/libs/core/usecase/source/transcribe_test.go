@@ -65,7 +65,7 @@ type played struct{ *voice }
 
 func (p played) Length() int { return len(p.words) * 1000 }
 
-func (p played) Speech(_ context.Context, from, count int) ([]port.Audio, error) {
+func (p played) Segments(_ context.Context, from, count int) ([]port.Audio, error) {
 	var out []port.Audio
 	for n := range p.words {
 		if at := stretch(n); at.From >= from {
@@ -103,7 +103,7 @@ func listener(t *testing.T, words ...string) (Transcribe, domain.Vault, *store, 
 	return Transcribe{
 		Readers: vaults{first.ID: shelved},
 		Sources: index,
-		Derived: kept,
+		Derived: shelves{kept},
 		By:      model,
 		Batch:   1,
 	}, first, index, kept, model, text.Fingerprint(raw)
@@ -208,7 +208,7 @@ func TestABatchThatDidNotLandWholeIsCutBack(t *testing.T) {
 	u, v, _, shelf, model, hash := listener(t, "one", "two", "three")
 
 	torn := transcript.Marshal([]transcript.Cue{{Text: "one", From: 0, To: 800}})
-	torn = append(torn, transcript.Heard(800)...)
+	torn = append(torn, transcript.Reaches(800)...)
 	loose := transcript.Marshal([]transcript.Cue{{Text: "half a thought", From: 1000, To: 1800}})
 	torn = append(torn, bytes.TrimPrefix(loose, []byte(transcript.Head+"\n"))...)
 	if err := shelf.Write(t.Context(), text.Partial("asr", hash), torn); err != nil {

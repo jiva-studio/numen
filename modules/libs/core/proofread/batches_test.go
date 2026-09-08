@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
@@ -14,7 +15,7 @@ import (
 
 // box is one printed line on a page, over a run of the prose.
 func box(page, start, length int) highlight.Box {
-	return highlight.Box{Page: page, Stretch: highlight.Stretch{Start: start, Length: length}}
+	return highlight.Box{Page: page, Span: domain.Span{From: start, To: start + length}}
 }
 
 func TestALineIsKnownByItsPlaceInTheWholeReading(t *testing.T) {

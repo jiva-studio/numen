@@ -1,18 +1,22 @@
 // A screen reaches the shared folders, and never another screen.
 //
-// The five shared folders are below; every other folder under `src/` draws one
-// screen, and a screen that reaches another is two screens that cannot be read,
-// moved or deleted apart. A sheet a screen draws over itself is that screen's
-// own component, however deep the folder holding it.
+// A folder under `src/` draws one screen, unless it is `shared/`, which is what
+// every screen may take, or `window/`, which is the shell that mounts them. A
+// screen that reaches another is two screens that cannot be read, moved or
+// deleted apart. A sheet a screen draws over itself is that screen's own
+// component, however deep the folder holding it.
 //
 // This holds for the windows alone, which are the modules `screened` names.
 // `modules/libs/ui` is a library of components, where one drawing another is
 // the whole point.
 
-const shared = ['command', 'notices', 'saving', 'tabs', 'testing']
+const apart = ['shared', 'window']
 
-/** Any folder under `src/` that is not one of the shared ones, captured. */
-const SCREEN = `^src/(?!(?:${shared.join('|')})/)([^/]+)/`
+/** A screen's own folder, captured. */
+const SCREEN = `^src/(?!(?:${apart.join('|')})/)([^/]+)/`
+
+/** The same screen. */
+const ITSELF = '^src/$1/'
 
 module.exports = {
   extends: './rules.cjs',
@@ -20,13 +24,13 @@ module.exports = {
     {
       name: 'no-screen-reaches-a-screen',
       comment:
-        'A screen reaches the shared folders of its window and never another ' +
-        'screen. What two screens both need is declared where it is needed and ' +
-        'satisfied by whoever has it, or it stands in a shared folder. ' +
-        `The shared folders are ${shared.join(', ')}.`,
+        'A screen reaches `shared/` and never another screen. What two screens ' +
+        'both need is declared where it is needed and satisfied by whoever has ' +
+        'it, or it stands in `shared/`. The folders that are no screen are ' +
+        `${apart.join(' and ')}.`,
       severity: 'error',
       from: { path: SCREEN },
-      to: { path: SCREEN, pathNot: '^src/$1/' },
+      to: { path: SCREEN, pathNot: ITSELF },
     },
     {
       name: 'no-folder-going-round',

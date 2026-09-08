@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 // ListFiles is what one folder of the vault holds. The vault settles the order
@@ -27,7 +28,7 @@ func (a *API) ListFiles(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	held, err := reader.List(ctx, r.Msg.GetFolder())
+	held, err := reader.List(ctx, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(listing(err), err)
 	}
@@ -188,6 +189,42 @@ func (a *API) CreateFolder(
 	return connect.NewResponse(out), nil
 }
 
+// CreateURL makes the file a web address is kept in.
+//
+// What is at the address is not fetched here: the file is made, and a run over
+// it is asked for the way a run over any source is.
+func (a *API) CreateURL(
+	ctx context.Context, r *connect.Request[v1.CreateURLRequest],
+) (*connect.Response[v1.CreateURLResponse], error) {
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
+	at, err := domain.ParseURL(r.Msg.GetUrl())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	if !a.Writing.begin() {
+		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
+	}
+	defer a.Writing.done()
+
+	made, err := a.Files.URLs.Execute(ctx, showing, source.NewURL{
+		Address: at, Path: r.Msg.GetPath(),
+	})
+	if made.Path != "" {
+		return connect.NewResponse(&v1.CreateURLResponse{Path: made.Path}), nil
+	}
+	if err == nil {
+		return connect.NewResponse(&v1.CreateURLResponse{}), nil
+	}
+	reason, refused := wire.RefusalBy(err)
+	if !refused {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&v1.CreateURLResponse{Refusal: &reason}), nil
+}
+
 // listing is the code a folder that could not be listed is answered with.
 func listing(err error) connect.Code {
 	switch {
@@ -200,7 +237,7 @@ func listing(err error) connect.Code {
 	}
 }
 
-// typeOf is which of four a note is, as the schema carries it. A note carrying
+// typeOf is what a note is, as the schema carries it. A note carrying
 // no type of its own is an ordinary note.
 func typeOf(noteType domain.NoteType) v1.NoteType {
 	switch noteType {
@@ -225,6 +262,8 @@ func kindOf(kind domain.SourceKind) v1.SourceKind {
 		return v1.SourceKind_SOURCE_KIND_BOOK
 	case domain.KindRecording:
 		return v1.SourceKind_SOURCE_KIND_RECORDING
+	case domain.KindURL:
+		return v1.SourceKind_SOURCE_KIND_URL
 	default:
 		return v1.SourceKind_SOURCE_KIND_UNSPECIFIED
 	}

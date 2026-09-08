@@ -1,7 +1,7 @@
 import type { Preview } from '@storybook/vue3-vite'
 import { configure } from 'storybook/test'
 import { reachCheck, type Proof } from './check'
-import '../src/tokens/theme.css'
+import '../src/shared/tokens/theme.css'
 import './preview.css'
 
 // A story waits on a real browser drawing a frame, and two engines draw at

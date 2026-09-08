@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+// What a client has to know before it can draw a document of the vault: how
+// many pages it has and how large each of them is.
+//
+// The pages themselves are pictures at addresses of their own, because a
+// browser's own elements speak bytes and not this. What a model read off them
+// is OcrService.
+package numen.v1;
+
+import "numen/v1/shared.proto";
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// DocumentService answers what a document is, for whatever opens one.
+//
+// It is a service apart from the vault's notes for one reason: a window that
+// serves the notes to a network need not serve the files, and a service is the
+// unit of what a binary answers.
+service DocumentService {
+  // GetDocument is what a document is: how many pages it has and how large each
+  // of them is. A page itself is a picture at an address of its own, drawn to
+  // the width it is asked for.
+  //
+  // Opening a document holds a worker of the library's pool. A caller that
+  // could not have one inside the wait is answered unavailable and asks again;
+  // a held request is not an answer.
+  rpc GetDocument(GetDocumentRequest) returns (GetDocumentResponse);
+}
+
+message GetDocumentRequest {
+  // The file, as the vault holds it.
+  string path = 1;
+}
+
+message GetDocumentResponse {
+  // Every page of the document in order, each as its size. How many there are
+  // is how many stand here. A page whose size could not be read stands at
+  // nothing, and the page after it is still where it was.
+  repeated Page pages = 1;
+
+  // Which bytes these pages were read from. It stands in the address a page is
+  // drawn at, so an address names one drawing of one document and answers the
+  // same picture for as long as it answers at all.
+  Fingerprint fingerprint = 2;
+}
+
+// A Page is one page of the document, in the document's own units. A client
+// draws it at whatever width it likes and keeps the shape by this.
+message Page {
+  double width = 1;
+  double height = 2;
+}

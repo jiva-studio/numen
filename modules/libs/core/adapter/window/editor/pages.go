@@ -10,7 +10,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/appearance"
+	"github.com/jiva-studio/numen/modules/libs/core/csp"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
@@ -53,6 +53,9 @@ func (a *API) Serving(files http.Handler, named ...string) http.Handler {
 	if serves(numenv1connect.VaultServiceName) {
 		routes = append(routes, mount(numenv1connect.NewVaultServiceHandler(a, counted)))
 	}
+	if serves(numenv1connect.WorkspaceServiceName) {
+		routes = append(routes, mount(numenv1connect.NewWorkspaceServiceHandler(a, counted)))
+	}
 	if serves(numenv1connect.FileServiceName) {
 		routes = append(routes, mount(numenv1connect.NewFileServiceHandler(a, counted)))
 	}
@@ -83,8 +86,20 @@ func (a *API) Serving(files http.Handler, named ...string) http.Handler {
 	if serves(numenv1connect.ArtifactServiceName) {
 		routes = append(routes, mount(numenv1connect.NewArtifactServiceHandler(a, counted)))
 	}
-	if serves(numenv1connect.AssetServiceName) {
-		routes = append(routes, mount(numenv1connect.NewAssetServiceHandler(a, counted)))
+	if serves(numenv1connect.TranscriptServiceName) {
+		routes = append(routes, mount(numenv1connect.NewTranscriptServiceHandler(a, counted)))
+	}
+	if serves(numenv1connect.ArticleServiceName) {
+		routes = append(routes, mount(numenv1connect.NewArticleServiceHandler(a, counted)))
+	}
+	if serves(numenv1connect.OcrServiceName) {
+		routes = append(routes, mount(numenv1connect.NewOcrServiceHandler(a, counted)))
+	}
+	if serves(numenv1connect.DocumentServiceName) {
+		routes = append(routes, mount(numenv1connect.NewDocumentServiceHandler(a, counted)))
+	}
+	if serves(numenv1connect.RecordingServiceName) {
+		routes = append(routes, mount(numenv1connect.NewRecordingServiceHandler(a, counted)))
 	}
 	// The themes belong to the installation and arrive here from whatever put
 	// the window together, so a build put together without a catalogue serves
@@ -93,14 +108,21 @@ func (a *API) Serving(files http.Handler, named ...string) http.Handler {
 		routes = append(routes, mount(numenv1connect.NewThemeServiceHandler(a.Themes, counted)))
 	}
 
-	// A file's own bytes are what a browser's own elements speak, and they are
-	// the file, so they are served where the file is answered about and nowhere
-	// else.
-	bytes := serves(numenv1connect.AssetServiceName)
+	// A page of a document is what a browser's own elements speak, and it is
+	// the document, so it is served where the document is answered about and
+	// nowhere else.
+	bytes := serves(numenv1connect.DocumentServiceName)
 
 	// Where a recording is played from is known once the socket it is served
-	// over is open, which is before a page is ever asked for.
-	policy := appearance.Sources{Media: a.Playing.named()}.Policy()
+	// over is open, which is before a page is ever asked for. What a link note
+	// points at is played in a frame, from the hosts named here and no other.
+	// A player is framed from this run's own socket and never from the host
+	// directly: a host is told which address holds its player, and a window
+	// drawn from a scheme of its own has none to give.
+	policy := csp.Sources{
+		Media:  a.Playing.named(),
+		Frames: a.Playing.named(),
+	}.Policy()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", policy)
 		// A window being taken away answers nothing.

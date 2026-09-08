@@ -100,7 +100,7 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 			// Everything down to the section's first card is the person's own
 			// writing about their deck, whatever it is made of.
 			lead, leadEnd := run(body, s.from, end)
-			d.Sections = append(d.Sections, Section{Name: s.name, Lead: lead})
+			d.Sections = append(d.Sections, Section{Name: s.name, Preamble: lead})
 			under = len(d.Sections) - 1
 			read = trimmedEnd(body, s.head, s.from)
 			if lead != "" {
@@ -118,14 +118,14 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 		}
 
 		target, leadFrom := stencil(body, s.from, s.to)
-		card.Stencil = target
+		card.StencilLink = target
 		read = trimmedEnd(body, s.head, s.from)
 		if target != "" {
 			read = trimmedEnd(body, s.from, leadFrom)
 			span.linkFrom, span.linkTo = lineFrom(body, s.from, read), read
 		}
 		lead, leadEnd := run(body, leadFrom, s.to)
-		card.Lead = lead
+		card.Preamble = lead
 		if lead != "" {
 			read = leadEnd
 		}

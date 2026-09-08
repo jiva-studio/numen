@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -19,6 +20,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/appearance"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/csp"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
@@ -94,13 +96,40 @@ func handed(handler http.Handler, path string) *httptest.ResponseRecorder {
 // refused by `img-src` and `font-src`, and the element the theme is spliced
 // into is permitted by `style-src`.
 func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
-	held := appearance.Sources{}.Policy()
+	held := csp.Sources{}.Policy()
 
 	handler := (&API{}).Serving(http.NotFoundHandler())
 	for _, path := range []string{"", "/", "/index.html", "/built/index.css", assetOf("a.pdf")} {
 		if said := handed(handler, path).Header().Get("Content-Security-Policy"); said != held {
 			t.Errorf("%q is held to %q", path, said)
 		}
+	}
+}
+
+// Every host that may be framed is named here, so one arriving in the list
+// arrives in a diff somebody reads. A frame runs that host's own scripts and
+// reaches that host's own machines, and nothing else about the policy moves.
+//
+// The window frames this run's own socket and no host at all. The page that
+// socket serves is what frames the host, and it is held to a policy of its own.
+func TestTheHostsAWindowMayFrame(t *testing.T) {
+	if got := embedHosts; !slices.Equal(got, []string{"https://www.youtube-nocookie.com"}) {
+		t.Errorf("the window may frame %q", got)
+	}
+
+	said := handed((&API{}).Serving(http.NotFoundHandler()), "/").
+		Header().Get("Content-Security-Policy")
+	if !strings.Contains(said, "frame-src 'self';") {
+		t.Errorf("the policy reads %q", said)
+	}
+	if strings.Contains(said, "youtube") {
+		t.Errorf("the window names a host of its own to frame: %q", said)
+	}
+
+	// A frame is what widens, and a script is not: what runs in the window is
+	// what the window served, which is `default-src`.
+	if strings.Contains(said, "script-src") {
+		t.Errorf("the policy names where a script comes from: %q", said)
 	}
 }
 

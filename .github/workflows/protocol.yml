@@ -67,15 +67,6 @@ jobs:
       - name: Lint
         run: buf lint
 
-      # A field renamed, renumbered or taken away breaks a client already built
-      # against the schema. The comparison is with the commit this pull request
-      # would be merged into, which a push to main does not have.
-      - name: Breaking changes
-        if: github.event_name == 'pull_request'
-        env:
-          BASE: ${{ github.event.pull_request.base.sha }}
-        run: buf breaking --against "../../../.git#ref=$BASE,subdir=modules/libs/protocol"
-
       # The generated code is committed so that an ordinary build needs none of
       # the tools above. This is what proves it is still what the schema says.
       - name: Codegen

@@ -11,8 +11,8 @@ import (
 func TestBoxesComeBackAsTheyWereWritten(t *testing.T) {
 	boxes := []highlight.Box{
 		testsupport.Box(0, 0, 5, highlight.Rect{MinX: 0, MinY: 0.25, MaxX: 0.5, MaxY: 0.75}),
-		testsupport.Box(1, 25, 7, highlight.Rect{MinX: 0.125, MinY: 0.5, MaxX: 1, MaxY: 1}),
-		testsupport.Box(17, 4096, 1, highlight.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.3, MaxY: 0.4}),
+		testsupport.Box(1, 25, 32, highlight.Rect{MinX: 0.125, MinY: 0.5, MaxX: 1, MaxY: 1}),
+		testsupport.Box(17, 4096, 4097, highlight.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.3, MaxY: 0.4}),
 	}
 	raw := highlight.Pack(boxes)
 
@@ -29,7 +29,7 @@ func TestATornTailGivesBackTheWholeRecords(t *testing.T) {
 	// What was written whole is still a box.
 	boxes := []highlight.Box{
 		testsupport.Box(0, 0, 5, highlight.Rect{MaxX: 0.5, MaxY: 0.5}),
-		testsupport.Box(0, 6, 4, highlight.Rect{MaxX: 0.75, MaxY: 0.5}),
+		testsupport.Box(0, 6, 10, highlight.Rect{MaxX: 0.75, MaxY: 0.5}),
 	}
 	raw := highlight.Pack(boxes)
 

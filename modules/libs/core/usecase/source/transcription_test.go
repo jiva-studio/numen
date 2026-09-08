@@ -51,7 +51,7 @@ type quiet struct{}
 
 func (quiet) Length() int { return 60_000 }
 
-func (quiet) Speech(context.Context, int, int) ([]port.Audio, error) { return nil, nil }
+func (quiet) Segments(context.Context, int, int) ([]port.Audio, error) { return nil, nil }
 
 func (quiet) Close() error { return nil }
 
@@ -68,7 +68,7 @@ func listens(t *testing.T, by *deaf, recordings ...string) (*TranscriptionWorker
 	v := domain.Vault{ID: "v", Path: "/vault"}
 	held := NewTranscriptionWorker(t.Context(), Transcriptions{
 		Readers: vaults{v.ID: shelved},
-		Derived: newShelf(),
+		Derived: shelves{newShelf()},
 		Tasks:   task.New(),
 		Runtime: TranscriptionRuntime{
 			Ready: func() bool { return true },

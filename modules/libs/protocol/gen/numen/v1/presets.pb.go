@@ -365,10 +365,10 @@ type Settings struct {
 	// The share of cards recalled when they come round again.
 	Retention float64 `protobuf:"fixed64,6,opt,name=retention,proto3" json:"retention,omitempty"`
 	// Whether days are made to resemble each other.
-	EvenLoad bool `protobuf:"varint,8,opt,name=even_load,json=evenLoad,proto3" json:"even_load,omitempty"`
+	EvenLoad bool `protobuf:"varint,7,opt,name=even_load,json=evenLoad,proto3" json:"even_load,omitempty"`
 	// What a day's budget is counted in. Unspecified is the default, which
 	// charges a card face once a review day.
-	Counts BudgetUnit `protobuf:"varint,9,opt,name=counts,proto3,enum=numen.v1.BudgetUnit" json:"counts,omitempty"`
+	Counts BudgetUnit `protobuf:"varint,8,opt,name=counts,proto3,enum=numen.v1.BudgetUnit" json:"counts,omitempty"`
 	// How much of a day goes to what is overdue before anything unbegun is
 	// offered, as a share in hundredths. A hundred pays the debt first and begins
 	// new cards on what is left, nothing puts the new material first, and between
@@ -376,17 +376,17 @@ type Settings struct {
 	//
 	// It says what a day is spent on and closes nothing. A goal of a date carries
 	// the whole material by its own reckoning, so it takes no part there.
-	Backlog int32 `protobuf:"varint,10,opt,name=backlog,proto3" json:"backlog,omitempty"`
+	Backlog int32 `protobuf:"varint,9,opt,name=backlog,proto3" json:"backlog,omitempty"`
 	// How much of a day's load each day of the week carries, in per cent, under
 	// the first three letters of the day's name in lower case. A day not named
 	// carries the whole of it, and a day at nothing schedules nothing.
-	Load map[string]int32 `protobuf:"bytes,11,rep,name=load,proto3" json:"load,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	Load map[string]int32 `protobuf:"bytes,10,rep,name=load,proto3" json:"load,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	// What counts as a card face the person has learned. The value the rule reads
 	// stands in the field it names: `interval` for RULE_INTERVAL, `retention` for
 	// RULE_RETENTION.
-	Learned Rule `protobuf:"varint,12,opt,name=learned,proto3,enum=numen.v1.Rule" json:"learned,omitempty"`
+	Learned Rule `protobuf:"varint,11,opt,name=learned,proto3,enum=numen.v1.Rule" json:"learned,omitempty"`
 	// How long a card face is sent away for before it is learned, in days.
-	Interval      int32 `protobuf:"varint,13,opt,name=interval,proto3" json:"interval,omitempty"`
+	Interval      int32 `protobuf:"varint,12,opt,name=interval,proto3" json:"interval,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -510,8 +510,10 @@ type Preset struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Path is the note the settings were read from, and is empty for a deck
 	// naming no preset.
-	Path     string    `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	Title    string    `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	// Title is what the preset is called.
+	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	// The settings themselves, as the preset names them.
 	Settings *Settings `protobuf:"bytes,3,opt,name=settings,proto3" json:"settings,omitempty"`
 	// What was wrong in the file and was not guessed at, in the words to show.
 	// The settings stand at the defaults for each of them, and the editor is
@@ -767,17 +769,17 @@ type Point struct {
 	// A goal of retention holds a day to both card counts, and a day that ran out
 	// of new cards and of reviews names both: a person raising one of them and
 	// finding nothing changed is reading a day the other closed too.
-	Closed []BudgetName `protobuf:"varint,8,rep,packed,name=closed,proto3,enum=numen.v1.BudgetName" json:"closed,omitempty"`
+	Closed []BudgetName `protobuf:"varint,7,rep,packed,name=closed,proto3,enum=numen.v1.BudgetName" json:"closed,omitempty"`
 	// How many days of review at this place it takes before nothing is overdue.
 	// Zero is a curve standing over nothing overdue, and -1 is a pace that never
 	// gets there, which a person reads as not at this one.
-	Clears int32 `protobuf:"varint,9,opt,name=clears,proto3" json:"clears,omitempty"`
+	Clears int32 `protobuf:"varint,8,opt,name=clears,proto3" json:"clears,omitempty"`
 	// How many card faces stand overdue at the end of each day projected at this
 	// place, one entry a day over the whole horizon. It runs over days, which is
 	// a different axis from the grid.
-	Backlog []int32 `protobuf:"varint,10,rep,packed,name=backlog,proto3" json:"backlog,omitempty"`
+	Backlog []int32 `protobuf:"varint,9,rep,packed,name=backlog,proto3" json:"backlog,omitempty"`
 	// How many card faces stand learned today under the rule the settings name.
-	Learned int32 `protobuf:"varint,11,opt,name=learned,proto3" json:"learned,omitempty"`
+	Learned int32 `protobuf:"varint,10,opt,name=learned,proto3" json:"learned,omitempty"`
 	// How many days of review at this place it takes before every card face the
 	// preset schedules is learned. Zero is a place standing over a material
 	// already learned, and -1 is a horizon that ends with one of them still to
@@ -791,11 +793,11 @@ type Point struct {
 	// curve of retention moves the scheduler at every place, so the day steps
 	// wherever one more review is wanted to pass the interval and falls away
 	// between the steps; what a target buys there is `through` beside it.
-	Learns *int32 `protobuf:"varint,12,opt,name=learns,proto3,oneof" json:"learns,omitempty"`
+	Learns *int32 `protobuf:"varint,11,opt,name=learns,proto3,oneof" json:"learns,omitempty"`
 	// How many card faces cannot be learned by this day whatever the pace: the
 	// rule wants more days than the day leaves them, so no pace reaches them and
 	// the pace beside this is the one that reaches every other.
-	Short         int32 `protobuf:"varint,13,opt,name=short,proto3" json:"short,omitempty"`
+	Short         int32 `protobuf:"varint,12,opt,name=short,proto3" json:"short,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1238,8 +1240,8 @@ type CreatePresetRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// What the preset is called. The file is named after it.
 	Title string `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
-	// Where in the vault it goes, relative to the root. Empty is the root.
-	Folder        string `protobuf:"bytes,2,opt,name=folder,proto3" json:"folder,omitempty"`
+	// The folder it goes in, as a path relative to the root. Empty is the root.
+	Path          string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1281,9 +1283,9 @@ func (x *CreatePresetRequest) GetTitle() string {
 	return ""
 }
 
-func (x *CreatePresetRequest) GetFolder() string {
+func (x *CreatePresetRequest) GetPath() string {
 	if x != nil {
-		return x.Folder
+		return x.Path
 	}
 	return ""
 }
@@ -1426,11 +1428,11 @@ type ScheduleDeckResponse struct {
 	Refusal *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
-	At *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *Fingerprint `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	// Set when the deck is on disk and the index would not come level with it.
 	// The write happened and `at` stands; search answers about this file as it
 	// read it last, until a walk goes past.
-	Unlevelled    bool `protobuf:"varint,4,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1774,11 +1776,11 @@ type WritePresetResponse struct {
 	Refusal *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
-	At *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *Fingerprint `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	// Set when the preset is on disk and the index would not come level with it.
 	// The write happened and `at` stands; search answers about this file as it
 	// read it last, until a walk goes past.
-	Unlevelled    bool `protobuf:"varint,4,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1938,7 +1940,7 @@ var File_numen_v1_presets_proto protoreflect.FileDescriptor
 
 const file_numen_v1_presets_proto_rawDesc = "" +
 	"\n" +
-	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\x1a\x14numen/v1/theme.proto\"\xf1\x03\n" +
+	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\x1a\x14numen/v1/theme.proto\"\xdf\x03\n" +
 	"\bSettings\x12\"\n" +
 	"\x04goal\x18\x01 \x01(\x0e2\x0e.numen.v1.GoalR\x04goal\x12\x17\n" +
 	"\aby_date\x18\x02 \x01(\tR\x06byDate\x12\"\n" +
@@ -1946,17 +1948,16 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\tnew_a_day\x18\x04 \x01(\x05R\anewADay\x12\"\n" +
 	"\rreviews_a_day\x18\x05 \x01(\x05R\vreviewsADay\x12\x1c\n" +
 	"\tretention\x18\x06 \x01(\x01R\tretention\x12\x1b\n" +
-	"\teven_load\x18\b \x01(\bR\bevenLoad\x12,\n" +
-	"\x06counts\x18\t \x01(\x0e2\x14.numen.v1.BudgetUnitR\x06counts\x12\x18\n" +
-	"\abacklog\x18\n" +
-	" \x01(\x05R\abacklog\x120\n" +
-	"\x04load\x18\v \x03(\v2\x1c.numen.v1.Settings.LoadEntryR\x04load\x12(\n" +
-	"\alearned\x18\f \x01(\x0e2\x0e.numen.v1.RuleR\alearned\x12\x1a\n" +
-	"\binterval\x18\r \x01(\x05R\binterval\x1a7\n" +
+	"\teven_load\x18\a \x01(\bR\bevenLoad\x12,\n" +
+	"\x06counts\x18\b \x01(\x0e2\x14.numen.v1.BudgetUnitR\x06counts\x12\x18\n" +
+	"\abacklog\x18\t \x01(\x05R\abacklog\x120\n" +
+	"\x04load\x18\n" +
+	" \x03(\v2\x1c.numen.v1.Settings.LoadEntryR\x04load\x12(\n" +
+	"\alearned\x18\v \x01(\x0e2\x0e.numen.v1.RuleR\alearned\x12\x1a\n" +
+	"\binterval\x18\f \x01(\x05R\binterval\x1a7\n" +
 	"\tLoadEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01J\x04\b\a\x10\bR\n" +
-	"light_days\"\xdb\x01\n" +
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\"\xdb\x01\n" +
 	"\x06Preset\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12.\n" +
@@ -1975,7 +1976,7 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x05cards\x18\b \x01(\x05R\x05cards\x12\x18\n" +
 	"\aoverdue\x18\t \x01(\x05R\aoverdue\x12\x18\n" +
 	"\aunbegun\x18\n" +
-	" \x01(\x05R\aunbegun\"\xe0\x02\n" +
+	" \x01(\x05R\aunbegun\"\xd5\x02\n" +
 	"\x05Point\x12\x18\n" +
 	"\areviews\x18\x01 \x01(\x01R\areviews\x12\x18\n" +
 	"\aminutes\x18\x02 \x01(\x01R\aminutes\x12\x1a\n" +
@@ -1983,14 +1984,14 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x04owed\x18\x04 \x01(\x05R\x04owed\x12\x18\n" +
 	"\athrough\x18\x05 \x01(\x01R\athrough\x12\x16\n" +
 	"\x06enough\x18\x06 \x01(\bR\x06enough\x12,\n" +
-	"\x06closed\x18\b \x03(\x0e2\x14.numen.v1.BudgetNameR\x06closed\x12\x16\n" +
-	"\x06clears\x18\t \x01(\x05R\x06clears\x12\x18\n" +
-	"\abacklog\x18\n" +
-	" \x03(\x05R\abacklog\x12\x18\n" +
-	"\alearned\x18\v \x01(\x05R\alearned\x12\x1b\n" +
-	"\x06learns\x18\f \x01(\x05H\x00R\x06learns\x88\x01\x01\x12\x14\n" +
-	"\x05short\x18\r \x01(\x05R\x05shortB\t\n" +
-	"\a_learnsJ\x04\b\a\x10\bR\x03met\"?\n" +
+	"\x06closed\x18\a \x03(\x0e2\x14.numen.v1.BudgetNameR\x06closed\x12\x16\n" +
+	"\x06clears\x18\b \x01(\x05R\x06clears\x12\x18\n" +
+	"\abacklog\x18\t \x03(\x05R\abacklog\x12\x18\n" +
+	"\alearned\x18\n" +
+	" \x01(\x05R\alearned\x12\x1b\n" +
+	"\x06learns\x18\v \x01(\x05H\x00R\x06learns\x88\x01\x01\x12\x14\n" +
+	"\x05short\x18\f \x01(\x05R\x05shortB\t\n" +
+	"\a_learns\"?\n" +
 	"\x05Place\x12\x0e\n" +
 	"\x02at\x18\x01 \x01(\x05R\x02at\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x01R\x05value\x12\x10\n" +
@@ -2011,10 +2012,10 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\apresets\x18\x01 \x03(\v2\x17.numen.v1.PresetSummaryR\apresets\"9\n" +
 	"\rPresetSummary\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"C\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"?\n" +
 	"\x13CreatePresetRequest\x12\x14\n" +
-	"\x05title\x18\x01 \x01(\tR\x05title\x12\x16\n" +
-	"\x06folder\x18\x02 \x01(\tR\x06folder\"\x88\x01\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\"\x88\x01\n" +
 	"\x14CreatePresetResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x120\n" +
 	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x1e\n" +
@@ -2027,16 +2028,16 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x16\n" +
 	"\x06preset\x18\x02 \x01(\tR\x06preset\x12.\n" +
 	"\x04seen\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xb6\x01\n" +
+	"\x05_seen\"\xa7\x01\n" +
 	"\x14ScheduleDeckResponse\x120\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
+	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
 	"\n" +
-	"unlevelled\x18\x04 \x01(\bR\n" +
+	"unlevelled\x18\x03 \x01(\bR\n" +
 	"unlevelledB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_atJ\x04\b\x02\x10\x03R\achanged\"'\n" +
+	"\x03_at\"'\n" +
 	"\x11ReadPresetRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"\xf1\x01\n" +
 	"\x12ReadPresetResponse\x12-\n" +
@@ -2060,16 +2061,16 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
 	"\bsettings\x18\x02 \x01(\v2\x12.numen.v1.SettingsR\bsettings\x12.\n" +
 	"\x04seen\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xb5\x01\n" +
+	"\x05_seen\"\xa6\x01\n" +
 	"\x13WritePresetResponse\x120\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
+	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
 	"\n" +
-	"unlevelled\x18\x04 \x01(\bR\n" +
+	"unlevelled\x18\x03 \x01(\bR\n" +
 	"unlevelledB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_atJ\x04\b\x02\x10\x03R\achanged\"Y\n" +
+	"\x03_at\"Y\n" +
 	"\x13ComputeCurveRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
 	"\bsettings\x18\x02 \x01(\v2\x12.numen.v1.SettingsR\bsettings\"=\n" +

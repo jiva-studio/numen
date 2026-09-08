@@ -19,18 +19,18 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/file.proto.
  */
 export const file_numen_v1_file: GenFile = /*@__PURE__*/
-  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIiChBMaXN0RmlsZXNSZXF1ZXN0Eg4KBmZvbGRlchgBIAEoCSI1ChFMaXN0RmlsZXNSZXNwb25zZRIgCgdlbnRyaWVzGAEgAygLMg8ubnVtZW4udjEuRW50cnkihQEKBUVudHJ5EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCRIOCgZmb2xkZXIYAyABKAgSIgoEa2luZBgEIAEoDjIULm51bWVuLnYxLlNvdXJjZUtpbmQSIAoEdHlwZRgGIAEoDjISLm51bWVuLnYxLk5vdGVUeXBlSgQIBRAGUgRzaXplIiUKFExpc3RGaWxlS2luZHNSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJIjoKFUxpc3RGaWxlS2luZHNSZXNwb25zZRIhCgVraW5kcxgBIAMoCzISLm51bWVuLnYxLkZpbGVLaW5kIl4KCEZpbGVLaW5kEgwKBHBhdGgYASABKAkSIgoEa2luZBgCIAEoDjIULm51bWVuLnYxLlNvdXJjZUtpbmQSIAoEdHlwZRgDIAEoDjISLm51bWVuLnYxLk5vdGVUeXBlIisKD01vdmVGaWxlUmVxdWVzdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIo8BChBNb3ZlRmlsZVJlc3BvbnNlEigKBW1vdmVkGAEgASgLMhQubnVtZW4udjEuTW92ZVJlc3VsdEgAiAEBEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSAGIAQESEgoKdW5sZXZlbGxlZBgDIAEoCEIICgZfbW92ZWRCCgoIX3JlZnVzYWwiXAoKTW92ZVJlc3VsdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJEhAKCHJlcGFpcmVkGAMgAygJEhAKCGRhbmdsaW5nGAUgAygJSgQIBBAFUgpyZXRhcmdldGVkIjIKEVJlbW92ZUZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkSDwoHZGVzdHJveRgCIAEoCCKAAQoSUmVtb3ZlRmlsZVJlc3BvbnNlEg8KB3RyYXNoZWQYASABKAkSEAoIZGFuZ2xpbmcYAiADKAkSJwoHcmVmdXNhbBgDIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARISCgp1bmxldmVsbGVkGAQgASgIQgoKCF9yZWZ1c2FsIiMKE0NyZWF0ZUZvbGRlclJlcXVlc3QSDAoEcGF0aBgBIAEoCSJLChRDcmVhdGVGb2xkZXJSZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsKnAKClNvdXJjZUtpbmQSGwoXU09VUkNFX0tJTkRfVU5TUEVDSUZJRUQQABIUChBTT1VSQ0VfS0lORF9OT1RFEAESFAoQU09VUkNFX0tJTkRfQk9PSxACEhkKFVNPVVJDRV9LSU5EX1JFQ09SRElORxADMoADCgtGaWxlU2VydmljZRJECglMaXN0RmlsZXMSGi5udW1lbi52MS5MaXN0RmlsZXNSZXF1ZXN0GhsubnVtZW4udjEuTGlzdEZpbGVzUmVzcG9uc2USUAoNTGlzdEZpbGVLaW5kcxIeLm51bWVuLnYxLkxpc3RGaWxlS2luZHNSZXF1ZXN0Gh8ubnVtZW4udjEuTGlzdEZpbGVLaW5kc1Jlc3BvbnNlEkEKCE1vdmVGaWxlEhkubnVtZW4udjEuTW92ZUZpbGVSZXF1ZXN0GhoubnVtZW4udjEuTW92ZUZpbGVSZXNwb25zZRJHCgpSZW1vdmVGaWxlEhsubnVtZW4udjEuUmVtb3ZlRmlsZVJlcXVlc3QaHC5udW1lbi52MS5SZW1vdmVGaWxlUmVzcG9uc2USTQoMQ3JlYXRlRm9sZGVyEh0ubnVtZW4udjEuQ3JlYXRlRm9sZGVyUmVxdWVzdBoeLm51bWVuLnYxLkNyZWF0ZUZvbGRlclJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIgChBMaXN0RmlsZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkiNQoRTGlzdEZpbGVzUmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLm51bWVuLnYxLkVudHJ5InkKBUVudHJ5EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCRIOCgZmb2xkZXIYAyABKAgSIgoEa2luZBgEIAEoDjIULm51bWVuLnYxLlNvdXJjZUtpbmQSIAoEdHlwZRgFIAEoDjISLm51bWVuLnYxLk5vdGVUeXBlIiUKFExpc3RGaWxlS2luZHNSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJIjoKFUxpc3RGaWxlS2luZHNSZXNwb25zZRIhCgVraW5kcxgBIAMoCzISLm51bWVuLnYxLkZpbGVLaW5kIl4KCEZpbGVLaW5kEgwKBHBhdGgYASABKAkSIgoEa2luZBgCIAEoDjIULm51bWVuLnYxLlNvdXJjZUtpbmQSIAoEdHlwZRgDIAEoDjISLm51bWVuLnYxLk5vdGVUeXBlIisKD01vdmVGaWxlUmVxdWVzdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIo8BChBNb3ZlRmlsZVJlc3BvbnNlEigKBW1vdmVkGAEgASgLMhQubnVtZW4udjEuTW92ZVJlc3VsdEgAiAEBEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSAGIAQESEgoKdW5sZXZlbGxlZBgDIAEoCEIICgZfbW92ZWRCCgoIX3JlZnVzYWwiSgoKTW92ZVJlc3VsdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJEhAKCHJlcGFpcmVkGAMgAygJEhAKCGRhbmdsaW5nGAQgAygJIjIKEVJlbW92ZUZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkSDwoHZGVzdHJveRgCIAEoCCKAAQoSUmVtb3ZlRmlsZVJlc3BvbnNlEg8KB3RyYXNoZWQYASABKAkSEAoIZGFuZ2xpbmcYAiADKAkSJwoHcmVmdXNhbBgDIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARISCgp1bmxldmVsbGVkGAQgASgIQgoKCF9yZWZ1c2FsIiMKE0NyZWF0ZUZvbGRlclJlcXVlc3QSDAoEcGF0aBgBIAEoCSJLChRDcmVhdGVGb2xkZXJSZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsIi0KEENyZWF0ZVVSTFJlcXVlc3QSCwoDdXJsGAEgASgJEgwKBHBhdGgYAiABKAkiVgoRQ3JlYXRlVVJMUmVzcG9uc2USDAoEcGF0aBgBIAEoCRInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsKoUBCgpTb3VyY2VLaW5kEhsKF1NPVVJDRV9LSU5EX1VOU1BFQ0lGSUVEEAASFAoQU09VUkNFX0tJTkRfTk9URRABEhQKEFNPVVJDRV9LSU5EX0JPT0sQAhIZChVTT1VSQ0VfS0lORF9SRUNPUkRJTkcQAxITCg9TT1VSQ0VfS0lORF9VUkwQBDLGAwoLRmlsZVNlcnZpY2USRAoJTGlzdEZpbGVzEhoubnVtZW4udjEuTGlzdEZpbGVzUmVxdWVzdBobLm51bWVuLnYxLkxpc3RGaWxlc1Jlc3BvbnNlElAKDUxpc3RGaWxlS2luZHMSHi5udW1lbi52MS5MaXN0RmlsZUtpbmRzUmVxdWVzdBofLm51bWVuLnYxLkxpc3RGaWxlS2luZHNSZXNwb25zZRJBCghNb3ZlRmlsZRIZLm51bWVuLnYxLk1vdmVGaWxlUmVxdWVzdBoaLm51bWVuLnYxLk1vdmVGaWxlUmVzcG9uc2USRwoKUmVtb3ZlRmlsZRIbLm51bWVuLnYxLlJlbW92ZUZpbGVSZXF1ZXN0GhwubnVtZW4udjEuUmVtb3ZlRmlsZVJlc3BvbnNlEk0KDENyZWF0ZUZvbGRlchIdLm51bWVuLnYxLkNyZWF0ZUZvbGRlclJlcXVlc3QaHi5udW1lbi52MS5DcmVhdGVGb2xkZXJSZXNwb25zZRJECglDcmVhdGVVUkwSGi5udW1lbi52MS5DcmVhdGVVUkxSZXF1ZXN0GhsubnVtZW4udjEuQ3JlYXRlVVJMUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.ListFilesRequest
  */
 export type ListFilesRequest = Message<"numen.v1.ListFilesRequest"> & {
   /**
-   * The folder to list, relative to the root. Empty is the root.
+   * The folder to list, as a path relative to the root. Empty is the root.
    *
-   * @generated from field: string folder = 1;
+   * @generated from field: string path = 1;
    */
-  folder: string;
+  path: string;
 };
 
 /**
@@ -83,6 +83,9 @@ export type Entry = Message<"numen.v1.Entry"> & {
   name: string;
 
   /**
+   * Whether the entry holds other entries. A folder carries no source and
+   * nothing is made from it.
+   *
    * @generated from field: bool folder = 3;
    */
   folder: boolean;
@@ -98,7 +101,7 @@ export type Entry = Message<"numen.v1.Entry"> & {
    * Which of three the note is. It says nothing about an entry that is not a
    * note.
    *
-   * @generated from field: numen.v1.NoteType type = 6;
+   * @generated from field: numen.v1.NoteType type = 5;
    */
   type: NoteType;
 };
@@ -276,7 +279,7 @@ export type MoveResult = Message<"numen.v1.MoveResult"> & {
    * comes back to it: a move that reports only what it repaired reports a
    * vault it did not leave behind.
    *
-   * @generated from field: repeated string dangling = 5;
+   * @generated from field: repeated string dangling = 4;
    */
   dangling: string[];
 };
@@ -397,6 +400,60 @@ export const CreateFolderResponseSchema: GenMessage<CreateFolderResponse> = /*@_
   messageDesc(file_numen_v1_file, 12);
 
 /**
+ * @generated from message numen.v1.CreateURLRequest
+ */
+export type CreateURLRequest = Message<"numen.v1.CreateURLRequest"> & {
+  /**
+   * The address, as a browser would go to it. It is read into the one form
+   * every spelling of it reaches, and one nothing can be fetched from is
+   * refused and no file is made.
+   *
+   * @generated from field: string url = 1;
+   */
+  url: string;
+
+  /**
+   * The folder it goes in, as a path relative to the root. Empty is the root.
+   *
+   * @generated from field: string path = 2;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message numen.v1.CreateURLRequest.
+ * Use `create(CreateURLRequestSchema)` to create a new message.
+ */
+export const CreateURLRequestSchema: GenMessage<CreateURLRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_file, 13);
+
+/**
+ * @generated from message numen.v1.CreateURLResponse
+ */
+export type CreateURLResponse = Message<"numen.v1.CreateURLResponse"> & {
+  /**
+   * Where the file is filed. Empty when nothing was made.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * Set when nothing was made, and why.
+   *
+   * @generated from field: optional numen.v1.Refusal refusal = 2;
+   */
+  refusal?: Refusal | undefined;
+};
+
+/**
+ * Describes the message numen.v1.CreateURLResponse.
+ * Use `create(CreateURLResponseSchema)` to create a new message.
+ */
+export const CreateURLResponseSchema: GenMessage<CreateURLResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_file, 14);
+
+/**
  * SourceKind is what the vault holds at a path. A file the index holds no text
  * for — a picture, an archive — is unspecified.
  *
@@ -422,6 +479,14 @@ export enum SourceKind {
    * @generated from enum value: SOURCE_KIND_RECORDING = 3;
    */
   RECORDING = 3,
+
+  /**
+   * A file holding a web address and nothing else. Its text is what was
+   * fetched from that address.
+   *
+   * @generated from enum value: SOURCE_KIND_URL = 4;
+   */
+  URL = 4,
 }
 
 /**
@@ -494,6 +559,18 @@ export const FileService: GenService<{
     methodKind: "unary";
     input: typeof CreateFolderRequestSchema;
     output: typeof CreateFolderResponseSchema;
+  },
+  /**
+   * CreateURL makes the file a web address is kept in. It holds the address and
+   * nothing else, and what is at that address is fetched into the store beside
+   * it.
+   *
+   * @generated from rpc numen.v1.FileService.CreateURL
+   */
+  createURL: {
+    methodKind: "unary";
+    input: typeof CreateURLRequestSchema;
+    output: typeof CreateURLResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_file, 0);

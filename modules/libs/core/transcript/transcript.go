@@ -197,11 +197,15 @@ func At(cues []Cue, start, length int) []Cue {
 	return out
 }
 
-// Heard is the note a run stopped part way leaves: how many milliseconds of the
-// recording have been written down. It stands after the cues it claims, so a
-// batch that did not land whole is one no note claims.
-func Heard(ms int) []byte {
-	return []byte(fmt.Sprintf("\nNOTE heard %d\n", ms))
+// reaches is the note a run stopped part way leaves, as it stands in the file.
+// The words after it are how many milliseconds of the recording have been
+// written down.
+const reaches = "NOTE heard "
+
+// Reaches is that note. It stands after the cues it claims, so a batch that did
+// not land whole is one no note claims.
+func Reaches(ms int) []byte {
+	return []byte(fmt.Sprintf("\n%s%d\n", reaches, ms))
 }
 
 // ByHand is the note a transcript a person wrote carries.
@@ -230,9 +234,9 @@ func Written(raw []byte) bool {
 }
 
 // Reached is how far a run before this one got, and where the last note about
-// it ends. A file carrying none is a recording nothing has listened to.
+// it ends. A file carrying none is a recording nothing has transcribed.
 func Reached(raw []byte) (ms, end int) {
-	note := []byte("NOTE heard ")
+	note := []byte(reaches)
 	// Each note is looked at once, and only what stands between it and the one
 	// after it is read.
 	for end := len(raw); ; {

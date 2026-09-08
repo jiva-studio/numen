@@ -56,11 +56,14 @@ func TestATranscriptIsComposedFromItsOwnBytes(t *testing.T) {
 	located(t, doc, middle, "1:23:45")
 }
 
+// A transcript stands in the folder of its kind, under the name of what made
+// it: a video may carry words a site published and words a model here heard,
+// and one folder holds both without either standing on the other.
 func TestATranscriptIsKeptUnderTheNameAPlayerKnowsItBy(t *testing.T) {
-	if name := text.Artifact(text.ASR, "abc123"); name != "asr/abc123.vtt" {
+	if name := text.Artifact(text.ASR, "abc123"); name != "transcript/abc123.asr.vtt" {
 		t.Errorf("a transcript is kept under %q", name)
 	}
-	if name := text.Partial(text.ASR, "abc123"); name != "asr/abc123.partial.vtt" {
+	if name := text.Partial(text.ASR, "abc123"); name != "transcript/abc123.asr.partial.vtt" {
 		t.Errorf("a transcription still running is kept under %q", name)
 	}
 }
@@ -69,12 +72,12 @@ func TestATranscriptIsKeptUnderTheNameAPlayerKnowsItBy(t *testing.T) {
 // no coordinates, parts or corrections.
 func TestASweepOfATranscriptNamesWhatItWrote(t *testing.T) {
 	want := []string{
-		"asr/abc123.vtt",
-		"asr/abc123.partial.vtt",
-		"asr/abc123.corrected.vtt",
-		"asr/abc123.proofread",
-		"asr/abc123.answer",
-		"asr/abc123.json",
+		"transcript/abc123.asr.vtt",
+		"transcript/abc123.asr.partial.vtt",
+		"transcript/abc123.asr.corrected.vtt",
+		"transcript/abc123.asr.proofread",
+		"transcript/abc123.asr.answer",
+		"transcript/abc123.asr.json",
 	}
 	if got := text.Names(text.ASR, "abc123"); !slices.Equal(got, want) {
 		t.Errorf("a sweep takes %v, want %v", got, want)
@@ -89,7 +92,7 @@ func TestAReadingIsKeptUnderTheNamesItAlwaysWas(t *testing.T) {
 		"ocr/abc123.partial",
 		"ocr/abc123.boxes",
 		"ocr/abc123.parts",
-		"ocr/abc123.fixes",
+		"ocr/abc123.corrected",
 		"ocr/abc123.proofread",
 		"ocr/abc123.json",
 	}
@@ -167,4 +170,23 @@ func TestATranscriptTornMidCueIsReadAsFarAsItGoes(t *testing.T) {
 	if strings.Contains(doc.Text, "00:1") {
 		t.Errorf("the torn block was read as speech:\n%s", doc.Text)
 	}
+}
+
+// A link note is its prose and what was fetched for it, as one text. What this
+// holds to is that a place in the fetched half is still the place it was: a
+// passage found there is located by when it was said, and the prose standing
+// before it moves every offset by exactly its own length.
+func TestALinkNoteIsItsProseAndThenWhatWasFetched(t *testing.T) {
+	prose := strings.Repeat("What I made of it. ", 20)
+	doc := text.Joined(prose, text.Transcribed(heard()))
+
+	if !strings.HasPrefix(doc.Text, prose+text.Separator) {
+		t.Errorf("the note reads %q, want its prose first", doc.Text)
+	}
+	if at := strings.Index(doc.Text, opening); at != len(prose)+len(text.Separator) {
+		t.Errorf("what was fetched begins at %d, want %d", at, len(prose)+len(text.Separator))
+	}
+	located(t, doc, opening, "0:01")
+	located(t, doc, middle, "1:23:45")
+	located(t, doc, closing, "1:30:00")
 }

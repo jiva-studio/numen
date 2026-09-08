@@ -47,7 +47,7 @@ async function made(from: string, seat: PlexRelatedSeat) {
   if (!core.value) return
   const title = window.prompt(`A new ${seat}`)
   if (!title?.trim()) return
-  const created = await core.value.notes.createNote({ title: title.trim(), folder: '' })
+  const created = await core.value.notes.createNote({ title: title.trim(), path: '' })
   if (!created.path) {
     trouble.value = refusalWords(created.refusal)
     return

@@ -5,8 +5,8 @@
  * window standing on a vault, or on none, puts in front of the person.
  */
 import type { PaletteKeys, VaultRow, WelcomeAction } from '@numen/ui'
-import type { VaultList } from '../core'
-import { keysOf } from '../command/chords'
+import type { VaultList } from '../shared/core'
+import { keysOf } from '../shared/command/chords'
 import { WORDS as own } from './words'
 
 /** What the welcome screen is drawn over. */
@@ -75,10 +75,10 @@ export const waysIn = (at: ShownVault, words: Words, agent: string): readonly We
  */
 export const vaultsOn = (listed: VaultList, words: Words): readonly VaultRow[] =>
   listed.vaults.map((one) => {
-    const aside = one.missing ? words.gone : one.name === listed.showing ? words.current : ''
+    const aside = one.missing ? words.gone : one.id === listed.showing ? words.current : ''
     return {
-      id: one.name,
-      name: one.displayName,
+      id: one.id,
+      name: one.name,
       path: one.path,
       ...(aside ? { detail: aside } : {}),
     }

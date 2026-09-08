@@ -98,9 +98,9 @@ func (a *API) CreateNote(
 	defer a.Writing.done()
 
 	made, err := a.Notes.Create.Execute(ctx, showing, note.NewNote{
-		Title:  r.Msg.GetTitle(),
-		Folder: r.Msg.GetFolder(),
-		Links:  links,
+		Title: r.Msg.GetTitle(),
+		Path:  r.Msg.GetPath(),
+		Links: links,
 	})
 	behind := a.unlevelled(err)
 	if made.Path != "" {
@@ -252,7 +252,7 @@ func (a *API) ResolveAddresses(
 
 // written turns the links a request carries into the links a note is written
 // with, and refuses the lot where one of them cannot be written.
-func (a *API) written(ctx context.Context, links []*v1.NewLink) ([]domain.Link, error) {
+func (a *API) written(ctx context.Context, links []*v1.Link) ([]domain.Link, error) {
 	if len(links) == 0 {
 		return nil, nil
 	}
@@ -272,7 +272,7 @@ func (a *API) written(ctx context.Context, links []*v1.NewLink) ([]domain.Link, 
 // The window names the note at the other end by the path it is filed under.
 // How much of that path the link carries is `note.Addressed`: a name where it
 // means one note, and the path where it would mean another.
-func (a *API) writes(ctx context.Context, l *v1.NewLink) (domain.Link, error) {
+func (a *API) writes(ctx context.Context, l *v1.Link) (domain.Link, error) {
 	role, ok := roleOf(l.GetRole())
 	if !ok {
 		return domain.Link{}, fmt.Errorf("no link carries the role %v", l.GetRole())

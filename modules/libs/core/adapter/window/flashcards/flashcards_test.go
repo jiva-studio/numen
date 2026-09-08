@@ -15,8 +15,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/appearance"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/csp"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
@@ -133,10 +133,8 @@ func windowed(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
 	}
 
 	// The window reads a vault the index does not carry, over the same scan.
-	api.Reading(ctx, func(ctx context.Context, v domain.Vault, got func(int64)) error {
-		walk := scan
-		walk.OnProgress = func(res vaults.ScanResult) { got(int64(res.Indexed)) }
-		_, err := walk.Execute(ctx, v)
+	api.Reading(ctx, func(ctx context.Context, v domain.Vault) error {
+		_, err := scan.Execute(ctx, v)
 		return err
 	})
 	return api, held
@@ -199,7 +197,7 @@ func asked(t *testing.T, client numenv1connect.FlashcardsServiceClient) *v1.Watc
 			first = false
 			out.Day, out.Vaults = said.GetDay(), said.GetVaults()
 			for where, one := range out.GetVaults() {
-				at[one.GetName()] = where
+				at[one.GetId()] = where
 			}
 			continue
 		}
@@ -209,9 +207,9 @@ func asked(t *testing.T, client numenv1connect.FlashcardsServiceClient) *v1.Watc
 			// running so that a page which has gone is found.
 			continue
 		}
-		where, listed := at[one.GetName()]
+		where, listed := at[one.GetId()]
 		if !listed {
-			t.Fatalf("a count arrived for %s, which the front door did not list", one.GetName())
+			t.Fatalf("a count arrived for %s, which the front door did not list", one.GetId())
 		}
 		out.Vaults[where] = one
 	}
@@ -347,7 +345,7 @@ func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
 func counted(t *testing.T, said *v1.WatchCardsDueResponse, id string) *v1.VaultCardsDue {
 	t.Helper()
 	for _, one := range said.GetVaults() {
-		if one.GetName() == id {
+		if one.GetId() == id {
 			return one
 		}
 	}
@@ -444,7 +442,7 @@ func TestAVaultTheIndexCarriesIsReadAgainOnOpening(t *testing.T) {
 	v := held[0]
 
 	var read atomic.Int64
-	api.Reading(t.Context(), func(context.Context, domain.Vault, func(int64)) error {
+	api.Reading(t.Context(), func(context.Context, domain.Vault) error {
 		read.Add(1)
 		return nil
 	})
@@ -531,7 +529,7 @@ func TestACardIsAskedWithWhatEachAnswerWouldDoToIt(t *testing.T) {
 // `data:` URI is no request, and it is the whole of what this window widens:
 // no script, no form submitted anywhere, and nothing fetched off the machine.
 func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
-	held := appearance.Sources{Images: []string{"data:"}}.Policy()
+	held := csp.Sources{Images: []string{"data:"}}.Policy()
 	if policy != held {
 		t.Errorf("the policy reads %q", policy)
 	}
@@ -616,7 +614,7 @@ func TestEveryVaultIsCountedOnTheFrontDoor(t *testing.T) {
 	}
 	for _, one := range out.GetVaults() {
 		if one.GetFaces() != 1 || one.GetNew() != 1 {
-			t.Errorf("%s comes to %+v", one.GetDisplayName(), one)
+			t.Errorf("%s comes to %+v", one.GetName(), one)
 		}
 	}
 }

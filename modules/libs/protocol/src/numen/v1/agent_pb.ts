@@ -10,13 +10,48 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Span } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/agent.proto.
  */
 export const file_numen_v1_agent: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiYQoPQXNrQWdlbnRSZXF1ZXN0Eg0KBWFza2VkGAEgASgJEg0KBWZvY3VzGAIgASgJEhQKDGNvbnZlcnNhdGlvbhgDIAEoCRIMCgRtYXJrGAQgASgJEgwKBGZhY2UYBSABKAkiMQoZRmluaXNoQ29udmVyc2F0aW9uUmVxdWVzdBIUCgxjb252ZXJzYXRpb24YASABKAkiHAoaRmluaXNoQ29udmVyc2F0aW9uUmVzcG9uc2UitgEKEEFza0FnZW50UmVzcG9uc2USDgoEc2FpZBgBIAEoCUgAEicKCXRvb2xfY2FsbBgCIAEoCzISLm51bWVuLnYxLlRvb2xDYWxsSAASEQoHc3RvcHBlZBgDIAEoCUgAEiYKCGFuc3dlcmVkGAQgASgLMhIubnVtZW4udjEuQW5zd2VyZWRIABImCgh0aGlua2luZxgFIAEoCzISLm51bWVuLnYxLlRoaW5raW5nSABCBgoEc3RlcCIKCghBbnN3ZXJlZCIKCghUaGlua2luZyJlCghUb29sQ2FsbBIMCgR0b29sGAEgASgJEg0KBWFib3V0GAIgASgJEg8KB3dyaXR0ZW4YAyABKAUSDAoEcGF0aBgEIAEoCRINCgVzdGFydBgFIAEoBRIOCgZsZW5ndGgYBiABKAUytAEKDEFnZW50U2VydmljZRJDCghBc2tBZ2VudBIZLm51bWVuLnYxLkFza0FnZW50UmVxdWVzdBoaLm51bWVuLnYxLkFza0FnZW50UmVzcG9uc2UwARJfChJGaW5pc2hDb252ZXJzYXRpb24SIy5udW1lbi52MS5GaW5pc2hDb252ZXJzYXRpb25SZXF1ZXN0GiQubnVtZW4udjEuRmluaXNoQ29udmVyc2F0aW9uUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiFgoUR2V0QWdlbnRTdGF0ZVJlcXVlc3QiLAoVR2V0QWdlbnRTdGF0ZVJlc3BvbnNlEhMKC3VucmVhY2hhYmxlGAEgASgJImEKD0Fza0FnZW50UmVxdWVzdBINCgVhc2tlZBgBIAEoCRINCgVmb2N1cxgCIAEoCRIUCgxjb252ZXJzYXRpb24YAyABKAkSDAoEbWFyaxgEIAEoCRIMCgRmYWNlGAUgASgJIjEKGUZpbmlzaENvbnZlcnNhdGlvblJlcXVlc3QSFAoMY29udmVyc2F0aW9uGAEgASgJIhwKGkZpbmlzaENvbnZlcnNhdGlvblJlc3BvbnNlIrYBChBBc2tBZ2VudFJlc3BvbnNlEg4KBHNhaWQYASABKAlIABInCgl0b29sX2NhbGwYAiABKAsyEi5udW1lbi52MS5Ub29sQ2FsbEgAEhEKB3N0b3BwZWQYAyABKAlIABImCghhbnN3ZXJlZBgEIAEoCzISLm51bWVuLnYxLkFuc3dlcmVkSAASJgoIdGhpbmtpbmcYBSABKAsyEi5udW1lbi52MS5UaGlua2luZ0gAQgYKBHN0ZXAiCgoIQW5zd2VyZWQiCgoIVGhpbmtpbmciZAoIVG9vbENhbGwSDAoEdG9vbBgBIAEoCRINCgVhYm91dBgCIAEoCRIPCgd3cml0dGVuGAMgASgFEgwKBHBhdGgYBCABKAkSHAoEc3BhbhgFIAEoCzIOLm51bWVuLnYxLlNwYW4yhgIKDEFnZW50U2VydmljZRJDCghBc2tBZ2VudBIZLm51bWVuLnYxLkFza0FnZW50UmVxdWVzdBoaLm51bWVuLnYxLkFza0FnZW50UmVzcG9uc2UwARJfChJGaW5pc2hDb252ZXJzYXRpb24SIy5udW1lbi52MS5GaW5pc2hDb252ZXJzYXRpb25SZXF1ZXN0GiQubnVtZW4udjEuRmluaXNoQ29udmVyc2F0aW9uUmVzcG9uc2USUAoNR2V0QWdlbnRTdGF0ZRIeLm51bWVuLnYxLkdldEFnZW50U3RhdGVSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0QWdlbnRTdGF0ZVJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+
+/**
+ * @generated from message numen.v1.GetAgentStateRequest
+ */
+export type GetAgentStateRequest = Message<"numen.v1.GetAgentStateRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.GetAgentStateRequest.
+ * Use `create(GetAgentStateRequestSchema)` to create a new message.
+ */
+export const GetAgentStateRequestSchema: GenMessage<GetAgentStateRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 0);
+
+/**
+ * @generated from message numen.v1.GetAgentStateResponse
+ */
+export type GetAgentStateResponse = Message<"numen.v1.GetAgentStateResponse"> & {
+  /**
+   * Set when no agent can be reached, and then nothing can be asked of one. It
+   * says why, in the person's own words.
+   *
+   * @generated from field: string unreachable = 1;
+   */
+  unreachable: string;
+};
+
+/**
+ * Describes the message numen.v1.GetAgentStateResponse.
+ * Use `create(GetAgentStateResponseSchema)` to create a new message.
+ */
+export const GetAgentStateResponseSchema: GenMessage<GetAgentStateResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_agent, 1);
 
 /**
  * @generated from message numen.v1.AskAgentRequest
@@ -68,7 +103,7 @@ export type AskAgentRequest = Message<"numen.v1.AskAgentRequest"> & {
  * Use `create(AskAgentRequestSchema)` to create a new message.
  */
 export const AskAgentRequestSchema: GenMessage<AskAgentRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 0);
+  messageDesc(file_numen_v1_agent, 2);
 
 /**
  * @generated from message numen.v1.FinishConversationRequest
@@ -88,7 +123,7 @@ export type FinishConversationRequest = Message<"numen.v1.FinishConversationRequ
  * Use `create(FinishConversationRequestSchema)` to create a new message.
  */
 export const FinishConversationRequestSchema: GenMessage<FinishConversationRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 1);
+  messageDesc(file_numen_v1_agent, 3);
 
 /**
  * @generated from message numen.v1.FinishConversationResponse
@@ -101,7 +136,7 @@ export type FinishConversationResponse = Message<"numen.v1.FinishConversationRes
  * Use `create(FinishConversationResponseSchema)` to create a new message.
  */
 export const FinishConversationResponseSchema: GenMessage<FinishConversationResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 2);
+  messageDesc(file_numen_v1_agent, 4);
 
 /**
  * AskAgentResponse is one step of the work: one thing the agent said, did, or
@@ -164,7 +199,7 @@ export type AskAgentResponse = Message<"numen.v1.AskAgentResponse"> & {
  * Use `create(AskAgentResponseSchema)` to create a new message.
  */
 export const AskAgentResponseSchema: GenMessage<AskAgentResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 3);
+  messageDesc(file_numen_v1_agent, 5);
 
 /**
  * Answered and Thinking carry nothing: each is a moment, and what it means is
@@ -180,7 +215,7 @@ export type Answered = Message<"numen.v1.Answered"> & {
  * Use `create(AnsweredSchema)` to create a new message.
  */
 export const AnsweredSchema: GenMessage<Answered> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 4);
+  messageDesc(file_numen_v1_agent, 6);
 
 /**
  * @generated from message numen.v1.Thinking
@@ -193,7 +228,7 @@ export type Thinking = Message<"numen.v1.Thinking"> & {
  * Use `create(ThinkingSchema)` to create a new message.
  */
 export const ThinkingSchema: GenMessage<Thinking> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 5);
+  messageDesc(file_numen_v1_agent, 7);
 
 /**
  * ToolCall is a tool in the agent's hands.
@@ -237,17 +272,12 @@ export type ToolCall = Message<"numen.v1.ToolCall"> & {
   path: string;
 
   /**
-   * The stretch of that source's text the call names, counted in bytes. A
-   * length of zero is a call that named the source and no place inside it.
+   * The run of that source's text the call names, counted in bytes. An empty
+   * span is a call that named the source and no place inside it.
    *
-   * @generated from field: int32 start = 5;
+   * @generated from field: numen.v1.Span span = 5;
    */
-  start: number;
-
-  /**
-   * @generated from field: int32 length = 6;
-   */
-  length: number;
+  span?: Span | undefined;
 };
 
 /**
@@ -255,7 +285,7 @@ export type ToolCall = Message<"numen.v1.ToolCall"> & {
  * Use `create(ToolCallSchema)` to create a new message.
  */
 export const ToolCallSchema: GenMessage<ToolCall> = /*@__PURE__*/
-  messageDesc(file_numen_v1_agent, 6);
+  messageDesc(file_numen_v1_agent, 8);
 
 /**
  * AgentService gives a task to the agent working this vault.
@@ -284,6 +314,18 @@ export const AgentService: GenService<{
     methodKind: "unary";
     input: typeof FinishConversationRequestSchema;
     output: typeof FinishConversationResponseSchema;
+  },
+  /**
+   * GetAgentState is whether an agent can be reached at all. Which agent
+   * answers is the installation's, not the vault's, so every window asks the
+   * same question here and none of them carries the answer in its own state.
+   *
+   * @generated from rpc numen.v1.AgentService.GetAgentState
+   */
+  getAgentState: {
+    methodKind: "unary";
+    input: typeof GetAgentStateRequestSchema;
+    output: typeof GetAgentStateResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_agent, 0);

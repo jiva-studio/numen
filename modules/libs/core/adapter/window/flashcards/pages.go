@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/appearance"
+	"github.com/jiva-studio/numen/modules/libs/core/csp"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
@@ -20,7 +20,7 @@ var pages embed.FS
 // draws it through the allowlist the library keeps and this line stands behind
 // that. A picture written into a card is a `data:` URI, which is the card's own
 // bytes and no request at all.
-var policy = appearance.Sources{Images: []string{"data:"}}.Policy()
+var policy = csp.Sources{Images: []string{"data:"}}.Policy()
 
 // Pages is the interface itself, built by `make interface` and carried inside
 // the binary. A binary built without it says so.

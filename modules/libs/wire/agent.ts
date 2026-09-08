@@ -5,8 +5,11 @@
  * comes to in the port is written down once. The window makes the client; this
  * says what its answers mean.
  */
-import type { AskAgentResponse } from '@numen/protocol'
+import type { AskAgentResponse, Span } from '@numen/protocol'
 import type { AgentPort } from '@numen/ui'
+
+/** The span a call named, and one naming no place inside the source. */
+const spanOf = (span: Span | undefined) => ({ from: span?.from ?? 0, to: span?.to ?? 0 })
 
 /** As much of the agent service as the port asks of it. */
 export interface AgentClient {
@@ -33,7 +36,7 @@ export const agentPort = (agent: AgentClient): AgentPort => ({
             about: said.about,
             written: said.written,
             ...(said.path
-              ? { place: { path: said.path, start: said.start, length: said.length } }
+              ? { place: { path: said.path, span: spanOf(said.span) } }
               : {}),
           }
           break

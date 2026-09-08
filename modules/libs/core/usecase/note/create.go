@@ -39,9 +39,9 @@ func NewCreate(
 type NewNote struct {
 	Title string
 	Body  string
-	// Folder is where in the vault it goes, relative to the root. Empty is the
-	// root itself: the application does not arrange anyone's folders.
-	Folder string
+	// Path is the folder it goes in, relative to the root. Empty is the root
+	// itself: the application does not arrange anyone's folders.
+	Path string
 	// Links are what it is joined to, written in the same breath as the note
 	// itself, so that it never exists as an island.
 	Links []domain.Link
@@ -63,7 +63,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	if err != nil {
 		return CreateResult{}, err
 	}
-	path := pathpkg.Join(in.Folder, name+domain.NoteExtension)
+	path := pathpkg.Join(in.Path, name+domain.NoteExtension)
 
 	// Before anything is made: a link the note cannot carry leaves no file.
 	for _, link := range in.Links {

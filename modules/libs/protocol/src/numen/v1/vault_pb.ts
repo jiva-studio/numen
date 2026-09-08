@@ -4,21 +4,20 @@
 
 // What a client may ask about the vault a window is showing, taken whole.
 //
-// What the vault is, what has changed in it, and where in it the person stands:
-// the questions that are about the vault itself and not about anything filed in
-// it. Its files are file.proto, its notes note.proto and its text search.proto.
+// What the vault is and what has changed in it: the questions that are about
+// the vault itself and not about anything filed in it. Its files are
+// file.proto, its notes note.proto and its text search.proto, and where the
+// person stands in it is workspace.proto.
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Stretch } from "./shared_pb.js";
-import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QimQIKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIMCgRuYW1lGBIgASgJEhQKDGRpc3BsYXlfbmFtZRgBIAEoCRIMCgRwYXRoGAIgASgJEg0KBXJlYWR5GAQgASgIEg4KBmZhaWxlZBgFIAEoCRIRCgl1bndhdGNoZWQYBiABKAkSEwoLdW5yZWFjaGFibGUYESABKAkSDgoGY2h1bmtzGAcgASgDEhAKCGVtYmVkZGVkGAggASgDEhEKCWVtYmVkZGluZxgKIAEoCEoECAMQBEoECAkQCkoECAsQEVIFYm9va3NSCmJvb2tzX3JlYWRSBGJ1c3lSB2luZGV4ZWRSCGxlYXJuaW5nUgRtYWRlUgVvd2luZ1IHcmVhZGluZyIaChhXYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QiWwoZV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZRINCgVwYXRocxgBIAMoCRIOCgZyZWxvYWQYAiABKAgSHwoHcmVuYW1lZBgDIAMoCzIOLm51bWVuLnYxLk1vdmUiIAoETW92ZRIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIhMKEVdhdGNoRm9jdXNSZXF1ZXN0ImIKEldhdGNoRm9jdXNSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBXN0YXJ0GAIgASgFEg4KBmxlbmd0aBgDIAEoBRIfCgRhbHNvGAQgAygLMhEubnVtZW4udjEuU3RyZXRjaCJCChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIhcKFVdyaXRlT3BlblRhYnNSZXNwb25zZSKmAQoDVGFiEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDAoEcGF0aBgDIAEoCRINCgV0aXRsZRgEIAEoCRIoCghkb2N1bWVudBgHIAEoCzIWLm51bWVuLnYxLk9wZW5Eb2N1bWVudBIqCglyZWNvcmRpbmcYCCABKAsyFy5udW1lbi52MS5PcGVuUmVjb3JkaW5nSgQIBRAGSgQIBhAHUgJhdFICb2YiKwoMT3BlbkRvY3VtZW50EgwKBHBhZ2UYASABKAUSDQoFcGFnZXMYAiABKAUiLgoNT3BlblJlY29yZGluZxINCgVoZWFyZBgBIAEoBRIOCgZsZW5ndGgYAiABKAUy3QIKDFZhdWx0U2VydmljZRJQCg1HZXRWYXVsdFN0YXRlEh4ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVzcG9uc2USXgoRV2F0Y2hWYXVsdENoYW5nZXMSIi5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QaIy5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlMAESSQoKV2F0Y2hGb2N1cxIbLm51bWVuLnYxLldhdGNoRm9jdXNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hGb2N1c1Jlc3BvbnNlMAESUAoNV3JpdGVPcGVuVGFicxIeLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVPcGVuVGFic1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QiiAEKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSHAoEc2NhbhgEIAEoCzIOLm51bWVuLnYxLlNjYW4SKQoIY292ZXJhZ2UYBSABKAsyFy5udW1lbi52MS5JbmRleENvdmVyYWdlIjgKBFNjYW4SDQoFcmVhZHkYASABKAgSDgoGZmFpbGVkGAIgASgJEhEKCXVud2F0Y2hlZBgDIAEoCSJPCg1JbmRleENvdmVyYWdlEhMKC2NodW5rX2NvdW50GAEgASgDEhYKDmVtYmVkZGVkX2NvdW50GAIgASgDEhEKCWVtYmVkZGluZxgDIAEoCCIaChhXYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QiWwoZV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZRINCgVwYXRocxgBIAMoCRIOCgZyZWxvYWQYAiABKAgSHwoHcmVuYW1lZBgDIAMoCzIOLm51bWVuLnYxLk1vdmUiIAoETW92ZRIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJMsABCgxWYXVsdFNlcnZpY2USUAoNR2V0VmF1bHRTdGF0ZRIeLm51bWVuLnYxLkdldFZhdWx0U3RhdGVSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlc3BvbnNlEl4KEVdhdGNoVmF1bHRDaGFuZ2VzEiIubnVtZW4udjEuV2F0Y2hWYXVsdENoYW5nZXNSZXF1ZXN0GiMubnVtZW4udjEuV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZTABQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * @generated from message numen.v1.GetVaultStateRequest
@@ -34,82 +33,46 @@ export const GetVaultStateRequestSchema: GenMessage<GetVaultStateRequest> = /*@_
   messageDesc(file_numen_v1_vault, 0);
 
 /**
+ * GetVaultStateResponse is what the vault the window is showing IS. What is
+ * being done behind that window is Tasks.
+ *
  * @generated from message numen.v1.GetVaultStateResponse
  */
 export type GetVaultStateResponse = Message<"numen.v1.GetVaultStateResponse"> & {
   /**
-   * Name is the identity the folder carries, and how this vault is asked for
-   * again. DisplayName is what the person calls it, which is what a window
-   * titles itself with. The list says both of a vault the same way.
+   * Id is the identity the folder carries, and how this vault is asked for
+   * again. Name is what the person calls it, which is what a window titles
+   * itself with. The list says both of a vault the same way.
    *
-   * @generated from field: string name = 18;
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string name = 2;
    */
   name: string;
 
   /**
-   * @generated from field: string display_name = 1;
-   */
-  displayName: string;
-
-  /**
-   * @generated from field: string path = 2;
+   * Where the vault stands on this disk.
+   *
+   * @generated from field: string path = 3;
    */
   path: string;
 
   /**
-   * Ready is set when the scan has finished.
+   * How far reading the vault has got.
    *
-   * @generated from field: bool ready = 4;
+   * @generated from field: numen.v1.Scan scan = 4;
    */
-  ready: boolean;
+  scan?: Scan | undefined;
 
   /**
-   * Why the scan stopped, when it stopped for a reason. A vault that could
-   * not be read is not an empty one.
+   * How far searching it by meaning has got.
    *
-   * @generated from field: string failed = 5;
+   * @generated from field: numen.v1.IndexCoverage coverage = 5;
    */
-  failed: string;
-
-  /**
-   * Why the vault is not being followed, when it is not. Changes will only
-   * appear when something asks for them again.
-   *
-   * @generated from field: string unwatched = 6;
-   */
-  unwatched: string;
-
-  /**
-   * Why an agent cannot be reached, when one cannot. The window works and the
-   * panel says this instead of answering.
-   *
-   * @generated from field: string unreachable = 17;
-   */
-  unreachable: string;
-
-  /**
-   * Chunks is how many spans of text the index holds, and embedded is how many
-   * of those carry a vector. Cutting finishes long before embedding does, so
-   * the pair is what says how far searching by meaning has got. Both are zero
-   * for a vault nothing has cut yet.
-   *
-   * @generated from field: int64 chunks = 7;
-   */
-  chunks: bigint;
-
-  /**
-   * @generated from field: int64 embedded = 8;
-   */
-  embedded: bigint;
-
-  /**
-   * Embedding says whether anything is going to turn the chunks into vectors.
-   * False for an installation with no model, where `embedded` stays where it is
-   * and the vault is searched by its words.
-   *
-   * @generated from field: bool embedding = 10;
-   */
-  embedding: boolean;
+  coverage?: IndexCoverage | undefined;
 };
 
 /**
@@ -118,6 +81,85 @@ export type GetVaultStateResponse = Message<"numen.v1.GetVaultStateResponse"> & 
  */
 export const GetVaultStateResponseSchema: GenMessage<GetVaultStateResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 1);
+
+/**
+ * Scan is how far reading a vault has got, and what stopped it.
+ *
+ * @generated from message numen.v1.Scan
+ */
+export type Scan = Message<"numen.v1.Scan"> & {
+  /**
+   * Ready is set when the scan has finished.
+   *
+   * @generated from field: bool ready = 1;
+   */
+  ready: boolean;
+
+  /**
+   * Why the scan stopped, when it stopped for a reason. A vault that could not
+   * be read is not an empty one.
+   *
+   * @generated from field: string failed = 2;
+   */
+  failed: string;
+
+  /**
+   * Why the vault is not being followed, when it is not. Changes will only
+   * appear when something asks for them again.
+   *
+   * @generated from field: string unwatched = 3;
+   */
+  unwatched: string;
+};
+
+/**
+ * Describes the message numen.v1.Scan.
+ * Use `create(ScanSchema)` to create a new message.
+ */
+export const ScanSchema: GenMessage<Scan> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 2);
+
+/**
+ * IndexCoverage is how far searching a vault by meaning has got.
+ *
+ * A search by meaning is asked of the vectors, and a vault holding none answers
+ * nothing however it is asked. Which of three states it stands in is what the
+ * person is told, so all three travel: no model at all, a model with nothing
+ * embedded yet, and a vault that answers.
+ *
+ * @generated from message numen.v1.IndexCoverage
+ */
+export type IndexCoverage = Message<"numen.v1.IndexCoverage"> & {
+  /**
+   * ChunkCount is how many spans of text the index holds, and EmbeddedCount how
+   * many of those carry a vector. Cutting finishes long before embedding does.
+   * Both are zero for a vault nothing has cut yet.
+   *
+   * @generated from field: int64 chunk_count = 1;
+   */
+  chunkCount: bigint;
+
+  /**
+   * @generated from field: int64 embedded_count = 2;
+   */
+  embeddedCount: bigint;
+
+  /**
+   * Embedding says whether anything is going to turn the spans into vectors.
+   * False for an installation with no model, where the vault is searched by its
+   * words alone.
+   *
+   * @generated from field: bool embedding = 3;
+   */
+  embedding: boolean;
+};
+
+/**
+ * Describes the message numen.v1.IndexCoverage.
+ * Use `create(IndexCoverageSchema)` to create a new message.
+ */
+export const IndexCoverageSchema: GenMessage<IndexCoverage> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 3);
 
 /**
  * @generated from message numen.v1.WatchVaultChangesRequest
@@ -130,7 +172,7 @@ export type WatchVaultChangesRequest = Message<"numen.v1.WatchVaultChangesReques
  * Use `create(WatchVaultChangesRequestSchema)` to create a new message.
  */
 export const WatchVaultChangesRequestSchema: GenMessage<WatchVaultChangesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 2);
+  messageDesc(file_numen_v1_vault, 4);
 
 /**
  * @generated from message numen.v1.WatchVaultChangesResponse
@@ -166,7 +208,7 @@ export type WatchVaultChangesResponse = Message<"numen.v1.WatchVaultChangesRespo
  * Use `create(WatchVaultChangesResponseSchema)` to create a new message.
  */
 export const WatchVaultChangesResponseSchema: GenMessage<WatchVaultChangesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 3);
+  messageDesc(file_numen_v1_vault, 5);
 
 /**
  * Move is a note that is no longer where it was. The bytes do not change on the
@@ -195,223 +237,11 @@ export type Move = Message<"numen.v1.Move"> & {
  * Use `create(MoveSchema)` to create a new message.
  */
 export const MoveSchema: GenMessage<Move> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 4);
-
-/**
- * @generated from message numen.v1.WatchFocusRequest
- */
-export type WatchFocusRequest = Message<"numen.v1.WatchFocusRequest"> & {
-};
-
-/**
- * Describes the message numen.v1.WatchFocusRequest.
- * Use `create(WatchFocusRequestSchema)` to create a new message.
- */
-export const WatchFocusRequestSchema: GenMessage<WatchFocusRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 5);
-
-/**
- * @generated from message numen.v1.WatchFocusResponse
- */
-export type WatchFocusResponse = Message<"numen.v1.WatchFocusResponse"> & {
-  /**
-   * The source to put in front of the person: a note to see the neighbourhood
-   * from, or a document to open.
-   *
-   * @generated from field: string path = 1;
-   */
-  path: string;
-
-  /**
-   * Where in the text of that source to open, counted in bytes. A length of
-   * zero names the source and no place inside it, which is what a note arrives
-   * with.
-   *
-   * @generated from field: int32 start = 2;
-   */
-  start: number;
-
-  /**
-   * @generated from field: int32 length = 3;
-   */
-  length: number;
-
-  /**
-   * The other stretches of the same source worth seeing. The person is taken to
-   * the stretch above, and these are shown where they fall.
-   *
-   * @generated from field: repeated numen.v1.Stretch also = 4;
-   */
-  also: Stretch[];
-};
-
-/**
- * Describes the message numen.v1.WatchFocusResponse.
- * Use `create(WatchFocusResponseSchema)` to create a new message.
- */
-export const WatchFocusResponseSchema: GenMessage<WatchFocusResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 6);
 
 /**
- * @generated from message numen.v1.WriteOpenTabsRequest
- */
-export type WriteOpenTabsRequest = Message<"numen.v1.WriteOpenTabsRequest"> & {
-  /**
-   * Every tab the window has open, in the order the person was last in them.
-   *
-   * @generated from field: repeated numen.v1.Tab tabs = 1;
-   */
-  tabs: Tab[];
-
-  /**
-   * Which of them the person is looking at, by its id. Empty where the window
-   * has nothing open.
-   *
-   * @generated from field: string front = 2;
-   */
-  front: string;
-};
-
-/**
- * Describes the message numen.v1.WriteOpenTabsRequest.
- * Use `create(WriteOpenTabsRequestSchema)` to create a new message.
- */
-export const WriteOpenTabsRequestSchema: GenMessage<WriteOpenTabsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 7);
-
-/**
- * @generated from message numen.v1.WriteOpenTabsResponse
- */
-export type WriteOpenTabsResponse = Message<"numen.v1.WriteOpenTabsResponse"> & {
-};
-
-/**
- * Describes the message numen.v1.WriteOpenTabsResponse.
- * Use `create(WriteOpenTabsResponseSchema)` to create a new message.
- */
-export const WriteOpenTabsResponseSchema: GenMessage<WriteOpenTabsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 8);
-
-/**
- * A Tab is one tab of the window: what kind it is, and what it holds.
- *
- * The kind is the client's own word — a note, a document, a recording — and a
- * reader that does not know one knows a tab of that kind is open and no more.
- *
- * @generated from message numen.v1.Tab
- */
-export type Tab = Message<"numen.v1.Tab"> & {
-  /**
-   * Id is what the window calls this tab, which the front is named by.
-   *
-   * @generated from field: string id = 1;
-   */
-  id: string;
-
-  /**
-   * Kind is what sort of tab it is.
-   *
-   * @generated from field: string kind = 2;
-   */
-  kind: string;
-
-  /**
-   * Path is the file it holds, by the path the vault files it under, and empty
-   * for a tab holding no file. A plex holds the note it stands on.
-   *
-   * @generated from field: string path = 3;
-   */
-  path: string;
-
-  /**
-   * Title is what the tab is called, as the person reads it.
-   *
-   * @generated from field: string title = 4;
-   */
-  title: string;
-
-  /**
-   * Where the person stands in what the tab holds. A tab holding a document
-   * sets document, a tab holding a recording sets recording, and a tab of any
-   * other kind sets neither.
-   *
-   * @generated from field: numen.v1.OpenDocument document = 7;
-   */
-  document?: OpenDocument | undefined;
-
-  /**
-   * @generated from field: numen.v1.OpenRecording recording = 8;
-   */
-  recording?: OpenRecording | undefined;
-};
-
-/**
- * Describes the message numen.v1.Tab.
- * Use `create(TabSchema)` to create a new message.
- */
-export const TabSchema: GenMessage<Tab> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 9);
-
-/**
- * An OpenDocument is the document a tab holds, as the person is reading it.
- *
- * @generated from message numen.v1.OpenDocument
- */
-export type OpenDocument = Message<"numen.v1.OpenDocument"> & {
-  /**
-   * Page is the page in front of them, counted from one.
-   *
-   * @generated from field: int32 page = 1;
-   */
-  page: number;
-
-  /**
-   * Pages is how many pages the document has.
-   *
-   * @generated from field: int32 pages = 2;
-   */
-  pages: number;
-};
-
-/**
- * Describes the message numen.v1.OpenDocument.
- * Use `create(OpenDocumentSchema)` to create a new message.
- */
-export const OpenDocumentSchema: GenMessage<OpenDocument> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 10);
-
-/**
- * An OpenRecording is the recording a tab holds, as far as it has been written
- * down.
- *
- * @generated from message numen.v1.OpenRecording
- */
-export type OpenRecording = Message<"numen.v1.OpenRecording"> & {
-  /**
-   * Heard is how much of it has been written down, in milliseconds.
-   *
-   * @generated from field: int32 heard = 1;
-   */
-  heard: number;
-
-  /**
-   * Length is how long the recording is, in milliseconds.
-   *
-   * @generated from field: int32 length = 2;
-   */
-  length: number;
-};
-
-/**
- * Describes the message numen.v1.OpenRecording.
- * Use `create(OpenRecordingSchema)` to create a new message.
- */
-export const OpenRecordingSchema: GenMessage<OpenRecording> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 11);
-
-/**
  * VaultService answers what the one vault a client is looking at is, and what
- * the person is at in it.
+ * has changed in it.
  *
  * @generated from service numen.v1.VaultService
  */
@@ -437,31 +267,6 @@ export const VaultService: GenService<{
     methodKind: "server_streaming";
     input: typeof WatchVaultChangesRequestSchema;
     output: typeof WatchVaultChangesResponseSchema;
-  },
-  /**
-   * WatchFocus reports the places something else asked to be put in front of
-   * the person — an agent working the vault beside them — for as long as the
-   * caller listens. What travelling there looks like is the client's.
-   *
-   * @generated from rpc numen.v1.VaultService.WatchFocus
-   */
-  watchFocus: {
-    methodKind: "server_streaming";
-    input: typeof WatchFocusRequestSchema;
-    output: typeof WatchFocusResponseSchema;
-  },
-  /**
-   * WriteOpenTabs says what the person has open — every tab of the window, and
-   * which of them is in front. The client says so again whenever any of it
-   * changes, and an agent working the vault beside them reads what it last
-   * said.
-   *
-   * @generated from rpc numen.v1.VaultService.WriteOpenTabs
-   */
-  writeOpenTabs: {
-    methodKind: "unary";
-    input: typeof WriteOpenTabsRequestSchema;
-    output: typeof WriteOpenTabsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_vault, 0);

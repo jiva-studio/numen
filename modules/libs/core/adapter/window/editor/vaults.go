@@ -56,7 +56,7 @@ func (s vaultsService) AddVault(
 	_ context.Context,
 	r *connect.Request[v1.AddVaultRequest],
 ) (*connect.Response[v1.AddVaultResponse], error) {
-	added, err := s.api.Vaults.Add.Execute(r.Msg.GetPath(), r.Msg.GetDisplayName())
+	added, err := s.api.Vaults.Add.Execute(r.Msg.GetPath(), r.Msg.GetName())
 	if err != nil {
 		refusal, refused := vaultRefusedBy(err)
 		if !refused {
@@ -73,9 +73,9 @@ func (s vaultsService) RenameVault(
 	ctx context.Context,
 	r *connect.Request[v1.RenameVaultRequest],
 ) (*connect.Response[v1.RenameVaultResponse], error) {
-	v, err := s.found(r.Msg.GetName())
+	v, err := s.found(r.Msg.GetId())
 	if err == nil {
-		v, err = s.api.Vaults.Rename.Execute(ctx, v, r.Msg.GetDisplayName())
+		v, err = s.api.Vaults.Rename.Execute(ctx, v, r.Msg.GetName())
 	}
 	if err != nil {
 		refusal, refused := vaultRefusedBy(err)
@@ -93,7 +93,7 @@ func (s vaultsService) RemoveVault(
 	ctx context.Context,
 	r *connect.Request[v1.RemoveVaultRequest],
 ) (*connect.Response[v1.RemoveVaultResponse], error) {
-	v, err := s.offTheList(r.Msg.GetName())
+	v, err := s.offTheList(r.Msg.GetId())
 	if err == nil {
 		err = s.removal(ctx, v, r.Msg.GetTrash())
 	}
@@ -121,7 +121,7 @@ func (s vaultsService) OpenVault(
 	ctx context.Context,
 	r *connect.Request[v1.OpenVaultRequest],
 ) (*connect.Response[v1.OpenVaultResponse], error) {
-	v, err := s.found(r.Msg.GetName())
+	v, err := s.found(r.Msg.GetId())
 	if err == nil {
 		err = s.api.Opens(ctx, v)
 	}
@@ -166,7 +166,7 @@ func (s vaultsService) found(id string) (domain.Vault, error) {
 // be found is marked, and the vault stays on the list.
 func vaultOf(v domain.Vault, readers port.VaultReaders) *v1.Vault {
 	return &v1.Vault{
-		Name: string(v.ID), DisplayName: v.Name, Path: v.Path,
+		Id: string(v.ID), Name: v.Name, Path: v.Path,
 		Missing: vaults.NewFolderCheck(readers).Execute(v),
 	}
 }

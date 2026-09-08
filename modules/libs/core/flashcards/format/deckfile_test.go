@@ -281,7 +281,9 @@ func TestTheSplicesASectionNeeds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.AddSection(format.Section{Name: "The ones without", Lead: "Added last."}); err != nil {
+	if err := f.AddSection(
+		format.Section{Name: "The ones without", Preamble: "Added last."},
+	); err != nil {
 		t.Fatalf("add: %v", err)
 	}
 	made := deck + "\n# The ones without\n\nAdded last.\n"
@@ -338,10 +340,10 @@ func TestAddCard(t *testing.T) {
 		t.Fatalf("open: %v", err)
 	}
 	if err := f.AddCard(format.Card{
-		Heading: "Alpaca",
-		Mark:    "m9n8b7v6c5",
-		Stencil: "Animal",
-		Lead:    "From the same trip.",
+		Heading:     "Alpaca",
+		Mark:        "m9n8b7v6c5",
+		StencilLink: "Animal",
+		Preamble:    "From the same trip.",
 		Values: []format.Value{
 			{Field: "Name", Text: "Alpaca"},
 			{Field: "Height", Text: "about 35\""},
@@ -361,7 +363,8 @@ func TestAddCard(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the card that was written cannot be read back: %v", err)
 	}
-	if card.Heading != "Alpaca" || card.Stencil != "Animal" || card.Lead != "From the same trip." {
+	if card.Heading != "Alpaca" || card.StencilLink != "Animal" ||
+		card.Preamble != "From the same trip." {
 		t.Errorf("card = %+v", card)
 	}
 	if got := fieldsOf(card); !slices.Equal(got, []string{"Name", "Height", "Life span"}) {
@@ -376,7 +379,7 @@ func TestAddCardWithNoHeadingAndNoMark(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.AddCard(format.Card{Stencil: "Animal"}); err != nil {
+	if err := f.AddCard(format.Card{StencilLink: "Animal"}); err != nil {
 		t.Fatalf("add: %v", err)
 	}
 	if want := deck + "\n##\n\n[[Animal]]\n"; string(f.Bytes()) != want {
@@ -565,8 +568,8 @@ func TestACardIsCutByWhatItsLinkPointsAt(t *testing.T) {
 	if renamed != 1 {
 		t.Fatalf("renamed = %d, want the card the link points at", renamed)
 	}
-	if got := f.Deck(domain.Fingerprint{}).Cards[0]; got.Stencil != "Animal|the beast" {
-		t.Errorf("the link was rewritten: %q", got.Stencil)
+	if got := f.Deck(domain.Fingerprint{}).Cards[0]; got.StencilLink != "Animal|the beast" {
+		t.Errorf("the link was rewritten: %q", got.StencilLink)
 	}
 }
 
@@ -601,8 +604,8 @@ func TestAHeadingAndASectionsNameAreCutAtTheFirstBreak(t *testing.T) {
 		t.Fatalf("open: %v", err)
 	}
 	if err := f.AddCard(format.Card{
-		Heading: "Question\n\n## Injected ^k7m2xq9fzp\n\n[[Term]]\n\n### Q\n\nsmuggled",
-		Stencil: "Animal",
+		Heading:     "Question\n\n## Injected ^k7m2xq9fzp\n\n[[Term]]\n\n### Q\n\nsmuggled",
+		StencilLink: "Animal",
 	}); err != nil {
 		t.Fatalf("add: %v", err)
 	}
@@ -630,8 +633,8 @@ func TestAFieldsNameIsCutAtTheFirstBreak(t *testing.T) {
 		t.Fatalf("open: %v", err)
 	}
 	if err := f.AddCard(format.Card{
-		Heading: "Question",
-		Stencil: "Animal",
+		Heading:     "Question",
+		StencilLink: "Animal",
 		Values: []format.Value{{
 			Field: "Answer\n\n## Injected ^k7m2xq9fzp\n\n[[Term]]",
 			Text:  "smuggled",
@@ -716,7 +719,7 @@ func TestDeckBodyWritesTheSectionsNoCardStandsUnder(t *testing.T) {
 		Preamble: "Cards I am learning.",
 		Sections: []format.Section{{Name: "Empty"}, {Name: "The ones with fur"}, {Name: "Last"}},
 		Cards: []format.Card{{
-			Heading: "Llama", Mark: "k7m2xq9fzp", Stencil: "Animal", Section: 1,
+			Heading: "Llama", Mark: "k7m2xq9fzp", StencilLink: "Animal", Section: 1,
 			Values: []format.Value{{Field: "Name", Text: "Llama"}},
 		}},
 	})
@@ -735,7 +738,7 @@ func TestDeckBodyWritesTheSectionsNoCardStandsUnder(t *testing.T) {
 func TestDeckBodyRefusesACardUnderASectionTheDeckDoesNotHold(t *testing.T) {
 	_, err := format.DeckBody(format.Deck{
 		Sections: []format.Section{{Name: "One"}, {Name: "Two"}},
-		Cards:    []format.Card{{Heading: "Llama", Stencil: "Animal", Section: 99}},
+		Cards:    []format.Card{{Heading: "Llama", StencilLink: "Animal", Section: 99}},
 	})
 	if !errors.Is(err, format.ErrNoSuchSection) {
 		t.Errorf("body = %v, want ErrNoSuchSection", err)
@@ -784,10 +787,10 @@ func TestChangingOneCardLeavesEveryOtherTheBytesItWas(t *testing.T) {
 			return f.RemoveCard(llama)
 		},
 		"a card added": func(f *format.DeckFile) error {
-			return f.AddCard(format.Card{Heading: "Camel", Stencil: "Animal"})
+			return f.AddCard(format.Card{Heading: "Camel", StencilLink: "Animal"})
 		},
 		"a card added under a section": func(f *format.DeckFile) error {
-			return f.AddCardUnder(0, format.Card{Heading: "Camel", Stencil: "Animal"})
+			return f.AddCardUnder(0, format.Card{Heading: "Camel", StencilLink: "Animal"})
 		},
 		"a section added": func(f *format.DeckFile) error {
 			return f.AddSection(format.Section{Name: "The ones without"})

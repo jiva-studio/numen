@@ -2,8 +2,8 @@
  * What the screen rule refuses, and what it has to let through.
  *
  * A boundary rule is only worth what it permits: one that refuses a screen
- * reaching a screen and also refuses a screen reaching the tabs would be met by
- * moving every folder back into the root. So the fixture under `testdata/`
+ * reaching a screen and also refuses a screen reaching `shared/` would be met
+ * by moving every folder back into the root. So the fixture under `testdata/`
  * holds one edge of each kind the windows actually have, and the run below
  * names every one of them.
  */
@@ -13,7 +13,7 @@ import { join } from 'node:path'
 import test from 'node:test'
 import { depcruise, here, screens } from './modules.mjs'
 
-/** The fixture window: five folders, eight edges, two of them wrong. */
+/** The fixture window, filed the way a window of ours is filed. */
 const at = join(here, 'testdata/screens')
 
 /** Two folders that each reach the other, where no one file is in a cycle. */
@@ -21,28 +21,43 @@ const ring = join(here, 'testdata/ring')
 
 /** Every edge the fixture holds, and whether the rule is meant to refuse it. */
 const edges = [
-  { says: 'a screen reaching another screen', refused: true, edge: 'src/cards/deck.ts → src/note/tab.ts' },
+  { says: 'a screen reaching another screen', refused: true, edge: 'src/cards-tab/deck.ts → src/note-tab/tab.ts' },
   {
-    says: 'a folder nobody named as shared reaching a screen',
+    says: 'a folder the rule holds no part reaching a screen',
     refused: true,
-    edge: 'src/ledger/entries.ts → src/note/tab.ts',
+    edge: 'src/ledger/entries.ts → src/note-tab/tab.ts',
   },
-  { says: 'a screen reaching a shared folder', refused: false, edge: 'src/cards/deck.ts → src/tabs/putting.ts' },
-  { says: 'a screen reaching the window\'s root', refused: false, edge: 'src/note/tab.ts → src/words.ts' },
+  { says: 'a screen reaching the top of shared', refused: false, edge: 'src/cards-tab/deck.ts → src/shared/core.ts' },
+  {
+    says: 'a screen reaching a folder under shared',
+    refused: false,
+    edge: 'src/note-tab/tab.ts → src/shared/tabs/putting.ts',
+  },
+  { says: 'a screen reaching the window\'s root', refused: false, edge: 'src/note-tab/tab.ts → src/words.ts' },
   {
     says: 'a folder under a screen reaching that screen\'s own top',
     refused: false,
-    edge: 'src/note/inner/deep.ts → src/note/tab.ts',
+    edge: 'src/note-tab/inner/deep.ts → src/note-tab/tab.ts',
   },
   {
-    says: 'a shared folder reaching another shared folder',
+    says: 'one folder under shared reaching another',
     refused: false,
-    edge: 'src/tabs/putting.ts → src/notices/telling.ts',
+    edge: 'src/shared/tabs/putting.ts → src/shared/notices/telling.ts',
   },
   {
-    says: 'a shared folder reaching the window\'s root',
+    says: 'a folder under shared reaching the window\'s root',
     refused: false,
-    edge: 'src/notices/telling.ts → src/words.ts',
+    edge: 'src/shared/notices/telling.ts → src/words.ts',
+  },
+  {
+    says: 'the shell mounting a screen',
+    refused: false,
+    edge: 'src/window/mounting.ts → src/note-tab/tab.ts',
+  },
+  {
+    says: 'the shell mounting a second screen',
+    refused: false,
+    edge: 'src/window/mounting.ts → src/cards-tab/deck.ts',
   },
 ]
 
@@ -72,11 +87,13 @@ test('what the screen rule refuses, and what it lets through', () => {
   // them fails here.
   for (const file of [
     'src/words.ts',
-    'src/notices/telling.ts',
-    'src/tabs/putting.ts',
-    'src/note/tab.ts',
-    'src/note/inner/deep.ts',
-    'src/cards/deck.ts',
+    'src/shared/core.ts',
+    'src/shared/notices/telling.ts',
+    'src/shared/tabs/putting.ts',
+    'src/window/mounting.ts',
+    'src/note-tab/tab.ts',
+    'src/note-tab/inner/deep.ts',
+    'src/cards-tab/deck.ts',
     'src/ledger/entries.ts',
   ]) {
     assert.ok(read.includes(file), `the fixture cruise did not read ${file}`)
@@ -109,14 +126,14 @@ test('what the screen rule refuses, and what it lets through', () => {
 test('two folders that each reach the other', () => {
   const { refused, rings, read } = cruised(ring)
 
-  for (const file of ['src/tabs/putting.ts', 'src/tabs/marking.ts', 'src/notices/telling.ts']) {
+  for (const file of ['src/shared/tabs/putting.ts', 'src/shared/tabs/marking.ts', 'src/shared/notices/telling.ts']) {
     assert.ok(read.includes(file), `the ring fixture cruise did not read ${file}`)
   }
 
-  assert.deepEqual(rings.sort(), ['src/notices → src/tabs', 'src/tabs → src/notices'])
+  assert.deepEqual(rings.sort(), ['src/shared/notices → src/shared/tabs', 'src/shared/tabs → src/shared/notices'])
 
-  // Both folders are shared, so the screen rule has nothing to say here. A
-  // ring caught by the wrong rule would say the folder check works when it
-  // does not.
+  // Both folders are under `shared/`, so the screen rule has nothing to say
+  // here. A ring caught by the wrong rule would say the folder check works
+  // when it does not.
   assert.deepEqual(refused, [])
 })

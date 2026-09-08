@@ -92,15 +92,10 @@ modules/libs/core/
   usecase/<aggregate>/     one file per scenario: add.go, scan.go, rename.go
   container/               composition root: adapter to port
 
-  markdown/                the note format, parsed
-  flashcards/format/       what a card is written in
-  flashcards/review/       how a card is scheduled
-  chunking/  embedding/    text into chunks, chunks into vectors
-  epub/  ocr/  highlight/  a book's text, and where it falls on a page
-  transcript/  proofread/  a recording's words, and putting them right
-  text/  task/  check/     read a source, follow a run, report a vault's faults
-  fixes/                   a correction kept
-  appearance/              the window's own surface
+  <subject>/               one folder to a subject the core reasons about,
+                           named after it: a format it parses, a calculation
+                           it makes. It takes values and returns values, and
+                           knows nothing of a port
 
   adapter/
     cli/                   driving: arguments in, text out
@@ -110,16 +105,11 @@ modules/libs/core/
       migration/           numbered schema changes
     settings/              driven: what a person configured
     agent/                 driven: which agent answers
-    window/                one adapter to a window
-      editor/              driving: the handler the notes window asks
-      flashcards/          driving: the handler the review window asks
+    window/<window>/       driving: the handler one window asks
   internal/
-    adapter/               driving or driven: what nothing outside composes
-      filesystem/          driven: a vault on disk
-    onnxruntime/           the runtime two driven adapters run models through
-    ulid/  cardid/         identifiers, and the ones a card is known by
-    wire/                  what two driving adapters both put on the wire
-    testsupport/           fixtures and generated vaults, for tests only
+    adapter/<name>/        driving or driven: what nothing outside composes
+    <name>/                what more than one adapter needs and nothing
+                           outside the core may name
 
 modules/apps/<app>/
   go.mod
@@ -128,7 +118,7 @@ modules/apps/<app>/
   <window>/                an npm package to each window this application opens
 ```
 
-The desktop's windows are `editor/` and `flashcards/`, published as `@numen/editor` and `@numen/flashcards`. Each is built by `make interface` and carried inside the binary, and each takes `@numen/ui`, `@numen/protocol` and `@numen/wire` from `modules/libs/`.
+A window is an npm package under the application that opens it, built by `make interface` and carried inside the binary. What windows share — components, the schema, the wire — is a package of its own under `modules/libs/`.
 
 The unit of organisation is the thing, not the kind of thing. An aggregate is a folder holding its repository, its queries and its SQL together; a use case is a file named after the scenario.
 

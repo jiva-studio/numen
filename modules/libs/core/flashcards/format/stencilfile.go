@@ -129,7 +129,7 @@ func (f *StencilFile) AddFace(face FaceTemplate) error {
 // side is written missing it, and it is the face that lays out nothing.
 func laid(face FaceTemplate) string {
 	blocks := []string{headingLine(2, face.Name)}
-	if lead := trimBlankLines(markdown.Normalised(face.Lead)); lead != "" {
+	if lead := trimBlankLines(markdown.Normalised(face.Preamble)); lead != "" {
 		blocks = append(blocks, lead)
 	}
 	for _, side := range []struct{ heading, text string }{

@@ -12,7 +12,7 @@ import (
 // contract is the stylesheet every token is declared in. A preset is held to
 // the first of its blocks that names tokens: that block is what a theme sets,
 // and the rest of the file is what a theme leaves alone.
-const contract = "../../../../../libs/ui/src/tokens/tokens.css"
+const contract = "../../../../../libs/ui/src/shared/tokens/tokens.css"
 
 // takes is the shape a value has. Each is read off the contract, so a token
 // given a different shape there holds every preset to the new one.

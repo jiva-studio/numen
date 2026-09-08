@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -125,6 +126,13 @@ type Sources struct {
 	// Documents reads a format that needs a library, for a document standing on
 	// its own bytes.
 	Documents port.TextExtractor
+	// URLs makes the file a web address is kept in, and Import fetches what is
+	// at that address. Without both, the tool that imports one is not added.
+	URLs   *source.CreateURL
+	Import *source.ImportURL
+	// Changed says an artifact of a file was written, so that whatever draws
+	// that file reads what now stands. Without it a window is told nothing.
+	Changed func(path string)
 }
 
 // AskedCard is the card in front of the person, as an agent is told about it.
@@ -179,6 +187,8 @@ func New(core Core) *sdk.Server {
 	addViewTools(server, core)
 	addWindowTools(server, core)
 	addSourceTools(server, core)
+	addArtifactTools(server, core)
+	addArtifactWriteTool(server, core)
 	return server
 }
 

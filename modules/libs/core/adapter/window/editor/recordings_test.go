@@ -1,9 +1,11 @@
 package editor
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -35,7 +37,34 @@ const (
 // it left it under.
 type stored map[string][]byte
 
-func (s stored) Open(domain.Vault) (port.DerivedStore, error) { return s, nil }
+// storing hands the one store to whatever opens a vault's.
+type storing struct{ port.DerivedStore }
+
+func (s storing) Open(domain.Vault) (port.DerivedStore, error) { return s.DerivedStore, nil }
+
+// Open is one file of the store, which a copy of a video is played from.
+func (s stored) Open(_ context.Context, name string) (io.ReadSeekCloser, int64, error) {
+	raw, held := s[name]
+	if !held {
+		return nil, 0, fs.ErrNotExist
+	}
+	return readingBytes{bytes.NewReader(raw)}, int64(len(raw)), nil
+}
+
+// Take puts what a reader gives under a name.
+func (s stored) Take(_ context.Context, name string, from io.Reader) (int64, error) {
+	raw, err := io.ReadAll(from)
+	if err != nil {
+		return 0, err
+	}
+	s[name] = raw
+	return int64(len(raw)), nil
+}
+
+// readingBytes is a reader of bytes already in memory, closed by nobody.
+type readingBytes struct{ *bytes.Reader }
+
+func (readingBytes) Close() error { return nil }
 
 func (s stored) Read(_ context.Context, name string) ([]byte, error) {
 	raw, held := s[name]
@@ -77,14 +106,14 @@ func listeningTo(t *testing.T, held stored) (*API, http.Handler) {
 }
 
 // windowOn is the same window, with whatever store the test hands it.
-func windowOn(t *testing.T, held port.DerivedStores) (*API, http.Handler) {
+func windowOn(t *testing.T, held port.DerivedStore) (*API, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{talk: sound, book: "the bytes of a scan"})
 	api := &API{
 		Readers: filesystem.VaultReaders{},
 		Highlight: &source.Highlight{
 			Sources: indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}},
-			Derived: held,
+			Derived: storing{held},
 		},
 	}
 	api.show(vault)
@@ -99,7 +128,7 @@ func whole(cues []transcript.Cue) stored {
 
 func partly(cues []transcript.Cue, reached int) stored {
 	return stored{
-		derived.Partial(asr, hashed): append(transcript.Marshal(cues), transcript.Heard(reached)...),
+		derived.Partial(asr, hashed): append(transcript.Marshal(cues), transcript.Reaches(reached)...),
 	}
 }
 
@@ -215,9 +244,8 @@ func TestWhatARecordingIsIsHowLongItRuns(t *testing.T) {
 				t.Fatalf("asked what the recording is and was refused: %v", err)
 			}
 			told := out.Msg
-			if told.GetLength() != one.length || told.GetHeard() != one.heard {
-				t.Errorf("the recording came back as %+v, want %d long and %d heard",
-					told, one.length, one.heard)
+			if told.GetDurationMs() != one.length {
+				t.Errorf("the recording came back as %+v, want %d long", told, one.length)
 			}
 		})
 	}
@@ -267,7 +295,7 @@ func TestCuesNarrowToARunOfTheWords(t *testing.T) {
 	_, cues := transcript.Parse(transcript.Marshal(spoke))
 
 	// "second" begins after "first\n".
-	got, err := within(&v1.Stretch{Start: 6, Length: 6})(cues)
+	got, err := within(&v1.Span{From: 6, To: 12})(cues)
 	if err != nil {
 		t.Fatalf("a run of the words was refused: %v", err)
 	}
@@ -275,7 +303,7 @@ func TestCuesNarrowToARunOfTheWords(t *testing.T) {
 		t.Errorf("the run was placed at %v", got)
 	}
 
-	if _, err := within(&v1.Stretch{Start: -1, Length: 6})(cues); err == nil {
+	if _, err := within(&v1.Span{From: -1, To: 5})(cues); err == nil {
 		t.Errorf("a place before the words was taken")
 	}
 }
@@ -295,8 +323,6 @@ type heldBy struct {
 	stored
 	name string
 }
-
-func (h heldBy) Open(domain.Vault) (port.DerivedStore, error) { return h, nil }
 
 func (h heldBy) Claim(ctx context.Context, name string) (func() error, error) {
 	if name == h.name {
@@ -500,7 +526,7 @@ func TestATranscriptIsNotEditedWhileTheRecordingIsBeingListenedTo(t *testing.T) 
 		t.Error("the transcript was written while a run held the recording")
 	}
 
-	if told := heard(t, api); told.GetEditable() {
+	if carrying(t, api, talk)[correctedOf] != v1.State_STATE_RUNNING {
 		t.Error("the window was told it may edit a transcript a run is writing")
 	}
 }
@@ -509,7 +535,7 @@ func TestATranscriptIsNotEditedWhileTheRecordingIsBeingListenedTo(t *testing.T) 
 func TestTheWindowIsToldATranscriptMayBePutRight(t *testing.T) {
 	api, _ := listeningTo(t, whole(spoke()))
 
-	if told := heard(t, api); !told.GetEditable() {
+	if carrying(t, api, talk)[correctedOf] == v1.State_STATE_RUNNING {
 		t.Error("the window was told it may not edit a transcript nothing is writing")
 	}
 }
@@ -618,8 +644,6 @@ type refusing struct {
 	stored
 	why error
 }
-
-func (r refusing) Open(domain.Vault) (port.DerivedStore, error) { return r, nil }
 
 func (r refusing) Write(ctx context.Context, name string, content []byte) error {
 	if name == derived.Corrections(asr, hashed) {

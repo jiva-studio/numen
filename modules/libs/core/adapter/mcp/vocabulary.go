@@ -42,6 +42,7 @@ var doing = map[string]Tool{
 	"note_resolve":        {Kind: port.StepRead},
 	"note_neighbourhood":  {Kind: port.StepRead},
 	"note_create":         {Kind: port.StepEdit},
+	"note_import":         {Kind: port.StepEdit},
 	"note_rewrite":        {Kind: port.StepEdit},
 	"note_edit":           {Kind: port.StepEdit, Match: "match", Text: "text"},
 	"note_rename":         {Kind: port.StepMove},
@@ -78,6 +79,8 @@ var doing = map[string]Tool{
 	"vault_open":        {Kind: port.StepRead},
 	"source_list":       {Kind: port.StepRead},
 	"source_read":       {Kind: port.StepRead},
+	"artifact_list":     {Kind: port.StepRead},
+	"artifact_read":     {Kind: port.StepRead},
 	"source_focus":      {Kind: port.StepRead},
 	// Reading a document changes what the vault holds — it writes down what a
 	// model saw — so it is shown as a change and not as a look. Listening to a

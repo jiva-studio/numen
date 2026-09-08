@@ -43,6 +43,9 @@ const (
 	// AgentServiceFinishConversationProcedure is the fully-qualified name of the AgentService's
 	// FinishConversation RPC.
 	AgentServiceFinishConversationProcedure = "/numen.v1.AgentService/FinishConversation"
+	// AgentServiceGetAgentStateProcedure is the fully-qualified name of the AgentService's
+	// GetAgentState RPC.
+	AgentServiceGetAgentStateProcedure = "/numen.v1.AgentService/GetAgentState"
 )
 
 // AgentServiceClient is a client for the numen.v1.AgentService service.
@@ -53,6 +56,10 @@ type AgentServiceClient interface {
 	// FinishConversation says a conversation is over. What the agent kept of it
 	// is let go of, and whatever is still being answered in it stops.
 	FinishConversation(context.Context, *connect.Request[v1.FinishConversationRequest]) (*connect.Response[v1.FinishConversationResponse], error)
+	// GetAgentState is whether an agent can be reached at all. Which agent
+	// answers is the installation's, not the vault's, so every window asks the
+	// same question here and none of them carries the answer in its own state.
+	GetAgentState(context.Context, *connect.Request[v1.GetAgentStateRequest]) (*connect.Response[v1.GetAgentStateResponse], error)
 }
 
 // NewAgentServiceClient constructs a client for the numen.v1.AgentService service. By default, it
@@ -78,6 +85,12 @@ func NewAgentServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(agentServiceMethods.ByName("FinishConversation")),
 			connect.WithClientOptions(opts...),
 		),
+		getAgentState: connect.NewClient[v1.GetAgentStateRequest, v1.GetAgentStateResponse](
+			httpClient,
+			baseURL+AgentServiceGetAgentStateProcedure,
+			connect.WithSchema(agentServiceMethods.ByName("GetAgentState")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -85,6 +98,7 @@ func NewAgentServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 type agentServiceClient struct {
 	askAgent           *connect.Client[v1.AskAgentRequest, v1.AskAgentResponse]
 	finishConversation *connect.Client[v1.FinishConversationRequest, v1.FinishConversationResponse]
+	getAgentState      *connect.Client[v1.GetAgentStateRequest, v1.GetAgentStateResponse]
 }
 
 // AskAgent calls numen.v1.AgentService.AskAgent.
@@ -97,6 +111,11 @@ func (c *agentServiceClient) FinishConversation(ctx context.Context, req *connec
 	return c.finishConversation.CallUnary(ctx, req)
 }
 
+// GetAgentState calls numen.v1.AgentService.GetAgentState.
+func (c *agentServiceClient) GetAgentState(ctx context.Context, req *connect.Request[v1.GetAgentStateRequest]) (*connect.Response[v1.GetAgentStateResponse], error) {
+	return c.getAgentState.CallUnary(ctx, req)
+}
+
 // AgentServiceHandler is an implementation of the numen.v1.AgentService service.
 type AgentServiceHandler interface {
 	// AskAgent hands over a task and reports what the agent does, in the order it
@@ -105,6 +124,10 @@ type AgentServiceHandler interface {
 	// FinishConversation says a conversation is over. What the agent kept of it
 	// is let go of, and whatever is still being answered in it stops.
 	FinishConversation(context.Context, *connect.Request[v1.FinishConversationRequest]) (*connect.Response[v1.FinishConversationResponse], error)
+	// GetAgentState is whether an agent can be reached at all. Which agent
+	// answers is the installation's, not the vault's, so every window asks the
+	// same question here and none of them carries the answer in its own state.
+	GetAgentState(context.Context, *connect.Request[v1.GetAgentStateRequest]) (*connect.Response[v1.GetAgentStateResponse], error)
 }
 
 // NewAgentServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -126,12 +149,20 @@ func NewAgentServiceHandler(svc AgentServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(agentServiceMethods.ByName("FinishConversation")),
 		connect.WithHandlerOptions(opts...),
 	)
+	agentServiceGetAgentStateHandler := connect.NewUnaryHandler(
+		AgentServiceGetAgentStateProcedure,
+		svc.GetAgentState,
+		connect.WithSchema(agentServiceMethods.ByName("GetAgentState")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.AgentService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AgentServiceAskAgentProcedure:
 			agentServiceAskAgentHandler.ServeHTTP(w, r)
 		case AgentServiceFinishConversationProcedure:
 			agentServiceFinishConversationHandler.ServeHTTP(w, r)
+		case AgentServiceGetAgentStateProcedure:
+			agentServiceGetAgentStateHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -147,4 +178,8 @@ func (UnimplementedAgentServiceHandler) AskAgent(context.Context, *connect.Reque
 
 func (UnimplementedAgentServiceHandler) FinishConversation(context.Context, *connect.Request[v1.FinishConversationRequest]) (*connect.Response[v1.FinishConversationResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AgentService.FinishConversation is not implemented"))
+}
+
+func (UnimplementedAgentServiceHandler) GetAgentState(context.Context, *connect.Request[v1.GetAgentStateRequest]) (*connect.Response[v1.GetAgentStateResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AgentService.GetAgentState is not implemented"))
 }

@@ -1176,11 +1176,11 @@ type WriteNoteResponse struct {
 	Refusal *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
-	At *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *Fingerprint `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	// Set when the prose is on disk and the index would not come level with it.
 	// The write happened and `at` stands; search answers about this note as it
 	// read it last, until a walk goes past.
-	Unlevelled    bool `protobuf:"varint,4,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1236,10 +1236,10 @@ func (x *WriteNoteResponse) GetUnlevelled() bool {
 	return false
 }
 
-// NewLink is one relationship as the note it is written in declares it: the
-// note at the other end, by the path it is filed under, and what kind of
+// Link is one relationship as the note it is written in declares it: the note
+// at the other end, by the path it is filed under, and what kind of
 // relationship it is.
-type NewLink struct {
+type Link struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	To    string                 `protobuf:"bytes,1,opt,name=to,proto3" json:"to,omitempty"`
 	Role  Role                   `protobuf:"varint,2,opt,name=role,proto3,enum=numen.v1.Role" json:"role,omitempty"`
@@ -1249,20 +1249,20 @@ type NewLink struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *NewLink) Reset() {
-	*x = NewLink{}
+func (x *Link) Reset() {
+	*x = Link{}
 	mi := &file_numen_v1_note_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *NewLink) String() string {
+func (x *Link) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*NewLink) ProtoMessage() {}
+func (*Link) ProtoMessage() {}
 
-func (x *NewLink) ProtoReflect() protoreflect.Message {
+func (x *Link) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1274,26 +1274,26 @@ func (x *NewLink) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use NewLink.ProtoReflect.Descriptor instead.
-func (*NewLink) Descriptor() ([]byte, []int) {
+// Deprecated: Use Link.ProtoReflect.Descriptor instead.
+func (*Link) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *NewLink) GetTo() string {
+func (x *Link) GetTo() string {
 	if x != nil {
 		return x.To
 	}
 	return ""
 }
 
-func (x *NewLink) GetRole() Role {
+func (x *Link) GetRole() Role {
 	if x != nil {
 		return x.Role
 	}
 	return Role_ROLE_UNSPECIFIED
 }
 
-func (x *NewLink) GetLabel() string {
+func (x *Link) GetLabel() string {
 	if x != nil {
 		return x.Label
 	}
@@ -1304,10 +1304,10 @@ type CreateNoteRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// What the note is called. The file is named after it.
 	Title string `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
-	// Where in the vault it goes, relative to the root. Empty is the root.
-	Folder string `protobuf:"bytes,2,opt,name=folder,proto3" json:"folder,omitempty"`
+	// The folder it goes in, as a path relative to the root. Empty is the root.
+	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// What the note is joined to, written into it as it is made.
-	Links         []*NewLink `protobuf:"bytes,3,rep,name=links,proto3" json:"links,omitempty"`
+	Links         []*Link `protobuf:"bytes,3,rep,name=links,proto3" json:"links,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1349,14 +1349,14 @@ func (x *CreateNoteRequest) GetTitle() string {
 	return ""
 }
 
-func (x *CreateNoteRequest) GetFolder() string {
+func (x *CreateNoteRequest) GetPath() string {
 	if x != nil {
-		return x.Folder
+		return x.Path
 	}
 	return ""
 }
 
-func (x *CreateNoteRequest) GetLinks() []*NewLink {
+func (x *CreateNoteRequest) GetLinks() []*Link {
 	if x != nil {
 		return x.Links
 	}
@@ -1431,8 +1431,8 @@ func (x *CreateNoteResponse) GetUnlevelled() bool {
 type WriteLinkRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The note the link is written in.
-	Path          string   `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	Link          *NewLink `protobuf:"bytes,2,opt,name=link,proto3" json:"link,omitempty"`
+	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	Link          *Link  `protobuf:"bytes,2,opt,name=link,proto3" json:"link,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1474,7 +1474,7 @@ func (x *WriteLinkRequest) GetPath() string {
 	return ""
 }
 
-func (x *WriteLinkRequest) GetLink() *NewLink {
+func (x *WriteLinkRequest) GetLink() *Link {
 	if x != nil {
 		return x.Link
 	}
@@ -1602,7 +1602,7 @@ type RenameNoteResponse struct {
 	// Set when the rename reached the vault and the index would not come level
 	// with it. Search answers about these files as it read them last, until a
 	// walk goes past.
-	Unlevelled    bool `protobuf:"varint,7,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	Unlevelled    bool `protobuf:"varint,6,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1722,15 +1722,14 @@ type WatchEditsResponse struct {
 	Change string `protobuf:"bytes,1,opt,name=change,proto3" json:"change,omitempty"`
 	// The note being changed.
 	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
-	// The stretch being replaced, counted the way a client counts text: in UTF-16
+	// The run being replaced, counted the way a client counts text: in UTF-16
 	// code units over the prose a read answers with.
-	From int32 `protobuf:"varint,3,opt,name=from,proto3" json:"from,omitempty"`
-	To   int32 `protobuf:"varint,4,opt,name=to,proto3" json:"to,omitempty"`
-	// What is going in where that stretch stands.
-	Text string `protobuf:"bytes,5,opt,name=text,proto3" json:"text,omitempty"`
+	Span *Span `protobuf:"bytes,3,opt,name=span,proto3" json:"span,omitempty"`
+	// What is going in where that span stands.
+	Text string `protobuf:"bytes,4,opt,name=text,proto3" json:"text,omitempty"`
 	// The last report of this change, which arrives whether the change landed or
 	// was refused.
-	Done          bool `protobuf:"varint,6,opt,name=done,proto3" json:"done,omitempty"`
+	Done          bool `protobuf:"varint,5,opt,name=done,proto3" json:"done,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1779,18 +1778,11 @@ func (x *WatchEditsResponse) GetPath() string {
 	return ""
 }
 
-func (x *WatchEditsResponse) GetFrom() int32 {
+func (x *WatchEditsResponse) GetSpan() *Span {
 	if x != nil {
-		return x.From
+		return x.Span
 	}
-	return 0
-}
-
-func (x *WatchEditsResponse) GetTo() int32 {
-	if x != nil {
-		return x.To
-	}
-	return 0
+	return nil
 }
 
 func (x *WatchEditsResponse) GetText() string {
@@ -1828,14 +1820,14 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x05focus\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x05focus\x12-\n" +
 	"\arelated\x18\x02 \x03(\v2\x13.numen.v1.NeighbourR\arelated\x121\n" +
 	"\n" +
-	"focus_type\x18\x03 \x01(\x0e2\x12.numen.v1.NoteTypeR\tfocusType\"\xe3\x01\n" +
+	"focus_type\x18\x03 \x01(\x0e2\x12.numen.v1.NoteTypeR\tfocusType\"\xc3\x01\n" +
 	"\tNeighbour\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x12\"\n" +
 	"\x04seat\x18\x02 \x01(\x0e2\x0e.numen.v1.SeatR\x04seat\x12\x14\n" +
 	"\x05label\x18\x03 \x01(\tR\x05label\x12\x18\n" +
 	"\athrough\x18\x04 \x01(\tR\athrough\x12\x16\n" +
 	"\x06mutual\x18\x05 \x01(\bR\x06mutual\x12&\n" +
-	"\x04type\x18\x06 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04typeJ\x04\b\a\x10\bJ\x04\b\b\x10\tR\tambiguousR\arefusal\"G\n" +
+	"\x04type\x18\x06 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\"G\n" +
 	"\x17ResolveAddressesRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x18\n" +
 	"\awritten\x18\x02 \x03(\tR\awritten\"Q\n" +
@@ -1874,24 +1866,24 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04body\x18\x02 \x01(\tR\x04body\x12+\n" +
 	"\x04seen\x18\x03 \x01(\v2\x12.numen.v1.LastReadH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xb3\x01\n" +
+	"\x05_seen\"\xa4\x01\n" +
 	"\x11WriteNoteResponse\x120\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
+	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
 	"\n" +
-	"unlevelled\x18\x04 \x01(\bR\n" +
+	"unlevelled\x18\x03 \x01(\bR\n" +
 	"unlevelledB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_atJ\x04\b\x02\x10\x03R\achanged\"S\n" +
-	"\aNewLink\x12\x0e\n" +
+	"\x03_at\"P\n" +
+	"\x04Link\x12\x0e\n" +
 	"\x02to\x18\x01 \x01(\tR\x02to\x12\"\n" +
 	"\x04role\x18\x02 \x01(\x0e2\x0e.numen.v1.RoleR\x04role\x12\x14\n" +
-	"\x05label\x18\x03 \x01(\tR\x05label\"j\n" +
+	"\x05label\x18\x03 \x01(\tR\x05label\"c\n" +
 	"\x11CreateNoteRequest\x12\x14\n" +
-	"\x05title\x18\x01 \x01(\tR\x05title\x12\x16\n" +
-	"\x06folder\x18\x02 \x01(\tR\x06folder\x12'\n" +
-	"\x05links\x18\x03 \x03(\v2\x11.numen.v1.NewLinkR\x05links\"\x86\x01\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12$\n" +
+	"\x05links\x18\x03 \x03(\v2\x0e.numen.v1.LinkR\x05links\"\x86\x01\n" +
 	"\x12CreateNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x120\n" +
 	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x1e\n" +
@@ -1899,17 +1891,17 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"unlevelled\x18\x03 \x01(\bR\n" +
 	"unlevelledB\n" +
 	"\n" +
-	"\b_refusal\"M\n" +
+	"\b_refusal\"J\n" +
 	"\x10WriteLinkRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12%\n" +
-	"\x04link\x18\x02 \x01(\v2\x11.numen.v1.NewLinkR\x04link\"`\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\"\n" +
+	"\x04link\x18\x02 \x01(\v2\x0e.numen.v1.LinkR\x04link\"Q\n" +
 	"\x11WriteLinkResponse\x120\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
 	"\n" +
-	"\b_refusalJ\x04\b\x02\x10\x03R\achanged\"=\n" +
+	"\b_refusal\"=\n" +
 	"\x11RenameNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"\x89\x02\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"\xfa\x01\n" +
 	"\x12RenameNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12!\n" +
@@ -1917,19 +1909,18 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x05moved\x18\x04 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x120\n" +
 	"\arefusal\x18\x05 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01\x12\x1e\n" +
 	"\n" +
-	"unlevelled\x18\a \x01(\bR\n" +
+	"unlevelled\x18\x06 \x01(\bR\n" +
 	"unlevelledB\b\n" +
 	"\x06_movedB\n" +
 	"\n" +
-	"\b_refusalJ\x04\b\x06\x10\aR\achanged\"\x13\n" +
+	"\b_refusal\"\x13\n" +
 	"\x11WatchEditsRequest\"\x8c\x01\n" +
 	"\x12WatchEditsResponse\x12\x16\n" +
 	"\x06change\x18\x01 \x01(\tR\x06change\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\x12\x12\n" +
-	"\x04from\x18\x03 \x01(\x05R\x04from\x12\x0e\n" +
-	"\x02to\x18\x04 \x01(\x05R\x02to\x12\x12\n" +
-	"\x04text\x18\x05 \x01(\tR\x04text\x12\x12\n" +
-	"\x04done\x18\x06 \x01(\bR\x04done*^\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12\"\n" +
+	"\x04span\x18\x03 \x01(\v2\x0e.numen.v1.SpanR\x04span\x12\x12\n" +
+	"\x04text\x18\x04 \x01(\tR\x04text\x12\x12\n" +
+	"\x04done\x18\x05 \x01(\bR\x04done*^\n" +
 	"\x04Seat\x12\x14\n" +
 	"\x10SEAT_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vSEAT_PARENT\x10\x01\x12\x0e\n" +
@@ -2000,7 +1991,7 @@ var file_numen_v1_note_proto_goTypes = []any{
 	(*LastRead)(nil),                 // 18: numen.v1.LastRead
 	(*WriteNoteRequest)(nil),         // 19: numen.v1.WriteNoteRequest
 	(*WriteNoteResponse)(nil),        // 20: numen.v1.WriteNoteResponse
-	(*NewLink)(nil),                  // 21: numen.v1.NewLink
+	(*Link)(nil),                     // 21: numen.v1.Link
 	(*CreateNoteRequest)(nil),        // 22: numen.v1.CreateNoteRequest
 	(*CreateNoteResponse)(nil),       // 23: numen.v1.CreateNoteResponse
 	(*WriteLinkRequest)(nil),         // 24: numen.v1.WriteLinkRequest
@@ -2013,6 +2004,7 @@ var file_numen_v1_note_proto_goTypes = []any{
 	(Refusal)(0),                     // 31: numen.v1.Refusal
 	(*Fingerprint)(nil),              // 32: numen.v1.Fingerprint
 	(*MoveResult)(nil),               // 33: numen.v1.MoveResult
+	(*Span)(nil),                     // 34: numen.v1.Span
 }
 var file_numen_v1_note_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.GetOpeningNoteResponse.note:type_name -> numen.v1.Note
@@ -2031,39 +2023,40 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	18, // 13: numen.v1.WriteNoteRequest.seen:type_name -> numen.v1.LastRead
 	31, // 14: numen.v1.WriteNoteResponse.refusal:type_name -> numen.v1.Refusal
 	32, // 15: numen.v1.WriteNoteResponse.at:type_name -> numen.v1.Fingerprint
-	1,  // 16: numen.v1.NewLink.role:type_name -> numen.v1.Role
-	21, // 17: numen.v1.CreateNoteRequest.links:type_name -> numen.v1.NewLink
+	1,  // 16: numen.v1.Link.role:type_name -> numen.v1.Role
+	21, // 17: numen.v1.CreateNoteRequest.links:type_name -> numen.v1.Link
 	31, // 18: numen.v1.CreateNoteResponse.refusal:type_name -> numen.v1.Refusal
-	21, // 19: numen.v1.WriteLinkRequest.link:type_name -> numen.v1.NewLink
+	21, // 19: numen.v1.WriteLinkRequest.link:type_name -> numen.v1.Link
 	31, // 20: numen.v1.WriteLinkResponse.refusal:type_name -> numen.v1.Refusal
 	2,  // 21: numen.v1.RenameNoteResponse.by:type_name -> numen.v1.NamedBy
 	33, // 22: numen.v1.RenameNoteResponse.moved:type_name -> numen.v1.MoveResult
 	31, // 23: numen.v1.RenameNoteResponse.refusal:type_name -> numen.v1.Refusal
-	4,  // 24: numen.v1.NoteService.GetOpeningNote:input_type -> numen.v1.GetOpeningNoteRequest
-	6,  // 25: numen.v1.NoteService.GetNeighbourhood:input_type -> numen.v1.GetNeighbourhoodRequest
-	9,  // 26: numen.v1.NoteService.ResolveAddresses:input_type -> numen.v1.ResolveAddressesRequest
-	12, // 27: numen.v1.NoteService.ListHeadings:input_type -> numen.v1.ListHeadingsRequest
-	16, // 28: numen.v1.NoteService.ReadNote:input_type -> numen.v1.ReadNoteRequest
-	19, // 29: numen.v1.NoteService.WriteNote:input_type -> numen.v1.WriteNoteRequest
-	22, // 30: numen.v1.NoteService.CreateNote:input_type -> numen.v1.CreateNoteRequest
-	24, // 31: numen.v1.NoteService.WriteLink:input_type -> numen.v1.WriteLinkRequest
-	26, // 32: numen.v1.NoteService.RenameNote:input_type -> numen.v1.RenameNoteRequest
-	28, // 33: numen.v1.NoteService.WatchEdits:input_type -> numen.v1.WatchEditsRequest
-	5,  // 34: numen.v1.NoteService.GetOpeningNote:output_type -> numen.v1.GetOpeningNoteResponse
-	7,  // 35: numen.v1.NoteService.GetNeighbourhood:output_type -> numen.v1.GetNeighbourhoodResponse
-	10, // 36: numen.v1.NoteService.ResolveAddresses:output_type -> numen.v1.ResolveAddressesResponse
-	13, // 37: numen.v1.NoteService.ListHeadings:output_type -> numen.v1.ListHeadingsResponse
-	17, // 38: numen.v1.NoteService.ReadNote:output_type -> numen.v1.ReadNoteResponse
-	20, // 39: numen.v1.NoteService.WriteNote:output_type -> numen.v1.WriteNoteResponse
-	23, // 40: numen.v1.NoteService.CreateNote:output_type -> numen.v1.CreateNoteResponse
-	25, // 41: numen.v1.NoteService.WriteLink:output_type -> numen.v1.WriteLinkResponse
-	27, // 42: numen.v1.NoteService.RenameNote:output_type -> numen.v1.RenameNoteResponse
-	29, // 43: numen.v1.NoteService.WatchEdits:output_type -> numen.v1.WatchEditsResponse
-	34, // [34:44] is the sub-list for method output_type
-	24, // [24:34] is the sub-list for method input_type
-	24, // [24:24] is the sub-list for extension type_name
-	24, // [24:24] is the sub-list for extension extendee
-	0,  // [0:24] is the sub-list for field type_name
+	34, // 24: numen.v1.WatchEditsResponse.span:type_name -> numen.v1.Span
+	4,  // 25: numen.v1.NoteService.GetOpeningNote:input_type -> numen.v1.GetOpeningNoteRequest
+	6,  // 26: numen.v1.NoteService.GetNeighbourhood:input_type -> numen.v1.GetNeighbourhoodRequest
+	9,  // 27: numen.v1.NoteService.ResolveAddresses:input_type -> numen.v1.ResolveAddressesRequest
+	12, // 28: numen.v1.NoteService.ListHeadings:input_type -> numen.v1.ListHeadingsRequest
+	16, // 29: numen.v1.NoteService.ReadNote:input_type -> numen.v1.ReadNoteRequest
+	19, // 30: numen.v1.NoteService.WriteNote:input_type -> numen.v1.WriteNoteRequest
+	22, // 31: numen.v1.NoteService.CreateNote:input_type -> numen.v1.CreateNoteRequest
+	24, // 32: numen.v1.NoteService.WriteLink:input_type -> numen.v1.WriteLinkRequest
+	26, // 33: numen.v1.NoteService.RenameNote:input_type -> numen.v1.RenameNoteRequest
+	28, // 34: numen.v1.NoteService.WatchEdits:input_type -> numen.v1.WatchEditsRequest
+	5,  // 35: numen.v1.NoteService.GetOpeningNote:output_type -> numen.v1.GetOpeningNoteResponse
+	7,  // 36: numen.v1.NoteService.GetNeighbourhood:output_type -> numen.v1.GetNeighbourhoodResponse
+	10, // 37: numen.v1.NoteService.ResolveAddresses:output_type -> numen.v1.ResolveAddressesResponse
+	13, // 38: numen.v1.NoteService.ListHeadings:output_type -> numen.v1.ListHeadingsResponse
+	17, // 39: numen.v1.NoteService.ReadNote:output_type -> numen.v1.ReadNoteResponse
+	20, // 40: numen.v1.NoteService.WriteNote:output_type -> numen.v1.WriteNoteResponse
+	23, // 41: numen.v1.NoteService.CreateNote:output_type -> numen.v1.CreateNoteResponse
+	25, // 42: numen.v1.NoteService.WriteLink:output_type -> numen.v1.WriteLinkResponse
+	27, // 43: numen.v1.NoteService.RenameNote:output_type -> numen.v1.RenameNoteResponse
+	29, // 44: numen.v1.NoteService.WatchEdits:output_type -> numen.v1.WatchEditsResponse
+	35, // [35:45] is the sub-list for method output_type
+	25, // [25:35] is the sub-list for method input_type
+	25, // [25:25] is the sub-list for extension type_name
+	25, // [25:25] is the sub-list for extension extendee
+	0,  // [0:25] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_note_proto_init() }

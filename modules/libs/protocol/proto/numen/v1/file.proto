@@ -37,11 +37,16 @@ service FileService {
 
   // CreateFolder makes an empty folder. The folders above it are made with it.
   rpc CreateFolder(CreateFolderRequest) returns (CreateFolderResponse);
+
+  // CreateURL makes the file a web address is kept in. It holds the address and
+  // nothing else, and what is at that address is fetched into the store beside
+  // it.
+  rpc CreateURL(CreateURLRequest) returns (CreateURLResponse);
 }
 
 message ListFilesRequest {
-  // The folder to list, relative to the root. Empty is the root.
-  string folder = 1;
+  // The folder to list, as a path relative to the root. Empty is the root.
+  string path = 1;
 }
 
 message ListFilesResponse {
@@ -60,17 +65,17 @@ message Entry {
   // The last segment of the path, which is what the row shows.
   string name = 2;
 
+  // Whether the entry holds other entries. A folder carries no source and
+  // nothing is made from it.
   bool folder = 3;
 
   // What the vault holds here.
   SourceKind kind = 4;
 
-  reserved 5;
-  reserved "size";
 
   // Which of three the note is. It says nothing about an entry that is not a
   // note.
-  NoteType type = 6;
+  NoteType type = 5;
 }
 
 // SourceKind is what the vault holds at a path. A file the index holds no text
@@ -80,6 +85,10 @@ enum SourceKind {
   SOURCE_KIND_NOTE = 1;
   SOURCE_KIND_BOOK = 2;
   SOURCE_KIND_RECORDING = 3;
+
+  // A file holding a web address and nothing else. Its text is what was
+  // fetched from that address.
+  SOURCE_KIND_URL = 4;
 }
 
 message ListFileKindsRequest {
@@ -141,10 +150,7 @@ message MoveResult {
   // name. Each of them still points at the name the file left, and nothing
   // comes back to it: a move that reports only what it repaired reports a
   // vault it did not leave behind.
-  repeated string dangling = 5;
-
-  reserved 4;
-  reserved "retargeted";
+  repeated string dangling = 4;
 }
 
 message RemoveFileRequest {
@@ -181,4 +187,22 @@ message CreateFolderRequest {
 message CreateFolderResponse {
   // Set when nothing was made, and why.
   optional Refusal refusal = 1;
+}
+
+message CreateURLRequest {
+  // The address, as a browser would go to it. It is read into the one form
+  // every spelling of it reaches, and one nothing can be fetched from is
+  // refused and no file is made.
+  string url = 1;
+
+  // The folder it goes in, as a path relative to the root. Empty is the root.
+  string path = 2;
+}
+
+message CreateURLResponse {
+  // Where the file is filed. Empty when nothing was made.
+  string path = 1;
+
+  // Set when nothing was made, and why.
+  optional Refusal refusal = 2;
 }

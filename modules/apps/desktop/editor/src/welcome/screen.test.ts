@@ -2,13 +2,13 @@
  * What a window holding nothing offers, asked without a screen.
  *
  * The negatives are the ones worth having: a window over no vault offers no
- * way into one, a vault still being read offers no new note, and a key is
+ * way into one, a vault that never opened offers no new note, and a key is
  * drawn on a row only where the table binds that letter to that command.
  */
 import { describe, expect, it } from 'vitest'
 import { keyChord } from '@numen/ui'
-import type { VaultList, Vault } from '../core'
-import { keyOf } from '../command/chords'
+import type { VaultList, Vault } from '../shared/core'
+import { keyOf } from '../shared/command/chords'
 import { COMMANDS, SETTINGS, vaultsOn, waysIn, type ShownVault, type Words } from './screen'
 import { WORDS as own } from './words'
 
@@ -39,8 +39,8 @@ const at = (over: Partial<ShownVault> = {}): ShownVault => ({
 })
 
 const vault = (id: string, name: string, missing = false): Vault => ({
-  name: id,
-  displayName: name,
+  id,
+  name,
   path: `/vaults/${name}`,
   missing,
 })
@@ -85,8 +85,8 @@ describe('the ways into the vault', () => {
     ])
   })
 
-  /** A note cannot be made in a vault the core has not read. The rest stand. */
-  it('leave out the new note while the vault is still being read', () => {
+  /** A note cannot be made in a vault that never opened. The rest stand. */
+  it('leave out the new note where the vault could not be opened', () => {
     const ways = waysIn(at({ ready: false }), words, APPLE)
     expect(ways.map((one) => one.id)).toStrictEqual(['find', COMMANDS, 'plex', 'agent', SETTINGS])
   })

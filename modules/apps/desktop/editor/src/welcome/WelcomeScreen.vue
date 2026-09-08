@@ -10,16 +10,17 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { opensVault, WelcomePage } from '@numen/ui'
 import type { Tab } from '@numen/ui'
-import { invocationOf, type CommandTarget, type VaultRef } from '../command/commands'
-import type { Commands } from '../command/palette'
-import type { VaultList } from '../core'
-import { does, type CommandDeps } from '../command/handlers'
-import type { SearchState } from '../command/search'
-import { iconFor } from '../icons'
-import { keysOf } from '../command/chords'
-import { VERSION } from '../version'
+import { invocationOf, type CommandTarget, type VaultRef } from '../shared/command/target'
+import type { Commands } from '../shared/command/palette'
+import type { VaultList } from '../shared/core'
+import type { CommandDeps } from '../shared/command/deps'
+import { does } from '../shared/command/handlers'
+import type { SearchState } from '../shared/command/search'
+import { iconFor } from '../shared/icons'
+import { keysOf } from '../shared/command/chords'
+import { VERSION } from './version'
 import { COMMANDS, vaultsOn, waysIn } from './screen'
-import { WORDS as words } from '../words'
+import { WORDS as words } from '../shared/words'
 
 const props = defineProps<{
   /** Every vault the installation holds, as the list last answered. */
@@ -72,9 +73,9 @@ const welcoming = computed(
 
 /** A vault chosen on the welcome screen, shown in this window in place of none. */
 const opens = (id: string) => {
-  const one = props.listed.vaults.find((vault) => vault.name === id)
+  const one = props.listed.vaults.find((vault) => vault.id === id)
   if (!one) return
-  const vault: VaultRef = { id: one.name, name: one.displayName }
+  const vault: VaultRef = { id: one.id, name: one.name }
   void does(invocationOf('openVault', { ...props.where(), vault }), props.doing, words)
 }
 

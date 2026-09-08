@@ -24,32 +24,28 @@ import {
   Waypoints,
 } from '@lucide/vue'
 import { ref } from 'vue'
-import WorkspaceLayout from '@/workspace/WorkspaceLayout.vue'
-import Plex from '@/plex/Plex.vue'
-import Editor from '@/editor/Editor.vue'
-import Palette from '@/palette/Palette.vue'
-import Reader from '@/reader/Reader.vue'
-import Tree from '@/tree/Tree.vue'
-import Menu from '@/menu/Menu.vue'
-import type { MenuItem } from '@/menu/item'
+import WorkspaceLayout from '@/features/workspace/WorkspaceLayout.vue'
+import Plex from '@/features/plex/Plex.vue'
+import Editor from '@/features/editor/Editor.vue'
+import Palette from '@/features/palette/Palette.vue'
+import Reader from '@/features/reader/Reader.vue'
+import Tree from '@/features/tree/Tree.vue'
+import { Menu } from '@/shared/ui/menu'
+import type { MenuItem } from '@/shared/ui/menu'
 import Agent from './Agent.vue'
-import { branch, pane, type Tab, type Workspace as State } from '@/workspace/node'
-import { keyChord } from '@/palette/item'
-import type {
-  PaletteAction,
-  PaletteGroup,
-  PaletteItem,
-  PaletteKeys,
-  PaletteSpan,
-} from '@/palette/item'
-import type { PlexPart } from '@/plex/inside'
-import { RELATED_SEATS, type PlexRelatedSeat } from '@/plex/seat'
-import type { PlexEdge } from '@/plex/edge'
-import type { PlexNeighbourhood } from '@/plex/neighbourhood'
-import type { PlexNode } from '@/plex/node'
-import type { Row } from '@/tree/row'
-import type { Turn } from '@/thread/turn'
-import { hovered } from '@/fixtures/colour'
+import { branch, pane, type Tab, type Workspace as State } from '@/features/workspace/node'
+import { keyChord } from '@/features/palette/item'
+import type { PaletteAction, PaletteGroup, PaletteItem } from '@/features/palette/item'
+import type { Span } from '@/shared/lib/span'
+import type { PaletteKeys } from '@/shared/ui/key-cap'
+import type { PlexPart } from '@/features/plex/inside'
+import { RELATED_SEATS, type PlexRelatedSeat } from '@/features/plex/seat'
+import type { PlexEdge } from '@/features/plex/edge'
+import type { PlexNeighbourhood } from '@/features/plex/neighbourhood'
+import type { PlexNode } from '@/features/plex/node'
+import type { Row } from '@/features/tree/row'
+import type { Turn } from '@/features/thread/turn'
+import { hovered } from '@/shared/fixtures/colour'
 
 const PLEX = 'plex'
 const NOTE = 'note'
@@ -381,8 +377,8 @@ const TURNS: readonly Turn[] = [
 ]
 
 /** Where a run of a title stands, every time it stands there. */
-const marks = (title: string, word: string): PaletteSpan[] => {
-  const spans: PaletteSpan[] = []
+const marks = (title: string, word: string): Span[] => {
+  const spans: Span[] = []
   const lower = title.toLowerCase()
   for (let at = lower.indexOf(word); at >= 0; at = lower.indexOf(word, at + 1)) {
     spans.push({ from: at, to: at + word.length })
@@ -634,8 +630,7 @@ const screen = ({
       menuIcon,
       groups: panel === 'commands' ? COMMANDS : GROUPS,
       placeholder: panel === 'commands' ? 'Type a command' : 'Search',
-      pages: BOOK_LEAVES,
-      sheets: Array.from({ length: BOOK_LEAVES }, () => PAPER),
+      pages: Array.from({ length: BOOK_LEAVES }, () => PAPER),
       picture: (page: number) => drawnPage(page),
       highlightsOn: (page: number) => (page === BOOK_FIRST ? HIGHLIGHTS : []),
       go: (page: number) => {
@@ -687,7 +682,6 @@ const screen = ({
             v-else-if="id === BOOK"
             class="h-full"
             :pages="pages"
-            :sheets="sheets"
             :at="at"
             :picture="picture"
             :highlights="highlightsOn"

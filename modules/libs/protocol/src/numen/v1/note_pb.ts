@@ -14,7 +14,7 @@ import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobu
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { MoveResult } from "./file_pb.js";
 import { file_numen_v1_file } from "./file_pb.js";
-import type { Fingerprint, NoteType, Refusal } from "./shared_pb.js";
+import type { Fingerprint, NoteType, Refusal, Span } from "./shared_pb.js";
 import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -22,7 +22,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/note.proto.
  */
 export const file_numen_v1_note: GenFile = /*@__PURE__*/
-  fileDesc("ChNudW1lbi92MS9ub3RlLnByb3RvEghudW1lbi52MSI3CgROb3RlEgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkSEgoKaWRlbnRpZmllchgDIAEoCSIXChVHZXRPcGVuaW5nTm90ZVJlcXVlc3QiRAoWR2V0T3BlbmluZ05vdGVSZXNwb25zZRIhCgRub3RlGAEgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBQgcKBV9ub3RlIicKF0dldE5laWdoYm91cmhvb2RSZXF1ZXN0EgwKBHBhdGgYASABKAkihwEKGEdldE5laWdoYm91cmhvb2RSZXNwb25zZRIdCgVmb2N1cxgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJAoHcmVsYXRlZBgCIAMoCzITLm51bWVuLnYxLk5laWdoYm91chImCgpmb2N1c190eXBlGAMgASgOMhIubnVtZW4udjEuTm90ZVR5cGUiuQEKCU5laWdoYm91chIcCgRub3RlGAEgASgLMg4ubnVtZW4udjEuTm90ZRIcCgRzZWF0GAIgASgOMg4ubnVtZW4udjEuU2VhdBINCgVsYWJlbBgDIAEoCRIPCgd0aHJvdWdoGAQgASgJEg4KBm11dHVhbBgFIAEoCBIgCgR0eXBlGAYgASgOMhIubnVtZW4udjEuTm90ZVR5cGVKBAgHEAhKBAgIEAlSCWFtYmlndW91c1IHcmVmdXNhbCI4ChdSZXNvbHZlQWRkcmVzc2VzUmVxdWVzdBIMCgRmcm9tGAEgASgJEg8KB3dyaXR0ZW4YAiADKAkiRwoYUmVzb2x2ZUFkZHJlc3Nlc1Jlc3BvbnNlEisKCHJlc29sdmVkGAEgAygLMhkubnVtZW4udjEuUmVzb2x2ZWRBZGRyZXNzImMKD1Jlc29sdmVkQWRkcmVzcxIPCgd3cml0dGVuGAEgASgJEgwKBHBhdGgYAiABKAkSDQoFdmF1bHQYAyABKAkSDwoHY3Jvc3NlZBgEIAEoCBIRCglhbWJpZ3VvdXMYBSABKAgiJAoTTGlzdEhlYWRpbmdzUmVxdWVzdBINCgVwYXRocxgBIAMoCSJAChRMaXN0SGVhZGluZ3NSZXNwb25zZRIoCghoZWFkaW5ncxgBIAMoCzIWLm51bWVuLnYxLk5vdGVIZWFkaW5ncyJBCgxOb3RlSGVhZGluZ3MSDAoEcGF0aBgBIAEoCRIjCghoZWFkaW5ncxgCIAMoCzIRLm51bWVuLnYxLkhlYWRpbmciNAoHSGVhZGluZxIMCgR0ZXh0GAEgASgJEgwKBGxpbmUYAiABKAUSDQoFbGV2ZWwYAyABKAUiHwoPUmVhZE5vdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkihAEKEFJlYWROb3RlUmVzcG9uc2USDAoEYm9keRgBIAEoCRInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBEiYKAmF0GAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAYgBAUIKCghfcmVmdXNhbEIFCgNfYXQiPAoITGFzdFJlYWQSDQoFcHJvc2UYASABKAkSIQoCYXQYAiABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludCJeChBXcml0ZU5vdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkSDAoEYm9keRgCIAEoCRIlCgRzZWVuGAMgASgLMhIubnVtZW4udjEuTGFzdFJlYWRIAIgBAUIHCgVfc2VlbiKaAQoRV3JpdGVOb3RlUmVzcG9uc2USJwoHcmVmdXNhbBgBIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAGIAQESEgoKdW5sZXZlbGxlZBgEIAEoCEIKCghfcmVmdXNhbEIFCgNfYXRKBAgCEANSB2NoYW5nZWQiQgoHTmV3TGluaxIKCgJ0bxgBIAEoCRIcCgRyb2xlGAIgASgOMg4ubnVtZW4udjEuUm9sZRINCgVsYWJlbBgDIAEoCSJUChFDcmVhdGVOb3RlUmVxdWVzdBINCgV0aXRsZRgBIAEoCRIOCgZmb2xkZXIYAiABKAkSIAoFbGlua3MYAyADKAsyES5udW1lbi52MS5OZXdMaW5rImsKEkNyZWF0ZU5vdGVSZXNwb25zZRIMCgRwYXRoGAEgASgJEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQESEgoKdW5sZXZlbGxlZBgDIAEoCEIKCghfcmVmdXNhbCJBChBXcml0ZUxpbmtSZXF1ZXN0EgwKBHBhdGgYASABKAkSHwoEbGluaxgCIAEoCzIRLm51bWVuLnYxLk5ld0xpbmsiVwoRV3JpdGVMaW5rUmVzcG9uc2USJwoHcmVmdXNhbBgBIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBAUIKCghfcmVmdXNhbEoECAIQA1IHY2hhbmdlZCIwChFSZW5hbWVOb3RlUmVxdWVzdBIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJItwBChJSZW5hbWVOb3RlUmVzcG9uc2USDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIdCgJieRgDIAEoDjIRLm51bWVuLnYxLk5hbWVkQnkSKAoFbW92ZWQYBCABKAsyFC5udW1lbi52MS5Nb3ZlUmVzdWx0SACIAQESJwoHcmVmdXNhbBgFIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAYgBARISCgp1bmxldmVsbGVkGAcgASgIQggKBl9tb3ZlZEIKCghfcmVmdXNhbEoECAYQB1IHY2hhbmdlZCITChFXYXRjaEVkaXRzUmVxdWVzdCJoChJXYXRjaEVkaXRzUmVzcG9uc2USDgoGY2hhbmdlGAEgASgJEgwKBHBhdGgYAiABKAkSDAoEZnJvbRgDIAEoBRIKCgJ0bxgEIAEoBRIMCgR0ZXh0GAUgASgJEgwKBGRvbmUYBiABKAgqXgoEU2VhdBIUChBTRUFUX1VOU1BFQ0lGSUVEEAASDwoLU0VBVF9QQVJFTlQQARIOCgpTRUFUX0NISUxEEAISDQoJU0VBVF9KVU1QEAMSEAoMU0VBVF9TSUJMSU5HEAQqbwoEUm9sZRIUChBST0xFX1VOU1BFQ0lGSUVEEAASDwoLUk9MRV9QQVJFTlQQARIOCgpST0xFX0NISUxEEAISDQoJUk9MRV9KVU1QEAMSDAoIUk9MRV9SRUYQBBITCg9ST0xFX0FUVEFDSE1FTlQQBSpUCgdOYW1lZEJ5EhgKFE5BTUVEX0JZX1VOU1BFQ0lGSUVEEAASGAoUTkFNRURfQllfRlJPTlRNQVRURVIQARIVChFOQU1FRF9CWV9GSUxFTkFNRRACMpMGCgtOb3RlU2VydmljZRJTCg5HZXRPcGVuaW5nTm90ZRIfLm51bWVuLnYxLkdldE9wZW5pbmdOb3RlUmVxdWVzdBogLm51bWVuLnYxLkdldE9wZW5pbmdOb3RlUmVzcG9uc2USWQoQR2V0TmVpZ2hib3VyaG9vZBIhLm51bWVuLnYxLkdldE5laWdoYm91cmhvb2RSZXF1ZXN0GiIubnVtZW4udjEuR2V0TmVpZ2hib3VyaG9vZFJlc3BvbnNlElkKEFJlc29sdmVBZGRyZXNzZXMSIS5udW1lbi52MS5SZXNvbHZlQWRkcmVzc2VzUmVxdWVzdBoiLm51bWVuLnYxLlJlc29sdmVBZGRyZXNzZXNSZXNwb25zZRJNCgxMaXN0SGVhZGluZ3MSHS5udW1lbi52MS5MaXN0SGVhZGluZ3NSZXF1ZXN0Gh4ubnVtZW4udjEuTGlzdEhlYWRpbmdzUmVzcG9uc2USQQoIUmVhZE5vdGUSGS5udW1lbi52MS5SZWFkTm90ZVJlcXVlc3QaGi5udW1lbi52MS5SZWFkTm90ZVJlc3BvbnNlEkQKCVdyaXRlTm90ZRIaLm51bWVuLnYxLldyaXRlTm90ZVJlcXVlc3QaGy5udW1lbi52MS5Xcml0ZU5vdGVSZXNwb25zZRJHCgpDcmVhdGVOb3RlEhsubnVtZW4udjEuQ3JlYXRlTm90ZVJlcXVlc3QaHC5udW1lbi52MS5DcmVhdGVOb3RlUmVzcG9uc2USRAoJV3JpdGVMaW5rEhoubnVtZW4udjEuV3JpdGVMaW5rUmVxdWVzdBobLm51bWVuLnYxLldyaXRlTGlua1Jlc3BvbnNlEkcKClJlbmFtZU5vdGUSGy5udW1lbi52MS5SZW5hbWVOb3RlUmVxdWVzdBocLm51bWVuLnYxLlJlbmFtZU5vdGVSZXNwb25zZRJJCgpXYXRjaEVkaXRzEhsubnVtZW4udjEuV2F0Y2hFZGl0c1JlcXVlc3QaHC5udW1lbi52MS5XYXRjaEVkaXRzUmVzcG9uc2UwAUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_file, file_numen_v1_shared]);
+  fileDesc("ChNudW1lbi92MS9ub3RlLnByb3RvEghudW1lbi52MSI3CgROb3RlEgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkSEgoKaWRlbnRpZmllchgDIAEoCSIXChVHZXRPcGVuaW5nTm90ZVJlcXVlc3QiRAoWR2V0T3BlbmluZ05vdGVSZXNwb25zZRIhCgRub3RlGAEgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBQgcKBV9ub3RlIicKF0dldE5laWdoYm91cmhvb2RSZXF1ZXN0EgwKBHBhdGgYASABKAkihwEKGEdldE5laWdoYm91cmhvb2RSZXNwb25zZRIdCgVmb2N1cxgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJAoHcmVsYXRlZBgCIAMoCzITLm51bWVuLnYxLk5laWdoYm91chImCgpmb2N1c190eXBlGAMgASgOMhIubnVtZW4udjEuTm90ZVR5cGUimQEKCU5laWdoYm91chIcCgRub3RlGAEgASgLMg4ubnVtZW4udjEuTm90ZRIcCgRzZWF0GAIgASgOMg4ubnVtZW4udjEuU2VhdBINCgVsYWJlbBgDIAEoCRIPCgd0aHJvdWdoGAQgASgJEg4KBm11dHVhbBgFIAEoCBIgCgR0eXBlGAYgASgOMhIubnVtZW4udjEuTm90ZVR5cGUiOAoXUmVzb2x2ZUFkZHJlc3Nlc1JlcXVlc3QSDAoEZnJvbRgBIAEoCRIPCgd3cml0dGVuGAIgAygJIkcKGFJlc29sdmVBZGRyZXNzZXNSZXNwb25zZRIrCghyZXNvbHZlZBgBIAMoCzIZLm51bWVuLnYxLlJlc29sdmVkQWRkcmVzcyJjCg9SZXNvbHZlZEFkZHJlc3MSDwoHd3JpdHRlbhgBIAEoCRIMCgRwYXRoGAIgASgJEg0KBXZhdWx0GAMgASgJEg8KB2Nyb3NzZWQYBCABKAgSEQoJYW1iaWd1b3VzGAUgASgIIiQKE0xpc3RIZWFkaW5nc1JlcXVlc3QSDQoFcGF0aHMYASADKAkiQAoUTGlzdEhlYWRpbmdzUmVzcG9uc2USKAoIaGVhZGluZ3MYASADKAsyFi5udW1lbi52MS5Ob3RlSGVhZGluZ3MiQQoMTm90ZUhlYWRpbmdzEgwKBHBhdGgYASABKAkSIwoIaGVhZGluZ3MYAiADKAsyES5udW1lbi52MS5IZWFkaW5nIjQKB0hlYWRpbmcSDAoEdGV4dBgBIAEoCRIMCgRsaW5lGAIgASgFEg0KBWxldmVsGAMgASgFIh8KD1JlYWROb3RlUmVxdWVzdBIMCgRwYXRoGAEgASgJIoQBChBSZWFkTm90ZVJlc3BvbnNlEgwKBGJvZHkYASABKAkSJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAGIAQFCCgoIX3JlZnVzYWxCBQoDX2F0IjwKCExhc3RSZWFkEg0KBXByb3NlGAEgASgJEiEKAmF0GAIgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnQiXgoQV3JpdGVOb3RlUmVxdWVzdBIMCgRwYXRoGAEgASgJEgwKBGJvZHkYAiABKAkSJQoEc2VlbhgDIAEoCzISLm51bWVuLnYxLkxhc3RSZWFkSACIAQFCBwoFX3NlZW4iiwEKEVdyaXRlTm90ZVJlc3BvbnNlEicKB3JlZnVzYWwYASABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQESJgoCYXQYAiABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgBiAEBEhIKCnVubGV2ZWxsZWQYAyABKAhCCgoIX3JlZnVzYWxCBQoDX2F0Ij8KBExpbmsSCgoCdG8YASABKAkSHAoEcm9sZRgCIAEoDjIOLm51bWVuLnYxLlJvbGUSDQoFbGFiZWwYAyABKAkiTwoRQ3JlYXRlTm90ZVJlcXVlc3QSDQoFdGl0bGUYASABKAkSDAoEcGF0aBgCIAEoCRIdCgVsaW5rcxgDIAMoCzIOLm51bWVuLnYxLkxpbmsiawoSQ3JlYXRlTm90ZVJlc3BvbnNlEgwKBHBhdGgYASABKAkSJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARISCgp1bmxldmVsbGVkGAMgASgIQgoKCF9yZWZ1c2FsIj4KEFdyaXRlTGlua1JlcXVlc3QSDAoEcGF0aBgBIAEoCRIcCgRsaW5rGAIgASgLMg4ubnVtZW4udjEuTGluayJIChFXcml0ZUxpbmtSZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsIjAKEVJlbmFtZU5vdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkizQEKElJlbmFtZU5vdGVSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEh0KAmJ5GAMgASgOMhEubnVtZW4udjEuTmFtZWRCeRIoCgVtb3ZlZBgEIAEoCzIULm51bWVuLnYxLk1vdmVSZXN1bHRIAIgBARInCgdyZWZ1c2FsGAUgASgOMhEubnVtZW4udjEuUmVmdXNhbEgBiAEBEhIKCnVubGV2ZWxsZWQYBiABKAhCCAoGX21vdmVkQgoKCF9yZWZ1c2FsIhMKEVdhdGNoRWRpdHNSZXF1ZXN0ImwKEldhdGNoRWRpdHNSZXNwb25zZRIOCgZjaGFuZ2UYASABKAkSDAoEcGF0aBgCIAEoCRIcCgRzcGFuGAMgASgLMg4ubnVtZW4udjEuU3BhbhIMCgR0ZXh0GAQgASgJEgwKBGRvbmUYBSABKAgqXgoEU2VhdBIUChBTRUFUX1VOU1BFQ0lGSUVEEAASDwoLU0VBVF9QQVJFTlQQARIOCgpTRUFUX0NISUxEEAISDQoJU0VBVF9KVU1QEAMSEAoMU0VBVF9TSUJMSU5HEAQqbwoEUm9sZRIUChBST0xFX1VOU1BFQ0lGSUVEEAASDwoLUk9MRV9QQVJFTlQQARIOCgpST0xFX0NISUxEEAISDQoJUk9MRV9KVU1QEAMSDAoIUk9MRV9SRUYQBBITCg9ST0xFX0FUVEFDSE1FTlQQBSpUCgdOYW1lZEJ5EhgKFE5BTUVEX0JZX1VOU1BFQ0lGSUVEEAASGAoUTkFNRURfQllfRlJPTlRNQVRURVIQARIVChFOQU1FRF9CWV9GSUxFTkFNRRACMpMGCgtOb3RlU2VydmljZRJTCg5HZXRPcGVuaW5nTm90ZRIfLm51bWVuLnYxLkdldE9wZW5pbmdOb3RlUmVxdWVzdBogLm51bWVuLnYxLkdldE9wZW5pbmdOb3RlUmVzcG9uc2USWQoQR2V0TmVpZ2hib3VyaG9vZBIhLm51bWVuLnYxLkdldE5laWdoYm91cmhvb2RSZXF1ZXN0GiIubnVtZW4udjEuR2V0TmVpZ2hib3VyaG9vZFJlc3BvbnNlElkKEFJlc29sdmVBZGRyZXNzZXMSIS5udW1lbi52MS5SZXNvbHZlQWRkcmVzc2VzUmVxdWVzdBoiLm51bWVuLnYxLlJlc29sdmVBZGRyZXNzZXNSZXNwb25zZRJNCgxMaXN0SGVhZGluZ3MSHS5udW1lbi52MS5MaXN0SGVhZGluZ3NSZXF1ZXN0Gh4ubnVtZW4udjEuTGlzdEhlYWRpbmdzUmVzcG9uc2USQQoIUmVhZE5vdGUSGS5udW1lbi52MS5SZWFkTm90ZVJlcXVlc3QaGi5udW1lbi52MS5SZWFkTm90ZVJlc3BvbnNlEkQKCVdyaXRlTm90ZRIaLm51bWVuLnYxLldyaXRlTm90ZVJlcXVlc3QaGy5udW1lbi52MS5Xcml0ZU5vdGVSZXNwb25zZRJHCgpDcmVhdGVOb3RlEhsubnVtZW4udjEuQ3JlYXRlTm90ZVJlcXVlc3QaHC5udW1lbi52MS5DcmVhdGVOb3RlUmVzcG9uc2USRAoJV3JpdGVMaW5rEhoubnVtZW4udjEuV3JpdGVMaW5rUmVxdWVzdBobLm51bWVuLnYxLldyaXRlTGlua1Jlc3BvbnNlEkcKClJlbmFtZU5vdGUSGy5udW1lbi52MS5SZW5hbWVOb3RlUmVxdWVzdBocLm51bWVuLnYxLlJlbmFtZU5vdGVSZXNwb25zZRJJCgpXYXRjaEVkaXRzEhsubnVtZW4udjEuV2F0Y2hFZGl0c1JlcXVlc3QaHC5udW1lbi52MS5XYXRjaEVkaXRzUmVzcG9uc2UwAUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_file, file_numen_v1_shared]);
 
 /**
  * Note is a note as something else refers to it.
@@ -521,7 +521,7 @@ export type WriteNoteResponse = Message<"numen.v1.WriteNoteResponse"> & {
    * The file the write produced, for the caller to present at its next write.
    * Absent when nothing was written.
    *
-   * @generated from field: optional numen.v1.Fingerprint at = 3;
+   * @generated from field: optional numen.v1.Fingerprint at = 2;
    */
   at?: Fingerprint | undefined;
 
@@ -530,7 +530,7 @@ export type WriteNoteResponse = Message<"numen.v1.WriteNoteResponse"> & {
    * The write happened and `at` stands; search answers about this note as it
    * read it last, until a walk goes past.
    *
-   * @generated from field: bool unlevelled = 4;
+   * @generated from field: bool unlevelled = 3;
    */
   unlevelled: boolean;
 };
@@ -543,13 +543,13 @@ export const WriteNoteResponseSchema: GenMessage<WriteNoteResponse> = /*@__PURE_
   messageDesc(file_numen_v1_note, 17);
 
 /**
- * NewLink is one relationship as the note it is written in declares it: the
- * note at the other end, by the path it is filed under, and what kind of
+ * Link is one relationship as the note it is written in declares it: the note
+ * at the other end, by the path it is filed under, and what kind of
  * relationship it is.
  *
- * @generated from message numen.v1.NewLink
+ * @generated from message numen.v1.Link
  */
-export type NewLink = Message<"numen.v1.NewLink"> & {
+export type Link = Message<"numen.v1.Link"> & {
   /**
    * @generated from field: string to = 1;
    */
@@ -569,10 +569,10 @@ export type NewLink = Message<"numen.v1.NewLink"> & {
 };
 
 /**
- * Describes the message numen.v1.NewLink.
- * Use `create(NewLinkSchema)` to create a new message.
+ * Describes the message numen.v1.Link.
+ * Use `create(LinkSchema)` to create a new message.
  */
-export const NewLinkSchema: GenMessage<NewLink> = /*@__PURE__*/
+export const LinkSchema: GenMessage<Link> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 18);
 
 /**
@@ -587,18 +587,18 @@ export type CreateNoteRequest = Message<"numen.v1.CreateNoteRequest"> & {
   title: string;
 
   /**
-   * Where in the vault it goes, relative to the root. Empty is the root.
+   * The folder it goes in, as a path relative to the root. Empty is the root.
    *
-   * @generated from field: string folder = 2;
+   * @generated from field: string path = 2;
    */
-  folder: string;
+  path: string;
 
   /**
    * What the note is joined to, written into it as it is made.
    *
-   * @generated from field: repeated numen.v1.NewLink links = 3;
+   * @generated from field: repeated numen.v1.Link links = 3;
    */
-  links: NewLink[];
+  links: Link[];
 };
 
 /**
@@ -655,9 +655,9 @@ export type WriteLinkRequest = Message<"numen.v1.WriteLinkRequest"> & {
   path: string;
 
   /**
-   * @generated from field: numen.v1.NewLink link = 2;
+   * @generated from field: numen.v1.Link link = 2;
    */
-  link?: NewLink | undefined;
+  link?: Link | undefined;
 };
 
 /**
@@ -763,7 +763,7 @@ export type RenameNoteResponse = Message<"numen.v1.RenameNoteResponse"> & {
    * with it. Search answers about these files as it read them last, until a
    * walk goes past.
    *
-   * @generated from field: bool unlevelled = 7;
+   * @generated from field: bool unlevelled = 6;
    */
   unlevelled: boolean;
 };
@@ -808,22 +808,17 @@ export type WatchEditsResponse = Message<"numen.v1.WatchEditsResponse"> & {
   path: string;
 
   /**
-   * The stretch being replaced, counted the way a client counts text: in UTF-16
+   * The run being replaced, counted the way a client counts text: in UTF-16
    * code units over the prose a read answers with.
    *
-   * @generated from field: int32 from = 3;
+   * @generated from field: numen.v1.Span span = 3;
    */
-  from: number;
+  span?: Span | undefined;
 
   /**
-   * @generated from field: int32 to = 4;
-   */
-  to: number;
-
-  /**
-   * What is going in where that stretch stands.
+   * What is going in where that span stands.
    *
-   * @generated from field: string text = 5;
+   * @generated from field: string text = 4;
    */
   text: string;
 
@@ -831,7 +826,7 @@ export type WatchEditsResponse = Message<"numen.v1.WatchEditsResponse"> & {
    * The last report of this change, which arrives whether the change landed or
    * was refused.
    *
-   * @generated from field: bool done = 6;
+   * @generated from field: bool done = 5;
    */
   done: boolean;
 };

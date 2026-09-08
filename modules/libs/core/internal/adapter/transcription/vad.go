@@ -27,12 +27,12 @@ const (
 	speechMemory = 2 * 128
 )
 
-// stretches cuts one recording into the stretches that carry speech.
+// segments cuts one recording into the segments that carry speech.
 //
-// The model answers for one window at a time, carrying what it heard in the
-// windows before. A run of windows it is sure enough about is a stretch, closed
+// The model answers for one window at a time, carrying what it made of the
+// windows before. A run of windows it is sure enough about is a segment, closed
 // by the quiet after it and widened a little at each end.
-func (t *Transcriber) stretches(ctx context.Context, sound []float32) ([]port.Audio, error) {
+func (t *Transcriber) segments(ctx context.Context, sound []float32) ([]port.Audio, error) {
 	scores, err := t.voiced(ctx, sound)
 	if err != nil {
 		return nil, err
@@ -131,7 +131,7 @@ func (t *Transcriber) listen(window, state []float32, rate []int64) (float32, []
 	}
 	defer hertz.Destroy()
 
-	out, err := t.speech.Run(map[string]*ort.Value{
+	out, err := t.segmenter.Run(map[string]*ort.Value{
 		speechInput: sound, speechState: carried, speechRate: hertz,
 	})
 	runtime.KeepAlive(window)

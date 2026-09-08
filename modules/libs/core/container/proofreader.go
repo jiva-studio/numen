@@ -85,7 +85,7 @@ func (c Config) ProofreadingScans() source.ProofreadingConfig {
 
 // ProofreadingSpeech is the same for what a model heard.
 func (c Config) ProofreadingSpeech() source.ProofreadingConfig {
-	return c.proofreadingFor(c.SpeechProofreading)
+	return c.proofreadingFor(c.TranscriptProofreading)
 }
 
 // proofreadingFor is what a reading of one kind is put right with: the profile

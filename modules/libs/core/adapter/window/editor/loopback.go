@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	derived "github.com/jiva-studio/numen/modules/libs/core/text"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -111,6 +112,12 @@ func (l *Loopback) serving() http.Handler {
 			http.Error(w, "not a file of a vault", http.StatusBadRequest)
 			return
 		}
+		// The page holding a video's player is served here and names no vault:
+		// it is a page of this application's own, and what it frames is a host.
+		if id == embedRoute {
+			l.framing(w, r, rest)
+			return
+		}
 		path, err := url.PathUnescape(rest)
 		if err != nil {
 			http.Error(w, "not a file of a vault", http.StatusBadRequest)
@@ -169,6 +176,13 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 		refuse(w, errNoVault)
 		return
 	}
+	// A copy of what a url points at is kept in the vault's own folder,
+	// which the vault's reader is refused, so it is served from the store it
+	// was written to. Every other file of the vault is
+	// served as the file it is.
+	if strings.HasSuffix(at, domain.URLExtension) && a.served(w, r, held, at, named) {
+		return
+	}
 	reader, err := a.Readers.Open(held)
 	if err != nil {
 		refuse(w, err)
@@ -195,6 +209,43 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 		w.Header().Set("Content-Type", named)
 	}
 	http.ServeContent(w, r, ref.Path, ref.ModTime, file)
+}
+
+// served answers with the copy fetched for a url, and says whether it
+// answered at all. One with no copy on this disk is a file like any other,
+// and is served as one.
+//
+// The size the address carries is the copy's own: a copy fetched again under
+// the same name is a different address.
+func (a *API) served(
+	w http.ResponseWriter, r *http.Request, held domain.Vault, at string, named fingerprint,
+) bool {
+	_, stores, ready := a.transcribing()
+	if !ready {
+		return false
+	}
+	points := a.points(r.Context(), held, domain.Fingerprint{Path: at, Kind: domain.KindURL})
+	if playing(points) == "" {
+		return false
+	}
+	store, err := stores.Open(held)
+	if err != nil {
+		return false
+	}
+	name := derived.Copy(derived.Fingerprint([]byte(string(points))))
+	file, size, err := store.Open(r.Context(), name)
+	if err != nil {
+		return false
+	}
+	defer file.Close()
+	if named.size != size {
+		refuse(w, errChanged)
+		return true
+	}
+	w.Header().Set("Cache-Control", immutable)
+	w.Header().Set("Content-Type", derived.CopyType)
+	http.ServeContent(w, r, name, time.Time{}, file)
+	return true
 }
 
 // vaultOf is the vault an address names. The one the window shows is answered

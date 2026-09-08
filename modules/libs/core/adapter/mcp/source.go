@@ -36,7 +36,7 @@ func addSourceTools(server *sdk.Server, core Core) {
 func addSourceReadingTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_list",
-		Title: "List the documents a vault holds",
+		Title: "List documents",
 		Description: "List the books, papers and scans filed in the vault beside its notes, " +
 			"and say of each whether a model has read it. A scanned document carries no " +
 			"text of its own until it is read, and nothing in the words of a document " +
@@ -84,7 +84,7 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_read",
-		Title: "Read a run of a document's text",
+		Title: "Read a range of a document",
 		Description: "Read a stretch of one document's own text, in the offsets a search's " +
 			"passage carries. A passage is a window cut to a size and it ends where it " +
 			"was cut, so what answers the question often stands just past it: ask for " +
@@ -135,7 +135,7 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 func addSourceWritingTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_recognise",
-		Title: "Read a scanned document",
+		Title: "Recognise a scanned document",
 		Description: "Have a model read one scanned document and write what it says into " +
 			"the vault. The words land as files under `.numen/ocr/`, beside the person's " +
 			"notes and inside the folder they sync — a book is megabytes of them. The " +
@@ -180,18 +180,18 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_transcribe",
-		Title: "Write down what a recording says",
+		Title: "Transcribe a recording",
 		Description: "Have a model listen to one recording and write the words it carries " +
-			"into the vault. They land as files under `.numen/asr/`, beside the person's " +
+			"into the vault. They land as files under `.numen/transcript/`, beside the person's " +
 			"notes and inside the folder they sync — an hour of talk is megabytes of " +
-			"them. What has been heard is searchable as it goes, so a search finds " +
-			"the first minutes of a talk long before the last of them are heard. This " +
-			"is slow — about as long as the recording itself. A vault's recordings are " +
-			"listened to on their own where the installation is set to; ask for this " +
-			"when one is wanted now, or when the installation leaves it to the hand. A " +
-			"recording asked for by name is heard whatever the installation listens to " +
-			"on its own, and waits behind nothing but the recordings asked for before " +
-			"it, so this is asked once and no more.",
+			"them. What has been transcribed is searchable as it goes, so a search " +
+			"finds the first minutes of a talk long before the last of them are " +
+			"reached. This is slow — about as long as the recording itself. A vault's " +
+			"recordings are transcribed on their own where the installation is set to; " +
+			"ask for this when one is wanted now, or when the installation leaves it to " +
+			"the hand. A recording asked for by name is transcribed whatever the " +
+			"installation does on its own, and waits behind nothing but the recordings " +
+			"asked for before it, so this is asked once and no more.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path string `json:"path" jsonschema:"the recording, as a path inside the vault"`
 	}) (*sdk.CallToolResult, struct {

@@ -1,7 +1,9 @@
 package text_test
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"io/fs"
 	"strings"
 	"testing"
@@ -25,6 +27,30 @@ func (b beside) Read(_ context.Context, name string) ([]byte, error) {
 	}
 	return raw, nil
 }
+
+// Open is one file of the store, which a copy of a video is played from.
+func (b beside) Open(_ context.Context, name string) (io.ReadSeekCloser, int64, error) {
+	raw, held := b[name]
+	if !held {
+		return nil, 0, fs.ErrNotExist
+	}
+	return readingBytes{bytes.NewReader(raw)}, int64(len(raw)), nil
+}
+
+// Take puts what a reader gives under a name.
+func (b beside) Take(_ context.Context, name string, from io.Reader) (int64, error) {
+	raw, err := io.ReadAll(from)
+	if err != nil {
+		return 0, err
+	}
+	b[name] = raw
+	return int64(len(raw)), nil
+}
+
+// readingBytes is a reader of bytes already in memory, closed by nobody.
+type readingBytes struct{ *bytes.Reader }
+
+func (readingBytes) Close() error { return nil }
 
 func (b beside) Write(_ context.Context, name string, content []byte) error {
 	b[name] = content
@@ -89,7 +115,7 @@ func TestATranscriptNothingPutRightReadsAsWhatWasHeard(t *testing.T) {
 // put right to goes with the recording it belongs to.
 func TestWhatATranscriptWasPutRightToIsSweptWithIt(t *testing.T) {
 	name := text.Corrections(text.ASR, "abc123")
-	if name != "asr/abc123.corrected.vtt" {
+	if name != "transcript/abc123.asr.corrected.vtt" {
 		t.Errorf("a transcript put right is kept under %q", name)
 	}
 

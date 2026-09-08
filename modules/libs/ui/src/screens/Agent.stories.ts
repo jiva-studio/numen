@@ -9,9 +9,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { onScopeDispose, ref } from 'vue'
 import Agent from './Agent.vue'
-import type { Turn } from '@/thread/turn'
-import { framed } from '@/fixtures/frame'
-import { LONG, MULTILINE, RUSSIAN } from '@/fixtures/prose'
+import type { Turn } from '@/features/thread/turn'
+import { framed } from '@/shared/fixtures/frame'
+import { LONG, MULTILINE, RUSSIAN } from '@/shared/fixtures/prose'
 
 const meta = {
   title: 'Chat/Agent',

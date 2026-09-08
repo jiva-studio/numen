@@ -23,7 +23,7 @@ func addViewTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "note_focus",
-		Title: "Put a note in front of the person",
+		Title: "Focus a note",
 		Description: "Make a note the one the person is looking at, so that the " +
 			"neighbourhood they see is drawn around it. Use it only where the person " +
 			"asked to be taken to a note. Talking about one is not asking, and neither " +
@@ -57,7 +57,7 @@ func addViewTools(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_focus",
-		Title: "Put a passage in front of the person",
+		Title: "Focus a passage",
 		Description: "Open one of the vault's documents in front of the person at one " +
 			"passage: the page it stands on is drawn, and the words of it are lit. " +
 			"`note_search` gives the range of every passage it answers with, and this " +
@@ -89,7 +89,6 @@ func addViewTools(server *sdk.Server, core Core) {
 			return nil, out{}, errors.New(
 				"a passage begins at or after the start of the text, and its length is zero or more")
 		}
-
 		if 1+len(in.Also) > domain.MostHighlights {
 			return nil, out{}, fmt.Errorf("light at most %d places of one document", domain.MostHighlights)
 		}
@@ -98,13 +97,16 @@ func addViewTools(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, out{}, err
 		}
-		at := domain.Place{Path: in.Path, Start: in.Start, Length: in.Length}
+		at := domain.Place{Path: in.Path}
+		if in.Length > 0 {
+			at.Spans = append(at.Spans, domain.Span{From: in.Start, To: in.Start + in.Length})
+		}
 		for _, one := range in.Also {
 			if one.Start < 0 || one.Length <= 0 {
 				return nil, out{}, errors.New(
 					"a passage begins at or after the start of the text, and is longer than nothing")
 			}
-			at.Stretches = append(at.Stretches, domain.Stretch{Start: one.Start, Length: one.Length})
+			at.Spans = append(at.Spans, domain.Span{From: one.Start, To: one.Start + one.Length})
 		}
 		if err := core.View.Focus(ctx, at); err != nil {
 			return nil, out{}, err

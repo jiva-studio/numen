@@ -47,9 +47,9 @@ func (a *API) SearchNames(
 	out := &v1.SearchNamesResponse{Found: make([]*v1.NameMatch, 0, len(found))}
 	for _, m := range found {
 		titled := &v1.NameMatch{
-			Note: &v1.Note{Path: m.Path, Title: m.Title},
-			At:   spansOf(m.Spans),
-			Type: typeOf(m.Type),
+			Note:  &v1.Note{Path: m.Path, Title: m.Title},
+			Spans: spansOf(m.Spans),
+			Type:  typeOf(m.Type),
 		}
 		if m.Heading != "" {
 			titled.Heading = &v1.Heading{Text: m.Heading, Line: int32(m.Line)}
@@ -150,10 +150,9 @@ func (a *API) SearchPassages(
 		passage := &v1.Passage{
 			Path:     p.Source,
 			Text:     text,
-			At:       spansOf(at),
+			Spans:    spansOf(at),
 			Location: p.Location,
-			Start:    int32(p.Start),
-			Length:   int32(p.Length),
+			Span:     &v1.Span{From: int32(p.Start), To: int32(p.Start + p.Length)},
 			Line:     int32(p.Line),
 			Kind:     kindOf(p.Kind),
 		}

@@ -48,6 +48,8 @@ How a vault is made searchable.
 | `embedding.indexing.local.dir` | text | holds the model and tokenizer.json. Empty means the download cache. |
 | `embedding.indexing.local.file` | text | the model inside the repository or the directory. |
 | `embedding.indexing.local.batch_texts` | a number | how many texts one forward pass carries. |
+| `embedding.indexing.local.runtime` | text | the ONNX shared library. Empty means the one beside the application, and then the one the platform holds. |
+| `embedding.indexing.local.threads` | a number | how many of this machine one forward pass may use. |
 | `embedding.indexing.local.download` | yes or no | allows fetching the model when it is not on this machine. |
 | `embedding.indexing.service` |  | how a hosted model is reached over HTTP. |
 | `embedding.indexing.service.base_url` | text | points at anything speaking the /v1/embeddings request shape. |
@@ -61,6 +63,8 @@ How a vault is made searchable.
 | `embedding.query.local.dir` | text | holds the model and tokenizer.json. Empty means the download cache. |
 | `embedding.query.local.file` | text | the model inside the repository or the directory. |
 | `embedding.query.local.batch_texts` | a number | how many texts one forward pass carries. |
+| `embedding.query.local.runtime` | text | the ONNX shared library. Empty means the one beside the application, and then the one the platform holds. |
+| `embedding.query.local.threads` | a number | how many of this machine one forward pass may use. |
 | `embedding.query.local.download` | yes or no | allows fetching the model when it is not on this machine. |
 | `embedding.query.service` |  | how a hosted model is reached over HTTP. |
 | `embedding.query.service.base_url` | text | points at anything speaking the /v1/embeddings request shape. |
@@ -115,16 +119,16 @@ How a vault is made searchable.
 | `transcription.model.decoder` | text |  |
 | `transcription.model.joiner` | text |  |
 | `transcription.model.tokens` | text |  |
-| `transcription.speech` |  | finds where in a recording somebody is speaking. |
-| `transcription.speech.name` | text | what this segmenter is called in the record kept beside a text. |
-| `transcription.speech.from` | text | where the model is fetched from, and `path` is a file on this machine. |
-| `transcription.speech.path` | text |  |
-| `transcription.speech.threshold` | a number | how sure the model has to be that a window carries speech. |
-| `transcription.speech.silence` | a number | how much quiet, in milliseconds, closes a stretch of speech. |
-| `transcription.speech.pad` | a number | how many milliseconds are kept on each side of a stretch, so that the first and last sound of a word are inside it. |
-| `transcription.speech.longest` | a number | how many milliseconds one stretch may run to. |
-| `transcription.speech.shortest` | a number | how many milliseconds a stretch carries to be a stretch at all. |
-| `transcription.speech.least` | a number | how many milliseconds a stretch runs to before it stands as a line of its own. |
+| `transcription.segmenter` |  | finds where in a recording somebody is speaking. |
+| `transcription.segmenter.name` | text | what this segmenter is called in the record kept beside a text. |
+| `transcription.segmenter.from` | text | where the model is fetched from, and `path` is a file on this machine. |
+| `transcription.segmenter.path` | text |  |
+| `transcription.segmenter.threshold` | a number | how sure the model has to be that a window carries speech. |
+| `transcription.segmenter.silence` | a number | how much quiet, in milliseconds, closes a segment. |
+| `transcription.segmenter.pad` | a number | how many milliseconds are kept on each side of a segment, so that the first and last sound of a word are inside it. |
+| `transcription.segmenter.longest` | a number | how many milliseconds one segment may run to. |
+| `transcription.segmenter.shortest` | a number | how many milliseconds a segment carries to be a segment at all. |
+| `transcription.segmenter.least` | a number | how many milliseconds a segment runs to before it stands as a line of its own. |
 | `transcription.proofread` |  | names the profile a transcript is put right at. |
 | `transcription.proofread.with` | text | the profile, by the name the profiles carry it under. |
 | `transcription.proofread.automatically` | yes or no | whether a reading already written down is put right without anybody asking for it. |
@@ -144,6 +148,25 @@ Which agent answers in the panel, and what it may reach.
 | `claude.model` | text | which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. |
 | `claude.max_steps` | a number | how many times it may go to the model before it is stopped. |
 | `claude.reads_hooks_and_skills` | yes or no | lets it read what is configured for it on this machine: hooks, skills, standing instructions in CLAUDE. |
+
+### `importing`
+
+How an address a link note points at is reached, and where the tools that reach it are.
+
+| | | |
+| --- | --- | --- |
+| `captions` | a list of words | the languages published words are preferred in, best first. |
+| `automatic_captions` | yes or no | whether words a machine wrote count where a person published none. |
+| `copy_max_size_mb` | a number | how large a copy may be. Above it, a copy asked for says the size it was refused at and nothing is fetched. |
+| `copies_to_vault` | yes or no | whether a copy is kept beside the note as a file of the person's own. |
+| `yt_dlp` |  | what is run to reach a video. Empty asks the path. |
+| `yt_dlp.command` | a list of words | what is run, so a machine that writes the path afresh at every build names whatever does know where the tool is. |
+| `yt_dlp.arguments` | a list of words | handed to every run before its own: what answers for a person at a site that refuses an unattended fetch — the cookies of a browser, a token, a proxy — is that machine's and is passed through as it stands. |
+| `yt_dlp.environment` |  | set on every run, over what this process was started with. |
+| `ffmpeg` |  | what brings a container to what a transcriber opens. |
+| `ffmpeg.command` | a list of words | what is run, so a machine that writes the path afresh at every build names whatever does know where the tool is. |
+| `ffmpeg.arguments` | a list of words | handed to every run before its own: what answers for a person at a site that refuses an unattended fetch — the cookies of a browser, a token, a proxy — is that machine's and is passed through as it stands. |
+| `ffmpeg.environment` |  | set on every run, over what this process was started with. |
 
 ### `naming`
 

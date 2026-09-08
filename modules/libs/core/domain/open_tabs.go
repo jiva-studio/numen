@@ -35,27 +35,28 @@ type Tab struct {
 	Title string
 	// Document is the document the tab holds, and nothing in a tab holding
 	// none.
-	Document *OpenDocument
+	Document *DocumentProgress
 	// Recording is the recording the tab holds, and nothing in a tab holding
 	// none.
-	Recording *OpenRecording
+	Recording *RecordingProgress
 }
 
-// An OpenDocument is the document a tab holds, as the person is reading it.
-type OpenDocument struct {
+// A DocumentProgress is how far through a document the person reading it is.
+type DocumentProgress struct {
 	// Page is the page in front of them, counted from one.
 	Page int
-	// Pages is how many pages the document has.
-	Pages int
+	// PageCount is how many pages the document has.
+	PageCount int
 }
 
-// An OpenRecording is the recording a tab holds, as far as it has been written
-// down. Both are milliseconds.
-type OpenRecording struct {
-	// Heard is how much of it has been written down.
-	Heard int
-	// Length is how long the recording is.
-	Length int
+// A RecordingProgress is how far into a recording the words written down reach.
+// Both are milliseconds.
+type RecordingProgress struct {
+	// TranscribedDuration is how far into the recording the words written down
+	// reach. It is short of the duration while a run is still listening.
+	TranscribedDuration int
+	// Duration is how long the recording is.
+	Duration int
 }
 
 // The kinds of tab this application has words for. A tab of any other kind is

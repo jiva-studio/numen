@@ -22,7 +22,7 @@ func saying(said ...string) []transcript.Cue {
 func recurring(t *testing.T, about string) string {
 	t.Helper()
 	for _, line := range strings.Split(about, "\n") {
-		if said, listed := strings.CutPrefix(line, "Words recurring through it, as the machine heard them: "); listed {
+		if said, listed := strings.CutPrefix(line, "Words recurring through it, as the machine transcribed them: "); listed {
 			return said
 		}
 	}

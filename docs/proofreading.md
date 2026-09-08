@@ -4,32 +4,32 @@ What a second model corrects in a text the first one produced, what it is shown,
 
 ## One mechanism, two texts
 
-A machine that read a page and a machine that heard an hour both produce text nobody typed, and both get things wrong. What they got wrong is different — a scan carries letters the eye of a machine misread, speech carries words its ear misheard — and everything around that is the same, so one mechanism serves both.
+A machine that read a page and a machine that transcribed an hour both produce text nobody typed, and both get things wrong. What they got wrong is different — a scan carries letters a machine misread, speech carries words it took for others — and everything around that is the same, so one mechanism serves both.
 
-| Proofread | The unit | Where the corrections go |
-| --- | --- | --- |
-| a reading | one printed line | `ocr/<hash>.fixes` |
-| a transcript | one cue | `asr/<hash>.corrected.vtt` |
+| Proofread | What it came out of | The unit | Where the corrections go |
+| --- | --- | --- | --- |
+| a reading | a document's pages, read by a model | one printed line | `ocr/<hash>.corrected` |
+| a transcript | a recording, heard by a model | one cue | `transcript/<hash>.asr.corrected.vtt` |
 
-What a reading is and how its files hold together is [Reading](reading.md). What a transcript is and how a moment in it is named is [Transcribing](transcribing.md).
+What a reading is and how its files hold together is [Recognising a document](recognising.md). What a transcript is and how a moment in it is named is [Transcribing](transcribing.md).
 
 ## The model is never shown a coordinate
 
 A line carries a rectangle on a page. A cue carries two times on a clock. Neither is sent.
 
-The model is given prose with the lines numbered inside it, and it must answer with those numbers. A number is a name, not a position: it says which line, and nothing about where that line stands. The coordinates are reattached afterwards from what was originally read or heard, by the number.
+The model is given prose with the lines numbered inside it, and it must answer with those numbers. A number is a name, not a position: it says which line, and nothing about where that line stands. The coordinates are reattached afterwards from what was originally read or transcribed, by the number.
 
-This is what makes a correction safe to apply. Putting a line's letters right leaves its words inside that line, so the rectangle it was read at and the times it was heard between hold unchanged. A reply that renames a line, or that moves a word from one line into another, has broken the one thing the coordinates depend on, and it is refused whole.
+This is what makes a correction safe to apply. Putting a line's letters right leaves its words inside that line, so the rectangle it was read at and the times it was spoken between hold unchanged. A reply that renames a line, or that moves a word from one line into another, has broken the one thing the coordinates depend on, and it is refused whole.
 
 ```mermaid
 graph TD
-    ART["the artifact<br/>what was read or heard"]
+    ART["the artifact<br/>what was read or transcribed"]
     COORD["the coordinates<br/>boxes, or cue times"]
     ASK["the batch<br/>prose, lines numbered inside it"]
     MODEL["the proofreader"]
     REPLY["the reply<br/>only the lines that changed"]
     GATES["the gates"]
-    FIX["the corrections<br/>.fixes, or .corrected.vtt"]
+    FIX["the corrections<br/>.corrected, or .corrected.vtt"]
     OUT["the text a chunk is a place in"]
 
     ART --> ASK
@@ -71,10 +71,10 @@ So a transcript's batches carry a digest of the whole of it, standing before the
 ```
 The speech opens: welcome everyone today we will read a verse that the teacher …
 
-Words recurring through it, as the machine heard them: Kenduvilva, Gaudiya, Ajay
+Words recurring through it, as the machine transcribed them: Kenduvilva, Gaudiya, Ajay
 ```
 
-It is drawn from the transcript and from nothing else — the opening words as they were heard, and the words standing capitalised somewhere other than where a sentence opens, said more than once. A recording of any subject is described in the terms it uses itself, and no coordinate, path or name from the vault is in it. The model is told the digest is read and answered for by nothing, and that a word listed there is put right the same way every time it is said.
+It is drawn from the transcript and from nothing else — the opening words as they were transcribed, and the words standing capitalised somewhere other than where a sentence opens, said more than once. A recording of any subject is described in the terms it uses itself, and no coordinate, path or name from the vault is in it. The model is told the digest is read and answered for by nothing, and that a word listed there is put right the same way every time it is said.
 
 A reading carries no digest: a page of a book is proofread against the page.
 
@@ -89,7 +89,7 @@ None of them asks whether a correction is right.
 
 Two more corrections are dropped without refusing the batch: one saying what the line already says, and one that only puts something wordless in front of what the line already says.
 
-A refused batch is left as it was read or heard. So is a batch nothing came back about. That is the ordinary outcome and not a failure.
+A refused batch is left as it was read or transcribed. So is a batch nothing came back about. That is the ordinary outcome and not a failure.
 
 ## The two instructions
 
@@ -97,7 +97,7 @@ The model is told which kind of text it has, because a scan and speech are corre
 
 A scan is corrected for what a machine misread off paper: letters, diacritics, words run together or broken apart, marks that are not words. Nothing is translated, rephrased, repunctuated or improved, and a line read correctly is left alone.
 
-A transcript is corrected for what a machine misheard: a word for its homophone, a name spelled as it sounded, a sentence ended in the wrong place, the punctuation a model that hears has no way to place. The words a person actually said are not rewritten into better ones, and a stretch heard correctly is left alone.
+A transcript is corrected for what a machine took wrongly: a word for its homophone, a name spelled as it sounded, a sentence ended in the wrong place, the punctuation a model transcribing speech has no way to place. The words a person actually said are not rewritten into better ones, and a stretch transcribed correctly is left alone.
 
 Both instructions carry the same rules about the answer: a line is answered for once, nothing is added that the page does not print or the recording does not say, the marks are never written back, and a line to leave alone is a line not answered with.
 
@@ -151,7 +151,7 @@ What takes a run up is a vault opening. Where `automatically` is on, every readi
 
 One model proofreads, and no chain of them. A chunk whose text did not change keeps the vector already made for it.
 
-Neither artifact is rewritten: what the model read or heard stays on disk under its own name, and the corrections go beside it. What a reading's corrections are kept in and how a corrected reading is composed is [Reading](reading.md); what a transcript's are kept in is [Transcribing](transcribing.md).
+Neither artifact is rewritten: what the model read or transcribed stays on disk under its own name, and the corrections go beside it. What a reading's corrections are kept in and how a corrected reading is composed is [Recognising a document](recognising.md); what a transcript's are kept in is [Transcribing](transcribing.md).
 
 ## What a person sees
 

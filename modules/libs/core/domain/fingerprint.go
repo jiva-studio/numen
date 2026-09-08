@@ -15,6 +15,9 @@ const (
 	// KindRecording is speech: an MP3, a WAV. It carries no text of its own,
 	// and what it says is there once a model has listened to it.
 	KindRecording SourceKind = "recording"
+	// KindURL is a web address and nothing else: a `.url` file. Its text is
+	// what was fetched from that address, and it holds no body to write in.
+	KindURL SourceKind = "url"
 )
 
 // Fingerprint is what a walk of a vault reports before anything is read: enough to

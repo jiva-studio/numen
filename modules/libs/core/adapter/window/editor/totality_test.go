@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	derived "github.com/jiva-studio/numen/modules/libs/core/text"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -72,6 +73,7 @@ func TestEverySourceKindIsWrittenFromOne(t *testing.T) {
 		v1.SourceKind_SOURCE_KIND_NOTE:      domain.KindNote,
 		v1.SourceKind_SOURCE_KIND_BOOK:      domain.KindBook,
 		v1.SourceKind_SOURCE_KIND_RECORDING: domain.KindRecording,
+		v1.SourceKind_SOURCE_KIND_URL:       domain.KindURL,
 	}, kindOf)
 }
 
@@ -130,14 +132,18 @@ func TestEveryArtifactTheSchemaNamesStandsSomewhere(t *testing.T) {
 		return named && id != ""
 	})
 	testsupport.Handled(t, func(of v1.ArtifactKind) bool {
-		return slices.Contains(carried(domain.KindBook), of) ||
-			slices.Contains(carried(domain.KindRecording), of)
+		// A url carries what was fetched from the address it holds, and which
+		// of the two texts that is follows from what fetched it.
+		return slices.Contains(carried(domain.KindBook, ""), of) ||
+			slices.Contains(carried(domain.KindRecording, ""), of) ||
+			slices.Contains(carried(domain.KindURL, derived.Captions), of) ||
+			slices.Contains(carried(domain.KindURL, derived.Article), of)
 	})
 }
 
 // standingAt is what an artifact over a source standing here is answered with.
 func standingAt(got reached) func() v1.State {
 	return func() v1.State {
-		return stood(domain.Vault{}, "Heard.md", v1.ArtifactKind_ARTIFACT_KIND_HEARD, got).GetState()
+		return stood(v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT, got).GetState()
 	}
 }

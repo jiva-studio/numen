@@ -14,6 +14,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // A Region is one part of a page: what it is, where it is, and where it comes
@@ -34,12 +36,11 @@ type Line struct {
 	Score float32
 }
 
-// A Stretch is one box of a region, in what was written from it: the rectangle
-// it covers on the page, and the run of bytes it produced.
-type Stretch struct {
-	Box    image.Rectangle
-	Start  int
-	Length int
+// A Box is one box of a region, in what was written from it: the rectangle it
+// covers on the page, and the run of bytes it produced.
+type Box struct {
+	Rect image.Rectangle
+	Span domain.Span
 }
 
 // A Block is one region of a page, written out.
@@ -50,9 +51,9 @@ type Block struct {
 	// opens sits. A document title stands above the section titles within it.
 	Heading bool
 	Depth   int
-	// Stretches are where on the page each run of Text was read. A recogniser
-	// that reports no rectangles leaves them empty.
-	Stretches []Stretch
+	// Boxes are where on the page each run of Text was read. A recogniser that
+	// reports no rectangles leaves them empty.
+	Boxes []Box
 }
 
 // A Page is one page of a document, read.
@@ -124,9 +125,9 @@ func inside(a, b image.Rectangle) bool {
 
 // Assemble writes one region out as running prose, and says where on the page
 // each run of it was read.
-func Assemble(lines []Line) (string, []Stretch) {
+func Assemble(lines []Line) (string, []Box) {
 	var out strings.Builder
-	var stretches []Stretch
+	var kept []Box
 	for _, line := range group(lines) {
 		text, boxes := written(line)
 		if text == "" {
@@ -138,20 +139,21 @@ func Assemble(lines []Line) (string, []Stretch) {
 			out.WriteString(hyphen.ReplaceAllString(joined, "$1"))
 			// The hyphen is gone from the end of the box that carried it, so
 			// that box covers one byte fewer than it wrote.
-			if n := len(stretches); n > 0 {
-				stretches[n-1].Length -= len(joined) - out.Len()
+			if n := len(kept); n > 0 {
+				kept[n-1].Span.To -= len(joined) - out.Len()
 			}
 		} else if joined != "" {
 			out.WriteString(" ")
 		}
 		at := out.Len()
-		for _, stretch := range boxes {
-			stretch.Start += at
-			stretches = append(stretches, stretch)
+		for _, box := range boxes {
+			box.Span.From += at
+			box.Span.To += at
+			kept = append(kept, box)
 		}
 		out.WriteString(text)
 	}
-	return out.String(), stretches
+	return out.String(), kept
 }
 
 // group divides a region's lines into the lines the page prints.
@@ -206,22 +208,23 @@ func shared(line []Line, box Line) float64 {
 // line are two words. The gap itself is not measurable here: a detector widens
 // every box it returns by a fixed number of pixels, and neighbours therefore
 // overlap however far apart the words were.
-func written(line []Line) (string, []Stretch) {
+func written(line []Line) (string, []Box) {
 	var out strings.Builder
-	var stretches []Stretch
-	for _, box := range line {
+	var kept []Box
+	for _, one := range line {
 		// A box the recogniser read as nothing is not a word.
-		text := strings.TrimSpace(box.Text)
+		text := strings.TrimSpace(one.Text)
 		if text == "" {
 			continue
 		}
 		if out.Len() > 0 {
 			out.WriteString(" ")
 		}
-		stretches = append(stretches, Stretch{Box: box.Box, Start: out.Len(), Length: len(text)})
+		at := out.Len()
+		kept = append(kept, Box{Rect: one.Box, Span: domain.Span{From: at, To: at + len(text)}})
 		out.WriteString(text)
 	}
-	return out.String(), stretches
+	return out.String(), kept
 }
 
 // A line broken by a hyphen continues in the next one.

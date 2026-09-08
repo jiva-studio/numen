@@ -47,10 +47,10 @@ type Stencil struct {
 // a value goes. A face with only one of the two lays out nothing.
 type FaceTemplate struct {
 	Name string
-	// Lead is what stands between the face's heading and its first side.
-	Lead  string
-	Front string
-	Back  string
+	// Preamble is what stands between the face's heading and its first side.
+	Preamble string
+	Front    string
+	Back     string
 }
 
 // Deck is a note whose body is cards.
@@ -72,10 +72,10 @@ type Deck struct {
 // nothing else: no fields, no stencil, no schedule, no mark.
 type Section struct {
 	Name string
-	// Lead is what stands between the section's heading and its first card.
+	// Preamble is what stands between the section's heading and its first card.
 	// Nothing lays it out and nothing reads it: it is a person writing about
 	// their own deck, and it is kept exactly as it stands.
-	Lead string
+	Preamble string
 }
 
 // NoSection is what a card standing before the first section carries.
@@ -91,12 +91,13 @@ type Card struct {
 	// the application next writes the deck. It is the ten characters alone: the
 	// caret in front of them is how a heading writes one.
 	Mark domain.CardID
-	// Stencil is the target of the lone wikilink under the heading, as it is
-	// written and without its brackets. A card whose first paragraph is not one
-	// names no stencil.
-	Stencil string
-	// Lead is what stands between the wikilink and the first field.
-	Lead string
+	// StencilLink is the target of the lone wikilink under the heading, as it is
+	// written and without its brackets: a name where one picks the stencil, and
+	// `note://<identifier>` where none does. A card whose first paragraph is not
+	// one names no stencil.
+	StencilLink string
+	// Preamble is what stands between the wikilink and the first field.
+	Preamble string
 	// Section is where the section this card stands under stands in the deck's
 	// own, counted from the first. A card standing before the first section
 	// carries NoSection.

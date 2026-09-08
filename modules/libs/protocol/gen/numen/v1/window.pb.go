@@ -90,27 +90,27 @@ type FlushResult int32
 const (
 	FlushResult_FLUSH_RESULT_UNSPECIFIED FlushResult = 0
 	// Nothing is left. The caller held nothing of its own.
-	FlushResult_FLUSH_RESULT_NOTHING FlushResult = 3
+	FlushResult_FLUSH_RESULT_NOTHING FlushResult = 1
 	// Everything this caller held is written.
-	FlushResult_FLUSH_RESULT_WRITTEN FlushResult = 1
+	FlushResult_FLUSH_RESULT_WRITTEN FlushResult = 2
 	// Something this caller holds could not be written, and a person is being
 	// asked what to do with it. The window stays until they answer.
-	FlushResult_FLUSH_RESULT_ASKING FlushResult = 2
+	FlushResult_FLUSH_RESULT_ASKING FlushResult = 3
 )
 
 // Enum value maps for FlushResult.
 var (
 	FlushResult_name = map[int32]string{
 		0: "FLUSH_RESULT_UNSPECIFIED",
-		3: "FLUSH_RESULT_NOTHING",
-		1: "FLUSH_RESULT_WRITTEN",
-		2: "FLUSH_RESULT_ASKING",
+		1: "FLUSH_RESULT_NOTHING",
+		2: "FLUSH_RESULT_WRITTEN",
+		3: "FLUSH_RESULT_ASKING",
 	}
 	FlushResult_value = map[string]int32{
 		"FLUSH_RESULT_UNSPECIFIED": 0,
-		"FLUSH_RESULT_NOTHING":     3,
-		"FLUSH_RESULT_WRITTEN":     1,
-		"FLUSH_RESULT_ASKING":      2,
+		"FLUSH_RESULT_NOTHING":     1,
+		"FLUSH_RESULT_WRITTEN":     2,
+		"FLUSH_RESULT_ASKING":      3,
 	}
 )
 
@@ -686,9 +686,9 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\fUNIT_SECONDS\x10\x03*x\n" +
 	"\vFlushResult\x12\x1c\n" +
 	"\x18FLUSH_RESULT_UNSPECIFIED\x10\x00\x12\x18\n" +
-	"\x14FLUSH_RESULT_NOTHING\x10\x03\x12\x18\n" +
-	"\x14FLUSH_RESULT_WRITTEN\x10\x01\x12\x17\n" +
-	"\x13FLUSH_RESULT_ASKING\x10\x022\xc0\x02\n" +
+	"\x14FLUSH_RESULT_NOTHING\x10\x01\x12\x18\n" +
+	"\x14FLUSH_RESULT_WRITTEN\x10\x02\x12\x17\n" +
+	"\x13FLUSH_RESULT_ASKING\x10\x032\xc0\x02\n" +
 	"\rWindowService\x12I\n" +
 	"\n" +
 	"WatchTasks\x12\x1b.numen.v1.WatchTasksRequest\x1a\x1c.numen.v1.WatchTasksResponse0\x01\x12F\n" +

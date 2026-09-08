@@ -53,6 +53,7 @@ func (c Config) Level(db *Index) note.Levels {
 		db.SourcesKnown(),
 		db.Sources(),
 	)
+	refresh.Derived = c.DerivedStores()
 	return func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err

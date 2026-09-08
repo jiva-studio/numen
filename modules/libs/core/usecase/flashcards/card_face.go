@@ -125,7 +125,7 @@ func (u ListCardFaces) facesOf(
 		if card.Mark == "" {
 			continue
 		}
-		path, held := deck.Stencils[card.Stencil]
+		path, held := deck.Stencils[card.StencilLink]
 		if !held {
 			continue
 		}

@@ -1,6 +1,7 @@
 package filesystem
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -95,7 +96,7 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 	if err := parents(root, filepath.Dir(name), path); err != nil {
 		return domain.Fingerprint{}, err
 	}
-	written, err := replace(root, name, content, mode)
+	written, err := replace(root, name, bytes.NewReader(content), mode)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
@@ -328,7 +329,7 @@ func (w *VaultWriter) reachable(path string) bool {
 // files it reports, and by the same rules.
 func (w *VaultWriter) holds(path string) bool {
 	clean := pathpkg.Clean(filepath.ToSlash(path))
-	if !w.opts.isNote(pathpkg.Base(clean)) {
+	if !w.opts.writable(pathpkg.Base(clean)) {
 		return false
 	}
 	if w.ignored.MatchesPath(clean) {

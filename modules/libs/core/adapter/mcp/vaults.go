@@ -53,7 +53,7 @@ func addVaultList(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "vault_list",
-		Title: "List the vaults this installation holds",
+		Title: "List vaults",
 		Description: "Every vault this installation holds: what each is called, where its " +
 			"folder is on this machine, and which one the person is looking at. Every " +
 			"other tool works the vault marked `showing`, and no other. A vault whose " +
@@ -84,7 +84,7 @@ func addVaultAdd(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "vault_add",
-		Title: "Make a folder into a vault",
+		Title: "Add a vault",
 		Description: "Put a folder on the list of vaults this installation holds. The " +
 			"window goes on showing the vault it is showing, and `vault_open` is what " +
 			"moves it. " +
@@ -157,7 +157,7 @@ func addVaultRename(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "vault_rename",
-		Title: "Call a vault something else",
+		Title: "Rename a vault",
 		Description: "What the person calls a vault. The folder keeps the name the " +
 			"filesystem gives it and nothing on disk moves. A name another vault on the " +
 			"list has is refused, so the names in `vault_list` name one vault each.",
@@ -193,7 +193,7 @@ func addVaultForget(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "vault_forget",
-		Title: "Take a vault off the list",
+		Title: "Forget a vault",
 		Description: "Take a vault off the list and out of the index. Its folder stays " +
 			"where it is with everything in it, and adding it again brings back the same " +
 			"vault under the same identity. The vault the person is looking at is " +
@@ -233,7 +233,7 @@ func addVaultOpen(server *sdk.Server, core Core) {
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "vault_open",
-		Title: "Show another vault in the window",
+		Title: "Open a vault",
 		Description: "Put another vault in front of the person, in the window they have " +
 			"open. Nothing on disk moves and nothing is written into either vault; the " +
 			"list of vaults records which one was opened last, and the window comes back " +

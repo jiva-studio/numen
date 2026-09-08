@@ -52,7 +52,7 @@ func Whole(
 			minted = append(minted, MintedMark{Card: i, Mark: carried})
 		}
 		text := card.Heading
-		if first := stencils[card.Stencil].First(); first != "" {
+		if first := stencils[card.StencilLink].First(); first != "" {
 			if value, written := card.Value(first); written {
 				text = Project(value)
 			}

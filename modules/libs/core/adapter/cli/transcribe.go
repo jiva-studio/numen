@@ -85,7 +85,7 @@ func transcribeCommand(ctx context.Context, out io.Writer, deps Deps, args []str
 	case res.Silent:
 		fmt.Fprintf(out, "%s carries no speech, and that is what was written\n", res.Path)
 	default:
-		fmt.Fprintf(out, "heard %s of %s in %s\n",
+		fmt.Fprintf(out, "transcribed %s of %s in %s\n",
 			transcript.Stamp(res.Heard), res.Path, time.Since(started).Round(time.Second))
 	}
 	return nil
