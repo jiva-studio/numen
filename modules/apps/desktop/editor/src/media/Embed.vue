@@ -44,6 +44,7 @@ const read = (): number | null => {
     const kept = Number(localStorage.getItem(HEIGHT))
     return kept >= LEAST ? kept : null
   } catch {
+    // A browser that keeps nothing for this page has no height to give back.
     return null
   }
 }

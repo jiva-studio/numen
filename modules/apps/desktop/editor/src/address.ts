@@ -12,6 +12,7 @@ export const isWebAddress = (typed: string): boolean => {
     const address = new URL(typed.trim())
     return (address.protocol === 'http:' || address.protocol === 'https:') && address.hostname !== ''
   } catch {
+    // Words a URL cannot be made of are words nobody typed an address in.
     return false
   }
 }

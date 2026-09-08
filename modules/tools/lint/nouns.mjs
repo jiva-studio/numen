@@ -22,7 +22,6 @@ export const nouns = {
   heading: 'a line a section of a note stands under',
   landing: 'where something let go comes to rest',
   opening: 'the way in, and how wide it is',
-  recording: 'a sound file',
   routing: 'the way a line is taken from one place to another',
   seating: 'where the nodes of a plex are put',
   spacing: 'the room left between things',
