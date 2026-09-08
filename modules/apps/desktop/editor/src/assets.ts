@@ -59,14 +59,14 @@ export const books: Books = {
     const documents = answer.documents.map(spined)
     return {
       title: answer.title,
-      span: { begins: 0, ends: answer.length },
+      span: { begins: 0, ends: answer.textBytes },
       documents,
       parts: answer.parts.map((one) => ({
         title: one.title,
         at: one.offset,
         level: one.level,
       })),
-      printed: answer.printed.map((one) => ({ label: one.label, at: one.offset })),
+      printed: answer.printedPages.map((one) => ({ label: one.label, at: one.offset })),
       pages: answer.pages,
       pageBytes: answer.pageBytes,
       at: stamp(answer.fingerprint) ?? '',

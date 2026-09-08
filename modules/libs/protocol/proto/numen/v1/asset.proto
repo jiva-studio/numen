@@ -88,7 +88,7 @@ message GetBookResponse {
   // The pages of the printed book this file was made from, ascending by
   // offset. A book naming nothing is reached by these, and most books carry
   // none.
-  repeated PrintedPage printed = 4;
+  repeated PrintedPage printed_pages = 4;
 
   // How many pages the book is read in. A book that reflows has none of its
   // own, so they are counted over its text and not over anything drawn.
@@ -100,7 +100,7 @@ message GetBookResponse {
   //
   // The page an offset falls on is counted from these, and comes to the same
   // page wherever it is counted.
-  int32 length = 6;
+  int32 text_bytes = 6;
   int32 page_bytes = 7;
 
   // Which bytes the book was read from. It stands in the address the markup of

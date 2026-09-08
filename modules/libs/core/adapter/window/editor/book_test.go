@@ -65,7 +65,7 @@ func TestWhatABookIsIsItsDocumentsAndWhatItNamesInThem(t *testing.T) {
 	if titles := partsOf(told); len(titles) != 2 || titles[0] != "The First Part" {
 		t.Errorf("the book names %v", titles)
 	}
-	if got := told.GetPrinted(); len(got) != 1 || got[0].GetLabel() != "17" {
+	if got := told.GetPrintedPages(); len(got) != 1 || got[0].GetLabel() != "17" {
 		t.Errorf("the printed pages are %v", got)
 	}
 	if told.GetPages() < 1 {
@@ -73,7 +73,7 @@ func TestWhatABookIsIsItsDocumentsAndWhatItNamesInThem(t *testing.T) {
 	}
 	// The window is told the text and the size of a page, so the page an offset
 	// falls on comes to the same page there as it does here.
-	length, size := told.GetLength(), told.GetPageBytes()
+	length, size := told.GetTextBytes(), told.GetPageBytes()
 	if length < 1 || size < 1 {
 		t.Fatalf("the text is %d bytes and a page of it is %d", length, size)
 	}

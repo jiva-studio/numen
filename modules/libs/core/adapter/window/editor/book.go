@@ -65,7 +65,7 @@ func (a *API) GetBook(
 	out := &v1.GetBookResponse{
 		Title:       read.Title,
 		Pages:       int32(read.PageCount()),
-		Length:      int32(len(read.Text)),
+		TextBytes:   int32(len(read.Text)),
 		PageBytes:   int32(read.PageBytes()),
 		Fingerprint: &v1.Fingerprint{Path: print.path, Size: print.size, Mtime: print.mtime},
 	}
@@ -84,7 +84,7 @@ func (a *API) GetBook(
 		})
 	}
 	for _, page := range read.Pages[:min(len(read.Pages), mostListed)] {
-		out.Printed = append(out.Printed, &v1.PrintedPage{Label: page.Label, Offset: int32(page.Offset)})
+		out.PrintedPages = append(out.PrintedPages, &v1.PrintedPage{Label: page.Label, Offset: int32(page.Offset)})
 	}
 	return connect.NewResponse(out), nil
 }

@@ -254,7 +254,7 @@ type GetBookResponse struct {
 	// The pages of the printed book this file was made from, ascending by
 	// offset. A book naming nothing is reached by these, and most books carry
 	// none.
-	Printed []*PrintedPage `protobuf:"bytes,4,rep,name=printed,proto3" json:"printed,omitempty"`
+	PrintedPages []*PrintedPage `protobuf:"bytes,4,rep,name=printed_pages,json=printedPages,proto3" json:"printed_pages,omitempty"`
 	// How many pages the book is read in. A book that reflows has none of its
 	// own, so they are counted over its text and not over anything drawn.
 	Pages int32 `protobuf:"varint,5,opt,name=pages,proto3" json:"pages,omitempty"`
@@ -264,7 +264,7 @@ type GetBookResponse struct {
 	//
 	// The page an offset falls on is counted from these, and comes to the same
 	// page wherever it is counted.
-	Length    int32 `protobuf:"varint,6,opt,name=length,proto3" json:"length,omitempty"`
+	TextBytes int32 `protobuf:"varint,6,opt,name=text_bytes,json=textBytes,proto3" json:"text_bytes,omitempty"`
 	PageBytes int32 `protobuf:"varint,7,opt,name=page_bytes,json=pageBytes,proto3" json:"page_bytes,omitempty"`
 	// Which bytes the book was read from. It stands in the address the markup of
 	// a document and the bytes of an entry are answered at, so an address names
@@ -325,9 +325,9 @@ func (x *GetBookResponse) GetParts() []*BookPart {
 	return nil
 }
 
-func (x *GetBookResponse) GetPrinted() []*PrintedPage {
+func (x *GetBookResponse) GetPrintedPages() []*PrintedPage {
 	if x != nil {
-		return x.Printed
+		return x.PrintedPages
 	}
 	return nil
 }
@@ -339,9 +339,9 @@ func (x *GetBookResponse) GetPages() int32 {
 	return 0
 }
 
-func (x *GetBookResponse) GetLength() int32 {
+func (x *GetBookResponse) GetTextBytes() int32 {
 	if x != nil {
-		return x.Length
+		return x.TextBytes
 	}
 	return 0
 }
@@ -947,14 +947,15 @@ const file_numen_v1_asset_proto_rawDesc = "" +
 	"\x04wide\x18\x01 \x01(\x01R\x04wide\x12\x12\n" +
 	"\x04high\x18\x02 \x01(\x01R\x04high\"$\n" +
 	"\x0eGetBookRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xbf\x02\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\xd1\x02\n" +
 	"\x0fGetBookResponse\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x125\n" +
 	"\tdocuments\x18\x02 \x03(\v2\x17.numen.v1.SpineDocumentR\tdocuments\x12(\n" +
-	"\x05parts\x18\x03 \x03(\v2\x12.numen.v1.BookPartR\x05parts\x12/\n" +
-	"\aprinted\x18\x04 \x03(\v2\x15.numen.v1.PrintedPageR\aprinted\x12\x14\n" +
-	"\x05pages\x18\x05 \x01(\x05R\x05pages\x12\x16\n" +
-	"\x06length\x18\x06 \x01(\x05R\x06length\x12\x1d\n" +
+	"\x05parts\x18\x03 \x03(\v2\x12.numen.v1.BookPartR\x05parts\x12:\n" +
+	"\rprinted_pages\x18\x04 \x03(\v2\x15.numen.v1.PrintedPageR\fprintedPages\x12\x14\n" +
+	"\x05pages\x18\x05 \x01(\x05R\x05pages\x12\x1d\n" +
+	"\n" +
+	"text_bytes\x18\x06 \x01(\x05R\ttextBytes\x12\x1d\n" +
 	"\n" +
 	"page_bytes\x18\a \x01(\x05R\tpageBytes\x127\n" +
 	"\vfingerprint\x18\b \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\"S\n" +
@@ -1034,7 +1035,7 @@ var file_numen_v1_asset_proto_depIdxs = []int32{
 	15, // 1: numen.v1.GetDocumentResponse.fingerprint:type_name -> numen.v1.Fingerprint
 	5,  // 2: numen.v1.GetBookResponse.documents:type_name -> numen.v1.SpineDocument
 	6,  // 3: numen.v1.GetBookResponse.parts:type_name -> numen.v1.BookPart
-	7,  // 4: numen.v1.GetBookResponse.printed:type_name -> numen.v1.PrintedPage
+	7,  // 4: numen.v1.GetBookResponse.printed_pages:type_name -> numen.v1.PrintedPage
 	15, // 5: numen.v1.GetBookResponse.fingerprint:type_name -> numen.v1.Fingerprint
 	16, // 6: numen.v1.ListHighlightsRequest.at:type_name -> numen.v1.Stretch
 	12, // 7: numen.v1.ListHighlightsResponse.runs:type_name -> numen.v1.Highlight
