@@ -14,7 +14,7 @@ import {
   stencilBodyOf,
   stencilIn,
   stencilOf,
-  type Stencil,
+  type BufferStencil,
 } from './stencil'
 
 /** Identities counted out, so a test names the face it means. */
@@ -29,15 +29,15 @@ const cut = (over: Partial<VaultStencil> = {}): VaultStencil => ({
   fields: ['Height', 'Life span'],
   preamble: '',
   faces: [
-    { name: 'Recognise', lead: '', front: '{{Height}}', back: '**Height:** {{Height}}' },
-    { name: 'Name it', lead: '', front: 'Which lives {{Life span}}?', back: '{{Height}}' },
+    { name: 'Recognise', preamble: '', front: '{{Height}}', back: '**Height:** {{Height}}' },
+    { name: 'Name it', preamble: '', front: 'Which lives {{Life span}}?', back: '{{Height}}' },
   ],
   tail: '',
   problems: [],
   ...over,
 })
 
-const stencil = (over: Partial<VaultStencil> = {}): Stencil => stencilOf(cut(over), minting())
+const stencil = (over: Partial<VaultStencil> = {}): BufferStencil => stencilOf(cut(over), minting())
 
 describe('a stencil as the window holds it', () => {
   it('gives every face an identity of its own', () => {
@@ -56,7 +56,7 @@ describe('a stencil as the window holds it', () => {
   it('hands the vault the faces without the identities it minted', () => {
     expect(facesOf(stencil())[0]).toStrictEqual({
       name: 'Recognise',
-      lead: '',
+      preamble: '',
       front: '{{Height}}',
       back: '**Height:** {{Height}}',
     })
@@ -96,7 +96,7 @@ describe('a face of a stencil', () => {
     expect(held.faces[2]).toStrictEqual({
       id: 'c9',
       name: 'Spell it',
-      lead: '',
+      preamble: '',
       front: '',
       back: '',
     })

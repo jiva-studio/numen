@@ -299,7 +299,7 @@ type Face struct {
 	Back  string `protobuf:"bytes,3,opt,name=back,proto3" json:"back,omitempty"`
 	// The prose between the face's heading and its first side, with line endings
 	// as LF. It is written back as it arrives.
-	Lead          string `protobuf:"bytes,4,opt,name=lead,proto3" json:"lead,omitempty"`
+	Preamble      string `protobuf:"bytes,4,opt,name=preamble,proto3" json:"preamble,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -355,9 +355,9 @@ func (x *Face) GetBack() string {
 	return ""
 }
 
-func (x *Face) GetLead() string {
+func (x *Face) GetPreamble() string {
 	if x != nil {
-		return x.Lead
+		return x.Preamble
 	}
 	return ""
 }
@@ -474,7 +474,7 @@ type Section struct {
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The prose between the section's heading and its first card, with line
 	// endings as LF. Nothing lays it out, and it is written back as it arrives.
-	Lead          string `protobuf:"bytes,2,opt,name=lead,proto3" json:"lead,omitempty"`
+	Preamble      string `protobuf:"bytes,2,opt,name=preamble,proto3" json:"preamble,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -516,9 +516,9 @@ func (x *Section) GetName() string {
 	return ""
 }
 
-func (x *Section) GetLead() string {
+func (x *Section) GetPreamble() string {
 	if x != nil {
-		return x.Lead
+		return x.Preamble
 	}
 	return ""
 }
@@ -634,18 +634,20 @@ type Card struct {
 	// by its mark alone.
 	Heading string `protobuf:"bytes,3,opt,name=heading,proto3" json:"heading,omitempty"`
 	// The stencil this card is cut by, as the wikilink beneath its heading names
-	// it, without the brackets. Empty for a card written under no wikilink.
-	Stencil string `protobuf:"bytes,4,opt,name=stencil,proto3" json:"stencil,omitempty"`
+	// it, without the brackets. A name where one picks the stencil, and
+	// `note://<identifier>` where none does. Empty for a card written under no
+	// wikilink.
+	StencilLink string `protobuf:"bytes,4,opt,name=stencil_link,json=stencilLink,proto3" json:"stencil_link,omitempty"`
 	// The prose between that wikilink and the first field, with line endings as
 	// LF. It is written back as it arrives.
-	Lead string `protobuf:"bytes,5,opt,name=lead,proto3" json:"lead,omitempty"`
+	Preamble string `protobuf:"bytes,5,opt,name=preamble,proto3" json:"preamble,omitempty"`
 	// The values, in the order they stand under the card. A field the stencil
 	// declares and the card leaves out is absent here.
 	Values []*Value `protobuf:"bytes,6,rep,name=values,proto3" json:"values,omitempty"`
 	// Where the stencil that wikilink names is filed, resolved the way any link
 	// is. Empty for a card naming none and for a name that reaches no note, and a
 	// write carries nothing here.
-	StencilAt     string `protobuf:"bytes,7,opt,name=stencil_at,json=stencilAt,proto3" json:"stencil_at,omitempty"`
+	StencilPath   string `protobuf:"bytes,7,opt,name=stencil_path,json=stencilPath,proto3" json:"stencil_path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -701,16 +703,16 @@ func (x *Card) GetHeading() string {
 	return ""
 }
 
-func (x *Card) GetStencil() string {
+func (x *Card) GetStencilLink() string {
 	if x != nil {
-		return x.Stencil
+		return x.StencilLink
 	}
 	return ""
 }
 
-func (x *Card) GetLead() string {
+func (x *Card) GetPreamble() string {
 	if x != nil {
-		return x.Lead
+		return x.Preamble
 	}
 	return ""
 }
@@ -722,9 +724,9 @@ func (x *Card) GetValues() []*Value {
 	return nil
 }
 
-func (x *Card) GetStencilAt() string {
+func (x *Card) GetStencilPath() string {
 	if x != nil {
-		return x.StencilAt
+		return x.StencilPath
 	}
 	return ""
 }
@@ -1930,12 +1932,12 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x0eStencilSummary\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
-	"\x06fields\x18\x03 \x03(\tR\x06fields\"X\n" +
+	"\x06fields\x18\x03 \x03(\tR\x06fields\"`\n" +
 	"\x04Face\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05front\x18\x02 \x01(\tR\x05front\x12\x12\n" +
-	"\x04back\x18\x03 \x01(\tR\x04back\x12\x12\n" +
-	"\x04lead\x18\x04 \x01(\tR\x04lead\"\xe4\x01\n" +
+	"\x04back\x18\x03 \x01(\tR\x04back\x12\x1a\n" +
+	"\bpreamble\x18\x04 \x01(\tR\bpreamble\"\xe4\x01\n" +
 	"\x04Deck\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1a\n" +
@@ -1943,10 +1945,10 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x05cards\x18\x04 \x03(\v2\x0e.numen.v1.CardR\x05cards\x12-\n" +
 	"\bsections\x18\x05 \x03(\v2\x11.numen.v1.SectionR\bsections\x12-\n" +
 	"\bproblems\x18\x06 \x03(\v2\x11.numen.v1.ProblemR\bproblems\x12\x12\n" +
-	"\x04tail\x18\a \x01(\tR\x04tail\"1\n" +
+	"\x04tail\x18\a \x01(\tR\x04tail\"9\n" +
 	"\aSection\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
-	"\x04lead\x18\x02 \x01(\tR\x04lead\"\x9e\x01\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
+	"\bpreamble\x18\x02 \x01(\tR\bpreamble\"\x9e\x01\n" +
 	"\aProblem\x12%\n" +
 	"\x05fault\x18\x01 \x01(\x0e2\x0f.numen.v1.FaultR\x05fault\x12\x17\n" +
 	"\x04card\x18\x02 \x01(\x05H\x00R\x04card\x88\x01\x01\x12\x17\n" +
@@ -1954,16 +1956,15 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x05field\x18\x04 \x01(\tR\x05field\x12\x12\n" +
 	"\x04text\x18\x05 \x01(\tR\x04textB\a\n" +
 	"\x05_cardB\a\n" +
-	"\x05_face\"\xe6\x01\n" +
+	"\x05_face\"\xfb\x01\n" +
 	"\x04Card\x12\x12\n" +
 	"\x04mark\x18\x01 \x01(\tR\x04mark\x12(\n" +
 	"\rsection_index\x18\x02 \x01(\x05H\x00R\fsectionIndex\x88\x01\x01\x12\x18\n" +
-	"\aheading\x18\x03 \x01(\tR\aheading\x12\x18\n" +
-	"\astencil\x18\x04 \x01(\tR\astencil\x12\x12\n" +
-	"\x04lead\x18\x05 \x01(\tR\x04lead\x12'\n" +
-	"\x06values\x18\x06 \x03(\v2\x0f.numen.v1.ValueR\x06values\x12\x1d\n" +
-	"\n" +
-	"stencil_at\x18\a \x01(\tR\tstencilAtB\x10\n" +
+	"\aheading\x18\x03 \x01(\tR\aheading\x12!\n" +
+	"\fstencil_link\x18\x04 \x01(\tR\vstencilLink\x12\x1a\n" +
+	"\bpreamble\x18\x05 \x01(\tR\bpreamble\x12'\n" +
+	"\x06values\x18\x06 \x03(\v2\x0f.numen.v1.ValueR\x06values\x12!\n" +
+	"\fstencil_path\x18\a \x01(\tR\vstencilPathB\x10\n" +
 	"\x0e_section_index\"1\n" +
 	"\x05Value\x12\x14\n" +
 	"\x05field\x18\x01 \x01(\tR\x05field\x12\x12\n" +

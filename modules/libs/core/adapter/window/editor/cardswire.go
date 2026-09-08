@@ -53,7 +53,7 @@ func renamedOf(r cards.RenameResult) *v1.RenameStencilFieldResponse {
 }
 
 func faceOf(f format.FaceTemplate) *v1.Face {
-	return &v1.Face{Name: f.Name, Lead: f.Lead, Front: f.Front, Back: f.Back}
+	return &v1.Face{Name: f.Name, Preamble: f.Preamble, Front: f.Front, Back: f.Back}
 }
 
 // deckOf is one deck as the schema carries it. The cards go out in the order
@@ -69,10 +69,10 @@ func deckOf(path, title string, d format.Deck, cutting map[string]string) *v1.De
 		Problems: problemsOf(d.Problems),
 	}
 	for _, s := range d.Sections {
-		out.Sections = append(out.Sections, &v1.Section{Name: s.Name, Lead: s.Lead})
+		out.Sections = append(out.Sections, &v1.Section{Name: s.Name, Preamble: s.Preamble})
 	}
 	for _, card := range d.Cards {
-		out.Cards = append(out.Cards, cardOf(card, cutting[card.Stencil]))
+		out.Cards = append(out.Cards, cardOf(card, cutting[card.StencilLink]))
 	}
 	return out
 }
@@ -82,9 +82,9 @@ func cardOf(c format.Card, at string) *v1.Card {
 		Heading:      c.Heading,
 		Mark:         string(c.Mark),
 		SectionIndex: section(c.Section),
-		Stencil:      c.Stencil,
-		StencilAt:    at,
-		Lead:         c.Lead,
+		StencilLink:  c.StencilLink,
+		StencilPath:  at,
+		Preamble:     c.Preamble,
 		Values:       make([]*v1.Value, 0, len(c.Values)),
 	}
 	for _, v := range c.Values {
@@ -190,7 +190,8 @@ func writtenDeck(w *v1.WriteDeckRequest) format.Deck {
 		Tail:     w.GetTail(),
 	}
 	for _, s := range w.GetSections() {
-		out.Sections = append(out.Sections, format.Section{Name: s.GetName(), Lead: s.GetLead()})
+		out.Sections = append(out.Sections,
+			format.Section{Name: s.GetName(), Preamble: s.GetPreamble()})
 	}
 	return out
 }
@@ -204,11 +205,11 @@ func cardsOf(cs []*v1.Card) []format.Card {
 	out := make([]format.Card, 0, len(cs))
 	for _, c := range cs {
 		card := format.Card{
-			Heading: c.GetHeading(),
-			Mark:    domain.CardID(c.GetMark()),
-			Section: sectionOf(c.SectionIndex),
-			Stencil: c.GetStencil(),
-			Lead:    c.GetLead(),
+			Heading:     c.GetHeading(),
+			Mark:        domain.CardID(c.GetMark()),
+			Section:     sectionOf(c.SectionIndex),
+			StencilLink: c.GetStencilLink(),
+			Preamble:    c.GetPreamble(),
 		}
 		for _, v := range c.GetValues() {
 			card.Values = append(card.Values, format.Value{Field: v.GetField(), Text: v.GetText()})
@@ -226,7 +227,7 @@ func facesOf(fs []*v1.Face) []format.FaceTemplate {
 	out := make([]format.FaceTemplate, 0, len(fs))
 	for _, f := range fs {
 		out = append(out, format.FaceTemplate{
-			Name: f.GetName(), Lead: f.GetLead(), Front: f.GetFront(), Back: f.GetBack(),
+			Name: f.GetName(), Preamble: f.GetPreamble(), Front: f.GetFront(), Back: f.GetBack(),
 		})
 	}
 	return out

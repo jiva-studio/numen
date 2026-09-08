@@ -7,7 +7,7 @@
  * drawn again under a fresh identity.
  */
 import type { Problem } from '../shared/flashcards/cards'
-import { deckIn, headed, named, sameDeck, type Deck } from './deck'
+import { deckIn, headed, named, sameDeck, type BufferDeck } from './deck'
 import { marksOf, sameMarks, type Marks } from '../shared/flashcards/marks'
 
 /** The string a tab holds, and the file it stands at. */
@@ -19,10 +19,10 @@ export interface ShownStore {
 /** The reader one window has, over the decks that window holds. */
 export function reader(store: ShownStore, problemsAt: (path: string) => readonly Problem[]) {
   /** The last string a deck was read out of, and what it came to. */
-  const parsed = new Map<string, { body: string; deck: Deck }>()
+  const parsed = new Map<string, { body: string; deck: BufferDeck }>()
 
   /** The deck one tab is showing, read out of the string the store holds. */
-  const deckAt = (id: string): Deck => {
+  const deckAt = (id: string): BufferDeck => {
     const body = store.shown(id).body
     const held = parsed.get(id)
     if (held && held.body === body) return held.deck
@@ -71,7 +71,7 @@ export function reader(store: ShownStore, problemsAt: (path: string) => readonly
    * A deck the tab itself turned, which is what it now holds. It is put here
    * as it goes into the store, so the string coming back is not read again.
    */
-  const holds = (id: string, body: string, deck: Deck): void => {
+  const holds = (id: string, body: string, deck: BufferDeck): void => {
     parsed.set(id, { body, deck })
   }
 

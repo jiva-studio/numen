@@ -32,8 +32,8 @@ const drawn = async (problems: readonly Problem[] = []) => {
   const renamed: string[] = []
   let fields: readonly string[] = ['Height', 'Life span']
   let faces: readonly VaultFace[] = [
-    { name: 'Recognise', lead: '', front: '{{Life span}}', back: '{{Height}}' },
-    { name: 'Name it', lead: '', front: '{{Life span}}', back: '' },
+    { name: 'Recognise', preamble: '', front: '{{Life span}}', back: '{{Height}}' },
+    { name: 'Name it', preamble: '', front: '{{Life span}}', back: '' },
   ]
 
   const core: Cards = {

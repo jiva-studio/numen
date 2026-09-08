@@ -42,9 +42,9 @@ const CARDS: readonly VaultCard[] = [
     mark: 'k7m2xq9fzp',
     sectionIndex: 0,
     heading: 'Llama',
-    stencil: 'Animal',
-    stencilAt: 'Animal.md',
-    lead: '',
+    stencilLink: 'Animal',
+    stencilPath: 'Animal.md',
+    preamble: '',
     values: [
       { field: 'Name', text: 'Llama' },
       { field: 'Height', text: '45"' },
@@ -54,15 +54,15 @@ const CARDS: readonly VaultCard[] = [
     mark: '3n8vr4tqch',
     sectionIndex: 0,
     heading: '',
-    stencil: 'Animal',
-    stencilAt: 'Animal.md',
-    lead: '',
+    stencilLink: 'Animal',
+    stencilPath: 'Animal.md',
+    preamble: '',
     values: [],
   },
 ]
 
 /** The one section the deck stands in, which every card of it is under. */
-const SECTIONS = [{ name: 'Roots', lead: '' }]
+const SECTIONS = [{ name: 'Roots', preamble: '' }]
 
 /** A window with one deck open, drawn. */
 const drawn = async (
@@ -215,7 +215,7 @@ describe('a deck drawn', () => {
     await window.find('[data-cut="Animal"]').trigger('click')
 
     expect(tab.deck.value.cards.length).toBe(3)
-    expect(tab.deck.value.cards.at(-1)?.stencil).toBe('Animal')
+    expect(tab.deck.value.cards.at(-1)?.stencilLink).toBe('Animal')
     expect(tab.deck.value.cards.at(-1)?.values).toStrictEqual([
       { field: 'Name', text: '' },
       { field: 'Height', text: '' },

@@ -251,7 +251,7 @@ func (f *DeckFile) RemoveSection(at int) error {
 func (f *DeckFile) AddSection(s Section) error {
 	body := []byte(f.doc.Body())
 	blocks := []string{headingLine(SectionLevel, oneLine(s.Name))}
-	if lead := trimBlankLines(markdown.Normalised(s.Lead)); lead != "" {
+	if lead := trimBlankLines(markdown.Normalised(s.Preamble)); lead != "" {
 		blocks = append(blocks, lead)
 	}
 	at := len(body)
@@ -286,10 +286,10 @@ func (f *DeckFile) AddCardUnder(at int, card Card) error {
 // heading of its field's name.
 func cardBlock(card Card) string {
 	blocks := []string{headingLine(CardLevel, WriteHeading(oneLine(card.Heading), card.Mark))}
-	if card.Stencil != "" {
-		blocks = append(blocks, "[["+card.Stencil+"]]")
+	if card.StencilLink != "" {
+		blocks = append(blocks, "[["+card.StencilLink+"]]")
 	}
-	if lead := trimBlankLines(markdown.Normalised(card.Lead)); lead != "" {
+	if lead := trimBlankLines(markdown.Normalised(card.Preamble)); lead != "" {
 		blocks = append(blocks, lead)
 	}
 	for _, v := range card.Values {
@@ -393,6 +393,6 @@ func (f *DeckFile) RenameField(cutting map[string]string, stencil, from, to stri
 // under the heading is an ordinary wikilink, so what cuts the card is the note
 // that name lands on.
 func cutBy(card Card, cutting map[string]string, stencil string) bool {
-	at, lands := cutting[card.Stencil]
+	at, lands := cutting[card.StencilLink]
 	return lands && at == stencil
 }

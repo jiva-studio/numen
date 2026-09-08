@@ -11,37 +11,37 @@ import type { VaultFace, VaultStencil } from '../shared/flashcards/cards'
 import { minting, type IdMaker } from '../shared/flashcards/identity'
 
 /** One face as the window holds it: what the file says, under an identity of its own. */
-export interface Face {
+export interface BufferFace {
   /** The identity the window addresses it by, minted at every reading. */
   readonly id: string
   readonly name: string
   /** The prose between the face's heading and its first side. */
-  readonly lead: string
+  readonly preamble: string
   readonly front: string
   readonly back: string
 }
 
 /** A stencil as the window holds it: its fields, and its faces under identities. */
-export interface Stencil {
+export interface BufferStencil {
   readonly fields: readonly string[]
   /** The prose below the frontmatter and above the first face. */
   readonly preamble: string
-  readonly faces: readonly Face[]
+  readonly faces: readonly BufferFace[]
   /** What the file ends with once the last face has been read. */
   readonly tail: string
 }
 
 /** A stencil that names nothing and shows nothing. */
-export const NO_STENCIL: Stencil = { fields: [], preamble: '', faces: [], tail: '' }
+export const NO_STENCIL: BufferStencil = { fields: [], preamble: '', faces: [], tail: '' }
 
 /** A stencil as the vault read it, each face under an identity this window mints. */
-export const stencilOf = (read: VaultStencil, mint: IdMaker = minting): Stencil => ({
+export const stencilOf = (read: VaultStencil, mint: IdMaker = minting): BufferStencil => ({
   fields: read.fields,
   preamble: read.preamble,
   faces: read.faces.map((face) => ({
     id: mint(),
     name: face.name,
-    lead: face.lead,
+    preamble: face.preamble,
     front: face.front,
     back: face.back,
   })),
@@ -53,7 +53,7 @@ export const stencilOf = (read: VaultStencil, mint: IdMaker = minting): Stencil 
  * The parts are written in a settled order, so a stencil that came back
  * unchanged reads as the string it went in as.
  */
-export const stencilBodyOf = (stencil: Stencil): string =>
+export const stencilBodyOf = (stencil: BufferStencil): string =>
   JSON.stringify({
     fields: stencil.fields,
     preamble: stencil.preamble,
@@ -61,34 +61,34 @@ export const stencilBodyOf = (stencil: Stencil): string =>
     faces: stencil.faces.map((face) => ({
       id: face.id,
       name: face.name,
-      lead: face.lead,
+      preamble: face.preamble,
       front: face.front,
       back: face.back,
     })),
   })
 
 /** The stencil a string stands for. A string holding nothing names no field. */
-export const stencilIn = (body: string): Stencil => (body ? (JSON.parse(body) as Stencil) : NO_STENCIL)
+export const stencilIn = (body: string): BufferStencil => (body ? (JSON.parse(body) as BufferStencil) : NO_STENCIL)
 
 /** The faces of a stencil, in the shape the vault takes them. */
-export const facesOf = (stencil: Stencil): readonly VaultFace[] =>
-  stencil.faces.map(({ name, lead, front, back }) => ({ name, lead, front, back }))
+export const facesOf = (stencil: BufferStencil): readonly VaultFace[] =>
+  stencil.faces.map(({ name, preamble, front, back }) => ({ name, preamble, front, back }))
 
 /** Whether two stencils read the same, the identities left out the same way. */
-export const sameStencil = (one: Stencil, other: Stencil): boolean =>
+export const sameStencil = (one: BufferStencil, other: BufferStencil): boolean =>
   one.preamble === other.preamble &&
   one.tail === other.tail &&
   JSON.stringify(one.fields) === JSON.stringify(other.fields) &&
   JSON.stringify(facesOf(one)) === JSON.stringify(facesOf(other))
 
 /** A field named at the end of the order. */
-export const fieldAdded = (stencil: Stencil, name: string): Stencil => ({
+export const fieldAdded = (stencil: BufferStencil, name: string): BufferStencil => ({
   ...stencil,
   fields: [...stencil.fields, name],
 })
 
 /** A field the stencil no longer names. What the faces stand in its braces stays. */
-export const fieldGone = (stencil: Stencil, field: string): Stencil => ({
+export const fieldGone = (stencil: BufferStencil, field: string): BufferStencil => ({
   ...stencil,
   fields: stencil.fields.filter((one) => one !== field),
 })
@@ -97,7 +97,7 @@ export const fieldGone = (stencil: Stencil, field: string): Stencil => ({
  * A field let go somewhere in the order. The first field names every card the
  * stencil cuts, so it stays first and nothing lands above it.
  */
-export const fieldDropped = (stencil: Stencil, field: string, at: InsertionPoint): Stencil => ({
+export const fieldDropped = (stencil: BufferStencil, field: string, at: InsertionPoint): BufferStencil => ({
   ...stencil,
   fields: reordered(stencil.fields, field, at),
 })
@@ -107,7 +107,7 @@ export const fieldDropped = (stencil: Stencil, field: string, at: InsertionPoint
  * order of the faces is the order a card's repetitions are taken from it, and
  * nothing among them is fixed.
  */
-export const faceDropped = (stencil: Stencil, id: string, at: InsertionPoint): Stencil => {
+export const faceDropped = (stencil: BufferStencil, id: string, at: InsertionPoint): BufferStencil => {
   const order = ordered(
     stencil.faces.map((face) => face.id),
     id,
@@ -118,30 +118,30 @@ export const faceDropped = (stencil: Stencil, id: string, at: InsertionPoint): S
 }
 
 /** A face added at the end, with both its halves empty. */
-export const faceAdded = (stencil: Stencil, name: string, mint: IdMaker = minting): Stencil => ({
+export const faceAdded = (stencil: BufferStencil, name: string, mint: IdMaker = minting): BufferStencil => ({
   ...stencil,
-  faces: [...stencil.faces, { id: mint(), name, lead: '', front: '', back: '' }],
+  faces: [...stencil.faces, { id: mint(), name, preamble: '', front: '', back: '' }],
 })
 
 /** A face under another name. */
-export const faceNamed = (stencil: Stencil, id: string, name: string): Stencil => ({
+export const faceNamed = (stencil: BufferStencil, id: string, name: string): BufferStencil => ({
   ...stencil,
   faces: stencil.faces.map((face) => (face.id === id ? { ...face, name } : face)),
 })
 
 /** A face taken out of the stencil. */
-export const faceGone = (stencil: Stencil, id: string): Stencil => ({
+export const faceGone = (stencil: BufferStencil, id: string): BufferStencil => ({
   ...stencil,
   faces: stencil.faces.filter((face) => face.id !== id),
 })
 
 /** One half of one face as it now reads. */
 export const faceWritten = (
-  stencil: Stencil,
+  stencil: BufferStencil,
   id: string,
   half: 'front' | 'back',
   text: string,
-): Stencil => ({
+): BufferStencil => ({
   ...stencil,
   faces: stencil.faces.map((face) => (face.id === id ? { ...face, [half]: text } : face)),
 })

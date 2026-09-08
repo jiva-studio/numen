@@ -39,7 +39,7 @@ import {
   sectionGone,
   sectionNamed,
   sectionsOf,
-  type Deck,
+  type BufferDeck,
 } from './deck'
 import type { Marks } from '../shared/flashcards/marks'
 import { WORDS as words } from '../shared/flashcards/words'
@@ -69,7 +69,7 @@ export interface DeckTabState {
   /** The deck as the window draws it: the state it is in, and what it stands at. */
   readonly shown: ComputedRef<OpenNote>
   /** The cards, as the window holds them. */
-  readonly deck: ComputedRef<Deck>
+  readonly deck: ComputedRef<BufferDeck>
   /** The same, as the grid draws them, each under the stencil that cuts it. */
   readonly drawn: ComputedRef<readonly DeckCard[]>
   /** The sections, as the grid draws them. */
@@ -181,7 +181,7 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
   const stencils = computed(() => stencilsOf(offers.value))
 
   /** A deck as it now stands, written back into the store. */
-  const turns = (id: string, deck: Deck): void => {
+  const turns = (id: string, deck: BufferDeck): void => {
     const body = deckBodyOf(deck)
     read.holds(id, body, deck)
     store.typed(id, body)

@@ -29,9 +29,9 @@ const CARDS: readonly VaultCard[] = [
     mark: 'k7m2xq9fzp',
     sectionIndex: null,
     heading: 'Llama',
-    stencil: 'cards/Animal',
-    stencilAt: 'Animal.md',
-    lead: '',
+    stencilLink: 'cards/Animal',
+    stencilPath: 'Animal.md',
+    preamble: '',
     values: [
       { field: 'Name', text: 'Llama' },
       { field: 'Height', text: 'about 45"' },
@@ -41,9 +41,9 @@ const CARDS: readonly VaultCard[] = [
     mark: '3n8vr4tqch',
     sectionIndex: null,
     heading: 'Alpaca',
-    stencil: 'Animal|животное',
-    stencilAt: 'Animal.md',
-    lead: '',
+    stencilLink: 'Animal|животное',
+    stencilPath: 'Animal.md',
+    preamble: '',
     values: [{ field: 'Name', text: 'Alpaca' }],
   },
 ]
@@ -63,7 +63,7 @@ const vault = (
     /** The cards the file holds, where a test wants other ones. */
     cards?: readonly VaultCard[]
     /** The sections the file holds, where a test wants some. */
-    sections?: readonly { name: string; lead: string }[]
+    sections?: readonly { name: string; preamble: string }[]
     /** The vault is out of reach, and a read of the deck reaches nothing. */
     unreachable?: boolean
     /** What a write of the deck is refused for. */
@@ -246,7 +246,7 @@ describe('a deck opened', () => {
   })
 
   it('draws the sections the vault read, each under an identity of its own', async () => {
-    const { tab } = await open({ sections: [{ name: 'Roots', lead: '' }] })
+    const { tab } = await open({ sections: [{ name: 'Roots', preamble: '' }] })
 
     expect(tab.sections.value.map((section) => section.name)).toStrictEqual(['Roots'])
     expect(tab.sections.value[0]?.id).toBeTruthy()
@@ -299,7 +299,7 @@ describe('a card written in a deck', () => {
 
     tab.adds('Animal', [], null)
 
-    expect(tab.deck.value.cards.at(-1)?.stencilAt).toBe('Animal.md')
+    expect(tab.deck.value.cards.at(-1)?.stencilPath).toBe('Animal.md')
   })
 
   it('carries no mark, which is written where the deck is made whole', async () => {
@@ -443,14 +443,14 @@ describe('a value written over', () => {
   const WRITTEN = ['cards/Animal', 'Animal|животное', 'note://01J3ZQ8W0T7K9V2M4N6P8R0S1T']
 
   /** A deck of one card, under the wikilink it wrote for its stencil. */
-  const only = (stencil: string, stencilAt = 'Animal.md'): readonly VaultCard[] => [
+  const only = (stencil: string, stencilPath = 'Animal.md'): readonly VaultCard[] => [
     {
       mark: 'k7m2xq9fzp',
       sectionIndex: null,
       heading: 'Llama',
-      stencil,
-      stencilAt,
-      lead: '',
+      stencilLink: stencil,
+      stencilPath,
+      preamble: '',
       values: [{ field: 'Name', text: 'Llama' }],
     },
   ]
@@ -461,9 +461,9 @@ describe('a value written over', () => {
       mark: 'k7m2xq9fzp',
       sectionIndex: null,
       heading: 'Llama',
-      stencil: 'Animal',
-      stencilAt: 'Animal.md',
-      lead: '',
+      stencilLink: 'Animal',
+      stencilPath: 'Animal.md',
+      preamble: '',
       values: [
         { field: 'Name', text: 'Llama' },
         { field: 'Name', text: 'Alpaca' },
@@ -528,11 +528,11 @@ describe('a section of a deck the window holds', () => {
     expect(tab.sections.value.map((section) => section.name)).toStrictEqual(['Roots'])
 
     await decks.flush()
-    expect(wrote()[0]?.sections).toStrictEqual([{ name: 'Roots', lead: '' }])
+    expect(wrote()[0]?.sections).toStrictEqual([{ name: 'Roots', preamble: '' }])
   })
 
   it('takes the name it was given', async () => {
-    const { tab } = await open({ sections: [{ name: 'Roots', lead: '' }] })
+    const { tab } = await open({ sections: [{ name: 'Roots', preamble: '' }] })
 
     tab.namesSection(tab.sections.value[0]?.id ?? '', 'Roots and shoots')
 
@@ -541,7 +541,7 @@ describe('a section of a deck the window holds', () => {
 
   it('takes away its heading and nothing else when it goes', async () => {
     const { tab } = await open({
-      sections: [{ name: 'Roots', lead: '' }],
+      sections: [{ name: 'Roots', preamble: '' }],
       cards: CARDS.map((card) => ({ ...card, section: 0 })),
     })
 
@@ -639,9 +639,9 @@ describe('a deck read again under the window', () => {
         mark: 'w9s5jd2b1k',
         sectionIndex: null,
         heading: 'Vicuña',
-        stencil: 'Animal',
-        stencilAt: 'Animal.md',
-        lead: '',
+        stencilLink: 'Animal',
+        stencilPath: 'Animal.md',
+        preamble: '',
         values: [{ field: 'Name', text: 'Vicuña' }],
       },
     ])
@@ -657,7 +657,7 @@ describe('a deck read again under the window', () => {
      under the identity its section stands at, so a reading that mints fresh
      ones takes down every run and every card standing in it. */
   it('keeps the identity of a section the file still holds', async () => {
-    const one = await open({ sections: [{ name: 'Roots', lead: '' }] })
+    const one = await open({ sections: [{ name: 'Roots', preamble: '' }] })
     const stood = one.tab.deck.value.sections[0]?.id ?? ''
     one.tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await one.decks.kept.settles(one.tab.id)
@@ -668,9 +668,9 @@ describe('a deck read again under the window', () => {
         mark: 'w9s5jd2b1k',
         sectionIndex: null,
         heading: 'Vicuña',
-        stencil: 'Animal',
-        stencilAt: 'Animal.md',
-        lead: '',
+        stencilLink: 'Animal',
+        stencilPath: 'Animal.md',
+        preamble: '',
         values: [{ field: 'Name', text: 'Vicuña' }],
       },
     ])
@@ -701,7 +701,7 @@ describe('a deck read again under the window', () => {
      somewhere else is a reading of a different length, and the sections of it
      are the sections that were already drawn. */
   it('keeps it where the file gained a card the window did not write', async () => {
-    const one = await open({ sections: [{ name: 'Roots', lead: '' }] })
+    const one = await open({ sections: [{ name: 'Roots', preamble: '' }] })
     const stood = one.tab.deck.value.sections[0]?.id ?? ''
 
     one.holds([
@@ -710,9 +710,9 @@ describe('a deck read again under the window', () => {
         mark: 'w9s5jd2b1k',
         sectionIndex: null,
         heading: 'Vicuña',
-        stencil: 'Animal',
-        stencilAt: 'Animal.md',
-        lead: '',
+        stencilLink: 'Animal',
+        stencilPath: 'Animal.md',
+        preamble: '',
         values: [{ field: 'Name', text: 'Vicuña' }],
       },
     ])
@@ -740,9 +740,9 @@ describe('a deck read again under the window', () => {
         mark: 'w9s5jd2b1k',
         sectionIndex: null,
         heading: 'Vic',
-        stencil: 'Animal',
-        stencilAt: 'Animal.md',
-        lead: '',
+        stencilLink: 'Animal',
+        stencilPath: 'Animal.md',
+        preamble: '',
         values: [{ field: 'Name', text: 'Vic' }],
       },
     ])
@@ -761,9 +761,9 @@ describe('a deck read again under the window', () => {
         mark: 'w9s5jd2b1k',
         sectionIndex: null,
         heading: 'Vicuña',
-        stencil: 'Animal',
-        stencilAt: 'Animal.md',
-        lead: '',
+        stencilLink: 'Animal',
+        stencilPath: 'Animal.md',
+        preamble: '',
         values: [{ field: 'Name', text: 'Vicuña' }],
       },
     ])

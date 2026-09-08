@@ -163,7 +163,7 @@ func TestACardSaysWhichSectionItStandsUnder(t *testing.T) {
 	if len(sections) != 2 || sections[0].GetName() != "Camelids" || sections[1].GetName() != "Others" {
 		t.Fatalf("the deck came back with the sections %+v", sections)
 	}
-	if lead := sections[1].GetLead(); lead != "what a person wrote about this run of it" {
+	if lead := sections[1].GetPreamble(); lead != "what a person wrote about this run of it" {
 		t.Errorf("what a person wrote under the second section came back as %q", lead)
 	}
 	held := read.GetCards()
@@ -608,11 +608,11 @@ func TestACardNamesItsStencilTheWayALinkNamesANote(t *testing.T) {
 	filed := map[string]string{"Llama": "cards/Animal.md", "Alpaca": "cards/Animal.md", "Vicuña": ""}
 	for _, card := range held {
 		name := valued(card, "Name")
-		if at := card.GetStencilAt(); at != filed[name] {
+		if at := card.GetStencilPath(); at != filed[name] {
 			t.Errorf("the stencil of %s is filed at %q, want %q", name, at, filed[name])
 		}
 	}
-	if written := held[0].GetStencil(); written != "cards/Animal" {
+	if written := held[0].GetStencilLink(); written != "cards/Animal" {
 		t.Errorf("the wikilink of the first card came back as %q", written)
 	}
 }

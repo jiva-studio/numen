@@ -32,7 +32,7 @@ import {
   stencilBodyOf,
   stencilIn,
   stencilOf,
-  type Stencil,
+  type BufferStencil,
 } from './stencil'
 import { marksOf, sameMarks, type Marks } from '../shared/flashcards/marks'
 import { fileOf } from '../shared/paths'
@@ -63,7 +63,7 @@ export interface StencilTabState {
   /** The stencil as the window draws it: the state it is in, and what it stands at. */
   readonly shown: ComputedRef<OpenNote>
   /** The fields and the faces, as the editor draws them. */
-  readonly stencil: ComputedRef<Stencil>
+  readonly stencil: ComputedRef<BufferStencil>
   /** What is wrong with the file, against the face or the field it stands on. */
   readonly marks: ComputedRef<Marks>
   /** What the whole file was refused for, in words a person reads. */
@@ -132,9 +132,9 @@ export function stencilling(
   })
 
   /** The last string a stencil was read out of, and what it came to. */
-  const parsed = new Map<string, { body: string; stencil: Stencil }>()
+  const parsed = new Map<string, { body: string; stencil: BufferStencil }>()
 
-  const stencilAt = (id: string): Stencil => {
+  const stencilAt = (id: string): BufferStencil => {
     const body = store.shown(id).body
     const held = parsed.get(id)
     if (held && held.body === body) return held.stencil
@@ -174,7 +174,7 @@ export function stencilling(
   }
 
   /** A stencil as it now stands, written back into the store. */
-  const turns = (id: string, stencil: Stencil): void => {
+  const turns = (id: string, stencil: BufferStencil): void => {
     const body = stencilBodyOf(stencil)
     parsed.set(id, { body, stencil })
     store.typed(id, body)

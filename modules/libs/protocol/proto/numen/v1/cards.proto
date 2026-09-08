@@ -136,7 +136,7 @@ message Face {
 
   // The prose between the face's heading and its first side, with line endings
   // as LF. It is written back as it arrives.
-  string lead = 4;
+  string preamble = 4;
 }
 
 // Deck is a note whose body is cards.
@@ -174,7 +174,7 @@ message Section {
 
   // The prose between the section's heading and its first card, with line
   // endings as LF. Nothing lays it out, and it is written back as it arrives.
-  string lead = 2;
+  string preamble = 2;
 }
 
 // Problem is something in a file that could not be acted on and was not guessed
@@ -267,12 +267,14 @@ message Card {
   string heading = 3;
 
   // The stencil this card is cut by, as the wikilink beneath its heading names
-  // it, without the brackets. Empty for a card written under no wikilink.
-  string stencil = 4;
+  // it, without the brackets. A name where one picks the stencil, and
+  // `note://<identifier>` where none does. Empty for a card written under no
+  // wikilink.
+  string stencil_link = 4;
 
   // The prose between that wikilink and the first field, with line endings as
   // LF. It is written back as it arrives.
-  string lead = 5;
+  string preamble = 5;
 
   // The values, in the order they stand under the card. A field the stencil
   // declares and the card leaves out is absent here.
@@ -281,7 +283,7 @@ message Card {
   // Where the stencil that wikilink names is filed, resolved the way any link
   // is. Empty for a card naming none and for a name that reaches no note, and a
   // write carries nothing here.
-  string stencil_at = 7;
+  string stencil_path = 7;
 }
 
 // Value is what a person wrote under one of a card's fields.

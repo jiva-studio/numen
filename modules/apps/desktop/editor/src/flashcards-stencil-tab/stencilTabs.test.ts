@@ -19,7 +19,7 @@ const puts = () => fileOpeners({ fileKinds: async () => new Map() })
 const settles = () => new Promise((done) => setTimeout(done, 0))
 
 const FACES: readonly VaultFace[] = [
-  { name: 'Recognise', lead: '', front: '{{Height}}', back: '**Height:** {{Height}}' },
+  { name: 'Recognise', preamble: '', front: '{{Height}}', back: '**Height:** {{Height}}' },
 ]
 
 /** A vault holding one stencil, writing down every write it was asked for. */
@@ -416,7 +416,7 @@ describe('a stencil read again under the window', () => {
     const one = await open()
     const was = one.tab.stencil.value
 
-    one.holds([{ name: 'Recall', lead: '', front: '{{Height}}', back: '{{Life span}}' }])
+    one.holds([{ name: 'Recall', preamble: '', front: '{{Height}}', back: '{{Life span}}' }])
     one.stencils.changed(['Animal.md'])
     await settles()
 

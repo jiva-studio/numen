@@ -251,9 +251,9 @@ const ROOT_CUT = { name: 'Root', fields: ['Root', 'Class', 'Present', 'Meaning']
 const card = (
   id: string,
   section: string,
-  stencil: string,
+  stencilLink: string,
   filled: readonly { field: string; text: string }[],
-) => ({ id, section, stencil, filled })
+) => ({ id, section, stencil: stencilLink, filled })
 
 const CARDS = [
   card('gam', 'going', 'Root', [
@@ -355,21 +355,21 @@ const STENCIL_STATE: StencilTabState = {
       {
         id: 'recognise',
         name: 'Recognise',
-        lead: '',
+        preamble: '',
         front: '<p>{{Word}} — <i>{{Reading}}</i></p>',
         back: '<p><b>Meaning:</b> {{Meaning}}</p>\n<p><b>In a sentence:</b> {{In a sentence}}</p>',
       },
       {
         id: 'produce',
         name: 'Produce',
-        lead: '',
+        preamble: '',
         front: '<p>Which word means <i>{{Meaning}}</i>?</p>',
         back: '<p>{{Word}} — <i>{{Reading}}</i></p>\n<p>{{In a sentence}}</p>',
       },
       {
         id: 'read-it',
         name: 'Read it',
-        lead: '',
+        preamble: '',
         front: '<p><i>{{Reading}}</i></p>',
         back: '<p>{{Word}}</p>\n<p><b>Meaning:</b> {{Meaning}}</p>',
       },

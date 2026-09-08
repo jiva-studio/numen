@@ -243,7 +243,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		stands := 0
 		written, minted, err := changing(ctx, core, in.Path, in.Fingerprint,
 			func(read cards.DeckContents, file *format.DeckFile) error {
-				card := format.Card{Stencil: in.Stencil, Values: values(in.Values)}
+				card := format.Card{StencilLink: in.Stencil, Values: values(in.Values)}
 				if in.Section == nil {
 					stands = len(read.Body.Cards)
 					return file.AddCard(card)
@@ -641,7 +641,7 @@ func placed(d format.Deck, section int) (int, error) {
 }
 
 func carded(card format.Card) Card {
-	out := Card{Mark: string(card.Mark), Section: card.Section, Stencil: card.Stencil}
+	out := Card{Mark: string(card.Mark), Section: card.Section, Stencil: card.StencilLink}
 	for _, v := range card.Values {
 		out.Values = append(out.Values, FieldValue{Field: v.Field, Text: v.Text})
 	}

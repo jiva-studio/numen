@@ -88,15 +88,19 @@ export interface VaultCard {
    * stencil is missing, where nothing can say which field is first.
    */
   readonly heading: string
-  /** The stencil it is cut by, as the wikilink beneath its heading names it. */
-  readonly stencil: string
   /**
-   * Where that stencil is filed, as the wikilink resolves in the vault. Empty
-   * for a card naming none and for a name that reaches no note.
+   * The stencil it is cut by, as the wikilink beneath its heading names it: a
+   * name where one picks the stencil, and `note://<identifier>` where none
+   * does.
    */
-  readonly stencilAt: string
+  readonly stencilLink: string
+  /**
+   * Where that link lands in the vault. Empty for a card naming none and for a
+   * link that reaches no note.
+   */
+  readonly stencilPath: string
   /** The prose between that wikilink and the first field. */
-  readonly lead: string
+  readonly preamble: string
   readonly values: readonly Value[]
 }
 
@@ -108,7 +112,7 @@ export interface VaultSection {
   /** What it is called, as its heading spells it. Two sections may carry one name. */
   readonly name: string
   /** The prose between its heading and its first card. */
-  readonly lead: string
+  readonly preamble: string
 }
 
 /**
@@ -137,7 +141,7 @@ export interface VaultDeck extends Surrounds {
 export interface VaultFace {
   readonly name: string
   /** The prose between the face's heading and its first side. */
-  readonly lead: string
+  readonly preamble: string
   readonly front: string
   readonly back: string
 }
@@ -310,7 +314,7 @@ export const cards: Cards = {
       path,
       preamble: deck.preamble,
       cards: deck.cards.map(carding),
-      sections: deck.sections.map((section) => ({ name: section.name, lead: section.lead })),
+      sections: deck.sections.map((section) => ({ name: section.name, preamble: section.preamble })),
       tail: deck.tail,
       ...(seen === null ? {} : { seen: fingerprint(seen) }),
     })
@@ -336,7 +340,7 @@ export const cards: Cards = {
       preamble: stencil.preamble,
       faces: stencil.faces.map((face) => ({
         name: face.name,
-        lead: face.lead,
+        preamble: face.preamble,
         front: face.front,
         back: face.back,
       })),
@@ -368,7 +372,7 @@ const decked = (one: DeckMessage): VaultDeck => ({
   title: one.title,
   preamble: one.preamble,
   cards: one.cards.map(carded),
-  sections: one.sections.map((section) => ({ name: section.name, lead: section.lead })),
+  sections: one.sections.map((section) => ({ name: section.name, preamble: section.preamble })),
   tail: one.tail,
   problems: one.problems.map(problem),
 })
@@ -382,7 +386,7 @@ const stencilled = (one: StencilMessage): VaultStencil => ({
   faces: one.faces.map(
     (face): VaultFace => ({
       name: face.name,
-      lead: face.lead,
+      preamble: face.preamble,
       front: face.front,
       back: face.back,
     }),
@@ -395,9 +399,9 @@ const carded = (one: CardMessage): VaultCard => ({
   mark: one.mark,
   sectionIndex: one.sectionIndex ?? null,
   heading: one.heading,
-  stencil: one.stencil,
-  stencilAt: one.stencilAt,
-  lead: one.lead,
+  stencilLink: one.stencilLink,
+  stencilPath: one.stencilPath,
+  preamble: one.preamble,
   values: one.values.map((value) => ({ field: value.field, text: value.text })),
 })
 
@@ -410,8 +414,8 @@ const carding = (one: VaultCard) => ({
   mark: one.mark,
   ...(one.sectionIndex === null ? {} : { sectionIndex: one.sectionIndex }),
   heading: one.heading,
-  stencil: one.stencil,
-  lead: one.lead,
+  stencilLink: one.stencilLink,
+  preamble: one.preamble,
   values: one.values.map((value) => ({ field: value.field, text: value.text })),
 })
 
