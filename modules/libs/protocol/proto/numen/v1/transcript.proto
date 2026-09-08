@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+// The text of a file with the times each stretch of it was said at.
+//
+// Two things write one: a model listening to a recording, and a site publishing
+// words with a video. A transcript is a transcript either way, so one service
+// answers for both.
+package numen.v1;
+
+import "numen/v1/shared.proto";
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// TranscriptService reads and writes the words of a file that carries times.
+//
+// Whether a file carries one is ListArtifacts.
+service TranscriptService {
+  // ReadTranscript is the words as they now stand: the ones a person put right,
+  // and what a model heard where nothing put them right.
+  rpc ReadTranscript(ReadTranscriptRequest) returns (ReadTranscriptResponse);
+
+  // WriteTranscript writes the words as a person left them.
+  //
+  // What the model heard stays under its own name and the words as they now
+  // stand go beside it, so a transcript edited into nonsense is corrections
+  // that can be taken away and what was heard comes back.
+  rpc WriteTranscript(WriteTranscriptRequest) returns (WriteTranscriptResponse);
+}
+
+// A Cue is one stretch of speech: what was said, and the milliseconds of the
+// recording it spans.
+//
+// One cue stands on one line. A cue broken over two is two a client would offer
+// to edit and one the recording would play.
+message Cue {
+  string text = 1;
+  int32 from = 2;
+  int32 to = 3;
+}
+
+message ReadTranscriptRequest {
+  // The file, as the vault holds it.
+  string path = 1;
+
+  // The run of the file's text to answer about, counted in bytes, and nothing
+  // at all for the whole of it. What comes back is the speech those bytes were
+  // said in.
+  Span span = 2;
+}
+
+message ReadTranscriptResponse {
+  // The words with the times each of them was said at. A file nothing has been
+  // heard for carries none.
+  repeated Cue cues = 1;
+}
+
+message WriteTranscriptRequest {
+  // The file, as the vault holds it.
+  string path = 1;
+
+  // The words as the person left them, against the milliseconds they were said
+  // in. A client that merged and split lines does the arithmetic.
+  //
+  // Speech runs forward: a cue ends no earlier than it begins, and begins after
+  // the one before it ends. A cue whose words trim away is dropped, and its
+  // timings still bound the cue after it. Words carrying nothing at all are
+  // refused: what was heard comes back by taking the corrections away, and
+  // writing nothing over the words would leave the recording saying nothing
+  // with nothing to edit.
+  repeated Cue cues = 2;
+}
+
+message WriteTranscriptResponse {
+  // The words as they now stand.
+  repeated Cue cues = 1;
+}

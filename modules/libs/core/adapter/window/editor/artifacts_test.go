@@ -224,12 +224,12 @@ func TestTheWordsOfALinkNoteAreReadBack(t *testing.T) {
 		willRun(), willRun(),
 	)
 
-	out, err := api.ReadText(t.Context(),
-		connect.NewRequest(&v1.ReadTextRequest{Path: pointed}))
+	out, err := api.ReadTranscript(t.Context(),
+		connect.NewRequest(&v1.ReadTranscriptRequest{Path: pointed}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	cues := out.Msg.GetSpoken().GetCues()
+	cues := out.Msg.GetCues()
 	if len(cues) != 1 || cues[0].GetText() != "what was said" || cues[0].GetFrom() != 1000 {
 		t.Errorf("the words read %+v", cues)
 	}

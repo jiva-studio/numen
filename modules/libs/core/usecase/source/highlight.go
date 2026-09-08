@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
-// Highlight says where a run of a source's text sits on the pages it was read
-// from.
+// Highlight is what runs of a source's text say and where they sit on the pages
+// they were read from.
 //
 // Two things place a word — a model reading a scan, and the document's own text
 // layer — and which of them made the text the chunks are places in is the one
@@ -34,27 +34,35 @@ type Highlight struct {
 	Documents port.TextExtractor
 }
 
-// NewHighlight is what places a run of text on the pages it was read from: the
-// vault the document is read out of, what says which producer made the text the
-// runs are places in, and the store that producer's coordinates are kept in.
+// A Run is one run of a source's text: what it says, and where it stands on the
+// pages it was read from.
+type Run struct {
+	Text  string
+	Boxes []highlight.Box
+}
+
+// NewHighlight is what a run of text says and where it stands on the pages it
+// was read from: the vault the document is read out of, what says which producer
+// made the text the runs are places in, and the store that producer's text and
+// coordinates are kept in.
 func NewHighlight(
 	readers port.VaultReaders, sources port.SourceQueries, derived port.DerivedStores,
 ) Highlight {
 	return Highlight{Readers: readers, Sources: sources, Derived: derived}
 }
 
-// Execute is where the runs of one source's text sit: for each of them, the
-// pages it falls on and, on each, the rectangles covering it.
+// Execute is what the runs of one source's text say and where each of them
+// sits: the boxes covering it, each on the page it was read from.
 //
 // The answer stands in the order the runs were asked about, so a caller that
-// asked about a passage and the places around it knows which is which. The
-// coordinates are read once however many runs are asked about.
+// asked about a passage and the places around it knows which is which. The text
+// and the coordinates are read once however many runs are asked about.
 func (u Highlight) Execute(
 	ctx context.Context,
 	v domain.Vault,
 	path string,
 	runs []domain.Span,
-) ([][]highlight.Page, error) {
+) ([]Run, error) {
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return nil, err
@@ -68,32 +76,74 @@ func (u Highlight) Execute(
 	if len(runs) == 0 {
 		return nil, nil
 	}
-
-	said, held, err := u.Sources.Reading(ctx, v.ID, path)
-	if err != nil || !held {
+	said, stands, err := u.Sources.Reading(ctx, v.ID, path)
+	if err != nil {
 		return nil, err
 	}
-	// A reading is of the bytes the index last saw, and its coordinates
-	// describe those. A file rewritten since is read from its own layer, which
-	// is the words that are there now.
+	// Which producer made a source's text is what says where its offsets are,
+	// and a source the index does not hold says nothing about either.
+	if !stands {
+		return over("", nil, runs), nil
+	}
+	var store port.DerivedStore
+	if u.Derived != nil {
+		if store, err = u.Derived.Open(v); err != nil {
+			return nil, err
+		}
+	}
+
+	// A reading is of the bytes the index last saw, and its text and
+	// coordinates describe those. A file rewritten since is read from its own
+	// layer, which is the words that are there now.
 	var boxes []highlight.Box
 	if said.Producer != "" && ref.Unchanged(said.Fingerprint) {
-		boxes, err = u.read(ctx, v, said)
+		boxes, err = u.read(ctx, store, said)
 	} else {
+		said = port.SourceText{}
 		boxes, err = u.layer(ctx, reader, ref, runs)
 	}
 	if err != nil {
 		return nil, err
 	}
-	return over(boxes, runs), nil
+	prose, err := u.prose(ctx, reader, store, path, said)
+	if err != nil {
+		return nil, err
+	}
+	return over(prose, boxes, runs), nil
 }
 
-// over is where each run sits, in the order the runs were asked about. A run
-// standing nowhere is lit nowhere and keeps its place in the answer.
-func over(boxes []highlight.Box, runs []domain.Span) [][]highlight.Page {
-	out := make([][]highlight.Page, 0, len(runs))
+// prose is the text the runs are places in: what the producer wrote, or the
+// file's own words where no reading of these bytes stands. A source nothing
+// here reads says nothing, and that is an answer.
+func (u Highlight) prose(
+	ctx context.Context,
+	reader port.VaultReader,
+	store port.DerivedStore,
+	path string,
+	said port.SourceText,
+) (string, error) {
+	of := text.Reader{Vault: reader, Derived: store, Documents: u.Documents}
+	doc, err := of.Of(ctx, path, said.Producer, said.Hash)
+	if errors.Is(err, text.ErrUnreadable) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return doc.Text, nil
+}
+
+// over is what each run says and where it sits, in the order the runs were
+// asked about. A run standing nowhere is lit nowhere and keeps its place in the
+// answer.
+func over(prose string, boxes []highlight.Box, runs []domain.Span) []Run {
+	out := make([]Run, 0, len(runs))
 	for _, one := range runs {
-		out = append(out, highlight.Pages(boxes, one))
+		start, length := held(prose, one.From, one.Len())
+		out = append(out, Run{
+			Text:  prose[start : start+length],
+			Boxes: highlight.Over(boxes, one),
+		})
 	}
 	return out
 }
@@ -103,12 +153,11 @@ func over(boxes []highlight.Box, runs []domain.Span) [][]highlight.Page {
 // from.
 func (u Highlight) read(
 	ctx context.Context,
-	v domain.Vault,
+	store port.DerivedStore,
 	said port.SourceText,
 ) ([]highlight.Box, error) {
-	store, err := u.Derived.Open(v)
-	if err != nil {
-		return nil, err
+	if store == nil {
+		return nil, nil
 	}
 	raw, err := store.Read(ctx, text.Boxes(said.Producer, said.Hash))
 	if errors.Is(err, fs.ErrNotExist) {

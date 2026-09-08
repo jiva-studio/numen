@@ -8,8 +8,6 @@ syntax = "proto3";
 // under a name of the application's own.
 package numen.v1;
 
-import "numen/v1/shared.proto";
-
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
 
 // ArtifactService answers what has been made from a file of the vault, makes
@@ -35,22 +33,6 @@ service ArtifactService {
   // DeleteArtifact takes one away, with everything cut from it. The file stands
   // as it did before anything was made from it, and it is offered again.
   rpc DeleteArtifact(DeleteArtifactRequest) returns (DeleteArtifactResponse);
-
-  // ReadText is the text a file holds: a transcript, each stretch of speech
-  // against the milliseconds it was spoken in, or the prose a page is written
-  // around. A file nothing has been read or heard for holds no text, which is
-  // an answer.
-  //
-  // What comes back is the text as it now stands: the words a person put right,
-  // and what a model wrote where nothing put them right.
-  rpc ReadText(ReadTextRequest) returns (ReadTextResponse);
-
-  // WriteTranscript writes the words of a recording as a person left them.
-  //
-  // What the model heard stays under its own name and the words as they now
-  // stand go beside it, so a transcript edited into nonsense is corrections
-  // that can be taken away and what was heard comes back.
-  rpc WriteTranscript(WriteTranscriptRequest) returns (WriteTranscriptResponse);
 }
 
 // An Artifact is one thing a model wrote about one file of the vault.
@@ -67,6 +49,10 @@ message Artifact {
 
   // Error is what stopped it, and is set when it failed.
   string error = 3;
+
+  // How many bytes stand under it. A caller reading a long text in windows
+  // knows from this where the end is.
+  int64 bytes = 4;
 }
 
 // ArtifactKind is what a thing made from a file is. The list is closed: a
@@ -175,73 +161,4 @@ message DeleteArtifactRequest {
   ArtifactKind kind = 2;
 }
 
-message DeleteArtifactResponse {
-  // The artifact as it now stands, which is nothing.
-  Artifact artifact = 1;
-}
-
-// A Cue is one stretch of speech in a recording: what was said, and the
-// milliseconds of the recording it spans.
-//
-// One cue stands on one line. A cue broken over two is two a client would offer
-// to edit and one the recording would play.
-message Cue {
-  string text = 1;
-  int32 from = 2;
-  int32 to = 3;
-}
-
-message ReadTextRequest {
-  // The file, as the vault holds it.
-  string path = 1;
-
-  // The run of the file's text to answer about, and nothing at all for the
-  // whole of it. It is a start and a length in the words, which is how a
-  // passage is addressed everywhere else, and what comes back is the speech
-  // those bytes were said in.
-  Span span = 2;
-}
-
-message ReadTextResponse {
-  // The text as the file holds it. A file nothing has been read or heard for
-  // carries none, and sets no field here.
-  oneof text {
-    // Words with the times each stretch of them was said at.
-    Spoken spoken = 1;
-
-    // The prose a page is written around. It carries no times, so a client
-    // draws it as it stands, with no gutter and nothing to seek.
-    string prose = 2;
-  }
-
-  // Whether the text may be put right now. A run listening to the recording
-  // holds it, and a client draws what it reads and leaves it alone.
-  bool editable = 3;
-}
-
-// Spoken is words against the clock they were said on.
-message Spoken {
-  repeated Cue cues = 1;
-}
-
-message WriteTranscriptRequest {
-  // The recording, as the vault holds it.
-  string path = 1;
-
-  // The words as the person left them, against the milliseconds they were said
-  // in. A client that merged and split lines does the arithmetic.
-  //
-  // Speech runs forward: a cue ends no earlier than it begins, and begins after
-  // the one before it ends. A cue whose words trim away is dropped, and its
-  // timings still bound the cue after it. Words carrying nothing at all are
-  // refused: what was heard comes back by taking the corrections away, and
-  // writing nothing over the words would leave the recording saying nothing
-  // with nothing to edit.
-  repeated Cue cues = 2;
-}
-
-message WriteTranscriptResponse {
-  // The words as they now stand.
-  repeated Cue cues = 1;
-  bool editable = 3;
-}
+message DeleteArtifactResponse {}

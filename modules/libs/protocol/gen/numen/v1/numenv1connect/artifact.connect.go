@@ -48,12 +48,6 @@ const (
 	// ArtifactServiceDeleteArtifactProcedure is the fully-qualified name of the ArtifactService's
 	// DeleteArtifact RPC.
 	ArtifactServiceDeleteArtifactProcedure = "/numen.v1.ArtifactService/DeleteArtifact"
-	// ArtifactServiceReadTextProcedure is the fully-qualified name of the ArtifactService's ReadText
-	// RPC.
-	ArtifactServiceReadTextProcedure = "/numen.v1.ArtifactService/ReadText"
-	// ArtifactServiceWriteTranscriptProcedure is the fully-qualified name of the ArtifactService's
-	// WriteTranscript RPC.
-	ArtifactServiceWriteTranscriptProcedure = "/numen.v1.ArtifactService/WriteTranscript"
 )
 
 // ArtifactServiceClient is a client for the numen.v1.ArtifactService service.
@@ -76,20 +70,6 @@ type ArtifactServiceClient interface {
 	// DeleteArtifact takes one away, with everything cut from it. The file stands
 	// as it did before anything was made from it, and it is offered again.
 	DeleteArtifact(context.Context, *connect.Request[v1.DeleteArtifactRequest]) (*connect.Response[v1.DeleteArtifactResponse], error)
-	// ReadText is the text a file holds: a transcript, each stretch of speech
-	// against the milliseconds it was spoken in, or the prose a page is written
-	// around. A file nothing has been read or heard for holds no text, which is
-	// an answer.
-	//
-	// What comes back is the text as it now stands: the words a person put right,
-	// and what a model wrote where nothing put them right.
-	ReadText(context.Context, *connect.Request[v1.ReadTextRequest]) (*connect.Response[v1.ReadTextResponse], error)
-	// WriteTranscript writes the words of a recording as a person left them.
-	//
-	// What the model heard stays under its own name and the words as they now
-	// stand go beside it, so a transcript edited into nonsense is corrections
-	// that can be taken away and what was heard comes back.
-	WriteTranscript(context.Context, *connect.Request[v1.WriteTranscriptRequest]) (*connect.Response[v1.WriteTranscriptResponse], error)
 }
 
 // NewArtifactServiceClient constructs a client for the numen.v1.ArtifactService service. By
@@ -121,28 +101,14 @@ func NewArtifactServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(artifactServiceMethods.ByName("DeleteArtifact")),
 			connect.WithClientOptions(opts...),
 		),
-		readText: connect.NewClient[v1.ReadTextRequest, v1.ReadTextResponse](
-			httpClient,
-			baseURL+ArtifactServiceReadTextProcedure,
-			connect.WithSchema(artifactServiceMethods.ByName("ReadText")),
-			connect.WithClientOptions(opts...),
-		),
-		writeTranscript: connect.NewClient[v1.WriteTranscriptRequest, v1.WriteTranscriptResponse](
-			httpClient,
-			baseURL+ArtifactServiceWriteTranscriptProcedure,
-			connect.WithSchema(artifactServiceMethods.ByName("WriteTranscript")),
-			connect.WithClientOptions(opts...),
-		),
 	}
 }
 
 // artifactServiceClient implements ArtifactServiceClient.
 type artifactServiceClient struct {
-	listArtifacts   *connect.Client[v1.ListArtifactsRequest, v1.ListArtifactsResponse]
-	createArtifact  *connect.Client[v1.CreateArtifactRequest, v1.CreateArtifactResponse]
-	deleteArtifact  *connect.Client[v1.DeleteArtifactRequest, v1.DeleteArtifactResponse]
-	readText        *connect.Client[v1.ReadTextRequest, v1.ReadTextResponse]
-	writeTranscript *connect.Client[v1.WriteTranscriptRequest, v1.WriteTranscriptResponse]
+	listArtifacts  *connect.Client[v1.ListArtifactsRequest, v1.ListArtifactsResponse]
+	createArtifact *connect.Client[v1.CreateArtifactRequest, v1.CreateArtifactResponse]
+	deleteArtifact *connect.Client[v1.DeleteArtifactRequest, v1.DeleteArtifactResponse]
 }
 
 // ListArtifacts calls numen.v1.ArtifactService.ListArtifacts.
@@ -158,16 +124,6 @@ func (c *artifactServiceClient) CreateArtifact(ctx context.Context, req *connect
 // DeleteArtifact calls numen.v1.ArtifactService.DeleteArtifact.
 func (c *artifactServiceClient) DeleteArtifact(ctx context.Context, req *connect.Request[v1.DeleteArtifactRequest]) (*connect.Response[v1.DeleteArtifactResponse], error) {
 	return c.deleteArtifact.CallUnary(ctx, req)
-}
-
-// ReadText calls numen.v1.ArtifactService.ReadText.
-func (c *artifactServiceClient) ReadText(ctx context.Context, req *connect.Request[v1.ReadTextRequest]) (*connect.Response[v1.ReadTextResponse], error) {
-	return c.readText.CallUnary(ctx, req)
-}
-
-// WriteTranscript calls numen.v1.ArtifactService.WriteTranscript.
-func (c *artifactServiceClient) WriteTranscript(ctx context.Context, req *connect.Request[v1.WriteTranscriptRequest]) (*connect.Response[v1.WriteTranscriptResponse], error) {
-	return c.writeTranscript.CallUnary(ctx, req)
 }
 
 // ArtifactServiceHandler is an implementation of the numen.v1.ArtifactService service.
@@ -190,20 +146,6 @@ type ArtifactServiceHandler interface {
 	// DeleteArtifact takes one away, with everything cut from it. The file stands
 	// as it did before anything was made from it, and it is offered again.
 	DeleteArtifact(context.Context, *connect.Request[v1.DeleteArtifactRequest]) (*connect.Response[v1.DeleteArtifactResponse], error)
-	// ReadText is the text a file holds: a transcript, each stretch of speech
-	// against the milliseconds it was spoken in, or the prose a page is written
-	// around. A file nothing has been read or heard for holds no text, which is
-	// an answer.
-	//
-	// What comes back is the text as it now stands: the words a person put right,
-	// and what a model wrote where nothing put them right.
-	ReadText(context.Context, *connect.Request[v1.ReadTextRequest]) (*connect.Response[v1.ReadTextResponse], error)
-	// WriteTranscript writes the words of a recording as a person left them.
-	//
-	// What the model heard stays under its own name and the words as they now
-	// stand go beside it, so a transcript edited into nonsense is corrections
-	// that can be taken away and what was heard comes back.
-	WriteTranscript(context.Context, *connect.Request[v1.WriteTranscriptRequest]) (*connect.Response[v1.WriteTranscriptResponse], error)
 }
 
 // NewArtifactServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -231,18 +173,6 @@ func NewArtifactServiceHandler(svc ArtifactServiceHandler, opts ...connect.Handl
 		connect.WithSchema(artifactServiceMethods.ByName("DeleteArtifact")),
 		connect.WithHandlerOptions(opts...),
 	)
-	artifactServiceReadTextHandler := connect.NewUnaryHandler(
-		ArtifactServiceReadTextProcedure,
-		svc.ReadText,
-		connect.WithSchema(artifactServiceMethods.ByName("ReadText")),
-		connect.WithHandlerOptions(opts...),
-	)
-	artifactServiceWriteTranscriptHandler := connect.NewUnaryHandler(
-		ArtifactServiceWriteTranscriptProcedure,
-		svc.WriteTranscript,
-		connect.WithSchema(artifactServiceMethods.ByName("WriteTranscript")),
-		connect.WithHandlerOptions(opts...),
-	)
 	return "/numen.v1.ArtifactService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ArtifactServiceListArtifactsProcedure:
@@ -251,10 +181,6 @@ func NewArtifactServiceHandler(svc ArtifactServiceHandler, opts ...connect.Handl
 			artifactServiceCreateArtifactHandler.ServeHTTP(w, r)
 		case ArtifactServiceDeleteArtifactProcedure:
 			artifactServiceDeleteArtifactHandler.ServeHTTP(w, r)
-		case ArtifactServiceReadTextProcedure:
-			artifactServiceReadTextHandler.ServeHTTP(w, r)
-		case ArtifactServiceWriteTranscriptProcedure:
-			artifactServiceWriteTranscriptHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -274,12 +200,4 @@ func (UnimplementedArtifactServiceHandler) CreateArtifact(context.Context, *conn
 
 func (UnimplementedArtifactServiceHandler) DeleteArtifact(context.Context, *connect.Request[v1.DeleteArtifactRequest]) (*connect.Response[v1.DeleteArtifactResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ArtifactService.DeleteArtifact is not implemented"))
-}
-
-func (UnimplementedArtifactServiceHandler) ReadText(context.Context, *connect.Request[v1.ReadTextRequest]) (*connect.Response[v1.ReadTextResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ArtifactService.ReadText is not implemented"))
-}
-
-func (UnimplementedArtifactServiceHandler) WriteTranscript(context.Context, *connect.Request[v1.WriteTranscriptRequest]) (*connect.Response[v1.WriteTranscriptResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ArtifactService.WriteTranscript is not implemented"))
 }

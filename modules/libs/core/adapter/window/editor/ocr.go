@@ -9,17 +9,18 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 )
 
-// ListHighlights answers where runs of a source's text sit: the pages each
-// falls on and, on each, the rectangles covering it.
-func (a *API) ListHighlights(
+// ReadOcr answers with what a model read off a document's pages: for each run
+// of the text asked about, what it says and the boxes covering it.
+func (a *API) ReadOcr(
 	ctx context.Context,
-	r *connect.Request[v1.ListHighlightsRequest],
-) (*connect.Response[v1.ListHighlightsResponse], error) {
-	showing := a.Showing()
-	if showing.ID == "" {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
+	r *connect.Request[v1.ReadOcrRequest],
+) (*connect.Response[v1.ReadOcrResponse], error) {
+	showing, ref, err := a.carrying(ctx, r.Msg.GetPath(), v1.ArtifactKind_ARTIFACT_KIND_OCR)
+	if err != nil {
+		return nil, err
 	}
 	runs, err := places(r.Msg.GetSpans())
 	if err != nil {
@@ -32,29 +33,31 @@ func (a *API) ListHighlights(
 	ctx, cancel := context.WithTimeout(ctx, patience)
 	defer cancel()
 
-	found, err := a.Highlight.Execute(ctx, showing, r.Msg.GetPath(), runs)
+	found, err := a.Highlight.Execute(ctx, showing, ref.Path, runs)
 	if err != nil {
 		return nil, connect.NewError(refusedDrawing(err), err)
 	}
 
-	out := &v1.ListHighlightsResponse{Runs: make([]*v1.Highlight, 0, len(found))}
-	for _, pages := range found {
-		one := &v1.Highlight{Pages: make([]*v1.HighlightedPage, 0, len(pages))}
-		for _, page := range pages {
-			on := &v1.HighlightedPage{
-				Index: int32(page.Index),
-				Rects: make([]*v1.Rect, 0, len(page.Rects)),
-			}
-			for _, box := range page.Rects {
-				on.Rects = append(on.Rects, &v1.Rect{
-					MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY,
-				})
-			}
-			one.Pages = append(one.Pages, on)
-		}
-		out.Runs = append(out.Runs, one)
+	out := &v1.ReadOcrResponse{Runs: make([]*v1.Run, 0, len(found))}
+	for _, one := range found {
+		out.Runs = append(out.Runs, &v1.Run{Text: one.Text, Boxes: boxed(one.Boxes)})
 	}
 	return connect.NewResponse(out), nil
+}
+
+// boxed is where a run of the text was read, as a caller reads it.
+func boxed(boxes []highlight.Box) []*v1.Box {
+	out := make([]*v1.Box, 0, len(boxes))
+	for _, one := range boxes {
+		out = append(out, &v1.Box{
+			Span: &v1.Span{From: int32(one.From), To: int32(one.To)},
+			Page: int32(one.Page),
+			Rect: &v1.Rect{
+				MinX: one.MinX, MinY: one.MinY, MaxX: one.MaxX, MaxY: one.MaxY,
+			},
+		})
+	}
+	return out
 }
 
 // longestRun is the most text one question about a place may cover. A passage

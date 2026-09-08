@@ -196,10 +196,10 @@ func TestTheWordsHeardComeBackAgainstTheRecording(t *testing.T) {
 			api, _ := listeningTo(t, one.held)
 
 			told := heard(t, api)
-			if len(told.GetSpoken().GetCues()) != 2 {
+			if len(told.GetCues()) != 2 {
 				t.Fatalf("what was heard came back as %+v", told)
 			}
-			if first := told.GetSpoken().GetCues()[0]; first.GetText() != "what was said" ||
+			if first := told.GetCues()[0]; first.GetText() != "what was said" ||
 				first.GetFrom() != 1500 || first.GetTo() != 4200 {
 				t.Errorf("the first thing said came back as %+v", first)
 			}
@@ -212,8 +212,8 @@ func TestTheWordsHeardComeBackAgainstTheRecording(t *testing.T) {
 func TestARecordingNobodyHasListenedToHoldsNoWords(t *testing.T) {
 	api, _ := listeningTo(t, nil)
 
-	if told := heard(t, api); len(told.GetSpoken().GetCues()) != 0 {
-		t.Errorf("a recording nobody heard says %+v", told.GetSpoken().GetCues())
+	if told := heard(t, api); len(told.GetCues()) != 0 {
+		t.Errorf("a recording nobody heard says %+v", told.GetCues())
 	}
 	back, playing := played(t, api)
 	if out := ask(playing, back.Address(api.Showing(), statOf(t, api, api.Showing(), talk))); out.Code != http.StatusOK {
@@ -260,7 +260,7 @@ func TestOnlyARecordingIsHeard(t *testing.T) {
 		book:             connect.CodeInvalidArgument,
 		"talks/none.mp3": connect.CodeNotFound,
 	} {
-		_, err := api.ReadText(t.Context(), connect.NewRequest(&v1.ReadTextRequest{
+		_, err := api.ReadTranscript(t.Context(), connect.NewRequest(&v1.ReadTranscriptRequest{
 			Path: path,
 		}))
 		if connect.CodeOf(err) != want {
@@ -312,8 +312,8 @@ func TestCuesNarrowToARunOfTheWords(t *testing.T) {
 func TestAQuestionNamingNoRunIsAboutTheWholeTranscript(t *testing.T) {
 	api, _ := listeningTo(t, whole(spoke()))
 
-	if told := heard(t, api); len(told.GetSpoken().GetCues()) != 2 {
-		t.Errorf("the whole transcript came back as %+v", told.GetSpoken().GetCues())
+	if told := heard(t, api); len(told.GetCues()) != 2 {
+		t.Errorf("the whole transcript came back as %+v", told.GetCues())
 	}
 }
 
@@ -434,20 +434,20 @@ func TestATranscriptPutRightIsWhatTheWindowIsToldNext(t *testing.T) {
 	); err != nil {
 		t.Fatalf("put the transcript right and was refused: %v", err)
 	}
-	if told := heard(t, api); told.GetSpoken().GetCues()[1].GetText() != "what Rupa said next" {
-		t.Errorf("the window is told %+v", told.GetSpoken().GetCues())
+	if told := heard(t, api); told.GetCues()[1].GetText() != "what Rupa said next" {
+		t.Errorf("the window is told %+v", told.GetCues())
 	}
 
 	delete(held, derived.Corrections(asr, hashed))
-	if told := heard(t, api); told.GetSpoken().GetCues()[1].GetText() != "what was said next" {
-		t.Errorf("what was heard did not come back: %+v", told.GetSpoken().GetCues())
+	if told := heard(t, api); told.GetCues()[1].GetText() != "what was said next" {
+		t.Errorf("what was heard did not come back: %+v", told.GetCues())
 	}
 }
 
 // heard is the transcript the window is told about.
-func heard(t *testing.T, api *API) *v1.ReadTextResponse {
+func heard(t *testing.T, api *API) *v1.ReadTranscriptResponse {
 	t.Helper()
-	out, err := api.ReadText(t.Context(), connect.NewRequest(&v1.ReadTextRequest{
+	out, err := api.ReadTranscript(t.Context(), connect.NewRequest(&v1.ReadTranscriptRequest{
 		Path: talk,
 	}))
 	if err != nil {
@@ -526,7 +526,7 @@ func TestATranscriptIsNotEditedWhileTheRecordingIsBeingListenedTo(t *testing.T) 
 		t.Error("the transcript was written while a run held the recording")
 	}
 
-	if told := heard(t, api); told.GetEditable() {
+	if carrying(t, api, talk)[correctedOf] != v1.State_STATE_RUNNING {
 		t.Error("the window was told it may edit a transcript a run is writing")
 	}
 }
@@ -535,7 +535,7 @@ func TestATranscriptIsNotEditedWhileTheRecordingIsBeingListenedTo(t *testing.T) 
 func TestTheWindowIsToldATranscriptMayBePutRight(t *testing.T) {
 	api, _ := listeningTo(t, whole(spoke()))
 
-	if told := heard(t, api); !told.GetEditable() {
+	if carrying(t, api, talk)[correctedOf] == v1.State_STATE_RUNNING {
 		t.Error("the window was told it may not edit a transcript nothing is writing")
 	}
 }
@@ -576,8 +576,8 @@ func TestATranscriptOfNoWordsIsRefused(t *testing.T) {
 			if _, kept := held[derived.Corrections(asr, hashed)]; kept {
 				t.Error("a transcript of no words was written over the recording")
 			}
-			if told := heard(t, api); len(told.GetSpoken().GetCues()) != 2 {
-				t.Errorf("the recording now says %+v", told.GetSpoken().GetCues())
+			if told := heard(t, api); len(told.GetCues()) != 2 {
+				t.Errorf("the recording now says %+v", told.GetCues())
 			}
 		})
 	}
@@ -672,7 +672,7 @@ func TestATranscriptThatCouldNotBeWrittenIsRefused(t *testing.T) {
 	if len(asked) != 0 {
 		t.Errorf("the source was cut again from words nothing holds: %v", asked)
 	}
-	if told := heard(t, api); told.GetSpoken().GetCues()[1].GetText() != "what was said next" {
-		t.Errorf("the recording now says %+v", told.GetSpoken().GetCues())
+	if told := heard(t, api); told.GetCues()[1].GetText() != "what was said next" {
+		t.Errorf("the recording now says %+v", told.GetCues())
 	}
 }

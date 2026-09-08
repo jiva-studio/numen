@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"strings"
+	"unicode/utf8"
 
 	"connectrpc.com/connect"
 
@@ -104,48 +105,86 @@ func (a *API) copied(
 	return a.Playing.Address(v, domain.Fingerprint{Path: played, Size: size}), derived.CopyType
 }
 
-// ReadText answers with the text a file holds: a transcript, each stretch of
-// speech against the milliseconds it was spoken in, or the prose a page is
-// written around. A file nothing has been read or heard for holds no text,
-// which is an answer.
-func (a *API) ReadText(
+// ReadTranscript answers with the words of a file that carries times: each
+// stretch of speech against the milliseconds it was spoken in. A file nothing
+// has been heard for holds none, which is an answer.
+func (a *API) ReadTranscript(
 	ctx context.Context,
-	r *connect.Request[v1.ReadTextRequest],
-) (*connect.Response[v1.ReadTextResponse], error) {
-	showing, ref, err := a.recording(ctx, r.Msg.GetPath())
+	r *connect.Request[v1.ReadTranscriptRequest],
+) (*connect.Response[v1.ReadTranscriptResponse], error) {
+	showing, ref, err := a.carrying(
+		ctx, r.Msg.GetPath(), v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT)
 	if err != nil {
 		return nil, err
 	}
-	said, store, listened, err := a.made(ctx, showing, ref.Path)
+	raw, err := a.text(ctx, showing, ref.Path)
 	if err != nil {
 		return nil, connect.NewError(reaching(err), err)
 	}
-
-	out := &v1.ReadTextResponse{}
-	var raw []byte
-	if listened {
-		if raw, err = a.transcribed(ctx, store, said); err != nil {
-			return nil, connect.NewError(reaching(err), err)
-		}
-		// Taken after the words, so a run that began while they were being read
-		// is one the caller is told about.
-		out.Editable = free(ctx, store, derived.Partial(said.Producer, said.Hash))
-	}
-	prose, cues := transcript.Parse(raw)
-	// A page is written around prose and nothing timed it, so the text itself is
-	// the answer and there is nothing to cut a stretch out of.
-	if len(cues) == 0 {
-		out.Text = &v1.ReadTextResponse_Prose{Prose: prose}
-		return connect.NewResponse(out), nil
-	}
+	_, cues := transcript.Parse(raw)
 	if at := r.Msg.GetSpan(); at != nil {
-		cues, err = within(at)(cues)
-		if err != nil {
+		if cues, err = within(at)(cues); err != nil {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 	}
-	out.Text = &v1.ReadTextResponse_Spoken{Spoken: &v1.Spoken{Cues: spoken(cues)}}
-	return connect.NewResponse(out), nil
+	return connect.NewResponse(&v1.ReadTranscriptResponse{Cues: spoken(cues)}), nil
+}
+
+// ReadArticle answers with the prose a page is written around. A file nothing
+// has been fetched for holds none, which is an answer.
+func (a *API) ReadArticle(
+	ctx context.Context,
+	r *connect.Request[v1.ReadArticleRequest],
+) (*connect.Response[v1.ReadArticleResponse], error) {
+	showing, ref, err := a.carrying(
+		ctx, r.Msg.GetPath(), v1.ArtifactKind_ARTIFACT_KIND_ARTICLE)
+	if err != nil {
+		return nil, err
+	}
+	raw, err := a.text(ctx, showing, ref.Path)
+	if err != nil {
+		return nil, connect.NewError(reaching(err), err)
+	}
+	whole, _ := transcript.Parse(raw)
+	prose, err := stretch(whole, r.Msg.GetSpan())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	return connect.NewResponse(&v1.ReadArticleResponse{Text: prose}), nil
+}
+
+// stretch is the run of the prose a request named, and the whole of it where a
+// request named none. A run is held within the prose and stands on whole
+// characters.
+func stretch(prose string, at *v1.Span) (string, error) {
+	if at == nil {
+		return prose, nil
+	}
+	span := domain.Span{From: int(at.GetFrom()), To: int(at.GetTo())}
+	if span.From < 0 {
+		return "", fmt.Errorf("from: %d is not a place in the prose", span.From)
+	}
+	if span.Empty() {
+		return "", fmt.Errorf("to: %d is not the end of a run of the prose", span.To)
+	}
+	start, end := min(span.From, len(prose)), min(span.To, len(prose))
+	for start > 0 && !utf8.RuneStart(prose[start]) {
+		start--
+	}
+	for end < len(prose) && !utf8.RuneStart(prose[end]) {
+		end++
+	}
+	return prose[start:end], nil
+}
+
+// text is the text of the file at a path as it now stands: what a person put
+// right, and what a model wrote or a site published where nothing put it right.
+func (a *API) text(ctx context.Context, v domain.Vault, path string) ([]byte, error) {
+	said, store, made, err := a.made(ctx, v, path)
+	if err != nil || !made {
+		return nil, err
+	}
+	return a.transcribed(ctx, store, said)
 }
 
 // WriteTranscript writes the transcript of a recording as a person left it.
@@ -198,9 +237,7 @@ func (a *API) WriteTranscript(
 			a.say(task.Task{ID: readingBooks, Doing: "Reading books", About: ref.Path, Failed: err.Error()})
 		}
 	}
-	return connect.NewResponse(&v1.WriteTranscriptResponse{
-		Cues: spoken(cues), Editable: true,
-	}), nil
+	return connect.NewResponse(&v1.WriteTranscriptResponse{Cues: spoken(cues)}), nil
 }
 
 // recording is the vault the window is showing and the recording it holds at a

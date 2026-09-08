@@ -55,14 +55,11 @@ func heardBy() indexed {
 }
 
 // dropping asks for what a recording was heard as to be taken away.
-func dropping(api *API) (*v1.Artifact, error) {
-	out, err := api.DeleteArtifact(context.Background(), connect.NewRequest(&v1.DeleteArtifactRequest{
+func dropping(api *API) error {
+	_, err := api.DeleteArtifact(context.Background(), connect.NewRequest(&v1.DeleteArtifactRequest{
 		Path: talk, Kind: v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
 	}))
-	if err != nil {
-		return nil, err
-	}
-	return out.Msg.GetArtifact(), nil
+	return err
 }
 
 // Everything one run of listening produced goes, and the recording is left
@@ -73,12 +70,8 @@ func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 	held[derived.Beside(asr, hashed)] = []byte(`{"model":"parakeet"}`)
 	api, index, _ := dropper(t, held, heardBy())
 
-	gone, err := dropping(api)
-	if err != nil {
+	if err := dropping(api); err != nil {
 		t.Fatalf("dropped the transcript and was refused: %v", err)
-	}
-	if gone.GetState() != v1.State_STATE_NONE {
-		t.Errorf("what was taken away is %s", gone.GetState())
 	}
 	if len(held) != 0 {
 		t.Errorf("the store still holds %v", held)
@@ -97,8 +90,8 @@ func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 		t.Errorf("the source was left with %d chunks of the words", len(wrote.Chunks))
 	}
 
-	if told := heard(t, api); len(told.GetSpoken().GetCues()) != 0 {
-		t.Errorf("the recording still says %+v", told.GetSpoken().GetCues())
+	if told := heard(t, api); len(told.GetCues()) != 0 {
+		t.Errorf("the recording still says %+v", told.GetCues())
 	}
 }
 
@@ -108,7 +101,7 @@ func TestATranscriptIsNotDroppedWhileTheRecordingIsBeingListenedTo(t *testing.T)
 	held := heldBy{stored: whole(spoke()), name: derived.Partial(asr, hashed)}
 	api, index, _ := dropper(t, held, heardBy())
 
-	if _, err := dropping(api); connect.CodeOf(err) != connect.CodeFailedPrecondition {
+	if err := dropping(api); connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("dropped a transcript being written and was refused %v", err)
 	}
 	if _, kept := held.stored[derived.Artifact(asr, hashed)]; !kept {
@@ -123,7 +116,7 @@ func TestATranscriptIsNotDroppedWhileTheRecordingIsBeingListenedTo(t *testing.T)
 func TestARecordingNobodyHasListenedToHasNoTranscriptToDrop(t *testing.T) {
 	api, index, _ := dropper(t, stored{}, indexed{})
 
-	if _, err := dropping(api); connect.CodeOf(err) != connect.CodeNotFound {
+	if err := dropping(api); connect.CodeOf(err) != connect.CodeNotFound {
 		t.Fatalf("dropped the transcript of a recording nothing heard and was refused %v", err)
 	}
 	if len(index.written) != 0 {
