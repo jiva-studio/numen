@@ -246,7 +246,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	api.Drops = &source.DropTranscript{
 		Readers: cfg.VaultReaders(),
 		Sources: db.Sources(),
-		Known:   db.SourcesKnown(),
+		Queries: db.SourcesKnown(),
 		Derived: cfg.DerivedStores(),
 	}
 

@@ -41,7 +41,7 @@ func dropper(t *testing.T, held port.DerivedStore, known indexed) (*API, *noting
 		Drops: &source.DropTranscript{
 			Readers: filesystem.VaultReaders{},
 			Sources: index,
-			Known:   known,
+			Queries: known,
 			Derived: storing{held},
 		},
 	}

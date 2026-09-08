@@ -22,7 +22,7 @@ func dropping(t *testing.T, words ...string) (Transcribe, DropTranscript, domain
 	kept := newShelf()
 	model := &voice{words: words}
 
-	cutting := Extract{Readers: vaults{first.ID: shelved}, Sources: index, Known: index, Derived: kept}
+	cutting := Extract{Readers: vaults{first.ID: shelved}, Sources: index, Queries: index, Derived: kept}
 	listen := Transcribe{
 		Readers: vaults{first.ID: shelved},
 		Sources: index,
@@ -37,7 +37,7 @@ func dropping(t *testing.T, words ...string) (Transcribe, DropTranscript, domain
 	drop := DropTranscript{
 		Readers: vaults{first.ID: shelved},
 		Sources: index,
-		Known:   index,
+		Queries: index,
 		Derived: shelves{kept},
 	}
 	return listen, drop, first, index, kept, model, text.Fingerprint(raw)

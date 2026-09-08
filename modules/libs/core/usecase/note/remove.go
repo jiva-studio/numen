@@ -24,19 +24,19 @@ const TrashDir = ".trash"
 type Remove struct {
 	Writers port.VaultWriters
 	Links   port.LinkQueries
-	// Known is what the index holds about each file, and is what says which
+	// Queries is what the index holds about each file, and is what says which
 	// sources sit under the path being removed.
-	Known port.SourceQueries
-	Index Levels
+	Queries port.SourceQueries
+	Index   Levels
 }
 
 // NewRemove is what takes a note out of the vault: the vault it is moved
 // within, the links that pointed at it, what the index holds about the files
 // under it, and what brings the path it left level.
 func NewRemove(
-	writers port.VaultWriters, links port.LinkQueries, known port.SourceQueries, index Levels,
+	writers port.VaultWriters, links port.LinkQueries, queries port.SourceQueries, index Levels,
 ) Remove {
-	return Remove{Writers: writers, Links: links, Known: known, Index: index}
+	return Remove{Writers: writers, Links: links, Queries: queries, Index: index}
 }
 
 // RemoveResult says what happened to what was removed and what it leaves behind.
@@ -55,7 +55,7 @@ type RemoveResult struct {
 func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
 	res := RemoveResult{Path: path}
 
-	went, err := u.Known.Under(ctx, v.ID, path)
+	went, err := u.Queries.Under(ctx, v.ID, path)
 	if err != nil {
 		return res, err
 	}
