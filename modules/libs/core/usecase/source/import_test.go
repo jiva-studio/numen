@@ -24,12 +24,12 @@ type site struct {
 	refusing error
 }
 
-func (s *site) Fetching(_ domain.URL) port.FetchModel {
+func (s *site) Downloading(_ domain.URL) port.DownloadModel {
 	producer := text.Captions
 	if len(s.cues) == 0 && s.prose != "" {
 		producer = text.Article
 	}
-	return port.FetchModel{Tool: "a test", Version: "1", Producer: producer}
+	return port.DownloadModel{Tool: "a test", Version: "1", Producer: producer}
 }
 
 func (s *site) Metadata(_ context.Context, at domain.URL) (port.Metadata, error) {
@@ -52,18 +52,18 @@ func (s *site) Text(
 	if s.prose != "" {
 		return port.Text{Producer: text.Article, Prose: s.prose, Title: s.title}, nil
 	}
-	return port.Text{}, port.ErrNothingFetched
+	return port.Text{}, port.ErrNothingDownloaded
 }
 
-func (s *site) Download(_ context.Context, at domain.URL, into io.Writer) (port.Download, error) {
+func (s *site) Download(_ context.Context, at domain.URL, into io.Writer) (port.Copy, error) {
 	s.asked = append(s.asked, "download "+string(at))
 	if len(s.bytes) == 0 {
-		return port.Download{}, port.ErrNothingFetched
+		return port.Copy{}, port.ErrNothingDownloaded
 	}
 	if _, err := into.Write(s.bytes); err != nil {
-		return port.Download{}, err
+		return port.Copy{}, err
 	}
-	return port.Download{MediaType: text.CopyType, Extension: text.CopyExtension}, nil
+	return port.Copy{MediaType: text.CopyType, Extension: text.CopyExtension}, nil
 }
 
 const videoNote = "notes/https---youtu.be-dQw4w9WgXcQ.url"

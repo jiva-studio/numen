@@ -103,7 +103,7 @@ func (a *API) producing(at domain.URL) string {
 	if a.Imports == nil || a.Imports.By == nil || at == "" {
 		return ""
 	}
-	return a.Imports.By.Fetching(at).Producer
+	return a.Imports.By.Downloading(at).Producer
 }
 
 // standing is the name one artifact stands under in the store, and whether the
@@ -223,7 +223,7 @@ func (a *API) copies(
 	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.URL,
 ) (*v1.Artifact, error) {
 	if a.Imports == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoFetcher)
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoDownloader)
 	}
 	// A copy is minutes of fetching, so how far it has got is reported as it
 	// arrives.
@@ -237,7 +237,7 @@ func (a *API) copies(
 	got, err := asked.Copy(ctx, v, ref.Path)
 	a.finished(copying + ref.Path)
 	out := a.copyOf(ctx, v, ref.Path, at)
-	if errors.Is(err, source.ErrBeingFetched) {
+	if errors.Is(err, source.ErrBeingDownloaded) {
 		out.State = v1.State_STATE_RUNNING
 		return out, nil
 	}
@@ -319,7 +319,7 @@ func (a *API) CreateArtifact(
 	// says it cannot rather than that the file carries nothing.
 	at := a.points(ctx, showing, ref)
 	if ref.Kind == domain.KindURL && a.producing(at) == "" {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoFetcher)
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoDownloader)
 	}
 	// The kind of the file decides what is made from it, so an artifact the file
 	// does not carry is a client asking for a run over the wrong thing.
@@ -372,7 +372,7 @@ func (a *API) DeleteArtifact(
 	}
 	if ref.Kind == domain.KindURL {
 		if a.Imports == nil {
-			return nil, connect.NewError(connect.CodeUnimplemented, errNoFetcher)
+			return nil, connect.NewError(connect.CodeUnimplemented, errNoDownloader)
 		}
 		if err := a.Imports.DeleteText(ctx, showing, ref.Path); err != nil {
 			return nil, connect.NewError(reaching(err), err)
@@ -455,9 +455,9 @@ func (a *API) runner(of v1.ArtifactKind) Runner {
 // asks again.
 var errComingUp = errors.New("the vault is still coming up")
 
-// errNoFetcher is a build on a machine holding neither of the tools an address
-// is reached with. The settings name where each of them is.
-var errNoFetcher = errors.New("this build cannot fetch what an address holds")
+// errNoDownloader is a build on a machine holding neither of the tools an
+// address is reached with. The settings name where each of them is.
+var errNoDownloader = errors.New("this build cannot download what an address holds")
 
 // fetch reaches the address a link note points at and answers with what stands
 // once it has.
@@ -471,7 +471,7 @@ func (a *API) fetch(
 	at domain.URL,
 ) (*v1.Artifact, error) {
 	if a.Imports == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoFetcher)
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoDownloader)
 	}
 	// A person who asks for this asks for the address afresh: what was fetched
 	// before goes, and the site is read again.

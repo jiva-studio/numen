@@ -23,8 +23,8 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/fetch"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
@@ -50,7 +50,7 @@ type Config struct {
 
 	// Importing is how an address a link note points at is reached, and where
 	// the tools that reach it are.
-	Importing fetch.Config `json:"importing"`
+	Importing download.Config `json:"importing"`
 
 	// Titles is how a note's title and the name of its file are held together.
 	Titles Titles `json:"naming"`
@@ -121,7 +121,7 @@ func Defaults() Config {
 			TranscribeRecordings: on(),
 		},
 		Agent:     agent.Defaults(),
-		Importing: fetch.Defaults(),
+		Importing: download.Defaults(),
 		Titles:    Titles{SyncTitleAndFilename: on()},
 		Review:    Review{DayStarts: review.Clock(DefaultStarts())},
 	}

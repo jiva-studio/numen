@@ -17,8 +17,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/fetch"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
@@ -61,8 +61,8 @@ type Config struct {
 
 	// Importing is how an address a link note points at is reached, and where
 	// the tools that reach it are. A machine holding neither tool builds no
-	// fetcher, and what asks for one is told this build cannot do it.
-	Importing fetch.Config
+	// downloader, and what asks for one is told this build cannot do it.
+	Importing download.Config
 
 	// Transcribes is whether a recording the vault holds no transcript for is
 	// listened to without anybody asking. A configuration naming nothing leaves

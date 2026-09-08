@@ -1,15 +1,15 @@
-// Package fetch reaches an address and brings back what is at it.
+// Package download reaches an address and brings back what is at it.
 //
 // Each source of what is published at one is a provider of its own: it says
 // which addresses it supports, and it is asked for nothing else. A page is
-// fetched in this process, and what a site publishes as a video is fetched by
-// running yt-dlp, with ffmpeg beside it where sound has to be brought to what a
-// transcriber opens. A site with an API of its own is another provider and
-// nothing more; whoever adds it adds it to the list.
+// downloaded in this process, and what a site publishes as a video is
+// downloaded by running yt-dlp, with ffmpeg beside it where sound has to be
+// brought to what a transcriber opens. A site with an API of its own is another
+// provider and nothing more; whoever adds it adds it to the list.
 //
 // No tool is linked and none is shipped. Each is named by a setting holding a
 // command and what it is started through, and an empty one asks the path.
-package fetch
+package download
 
 import (
 	"bytes"
@@ -26,7 +26,7 @@ import (
 
 // ErrNoTool is an address no provider on this machine supports, which is a
 // machine missing a tool one of them runs.
-var ErrNoTool = errors.New("nothing on this machine fetches that address")
+var ErrNoTool = errors.New("nothing on this machine downloads that address")
 
 // A provider is one source of what is published at an address.
 //
@@ -35,13 +35,13 @@ var ErrNoTool = errors.New("nothing on this machine fetches that address")
 // and nothing has to be taught about it elsewhere.
 //
 // What every provider does is here: say which addresses are its own, say what
-// it fetches by, and hand back what the address publishes as words.
+// it downloads by, and hand back what the address publishes as words.
 type provider interface {
 	// Supports says whether this provider answers for an address. Each is asked
 	// in turn, and the first that says so is the one that answers.
 	Supports(at domain.URL) bool
 
-	Fetching(at domain.URL) port.FetchModel
+	Downloading(at domain.URL) port.DownloadModel
 	Metadata(ctx context.Context, at domain.URL) (port.Metadata, error)
 	Text(ctx context.Context, at domain.URL, want port.PreferredCaptions) (port.Text, error)
 }
@@ -50,25 +50,25 @@ type provider interface {
 // publishing prose is not one, and says so by not being one rather than by
 // answering that it has nothing.
 type player interface {
-	Download(ctx context.Context, at domain.URL, into io.Writer) (port.Download, error)
+	Download(ctx context.Context, at domain.URL, into io.Writer) (port.Copy, error)
 }
 
-// A Fetcher is the providers this machine holds, asked in order.
-type Fetcher struct{ providers []provider }
+// A Downloader is the providers this machine holds, asked in order.
+type Downloader struct{ providers []provider }
 
-// New is a fetcher for this machine.
+// New is a downloader for this machine.
 //
 // The providers stand in the order they are asked, narrowest first: a video is
-// fetched by the tool that knows the site, and a page is what an address is
+// downloaded by the tool that knows the site, and a page is what an address is
 // when nothing knows it better, which is why pages stand last and why every
-// machine fetches one.
-func New(ctx context.Context, c Config) (*Fetcher, error) {
-	return &Fetcher{providers: []provider{newYtDLP(ctx, c), newPages()}}, nil
+// machine downloads one.
+func New(ctx context.Context, c Config) (*Downloader, error) {
+	return &Downloader{providers: []provider{newYtDLP(ctx, c), newPages()}}, nil
 }
 
 // providerFor is the provider that answers for an address, and ErrNoTool where
 // this machine holds none.
-func (f *Fetcher) providerFor(at domain.URL) (provider, error) {
+func (f *Downloader) providerFor(at domain.URL) (provider, error) {
 	for _, one := range f.providers {
 		if one.Supports(at) {
 			return one, nil
@@ -77,18 +77,18 @@ func (f *Fetcher) providerFor(at domain.URL) (provider, error) {
 	return nil, fmt.Errorf("%s: %w", string(at), ErrNoTool)
 }
 
-// Fetching is what this address is fetched by, and nothing where nothing
+// Downloading is what this address is downloaded by, and nothing where nothing
 // reaches it.
-func (f *Fetcher) Fetching(at domain.URL) port.FetchModel {
+func (f *Downloader) Downloading(at domain.URL) port.DownloadModel {
 	by, err := f.providerFor(at)
 	if err != nil {
-		return port.FetchModel{}
+		return port.DownloadModel{}
 	}
-	return by.Fetching(at)
+	return by.Downloading(at)
 }
 
 // Metadata is what stands at the address, taking none of it.
-func (f *Fetcher) Metadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
+func (f *Downloader) Metadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
 	by, err := f.providerFor(at)
 	if err != nil {
 		return port.Metadata{}, err
@@ -98,7 +98,7 @@ func (f *Fetcher) Metadata(ctx context.Context, at domain.URL) (port.Metadata, e
 
 // Text is what the address publishes as words, as whichever provider answers
 // for it produces them.
-func (f *Fetcher) Text(
+func (f *Downloader) Text(
 	ctx context.Context, at domain.URL, want port.PreferredCaptions,
 ) (port.Text, error) {
 	by, err := f.providerFor(at)
@@ -109,26 +109,26 @@ func (f *Fetcher) Text(
 }
 
 // Download is what is at the address as a person plays it.
-func (f *Fetcher) Download(
+func (f *Downloader) Download(
 	ctx context.Context, at domain.URL, into io.Writer,
-) (port.Download, error) {
+) (port.Copy, error) {
 	plays, err := f.playerFor(at)
 	if err != nil {
-		return port.Download{}, err
+		return port.Copy{}, err
 	}
 	return plays.Download(ctx, at, into)
 }
 
 // playerFor is the provider that reaches the bytes at an address, and
-// ErrNothingFetched where whatever answers for it reaches only words.
-func (f *Fetcher) playerFor(at domain.URL) (player, error) {
+// ErrNothingDownloaded where whatever answers for it reaches only words.
+func (f *Downloader) playerFor(at domain.URL) (player, error) {
 	by, err := f.providerFor(at)
 	if err != nil {
 		return nil, err
 	}
 	plays, is := by.(player)
 	if !is {
-		return nil, port.ErrNothingFetched
+		return nil, port.ErrNothingDownloaded
 	}
 	return plays, nil
 }

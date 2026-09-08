@@ -91,8 +91,8 @@ func copies(
 	switch {
 	case errors.Is(err, source.ErrNotAURL):
 		return 0, "there is nothing to copy at that address"
-	case errors.Is(err, source.ErrBeingFetched):
-		return 0, "another run is fetching this address"
+	case errors.Is(err, source.ErrBeingDownloaded):
+		return 0, "another run is downloading this address"
 	case err != nil:
 		return 0, refusing(err)
 	case got.TooLarge():

@@ -27,7 +27,7 @@ var ErrNotAURL = errors.New("this file holds no web address")
 type ImportURL struct {
 	Readers port.VaultReaders
 	Derived port.DerivedStores
-	By      port.Fetcher
+	By      port.Downloader
 
 	// CopyMaxSize is how many bytes a copy may run to. Zero is no limit.
 	CopyMaxSize int64
@@ -63,9 +63,9 @@ type ImportURL struct {
 	Progress func(done, total int64)
 }
 
-// ErrBeingFetched is another run holding this address. Nothing was done, and
+// ErrBeingDownloaded is another run holding this address. Nothing was done, and
 // asking again once that run is over is the whole of what is left to do.
-var ErrBeingFetched = errors.New("another run is fetching this address")
+var ErrBeingDownloaded = errors.New("another run is downloading this address")
 
 // ImportURLResult reports what fetching did.
 type ImportURLResult struct {
@@ -92,9 +92,9 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 
 	// One run to an address. The name is held for as long as the fetch takes,
 	// so two urls on one address do not fetch it twice.
-	release, err := store.Claim(ctx, text.Partial(u.By.Fetching(at).Producer, hash))
+	release, err := store.Claim(ctx, text.Partial(u.By.Downloading(at).Producer, hash))
 	if errors.Is(err, port.ErrClaimed) {
-		return res, ErrBeingFetched
+		return res, ErrBeingDownloaded
 	}
 	if err != nil {
 		return res, err
@@ -120,7 +120,7 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 		Languages: u.Languages, Automatic: u.Automatic,
 	})
 	switch {
-	case errors.Is(err, port.ErrNothingFetched):
+	case errors.Is(err, port.ErrNothingDownloaded):
 		// The address publishes none of what was asked for. That is an answer,
 		// and it is written down so the address is not asked again every time
 		// the vault is scanned.
@@ -167,7 +167,7 @@ func (u ImportURL) keeps(
 func (u ImportURL) silent(
 	ctx context.Context, at domain.URL, store port.DerivedStore, hash string,
 ) error {
-	return store.Write(ctx, text.Answer(u.By.Fetching(at).Producer, hash), []byte(text.Silent+"\n"))
+	return store.Write(ctx, text.Answer(u.By.Downloading(at).Producer, hash), []byte(text.Silent+"\n"))
 }
 
 // pointed is one url: where it points, the file itself, and the store what is
@@ -247,17 +247,17 @@ func (u ImportURL) record(
 	said port.Text,
 ) error {
 	written, err := json.Marshal(struct {
-		Address  string `json:"address"`
-		Title    string `json:"title,omitempty"`
-		Length   int    `json:"length,omitempty"`
-		Producer string `json:"producer"`
-		Fetcher  string `json:"fetcher"`
+		Address    string `json:"address"`
+		Title      string `json:"title,omitempty"`
+		Length     int    `json:"length,omitempty"`
+		Producer   string `json:"producer"`
+		Downloader string `json:"downloader"`
 	}{
-		Address:  string(at),
-		Title:    said.Title,
-		Length:   said.Length,
-		Producer: producer,
-		Fetcher:  u.By.Fetching(at).Recipe(),
+		Address:    string(at),
+		Title:      said.Title,
+		Length:     said.Length,
+		Producer:   producer,
+		Downloader: u.By.Downloading(at).Recipe(),
 	})
 	if err != nil {
 		return err

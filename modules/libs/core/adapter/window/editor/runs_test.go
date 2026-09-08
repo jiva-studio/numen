@@ -444,10 +444,10 @@ func TestListingWhatAFileCarriesBeginsNoRun(t *testing.T) {
 	}
 }
 
-// reachingASite is a fetcher that reaches a video and nothing else: what a url
-// carries follows from what fetches it, and a test says which that is.
-type reachingASite struct{ port.Fetcher }
+// reachingASite is a downloader that reaches a video and nothing else: what a
+// url carries follows from what downloads it, and a test says which that is.
+type reachingASite struct{ port.Downloader }
 
-func (reachingASite) Fetching(domain.URL) port.FetchModel {
-	return port.FetchModel{Tool: "a test", Producer: derived.Captions}
+func (reachingASite) Downloading(domain.URL) port.DownloadModel {
+	return port.DownloadModel{Tool: "a test", Producer: derived.Captions}
 }

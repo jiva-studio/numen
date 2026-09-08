@@ -1,4 +1,4 @@
-package fetch
+package download
 
 import (
 	"bytes"
@@ -43,8 +43,8 @@ func newYtDLP(ctx context.Context, c Config) *ytDLP {
 // Supports is a video, on a machine holding the tool that gets at one.
 func (v *ytDLP) Supports(at domain.URL) bool { return carries(at) && v.command.held() }
 
-func (v *ytDLP) Fetching(domain.URL) port.FetchModel {
-	return port.FetchModel{Tool: "yt-dlp", Version: v.version, Producer: text.Captions}
+func (v *ytDLP) Downloading(domain.URL) port.DownloadModel {
+	return port.DownloadModel{Tool: "yt-dlp", Version: v.version, Producer: text.Captions}
 }
 
 // version is what the tool answers when asked which it is. A tool that will not
@@ -130,7 +130,7 @@ func (v *ytDLP) subtitles(
 	ctx context.Context, at domain.URL, language string,
 ) ([]transcript.Cue, error) {
 	if language == "" {
-		return nil, port.ErrNothingFetched
+		return nil, port.ErrNothingDownloaded
 	}
 	into, err := os.MkdirTemp("", "numen-words-")
 	if err != nil {
@@ -147,7 +147,7 @@ func (v *ytDLP) subtitles(
 	}
 	found, err := filepath.Glob(filepath.Join(into, "words.*.json3"))
 	if err != nil || len(found) == 0 {
-		return nil, port.ErrNothingFetched
+		return nil, port.ErrNothingDownloaded
 	}
 	raw, err := os.ReadFile(found[0])
 	if err != nil {
@@ -158,7 +158,7 @@ func (v *ytDLP) subtitles(
 		return nil, err
 	}
 	if len(cues) == 0 {
-		return nil, port.ErrNothingFetched
+		return nil, port.ErrNothingDownloaded
 	}
 	return cues, nil
 }
@@ -172,10 +172,10 @@ func (v *ytDLP) subtitles(
 // lands beside this run before it is handed on.
 func (v *ytDLP) Download(
 	ctx context.Context, at domain.URL, into io.Writer,
-) (port.Download, error) {
+) (port.Copy, error) {
 	folder, err := os.MkdirTemp("", "numen-copy-")
 	if err != nil {
-		return port.Download{}, err
+		return port.Copy{}, err
 	}
 	defer os.RemoveAll(folder)
 
@@ -191,32 +191,32 @@ func (v *ytDLP) Download(
 	taking.Stdout, taking.Stderr = &said, &said
 	if err := taking.Run(); err != nil {
 		if stopped := ctx.Err(); stopped != nil {
-			return port.Download{}, stopped
+			return port.Copy{}, stopped
 		}
-		return port.Download{}, fmt.Errorf("%w: %s", err, lastLine(said.String()))
+		return port.Copy{}, fmt.Errorf("%w: %s", err, lastLine(said.String()))
 	}
 
 	// What the container ended up being is read off the folder: codecs that mp4
 	// cannot hold are written to a container that can, and the name says which.
 	written, err := os.ReadDir(folder)
 	if err != nil {
-		return port.Download{}, err
+		return port.Copy{}, err
 	}
 	if len(written) != 1 {
-		return port.Download{}, fmt.Errorf("%w: %s", port.ErrNothingFetched, lastLine(said.String()))
+		return port.Copy{}, fmt.Errorf("%w: %s", port.ErrNothingDownloaded, lastLine(said.String()))
 	}
 	name := filepath.Join(folder, written[0].Name())
 
 	copied, err := os.Open(name)
 	if err != nil {
-		return port.Download{}, err
+		return port.Copy{}, err
 	}
 	defer copied.Close()
 	if _, err := io.Copy(into, copied); err != nil {
-		return port.Download{}, err
+		return port.Copy{}, err
 	}
 	extension := filepath.Ext(name)
-	return port.Download{MediaType: domain.MediaType(name), Extension: extension}, nil
+	return port.Copy{MediaType: domain.MediaType(name), Extension: extension}, nil
 }
 
 // copyFormat is what a copy is asked for: picture and sound in one file, in the

@@ -52,7 +52,7 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 	// is being fetched, and two urls on one address are one fetch.
 	release, err := store.Claim(ctx, text.Copy(hash))
 	if errors.Is(err, port.ErrClaimed) {
-		return res, ErrBeingFetched
+		return res, ErrBeingDownloaded
 	}
 	if err != nil {
 		return res, err

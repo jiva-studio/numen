@@ -22,8 +22,8 @@ type site struct {
 	bytes []byte
 }
 
-func (s *site) Fetching(domain.URL) port.FetchModel {
-	return port.FetchModel{Tool: "a test", Version: "1", Producer: derived.Captions}
+func (s *site) Downloading(domain.URL) port.DownloadModel {
+	return port.DownloadModel{Tool: "a test", Version: "1", Producer: derived.Captions}
 }
 
 func (s *site) Metadata(context.Context, domain.URL) (port.Metadata, error) {
@@ -34,19 +34,19 @@ func (s *site) Text(
 	context.Context, domain.URL, port.PreferredCaptions,
 ) (port.Text, error) {
 	if len(s.cues) == 0 {
-		return port.Text{}, port.ErrNothingFetched
+		return port.Text{}, port.ErrNothingDownloaded
 	}
 	return port.Text{
 		Producer: derived.Captions, Cues: s.cues, Title: s.title, Length: 83_500,
 	}, nil
 }
 
-func (s *site) Download(_ context.Context, _ domain.URL, into io.Writer) (port.Download, error) {
+func (s *site) Download(_ context.Context, _ domain.URL, into io.Writer) (port.Copy, error) {
 	if len(s.bytes) == 0 {
-		return port.Download{}, port.ErrNothingFetched
+		return port.Copy{}, port.ErrNothingDownloaded
 	}
 	_, err := into.Write(s.bytes)
-	return port.Download{MediaType: derived.CopyType, Extension: derived.CopyExtension}, err
+	return port.Copy{MediaType: derived.CopyType, Extension: derived.CopyExtension}, err
 }
 
 // importing is the core with one address it can reach.

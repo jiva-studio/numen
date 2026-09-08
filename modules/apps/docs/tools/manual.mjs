@@ -375,7 +375,7 @@ const meaning = (doc, name, keys) => {
  */
 const PACKAGES = {
   settings: 'adapter/settings',
-  fetch: 'internal/adapter/fetch',
+  download: 'internal/adapter/download',
   embed: 'internal/adapter/embed',
   recognition: 'internal/adapter/recognition',
   transcription: 'internal/adapter/transcription',
