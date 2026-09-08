@@ -8,9 +8,9 @@
  */
 import { computed } from 'vue'
 import { Player } from '@numen/ui'
-import MediaTab from './MediaTab.vue'
-import { DELETE_TEXT, PROOFREAD, WORDS as words } from './words'
-import type { MediaTabState } from './kind'
+import MediaTab from '../MediaTab.vue'
+import { DELETE_TEXT, PROOFREAD, WORDS as words } from '../words'
+import type { MediaTabState } from '../kind'
 
 const props = defineProps<{ state: MediaTabState }>()
 

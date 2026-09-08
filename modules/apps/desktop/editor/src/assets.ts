@@ -17,8 +17,8 @@ import type {
 import { transport } from '@numen/wire'
 import { fingerprint, stamp } from './shared/answers'
 import type { Documents, HighlightedPage } from './features/document/open'
-import type { Recordings } from './media/transcript'
-import type { Cue } from './media/cues'
+import type { Recordings } from './features/media/transcript'
+import type { Cue } from './features/media/cues'
 
 /** What the files of the vault are, for whatever opens one. */
 const assets = createClient(AssetService, transport)

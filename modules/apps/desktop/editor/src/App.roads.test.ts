@@ -11,7 +11,7 @@ import { type VueWrapper } from '@vue/test-utils'
 import { Agent, Editor, Palette, Plex, Reader, Tree, WorkspaceLayout, type Workspace } from '@numen/ui'
 import DocumentTab from './features/document/DocumentTab.vue'
 import NoteTab from './features/note/NoteTab.vue'
-import RecordingTab from './media/RecordingTab.vue'
+import RecordingTab from './features/media/recording-tab/RecordingTab.vue'
 import {
   asked,
   cards,

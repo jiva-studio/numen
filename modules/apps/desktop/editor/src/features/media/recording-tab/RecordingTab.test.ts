@@ -10,13 +10,13 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { ref } from 'vue'
-import { runSupport } from '../shared/command/runs'
+import { runSupport } from '../../../shared/command/runs'
 import RecordingTab from './RecordingTab.vue'
-import { transcribed } from './kind'
-import { transcript, type Recordings } from './transcript'
-import type { Cue } from './cues'
-import type { MediaTypeProbe, Player } from './player'
-import { WORDS } from './words'
+import { transcribed } from '../kind'
+import { transcript, type Recordings } from '../transcript'
+import type { Cue } from '../cues'
+import type { MediaTypeProbe, Player } from '../player'
+import { WORDS } from '../words'
 
 const CUES: readonly Cue[] = [
   { text: 'The first thing said.', from: 0, to: 2_000 },

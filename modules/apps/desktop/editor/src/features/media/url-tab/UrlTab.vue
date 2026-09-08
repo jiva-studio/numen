@@ -9,10 +9,10 @@
  * prose where it was written.
  */
 import { computed, useTemplateRef, watchPostEffect } from 'vue'
-import MediaTab from './MediaTab.vue'
-import Embed from './Embed.vue'
-import { DELETE_TEXT, WORDS as words } from './words'
-import type { MediaTabState } from './kind'
+import MediaTab from '../MediaTab.vue'
+import Embed from './embed/Embed.vue'
+import { DELETE_TEXT, WORDS as words } from '../words'
+import type { MediaTabState } from '../kind'
 
 const props = defineProps<{ state: MediaTabState }>()
 
