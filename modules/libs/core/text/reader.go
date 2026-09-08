@@ -475,8 +475,8 @@ func AddressNames(hash string) []string {
 	return append([]string{Copy(hash)}, AddressTexts(hash)...)
 }
 
-// AddressTexts is every file a producer wrote for one address. The copy is the
-// bytes of a video and no producer's text, so it is not among them.
+// AddressTexts is every file a producer wrote for one address, without the
+// copy.
 func AddressTexts(hash string) []string {
 	var out []string
 	for _, producer := range Producers() {
