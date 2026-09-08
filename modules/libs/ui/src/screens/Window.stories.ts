@@ -686,7 +686,6 @@ const screen = ({
             v-else-if="id === BOOK"
             class="h-full"
             :pages="pages"
-            :pages="pages"
             :at="at"
             :picture="picture"
             :highlights="highlightsOn"

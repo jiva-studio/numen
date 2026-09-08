@@ -1,5 +1,7 @@
 package domain
 
+import "slices"
+
 // Note is a parsed markdown file. Frontmatter is kept as it was found: the
 // application owns a closed set of keys and preserves everything else verbatim,
 // so the parser is not allowed to normalise or drop what it does not recognise.
@@ -45,13 +47,16 @@ const (
 	TypePreset NoteType = "preset"
 )
 
-// KnownNoteType reports whether a type is one of the four.
+// NoteTypes is every type a note may carry. Whatever says a type is unknown
+// and whatever names the known ones read this, so a type added here is added
+// to both at once.
+func NoteTypes() []NoteType {
+	return []NoteType{TypeNote, TypeDeck, TypeStencil, TypePreset}
+}
+
+// KnownNoteType reports whether a type is one this application has a word for.
 func KnownNoteType(t NoteType) bool {
-	switch t {
-	case TypeNote, TypeDeck, TypeStencil, TypePreset:
-		return true
-	}
-	return false
+	return slices.Contains(NoteTypes(), t)
 }
 
 // Heading is one ATX heading of a note, in document order.

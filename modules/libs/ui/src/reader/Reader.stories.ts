@@ -297,7 +297,7 @@ export const Undrawn: Story = {
       }
     },
     template: `
-      <Reader class="h-full" :pages="pages" :pages="pages" :at="at" :picture="picture" @go="go">
+      <Reader class="h-full" :pages="pages" :at="at" :picture="picture" @go="go">
         <template #silence>Nothing yet</template>
       </Reader>
     `,

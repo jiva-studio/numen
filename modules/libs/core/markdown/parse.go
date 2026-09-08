@@ -56,8 +56,8 @@ func Parse(ref domain.Fingerprint, raw []byte) domain.Note {
 			problems = append(problems, "id "+id+" is not a ULID")
 		}
 	}
-	// One key says what a note is, out of a closed list of five. A key with
-	// nothing in it says nothing, and the note is a note.
+	// One key says what a note is, out of a closed list. A key with nothing in
+	// it says nothing, and the note is a note.
 	n.Type = domain.TypeNote
 	if raw, present := n.Frontmatter["type"]; present && raw != nil {
 		name, isText := raw.(string)
@@ -68,8 +68,7 @@ func Parse(ref domain.Fingerprint, raw []byte) domain.Note {
 		case domain.KnownNoteType(domain.NoteType(name)):
 			n.Type = domain.NoteType(name)
 		default:
-			problems = append(problems,
-				"type "+name+" is not a note, a deck, a stencil or a preset")
+			problems = append(problems, "type "+name+" is not one of "+knownTypes())
 		}
 	}
 
@@ -177,3 +176,17 @@ func (f *Fence) Crosses(line string) bool {
 
 // Inside reports whether the walk stands within a fence.
 func (f *Fence) Inside() bool { return f.mark != 0 }
+
+// knownTypes names every type a note may carry, as a person reads them. It is
+// built from the types themselves, so a type added to the domain is named here
+// without anything being edited.
+func knownTypes() string {
+	names := make([]string, 0, len(domain.NoteTypes()))
+	for _, one := range domain.NoteTypes() {
+		names = append(names, string(one))
+	}
+	if len(names) < 2 {
+		return strings.Join(names, "")
+	}
+	return strings.Join(names[:len(names)-1], ", ") + " or " + names[len(names)-1]
+}
