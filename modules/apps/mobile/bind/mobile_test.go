@@ -178,9 +178,12 @@ func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 
 	for _, at := range []string{
 		"/assets/Physics.md",
-		"/numen.v1.AssetService/GetDocument",
-		"/numen.v1.AssetService/GetRecording",
-		"/numen.v1.AssetService/ListHighlights",
+		"/numen.v1.DocumentService/GetDocument",
+		"/numen.v1.RecordingService/GetRecording",
+		"/numen.v1.OcrService/ReadOcr",
+		"/numen.v1.TranscriptService/ReadTranscript",
+		"/numen.v1.TranscriptService/WriteTranscript",
+		"/numen.v1.ArticleService/ReadArticle",
 		"/numen.v1.ArtifactService/ListArtifacts",
 		"/numen.v1.ArtifactService/CreateArtifact",
 		"/numen.v1.ArtifactService/DeleteArtifact",
