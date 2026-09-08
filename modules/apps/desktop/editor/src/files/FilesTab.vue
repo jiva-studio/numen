@@ -17,7 +17,7 @@ import type { LucideIcon } from '@lucide/vue'
 import { iconFor, iconOfEntry } from '../icons'
 import type { DropPosition, FilesTabState } from './kind'
 import type { ListingRow } from './listing'
-import { addressIn, carriesAddress } from './dropping'
+import { addressIn, carriesAddress } from './drag'
 import { itemsFor } from './menu'
 import { WORDS as words } from './words'
 

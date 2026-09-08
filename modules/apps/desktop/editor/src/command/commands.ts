@@ -6,7 +6,7 @@
  * groups it is drawn in.
  */
 import { keysOf } from './chords'
-import { always, onEvidence, onNote, onVault, owed } from './offered'
+import { always, onEvidence, onNote, onVault, owed } from './where'
 import type { Command, CommandGroup, Words } from './target'
 
 /**

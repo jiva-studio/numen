@@ -16,8 +16,8 @@ export interface ShownStore {
   where(id: string): string
 }
 
-/** The reading one window does, over the decks that window holds. */
-export function reading(store: ShownStore, problemsAt: (path: string) => readonly Problem[]) {
+/** The reader one window has, over the decks that window holds. */
+export function reader(store: ShownStore, problemsAt: (path: string) => readonly Problem[]) {
   /** The last string a deck was read out of, and what it came to. */
   const parsed = new Map<string, { body: string; deck: Deck }>()
 

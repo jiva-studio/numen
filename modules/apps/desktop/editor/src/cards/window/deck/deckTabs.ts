@@ -13,8 +13,8 @@ import type { Cards, Problem, StencilSummary } from '../../vault/cards'
 import type { Store } from '../../../command/deps'
 import type { Presets } from '../../../preset/core'
 import { fileOf } from '../../../paths'
-import { reading } from './reading'
-import { scheduling, type Choice, type DeckPreset } from './scheduling'
+import { reader } from './reader'
+import { scheduler, type Choice, type DeckPreset } from './scheduler'
 import { openNotes, type OpenNote } from '../../../note/notes'
 import { markOf } from '../../../note/tab'
 import type { Kind, WindowHandle } from '../../../tabs/windowing'
@@ -174,7 +174,7 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
     },
   })
 
-  const read = reading(store, (path) => (told.get(path) ?? NOTHING).problems)
+  const read = reader(store, (path) => (told.get(path) ?? NOTHING).problems)
   const { deckAt, marksAt } = read
 
   /** The stencils a card may be cut by, made again where the list changed. */
@@ -209,7 +209,7 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
     if (!listedOk) void lists()
   }
 
-  const scheduled = scheduling(presets, store)
+  const scheduled = scheduler(presets, store)
   const { choices, listsPresets, listsPresetsAgain, asks, schedules, scheduledAt } = scheduled
 
 

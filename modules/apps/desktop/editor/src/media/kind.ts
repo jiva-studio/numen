@@ -77,7 +77,7 @@ export function transcribed(read: TranscriptState, asks: MediaTabDeps) {
  * the openers hand it the files it holds. A recording and a url hold the same
  * thing and are drawn the same, and each is its own tab.
  */
-export interface Played {
+export interface Medium {
   readonly tab: string
   readonly source: Source
   readonly draws: Component
@@ -85,7 +85,7 @@ export interface Played {
 }
 
 /** The recordings of the vault, played. */
-export const RECORDINGS: Played = {
+export const RECORDINGS: Medium = {
   tab: RECORDING,
   source: 'recording',
   draws: RecordingTab,
@@ -93,7 +93,7 @@ export const RECORDINGS: Played = {
 }
 
 /** The urls of the vault, opened at what is at the address. */
-export const URLS: Played = {
+export const URLS: Medium = {
   tab: URL,
   source: 'url',
   draws: UrlTab,
@@ -109,7 +109,7 @@ export function recordingKind(
   opens: (path: string) => TranscriptState,
   asks: MediaTabDeps,
   puts: FileOpeners,
-  as: Played = RECORDINGS,
+  as: Medium = RECORDINGS,
 ) {
   const kind: Kind<MediaTabState> = {
     kind: as.tab,

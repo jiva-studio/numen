@@ -116,7 +116,7 @@ export interface VaultSection {
  * it. A note is theirs, and what they wrote above the first card and below the
  * last comes back written as it went out.
  */
-export interface Surrounding {
+export interface Surrounds {
   /** The prose below the frontmatter and above the first of them. */
   readonly preamble: string
   /** What the file ends with once the last of them has been read. */
@@ -124,7 +124,7 @@ export interface Surrounding {
 }
 
 /** A deck as the vault reads it. */
-export interface VaultDeck extends Surrounding {
+export interface VaultDeck extends Surrounds {
   readonly path: string
   readonly title: string
   readonly cards: readonly VaultCard[]
@@ -143,7 +143,7 @@ export interface VaultFace {
 }
 
 /** A stencil as the vault reads it. */
-export interface VaultStencil extends Surrounding {
+export interface VaultStencil extends Surrounds {
   readonly path: string
   readonly title: string
   readonly fields: readonly string[]

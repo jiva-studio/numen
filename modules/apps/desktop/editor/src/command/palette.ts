@@ -12,7 +12,7 @@ import { isWebAddress } from '../address'
 import { answerGuard as latest } from '../questions'
 import { movedTo, type Move, type Vault } from '../core'
 import { commandsOf } from './commands'
-import { drawing } from './drawing'
+import { view } from './view'
 import type { RunSupport } from './runs'
 import { EXACT, NO, YES, type PendingStep } from './step'
 import {
@@ -209,7 +209,7 @@ export function commandPalette(
     if (here.value?.step === 'picking') await looks(text.trim())
   }
 
-  const draws = drawing({
+  const draws = view({
     words,
     commands,
     byId,

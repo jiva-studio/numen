@@ -24,8 +24,8 @@ import type {
   Words,
 } from './target'
 
-/** Everything the drawing reads, which is the palette's own state. */
-export interface DrawingState {
+/** Everything the view reads, which is the palette's own state. */
+export interface ViewState {
   readonly words: Words
   /** Every command, and the one another command's row reaches by its id. */
   readonly commands: readonly Command[]
@@ -46,8 +46,8 @@ export interface DrawingState {
   readonly named: (step: PendingStep) => string
 }
 
-/** The drawing one palette does, over the state that palette holds. */
-export function drawing(state: DrawingState) {
+/** The view one palette draws, over the state that palette holds. */
+export function view(state: ViewState) {
   const { words, commands, byId, runs, holds, found, known, showing, working, said } = state
   const { calling, named } = state
 
