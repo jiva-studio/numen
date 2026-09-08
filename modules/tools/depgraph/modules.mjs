@@ -63,6 +63,7 @@ export const baseline = new Map([
       'no-screen-reaches-a-screen: src/cards/deckTabs.ts → src/note/notes.ts',
       'no-screen-reaches-a-screen: src/cards/deckTabs.ts → src/note/tab.ts',
       'no-screen-reaches-a-screen: src/cards/deckTabs.ts → src/preset/core.ts',
+      'no-screen-reaches-a-screen: src/cards/scheduling.ts → src/preset/core.ts',
       'no-screen-reaches-a-screen: src/cards/deckTabs.test.ts → src/preset/core.ts',
       'no-screen-reaches-a-screen: src/cards/DeckTab.test.ts → src/preset/core.ts',
       'no-screen-reaches-a-screen: src/cards/stencilTabs.ts → src/note/notes.ts',

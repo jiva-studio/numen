@@ -6,12 +6,14 @@
  * What travels between the store and the vault is the cards of the deck, and
  * the string the store is dirty against is those cards written out.
  */
-import { computed, ref, shallowRef, type ComputedRef } from 'vue'
+import { computed, shallowRef, type ComputedRef } from 'vue'
 import type { DeckCard, DeckSection, PlexShowing, Stencil } from '@numen/ui'
 import type { Move, RefusalReason } from '../core'
 import type { Cards, Problem, StencilSummary } from './vault'
 import type { Store } from '../command/deps'
-import type { PresetChoice, Presets, ReadResult } from '../preset/core'
+import type { Presets } from '../preset/core'
+import { reading } from './reading'
+import { scheduling, type Choice, type DeckPreset } from './scheduling'
 import { openNotes, type OpenNote } from '../note/notes'
 import { markOf } from '../note/tab'
 import type { Kind, WindowHandle } from '../tabs/windowing'
@@ -29,11 +31,8 @@ import {
   deckOf,
   drawnOf,
   filled,
-  headed,
-  named,
   pathOfCut,
   removed,
-  sameDeck,
   sameOffers,
   sectionAdded,
   sectionGone,
@@ -41,7 +40,7 @@ import {
   sectionsOf,
   type Deck,
 } from './deck'
-import { marksOf, sameMarks, type Marks } from './marks'
+import type { Marks } from './marks'
 import { WORDS as words } from './words'
 
 /** What the vault said about one file the last time it was read or written. */
@@ -61,28 +60,6 @@ interface VaultAnswer {
 }
 
 const NOTHING: VaultAnswer = { problems: [], reading: null, writing: null, bound: 0 }
-
-/** The preset a deck is scheduled by, as the line at the top of it draws it. */
-export interface DeckPreset {
-  /** The note the preset stands in. Empty is a deck scheduled by the defaults. */
-  readonly path: string
-  /** What that preset is called, in the words on the line. */
-  readonly name: string
-  /**
-   * What is wrong with what the deck names — a preset the vault no longer
-   * holds, a note that is not a preset — and nothing where nothing is.
-   */
-  readonly saying: string
-}
-
-/** A deck naming no preset, which is scheduled by the defaults. */
-const BY_DEFAULT: DeckPreset = { path: '', name: words.defaults, saying: '' }
-
-/** One preset a deck may be put on, as the line offers it. */
-export interface Choice {
-  readonly path: string
-  readonly name: string
-}
 
 /** What one deck tab holds. */
 export interface DeckTabState {
@@ -196,54 +173,8 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
     },
   })
 
-  /** The last string a deck was read out of, and what it came to. */
-  const parsed = new Map<string, { body: string; deck: Deck }>()
-
-  /** The deck one tab is showing, read out of the string the store holds. */
-  const deckAt = (id: string): Deck => {
-    const body = store.shown(id).body
-    const held = parsed.get(id)
-    if (held && held.body === body) return held.deck
-    // A file read again carries fresh identities for the same cards, so the
-    // string it comes back as differs from the string that went out. A deck
-    // reading as the one on screen leaves that one standing, and a deck the
-    // file has named a card of since keeps that card's identity, so the card a
-    // person is typing into is not drawn again.
-    const read = deckIn(body)
-    const deck = held
-      ? sameDeck(held.deck, read)
-        ? headed(held.deck, read)
-        : named(held.deck, read)
-      : read
-    parsed.set(id, { body, deck })
-    return deck
-  }
-
-  /** The problems one tab was last marked from, and the marks that came of it. */
-  const marked = new Map<string, { problems: readonly Problem[]; marks: Marks }>()
-
-  /**
-   * What is wrong with a file, against the card the grid is drawing. A problem
-   * carries where it stood in the file it was read from, so it is put against
-   * a card once, when the reading it came in on is the newest one: a card
-   * dragged elsewhere in the order or a card removed beside it takes its mark
-   * with it from there.
-   */
-  const marksAt = (id: string): Marks => {
-    const problems = (told.get(store.where(id)) ?? NOTHING).problems
-    const held = marked.get(id)
-    if (held && held.problems === problems) return held.marks
-    const read = marksOf(
-      problems,
-      deckAt(id).cards.map((card) => card.id),
-      [],
-    )
-    // Marks saying what the last ones said leave what is drawn against the
-    // file standing.
-    const marks = held && sameMarks(held.marks, read) ? held.marks : read
-    marked.set(id, { problems, marks })
-    return marks
-  }
+  const read = reading(store, (path) => (told.get(path) ?? NOTHING).problems)
+  const { deckAt, marksAt } = read
 
   /** The stencils a card may be cut by, made again where the list changed. */
   const stencils = computed(() => stencilsOf(offers.value))
@@ -251,7 +182,7 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
   /** A deck as it now stands, written back into the store. */
   const turns = (id: string, deck: Deck): void => {
     const body = deckBodyOf(deck)
-    parsed.set(id, { body, deck })
+    read.holds(id, body, deck)
     store.typed(id, body)
   }
 
@@ -277,102 +208,9 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
     if (!listedOk) void lists()
   }
 
-  /** The presets of the vault, as they were last listed. */
-  const offered = shallowRef<readonly PresetChoice[]>([])
-  /** Whether the last listing of the presets answered. */
-  let offeredOk = true
-  /** Which preset schedules each file, under the path it is filed at. */
-  const scheduling = ref(new Map<string, DeckPreset>())
-  /** What choosing a preset came to, under the tab that chose. */
-  const chose = ref(new Map<string, string>())
+  const scheduled = scheduling(presets, store)
+  const { choices, listsPresets, listsPresetsAgain, asks, schedules, scheduledAt } = scheduled
 
-  /** The presets of the vault, asked for again. */
-  const listsPresets = async (): Promise<void> => {
-    try {
-      offered.value = await presets.list()
-      offeredOk = true
-    } catch {
-      // The presets the window last heard of stand, and a deck is put on one
-      // of them until the vault answers again.
-      offeredOk = false
-    }
-  }
-
-  /** The presets asked for again, where the last listing did not answer. */
-  const listsPresetsAgain = (): void => {
-    if (!offeredOk) void listsPresets()
-  }
-
-  /** The preset a deck names, as the line at the top of it draws it. */
-  const scheduledOf = (read: ReadResult): DeckPreset => {
-    if (read.preset === null) return BY_DEFAULT
-    const saying = read.preset.problems[0] ?? ''
-    if (read.preset.path === '') return { ...BY_DEFAULT, saying }
-    return {
-      path: read.preset.path,
-      name: read.preset.title || words.unnamed(read.preset.path),
-      saying,
-    }
-  }
-
-  /** Which preset schedules the deck at a path, asked of the vault. */
-  const asks = async (path: string): Promise<void> => {
-    let read: ReadResult
-    try {
-      read = await presets.scheduling(path)
-    } catch {
-      // The preset the window last heard of stands.
-      return
-    }
-    scheduling.value.set(path, scheduledOf(read))
-  }
-
-  /** What one tab was told about the preset it last chose. */
-  const says = (id: string, text: string): void => {
-    chose.value.set(id, text)
-  }
-
-  /**
-   * A deck put on a preset. What the deck owes reaches the file first, so the
-   * write lands on the deck the window read; the file the write made is then
-   * read again, and the tab writes against it from there.
-   */
-  const schedules = async (id: string, preset: string): Promise<void> => {
-    const path = store.where(id)
-    await store.settles(id)
-    try {
-      const answer = await presets.schedules(path, preset, store.at(id))
-      if (answer.changed) says(id, words.notScheduledChanged)
-      else if (answer.refusal !== null) says(id, words.notScheduled)
-      else says(id, '')
-    } catch {
-      // The vault did not answer, and the deck is on the preset it was on. The
-      // tab says so where it says what choosing came to.
-      says(id, words.unreachable)
-      return
-    }
-    store.changed([path])
-    await asks(path)
-  }
-
-  /** The presets a deck may be put on: the defaults, and every preset the vault holds. */
-  const choices = computed<readonly Choice[]>(() => [
-    { path: '', name: words.defaults },
-    ...offered.value.map((one) => ({
-      path: one.path,
-      name: one.title || words.unnamed(one.path),
-    })),
-  ])
-
-  /**
-   * The preset one tab is scheduled by. What the tab was last told about a
-   * choice it made stands over what the file says, until a choice lands.
-   */
-  const scheduledAt = (id: string): DeckPreset => {
-    const held = scheduling.value.get(store.where(id)) ?? BY_DEFAULT
-    const said = chose.value.get(id) ?? ''
-    return said === '' ? held : { ...held, saying: said }
-  }
 
   /** The words one refusal is put in, and nothing for one this file has none for. */
   const whyOf = (refusal: RefusalReason | null, bound: number): string | null => {
@@ -424,9 +262,8 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
         const path = store.where(id)
         void store.shut(id).then((gone) => {
           if (!gone) return
-          parsed.delete(id)
-          marked.delete(id)
-          chose.value.delete(id)
+          read.closes(id)
+          scheduled.closes(id)
           forgets(path)
           handle.closes(tab)
         })
@@ -442,7 +279,7 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
     if (store.all().some((one) => store.where(one) === path)) return
     told.delete(path)
     titles.delete(path)
-    scheduling.value.delete(path)
+    scheduled.forgets(path)
   }
 
   /** What a deck tab is called: the title the file carries, or the file itself. */
@@ -552,9 +389,7 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
       const title = titles.get(went.from)
       if (title !== undefined) titles.set(went.to, title)
       titles.delete(went.from)
-      const by = scheduling.value.get(went.from)
-      if (by) scheduling.value.set(went.to, by)
-      scheduling.value.delete(went.from)
+      scheduled.moved(went.from, went.to)
     }
     store.changed(paths, renamed)
     if (store.all().length === 0) return
