@@ -337,7 +337,7 @@ The boundary the detector answers with is the text's own outline drawn inside th
       "download": true,
       "threads": 4,
       "model": { "name": "parakeet-tdt-0.6b-v3-int8" },
-      "speech": { "name": "silero-vad", "threshold": 0.5, "silence": 500, "pad": 200, "longest": 30000, "shortest": 100, "least": 2500 },
+      "segmenter": { "name": "silero-vad", "threshold": 0.5, "silence": 500, "pad": 200, "longest": 30000, "shortest": 100, "least": 2500 },
       "proofread": { "with": "", "automatically": false }
     }
   }
@@ -355,14 +355,14 @@ The boundary the detector answers with is the text's own outline drawn inside th
 | `model.name` | what the transducer is called in the record kept beside a transcript. |
 | `model.from` | the folder its four files are fetched from. The encoder, the decoder, the joiner and the tokens are one model: three graphs from two exports write nothing anybody can read. |
 | `model.encoder`, `model.decoder`, `model.joiner`, `model.tokens` | the files on this machine. A path is used as given; an empty one is the file of that name under `model.from`. |
-| `speech.name` | what the segmenter is called in that same record. Where a stretch of speech is cut is part of what the words are, so it is named beside the model that transcribed them. |
-| `speech.from`, `speech.path` | where the segmenter is fetched from, and a file on this machine. A path is used as given; `from` is looked for in `dir` first. |
-| `speech.threshold` | how sure the model has to be that a window carries speech. 0.5. |
-| `speech.silence` | how much quiet, in milliseconds, closes a stretch of speech. 500. |
-| `speech.pad` | how many milliseconds are kept on each side of a stretch. 200, because the model answers on the window a sound begins in, and the sound before that window is what the first letter of the word is made of. |
-| `speech.longest` | how many milliseconds one stretch may run to. 30000. One stretch is one run of the encoder, and its cost grows with its length; speech going on longer is cut at the quietest window this side of the limit. |
-| `speech.shortest` | how many milliseconds a stretch carries to be a stretch at all. 100. |
-| `speech.least` | how many milliseconds a stretch runs to before it stands as a line of its own. 2500. A shorter one is put together with the stretch after it, up to `longest`. A line of a transcript is read, so it holds a phrase; and the model transcribes a sentence better than it transcribes a word out of one. |
+| `segmenter.name` | what the segmenter is called in that same record. Where a segment is cut is part of what the words are, so it is named beside the model that transcribed them. |
+| `segmenter.from`, `segmenter.path` | where the segmenter is fetched from, and a file on this machine. A path is used as given; `from` is looked for in `dir` first. |
+| `segmenter.threshold` | how sure the model has to be that a window carries speech. 0.5. |
+| `segmenter.silence` | how much quiet, in milliseconds, closes a segment. 500. |
+| `segmenter.pad` | how many milliseconds are kept on each side of a segment. 200, because the model answers on the window a sound begins in, and the sound before that window is what the first letter of the word is made of. |
+| `segmenter.longest` | how many milliseconds one segment may run to. 30000. One segment is one run of the encoder, and its cost grows with its length; speech going on longer is cut at the quietest window this side of the limit. |
+| `segmenter.shortest` | how many milliseconds a segment carries to be a segment at all. 100. |
+| `segmenter.least` | how many milliseconds a segment runs to before it stands as a line of its own. 2500. A shorter one is put together with the segment after it, up to `longest`. A line of a transcript is read, so it holds a phrase; and the model transcribes a sentence better than it transcribes a word out of one. |
 | `proofread.with` | which profile under `indexing.proofreading.profiles` puts a transcript right. Empty proofreads nothing, and a transcript is used exactly as it was transcribed. A name no profile carries is an error at startup. |
 | `proofread.automatically` | whether a transcript is proofread as soon as it is finished. Off leaves it to the hand: a person asks for it on the recording in front of them. |
 

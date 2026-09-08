@@ -56,10 +56,10 @@ type Recording interface {
 	// Length is how long the recording is, in milliseconds.
 	Length() int
 
-	// Speech is the stretches of speech from a millisecond onward, at most
-	// count of them. A recording with nothing further to say answers with none,
-	// and that is how a run knows it is done.
-	Speech(ctx context.Context, from, count int) ([]Audio, error)
+	// Segments is what the segmenter cut the recording into, from a millisecond
+	// onward, at most count of them. A recording with nothing further to say
+	// answers with none, and that is how a run knows it is done.
+	Segments(ctx context.Context, from, count int) ([]Audio, error)
 
 	Close() error
 }

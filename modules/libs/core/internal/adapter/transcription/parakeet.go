@@ -61,10 +61,10 @@ type Transcriber struct {
 	pieces pieces
 	blank  int
 
-	// speech is the model that finds the stretches, and cutting is how it cuts
-	// them. A recording opened by this transcriber is cut by them.
-	speech  *ort.Session
-	cutting SegmenterModel
+	// segmenter is the model that finds the stretches, and cutting is how it
+	// cuts them. A recording opened by this transcriber is cut by them.
+	segmenter *ort.Session
+	cutting   SegmenterModel
 
 	model port.TranscriptionModel
 
@@ -100,11 +100,11 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 	out := &Transcriber{
 		pieces:  said,
 		blank:   blank,
-		cutting: cfg.Speech,
+		cutting: cfg.Segmenter,
 		model: port.TranscriptionModel{
 			Model:     named(cfg.Model.Name, found.encoder),
-			Segmenter: named(cfg.Speech.Name, found.speech),
-			Cutting:   cfg.Speech.cutting(),
+			Segmenter: named(cfg.Segmenter.Name, found.segmenter),
+			Cutting:   cfg.Segmenter.cutting(),
 			From:      found.from,
 		},
 	}
@@ -116,7 +116,7 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 		{&out.encoder, found.encoder, "encoder"},
 		{&out.decoder, found.decoder, "decoder"},
 		{&out.joiner, found.joiner, "joiner"},
-		{&out.speech, found.speech, "speech model"},
+		{&out.segmenter, found.segmenter, "segmenter model"},
 	} {
 		session, err := opened.engine.NewSession(one.at, options)
 		if err != nil {
@@ -134,7 +134,7 @@ func (t *Transcriber) Transcription() port.TranscriptionModel { return t.model }
 // Close lets go of the models this transcriber loaded. The runtime they ran on
 // is the process's and stays.
 func (t *Transcriber) Close() error {
-	for _, session := range []*ort.Session{t.encoder, t.decoder, t.joiner, t.speech} {
+	for _, session := range []*ort.Session{t.encoder, t.decoder, t.joiner, t.segmenter} {
 		if session != nil {
 			session.Destroy()
 		}

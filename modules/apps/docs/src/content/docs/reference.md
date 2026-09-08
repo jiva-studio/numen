@@ -119,16 +119,16 @@ How a vault is made searchable.
 | `transcription.model.decoder` | text |  |
 | `transcription.model.joiner` | text |  |
 | `transcription.model.tokens` | text |  |
-| `transcription.speech` |  | finds where in a recording somebody is speaking. |
-| `transcription.speech.name` | text | what this segmenter is called in the record kept beside a text. |
-| `transcription.speech.from` | text | where the model is fetched from, and `path` is a file on this machine. |
-| `transcription.speech.path` | text |  |
-| `transcription.speech.threshold` | a number | how sure the model has to be that a window carries speech. |
-| `transcription.speech.silence` | a number | how much quiet, in milliseconds, closes a stretch of speech. |
-| `transcription.speech.pad` | a number | how many milliseconds are kept on each side of a stretch, so that the first and last sound of a word are inside it. |
-| `transcription.speech.longest` | a number | how many milliseconds one stretch may run to. |
-| `transcription.speech.shortest` | a number | how many milliseconds a stretch carries to be a stretch at all. |
-| `transcription.speech.least` | a number | how many milliseconds a stretch runs to before it stands as a line of its own. |
+| `transcription.segmenter` |  | finds where in a recording somebody is speaking. |
+| `transcription.segmenter.name` | text | what this segmenter is called in the record kept beside a text. |
+| `transcription.segmenter.from` | text | where the model is fetched from, and `path` is a file on this machine. |
+| `transcription.segmenter.path` | text |  |
+| `transcription.segmenter.threshold` | a number | how sure the model has to be that a window carries speech. |
+| `transcription.segmenter.silence` | a number | how much quiet, in milliseconds, closes a segment. |
+| `transcription.segmenter.pad` | a number | how many milliseconds are kept on each side of a segment, so that the first and last sound of a word are inside it. |
+| `transcription.segmenter.longest` | a number | how many milliseconds one segment may run to. |
+| `transcription.segmenter.shortest` | a number | how many milliseconds a segment carries to be a segment at all. |
+| `transcription.segmenter.least` | a number | how many milliseconds a segment runs to before it stands as a line of its own. |
 | `transcription.proofread` |  | names the profile a transcript is put right at. |
 | `transcription.proofread.with` | text | the profile, by the name the profiles carry it under. |
 | `transcription.proofread.automatically` | yes or no | whether a reading already written down is put right without anybody asking for it. |

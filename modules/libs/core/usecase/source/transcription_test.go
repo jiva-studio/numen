@@ -51,7 +51,7 @@ type quiet struct{}
 
 func (quiet) Length() int { return 60_000 }
 
-func (quiet) Speech(context.Context, int, int) ([]port.Audio, error) { return nil, nil }
+func (quiet) Segments(context.Context, int, int) ([]port.Audio, error) { return nil, nil }
 
 func (quiet) Close() error { return nil }
 

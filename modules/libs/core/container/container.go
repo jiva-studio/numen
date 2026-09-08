@@ -84,11 +84,11 @@ type Config struct {
 	// does, and naming no profile here is naming no proofreader.
 	Proofreading proofreading.Config
 
-	// ScanProofreading and SpeechProofreading name the profile each kind of
-	// reading is put right at, and say whether that happens without anybody
+	// ScanProofreading and TranscriptProofreading name the profile each kind of
+	// text is put right at, and say whether that happens without anybody
 	// asking.
-	ScanProofreading   proofreading.Proofread
-	SpeechProofreading proofreading.Proofread
+	ScanProofreading       proofreading.Proofread
+	TranscriptProofreading proofreading.Proofread
 
 	// AgentProofreader opens a profile that reaches the command line a person
 	// already has. The platform supplies it, since core starts no process; an
@@ -142,7 +142,7 @@ func (c Config) Indexing(said settings.Indexing) Config {
 	c.Recognition = said.Recognition.Config
 	c.Proofreading = said.Proofreading
 	c.ScanProofreading = said.Recognition.Proofread
-	c.SpeechProofreading = said.Transcription.Proofread
+	c.TranscriptProofreading = said.Transcription.Proofread
 	c.Transcription = said.Transcription.Config
 	c.Transcribes = said.Transcribes()
 	c.TranscribesUnder = said.TranscribesUnder()

@@ -182,17 +182,17 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 			// person did, and the next run begins where this one stopped.
 			return res, err
 		}
-		speech, err := recording.Speech(ctx, from, u.batch())
+		segments, err := recording.Segments(ctx, from, u.batch())
 		if err != nil {
-			return res, fmt.Errorf("listen to %s at %s: %w", path, transcript.Stamp(from), err)
+			return res, fmt.Errorf("transcribe %s at %s: %w", path, transcript.Stamp(from), err)
 		}
-		if len(speech) == 0 {
+		if len(segments) == 0 {
 			break
 		}
 
 		reached := from
-		cues := make([]transcript.Cue, 0, len(speech))
-		for _, audio := range speech {
+		cues := make([]transcript.Cue, 0, len(segments))
+		for _, audio := range segments {
 			words, err := u.By.Transcribe(ctx, audio)
 			if err != nil {
 				return res, fmt.Errorf("hear %s at %s: %w", path, transcript.Stamp(audio.From), err)

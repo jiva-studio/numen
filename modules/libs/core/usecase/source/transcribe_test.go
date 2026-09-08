@@ -65,7 +65,7 @@ type played struct{ *voice }
 
 func (p played) Length() int { return len(p.words) * 1000 }
 
-func (p played) Speech(_ context.Context, from, count int) ([]port.Audio, error) {
+func (p played) Segments(_ context.Context, from, count int) ([]port.Audio, error) {
 	var out []port.Audio
 	for n := range p.words {
 		if at := stretch(n); at.From >= from {
