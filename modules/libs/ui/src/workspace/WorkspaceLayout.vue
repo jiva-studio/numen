@@ -7,9 +7,8 @@
  * hands identities back.
  */
 import { computed, provide, useTemplateRef } from 'vue'
-import { browserClock, type Clock } from '../lib/clock'
-import DragPreview from '../press/DragPreview.vue'
-import { usePressDrag } from '../press/press'
+import { browserClock, type Clock } from '@/shared/lib/clock'
+import { DragPreview, usePressDrag } from '@/shared/ui/drag-preview'
 import WorkspaceBranch from './render/WorkspaceBranch.vue'
 import WorkspacePane from './render/WorkspacePane.vue'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from './render/context'

@@ -5,7 +5,7 @@
  * written down.
  */
 import { ARROW_LENGTH, type EdgeCurve, type PlacedArrow, type PlacedEdge } from '../edge'
-import type { Position } from '../../lib/geometry'
+import type { Position } from '@/shared/lib/geometry'
 
 /** The curve, from where it leaves to where it arrives. */
 export const pathOf = (edge: EdgeCurve): string =>

@@ -6,7 +6,7 @@
  * page in front and how close it is drawn are the reader's, held here.
  */
 import { computed, ref } from 'vue'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/shared/ui/button'
 import { clamped, CLOSEST, FURTHEST, NEARER, READER_WORDS, type ReaderWords } from './strip'
 
 withDefaults(

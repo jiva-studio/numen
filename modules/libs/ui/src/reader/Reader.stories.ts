@@ -13,7 +13,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
 import Reader from './Reader.vue'
 import { GAP } from './strip'
-import { framed } from '@/fixtures/frame'
+import { framed } from '@/shared/fixtures/frame'
 
 const meta = {
   title: 'Reading/Reader',

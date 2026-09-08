@@ -11,8 +11,8 @@
  * `hint` and `silence`. A group is drawn as a group and a row as an option.
  */
 import { nextTick } from 'vue'
-import Spinner from '../waiting/Spinner.vue'
-import KeyCap from './KeyCap.vue'
+import { Spinner } from '@/shared/ui/spinner'
+import { KeyCap } from '@/shared/ui/key-cap'
 import { listId, optionId, type PlacedGroup } from './item'
 
 const props = defineProps<{

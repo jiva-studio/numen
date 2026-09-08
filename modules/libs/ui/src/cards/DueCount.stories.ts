@@ -8,10 +8,10 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 import DueCount from './DueCount.vue'
-import { Button } from '../components/ui/button'
+import { Button } from '@/shared/ui/button'
 import { DUE_WORDS } from './due'
-import { lightness } from '@/fixtures/colour'
-import { DARK, drawnDark } from '@/fixtures/theme'
+import { lightness } from '@/shared/fixtures/colour'
+import { DARK, drawnDark } from '@/shared/fixtures/theme'
 
 interface Knobs {
   /** Cards due today. Nothing until it has been counted. */

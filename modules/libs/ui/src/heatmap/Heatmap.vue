@@ -12,7 +12,7 @@
 import { computed, ref, useTemplateRef } from 'vue'
 
 import Tooltip from '../tooltip/Tooltip.vue'
-import type { Box } from '../placing/place'
+import type { Box } from '@/shared/lib/place'
 import DaySummary from './DaySummary.vue'
 import { days, fits, ROWS } from './heatmap'
 import type { Day, Tally } from './heatmap'

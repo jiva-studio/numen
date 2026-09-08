@@ -24,7 +24,7 @@ import { byHandle, type ReachStrategy } from './reaching'
 import { byDoubleClick, type ShowStrategy } from './showing'
 import { hangParts, type PlexPart } from './inside'
 import { usePlexTransition, browserClock, type Clock } from './transition'
-import { browserViewport, type Viewport } from '../lib/viewport'
+import { browserViewport, type Viewport } from '@/shared/lib/viewport'
 import type { Placement, PlexOptionsInput, Size } from './arrange'
 import type { PlexNeighbourhood } from './neighbourhood'
 import type { PlacedNode, Position } from './node'
@@ -33,7 +33,7 @@ import type { PlexShowing } from './showing'
 import { resolveOptions } from './arrange'
 import { usePlexDrag } from './drag'
 import { usePlexGesture } from './gesture'
-import type { MenuOpening } from '../menu/item'
+import type { MenuOpening } from '@/shared/ui/menu'
 
 const props = withDefaults(
   defineProps<{

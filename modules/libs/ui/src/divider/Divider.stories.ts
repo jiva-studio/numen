@@ -10,7 +10,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
 import Divider from './Divider.vue'
 import Icon from '../cards/Icon.vue'
-import { Button } from '../components/ui/button'
+import { Button } from '@/shared/ui/button'
 
 const UNBROKEN =
   'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'

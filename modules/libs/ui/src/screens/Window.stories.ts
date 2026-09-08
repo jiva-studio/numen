@@ -30,8 +30,8 @@ import Editor from '@/editor/Editor.vue'
 import Palette from '@/palette/Palette.vue'
 import Reader from '@/reader/Reader.vue'
 import Tree from '@/tree/Tree.vue'
-import Menu from '@/menu/Menu.vue'
-import type { MenuItem } from '@/menu/item'
+import { Menu } from '@/shared/ui/menu'
+import type { MenuItem } from '@/shared/ui/menu'
 import Agent from './Agent.vue'
 import { branch, pane, type Tab, type Workspace as State } from '@/workspace/node'
 import { keyChord } from '@/palette/item'
@@ -39,9 +39,9 @@ import type {
   PaletteAction,
   PaletteGroup,
   PaletteItem,
-  PaletteKeys,
   PaletteSpan,
 } from '@/palette/item'
+import type { PaletteKeys } from '@/shared/ui/key-cap'
 import type { PlexPart } from '@/plex/inside'
 import { RELATED_SEATS, type PlexRelatedSeat } from '@/plex/seat'
 import type { PlexEdge } from '@/plex/edge'
@@ -49,7 +49,7 @@ import type { PlexNeighbourhood } from '@/plex/neighbourhood'
 import type { PlexNode } from '@/plex/node'
 import type { Row } from '@/tree/row'
 import type { Turn } from '@/thread/turn'
-import { hovered } from '@/fixtures/colour'
+import { hovered } from '@/shared/fixtures/colour'
 
 const PLEX = 'plex'
 const NOTE = 'note'

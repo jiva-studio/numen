@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import PlexNodeView from './PlexNodeView.vue'
 import { OPENING, type WideBox } from '../dwell'
 import { hangParts, type PlexPart } from '../inside'
-import { stubClock } from '../../fixtures/clock'
+import { stubClock } from '@/shared/fixtures/clock'
 import type { GestureRole, PlacedNode } from '../node'
 import type { PlexSeat } from '../seat'
 

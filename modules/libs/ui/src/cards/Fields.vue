@@ -15,7 +15,7 @@ import Divider from '../divider/Divider.vue'
 import CardRow from './CardRow.vue'
 import { useDrag } from './drag'
 import { useNaming } from './naming'
-import { Button } from '../components/ui/button'
+import { Button } from '@/shared/ui/button'
 import {
   landing,
   numbered,

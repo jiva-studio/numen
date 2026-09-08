@@ -1,5 +1,5 @@
 /** Boxes and places, in whatever coordinates the caller measures in. */
-import type { Position } from '../lib/geometry'
+import type { Position } from '@/shared/lib/geometry'
 
 export type { Position }
 

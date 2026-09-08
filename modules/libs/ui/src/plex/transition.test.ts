@@ -3,7 +3,7 @@ import { effectScope, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { usePlexTransition } from './transition'
 import { neighbourhoods } from './fixtures/neighbourhoods'
-import { stubClock } from '../fixtures/clock'
+import { stubClock } from '@/shared/fixtures/clock'
 import type { PlexNeighbourhood } from './neighbourhood'
 import type { PlacedNode } from './node'
 

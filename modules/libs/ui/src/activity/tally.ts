@@ -7,7 +7,7 @@
  * what the words are, so nothing here knows what is being counted.
  */
 
-import { clock } from '../player/clock'
+import { clock } from '@/shared/lib/duration'
 
 /**
  * Where a piece of work has got to.

@@ -8,8 +8,8 @@
  */
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 
-import { beside, type Box } from '../placing/place'
-import type { Size } from '../lib/geometry'
+import { beside, type Box } from '@/shared/lib/place'
+import type { Size } from '@/shared/lib/geometry'
 
 const props = withDefaults(
   defineProps<{

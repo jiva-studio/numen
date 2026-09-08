@@ -10,7 +10,7 @@ import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Tooltip from './Tooltip.vue'
-import type { Box } from '../placing/place'
+import type { Box } from '@/shared/lib/place'
 
 /** How large the tooltip turned out to be, once it was drawn. */
 const WIDE = 120

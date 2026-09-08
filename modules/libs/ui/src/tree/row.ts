@@ -6,7 +6,7 @@
  * at.
  */
 
-import type { Position } from '../lib/geometry'
+import type { Position } from '@/shared/lib/geometry'
 
 /** A row's identity. What it stands for is the caller's to decide. */
 export type RowId = string

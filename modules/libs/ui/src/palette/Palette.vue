@@ -21,7 +21,7 @@ import {
   useTemplateRef,
   watch,
 } from 'vue'
-import KeyCap from './KeyCap.vue'
+import { KeyCap } from '@/shared/ui/key-cap'
 import PaletteActions from './PaletteActions.vue'
 import PaletteResults from './PaletteResults.vue'
 import {
@@ -40,9 +40,9 @@ import {
   ACTION_WORDS,
   type ActionWords,
   type PaletteGroup,
-  type PaletteKeys,
   type PaletteLit,
 } from './item'
+import type { PaletteKeys } from '@/shared/ui/key-cap'
 
 const props = withDefaults(
   defineProps<{

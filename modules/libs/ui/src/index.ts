@@ -4,40 +4,39 @@
  * Narrower than what the module contains: the easing curve, the routing and
  * the arithmetic are how a plex is built, not how it is used.
  */
-import './tokens/theme.css'
-import './window.css'
+import './shared/tokens/theme.css'
+import './shared/tokens/window.css'
 
 export { default as Plex } from './plex/Plex.vue'
 export { seatWord } from './plex/seat'
 
-export { default as Menu } from './menu/Menu.vue'
-export { grouped } from './menu/item'
-export type { MenuItem, MenuOpening } from './menu/item'
+export { Menu, grouped } from './shared/ui/menu'
+export type { MenuItem, MenuOpening } from './shared/ui/menu'
 
-export { Button } from './components/ui/button'
+export { Button } from './shared/ui/button'
 
 /** One line of digits, typed by hand and held inside its bounds. */
-export { NumberField } from './components/ui/number-field'
+export { NumberField } from './shared/ui/number-field'
 
-export { Switch } from './components/ui/switch'
+export { Switch } from './shared/ui/switch'
 
 /** An hour and a minute of the day, typed on the clock the machine draws. */
-export { TimeField } from './components/ui/time-field'
+export { TimeField } from './shared/ui/time-field'
 
 /** One value along a track, moved by a handle. */
-export { Slider } from './components/ui/slider'
+export { Slider } from './shared/ui/slider'
 
 /** Two to four choices side by side, one of them chosen. */
-export { SegmentedControl } from './components/ui/segmented'
+export { SegmentedControl } from './shared/ui/segmented'
 
 /** One choice out of a list, taken from a menu the machine draws. */
-export { Select } from './components/ui/select'
-export type { SelectChoice } from './components/ui/select'
+export { Select } from './shared/ui/select'
+export type { SelectChoice } from './shared/ui/select'
 
 /** The days of the week, each drawn at the level it stands at. */
-export { WeekdayChips } from './components/ui/weekday-chips'
-export { WEEK } from './components/ui/weekday-chips'
-export type { Day } from './components/ui/weekday-chips'
+export { WeekdayChips } from './shared/ui/weekday-chips'
+export { WEEK } from './shared/ui/weekday-chips'
+export type { Day } from './shared/ui/weekday-chips'
 
 export { default as DueCount } from './cards/DueCount.vue'
 /** What a person did on each day, as a grid of weeks. */
@@ -45,7 +44,7 @@ export { default as Heatmap } from './heatmap/Heatmap.vue'
 export { dayName as heatmapDayName } from './heatmap/dates'
 export type { Words as HeatmapWords } from './heatmap/words'
 /** A day of the calendar, written down, read back and counted against another. */
-export { dayAfter, dayNamed, dayOf, daysBetween, isDay } from './calendar/day'
+export { dayAfter, dayNamed, dayOf, daysBetween, isDay } from './shared/lib/day'
 export type { Tally as HeatmapTally } from './heatmap/heatmap'
 export { default as WelcomePage } from './welcome/WelcomePage.vue'
 /** The letter a vault on that screen is opened by, and what a keystroke opens. */
@@ -53,9 +52,10 @@ export { opensVault, typing } from './welcome/letters'
 export type { VaultRow, WelcomeAction } from './welcome/welcome'
 
 export { default as Palette } from './palette/Palette.vue'
-export { default as KeyCap } from './palette/KeyCap.vue'
+export { KeyCap } from './shared/ui/key-cap'
 export { commandKeyChord, keyChord } from './palette/item'
-export type { ActionWords, PaletteItem, PaletteKeys, PaletteGroup } from './palette/item'
+export type { ActionWords, PaletteItem, PaletteGroup } from './palette/item'
+export type { PaletteKeys } from './shared/ui/key-cap'
 
 /** The size a node's label is being set at, and the plex drawn to hold it. */
 export { optionsForType, useTypeSize } from './plex/sizing'
@@ -66,13 +66,13 @@ export { timing } from './editor/timing'
 
 /** The controls a recording is played by. What plays is somewhere else. */
 export { default as Player } from './player/Player.vue'
-export { clock } from './player/clock'
+export { clock } from './shared/lib/duration'
 
 /** A stream taken up again for as long as a window is open. */
-export { following } from './stream/stream'
+export { following } from './shared/lib/stream'
 
-export { default as Spinner } from './waiting/Spinner.vue'
-export { default as Skeleton } from './waiting/Skeleton.vue'
+export { Spinner } from './shared/ui/spinner'
+export { Skeleton } from './shared/ui/skeleton'
 
 export type { Turn } from './thread/turn'
 export { conversation } from './thread/conversation'
@@ -80,15 +80,15 @@ export type { Conversation } from './thread/conversation'
 export type { AgentPort, AgentStep } from './thread/agent'
 
 /** A link to a note: `[[name]]` in the text, `note://<identifier>` inside it. */
-export { pointsAtNote, wikilinksIn } from './linking/address'
+export { pointsAtNote, wikilinksIn } from './shared/lib/address'
 
 /** A link that leads out of the application, and the window held against it. */
-export { holdsTheWindow } from './linking/outward'
+export { holdsTheWindow } from './shared/lib/outward'
 
 /** Numbers as they are read out, which both windows read the same way. */
-export { many, percent, plural } from './digits'
+export { many, percent, plural } from './shared/lib/digits'
 
-export { default as Prose } from './prose/Prose.vue'
+export { Prose } from './shared/ui/prose'
 
 /** What a count counts, and how a notice about it reads. */
 export type { TallyUnit, Tone } from './activity/tally'

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { days, fits, NOTHING, ROWS, weighs } from './heatmap'
-import { dayNamed } from '../calendar/day'
+import { dayNamed } from '@/shared/lib/day'
 import type { Tally } from './heatmap'
 
 describe('how much of a year fits', () => {

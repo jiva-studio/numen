@@ -13,7 +13,7 @@ import Plex from '@/plex/Plex.vue'
 import Agent from './Agent.vue'
 import { branch, pane, type Tab, type Workspace as State } from '@/workspace/node'
 import { neighbourhoods } from '@/plex/fixtures/neighbourhoods'
-import { LONG, MULTILINE } from '@/fixtures/prose'
+import { LONG, MULTILINE } from '@/shared/fixtures/prose'
 import type { PlexNeighbourhood } from '@/plex/neighbourhood'
 import type { Turn } from '@/thread/turn'
 

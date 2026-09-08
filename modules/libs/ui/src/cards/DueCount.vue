@@ -6,7 +6,7 @@
  * box, so the row it stands in does not move when it lands.
  */
 import { computed } from 'vue'
-import Skeleton from '../waiting/Skeleton.vue'
+import { Skeleton } from '@/shared/ui/skeleton'
 import { DUE_WORDS, type DueWords } from './due'
 
 const props = withDefaults(

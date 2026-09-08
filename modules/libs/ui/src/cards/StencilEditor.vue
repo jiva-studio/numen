@@ -13,7 +13,7 @@ import Fields from './Fields.vue'
 import Icon from './Icon.vue'
 import Divider from '../divider/Divider.vue'
 import { useDrag } from './drag'
-import { Button } from '../components/ui/button'
+import { Button } from '@/shared/ui/button'
 import { declared, numbered, type Half, type InsertionPoint } from './order'
 import {
   faceRows,

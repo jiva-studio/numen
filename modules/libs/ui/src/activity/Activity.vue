@@ -8,7 +8,7 @@
  * It is a line, and whoever draws it announces it.
  */
 import { computed } from 'vue'
-import Spinner from '../waiting/Spinner.vue'
+import { Spinner } from '@/shared/ui/spinner'
 import { activity, percentWord, type Tally, type Tone } from './tally'
 
 const props = withDefaults(

@@ -14,7 +14,7 @@ import {
   ViewPlugin,
   type ViewUpdate,
 } from '@codemirror/view'
-import { browserClock, type Clock } from '../plex/transition'
+import { browserClock, type Clock } from '@/shared/lib/clock'
 
 /** A change being made to this text by something other than the reader. */
 export interface EditorChange {

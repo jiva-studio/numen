@@ -10,7 +10,7 @@
  * and `hunt`. An action is an option.
  */
 import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
-import KeyCap from './KeyCap.vue'
+import { KeyCap } from '@/shared/ui/key-cap'
 import {
   keptOn,
   opensActions,

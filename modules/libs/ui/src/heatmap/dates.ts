@@ -5,7 +5,7 @@
  * reading in their own language reads their own dates.
  */
 
-import { dayOf } from '../calendar/day'
+import { dayOf } from '@/shared/lib/day'
 
 const full = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' })
 

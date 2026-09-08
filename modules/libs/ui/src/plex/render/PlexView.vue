@@ -20,7 +20,7 @@ import { byDoubleClick, type PlexShowing, type ShowStrategy } from '../showing'
 import type { HungParts } from '../inside'
 import { browserClock, type Clock } from '../transition'
 import { threadOf, type Drop } from '../arrange'
-import type { MenuOpening } from '../../menu/item'
+import type { MenuOpening } from '@/shared/ui/menu'
 
 const props = withDefaults(
   defineProps<{

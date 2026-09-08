@@ -13,7 +13,7 @@ import Card from './Card.vue'
 import Icon from './Icon.vue'
 import Divider from '../divider/Divider.vue'
 import { useDrag } from './drag'
-import { Button } from '../components/ui/button'
+import { Button } from '@/shared/ui/button'
 import {
   DECK_WORDS,
   endOf,

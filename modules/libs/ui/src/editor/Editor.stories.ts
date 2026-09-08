@@ -12,8 +12,8 @@ import Editor from './Editor.vue'
 import type { EditorChange } from './change'
 import WorkspacePane from '@/workspace/render/WorkspacePane.vue'
 import { pane } from '@/workspace/node'
-import { MARKED_UP, PICTURE, TABLE } from '@/fixtures/markdown'
-import { ARABIC, DEVANAGARI, LINK, LONG, RUSSIAN, UNBREAKABLE } from '@/fixtures/prose'
+import { MARKED_UP, PICTURE, TABLE } from '@/shared/fixtures/markdown'
+import { ARABIC, DEVANAGARI, LINK, LONG, RUSSIAN, UNBREAKABLE } from '@/shared/fixtures/prose'
 
 const meta = {
   title: 'Text/Editor',

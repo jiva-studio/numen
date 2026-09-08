@@ -15,7 +15,7 @@ import AutosizeTextarea from './AutosizeTextarea.vue'
 import CardProse from './CardProse.vue'
 import NameBox from './NameBox.vue'
 import { useNaming } from './naming'
-import { Button } from '../components/ui/button'
+import { Button } from '@/shared/ui/button'
 import { heading, type Half, type Refusal, type StepDirection } from './order'
 import {
   panes,

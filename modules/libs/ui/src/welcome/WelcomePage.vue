@@ -8,7 +8,7 @@
  * draws the rows it is given and decides nothing.
  */
 import { FolderRoot } from '@lucide/vue'
-import KeyCap from '../palette/KeyCap.vue'
+import { KeyCap } from '@/shared/ui/key-cap'
 import Glyph from './Glyph.vue'
 import { vaultLetter } from './letters'
 import type { Offer, VaultRow, WelcomeAction } from './welcome'

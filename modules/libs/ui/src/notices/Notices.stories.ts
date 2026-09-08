@@ -7,9 +7,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import Notices from './Notices.vue'
 import type { Notice } from './notice'
-import { hovered, lightness } from '@/fixtures/colour'
-import { LONG, RUSSIAN, UNBREAKABLE } from '@/fixtures/prose'
-import { DARK, drawnDark } from '@/fixtures/theme'
+import { hovered, lightness } from '@/shared/fixtures/colour'
+import { LONG, RUSSIAN, UNBREAKABLE } from '@/shared/fixtures/prose'
+import { DARK, drawnDark } from '@/shared/fixtures/theme'
 
 interface Knobs {
   notices: readonly Notice[]

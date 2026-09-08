@@ -1,5 +1,5 @@
 import type { PlexSeat } from './seat'
-import type { Position, Size } from '../lib/geometry'
+import type { Position, Size } from '@/shared/lib/geometry'
 
 export type { Position }
 

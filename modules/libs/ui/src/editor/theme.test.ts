@@ -15,7 +15,7 @@ import { theme } from './theme'
 /** The names the tokens declare, which is everything a stylesheet may read. */
 const TOKENS = new Set(
   [
-    ...readFileSync(join(process.cwd(), 'src/tokens/tokens.css'), 'utf8').matchAll(
+    ...readFileSync(join(process.cwd(), 'src/shared/tokens/tokens.css'), 'utf8').matchAll(
       /(--numen-[\w-]+)\s*:/g,
     ),
   ].map((found) => found[1] as string),

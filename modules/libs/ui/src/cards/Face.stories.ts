@@ -12,8 +12,8 @@ import type { FieldValue } from './deck'
 import { declared, type Half } from './order'
 import { faceRows, type FaceRow, type StencilFace } from './stencil'
 import { sampled } from './fill'
-import { hovered, lightness } from '@/fixtures/colour'
-import { DARK, drawnDark } from '@/fixtures/theme'
+import { hovered, lightness } from '@/shared/fixtures/colour'
+import { DARK, drawnDark } from '@/shared/fixtures/theme'
 
 interface Corpus {
   readonly face: StencilFace

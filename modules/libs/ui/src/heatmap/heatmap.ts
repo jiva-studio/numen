@@ -5,7 +5,7 @@
  * how dark it is drawn are arithmetic, and arithmetic inside a component is
  * arithmetic nobody can check without a screen.
  */
-import { dayNamed, dayOf } from '../calendar/day'
+import { dayNamed, dayOf } from '@/shared/lib/day'
 
 /** How many days stand in one column. A column is a week. */
 export const ROWS = 7

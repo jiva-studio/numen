@@ -30,10 +30,9 @@ import {
   type RowId,
   type ShownRow,
 } from './row'
-import type { Position } from '../lib/geometry'
-import { browserClock, type Clock } from '../lib/clock'
-import DragPreview from '../press/DragPreview.vue'
-import { usePressDrag } from '../press/press'
+import type { Position } from '@/shared/lib/geometry'
+import { browserClock, type Clock } from '@/shared/lib/clock'
+import { DragPreview, usePressDrag } from '@/shared/ui/drag-preview'
 import TreeField from './TreeField.vue'
 
 const props = withDefaults(

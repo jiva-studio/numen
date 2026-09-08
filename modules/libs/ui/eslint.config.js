@@ -134,7 +134,7 @@ export default tseslint.config(
       'src/**/fixtures/**',
       // The port itself, and the one function that turns an element into the
       // rectangle the pure core reasons about.
-      'src/lib/clock.ts',
+      'src/shared/lib/clock.ts',
       'src/workspace/drop.ts',
     ],
     rules: {

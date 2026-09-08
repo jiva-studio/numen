@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { EditorState } from '@codemirror/state'
 import { blockMarks, marks } from './live'
 import { Box, Bullet, Picture, Rule } from './widgets'
-import { parsed } from '@/fixtures/state'
+import { parsed } from './fixtures/state'
 
 interface Drawn {
   readonly from: number

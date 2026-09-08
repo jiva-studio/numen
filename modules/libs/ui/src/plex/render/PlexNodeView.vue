@@ -26,7 +26,7 @@ import { byHandle, type ReachStrategy } from '../reaching'
 import { byDoubleClick, joined, showingOf, type PlexShowing, type ShowStrategy } from '../showing'
 import type { HungParts } from '../inside'
 import { browserClock, type Clock } from '../transition'
-import type { MenuOpening } from '../../menu/item'
+import type { MenuOpening } from '@/shared/ui/menu'
 import {
   handleIn,
   isReachable,

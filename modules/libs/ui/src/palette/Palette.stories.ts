@@ -19,7 +19,7 @@ import {
   LONG,
   RUSSIAN,
   UNBREAKABLE,
-} from '@/fixtures/prose'
+} from '@/shared/fixtures/prose'
 
 interface Knobs {
   groups: readonly PaletteGroup[]

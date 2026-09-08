@@ -24,7 +24,7 @@ import type { PlexNode, Position } from './node'
 import type { PlexRelatedSeat } from './seat'
 import type { PlexShowing } from './showing'
 import type { Clock } from './transition'
-import type { MenuOpening } from '../menu/item'
+import type { MenuOpening } from '@/shared/ui/menu'
 
 interface Knobs {
   neighbourhood: PlexNeighbourhood

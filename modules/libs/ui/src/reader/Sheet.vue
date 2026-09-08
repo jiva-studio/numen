@@ -8,7 +8,7 @@
  * asked for again a few times, each ask carrying a number the last one did not.
  */
 import { computed, ref, watch } from 'vue'
-import Spinner from '@/waiting/Spinner.vue'
+import { Spinner } from '@/shared/ui/spinner'
 import type { Rect } from './strip'
 
 const props = withDefaults(

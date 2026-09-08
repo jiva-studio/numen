@@ -8,7 +8,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn } from 'storybook/test'
 import { ref } from 'vue'
 import MessageComposer from './MessageComposer.vue'
-import { ARABIC, DEVANAGARI, LINK, LONG, MULTILINE } from '@/fixtures/prose'
+import { ARABIC, DEVANAGARI, LINK, LONG, MULTILINE } from '@/shared/fixtures/prose'
 
 const meta = {
   title: 'Chat/MessageComposer',

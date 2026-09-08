@@ -15,8 +15,8 @@ import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import type { EdgeLine } from './lines'
 import { arrowTransformOf, pathOf, readingPathOf } from '../arrange'
 import type { PlacedEdge } from '../edge'
-import { lightness } from '@/fixtures/colour'
-import { DARK, drawnDark } from '@/fixtures/theme'
+import { lightness } from '@/shared/fixtures/colour'
+import { DARK, drawnDark } from '@/shared/fixtures/theme'
 
 interface Knobs {
   /** The words set along the line. Nothing draws no title at all. */

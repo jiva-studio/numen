@@ -8,7 +8,7 @@
  * is reached again.
  */
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
-import Prose from '../prose/Prose.vue'
+import { Prose } from '@/shared/ui/prose'
 import ToolCall from '../tool/ToolCall.vue'
 import { atFoot, footOf } from './foot'
 import { placeTurns, type PlacedTurn, type Turn } from './turn'

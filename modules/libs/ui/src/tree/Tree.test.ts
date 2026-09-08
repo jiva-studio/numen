@@ -9,8 +9,8 @@ import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Tree from './Tree.vue'
 import type { Row } from './row'
-import { stubClock } from '../fixtures/clock'
-import type { Clock } from '../lib/clock'
+import { stubClock } from '@/shared/fixtures/clock'
+import type { Clock } from '@/shared/lib/clock'
 
 const ROWS: readonly Row[] = [
   {

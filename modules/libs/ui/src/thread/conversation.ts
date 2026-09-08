@@ -8,7 +8,7 @@
  * them all as one.
  */
 import { ref, type Ref } from 'vue'
-import { onNextFrame } from '../lib/clock'
+import { onNextFrame } from '@/shared/lib/clock'
 import { charsWord, type Turn } from './turn'
 import type { AgentPort, Passage } from './agent'
 

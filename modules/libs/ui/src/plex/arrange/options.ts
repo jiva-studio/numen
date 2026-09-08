@@ -1,5 +1,5 @@
 import { SEATS, type PlexRelatedSeat } from '../seat'
-import type { Size } from '../../lib/geometry'
+import type { Size } from '@/shared/lib/geometry'
 
 export type Direction = 'up' | 'down' | 'left' | 'right'
 
