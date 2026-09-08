@@ -16,7 +16,8 @@ import { readFile, readdir, writeFile } from 'node:fs/promises'
 // and a package name is a link `npm ci` makes.
 import { faults, proves, stories } from '../../../tools/stories/stories.mjs'
 
-const UI = new URL('../../desktop/editor/src/', import.meta.url)
+// The window's shared layer, which is where the commands and the words stand.
+const UI = new URL('../../desktop/editor/src/shared/', import.meta.url)
 const GO = new URL('../../../libs/core/', import.meta.url)
 const CMD = new URL('../../desktop/cmd/numen/', import.meta.url)
 const PAGES = new URL('../src/content/docs/', import.meta.url)
