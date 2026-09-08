@@ -24,3 +24,7 @@ export const addressIn = (written: string): string =>
     .split('\n')
     .map((line) => line.trim())
     .find((line) => line !== '' && !line.startsWith('#')) ?? ''
+
+/** The address a drag let go over the tree carries, read out of what it holds. */
+export const addressDropped = (held: DataTransfer | null | undefined): string =>
+  addressIn(held?.getData(URI_LIST) ?? '')
