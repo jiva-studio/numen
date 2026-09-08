@@ -9,7 +9,7 @@
 import { computed, type ComputedRef } from 'vue'
 import { pointsAtNote, type PlexShowing } from '@numen/ui'
 import type { Store } from '../shared/command/deps'
-import type { Kind, WindowHandle } from '../shared/tabs/windowing'
+import type { Kind, WindowHandle } from '../shared/tabs/windowTabs'
 import { NOTE } from '../shared/tabs/workspace'
 import type { Change } from './drawing'
 import type { noteChanges } from './changes'

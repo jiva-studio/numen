@@ -23,7 +23,7 @@ import {
 } from './core'
 import { BOUNDS } from './drawn'
 import type { RefusalReason } from '../shared/core'
-import type { WindowHandle } from '../shared/tabs/windowing'
+import type { WindowHandle } from '../shared/tabs/windowTabs'
 import type { FileOpeners } from '../shared/tabs/openers'
 import { WORDS as words } from './words'
 

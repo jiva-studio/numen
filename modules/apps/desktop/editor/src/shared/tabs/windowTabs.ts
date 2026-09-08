@@ -137,7 +137,7 @@ export interface WindowHandle {
 /** The identity a pane made by a split is filed under. */
 const naming = () => crypto.randomUUID()
 
-export function windowing() {
+export function windowTabs() {
   /**
    * What every kind is given. It is there before any kind is, so a kind is
    * made with it and declared to the window it already has.

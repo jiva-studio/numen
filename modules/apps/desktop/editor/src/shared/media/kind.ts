@@ -9,7 +9,7 @@ import { computed, type Component } from 'vue'
 import type { TranscriptState } from './transcript'
 import type { Source, Span, Task } from '../core'
 import type { FileOpeners, SourceReader } from '../tabs/openers'
-import type { Kind, WindowHandle } from '../tabs/windowing'
+import type { Kind, WindowHandle } from '../tabs/windowTabs'
 import { DELETE_TEXT, PROOFREAD, TRANSCRIBE } from './words'
 import { fileOf } from '../paths'
 

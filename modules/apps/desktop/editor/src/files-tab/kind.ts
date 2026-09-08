@@ -17,7 +17,7 @@ import {
   RENAME,
   type RunGuard,
 } from './menu'
-import type { Kind, WindowHandle } from '../shared/tabs/windowing'
+import type { Kind, WindowHandle } from '../shared/tabs/windowTabs'
 import { FILES } from '../shared/tabs/workspace'
 import FilesTab from './FilesTab.vue'
 import { fileOf } from '../shared/paths'

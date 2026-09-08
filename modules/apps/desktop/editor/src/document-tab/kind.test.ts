@@ -10,7 +10,7 @@ import { DOCUMENT } from '../shared/tabs/workspace'
 import type { OpenDocumentState } from './open'
 import type { FileOpeners, SourceReader } from '../shared/tabs/openers'
 import type { Span } from '../shared/core'
-import type { WindowHandle } from '../shared/tabs/windowing'
+import type { WindowHandle } from '../shared/tabs/windowTabs'
 
 /** A document being read, with only the parts a tab of it reaches for. */
 const read = (path: string, close = vi.fn()) => ({ path, close }) as unknown as OpenDocumentState

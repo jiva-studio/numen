@@ -8,7 +8,7 @@
 import type { OpenDocumentState } from './open'
 import type { Span } from '../shared/core'
 import type { FileOpeners } from '../shared/tabs/openers'
-import type { Kind, WindowHandle } from '../shared/tabs/windowing'
+import type { Kind, WindowHandle } from '../shared/tabs/windowTabs'
 import { DOCUMENT } from '../shared/tabs/workspace'
 import DocumentTab from './DocumentTab.vue'
 import { fileOf } from '../shared/paths'
