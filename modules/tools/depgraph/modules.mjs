@@ -30,7 +30,7 @@ export const depcruise = installed('.bin/depcruise')
  * only a module's root would find no screen to judge and pass.
  */
 export const screened = new Map([
-  ['@numen/editor', 'src/features/cards/deck-tab/deck.ts'],
+  ['@numen/editor', 'src/flashcards-deck-tab/deck.ts'],
   ['@numen/flashcards', 'src/decks/presets.ts'],
 ])
 
@@ -63,18 +63,17 @@ export const baseline = new Map([
     '@numen/editor',
     [
       // A deck and a stencil are edited as a note is, and a deck is scheduled
-      // by a preset. The coupling is the domain's, not the folders': what the
-      // cards screen takes is the note's editing and its tab state, and the
-      // preset's core. These three edges are the design; a fourth screen
-      // appearing here is a change.
-      'no-screen-reaches-a-screen: src/features/cards/deck-tab/deckTabs.ts → src/features/note/notes.ts',
-      'no-screen-reaches-a-screen: src/features/cards/deck-tab/deckTabs.ts → src/features/note/tab.ts',
-      'no-screen-reaches-a-screen: src/features/cards/deck-tab/deckTabs.ts → src/features/preset/core.ts',
-      'no-screen-reaches-a-screen: src/features/cards/deck-tab/scheduler.ts → src/features/preset/core.ts',
-      'no-screen-reaches-a-screen: src/features/cards/deck-tab/deckTabs.test.ts → src/features/preset/core.ts',
-      'no-screen-reaches-a-screen: src/features/cards/deck-tab/DeckTab.test.ts → src/features/preset/core.ts',
-      'no-screen-reaches-a-screen: src/features/cards/stencil-tab/stencilTabs.ts → src/features/note/notes.ts',
-      'no-screen-reaches-a-screen: src/features/cards/stencil-tab/stencilTabs.ts → src/features/note/tab.ts',
+      // by a preset. What the card tabs take is the note's editing and its tab
+      // state, and the preset's core; another screen appearing here is a
+      // change.
+      'no-screen-reaches-a-screen: src/flashcards-deck-tab/deckTabs.ts → src/note-tab/notes.ts',
+      'no-screen-reaches-a-screen: src/flashcards-deck-tab/deckTabs.ts → src/note-tab/tab.ts',
+      'no-screen-reaches-a-screen: src/flashcards-deck-tab/deckTabs.ts → src/flashcards-preset-tab/core.ts',
+      'no-screen-reaches-a-screen: src/flashcards-deck-tab/scheduler.ts → src/flashcards-preset-tab/core.ts',
+      'no-screen-reaches-a-screen: src/flashcards-deck-tab/deckTabs.test.ts → src/flashcards-preset-tab/core.ts',
+      'no-screen-reaches-a-screen: src/flashcards-deck-tab/DeckTab.test.ts → src/flashcards-preset-tab/core.ts',
+      'no-screen-reaches-a-screen: src/flashcards-stencil-tab/stencilTabs.ts → src/note-tab/notes.ts',
+      'no-screen-reaches-a-screen: src/flashcards-stencil-tab/stencilTabs.ts → src/note-tab/tab.ts',
     ],
   ],
   [
