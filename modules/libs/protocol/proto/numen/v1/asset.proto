@@ -79,27 +79,20 @@ message GetBookResponse {
   // What the package document calls the book.
   string title = 1;
 
-  // Whether the book's documents can be reflowed. A book laid out once and
-  // drawn as it stands is false, and a window draws it at the size it was made
-  // at.
-  bool reflowable = 2;
-
-  // Which way its pages progress.
-  PageProgression progression = 3;
-
   // The documents of the spine, in reading order.
-  repeated SpineDocument documents = 4;
+  repeated SpineDocument documents = 2;
 
   // What the book names, ascending by offset.
-  repeated BookPart parts = 5;
+  repeated BookPart parts = 3;
 
   // The pages of the printed book this file was made from, ascending by
-  // offset. Most books carry none.
-  repeated PrintedPage printed = 6;
+  // offset. A book naming nothing is reached by these, and most books carry
+  // none.
+  repeated PrintedPage printed = 4;
 
   // How many pages the book is read in. A book that reflows has none of its
   // own, so they are counted over its text and not over anything drawn.
-  int32 pages = 7;
+  int32 pages = 5;
 
   // How many bytes the book's text is, and how many of them stand on one page.
   // A page is a number of letters and a letter is several bytes in most of the
@@ -107,20 +100,13 @@ message GetBookResponse {
   //
   // The page an offset falls on is counted from these, and comes to the same
   // page wherever it is counted.
-  int32 length = 12;
-  int32 page_bytes = 13;
+  int32 length = 6;
+  int32 page_bytes = 7;
 
   // Which bytes the book was read from. It stands in the address the markup of
   // a document and the bytes of an entry are answered at, so an address names
   // one reading of one file.
   Fingerprint fingerprint = 8;
-
-  // How many of each the book holds. A count standing above the length of the
-  // list above it says the rest are not here: a book names as many parts as it
-  // likes, and what crosses is bounded.
-  int32 spine = 9;
-  int32 named = 10;
-  int32 pages_printed = 11;
 }
 
 // SpineDocument is one document of the book, and where its text stands in the
@@ -134,11 +120,6 @@ message SpineDocument {
   // it the document is.
   int32 offset = 2;
   int32 length = 3;
-
-  // Linear is false for a document the spine sets apart from the reading order:
-  // a note, an appendix, the back of a plate. Its text is in the book's text
-  // all the same.
-  bool linear = 4;
 }
 
 // BookPart is a named division of the book, at the offset its text begins.
@@ -155,15 +136,6 @@ message BookPart {
 message PrintedPage {
   string label = 1;
   int32 offset = 2;
-}
-
-// PageProgression is the direction a book's pages progress in. A book that says
-// nothing is unspecified, and a window lays it out the way its language is
-// written.
-enum PageProgression {
-  PAGE_PROGRESSION_UNSPECIFIED = 0;
-  PAGE_PROGRESSION_LEFT_TO_RIGHT = 1;
-  PAGE_PROGRESSION_RIGHT_TO_LEFT = 2;
 }
 
 message GetRecordingRequest {

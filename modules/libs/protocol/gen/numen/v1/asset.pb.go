@@ -33,58 +33,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// PageProgression is the direction a book's pages progress in. A book that says
-// nothing is unspecified, and a window lays it out the way its language is
-// written.
-type PageProgression int32
-
-const (
-	PageProgression_PAGE_PROGRESSION_UNSPECIFIED   PageProgression = 0
-	PageProgression_PAGE_PROGRESSION_LEFT_TO_RIGHT PageProgression = 1
-	PageProgression_PAGE_PROGRESSION_RIGHT_TO_LEFT PageProgression = 2
-)
-
-// Enum value maps for PageProgression.
-var (
-	PageProgression_name = map[int32]string{
-		0: "PAGE_PROGRESSION_UNSPECIFIED",
-		1: "PAGE_PROGRESSION_LEFT_TO_RIGHT",
-		2: "PAGE_PROGRESSION_RIGHT_TO_LEFT",
-	}
-	PageProgression_value = map[string]int32{
-		"PAGE_PROGRESSION_UNSPECIFIED":   0,
-		"PAGE_PROGRESSION_LEFT_TO_RIGHT": 1,
-		"PAGE_PROGRESSION_RIGHT_TO_LEFT": 2,
-	}
-)
-
-func (x PageProgression) Enum() *PageProgression {
-	p := new(PageProgression)
-	*p = x
-	return p
-}
-
-func (x PageProgression) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (PageProgression) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_asset_proto_enumTypes[0].Descriptor()
-}
-
-func (PageProgression) Type() protoreflect.EnumType {
-	return &file_numen_v1_asset_proto_enumTypes[0]
-}
-
-func (x PageProgression) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use PageProgression.Descriptor instead.
-func (PageProgression) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_asset_proto_rawDescGZIP(), []int{0}
-}
-
 type GetDocumentRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The file, as the vault holds it.
@@ -299,40 +247,29 @@ type GetBookResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// What the package document calls the book.
 	Title string `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
-	// Whether the book's documents can be reflowed. A book laid out once and
-	// drawn as it stands is false, and a window draws it at the size it was made
-	// at.
-	Reflowable bool `protobuf:"varint,2,opt,name=reflowable,proto3" json:"reflowable,omitempty"`
-	// Which way its pages progress.
-	Progression PageProgression `protobuf:"varint,3,opt,name=progression,proto3,enum=numen.v1.PageProgression" json:"progression,omitempty"`
 	// The documents of the spine, in reading order.
-	Documents []*SpineDocument `protobuf:"bytes,4,rep,name=documents,proto3" json:"documents,omitempty"`
+	Documents []*SpineDocument `protobuf:"bytes,2,rep,name=documents,proto3" json:"documents,omitempty"`
 	// What the book names, ascending by offset.
-	Parts []*BookPart `protobuf:"bytes,5,rep,name=parts,proto3" json:"parts,omitempty"`
+	Parts []*BookPart `protobuf:"bytes,3,rep,name=parts,proto3" json:"parts,omitempty"`
 	// The pages of the printed book this file was made from, ascending by
-	// offset. Most books carry none.
-	Printed []*PrintedPage `protobuf:"bytes,6,rep,name=printed,proto3" json:"printed,omitempty"`
+	// offset. A book naming nothing is reached by these, and most books carry
+	// none.
+	Printed []*PrintedPage `protobuf:"bytes,4,rep,name=printed,proto3" json:"printed,omitempty"`
 	// How many pages the book is read in. A book that reflows has none of its
 	// own, so they are counted over its text and not over anything drawn.
-	Pages int32 `protobuf:"varint,7,opt,name=pages,proto3" json:"pages,omitempty"`
+	Pages int32 `protobuf:"varint,5,opt,name=pages,proto3" json:"pages,omitempty"`
 	// How many bytes the book's text is, and how many of them stand on one page.
 	// A page is a number of letters and a letter is several bytes in most of the
 	// scripts a book is written in, so the size is measured in this book's own.
 	//
 	// The page an offset falls on is counted from these, and comes to the same
 	// page wherever it is counted.
-	Length    int32 `protobuf:"varint,12,opt,name=length,proto3" json:"length,omitempty"`
-	PageBytes int32 `protobuf:"varint,13,opt,name=page_bytes,json=pageBytes,proto3" json:"page_bytes,omitempty"`
+	Length    int32 `protobuf:"varint,6,opt,name=length,proto3" json:"length,omitempty"`
+	PageBytes int32 `protobuf:"varint,7,opt,name=page_bytes,json=pageBytes,proto3" json:"page_bytes,omitempty"`
 	// Which bytes the book was read from. It stands in the address the markup of
 	// a document and the bytes of an entry are answered at, so an address names
 	// one reading of one file.
-	Fingerprint *Fingerprint `protobuf:"bytes,8,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
-	// How many of each the book holds. A count standing above the length of the
-	// list above it says the rest are not here: a book names as many parts as it
-	// likes, and what crosses is bounded.
-	Spine         int32 `protobuf:"varint,9,opt,name=spine,proto3" json:"spine,omitempty"`
-	Named         int32 `protobuf:"varint,10,opt,name=named,proto3" json:"named,omitempty"`
-	PagesPrinted  int32 `protobuf:"varint,11,opt,name=pages_printed,json=pagesPrinted,proto3" json:"pages_printed,omitempty"`
+	Fingerprint   *Fingerprint `protobuf:"bytes,8,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -372,20 +309,6 @@ func (x *GetBookResponse) GetTitle() string {
 		return x.Title
 	}
 	return ""
-}
-
-func (x *GetBookResponse) GetReflowable() bool {
-	if x != nil {
-		return x.Reflowable
-	}
-	return false
-}
-
-func (x *GetBookResponse) GetProgression() PageProgression {
-	if x != nil {
-		return x.Progression
-	}
-	return PageProgression_PAGE_PROGRESSION_UNSPECIFIED
 }
 
 func (x *GetBookResponse) GetDocuments() []*SpineDocument {
@@ -437,27 +360,6 @@ func (x *GetBookResponse) GetFingerprint() *Fingerprint {
 	return nil
 }
 
-func (x *GetBookResponse) GetSpine() int32 {
-	if x != nil {
-		return x.Spine
-	}
-	return 0
-}
-
-func (x *GetBookResponse) GetNamed() int32 {
-	if x != nil {
-		return x.Named
-	}
-	return 0
-}
-
-func (x *GetBookResponse) GetPagesPrinted() int32 {
-	if x != nil {
-		return x.PagesPrinted
-	}
-	return 0
-}
-
 // SpineDocument is one document of the book, and where its text stands in the
 // book's text.
 type SpineDocument struct {
@@ -467,12 +369,8 @@ type SpineDocument struct {
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Where the document's text begins in the book's text, and how many bytes of
 	// it the document is.
-	Offset int32 `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
-	Length int32 `protobuf:"varint,3,opt,name=length,proto3" json:"length,omitempty"`
-	// Linear is false for a document the spine sets apart from the reading order:
-	// a note, an appendix, the back of a plate. Its text is in the book's text
-	// all the same.
-	Linear        bool `protobuf:"varint,4,opt,name=linear,proto3" json:"linear,omitempty"`
+	Offset        int32 `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
+	Length        int32 `protobuf:"varint,3,opt,name=length,proto3" json:"length,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -526,13 +424,6 @@ func (x *SpineDocument) GetLength() int32 {
 		return x.Length
 	}
 	return 0
-}
-
-func (x *SpineDocument) GetLinear() bool {
-	if x != nil {
-		return x.Linear
-	}
-	return false
 }
 
 // BookPart is a named division of the book, at the offset its text begins.
@@ -1056,30 +947,21 @@ const file_numen_v1_asset_proto_rawDesc = "" +
 	"\x04wide\x18\x01 \x01(\x01R\x04wide\x12\x12\n" +
 	"\x04high\x18\x02 \x01(\x01R\x04high\"$\n" +
 	"\x0eGetBookRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xed\x03\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\xbf\x02\n" +
 	"\x0fGetBookResponse\x12\x14\n" +
-	"\x05title\x18\x01 \x01(\tR\x05title\x12\x1e\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x125\n" +
+	"\tdocuments\x18\x02 \x03(\v2\x17.numen.v1.SpineDocumentR\tdocuments\x12(\n" +
+	"\x05parts\x18\x03 \x03(\v2\x12.numen.v1.BookPartR\x05parts\x12/\n" +
+	"\aprinted\x18\x04 \x03(\v2\x15.numen.v1.PrintedPageR\aprinted\x12\x14\n" +
+	"\x05pages\x18\x05 \x01(\x05R\x05pages\x12\x16\n" +
+	"\x06length\x18\x06 \x01(\x05R\x06length\x12\x1d\n" +
 	"\n" +
-	"reflowable\x18\x02 \x01(\bR\n" +
-	"reflowable\x12;\n" +
-	"\vprogression\x18\x03 \x01(\x0e2\x19.numen.v1.PageProgressionR\vprogression\x125\n" +
-	"\tdocuments\x18\x04 \x03(\v2\x17.numen.v1.SpineDocumentR\tdocuments\x12(\n" +
-	"\x05parts\x18\x05 \x03(\v2\x12.numen.v1.BookPartR\x05parts\x12/\n" +
-	"\aprinted\x18\x06 \x03(\v2\x15.numen.v1.PrintedPageR\aprinted\x12\x14\n" +
-	"\x05pages\x18\a \x01(\x05R\x05pages\x12\x16\n" +
-	"\x06length\x18\f \x01(\x05R\x06length\x12\x1d\n" +
-	"\n" +
-	"page_bytes\x18\r \x01(\x05R\tpageBytes\x127\n" +
-	"\vfingerprint\x18\b \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\x12\x14\n" +
-	"\x05spine\x18\t \x01(\x05R\x05spine\x12\x14\n" +
-	"\x05named\x18\n" +
-	" \x01(\x05R\x05named\x12#\n" +
-	"\rpages_printed\x18\v \x01(\x05R\fpagesPrinted\"k\n" +
+	"page_bytes\x18\a \x01(\x05R\tpageBytes\x127\n" +
+	"\vfingerprint\x18\b \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\"S\n" +
 	"\rSpineDocument\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x16\n" +
 	"\x06offset\x18\x02 \x01(\x05R\x06offset\x12\x16\n" +
-	"\x06length\x18\x03 \x01(\x05R\x06length\x12\x16\n" +
-	"\x06linear\x18\x04 \x01(\bR\x06linear\"N\n" +
+	"\x06length\x18\x03 \x01(\x05R\x06length\"N\n" +
 	"\bBookPart\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x16\n" +
 	"\x06offset\x18\x02 \x01(\x05R\x06offset\x12\x14\n" +
@@ -1108,11 +990,7 @@ const file_numen_v1_asset_proto_rawDesc = "" +
 	"\x05min_x\x18\x01 \x01(\x02R\x04minX\x12\x13\n" +
 	"\x05min_y\x18\x02 \x01(\x02R\x04minY\x12\x13\n" +
 	"\x05max_x\x18\x03 \x01(\x02R\x04maxX\x12\x13\n" +
-	"\x05max_y\x18\x04 \x01(\x02R\x04maxY*{\n" +
-	"\x0fPageProgression\x12 \n" +
-	"\x1cPAGE_PROGRESSION_UNSPECIFIED\x10\x00\x12\"\n" +
-	"\x1ePAGE_PROGRESSION_LEFT_TO_RIGHT\x10\x01\x12\"\n" +
-	"\x1ePAGE_PROGRESSION_RIGHT_TO_LEFT\x10\x022\xbe\x02\n" +
+	"\x05max_y\x18\x04 \x01(\x02R\x04maxY2\xbe\x02\n" +
 	"\fAssetService\x12J\n" +
 	"\vGetDocument\x12\x1c.numen.v1.GetDocumentRequest\x1a\x1d.numen.v1.GetDocumentResponse\x12>\n" +
 	"\aGetBook\x12\x18.numen.v1.GetBookRequest\x1a\x19.numen.v1.GetBookResponse\x12M\n" +
@@ -1131,53 +1009,50 @@ func file_numen_v1_asset_proto_rawDescGZIP() []byte {
 	return file_numen_v1_asset_proto_rawDescData
 }
 
-var file_numen_v1_asset_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_asset_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_numen_v1_asset_proto_goTypes = []any{
-	(PageProgression)(0),           // 0: numen.v1.PageProgression
-	(*GetDocumentRequest)(nil),     // 1: numen.v1.GetDocumentRequest
-	(*GetDocumentResponse)(nil),    // 2: numen.v1.GetDocumentResponse
-	(*Sheet)(nil),                  // 3: numen.v1.Sheet
-	(*GetBookRequest)(nil),         // 4: numen.v1.GetBookRequest
-	(*GetBookResponse)(nil),        // 5: numen.v1.GetBookResponse
-	(*SpineDocument)(nil),          // 6: numen.v1.SpineDocument
-	(*BookPart)(nil),               // 7: numen.v1.BookPart
-	(*PrintedPage)(nil),            // 8: numen.v1.PrintedPage
-	(*GetRecordingRequest)(nil),    // 9: numen.v1.GetRecordingRequest
-	(*GetRecordingResponse)(nil),   // 10: numen.v1.GetRecordingResponse
-	(*ListHighlightsRequest)(nil),  // 11: numen.v1.ListHighlightsRequest
-	(*ListHighlightsResponse)(nil), // 12: numen.v1.ListHighlightsResponse
-	(*Highlight)(nil),              // 13: numen.v1.Highlight
-	(*Page)(nil),                   // 14: numen.v1.Page
-	(*Rect)(nil),                   // 15: numen.v1.Rect
-	(*Fingerprint)(nil),            // 16: numen.v1.Fingerprint
-	(*Stretch)(nil),                // 17: numen.v1.Stretch
+	(*GetDocumentRequest)(nil),     // 0: numen.v1.GetDocumentRequest
+	(*GetDocumentResponse)(nil),    // 1: numen.v1.GetDocumentResponse
+	(*Sheet)(nil),                  // 2: numen.v1.Sheet
+	(*GetBookRequest)(nil),         // 3: numen.v1.GetBookRequest
+	(*GetBookResponse)(nil),        // 4: numen.v1.GetBookResponse
+	(*SpineDocument)(nil),          // 5: numen.v1.SpineDocument
+	(*BookPart)(nil),               // 6: numen.v1.BookPart
+	(*PrintedPage)(nil),            // 7: numen.v1.PrintedPage
+	(*GetRecordingRequest)(nil),    // 8: numen.v1.GetRecordingRequest
+	(*GetRecordingResponse)(nil),   // 9: numen.v1.GetRecordingResponse
+	(*ListHighlightsRequest)(nil),  // 10: numen.v1.ListHighlightsRequest
+	(*ListHighlightsResponse)(nil), // 11: numen.v1.ListHighlightsResponse
+	(*Highlight)(nil),              // 12: numen.v1.Highlight
+	(*Page)(nil),                   // 13: numen.v1.Page
+	(*Rect)(nil),                   // 14: numen.v1.Rect
+	(*Fingerprint)(nil),            // 15: numen.v1.Fingerprint
+	(*Stretch)(nil),                // 16: numen.v1.Stretch
 }
 var file_numen_v1_asset_proto_depIdxs = []int32{
-	3,  // 0: numen.v1.GetDocumentResponse.sheets:type_name -> numen.v1.Sheet
-	16, // 1: numen.v1.GetDocumentResponse.fingerprint:type_name -> numen.v1.Fingerprint
-	0,  // 2: numen.v1.GetBookResponse.progression:type_name -> numen.v1.PageProgression
-	6,  // 3: numen.v1.GetBookResponse.documents:type_name -> numen.v1.SpineDocument
-	7,  // 4: numen.v1.GetBookResponse.parts:type_name -> numen.v1.BookPart
-	8,  // 5: numen.v1.GetBookResponse.printed:type_name -> numen.v1.PrintedPage
-	16, // 6: numen.v1.GetBookResponse.fingerprint:type_name -> numen.v1.Fingerprint
-	17, // 7: numen.v1.ListHighlightsRequest.at:type_name -> numen.v1.Stretch
-	13, // 8: numen.v1.ListHighlightsResponse.runs:type_name -> numen.v1.Highlight
-	14, // 9: numen.v1.Highlight.pages:type_name -> numen.v1.Page
-	15, // 10: numen.v1.Page.rects:type_name -> numen.v1.Rect
-	1,  // 11: numen.v1.AssetService.GetDocument:input_type -> numen.v1.GetDocumentRequest
-	4,  // 12: numen.v1.AssetService.GetBook:input_type -> numen.v1.GetBookRequest
-	9,  // 13: numen.v1.AssetService.GetRecording:input_type -> numen.v1.GetRecordingRequest
-	11, // 14: numen.v1.AssetService.ListHighlights:input_type -> numen.v1.ListHighlightsRequest
-	2,  // 15: numen.v1.AssetService.GetDocument:output_type -> numen.v1.GetDocumentResponse
-	5,  // 16: numen.v1.AssetService.GetBook:output_type -> numen.v1.GetBookResponse
-	10, // 17: numen.v1.AssetService.GetRecording:output_type -> numen.v1.GetRecordingResponse
-	12, // 18: numen.v1.AssetService.ListHighlights:output_type -> numen.v1.ListHighlightsResponse
-	15, // [15:19] is the sub-list for method output_type
-	11, // [11:15] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	2,  // 0: numen.v1.GetDocumentResponse.sheets:type_name -> numen.v1.Sheet
+	15, // 1: numen.v1.GetDocumentResponse.fingerprint:type_name -> numen.v1.Fingerprint
+	5,  // 2: numen.v1.GetBookResponse.documents:type_name -> numen.v1.SpineDocument
+	6,  // 3: numen.v1.GetBookResponse.parts:type_name -> numen.v1.BookPart
+	7,  // 4: numen.v1.GetBookResponse.printed:type_name -> numen.v1.PrintedPage
+	15, // 5: numen.v1.GetBookResponse.fingerprint:type_name -> numen.v1.Fingerprint
+	16, // 6: numen.v1.ListHighlightsRequest.at:type_name -> numen.v1.Stretch
+	12, // 7: numen.v1.ListHighlightsResponse.runs:type_name -> numen.v1.Highlight
+	13, // 8: numen.v1.Highlight.pages:type_name -> numen.v1.Page
+	14, // 9: numen.v1.Page.rects:type_name -> numen.v1.Rect
+	0,  // 10: numen.v1.AssetService.GetDocument:input_type -> numen.v1.GetDocumentRequest
+	3,  // 11: numen.v1.AssetService.GetBook:input_type -> numen.v1.GetBookRequest
+	8,  // 12: numen.v1.AssetService.GetRecording:input_type -> numen.v1.GetRecordingRequest
+	10, // 13: numen.v1.AssetService.ListHighlights:input_type -> numen.v1.ListHighlightsRequest
+	1,  // 14: numen.v1.AssetService.GetDocument:output_type -> numen.v1.GetDocumentResponse
+	4,  // 15: numen.v1.AssetService.GetBook:output_type -> numen.v1.GetBookResponse
+	9,  // 16: numen.v1.AssetService.GetRecording:output_type -> numen.v1.GetRecordingResponse
+	11, // 17: numen.v1.AssetService.ListHighlights:output_type -> numen.v1.ListHighlightsResponse
+	14, // [14:18] is the sub-list for method output_type
+	10, // [10:14] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_asset_proto_init() }
@@ -1191,14 +1066,13 @@ func file_numen_v1_asset_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_asset_proto_rawDesc), len(file_numen_v1_asset_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      0,
 			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_numen_v1_asset_proto_goTypes,
 		DependencyIndexes: file_numen_v1_asset_proto_depIdxs,
-		EnumInfos:         file_numen_v1_asset_proto_enumTypes,
 		MessageInfos:      file_numen_v1_asset_proto_msgTypes,
 	}.Build()
 	File_numen_v1_asset_proto = out.File

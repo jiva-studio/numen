@@ -19,8 +19,7 @@ import (
 // handler, and what it answers with is the markup a page is drawn from.
 
 // mostListed is how many documents, parts and printed pages of one book cross.
-// A book names as many as it likes, and the counts beside the lists say how
-// many it named.
+// A book names as many as it likes.
 const mostListed = 10_000
 
 // errNotAPicture is an entry of an archive that is not one of the pictures a
@@ -42,8 +41,8 @@ var pictured = map[string]bool{
 	"image/webp": true,
 }
 
-// GetBook answers what a book that reflows is: what it is called, which way its
-// pages progress, the documents it is read in, and what it names inside them.
+// GetBook answers what a book that reflows is: what it is called, the documents
+// it is read in, and what it names inside them.
 //
 // A window lays a chapter out itself, so it takes the whole of the book's shape
 // here and then asks for one document at a time.
@@ -64,23 +63,17 @@ func (a *API) GetBook(
 	}
 
 	out := &v1.GetBookResponse{
-		Title:        read.Title,
-		Reflowable:   read.Layout != epub.PrePaginated,
-		Progression:  progressing(read.Direction),
-		Pages:        int32(read.PageCount()),
-		Length:       int32(len(read.Text)),
-		PageBytes:    int32(read.PageBytes()),
-		Fingerprint:  &v1.Fingerprint{Path: print.path, Size: print.size, Mtime: print.mtime},
-		Spine:        int32(len(read.Documents)),
-		Named:        int32(len(read.Parts)),
-		PagesPrinted: int32(len(read.Pages)),
+		Title:       read.Title,
+		Pages:       int32(read.PageCount()),
+		Length:      int32(len(read.Text)),
+		PageBytes:   int32(read.PageBytes()),
+		Fingerprint: &v1.Fingerprint{Path: print.path, Size: print.size, Mtime: print.mtime},
 	}
 	for _, doc := range read.Documents[:min(len(read.Documents), mostListed)] {
 		out.Documents = append(out.Documents, &v1.SpineDocument{
 			Path:   doc.Path,
 			Offset: int32(doc.Offset),
 			Length: int32(doc.Length),
-			Linear: doc.Linear,
 		})
 	}
 	for _, part := range read.Parts[:min(len(read.Parts), mostListed)] {
@@ -195,18 +188,6 @@ func (a *API) book(
 		}
 		return epub.Read(raw)
 	})
-}
-
-// progressing is the direction a book's pages go in, as the schema carries it.
-func progressing(said epub.Direction) v1.PageProgression {
-	switch said {
-	case epub.LeftToRight:
-		return v1.PageProgression_PAGE_PROGRESSION_LEFT_TO_RIGHT
-	case epub.RightToLeft:
-		return v1.PageProgression_PAGE_PROGRESSION_RIGHT_TO_LEFT
-	default:
-		return v1.PageProgression_PAGE_PROGRESSION_UNSPECIFIED
-	}
 }
 
 // misnamed is whether the bytes are not what they are called: a file that is no

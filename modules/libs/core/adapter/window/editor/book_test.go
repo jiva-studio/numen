@@ -47,22 +47,16 @@ func TestWhatABookIsIsItsDocumentsAndWhatItNamesInThem(t *testing.T) {
 	if told.GetTitle() != "A Reflowed Book" {
 		t.Errorf("the book is called %q", told.GetTitle())
 	}
-	if !told.GetReflowable() {
-		t.Error("a book made for a screen came back as one laid out once")
+	if got := len(told.GetDocuments()); got != 2 {
+		t.Fatalf("the book is read in %d documents", got)
 	}
-	if told.GetProgression() != v1.PageProgression_PAGE_PROGRESSION_RIGHT_TO_LEFT {
-		t.Errorf("the pages progress %v", told.GetProgression())
-	}
-	if got := len(told.GetDocuments()); got != 2 || int(told.GetSpine()) != got {
-		t.Fatalf("the book is read in %d documents, and says it holds %d", got, told.GetSpine())
-	}
-	if got := told.GetDocuments()[0]; got.GetPath() != firstDoc || !got.GetLinear() {
+	if got := told.GetDocuments()[0]; got.GetPath() != firstDoc {
 		t.Errorf("the first document is %+v", got)
 	}
 	// A document the spine sets apart from the reading order is in the book all
 	// the same, and stands after the one before it.
 	last := told.GetDocuments()[1]
-	if last.GetPath() != lastDoc || last.GetLinear() {
+	if last.GetPath() != lastDoc {
 		t.Errorf("the last document is %+v", last)
 	}
 	if last.GetOffset() <= told.GetDocuments()[0].GetOffset() || last.GetLength() <= 0 {

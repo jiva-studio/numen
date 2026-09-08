@@ -14,8 +14,8 @@
 // serves the notes to a network need not serve the files, and a service is the
 // unit of what a binary answers.
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Fingerprint, Stretch } from "./shared_pb.js";
 import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
@@ -24,7 +24,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/asset.proto.
  */
 export const file_numen_v1_asset: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9hc3NldC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkicQoTR2V0RG9jdW1lbnRSZXNwb25zZRINCgVwYWdlcxgBIAEoBRIfCgZzaGVldHMYAiADKAsyDy5udW1lbi52MS5TaGVldBIqCgtmaW5nZXJwcmludBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50IiMKBVNoZWV0EgwKBHdpZGUYASABKAESDAoEaGlnaBgCIAEoASIeCg5HZXRCb29rUmVxdWVzdBIMCgRwYXRoGAEgASgJIu8CCg9HZXRCb29rUmVzcG9uc2USDQoFdGl0bGUYASABKAkSEgoKcmVmbG93YWJsZRgCIAEoCBIuCgtwcm9ncmVzc2lvbhgDIAEoDjIZLm51bWVuLnYxLlBhZ2VQcm9ncmVzc2lvbhIqCglkb2N1bWVudHMYBCADKAsyFy5udW1lbi52MS5TcGluZURvY3VtZW50EiEKBXBhcnRzGAUgAygLMhIubnVtZW4udjEuQm9va1BhcnQSJgoHcHJpbnRlZBgGIAMoCzIVLm51bWVuLnYxLlByaW50ZWRQYWdlEg0KBXBhZ2VzGAcgASgFEg4KBmxlbmd0aBgMIAEoBRISCgpwYWdlX2J5dGVzGA0gASgFEioKC2ZpbmdlcnByaW50GAggASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnQSDQoFc3BpbmUYCSABKAUSDQoFbmFtZWQYCiABKAUSFQoNcGFnZXNfcHJpbnRlZBgLIAEoBSJNCg1TcGluZURvY3VtZW50EgwKBHBhdGgYASABKAkSDgoGb2Zmc2V0GAIgASgFEg4KBmxlbmd0aBgDIAEoBRIOCgZsaW5lYXIYBCABKAgiOAoIQm9va1BhcnQSDQoFdGl0bGUYASABKAkSDgoGb2Zmc2V0GAIgASgFEg0KBWxldmVsGAMgASgFIiwKC1ByaW50ZWRQYWdlEg0KBWxhYmVsGAEgASgJEg4KBm9mZnNldBgCIAEoBSIjChNHZXRSZWNvcmRpbmdSZXF1ZXN0EgwKBHBhdGgYASABKAkiUgoUR2V0UmVjb3JkaW5nUmVzcG9uc2USDgoGbGVuZ3RoGAEgASgFEg0KBWhlYXJkGAIgASgFEg0KBW1lZGlhGAMgASgJEgwKBHR5cGUYBCABKAkiRAoVTGlzdEhpZ2hsaWdodHNSZXF1ZXN0EgwKBHBhdGgYASABKAkSHQoCYXQYAiADKAsyES5udW1lbi52MS5TdHJldGNoIjsKFkxpc3RIaWdobGlnaHRzUmVzcG9uc2USIQoEcnVucxgBIAMoCzITLm51bWVuLnYxLkhpZ2hsaWdodCIqCglIaWdobGlnaHQSHQoFcGFnZXMYASADKAsyDi5udW1lbi52MS5QYWdlIjQKBFBhZ2USDQoFaW5kZXgYASABKAUSHQoFcmVjdHMYAiADKAsyDi5udW1lbi52MS5SZWN0IkIKBFJlY3QSDQoFbWluX3gYASABKAISDQoFbWluX3kYAiABKAISDQoFbWF4X3gYAyABKAISDQoFbWF4X3kYBCABKAIqewoPUGFnZVByb2dyZXNzaW9uEiAKHFBBR0VfUFJPR1JFU1NJT05fVU5TUEVDSUZJRUQQABIiCh5QQUdFX1BST0dSRVNTSU9OX0xFRlRfVE9fUklHSFQQARIiCh5QQUdFX1BST0dSRVNTSU9OX1JJR0hUX1RPX0xFRlQQAjK+AgoMQXNzZXRTZXJ2aWNlEkoKC0dldERvY3VtZW50EhwubnVtZW4udjEuR2V0RG9jdW1lbnRSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0RG9jdW1lbnRSZXNwb25zZRI+CgdHZXRCb29rEhgubnVtZW4udjEuR2V0Qm9va1JlcXVlc3QaGS5udW1lbi52MS5HZXRCb29rUmVzcG9uc2USTQoMR2V0UmVjb3JkaW5nEh0ubnVtZW4udjEuR2V0UmVjb3JkaW5nUmVxdWVzdBoeLm51bWVuLnYxLkdldFJlY29yZGluZ1Jlc3BvbnNlElMKDkxpc3RIaWdobGlnaHRzEh8ubnVtZW4udjEuTGlzdEhpZ2hsaWdodHNSZXF1ZXN0GiAubnVtZW4udjEuTGlzdEhpZ2hsaWdodHNSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS9hc3NldC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkicQoTR2V0RG9jdW1lbnRSZXNwb25zZRINCgVwYWdlcxgBIAEoBRIfCgZzaGVldHMYAiADKAsyDy5udW1lbi52MS5TaGVldBIqCgtmaW5nZXJwcmludBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50IiMKBVNoZWV0EgwKBHdpZGUYASABKAESDAoEaGlnaBgCIAEoASIeCg5HZXRCb29rUmVxdWVzdBIMCgRwYXRoGAEgASgJIvYBCg9HZXRCb29rUmVzcG9uc2USDQoFdGl0bGUYASABKAkSKgoJZG9jdW1lbnRzGAIgAygLMhcubnVtZW4udjEuU3BpbmVEb2N1bWVudBIhCgVwYXJ0cxgDIAMoCzISLm51bWVuLnYxLkJvb2tQYXJ0EiYKB3ByaW50ZWQYBCADKAsyFS5udW1lbi52MS5QcmludGVkUGFnZRINCgVwYWdlcxgFIAEoBRIOCgZsZW5ndGgYBiABKAUSEgoKcGFnZV9ieXRlcxgHIAEoBRIqCgtmaW5nZXJwcmludBgIIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50Ij0KDVNwaW5lRG9jdW1lbnQSDAoEcGF0aBgBIAEoCRIOCgZvZmZzZXQYAiABKAUSDgoGbGVuZ3RoGAMgASgFIjgKCEJvb2tQYXJ0Eg0KBXRpdGxlGAEgASgJEg4KBm9mZnNldBgCIAEoBRINCgVsZXZlbBgDIAEoBSIsCgtQcmludGVkUGFnZRINCgVsYWJlbBgBIAEoCRIOCgZvZmZzZXQYAiABKAUiIwoTR2V0UmVjb3JkaW5nUmVxdWVzdBIMCgRwYXRoGAEgASgJIlIKFEdldFJlY29yZGluZ1Jlc3BvbnNlEg4KBmxlbmd0aBgBIAEoBRINCgVoZWFyZBgCIAEoBRINCgVtZWRpYRgDIAEoCRIMCgR0eXBlGAQgASgJIkQKFUxpc3RIaWdobGlnaHRzUmVxdWVzdBIMCgRwYXRoGAEgASgJEh0KAmF0GAIgAygLMhEubnVtZW4udjEuU3RyZXRjaCI7ChZMaXN0SGlnaGxpZ2h0c1Jlc3BvbnNlEiEKBHJ1bnMYASADKAsyEy5udW1lbi52MS5IaWdobGlnaHQiKgoJSGlnaGxpZ2h0Eh0KBXBhZ2VzGAEgAygLMg4ubnVtZW4udjEuUGFnZSI0CgRQYWdlEg0KBWluZGV4GAEgASgFEh0KBXJlY3RzGAIgAygLMg4ubnVtZW4udjEuUmVjdCJCCgRSZWN0Eg0KBW1pbl94GAEgASgCEg0KBW1pbl95GAIgASgCEg0KBW1heF94GAMgASgCEg0KBW1heF95GAQgASgCMr4CCgxBc3NldFNlcnZpY2USSgoLR2V0RG9jdW1lbnQSHC5udW1lbi52MS5HZXREb2N1bWVudFJlcXVlc3QaHS5udW1lbi52MS5HZXREb2N1bWVudFJlc3BvbnNlEj4KB0dldEJvb2sSGC5udW1lbi52MS5HZXRCb29rUmVxdWVzdBoZLm51bWVuLnYxLkdldEJvb2tSZXNwb25zZRJNCgxHZXRSZWNvcmRpbmcSHS5udW1lbi52MS5HZXRSZWNvcmRpbmdSZXF1ZXN0Gh4ubnVtZW4udjEuR2V0UmVjb3JkaW5nUmVzcG9uc2USUwoOTGlzdEhpZ2hsaWdodHMSHy5udW1lbi52MS5MaXN0SGlnaGxpZ2h0c1JlcXVlc3QaIC5udW1lbi52MS5MaXN0SGlnaGxpZ2h0c1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetDocumentRequest
@@ -137,40 +137,25 @@ export type GetBookResponse = Message<"numen.v1.GetBookResponse"> & {
   title: string;
 
   /**
-   * Whether the book's documents can be reflowed. A book laid out once and
-   * drawn as it stands is false, and a window draws it at the size it was made
-   * at.
-   *
-   * @generated from field: bool reflowable = 2;
-   */
-  reflowable: boolean;
-
-  /**
-   * Which way its pages progress.
-   *
-   * @generated from field: numen.v1.PageProgression progression = 3;
-   */
-  progression: PageProgression;
-
-  /**
    * The documents of the spine, in reading order.
    *
-   * @generated from field: repeated numen.v1.SpineDocument documents = 4;
+   * @generated from field: repeated numen.v1.SpineDocument documents = 2;
    */
   documents: SpineDocument[];
 
   /**
    * What the book names, ascending by offset.
    *
-   * @generated from field: repeated numen.v1.BookPart parts = 5;
+   * @generated from field: repeated numen.v1.BookPart parts = 3;
    */
   parts: BookPart[];
 
   /**
    * The pages of the printed book this file was made from, ascending by
-   * offset. Most books carry none.
+   * offset. A book naming nothing is reached by these, and most books carry
+   * none.
    *
-   * @generated from field: repeated numen.v1.PrintedPage printed = 6;
+   * @generated from field: repeated numen.v1.PrintedPage printed = 4;
    */
   printed: PrintedPage[];
 
@@ -178,7 +163,7 @@ export type GetBookResponse = Message<"numen.v1.GetBookResponse"> & {
    * How many pages the book is read in. A book that reflows has none of its
    * own, so they are counted over its text and not over anything drawn.
    *
-   * @generated from field: int32 pages = 7;
+   * @generated from field: int32 pages = 5;
    */
   pages: number;
 
@@ -190,12 +175,12 @@ export type GetBookResponse = Message<"numen.v1.GetBookResponse"> & {
    * The page an offset falls on is counted from these, and comes to the same
    * page wherever it is counted.
    *
-   * @generated from field: int32 length = 12;
+   * @generated from field: int32 length = 6;
    */
   length: number;
 
   /**
-   * @generated from field: int32 page_bytes = 13;
+   * @generated from field: int32 page_bytes = 7;
    */
   pageBytes: number;
 
@@ -207,25 +192,6 @@ export type GetBookResponse = Message<"numen.v1.GetBookResponse"> & {
    * @generated from field: numen.v1.Fingerprint fingerprint = 8;
    */
   fingerprint?: Fingerprint | undefined;
-
-  /**
-   * How many of each the book holds. A count standing above the length of the
-   * list above it says the rest are not here: a book names as many parts as it
-   * likes, and what crosses is bounded.
-   *
-   * @generated from field: int32 spine = 9;
-   */
-  spine: number;
-
-  /**
-   * @generated from field: int32 named = 10;
-   */
-  named: number;
-
-  /**
-   * @generated from field: int32 pages_printed = 11;
-   */
-  pagesPrinted: number;
 };
 
 /**
@@ -262,15 +228,6 @@ export type SpineDocument = Message<"numen.v1.SpineDocument"> & {
    * @generated from field: int32 length = 3;
    */
   length: number;
-
-  /**
-   * Linear is false for a document the spine sets apart from the reading order:
-   * a note, an appendix, the back of a plate. Its text is in the book's text
-   * all the same.
-   *
-   * @generated from field: bool linear = 4;
-   */
-  linear: boolean;
 };
 
 /**
@@ -522,36 +479,6 @@ export type Rect = Message<"numen.v1.Rect"> & {
  */
 export const RectSchema: GenMessage<Rect> = /*@__PURE__*/
   messageDesc(file_numen_v1_asset, 14);
-
-/**
- * PageProgression is the direction a book's pages progress in. A book that says
- * nothing is unspecified, and a window lays it out the way its language is
- * written.
- *
- * @generated from enum numen.v1.PageProgression
- */
-export enum PageProgression {
-  /**
-   * @generated from enum value: PAGE_PROGRESSION_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * @generated from enum value: PAGE_PROGRESSION_LEFT_TO_RIGHT = 1;
-   */
-  LEFT_TO_RIGHT = 1,
-
-  /**
-   * @generated from enum value: PAGE_PROGRESSION_RIGHT_TO_LEFT = 2;
-   */
-  RIGHT_TO_LEFT = 2,
-}
-
-/**
- * Describes the enum numen.v1.PageProgression.
- */
-export const PageProgressionSchema: GenEnum<PageProgression> = /*@__PURE__*/
-  enumDesc(file_numen_v1_asset, 0);
 
 /**
  * AssetService answers what a file of the vault is, for whatever opens it.
