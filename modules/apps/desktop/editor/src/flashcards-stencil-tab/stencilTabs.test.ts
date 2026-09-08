@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import type { RefusalReason } from '../shared/core'
 import type { Cards, VaultFace, Problem, FieldRenameResult } from '../shared/flashcards/cards'
 import { fileOpeners } from '../shared/tabs/openers'
-import { windowing } from '../shared/tabs/windowing'
+import { windowTabs } from '../shared/tabs/windowTabs'
 import { STENCIL } from '../shared/tabs/workspace'
 import { REFUSED } from '../shared/words'
 import { stencilling, type StencilTabState } from './stencilTabs'
@@ -105,7 +105,7 @@ const vault = (
 /** A window with one stencil open on a file, and what that tab holds. */
 const open = async (answers: Parameters<typeof vault>[0] = {}, path = 'Animal.md') => {
   const one = vault(answers)
-  const held = windowing()
+  const held = windowTabs()
   /** Everything the window was given to say about this stencil. */
   const said: string[] = []
   const road = puts()

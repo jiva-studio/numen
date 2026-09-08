@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest'
 import { panesOf } from '@numen/ui'
 import type { Workspace } from '@numen/ui'
-import { windowing, type AnyKind, type WindowHandle } from './windowing'
+import { windowTabs, type AnyKind, type WindowHandle } from './windowTabs'
 
 /**
  * A kind that records what it was asked to do, under the names it opened on. A
@@ -39,7 +39,7 @@ const kind = ({ keeps = false, ...over }: Partial<AnyKind> & { keeps?: boolean }
 
 /** A window told what kinds it draws, each of them made with what it is given. */
 const told = (declared: readonly ((handle: WindowHandle) => AnyKind)[]) => {
-  const window = windowing()
+  const window = windowTabs()
   window.declares(declared.map((one) => one(window.handle)))
   return window
 }

@@ -10,7 +10,7 @@ import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { Cards, VaultFace, Problem } from '../shared/flashcards/cards'
 import { fileOpeners } from '../shared/tabs/openers'
-import { windowing } from '../shared/tabs/windowing'
+import { windowTabs } from '../shared/tabs/windowTabs'
 import { STENCIL } from '../shared/tabs/workspace'
 import StencilTab from './StencilTab.vue'
 import { stencilling, type StencilTabState } from './stencilTabs'
@@ -62,7 +62,7 @@ const drawn = async (problems: readonly Problem[] = []) => {
     writeStencil: async () => ({ refusal: null, changed: false, at: 'written' }),
   }
 
-  const held = windowing()
+  const held = windowTabs()
   const stencils = stencilling(core, held.handle, puts())
   held.declares([stencils.kind])
   const id = await held.opens(STENCIL, 'Animal.md')

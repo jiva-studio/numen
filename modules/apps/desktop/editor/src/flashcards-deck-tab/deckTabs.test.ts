@@ -8,7 +8,7 @@ import type { RefusalReason } from '../shared/core'
 import type { Cards, VaultCard, Problem } from '../shared/flashcards/cards'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '../flashcards-preset-tab/core'
 import { fileOpeners } from '../shared/tabs/openers'
-import { windowing } from '../shared/tabs/windowing'
+import { windowTabs } from '../shared/tabs/windowTabs'
 import { DECK } from '../shared/tabs/workspace'
 import { decking, type DeckTabState } from './deckTabs'
 import { WORDS as words } from '../shared/flashcards/words'
@@ -221,7 +221,7 @@ const open = async (
   path = 'Animals.md',
 ) => {
   const one = vault(answers)
-  const held = windowing()
+  const held = windowTabs()
   const road = puts()
   const decks = decking(one.core, one.presets, held.handle, road)
   held.declares([decks.kind])
@@ -556,7 +556,7 @@ describe('a section of a deck the window holds', () => {
 describe('the vault changing under the window', () => {
   it('asks for no stencil while the window holds no deck', async () => {
     const one = vault()
-    const held = windowing()
+    const held = windowTabs()
     const decks = decking(one.core, one.presets, held.handle, puts())
     held.declares([decks.kind])
 

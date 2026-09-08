@@ -7,7 +7,7 @@
  */
 import type { Ref } from 'vue'
 import type { Model, SettingEdit } from '../shared/core'
-import type { Kind, WindowHandle } from '../shared/tabs/windowing'
+import type { Kind, WindowHandle } from '../shared/tabs/windowTabs'
 import { SETTINGS } from '../shared/tabs/workspace'
 import type { Bounds, Mode, Ranges, Sizes, Theme } from '../shared/settings/theme'
 import SettingsTab from './SettingsTab.vue'

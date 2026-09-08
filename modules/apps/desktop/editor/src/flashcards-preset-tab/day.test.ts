@@ -13,7 +13,7 @@ import { dayAfter } from '@numen/ui'
 import { presetting } from './kind'
 import { DEFAULTS, NO_BOUNDS, type Curve, type Point, type Presets, type Settings } from './core'
 import { BOUNDS } from './drawn'
-import type { WindowHandle } from '../shared/tabs/windowing'
+import type { WindowHandle } from '../shared/tabs/windowTabs'
 import type { FileOpeners } from '../shared/tabs/openers'
 
 /** The review day the window is told, which is the day holding one in the morning. */

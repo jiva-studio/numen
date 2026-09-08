@@ -15,7 +15,7 @@ import type { LucideIcon } from '@lucide/vue'
 import { iconFor, iconOfEntry } from '../shared/icons'
 import type { DropPosition, FilesTabState } from './kind'
 import type { ListingRow } from './listing'
-import { addressIn, carriesAddress } from './drag'
+import { addressDropped, carriesAddress } from './drag'
 import { itemsFor } from './menu'
 import { WORDS as words } from './words'
 
@@ -33,7 +33,7 @@ const dropTarget = computed<RowMarker>(() => ({
 
 /** An address dragged out of a browser, made into the file it is kept in. */
 const dropped = (event: DragEvent) => {
-  const address = addressIn(event.dataTransfer?.getData('text/uri-list') ?? '')
+  const address = addressDropped(event.dataTransfer)
   if (!address) return
   event.preventDefault()
   void props.state.imports(address)

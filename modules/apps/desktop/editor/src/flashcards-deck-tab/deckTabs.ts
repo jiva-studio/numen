@@ -8,16 +8,16 @@
  */
 import { computed, shallowRef, type ComputedRef } from 'vue'
 import type { DeckCard, DeckSection, PlexShowing, Stencil } from '@numen/ui'
-import type { Move, RefusalReason } from '../shared/core'
-import type { Cards, Problem, StencilSummary } from '../shared/flashcards/cards'
+import type { Move } from '../shared/core'
+import type { Cards, StencilSummary } from '../shared/flashcards/cards'
 import type { Store } from '../shared/command/deps'
 import type { Presets } from '../flashcards-preset-tab/core'
-import { fileOf } from '../shared/paths'
+import { answers } from './answers'
 import { reader } from './reader'
 import { scheduler, type Choice, type DeckPreset } from './scheduler'
 import { openNotes, type OpenNote } from '../note-tab/notes'
 import { markOf } from '../note-tab/tab'
-import type { Kind, WindowHandle } from '../shared/tabs/windowing'
+import type { Kind, WindowHandle } from '../shared/tabs/windowTabs'
 import type { FileOpeners } from '../shared/tabs/openers'
 import { DECK } from '../shared/tabs/workspace'
 import DeckTab from './DeckTab.vue'
@@ -42,25 +42,6 @@ import {
   type BufferDeck,
 } from './deck'
 import type { Marks } from '../shared/flashcards/marks'
-import { WORDS as words } from '../shared/flashcards/words'
-
-/** What the vault said about one file the last time it was read or written. */
-interface VaultAnswer {
-  /**
-   * What is wrong with the file, in the order the cards were read in. Which
-   * card each stands on is decided against the deck the grid is drawing, so a
-   * card the window is holding through a re-read keeps its mark.
-   */
-  readonly problems: readonly Problem[]
-  /** What the last read of the file was refused for. */
-  readonly reading: RefusalReason | null
-  /** What the last write of it was refused for. */
-  readonly writing: RefusalReason | null
-  /** The size a deck is read up to, where that is what refused it. */
-  readonly bound: number
-}
-
-const NOTHING: VaultAnswer = { problems: [], reading: null, writing: null, bound: 0 }
 
 /** What one deck tab holds. */
 export interface DeckTabState {
@@ -123,10 +104,8 @@ export interface DeckTabState {
 }
 
 export function decking(cards: Cards, presets: Presets, handle: WindowHandle, puts: FileOpeners) {
-  /** What the vault last said about each file, under the path it is filed at. */
-  const told = new Map<string, VaultAnswer>()
-  /** What each file is called, as the vault last read it. */
-  const titles = new Map<string, string>()
+  /** What the vault last said about each file this window holds. */
+  const said = answers()
   /** The stencils of the vault, as they were last listed. */
   const offers = shallowRef<readonly StencilSummary[]>([])
   /** Whether the last listing of the stencils answered. */
@@ -136,13 +115,12 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
     read: async (path) => {
       const answer = await cards.readDeck(path)
       const deck = answer.deck ? deckOf(answer.deck) : null
-      told.set(path, {
+      said.reads(path, {
         problems: answer.deck?.problems ?? [],
-        reading: answer.refusal,
-        writing: null,
+        refusal: answer.refusal,
         bound: answer.bound,
+        title: answer.deck?.title ?? null,
       })
-      if (answer.deck) titles.set(path, answer.deck.title)
       if (answer.refusal !== null) return { body: '', refusal: answer.refusal }
       return { body: deck ? deckBodyOf(deck) : '', refusal: null, at: answer.at }
     },
@@ -158,13 +136,7 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
         },
         seen?.at ?? null,
       )
-      const said = told.get(path) ?? NOTHING
-      told.set(path, {
-        problems: said.problems,
-        reading: said.reading,
-        writing: answer.refusal,
-        bound: answer.bound,
-      })
+      said.writes(path, { refusal: answer.refusal, bound: answer.bound })
       return {
         body: '',
         refusal: answer.refusal,
@@ -174,7 +146,7 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
     },
   })
 
-  const read = reader(store, (path) => (told.get(path) ?? NOTHING).problems)
+  const read = reader(store, said.problemsAt)
   const { deckAt, marksAt } = read
 
   /** The stencils a card may be cut by, made again where the list changed. */
@@ -212,26 +184,6 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
   const scheduled = scheduler(presets, store)
   const { choices, listsPresets, listsPresetsAgain, asks, schedules, scheduledAt } = scheduled
 
-
-  /** The words one refusal is put in, and nothing for one this file has none for. */
-  const whyOf = (refusal: RefusalReason | null, bound: number): string | null => {
-    if (refusal === 'deckTooLarge') return words.tooLarge(bound)
-    if (refusal === 'notADeck') return words.notADeck
-    return null
-  }
-
-  /**
-   * What one tab was refused for, in words a person reads. A vault that
-   * answered nothing at all left the tab refused and said no word of its own.
-   */
-  const sayingOf = (id: string): string => {
-    if (store.shown(id).refusal === null) return ''
-    const said = told.get(store.where(id)) ?? NOTHING
-    if (said.reading !== null) return whyOf(said.reading, said.bound) ?? words.refused
-    if (said.writing !== null) return whyOf(said.writing, said.bound) ?? words.notSaved
-    return words.unreachable
-  }
-
   const held = (id: string): DeckTabState => {
     /** The deck this tab is showing, which everything drawn of it follows. */
     const deck = computed(() => deckAt(id))
@@ -244,7 +196,7 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
       sections: computed(() => drawnSectionsOf(deck.value)),
       stencils,
       marks: computed(() => marksAt(id)),
-      saying: computed(() => sayingOf(id)),
+      saying: computed(() => said.saying(store.where(id), store.shown(id).refusal !== null)),
       scheduled: computed(() => scheduledAt(id)),
       choices,
       schedules: (preset) => void schedules(id, preset),
@@ -278,13 +230,9 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
    */
   const forgets = (path: string): void => {
     if (store.all().some((one) => store.where(one) === path)) return
-    told.delete(path)
-    titles.delete(path)
+    said.forgets(path)
     scheduled.forgets(path)
   }
-
-  /** What a deck tab is called: the title the file carries, or the file itself. */
-  const called = (path: string): string => titles.get(path) || fileOf(path)
 
   /** The tab holding a deck lets go of it, wherever the window draws it. */
   const shuts = (id: string): void => {
@@ -296,7 +244,7 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
   const kept: Store = {
     has: (id) => store.all().includes(id),
     where: (id) => store.where(id),
-    called: (id) => called(store.where(id)),
+    called: (id) => said.called(store.where(id)),
     asking: (id) => store.overtaken(id) !== null,
     settles: (id) => store.settles(id),
     shuts,
@@ -346,7 +294,7 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
       void asks(path)
       return held(id)
     },
-    called: (one) => called(store.where(one.id)),
+    called: (one) => said.called(store.where(one.id)),
     marked: (one) => markOf(one.shown.value.state),
     draws: DeckTab,
     identity: (id) => id,
@@ -368,7 +316,7 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
   /** A deck put in front of the person, in a tab of its own. */
   const shows = (path: string, title = '', showing: PlexShowing = 'here'): void => {
     const id = mints(path)
-    if (title) titles.set(path, title)
+    if (title) said.names(path, title)
     void (showing === 'beside' ? handle.beside(DECK, id) : handle.opens(DECK, id))
   }
 
@@ -384,12 +332,7 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
     // What the vault said about a file is filed under that file, so a file
     // that moved takes it along.
     for (const went of renamed) {
-      const said = told.get(went.from)
-      if (said) told.set(went.to, said)
-      told.delete(went.from)
-      const title = titles.get(went.from)
-      if (title !== undefined) titles.set(went.to, title)
-      titles.delete(went.from)
+      said.moved(went.from, went.to)
       scheduled.moved(went.from, went.to)
     }
     store.changed(paths, renamed)
@@ -406,7 +349,7 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
     held,
     changed,
     lists,
-    called,
+    called: said.called,
     kept,
     /** Every open deck, for the quit and for the question it raises. */
     all: store.all,

@@ -47,7 +47,7 @@ import { lands, type DestinationDeps } from '../shared/command/destination'
 import { fileMakers, fileOpeners } from '../shared/tabs/openers'
 import { flushing } from '../shared/saving/flushing'
 import { raisesConflicts } from '../shared/saving/conflicts'
-import { windowing } from '../shared/tabs/windowing'
+import { windowTabs } from '../shared/tabs/windowTabs'
 import { messageLog } from '../shared/notices/messages'
 import { agentKind, talking } from '../agent-tab/kind'
 import { decking } from '../flashcards-deck-tab/deckTabs'
@@ -133,7 +133,7 @@ export const useWindow = () => {
   )
 
   /** The tabs of this window, whatever kind each of them holds. */
-  const held = windowing()
+  const held = windowTabs()
   const { layout } = held
 
   /**
