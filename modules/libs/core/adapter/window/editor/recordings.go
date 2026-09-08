@@ -104,13 +104,14 @@ func (a *API) copied(
 	return a.Playing.Address(v, domain.Fingerprint{Path: played, Size: size}), derived.CopyType
 }
 
-// ReadTranscript answers with the transcript of a recording, each stretch of
-// speech against the milliseconds it was spoken in. A recording nothing has
-// listened to holds no words, which is an answer.
-func (a *API) ReadTranscript(
+// ReadText answers with the text a file holds: a transcript, each stretch of
+// speech against the milliseconds it was spoken in, or the prose a page is
+// written around. A file nothing has been read or heard for holds no text,
+// which is an answer.
+func (a *API) ReadText(
 	ctx context.Context,
-	r *connect.Request[v1.ReadTranscriptRequest],
-) (*connect.Response[v1.ReadTranscriptResponse], error) {
+	r *connect.Request[v1.ReadTextRequest],
+) (*connect.Response[v1.ReadTextResponse], error) {
 	showing, ref, err := a.recording(ctx, r.Msg.GetPath())
 	if err != nil {
 		return nil, err
@@ -120,7 +121,7 @@ func (a *API) ReadTranscript(
 		return nil, connect.NewError(reaching(err), err)
 	}
 
-	out := &v1.ReadTranscriptResponse{}
+	out := &v1.ReadTextResponse{}
 	var raw []byte
 	if listened {
 		if raw, err = a.transcribed(ctx, store, said); err != nil {
@@ -134,7 +135,7 @@ func (a *API) ReadTranscript(
 	// A page is written around prose and nothing timed it, so the text itself is
 	// the answer and there is nothing to cut a stretch out of.
 	if len(cues) == 0 {
-		out.Text = &v1.ReadTranscriptResponse_Prose{Prose: prose}
+		out.Text = &v1.ReadTextResponse_Prose{Prose: prose}
 		return connect.NewResponse(out), nil
 	}
 	if at := r.Msg.GetAt(); at != nil {
@@ -143,7 +144,7 @@ func (a *API) ReadTranscript(
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 	}
-	out.Text = &v1.ReadTranscriptResponse_Spoken{Spoken: &v1.Spoken{Cues: spoken(cues)}}
+	out.Text = &v1.ReadTextResponse_Spoken{Spoken: &v1.Spoken{Cues: spoken(cues)}}
 	return connect.NewResponse(out), nil
 }
 

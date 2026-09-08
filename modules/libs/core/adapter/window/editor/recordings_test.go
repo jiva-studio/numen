@@ -260,7 +260,7 @@ func TestOnlyARecordingIsHeard(t *testing.T) {
 		book:             connect.CodeInvalidArgument,
 		"talks/none.mp3": connect.CodeNotFound,
 	} {
-		_, err := api.ReadTranscript(t.Context(), connect.NewRequest(&v1.ReadTranscriptRequest{
+		_, err := api.ReadText(t.Context(), connect.NewRequest(&v1.ReadTextRequest{
 			Path: path,
 		}))
 		if connect.CodeOf(err) != want {
@@ -445,9 +445,9 @@ func TestATranscriptPutRightIsWhatTheWindowIsToldNext(t *testing.T) {
 }
 
 // heard is the transcript the window is told about.
-func heard(t *testing.T, api *API) *v1.ReadTranscriptResponse {
+func heard(t *testing.T, api *API) *v1.ReadTextResponse {
 	t.Helper()
-	out, err := api.ReadTranscript(t.Context(), connect.NewRequest(&v1.ReadTranscriptRequest{
+	out, err := api.ReadText(t.Context(), connect.NewRequest(&v1.ReadTextRequest{
 		Path: talk,
 	}))
 	if err != nil {

@@ -12,7 +12,7 @@ import { ArtifactService, AssetService } from '@numen/protocol'
 import type {
   Cue as CueMessage,
   HighlightedPage as HighlightedPageMessage,
-  ReadTranscriptResponse,
+  ReadTextResponse,
 } from '@numen/protocol'
 import { transport } from '@numen/wire'
 import { fingerprint, stamp } from './answers'
@@ -73,14 +73,14 @@ export const recordings: Recordings = {
     }
   },
   cues: async (path) => {
-    const answer = await waiting(() => artifacts.readTranscript({ path }))
+    const answer = await waiting(() => artifacts.readText({ path }))
     return { ...said(answer), editable: answer.editable }
   },
   writes: async (path, cues) => {
     await waiting(() => artifacts.writeTranscript({ path, cues: [...cues] }))
   },
   plays: async (path, stretch) => {
-    const answer = await waiting(() => artifacts.readTranscript({ path, at: stretch }))
+    const answer = await waiting(() => artifacts.readText({ path, at: stretch }))
     return said(answer).cues[0]?.from ?? null
   },
 }
@@ -89,11 +89,10 @@ export const recordings: Recordings = {
 const spoken = (one: CueMessage): Cue => ({ text: one.text, from: one.from, to: one.to })
 
 /**
- * The text of a file in whichever of the two shapes it came in: words against
- * the clock, or prose nothing timed. A file nothing has been read or
- * transcribed for came in neither.
+ * The text of a file as it came: words against the clock, or prose nothing
+ * timed. A file nothing has been read or transcribed for came in neither.
  */
-const said = (answer: ReadTranscriptResponse): { cues: readonly Cue[]; prose: string } => {
+const said = (answer: ReadTextResponse): { cues: readonly Cue[]; prose: string } => {
   switch (answer.text.case) {
     case 'spoken':
       return { cues: answer.text.value.cues.map(spoken), prose: '' }

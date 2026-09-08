@@ -36,13 +36,14 @@ service ArtifactService {
   // as it did before anything was made from it, and it is offered again.
   rpc DeleteArtifact(DeleteArtifactRequest) returns (DeleteArtifactResponse);
 
-  // ReadTranscript is the words a recording was heard as, each stretch of
-  // speech against the milliseconds it was spoken in. A recording nothing has
-  // listened to holds no words, which is an answer.
+  // ReadText is the text a file holds: a transcript, each stretch of speech
+  // against the milliseconds it was spoken in, or the prose a page is written
+  // around. A file nothing has been read or heard for holds no text, which is
+  // an answer.
   //
-  // What comes back is the transcript as it now stands: the words a person put
-  // right, and what a model heard where nothing put them right.
-  rpc ReadTranscript(ReadTranscriptRequest) returns (ReadTranscriptResponse);
+  // What comes back is the text as it now stands: the words a person put right,
+  // and what a model wrote where nothing put them right.
+  rpc ReadText(ReadTextRequest) returns (ReadTextResponse);
 
   // WriteTranscript writes the words of a recording as a person left them.
   //
@@ -190,20 +191,20 @@ message Cue {
   int32 to = 3;
 }
 
-message ReadTranscriptRequest {
-  // The recording, as the vault holds it.
+message ReadTextRequest {
+  // The file, as the vault holds it.
   string path = 1;
 
-  // The run of the recording's text to answer about, and nothing at all for the
+  // The run of the file's text to answer about, and nothing at all for the
   // whole of it. It is a start and a length in the words, which is how a
   // passage is addressed everywhere else, and what comes back is the speech
   // those bytes were said in.
   Stretch at = 2;
 }
 
-message ReadTranscriptResponse {
-  // The text, in one of the two shapes it comes in. A file nothing has been
-  // read or heard for carries neither, and sets none of them.
+message ReadTextResponse {
+  // The text as the file holds it. A file nothing has been read or heard for
+  // carries none, and sets no field here.
   oneof text {
     // Words with the times each stretch of them was said at.
     Spoken spoken = 1;
@@ -218,10 +219,7 @@ message ReadTranscriptResponse {
   bool editable = 3;
 }
 
-// Spoken is words against the clock they were said on. It is a message of its
-// own because a field that holds many of a thing cannot stand in a `oneof`,
-// and which of the two shapes a text is in is a rule worth stating in the
-// schema rather than in a comment.
+// Spoken is words against the clock they were said on.
 message Spoken {
   repeated Cue cues = 1;
 }

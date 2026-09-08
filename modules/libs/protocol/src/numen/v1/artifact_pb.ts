@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/artifact.proto.
  */
 export const file_numen_v1_artifact: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9hcnRpZmFjdC5wcm90bxIIbnVtZW4udjEiXwoIQXJ0aWZhY3QSJAoEa2luZBgBIAEoDjIWLm51bWVuLnYxLkFydGlmYWN0S2luZBIeCgVzdGF0ZRgCIAEoDjIPLm51bWVuLnYxLlN0YXRlEg0KBWVycm9yGAMgASgJIiQKFExpc3RBcnRpZmFjdHNSZXF1ZXN0EgwKBHBhdGgYASABKAkiPgoVTGlzdEFydGlmYWN0c1Jlc3BvbnNlEiUKCWFydGlmYWN0cxgBIAMoCzISLm51bWVuLnYxLkFydGlmYWN0IksKFUNyZWF0ZUFydGlmYWN0UmVxdWVzdBIMCgRwYXRoGAEgASgJEiQKBGtpbmQYAiABKA4yFi5udW1lbi52MS5BcnRpZmFjdEtpbmQiPgoWQ3JlYXRlQXJ0aWZhY3RSZXNwb25zZRIkCghhcnRpZmFjdBgBIAEoCzISLm51bWVuLnYxLkFydGlmYWN0IksKFURlbGV0ZUFydGlmYWN0UmVxdWVzdBIMCgRwYXRoGAEgASgJEiQKBGtpbmQYAiABKA4yFi5udW1lbi52MS5BcnRpZmFjdEtpbmQiPgoWRGVsZXRlQXJ0aWZhY3RSZXNwb25zZRIkCghhcnRpZmFjdBgBIAEoCzISLm51bWVuLnYxLkFydGlmYWN0Ii0KA0N1ZRIMCgR0ZXh0GAEgASgJEgwKBGZyb20YAiABKAUSCgoCdG8YAyABKAUiRAoVUmVhZFRyYW5zY3JpcHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSHQoCYXQYAiABKAsyES5udW1lbi52MS5TdHJldGNoImcKFlJlYWRUcmFuc2NyaXB0UmVzcG9uc2USIgoGc3Bva2VuGAEgASgLMhAubnVtZW4udjEuU3Bva2VuSAASDwoFcHJvc2UYAiABKAlIABIQCghlZGl0YWJsZRgDIAEoCEIGCgR0ZXh0IiUKBlNwb2tlbhIbCgRjdWVzGAEgAygLMg0ubnVtZW4udjEuQ3VlIkMKFldyaXRlVHJhbnNjcmlwdFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIbCgRjdWVzGAIgAygLMg0ubnVtZW4udjEuQ3VlIkgKF1dyaXRlVHJhbnNjcmlwdFJlc3BvbnNlEhsKBGN1ZXMYASADKAsyDS5udW1lbi52MS5DdWUSEAoIZWRpdGFibGUYAyABKAgq3gEKDEFydGlmYWN0S2luZBIdChlBUlRJRkFDVF9LSU5EX1VOU1BFQ0lGSUVEEAASFQoRQVJUSUZBQ1RfS0lORF9PQ1IQARIfChtBUlRJRkFDVF9LSU5EX09DUl9DT1JSRUNURUQQAhIcChhBUlRJRkFDVF9LSU5EX1RSQU5TQ1JJUFQQAxImCiJBUlRJRkFDVF9LSU5EX1RSQU5TQ1JJUFRfQ09SUkVDVEVEEAQSGQoVQVJUSUZBQ1RfS0lORF9BUlRJQ0xFEAUSFgoSQVJUSUZBQ1RfS0lORF9DT1BZEAYqmQEKBVN0YXRlEhUKEVNUQVRFX1VOU1BFQ0lGSUVEEAASDgoKU1RBVEVfTk9ORRABEhAKDFNUQVRFX1FVRVVFRBACEhEKDVNUQVRFX1JVTk5JTkcQAxIRCg1TVEFURV9TVE9QUEVEEAQSDgoKU1RBVEVfRE9ORRAFEg8KC1NUQVRFX0VNUFRZEAYSEAoMU1RBVEVfRkFJTEVEEAcyugMKD0FydGlmYWN0U2VydmljZRJQCg1MaXN0QXJ0aWZhY3RzEh4ubnVtZW4udjEuTGlzdEFydGlmYWN0c1JlcXVlc3QaHy5udW1lbi52MS5MaXN0QXJ0aWZhY3RzUmVzcG9uc2USUwoOQ3JlYXRlQXJ0aWZhY3QSHy5udW1lbi52MS5DcmVhdGVBcnRpZmFjdFJlcXVlc3QaIC5udW1lbi52MS5DcmVhdGVBcnRpZmFjdFJlc3BvbnNlElMKDkRlbGV0ZUFydGlmYWN0Eh8ubnVtZW4udjEuRGVsZXRlQXJ0aWZhY3RSZXF1ZXN0GiAubnVtZW4udjEuRGVsZXRlQXJ0aWZhY3RSZXNwb25zZRJTCg5SZWFkVHJhbnNjcmlwdBIfLm51bWVuLnYxLlJlYWRUcmFuc2NyaXB0UmVxdWVzdBogLm51bWVuLnYxLlJlYWRUcmFuc2NyaXB0UmVzcG9uc2USVgoPV3JpdGVUcmFuc2NyaXB0EiAubnVtZW4udjEuV3JpdGVUcmFuc2NyaXB0UmVxdWVzdBohLm51bWVuLnYxLldyaXRlVHJhbnNjcmlwdFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9hcnRpZmFjdC5wcm90bxIIbnVtZW4udjEiXwoIQXJ0aWZhY3QSJAoEa2luZBgBIAEoDjIWLm51bWVuLnYxLkFydGlmYWN0S2luZBIeCgVzdGF0ZRgCIAEoDjIPLm51bWVuLnYxLlN0YXRlEg0KBWVycm9yGAMgASgJIiQKFExpc3RBcnRpZmFjdHNSZXF1ZXN0EgwKBHBhdGgYASABKAkiPgoVTGlzdEFydGlmYWN0c1Jlc3BvbnNlEiUKCWFydGlmYWN0cxgBIAMoCzISLm51bWVuLnYxLkFydGlmYWN0IksKFUNyZWF0ZUFydGlmYWN0UmVxdWVzdBIMCgRwYXRoGAEgASgJEiQKBGtpbmQYAiABKA4yFi5udW1lbi52MS5BcnRpZmFjdEtpbmQiPgoWQ3JlYXRlQXJ0aWZhY3RSZXNwb25zZRIkCghhcnRpZmFjdBgBIAEoCzISLm51bWVuLnYxLkFydGlmYWN0IksKFURlbGV0ZUFydGlmYWN0UmVxdWVzdBIMCgRwYXRoGAEgASgJEiQKBGtpbmQYAiABKA4yFi5udW1lbi52MS5BcnRpZmFjdEtpbmQiPgoWRGVsZXRlQXJ0aWZhY3RSZXNwb25zZRIkCghhcnRpZmFjdBgBIAEoCzISLm51bWVuLnYxLkFydGlmYWN0Ii0KA0N1ZRIMCgR0ZXh0GAEgASgJEgwKBGZyb20YAiABKAUSCgoCdG8YAyABKAUiPgoPUmVhZFRleHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSHQoCYXQYAiABKAsyES5udW1lbi52MS5TdHJldGNoImEKEFJlYWRUZXh0UmVzcG9uc2USIgoGc3Bva2VuGAEgASgLMhAubnVtZW4udjEuU3Bva2VuSAASDwoFcHJvc2UYAiABKAlIABIQCghlZGl0YWJsZRgDIAEoCEIGCgR0ZXh0IiUKBlNwb2tlbhIbCgRjdWVzGAEgAygLMg0ubnVtZW4udjEuQ3VlIkMKFldyaXRlVHJhbnNjcmlwdFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIbCgRjdWVzGAIgAygLMg0ubnVtZW4udjEuQ3VlIkgKF1dyaXRlVHJhbnNjcmlwdFJlc3BvbnNlEhsKBGN1ZXMYASADKAsyDS5udW1lbi52MS5DdWUSEAoIZWRpdGFibGUYAyABKAgq3gEKDEFydGlmYWN0S2luZBIdChlBUlRJRkFDVF9LSU5EX1VOU1BFQ0lGSUVEEAASFQoRQVJUSUZBQ1RfS0lORF9PQ1IQARIfChtBUlRJRkFDVF9LSU5EX09DUl9DT1JSRUNURUQQAhIcChhBUlRJRkFDVF9LSU5EX1RSQU5TQ1JJUFQQAxImCiJBUlRJRkFDVF9LSU5EX1RSQU5TQ1JJUFRfQ09SUkVDVEVEEAQSGQoVQVJUSUZBQ1RfS0lORF9BUlRJQ0xFEAUSFgoSQVJUSUZBQ1RfS0lORF9DT1BZEAYqmQEKBVN0YXRlEhUKEVNUQVRFX1VOU1BFQ0lGSUVEEAASDgoKU1RBVEVfTk9ORRABEhAKDFNUQVRFX1FVRVVFRBACEhEKDVNUQVRFX1JVTk5JTkcQAxIRCg1TVEFURV9TVE9QUEVEEAQSDgoKU1RBVEVfRE9ORRAFEg8KC1NUQVRFX0VNUFRZEAYSEAoMU1RBVEVfRkFJTEVEEAcyqAMKD0FydGlmYWN0U2VydmljZRJQCg1MaXN0QXJ0aWZhY3RzEh4ubnVtZW4udjEuTGlzdEFydGlmYWN0c1JlcXVlc3QaHy5udW1lbi52MS5MaXN0QXJ0aWZhY3RzUmVzcG9uc2USUwoOQ3JlYXRlQXJ0aWZhY3QSHy5udW1lbi52MS5DcmVhdGVBcnRpZmFjdFJlcXVlc3QaIC5udW1lbi52MS5DcmVhdGVBcnRpZmFjdFJlc3BvbnNlElMKDkRlbGV0ZUFydGlmYWN0Eh8ubnVtZW4udjEuRGVsZXRlQXJ0aWZhY3RSZXF1ZXN0GiAubnVtZW4udjEuRGVsZXRlQXJ0aWZhY3RSZXNwb25zZRJBCghSZWFkVGV4dBIZLm51bWVuLnYxLlJlYWRUZXh0UmVxdWVzdBoaLm51bWVuLnYxLlJlYWRUZXh0UmVzcG9uc2USVgoPV3JpdGVUcmFuc2NyaXB0EiAubnVtZW4udjEuV3JpdGVUcmFuc2NyaXB0UmVxdWVzdBohLm51bWVuLnYxLldyaXRlVHJhbnNjcmlwdFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * An Artifact is one thing a model wrote about one file of the vault.
@@ -227,18 +227,18 @@ export const CueSchema: GenMessage<Cue> = /*@__PURE__*/
   messageDesc(file_numen_v1_artifact, 7);
 
 /**
- * @generated from message numen.v1.ReadTranscriptRequest
+ * @generated from message numen.v1.ReadTextRequest
  */
-export type ReadTranscriptRequest = Message<"numen.v1.ReadTranscriptRequest"> & {
+export type ReadTextRequest = Message<"numen.v1.ReadTextRequest"> & {
   /**
-   * The recording, as the vault holds it.
+   * The file, as the vault holds it.
    *
    * @generated from field: string path = 1;
    */
   path: string;
 
   /**
-   * The run of the recording's text to answer about, and nothing at all for the
+   * The run of the file's text to answer about, and nothing at all for the
    * whole of it. It is a start and a length in the words, which is how a
    * passage is addressed everywhere else, and what comes back is the speech
    * those bytes were said in.
@@ -249,21 +249,21 @@ export type ReadTranscriptRequest = Message<"numen.v1.ReadTranscriptRequest"> & 
 };
 
 /**
- * Describes the message numen.v1.ReadTranscriptRequest.
- * Use `create(ReadTranscriptRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ReadTextRequest.
+ * Use `create(ReadTextRequestSchema)` to create a new message.
  */
-export const ReadTranscriptRequestSchema: GenMessage<ReadTranscriptRequest> = /*@__PURE__*/
+export const ReadTextRequestSchema: GenMessage<ReadTextRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_artifact, 8);
 
 /**
- * @generated from message numen.v1.ReadTranscriptResponse
+ * @generated from message numen.v1.ReadTextResponse
  */
-export type ReadTranscriptResponse = Message<"numen.v1.ReadTranscriptResponse"> & {
+export type ReadTextResponse = Message<"numen.v1.ReadTextResponse"> & {
   /**
-   * The text, in one of the two shapes it comes in. A file nothing has been
-   * read or heard for carries neither, and sets none of them.
+   * The text as the file holds it. A file nothing has been read or heard for
+   * carries none, and sets no field here.
    *
-   * @generated from oneof numen.v1.ReadTranscriptResponse.text
+   * @generated from oneof numen.v1.ReadTextResponse.text
    */
   text: {
     /**
@@ -294,17 +294,14 @@ export type ReadTranscriptResponse = Message<"numen.v1.ReadTranscriptResponse"> 
 };
 
 /**
- * Describes the message numen.v1.ReadTranscriptResponse.
- * Use `create(ReadTranscriptResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ReadTextResponse.
+ * Use `create(ReadTextResponseSchema)` to create a new message.
  */
-export const ReadTranscriptResponseSchema: GenMessage<ReadTranscriptResponse> = /*@__PURE__*/
+export const ReadTextResponseSchema: GenMessage<ReadTextResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_artifact, 9);
 
 /**
- * Spoken is words against the clock they were said on. It is a message of its
- * own because a field that holds many of a thing cannot stand in a `oneof`,
- * and which of the two shapes a text is in is a rule worth stating in the
- * schema rather than in a comment.
+ * Spoken is words against the clock they were said on.
  *
  * @generated from message numen.v1.Spoken
  */
@@ -577,19 +574,20 @@ export const ArtifactService: GenService<{
     output: typeof DeleteArtifactResponseSchema;
   },
   /**
-   * ReadTranscript is the words a recording was heard as, each stretch of
-   * speech against the milliseconds it was spoken in. A recording nothing has
-   * listened to holds no words, which is an answer.
+   * ReadText is the text a file holds: a transcript, each stretch of speech
+   * against the milliseconds it was spoken in, or the prose a page is written
+   * around. A file nothing has been read or heard for holds no text, which is
+   * an answer.
    *
-   * What comes back is the transcript as it now stands: the words a person put
-   * right, and what a model heard where nothing put them right.
+   * What comes back is the text as it now stands: the words a person put right,
+   * and what a model wrote where nothing put them right.
    *
-   * @generated from rpc numen.v1.ArtifactService.ReadTranscript
+   * @generated from rpc numen.v1.ArtifactService.ReadText
    */
-  readTranscript: {
+  readText: {
     methodKind: "unary";
-    input: typeof ReadTranscriptRequestSchema;
-    output: typeof ReadTranscriptResponseSchema;
+    input: typeof ReadTextRequestSchema;
+    output: typeof ReadTextResponseSchema;
   },
   /**
    * WriteTranscript writes the words of a recording as a person left them.
