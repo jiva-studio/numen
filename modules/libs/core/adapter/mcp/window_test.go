@@ -90,7 +90,7 @@ func TestWindowTabsSaysWhereInABookThePersonIs(t *testing.T) {
 		FrontID: "one",
 		Tabs: []domain.Tab{
 			{ID: "one", Kind: domain.TabBook, Path: "library/Adi.epub", Title: "The Adi Parva",
-				Book: &domain.OpenBook{Offset: 145203, Length: 982331, Page: 142, Pages: 960}},
+				Book: &domain.OpenBook{Offset: 145203, Page: 142, Pages: 960}},
 		},
 	})
 

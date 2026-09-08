@@ -175,16 +175,14 @@ message OpenDocument {
 // it. Such a book has no pages of its own, so where the person is is an offset
 // into its text.
 message OpenBook {
-  // Offset is where they are reading, in bytes of the book's text, and length
-  // is how many bytes that text is.
+  // Offset is where they are reading, in bytes of the book's text.
   int32 offset = 1;
-  int32 length = 2;
 
   // Page is the page the offset falls on, counted from one, and pages is how
   // many the book is read in. Both are counted over the text by the size of a
   // page the book was answered with, which is not here.
-  int32 page = 3;
-  int32 pages = 4;
+  int32 page = 2;
+  int32 pages = 3;
 }
 
 // An OpenRecording is the recording a tab holds, as far as it has been written

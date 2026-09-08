@@ -32,7 +32,6 @@ func (a *API) WriteOpenTabs(
 		if book := one.GetBook(); book != nil {
 			tab.Book = &domain.OpenBook{
 				Offset: int(book.GetOffset()),
-				Length: int(book.GetLength()),
 				Page:   int(book.GetPage()),
 				Pages:  int(book.GetPages()),
 			}

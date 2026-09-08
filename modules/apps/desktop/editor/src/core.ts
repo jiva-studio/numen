@@ -305,8 +305,6 @@ export interface OpenDocument {
 export interface OpenBook {
   /** Where they are reading, in bytes of the book's text. */
   readonly offset: number
-  /** How many bytes that text is. */
-  readonly length: number
   /** The page the offset falls on, counted from one. */
   readonly page: number
   /** How many pages the book is read in. */

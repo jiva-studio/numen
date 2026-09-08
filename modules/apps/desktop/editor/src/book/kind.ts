@@ -53,7 +53,6 @@ export function bookKind(
       path: state.path,
       book: {
         offset: state.at.value,
-        length: state.span.value.ends,
         page: state.page.value,
         pages: state.pages.value,
       },

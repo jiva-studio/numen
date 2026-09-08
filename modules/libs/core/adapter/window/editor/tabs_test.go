@@ -28,7 +28,7 @@ func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 			{Id: "two", Kind: "recording", Path: "Talk.mp3", Title: "Talk.mp3",
 				Recording: &v1.OpenRecording{Heard: 1000, Length: 4000}},
 			{Id: "three", Kind: "book", Path: "Adi.epub", Title: "The Adi Parva",
-				Book: &v1.OpenBook{Offset: 145203, Length: 982331, Page: 142, Pages: 960}},
+				Book: &v1.OpenBook{Offset: 145203, Page: 142, Pages: 960}},
 		},
 	}))
 	if err != nil {
@@ -42,7 +42,7 @@ func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 			{ID: "two", Kind: "recording", Path: "Talk.mp3", Title: "Talk.mp3",
 				Recording: &domain.OpenRecording{Heard: 1000, Length: 4000}},
 			{ID: "three", Kind: domain.TabBook, Path: "Adi.epub", Title: "The Adi Parva",
-				Book: &domain.OpenBook{Offset: 145203, Length: 982331, Page: 142, Pages: 960}},
+				Book: &domain.OpenBook{Offset: 145203, Page: 142, Pages: 960}},
 		},
 	}
 	if got := api.Attended(); !reflect.DeepEqual(got, want) {

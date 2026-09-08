@@ -56,10 +56,8 @@ type OpenDocument struct {
 // it. Such a book has no pages of its own, so where the person is is an offset
 // into its text.
 type OpenBook struct {
-	// Offset is where they are reading, in bytes of the book's text, and Length
-	// is how many bytes that text is.
+	// Offset is where they are reading, in bytes of the book's text.
 	Offset int
-	Length int
 	// Page is the page the offset falls on, counted from one, and Pages how many
 	// the book is read in.
 	Page  int

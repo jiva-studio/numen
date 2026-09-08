@@ -92,7 +92,7 @@ describe('what a book tab tells whoever answers for the person', () => {
 
     expect(kindOver(held).attends?.(held)).toStrictEqual({
       path: 'library/Mahabharata.epub',
-      book: { offset: 1_200_000, length: 5_120_000, page: 1_201, pages: 5_000 },
+      book: { offset: 1_200_000, page: 1_201, pages: 5_000 },
     })
   })
 })

@@ -720,15 +720,13 @@ func (x *OpenDocument) GetPages() int32 {
 // into its text.
 type OpenBook struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Offset is where they are reading, in bytes of the book's text, and length
-	// is how many bytes that text is.
+	// Offset is where they are reading, in bytes of the book's text.
 	Offset int32 `protobuf:"varint,1,opt,name=offset,proto3" json:"offset,omitempty"`
-	Length int32 `protobuf:"varint,2,opt,name=length,proto3" json:"length,omitempty"`
 	// Page is the page the offset falls on, counted from one, and pages is how
 	// many the book is read in. Both are counted over the text by the size of a
 	// page the book was answered with, which is not here.
-	Page          int32 `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
-	Pages         int32 `protobuf:"varint,4,opt,name=pages,proto3" json:"pages,omitempty"`
+	Page          int32 `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	Pages         int32 `protobuf:"varint,3,opt,name=pages,proto3" json:"pages,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -766,13 +764,6 @@ func (*OpenBook) Descriptor() ([]byte, []int) {
 func (x *OpenBook) GetOffset() int32 {
 	if x != nil {
 		return x.Offset
-	}
-	return 0
-}
-
-func (x *OpenBook) GetLength() int32 {
-	if x != nil {
-		return x.Length
 	}
 	return 0
 }
@@ -895,12 +886,11 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x04book\x18\t \x01(\v2\x12.numen.v1.OpenBookR\x04bookJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\x02atR\x02of\"8\n" +
 	"\fOpenDocument\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x14\n" +
-	"\x05pages\x18\x02 \x01(\x05R\x05pages\"d\n" +
+	"\x05pages\x18\x02 \x01(\x05R\x05pages\"L\n" +
 	"\bOpenBook\x12\x16\n" +
-	"\x06offset\x18\x01 \x01(\x05R\x06offset\x12\x16\n" +
-	"\x06length\x18\x02 \x01(\x05R\x06length\x12\x12\n" +
-	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x14\n" +
-	"\x05pages\x18\x04 \x01(\x05R\x05pages\"=\n" +
+	"\x06offset\x18\x01 \x01(\x05R\x06offset\x12\x12\n" +
+	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x14\n" +
+	"\x05pages\x18\x03 \x01(\x05R\x05pages\"=\n" +
 	"\rOpenRecording\x12\x14\n" +
 	"\x05heard\x18\x01 \x01(\x05R\x05heard\x12\x16\n" +
 	"\x06length\x18\x02 \x01(\x05R\x06length2\xdd\x02\n" +
