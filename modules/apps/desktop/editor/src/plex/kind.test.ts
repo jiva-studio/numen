@@ -295,7 +295,7 @@ describe('a plex drawing nothing', () => {
     expect(plex({}).empty.value).toBe(true)
   })
 
-  it('is not an empty vault while the vault is still being read', () => {
+  it('is not an empty vault where the vault could not be opened', () => {
     expect(plex({ ready: ref(false) }).empty.value).toBe(false)
   })
 

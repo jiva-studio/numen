@@ -155,11 +155,11 @@ func begin(
 	first := func() bool {
 		defer api.finished(walkingNotes)
 
-		// The walk a person watches is this one. A later one is the index being
-		// brought level with a vault that moved under it.
-		notes, err := open.Read(ctx, func(indexed int) {
-			api.say(task.Task{ID: walkingNotes, Doing: "Reading the vault", Count: int64(indexed)})
-		})
+		// The walk runs behind the window, which answers from what it has
+		// reached. A later one is the index being brought level with a vault
+		// that moved under it.
+		api.say(task.Task{ID: walkingNotes, Doing: "Reading the vault"})
+		notes, err := open.Read(ctx, nil)
 
 		switch {
 		case err == nil:

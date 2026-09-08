@@ -9,7 +9,6 @@ import { describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
 import {
   branch,
-  Notices,
   pane,
   Palette,
   Tree,
@@ -603,36 +602,38 @@ describe('a command asked for on a node of the plex', () => {
  * the keyboard: this is the window a person meets while a vault is opening.
  */
 describe('a command asked for while the vault is being read', () => {
+  const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
+
+  const type = async (text: string) => {
+    const into = field()
+    if (!into) return
+    into.value = text
+    into.dispatchEvent(new Event('input'))
+    await settles()
+  }
+
+  const press = async (key: string) => {
+    field()?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
+    await settles()
+  }
+
   /** The keystroke for a new note, which is a command over the window. */
   const askedFor = async () => {
     globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'n', ctrlKey: true }))
     await settles()
   }
 
-  it('says the vault is still being read, and carries no command out', async () => {
+  it('carries the command out, and goes on saying the vault is being read', async () => {
     said.ready = false
     said.opening = null
-    const window = await drawn()
+    const window = await drawnWithPalette()
 
     await askedFor()
+    await type('Entropy')
+    await press('Enter')
 
-    expect(cards(window)).toStrictEqual(['reading the vault…', 'The vault is still being read'])
-    expect(asked.made).toStrictEqual([])
-  })
-
-  it('lets a person put away what it told them, and forgets it', async () => {
-    said.ready = false
-    said.opening = null
-    const window = await drawn()
-
-    await askedFor()
-    await window.findAll('article.notice button')[1]!.trigger('click')
-    await settles()
-
+    expect(asked.made).toStrictEqual(['Entropy'])
     expect(cards(window)).toStrictEqual(['reading the vault…'])
-    // Put away is put away for good: the window stops handing the corner a card
-    // it has been told the person is finished with.
-    expect(window.findComponent(Notices).props('notices')).toHaveLength(1)
   })
 })
 

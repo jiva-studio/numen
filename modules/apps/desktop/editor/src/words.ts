@@ -211,8 +211,8 @@ export const WORDS = {
   renameVault: 'Rename vault',
   forgetVault: 'Forget vault',
   eraseVault: 'Erase vault',
-  /** Why nothing can be done to a note: the vault is unread, or none is in front. */
-  indexing: 'The vault is still being read',
+  /** Why nothing can be done to a note: the vault never opened, or none is in front. */
+  noVault: 'The vault could not be opened',
   noNote: 'Nothing in front of you is a note',
   /** The steps a command asks for: the chip beside the field, and the field. */
   command: 'Command',

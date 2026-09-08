@@ -276,13 +276,13 @@ export function commandPalette(
   }
 
   /**
-   * Why a command asked for did nothing: the vault is unread, or what it was
+   * Why a command asked for did nothing: the vault never opened, or what it was
    * asked over is not a note. One that was taken up says nothing.
    */
   const refused = (id: string, over: CommandTarget): string => {
     const command = byId.get(id)
     if (!command || command.where(over, runs)) return ''
-    return over.ready ? words.noNote : words.indexing
+    return over.ready ? words.noNote : words.noVault
   }
 
   /** A note that moved. A step open over it is asked at the name it now has. */

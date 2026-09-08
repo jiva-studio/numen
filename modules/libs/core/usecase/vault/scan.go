@@ -61,8 +61,9 @@ func NewScan(
 
 // ScanResult reports what a scan did, in the terms the user cares about.
 //
-// `Notes` counts notes and nothing else, and every other number here is about
-// those notes. What the walk found that is not a note is `Assets`.
+// `Notes` counts notes, and every number below it is about those notes. What
+// the walk found that is a source of another kind is `Assets`, which is how a
+// format nothing extracts is told from one that is seen and left alone.
 type ScanResult struct {
 	Notes      int // notes found in the vault
 	Assets     int // sources of another kind found in the vault
@@ -71,7 +72,6 @@ type ScanResult struct {
 	Removed    int // in the index, no longer on disk
 	Vanished   int // walked, but gone by the time it was read
 	Unreadable int // walked, still there, and the read refused
-	Fetched    int // link notes whose address was reached, unasked
 }
 
 // FingerprintQueries is the one question a scan asks of the index, so that a
@@ -147,8 +147,8 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 			return res, err
 		}
 		if ref.Kind != domain.KindNote {
-			// A source of another kind is what the vault holds, said out loud.
-			// Taking its text out of it is its own step, on its own schedule.
+			// Taking the text out of a source of another kind is its own step,
+			// on its own schedule.
 			res.Assets++
 			continue
 		}

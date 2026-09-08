@@ -73,7 +73,11 @@ export interface CommandTarget {
   readonly others?: readonly string[]
   /** The vault the window is showing, and nothing where it shows none. */
   readonly vault: VaultRef
-  /** Whether the vault has been read and can be asked to do anything. */
+  /**
+   * Whether the vault can be asked to do anything. A vault still being read
+   * can: the walk runs behind the window, and what it has reached already
+   * answers.
+   */
   readonly ready: boolean
 }
 
@@ -228,8 +232,8 @@ export interface Words extends EmptyWords {
   readonly overFile: string
   readonly overWindow: string
   readonly overVault: string
-  /** Why nothing can be done to a note: the vault is unread, or none is in front. */
-  readonly indexing: string
+  /** Why nothing can be done to a note: the vault never opened, or none is in front. */
+  readonly noVault: string
   readonly noNote: string
   /** The list of commands: the chip beside the field, and what stands in it. */
   readonly command: string

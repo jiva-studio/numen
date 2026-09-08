@@ -193,7 +193,7 @@ export const useWindow = () => {
   /** The plex tabs, and the one the person is looking at. */
   const plexes = plexKind(held.handle, () => view(core), {
     makes: making,
-    ready: computed(() => !failure.value && !indexing.value),
+    ready: computed(() => !failure.value),
     hangs: hungParts.hangs,
     parts: hungParts.parts,
     opens: (path, title, showing, line) => void puts.opens(path, title, showing, line),
@@ -400,7 +400,7 @@ export const useWindow = () => {
       source: on?.source ?? null,
       made: (file && makes.value.get(file)) || {},
       vault: shown.value,
-      ready: !failure.value && !indexing.value,
+      ready: !failure.value,
     }
   }
 

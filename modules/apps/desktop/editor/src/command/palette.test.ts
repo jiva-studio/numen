@@ -241,8 +241,8 @@ describe('what is in front', () => {
     expect(drawn(commands.groups).note).toStrictEqual([])
   })
 
-  /** A vault that will not read is the one a person most needs to leave. */
-  it('says the vault is still being read, and offers nothing over the note', () => {
+  /** A vault that will not open is the one a person most needs to leave. */
+  it('says the vault could not be opened, and offers nothing over the note', () => {
     const { commands } = asking({ ready: false })
 
     expect(drawn(commands.groups)).toStrictEqual({
@@ -264,7 +264,7 @@ describe('what is in front', () => {
       ],
       vault: ['openVault', 'newVault', 'renameVault', 'forgetVault', 'eraseVault'],
     })
-    expect(silence(commands.groups, 'note')).toBe(words.indexing)
+    expect(silence(commands.groups, 'note')).toBe(words.noVault)
   })
 
   it('offers no close where the window holds no tab at all', () => {
@@ -587,7 +587,7 @@ describe('the runs over the file in front', () => {
     expect(drawn(commands.groups).file).toBeUndefined()
   })
 
-  it('offers neither while the vault is still being read', () => {
+  it('offers neither where the vault could not be opened', () => {
     const { commands } = asking({ ...recording, ready: false })
 
     expect(drawn(commands.groups).file).toBeUndefined()
@@ -713,10 +713,10 @@ describe('dropping the transcript of a recording', () => {
 })
 
 describe('a command that was not offered over what it was asked over', () => {
-  it('says the vault is still being read', () => {
+  it('says the vault could not be opened', () => {
     const { commands } = asking({ ready: false })
 
-    expect(commands.refused('remove', front({ ready: false }))).toBe(words.indexing)
+    expect(commands.refused('remove', front({ ready: false }))).toBe(words.noVault)
   })
 
   it('says nothing in front is a note', () => {

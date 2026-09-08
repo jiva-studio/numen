@@ -70,7 +70,7 @@ export function drawing(state: DrawingState) {
 
   /** Why nothing over the note in front is offered. */
   const why = (over: CommandTarget): string =>
-    !over.ready ? words.indexing : over.path ? words.noneFound : words.noNote
+    !over.ready ? words.noVault : over.path ? words.noneFound : words.noNote
 
   /** Every command offered over what is in front, in the groups it holds. */
   const listed = (over: CommandTarget, text: string): readonly PaletteGroup[] => {
