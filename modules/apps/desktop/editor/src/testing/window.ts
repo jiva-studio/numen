@@ -317,7 +317,7 @@ vi.mock('../artifacts', () => ({
   },
 }))
 
-vi.mock('../cards/vault', () => ({
+vi.mock('../cards/vault/cards', () => ({
   cards: {
     // A card is named by the first field of the stencil it is cut by, so the
     // window is told of one.

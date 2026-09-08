@@ -7,20 +7,30 @@
  * fields and the faces a file is written from, is here.
  */
 import { ordered, reordered, type InsertionPoint } from '@numen/ui'
-import type { Surrounding, VaultFace, VaultStencil } from './vault'
-import type { IdMaker } from './deck'
+import type { VaultFace, VaultStencil } from '../../vault/cards'
+import type { IdMaker } from '../deck/deck'
 
 const minting: IdMaker = () => crypto.randomUUID()
 
 /** One face as the window holds it: what the file says, under an identity of its own. */
-export interface Face extends VaultFace {
+export interface Face {
+  /** The identity the window addresses it by, minted at every reading. */
   readonly id: string
+  readonly name: string
+  /** The prose between the face's heading and its first side. */
+  readonly lead: string
+  readonly front: string
+  readonly back: string
 }
 
 /** A stencil as the window holds it: its fields, and its faces under identities. */
-export interface Stencil extends Surrounding {
+export interface Stencil {
   readonly fields: readonly string[]
+  /** The prose below the frontmatter and above the first face. */
+  readonly preamble: string
   readonly faces: readonly Face[]
+  /** What the file ends with once the last face has been read. */
+  readonly tail: string
 }
 
 /** A stencil that names nothing and shows nothing. */
@@ -30,7 +40,13 @@ export const NO_STENCIL: Stencil = { fields: [], preamble: '', faces: [], tail: 
 export const stencilOf = (read: VaultStencil, mint: IdMaker = minting): Stencil => ({
   fields: read.fields,
   preamble: read.preamble,
-  faces: read.faces.map((face) => ({ id: mint(), ...face })),
+  faces: read.faces.map((face) => ({
+    id: mint(),
+    name: face.name,
+    lead: face.lead,
+    front: face.front,
+    back: face.back,
+  })),
   tail: read.tail,
 })
 

@@ -8,15 +8,15 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
-import type { RefusalReason } from '../core'
-import type { Cards, VaultCard, Problem } from './vault'
-import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '../preset/core'
-import { fileOpeners } from '../tabs/openers'
-import { windowing } from '../tabs/windowing'
-import { DECK } from '../tabs/workspace'
+import type { RefusalReason } from '../../../core'
+import type { Cards, VaultCard, Problem } from '../../vault/cards'
+import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '../../../preset/core'
+import { fileOpeners } from '../../../tabs/openers'
+import { windowing } from '../../../tabs/windowing'
+import { DECK } from '../../../tabs/workspace'
 import DeckTab from './DeckTab.vue'
 import { decking, type DeckTabState } from './deckTabs'
-import { WORDS as words } from './words'
+import { WORDS as words } from '../words'
 
 /** A preset that schedules, which is what every preset here is. */
 const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING }

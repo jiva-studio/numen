@@ -8,18 +8,18 @@
  */
 import { computed, shallowRef, type ComputedRef } from 'vue'
 import type { DeckCard, DeckSection, PlexShowing, Stencil } from '@numen/ui'
-import type { Move, RefusalReason } from '../core'
-import type { Cards, Problem, StencilSummary } from './vault'
-import type { Store } from '../command/deps'
-import type { Presets } from '../preset/core'
-import { fileOf } from '../paths'
+import type { Move, RefusalReason } from '../../../core'
+import type { Cards, Problem, StencilSummary } from '../../vault/cards'
+import type { Store } from '../../../command/deps'
+import type { Presets } from '../../../preset/core'
+import { fileOf } from '../../../paths'
 import { reading } from './reading'
 import { scheduling, type Choice, type DeckPreset } from './scheduling'
-import { openNotes, type OpenNote } from '../note/notes'
-import { markOf } from '../note/tab'
-import type { Kind, WindowHandle } from '../tabs/windowing'
-import type { FileOpeners } from '../tabs/openers'
-import { DECK } from '../tabs/workspace'
+import { openNotes, type OpenNote } from '../../../note/notes'
+import { markOf } from '../../../note/tab'
+import type { Kind, WindowHandle } from '../../../tabs/windowing'
+import type { FileOpeners } from '../../../tabs/openers'
+import { DECK } from '../../../tabs/workspace'
 import DeckTab from './DeckTab.vue'
 import {
   added,
@@ -41,8 +41,8 @@ import {
   sectionsOf,
   type Deck,
 } from './deck'
-import type { Marks } from './marks'
-import { WORDS as words } from './words'
+import type { Marks } from '../marks'
+import { WORDS as words } from '../words'
 
 /** What the vault said about one file the last time it was read or written. */
 interface VaultAnswer {

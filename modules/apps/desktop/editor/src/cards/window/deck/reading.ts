@@ -6,9 +6,9 @@
  * screen leaves that one standing, so the card a person is typing into is not
  * drawn again under a fresh identity.
  */
-import type { Problem } from './vault'
+import type { Problem } from '../../vault/cards'
 import { deckIn, headed, named, sameDeck, type Deck } from './deck'
-import { marksOf, sameMarks, type Marks } from './marks'
+import { marksOf, sameMarks, type Marks } from '../marks'
 
 /** The string a tab holds, and the file it stands at. */
 export interface ShownStore {

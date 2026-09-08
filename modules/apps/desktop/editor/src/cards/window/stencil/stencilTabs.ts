@@ -7,16 +7,16 @@
  */
 import { computed, type ComputedRef } from 'vue'
 import type { Half, PlexShowing } from '@numen/ui'
-import type { Move, RefusalReason } from '../core'
-import type { Cards, Problem } from './vault'
-import type { Store } from '../command/deps'
-import { openNotes, type OpenNote } from '../note/notes'
-import { markOf } from '../note/tab'
-import type { MessageWriter } from '../notices/messages'
-import type { Kind, WindowHandle } from '../tabs/windowing'
-import { REFUSED } from '../words'
-import type { FileOpeners } from '../tabs/openers'
-import { STENCIL } from '../tabs/workspace'
+import type { Move, RefusalReason } from '../../../core'
+import type { Cards, Problem } from '../../vault/cards'
+import type { Store } from '../../../command/deps'
+import { openNotes, type OpenNote } from '../../../note/notes'
+import { markOf } from '../../../note/tab'
+import type { MessageWriter } from '../../../notices/messages'
+import type { Kind, WindowHandle } from '../../../tabs/windowing'
+import { REFUSED } from '../../../words'
+import type { FileOpeners } from '../../../tabs/openers'
+import { STENCIL } from '../../../tabs/workspace'
 import StencilTab from './StencilTab.vue'
 import {
   faceAdded,
@@ -34,9 +34,9 @@ import {
   stencilOf,
   type Stencil,
 } from './stencil'
-import { marksOf, sameMarks, type Marks } from './marks'
-import { fileOf } from '../paths'
-import { WORDS as words } from './words'
+import { marksOf, sameMarks, type Marks } from '../marks'
+import { fileOf } from '../../../paths'
+import { WORDS as words } from '../words'
 
 /** What the vault said about one file the last time it was read or written. */
 interface VaultAnswer {

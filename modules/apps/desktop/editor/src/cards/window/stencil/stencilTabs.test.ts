@@ -3,14 +3,14 @@
  * writes back, and where what is wrong with it stands.
  */
 import { describe, expect, it } from 'vitest'
-import type { RefusalReason } from '../core'
-import type { Cards, VaultFace, Problem, FieldRenameResult } from './vault'
-import { fileOpeners } from '../tabs/openers'
-import { windowing } from '../tabs/windowing'
-import { STENCIL } from '../tabs/workspace'
-import { REFUSED } from '../words'
+import type { RefusalReason } from '../../../core'
+import type { Cards, VaultFace, Problem, FieldRenameResult } from '../../vault/cards'
+import { fileOpeners } from '../../../tabs/openers'
+import { windowing } from '../../../tabs/windowing'
+import { STENCIL } from '../../../tabs/workspace'
+import { REFUSED } from '../../../words'
 import { stencilling, type StencilTabState } from './stencilTabs'
-import { WORDS as words } from './words'
+import { WORDS as words } from '../words'
 
 /** The one place a file is opened from. Nothing here opens one. */
 const puts = () => fileOpeners({ fileKinds: async () => new Map() })

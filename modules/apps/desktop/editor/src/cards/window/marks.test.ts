@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { marksOf } from './marks'
-import type { Problem } from './vault'
+import type { Problem } from '../vault/cards'
 
 /** One problem as the vault reports one, against nothing in particular. */
 const problem = (over: Partial<Problem> = {}): Problem => ({

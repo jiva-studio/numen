@@ -16,8 +16,8 @@ import type {
   Stencil as StencilMessage,
 } from '@numen/protocol'
 import { transport } from '@numen/wire'
-import { fingerprint, refusalIn, staleIn, stamp } from '../answers'
-import type { MakeResult, RefusalReason } from '../core'
+import { fingerprint, refusalIn, staleIn, stamp } from '../../answers'
+import type { MakeResult, RefusalReason } from '../../core'
 
 /** One stencil as the list of them names it. */
 export interface StencilSummary {

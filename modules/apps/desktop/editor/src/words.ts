@@ -8,7 +8,7 @@
 import { commandKeyChord, keyChord } from '@numen/ui'
 import type { Artifact, ArtifactState, RefusalReason, VaultRefusalReason } from './core'
 import { WORDS as agent } from './agent/words'
-import { WORDS as cards } from './cards/words'
+import { WORDS as cards } from './cards/window/words'
 import { WORDS as note } from './note/words'
 import { WORDS as plex } from './plex/words'
 import { WORDS as preset } from './preset/words'
