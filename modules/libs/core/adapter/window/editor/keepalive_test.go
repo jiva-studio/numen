@@ -34,7 +34,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 			return err
 		},
 		"focus": func(ctx context.Context, http connect.HTTPClient, at string) error {
-			_, err := numenv1connect.NewVaultServiceClient(http, at).
+			_, err := numenv1connect.NewWorkspaceServiceClient(http, at).
 				WatchFocus(ctx, connect.NewRequest(&v1.WatchFocusRequest{}))
 			return err
 		},
@@ -64,6 +64,8 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 			mux := http.NewServeMux()
 			vault, vaults := numenv1connect.NewVaultServiceHandler(api)
 			mux.Handle(vault, testsupport.Rooted(vaults, entered, returned))
+			standing, workspace := numenv1connect.NewWorkspaceServiceHandler(api)
+			mux.Handle(standing, testsupport.Rooted(workspace, entered, returned))
 			filed, notes := numenv1connect.NewNoteServiceHandler(api)
 			mux.Handle(filed, testsupport.Rooted(notes, entered, returned))
 			agent, agents := numenv1connect.NewAgentServiceHandler(api)

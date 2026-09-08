@@ -4,21 +4,20 @@
 
 // What a client may ask about the vault a window is showing, taken whole.
 //
-// What the vault is, what has changed in it, and where in it the person stands:
-// the questions that are about the vault itself and not about anything filed in
-// it. Its files are file.proto, its notes note.proto and its text search.proto.
+// What the vault is and what has changed in it: the questions that are about
+// the vault itself and not about anything filed in it. Its files are
+// file.proto, its notes note.proto and its text search.proto, and where the
+// person stands in it is workspace.proto.
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Stretch } from "./shared_pb.js";
-import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QiiAEKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSHAoEc2NhbhgEIAEoCzIOLm51bWVuLnYxLlNjYW4SKQoIY292ZXJhZ2UYBSABKAsyFy5udW1lbi52MS5JbmRleENvdmVyYWdlIjgKBFNjYW4SDQoFcmVhZHkYASABKAgSDgoGZmFpbGVkGAIgASgJEhEKCXVud2F0Y2hlZBgDIAEoCSJPCg1JbmRleENvdmVyYWdlEhMKC2NodW5rX2NvdW50GAEgASgDEhYKDmVtYmVkZGVkX2NvdW50GAIgASgDEhEKCWVtYmVkZGluZxgDIAEoCCIaChhXYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QiWwoZV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZRINCgVwYXRocxgBIAMoCRIOCgZyZWxvYWQYAiABKAgSHwoHcmVuYW1lZBgDIAMoCzIOLm51bWVuLnYxLk1vdmUiIAoETW92ZRIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIhMKEVdhdGNoRm9jdXNSZXF1ZXN0ImIKEldhdGNoRm9jdXNSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBXN0YXJ0GAIgASgFEg4KBmxlbmd0aBgDIAEoBRIfCgRhbHNvGAQgAygLMhEubnVtZW4udjEuU3RyZXRjaCJCChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIhcKFVdyaXRlT3BlblRhYnNSZXNwb25zZSKaAQoDVGFiEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDAoEcGF0aBgDIAEoCRINCgV0aXRsZRgEIAEoCRIsCghkb2N1bWVudBgFIAEoCzIaLm51bWVuLnYxLkRvY3VtZW50UHJvZ3Jlc3MSLgoJcmVjb3JkaW5nGAYgASgLMhsubnVtZW4udjEuUmVjb3JkaW5nUHJvZ3Jlc3MiNAoQRG9jdW1lbnRQcm9ncmVzcxIMCgRwYWdlGAEgASgFEhIKCnBhZ2VfY291bnQYAiABKAUiSQoRUmVjb3JkaW5nUHJvZ3Jlc3MSHwoXdHJhbnNjcmliZWRfZHVyYXRpb25fbXMYASABKAUSEwoLZHVyYXRpb25fbXMYAiABKAUy3QIKDFZhdWx0U2VydmljZRJQCg1HZXRWYXVsdFN0YXRlEh4ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVzcG9uc2USXgoRV2F0Y2hWYXVsdENoYW5nZXMSIi5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QaIy5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlMAESSQoKV2F0Y2hGb2N1cxIbLm51bWVuLnYxLldhdGNoRm9jdXNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hGb2N1c1Jlc3BvbnNlMAESUAoNV3JpdGVPcGVuVGFicxIeLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVPcGVuVGFic1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QiiAEKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSHAoEc2NhbhgEIAEoCzIOLm51bWVuLnYxLlNjYW4SKQoIY292ZXJhZ2UYBSABKAsyFy5udW1lbi52MS5JbmRleENvdmVyYWdlIjgKBFNjYW4SDQoFcmVhZHkYASABKAgSDgoGZmFpbGVkGAIgASgJEhEKCXVud2F0Y2hlZBgDIAEoCSJPCg1JbmRleENvdmVyYWdlEhMKC2NodW5rX2NvdW50GAEgASgDEhYKDmVtYmVkZGVkX2NvdW50GAIgASgDEhEKCWVtYmVkZGluZxgDIAEoCCIaChhXYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QiWwoZV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZRINCgVwYXRocxgBIAMoCRIOCgZyZWxvYWQYAiABKAgSHwoHcmVuYW1lZBgDIAMoCzIOLm51bWVuLnYxLk1vdmUiIAoETW92ZRIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJMsABCgxWYXVsdFNlcnZpY2USUAoNR2V0VmF1bHRTdGF0ZRIeLm51bWVuLnYxLkdldFZhdWx0U3RhdGVSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlc3BvbnNlEl4KEVdhdGNoVmF1bHRDaGFuZ2VzEiIubnVtZW4udjEuV2F0Y2hWYXVsdENoYW5nZXNSZXF1ZXN0GiMubnVtZW4udjEuV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZTABQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * @generated from message numen.v1.GetVaultStateRequest
@@ -241,221 +240,8 @@ export const MoveSchema: GenMessage<Move> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 6);
 
 /**
- * @generated from message numen.v1.WatchFocusRequest
- */
-export type WatchFocusRequest = Message<"numen.v1.WatchFocusRequest"> & {
-};
-
-/**
- * Describes the message numen.v1.WatchFocusRequest.
- * Use `create(WatchFocusRequestSchema)` to create a new message.
- */
-export const WatchFocusRequestSchema: GenMessage<WatchFocusRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 7);
-
-/**
- * @generated from message numen.v1.WatchFocusResponse
- */
-export type WatchFocusResponse = Message<"numen.v1.WatchFocusResponse"> & {
-  /**
-   * The source to put in front of the person: a note to see the neighbourhood
-   * from, or a document to open.
-   *
-   * @generated from field: string path = 1;
-   */
-  path: string;
-
-  /**
-   * Where in the text of that source to open, counted in bytes. A length of
-   * zero names the source and no place inside it, which is what a note arrives
-   * with.
-   *
-   * @generated from field: int32 start = 2;
-   */
-  start: number;
-
-  /**
-   * @generated from field: int32 length = 3;
-   */
-  length: number;
-
-  /**
-   * The other stretches of the same source worth seeing. The person is taken to
-   * the stretch above, and these are shown where they fall.
-   *
-   * @generated from field: repeated numen.v1.Stretch also = 4;
-   */
-  also: Stretch[];
-};
-
-/**
- * Describes the message numen.v1.WatchFocusResponse.
- * Use `create(WatchFocusResponseSchema)` to create a new message.
- */
-export const WatchFocusResponseSchema: GenMessage<WatchFocusResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 8);
-
-/**
- * @generated from message numen.v1.WriteOpenTabsRequest
- */
-export type WriteOpenTabsRequest = Message<"numen.v1.WriteOpenTabsRequest"> & {
-  /**
-   * Every tab the window has open, in the order the person was last in them.
-   *
-   * @generated from field: repeated numen.v1.Tab tabs = 1;
-   */
-  tabs: Tab[];
-
-  /**
-   * Which of them the person is looking at, by its id. Empty where the window
-   * has nothing open.
-   *
-   * @generated from field: string front = 2;
-   */
-  front: string;
-};
-
-/**
- * Describes the message numen.v1.WriteOpenTabsRequest.
- * Use `create(WriteOpenTabsRequestSchema)` to create a new message.
- */
-export const WriteOpenTabsRequestSchema: GenMessage<WriteOpenTabsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 9);
-
-/**
- * @generated from message numen.v1.WriteOpenTabsResponse
- */
-export type WriteOpenTabsResponse = Message<"numen.v1.WriteOpenTabsResponse"> & {
-};
-
-/**
- * Describes the message numen.v1.WriteOpenTabsResponse.
- * Use `create(WriteOpenTabsResponseSchema)` to create a new message.
- */
-export const WriteOpenTabsResponseSchema: GenMessage<WriteOpenTabsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 10);
-
-/**
- * A Tab is one tab of the window: what kind it is, and what it holds.
- *
- * The kind is the client's own word — a note, a document, a recording — and a
- * reader that does not know one knows a tab of that kind is open and no more.
- *
- * @generated from message numen.v1.Tab
- */
-export type Tab = Message<"numen.v1.Tab"> & {
-  /**
-   * Id is what the window calls this tab, which the front is named by.
-   *
-   * @generated from field: string id = 1;
-   */
-  id: string;
-
-  /**
-   * Kind is what sort of tab it is.
-   *
-   * @generated from field: string kind = 2;
-   */
-  kind: string;
-
-  /**
-   * Path is the file it holds, by the path the vault files it under, and empty
-   * for a tab holding no file. A plex holds the note it stands on.
-   *
-   * @generated from field: string path = 3;
-   */
-  path: string;
-
-  /**
-   * Title is what the tab is called, as the person reads it.
-   *
-   * @generated from field: string title = 4;
-   */
-  title: string;
-
-  /**
-   * How far the person has got through what the tab holds. A tab holding a
-   * document sets document, a tab holding a recording sets recording, and a tab
-   * of any other kind sets neither.
-   *
-   * @generated from field: numen.v1.DocumentProgress document = 5;
-   */
-  document?: DocumentProgress | undefined;
-
-  /**
-   * @generated from field: numen.v1.RecordingProgress recording = 6;
-   */
-  recording?: RecordingProgress | undefined;
-};
-
-/**
- * Describes the message numen.v1.Tab.
- * Use `create(TabSchema)` to create a new message.
- */
-export const TabSchema: GenMessage<Tab> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 11);
-
-/**
- * A DocumentProgress is how far through a document the person reading it is.
- *
- * @generated from message numen.v1.DocumentProgress
- */
-export type DocumentProgress = Message<"numen.v1.DocumentProgress"> & {
-  /**
-   * Page is the page in front of them, counted from one.
-   *
-   * @generated from field: int32 page = 1;
-   */
-  page: number;
-
-  /**
-   * PageCount is how many pages the document has.
-   *
-   * @generated from field: int32 page_count = 2;
-   */
-  pageCount: number;
-};
-
-/**
- * Describes the message numen.v1.DocumentProgress.
- * Use `create(DocumentProgressSchema)` to create a new message.
- */
-export const DocumentProgressSchema: GenMessage<DocumentProgress> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 12);
-
-/**
- * A RecordingProgress is how far into a recording the words written down reach.
- *
- * @generated from message numen.v1.RecordingProgress
- */
-export type RecordingProgress = Message<"numen.v1.RecordingProgress"> & {
-  /**
-   * TranscribedDurationMs is how far into the recording the words written down
-   * reach. It is short of the duration while a run is still going, and the two
-   * are equal once one has finished.
-   *
-   * @generated from field: int32 transcribed_duration_ms = 1;
-   */
-  transcribedDurationMs: number;
-
-  /**
-   * DurationMs is how long the recording is.
-   *
-   * @generated from field: int32 duration_ms = 2;
-   */
-  durationMs: number;
-};
-
-/**
- * Describes the message numen.v1.RecordingProgress.
- * Use `create(RecordingProgressSchema)` to create a new message.
- */
-export const RecordingProgressSchema: GenMessage<RecordingProgress> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 13);
-
-/**
  * VaultService answers what the one vault a client is looking at is, and what
- * the person is at in it.
+ * has changed in it.
  *
  * @generated from service numen.v1.VaultService
  */
@@ -481,31 +267,6 @@ export const VaultService: GenService<{
     methodKind: "server_streaming";
     input: typeof WatchVaultChangesRequestSchema;
     output: typeof WatchVaultChangesResponseSchema;
-  },
-  /**
-   * WatchFocus reports the places something else asked to be put in front of
-   * the person — an agent working the vault beside them — for as long as the
-   * caller listens. What travelling there looks like is the client's.
-   *
-   * @generated from rpc numen.v1.VaultService.WatchFocus
-   */
-  watchFocus: {
-    methodKind: "server_streaming";
-    input: typeof WatchFocusRequestSchema;
-    output: typeof WatchFocusResponseSchema;
-  },
-  /**
-   * WriteOpenTabs says what the person has open — every tab of the window, and
-   * which of them is in front. The client says so again whenever any of it
-   * changes, and an agent working the vault beside them reads what it last
-   * said.
-   *
-   * @generated from rpc numen.v1.VaultService.WriteOpenTabs
-   */
-  writeOpenTabs: {
-    methodKind: "unary";
-    input: typeof WriteOpenTabsRequestSchema;
-    output: typeof WriteOpenTabsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_vault, 0);

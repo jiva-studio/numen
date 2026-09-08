@@ -24,6 +24,7 @@ import {
   VaultsRefusal,
   VaultsService,
   WindowService,
+  WorkspaceService,
 } from '@numen/protocol'
 import type {
   Entry as EntryMessage,
@@ -70,6 +71,9 @@ export const vault = createClient(VaultService, transport)
 
 /** Whether an agent can be reached, which is the installation's and not a vault's. */
 const agentService = createClient(AgentService, transport)
+
+/** Where the person stands in the vault: what they have open, and where they are sent. */
+const workspace = createClient(WorkspaceService, transport)
 
 /** The tree the vault is filed in: what stands where, and moving it about. */
 const files = createClient(FileService, transport)
@@ -183,9 +187,9 @@ export const core: Core & SearchDeps & CommandsDeps = {
       }
     }
   },
-  focus: (signal) => vault.watchFocus({}, { signal }),
+  focus: (signal) => workspace.watchFocus({}, { signal }),
   attending: async (open) => {
-    await vault.writeOpenTabs({ tabs: open.tabs.map((one) => ({ ...one })), front: open.front })
+    await workspace.writeOpenTabs({ tabs: open.tabs.map((one) => ({ ...one })), front: open.front })
   },
   editing: (signal) => notes.watchEdits({}, { signal }),
   async *tasks(signal) {
