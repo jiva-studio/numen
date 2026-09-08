@@ -40,15 +40,12 @@ func TestARunIsLitWhereItWasRead(t *testing.T) {
 	boxes := read(3, 4)
 
 	// The second and third words of the first page: "6..17".
-	pages := highlight.Pages(boxes, run(6, 12))
-	if len(pages) != 1 {
-		t.Fatalf("%d pages, want one", len(pages))
+	over := highlight.Over(boxes, run(6, 12))
+	if len(over) != 2 {
+		t.Fatalf("%d boxes, want the two words the run covers", len(over))
 	}
-	if pages[0].Index != 0 {
-		t.Errorf("page %d", pages[0].Index)
-	}
-	if len(pages[0].Rects) != 2 {
-		t.Errorf("%d rectangles, want the two words the run covers", len(pages[0].Rects))
+	if over[0].Page != 0 || over[1].Page != 0 {
+		t.Errorf("pages %d and %d", over[0].Page, over[1].Page)
 	}
 }
 
@@ -57,12 +54,12 @@ func TestARunCrossingAPageIsOnBothOfThem(t *testing.T) {
 	// two are one run.
 	boxes := read(3, 4)
 
-	pages := highlight.Pages(boxes, run(18, 12))
-	if len(pages) != 2 {
-		t.Fatalf("%d pages, want the two the run crosses", len(pages))
+	over := highlight.Over(boxes, run(18, 12))
+	if len(over) != 2 {
+		t.Fatalf("%d boxes, want the two words the run crosses", len(over))
 	}
-	if pages[0].Index != 0 || pages[1].Index != 1 {
-		t.Errorf("pages %d and %d", pages[0].Index, pages[1].Index)
+	if over[0].Page != 0 || over[1].Page != 1 {
+		t.Errorf("pages %d and %d", over[0].Page, over[1].Page)
 	}
 }
 
@@ -70,9 +67,9 @@ func TestAWordTheRunOnlyTouchesIsLit(t *testing.T) {
 	boxes := read(1, 3)
 
 	// One byte into the second word and one byte out of it.
-	pages := highlight.Pages(boxes, run(7, 2))
-	if len(pages) != 1 || len(pages[0].Rects) != 1 {
-		t.Fatalf("%v", pages)
+	over := highlight.Over(boxes, run(7, 2))
+	if len(over) != 1 {
+		t.Fatalf("%v", over)
 	}
 }
 
@@ -80,33 +77,33 @@ func TestARunBetweenTwoWordsLightsNeither(t *testing.T) {
 	// The space between the first and second word: no box holds it.
 	boxes := read(1, 3)
 
-	if pages := highlight.Pages(boxes, run(5, 1)); pages != nil {
-		t.Errorf("the gap lit %v", pages)
+	if over := highlight.Over(boxes, run(5, 1)); over != nil {
+		t.Errorf("the gap lit %v", over)
 	}
 }
 
 func TestNothingIsAskedForAndNothingIsLit(t *testing.T) {
 	boxes := read(2, 2)
 
-	if pages := highlight.Pages(boxes, run(0, 0)); pages != nil {
-		t.Errorf("a run of nothing lit %v", pages)
+	if over := highlight.Over(boxes, run(0, 0)); over != nil {
+		t.Errorf("a run of nothing lit %v", over)
 	}
-	if pages := highlight.Pages(nil, run(0, 10)); pages != nil {
-		t.Errorf("a document nobody lit lit %v", pages)
+	if over := highlight.Over(nil, run(0, 10)); over != nil {
+		t.Errorf("a document nobody lit lit %v", over)
 	}
-	if pages := highlight.Pages(boxes, run(9000, 10)); pages != nil {
-		t.Errorf("a run past the end lit %v", pages)
+	if over := highlight.Over(boxes, run(9000, 10)); over != nil {
+		t.Errorf("a run past the end lit %v", over)
 	}
 }
 
-func TestThePagesComeBackInTheOrderTheyAreRead(t *testing.T) {
+func TestTheBoxesComeBackInTheOrderTheyAreRead(t *testing.T) {
 	boxes := read(4, 2)
 
 	var at []int
-	for _, one := range highlight.Pages(boxes, run(0, 48)) {
-		at = append(at, one.Index)
+	for _, one := range highlight.Over(boxes, run(0, 48)) {
+		at = append(at, one.Page)
 	}
-	if want := []int{0, 1, 2, 3}; !reflect.DeepEqual(at, want) {
+	if want := []int{0, 0, 1, 1, 2, 2, 3, 3}; !reflect.DeepEqual(at, want) {
 		t.Errorf("pages %v, want %v", at, want)
 	}
 }

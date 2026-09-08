@@ -75,7 +75,7 @@ func run(t *testing.T, book document, word string) (start, length int) {
 
 // litOn is where one run of a source's text sits, asked about on its own. A
 // source with no reading and no layer is lit nowhere.
-func litOn(t *testing.T, u Highlight, path string, start, length int) []highlight.Page {
+func litOn(t *testing.T, u Highlight, path string, start, length int) []highlight.Box {
 	t.Helper()
 	found, err := u.Execute(t.Context(), first, path, []domain.Span{{From: start, To: start + length}})
 	if err != nil {
@@ -84,7 +84,19 @@ func litOn(t *testing.T, u Highlight, path string, start, length int) []highligh
 	if len(found) == 0 {
 		return nil
 	}
-	return found[0]
+	return found[0].Boxes
+}
+
+// pages is the pages a run was lit on, each of them once and in the order the
+// boxes were read.
+func pages(boxes []highlight.Box) []int {
+	var out []int
+	for _, box := range boxes {
+		if len(out) == 0 || out[len(out)-1] != box.Page {
+			out = append(out, box.Page)
+		}
+	}
+	return out
 }
 
 // A run of a recognised source's text is lit from what the model wrote down.
@@ -110,12 +122,12 @@ func TestARecognisedSourceIsLitFromWhatWasReadInIt(t *testing.T) {
 	}
 
 	found := litOn(t, u, documentPath, 0, 10)
-	if len(found) != 1 || found[0].Index != 4 || len(found[0].Rects) != 2 {
+	if len(found) != 2 || !slices.Equal(pages(found), []int{4}) {
 		t.Fatalf("the run was lit at %+v", found)
 	}
 	want := highlight.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}
-	if found[0].Rects[0] != want {
-		t.Errorf("the first word is at %+v, want %+v", found[0].Rects[0], want)
+	if found[0].Rect != want {
+		t.Errorf("the first word is at %+v, want %+v", found[0].Rect, want)
 	}
 }
 
@@ -127,7 +139,7 @@ func TestASourceWithNoReadingIsLitFromItsOwnLayer(t *testing.T) {
 
 	start, length := run(t, book, "gamma")
 	found := litOn(t, u, documentPath, start, length)
-	if len(found) != 1 || found[0].Index != 0 || len(found[0].Rects) != 1 {
+	if len(found) != 1 || found[0].Page != 0 {
 		t.Fatalf("%q was lit at %+v", "gamma", found)
 	}
 
@@ -138,9 +150,9 @@ func TestASourceWithNoReadingIsLitFromItsOwnLayer(t *testing.T) {
 			want = highlight.Rect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}
 		}
 	}
-	if found[0].Rects[0] != want {
+	if found[0].Rect != want {
 		t.Errorf("%q is at %+v, want the %+v the document places it at",
-			"gamma", found[0].Rects[0], want)
+			"gamma", found[0].Rect, want)
 	}
 }
 
@@ -153,14 +165,8 @@ func TestARunCrossingAPageIsOnBothOfThem(t *testing.T) {
 	from, _ := run(t, book, "gamma")
 	to, length := run(t, book, "Delta")
 	found := litOn(t, u, documentPath, from, to+length-from)
-	if len(found) != 2 || found[0].Index != 0 || found[1].Index != 1 {
+	if len(found) != 2 || !slices.Equal(pages(found), []int{0, 1}) {
 		t.Fatalf("a run across a page was lit at %+v", found)
-	}
-	for _, page := range found {
-		if len(page.Rects) != 1 {
-			t.Errorf("page %d lights %d words, want the one printed on it",
-				page.Index, len(page.Rects))
-		}
 	}
 }
 
@@ -173,7 +179,7 @@ func TestAWordIsLitOnThePageItIsPrintedOn(t *testing.T) {
 
 	start, length := run(t, book, "Afterword")
 	found := litOn(t, u, documentPath, start, length)
-	if len(found) != 1 || found[0].Index != 3 {
+	if len(found) != 1 || found[0].Page != 3 {
 		t.Fatalf("%q is printed on page 3 and was lit at %+v", "Afterword", found)
 	}
 }
@@ -195,7 +201,7 @@ func TestOnlyThePagesARunFallsOnAreLit(t *testing.T) {
 	if !slices.Equal(asked, []int{2}) {
 		t.Errorf("a word on page 2 of %d asked for pages %v", len(book.Pages), asked)
 	}
-	if len(found) != 1 || found[0].Index != 2 {
+	if len(found) != 1 || found[0].Page != 2 {
 		t.Errorf("%q was lit at %+v", "closer", found)
 	}
 }
@@ -225,11 +231,14 @@ func TestSeveralPlacesAreAskedAboutAtOnce(t *testing.T) {
 	if len(found) != 2 {
 		t.Fatalf("two places were asked about and %d came back: %+v", len(found), found)
 	}
-	if len(found[0]) != 1 || found[0][0].Index != 3 {
-		t.Errorf("%q is printed on page 3 and was lit at %+v", "Afterword", found[0])
+	if len(found[0].Boxes) != 1 || found[0].Boxes[0].Page != 3 {
+		t.Errorf("%q is printed on page 3 and was lit at %+v", "Afterword", found[0].Boxes)
 	}
-	if len(found[1]) != 1 || found[1][0].Index != 2 {
-		t.Errorf("%q is printed on page 2 and was lit at %+v", "closer", found[1])
+	if len(found[1].Boxes) != 1 || found[1].Boxes[0].Page != 2 {
+		t.Errorf("%q is printed on page 2 and was lit at %+v", "closer", found[1].Boxes)
+	}
+	if found[0].Text != "Afterword" || found[1].Text != "closer" {
+		t.Errorf("the runs read %q and %q", found[0].Text, found[1].Text)
 	}
 	if len(asked) != 1 || !slices.Equal(asked[0], []int{2, 3}) {
 		t.Errorf("the layer was asked for %v, want both pages once", asked)
@@ -315,7 +324,7 @@ func TestAFileRewrittenSinceItWasReadIsLitFromItself(t *testing.T) {
 	shelved.hold(documentPath, domain.KindBook, printedAs(outline), 2)
 
 	after := litOn(t, u, documentPath, start, length)
-	if len(after) == 1 && len(after[0].Rects) == 1 && after[0].Rects[0].MinY == 0.1 {
+	if len(after) == 1 && after[0].MinY == 0.1 {
 		t.Error("the reading of other bytes was lit on the file that is there now")
 	}
 }
@@ -343,7 +352,7 @@ func TestAProofreadReadingIsLitWhereItsWordsNowStand(t *testing.T) {
 	}
 
 	found := litOn(t, u, documentPath, 16, 3)
-	if len(found) != 1 || found[0].Index != 5 || len(found[0].Rects) != 1 {
+	if len(found) != 1 || found[0].Page != 5 {
 		t.Fatalf("the run was lit at %+v", found)
 	}
 }

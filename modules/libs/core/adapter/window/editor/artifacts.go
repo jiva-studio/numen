@@ -76,6 +76,26 @@ func carried(kind domain.SourceKind, produces string) []v1.ArtifactKind {
 	}
 }
 
+// carrying is the vault the window is showing and the file at a path, where
+// that file carries the artifact asked about. A file carrying none of that kind
+// holds nothing to read.
+func (a *API) carrying(
+	ctx context.Context,
+	path string,
+	of v1.ArtifactKind,
+) (domain.Vault, domain.Fingerprint, error) {
+	showing, ref, err := a.held(ctx, path)
+	if err != nil {
+		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(reaching(err), err)
+	}
+	at := a.points(ctx, showing, ref)
+	if !slices.Contains(carried(ref.Kind, a.producing(at)), of) {
+		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(
+			connect.CodeInvalidArgument, errNotCarried)
+	}
+	return showing, ref, nil
+}
+
 // producing is what fetching an address would keep its text under, and nothing
 // where this build reaches no address at all. What is at an address is the
 // fetcher's to say, so nothing here reads the address itself.
@@ -176,12 +196,7 @@ func (a *API) drops(
 	if err := store.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return nil, connect.NewError(reaching(err), err)
 	}
-	return connect.NewResponse(&v1.DeleteArtifactResponse{
-		Artifact: &v1.Artifact{
-			Kind:  v1.ArtifactKind_ARTIFACT_KIND_COPY,
-			State: v1.State_STATE_NONE,
-		},
-	}), nil
+	return connect.NewResponse(&v1.DeleteArtifactResponse{}), nil
 }
 
 // copyOf is whether a copy of the video at an address stands on this disk, and
@@ -193,10 +208,11 @@ func (a *API) copyOf(
 		Kind:  v1.ArtifactKind_ARTIFACT_KIND_COPY,
 		State: v1.State_STATE_NONE,
 	}
-	if _, _, held := a.standing(ctx, v, path, at); !held {
+	_, size, held := a.standing(ctx, v, path, at)
+	if !held {
 		return out
 	}
-	out.State = v1.State_STATE_DONE
+	out.State, out.Bytes = v1.State_STATE_DONE, size
 	return out
 }
 
@@ -361,12 +377,7 @@ func (a *API) DeleteArtifact(
 		if err := a.Imports.DeleteText(ctx, showing, ref.Path); err != nil {
 			return nil, connect.NewError(reaching(err), err)
 		}
-		return connect.NewResponse(&v1.DeleteArtifactResponse{
-			Artifact: &v1.Artifact{
-				Kind:  v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
-				State: v1.State_STATE_NONE,
-			},
-		}), nil
+		return connect.NewResponse(&v1.DeleteArtifactResponse{}), nil
 	}
 	if ref.Kind != domain.KindRecording {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNotCarried)
@@ -386,12 +397,7 @@ func (a *API) DeleteArtifact(
 	case res.None:
 		return nil, connect.NewError(connect.CodeNotFound, errNotHeard)
 	}
-	return connect.NewResponse(&v1.DeleteArtifactResponse{
-		Artifact: &v1.Artifact{
-			Kind:  v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
-			State: v1.State_STATE_NONE,
-		},
-	}), nil
+	return connect.NewResponse(&v1.DeleteArtifactResponse{}), nil
 }
 
 // run begins reading a scan or hearing a recording, and answers with what the
@@ -598,7 +604,7 @@ func (a *API) corrections(
 
 // stood is how far a run got, as the artifact a client reads.
 func stood(of v1.ArtifactKind, got reached) *v1.Artifact {
-	out := &v1.Artifact{Kind: of}
+	out := &v1.Artifact{Kind: of, Bytes: int64(got.size)}
 	switch got.stands {
 	case done:
 		out.State = v1.State_STATE_DONE

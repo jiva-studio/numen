@@ -352,22 +352,24 @@ func TestNoDocumentIsDrawnForAWindowStandingOnNothing(t *testing.T) {
 		t.Errorf("a page was answered %s, and the window has no vault", answer.Status)
 	}
 
-	files := numenv1connect.NewAssetServiceClient(f.server.Client(), f.server.URL)
+	documents := numenv1connect.NewDocumentServiceClient(f.server.Client(), f.server.URL)
+	recordings := numenv1connect.NewRecordingServiceClient(f.server.Client(), f.server.URL)
+	readings := numenv1connect.NewOcrServiceClient(f.server.Client(), f.server.URL)
 	asked := map[string]func() error{
 		"what a document is": func() error {
-			_, err := files.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{
+			_, err := documents.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{
 				Path: file,
 			}))
 			return err
 		},
 		"what a recording is": func() error {
-			_, err := files.GetRecording(t.Context(), connect.NewRequest(&v1.GetRecordingRequest{
+			_, err := recordings.GetRecording(t.Context(), connect.NewRequest(&v1.GetRecordingRequest{
 				Path: file,
 			}))
 			return err
 		},
-		"where a run of the text sits": func() error {
-			_, err := files.ListHighlights(t.Context(), connect.NewRequest(&v1.ListHighlightsRequest{
+		"what a run of the text says": func() error {
+			_, err := readings.ReadOcr(t.Context(), connect.NewRequest(&v1.ReadOcrRequest{
 				Path:  file,
 				Spans: []*v1.Span{{From: 0, To: 1}},
 			}))

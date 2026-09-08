@@ -29,18 +29,12 @@ type Rect struct {
 	MinX, MinY, MaxX, MaxY float32
 }
 
-// A Page is one page and what to light on it.
-type Page struct {
-	Index int
-	Rects []Rect
-}
-
-// Pages is where a run of the prose sits: the pages it falls on and, on each,
-// the rectangles covering it.
+// Over is the boxes covering a run of the prose, in the order they were read. A
+// run standing nowhere is covered by none.
 //
 // The boxes are in the order they were read, so the run is found by halving and
-// then walked to its end. A run crossing a page is on both of them.
-func Pages(boxes []Box, span domain.Span) []Page {
+// then walked to its end. A run crossing a page carries boxes from both of them.
+func Over(boxes []Box, span domain.Span) []Box {
 	if span.Empty() || len(boxes) == 0 {
 		return nil
 	}
@@ -51,14 +45,9 @@ func Pages(boxes []Box, span domain.Span) []Page {
 		return boxes[i].To > span.From
 	})
 
-	var out []Page
+	var out []Box
 	for ; at < len(boxes) && boxes[at].From < span.To; at++ {
-		box := boxes[at]
-		if n := len(out); n > 0 && out[n-1].Index == box.Page {
-			out[n-1].Rects = append(out[n-1].Rects, box.Rect)
-			continue
-		}
-		out = append(out, Page{Index: box.Page, Rects: []Rect{box.Rect}})
+		out = append(out, boxes[at])
 	}
 	return out
 }

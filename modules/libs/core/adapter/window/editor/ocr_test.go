@@ -87,9 +87,10 @@ func where(t *testing.T, doc *pdf.Book, word string) *v1.Span {
 	return &v1.Span{From: int32(at), To: int32(at + len(word))}
 }
 
-// highlights is where the runs of a source's text sit, as the window is told it.
-func highlights(api *API, path string, at ...*v1.Span) ([]*v1.Highlight, error) {
-	out, err := api.ListHighlights(context.Background(), connect.NewRequest(&v1.ListHighlightsRequest{
+// reads is what the runs of a source's text say and where they sit, as the
+// window is told it.
+func reads(api *API, path string, at ...*v1.Span) ([]*v1.Run, error) {
+	out, err := api.ReadOcr(context.Background(), connect.NewRequest(&v1.ReadOcrRequest{
 		Path: path, Spans: at,
 	}))
 	if err != nil {
@@ -98,43 +99,54 @@ func highlights(api *API, path string, at ...*v1.Span) ([]*v1.Highlight, error) 
 	return out.Msg.GetRuns(), nil
 }
 
-// A run of a source's text comes back as the pages it falls on and, on each,
-// the rectangles covering it.
-func TestARunOfTheProseComesBackAsPagesAndRectangles(t *testing.T) {
+// A run of a source's text comes back as what it says and the boxes covering
+// it, each on the page it was read from.
+func TestARunOfTheProseComesBackAsTextAndBoxes(t *testing.T) {
 	api, _, doc := placing(t)
 
-	runs, err := highlights(api, book, where(t, doc, "Delta"))
+	runs, err := reads(api, book, where(t, doc, "Delta"))
 	if err != nil {
 		t.Fatalf("asked where a word is and was refused: %v", err)
 	}
 	if len(runs) != 1 {
 		t.Fatalf("one place was asked about and %d came back: %+v", len(runs), runs)
 	}
-	pages := runs[0].GetPages()
-	if len(pages) != 1 || pages[0].GetIndex() != 1 || len(pages[0].GetRects()) != 1 {
-		t.Fatalf("%q is on the second page and came back at %+v", "Delta", pages)
+	if runs[0].GetText() != "Delta" {
+		t.Errorf("the run reads %q", runs[0].GetText())
 	}
-	box := pages[0].GetRects()[0]
-	if box.GetMinX() < 0 || box.GetMinY() < 0 || box.GetMaxX() > 1 || box.GetMaxY() > 1 {
-		t.Errorf("%q is at %+v, which is off the page", "Delta", box)
+	boxes := runs[0].GetBoxes()
+	if len(boxes) != 1 || boxes[0].GetPage() != 1 {
+		t.Fatalf("%q is on the second page and came back at %+v", "Delta", boxes)
 	}
-	if box.GetMinX() >= box.GetMaxX() || box.GetMinY() >= box.GetMaxY() {
-		t.Errorf("%q is at %+v, which is nothing at all", "Delta", box)
+	rect := boxes[0].GetRect()
+	if rect.GetMinX() < 0 || rect.GetMinY() < 0 || rect.GetMaxX() > 1 || rect.GetMaxY() > 1 {
+		t.Errorf("%q is at %+v, which is off the page", "Delta", rect)
+	}
+	if rect.GetMinX() >= rect.GetMaxX() || rect.GetMinY() >= rect.GetMaxY() {
+		t.Errorf("%q is at %+v, which is nothing at all", "Delta", rect)
+	}
+	span := boxes[0].GetSpan()
+	if span.GetFrom() >= span.GetTo() {
+		t.Errorf("%q covers %+v, which is nothing of the text", "Delta", span)
 	}
 }
 
-// A source the index does not hold is lit nowhere, and the window is told a
-// list of no pages.
-func TestASourceNothingIsKnownAboutComesBackWithNoPages(t *testing.T) {
+// A source the index does not hold says nothing and is lit nowhere. It keeps
+// its place in the answer, so a caller still reads one run per run it asked
+// about.
+func TestASourceNothingIsKnownAboutComesBackEmpty(t *testing.T) {
 	api, _, doc := placing(t)
 	api.Highlight.Sources = indexed{}
 
-	runs, err := highlights(api, book, where(t, doc, "Delta"))
+	runs, err := reads(api, book, where(t, doc, "Delta"))
 	if err != nil {
 		t.Fatalf("asked where a word is and was refused: %v", err)
 	}
-	if len(runs) != 0 {
-		t.Errorf("a source nothing is known about came back as %+v", runs)
+	if len(runs) != 1 {
+		t.Fatalf("one place was asked about and %d came back: %+v", len(runs), runs)
+	}
+	if runs[0].GetText() != "" || len(runs[0].GetBoxes()) != 0 {
+		t.Errorf("a source nothing is known about came back as %+v", runs[0])
 	}
 }
 
@@ -151,7 +163,7 @@ func TestAPathTheVaultDoesNotHoldIsNotLit(t *testing.T) {
 		t.Run(path, func(t *testing.T) {
 			api, _, _ := placing(t)
 
-			_, err := highlights(api, path, &v1.Span{From: 0, To: 5})
+			_, err := reads(api, path, &v1.Span{From: 0, To: 5})
 			if code := connect.CodeOf(err); code != connect.CodeNotFound &&
 				code != connect.CodeInvalidArgument {
 				t.Errorf("%s was refused %v", path, err)
@@ -174,7 +186,7 @@ func TestARunThatIsNotOneIsRefused(t *testing.T) {
 		t.Run(one.what, func(t *testing.T) {
 			api, _, _ := placing(t)
 
-			if _, err := highlights(api, book, one.at...); connect.CodeOf(err) != connect.CodeInvalidArgument {
+			if _, err := reads(api, book, one.at...); connect.CodeOf(err) != connect.CodeInvalidArgument {
 				t.Errorf("asking about %s was refused %v", one.what, err)
 			}
 		})
