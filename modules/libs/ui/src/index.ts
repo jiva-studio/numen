@@ -7,8 +7,8 @@
 import './shared/tokens/theme.css'
 import './shared/tokens/window.css'
 
-export { default as Plex } from './plex/Plex.vue'
-export { seatWord } from './plex/seat'
+export { default as Plex } from './features/plex/Plex.vue'
+export { seatWord } from './features/plex/seat'
 
 export { Menu, grouped } from './shared/ui/menu'
 export type { MenuItem, MenuOpening } from './shared/ui/menu'
@@ -40,32 +40,32 @@ export type { Day } from './shared/ui/weekday-chips'
 
 export { DueCount } from './features/cards/due-count'
 /** What a person did on each day, as a grid of weeks. */
-export { default as Heatmap } from './heatmap/Heatmap.vue'
-export { dayName as heatmapDayName } from './heatmap/dates'
-export type { Words as HeatmapWords } from './heatmap/words'
+export { default as Heatmap } from './features/heatmap/Heatmap.vue'
+export { dayName as heatmapDayName } from './features/heatmap/dates'
+export type { Words as HeatmapWords } from './features/heatmap/words'
 /** A day of the calendar, written down, read back and counted against another. */
 export { dayAfter, dayNamed, dayOf, daysBetween, isDay } from './shared/lib/day'
-export type { Tally as HeatmapTally } from './heatmap/heatmap'
-export { default as WelcomePage } from './welcome/WelcomePage.vue'
+export type { Tally as HeatmapTally } from './features/heatmap/heatmap'
+export { default as WelcomePage } from './features/welcome/WelcomePage.vue'
 /** The letter a vault on that screen is opened by, and what a keystroke opens. */
-export { opensVault, typing } from './welcome/letters'
-export type { VaultRow, WelcomeAction } from './welcome/welcome'
+export { opensVault, typing } from './features/welcome/letters'
+export type { VaultRow, WelcomeAction } from './features/welcome/welcome'
 
-export { default as Palette } from './palette/Palette.vue'
+export { default as Palette } from './features/palette/Palette.vue'
 export { KeyCap } from './shared/ui/key-cap'
-export { commandKeyChord, keyChord } from './palette/item'
-export type { ActionWords, PaletteItem, PaletteGroup } from './palette/item'
+export { commandKeyChord, keyChord } from './features/palette/item'
+export type { ActionWords, PaletteItem, PaletteGroup } from './features/palette/item'
 export type { PaletteKeys } from './shared/ui/key-cap'
 
 /** The size a node's label is being set at, and the plex drawn to hold it. */
-export { optionsForType, useTypeSize } from './plex/sizing'
+export { optionsForType, useTypeSize } from './features/plex/sizing'
 
-export { default as Editor } from './editor/Editor.vue'
+export { default as Editor } from './features/editor/Editor.vue'
 /** A time against every line of an editor, and the line being said now. */
-export { timing } from './editor/timing'
+export { timing } from './features/editor/timing'
 
 /** The controls a recording is played by. What plays is somewhere else. */
-export { default as Player } from './player/Player.vue'
+export { default as Player } from './features/player/Player.vue'
 export { clock } from './shared/lib/duration'
 
 /** A stream taken up again for as long as a window is open. */
@@ -74,10 +74,10 @@ export { following } from './shared/lib/stream'
 export { Spinner } from './shared/ui/spinner'
 export { Skeleton } from './shared/ui/skeleton'
 
-export type { Turn } from './thread/turn'
-export { conversation } from './thread/conversation'
-export type { Conversation } from './thread/conversation'
-export type { AgentPort, AgentStep } from './thread/agent'
+export type { Turn } from './features/thread/turn'
+export { conversation } from './features/thread/conversation'
+export type { Conversation } from './features/thread/conversation'
+export type { AgentPort, AgentStep } from './features/thread/agent'
 
 /** A link to a note: `[[name]]` in the text, `note://<identifier>` inside it. */
 export { pointsAtNote, wikilinksIn } from './shared/lib/address'
@@ -91,25 +91,25 @@ export { many, percent, plural } from './shared/lib/digits'
 export { Prose } from './shared/ui/prose'
 
 /** What a count counts, and how a notice about it reads. */
-export type { TallyUnit, Tone } from './activity/tally'
+export type { TallyUnit, Tone } from './features/notices/activity/tally'
 
-export { default as Notices } from './notices/Notices.vue'
-export { noticed } from './notices/notice'
-export type { Notice, Stay, Task } from './notices/notice'
+export { default as Notices } from './features/notices/Notices.vue'
+export { noticed } from './features/notices/notice'
+export type { Notice, Stay, Task } from './features/notices/notice'
 
 export { default as Agent } from './screens/Agent.vue'
-export { default as Reader } from './reader/Reader.vue'
+export { default as Reader } from './features/reader/Reader.vue'
 
-export { default as WorkspaceLayout } from './workspace/WorkspaceLayout.vue'
-export { closeTab, openTab, openTabBeside } from './workspace/edit'
+export { default as WorkspaceLayout } from './features/workspace/WorkspaceLayout.vue'
+export { closeTab, openTab, openTabBeside } from './features/workspace/edit'
 
 /** For arranging without drawing, or reading a gesture without this renderer. */
-export { branch, pane } from './workspace/node'
-export { paneById, panesOf } from './workspace/tree'
-export type { Tab, Workspace } from './workspace/node'
+export { branch, pane } from './features/workspace/node'
+export { paneById, panesOf } from './features/workspace/tree'
+export type { Tab, Workspace } from './features/workspace/node'
 
-export { default as Tree } from './tree/Tree.vue'
-export type { Row, RowMarker } from './tree/row'
+export { default as Tree } from './features/tree/Tree.vue'
+export type { Row, RowMarker } from './features/tree/row'
 
 export { StencilEditor } from './features/cards/stencil-editor'
 export { DeckEditor } from './features/cards/deck-editor'
@@ -129,11 +129,11 @@ export { declared as cardFields } from './features/cards/order'
 export type { DeckCard, DeckSection } from './features/cards/deck'
 export type { Stencil } from './features/cards/card'
 
-export { byHolding } from './plex/reaching'
-export { byDoubleTap } from './plex/showing'
-export type { PlexPart } from './plex/inside'
-export type { EdgeArrow, PlexEdge } from './plex/edge'
-export type { PlexNeighbourhood } from './plex/neighbourhood'
-export type { PlexNode, Position } from './plex/node'
-export type { PlexRelatedSeat } from './plex/seat'
-export type { PlexShowing } from './plex/showing'
+export { byHolding } from './features/plex/reaching'
+export { byDoubleTap } from './features/plex/showing'
+export type { PlexPart } from './features/plex/inside'
+export type { EdgeArrow, PlexEdge } from './features/plex/edge'
+export type { PlexNeighbourhood } from './features/plex/neighbourhood'
+export type { PlexNode, Position } from './features/plex/node'
+export type { PlexRelatedSeat } from './features/plex/seat'
+export type { PlexShowing } from './features/plex/showing'
