@@ -22,13 +22,9 @@ const settled = {
   id: '01JQVAULTPHYSICS0000000000',
   name: 'Vault',
   path: '/vaults/Physics',
-  ready: true,
-  failed: '',
-  unwatched: '',
-  unreachable: '',
-  chunkCount: 0n,
-  embeddedCount: 0n,
-  embedding: false,
+  scan: { ready: true, failed: '', unwatched: '' },
+  coverage: { chunkCount: 0n, embeddedCount: 0n, embedding: false },
+  agentUnreachable: '',
 }
 
 /** A core that answers whatever it is told to, and records what it was asked. */
@@ -396,7 +392,10 @@ describe('a vault that could not be read', () => {
   it('stops the waiting and is not called empty', async () => {
     const core = fake({
       opening: async () => null,
-      state: async () => ({ ...settled, ready: false, failed: 'permission denied' }),
+      state: async () => ({
+        ...settled,
+        scan: { ready: false, failed: 'permission denied', unwatched: '' },
+      }),
     })
     const window = showing(core, { wait: async () => window.close() })
 
@@ -423,7 +422,12 @@ describe('a vault with a note in it', () => {
 
 describe('a vault that is not being followed', () => {
   it('says so rather than looking up to date', async () => {
-    const core = fake({ state: async () => ({ ...settled, unwatched: 'too many watches' }) })
+    const core = fake({
+      state: async () => ({
+        ...settled,
+        scan: { ...settled.scan, unwatched: 'too many watches' },
+      }),
+    })
     const window = showing(core, { wait: async () => window.close() })
 
     await window.start()
@@ -436,7 +440,10 @@ describe('a vault that is not being followed', () => {
 describe('chunks with nothing to embed them', () => {
   it('says so, since the vault is searched by its words from now on', async () => {
     const core = fake({
-      state: async () => ({ ...settled, chunkCount: 4823n, embeddedCount: 0n, embedding: false }),
+      state: async () => ({
+        ...settled,
+        coverage: { chunkCount: 4823n, embeddedCount: 0n, embedding: false },
+      }),
     })
     const window = showing(core, { wait: async () => window.close() })
 
@@ -539,7 +546,10 @@ describe('what the application is doing', () => {
       },
       state: async () => {
         asks++
-        return { ...settled, chunkCount: BigInt(asks * 1000), embedding: false }
+        return {
+          ...settled,
+          coverage: { ...settled.coverage, chunkCount: BigInt(asks * 1000) },
+        }
       },
       tasks: async function* () {
         yield [reading(16)]

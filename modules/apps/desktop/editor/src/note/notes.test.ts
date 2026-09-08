@@ -8,13 +8,9 @@ const idle = {
   id: '',
   name: '',
   path: '',
-  ready: true,
-  failed: '',
-  unwatched: '',
-  unreachable: '',
-  chunkCount: 0n,
-  embeddedCount: 0n,
-  embedding: false,
+  scan: { ready: true, failed: '', unwatched: '' },
+  coverage: { chunkCount: 0n, embeddedCount: 0n, embedding: false },
+  agentUnreachable: '',
 }
 
 /** A file's fingerprint, which follows what the file holds. */

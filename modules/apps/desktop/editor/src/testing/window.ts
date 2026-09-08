@@ -225,13 +225,9 @@ vi.mock('../vault', () => ({
     state: async () => ({
       name: 'Vault',
       path: '/vaults/Physics',
-      ready: said.ready,
-      failed: said.failed,
-      unwatched: '',
-      unreachable: '',
-      chunkCount: 0n,
-      embeddedCount: BigInt(said.embedded),
-      embedding: false,
+      scan: { ready: said.ready, failed: said.failed, unwatched: '' },
+      coverage: { chunkCount: 0n, embeddedCount: BigInt(said.embedded), embedding: false },
+      agentUnreachable: '',
     }),
     opening: async () => (said.opening ? { path: said.opening } : null),
     neighbourhood: async (path: string) => ({

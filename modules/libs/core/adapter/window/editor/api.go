@@ -409,21 +409,23 @@ func (a *API) GetVaultState(
 ) (*connect.Response[v1.GetVaultStateResponse], error) {
 	showing := a.Showing()
 	out := &v1.GetVaultStateResponse{
-		Id:          string(showing.ID),
-		Name:        showing.Name,
-		Path:        showing.Path,
-		Ready:       a.Ready.Load(),
-		Failed:      a.Failed.Why(),
-		Unwatched:   a.Unwatched.Why(),
-		Unreachable: a.Unreachable.Why(),
-		Embedding:   text(&a.Indexing.Model) != "",
+		Id:   string(showing.ID),
+		Name: showing.Name,
+		Path: showing.Path,
+		Scan: &v1.Scan{
+			Ready:     a.Ready.Load(),
+			Failed:    a.Failed.Why(),
+			Unwatched: a.Unwatched.Why(),
+		},
+		Coverage:         &v1.IndexCoverage{Embedding: text(&a.Indexing.Model) != ""},
+		AgentUnreachable: a.Unreachable.Why(),
 	}
 	// A count that cannot be taken leaves the pair at nothing, and the rest of
 	// the state is answered as it stands. A window standing on nothing holds no
 	// chunks and counts none.
 	if a.Indexing.Progress != nil && showing.ID != "" {
 		if held, embedded, err := a.Indexing.Progress.Progress(ctx, showing.ID, text(&a.Indexing.Recipe)); err == nil {
-			out.ChunkCount, out.EmbeddedCount = held, embedded
+			out.Coverage.ChunkCount, out.Coverage.EmbeddedCount = held, embedded
 		}
 	}
 	return connect.NewResponse(out), nil

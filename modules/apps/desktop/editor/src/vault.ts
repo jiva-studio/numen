@@ -149,7 +149,25 @@ export const core: Core & SearchDeps & CommandsDeps = {
   vaults: () => vaults.list(),
   neighbourhood: async (path) => around(await notes.getNeighbourhood({ path })),
   opening: async () => (await notes.getOpeningNote({})).note ?? null,
-  state: () => vault.getVaultState({}),
+  state: async () => {
+    const said = await vault.getVaultState({})
+    return {
+      id: said.id,
+      name: said.name,
+      path: said.path,
+      scan: {
+        ready: said.scan?.ready ?? false,
+        failed: said.scan?.failed ?? '',
+        unwatched: said.scan?.unwatched ?? '',
+      },
+      coverage: {
+        chunkCount: said.coverage?.chunkCount ?? 0n,
+        embeddedCount: said.coverage?.embeddedCount ?? 0n,
+        embedding: said.coverage?.embedding ?? false,
+      },
+      agentUnreachable: said.agentUnreachable,
+    }
+  },
   changes: async function* (signal) {
     for await (const change of vault.watchVaultChanges({}, { signal })) {
       yield {

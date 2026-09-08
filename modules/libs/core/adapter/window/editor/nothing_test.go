@@ -122,15 +122,15 @@ func TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 	if got := state.Msg; got.GetName() != "" || got.GetPath() != "" {
 		t.Errorf("the window says it is showing %q at %q", got.GetName(), got.GetPath())
 	}
-	if !state.Msg.GetReady() {
+	if !state.Msg.GetScan().GetReady() {
 		t.Error("the window says it is still being read, and nothing is reading")
 	}
-	if reason := state.Msg.GetFailed(); reason != "" {
+	if reason := state.Msg.GetScan().GetFailed(); reason != "" {
 		t.Errorf("the window says it could not be read: %s", reason)
 	}
-	if state.Msg.GetChunkCount() != 0 || state.Msg.GetEmbeddedCount() != 0 {
+	if state.Msg.GetCoverage().GetChunkCount() != 0 || state.Msg.GetCoverage().GetEmbeddedCount() != 0 {
 		t.Errorf("the window counted %d chunks and %d of them embedded",
-			state.Msg.GetChunkCount(), state.Msg.GetEmbeddedCount())
+			state.Msg.GetCoverage().GetChunkCount(), state.Msg.GetCoverage().GetEmbeddedCount())
 	}
 
 	opening, err := f.vault.GetOpeningNote(t.Context(), connect.NewRequest(&v1.GetOpeningNoteRequest{}))
@@ -422,10 +422,10 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if reason := state.Msg.GetFailed(); reason != "" {
+		if reason := state.Msg.GetScan().GetFailed(); reason != "" {
 			t.Fatalf("the vault could not be read: %s", reason)
 		}
-		if state.Msg.GetReady() {
+		if state.Msg.GetScan().GetReady() {
 			if got := state.Msg.GetName(); got != "the first one" {
 				t.Errorf("the window says it is showing %q", got)
 			}

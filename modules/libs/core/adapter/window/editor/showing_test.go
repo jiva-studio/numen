@@ -131,9 +131,9 @@ func (f *showing) read(t *testing.T) {
 	t.Helper()
 
 	for range 400 {
-		if state := f.state(t); state.GetReady() {
+		if state := f.state(t); state.GetScan().GetReady() {
 			return
-		} else if reason := state.GetFailed(); reason != "" {
+		} else if reason := state.GetScan().GetFailed(); reason != "" {
 			t.Fatalf("the vault could not be read: %s", reason)
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -368,7 +368,7 @@ func TestTheVaultAlreadyShownIsNotOpenedAgain(t *testing.T) {
 	if err := f.opened.Show(t.Context(), f.first); err != nil {
 		t.Fatalf("the vault already shown was refused: %v", err)
 	}
-	if state := f.state(t); !state.GetReady() {
+	if state := f.state(t); !state.GetScan().GetReady() {
 		t.Error("the vault already shown is being read again")
 	}
 	if got := f.named(t, "Entropy"); len(got) == 0 {
@@ -402,7 +402,7 @@ func TestAVaultThatCannotBeShownIsRefusedAndTheWindowStays(t *testing.T) {
 				t.Fatal("the window opened a vault it cannot read")
 			}
 			state := f.state(t)
-			if state.GetName() != "one" || !state.GetReady() {
+			if state.GetName() != "one" || !state.GetScan().GetReady() {
 				t.Errorf("the window is on %+v", state)
 			}
 			if got := f.named(t, "Entropy"); len(got) == 0 {

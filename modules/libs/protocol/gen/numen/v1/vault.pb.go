@@ -74,29 +74,16 @@ type GetVaultStateResponse struct {
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Where the vault stands on this disk.
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
-	// Ready is set when the scan has finished.
-	Ready bool `protobuf:"varint,4,opt,name=ready,proto3" json:"ready,omitempty"`
-	// Why the scan stopped, when it stopped for a reason. A vault that could
-	// not be read is not an empty one.
-	Failed string `protobuf:"bytes,5,opt,name=failed,proto3" json:"failed,omitempty"`
-	// Why the vault is not being followed, when it is not. Changes will only
-	// appear when something asks for them again.
-	Unwatched string `protobuf:"bytes,6,opt,name=unwatched,proto3" json:"unwatched,omitempty"`
+	// How far reading the vault has got.
+	Scan *Scan `protobuf:"bytes,4,opt,name=scan,proto3" json:"scan,omitempty"`
+	// How far searching it by meaning has got.
+	Coverage *IndexCoverage `protobuf:"bytes,5,opt,name=coverage,proto3" json:"coverage,omitempty"`
 	// Why an agent cannot be reached, when one cannot. The window works and the
-	// panel says this instead of answering.
-	Unreachable string `protobuf:"bytes,7,opt,name=unreachable,proto3" json:"unreachable,omitempty"`
-	// ChunkCount is how many spans of text the index holds, and EmbeddedCount is
-	// how many of those carry a vector. Cutting finishes long before embedding
-	// does, so the pair is what says how far searching by meaning has got. Both
-	// are zero for a vault nothing has cut yet.
-	ChunkCount    int64 `protobuf:"varint,8,opt,name=chunk_count,json=chunkCount,proto3" json:"chunk_count,omitempty"`
-	EmbeddedCount int64 `protobuf:"varint,9,opt,name=embedded_count,json=embeddedCount,proto3" json:"embedded_count,omitempty"`
-	// Embedding says whether anything is going to turn the chunks into vectors.
-	// False for an installation with no model, where `embedded_count` stays where
-	// it is and the vault is searched by its words.
-	Embedding     bool `protobuf:"varint,10,opt,name=embedding,proto3" json:"embedding,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// panel says this instead of answering. It is the agent's and not the
+	// vault's, and rides here because this is what a window already asks.
+	AgentUnreachable string `protobuf:"bytes,6,opt,name=agent_unreachable,json=agentUnreachable,proto3" json:"agent_unreachable,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *GetVaultStateResponse) Reset() {
@@ -150,49 +137,159 @@ func (x *GetVaultStateResponse) GetPath() string {
 	return ""
 }
 
-func (x *GetVaultStateResponse) GetReady() bool {
+func (x *GetVaultStateResponse) GetScan() *Scan {
+	if x != nil {
+		return x.Scan
+	}
+	return nil
+}
+
+func (x *GetVaultStateResponse) GetCoverage() *IndexCoverage {
+	if x != nil {
+		return x.Coverage
+	}
+	return nil
+}
+
+func (x *GetVaultStateResponse) GetAgentUnreachable() string {
+	if x != nil {
+		return x.AgentUnreachable
+	}
+	return ""
+}
+
+// Scan is how far reading a vault has got, and what stopped it.
+type Scan struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Ready is set when the scan has finished.
+	Ready bool `protobuf:"varint,1,opt,name=ready,proto3" json:"ready,omitempty"`
+	// Why the scan stopped, when it stopped for a reason. A vault that could not
+	// be read is not an empty one.
+	Failed string `protobuf:"bytes,2,opt,name=failed,proto3" json:"failed,omitempty"`
+	// Why the vault is not being followed, when it is not. Changes will only
+	// appear when something asks for them again.
+	Unwatched     string `protobuf:"bytes,3,opt,name=unwatched,proto3" json:"unwatched,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Scan) Reset() {
+	*x = Scan{}
+	mi := &file_numen_v1_vault_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Scan) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Scan) ProtoMessage() {}
+
+func (x *Scan) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_vault_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Scan.ProtoReflect.Descriptor instead.
+func (*Scan) Descriptor() ([]byte, []int) {
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Scan) GetReady() bool {
 	if x != nil {
 		return x.Ready
 	}
 	return false
 }
 
-func (x *GetVaultStateResponse) GetFailed() string {
+func (x *Scan) GetFailed() string {
 	if x != nil {
 		return x.Failed
 	}
 	return ""
 }
 
-func (x *GetVaultStateResponse) GetUnwatched() string {
+func (x *Scan) GetUnwatched() string {
 	if x != nil {
 		return x.Unwatched
 	}
 	return ""
 }
 
-func (x *GetVaultStateResponse) GetUnreachable() string {
-	if x != nil {
-		return x.Unreachable
-	}
-	return ""
+// IndexCoverage is how far searching a vault by meaning has got.
+//
+// A search by meaning is asked of the vectors, and a vault holding none answers
+// nothing however it is asked. Which of three states it stands in is what the
+// person is told, so all three travel: no model at all, a model with nothing
+// embedded yet, and a vault that answers.
+type IndexCoverage struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ChunkCount is how many spans of text the index holds, and EmbeddedCount how
+	// many of those carry a vector. Cutting finishes long before embedding does.
+	// Both are zero for a vault nothing has cut yet.
+	ChunkCount    int64 `protobuf:"varint,1,opt,name=chunk_count,json=chunkCount,proto3" json:"chunk_count,omitempty"`
+	EmbeddedCount int64 `protobuf:"varint,2,opt,name=embedded_count,json=embeddedCount,proto3" json:"embedded_count,omitempty"`
+	// Embedding says whether anything is going to turn the spans into vectors.
+	// False for an installation with no model, where the vault is searched by its
+	// words alone.
+	Embedding     bool `protobuf:"varint,3,opt,name=embedding,proto3" json:"embedding,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetVaultStateResponse) GetChunkCount() int64 {
+func (x *IndexCoverage) Reset() {
+	*x = IndexCoverage{}
+	mi := &file_numen_v1_vault_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IndexCoverage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IndexCoverage) ProtoMessage() {}
+
+func (x *IndexCoverage) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_vault_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IndexCoverage.ProtoReflect.Descriptor instead.
+func (*IndexCoverage) Descriptor() ([]byte, []int) {
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *IndexCoverage) GetChunkCount() int64 {
 	if x != nil {
 		return x.ChunkCount
 	}
 	return 0
 }
 
-func (x *GetVaultStateResponse) GetEmbeddedCount() int64 {
+func (x *IndexCoverage) GetEmbeddedCount() int64 {
 	if x != nil {
 		return x.EmbeddedCount
 	}
 	return 0
 }
 
-func (x *GetVaultStateResponse) GetEmbedding() bool {
+func (x *IndexCoverage) GetEmbedding() bool {
 	if x != nil {
 		return x.Embedding
 	}
@@ -207,7 +304,7 @@ type WatchVaultChangesRequest struct {
 
 func (x *WatchVaultChangesRequest) Reset() {
 	*x = WatchVaultChangesRequest{}
-	mi := &file_numen_v1_vault_proto_msgTypes[2]
+	mi := &file_numen_v1_vault_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -219,7 +316,7 @@ func (x *WatchVaultChangesRequest) String() string {
 func (*WatchVaultChangesRequest) ProtoMessage() {}
 
 func (x *WatchVaultChangesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[2]
+	mi := &file_numen_v1_vault_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -232,7 +329,7 @@ func (x *WatchVaultChangesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchVaultChangesRequest.ProtoReflect.Descriptor instead.
 func (*WatchVaultChangesRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{2}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{4}
 }
 
 type WatchVaultChangesResponse struct {
@@ -252,7 +349,7 @@ type WatchVaultChangesResponse struct {
 
 func (x *WatchVaultChangesResponse) Reset() {
 	*x = WatchVaultChangesResponse{}
-	mi := &file_numen_v1_vault_proto_msgTypes[3]
+	mi := &file_numen_v1_vault_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -264,7 +361,7 @@ func (x *WatchVaultChangesResponse) String() string {
 func (*WatchVaultChangesResponse) ProtoMessage() {}
 
 func (x *WatchVaultChangesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[3]
+	mi := &file_numen_v1_vault_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -277,7 +374,7 @@ func (x *WatchVaultChangesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchVaultChangesResponse.ProtoReflect.Descriptor instead.
 func (*WatchVaultChangesResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *WatchVaultChangesResponse) GetPaths() []string {
@@ -315,7 +412,7 @@ type Move struct {
 
 func (x *Move) Reset() {
 	*x = Move{}
-	mi := &file_numen_v1_vault_proto_msgTypes[4]
+	mi := &file_numen_v1_vault_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -327,7 +424,7 @@ func (x *Move) String() string {
 func (*Move) ProtoMessage() {}
 
 func (x *Move) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[4]
+	mi := &file_numen_v1_vault_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -340,7 +437,7 @@ func (x *Move) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Move.ProtoReflect.Descriptor instead.
 func (*Move) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Move) GetFrom() string {
@@ -365,7 +462,7 @@ type WatchFocusRequest struct {
 
 func (x *WatchFocusRequest) Reset() {
 	*x = WatchFocusRequest{}
-	mi := &file_numen_v1_vault_proto_msgTypes[5]
+	mi := &file_numen_v1_vault_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -377,7 +474,7 @@ func (x *WatchFocusRequest) String() string {
 func (*WatchFocusRequest) ProtoMessage() {}
 
 func (x *WatchFocusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[5]
+	mi := &file_numen_v1_vault_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -390,7 +487,7 @@ func (x *WatchFocusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchFocusRequest.ProtoReflect.Descriptor instead.
 func (*WatchFocusRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{7}
 }
 
 type WatchFocusResponse struct {
@@ -412,7 +509,7 @@ type WatchFocusResponse struct {
 
 func (x *WatchFocusResponse) Reset() {
 	*x = WatchFocusResponse{}
-	mi := &file_numen_v1_vault_proto_msgTypes[6]
+	mi := &file_numen_v1_vault_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -424,7 +521,7 @@ func (x *WatchFocusResponse) String() string {
 func (*WatchFocusResponse) ProtoMessage() {}
 
 func (x *WatchFocusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[6]
+	mi := &file_numen_v1_vault_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -437,7 +534,7 @@ func (x *WatchFocusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchFocusResponse.ProtoReflect.Descriptor instead.
 func (*WatchFocusResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *WatchFocusResponse) GetPath() string {
@@ -481,7 +578,7 @@ type WriteOpenTabsRequest struct {
 
 func (x *WriteOpenTabsRequest) Reset() {
 	*x = WriteOpenTabsRequest{}
-	mi := &file_numen_v1_vault_proto_msgTypes[7]
+	mi := &file_numen_v1_vault_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -493,7 +590,7 @@ func (x *WriteOpenTabsRequest) String() string {
 func (*WriteOpenTabsRequest) ProtoMessage() {}
 
 func (x *WriteOpenTabsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[7]
+	mi := &file_numen_v1_vault_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -506,7 +603,7 @@ func (x *WriteOpenTabsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteOpenTabsRequest.ProtoReflect.Descriptor instead.
 func (*WriteOpenTabsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *WriteOpenTabsRequest) GetTabs() []*Tab {
@@ -531,7 +628,7 @@ type WriteOpenTabsResponse struct {
 
 func (x *WriteOpenTabsResponse) Reset() {
 	*x = WriteOpenTabsResponse{}
-	mi := &file_numen_v1_vault_proto_msgTypes[8]
+	mi := &file_numen_v1_vault_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -543,7 +640,7 @@ func (x *WriteOpenTabsResponse) String() string {
 func (*WriteOpenTabsResponse) ProtoMessage() {}
 
 func (x *WriteOpenTabsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[8]
+	mi := &file_numen_v1_vault_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -556,7 +653,7 @@ func (x *WriteOpenTabsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteOpenTabsResponse.ProtoReflect.Descriptor instead.
 func (*WriteOpenTabsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{10}
 }
 
 // A Tab is one tab of the window: what kind it is, and what it holds.
@@ -585,7 +682,7 @@ type Tab struct {
 
 func (x *Tab) Reset() {
 	*x = Tab{}
-	mi := &file_numen_v1_vault_proto_msgTypes[9]
+	mi := &file_numen_v1_vault_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -597,7 +694,7 @@ func (x *Tab) String() string {
 func (*Tab) ProtoMessage() {}
 
 func (x *Tab) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[9]
+	mi := &file_numen_v1_vault_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -610,7 +707,7 @@ func (x *Tab) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Tab.ProtoReflect.Descriptor instead.
 func (*Tab) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *Tab) GetId() string {
@@ -668,7 +765,7 @@ type DocumentProgress struct {
 
 func (x *DocumentProgress) Reset() {
 	*x = DocumentProgress{}
-	mi := &file_numen_v1_vault_proto_msgTypes[10]
+	mi := &file_numen_v1_vault_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -680,7 +777,7 @@ func (x *DocumentProgress) String() string {
 func (*DocumentProgress) ProtoMessage() {}
 
 func (x *DocumentProgress) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[10]
+	mi := &file_numen_v1_vault_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -693,7 +790,7 @@ func (x *DocumentProgress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DocumentProgress.ProtoReflect.Descriptor instead.
 func (*DocumentProgress) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{10}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *DocumentProgress) GetPage() int32 {
@@ -725,7 +822,7 @@ type RecordingProgress struct {
 
 func (x *RecordingProgress) Reset() {
 	*x = RecordingProgress{}
-	mi := &file_numen_v1_vault_proto_msgTypes[11]
+	mi := &file_numen_v1_vault_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -737,7 +834,7 @@ func (x *RecordingProgress) String() string {
 func (*RecordingProgress) ProtoMessage() {}
 
 func (x *RecordingProgress) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[11]
+	mi := &file_numen_v1_vault_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -750,7 +847,7 @@ func (x *RecordingProgress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecordingProgress.ProtoReflect.Descriptor instead.
 func (*RecordingProgress) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{11}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *RecordingProgress) GetTranscribedDurationMs() int32 {
@@ -772,20 +869,23 @@ var File_numen_v1_vault_proto protoreflect.FileDescriptor
 const file_numen_v1_vault_proto_rawDesc = "" +
 	"\n" +
 	"\x14numen/v1/vault.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x16\n" +
-	"\x14GetVaultStateRequest\"\xa3\x02\n" +
+	"\x14GetVaultStateRequest\"\xd5\x01\n" +
 	"\x15GetVaultStateResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
-	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
-	"\x05ready\x18\x04 \x01(\bR\x05ready\x12\x16\n" +
-	"\x06failed\x18\x05 \x01(\tR\x06failed\x12\x1c\n" +
-	"\tunwatched\x18\x06 \x01(\tR\tunwatched\x12 \n" +
-	"\vunreachable\x18\a \x01(\tR\vunreachable\x12\x1f\n" +
-	"\vchunk_count\x18\b \x01(\x03R\n" +
+	"\x04path\x18\x03 \x01(\tR\x04path\x12\"\n" +
+	"\x04scan\x18\x04 \x01(\v2\x0e.numen.v1.ScanR\x04scan\x123\n" +
+	"\bcoverage\x18\x05 \x01(\v2\x17.numen.v1.IndexCoverageR\bcoverage\x12+\n" +
+	"\x11agent_unreachable\x18\x06 \x01(\tR\x10agentUnreachable\"R\n" +
+	"\x04Scan\x12\x14\n" +
+	"\x05ready\x18\x01 \x01(\bR\x05ready\x12\x16\n" +
+	"\x06failed\x18\x02 \x01(\tR\x06failed\x12\x1c\n" +
+	"\tunwatched\x18\x03 \x01(\tR\tunwatched\"u\n" +
+	"\rIndexCoverage\x12\x1f\n" +
+	"\vchunk_count\x18\x01 \x01(\x03R\n" +
 	"chunkCount\x12%\n" +
-	"\x0eembedded_count\x18\t \x01(\x03R\rembeddedCount\x12\x1c\n" +
-	"\tembedding\x18\n" +
-	" \x01(\bR\tembedding\"\x1a\n" +
+	"\x0eembedded_count\x18\x02 \x01(\x03R\rembeddedCount\x12\x1c\n" +
+	"\tembedding\x18\x03 \x01(\bR\tembedding\"\x1a\n" +
 	"\x18WatchVaultChangesRequest\"s\n" +
 	"\x19WatchVaultChangesResponse\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\x12\x16\n" +
@@ -838,41 +938,45 @@ func file_numen_v1_vault_proto_rawDescGZIP() []byte {
 	return file_numen_v1_vault_proto_rawDescData
 }
 
-var file_numen_v1_vault_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_numen_v1_vault_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_numen_v1_vault_proto_goTypes = []any{
 	(*GetVaultStateRequest)(nil),      // 0: numen.v1.GetVaultStateRequest
 	(*GetVaultStateResponse)(nil),     // 1: numen.v1.GetVaultStateResponse
-	(*WatchVaultChangesRequest)(nil),  // 2: numen.v1.WatchVaultChangesRequest
-	(*WatchVaultChangesResponse)(nil), // 3: numen.v1.WatchVaultChangesResponse
-	(*Move)(nil),                      // 4: numen.v1.Move
-	(*WatchFocusRequest)(nil),         // 5: numen.v1.WatchFocusRequest
-	(*WatchFocusResponse)(nil),        // 6: numen.v1.WatchFocusResponse
-	(*WriteOpenTabsRequest)(nil),      // 7: numen.v1.WriteOpenTabsRequest
-	(*WriteOpenTabsResponse)(nil),     // 8: numen.v1.WriteOpenTabsResponse
-	(*Tab)(nil),                       // 9: numen.v1.Tab
-	(*DocumentProgress)(nil),          // 10: numen.v1.DocumentProgress
-	(*RecordingProgress)(nil),         // 11: numen.v1.RecordingProgress
-	(*Stretch)(nil),                   // 12: numen.v1.Stretch
+	(*Scan)(nil),                      // 2: numen.v1.Scan
+	(*IndexCoverage)(nil),             // 3: numen.v1.IndexCoverage
+	(*WatchVaultChangesRequest)(nil),  // 4: numen.v1.WatchVaultChangesRequest
+	(*WatchVaultChangesResponse)(nil), // 5: numen.v1.WatchVaultChangesResponse
+	(*Move)(nil),                      // 6: numen.v1.Move
+	(*WatchFocusRequest)(nil),         // 7: numen.v1.WatchFocusRequest
+	(*WatchFocusResponse)(nil),        // 8: numen.v1.WatchFocusResponse
+	(*WriteOpenTabsRequest)(nil),      // 9: numen.v1.WriteOpenTabsRequest
+	(*WriteOpenTabsResponse)(nil),     // 10: numen.v1.WriteOpenTabsResponse
+	(*Tab)(nil),                       // 11: numen.v1.Tab
+	(*DocumentProgress)(nil),          // 12: numen.v1.DocumentProgress
+	(*RecordingProgress)(nil),         // 13: numen.v1.RecordingProgress
+	(*Stretch)(nil),                   // 14: numen.v1.Stretch
 }
 var file_numen_v1_vault_proto_depIdxs = []int32{
-	4,  // 0: numen.v1.WatchVaultChangesResponse.renamed:type_name -> numen.v1.Move
-	12, // 1: numen.v1.WatchFocusResponse.also:type_name -> numen.v1.Stretch
-	9,  // 2: numen.v1.WriteOpenTabsRequest.tabs:type_name -> numen.v1.Tab
-	10, // 3: numen.v1.Tab.document:type_name -> numen.v1.DocumentProgress
-	11, // 4: numen.v1.Tab.recording:type_name -> numen.v1.RecordingProgress
-	0,  // 5: numen.v1.VaultService.GetVaultState:input_type -> numen.v1.GetVaultStateRequest
-	2,  // 6: numen.v1.VaultService.WatchVaultChanges:input_type -> numen.v1.WatchVaultChangesRequest
-	5,  // 7: numen.v1.VaultService.WatchFocus:input_type -> numen.v1.WatchFocusRequest
-	7,  // 8: numen.v1.VaultService.WriteOpenTabs:input_type -> numen.v1.WriteOpenTabsRequest
-	1,  // 9: numen.v1.VaultService.GetVaultState:output_type -> numen.v1.GetVaultStateResponse
-	3,  // 10: numen.v1.VaultService.WatchVaultChanges:output_type -> numen.v1.WatchVaultChangesResponse
-	6,  // 11: numen.v1.VaultService.WatchFocus:output_type -> numen.v1.WatchFocusResponse
-	8,  // 12: numen.v1.VaultService.WriteOpenTabs:output_type -> numen.v1.WriteOpenTabsResponse
-	9,  // [9:13] is the sub-list for method output_type
-	5,  // [5:9] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	2,  // 0: numen.v1.GetVaultStateResponse.scan:type_name -> numen.v1.Scan
+	3,  // 1: numen.v1.GetVaultStateResponse.coverage:type_name -> numen.v1.IndexCoverage
+	6,  // 2: numen.v1.WatchVaultChangesResponse.renamed:type_name -> numen.v1.Move
+	14, // 3: numen.v1.WatchFocusResponse.also:type_name -> numen.v1.Stretch
+	11, // 4: numen.v1.WriteOpenTabsRequest.tabs:type_name -> numen.v1.Tab
+	12, // 5: numen.v1.Tab.document:type_name -> numen.v1.DocumentProgress
+	13, // 6: numen.v1.Tab.recording:type_name -> numen.v1.RecordingProgress
+	0,  // 7: numen.v1.VaultService.GetVaultState:input_type -> numen.v1.GetVaultStateRequest
+	4,  // 8: numen.v1.VaultService.WatchVaultChanges:input_type -> numen.v1.WatchVaultChangesRequest
+	7,  // 9: numen.v1.VaultService.WatchFocus:input_type -> numen.v1.WatchFocusRequest
+	9,  // 10: numen.v1.VaultService.WriteOpenTabs:input_type -> numen.v1.WriteOpenTabsRequest
+	1,  // 11: numen.v1.VaultService.GetVaultState:output_type -> numen.v1.GetVaultStateResponse
+	5,  // 12: numen.v1.VaultService.WatchVaultChanges:output_type -> numen.v1.WatchVaultChangesResponse
+	8,  // 13: numen.v1.VaultService.WatchFocus:output_type -> numen.v1.WatchFocusResponse
+	10, // 14: numen.v1.VaultService.WriteOpenTabs:output_type -> numen.v1.WriteOpenTabsResponse
+	11, // [11:15] is the sub-list for method output_type
+	7,  // [7:11] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_vault_proto_init() }
@@ -887,7 +991,7 @@ func file_numen_v1_vault_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_vault_proto_rawDesc), len(file_numen_v1_vault_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

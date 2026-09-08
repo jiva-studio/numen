@@ -360,15 +360,12 @@ export interface Core {
     name: string
     /** The folder the vault sits in, absolute on this machine. */
     path: string
-    ready: boolean
-    failed: string
-    unwatched: string
-    unreachable: string
-    /** Spans of text the index holds, and how many of them carry a vector. */
-    chunkCount: bigint
-    embeddedCount: bigint
-    /** Whether anything is going to turn the chunks into vectors. */
-    embedding: boolean
+    /** How far reading the vault has got. */
+    scan: { ready: boolean; failed: string; unwatched: string }
+    /** How far searching it by meaning has got. */
+    coverage: { chunkCount: bigint; embeddedCount: bigint; embedding: boolean }
+    /** Why an agent cannot be reached, when one cannot. */
+    agentUnreachable: string
   }>
   changes(signal: AbortSignal): AsyncIterable<{
     paths: string[]

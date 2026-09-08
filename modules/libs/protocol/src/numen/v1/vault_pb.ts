@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QixgEKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFcmVhZHkYBCABKAgSDgoGZmFpbGVkGAUgASgJEhEKCXVud2F0Y2hlZBgGIAEoCRITCgt1bnJlYWNoYWJsZRgHIAEoCRITCgtjaHVua19jb3VudBgIIAEoAxIWCg5lbWJlZGRlZF9jb3VudBgJIAEoAxIRCgllbWJlZGRpbmcYCiABKAgiGgoYV2F0Y2hWYXVsdENoYW5nZXNSZXF1ZXN0IlsKGVdhdGNoVmF1bHRDaGFuZ2VzUmVzcG9uc2USDQoFcGF0aHMYASADKAkSDgoGcmVsb2FkGAIgASgIEh8KB3JlbmFtZWQYAyADKAsyDi5udW1lbi52MS5Nb3ZlIiAKBE1vdmUSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCSITChFXYXRjaEZvY3VzUmVxdWVzdCJiChJXYXRjaEZvY3VzUmVzcG9uc2USDAoEcGF0aBgBIAEoCRINCgVzdGFydBgCIAEoBRIOCgZsZW5ndGgYAyABKAUSHwoEYWxzbxgEIAMoCzIRLm51bWVuLnYxLlN0cmV0Y2giQgoUV3JpdGVPcGVuVGFic1JlcXVlc3QSGwoEdGFicxgBIAMoCzINLm51bWVuLnYxLlRhYhINCgVmcm9udBgCIAEoCSIXChVXcml0ZU9wZW5UYWJzUmVzcG9uc2UimgEKA1RhYhIKCgJpZBgBIAEoCRIMCgRraW5kGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFdGl0bGUYBCABKAkSLAoIZG9jdW1lbnQYBSABKAsyGi5udW1lbi52MS5Eb2N1bWVudFByb2dyZXNzEi4KCXJlY29yZGluZxgGIAEoCzIbLm51bWVuLnYxLlJlY29yZGluZ1Byb2dyZXNzIjQKEERvY3VtZW50UHJvZ3Jlc3MSDAoEcGFnZRgBIAEoBRISCgpwYWdlX2NvdW50GAIgASgFIkkKEVJlY29yZGluZ1Byb2dyZXNzEh8KF3RyYW5zY3JpYmVkX2R1cmF0aW9uX21zGAEgASgFEhMKC2R1cmF0aW9uX21zGAIgASgFMt0CCgxWYXVsdFNlcnZpY2USUAoNR2V0VmF1bHRTdGF0ZRIeLm51bWVuLnYxLkdldFZhdWx0U3RhdGVSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlc3BvbnNlEl4KEVdhdGNoVmF1bHRDaGFuZ2VzEiIubnVtZW4udjEuV2F0Y2hWYXVsdENoYW5nZXNSZXF1ZXN0GiMubnVtZW4udjEuV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZTABEkkKCldhdGNoRm9jdXMSGy5udW1lbi52MS5XYXRjaEZvY3VzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoRm9jdXNSZXNwb25zZTABElAKDVdyaXRlT3BlblRhYnMSHi5udW1lbi52MS5Xcml0ZU9wZW5UYWJzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QiowEKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSHAoEc2NhbhgEIAEoCzIOLm51bWVuLnYxLlNjYW4SKQoIY292ZXJhZ2UYBSABKAsyFy5udW1lbi52MS5JbmRleENvdmVyYWdlEhkKEWFnZW50X3VucmVhY2hhYmxlGAYgASgJIjgKBFNjYW4SDQoFcmVhZHkYASABKAgSDgoGZmFpbGVkGAIgASgJEhEKCXVud2F0Y2hlZBgDIAEoCSJPCg1JbmRleENvdmVyYWdlEhMKC2NodW5rX2NvdW50GAEgASgDEhYKDmVtYmVkZGVkX2NvdW50GAIgASgDEhEKCWVtYmVkZGluZxgDIAEoCCIaChhXYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QiWwoZV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZRINCgVwYXRocxgBIAMoCRIOCgZyZWxvYWQYAiABKAgSHwoHcmVuYW1lZBgDIAMoCzIOLm51bWVuLnYxLk1vdmUiIAoETW92ZRIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIhMKEVdhdGNoRm9jdXNSZXF1ZXN0ImIKEldhdGNoRm9jdXNSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBXN0YXJ0GAIgASgFEg4KBmxlbmd0aBgDIAEoBRIfCgRhbHNvGAQgAygLMhEubnVtZW4udjEuU3RyZXRjaCJCChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIhcKFVdyaXRlT3BlblRhYnNSZXNwb25zZSKaAQoDVGFiEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDAoEcGF0aBgDIAEoCRINCgV0aXRsZRgEIAEoCRIsCghkb2N1bWVudBgFIAEoCzIaLm51bWVuLnYxLkRvY3VtZW50UHJvZ3Jlc3MSLgoJcmVjb3JkaW5nGAYgASgLMhsubnVtZW4udjEuUmVjb3JkaW5nUHJvZ3Jlc3MiNAoQRG9jdW1lbnRQcm9ncmVzcxIMCgRwYWdlGAEgASgFEhIKCnBhZ2VfY291bnQYAiABKAUiSQoRUmVjb3JkaW5nUHJvZ3Jlc3MSHwoXdHJhbnNjcmliZWRfZHVyYXRpb25fbXMYASABKAUSEwoLZHVyYXRpb25fbXMYAiABKAUy3QIKDFZhdWx0U2VydmljZRJQCg1HZXRWYXVsdFN0YXRlEh4ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVzcG9uc2USXgoRV2F0Y2hWYXVsdENoYW5nZXMSIi5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QaIy5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlMAESSQoKV2F0Y2hGb2N1cxIbLm51bWVuLnYxLldhdGNoRm9jdXNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hGb2N1c1Jlc3BvbnNlMAESUAoNV3JpdGVPcGVuVGFicxIeLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVPcGVuVGFic1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetVaultStateRequest
@@ -62,59 +62,27 @@ export type GetVaultStateResponse = Message<"numen.v1.GetVaultStateResponse"> & 
   path: string;
 
   /**
-   * Ready is set when the scan has finished.
+   * How far reading the vault has got.
    *
-   * @generated from field: bool ready = 4;
+   * @generated from field: numen.v1.Scan scan = 4;
    */
-  ready: boolean;
+  scan?: Scan | undefined;
 
   /**
-   * Why the scan stopped, when it stopped for a reason. A vault that could
-   * not be read is not an empty one.
+   * How far searching it by meaning has got.
    *
-   * @generated from field: string failed = 5;
+   * @generated from field: numen.v1.IndexCoverage coverage = 5;
    */
-  failed: string;
-
-  /**
-   * Why the vault is not being followed, when it is not. Changes will only
-   * appear when something asks for them again.
-   *
-   * @generated from field: string unwatched = 6;
-   */
-  unwatched: string;
+  coverage?: IndexCoverage | undefined;
 
   /**
    * Why an agent cannot be reached, when one cannot. The window works and the
-   * panel says this instead of answering.
+   * panel says this instead of answering. It is the agent's and not the
+   * vault's, and rides here because this is what a window already asks.
    *
-   * @generated from field: string unreachable = 7;
+   * @generated from field: string agent_unreachable = 6;
    */
-  unreachable: string;
-
-  /**
-   * ChunkCount is how many spans of text the index holds, and EmbeddedCount is
-   * how many of those carry a vector. Cutting finishes long before embedding
-   * does, so the pair is what says how far searching by meaning has got. Both
-   * are zero for a vault nothing has cut yet.
-   *
-   * @generated from field: int64 chunk_count = 8;
-   */
-  chunkCount: bigint;
-
-  /**
-   * @generated from field: int64 embedded_count = 9;
-   */
-  embeddedCount: bigint;
-
-  /**
-   * Embedding says whether anything is going to turn the chunks into vectors.
-   * False for an installation with no model, where `embedded_count` stays where
-   * it is and the vault is searched by its words.
-   *
-   * @generated from field: bool embedding = 10;
-   */
-  embedding: boolean;
+  agentUnreachable: string;
 };
 
 /**
@@ -123,6 +91,85 @@ export type GetVaultStateResponse = Message<"numen.v1.GetVaultStateResponse"> & 
  */
 export const GetVaultStateResponseSchema: GenMessage<GetVaultStateResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 1);
+
+/**
+ * Scan is how far reading a vault has got, and what stopped it.
+ *
+ * @generated from message numen.v1.Scan
+ */
+export type Scan = Message<"numen.v1.Scan"> & {
+  /**
+   * Ready is set when the scan has finished.
+   *
+   * @generated from field: bool ready = 1;
+   */
+  ready: boolean;
+
+  /**
+   * Why the scan stopped, when it stopped for a reason. A vault that could not
+   * be read is not an empty one.
+   *
+   * @generated from field: string failed = 2;
+   */
+  failed: string;
+
+  /**
+   * Why the vault is not being followed, when it is not. Changes will only
+   * appear when something asks for them again.
+   *
+   * @generated from field: string unwatched = 3;
+   */
+  unwatched: string;
+};
+
+/**
+ * Describes the message numen.v1.Scan.
+ * Use `create(ScanSchema)` to create a new message.
+ */
+export const ScanSchema: GenMessage<Scan> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 2);
+
+/**
+ * IndexCoverage is how far searching a vault by meaning has got.
+ *
+ * A search by meaning is asked of the vectors, and a vault holding none answers
+ * nothing however it is asked. Which of three states it stands in is what the
+ * person is told, so all three travel: no model at all, a model with nothing
+ * embedded yet, and a vault that answers.
+ *
+ * @generated from message numen.v1.IndexCoverage
+ */
+export type IndexCoverage = Message<"numen.v1.IndexCoverage"> & {
+  /**
+   * ChunkCount is how many spans of text the index holds, and EmbeddedCount how
+   * many of those carry a vector. Cutting finishes long before embedding does.
+   * Both are zero for a vault nothing has cut yet.
+   *
+   * @generated from field: int64 chunk_count = 1;
+   */
+  chunkCount: bigint;
+
+  /**
+   * @generated from field: int64 embedded_count = 2;
+   */
+  embeddedCount: bigint;
+
+  /**
+   * Embedding says whether anything is going to turn the spans into vectors.
+   * False for an installation with no model, where the vault is searched by its
+   * words alone.
+   *
+   * @generated from field: bool embedding = 3;
+   */
+  embedding: boolean;
+};
+
+/**
+ * Describes the message numen.v1.IndexCoverage.
+ * Use `create(IndexCoverageSchema)` to create a new message.
+ */
+export const IndexCoverageSchema: GenMessage<IndexCoverage> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vault, 3);
 
 /**
  * @generated from message numen.v1.WatchVaultChangesRequest
@@ -135,7 +182,7 @@ export type WatchVaultChangesRequest = Message<"numen.v1.WatchVaultChangesReques
  * Use `create(WatchVaultChangesRequestSchema)` to create a new message.
  */
 export const WatchVaultChangesRequestSchema: GenMessage<WatchVaultChangesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 2);
+  messageDesc(file_numen_v1_vault, 4);
 
 /**
  * @generated from message numen.v1.WatchVaultChangesResponse
@@ -171,7 +218,7 @@ export type WatchVaultChangesResponse = Message<"numen.v1.WatchVaultChangesRespo
  * Use `create(WatchVaultChangesResponseSchema)` to create a new message.
  */
 export const WatchVaultChangesResponseSchema: GenMessage<WatchVaultChangesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 3);
+  messageDesc(file_numen_v1_vault, 5);
 
 /**
  * Move is a note that is no longer where it was. The bytes do not change on the
@@ -200,7 +247,7 @@ export type Move = Message<"numen.v1.Move"> & {
  * Use `create(MoveSchema)` to create a new message.
  */
 export const MoveSchema: GenMessage<Move> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 4);
+  messageDesc(file_numen_v1_vault, 6);
 
 /**
  * @generated from message numen.v1.WatchFocusRequest
@@ -213,7 +260,7 @@ export type WatchFocusRequest = Message<"numen.v1.WatchFocusRequest"> & {
  * Use `create(WatchFocusRequestSchema)` to create a new message.
  */
 export const WatchFocusRequestSchema: GenMessage<WatchFocusRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 5);
+  messageDesc(file_numen_v1_vault, 7);
 
 /**
  * @generated from message numen.v1.WatchFocusResponse
@@ -255,7 +302,7 @@ export type WatchFocusResponse = Message<"numen.v1.WatchFocusResponse"> & {
  * Use `create(WatchFocusResponseSchema)` to create a new message.
  */
 export const WatchFocusResponseSchema: GenMessage<WatchFocusResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 6);
+  messageDesc(file_numen_v1_vault, 8);
 
 /**
  * @generated from message numen.v1.WriteOpenTabsRequest
@@ -282,7 +329,7 @@ export type WriteOpenTabsRequest = Message<"numen.v1.WriteOpenTabsRequest"> & {
  * Use `create(WriteOpenTabsRequestSchema)` to create a new message.
  */
 export const WriteOpenTabsRequestSchema: GenMessage<WriteOpenTabsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 7);
+  messageDesc(file_numen_v1_vault, 9);
 
 /**
  * @generated from message numen.v1.WriteOpenTabsResponse
@@ -295,7 +342,7 @@ export type WriteOpenTabsResponse = Message<"numen.v1.WriteOpenTabsResponse"> & 
  * Use `create(WriteOpenTabsResponseSchema)` to create a new message.
  */
 export const WriteOpenTabsResponseSchema: GenMessage<WriteOpenTabsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 8);
+  messageDesc(file_numen_v1_vault, 10);
 
 /**
  * A Tab is one tab of the window: what kind it is, and what it holds.
@@ -355,7 +402,7 @@ export type Tab = Message<"numen.v1.Tab"> & {
  * Use `create(TabSchema)` to create a new message.
  */
 export const TabSchema: GenMessage<Tab> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 9);
+  messageDesc(file_numen_v1_vault, 11);
 
 /**
  * A DocumentProgress is how far through a document the person reading it is.
@@ -383,7 +430,7 @@ export type DocumentProgress = Message<"numen.v1.DocumentProgress"> & {
  * Use `create(DocumentProgressSchema)` to create a new message.
  */
 export const DocumentProgressSchema: GenMessage<DocumentProgress> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 10);
+  messageDesc(file_numen_v1_vault, 12);
 
 /**
  * A RecordingProgress is how far into a recording the words written down reach.
@@ -413,7 +460,7 @@ export type RecordingProgress = Message<"numen.v1.RecordingProgress"> & {
  * Use `create(RecordingProgressSchema)` to create a new message.
  */
 export const RecordingProgressSchema: GenMessage<RecordingProgress> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 11);
+  messageDesc(file_numen_v1_vault, 13);
 
 /**
  * VaultService answers what the one vault a client is looking at is, and what

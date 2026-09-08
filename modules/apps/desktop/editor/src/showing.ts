@@ -110,12 +110,12 @@ export function showing(core: Core, how: ShowingOptions = {}) {
     name.value = state.name
     // Read once: this is the folder the page was drawn on.
     if (at.value === '') at.value = state.path
-    trouble.value = state.failed
-    unwatched.value = state.unwatched
-    unreachable.value = state.unreachable
-    chunks.value = Number(state.chunkCount)
-    embedded.value = Number(state.embeddedCount)
-    embedding.value = state.embedding
+    trouble.value = state.scan.failed
+    unwatched.value = state.scan.unwatched
+    unreachable.value = state.agentUnreachable
+    chunks.value = Number(state.coverage.chunkCount)
+    embedded.value = Number(state.coverage.embeddedCount)
+    embedding.value = state.coverage.embedding
     return state
   }
 
@@ -236,7 +236,7 @@ export function showing(core: Core, how: ShowingOptions = {}) {
         }
         // A vault that could not be read is not an empty one, and neither is
         // one still being read. Both end the waiting; only one is empty.
-        if (state.failed || state.ready) {
+        if (state.scan.failed || state.scan.ready) {
           indexing.value = false
           void follow()
           void watch()

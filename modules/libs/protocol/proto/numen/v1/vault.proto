@@ -47,32 +47,50 @@ message GetVaultStateResponse {
 
   // Where the vault stands on this disk.
   string path = 3;
-  // Ready is set when the scan has finished.
-  bool ready = 4;
 
-  // Why the scan stopped, when it stopped for a reason. A vault that could
-  // not be read is not an empty one.
-  string failed = 5;
+  // How far reading the vault has got.
+  Scan scan = 4;
+
+  // How far searching it by meaning has got.
+  IndexCoverage coverage = 5;
+
+  // Why an agent cannot be reached, when one cannot. The window works and the
+  // panel says this instead of answering. It is the agent's and not the
+  // vault's, and rides here because this is what a window already asks.
+  string agent_unreachable = 6;
+}
+
+// Scan is how far reading a vault has got, and what stopped it.
+message Scan {
+  // Ready is set when the scan has finished.
+  bool ready = 1;
+
+  // Why the scan stopped, when it stopped for a reason. A vault that could not
+  // be read is not an empty one.
+  string failed = 2;
 
   // Why the vault is not being followed, when it is not. Changes will only
   // appear when something asks for them again.
-  string unwatched = 6;
+  string unwatched = 3;
+}
 
-  // Why an agent cannot be reached, when one cannot. The window works and the
-  // panel says this instead of answering.
-  string unreachable = 7;
+// IndexCoverage is how far searching a vault by meaning has got.
+//
+// A search by meaning is asked of the vectors, and a vault holding none answers
+// nothing however it is asked. Which of three states it stands in is what the
+// person is told, so all three travel: no model at all, a model with nothing
+// embedded yet, and a vault that answers.
+message IndexCoverage {
+  // ChunkCount is how many spans of text the index holds, and EmbeddedCount how
+  // many of those carry a vector. Cutting finishes long before embedding does.
+  // Both are zero for a vault nothing has cut yet.
+  int64 chunk_count = 1;
+  int64 embedded_count = 2;
 
-  // ChunkCount is how many spans of text the index holds, and EmbeddedCount is
-  // how many of those carry a vector. Cutting finishes long before embedding
-  // does, so the pair is what says how far searching by meaning has got. Both
-  // are zero for a vault nothing has cut yet.
-  int64 chunk_count = 8;
-  int64 embedded_count = 9;
-
-  // Embedding says whether anything is going to turn the chunks into vectors.
-  // False for an installation with no model, where `embedded_count` stays where
-  // it is and the vault is searched by its words.
-  bool embedding = 10;
+  // Embedding says whether anything is going to turn the spans into vectors.
+  // False for an installation with no model, where the vault is searched by its
+  // words alone.
+  bool embedding = 3;
 }
 
 message WatchVaultChangesRequest {}

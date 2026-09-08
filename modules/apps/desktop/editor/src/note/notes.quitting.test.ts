@@ -15,13 +15,9 @@ const idle = {
   id: '',
   name: '',
   path: '',
-  ready: true,
-  failed: '',
-  unwatched: '',
-  unreachable: '',
-  chunkCount: 0n,
-  embeddedCount: 0n,
-  embedding: false,
+  scan: { ready: true, failed: '', unwatched: '' },
+  coverage: { chunkCount: 0n, embeddedCount: 0n, embedding: false },
+  agentUnreachable: '',
 }
 
 /** What the application says over the quit stream, when a test says it. */
