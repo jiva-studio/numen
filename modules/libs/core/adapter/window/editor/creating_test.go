@@ -90,9 +90,9 @@ func TestANoteIsMadeInTheFolderItWasAskedFor(t *testing.T) {
 	})
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
-		Title:  "Entropy",
-		Path: "physics",
-		Links:  []*v1.NewLink{{To: "physics/Ontology.md", Role: v1.Role_ROLE_PARENT}},
+		Title: "Entropy",
+		Path:  "physics",
+		Links: []*v1.NewLink{{To: "physics/Ontology.md", Role: v1.Role_ROLE_PARENT}},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -224,9 +224,9 @@ func TestANoteIsMadeUnderTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
 	}
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
-		Title:  "Entropy",
-		Path: "physics",
-		Links:  []*v1.NewLink{{To: "physics/Ontology.md", Role: v1.Role_ROLE_PARENT}},
+		Title: "Entropy",
+		Path:  "physics",
+		Links: []*v1.NewLink{{To: "physics/Ontology.md", Role: v1.Role_ROLE_PARENT}},
 	}))
 	if err != nil {
 		t.Fatal(err)

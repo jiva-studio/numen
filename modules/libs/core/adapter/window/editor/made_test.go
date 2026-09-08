@@ -46,7 +46,7 @@ func TestAStencilTheIndexWouldNotComeLevelWithIsAnsweredWithItsPath(t *testing.T
 
 	answer, err := f.client.CreateStencil(t.Context(), connect.NewRequest(&v1.CreateStencilRequest{
 		Title:  "Animal",
-		Path: "cards",
+		Path:   "cards",
 		Fields: []string{"Name", "Height"},
 	}))
 	if err != nil {
