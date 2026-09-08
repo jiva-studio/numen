@@ -8,24 +8,34 @@
  */
 import { Code, createClient } from '@connectrpc/connect'
 import type { ConnectError } from '@connectrpc/connect'
-import { ArtifactService, AssetService } from '@numen/protocol'
-import type {
-  Cue as CueMessage,
-  HighlightedPage as HighlightedPageMessage,
-  ReadTextResponse,
+import {
+  ArticleService,
+  DocumentService,
+  OcrService,
+  RecordingService,
+  TranscriptService,
 } from '@numen/protocol'
+import type { Cue as CueMessage, Run as RunMessage } from '@numen/protocol'
 import { transport } from '@numen/wire'
 import { fingerprint, stamp } from './shared/answers'
 import { running } from './shared/artifacts'
-import type { Documents, HighlightedPage } from './features/document/open'
+import type { Documents, HighlightedPage, Rect } from './features/document/open'
 import type { Recordings } from './features/media/transcript'
 import type { Cue } from './features/media/cues'
 
-/** What the files of the vault are, for whatever opens one. */
-const assets = createClient(AssetService, transport)
-
-/** What a model has made from the files of the vault. */
-const artifacts = createClient(ArtifactService, transport)
+/** The services the application answers these questions over. */
+const served = {
+  /** What a document is: how many pages it has and how large each of them is. */
+  documents: createClient(DocumentService, transport),
+  /** What a recording is: how long it runs and where its bytes are played from. */
+  recordings: createClient(RecordingService, transport),
+  /** The words of a file that carries the times each stretch was said at. */
+  transcripts: createClient(TranscriptService, transport),
+  /** The prose a page is written around. */
+  articles: createClient(ArticleService, transport),
+  /** What a model read off a document's pages, and where each run of it stands. */
+  readings: createClient(OcrService, transport),
+}
 
 /**
  * The documents the vault holds, over the addresses the application serves the
@@ -34,7 +44,7 @@ const artifacts = createClient(ArtifactService, transport)
  */
 export const documents: Documents = {
   shape: async (path) => {
-    const answer = await waiting(() => assets.getDocument({ path }))
+    const answer = await waiting(() => served.documents.getDocument({ path }))
     return {
       pages: answer.pages.map((one) => ({ width: one.width, height: one.height })),
       at: stamp(answer.fingerprint) ?? '',
@@ -43,21 +53,33 @@ export const documents: Documents = {
   page: (path, at, wide, seen) =>
     `${asset(path)}/pages/${at}?wide=${wide}&${named(seen)}`,
   highlights: async (path, spans) => {
-    const answer = await waiting(() => assets.listHighlights({ path, spans: [...spans] }))
-    return spans.map((_, i) => answer.runs[i]?.pages.map(highlighted) ?? [])
+    const answer = await waiting(() => served.readings.readOcr({ path, spans: [...spans] }))
+    return spans.map((_, at) => {
+      const run = answer.runs[at]
+      return run ? highlighted(run) : []
+    })
   },
 }
 
-/** One page a highlight falls on, as the window carries it. */
-const highlighted = (one: HighlightedPageMessage): HighlightedPage => ({
-  page: one.index,
-  rects: one.rects.map((box) => ({
-    minX: box.minX,
-    minY: box.minY,
-    maxX: box.maxX,
-    maxY: box.maxY,
-  })),
-})
+/**
+ * Where one run of the text stands, page by page. The boxes come in the order
+ * they were read, so a run crossing a page opens a page where it crosses.
+ */
+const highlighted = (run: RunMessage): HighlightedPage[] => {
+  const pages: { page: number; rects: Rect[] }[] = []
+  for (const box of run.boxes) {
+    const rect: Rect = {
+      minX: box.rect?.minX ?? 0,
+      minY: box.rect?.minY ?? 0,
+      maxX: box.rect?.maxX ?? 0,
+      maxY: box.rect?.maxY ?? 0,
+    }
+    const last = pages.at(-1)
+    if (last && last.page === box.page) last.rects.push(rect)
+    else pages.push({ page: box.page, rects: [rect] })
+  }
+  return pages
+}
 
 /**
  * The recordings the vault holds, over the same addresses. The player is given
@@ -66,7 +88,7 @@ const highlighted = (one: HighlightedPageMessage): HighlightedPage => ({
  */
 export const recordings: Recordings = {
   listened: async (path) => {
-    const answer = await waiting(() => assets.getRecording({ path }))
+    const answer = await waiting(() => served.recordings.getRecording({ path }))
     return {
       duration: answer.durationMs,
       mediaUrl: answer.mediaUrl,
@@ -76,19 +98,19 @@ export const recordings: Recordings = {
   },
   carries: (path) => running.carries(path),
   transcript: async (path) => {
-    const answer = await waiting(() => artifacts.readText({ path }))
-    return { ...said(answer), editable: answer.editable }
+    const answer = await waiting(() => served.transcripts.readTranscript({ path }))
+    return { cues: answer.cues.map(spoken), prose: '', editable: await editable(path) }
   },
   article: async (path) => {
-    const answer = await waiting(() => artifacts.readText({ path }))
-    return { ...said(answer), editable: answer.editable }
+    const answer = await waiting(() => served.articles.readArticle({ path }))
+    return { cues: [], prose: answer.text, editable: await editable(path) }
   },
   writes: async (path, cues) => {
-    await waiting(() => artifacts.writeTranscript({ path, cues: [...cues] }))
+    await waiting(() => served.transcripts.writeTranscript({ path, cues: [...cues] }))
   },
   plays: async (path, span) => {
-    const answer = await waiting(() => artifacts.readText({ path, span }))
-    return said(answer).cues[0]?.from ?? null
+    const answer = await waiting(() => served.transcripts.readTranscript({ path, span }))
+    return answer.cues[0]?.from ?? null
   },
 }
 
@@ -96,18 +118,12 @@ export const recordings: Recordings = {
 const spoken = (one: CueMessage): Cue => ({ text: one.text, from: one.from, to: one.to })
 
 /**
- * The text of a file as it came: words against the clock, or prose nothing
- * timed. A file nothing has been read or transcribed for came in neither.
+ * Whether the text may be written over. A run putting the words right holds
+ * them while it writes, and what the file carries says so.
  */
-const said = (answer: ReadTextResponse): { cues: readonly Cue[]; prose: string } => {
-  switch (answer.text.case) {
-    case 'spoken':
-      return { cues: answer.text.value.cues.map(spoken), prose: '' }
-    case 'prose':
-      return { cues: [], prose: answer.text.value }
-    default:
-      return { cues: [], prose: '' }
-  }
+const editable = async (path: string): Promise<boolean> => {
+  const carried = await running.carries(path)
+  return carried['transcript.corrected'] !== 'running'
 }
 
 /**
