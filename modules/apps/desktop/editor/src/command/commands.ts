@@ -5,11 +5,9 @@
  * when each is offered is `offered.ts`. This file is the table and the
  * groups it is drawn in.
  */
-import type { PaletteKeys } from '@numen/ui'
-import type { Source } from '../core'
 import { keysOf } from './chords'
-import { always, onEvidence, onNote, onSource, onVault, owed } from './offered'
-import type { Command, CommandGroup, CommandTarget, Words } from './target'
+import { always, onEvidence, onNote, onVault, owed } from './offered'
+import type { Command, CommandGroup, Words } from './target'
 
 /**
  * Every command, in the order it is drawn. The keyboard it is being read on

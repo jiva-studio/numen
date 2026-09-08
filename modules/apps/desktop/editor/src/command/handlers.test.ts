@@ -9,7 +9,8 @@ import { Code, ConnectError } from '@connectrpc/connect'
 import { commandsOf } from './commands'
 import { runSupport } from './runs'
 import { invocationOf, type CommandInvocation, type CommandTarget } from './target'
-import { does, reaching, type CommandDeps, type Store } from './handlers'
+import { reaching, type CommandDeps, type Store } from './deps'
+import { does } from './handlers'
 import type {
   Artifact,
   ArtifactStates,

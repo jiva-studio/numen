@@ -8,65 +8,28 @@
  * on every keystroke, so a vault moving under an open step is drawn as it is.
  */
 import { computed, ref, shallowRef } from 'vue'
-import type { PaletteGroup, PaletteItem } from '@numen/ui'
+import { isWebAddress } from '../address'
 import { answerGuard as latest } from '../questions'
-import { movedTo, type Move, type NoteType, type Vault } from '../core'
-import { commandsOf, inGroup } from './commands'
+import { movedTo, type Move, type Vault } from '../core'
+import { commandsOf } from './commands'
+import { drawing } from './drawing'
 import type { RunSupport } from './runs'
+import { EXACT, NO, YES, type PendingStep } from './step'
 import {
   invocationOf,
-  type Command,
-  type CommandGroup,
   type CommandsDeps,
   type CommandTarget,
-  type ConfirmWords,
   type CommandInvocation,
-  type PromptStep,
-  type RetypeWords,
   type Words,
 } from './target'
-import type { NoteLookup, PaletteLists, StepRow } from './lists'
+import type { NoteLookup, PaletteLists } from './lists'
 import type { NameMatch } from './search'
-
-/** The one item of a step that asks for one thing. */
-const NAME = 'name'
-const PICK = 'pick'
-const OPEN = 'open'
-const EXACT = 'exactly'
-
-/** The one thing every item of a list the window holds can be asked. */
-const CHOSEN = 'chosen'
-
-/**
- * Whether these words are somewhere a browser would go, which is what decides
- * that the step offers a row at all. The vault reads the address again and is
- * what refuses one nothing can be fetched from.
- */
-const fetchable = (typed: string): boolean => {
-  try {
-    const address = new URL(typed.trim())
-    return (address.protocol === 'http:' || address.protocol === 'https:') && address.hostname !== ''
-  } catch {
-    return false
-  }
-}
-
-/** The two answers of the step that confirms. */
-const NO = 'no'
-const YES = 'yes'
 
 /** How many notes the step that picks one asks for. */
 const EACH = 8
 
 /** How long a keystroke waits before the vault is asked. */
 const HOLD = 120
-
-/** One step of a command: what it asks for, and what it is over. */
-interface PendingStep {
-  readonly step: PromptStep
-  readonly command: Command
-  readonly on: CommandTarget
-}
 
 const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
 
@@ -246,248 +209,23 @@ export function commandPalette(
     if (here.value?.step === 'picking') await looks(text.trim())
   }
 
-  /** One command as it is drawn, and nothing where the words typed leave it out. */
-  const drawn = (one: Command, over: CommandTarget, word: string): PaletteItem | null => {
-    const found = word === '' ? -1 : one.text.toLowerCase().indexOf(word)
-    if (word !== '' && found < 0) return null
-    const also = one.also ? byId.get(one.also) : undefined
-    return {
-      id: one.id,
-      title: one.text,
-      ...(found < 0 ? {} : { at: [{ from: found, to: found + word.length }] }),
-      ...(one.keys ? { keys: one.keys } : {}),
-      actions: [
-        { id: one.id, text: one.text },
-        ...(also && also.where(over, runs) ? [{ id: also.id, text: also.text }] : []),
-      ],
-    }
-  }
-
-  /** Why nothing over the note in front is offered. */
-  const why = (over: CommandTarget): string =>
-    !over.ready ? words.indexing : over.path ? words.noneFound : words.noNote
-
-  /** Every command offered over what is in front, in the groups it holds. */
-  const listed = (over: CommandTarget, text: string): readonly PaletteGroup[] => {
-    const word = text.trim().toLowerCase()
-    const items = (group: CommandGroup): readonly PaletteItem[] =>
-      inGroup(commands, group)
-        .filter((one) => one.where(over, runs))
-        .map((one) => drawn(one, over, word))
-        .filter((item) => item !== null)
-
-    // The runs are offered over a book and over a recording, and their group
-    // stands where one of them is in front.
-    const overFile = items('file')
-
-    return [
-      { id: 'note', title: words.overNote, items: items('note'), silence: why(over) },
-      ...(overFile.length === 0 ? [] : [{ id: 'file', title: words.overFile, items: overFile }]),
-      { id: 'window', title: words.overWindow, items: items('window'), silence: words.noneFound },
-      { id: 'vault', title: words.overVault, items: items('vault'), silence: words.noneFound },
-    ]
-  }
-
-  /** A name to give, as the one thing the words typed can be. */
-  const naming = (text: string): PaletteGroup => {
-    const name = text.trim()
-    return {
-      id: 'naming',
-      title: words.naming,
-      items: name
-        ? [
-            {
-              id: NAME,
-              title: `${words.callIt} “${name}”`,
-              actions: [{ id: NAME, text: words.callIt }],
-            },
-          ]
-        : [],
-      silence: words.typeName,
-    }
-  }
-
-  /**
-   * An address to point at, as the one thing the words typed can be. What is
-   * offered is what a browser would go to; the vault reads it again and is what
-   * refuses one it cannot fetch.
-   */
-  const address = (text: string): PaletteGroup => {
-    const raw = text.trim()
-    return {
-      id: 'address',
-      title: words.address,
-      items: fetchable(raw)
-        ? [
-            {
-              id: NAME,
-              title: `${words.importIt} “${raw}”`,
-              actions: [{ id: NAME, text: words.importIt }],
-            },
-          ]
-        : [],
-      silence: raw ? words.notAnAddress : words.typeAddress,
-    }
-  }
-
-  /**
-   * The notes the vault turned up. A note found by a heading is that note, and
-   * a note found twice is one row.
-   */
-  /** Which of four the note a row of the picking step stands for is. */
-  const typeOf = (id: string): NoteType | null =>
-    found.value.find((one) => one.path === id)?.type ?? null
-
-  const picking = (text: string): PaletteGroup => {
-    const seen = new Set<string>()
-    const items: PaletteItem[] = []
-    for (const one of found.value) {
-      if (seen.has(one.path)) continue
-      seen.add(one.path)
-      items.push({
-        id: one.path,
-        title: one.title || one.path,
-        ...(one.heading ? {} : { at: one.at }),
-        actions: [{ id: PICK, text: words.travel }],
-      })
-    }
-    return {
-      id: 'picking',
-      title: words.names,
-      items,
-      working: working.value,
-      silence: said.value || (text.trim() ? words.noneFound : words.typeNote),
-    }
-  }
-
-  /**
-   * The groups a list the window holds is drawn in, narrowed by the words typed.
-   * They are read again on every keystroke, and a row drawn as not to be chosen
-   * is not chosen.
-   */
-  const choosing = (step: PendingStep, text: string): readonly PaletteGroup[] => {
-    const word = text.trim().toLowerCase()
-    return holds.offers(step.command.id, text).map((group) => ({
-      id: group.id,
-      title: group.title,
-      items: group.items.map((one) => offered(one, word)).filter((item) => item !== null),
-      silence: group.silence ?? words.noneFound,
-    }))
-  }
-
-  /** One such row, and nothing where the words typed leave it out. */
-  const offered = (one: StepRow, word: string): PaletteItem | null => {
-    const found = word === '' ? -1 : one.title.toLowerCase().indexOf(word)
-    if (word !== '' && found < 0) return null
-    return {
-      id: one.id,
-      title: one.title,
-      ...(found < 0 ? {} : { at: [{ from: found, to: found + word.length }] }),
-      ...(one.detail ? { detail: one.detail } : {}),
-      ...(one.disabled ? { disabled: true } : {}),
-      actions: [{ id: CHOSEN, text: words.chooses }],
-    }
-  }
-
-  /**
-   * Why a vault the list holds is drawn and not chosen: its folder is not
-   * there, or it is the one the window is showing. A vault that can be chosen
-   * is marked with nothing.
-   */
-  const aside = (one: Vault): string =>
-    one.missing ? words.gone : one.id === showing.value ? words.current : ''
-
-  /**
-   * The vaults the installation holds. The two it will not take are marked
-   * ahead of their folder, and cannot be chosen. The folder is what tells one
-   * vault from another, so it keeps the room.
-   */
-  const listing = (text: string, step: PendingStep): PaletteGroup => {
-    const word = text.trim().toLowerCase()
-    const items: PaletteItem[] = known.value
-      .filter((one) => word === '' || one.name.toLowerCase().includes(word))
-      .map((one) => {
-        const why = aside(one)
-        return {
-          id: one.id,
-          title: one.name,
-          detail: why ? `${why} · ${one.path}` : one.path,
-          ...(why ? { disabled: true } : {}),
-          actions: [{ id: OPEN, text: step.command.text }],
-        }
-      })
-    return {
-      id: 'vaults',
-      title: words.vaults,
-      items,
-      working: working.value,
-      silence: said.value || words.noneFound,
-    }
-  }
-
-  /**
-   * The two answers put before a note goes to the trash. The one that changes
-   * nothing is drawn first, and it is the one the keyboard opens on. Each is
-   * reached by the name it is offered under, as an item of any other step is.
-   */
-  const asking = (step: PendingStep, text: string): PaletteGroup => {
-    const word = text.trim().toLowerCase()
-    const { keeps = '', kept = '', does = '', then = '' }: Partial<ConfirmWords> =
-      step.command.answers ?? {}
-    const items: PaletteItem[] = [
-      {
-        id: NO,
-        title: keeps,
-        detail: kept,
-        actions: [{ id: NO, text: keeps }],
-      },
-      {
-        id: YES,
-        title: `${does} ${named(step)}`,
-        detail: then,
-        actions: [{ id: YES, text: does }],
-      },
-    ]
-    return {
-      id: 'asking',
-      title: words.asking,
-      items: word
-        ? items.filter((one) => (one.actions?.[0]?.text ?? '').toLowerCase().includes(word))
-        : items,
-      silence: words.answer,
-    }
-  }
-
-  /** The name typed back, which is the one thing that reaches destroying. */
-  const exactly = (step: PendingStep, text: string): PaletteGroup => {
-    const title = calling(step)
-    const { does = '', then = '' }: Partial<RetypeWords> = step.command.warns ?? {}
-    return {
-      id: 'exactly',
-      title: words.exactly,
-      items: [
-        {
-          id: EXACT,
-          title: `${does} “${title}”`,
-          detail: then,
-          disabled: text.trim() !== title,
-          actions: [{ id: EXACT, text: does }],
-        },
-      ],
-    }
-  }
-
-  const groups = computed<readonly PaletteGroup[]>(() => {
-    const step = here.value
-    if (!step) return listed(on.value, typed.value)
-    if (step.step === 'naming') return [naming(typed.value)]
-    if (step.step === 'address') return [address(typed.value)]
-    if (step.step === 'picking') return [picking(typed.value)]
-    if (step.step === 'choosing') return choosing(step, typed.value)
-    if (step.step === 'vaults') return [listing(typed.value, step)]
-    if (step.step === 'asking') return [asking(step, typed.value)]
-    return [exactly(step, typed.value)]
+  const draws = drawing({
+    words,
+    commands,
+    byId,
+    runs,
+    holds,
+    found,
+    known,
+    showing,
+    working,
+    said,
+    calling,
+    named,
   })
+
+  const groups = computed(() => draws.groupsOf(here.value, on.value, typed.value))
+
 
   /** What a step asks of the application as it is put in front of the person. */
   const begins = (step: PendingStep | null) => {
@@ -569,7 +307,7 @@ export function commandPalette(
     if (step.step === 'vaults') {
       const one = known.value.find((vault) => vault.id === item)
       // The two the list draws and does not take are the ones it says so on.
-      if (!one || aside(one)) return null
+      if (!one || draws.aside(one)) return null
       const on = { ...step.on, vault: { id: one.id, name: one.name } }
       if (!step.command.next) return invocation(step.command.id, on)
       // The vault chosen is what the step after this one is over.
@@ -581,7 +319,7 @@ export function commandPalette(
       return invocation(step.command.id, step.on, name)
     }
     if (step.step === 'address') {
-      if (!fetchable(name)) return null
+      if (!isWebAddress(name)) return null
       return invocation(step.command.id, step.on, name)
     }
     if (step.step === 'choosing') {
@@ -651,7 +389,7 @@ export function commandPalette(
     chose,
     leaves,
     backs,
-    typeOf,
+    typeOf: draws.typeOf,
   }
 }
 
