@@ -13,7 +13,8 @@ A window asks about the vault it shows, the vaults the installation holds, the c
 
 ### A service is one subject, and every question about that subject is on it
 
-- `VaultService` — the vault a window is showing, taken whole: what it is, what has changed in it, and where in it the person stands.
+- `VaultService` — the vault a window is showing, taken whole: what it is, and what has changed in it.
+- `WorkspaceService` — where in that vault the person stands: the tabs the window has open, and the places something else asks to be put in front of them.
 - `FileService` — the tree that vault is filed in: what a folder holds, what stands at a path, and moving one, removing one, making one.
 - `NoteService` — a note of that vault: its prose, its headings, its neighbourhood, the addresses written in it, and every way of writing one.
 - `SearchService` — what that vault holds that answers what a person typed: its names, and the passages of its text.
@@ -42,9 +43,11 @@ Every call of `WindowService` names the window it is about, and one that names a
 
 The review window is open on the installation rather than on any one vault — it says what is owed across all of them and names a vault in every call — so it answers `GetShownVault` with none. That is the answer, not a stub: a window standing on nothing gives the same one.
 
-### A service is a file, and the types three services hold are `shared.proto`
+### A service is one subject in a file of its own, and the types three services hold are `shared.proto`
 
-Each service has a file of its own, and `shared.proto` holds what three or more of them use: `Refusal`, `NoteType`, `Fingerprint` and `Stretch`. It declares no service and imports nothing, and it is the base of the import graph.
+Each service has a file of its own, and a file that has grown a second subject is split: each subject becomes a service in a file of its own. `WorkspaceService` came out of `VaultService` that way, because where the person stands is the window's and what the vault holds is not.
+
+`shared.proto` holds what three or more services use: `Refusal`, `NoteType`, `Fingerprint` and `Stretch`. It declares no service and imports nothing, and it is the base of the import graph.
 
 **A type enters `shared.proto` only when three services already use it.** Two services holding one type is a coincidence; three is a shape. Everything else stays in the file of the service that answers with it, and the service that wants it imports that file. `Note` and `Heading` are `NoteService`'s and `SearchService` imports them; `SourceKind` and `MoveResult` are `FileService`'s, and `NoteService` and `SearchService` import them.
 

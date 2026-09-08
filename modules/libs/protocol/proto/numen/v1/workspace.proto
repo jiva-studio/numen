@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+// What a client may ask about where the person stands in the vault a window is
+// showing.
+//
+// The tabs the window has open and the places something else asks to be put in
+// front of the person are the window's. What the vault is and what has changed
+// in it is vault.proto.
+package numen.v1;
+
+import "numen/v1/shared.proto";
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// WorkspaceService answers where in the vault the person stands, and takes what
+// the window has open.
+service WorkspaceService {
+  // WatchFocus reports the places something else asked to be put in front of
+  // the person — an agent working the vault beside them — for as long as the
+  // caller listens. What travelling there looks like is the client's.
+  rpc WatchFocus(WatchFocusRequest) returns (stream WatchFocusResponse);
+
+  // WriteOpenTabs says what the person has open — every tab of the window, and
+  // which of them is in front. The client says so again whenever any of it
+  // changes, and an agent working the vault beside them reads what it last
+  // said.
+  rpc WriteOpenTabs(WriteOpenTabsRequest) returns (WriteOpenTabsResponse);
+}
+
+message WatchFocusRequest {}
+
+message WatchFocusResponse {
+  // The source to put in front of the person: a note to see the neighbourhood
+  // from, or a document to open.
+  string path = 1;
+
+  // Where in the text of that source to open, counted in bytes. A length of
+  // zero names the source and no place inside it, which is what a note arrives
+  // with.
+  int32 start = 2;
+  int32 length = 3;
+
+  // The other stretches of the same source worth seeing. The person is taken to
+  // the stretch above, and these are shown where they fall.
+  repeated Stretch also = 4;
+}
+
+message WriteOpenTabsRequest {
+  // Every tab the window has open, in the order the person was last in them.
+  repeated Tab tabs = 1;
+
+  // Which of them the person is looking at, by its id. Empty where the window
+  // has nothing open.
+  string front = 2;
+}
+
+message WriteOpenTabsResponse {}
+
+// A Tab is one tab of the window: what kind it is, and what it holds.
+//
+// The kind is the client's own word — a note, a document, a recording — and a
+// reader that does not know one knows a tab of that kind is open and no more.
+message Tab {
+  // Id is what the window calls this tab, which the front is named by.
+  string id = 1;
+
+  // Kind is what sort of tab it is.
+  string kind = 2;
+
+  // Path is the file it holds, by the path the vault files it under, and empty
+  // for a tab holding no file. A plex holds the note it stands on.
+  string path = 3;
+
+  // Title is what the tab is called, as the person reads it.
+  string title = 4;
+
+  // How far the person has got through what the tab holds. A tab holding a
+  // document sets document, a tab holding a recording sets recording, and a tab
+  // of any other kind sets neither.
+  DocumentProgress document = 5;
+  RecordingProgress recording = 6;
+}
+
+// A DocumentProgress is how far through a document the person reading it is.
+message DocumentProgress {
+  // Page is the page in front of them, counted from one.
+  int32 page = 1;
+
+  // PageCount is how many pages the document has.
+  int32 page_count = 2;
+}
+
+// A RecordingProgress is how far into a recording the words written down reach.
+message RecordingProgress {
+  // TranscribedDurationMs is how far into the recording the words written down
+  // reach. It is short of the duration while a run is still going, and the two
+  // are equal once one has finished.
+  int32 transcribed_duration_ms = 1;
+
+  // DurationMs is how long the recording is.
+  int32 duration_ms = 2;
+}

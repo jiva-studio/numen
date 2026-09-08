@@ -6,6 +6,7 @@
  */
 export * from './src/numen/v1/shared_pb.js'
 export * from './src/numen/v1/vault_pb.js'
+export * from './src/numen/v1/workspace_pb.js'
 export * from './src/numen/v1/file_pb.js'
 export * from './src/numen/v1/note_pb.js'
 export * from './src/numen/v1/search_pb.js'

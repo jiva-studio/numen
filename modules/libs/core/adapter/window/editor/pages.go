@@ -53,6 +53,9 @@ func (a *API) Serving(files http.Handler, named ...string) http.Handler {
 	if serves(numenv1connect.VaultServiceName) {
 		routes = append(routes, mount(numenv1connect.NewVaultServiceHandler(a, counted)))
 	}
+	if serves(numenv1connect.WorkspaceServiceName) {
+		routes = append(routes, mount(numenv1connect.NewWorkspaceServiceHandler(a, counted)))
+	}
 	if serves(numenv1connect.FileServiceName) {
 		routes = append(routes, mount(numenv1connect.NewFileServiceHandler(a, counted)))
 	}
