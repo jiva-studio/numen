@@ -80,6 +80,9 @@ watchPostEffect(() =>
 
 <style scoped>
 .transcript {
+  /* The measure the text is read at. */
+  --transcript-measure: 46rem;
+
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -116,6 +119,7 @@ watchPostEffect(() =>
 /* The text is read in one column, clear of the rule the player stands on, and
    the editor scrolls so the bar stands at the edge of the pane. */
 .transcript .transcript__text {
+  --editor-measure: var(--transcript-measure);
   --editor-lead: var(--numen-inset);
   --editor-margin: var(--numen-gutter);
 
@@ -129,6 +133,7 @@ watchPostEffect(() =>
 .transcript__note {
   flex: none;
   inline-size: 100%;
+  max-inline-size: var(--transcript-measure);
   margin: 0;
   padding: var(--numen-gutter) var(--numen-gutter) 0;
   color: var(--numen-hushed);

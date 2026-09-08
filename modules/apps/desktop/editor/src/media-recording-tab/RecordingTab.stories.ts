@@ -137,7 +137,7 @@ export const TheWordsClearThePlayer: Story = {
 
     // The controls stand in the strip the player heads the pane with, and that
     // strip takes room of its own.
-    const strip = canvasElement.querySelector<HTMLElement>('.recording__head')!
+    const strip = canvasElement.querySelector<HTMLElement>('.media__head')!
     expect(strip.contains(follow)).toBe(true)
     expect(strip.getBoundingClientRect().height).toBeGreaterThan(0)
 
