@@ -79,7 +79,7 @@ export default defineConfig({
       // A story is the corpus a test run draws, not code under test.
       exclude: [...coverageConfigDefaults.exclude, '**/*.stories.ts'],
       reporter: ['text-summary'],
-      thresholds: { statements: 89, branches: 84, functions: 81, lines: 91 },
+      thresholds: { statements: 90, branches: 85, functions: 83, lines: 91 },
     },
     projects: [
       {

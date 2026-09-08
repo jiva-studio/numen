@@ -16,7 +16,6 @@ export function noteChanges(limits: HoldLimits = holding) {
   /** The interval each note is waiting on, so arming again replaces it. */
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
 
-
   const carry = (path: string, arm: TimerRequest | null): void => {
     const change = decided.shown(path)
     if (change) changes.value.set(path, change)

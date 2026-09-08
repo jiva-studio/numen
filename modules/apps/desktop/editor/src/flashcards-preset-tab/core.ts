@@ -259,7 +259,6 @@ export interface Place {
 /** A place that falls outside the grid. */
 export const NOWHERE: Place = { at: -1, value: 0, day: '' }
 
-/** What the one control comes to over the whole range of its goal. */
 /**
  * What a preset schedules, as the figures over the picture count it. No setting
  * moves one of them.

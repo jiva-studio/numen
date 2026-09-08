@@ -12,10 +12,10 @@ import type { NoteEdit } from '../shared/core'
 export interface Change {
   /** Whatever the change was reported by. Never read, only handed back. */
   readonly id: string
-  /** The stretch being replaced, as offsets into the prose. */
+  /** The run being replaced, as offsets into the prose. */
   readonly from: number
   readonly to: number
-  /** What is going in where that stretch stands. */
+  /** What is going in where that run stands. */
   readonly text: string
 }
 
