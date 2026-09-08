@@ -114,7 +114,6 @@ enum BudgetUnit {
 // Settings are how the decks pointing at one preset are scheduled. A preset
 // carrying none of these keys is the defaults, and no cards a day is a pause.
 message Settings {
-
   Goal goal = 1;
 
   // The day the material is to be in the head, as the year, the month and the
@@ -288,7 +287,6 @@ message Curve {
 
 // Point is what a preset comes to at one place of the grid.
 message Point {
-
   // `reviews` is counted in card faces and `minutes` in the showings they take,
   // so a face the day comes back to costs its minutes and is the one card.
   //
@@ -444,7 +442,6 @@ message ScheduleDeckRequest {
 }
 
 message ScheduleDeckResponse {
-
   // Set when nothing was written, and why. A deck that is no longer the one
   // this caller read is REFUSAL_STALE, and the person chooses what happens
   // next.
@@ -510,7 +507,6 @@ message WritePresetRequest {
 }
 
 message WritePresetResponse {
-
   // Set when nothing was written, and why. A file that is no longer the one
   // this caller read is REFUSAL_STALE, and the person chooses what happens to
   // their settings.

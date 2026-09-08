@@ -44,7 +44,6 @@ message GetDocumentRequest {
 }
 
 message GetDocumentResponse {
-
   // Every page of the document in order, each as its size. How many there are
   // is how many stand here. A page whose size could not be read stands at
   // nothing, and the page after it is still where it was.

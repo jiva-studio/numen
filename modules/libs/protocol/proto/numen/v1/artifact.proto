@@ -150,7 +150,6 @@ message ListArtifactsResponse {
 }
 
 message CreateArtifactRequest {
-
   // The file of the vault, as the vault holds it.
   string path = 1;
 
@@ -164,7 +163,6 @@ message CreateArtifactResponse {
 }
 
 message DeleteArtifactRequest {
-
   // The file of the vault, as the vault holds it.
   string path = 1;
 

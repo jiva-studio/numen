@@ -151,7 +151,6 @@ message MoveResult {
   // comes back to it: a move that reports only what it repaired reports a
   // vault it did not leave behind.
   repeated string dangling = 4;
-
 }
 
 message RemoveFileRequest {

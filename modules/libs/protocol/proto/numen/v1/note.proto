@@ -125,7 +125,6 @@ message Neighbour {
   // Which of three the note is, so a client draws a deck and a stencil as what
   // they are.
   NoteType type = 6;
-
 }
 
 message ResolveAddressesRequest {
@@ -236,7 +235,6 @@ message WriteNoteRequest {
 }
 
 message WriteNoteResponse {
-
   // Set when nothing was written, and why.
   optional Refusal refusal = 1;
 
@@ -303,7 +301,6 @@ message WriteLinkRequest {
 }
 
 message WriteLinkResponse {
-
   // Set when nothing was written, and why. A note that moved between being
   // read and being written is REFUSAL_STALE, and the caller reads it again
   // before asking for this.
@@ -332,7 +329,6 @@ message RenameNoteRequest {
 }
 
 message RenameNoteResponse {
-
   // Where the note is filed. Empty when the note was never opened. The note is
   // brought into line before the file is, so a refused move answers with the
   // path the note still has.

@@ -372,7 +372,6 @@ message WriteStencilRequest {
 }
 
 message WriteStencilResponse {
-
   // Set when nothing was written, and why. A file that is no longer the one
   // this caller read is REFUSAL_STALE, and the person chooses what happens to
   // their text.
@@ -402,7 +401,6 @@ message RenameStencilFieldRequest {
 }
 
 message RenameStencilFieldResponse {
-
   // The decks a heading was rewritten in, by path.
   repeated string decks = 1;
 
@@ -502,7 +500,6 @@ message WriteDeckRequest {
 }
 
 message WriteDeckResponse {
-
   // Set when nothing was written, and why. A file that is no longer the one
   // this caller read is REFUSAL_STALE, and the person chooses what happens to
   // their text.

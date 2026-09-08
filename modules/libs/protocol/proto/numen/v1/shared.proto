@@ -81,7 +81,6 @@ enum NoteType {
 
   // A note saying how the decks pointing at it are scheduled.
   NOTE_TYPE_PRESET = 3;
-
 }
 
 // Fingerprint is which file this is: where it is filed, how big it is, and when
