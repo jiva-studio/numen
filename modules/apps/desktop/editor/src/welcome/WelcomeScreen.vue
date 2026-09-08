@@ -10,7 +10,7 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { opensVault, WelcomePage } from '@numen/ui'
 import type { Tab } from '@numen/ui'
-import { invocationOf, type CommandTarget, type VaultRef } from '../command/commands'
+import { invocationOf, type CommandTarget, type VaultRef } from '../command/target'
 import type { Commands } from '../command/palette'
 import type { VaultList } from '../core'
 import { does, type CommandDeps } from '../command/handlers'

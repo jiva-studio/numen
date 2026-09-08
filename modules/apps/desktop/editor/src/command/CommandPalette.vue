@@ -8,7 +8,7 @@
  */
 import { computed, onMounted, onUnmounted } from 'vue'
 import { Palette, type ActionWords } from '@numen/ui'
-import { asksCommands, type CommandTarget } from './commands'
+import { asksCommands, type CommandTarget } from './target'
 import { creates, MAKING, offering } from './offers'
 import type { Commands } from './palette'
 import { does, type CommandDeps } from './handlers'

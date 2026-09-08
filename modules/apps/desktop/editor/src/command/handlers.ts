@@ -7,7 +7,8 @@
  */
 import type { PlexRelatedSeat } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
-import type { CommandInvocation, RunSupport, VaultRef } from './commands'
+import type { RunSupport } from './runs'
+import type { CommandInvocation, VaultRef } from './target'
 import type { EditorKind } from '../tabs/openers'
 import type {
   Artifact,

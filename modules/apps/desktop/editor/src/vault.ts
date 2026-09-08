@@ -38,7 +38,7 @@ import { DEFAULT_PARTS } from './settings/hanging'
 import { DEFAULT_STARTS } from './settings/review'
 import { settingAt } from './settings/store'
 import { write } from './settings/write'
-import type { CommandsDeps } from './command/commands'
+import type { CommandsDeps } from './command/target'
 import type { SearchDeps, SearchMode } from './command/search'
 import type {
   Core,

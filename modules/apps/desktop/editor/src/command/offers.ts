@@ -11,7 +11,7 @@ import {
   type CommandInvocation,
   type CommandTarget,
   type Words,
-} from './commands'
+} from './target'
 
 /** The group and the item that offer to make the note a search did not find. */
 export const MAKING = 'creating'

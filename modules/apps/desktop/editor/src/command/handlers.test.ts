@@ -6,7 +6,9 @@
  */
 import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import { commandsOf, invocationOf, runSupport, type CommandInvocation, type CommandTarget } from './commands'
+import { commandsOf } from './commands'
+import { runSupport } from './runs'
+import { invocationOf, type CommandInvocation, type CommandTarget } from './target'
 import { does, reaching, type CommandDeps, type Store } from './handlers'
 import type {
   Artifact,

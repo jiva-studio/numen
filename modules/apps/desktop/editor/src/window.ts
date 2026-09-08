@@ -22,12 +22,8 @@ import type { IndexCoverage } from './notices/coverage'
 import { openNotes } from './note/notes'
 import { noteChanges } from './note/changes'
 import { CREATABLE, noteMaker } from './note/maker'
-import {
-  invocationOf,
-  runSupport,
-  type VaultRef,
-  type CommandTarget,
-} from './command/commands'
+import { runSupport } from './command/runs'
+import { invocationOf, type VaultRef, type CommandTarget } from './command/target'
 import type { NoteLookup, PaletteLists } from './command/lists'
 import { commandPalette } from './command/palette'
 import { chorded, commandFor } from './command/chords'

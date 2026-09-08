@@ -11,10 +11,10 @@ import { computed, ref, shallowRef } from 'vue'
 import type { PaletteGroup, PaletteItem } from '@numen/ui'
 import { answerGuard as latest } from '../questions'
 import { movedTo, type Move, type NoteType, type Vault } from '../core'
+import { commandsOf, inGroup } from './commands'
+import type { RunSupport } from './runs'
 import {
-  commandsOf,
   invocationOf,
-  inGroup,
   type Command,
   type CommandGroup,
   type CommandsDeps,
@@ -23,9 +23,8 @@ import {
   type CommandInvocation,
   type PromptStep,
   type RetypeWords,
-  type RunSupport,
   type Words,
-} from './commands'
+} from './target'
 import type { NoteLookup, PaletteLists, StepRow } from './lists'
 import type { NameMatch } from './search'
 

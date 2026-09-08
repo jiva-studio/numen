@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { creates, MAKING, offering } from './offers'
-import type { CommandTarget } from './commands'
+import type { CommandTarget } from './target'
 import { WORDS as words } from '../words'
 
 /** What is in front, which a test moves under the commands. */
