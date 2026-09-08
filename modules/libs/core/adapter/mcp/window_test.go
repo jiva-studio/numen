@@ -69,7 +69,7 @@ func TestWindowTabsSaysWhereInADocumentThePersonIs(t *testing.T) {
 		FrontID: "one",
 		Tabs: []domain.Tab{
 			{ID: "one", Kind: domain.TabDocument, Path: "library/A Book.pdf",
-				Title: "A Book.pdf", Document: &domain.DocumentProgress{Page: 3, Pages: 40}},
+				Title: "A Book.pdf", Document: &domain.DocumentProgress{Page: 3, PageCount: 40}},
 		},
 	})
 

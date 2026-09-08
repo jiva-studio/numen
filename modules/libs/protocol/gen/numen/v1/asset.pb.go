@@ -83,7 +83,7 @@ type GetDocumentResponse struct {
 	// Every page of the document in order, each as its size. How many there are
 	// is how many stand here. A page whose size could not be read stands at
 	// nothing, and the page after it is still where it was.
-	Pages []*PageSize `protobuf:"bytes,1,rep,name=pages,proto3" json:"pages,omitempty"`
+	Pages []*Page `protobuf:"bytes,1,rep,name=pages,proto3" json:"pages,omitempty"`
 	// Which bytes these pages were read from. It stands in the address a page is
 	// drawn at, so an address names one drawing of one document and answers the
 	// same picture for as long as it answers at all.
@@ -122,7 +122,7 @@ func (*GetDocumentResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_asset_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *GetDocumentResponse) GetPages() []*PageSize {
+func (x *GetDocumentResponse) GetPages() []*Page {
 	if x != nil {
 		return x.Pages
 	}
@@ -136,9 +136,9 @@ func (x *GetDocumentResponse) GetFingerprint() *Fingerprint {
 	return nil
 }
 
-// A PageSize is one page in the document's own units. A client draws a page at
-// whatever width it likes and keeps the shape by this.
-type PageSize struct {
+// A Page is one page of the document, in the document's own units. A client
+// draws it at whatever width it likes and keeps the shape by this.
+type Page struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Width         float64                `protobuf:"fixed64,1,opt,name=width,proto3" json:"width,omitempty"`
 	Height        float64                `protobuf:"fixed64,2,opt,name=height,proto3" json:"height,omitempty"`
@@ -146,20 +146,20 @@ type PageSize struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PageSize) Reset() {
-	*x = PageSize{}
+func (x *Page) Reset() {
+	*x = Page{}
 	mi := &file_numen_v1_asset_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PageSize) String() string {
+func (x *Page) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PageSize) ProtoMessage() {}
+func (*Page) ProtoMessage() {}
 
-func (x *PageSize) ProtoReflect() protoreflect.Message {
+func (x *Page) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_asset_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -171,19 +171,19 @@ func (x *PageSize) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PageSize.ProtoReflect.Descriptor instead.
-func (*PageSize) Descriptor() ([]byte, []int) {
+// Deprecated: Use Page.ProtoReflect.Descriptor instead.
+func (*Page) Descriptor() ([]byte, []int) {
 	return file_numen_v1_asset_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *PageSize) GetWidth() float64 {
+func (x *Page) GetWidth() float64 {
 	if x != nil {
 		return x.Width
 	}
 	return 0
 }
 
-func (x *PageSize) GetHeight() float64 {
+func (x *Page) GetHeight() float64 {
 	if x != nil {
 		return x.Height
 	}
@@ -237,9 +237,9 @@ func (x *GetRecordingRequest) GetPath() string {
 
 type GetRecordingResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// How long it runs, in milliseconds. A recording nothing has listened to
-	// runs nowhere, and the player it is loaded into is what then says.
-	Duration int32 `protobuf:"varint,1,opt,name=duration,proto3" json:"duration,omitempty"`
+	// How long it runs. A recording nothing has transcribed runs nowhere, and the
+	// player it is loaded into is what then says.
+	DurationMs int32 `protobuf:"varint,1,opt,name=duration_ms,json=durationMs,proto3" json:"duration_ms,omitempty"`
 	// Where it is played from, and what it is played as. A media element speaks
 	// the protocols of the world and not the scheme a window is served under, so
 	// the bytes are answered at an address of their own; a url with no copy on
@@ -283,9 +283,9 @@ func (*GetRecordingResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_asset_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *GetRecordingResponse) GetDuration() int32 {
+func (x *GetRecordingResponse) GetDurationMs() int32 {
 	if x != nil {
-		return x.Duration
+		return x.DurationMs
 	}
 	return 0
 }
@@ -415,7 +415,7 @@ func (x *ListHighlightsResponse) GetRuns() []*Highlight {
 // each, the rectangles covering it.
 type Highlight struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Pages         []*Page                `protobuf:"bytes,1,rep,name=pages,proto3" json:"pages,omitempty"`
+	Pages         []*HighlightedPage     `protobuf:"bytes,1,rep,name=pages,proto3" json:"pages,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -450,15 +450,15 @@ func (*Highlight) Descriptor() ([]byte, []int) {
 	return file_numen_v1_asset_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *Highlight) GetPages() []*Page {
+func (x *Highlight) GetPages() []*HighlightedPage {
 	if x != nil {
 		return x.Pages
 	}
 	return nil
 }
 
-// Page is one page of a highlight, and what to light on it.
-type Page struct {
+// HighlightedPage is one page a highlight falls on, and what to light on it.
+type HighlightedPage struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Where the page stands in the document, counted from the first.
 	Index         int32   `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
@@ -467,20 +467,20 @@ type Page struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Page) Reset() {
-	*x = Page{}
+func (x *HighlightedPage) Reset() {
+	*x = HighlightedPage{}
 	mi := &file_numen_v1_asset_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Page) String() string {
+func (x *HighlightedPage) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Page) ProtoMessage() {}
+func (*HighlightedPage) ProtoMessage() {}
 
-func (x *Page) ProtoReflect() protoreflect.Message {
+func (x *HighlightedPage) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_asset_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -492,19 +492,19 @@ func (x *Page) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Page.ProtoReflect.Descriptor instead.
-func (*Page) Descriptor() ([]byte, []int) {
+// Deprecated: Use HighlightedPage.ProtoReflect.Descriptor instead.
+func (*HighlightedPage) Descriptor() ([]byte, []int) {
 	return file_numen_v1_asset_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *Page) GetIndex() int32 {
+func (x *HighlightedPage) GetIndex() int32 {
 	if x != nil {
 		return x.Index
 	}
 	return 0
 }
 
-func (x *Page) GetRects() []*Rect {
+func (x *HighlightedPage) GetRects() []*Rect {
 	if x != nil {
 		return x.Rects
 	}
@@ -587,17 +587,18 @@ const file_numen_v1_asset_proto_rawDesc = "" +
 	"\n" +
 	"\x14numen/v1/asset.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"(\n" +
 	"\x12GetDocumentRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"x\n" +
-	"\x13GetDocumentResponse\x12(\n" +
-	"\x05pages\x18\x01 \x03(\v2\x12.numen.v1.PageSizeR\x05pages\x127\n" +
-	"\vfingerprint\x18\x02 \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\"8\n" +
-	"\bPageSize\x12\x14\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"t\n" +
+	"\x13GetDocumentResponse\x12$\n" +
+	"\x05pages\x18\x01 \x03(\v2\x0e.numen.v1.PageR\x05pages\x127\n" +
+	"\vfingerprint\x18\x02 \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\"4\n" +
+	"\x04Page\x12\x14\n" +
 	"\x05width\x18\x01 \x01(\x01R\x05width\x12\x16\n" +
 	"\x06height\x18\x02 \x01(\x01R\x06height\")\n" +
 	"\x13GetRecordingRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\x80\x01\n" +
-	"\x14GetRecordingResponse\x12\x1a\n" +
-	"\bduration\x18\x01 \x01(\x05R\bduration\x12\x1b\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x85\x01\n" +
+	"\x14GetRecordingResponse\x12\x1f\n" +
+	"\vduration_ms\x18\x01 \x01(\x05R\n" +
+	"durationMs\x12\x1b\n" +
 	"\tmedia_url\x18\x02 \x01(\tR\bmediaUrl\x12\x1d\n" +
 	"\n" +
 	"media_type\x18\x03 \x01(\tR\tmediaType\x12\x10\n" +
@@ -606,10 +607,10 @@ const file_numen_v1_asset_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12!\n" +
 	"\x02at\x18\x02 \x03(\v2\x11.numen.v1.StretchR\x02at\"A\n" +
 	"\x16ListHighlightsResponse\x12'\n" +
-	"\x04runs\x18\x01 \x03(\v2\x13.numen.v1.HighlightR\x04runs\"1\n" +
-	"\tHighlight\x12$\n" +
-	"\x05pages\x18\x01 \x03(\v2\x0e.numen.v1.PageR\x05pages\"B\n" +
-	"\x04Page\x12\x14\n" +
+	"\x04runs\x18\x01 \x03(\v2\x13.numen.v1.HighlightR\x04runs\"<\n" +
+	"\tHighlight\x12/\n" +
+	"\x05pages\x18\x01 \x03(\v2\x19.numen.v1.HighlightedPageR\x05pages\"M\n" +
+	"\x0fHighlightedPage\x12\x14\n" +
 	"\x05index\x18\x01 \x01(\x05R\x05index\x12$\n" +
 	"\x05rects\x18\x02 \x03(\v2\x0e.numen.v1.RectR\x05rects\"Z\n" +
 	"\x04Rect\x12\x13\n" +
@@ -638,24 +639,24 @@ var file_numen_v1_asset_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_numen_v1_asset_proto_goTypes = []any{
 	(*GetDocumentRequest)(nil),     // 0: numen.v1.GetDocumentRequest
 	(*GetDocumentResponse)(nil),    // 1: numen.v1.GetDocumentResponse
-	(*PageSize)(nil),               // 2: numen.v1.PageSize
+	(*Page)(nil),                   // 2: numen.v1.Page
 	(*GetRecordingRequest)(nil),    // 3: numen.v1.GetRecordingRequest
 	(*GetRecordingResponse)(nil),   // 4: numen.v1.GetRecordingResponse
 	(*ListHighlightsRequest)(nil),  // 5: numen.v1.ListHighlightsRequest
 	(*ListHighlightsResponse)(nil), // 6: numen.v1.ListHighlightsResponse
 	(*Highlight)(nil),              // 7: numen.v1.Highlight
-	(*Page)(nil),                   // 8: numen.v1.Page
+	(*HighlightedPage)(nil),        // 8: numen.v1.HighlightedPage
 	(*Rect)(nil),                   // 9: numen.v1.Rect
 	(*Fingerprint)(nil),            // 10: numen.v1.Fingerprint
 	(*Stretch)(nil),                // 11: numen.v1.Stretch
 }
 var file_numen_v1_asset_proto_depIdxs = []int32{
-	2,  // 0: numen.v1.GetDocumentResponse.pages:type_name -> numen.v1.PageSize
+	2,  // 0: numen.v1.GetDocumentResponse.pages:type_name -> numen.v1.Page
 	10, // 1: numen.v1.GetDocumentResponse.fingerprint:type_name -> numen.v1.Fingerprint
 	11, // 2: numen.v1.ListHighlightsRequest.at:type_name -> numen.v1.Stretch
 	7,  // 3: numen.v1.ListHighlightsResponse.runs:type_name -> numen.v1.Highlight
-	8,  // 4: numen.v1.Highlight.pages:type_name -> numen.v1.Page
-	9,  // 5: numen.v1.Page.rects:type_name -> numen.v1.Rect
+	8,  // 4: numen.v1.Highlight.pages:type_name -> numen.v1.HighlightedPage
+	9,  // 5: numen.v1.HighlightedPage.rects:type_name -> numen.v1.Rect
 	0,  // 6: numen.v1.AssetService.GetDocument:input_type -> numen.v1.GetDocumentRequest
 	3,  // 7: numen.v1.AssetService.GetRecording:input_type -> numen.v1.GetRecordingRequest
 	5,  // 8: numen.v1.AssetService.ListHighlights:input_type -> numen.v1.ListHighlightsRequest

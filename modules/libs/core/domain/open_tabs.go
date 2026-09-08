@@ -45,8 +45,8 @@ type Tab struct {
 type DocumentProgress struct {
 	// Page is the page in front of them, counted from one.
 	Page int
-	// Pages is how many pages the document has.
-	Pages int
+	// PageCount is how many pages the document has.
+	PageCount int
 }
 
 // A RecordingProgress is how far into a recording the words written down reach.

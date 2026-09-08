@@ -27,12 +27,15 @@ func (a *API) WriteOpenTabs(
 			Title: one.GetTitle(),
 		}
 		if doc := one.GetDocument(); doc != nil {
-			tab.Document = &domain.DocumentProgress{Page: int(doc.GetPage()), Pages: int(doc.GetPages())}
+			tab.Document = &domain.DocumentProgress{
+				Page:      int(doc.GetPage()),
+				PageCount: int(doc.GetPageCount()),
+			}
 		}
 		if rec := one.GetRecording(); rec != nil {
 			tab.Recording = &domain.RecordingProgress{
-				TranscribedDuration: int(rec.GetTranscribedDuration()),
-				Duration:            int(rec.GetDuration()),
+				TranscribedDuration: int(rec.GetTranscribedDurationMs()),
+				Duration:            int(rec.GetDurationMs()),
 			}
 		}
 		open.Tabs = append(open.Tabs, tab)

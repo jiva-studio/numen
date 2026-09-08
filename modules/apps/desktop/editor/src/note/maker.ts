@@ -7,7 +7,7 @@
  */
 import type { PlexRelatedSeat } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
-import type { Core, NewLink, RefusalReason, Role } from '../core'
+import type { Core, Link, RefusalReason, Role } from '../core'
 import type { MessageWriter } from '../notices/messages'
 import { REFUSED } from '../words'
 
@@ -41,7 +41,7 @@ const facing: Partial<Record<PlexRelatedSeat, PlexRelatedSeat>> = {
  * What a new note writes to sit in that seat of another one. A note in no seat
  * writes nothing, and a seat nothing faces is not a seat to make one in.
  */
-const seatedOn = (from: string, seat: PlexRelatedSeat | null): readonly NewLink[] | null => {
+const seatedOn = (from: string, seat: PlexRelatedSeat | null): readonly Link[] | null => {
   if (!seat) return []
   const opposite = facing[seat]
   const role = opposite && carries[opposite]
@@ -80,7 +80,7 @@ export function noteMaker(core: Core, said: MessageWriter) {
   async function creates(
     title: string,
     folder: string,
-    links: readonly NewLink[],
+    links: readonly Link[],
   ): Promise<NoteRef | RefusalReason | null> {
     try {
       const made = await core.create({ title, folder, links })
@@ -99,7 +99,7 @@ export function noteMaker(core: Core, said: MessageWriter) {
    * taken: whether a name is free is the filesystem's to answer at the moment
    * the file is made, so it is asked one name at a time.
    */
-  async function named(folder: string, links: readonly NewLink[]): Promise<NoteRef | null> {
+  async function named(folder: string, links: readonly Link[]): Promise<NoteRef | null> {
     for (let taken = 1; taken <= names; taken++) {
       const made = await creates(nameAt(taken), folder, links)
       if (made === 'occupied') continue

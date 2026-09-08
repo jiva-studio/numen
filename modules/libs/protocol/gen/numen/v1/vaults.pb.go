@@ -225,6 +225,8 @@ func (*ListVaultsRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{1}
 }
 
+// ListVaultsResponse is the list itself, which is the same for every window.
+// Which vault a window is showing is asked of that window.
 type ListVaultsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Every vault the installation holds.

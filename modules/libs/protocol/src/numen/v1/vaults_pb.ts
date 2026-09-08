@@ -77,6 +77,7 @@ export const ListVaultsRequestSchema: GenMessage<ListVaultsRequest> = /*@__PURE_
   messageDesc(file_numen_v1_vaults, 1);
 
 /**
+ * ListVaultsResponse is the list itself, which is the same for every window.
  * Which vault a window is showing is asked of that window.
  *
  * @generated from message numen.v1.ListVaultsResponse

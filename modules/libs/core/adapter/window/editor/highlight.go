@@ -40,9 +40,12 @@ func (a *API) ListHighlights(
 
 	out := &v1.ListHighlightsResponse{Runs: make([]*v1.Highlight, 0, len(found))}
 	for _, pages := range found {
-		one := &v1.Highlight{Pages: make([]*v1.Page, 0, len(pages))}
+		one := &v1.Highlight{Pages: make([]*v1.HighlightedPage, 0, len(pages))}
 		for _, page := range pages {
-			on := &v1.Page{Index: int32(page.Index), Rects: make([]*v1.Rect, 0, len(page.Rects))}
+			on := &v1.HighlightedPage{
+				Index: int32(page.Index),
+				Rects: make([]*v1.Rect, 0, len(page.Rects)),
+			}
 			for _, box := range page.Rects {
 				on.Rects = append(on.Rects, &v1.Rect{
 					MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY,

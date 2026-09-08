@@ -113,8 +113,8 @@ export function showing(core: Core, how: ShowingOptions = {}) {
     trouble.value = state.failed
     unwatched.value = state.unwatched
     unreachable.value = state.unreachable
-    chunks.value = Number(state.chunks)
-    embedded.value = Number(state.embedded)
+    chunks.value = Number(state.chunkCount)
+    embedded.value = Number(state.embeddedCount)
     embedding.value = state.embedding
     return state
   }

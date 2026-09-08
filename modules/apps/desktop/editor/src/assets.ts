@@ -11,12 +11,12 @@ import type { ConnectError } from '@connectrpc/connect'
 import { ArtifactService, AssetService } from '@numen/protocol'
 import type {
   Cue as CueMessage,
-  Page as PageMessage,
+  HighlightedPage as HighlightedPageMessage,
   ReadTranscriptResponse,
 } from '@numen/protocol'
 import { transport } from '@numen/wire'
 import { fingerprint, stamp } from './answers'
-import type { Documents, Page } from './document/open'
+import type { Documents, HighlightedPage } from './document/open'
 import type { Cue, Recordings } from './media/transcript'
 
 /** What the files of the vault are, for whatever opens one. */
@@ -46,8 +46,8 @@ export const documents: Documents = {
   },
 }
 
-/** One page of a highlight, as the window carries it. */
-const highlighted = (one: PageMessage): Page => ({
+/** One page a highlight falls on, as the window carries it. */
+const highlighted = (one: HighlightedPageMessage): HighlightedPage => ({
   page: one.index,
   rects: one.rects.map((box) => ({
     minX: box.minX,
@@ -66,7 +66,7 @@ export const recordings: Recordings = {
   listened: async (path) => {
     const answer = await waiting(() => assets.getRecording({ path }))
     return {
-      duration: answer.duration,
+      duration: answer.durationMs,
       mediaUrl: answer.mediaUrl,
       mediaType: answer.mediaType,
       url: answer.url,

@@ -50,7 +50,7 @@ import type {
   MoveResult,
   Movement,
   Neighbourhood,
-  NewLink,
+  Link,
   NoteResult,
   NoteType,
   Presence,
@@ -411,7 +411,7 @@ const called: Record<Roles, Role | null> = {
 const roles = namesOf<Role, Roles>(called)
 
 /** A link in the shape the schema carries it. */
-const written = (link: NewLink) => ({
+const written = (link: Link) => ({
   to: link.to,
   role: roles[link.role],
   label: link.label ?? '',

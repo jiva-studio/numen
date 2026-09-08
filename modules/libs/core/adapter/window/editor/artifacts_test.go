@@ -280,7 +280,7 @@ func TestALinkNoteIsAskedWhatItIsBeforeItsWords(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a link note was refused before its words were read: %v", err)
 	}
-	if out.Msg.GetDuration() == 0 {
-		t.Errorf("it runs %d ms, and the words reach further", out.Msg.GetDuration())
+	if out.Msg.GetDurationMs() == 0 {
+		t.Errorf("it runs %d ms, and the words reach further", out.Msg.GetDurationMs())
 	}
 }

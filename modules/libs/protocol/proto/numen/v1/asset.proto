@@ -48,7 +48,7 @@ message GetDocumentResponse {
   // Every page of the document in order, each as its size. How many there are
   // is how many stand here. A page whose size could not be read stands at
   // nothing, and the page after it is still where it was.
-  repeated PageSize pages = 1;
+  repeated Page pages = 1;
 
   // Which bytes these pages were read from. It stands in the address a page is
   // drawn at, so an address names one drawing of one document and answers the
@@ -56,9 +56,9 @@ message GetDocumentResponse {
   Fingerprint fingerprint = 2;
 }
 
-// A PageSize is one page in the document's own units. A client draws a page at
-// whatever width it likes and keeps the shape by this.
-message PageSize {
+// A Page is one page of the document, in the document's own units. A client
+// draws it at whatever width it likes and keeps the shape by this.
+message Page {
   double width = 1;
   double height = 2;
 }
@@ -69,9 +69,9 @@ message GetRecordingRequest {
 }
 
 message GetRecordingResponse {
-  // How long it runs, in milliseconds. A recording nothing has listened to
-  // runs nowhere, and the player it is loaded into is what then says.
-  int32 duration = 1;
+  // How long it runs. A recording nothing has transcribed runs nowhere, and the
+  // player it is loaded into is what then says.
+  int32 duration_ms = 1;
 
   // Where it is played from, and what it is played as. A media element speaks
   // the protocols of the world and not the scheme a window is served under, so
@@ -102,11 +102,11 @@ message ListHighlightsResponse {
 // Highlight is where one run of the text sits: the pages it falls on and, on
 // each, the rectangles covering it.
 message Highlight {
-  repeated Page pages = 1;
+  repeated HighlightedPage pages = 1;
 }
 
-// Page is one page of a highlight, and what to light on it.
-message Page {
+// HighlightedPage is one page a highlight falls on, and what to light on it.
+message HighlightedPage {
   // Where the page stands in the document, counted from the first.
   int32 index = 1;
   repeated Rect rects = 2;

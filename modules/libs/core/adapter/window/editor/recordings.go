@@ -57,9 +57,9 @@ func (a *API) GetRecording(
 	// here: the socket is opened afresh for every run, and what counts as a
 	// recording is this application's to say.
 	out := &v1.GetRecordingResponse{
-		Duration:  int32(transcribed),
-		MediaUrl:  a.Playing.Address(showing, ref),
-		MediaType: domain.MediaType(ref.Path),
+		DurationMs: int32(transcribed),
+		MediaUrl:   a.Playing.Address(showing, ref),
+		MediaType:  domain.MediaType(ref.Path),
 	}
 	// A url plays the copy fetched for it, where one stands. One with none is
 	// framed at the address instead, from the socket this run opened, and the
@@ -73,7 +73,7 @@ func (a *API) GetRecording(
 		}
 	}
 	if len(cues) > 0 {
-		out.Duration = max(out.Duration, int32(cues[len(cues)-1].To))
+		out.DurationMs = max(out.DurationMs, int32(cues[len(cues)-1].To))
 	}
 	return connect.NewResponse(out), nil
 }

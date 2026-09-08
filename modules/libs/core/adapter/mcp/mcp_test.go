@@ -365,7 +365,7 @@ func TestANoteIsMadeAlreadyJoined(t *testing.T) {
 	}
 
 	links := call[struct {
-		Links []mcp.Link `json:"links"`
+		Links []mcp.ResolvedLink `json:"links"`
 	}](t, session, "link_list", map[string]any{"path": made[0].Path})
 	if len(links.Links) != 1 {
 		t.Fatalf("want the link it was made with: %+v", links.Links)
@@ -512,7 +512,7 @@ func TestLinkingTwoNotesShowsAtBothEnds(t *testing.T) {
 	}
 
 	joined := call[struct {
-		Backlinks []mcp.Link `json:"backlinks"`
+		Backlinks []mcp.ResolvedLink `json:"backlinks"`
 	}](t, session, "link_list", map[string]any{"path": "Entropy.md"})
 	if len(joined.Backlinks) != 1 || joined.Backlinks[0].From != "Heat.md" {
 		t.Errorf("want the note that points here: %+v", joined.Backlinks)
@@ -548,14 +548,14 @@ func TestLinksGoWhereTheyBelongAndABadOneCostsOnlyItself(t *testing.T) {
 	}
 
 	from := call[struct {
-		Links []mcp.Link `json:"links"`
+		Links []mcp.ResolvedLink `json:"links"`
 	}](t, session, "link_list", map[string]any{"path": "Heat.md"})
 	if len(from.Links) != 2 {
 		t.Errorf("want both good links written into Heat: %+v", from.Links)
 	}
 
 	elsewhere := call[struct {
-		Links []mcp.Link `json:"links"`
+		Links []mcp.ResolvedLink `json:"links"`
 	}](t, session, "link_list", map[string]any{"path": "Work.md"})
 	if len(elsewhere.Links) != 1 {
 		t.Errorf("want the link belonging to the other note: %+v", elsewhere.Links)
@@ -643,7 +643,7 @@ func TestALinkWrittenOverAnEditNobodySawIsRefused(t *testing.T) {
 
 	// Nothing landed: the link is the one it was, and no second one is there.
 	links := call[struct {
-		Links []mcp.Link `json:"links"`
+		Links []mcp.ResolvedLink `json:"links"`
 	}](t, session, "link_list", map[string]any{"path": "Heat.md"})
 	if len(links.Links) != 1 || links.Links[0].Role != "parent" ||
 		links.Links[0].Label != "follows from" {
@@ -778,7 +778,7 @@ func TestALinkToASharedNameSaysItIsAmbiguous(t *testing.T) {
 	})
 
 	joined := call[struct {
-		Links []mcp.Link `json:"links"`
+		Links []mcp.ResolvedLink `json:"links"`
 	}](t, session, "link_list", map[string]any{"path": "Heat.md"})
 	if len(joined.Links) != 1 {
 		t.Fatalf("want the one link, got %+v", joined.Links)

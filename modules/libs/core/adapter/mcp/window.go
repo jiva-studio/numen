@@ -105,10 +105,10 @@ func called(t domain.Tab) string {
 func stands(t domain.Tab) string {
 	switch t.Kind {
 	case domain.TabDocument:
-		if t.Document == nil || t.Document.Pages <= 0 {
+		if t.Document == nil || t.Document.PageCount <= 0 {
 			return ""
 		}
-		return fmt.Sprintf("page %d of %d", t.Document.Page, t.Document.Pages)
+		return fmt.Sprintf("page %d of %d", t.Document.Page, t.Document.PageCount)
 	case domain.TabRecording:
 		var writtenTo, length int
 		if t.Recording != nil {

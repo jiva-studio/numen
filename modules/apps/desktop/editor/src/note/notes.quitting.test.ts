@@ -19,8 +19,8 @@ const idle = {
   failed: '',
   unwatched: '',
   unreachable: '',
-  chunks: 0n,
-  embedded: 0n,
+  chunkCount: 0n,
+  embeddedCount: 0n,
   embedding: false,
 }
 

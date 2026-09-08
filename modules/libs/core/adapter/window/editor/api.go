@@ -423,7 +423,7 @@ func (a *API) GetVaultState(
 	// chunks and counts none.
 	if a.Indexing.Progress != nil && showing.ID != "" {
 		if held, embedded, err := a.Indexing.Progress.Progress(ctx, showing.ID, text(&a.Indexing.Recipe)); err == nil {
-			out.Chunks, out.Embedded = held, embedded
+			out.ChunkCount, out.EmbeddedCount = held, embedded
 		}
 	}
 	return connect.NewResponse(out), nil

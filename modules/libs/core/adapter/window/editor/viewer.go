@@ -159,16 +159,16 @@ func (a *API) GetDocument(
 	out := &v1.GetDocumentResponse{
 		Fingerprint: &v1.Fingerprint{Path: print.path, Size: print.size, Mtime: print.mtime},
 	}
-	out.Pages = make([]*v1.PageSize, doc.scan.Pages())
+	out.Pages = make([]*v1.Page, doc.scan.Pages())
 	for i := range out.Pages {
 		width, height, err := doc.scan.Size(i)
 		if err != nil {
 			// A page whose size could not be read stands at nothing, and the
 			// pages after it are still where they were.
-			out.Pages[i] = &v1.PageSize{}
+			out.Pages[i] = &v1.Page{}
 			continue
 		}
-		out.Pages[i] = &v1.PageSize{Width: width, Height: height}
+		out.Pages[i] = &v1.Page{Width: width, Height: height}
 	}
 	return connect.NewResponse(out), nil
 }

@@ -26,7 +26,7 @@ func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 		Tabs: []*v1.Tab{
 			{Id: "one", Kind: "plex", Path: "Entropy.md", Title: "Entropy"},
 			{Id: "two", Kind: "recording", Path: "Talk.mp3", Title: "Talk.mp3",
-				Recording: &v1.RecordingProgress{TranscribedDuration: 1000, Duration: 4000}},
+				Recording: &v1.RecordingProgress{TranscribedDurationMs: 1000, DurationMs: 4000}},
 		},
 	}))
 	if err != nil {

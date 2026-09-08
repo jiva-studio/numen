@@ -47,7 +47,7 @@ describe('what a recording tab holds, as whoever answers for the person is told 
 
     expect(kind(held).attends!(held)).toStrictEqual({
       path: 'talks/Ants.mp3',
-      recording: { transcribedDuration: 4000, duration: 9000 },
+      recording: { transcribedDurationMs: 4000, durationMs: 9000 },
     })
   })
 })

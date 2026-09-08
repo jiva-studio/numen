@@ -83,12 +83,12 @@ type GetVaultStateResponse struct {
 	// Why an agent cannot be reached, when one cannot. The window works and the
 	// panel says this instead of answering.
 	Unreachable string `protobuf:"bytes,7,opt,name=unreachable,proto3" json:"unreachable,omitempty"`
-	// Chunks is how many spans of text the index holds, and embedded is how many
-	// of those carry a vector. Cutting finishes long before embedding does, so
-	// the pair is what says how far searching by meaning has got. Both are zero
-	// for a vault nothing has cut yet.
-	Chunks   int64 `protobuf:"varint,8,opt,name=chunks,proto3" json:"chunks,omitempty"`
-	Embedded int64 `protobuf:"varint,9,opt,name=embedded,proto3" json:"embedded,omitempty"`
+	// ChunkCount is how many spans of text the index holds, and EmbeddedCount is
+	// how many of those carry a vector. Cutting finishes long before embedding
+	// does, so the pair is what says how far searching by meaning has got. Both
+	// are zero for a vault nothing has cut yet.
+	ChunkCount    int64 `protobuf:"varint,8,opt,name=chunk_count,json=chunkCount,proto3" json:"chunk_count,omitempty"`
+	EmbeddedCount int64 `protobuf:"varint,9,opt,name=embedded_count,json=embeddedCount,proto3" json:"embedded_count,omitempty"`
 	// Embedding says whether anything is going to turn the chunks into vectors.
 	// False for an installation with no model, where `embedded` stays where it is
 	// and the vault is searched by its words.
@@ -176,16 +176,16 @@ func (x *GetVaultStateResponse) GetUnreachable() string {
 	return ""
 }
 
-func (x *GetVaultStateResponse) GetChunks() int64 {
+func (x *GetVaultStateResponse) GetChunkCount() int64 {
 	if x != nil {
-		return x.Chunks
+		return x.ChunkCount
 	}
 	return 0
 }
 
-func (x *GetVaultStateResponse) GetEmbedded() int64 {
+func (x *GetVaultStateResponse) GetEmbeddedCount() int64 {
 	if x != nil {
-		return x.Embedded
+		return x.EmbeddedCount
 	}
 	return 0
 }
@@ -658,8 +658,8 @@ type DocumentProgress struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Page is the page in front of them, counted from one.
 	Page int32 `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
-	// Pages is how many pages the document has.
-	Pages         int32 `protobuf:"varint,2,opt,name=pages,proto3" json:"pages,omitempty"`
+	// PageCount is how many pages the document has.
+	PageCount     int32 `protobuf:"varint,2,opt,name=page_count,json=pageCount,proto3" json:"page_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -701,9 +701,9 @@ func (x *DocumentProgress) GetPage() int32 {
 	return 0
 }
 
-func (x *DocumentProgress) GetPages() int32 {
+func (x *DocumentProgress) GetPageCount() int32 {
 	if x != nil {
-		return x.Pages
+		return x.PageCount
 	}
 	return 0
 }
@@ -711,12 +711,12 @@ func (x *DocumentProgress) GetPages() int32 {
 // A RecordingProgress is how far into a recording the words written down reach.
 type RecordingProgress struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// TranscribedDuration is how far into the recording the words written down
-	// reach, in milliseconds. It is short of the duration while a run is still
-	// listening, and the two are equal once one has finished.
-	TranscribedDuration int32 `protobuf:"varint,1,opt,name=transcribed_duration,json=transcribedDuration,proto3" json:"transcribed_duration,omitempty"`
-	// Duration is how long the recording is, in milliseconds.
-	Duration      int32 `protobuf:"varint,2,opt,name=duration,proto3" json:"duration,omitempty"`
+	// TranscribedDurationMs is how far into the recording the words written down
+	// reach. It is short of the duration while a run is still going, and the two
+	// are equal once one has finished.
+	TranscribedDurationMs int32 `protobuf:"varint,1,opt,name=transcribed_duration_ms,json=transcribedDurationMs,proto3" json:"transcribed_duration_ms,omitempty"`
+	// DurationMs is how long the recording is.
+	DurationMs    int32 `protobuf:"varint,2,opt,name=duration_ms,json=durationMs,proto3" json:"duration_ms,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -751,16 +751,16 @@ func (*RecordingProgress) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *RecordingProgress) GetTranscribedDuration() int32 {
+func (x *RecordingProgress) GetTranscribedDurationMs() int32 {
 	if x != nil {
-		return x.TranscribedDuration
+		return x.TranscribedDurationMs
 	}
 	return 0
 }
 
-func (x *RecordingProgress) GetDuration() int32 {
+func (x *RecordingProgress) GetDurationMs() int32 {
 	if x != nil {
-		return x.Duration
+		return x.DurationMs
 	}
 	return 0
 }
@@ -770,7 +770,7 @@ var File_numen_v1_vault_proto protoreflect.FileDescriptor
 const file_numen_v1_vault_proto_rawDesc = "" +
 	"\n" +
 	"\x14numen/v1/vault.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x16\n" +
-	"\x14GetVaultStateRequest\"\x8f\x02\n" +
+	"\x14GetVaultStateRequest\"\xa3\x02\n" +
 	"\x15GetVaultStateResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -778,9 +778,10 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x05ready\x18\x04 \x01(\bR\x05ready\x12\x16\n" +
 	"\x06failed\x18\x05 \x01(\tR\x06failed\x12\x1c\n" +
 	"\tunwatched\x18\x06 \x01(\tR\tunwatched\x12 \n" +
-	"\vunreachable\x18\a \x01(\tR\vunreachable\x12\x16\n" +
-	"\x06chunks\x18\b \x01(\x03R\x06chunks\x12\x1a\n" +
-	"\bembedded\x18\t \x01(\x03R\bembedded\x12\x1c\n" +
+	"\vunreachable\x18\a \x01(\tR\vunreachable\x12\x1f\n" +
+	"\vchunk_count\x18\b \x01(\x03R\n" +
+	"chunkCount\x12%\n" +
+	"\x0eembedded_count\x18\t \x01(\x03R\rembeddedCount\x12\x1c\n" +
 	"\tembedding\x18\n" +
 	" \x01(\bR\tembedding\"\x1a\n" +
 	"\x18WatchVaultChangesRequest\"s\n" +
@@ -807,13 +808,15 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x04 \x01(\tR\x05title\x126\n" +
 	"\bdocument\x18\x05 \x01(\v2\x1a.numen.v1.DocumentProgressR\bdocument\x129\n" +
-	"\trecording\x18\x06 \x01(\v2\x1b.numen.v1.RecordingProgressR\trecording\"<\n" +
+	"\trecording\x18\x06 \x01(\v2\x1b.numen.v1.RecordingProgressR\trecording\"E\n" +
 	"\x10DocumentProgress\x12\x12\n" +
-	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x14\n" +
-	"\x05pages\x18\x02 \x01(\x05R\x05pages\"b\n" +
-	"\x11RecordingProgress\x121\n" +
-	"\x14transcribed_duration\x18\x01 \x01(\x05R\x13transcribedDuration\x12\x1a\n" +
-	"\bduration\x18\x02 \x01(\x05R\bduration2\xdd\x02\n" +
+	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x1d\n" +
+	"\n" +
+	"page_count\x18\x02 \x01(\x05R\tpageCount\"l\n" +
+	"\x11RecordingProgress\x126\n" +
+	"\x17transcribed_duration_ms\x18\x01 \x01(\x05R\x15transcribedDurationMs\x12\x1f\n" +
+	"\vduration_ms\x18\x02 \x01(\x05R\n" +
+	"durationMs2\xdd\x02\n" +
 	"\fVaultService\x12P\n" +
 	"\rGetVaultState\x12\x1e.numen.v1.GetVaultStateRequest\x1a\x1f.numen.v1.GetVaultStateResponse\x12^\n" +
 	"\x11WatchVaultChanges\x12\".numen.v1.WatchVaultChangesRequest\x1a#.numen.v1.WatchVaultChangesResponse0\x01\x12I\n" +

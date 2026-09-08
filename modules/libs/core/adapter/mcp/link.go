@@ -24,12 +24,12 @@ func addLinkReadingTools(server *sdk.Server, core Core) {
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path string `json:"path" jsonschema:"the note to ask about"`
 	}) (*sdk.CallToolResult, struct {
-		Links     []Link `json:"links"`
-		Backlinks []Link `json:"backlinks"`
+		Links     []ResolvedLink `json:"links"`
+		Backlinks []ResolvedLink `json:"backlinks"`
 	}, error) {
 		type out = struct {
-			Links     []Link `json:"links"`
-			Backlinks []Link `json:"backlinks"`
+			Links     []ResolvedLink `json:"links"`
+			Backlinks []ResolvedLink `json:"backlinks"`
 		}
 		found, err := core.Notes.Links.Execute(ctx, core.shown().Vault, in.Path)
 		if err != nil {
@@ -66,7 +66,7 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 		// Asked of the whole call, before a file is opened.
 		size := 0
 		for _, add := range in.Links {
-			size += carried(add.NewLink)
+			size += carried(add.Link)
 		}
 		if size > maxBytes {
 			return nil, out{}, fmt.Errorf(
@@ -82,7 +82,7 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 		at := map[string][]int{}
 		for i, add := range in.Links {
 			res.Added = append(res.Added, AddOutcome{From: add.From, To: add.To})
-			link := writes(add.NewLink)
+			link := writes(add.Link)
 			if err := note.Writable(link); err != nil {
 				res.Added[i].Refused = refusing(err)
 				continue
@@ -190,9 +190,9 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 	})
 }
 
-// Link is one relationship as a tool reports it: what was written, and what it
-// currently reaches.
-type Link struct {
+// ResolvedLink is one relationship as a tool reports it: what was written, and
+// what it currently reaches.
+type ResolvedLink struct {
 	From string `json:"from" jsonschema:"the note the link is written in"`
 	To   string `json:"to,omitempty" jsonschema:"the note it reaches now, absent when it reaches nothing"`
 	// Address is what the file actually says, which is not the same question.
@@ -204,10 +204,10 @@ type Link struct {
 	Ambiguous bool   `json:"ambiguous,omitempty" jsonschema:"more than one note answers to this name, and it reached the nearest"`
 }
 
-func linksOf(links []domain.ResolvedLink) []Link {
-	out := make([]Link, 0, len(links))
+func linksOf(links []domain.ResolvedLink) []ResolvedLink {
+	out := make([]ResolvedLink, 0, len(links))
 	for _, l := range links {
-		out = append(out, Link{
+		out = append(out, ResolvedLink{
 			From:      l.From,
 			To:        l.To,
 			Address:   l.Target.String(),
@@ -221,9 +221,9 @@ func linksOf(links []domain.ResolvedLink) []Link {
 	return out
 }
 
-// NewLink is a relationship written into a note, whether the note is being made
-// or is already there.
-type NewLink struct {
+// Link is a relationship written into a note, whether the note is being made or
+// is already there.
+type Link struct {
 	To    string `json:"to" jsonschema:"the other note's name, or note://<identifier> when the name is ambiguous"`
 	Role  string `json:"role" jsonschema:"what kind of relationship this is: parent, child, jump, ref or attachment"`
 	Type  string `json:"type,omitempty" jsonschema:"leave this out: a value is introduced together with the code that reads it, and none is defined yet"`
@@ -232,7 +232,7 @@ type NewLink struct {
 }
 
 // writes turns what was asked for into what the core writes.
-func writes(l NewLink) domain.Link {
+func writes(l Link) domain.Link {
 	return domain.Link{
 		Target: domain.ParseAddress(l.To),
 		Role:   domain.LinkRole(l.Role),
@@ -242,7 +242,7 @@ func writes(l NewLink) domain.Link {
 	}
 }
 
-func written(links []NewLink) []domain.Link {
+func written(links []Link) []domain.Link {
 	if len(links) == 0 {
 		return nil
 	}
@@ -255,7 +255,7 @@ func written(links []NewLink) []domain.Link {
 
 // carried is how many bytes a link will put in a file. Every field of one is
 // written into the frontmatter, so every field is measured.
-func carried(l NewLink) int {
+func carried(l Link) int {
 	return len(l.To) + len(l.Role) + len(l.Type) + len(l.Label) + len(l.Why)
 }
 
@@ -272,7 +272,7 @@ type Addition struct {
 	// Fingerprint is that note as the caller read it. Links sharing a note are
 	// one write, so they name one fingerprint between them.
 	Fingerprint string `json:"fingerprint" jsonschema:"what note_read said the note was, which refuses a write over somebody else's edit; the same for every link written into one note"`
-	NewLink
+	Link
 }
 
 // AddOutcome is what happened to one link in a batch. Refused is empty when it

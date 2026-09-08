@@ -124,8 +124,8 @@ export function recordingKind(
     attends: (state) => ({
       path: state.path,
       recording: {
-        transcribedDuration: state.transcribedDuration.value,
-        duration: state.duration.value,
+        transcribedDurationMs: state.transcribedDuration.value,
+        durationMs: state.duration.value,
       },
     }),
   }

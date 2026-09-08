@@ -99,9 +99,9 @@ message Vault {
 
 message ListVaultsRequest {}
 
+// ListVaultsResponse is the list itself, which is the same for every window.
+// Which vault a window is showing is asked of that window.
 message ListVaultsResponse {
-  // Which vault a window is showing is asked of that window.
-
   // Every vault the installation holds.
   repeated Vault vaults = 1;
 }

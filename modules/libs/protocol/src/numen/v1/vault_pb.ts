@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QiuwEKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFcmVhZHkYBCABKAgSDgoGZmFpbGVkGAUgASgJEhEKCXVud2F0Y2hlZBgGIAEoCRITCgt1bnJlYWNoYWJsZRgHIAEoCRIOCgZjaHVua3MYCCABKAMSEAoIZW1iZWRkZWQYCSABKAMSEQoJZW1iZWRkaW5nGAogASgIIhoKGFdhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdCJbChlXYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlEg0KBXBhdGhzGAEgAygJEg4KBnJlbG9hZBgCIAEoCBIfCgdyZW5hbWVkGAMgAygLMg4ubnVtZW4udjEuTW92ZSIgCgRNb3ZlEgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkiEwoRV2F0Y2hGb2N1c1JlcXVlc3QiYgoSV2F0Y2hGb2N1c1Jlc3BvbnNlEgwKBHBhdGgYASABKAkSDQoFc3RhcnQYAiABKAUSDgoGbGVuZ3RoGAMgASgFEh8KBGFsc28YBCADKAsyES5udW1lbi52MS5TdHJldGNoIkIKFFdyaXRlT3BlblRhYnNSZXF1ZXN0EhsKBHRhYnMYASADKAsyDS5udW1lbi52MS5UYWISDQoFZnJvbnQYAiABKAkiFwoVV3JpdGVPcGVuVGFic1Jlc3BvbnNlIpoBCgNUYWISCgoCaWQYASABKAkSDAoEa2luZBgCIAEoCRIMCgRwYXRoGAMgASgJEg0KBXRpdGxlGAQgASgJEiwKCGRvY3VtZW50GAUgASgLMhoubnVtZW4udjEuRG9jdW1lbnRQcm9ncmVzcxIuCglyZWNvcmRpbmcYBiABKAsyGy5udW1lbi52MS5SZWNvcmRpbmdQcm9ncmVzcyIvChBEb2N1bWVudFByb2dyZXNzEgwKBHBhZ2UYASABKAUSDQoFcGFnZXMYAiABKAUiQwoRUmVjb3JkaW5nUHJvZ3Jlc3MSHAoUdHJhbnNjcmliZWRfZHVyYXRpb24YASABKAUSEAoIZHVyYXRpb24YAiABKAUy3QIKDFZhdWx0U2VydmljZRJQCg1HZXRWYXVsdFN0YXRlEh4ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVzcG9uc2USXgoRV2F0Y2hWYXVsdENoYW5nZXMSIi5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QaIy5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlMAESSQoKV2F0Y2hGb2N1cxIbLm51bWVuLnYxLldhdGNoRm9jdXNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hGb2N1c1Jlc3BvbnNlMAESUAoNV3JpdGVPcGVuVGFicxIeLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVPcGVuVGFic1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QixgEKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFcmVhZHkYBCABKAgSDgoGZmFpbGVkGAUgASgJEhEKCXVud2F0Y2hlZBgGIAEoCRITCgt1bnJlYWNoYWJsZRgHIAEoCRITCgtjaHVua19jb3VudBgIIAEoAxIWCg5lbWJlZGRlZF9jb3VudBgJIAEoAxIRCgllbWJlZGRpbmcYCiABKAgiGgoYV2F0Y2hWYXVsdENoYW5nZXNSZXF1ZXN0IlsKGVdhdGNoVmF1bHRDaGFuZ2VzUmVzcG9uc2USDQoFcGF0aHMYASADKAkSDgoGcmVsb2FkGAIgASgIEh8KB3JlbmFtZWQYAyADKAsyDi5udW1lbi52MS5Nb3ZlIiAKBE1vdmUSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCSITChFXYXRjaEZvY3VzUmVxdWVzdCJiChJXYXRjaEZvY3VzUmVzcG9uc2USDAoEcGF0aBgBIAEoCRINCgVzdGFydBgCIAEoBRIOCgZsZW5ndGgYAyABKAUSHwoEYWxzbxgEIAMoCzIRLm51bWVuLnYxLlN0cmV0Y2giQgoUV3JpdGVPcGVuVGFic1JlcXVlc3QSGwoEdGFicxgBIAMoCzINLm51bWVuLnYxLlRhYhINCgVmcm9udBgCIAEoCSIXChVXcml0ZU9wZW5UYWJzUmVzcG9uc2UimgEKA1RhYhIKCgJpZBgBIAEoCRIMCgRraW5kGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFdGl0bGUYBCABKAkSLAoIZG9jdW1lbnQYBSABKAsyGi5udW1lbi52MS5Eb2N1bWVudFByb2dyZXNzEi4KCXJlY29yZGluZxgGIAEoCzIbLm51bWVuLnYxLlJlY29yZGluZ1Byb2dyZXNzIjQKEERvY3VtZW50UHJvZ3Jlc3MSDAoEcGFnZRgBIAEoBRISCgpwYWdlX2NvdW50GAIgASgFIkkKEVJlY29yZGluZ1Byb2dyZXNzEh8KF3RyYW5zY3JpYmVkX2R1cmF0aW9uX21zGAEgASgFEhMKC2R1cmF0aW9uX21zGAIgASgFMt0CCgxWYXVsdFNlcnZpY2USUAoNR2V0VmF1bHRTdGF0ZRIeLm51bWVuLnYxLkdldFZhdWx0U3RhdGVSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlc3BvbnNlEl4KEVdhdGNoVmF1bHRDaGFuZ2VzEiIubnVtZW4udjEuV2F0Y2hWYXVsdENoYW5nZXNSZXF1ZXN0GiMubnVtZW4udjEuV2F0Y2hWYXVsdENoYW5nZXNSZXNwb25zZTABEkkKCldhdGNoRm9jdXMSGy5udW1lbi52MS5XYXRjaEZvY3VzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoRm9jdXNSZXNwb25zZTABElAKDVdyaXRlT3BlblRhYnMSHi5udW1lbi52MS5Xcml0ZU9wZW5UYWJzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetVaultStateRequest
@@ -93,19 +93,19 @@ export type GetVaultStateResponse = Message<"numen.v1.GetVaultStateResponse"> & 
   unreachable: string;
 
   /**
-   * Chunks is how many spans of text the index holds, and embedded is how many
-   * of those carry a vector. Cutting finishes long before embedding does, so
-   * the pair is what says how far searching by meaning has got. Both are zero
-   * for a vault nothing has cut yet.
+   * ChunkCount is how many spans of text the index holds, and EmbeddedCount is
+   * how many of those carry a vector. Cutting finishes long before embedding
+   * does, so the pair is what says how far searching by meaning has got. Both
+   * are zero for a vault nothing has cut yet.
    *
-   * @generated from field: int64 chunks = 8;
+   * @generated from field: int64 chunk_count = 8;
    */
-  chunks: bigint;
+  chunkCount: bigint;
 
   /**
-   * @generated from field: int64 embedded = 9;
+   * @generated from field: int64 embedded_count = 9;
    */
-  embedded: bigint;
+  embeddedCount: bigint;
 
   /**
    * Embedding says whether anything is going to turn the chunks into vectors.
@@ -371,11 +371,11 @@ export type DocumentProgress = Message<"numen.v1.DocumentProgress"> & {
   page: number;
 
   /**
-   * Pages is how many pages the document has.
+   * PageCount is how many pages the document has.
    *
-   * @generated from field: int32 pages = 2;
+   * @generated from field: int32 page_count = 2;
    */
-  pages: number;
+  pageCount: number;
 };
 
 /**
@@ -392,20 +392,20 @@ export const DocumentProgressSchema: GenMessage<DocumentProgress> = /*@__PURE__*
  */
 export type RecordingProgress = Message<"numen.v1.RecordingProgress"> & {
   /**
-   * TranscribedDuration is how far into the recording the words written down
-   * reach, in milliseconds. It is short of the duration while a run is still
-   * listening, and the two are equal once one has finished.
+   * TranscribedDurationMs is how far into the recording the words written down
+   * reach. It is short of the duration while a run is still going, and the two
+   * are equal once one has finished.
    *
-   * @generated from field: int32 transcribed_duration = 1;
+   * @generated from field: int32 transcribed_duration_ms = 1;
    */
-  transcribedDuration: number;
+  transcribedDurationMs: number;
 
   /**
-   * Duration is how long the recording is, in milliseconds.
+   * DurationMs is how long the recording is.
    *
-   * @generated from field: int32 duration = 2;
+   * @generated from field: int32 duration_ms = 2;
    */
-  duration: number;
+  durationMs: number;
 };
 
 /**

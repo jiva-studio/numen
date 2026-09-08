@@ -482,10 +482,10 @@ type MoveOutcome struct {
 
 // NewNote is one note a caller wants made, and what it should be joined to.
 type NewNote struct {
-	Title  string    `json:"title" jsonschema:"what the note is called"`
-	Body   string    `json:"body,omitempty" jsonschema:"the markdown to start it with"`
-	Folder string    `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
-	Links  []NewLink `json:"links,omitempty" jsonschema:"the relationships to write into it, so it arrives already joined"`
+	Title  string `json:"title" jsonschema:"what the note is called"`
+	Body   string `json:"body,omitempty" jsonschema:"the markdown to start it with"`
+	Folder string `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
+	Links  []Link `json:"links,omitempty" jsonschema:"the relationships to write into it, so it arrives already joined"`
 }
 
 // CreateOutcome is what happened to one note in a batch.

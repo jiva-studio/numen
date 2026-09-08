@@ -261,10 +261,10 @@ enum Role {
   ROLE_ATTACHMENT = 5;
 }
 
-// NewLink is one relationship as the note it is written in declares it: the
-// note at the other end, by the path it is filed under, and what kind of
+// Link is one relationship as the note it is written in declares it: the note
+// at the other end, by the path it is filed under, and what kind of
 // relationship it is.
-message NewLink {
+message Link {
   string to = 1;
   Role role = 2;
 
@@ -280,7 +280,7 @@ message CreateNoteRequest {
   string path = 2;
 
   // What the note is joined to, written into it as it is made.
-  repeated NewLink links = 3;
+  repeated Link links = 3;
 }
 
 message CreateNoteResponse {
@@ -299,7 +299,7 @@ message CreateNoteResponse {
 message WriteLinkRequest {
   // The note the link is written in.
   string path = 1;
-  NewLink link = 2;
+  Link link = 2;
 }
 
 message WriteLinkResponse {

@@ -128,9 +128,9 @@ func TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 	if reason := state.Msg.GetFailed(); reason != "" {
 		t.Errorf("the window says it could not be read: %s", reason)
 	}
-	if state.Msg.GetChunks() != 0 || state.Msg.GetEmbedded() != 0 {
+	if state.Msg.GetChunkCount() != 0 || state.Msg.GetEmbeddedCount() != 0 {
 		t.Errorf("the window counted %d chunks and %d of them embedded",
-			state.Msg.GetChunks(), state.Msg.GetEmbedded())
+			state.Msg.GetChunkCount(), state.Msg.GetEmbeddedCount())
 	}
 
 	opening, err := f.vault.GetOpeningNote(t.Context(), connect.NewRequest(&v1.GetOpeningNoteRequest{}))
@@ -259,7 +259,7 @@ func TestAWindowStandingOnNothingRefusesEveryQuestionAboutAVault(t *testing.T) {
 		"join a note to another": func() error {
 			_, err := f.vault.WriteLink(t.Context(), connect.NewRequest(&v1.WriteLinkRequest{
 				Path: "One.md",
-				Link: &v1.NewLink{To: "Two.md", Role: v1.Role_ROLE_JUMP},
+				Link: &v1.Link{To: "Two.md", Role: v1.Role_ROLE_JUMP},
 			}))
 			return err
 		},

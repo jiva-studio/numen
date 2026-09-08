@@ -118,14 +118,14 @@ enum FlushResult {
   FLUSH_RESULT_UNSPECIFIED = 0;
 
   // Nothing is left. The caller held nothing of its own.
-  FLUSH_RESULT_NOTHING = 3;
+  FLUSH_RESULT_NOTHING = 1;
 
   // Everything this caller held is written.
-  FLUSH_RESULT_WRITTEN = 1;
+  FLUSH_RESULT_WRITTEN = 2;
 
   // Something this caller holds could not be written, and a person is being
   // asked what to do with it. The window stays until they answer.
-  FLUSH_RESULT_ASKING = 2;
+  FLUSH_RESULT_ASKING = 3;
 }
 
 message ReportFlushRequest {

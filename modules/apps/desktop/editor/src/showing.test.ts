@@ -26,8 +26,8 @@ const settled = {
   failed: '',
   unwatched: '',
   unreachable: '',
-  chunks: 0n,
-  embedded: 0n,
+  chunkCount: 0n,
+  embeddedCount: 0n,
   embedding: false,
 }
 
@@ -436,7 +436,7 @@ describe('a vault that is not being followed', () => {
 describe('chunks with nothing to embed them', () => {
   it('says so, since the vault is searched by its words from now on', async () => {
     const core = fake({
-      state: async () => ({ ...settled, chunks: 4823n, embedded: 0n, embedding: false }),
+      state: async () => ({ ...settled, chunkCount: 4823n, embeddedCount: 0n, embedding: false }),
     })
     const window = showing(core, { wait: async () => window.close() })
 
@@ -539,7 +539,7 @@ describe('what the application is doing', () => {
       },
       state: async () => {
         asks++
-        return { ...settled, chunks: BigInt(asks * 1000), embedding: false }
+        return { ...settled, chunkCount: BigInt(asks * 1000), embedding: false }
       },
       tasks: async function* () {
         yield [reading(16)]

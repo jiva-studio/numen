@@ -6,7 +6,7 @@
  * and they are the ones asked about here.
  */
 import { describe, expect, it } from 'vitest'
-import { openDocument, type Documents, type Page, type Shape } from './open'
+import { openDocument, type Documents, type HighlightedPage, type Shape } from './open'
 
 const SHAPE: Shape = {
   pages: [
@@ -22,7 +22,7 @@ const SHAPE: Shape = {
  * about each stretch asked about with the highlights standing at the same place
  * in `where`, and with nothing where that list is shorter.
  */
-function book(shape: Shape | Error = SHAPE, where: readonly (readonly Page[])[] = []) {
+function book(shape: Shape | Error = SHAPE, where: readonly (readonly HighlightedPage[])[] = []) {
   const asked: string[] = []
   /** Every stretch of the document's text it was asked what stands on. */
   const stretches: string[] = []

@@ -308,7 +308,7 @@ export interface Tab {
   readonly recording?: RecordingProgress
 }
 
-/** The document a tab holds, as the person is reading it. */
+/** How far through a document the person reading it is. */
 export interface DocumentProgress {
   /** The page in front of them, counted from one. */
   readonly page: number
@@ -316,15 +316,15 @@ export interface DocumentProgress {
   readonly pageCount: number
 }
 
-/** The recording a tab holds, as far as it has been written down. */
+/** How far into a recording the words written down reach. */
 export interface RecordingProgress {
   /**
-   * How far into the recording the words written down reach, in milliseconds.
-   * It is short of the duration while a run is still listening.
+   * How far into the recording the words written down reach. It is short of the
+   * duration while a run is still going.
    */
-  readonly transcribedDuration: number
-  /** How long the recording is, in milliseconds. */
-  readonly duration: number
+  readonly transcribedDurationMs: number
+  /** How long the recording is. */
+  readonly durationMs: number
 }
 
 /** What the person has open: every tab, and which of them is in front. */
@@ -365,8 +365,8 @@ export interface Core {
     unwatched: string
     unreachable: string
     /** Spans of text the index holds, and how many of them carry a vector. */
-    chunks: bigint
-    embedded: bigint
+    chunkCount: bigint
+    embeddedCount: bigint
     /** Whether anything is going to turn the chunks into vectors. */
     embedding: boolean
   }>
@@ -424,7 +424,7 @@ export interface Core {
    * A relationship written into one note. The note at the other end is left
    * alone: a link is one end's account of a relationship.
    */
-  join(path: string, link: NewLink): Promise<RefusalReason | null>
+  join(path: string, link: Link): Promise<RefusalReason | null>
   /**
    * A note given a different name. Whichever of the title and the filename
    * names it is brought into line, and the file follows where a title and a
@@ -557,7 +557,7 @@ export interface NewNote {
   title: string
   /** Where in the vault it goes, relative to the root. Empty is the root. */
   folder: string
-  links: readonly NewLink[]
+  links: readonly Link[]
   /**
    * Where the note points. Given, it is made a link, and the vault refuses an
    * address nothing can be fetched from.
@@ -576,7 +576,7 @@ export type Role = 'parent' | 'child' | 'jump' | 'ref' | 'attachment'
  * other end, by the path it is filed under, and what kind of relationship it
  * is.
  */
-export interface NewLink {
+export interface Link {
   to: string
   role: Role
   /** What the person calls this relationship, when they call it anything. */

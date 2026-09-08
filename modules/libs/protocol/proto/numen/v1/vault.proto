@@ -63,12 +63,12 @@ message GetVaultStateResponse {
   // panel says this instead of answering.
   string unreachable = 7;
 
-  // Chunks is how many spans of text the index holds, and embedded is how many
-  // of those carry a vector. Cutting finishes long before embedding does, so
-  // the pair is what says how far searching by meaning has got. Both are zero
-  // for a vault nothing has cut yet.
-  int64 chunks = 8;
-  int64 embedded = 9;
+  // ChunkCount is how many spans of text the index holds, and EmbeddedCount is
+  // how many of those carry a vector. Cutting finishes long before embedding
+  // does, so the pair is what says how far searching by meaning has got. Both
+  // are zero for a vault nothing has cut yet.
+  int64 chunk_count = 8;
+  int64 embedded_count = 9;
 
   // Embedding says whether anything is going to turn the chunks into vectors.
   // False for an installation with no model, where `embedded` stays where it is
@@ -163,17 +163,17 @@ message DocumentProgress {
   // Page is the page in front of them, counted from one.
   int32 page = 1;
 
-  // Pages is how many pages the document has.
-  int32 pages = 2;
+  // PageCount is how many pages the document has.
+  int32 page_count = 2;
 }
 
 // A RecordingProgress is how far into a recording the words written down reach.
 message RecordingProgress {
-  // TranscribedDuration is how far into the recording the words written down
-  // reach, in milliseconds. It is short of the duration while a run is still
-  // listening, and the two are equal once one has finished.
-  int32 transcribed_duration = 1;
+  // TranscribedDurationMs is how far into the recording the words written down
+  // reach. It is short of the duration while a run is still going, and the two
+  // are equal once one has finished.
+  int32 transcribed_duration_ms = 1;
 
-  // Duration is how long the recording is, in milliseconds.
-  int32 duration = 2;
+  // DurationMs is how long the recording is.
+  int32 duration_ms = 2;
 }

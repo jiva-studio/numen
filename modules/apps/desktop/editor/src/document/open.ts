@@ -18,14 +18,14 @@ export interface Rect {
   readonly maxY: number
 }
 
-/** One page and what is highlighted on it. */
-export interface Page {
+/** One page a highlight falls on, and what is lit on it. */
+export interface HighlightedPage {
   readonly page: number
   readonly rects: readonly Rect[]
 }
 
 /** One page's size, in the page's own units. */
-export interface PageSize {
+export interface Page {
   readonly width: number
   readonly height: number
 }
@@ -42,7 +42,7 @@ export interface PageSize {
  * ones arrived.
  */
 export interface Shape {
-  readonly pages: readonly PageSize[]
+  readonly pages: readonly Page[]
   /** The file these pages were read from, as the one string the window carries. */
   readonly at: string
 }
@@ -67,7 +67,7 @@ export interface Documents {
   highlights(
     path: string,
     stretches: readonly Stretch[],
-  ): Promise<readonly (readonly Page[])[]>
+  ): Promise<readonly (readonly HighlightedPage[])[]>
 }
 
 /** The widest a page is drawn, in device pixels, which is as wide as one is drawn. */
@@ -78,7 +78,7 @@ export type OpenDocumentState = ReturnType<typeof openDocument>
 
 export function openDocument(documents: Documents, path: string) {
   /** How big each page is, in its own units. */
-  const pages = shallowRef<readonly PageSize[]>([])
+  const pages = shallowRef<readonly Page[]>([])
   /** Which page is in front, counted from the first. */
   const at = ref(0)
   /** How wide the page is drawn, in device pixels. */
@@ -86,12 +86,12 @@ export function openDocument(documents: Documents, path: string) {
   /** The file the pages were read from, which the addresses they are drawn at name. */
   const seen = ref('')
   /** What is highlighted, page by page: the place the tab turned to. */
-  const highlights = shallowRef<readonly Page[]>([])
+  const highlights = shallowRef<readonly HighlightedPage[]>([])
   /**
    * The other places asked for, page by page. They are somewhere else to look
    * and not where the person was taken.
    */
-  const others = shallowRef<readonly (readonly Page[])[]>([])
+  const others = shallowRef<readonly (readonly HighlightedPage[])[]>([])
   /** What this document could not do, in words the window puts up for it. */
   const trouble = ref('')
 
@@ -162,7 +162,7 @@ export function openDocument(documents: Documents, path: string) {
    * place the person was sent to: the tab turns to its first page, and the rest
    * are highlighted where they fall.
    */
-  const highlight = async (where: readonly (readonly Page[])[]) => {
+  const highlight = async (where: readonly (readonly HighlightedPage[])[]) => {
     const [front = [], ...rest] = where
     highlights.value = front
     others.value = rest
