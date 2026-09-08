@@ -35,7 +35,7 @@ test('nothing but a test draws this export', () => {
   for (const one of [
     'modules/libs/ui/src/index.ts',
     'modules/libs/wire/index.ts',
-    'modules/apps/desktop/editor/src/features/preset/curve.ts',
+    'modules/apps/desktop/editor/src/flashcards-preset-tab/curve.ts',
     'modules/apps/desktop/flashcards/src/decks/presets.ts',
     'modules/apps/mobile/src/core.ts',
   ]) {

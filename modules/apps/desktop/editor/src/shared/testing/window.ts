@@ -201,7 +201,7 @@ const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoiste
   } as Record<string, readonly Record<string, unknown>[]>,
 }))
 
-vi.mock('../../vault', () => ({
+vi.mock('../../window/vault', () => ({
   vault: {},
   vaults: {
     list: async () => listed,
@@ -278,7 +278,7 @@ vi.mock('../../vault', () => ({
   },
 }))
 
-vi.mock('../../assets', () => ({
+vi.mock('../../window/assets', () => ({
   documents: {
     shape: async () => ({ pages: 1, pageSizes: [{ wide: 100, high: 100 }] }),
     page: () => '',
@@ -323,7 +323,7 @@ vi.mock('../artifacts', () => ({
   },
 }))
 
-vi.mock('../../features/cards/vault/cards', () => ({
+vi.mock('../flashcards/cards', () => ({
   cards: {
     // A card is named by the first field of the stencil it is cut by, so the
     // window is told of one.
@@ -377,9 +377,9 @@ vi.mock('../../features/cards/vault/cards', () => ({
   },
 }))
 
-vi.mock('../../features/agent/core', () => ({ core: { ask: held, finish: async () => {} } }))
+vi.mock('../../agent-tab/core', () => ({ core: { ask: held, finish: async () => {} } }))
 
-vi.mock('../../features/settings/theme', () => ({
+vi.mock('../settings/theme', () => ({
   themes: {
     appearance: async () => ({
       themes: [
