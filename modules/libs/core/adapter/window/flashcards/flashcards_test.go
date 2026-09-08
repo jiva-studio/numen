@@ -199,7 +199,7 @@ func asked(t *testing.T, client numenv1connect.FlashcardsServiceClient) *v1.Watc
 			first = false
 			out.Day, out.Vaults = said.GetDay(), said.GetVaults()
 			for where, one := range out.GetVaults() {
-				at[one.GetName()] = where
+				at[one.GetId()] = where
 			}
 			continue
 		}
@@ -209,9 +209,9 @@ func asked(t *testing.T, client numenv1connect.FlashcardsServiceClient) *v1.Watc
 			// running so that a page which has gone is found.
 			continue
 		}
-		where, listed := at[one.GetName()]
+		where, listed := at[one.GetId()]
 		if !listed {
-			t.Fatalf("a count arrived for %s, which the front door did not list", one.GetName())
+			t.Fatalf("a count arrived for %s, which the front door did not list", one.GetId())
 		}
 		out.Vaults[where] = one
 	}
@@ -347,7 +347,7 @@ func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
 func counted(t *testing.T, said *v1.WatchCardsDueResponse, id string) *v1.VaultCardsDue {
 	t.Helper()
 	for _, one := range said.GetVaults() {
-		if one.GetName() == id {
+		if one.GetId() == id {
 			return one
 		}
 	}
@@ -616,7 +616,7 @@ func TestEveryVaultIsCountedOnTheFrontDoor(t *testing.T) {
 	}
 	for _, one := range out.GetVaults() {
 		if one.GetFaces() != 1 || one.GetNew() != 1 {
-			t.Errorf("%s comes to %+v", one.GetDisplayName(), one)
+			t.Errorf("%s comes to %+v", one.GetName(), one)
 		}
 	}
 }

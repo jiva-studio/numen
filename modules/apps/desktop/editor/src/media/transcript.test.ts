@@ -24,7 +24,7 @@ const CUES: readonly Cue[] = [
 ]
 
 const SUMMARY: RecordingSummary = {
-  length: 9_000,
+  duration: 9_000,
   media: 'http://127.0.0.1:1/files/w/v/talk.mp3',
   type: 'audio/mpeg',
   url: '',
@@ -76,7 +76,7 @@ function talk(
 function played() {
   const address = ref('')
   const at = ref(0)
-  const length = ref(0)
+  const duration = ref(0)
   const playing = ref(false)
   const failed = ref('')
   const sought: number[] = []
@@ -84,7 +84,7 @@ function played() {
   const player: Player = {
     address,
     at,
-    length,
+    duration,
     playing,
     failed,
     load: (wanted) => void (address.value = wanted),
@@ -106,7 +106,7 @@ function played() {
     at.value = ms
   }
 
-  return { player, sought, moves, failed, address, length, playing, at }
+  return { player, sought, moves, failed, address, duration, playing, at }
 }
 
 /** Everything asked for has been answered and everything waiting has run. */
@@ -134,13 +134,13 @@ describe('a recording opened', () => {
 
     expect(asked).toStrictEqual(['about talks/Ants.mp3', 'cues talks/Ants.mp3'])
     expect(heard.cues.value).toStrictEqual(CUES)
-    expect(heard.length.value).toBe(9_000)
+    expect(heard.duration.value).toBe(9_000)
   })
 })
 
 describe('a recording nothing has listened to', () => {
   it('holds no words and says nothing went wrong', async () => {
-    const { recordings } = talk([], { length: 0, media: '', type: '', url: '' })
+    const { recordings } = talk([], { duration: 0, media: '', type: '', url: '' })
     const heard = transcript(recordings, 'talks/Ants.mp3')
 
     await settled()
@@ -483,24 +483,24 @@ describe('how long the recording runs, as the controls read it', () => {
   })
 
   it('is what the recording itself says, where nothing has listened to it', async () => {
-    const { recordings } = talk([], { ...SUMMARY, length: 0 })
-    const { player, length } = played()
+    const { recordings } = talk([], { ...SUMMARY, duration: 0 })
+    const { player, duration } = played()
     const heard = transcript(recordings, 'talks/Ants.mp3', { through: player })
     await settled()
 
-    length.value = 85_000
+    duration.value = 85_000
 
     expect(heard.runs.value).toBe(85_000)
   })
 
   it('is what the application said while the player holds another recording', async () => {
     const { recordings } = talk()
-    const { player, length } = played()
+    const { player, duration } = played()
     const heard = transcript(recordings, 'talks/Ants.mp3', { through: player })
     await settled()
 
     player.load('http://127.0.0.1:1/files/w/v/another.mp3')
-    length.value = 400_000
+    duration.value = 400_000
 
     expect(heard.runs.value).toBe(9_000)
   })

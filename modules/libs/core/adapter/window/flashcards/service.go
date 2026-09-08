@@ -41,7 +41,7 @@ func (a *API) WatchCardsDue(
 	listed := make([]*v1.VaultCardsDue, 0, len(known))
 	for _, one := range known {
 		listed = append(listed, &v1.VaultCardsDue{
-			Name: string(one.Vault.ID), DisplayName: one.Vault.Name, Path: one.Vault.Path,
+			Id: string(one.Vault.ID), Name: one.Vault.Name, Path: one.Vault.Path,
 		})
 	}
 	// The day these counts stand in, which is the day a goal is weighed against.
@@ -137,7 +137,7 @@ func (a *API) counting(ctx context.Context, all []domain.Vault) <-chan *v1.Vault
 }
 
 func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultCardsDue {
-	one := &v1.VaultCardsDue{Name: string(v.ID), DisplayName: v.Name, Path: v.Path}
+	one := &v1.VaultCardsDue{Id: string(v.ID), Name: v.Name, Path: v.Path}
 
 	// The vault is brought up to date before it is counted. Nothing is counted
 	// from a walk half done, and the numbers arrive with the count that the

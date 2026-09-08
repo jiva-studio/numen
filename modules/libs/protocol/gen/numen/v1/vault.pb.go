@@ -65,11 +65,11 @@ func (*GetVaultStateRequest) Descriptor() ([]byte, []int) {
 
 type GetVaultStateResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Name is the identity the folder carries, and how this vault is asked for
-	// again. DisplayName is what the person calls it, which is what a window
-	// titles itself with. The list says both of a vault the same way.
-	Name        string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	DisplayName string `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	// Id is the identity the folder carries, and how this vault is asked for
+	// again. Name is what the person calls it, which is what a window titles
+	// itself with. The list says both of a vault the same way.
+	Id   string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Where the vault stands on this disk.
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	// Ready is set when the scan has finished.
@@ -127,16 +127,16 @@ func (*GetVaultStateResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *GetVaultStateResponse) GetName() string {
+func (x *GetVaultStateResponse) GetId() string {
 	if x != nil {
-		return x.Name
+		return x.Id
 	}
 	return ""
 }
 
-func (x *GetVaultStateResponse) GetDisplayName() string {
+func (x *GetVaultStateResponse) GetName() string {
 	if x != nil {
-		return x.DisplayName
+		return x.Name
 	}
 	return ""
 }
@@ -712,10 +712,12 @@ func (x *OpenDocument) GetPages() int32 {
 // down.
 type OpenRecording struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// TranscribedTo is the millisecond the words written down reach.
-	TranscribedTo int32 `protobuf:"varint,1,opt,name=transcribed_to,json=transcribedTo,proto3" json:"transcribed_to,omitempty"`
-	// Length is how long the recording is, in milliseconds.
-	Length        int32 `protobuf:"varint,2,opt,name=length,proto3" json:"length,omitempty"`
+	// TranscribedDuration is how far into the recording the words written down
+	// reach, in milliseconds. It is short of the duration while a run is still
+	// listening, and the two are equal once one has finished.
+	TranscribedDuration int32 `protobuf:"varint,1,opt,name=transcribed_duration,json=transcribedDuration,proto3" json:"transcribed_duration,omitempty"`
+	// Duration is how long the recording is, in milliseconds.
+	Duration      int32 `protobuf:"varint,2,opt,name=duration,proto3" json:"duration,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -750,16 +752,16 @@ func (*OpenRecording) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *OpenRecording) GetTranscribedTo() int32 {
+func (x *OpenRecording) GetTranscribedDuration() int32 {
 	if x != nil {
-		return x.TranscribedTo
+		return x.TranscribedDuration
 	}
 	return 0
 }
 
-func (x *OpenRecording) GetLength() int32 {
+func (x *OpenRecording) GetDuration() int32 {
 	if x != nil {
-		return x.Length
+		return x.Duration
 	}
 	return 0
 }
@@ -769,10 +771,10 @@ var File_numen_v1_vault_proto protoreflect.FileDescriptor
 const file_numen_v1_vault_proto_rawDesc = "" +
 	"\n" +
 	"\x14numen/v1/vault.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x16\n" +
-	"\x14GetVaultStateRequest\"\xa2\x02\n" +
-	"\x15GetVaultStateResponse\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
-	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x12\n" +
+	"\x14GetVaultStateRequest\"\x8f\x02\n" +
+	"\x15GetVaultStateResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
 	"\x05ready\x18\x04 \x01(\bR\x05ready\x12\x16\n" +
 	"\x06failed\x18\x05 \x01(\tR\x06failed\x12\x1c\n" +
@@ -809,10 +811,10 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\trecording\x18\x06 \x01(\v2\x17.numen.v1.OpenRecordingR\trecording\"8\n" +
 	"\fOpenDocument\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x14\n" +
-	"\x05pages\x18\x02 \x01(\x05R\x05pages\"N\n" +
-	"\rOpenRecording\x12%\n" +
-	"\x0etranscribed_to\x18\x01 \x01(\x05R\rtranscribedTo\x12\x16\n" +
-	"\x06length\x18\x02 \x01(\x05R\x06length2\xdd\x02\n" +
+	"\x05pages\x18\x02 \x01(\x05R\x05pages\"^\n" +
+	"\rOpenRecording\x121\n" +
+	"\x14transcribed_duration\x18\x01 \x01(\x05R\x13transcribedDuration\x12\x1a\n" +
+	"\bduration\x18\x02 \x01(\x05R\bduration2\xdd\x02\n" +
 	"\fVaultService\x12P\n" +
 	"\rGetVaultState\x12\x1e.numen.v1.GetVaultStateRequest\x1a\x1f.numen.v1.GetVaultStateResponse\x12^\n" +
 	"\x11WatchVaultChanges\x12\".numen.v1.WatchVaultChangesRequest\x1a#.numen.v1.WatchVaultChangesResponse0\x01\x12I\n" +

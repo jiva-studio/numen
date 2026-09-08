@@ -66,7 +66,7 @@ export const recordings: Recordings = {
   listened: async (path) => {
     const answer = await waiting(() => assets.getRecording({ path }))
     return {
-      length: answer.length,
+      duration: answer.duration,
       media: answer.media,
       type: answer.type,
       url: answer.url,

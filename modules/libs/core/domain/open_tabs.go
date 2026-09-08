@@ -52,10 +52,11 @@ type OpenDocument struct {
 // An OpenRecording is the recording a tab holds, as far as it has been written
 // down. Both are milliseconds.
 type OpenRecording struct {
-	// TranscribedTo is the millisecond the words written down reach.
-	TranscribedTo int
-	// Length is how long the recording is.
-	Length int
+	// TranscribedDuration is how far into the recording the words written down
+	// reach. It is short of the duration while a run is still listening.
+	TranscribedDuration int
+	// Duration is how long the recording is.
+	Duration int
 }
 
 // The kinds of tab this application has words for. A tab of any other kind is

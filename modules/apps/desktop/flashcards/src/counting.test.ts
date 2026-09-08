@@ -5,8 +5,8 @@ import { counting } from './counting'
 import type { CardsDueClient, DueCounts, VaultCounts } from './counting'
 
 const vault = (id: string, said: Partial<VaultCounts> = {}): VaultCounts => ({
+  id,
   name: id,
-  displayName: id,
   path: `/vaults/${id}`,
   faces: 3,
   due: 1,

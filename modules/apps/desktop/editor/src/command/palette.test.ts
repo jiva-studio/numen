@@ -41,8 +41,8 @@ const name = (path: string, title: string, heading = ''): NameMatch => ({
 
 /** One vault as the list answers one. */
 const vault = (id: string, name: string, missing = false): Vault => ({
-  name: id,
-  displayName: name,
+  id,
+  name,
   path: `/vaults/${name}`,
   missing,
 })

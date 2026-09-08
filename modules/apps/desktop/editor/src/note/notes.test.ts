@@ -5,8 +5,8 @@ import type { Core } from '../core'
 
 /** A vault that has been read and is doing nothing. */
 const idle = {
+  id: '',
   name: '',
-  displayName: '',
   path: '',
   ready: true,
   failed: '',

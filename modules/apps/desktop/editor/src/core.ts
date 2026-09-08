@@ -318,10 +318,13 @@ export interface OpenDocument {
 
 /** The recording a tab holds, as far as it has been written down. */
 export interface OpenRecording {
-  /** The millisecond the words written down reach. */
-  readonly transcribedTo: number
+  /**
+   * How far into the recording the words written down reach, in milliseconds.
+   * It is short of the duration while a run is still listening.
+   */
+  readonly transcribedDuration: number
   /** How long the recording is, in milliseconds. */
-  readonly length: number
+  readonly duration: number
 }
 
 /** What the person has open: every tab, and which of them is in front. */
@@ -352,9 +355,9 @@ export interface Core {
   opening(): Promise<{ path: string } | null>
   state(): Promise<{
     /** The identity the folder carries, which is how the vault is asked for again. */
-    name: string
+    id: string
     /** What the person calls the vault. */
-    displayName: string
+    name: string
     /** The folder the vault sits in, absolute on this machine. */
     path: string
     ready: boolean
@@ -627,9 +630,9 @@ export interface RemoveResult {
 /** One vault the installation holds, as the list has it. */
 export interface Vault {
   /** The identity the folder carries, and how the vault is asked for again. */
-  readonly name: string
+  readonly id: string
   /** What the person calls the collection. */
-  readonly displayName: string
+  readonly name: string
   /** The folder, absolute on this machine. */
   readonly path: string
   /** Whether nothing is at the path. The vault stays on the list. */

@@ -71,7 +71,7 @@ message GetRecordingRequest {
 message GetRecordingResponse {
   // How long it runs, in milliseconds. A recording nothing has listened to
   // runs nowhere, and the player it is loaded into is what then says.
-  int32 length = 1;
+  int32 duration = 1;
 
   // Where it is played from, and what it is played as. A media element speaks
   // the protocols of the world and not the scheme a window is served under, so

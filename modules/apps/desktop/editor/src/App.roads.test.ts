@@ -286,7 +286,7 @@ describe('a recording put in front', () => {
     // answer, and what the window says the person has open carries them.
     expect(asked.attending.at(-1)?.tabs.at(-1)).toMatchObject({
       path: RECORDING,
-      recording: { transcribedTo: said.heard.cues[0]?.to, length: said.heard.length },
+      recording: { transcribedDuration: said.heard.cues[0]?.to, duration: said.heard.duration },
     })
   })
 

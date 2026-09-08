@@ -138,11 +138,10 @@ export const vaults: Vaults = {
     const answer = await vaultsService.chooseFolder({ title, startingAt: '' })
     return answer.chose ? answer.path : ''
   },
-  add: async (path, called) => added(await vaultsService.addVault({ path, displayName: called })),
-  rename: async (id, called) =>
-    added(await vaultsService.renameVault({ name: id, displayName: called })),
-  remove: async (id, trash) => turnedDown(await vaultsService.removeVault({ name: id, trash })),
-  open: async (id) => turnedDown(await vaultsService.openVault({ name: id })),
+  add: async (path, called) => added(await vaultsService.addVault({ path, name: called })),
+  rename: async (id, called) => added(await vaultsService.renameVault({ id, name: called })),
+  remove: async (id, trash) => turnedDown(await vaultsService.removeVault({ id, trash })),
+  open: async (id) => turnedDown(await vaultsService.openVault({ id })),
 }
 
 /** The same questions, in the shape the window asks them. */
@@ -515,8 +514,8 @@ const noteType = (of: NoteTypes): NoteType => typed[of] ?? 'note'
 
 /** One vault of the list, kept as the plain value the window carries it as. */
 const held = (one: VaultMessage): Vault => ({
+  id: one.id,
   name: one.name,
-  displayName: one.displayName,
   path: one.path,
   missing: one.missing,
 })

@@ -396,7 +396,7 @@ export function commandPalette(
    * is marked with nothing.
    */
   const aside = (one: Vault): string =>
-    one.missing ? words.gone : one.name === showing.value ? words.current : ''
+    one.missing ? words.gone : one.id === showing.value ? words.current : ''
 
   /**
    * The vaults the installation holds. The two it will not take are marked
@@ -406,12 +406,12 @@ export function commandPalette(
   const listing = (text: string, step: PendingStep): PaletteGroup => {
     const word = text.trim().toLowerCase()
     const items: PaletteItem[] = known.value
-      .filter((one) => word === '' || one.displayName.toLowerCase().includes(word))
+      .filter((one) => word === '' || one.name.toLowerCase().includes(word))
       .map((one) => {
         const why = aside(one)
         return {
-          id: one.name,
-          title: one.displayName,
+          id: one.id,
+          title: one.name,
           detail: why ? `${why} · ${one.path}` : one.path,
           ...(why ? { disabled: true } : {}),
           actions: [{ id: OPEN, text: step.command.text }],
@@ -568,10 +568,10 @@ export function commandPalette(
       return invocation(step.command.id, { ...step.on, path: one.path, title: one.title || one.path })
     }
     if (step.step === 'vaults') {
-      const one = known.value.find((vault) => vault.name === item)
+      const one = known.value.find((vault) => vault.id === item)
       // The two the list draws and does not take are the ones it says so on.
       if (!one || aside(one)) return null
-      const on = { ...step.on, vault: { id: one.name, name: one.displayName } }
+      const on = { ...step.on, vault: { id: one.id, name: one.name } }
       if (!step.command.next) return invocation(step.command.id, on)
       // The vault chosen is what the step after this one is over.
       puts({ step: step.command.next, command: step.command, on })

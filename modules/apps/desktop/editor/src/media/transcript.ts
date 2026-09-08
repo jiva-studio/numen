@@ -44,7 +44,7 @@ export interface Transcript {
  * loaded into is what then says how long it runs.
  */
 export interface RecordingSummary {
-  readonly length: number
+  readonly duration: number
   /** Where it is played from, as the application answers it. */
   readonly media: string
   /**
@@ -117,7 +117,7 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
   /** Whether a person has been typing too recently for the view to move. */
   const typing = ref(false)
   /** How long the recording runs, as the application last said. */
-  const length = ref(0)
+  const duration = ref(0)
   /** What the recording is played as, as the application answers it. */
   const type = ref('')
   /** The web address a url points at, and nothing on every other source. */
@@ -129,7 +129,7 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
    * How long the recording runs. The application says, and the recording
    * itself says where it is loaded and knows better.
    */
-  const runs = computed(() => Math.max(length.value, held.value ? through.length.value : 0))
+  const runs = computed(() => Math.max(duration.value, held.value ? through.duration.value : 0))
 
   /**
    * Where the player stands in this recording, in milliseconds.
@@ -229,7 +229,7 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
     try {
       const said = await recordings.listened(path)
       if (!mine.lands()) return
-      length.value = said.length
+      duration.value = said.duration
       address.value = said.media
       type.value = said.type
       points.value = said.url
@@ -414,8 +414,8 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
    */
   const framing = computed(() => address.value !== '' && type.value === PAGE)
 
-  /** How far the words written down reach, in milliseconds. */
-  const transcribedTo = computed(() => cues.value.at(-1)?.to ?? 0)
+  /** How far into the recording the words written down reach, in milliseconds. */
+  const transcribedDuration = computed(() => cues.value.at(-1)?.to ?? 0)
 
   /** What the tab says where the words would stand, and nothing where they do. */
   const note = computed(() => {
@@ -438,9 +438,9 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
     editable,
     following,
     typing,
-    length,
+    duration,
     runs,
-    transcribedTo,
+    transcribedDuration,
     now,
     current,
     timed,

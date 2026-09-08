@@ -119,8 +119,8 @@ func TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the window cannot say what it is showing: %v", err)
 	}
-	if got := state.Msg; got.GetDisplayName() != "" || got.GetPath() != "" {
-		t.Errorf("the window says it is showing %q at %q", got.GetDisplayName(), got.GetPath())
+	if got := state.Msg; got.GetName() != "" || got.GetPath() != "" {
+		t.Errorf("the window says it is showing %q at %q", got.GetName(), got.GetPath())
 	}
 	if !state.Msg.GetReady() {
 		t.Error("the window says it is still being read, and nothing is reading")
@@ -397,7 +397,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 	}
 
 	added, err := f.holds.AddVault(t.Context(), connect.NewRequest(&v1.AddVaultRequest{
-		Path: root, DisplayName: "the first one",
+		Path: root, Name: "the first one",
 	}))
 	if err != nil {
 		t.Fatalf("a folder could not be added: %v", err)
@@ -407,12 +407,12 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 	}
 
 	if _, err := f.holds.OpenVault(t.Context(), connect.NewRequest(&v1.OpenVaultRequest{
-		Name: added.Msg.GetVault().GetName(),
+		Id: added.Msg.GetVault().GetId(),
 	})); err != nil {
 		t.Fatalf("the vault just added would not open: %v", err)
 	}
 
-	if got := string(f.opened.Showing().ID); got != added.Msg.GetVault().GetName() {
+	if got := string(f.opened.Showing().ID); got != added.Msg.GetVault().GetId() {
 		t.Fatalf("the window is showing %q, want the vault just added", got)
 	}
 
@@ -426,7 +426,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 			t.Fatalf("the vault could not be read: %s", reason)
 		}
 		if state.Msg.GetReady() {
-			if got := state.Msg.GetDisplayName(); got != "the first one" {
+			if got := state.Msg.GetName(); got != "the first one" {
 				t.Errorf("the window says it is showing %q", got)
 			}
 			break
@@ -450,7 +450,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 	switch last, found, err := registry.Last(); {
 	case err != nil:
 		t.Fatal(err)
-	case !found || string(last.ID) != added.Msg.GetVault().GetName():
+	case !found || string(last.ID) != added.Msg.GetVault().GetId():
 		t.Errorf("the list says the vault opened last is %+v", last)
 	}
 }

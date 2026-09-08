@@ -34,11 +34,9 @@ const LONG: readonly Cue[] = [
 /** A recording that answers what it holds and writes nothing back. */
 const talk = (cues: readonly Cue[]): Recordings => ({
   listened: async () => ({
-    length: 85_000,
-    heard: 85_000,
+    duration: 85_000,
     media: 'http://127.0.0.1:1/w/v/talk.mp3',
     type: 'audio/mpeg',
-    embed: '',
     url: '',
   }),
   cues: async () => ({ cues, editable: true, prose: '' }),
@@ -52,7 +50,7 @@ const played = (): Player => {
   return {
     address,
     at: ref(0),
-    length: ref(85_000),
+    duration: ref(85_000),
     playing: ref(false),
     failed: ref(''),
     load: (wanted) => void (address.value = wanted),

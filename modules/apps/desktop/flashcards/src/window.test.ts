@@ -21,8 +21,8 @@ const { waits } = vi.hoisted(() => ({
 
 /** One vault owing something, so every screen has something to hold. */
 const VAULT = {
-  name: 'roots',
-  displayName: 'Roots',
+  id: 'roots',
+  name: 'Roots',
   path: '/vaults/Roots',
   faces: 2,
   due: 2,

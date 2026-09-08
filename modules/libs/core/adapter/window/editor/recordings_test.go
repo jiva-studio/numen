@@ -244,7 +244,7 @@ func TestWhatARecordingIsIsHowLongItRuns(t *testing.T) {
 				t.Fatalf("asked what the recording is and was refused: %v", err)
 			}
 			told := out.Msg
-			if told.GetLength() != one.length {
+			if told.GetDuration() != one.length {
 				t.Errorf("the recording came back as %+v, want %d long", told, one.length)
 			}
 		})

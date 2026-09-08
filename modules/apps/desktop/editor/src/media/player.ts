@@ -31,7 +31,7 @@ export interface Player {
   /** Where it stands, in milliseconds. */
   readonly at: Readonly<Ref<number>>
   /** How long it runs, in milliseconds, and zero until the recording says. */
-  readonly length: Readonly<Ref<number>>
+  readonly duration: Readonly<Ref<number>>
   readonly playing: Readonly<Ref<boolean>>
   /** What it could not do, in words a person reads. */
   readonly failed: Readonly<Ref<string>>
@@ -56,7 +56,7 @@ const made: AudioFactory = () => new Audio()
 export function audio(makes: AudioFactory = made): Player {
   const address = ref('')
   const at = ref(0)
-  const length = ref(0)
+  const duration = ref(0)
   const playing = ref(false)
   const failed = ref('')
 
@@ -80,7 +80,7 @@ export function audio(makes: AudioFactory = made): Player {
     })
     element.addEventListener('durationchange', () => {
       const runs = element?.duration ?? 0
-      length.value = Number.isFinite(runs) ? Math.round(runs * 1000) : 0
+      duration.value = Number.isFinite(runs) ? Math.round(runs * 1000) : 0
     })
     element.addEventListener('play', () => void (playing.value = true))
     element.addEventListener('pause', () => void (playing.value = false))
@@ -99,7 +99,7 @@ export function audio(makes: AudioFactory = made): Player {
     element.src = wanted
     address.value = wanted
     at.value = 0
-    length.value = 0
+    duration.value = 0
     playing.value = false
     failed.value = ''
     return true
@@ -108,7 +108,7 @@ export function audio(makes: AudioFactory = made): Player {
   return {
     address: readonly(address),
     at: readonly(at),
-    length: readonly(length),
+    duration: readonly(duration),
     playing: readonly(playing),
     failed: readonly(failed),
 

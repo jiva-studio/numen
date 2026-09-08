@@ -118,7 +118,7 @@ const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoiste
     sizes: { interfaceScale: 1, textScale: 1 },
     /** The recording the vault answers with, and the words written down in it. */
     heard: {
-      length: 60_000,
+      duration: 60_000,
       media: 'numen://recording/heard',
       type: 'audio/mpeg',
       cues: [{ text: 'the first thing said', from: 0, to: 4000 }] as {
@@ -184,7 +184,7 @@ const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoiste
   },
   /** The vaults this installation holds, and the one the window is showing. */
   listed: {
-    vaults: [{ name: 'physics', displayName: 'Physics', path: '/vaults/Physics', missing: false }],
+    vaults: [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false }],
     showing: 'physics',
   },
   /** What each folder of the vault holds, as a listing answers it. */
@@ -291,8 +291,8 @@ vi.mock('../assets', () => ({
   recordings: {
     listened: async (path: string) => {
       asked.listened.push(path)
-      const { length, media, type } = said.heard
-      return { length, media, type, url: "" }
+      const { duration, media, type } = said.heard
+      return { duration, media, type, url: '' }
     },
     cues: async () => ({ cues: said.heard.cues, prose: '', editable: said.heard.editable }),
     writes: async (path: string, cues: readonly { text: string }[]) => {
@@ -479,7 +479,7 @@ afterEach(() => {
   said.mode = 'system'
   said.sizes = { interfaceScale: 1, textScale: 1 }
   said.heard = {
-    length: 60_000,
+    duration: 60_000,
     media: 'numen://recording/heard',
     type: 'audio/mpeg',
     cues: [{ text: 'the first thing said', from: 0, to: 4000 }],
@@ -514,7 +514,7 @@ afterEach(() => {
   asked.ran = []
   asked.chose = 0
   asked.attending = []
-  listed.vaults = [{ name: 'physics', displayName: 'Physics', path: '/vaults/Physics', missing: false }]
+  listed.vaults = [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false }]
   listed.showing = 'physics'
 })
 

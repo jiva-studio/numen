@@ -143,7 +143,7 @@ describe('a recording loaded', () => {
 
     expect(plays.address.value).toBe(OTHER)
     expect(plays.at.value).toBe(0)
-    expect(plays.length.value).toBe(0)
+    expect(plays.duration.value).toBe(0)
   })
 })
 
@@ -245,7 +245,7 @@ describe('how long a recording runs', () => {
 
     runs(85.25)
 
-    expect(plays.length.value).toBe(85_250)
+    expect(plays.duration.value).toBe(85_250)
   })
 
   it('is nothing where the recording never ends', () => {
@@ -254,7 +254,7 @@ describe('how long a recording runs', () => {
 
     runs(Number.POSITIVE_INFINITY)
 
-    expect(plays.length.value).toBe(0)
+    expect(plays.duration.value).toBe(0)
   })
 
   it('is nothing where the recording has not said', () => {
@@ -263,7 +263,7 @@ describe('how long a recording runs', () => {
 
     runs(Number.NaN)
 
-    expect(plays.length.value).toBe(0)
+    expect(plays.duration.value).toBe(0)
   })
 })
 

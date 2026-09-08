@@ -492,7 +492,7 @@ const adds = async (on: CommandDeps, words: Words): Promise<void> => {
   const answer = await on.vaults.add(path, '')
   if (answer.refusal) return on.says(words.unvaulted[answer.refusal], 'refusal')
   if (!answer.vault) return
-  await shows(answer.vault.name, on, words)
+  await shows(answer.vault.id, on, words)
 }
 
 /** A vault called something else. Its folder keeps the name it has on disk. */
@@ -500,7 +500,7 @@ const calls = async (invocation: CommandInvocation, on: CommandDeps, words: Word
   if (!invocation.name || invocation.name === invocation.vault.name) return
   const answer = await on.vaults.rename(invocation.vault.id, invocation.name)
   if (answer.refusal) return on.says(words.unvaulted[answer.refusal], 'refusal')
-  if (answer.vault) on.vaults.calls({ id: answer.vault.name, name: answer.vault.displayName })
+  if (answer.vault) on.vaults.calls({ id: answer.vault.id, name: answer.vault.name })
 }
 
 /**

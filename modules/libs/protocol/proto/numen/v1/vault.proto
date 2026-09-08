@@ -40,11 +40,11 @@ message GetVaultStateResponse {
   // What is being done behind the window is Tasks. What is here is what the
   // vault is.
 
-  // Name is the identity the folder carries, and how this vault is asked for
-  // again. DisplayName is what the person calls it, which is what a window
-  // titles itself with. The list says both of a vault the same way.
-  string name = 1;
-  string display_name = 2;
+  // Id is the identity the folder carries, and how this vault is asked for
+  // again. Name is what the person calls it, which is what a window titles
+  // itself with. The list says both of a vault the same way.
+  string id = 1;
+  string name = 2;
 
   // Where the vault stands on this disk.
   string path = 3;
@@ -170,9 +170,11 @@ message OpenDocument {
 // An OpenRecording is the recording a tab holds, as far as it has been written
 // down.
 message OpenRecording {
-  // TranscribedTo is the millisecond the words written down reach.
-  int32 transcribed_to = 1;
+  // TranscribedDuration is how far into the recording the words written down
+  // reach, in milliseconds. It is short of the duration while a run is still
+  // listening, and the two are equal once one has finished.
+  int32 transcribed_duration = 1;
 
-  // Length is how long the recording is, in milliseconds.
-  int32 length = 2;
+  // Duration is how long the recording is, in milliseconds.
+  int32 duration = 2;
 }

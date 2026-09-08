@@ -112,7 +112,7 @@ func stands(t domain.Tab) string {
 	case domain.TabRecording:
 		var writtenTo, length int
 		if t.Recording != nil {
-			writtenTo, length = t.Recording.TranscribedTo, t.Recording.Length
+			writtenTo, length = t.Recording.TranscribedDuration, t.Recording.Duration
 		}
 		switch {
 		case writtenTo <= 0:

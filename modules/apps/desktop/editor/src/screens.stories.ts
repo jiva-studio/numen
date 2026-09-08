@@ -471,7 +471,7 @@ const RUNS = 1_842_000
 const PLAYER: Player = {
   address: ref(MEDIA),
   at: ref(47_200),
-  length: ref(RUNS),
+  duration: ref(RUNS),
   playing: ref(true),
   failed: ref(''),
   load: () => {},
@@ -482,11 +482,9 @@ const PLAYER: Player = {
 
 const heard = (cues: readonly Cue[]): Recordings => ({
   listened: async () => ({
-    length: RUNS,
-    heard: cues.length ? (cues[cues.length - 1]?.to ?? 0) : 0,
+    duration: RUNS,
     media: MEDIA,
     type: 'audio/mpeg',
-    embed: '',
     url: '',
   }),
   cues: async () => ({ cues, editable: true, prose: '' }),

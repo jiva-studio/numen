@@ -96,11 +96,11 @@ func (Rating) EnumDescriptor() ([]byte, []int) {
 // VaultCardsDue is one vault, and what its cards come to today.
 type VaultCardsDue struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Name is the identity the folder carries, and how this vault is asked for
-	// again. DisplayName is what the person calls the collection.
-	Name        string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	DisplayName string `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
-	Path        string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
+	// Id is the identity the folder carries, and how this vault is asked for
+	// again. Name is what the person calls the collection.
+	Id   string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	// Faces is every card the vault holds, counted once for each face it is shown
 	// through. Due is what was answered before and is owed today; New is what
 	// nobody has answered.
@@ -153,16 +153,16 @@ func (*VaultCardsDue) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *VaultCardsDue) GetName() string {
+func (x *VaultCardsDue) GetId() string {
 	if x != nil {
-		return x.Name
+		return x.Id
 	}
 	return ""
 }
 
-func (x *VaultCardsDue) GetDisplayName() string {
+func (x *VaultCardsDue) GetName() string {
 	if x != nil {
-		return x.DisplayName
+		return x.Name
 	}
 	return ""
 }
@@ -1942,10 +1942,10 @@ var File_numen_v1_flashcards_proto protoreflect.FileDescriptor
 
 const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\n" +
-	"\x19numen/v1/flashcards.proto\x12\bnumen.v1\x1a\x16numen/v1/presets.proto\x1a\x15numen/v1/shared.proto\"\xa8\x02\n" +
-	"\rVaultCardsDue\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
-	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x12\n" +
+	"\x19numen/v1/flashcards.proto\x12\bnumen.v1\x1a\x16numen/v1/presets.proto\x1a\x15numen/v1/shared.proto\"\x95\x02\n" +
+	"\rVaultCardsDue\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
 	"\x05faces\x18\x04 \x01(\x05R\x05faces\x12\x10\n" +
 	"\x03due\x18\x05 \x01(\x05R\x03due\x12\x10\n" +

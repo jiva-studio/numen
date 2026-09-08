@@ -95,10 +95,10 @@ enum Rating {
 
 // VaultCardsDue is one vault, and what its cards come to today.
 message VaultCardsDue {
-  // Name is the identity the folder carries, and how this vault is asked for
-  // again. DisplayName is what the person calls the collection.
-  string name = 1;
-  string display_name = 2;
+  // Id is the identity the folder carries, and how this vault is asked for
+  // again. Name is what the person calls the collection.
+  string id = 1;
+  string name = 2;
   string path = 3;
 
   // Faces is every card the vault holds, counted once for each face it is shown

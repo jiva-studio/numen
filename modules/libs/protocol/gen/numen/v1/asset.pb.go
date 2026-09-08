@@ -239,7 +239,7 @@ type GetRecordingResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// How long it runs, in milliseconds. A recording nothing has listened to
 	// runs nowhere, and the player it is loaded into is what then says.
-	Length int32 `protobuf:"varint,1,opt,name=length,proto3" json:"length,omitempty"`
+	Duration int32 `protobuf:"varint,1,opt,name=duration,proto3" json:"duration,omitempty"`
 	// Where it is played from, and what it is played as. A media element speaks
 	// the protocols of the world and not the scheme a window is served under, so
 	// the bytes are answered at an address of their own; a url with no copy on
@@ -283,9 +283,9 @@ func (*GetRecordingResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_asset_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *GetRecordingResponse) GetLength() int32 {
+func (x *GetRecordingResponse) GetDuration() int32 {
 	if x != nil {
-		return x.Length
+		return x.Duration
 	}
 	return 0
 }
@@ -595,9 +595,9 @@ const file_numen_v1_asset_proto_rawDesc = "" +
 	"\x05width\x18\x01 \x01(\x01R\x05width\x12\x16\n" +
 	"\x06height\x18\x02 \x01(\x01R\x06height\")\n" +
 	"\x13GetRecordingRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"j\n" +
-	"\x14GetRecordingResponse\x12\x16\n" +
-	"\x06length\x18\x01 \x01(\x05R\x06length\x12\x14\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"n\n" +
+	"\x14GetRecordingResponse\x12\x1a\n" +
+	"\bduration\x18\x01 \x01(\x05R\bduration\x12\x14\n" +
 	"\x05media\x18\x02 \x01(\tR\x05media\x12\x12\n" +
 	"\x04type\x18\x03 \x01(\tR\x04type\x12\x10\n" +
 	"\x03url\x18\x04 \x01(\tR\x03url\"N\n" +

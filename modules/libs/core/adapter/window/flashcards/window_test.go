@@ -137,7 +137,7 @@ func lives(t *testing.T, api *API, v domain.Vault, days int) {
 func owing(t *testing.T, api *API, v domain.Vault) *v1.VaultCardsDue {
 	t.Helper()
 	for _, one := range front(t, api).GetVaults() {
-		if one.GetName() == string(v.ID) {
+		if one.GetId() == string(v.ID) {
 			if one.GetUnread() != "" {
 				t.Fatalf("the vault could not be counted: %s", one.GetUnread())
 			}
@@ -396,7 +396,7 @@ func TestTheFrontDoorHoldsEachVaultOnce(t *testing.T) {
 	}
 	seen := make(map[string]int, len(rows))
 	for _, one := range rows {
-		seen[one.GetName()]++
+		seen[one.GetId()]++
 	}
 	for _, v := range held {
 		if seen[string(v.ID)] != 1 {
@@ -412,7 +412,7 @@ func TestTheFrontDoorHoldsEachVaultOnce(t *testing.T) {
 		}
 		if faces != int(row.GetFaces()) {
 			t.Errorf("the decks of %s hold %d card faces and the vault holds %d",
-				row.GetDisplayName(), faces, row.GetFaces())
+				row.GetName(), faces, row.GetFaces())
 		}
 	}
 	if got := owing(t, api, held[0]).GetFaces(); got != 630 {

@@ -39,8 +39,8 @@ const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
 
 /** One vault as the list answers one. */
 const known = (id: string, name: string): Vault => ({
-  name: id,
-  displayName: name,
+  id,
+  name,
   path: `/vaults/${name}`,
   missing: false,
 })
