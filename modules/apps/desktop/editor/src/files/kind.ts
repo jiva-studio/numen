@@ -20,6 +20,7 @@ import {
 import type { Kind, WindowHandle } from '../tabs/windowing'
 import { FILES } from '../tabs/workspace'
 import FilesTab from './FilesTab.vue'
+import { fileOf } from '../paths'
 import { WORDS as words } from './words'
 
 /** Where the menu stands, and what it was asked for on. */
@@ -89,9 +90,6 @@ type FileMaker = (folder: string, name: string) => Promise<string>
  */
 export const landingOf = (entry: Entry): SearchDestination | null =>
   entry.folder ? null : { at: 'file', path: entry.path, title: entry.name }
-
-/** What a file is filed as, which is the last segment of the path. */
-const fileOf = (path: string): string => path.split('/').pop() ?? path
 
 /**
  * Where a name's ending begins, and nowhere for a name carrying none. An ending
@@ -240,7 +238,7 @@ export function filing(list: FileTree, deps: FilesTabDeps) {
     const refused: string[] = []
 
     for (const path of paths) {
-      const name = path.split('/').pop() ?? path
+      const name = fileOf(path)
       const to = into === ROOT ? name : `${into}/${name}`
       if (to === path) continue
       if (taken.has(name)) {
@@ -361,7 +359,7 @@ export function filing(list: FileTree, deps: FilesTabDeps) {
 
   /** What a file is called, which is the last segment of the path it is filed at. */
   const nameOf = (path: string): string =>
-    list.entryAt(path)?.name ?? (path.split('/').pop() ?? path)
+    list.entryAt(path)?.name ?? fileOf(path)
 
   /** What the vault holds at a row, and none of the three where it holds none. */
   const sourceOf = (path: string): Source => list.entryAt(path)?.kind ?? 'other'

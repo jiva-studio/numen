@@ -14,6 +14,7 @@ import { RECORDING, URL } from '../tabs/workspace'
 import { DELETE_TEXT, PROOFREAD, TRANSCRIBE } from './words'
 import RecordingTab from './RecordingTab.vue'
 import UrlTab from './UrlTab.vue'
+import { fileOf } from '../paths'
 
 /** What a recording tab asks of the window it is drawn in. */
 export interface MediaTabDeps {
@@ -53,7 +54,7 @@ export function transcribed(read: TranscriptState, asks: MediaTabDeps) {
   const proofreadable = computed(() => written.value && !read.working.value && canRun(PROOFREAD))
   const deletable = computed(() => written.value && !read.working.value && canRun(DELETE_TEXT))
 
-  const called = read.path.split('/').pop() ?? read.path
+  const called = fileOf(read.path)
   const transcribes = () => asks.runs(TRANSCRIBE, read.path, called)
   const proofreads = () => asks.runs(PROOFREAD, read.path, called)
   const deletes = () => asks.runs(DELETE_TEXT, read.path, called)

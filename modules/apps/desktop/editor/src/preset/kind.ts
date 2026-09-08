@@ -39,6 +39,7 @@ import {
   steers,
   type Field,
 } from './curve'
+import { fileOf } from '../paths'
 import { WORDS as words } from './words'
 
 /** How far off the day a goal of a date opens on, where the file names none. */
@@ -589,7 +590,7 @@ export function presetting(
 
   /** What a preset tab is called: the title the file carries, or the file itself. */
   const called = (path: string): string =>
-    titles.get(path) || (path.split('/').pop() ?? path) || words.newPreset
+    titles.get(path) || fileOf(path) || words.newPreset
 
   /**
    * A preset tab as the window keeps it. A preset is its own tab, under the

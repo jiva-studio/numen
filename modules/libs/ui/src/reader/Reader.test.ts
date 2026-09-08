@@ -10,7 +10,7 @@ const PAGES = Array.from({ length: 8 }, () => ({ width: 612, height: 792 }))
  */
 const reader = async (wide: number, high: number) => {
   const held = mount(Reader, {
-    props: { pageCount: PAGES.length, pages: PAGES, picture: (page: number) => `/p/${page}` },
+    props: { pages: PAGES, picture: (page: number) => `/p/${page}` },
     attachTo: document.body,
   })
   await room(held, wide, high)
@@ -90,7 +90,7 @@ describe('the pages drawn', () => {
   })
 
   it('draws nothing at all for a document with no pages', async () => {
-    const held = mount(Reader, { props: { pageCount: 0, pages: [] }, attachTo: document.body })
+    const held = mount(Reader, { props: { pages: [] }, attachTo: document.body })
 
     expect(held.findAll('.reader__page')).toHaveLength(0)
     expect(held.find('.reader__row').exists()).toBe(false)

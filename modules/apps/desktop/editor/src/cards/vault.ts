@@ -107,17 +107,25 @@ export interface VaultSection {
   readonly lead: string
 }
 
+/**
+ * The prose standing around what this window edits, kept as the person left
+ * it. A note is theirs, and what they wrote above the first card and below the
+ * last comes back written as it went out.
+ */
+export interface Surrounding {
+  /** The prose below the frontmatter and above the first of them. */
+  readonly preamble: string
+  /** What the file ends with once the last of them has been read. */
+  readonly tail: string
+}
+
 /** A deck as the vault reads it. */
-export interface VaultDeck {
+export interface VaultDeck extends Surrounding {
   readonly path: string
   readonly title: string
-  /** The prose below the frontmatter and above the first section or card. */
-  readonly preamble: string
   readonly cards: readonly VaultCard[]
   /** The sections, in the order they stand in the note. */
   readonly sections: readonly VaultSection[]
-  /** What the file ends with once the last value has been read. */
-  readonly tail: string
   readonly problems: readonly Problem[]
 }
 
@@ -131,15 +139,11 @@ export interface VaultFace {
 }
 
 /** A stencil as the vault reads it. */
-export interface VaultStencil {
+export interface VaultStencil extends Surrounding {
   readonly path: string
   readonly title: string
   readonly fields: readonly string[]
-  /** The prose below the frontmatter and above the first face. */
-  readonly preamble: string
   readonly faces: readonly VaultFace[]
-  /** What the file ends with once the last side has been read. */
-  readonly tail: string
   readonly problems: readonly Problem[]
 }
 

@@ -14,12 +14,14 @@ import {
   type DeckCard,
 } from '@numen/ui'
 import type {
+  Surrounding,
   VaultCard,
   VaultDeck,
   VaultSection,
   StencilSummary,
   Value,
 } from './vault'
+import { nameOf } from '../paths'
 
 /** An identity something is drawn under, which no file carries. */
 export type IdMaker = () => string
@@ -45,11 +47,9 @@ export interface Section extends VaultSection {
 }
 
 /** A deck as the window holds it. */
-export interface Deck {
-  readonly preamble: string
+export interface Deck extends Surrounding {
   readonly cards: readonly Card[]
   readonly sections: readonly Section[]
-  readonly tail: string
 }
 
 /** A deck of no cards, which is what a file nothing has been written to holds. */
@@ -270,16 +270,6 @@ export const sameOffers = (one: readonly StencilSummary[], other: readonly Stenc
 export const pathOfCut = (offers: readonly StencilSummary[], name: string): string =>
   offers.find((offer) => offer.title === name)?.path ?? ''
 
-/**
- * How a card names the stencil filed at a path: the file's name, without the
- * folders above it and without the extension. A name is what a link resolves
- * by, so the link stands where the stencil is moved.
- */
-export const linkTo = (path: string): string => {
-  const file = path.split('/').pop() ?? ''
-  const dot = file.lastIndexOf('.')
-  return dot > 0 ? file.slice(0, dot) : file
-}
 
 /**
  * A card made at the end of a section, cut by the stencil filed at a path, with
@@ -320,7 +310,7 @@ export const added = (
         mark: '',
         section: section !== null && ranks.has(section) ? section : null,
         heading: '',
-        stencil: stencilAt ? linkTo(stencilAt) : title,
+        stencil: stencilAt ? nameOf(stencilAt) : title,
         stencilAt,
         lead: '',
         values,

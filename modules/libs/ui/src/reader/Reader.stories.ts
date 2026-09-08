@@ -86,7 +86,7 @@ const book =
         at.value = Math.min(Math.max(page, 0), pageCount - 1)
       }
 
-      return { at, wide, picture, highlightsOn, pageCount, pages: sized(pageCount), go }
+      return { at, wide, picture, highlightsOn, pages: sized(pageCount), go }
     },
     template: TEMPLATE,
   })
@@ -95,7 +95,6 @@ const TEMPLATE = `
   <div class="h-full" :data-wide="wide">
     <Reader
       class="h-full"
-      :pages="pages"
       :pages="pages"
       :at="at"
       :picture="picture"
@@ -293,7 +292,6 @@ export const Undrawn: Story = {
       return {
         at,
         picture,
-        pageCount: 4,
         pages: sized(4),
         go: (page: number) => (at.value = page),
       }

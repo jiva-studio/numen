@@ -22,6 +22,7 @@ import type { Move, NoteHeading, NoteType } from '../core'
 import type { Kind, WindowHandle } from '../tabs/windowing'
 import { PLEX, plexCalled } from '../tabs/workspace'
 import PlexTab from './PlexTab.vue'
+import { fileOf } from '../paths'
 import { WORDS as words } from './words'
 
 /** Where the menu stands, and the node it was asked for on. */
@@ -408,7 +409,7 @@ export function plexing(view: View, deps: PlexTabDeps) {
     const around = view.neighbourhood.value
     if (around?.focus.path === path && around.focus.title) return around.focus.title
     const near = around?.related.find((one) => one.path === path)
-    return near?.title || (path.split('/').pop() ?? path).replace(/\.md$/, '')
+    return near?.title || fileOf(path).replace(/\.md$/, '')
   }
 
   return {

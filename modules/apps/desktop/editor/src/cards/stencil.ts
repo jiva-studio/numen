@@ -7,7 +7,7 @@
  * fields and the faces a file is written from, is here.
  */
 import { ordered, reordered, type InsertionPoint } from '@numen/ui'
-import type { VaultFace, VaultStencil } from './vault'
+import type { Surrounding, VaultFace, VaultStencil } from './vault'
 import type { IdMaker } from './deck'
 
 const minting: IdMaker = () => crypto.randomUUID()
@@ -18,11 +18,9 @@ export interface Face extends VaultFace {
 }
 
 /** A stencil as the window holds it: its fields, and its faces under identities. */
-export interface Stencil {
+export interface Stencil extends Surrounding {
   readonly fields: readonly string[]
-  readonly preamble: string
   readonly faces: readonly Face[]
-  readonly tail: string
 }
 
 /** A stencil that names nothing and shows nothing. */

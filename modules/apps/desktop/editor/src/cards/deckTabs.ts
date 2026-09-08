@@ -12,6 +12,7 @@ import type { Move, RefusalReason } from '../core'
 import type { Cards, Problem, StencilSummary } from './vault'
 import type { Store } from '../command/deps'
 import type { Presets } from '../preset/core'
+import { fileOf } from '../paths'
 import { reading } from './reading'
 import { scheduling, type Choice, type DeckPreset } from './scheduling'
 import { openNotes, type OpenNote } from '../note/notes'
@@ -283,7 +284,7 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
   }
 
   /** What a deck tab is called: the title the file carries, or the file itself. */
-  const called = (path: string): string => titles.get(path) || (path.split('/').pop() ?? path)
+  const called = (path: string): string => titles.get(path) || fileOf(path)
 
   /** The tab holding a deck lets go of it, wherever the window draws it. */
   const shuts = (id: string): void => {

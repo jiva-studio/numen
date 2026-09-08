@@ -11,6 +11,7 @@ import type { FileOpeners } from '../tabs/openers'
 import type { Kind, WindowHandle } from '../tabs/windowing'
 import { DOCUMENT } from '../tabs/workspace'
 import DocumentTab from './DocumentTab.vue'
+import { fileOf } from '../paths'
 
 /** What the window asks of a page once it is drawn. */
 export interface PageHandle {
@@ -28,7 +29,7 @@ export function documentKind(handle: WindowHandle, opens: (path: string) => Docu
   const kind: Kind<DocumentTabState> = {
     kind: DOCUMENT,
     opens,
-    called: (state) => state.path.split('/').pop() ?? state.path,
+    called: (state) => fileOf(state.path),
     draws: DocumentTab,
     identity: (path) => path,
     shown: (state) => state.measure(),

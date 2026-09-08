@@ -1,5 +1,6 @@
 /** What a deck tab and a stencil tab say: what they are called, and what is wrong. */
 import { many } from '@numen/ui'
+import { fileOf } from '../paths'
 
 export const WORDS = {
   deck: 'Deck',
@@ -33,7 +34,7 @@ export const WORDS = {
   /** The choice a deck naming no preset stands at. */
   defaults: 'The defaults',
   /** A preset the note carries no name for, drawn by the file it stands in. */
-  unnamed: (path: string) => path.split('/').pop() ?? path,
+  unnamed: (path: string) => fileOf(path),
   /** A deck the vault would not put on the preset chosen. */
   notScheduled: 'This deck was not put on that preset.',
   /** A deck the file has moved past since the window read it. */

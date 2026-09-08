@@ -35,6 +35,7 @@ import {
   type Stencil,
 } from './stencil'
 import { marksOf, sameMarks, type Marks } from './marks'
+import { fileOf } from '../paths'
 import { WORDS as words } from './words'
 
 /** What the vault said about one file the last time it was read or written. */
@@ -261,7 +262,7 @@ export function stencilling(
   }
 
   /** What a stencil tab is called: the title the file carries, or the file itself. */
-  const called = (path: string): string => titles.get(path) || (path.split('/').pop() ?? path)
+  const called = (path: string): string => titles.get(path) || fileOf(path)
 
   /** The tab holding a stencil lets go of it, wherever the window draws it. */
   const shuts = (id: string): void => {

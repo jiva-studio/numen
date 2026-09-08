@@ -12,7 +12,6 @@ import {
   deckOf,
   drawnOf,
   filled,
-  linkTo,
   pathOfCut,
   removed,
   sameDeck,
@@ -303,21 +302,6 @@ describe('a card added', () => {
   it('names it by the title where the vault filed the stencil nowhere', () => {
     const held = added(deck(), 'Animal', '', [], null, () => 'c9')
     expect(held.cards[2]?.stencil).toBe('Animal')
-  })
-})
-
-describe('how a card names the stencil it is cut by', () => {
-  it('is the file, without the folders above it and without the extension', () => {
-    expect(linkTo('stencils/cards/Animal.md')).toBe('Animal')
-  })
-
-  it('keeps a name a dot stands inside, and one carrying no extension at all', () => {
-    expect(linkTo('stencils/Animal v2.md')).toBe('Animal v2')
-    expect(linkTo('stencils/Animal')).toBe('Animal')
-  })
-
-  it('is nothing for a stencil filed nowhere', () => {
-    expect(linkTo('')).toBe('')
   })
 })
 

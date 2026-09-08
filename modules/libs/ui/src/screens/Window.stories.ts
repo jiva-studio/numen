@@ -634,7 +634,6 @@ const screen = ({
       menuIcon,
       groups: panel === 'commands' ? COMMANDS : GROUPS,
       placeholder: panel === 'commands' ? 'Type a command' : 'Search',
-      pageCount: BOOK_LEAVES,
       pages: Array.from({ length: BOOK_LEAVES }, () => PAPER),
       picture: (page: number) => drawnPage(page),
       highlightsOn: (page: number) => (page === BOOK_FIRST ? HIGHLIGHTS : []),
