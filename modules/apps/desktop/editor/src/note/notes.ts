@@ -18,7 +18,7 @@ import {
   type State,
   type Tab,
 } from './tab'
-import type { Address, NoteResult, RefusalReason } from '../core'
+import type { Address, NoteResult, RefusalReason } from '../shared/core'
 
 /** One open note as the window draws it. */
 export interface OpenNote {

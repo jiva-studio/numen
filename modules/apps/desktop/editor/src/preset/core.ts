@@ -23,8 +23,8 @@ import type {
 } from '@numen/protocol'
 import { goalNames, goalOf, namesOf, transport } from '@numen/wire'
 import type { Goal } from '@numen/wire'
-import { fingerprint, refusalIn, staleIn, stamp } from '../answers'
-import type { RefusalReason } from '../core'
+import { fingerprint, refusalIn, staleIn, stamp } from '../shared/answers'
+import type { RefusalReason } from '../shared/core'
 
 /** Which value the one control steers. Both windows say it in the same words. */
 export type { Goal }

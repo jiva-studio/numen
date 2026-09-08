@@ -6,8 +6,8 @@
  */
 import { ref } from 'vue'
 import { troubleWords } from '@numen/wire'
-import { answerGuard } from '../questions'
-import { movedTo, type Neighbourhood, type Move } from '../core'
+import { answerGuard } from '../shared/questions'
+import { movedTo, type Neighbourhood, type Move } from '../shared/core'
 import { alike } from './picture'
 
 /** The one question a plex asks of the vault: what is around a note. */

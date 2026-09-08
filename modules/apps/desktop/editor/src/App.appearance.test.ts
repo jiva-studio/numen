@@ -15,7 +15,7 @@ import {
   nodeInPlex,
   said,
   settles,
-} from './testing/window'
+} from './shared/testing/window'
 import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from './settings/appearance'
 
 describe('the four commands over how the window is drawn', () => {

@@ -9,9 +9,9 @@
 import { computed, ref, shallowRef, watch } from 'vue'
 import { pointsAtNote, wikilinksIn, type Conversation, type Turn } from '@numen/ui'
 import { same, spotOf, spotsIn } from './places'
-import type { Stretch } from '../core'
-import type { Kind, WindowHandle } from '../tabs/windowing'
-import { AGENT, shortened } from '../tabs/workspace'
+import type { Stretch } from '../shared/core'
+import type { Kind, WindowHandle } from '../shared/tabs/windowing'
+import { AGENT, shortened } from '../shared/tabs/workspace'
 import AgentTab from './AgentTab.vue'
 import { WORDS as words } from './words'
 

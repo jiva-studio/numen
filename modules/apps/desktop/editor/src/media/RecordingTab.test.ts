@@ -10,7 +10,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { ref } from 'vue'
-import { runSupport } from '../command/runs'
+import { runSupport } from '../shared/command/runs'
 import RecordingTab from './RecordingTab.vue'
 import { transcribed } from './kind'
 import { transcript, type Recordings } from './transcript'

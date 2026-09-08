@@ -10,13 +10,13 @@ import { flushPromises } from '@vue/test-utils'
 import { nextTick, ref } from 'vue'
 import type { PlexShowing } from '@numen/ui'
 import { noting, type NoteTabDeps, type NoteTabState } from './kind'
-import { fileOpeners } from '../tabs/openers'
+import { fileOpeners } from '../shared/tabs/openers'
 import type { EditorHandle } from './keyboard'
 import type { noteChanges } from './changes'
 import type { openNotes } from './notes'
 import type { State } from './tab'
-import { windowing } from '../tabs/windowing'
-import { NOTE } from '../tabs/workspace'
+import { windowing } from '../shared/tabs/windowing'
+import { NOTE } from '../shared/tabs/workspace'
 
 /** A vault that answers with the heading written into each note. */
 const vault = (

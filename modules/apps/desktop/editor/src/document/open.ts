@@ -6,7 +6,7 @@
  * wide it is drawn, and what is highlighted over it are decisions, and a test
  * asks them without a browser.
  */
-import type { Stretch } from '../core'
+import type { Stretch } from '../shared/core'
 import { computed, ref, shallowRef } from 'vue'
 import { troubleWords } from '@numen/wire'
 

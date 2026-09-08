@@ -19,9 +19,9 @@ import {
   type Neighbourhood,
   type NoteType,
   type Seat,
-} from '../core'
-import { windowing, type AnyKind } from '../tabs/windowing'
-import { PLEX } from '../tabs/workspace'
+} from '../shared/core'
+import { windowing, type AnyKind } from '../shared/tabs/windowing'
+import { PLEX } from '../shared/tabs/workspace'
 
 /** A moment for whatever a gesture asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))

@@ -20,7 +20,7 @@ import type {
   StencilSummary,
   Value,
 } from '../../vault/cards'
-import { nameOf } from '../../../paths'
+import { nameOf } from '../../../shared/paths'
 
 /** An identity something is drawn under, which no file carries. */
 export type IdMaker = () => string

@@ -4,12 +4,12 @@
  */
 import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
-import type { RefusalReason } from '../../../core'
+import type { RefusalReason } from '../../../shared/core'
 import type { Cards, VaultCard, Problem } from '../../vault/cards'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '../../../preset/core'
-import { fileOpeners } from '../../../tabs/openers'
-import { windowing } from '../../../tabs/windowing'
-import { DECK } from '../../../tabs/workspace'
+import { fileOpeners } from '../../../shared/tabs/openers'
+import { windowing } from '../../../shared/tabs/windowing'
+import { DECK } from '../../../shared/tabs/workspace'
 import { decking, type DeckTabState } from './deckTabs'
 import { WORDS as words } from '../words'
 

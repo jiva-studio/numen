@@ -13,16 +13,16 @@ import type {
   PlexRelatedSeat,
   PlexShowing,
 } from '@numen/ui'
-import { answerGuard } from '../questions'
+import { answerGuard } from '../shared/questions'
 import { NEW_NOTE, OFFERED } from './menu'
 import { asParts, asPlex, typesIn } from './picture'
 import type { View } from './view'
 import { ticketing } from './tickets'
-import type { Move, NoteHeading, NoteType } from '../core'
-import type { Kind, WindowHandle } from '../tabs/windowing'
-import { PLEX, plexCalled } from '../tabs/workspace'
+import type { Move, NoteHeading, NoteType } from '../shared/core'
+import type { Kind, WindowHandle } from '../shared/tabs/windowing'
+import { PLEX, plexCalled } from '../shared/tabs/workspace'
 import PlexTab from './PlexTab.vue'
-import { fileOf } from '../paths'
+import { fileOf } from '../shared/paths'
 import { WORDS as words } from './words'
 
 /** Where the menu stands, and the node it was asked for on. */

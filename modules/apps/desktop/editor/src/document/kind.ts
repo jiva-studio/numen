@@ -6,12 +6,12 @@
  * measures again then.
  */
 import type { OpenDocumentState } from './open'
-import type { Stretch } from '../core'
-import type { FileOpeners } from '../tabs/openers'
-import type { Kind, WindowHandle } from '../tabs/windowing'
-import { DOCUMENT } from '../tabs/workspace'
+import type { Stretch } from '../shared/core'
+import type { FileOpeners } from '../shared/tabs/openers'
+import type { Kind, WindowHandle } from '../shared/tabs/windowing'
+import { DOCUMENT } from '../shared/tabs/workspace'
 import DocumentTab from './DocumentTab.vue'
-import { fileOf } from '../paths'
+import { fileOf } from '../shared/paths'
 
 /** What the window asks of a page once it is drawn. */
 export interface PageHandle {

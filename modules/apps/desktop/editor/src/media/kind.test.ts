@@ -8,8 +8,8 @@ import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { recordingKind, type MediaTabState } from './kind'
 import type { TranscriptState } from './transcript'
-import { fileOpeners } from '../tabs/openers'
-import { windowing } from '../tabs/windowing'
+import { fileOpeners } from '../shared/tabs/openers'
+import { windowing } from '../shared/tabs/windowing'
 
 /** A recording open in a tab, as far as the window reads one. */
 const recording = (path: string, transcribedDuration: number, duration: number) =>

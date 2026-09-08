@@ -8,9 +8,9 @@ import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import type { Conversation, Turn } from '@numen/ui'
 import { agentKind, talking, type AgentTabState } from './kind'
-import type { Stretch } from '../core'
-import { windowing } from '../tabs/windowing'
-import { AGENT } from '../tabs/workspace'
+import type { Stretch } from '../shared/core'
+import { windowing } from '../shared/tabs/windowing'
+import { AGENT } from '../shared/tabs/workspace'
 
 /** A talk that records what it was asked, and the passages its lines name. */
 const talked = (

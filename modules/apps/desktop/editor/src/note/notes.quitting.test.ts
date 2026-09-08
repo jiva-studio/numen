@@ -7,8 +7,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { openNotes } from './notes'
-import { flushing, type Conflict, type FlushDeps, type FlushResult } from '../saving/flushing'
-import type { NoteResult, Core } from '../core'
+import { flushing, type Conflict, type FlushDeps, type FlushResult } from '../shared/saving/flushing'
+import type { NoteResult, Core } from '../shared/core'
 
 /** A vault that has been read and is doing nothing. */
 const idle = {

@@ -3,12 +3,12 @@
  * writes back, and where what is wrong with it stands.
  */
 import { describe, expect, it } from 'vitest'
-import type { RefusalReason } from '../../../core'
+import type { RefusalReason } from '../../../shared/core'
 import type { Cards, VaultFace, Problem, FieldRenameResult } from '../../vault/cards'
-import { fileOpeners } from '../../../tabs/openers'
-import { windowing } from '../../../tabs/windowing'
-import { STENCIL } from '../../../tabs/workspace'
-import { REFUSED } from '../../../words'
+import { fileOpeners } from '../../../shared/tabs/openers'
+import { windowing } from '../../../shared/tabs/windowing'
+import { STENCIL } from '../../../shared/tabs/workspace'
+import { REFUSED } from '../../../shared/words'
 import { stencilling, type StencilTabState } from './stencilTabs'
 import { WORDS as words } from '../words'
 

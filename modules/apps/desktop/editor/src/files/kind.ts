@@ -4,8 +4,8 @@
  * decided here.
  */
 import { ref } from 'vue'
-import type { Entry, Move, Source } from '../core'
-import type { SearchDestination } from '../command/search'
+import type { Entry, Move, Source } from '../shared/core'
+import type { SearchDestination } from '../shared/command/search'
 import { folderOf, landedIn, type FileTree, ROOT } from './listing'
 import {
   NEW_DECK,
@@ -17,10 +17,10 @@ import {
   RENAME,
   type RunGuard,
 } from './menu'
-import type { Kind, WindowHandle } from '../tabs/windowing'
-import { FILES } from '../tabs/workspace'
+import type { Kind, WindowHandle } from '../shared/tabs/windowing'
+import { FILES } from '../shared/tabs/workspace'
 import FilesTab from './FilesTab.vue'
-import { fileOf } from '../paths'
+import { fileOf } from '../shared/paths'
 import { WORDS as words } from './words'
 
 /** Where the menu stands, and what it was asked for on. */

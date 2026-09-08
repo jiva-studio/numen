@@ -7,7 +7,7 @@
  * apart.
  */
 import { describe, expect, it } from 'vitest'
-import type { Entry } from '../core'
+import type { Entry } from '../shared/core'
 import { above, folderOf, freeName, landedIn, listing, ROOT, type ListingRow } from './listing'
 
 /** One row of a listing, under the folder it sits in. */

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { OFF, ON, SYNCING, syncSetting } from './sync'
-import { writer } from '../testing/writer'
-import { WORDS as words } from '../words'
+import { writer } from '../shared/testing/writer'
+import { WORDS as words } from '../shared/words'
 
 /** The vault, answering what the settings hold and keeping what was written. */
 const vault = (held: boolean, refuses: string | null = null) => {

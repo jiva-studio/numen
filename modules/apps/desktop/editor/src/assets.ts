@@ -15,7 +15,7 @@ import type {
   ReadTextResponse,
 } from '@numen/protocol'
 import { transport } from '@numen/wire'
-import { fingerprint, stamp } from './answers'
+import { fingerprint, stamp } from './shared/answers'
 import type { Documents, HighlightedPage } from './document/open'
 import type { Recordings } from './media/transcript'
 import type { Cue } from './media/cues'

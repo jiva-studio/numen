@@ -6,7 +6,7 @@
  * window goes back to what the settings hold.
  */
 import { describe, expect, it, vi } from 'vitest'
-import type { Model } from '../core'
+import type { Model } from '../shared/core'
 import { settingsStore, settingAt, type SettingsStoreDeps } from './store'
 
 const words = {

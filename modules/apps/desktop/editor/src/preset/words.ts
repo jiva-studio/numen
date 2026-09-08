@@ -1,7 +1,7 @@
 /** What a preset tab says: the one control, the settings under it, and what went wrong. */
 import { StopReason } from '@numen/protocol'
 import { many, percent, plural } from '@numen/ui'
-import type { RefusalReason } from '../core'
+import type { RefusalReason } from '../shared/core'
 import type { BudgetUnit, Goal, Rule } from './core'
 import type { Field } from './curve'
 

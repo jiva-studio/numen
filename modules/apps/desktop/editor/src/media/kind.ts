@@ -7,14 +7,14 @@
  */
 import { computed, type Component } from 'vue'
 import type { TranscriptState } from './transcript'
-import type { Source, Stretch, Task } from '../core'
-import type { FileOpeners, SourceReader } from '../tabs/openers'
-import type { Kind, WindowHandle } from '../tabs/windowing'
-import { RECORDING, URL } from '../tabs/workspace'
+import type { Source, Stretch, Task } from '../shared/core'
+import type { FileOpeners, SourceReader } from '../shared/tabs/openers'
+import type { Kind, WindowHandle } from '../shared/tabs/windowing'
+import { RECORDING, URL } from '../shared/tabs/workspace'
 import { DELETE_TEXT, PROOFREAD, TRANSCRIBE } from './words'
 import RecordingTab from './RecordingTab.vue'
 import UrlTab from './UrlTab.vue'
-import { fileOf } from '../paths'
+import { fileOf } from '../shared/paths'
 
 /** What a recording tab asks of the window it is drawn in. */
 export interface MediaTabDeps {

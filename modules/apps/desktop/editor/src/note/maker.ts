@@ -7,9 +7,9 @@
  */
 import type { PlexRelatedSeat } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
-import type { Core, Link, RefusalReason, Role } from '../core'
-import type { MessageWriter } from '../notices/messages'
-import { REFUSED } from '../words'
+import type { Core, Link, RefusalReason, Role } from '../shared/core'
+import type { MessageWriter } from '../shared/notices/messages'
+import { REFUSED } from '../shared/words'
 
 /**
  * The role a link carries to seat a note where the gesture put it. A seat and

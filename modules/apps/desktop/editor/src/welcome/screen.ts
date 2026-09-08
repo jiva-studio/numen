@@ -5,8 +5,8 @@
  * window standing on a vault, or on none, puts in front of the person.
  */
 import type { PaletteKeys, VaultRow, WelcomeAction } from '@numen/ui'
-import type { VaultList } from '../core'
-import { keysOf } from '../command/chords'
+import type { VaultList } from '../shared/core'
+import { keysOf } from '../shared/command/chords'
 import { WORDS as own } from './words'
 
 /** What the welcome screen is drawn over. */

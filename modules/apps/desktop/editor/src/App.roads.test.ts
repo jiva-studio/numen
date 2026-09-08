@@ -25,7 +25,7 @@ import {
   passageSaid,
   said,
   settles,
-} from './testing/window'
+} from './shared/testing/window'
 
 describe('the window with no note to show', () => {
   it('says the vault could not be read, and that nothing was read from it', async () => {

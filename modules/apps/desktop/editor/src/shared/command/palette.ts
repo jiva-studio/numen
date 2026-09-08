@@ -8,7 +8,7 @@
  * on every keystroke, so a vault moving under an open step is drawn as it is.
  */
 import { computed, ref, shallowRef } from 'vue'
-import { isWebAddress } from '../address'
+import { isWebAddress } from './address'
 import { answerGuard as latest } from '../questions'
 import { movedTo, type Move, type Vault } from '../core'
 import { commandsOf } from './commands'

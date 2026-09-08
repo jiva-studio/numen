@@ -7,8 +7,8 @@
  */
 import { ref } from 'vue'
 import { troubleWords } from '@numen/wire'
-import type { ReviewSettings } from '../core'
-import type { MessageWriter } from '../notices/messages'
+import type { ReviewSettings } from '../shared/core'
+import type { MessageWriter } from '../shared/notices/messages'
 
 /** The hour an installation nobody has configured begins the day at. */
 export const DEFAULT_STARTS = '04:00'

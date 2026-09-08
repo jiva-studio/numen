@@ -35,13 +35,13 @@ import type {
 } from '@numen/protocol'
 import type { TallyUnit } from '@numen/ui'
 import { namesOf, transport, troubleWords } from '@numen/wire'
-import { fingerprint, refusalIn, staleIn, stamp } from './answers'
+import { fingerprint, refusalIn, staleIn, stamp } from './shared/answers'
 import { DEFAULT_PARTS } from './settings/hanging'
 import { DEFAULT_STARTS } from './settings/review'
 import { settingAt } from './settings/store'
 import { write } from './settings/write'
-import type { CommandsDeps } from './command/target'
-import type { SearchDeps, SearchMode } from './command/search'
+import type { CommandsDeps } from './shared/command/target'
+import type { SearchDeps, SearchMode } from './shared/command/search'
 import type {
   Core,
   Entry,
@@ -65,7 +65,7 @@ import type {
   VaultRefusalReason,
   VaultResult,
   Vaults,
-} from './core'
+} from './shared/core'
 
 export const vault = createClient(VaultService, transport)
 

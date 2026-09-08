@@ -201,7 +201,7 @@ const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoiste
   } as Record<string, readonly Record<string, unknown>[]>,
 }))
 
-vi.mock('../vault', () => ({
+vi.mock('../../vault', () => ({
   vault: {},
   vaults: {
     list: async () => listed,
@@ -278,7 +278,7 @@ vi.mock('../vault', () => ({
   },
 }))
 
-vi.mock('../assets', () => ({
+vi.mock('../../assets', () => ({
   documents: {
     shape: async () => ({ pages: 1, pageSizes: [{ wide: 100, high: 100 }] }),
     page: () => '',
@@ -317,7 +317,7 @@ vi.mock('../artifacts', () => ({
   },
 }))
 
-vi.mock('../cards/vault/cards', () => ({
+vi.mock('../../cards/vault/cards', () => ({
   cards: {
     // A card is named by the first field of the stencil it is cut by, so the
     // window is told of one.
@@ -371,9 +371,9 @@ vi.mock('../cards/vault/cards', () => ({
   },
 }))
 
-vi.mock('../agent/core', () => ({ core: { ask: held, finish: async () => {} } }))
+vi.mock('../../agent/core', () => ({ core: { ask: held, finish: async () => {} } }))
 
-vi.mock('../settings/theme', () => ({
+vi.mock('../../settings/theme', () => ({
   themes: {
     appearance: async () => ({
       themes: [
@@ -398,7 +398,7 @@ vi.mock('../settings/theme', () => ({
   },
 }))
 
-const App = (await import('../App.vue')).default
+const App = (await import('../../App.vue')).default
 
 /** A moment for whatever the window asked the vault for to come back. */
 const settles = () => new Promise((done) => setTimeout(done, 0))

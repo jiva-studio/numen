@@ -8,13 +8,13 @@
  */
 import { ref, shallowRef, type Ref } from 'vue'
 import { StopReason } from '@numen/protocol'
-import { answerGuard, type AnswerGuard } from '../questions'
+import { answerGuard, type AnswerGuard } from '../shared/questions'
 import type { PlexShowing } from '@numen/ui'
-import type { Move, RefusalReason } from '../core'
-import type { MessageWriter } from '../notices/messages'
-import type { Kind, WindowHandle } from '../tabs/windowing'
-import type { FileOpeners } from '../tabs/openers'
-import { PRESET } from '../tabs/workspace'
+import type { Move, RefusalReason } from '../shared/core'
+import type { MessageWriter } from '../shared/notices/messages'
+import type { Kind, WindowHandle } from '../shared/tabs/windowing'
+import type { FileOpeners } from '../shared/tabs/openers'
+import { PRESET } from '../shared/tabs/workspace'
 import PresetTab from './PresetTab.vue'
 import {
   DEFAULTS,
@@ -39,7 +39,7 @@ import {
   steers,
   type Field,
 } from './curve'
-import { fileOf } from '../paths'
+import { fileOf } from '../shared/paths'
 import { WORDS as words } from './words'
 
 /** How far off the day a goal of a date opens on, where the file names none. */

@@ -7,9 +7,9 @@
  * run over it.
  */
 import type { MenuItem } from '@numen/ui'
-import { commandsOf, overNote } from '../command/commands'
-import type { Source } from '../core'
-import { WORDS as words } from '../words'
+import { commandsOf, overNote } from '../shared/command/commands'
+import type { Source } from '../shared/core'
+import { WORDS as words } from '../shared/words'
 import { WORDS as own } from './words'
 
 /** What the tab does itself: the files it makes, and a name put in a field. */

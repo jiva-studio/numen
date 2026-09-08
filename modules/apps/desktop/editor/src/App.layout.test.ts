@@ -24,7 +24,7 @@ import {
   said,
   settles,
   tabsOf,
-} from './testing/window'
+} from './shared/testing/window'
 
 describe('the window as it opens', () => {
   it('draws a plex in the room, and an agent in front of the files beside it', async () => {

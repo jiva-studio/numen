@@ -6,7 +6,7 @@
  * is only exercised by looking at the screen.
  */
 import { ref, shallowRef } from 'vue'
-import type { Core, Move, NoteEdit, Stretch, Task } from './core'
+import type { Core, Move, NoteEdit, Stretch, Task } from './shared/core'
 import { following } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
 

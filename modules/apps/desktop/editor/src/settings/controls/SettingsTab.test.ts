@@ -11,7 +11,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { computed, nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 
-import type { Model, SettingEdit } from '../../core'
+import type { Model, SettingEdit } from '../../shared/core'
 import { settingAt as at } from '../store'
 import SettingsTab from './SettingsTab.vue'
 import type { Installation } from './kind'

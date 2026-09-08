@@ -9,7 +9,7 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import { troubleWords } from '@numen/wire'
-import { movedTo, type Entry, type Move } from '../core'
+import { movedTo, type Entry, type Move } from '../shared/core'
 
 /** Everything a files tab asks of the application. */
 export interface Folders {

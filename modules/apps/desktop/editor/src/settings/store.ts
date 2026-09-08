@@ -8,8 +8,8 @@
  */
 import { ref, shallowRef } from 'vue'
 import { troubleWords } from '@numen/wire'
-import type { Model, SettingEdit } from '../core'
-import type { MessageWriter } from '../notices/messages'
+import type { Model, SettingEdit } from '../shared/core'
+import type { MessageWriter } from '../shared/notices/messages'
 import { write } from './write'
 
 /** Everything this says in the window's voice. */

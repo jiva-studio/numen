@@ -7,8 +7,8 @@
  */
 import { computed, readonly, ref } from 'vue'
 import { troubleWords } from '@numen/wire'
-import type { Kind, WindowHandle } from '../../tabs/windowing'
-import { SETTINGS_FILE } from '../../tabs/workspace'
+import type { Kind, WindowHandle } from '../../shared/tabs/windowing'
+import { SETTINGS_FILE } from '../../shared/tabs/workspace'
 import SettingsFileTab from './SettingsFileTab.vue'
 import { WORDS as words } from './words'
 

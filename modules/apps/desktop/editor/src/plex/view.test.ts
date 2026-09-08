@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { view, type Neighbours } from './view'
-import type { Neighbourhood } from '../core'
+import type { Neighbourhood } from '../shared/core'
 
 const answer = (path: string): Neighbourhood => ({
   focus: { path, title: path },

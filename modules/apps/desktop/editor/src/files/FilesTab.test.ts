@@ -9,7 +9,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { Menu, Tree } from '@numen/ui'
-import type { Entry } from '../core'
+import type { Entry } from '../shared/core'
 import FilesTab from './FilesTab.vue'
 import { filing, type FilesTabState } from './kind'
 import { listing, ROOT } from './listing'

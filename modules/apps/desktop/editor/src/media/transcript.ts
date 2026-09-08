@@ -3,11 +3,11 @@
  * transcript, which cue is being said now, and the words as a person edits
  * them.
  */
-import type { Stretch } from '../core'
+import type { Stretch } from '../shared/core'
 import { computed, ref, shallowRef } from 'vue'
 import { clock } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
-import { answerGuard as latest } from '../questions'
+import { answerGuard as latest } from '../shared/questions'
 import { cued, same, spanning, spoken, type Cue } from './cues'
 import { playable as canPlay, player, type MediaTypeProbe, type Player } from './player'
 import { WORDS } from './words'

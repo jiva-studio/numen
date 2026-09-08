@@ -10,8 +10,8 @@
 import { computed } from 'vue'
 import { StencilEditor } from '@numen/ui'
 import type { InsertionPoint, Half } from '@numen/ui'
-import FileConflictPrompt from '../../../saving/FileConflictPrompt.vue'
-import { conflictIn } from '../../../saving/flushing'
+import FileConflictPrompt from '../../../shared/saving/FileConflictPrompt.vue'
+import { conflictIn } from '../../../shared/saving/flushing'
 import type { StencilTabState } from './stencilTabs'
 import { WORDS as words } from '../words'
 

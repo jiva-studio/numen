@@ -14,7 +14,7 @@ import { Menu, Tree } from '@numen/ui'
 import type { Position, Row, RowMarker } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 
-import { iconFor, iconOfEntry } from '../icons'
+import { iconFor, iconOfEntry } from '../shared/icons'
 import type { DropPosition, FilesTabState } from './kind'
 import type { ListingRow } from './listing'
 import { addressIn, carriesAddress } from './drag'

@@ -36,9 +36,9 @@ import {
   said,
   settles,
   sourceSaid,
-} from './testing/window'
-import { REFUSED, WORDS } from './words'
-import { plexCalled } from './tabs/workspace'
+} from './shared/testing/window'
+import { REFUSED, WORDS } from './shared/words'
+import { plexCalled } from './shared/tabs/workspace'
 
 describe('the palette', () => {
   /** A keystroke taken on the window, and whether the window took it. */

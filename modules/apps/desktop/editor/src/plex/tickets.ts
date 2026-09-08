@@ -5,7 +5,7 @@
  * while its file moves. Everything the plex hands back names a node by its
  * ticket, and is translated to a path at the plex's edge.
  */
-import { movedTo, type Move } from '../core'
+import { movedTo, type Move } from '../shared/core'
 
 export function ticketing() {
   /** The ticket each note holds, by the path its file is at. */

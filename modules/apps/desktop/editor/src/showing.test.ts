@@ -6,8 +6,8 @@
  */
 import { describe, expect, it } from 'vitest'
 import { showing } from './showing'
-import type { Core, Stretch, Task } from './core'
-import type { Neighbourhood } from './core'
+import type { Core, Stretch, Task } from './shared/core'
+import type { Neighbourhood } from './shared/core'
 
 const answer = (path: string): Neighbourhood => ({
   focus: { path, title: path },

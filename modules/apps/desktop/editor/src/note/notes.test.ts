@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { openNotes, type Notes } from './notes'
-import type { Core } from '../core'
+import type { Core } from '../shared/core'
 
 /** A vault that has been read and is doing nothing. */
 const idle = {

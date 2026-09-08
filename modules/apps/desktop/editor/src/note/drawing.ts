@@ -6,7 +6,7 @@
  * held until the note changes under it and dropped a moment later; one whose
  * text never arrives is dropped on the longer bound.
  */
-import type { NoteEdit } from '../core'
+import type { NoteEdit } from '../shared/core'
 
 /** What is being drawn over one note. */
 export interface Change {
