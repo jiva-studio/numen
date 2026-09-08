@@ -98,9 +98,9 @@ func (a *API) CreateNote(
 	defer a.Writing.done()
 
 	made, err := a.Notes.Create.Execute(ctx, showing, note.NewNote{
-		Title:  r.Msg.GetTitle(),
-		Folder: r.Msg.GetPath(),
-		Links:  links,
+		Title: r.Msg.GetTitle(),
+		Path:  r.Msg.GetPath(),
+		Links: links,
 	})
 	behind := a.unlevelled(err)
 	if made.Path != "" {

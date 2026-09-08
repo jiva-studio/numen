@@ -62,7 +62,7 @@ func addImportTool(server *sdk.Server, core Core) {
 		// It is named by the address until what is there says what it is
 		// called, which is what the import does next.
 		made, err := core.Sources.URLs.Execute(ctx, v, source.NewURL{
-			Address: at, Folder: in.Folder,
+			Address: at, Path: in.Folder,
 		})
 		if err != nil {
 			return nil, ImportOutcome{Path: made.Path, Refused: refusing(err)}, nil

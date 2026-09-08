@@ -46,9 +46,9 @@ func NewCreate(writers port.VaultWriters, index note.Levels, now port.Clock) Cre
 type New struct {
 	Title string
 	Body  string
-	// Folder is where in the vault it goes, relative to the root. Empty is the
-	// root itself: the application does not arrange anyone's folders.
-	Folder string
+	// Path is the folder it goes in, relative to the root. Empty is the root
+	// itself: the application does not arrange anyone's folders.
+	Path string
 	// Fields is what a stencil declares, in the order a person is asked for
 	// them. A deck declares none.
 	Fields []string
@@ -93,7 +93,7 @@ func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, 
 	if err != nil {
 		return CreateNoteResult{}, err
 	}
-	path := pathpkg.Join(in.Folder, name+domain.NoteExtension)
+	path := pathpkg.Join(in.Path, name+domain.NoteExtension)
 
 	identifier, err := ulid.New(u.Now())
 	if err != nil {

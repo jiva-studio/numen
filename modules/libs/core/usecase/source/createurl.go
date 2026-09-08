@@ -27,9 +27,9 @@ type NewURL struct {
 	// Title is what the file is called. Empty is the address itself, which is
 	// the name a fetch replaces once it knows what is there.
 	Title string
-	// Folder is where in the vault it goes, relative to the root. Empty is the
-	// root itself.
-	Folder string
+	// Path is the folder it goes in, relative to the root. Empty is the root
+	// itself.
+	Path string
 }
 
 // CreateURLResult is the file that now exists.
@@ -49,7 +49,7 @@ func (u CreateURL) Execute(
 	if err != nil {
 		return CreateURLResult{}, err
 	}
-	path := pathpkg.Join(in.Folder, name+domain.URLExtension)
+	path := pathpkg.Join(in.Path, name+domain.URLExtension)
 
 	writer, err := u.Writers.Open(v)
 	if err != nil {
