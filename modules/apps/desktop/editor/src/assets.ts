@@ -16,6 +16,7 @@ import type {
 } from '@numen/protocol'
 import { transport } from '@numen/wire'
 import { fingerprint, stamp } from './shared/answers'
+import { running } from './shared/artifacts'
 import type { Documents, HighlightedPage } from './features/document/open'
 import type { Recordings } from './features/media/transcript'
 import type { Cue } from './features/media/cues'
@@ -73,7 +74,12 @@ export const recordings: Recordings = {
       url: answer.url,
     }
   },
-  cues: async (path) => {
+  carries: (path) => running.carries(path),
+  transcript: async (path) => {
+    const answer = await waiting(() => artifacts.readText({ path }))
+    return { ...said(answer), editable: answer.editable }
+  },
+  article: async (path) => {
     const answer = await waiting(() => artifacts.readText({ path }))
     return { ...said(answer), editable: answer.editable }
   },

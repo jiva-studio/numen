@@ -290,12 +290,18 @@ vi.mock('../../assets', () => ({
       const { duration, mediaUrl, mediaType } = said.transcribed
       return { duration, mediaUrl, mediaType, url: '' }
     },
-    cues: async () => ({ cues: said.transcribed.cues, prose: '', editable: said.transcribed.editable }),
+    carries: async (path: string) => said.carries[path] ?? { transcript: 'done' },
+    transcript: async () => ({
+      cues: said.transcribed.cues,
+      prose: '',
+      editable: said.transcribed.editable,
+    }),
+    article: async () => ({ cues: [], prose: '', editable: said.transcribed.editable }),
     writes: async (path: string, cues: readonly { text: string }[]) => {
       asked.transcribed.push(`${path} ${cues.map((one) => one.text).join(' / ')}`)
     },
-    plays: async (path: string, stretch: { start: number }) =>
-      said.transcribed.cues.find((one) => one.from >= stretch.start)?.from ?? null,
+    plays: async (path: string, span: { from: number }) =>
+      said.transcribed.cues.find((one) => one.from >= span.from)?.from ?? null,
   },
 }))
 

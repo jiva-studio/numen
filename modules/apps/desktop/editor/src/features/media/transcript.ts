@@ -3,7 +3,7 @@
  * transcript, which cue is being said now, and the words as a person edits
  * them.
  */
-import type { Span } from '../../shared/core'
+import type { ArtifactStates, Span } from '../../shared/core'
 import { computed, ref, shallowRef } from 'vue'
 import { clock } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
@@ -19,13 +19,11 @@ export interface TabPlayer {
 
 /** The text fetched or heard, and whether it may be written over. */
 export interface Transcript {
+  /** The words with the times they were said at, empty for prose nothing timed. */
   readonly cues: readonly Cue[]
-  /**
-   * The text where nothing timed it: the prose a page is written around. It
-   * comes instead of the cues, never beside them.
-   */
+  /** The prose a page is written around, empty for words with times. */
   readonly prose: string
-  /** False while a run writing the transcript holds it. */
+  /** False while a run writing the text holds it. */
   readonly editable: boolean
 }
 
@@ -53,8 +51,12 @@ export interface RecordingSummary {
 export interface Recordings {
   /** How long the recording runs, and how much of it has been written down. */
   listened(path: string): Promise<RecordingSummary>
+  /** What the file carries, which says which of the two texts to read. */
+  carries(path: string): Promise<ArtifactStates>
   /** The words heard in the recording, in the order they were spoken. */
-  cues(path: string): Promise<Transcript>
+  transcript(path: string): Promise<Transcript>
+  /** The prose the page is written around, where nothing timed it. */
+  article(path: string): Promise<Transcript>
   /** The words as a person has edited them, kept against the recording. */
   writes(path: string, cues: readonly Cue[]): Promise<void>
   /**
@@ -239,7 +241,13 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
         through.load(address.value)
       }
 
-      const spoke = await recordings.cues(path)
+      // What the file carries says which text to read. A url publishing words
+      // against a clock carries a transcript; every other page carries prose.
+      const carried = await recordings.carries(path)
+      if (!mine.lands()) return
+      const spoke = await (carried.transcript
+        ? recordings.transcript(path)
+        : recordings.article(path))
       if (!mine.lands()) return
       cues.value = spoke.cues
       editable.value = spoke.editable

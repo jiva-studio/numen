@@ -13,6 +13,7 @@ import {
   type RecordingSummary,
   type Transcript,
 } from './transcript'
+import type { ArtifactStates } from '../../shared/core'
 import type { Cue } from './cues'
 import { playable, type Player } from './player'
 import { WORDS } from './words'
@@ -38,6 +39,7 @@ function talk(
   cues: readonly Cue[] | Error = CUES,
   said: RecordingSummary | Error = SUMMARY,
   at: number | null = null,
+  carried: ArtifactStates = { transcript: 'done' },
 ) {
   /** Every address asked of it, in the order they were asked. */
   const asked: string[] = []
@@ -51,10 +53,18 @@ function talk(
       if (said instanceof Error) throw said
       return said
     },
-    cues: async (path) => {
+    carries: async (path) => {
+      asked.push(`carries ${path}`)
+      return carried
+    },
+    transcript: async (path) => {
       asked.push(`cues ${path}`)
       if (cues instanceof Error) throw cues
       return { cues, editable: true, prose: '' }
+    },
+    article: async (path) => {
+      asked.push(`prose ${path}`)
+      return { cues: [], editable: true, prose: 'A page nothing timed.' }
     },
     writes: async (path, kept) => {
       asked.push(`writes ${path}`)
@@ -126,13 +136,17 @@ describe('a recording opened', () => {
     expect(heard.address.value).toBe(SUMMARY.mediaUrl)
   })
 
-  it('asks what it is and what was heard in it, once each', async () => {
+  it('asks what it is, what it carries and what was heard in it, once each', async () => {
     const { recordings, asked } = talk()
     const heard = transcript(recordings, 'talks/Ants.mp3')
 
     await settled()
 
-    expect(asked).toStrictEqual(['about talks/Ants.mp3', 'cues talks/Ants.mp3'])
+    expect(asked).toStrictEqual([
+      'about talks/Ants.mp3',
+      'carries talks/Ants.mp3',
+      'cues talks/Ants.mp3',
+    ])
     expect(heard.cues.value).toStrictEqual(CUES)
     expect(heard.duration.value).toBe(9_000)
   })
@@ -288,6 +302,31 @@ describe('the one player the window has', () => {
   })
 })
 
+describe('a file whose text the vault carries under one kind and not the other', () => {
+  it('reads the words with their times where the file carries a transcript', async () => {
+    const { recordings, asked } = talk(CUES, SUMMARY, null, { transcript: 'done' })
+
+    const heard = transcript(recordings, 'talks/Ants.mp3')
+    await settled()
+
+    expect(asked).toContain('cues talks/Ants.mp3')
+    expect(asked).not.toContain('prose talks/Ants.mp3')
+    expect(heard.cues.value).toStrictEqual(CUES)
+  })
+
+  it('reads the prose where the file carries an article', async () => {
+    const { recordings, asked } = talk(CUES, SUMMARY, null, { article: 'done' })
+
+    const heard = transcript(recordings, 'notes/A page.md')
+    await settled()
+
+    expect(asked).toContain('prose notes/A page.md')
+    expect(asked).not.toContain('cues notes/A page.md')
+    expect(heard.cues.value).toStrictEqual([])
+    expect(heard.prose.value).toBe('A page nothing timed.')
+  })
+})
+
 describe('a recording opened at a place in its words', () => {
   it('plays from the moment the first stretch was spoken at', async () => {
     const { recordings, asked } = talk(CUES, SUMMARY, 2_500)
@@ -366,7 +405,9 @@ describe('two questions about the words in flight at once', () => {
     })
     const recordings: Recordings = {
       listened: async () => (++asks > 1 ? new Promise<RecordingSummary>(() => {}) : SUMMARY),
-      cues: async () => held,
+      carries: async () => ({ transcript: 'done' }),
+      transcript: async () => held,
+      article: async () => held,
       writes: async () => {},
       plays: async () => null,
     }
@@ -540,7 +581,9 @@ describe('a transcript asked for twice at once', () => {
 
     const recordings: Recordings = {
       listened: async () => SUMMARY,
-      cues: () => new Promise<Transcript>((done) => void answers.push(done)),
+      carries: async () => ({ transcript: 'done' }),
+      transcript: () => new Promise<Transcript>((done) => void answers.push(done)),
+      article: async () => early,
       writes: async () => {},
       plays: async () => null,
     }
@@ -797,7 +840,9 @@ describe('a transcript a run still holds', () => {
   it('is not edited', async () => {
     const recordings: Recordings = {
       listened: async () => SUMMARY,
-      cues: async () => ({ cues: CUES, editable: false, prose: '' }),
+      carries: async () => ({ transcript: 'done' }),
+      transcript: async () => ({ cues: CUES, editable: false, prose: '' }),
+      article: async () => ({ cues: [], editable: false, prose: '' }),
       writes: async () => {},
       plays: async () => null,
     }

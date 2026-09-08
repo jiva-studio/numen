@@ -40,7 +40,9 @@ const talk = (cues: readonly Cue[]): Recordings => ({
     mediaType: 'audio/mpeg',
     url: '',
   }),
-  cues: async () => ({ cues, editable: true, prose: '' }),
+  carries: async () => ({ transcript: 'done' }),
+  transcript: async () => ({ cues, editable: true, prose: '' }),
+  article: async () => ({ cues: [], editable: true, prose: '' }),
   writes: async () => {},
   plays: async () => null,
 })
