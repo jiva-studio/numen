@@ -38,7 +38,7 @@ export { WeekdayChips } from './shared/ui/weekday-chips'
 export { WEEK } from './shared/ui/weekday-chips'
 export type { Day } from './shared/ui/weekday-chips'
 
-export { default as DueCount } from './cards/DueCount.vue'
+export { DueCount } from './features/cards/due-count'
 /** What a person did on each day, as a grid of weeks. */
 export { default as Heatmap } from './heatmap/Heatmap.vue'
 export { dayName as heatmapDayName } from './heatmap/dates'
@@ -111,23 +111,23 @@ export type { Tab, Workspace } from './workspace/node'
 export { default as Tree } from './tree/Tree.vue'
 export type { Row, RowMarker } from './tree/row'
 
-export { default as StencilEditor } from './cards/StencilEditor.vue'
-export { default as DeckEditor } from './cards/DeckEditor.vue'
-export { default as CardProse } from './cards/CardProse.vue'
+export { StencilEditor } from './features/cards/stencil-editor'
+export { DeckEditor } from './features/cards/deck-editor'
+export { CardProse } from './features/cards/card-prose'
 
 /** The schemes a link in a card may point at. An address naming none is the caller's. */
-export { scheme } from './cards/safe'
+export { scheme } from './features/cards/safe'
 /** For putting a card or a field where a person let it go, without drawing it. */
-export { ordered, reordered } from './cards/order'
-export type { Half, InsertionPoint } from './cards/order'
+export { ordered, reordered } from './features/cards/order'
+export type { Half, InsertionPoint } from './features/cards/order'
 /**
  * Where a card let go at the head of a deck lands, before its first section,
  * and where one let go past the last card standing under a heading lands.
  */
-export { blanks as cardBlanks, ended as cardEnded, endOf as cardEndOf, HEAD as CARD_HEAD } from './cards/deck'
-export { declared as cardFields } from './cards/order'
-export type { DeckCard, DeckSection } from './cards/deck'
-export type { Stencil } from './cards/stencil'
+export { blanks as cardBlanks, ended as cardEnded, endOf as cardEndOf, HEAD as CARD_HEAD } from './features/cards/deck'
+export { declared as cardFields } from './features/cards/order'
+export type { DeckCard, DeckSection } from './features/cards/deck'
+export type { Stencil } from './features/cards/card'
 
 export { byHolding } from './plex/reaching'
 export { byDoubleTap } from './plex/showing'
