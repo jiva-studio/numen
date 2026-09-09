@@ -480,3 +480,39 @@ export const InAPaneOfTheWindow: Story = {
     )
   },
 }
+
+/**
+ * The book answers a key as soon as it is drawn, with nothing pressed in it
+ * first.
+ *
+ * The tab reads the keys and the book turns the page, so the tab holds the book
+ * as it is drawn. A tab holding nothing answers every key with "not mine", and
+ * a book that has to be pressed once before its arrows work is that.
+ */
+export const AnswersAKeyAsDrawn: Story = {
+  render: (args: Knobs) => ({
+    components: { BookTab },
+    setup() {
+      const state = booking(openBook(shelf(args.book), 'library/mbh.epub', words, () => {}))
+      return { args, state }
+    },
+    template: `
+      <div class="numen" :style="{ height: '100vh', width: args.width, background: 'var(--numen-surface)' }">
+        <BookTab :state="state" />
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await laid(canvasElement)
+
+    // Struck at the book, with nothing pressed in it beforehand.
+    const tab = canvasElement.querySelector('.book-tab') as HTMLElement
+    tab.focus()
+    await userEvent.keyboard('{ArrowRight}')
+    await waitFor(
+      async () =>
+        await expect(canvasElement.querySelector('.book__count')?.textContent).not.toBe('1 of 1'),
+      { timeout: ITS_OWN_PACE },
+    )
+  },
+}

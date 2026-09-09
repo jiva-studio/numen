@@ -15,7 +15,7 @@ import {
   type EffectScope,
   type Ref,
 } from 'vue'
-import { closeTab, openTab, openTabBeside, pane, paneById } from '@numen/ui'
+import { closeTab, openTab, openTabBeside, pane, paneById, panesOf } from '@numen/ui'
 import type { Tab, Workspace } from '@numen/ui'
 import type { BookProgress, DocumentProgress, RecordingProgress, Source } from '../core'
 import { named } from './workspace'
@@ -69,7 +69,8 @@ export interface Kind<TabState> {
   /**
    * A key struck while one of its tabs is the one the person is in, answered
    * with whether the tab took it. Several panes are drawn at once, so the tab
-   * asked is the one showing in the pane the layout is focused on.
+   * offered it is the one showing in the pane the layout is focused on, and
+   * then whatever else is on screen.
    */
   presses?(state: TabState, event: KeyboardEvent): boolean
   /** What a command asked over one of its tabs is over. */
@@ -289,12 +290,26 @@ export function windowTabs() {
     one.kind.shown?.(one.state, id)
   }
 
-  /** A key struck, handed to the tab in the pane the person is in. */
+  /**
+   * A key struck, offered to the tabs on screen: the one in the pane the person
+   * is in first, and then the rest, the one they were in last before the one
+   * before that. The first to take it keeps it.
+   *
+   * A pane is what the layout is focused on and not what the person is looking
+   * at, and several panes are drawn at once. A key nobody in the pane it names
+   * reads is one the tab in front of them would have.
+   */
   const presses = (event: KeyboardEvent): boolean => {
-    const id = paneById(layout.value.root, layout.value.focus)?.active
-    if (!id) return false
-    const one = open.value.get(id)
-    return one?.kind.presses?.(one.state, event) ?? false
+    const drawn = panesOf(layout.value.root).map((one) => one.active)
+    const front = paneById(layout.value.root, layout.value.focus)?.active
+    const offered = new Set<string>()
+    for (const id of [front, ...[...open.value.keys()].reverse()]) {
+      if (!id || offered.has(id) || !drawn.includes(id)) continue
+      offered.add(id)
+      const one = open.value.get(id)
+      if (one?.kind.presses?.(one.state, event)) return true
+    }
+    return false
   }
 
   /**

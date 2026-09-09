@@ -487,7 +487,7 @@ const book = answers('Book', {
   // asked of the window is that the key reaches the book it is showing.
   pressed: (event: KeyboardEvent) => {
     asked.pressed.push(event.key)
-    return false
+    return event.key.startsWith('Arrow')
   },
 })
 
