@@ -105,6 +105,12 @@ const along = ref(0)
 /** Which spread is in front, counted from the first. */
 const standing = ref(0)
 
+/** How far along the columns are carried, in CSS pixels. */
+const shift = ref(0)
+
+/** Whether they are carried there at once, which is a layout and not a turn. */
+const still = ref(true)
+
 /** Where each run of the text stands. */
 const marks = shallowRef<readonly Mark[]>([])
 
@@ -140,11 +146,12 @@ const left = computed(() => leftInDocument(flow.value, standing.value, marks.val
  * settled.
  */
 const setting = computed(() => ({
-  '--book-run': columns.value === 1 ? `calc(200% + ${GAP}px)` : '100%',
+  '--book-run': columns.value === 1 ? '200%' : '100%',
   '--book-gap': `${GAP}px`,
   '--book-column': `${columnWide(flow.value)}px`,
   '--book-high': `${viewport.value.high}px`,
   '--book-size': `calc(var(--numen-prose-size) * ${size.value})`,
+  '--book-shift': `${shift.value}px`,
 }))
 
 /**
@@ -161,20 +168,27 @@ const lineOf = (text: HTMLElement): number => {
 
 /** The runs of the drawn document, and where the columns put each of them. */
 const gather = () => {
-  const box = area.value
   const text = paper.value
-  if (!box || !text) return
+  if (!text) return
 
+  // Where a run stands is read against the columns it stands in and not against
+  // the area they are carried across: a turn under way carries both, and the
+  // one measured against the other is where the run will come to rest.
   runs = runsIn(text)
-  marks.value = marksIn(runs, box.getBoundingClientRect().left - box.scrollLeft)
+  marks.value = marksIn(runs, text.getBoundingClientRect().left)
 }
 
-/** The spread put against the near edge of the reading area. */
+/**
+ * The spread put against the near edge of the reading area. The columns are
+ * carried there rather than scrolled to: a scroll stops at the end of what it
+ * has to scroll, and the gap the last column keeps beside it is not part of
+ * that, so the last spread of a document would stand half a gap short.
+ */
 const stand = (spread: number, how: ScrollBehavior) => {
-  const box = area.value
-  if (!box) return
   standing.value = Math.min(Math.max(spread, 0), Math.max(count.value - 1, 0))
-  box.scrollTo({ left: beginsAt(flow.value, standing.value), behavior: how })
+  still.value = how !== 'smooth'
+  shift.value = beginsAt(flow.value, standing.value)
+  if (still.value) onNextFrame(() => (still.value = false))
 }
 
 /** What stands in front now, said once, and nothing while nothing does. */
@@ -386,6 +400,7 @@ defineExpose({
           v-show="measured"
           ref="paper"
           class="book__paper prose prose-sm prose-numen max-w-none"
+          :class="{ 'book__paper--still': still }"
           :style="setting"
           @click="follow"
           @auxclick="follow"
@@ -440,9 +455,9 @@ defineExpose({
    the width of a spread. */
 .book__margin {
   box-sizing: border-box;
-  /* The gutter a book keeps beside its text, which is wide: a column runs to
-     the measure it is set at and the room left over is margin. */
-  padding-inline: clamp(1rem, 3%, 2.5rem);
+  /* The gutter a book keeps beside its text stands inside the columns and not
+     around them: the page a turn carries off goes off the edge of the pane
+     rather than being cut where the text begins. */
   padding-block-start: var(--book-head);
   padding-block-end: 3rem;
 }
@@ -483,14 +498,22 @@ defineExpose({
      out once the text is laid out, and the whole of the area until it has. */
   --book-paper: var(--book-high);
 
+  box-sizing: border-box;
   block-size: var(--book-paper);
   /* Two columns, always. A single-column box is not broken into columns at all
      by WebKit: the text past the first column is cut off and never reached. A
      spread of one column is two set across a box twice as wide, and the area
      around it shows one of them. */
   inline-size: var(--book-run);
+  /* Half a gap beside the outermost column at either edge, so a column stands
+     the same distance from the edge as two columns stand from each other and a
+     spread begins one whole area along. */
+  padding-inline: calc(var(--book-gap) / 2);
   column-count: 2;
   column-gap: var(--book-gap);
+  /* The spread in front is carried here, and the turn is that being carried. */
+  translate: calc(-1 * var(--book-shift)) 0;
+  transition: translate var(--numen-motion) var(--numen-easing);
   column-fill: auto;
   font-size: var(--book-size);
   /* Set to the measure, broken at the syllable, as a book is. */
@@ -502,6 +525,12 @@ defineExpose({
      is there to be read. A book is there to be read. */
   user-select: text;
   -webkit-user-select: text;
+}
+
+/* The columns laid out again are put where they belong at once: a layout is not
+   a turn, and nothing slides across the pane while one is being made. */
+.book__paper--still {
+  transition: none;
 }
 
 /* A picture is set to its column's width and no taller than the column. */

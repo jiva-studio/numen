@@ -217,7 +217,7 @@ export const OneColumn: Story = {
     await laid(canvasElement)
 
     const area = areaOf(canvasElement).getBoundingClientRect()
-    await expect(columnOf(canvasElement)).toBeCloseTo(area.width, -1)
+    await expect(columnOf(canvasElement)).toBeCloseTo(area.width - GAP, -1)
   },
 }
 
@@ -262,7 +262,7 @@ export const OneColumnTurns: Story = {
     // single-column box into columns at all: the text past the first is cut off
     // and never reached.
     await expect(getComputedStyle(paper).columnCount).toBe('2')
-    await expect(paper.getBoundingClientRect().width).toBeCloseTo(2 * area.clientWidth + GAP, -1)
+    await expect(paper.getBoundingClientRect().width).toBeCloseTo(2 * area.clientWidth, -1)
 
     await expect(paper.scrollWidth).toBeGreaterThan(area.clientWidth + 1)
     await expect(canvasElement.querySelector('.book__left')?.textContent).not.toBe(
@@ -288,7 +288,7 @@ export const TwoColumns: Story = {
 
     const area = areaOf(canvasElement).getBoundingClientRect()
     const column = columnOf(canvasElement)
-    await expect(column).toBeCloseTo((area.width - GAP) / 2, -1)
+    await expect(column).toBeCloseTo(area.width / 2 - GAP, -1)
 
     // The run that stands in the second column of the first spread stands in
     // the first column of nothing after one turn: the whole spread has gone.
@@ -299,7 +299,7 @@ export const TwoColumns: Story = {
       async () => {
         const after = runsOf(canvasElement).map((run) => run.getClientRects()[0]?.left ?? 0)
         const moved = before.map((was, index) => was - (after[index] ?? 0))
-        await expect(Math.max(...moved)).toBeCloseTo(area.width + GAP, -1)
+        await expect(Math.max(...moved)).toBeCloseTo(area.width, -1)
       },
       { timeout: ITS_OWN_PACE },
     )
@@ -437,9 +437,9 @@ export const OneLine: Story = {
       '0 pages left in chapter',
     )
 
-    const was = areaOf(canvasElement).scrollLeft
+    const was = paperOf(canvasElement).getBoundingClientRect().left
     await userEvent.keyboard('{ArrowRight}')
-    await expect(areaOf(canvasElement).scrollLeft).toBe(was)
+    await expect(paperOf(canvasElement).getBoundingClientRect().left).toBe(was)
   },
 }
 
@@ -565,6 +565,6 @@ export const DrawnOutOfSight: Story = {
     const area = areaOf(canvasElement)
     await expect(paperOf(canvasElement).scrollHeight).toBeLessThanOrEqual(area.clientHeight + 1)
     await expect(area.scrollHeight).toBeLessThanOrEqual(area.clientHeight + 1)
-    await expect(columnOf(canvasElement)).toBeCloseTo((area.clientWidth - GAP) / 2, -1)
+    await expect(columnOf(canvasElement)).toBeCloseTo(area.clientWidth / 2 - GAP, -1)
   },
 }

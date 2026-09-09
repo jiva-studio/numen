@@ -33,7 +33,12 @@ export interface Flow {
   readonly columns: number
 }
 
-/** What stands between two columns, in CSS pixels. */
+/**
+ * What stands between two columns, in CSS pixels. Half of it stands beside the
+ * outermost column at either edge, so a column keeps the same distance from the
+ * one beside it as two columns of a spread keep from each other, and a spread
+ * begins every reading area's width along.
+ */
 export const GAP = 72
 
 /**
@@ -49,7 +54,7 @@ export const NARROWEST = 448
  * the narrowest a column is read at, and one until then.
  */
 export function columnsIn(wide: number, size: number): number {
-  return wide >= 2 * NARROWEST * size + GAP ? 2 : 1
+  return wide >= 2 * (NARROWEST * size + GAP) ? 2 : 1
 }
 
 /**
@@ -62,10 +67,18 @@ export function columnHigh(high: number, line: number): number {
   return Math.max(Math.floor(high / line), 1) * line
 }
 
-/** How wide one column is set. */
-export function columnWide(flow: Flow): number {
+/**
+ * How far one column stands from the next, which is the reading area shared out
+ * between the columns of a spread.
+ */
+export function columnPitch(flow: Flow): number {
   if (flow.columns <= 0) return 0
-  return (flow.wide - (flow.columns - 1) * flow.gap) / flow.columns
+  return flow.wide / flow.columns
+}
+
+/** How wide one column is set: its share of the area, less the gap it keeps. */
+export function columnWide(flow: Flow): number {
+  return Math.max(columnPitch(flow) - flow.gap, 0)
 }
 
 /**
@@ -74,22 +87,21 @@ export function columnWide(flow: Flow): number {
  * document.
  */
 export function columnsInAll(flow: Flow): number {
-  const one = columnWide(flow)
-  if (one <= 0 || flow.along <= 0) return 0
-  return Math.max(1, Math.round((flow.along + flow.gap) / (one + flow.gap)))
+  const pitch = columnPitch(flow)
+  if (pitch <= 0 || flow.along <= 0) return 0
+  return Math.max(1, Math.round(flow.along / pitch))
 }
 
 /**
- * Which column a place along them falls in, counted from the first. The browser
- * lays the columns out in whole device pixels, so a run standing at the head of
- * a column is measured a fraction of a pixel to either side of where the column
- * is reckoned to begin, and the gap between two columns is what that fraction
- * is read against.
+ * Which column a place along them falls in, counted from the first. A column
+ * begins half a gap into its share of the area, and the browser lays the
+ * columns out in whole device pixels, so that half gap is also what a run
+ * measured a fraction of a pixel short of its own column is read against.
  */
 export function columnAt(flow: Flow, x: number): number {
-  const one = columnWide(flow)
-  if (one <= 0) return 0
-  return Math.max(Math.floor((x + flow.gap / 2) / (one + flow.gap)), 0)
+  const pitch = columnPitch(flow)
+  if (pitch <= 0) return 0
+  return Math.max(Math.floor(x / pitch), 0)
 }
 
 /**
@@ -157,12 +169,12 @@ export function spreads(flow: Flow): number {
 }
 
 /**
- * Where a spread begins along the columns, in CSS pixels. Each one is a whole
- * number of spreads out from the first, and one gap stands between two spreads
- * as it stands between two columns.
+ * Where a spread begins along the columns, in CSS pixels. The gap a column
+ * keeps stands inside the area at either edge, so one spread begins the whole
+ * of a reading area along from the one before it.
  */
 export function beginsAt(flow: Flow, spread: number): number {
-  return spread * (flow.wide + flow.gap)
+  return spread * flow.wide
 }
 
 /** Which spread a place along the columns falls in. */

@@ -31,18 +31,22 @@ const NARROW = 420
 
 /**
  * The columns a document of so many of them comes to, in a given reading area.
- * A column stands one gap after the one before it, which is how the browser
+ * A column takes its share of the area, gap and all, which is how the browser
  * lays them out and how far a spread has to move.
  */
-const laid = (wide: number, columns: number, all: number): Flow => {
-  const one = (wide - (columns - 1) * GAP) / columns
-  return { along: all * one + (all - 1) * GAP, wide, gap: GAP, columns }
-}
+const laid = (wide: number, columns: number, all: number): Flow => ({
+  along: (all * wide) / columns,
+  wide,
+  gap: GAP,
+  columns,
+})
 
 describe('how many columns a reading area takes', () => {
   it('takes two once each of them can be set at the narrowest a column is read at', () => {
-    expect(columnsIn(2 * NARROWEST + GAP, 1)).toBe(2)
-    expect(columnsIn(2 * NARROWEST + GAP - 1, 1)).toBe(1)
+    // Each column keeps a gap of its own, at the edge of the area as between
+    // the two of them.
+    expect(columnsIn(2 * (NARROWEST + GAP), 1)).toBe(2)
+    expect(columnsIn(2 * (NARROWEST + GAP) - 1, 1)).toBe(1)
   })
 
   it('takes one in an area nothing has been measured in', () => {
@@ -52,14 +56,14 @@ describe('how many columns a reading area takes', () => {
   it('takes the size the text is set at into account', () => {
     // A column is measured in characters, so text set half again as large needs
     // half again as much room before a second column will hold a line.
-    const wide = 2 * NARROWEST + GAP
+    const wide = 2 * (NARROWEST + GAP)
     expect(columnsIn(wide, 1)).toBe(2)
     expect(columnsIn(wide, 1.5)).toBe(1)
   })
 
-  it('sets each column to its share of what is left after the gap', () => {
-    expect(columnWide({ along: 0, wide: WIDE, gap: GAP, columns: 2 })).toBe((WIDE - GAP) / 2)
-    expect(columnWide({ along: 0, wide: NARROW, gap: GAP, columns: 1 })).toBe(NARROW)
+  it('sets each column to its share of the area, less the gap it keeps', () => {
+    expect(columnWide({ along: 0, wide: WIDE, gap: GAP, columns: 2 })).toBe(WIDE / 2 - GAP)
+    expect(columnWide({ along: 0, wide: NARROW, gap: GAP, columns: 1 })).toBe(NARROW - GAP)
   })
 })
 
@@ -163,9 +167,11 @@ describe('where a spread begins', () => {
     expect(beginsAt(flow, 100)).toBe(200 * (one + GAP))
   })
 
-  it('leaves one gap between two spreads, as between two columns', () => {
+  it('begins one whole reading area along from the spread before it', () => {
+    // The gap a column keeps stands inside the area at either edge, so nothing
+    // stands between two spreads for the turn to carry over.
     const flow = laid(WIDE, 2, 10)
-    expect(beginsAt(flow, 1) - beginsAt(flow, 0)).toBe(WIDE + GAP)
+    expect(beginsAt(flow, 1) - beginsAt(flow, 0)).toBe(WIDE)
   })
 })
 
