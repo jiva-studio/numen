@@ -2,17 +2,8 @@
  * The tabs of the window, and what the person has open in them.
  */
 
-/**
- * One tab of the window, as whoever answers on the person's behalf is told
- * about it: what kind it is, and what it holds.
- */
-export interface Tab {
-  readonly id: string
-  readonly kind: string
-  /** The file it holds, empty for a tab holding none. A plex holds its note. */
-  readonly path: string
-  /** What the tab is called, as the person reads it. */
-  readonly title: string
+/** What a tab holds besides its file, by the kind that holds it. */
+export interface TabProgress {
   /** The document it holds, absent in a tab holding none. */
   readonly document?: DocumentProgress
   /** The recording it holds, absent in a tab holding none. */
@@ -20,6 +11,24 @@ export interface Tab {
   /** How far through the book that reflows it holds, absent in a tab holding none. */
   readonly book?: BookProgress
 }
+
+/**
+ * What a tab of kind K holds besides its file. A kind with no word here holds
+ * none of them, which is how a kind nothing here has heard of is carried: by
+ * its kind and no more.
+ */
+export type ProgressOf<K extends string> = Pick<TabProgress, Extract<K, keyof TabProgress>>
+
+/** One tab of the window, as whoever answers on the person's behalf is told about it. */
+export type Tab<K extends string = string> = {
+  readonly id: string
+  /** The kind of tab it is, in the window's own word for it. The set is open. */
+  readonly kind: K
+  /** The file it holds, empty for a tab holding none. A plex holds its note. */
+  readonly path: string
+  /** What the tab is called, as the person reads it. */
+  readonly title: string
+} & ProgressOf<K>
 
 /** How far through a document the person reading it is. */
 export interface DocumentProgress {

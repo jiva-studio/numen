@@ -7,7 +7,7 @@
  */
 import { computed, readonly, ref } from 'vue'
 import { troubleWords } from '@numen/wire'
-import type { Kind, WindowHandle } from '../shared/tabs/windowTabs'
+import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
 import { SETTINGS_FILE } from '../shared/tabs/workspace'
 import SettingsFileTab from './SettingsFileTab.vue'
 import { WORDS as words } from './words'
@@ -131,7 +131,7 @@ const mark = (state: SettingsFileTabState): string | undefined => {
  * already stands in.
  */
 export function editingSettingsFile(handle: WindowHandle, core: SettingsFileTabDeps, reads: () => void) {
-  const kind: Kind<SettingsFileTabState> = {
+  const kind: TabKind<SettingsFileTabState, typeof SETTINGS_FILE> = {
     kind: SETTINGS_FILE,
     opens: () => {
       const state = holding(core, reads)

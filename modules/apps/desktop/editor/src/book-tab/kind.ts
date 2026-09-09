@@ -9,7 +9,7 @@
 import type { OpenBookState } from './open'
 import type { Span } from '../shared/core'
 import type { FileOpeners } from '../shared/tabs/openers'
-import type { Kind, WindowHandle } from '../shared/tabs/windowTabs'
+import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
 import { BOOK } from '../shared/tabs/workspace'
 import BookTab from './BookTab.vue'
 
@@ -32,7 +32,7 @@ export function bookKind(
   opens: (path: string) => BookTabState,
   puts: FileOpeners,
 ) {
-  const kind: Kind<BookTabState> = {
+  const kind: TabKind<BookTabState, typeof BOOK> = {
     kind: BOOK,
     opens,
     called: (state) => state.title.value || (state.path.split('/').pop() ?? state.path),
@@ -49,7 +49,7 @@ export function bookKind(
       state.close()
       return true
     },
-    at: (state) => ({ file: state.path, source: 'book' }),
+    over: (state) => ({ file: state.path, source: 'book' }),
     // Where a person is in a book that reflows is an offset into its text, and
     // the page beside it is the page that offset falls on.
     attends: (state) => ({

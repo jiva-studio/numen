@@ -264,7 +264,7 @@ describe('what a command asked over an agent tab is over', () => {
     const window = tabs({ path: 'physics/Ontology.md', title: 'Ontology' })
     const one = await window.holds()
 
-    expect(window.kind.at!(one.state)).toStrictEqual({
+    expect(window.kind.over!(one.state)).toStrictEqual({
       path: 'physics/Ontology.md',
       title: 'Ontology',
     })

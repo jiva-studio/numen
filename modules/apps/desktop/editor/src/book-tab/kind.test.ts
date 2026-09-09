@@ -101,7 +101,7 @@ describe('what a command over a book tab is asked over', () => {
   it('is the file the book stands in, as a source', () => {
     const held = openedAt('library/Mahabharata.epub', 0, 1, 5_000)
 
-    expect(kindOver(held).at?.(held)).toStrictEqual({
+    expect(kindOver(held).over?.(held)).toStrictEqual({
       file: 'library/Mahabharata.epub',
       source: 'book',
     })

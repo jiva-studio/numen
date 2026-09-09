@@ -4,7 +4,7 @@ import { RECORDING } from '../shared/tabs/workspace'
 import RecordingTab from './RecordingTab.vue'
 
 /** The recordings of the vault, played. */
-export const RECORDINGS: Medium = {
+export const RECORDINGS: Medium<typeof RECORDING> = {
   tab: RECORDING,
   source: 'recording',
   draws: RecordingTab,

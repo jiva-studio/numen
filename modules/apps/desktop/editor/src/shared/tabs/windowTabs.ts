@@ -18,7 +18,7 @@ import {
 import { closeTab, openTab, openTabBeside, pane, paneById, panesOf } from '@numen/ui'
 import type { Tab, Workspace } from '@numen/ui'
 import type { Source } from '../file'
-import type { BookProgress, DocumentProgress, RecordingProgress } from './tab'
+import type { ProgressOf } from './tab'
 import { named } from './workspace'
 
 /**
@@ -36,17 +36,12 @@ export interface TabTarget {
  * What one tab holds, as whoever answers on the person's behalf is told it: the
  * file it stands at, and the document, the book or the recording it stands in.
  */
-export interface OpenTab {
-  readonly path: string
-  readonly document?: DocumentProgress
-  readonly recording?: RecordingProgress
-  readonly book?: BookProgress
-}
+export type OpenTab<K extends string = string> = { readonly path: string } & ProgressOf<K>
 
 /** A kind of tab: what it holds, what it is called, and what it lets go of. */
-export interface Kind<TabState> {
+export interface TabKind<TabState, K extends string = string> {
   /** The word the identities of its tabs are filed under. */
-  readonly kind: string
+  readonly kind: K
   /**
    * What one of its tabs holds, made as the tab opens on what it was given.
    * It is made at once, so whatever it watches is caught by the tab's scope
@@ -75,9 +70,9 @@ export interface Kind<TabState> {
    */
   presses?(state: TabState, event: KeyboardEvent): boolean
   /** What a command asked over one of its tabs is over. */
-  at?(state: TabState): TabTarget
+  over?(state: TabState): TabTarget
   /** What one of its tabs holds, as whoever answers for the person is told it. */
-  attends?(state: TabState): OpenTab
+  attends?(state: TabState): OpenTab<K>
   /**
    * The tab lets go of what it held. False keeps it on screen: what it holds
    * has something to finish, and closes the tab itself once it has.
@@ -94,11 +89,11 @@ export interface Kind<TabState> {
  * A kind as the window keeps it. What its tabs hold is the kind's own affair,
  * and the window hands it back to the kind untouched.
  */
-export type AnyKind = Kind<unknown>
+export type AnyTabKind = TabKind<unknown>
 
 /** What one tab is: its kind, and what that kind gave it to hold. */
 export interface WindowTab {
-  readonly kind: AnyKind
+  readonly kind: AnyTabKind
   readonly state: unknown
 }
 
@@ -163,13 +158,13 @@ export function windowTabs() {
   }
 
   /** The kinds of tab this window draws, each under the word it is asked for by. */
-  const byKind = new Map<string, AnyKind>()
+  const byKind = new Map<string, AnyTabKind>()
 
   /**
    * The kinds this window draws. It is told once, before a tab of any of them
    * is opened.
    */
-  const declares = (told: readonly AnyKind[]) => {
+  const declares = (told: readonly AnyTabKind[]) => {
     for (const one of told) byKind.set(one.kind, one)
   }
 

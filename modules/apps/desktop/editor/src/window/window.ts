@@ -49,7 +49,7 @@ import { lands, type DestinationDeps } from '../shared/command/destination'
 import { fileMakers, fileOpeners } from '../shared/tabs/openers'
 import { flushing } from '../shared/saving/flushing'
 import { raisesConflicts } from '../shared/saving/conflicts'
-import { windowTabs } from '../shared/tabs/windowTabs'
+import { windowTabs, type OpenTab } from '../shared/tabs/windowTabs'
 import { messageLog } from '../shared/notices/messages'
 import { agentKind, talking } from '../agent-tab/kind'
 import { decking } from '../flashcards-deck-tab/deckTabs'
@@ -402,7 +402,7 @@ export const useWindow = () => {
   const where = (): CommandTarget => {
     const front = held.handle.front()
     const tab = front?.id ?? ''
-    const on = front && held.heldIn(tab)?.kind.at?.(front.state)
+    const on = front && held.heldIn(tab)?.kind.over?.(front.state)
     const file = on?.file ?? ''
     return {
       tab,
@@ -469,7 +469,9 @@ export const useWindow = () => {
     front: looked(),
     tabs: held.tabs.value.map(({ id, title }) => {
       const one = held.heldIn(id)
-      const said = one?.kind.attends?.(one.state)
+      const said = one?.kind.attends?.(one.state) as
+        | OpenTab<'document' | 'recording' | 'book'>
+        | undefined
       return {
         id,
         kind: one?.kind.kind ?? '',

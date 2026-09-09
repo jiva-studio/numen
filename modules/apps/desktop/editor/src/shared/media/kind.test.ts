@@ -44,7 +44,7 @@ describe('what a command asked over a recording tab is over', () => {
   it('is the file it plays, which is what a run is asked over', () => {
     const held = recording('talks/Ants.mp3', 4000, 9000)
 
-    expect(kind(held).at!(held)).toStrictEqual({
+    expect(kind(held).over!(held)).toStrictEqual({
       file: 'talks/Ants.mp3',
       source: 'recording',
     })

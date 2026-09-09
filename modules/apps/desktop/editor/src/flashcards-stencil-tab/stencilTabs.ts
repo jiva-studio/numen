@@ -13,7 +13,7 @@ import type { Store } from '../shared/command/deps'
 import { openNotes, type OpenNote } from '../note-tab/notes'
 import { markOf } from '../note-tab/tab'
 import type { MessageWriter } from '../shared/notices/messages'
-import type { Kind, WindowHandle } from '../shared/tabs/windowTabs'
+import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
 import { REFUSED } from '../shared/words'
 import type { FileOpeners } from '../shared/tabs/openers'
 import { STENCIL } from '../shared/tabs/workspace'
@@ -313,7 +313,7 @@ export function stencilling(
    * under, so the same file asked for twice is the tab it has wherever the file
    * has been renamed to since.
    */
-  const kind: Kind<StencilTabState> = {
+  const kind: TabKind<StencilTabState, typeof STENCIL> = {
     kind: STENCIL,
     opens: (id) => {
       const path = minted.get(id) ?? id

@@ -506,7 +506,7 @@ describe('what a command asked over a note tab is over', () => {
     one.shows('Note.md', 'A note')
     await nextTick()
 
-    expect(one.noted.kind.at!(holds(one))).toStrictEqual({
+    expect(one.noted.kind.over!(holds(one))).toStrictEqual({
       path: 'Note.md',
       title: 'A note',
     })
@@ -519,7 +519,7 @@ describe('what a command asked over a note tab is over', () => {
     one.moves('Note.md', 'Moved.md')
     await nextTick()
 
-    expect(one.noted.kind.at!(holds(one)).path).toBe('Moved.md')
+    expect(one.noted.kind.over!(holds(one)).path).toBe('Moved.md')
   })
 })
 

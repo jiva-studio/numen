@@ -20,7 +20,7 @@ import {
   type NoteType,
   type Seat,
 } from '../shared/core'
-import { windowTabs, type AnyKind } from '../shared/tabs/windowTabs'
+import { windowTabs, type AnyTabKind } from '../shared/tabs/windowTabs'
 import { PLEX } from '../shared/tabs/workspace'
 
 /** A moment for whatever a gesture asked the vault for to come back. */
@@ -1024,7 +1024,7 @@ describe('a plex that travelled', () => {
 })
 
 /** A kind that is not a plex, for the person to be in a tab of. */
-const other: AnyKind = {
+const other: AnyTabKind = {
   kind: 'other',
   opens: () => ({}),
   called: () => 'Other',
@@ -1368,7 +1368,7 @@ describe('what a command asked over a plex tab is over', () => {
     const one = window()
     const { state } = await one.holds('physics/Ontology.md')
 
-    expect(one.kind.at!(state)).toStrictEqual({
+    expect(one.kind.over!(state)).toStrictEqual({
       path: 'physics/Ontology.md',
       title: 'physics/Ontology',
     })
@@ -1378,7 +1378,7 @@ describe('what a command asked over a plex tab is over', () => {
     const one = window('')
     const { state } = await one.holds()
 
-    expect(one.kind.at!(state)).toStrictEqual({ path: '', title: '' })
+    expect(one.kind.over!(state)).toStrictEqual({ path: '', title: '' })
   })
 })
 

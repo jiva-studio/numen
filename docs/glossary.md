@@ -180,6 +180,7 @@ A word means one thing inside its context, and the same word in two contexts is 
 | branch | A split of the workspace, drawn as two parts side by side. | |
 | pane | One part of a branch, holding tabs and showing one of them. | |
 | tab | One thing a pane holds open, shown by its title. | |
+| tab kind | Which of the kinds of tab a window draws, declared to the window once: how a tab of it opens, what it is called, what is drawn in it and what letting go of it comes to. A window is free to open a kind nothing in the application has heard of. It is `TabKind` in the window; the agent's `kind` — what a call does to the vault — is the other thing the word is spent on. | plugin, view |
 | welcome | What the window draws while it holds no tab: the mark, the ways into the vault, and the vaults this installation holds. | |
 | tree | A hierarchy of rows drawn as an indented list, some of them holding others. The vault's folders and files are shown in one. | |
 | row | One line of a tree: an entry, at the depth it sits. | node |

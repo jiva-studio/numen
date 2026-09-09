@@ -4,7 +4,7 @@ import { URL } from '../shared/tabs/workspace'
 import UrlTab from './UrlTab.vue'
 
 /** The urls of the vault, opened at what is at the address. */
-export const URLS: Medium = {
+export const URLS: Medium<typeof URL> = {
   tab: URL,
   source: 'url',
   draws: UrlTab,

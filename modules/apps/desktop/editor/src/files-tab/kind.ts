@@ -18,7 +18,7 @@ import {
   type RunGuard,
 } from './menu'
 import { renamedTo } from './rename'
-import type { Kind, WindowHandle } from '../shared/tabs/windowTabs'
+import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
 import { FILES } from '../shared/tabs/workspace'
 import FilesTab from './FilesTab.vue'
 import { fileOf } from '../shared/paths'
@@ -100,7 +100,7 @@ export type FilesTabState = ReturnType<typeof filing>
  * for is the tree already open.
  */
 export function filesKind(handle: WindowHandle, makes: () => FileTree, deps: FilesTabDeps) {
-  const kind: Kind<FilesTabState> = {
+  const kind: TabKind<FilesTabState, typeof FILES> = {
     kind: FILES,
     opens: () => {
       const state = filing(makes(), deps)

@@ -19,7 +19,7 @@ import { asParts, asPlex, typesIn } from './picture'
 import type { View } from './view'
 import { ticketing } from './tickets'
 import type { Move, NoteHeading, NoteType } from '../shared/core'
-import type { Kind, WindowHandle } from '../shared/tabs/windowTabs'
+import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
 import { PLEX, plexCalled } from '../shared/tabs/workspace'
 import PlexTab from './PlexTab.vue'
 import { fileOf } from '../shared/paths'
@@ -104,7 +104,7 @@ export function plexKind(handle: WindowHandle, makes: () => View, deps: PlexTabD
   const all = () => handle.each<PlexTabState>(PLEX)
   const front = (): PlexTabState | null => handle.last<PlexTabState>(PLEX)?.state ?? null
 
-  const kind: Kind<PlexTabState> = {
+  const kind: TabKind<PlexTabState, typeof PLEX> = {
     kind: PLEX,
     opens: (at) => {
       const state = plexing(makes(), deps)
@@ -118,7 +118,7 @@ export function plexKind(handle: WindowHandle, makes: () => View, deps: PlexTabD
       state.view.close()
       return true
     },
-    at: (state) => {
+    over: (state) => {
       const path = state.view.here.value
       return { path, title: (path && state.nameOf(path)) || path }
     },

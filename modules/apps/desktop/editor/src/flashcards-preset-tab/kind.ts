@@ -12,7 +12,7 @@ import { answerGuard, type AnswerGuard } from '../shared/questions'
 import type { PlexShowing } from '@numen/ui'
 import type { Move, RefusalReason } from '../shared/core'
 import type { MessageWriter } from '../shared/notices/messages'
-import type { Kind, WindowHandle } from '../shared/tabs/windowTabs'
+import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
 import type { FileOpeners } from '../shared/tabs/openers'
 import { PRESET } from '../shared/tabs/workspace'
 import PresetTab from './PresetTab.vue'
@@ -596,7 +596,7 @@ export function presetting(
    * A preset tab as the window keeps it. A preset is its own tab, under the
    * file it stands at, so the same preset asked for twice is the tab it has.
    */
-  const kind: Kind<PresetTabState> = {
+  const kind: TabKind<PresetTabState, typeof PRESET> = {
     kind: PRESET,
     opens: (path) => {
       const one = keeps(path)

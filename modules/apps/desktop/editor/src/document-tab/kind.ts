@@ -8,7 +8,7 @@
 import type { OpenDocumentState } from './open'
 import type { Span } from '../shared/core'
 import type { FileOpeners } from '../shared/tabs/openers'
-import type { Kind, WindowHandle } from '../shared/tabs/windowTabs'
+import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
 import { DOCUMENT } from '../shared/tabs/workspace'
 import DocumentTab from './DocumentTab.vue'
 import { fileOf } from '../shared/paths'
@@ -26,7 +26,7 @@ export type DocumentTabState = ReturnType<typeof documenting>
  * opened again is the tab it is already read in.
  */
 export function documentKind(handle: WindowHandle, opens: (path: string) => DocumentTabState, puts: FileOpeners) {
-  const kind: Kind<DocumentTabState> = {
+  const kind: TabKind<DocumentTabState, typeof DOCUMENT> = {
     kind: DOCUMENT,
     opens,
     called: (state) => fileOf(state.path),
@@ -37,7 +37,7 @@ export function documentKind(handle: WindowHandle, opens: (path: string) => Docu
       state.close()
       return true
     },
-    at: (state) => ({ file: state.path, source: 'book' }),
+    over: (state) => ({ file: state.path, source: 'book' }),
     attends: (state) => ({
       path: state.path,
       document: { page: state.at.value + 1, pageCount: state.pages.value.length },

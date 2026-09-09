@@ -11,7 +11,7 @@ import type { Source } from '../file'
 import type { Span } from '../note'
 import type { Task } from '../notices/task'
 import type { FileOpeners, SourceReader } from '../tabs/openers'
-import type { Kind, WindowHandle } from '../tabs/windowTabs'
+import type { OpenTab, TabKind, WindowHandle } from '../tabs/windowTabs'
 import { DELETE_TEXT, PROOFREAD, TRANSCRIBE } from './words'
 import { fileOf } from '../paths'
 
@@ -76,8 +76,8 @@ export function transcribed(read: TranscriptState, asks: MediaTabDeps) {
  * the openers hand it the files it holds. A recording and a url hold the same
  * thing and are drawn the same, and each is its own tab.
  */
-export interface Medium {
-  readonly tab: string
+export interface Medium<K extends string = string> {
+  readonly tab: K
   readonly source: Source
   readonly draws: Component
   hands(puts: FileOpeners, opens: SourceReader): void
@@ -87,14 +87,14 @@ export interface Medium {
  * The recording tabs of a window, or its url tabs. A file is its own tab, so
  * the same one opened again is the tab it is already played in.
  */
-export function recordingKind(
+export function recordingKind<K extends string>(
   handle: WindowHandle,
   opens: (path: string) => TranscriptState,
   asks: MediaTabDeps,
   puts: FileOpeners,
-  as: Medium,
+  as: Medium<K>,
 ) {
-  const kind: Kind<MediaTabState> = {
+  const kind: TabKind<MediaTabState, K> = {
     kind: as.tab,
     opens: (path) => transcribed(opens(path), asks),
     called: (state) => state.called,
@@ -104,14 +104,15 @@ export function recordingKind(
       state.close()
       return true
     },
-    at: (state) => ({ file: state.path, source: as.source }),
-    attends: (state) => ({
-      path: state.path,
-      recording: {
-        transcribedDurationMs: state.transcribedDuration.value,
-        durationMs: state.duration.value,
-      },
-    }),
+    over: (state) => ({ file: state.path, source: as.source }),
+    attends: (state) =>
+      ({
+        path: state.path,
+        recording: {
+          transcribedDurationMs: state.transcribedDuration.value,
+          durationMs: state.duration.value,
+        },
+      }) as OpenTab<K>,
   }
 
   // The person is taken to the moment the first of the spans asked for was

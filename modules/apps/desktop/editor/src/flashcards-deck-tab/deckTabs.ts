@@ -17,7 +17,7 @@ import { reader } from './reader'
 import { scheduler, type Choice, type DeckPreset } from './scheduler'
 import { openNotes, type OpenNote } from '../note-tab/notes'
 import { markOf } from '../note-tab/tab'
-import type { Kind, WindowHandle } from '../shared/tabs/windowTabs'
+import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
 import type { FileOpeners } from '../shared/tabs/openers'
 import { DECK } from '../shared/tabs/workspace'
 import DeckTab from './DeckTab.vue'
@@ -282,7 +282,7 @@ export function decking(cards: Cards, presets: Presets, handle: WindowHandle, pu
    * identity it opened under, so the same file asked for twice is the tab it
    * has wherever the file has been renamed to since.
    */
-  const kind: Kind<DeckTabState> = {
+  const kind: TabKind<DeckTabState, typeof DECK> = {
     kind: DECK,
     opens: (id) => {
       const path = minted.get(id) ?? id

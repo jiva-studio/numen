@@ -7,7 +7,7 @@
  */
 import type { Ref } from 'vue'
 import type { Model, SettingEdit } from '../shared/core'
-import type { Kind, WindowHandle } from '../shared/tabs/windowTabs'
+import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
 import { SETTINGS } from '../shared/tabs/workspace'
 import type { Bounds, Mode, Ranges, Sizes, Theme } from '../shared/settings/theme'
 import SettingsTab from './SettingsTab.vue'
@@ -65,7 +65,7 @@ export function settling(handle: WindowHandle, installation: Installation) {
   const state: SettingsTabState = { installation }
 
   /** One settings tab to a window: the settings are the installation's, not a file's. */
-  const kind: Kind<SettingsTabState> = {
+  const kind: TabKind<SettingsTabState, typeof SETTINGS> = {
     kind: SETTINGS,
     opens: () => state,
     called: () => words.settings,

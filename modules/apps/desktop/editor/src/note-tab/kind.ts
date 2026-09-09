@@ -9,7 +9,7 @@
 import { computed, type ComputedRef } from 'vue'
 import { pointsAtNote, type PlexShowing } from '@numen/ui'
 import type { Store } from '../shared/command/deps'
-import type { Kind, WindowHandle } from '../shared/tabs/windowTabs'
+import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
 import { NOTE } from '../shared/tabs/workspace'
 import type { Change } from './drawing'
 import type { noteChanges } from './changes'
@@ -193,7 +193,7 @@ export function noting(
   const standsAt = (state: NoteTabState): string =>
     notes.has(state.id) ? notes.where(state.id) : ''
 
-  const kind: Kind<NoteTabState> = {
+  const kind: TabKind<NoteTabState, typeof NOTE> = {
     kind: NOTE,
     opens: (id) => opens(id),
     called: (state) => names.called(state.id),
@@ -201,7 +201,7 @@ export function noting(
     draws: NoteTab,
     identity: (id) => id,
     shown: (state) => state.measure(),
-    at: (state) => {
+    over: (state) => {
       const path = standsAt(state)
       return { path, title: path ? names.called(state.id) : '' }
     },

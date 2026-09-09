@@ -7,17 +7,17 @@
 import { describe, expect, it } from 'vitest'
 import { panesOf } from '@numen/ui'
 import type { Workspace } from '@numen/ui'
-import { windowTabs, type AnyKind, type WindowHandle } from './windowTabs'
+import { windowTabs, type AnyTabKind, type WindowHandle } from './windowTabs'
 
 /**
  * A kind that records what it was asked to do, under the names it opened on. A
  * kind that keeps its tabs has something to finish and never lets one go.
  */
-const kind = ({ keeps = false, ...over }: Partial<AnyKind> & { keeps?: boolean } = {}) => {
+const kind = ({ keeps = false, ...over }: Partial<AnyTabKind> & { keeps?: boolean } = {}) => {
   const opened: string[] = []
   const shut: string[] = []
   const seen: string[] = []
-  const one: AnyKind = {
+  const one: AnyTabKind = {
     kind: 'thing',
     opens: (at: string) => {
       opened.push(at)
@@ -38,7 +38,7 @@ const kind = ({ keeps = false, ...over }: Partial<AnyKind> & { keeps?: boolean }
 }
 
 /** A window told what kinds it draws, each of them made with what it is given. */
-const told = (declared: readonly ((handle: WindowHandle) => AnyKind)[]) => {
+const told = (declared: readonly ((handle: WindowHandle) => AnyTabKind)[]) => {
   const window = windowTabs()
   window.declares(declared.map((one) => one(window.handle)))
   return window

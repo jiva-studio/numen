@@ -10,7 +10,7 @@ import { computed, ref, shallowRef, watch } from 'vue'
 import { pointsAtNote, wikilinksIn, type Conversation, type Turn } from '@numen/ui'
 import { same, spotOf, spotsIn } from './places'
 import type { Span } from '../shared/core'
-import type { Kind, WindowHandle } from '../shared/tabs/windowTabs'
+import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
 import { AGENT, shortened } from '../shared/tabs/workspace'
 import AgentTab from './AgentTab.vue'
 import { WORDS as words } from './words'
@@ -141,7 +141,7 @@ export function talking(talk: Conversation, deps: AgentTabDeps) {
  * the note the plex the person was last in is standing on.
  */
 export function agentKind(handle: WindowHandle, opens: () => AgentTabState, about: () => NoteRef) {
-  const kind: Kind<AgentTabState> = {
+  const kind: TabKind<AgentTabState, typeof AGENT> = {
     kind: AGENT,
     opens,
     called: (state) =>
@@ -151,7 +151,7 @@ export function agentKind(handle: WindowHandle, opens: () => AgentTabState, abou
       state.finish()
       return true
     },
-    at: () => about(),
+    over: () => about(),
   }
 
   /** Something to ask, put in the agent the person was last in and put in front. */
