@@ -177,13 +177,13 @@ export function openBook(
   const markup = ref('')
   /** The file the book was read from, which the addresses it is drawn at name. */
   const seen = ref('')
-  /** The runs marked where they stand: the place the tab was sent to. */
-  const marked = shallowRef<readonly BookSpan[]>([])
+  /** The runs highlighted where they stand: the place the tab was sent to. */
+  const highlights = shallowRef<readonly BookSpan[]>([])
   /**
    * The other runs asked about. They are somewhere else to look and not where
    * the person was taken.
    */
-  const also = shallowRef<readonly BookSpan[]>([])
+  const elsewhere = shallowRef<readonly BookSpan[]>([])
 
   /** The page the person is on, counted from one. */
   const page = computed(() => pageAt(pageBytes.value, pages.value, at.value))
@@ -289,8 +289,8 @@ export function openBook(
     if (!open || spans.length === 0) return
     const [front, ...rest] = spans
     if (!front) return
-    marked.value = [spanOf(front)]
-    also.value = rest.map(spanOf)
+    highlights.value = [spanOf(front)]
+    elsewhere.value = rest.map(spanOf)
     await go(front.from)
   }
 
@@ -317,8 +317,8 @@ export function openBook(
     reading,
     drawn,
     markup,
-    marked,
-    also,
+    highlights,
+    elsewhere,
     go,
     follow,
     reach,

@@ -234,7 +234,7 @@ describe('a passage reached', () => {
 
     expect(read.at.value).toBe(3_600)
     expect(read.reading.value).toStrictEqual({ begins: 3_000, ends: 6_000 })
-    expect(read.marked.value).toStrictEqual([{ begins: 3_600, ends: 3_642 }])
+    expect(read.highlights.value).toStrictEqual([{ begins: 3_600, ends: 3_642 }])
   })
 
   it('leaves the other stretches somewhere else to look', async () => {
@@ -244,7 +244,7 @@ describe('a passage reached', () => {
     await read.reach({ from: 100, to: 110 }, { from: 6_500, to: 6_520 })
 
     expect(read.at.value).toBe(100)
-    expect(read.also.value).toStrictEqual([{ begins: 6_500, ends: 6_520 }])
+    expect(read.elsewhere.value).toStrictEqual([{ begins: 6_500, ends: 6_520 }])
   })
 
   it('is nowhere at all when nothing was asked about', async () => {
@@ -253,7 +253,7 @@ describe('a passage reached', () => {
 
     await read.reach()
 
-    expect(read.marked.value).toStrictEqual([])
+    expect(read.highlights.value).toStrictEqual([])
   })
 })
 

@@ -11,7 +11,7 @@
 export const HIGHLIGHT = 'numen-book'
 
 /** Where else the same search stands, drawn more faintly. */
-export const ALSO = 'numen-book-also'
+export const ELSEWHERE = 'numen-book-elsewhere'
 
 /** The ranges each book on screen has in each entry. */
 const held = new Map<string, Map<object, readonly Range[]>>()

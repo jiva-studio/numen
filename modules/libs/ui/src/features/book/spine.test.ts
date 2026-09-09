@@ -58,7 +58,7 @@ const press = async (held: Awaited<ReturnType<typeof reading>>, says: string) =>
 
 /** The offsets the reader has asked to be sent to, in the order it asked. */
 const asked = (held: Awaited<ReturnType<typeof reading>>) =>
-  (held.emitted('go') ?? []).map((one) => (one as [number])[0])
+  (held.emitted('moved') ?? []).map((one) => (one as [number])[0])
 
 describe('the markup a spine document arrives as', () => {
   it('says where every run of it begins', () => {
@@ -98,7 +98,7 @@ describe('a reader handed that markup', () => {
 
     await press(held, 'the opening')
 
-    expect(held.emitted('follow')).toEqual([['OEBPS/opening.xhtml']])
+    expect(held.emitted('followed')).toEqual([['OEBPS/opening.xhtml']])
   })
 
   it('asks for nothing of the book where the link leads out of it', async () => {
@@ -107,6 +107,6 @@ describe('a reader handed that markup', () => {
     await press(held, 'somewhere else entirely')
 
     expect(asked(held)).toHaveLength(0)
-    expect(held.emitted('follow')).toBeUndefined()
+    expect(held.emitted('followed')).toBeUndefined()
   })
 })

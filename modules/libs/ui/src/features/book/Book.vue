@@ -8,254 +8,50 @@
  * the book's text: setting the text larger sets the columns again, and the
  * offset stays where it was.
  */
-import { computed, onBeforeUnmount, onMounted, ref, shallowRef, useTemplateRef, watch } from 'vue'
+import { useTemplateRef } from 'vue'
 
-import { useViewport } from '@/shared/lib/viewport'
-import { onNextFrame } from '@/shared/lib/clock'
-import { ALSO, HIGHLIGHT, highlight, unhighlight } from './highlight'
 import { placeIn, pointsAway, type BookLink } from './link'
-import { marksIn, offsetAt, rangesOver, runsIn, type Run } from './runs'
-import {
-  BOOK_WORDS,
-  GAP,
-  LARGEST,
-  SMALLEST,
-  beginsAt,
-  columnHigh,
-  held,
-  columnWide,
-  columnsIn,
-  handTurn,
-  holding,
-  inFront,
-  keyTurn,
-  leftInDocument,
-  pagesOf,
-  spreads,
-  type BookWords,
-  type Flow,
-  type Mark,
-  type PageTurn,
-  type Span,
-} from './spread'
+import { handTurn, keyTurn } from './turn'
+import { useBookLayout } from './layout'
+import { BOOK_WORDS } from './spread'
+import type { BookProps } from './props'
 
-const props = withDefaults(
-  defineProps<{
-    /**
-     * One document of the book, as it is drawn. Every run of text in it carries
-     * `data-offset`, the byte offset at which that run begins in the book's text.
-     * It reaches this component already measured against what may be drawn.
-     */
-    markup?: string
-    /** The document being drawn, as the book's archive names it. */
-    path?: string
-    /** Where this document stands in the book, in bytes of the book's text. */
-    span?: Span
-    /** Where the book itself runs between, in bytes. */
-    book?: Span
-    /** The offset in front, in bytes of the book's text. */
-    at?: number
-    /** The runs marked where they stand, in bytes of the book's text. */
-    marked?: readonly Span[]
-    /** The other runs asked about, each of them somewhere else to look. */
-    also?: readonly Span[]
-    /** How large the text is set, as a multiple of the size prose is read at. */
-    size?: number
-    /** What the book calls the place in front, drawn over the text it names. */
-    chapter?: string
-    /** The words it is read with. */
-    words?: BookWords
-  }>(),
-  {
-    markup: '',
-    path: '',
-    span: () => ({ begins: 0, ends: 0 }),
-    book: () => ({ begins: 0, ends: 0 }),
-    at: 0,
-    marked: () => [],
-    also: () => [],
-    size: 1,
-    chapter: '',
-    words: () => BOOK_WORDS,
-  },
-)
+const props = withDefaults(defineProps<BookProps>(), {
+  markup: '',
+  path: '',
+  span: () => ({ begins: 0, ends: 0 }),
+  book: () => ({ begins: 0, ends: 0 }),
+  at: 0,
+  highlights: () => [],
+  elsewhere: () => [],
+  textSize: 1,
+  chapter: '',
+  words: () => BOOK_WORDS,
+})
 
 const emit = defineEmits<{
   /** The offset now in front, in bytes of the book's text. */
-  (event: 'go', at: number): void
+  (event: 'moved', at: number): void
   /**
    * A link led to another document of the book, named as the archive names it.
    * The reader lands on the place inside it once that document is drawn.
    */
-  (event: 'follow', path: string): void
+  (event: 'followed', path: string): void
 }>()
-
-/** How large the text is set, held inside what a book may be read at. */
-const size = computed(() => held(props.size, SMALLEST, LARGEST))
 
 const area = useTemplateRef<HTMLElement>('area')
 const paper = useTemplateRef<HTMLElement>('paper')
 
-/** The reading area, taken again whenever it changes. */
-const { viewport, measure } = useViewport(area)
-
-/** How far the columns run, taken once they have been laid out. */
-const along = ref(0)
-
-/** Which spread is in front, counted from the first. */
-const standing = ref(0)
-
-/** Where each run of the text stands. */
-const marks = shallowRef<readonly Mark[]>([])
-
-/** Each run of the text, in the order the document sets them. */
-let runs: readonly Run[] = []
-
-/**
- * Whether the reading area has been measured. A book is turned and never
- * scrolled, so its text is drawn only against an area of a known size.
- */
-const measured = computed(() => viewport.value.wide > 0 && viewport.value.high > 0)
-
-const columns = computed(() => columnsIn(viewport.value.wide, size.value))
-
-const flow = computed<Flow>(() => ({
-  along: along.value,
-  wide: viewport.value.wide,
-  gap: GAP,
-  columns: columns.value,
-}))
-
-const count = computed(() => spreads(flow.value))
-
-/** The page in front and how many there are, counted in columns on the screen. */
-const paged = computed(() => pagesOf(props.book, props.span, flow.value, standing.value, marks.value))
-
-/** How much of the chapter in front is still to come, which is measured exactly. */
-const left = computed(() => leftInDocument(flow.value, standing.value, marks.value))
-
-/**
- * What the columns are set with. A column's own width and height are among
- * them: a percentage inside a column resolves against a box whose height is not
- * settled.
- */
-const setting = computed(() => ({
-  '--book-run': columns.value === 1 ? '200%' : '100%',
-  '--book-gap': `${GAP}px`,
-  '--book-column': `${columnWide(flow.value)}px`,
-  '--book-high': `${viewport.value.high}px`,
-  '--book-size': `calc(var(--numen-prose-size) * ${size.value})`,
-}))
-
-/**
- * How tall one line of the text is set, taken off a run of the text itself. The
- * lines the column has to end between are the ones the prose is set in, and the
- * box holding it is set in another. A line height the browser will put no
- * number to leaves the column at the height of the area.
- */
-const lineOf = (text: HTMLElement): number => {
-  const run = text.querySelector<HTMLElement>('p') ?? text
-  const said = Number.parseFloat(getComputedStyle(run).lineHeight)
-  return Number.isFinite(said) ? said : 0
+/** Where a link led, held until the document holding that place is drawn. */
+let led: BookLink | undefined
+const takeLed = (): BookLink | undefined => {
+  const place = led
+  led = undefined
+  return place
 }
 
-/** The runs of the drawn document, and where the columns put each of them. */
-const gather = () => {
-  const text = paper.value
-  if (!text) return
-
-  // Where a run stands is read against the columns it stands in and not against
-  // the area they are carried across: a turn under way carries both, and the
-  // one measured against the other is where the run will come to rest.
-  runs = runsIn(text)
-  marks.value = marksIn(runs, text.getBoundingClientRect().left)
-}
-
-/**
- * The spread put against the near edge of the reading area. The columns are
- * carried there rather than scrolled to: a scroll stops at the end of what it
- * has to scroll, and the gap the last column keeps beside it is not part of
- * that, so the last spread of a document would stand half a gap short.
- */
-const stand = (spread: number, how: ScrollBehavior) => {
-  const text = paper.value
-  standing.value = Math.min(Math.max(spread, 0), Math.max(count.value - 1, 0))
-  if (!text) return
-
-  const to = `${-beginsAt(flow.value, standing.value)}px 0`
-  if (how === 'smooth') {
-    text.style.translate = to
-    return
-  }
-  // A layout is not a turn: the columns are put where they belong at once. The
-  // style is settled in between, because a browser handed the transition and
-  // the distance in one recalculation animates neither.
-  text.style.transition = 'none'
-  text.style.translate = to
-  void text.offsetWidth
-  text.style.transition = ''
-}
-
-/** What stands in front now, said once, and nothing while nothing does. */
-const said = () => {
-  const now = inFront(marks.value, flow.value, standing.value)
-  if (now !== undefined && now !== props.at) emit('go', now)
-}
-
-const goTo = (spread: number) => {
-  stand(spread, 'smooth')
-  said()
-}
-
-/** What the person is reading now, to be kept in front while the text is set again. */
-const keeping = () => inFront(marks.value, flow.value, standing.value) ?? props.at
-
-/** The offset a place named inside the drawn document stands at. */
-const placeAt = (fragment: string): number | undefined => {
-  const text = paper.value
-  return text ? offsetAt(text, runs, fragment) : undefined
-}
-
-/**
- * The text set in columns again, with one offset kept in front. The columns are
- * measured after the browser has laid them out, and only an area that overflows
- * has a length to measure.
- *
- * A place a link led to is found here, in markup that has only now been drawn.
- */
-const settle = (keep: number, led?: BookLink) => {
-  measure()
-  if (!measured.value) return
-  onNextFrame(() => {
-    const box = area.value
-    const text = paper.value
-    if (!box || !text) return
-    text.style.setProperty('--book-paper', `${columnHigh(box.clientHeight, lineOf(text))}px`)
-    // How far the columns run is asked of the box they are set in. The area
-    // around it clips what overflows, and a box that clips is not asked how far
-    // what it clipped reaches.
-    along.value = text.scrollWidth
-    gather()
-    const landed =
-      led && (led.path === '' || led.path === props.path) ? placeAt(led.fragment) : undefined
-    stand(holding(marks.value, flow.value, landed ?? keep), 'auto')
-    if (landed !== undefined) emit('go', landed)
-    marking()
-  })
-}
-
-const turn = (way: PageTurn) => {
-  if (way === 'first') return goTo(0)
-  if (way === 'last') return goTo(count.value - 1)
-
-  const to = standing.value + (way === 'next' ? 1 : -1)
-  if (to >= 0 && to < count.value) return goTo(to)
-
-  // Past either end of this document stands the next one, which the caller
-  // hands over.
-  const asked = way === 'next' ? props.span.ends : props.span.begins - 1
-  if (asked >= props.book.begins && asked < props.book.ends) emit('go', asked)
-}
+const layout = useBookLayout(area, paper, props, (at) => emit('moved', at), takeLed)
+const { measured, setting, spreadCount, front, leftInChapter } = layout
 
 /**
  * A key the tab caught. Turning belongs to whatever holds the book, so the
@@ -264,7 +60,7 @@ const turn = (way: PageTurn) => {
 const pressed = (event: KeyboardEvent): boolean => {
   const way = keyTurn(event.key)
   if (!way) return false
-  turn(way)
+  layout.turn(way)
   return true
 }
 
@@ -296,11 +92,8 @@ const letGo = (event: PointerEvent) => {
 
   const edge = box.getBoundingClientRect().left
   const way = handTurn(from - edge, event.clientX - edge, box.clientWidth, selecting())
-  if (way) turn(way)
+  if (way) layout.turn(way)
 }
-
-/** Where a link led, held until the document holding that place is drawn. */
-let led: BookLink | undefined
 
 /**
  * A link pressed in the text. Nothing a book contains navigates the window: a
@@ -318,66 +111,18 @@ const follow = (press: MouseEvent) => {
   const place = placeIn(href)
   if (place.path !== '' && place.path !== props.path) {
     led = place
-    emit('follow', place.path)
+    emit('followed', place.path)
     return
   }
-  emit('go', placeAt(place.fragment) ?? props.span.begins)
+  emit('moved', layout.placeAt(place.fragment) ?? props.span.begins)
 }
-
-/** The runs asked about marked where they stand, and the rest more faintly. */
-const marking = () => {
-  highlight(HIGHLIGHT, props, rangesOver(runs, props.marked))
-  highlight(ALSO, props, rangesOver(runs, props.also))
-}
-
-// A reading area of another size, or a text of another size, is another set of
-// columns.
-watch([() => viewport.value.wide, () => viewport.value.high, size], () => {
-  settle(keeping())
-})
-
-// Another document is opened at the offset asked for, and there is nothing to
-// keep in front.
-watch(
-  () => props.markup,
-  () => {
-    const place = led
-    led = undefined
-    standing.value = 0
-    settle(props.at, place)
-  },
-)
-
-watch([() => props.marked, () => props.also], marking)
-
-// An offset asked for from outside is turned to. One reached by the hand is
-// already in front.
-watch(
-  () => props.at,
-  (at) => {
-    if (at < props.span.begins || at >= props.span.ends) return
-    const want = holding(marks.value, flow.value, at)
-    if (want !== standing.value) stand(want, 'smooth')
-  },
-)
-
-onMounted(() => {
-  settle(props.at)
-  // The columns are counted over the type the book is set in, which arrives
-  // after the markup does.
-  void document.fonts?.ready.then(() => settle(keeping()))
-})
-
-onBeforeUnmount(() => {
-  unhighlight(props)
-})
 
 defineExpose({
   /**
    * Set the text again. A reader drawn out of sight has no reading area, and
    * the caller says when it is on screen.
    */
-  measure: () => settle(keeping()),
+  measure: () => layout.settle(layout.keeping()),
   /** A key the tab caught: true where it turned the page. */
   pressed,
 })
@@ -418,9 +163,9 @@ defineExpose({
          what is left of the chapter is measured on the page in front. -->
     <footer class="book__foot text-small text-hushed">
       <span class="book__way"><slot name="way" /></span>
-      <template v-if="count > 0">
-        <span class="book__count">{{ words.of(paged.page, paged.pages) }}</span>
-        <span class="book__left">{{ words.left(left) }}</span>
+      <template v-if="spreadCount > 0">
+        <span class="book__count">{{ words.of(front.page, front.pages) }}</span>
+        <span class="book__left">{{ words.left(leftInChapter) }}</span>
       </template>
     </footer>
   </div>
@@ -584,7 +329,7 @@ defineExpose({
 
 /* A place the person was not sent to is drawn faintly: it says there is
    something here, and the place they were sent to is the one drawn full. */
-:global(::highlight(numen-book-also)) {
+:global(::highlight(numen-book-elsewhere)) {
   background-color: color-mix(in srgb, var(--numen-highlight) 35%, transparent);
 }
 </style>

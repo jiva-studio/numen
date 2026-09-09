@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   BOOK_WORDS,
-  EDGE,
   GAP,
   NARROWEST,
-  SWIPE,
   beginsAt,
   bytesIn,
   columnHigh,
@@ -14,18 +12,15 @@ import {
   columnsInAll,
   holding,
   inFront,
-  keyTurn,
-  handTurn,
   leftInDocument,
   pagesOf,
-  pressTurn,
   spreadAt,
   spreads,
-  swipeTurn,
   unitsIn,
   type Flow,
   type Mark,
 } from './spread'
+import { EDGE, SWIPE, handTurn, keyTurn, pressTurn, swipeTurn, turnTo } from './turn'
 
 /** A wide reading area, which takes two columns, and a narrow one, which takes one. */
 const WIDE = 800
@@ -423,5 +418,27 @@ describe('the words the page count is said in', () => {
   it('say how much of the chapter is still to come, one page or many', () => {
     expect(BOOK_WORDS.left(1)).toBe('1 page left in chapter')
     expect(BOOK_WORDS.left(5)).toBe('5 pages left in chapter')
+  })
+})
+
+describe('where a turn lands', () => {
+  const span = { begins: 400, ends: 900 }
+  const book = { begins: 0, ends: 1400 }
+
+  it('lands on the spread the turn asks for, inside the document', () => {
+    expect(turnTo('next', 0, 3, span, book)).toStrictEqual({ spread: 1 })
+    expect(turnTo('back', 2, 3, span, book)).toStrictEqual({ spread: 1 })
+    expect(turnTo('first', 1, 3, span, book)).toStrictEqual({ spread: 0 })
+    expect(turnTo('last', 1, 3, span, book)).toStrictEqual({ spread: 2 })
+  })
+
+  it('asks for the document beside this one, past either end of it', () => {
+    expect(turnTo('next', 2, 3, span, book)).toStrictEqual({ offset: 900 })
+    expect(turnTo('back', 0, 3, span, book)).toStrictEqual({ offset: 399 })
+  })
+
+  it('lands nowhere at either end of the book itself', () => {
+    expect(turnTo('next', 2, 3, span, span)).toStrictEqual({})
+    expect(turnTo('back', 0, 3, span, span)).toStrictEqual({})
   })
 })

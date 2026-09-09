@@ -5,6 +5,7 @@
  * pages are in the viewport and which one is in front are arithmetic, and a test
  * asks them without a browser.
  */
+import type { Extent } from '@/shared/lib/geometry'
 
 /** Where something sits on a page, in fractions of it. */
 export interface Rect {
@@ -44,10 +45,7 @@ export interface Page {
 }
 
 /** The area the pages are read in, in CSS pixels. */
-export interface Viewport {
-  readonly wide: number
-  readonly high: number
-}
+export type Viewport = Extent
 
 /** What stands between two pages, and around the row, in CSS pixels. */
 export const GAP = 16

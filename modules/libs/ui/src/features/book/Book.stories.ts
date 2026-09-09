@@ -71,7 +71,7 @@ const UNBROKEN =
   'Sarvabhutahitaratahsarvabhutasthitasyatathasarvatragamacintyarupamavyaktamniravadyampada'
 
 const reading =
-  (chapter: Chapter, marked: readonly Span[] = []): Render =>
+  (chapter: Chapter, highlights: readonly Span[] = []): Render =>
   () => ({
     components: { Book },
     setup() {
@@ -95,8 +95,8 @@ const reading =
         book,
         markup: chapter.markup,
         span: chapter.span,
-        marked,
-        go: (to: number) => {
+        highlights,
+        moved: (to: number) => {
           at.value = to
         },
         larger: () => {
@@ -114,9 +114,9 @@ const reading =
           :span="span"
           :book="span"
           :at="at"
-          :size="size"
-          :marked="marked"
-          @go="go"
+          :text-size="size"
+          :highlights="highlights"
+          @moved="moved"
         />
       </div>
     `,
@@ -161,7 +161,7 @@ const outOfSight =
             :span="span"
             :book="span"
             :at="at"
-            @go="go"
+            @moved="moved"
           />
         </div>
       </div>

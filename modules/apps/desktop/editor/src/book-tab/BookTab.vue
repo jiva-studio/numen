@@ -106,12 +106,12 @@ const chose = (at: number) => {
         :span="props.state.reading.value"
         :book="props.state.span.value"
         :at="props.state.at.value"
-        :marked="props.state.marked.value"
-        :also="props.state.also.value"
+        :highlights="props.state.highlights.value"
+        :elsewhere="props.state.elsewhere.value"
         :chapter="props.state.chapter.value"
         :words="words"
-        @go="(at: number) => void props.state.go(at)"
-        @follow="(path: string) => void props.state.follow(path)"
+        @moved="(at: number) => void props.state.go(at)"
+        @followed="(path: string) => void props.state.follow(path)"
       >
         <template #way>
           <button

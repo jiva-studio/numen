@@ -3,7 +3,7 @@
  * takes back out.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ALSO, HIGHLIGHT } from './highlight'
+import { ELSEWHERE, HIGHLIGHT } from './highlight'
 
 /** The registry a browser that draws ranges keeps, and the ranges it holds. */
 const registry = () => {
@@ -40,7 +40,7 @@ beforeEach(() => {
 describe('the entries the names name', () => {
   it('are the two a book is drawn with', () => {
     expect(HIGHLIGHT).toBe('numen-book')
-    expect(ALSO).toBe('numen-book-also')
+    expect(ELSEWHERE).toBe('numen-book-elsewhere')
   })
 })
 
@@ -97,14 +97,14 @@ describe('what a book took with it when it went', () => {
     const { highlight: fresh, unhighlight: taken } = await import('./highlight')
     const held = registry()
     fresh(HIGHLIGHT, going, [range()])
-    fresh(ALSO, going, [range()])
+    fresh(ELSEWHERE, going, [range()])
     fresh(HIGHLIGHT, staying, [range()])
 
     taken(going)
 
     const drawn = held.get(HIGHLIGHT) as unknown as { ranges: readonly unknown[] }
     expect(drawn.ranges).toHaveLength(1)
-    expect(held.has(ALSO)).toBe(false)
+    expect(held.has(ELSEWHERE)).toBe(false)
   })
 
   it('is nothing, where the book had put nothing anywhere', async () => {
