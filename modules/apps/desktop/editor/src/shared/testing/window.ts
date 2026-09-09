@@ -570,6 +570,9 @@ async function drawn() {
         Tree: true,
       },
     },
+    // Drawn in the document, because what holds the keyboard is a question only
+    // a window standing in one can answer.
+    attachTo: document.body,
   })
   windows.push(window)
   await settles()

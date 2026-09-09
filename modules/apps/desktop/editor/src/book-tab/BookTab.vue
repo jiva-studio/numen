@@ -63,7 +63,11 @@ const chose = (at: number) => {
 </script>
 
 <template>
-  <div class="book-tab">
+  <div
+    :ref="(held: unknown) => props.state.stands(held as HTMLElement | null)"
+    class="book-tab"
+    tabindex="-1"
+  >
     <div class="book-tab__reading">
       <Transition name="book-tab__over">
         <aside v-if="listing" ref="panel" class="book-tab__contents">
@@ -112,6 +116,13 @@ const chose = (at: number) => {
 .book-tab {
   block-size: 100%;
   min-block-size: 0;
+}
+
+/* It holds the keyboard so that nothing else reads the arrows over it, and
+   nothing is drawn around it for holding one. */
+.book-tab:focus,
+.book-tab:focus-visible {
+  outline: none;
 }
 
 .book-tab__reading {

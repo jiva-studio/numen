@@ -38,7 +38,10 @@ export function bookKind(
     called: (state) => state.title.value || (state.path.split('/').pop() ?? state.path),
     draws: BookTab,
     identity: (path) => path,
-    shown: (state) => state.measure(),
+    shown: (state) => {
+      state.measure()
+      state.takes()
+    },
     // Several panes are drawn at once, so the book asked is the one in the pane
     // the person is in.
     presses: (state, event) => state.pressed(event),
@@ -75,14 +78,29 @@ export function booking(read: OpenBookState) {
   /** The book as it is drawn, for as long as its tab is drawn. */
   let reader: BookHandle | null = null
 
+  /** The tab it is drawn in, which is what holds the keyboard. */
+  let tab: HTMLElement | null = null
+
   const drew = (held: unknown) => {
     reader = (held as BookHandle | null) ?? null
   }
 
+  const stands = (held: HTMLElement | null) => {
+    tab = held
+  }
+
   const measure = () => reader?.measure()
+
+  /**
+   * The book takes the keyboard, the way a note opened takes it. What holds it
+   * reads the arrows for itself: the tree walks its rows by them, and a book
+   * opened out of the tree and left without it is a book the arrows never
+   * reach.
+   */
+  const takes = () => tab?.focus()
 
   /** A key the tab caught, answered by the book it is drawn in. */
   const pressed = (event: KeyboardEvent) => reader?.pressed(event) ?? false
 
-  return { ...read, drew, measure, pressed }
+  return { ...read, drew, stands, measure, takes, pressed }
 }

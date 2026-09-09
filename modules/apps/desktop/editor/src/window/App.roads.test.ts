@@ -162,6 +162,23 @@ describe('every road to a file', () => {
       expect(drew).toContain('book')
       expect(drew).not.toContain('note')
     })
+
+    // A book is turned by the arrows and by nothing else, so a road that opens
+    // one and leaves the keyboard behind is a book nobody can read: whatever
+    // holds it reads the arrows for itself, and the tree walks its rows by them.
+    it(`hands the book the keyboard, reached by ${name}`, async () => {
+      await taken(road, 'Ants.epub', 'note')
+
+      expect(document.activeElement?.className).toContain('book-tab')
+    })
+
+    it(`turns the book by the arrows, reached by ${name}`, async () => {
+      await taken(road, 'Ants.epub', 'note')
+
+      globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
+
+      expect(asked.pressed).toStrictEqual(['ArrowRight'])
+    })
   }
 })
 
