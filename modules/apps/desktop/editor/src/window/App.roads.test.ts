@@ -8,7 +8,19 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
-import { Agent, Editor, Palette, Plex, Reader, Tree, WorkspaceLayout, type Workspace } from '@numen/ui'
+import {
+  Agent,
+
+  Editor,
+  openTabBeside,
+  Palette,
+  panesOf,
+  Plex,
+  Reader,
+  Tree,
+  WorkspaceLayout,
+  type Workspace,
+} from '@numen/ui'
 import DocumentTab from '../document-tab/DocumentTab.vue'
 import NoteTab from '../note-tab/NoteTab.vue'
 import RecordingTab from '../media-recording-tab/RecordingTab.vue'
@@ -18,6 +30,7 @@ import {
   DEBOUNCE,
   drawn,
   folders,
+  layoutOf,
   nameSaid,
   nodeInPlex,
   outside,
@@ -368,6 +381,60 @@ describe('a key struck while a book is in front', () => {
     globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
 
     expect(asked.pressed).toStrictEqual([])
+    window.unmount()
+  })
+})
+
+describe('a book carried into another group of tabs', () => {
+  it('keeps the keyboard, so the arrows still turn it', async () => {
+    // A tab dragged into another pane is drawn again where it landed, and a
+    // book drawn again without the keyboard is one the arrows never reach.
+    said.opening = 'Root.md'
+    const window = await drawn()
+    outside.asks({ path: 'Ants.epub', start: 0, length: 4 })
+    await settles()
+    await settles()
+    asked.pressed = []
+
+    const workspace = window.findComponent(WorkspaceLayout)
+    const was = layoutOf(window)
+    const book = panesOf(was.root)
+      .flatMap((one) => one.tabs)
+      .find((tab) => tab.startsWith('book:'))!
+    workspace.vm.$emit('update:modelValue', openTabBeside(was, book, 'right', () => 'landed'))
+    await settles()
+    await settles()
+
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
+
+    expect(asked.pressed).toStrictEqual(['ArrowRight'])
+    window.unmount()
+  })
+})
+
+describe('a book beside the pane the person is in', () => {
+  it('is turned by the arrows while it holds the keyboard', async () => {
+    // Several panes are drawn at once and the person is in one of them. The
+    // book is in another, holding the keyboard, and the arrows are struck at
+    // the book they are looking at.
+    said.opening = 'Root.md'
+    const window = await drawn()
+    outside.asks({ path: 'Ants.epub', start: 0, length: 4 })
+    await settles()
+    await settles()
+    asked.pressed = []
+
+    const workspace = window.findComponent(WorkspaceLayout)
+    const was = layoutOf(window)
+    const other = panesOf(was.root).find((one) => !one.tabs.some((tab) => tab.startsWith('book:')))!
+    workspace.vm.$emit('update:modelValue', { ...was, focus: other.id })
+    await settles()
+
+    document.activeElement?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true, bubbles: true }),
+    )
+
+    expect(asked.pressed).toStrictEqual(['ArrowRight'])
     window.unmount()
   })
 })

@@ -34,6 +34,16 @@ const onWindowKey = (event: KeyboardEvent) => {
   way.value?.focus()
 }
 
+/**
+ * A key struck at the book itself. The window hands one to the tab of the pane
+ * the person is in, and several panes are drawn at once: a book they are
+ * looking at and reading from holds the keyboard, whichever pane the layout
+ * calls the one they are in.
+ */
+const turns = (event: KeyboardEvent) => {
+  if (props.state.pressed(event)) event.preventDefault()
+}
+
 /** What the open list installed on the window, if anything. */
 let detach: (() => void) | null = null
 
@@ -67,6 +77,7 @@ const chose = (at: number) => {
     :ref="(held: unknown) => props.state.stands(held as HTMLElement | null)"
     class="book-tab"
     tabindex="-1"
+    @keydown="turns"
   >
     <div class="book-tab__reading">
       <Transition name="book-tab__over">
