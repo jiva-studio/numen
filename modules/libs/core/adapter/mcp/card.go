@@ -62,6 +62,15 @@ type Fault struct {
 	Why  string `json:"why" jsonschema:"what is wrong, and what the application did about it"`
 }
 
+// AskedCard is the card in front of the person, as an agent is told about it.
+// The deck is the file it stands in and the mark is what every card tool
+// addresses it by.
+type AskedCard struct {
+	Deck string `json:"deck" jsonschema:"the deck the card stands in, by the path the vault files it under; empty when no card is in front of them"`
+	Card string `json:"card,omitempty" jsonschema:"the card's mark, as card_read gives it"`
+	Face string `json:"face,omitempty" jsonschema:"the face it is being shown through, spelled as the stencil writes it"`
+}
+
 func addCardTools(server *sdk.Server, core Core) {
 	addCardReadingTools(server, core)
 	addCardWritingTools(server, core)

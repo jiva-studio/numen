@@ -8,6 +8,28 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
+// ShownVault is the vault a call is answered about: the vault itself, and where
+// it sits on this machine. An agent that can open files joins the folder to a
+// path itself; one that cannot reads through a tool.
+type ShownVault struct {
+	Vault domain.Vault
+	Root  string
+}
+
+// shown is the vault this call is about. A build that named none answers about
+// no vault at all.
+func (c Core) shown() ShownVault {
+	if c.Showing == nil {
+		return ShownVault{}
+	}
+	return c.Showing()
+}
+
+// ShowingOne answers with the same vault for as long as the server is served.
+func ShowingOne(v domain.Vault, root string) func() ShownVault {
+	return func() ShownVault { return ShownVault{Vault: v, Root: root} }
+}
+
 // addVaultTools gives an agent the vault it is working: where it is, and what
 // in it could not be read. Both of them read.
 func addVaultTools(server *sdk.Server, core Core) {
