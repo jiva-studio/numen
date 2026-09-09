@@ -568,3 +568,34 @@ export const DrawnOutOfSight: Story = {
     await expect(columnOf(canvasElement)).toBeCloseTo(area.clientWidth / 2 - GAP, -1)
   },
 }
+
+/**
+ * The turn is the columns being carried, so the page slides across the pane
+ * rather than jumping. A layout is not a turn and is put in place at once, and
+ * a layout that left the transition switched off is a book that turns without
+ * moving.
+ */
+export const TheTurnIsCarried: Story = {
+  decorators: [WIDE],
+  render: reading(chapterOf(PROSE)),
+  play: async ({ canvasElement }) => {
+    await laid(canvasElement)
+
+    const paper = paperOf(canvasElement)
+    await expect(getComputedStyle(paper).transitionProperty).toContain('translate')
+    await expect(paper.style.transition).toBe('')
+
+    // The columns carried are carried the whole way, and where they come to
+    // rest is one spread along.
+    const was = paper.getBoundingClientRect().left
+    await userEvent.keyboard('{ArrowRight}')
+    await waitFor(
+      async () =>
+        await expect(was - paper.getBoundingClientRect().left).toBeCloseTo(
+          areaOf(canvasElement).clientWidth,
+          -1,
+        ),
+      { timeout: ITS_OWN_PACE },
+    )
+  },
+}

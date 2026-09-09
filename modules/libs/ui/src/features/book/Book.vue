@@ -105,12 +105,6 @@ const along = ref(0)
 /** Which spread is in front, counted from the first. */
 const standing = ref(0)
 
-/** How far along the columns are carried, in CSS pixels. */
-const shift = ref(0)
-
-/** Whether they are carried there at once, which is a layout and not a turn. */
-const still = ref(true)
-
 /** Where each run of the text stands. */
 const marks = shallowRef<readonly Mark[]>([])
 
@@ -151,7 +145,6 @@ const setting = computed(() => ({
   '--book-column': `${columnWide(flow.value)}px`,
   '--book-high': `${viewport.value.high}px`,
   '--book-size': `calc(var(--numen-prose-size) * ${size.value})`,
-  '--book-shift': `${shift.value}px`,
 }))
 
 /**
@@ -185,10 +178,22 @@ const gather = () => {
  * that, so the last spread of a document would stand half a gap short.
  */
 const stand = (spread: number, how: ScrollBehavior) => {
+  const text = paper.value
   standing.value = Math.min(Math.max(spread, 0), Math.max(count.value - 1, 0))
-  still.value = how !== 'smooth'
-  shift.value = beginsAt(flow.value, standing.value)
-  if (still.value) onNextFrame(() => (still.value = false))
+  if (!text) return
+
+  const to = `${-beginsAt(flow.value, standing.value)}px 0`
+  if (how === 'smooth') {
+    text.style.translate = to
+    return
+  }
+  // A layout is not a turn: the columns are put where they belong at once. The
+  // style is settled in between, because a browser handed the transition and
+  // the distance in one recalculation animates neither.
+  text.style.transition = 'none'
+  text.style.translate = to
+  void text.offsetWidth
+  text.style.transition = ''
 }
 
 /** What stands in front now, said once, and nothing while nothing does. */
@@ -400,7 +405,6 @@ defineExpose({
           v-show="measured"
           ref="paper"
           class="book__paper prose prose-sm prose-numen max-w-none"
-          :class="{ 'book__paper--still': still }"
           :style="setting"
           @click="follow"
           @auxclick="follow"
@@ -512,7 +516,6 @@ defineExpose({
   column-count: 2;
   column-gap: var(--book-gap);
   /* The spread in front is carried here, and the turn is that being carried. */
-  translate: calc(-1 * var(--book-shift)) 0;
   transition: translate var(--numen-motion) var(--numen-easing);
   column-fill: auto;
   font-size: var(--book-size);
@@ -525,12 +528,6 @@ defineExpose({
      is there to be read. A book is there to be read. */
   user-select: text;
   -webkit-user-select: text;
-}
-
-/* The columns laid out again are put where they belong at once: a layout is not
-   a turn, and nothing slides across the pane while one is being made. */
-.book__paper--still {
-  transition: none;
 }
 
 /* A picture is set to its column's width and no taller than the column. */
