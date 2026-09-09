@@ -69,7 +69,7 @@ export function pressTurn(x: number, wide: number): PageTurn | undefined {
 }
 
 /** Where a turn lands: on a spread of this document, or past either end of it. */
-export interface Turned {
+export interface Destination {
   /** The spread the turn lands on, absent past the ends of the document. */
   readonly spread?: number
   /**
@@ -90,7 +90,7 @@ export function turnTo(
   count: number,
   span: { begins: number; ends: number },
   book: { begins: number; ends: number },
-): Turned {
+): Destination {
   if (way === 'first') return { spread: 0 }
   if (way === 'last') return { spread: count - 1 }
 
