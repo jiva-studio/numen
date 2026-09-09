@@ -11,7 +11,7 @@ import { troubleWords } from '@numen/wire'
 import { all, naming, type CommandDeps, type CommandHandler, type Words } from './deps'
 import type { CommandInvocation } from './target'
 import { adds, calls, forgets, shows } from './vaults'
-import type { Outcome, ArtifactState } from '../core'
+import type { Outcome, ArtifactState } from '../artifacts'
 import { AGENT, FILES, NOTE, PLEX, SETTINGS } from '../tabs/workspace'
 import type { PlexRelatedSeat } from '@numen/ui'
 

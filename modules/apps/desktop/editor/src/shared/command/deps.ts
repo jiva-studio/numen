@@ -9,17 +9,10 @@ import type { PlexRelatedSeat } from '@numen/ui'
 import type { RunSupport } from './runs'
 import type { CommandInvocation, VaultRef } from './target'
 import type { EditorKind } from '../tabs/openers'
-import type {
-  Artifact,
-  Movement,
-  ArtifactState,
-  RefusalReason,
-  RemoveResult,
-  RenameResult,
-  ArtifactRunner,
-  VaultRefusalReason,
-  Vaults,
-} from '../core'
+import type { Artifact, ArtifactState, ArtifactRunner } from '../artifacts'
+import type { Movement } from '../file'
+import type { RefusalReason, RemoveResult, RenameResult } from '../note'
+import type { VaultRefusalReason, Vaults } from '../vaults'
 import type { MessageWriter } from '../notices/messages'
 
 

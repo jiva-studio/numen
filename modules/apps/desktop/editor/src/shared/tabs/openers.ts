@@ -7,7 +7,8 @@
  */
 import type { PlexShowing } from '@numen/ui'
 import { troubleWords } from '@numen/wire'
-import type { FileKind, MakeResult, NoteType, RefusalReason, Span } from '../core'
+import type { FileKind } from '../file'
+import type { MakeResult, NoteType, RefusalReason, Span } from '../note'
 import type { MessageWriter } from '../notices/messages'
 
 /**

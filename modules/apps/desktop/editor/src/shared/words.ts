@@ -6,7 +6,9 @@
  * the palette, the commands, the corner, and the quit.
  */
 import { commandKeyChord, keyChord } from '@numen/ui'
-import type { Artifact, ArtifactState, RefusalReason, VaultRefusalReason } from './core'
+import type { Artifact, ArtifactState } from './artifacts'
+import type { RefusalReason } from './note'
+import type { VaultRefusalReason } from './vaults'
 
 /** What the vault refused a command, in words a person reads. */
 export const REFUSED: Record<RefusalReason, string> = {

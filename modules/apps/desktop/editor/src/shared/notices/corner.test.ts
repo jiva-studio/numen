@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { cornerOf, type State, type Words } from './corner'
-import type { Task } from '../core'
+import type { Task } from './task'
 import type { IndexCoverage } from './coverage'
 import type { WindowMessage } from './messages'
 

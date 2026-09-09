@@ -17,7 +17,7 @@ import type {
 } from '@numen/protocol'
 import { transport } from '@numen/wire'
 import { fingerprint, refusalIn, staleIn, stamp } from '../answers'
-import type { MakeResult, RefusalReason } from '../core'
+import type { MakeResult, RefusalReason } from '../note'
 import type { Surrounds } from './surrounds'
 
 /** One stencil as the list of them names it. */

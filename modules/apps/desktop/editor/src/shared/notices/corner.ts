@@ -7,7 +7,7 @@
  */
 import { noticed } from '@numen/ui'
 import type { Notice, Stay, Tone } from '@numen/ui'
-import type { Task } from '../core'
+import type { Task } from './task'
 import { wordsOnly, type IndexCoverage } from './coverage'
 import type { MessageKind, WindowMessage } from './messages'
 

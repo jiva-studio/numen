@@ -5,7 +5,8 @@
  * file of a kind, a file nothing has been made from yet. Each answer here is
  * one such question, and the table in `commands.ts` names which it asks.
  */
-import type { ArtifactState, ArtifactStates, Source } from '../core'
+import type { ArtifactState, ArtifactStates } from '../artifacts'
+import type { Source } from '../file'
 import type { RunSupport } from './runs'
 import type { CommandTarget } from './target'
 

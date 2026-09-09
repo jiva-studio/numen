@@ -11,19 +11,10 @@ import { runSupport } from './runs'
 import { invocationOf, type CommandInvocation, type CommandTarget } from './target'
 import { reaching, type CommandDeps, type Store } from './deps'
 import { does } from './handlers'
-import type {
-  Artifact,
-  ArtifactStates,
-  Movement,
-  Outcome,
-  ArtifactState,
-  RefusalReason,
-  RemoveResult,
-  RenameResult,
-  Vault,
-  VaultRefusalReason,
-  VaultResult,
-} from '../core'
+import type { Artifact, ArtifactStates, Outcome, ArtifactState } from '../artifacts'
+import type { Movement } from '../file'
+import type { RefusalReason, RemoveResult, RenameResult } from '../note'
+import type { Vault, VaultRefusalReason, VaultResult } from '../vaults'
 import { WORDS as words } from '../words'
 
 /** What is in front, which every invocation is carried out over. */

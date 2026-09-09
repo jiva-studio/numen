@@ -53,7 +53,8 @@ import {
   X,
   type LucideIcon,
 } from '@lucide/vue'
-import type { Entry, NoteType, Source } from './core'
+import type { Entry, Source } from './file'
+import type { NoteType } from './note'
 import {
   AGENT,
   BOOK,

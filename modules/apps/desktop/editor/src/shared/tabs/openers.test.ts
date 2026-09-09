@@ -6,7 +6,8 @@
  * it answers picks the tab the file opens in.
  */
 import { describe, expect, it } from 'vitest'
-import type { FileKind, RefusalReason } from '../core'
+import type { FileKind } from '../file'
+import type { RefusalReason } from '../note'
 import { fileMakers, fileOpeners, type VaultMaker, type FileOpenerDeps } from './openers'
 import { writer } from '../testing/writer'
 import { REFUSED } from '../words'

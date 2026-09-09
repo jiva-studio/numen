@@ -8,7 +8,7 @@
  */
 import { ref, shallowRef } from 'vue'
 import { troubleWords } from '@numen/wire'
-import type { Model, SettingEdit } from '../core'
+import type { Model, SettingEdit } from './configuration'
 import type { MessageWriter } from '../notices/messages'
 import { write } from './write'
 

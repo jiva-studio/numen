@@ -9,7 +9,8 @@
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteItem, PaletteGroup } from '@numen/ui'
 import { answerGuard, type Question } from '../questions'
-import type { NoteType, Source } from '../core'
+import type { Source } from '../file'
+import type { NoteType } from '../note'
 import { wordsOnly, type IndexCoverage } from '../notices/coverage'
 
 /** A run of a name or a passage, counted the way this window counts text. */

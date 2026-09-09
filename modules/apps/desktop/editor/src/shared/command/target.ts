@@ -5,7 +5,9 @@
  * when each is offered is `offered.ts`. This is what both of them speak.
  */
 import type { PaletteKeys } from '@numen/ui'
-import type { ArtifactStates, Source, VaultList } from '../core'
+import type { ArtifactStates } from '../artifacts'
+import type { Source } from '../file'
+import type { VaultList } from '../vaults'
 import type { RunSupport } from './runs'
 import type { EmptyWords, NameMatch } from './search'
 

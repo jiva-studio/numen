@@ -12,7 +12,7 @@ import { runSupport, type RunSupport } from './runs'
 import type { CommandTarget } from './target'
 import type { NoteLookup, PaletteLists, StepGroup } from './lists'
 import { commandPalette } from './palette'
-import type { VaultList, Vault } from '../core'
+import type { VaultList, Vault } from '../vaults'
 import type { NameMatch } from './search'
 import { WORDS as words } from '../words'
 

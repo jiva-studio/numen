@@ -7,7 +7,6 @@
  */
 import { ref } from 'vue'
 import { troubleWords } from '@numen/wire'
-import type { ReviewSettings } from '../core'
 import type { MessageWriter } from '../notices/messages'
 
 /** The hour an installation nobody has configured begins the day at. */
@@ -95,4 +94,16 @@ export function reviewSetting(core: ReviewDeps, words: Words, said: MessageWrite
   }
 
   return { starts, latest, day, start, chooses }
+}
+
+/** The hour a day of review begins at, and how late in the day one may. */
+export interface ReviewSettings {
+  readonly starts: string
+  /** The latest hour the vault takes. One past it is refused. */
+  readonly latest: string
+  /**
+   * The review day now standing, as the vault counts it. A day of review begins
+   * at the hour above, so an hour past midnight is still the day before.
+   */
+  readonly day: string
 }

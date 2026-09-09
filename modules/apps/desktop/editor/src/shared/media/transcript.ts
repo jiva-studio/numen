@@ -3,7 +3,8 @@
  * transcript, which cue is being said now, and the words as a person edits
  * them.
  */
-import type { ArtifactStates, Span } from '../core'
+import type { ArtifactStates } from '../artifacts'
+import type { Span } from '../note'
 import { computed, ref, shallowRef } from 'vue'
 import { clock } from '@numen/ui'
 import { troubleWords } from '@numen/wire'

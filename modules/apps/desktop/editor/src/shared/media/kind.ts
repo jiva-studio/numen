@@ -7,7 +7,9 @@
  */
 import { computed, type Component } from 'vue'
 import type { TranscriptState } from './transcript'
-import type { Source, Span, Task } from '../core'
+import type { Source } from '../file'
+import type { Span } from '../note'
+import type { Task } from '../notices/task'
 import type { FileOpeners, SourceReader } from '../tabs/openers'
 import type { Kind, WindowHandle } from '../tabs/windowTabs'
 import { DELETE_TEXT, PROOFREAD, TRANSCRIBE } from './words'

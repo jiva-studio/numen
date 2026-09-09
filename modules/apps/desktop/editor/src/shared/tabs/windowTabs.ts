@@ -17,7 +17,8 @@ import {
 } from 'vue'
 import { closeTab, openTab, openTabBeside, pane, paneById, panesOf } from '@numen/ui'
 import type { Tab, Workspace } from '@numen/ui'
-import type { BookProgress, DocumentProgress, RecordingProgress, Source } from '../core'
+import type { Source } from '../file'
+import type { BookProgress, DocumentProgress, RecordingProgress } from './tab'
 import { named } from './workspace'
 
 /**

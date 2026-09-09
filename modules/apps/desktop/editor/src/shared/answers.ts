@@ -7,7 +7,7 @@
  * the parts stay here and the string goes everywhere else.
  */
 import { Refusal } from '@numen/protocol'
-import type { RefusalReason } from './core'
+import type { RefusalReason } from './note'
 
 /** The file an answer came out of, as the one string the window carries. */
 export const stamp = (at?: { path: string; size: bigint; mtime: bigint }): string | undefined =>
