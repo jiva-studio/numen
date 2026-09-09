@@ -127,8 +127,26 @@ func (a *API) ReadBookMarkup(
 // the type is settled by reading the bytes, and an entry that is not one of the
 // pictures a book is drawn from is not served at all.
 func (a *API) Entry(w http.ResponseWriter, r *http.Request, path, entry string) {
-	read, ok := a.reading(w, r, path)
-	if !ok {
+	named, err := printed(r.URL.Query())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), a.Viewer.patience)
+	defer cancel()
+
+	reader, print, err := a.stat(ctx, path)
+	if err != nil {
+		refuse(w, err)
+		return
+	}
+	if named.size != print.size || named.mtime != print.mtime {
+		refuse(w, errChanged)
+		return
+	}
+	read, err := a.book(ctx, reader, print)
+	if err != nil {
+		refuse(w, err)
 		return
 	}
 	body, err := read.Entry(entry)
@@ -147,34 +165,6 @@ func (a *API) Entry(w http.ResponseWriter, r *http.Request, path, entry string) 
 	w.Header().Set("Content-Length", strconv.Itoa(len(body)))
 	w.Header().Set("Cache-Control", immutable)
 	_, _ = w.Write(body)
-}
-
-// reading is the book an address is about, held open, and false where the
-// caller has been told why it is not coming.
-func (a *API) reading(w http.ResponseWriter, r *http.Request, path string) (*epub.Book, bool) {
-	named, err := printed(r.URL.Query())
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return nil, false
-	}
-	ctx, cancel := context.WithTimeout(r.Context(), a.Viewer.patience)
-	defer cancel()
-
-	reader, print, err := a.stat(ctx, path)
-	if err != nil {
-		refuse(w, err)
-		return nil, false
-	}
-	if named.size != print.size || named.mtime != print.mtime {
-		refuse(w, errChanged)
-		return nil, false
-	}
-	read, err := a.book(ctx, reader, print)
-	if err != nil {
-		refuse(w, err)
-		return nil, false
-	}
-	return read, true
 }
 
 // book hands over the book at a fingerprint, read where it is not held already.

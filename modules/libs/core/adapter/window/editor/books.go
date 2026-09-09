@@ -15,7 +15,10 @@ import (
 // was read out of. One nobody has turned a page of for a while is let go, and
 // the reader holding it keeps it as long as it is reading.
 type books struct {
-	mu   sync.Mutex
+	// mu is held while open, order, or a volume's timer changes.
+	mu sync.Mutex
+	// open is the books read, keyed by the fingerprint of the file each
+	// came out of.
 	open map[fingerprint]*volume
 	// order is what is held, least recently asked for first.
 	order []fingerprint
@@ -27,10 +30,13 @@ type books struct {
 
 // volume is one book read, or the reading of it under way.
 type volume struct {
+	// ready is closed once the reading is over, whichever way it went.
 	ready chan struct{}
-	book  *epub.Book
-	why   error
-	idle  *time.Timer
+	// book is the book read, and why the reason it is not.
+	book *epub.Book
+	why  error
+	// idle lets the book go once nobody has asked about it for a while.
+	idle *time.Timer
 }
 
 // How many books are held at once, and how long one nobody is reading is kept.
@@ -128,6 +134,7 @@ func (b *books) touch(print fingerprint) {
 	b.order = append(b.order, print)
 }
 
+// forget takes a fingerprint out of the order, wherever it stands in it.
 func (b *books) forget(print fingerprint) {
 	for i, held := range b.order {
 		if held == print {
