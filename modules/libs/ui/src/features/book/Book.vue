@@ -535,6 +535,12 @@ defineExpose({
   /* A box that clips its own overflow cannot be cut between two columns, and
      the typography this paper carries gives one to every pre. */
   overflow: visible;
+  /* A pre in a book is a title page or a verse, and stands on the paper the
+     rest of the text does. The typography dresses one as a block of code. */
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
 }
 
 /* A heading stands in the column its text does. */

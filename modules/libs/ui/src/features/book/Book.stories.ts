@@ -394,6 +394,12 @@ export const VerseSetInAPreElement: Story = {
     await expect(set.scrollHeight).toBeLessThanOrEqual(set.clientHeight + 1)
     await expect(set.scrollWidth).toBeLessThanOrEqual(set.clientWidth + 1)
 
+    // It stands on the paper the rest of the text does. The typography dresses
+    // a pre as a block of code, and a title page is not one.
+    const drawn = getComputedStyle(set)
+    await expect(drawn.backgroundColor).toBe('rgba(0, 0, 0, 0)')
+    await expect(drawn.color).toBe(getComputedStyle(paperOf(canvasElement)).color)
+
     // It ran on into columns of its own rather than stopping at the first.
     const area = areaOf(canvasElement)
     await expect(area.scrollWidth).toBeGreaterThan(area.clientWidth)
