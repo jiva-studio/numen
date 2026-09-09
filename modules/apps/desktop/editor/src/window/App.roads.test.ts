@@ -159,7 +159,7 @@ describe('every road to a file', () => {
     it(`opens a book in the reader, reached by ${name}`, async () => {
       const drew = await taken(road, 'Ants.epub', 'note')
 
-      expect(drew).toContain('document')
+      expect(drew).toContain('book')
       expect(drew).not.toContain('note')
     })
   }
@@ -201,7 +201,7 @@ describe('what the person has open, as whoever answers for them is told it', () 
     expect(front()?.kind).toBe('plex')
   })
 
-  it('names the document in front, and the note the plex stands on beside it', async () => {
+  it('names the book in front, and the note the plex stands on beside it', async () => {
     const window = await drawn()
 
     outside.asks({ path: 'Ants.epub', start: 0, length: 4 })
@@ -209,7 +209,7 @@ describe('what the person has open, as whoever answers for them is told it', () 
     await settles()
     window.unmount()
 
-    expect(front()?.kind).toBe('document')
+    expect(front()?.kind).toBe('book')
     expect(front()?.path).toBe('Ants.epub')
     expect(reported()?.tabs.some((one) => one.kind === 'plex' && one.path === 'Root.md')).toBe(true)
   })
@@ -326,3 +326,31 @@ const runsOffered = async (window: VueWrapper): Promise<readonly string[]> => {
   return groups.find((one) => one.id === 'file')?.items.map((one) => one.id) ?? []
 }
 
+
+describe('a key struck while a book is in front', () => {
+  it('reaches the book, whichever pane the person came to it from', async () => {
+    // The tab is asked before the commands are. A book that hears no key is a
+    // book nothing turns: the arrows are what a page is turned by.
+    said.opening = 'Root.md'
+    const window = await drawn()
+
+    outside.asks({ path: 'Ants.epub', start: 0, length: 4 })
+    await settles()
+    await settles()
+
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
+
+    expect(asked.pressed).toStrictEqual(['ArrowRight'])
+    window.unmount()
+  })
+
+  it('reaches no book where the person is in another kind of tab', async () => {
+    said.opening = 'Root.md'
+    const window = await drawn()
+
+    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true }))
+
+    expect(asked.pressed).toStrictEqual([])
+    window.unmount()
+  })
+})

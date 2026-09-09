@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	derived "github.com/jiva-studio/numen/modules/libs/core/text"
@@ -152,5 +153,18 @@ func TestEveryArtifactTheSchemaNamesStandsSomewhere(t *testing.T) {
 func standingAt(got reached) func() v1.State {
 	return func() v1.State {
 		return stood(v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT, got).GetState()
+	}
+}
+
+// Which extensions are books and which reader cuts each of them are two lists,
+// and a book the vault names with no reader behind it opens in the reader made
+// for the other sort: the window is told the format is none, and none is the
+// picture reader.
+func TestEveryBookTheVaultNamesOpensInAReader(t *testing.T) {
+	for _, extension := range filesystem.DefaultBookExtensions {
+		path := "library/a" + extension
+		if got := formatOf(path, domain.KindBook); got == v1.BookFormat_BOOK_FORMAT_UNSPECIFIED {
+			t.Errorf("%s is a book of the vault and opens in no reader", extension)
+		}
 	}
 }

@@ -19,7 +19,12 @@ const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoiste
    * of three a note is is what a test said.
    */
   stands: (path: string) => {
-    if (/\.(epub|pdf)$/u.test(path)) return { kind: 'book' as const, type: 'note' as const }
+    if (/\.epub$/u.test(path)) {
+      return { kind: 'book' as const, type: 'note' as const, format: 'epub' as const }
+    }
+    if (/\.pdf$/u.test(path)) {
+      return { kind: 'book' as const, type: 'note' as const, format: 'pdf' as const }
+    }
     if (/\.(mp3|m4a|wav)$/u.test(path)) return { kind: 'recording' as const, type: 'note' as const }
     if (!/\.(md|note)$/u.test(path)) return { kind: 'other' as const, type: 'note' as const }
     return { kind: 'note' as const, type: said.types[path] ?? ('note' as const) }
@@ -167,6 +172,8 @@ const { said, held, asked, listed, folders, maker, stands, outside } = vi.hoiste
     worn: [] as string[],
     /** How often an open editor was told to take its measurements again. */
     measured: 0,
+    /** Every key the window handed down to the book it is showing. */
+    pressed: [] as string[],
     /** The vaults the window asked to be shown, in the order it asked. */
     opened: [] as string[],
     /** The recordings the window listened to, in the order it asked. */
@@ -283,6 +290,20 @@ vi.mock('../../window/assets', () => ({
     shape: async () => ({ pages: 1, pageSizes: [{ wide: 100, high: 100 }] }),
     page: () => '',
     places: async () => [],
+  },
+  books: {
+    shape: async (path: string) => ({
+      title: path,
+      span: { begins: 0, ends: 900 },
+      documents: [{ path: 'text/one.xhtml', span: { begins: 0, ends: 900 } }],
+      parts: [],
+      printed: [],
+      pages: 1,
+      pageBytes: 900,
+      at: '20480 1700000000000000000 book.epub',
+    }),
+    markup: async () => '<p data-offset="0">the book</p>',
+    entry: () => '',
   },
   recordings: {
     listened: async (path: string) => {
@@ -460,7 +481,15 @@ const editor = answers('Editor', {
   reveal: () => true,
 })
 const reader = answers('Reader', { measure: () => {} })
-const book = answers('Book', { measure: () => {}, pressed: () => false })
+const book = answers('Book', {
+  measure: () => {},
+  // The book writes down every key it was handed and turns no page: what is
+  // asked of the window is that the key reaches the book it is showing.
+  pressed: (event: KeyboardEvent) => {
+    asked.pressed.push(event.key)
+    return false
+  },
+})
 
 /**
  * Every window a test drew. A window listens for the keystrokes that open the
@@ -510,6 +539,7 @@ afterEach(() => {
   asked.folders = []
   asked.worn = []
   asked.measured = 0
+  asked.pressed = []
   asked.opened = []
   asked.listened = []
   asked.transcribed = []
