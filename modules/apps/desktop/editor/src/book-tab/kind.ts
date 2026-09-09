@@ -81,11 +81,13 @@ export function booking(read: OpenBookState) {
   /** The tab it is drawn in, which is what holds the keyboard. */
   let tab: HTMLElement | null = null
 
-  const drew = (held: unknown) => {
-    reader = (held as BookHandle | null) ?? null
+  /** The book the tab is drawing, and nothing while it draws none. */
+  const holdsBook = (held: BookHandle | null) => {
+    reader = held
   }
 
-  const stands = (held: HTMLElement | null) => {
+  /** The tab as it is drawn, which is the element the keyboard is brought to. */
+  const holdsTab = (held: HTMLElement | null) => {
     tab = held
   }
 
@@ -102,5 +104,5 @@ export function booking(read: OpenBookState) {
   /** A key the tab caught, answered by the book it is drawn in. */
   const pressed = (event: KeyboardEvent) => reader?.pressed(event) ?? false
 
-  return { ...read, drew, stands, measure, takes, pressed }
+  return { ...read, holdsBook, holdsTab, measure, takes, pressed }
 }

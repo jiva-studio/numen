@@ -62,7 +62,7 @@ describe('what a book tab holds', () => {
     held.measure()
     expect(drawn.measure).not.toHaveBeenCalled()
 
-    held.drew(drawn)
+    held.holdsBook(drawn)
     held.measure()
     expect(drawn.measure).toHaveBeenCalledTimes(1)
   })

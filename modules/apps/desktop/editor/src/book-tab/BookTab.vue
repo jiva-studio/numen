@@ -5,16 +5,24 @@
  *
  * What the book could not be read as is said in the window's own notices.
  */
-import { onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
+import { onBeforeUnmount, ref, useTemplateRef, watch, watchEffect } from 'vue'
 import { Book, BookContents } from '@numen/ui'
 import { ListTree } from '@lucide/vue'
 import { WORDS as words } from './words'
-import type { BookTabState } from './kind'
+import type { BookHandle, BookTabState } from './kind'
 
 const props = defineProps<{ state: BookTabState }>()
 
 /** Whether the list of what the book divides into stands over the text. */
 const listing = ref(false)
+
+/**
+ * The book as it is drawn, handed to what the tab holds. The tab reads the keys
+ * and the book turns the page, so a tab holding no book answers every key with
+ * "not mine" and the arrows turn nothing at all.
+ */
+const book = useTemplateRef<BookHandle>('book')
+watchEffect(() => props.state.holdsBook(book.value))
 
 const panel = useTemplateRef<HTMLElement>('panel')
 const way = useTemplateRef<HTMLElement>('way')
@@ -74,7 +82,7 @@ const chose = (at: number) => {
 
 <template>
   <div
-    :ref="(held: unknown) => props.state.stands(held as HTMLElement | null)"
+    :ref="(held: unknown) => props.state.holdsTab(held as HTMLElement | null)"
     class="book-tab"
     tabindex="-1"
     @keydown="turns"
@@ -92,7 +100,7 @@ const chose = (at: number) => {
       </Transition>
 
       <Book
-        :ref="(reader: unknown) => props.state.drew(reader)"
+        ref="book"
         :markup="props.state.markup.value"
         :path="props.state.drawn.value"
         :span="props.state.reading.value"
