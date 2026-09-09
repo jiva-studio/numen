@@ -50,7 +50,9 @@ const takeLed = (): BookLink | undefined => {
   return place
 }
 
-const layout = useBookLayout(area, paper, props, (at) => emit('moved', at), takeLed)
+const layout = useBookLayout(area, paper, props, (at) => emit('moved', at), takeLed, (of) =>
+  of.getBoundingClientRect().left,
+)
 const { measured, setting, spreadCount, front, leftInChapter } = layout
 
 /**

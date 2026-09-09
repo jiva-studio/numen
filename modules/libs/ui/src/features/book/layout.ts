@@ -4,7 +4,8 @@
  * about marked where they stand.
  *
  * Apart from the component the way `turn.ts` is: the component hands over the
- * two elements and what it was told, and answers for nothing here.
+ * two elements, what it was told, and the one measurement this makes of the
+ * browser, and answers for nothing here.
  */
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import type { ShallowRef } from 'vue'
@@ -29,6 +30,7 @@ export function useBookLayout(
   props: SettledBookProps,
   moved: (at: number) => void,
   takeLed: () => BookLink | undefined,
+  edgeOf: (of: HTMLElement) => number,
 ) {
   /** How large the text is set, held inside what a book may be read at. */
   const textSize = computed(() => held(props.textSize, SMALLEST, LARGEST))
@@ -106,7 +108,7 @@ export function useBookLayout(
     // the area they are carried across: a turn under way carries both, and the
     // one measured against the other is where the run will come to rest.
     runs = runsIn(text)
-    marks.value = marksIn(runs, text.getBoundingClientRect().left)
+    marks.value = marksIn(runs, edgeOf(text))
   }
 
   /**
