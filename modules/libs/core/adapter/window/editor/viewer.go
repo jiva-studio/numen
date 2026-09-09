@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -180,14 +181,17 @@ func (a *API) GetDocument(
 	return connect.NewResponse(out), nil
 }
 
+// pagesName is the one place a document has a name for: a page of it.
+const pagesName = "pages"
+
 // Page answers with one page of a document, drawn as wide as was asked for.
 //
 // The address names the bytes it was drawn from, so it is answered only while
 // the file at that path is still those bytes and the picture it answers with
 // never changes. A file rewritten under the same name is a different address,
 // and this one is gone.
-func (a *API) Page(w http.ResponseWriter, r *http.Request, path, page string) {
-	at, wide, named, err := wanted(page, r.URL.Query())
+func (a *API) Page(w http.ResponseWriter, r *http.Request, path, where string) {
+	at, wide, named, err := wanted(where, r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -378,11 +382,16 @@ func encoded(drawn image.Image) ([]byte, error) {
 }
 
 // wanted is which page the window asks for and how wide, in the pixels of the
-// device it draws on.
-func wanted(page string, query url.Values) (at, width int, named fingerprint, err error) {
-	at, err = strconv.Atoi(page)
+// device it draws on. A document is asked for a page of it and no other place
+// in it.
+func wanted(where string, query url.Values) (at, width int, named fingerprint, err error) {
+	asked, found := strings.CutPrefix(where, pagesName+"/")
+	if !found {
+		return 0, 0, fingerprint{}, fmt.Errorf("%q is not a place in a document", where)
+	}
+	at, err = strconv.Atoi(asked)
 	if err != nil || at < 0 {
-		return 0, 0, fingerprint{}, fmt.Errorf("%q is not a page", page)
+		return 0, 0, fingerprint{}, fmt.Errorf("%q is not a page", asked)
 	}
 	width, err = strconv.Atoi(query.Get("wide"))
 	if err != nil || width < 1 || width > widestPage {
@@ -405,7 +414,8 @@ func refusedDrawing(err error) connect.Code {
 	switch {
 	case errors.Is(err, errBusy):
 		return connect.CodeUnavailable
-	case errors.Is(err, errNoPage), errors.Is(err, epub.ErrNoDocument), errors.Is(err, epub.ErrNoEntry):
+	case errors.Is(err, errNoPage), errors.Is(err, errChanged),
+		errors.Is(err, epub.ErrNoDocument), errors.Is(err, epub.ErrNoEntry):
 		return connect.CodeNotFound
 	case errors.Is(err, port.ErrNotADocument), errors.Is(err, port.ErrEncrypted), misnamed(err):
 		return connect.CodeFailedPrecondition

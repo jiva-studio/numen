@@ -58,11 +58,8 @@ func FuzzAssetAddress(f *testing.F) {
 		if at.path != path {
 			t.Fatalf("%q is addressed as %q and read back as %q", path, url, at.path)
 		}
-		if at.facet != pagesFacet {
-			t.Fatalf("a page of %q is addressed as %q and asks for %q", path, url, at.facet)
-		}
-		if want := strconv.Itoa(page); at.at != want {
-			t.Fatalf("page %d of %q is addressed as %q and asks for %q", page, path, url, at.at)
+		if want := pagesName + "/" + strconv.Itoa(page); at.where != want {
+			t.Fatalf("page %d of %q is addressed as %q and asks for %q", page, path, url, at.where)
 		}
 
 		// Which bytes the address is about rides beside it, and says the same

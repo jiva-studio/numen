@@ -23,7 +23,6 @@ import type {
   SpineDocument as SpineDocumentMessage,
 } from '@numen/protocol'
 import { transport } from '@numen/wire'
-import { fetched } from '../shared/addresses'
 import { fingerprint, stamp } from '../shared/answers'
 import { running } from '../shared/artifacts'
 import type { Documents, HighlightedPage, Rect } from '../document-tab/open'
@@ -72,9 +71,9 @@ export const documents: Documents = {
 }
 
 /**
- * The books that reflow, over the same addresses. What a book is comes over the
- * schema; one document of it and one picture it carries are bytes, and bytes
- * are answered at an address.
+ * The books that reflow, over the same addresses. What a book is and the markup
+ * of one document of it come over the schema; one picture it carries is bytes,
+ * and bytes are answered at an address.
  */
 export const books: Books = {
   shape: async (path) => {
@@ -94,9 +93,18 @@ export const books: Books = {
       at: stamp(answer.fingerprint) ?? '',
     }
   },
-  markup: async (path, document, seen) =>
-    await fetched(`${asset(path)}/markup/${encodeURIComponent(document)}?${named(seen)}`),
-  entry: (path, name, seen) => `${asset(path)}/entries/${encodeURIComponent(name)}?${named(seen)}`,
+  markup: async (path, document, seen) => {
+    const answer = await waiting(() =>
+      served.books.readBookMarkup({
+        path,
+        document,
+        ...(seen === '' ? {} : { seen: fingerprint(seen) }),
+      }),
+    )
+    return answer.markup
+  },
+  entry: (path, name, seen) =>
+    `${asset(path)}/${name.split('/').map(encodeURIComponent).join('/')}?${named(seen)}`,
 }
 
 /** One document of the spine, as the window carries it. */

@@ -8,9 +8,9 @@
 //
 // Such a book has no pages of its own. It is set in columns against the room
 // the reader has, so a place in it is an offset into its one text stream, and
-// every number here is counted in bytes of that text. The markup of one
-// document and the bytes of one picture are at addresses of their own, because
-// a browser's own elements speak bytes and not this.
+// every number here is counted in bytes of that text. The bytes of one picture
+// are at an address of their own, because a browser's own elements speak bytes
+// and not this.
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
@@ -22,7 +22,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/book.proto.
  */
 export const file_numen_v1_book: GenFile = /*@__PURE__*/
-  fileDesc("ChNudW1lbi92MS9ib29rLnByb3RvEghudW1lbi52MSIeCg5HZXRCb29rUmVxdWVzdBIMCgRwYXRoGAEgASgJIoUCCg9HZXRCb29rUmVzcG9uc2USDQoFdGl0bGUYASABKAkSKgoJZG9jdW1lbnRzGAIgAygLMhcubnVtZW4udjEuU3BpbmVEb2N1bWVudBIhCgVwYXJ0cxgDIAMoCzISLm51bWVuLnYxLkJvb2tQYXJ0EiwKDXByaW50ZWRfcGFnZXMYBCADKAsyFS5udW1lbi52MS5QcmludGVkUGFnZRISCgpwYWdlX2NvdW50GAUgASgFEhIKCnRleHRfYnl0ZXMYBiABKAUSEgoKcGFnZV9ieXRlcxgHIAEoBRIqCgtmaW5nZXJwcmludBgIIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50Ij0KDVNwaW5lRG9jdW1lbnQSDAoEcGF0aBgBIAEoCRIOCgZvZmZzZXQYAiABKAUSDgoGbGVuZ3RoGAMgASgFIjgKCEJvb2tQYXJ0Eg0KBXRpdGxlGAEgASgJEg4KBm9mZnNldBgCIAEoBRINCgVsZXZlbBgDIAEoBSIsCgtQcmludGVkUGFnZRINCgVsYWJlbBgBIAEoCRIOCgZvZmZzZXQYAiABKAUyTQoLQm9va1NlcnZpY2USPgoHR2V0Qm9vaxIYLm51bWVuLnYxLkdldEJvb2tSZXF1ZXN0GhkubnVtZW4udjEuR2V0Qm9va1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChNudW1lbi92MS9ib29rLnByb3RvEghudW1lbi52MSIeCg5HZXRCb29rUmVxdWVzdBIMCgRwYXRoGAEgASgJIoUCCg9HZXRCb29rUmVzcG9uc2USDQoFdGl0bGUYASABKAkSKgoJZG9jdW1lbnRzGAIgAygLMhcubnVtZW4udjEuU3BpbmVEb2N1bWVudBIhCgVwYXJ0cxgDIAMoCzISLm51bWVuLnYxLkJvb2tQYXJ0EiwKDXByaW50ZWRfcGFnZXMYBCADKAsyFS5udW1lbi52MS5QcmludGVkUGFnZRISCgpwYWdlX2NvdW50GAUgASgFEhIKCnRleHRfYnl0ZXMYBiABKAUSEgoKcGFnZV9ieXRlcxgHIAEoBRIqCgtmaW5nZXJwcmludBgIIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50ImoKFVJlYWRCb29rTWFya3VwUmVxdWVzdBIMCgRwYXRoGAEgASgJEhAKCGRvY3VtZW50GAIgASgJEigKBHNlZW4YAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgAiAEBQgcKBV9zZWVuIigKFlJlYWRCb29rTWFya3VwUmVzcG9uc2USDgoGbWFya3VwGAEgASgJIj0KDVNwaW5lRG9jdW1lbnQSDAoEcGF0aBgBIAEoCRIOCgZvZmZzZXQYAiABKAUSDgoGbGVuZ3RoGAMgASgFIjgKCEJvb2tQYXJ0Eg0KBXRpdGxlGAEgASgJEg4KBm9mZnNldBgCIAEoBRINCgVsZXZlbBgDIAEoBSIsCgtQcmludGVkUGFnZRINCgVsYWJlbBgBIAEoCRIOCgZvZmZzZXQYAiABKAUyogEKC0Jvb2tTZXJ2aWNlEj4KB0dldEJvb2sSGC5udW1lbi52MS5HZXRCb29rUmVxdWVzdBoZLm51bWVuLnYxLkdldEJvb2tSZXNwb25zZRJTCg5SZWFkQm9va01hcmt1cBIfLm51bWVuLnYxLlJlYWRCb29rTWFya3VwUmVxdWVzdBogLm51bWVuLnYxLlJlYWRCb29rTWFya3VwUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetBookRequest
@@ -103,9 +103,9 @@ export type GetBookResponse = Message<"numen.v1.GetBookResponse"> & {
   pageBytes: number;
 
   /**
-   * Which bytes the book was read from. It stands in the address the markup of
-   * a document and the bytes of a picture are answered at, so an address names
-   * one reading of one file.
+   * Which bytes the book was read from. It stands in the ask for the markup of
+   * a document and in the address the bytes of a picture are answered at, so
+   * both name one reading of one file.
    *
    * @generated from field: numen.v1.Fingerprint fingerprint = 8;
    */
@@ -118,6 +118,61 @@ export type GetBookResponse = Message<"numen.v1.GetBookResponse"> & {
  */
 export const GetBookResponseSchema: GenMessage<GetBookResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_book, 1);
+
+/**
+ * @generated from message numen.v1.ReadBookMarkupRequest
+ */
+export type ReadBookMarkupRequest = Message<"numen.v1.ReadBookMarkupRequest"> & {
+  /**
+   * The file, as the vault holds it.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * The document of the spine, as the archive names it.
+   *
+   * @generated from field: string document = 2;
+   */
+  document: string;
+
+  /**
+   * Which bytes the ask was given out for. A file that is other bytes now is
+   * not answered: the book is asked for again, and the new answer is asked
+   * with what that says.
+   *
+   * @generated from field: optional numen.v1.Fingerprint seen = 3;
+   */
+  seen?: Fingerprint | undefined;
+};
+
+/**
+ * Describes the message numen.v1.ReadBookMarkupRequest.
+ * Use `create(ReadBookMarkupRequestSchema)` to create a new message.
+ */
+export const ReadBookMarkupRequestSchema: GenMessage<ReadBookMarkupRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_book, 2);
+
+/**
+ * @generated from message numen.v1.ReadBookMarkupResponse
+ */
+export type ReadBookMarkupResponse = Message<"numen.v1.ReadBookMarkupResponse"> & {
+  /**
+   * The markup of the document, carrying the offsets the book's text stands
+   * at.
+   *
+   * @generated from field: string markup = 1;
+   */
+  markup: string;
+};
+
+/**
+ * Describes the message numen.v1.ReadBookMarkupResponse.
+ * Use `create(ReadBookMarkupResponseSchema)` to create a new message.
+ */
+export const ReadBookMarkupResponseSchema: GenMessage<ReadBookMarkupResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_book, 3);
 
 /**
  * SpineDocument is one document of the book, and where its text stands in the
@@ -153,7 +208,7 @@ export type SpineDocument = Message<"numen.v1.SpineDocument"> & {
  * Use `create(SpineDocumentSchema)` to create a new message.
  */
 export const SpineDocumentSchema: GenMessage<SpineDocument> = /*@__PURE__*/
-  messageDesc(file_numen_v1_book, 2);
+  messageDesc(file_numen_v1_book, 4);
 
 /**
  * BookPart is a named division of the book, at the offset its text begins.
@@ -185,7 +240,7 @@ export type BookPart = Message<"numen.v1.BookPart"> & {
  * Use `create(BookPartSchema)` to create a new message.
  */
 export const BookPartSchema: GenMessage<BookPart> = /*@__PURE__*/
-  messageDesc(file_numen_v1_book, 3);
+  messageDesc(file_numen_v1_book, 5);
 
 /**
  * PrintedPage is one page of the printed book, at the offset it starts.
@@ -209,7 +264,7 @@ export type PrintedPage = Message<"numen.v1.PrintedPage"> & {
  * Use `create(PrintedPageSchema)` to create a new message.
  */
 export const PrintedPageSchema: GenMessage<PrintedPage> = /*@__PURE__*/
-  messageDesc(file_numen_v1_book, 4);
+  messageDesc(file_numen_v1_book, 6);
 
 /**
  * BookService answers what a book that reflows is, for whatever opens one.
@@ -229,6 +284,18 @@ export const BookService: GenService<{
     methodKind: "unary";
     input: typeof GetBookRequestSchema;
     output: typeof GetBookResponseSchema;
+  },
+  /**
+   * ReadBookMarkup is one document of the book, as the markup a window sets a
+   * page from. It answers while the file is still the bytes the ask names, so
+   * one answer is one reading of one file.
+   *
+   * @generated from rpc numen.v1.BookService.ReadBookMarkup
+   */
+  readBookMarkup: {
+    methodKind: "unary";
+    input: typeof ReadBookMarkupRequestSchema;
+    output: typeof ReadBookMarkupResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_book, 0);

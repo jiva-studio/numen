@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -119,20 +120,10 @@ func TestAFileThatIsNoBook(t *testing.T) {
 // One document of a book is markup, and the window reads every offset it needs
 // off it.
 func TestOneDocumentOfABookIsAnsweredAsMarkup(t *testing.T) {
-	api, handler := readFrom(t)
+	api, _ := readFrom(t)
 	print := printOf(t, api, reflowed)
 
-	out := ask(handler, markupOf(reflowed, firstDoc, print))
-	if out.Code != http.StatusOK {
-		t.Fatalf("asked for a document and got %d: %s", out.Code, out.Body)
-	}
-	if said := out.Header().Get("Content-Type"); said != "text/html; charset=utf-8" {
-		t.Errorf("the document came back as %q", said)
-	}
-	if said := out.Header().Get("X-Content-Type-Options"); said != "nosniff" {
-		t.Errorf("the document is sniffed: %q", said)
-	}
-	page := out.Body.String()
+	page := markupOf(t, api, reflowed, firstDoc, print)
 	if !strings.Contains(page, epub.OffsetAttribute+`="`) {
 		t.Errorf("the markup says no offsets:\n%s", page)
 	}
@@ -145,9 +136,31 @@ func TestOneDocumentOfABookIsAnsweredAsMarkup(t *testing.T) {
 	}
 
 	// A document the book was not read from is not one to ask for.
-	if out := ask(handler, markupOf(reflowed, "OEBPS/gone.xhtml", print)); out.Code != http.StatusNotFound {
-		t.Errorf("a document the book does not hold was answered %d", out.Code)
+	_, err := api.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
+		Path: reflowed, Document: "OEBPS/gone.xhtml",
+		Seen: named(print),
+	}))
+	if got := connect.CodeOf(err); got != connect.CodeNotFound {
+		t.Errorf("a document the book does not hold was answered %v", got)
 	}
+}
+
+// markupOf is the markup of one document of a book, asked as the schema asks it
+// with the bytes it was given out for.
+func markupOf(t *testing.T, api *API, path, document string, print fingerprint) string {
+	t.Helper()
+	out, err := api.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
+		Path: path, Document: document, Seen: named(print),
+	}))
+	if err != nil {
+		t.Fatalf("asked for %s of %s and was refused: %v", document, path, err)
+	}
+	return out.Msg.GetMarkup()
+}
+
+// named is a fingerprint as an ask over the schema carries it.
+func named(print fingerprint) *v1.Fingerprint {
+	return &v1.Fingerprint{Path: print.path, Size: print.size, Mtime: print.mtime}
 }
 
 // A picture the book carries is drawn out of the archive, and what settles the
@@ -156,7 +169,7 @@ func TestAPictureTheBookCarries(t *testing.T) {
 	api, handler := readFrom(t)
 	print := printOf(t, api, reflowed)
 
-	out := ask(handler, entryOf(reflowed, "OEBPS/pictures/plate.png", print))
+	out := ask(handler, pictureOf(reflowed, "OEBPS/pictures/plate.png", print))
 	if out.Code != http.StatusOK {
 		t.Fatalf("asked for a picture and got %d: %s", out.Code, out.Body)
 	}
@@ -186,7 +199,7 @@ func TestAnEntryThatIsNotAPictureIsNotServed(t *testing.T) {
 		"OEBPS/pictures/gone.png",
 	} {
 		t.Run(entry, func(t *testing.T) {
-			out := ask(handler, entryOf(reflowed, entry, print))
+			out := ask(handler, pictureOf(reflowed, entry, print))
 			if out.Code == http.StatusOK {
 				t.Errorf("%s was served as %q", entry, out.Header().Get("Content-Type"))
 			}
@@ -204,15 +217,12 @@ func TestACoverIsDrawnFromThePictureItWraps(t *testing.T) {
 	handler := api.Serving(http.NotFoundHandler())
 	print := printOf(t, api, reflowed)
 
-	out := ask(handler, markupOf(reflowed, "OEBPS/cover.svg", print))
-	if out.Code != http.StatusOK {
-		t.Fatalf("asked for the cover and got %d: %s", out.Code, out.Body)
-	}
-	if page := out.Body.String(); !strings.Contains(page, `src="OEBPS/pictures/plate.png"`) {
+	page := markupOf(t, api, reflowed, "OEBPS/cover.svg", print)
+	if !strings.Contains(page, `src="OEBPS/pictures/plate.png"`) {
 		t.Fatalf("the cover is drawn as\n%s", page)
 	}
 
-	drawn := ask(handler, entryOf(reflowed, "OEBPS/pictures/plate.png", print))
+	drawn := ask(handler, pictureOf(reflowed, "OEBPS/pictures/plate.png", print))
 	if drawn.Code != http.StatusOK {
 		t.Errorf("the picture the cover names came back %d", drawn.Code)
 	}
@@ -225,13 +235,14 @@ func TestAnAddressIntoABookThatChanged(t *testing.T) {
 	stale := printOf(t, api, reflowed)
 	stale.size++
 
-	for _, url := range []string{
-		markupOf(reflowed, firstDoc, stale),
-		entryOf(reflowed, "OEBPS/pictures/plate.png", stale),
-	} {
-		if out := ask(handler, url); out.Code != http.StatusNotFound {
-			t.Errorf("%s was answered %d", url, out.Code)
-		}
+	_, err := api.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
+		Path: reflowed, Document: firstDoc, Seen: named(stale),
+	}))
+	if got := connect.CodeOf(err); got != connect.CodeNotFound {
+		t.Errorf("the markup of a book that changed was answered %v", got)
+	}
+	if out := ask(handler, pictureOf(reflowed, "OEBPS/pictures/plate.png", stale)); out.Code != http.StatusNotFound {
+		t.Errorf("the picture was answered %d", out.Code)
 	}
 }
 
@@ -242,14 +253,17 @@ func TestAPathTheVaultDoesNotHoldIsNoBook(t *testing.T) {
 	print := printOf(t, api, reflowed)
 
 	for _, path := range []string{"../outside.epub", "/etc/passwd", "library/nothing.epub"} {
-		for _, url := range []string{
-			markupOf(path, firstDoc, print),
-			entryOf(path, "OEBPS/pictures/plate.png", print),
-		} {
-			if out := ask(handler, url); out.Code == http.StatusOK {
-				t.Errorf("%s was answered", url)
+		t.Run(path, func(t *testing.T) {
+			_, err := api.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
+				Path: path, Document: firstDoc, Seen: named(print),
+			}))
+			if err == nil {
+				t.Errorf("the markup of %s was answered", path)
 			}
-		}
+			if out := ask(handler, pictureOf(path, "OEBPS/pictures/plate.png", print)); out.Code == http.StatusOK {
+				t.Errorf("the picture of %s was answered", path)
+			}
+		})
 	}
 }
 
@@ -377,6 +391,16 @@ func readFrom(t *testing.T) (*API, http.Handler) {
 	api.show(vault)
 	t.Cleanup(api.Viewer.close)
 	return api, api.Serving(http.NotFoundHandler())
+}
+
+// pictureOf is where a picture a book carries is asked for: the place it has in
+// the archive, each segment of it escaped on its own.
+func pictureOf(path, entry string, print fingerprint) string {
+	parts := strings.Split(entry, "/")
+	for at, one := range parts {
+		parts[at] = url.PathEscape(one)
+	}
+	return fmt.Sprintf("%s/%s?%s", assetOf(path), strings.Join(parts, "/"), printing(print))
 }
 
 // whatBook is what the book is, as the window is told it.

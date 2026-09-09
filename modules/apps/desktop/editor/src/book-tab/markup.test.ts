@@ -7,13 +7,14 @@ import spine from '../../../../../libs/protocol/testdata/spine.html?raw'
 import { pointedAt } from './markup'
 
 /** Where one entry of the archive is served, as the test reads an address. */
-const entry = (name: string) => `/assets/book.epub/entries/${encodeURIComponent(name)}?size=1`
+const entry = (name: string) =>
+  `/assets/book.epub/${name.split('/').map(encodeURIComponent).join('/')}?size=1`
 
 describe('a picture in a book', () => {
   it('is pointed at the address its entry of the archive is served from', () => {
     const drawn = pointedAt('<p><img src="OEBPS/pictures/plate.png" alt="A plate"></p>', entry)
 
-    expect(drawn).toContain('src="/assets/book.epub/entries/OEBPS%2Fpictures%2Fplate.png?size=1"')
+    expect(drawn).toContain('src="/assets/book.epub/OEBPS/pictures/plate.png?size=1"')
     expect(drawn).toContain('alt="A plate"')
   })
 

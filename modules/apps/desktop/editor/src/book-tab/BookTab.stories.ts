@@ -91,7 +91,7 @@ const UNNAMED: Book = { ...NAMED, parts: [] }
 const shelf = (book: Book): Books => ({
   shape: async () => book,
   markup: async () => document_.markup,
-  entry: (_path, name) => `/assets/book.epub/entries/${encodeURIComponent(name)}`,
+  entry: (_path, name) => `/assets/book.epub/${name.split("/").map(encodeURIComponent).join("/")}`,
 })
 
 /** The two documents of a book whose text points about inside itself. */
@@ -146,7 +146,7 @@ const CROSSED: Book = {
 const crossed: Books = {
   shape: async () => CROSSED,
   markup: async (_path, document) => (document === SECOND_PATH ? SECOND.markup : FIRST.markup),
-  entry: (_path, name) => `/assets/book.epub/entries/${encodeURIComponent(name)}`,
+  entry: (_path, name) => `/assets/book.epub/${name.split("/").map(encodeURIComponent).join("/")}`,
 }
 
 interface Knobs {

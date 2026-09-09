@@ -6,9 +6,9 @@ syntax = "proto3";
 //
 // Such a book has no pages of its own. It is set in columns against the room
 // the reader has, so a place in it is an offset into its one text stream, and
-// every number here is counted in bytes of that text. The markup of one
-// document and the bytes of one picture are at addresses of their own, because
-// a browser's own elements speak bytes and not this.
+// every number here is counted in bytes of that text. The bytes of one picture
+// are at an address of their own, because a browser's own elements speak bytes
+// and not this.
 package numen.v1;
 
 import "numen/v1/shared.proto";
@@ -22,6 +22,11 @@ service BookService {
   // document out itself, so it takes the whole of this and then asks for one
   // document at a time.
   rpc GetBook(GetBookRequest) returns (GetBookResponse);
+
+  // ReadBookMarkup is one document of the book, as the markup a window sets a
+  // page from. It answers while the file is still the bytes the ask names, so
+  // one answer is one reading of one file.
+  rpc ReadBookMarkup(ReadBookMarkupRequest) returns (ReadBookMarkupResponse);
 }
 
 message GetBookRequest {
@@ -57,10 +62,29 @@ message GetBookResponse {
   int32 text_bytes = 6;
   int32 page_bytes = 7;
 
-  // Which bytes the book was read from. It stands in the address the markup of
-  // a document and the bytes of a picture are answered at, so an address names
-  // one reading of one file.
+  // Which bytes the book was read from. It stands in the ask for the markup of
+  // a document and in the address the bytes of a picture are answered at, so
+  // both name one reading of one file.
   Fingerprint fingerprint = 8;
+}
+
+message ReadBookMarkupRequest {
+  // The file, as the vault holds it.
+  string path = 1;
+
+  // The document of the spine, as the archive names it.
+  string document = 2;
+
+  // Which bytes the ask was given out for. A file that is other bytes now is
+  // not answered: the book is asked for again, and the new answer is asked
+  // with what that says.
+  optional Fingerprint seen = 3;
+}
+
+message ReadBookMarkupResponse {
+  // The markup of the document, carrying the offsets the book's text stands
+  // at.
+  string markup = 1;
 }
 
 // SpineDocument is one document of the book, and where its text stands in the

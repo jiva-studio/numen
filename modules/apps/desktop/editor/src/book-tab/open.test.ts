@@ -74,7 +74,7 @@ function shelf(book: Book | Error = BOOK, markup: Error | null = null) {
       if (markup) throw markup
       return `<p data-offset="0">${document}</p>`
     },
-    entry: (path, name) => `/assets/${path}/entries/${name}`,
+    entry: (path, name) => `/assets/${path}/${name}`,
   }
 
   return { books, asked, drawn }

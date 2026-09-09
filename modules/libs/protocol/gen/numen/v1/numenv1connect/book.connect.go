@@ -8,9 +8,9 @@
 //
 // Such a book has no pages of its own. It is set in columns against the room
 // the reader has, so a place in it is an offset into its one text stream, and
-// every number here is counted in bytes of that text. The markup of one
-// document and the bytes of one picture are at addresses of their own, because
-// a browser's own elements speak bytes and not this.
+// every number here is counted in bytes of that text. The bytes of one picture
+// are at an address of their own, because a browser's own elements speak bytes
+// and not this.
 package numenv1connect
 
 import (
@@ -44,6 +44,9 @@ const (
 const (
 	// BookServiceGetBookProcedure is the fully-qualified name of the BookService's GetBook RPC.
 	BookServiceGetBookProcedure = "/numen.v1.BookService/GetBook"
+	// BookServiceReadBookMarkupProcedure is the fully-qualified name of the BookService's
+	// ReadBookMarkup RPC.
+	BookServiceReadBookMarkupProcedure = "/numen.v1.BookService/ReadBookMarkup"
 )
 
 // BookServiceClient is a client for the numen.v1.BookService service.
@@ -53,6 +56,10 @@ type BookServiceClient interface {
 	// document out itself, so it takes the whole of this and then asks for one
 	// document at a time.
 	GetBook(context.Context, *connect.Request[v1.GetBookRequest]) (*connect.Response[v1.GetBookResponse], error)
+	// ReadBookMarkup is one document of the book, as the markup a window sets a
+	// page from. It answers while the file is still the bytes the ask names, so
+	// one answer is one reading of one file.
+	ReadBookMarkup(context.Context, *connect.Request[v1.ReadBookMarkupRequest]) (*connect.Response[v1.ReadBookMarkupResponse], error)
 }
 
 // NewBookServiceClient constructs a client for the numen.v1.BookService service. By default, it
@@ -72,17 +79,29 @@ func NewBookServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(bookServiceMethods.ByName("GetBook")),
 			connect.WithClientOptions(opts...),
 		),
+		readBookMarkup: connect.NewClient[v1.ReadBookMarkupRequest, v1.ReadBookMarkupResponse](
+			httpClient,
+			baseURL+BookServiceReadBookMarkupProcedure,
+			connect.WithSchema(bookServiceMethods.ByName("ReadBookMarkup")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // bookServiceClient implements BookServiceClient.
 type bookServiceClient struct {
-	getBook *connect.Client[v1.GetBookRequest, v1.GetBookResponse]
+	getBook        *connect.Client[v1.GetBookRequest, v1.GetBookResponse]
+	readBookMarkup *connect.Client[v1.ReadBookMarkupRequest, v1.ReadBookMarkupResponse]
 }
 
 // GetBook calls numen.v1.BookService.GetBook.
 func (c *bookServiceClient) GetBook(ctx context.Context, req *connect.Request[v1.GetBookRequest]) (*connect.Response[v1.GetBookResponse], error) {
 	return c.getBook.CallUnary(ctx, req)
+}
+
+// ReadBookMarkup calls numen.v1.BookService.ReadBookMarkup.
+func (c *bookServiceClient) ReadBookMarkup(ctx context.Context, req *connect.Request[v1.ReadBookMarkupRequest]) (*connect.Response[v1.ReadBookMarkupResponse], error) {
+	return c.readBookMarkup.CallUnary(ctx, req)
 }
 
 // BookServiceHandler is an implementation of the numen.v1.BookService service.
@@ -92,6 +111,10 @@ type BookServiceHandler interface {
 	// document out itself, so it takes the whole of this and then asks for one
 	// document at a time.
 	GetBook(context.Context, *connect.Request[v1.GetBookRequest]) (*connect.Response[v1.GetBookResponse], error)
+	// ReadBookMarkup is one document of the book, as the markup a window sets a
+	// page from. It answers while the file is still the bytes the ask names, so
+	// one answer is one reading of one file.
+	ReadBookMarkup(context.Context, *connect.Request[v1.ReadBookMarkupRequest]) (*connect.Response[v1.ReadBookMarkupResponse], error)
 }
 
 // NewBookServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -107,10 +130,18 @@ func NewBookServiceHandler(svc BookServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(bookServiceMethods.ByName("GetBook")),
 		connect.WithHandlerOptions(opts...),
 	)
+	bookServiceReadBookMarkupHandler := connect.NewUnaryHandler(
+		BookServiceReadBookMarkupProcedure,
+		svc.ReadBookMarkup,
+		connect.WithSchema(bookServiceMethods.ByName("ReadBookMarkup")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.BookService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case BookServiceGetBookProcedure:
 			bookServiceGetBookHandler.ServeHTTP(w, r)
+		case BookServiceReadBookMarkupProcedure:
+			bookServiceReadBookMarkupHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -122,4 +153,8 @@ type UnimplementedBookServiceHandler struct{}
 
 func (UnimplementedBookServiceHandler) GetBook(context.Context, *connect.Request[v1.GetBookRequest]) (*connect.Response[v1.GetBookResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.BookService.GetBook is not implemented"))
+}
+
+func (UnimplementedBookServiceHandler) ReadBookMarkup(context.Context, *connect.Request[v1.ReadBookMarkupRequest]) (*connect.Response[v1.ReadBookMarkupResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.BookService.ReadBookMarkup is not implemented"))
 }

@@ -339,8 +339,9 @@ func TestNoDocumentIsDrawnForAWindowStandingOnNothing(t *testing.T) {
 	f := standingOnNothing(t)
 
 	// A file of the folder this process is standing in, which is what a path
-	// with no vault under it reaches.
-	const file = "serve.go"
+	// with no vault under it reaches. The name is a document's, so the ask is
+	// one a reader would take.
+	const file = "serve.pdf"
 
 	answer, err := f.server.Client().Get(
 		f.server.URL + "/assets/" + file + "/pages/0?wide=800&size=1&mtime=1")

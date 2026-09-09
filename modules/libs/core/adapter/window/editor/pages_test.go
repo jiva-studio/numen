@@ -393,13 +393,13 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 	// file up before anything else. That look is where the door stands.
 	api := &API{Readers: readers, Viewer: looking(nil)}
 	api.Viewer.open = func([]byte) (scan, error) { return nil, errNoPage }
-	api.show(testsupport.NewVault(t, map[string]string{"Note.md": "# Note\n"}))
+	api.show(testsupport.NewVault(t, map[string]string{"Note.pdf": "# Note\n"}))
 	handler := api.Serving(http.NotFoundHandler())
 
 	answered := make(chan struct{})
 	go func() {
 		defer close(answered)
-		at := pageOf("Note.md", 0, 800, fingerprint{})
+		at := pageOf("Note.pdf", 0, 800, fingerprint{})
 		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, at, nil))
 	}()
 	<-readers.begun

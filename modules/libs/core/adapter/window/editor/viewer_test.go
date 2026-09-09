@@ -279,7 +279,7 @@ func TestAPageTheDocumentDoesNotHaveIsRefused(t *testing.T) {
 			if one.wide == "" {
 				join = "?"
 			}
-			at := assetOf(book) + "/" + pagesFacet + "/" + asked +
+			at := assetOf(book) + "/" + pagesName + "/" + asked +
 				join + printing(printOf(t, api, book))
 			out := ask(handler, at)
 			if out.Code != one.want {

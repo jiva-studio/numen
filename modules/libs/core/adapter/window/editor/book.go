@@ -15,8 +15,8 @@ import (
 )
 
 // A book that reflows reaches the window as words: the markup of one document
-// at a time, and beside it the pictures the archive carries. So a chapter is a
-// handler, and what it answers with is the markup a page is drawn from.
+// at a time, asked for over the schema, and beside it the pictures the archive
+// carries, answered at an address as the bytes they are.
 
 // mostListed is how many documents, parts and printed pages of one book cross.
 // A book names as many as it likes.
@@ -89,28 +89,34 @@ func (a *API) GetBook(
 	return connect.NewResponse(out), nil
 }
 
-// Markup answers with one document of a book, as the markup a window draws a
-// page from.
+// ReadBookMarkup answers with one document of a book, as the markup a window
+// sets a page from.
 //
-// The address names the bytes it was read from, so it is answered only while the
-// file at that path is still those bytes and what it answers with never changes.
-func (a *API) Markup(w http.ResponseWriter, r *http.Request, path, document string) {
-	read, ok := a.reading(w, r, path)
-	if !ok {
-		return
-	}
-	drawn, err := read.Markup(document)
-	if err != nil {
-		refuse(w, err)
-		return
-	}
-	body := drawn.HTML()
+// The ask names the bytes it was given out for, and is answered while the file
+// is still those bytes: one answer is one reading of one file.
+func (a *API) ReadBookMarkup(
+	ctx context.Context,
+	r *connect.Request[v1.ReadBookMarkupRequest],
+) (*connect.Response[v1.ReadBookMarkupResponse], error) {
+	ctx, cancel := context.WithTimeout(ctx, a.Viewer.patience)
+	defer cancel()
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.Header().Set("Content-Length", strconv.Itoa(len(body)))
-	w.Header().Set("Cache-Control", immutable)
-	_, _ = w.Write([]byte(body))
+	reader, print, err := a.stat(ctx, r.Msg.GetPath())
+	if err != nil {
+		return nil, connect.NewError(refusedDrawing(err), err)
+	}
+	if seen := r.Msg.GetSeen(); seen != nil && (seen.GetSize() != print.size || seen.GetMtime() != print.mtime) {
+		return nil, connect.NewError(connect.CodeNotFound, errChanged)
+	}
+	read, err := a.book(ctx, reader, print)
+	if err != nil {
+		return nil, connect.NewError(refusedDrawing(err), err)
+	}
+	drawn, err := read.Markup(r.Msg.GetDocument())
+	if err != nil {
+		return nil, connect.NewError(refusedDrawing(err), err)
+	}
+	return connect.NewResponse(&v1.ReadBookMarkupResponse{Markup: drawn.HTML()}), nil
 }
 
 // Entry answers with the bytes of one entry of a book's archive, which is how a

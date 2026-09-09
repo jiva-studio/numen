@@ -45,7 +45,8 @@ A reader of pictures and a reader of text share a toolbar and nothing else. What
 - The number of pages is stable while the window is not, and it is the same number on every machine, because it is read off the text.
 - A person reads every book in the window's own typography, and a book cannot dictate how it looks.
 - A book of fixed layout cannot be shown this way, and says so rather than being reflowed into nonsense.
-- The markup crosses from the application already reduced to what a book is drawn from, so the window trusts it. The escaping and the allowlist are the last thing between somebody else's file and the window's DOM, and they stand in one place.
+- The markup crosses the schema, reduced to what a book is drawn from, so the window trusts it. The escaping and the allowlist stand in one place, between somebody else's file and the window's DOM.
+- A book's pictures are bytes, and bytes are what the window's one address for bytes answers: the place the picture has in the archive is the address's name for it, and the allowlist is what keeps every other entry of the archive off the window's origin.
 
 ## Alternatives considered
 
