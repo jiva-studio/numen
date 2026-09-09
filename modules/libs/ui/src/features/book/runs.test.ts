@@ -6,7 +6,7 @@
  * three, and no offset below is a count of characters.
  */
 import { describe, expect, it } from 'vitest'
-import { offsetAt, rangesOver, runAt, runsIn } from './runs'
+import { marksIn, offsetAt, rangesOver, runAt, runsIn } from './runs'
 
 /** A document as it is drawn, held in an element the way the reader holds it. */
 const paperOf = (markup: string): HTMLElement => {
@@ -128,5 +128,40 @@ describe('a stretch of the book marked where it stands', () => {
 
   it('is nothing at all in a document with no runs in it', () => {
     expect(rangesOver([], [{ begins: 0, ends: 8 }])).toStrictEqual([])
+  })
+})
+
+/** A run the browser has put somewhere, which jsdom never does by itself. */
+const standing = (markup: string, lefts: readonly number[]): HTMLElement => {
+  const paper = paperOf(markup)
+  const runs = paper.querySelectorAll<HTMLElement>('[data-offset]')
+  runs.forEach((run, at) => {
+    if (at >= lefts.length) return
+    Object.defineProperty(run, 'getClientRects', {
+      value: () => [{ left: lefts[at] }],
+      configurable: true,
+    })
+  })
+  return paper
+}
+
+describe('where the runs stand across the columns', () => {
+  it('is where the first of the rectangles a run has begins', () => {
+    const paper = standing(TWO, [120, 480])
+
+    const marks = marksIn(runsIn(paper), 40)
+
+    expect(marks).toStrictEqual([
+      { at: 0, x: 80 },
+      { at: 8, x: 440 },
+    ])
+  })
+
+  it('is nothing for a run the browser has put nowhere', () => {
+    // A run broken over a column edge has a rectangle in each column, and a
+    // document nothing has laid out has no rectangles at all.
+    const paper = standing(TWO, [120])
+
+    expect(marksIn(runsIn(paper), 0)).toStrictEqual([{ at: 0, x: 120 }])
   })
 })

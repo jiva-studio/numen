@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  BOOK_WORDS,
   EDGE,
   GAP,
   NARROWEST,
@@ -15,6 +16,7 @@ import {
   inFront,
   keyTurn,
   handTurn,
+  leftInDocument,
   pagesOf,
   pressTurn,
   spreadAt,
@@ -392,5 +394,34 @@ describe('the page a person is looking at', () => {
 
   it('says one page for a document nothing has been laid out for', () => {
     expect(pagesOf(book, document, flow, 0, [])).toEqual({ page: 1, pages: 1 })
+  })
+})
+
+describe('what is left of the document on the page in front', () => {
+  const flow: Flow = { along: 2700, wide: 800, gap: GAP, columns: 2 }
+  const marks: readonly Mark[] = [
+    { at: 0, x: 10 },
+    { at: 400, x: 1610 },
+  ]
+
+  it('is the columns of it standing past the spread in front', () => {
+    expect(leftInDocument(flow, 0, marks)).toBe(3)
+  })
+
+  it('is nothing once the spread in front is the last that holds any', () => {
+    // Five columns hold the text, and the third spread carries the last of
+    // them: past it the document owes nobody anything.
+    expect(leftInDocument(flow, 2, marks)).toBe(0)
+  })
+})
+
+describe('the words the page count is said in', () => {
+  it('put the page in front against all of them', () => {
+    expect(BOOK_WORDS.of(3, 40)).toBe('3 of 40')
+  })
+
+  it('say how much of the chapter is still to come, one page or many', () => {
+    expect(BOOK_WORDS.left(1)).toBe('1 page left in chapter')
+    expect(BOOK_WORDS.left(5)).toBe('5 pages left in chapter')
   })
 })

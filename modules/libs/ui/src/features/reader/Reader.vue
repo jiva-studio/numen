@@ -10,7 +10,7 @@ import { computed, useTemplateRef, ref, watch } from 'vue'
 import { ReaderToolbar } from './reader-toolbar'
 import { Sheet } from './sheet'
 import { usePageWidth } from './width'
-import { useViewport } from './viewport'
+import { useViewport } from '@/shared/lib/viewport'
 import { useHandScroll } from './scroll'
 import {
   GAP,

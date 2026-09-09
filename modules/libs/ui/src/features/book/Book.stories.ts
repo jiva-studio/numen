@@ -13,7 +13,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import Book from './Book.vue'
 import { GAP, bytesIn, type Span } from './spread'
-import { PROSE, VERSE, VERSES, chapterOf, type Chapter } from '@/shared/fixtures/book'
+import { PROSE, VERSE, VERSES, chapterOf, type Chapter } from '@/features/book/fixtures/book'
 
 const meta = {
   title: 'Reading/Book',

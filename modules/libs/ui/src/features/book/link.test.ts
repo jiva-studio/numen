@@ -1,5 +1,22 @@
 import { describe, expect, it } from 'vitest'
-import { placeIn } from './link'
+import { placeIn, pointsAway } from './link'
+
+describe('whether a link leads out of the window', () => {
+  it('leads out of it where the address names another place', () => {
+    expect(pointsAway('https://example.invalid/away')).toBe(true)
+  })
+
+  it('leads nowhere outward, where the address is one the window serves', () => {
+    expect(pointsAway('OEBPS/second.xhtml#alpha')).toBe(false)
+    expect(pointsAway('#alpha')).toBe(false)
+  })
+
+  it('leads nowhere outward, where the href is no address at all', () => {
+    // An href a book wrote badly is asked of the book itself, which is what
+    // knows the place it meant.
+    expect(pointsAway('::')).toBe(false)
+  })
+})
 
 describe('where a link inside a book points', () => {
   it('names the document and the place in it', () => {

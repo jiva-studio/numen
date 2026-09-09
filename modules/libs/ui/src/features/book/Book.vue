@@ -10,7 +10,7 @@
  */
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, useTemplateRef, watch } from 'vue'
 
-import { useViewport } from '@/features/reader/viewport'
+import { useViewport } from '@/shared/lib/viewport'
 import { onNextFrame } from '@/shared/lib/clock'
 import { ALSO, HIGHLIGHT, highlight, unhighlight } from './highlight'
 import { placeIn, pointsAway, type BookLink } from './link'
