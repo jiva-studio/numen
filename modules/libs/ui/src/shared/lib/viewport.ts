@@ -3,7 +3,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import type { Ref, ShallowRef } from 'vue'
 
-import type { Extent, Size } from './geometry'
+import type { Size } from './geometry'
 
 export interface Viewport {
   /**
@@ -36,25 +36,25 @@ export const browserViewport: Viewport = {
  * none until it is drawn where somebody can see it.
  */
 export function useViewport(area: Readonly<ShallowRef<HTMLElement | null>>): {
-  viewport: Ref<Extent>
+  viewport: Ref<Size>
   measure: () => void
 } {
-  const viewport = ref<Extent>({ wide: 0, high: 0 })
+  const viewport = ref<Size>({ width: 0, height: 0 })
   let watching: (() => void) | undefined
 
   const measure = (): void => {
     if (!area.value) return
-    const wide = area.value.clientWidth
-    const high = area.value.clientHeight
-    if (wide <= 0 || high <= 0) return
-    viewport.value = { wide, high }
+    const width = area.value.clientWidth
+    const height = area.value.clientHeight
+    if (width <= 0 || height <= 0) return
+    viewport.value = { width, height }
   }
 
   onMounted(() => {
     measure()
     if (!area.value) return
-    watching = browserViewport.watch(area.value, ({ width, height }) => {
-      viewport.value = { wide: width, high: height }
+    watching = browserViewport.watch(area.value, (size) => {
+      viewport.value = size
     })
   })
 

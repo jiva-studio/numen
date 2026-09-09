@@ -247,7 +247,7 @@ defineExpose({
 .book__paper {
   /* How tall a column is set: a whole number of lines, which the reader works
      out once the text is laid out, and the whole of the area until it has. */
-  --book-paper: var(--book-high);
+  --book-paper: var(--book-height);
 
   box-sizing: border-box;
   block-size: var(--book-paper);

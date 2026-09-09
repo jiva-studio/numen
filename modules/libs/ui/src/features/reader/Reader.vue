@@ -101,7 +101,7 @@ const stand = (page: number, how: ScrollBehavior) => {
 
   // As far as the row goes: the last page cannot be brought any further left
   // than the end of it.
-  const furthest = Math.max(laid.value.length - viewport.value.wide, 0)
+  const furthest = Math.max(laid.value.length - viewport.value.width, 0)
   send(Math.min(Math.max(begins, 0), furthest), how)
 }
 
@@ -117,7 +117,7 @@ watch(
 // Zooming keeps the page in front in front. Every page changes width, so the
 // place along the row the hand was looking at has moved.
 watch(
-  () => laid.value.high,
+  () => laid.value.height,
   () => {
     requestAnimationFrame(() => stand(props.at, 'auto'))
   },
@@ -128,7 +128,7 @@ const boxOf = (page: number) => ({
   insetInlineStart: `${laid.value.starts[page] ?? 0}px`,
   insetBlockStart: `${GAP}px`,
   inlineSize: `${laid.value.widths[page] ?? 0}px`,
-  blockSize: `${laid.value.high}px`,
+  blockSize: `${laid.value.height}px`,
 })
 
 defineExpose({
@@ -159,7 +159,7 @@ defineExpose({
       <div
         v-if="pages.length > 0"
         class="reader__row relative"
-        :style="{ inlineSize: `${laid.length}px`, blockSize: `${laid.high + 2 * GAP}px` }"
+        :style="{ inlineSize: `${laid.length}px`, blockSize: `${laid.height + 2 * GAP}px` }"
       >
         <Sheet
           v-for="page in shown"

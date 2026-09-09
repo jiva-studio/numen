@@ -10,11 +10,11 @@ import {
   standAt,
   within,
   type Page,
-  type Viewport,
 } from './strip'
+import type { Size } from '@/shared/lib/geometry'
 
 /** A viewport a page stands in whole: tall enough for a page, and a few wide. */
-const VIEWPORT: Viewport = { wide: 900, high: 800 }
+const VIEWPORT: Size = { width: 900, height: 800 }
 
 /** Every page the same shape, the way a book is. */
 const book = (pages: number): Page[] =>
@@ -24,8 +24,8 @@ describe('the row a document makes', () => {
   it('draws a whole page in the viewport', () => {
     const laid = row(book(4), VIEWPORT, 1)
 
-    expect(laid.high).toBeLessThanOrEqual(VIEWPORT.high)
-    expect(laid.widths[0]).toBe(Math.round((laid.high * 612) / 792))
+    expect(laid.height).toBeLessThanOrEqual(VIEWPORT.height)
+    expect(laid.widths[0]).toBe(Math.round((laid.height * 612) / 792))
   })
 
   it('puts every page after the one before it, with a gap', () => {
@@ -72,7 +72,7 @@ describe('the row a document makes', () => {
     const one = row(book(4), VIEWPORT, 1)
     const two = row(book(4), VIEWPORT, 2)
 
-    expect(two.high).toBeGreaterThan(one.high)
+    expect(two.height).toBeGreaterThan(one.height)
     expect(two.widths[0]).toBeGreaterThan(one.widths[0]!)
     expect(two.length).toBeGreaterThan(one.length)
   })
@@ -87,7 +87,7 @@ describe('which pages are drawn', () => {
     expect(shown[0]).toBe(0)
     expect(shown.length).toBeLessThan(500)
     // Wide enough for the viewport, and for the reach beyond it on the far side.
-    const across = Math.ceil(VIEWPORT.wide / laid.widths[0]!)
+    const across = Math.ceil(VIEWPORT.width / laid.widths[0]!)
     expect(shown.length).toBeGreaterThan(across)
   })
 
@@ -125,7 +125,7 @@ describe('which page is in front', () => {
     const half = laid.starts[4]! - laid.widths[4]! / 2
 
     expect(inFront(laid, VIEWPORT, laid.starts[4]!)).toBe(4)
-    expect(inFront(laid, { wide: laid.widths[0]!, high: VIEWPORT.high }, half)).toBe(4)
+    expect(inFront(laid, { width: laid.widths[0]!, height: VIEWPORT.height }, half)).toBe(4)
   })
 
   it('is the first page at the beginning of the row', () => {
@@ -171,15 +171,15 @@ describe('a viewport nothing has been measured in', () => {
   it('makes no row at all', () => {
     // Until something has been measured there is no width to draw a page at,
     // and a page drawn at a made-up one is a page drawn and thrown away.
-    const laid = row(book(8), { wide: 0, high: 0 }, 1)
+    const laid = row(book(8), { width: 0, height: 0 }, 1)
 
-    expect(laid.high).toBe(0)
+    expect(laid.height).toBe(0)
     expect(laid.widths).toEqual([])
     expect(laid.length).toBe(0)
-    expect(within(laid, { wide: 0, high: 0 }, 0)).toEqual([])
+    expect(within(laid, { width: 0, height: 0 }, 0)).toEqual([])
   })
 
   it('makes no row in a viewport too short to stand a page in', () => {
-    expect(row(book(8), { wide: 900, high: 2 * GAP }, 1).widths).toEqual([])
+    expect(row(book(8), { width: 900, height: 2 * GAP }, 1).widths).toEqual([])
   })
 })

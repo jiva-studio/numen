@@ -26,7 +26,7 @@ export interface Flow {
   /** How far the columns run, in CSS pixels. */
   readonly along: number
   /** The reading area one spread fills, in CSS pixels. */
-  readonly wide: number
+  readonly width: number
   /** What stands between two columns, in CSS pixels. */
   readonly gap: number
   /** How many columns stand in one spread. */
@@ -53,8 +53,8 @@ export const NARROWEST = 448
  * How many columns a reading area holds. Two once each of them can be set at
  * the narrowest a column is read at, and one until then.
  */
-export function columnsIn(wide: number, size: number): number {
-  return wide >= 2 * (NARROWEST * size + GAP) ? 2 : 1
+export function columnsIn(width: number, size: number): number {
+  return width >= 2 * (NARROWEST * size + GAP) ? 2 : 1
 }
 
 /**
@@ -62,9 +62,9 @@ export function columnsIn(wide: number, size: number): number {
  * A column set to the height of the area it stands in ends part of the way
  * through a line, and the half of it below the edge is cut off.
  */
-export function columnHigh(high: number, line: number): number {
-  if (line <= 0 || high <= 0) return Math.max(high, 0)
-  return Math.max(Math.floor(high / line), 1) * line
+export function columnHeight(height: number, line: number): number {
+  if (line <= 0 || height <= 0) return Math.max(height, 0)
+  return Math.max(Math.floor(height / line), 1) * line
 }
 
 /**
@@ -73,11 +73,11 @@ export function columnHigh(high: number, line: number): number {
  */
 export function columnPitch(flow: Flow): number {
   if (flow.columns <= 0) return 0
-  return flow.wide / flow.columns
+  return flow.width / flow.columns
 }
 
 /** How wide one column is set: its share of the area, less the gap it keeps. */
-export function columnWide(flow: Flow): number {
+export function columnWidth(flow: Flow): number {
   return Math.max(columnPitch(flow) - flow.gap, 0)
 }
 
@@ -110,7 +110,7 @@ export function columnAt(flow: Flow, x: number): number {
  * column and beside an empty one, and only the runs say which.
  */
 export function columnsFilled(marks: readonly Mark[], flow: Flow): number {
-  if (columnWide(flow) <= 0 || marks.length === 0) return 0
+  if (columnWidth(flow) <= 0 || marks.length === 0) return 0
   let last = 0
   for (const mark of marks) last = Math.max(last, columnAt(flow, mark.x))
   return last + 1
@@ -174,12 +174,12 @@ export function spreads(flow: Flow): number {
  * of a reading area along from the one before it.
  */
 export function beginsAt(flow: Flow, spread: number): number {
-  return spread * flow.wide
+  return spread * flow.width
 }
 
 /** Which spread a place along the columns falls in. */
 export function spreadAt(flow: Flow, x: number): number {
-  if (columnWide(flow) <= 0) return 0
+  if (columnWidth(flow) <= 0) return 0
   const last = Math.max(spreads(flow) - 1, 0)
   return Math.min(Math.floor(columnAt(flow, x) / flow.columns), last)
 }

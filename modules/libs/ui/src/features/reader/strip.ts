@@ -5,7 +5,7 @@
  * pages are in the viewport and which one is in front are arithmetic, and a test
  * asks them without a browser.
  */
-import type { Extent } from '@/shared/lib/geometry'
+import type { Size } from '@/shared/lib/geometry'
 
 /** Where something sits on a page, in fractions of it. */
 export interface Rect {
@@ -44,9 +44,6 @@ export interface Page {
   readonly height: number
 }
 
-/** The area the pages are read in, in CSS pixels. */
-export type Viewport = Extent
-
 /** What stands between two pages, and around the row, in CSS pixels. */
 export const GAP = 16
 
@@ -72,7 +69,7 @@ const BEYOND = 1.5
  */
 export interface Row {
   /** How tall every page is drawn, in CSS pixels. */
-  readonly high: number
+  readonly height: number
   /** Where each page begins along the row, in CSS pixels. */
   readonly starts: readonly number[]
   /** How wide each page is drawn, in CSS pixels. */
@@ -93,20 +90,20 @@ export interface Row {
  * there is no width to draw a page at, and a page drawn at a made-up one is a
  * page drawn and thrown away.
  */
-export function row(pages: readonly Page[], viewport: Viewport, zoom: number): Row {
-  const high = Math.round((viewport.high - 2 * GAP) * zoom)
-  if (high <= 0) return { high: 0, starts: [], widths: [], length: 0 }
+export function row(pages: readonly Page[], viewport: Size, zoom: number): Row {
+  const height = Math.round((viewport.height - 2 * GAP) * zoom)
+  if (height <= 0) return { height: 0, starts: [], widths: [], length: 0 }
   const starts: number[] = []
   const widths: number[] = []
   let along = GAP
   for (let page = 0; page < pages.length; page++) {
     const size = sizeOf(pages, page)
-    const wide = Math.max(Math.round((high * size.width) / size.height), 1)
+    const width = Math.max(Math.round((height * size.width) / size.height), 1)
     starts.push(along)
-    widths.push(wide)
-    along += wide + GAP
+    widths.push(width)
+    along += width + GAP
   }
-  return { high, starts, widths, length: along }
+  return { height, starts, widths, length: along }
 }
 
 /** The size of one page, and the nearest thing to it that is known. */
@@ -123,9 +120,9 @@ function sizeOf(pages: readonly Page[], page: number): Page {
  * A book is five hundred pages and a page is half a megabyte. A row that drew
  * all of them would ask for a book's worth of pixels to show one page.
  */
-export function within(row: Row, viewport: Viewport, along: number): number[] {
-  const from = along - viewport.wide * BEYOND
-  const to = along + viewport.wide * (1 + BEYOND)
+export function within(row: Row, viewport: Size, along: number): number[] {
+  const from = along - viewport.width * BEYOND
+  const to = along + viewport.width * (1 + BEYOND)
   const out: number[] = []
   for (let page = 0; page < row.starts.length; page++) {
     const begins = row.starts[page]!
@@ -139,8 +136,8 @@ export function within(row: Row, viewport: Viewport, along: number): number[] {
  * The page in front: the one under the middle of the viewport. A page scrolled
  * halfway off is not the page a person is reading.
  */
-export function inFront(row: Row, viewport: Viewport, along: number): number {
-  const at = along + viewport.wide / 2
+export function inFront(row: Row, viewport: Size, along: number): number {
+  const at = along + viewport.width / 2
   let page = 0
   for (let i = 0; i < row.starts.length; i++) {
     if (row.starts[i]! > at) break

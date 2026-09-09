@@ -270,7 +270,7 @@ describe('a document the browser has laid out', () => {
 
     const style = (held.find('.book__paper').element as HTMLElement).style
     expect(style.getPropertyValue('--book-column')).toBe('478px')
-    expect(style.getPropertyValue('--book-high')).toBe('600px')
+    expect(style.getPropertyValue('--book-height')).toBe('600px')
 
     held.unmount()
   })

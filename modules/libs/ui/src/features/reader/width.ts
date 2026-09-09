@@ -23,7 +23,7 @@ export interface PageWidthState {
   readonly drawnAt: Ref<number>
 }
 
-export function usePageWidth(laid: () => Row, wide: (pixels: number) => void): PageWidthState {
+export function usePageWidth(laid: () => Row, atWidth: (pixels: number) => void): PageWidthState {
   /** The widest page there is, staged, in device pixels. */
   const needed = computed(() => {
     const widest = laid().widths.reduce((most, each) => Math.max(most, each), 0)
@@ -39,13 +39,13 @@ export function usePageWidth(laid: () => Row, wide: (pixels: number) => void): P
     if (!pixels) return
     if (!before) {
       drawnAt.value = pixels
-      wide(pixels)
+      atWidth(pixels)
       return
     }
     clearTimeout(settling)
     settling = setTimeout(() => {
       drawnAt.value = pixels
-      wide(pixels)
+      atWidth(pixels)
     }, SETTLED)
   })
 

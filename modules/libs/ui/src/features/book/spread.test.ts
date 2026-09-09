@@ -5,8 +5,8 @@ import {
   NARROWEST,
   beginsAt,
   bytesIn,
-  columnHigh,
-  columnWide,
+  columnHeight,
+  columnWidth,
   columnsIn,
   columnsFilled,
   columnsInAll,
@@ -31,9 +31,9 @@ const NARROW = 420
  * A column takes its share of the area, gap and all, which is how the browser
  * lays them out and how far a spread has to move.
  */
-const laid = (wide: number, columns: number, all: number): Flow => ({
-  along: (all * wide) / columns,
-  wide,
+const laid = (width: number, columns: number, all: number): Flow => ({
+  along: (all * width) / columns,
+  width,
   gap: GAP,
   columns,
 })
@@ -59,35 +59,35 @@ describe('how many columns a reading area takes', () => {
   })
 
   it('sets each column to its share of the area, less the gap it keeps', () => {
-    expect(columnWide({ along: 0, wide: WIDE, gap: GAP, columns: 2 })).toBe(WIDE / 2 - GAP)
-    expect(columnWide({ along: 0, wide: NARROW, gap: GAP, columns: 1 })).toBe(NARROW - GAP)
+    expect(columnWidth({ along: 0, width: WIDE, gap: GAP, columns: 2 })).toBe(WIDE / 2 - GAP)
+    expect(columnWidth({ along: 0, width: NARROW, gap: GAP, columns: 1 })).toBe(NARROW - GAP)
   })
 })
 
 describe('how tall a column is set', () => {
   it('is the lines that fit whole in the area, and no part of another', () => {
-    expect(columnHigh(1000, 24)).toBe(984)
-    expect(columnHigh(984, 24)).toBe(984)
+    expect(columnHeight(1000, 24)).toBe(984)
+    expect(columnHeight(984, 24)).toBe(984)
   })
 
   it('is one line in an area too short to hold one', () => {
     // The line runs past the foot of the area either way, and a column of no
     // height at all holds nothing and never ends.
-    expect(columnHigh(20, 24)).toBe(24)
+    expect(columnHeight(20, 24)).toBe(24)
   })
 
   it('is the whole of the area where the lines are of no known height', () => {
-    expect(columnHigh(1000, 0)).toBe(1000)
+    expect(columnHeight(1000, 0)).toBe(1000)
   })
 
   it('is nothing in an area nothing has been measured in', () => {
-    expect(columnHigh(0, 24)).toBe(0)
+    expect(columnHeight(0, 24)).toBe(0)
   })
 })
 
 describe('how many columns the text of a document fills', () => {
   /** One column of a narrow area, and the place the second one begins. */
-  const flow = { along: 2 * NARROW + GAP, wide: NARROW, gap: GAP, columns: 1 }
+  const flow = { along: 2 * NARROW + GAP, width: NARROW, gap: GAP, columns: 1 }
   const second = NARROW + GAP
 
   it('is counted off the run standing furthest along them', () => {
@@ -109,7 +109,7 @@ describe('how many columns the text of a document fills', () => {
 
   it('is no column at all where nothing was laid out', () => {
     expect(columnsFilled([], flow)).toBe(0)
-    expect(columnsFilled([{ at: 0, x: 0 }], { ...flow, wide: 0 })).toBe(0)
+    expect(columnsFilled([{ at: 0, x: 0 }], { ...flow, width: 0 })).toBe(0)
   })
 })
 
@@ -140,8 +140,8 @@ describe('how many spreads a document comes to', () => {
   })
 
   it('comes to nothing for a document with no text at all', () => {
-    expect(spreads({ along: 0, wide: WIDE, gap: GAP, columns: 2 })).toBe(0)
-    expect(columnsInAll({ along: 0, wide: WIDE, gap: GAP, columns: 2 })).toBe(0)
+    expect(spreads({ along: 0, width: WIDE, gap: GAP, columns: 2 })).toBe(0)
+    expect(columnsInAll({ along: 0, width: WIDE, gap: GAP, columns: 2 })).toBe(0)
   })
 
   it('comes to one spread for a document of one line', () => {
@@ -150,7 +150,7 @@ describe('how many spreads a document comes to', () => {
   })
 
   it('comes to nothing in an area nothing has been measured in', () => {
-    expect(spreads({ along: 1000, wide: 0, gap: GAP, columns: 1 })).toBe(0)
+    expect(spreads({ along: 1000, width: 0, gap: GAP, columns: 1 })).toBe(0)
   })
 })
 
@@ -160,7 +160,7 @@ describe('where a spread begins', () => {
 
     // A hundred spreads out, the place is still exactly the place the hundredth
     // column pair begins at: nothing is added up along the way.
-    const one = columnWide(flow)
+    const one = columnWidth(flow)
     expect(beginsAt(flow, 100)).toBe(200 * (one + GAP))
   })
 
@@ -175,7 +175,7 @@ describe('where a spread begins', () => {
 describe('which spread a place falls in', () => {
   it('is the spread the column at that place belongs to', () => {
     const flow = laid(WIDE, 2, 10)
-    const step = columnWide(flow) + GAP
+    const step = columnWidth(flow) + GAP
 
     expect(spreadAt(flow, 0)).toBe(0)
     expect(spreadAt(flow, step)).toBe(0)
@@ -194,7 +194,7 @@ describe('which spread a place falls in', () => {
 describe('which run of the text is in front', () => {
   /** Runs an offset apart, each one column further along. */
   const runs = (flow: Flow, count: number): Mark[] => {
-    const step = columnWide(flow) + GAP
+    const step = columnWidth(flow) + GAP
     return Array.from({ length: count }, (_, index) => ({ at: index * 100, x: index * step }))
   }
 
@@ -222,7 +222,7 @@ describe('which run of the text is in front', () => {
 
 describe('which spread an offset stands in', () => {
   const flow = laid(WIDE, 2, 10)
-  const step = columnWide(flow) + GAP
+  const step = columnWidth(flow) + GAP
   const marks: Mark[] = [
     { at: 0, x: 0 },
     { at: 100, x: 3 * step },
@@ -351,7 +351,7 @@ describe('a hand put down and lifted', () => {
 
 
 describe('the page a person is looking at', () => {
-  const flow = { along: 10 * WIDE, wide: WIDE, gap: GAP, columns: 2 }
+  const flow = { along: 10 * WIDE, width: WIDE, gap: GAP, columns: 2 }
   const document = { begins: 2000, ends: 3000 }
   const book = { begins: 0, ends: 10_000 }
 
@@ -359,7 +359,7 @@ describe('the page a person is looking at', () => {
   const filling = (columns: number): Mark[] =>
     Array.from({ length: columns }, (_, column) => ({
       at: document.begins + column,
-      x: column * (columnWide(flow) + GAP),
+      x: column * (columnWidth(flow) + GAP),
     }))
 
   const marks = filling(columnsInAll(flow))
@@ -393,7 +393,7 @@ describe('the page a person is looking at', () => {
 })
 
 describe('what is left of the document on the page in front', () => {
-  const flow: Flow = { along: 2700, wide: 800, gap: GAP, columns: 2 }
+  const flow: Flow = { along: 2700, width: 800, gap: GAP, columns: 2 }
   const marks: readonly Mark[] = [
     { at: 0, x: 10 },
     { at: 400, x: 1610 },

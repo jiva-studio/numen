@@ -15,7 +15,7 @@ import { onNextFrame } from '@/shared/lib/clock'
 import { ELSEWHERE, HIGHLIGHT, highlight, unhighlight } from './highlight'
 import { marksIn, offsetAt, rangesOver, runsIn, type Run } from './runs'
 import type { BookLink } from './link'
-import { GAP, LARGEST, SMALLEST, beginsAt, columnHigh, held, columnWide, columnsIn, holding, inFront, leftInDocument, pagesOf, spreads, type Flow, type Mark } from './spread'
+import { GAP, LARGEST, SMALLEST, beginsAt, columnHeight, held, columnWidth, columnsIn, holding, inFront, leftInDocument, pagesOf, spreads, type Flow, type Mark } from './spread'
 import { turnTo, type PageTurn } from './turn'
 import type { SettledBookProps } from './props'
 
@@ -54,13 +54,13 @@ export function useBookLayout(
    * Whether the reading area has been measured. A book is turned and never
    * scrolled, so its text is drawn only against an area of a known size.
    */
-  const measured = computed(() => viewport.value.wide > 0 && viewport.value.high > 0)
+  const measured = computed(() => viewport.value.width > 0 && viewport.value.height > 0)
 
-  const columns = computed(() => columnsIn(viewport.value.wide, textSize.value))
+  const columns = computed(() => columnsIn(viewport.value.width, textSize.value))
 
   const flow = computed<Flow>(() => ({
     along: along.value,
-    wide: viewport.value.wide,
+    width: viewport.value.width,
     gap: GAP,
     columns: columns.value,
   }))
@@ -82,8 +82,8 @@ export function useBookLayout(
   const setting = computed(() => ({
     '--book-run': columns.value === 1 ? '200%' : '100%',
     '--book-gap': `${GAP}px`,
-    '--book-column': `${columnWide(flow.value)}px`,
-    '--book-high': `${viewport.value.high}px`,
+    '--book-column': `${columnWidth(flow.value)}px`,
+    '--book-height': `${viewport.value.height}px`,
     '--book-size': `calc(var(--numen-prose-size) * ${textSize.value})`,
   }))
 
@@ -170,7 +170,7 @@ export function useBookLayout(
       const box = area.value
       const text = paper.value
       if (!box || !text) return
-      text.style.setProperty('--book-paper', `${columnHigh(box.clientHeight, lineOf(text))}px`)
+      text.style.setProperty('--book-paper', `${columnHeight(box.clientHeight, lineOf(text))}px`)
       // How far the columns run is asked of the box they are set in. The area
       // around it clips what overflows, and a box that clips is not asked how far
       // what it clipped reaches.
@@ -199,7 +199,7 @@ export function useBookLayout(
 
   // A reading area of another size, or a text of another size, is another set of
   // columns.
-  watch([() => viewport.value.wide, () => viewport.value.high, textSize], () => {
+  watch([() => viewport.value.width, () => viewport.value.height, textSize], () => {
     settle(keeping())
   })
 
