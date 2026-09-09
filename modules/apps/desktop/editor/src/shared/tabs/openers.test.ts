@@ -31,9 +31,11 @@ const vault = (stands: Record<string, FileKind> = {}) => {
 /** A note of one of three, as the vault answers what stands at its path. */
 const note = (type: FileKind['type']): FileKind => ({ kind: 'note', type })
 
-/** A book, a recording, and a file the vault holds no source for. */
+/**
+ * A book drawn as pictures of its pages, a book that reflows, a recording, and
+ * a file the vault holds no source for.
+ */
 const BOOK: FileKind = { kind: 'book', type: 'note', format: 'pdf' }
-/** A book made for a screen, which reflows to the room it is read in. */
 const REFLOWS: FileKind = { kind: 'book', type: 'note', format: 'epub' }
 const TALK: FileKind = { kind: 'recording', type: 'note' }
 const OTHER: FileKind = { kind: 'other', type: 'note' }

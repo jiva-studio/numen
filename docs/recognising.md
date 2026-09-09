@@ -58,7 +58,7 @@ What the paper printed is not kept. The page-label dictionary a born-digital PDF
 
 An EPUB is the exception. A book made for a screen has no pages of its own, so the page breaks it names from the printed edition it was set from are the only page names it has, and a page of one is called by its label.
 
-## A book made for a screen
+## Why an EPUB is not recognised
 
 Nothing here reads an EPUB. It carries its own text, a library takes that text out, and there is no artifact and no recogniser — see [An EPUB is reflowed in the window](adr/0042-an-epub-is-reflowed-in-the-window.md). What follows is what such a book gives a reader beyond that text.
 

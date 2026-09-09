@@ -3,6 +3,7 @@ package mcp
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -28,6 +29,14 @@ type Passage struct {
 	Text     string `json:"text" jsonschema:"the passage itself"`
 	Start    int    `json:"start" jsonschema:"where the passage begins in the source's text, in bytes; hand it to source_focus to put this place in front of the person"`
 	Length   int    `json:"length" jsonschema:"how long the passage is, in bytes"`
+	At       string `json:"at" jsonschema:"the address of this passage; write it into your answer as a markdown link where you speak about the passage, so that the person can go to it"`
+}
+
+// addressOf is where a passage is reached, as the window opens one. It is
+// written out here rather than left to be put together, because a passage
+// spoken about without one is a passage the person cannot go to.
+func addressOf(source string, start, length int) string {
+	return fmt.Sprintf("numen:%s?start=%d&length=%d", url.PathEscape(source), start, length)
 }
 
 // addNoteSearch is what the vault holds that answers what somebody typed. It
@@ -79,6 +88,7 @@ func addNoteSearch(server *sdk.Server, core Core) {
 				Text:     p.Text,
 				Start:    p.Start,
 				Length:   p.Length,
+				At:       addressOf(p.Source, p.Start, p.Length),
 			})
 		}
 		return nil, out{Matches: matches}, nil

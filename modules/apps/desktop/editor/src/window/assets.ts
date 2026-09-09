@@ -23,6 +23,7 @@ import type {
   SpineDocument as SpineDocumentMessage,
 } from '@numen/protocol'
 import { transport } from '@numen/wire'
+import { fetched } from '../shared/addresses'
 import { fingerprint, stamp } from '../shared/answers'
 import { running } from '../shared/artifacts'
 import type { Documents, HighlightedPage, Rect } from '../document-tab/open'
@@ -42,8 +43,7 @@ const served = {
   transcripts: createClient(TranscriptService, transport),
   /** The prose a page is written around. */
   articles: createClient(ArticleService, transport),
-  /** What a model read off a document's pages, the
- * documents a book that reflows is read in, and where each run of it stands. */
+  /** What a model read off a document's pages, and where each run of it stands. */
   readings: createClient(OcrService, transport),
 }
 
@@ -104,13 +104,6 @@ const spined = (one: SpineDocumentMessage): SpineDocument => ({
   path: one.path,
   span: { begins: one.offset, ends: one.offset + one.length },
 })
-
-/** What one address answered with, or what it refused with. */
-const fetched = async (at: string): Promise<string> => {
-  const answer = await fetch(at)
-  if (!answer.ok) throw new Error(`${at}: ${answer.status}`)
-  return await answer.text()
-}
 
 /**
  * Where one run of the text stands, page by page. The boxes come in the order

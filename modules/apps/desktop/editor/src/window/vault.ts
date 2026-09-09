@@ -506,15 +506,15 @@ const holding: Record<SourceKind, Source> = {
 /** A source this window has no word for is a file it holds no source for. */
 const sourceKind = (of: SourceKind): Source => holding[of] ?? 'other'
 
-/** Which sort of book stands at a path, in the words the window uses. */
-const formatted: Record<BookFormats, BookFormat | undefined> = {
+/** How a book at a path is drawn, in the words the window uses. */
+const drawn: Record<BookFormats, BookFormat | undefined> = {
   [BookFormats.UNSPECIFIED]: undefined,
   [BookFormats.PDF]: 'pdf',
   [BookFormats.EPUB]: 'epub',
 }
 
 /** A format this window has no word for is a book it draws as pages. */
-const bookFormat = (of: BookFormats): BookFormat | undefined => formatted[of]
+const bookFormat = (of: BookFormats): BookFormat | undefined => drawn[of]
 
 /** What a model's files are on this machine, in the words the window uses. */
 const fetched: Record<Presences, Presence> = {
