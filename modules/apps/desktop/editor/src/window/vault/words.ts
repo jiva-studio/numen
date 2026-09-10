@@ -231,6 +231,7 @@ export const around = (said: NeighbourhoodMessage): Neighbourhood => ({
         seat,
         label: one.label,
         through: one.through,
+        isMutual: one.mutual,
         mutual: one.mutual,
       },
     ]

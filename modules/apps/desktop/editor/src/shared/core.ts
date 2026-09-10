@@ -52,9 +52,21 @@ export interface Core {
     /** The folder the vault sits in, absolute on this machine. */
     path: string
     /** How far reading the vault has got. */
-    scan: { ready: boolean; failed: string; unwatched: string }
+    scan: {
+      isReady: boolean
+      ready: boolean
+      failureReason: string
+      failed: string
+      unwatchedPath: string
+      unwatched: string
+    }
     /** How far searching it by meaning has got. */
-    coverage: { chunkCount: bigint; embeddedCount: bigint; embedding: boolean }
+    coverage: {
+      chunkCount: bigint
+      embeddedCount: bigint
+      isEmbedding: boolean
+      embedding: boolean
+    }
   }>
   /**
    * Why an agent cannot be reached, and nothing where one can. Which agent
@@ -64,6 +76,7 @@ export interface Core {
   agentUnreachable(): Promise<string>
   changes(signal: AbortSignal): AsyncIterable<{
     paths: string[]
+    shouldReload: boolean
     reload: boolean
     renamed: readonly Move[]
   }>

@@ -22,8 +22,10 @@ export interface Theme {
   /** What the file is called, without the shelf. */
   readonly title: string
   /** Whether it ships inside the application. Every other theme is a file of the person's. */
+  readonly isBuiltIn: boolean
   readonly shipped: boolean
   /** It declares light and dark itself, so the mode has nothing left to choose. */
+  readonly isPinned: boolean
   readonly pinned: boolean
 }
 
@@ -82,7 +84,9 @@ export const themes: Themes = {
       themes: answer.themes.map((one) => ({
         name: one.name,
         title: one.title,
+        isBuiltIn: ships[one.shelf],
         shipped: ships[one.shelf],
+        isPinned: one.pinned,
         pinned: one.pinned,
       })),
       applied: answer.applied,

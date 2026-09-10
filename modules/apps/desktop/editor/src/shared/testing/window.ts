@@ -231,8 +231,20 @@ vi.mock('../../window/vault', () => ({
     state: async () => ({
       name: 'Vault',
       path: '/vaults/Physics',
-      scan: { ready: said.ready, failed: said.failed, unwatched: '' },
-      coverage: { chunkCount: 0n, embeddedCount: BigInt(said.embedded), embedding: false },
+      scan: {
+        isReady: said.ready,
+        ready: said.ready,
+        failureReason: said.failed,
+        failed: said.failed,
+        unwatchedPath: '',
+        unwatched: '',
+      },
+      coverage: {
+        chunkCount: 0n,
+        embeddedCount: BigInt(said.embedded),
+        isEmbedding: false,
+        embedding: false,
+      },
     }),
     agentUnreachable: async () => '',
     opening: async () => (said.opening ? { path: said.opening } : null),

@@ -25,6 +25,7 @@ export interface Transcript {
   /** The prose a page is written around, empty for words with times. */
   readonly prose: string
   /** False while a run writing the text holds it. */
+  readonly isEditable?: boolean
   readonly editable: boolean
 }
 
@@ -108,6 +109,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
   const prose = ref('')
   /** Whether the transcript may be written over now. */
   const editable = ref(true)
+  const isEditable = editable
   /** Whether the view keeps the line being said in sight. */
   const following = ref(true)
   /** Whether a person has been typing too recently for the view to move. */
@@ -438,6 +440,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
     cues,
     prose,
     editable,
+    isEditable,
     following,
     typing,
     duration,

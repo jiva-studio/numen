@@ -30,6 +30,7 @@ export const noteOperations: NoteOperations = {
         path: said.path,
         span: run(said.span ?? { from: 0, to: 0 }),
         text: said.text,
+        isComplete: said.done,
         done: said.done,
       }
     }
@@ -51,9 +52,11 @@ export const noteOperations: NoteOperations = {
     return {
       path: answer.path,
       title: answer.title,
+      hasFrontmatter: writes[answer.by],
       frontmatter: writes[answer.by],
       moved: answer.moved ? filed(answer.moved) : null,
       refusal: refusalIn(answer),
+      hasChanged: staleIn(answer),
       changed: staleIn(answer),
     }
   },

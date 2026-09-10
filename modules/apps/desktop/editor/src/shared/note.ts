@@ -32,6 +32,7 @@ export interface NoteEdit {
   readonly path: string
   readonly span: Span
   readonly text: string
+  readonly isComplete: boolean
   readonly done: boolean
 }
 
@@ -57,6 +58,7 @@ export interface Neighbour {
   /** The parent a sibling shares with the note in focus. */
   readonly through: string
   /** Whether both notes named the relationship. */
+  readonly isMutual: boolean
   readonly mutual: boolean
 }
 
@@ -169,11 +171,13 @@ export interface RenameResult {
   path: string
   title: string
   /** Whether the rename wrote the title into the frontmatter of the note. */
+  hasFrontmatter: boolean
   frontmatter: boolean
   /** What the file did. Null when it stayed where it was. */
   moved: MoveResult | null
   refusal: RefusalReason | null
   /** The note holds prose nobody here has seen, and nothing was written. */
+  hasChanged: boolean
   changed: boolean
 }
 

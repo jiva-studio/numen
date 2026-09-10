@@ -18,13 +18,17 @@ export const sessionCore: SessionCore = {
       name: said.name,
       path: said.path,
       scan: {
+        isReady: said.scan?.ready ?? false,
         ready: said.scan?.ready ?? false,
+        failureReason: said.scan?.failed ?? '',
         failed: said.scan?.failed ?? '',
+        unwatchedPath: said.scan?.unwatched ?? '',
         unwatched: said.scan?.unwatched ?? '',
       },
       coverage: {
         chunkCount: said.coverage?.chunkCount ?? 0n,
         embeddedCount: said.coverage?.embeddedCount ?? 0n,
+        isEmbedding: said.coverage?.embedding ?? false,
         embedding: said.coverage?.embedding ?? false,
       },
     }
@@ -34,6 +38,7 @@ export const sessionCore: SessionCore = {
     for await (const change of vault.watchVaultChanges({}, { signal })) {
       yield {
         paths: change.paths,
+        shouldReload: change.reload,
         reload: change.reload,
         renamed: change.renamed.map((went) => ({ from: went.from, to: went.to })),
       }

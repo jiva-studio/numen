@@ -278,9 +278,11 @@ export function windowAppearance(
   })
 
   /** Whether the theme worn declares light and dark itself. */
-  const pinned = computed(
-    () => list.value.find((one) => one.name === worn.value)?.pinned ?? false,
-  )
+  const isPinned = computed(() => {
+    const theme = list.value.find((one) => one.name === worn.value)
+    return theme?.isPinned ?? theme?.pinned ?? false
+  })
+  const pinned = isPinned
 
   /** A file arriving for a row the keyboard has already left is dropped. */
   const asks = answerGuard()
@@ -544,6 +546,7 @@ export function windowAppearance(
     mode,
     sized,
     bounds,
+    isPinned,
     pinned,
     lost,
     offers,

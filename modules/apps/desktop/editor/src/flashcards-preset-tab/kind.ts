@@ -117,20 +117,26 @@ export function usePresetTab(
     /** The file the settings came out of, presented at the next write. */
     at: string
     /** A write is out, and whether another is wanted once it lands. */
+    isWriting: boolean
     writing: boolean
+    isSelected: boolean
     wanted: boolean
     /** What the writes now in the air answer to, and null while none is out. */
     flight: Promise<void> | null
     /** The tab was held once at its close and says why; asked again it goes. */
+    hasMessage: boolean
     told: boolean
     /** An answer for a goal this tab has since left is dropped. */
     readonly asks: AnswerGuard
     /** A curve is out, and whether the settings moved again while it was. */
+    isDrawing: boolean
     drawing: boolean
+    shouldDrawAgain: boolean
     drawAgain: boolean
     /** The settings the curve in hand was asked under, as `shapeOf` reads them. */
     shape: string
     /** Whether the curve on screen is an answer, though a newer one may be out. */
+    isReal: boolean
     real: boolean
     /**
      * The settings this person has moved, which the file has not been told of.
@@ -156,14 +162,20 @@ export function usePresetTab(
     // A tab opens by reading the file the picture is worked out over.
     waiting: ref(true),
     at: '',
+    isWriting: false,
     writing: false,
+    isSelected: false,
     wanted: false,
     flight: null,
+    hasMessage: false,
     told: false,
     asks: answerGuard(),
+    isDrawing: false,
     drawing: false,
+    shouldDrawAgain: false,
     drawAgain: false,
     shape: '',
+    isReal: false,
     real: false,
     theirs: new Set<keyof Settings>(),
     answers: new Map<string, Curve>(),
@@ -231,17 +243,21 @@ export function usePresetTab(
     }
     // One curve is in the air at a time. A hand still moving asks for the
     // settings it comes to rest on, and the range in between is not drawn.
-    if (one.drawing) {
+    if (one.isDrawing) {
+      one.shouldDrawAgain = true
       one.drawAgain = true
       return
     }
+    one.isDrawing = true
     one.drawing = true
     try {
       await drawing(one)
     } finally {
+      one.isDrawing = false
       one.drawing = false
     }
-    if (!one.drawAgain) return
+    if (!one.shouldDrawAgain) return
+    one.shouldDrawAgain = false
     one.drawAgain = false
     await curves(one)
   }
@@ -253,7 +269,7 @@ export function usePresetTab(
     one.shape = shape
     const riding = one.curve.value.grid
 
-    const standsAlready = one.real && one.curve.value.goal === one.settings.value.goal
+    const standsAlready = (one.isReal ?? one.real) && one.curve.value.goal === one.settings.value.goal
     if (standsAlready) {
       // The numbers on screen were worked out for settings that no longer
       // stand, so they are drawn as the waiting they are: the range and the
@@ -267,6 +283,7 @@ export function usePresetTab(
       one.curve.value = meanwhile
       one.place.value = Math.max(meanwhile.now.at, 0)
     }
+    one.isReal = false
     one.real = false
     one.waiting.value = true
     let answer: Curve
@@ -300,6 +317,7 @@ export function usePresetTab(
       overdue: curve.overdue,
       unbegun: curve.unbegun,
     }
+    one.isReal = true
     one.real = true
     one.waiting.value = false
   }
@@ -338,6 +356,7 @@ export function usePresetTab(
     one.at = answer.at
     // The file has been told of every one of them, so none is still theirs.
     one.theirs.clear()
+    one.hasMessage = false
     one.told = false
   }
 
@@ -348,10 +367,12 @@ export function usePresetTab(
    * person, so nothing is sent on top of that notice.
    */
   const writes = (one: OpenPreset): Promise<void> => {
-    if (one.writing) {
+    if (one.isWriting || one.writing) {
+      one.isSelected = true
       one.wanted = true
       return one.flight ?? Promise.resolve()
     }
+    one.isWriting = true
     one.writing = true
     const flight = sending(one)
     one.flight = flight
@@ -361,8 +382,10 @@ export function usePresetTab(
   /** One write, and the write asked for while it was out, as one answer. */
   const sending = async (one: OpenPreset): Promise<void> => {
     await sends(one)
+    one.isWriting = false
     one.writing = false
-    const again = one.wanted && !one.changed.value
+    const again = (one.isSelected || one.wanted) && !one.changed.value
+    one.isSelected = false
     one.wanted = false
     if (again) {
       await writes(one)
@@ -390,7 +413,8 @@ export function usePresetTab(
   const shut = async (one: OpenPreset): Promise<boolean> => {
     await owed(one)
     if (one.theirs.size === 0 && !one.changed.value) return true
-    if (one.told) return true
+    if (one.hasMessage || one.told) return true
+    one.hasMessage = true
     one.told = true
     return false
   }

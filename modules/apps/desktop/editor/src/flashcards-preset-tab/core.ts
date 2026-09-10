@@ -83,6 +83,7 @@ export interface Settings {
    * whole of it, and a day at nothing schedules nothing.
    */
   readonly load: Load
+  readonly hasEvenLoad?: boolean
   readonly evenLoad: boolean
   /** What counts as learned, and how long a card is sent away for under one. */
   readonly learned: Rule
@@ -123,6 +124,7 @@ export const DEFAULTS: Settings = {
   counts: 'cards',
   backlog: 100,
   load: {},
+  hasEvenLoad: true,
   evenLoad: true,
   learned: 'interval',
   interval: 21,
@@ -208,6 +210,7 @@ export interface Point {
   readonly owed: number
   /** The share got through by this day, and whether a budget gets through it. */
   readonly through: number
+  readonly isSufficient?: boolean
   readonly enough: boolean
   /**
    * Every budget that closed the day here, as the schema names them. None is a
@@ -293,6 +296,7 @@ export interface Curve extends PresetCounts {
    * Whether this is the application's answer. A curve the window worked out
    * for itself stands until that answer lands.
    */
+  readonly isValid?: boolean
   readonly honest: boolean
 }
 
@@ -426,6 +430,7 @@ const settingsOf = (said: SettingsMessage | undefined): Settings =>
         counts: COUNTED[said.counts] ?? DEFAULTS.counts,
         backlog: said.backlog,
         load: said.load,
+        hasEvenLoad: said.evenLoad,
         evenLoad: said.evenLoad,
         learned: LEARNED[said.learned] ?? DEFAULTS.learned,
         interval: said.interval,
@@ -442,7 +447,7 @@ const sent = (settings: Settings) => ({
   counts: COUNTING[settings.counts],
   backlog: settings.backlog,
   load: { ...settings.load },
-  evenLoad: settings.evenLoad,
+  evenLoad: settings.hasEvenLoad ?? settings.evenLoad,
   learned: RULING[settings.learned],
   interval: settings.interval,
 })
@@ -458,6 +463,7 @@ const curved = (said: CurveMessage | undefined): Curve => ({
     retained: one.retained,
     owed: one.owed,
     through: one.through,
+    isSufficient: one.enough,
     enough: one.enough,
     closed: one.closed,
     clears: one.clears,
@@ -473,6 +479,7 @@ const curved = (said: CurveMessage | undefined): Curve => ({
   cards: said?.cards ?? 0,
   overdue: said?.overdue ?? 0,
   unbegun: said?.unbegun ?? 0,
+  isValid: true,
   honest: true,
 })
 
