@@ -26,17 +26,17 @@ const CUES: readonly Cue[] = [
 /** A recording that answers only once the tab has been drawn. */
 function talk(cues: readonly Cue[] = CUES): Recordings {
   return {
-    listened: async () => ({
+    getSummary: async () => ({
       duration: 85_000,
       mediaUrl: 'http://127.0.0.1:1/w/v/talk.mp3',
       mediaType: 'audio/mpeg',
       url: '',
     }),
-    carries: async () => ({ transcript: 'done' }),
-    transcript: async () => ({ cues, editable: true, prose: '' }),
-    article: async () => ({ cues: [], editable: true, prose: '' }),
-    writes: async () => {},
-    plays: async () => null,
+    getTaskStates: async () => ({ transcript: 'done' }),
+    readTranscript: async () => ({ cues, editable: true, prose: '' }),
+    readArticle: async () => ({ cues: [], editable: true, prose: '' }),
+    writeTranscript: async () => {},
+    findCueTime: async () => null,
   }
 }
 

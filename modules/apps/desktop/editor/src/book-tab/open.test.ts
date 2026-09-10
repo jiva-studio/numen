@@ -64,17 +64,17 @@ function shelf(book: Book | Error = BOOK, markup: Error | null = null) {
   const drawn: string[] = []
 
   const books: Books = {
-    shape: async (path) => {
+    getShape: async (path) => {
       asked.push(path)
       if (book instanceof Error) throw book
       return book
     },
-    markup: async (path, document, seen) => {
+    readMarkup: async (path, document, seen) => {
       drawn.push(`${path} ${document} ${seen}`)
       if (markup) throw markup
       return `<p data-offset="0">${document}</p>`
     },
-    entry: (path, name) => `/assets/${path}/${name}`,
+    getEntryUrl: (path, name) => `/assets/${path}/${name}`,
   }
 
   return { books, asked, drawn }

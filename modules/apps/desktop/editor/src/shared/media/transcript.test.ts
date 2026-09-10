@@ -48,29 +48,29 @@ function talk(
   const written: (readonly Cue[])[] = []
 
   const recordings: Recordings = {
-    listened: async (path) => {
+    getSummary: async (path) => {
       asked.push(`about ${path}`)
       if (said instanceof Error) throw said
       return said
     },
-    carries: async (path) => {
+    getTaskStates: async (path) => {
       asked.push(`carries ${path}`)
       return carried
     },
-    transcript: async (path) => {
+    readTranscript: async (path) => {
       asked.push(`cues ${path}`)
       if (cues instanceof Error) throw cues
       return { cues, editable: true, prose: '' }
     },
-    article: async (path) => {
+    readArticle: async (path) => {
       asked.push(`prose ${path}`)
       return { cues: [], editable: true, prose: 'A page nothing timed.' }
     },
-    writes: async (path, kept) => {
+    writeTranscript: async (path, kept) => {
       asked.push(`writes ${path}`)
       written.push(kept)
     },
-    plays: async (path, run) => {
+    findCueTime: async (path, run) => {
       asked.push(`plays ${path} ${run.from} ${run.to}`)
       return at
     },
@@ -353,7 +353,7 @@ describe('a recording opened at a place in its words', () => {
 
   it('says what it could not ask, and plays on', async () => {
     const { recordings } = talk()
-    recordings.plays = async () => {
+    recordings.findCueTime = async () => {
       throw new Error('the words are being written')
     }
     const heard = transcript(recordings, 'talks/Ants.mp3')
@@ -404,12 +404,12 @@ describe('two questions about the words in flight at once', () => {
       letGo = done
     })
     const recordings: Recordings = {
-      listened: async () => (++asks > 1 ? new Promise<RecordingSummary>(() => {}) : SUMMARY),
-      carries: async () => ({ transcript: 'done' }),
-      transcript: async () => held,
-      article: async () => held,
-      writes: async () => {},
-      plays: async () => null,
+      getSummary: async () => (++asks > 1 ? new Promise<RecordingSummary>(() => {}) : SUMMARY),
+      getTaskStates: async () => ({ transcript: 'done' }),
+      readTranscript: async () => held,
+      readArticle: async () => held,
+      writeTranscript: async () => {},
+      findCueTime: async () => null,
     }
     return { recordings, letGo: () => letGo({ cues: CUES, editable: true, prose: '' }) }
   }
@@ -580,12 +580,12 @@ describe('a transcript asked for twice at once', () => {
     const answers: ((said: Transcript) => void)[] = []
 
     const recordings: Recordings = {
-      listened: async () => SUMMARY,
-      carries: async () => ({ transcript: 'done' }),
-      transcript: () => new Promise<Transcript>((done) => void answers.push(done)),
-      article: async () => early,
-      writes: async () => {},
-      plays: async () => null,
+      getSummary: async () => SUMMARY,
+      getTaskStates: async () => ({ transcript: 'done' }),
+      readTranscript: () => new Promise<Transcript>((done) => void answers.push(done)),
+      readArticle: async () => early,
+      writeTranscript: async () => {},
+      findCueTime: async () => null,
     }
 
     const heard = transcript(recordings, 'talks/Ants.mp3')
@@ -648,7 +648,7 @@ describe('what the tab says where the words would stand', () => {
     const heard = transcript(recordings, 'talks/Ants.mp3', { through: played().player, quiet: 5 })
     await settled()
 
-    recordings.writes = async () => {
+    recordings.writeTranscript = async () => {
       throw new Error('the transcript is being listened to')
     }
     heard.typed('One.\nThe second thing said.\nThe third thing said.')
@@ -810,7 +810,7 @@ describe('the words as a person edits them', () => {
 
   it('are owed again where the write was refused', async () => {
     const { recordings } = talk()
-    recordings.writes = async () => {
+    recordings.writeTranscript = async () => {
       throw new Error('the transcript is held')
     }
     const heard = transcript(recordings, 'talks/Ants.mp3', { through: played().player, quiet: 5 })
@@ -839,12 +839,12 @@ describe('the words as a person edits them', () => {
 describe('a transcript a run still holds', () => {
   it('is not edited', async () => {
     const recordings: Recordings = {
-      listened: async () => SUMMARY,
-      carries: async () => ({ transcript: 'done' }),
-      transcript: async () => ({ cues: CUES, editable: false, prose: '' }),
-      article: async () => ({ cues: [], editable: false, prose: '' }),
-      writes: async () => {},
-      plays: async () => null,
+      getSummary: async () => SUMMARY,
+      getTaskStates: async () => ({ transcript: 'done' }),
+      readTranscript: async () => ({ cues: CUES, editable: false, prose: '' }),
+      readArticle: async () => ({ cues: [], editable: false, prose: '' }),
+      writeTranscript: async () => {},
+      findCueTime: async () => null,
     }
     const heard = transcript(recordings, 'talks/Ants.mp3')
     await settled()
@@ -920,7 +920,7 @@ describe('typing that lands while a write is in the air', () => {
   it('is written once the one before it has answered', async () => {
     const held: { answer: (() => void) | null } = { answer: null }
     const { recordings, written } = talk()
-    recordings.writes = (_, kept) => {
+    recordings.writeTranscript = (_, kept) => {
       written.push(kept)
       return new Promise<void>((done) => {
         held.answer = done

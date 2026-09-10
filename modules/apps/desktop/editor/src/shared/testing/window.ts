@@ -287,15 +287,15 @@ vi.mock('../../window/vault', () => ({
 
 vi.mock('../../document-tab/wire', () => ({
   documents: {
-    shape: async () => ({ pages: 1, pageSizes: [{ wide: 100, high: 100 }] }),
-    page: () => '',
-    places: async () => [],
+    getShape: async () => ({ pages: 1, pageSizes: [{ wide: 100, high: 100 }] }),
+    getPageUrl: () => '',
+    getHighlights: async () => [],
   },
 }))
 
 vi.mock('../../book-tab/wire', () => ({
   books: {
-    shape: async (path: string) => ({
+    getShape: async (path: string) => ({
       title: path,
       span: { begins: 0, ends: 900 },
       documents: [{ path: 'text/one.xhtml', span: { begins: 0, ends: 900 } }],
@@ -305,29 +305,29 @@ vi.mock('../../book-tab/wire', () => ({
       pageBytes: 900,
       at: '20480 1700000000000000000 book.epub',
     }),
-    markup: async () => '<p data-offset="0">the book</p>',
-    entry: () => '',
+    readMarkup: async () => '<p data-offset="0">the book</p>',
+    getEntryUrl: () => '',
   },
 }))
 
 vi.mock('../media/wire', () => ({
   recordings: {
-    listened: async (path: string) => {
+    getSummary: async (path: string) => {
       asked.listened.push(path)
       const { duration, mediaUrl, mediaType } = said.transcribed
       return { duration, mediaUrl, mediaType, url: '' }
     },
-    carries: async (path: string) => said.carries[path] ?? { transcript: 'done' },
-    transcript: async () => ({
+    getTaskStates: async (path: string) => said.carries[path] ?? { transcript: 'done' },
+    readTranscript: async () => ({
       cues: said.transcribed.cues,
       prose: '',
       editable: said.transcribed.editable,
     }),
-    article: async () => ({ cues: [], prose: '', editable: said.transcribed.editable }),
-    writes: async (path: string, cues: readonly { text: string }[]) => {
+    readArticle: async () => ({ cues: [], prose: '', editable: said.transcribed.editable }),
+    writeTranscript: async (path: string, cues: readonly { text: string }[]) => {
       asked.transcribed.push(`${path} ${cues.map((one) => one.text).join(' / ')}`)
     },
-    plays: async (path: string, span: { from: number }) =>
+    findCueTime: async (path: string, span: { from: number }) =>
       said.transcribed.cues.find((one) => one.from >= span.from)?.from ?? null,
   },
 }))

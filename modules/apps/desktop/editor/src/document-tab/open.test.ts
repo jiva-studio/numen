@@ -28,13 +28,13 @@ function book(shape: Shape | Error = SHAPE, where: readonly (readonly Highlighte
   const spans: string[] = []
 
   const documents: Documents = {
-    shape: async (path) => {
+    getShape: async (path) => {
       asked.push(path)
       if (shape instanceof Error) throw shape
       return shape
     },
-    page: (path, at, wide) => `${path} ${at} ${wide}`,
-    highlights: async (path, asking) => {
+    getPageUrl: (path, at, wide) => `${path} ${at} ${wide}`,
+    getHighlights: async (path, asking) => {
       for (const one of asking) spans.push(`${path} ${one.from} ${one.to}`)
       return asking.map((_, i) => where[i] ?? [])
     },
@@ -215,7 +215,7 @@ describe('a document opened at a place in its text', () => {
 
   it('says what it could not ask, and reads on', async () => {
     const { documents } = book()
-    documents.highlights = async () => {
+    documents.getHighlights = async () => {
       throw new Error('the layer is being written')
     }
     const read = openDocument(documents, 'Book.pdf')

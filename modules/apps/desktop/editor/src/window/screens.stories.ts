@@ -482,17 +482,17 @@ const PLAYER: Player = {
 }
 
 const heard = (cues: readonly Cue[]): Recordings => ({
-  listened: async () => ({
+  getSummary: async () => ({
     duration: RUNS,
     mediaUrl: MEDIA,
     mediaType: 'audio/mpeg',
     url: '',
   }),
-  carries: async () => ({ transcript: 'done' }),
-  transcript: async () => ({ cues, editable: true, prose: '' }),
-  article: async () => ({ cues: [], editable: true, prose: '' }),
-  writes: async () => {},
-  plays: async () => null,
+  getTaskStates: async () => ({ transcript: 'done' }),
+  readTranscript: async () => ({ cues, editable: true, prose: '' }),
+  readArticle: async () => ({ cues: [], editable: true, prose: '' }),
+  writeTranscript: async () => {},
+  findCueTime: async () => null,
 })
 
 /** The words heard in a recording, against the moment each was said. */
@@ -698,12 +698,12 @@ const overLine = (at: number, ends: number) => ({
 const HIGHLIGHTS = [overLine(10, 396), overLine(11, 412), overLine(12, 372)]
 
 const BOOK: Documents = {
-  shape: async () => ({
+  getShape: async () => ({
     pages: Array.from({ length: LEAVES }, () => PAGE),
     at: '1024 1700000000000000000 book.pdf',
   }),
-  page: (_path, at) => pageAt(at),
-  highlights: async () => [[{ page: OPENS_AT, rects: HIGHLIGHTS }]],
+  getPageUrl: (_path, at) => pageAt(at),
+  getHighlights: async () => [[{ page: OPENS_AT, rects: HIGHLIGHTS }]],
 }
 
 /**

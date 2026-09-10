@@ -41,16 +41,16 @@ const highlighted = (run: RunMessage): HighlightedPage[] => {
  * it is asked for in device pixels.
  */
 export const documents: Documents = {
-  shape: async (path) => {
+  getShape: async (path) => {
     const answer = await waiting(() => served.documents.getDocument({ path }))
     return {
       pages: answer.pages.map((one) => ({ width: one.width, height: one.height })),
       at: stamp(answer.fingerprint) ?? '',
     }
   },
-  page: (path, at, wide, seen) =>
+  getPageUrl: (path, at, wide, seen) =>
     `${asset(path)}/pages/${at}?wide=${wide}&${named(seen)}`,
-  highlights: async (path, spans) => {
+  getHighlights: async (path, spans) => {
     const answer = await waiting(() => served.readings.readOcr({ path, spans: [...spans] }))
     return spans.map((_, at) => {
       const run = answer.runs[at]

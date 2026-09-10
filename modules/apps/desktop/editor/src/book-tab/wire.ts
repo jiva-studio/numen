@@ -25,7 +25,7 @@ const spined = (one: SpineDocumentMessage): SpineDocument => ({
  * and bytes are answered at an address.
  */
 export const books: Books = {
-  shape: async (path) => {
+  getShape: async (path) => {
     const answer = await waiting(() => served.books.getBook({ path }))
     return {
       title: answer.title,
@@ -42,7 +42,7 @@ export const books: Books = {
       at: stamp(answer.fingerprint) ?? '',
     }
   },
-  markup: async (path, document, seen) => {
+  readMarkup: async (path, document, seen) => {
     const answer = await waiting(() =>
       served.books.readBookMarkup({
         path,
@@ -52,6 +52,6 @@ export const books: Books = {
     )
     return answer.markup
   },
-  entry: (path, name, seen) =>
+  getEntryUrl: (path, name, seen) =>
     `${asset(path)}/${name.split('/').map(encodeURIComponent).join('/')}?${named(seen)}`,
 }

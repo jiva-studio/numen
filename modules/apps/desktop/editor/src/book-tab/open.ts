@@ -69,7 +69,7 @@ export interface Book {
 /** Everything a book tab asks of the application. */
 export interface Books {
   /** What the book is: its documents, the places it names, and its pages. */
-  shape(path: string): Promise<Book>
+  getShape(path: string): Promise<Book>
   /**
    * One document of the spine as it is drawn: markup in which every run of text
    * carries the byte offset it begins at in the book's text, and every picture
@@ -78,12 +78,12 @@ export interface Books {
    * The file the shape came out of is named in the ask, so the markup is one
    * drawing of one book and is answered with that or with nothing.
    */
-  markup(path: string, document: string, seen: string): Promise<string>
+  readMarkup(path: string, document: string, seen: string): Promise<string>
   /**
    * Where one entry of the book's archive is served, as an address to point a
    * picture at. It names the same file the markup was asked for.
    */
-  entry(path: string, name: string, seen: string): string
+  getEntryUrl(path: string, name: string, seen: string): string
 }
 
 /** What a book tab says of a book that names nothing. */
@@ -221,10 +221,10 @@ export function openBook(
     if (!document || document.path === standing.value?.path) return
     const asked = ++wanted
     try {
-      const drawn = await books.markup(path, document.path, seen.value)
+      const drawn = await books.readMarkup(path, document.path, seen.value)
       if (!open || asked !== wanted) return
       standing.value = document
-      markup.value = pointedAt(drawn, (name) => books.entry(path, name, seen.value))
+      markup.value = pointedAt(drawn, (name) => books.getEntryUrl(path, name, seen.value))
     } catch (error) {
       if (!open || asked !== wanted) return
       said(troubleWords(error), 'refusal')
@@ -237,7 +237,7 @@ export function openBook(
    */
   const shape = (async () => {
     try {
-      const said = await books.shape(path)
+      const said = await books.getShape(path)
       if (!open) return
       title.value = said.title
       span.value = said.span

@@ -89,9 +89,9 @@ const UNNAMED: Book = { ...NAMED, parts: [] }
 
 /** A book on a shelf: one document, drawn as it stands. */
 const shelf = (book: Book): Books => ({
-  shape: async () => book,
-  markup: async () => document_.markup,
-  entry: (_path, name) => `/assets/book.epub/${name.split("/").map(encodeURIComponent).join("/")}`,
+  getShape: async () => book,
+  readMarkup: async () => document_.markup,
+  getEntryUrl: (_path, name) => `/assets/book.epub/${name.split("/").map(encodeURIComponent).join("/")}`,
 })
 
 /** The two documents of a book whose text points about inside itself. */
@@ -144,9 +144,9 @@ const CROSSED: Book = {
 
 /** That book on a shelf, each document of the spine drawn as it stands. */
 const crossed: Books = {
-  shape: async () => CROSSED,
-  markup: async (_path, document) => (document === SECOND_PATH ? SECOND.markup : FIRST.markup),
-  entry: (_path, name) => `/assets/book.epub/${name.split("/").map(encodeURIComponent).join("/")}`,
+  getShape: async () => CROSSED,
+  readMarkup: async (_path, document) => (document === SECOND_PATH ? SECOND.markup : FIRST.markup),
+  getEntryUrl: (_path, name) => `/assets/book.epub/${name.split("/").map(encodeURIComponent).join("/")}`,
 }
 
 interface Knobs {

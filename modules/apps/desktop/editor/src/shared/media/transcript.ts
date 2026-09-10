@@ -51,20 +51,20 @@ export interface RecordingSummary {
 /** Everything a recording tab asks of the application. */
 export interface Recordings {
   /** How long the recording runs, and how much of it has been written down. */
-  listened(path: string): Promise<RecordingSummary>
+  getSummary(path: string): Promise<RecordingSummary>
   /** What the file carries, which says which of the two texts to read. */
-  carries(path: string): Promise<ArtifactStates>
+  getTaskStates(path: string): Promise<ArtifactStates>
   /** The words heard in the recording, in the order they were spoken. */
-  transcript(path: string): Promise<Transcript>
+  readTranscript(path: string): Promise<Transcript>
   /** The prose the page is written around, where nothing timed it. */
-  article(path: string): Promise<Transcript>
+  readArticle(path: string): Promise<Transcript>
   /** The words as a person has edited them, kept against the recording. */
-  writes(path: string, cues: readonly Cue[]): Promise<void>
+  writeTranscript(path: string, cues: readonly Cue[]): Promise<void>
   /**
    * The millisecond a span of the words written down is played from, and
    * nothing where no cue holds it.
    */
-  plays(path: string, span: Span): Promise<number | null>
+  findCueTime(path: string, span: Span): Promise<number | null>
 }
 
 /**
@@ -223,7 +223,7 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
   const reads = async () => {
     const mine = asks.ask()
     try {
-      const said = await recordings.listened(path)
+      const said = await recordings.getSummary(path)
       if (!mine.lands()) return
       duration.value = said.duration
       address.value = said.mediaUrl
@@ -244,11 +244,11 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
 
       // What the file carries says which text to read. A url publishing words
       // against a clock carries a transcript; every other page carries prose.
-      const carried = await recordings.carries(path)
+      const carried = await recordings.getTaskStates(path)
       if (!mine.lands()) return
       const spoke = await (carried.transcript
-        ? recordings.transcript(path)
-        : recordings.article(path))
+        ? recordings.readTranscript(path)
+        : recordings.readArticle(path))
       if (!mine.lands()) return
       cues.value = spoke.cues
       editable.value = spoke.editable
@@ -326,7 +326,7 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
     if (same(next, cues.value)) return
     writing = true
     try {
-      await recordings.writes(path, next)
+      await recordings.writeTranscript(path, next)
       if (!open) return
       cues.value = next
       trouble.value = ''
@@ -375,7 +375,7 @@ export function transcript(recordings: Recordings, path: string, how: Transcript
     await opened
     if (!open || spans.length === 0) return
     try {
-      const ms = await recordings.plays(path, spans[0]!)
+      const ms = await recordings.findCueTime(path, spans[0]!)
       if (!open || ms === null) return
       go(ms)
     } catch (error) {

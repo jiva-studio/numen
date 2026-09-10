@@ -50,7 +50,7 @@ export interface Shape {
 /** Everything a document tab asks of the application. */
 export interface Documents {
   /** How many pages the document has, and how big each one is. */
-  shape(path: string): Promise<Shape>
+  getShape(path: string): Promise<Shape>
   /**
    * Where one page is drawn `wide` device pixels across, as an address to point
    * a picture at.
@@ -58,13 +58,13 @@ export interface Documents {
    * The file the shape came out of is named in the address, so the address is
    * one drawing of one document and is answered with that or with nothing.
    */
-  page(path: string, at: number, wide: number, seen: string): string
+  getPageUrl(path: string, at: number, wide: number, seen: string): string
   /**
    * Where spans of the document's own text stand on its pages, one answer
    * per span and in the order they were asked about. A span nothing was
    * recorded for stands nowhere.
    */
-  highlights(
+  getHighlights(
     path: string,
     spans: readonly Span[],
   ): Promise<readonly (readonly HighlightedPage[])[]>
@@ -117,7 +117,7 @@ export function openDocument(documents: Documents, path: string) {
    * the document has been read and the room it is read in has been measured.
    */
   const pictureOf = (page: number): string =>
-    pages.value.length > 0 && wide.value > 0 ? documents.page(path, page, wide.value, seen.value) : ''
+    pages.value.length > 0 && wide.value > 0 ? documents.getPageUrl(path, page, wide.value, seen.value) : ''
 
   /** Where the page in front is drawn. */
   const picture = computed(() => pictureOf(at.value))
@@ -131,7 +131,7 @@ export function openDocument(documents: Documents, path: string) {
    */
   const shape = (async () => {
     try {
-      const said = await documents.shape(path)
+      const said = await documents.getShape(path)
       if (!open) return
       pages.value = said.pages
       seen.value = said.at
@@ -180,7 +180,7 @@ export function openDocument(documents: Documents, path: string) {
     await shape
     if (!open || spans.length === 0) return
     try {
-      const where = await documents.highlights(path, spans)
+      const where = await documents.getHighlights(path, spans)
       if (!open) return
       await highlight(where)
     } catch (error) {

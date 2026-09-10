@@ -34,17 +34,17 @@ const LONG: readonly Cue[] = [
 
 /** A recording that answers what it holds and writes nothing back. */
 const talk = (cues: readonly Cue[]): Recordings => ({
-  listened: async () => ({
+  getSummary: async () => ({
     duration: 85_000,
     mediaUrl: 'http://127.0.0.1:1/w/v/talk.mp3',
     mediaType: 'audio/mpeg',
     url: '',
   }),
-  carries: async () => ({ transcript: 'done' }),
-  transcript: async () => ({ cues, editable: true, prose: '' }),
-  article: async () => ({ cues: [], editable: true, prose: '' }),
-  writes: async () => {},
-  plays: async () => null,
+  getTaskStates: async () => ({ transcript: 'done' }),
+  readTranscript: async () => ({ cues, editable: true, prose: '' }),
+  readArticle: async () => ({ cues: [], editable: true, prose: '' }),
+  writeTranscript: async () => {},
+  findCueTime: async () => null,
 })
 
 /** The one player the window has, faked: nothing here makes a sound. */

@@ -35,7 +35,7 @@ const editable = async (path: string): Promise<boolean> => {
  * load sound through, and the application answers where it does.
  */
 export const recordings: Recordings = {
-  listened: async (path) => {
+  getSummary: async (path) => {
     const answer = await waiting(() => served.recordings.getRecording({ path }))
     return {
       duration: answer.durationMs,
@@ -44,20 +44,21 @@ export const recordings: Recordings = {
       url: answer.url,
     }
   },
-  carries: (path) => running.carries(path),
-  transcript: async (path) => {
+  getTaskStates: (path) => running.carries(path),
+  readTranscript: async (path) => {
     const answer = await waiting(() => served.transcripts.readTranscript({ path }))
     return { cues: answer.cues.map(heard), prose: '', editable: await editable(path) }
   },
-  article: async (path) => {
+  readArticle: async (path) => {
     const answer = await waiting(() => served.articles.readArticle({ path }))
     return { cues: [], prose: answer.text, editable: await editable(path) }
   },
-  writes: async (path, cues) => {
+  writeTranscript: async (path, cues) => {
     await waiting(() => served.transcripts.writeTranscript({ path, cues: [...cues] }))
   },
-  plays: async (path, span) => {
+  findCueTime: async (path, span) => {
     const answer = await waiting(() => served.transcripts.readTranscript({ path, span }))
     return answer.cues[0]?.from ?? null
   },
 }
+
