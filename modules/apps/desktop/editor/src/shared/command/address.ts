@@ -6,13 +6,15 @@
  * person is offered the import at all.
  */
 
-/** Whether these words are somewhere a browser would go. */
-export const isWebAddress = (typed: string): boolean => {
+export const isWebUrl = (typed: string): boolean => {
   try {
     const address = new URL(typed.trim())
     return (address.protocol === 'http:' || address.protocol === 'https:') && address.hostname !== ''
   } catch {
-    // Words a URL cannot be made of are words nobody typed an address in.
+    // A string a URL cannot be constructed from is not a web url.
     return false
   }
 }
+
+export const isWebAddress = isWebUrl
+

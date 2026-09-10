@@ -6,121 +6,12 @@
  * the palette, the commands, the corner, and the quit.
  */
 import { commandKeyChord, keyChord } from '@numen/ui'
-import type { Artifact, ArtifactState } from './artifacts'
-import type { ErrorCode, RefusalReason } from './note'
-import type { VaultErrorCode, VaultRefusalReason } from './vaults'
+import { ERRORS, REFUSED, VAULT_ERRORS, UNVAULTED } from './words/errors'
+import { FETCHED, MADE } from './words/artifacts'
 
-/** What the vault reports as error for a command, in words a person reads. */
-export const ERRORS: Record<ErrorCode, string> = {
-  missing: 'that note is not in the vault',
-  notANote: 'that file is not a note',
-  notText: 'that file is not text',
-  tooLarge: 'that note is longer than this writes',
-  bodyRefused: 'that text cannot be written into a note',
-  unreadable: 'the frontmatter of that note cannot be read',
-  occupied: 'a note of that name is filed there, so the note was renamed and its file was not',
-  unnameable: 'a note cannot be called that',
-  notAStencil: 'that note is not a stencil',
-  notADeck: 'that note is not a deck',
-  deckTooLarge: 'that deck is longer than this reads',
-  notAPreset: 'that note is not a preset',
-}
-export const REFUSED = ERRORS
+export { ERRORS, REFUSED, VAULT_ERRORS, UNVAULTED }
+export { FETCHED, MADE }
 
-/**
- * What an artifact of a file now stands at, in the window's own voice.
- *
- * They answer a person who chose Recognise, Transcribe or Proofread from a
- * menu, and they say the word that person chose. A run under way is said as a
- * report and everything else as a refusal, so no two of them may say the same
- * thing.
- */
-/**
- * What a run over the address a note points at came to.
- *
- * A person who chose Fetch again asked for the address to be read afresh, and
- * it was: nothing here says the words were already there.
- */
-export const FETCHED: Record<ArtifactState, string> = {
-  none: 'The address published none of what was asked for.',
-  queued: 'This address is in line, behind the one being fetched now.',
-  running: 'This address is being fetched now.',
-  stopped: 'Fetching this address stopped part way.',
-  done: 'Fetched what is at this address.',
-  empty: 'The address published none of what was asked for.',
-  failed: 'This address could not be fetched:',
-}
-
-export const MADE: Record<Artifact, Record<ArtifactState, string>> = {
-  ocr: {
-    none: 'This scan has not been recognised.',
-    queued: 'This scan is in line, behind the one being recognised now.',
-    running: 'This scan is being recognised now.',
-    stopped: 'Recognising this scan stopped part way.',
-    done: 'This scan has already been recognised.',
-    empty: 'Nothing was read in this scan.',
-    failed: 'This scan could not be opened:',
-  },
-  transcript: {
-    none: 'This recording has not been transcribed.',
-    queued: 'This recording is in line, behind the one being transcribed now.',
-    running: 'This recording is being transcribed now.',
-    stopped: 'Transcribing this recording stopped part way.',
-    done: 'This recording has already been transcribed.',
-    empty: 'There is no speech in this recording.',
-    failed: 'This recording could not be opened:',
-  },
-  'transcript.corrected': {
-    none: 'Nothing has been transcribed here, so there is nothing to proofread.',
-    queued: 'This transcript is in line, behind the one being put right now.',
-    running: 'This transcript is being put right now.',
-    stopped: 'Putting this transcript right stopped part way.',
-    done: 'This transcript has already been put right.',
-    empty: 'There were no words in this transcript to put right.',
-    failed: 'This transcript could not be put right:',
-  },
-  'ocr.corrected': {
-    none: 'Nothing has been recognised here, so there is nothing to proofread.',
-    queued: 'This reading is in line, behind the one being put right now.',
-    running: 'This reading is being put right now.',
-    stopped: 'Putting this reading right stopped part way.',
-    done: 'This reading has already been put right.',
-    empty: 'There were no words in this reading to put right.',
-    failed: 'This reading could not be put right:',
-  },
-  copy: {
-    none: 'No copy of this is on this disk.',
-    queued: 'This is in line, behind the one being fetched now.',
-    running: 'This is being fetched now.',
-    stopped: 'Fetching this stopped part way.',
-    done: 'A copy of this is on this disk.',
-    empty: 'There is nothing at this address to copy.',
-    failed: 'This was not copied:',
-  },
-  article: {
-    none: 'Nothing has been fetched from this address.',
-    queued: 'This address is in line, behind the one being fetched now.',
-    running: 'This address is being fetched now.',
-    stopped: 'Fetching this address stopped part way.',
-    done: 'What is at this address has already been fetched.',
-    empty: 'This address publishes none of what was asked for.',
-    failed: 'This address could not be reached:',
-  },
-}
-
-/** What the list of vaults reports as error for a command, in words a person reads. */
-export const VAULT_ERRORS: Record<VaultErrorCode, string> = {
-  unreadable: 'that folder is not there, or cannot be read',
-  copy: 'that folder is a copy of a vault this installation already holds',
-  overlaps: 'that folder is inside a vault already added, or holds one',
-  nameTaken: 'a vault is already called that',
-  lastVault: 'that is the only vault this installation has',
-  showing: 'that is the vault in front of you',
-  unknown: 'that vault is not on the list',
-  noTrash: 'this machine has nowhere to put what is deleted',
-  asking: 'a tab is holding text you have to answer for, so the window stayed where it was',
-}
-export const UNVAULTED = VAULT_ERRORS
 
 export const WORDS = {
   /** What the corner says while something about the vault is wrong. */

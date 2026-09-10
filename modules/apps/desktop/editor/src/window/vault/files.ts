@@ -2,7 +2,7 @@
  * File tree and filesystem domain methods for the window core.
  */
 import { files } from './clients'
-import { bookFormat, filed, listed, noteType, sourceKind } from './words'
+import { bookFormat, mapEntry, mapMoveResult, noteType, sourceKind } from './words'
 import { errorIn } from '../../shared/answers'
 import type { Core } from '../../shared/core'
 
@@ -22,12 +22,12 @@ export const filesCore: FilesCore = {
       refusal: error,
     }
   },
-  list: async (folder) => (await files.listFiles({ path: folder })).entries.map(listed),
+  list: async (folder) => (await files.listFiles({ path: folder })).entries.map(mapEntry),
   move: async (from, to) => {
     const answer = await files.moveFile({ from, to })
     const error = errorIn(answer)
     return {
-      moved: answer.moved ? filed(answer.moved) : null,
+      moved: answer.moved ? mapMoveResult(answer.moved) : null,
       error,
       refusal: error,
     }

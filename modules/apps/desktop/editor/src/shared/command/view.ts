@@ -8,7 +8,7 @@
  */
 import type { Ref } from 'vue'
 import type { PaletteGroup, PaletteItem } from '@numen/ui'
-import { isWebAddress } from './address'
+import { isWebAddress, isWebUrl } from './address'
 import type { NoteType } from '../note'
 import type { Vault } from '../vaults'
 import { inGroup } from './commands'
@@ -123,7 +123,7 @@ export function view(state: ViewState) {
     return {
       id: 'address',
       title: words.address,
-      items: isWebAddress(raw)
+      items: isWebUrl(raw)
         ? [
             {
               id: NAME,

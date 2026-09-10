@@ -60,6 +60,7 @@ export interface FilesTabState {
   makesOne(path: string | null, makes: FileMaker, name: string): Promise<void>
   imports(address: string): Promise<string>
   importAddress(address: string): Promise<string>
+  importUrl(url: string): Promise<string>
   openMenu(asked: MenuRequest): void
   asks(asked: MenuRequest): void
   dismiss(): void

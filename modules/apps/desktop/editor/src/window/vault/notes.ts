@@ -2,7 +2,7 @@
  * Note domain methods for the window core.
  */
 import { notes } from './clients'
-import { answered, around, filed, run, seenOf, writes, written } from './words'
+import { mapBaseline, mapLink, mapMoveResult, mapNeighbourhood, mapNoteResult, run, writes } from './words'
 import { errorIn, staleIn } from '../../shared/answers'
 import type { Core } from '../../shared/core'
 
@@ -21,7 +21,7 @@ export type NoteOperations = Pick<
 >
 
 export const noteOperations: NoteOperations = {
-  neighbourhood: async (path) => around(await notes.getNeighbourhood({ path })),
+  neighbourhood: async (path) => mapNeighbourhood(await notes.getNeighbourhood({ path })),
   opening: async () => (await notes.getOpeningNote({})).note ?? null,
   async *editing(signal) {
     for await (const said of notes.watchEdits({}, { signal })) {
@@ -35,19 +35,19 @@ export const noteOperations: NoteOperations = {
       }
     }
   },
-  read: async (path) => answered(await notes.readNote({ path })),
+  read: async (path) => mapNoteResult(await notes.readNote({ path })),
   write: async (path, body, seen) =>
-    answered(await notes.writeNote({ path, body, ...(seen ? { seen: seenOf(seen) } : {}) })),
+    mapNoteResult(await notes.writeNote({ path, body, ...(seen ? { seen: mapBaseline(seen) } : {}) })),
   create: async (note) => {
     const answer = await notes.createNote({
       title: note.title,
       path: note.folder,
-      links: note.links.map(written),
+      links: note.links.map(mapLink),
     })
     const error = errorIn(answer)
     return { path: answer.path, error, refusal: error }
   },
-  join: async (path, link) => errorIn(await notes.writeLink({ path, link: written(link) })),
+  join: async (path, link) => errorIn(await notes.writeLink({ path, link: mapLink(link) })),
   rename: async (path, title) => {
     const answer = await notes.renameNote({ path, title })
     const error = errorIn(answer)
@@ -56,7 +56,7 @@ export const noteOperations: NoteOperations = {
       title: answer.title,
       hasFrontmatter: writes[answer.by],
       frontmatter: writes[answer.by],
-      moved: answer.moved ? filed(answer.moved) : null,
+      moved: answer.moved ? mapMoveResult(answer.moved) : null,
       error,
       refusal: error,
       hasChanged: staleIn(answer),

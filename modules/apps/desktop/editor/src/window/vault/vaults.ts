@@ -2,7 +2,7 @@
  * Vault management domain methods for the window core and vaults interface.
  */
 import { vaultsService, windowService, WINDOW } from './clients'
-import { added, held, turnedDown } from './words'
+import { mapVault, mapVaultResult, turnedDown } from './words'
 import type { CommandsDeps } from '../../shared/command/target'
 import type { Vaults } from '../../shared/core'
 
@@ -13,14 +13,14 @@ export const vaults: Vaults = {
       vaultsService.listVaults({}),
       windowService.getShownVault({ window: WINDOW }),
     ])
-    return { vaults: answer.vaults.map(held), showing: shown.vault }
+    return { vaults: answer.vaults.map(mapVault), showing: shown.vault }
   },
   choose: async (title) => {
     const answer = await vaultsService.chooseFolder({ title, startingAt: '' })
     return answer.chose ? answer.path : ''
   },
-  add: async (path, called) => added(await vaultsService.addVault({ path, name: called })),
-  rename: async (id, called) => added(await vaultsService.renameVault({ id, name: called })),
+  add: async (path, called) => mapVaultResult(await vaultsService.addVault({ path, name: called })),
+  rename: async (id, called) => mapVaultResult(await vaultsService.renameVault({ id, name: called })),
   remove: async (id, trash) => turnedDown(await vaultsService.removeVault({ id, trash })),
   open: async (id) => turnedDown(await vaultsService.openVault({ id })),
 }

@@ -171,6 +171,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     createOne: handleCreateOne,
     imports,
     importAddress: imports,
+    importUrl: imports,
     openMenu,
     asks: openMenu,
     dismiss,

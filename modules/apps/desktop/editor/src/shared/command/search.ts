@@ -151,7 +151,7 @@ interface SearchHit {
 /** One item as it is drawn, beside where it stands and what it offers. */
 interface SearchRow {
   item: PaletteItem
-  stands: SearchHit
+  hit: SearchHit
 }
 
 const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
@@ -277,7 +277,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
               { id: PLEX, text: words.travel },
             ],
           },
-          stands: {
+          hit: {
             path: one.path,
             title: one.title,
             line: one.line,
@@ -298,7 +298,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
               { id: NOTE, text: words.read },
             ],
           },
-          stands: {
+          hit: {
             path: one.path,
             title: one.title,
             line: -1,
@@ -329,7 +329,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
           ]
         : [{ id: DOCUMENT, text: words.readDocument }],
     },
-    stands: {
+    hit: {
       path: one.path,
       title: one.title,
       // A note is opened on the line the words were found on. A book has no
@@ -364,7 +364,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     if (!typed.value.trim()) return { groups: [] as readonly PaletteGroup[], held }
 
     const group = (id: SearchGroup, title: string, drawn: readonly SearchRow[]): PaletteGroup => {
-      for (const one of drawn) held.set(one.item.id, one.stands)
+      for (const one of drawn) held.set(one.item.id, one.hit)
       return {
         id,
         title,

@@ -8,7 +8,7 @@
  * on every keystroke, so a vault moving under an open step is drawn as it is.
  */
 import { computed, ref, shallowRef } from 'vue'
-import { isWebAddress } from './address'
+import { isWebAddress, isWebUrl } from './address'
 import { answerGuard as latest } from '../questions'
 import { movedTo, type Move } from '../note'
 import type { Vault } from '../vaults'
@@ -320,7 +320,7 @@ export function useCommandPalette(
       return invocation(step.command.id, step.on, name)
     }
     if (step.step === 'address') {
-      if (!isWebAddress(name)) return null
+      if (!isWebUrl(name)) return null
       return invocation(step.command.id, step.on, name)
     }
     if (step.step === 'choosing') {

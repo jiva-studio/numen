@@ -176,18 +176,18 @@ export const owing = namesOf<NonNullable<(typeof left)[FlushResult]>, FlushResul
 export const run = (span: { from: number; to: number }) => ({ from: span.from, to: span.to })
 
 /** A link in the shape the schema carries it. */
-export const written = (link: Link) => ({
+export const mapLink = (link: Link) => ({
   to: link.to,
   role: roles[link.role],
   label: link.label ?? '',
 })
 
-export const seenOf = (seen: { prose: string; path: string }) => ({
+export const mapBaseline = (seen: { prose: string; path: string }) => ({
   prose: seen.prose,
   at: fingerprint(seen.path),
 })
 
-export const answered = (from: {
+export const mapNoteResult = (from: {
   body?: string | undefined
   refusal?: Refusal | undefined
   at?: { path: string; size: bigint; mtime: bigint } | undefined
@@ -208,7 +208,7 @@ export const answered = (from: {
 }
 
 /** One row of a listing, kept as the plain value the window carries it as. */
-export const listed = (one: EntryMessage): Entry => ({
+export const mapEntry = (one: EntryMessage): Entry => ({
   path: one.path,
   name: one.name,
   folder: one.folder,
@@ -217,10 +217,9 @@ export const listed = (one: EntryMessage): Entry => ({
 })
 
 /**
- * A neighbourhood in the words the window uses. A note the window has no seat
- * for, and one the answer names no note at, is not one of them.
+ * A neighbourhood in the words the window uses.
  */
-export const around = (said: NeighbourhoodMessage): Neighbourhood => ({
+export const mapNeighbourhood = (said: NeighbourhoodMessage): Neighbourhood => ({
   focus: { path: said.focus?.path ?? '', title: said.focus?.title ?? '' },
   focusType: noteType(said.focusType),
   related: said.related.flatMap((one) => {
@@ -242,28 +241,29 @@ export const around = (said: NeighbourhoodMessage): Neighbourhood => ({
 })
 
 /** One vault of the list, kept as the plain value the window carries it as. */
-export const held = (one: VaultMessage): Vault => ({
+export const mapVault = (one: VaultMessage): Vault => ({
   id: one.id,
   name: one.name,
   path: one.path,
   missing: one.missing,
 })
 
-export const added = (from: {
+export const mapVaultResult = (from: {
   vault?: VaultMessage | undefined
   refusal?: VaultsRefusal | undefined
 }): VaultResult => {
   const error = turnedDown(from)
   return {
-    vault: from.vault ? held(from.vault) : null,
+    vault: from.vault ? mapVault(from.vault) : null,
     error,
     refusal: error,
   }
 }
 
 /** What the file did, in the shape the window carries it. */
-export const filed = (moved: MoveResultMessage): MoveResult => ({
+export const mapMoveResult = (moved: MoveResultMessage): MoveResult => ({
   from: moved.from,
   to: moved.to,
   repaired: moved.repaired,
 })
+
