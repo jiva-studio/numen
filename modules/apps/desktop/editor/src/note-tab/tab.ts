@@ -61,6 +61,7 @@ export interface Tab {
   /** The generation of the newest read issued. */
   readonly reading: number
   /** Why writing or reading is impossible, or nothing. */
+  readonly error?: Refusal | null
   readonly refused: Refusal | null
 }
 

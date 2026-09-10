@@ -152,7 +152,8 @@ const renames = async (invocation: CommandInvocation, on: CommandDeps, words: Wo
   if (tab.waiting) return on.says(words.unanswered, 'caution')
   const answer = await on.files.renames(invocation.path, invocation.name)
   if (answer.changed) return on.says(words.stale ?? words.overtaken ?? '', 'caution')
-  if (answer.refusal) on.says(words.refused[answer.refusal], 'refusal')
+  const error = answer.error ?? answer.refusal
+  if (error) on.says((words.errors ?? words.refused)[error], 'refusal')
 }
 
 /**
@@ -164,8 +165,9 @@ const moves = async (invocation: CommandInvocation, on: CommandDeps, words: Word
   const tab = await settles(invocation.path, on)
   if (tab.waiting) return on.says(words.unanswered, 'caution')
   const answer = await on.files.moves(invocation.path, invocation.name)
-  if (answer.refusal === 'occupied') return on.says(words.occupied, 'refusal')
-  if (answer.refusal) on.says(words.refused[answer.refusal], 'refusal')
+  const error = answer.error ?? answer.refusal
+  if (error === 'occupied') return on.says(words.occupied, 'refusal')
+  if (error) on.says((words.errors ?? words.refused)[error], 'refusal')
 }
 
 /** What an artifact stands at when the ask did not come off, which is said as a refusal. */
@@ -226,8 +228,9 @@ const removes = async (invocation: CommandInvocation, destroy: boolean, on: Comm
       continue
     }
     const answer = await on.files.removes(path, destroy)
-    if (answer.refusal) {
-      refused.push(words.refused[answer.refusal])
+    const error = answer.error ?? answer.refusal
+    if (error) {
+      refused.push((words.errors ?? words.refused)[error])
       continue
     }
     if (tab.held) on.notes.shuts(tab.held)

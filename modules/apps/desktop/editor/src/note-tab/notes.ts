@@ -25,6 +25,7 @@ export interface OpenNote {
   readonly path: string
   readonly body: string
   readonly state: State
+  readonly error?: Refusal | null
   readonly refusal: Refusal | null
 }
 
@@ -174,11 +175,13 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
 
   const shown = (id: string): OpenNote => {
     const tab = tabs.value.get(id)
+    const err = tab?.refused ?? null
     return {
       path: tab?.path ?? id,
       body: bodies.value.get(id) ?? '',
       state: tab ? stateOf(tab) : 'loading',
-      refusal: tab?.refused ?? null,
+      error: err,
+      refusal: err,
     }
   }
 

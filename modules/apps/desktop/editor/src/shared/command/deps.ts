@@ -11,8 +11,8 @@ import type { CommandInvocation, VaultRef } from './target'
 import type { EditorKind } from '../tabs/openers'
 import type { Artifact, ArtifactState, ArtifactRunner } from '../artifacts'
 import type { Movement } from '../file'
-import type { RefusalReason, RemoveResult, RenameResult } from '../note'
-import type { VaultRefusalReason, Vaults } from '../vaults'
+import type { ErrorCode, RefusalReason, RemoveResult, RenameResult } from '../note'
+import type { VaultErrorCode, VaultRefusalReason, Vaults } from '../vaults'
 import type { MessageWriter } from '../notices/messages'
 
 
@@ -207,9 +207,11 @@ export interface CommandDeps {
 
 /** Everything carrying a command out says in the window's voice. */
 export interface Words {
-  /** What the vault refused, in words a person reads. */
+  /** What the vault reported as error, in words a person reads. */
+  readonly errors?: Record<ErrorCode, string>
   readonly refused: Record<RefusalReason, string>
   /** What the list of vaults refused, in words a person reads. */
+  readonly vaultErrors?: Record<VaultErrorCode, string>
   readonly unvaulted: Record<VaultRefusalReason, string>
   /** What the machine's own folder picker is titled. */
   readonly folder: string

@@ -3,7 +3,7 @@
  */
 import { files } from './clients'
 import { bookFormat, filed, listed, noteType, sourceKind } from './words'
-import { refusalIn } from '../../shared/answers'
+import { errorIn } from '../../shared/answers'
 import type { Core } from '../../shared/core'
 
 export type FilesCore = Pick<
@@ -14,24 +14,29 @@ export type FilesCore = Pick<
 export const filesCore: FilesCore = {
   remove: async (path, destroy) => {
     const answer = await files.removeFile({ path, destroy: destroy ?? false })
+    const error = errorIn(answer)
     return {
       trashed: answer.trashed,
       dangling: answer.dangling,
-      refusal: refusalIn(answer),
+      error,
+      refusal: error,
     }
   },
   list: async (folder) => (await files.listFiles({ path: folder })).entries.map(listed),
   move: async (from, to) => {
     const answer = await files.moveFile({ from, to })
+    const error = errorIn(answer)
     return {
       moved: answer.moved ? filed(answer.moved) : null,
-      refusal: refusalIn(answer),
+      error,
+      refusal: error,
     }
   },
-  makeFolder: async (path) => refusalIn(await files.createFolder({ path })),
+  makeFolder: async (path) => errorIn(await files.createFolder({ path })),
   makeURL: async (url, folder) => {
     const answer = await files.createURL({ url, path: folder })
-    return { path: answer.path, refusal: refusalIn(answer) }
+    const error = errorIn(answer)
+    return { path: answer.path, error, refusal: error }
   },
   fileKinds: async (paths) => {
     const answer = await files.listFileKinds({ paths: [...paths] })

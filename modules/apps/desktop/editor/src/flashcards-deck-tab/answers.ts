@@ -5,7 +5,7 @@
  * It is filed under the path the file stands at, so a file that moved carries
  * it along and a file no tab stands at any longer lets it go.
  */
-import type { RefusalReason } from '../shared/core'
+import type { ErrorCode, RefusalReason } from '../shared/core'
 import type { Problem } from '../shared/flashcards/cards'
 import { fileOf } from '../shared/paths'
 import { WORDS as words } from '../shared/flashcards/words'
@@ -18,11 +18,11 @@ export interface VaultAnswer {
    * card the window is holding through a re-read keeps its mark.
    */
   readonly problems: readonly Problem[]
-  /** What the last read of the file was refused for. */
+  /** What the last read of the file encountered as error. */
   readonly reading: RefusalReason | null
-  /** What the last write of it was refused for. */
+  /** What the last write of it encountered as error. */
   readonly writing: RefusalReason | null
-  /** The size a deck is read up to, where that is what refused it. */
+  /** The size a deck is read up to, where that is what caused the error. */
   readonly bound: number
 }
 
@@ -43,6 +43,7 @@ export function answers() {
     path: string,
     answer: {
       readonly problems: readonly Problem[]
+      readonly error?: ErrorCode | null
       readonly refusal: RefusalReason | null
       readonly bound: number
       /** The title the file carries, and nothing where the read reached none. */
@@ -51,7 +52,7 @@ export function answers() {
   ): void => {
     told.set(path, {
       problems: answer.problems,
-      reading: answer.refusal,
+      reading: answer.error ?? answer.refusal,
       writing: null,
       bound: answer.bound,
     })
@@ -61,13 +62,17 @@ export function answers() {
   /** What a write of a file came back with. What the last read found stands. */
   const writes = (
     path: string,
-    answer: { readonly refusal: RefusalReason | null; readonly bound: number },
+    answer: {
+      readonly error?: ErrorCode | null
+      readonly refusal: RefusalReason | null
+      readonly bound: number
+    },
   ): void => {
     const said = at(path)
     told.set(path, {
       problems: said.problems,
       reading: said.reading,
-      writing: answer.refusal,
+      writing: answer.error ?? answer.refusal,
       bound: answer.bound,
     })
   }

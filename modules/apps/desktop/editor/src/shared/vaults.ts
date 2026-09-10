@@ -25,11 +25,12 @@ export interface VaultList {
 export interface VaultResult {
   /** The vault as the list has it now. Null where the list is as it was. */
   vault: Vault | null
+  error?: VaultErrorCode | null
   refusal: VaultRefusalReason | null
 }
 
 /** Why the list is as it was, or why the window is showing what it was showing. */
-export type VaultRefusalReason =
+export type VaultErrorCode =
   | 'unreadable'
   | 'copy'
   | 'overlaps'
@@ -39,6 +40,7 @@ export type VaultRefusalReason =
   | 'unknown'
   | 'noTrash'
   | 'asking'
+export type VaultRefusalReason = VaultErrorCode
 
 /** The vaults an installation holds, and what changes them. */
 export interface Vaults {

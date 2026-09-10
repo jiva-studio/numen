@@ -23,7 +23,7 @@ import type {
 } from '@numen/protocol'
 import type { TallyUnit } from '@numen/ui'
 import { namesOf } from '@numen/wire'
-import { fingerprint, refusalIn, staleIn, stamp } from '../../shared/answers'
+import { fingerprint, errorIn, staleIn, stamp } from '../../shared/answers'
 import type { SearchMode } from '../../shared/command/search'
 import type {
   BookFormat,
@@ -195,9 +195,11 @@ export const answered = (from: {
   embed?: string | undefined
 }): NoteResult & { at?: string; changed: boolean } => {
   const at = stamp(from.at)
+  const error = errorIn(from)
   return {
     body: from.body ?? '',
-    refusal: refusalIn(from),
+    error,
+    refusal: error,
     changed: staleIn(from),
     ...(at === undefined ? {} : { at }),
     ...(from.url === undefined ? {} : { address: { url: from.url, embed: from.embed ?? '' } }),
@@ -249,10 +251,14 @@ export const held = (one: VaultMessage): Vault => ({
 export const added = (from: {
   vault?: VaultMessage | undefined
   refusal?: VaultsRefusal | undefined
-}): VaultResult => ({
-  vault: from.vault ? held(from.vault) : null,
-  refusal: turnedDown(from),
-})
+}): VaultResult => {
+  const error = turnedDown(from)
+  return {
+    vault: from.vault ? held(from.vault) : null,
+    error,
+    refusal: error,
+  }
+}
 
 /** What the file did, in the shape the window carries it. */
 export const filed = (moved: MoveResultMessage): MoveResult => ({

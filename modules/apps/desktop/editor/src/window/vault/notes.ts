@@ -3,7 +3,7 @@
  */
 import { notes } from './clients'
 import { answered, around, filed, run, seenOf, writes, written } from './words'
-import { refusalIn, staleIn } from '../../shared/answers'
+import { errorIn, staleIn } from '../../shared/answers'
 import type { Core } from '../../shared/core'
 
 export type NoteOperations = Pick<
@@ -44,18 +44,21 @@ export const noteOperations: NoteOperations = {
       path: note.folder,
       links: note.links.map(written),
     })
-    return { path: answer.path, refusal: refusalIn(answer) }
+    const error = errorIn(answer)
+    return { path: answer.path, error, refusal: error }
   },
-  join: async (path, link) => refusalIn(await notes.writeLink({ path, link: written(link) })),
+  join: async (path, link) => errorIn(await notes.writeLink({ path, link: written(link) })),
   rename: async (path, title) => {
     const answer = await notes.renameNote({ path, title })
+    const error = errorIn(answer)
     return {
       path: answer.path,
       title: answer.title,
       hasFrontmatter: writes[answer.by],
       frontmatter: writes[answer.by],
       moved: answer.moved ? filed(answer.moved) : null,
-      refusal: refusalIn(answer),
+      error,
+      refusal: error,
       hasChanged: staleIn(answer),
       changed: staleIn(answer),
     }

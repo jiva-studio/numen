@@ -94,6 +94,7 @@ export type NoteType = 'note' | 'deck' | 'stencil' | 'preset'
  */
 export interface NoteResult {
   body: string
+  error?: ErrorCode | null
   refusal: RefusalReason | null
   /** Where a link note points, and nothing on every other note. */
   address?: Address
@@ -108,7 +109,8 @@ export interface LinkAddress {
 }
 export type Address = LinkAddress
 
-export type NoteRefusalReason =
+/** The canonical error code for note operations. */
+export type ErrorCode =
   | 'missing'
   | 'notANote'
   | 'notText'
@@ -121,7 +123,8 @@ export type NoteRefusalReason =
   | 'notADeck'
   | 'deckTooLarge'
   | 'notAPreset'
-export type RefusalReason = NoteRefusalReason
+export type NoteRefusalReason = ErrorCode
+export type RefusalReason = ErrorCode
 
 /** A note to make: what it is called, where it goes, and what it arrives joined to. */
 export interface NewNote {
@@ -158,6 +161,7 @@ export interface Link {
 export interface CreateResult {
   /** Where the file is filed. Empty when nothing was made. */
   path: string
+  error?: ErrorCode | null
   refusal: RefusalReason | null
 }
 export type MakeResult = CreateResult
@@ -175,6 +179,7 @@ export interface RenameResult {
   frontmatter: boolean
   /** What the file did. Null when it stayed where it was. */
   moved: MoveResult | null
+  error?: ErrorCode | null
   refusal: RefusalReason | null
   /** The note holds prose nobody here has seen, and nothing was written. */
   hasChanged: boolean
@@ -198,5 +203,6 @@ export interface RemoveResult {
   trashed: string
   /** The notes whose links pointed at it and now reach nothing. */
   dangling: readonly string[]
+  error?: ErrorCode | null
   refusal: RefusalReason | null
 }

@@ -7,7 +7,18 @@
  */
 import { describe, expect, it } from 'vitest'
 import { Refusal } from '@numen/protocol'
-import { asset, fingerprint, named, REFUSAL, refusalIn, staleIn, stamp, waiting } from './answers'
+import {
+  asset,
+  ERROR_CODE,
+  errorIn,
+  fingerprint,
+  named,
+  REFUSAL,
+  refusalIn,
+  staleIn,
+  stamp,
+  waiting,
+} from './answers'
 
 describe('the file an answer came out of', () => {
   it('comes back out as it went in', () => {
@@ -35,8 +46,9 @@ describe('what a refusal is called', () => {
   // The table is keyed by the schema, so the compiler asks for every refusal.
   // What it cannot ask is which of them the silence belongs to.
   it('leaves a file that moved past the caller the one refusal with no word', () => {
+    expect(ERROR_CODE[Refusal.STALE]).toBeNull()
     expect(REFUSAL[Refusal.STALE]).toBeNull()
-    expect(Object.values(REFUSAL).filter((word) => word === null)).toHaveLength(1)
+    expect(Object.values(ERROR_CODE).filter((word) => word === null)).toHaveLength(1)
   })
 
   it('reads a file that moved past the caller off the answer that says so', () => {
@@ -46,6 +58,8 @@ describe('what a refusal is called', () => {
   })
 
   it('reads a refusal off an answer that carries one', () => {
+    expect(errorIn({ refusal: Refusal.MISSING })).toBe('missing')
+    expect(errorIn({ refusal: Refusal.TOO_LARGE })).toBe('tooLarge')
     expect(refusalIn({ refusal: Refusal.MISSING })).toBe('missing')
     expect(refusalIn({ refusal: Refusal.TOO_LARGE })).toBe('tooLarge')
   })
@@ -53,11 +67,14 @@ describe('what a refusal is called', () => {
   // Nothing refused is not the same as a refusal nobody named, so an answer
   // that was not refused says nothing rather than saying it is unreadable.
   it('says nothing about an answer that was not refused', () => {
+    expect(errorIn({})).toBeNull()
     expect(refusalIn({})).toBeNull()
+    expect(errorIn({ refusal: undefined })).toBeNull()
     expect(refusalIn({ refusal: undefined })).toBeNull()
   })
 
   it('calls a refusal it has no word of its own for unreadable', () => {
+    expect(errorIn({ refusal: Refusal.UNSPECIFIED })).toBe('unreadable')
     expect(refusalIn({ refusal: Refusal.UNSPECIFIED })).toBe('unreadable')
   })
 })

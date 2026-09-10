@@ -2,7 +2,7 @@
  * The files of the vault: what stands at a path, what a listing of one folder
  * reports, and what moving one comes back with.
  */
-import type { MoveResult, NoteType, RefusalReason } from './note'
+import type { ErrorCode, MoveResult, NoteType, RefusalReason } from './note'
 
 /**
  * What the vault holds at a path. A file it holds no source for — a picture,
@@ -39,6 +39,7 @@ export type Entry = FileEntry
 export interface FileMoveResult {
   /** What the file did. Null when it stayed where it was. */
   moved: MoveResult | null
+  error?: ErrorCode | null
   refusal: RefusalReason | null
 }
 export type Movement = FileMoveResult

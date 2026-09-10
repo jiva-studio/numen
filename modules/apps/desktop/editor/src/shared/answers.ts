@@ -8,7 +8,7 @@
  */
 import { Code, type ConnectError } from '@connectrpc/connect'
 import { Refusal } from '@numen/protocol'
-import type { RefusalReason } from './note'
+import type { ErrorCode, RefusalReason } from './note'
 
 /** The file an answer came out of, as the one string the window carries. */
 export const stamp = (at?: { path: string; size: bigint; mtime: bigint }): string | undefined =>
@@ -21,14 +21,14 @@ export const fingerprint = (at: string) => {
 }
 
 /**
- * What each refusal the schema carries is called in the window's own words.
+ * What each error code the schema carries is called in the window's own words.
  *
  * A file that moved past what the caller read has no word: that one is a
  * question for the person and not a message, and the window carries it as
- * `changed`. Keyed by the schema, so a refusal added to it has to be given a
+ * `changed`. Keyed by the schema, so an error code added to it has to be given a
  * word or that same silence here before this compiles.
  */
-export const REFUSAL: Record<Refusal, RefusalReason | null> = {
+export const REFUSAL: Record<Refusal, ErrorCode | null> = {
   [Refusal.UNSPECIFIED]: 'unreadable',
   [Refusal.MISSING]: 'missing',
   [Refusal.NOT_A_NOTE]: 'notANote',
@@ -44,9 +44,13 @@ export const REFUSAL: Record<Refusal, RefusalReason | null> = {
   [Refusal.NOT_A_PRESET]: 'notAPreset',
   [Refusal.STALE]: null,
 }
+export const ERROR_CODE = REFUSAL
 
-/** What one answer was refused for, and nothing where it was not refused. */
-export const refusalIn = (from: { refusal?: Refusal | undefined }): RefusalReason | null =>
+/** What one answer encountered as an error, and nothing where it succeeded. */
+export const errorIn = (from: { refusal?: Refusal | undefined }): ErrorCode | null =>
+  from.refusal === undefined ? null : (ERROR_CODE[from.refusal] ?? null)
+
+export const refusalIn = (from: { refusal?: Refusal | undefined }): ErrorCode | null =>
   from.refusal === undefined ? null : (REFUSAL[from.refusal] ?? null)
 
 /** Whether the file an answer is about had moved past what the caller read. */

@@ -7,11 +7,11 @@
  */
 import { commandKeyChord, keyChord } from '@numen/ui'
 import type { Artifact, ArtifactState } from './artifacts'
-import type { RefusalReason } from './note'
-import type { VaultRefusalReason } from './vaults'
+import type { ErrorCode, RefusalReason } from './note'
+import type { VaultErrorCode, VaultRefusalReason } from './vaults'
 
-/** What the vault refused a command, in words a person reads. */
-export const REFUSED: Record<RefusalReason, string> = {
+/** What the vault reports as error for a command, in words a person reads. */
+export const ERRORS: Record<ErrorCode, string> = {
   missing: 'that note is not in the vault',
   notANote: 'that file is not a note',
   notText: 'that file is not text',
@@ -25,6 +25,7 @@ export const REFUSED: Record<RefusalReason, string> = {
   deckTooLarge: 'that deck is longer than this reads',
   notAPreset: 'that note is not a preset',
 }
+export const REFUSED = ERRORS
 
 /**
  * What an artifact of a file now stands at, in the window's own voice.
@@ -107,8 +108,8 @@ export const MADE: Record<Artifact, Record<ArtifactState, string>> = {
   },
 }
 
-/** What the list of vaults refused a command, in words a person reads. */
-export const UNVAULTED: Record<VaultRefusalReason, string> = {
+/** What the list of vaults reports as error for a command, in words a person reads. */
+export const VAULT_ERRORS: Record<VaultErrorCode, string> = {
   unreadable: 'that folder is not there, or cannot be read',
   copy: 'that folder is a copy of a vault this installation already holds',
   overlaps: 'that folder is inside a vault already added, or holds one',
@@ -119,6 +120,7 @@ export const UNVAULTED: Record<VaultRefusalReason, string> = {
   noTrash: 'this machine has nowhere to put what is deleted',
   asking: 'a tab is holding text you have to answer for, so the window stayed where it was',
 }
+export const UNVAULTED = VAULT_ERRORS
 
 export const WORDS = {
   /** What the corner says while something about the vault is wrong. */

@@ -14,7 +14,7 @@ import { shallowRef, type Ref } from 'vue'
  * nothing done at once. A report is what a command did. A state is so until
  * something else makes it not so.
  */
-export type MessageKind = 'refusal' | 'caution' | 'report' | 'state'
+export type MessageKind = 'refusal' | 'error' | 'caution' | 'report' | 'state'
 
 /** One message the window holds. */
 export interface WindowMessage {
