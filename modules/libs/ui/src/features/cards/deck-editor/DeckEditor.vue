@@ -27,12 +27,10 @@ import {
   type Run,
   type Wrong,
 } from '../deck'
-import { numbered, sealed, type InsertionPoint } from '../order'
+import { numbered, sealed, type InsertionPoint, type StepDirection } from '../order'
 import type { Stencil } from '../card'
 
-/** A card nothing is wrong with any value of. */
-const NO_FIELDS: ReadonlyMap<string, readonly string[]> = sealed()
-
+// --- Props & Emits ---
 const props = withDefaults(
   defineProps<{
     /** The cards, in the order they are drawn. */
@@ -52,43 +50,26 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  /**
-   * A card asked for, cut by the stencil of that name. It is made at the end of
-   * the section its plus stands in, and nothing names the cards before the
-   * first section. What a new card holds is the caller's.
-   */
   (event: 'add', stencil: string, section: string | null): void
   (event: 'remove', card: string): void
-  /**
-   * A card let go somewhere in the deck: before the card of that identity, at
-   * the head of the deck, at the head of the section of that identity, past
-   * the last card standing under a heading, or at the end.
-   */
   (event: 'move', card: string, at: InsertionPoint): void
-  /**
-   * One value of one card as it now reads. A card writing a field twice is
-   * writing two values, of which `nth` says which was typed in.
-   */
   (event: 'write', card: string, field: string, nth: number, text: string): void
-  /** A section asked for, under a name nothing has taken. It is made at the end. */
   (event: 'add-section', name: string): void
   (event: 'rename-section', id: string, name: string): void
-  /** A section asked to go. Its heading goes, and the cards under it stay. */
   (event: 'remove-section', id: string): void
 }>()
 
+// --- State ---
+/** A card nothing is wrong with any value of. */
+const NO_FIELDS: ReadonlyMap<string, readonly string[]> = sealed()
+
 /**
- * The run whose plus is showing which stencils a new card may be cut by, and
- * nothing while none of them is. One plus asks at a time.
+ * The run whose plus is showing which stencils a new card may be cut by.
  */
 const asking = shallowRef<string | null>(null)
 
 /**
- * The card under the pointer's hand, and where letting go would put it. A card
- * let go where it stands moves nothing, and nothing else among them is fixed.
- *
- * The head of the deck stands first in the order, so the card at the top of the
- * first section is dragged out of it by the keyboard as it is by the pointer.
+ * The card under the pointer's hand, and where letting go would put it.
  */
 const { dragged, at, lift, over, release, drop, step } = useDrag<InsertionPoint | undefined>({
   order: () => [HEAD, ...props.cards.map((card) => card.id)],
@@ -99,16 +80,59 @@ const { dragged, at, lift, over, release, drop, step } = useDrag<InsertionPoint 
 
 const shown = computed(() => grid(props.cards, props.sections, props.stencils, dragged.value))
 
-/** Where the plus of a run stands in the order: past everything under it. */
-const after = (run: Run): InsertionPoint => endOf(run.id)
+// --- Handlers ---
+function onDragOver(targetAt: InsertionPoint | undefined, event: DragEvent): void {
+  over(targetAt, event)
+}
 
-const add = (stencil: Stencil, run: Run): void => {
+function onDrop(): void {
+  drop()
+}
+
+function onRenameSection(id: string, name: string): void {
+  emit('rename-section', id, name)
+}
+
+function onRemoveSection(id: string): void {
+  emit('remove-section', id)
+}
+
+function onRemoveCard(id: string): void {
+  emit('remove', id)
+}
+
+function onLift(id: string, event: DragEvent): void {
+  lift(id, event)
+}
+
+function onRelease(): void {
+  release()
+}
+
+function onStep(id: string, direction: StepDirection, press: KeyboardEvent): void {
+  step(id, direction, press)
+}
+
+function onWriteCard(id: string, field: string, nth: number, text: string): void {
+  emit('write', id, field, nth, text)
+}
+
+function onAsk(runId: string): void {
+  asking.value = runId
+}
+
+function onAddCard(stencil: Stencil, run: Run): void {
   asking.value = null
   emit('add', stencil.name, run.section?.id ?? null)
 }
 
-const addSection = (): void => {
+function onAddSection(): void {
   emit('add-section', numbered(props.sections.map((each) => each.name), props.words.sectionStem))
+}
+
+// --- Helpers ---
+function getRunEnd(run: Run): InsertionPoint {
+  return endOf(run.id)
 }
 </script>
 
@@ -117,25 +141,24 @@ const addSection = (): void => {
     class="deck numen bg-surface font-sans text-base text-ink"
     role="group"
     :aria-label="name"
-    @dragover="over(undefined, $event)"
-    @drop="drop"
+    @dragover="onDragOver(undefined, $event)"
+    @drop="onDrop"
   >
     <template v-for="run in shown.runs" :key="run.id">
-      <!-- A card let go on a section's heading lands at the head of that
-           section, which is the one place a section holding none takes one. -->
+      <!-- A card let go on a section's heading lands at the head of that section. -->
       <div
         v-if="run.section"
         class="deck__section-head caret-below"
         :data-section-head="run.section.id"
         :data-before="run.section.id === at || undefined"
-        @dragover.stop="over(run.section.id, $event)"
-        @drop.stop="drop"
+        @dragover.stop="onDragOver(run.section.id, $event)"
+        @drop.stop="onDrop"
       >
         <SectionHeading
           :section="run.section"
           :words="words"
-          @rename="(name: string) => emit('rename-section', run.section?.id ?? '', name)"
-          @remove="emit('remove-section', run.section?.id ?? '')"
+          @rename="(name: string) => onRenameSection(run.section?.id ?? '', name)"
+          @remove="onRemoveSection(run.section?.id ?? '')"
         />
       </div>
 
@@ -146,8 +169,8 @@ const addSection = (): void => {
         class="deck__head caret-below"
         data-head
         :data-before="run.id === at || undefined"
-        @dragover.stop="over(run.id, $event)"
-        @drop.stop="drop"
+        @dragover.stop="onDragOver(run.id, $event)"
+        @drop.stop="onDrop"
       ></div>
 
       <div class="deck__grid">
@@ -156,26 +179,23 @@ const addSection = (): void => {
           :key="tile.id"
           class="deck__tile caret-beside"
           :data-before="tile.id === at || undefined"
-          @dragover.stop="over(tile.id, $event)"
-          @drop.stop="drop"
+          @dragover.stop="onDragOver(tile.id, $event)"
+          @drop.stop="onDrop"
         >
           <Card
             :tile="tile"
             :wrong="wrong.at.get(tile.id) ?? []"
             :wrong-under="wrong.under.get(tile.id) ?? NO_FIELDS"
             :words="words"
-            @remove="emit('remove', tile.id)"
-            @lift="lift(tile.id, $event)"
-            @release="release"
-            @step="(direction, press) => step(tile.id, direction, press)"
-            @write="(field, nth, text) => emit('write', tile.id, field, nth, text)"
+            @remove="onRemoveCard(tile.id)"
+            @lift="onLift(tile.id, $event)"
+            @release="onRelease"
+            @step="(direction, press) => onStep(tile.id, direction, press)"
+            @write="(field, nth, text) => onWriteCard(tile.id, field, nth, text)"
           />
         </div>
 
-        <!-- A card is made at the end of a section, so every section carries a
-             plus of its own. What stands before the first section carries one
-             wherever a card stands there, and a deck nobody has divided is one
-             such run. -->
+        <!-- Every section carries a plus of its own. -->
         <article
           v-if="run.plusAt !== null"
           class="deck__tile deck__plus caret-beside rounded-node"
@@ -184,20 +204,18 @@ const addSection = (): void => {
           :aria-label="words.add"
           data-plus
           :data-plus-of="run.section?.id"
-          :data-before="after(run) === at || undefined"
-          @dragover.stop="over(after(run), $event)"
-          @drop.stop="drop"
+          :data-before="getRunEnd(run) === at || undefined"
+          @dragover.stop="onDragOver(getRunEnd(run), $event)"
+          @drop.stop="onDrop"
         >
-          <!-- The plus says what it is for by standing alone in the middle. What
-               it is called is read aloud and shown on hovering, and not beside it.
-               What it opens takes its place, so it says nothing of being open. -->
+          <!-- The plus stands in the middle. -->
           <Button
             v-if="asking !== run.id"
             variant="ghost"
             class="deck__ask"
             :aria-label="words.add"
             :title="words.add"
-            @click="asking = run.id"
+            @click="onAsk(run.id)"
           >
             <Icon shows="plus" />
           </Button>
@@ -211,7 +229,7 @@ const addSection = (): void => {
                 variant="outline"
                 size="small"
                 :data-cut="stencil.name"
-                @click="add(stencil, run)"
+                @click="onAddCard(stencil, run)"
                 >{{ stencil.name }}</Button
               >
             </div>
@@ -221,7 +239,7 @@ const addSection = (): void => {
     </template>
 
     <Divider>
-      <Button variant="ghost" size="small" data-add-section @click="addSection">
+      <Button variant="ghost" size="small" data-add-section @click="onAddSection">
         <Icon shows="plus" />
         {{ words.addSection }}
       </Button>
