@@ -53,7 +53,7 @@ type Paint = (draw: () => void) => void
  */
 const spoken = (tool: string) => tool.replaceAll('_', ' ')
 
-export function conversation(
+export function useConversation(
   agent: AgentPort,
   words: ConversationStrings,
   /** What this thread of talk is called, for as long as it is open. */

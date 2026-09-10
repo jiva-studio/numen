@@ -6,7 +6,7 @@
  * what they hold. What a tab of a kind holds is that kind's own.
  */
 import { computed, onMounted, onUnmounted, shallowRef, watch } from 'vue'
-import { conversation } from '@numen/ui'
+import { useConversation } from '@numen/ui'
 import type { Notice } from '@numen/ui'
 import { core } from './vault'
 import { documents } from '../document-tab/wire'
@@ -146,7 +146,7 @@ export const useWindow = () => {
   const agents = agentKind(
     held.handle,
     () =>
-      useAgentConversation(conversation(agent, talk, minted(CONVERSATION)), {
+      useAgentConversation(useConversation(agent, talk, minted(CONVERSATION)), {
         opens: (path, ...runs) => void puts.opensAt(path, runs),
         beside: (path) => void puts.opens(path, '', 'beside'),
         resolve: (written) => core.resolve('', written),

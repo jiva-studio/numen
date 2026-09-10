@@ -6,7 +6,7 @@
  * from one exchange landing in the next.
  */
 import { describe, expect, it } from 'vitest'
-import { conversation, type ConversationStrings } from './conversation'
+import { useConversation, type ConversationStrings } from './conversation'
 import type { AgentPort, AgentStep, Place } from './agent'
 
 const words: ConversationStrings = {
@@ -49,7 +49,7 @@ const stopped = (failed = ''): AgentStep => ({ kind: 'stopped', failed })
 
 describe('an answer', () => {
   it('grows as its pieces arrive and settles when they stop', async () => {
-    const talk = conversation(doing([said('Two '), said('notes.'), stopped()]), words, called, now)
+    const talk = useConversation(doing([said('Two '), said('notes.'), stopped()]), words, called, now)
     await talk.ask('what is here?', '')
 
     expect(talk.turns.value.map((turn) => [turn.voice, turn.text])).toEqual([
@@ -60,14 +60,14 @@ describe('an answer', () => {
   })
 
   it('is not left waiting when the agent finishes having said nothing', async () => {
-    const talk = conversation(doing([used('Search notes'), stopped()]), words, called, now)
+    const talk = useConversation(doing([used('Search notes'), stopped()]), words, called, now)
     await talk.ask('what is here?', '')
 
     expect(talk.turns.value.map((turn) => turn.text)).toEqual(['what is here?', 'Said nothing'])
   })
 
   it('carries the reason when the agent stopped for one', async () => {
-    const talk = conversation(doing([stopped('went round too many times')]), words, called, now)
+    const talk = useConversation(doing([stopped('went round too many times')]), words, called, now)
     await talk.ask('what is here?', '')
 
     const last = talk.turns.value.at(-1)
@@ -79,7 +79,7 @@ describe('an answer', () => {
 describe('the line about work', () => {
   it('is up before anything comes back, and says what is in hand', async () => {
     let seen: string[] = []
-    const talk = conversation(
+    const talk = useConversation(
       {
         async *ask() {
           yield used('Search notes', 'entropy')
@@ -99,7 +99,7 @@ describe('the line about work', () => {
   })
 
   it('comes down when the answer begins', async () => {
-    const talk = conversation(
+    const talk = useConversation(
       doing([used('Search notes'), said('Two notes.'), stopped()]),
       words,
       called,
@@ -111,7 +111,7 @@ describe('the line about work', () => {
   })
 
   it('is one line however many tools are used', async () => {
-    const talk = conversation(
+    const talk = useConversation(
       doing([used('Search notes'), used('Read notes'), used('Search notes'), stopped()]),
       words,
       called,
@@ -129,7 +129,7 @@ describe('giving up', () => {
     const held = new Promise<void>((done) => {
       release = done
     })
-    const talk = conversation(doing([said('Two ')], held), words, called, now)
+    const talk = useConversation(doing([said('Two ')], held), words, called, now)
 
     const asking = talk.ask('what is here?', '')
     await nap()
@@ -145,7 +145,7 @@ describe('giving up', () => {
 describe('a tool nobody titled', () => {
   it('is read as words', async () => {
     let seen = ''
-    const talk = conversation(
+    const talk = useConversation(
       {
         async *ask() {
           yield used('note_search')
@@ -170,7 +170,7 @@ describe('a wait that explains itself', () => {
     const held = new Promise<void>((go) => {
       release = go
     })
-    const talk = conversation(
+    const talk = useConversation(
       doing([used('Create a note', "Bram Doyle's warning", 12015)], held),
       words,
       called,
@@ -196,7 +196,7 @@ describe('a wait that explains itself', () => {
     const held = new Promise<void>((go) => {
       release = go
     })
-    const talk = conversation(
+    const talk = useConversation(
       doing([used('Create a note', "Bram Doyle's warning", 4000), answered()], held),
       words,
       called,
@@ -220,7 +220,7 @@ describe('a wait that explains itself', () => {
     const held = new Promise<void>((go) => {
       release = go
     })
-    const talk = conversation(
+    const talk = useConversation(
       doing([used('Create a note', "Bram Doyle's warning", 4000), answered(), thinking()], held),
       words,
       called,
@@ -249,7 +249,7 @@ describe('a wait that explains itself', () => {
     const held = new Promise<void>((go) => {
       release = go
     })
-    const talk = conversation(
+    const talk = useConversation(
       doing([used('Create a note', "Bram Doyle's warning", 4000), answered()], held),
       words,
       called,
@@ -273,7 +273,7 @@ describe('a wait that explains itself', () => {
     const held = new Promise<void>((go) => {
       release = go
     })
-    const talk = conversation(doing([], held), words, called, now)
+    const talk = useConversation(doing([], held), words, called, now)
     const asking = talk.ask('write it up', '')
     await nap()
 
@@ -295,7 +295,7 @@ describe('a call that was working on a place', () => {
     const held = new Promise<void>((go) => {
       release = go
     })
-    const talk = conversation(
+    const talk = useConversation(
       doing([used('Read a document', 'gardening.epub', 0, place)], held),
       words,
       called,
@@ -318,7 +318,7 @@ describe('a call that was working on a place', () => {
       release = go
     })
     const whole: Place = { path: 'notes/heat.md', span: { from: 0, to: 0 } }
-    const talk = conversation(
+    const talk = useConversation(
       doing([used('Read a note', 'notes/heat.md', 0, whole)], held),
       words,
       called,
@@ -340,7 +340,7 @@ describe('a call that was working on a place', () => {
     const held = new Promise<void>((go) => {
       release = go
     })
-    const talk = conversation(doing([used('Search notes', 'frost')], held), words, called, now)
+    const talk = useConversation(doing([used('Search notes', 'frost')], held), words, called, now)
     const asking = talk.ask('what does it say of frost?', '')
     await nap()
 
@@ -363,7 +363,7 @@ describe('where the line about work stands', () => {
     const held = new Promise<void>((go) => {
       release = go
     })
-    const talk = conversation(
+    const talk = useConversation(
       doing([used('Read a note'), said('Bram Doyle '), answered(), said('was the chair.')], held),
       words,
       called,
@@ -388,7 +388,7 @@ describe('where the line about work stands', () => {
     const held = new Promise<void>((go) => {
       release = go
     })
-    const talk = conversation(
+    const talk = useConversation(
       doing([said('One moment. '), thinking(), used('Read a note')], held),
       words,
       called,
@@ -412,7 +412,7 @@ describe('where the line about work stands', () => {
     const held = new Promise<void>((go) => {
       release = go
     })
-    const talk = conversation(doing([said(''), thinking()], held), words, called, now)
+    const talk = useConversation(doing([said(''), thinking()], held), words, called, now)
     const asking = talk.ask('tell me about him', '')
     await nap()
 
@@ -435,8 +435,8 @@ describe('a conversation', () => {
       },
       finish: async () => {},
     }
-    const one = conversation(agent, words, 'conversation:one', now)
-    const two = conversation(agent, words, 'conversation:two', now)
+    const one = useConversation(agent, words, 'conversation:one', now)
+    const two = useConversation(agent, words, 'conversation:two', now)
 
     await one.ask('what is here?', '')
     await one.ask('and below it?', '')
@@ -449,7 +449,7 @@ describe('a conversation', () => {
 describe('a conversation that is over', () => {
   it('tells the agent, under the name it answers by', () => {
     const over: string[] = []
-    const talk = conversation(
+    const talk = useConversation(
       { ...doing([stopped()]), finish: async (named) => void over.push(named) },
       words,
       called,
@@ -466,7 +466,7 @@ describe('a conversation that is over', () => {
     const held = new Promise<void>((done) => {
       release = done
     })
-    const talk = conversation(doing([said('Two ')], held), words, called, now)
+    const talk = useConversation(doing([said('Two ')], held), words, called, now)
 
     const asking = talk.ask('what is here?', '')
     await nap()
@@ -479,7 +479,7 @@ describe('a conversation that is over', () => {
   })
 
   it('says nothing when the agent refuses to let go', async () => {
-    const talk = conversation(
+    const talk = useConversation(
       { ...doing([stopped()]), finish: async () => Promise.reject(new Error('unreachable')) },
       words,
       called,
@@ -493,7 +493,7 @@ describe('a conversation that is over', () => {
   })
 
   it('says nothing when the agent cannot be reached at all', () => {
-    const talk = conversation(
+    const talk = useConversation(
       {
         ...doing([stopped()]),
         finish: () => {
@@ -520,7 +520,7 @@ describe('a window nobody is looking at', () => {
     const held = new Promise<void>((go) => {
       release = go
     })
-    const talk = conversation(doing([said('Two notes.')], held), words, called, never)
+    const talk = useConversation(doing([said('Two notes.')], held), words, called, never)
     const asking = talk.ask('what is here?', '')
     await nap()
 
@@ -541,7 +541,7 @@ describe('giving up on an answer', () => {
     const held = new Promise<void>((go) => {
       release = go
     })
-    const talk = conversation(doing([used('Search notes')], held), words, called, now)
+    const talk = useConversation(doing([used('Search notes')], held), words, called, now)
     const asking = talk.ask('what is here?', '')
     await nap()
 
@@ -561,7 +561,7 @@ describe('two tools in hand at once', () => {
     const held = new Promise<void>((go) => {
       release = go
     })
-    const talk = conversation(
+    const talk = useConversation(
       doing([used('Search notes', 'entropy'), used('Read a note', 'Bram Doyle'), answered()], held),
       words,
       called,
@@ -582,14 +582,14 @@ describe('two tools in hand at once', () => {
 
 describe('an exchange that is over', () => {
   it('leaves nothing saying the agent is still working', async () => {
-    const talk = conversation(doing([used('Search notes'), stopped('went round too many times')]), words, called, now)
+    const talk = useConversation(doing([used('Search notes'), stopped('went round too many times')]), words, called, now)
     await talk.ask('what is here?', '')
 
     expect(talk.turns.value.filter((turn) => turn.voice === 'doing')).toEqual([])
   })
 
   it('leaves nothing saying so when the agent could not be reached', async () => {
-    const talk = conversation(
+    const talk = useConversation(
       {
         async *ask() {
           yield used('Search notes')
@@ -614,7 +614,7 @@ describe('words with none in them', () => {
     const held = new Promise<void>((go) => {
       release = go
     })
-    const talk = conversation(doing([said(''), said('')], held), words, called, now)
+    const talk = useConversation(doing([said(''), said('')], held), words, called, now)
     const asking = talk.ask('what is here?', '')
     await nap()
 

@@ -75,7 +75,7 @@ export { Spinner } from './shared/ui/spinner'
 export { Skeleton } from './shared/ui/skeleton'
 
 export type { Turn } from './features/thread/turn'
-export { conversation } from './features/thread/conversation'
+export { useConversation } from './features/thread/conversation'
 export type { Conversation } from './features/thread/conversation'
 export type { AgentPort, AgentStep } from './features/thread/agent'
 
