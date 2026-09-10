@@ -14,8 +14,10 @@ import Embed from './embed/Embed.vue'
 import { DELETE_TEXT, WORDS as words } from '../shared/media/words'
 import type { MediaTabState } from '../shared/media/kind'
 
+// --- Props & Emits ---
 const props = defineProps<{ state: MediaTabState }>()
 
+// --- State ---
 const { address, deletable, framing, playable } = props.state
 
 // What is at the address plays where it is drawn, so a moment chosen in the
@@ -27,20 +29,27 @@ const offered = computed(() =>
   deletable.value ? [{ id: DELETE_TEXT, text: words.deleteText }] : [],
 )
 
-const chose = (id: string) => {
+// --- Handlers ---
+function onChoose(id: string) {
   if (id === DELETE_TEXT) props.state.deletes()
 }
+
+function onTimeUpdate(ms: number) {
+  props.state.reached(ms)
+}
+
+// --- Helpers ---
 </script>
 
 <template>
-  <MediaLayout :state="props.state" framed :offered="offered" @choose="chose">
+  <MediaLayout :state="props.state" framed :offered="offered" @choose="onChoose">
     <template #player>
       <Embed
         ref="player"
         :embed="framing ? address : ''"
         :copy="playable ? address : ''"
         :words="words"
-        @time-update="(ms: number) => props.state.reached(ms)"
+        @time-update="onTimeUpdate"
       />
     </template>
   </MediaLayout>

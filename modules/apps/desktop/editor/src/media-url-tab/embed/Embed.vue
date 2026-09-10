@@ -10,6 +10,7 @@
  */
 import { onBeforeUnmount, ref, useTemplateRef } from 'vue'
 
+// --- Props & Emits ---
 const props = defineProps<{
   /** Where a frame plays what is at the address, and nothing where a copy is. */
   embed: string
@@ -28,6 +29,7 @@ const emit = defineEmits<{
   timeUpdate: [ms: number]
 }>()
 
+// --- State ---
 const frame = useTemplateRef<HTMLIFrameElement>('frame')
 const player = useTemplateRef<HTMLVideoElement>('player')
 
@@ -35,23 +37,10 @@ const player = useTemplateRef<HTMLVideoElement>('player')
 const HEIGHT = 'numen.embed.height'
 const LEAST = 120
 
-/**
- * How tall a person drew the player last, and nothing where they have not drawn
- * it: sixteen by nine is what it is until somebody says otherwise.
- */
-const read = (): number | null => {
-  try {
-    const kept = Number(localStorage.getItem(HEIGHT))
-    return kept >= LEAST ? kept : null
-  } catch {
-    // A browser that keeps nothing for this page has no height to give back.
-    return null
-  }
-}
-
-const tall = ref(read())
+const tall = ref(readHeight())
 const drawn = ref<{ bar: HTMLElement; pointer: number; from: number; was: number } | null>(null)
 
+// --- Handlers ---
 /**
  * The bar under the player is taken hold of, and the player follows it.
  *
@@ -60,7 +49,7 @@ const drawn = ref<{ bar: HTMLElement; pointer: number; from: number; was: number
  * move and the release with it — so the bar would follow the pointer only while
  * it stayed off the player, and would never hear that it was let go.
  */
-const draws = (at: PointerEvent): void => {
+function onPointerDown(at: PointerEvent): void {
   const bar = at.currentTarget as HTMLElement
   const held = bar.previousElementSibling
   bar.setPointerCapture(at.pointerId)
@@ -70,25 +59,25 @@ const draws = (at: PointerEvent): void => {
     from: at.clientY,
     was: held?.clientHeight ?? LEAST,
   }
-  bar.addEventListener('pointermove', drawing)
-  bar.addEventListener('pointerup', drew)
-  bar.addEventListener('pointercancel', drew)
+  bar.addEventListener('pointermove', onPointerMove)
+  bar.addEventListener('pointerup', onPointerUp)
+  bar.addEventListener('pointercancel', onPointerUp)
 }
 
-const drawing = (at: PointerEvent): void => {
+function onPointerMove(at: PointerEvent): void {
   const held = drawn.value
   if (!held) return
   const most = Math.max(LEAST, window.innerHeight - 160)
   tall.value = Math.min(most, Math.max(LEAST, held.was + at.clientY - held.from))
 }
 
-const drew = (): void => {
+function onPointerUp(): void {
   const held = drawn.value
   if (!held) return
   drawn.value = null
-  held.bar.removeEventListener('pointermove', drawing)
-  held.bar.removeEventListener('pointerup', drew)
-  held.bar.removeEventListener('pointercancel', drew)
+  held.bar.removeEventListener('pointermove', onPointerMove)
+  held.bar.removeEventListener('pointerup', onPointerUp)
+  held.bar.removeEventListener('pointercancel', onPointerUp)
   if (held.bar.hasPointerCapture(held.pointer)) held.bar.releasePointerCapture(held.pointer)
   try {
     if (tall.value !== null) localStorage.setItem(HEIGHT, String(tall.value))
@@ -98,10 +87,30 @@ const drew = (): void => {
   }
 }
 
-onBeforeUnmount(drew)
+function onVideoTimeUpdate(event: Event): void {
+  const video = event.target as HTMLVideoElement
+  emit('timeUpdate', Math.round(video.currentTime * 1000))
+}
+
+onBeforeUnmount(onPointerUp)
+
+// --- Helpers ---
+/**
+ * How tall a person drew the player last, and nothing where they have not drawn
+ * it: sixteen by nine is what it is until somebody says otherwise.
+ */
+function readHeight(): number | null {
+  try {
+    const kept = Number(localStorage.getItem(HEIGHT))
+    return kept >= LEAST ? kept : null
+  } catch {
+    // A browser that keeps nothing for this page has no height to give back.
+    return null
+  }
+}
 
 /** Played from a moment, in milliseconds: the copy where there is one. */
-const seeks = (ms: number): void => {
+function seek(ms: number): void {
   if (player.value) {
     player.value.currentTime = ms / 1000
     void player.value.play()
@@ -113,7 +122,7 @@ const seeks = (ms: number): void => {
   )
 }
 
-defineExpose({ seeks })
+defineExpose({ seeks: seek, seek })
 </script>
 
 <template>
@@ -129,7 +138,7 @@ defineExpose({ seeks })
       controls
       preload="metadata"
       @contextmenu.prevent
-      @timeupdate="emit('timeUpdate', Math.round(($event.target as HTMLVideoElement).currentTime * 1000))"
+      @timeupdate="onVideoTimeUpdate"
     ></video>
 
     <iframe
@@ -152,7 +161,7 @@ defineExpose({ seeks })
       aria-orientation="horizontal"
       :data-state="drawn ? 'drag' : undefined"
       :title="props.words.taller"
-      @pointerdown="draws"
+      @pointerdown="onPointerDown"
     ></div>
   </div>
 </template>

@@ -16,6 +16,7 @@ import Transcript from './Transcript.vue'
 import { WORDS as words } from './words'
 import type { MediaTabState } from './kind'
 
+// --- Props & Emits ---
 const props = defineProps<{
   state: MediaTabState
   /**
@@ -29,6 +30,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ choose: [id: string] }>()
 
+// --- State ---
 const { following, timed } = props.state
 
 /** Whether the view keeps the line being said in sight. */
@@ -39,17 +41,28 @@ const offered = computed(() => props.offered ?? [])
 /** Where the menu was asked for, and nothing while it is not open. */
 const asking = ref<{ at: Position; from: HTMLElement } | null>(null)
 
-const asks = (event: Event) => {
+// --- Handlers ---
+function onOpenMenu(event: Event) {
   const button = event.currentTarget
   if (!(button instanceof HTMLElement)) return
   const box = button.getBoundingClientRect()
   asking.value = { at: { x: box.left, y: box.bottom }, from: button }
 }
 
-const chose = (id: string) => {
+function onChooseMenuItem(id: string) {
   asking.value = null
   emit('choose', id)
 }
+
+function onDismissMenu() {
+  asking.value = null
+}
+
+function onToggleFollow() {
+  props.state.follows(!follows.value)
+}
+
+// --- Helpers ---
 </script>
 
 <template>
@@ -68,7 +81,7 @@ const chose = (id: string) => {
           :aria-label="words.follow"
           :title="words.follow"
           :aria-pressed="follows ? 'true' : 'false'"
-          @click="props.state.follows(!follows)"
+          @click="onToggleFollow"
         >
           <LocateFixed class="media__icon" />
         </button>
@@ -79,7 +92,7 @@ const chose = (id: string) => {
           :aria-label="words.more"
           :title="words.more"
           aria-haspopup="menu"
-          @click="asks"
+          @click="onOpenMenu"
         >
           <Ellipsis class="media__icon" />
         </button>
@@ -95,8 +108,8 @@ const chose = (id: string) => {
       :from="asking.from"
       open
       :name="words.more"
-      @choose="chose"
-      @dismiss="asking = null"
+      @choose="onChooseMenuItem"
+      @dismiss="onDismissMenu"
     >
       <template #icon="{ id }">
         <component :is="iconFor(id)" v-if="iconFor(id)" class="media__mark" aria-hidden="true" />

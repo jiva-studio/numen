@@ -26,6 +26,7 @@ import type { Curve } from '../../core'
 import { WORDS as words } from '../../words'
 import '../curve-slider.css'
 
+// --- Props & Emits ---
 const props = defineProps<{
   curve: Curve
   /** The place of the grid the knob stands at. */
@@ -34,6 +35,7 @@ const props = defineProps<{
   honest: boolean
 }>()
 
+// --- State ---
 /** The backlog at the place the knob stands, one figure a day. */
 const backlog = computed<readonly number[]>(() => runAt(props.curve, props.place))
 
@@ -76,6 +78,10 @@ const heights = computed(() => {
 
 /** The days at either end of the extent, which the grid says nothing about. */
 const ends = computed(() => [words.backlogWidthAt(1), words.backlogWidthAt(backlog.value.length)])
+
+// --- Handlers ---
+
+// --- Helpers ---
 </script>
 
 <template>

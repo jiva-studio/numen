@@ -16,8 +16,10 @@ import type { Bounds, BudgetUnit } from '../core'
 import { fieldsUnder, round, type Field } from '../curve'
 import { WORDS as words } from '../words'
 
+// --- Props & Emits ---
 const props = defineProps<{ state: PresetTabState }>()
 
+// --- State ---
 const { bounds, settings } = props.state
 
 /** The rows the chosen goal schedules by, which are the ones drawn. */
@@ -37,27 +39,67 @@ const week = computed<readonly Day[]>(() =>
 /** The shares a day may be put at, as the row draws them. */
 const levels = LOADS.map((one) => one / WHOLE_LOAD)
 
+// --- Handlers ---
 /** One day of the week put at a share of a day's load. */
-const loads = (day: string, level: number) => {
-  chose('load', loaded(settings.value.load, day, Math.round(level * WHOLE_LOAD)))
+function onSelectLoad(day: string, level: number) {
+  onChooseSetting('load', loaded(settings.value.load, day, Math.round(level * WHOLE_LOAD)))
 }
 
-const ruled = (said: string) => {
-  if (said === 'interval' || said === 'retention') chose('learned', said)
+function onSelectRule(said: string) {
+  if (said === 'interval' || said === 'retention') onChooseSetting('learned', said)
 }
 
+/** A number typed into a row. An empty field leaves the setting as it stands. */
+function onFieldType(field: Field, said: number | null) {
+  if (said === null) return
+  props.state.types(field, field === 'retention' ? round(said / 100, 2) : said)
+}
+
+function onFieldSettle() {
+  props.state.settles()
+}
+
+/**
+ * A row a person is done with, which is what writes the group. A control moved
+ * a step at a time says so when it is let go of; one that turns in a single
+ * gesture is done the moment it turns.
+ */
+function onChooseSetting(field: Field, value: SettingValue) {
+  props.state.types(field, value)
+  props.state.settles()
+}
+
+function onUpdateSlider(field: Field, share: number) {
+  props.state.types(field, share)
+}
+
+function onToggleEvenLoad(on: boolean) {
+  onChooseSetting('evenLoad', on)
+}
+
+function onChooseUnit(field: Field, unit: string) {
+  onChooseSetting(field, unit as BudgetUnit)
+}
+
+/** A day typed into the row that holds one. */
+function onDateChange(event: Event) {
+  onChooseSetting('byDate', (event.target as HTMLInputElement).value)
+}
+
+// --- Helpers ---
 /** How far a control runs, and nothing at all where nothing was said. */
 type ControlBounds = { min: number; max: number } | Record<string, never>
 
 /** One pair of ends as a control takes them, counted in the field's own units. */
-const ends = (one: Bounds | undefined, per = 1): ControlBounds =>
-  one ? { min: one.least * per, max: one.most * per } : {}
+function ends(one: Bounds | undefined, per = 1): ControlBounds {
+  return one ? { min: one.least * per, max: one.most * per } : {}
+}
 
 /**
  * How far a field goes, as the control it is drawn in takes it. A field the
  * application has said no bound for is left to the control's own ends.
  */
-const boundsOf = (field: Field): ControlBounds => {
+function boundsOf(field: Field): ControlBounds {
   const within = bounds.value
   if (field === 'newADay') return ends(within.newADay)
   if (field === 'reviewsADay') return ends(within.reviewsADay)
@@ -71,34 +113,13 @@ const boundsOf = (field: Field): ControlBounds => {
 }
 
 /** Whether a row draws a number, and the number it draws. */
-const counted = (field: Field): number | null => {
+function counted(field: Field): number | null {
   if (field === 'newADay') return settings.value.newADay
   if (field === 'reviewsADay') return settings.value.reviewsADay
   if (field === 'retention') return Math.round(settings.value.retention * 100)
   if (field === 'minutesADay') return settings.value.minutesADay
   if (field === 'interval') return settings.value.interval
   return null
-}
-
-/** A number typed into a row. An empty field leaves the setting as it stands. */
-const typed = (field: Field, said: number | null) => {
-  if (said === null) return
-  props.state.types(field, field === 'retention' ? round(said / 100, 2) : said)
-}
-
-/**
- * A row a person is done with, which is what writes the group. A control moved
- * a step at a time says so when it is let go of; one that turns in a single
- * gesture is done the moment it turns.
- */
-const chose = (field: Field, value: SettingValue) => {
-  props.state.types(field, value)
-  props.state.settles()
-}
-
-/** A day typed into the row that holds one. */
-const dated = (said: Event) => {
-  chose('byDate', (said.target as HTMLInputElement).value)
 }
 </script>
 
@@ -127,7 +148,7 @@ const dated = (said: Event) => {
           data-preset="day"
           :value="settings.byDate"
           :aria-labelledby="`preset-${field}`"
-          @change="dated"
+          @change="onDateChange"
         />
         <Select
           v-else-if="field === 'learned'"
@@ -137,14 +158,14 @@ const dated = (said: Event) => {
           :aria-labelledby="`preset-${field}`"
           class="preset-settings__choice"
           data-preset="choice"
-          @update:model-value="ruled"
+          @update:model-value="onSelectRule"
         />
         <SegmentedControl
           v-else-if="field === 'counts'"
           :model-value="settings.counts"
           :choices="budgetUnits"
           :aria-labelledby="`preset-${field}`"
-          @update:model-value="(one: string) => chose(field, one as BudgetUnit)"
+          @update:model-value="(one: string) => onChooseUnit(field, one)"
         />
         <!-- A share is moved along its whole range and read out beside
              the track, which draws no figure of its own. -->
@@ -155,8 +176,8 @@ const dated = (said: Event) => {
             :step="1"
             :aria-labelledby="`preset-${field}`"
             class="preset-settings__slider"
-            @update:model-value="(share: number) => props.state.types(field, share)"
-            @settles="props.state.settles()"
+            @update:model-value="(share: number) => onUpdateSlider(field, share)"
+            @settles="onFieldSettle"
           />
           <span class="preset-settings__percent" data-preset="percent">{{
             words.percent(settings.backlog)
@@ -167,13 +188,13 @@ const dated = (said: Event) => {
           :days="week"
           :levels="levels"
           :aria-labelledby="`preset-${field}`"
-          @chooses="loads"
+          @chooses="onSelectLoad"
         />
         <Switch
           v-else-if="field === 'evenLoad'"
           :model-value="settings.evenLoad"
           :aria-labelledby="`preset-${field}`"
-          @update:model-value="(on: boolean) => chose(field, on)"
+          @update:model-value="onToggleEvenLoad"
         />
         <NumberField
           v-else
@@ -182,8 +203,8 @@ const dated = (said: Event) => {
           :step="1"
           :aria-labelledby="`preset-${field}`"
           class="preset-settings__number"
-          @update:model-value="(said: number | null) => typed(field, said)"
-          @settles="props.state.settles()"
+          @update:model-value="(said: number | null) => onFieldType(field, said)"
+          @settles="onFieldSettle"
         />
       </span>
     </div>

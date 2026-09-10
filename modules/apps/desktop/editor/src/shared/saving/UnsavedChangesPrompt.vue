@@ -15,12 +15,30 @@ export interface UnsavedChangesWords {
   readonly later: string
 }
 
+// --- Props & Emits ---
 const props = defineProps<{
   conflicts: readonly ConflictPrompt[]
   /** What each note is called, for a person to tell them apart by. */
   called: (note: string) => string
   words: UnsavedChangesWords
 }>()
+
+// --- State ---
+
+// --- Handlers ---
+function onKeep(conflict: ConflictPrompt) {
+  void conflict.keep()
+}
+
+function onTake(conflict: ConflictPrompt) {
+  void conflict.take()
+}
+
+function onLater(conflict: ConflictPrompt) {
+  conflict.later()
+}
+
+// --- Helpers ---
 </script>
 
 <template>
@@ -29,13 +47,13 @@ const props = defineProps<{
     <ul class="unsaved__notes">
       <li v-for="one in props.conflicts" :key="one.note" class="unsaved__note">
         <span class="unsaved__title">{{ props.called(one.note) }}</span>
-        <button type="button" class="answer" @click="void one.keep()">
+        <button type="button" class="answer" @click="onKeep(one)">
           {{ props.words.keep }}
         </button>
-        <button type="button" class="answer" @click="void one.take()">
+        <button type="button" class="answer" @click="onTake(one)">
           {{ props.words.take }}
         </button>
-        <button type="button" class="answer" @click="one.later()">
+        <button type="button" class="answer" @click="onLater(one)">
           {{ props.words.later }}
         </button>
       </li>

@@ -16,6 +16,9 @@ import { useWindow } from './window/window'
 import { WORDS as words } from './shared/words'
 import { WORDS as note } from './note-tab/words'
 
+// --- Props & Emits ---
+
+// --- State ---
 /** What the notes still unwritten are put in: the window's words and a note's. */
 const unsaved = {
   going: words.going,
@@ -42,6 +45,21 @@ const {
   titled,
   where,
 } = useWindow()
+
+// --- Handlers ---
+function onCloseTab(id: string) {
+  shut(id)
+}
+
+function onShowTab(id: string) {
+  held.shown(id)
+}
+
+function onForgetNotice(id: string) {
+  log.forget(id)
+}
+
+// --- Helpers ---
 </script>
 
 <template>
@@ -52,8 +70,8 @@ const {
       v-model="layout"
       class="below"
       :tabs="held.tabs.value"
-      @close="shut"
-      @show="held.shown"
+      @close="onCloseTab"
+      @show="onShowTab"
     >
       <template #icon="{ id }">
         <component :is="tabIcon(id)" v-if="tabIcon(id)" class="tab-icon" />
@@ -87,7 +105,7 @@ const {
       :name="words.working"
       :put-away="words.putAway"
       :more="words.more"
-      @gone="log.forget"
+      @gone="onForgetNotice"
     />
 
     <UnsavedChangesPrompt

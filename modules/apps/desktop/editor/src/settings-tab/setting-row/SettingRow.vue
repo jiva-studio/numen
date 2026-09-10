@@ -10,6 +10,7 @@
  */
 import { computed } from 'vue'
 
+// --- Props & Emits ---
 const props = defineProps<{
   /** What the setting is about, which the name is addressed by. */
   at: string
@@ -23,7 +24,12 @@ defineSlots<{
   default(props: { labelledBy: string }): unknown
 }>()
 
+// --- State ---
 const labelling = computed(() => `settings-${props.at}`)
+
+// --- Handlers ---
+
+// --- Helpers ---
 </script>
 
 <template>

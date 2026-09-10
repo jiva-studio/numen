@@ -12,8 +12,10 @@ import MediaLayout from '../shared/media/MediaLayout.vue'
 import { DELETE_TEXT, PROOFREAD, WORDS as words } from '../shared/media/words'
 import type { MediaTabState } from '../shared/media/kind'
 
+// --- Props & Emits ---
 const props = defineProps<{ state: MediaTabState }>()
 
+// --- State ---
 const { deletable, now, playable, playing, proofreadable, runs } = props.state
 
 /** What the menu offers over this recording: each item only where it applies. */
@@ -22,14 +24,29 @@ const offered = computed(() => [
   ...(deletable.value ? [{ id: DELETE_TEXT, text: words.deleteText }] : []),
 ])
 
-const chose = (id: string) => {
+// --- Handlers ---
+function onChoose(id: string) {
   if (id === PROOFREAD) props.state.proofreads()
   if (id === DELETE_TEXT) props.state.deletes()
 }
+
+function onPlay() {
+  props.state.play()
+}
+
+function onPause() {
+  props.state.pause()
+}
+
+function onSeek(at: number) {
+  props.state.go(at)
+}
+
+// --- Helpers ---
 </script>
 
 <template>
-  <MediaLayout :state="props.state" :offered="offered" @choose="chose">
+  <MediaLayout :state="props.state" :offered="offered" @choose="onChoose">
     <template #player>
       <Player
         v-if="playable"
@@ -38,9 +55,9 @@ const chose = (id: string) => {
         :length="runs"
         :playing="playing"
         :label="words.player"
-        @play="props.state.play()"
-        @pause="props.state.pause()"
-        @seek="props.state.go($event)"
+        @play="onPlay"
+        @pause="onPause"
+        @seek="onSeek"
       />
       <p v-else class="recording__note">{{ words.unplayable }}</p>
     </template>
