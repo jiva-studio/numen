@@ -20,7 +20,7 @@ import {
   type NoteType,
   type Seat,
 } from '../shared/core'
-import { windowTabs, type AnyTabKind } from '../shared/tabs/windowTabs'
+import { useWindowTabs, type AnyTabKind } from '../shared/tabs/windowTabs'
 import { PLEX } from '../shared/tabs/workspace'
 
 /** A moment for whatever a gesture asked the vault for to come back. */
@@ -1052,7 +1052,7 @@ const window = (opening = 'Opening.md') => {
     views.push(view)
     return view.view
   }
-  const held = windowTabs()
+  const held = useWindowTabs()
   const plexes = plexKind(held.handle, makes, {
     makes: making().makes,
     ready: ref(true),

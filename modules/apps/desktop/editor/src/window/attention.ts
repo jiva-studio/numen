@@ -5,13 +5,13 @@ import { computed, watch } from 'vue'
 import { iconOfKind } from '../shared/icons'
 import { AGENT } from '../shared/tabs/workspace'
 import type { Attention, Core } from '../shared/core'
-import type { OpenTab, windowTabs } from '../shared/tabs/windowTabs'
+import type { OpenTab, useWindowTabs } from '../shared/tabs/windowTabs'
 
 export interface AttentionDeps {
   core: Core
   /** The window tabs manager. */
-  tabs?: ReturnType<typeof windowTabs>
-  held?: ReturnType<typeof windowTabs>
+  tabs?: ReturnType<typeof useWindowTabs>
+  held?: ReturnType<typeof useWindowTabs>
 }
 
 export function useAttention({ core, tabs, held }: AttentionDeps) {

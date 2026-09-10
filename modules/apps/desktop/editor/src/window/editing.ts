@@ -16,13 +16,13 @@ import { reaching, type Store } from '../shared/command/deps'
 import type { Core } from '../shared/core'
 import type { MessageLog } from '../shared/notices/messages'
 import type { FileOpeners } from '../shared/tabs/openers'
-import type { windowTabs } from '../shared/tabs/windowTabs'
+import type { useWindowTabs } from '../shared/tabs/windowTabs'
 
 export interface EditingDeps {
   core: Core
   log: MessageLog
   puts: FileOpeners
-  held: ReturnType<typeof windowTabs>
+  held: ReturnType<typeof useWindowTabs>
   day: () => string
 }
 

@@ -16,7 +16,7 @@ import type { RunSupport } from '../shared/command/runs'
 import type { IndexCoverage } from '../shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '../shared/notices/messages'
 import type { fileMakers } from '../shared/tabs/makers'
-import type { windowTabs } from '../shared/tabs/windowTabs'
+import type { useWindowTabs } from '../shared/tabs/windowTabs'
 import { WORDS } from '../shared/words'
 import type { noteMaker } from '../note-tab/maker'
 import type { VaultCore } from './vault'
@@ -27,7 +27,7 @@ export interface CommandsDepsOptions {
   core: VaultCore
   words: Words
   log: MessageLog
-  held: ReturnType<typeof windowTabs>
+  held: ReturnType<typeof useWindowTabs>
   where: () => CommandTarget
   knows: NoteLookup
   kept: PaletteLists

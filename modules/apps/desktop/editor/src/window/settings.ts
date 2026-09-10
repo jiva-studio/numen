@@ -21,7 +21,7 @@ import type { PaletteLists } from '../shared/command/lists'
 import type { Core } from '../shared/core'
 import type { MessageLog } from '../shared/notices/messages'
 import { WORDS } from '../shared/words'
-import type { windowTabs } from '../shared/tabs/windowTabs'
+import type { useWindowTabs } from '../shared/tabs/windowTabs'
 
 type Words = typeof WORDS
 
@@ -29,7 +29,7 @@ export interface SettingsDeps {
   core: Core
   words: Words
   log: MessageLog
-  held: ReturnType<typeof windowTabs>
+  held: ReturnType<typeof useWindowTabs>
   onSizeChanged: () => void
 }
 

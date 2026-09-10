@@ -15,7 +15,7 @@ import type { EditorHandle } from './keyboard'
 import type { noteChanges } from './changes'
 import type { openNotes } from './notes'
 import type { State } from './tab'
-import { windowTabs } from '../shared/tabs/windowTabs'
+import { useWindowTabs } from '../shared/tabs/windowTabs'
 import { NOTE } from '../shared/tabs/workspace'
 
 /** A vault that answers with the heading written into each note. */
@@ -123,7 +123,7 @@ const window = (
 ) => {
   const store = notes(states)
   const drawing = drawings()
-  const held = windowTabs()
+  const held = useWindowTabs()
   const puts = fileOpeners({
     fileKinds: async (paths) =>
       new Map(paths.map((path) => [path, { kind: 'note' as const, type: 'note' as const }])),

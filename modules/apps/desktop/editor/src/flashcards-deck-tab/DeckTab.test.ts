@@ -12,7 +12,7 @@ import type { RefusalReason } from '../shared/core'
 import type { Cards, VaultCard, Problem } from '../shared/flashcards/cards'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '../flashcards-preset-tab/core'
 import { fileOpeners } from '../shared/tabs/openers'
-import { windowTabs } from '../shared/tabs/windowTabs'
+import { useWindowTabs } from '../shared/tabs/windowTabs'
 import { DECK } from '../shared/tabs/workspace'
 import DeckTab from './DeckTab.vue'
 import { useDeckTabs, type DeckTabState } from './deckTabs'
@@ -166,7 +166,7 @@ const drawn = async (
     }),
   }
 
-  const held = windowTabs()
+  const held = useWindowTabs()
   const decks = useDeckTabs(core, presets, held.handle, puts())
   held.declares([decks.kind])
   const id = await held.opens(DECK, 'Animals.md')

@@ -9,7 +9,7 @@ import { ref } from 'vue'
 import { recordingKind, type MediaTabState, type Medium } from './kind'
 import type { TranscriptState } from './transcript'
 import { fileOpeners } from '../tabs/openers'
-import { windowTabs } from '../tabs/windowTabs'
+import { useWindowTabs } from '../tabs/windowTabs'
 import { RECORDING } from '../tabs/workspace'
 
 /** A medium drawn by nothing, which is as much of one as a kind is asked for. */
@@ -30,7 +30,7 @@ const recording = (path: string, transcribedDuration: number, duration: number) 
 
 /** The kind, made with a window that opens recordings this test hands it. */
 const kind = (held: MediaTabState) => {
-  const window = windowTabs()
+  const window = useWindowTabs()
   return recordingKind(
     window.handle,
     () => held as unknown as TranscriptState,

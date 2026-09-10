@@ -9,7 +9,7 @@ import { nextTick, ref } from 'vue'
 import type { Conversation, Turn } from '@numen/ui'
 import { agentKind, firstLine, useAgentConversation, type AgentTabState } from './kind'
 import type { Span } from '../shared/core'
-import { windowTabs } from '../shared/tabs/windowTabs'
+import { useWindowTabs } from '../shared/tabs/windowTabs'
 import { AGENT } from '../shared/tabs/workspace'
 
 /** A talk that records what it was asked, and the places its lines name. */
@@ -54,7 +54,7 @@ const tab = (
 /** A window of agent tabs, with a talk of its own for each. */
 const tabs = (about = { path: '', title: '' }) => {
   const talks: ReturnType<typeof tab>[] = []
-  const held = windowTabs()
+  const held = useWindowTabs()
   const agents = agentKind(
     held.handle,
     () => {

@@ -32,7 +32,7 @@ import { does } from '../shared/command/handlers'
 import { lands, type DestinationDeps } from '../shared/command/destination'
 import { fileOpeners } from '../shared/tabs/openers'
 import { fileMakers } from '../shared/tabs/makers'
-import { windowTabs } from '../shared/tabs/windowTabs'
+import { useWindowTabs } from '../shared/tabs/windowTabs'
 import { messageLog } from '../shared/notices/messages'
 import { agentKind, useAgentConversation } from '../agent-tab/kind'
 import { documentKind, useDocumentTab } from '../document-tab/kind'
@@ -61,7 +61,7 @@ import { useCommands } from './commands'
 export const useWindow = () => {
   const log = messageLog()
   const told = log.under('command')
-  const held = windowTabs()
+  const held = useWindowTabs()
   const { layout } = held
   const puts = fileOpeners(core)
   const runs = runSupport()
