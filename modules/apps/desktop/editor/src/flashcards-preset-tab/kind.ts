@@ -1,10 +1,5 @@
 /**
- * The presets the window has open, and what one preset tab holds.
- *
- * A preset is read whole and written whole: the settings a person moves are one
- * group, and one write carries them. The file a read came out of goes back with
- * that write, so a file that moved under the window is answered and not
- * overwritten.
+ * Window registration and tab state for flashcard preset tabs.
  */
 import { ref, shallowRef, type Ref } from 'vue'
 import { StopReason } from '@numen/protocol'
@@ -41,12 +36,12 @@ import {
 } from './curve'
 import { fileOf } from '../shared/paths'
 import { WORDS as words } from './words'
+import type { PresetTabState, SettingValue } from './types'
+
+export type { PresetTabState, SettingValue }
 
 /** How far off the day a goal of a date opens on, where the file names none. */
 const AHEAD = 30
-
-/** What a person can put into one row of the receipt. */
-export type SettingValue = number | string | boolean | Load
 
 /** Whether what was said is a share for each day of the week that carries one. */
 const isLoad = (value: SettingValue): value is Load =>
@@ -81,58 +76,6 @@ const taking = (read: Settings, was: Settings, theirs: ReadonlySet<keyof Setting
   const out: MutableSettings = { ...read }
   for (const field of theirs) kept(out, was, field)
   return out
-}
-
-/** What one preset tab holds. */
-export interface PresetTabState {
-  /** The identity this preset opened under, which its tab keeps wherever it goes. */
-  readonly id: string
-  /** The settings as they now stand, whether or not they have been written. */
-  readonly settings: Readonly<Ref<Settings>>
-  /** The curve of the goal, which is the control the person moves. */
-  readonly curve: Readonly<Ref<Curve>>
-  /**
-   * What the preset schedules, as the last answer counted it, and nothing until
-   * one has. No setting moves these figures, so they stand while a curve asked
-   * under other settings is on its way.
-   */
-  readonly material: Readonly<Ref<PresetCounts | null>>
-  /** Where the knob stands on that curve. */
-  readonly place: Readonly<Ref<number>>
-  /** An answer to the picture is on its way. */
-  readonly waiting: Readonly<Ref<boolean>>
-  /**
-   * How far each setting goes, as the application answers it. They are its own
-   * and not this preset's, and nothing is said of them until a read lands.
-   */
-  readonly bounds: Readonly<Ref<SettingsBounds>>
-  /** What is wrong with the file, in the words to show. */
-  readonly problems: Readonly<Ref<readonly string[]>>
-  /**
-   * Why it schedules nothing on the day it was read in, as the vault says it.
-   * The rule is the core's, and it is the rule a session hands its cards out by.
-   */
-  readonly stopped: Readonly<Ref<StopReason>>
-  /** What the file was refused for, in words a person reads, or nothing. */
-  readonly saying: Readonly<Ref<string>>
-  /** The file moved under the window and nothing was written. */
-  readonly changed: Readonly<Ref<boolean>>
-  /** The file read again, which is the way out of that. */
-  again(): void
-  /** Another of the three goals steers this preset from now on. */
-  chooses(goal: Goal): void
-  /** The knob moved to a place of the grid. Nothing is written while it moves. */
-  moves(place: number): void
-  /** A control let go of, which is what writes the group. */
-  settles(): void
-  /**
-   * One field moved: the settings and the drawing follow it and nothing is
-   * written, as under the knob. The field the goal steers is the knob, and
-   * typing into it moves the knob.
-   */
-  types(field: Field, value: SettingValue): void
-  /** The tab is closing. */
-  shuts(id: string): void
 }
 
 /**
@@ -524,61 +467,66 @@ export function usePresetTab(
 
   /** What one open preset holds, in the vocabulary its tab is drawn from. */
   const holding = (one: OpenPreset, id: string): PresetTabState => {
+    const chooseGoal = (goal: Goal) => {
+      const was = one.settings.value
+      if (goal === was.goal) return
+      one.settings.value = aiming(was, goal)
+      one.theirs.add('goal')
+      if (one.settings.value.byDate !== was.byDate) one.theirs.add('byDate')
+      void writes(one)
+      void curves(one)
+    }
+
+    const updateSetting = (field: Field, value: SettingValue) => {
+      if (field === steers(one.settings.value.goal)) {
+        moved(one, field, value)
+        const place = falling(one, value)
+        if (place >= 0) one.place.value = place
+        if (shapeOf(one.settings.value) !== one.shape) void curves(one)
+        return
+      }
+      moved(one, field, value)
+      if (shapeOf(one.settings.value) !== one.shape) void curves(one)
+    }
+
+    const closeTab = (tab: string) => {
+      void shut(one).then((gone) => {
+        if (!gone) return
+        open.delete(one.path.value)
+        handle.closes(tab)
+      })
+    }
+
     return {
       id,
       settings: one.settings,
       curve: one.curve,
+      counts: one.material,
       material: one.material,
+      sliderPosition: one.place,
       place: one.place,
+      isWaiting: one.waiting,
       waiting: one.waiting,
       bounds,
       problems: one.problems,
       stopped: one.stopped,
+      errorMessage: one.saying,
       saying: one.saying,
+      hasChanged: one.changed,
       changed: one.changed,
       again: () => void reads(one),
-      chooses: (goal) => {
-        const was = one.settings.value
-        if (goal === was.goal) return
-        one.settings.value = aiming(was, goal)
-        one.theirs.add('goal')
-        // A goal of a date opens on a day where the file names none, and that
-        // day is the person's from here.
-        if (one.settings.value.byDate !== was.byDate) one.theirs.add('byDate')
-        // The goal is a settled choice the moment it is made, and the file
-        // carries it whether or not the curve of it ever comes back.
-        void writes(one)
-        void curves(one)
-      },
+      reload: () => void reads(one),
+      chooses: chooseGoal,
+      chooseGoal,
       moves: (place) => turns(one, place),
+      move: (place) => turns(one, place),
+      moveSlider: (place) => turns(one, place),
       settles: () => void writes(one),
-      types: (field, value) => {
-        // The value typed into the field the goal steers is the value kept and
-        // written. The knob goes to the place nearest it, which is where the
-        // person now stands on the grid.
-        if (field === steers(one.settings.value.goal)) {
-          moved(one, field, value)
-          const place = falling(one, value)
-          if (place >= 0) one.place.value = place
-          // The range the curve is drawn over runs to the value the knob
-          // rides, so a value typed past the end of it is a curve to ask for.
-          if (shapeOf(one.settings.value) !== one.shape) void curves(one)
-          return
-        }
-        moved(one, field, value)
-        // A field the knob does not ride gives the curve its shape, so the
-        // curve is asked for again where one of those is typed.
-        if (shapeOf(one.settings.value) !== one.shape) void curves(one)
-      },
-      // The tab stands until the settings are written, and goes then. A preset
-      // that was renamed is filed under the name it now carries.
-      shuts: (tab) => {
-        void shut(one).then((gone) => {
-          if (!gone) return
-          open.delete(one.path.value)
-          handle.closes(tab)
-        })
-      },
+      save: () => void writes(one),
+      types: updateSetting,
+      updateSetting,
+      shuts: closeTab,
+      close: closeTab,
     }
   }
 

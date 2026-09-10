@@ -1,16 +1,12 @@
 <script setup lang="ts">
 /**
- * A preset tab: the one control at the top, and under it the settings its goal
- * schedules by. The goal owns one value and writes only that; every other
- * setting stands as the person left it.
- *
- * `data-preset` names the parts: `label`, `unpointed` and `stopped`.
+ * Displays flashcard review preset settings and target curve slider.
  */
 import { computed } from 'vue'
 import { SegmentedControl } from '@numen/ui'
 import CurveSlider from './curve-slider/CurveSlider.vue'
 import PresetSettings from './preset-settings/PresetSettings.vue'
-import type { PresetTabState } from './kind'
+import type { PresetTabState } from './types'
 import { GOALS } from './core'
 import type { Goal } from './core'
 import { idle, valueAt } from './curve'
@@ -60,19 +56,23 @@ const stopped = computed(() => words.stopped(stoppedAt.value))
 
 // --- Handlers ---
 function onAgain() {
-  props.state.again()
+  const reload = props.state.reload ?? props.state.again
+  reload()
 }
 
 function onSelectGoal(one: string) {
-  props.state.chooses(one as Goal)
+  const chooseGoal = props.state.chooseGoal ?? props.state.chooses
+  chooseGoal(one as Goal)
 }
 
 function onMoveSlider(at: number) {
-  props.state.moves(at)
+  const move = props.state.moveSlider ?? props.state.move ?? props.state.moves
+  move(at)
 }
 
 function onSettleSlider() {
-  props.state.settles()
+  const save = props.state.save ?? props.state.settles
+  save()
 }
 
 // --- Helpers ---
