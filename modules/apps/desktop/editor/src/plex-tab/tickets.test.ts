@@ -6,24 +6,24 @@
  * a note the person never touched.
  */
 import { describe, expect, it } from 'vitest'
-import { ticketing } from './tickets'
+import { createTickets } from './tickets'
 
 describe('a note being drawn', () => {
   it('holds one ticket for as long as the picture draws it', () => {
-    const tickets = ticketing()
+    const tickets = createTickets()
 
     expect(tickets.of('Entropy.md')).toBe(tickets.of('Entropy.md'))
   })
 
   it('holds a ticket no other note in the picture holds', () => {
-    const tickets = ticketing()
+    const tickets = createTickets()
     const drawn = ['Root.md', 'physics/Entropy.md', 'Heat.md'].map(tickets.of)
 
     expect(new Set(drawn).size).toBe(3)
   })
 
   it('holds nothing at all where there is no path to hold it', () => {
-    const tickets = ticketing()
+    const tickets = createTickets()
 
     expect(tickets.of('')).toBe('')
   })
@@ -31,7 +31,7 @@ describe('a note being drawn', () => {
 
 describe('a note whose file moved', () => {
   it('keeps the ticket it held', () => {
-    const tickets = ticketing()
+    const tickets = createTickets()
     const ticket = tickets.of('Entropy.md')
 
     tickets.moved([{ from: 'Entropy.md', to: 'physics/Entropy.md' }])
@@ -41,7 +41,7 @@ describe('a note whose file moved', () => {
   })
 
   it('keeps it through a second move', () => {
-    const tickets = ticketing()
+    const tickets = createTickets()
     const ticket = tickets.of('Entropy.md')
 
     tickets.moved([{ from: 'Entropy.md', to: 'physics/Entropy.md' }])
@@ -51,7 +51,7 @@ describe('a note whose file moved', () => {
   })
 
   it('is left where it stood by a move of some other note', () => {
-    const tickets = ticketing()
+    const tickets = createTickets()
     const ticket = tickets.of('Entropy.md')
 
     tickets.moved([{ from: 'Heat.md', to: 'physics/Heat.md' }])
@@ -60,7 +60,7 @@ describe('a note whose file moved', () => {
   })
 
   it('moves with every other note of a folder that moved at once', () => {
-    const tickets = ticketing()
+    const tickets = createTickets()
     const one = tickets.of('physics/Entropy.md')
     const two = tickets.of('physics/Heat.md')
 
@@ -76,7 +76,7 @@ describe('a note whose file moved', () => {
   it('trades paths with a note that took its own', () => {
     // Read one move at a time, the first note is moved onto the second and the
     // second is moved back onto the first, and one ticket names both.
-    const tickets = ticketing()
+    const tickets = createTickets()
     const one = tickets.of('One.md')
     const two = tickets.of('Two.md')
 
@@ -92,13 +92,13 @@ describe('a note whose file moved', () => {
 
 describe('a ticket handed back', () => {
   it('names the note holding it', () => {
-    const tickets = ticketing()
+    const tickets = createTickets()
 
     expect(tickets.note(tickets.of('Entropy.md'))).toBe('Entropy.md')
   })
 
   it('names nothing where no note holds it', () => {
-    const tickets = ticketing()
+    const tickets = createTickets()
     tickets.of('Entropy.md')
 
     expect(tickets.note('999')).toBe('')
@@ -109,7 +109,7 @@ describe('a ticket handed back', () => {
 
 describe('the notes one picture drew', () => {
   it('are kept, and every other note is let go of', () => {
-    const tickets = ticketing()
+    const tickets = createTickets()
     const kept = tickets.of('Root.md')
     const gone = tickets.of('Heat.md')
 
@@ -120,7 +120,7 @@ describe('the notes one picture drew', () => {
   })
 
   it('leave a note that comes back holding a ticket of its own', () => {
-    const tickets = ticketing()
+    const tickets = createTickets()
     const root = tickets.of('Root.md')
     const before = tickets.of('Heat.md')
     tickets.keeps([root])
@@ -133,7 +133,7 @@ describe('the notes one picture drew', () => {
   })
 
   it('are all a person travelling from note to note leaves held', () => {
-    const tickets = ticketing()
+    const tickets = createTickets()
     /** Every ticket minted along the way, whatever became of it. */
     const minted: string[] = []
 

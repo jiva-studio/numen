@@ -18,7 +18,7 @@ import { cards } from '../shared/flashcards/cards'
 import { presets } from '../flashcards-preset-tab/core'
 import type { Source } from '../shared/core'
 import { showing } from './showing'
-import { view } from '../plex-tab/view'
+import { usePlexView } from '../plex-tab/view'
 import { useDocumentReader } from '../document-tab/open'
 import { useBookReader } from '../book-tab/open'
 import { WORDS as bookWords } from '../book-tab/words'
@@ -126,7 +126,7 @@ export const useWindow = () => {
 
   const dragged = shallowRef<readonly string[]>([])
 
-  const plexes = plexKind(held.handle, () => view(core), {
+  const plexes = plexKind(held.handle, () => usePlexView(core), {
     makes: editing.making,
     ready: computed(() => !window.failure.value),
     hangs: settings.hungParts.hangs,

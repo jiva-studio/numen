@@ -16,8 +16,8 @@ import type {
 import { answerGuard } from '../shared/questions'
 import { NEW_NOTE, OFFERED } from './menu'
 import { asParts, asPlex, typesIn } from './picture'
-import type { View } from './view'
-import { ticketing } from './tickets'
+import type { PlexView } from './view'
+import { createTickets } from './tickets'
 import type { Move, NoteHeading, NoteType } from '../shared/core'
 import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
 import { PLEX } from '../shared/tabs/workspace'
@@ -96,7 +96,7 @@ export interface PlexTabDeps {
 }
 
 /** What one plex tab holds. */
-export type PlexTabState = ReturnType<typeof plexing>
+export type PlexTabState = ReturnType<typeof usePlexTab>
 
 /**
  * The plex tabs of a window, in the order the person was last in them.
@@ -105,7 +105,7 @@ export type PlexTabState = ReturnType<typeof plexing>
  * the window is put in front of, and the one a plex opened after it stands
  * beside.
  */
-export function plexKind(handle: WindowHandle, makes: () => View, deps: PlexTabDeps) {
+export function plexKind(handle: WindowHandle, makes: () => PlexView, deps: PlexTabDeps) {
   /** Every plex the window holds, and the one the person was last in. */
   const all = () => handle.each<PlexTabState>(PLEX)
   const front = (): PlexTabState | null => handle.last<PlexTabState>(PLEX)?.state ?? null
@@ -113,7 +113,7 @@ export function plexKind(handle: WindowHandle, makes: () => View, deps: PlexTabD
   const kind: TabKind<PlexTabState, typeof PLEX> = {
     kind: PLEX,
     opens: (at) => {
-      const state = plexing(makes(), deps)
+      const state = usePlexTab(makes(), deps)
       const from = at || looking() || deps.opening.value
       if (from) void state.view.go(from)
       return state
@@ -199,9 +199,9 @@ export function plexKind(handle: WindowHandle, makes: () => View, deps: PlexTabD
   return { kind, looking, names, travel, leaves, again }
 }
 
-export function plexing(view: View, deps: PlexTabDeps) {
+export function usePlexTab(view: PlexView, deps: PlexTabDeps) {
   /** What this plex calls each note it draws. */
-  const tickets = ticketing()
+  const tickets = createTickets()
 
   /**
    * The picture as the plex reads it, and nothing while the window has none.

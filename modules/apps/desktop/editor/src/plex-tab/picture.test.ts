@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Neighbourhood, Seat } from '../shared/core'
 import { asPlex } from './picture'
-import { ticketing } from './tickets'
+import { createTickets } from './tickets'
 
 /** A note and what sits around it: seat, label, the note it comes through, and
  *  whether the other note names the relationship too. */
@@ -26,7 +26,7 @@ const around = (focus: string, related: NeighbourRow[]): Neighbourhood => ({
  * one carrying no identifier, which is the note the picture has to draw.
  */
 const drawing = (neighbourhood: ReturnType<typeof around>) => {
-  const tickets = ticketing()
+  const tickets = createTickets()
   return { plex: asPlex(neighbourhood, tickets.of), note: tickets.note }
 }
 
@@ -123,7 +123,7 @@ describe('what a note is drawn under', () => {
   ])
 
   it('is the ticket the note holds, and never the file it is filed under', () => {
-    const tickets = ticketing()
+    const tickets = createTickets()
     const plex = asPlex(held, (path) => `#${path}`)
 
     expect(plex.nodes.map((node) => node.id)).toEqual(['#Here', '#Above', '#Below', '#Beside'])

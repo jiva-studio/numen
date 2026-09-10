@@ -8,9 +8,9 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { paneById, panesOf } from '@numen/ui'
-import { plexKind, plexing, type PlexTabState, type PlexEditor, type PlexTabDeps } from './kind'
+import { plexKind, usePlexTab, type PlexTabState, type PlexEditor, type PlexTabDeps } from './kind'
 import { ITEMS, NEW_NOTE } from './menu'
-import { view as viewing, type View } from './view'
+import { usePlexView as viewing, type View } from './view'
 import { WORDS as words } from './words'
 import {
   movedTo,
@@ -136,7 +136,7 @@ const tab = (at: string, related: readonly string[] = [], takes = true, types: T
     },
     creatable: ['parent', 'child', 'jump'],
   }
-  const state = plexing(plex.view, deps)
+  const state = usePlexTab(plex.view, deps)
   /** What the picture calls a note, which is what a gesture in it carries. */
   const node = (path: string) => nodeFor(state, path.replace(/\.md$/, ''))
   return {
@@ -272,7 +272,7 @@ describe('a plex drawing nothing', () => {
       follows: () => {},
       close: () => {},
     }
-    return plexing(view as unknown as View, {
+    return usePlexTab(view as unknown as View, {
       makes: making().makes,
       ready: ref(true),
       hangs: ref(true),
@@ -363,7 +363,7 @@ describe('what a note in the picture is called', () => {
 describe('the picture', () => {
   it('is nothing while the window has nothing true to draw', () => {
     const plex = viewOn('Root.md')
-    const state = plexing(plex.view, {
+    const state = usePlexTab(plex.view, {
       makes: making().makes,
       ready: ref(false),
       hangs: ref(true),
@@ -538,7 +538,7 @@ describe('the parts a node hangs', () => {
     // change followed while a travel is still out.
     const answers: ((held: ReadonlyMap<string, readonly NoteHeading[]>) => void)[] = []
     const one = tab('Root.md')
-    const plex = plexing(one.state.view, {
+    const plex = usePlexTab(one.state.view, {
       makes: making().makes,
       ready: ref(true),
       hangs: ref(true),
@@ -733,7 +733,7 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
       }
     },
   })
-  const state = plexing(view, {
+  const state = usePlexTab(view, {
     makes: vault.makes,
     ready: ref(true),
     hangs: ref(true),

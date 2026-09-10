@@ -7,7 +7,7 @@
  */
 import { movedTo, type Move } from '../shared/core'
 
-export function ticketing() {
+export function createTickets() {
   /** The ticket each note holds, by the path its file is at. */
   let held = new Map<string, string>()
   /** What the last ticket was minted as. A number is spent once. */

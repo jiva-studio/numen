@@ -15,9 +15,10 @@ export interface Neighbours {
   neighbourhood(path: string): Promise<Neighbourhood>
 }
 
-export type View = ReturnType<typeof view>
+export type View = ReturnType<typeof usePlexView>
+export type PlexView = View
 
-export function view(core: Neighbours) {
+export function usePlexView(core: Neighbours) {
   const neighbourhood = ref<Neighbourhood | null>(null)
   /**
    * The note this plex is showing, as it asked for it.

@@ -16,8 +16,10 @@ import { iconFor, iconOfNote } from '../shared/icons'
 import type { PlexTabState } from './kind'
 import { WORDS as words } from './words'
 
+// --- Props & Emits ---
 const props = defineProps<{ state: PlexTabState }>()
 
+// --- State ---
 // The tab's state outlives this component, so what it holds is bound once here
 // and the template unwraps it.
 const { dragged, empty, menu, mostParts, picture: neighbourhood } = props.state
@@ -33,24 +35,18 @@ const options = computed(() => ({
   maxParts: mostParts.value,
 }))
 
-/**
- * What a node is drawn before its title, and nothing for an ordinary note. A
- * deck, a stencil and a preset carry the icon the tree draws them under.
- */
-const nodeIcon = (node: string): LucideIcon | null => {
-  const type = props.state.typeOf(node)
-  return type === 'note' ? null : iconOfNote(type)
-}
-
 /** What the menu offers: on a node, or off every node. */
 const items = computed(() => (menu.value?.node === null ? NONE : ITEMS))
 
+const picture = useTemplateRef<{ focusNode: (id: string) => void }>('picture')
+
+// --- Handlers ---
 /**
  * A menu asked for over a tab drawing no picture, which is a vault holding no
  * note to draw one around. A tab drawing one leaves the picture to answer, and
  * so does a vault that has notes and has not been read yet.
  */
-const asks = (event: MouseEvent) => {
+function onContextMenu(event: MouseEvent) {
   if (!empty.value) return
   event.preventDefault()
   props.state.asks({
@@ -60,10 +56,58 @@ const asks = (event: MouseEvent) => {
   })
 }
 
-const picture = useTemplateRef<{ focusNode: (id: string) => void }>('picture')
+function onActivateNode(node: string) {
+  props.state.activate(node)
+}
+
+function onCreateNode(from: string, seat: PlexRelatedSeat) {
+  void props.state.made(from, seat)
+}
+
+function onLinkNodes(from: string, to: string, seat: PlexRelatedSeat) {
+  void props.state.joined(from, to, seat)
+}
+
+function onBringNodes(dragged: readonly string[], seat: PlexRelatedSeat) {
+  void props.state.brought(dragged, seat)
+}
+
+function onOpenMenu(node: string, at: { x: number; y: number }, opening: MenuOpening) {
+  props.state.asks({ node, at, opening })
+}
+
+function onShowNode(node: string, how: PlexShowing) {
+  props.state.opens(node, how)
+}
+
+function onEnterPart(node: string, part: string) {
+  props.state.entered(node, part)
+}
+
+function onDismissPicture() {
+  props.state.dismiss()
+}
+
+function onChooseMenuItem(id: string) {
+  closeMenu(id)
+}
+
+function onDismissMenu() {
+  closeMenu()
+}
+
+// --- Helpers ---
+/**
+ * What a node is drawn before its title, and nothing for an ordinary note. A
+ * deck, a stencil and a preset carry the icon the tree draws them under.
+ */
+function getNodeIcon(node: string): LucideIcon | null {
+  const type = props.state.typeOf(node)
+  return type === 'note' ? null : iconOfNote(type)
+}
 
 /** A menu put away, and the keyboard back on the node it was asked from. */
-const closed = (chose?: string) => {
+function closeMenu(chose?: string) {
   const node = menu.value?.node ?? null
   if (chose === undefined) props.state.dismiss()
   else props.state.chose(chose)
@@ -72,7 +116,7 @@ const closed = (chose?: string) => {
 </script>
 
 <template>
-  <div class="plex" @contextmenu="asks">
+  <div class="plex" @contextmenu="onContextMenu">
     <p v-if="props.state.view.trouble.value" class="caution">
       {{ props.state.view.trouble.value }}
     </p>
@@ -87,29 +131,21 @@ const closed = (chose?: string) => {
       :dragged="dragged"
       :drop-name="words.dropName"
       :parts="props.state.partsOf"
-      @activate="(node: string) => props.state.activate(node)"
-      @create="(from: string, seat: PlexRelatedSeat) => void props.state.made(from, seat)"
-      @link="
-        (from: string, to: string, seat: PlexRelatedSeat) => void props.state.joined(from, to, seat)
-      "
-      @bring="
-        (dragged: readonly string[], seat: PlexRelatedSeat) =>
-          void props.state.brought(dragged, seat)
-      "
-      @menu="
-        (node: string, at: { x: number; y: number }, opening: MenuOpening) =>
-          props.state.asks({ node, at, opening })
-      "
-      @show="(node: string, how: PlexShowing) => props.state.opens(node, how)"
-      @enter="(node: string, part: string) => props.state.entered(node, part)"
-      @dismiss="props.state.dismiss()"
+      @activate="onActivateNode"
+      @create="onCreateNode"
+      @link="onLinkNodes"
+      @bring="onBringNodes"
+      @menu="onOpenMenu"
+      @show="onShowNode"
+      @enter="onEnterPart"
+      @dismiss="onDismissPicture"
     >
       <!-- A deck, a stencil and a preset are drawn as the tree draws them. An
            ordinary note is drawn its title and nothing before it. -->
       <template #icon="{ node }: { node: { id: string } }">
         <component
-          :is="nodeIcon(node.id)"
-          v-if="nodeIcon(node.id)"
+          :is="getNodeIcon(node.id)"
+          v-if="getNodeIcon(node.id)"
           class="plex__icon"
           aria-hidden="true"
         />
@@ -122,8 +158,8 @@ const closed = (chose?: string) => {
       :at="menu!.at"
       :opening="menu!.opening"
       open
-      @choose="(id: string) => closed(id)"
-      @dismiss="closed()"
+      @choose="onChooseMenuItem"
+      @dismiss="onDismissMenu"
     >
       <template #icon="{ id }">
         <component :is="iconFor(id)" v-if="iconFor(id)" class="plex__icon" aria-hidden="true" />
