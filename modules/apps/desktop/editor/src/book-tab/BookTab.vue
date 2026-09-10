@@ -1,9 +1,6 @@
 <script setup lang="ts">
 /**
- * A book tab: the document of the book the person is standing in, and the list
- * of what the book divides into, which comes over it.
- *
- * What the book could not be read as is said in the window's own notices.
+ * Book tab view rendering reflowable book text and contents navigation.
  */
 import { onBeforeUnmount, ref, useTemplateRef, watch, watchEffect } from 'vue'
 import { Book, BookContents } from '@numen/ui'

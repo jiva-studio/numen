@@ -1,25 +1,17 @@
 /**
- * What one book tab holds: the book being read, and the document the offset in
- * front falls in.
- *
- * A book is laid out against the room it has, and a tab is drawn while it is
- * out of sight, where there is none. What is drawn says so when it appears, and
- * lays the columns out again then.
+ * Window registration and tab state for book tabs.
  */
 import { shallowRef } from 'vue'
 import type { BookReaderState } from './open'
+import type { BookHandle } from './types'
 import type { Span } from '../shared/core'
 import type { FileOpeners } from '../shared/tabs/openers'
 import type { TabKind, WindowHandle } from '../shared/tabs/windowTabs'
 import { BOOK } from '../shared/tabs/workspace'
 import BookTab from './BookTab.vue'
 
-/** What the window asks of a book once it is drawn. */
-export interface BookHandle {
-  measure(): void
-  /** A key the tab caught: true where it turned the page. */
-  pressed(event: KeyboardEvent): boolean
-}
+export type { BookHandle }
+
 
 /** What one book tab holds. */
 export type BookTabState = ReturnType<typeof useBookTab>
