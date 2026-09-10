@@ -297,6 +297,7 @@ function isKeyboardOn(element: Element): boolean {
   try {
     return element.matches(':focus-visible')
   } catch {
+    // Unsupported selectors mean no visible keyboard focus is reported.
     return false
   }
 }
