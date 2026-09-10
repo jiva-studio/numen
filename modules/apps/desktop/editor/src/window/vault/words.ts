@@ -182,9 +182,9 @@ export const written = (link: Link) => ({
   label: link.label ?? '',
 })
 
-export const seenOf = (seen: { prose: string; at: string }) => ({
+export const seenOf = (seen: { prose: string; path: string }) => ({
   prose: seen.prose,
-  at: fingerprint(seen.at),
+  at: fingerprint(seen.path),
 })
 
 export const answered = (from: {

@@ -149,7 +149,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
    * The file this tab last read or wrote, which a caller writing to the same
    * note beside the tab presents. Empty where no file has been read.
    */
-  const at = (id: string): string => tabs.value.get(id)?.at ?? ''
+  const at = (id: string): string => tabs.value.get(id)?.filePath ?? ''
 
   /** The person typed. */
   const typed = (id: string, body: string): void => {
@@ -212,7 +212,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     if (held && !writing) closing.get(id)?.(false)
 
     // A note settling is done the moment nothing of it is on its way.
-    if (!next.tab.flight) settled(id)
+    if (next.tab.pendingWrite === null) settled(id)
   }
 
   function settled(id: string): void {

@@ -38,6 +38,10 @@ export function documentKind(handle: WindowHandle, opens: (path: string) => Docu
       path: state.path,
       document: { page: state.at.value + 1, pageCount: state.pages.value.length },
     }),
+    getAttention: (state) => ({
+      path: state.path,
+      document: { page: state.at.value + 1, pageCount: state.pages.value.length },
+    }),
   }
 
   // The reader of documents. What stands at the spans asked for is

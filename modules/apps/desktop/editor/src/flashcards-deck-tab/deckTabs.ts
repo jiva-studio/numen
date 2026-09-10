@@ -72,7 +72,7 @@ export function useDeckTabs(cards: Cards, presets: Presets, handle: WindowHandle
           sections: sectionsOf(deck),
           tail: deck.tail,
         },
-        seen?.at ?? null,
+        seen?.path ?? null,
       )
       said.writes(path, { refusal: answer.refusal, bound: answer.bound })
       return {

@@ -47,7 +47,7 @@ function fake(over: Partial<FakeCore> = {}) {
       const held = files.get(path)
       // A note still holding either the prose or the file that prose came out of
       // is the note this caller read.
-      if (seen && held !== undefined && held !== seen.prose && marked(held) !== seen.at) {
+      if (seen && held !== undefined && held !== seen.prose && marked(held) !== seen.path) {
         return { body: '', refusal: null, changed: true }
       }
       files.set(path, body)

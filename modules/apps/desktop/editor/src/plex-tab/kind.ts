@@ -59,6 +59,7 @@ export function plexKind(handle: WindowHandle, makes: () => PlexView, deps: Plex
       return { path, title: (path && state.nameOf(path)) || path }
     },
     attends: (state) => ({ path: state.view.here.value }),
+    getAttention: (state) => ({ path: state.view.here.value }),
   }
 
   /** The note the person is looking at, which is what a question is about. */

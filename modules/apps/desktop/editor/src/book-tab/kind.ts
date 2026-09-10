@@ -53,6 +53,14 @@ export function bookKind(
         pageCount: state.pages.value,
       },
     }),
+    getAttention: (state) => ({
+      path: state.path,
+      book: {
+        offset: state.at.value,
+        page: state.page.value,
+        pageCount: state.pages.value,
+      },
+    }),
   }
 
   // The reader of books that reflow. The stretch asked for is marked where it

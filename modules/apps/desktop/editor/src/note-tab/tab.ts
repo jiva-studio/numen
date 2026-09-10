@@ -32,19 +32,10 @@ export interface Move {
 /** Which file prose came out of, as the core hands it back. */
 export type FilePath = string
 
-/**
- * What a tab last saw of its note: the prose a read gave it, and which file that
- * read came out of. A write presents it, and the note still holding either is
- * the note this tab read.
- */
+/** What a tab last saw of its note: the prose a read gave it, and which file that read came out of. */
 export interface NoteBaseline {
   readonly prose: string
-  readonly at: FilePath
-}
-
-/** The write on its way to the file. */
-export interface PendingWrite {
-  readonly body: string
+  readonly path: FilePath
 }
 
 /** What a tab holds. */
@@ -53,23 +44,18 @@ export interface Tab {
   readonly path: string
   /** The body as last read or last successfully written, normalised. */
   readonly written: string | null
-  /**
-   * Which file `written` came out of, and nothing where no file was read. A
-   * write presents it, and the answer to a write replaces it.
-   */
-  readonly at: FilePath | null
+  /** Which file `written` came out of, and nothing where no file was read. */
+  readonly filePath: FilePath | null
   /** The body on screen. */
   readonly shown: string
-  readonly flight: PendingWrite | null
-  /** Whether the flight has to be followed by a write. */
-  readonly owed: boolean
-  /**
-   * Whether the note this tab reads is at a name with no file behind it, and
-   * so its save stopped. A note that comes back clears it.
-   */
-  readonly gone: boolean
+  /** The body on its way to the file, and nothing where no write is in the air. */
+  readonly pendingWrite: string | null
+  /** Whether the pending write has to be followed by another write. */
+  readonly hasPendingWrite: boolean
+  /** Whether the note this tab reads is at a name with no file behind it. */
+  readonly isDeleted: boolean
   /** Whether the file moved past the prose this tab read, and so its save stopped. */
-  readonly overtaken: boolean
+  readonly isStale: boolean
   /** When the first unwritten change was made, or nothing. */
   readonly since: number | null
   /** The generation of the newest read issued. */
@@ -90,9 +76,9 @@ export const dirty = (tab: Tab): boolean => tab.shown !== tab.written
 export const stateOf = (tab: Tab): State => {
   if (tab.refused) return 'stuck'
   if (tab.written === null) return 'loading'
-  if (tab.gone) return 'gone'
-  if (tab.overtaken) return 'overtaken'
-  if (tab.flight) return 'saving'
+  if (tab.isDeleted) return 'gone'
+  if (tab.isStale) return 'overtaken'
+  if (tab.pendingWrite !== null) return 'saving'
   if (dirty(tab)) return 'unsaved'
   return 'clean'
 }
@@ -202,18 +188,19 @@ export const opening = (path: string): Transition => ({
   tab: {
     path,
     written: null,
-    at: null,
+    filePath: null,
     shown: '',
-    flight: null,
-    owed: false,
-    gone: false,
-    overtaken: false,
+    pendingWrite: null,
+    hasPendingWrite: false,
+    isDeleted: false,
+    isStale: false,
     since: null,
     reading: 1,
     refused: null,
   },
   effects: [{ kind: 'read', path, generation: 1 }],
 })
+
 
 export const tabAfter = (tab: Tab, event: Event, limits: WriteLimits = waiting): Transition => {
   switch (event.kind) {
@@ -246,20 +233,21 @@ const still = (tab: Tab): Transition => ({ tab, effects: [] })
  * A body equal to what is shown replaces nothing. What the file holds is what
  * the tab has written, so nothing is unwritten behind it.
  */
-const shows = (tab: Tab, body: string, at: FilePath | null): Transition => ({
-  tab: { ...tab, written: body, at, shown: body, since: null },
+const shows = (tab: Tab, body: string, filePath: FilePath | null): Transition => ({
+  tab: { ...tab, written: body, filePath, shown: body, since: null },
   effects: body === tab.shown ? [] : [{ kind: 'replace', body }],
 })
 
 /** What the tab last saw, for a write to present. */
 const seenOf = (tab: Tab): NoteBaseline | null =>
-  tab.written === null || tab.at === null ? null : { prose: tab.written, at: tab.at }
+  tab.written === null || tab.filePath === null ? null : { prose: tab.written, path: tab.filePath }
 
 /** A write of what is on screen now, presenting what it is given. */
 const begins = (tab: Tab, seen: NoteBaseline | null): Transition => ({
-  tab: { ...tab, flight: { body: tab.shown }, owed: false, overtaken: false },
+  tab: { ...tab, pendingWrite: tab.shown, hasPendingWrite: false, isStale: false },
   effects: [{ kind: 'write', path: tab.path, body: tab.shown, seen }],
 })
+
 
 /**
  * A read is applied to a tab with nothing unsaved and only for the generation
@@ -281,13 +269,13 @@ const answered = (tab: Tab, generation: number, answer: ReadResult): Transition 
   // until they say so.
   if (answer.kind === 'missing') {
     if (stale) return still(tab)
-    return loading ? shows(tab, '', null) : still({ ...tab, gone: true })
+    return loading ? shows(tab, '', null) : still({ ...tab, isDeleted: true })
   }
   if (loading) return shows(tab, answer.body, answer.at)
   // The note came back, at this name or another.
-  if (state === 'gone') return shows({ ...tab, gone: false }, answer.body, answer.at)
+  if (state === 'gone') return shows({ ...tab, isDeleted: false }, answer.body, answer.at)
   if (stale) return still(tab)
-  if (state === 'overtaken') return shows({ ...tab, overtaken: false }, answer.body, answer.at)
+  if (state === 'overtaken') return shows({ ...tab, isStale: false }, answer.body, answer.at)
   if (dirty(tab)) return still(tab)
   return shows(tab, answer.body, answer.at)
 }
@@ -324,47 +312,50 @@ const fired = (tab: Tab): Transition => {
   // A tab that has not read its note has nothing to write.
   if (state === 'loading') return still(tab)
   if (state === 'unsaved') return begins(tab, seenOf(tab))
-  if (state === 'saving') return { tab: { ...tab, owed: true }, effects: [] }
+  if (state === 'saving') return { tab: { ...tab, hasPendingWrite: true }, effects: [] }
   return still(tab)
 }
 
 const landed = (tab: Tab, answer: WriteResult): Transition => {
-  if (!tab.flight) return still(tab)
+  if (tab.pendingWrite === null) return still(tab)
   if (answer.kind === 'refused') {
     // The buffer stays editable, and what is owed goes.
-    return { tab: { ...tab, flight: null, owed: false, refused: answer.refusal }, effects: [] }
+    return {
+      tab: { ...tab, pendingWrite: null, hasPendingWrite: false, refused: answer.refusal },
+      effects: [],
+    }
   }
   if (answer.kind === 'changed') {
-    // Nothing was written, and the tab is overtaken until the person answers.
+    // Nothing was written, and the tab is stale until the person answers.
     return {
-      tab: { ...tab, flight: null, owed: false, overtaken: true, since: null },
+      tab: { ...tab, pendingWrite: null, hasPendingWrite: false, isStale: true, since: null },
       effects: [],
     }
   }
   const written: Tab = {
     ...tab,
-    written: tab.flight.body,
-    at: answer.at,
-    flight: null,
+    written: tab.pendingWrite,
+    filePath: answer.at,
+    pendingWrite: null,
     since: null,
-    gone: false,
+    isDeleted: false,
   }
-  return tab.owed ? begins(written, seenOf(written)) : still(written)
+  return tab.hasPendingWrite ? begins(written, seenOf(written)) : still(written)
 }
 
 const changed = (tab: Tab, paths: readonly string[], renamed: readonly Move[]): Transition => {
   // A note that moved is followed wherever it went: its name changed and what
   // it holds did not. A tab left at the name it had holds a name with no file.
   const went = renamed.find((one) => one.from === tab.path)
-  const at = went ? { ...tab, path: went.to, gone: false } : tab
+  const next = went ? { ...tab, path: went.to, isDeleted: false } : tab
 
   // A change carrying no paths is a reload, and it is about every tab.
-  const mine = paths.length === 0 || paths.includes(at.path) || went !== undefined
-  if (!mine || stateOf(at) !== 'clean') return still(at)
-  const reading = at.reading + 1
+  const mine = paths.length === 0 || paths.includes(next.path) || went !== undefined
+  if (!mine || stateOf(next) !== 'clean') return still(next)
+  const reading = next.reading + 1
   return {
-    tab: { ...at, reading },
-    effects: [{ kind: 'read', path: at.path, generation: reading }],
+    tab: { ...next, reading },
+    effects: [{ kind: 'read', path: next.path, generation: reading }],
   }
 }
 
@@ -375,7 +366,7 @@ const changed = (tab: Tab, paths: readonly string[], renamed: readonly Move[]): 
 const saving = (tab: Tab): Transition => {
   const state = stateOf(tab)
   if (state === 'unsaved') return begins(tab, seenOf(tab))
-  if (state === 'saving') return { tab: { ...tab, owed: true }, effects: [] }
+  if (state === 'saving') return { tab: { ...tab, hasPendingWrite: true }, effects: [] }
   return still(tab)
 }
 
@@ -391,18 +382,12 @@ const settling = (tab: Tab): Transition => {
     return { tab: going.tab, effects: [{ kind: 'disarm' }, ...going.effects] }
   }
   if (state === 'saving') {
-    return { tab: { ...tab, owed: dirty(tab) }, effects: [{ kind: 'disarm' }] }
+    return { tab: { ...tab, hasPendingWrite: dirty(tab) }, effects: [{ kind: 'disarm' }] }
   }
   return { tab, effects: [{ kind: 'disarm' }] }
 }
 
-/** Keep: what is shown goes to the file, over whatever the file holds. */
-/**
- * Keep: what is on screen goes to the file, whatever the file now holds.
- *
- * A note that is no longer there is made again at the name it had, which is the
- * one thing that recovers prose the person can otherwise only copy out by hand.
- */
+/** Keep: what is on screen goes to the file, whatever the file now holds. */
 const keeping = (tab: Tab): Transition => {
   const state = stateOf(tab)
   if (state !== 'overtaken' && state !== 'gone') return still(tab)
@@ -443,6 +428,8 @@ const closing = (tab: Tab): Transition => {
     const going = begins(tab, seenOf(tab))
     return { tab: going.tab, effects: [...going.effects, { kind: 'hold' }] }
   }
-  if (state === 'saving') return { tab: { ...tab, owed: dirty(tab) }, effects: [{ kind: 'hold' }] }
+  if (state === 'saving') {
+    return { tab: { ...tab, hasPendingWrite: dirty(tab) }, effects: [{ kind: 'hold' }] }
+  }
   return { tab, effects: [{ kind: 'close' }] }
 }

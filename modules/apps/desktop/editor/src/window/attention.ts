@@ -27,7 +27,7 @@ export function useAttention({ core, tabs, held }: AttentionDeps) {
   }
   const looked = getActiveTabId
 
-  const attends = (): Attention => ({
+  const getAttention = (): Attention => ({
     front: getActiveTabId(),
     tabs: windowTabsManager.tabs.value.map(({ id, title }) => {
       const one = windowTabsManager.heldIn(id)
@@ -45,8 +45,9 @@ export function useAttention({ core, tabs, held }: AttentionDeps) {
       }
     }),
   })
+  const attends = getAttention
 
-  const attention = computed<Attention>(() => attends())
+  const attention = computed<Attention>(() => getAttention())
   watch(
     attention,
     (open) => {

@@ -113,6 +113,14 @@ export function recordingKind<K extends string>(
           durationMs: state.duration.value,
         },
       }) as OpenTab<K>,
+    getAttention: (state) =>
+      ({
+        path: state.path,
+        recording: {
+          transcribedDurationMs: state.transcribedDuration.value,
+          durationMs: state.duration.value,
+        },
+      }) as OpenTab<K>,
   }
 
   // The person is taken to the moment the first of the spans asked for was
