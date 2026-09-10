@@ -1,18 +1,13 @@
 <script setup lang="ts">
 /**
- * A stencil tab: the fields it names, the faces that show them, and the
- * questions the file puts.
- *
- * What is wrong with the faces and the fields is handed to the editor, which
- * stands a face's mark under that face's name and a field's under that field's
- * row. What stands against neither is said above the editor.
+ * Displays flashcard stencil editor and handles field and face definitions.
  */
 import { computed } from 'vue'
 import { StencilEditor } from '@numen/ui'
 import type { InsertionPoint, Half } from '@numen/ui'
 import FileConflictPrompt from '../shared/saving/FileConflictPrompt.vue'
 import { conflictIn } from '../shared/saving/flushing'
-import type { StencilTabState } from './stencilTabs'
+import type { StencilTabState } from './types'
 import { WORDS as words } from '../shared/flashcards/words'
 
 // --- Props & Emits ---
@@ -24,47 +19,58 @@ const marks = computed(() => props.state.marks.value)
 
 // --- Handlers ---
 function onKeep() {
-  props.state.keep()
+  const keep = props.state.keepMine ?? props.state.keep
+  keep()
 }
 
 function onTake() {
-  props.state.take()
+  const take = props.state.takeFile ?? props.state.take
+  take()
 }
 
 function onAddField(name: string) {
-  props.state.addsField(name)
+  const add = props.state.addField ?? props.state.addsField
+  add(name)
 }
 
 function onRenameField(field: string, name: string) {
-  props.state.namesField(field, name)
+  const rename = props.state.renameField ?? props.state.namesField
+  rename(field, name)
 }
 
 function onRemoveField(field: string) {
-  props.state.removesField(field)
+  const remove = props.state.removeField ?? props.state.removesField
+  remove(field)
 }
 
 function onMoveField(field: string, at: InsertionPoint) {
-  props.state.movesField(field, at)
+  const move = props.state.moveField ?? props.state.movesField
+  move(field, at)
 }
 
 function onAddFace(name: string) {
-  props.state.addsFace(name)
+  const add = props.state.addFace ?? props.state.addsFace
+  add(name)
 }
 
 function onRenameFace(id: string, name: string) {
-  props.state.namesFace(id, name)
+  const rename = props.state.renameFace ?? props.state.namesFace
+  rename(id, name)
 }
 
 function onRemoveFace(id: string) {
-  props.state.removesFace(id)
+  const remove = props.state.removeFace ?? props.state.removesFace
+  remove(id)
 }
 
 function onMoveFace(id: string, at: InsertionPoint) {
-  props.state.movesFace(id, at)
+  const move = props.state.moveFace ?? props.state.movesFace
+  move(id, at)
 }
 
 function onWriteFace(id: string, half: Half, text: string) {
-  props.state.writes(id, half, text)
+  const write = props.state.writeFaceHalf ?? props.state.writes
+  write(id, half, text)
 }
 
 // --- Helpers ---

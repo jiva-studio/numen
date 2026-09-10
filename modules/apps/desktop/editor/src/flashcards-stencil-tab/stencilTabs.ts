@@ -1,9 +1,5 @@
 /**
- * The stencils the window has open, and what one stencil tab holds.
- *
- * A stencil is saved the way a note is, and the string the store is dirty
- * against is its fields and its faces written out. A field renamed here is
- * renamed in every card the vault knows it cuts, which is the write's doing.
+ * Window registration and tab state for flashcard stencil tabs.
  */
 import { computed, type ComputedRef } from 'vue'
 import type { Half, PlexShowing } from '@numen/ui'
@@ -37,6 +33,9 @@ import {
 import { marksOf, sameMarks, type Marks } from '../shared/flashcards/marks'
 import { fileOf } from '../shared/paths'
 import { WORDS as words } from '../shared/flashcards/words'
+import type { StencilTabState } from './types'
+
+export type { StencilTabState }
 
 /** What the vault said about one file the last time it was read or written. */
 interface VaultAnswer {
@@ -55,35 +54,6 @@ interface VaultAnswer {
 }
 
 const NOTHING: VaultAnswer = { problems: [], reading: null, writing: null, at: '' }
-
-/** What one stencil tab holds. */
-export interface StencilTabState {
-  /** The identity this stencil opened under, which its tab keeps wherever it goes. */
-  readonly id: string
-  /** The stencil as the window draws it: the state it is in, and what it stands at. */
-  readonly shown: ComputedRef<OpenNote>
-  /** The fields and the faces, as the editor draws them. */
-  readonly stencil: ComputedRef<BufferStencil>
-  /** What is wrong with the file, against the face or the field it stands on. */
-  readonly marks: ComputedRef<Marks>
-  /** What the whole file was refused for, in words a person reads. */
-  readonly saying: ComputedRef<string>
-  addsField(name: string): void
-  namesField(field: string, name: string): void
-  removesField(field: string): void
-  movesField(field: string, at: string | null): void
-  addsFace(name: string): void
-  namesFace(id: string, name: string): void
-  removesFace(id: string): void
-  movesFace(id: string, at: string | null): void
-  writes(id: string, half: Half, text: string): void
-  /** The person keeps what they have written, over whatever the file holds. */
-  keep(): void
-  /** The person takes what the file holds. */
-  take(): void
-  /** The tab is closing, and what is unwritten goes to the file first. */
-  shuts(id: string): void
-}
 
 export function useStencilTabs(
   cards: Cards,
@@ -222,24 +192,8 @@ export function useStencilTabs(
     return words.unreachable
   }
 
-  const held = (id: string): StencilTabState => ({
-    id,
-    shown: computed(() => store.shown(id)),
-    stencil: computed(() => stencilAt(id)),
-    marks: computed(() => marksAt(id)),
-    saying: computed(() => sayingOf(id)),
-    addsField: (name) => turns(id, fieldAdded(stencilAt(id), name)),
-    namesField: (field, name) => void renames(id, field, name),
-    removesField: (field) => turns(id, fieldGone(stencilAt(id), field)),
-    movesField: (field, at) => turns(id, fieldDropped(stencilAt(id), field, at)),
-    addsFace: (name) => turns(id, faceAdded(stencilAt(id), name)),
-    namesFace: (face, name) => turns(id, faceNamed(stencilAt(id), face, name)),
-    removesFace: (face) => turns(id, faceGone(stencilAt(id), face)),
-    movesFace: (face, at) => turns(id, faceDropped(stencilAt(id), face, at)),
-    writes: (face, half, text) => turns(id, faceWritten(stencilAt(id), face, half, text)),
-    keep: () => store.keep(id),
-    take: () => store.take(id),
-    shuts: (tab) => {
+  const held = (id: string): StencilTabState => {
+    const closeTab = (tab: string) => {
       const path = store.where(id)
       void store.shut(id).then((gone) => {
         if (!gone) return
@@ -248,8 +202,40 @@ export function useStencilTabs(
         forgets(path)
         handle.closes(tab)
       })
-    },
-  })
+    }
+
+    return {
+      id,
+      shown: computed(() => store.shown(id)),
+      stencil: computed(() => stencilAt(id)),
+      marks: computed(() => marksAt(id)),
+      saying: computed(() => sayingOf(id)),
+      addsField: (name) => turns(id, fieldAdded(stencilAt(id), name)),
+      addField: (name) => turns(id, fieldAdded(stencilAt(id), name)),
+      namesField: (field, name) => void renames(id, field, name),
+      renameField: (field, name) => void renames(id, field, name),
+      removesField: (field) => turns(id, fieldGone(stencilAt(id), field)),
+      removeField: (field) => turns(id, fieldGone(stencilAt(id), field)),
+      movesField: (field, at) => turns(id, fieldDropped(stencilAt(id), field, at)),
+      moveField: (field, at) => turns(id, fieldDropped(stencilAt(id), field, at)),
+      addsFace: (name) => turns(id, faceAdded(stencilAt(id), name)),
+      addFace: (name) => turns(id, faceAdded(stencilAt(id), name)),
+      namesFace: (face, name) => turns(id, faceNamed(stencilAt(id), face, name)),
+      renameFace: (face, name) => turns(id, faceNamed(stencilAt(id), face, name)),
+      removesFace: (face) => turns(id, faceGone(stencilAt(id), face)),
+      removeFace: (face) => turns(id, faceGone(stencilAt(id), face)),
+      movesFace: (face, at) => turns(id, faceDropped(stencilAt(id), face, at)),
+      moveFace: (face, at) => turns(id, faceDropped(stencilAt(id), face, at)),
+      writes: (face, half, text) => turns(id, faceWritten(stencilAt(id), face, half, text)),
+      writeFaceHalf: (face, half, text) => turns(id, faceWritten(stencilAt(id), face, half, text)),
+      keep: () => store.keep(id),
+      keepMine: () => store.keep(id),
+      take: () => store.take(id),
+      takeFile: () => store.take(id),
+      shuts: closeTab,
+      close: closeTab,
+    }
+  }
 
   /**
    * What the vault said about a file no tab of this window stands at any
