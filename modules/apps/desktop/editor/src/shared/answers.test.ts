@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { Refusal } from '@numen/protocol'
-import { fingerprint, REFUSAL, refusalIn, staleIn, stamp } from './answers'
+import { asset, fingerprint, named, REFUSAL, refusalIn, staleIn, stamp, waiting } from './answers'
 
 describe('the file an answer came out of', () => {
   it('comes back out as it went in', () => {
@@ -61,3 +61,25 @@ describe('what a refusal is called', () => {
     expect(refusalIn({ refusal: Refusal.UNSPECIFIED })).toBe('unreadable')
   })
 })
+
+describe('the address a file is asked about at', () => {
+  it('escapes characters in the path', () => {
+    expect(asset('notes/Maxwell’s demon.md')).toBe('/assets/notes%2FMaxwell%E2%80%99s%20demon.md')
+  })
+})
+
+describe('how an address names the bytes of a file', () => {
+  it('encodes the size and modification time', () => {
+    expect(named('1024 1700000000000000000 notes/Doc.pdf')).toBe(
+      'size=1024&mtime=1700000000000000000',
+    )
+  })
+})
+
+describe('waiting for an answer', () => {
+  it('returns the answer when the call succeeds', async () => {
+    const answer = await waiting(async () => 'ok')
+    expect(answer).toBe('ok')
+  })
+})
+

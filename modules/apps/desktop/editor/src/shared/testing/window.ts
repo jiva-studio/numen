@@ -285,12 +285,15 @@ vi.mock('../../window/vault', () => ({
   },
 }))
 
-vi.mock('../../window/assets', () => ({
+vi.mock('../../document-tab/wire', () => ({
   documents: {
     shape: async () => ({ pages: 1, pageSizes: [{ wide: 100, high: 100 }] }),
     page: () => '',
     places: async () => [],
   },
+}))
+
+vi.mock('../../book-tab/wire', () => ({
   books: {
     shape: async (path: string) => ({
       title: path,
@@ -305,6 +308,9 @@ vi.mock('../../window/assets', () => ({
     markup: async () => '<p data-offset="0">the book</p>',
     entry: () => '',
   },
+}))
+
+vi.mock('../media/wire', () => ({
   recordings: {
     listened: async (path: string) => {
       asked.listened.push(path)
