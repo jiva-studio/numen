@@ -40,7 +40,7 @@ export interface ShowingOptions {
   reloads?(): void
 }
 
-export function showing(core: Core, how: ShowingOptions = {}) {
+export function useWindowShowing(core: Core, how: ShowingOptions = {}) {
   const wait = how.wait ?? sleep
   const told = how.told ?? (() => {})
   const drawing = how.drawing ?? (() => {})

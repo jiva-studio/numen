@@ -21,7 +21,6 @@ const generated = new Set(['modules/libs/protocol'])
  */
 export const baseline = [
   'modules/apps/desktop/editor/src/note-tab/drawing.ts',
-  'modules/apps/desktop/editor/src/window/showing.ts',
 ]
 
 /** Every Go module of the repository, found by its go.mod. */

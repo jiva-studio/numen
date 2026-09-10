@@ -5,7 +5,7 @@
  * showing something stale, with no error and no way back.
  */
 import { describe, expect, it } from 'vitest'
-import { showing } from './showing'
+import { useWindowShowing } from './showing'
 import type { Core, Span, Task } from '../shared/core'
 import type { Neighbourhood } from '../shared/core'
 
@@ -92,7 +92,7 @@ const nap = () => new Promise((wake) => setTimeout(wake, 0))
 const heard = (core: Core, reads?: (path: string, spans: readonly Span[]) => void) => {
   const changed: string[] = []
   const wanted: string[] = []
-  const showed = showing(core, {
+  const showed = useWindowShowing(core, {
     wait: async () => showed.close(),
     told: async (paths, renamed) => {
       changed.push([...paths, ...(renamed ?? []).map((one) => `${one.from} → ${one.to}`)].join(' '))
@@ -115,7 +115,7 @@ describe('the stream of changes', () => {
       },
     })
     const waits: number[] = []
-    const window = showing(core, {
+    const window = useWindowShowing(core, {
       wait: async (ms) => {
         waits.push(ms)
         if (streams >= 3) window.close()
@@ -136,7 +136,7 @@ describe('the stream of changes', () => {
         throw new Error('connection lost')
       } as unknown as Core['changes'],
     })
-    const window = showing(core, {
+    const window = useWindowShowing(core, {
       wait: async () => {
         if (streams >= 2) window.close()
       },
@@ -234,7 +234,7 @@ describe('another vault under this window', () => {
   /** What the window did about a reload: drew the page again, or read again. */
   const swapping = (core: Core) => {
     const drawn: string[] = []
-    const window = showing(core, {
+    const window = useWindowShowing(core, {
       wait: async () => {},
       told: async (paths) => void drawn.push(`told ${paths.join(' ')}`),
       reloads: () => void drawn.push('reloads'),
@@ -397,7 +397,7 @@ describe('a vault that could not be read', () => {
         scan: { ready: false, failed: 'permission denied', unwatched: '' },
       }),
     })
-    const window = showing(core, { wait: async () => window.close() })
+    const window = useWindowShowing(core, { wait: async () => window.close() })
 
     await window.start()
     await nap()
@@ -410,7 +410,7 @@ describe('a vault that could not be read', () => {
 
 describe('a vault with a note in it', () => {
   it('says it holds one, which is not what an unreadable vault says', async () => {
-    const window = showing(fake(), { wait: async () => window.close() })
+    const window = useWindowShowing(fake(), { wait: async () => window.close() })
 
     await window.start()
     await nap()
@@ -428,7 +428,7 @@ describe('a vault that is not being followed', () => {
         scan: { ...settled.scan, unwatched: 'too many watches' },
       }),
     })
-    const window = showing(core, { wait: async () => window.close() })
+    const window = useWindowShowing(core, { wait: async () => window.close() })
 
     await window.start()
     await nap()
@@ -445,7 +445,7 @@ describe('chunks with nothing to embed them', () => {
         coverage: { chunkCount: 4823n, embeddedCount: 0n, embedding: false },
       }),
     })
-    const window = showing(core, { wait: async () => window.close() })
+    const window = useWindowShowing(core, { wait: async () => window.close() })
 
     await window.start()
     await nap()
@@ -485,7 +485,7 @@ describe('what the application is doing', () => {
         await held()
       },
     })
-    const window = showing(core, { wait: async () => {} })
+    const window = useWindowShowing(core, { wait: async () => {} })
 
     await window.start()
     await nap()
@@ -516,7 +516,7 @@ describe('what the application is doing', () => {
     })
     // The clock is the test's, so the wait between one stream and the next is
     // not a second of it.
-    const window = showing(core, { wait: async () => {} })
+    const window = useWindowShowing(core, { wait: async () => {} })
 
     await window.start()
     await nap()
@@ -557,7 +557,7 @@ describe('what the application is doing', () => {
         await held()
       },
     })
-    const window = showing(core, { wait: async () => {} })
+    const window = useWindowShowing(core, { wait: async () => {} })
 
     await window.start()
     await nap()

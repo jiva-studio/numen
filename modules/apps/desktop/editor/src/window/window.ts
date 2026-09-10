@@ -17,7 +17,7 @@ import { running } from '../shared/artifacts'
 import { cards } from '../shared/flashcards/cards'
 import { presets } from '../flashcards-preset-tab/core'
 import type { Source } from '../shared/core'
-import { showing } from './showing'
+import { useWindowShowing } from './showing'
 import { usePlexView } from '../plex-tab/view'
 import { useDocumentReader } from '../document-tab/open'
 import { useBookReader } from '../book-tab/open'
@@ -75,7 +75,7 @@ export const useWindow = () => {
     day: () => settings.dayBegins.day.value,
   })
 
-  const window = showing(core, {
+  const window = useWindowShowing(core, {
     told: async (paths, renamed) => {
       editing.notes.changed(paths, renamed)
       editing.decks.changed(paths, renamed)
